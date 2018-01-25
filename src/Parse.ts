@@ -5,11 +5,11 @@ import {
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst, 
    dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, token, 
    withAction, withJoin
-} from "./Parsing"
+} from "./util/parse/Core"
 import { ITraced, Traced0, __tracedK, __val, create, reflect, ν } from "./Runtime"
-import { Trace, join, str } from "./Syntax"
+import { Lex, Trace, join, str } from "./Syntax"
 import * as AST from "./Syntax"
-import { className } from "./Util"
+import { className, make } from "./util/Core"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.
@@ -32,11 +32,15 @@ function isCtr (str: string): boolean {
    return isUpper(str.charAt(0))
 }
 
-const keyword: Parser<string> =
+const reservedWord: Parser<string> =
    choice<string>([
-      reservedWord(str.as), reservedWord(str.match), reservedWord(str.fun), reservedWord(str.in_),
-      reservedWord(str.let_), reservedWord(str.letRec)
+      reserved(str.as), reserved(str.match), reserved(str.fun), reserved(str.in_),
+      reserved(str.let_), reserved(str.letRec)
    ])
+
+function keyword(str: string): Parser<Lex.Keyword> {
+   return lexeme(reserved(str), Lex.Keyword)
+}
 
 // No Unicode support for identifiers yet.
 const identStart: Parser<string> =
@@ -49,33 +53,28 @@ const identEnd: Parser<string> =
    ch('\'')
 
 const identCandidate: Parser<string> =
-   lexeme(withJoin(sequence([identStart, withJoin(repeat(identPart)), withJoin(repeat(identEnd))])))
+   withJoin(sequence([identStart, withJoin(repeat(identPart)), withJoin(repeat(identEnd))]))
 
 // Use this to prevent identifiers/keywords that have (other) keywords as prefixes from being
 // problematic. Could take a similar approach (defining operatorCandidate) with operators, if we
 // wanted Haskell-style operators, where for example >>= and >> must coexist.
-function reservedWord (str: string): Parser<string> {
+function reserved (str: string): Parser<string> {
    return (state: ParseState): ParseResult<string> => {
-      const r: ParseResult<string> = lexeme(identCandidate)(state)
+      const r: ParseResult<string> = identCandidate(state)
       if (r !== null && r.ast === str)
          return r
       return null
    }
 }
 
-const ctr: Parser<string> =
-   (state: ParseState): ParseResult<string> => {
-      const r: ParseResult<string> = identCandidate(state)
-      if (r && isCtr(r.ast))
-         return r
-      return null
-   }
+const ctr: Parser<Str> = 
+   satisfying(identCandidate, isCtr)
 
 // Note that primitive operations that have names (e.g. reflect, intToString) are /exactly/ like regular
 // identifiers. They can be shadowed, for example.
 const ident: Parser<Str> =
    withAction(
-      butnot(identCandidate, choice([keyword, ctr])),
+      butnot(satisfying(identCandidate, str => !isCtr(str)), reservedWord),
       (x: string) => Str.at(ν(), x)
    )
 
@@ -84,7 +83,7 @@ const variable: Parser<ITraced<AST.Var>> =
 
 // Only allow Unicode escape sequences (i.e. no hex or octal escapes, nor "character" escapes such as \r).
 const hexDigit: Parser<string> = 
-   lexeme(choice<string>([range('0', '9'), range('a', 'f'), range('A', 'F')]))
+   choice<string>([range('0', '9'), range('a', 'f'), range('A', 'F')])
 
 const unicodeEscape: Parser<string> =
    withAction(
@@ -106,7 +105,7 @@ const singleCharEscape: Parser<string> = choice<string>([
 ])
 
 const escapeSeq: Parser<string> =
-   lexeme(dropFirst(ch('\\'), choice<string>([unicodeEscape, singleCharEscape])))
+   dropFirst(ch('\\'), choice<string>([unicodeEscape, singleCharEscape]))
 
 const stringCh: Parser<string> =
    choice<string>([negate(choice<string>([ch('\"'), ch('\\'), ch('\r'), ch('\n')])), escapeSeq])
@@ -116,7 +115,7 @@ const decimalDigits: Parser<string> =
 
 // To avoid having to deal with arbitrary operator precedence, we classify all operators as one of three
 // kinds, depending on the initial character. See 0.5.1 release notes.
-const opCandidate: Parser<string> =
+const opCandidate: Parser<Str> =
    lexeme(
       butnot(
          withJoin(repeat1(choice([ch('+'), ch('*'), ch('/'), ch('-'), ch('='), ch('<'), ch('>')]))),
@@ -204,7 +203,8 @@ const integer: Parser<ITraced<Int>> =
             decimalDigits,
             withJoin(sequence([ch('+'), decimalDigits])),
             withJoin(sequence([ch('-'), decimalDigits]))
-         ])
+         ]),
+         Lex.Int
       ),
       str => __val(ν(), Int.at(ν(), parseInt(str)))
    )
@@ -215,8 +215,8 @@ const parenthExpr: Parser<ITraced> =
 const let_: Parser<ITraced> =
    withAction(
       seq(
-         dropFirst(reservedWord(str.let_), seq(dropSecond(ident, token(str.letInitSep)), expr)),
-         dropFirst(reservedWord(str.in_), expr)
+         dropFirst(keyword(str.let_), seq(dropSecond(ident, token(str.letInitSep)), expr)),
+         dropFirst(keyword(str.in_), expr)
       ),
       ([[x, e], eʹ]: [[Str, ITraced], ITraced]) =>
          __tracedK(ν(), AST.Let.at(ν(), __val(ν(), e), __val(ν(), AST.VarTrie.at(ν(), __val(ν(), x), eʹ))), eʹ.val)
@@ -224,7 +224,7 @@ const let_: Parser<ITraced> =
 
 const recDefinition: Parser<AST.RecBinding> =
    withAction(
-      seq(dropFirst(reservedWord(str.fun), ident), matches),
+      seq(dropFirst(keyword(str.fun), ident), matches),
       ([name, σ]: [Str, AST.Trie<ITraced>]) =>
          AST.RecBinding.at(ν(),
             __val(ν(), AST.RecDefinition.at(ν(), __val(ν(), name), __val(ν(), AST.Fun.at(ν(), __val(ν(), σ))))),
@@ -235,8 +235,8 @@ const recDefinition: Parser<AST.RecBinding> =
 const letrec: Parser<ITraced> =
    withAction(
       seq(
-         dropFirst(reservedWord(str.letRec), repeat1(recDefinition)),
-         dropFirst(reservedWord(str.in_), expr)
+         dropFirst(keyword(str.letRec), repeat1(recDefinition)),
+         dropFirst(keyword(str.in_), expr)
       ),
       ([defs, body]: [AST.RecBinding[], ITraced]) =>
          __tracedK(ν(), AST.LetRec.at(ν(), __val(ν(), __toList(defs)), __val(ν(), body.trace)), body.val)
@@ -246,7 +246,7 @@ const constr: Parser<ITraced> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, token(','))), [])),
       ([ctr, args]: [string, ITraced[]]) =>
-         __val(ν(), reflect(AST.Constr.at(ν(), __val(ν(), Str.at(ν(), ctr)), __val(ν(), __toList(args)))))
+         __val(ν(), reflect(AST.Constr.at(ν(), __val(ν(), ctr), __val(ν(), __toList(args)))))
    )
 
 // Redundantly use reflection here to force everything through the same infrastructure.
@@ -275,7 +275,7 @@ function constr_pattern (p: Parser<Object>): Parser<AST.ConstrTrie<Object>> {
          choice([dropFirst(token(str.parenL), args_pattern(dropFirst(token(str.parenR), p))), p])
       ),
       ([ctr, z]: [string, Object]) =>
-         AST.ConstrTrie.at(ν(), __val(ν(), singleton(Str.at(ν(), ctr), z))) 
+         AST.ConstrTrie.at(ν(), __val(ν(), singleton(ctr, z))) 
    )
 }
 
@@ -323,8 +323,8 @@ function matches (state: ParseState): ParseResult<AST.Trie<Object>> {
 const matchAs: Parser<ITraced> =
    withAction(
       seq(
-         dropFirst(reservedWord(str.match), expr),
-         dropFirst(reservedWord(str.as), matches)
+         dropFirst(keyword(str.match), expr),
+         dropFirst(keyword(str.as), matches)
       ),
       ([e, σ]: [ITraced, AST.Trie<ITraced>]) =>
          newExpr(AST.MatchAs.at(ν(), __val(ν(), e), __val(ν(), σ)))
@@ -332,7 +332,7 @@ const matchAs: Parser<ITraced> =
 
 const fun: Parser<ITraced> =
    withAction(
-      dropFirst(reservedWord(str.fun), matches),
+      dropFirst(keyword(str.fun), matches),
       (σ: AST.Trie<ITraced>) => newExpr(AST.Fun.at(ν(), __val(ν(), σ)))
    )
 

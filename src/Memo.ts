@@ -1,4 +1,4 @@
-import { __nonNull, assertMessage } from "./Util"
+import { __nonNull, assert } from "./util/Core"
 
 export function addr (o: Object): Addr {
    return __nonNull(o.__addr)
@@ -16,12 +16,12 @@ export function keyP (α: Addr, ...path: string[]): Addr {
 // Rather than using a fresh address, we require top-level functions to have globally unique names.
 // TODO: store these in the instances map.
 export function __def <T> (f: (...xs: Object[]) => T): void {
-   assertMessage(f.name !== undefined, "Memo-functions must be named.")
+   assert(f.name !== undefined, "Memo-functions must be named.")
    f.__addr = f.name
 }
 
 export function __defLocal <T, U> (α: Addr, f: (t: T) => U): (t: T) => U {
-   assertMessage(f.name !== undefined, "Memo-functions must be named.")
+   assert(f.name !== undefined, "Memo-functions must be named.")
    f.__addr = keyP(α, f.name)
    return f
 }

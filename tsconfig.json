@@ -10,7 +10,7 @@
       "outDir": "js/",
       "rootDir": "./",
       "sourceMap": true
-      // "strictNullChecks": true
+//    "strictNullChecks": true
    },
    "include": [
       "src"
