@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { TestFile, initialise, loadTestFile, runTest } from "./Helpers"
-import { __nonNull } from "../src/Util"
+import { __nonNull } from "../src/util/Core"
 
 function loadExample(file: string): TestFile {
 	return loadTestFile("example", file)
