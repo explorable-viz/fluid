@@ -1,0 +1,22 @@
+{
+   "compilerOptions": {
+      "target": "es5", // phantomJS doesn't support es6
+      "lib": ["es6", "dom"],
+      "module": "commonjs",
+      "noImplicitAny": true,
+      "noImplicitReturns": true,
+      "noImplicitThis": true,
+      "noUnusedLocals": true,
+      "outDir": "js/",
+      "rootDir": "./",
+      "sourceMap": true
+      // "strictNullChecks": true
+   },
+   "include": [
+      "src"
+   ],
+   "exclude": [
+      "node_modules"
+   ],
+   "types": []
+}

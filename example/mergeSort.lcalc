@@ -1,0 +1,29 @@
+letrec
+   fun split {
+      Nil → (Nil, Nil);
+      Cons(x, xs') →
+         match split xs' as 
+            (ys, zs) → (Cons(x, zs), ys)
+   }
+
+   fun merge xs → fun ys →
+      match (xs, ys) as {
+         (Nil, ys') → ys;
+         (Cons(x, xs'), Nil) → xs;
+         (Cons(x, xs'), Cons(y, ys')) →
+            match x < y as {
+               True → Cons(x, merge xs' ys);
+               False → Cons(y, merge xs ys')
+            }
+      }
+
+   fun mergesort xs →
+      match xs as {
+         Nil → xs;
+         Cons(x, Nil) → xs;
+         Cons(x, Cons(y, xs')) →
+            match split xs as 
+               (ys, zs) → merge (mergesort ys) (mergesort zs)
+     }
+in
+mergesort Cons(1, Cons(2, Cons(3, Nil)))

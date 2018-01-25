@@ -1,0 +1,28 @@
+let compare =
+   fun (x, y) →
+      match x < y as {
+         True → LT;
+         False → match x > y as {
+            True → GT;
+            False → EQ
+         }
+      }
+in
+letrec
+   fun lookup k → fun {
+      Empty → None;
+      NonEmpty(t1, (key, val), t2) →
+         match compare (k, key) as {
+            LT → lookup k t2;
+            EQ → Some(val);
+            GT → lookup k t2
+         }
+   }
+in
+lookup
+   4
+   NonEmpty(
+      NonEmpty(Empty, (3,"simon"), Empty),
+      (4,"john"),
+      NonEmpty(NonEmpty(Empty, (6,"sarah"), Empty), (7,"claire"), Empty)
+   )

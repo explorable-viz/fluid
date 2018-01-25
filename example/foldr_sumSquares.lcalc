@@ -1,0 +1,10 @@
+letrec
+   fun foldr op → fun z →
+      fun {
+         Nil → z;
+         Cons(x,xs) → op (x, foldr op z xs)
+      }
+in
+foldr (fun (x, y) → x * x + y * y)
+      0
+      Cons(4,Cons(2,Cons(2,Nil)))

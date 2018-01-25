@@ -1,0 +1,18 @@
+#
+# Build configuration for Circle CI
+#
+
+machine:
+  node:
+    version: 7.4.0
+
+dependencies:
+  override:
+    - npm install
+
+test:
+    override:
+        - npm run ci-test
+        # copy test results
+        - mkdir $CIRCLE_TEST_REPORTS/junit
+        - mv node_modules/junit-test-results/* $CIRCLE_TEST_REPORTS/junit

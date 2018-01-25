@@ -1,0 +1,54 @@
+{
+  "name": "lambdacalc",
+  "version": "0.0.1",
+  "description": "LambdaCalc",
+  "main": "make",
+  "dependencies": {
+    "@types/three": "0.0.24",
+    "jquery": "^3.2.1",
+    "three": "^0.81.2",
+    "ts-loader": "^2.3.3",
+    "typescript": "^2.5.1"
+  },
+  "devDependencies": {
+    "@types/chai": "^3.4.35",
+    "@types/jquery": "^3.2.12",
+    "@types/mocha": "^2.2.42",
+    "chai": "^3.5.0",
+    "karma": "^1.7.0",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-es6-shim": "^1.0.0",
+    "karma-junit-reporter": "^1.2.0",
+    "karma-mocha": "^1.2.0",
+    "karma-mocha-reporter": "^2.2.2",
+    "karma-phantomjs-launcher": "^1.0.2",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-webpack": "^1.8.0",
+    "mocha": "^3.5.0",
+    "mocha-webpack": "^0.7.0",
+    "ts-node": "^3.3.0",
+    "webpack": "^1.14.0",
+    "webpack-dev-server": "^1.16.3"
+  },
+  "scripts": {
+    "start": "webpack-dev-server",
+    "bundle": "webpack",
+    "test": "karma start",
+    "ci-test": "karma start --singleRun=true --reporters junit,mocha",
+    "chrome": "karma start --browsers=Chrome"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rolyp/lambdacalc.git"
+  },
+  "author": "Roly Perera <roly.perera@dynamicaspects.org> (http://dynamicaspects.org/)",
+  "contributors": [
+    "Roly Perera <roly.perera@dynamicaspects.org> (http://dynamicaspects.org/)"
+  ],
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/rolyp/lambdacalc/issues"
+  },
+  "homepage": "https://github.com/rolyp/lambdacalc"
+}

@@ -1,0 +1,260 @@
+\cite{perera12a}
+
+\begin{syntaxfig}
+\mbox{Expression}
+&
+e
+&
+::=
+&
+x
+&
+\text{variable}
+\\
+&&&
+\exPrimConst{c}
+&
+\text{nullary primitive}
+\\
+&&&
+\exPrimOp
+&
+\text{unary primitive}
+\\
+&&&
+\exInl{e}
+&
+\text{injection}
+\\
+&&&
+\exMatchAs{e'}{\matches{p}{e}}
+&
+\text{pattern-match}
+\\
+&&&
+\exPair{e_1}{e_2}
+&
+\text{pair}
+\\
+&&&
+\exFst{e}
+&
+\text{projection}
+\\
+&&&
+\exPatternLambda{p}{e}
+&
+\text{function}
+\\
+&&&
+\exApp{e_1}{e_2}
+&
+\text{application}
+\\[1mm]
+\mbox{Trace}
+&
+T
+&
+::=
+&
+\emptyE
+&
+\text{empty}
+\\
+&&&
+x
+&
+\text{variable}
+\\
+&&&
+\exApp{(\SEV{T_1}{\exPrimOp})}{(\SEV{T_2}{v})}
+&
+\text{primitive application}
+\\
+&&&
+\exFst{(\SEV{T}{\exPair{\SEV{T_1}{v_1}}{\SEV{T_2}{v_2}}}})
+&
+\text{projection}
+\\
+&&&
+\exMatchedAs{\SEV{T}{m}}{T'}
+&
+\text{successful match}
+\\
+&&&
+\exAppLive{(\SEV{T_1}{\exPatternLambda{p}{e}})}{\SEV{T_2}{m}}{T}
+&
+\text{$\lambda$ application}
+\\[1mm]
+\mbox{Value}
+&
+v
+&
+::=
+&
+\exPrimConst{c}
+\\
+&&&
+\exPrimOp
+\\
+&&&
+\exInl{(\SEV{T}{v})}
+\\
+&&&
+\exPair{\SEV{T_1}{v_1}}{\SEV{T_2}{v_2}}
+\\
+&&&
+\exPatternLambda{p}{e}
+\\[1mm]
+\mbox{Matched pattern}
+&
+m
+&
+::=
+&
+x
+\\
+&&&
+\exPrimConst{c}
+\\
+&&&
+\exPrimOp
+\\
+&&&
+\exInl{(\SEV{T}{m})}
+\\
+&&&
+\exPair{\SEV{T_1}{m_1}}{\SEV{T_2}{m_2}}
+\\
+\end{syntaxfig}
+
+\noindent \shadebox{$e \eval \SEV{T}{v}$}
+\begin{mathpar}
+\inferrule*
+{
+  \strut
+}
+{
+  \SEV{x}{v} \eval \SEV{x}{v}
+}
+%
+\and
+%
+\inferrule*
+{
+  \strut
+}
+{
+  \exPrimOp \eval \SEV{\emptyE}{\exPrimOp}
+}
+%
+\and
+%
+\inferrule*
+{
+  \strut
+}
+{
+  \exPrimConst{c} \eval \SEV{\emptyE}{\exPrimConst{c}}
+}
+%
+\and
+%
+\inferrule*
+{
+  e \eval \SEV{T}{v}
+}
+{
+  \exInl{e} \eval \SEV{\emptyE}{\exInl{(\SEV{T}{v})}}
+}
+%
+\and
+%
+\inferrule*[right={$\matchval{v}{p}{e} = \match{m}{e^{\second}}$}]
+{
+  e' \eval \SEV{T}{v}
+  \\
+  e^{\second} \eval \SEV{T_1}{v_1}
+}
+{
+  \exMatchAs{e'}{\matches{p}{e}}
+  \eval
+  \exMatchedAs{\SEV{T}{m}}{\SEV{T_1}{v_1}}
+}
+%
+\and
+%
+\inferrule*
+{
+  e_1 \eval \SEV{T_1}{v_1}
+  \\
+  e_2 \eval \SEV{T_2}{v_2}
+}
+{
+  \exPair{e_1}{e_2} \eval \SEV{\emptyE}{\exPair{(\SEV{T_1}{v_1})}{(\SEV{T_2}{v_2})}}
+}
+%
+\and
+%
+\inferrule*
+{
+  e \eval \SEV{T}{\exPair{\SEV{T_1}{v_1}}{\SEV{T_2}{v_2}}}
+}
+{
+  \exFst{e} \eval \SEV{\exFst{(\SEV{T}{\exPair{\SEV{T_1}{v_1}}{\SEV{T_2}{v_2}}})}}{v_1}
+}
+%
+\and
+%
+\inferrule*
+{
+}
+{
+  \exPatternLambda{p}{e} \eval \SEV{\emptyE}{\exPatternLambda{p}{e}}
+}
+%
+\and
+%
+\inferrule*[right={$\matchval{v_2}{p}{e} = \match{m}{e'}$}]
+{
+  e_1 \eval \SEV{T_1}{\exPatternLambda{p}{e}}
+  \\
+  e_2 \eval \SEV{T_2}{v_2}
+  \\
+  e' \eval \SEV{T}{v}
+}
+{
+  \exApp{e_1}{e_2} \eval \exAppLive{(\SEV{T_1}{\exPatternLambda{p}{e}})}
+                                   {\SEV{T_2}{m}}
+                                   {\SEV{T}{v}}
+}
+%
+\and
+%
+\inferrule*
+{
+  e_1 \eval \SEV{T_1}{\exPrimOp}
+  \\
+  e_2 \eval \SEV{T_2}{v}
+}
+{
+  \exApp{e_1}{e_2} \eval \SEV{\exApp{(\SEV{T_1}{\exPrimOp})}{(\SEV{T_2}{v})}}{\primOp(v)}
+}
+\end{mathpar}
+
+\noindent{\shadebox{$\subst{e}{x}{v}$}}
+\begin{align*}
+&
+\ldots
+\\
+\subst{x}{v}{x}
+&=
+\SEV{x}{v}
+\end{align*}
+
+\paragraph{Notes}
+A \emph{pattern} $p$ is a bound pattern that contains only empty traces.
+Iso-recursive datatypes are easy to add. The expression ${\kw{let}\;x =
+e_1\;\kw{in}\;e_2}$ desugars into ${\exMatchAs{e_1}{\match{x}{e_2}}}$. A
+projection ${\exFst{e}}$ desugars into
+$\exMatchAs{e}{\match{\exPair{x}{y}}{x}}$.

@@ -1,0 +1,72 @@
+\documentclass[preprint]{sigplanconf}
+
+% save defaults
+\edef\keptrmdefault{\rmdefault}
+\edef\keptsfdefault{\sfdefault}
+\edef\keptttdefault{\ttdefault}
+\usepackage[math]{iwona}
+% restore defaults
+\edef\rmdefault{\keptrmdefault}
+\edef\sfdefault{\keptsfdefault}
+\edef\ttdefault{\keptttdefault}
+
+\usepackage{float}
+\usepackage{mathpartir}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{stmaryrd}
+\usepackage{graphicx}
+\usepackage{soul}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{MnSymbol}
+\usepackage{xspace}
+\usepackage{mathtools}
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+\usepackage{breakurl}
+\usepackage[T1]{fontenc}
+\usepackage{libertine}
+\usepackage[scaled=0.8]{beramono}
+\usepackage{upgreek}
+\usepackage{pifont}
+\usepackage{framed}
+\usepackage{subdepth}
+\usepackage{tikz}
+\usepackage{dashundergaps}
+
+\everymath{\displaystyle}
+
+\allowdisplaybreaks
+
+% I find the align environments use a bit too much vertical spacing.
+\addtolength{\jot}{-0.25em}
+
+\raggedbottom % sane vertical paragraph justification
+
+\hypersetup{ % not using recent enough version of hyperref for [hidelinks] option
+    colorlinks=false,
+    pdfborder={0 0 0},
+}
+
+\input{../paper/def/macros}
+\input{tex/macros}
+
+% Put section and chapter numbering in margins, and color red.
+\makeatletter
+\def\@seccntformat#1{\protect\makebox[0pt][r]{\textcolor{red}{\csname
+      the#1\endcsname}\hspace{6pt}}} \makeatother
+
+\begin{document}
+
+\title{Lazy Self-Explaining Computation}
+
+\authorinfo{}
+
+\maketitle
+
+\input{language}
+
+{\footnotesize \bibliographystyle{abbrv}
+\bibliography{../paper/bib}}
+
+\end{document}

@@ -1,0 +1,11 @@
+letrec
+   fun filter {
+      Nil → Nil;
+      Cons(x, xs) →
+         match p x as {
+            True → Cons(x, filter p xs);
+            False → filter p xs
+         }
+   }
+in
+filter ((<) 5) Cons(4, Cons(2, Cons(7, Nil)))

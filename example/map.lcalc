@@ -1,0 +1,9 @@
+letrec
+   fun map f → fun {
+      Nil → Nil;
+      Cons(x, xs') → Cons(f x, map f xs')
+   }
+in
+let incr = (+) 1
+in
+map incr Cons(2, Cons(4, Cons(6, Nil)))

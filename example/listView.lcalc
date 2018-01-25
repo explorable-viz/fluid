@@ -1,0 +1,18 @@
+letrec
+   fun listView' {
+      Nil → EmptyView;
+      Cons(str, strs) →
+         let x = Word(False, 0, str) in
+         match strs as {
+            Nil → x;
+            Cons(_, _) → Horiz(x, Horiz(Word(False, 0, ","), listView' strs))
+         }
+   }
+in
+let listView =
+   fun strs → RoundedCell(Some(0), listView' strs)
+in
+Vert(
+   listView Cons("h", Cons("e", Cons("l", Cons("l", Cons("o", Nil))))),
+   listView Cons("w", Cons("o", Cons("r", Cons("l", Cons("d", Nil)))))
+)
