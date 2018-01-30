@@ -1,20 +1,20 @@
-import { Int, None, Pair, Str, __toList } from "./BaseTypes"
-import { singleton } from "./FiniteMap"
-import { keyP } from "./Memo"
+// import { Int, None, Pair, Str, __toList } from "./BaseTypes"
+// import { singleton } from "./FiniteMap"
+// import { keyP } from "./Memo"
 import { 
-   Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst, 
-   dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, token, 
-   withAction, withJoin
+   /*Parser,*/ ParseResult, ParseState, /*between, butnot, ch, chainl1, choice, constant, dropFirst, */
+//   dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, token, 
+//   withAction, withJoin
 } from "./util/parse/Core"
-import { ITraced, Traced0, __tracedK, __val, create, reflect, ν } from "./Runtime"
-import { Lex, Trace, join, str } from "./Syntax"
-import * as AST from "./Syntax"
-import { className, make } from "./util/Core"
+// import { ITraced, Traced0, __tracedK, __val, create, reflect, ν } from "./Runtime"
+// import { Lex, Trace, join, str } from "./Syntax"
+// import * as AST from "./Syntax"
+// import { className, make } from "./util/Core"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.
 export module Parse {
-
+/*
 function newExpr <T extends Trace> (t: T): ITraced<T> {
    const α: Addr = ν()
    return Traced0.at(α, t, create(keyP(α, 'name'), None), null)
@@ -350,9 +350,11 @@ const appChain: Parser<ITraced> = chainl1(simpleExpr, app_)
 const productExpr: Parser<ITraced> = chainl1(appChain, appOp(productOp))
 const sumExpr: Parser<ITraced> = chainl1(productExpr, appOp(sumOp))
 const compareExpr: Parser<ITraced> = chainl1(sumExpr, appOp(compareOp))
+*/
 
 export function expr (state: ParseState): ParseResult<ITraced> {
-   return compareExpr(state)
+   return null
+// return compareExpr(state)
 }
 
 }
