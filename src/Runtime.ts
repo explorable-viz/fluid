@@ -1,5 +1,11 @@
-import { Ctr } from "./DataType"
 import { assert, className } from "./util/Core"
+import { Ctr } from "./DataType"
+import { Trace } from "./Syntax"
+
+export class Traced<T = Object> {
+   trace: Trace
+   val: T
+}
 
 const __instances: Map<Addr, Object> = new Map()
 

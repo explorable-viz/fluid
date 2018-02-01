@@ -6,7 +6,7 @@ import {
 //   dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, token, 
 //   withAction, withJoin
 } from "./util/parse/Core"
-// import { ITraced, Traced0, __tracedK, __val, create, reflect, ν } from "./Runtime"
+import { Traced /*, Traced0, __tracedK, __val, create, reflect, ν*/ } from "./Runtime"
 // import { Lex, Trace, join, str } from "./Syntax"
 // import * as AST from "./Syntax"
 // import { className, make } from "./util/Core"
@@ -352,7 +352,7 @@ const sumExpr: Parser<ITraced> = chainl1(productExpr, appOp(sumOp))
 const compareExpr: Parser<ITraced> = chainl1(sumExpr, appOp(compareOp))
 */
 
-export function expr (state: ParseState): ParseResult<ITraced> {
+export function expr (state: ParseState): ParseResult<Traced> {
    return null
 // return compareExpr(state)
 }

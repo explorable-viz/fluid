@@ -52,5 +52,5 @@ export namespace Lex {
    }
 }
 
-export namespace AST {
+export class Trace {
 }
