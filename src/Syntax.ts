@@ -1,5 +1,7 @@
+import { as } from "./util/Core"
 import { Lexeme } from "./util/parse/Core"
-import { create, typeCheck_ } from "./Runtime"
+import { Str } from "./BaseTypes"
+import { create, as_, Traced } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
@@ -70,11 +72,11 @@ export class EmptyBody extends AppBody {
 // For primitives there is no trace part, but we will still show how the argument is consumed.
 // TODO: unify with matches?
 export class PrimBody extends AppBody {
-   _param: ITraced<Str>
+   _param: Traced<Str>
 
-   static at (α: Addr, param: ITraced<Str>): PrimBody {
+   static at (α: Addr, param: Traced<Str>): PrimBody {
       const this_: PrimBody = create(α, PrimBody)
-      this_._param = typeCheck_(param, Str)
+      this_._param = as_(param, Str)
       this_.__version()
       return this_
    }
@@ -89,20 +91,20 @@ export class PrimBody extends AppBody {
 }
 
 export class FunBody extends AppBody {
-   _σ: ITraced<Trie<ITraced>>
+   _σ: Traced<Trie<Traced>>
 
-   static at (α: Addr, σ: ITraced<Trie<ITraced>>): FunBody {
+   static at (α: Addr, σ: Traced<Trie<Traced>>): FunBody {
       const this_: FunBody = create(α, FunBody)
-      this_._σ = typeCheck(σ, ITraced)
+      this_._σ = as(σ, Traced)
       this_.__version()
       return this_
    }
 
-   static at_ (α: Addr, σ: Trie<ITraced>): FunBody {
+   static at_ (α: Addr, σ: Trie<Traced>): FunBody {
       return FunBody.at(α, __val(keyP(α, 'σ'), σ))
    }
 
-   get σ (): Trie<ITraced> {
+   get σ (): Trie<Traced> {
       return this._σ.val
    }
 }
