@@ -1,10 +1,18 @@
-import { assert, className } from "./util/Core"
+import { as, assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
 import { Trace } from "./Syntax"
 
 export class Traced<T = Object> {
    trace: Trace
    val: T
+}
+
+export function as_ <T> (v: Traced<T>, ctr: Ctr<T>): Traced<T> {
+   if (v !== undefined) { // idiom for reifying datatypes means fields can be uninitialised
+      as(v, Traced)
+      as(v.val, ctr)
+   }
+   return v
 }
 
 const __instances: Map<Addr, Object> = new Map()

@@ -2,24 +2,26 @@
 // import { singleton } from "./FiniteMap"
 // import { keyP } from "./Memo"
 import { 
-   /*Parser,*/ ParseResult, ParseState, /*between, butnot, ch, chainl1, choice, constant, dropFirst, */
+   Parser, ParseResult, ParseState, /*between, butnot, ch,*/ chainl1, /*choice, constant, dropFirst, */
 //   dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, token, 
-//   withAction, withJoin
+   withAction//, withJoin
 } from "./util/parse/Core"
-import { Traced /*, Traced0, __tracedK, __val, create, reflect, ν*/ } from "./Runtime"
-// import { Lex, Trace, join, str } from "./Syntax"
-// import * as AST from "./Syntax"
+import { Traced /*, Traced0, __tracedK*/, __val/*, create, reflect*/, ν } from "./Runtime"
+import { /*Lex, */Trace/*, join, str*/ } from "./Syntax"
+import * as AST from "./Syntax"
 // import { className, make } from "./util/Core"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.
 export module Parse {
+
+function newExpr <T extends Trace> (t: T): Traced<T> {
 /*
-function newExpr <T extends Trace> (t: T): ITraced<T> {
    const α: Addr = ν()
    return Traced0.at(α, t, create(keyP(α, 'name'), None), null)
+*/
 }
-
+/*
 // ch is a JavaScript "character", i.e. string of length 1. Currently not supporting Unicode
 // identifiers.
 function isUpper (ch: string) {
@@ -146,13 +148,13 @@ const sumOp: Parser<ITraced> =
       satisfying(opCandidate, isSumOp),
       str => newExpr(AST.OpName.at(ν(), __val(ν(), Str.at(ν(), str))))
    )
-
-const compareOp: Parser<ITraced> =
+*/
+const compareOp: Parser<Traced> // =
+/*
    withAction(
       satisfying(opCandidate, isCompareOp),
       str => newExpr(AST.OpName.at(ν(), __val(ν(), Str.at(ν(), str))))
    )
-
 const symbolOp: Parser<ITraced> = 
    choice<ITraced>([productOp, sumOp, compareOp])
 
@@ -172,14 +174,14 @@ const app_: Parser<(e1: ITraced, e2: ITraced) => ITraced> =
          (e1: ITraced, e2: ITraced): ITraced =>
             newExpr(AST.App.at(ν(), __val(ν(), e1), __val(ν(), e2), __val(ν(), AST.EmptyBody.at(ν()))))
    )
-
+*/
 function appOp (
-   opP: Parser<ITraced>
-): Parser<(e1: ITraced, e2: ITraced) => ITraced> {
+   opP: Parser<Traced>
+): Parser<(e1: Traced, e2: Traced) => Traced> {
    return withAction(
       opP,
       op =>
-         (e1: ITraced, e2: ITraced): ITraced =>
+         (e1: Traced, e2: Traced): Traced =>
             newExpr(
                AST.App.at(ν(),
                   __val(ν(), newExpr(AST.App.at(ν(), __val(ν(), op), __val(ν(), e1), __val(ν(), AST.EmptyBody.at(ν()))))),
@@ -189,7 +191,7 @@ function appOp (
             )
    )
 }
-
+/*
 const string_: Parser<ITraced<Str>> =
    withAction(
       lexeme(between(ch('\"'), withJoin(repeat(stringCh)), ch('\"'))),
@@ -348,13 +350,12 @@ const appChain: Parser<ITraced> = chainl1(simpleExpr, app_)
 // An expression is an operator tree. An operator tree is a tree whose branches are infix
 // binary primitives and whose leaves are application chains.
 const productExpr: Parser<ITraced> = chainl1(appChain, appOp(productOp))
-const sumExpr: Parser<ITraced> = chainl1(productExpr, appOp(sumOp))
-const compareExpr: Parser<ITraced> = chainl1(sumExpr, appOp(compareOp))
 */
+const sumExpr: Parser<Traced> // = chainl1(productExpr, appOp(sumOp))
+const compareExpr: Parser<Traced> = chainl1(sumExpr, appOp(compareOp))
 
 export function expr (state: ParseState): ParseResult<Traced> {
-   return null
-// return compareExpr(state)
+   return compareExpr(state)
 }
 
 }
