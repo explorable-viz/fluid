@@ -35,6 +35,14 @@ export namespace Lex {
       }
    }
 
+   // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
+   // Other uses of primitive operations are treated as variables.
+   export class OpName extends Lexeme {
+      constructor(str: string) {
+         super(str)
+      }
+   }
+
    export class StringLiteral extends Lexeme {
       constructor(str: string) {
          super(str)
@@ -59,14 +67,23 @@ export namespace Lex {
 export class Trace {
 }
 
-// The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
-// Other uses of primitive operations are treated as variables.
 export class OpName extends Trace {
-   name: Str
+   opName: Lex.OpName
 
-   static at (α: Addr, name: Str): OpName {
+   static at (α: Addr, opName: Lex.OpName): OpName {
       const this_: OpName = create(α, OpName)
-      this_.name = as(name, Str)
+      this_.opName = as(opName, Lex.OpName)
+      this_.__version()
+      return this_
+   }
+}
+
+export class Var extends Trace {
+   ident: Lex.Var
+
+   static at (α: Addr, ident: Lex.Var): Var {
+      const this_: Var = create(α, Var)
+      this_.ident = as(ident, Lex.Var)
       this_.__version()
       return this_
    }

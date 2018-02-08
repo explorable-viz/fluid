@@ -1,10 +1,10 @@
-import { /*Int, None, Pair,*/ Str/*, __toList*/ } from "./BaseTypes"
+import { /*Int, None, Pair, __toList*/ } from "./BaseTypes"
 // import { singleton } from "./FiniteMap"
 // import { keyP } from "./Memo"
 import { 
    Parser, ParseResult, ParseState, /*between, */butnot, ch, chainl1, choice, /*constant, dropFirst, */
    /* dropSecond,*/ lexeme, /*negate, optional,*/ range, repeat, repeat1, satisfying,/* sepBy1, seq,*/ sequence, 
-   withAction, withJoin
+   symbol, withAction, withJoin
 } from "./util/parse/Core"
 import { Traced /*, __tracedK, create*/, ν } from "./Runtime"
 import { Lex, Trace/*, join*/, str } from "./Syntax"
@@ -115,38 +115,39 @@ const decimalDigits: Parser<string> =
 */
 // To avoid having to deal with arbitrary operator precedence, we classify all operators as one of three
 // kinds, depending on the initial character. See 0.5.1 release notes.
-const opCandidate: Parser<string> =
+const opCandidate: Parser<Lex.OpName> =
    lexeme(
       butnot(
          withJoin(repeat1(choice([ch('+'), ch('*'), ch('/'), ch('-'), ch('='), ch('<'), ch('>')]))),
-         token(str.equals)
-      )
+         symbol(str.equals)
+      ),
+      Lex.OpName
    )
-function isProductOp (str: string): boolean {
-   return str.charAt(0) === '*' || str.charAt(0) === '/'
+
+function isProductOp (opName: Lex.OpName): boolean {
+   return opName.str.charAt(0) === '*' || opName.str.charAt(0) === '/'
 }
 
-function isSumOp (str: string): boolean {
-   return str.charAt(0) === '+' || str.charAt(0) === '-'
+function isSumOp (opName: Lex.OpName): boolean {
+   return opName.str.charAt(0) === '+' || opName.str.charAt(0) === '-'
 }
 
-/*
-const productOp: Parser<ITraced> =
+const productOp: Parser<Traced> =
    withAction(
       satisfying(opCandidate, isProductOp),
-      str => newExpr(AST.OpName.at(ν(), __val(ν(), Str.at(ν(), str))))
+      opName => newExpr(AST.OpName.at(ν(), opName))
    )
 
-const sumOp: Parser<ITraced> =
+const sumOp: Parser<Traced> =
    withAction(
       satisfying(opCandidate, isSumOp),
-      str => newExpr(AST.OpName.at(ν(), __val(ν(), Str.at(ν(), str))))
+      opName => newExpr(AST.OpName.at(ν(), opName))
    )
-*/
+
 const compareOp: Parser<Traced> =
    withAction(
-      satisfying(opCandidate, str => !isProductOp(str) && !isSumOp(str)),
-      str => newExpr(AST.OpName.at(ν(), Str.at(ν(), str)))
+      satisfying(opCandidate, opName => !isProductOp(opName) && !isSumOp(opName)),
+      opName => newExpr(AST.OpName.at(ν(), opName))
    )
 /*
 const symbolOp: Parser<ITraced> = 
@@ -337,15 +338,15 @@ const simpleExpr: Parser<ITraced> =
    choice<ITraced>([
       variable, string_, integer, sectionOp, parenthExpr, pair, let_, letrec, constr, matchAs, fun
    ])
+*/
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.
-const appChain: Parser<ITraced> = chainl1(simpleExpr, app_)
+const appChain: Parser<Traced> = chainl1(simpleExpr, app_)
 
 // An expression is an operator tree. An operator tree is a tree whose branches are infix
 // binary primitives and whose leaves are application chains.
-const productExpr: Parser<ITraced> = chainl1(appChain, appOp(productOp))
-*/
-const sumExpr: Parser<Traced> //= chainl1(productExpr, appOp(sumOp))
+const productExpr: Parser<Traced> = chainl1(appChain, appOp(productOp))
+const sumExpr: Parser<Traced> = chainl1(productExpr, appOp(sumOp))
 const compareExpr: Parser<Traced> = chainl1(sumExpr, appOp(compareOp))
 
 export function expr (state: ParseState): ParseResult<Traced> {
