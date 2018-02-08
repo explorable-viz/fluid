@@ -3,11 +3,11 @@ import {
    dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, 
    symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { Traced /*, create*/, ν } from "./Runtime"
-import { Lex, Trace/*, join*/, str } from "./Syntax"
+import { Traced, ν } from "./Runtime"
+import { Lex, Trace, join, str } from "./Syntax"
 import { 
    App, ConstInt, ConstStr, Constr, ConstrTrie, EmptyBody, EmptyTrace, Fun, Let, LetRec, MatchAs,
-   OpName, RecBinding, RecDefinition, Trie, Value, Var, VarTrie, join
+   OpName, RecBinding, RecDefinition, Trie, Value, Var, VarTrie
 } from "./Syntax"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
