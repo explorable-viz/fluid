@@ -1,13 +1,13 @@
-// import { Int, None, Pair, Str, __toList } from "./BaseTypes"
+import { /*Int, None, Pair,*/ Str/*, __toList*/ } from "./BaseTypes"
 // import { singleton } from "./FiniteMap"
 // import { keyP } from "./Memo"
 import { 
-   Parser, ParseResult, ParseState, /*between, butnot, ch,*/ chainl1, /*choice, constant, dropFirst, */
-//   dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, token, 
-   withAction//, withJoin
+   Parser, ParseResult, ParseState, /*between, */butnot, ch, chainl1, choice, /*constant, dropFirst, */
+   /* dropSecond,*/ lexeme, /*negate, optional,*/ range, repeat, repeat1, satisfying,/* sepBy1, seq,*/ sequence, 
+   withAction, withJoin
 } from "./util/parse/Core"
 import { Traced /*, __tracedK, create*/, ν } from "./Runtime"
-import { /*Lex, */Trace/*, join, str*/ } from "./Syntax"
+import { Lex, Trace/*, join*/, str } from "./Syntax"
 import * as AST from "./Syntax"
 // import { className, make } from "./util/Core"
 
@@ -36,7 +36,7 @@ const reservedWord: Parser<string> =
       reserved(str.as), reserved(str.match), reserved(str.fun), reserved(str.in_),
       reserved(str.let_), reserved(str.letRec)
    ])
-
+*/
 function keyword(str: string): Parser<Lex.Keyword> {
    return lexeme(reserved(str), Lex.Keyword)
 }
@@ -57,6 +57,7 @@ const identCandidate: Parser<string> =
 // Use this to prevent identifiers/keywords that have (other) keywords as prefixes from being
 // problematic. Could take a similar approach (defining operatorCandidate) with operators, if we
 // wanted Haskell-style operators, where for example >>= and >> must coexist.
+// TODO: hoist to Parse module, which will need parameterising on identCandidate.
 function reserved (str: string): Parser<string> {
    return (state: ParseState): ParseResult<string> => {
       const r: ParseResult<string> = identCandidate(state)
@@ -65,7 +66,7 @@ function reserved (str: string): Parser<string> {
       return null
    }
 }
-
+/*
 const ctr: Parser<Str> = 
    satisfying(identCandidate, isCtr)
 
@@ -111,17 +112,16 @@ const stringCh: Parser<string> =
 
 const decimalDigits: Parser<string> = 
    withJoin(repeat1(range('0', '9')))
-
+*/
 // To avoid having to deal with arbitrary operator precedence, we classify all operators as one of three
 // kinds, depending on the initial character. See 0.5.1 release notes.
-const opCandidate: Parser<Str> =
+const opCandidate: Parser<string> =
    lexeme(
       butnot(
          withJoin(repeat1(choice([ch('+'), ch('*'), ch('/'), ch('-'), ch('='), ch('<'), ch('>')]))),
-         token(str.letInitSep)
+         token(str.equals)
       )
    )
-
 function isProductOp (str: string): boolean {
    return str.charAt(0) === '*' || str.charAt(0) === '/'
 }
@@ -130,10 +130,7 @@ function isSumOp (str: string): boolean {
    return str.charAt(0) === '+' || str.charAt(0) === '-'
 }
 
-function isCompareOp (str: string): boolean {
-   return !isProductOp(str) && !isSumOp(str)
-}
-
+/*
 const productOp: Parser<ITraced> =
    withAction(
       satisfying(opCandidate, isProductOp),
@@ -146,12 +143,12 @@ const sumOp: Parser<ITraced> =
       str => newExpr(AST.OpName.at(ν(), __val(ν(), Str.at(ν(), str))))
    )
 */
-const compareOp: Parser<Traced> // =
-/*
+const compareOp: Parser<Traced> =
    withAction(
-      satisfying(opCandidate, isCompareOp),
-      str => newExpr(AST.OpName.at(ν(), __val(ν(), Str.at(ν(), str))))
+      satisfying(opCandidate, str => !isProductOp(str) && !isSumOp(str)),
+      str => newExpr(AST.OpName.at(ν(), Str.at(ν(), str)))
    )
+/*
 const symbolOp: Parser<ITraced> = 
    choice<ITraced>([productOp, sumOp, compareOp])
 
@@ -348,7 +345,7 @@ const appChain: Parser<ITraced> = chainl1(simpleExpr, app_)
 // binary primitives and whose leaves are application chains.
 const productExpr: Parser<ITraced> = chainl1(appChain, appOp(productOp))
 */
-const sumExpr: Parser<Traced> // = chainl1(productExpr, appOp(sumOp))
+const sumExpr: Parser<Traced> //= chainl1(productExpr, appOp(sumOp))
 const compareExpr: Parser<Traced> = chainl1(sumExpr, appOp(compareOp))
 
 export function expr (state: ParseState): ParseResult<Traced> {

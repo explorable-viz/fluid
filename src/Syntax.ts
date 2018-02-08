@@ -5,13 +5,14 @@ import { create, Traced } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
-   export const quotes: string = '"'
    export const as: string = "as"
-   export const match: string = "match"
+   export const equals: string = '='
    export const fun: string = "fun"
    export const in_: string = "in"
    export const let_: string = "let"
    export const letRec: string = "letrec"
+   export const match: string = "match"
+   export const quotes: string = '"'
 }
 
 export namespace Lex {
@@ -56,6 +57,19 @@ export namespace Lex {
 }
 
 export class Trace {
+}
+
+// The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
+// Other uses of primitive operations are treated as variables.
+export class OpName extends Trace {
+   name: Str
+
+   static at (α: Addr, name: Str): OpName {
+      const this_: OpName = create(α, OpName)
+      this_.name = as(name, Str)
+      this_.__version()
+      return this_
+   }
 }
 
 // Body of a lambda abstraction or primitive.
