@@ -2,8 +2,8 @@ import { /*Int, None, Pair, __toList*/ } from "./BaseTypes"
 // import { singleton } from "./FiniteMap"
 // import { keyP } from "./Memo"
 import { 
-   Parser, ParseResult, ParseState, /*between, */butnot, ch, chainl1, choice, constant, /*dropFirst, */
-   /* dropSecond,*/ lexeme, /*negate, optional,*/ range, repeat, repeat1, satisfying,/* sepBy1, seq,*/ sequence, 
+   Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
+   /* dropSecond,*/ lexeme, negate, /*optional,*/ range, repeat, repeat1, satisfying,/* sepBy1*/, seq, sequence, 
    symbol, withAction, withJoin
 } from "./util/parse/Core"
 import { Traced /*, __tracedK, create*/, ν } from "./Runtime"
@@ -18,7 +18,7 @@ export module Parse {
 function newExpr <T extends Trace> (t: T): Traced<T> {
    return Traced.at(ν(), t, null)
 }
-/*
+
 // ch is a JavaScript "character", i.e. string of length 1. Currently not supporting Unicode
 // identifiers.
 function isUpper (ch: string) {
@@ -36,8 +36,8 @@ const reservedWord: Parser<string> =
       reserved(str.as), reserved(str.match), reserved(str.fun), reserved(str.in_),
       reserved(str.let_), reserved(str.letRec)
    ])
-*/
-function keyword(str: string): Parser<Lex.Keyword> {
+
+   function keyword(str: string): Parser<Lex.Keyword> {
    return lexeme(reserved(str), Lex.Keyword)
 }
 
@@ -69,17 +69,17 @@ function reserved (str: string): Parser<string> {
 /*
 const ctr: Parser<Str> = 
    satisfying(identCandidate, isCtr)
-
+*/
 // Note that primitive operations that have names (e.g. reflect, intToString) are /exactly/ like regular
 // identifiers. They can be shadowed, for example.
-const ident: Parser<Str> =
-   withAction(
+const ident: Parser<Lex.Var> =
+   lexeme(
       butnot(satisfying(identCandidate, str => !isCtr(str)), reservedWord),
-      (x: string) => Str.at(ν(), x)
+      Lex.Var
    )
 
-const variable: Parser<ITraced<AST.Var>> =
-   withAction(ident, (x: Str) => newExpr(AST.Var.at(ν(), __val(ν(), x))))
+const variable: Parser<Traced> =
+   withAction(ident, (x: Lex.Var) => newExpr(AST.Var.at(ν(), x)))
 
 // Only allow Unicode escape sequences (i.e. no hex or octal escapes, nor "character" escapes such as \r).
 const hexDigit: Parser<string> = 
@@ -112,7 +112,7 @@ const stringCh: Parser<string> =
 
 const decimalDigits: Parser<string> = 
    withJoin(repeat1(range('0', '9')))
-*/
+
 // To avoid having to deal with arbitrary operator precedence, we classify all operators as one of three
 // kinds, depending on the initial character. See 0.5.1 release notes.
 const opCandidate: Parser<Lex.OpName> =
@@ -187,14 +187,14 @@ function appOp (
             )
    )
 }
-/*
-const string_: Parser<ITraced<Str>> =
+
+const string_: Parser<AST.ConstStr> =
    withAction(
-      lexeme(between(ch('\"'), withJoin(repeat(stringCh)), ch('\"'))),
-      str => __val(ν(), Str.at(ν(), str))
+      lexeme(between(ch('\"'), withJoin(repeat(stringCh)), ch('\"'),), Lex.StringLiteral),
+      lit => AST.ConstStr.at(ν(), lit.str)
    )
 
-const integer: Parser<ITraced<Int>> =
+const integer: Parser<AST.ConstInt> =
    withAction(
       lexeme(
          choice<string>([
@@ -202,11 +202,12 @@ const integer: Parser<ITraced<Int>> =
             withJoin(sequence([ch('+'), decimalDigits])),
             withJoin(sequence([ch('-'), decimalDigits]))
          ]),
-         Lex.Int
+         Lex.IntLiteral
       ),
-      str => __val(ν(), Int.at(ν(), parseInt(str)))
+      lit => AST.ConstInt.at(ν(), parseInt(lit.str))
    )
 
+/*
 const parenthExpr: Parser<ITraced> = 
    parenthesise(expr)
 
@@ -327,18 +328,18 @@ const matchAs: Parser<ITraced> =
       ([e, σ]: [ITraced, AST.Trie<ITraced>]) =>
          newExpr(AST.MatchAs.at(ν(), __val(ν(), e), __val(ν(), σ)))
    )
+*/
 
-const fun: Parser<ITraced> =
+const fun: Parser<Traced> =
    withAction(
-      dropFirst(keyword(str.fun), matches),
-      (σ: AST.Trie<ITraced>) => newExpr(AST.Fun.at(ν(), __val(ν(), σ)))
+      dropFirst(keyword(str.fun), seq(ident, expr)),
+      ([x, e]: [Lex.Var, Traced]) => newExpr(AST.Fun.at(ν(), x, e))
    )
 
-*/
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Traced> =
    choice<Traced>([
-//      variable, string_, integer, sectionOp, parenthExpr, pair, let_, letrec, constr, matchAs, fun
+      variable, string_, integer, /*sectionOp, parenthExpr, pair, let_, letrec, constr, matchAs,*/ fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.

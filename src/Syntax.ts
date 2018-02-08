@@ -64,6 +64,31 @@ export namespace Lex {
    }
 }
 
+export class Value {
+}
+
+export class ConstInt extends Value {
+   val: number
+
+   static at (α: Addr, val: number): ConstInt {
+      const this_: ConstInt = create(α, ConstInt)
+      this_.val = val
+      this_.__version()
+      return this_
+   }
+}
+
+export class ConstStr extends Value {
+   val: string
+
+   static at (α: Addr, val: string): ConstStr {
+      const this_: ConstStr = create(α, ConstStr)
+      this_.val = val
+      this_.__version()
+      return this_
+   }
+}
+
 export class Trace {
 }
 
@@ -84,6 +109,20 @@ export class Var extends Trace {
    static at (α: Addr, ident: Lex.Var): Var {
       const this_: Var = create(α, Var)
       this_.ident = as(ident, Lex.Var)
+      this_.__version()
+      return this_
+   }
+}
+
+// Expression form only. TODO: don't I need to unify this now with Closure?
+export class Fun extends Trace {
+   x: Lex.Var
+   e: Traced
+
+   static at (α: Addr, x: Lex.Var, e: Traced): Fun {
+      const this_: Fun = create(α, Fun)
+      this_.x = as(x, Lex.Var)
+      this_.e = as(e, Traced)
       this_.__version()
       return this_
    }
