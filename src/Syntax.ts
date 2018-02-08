@@ -1,4 +1,5 @@
-import { as } from "./util/Core"
+import { as, assert } from "./util/Core"
+import { JoinSemilattice } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { Str } from "./BaseTypes"
 import { create, Traced } from "./Runtime"
@@ -212,4 +213,26 @@ export class App extends Trace {
       this_.__version()
       return this_
    }
+}
+
+// Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
+export class Trie<T> implements JoinSemilattice<Trie<T>> {
+   join (σ: Trie<T>): Trie<T> {
+      return join(this, σ)
+   }
+}
+
+export class ConstrTrie<T> extends Trie<T> {
+   cases: Map<string, T>
+
+   static at <T> (α: Addr, cases: Map<string, T>): ConstrTrie<T> {
+      const this_: ConstrTrie<T> = create(α, ConstrTrie)
+      this_.cases = cases
+      this_.__version()
+      return this_
+   }
+}
+
+export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
+   return assert(false)
 }
