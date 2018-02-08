@@ -9,7 +9,8 @@ import {
 import { Traced /*, __tracedK, create*/, ν } from "./Runtime"
 import { Lex, Trace/*, join*/, str } from "./Syntax"
 import { 
-   App, ConstInt, ConstStr, Constr, EmptyBody, EmptyTrace, Fun, OpName, Value, Var, VarTrie 
+   App, ConstInt, ConstStr, Constr, ConstrTrie, EmptyBody, EmptyTrace, Fun, OpName, Trie, Value, Var, 
+   VarTrie 
 } from "./Syntax"
 // import { className, make } from "./util/Core"
 
@@ -261,46 +262,46 @@ const pair: Parser<Traced<Constr>> =
          __val(Constr.at(ν(), new Lex.Ctr("Pair"), [fst, snd]))
    )
 
-/*
 function args_pattern (p: Parser<Object>): Parser<Trie<Object>> {
    return (state: ParseState) => 
-      pattern(choice([dropFirst(token(","), args_pattern(p)), p]))(state)
+      pattern(choice([dropFirst(symbol(","), args_pattern(p)), p]))(state)
 }
 
 // Continuation-passing style means 'parenthesise' idiom doesn't work here.
-function constr_pattern (p: Parser<Object>): Parser<ConstrTrie<Object>> {
+function constr_pattern (p: Parser<Value>): Parser<ConstrTrie<Value>> {
    return withAction(
       seq(
          ctr, 
-         choice([dropFirst(token(str.parenL), args_pattern(dropFirst(token(str.parenR), p))), p])
+         choice([dropFirst(symbol(str.parenL), args_pattern(dropFirst(symbol(str.parenR), p))), p])
       ),
-      ([ctr, z]: [string, Object]) =>
-         ConstrTrie.at(ν(), __val(ν(), singleton(ctr, z))) 
+      ([ctr, z]: [Lex.Ctr, Value]) =>
+         ConstrTrie.at(ν(), new Map([[ctr.str, z]])) 
    )
 }
 
 function pair_pattern (p: Parser<Object>): Parser<ConstrTrie<Object>> {
    return withAction(
       dropFirst(
-         token(str.parenL), 
-         pattern(dropFirst(token(","), pattern(dropFirst(token(str.parenR), p))))
+         symbol(str.parenL), 
+         pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
       ),
-      (σ: Trie<Object>) => ConstrTrie.at(ν(), __val(ν(), singleton(Str.at(ν(), className(Pair)), σ)))
+      (σ: Trie<Object>) => ConstrTrie.at(ν(), new Map([["Pair", σ]]))
    )
 }
-*/
+
 function variable_pattern (p: Parser<Value>): Parser<VarTrie<Value>> {
    return withAction(
       seq(var_, p), ([x, z]: [Lex.Var, Value]) => 
          VarTrie.at(ν(), x, z)
       )
 }
-/*
+
 function pattern (p: Parser<Object>): Parser<Trie<Object>> {
    return (state: ParseState) =>
-      choice<Trie<ITraced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
+      choice<Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
+/*
 // Chain of singleton tries, terminating in an expression.
 const match: Parser<Trie<Object>> = 
    pattern(dropFirst(token(str.arrow), expr))
