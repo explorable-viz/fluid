@@ -2,7 +2,7 @@ import { /*Int, None, Pair, __toList*/ } from "./BaseTypes"
 // import { singleton } from "./FiniteMap"
 // import { keyP } from "./Memo"
 import { 
-   Parser, ParseResult, ParseState, /*between, */butnot, ch, chainl1, choice, /*constant, dropFirst, */
+   Parser, ParseResult, ParseState, /*between, */butnot, ch, chainl1, choice, constant, /*dropFirst, */
    /* dropSecond,*/ lexeme, /*negate, optional,*/ range, repeat, repeat1, satisfying,/* sepBy1, seq,*/ sequence, 
    symbol, withAction, withJoin
 } from "./util/parse/Core"
@@ -160,16 +160,17 @@ function parenthesise<T> (p: Parser<T>): Parser<T> {
 // We permit Haskell-style "sections" in the surface syntax for convenience, but internally there is
 // no distinction between sections and infix.
 const sectionOp: Parser<ITraced> = parenthesise(symbolOp)
+*/
 
 // Consume no input, because application is represented simply by adjacency.
-const app_: Parser<(e1: ITraced, e2: ITraced) => ITraced> =
+const app_: Parser<(e1: Traced, e2: Traced) => Traced> =
    withAction(
       constant(null),
-      (_: ITraced) =>
-         (e1: ITraced, e2: ITraced): ITraced =>
-            newExpr(AST.App.at(ν(), __val(ν(), e1), __val(ν(), e2), __val(ν(), AST.EmptyBody.at(ν()))))
+      (_: Traced) =>
+         (e1: Traced, e2: Traced): Traced =>
+            newExpr(AST.App.at(ν(), e1, e2, AST.EmptyBody.at(ν())))
    )
-*/
+
 function appOp (
    opP: Parser<Traced>
 ): Parser<(e1: Traced, e2: Traced) => Traced> {
@@ -333,12 +334,12 @@ const fun: Parser<ITraced> =
       (σ: AST.Trie<ITraced>) => newExpr(AST.Fun.at(ν(), __val(ν(), σ)))
    )
 
-// Any expression other than an operator tree or application chain.
-const simpleExpr: Parser<ITraced> =
-   choice<ITraced>([
-      variable, string_, integer, sectionOp, parenthExpr, pair, let_, letrec, constr, matchAs, fun
-   ])
 */
+// Any expression other than an operator tree or application chain.
+const simpleExpr: Parser<Traced> =
+   choice<Traced>([
+//      variable, string_, integer, sectionOp, parenthExpr, pair, let_, letrec, constr, matchAs, fun
+   ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.
 const appChain: Parser<Traced> = chainl1(simpleExpr, app_)
