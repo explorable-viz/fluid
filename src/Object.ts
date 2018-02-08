@@ -6,6 +6,6 @@ type Addr = string
 
 interface Object {
    __history: this[]
-   __version (): void
+   __version (): this
    __addr?: Addr
 }
