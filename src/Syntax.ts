@@ -12,6 +12,8 @@ export namespace str {
    export const let_: string = "let"
    export const letRec: string = "letrec"
    export const match: string = "match"
+   export const parenL: string = '('
+   export const parenR: string = ')'
    export const quotes: string = '"'
 }
 

@@ -153,18 +153,17 @@ const compareOp: Parser<Traced> =
       satisfying(opCandidate, opName => !isProductOp(opName) && !isSumOp(opName)),
       opName => newExpr(OpName.at(ν(), opName))
    )
-/*
-const symbolOp: Parser<ITraced> = 
-   choice<ITraced>([productOp, sumOp, compareOp])
+
+const symbolOp: Parser<Traced> = 
+   choice<Traced>([productOp, sumOp, compareOp])
 
 function parenthesise<T> (p: Parser<T>): Parser<T> {
-   return between(token(str.parenL), p, token(str.parenR))
+   return between(symbol(str.parenL), p, symbol(str.parenR))
 }
 
 // We permit Haskell-style "sections" in the surface syntax for convenience, but internally there is
 // no distinction between sections and infix.
-const sectionOp: Parser<ITraced> = parenthesise(symbolOp)
-*/
+const sectionOp: Parser<Traced> = parenthesise(symbolOp)
 
 // Consume no input, because application is represented simply by adjacency.
 const app_: Parser<(e1: Traced, e2: Traced) => Traced> =
@@ -211,10 +210,10 @@ const integer: Parser<Traced<ConstInt>> =
       lit => val(ConstInt.at(ν(), parseInt(lit.str)))
    )
 
-/*
-const parenthExpr: Parser<ITraced> = 
+const parenthExpr: Parser<Traced> = 
    parenthesise(expr)
 
+/*
 const let_: Parser<ITraced> =
    withAction(
       seq(
@@ -343,7 +342,7 @@ const fun: Parser<Traced> =
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Traced> =
    choice<Traced>([
-      variable, string_, integer, /*sectionOp, parenthExpr, pair, let_, letrec, constr, matchAs,*/ fun
+      variable, string_, integer, sectionOp, parenthExpr, /*pair, let_, letrec, constr, matchAs,*/ fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.
