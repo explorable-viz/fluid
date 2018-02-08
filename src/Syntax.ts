@@ -4,6 +4,8 @@ import { Lexeme } from "./util/parse/Core"
 import { Str } from "./BaseTypes"
 import { create, Traced } from "./Runtime"
 
+export type Env = Map<string, Value>
+
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
    export const arrow: string = '→'
@@ -78,7 +80,22 @@ export namespace Lex {
    }
 }
 
-export type Value = ConstInt | ConstStr | Constr
+export type Value = Closure | ConstInt | ConstStr | Constr
+
+export class Closure {
+   ρ: Env
+   defs: RecDefinition[]
+   func: Fun
+
+   static at (α: Addr, ρ: Env, defs: RecDefinition[], func: Fun): Closure {
+      const this_: Closure = create(α, Closure)
+      this_.ρ = ρ
+      this_.defs = defs
+      this_.func = as(func, Fun)
+      this_.__version()
+      return this_
+   }
+}
 
 export class ConstInt {
    val: number
@@ -287,56 +304,28 @@ export class RecDefinition {
 // Keep binding of recursive definitions to closures separate from the definitions themselves so that
 // closures can contain definitions without inducing cycles.
 export class RecBinding {
-   _def: ITraced<RecDefinition>;
-   _valueOpt: ITraced<Prim.Option<Closure>>;
+   def: RecDefinition
+   valueOpt?: Closure
 
-   static at (α: Addr, def: ITraced<RecDefinition>, valueOpt: ITraced<Prim.Option<Closure>>): RecBinding {
+   static at (α: Addr, def: RecDefinition, valueOpt?: Closure): RecBinding {
       const this_: RecBinding = create(α, RecBinding)
-      this_._def = typeCheck_(def, RecDefinition)
-      this_._valueOpt = typeCheck_(valueOpt, Prim.Option)
+      this_.def = as(def, RecDefinition)
+      this_.valueOpt = as(valueOpt, Closure)
       this_.__version()
       return this_
-   }
-
-   static at_ (α: Addr, def: RecDefinition, valueOpt: Prim.Option<Closure>): RecBinding {
-      return RecBinding.at(α, __val(keyP(α, 'def'), def), __val(keyP(α, 'valueOpt'), valueOpt))
-   }
-
-   get def (): RecDefinition {
-      return this._def.val
-   }
-
-   get valueOpt (): Prim.Option<Closure> {
-      return this._valueOpt.val
    }
 }
 
 export class LetRec extends Trace {
-   _bindings: ITraced<List<RecBinding>>
-   _body: ITraced<Trace>
+   bindings: RecBinding[]
+   body: Trace
 
-   static at (α: Addr, bindings: ITraced<List<RecBinding>>, body: ITraced<Trace>): LetRec {
+   static at (α: Addr, bindings: RecBinding[], body: Trace): LetRec {
       const this_: LetRec = create(α, LetRec)
-      this_._bindings = typeCheck_(bindings, List)
-      this_._body = typeCheck_(body, Trace)
+      this_.bindings = bindings
+      this_.body = as(body, Trace)
       this_.__version()
       return this_
-   }
-
-   static at_ (α: Addr, bindings: List<RecBinding>, body: Trace): LetRec {
-      return LetRec.at(α, __val(keyP(α, 'bindings'), bindings), __val(keyP(α, 'body'), body))
-   }
-
-   __visit <T> (v: TraceVisitor<T>): T {
-      return v.is_LetRec(this)
-   }
-
-   get bindings (): List<RecBinding> {
-      return this._bindings.val
-   }
-
-   get body (): Trace {
-      return this._body.val
    }
 }
 
