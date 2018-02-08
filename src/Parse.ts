@@ -251,8 +251,7 @@ const constr: Parser<Traced> =
       ([ctr, args]: [Lex.Ctr, Traced[]]) =>
          __val(Constr.at(ν(), ctr, args))
    )
-   
-// Redundantly use reflection here to force everything through the same infrastructure.
+
 const pair: Parser<Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(',')), expr)),
