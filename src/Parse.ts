@@ -9,8 +9,8 @@ import {
 import { Traced /*, __tracedK, create*/, ν } from "./Runtime"
 import { Lex, Trace/*, join*/, str } from "./Syntax"
 import { 
-   App, ConstInt, ConstStr, Constr, ConstrTrie, EmptyBody, EmptyTrace, Fun, OpName, Trie, Value, Var, 
-   VarTrie 
+   App, ConstInt, ConstStr, Constr, ConstrTrie, EmptyBody, EmptyTrace, Fun, MatchAs, OpName, Trie,
+   Value, Var, VarTrie, join
 } from "./Syntax"
 // import { className, make } from "./util/Core"
 
@@ -268,14 +268,13 @@ function args_pattern (p: Parser<Object>): Parser<Trie<Object>> {
 }
 
 // Continuation-passing style means 'parenthesise' idiom doesn't work here.
-function constr_pattern (p: Parser<Value>): Parser<ConstrTrie<Value>> {
+function constr_pattern (p: Parser<Object>): Parser<ConstrTrie<Object>> {
    return withAction(
       seq(
          ctr, 
          choice([dropFirst(symbol(str.parenL), args_pattern(dropFirst(symbol(str.parenR), p))), p])
       ),
-      ([ctr, z]: [Lex.Ctr, Value]) =>
-         ConstrTrie.at(ν(), new Map([[ctr.str, z]])) 
+      ([ctr, z]: [Lex.Ctr, Traced]) => ConstrTrie.at(ν(), new Map([[ctr.str, z]])) 
    )
 }
 
@@ -285,36 +284,34 @@ function pair_pattern (p: Parser<Object>): Parser<ConstrTrie<Object>> {
          symbol(str.parenL), 
          pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
       ),
-      (σ: Trie<Object>) => ConstrTrie.at(ν(), new Map([["Pair", σ]]))
+      (σ: Trie<Traced>) => ConstrTrie.at(ν(), new Map([["Pair", σ]]))
    )
 }
 
-function variable_pattern (p: Parser<Value>): Parser<VarTrie<Value>> {
+function variable_pattern (p: Parser<Object>): Parser<VarTrie<Object>> {
    return withAction(
-      seq(var_, p), ([x, z]: [Lex.Var, Value]) => 
+      seq(var_, p), ([x, z]: [Lex.Var, Traced]) => 
          VarTrie.at(ν(), x, z)
       )
 }
 
 function pattern (p: Parser<Object>): Parser<Trie<Object>> {
-   return (state: ParseState) =>
-      choice<Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
+   return choice<Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])
 }
 
-/*
 // Chain of singleton tries, terminating in an expression.
-const match: Parser<Trie<Object>> = 
-   pattern(dropFirst(token(str.arrow), expr))
+const match: Parser<Trie<Traced>> = 
+   pattern(dropFirst(symbol(str.arrow), expr))
 
 // Assume at least one match clause.
-function matches (state: ParseState): ParseResult<Trie<Object>> {
+function matches (state: ParseState): ParseResult<Trie<Traced>> {
    return withAction(
-      choice<Trie<ITraced>[]>([
+      choice<Trie<Traced>[]>([
          withAction(match, m => [m]),
-         between(token("{"), sepBy1(match, token(";")), token("}"))
+         between(symbol("{"), sepBy1(match, symbol(";")), symbol("}"))
       ]),
-      (σs: Trie<ITraced>[]) => {
-         let σ: Trie<ITraced> = σs[0]
+      (σs: Trie<Traced>[]) => {
+         let σ: Trie<Traced> = σs[0]
          for (let i = 1; i < σs.length; ++i) {
             σ = join(σ, σs[i])
          } 
@@ -323,16 +320,15 @@ function matches (state: ParseState): ParseResult<Trie<Object>> {
    )(state)
 }
 
-const matchAs: Parser<ITraced> =
+const matchAs: Parser<Traced> =
    withAction(
       seq(
          dropFirst(keyword(str.match), expr),
          dropFirst(keyword(str.as), matches)
       ),
-      ([e, σ]: [ITraced, Trie<ITraced>]) =>
-         newExpr(MatchAs.at(ν(), __val(ν(), e), __val(ν(), σ)))
+      ([e, σ]: [Traced, Trie<Traced>]) =>
+         newExpr(MatchAs.at(ν(), e, σ))
    )
-*/
 
 const fun: Parser<Traced> =
    withAction(
@@ -343,7 +339,7 @@ const fun: Parser<Traced> =
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Traced> =
    choice<Traced>([
-      variable, string_, integer, sectionOp, parenthExpr, pair,/* let_, letrec,*/ constr, /*matchAs,*/ fun
+      variable, string_, integer, sectionOp, parenthExpr, pair,/* let_, letrec,*/ constr, matchAs, fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.

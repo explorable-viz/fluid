@@ -232,6 +232,20 @@ export class App extends Trace {
    }
 }
 
+// See 0.6.1 release notes. Also 0.6.4 notes for discussion of expression/trace disparity.
+export class MatchAs extends Trace {
+   e: Traced
+   σ: Trie<Traced>
+
+   static at (α: Addr, e: Traced, σ: Trie<Traced>): MatchAs {
+      const this_: MatchAs = create(α, MatchAs)
+      this_.e = as(e, Traced)
+      this_.σ = as(σ, Trie)
+      this_.__version()
+      return this_
+   }
+}
+
 // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
 export class Trie<T> implements JoinSemilattice<Trie<T>> {
    join (σ: Trie<T>): Trie<T> {
