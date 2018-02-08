@@ -6,7 +6,7 @@ import {
 //   dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, token, 
    withAction//, withJoin
 } from "./util/parse/Core"
-import { Traced /*, Traced0, __tracedK*/, __val/*, create, reflect*/, ν } from "./Runtime"
+import { Traced /*, __tracedK, create*/, ν } from "./Runtime"
 import { /*Lex, */Trace/*, join, str*/ } from "./Syntax"
 import * as AST from "./Syntax"
 // import { className, make } from "./util/Core"
@@ -16,10 +16,7 @@ import * as AST from "./Syntax"
 export module Parse {
 
 function newExpr <T extends Trace> (t: T): Traced<T> {
-/*
-   const α: Addr = ν()
-   return Traced0.at(α, t, create(keyP(α, 'name'), None), null)
-*/
+   return Traced.at(ν(), t, null)
 }
 /*
 // ch is a JavaScript "character", i.e. string of length 1. Currently not supporting Unicode
@@ -184,9 +181,9 @@ function appOp (
          (e1: Traced, e2: Traced): Traced =>
             newExpr(
                AST.App.at(ν(),
-                  __val(ν(), newExpr(AST.App.at(ν(), __val(ν(), op), __val(ν(), e1), __val(ν(), AST.EmptyBody.at(ν()))))),
-                  __val(ν(), e2),
-                  __val(ν(), AST.EmptyBody.at(ν()))
+                  newExpr(AST.App.at(ν(), op, e1, AST.EmptyBody.at(ν()))),
+                  e2,
+                  AST.EmptyBody.at(ν())
                )
             )
    )

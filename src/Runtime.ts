@@ -5,6 +5,14 @@ import { Trace } from "./Syntax"
 export class Traced<T = Object> {
    trace: Trace
    val: T
+
+   static at <T> (α: Addr, trace: Trace, val: T): Traced<T> {
+      const this_: Traced<T> = create(α, Traced)
+      this_.trace = as(trace, Trace)
+      this_.val = val
+      this_.__version()
+      return this_
+   }
 }
 
 export function as_ <T> (v: Traced<T>, ctr: Ctr<T>): Traced<T> {

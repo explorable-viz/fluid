@@ -1,7 +1,7 @@
 import { as } from "./util/Core"
 import { Lexeme } from "./util/parse/Core"
 import { Str } from "./BaseTypes"
-import { create, as_, Traced } from "./Runtime"
+import { create, Traced } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
@@ -74,7 +74,7 @@ export class EmptyBody extends AppBody {
 export class PrimBody extends AppBody {
    param: Str
 
-   static at_ (α: Addr, param: Str): PrimBody {
+   static at (α: Addr, param: Str): PrimBody {
       const this_: PrimBody = create(α, PrimBody)
       this_.param = as(param, Str)
       this_.__version()
@@ -86,7 +86,7 @@ export class FunBody extends AppBody {
    x: Lex.Var
    e: Traced
 
-   static at_ (α: Addr, x: Lex.Var, e: Traced): FunBody {
+   static at (α: Addr, x: Lex.Var, e: Traced): FunBody {
       const this_: FunBody = create(α, FunBody)
       this_.x = as(x, Lex.Var)
       this_.e = as(e, Traced)
@@ -100,16 +100,12 @@ export class App extends Trace {
    arg: Traced
    appBody: AppBody
 
-   static at_ (α: Addr, func: Traced, arg: Traced, appBody: AppBody): App {
+   static at (α: Addr, func: Traced, arg: Traced, appBody: AppBody): App {
       const this_: App = create(α, App)
       this_.func = as(func, Traced)
       this_.arg = as(arg, Traced)
       this_.appBody = as(appBody, AppBody)
       this_.__version()
       return this_
-   }
-
-   __visit <T> (v: TraceVisitor<T>): T {
-      return v.is_App(this)
    }
 }
