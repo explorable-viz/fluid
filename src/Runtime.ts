@@ -1,12 +1,12 @@
 import { as, assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
-import { Trace } from "./Syntax"
+import { Trace, Value } from "./Syntax"
 
-export class Traced<T = Object> {
+export class Traced<T extends Value = Value> {
    trace: Trace
    val: T
 
-   static at <T> (α: Addr, trace: Trace, val: T): Traced<T> {
+   static at <T extends Value> (α: Addr, trace: Trace, val: T): Traced<T> {
       const this_: Traced<T> = create(α, Traced)
       this_.trace = as(trace, Trace)
       this_.val = val
@@ -15,7 +15,7 @@ export class Traced<T = Object> {
    }
 }
 
-export function as_ <T> (v: Traced<T>, ctr: Ctr<T>): Traced<T> {
+export function as_ <T extends Value> (v: Traced<T>, ctr: Ctr<T>): Traced<T> {
    if (v !== undefined) { // idiom for reifying datatypes means fields can be uninitialised
       as(v, Traced)
       as(v.val, ctr)

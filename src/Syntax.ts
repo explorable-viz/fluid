@@ -64,10 +64,9 @@ export namespace Lex {
    }
 }
 
-export class Value {
-}
+export type Value = ConstInt | ConstStr
 
-export class ConstInt extends Value {
+export class ConstInt {
    val: number
 
    static at (α: Addr, val: number): ConstInt {
@@ -78,7 +77,7 @@ export class ConstInt extends Value {
    }
 }
 
-export class ConstStr extends Value {
+export class ConstStr {
    val: string
 
    static at (α: Addr, val: string): ConstStr {
@@ -90,6 +89,15 @@ export class ConstStr extends Value {
 }
 
 export class Trace {
+}
+
+// I don't think this is the same as ⊥; it represents the "end" of an explanation.
+export class EmptyTrace extends Trace {
+   static at (α: Addr): EmptyTrace {
+      const this_: Trace = create(α, EmptyTrace)
+      this_.__version()
+      return this_
+   }
 }
 
 export class OpName extends Trace {

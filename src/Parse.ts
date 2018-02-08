@@ -3,20 +3,24 @@ import { /*Int, None, Pair, __toList*/ } from "./BaseTypes"
 // import { keyP } from "./Memo"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
-   /* dropSecond,*/ lexeme, negate, /*optional,*/ range, repeat, repeat1, satisfying,/* sepBy1*/, seq, sequence, 
+   /* dropSecond,*/ lexeme, negate, /*optional,*/ range, repeat, repeat1, satisfying,/* sepBy1,*/ seq, sequence, 
    symbol, withAction, withJoin
 } from "./util/parse/Core"
 import { Traced /*, __tracedK, create*/, ν } from "./Runtime"
 import { Lex, Trace/*, join*/, str } from "./Syntax"
-import * as AST from "./Syntax"
+import { App, ConstInt, ConstStr, EmptyBody, EmptyTrace, Fun, OpName, Value, Var } from "./Syntax"
 // import { className, make } from "./util/Core"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.
 export module Parse {
 
-function newExpr <T extends Trace> (t: T): Traced<T> {
+function newExpr (t: Trace): Traced {
    return Traced.at(ν(), t, null)
+}
+
+function val <V extends Value> (v: V): Traced<V> {
+   return Traced.at(ν(), EmptyTrace.at(ν()), v)
 }
 
 // ch is a JavaScript "character", i.e. string of length 1. Currently not supporting Unicode
@@ -79,7 +83,7 @@ const ident: Parser<Lex.Var> =
    )
 
 const variable: Parser<Traced> =
-   withAction(ident, (x: Lex.Var) => newExpr(AST.Var.at(ν(), x)))
+   withAction(ident, (x: Lex.Var) => newExpr(Var.at(ν(), x)))
 
 // Only allow Unicode escape sequences (i.e. no hex or octal escapes, nor "character" escapes such as \r).
 const hexDigit: Parser<string> = 
@@ -135,19 +139,19 @@ function isSumOp (opName: Lex.OpName): boolean {
 const productOp: Parser<Traced> =
    withAction(
       satisfying(opCandidate, isProductOp),
-      opName => newExpr(AST.OpName.at(ν(), opName))
+      opName => newExpr(OpName.at(ν(), opName))
    )
 
 const sumOp: Parser<Traced> =
    withAction(
       satisfying(opCandidate, isSumOp),
-      opName => newExpr(AST.OpName.at(ν(), opName))
+      opName => newExpr(OpName.at(ν(), opName))
    )
 
 const compareOp: Parser<Traced> =
    withAction(
       satisfying(opCandidate, opName => !isProductOp(opName) && !isSumOp(opName)),
-      opName => newExpr(AST.OpName.at(ν(), opName))
+      opName => newExpr(OpName.at(ν(), opName))
    )
 /*
 const symbolOp: Parser<ITraced> = 
@@ -168,7 +172,7 @@ const app_: Parser<(e1: Traced, e2: Traced) => Traced> =
       constant(null),
       (_: Traced) =>
          (e1: Traced, e2: Traced): Traced =>
-            newExpr(AST.App.at(ν(), e1, e2, AST.EmptyBody.at(ν())))
+            newExpr(App.at(ν(), e1, e2, EmptyBody.at(ν())))
    )
 
 function appOp (
@@ -179,22 +183,22 @@ function appOp (
       op =>
          (e1: Traced, e2: Traced): Traced =>
             newExpr(
-               AST.App.at(ν(),
-                  newExpr(AST.App.at(ν(), op, e1, AST.EmptyBody.at(ν()))),
+               App.at(ν(),
+                  newExpr(App.at(ν(), op, e1, EmptyBody.at(ν()))),
                   e2,
-                  AST.EmptyBody.at(ν())
+                  EmptyBody.at(ν())
                )
             )
    )
 }
 
-const string_: Parser<AST.ConstStr> =
+const string_: Parser<Traced<ConstStr>> =
    withAction(
       lexeme(between(ch('\"'), withJoin(repeat(stringCh)), ch('\"'),), Lex.StringLiteral),
-      lit => AST.ConstStr.at(ν(), lit.str)
+      lit => val(ConstStr.at(ν(), lit.str))
    )
 
-const integer: Parser<AST.ConstInt> =
+const integer: Parser<Traced<ConstInt>> =
    withAction(
       lexeme(
          choice<string>([
@@ -204,7 +208,7 @@ const integer: Parser<AST.ConstInt> =
          ]),
          Lex.IntLiteral
       ),
-      lit => AST.ConstInt.at(ν(), parseInt(lit.str))
+      lit => val(ConstInt.at(ν(), parseInt(lit.str)))
    )
 
 /*
@@ -218,16 +222,16 @@ const let_: Parser<ITraced> =
          dropFirst(keyword(str.in_), expr)
       ),
       ([[x, e], eʹ]: [[Str, ITraced], ITraced]) =>
-         __tracedK(ν(), AST.Let.at(ν(), __val(ν(), e), __val(ν(), AST.VarTrie.at(ν(), __val(ν(), x), eʹ))), eʹ.val)
+         __tracedK(ν(), Let.at(ν(), __val(ν(), e), __val(ν(), VarTrie.at(ν(), __val(ν(), x), eʹ))), eʹ.val)
    )
 
-const recDefinition: Parser<AST.RecBinding> =
+const recDefinition: Parser<RecBinding> =
    withAction(
       seq(dropFirst(keyword(str.fun), ident), matches),
-      ([name, σ]: [Str, AST.Trie<ITraced>]) =>
-         AST.RecBinding.at(ν(),
-            __val(ν(), AST.RecDefinition.at(ν(), __val(ν(), name), __val(ν(), AST.Fun.at(ν(), __val(ν(), σ))))),
-            __val(ν(), None.at<AST.Closure>(ν()))
+      ([name, σ]: [Str, Trie<ITraced>]) =>
+         RecBinding.at(ν(),
+            __val(ν(), RecDefinition.at(ν(), __val(ν(), name), __val(ν(), Fun.at(ν(), __val(ν(), σ))))),
+            __val(ν(), None.at<Closure>(ν()))
          )
    )
 
@@ -237,15 +241,15 @@ const letrec: Parser<ITraced> =
          dropFirst(keyword(str.letRec), repeat1(recDefinition)),
          dropFirst(keyword(str.in_), expr)
       ),
-      ([defs, body]: [AST.RecBinding[], ITraced]) =>
-         __tracedK(ν(), AST.LetRec.at(ν(), __val(ν(), __toList(defs)), __val(ν(), body.trace)), body.val)
+      ([defs, body]: [RecBinding[], ITraced]) =>
+         __tracedK(ν(), LetRec.at(ν(), __val(ν(), __toList(defs)), __val(ν(), body.trace)), body.val)
    )
 
 const constr: Parser<ITraced> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, token(','))), [])),
       ([ctr, args]: [string, ITraced[]]) =>
-         __val(ν(), reflect(AST.Constr.at(ν(), __val(ν(), ctr), __val(ν(), __toList(args)))))
+         __val(ν(), reflect(Constr.at(ν(), __val(ν(), ctr), __val(ν(), __toList(args)))))
    )
 
 // Redundantly use reflection here to force everything through the same infrastructure.
@@ -253,7 +257,7 @@ const pair: Parser<ITraced<Pair<ITraced, ITraced>>> =
    withAction(
       parenthesise(seq(dropSecond(expr, token(',')), expr)),
       ([fst, snd]: [ITraced, ITraced]) => {
-         const p: AST.Constr = AST.Constr.at(
+         const p: Constr = Constr.at(
             ν(), 
             __val(ν(), Str.at(ν(), className(Pair))), 
             __val(ν(), __toList([fst, snd]))
@@ -261,56 +265,56 @@ const pair: Parser<ITraced<Pair<ITraced, ITraced>>> =
          return __val(ν(), <Pair<ITraced, ITraced>>reflect(p))
       })
 
-function args_pattern (p: Parser<Object>): Parser<AST.Trie<Object>> {
+function args_pattern (p: Parser<Object>): Parser<Trie<Object>> {
    return (state: ParseState) => 
       pattern(choice([dropFirst(token(','), args_pattern(p)), p]))(state)
 }
 
 // Continuation-passing style means 'parenthesise' idiom doesn't work here.
-function constr_pattern (p: Parser<Object>): Parser<AST.ConstrTrie<Object>> {
+function constr_pattern (p: Parser<Object>): Parser<ConstrTrie<Object>> {
    return withAction(
       seq(
          ctr, 
          choice([dropFirst(token(str.parenL), args_pattern(dropFirst(token(str.parenR), p))), p])
       ),
       ([ctr, z]: [string, Object]) =>
-         AST.ConstrTrie.at(ν(), __val(ν(), singleton(ctr, z))) 
+         ConstrTrie.at(ν(), __val(ν(), singleton(ctr, z))) 
    )
 }
 
-function pair_pattern (p: Parser<Object>): Parser<AST.ConstrTrie<Object>> {
+function pair_pattern (p: Parser<Object>): Parser<ConstrTrie<Object>> {
    return withAction(
       dropFirst(
          token(str.parenL), 
          pattern(dropFirst(token(','), pattern(dropFirst(token(str.parenR), p))))
       ),
-      (σ: AST.Trie<Object>) => AST.ConstrTrie.at(ν(), __val(ν(), singleton(Str.at(ν(), className(Pair)), σ)))
+      (σ: Trie<Object>) => ConstrTrie.at(ν(), __val(ν(), singleton(Str.at(ν(), className(Pair)), σ)))
    )
 }
 
-function variable_pattern (p: Parser<Object>): Parser<AST.VarTrie<Object>> {
+function variable_pattern (p: Parser<Object>): Parser<VarTrie<Object>> {
    return withAction(seq(ident, p), ([x, z]: [Str, Object]) => 
-      AST.VarTrie.at(ν(), __val(ν(), x), __val(ν(), z)))
+      VarTrie.at(ν(), __val(ν(), x), __val(ν(), z)))
 }
 
-function pattern (p: Parser<Object>): Parser<AST.Trie<Object>> {
+function pattern (p: Parser<Object>): Parser<Trie<Object>> {
    return (state: ParseState) =>
-      choice<AST.Trie<ITraced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
+      choice<Trie<ITraced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
 // Chain of singleton tries, terminating in an expression.
-const match: Parser<AST.Trie<Object>> = 
+const match: Parser<Trie<Object>> = 
    pattern(dropFirst(token(str.matchBodySep), expr))
 
 // Assume at least one match clause.
-function matches (state: ParseState): ParseResult<AST.Trie<Object>> {
+function matches (state: ParseState): ParseResult<Trie<Object>> {
    return withAction(
-      choice<AST.Trie<ITraced>[]>([
+      choice<Trie<ITraced>[]>([
          withAction(match, m => [m]),
          between(token('{'), sepBy1(match, token(';')), token('}'))
       ]),
-      (σs: AST.Trie<ITraced>[]) => {
-         let σ: AST.Trie<ITraced> = σs[0]
+      (σs: Trie<ITraced>[]) => {
+         let σ: Trie<ITraced> = σs[0]
          for (let i = 1; i < σs.length; ++i) {
             σ = join(σ, σs[i])
          } 
@@ -325,15 +329,15 @@ const matchAs: Parser<ITraced> =
          dropFirst(keyword(str.match), expr),
          dropFirst(keyword(str.as), matches)
       ),
-      ([e, σ]: [ITraced, AST.Trie<ITraced>]) =>
-         newExpr(AST.MatchAs.at(ν(), __val(ν(), e), __val(ν(), σ)))
+      ([e, σ]: [ITraced, Trie<ITraced>]) =>
+         newExpr(MatchAs.at(ν(), __val(ν(), e), __val(ν(), σ)))
    )
 */
 
 const fun: Parser<Traced> =
    withAction(
       dropFirst(keyword(str.fun), seq(ident, expr)),
-      ([x, e]: [Lex.Var, Traced]) => newExpr(AST.Fun.at(ν(), x, e))
+      ([x, e]: [Lex.Var, Traced]) => newExpr(Fun.at(ν(), x, e))
    )
 
 // Any expression other than an operator tree or application chain.
