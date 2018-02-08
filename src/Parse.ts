@@ -47,13 +47,13 @@ const reservedWord: Parser<string> =
 
 // No Unicode support for identifiers yet.
 const identStart: Parser<string> =
-   choice<string>([range('a', 'z'), range('A', 'Z'), ch('$'), ch('_')])
+   choice<string>([range("a", "z"), range("A", "Z"), ch("$"), ch("_")])
 
 const identPart: Parser<string> =
-   choice<string>([identStart, range('0', '9')])
+   choice<string>([identStart, range("0", "9")])
 
 const identEnd: Parser<string> =
-   ch('\'')
+   ch("'")
 
 const identCandidate: Parser<string> =
    withJoin(sequence([identStart, withJoin(repeat(identPart)), withJoin(repeat(identEnd))]))
@@ -87,53 +87,53 @@ const variable: Parser<Traced> =
 
 // Only allow Unicode escape sequences (i.e. no hex or octal escapes, nor "character" escapes such as \r).
 const hexDigit: Parser<string> = 
-   choice<string>([range('0', '9'), range('a', 'f'), range('A', 'F')])
+   choice<string>([range("0", "9"), range("a", "f"), range("A", "F")])
 
 const unicodeEscape: Parser<string> =
    withAction(
-      sequence([ch('x'), hexDigit, hexDigit, hexDigit, hexDigit]),
-      chars => String.fromCharCode(parseInt('0x' + chars.join('').substring(1)))
+      sequence([ch("x"), hexDigit, hexDigit, hexDigit, hexDigit]),
+      chars => String.fromCharCode(parseInt("0x" + chars.join("").substring(1)))
    )
 
 // Standard Java/C escape sequences. They happen to be a subset of JavaScript's escape sequences, so
 // this just defines the embedding.
 const singleCharEscape: Parser<string> = choice<string>([
-   withAction(ch('\''), _ => '\''),
-   withAction(ch('"'), _ => '\"'),
-   withAction(ch('\\'), _ => '\\'),
-   withAction(ch('b'), _ => '\b'),
-   withAction(ch('f'), _ => '\f'),
-   withAction(ch('n'), _ => '\t'),
-   withAction(ch('r'), _ => '\r'),
-   withAction(ch('t'), _ => '\t')
+   withAction(ch("'"), _ => "'"),
+   withAction(ch('"'), _ => '"'),
+   withAction(ch("\\"), _ => "\\"),
+   withAction(ch("b"), _ => "\b"),
+   withAction(ch("f"), _ => "\f"),
+   withAction(ch("n"), _ => "\t"),
+   withAction(ch("r"), _ => "\r"),
+   withAction(ch("t"), _ => "\t")
 ])
 
 const escapeSeq: Parser<string> =
-   dropFirst(ch('\\'), choice<string>([unicodeEscape, singleCharEscape]))
+   dropFirst(ch("\\"), choice<string>([unicodeEscape, singleCharEscape]))
 
 const stringCh: Parser<string> =
-   choice<string>([negate(choice<string>([ch('\"'), ch('\\'), ch('\r'), ch('\n')])), escapeSeq])
+   choice<string>([negate(choice<string>([ch('"'), ch("\\"), ch("\r"), ch("\n")])), escapeSeq])
 
 const decimalDigits: Parser<string> = 
-   withJoin(repeat1(range('0', '9')))
+   withJoin(repeat1(range("0", "9")))
 
 // To avoid having to deal with arbitrary operator precedence, we classify all operators as one of three
 // kinds, depending on the initial character. See 0.5.1 release notes.
 const opCandidate: Parser<Lex.OpName> =
    lexeme(
       butnot(
-         withJoin(repeat1(choice([ch('+'), ch('*'), ch('/'), ch('-'), ch('='), ch('<'), ch('>')]))),
+         withJoin(repeat1(choice([ch("+"), ch("*"), ch("/"), ch("-"), ch("="), ch("<"), ch(">")]))),
          symbol(str.equals)
       ),
       Lex.OpName
    )
 
 function isProductOp (opName: Lex.OpName): boolean {
-   return opName.str.charAt(0) === '*' || opName.str.charAt(0) === '/'
+   return opName.str.charAt(0) === "*" || opName.str.charAt(0) === "/"
 }
 
 function isSumOp (opName: Lex.OpName): boolean {
-   return opName.str.charAt(0) === '+' || opName.str.charAt(0) === '-'
+   return opName.str.charAt(0) === "+" || opName.str.charAt(0) === "-"
 }
 
 const productOp: Parser<Traced> =
@@ -193,7 +193,7 @@ function appOp (
 
 const string_: Parser<Traced<ConstStr>> =
    withAction(
-      lexeme(between(ch('\"'), withJoin(repeat(stringCh)), ch('\"'),), Lex.StringLiteral),
+      lexeme(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),), Lex.StringLiteral),
       lit => __val(ConstStr.at(ν(), lit.str))
    )
 
@@ -202,8 +202,8 @@ const integer: Parser<Traced<ConstInt>> =
       lexeme(
          choice<string>([
             decimalDigits,
-            withJoin(sequence([ch('+'), decimalDigits])),
-            withJoin(sequence([ch('-'), decimalDigits]))
+            withJoin(sequence([ch("+"), decimalDigits])),
+            withJoin(sequence([ch("-"), decimalDigits]))
          ]),
          Lex.IntLiteral
       ),
@@ -247,21 +247,22 @@ const letrec: Parser<ITraced> =
 
 const constr: Parser<Traced> =
    withAction(
-      seq(ctr, optional(parenthesise(sepBy1(expr, symbol(','))), [])),
+      seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
       ([ctr, args]: [Lex.Ctr, Traced[]]) =>
          __val(Constr.at(ν(), ctr, args))
    )
 
-const pair: Parser<Constr> =
+const pair: Parser<Traced<Constr>> =
    withAction(
-      parenthesise(seq(dropSecond(expr, symbol(',')), expr)),
+      parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Traced, Traced]) =>
-         Constr.at(ν(), Str.at(ν(), className(Pair)), [fst, snd])
+         __val(Constr.at(ν(), new Lex.Ctr("Pair"), [fst, snd]))
+   )
 
 /*
 function args_pattern (p: Parser<Object>): Parser<Trie<Object>> {
    return (state: ParseState) => 
-      pattern(choice([dropFirst(token(','), args_pattern(p)), p]))(state)
+      pattern(choice([dropFirst(token(","), args_pattern(p)), p]))(state)
 }
 
 // Continuation-passing style means 'parenthesise' idiom doesn't work here.
@@ -280,7 +281,7 @@ function pair_pattern (p: Parser<Object>): Parser<ConstrTrie<Object>> {
    return withAction(
       dropFirst(
          token(str.parenL), 
-         pattern(dropFirst(token(','), pattern(dropFirst(token(str.parenR), p))))
+         pattern(dropFirst(token(","), pattern(dropFirst(token(str.parenR), p))))
       ),
       (σ: Trie<Object>) => ConstrTrie.at(ν(), __val(ν(), singleton(Str.at(ν(), className(Pair)), σ)))
    )
@@ -305,7 +306,7 @@ function matches (state: ParseState): ParseResult<Trie<Object>> {
    return withAction(
       choice<Trie<ITraced>[]>([
          withAction(match, m => [m]),
-         between(token('{'), sepBy1(match, token(';')), token('}'))
+         between(token("{"), sepBy1(match, token(";")), token("}"))
       ]),
       (σs: Trie<ITraced>[]) => {
          let σ: Trie<ITraced> = σs[0]
