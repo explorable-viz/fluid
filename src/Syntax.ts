@@ -21,6 +21,16 @@ export namespace Lex {
    // With purely structural typing, these lexeme classes are identical, not just isomorphic. This
    // mostly sucks in a class-oriented languages like JavaScript, so we add dummy discriminator methods.
 
+   export class Ctr extends Lexeme {
+      constructor(str: string) {
+         super(str)
+      }
+
+      __Ctr(): void {
+         // discriminator
+      }
+   }
+
    export class IntLiteral extends Lexeme {
       constructor(str: string) {
          super(str)
@@ -66,7 +76,7 @@ export namespace Lex {
    }
 }
 
-export type Value = ConstInt | ConstStr
+export type Value = ConstInt | ConstStr | Constr
 
 export class ConstInt {
    val: number
@@ -85,6 +95,19 @@ export class ConstStr {
    static at (α: Addr, val: string): ConstStr {
       const this_: ConstStr = create(α, ConstStr)
       this_.val = val
+      this_.__version()
+      return this_
+   }
+}
+
+export class Constr {
+   ctr: Lex.Ctr
+   args: Traced[]
+
+   static at (α: Addr, ctr: Lex.Ctr, args: Traced[]): Constr {
+      const this_: Constr = create(α, Constr)
+      this_.ctr = as(ctr, Lex.Ctr)
+      this_.args = args
       this_.__version()
       return this_
    }
