@@ -299,7 +299,7 @@ function pattern (p: Parser<Object>): Parser<Trie<Object>> {
 
 // Chain of singleton tries, terminating in an expression.
 const match: Parser<Trie<Object>> = 
-   pattern(dropFirst(token(str.matchBodySep), expr))
+   pattern(dropFirst(token(str.arrow), expr))
 
 // Assume at least one match clause.
 function matches (state: ParseState): ParseResult<Trie<Object>> {

@@ -5,6 +5,7 @@ import { create, Traced } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
+   export const arrow: string = '→'
    export const as: string = "as"
    export const equals: string = '='
    export const fun: string = "fun"
