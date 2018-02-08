@@ -233,6 +233,31 @@ export class ConstrTrie<T> extends Trie<T> {
    }
 }
 
+export class VarTrie<T> extends Trie<T> {
+   name: Lex.Var
+   body: T
+
+   static at <T> (α: Addr, name: Lex.Var, body: T): VarTrie<T> {
+      const this_: VarTrie<T> = create(α, VarTrie)
+      this_.name = as(name, Lex.Var)
+      this_.body = body
+      this_.__version()
+      return this_
+   }
+}
+
+export class FunTrie<T> extends Trie<T> {
+   body: T
+
+   static at <T> (α: Addr, body: T): FunTrie<T> {
+      const this_: FunTrie<T> = create(α, FunTrie)
+      this_.body = body
+      this_.__version()
+      return this_
+   }
+}
+
+
 export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
    return assert(false)
 }
