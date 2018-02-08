@@ -8,7 +8,9 @@ import {
 } from "./util/parse/Core"
 import { Traced /*, __tracedK, create*/, ν } from "./Runtime"
 import { Lex, Trace/*, join*/, str } from "./Syntax"
-import { App, ConstInt, ConstStr, Constr, EmptyBody, EmptyTrace, Fun, OpName, Value, Var } from "./Syntax"
+import { 
+   App, ConstInt, ConstStr, Constr, EmptyBody, EmptyTrace, Fun, OpName, Value, Var, VarTrie 
+} from "./Syntax"
 // import { className, make } from "./util/Core"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
@@ -286,12 +288,14 @@ function pair_pattern (p: Parser<Object>): Parser<ConstrTrie<Object>> {
       (σ: Trie<Object>) => ConstrTrie.at(ν(), __val(ν(), singleton(Str.at(ν(), className(Pair)), σ)))
    )
 }
-
-function variable_pattern (p: Parser<Object>): Parser<VarTrie<Object>> {
-   return withAction(seq(ident, p), ([x, z]: [Str, Object]) => 
-      VarTrie.at(ν(), __val(ν(), x), __val(ν(), z)))
+*/
+function variable_pattern (p: Parser<Value>): Parser<VarTrie<Value>> {
+   return withAction(
+      seq(var_, p), ([x, z]: [Lex.Var, Value]) => 
+         VarTrie.at(ν(), x, z)
+      )
 }
-
+/*
 function pattern (p: Parser<Object>): Parser<Trie<Object>> {
    return (state: ParseState) =>
       choice<Trie<ITraced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
