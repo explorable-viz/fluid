@@ -72,39 +72,44 @@ export class EmptyBody extends AppBody {
 // For primitives there is no trace part, but we will still show how the argument is consumed.
 // TODO: unify with matches?
 export class PrimBody extends AppBody {
-   _param: Traced<Str>
-
-   static at (α: Addr, param: Traced<Str>): PrimBody {
-      const this_: PrimBody = create(α, PrimBody)
-      this_._param = as_(param, Str)
-      this_.__version()
-      return this_
-   }
+   param: Str
 
    static at_ (α: Addr, param: Str): PrimBody {
-      return PrimBody.at(α, __val(keyP(α, 'param'), param))
-   }
-
-   get param (): Str {
-      return this._param.val
+      const this_: PrimBody = create(α, PrimBody)
+      this_.param = as(param, Str)
+      this_.__version()
+      return this_
    }
 }
 
 export class FunBody extends AppBody {
-   _σ: Traced<Trie<Traced>>
+   x: Lex.Var
+   e: Traced
 
-   static at (α: Addr, σ: Traced<Trie<Traced>>): FunBody {
+   static at_ (α: Addr, x: Lex.Var, e: Traced): FunBody {
       const this_: FunBody = create(α, FunBody)
-      this_._σ = as(σ, Traced)
+      this_.x = as(x, Lex.Var)
+      this_.e = as(e, Traced)
+      this_.__version()
+      return this_
+   }
+}
+
+export class App extends Trace {
+   func: Traced
+   arg: Traced
+   appBody: AppBody
+
+   static at_ (α: Addr, func: Traced, arg: Traced, appBody: AppBody): App {
+      const this_: App = create(α, App)
+      this_.func = as(func, Traced)
+      this_.arg = as(arg, Traced)
+      this_.appBody = as(appBody, AppBody)
       this_.__version()
       return this_
    }
 
-   static at_ (α: Addr, σ: Trie<Traced>): FunBody {
-      return FunBody.at(α, __val(keyP(α, 'σ'), σ))
-   }
-
-   get σ (): Trie<Traced> {
-      return this._σ.val
+   __visit <T> (v: TraceVisitor<T>): T {
+      return v.is_App(this)
    }
 }
