@@ -2,6 +2,38 @@ import { as, assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
 import { Trace, Value } from "./Syntax"
 
+// At a given version (there is only one, currently) enforce "single assignment" semantics.
+Object.prototype.__version = function () {
+   if (this.__history.length === 0) {
+      this.__history.push(__shallowCopy(this))
+   } else {
+      assert(__shallowEq(this, this.__history[0]))
+   }
+}
+
+Object.defineProperty(Object.prototype, '__version', {
+   enumerable: false
+})
+
+// Previously used Object.assign, but that goes via getters/setters.
+function __shallowCopy (src: Object): Object {
+   const tgt: Object = new (src.constructor as { new(): Object } ) // lacks a construct signature
+   for (let x of Object.keys(src)) {
+      (<any>tgt)[x] = (<any>src)[x]
+   }
+   return tgt
+}
+
+function __shallowEq (o1: Object, o2: Object): boolean {
+   assert(o1.constructor === o2.constructor)
+   for (let x of Object.keys(o1)) {
+      if ((<any>o1)[x] !== (<any>o2)[x]) {
+         return false
+      }
+   }
+   return true
+}
+
 export class Traced<T extends Value = Value> {
    trace: Trace
    val: T

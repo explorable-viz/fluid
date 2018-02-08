@@ -257,6 +257,19 @@ export class FunTrie<T> extends Trie<T> {
    }
 }
 
+// A let is simply a match where the trie is a variable trie.
+export class Let extends Trace {
+   e: Traced
+   σ: VarTrie<Object>
+
+   static at (α: Addr, e: Traced, σ: VarTrie<Object>): Let {
+      const this_: Let = create(α, Let)
+      this_.e = as(e, Traced)
+      this_.σ = as(σ, VarTrie)
+      this_.__version()
+      return this_
+   }
+}
 
 export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
    return assert(false)
