@@ -1,18 +1,14 @@
-import { /*Int, None, Pair, __toList*/ } from "./BaseTypes"
-// import { singleton } from "./FiniteMap"
-// import { keyP } from "./Memo"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
    dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, 
    symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { Traced /*, __tracedK, create*/, ν } from "./Runtime"
+import { Traced /*, create*/, ν } from "./Runtime"
 import { Lex, Trace/*, join*/, str } from "./Syntax"
 import { 
-   App, ConstInt, ConstStr, Constr, ConstrTrie, EmptyBody, EmptyTrace, Fun, MatchAs, OpName, Trie,
-   Value, Var, VarTrie, join
+   App, ConstInt, ConstStr, Constr, ConstrTrie, EmptyBody, EmptyTrace, Fun, Let, LetRec, MatchAs,
+   OpName, RecBinding, RecDefinition, Trie, Value, Var, VarTrie, join
 } from "./Syntax"
-// import { className, make } from "./util/Core"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.
@@ -216,37 +212,32 @@ const integer: Parser<Traced<ConstInt>> =
 const parenthExpr: Parser<Traced> = 
    parenthesise(expr)
 
-/*
-const let_: Parser<ITraced> =
+const let_: Parser<Traced> =
    withAction(
       seq(
-         dropFirst(keyword(str.let_), seq(dropSecond(ident, token(str.letInitSep)), expr)),
+         dropFirst(keyword(str.let_), seq(dropSecond(var_, symbol(str.equals)), expr)),
          dropFirst(keyword(str.in_), expr)
       ),
-      ([[x, e], eʹ]: [[Str, ITraced], ITraced]) =>
-         __tracedK(ν(), Let.at(ν(), __val(ν(), e), __val(ν(), VarTrie.at(ν(), __val(ν(), x), eʹ))), eʹ.val)
+      ([[x, e], eʹ]: [[Lex.Var, Traced], Traced]) =>
+         Traced.at(ν(), Let.at(ν(), e, VarTrie.at(ν(), x, eʹ)), eʹ.val)
    )
 
 const recDefinition: Parser<RecBinding> =
    withAction(
-      seq(dropFirst(keyword(str.fun), ident), matches),
-      ([name, σ]: [Str, Trie<ITraced>]) =>
-         RecBinding.at(ν(),
-            __val(ν(), RecDefinition.at(ν(), __val(ν(), name), __val(ν(), Fun.at(ν(), __val(ν(), σ))))),
-            __val(ν(), None.at<Closure>(ν()))
-         )
+      seq(dropFirst(keyword(str.fun), var_), matches),
+      ([name, σ]: [Lex.Var, Trie<Traced>]) =>
+         RecBinding.at(ν(), RecDefinition.at(ν(), name, Fun.at(ν(), σ)), null)
    )
 
-const letrec: Parser<ITraced> =
+const letrec: Parser<Traced> =
    withAction(
       seq(
          dropFirst(keyword(str.letRec), repeat1(recDefinition)),
          dropFirst(keyword(str.in_), expr)
       ),
-      ([defs, body]: [RecBinding[], ITraced]) =>
-         __tracedK(ν(), LetRec.at(ν(), __val(ν(), __toList(defs)), __val(ν(), body.trace)), body.val)
+      ([defs, body]: [RecBinding[], Traced]) =>
+         Traced.at(ν(), LetRec.at(ν(), defs, body.trace), body.val)
    )
-*/
 
 const constr: Parser<Traced> =
    withAction(
@@ -333,14 +324,14 @@ const matchAs: Parser<Traced> =
 
 const fun: Parser<Traced> =
    withAction(
-      dropFirst(keyword(str.fun), seq(var_, expr)),
-      ([x, e]: [Lex.Var, Traced]) => newExpr(Fun.at(ν(), x, e))
+      dropFirst(keyword(str.fun), matches),
+      (σ: Trie<Traced>) => newExpr(Fun.at(ν(), σ))
    )
 
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Traced> =
    choice<Traced>([
-      variable, string_, integer, sectionOp, parenthExpr, pair,/* let_, letrec,*/ constr, matchAs, fun
+      variable, string_, integer, sectionOp, parenthExpr, pair, let_, letrec, constr, matchAs, fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.

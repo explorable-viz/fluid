@@ -168,13 +168,11 @@ export class Var extends Trace {
 
 // Expression form only. TODO: don't I need to unify this now with Closure?
 export class Fun extends Trace {
-   x: Lex.Var
-   e: Traced
+   σ: Trie<Traced>
 
-   static at (α: Addr, x: Lex.Var, e: Traced): Fun {
+   static at (α: Addr, σ: Trie<Traced>): Fun {
       const this_: Fun = create(α, Fun)
-      this_.x = as(x, Lex.Var)
-      this_.e = as(e, Traced)
+      this_.σ = as(σ, Trie)
       this_.__version()
       return this_
    }
