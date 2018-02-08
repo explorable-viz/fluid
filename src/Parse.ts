@@ -295,6 +295,7 @@ function variable_pattern (p: Parser<Object>): Parser<VarTrie<Object>> {
       )
 }
 
+// Wasn't able to figure out the trie type parameters. Using Object allows us not to care.
 function pattern (p: Parser<Object>): Parser<Trie<Object>> {
    return choice<Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])
 }
