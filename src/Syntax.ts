@@ -1,5 +1,6 @@
 import { as, assert } from "./util/Core"
-import { JoinSemilattice } from "./util/Ord"
+import { unionWith } from "./util/Map"
+import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { Str } from "./BaseTypes"
 import { create, Traced } from "./Runtime"
@@ -341,6 +342,29 @@ export class LetRec extends Trace {
    }
 }
 
+// Addressing scheme doesn't yet support "member functions". Plus methods don't allow null receivers.
+__def(join)
 export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
-   return assert(false)
+   const α: Addr = key(join, arguments)
+   if (σ === null) {
+      return τ
+   } else
+   if (τ === null) {
+      return σ
+   } else
+   // The instanceof guards turns T into 'any'. Yuk.
+   if (σ instanceof FunTrie && τ instanceof FunTrie) {
+      const [σʹ, τʹ]: [FunTrie<T>, FunTrie<T>] = [σ, τ]
+      return FunTrie.at(α, join(σʹ.body, τʹ.body))
+   } else
+   if (σ instanceof VarTrie && τ instanceof VarTrie && eq(σ.name, τ.name)) {
+      const [σʹ, τʹ]: [VarTrie<T>, VarTrie<T>] = [σ, τ]
+      return VarTrie.at(α, σʹ.name, join(σʹ.body, τʹ.body))
+   } else
+   if (σ instanceof ConstrTrie && τ instanceof ConstrTrie) {
+      const [σʹ, τʹ]: [ConstrTrie<T>, ConstrTrie<T>] = [σ, τ]
+      return ConstrTrie.at<T>(α, unionWith([σʹ.cases, τʹ.cases], ms => ms.reduce((x, y) => x.join(y))))
+   } else {
+      return assert(false, 'Undefined join.', σ, τ)
+   }
 }
