@@ -255,7 +255,7 @@ export class ConstrTrie<T> extends Trie<T> {
    cases: Map<string, T>
 
    static at <T> (α: Addr, cases: Map<string, T>): ConstrTrie<T> {
-      const this_: ConstrTrie<T> = create(α, ConstrTrie)
+      const this_: ConstrTrie<T> = create<ConstrTrie<T>>(α, ConstrTrie)
       this_.cases = cases
       this_.__version()
       return this_
@@ -267,7 +267,7 @@ export class VarTrie<T> extends Trie<T> {
    body: T
 
    static at <T> (α: Addr, name: Lex.Var, body: T): VarTrie<T> {
-      const this_: VarTrie<T> = create(α, VarTrie)
+      const this_: VarTrie<T> = create<VarTrie<T>>(α, VarTrie)
       this_.name = as(name, Lex.Var)
       this_.body = body
       this_.__version()
@@ -279,7 +279,7 @@ export class FunTrie<T> extends Trie<T> {
    body: T
 
    static at <T> (α: Addr, body: T): FunTrie<T> {
-      const this_: FunTrie<T> = create(α, FunTrie)
+      const this_: FunTrie<T> = create<FunTrie<T>>(α, FunTrie)
       this_.body = body
       this_.__version()
       return this_

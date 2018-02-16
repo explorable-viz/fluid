@@ -40,7 +40,7 @@ export class Traced<T extends Value = Value> {
    val: T
 
    static at <T extends Value> (α: Addr, trace: Trace, val: T): Traced<T> {
-      const this_: Traced<T> = create(α, Traced)
+      const this_: Traced<T> = create<Traced<T>>(α, Traced)
       this_.trace = as(trace, Trace)
       this_.val = val
       this_.__version()
