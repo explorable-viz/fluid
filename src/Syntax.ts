@@ -3,6 +3,7 @@ import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { Str } from "./BaseTypes"
+import { __def, key } from "./Memo"
 import { create, Traced } from "./Runtime"
 
 export type Env = Map<string, Value>
