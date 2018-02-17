@@ -55,13 +55,6 @@ describe("example", () => {
 		})
 	})
 
-	describe("listView", () => {
-		const file: TestFile = loadExample("listView")
-		it("parses ok", () => {
-			runTest(__nonNull(file.text))
-		})
-	})
-
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
 		it("parses ok", () => {

@@ -1,4 +1,4 @@
-import { as, assert } from "./util/Core"
+import { as, asOpt, assert } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
@@ -324,7 +324,7 @@ export class RecBinding {
    static at (α: Addr, def: RecDefinition, valueOpt: Closure | null): RecBinding {
       const this_: RecBinding = create(α, RecBinding)
       this_.def = as(def, RecDefinition)
-      this_.valueOpt = as(valueOpt, Closure)
+      this_.valueOpt = asOpt(valueOpt, Closure)
       this_.__version()
       return this_
    }
