@@ -2,11 +2,12 @@ import { zip } from "./util/Array"
 import { __nonNull, assert, as } from "./util/Core"
 import { eq } from "./util/Ord"
 import { __def, __defLocal, key, keyP } from "./Memo"
-import { Env, Lex, Traced } from "./Syntax"
+import { create } from "./Runtime"
+import { Env, Traced, Value } from "./Syntax"
 import * as AST from "./Syntax"
 
 export module Eval {
-/*
+
 class EvalResult<T extends Value = Value> {
    bindings: Env
    expr: Traced<T>
@@ -31,10 +32,10 @@ class EvalResult<T extends Value = Value> {
 }
 
 function __result <T extends Value> (α: Addr, t: AST.Trace, v: T): EvalResult<T> {
-   const β: Addr = keyP(α, 'expr')
-   return EvalResult.at(α, null, __tracedK(β, t, v), null, null)
+   const β: Addr = keyP(α, "expr")
+   return EvalResult.at(α, null, Traced.at(β, t, null, v), null, null)
 }
-
+/*
 __def(eval)
 export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalResult<T> {
    return __defLocal(key(eval, arguments), function withDemand (σ: AST.Trie<Object>): (e: Traced) => EvalResult<T> {
