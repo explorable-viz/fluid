@@ -87,13 +87,13 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
             },
 
             // See 0.3.4 release notes for semantics.
-            is_LetRec (t: AST.LetRec): EvalResult<Object> {
+            is_LetRec (t: AST.LetRec): EvalResult<Value> {
                const defs: AST.RecDefinition[] = t.bindings.map(binding => binding.def),
                      fs: AST.Closure[] = closeDefs(ρ, defs),
-                     ρ_: Env = extend(ρ, zip(map(defs, name), fs)),
-                     χ: EvalResult<Object> = eval_(ρ_)(null)(__tracedK(keyP(α, '1'), t.body, e.val)),
-                     bindings: List<AST.RecBinding> = map(zip(t.bindings, fs), bindRecDef)
-               return __result(α, AST.LetRec.at_(keyP(α, 'expr', 't'), bindings, χ.expr.trace), χ.expr.val)
+                     ρ_: Env = extend(ρ, zip(defs.map(def => def.name.str), fs)),
+                     χ: EvalResult<Value> = eval_(ρ_)(null)(Traced.at(keyP(α, '1'), t.body, null, e.val)),
+                     bindings: AST.RecBinding[] = zip(t.bindings, fs).map(bindRecDef)
+               return __result(α, AST.LetRec.at(keyP(α, "trace"), bindings, χ.expr.trace), χ.expr.val)
             },
 
 /*
