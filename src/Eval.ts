@@ -169,12 +169,11 @@ function bindRecDef (binding_f: Pair<AST.RecBinding, AST.Closure>): AST.RecBindi
 // Also see 0.6.4 release notes.
 __def(match)
 function match (v: Traced, ρ: Env, p: Traced): [Traced, Env] | null {
-   const α: Addr = key(match, arguments),
-         β: Addr = keyP(α, "valOf", "v")
+   const α: Addr = key(match, arguments)
    if (p.name !== null) {
       // variable pattern always succeeds (check whether I need to clone var here)
       assert(p.val === null)
-      return [Traced.at(keyP(β, "fst", "v"), v.trace, p.name, v.val), insert(ρ, p.name.str, v.val)]
+      return [Traced.at(α, v.trace, p.name, v.val), new Map(ρ).set(p.name.str, __nonNull(v.val))]
    } else {
       // otherwise succeed iff constructors match and sub-patterns match sub-values
       const v_: AST.Constr = as(v.val, AST.Constr),
@@ -195,7 +194,7 @@ function match (v: Traced, ρ: Env, p: Traced): [Traced, Env] | null {
          const ps: Traced[] = zip(v_.args, p_.args).map(submatch)
          if (matched) {
             const v_: AST.Constr = AST.Constr.at(keyP(α, "v_"), p_.ctr, ps)
-            return [Traced.at(keyP(β, "fst", "v"), v.trace, null, v_), ρ]
+            return [Traced.at(α, v.trace, null, v_), ρ]
          }
       }
       return null
