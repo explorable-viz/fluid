@@ -16,3 +16,8 @@ test:
         # copy test results
         - mkdir $CIRCLE_TEST_REPORTS/junit
         - mv node_modules/junit-test-results/* $CIRCLE_TEST_REPORTS/junit
+
+checkout:
+  post:
+    - git submodule sync
+    - git submodule update --init
