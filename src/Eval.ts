@@ -1,4 +1,5 @@
 import { __nonNull, assert, as } from "./util/Core"
+import { zip } from "./util/Array"
 import { Str } from "./BaseTypes"
 import { __def, __defLocal, key, keyP } from "./Memo"
 import { eq } from "./Ord"
@@ -7,7 +8,7 @@ import { Env, Value } from "./Syntax"
 import * as AST from "./Syntax"
 
 export module Eval {
-
+/*
 class EvalResult<T extends Value = Value> {
    bindings: Env
    expr: Traced<T>
@@ -45,9 +46,9 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
          // TODO: case where demand is empty.
          // TODO: variable trie.
          return e.trace.__visit({
-            is_EmptyTrace (t: AST.EmptyTrace): EvalResult<Object> {
+            is_EmptyTrace (t: AST.EmptyTrace): EvalResult<T> {
                return null
-/*
+               // COMMENTS DON'T NEST, WHAT
                return __tracedK(α, t, reify(__nonNull(e.val)).__visit({
                   is_Constr (v_: Constr): Object {
                      const β: Addr = keyP(α, 'val')
@@ -62,12 +63,11 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
                      return <String>e.val
                   }
                }))
-*/
             },
 
             is_Fun (t: AST.Fun): EvalResult<AST.Closure> {
                const β: Addr = keyP(α, 'expr', 'val')
-               return __result(α, t, AST.Closure.at_(β, ρ, Nil.at<AST.RecDefinition>(keyP(β, 'defs', 'v')), t))
+               return __result(α, t, AST.Closure.at(β, ρ, [], t))
             },
 
             // See 0.4.6 release notes on why undefined values map to ⊥.
@@ -75,7 +75,7 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
                assert(e.val === null)
                return get(ρ, t.name).__visit({
                   is_None: (_) =>
-                     assertMessage(false, 'Operator not found.', t),
+                     assert(false, "Operator not found.", t),
                   is_Some: (op) =>
                      __result(α, t, <AST.PrimOp>op.valOf)
                })
@@ -89,7 +89,7 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
             is_Let (t: AST.Let): EvalResult<Object> {
                const χ: EvalResult<Object> = eval_(ρ)(t.σ)(t.e),
                      χʹ: EvalResult<Object> = eval_(union(ρ, χ.bindings))(σ)(χ.cont)
-               return __result(α, AST.Let.at_(keyP(α, 'expr', 't'), χ.expr, <AST.VarTrie<Object>>χ.demand), χʹ.cont.val)
+               return __result(α, AST.Let.at(keyP(α, 'expr', 't'), χ.expr, <AST.VarTrie<Object>>χ.demand), χʹ.cont.val)
             },
 
             // See 0.3.4 release notes for semantics.
@@ -165,52 +165,45 @@ function bindRecDef (binding_f: Pair<AST.RecBinding, AST.Closure>): AST.RecBindi
   const α: Addr = key(bindRecDef, arguments)
   return AST.RecBinding.at_(α, binding_f.fst.def, Some.at_<AST.Closure>(keyP(α, 'valueOpt', 'v'), binding_f.snd))
 }
+*/
 
 // Return matched pattern and modified environment iff there is a successful match.
 // Also see 0.6.4 release notes.
 __def(match)
-function match (v: ITraced, ρ: Env, p: ITraced): Prim.Option<Pair<ITraced, Env>> {
+function match (v: Traced, ρ: Env, p: Traced): [Traced, Env] | null {
    const α: Addr = key(match, arguments)
-   return p.name.__visit({
-      is_Some (name) {
-         // variable pattern always succeeds
-         assert(p.val === null)
-         const x: Str = name.valOf,
-               β: Addr = keyP(α, 'valOf', 'v')
-         return Some.at_(
-            α,
-            Pair.at_(β, __traced_var(keyP(β, 'fst', 'v'), v.trace, x, v.val), insert(ρ, x, v.val))
-         )
-      },
-      is_None (_) {
-         // otherwise succeed iff constructors match and sub-patterns match sub-values
-         const v_: AST.Constr = <AST.Constr>typeCheck(reify(v.val), AST.Constr),
-               p_: AST.Constr = <AST.Constr>typeCheck(reify(p.val), AST.Constr)
-         if (eq(__nonNull(v_).ctr, p_.ctr)) {
-            var matched: boolean = true
-            const submatch =
-               __defLocal(α, function submatch (vp: Pair<ITraced, ITraced>): ITraced {
-                  return match(vp.fst, ρ, vp.snd).__visit({
-                     is_None (_) {
-                        matched = false
-                        return vp.snd
-                     },
-                     is_Some (match_opt) {
-                        ρ = match_opt.valOf.snd
-                        return match_opt.valOf.fst
-                     }
-                  })
-               })
-            const ps: List<ITraced> = map(zip(v_.args, p_.args), submatch)
-            if (matched) {
-               const β: Addr = keyP(α, 'valOf', 'v'),
-                     v_: AST.Constr = AST.Constr.at_(keyP(α, 'v_'), p_.ctr, ps)
-               return Some.at_(α, Pair.at_(β, __tracedK(keyP(β, 'fst', 'v'), v.trace, reflect(v_)), ρ))
-            }
+   if (p.name !== null) {
+      // variable pattern always succeeds
+      assert(p.val === null)
+      const x: Str = name.valOf,
+            β: Addr = keyP(α, 'valOf', 'v')
+      return [__traced_var(keyP(β, 'fst', 'v'), v.trace, x, v.val), insert(ρ, x, v.val)]
+   } else {
+      // otherwise succeed iff constructors match and sub-patterns match sub-values
+      const v_: AST.Constr = as(v.val, AST.Constr),
+            p_: AST.Constr = as(p.val, AST.Constr)
+      if (eq(__nonNull(v_).ctr, p_.ctr)) {
+         var matched: boolean = true
+         const submatch =
+            __defLocal(α, function submatch ([v, p]: [Traced, Traced]): Traced {
+               const vρ_opt: [Traced, Env] | null = match(v, ρ, p)
+               if (vρ_opt === null) {
+                  matched = false
+                  return p
+               } else {
+                  ρ = vρ_opt[1]
+                  return vρ_opt[0]
+               }
+            })
+         const ps: Traced[] = zip(v_.args, p_.args).map(submatch)
+         if (matched) {
+            const β: Addr = keyP(α, 'valOf', 'v'),
+                  v_: AST.Constr = AST.Constr.at_(keyP(α, 'v_'), p_.ctr, ps)
+            return [__tracedK(keyP(β, 'fst', 'v'), v.trace, reflect(v_)), ρ)]
          }
-         return None.at<Pair<ITraced, Env>>(α)
       }
-   })
+      return null
+   }
 }
 
 }

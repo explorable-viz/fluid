@@ -1,8 +1,7 @@
-import { as, asOpt, assert } from "./util/Core"
+import { __nonNull, as, asOpt, assert } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { Str } from "./BaseTypes"
 import { __def, key } from "./Memo"
 import { create, Traced } from "./Runtime"
 
@@ -82,7 +81,100 @@ export namespace Lex {
    }
 }
 
-export type Value = Closure | ConstInt | ConstStr | Constr
+export type Value = Closure | ConstInt | ConstStr | Constr | PrimOp
+
+// Primitive ops; see 0.4.4 release notes.
+export class PrimOp {
+   __apply (v: Object): Object {
+      return assert(false, "Would like this to be abstract.")
+   }
+}
+
+// Assume all dynamic type-checking is performed inside the underlying JS operation, although
+// currently there mostly isn't any.
+export class UnaryPrimOp extends PrimOp {
+   name: string
+
+   static at (α: Addr, name: string): UnaryPrimOp {
+      const this_: UnaryPrimOp = create(α, UnaryPrimOp)
+      this_.name = name
+      this_.__version()
+      return this_
+   }
+
+   __apply (v: Object): Object {
+      return __nonNull(unaryOps.get(this.name))(v)
+   }
+
+   toString (): string {
+      return this.name
+   }
+}
+
+export class BinaryPrimOp extends PrimOp {
+   name: string
+
+   static at (α: Addr, name: string): BinaryPrimOp {
+      const this_: BinaryPrimOp = create(α, BinaryPrimOp)
+      this_.name = name
+      this_.__version()
+      return this_
+   }
+
+   __apply (v1: Object): PrimOp {
+      return partiallyApply(this, v1)
+   }
+
+   
+   toString (): string {
+      return this.name
+   }
+}
+
+// Binary op that has been applied to a single operand.
+export class UnaryPartialPrimOp extends PrimOp {
+   name: string
+   binOp: BinaryPrimOp
+   v1: Value
+
+   static at (α: Addr, name: string, binOp: BinaryPrimOp, v1: Value): UnaryPartialPrimOp {
+      const this_: UnaryPartialPrimOp = create(α, UnaryPartialPrimOp)
+      this_.name = name
+      this_.binOp = as(binOp, BinaryPrimOp)
+      this_.v1 = v1
+      this_.__version()
+      return this_
+   }
+
+   __apply (v2: Object): Object {
+      return __nonNull(binaryOps.get(this.binOp.name))(this.v1, v2)
+   }
+
+   toString (): string {
+      return this.name
+   }
+}
+
+// Syntactically distinguish projection functions from other unary ops, previously because we generated an
+// implementation; may no longer be necessary.
+export class Proj extends PrimOp {
+   name: string
+
+   static at (α: Addr, name: string): Proj {
+      const this_: Proj = create(α, Proj)
+      this_.name = name
+      this_.__version()
+      return this_
+   }
+
+   __apply (v: Object): Object {
+      return __nonNull(projections.get(this.name))(v)
+   }
+
+   toString (): string {
+      return this.name
+   }
+}
 
 export class Closure {
    ρ: Env
@@ -194,11 +286,11 @@ export class EmptyBody extends AppBody {
 // For primitives there is no trace part, but we will still show how the argument is consumed.
 // TODO: unify with matches?
 export class PrimBody extends AppBody {
-   param: Str
+   param: Lex.Var
 
-   static at (α: Addr, param: Str): PrimBody {
+   static at (α: Addr, param: Lex.Var): PrimBody {
       const this_: PrimBody = create(α, PrimBody)
-      this_.param = as(param, Str)
+      this_.param = as(param, Lex.Var)
       this_.__version()
       return this_
    }
