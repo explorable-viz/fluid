@@ -37,6 +37,9 @@ function __shallowEq (o1: Object, o2: Object): boolean {
    return true
 }
 
+// Populated by initDataTypes(). Note that constructors are not (yet) first-class.
+export const projections: Map<string, UnaryOp> = new Map
+
 // Populated by initPrimitives().
 export var unaryOps: Map<string, UnaryOp> = new Map
 export var binaryOps: Map<string, BinaryOp> = new Map

@@ -4,7 +4,7 @@ import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { __def, key } from "./Memo"
 import { partiallyApply } from "./Primitive"
-import { binaryOps, create, unaryOps } from "./Runtime"
+import { binaryOps, create, projections, unaryOps } from "./Runtime"
 
 export type Env = Map<string, Value>
 
