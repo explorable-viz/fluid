@@ -25,4 +25,4 @@ checkout:
 general:
   branches:
     only:
-      - master # list of branches to ignore
+      - master
