@@ -1,6 +1,6 @@
 import { assert } from "./util/Core"
 import { __def, key } from "./Memo"
-import { BinaryPrimOp, ConstInt, Constr, ConstStr, UnaryPartialPrimOp, Value } from "./Syntax"
+import { BinaryPrimOp, ConstInt, Constr, ConstStr, Lex, UnaryPartialPrimOp, Value } from "./Syntax"
 
 // Signatures of primitive operations.
 export interface UnaryOp {
@@ -9,6 +9,14 @@ export interface UnaryOp {
 
 export interface BinaryOp {
    (v1: Value, v2: Value): Value
+}
+
+function __true (α: Addr): Constr {
+   return Constr.at(α, new Lex.Ctr("True"), [])
+}
+
+function __false (α: Addr): Constr {
+   return Constr.at(α, new Lex.Ctr("False"), [])
 }
 
 __def(partiallyApply)
@@ -26,10 +34,10 @@ __def(equalOp)
 export function equalOp (x: Value, y: Value): Constr {
    const α: Addr = key(equalOp, arguments)
    if (x instanceof ConstInt && y instanceof ConstInt) {
-      return x.val === y.val ? True.at(α) : False.at(α)
+      return x.val === y.val ? __true(α) : __false(α)
    } else
    if (x instanceof ConstStr && y instanceof ConstStr) {
-      return x.val === y.val ? True.at(α) : False.at(α)
+      return x.val === y.val ? __true(α) : __false(α)
    } else {
       return assert(false, "Can only compare two ints or two strings.", x, y)
    }
@@ -38,11 +46,12 @@ export function equalOp (x: Value, y: Value): Constr {
 __def(greaterT)
 export function greaterT (x: ConstInt, y: ConstInt): Constr {
    const α: Addr = key(greaterT, arguments)
+   
    if (x instanceof ConstInt && y instanceof ConstInt) {
-      return x.val > y.val ? True.at(α) : False.at(α)
+      return x.val > y.val ? __true(α) : __false(α)
    } else
    if (x instanceof ConstStr && y instanceof ConstStr) {
-      return x.val > y.val ? True.at(α) : False.at(α)
+      return x.val > y.val ? __true(α) : __false(α)
    } else {
       return assert(false, "Can only compare two ints or two strings.", x, y)
    }
@@ -52,10 +61,10 @@ __def(lessT)
 export function lessT (x: ConstInt, y: ConstInt): Constr {
    const α: Addr = key(lessT, arguments)
    if (x instanceof ConstInt && y instanceof ConstInt) {
-      return x.val < y.val ? True.at(α) : False.at(α)
+      return x.val < y.val ? __true(α) : __false(α)
    } else
    if (x instanceof ConstStr && y instanceof ConstStr) {
-      return x.val < y.val ? True.at(α) : False.at(α)
+      return x.val < y.val ? __true(α) : __false(α)
    } else {
       return assert(false, "Can only compare two ints or two strings.", x, y)
    }

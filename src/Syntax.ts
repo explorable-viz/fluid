@@ -485,6 +485,6 @@ export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): 
       const [σʹ, τʹ]: [ConstrTrie<T>, ConstrTrie<T>] = [σ, τ]
       return ConstrTrie.at<T>(α, unionWith([σʹ.cases, τʹ.cases], ms => ms.reduce((x, y) => x.join(y))))
    } else {
-      return assert(false, 'Undefined join.', σ, τ)
+      return assert(false, "Undefined join.", σ, τ)
    }
 }
