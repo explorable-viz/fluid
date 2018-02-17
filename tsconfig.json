@@ -9,8 +9,8 @@
       "noUnusedLocals": true,
       "outDir": "js/",
       "rootDir": "./",
-      "sourceMap": true
-//    "strictNullChecks": true
+      "sourceMap": true,
+      "strictNullChecks": true
    },
    "include": [
       "src"

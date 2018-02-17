@@ -62,8 +62,8 @@ const identCandidate: Parser<string> =
 // wanted Haskell-style operators, where for example >>= and >> must coexist.
 // TODO: hoist to Parse module, which will need parameterising on identCandidate.
 function reserved (str: string): Parser<string> {
-   return (state: ParseState): ParseResult<string> => {
-      const r: ParseResult<string> = identCandidate(state)
+   return (state: ParseState): ParseResult<string> | null => {
+      const r: ParseResult<string> | null = identCandidate(state)
       if (r !== null && r.ast === str)
          return r
       return null
@@ -288,7 +288,8 @@ function variable_pattern (p: Parser<Object>): Parser<VarTrie<Object>> {
 
 // Wasn't able to figure out the trie type parameters. Using Object allows us not to care.
 function pattern (p: Parser<Object>): Parser<Trie<Object>> {
-   return choice<Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])
+   return (state: ParseState) => 
+      choice<Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
 // Chain of singleton tries, terminating in an expression.
@@ -296,7 +297,7 @@ const match: Parser<Trie<Traced>> =
    pattern(dropFirst(symbol(str.arrow), expr))
 
 // Assume at least one match clause.
-function matches (state: ParseState): ParseResult<Trie<Traced>> {
+function matches (state: ParseState): ParseResult<Trie<Traced>> | null {
    return withAction(
       choice<Trie<Traced>[]>([
          withAction(match, m => [m]),
@@ -343,7 +344,7 @@ const productExpr: Parser<Traced> = chainl1(appChain, appOp(productOp))
 const sumExpr: Parser<Traced> = chainl1(productExpr, appOp(sumOp))
 const compareExpr: Parser<Traced> = chainl1(sumExpr, appOp(compareOp))
 
-export function expr (state: ParseState): ParseResult<Traced> {
+export function expr (state: ParseState): ParseResult<Traced> | null {
    return compareExpr(state)
 }
 

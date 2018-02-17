@@ -1,7 +1,9 @@
-import { as, assert } from "./util/Core"
-import { JoinSemilattice } from "./util/Ord"
+import { as, asOpt, assert } from "./util/Core"
+import { unionWith } from "./util/Map"
+import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { Str } from "./BaseTypes"
+import { __def, key } from "./Memo"
 import { create, Traced } from "./Runtime"
 
 export type Env = Map<string, Value>
@@ -255,7 +257,7 @@ export class ConstrTrie<T> extends Trie<T> {
    cases: Map<string, T>
 
    static at <T> (α: Addr, cases: Map<string, T>): ConstrTrie<T> {
-      const this_: ConstrTrie<T> = create(α, ConstrTrie)
+      const this_: ConstrTrie<T> = create<ConstrTrie<T>>(α, ConstrTrie)
       this_.cases = cases
       this_.__version()
       return this_
@@ -267,7 +269,7 @@ export class VarTrie<T> extends Trie<T> {
    body: T
 
    static at <T> (α: Addr, name: Lex.Var, body: T): VarTrie<T> {
-      const this_: VarTrie<T> = create(α, VarTrie)
+      const this_: VarTrie<T> = create<VarTrie<T>>(α, VarTrie)
       this_.name = as(name, Lex.Var)
       this_.body = body
       this_.__version()
@@ -279,7 +281,7 @@ export class FunTrie<T> extends Trie<T> {
    body: T
 
    static at <T> (α: Addr, body: T): FunTrie<T> {
-      const this_: FunTrie<T> = create(α, FunTrie)
+      const this_: FunTrie<T> = create<FunTrie<T>>(α, FunTrie)
       this_.body = body
       this_.__version()
       return this_
@@ -317,12 +319,12 @@ export class RecDefinition {
 // closures can contain definitions without inducing cycles.
 export class RecBinding {
    def: RecDefinition
-   valueOpt?: Closure
+   valueOpt: Closure | null
 
-   static at (α: Addr, def: RecDefinition, valueOpt?: Closure): RecBinding {
+   static at (α: Addr, def: RecDefinition, valueOpt: Closure | null): RecBinding {
       const this_: RecBinding = create(α, RecBinding)
       this_.def = as(def, RecDefinition)
-      this_.valueOpt = as(valueOpt, Closure)
+      this_.valueOpt = asOpt(valueOpt, Closure)
       this_.__version()
       return this_
    }
@@ -341,6 +343,29 @@ export class LetRec extends Trace {
    }
 }
 
+// Addressing scheme doesn't yet support "member functions". Plus methods don't allow null receivers.
+__def(join)
 export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
-   return assert(false)
+   const α: Addr = key(join, arguments)
+   if (σ === null) {
+      return τ
+   } else
+   if (τ === null) {
+      return σ
+   } else
+   // The instanceof guards turns T into 'any'. Yuk.
+   if (σ instanceof FunTrie && τ instanceof FunTrie) {
+      const [σʹ, τʹ]: [FunTrie<T>, FunTrie<T>] = [σ, τ]
+      return FunTrie.at(α, join(σʹ.body, τʹ.body))
+   } else
+   if (σ instanceof VarTrie && τ instanceof VarTrie && eq(σ.name, τ.name)) {
+      const [σʹ, τʹ]: [VarTrie<T>, VarTrie<T>] = [σ, τ]
+      return VarTrie.at(α, σʹ.name, join(σʹ.body, τʹ.body))
+   } else
+   if (σ instanceof ConstrTrie && τ instanceof ConstrTrie) {
+      const [σʹ, τʹ]: [ConstrTrie<T>, ConstrTrie<T>] = [σ, τ]
+      return ConstrTrie.at<T>(α, unionWith([σʹ.cases, τʹ.cases], ms => ms.reduce((x, y) => x.join(y))))
+   } else {
+      return assert(false, 'Undefined join.', σ, τ)
+   }
 }
