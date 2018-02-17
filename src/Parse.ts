@@ -3,11 +3,11 @@ import {
    dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, 
    symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { ν } from "./Runtime"
+import { __val, ν } from "./Runtime"
 import { Lex, Trace, Traced, join, str } from "./Syntax"
 import { 
-   App, ConstInt, ConstStr, Constr, ConstrTrie, EmptyBody, EmptyTrace, Fun, Let, LetRec, MatchAs,
-   OpName, RecBinding, RecDefinition, Trie, Value, Var, VarTrie
+   App, ConstInt, ConstStr, Constr, ConstrTrie, EmptyBody, Fun, Let, LetRec, MatchAs,
+   OpName, RecBinding, RecDefinition, Trie, Var, VarTrie
 } from "./Syntax"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
@@ -16,10 +16,6 @@ export module Parse {
 
 function newExpr (t: Trace): Traced {
    return Traced.at(ν(), t, null, null)
-}
-
-function __val <V extends Value> (v: V): Traced<V> {
-   return Traced.at(ν(), EmptyTrace.at(ν()), null, v)
 }
 
 // ch is a JavaScript "character", i.e. string of length 1. Currently not supporting Unicode

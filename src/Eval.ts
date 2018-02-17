@@ -1,10 +1,8 @@
-import { __nonNull, assert, as } from "./util/Core"
 import { zip } from "./util/Array"
-import { Str } from "./BaseTypes"
+import { __nonNull, assert, as } from "./util/Core"
+import { eq } from "./util/Ord"
 import { __def, __defLocal, key, keyP } from "./Memo"
-import { eq } from "./Ord"
-import { Traced, __tracedK, __traced_var, __val, create } from "./Runtime"
-import { Env, Value } from "./Syntax"
+import { Env, Traced } from "./Syntax"
 import * as AST from "./Syntax"
 
 export module Eval {
@@ -171,19 +169,18 @@ function bindRecDef (binding_f: Pair<AST.RecBinding, AST.Closure>): AST.RecBindi
 // Also see 0.6.4 release notes.
 __def(match)
 function match (v: Traced, ρ: Env, p: Traced): [Traced, Env] | null {
-   const α: Addr = key(match, arguments)
+   const α: Addr = key(match, arguments),
+         β: Addr = keyP(α, "valOf", "v")
    if (p.name !== null) {
-      // variable pattern always succeeds
+      // variable pattern always succeeds (check whether I need to clone var here)
       assert(p.val === null)
-      const x: Str = p.name.valOf,
-            β: Addr = keyP(α, 'valOf', 'v')
-      return [__traced_var(keyP(β, 'fst', 'v'), v.trace, x, v.val), insert(ρ, x, v.val)]
+      return [Traced.at(keyP(β, "fst", "v"), v.trace, p.name, v.val), insert(ρ, p.name.str, v.val)]
    } else {
       // otherwise succeed iff constructors match and sub-patterns match sub-values
       const v_: AST.Constr = as(v.val, AST.Constr),
             p_: AST.Constr = as(p.val, AST.Constr)
       if (eq(__nonNull(v_).ctr, p_.ctr)) {
-         var matched: boolean = true
+         let matched: boolean = true
          const submatch =
             __defLocal(α, function submatch ([v, p]: [Traced, Traced]): Traced {
                const vρ_opt: [Traced, Env] | null = match(v, ρ, p)
@@ -197,9 +194,8 @@ function match (v: Traced, ρ: Env, p: Traced): [Traced, Env] | null {
             })
          const ps: Traced[] = zip(v_.args, p_.args).map(submatch)
          if (matched) {
-            const β: Addr = keyP(α, 'valOf', 'v'),
-                  v_: AST.Constr = AST.Constr.at(keyP(α, 'v_'), p_.ctr, ps)
-            return [__tracedK(keyP(β, 'fst', 'v'), v.trace, reflect(v_)), ρ]
+            const v_: AST.Constr = AST.Constr.at(keyP(α, "v_"), p_.ctr, ps)
+            return [Traced.at(keyP(β, "fst", "v"), v.trace, null, v_), ρ]
          }
       }
       return null
