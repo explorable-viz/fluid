@@ -2,7 +2,7 @@ import { zip } from "./util/Array"
 import { __nonNull, assert, as } from "./util/Core"
 import { eq } from "./util/Ord"
 import { __def, __defLocal, key, keyP } from "./Memo"
-import { Env, Traced } from "./Syntax"
+import { Env, Lex, Traced } from "./Syntax"
 import * as AST from "./Syntax"
 
 export module Eval {
@@ -138,32 +138,33 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
       })
    })
 }
+*/
 
 // TODO: unify with the projection operators generated for each constructor.
-__def(def)
-function def (binding: AST.RecBinding): AST.RecDefinition {
-   return binding.def
-}
+// __def(def)
+// function def (binding: AST.RecBinding): AST.RecDefinition {
+//    return binding.def
+// }
 
-__def(name)
-function name (def: AST.RecDefinition): Str {
-   return def.name
-}
+// __def(name)
+// function name (def: AST.RecDefinition): Lex.Var {
+//    return def.name
+// }
 
 __def(closeDefs)
-function closeDefs (ρ: Env, defs: List<AST.RecDefinition>): List<AST.Closure> {
-   const closeDef = __defLocal(key(closeDefs, arguments), function closeDef (def: AST.RecDefinition): AST.Closure {
-      return AST.Closure.at_(key(closeDef, arguments), ρ, defs, def.func)
-   })
-   return map(defs, closeDef)
+function closeDefs (ρ: Env, defs: AST.RecDefinition[]): AST.Closure[] {
+   const closeDef = 
+      __defLocal(key(closeDefs, arguments), function closeDef (def: AST.RecDefinition): AST.Closure {
+         return AST.Closure.at(key(closeDef, arguments), ρ, defs, def.func)
+      })
+   return defs.map(closeDef)
 }
 
 __def(bindRecDef)
-function bindRecDef (binding_f: Pair<AST.RecBinding, AST.Closure>): AST.RecBinding {
+function bindRecDef ([binding, f]: [AST.RecBinding, AST.Closure]): AST.RecBinding {
   const α: Addr = key(bindRecDef, arguments)
-  return AST.RecBinding.at_(α, binding_f.fst.def, Some.at_<AST.Closure>(keyP(α, 'valueOpt', 'v'), binding_f.snd))
+  return AST.RecBinding.at(α, binding.def, f)
 }
-*/
 
 // Return matched pattern and modified environment iff there is a successful match.
 // Also see 0.6.4 release notes.
