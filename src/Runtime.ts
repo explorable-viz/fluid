@@ -37,9 +37,9 @@ function __shallowEq (o1: Object, o2: Object): boolean {
 
 export class Traced<T extends Value = Value> {
    trace: Trace
-   val: T
+   val: T | null
 
-   static at <T extends Value> (α: Addr, trace: Trace, val: T): Traced<T> {
+   static at <T extends Value> (α: Addr, trace: Trace, val: T | null): Traced<T> {
       const this_: Traced<T> = create<Traced<T>>(α, Traced)
       this_.trace = as(trace, Trace)
       this_.val = val

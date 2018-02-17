@@ -319,9 +319,9 @@ export class RecDefinition {
 // closures can contain definitions without inducing cycles.
 export class RecBinding {
    def: RecDefinition
-   valueOpt?: Closure
+   valueOpt: Closure | null
 
-   static at (α: Addr, def: RecDefinition, valueOpt?: Closure): RecBinding {
+   static at (α: Addr, def: RecDefinition, valueOpt: Closure | null): RecBinding {
       const this_: RecBinding = create(α, RecBinding)
       this_.def = as(def, RecDefinition)
       this_.valueOpt = as(valueOpt, Closure)
