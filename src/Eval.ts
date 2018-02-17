@@ -3,7 +3,7 @@ import { __nonNull, assert, as } from "./util/Core"
 import { eq } from "./util/Ord"
 import { __def, __defLocal, key, keyP } from "./Memo"
 import { create } from "./Runtime"
-import { Env, Traced, Value } from "./Syntax"
+import { ConstInt, Constr, ConstStr, Env, Traced, Value } from "./Syntax"
 import * as AST from "./Syntax"
 
 export module Eval {
@@ -14,28 +14,18 @@ class EvalResult<T extends Value = Value> {
    demand: AST.Trie<Object>
    cont: Traced
 
-   static at <T extends Value> (
-      α: Addr,
-      bindings: Env,
-      expr: Traced<T>,
-      demand: AST.Trie<Object>,
-      cont: Traced
-   ): EvalResult<T> {
-      const this_: EvalResult<T> = create<EvalResult<T>>(α, EvalResult)
-      this_.bindings = as(bindings, Map)
-      this_.expr = as(expr, Traced)
-      this_.demand = as(demand, AST.Trie)
-      this_.cont = as(cont, Traced)
-      this_.__version()
-      return this_
+   constructor (bindings: Env, expr: Traced<T>, demand: AST.Trie<Object>, cont: Traced) {
+      this.bindings = as(bindings, Map)
+      this.expr = as(expr, Traced)
+      this.demand = as(demand, AST.Trie)
+      this.cont = as(cont, Traced)
    }
 }
 
 function __result <T extends Value> (α: Addr, t: AST.Trace, v: T): EvalResult<T> {
-   const β: Addr = keyP(α, "expr")
-   return EvalResult.at(α, null, Traced.at(β, t, null, v), null, null)
+   return new EvalResult(null, Traced.at(α, t, null, v), null, null)
 }
-/*
+
 __def(eval)
 export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalResult<T> {
    return __defLocal(key(eval, arguments), function withDemand (σ: AST.Trie<Object>): (e: Traced) => EvalResult<T> {
@@ -46,12 +36,12 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
          // TODO: variable trie.
          return e.trace.__visit({
             is_EmptyTrace (t: AST.EmptyTrace): EvalResult<T> {
-               return null
-               // COMMENTS DON'T NEST, WHAT
-               return __tracedK(α, t, reify(__nonNull(e.val)).__visit({
+               return assert(false)
+/*               
+               return Traced.at(α, t, null, __nonNull(e.val).__visit({
                   is_Constr (v_: Constr): Object {
                      const β: Addr = keyP(α, 'val')
-                     return reflect(Constr.at_(β, v_.ctr, map(v_.args, eval_(ρ)(null))))
+                     return Constr.at_(β, v_.ctr, map(v_.args, eval_(ρ)(null)))
                   },
 
                   is_ConstInt (_: ConstInt): Int {
@@ -62,13 +52,14 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
                      return <String>e.val
                   }
                }))
+*/
             },
 
             is_Fun (t: AST.Fun): EvalResult<AST.Closure> {
-               const β: Addr = keyP(α, 'expr', 'val')
-               return __result(α, t, AST.Closure.at(β, ρ, [], t))
+               return __result(α, t, AST.Closure.at(keyP(α, "val"), ρ, [], t))
             },
 
+/*
             // See 0.4.6 release notes on why undefined values map to ⊥.
             is_OpName (t: AST.OpName): EvalResult<AST.PrimOp> {
                assert(e.val === null)
@@ -135,11 +126,11 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
                      χʹ: EvalResult<Object> = eval_(union(ρ, χ.bindings))(σ)(χ.cont)
                return __result(α, AST.MatchAs.at_(keyP(α, 'expr', 't'), χ.expr, χ.demand), χʹ.cont.val)
             }
+*/
          })
       })
    })
 }
-*/
 
 // TODO: unify with the projection operators generated for each constructor.
 // __def(def)
