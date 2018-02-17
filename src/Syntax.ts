@@ -2,8 +2,9 @@ import { __nonNull, as, asOpt, assert } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
+import { Ctr } from "./DataType"
 import { __def, key } from "./Memo"
-import { create, Traced } from "./Runtime"
+import { create } from "./Runtime"
 
 export type Env = Map<string, Value>
 
@@ -224,6 +225,30 @@ export class Constr {
       this_.__version()
       return this_
    }
+}
+
+// The 'name' field appears here to allow the syntactic unification of patterns with values.
+export class Traced<T extends Value = Value> {
+   trace: Trace
+   name: Lex.Var | null
+   val: T | null
+
+   static at <T extends Value> (α: Addr, trace: Trace, name: Lex.Var | null, val: T | null): Traced<T> {
+      const this_: Traced<T> = create<Traced<T>>(α, Traced)
+      this_.trace = as(trace, Trace)
+      this_.name = as(name, Lex.Var)
+      this_.val = val
+      this_.__version()
+      return this_
+   }
+}
+
+export function as_ <T extends Value> (v: Traced<T>, ctr: Ctr<T>): Traced<T> {
+   if (v !== undefined) { // idiom for reifying datatypes means fields can be uninitialised
+      as(v, Traced)
+      as(v.val, ctr)
+   }
+   return v
 }
 
 export class Trace {

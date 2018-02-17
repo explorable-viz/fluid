@@ -3,8 +3,8 @@ import {
    dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, 
    symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { Traced, ν } from "./Runtime"
-import { Lex, Trace, join, str } from "./Syntax"
+import { ν } from "./Runtime"
+import { Lex, Trace, Traced, join, str } from "./Syntax"
 import { 
    App, ConstInt, ConstStr, Constr, ConstrTrie, EmptyBody, EmptyTrace, Fun, Let, LetRec, MatchAs,
    OpName, RecBinding, RecDefinition, Trie, Value, Var, VarTrie
@@ -15,11 +15,11 @@ import {
 export module Parse {
 
 function newExpr (t: Trace): Traced {
-   return Traced.at(ν(), t, null)
+   return Traced.at(ν(), t, null, null)
 }
 
 function __val <V extends Value> (v: V): Traced<V> {
-   return Traced.at(ν(), EmptyTrace.at(ν()), v)
+   return Traced.at(ν(), EmptyTrace.at(ν()), null, v)
 }
 
 // ch is a JavaScript "character", i.e. string of length 1. Currently not supporting Unicode
@@ -219,7 +219,7 @@ const let_: Parser<Traced> =
          dropFirst(keyword(str.in_), expr)
       ),
       ([[x, e], eʹ]: [[Lex.Var, Traced], Traced]) =>
-         Traced.at(ν(), Let.at(ν(), e, VarTrie.at(ν(), x, eʹ)), eʹ.val)
+         Traced.at(ν(), Let.at(ν(), e, VarTrie.at(ν(), x, eʹ)), null, eʹ.val)
    )
 
 const recDefinition: Parser<RecBinding> =
@@ -236,7 +236,7 @@ const letrec: Parser<Traced> =
          dropFirst(keyword(str.in_), expr)
       ),
       ([defs, body]: [RecBinding[], Traced]) =>
-         Traced.at(ν(), LetRec.at(ν(), defs, body.trace), body.val)
+         Traced.at(ν(), LetRec.at(ν(), defs, body.trace), null, body.val)
    )
 
 const constr: Parser<Traced> =

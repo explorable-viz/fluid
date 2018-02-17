@@ -35,27 +35,6 @@ function __shallowEq (o1: Object, o2: Object): boolean {
    return true
 }
 
-export class Traced<T extends Value = Value> {
-   trace: Trace
-   val: T | null
-
-   static at <T extends Value> (α: Addr, trace: Trace, val: T | null): Traced<T> {
-      const this_: Traced<T> = create<Traced<T>>(α, Traced)
-      this_.trace = as(trace, Trace)
-      this_.val = val
-      this_.__version()
-      return this_
-   }
-}
-
-export function as_ <T extends Value> (v: Traced<T>, ctr: Ctr<T>): Traced<T> {
-   if (v !== undefined) { // idiom for reifying datatypes means fields can be uninitialised
-      as(v, Traced)
-      as(v.val, ctr)
-   }
-   return v
-}
-
 const __instances: Map<Addr, Object> = new Map()
 
 // Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
