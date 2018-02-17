@@ -2,14 +2,24 @@ import { __nonNull, as, asOpt, assert } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { Ctr } from "./DataType"
 import { __def, key } from "./Memo"
-import { create } from "./Runtime"
+import { partiallyApply } from "./Primitive"
+import { binaryOps, create, unaryOps } from "./Runtime"
 
 export type Env = Map<string, Value>
 
-// Constants used for parsing, and also for toString() implementations.
 export namespace str {
+   // Primitive ops.
+   export const concat: string = '++'
+   export const div: string = '/'
+   export const equal: string = '=='
+   export const greaterT: string = '>'
+   export const lessT: string = '<'
+   export const minus: string = '-'
+   export const plus: string = '+'
+   export const times: string = '*'
+
+   // Constants used for parsing, and also for toString() implementations.
    export const arrow: string = '→'
    export const as: string = "as"
    export const equals: string = '='
@@ -86,7 +96,7 @@ export type Value = Closure | ConstInt | ConstStr | Constr | PrimOp
 
 // Primitive ops; see 0.4.4 release notes.
 export class PrimOp {
-   __apply (v: Object): Object {
+   __apply (v: Value): Value {
       return assert(false, "Would like this to be abstract.")
    }
 }
@@ -103,7 +113,7 @@ export class UnaryPrimOp extends PrimOp {
       return this_
    }
 
-   __apply (v: Object): Object {
+   __apply (v: Value): Value {
       return __nonNull(unaryOps.get(this.name))(v)
    }
 
@@ -122,7 +132,7 @@ export class BinaryPrimOp extends PrimOp {
       return this_
    }
 
-   __apply (v1: Object): PrimOp {
+   __apply (v1: Value): PrimOp {
       return partiallyApply(this, v1)
    }
 
@@ -147,7 +157,7 @@ export class UnaryPartialPrimOp extends PrimOp {
       return this_
    }
 
-   __apply (v2: Object): Object {
+   __apply (v2: Value): Value {
       return __nonNull(binaryOps.get(this.binOp.name))(this.v1, v2)
    }
 
@@ -168,7 +178,7 @@ export class Proj extends PrimOp {
       return this_
    }
 
-   __apply (v: Object): Object {
+   __apply (v: Value): Value {
       return __nonNull(projections.get(this.name))(v)
    }
 
@@ -241,14 +251,6 @@ export class Traced<T extends Value = Value> {
       this_.__version()
       return this_
    }
-}
-
-export function as_ <T extends Value> (v: Traced<T>, ctr: Ctr<T>): Traced<T> {
-   if (v !== undefined) { // idiom for reifying datatypes means fields can be uninitialised
-      as(v, Traced)
-      as(v.val, ctr)
-   }
-   return v
 }
 
 export class Trace {

@@ -3,7 +3,7 @@ import { zip } from "./util/Array"
 import { Str } from "./BaseTypes"
 import { __def, __defLocal, key, keyP } from "./Memo"
 import { eq } from "./Ord"
-import { Traced, __tracedK, __traced_var, __val, create, reflect, reify, typeCheck_ } from "./Runtime"
+import { Traced, __tracedK, __traced_var, __val, create } from "./Runtime"
 import { Env, Value } from "./Syntax"
 import * as AST from "./Syntax"
 
@@ -175,7 +175,7 @@ function match (v: Traced, ρ: Env, p: Traced): [Traced, Env] | null {
    if (p.name !== null) {
       // variable pattern always succeeds
       assert(p.val === null)
-      const x: Str = name.valOf,
+      const x: Str = p.name.valOf,
             β: Addr = keyP(α, 'valOf', 'v')
       return [__traced_var(keyP(β, 'fst', 'v'), v.trace, x, v.val), insert(ρ, x, v.val)]
    } else {
@@ -198,8 +198,8 @@ function match (v: Traced, ρ: Env, p: Traced): [Traced, Env] | null {
          const ps: Traced[] = zip(v_.args, p_.args).map(submatch)
          if (matched) {
             const β: Addr = keyP(α, 'valOf', 'v'),
-                  v_: AST.Constr = AST.Constr.at_(keyP(α, 'v_'), p_.ctr, ps)
-            return [__tracedK(keyP(β, 'fst', 'v'), v.trace, reflect(v_)), ρ)]
+                  v_: AST.Constr = AST.Constr.at(keyP(α, 'v_'), p_.ctr, ps)
+            return [__tracedK(keyP(β, 'fst', 'v'), v.trace, reflect(v_)), ρ]
          }
       }
       return null

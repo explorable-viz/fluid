@@ -1,6 +1,8 @@
 import { as, assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
-import { Trace, Value } from "./Syntax"
+import { UnaryOp, BinaryOp } from "./Primitive"
+import * as P from "./Primitive"
+import { Trace, Value, str } from "./Syntax"
 
 // At a given version (there is only one, currently) enforce "single assignment" semantics.
 Object.prototype.__version = function (): Object {
@@ -33,6 +35,25 @@ function __shallowEq (o1: Object, o2: Object): boolean {
       }
    }
    return true
+}
+
+// Populated by initPrimitives().
+export var unaryOps: Map<string, UnaryOp> = new Map
+export var binaryOps: Map<string, BinaryOp> = new Map
+
+// Map primitives to their underlying JS operation.
+function initPrimitives (): void {
+   unaryOps.set("intToString", P.intToString)
+
+   binaryOps.set(str.concat, P.concat)
+   binaryOps.set(str.div, P.div)
+   binaryOps.set(str.equal, P.equalOp)
+   binaryOps.set(str.greaterT, P.greaterT)
+   binaryOps.set(str.lessT, P.lessT)
+   binaryOps.set(str.minus, P.minus)
+   binaryOps.set(str.plus, P.plus)
+   binaryOps.set(str.times, P.times)
+   binaryOps.set("error", P.error)
 }
 
 const __instances: Map<Addr, Object> = new Map()
