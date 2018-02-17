@@ -1,5 +1,6 @@
 import { zip } from "./util/Array"
 import { __nonNull, assert, as } from "./util/Core"
+import { extend, union } from "./util/Map"
 import { eq } from "./util/Ord"
 import { __def, __defLocal, key, keyP } from "./Memo"
 import { create } from "./Runtime"
@@ -59,39 +60,43 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
                return __result(α, t, AST.Closure.at(keyP(α, "val"), ρ, [], t))
             },
 
-/*
             // See 0.4.6 release notes on why undefined values map to ⊥.
             is_OpName (t: AST.OpName): EvalResult<AST.PrimOp> {
                assert(e.val === null)
-               return get(ρ, t.name).__visit({
-                  is_None: (_) =>
-                     assert(false, "Operator not found.", t),
-                  is_Some: (op) =>
-                     __result(α, t, <AST.PrimOp>op.valOf)
-               })
+               const v_opt: Value | undefined = ρ.get(t.opName.str)
+               if (v_opt === undefined) {
+                  return assert(false, "Operator not found.", t)
+               } else {
+                  return __result(α, t, as(v_opt, AST.PrimOp))
+               }
             },
 
-            is_Var (t: AST.Var): EvalResult<Object> {
+            is_Var (t: AST.Var): EvalResult<Value> {
                assert(e.val === null)
-               return __result(α, t, get(ρ, t.name))
+               return __result(α, t, ρ.get(t.ident.str))
             },
 
-            is_Let (t: AST.Let): EvalResult<Object> {
-               const χ: EvalResult<Object> = eval_(ρ)(t.σ)(t.e),
-                     χʹ: EvalResult<Object> = eval_(union(ρ, χ.bindings))(σ)(χ.cont)
-               return __result(α, AST.Let.at(keyP(α, 'expr', 't'), χ.expr, <AST.VarTrie<Object>>χ.demand), χʹ.cont.val)
+            is_Let (t: AST.Let): EvalResult<Value> {
+               const χ: EvalResult<Value> = eval_(ρ)(t.σ)(t.e),
+                     χʹ: EvalResult<Value> = eval_(union([ρ, χ.bindings]))(σ)(χ.cont)
+               return __result(
+                  α, 
+                  AST.Let.at(keyP(α, "trace"), χ.expr, χ.demand as AST.VarTrie<Value>), 
+                  χʹ.cont.val
+               )
             },
 
             // See 0.3.4 release notes for semantics.
             is_LetRec (t: AST.LetRec): EvalResult<Object> {
-               const defs: List<AST.RecDefinition> = map(t.bindings, def),
-                     fs: List<AST.Closure> = closeDefs(ρ, defs),
+               const defs: AST.RecDefinition[] = t.bindings.map(binding => binding.def),
+                     fs: AST.Closure[] = closeDefs(ρ, defs),
                      ρ_: Env = extend(ρ, zip(map(defs, name), fs)),
                      χ: EvalResult<Object> = eval_(ρ_)(null)(__tracedK(keyP(α, '1'), t.body, e.val)),
                      bindings: List<AST.RecBinding> = map(zip(t.bindings, fs), bindRecDef)
                return __result(α, AST.LetRec.at_(keyP(α, 'expr', 't'), bindings, χ.expr.trace), χ.expr.val)
             },
 
+/*
             is_App (t: AST.App): EvalResult<Object> {
                const β: Addr = keyP(α, 'expr', 't'),
                      γ: Addr = keyP(β, 'appBody', 'v'),
@@ -132,17 +137,6 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
    })
 }
 
-// TODO: unify with the projection operators generated for each constructor.
-// __def(def)
-// function def (binding: AST.RecBinding): AST.RecDefinition {
-//    return binding.def
-// }
-
-// __def(name)
-// function name (def: AST.RecDefinition): Lex.Var {
-//    return def.name
-// }
-
 __def(closeDefs)
 function closeDefs (ρ: Env, defs: AST.RecDefinition[]): AST.Closure[] {
    const closeDef = 
@@ -166,7 +160,7 @@ function match (v: Traced, ρ: Env, p: Traced): [Traced, Env] | null {
    if (p.name !== null) {
       // variable pattern always succeeds (check whether I need to clone var here)
       assert(p.val === null)
-      return [Traced.at(α, v.trace, p.name, v.val), new Map(ρ).set(p.name.str, __nonNull(v.val))]
+      return [Traced.at(α, v.trace, p.name, v.val), extend(ρ, [[p.name.str, v.val]])]
    } else {
       // otherwise succeed iff constructors match and sub-patterns match sub-values
       const v_: AST.Constr = as(v.val, AST.Constr),
