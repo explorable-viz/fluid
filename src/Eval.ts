@@ -3,13 +3,12 @@ import { __nonNull, assert, as } from "./util/Core"
 import { extend, union } from "./util/Map"
 import { eq } from "./util/Ord"
 import { __def, __defLocal, key, keyP } from "./Memo"
-import { create } from "./Runtime"
-import { ConstInt, Constr, ConstStr, Env, Traced, Value } from "./Syntax"
+import { Env, Lex, Traced, Value } from "./Syntax"
 import * as AST from "./Syntax"
 
 export module Eval {
 
-class EvalResult<T extends Value = Value> {
+class EvalResult<T extends Value> {
    bindings: Env
    expr: Traced<T>
    demand: AST.Trie<Object>
@@ -28,110 +27,101 @@ function __result <T extends Value> (α: Addr, t: AST.Trace, v: T): EvalResult<T
 }
 
 __def(eval)
-export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalResult<T> {
-   return __defLocal(key(eval, arguments), function withDemand (σ: AST.Trie<Object>): (e: Traced) => EvalResult<T> {
-      return __defLocal(key(withDemand, arguments), function withEnv (e: Traced): EvalResult<T> {
+export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalResult<Value> {
+   return __defLocal(key(eval, arguments), function withDemand (σ: AST.Trie<Object>): (e: Traced) => EvalResult<Value> {
+      return __defLocal(key(withDemand, arguments), function withEnv (e: Traced): EvalResult<Value> {
          const α: Addr = key(withEnv, arguments)
          assert(e !== undefined, "Missing constructor argument?")
          // TODO: case where demand is empty.
          // TODO: variable trie.
-         return e.trace.__visit({
-            is_EmptyTrace (t: AST.EmptyTrace): EvalResult<T> {
-               return assert(false)
-/*               
-               return Traced.at(α, t, null, __nonNull(e.val).__visit({
-                  is_Constr (v_: Constr): Object {
-                     const β: Addr = keyP(α, 'val')
-                     return Constr.at_(β, v_.ctr, map(v_.args, eval_(ρ)(null)))
-                  },
-
-                  is_ConstInt (_: ConstInt): Int {
-                     return <Int>e.val
-                  },
-
-                  is_ConstStr (_: ConstStr): String {
-                     return <String>e.val
-                  }
-               }))
-*/
-            },
-
-            is_Fun (t: AST.Fun): EvalResult<AST.Closure> {
-               return __result(α, t, AST.Closure.at(keyP(α, "val"), ρ, [], t))
-            },
-
-            // See 0.4.6 release notes on why undefined values map to ⊥.
-            is_OpName (t: AST.OpName): EvalResult<AST.PrimOp> {
-               assert(e.val === null)
-               const v_opt: Value | undefined = ρ.get(t.opName.str)
-               if (v_opt === undefined) {
-                  return assert(false, "Operator not found.", t)
-               } else {
-                  return __result(α, t, as(v_opt, AST.PrimOp))
-               }
-            },
-
-            is_Var (t: AST.Var): EvalResult<Value> {
-               assert(e.val === null)
-               return __result(α, t, ρ.get(t.ident.str))
-            },
-
-            is_Let (t: AST.Let): EvalResult<Value> {
-               const χ: EvalResult<Value> = eval_(ρ)(t.σ)(t.e),
-                     χʹ: EvalResult<Value> = eval_(union([ρ, χ.bindings]))(σ)(χ.cont)
-               return __result(
-                  α, 
-                  AST.Let.at(keyP(α, "trace"), χ.expr, χ.demand as AST.VarTrie<Value>), 
-                  χʹ.cont.val
-               )
-            },
-
-            // See 0.3.4 release notes for semantics.
-            is_LetRec (t: AST.LetRec): EvalResult<Value> {
-               const defs: AST.RecDefinition[] = t.bindings.map(binding => binding.def),
-                     fs: AST.Closure[] = closeDefs(ρ, defs),
-                     ρ_: Env = extend(ρ, zip(defs.map(def => def.name.str), fs)),
-                     χ: EvalResult<Value> = eval_(ρ_)(null)(Traced.at(keyP(α, '1'), t.body, null, e.val)),
-                     bindings: AST.RecBinding[] = zip(t.bindings, fs).map(bindRecDef)
-               return __result(α, AST.LetRec.at(keyP(α, "trace"), bindings, χ.expr.trace), χ.expr.val)
-            },
-
-/*
-            is_App (t: AST.App): EvalResult<Object> {
-               const β: Addr = keyP(α, 'expr', 't'),
-                     γ: Addr = keyP(β, 'appBody', 'v'),
-                     χ: EvalResult<Object> = eval_(ρ)(AST.FunTrie.at_(keyP(α, '1'), Unit.at(keyP(α, '2'))))(t.func),
-                     f: Object = χ.expr.val
-               if (f instanceof AST.Closure) {
-                  const χʹ: EvalResult<Object> = eval_(ρ)(f.func.σ)(t.arg),
-                        ρʹ: Env = extend(f.ρ, zip(map(f.defs, name), closeDefs(f.ρ, f.defs))),
-                        χʺ: EvalResult<Object> = eval_(union(ρʹ, χʹ.bindings))(σ)(χʹ.cont)
-                  return __result(
-                           α,
-                           AST.App.at_(β, χ.expr, χʹ.expr, AST.FunBody.at_(γ, χʺ.demand)),
-                           χʺ.cont.val
-                        )
-               } else
-               if (f instanceof AST.PrimOp) {
-                  const χʹ: EvalResult<Object> = eval_(ρ)(null)(t.arg)
-                  // Treat a primitive (which is always unary) as having an anonymous formal parameter.
-                  // TODO: trie for forcing value of primitive type.
-                  return __result(
-                     α,
-                     AST.App.at_(β, χ.expr, χʹ.expr, AST.PrimBody.at_(γ, Str.at(keyP(γ, 'param', 'v'), '_'))),
-                     f.__apply(χʹ.expr.val)
-                  )
-               } else {
-                  return assertMessage(false, 'Not an applicable value.', χ.expr)
-               }
-            },
-*/
-            is_MatchAs (t: AST.MatchAs): EvalResult<Value> {
-               const χ: EvalResult<Value> = eval_(ρ)(t.σ)(t.e),
-                     χʹ: EvalResult<Value> = eval_(union([ρ, χ.bindings]))(σ)(χ.cont)
-               return __result(α, AST.MatchAs.at(keyP(α, "expr", "trace"), χ.expr, χ.demand), χʹ.cont.val)
+         const t: AST.Trace = e.trace
+         if (e.trace instanceof AST.EmptyTrace) {
+            return assert(false)
+            /*               
+                           return Traced.at(α, t, null, __nonNull(e.val).__visit({
+                              is_Constr (v_: Constr): Object {
+                                 const β: Addr = keyP(α, 'val')
+                                 return Constr.at_(β, v_.ctr, map(v_.args, eval_(ρ)(null)))
+                              },
+            
+                              is_ConstInt (_: ConstInt): Int {
+                                 return <Int>e.val
+                              },
+            
+                              is_ConstStr (_: ConstStr): String {
+                                 return <String>e.val
+                              }
+                           }))
+            */
+         } else
+         if (t instanceof AST.Fun) {
+            return __result(α, t, AST.Closure.at(keyP(α, "val"), ρ, [], t))
+         } else
+         // See 0.4.6 release notes on why undefined values map to ⊥.
+         if (t instanceof AST.OpName) {
+            assert(e.val === null)
+            const v_opt: Value | undefined = ρ.get(t.opName.str)
+            if (v_opt === undefined) {
+               return assert(false, "Operator not found.", e.trace)
+            } else {
+               return __result(α, e.trace, as(v_opt, AST.PrimOp))
             }
-         })
+         } else
+         if (t instanceof AST.Var) {
+            assert(e.val === null)
+            return __result(α, t, ρ.get(t.ident.str))
+         } else
+         if (t instanceof AST.Let) {
+            const χ: EvalResult<Value> = eval_(ρ)(t.σ)(t.e),
+                  χʹ: EvalResult<Value> = eval_(union([ρ, χ.bindings]))(σ)(χ.cont)
+            return __result(
+               α, 
+               AST.Let.at(keyP(α, "trace"), χ.expr, χ.demand as AST.VarTrie<Value>), 
+               χʹ.cont.val
+            )
+         } else 
+         // See 0.3.4 release notes for semantics.
+         if (t instanceof AST.LetRec) {
+            const defs: AST.RecDefinition[] = t.bindings.map(binding => binding.def),
+                  fs: AST.Closure[] = closeDefs(ρ, defs),
+                  ρ_: Env = extend(ρ, zip(defs.map(def => def.name.str), fs)),
+                  χ: EvalResult<Value> = eval_(ρ_)(null)(Traced.at(keyP(α, '1'), t.body, null, e.val)),
+                  bindings: AST.RecBinding[] = zip(t.bindings, fs).map(bindRecDef)
+            return __result(α, AST.LetRec.at(keyP(α, "trace"), bindings, χ.expr.trace), χ.expr.val)
+         } else
+         if (t instanceof AST.MatchAs) {
+            const χ: EvalResult<Value> = eval_(ρ)(t.σ)(t.e),
+                  χʹ: EvalResult<Value> = eval_(union([ρ, χ.bindings]))(σ)(χ.cont)
+            return __result(α, AST.MatchAs.at(keyP(α, "trace"), χ.expr, χ.demand), χʹ.cont.val)
+         } else
+         if (t instanceof AST.App) {
+            const β: Addr = keyP(α, 'expr', 't'),
+                  γ: Addr = keyP(β, 'appBody', 'v'),
+                  χ: EvalResult<Value> = eval_(ρ)(AST.FunTrie.at(keyP(α, '1'), Unit.at(keyP(α, '2'))))(t.func),
+                  f: Object = χ.expr.val
+            if (f instanceof AST.Closure) {
+               const χʹ: EvalResult<Value> = eval_(ρ)(f.func.σ)(t.arg),
+                     ρʹ: Env = extend(f.ρ, zip(map(f.defs, name), closeDefs(f.ρ, f.defs))),
+                     χʺ: EvalResult<Value> = eval_(union([ρʹ, χʹ.bindings]))(σ)(χʹ.cont)
+               return __result(
+                        α,
+                        AST.App.at(β, χ.expr, χʹ.expr, AST.FunBody.at(γ, χʺ.demand)),
+                        χʺ.cont.val
+                     )
+            } else
+            if (f instanceof AST.PrimOp) {
+               const χʹ: EvalResult<Value> = eval_(ρ)(null)(t.arg)
+               // Treat a primitive (which is always unary) as having an anonymous formal parameter.
+               // TODO: trie for forcing value of primitive type.
+               return __result(
+                  α,
+                  AST.App.at(β, χ.expr, χʹ.expr, AST.PrimBody.at(γ, new Lex.Var('_'))),
+                  f.__apply(χʹ.expr.val)
+               )
+            } else {
+               return assert(false, 'Not an applicable value.', χ.expr)
+            }
+         }
       })
    })
 }
