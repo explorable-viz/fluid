@@ -125,13 +125,12 @@ export function eval_ <T extends Value> (ρ: Env): (σ: AST.Trie<Object>) => (e:
                   return assertMessage(false, 'Not an applicable value.', χ.expr)
                }
             },
-
-            is_MatchAs (t: AST.MatchAs): EvalResult<Object> {
-               const χ: EvalResult<Object> = eval_(ρ)(t.σ)(t.e),
-                     χʹ: EvalResult<Object> = eval_(union(ρ, χ.bindings))(σ)(χ.cont)
-               return __result(α, AST.MatchAs.at_(keyP(α, 'expr', 't'), χ.expr, χ.demand), χʹ.cont.val)
-            }
 */
+            is_MatchAs (t: AST.MatchAs): EvalResult<Value> {
+               const χ: EvalResult<Value> = eval_(ρ)(t.σ)(t.e),
+                     χʹ: EvalResult<Value> = eval_(union([ρ, χ.bindings]))(σ)(χ.cont)
+               return __result(α, AST.MatchAs.at(keyP(α, "expr", "trace"), χ.expr, χ.demand), χʹ.cont.val)
+            }
          })
       })
    })
