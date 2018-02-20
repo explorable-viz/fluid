@@ -96,6 +96,14 @@ export type Value = Closure | ConstInt | ConstStr | Constr | PrimOp
 
 // Primitive ops; see 0.4.4 release notes.
 export class PrimOp {
+   _apply (v: Value | null): Value | null {
+      if (v === null) {
+         return null
+      } else {
+         return this.__apply(v)
+      }
+   }
+
    __apply (v: Value): Value {
       return assert(false, "Would like this to be abstract.")
    }

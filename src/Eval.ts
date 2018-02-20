@@ -39,7 +39,7 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => Eva
             const v: Value = __nonNull(e.val)
             if (v instanceof AST.Constr) {               
                if (σ instanceof AST.ConstrTrie) {
-                  const x: Trie<Traced> = σ.cases.get(v.ctr.str)
+                  const σ_: Trie<Traced> = σ.cases.get(v.ctr.str)
                   const β: Addr = keyP(α, "val")
                   return __result(α, t, AST.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
                } else {
@@ -115,7 +115,7 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => Eva
                return __result(
                   α,
                   AST.App.at(β, χ.expr, χʹ.expr, AST.PrimBody.at(γ, new Lex.Var('_'))),
-                  f.__apply(χʹ.expr.val)
+                  f._apply(χʹ.expr.val)
                )
             } else {
                return assert(false, "Not an applicable value.", χ.expr)
