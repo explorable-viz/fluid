@@ -90,12 +90,12 @@ export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalRe
          } else
          if (t instanceof AST.App) {
             const β: Addr = keyP(α, "trace"),
-                  γ: Addr = keyP(β, 'appBody', 'v'),
-                  χ: EvalResult = eval_(ρ)(AST.FunTrie.at(keyP(α, '1'), Unit.at(keyP(α, '2'))))(t.func),
-                  f: Object = χ.expr.val
+                  γ: Addr = keyP(β, "appBody", "v"),
+                  χ: EvalResult = eval_(ρ)(AST.FunTrie.at(keyP(α, "1"), null))(t.func),
+                  f: Value | null = χ.expr.val
             if (f instanceof AST.Closure) {
                const χʹ: EvalResult = eval_(ρ)(f.func.σ)(t.arg),
-                     ρʹ: Env = extend(f.ρ, zip(f.defs.map(def => def.name), closeDefs(f.ρ, f.defs))),
+                     ρʹ: Env = extend(f.ρ, zip(f.defs.map(def => def.name.str), closeDefs(f.ρ, f.defs))),
                      χʺ: EvalResult = eval_(union([ρʹ, χʹ.bindings]))(σ)(χʹ.cont)
                return __result(
                         α,
