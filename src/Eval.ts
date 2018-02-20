@@ -1,9 +1,9 @@
 import { zip } from "./util/Array"
 import { __nonNull, assert, as } from "./util/Core"
-import { extend, union } from "./util/Map"
+import { extend, map, union } from "./util/Map"
 import { eq } from "./util/Ord"
 import { __def, __defLocal, key, keyP } from "./Memo"
-import { Env, Lex, Traced, Value } from "./Syntax"
+import { Env, Lex, Traced, Trie, Value } from "./Syntax"
 import * as AST from "./Syntax"
 
 export module Eval {
@@ -11,13 +11,13 @@ export module Eval {
 class EvalResult {
    bindings: Env
    expr: Traced
-   demand: AST.Trie<Object>
+   demand: Trie<Object>
    cont: Traced
 
-   constructor (bindings: Env, expr: Traced, demand: AST.Trie<Object>, cont: Traced) {
+   constructor (bindings: Env, expr: Traced, demand: Trie<Object>, cont: Traced) {
       this.bindings = as(bindings, Map)
       this.expr = as(expr, Traced)
-      this.demand = as(demand, AST.Trie)
+      this.demand = as(demand, Trie)
       this.cont = as(cont, Traced)
    }
 }
@@ -27,8 +27,8 @@ function __result (α: Addr, t: AST.Trace, v: Value | null): EvalResult {
 }
 
 __def(eval)
-export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalResult {
-   return __defLocal(key(eval, arguments), function withDemand (σ: AST.Trie<Object>): (e: Traced) => EvalResult {
+export function eval_ (ρ: Env): (σ: Trie<Object>) => (e: Traced) => EvalResult {
+   return __defLocal(key(eval, arguments), function withDemand (σ: Trie<Object>): (e: Traced) => EvalResult {
       return __defLocal(key(withDemand, arguments), function withEnv (e: Traced): EvalResult {
          const α: Addr = key(withEnv, arguments)
          assert(e !== undefined, "Missing constructor argument?")
@@ -37,9 +37,14 @@ export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalRe
          const t: AST.Trace = e.trace
          if (t instanceof AST.EmptyTrace) {
             const v: Value = __nonNull(e.val)
-            if (v instanceof AST.Constr) {
-               const β: Addr = keyP(α, "val")
-               return __result(α, t, AST.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
+            if (v instanceof AST.Constr) {               
+               if (σ instanceof AST.ConstrTrie) {
+                  const x: Trie<Traced> = σ.cases.get(v.ctr.str)
+                  const β: Addr = keyP(α, "val")
+                  return __result(α, t, AST.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
+               } else {
+                  return assert(false, "Demand mismatch.")
+               }
             } else
             if (v instanceof AST.ConstInt) {
                return e
@@ -79,7 +84,7 @@ export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalRe
             const defs: AST.RecDefinition[] = t.bindings.map(binding => binding.def),
                   fs: AST.Closure[] = closeDefs(ρ, defs),
                   ρ_: Env = extend(ρ, zip(defs.map(def => def.name.str), fs)),
-                  χ: EvalResult = eval_(ρ_)(null)(Traced.at(keyP(α, '1'), t.body, null, e.val)),
+                  χ: EvalResult = eval_(ρ_)(null)(Traced.at(keyP(α, "1"), t.body, null, e.val)),
                   bindings: AST.RecBinding[] = zip(t.bindings, fs).map(bindRecDef)
             return __result(α, AST.LetRec.at(keyP(α, "trace"), bindings, χ.expr.trace), χ.expr.val)
          } else
