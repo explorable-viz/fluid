@@ -8,13 +8,13 @@ import * as AST from "./Syntax"
 
 export module Eval {
 
-class EvalResult<T extends Value> {
+class EvalResult {
    bindings: Env
-   expr: Traced<T>
+   expr: Traced
    demand: AST.Trie<Object>
    cont: Traced
 
-   constructor (bindings: Env, expr: Traced<T>, demand: AST.Trie<Object>, cont: Traced) {
+   constructor (bindings: Env, expr: Traced, demand: AST.Trie<Object>, cont: Traced) {
       this.bindings = as(bindings, Map)
       this.expr = as(expr, Traced)
       this.demand = as(demand, AST.Trie)
@@ -22,37 +22,31 @@ class EvalResult<T extends Value> {
    }
 }
 
-function __result <T extends Value> (α: Addr, t: AST.Trace, v: T): EvalResult<T> {
+function __result (α: Addr, t: AST.Trace, v: Value | null): EvalResult {
    return new EvalResult(null, Traced.at(α, t, null, v), null, null)
 }
 
 __def(eval)
-export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalResult<Value> {
-   return __defLocal(key(eval, arguments), function withDemand (σ: AST.Trie<Object>): (e: Traced) => EvalResult<Value> {
-      return __defLocal(key(withDemand, arguments), function withEnv (e: Traced): EvalResult<Value> {
+export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalResult {
+   return __defLocal(key(eval, arguments), function withDemand (σ: AST.Trie<Object>): (e: Traced) => EvalResult {
+      return __defLocal(key(withDemand, arguments), function withEnv (e: Traced): EvalResult {
          const α: Addr = key(withEnv, arguments)
          assert(e !== undefined, "Missing constructor argument?")
          // TODO: case where demand is empty.
          // TODO: variable trie.
          const t: AST.Trace = e.trace
-         if (e.trace instanceof AST.EmptyTrace) {
-            return assert(false)
-            /*               
-                           return Traced.at(α, t, null, __nonNull(e.val).__visit({
-                              is_Constr (v_: Constr): Object {
-                                 const β: Addr = keyP(α, 'val')
-                                 return Constr.at_(β, v_.ctr, map(v_.args, eval_(ρ)(null)))
-                              },
-            
-                              is_ConstInt (_: ConstInt): Int {
-                                 return <Int>e.val
-                              },
-            
-                              is_ConstStr (_: ConstStr): String {
-                                 return <String>e.val
-                              }
-                           }))
-            */
+         if (t instanceof AST.EmptyTrace) {
+            const v: Value = __nonNull(e.val)
+            if (v instanceof AST.Constr) {
+               const β: Addr = keyP(α, "val")
+               return __result(α, t, AST.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
+            } else
+            if (v instanceof AST.ConstInt) {
+               return e
+            } else
+            if (v instanceof AST.ConstStr) {
+               return e
+            }
          } else
          if (t instanceof AST.Fun) {
             return __result(α, t, AST.Closure.at(keyP(α, "val"), ρ, [], t))
@@ -69,11 +63,11 @@ export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalRe
          } else
          if (t instanceof AST.Var) {
             assert(e.val === null)
-            return __result(α, t, ρ.get(t.ident.str))
+            return __result(α, t, ρ.has(t.ident.str) ? ρ.get(t.ident.str)! : null)
          } else
          if (t instanceof AST.Let) {
-            const χ: EvalResult<Value> = eval_(ρ)(t.σ)(t.e),
-                  χʹ: EvalResult<Value> = eval_(union([ρ, χ.bindings]))(σ)(χ.cont)
+            const χ: EvalResult = eval_(ρ)(t.σ)(t.e),
+                  χʹ: EvalResult = eval_(union([ρ, χ.bindings]))(σ)(χ.cont)
             return __result(
                α, 
                AST.Let.at(keyP(α, "trace"), χ.expr, χ.demand as AST.VarTrie<Value>), 
@@ -85,24 +79,24 @@ export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalRe
             const defs: AST.RecDefinition[] = t.bindings.map(binding => binding.def),
                   fs: AST.Closure[] = closeDefs(ρ, defs),
                   ρ_: Env = extend(ρ, zip(defs.map(def => def.name.str), fs)),
-                  χ: EvalResult<Value> = eval_(ρ_)(null)(Traced.at(keyP(α, '1'), t.body, null, e.val)),
+                  χ: EvalResult = eval_(ρ_)(null)(Traced.at(keyP(α, '1'), t.body, null, e.val)),
                   bindings: AST.RecBinding[] = zip(t.bindings, fs).map(bindRecDef)
             return __result(α, AST.LetRec.at(keyP(α, "trace"), bindings, χ.expr.trace), χ.expr.val)
          } else
          if (t instanceof AST.MatchAs) {
-            const χ: EvalResult<Value> = eval_(ρ)(t.σ)(t.e),
-                  χʹ: EvalResult<Value> = eval_(union([ρ, χ.bindings]))(σ)(χ.cont)
+            const χ: EvalResult = eval_(ρ)(t.σ)(t.e),
+                  χʹ: EvalResult = eval_(union([ρ, χ.bindings]))(σ)(χ.cont)
             return __result(α, AST.MatchAs.at(keyP(α, "trace"), χ.expr, χ.demand), χʹ.cont.val)
          } else
          if (t instanceof AST.App) {
-            const β: Addr = keyP(α, 'expr', 't'),
+            const β: Addr = keyP(α, "trace"),
                   γ: Addr = keyP(β, 'appBody', 'v'),
-                  χ: EvalResult<Value> = eval_(ρ)(AST.FunTrie.at(keyP(α, '1'), Unit.at(keyP(α, '2'))))(t.func),
+                  χ: EvalResult = eval_(ρ)(AST.FunTrie.at(keyP(α, '1'), Unit.at(keyP(α, '2'))))(t.func),
                   f: Object = χ.expr.val
             if (f instanceof AST.Closure) {
-               const χʹ: EvalResult<Value> = eval_(ρ)(f.func.σ)(t.arg),
-                     ρʹ: Env = extend(f.ρ, zip(map(f.defs, name), closeDefs(f.ρ, f.defs))),
-                     χʺ: EvalResult<Value> = eval_(union([ρʹ, χʹ.bindings]))(σ)(χʹ.cont)
+               const χʹ: EvalResult = eval_(ρ)(f.func.σ)(t.arg),
+                     ρʹ: Env = extend(f.ρ, zip(f.defs.map(def => def.name), closeDefs(f.ρ, f.defs))),
+                     χʺ: EvalResult = eval_(union([ρʹ, χʹ.bindings]))(σ)(χʹ.cont)
                return __result(
                         α,
                         AST.App.at(β, χ.expr, χʹ.expr, AST.FunBody.at(γ, χʺ.demand)),
@@ -110,7 +104,7 @@ export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalRe
                      )
             } else
             if (f instanceof AST.PrimOp) {
-               const χʹ: EvalResult<Value> = eval_(ρ)(null)(t.arg)
+               const χʹ: EvalResult = eval_(ρ)(null)(t.arg)
                // Treat a primitive (which is always unary) as having an anonymous formal parameter.
                // TODO: trie for forcing value of primitive type.
                return __result(
@@ -119,9 +113,10 @@ export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalRe
                   f.__apply(χʹ.expr.val)
                )
             } else {
-               return assert(false, 'Not an applicable value.', χ.expr)
+               return assert(false, "Not an applicable value.", χ.expr)
             }
          }
+         return assert(false)
       })
    })
 }
