@@ -98,10 +98,10 @@ export function eval_ (ρ: Env): (σ: AST.Trie<Object>) => (e: Traced) => EvalRe
                      ρʹ: Env = extend(f.ρ, zip(f.defs.map(def => def.name.str), closeDefs(f.ρ, f.defs))),
                      χʺ: EvalResult = eval_(union([ρʹ, χʹ.bindings]))(σ)(χʹ.cont)
                return __result(
-                        α,
-                        AST.App.at(β, χ.expr, χʹ.expr, AST.FunBody.at(γ, χʺ.demand)),
-                        χʺ.cont.val
-                     )
+                  α,
+                  AST.App.at(β, χ.expr, χʹ.expr, AST.FunBody.at(γ, χʺ.demand)),
+                  χʺ.cont.val
+               )
             } else
             if (f instanceof AST.PrimOp) {
                const χʹ: EvalResult = eval_(ρ)(null)(t.arg)

@@ -324,13 +324,11 @@ export class PrimBody extends AppBody {
 }
 
 export class FunBody extends AppBody {
-   x: Lex.Var
-   e: Traced
+   σ: Trie<Traced>
 
-   static at (α: Addr, x: Lex.Var, e: Traced): FunBody {
+   static at (α: Addr, σ: Trie<Traced>): FunBody {
       const this_: FunBody = create(α, FunBody)
-      this_.x = as(x, Lex.Var)
-      this_.e = as(e, Traced)
+      this_.σ = as(σ, Trie)
       this_.__version()
       return this_
    }
