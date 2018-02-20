@@ -6,7 +6,7 @@ import { __def, key } from "./Memo"
 import { partiallyApply } from "./Primitive"
 import { binaryOps, create, projections, unaryOps } from "./Runtime"
 
-export type Env = Map<string, Value>
+export type Env = Map<string, Value | null>
 
 export namespace str {
    // Primitive ops.

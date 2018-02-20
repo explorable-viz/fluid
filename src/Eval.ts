@@ -27,7 +27,7 @@ function __result (α: Addr, t: AST.Trace, v: Value | null): EvalResult {
 }
 
 __def(eval)
-export function eval_ (ρ: Env): (σ: Trie<Object>) => (e: Traced) => EvalResult {
+export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => EvalResult {
    return __defLocal(key(eval, arguments), function withDemand (σ: Trie<Object>): (e: Traced) => EvalResult {
       return __defLocal(key(withDemand, arguments), function withEnv (e: Traced): EvalResult {
          const α: Addr = key(withEnv, arguments)
