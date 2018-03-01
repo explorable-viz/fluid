@@ -91,16 +91,12 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Expr.Expr) => 
                   return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
                } else
                if (f instanceof Value.PrimOp) {
-                  const χʹ: EvalResult = eval_(ρ)(null)(t.arg)
                   // Treat a primitive (which is always unary) as having an anonymous formal parameter.
+                  const [tv, , γv]: EvalResult = eval_(ρ)(f.func.σ)(e.arg)                        
                   // TODO: trie for forcing value of primitive type.
-                  return __result(
-                     α,
-                     AST.App.at(β, χ.expr, χʹ.expr, AST.PrimBody.at(γ, new Lex.Var("_"))),
-                     f._apply(χʹ.expr.val)
-                  )
+                  return __result(α, Trace.PrimApp.at(β, tf, tv), f._apply(tv.val), new Map, null)
                } else {
-                  return assert(false, "Not an applicable value.", χ.expr)
+                  return assert(false, "Not an applicable value.", f)
                }
             }
             return assert(false)
@@ -110,16 +106,16 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Expr.Expr) => 
 }
 
 __def(closeDefs)
-function closeDefs (ρ: Env, defs: AST.RecDefinition[]): AST.Closure[] {
+function closeDefs (ρ: Env, defs: AST.RecDefinition[]): Value.Closure[] {
    const closeDef = 
-      __defLocal(key(closeDefs, arguments), function closeDef (def: AST.RecDefinition): AST.Closure {
-         return AST.Closure.at(key(closeDef, arguments), ρ, defs, def.func)
+      __defLocal(key(closeDefs, arguments), function closeDef (def: AST.RecDefinition): Value.Closure {
+         return Value.Closure.at(key(closeDef, arguments), ρ, defs, def.func)
       })
    return defs.map(closeDef)
 }
 
 __def(bindRecDef)
-function bindRecDef ([binding, f]: [AST.RecBinding, AST.Closure]): AST.RecBinding {
+function bindRecDef ([binding, f]: [AST.RecBinding, Value.Closure]): AST.RecBinding {
   const α: Addr = key(bindRecDef, arguments)
   return AST.RecBinding.at(α, binding.def, f)
 }
