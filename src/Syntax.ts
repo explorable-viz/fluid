@@ -6,7 +6,17 @@ import { __def, key } from "./Memo"
 import { partiallyApply } from "./Primitive"
 import { binaryOps, create, projections, unaryOps } from "./Runtime"
 
-export type Env = Map<string, Value | null>
+export class EnvEntry {
+   ρ: Env
+   e: Expr.Expr
+
+   constructor(ρ: Env, e: Expr.Expr) {
+      this.ρ = ρ
+      this.e = e  
+   }
+}
+
+export type Env = Map<string, EnvEntry | null>
 
 export namespace str {
    // Primitive ops.
@@ -245,16 +255,13 @@ export class Constr {
    }
 }
 
-// The 'name' field appears here to allow the syntactic unification of patterns with values.
 export class Traced<T extends Value = Value> {
    trace: Trace
-   name: Lex.Var | null
    val: T | null
 
-   static at <T extends Value> (α: Addr, trace: Trace, name: Lex.Var | null, val: T | null): Traced<T> {
+   static at <T extends Value> (α: Addr, trace: Trace, val: T | null): Traced<T> {
       const this_: Traced<T> = create<Traced<T>>(α, Traced)
       this_.trace = as(trace, Trace)
-      this_.name = as(name, Lex.Var)
       this_.val = val
       this_.__version()
       return this_
@@ -279,17 +286,6 @@ export class OpName extends Trace {
    static at (α: Addr, opName: Lex.OpName): OpName {
       const this_: OpName = create(α, OpName)
       this_.opName = as(opName, Lex.OpName)
-      this_.__version()
-      return this_
-   }
-}
-
-export class Var extends Trace {
-   ident: Lex.Var
-
-   static at (α: Addr, ident: Lex.Var): Var {
-      const this_: Var = create(α, Var)
-      this_.ident = as(ident, Lex.Var)
       this_.__version()
       return this_
    }
@@ -467,6 +463,19 @@ export namespace Trace {
          return this_
       }
    }
+
+   export class Var extends Trace {
+      x: Lex.Var
+      t: Trace
+
+      static at (α: Addr, x: Lex.Var, t: Trace): Var {
+         const this_: Var = create(α, Var)
+         this_.x = as(x, Lex.Var)
+         this_.t = as(t, Trace)
+         this_.__version()
+         return this_
+      }
+   }
 }
 
 export namespace Expr {
@@ -495,6 +504,17 @@ export namespace Expr {
          const this_: MatchAs = create(α, MatchAs)
          this_.e = as(e, Traced)
          this_.σ = as(σ, Trie)
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class Var extends Expr {
+      ident: Lex.Var
+   
+      static at (α: Addr, ident: Lex.Var): Var {
+         const this_: Var = create(α, Var)
+         this_.ident = as(ident, Lex.Var)
          this_.__version()
          return this_
       }

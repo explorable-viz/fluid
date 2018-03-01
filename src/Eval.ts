@@ -3,7 +3,7 @@ import { __nonNull, assert, as } from "./util/Core"
 import { extend, map, union } from "./util/Map"
 import { eq } from "./util/Ord"
 import { __def, __defLocal, key, keyP } from "./Memo"
-import { Env, Expr, Lex, Trace, Traced, Trie, Value } from "./Syntax"
+import { Env, EnvEntry, Expr, Lex, Trace, Traced, Trie, Value } from "./Syntax"
 import * as AST from "./Syntax"
 
 export module Eval {
@@ -57,9 +57,10 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Expr.Expr) => 
                   return __result(α, e.trace, as(ρ.get(t.opName.str), AST.PrimOp))
                }
             } else
-            if (e instanceof AST.Var) {
-               assert(e.val === null)
-               return __result(α, t, ρ.has(t.ident.str) ? ρ.get(t.ident.str)! : null)
+            if (e instanceof Expr.Var) {
+               const cls: EnvEntry = __nonNull(ρ.get(e.ident.str)),
+                     [tv, ρʺ, σv]: EvalResult = eval_(cls.ρ)(σ)(cls.e)
+               return __result(α, Trace.Var.at(α, e.ident, tv.trace), tv.val, ρʺ, σv)
             } else
             if (e instanceof Expr.Let) {
                const [tu, ρʹ, σu]: EvalResult = eval_(ρ)(e.σ)(e.e),
