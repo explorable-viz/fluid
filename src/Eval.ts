@@ -10,8 +10,8 @@ export module Eval {
 
 type EvalResult = [Traced, Env, Traced] // v, ρ, σv
 
-function __result (α: Addr, t: Trace, v: Value | null, ρ: Env, κ: Traced): EvalResult {
-   return [Traced.at(α, t, null, v), ρ, κ]
+function __result (α: Addr, t: Trace, v: Value.Value | null, ρ: Env, κ: Traced): EvalResult {
+   return [Traced.at(α, t, v), ρ, κ]
 }
 
 __def(eval)
@@ -24,20 +24,20 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Expr.Expr) => 
             // TODO
          } else {
             if (e instanceof AST.EmptyTrace) {
-               const v: Value = __nonNull(e.val)
-               if (v instanceof AST.Constr) {               
+               const v: Value.Value = __nonNull(e.val)
+               if (v instanceof Value.Constr) {               
                   if (σ instanceof AST.ConstrTrie) {
                      const σʹ: Trie<Traced> = σ.cases.get(v.ctr.str)
                      const β: Addr = keyP(α, "val")
-                     return __result(α, t, AST.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
+                     return __result(α, t, Value.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
                   } else {
                      return assert(false, "Demand mismatch.")
                   }
                } else
-               if (v instanceof AST.ConstInt) {
+               if (v instanceof Value.ConstInt) {
                   return e
                } else
-               if (v instanceof AST.ConstStr) {
+               if (v instanceof Value.ConstStr) {
                   return e
                }
             } else
@@ -50,8 +50,7 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Expr.Expr) => 
             } else
             // See 0.4.6 release notes on why undefined values map to ⊥.
             if (e instanceof AST.OpName) {
-               assert(e.val === null)
-               if (!ρ.has(t.opName.str)) {
+               if (!ρ.has(e.opName.str)) {
                   return assert(false, "Operator not found.", t.opName)
                } else {
                   return __result(α, e.trace, as(ρ.get(t.opName.str), AST.PrimOp))
@@ -70,7 +69,7 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Expr.Expr) => 
             // See 0.3.4 release notes for semantics.
             if (e instanceof AST.LetRec) {
                const defs: AST.RecDefinition[] = e.bindings.map(binding => binding.def),
-                     fs: AST.Closure[] = closeDefs(ρ, defs),
+                     fs: Value.Closure[] = closeDefs(ρ, defs),
                      ρʹ: Env = extend(ρ, zip(defs.map(def => def.name.str), fs)),
                      χ: EvalResult = eval_(ρʹ)(null)(Traced.at(keyP(α, "1"), t.body, null, e.val)),
                      bindings: AST.RecBinding[] = zip(t.bindings, fs).map(bindRecDef)
@@ -84,14 +83,14 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Expr.Expr) => 
             if (e instanceof Expr.App) {
                const β: Addr = keyP(α, "trace"),
                      [tf, ,]: EvalResult = eval_(ρ)(AST.FunTrie.at(keyP(α, "1"), null))(e.func),
-                     f: Value | null = tf.val
-               if (f instanceof AST.Closure) {
+                     f: Value.Value | null = tf.val
+               if (f instanceof Value.Closure) {
                   const [tu, ρ2, σʹu]: EvalResult = eval_(ρ)(f.func.σ)(e.arg),
                         // extend(, zip(f.defs.map(def => def.name.str), closeDefs(f.ρ, f.defs))
                         [tv, ρʹ, σv]: EvalResult = eval_(union([f.ρ, ρ2]))(σ)(σʹu)
                   return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
                } else
-               if (f instanceof AST.PrimOp) {
+               if (f instanceof Value.PrimOp) {
                   const χʹ: EvalResult = eval_(ρ)(null)(t.arg)
                   // Treat a primitive (which is always unary) as having an anonymous formal parameter.
                   // TODO: trie for forcing value of primitive type.

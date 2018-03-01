@@ -102,156 +102,158 @@ export namespace Lex {
    }
 }
 
-export type Value = Closure | ConstInt | ConstStr | Constr | PrimOp
+export namespace Value {
+   export type Value = Closure | ConstInt | ConstStr | Constr | PrimOp
 
-// Primitive ops; see 0.4.4 release notes.
-export class PrimOp {
-   _apply (v: Value | null): Value | null {
-      if (v === null) {
-         return null
-      } else {
-         return this.__apply(v)
+   // Primitive ops; see 0.4.4 release notes.
+   export class PrimOp {
+      _apply (v: Value | null): Value | null {
+         if (v === null) {
+            return null
+         } else {
+            return this.__apply(v)
+         }
+      }
+   
+      __apply (v: Value): Value {
+         return assert(false, "Would like this to be abstract.")
       }
    }
-
-   __apply (v: Value): Value {
-      return assert(false, "Would like this to be abstract.")
-   }
-}
-
-// Assume all dynamic type-checking is performed inside the underlying JS operation, although
-// currently there mostly isn't any.
-export class UnaryPrimOp extends PrimOp {
-   name: string
-
-   static at (α: Addr, name: string): UnaryPrimOp {
-      const this_: UnaryPrimOp = create(α, UnaryPrimOp)
-      this_.name = name
-      this_.__version()
-      return this_
-   }
-
-   __apply (v: Value): Value {
-      return __nonNull(unaryOps.get(this.name))(v)
-   }
-
-   toString (): string {
-      return this.name
-   }
-}
-
-export class BinaryPrimOp extends PrimOp {
-   name: string
-
-   static at (α: Addr, name: string): BinaryPrimOp {
-      const this_: BinaryPrimOp = create(α, BinaryPrimOp)
-      this_.name = name
-      this_.__version()
-      return this_
-   }
-
-   __apply (v1: Value): PrimOp {
-      return partiallyApply(this, v1)
-   }
-
    
-   toString (): string {
-      return this.name
+   // Assume all dynamic type-checking is performed inside the underlying JS operation, although
+   // currently there mostly isn't any.
+   export class UnaryPrimOp extends PrimOp {
+      name: string
+   
+      static at (α: Addr, name: string): UnaryPrimOp {
+         const this_: UnaryPrimOp = create(α, UnaryPrimOp)
+         this_.name = name
+         this_.__version()
+         return this_
+      }
+   
+      __apply (v: Value): Value {
+         return __nonNull(unaryOps.get(this.name))(v)
+      }
+   
+      toString (): string {
+         return this.name
+      }
    }
-}
-
-// Binary op that has been applied to a single operand.
-export class UnaryPartialPrimOp extends PrimOp {
-   name: string
-   binOp: BinaryPrimOp
-   v1: Value
-
-   static at (α: Addr, name: string, binOp: BinaryPrimOp, v1: Value): UnaryPartialPrimOp {
-      const this_: UnaryPartialPrimOp = create(α, UnaryPartialPrimOp)
-      this_.name = name
-      this_.binOp = as(binOp, BinaryPrimOp)
-      this_.v1 = v1
-      this_.__version()
-      return this_
+   
+   export class BinaryPrimOp extends PrimOp {
+      name: string
+   
+      static at (α: Addr, name: string): BinaryPrimOp {
+         const this_: BinaryPrimOp = create(α, BinaryPrimOp)
+         this_.name = name
+         this_.__version()
+         return this_
+      }
+   
+      __apply (v1: Value): PrimOp {
+         return partiallyApply(this, v1)
+      }
+   
+      
+      toString (): string {
+         return this.name
+      }
    }
-
-   __apply (v2: Value): Value {
-      return __nonNull(binaryOps.get(this.binOp.name))(this.v1, v2)
+   
+   // Binary op that has been applied to a single operand.
+   export class UnaryPartialPrimOp extends PrimOp {
+      name: string
+      binOp: BinaryPrimOp
+      v1: Value
+   
+      static at (α: Addr, name: string, binOp: BinaryPrimOp, v1: Value): UnaryPartialPrimOp {
+         const this_: UnaryPartialPrimOp = create(α, UnaryPartialPrimOp)
+         this_.name = name
+         this_.binOp = as(binOp, BinaryPrimOp)
+         this_.v1 = v1
+         this_.__version()
+         return this_
+      }
+   
+      __apply (v2: Value): Value {
+         return __nonNull(binaryOps.get(this.binOp.name))(this.v1, v2)
+      }
+   
+      toString (): string {
+         return this.name
+      }
    }
-
-   toString (): string {
-      return this.name
+   
+   // Syntactically distinguish projection functions from other unary ops, previously because we generated an
+   // implementation; may no longer be necessary.
+   export class Proj extends PrimOp {
+      name: string
+   
+      static at (α: Addr, name: string): Proj {
+         const this_: Proj = create(α, Proj)
+         this_.name = name
+         this_.__version()
+         return this_
+      }
+   
+      __apply (v: Value): Value {
+         return __nonNull(projections.get(this.name))(v)
+      }
+   
+      toString (): string {
+         return this.name
+      }
    }
-}
-
-// Syntactically distinguish projection functions from other unary ops, previously because we generated an
-// implementation; may no longer be necessary.
-export class Proj extends PrimOp {
-   name: string
-
-   static at (α: Addr, name: string): Proj {
-      const this_: Proj = create(α, Proj)
-      this_.name = name
-      this_.__version()
-      return this_
+   
+   export class Closure {
+      ρ: Env
+      defs: RecDefinition[]
+      func: Fun
+   
+      static at (α: Addr, ρ: Env, defs: RecDefinition[], func: Fun): Closure {
+         const this_: Closure = create(α, Closure)
+         this_.ρ = ρ
+         this_.defs = defs
+         this_.func = as(func, Fun)
+         this_.__version()
+         return this_
+      }
    }
-
-   __apply (v: Value): Value {
-      return __nonNull(projections.get(this.name))(v)
+   
+   export class ConstInt {
+      val: number
+   
+      static at (α: Addr, val: number): ConstInt {
+         const this_: ConstInt = create(α, ConstInt)
+         this_.val = val
+         this_.__version()
+         return this_
+      }
    }
-
-   toString (): string {
-      return this.name
+   
+   export class ConstStr {
+      val: string
+   
+      static at (α: Addr, val: string): ConstStr {
+         const this_: ConstStr = create(α, ConstStr)
+         this_.val = val
+         this_.__version()
+         return this_
+      }
    }
-}
-
-export class Closure {
-   ρ: Env
-   defs: RecDefinition[]
-   func: Fun
-
-   static at (α: Addr, ρ: Env, defs: RecDefinition[], func: Fun): Closure {
-      const this_: Closure = create(α, Closure)
-      this_.ρ = ρ
-      this_.defs = defs
-      this_.func = as(func, Fun)
-      this_.__version()
-      return this_
-   }
-}
-
-export class ConstInt {
-   val: number
-
-   static at (α: Addr, val: number): ConstInt {
-      const this_: ConstInt = create(α, ConstInt)
-      this_.val = val
-      this_.__version()
-      return this_
-   }
-}
-
-export class ConstStr {
-   val: string
-
-   static at (α: Addr, val: string): ConstStr {
-      const this_: ConstStr = create(α, ConstStr)
-      this_.val = val
-      this_.__version()
-      return this_
-   }
-}
-
-export class Constr {
-   ctr: Lex.Ctr
-   args: Traced[]
-
-   static at (α: Addr, ctr: Lex.Ctr, args: Traced[]): Constr {
-      const this_: Constr = create(α, Constr)
-      this_.ctr = as(ctr, Lex.Ctr)
-      this_.args = args
-      this_.__version()
-      return this_
+   
+   export class Constr {
+      ctr: Lex.Ctr
+      args: Traced[]
+   
+      static at (α: Addr, ctr: Lex.Ctr, args: Traced[]): Constr {
+         const this_: Constr = create(α, Constr)
+         this_.ctr = as(ctr, Lex.Ctr)
+         this_.args = args
+         this_.__version()
+         return this_
+      }
    }
 }
 
