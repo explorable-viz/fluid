@@ -10,8 +10,8 @@ export module Eval {
 
 type EvalResult = [Traced, Env, Traced] // v, ρ, σv
 
-function __result (α: Addr, t: AST.Trace, v: Value | null, ρ: Env, cont: Traced): EvalResult {
-   return [Traced.at(α, t, null, v), ρ, cont]
+function __result (α: Addr, t: AST.Trace, v: Value | null, ρ: Env, κ: Traced): EvalResult {
+   return [Traced.at(α, t, null, v), ρ, κ]
 }
 
 __def(eval)
@@ -63,12 +63,14 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => Eva
                return __result(α, t, ρ.has(t.ident.str) ? ρ.get(t.ident.str)! : null)
             } else
             if (t instanceof AST.Let) {
-               const χ: EvalResult = eval_(ρ)(t.σ)(t.e),
-                     χʹ: EvalResult = eval_(union([ρ, χ.ρ]))(σ)(χ.cont)
+               const [tu, ρʹ, σu]: EvalResult = eval_(ρ)(t.σ)(t.e),
+                     [tv, ρʺ, κ]: EvalResult = eval_(union([ρ, ρʹ]))(σ)(σu)
                return __result(
                   α, 
                   AST.Let.at(keyP(α, "trace"), χ.tv, t.σ), 
-                  χʹ.cont.val
+                  tv.val,
+                  ρʺ,
+                  κ
                )
             } else 
             // See 0.3.4 release notes for semantics.
@@ -82,8 +84,8 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => Eva
             } else
             if (t instanceof AST.MatchAs) {
                const [tu, ρʹ, σu]: EvalResult = eval_(ρ)(t.σ)(t.e),
-                     [tv, ρʺ, cont] : EvalResult = eval_(union([ρ, ρʹ]))(σ)(σu)
-               return __result(α, AST.MatchAs.at(keyP(α, "trace"), tu, t.σ), tv.val, ρʺ, cont)
+                     [tv, ρʺ, κ] : EvalResult = eval_(union([ρ, ρʹ]))(σ)(σu)
+               return __result(α, AST.MatchAs.at(keyP(α, "trace"), tu, t.σ), tv.val, ρʺ, κ)
             } else
             if (t instanceof AST.App) {
                const β: Addr = keyP(α, "trace"),
