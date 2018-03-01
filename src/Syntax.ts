@@ -303,56 +303,6 @@ export class Fun extends Trace {
    }
 }
 
-// Body of a lambda abstraction or primitive.
-export class AppBody {
-}
-
-// An application expression has an empty body.
-export class EmptyBody extends AppBody {
-   static at (α: Addr): EmptyBody {
-      return create(α, EmptyBody)
-   }
-}
-
-// For primitives there is no trace part, but we will still show how the argument is consumed.
-// TODO: unify with matches?
-export class PrimBody extends AppBody {
-   param: Lex.Var
-
-   static at (α: Addr, param: Lex.Var): PrimBody {
-      const this_: PrimBody = create(α, PrimBody)
-      this_.param = as(param, Lex.Var)
-      this_.__version()
-      return this_
-   }
-}
-
-export class FunBody extends AppBody {
-   σ: Trie<Traced>
-
-   static at (α: Addr, σ: Trie<Traced>): FunBody {
-      const this_: FunBody = create(α, FunBody)
-      this_.σ = as(σ, Trie)
-      this_.__version()
-      return this_
-   }
-}
-
-export class App extends Trace {
-   func: Traced
-   arg: Traced
-   appBody: AppBody
-
-   static at (α: Addr, func: Traced, arg: Traced, appBody: AppBody): App {
-      const this_: App = create(α, App)
-      this_.func = as(func, Traced)
-      this_.arg = as(arg, Traced)
-      this_.appBody = as(appBody, AppBody)
-      this_.__version()
-      return this_
-   }
-}
-
 // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
 export class Trie<T> implements JoinSemilattice<Trie<T>> {
    join (σ: Trie<T>): Trie<T> {
@@ -437,6 +387,35 @@ export class LetRec extends Trace {
 }
 
 export namespace Trace {
+   export class App extends Trace {
+      func: Traced
+      arg: Traced
+      body: Trace
+
+      static at (α: Addr, func: Traced, arg: Traced, body: Trace): App {
+         const this_: App = create(α, App)
+         this_.func = as(func, Traced)
+         this_.arg = as(arg, Traced)
+         this_.body = as(body, Trace)
+         this_.__version()
+         return this_
+      }
+   }
+
+   // For primitives there is no body, but we will still show how the argument is consumed.
+   export class PrimApp extends Trace {
+      func: Traced
+      arg: Traced
+
+      static at (α: Addr, func: Traced, arg: Traced): App {
+         const this_: App = create(α, App)
+         this_.func = as(func, Traced)
+         this_.arg = as(arg, Traced)
+         this_.__version()
+         return this_
+      }
+   }
+
    export class Let extends Trace {
       tu: Traced
       t: Trace
@@ -480,6 +459,19 @@ export namespace Trace {
 
 export namespace Expr {
    export class Expr {
+   }
+
+   export class App extends Expr {
+      func: Expr
+      arg: Expr
+
+      static at (α: Addr, func: Expr, arg: Expr): App {
+         const this_: App = create(α, App)
+         this_.func = as(func, Expr)
+         this_.arg = as(arg, Expr)
+         this_.__version()
+         return this_
+      }
    }
 
    // A let is simply a match where the trie is a variable trie.

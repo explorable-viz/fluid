@@ -65,17 +65,11 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Expr.Expr) => 
             if (e instanceof Expr.Let) {
                const [tu, ρʹ, σu]: EvalResult = eval_(ρ)(e.σ)(e.e),
                      [tv, ρʺ, κ]: EvalResult = eval_(union([ρ, ρʹ]))(σ)(σu)
-               return __result(
-                  α, 
-                  Trace.Let.at(keyP(α, "trace"), tu, tv.trace), 
-                  tv.val,
-                  ρʺ,
-                  κ
-               )
+               return __result(α, Trace.Let.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
             } else 
             // See 0.3.4 release notes for semantics.
             if (e instanceof AST.LetRec) {
-               const defs: AST.RecDefinition[] = t.bindings.map(binding => binding.def),
+               const defs: AST.RecDefinition[] = e.bindings.map(binding => binding.def),
                      fs: AST.Closure[] = closeDefs(ρ, defs),
                      ρʹ: Env = extend(ρ, zip(defs.map(def => def.name.str), fs)),
                      χ: EvalResult = eval_(ρʹ)(null)(Traced.at(keyP(α, "1"), t.body, null, e.val)),
@@ -87,20 +81,15 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Expr.Expr) => 
                      [tv, ρʺ, κ] : EvalResult = eval_(union([ρ, ρʹ]))(σ)(σu)
                return __result(α, Trace.Match.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
             } else
-            if (e instanceof AST.App) {
+            if (e instanceof Expr.App) {
                const β: Addr = keyP(α, "trace"),
-                     γ: Addr = keyP(β, "appBody", "v"),
-                     χ: EvalResult = eval_(ρ)(AST.FunTrie.at(keyP(α, "1"), null))(t.func),
-                     f: Value | null = χ.expr.val
+                     [tf, ,]: EvalResult = eval_(ρ)(AST.FunTrie.at(keyP(α, "1"), null))(e.func),
+                     f: Value | null = tf.val
                if (f instanceof AST.Closure) {
-                  const χʹ: EvalResult = eval_(ρ)(f.func.σ)(t.arg),
-                        ρʹ: Env = extend(f.ρ, zip(f.defs.map(def => def.name.str), closeDefs(f.ρ, f.defs))),
-                        χʺ: EvalResult = eval_(union([ρʹ, χʹ.ρ]))(σ)(χʹ.cont)
-                  return __result(
-                     α,
-                     AST.App.at(β, χ.expr, χʹ.expr, AST.FunBody.at(γ, χʺ.demand)),
-                     χʺ.cont.val
-                  )
+                  const [tu, ρ2, σʹu]: EvalResult = eval_(ρ)(f.func.σ)(e.arg),
+                        // extend(, zip(f.defs.map(def => def.name.str), closeDefs(f.ρ, f.defs))
+                        [tv, ρʹ, σv]: EvalResult = eval_(union([f.ρ, ρ2]))(σ)(σʹu)
+                  return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
                } else
                if (f instanceof AST.PrimOp) {
                   const χʹ: EvalResult = eval_(ρ)(null)(t.arg)
