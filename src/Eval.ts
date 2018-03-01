@@ -8,10 +8,10 @@ import * as AST from "./Syntax"
 
 export module Eval {
 
-type EvalResult = [Traced, Traced, Env] // v, σv, ρ
+type EvalResult = [Traced, Env, Traced] // v, ρ, σv
 
 function __result (α: Addr, t: AST.Trace, v: Value | null, ρ: Env, cont: Traced): EvalResult {
-   return [Traced.at(α, t, null, v), cont, ρ]
+   return [Traced.at(α, t, null, v), ρ, cont]
 }
 
 __def(eval)
@@ -44,7 +44,7 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => Eva
             } else
             if (t instanceof AST.Fun) {
                if (σ instanceof AST.FunTrie) {
-                  return __result(α, t, AST.Closure.at(keyP(α, "val"), ρ, [], t), new Map)
+                  return __result(α, t, AST.Closure.at(keyP(α, "val"), ρ, [], t), new Map, σ.body)
                } else {
                   assert(false, "Demand m ismatch.")
                }
@@ -81,9 +81,9 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => Eva
                return __result(α, AST.LetRec.at(keyP(α, "trace"), bindings, χ.expr.trace), χ.expr.val)
             } else
             if (t instanceof AST.MatchAs) {
-               const [ρʹ, tu, σu]: EvalResult = eval_(ρ)(t.σ)(t.e),
-                     [ρʺ, tv, cont] : EvalResult = eval_(union([ρ, ρʹ]))(σ)(σu)
-               return __result(α, AST.MatchAs.at(keyP(α, "trace"), tu, t.σ), tv.val)
+               const [tu, ρʹ, σu]: EvalResult = eval_(ρ)(t.σ)(t.e),
+                     [tv, ρʺ, cont] : EvalResult = eval_(union([ρ, ρʹ]))(σ)(σu)
+               return __result(α, AST.MatchAs.at(keyP(α, "trace"), tu, t.σ), tv.val, ρʺ, cont)
             } else
             if (t instanceof AST.App) {
                const β: Addr = keyP(α, "trace"),
