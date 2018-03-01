@@ -39,7 +39,7 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => Eva
             const v: Value = __nonNull(e.val)
             if (v instanceof AST.Constr) {               
                if (σ instanceof AST.ConstrTrie) {
-                  const σ_: Trie<Traced> = σ.cases.get(v.ctr.str)
+                  const σʹ: Trie<Traced> = σ.cases.get(v.ctr.str)
                   const β: Addr = keyP(α, "val")
                   return __result(α, t, AST.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
                } else {
@@ -54,16 +54,19 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => Eva
             }
          } else
          if (t instanceof AST.Fun) {
-            return __result(α, t, AST.Closure.at(keyP(α, "val"), ρ, [], t))
+            if (σ instanceof AST.FunTrie) {
+               return __result(α, t, AST.Closure.at(keyP(α, "val"), ρ, [], t))
+            } else {
+               assert(false, "Demand mismatch.")
+            }
          } else
          // See 0.4.6 release notes on why undefined values map to ⊥.
          if (t instanceof AST.OpName) {
             assert(e.val === null)
-            const v_opt: Value | undefined = ρ.get(t.opName.str)
-            if (v_opt === undefined) {
-               return assert(false, "Operator not found.", e.trace)
+            if (!ρ.has(t.opName.str)) {
+               return assert(false, "Operator not found.", t.opName)
             } else {
-               return __result(α, e.trace, as(v_opt, AST.PrimOp))
+               return __result(α, e.trace, as(ρ.get(t.opName.str), AST.PrimOp))
             }
          } else
          if (t instanceof AST.Var) {
@@ -83,8 +86,8 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => Eva
          if (t instanceof AST.LetRec) {
             const defs: AST.RecDefinition[] = t.bindings.map(binding => binding.def),
                   fs: AST.Closure[] = closeDefs(ρ, defs),
-                  ρ_: Env = extend(ρ, zip(defs.map(def => def.name.str), fs)),
-                  χ: EvalResult = eval_(ρ_)(null)(Traced.at(keyP(α, "1"), t.body, null, e.val)),
+                  ρʹ: Env = extend(ρ, zip(defs.map(def => def.name.str), fs)),
+                  χ: EvalResult = eval_(ρʹ)(null)(Traced.at(keyP(α, "1"), t.body, null, e.val)),
                   bindings: AST.RecBinding[] = zip(t.bindings, fs).map(bindRecDef)
             return __result(α, AST.LetRec.at(keyP(α, "trace"), bindings, χ.expr.trace), χ.expr.val)
          } else
@@ -114,7 +117,7 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Traced) => Eva
                // TODO: trie for forcing value of primitive type.
                return __result(
                   α,
-                  AST.App.at(β, χ.expr, χʹ.expr, AST.PrimBody.at(γ, new Lex.Var('_'))),
+                  AST.App.at(β, χ.expr, χʹ.expr, AST.PrimBody.at(γ, new Lex.Var("_"))),
                   f._apply(χʹ.expr.val)
                )
             } else {
