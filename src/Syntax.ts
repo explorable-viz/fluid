@@ -208,14 +208,14 @@ export namespace Value {
    
    export class Closure {
       ρ: Env
-      defs: RecDefinition[]
-      func: Fun
+      defs: Trace.RecDefinition[]
+      func: Expr.Fun
    
-      static at (α: Addr, ρ: Env, defs: RecDefinition[], func: Fun): Closure {
+      static at (α: Addr, ρ: Env, defs: Trace.RecDefinition[], func: Expr.Fun): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
          this_.defs = defs
-         this_.func = as(func, Fun)
+         this_.func = as(func, Expr.Fun)
          this_.__version()
          return this_
       }
@@ -257,11 +257,11 @@ export namespace Value {
    }
 }
 
-export class Traced<T extends Value = Value> {
+export class Traced<T extends Value.Value = Value.Value> {
    trace: Trace
    val: T | null
 
-   static at <T extends Value> (α: Addr, trace: Trace, val: T | null): Traced<T> {
+   static at <T extends Value.Value> (α: Addr, trace: Trace, val: T | null): Traced<T> {
       const this_: Traced<T> = create<Traced<T>>(α, Traced)
       this_.trace = as(trace, Trace)
       this_.val = val
@@ -273,118 +273,74 @@ export class Traced<T extends Value = Value> {
 export class Trace {
 }
 
-// I don't think this is the same as ⊥; it represents the "end" of an explanation.
-export class EmptyTrace extends Trace {
-   static at (α: Addr): EmptyTrace {
-      const this_: Trace = create(α, EmptyTrace)
-      this_.__version()
-      return this_
+export namespace Trie {
+   // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
+   export class Trie<T> implements JoinSemilattice<Trie<T>> {
+      join (σ: Trie<T>): Trie<T> {
+         return join(this, σ)
+      }
    }
-}
 
-export class OpName extends Trace {
-   opName: Lex.OpName
+   export class Constr<T> extends Trie<T> {
+      cases: Map<string, T>
 
-   static at (α: Addr, opName: Lex.OpName): OpName {
-      const this_: OpName = create(α, OpName)
-      this_.opName = as(opName, Lex.OpName)
-      this_.__version()
-      return this_
+      static at <T> (α: Addr, cases: Map<string, T>): Constr<T> {
+         const this_: Constr<T> = create<Constr<T>>(α, Constr)
+         this_.cases = cases
+         this_.__version()
+         return this_
+      }
    }
-}
 
-// Expression form only. TODO: don't I need to unify this now with Closure?
-export class Fun extends Trace {
-   σ: Trie<Traced>
+   export class Var<T> extends Trie<T> {
+      name: Lex.Var
+      body: T
 
-   static at (α: Addr, σ: Trie<Traced>): Fun {
-      const this_: Fun = create(α, Fun)
-      this_.σ = as(σ, Trie)
-      this_.__version()
-      return this_
+      static at <T> (α: Addr, name: Lex.Var, body: T): Var<T> {
+         const this_: Var<T> = create<Var<T>>(α, Var)
+         this_.name = as(name, Lex.Var)
+         this_.body = body
+         this_.__version()
+         return this_
+      }
    }
-}
 
-// Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
-export class Trie<T> implements JoinSemilattice<Trie<T>> {
-   join (σ: Trie<T>): Trie<T> {
-      return join(this, σ)
+   export class Fun<T> extends Trie<T> {
+      body: T
+
+      static at <T> (α: Addr, body: T): Fun<T> {
+         const this_: Fun<T> = create<Fun<T>>(α, Fun)
+         this_.body = body
+         this_.__version()
+         return this_
+      }
    }
-}
 
-export class ConstrTrie<T> extends Trie<T> {
-   cases: Map<string, T>
-
-   static at <T> (α: Addr, cases: Map<string, T>): ConstrTrie<T> {
-      const this_: ConstrTrie<T> = create<ConstrTrie<T>>(α, ConstrTrie)
-      this_.cases = cases
-      this_.__version()
-      return this_
-   }
-}
-
-export class VarTrie<T> extends Trie<T> {
-   name: Lex.Var
-   body: T
-
-   static at <T> (α: Addr, name: Lex.Var, body: T): VarTrie<T> {
-      const this_: VarTrie<T> = create<VarTrie<T>>(α, VarTrie)
-      this_.name = as(name, Lex.Var)
-      this_.body = body
-      this_.__version()
-      return this_
-   }
-}
-
-export class FunTrie<T> extends Trie<T> {
-   body: T
-
-   static at <T> (α: Addr, body: T): FunTrie<T> {
-      const this_: FunTrie<T> = create<FunTrie<T>>(α, FunTrie)
-      this_.body = body
-      this_.__version()
-      return this_
-   }
-}
-
-export class RecDefinition {
-   name: Lex.Var
-   func: Fun
-
-   static at (α: Addr, name: Lex.Var, func: Fun): RecDefinition {
-      const this_: RecDefinition = create(α, RecDefinition)
-      this_.name = as(name, Lex.Var)
-      this_.func = as(func, Fun)
-      this_.__version()
-      return this_
-   }
-}
-
-// Keep binding of recursive definitions to closures separate from the definitions themselves so that
-// closures can contain definitions without inducing cycles.
-export class RecBinding {
-   def: RecDefinition
-   valueOpt: Closure | null
-
-   static at (α: Addr, def: RecDefinition, valueOpt: Closure | null): RecBinding {
-      const this_: RecBinding = create(α, RecBinding)
-      this_.def = as(def, RecDefinition)
-      this_.valueOpt = asOpt(valueOpt, Closure)
-      this_.__version()
-      return this_
-   }
-}
-
-export class LetRec extends Trace {
-   bindings: RecBinding[]
-   body: Trace
-
-   static at (α: Addr, bindings: RecBinding[], body: Trace): LetRec {
-      const this_: LetRec = create(α, LetRec)
-      this_.bindings = bindings
-      this_.body = as(body, Trace)
-      this_.__version()
-      return this_
+   // Addressing scheme doesn't yet support "member functions". Plus methods don't allow null receivers.
+   __def(join)
+   export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
+      const α: Addr = key(join, arguments)
+      if (σ === null) {
+         return τ
+      } else
+      if (τ === null) {
+         return σ
+      } else
+      // The instanceof guards turns T into 'any'. Yuk.
+      if (σ instanceof Fun && τ instanceof Fun) {
+         const [σʹ, τʹ]: [Fun<T>, Fun<T>] = [σ, τ]
+         return Fun.at(α, join(σʹ.body, τʹ.body))
+      } else
+      if (σ instanceof Var && τ instanceof Var && eq(σ.name, τ.name)) {
+         const [σʹ, τʹ]: [Var<T>, Var<T>] = [σ, τ]
+         return Var.at(α, σʹ.name, join(σʹ.body, τʹ.body))
+      } else
+      if (σ instanceof Constr && τ instanceof Constr) {
+         const [σʹ, τʹ]: [Constr<T>, Constr<T>] = [σ, τ]
+         return Constr.at<T>(α, unionWith([σʹ.cases, τʹ.cases], ms => ms.reduce((x, y) => x.join(y))))
+      } else {
+         return assert(false, "Undefined join.", σ, τ)
+      }
    }
 }
 
@@ -404,15 +360,10 @@ export namespace Trace {
       }
    }
 
-   // For primitives there is no body, but we will still show how the argument is consumed.
-   export class PrimApp extends Trace {
-      func: Traced
-      arg: Traced
-
-      static at (α: Addr, func: Traced, arg: Traced): App {
-         const this_: App = create(α, App)
-         this_.func = as(func, Traced)
-         this_.arg = as(arg, Traced)
+   // I don't think this is the same as ⊥; it represents the "end" of an explanation.
+   export class Empty extends Trace {
+      static at (α: Addr): Empty {
+         const this_: Empty = create(α, Empty)
          this_.__version()
          return this_
       }
@@ -431,7 +382,48 @@ export namespace Trace {
       }
    }
 
-   // See 0.6.1 release notes. Also 0.6.4 notes for discussion of expression/trace disparity.
+   export class RecDefinition {
+      name: Lex.Var
+      func: Expr.Fun
+   
+      static at (α: Addr, name: Lex.Var, func: Expr.Fun): RecDefinition {
+         const this_: RecDefinition = create(α, RecDefinition)
+         this_.name = as(name, Lex.Var)
+         this_.func = as(func, Expr.Fun)
+         this_.__version()
+         return this_
+      }
+   }
+   
+   // Keep binding of recursive definitions to closures separate from the definitions themselves so that
+   // closures can contain definitions without inducing cycles.
+   export class RecBinding {
+      def: RecDefinition
+      valueOpt: Value.Closure | null
+   
+      static at (α: Addr, def: RecDefinition, valueOpt: Value.Closure | null): RecBinding {
+         const this_: RecBinding = create(α, RecBinding)
+         this_.def = as(def, RecDefinition)
+         this_.valueOpt = asOpt(valueOpt, Value.Closure)
+         this_.__version()
+         return this_
+      }
+   }
+   
+   export class LetRec extends Trace {
+      bindings: RecBinding[]
+      body: Trace
+   
+      static at (α: Addr, bindings: RecBinding[], body: Trace): LetRec {
+         const this_: LetRec = create(α, LetRec)
+         this_.bindings = bindings
+         this_.body = as(body, Trace)
+         this_.__version()
+         return this_
+      }
+   }
+   
+      // See 0.6.1 release notes. Also 0.6.4 notes for discussion of expression/trace disparity.
    export class Match extends Trace {
       tu: Traced
       t: Trace
@@ -440,6 +432,20 @@ export namespace Trace {
          const this_: Match = create(α, Match)
          this_.tu = as(tu, Traced)
          this_.t = as(t, Trace)
+         this_.__version()
+         return this_
+      }
+   }
+
+   // For primitives there is no body, but we will still show how the argument is consumed.
+   export class PrimApp extends Trace {
+      func: Traced
+      arg: Traced
+
+      static at (α: Addr, func: Traced, arg: Traced): App {
+         const this_: App = create(α, App)
+         this_.func = as(func, Traced)
+         this_.arg = as(arg, Traced)
          this_.__version()
          return this_
       }
@@ -476,15 +482,26 @@ export namespace Expr {
       }
    }
 
+   export class Fun extends Expr {
+      σ: Trie.Trie<Expr>
+
+      static at (α: Addr, σ: Trie.Trie<Expr>): Fun {
+         const this_: Fun = create(α, Fun)
+         this_.σ = as(σ, Trie.Trie)
+         this_.__version()
+         return this_
+      }
+   }
+
    // A let is simply a match where the trie is a variable trie.
    export class Let extends Expr {
       e: Expr
-      σ: VarTrie<Expr>
+      σ: Trie.Var<Expr>
 
-      static at (α: Addr, e: Expr, σ: VarTrie<Expr>): Let {
+      static at (α: Addr, e: Expr, σ: Trie.Var<Expr>): Let {
          const this_: Let = create(α, Let)
          this_.e = as(e, Expr)
-         this_.σ = as(σ, VarTrie)
+         this_.σ = as(σ, Trie.Var)
          this_.__version()
          return this_
       }
@@ -492,17 +509,28 @@ export namespace Expr {
 
    export class MatchAs extends Expr {
       e: Expr
-      σ: Trie<Expr>
+      σ: Trie.Trie<Expr>
    
-      static at (α: Addr, e: Traced, σ: Trie<Expr>): MatchAs {
+      static at (α: Addr, e: Traced, σ: Trie.Trie<Expr>): MatchAs {
          const this_: MatchAs = create(α, MatchAs)
          this_.e = as(e, Traced)
-         this_.σ = as(σ, Trie)
+         this_.σ = as(σ, Trie.Trie)
          this_.__version()
          return this_
       }
    }
 
+   export class OpName extends Expr {
+      opName: Lex.OpName
+   
+      static at (α: Addr, opName: Lex.OpName): OpName {
+         const this_: OpName = create(α, OpName)
+         this_.opName = as(opName, Lex.OpName)
+         this_.__version()
+         return this_
+      }
+   }
+  
    export class Var extends Expr {
       ident: Lex.Var
    
@@ -512,32 +540,5 @@ export namespace Expr {
          this_.__version()
          return this_
       }
-   }
-}
-
-// Addressing scheme doesn't yet support "member functions". Plus methods don't allow null receivers.
-__def(join)
-export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
-   const α: Addr = key(join, arguments)
-   if (σ === null) {
-      return τ
-   } else
-   if (τ === null) {
-      return σ
-   } else
-   // The instanceof guards turns T into 'any'. Yuk.
-   if (σ instanceof FunTrie && τ instanceof FunTrie) {
-      const [σʹ, τʹ]: [FunTrie<T>, FunTrie<T>] = [σ, τ]
-      return FunTrie.at(α, join(σʹ.body, τʹ.body))
-   } else
-   if (σ instanceof VarTrie && τ instanceof VarTrie && eq(σ.name, τ.name)) {
-      const [σʹ, τʹ]: [VarTrie<T>, VarTrie<T>] = [σ, τ]
-      return VarTrie.at(α, σʹ.name, join(σʹ.body, τʹ.body))
-   } else
-   if (σ instanceof ConstrTrie && τ instanceof ConstrTrie) {
-      const [σʹ, τʹ]: [ConstrTrie<T>, ConstrTrie<T>] = [σ, τ]
-      return ConstrTrie.at<T>(α, unionWith([σʹ.cases, τʹ.cases], ms => ms.reduce((x, y) => x.join(y))))
-   } else {
-      return assert(false, "Undefined join.", σ, τ)
    }
 }
