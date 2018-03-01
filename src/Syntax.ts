@@ -357,20 +357,6 @@ export class App extends Trace {
    }
 }
 
-// See 0.6.1 release notes. Also 0.6.4 notes for discussion of expression/trace disparity.
-export class MatchAs extends Trace {
-   e: Traced
-   σ: Trie<Traced>
-
-   static at (α: Addr, e: Traced, σ: Trie<Traced>): MatchAs {
-      const this_: MatchAs = create(α, MatchAs)
-      this_.e = as(e, Traced)
-      this_.σ = as(σ, Trie)
-      this_.__version()
-      return this_
-   }
-}
-
 // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
 export class Trie<T> implements JoinSemilattice<Trie<T>> {
    join (σ: Trie<T>): Trie<T> {
@@ -408,20 +394,6 @@ export class FunTrie<T> extends Trie<T> {
    static at <T> (α: Addr, body: T): FunTrie<T> {
       const this_: FunTrie<T> = create<FunTrie<T>>(α, FunTrie)
       this_.body = body
-      this_.__version()
-      return this_
-   }
-}
-
-// A let is simply a match where the trie is a variable trie.
-export class Let extends Trace {
-   e: Traced
-   σ: VarTrie<Object>
-
-   static at (α: Addr, e: Traced, σ: VarTrie<Object>): Let {
-      const this_: Let = create(α, Let)
-      this_.e = as(e, Traced)
-      this_.σ = as(σ, VarTrie)
       this_.__version()
       return this_
    }
@@ -465,6 +437,67 @@ export class LetRec extends Trace {
       this_.body = as(body, Trace)
       this_.__version()
       return this_
+   }
+}
+
+export namespace Trace {
+   export class Let extends Trace {
+      tu: Traced
+      t: Trace
+
+      static at (α: Addr, tu: Traced, t: Trace): Match {
+         const this_: Match = create(α, Match)
+         this_.tu = as(tu, Traced)
+         this_.t = as(t, Trace)
+         this_.__version()
+         return this_
+      }
+   }
+
+   // See 0.6.1 release notes. Also 0.6.4 notes for discussion of expression/trace disparity.
+   export class Match extends Trace {
+      tu: Traced
+      t: Trace
+
+      static at (α: Addr, tu: Traced, t: Trace): Match {
+         const this_: Match = create(α, Match)
+         this_.tu = as(tu, Traced)
+         this_.t = as(t, Trace)
+         this_.__version()
+         return this_
+      }
+   }
+}
+
+export namespace Expr {
+   export class Expr {
+   }
+
+   // A let is simply a match where the trie is a variable trie.
+   export class Let extends Expr {
+      e: Expr
+      σ: VarTrie<Expr>
+
+      static at (α: Addr, e: Expr, σ: VarTrie<Expr>): Let {
+         const this_: Let = create(α, Let)
+         this_.e = as(e, Expr)
+         this_.σ = as(σ, VarTrie)
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class MatchAs extends Expr {
+      e: Expr
+      σ: Trie<Expr>
+   
+      static at (α: Addr, e: Traced, σ: Trie<Expr>): MatchAs {
+         const this_: MatchAs = create(α, MatchAs)
+         this_.e = as(e, Traced)
+         this_.σ = as(σ, Trie)
+         this_.__version()
+         return this_
+      }
    }
 }
 
