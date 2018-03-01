@@ -91,9 +91,8 @@ export function eval_ (ρ: Env): (σ: Trie<Object> | null) => (e: Expr.Expr) => 
                   return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
                } else
                if (f instanceof Value.PrimOp) {
-                  // Treat a primitive (which is always unary) as having an anonymous formal parameter.
-                  const [tv, , γv]: EvalResult = eval_(ρ)(f.func.σ)(e.arg)                        
                   // TODO: trie for forcing value of primitive type.
+                  const [tv, ,]: EvalResult = eval_(ρ)(f.func.σ)(e.arg)                        
                   return __result(α, Trace.PrimApp.at(β, tf, tv), f._apply(tv.val), new Map, null)
                } else {
                   return assert(false, "Not an applicable value.", f)
