@@ -21,40 +21,29 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
          if (σ instanceof Trie.Var) {
             // TODO
          } else {
-            if (e instanceof Expr.Constr) {               
-               if (σ instanceof Trie.Constr) {
-                  const σʹ: Trie.Trie<Traced> = σ.cases.get(v.ctr.str)
-                  const β: Addr = keyP(α, "val")
-                  return __result(α, t, Value.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
-               } else {
-                  return assert(false, "Demand mismatch.")
-               }
+            if (e instanceof Expr.Constr && σ instanceof Trie.Constr) {
+               const σʹ: Trie.Trie<Traced> = σ.cases.get(e.ctr.str)
+               const β: Addr = keyP(α, "val")
+               return __result(α, t, Value.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
             } else
-            if (e instanceof Expr.ConstInt) {
-               return e
+            if (e instanceof Expr.ConstInt && σ instanceof Trie.ConstInt) {
+               return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), new Map, σ.body)
             } else
-            if (e instanceof Expr.ConstStr) {
-               return e
+            if (e instanceof Expr.ConstStr && σ instanceof Trie.ConstStr) {
+               return __result(α, Trace.Empty.at(α), Value.ConstStr.at(keyP(α, "val"), e.val), new Map, σ.body)
+
             } else
-            if (e instanceof Expr.Fun) {
-               if (σ instanceof Trie.Fun) {
-                  const v: Value.Closure = Value.Closure.at(keyP(α, "val"), ρ, [], e)
-                  return __result(α, Trace.Empty.at(keyP(α, "trace")), v, new Map, σ.body)
-               } else {
-                  assert(false, "Demand mismatch.")
-               }
+            if (e instanceof Expr.Fun && σ instanceof Trie.Fun) {
+               const v: Value.Closure = Value.Closure.at(keyP(α, "val"), ρ, [], e)
+               return __result(α, Trace.Empty.at(keyP(α, "trace")), v, new Map, σ.body)
             } else
             // See 0.4.6 release notes on why undefined values map to ⊥.
-            if (e instanceof Expr.OpName) {
-               if (σ instanceof Trie.Fun) {
-                  if (!ρ.has(e.opName.str)) {
-                     return assert(false, "Operator not found.", e.opName)
-                  } else {
-                     const v: Value.PrimOp = as(ρ.get(e.opName.str), Value.PrimOp)
-                     return __result(α, Trace.Empty.at(keyP(α, "trace")), v, new Map, σ.body)
-                  }
+            if (e instanceof Expr.OpName && σ instanceof Trie.Fun) {
+               if (!ρ.has(e.opName.str)) {
+                  return assert(false, "Operator not found.", e.opName)
                } else {
-                  assert(false, "Demand mismatch.")
+                  const v: Value.PrimOp = as(ρ.get(e.opName.str), Value.PrimOp)
+                  return __result(α, Trace.Empty.at(keyP(α, "trace")), v, new Map, σ.body)
                }
             } else
             if (e instanceof Expr.Var) {
@@ -103,7 +92,7 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
                   return assert(false, "Not an applicable value.", f)
                }
             }
-            return assert(false)
+            return assert(false, "Demand mismatch.")
          }
       })
    })

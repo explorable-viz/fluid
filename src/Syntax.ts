@@ -257,20 +257,129 @@ export namespace Value {
    }
 }
 
+export namespace Expr {
+   export class Expr {
+   }
+
+   export class App extends Expr {
+      func: Expr
+      arg: Expr
+
+      static at (α: Addr, func: Expr, arg: Expr): App {
+         const this_: App = create(α, App)
+         this_.func = as(func, Expr)
+         this_.arg = as(arg, Expr)
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class ConstInt {
+      val: number
+   
+      static at (α: Addr, val: number): ConstInt {
+         const this_: ConstInt = create(α, ConstInt)
+         this_.val = val
+         this_.__version()
+         return this_
+      }
+   }
+   
+   export class ConstStr {
+      val: string
+   
+      static at (α: Addr, val: string): ConstStr {
+         const this_: ConstStr = create(α, ConstStr)
+         this_.val = val
+         this_.__version()
+         return this_
+      }
+   }
+   
+   export class Constr {
+      ctr: Lex.Ctr
+      args: Expr[]
+   
+      static at (α: Addr, ctr: Lex.Ctr, args: Expr[]): Constr {
+         const this_: Constr = create(α, Constr)
+         this_.ctr = as(ctr, Lex.Ctr)
+         this_.args = args
+         this_.__version()
+         return this_
+      }
+   }
+   export class Fun extends Expr {
+      σ: Trie.Trie<Expr>
+
+      static at (α: Addr, σ: Trie.Trie<Expr>): Fun {
+         const this_: Fun = create(α, Fun)
+         this_.σ = as(σ, Trie.Trie)
+         this_.__version()
+         return this_
+      }
+   }
+
+   // A let is simply a match where the trie is a variable trie.
+   export class Let extends Expr {
+      e: Expr
+      σ: Trie.Var<Expr>
+
+      static at (α: Addr, e: Expr, σ: Trie.Var<Expr>): Let {
+         const this_: Let = create(α, Let)
+         this_.e = as(e, Expr)
+         this_.σ = as(σ, Trie.Var)
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class MatchAs extends Expr {
+      e: Expr
+      σ: Trie.Trie<Expr>
+   
+      static at (α: Addr, e: Traced, σ: Trie.Trie<Expr>): MatchAs {
+         const this_: MatchAs = create(α, MatchAs)
+         this_.e = as(e, Traced)
+         this_.σ = as(σ, Trie.Trie)
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class OpName extends Expr {
+      opName: Lex.OpName
+   
+      static at (α: Addr, opName: Lex.OpName): OpName {
+         const this_: OpName = create(α, OpName)
+         this_.opName = as(opName, Lex.OpName)
+         this_.__version()
+         return this_
+      }
+   }
+  
+   export class Var extends Expr {
+      ident: Lex.Var
+   
+      static at (α: Addr, ident: Lex.Var): Var {
+         const this_: Var = create(α, Var)
+         this_.ident = as(ident, Lex.Var)
+         this_.__version()
+         return this_
+      }
+   }
+}
+
 export class Traced<T extends Value.Value = Value.Value> {
-   trace: Trace
+   trace: Trace.Trace
    val: T | null
 
-   static at <T extends Value.Value> (α: Addr, trace: Trace, val: T | null): Traced<T> {
+   static at <T extends Value.Value> (α: Addr, trace: Trace.Trace, val: T | null): Traced<T> {
       const this_: Traced<T> = create<Traced<T>>(α, Traced)
-      this_.trace = as(trace, Trace)
+      this_.trace = as(trace, Trace.Trace)
       this_.val = val
       this_.__version()
       return this_
    }
-}
-
-export class Trace {
 }
 
 export namespace Trie {
@@ -278,6 +387,28 @@ export namespace Trie {
    export class Trie<T> implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
+      }
+   }
+
+   export class ConstInt<T> extends Trie<T> {
+      body: T
+
+      static at <T> (α: Addr, body: T): ConstInt<T> {
+         const this_: ConstInt<T> = create<ConstInt<T>>(α, Fun)
+         this_.body = body
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class ConstStr<T> extends Trie<T> {
+      body: T
+
+      static at <T> (α: Addr, body: T): ConstStr<T> {
+         const this_: ConstStr<T> = create<ConstStr<T>>(α, Fun)
+         this_.body = body
+         this_.__version()
+         return this_
       }
    }
 
@@ -345,6 +476,9 @@ export namespace Trie {
 }
 
 export namespace Trace {
+   export class Trace {
+   }
+   
    export class App extends Trace {
       func: Traced
       arg: Traced
@@ -459,84 +593,6 @@ export namespace Trace {
          const this_: Var = create(α, Var)
          this_.x = as(x, Lex.Var)
          this_.t = as(t, Trace)
-         this_.__version()
-         return this_
-      }
-   }
-}
-
-export namespace Expr {
-   export class Expr {
-   }
-
-   export class App extends Expr {
-      func: Expr
-      arg: Expr
-
-      static at (α: Addr, func: Expr, arg: Expr): App {
-         const this_: App = create(α, App)
-         this_.func = as(func, Expr)
-         this_.arg = as(arg, Expr)
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class Fun extends Expr {
-      σ: Trie.Trie<Expr>
-
-      static at (α: Addr, σ: Trie.Trie<Expr>): Fun {
-         const this_: Fun = create(α, Fun)
-         this_.σ = as(σ, Trie.Trie)
-         this_.__version()
-         return this_
-      }
-   }
-
-   // A let is simply a match where the trie is a variable trie.
-   export class Let extends Expr {
-      e: Expr
-      σ: Trie.Var<Expr>
-
-      static at (α: Addr, e: Expr, σ: Trie.Var<Expr>): Let {
-         const this_: Let = create(α, Let)
-         this_.e = as(e, Expr)
-         this_.σ = as(σ, Trie.Var)
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class MatchAs extends Expr {
-      e: Expr
-      σ: Trie.Trie<Expr>
-   
-      static at (α: Addr, e: Traced, σ: Trie.Trie<Expr>): MatchAs {
-         const this_: MatchAs = create(α, MatchAs)
-         this_.e = as(e, Traced)
-         this_.σ = as(σ, Trie.Trie)
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class OpName extends Expr {
-      opName: Lex.OpName
-   
-      static at (α: Addr, opName: Lex.OpName): OpName {
-         const this_: OpName = create(α, OpName)
-         this_.opName = as(opName, Lex.OpName)
-         this_.__version()
-         return this_
-      }
-   }
-  
-   export class Var extends Expr {
-      ident: Lex.Var
-   
-      static at (α: Addr, ident: Lex.Var): Var {
-         const this_: Var = create(α, Var)
-         this_.ident = as(ident, Lex.Var)
          this_.__version()
          return this_
       }
