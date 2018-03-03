@@ -62,11 +62,10 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
             } else 
             // See 0.3.4 release notes for semantics.
             if (e instanceof Expr.LetRec) {
-               const fs: EnvEntry[] = e.defs.map(def => new EnvEntry(ρ, e.defs, def.func)),
-                     ρʹ: Env = extend(ρ, zip(e.defs.map(def => def.name.str), fs)),
-                     χ: EvalResult = eval_(ρʹ)(null)(Traced.at(keyP(α, "1"), t.body, null, e.val)),
-                     bindings: Trace.RecBinding[] = zip(e.bindings, fs).map(bindRecDef)
-               return __result(α, Trace.LetRec.at(keyP(α, "trace"), bindings, χ.expr.trace), χ.expr.val)
+               const fs: EnvEntry[] = e.δ.map(def => new EnvEntry(ρ, e.δ, def.func)),
+                     ρʹ: Env = extend(ρ, zip(e.δ.map(def => def.name.str), fs)),
+                     [tv, ρʺ, σv]: EvalResult = eval_(ρʹ)(σ)(e.e)
+               return __result(α, Trace.LetRec.at(keyP(α, "trace"), e.δ, tv.trace), tv.val, ρʺ, σv)
             } else
             if (e instanceof Expr.MatchAs) {
                const [tu, ρʹ, σu]: EvalResult = eval_(ρ)(e.σ)(e.e),
@@ -94,13 +93,6 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
          return assert(false, "Demand mismatch.")
       })
    })
-}
-
-// TODO: redo this so they just take their "root" address as an argument?
-__def(bindRecDef)
-function bindRecDef ([binding, f]: [Trace.RecBinding, Value.Closure]): Trace.RecBinding {
-  const α: Addr = key(bindRecDef, arguments)
-  return Trace.RecBinding.at(α, binding.def, f)
 }
 
 }

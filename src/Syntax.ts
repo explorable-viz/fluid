@@ -350,12 +350,12 @@ export namespace Expr {
    }
    
    export class LetRec extends Expr {
-      defs: RecDefinition[]
+      δ: RecDefinition[]
       e: Expr
 
-      static at (α: Addr, defs: RecDefinition[], e: Expr): LetRec {
+      static at (α: Addr, δ: RecDefinition[], e: Expr): LetRec {
          const this_: LetRec = create(α, LetRec)
-         this_.defs = defs
+         this_.δ = δ
          this_.e = as(e, Expr)
          this_.__version()
          return this_
@@ -535,29 +535,15 @@ export namespace Trace {
       }
    }
 
-   // Keep binding of recursive definitions to closures separate from the definitions themselves so that
-   // closures can contain definitions without inducing cycles.
-   export class RecBinding {
-      def: Expr.RecDefinition
-      valueOpt: Value.Closure | null
-   
-      static at (α: Addr, def: Expr.RecDefinition, valueOpt: Value.Closure | null): RecBinding {
-         const this_: RecBinding = create(α, RecBinding)
-         this_.def = as(def, Expr.RecDefinition)
-         this_.valueOpt = asOpt(valueOpt, Value.Closure)
-         this_.__version()
-         return this_
-      }
-   }
-   
+   // Used to be something called RecBinding, but bindings doesn't seem to be stored in traces at the moment.
    export class LetRec extends Trace {
-      bindings: RecBinding[]
-      body: Trace
+      δ: Expr.RecDefinition[]
+      t: Trace
    
-      static at (α: Addr, bindings: RecBinding[], body: Trace): LetRec {
+      static at (α: Addr, δ: Expr.RecDefinition[], t: Trace): LetRec {
          const this_: LetRec = create(α, LetRec)
-         this_.bindings = bindings
-         this_.body = as(body, Trace)
+         this_.δ = δ
+         this_.t = as(t, Trace)
          this_.__version()
          return this_
       }
