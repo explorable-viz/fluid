@@ -8,7 +8,7 @@ export module Eval {
 
 type EvalResult = [Traced, Env, Traced] // v, ρ, σv
 
-function __result (α: Addr, t: Trace, v: Value.Value | null, ρ: Env, κ: Traced): EvalResult {
+function __result (α: Addr, t: Trace.Trace, v: Value.Value | null, ρ: Env, κ: Traced): EvalResult {
    return [Traced.at(α, t, v), ρ, κ]
 }
 
@@ -19,17 +19,18 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
          const α: Addr = key(withEnv, arguments)
          assert(e !== undefined, "Missing constructor argument?")
          if (σ instanceof Trie.Var) {
-            // TODO
+            const entries: [string, EnvEntry][] = [[σ.x.str, new EnvEntry(ρ, [], e)]]
+            return __result(α, Trace.Empty.at(α), null, new Map(entries), σ.body)
          } else {
             if (e instanceof Expr.Constr && σ instanceof Trie.Constr) {
                const σʹ: Trie.Trie<Traced> = σ.cases.get(e.ctr.str)
                const β: Addr = keyP(α, "val")
                return __result(α, t, Value.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
             } else
-            if (e instanceof Expr.ConstInt && σ instanceof Trie.ConstInt) {
+            if (e instanceof Expr.ConstInt && σ instanceof Trie.Prim) {
                return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), new Map, σ.body)
             } else
-            if (e instanceof Expr.ConstStr && σ instanceof Trie.ConstStr) {
+            if (e instanceof Expr.ConstStr && σ instanceof Trie.Prim) {
                return __result(α, Trace.Empty.at(α), Value.ConstStr.at(keyP(α, "val"), e.val), new Map, σ.body)
 
             } else
@@ -37,7 +38,6 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
                const v: Value.Closure = Value.Closure.at(keyP(α, "val"), ρ, [], e)
                return __result(α, Trace.Empty.at(keyP(α, "trace")), v, new Map, σ.body)
             } else
-            // See 0.4.6 release notes on why undefined values map to ⊥.
             if (e instanceof Expr.OpName && σ instanceof Trie.Fun) {
                if (!ρ.has(e.opName.str)) {
                   return assert(false, "Operator not found.", e.opName)
@@ -61,12 +61,11 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
                return __result(α, Trace.Let.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
             } else 
             // See 0.3.4 release notes for semantics.
-            if (e instanceof Trace.LetRec) {
-               const defs: Trace.RecDefinition[] = e.bindings.map(binding => binding.def),
-                     fs: Value.Closure[] = closeDefs(ρ, defs),
-                     ρʹ: Env = extend(ρ, zip(defs.map(def => def.name.str), fs)),
+            if (e instanceof Expr.LetRec) {
+               const fs: EnvEntry[] = e.defs.map(def => new EnvEntry(ρ, e.defs, def.func)),
+                     ρʹ: Env = extend(ρ, zip(e.defs.map(def => def.name.str), fs)),
                      χ: EvalResult = eval_(ρʹ)(null)(Traced.at(keyP(α, "1"), t.body, null, e.val)),
-                     bindings: Trace.RecBinding[] = zip(t.bindings, fs).map(bindRecDef)
+                     bindings: Trace.RecBinding[] = zip(e.bindings, fs).map(bindRecDef)
                return __result(α, Trace.LetRec.at(keyP(α, "trace"), bindings, χ.expr.trace), χ.expr.val)
             } else
             if (e instanceof Expr.MatchAs) {
@@ -74,7 +73,7 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
                      [tv, ρʺ, κ] : EvalResult = eval_(union([ρ, ρʹ]))(σ)(σu)
                return __result(α, Trace.Match.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
             } else
-            if (e instanceof Expr.App) {
+            if (e instanceof Expr.App) { 
                const β: Addr = keyP(α, "trace"),
                      [tf, ,]: EvalResult = eval_(ρ)(Trie.Fun.at(keyP(α, "1"), null))(e.func),
                      f: Value.Value | null = tf.val
@@ -85,28 +84,19 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
                   return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
                } else
                if (f instanceof Value.PrimOp) {
-                  // TODO: trie for forcing value of primitive type.
-                  const [tv, ,]: EvalResult = eval_(ρ)(f.func.σ)(e.arg)                        
+                  const [tv, ,]: EvalResult = eval_(ρ)(Trie.Prim.at(keyP(α, "1"), null))(e.arg)                        
                   return __result(α, Trace.PrimApp.at(β, tf, tv), f._apply(tv.val), new Map, null)
                } else {
                   return assert(false, "Not an applicable value.", f)
                }
             }
-            return assert(false, "Demand mismatch.")
          }
+         return assert(false, "Demand mismatch.")
       })
    })
 }
 
-__def(closeDefs)
-function closeDefs (ρ: Env, defs: Trace.RecDefinition[]): Value.Closure[] {
-   const closeDef = 
-      __defLocal(key(closeDefs, arguments), function closeDef (def: Trace.RecDefinition): Value.Closure {
-         return Value.Closure.at(key(closeDef, arguments), ρ, defs, def.func)
-      })
-   return defs.map(closeDef)
-}
-
+// TODO: redo this so they just take their "root" address as an argument?
 __def(bindRecDef)
 function bindRecDef ([binding, f]: [Trace.RecBinding, Value.Closure]): Trace.RecBinding {
   const α: Addr = key(bindRecDef, arguments)

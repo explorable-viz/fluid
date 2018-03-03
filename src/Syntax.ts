@@ -8,10 +8,12 @@ import { binaryOps, create, projections, unaryOps } from "./Runtime"
 
 export class EnvEntry {
    ρ: Env
+   δ: Expr.RecDefinition[]
    e: Expr.Expr
 
-   constructor(ρ: Env, e: Expr.Expr) {
+   constructor(ρ: Env, δ: Expr.RecDefinition[], e: Expr.Expr) {
       this.ρ = ρ
+      this.δ = δ
       this.e = e  
    }
 }
@@ -206,15 +208,16 @@ export namespace Value {
       }
    }
    
+   // Closure and thunk (environment entry) are essentially the same thing; might need to revisit.
    export class Closure {
       ρ: Env
-      defs: Trace.RecDefinition[]
+      δ: Expr.RecDefinition[]
       func: Expr.Fun
    
-      static at (α: Addr, ρ: Env, defs: Trace.RecDefinition[], func: Expr.Fun): Closure {
+      static at (α: Addr, ρ: Env, δ: Expr.RecDefinition[], func: Expr.Fun): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
-         this_.defs = defs
+         this_.δ = δ
          this_.func = as(func, Expr.Fun)
          this_.__version()
          return this_
@@ -333,6 +336,32 @@ export namespace Expr {
       }
    }
 
+   export class RecDefinition {
+      name: Lex.Var
+      func: Fun
+   
+      static at (α: Addr, name: Lex.Var, func: Fun): RecDefinition {
+         const this_: RecDefinition = create(α, RecDefinition)
+         this_.name = as(name, Lex.Var)
+         this_.func = as(func, Fun)
+         this_.__version()
+         return this_
+      }
+   }
+   
+   export class LetRec extends Expr {
+      defs: RecDefinition[]
+      e: Expr
+
+      static at (α: Addr, defs: RecDefinition[], e: Expr): LetRec {
+         const this_: LetRec = create(α, LetRec)
+         this_.defs = defs
+         this_.e = as(e, Expr)
+         this_.__version()
+         return this_
+      }
+   }
+
    export class MatchAs extends Expr {
       e: Expr
       σ: Trie.Trie<Expr>
@@ -390,22 +419,12 @@ export namespace Trie {
       }
    }
 
-   export class ConstInt<T> extends Trie<T> {
+   // Refine this when we have proper signatures for primitive ops.
+   export class Prim<T> extends Trie<T> {
       body: T
 
-      static at <T> (α: Addr, body: T): ConstInt<T> {
-         const this_: ConstInt<T> = create<ConstInt<T>>(α, Fun)
-         this_.body = body
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class ConstStr<T> extends Trie<T> {
-      body: T
-
-      static at <T> (α: Addr, body: T): ConstStr<T> {
-         const this_: ConstStr<T> = create<ConstStr<T>>(α, Fun)
+      static at <T> (α: Addr, body: T): Prim<T> {
+         const this_: Prim<T> = create<Prim<T>>(α, Fun)
          this_.body = body
          this_.__version()
          return this_
@@ -424,12 +443,12 @@ export namespace Trie {
    }
 
    export class Var<T> extends Trie<T> {
-      name: Lex.Var
+      x: Lex.Var
       body: T
 
-      static at <T> (α: Addr, name: Lex.Var, body: T): Var<T> {
+      static at <T> (α: Addr, x: Lex.Var, body: T): Var<T> {
          const this_: Var<T> = create<Var<T>>(α, Var)
-         this_.name = as(name, Lex.Var)
+         this_.x = as(x, Lex.Var)
          this_.body = body
          this_.__version()
          return this_
@@ -462,9 +481,9 @@ export namespace Trie {
          const [σʹ, τʹ]: [Fun<T>, Fun<T>] = [σ, τ]
          return Fun.at(α, join(σʹ.body, τʹ.body))
       } else
-      if (σ instanceof Var && τ instanceof Var && eq(σ.name, τ.name)) {
+      if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
          const [σʹ, τʹ]: [Var<T>, Var<T>] = [σ, τ]
-         return Var.at(α, σʹ.name, join(σʹ.body, τʹ.body))
+         return Var.at(α, σʹ.x, join(σʹ.body, τʹ.body))
       } else
       if (σ instanceof Constr && τ instanceof Constr) {
          const [σʹ, τʹ]: [Constr<T>, Constr<T>] = [σ, τ]
@@ -516,28 +535,15 @@ export namespace Trace {
       }
    }
 
-   export class RecDefinition {
-      name: Lex.Var
-      func: Expr.Fun
-   
-      static at (α: Addr, name: Lex.Var, func: Expr.Fun): RecDefinition {
-         const this_: RecDefinition = create(α, RecDefinition)
-         this_.name = as(name, Lex.Var)
-         this_.func = as(func, Expr.Fun)
-         this_.__version()
-         return this_
-      }
-   }
-   
    // Keep binding of recursive definitions to closures separate from the definitions themselves so that
    // closures can contain definitions without inducing cycles.
    export class RecBinding {
-      def: RecDefinition
+      def: Expr.RecDefinition
       valueOpt: Value.Closure | null
    
-      static at (α: Addr, def: RecDefinition, valueOpt: Value.Closure | null): RecBinding {
+      static at (α: Addr, def: Expr.RecDefinition, valueOpt: Value.Closure | null): RecBinding {
          const this_: RecBinding = create(α, RecBinding)
-         this_.def = as(def, RecDefinition)
+         this_.def = as(def, Expr.RecDefinition)
          this_.valueOpt = asOpt(valueOpt, Value.Closure)
          this_.__version()
          return this_
