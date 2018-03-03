@@ -78,8 +78,9 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
                      f: Value.Value | null = tf.val
                if (f instanceof Value.Closure) {
                   const [tu, ρ2, σʹu]: EvalResult = eval_(ρ)(f.func.σ)(e.arg),
-                        // extend(, zip(f.defs.map(def => def.name.str), closeDefs(f.ρ, f.defs))
-                        [tv, ρʹ, σv]: EvalResult = eval_(union([f.ρ, ρ2]))(σ)(σʹu)
+                        fs: EnvEntry[] = f.δ.map(def => new EnvEntry(f.ρ, f.δ, def.func)),
+                        ρ1: Env = extend(f.ρ, zip(f.δ.map(def => def.name.str), fs)),
+                        [tv, ρʹ, σv]: EvalResult = eval_(union([ρ1, ρ2]))(σ)(σʹu)
                   return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
                } else
                if (f instanceof Value.PrimOp) {
