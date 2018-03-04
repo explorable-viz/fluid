@@ -78,7 +78,7 @@ export function eval_<T> (ρ: Env): (σ: Trie.Trie<T> | null) => (e: Expr.Expr) 
             if (e instanceof Expr.LetRec) {
                const fs: EnvEntry[] = e.δ.map(def => new EnvEntry(ρ, e.δ, def.func)),
                      ρʹ: Env = extend(ρ, zip(e.δ.map(def => def.name.str), fs)),
-                     [tv, ρʺ, σv]: EvalResult = eval_(ρʹ)(σ)(e.e)
+                     [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(ρʹ)(σ)(e.e)
                return __result(α, Trace.LetRec.at(keyP(α, "trace"), e.δ, tv.trace), tv.val, ρʺ, σv)
             } else
             if (e instanceof Expr.MatchAs) {
@@ -88,17 +88,17 @@ export function eval_<T> (ρ: Env): (σ: Trie.Trie<T> | null) => (e: Expr.Expr) 
             } else
             if (e instanceof Expr.App) { 
                const β: Addr = keyP(α, "trace"),
-                     [tf, ,]: EvalResult = eval_(ρ)(Trie.Fun.at(keyP(α, "1"), null))(e.func),
+                     [tf, ,]: EvalResult<null> = eval_<null>(ρ)(Trie.Fun.at(keyP(α, "1"), null))(e.func),
                      f: Value.Value | null = tf.val
                if (f instanceof Value.Closure) {
-                  const [tu, ρ2, σʹu]: EvalResult = eval_(ρ)(f.func.σ)(e.arg),
+                  const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ)(f.func.σ)(e.arg),
                         fs: EnvEntry[] = f.δ.map(def => new EnvEntry(f.ρ, f.δ, def.func)),
                         ρ1: Env = extend(f.ρ, zip(f.δ.map(def => def.name.str), fs)),
-                        [tv, ρʹ, σv]: EvalResult = eval_(union([ρ1, ρ2]))(σ)(σʹu)
+                        [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(union([ρ1, ρ2]))(σ)(σʹu)
                   return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
                } else
                if (f instanceof Value.PrimOp) {
-                  const [tv, ,]: EvalResult = eval_(ρ)(Trie.Prim.at(keyP(α, "1"), null))(e.arg)                        
+                  const [tv, ,]: EvalResult<null> = eval_<null>(ρ)(Trie.Prim.at(keyP(α, "1"), null))(e.arg)                        
                   return __result(α, Trace.PrimApp.at(β, tf, tv), f._apply(tv.val), new Map, null)
                } else {
                   return assert(false, "Not an applicable value.", f)
