@@ -6,10 +6,10 @@ import { Env, EnvEntry, Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
 export module Eval {
 
-type EvalResult = [Traced, Env, Traced]    // tv, ρ, σv
+type EvalResult<T> = [Traced, Env, T]    // tv, ρ, σv
 type EvalResults = [Traced[], Env, Object] // tvs, ρ, σv
 
-function __result (α: Addr, t: Trace.Trace, v: Value.Value | null, ρ: Env, κ: Traced): EvalResult {
+function __result<T> (α: Addr, t: Trace.Trace, v: Value.Value | null, ρ: Env, κ: T): EvalResult<T> {
    return [Traced.at(α, t, v), ρ, κ]
 }
 
@@ -19,16 +19,16 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
       return [[], new Map, κ]
    } else {
       const σ: Trie.Trie<Object> = as(κ as Trie.Trie<Object>, Trie.Trie),
-            [tv, ρʹ, κʹ]: EvalResult = eval_(ρ)(σ)(es[0])
-            [tvs, ρʹ, κʹ]: EvalResults = evalSeq(ρ, ,)
-      return [tvs.push(tv)]
+            [tv, ρʹ, κʹ]: EvalResult<Object> = eval_(ρ)(σ)(es[0]),
+            [tvs, ρʺ, κʺ]: EvalResults = evalSeq(ρ, κʹ, es.slice(1))
+      return [[tv].concat(tvs), union([ρʹ, ρʺ]), κʺ]
    }
 }
 
 __def(eval)
-export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr) => EvalResult {
-   return __defLocal(key(eval, arguments), function withDemand (σ: Trie.Trie<Object>): (e: Expr.Expr) => EvalResult {
-      return __defLocal(key(withDemand, arguments), function withEnv (e: Expr.Expr): EvalResult {
+export function eval_<T> (ρ: Env): (σ: Trie.Trie<T> | null) => (e: Expr.Expr) => EvalResult<T> {
+   return __defLocal(key(eval, arguments), function withDemand<T> (σ: Trie.Trie<T>): (e: Expr.Expr) => EvalResult<T> {
+      return __defLocal(key(withDemand, arguments), function withEnv (e: Expr.Expr): EvalResult<T> {
          const α: Addr = key(withEnv, arguments)
          assert(e !== undefined, "Missing constructor argument?")
          if (σ instanceof Trie.Var) {
@@ -38,8 +38,8 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
             if (e instanceof Expr.Constr && σ instanceof Trie.Constr) {
                const σʹ: Object = σ.cases.get(e.ctr.str),
                      β: Addr = keyP(α, "val"),
-                     [tvs, ρʹ, σv]: EvalResults = evalSeq(ρ, σʹ, e.args)
-               return __result(α, Trace.Empty.at(α), Value.Constr.at(β, e.ctr, tvs), ρʹ, σv)
+                     [tvs, ρʹ, κ]: EvalResults = evalSeq(ρ, σʹ, e.args)
+               return __result(α, Trace.Empty.at(α), Value.Constr.at(β, e.ctr, tvs), ρʹ, κ)
             } else
             if (e instanceof Expr.ConstInt && σ instanceof Trie.Prim) {
                return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), new Map, σ.body)
@@ -65,13 +65,13 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
                   return assert(false, "Variable not found.", e.ident)
                } else {
                   const cls: EnvEntry = __nonNull(ρ.get(e.ident.str)),
-                        [tv, ρʺ, σv]: EvalResult = eval_(cls.ρ)(σ)(cls.e)
+                        [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(cls.ρ)(σ)(cls.e)
                   return __result(α, Trace.Var.at(α, e.ident, tv.trace), tv.val, ρʺ, σv)
                }
             } else
             if (e instanceof Expr.Let) {
-               const [tu, ρʹ, σu]: EvalResult = eval_(ρ)(e.σ)(e.e),
-                     [tv, ρʺ, κ]: EvalResult = eval_(union([ρ, ρʹ]))(σ)(σu)
+               const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ)(e.σ)(e.e),
+                     [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(union([ρ, ρʹ]))(σ)(σu)
                return __result(α, Trace.Let.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
             } else 
             // See 0.3.4 release notes for semantics.
@@ -82,8 +82,8 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
                return __result(α, Trace.LetRec.at(keyP(α, "trace"), e.δ, tv.trace), tv.val, ρʺ, σv)
             } else
             if (e instanceof Expr.MatchAs) {
-               const [tu, ρʹ, σu]: EvalResult = eval_(ρ)(e.σ)(e.e),
-                     [tv, ρʺ, κ] : EvalResult = eval_(union([ρ, ρʹ]))(σ)(σu)
+               const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ)(e.σ)(e.e),
+                     [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(union([ρ, ρʹ]))(σ)(σu)
                return __result(α, Trace.Match.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
             } else
             if (e instanceof Expr.App) { 
