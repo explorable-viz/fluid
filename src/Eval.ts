@@ -6,14 +6,23 @@ import { Env, EnvEntry, Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
 export module Eval {
 
-type EvalResult = [Traced, Env, Traced] // v, ρ, σv
+type EvalResult = [Traced, Env, Traced]    // tv, ρ, σv
+type EvalResults = [Traced[], Env, Object] // tvs, ρ, σv
 
 function __result (α: Addr, t: Trace.Trace, v: Value.Value | null, ρ: Env, κ: Traced): EvalResult {
    return [Traced.at(α, t, v), ρ, κ]
 }
 
-function evalSeq (ρ: Env, σ: Trie.Trie<Object>, es: Expr.Expr[]): EvalResult {
-   
+// TODOL improve the trie typing - maybe need to dynamically emulate the polymorphism of the Agda version?
+function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
+   if (es.length === 0) {
+      return [[], new Map, κ]
+   } else {
+      const σ: Trie.Trie<Object> = as(κ as Trie.Trie<Object>, Trie.Trie),
+            [tv, ρʹ, κʹ]: EvalResult = eval_(ρ)(σ)(es[0])
+            [tvs, ρʹ, κʹ]: EvalResults = evalSeq(ρ, ,)
+      return [tvs.push(tv)]
+   }
 }
 
 __def(eval)
@@ -27,9 +36,10 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
             return __result(α, Trace.Empty.at(α), null, new Map(entries), σ.body)
          } else {
             if (e instanceof Expr.Constr && σ instanceof Trie.Constr) {
-               const σʹ: Trie.Trie<Traced> = σ.cases.get(e.ctr.str)
-               const β: Addr = keyP(α, "val")
-               return __result(α, t, Value.Constr.at(β, e.ctr, evalSeq(ρ, σ, e.args))))
+               const σʹ: Object = σ.cases.get(e.ctr.str),
+                     β: Addr = keyP(α, "val"),
+                     [tvs, ρʹ, σv]: EvalResults = evalSeq(ρ, σʹ, e.args)
+               return __result(α, Trace.Empty.at(α), Value.Constr.at(β, e.ctr, tvs), ρʹ, σv)
             } else
             if (e instanceof Expr.ConstInt && σ instanceof Trie.Prim) {
                return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), new Map, σ.body)
