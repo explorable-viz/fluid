@@ -13,7 +13,7 @@ function __result<T> (α: Addr, t: Trace.Trace, v: Value.Value | null, ρ: Env, 
    return [Traced.at(α, t, v), ρ, κ]
 }
 
-// TODOL improve the trie typing - maybe need to dynamically emulate the polymorphism of the Agda version?
+// Don't think I capture the polymorphic type of the nested trie κ (which has a depth of n >= 0).
 function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
    if (es.length === 0) {
       return [[], new Map, κ]
@@ -39,7 +39,8 @@ export function eval_<T> (ρ: Env): (σ: Trie.Trie<T> | null) => (e: Expr.Expr) 
                const σʹ: Object = σ.cases.get(e.ctr.str),
                      β: Addr = keyP(α, "val"),
                      [tvs, ρʹ, κ]: EvalResults = evalSeq(ρ, σʹ, e.args)
-               return __result(α, Trace.Empty.at(α), Value.Constr.at(β, e.ctr, tvs), ρʹ, κ)
+               // have to cast κ without type information on constructor
+               return __result(α, Trace.Empty.at(α), Value.Constr.at(β, e.ctr, tvs), ρʹ, κ as T)
             } else
             if (e instanceof Expr.ConstInt && σ instanceof Trie.Prim) {
                return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), new Map, σ.body)
