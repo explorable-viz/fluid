@@ -12,6 +12,10 @@ function __result (α: Addr, t: Trace.Trace, v: Value.Value | null, ρ: Env, κ:
    return [Traced.at(α, t, v), ρ, κ]
 }
 
+function evalSeq (ρ: Env, σ: Trie.Trie<Object>, es: Expr.Expr[]): EvalResult {
+   
+}
+
 __def(eval)
 export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr) => EvalResult {
    return __defLocal(key(eval, arguments), function withDemand (σ: Trie.Trie<Object>): (e: Expr.Expr) => EvalResult {
@@ -19,13 +23,13 @@ export function eval_ (ρ: Env): (σ: Trie.Trie<Object> | null) => (e: Expr.Expr
          const α: Addr = key(withEnv, arguments)
          assert(e !== undefined, "Missing constructor argument?")
          if (σ instanceof Trie.Var) {
-            const entries: [string, EnvEntry][] = [[σ.x.str, new EnvEntry(ρ, [], e)]]
+            const entries: [string, EnvEntry][] = [[σ.x.str, {ρ, δ: [], e}]]
             return __result(α, Trace.Empty.at(α), null, new Map(entries), σ.body)
          } else {
             if (e instanceof Expr.Constr && σ instanceof Trie.Constr) {
                const σʹ: Trie.Trie<Traced> = σ.cases.get(e.ctr.str)
                const β: Addr = keyP(α, "val")
-               return __result(α, t, Value.Constr.at(β, v.ctr, v.args.map(eval_(ρ)(null))))
+               return __result(α, t, Value.Constr.at(β, e.ctr, evalSeq(ρ, σ, e.args))))
             } else
             if (e instanceof Expr.ConstInt && σ instanceof Trie.Prim) {
                return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), new Map, σ.body)

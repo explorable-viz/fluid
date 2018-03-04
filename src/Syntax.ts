@@ -1,4 +1,4 @@
-import { __nonNull, as, asOpt, assert } from "./util/Core"
+import { __nonNull, as, assert } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
