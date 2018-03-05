@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
 import { __nonNull, assert, as } from "./util/Core"
 import { extend, union } from "./util/Map"
-import { __def, __defLocal, key, keyP } from "./Memo"
+import { __def, key, keyP } from "./Memo"
 import { Env, EnvEntry, Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
 export module Eval {
