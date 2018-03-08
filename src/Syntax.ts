@@ -107,7 +107,7 @@ export namespace Lex {
 export namespace Value {
    export type Value = Closure | ConstInt | ConstStr | Constr | PrimOp
 
-   // Primitive ops; see 0.4.4 release notes.
+   // Primitive ops; see 0.4.4 release notes. No literal forms; can only be used via operator names.
    export class PrimOp {
       _apply (v: Value | null): Value | null {
          if (v === null) {
