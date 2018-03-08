@@ -1,8 +1,8 @@
-import { as, assert, className } from "./util/Core"
+import { assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
 import { UnaryOp, BinaryOp } from "./Primitive"
 import * as P from "./Primitive"
-import { EmptyTrace, Lex, Trace, Traced, Value, str } from "./Syntax"
+import { Env, str } from "./Syntax"
 
 // At a given version (there is only one, currently) enforce "single assignment" semantics.
 Object.prototype.__version = function (): Object {
@@ -59,9 +59,14 @@ function initPrimitives (): void {
    binaryOps.set("error", P.error)
 }
 
-// export function __val <V extends Value> (v: V): Traced<V> {
-//    return Traced.at(ν(), EmptyTrace.at(ν()), null, v)
-// }
+// Only primitives at the moment; eventually other library code. Fake "syntax" for primitives.
+export function prelude (): Env {
+   initPrimitives()
+
+   const ρ: Env = new Map
+   // TODO: populate
+   return ρ
+}
 
 const __instances: Map<Addr, Object> = new Map()
 
