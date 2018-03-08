@@ -59,9 +59,9 @@ function initPrimitives (): void {
    binaryOps.set("error", P.error)
 }
 
-export function __val <V extends Value> (v: V): Traced<V> {
-   return Traced.at(ν(), EmptyTrace.at(ν()), null, v)
-}
+// export function __val <V extends Value> (v: V): Traced<V> {
+//    return Traced.at(ν(), EmptyTrace.at(ν()), null, v)
+// }
 
 const __instances: Map<Addr, Object> = new Map()
 

@@ -14,7 +14,7 @@ export class EnvEntry {
    constructor(ρ: Env, δ: Expr.RecDefinition[], e: Expr.Expr) {
       this.ρ = ρ
       this.δ = δ
-      this.e = e  
+      this.e = e
    }
 }
 
@@ -208,7 +208,7 @@ export namespace Value {
       }
    }
    
-   // Closure and thunk (environment entry) are essentially the same thing; might need to revisit.
+   // Main difference between closure and environment entry is that closures are a value form.
    export class Closure {
       ρ: Env
       δ: Expr.RecDefinition[]
@@ -262,6 +262,9 @@ export namespace Value {
 
 export namespace Expr {
    export class Expr {
+      __Expr(): void {
+         // discriminator
+      }
    }
 
    export class App extends Expr {
@@ -277,7 +280,7 @@ export namespace Expr {
       }
    }
 
-   export class ConstInt {
+   export class ConstInt extends Expr {
       val: number
    
       static at (α: Addr, val: number): ConstInt {
@@ -288,7 +291,7 @@ export namespace Expr {
       }
    }
    
-   export class ConstStr {
+   export class ConstStr extends Expr {
       val: string
    
       static at (α: Addr, val: string): ConstStr {
@@ -299,7 +302,7 @@ export namespace Expr {
       }
    }
    
-   export class Constr {
+   export class Constr extends Expr {
       ctr: Lex.Ctr
       args: Expr[]
    
@@ -366,9 +369,9 @@ export namespace Expr {
       e: Expr
       σ: Trie.Trie<Expr>
    
-      static at (α: Addr, e: Traced, σ: Trie.Trie<Expr>): MatchAs {
+      static at (α: Addr, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
          const this_: MatchAs = create(α, MatchAs)
-         this_.e = as(e, Traced)
+         this_.e = as(e, Expr)
          this_.σ = as(σ, Trie.Trie)
          this_.__version()
          return this_
@@ -496,6 +499,9 @@ export namespace Trie {
 
 export namespace Trace {
    export class Trace {
+      __Trace(): void {
+         // discriminator
+      }
    }
    
    export class App extends Trace {
