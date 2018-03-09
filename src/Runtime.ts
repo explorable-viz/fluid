@@ -22,7 +22,7 @@ Object.defineProperty(Object.prototype, "__version", {
 function __shallowCopy (src: Object): Object {
    const tgt: Object = new (src.constructor as { new(): Object } ) // lacks a construct signature
    for (let x of Object.keys(src)) {
-      (<any>tgt)[x] = (<any>src)[x]
+      (tgt as any)[x] = (src as any)[x]
    }
    return tgt
 }
@@ -30,7 +30,7 @@ function __shallowCopy (src: Object): Object {
 function __shallowEq (o1: Object, o2: Object): boolean {
    assert(o1.constructor === o2.constructor)
    for (let x of Object.keys(o1)) {
-      if ((<any>o1)[x] !== (<any>o2)[x]) {
+      if ((o1 as any)[x] !== (o2 as any)[x]) {
          return false
       }
    }
@@ -68,7 +68,7 @@ export function prelude (): Env {
    return ρ
 }
 
-const __instances: Map<Addr, Object> = new Map()
+const __instances: Map<Addr, Object> = new Map
 
 // Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
 export function create <T> (α: Addr, ctr: Ctr<T>): T {
@@ -88,7 +88,7 @@ export function create <T> (α: Addr, ctr: Ctr<T>): T {
    } else {
       assert(o.constructor === ctr, "Address collision.", α, className(o.constructor), className(ctr))
    }
-   return <T>o
+   return o as T
 }
 
 // Fresh keys represent inputs to the system.
