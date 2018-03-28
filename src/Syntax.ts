@@ -163,8 +163,17 @@ export namespace Value {
 
    // Primitive ops; see 0.4.4 release notes.
    export class PrimOp {
+      name: string
       σ: Trie.Prim<PrimBody<any>>
 
+      static at (α: Addr, name: string, σ: Trie.Prim<PrimBody<any>>): PrimOp {
+         const this_: PrimOp = create(α, PrimOp)
+         this_.name = name
+         this_.σ = σ
+         this_.__version()
+         return this_
+      }
+/*   
       _apply (v: Value.Value | null): Value.Value | null {
          if (v === null) {
             return null
@@ -176,8 +185,10 @@ export namespace Value {
       __apply (v: Value.Value): Value.Value {
          return abstractMethodError(this)
       }
+*/
    }
-   
+
+/*   
    export class UnaryPrimOp extends PrimOp {
       name: string
    
@@ -242,6 +253,7 @@ export namespace Value {
          return this.name
       }
    }
+*/
 }
 
 export namespace Expr {

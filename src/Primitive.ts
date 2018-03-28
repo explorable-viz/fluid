@@ -24,7 +24,7 @@ function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    }
    if (σ instanceof Trie.Fun) {
       const σʹ: Trie.ConstInt<PrimBody<any>> = Trie.ConstInt.at("", burble),
-            v: Value.PrimOp = Value.UnaryPrimOp.at(key(intToString, arguments), σʹ, "minus-" + x)
+            v: Value.PrimOp = Value.PrimOp.at(key(intToString, arguments), "minus-" + x, σʹ)
       return [v, new Map, σ.body]
    } else {
       return assert(false, "Demand mismatch.")
@@ -32,8 +32,8 @@ function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
 }
 
 export const ops: Value.PrimOp[] = [
-   Value.UnaryPrimOp.at("", Trie.ConstInt.at("", intToString2), "intToString"),
-   Value.BinaryPrimOp.at("", Trie.ConstInt.at("", minus2), "minus")
+   Value.PrimOp.at("", "intToString", Trie.ConstInt.at("", intToString2)),
+   Value.PrimOp.at("", "minus", Trie.ConstInt.at("", minus2))
 ]
 
 // Signatures of primitive operations.
