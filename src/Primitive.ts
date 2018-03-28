@@ -4,7 +4,7 @@ import { ν } from "./Runtime"
 import { Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
-export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
+export type PrimBody<T = any> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
 
 type Unary<T, V> = (x: T) => V
 type Binary<T, U, V> = (x: T, y: U) => V
@@ -21,6 +21,41 @@ function unaryIntStr<T> (op: Unary<Value.ConstInt, Value.ConstStr>): Prim<Value.
          return assert(false, "Demand mismatch.")
       }
    }
+}
+
+function matches<T> (v: Value.Prim, σ: Trie.Trie<T>): PrimResult<T> {
+   if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
+      return [v, σ.body]
+   } else 
+   if (v instanceof Value.ConstStr && σ instanceof Trie.ConstStr) {
+      return [v, σ.body]
+   } else 
+   if (v instanceof Value.Constr && σ instanceof Trie.Constr && σ.cases.has(v.ctr.str)) {
+      return σ.cases.get(v.ctr.str)
+   } else {
+      return assert(false, "Demand mismatch.")
+   }
+}
+
+function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
+   op: Binary<T, U, V>,
+   at1: (α: Addr, body: PrimBody) => Trie.Prim<PrimBody>,
+   at2: (α: Addr, body: PrimBody) => Trie.Prim<PrimBody>
+): Value.PrimOp {
+   const α: Addr = addr(op)
+   function first (x: T, σ: Trie.Trie<any>): PrimResult<any> {
+      function second (y: U, τ: Trie.Trie<T>): PrimResult<T> {
+         return matches(op(x, y), τ)
+      }
+      if (σ instanceof Trie.Fun) {
+         const β: Addr = keyP(α, addr(x)),
+               v: Value.PrimOp = Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), second))
+         return [v, σ.body]
+      } else {
+         return assert(false, "Demand mismatch.")
+      }
+   }
+   return Value.PrimOp.at(α, name, at1(keyP(α, "σ"), first))
 }
 
 function binaryIntIntInt<T> (op: Binary<Value.ConstInt, Value.ConstInt, Value.ConstInt>): Value.PrimOp {
@@ -68,7 +103,7 @@ function binaryIntIntBool<T> (op: Binary<Value.ConstInt, Value.ConstInt, Value.C
 // Fake "syntax" for primitive ops; might revisit.
 export const ops: Value.PrimOp[] = [
    Value.PrimOp.at(ν(), "intToString", Trie.ConstInt.at(ν(), unaryIntStr(intToString))),
-   binaryIntIntInt(minus),
+   binary(minus, Trie.ConstInt.at, Trie.ConstInt.at),
    binaryIntIntInt(plus),
    binaryIntIntInt(times),
    binaryIntIntInt(div),
