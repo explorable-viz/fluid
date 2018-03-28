@@ -85,7 +85,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
                [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(union([ρ, ρʹ]), σ, σu)
          return __result(α, Trace.Match.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
       } else
-      if (e instanceof Expr.App) { 
+      if (e instanceof Expr.App) {
          const β: Addr = keyP(α, "trace"),
                [tf, ,]: EvalResult<null> = eval_<null>(ρ, Trie.Fun.at(keyP(α, "1"), null), e.func),
                f: Value.Value | null = tf.val

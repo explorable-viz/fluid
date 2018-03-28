@@ -31,7 +31,8 @@ function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
-function equalOp2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
+// No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
+function equalInt<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
       const α: Addr = key(equalOp, arguments),
             v: Value.Constr = x.val === y.val ? __true(α) : __false(α)

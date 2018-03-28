@@ -1,10 +1,10 @@
-import { __nonNull, as, assert, abstractMethodError } from "./util/Core"
+import { as, assert } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { __def, key } from "./Memo"
-import { partiallyApply, PrimBody } from "./Primitive"
-import { binaryOps, create, unaryOps } from "./Runtime"
+import { PrimBody } from "./Primitive"
+import { create } from "./Runtime"
 
 export class EnvEntry {
    ρ: Env
