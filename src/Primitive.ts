@@ -1,6 +1,6 @@
 import { assert } from "./util/Core"
 import { __def, key } from "./Memo"
-import { Env, Lex, Trie, Value } from "./Syntax"
+import { Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, ρ, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
@@ -63,23 +63,6 @@ function __true (α: Addr): Value.Constr {
 function __false (α: Addr): Value.Constr {
    return Value.Constr.at(α, new Lex.Ctr("False"), [])
 }
-
-/*
-// Signatures of primitive operations.
-export interface UnaryOp {
-   (v: Value.Value): Value.Value
-}
-
-export interface BinaryOp {
-   (v1: Value.Value, v2: Value.Value): Value.Value
-}
-
-__def(partiallyApply)
-export function partiallyApply (binOp: Value.BinaryPrimOp, v1: Value.Value): Value.UnaryPartialPrimOp {
-   const α: Addr = key(partiallyApply, arguments)
-   return Value.UnaryPartialPrimOp.at(α, binOp + " " + v1, binOp, v1)
-}
-*/
 
 __def(equalOp)
 export function equalOp (x: Value.Value, y: Value.Value): Value.Constr {
