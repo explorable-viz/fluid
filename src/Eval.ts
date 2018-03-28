@@ -34,7 +34,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
       const entries: [string, EnvEntry][] = [[σ.x.str, {ρ, δ: [], e}]]
       return __result(α, Trace.Empty.at(α), null, new Map(entries), σ.body)
    } else {
-      if (e instanceof Expr.Constr && σ instanceof Trie.Constr) {
+      if (e instanceof Expr.Constr && σ instanceof Trie.Constr && σ.cases.has(e.ctr.str)) {
          const σʹ: Object = σ.cases.get(e.ctr.str),
                β: Addr = keyP(α, "val"),
                [tvs, ρʹ, κ]: EvalResults = evalSeq(ρ, σʹ, e.args)

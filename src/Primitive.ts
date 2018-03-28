@@ -33,9 +33,10 @@ function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
 
 function equalOp2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
-      if (τ instanceof Trie.ConstInt) {
-         const α: Addr = key(equalOp, arguments)
-         return [x.val === y.val ? __true(α) : __false(α), new Map, τ.body]
+      const α: Addr = key(equalOp, arguments),
+            v: Value.Constr = x.val === y.val ? __true(α) : __false(α)
+      if (τ instanceof Trie.Constr && τ.cases.has(v.ctr.str)) {
+         return [v, new Map, τ.cases.get(v.ctr.str)]
       } else {
          return assert(false, "Demand mismatch.")
       }
