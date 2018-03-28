@@ -1,9 +1,10 @@
 import { assert } from "./util/Core"
 import { Eval } from "./Eval"
 import { __def, key } from "./Memo"
-import { Lex, Trie, Value } from "./Syntax"
+import { Env, Lex, Trie, Value } from "./Syntax"
 
-export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => Eval.EvalResult<T>
+export type PrimResult<T> = [Value.Value, Env, T]    // v, ρ, σv
+export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
 
 // Signatures of primitive operations.
 export interface UnaryOp {

@@ -2,7 +2,7 @@ import { zip } from "./util/Array"
 import { __nonNull, assert, as } from "./util/Core"
 import { extend, union } from "./util/Map"
 import { __def, key, keyP } from "./Memo"
-import { PrimBody } from "./Primitive"
+import { PrimBody, PrimResult } from "./Primitive"
 import { Env, EnvEntry, Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
 export module Eval {
@@ -61,7 +61,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
             return assert(false, "Name not found.", x)
          } else {
             const cls: EnvEntry = __nonNull(ρ.get(x)),
-                  [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(cls.ρ, σ, cls.e),
+                  [tv, ρʺ, σv]: EvalResult<T> = eval_(cls.ρ, σ, cls.e),
                   t: Trace.Trace = e instanceof Expr.OpName 
                      ? Trace.OpName.at(α, e.opName, tv.trace)
                      : Trace.Var.at(α, e.ident, tv.trace)
@@ -97,9 +97,9 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
             return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
          } else
          if (f instanceof Value.PrimOp) {
-            const [tu, , σʹu]: EvalResult<PrimBody<T>> = eval_<PrimBody<T>>(ρ, f.σ, e.arg),
-                  [tv, ρʹ, σv]: EvalResult<T> = σʹu(tu.val, σ)
-            return __result(α, Trace.PrimApp.at(β, tf, tv), f._apply(tv.val, σ), ρʹ, σv)
+            const [tu, , σʹu]: EvalResult<PrimBody<T>> = eval_(ρ, f.σ, e.arg),
+                  [v, ρʹ, σv]: PrimResult<T> = σʹu(tu.val, σ)
+            return __result(α, Trace.PrimApp.at(β, tf, tu), v, ρʹ, σv)
          } else {
             return assert(false, "Not a function.", f)
          }

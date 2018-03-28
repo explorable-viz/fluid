@@ -163,9 +163,9 @@ export namespace Value {
 
    // Primitive ops; see 0.4.4 release notes.
    export class PrimOp {
-      σ: Trie.Prim<PrimBody>
+      σ: Trie.Prim<PrimBody<any>> // want the quantification on the function itself
 
-      _apply<T> (v: Value.Value | null, σ: Trie.Trie<T>): Value.Value | null {
+      _apply (v: Value.Value | null): Value.Value | null {
          if (v === null) {
             return null
          } else {
