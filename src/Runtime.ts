@@ -1,8 +1,8 @@
-import { assert, className } from "./util/Core"
+import { __shallowCopy, __shallowEq, assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
-import { UnaryOp, BinaryOp } from "./Primitive"
+import { ops } from "./Primitive"
 import * as P from "./Primitive"
-import { Env, str } from "./Syntax"
+import { Env, Expr, Value, str } from "./Syntax"
 
 // At a given version (there is only one, currently) enforce "single assignment" semantics.
 Object.prototype.__version = function (): Object {
@@ -17,25 +17,6 @@ Object.prototype.__version = function (): Object {
 Object.defineProperty(Object.prototype, "__version", {
    enumerable: false
 })
-
-// Previously used Object.assign, but that goes via getters/setters.
-function __shallowCopy (src: Object): Object {
-   const tgt: Object = new (src.constructor as { new(): Object } ) // lacks a construct signature
-   for (let x of Object.keys(src)) {
-      (tgt as any)[x] = (src as any)[x]
-   }
-   return tgt
-}
-
-function __shallowEq (o1: Object, o2: Object): boolean {
-   assert(o1.constructor === o2.constructor)
-   for (let x of Object.keys(o1)) {
-      if ((o1 as any)[x] !== (o2 as any)[x]) {
-         return false
-      }
-   }
-   return true
-}
 
 // Populated by initDataTypes(). Note that constructors are not (yet) first-class.
 export const projections: Map<string, UnaryOp> = new Map
@@ -64,7 +45,9 @@ export function prelude (): Env {
    initPrimitives()
 
    const ρ: Env = new Map
-   // TODO: populate
+   ops.forEach((op: Value.PrimOp) => {
+      ρ.set(op.name, {ρ: new Map, δ: [], e: Expr.PrimOp.at(ν(), op)})
+   })
    return ρ
 }
 
