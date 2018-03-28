@@ -2,7 +2,7 @@ import { assert } from "./util/Core"
 import { __def, key } from "./Memo"
 import { Env, Lex, Trie, Value } from "./Syntax"
 
-export type PrimResult<T> = [Value.Value | null, Env, T]    // v, ρ, σv
+export type PrimResult<T> = [Value.Value | null, Env, T] // v, ρ, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
 
 function intToString2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
@@ -24,7 +24,25 @@ function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    }
    if (σ instanceof Trie.Fun) {
       const σʹ: Trie.ConstInt<PrimBody<any>> = Trie.ConstInt.at("", burble),
-            v: Value.PrimOp = Value.PrimOp.at(key(intToString, arguments), "minus-" + x, σʹ)
+            v: Value.PrimOp = Value.PrimOp.at(key(intToString, arguments), "minus" + " " + x, σʹ)
+      return [v, new Map, σ.body]
+   } else {
+      return assert(false, "Demand mismatch.")
+   }
+}
+
+function equalOp2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
+   function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
+      if (τ instanceof Trie.ConstInt) {
+         const α: Addr = key(equalOp, arguments)
+         return [x.val === y.val ? __true(α) : __false(α), new Map, τ.body]
+      } else {
+         return assert(false, "Demand mismatch.")
+      }
+   }
+   if (σ instanceof Trie.Fun) {
+      const σʹ: Trie.ConstInt<PrimBody<any>> = Trie.ConstInt.at("", burble),
+            v: Value.PrimOp = Value.PrimOp.at(key(intToString, arguments), "minus" + " " + x, σʹ)
       return [v, new Map, σ.body]
    } else {
       return assert(false, "Demand mismatch.")
@@ -53,11 +71,13 @@ function __false (α: Addr): Value.Constr {
    return Value.Constr.at(α, new Lex.Ctr("False"), [])
 }
 
+/*
 __def(partiallyApply)
 export function partiallyApply (binOp: Value.BinaryPrimOp, v1: Value.Value): Value.UnaryPartialPrimOp {
    const α: Addr = key(partiallyApply, arguments)
    return Value.UnaryPartialPrimOp.at(α, binOp + " " + v1, binOp, v1)
 }
+*/
 
 __def(equalOp)
 export function equalOp (x: Value.Value, y: Value.Value): Value.Constr {
