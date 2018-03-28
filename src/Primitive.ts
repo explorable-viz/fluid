@@ -55,15 +55,6 @@ export const ops: Value.PrimOp[] = [
    Value.PrimOp.at("", "minus", Trie.ConstInt.at("", minus2))
 ]
 
-// Signatures of primitive operations.
-export interface UnaryOp {
-   (v: Value.Value): Value.Value
-}
-
-export interface BinaryOp {
-   (v1: Value.Value, v2: Value.Value): Value.Value
-}
-
 function __true (α: Addr): Value.Constr {
    return Value.Constr.at(α, new Lex.Ctr("True"), [])
 }
@@ -73,6 +64,15 @@ function __false (α: Addr): Value.Constr {
 }
 
 /*
+// Signatures of primitive operations.
+export interface UnaryOp {
+   (v: Value.Value): Value.Value
+}
+
+export interface BinaryOp {
+   (v1: Value.Value, v2: Value.Value): Value.Value
+}
+
 __def(partiallyApply)
 export function partiallyApply (binOp: Value.BinaryPrimOp, v1: Value.Value): Value.UnaryPartialPrimOp {
    const α: Addr = key(partiallyApply, arguments)
