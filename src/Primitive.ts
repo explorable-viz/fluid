@@ -3,7 +3,7 @@ import { __def, key } from "./Memo"
 import { ν } from "./Runtime"
 import { Lex, Trie, Value } from "./Syntax"
 
-export type PrimResult<T> = [Value.Value | null, T] // v, ρ, σv
+export type PrimResult<T> = [Value.Value | null, T] // v, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
 
 function intToString2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
@@ -18,7 +18,7 @@ function intToString2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
 function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
       if (τ instanceof Trie.ConstInt) {
-         return [Value.ConstInt.at(key(minus, arguments), x.val - y.val), τ.body]
+        return [Value.ConstInt.at(key(minus, arguments), x.val - y.val), τ.body]
       } else {
          return assert(false, "Demand mismatch.")
       }
@@ -32,30 +32,37 @@ function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
+type Binary<T, U, V> = (x: T, y: U) => V
+type Prim<T, U> = (x: T, σ: Trie.Trie<U>) => PrimResult<U>
+
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
-function equalInt<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
-   function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
-      const α: Addr = key(equalOp, arguments),
-            v: Value.Constr = x.val === y.val ? __true(α) : __false(α)
-      if (τ instanceof Trie.Constr && τ.cases.has(v.ctr.str)) {
-         return [v, τ.cases.get(v.ctr.str)]
+function binaryIntIntBool<T> (op: Binary<Value.ConstInt, Value.ConstInt, Value.Constr>): Prim<Value.ConstInt, T> {
+   return function (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
+      function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
+         const v: Value.Constr = op(x, y)
+         if (τ instanceof Trie.Constr && τ.cases.has(v.ctr.str)) {
+            return [v, τ.cases.get(v.ctr.str)]
+         } else {
+            return assert(false, "Demand mismatch.")
+         }
+      }
+      if (σ instanceof Trie.Fun) {
+         const σʹ: Trie.ConstInt<PrimBody<any>> = Trie.ConstInt.at("", burble),
+               v: Value.PrimOp = Value.PrimOp.at(key(intToString, arguments), "minus" + " " + x, σʹ)
+         return [v, σ.body]
       } else {
          return assert(false, "Demand mismatch.")
       }
-   }
-   if (σ instanceof Trie.Fun) {
-      const σʹ: Trie.ConstInt<PrimBody<any>> = Trie.ConstInt.at("", burble),
-            v: Value.PrimOp = Value.PrimOp.at(key(intToString, arguments), "minus" + " " + x, σʹ)
-      return [v, σ.body]
-   } else {
-      return assert(false, "Demand mismatch.")
    }
 }
 
 // Fake "syntax" for primitive ops; might revisit.
 export const ops: Value.PrimOp[] = [
    Value.PrimOp.at(ν(), "intToString", Trie.ConstInt.at(ν(), intToString2)),
-   Value.PrimOp.at(ν(), "minus", Trie.ConstInt.at(ν(), minus2))
+   Value.PrimOp.at(ν(), "minus", Trie.ConstInt.at(ν(), minus2)),
+   Value.PrimOp.at(ν(), "equalInt", Trie.ConstInt.at(ν(), binaryIntIntBool(equalInt))),
+   Value.PrimOp.at(ν(), "greaterInt", Trie.ConstInt.at(ν(), binaryIntIntBool(greaterInt))),
+   Value.PrimOp.at(ν(), "lessInt", Trie.ConstInt.at(ν(), binaryIntIntBool(lessInt)))
 ]
 
 function __true (α: Addr): Value.Constr {
@@ -66,44 +73,40 @@ function __false (α: Addr): Value.Constr {
    return Value.Constr.at(α, new Lex.Ctr("False"), [])
 }
 
-__def(equalOp)
-export function equalOp (x: Value.Value, y: Value.Value): Value.Constr {
-   const α: Addr = key(equalOp, arguments)
-   if (x instanceof Value.ConstInt && y instanceof Value.ConstInt) {
-      return x.val === y.val ? __true(α) : __false(α)
-   } else
-   if (x instanceof Value.ConstStr && y instanceof Value.ConstStr) {
-      return x.val === y.val ? __true(α) : __false(α)
-   } else {
-      return assert(false, "Can only compare two ints or two strings.", x, y)
-   }
+__def(equalInt)
+export function equalInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
+   const α: Addr = key(equalInt, arguments)
+   return x.val === y.val ? __true(α) : __false(α)
 }
 
-__def(greaterT)
-export function greaterT (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
-   const α: Addr = key(greaterT, arguments)
-   
-   if (x instanceof Value.ConstInt && y instanceof Value.ConstInt) {
-      return x.val > y.val ? __true(α) : __false(α)
-   } else
-   if (x instanceof Value.ConstStr && y instanceof Value.ConstStr) {
-      return x.val > y.val ? __true(α) : __false(α)
-   } else {
-      return assert(false, "Can only compare two ints or two strings.", x, y)
-   }
+__def(equalStr)
+export function equalStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
+   const α: Addr = key(equalStr, arguments)
+   return x.val === y.val ? __true(α) : __false(α)
 }
 
-__def(lessT)
-export function lessT (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
-   const α: Addr = key(lessT, arguments)
-   if (x instanceof Value.ConstInt && y instanceof Value.ConstInt) {
-      return x.val < y.val ? __true(α) : __false(α)
-   } else
-   if (x instanceof Value.ConstStr && y instanceof Value.ConstStr) {
-      return x.val < y.val ? __true(α) : __false(α)
-   } else {
-      return assert(false, "Can only compare two ints or two strings.", x, y)
-   }
+__def(greaterInt)
+export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
+   const α: Addr = key(greaterInt, arguments)
+   return x.val > y.val ? __true(α) : __false(α)
+}
+
+__def(greaterStr)
+export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
+   const α: Addr = key(greaterStr, arguments)
+   return x.val > y.val ? __true(α) : __false(α)
+}
+
+__def(lessInt)
+export function lessInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
+   const α: Addr = key(lessInt, arguments)
+   return x.val > y.val ? __true(α) : __false(α)
+}
+
+__def(lessStr)
+export function lessStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
+   const α: Addr = key(lessStr, arguments)
+   return x.val > y.val ? __true(α) : __false(α)
 }
 
 __def(minus)
