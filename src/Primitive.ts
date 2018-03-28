@@ -1,5 +1,6 @@
 import { assert } from "./util/Core"
 import { __def, key } from "./Memo"
+import { ν } from "./Runtime"
 import { Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, ρ, σv
@@ -51,9 +52,10 @@ function equalInt<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
+// Fake "syntax" for primitive ops; might revisit.
 export const ops: Value.PrimOp[] = [
-   Value.PrimOp.at("", "intToString", Trie.ConstInt.at("", intToString2)),
-   Value.PrimOp.at("", "minus", Trie.ConstInt.at("", minus2))
+   Value.PrimOp.at(ν(), "intToString", Trie.ConstInt.at(ν(), intToString2)),
+   Value.PrimOp.at(ν(), "minus", Trie.ConstInt.at(ν(), minus2))
 ]
 
 function __true (α: Addr): Value.Constr {
