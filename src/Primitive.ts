@@ -1,22 +1,32 @@
-import { as, assert } from "./util/Core"
-import { Eval } from "./Eval"
+import { assert } from "./util/Core"
 import { __def, key } from "./Memo"
 import { Env, Lex, Trie, Value } from "./Syntax"
 
-export type PrimResult<T> = [Value.Value, Env, T]    // v, ρ, σv
+export type PrimResult<T> = [Value.Value | null, Env, T]    // v, ρ, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
 
-function intToString2<T> (x_: Value.Value | null, σ: Trie.Trie<T>): PrimResult<T> {
-   const v: Value.ConstStr = Value.ConstStr.at(key(intToString, arguments), as(x_, Value.ConstInt).toString())
-   if (σ instanceof Trie.Var) {
-
-   } else 
-   if (σ instanceof Trie.Prim) {
-
-   } else 
+function intToString2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
+   if (σ instanceof Trie.ConstStr) {
+      const v: Value.ConstStr = Value.ConstStr.at(key(intToString, arguments), x.toString())
+      return [v, new Map, σ.body]
+   } else {
+      return assert(false, "Demand mismatch.")
+   }
 }
 
-const blah: Trie.Prim<PrimBody<null>> = Trie.Prim.at("", burble)
+function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
+   if (σ instanceof Trie.Fun) {
+      const v: Value.PrimOp = Value.UnaryPrimOp.at(key(intToString, arguments), 5, "minus-" + x)
+      return [v, new Map, σ.body]
+   } else {
+      return assert(false, "Demand mismatch.")
+   }
+}
+
+export const ops: Value.PrimOp[] = [
+   Value.UnaryPrimOp.at("", Trie.ConstInt.at("", intToString2), "intToString"),
+   Value.BinaryPrimOp.at("", Trie.ConstInt.at("", minus2), "minus")
+]
 
 // Signatures of primitive operations.
 export interface UnaryOp {

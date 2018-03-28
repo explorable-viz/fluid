@@ -163,7 +163,7 @@ export namespace Value {
 
    // Primitive ops; see 0.4.4 release notes.
    export class PrimOp {
-      σ: Trie.Prim<PrimBody<any>> // want the quantification on the function itself
+      σ: Trie.Prim<PrimBody<any>>
 
       _apply (v: Value.Value | null): Value.Value | null {
          if (v === null) {
@@ -178,13 +178,12 @@ export namespace Value {
       }
    }
    
-   // Assume all dynamic type-checking is performed inside the underlying JS operation, although
-   // currently there mostly isn't any.
    export class UnaryPrimOp extends PrimOp {
       name: string
    
-      static at (α: Addr, name: string): UnaryPrimOp {
+      static at (α: Addr, σ: Trie.Prim<PrimBody<any>>, name: string): UnaryPrimOp {
          const this_: UnaryPrimOp = create(α, UnaryPrimOp)
+         this_.σ = σ
          this_.name = name
          this_.__version()
          return this_
@@ -202,8 +201,9 @@ export namespace Value {
    export class BinaryPrimOp extends PrimOp {
       name: string
    
-      static at (α: Addr, name: string): BinaryPrimOp {
+      static at (α: Addr, σ: Trie.Prim<PrimBody<any>>, name: string): BinaryPrimOp {
          const this_: BinaryPrimOp = create(α, BinaryPrimOp)
+         this_.σ = σ
          this_.name = name
          this_.__version()
          return this_
@@ -420,9 +420,11 @@ export namespace Trie {
       }
    }
 
-   export class ConstInt<T> extends Trie<T> {
+   export class Prim<T> extends Trie<T> {
       body: T
+   }
 
+   export class ConstInt<T> extends Prim<T> {
       static at <T> (α: Addr, body: T): ConstInt<T> {
          const this_: ConstInt<T> = create<ConstInt<T>>(α, Fun)
          this_.body = body
@@ -431,9 +433,7 @@ export namespace Trie {
       }
    }
 
-   export class ConstStr<T> extends Trie<T> {
-      body: T
-
+   export class ConstStr<T> extends Prim<T> {
       static at <T> (α: Addr, body: T): ConstStr<T> {
          const this_: ConstStr<T> = create<ConstStr<T>>(α, Fun)
          this_.body = body
