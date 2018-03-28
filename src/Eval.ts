@@ -41,10 +41,10 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
          // have to cast κ without type information on constructor
          return __result(α, Trace.Empty.at(α), Value.Constr.at(β, e.ctr, tvs), ρʹ, κ as T)
       } else
-      if (e instanceof Expr.ConstInt && σ instanceof Trie.Prim) {
+      if (e instanceof Expr.ConstInt && σ instanceof Trie.ConstInt) {
          return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), new Map, σ.body)
       } else
-      if (e instanceof Expr.ConstStr && σ instanceof Trie.Prim) {
+      if (e instanceof Expr.ConstStr && σ instanceof Trie.ConstStr) {
          return __result(α, Trace.Empty.at(α), Value.ConstStr.at(keyP(α, "val"), e.val), new Map, σ.body)
 
       } else

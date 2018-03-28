@@ -1,10 +1,22 @@
-import { assert } from "./util/Core"
+import { as, assert } from "./util/Core"
 import { Eval } from "./Eval"
 import { __def, key } from "./Memo"
 import { Env, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value, Env, T]    // v, ρ, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
+
+function intToString2<T> (x_: Value.Value | null, σ: Trie.Trie<T>): PrimResult<T> {
+   const v: Value.ConstStr = Value.ConstStr.at(key(intToString, arguments), as(x_, Value.ConstInt).toString())
+   if (σ instanceof Trie.Var) {
+
+   } else 
+   if (σ instanceof Trie.Prim) {
+
+   } else 
+}
+
+const blah: Trie.Prim<PrimBody<null>> = Trie.Prim.at("", burble)
 
 // Signatures of primitive operations.
 export interface UnaryOp {

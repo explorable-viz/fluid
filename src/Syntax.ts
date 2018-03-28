@@ -420,12 +420,22 @@ export namespace Trie {
       }
    }
 
-   // Refine this when we have proper signatures for primitive ops.
-   export class Prim<T> extends Trie<T> {
+   export class ConstInt<T> extends Trie<T> {
       body: T
 
-      static at <T> (α: Addr, body: T): Prim<T> {
-         const this_: Prim<T> = create<Prim<T>>(α, Fun)
+      static at <T> (α: Addr, body: T): ConstInt<T> {
+         const this_: ConstInt<T> = create<ConstInt<T>>(α, Fun)
+         this_.body = body
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class ConstStr<T> extends Trie<T> {
+      body: T
+
+      static at <T> (α: Addr, body: T): ConstStr<T> {
+         const this_: ConstStr<T> = create<ConstStr<T>>(α, Fun)
          this_.body = body
          this_.__version()
          return this_
