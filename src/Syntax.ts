@@ -3,8 +3,8 @@ import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { __def, key } from "./Memo"
-import { partiallyApply } from "./Primitive"
-import { binaryOps, create, projections, unaryOps } from "./Runtime"
+import { partiallyApply, PrimBody } from "./Primitive"
+import { binaryOps, create, unaryOps } from "./Runtime"
 
 export class EnvEntry {
    ρ: Env
@@ -163,7 +163,9 @@ export namespace Value {
 
    // Primitive ops; see 0.4.4 release notes.
    export class PrimOp {
-      _apply (v: Value.Value | null): Value.Value | null {
+      σ: Trie.Prim<PrimBody>
+
+      _apply<T> (v: Value.Value | null, σ: Trie.Trie<T>): Value.Value | null {
          if (v === null) {
             return null
          } else {
@@ -580,12 +582,12 @@ export namespace Trace {
 
    // For primitives there is no body, but we will still show how the argument is consumed.
    export class PrimApp extends Trace {
-      func: Traced
+      op: Traced
       arg: Traced
 
-      static at (α: Addr, func: Traced, arg: Traced): App {
-         const this_: App = create(α, App)
-         this_.func = as(func, Traced)
+      static at (α: Addr, op: Traced, arg: Traced): PrimApp {
+         const this_: PrimApp = create(α, PrimApp)
+         this_.op = as(op, Traced)
          this_.arg = as(arg, Traced)
          this_.__version()
          return this_

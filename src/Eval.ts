@@ -2,11 +2,12 @@ import { zip } from "./util/Array"
 import { __nonNull, assert, as } from "./util/Core"
 import { extend, union } from "./util/Map"
 import { __def, key, keyP } from "./Memo"
+import { PrimBody } from "./Primitive"
 import { Env, EnvEntry, Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
 export module Eval {
 
-type EvalResult<T> = [Traced, Env, T]    // tv, ρ, σv
+export type EvalResult<T> = [Traced, Env, T]    // tv, ρ, σv
 type EvalResults = [Traced[], Env, Object] // tvs, ρ, σv
 
 function __result<T> (α: Addr, t: Trace.Trace, v: Value.Value | null, ρ: Env, κ: T): EvalResult<T> {
@@ -26,7 +27,7 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
 }
 
 __def(eval_)
-export function eval_<T> (ρ: Env, σ: Trie.Trie<T> | null, e: Expr.Expr): EvalResult<T> {
+export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
    const α: Addr = key(eval_, arguments)
    assert(e !== undefined, "Missing constructor argument?")
    if (σ instanceof Trie.Var) {
@@ -54,22 +55,17 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T> | null, e: Expr.Expr): EvalR
       if (e instanceof Expr.PrimOp && σ instanceof Trie.Fun) {
          return __result(α, Trace.Empty.at(keyP(α, "trace")), e.op, new Map, σ.body)
       } else
-      if (e instanceof Expr.OpName) {
-         if (!ρ.has(e.opName.str)) {
-            return assert(false, "Operator not found.", e.opName)
+      if (e instanceof Expr.OpName || e instanceof Expr.Var) {
+         const x: string = e instanceof Expr.OpName ? e.opName.str : e.ident.str
+         if (!ρ.has(x)) {
+            return assert(false, "Name not found.", x)
          } else {
-            const cls: EnvEntry = __nonNull(ρ.get(e.opName.str)),
-                  [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(cls.ρ, σ, cls.e)
-            return __result(α, Trace.OpName.at(α, e.opName, tv.trace), tv.val, ρʺ, σv)
-         }
-      } else
-      if (e instanceof Expr.Var) {
-         if (!ρ.has(e.ident.str)) {
-            return assert(false, "Variable not found.", e.ident)
-         } else {
-            const cls: EnvEntry = __nonNull(ρ.get(e.ident.str)),
-                  [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(cls.ρ, σ, cls.e)
-            return __result(α, Trace.Var.at(α, e.ident, tv.trace), tv.val, ρʺ, σv)
+            const cls: EnvEntry = __nonNull(ρ.get(x)),
+                  [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(cls.ρ, σ, cls.e),
+                  t: Trace.Trace = e instanceof Expr.OpName 
+                     ? Trace.OpName.at(α, e.opName, tv.trace)
+                     : Trace.Var.at(α, e.ident, tv.trace)
+            return __result(α, t, tv.val, ρʺ, σv)
          }
       } else
       if (e instanceof Expr.Let) {
@@ -101,10 +97,11 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T> | null, e: Expr.Expr): EvalR
             return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
          } else
          if (f instanceof Value.PrimOp) {
-            const [tv, ,]: EvalResult<null> = eval_<null>(ρ, Trie.Prim.at(keyP(α, "1"), null), e.arg)                        
-            return __result(α, Trace.PrimApp.at(β, tf, tv), f._apply(tv.val), new Map, null)
+            const [tu, , σʹu]: EvalResult<PrimBody<T>> = eval_<PrimBody<T>>(ρ, f.σ, e.arg),
+                  [tv, ρʹ, σv]: EvalResult<T> = σʹu(tu.val, σ)
+            return __result(α, Trace.PrimApp.at(β, tf, tv), f._apply(tv.val, σ), ρʹ, σv)
          } else {
-            return assert(false, "Not an applicable value.", f)
+            return assert(false, "Not a function.", f)
          }
       }
    }
