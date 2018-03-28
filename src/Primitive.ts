@@ -2,13 +2,13 @@ import { assert } from "./util/Core"
 import { __def, key } from "./Memo"
 import { Env, Lex, Trie, Value } from "./Syntax"
 
-export type PrimResult<T> = [Value.Value | null, Env, T] // v, ρ, σv
+export type PrimResult<T> = [Value.Value | null, T] // v, ρ, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
 
 function intToString2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    if (σ instanceof Trie.ConstStr) {
       const v: Value.ConstStr = Value.ConstStr.at(key(intToString, arguments), x.toString())
-      return [v, new Map, σ.body]
+      return [v, σ.body]
    } else {
       return assert(false, "Demand mismatch.")
    }
@@ -17,7 +17,7 @@ function intToString2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
 function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
       if (τ instanceof Trie.ConstInt) {
-         return [Value.ConstInt.at(key(minus, arguments), x.val - y.val), new Map, τ.body]
+         return [Value.ConstInt.at(key(minus, arguments), x.val - y.val), τ.body]
       } else {
          return assert(false, "Demand mismatch.")
       }
@@ -25,7 +25,7 @@ function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    if (σ instanceof Trie.Fun) {
       const σʹ: Trie.ConstInt<PrimBody<any>> = Trie.ConstInt.at("", burble),
             v: Value.PrimOp = Value.PrimOp.at(key(intToString, arguments), "minus" + " " + x, σʹ)
-      return [v, new Map, σ.body]
+      return [v, σ.body]
    } else {
       return assert(false, "Demand mismatch.")
    }
@@ -36,7 +36,7 @@ function equalOp2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
       const α: Addr = key(equalOp, arguments),
             v: Value.Constr = x.val === y.val ? __true(α) : __false(α)
       if (τ instanceof Trie.Constr && τ.cases.has(v.ctr.str)) {
-         return [v, new Map, τ.cases.get(v.ctr.str)]
+         return [v, τ.cases.get(v.ctr.str)]
       } else {
          return assert(false, "Demand mismatch.")
       }
@@ -44,7 +44,7 @@ function equalOp2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
    if (σ instanceof Trie.Fun) {
       const σʹ: Trie.ConstInt<PrimBody<any>> = Trie.ConstInt.at("", burble),
             v: Value.PrimOp = Value.PrimOp.at(key(intToString, arguments), "minus" + " " + x, σʹ)
-      return [v, new Map, σ.body]
+      return [v, σ.body]
    } else {
       return assert(false, "Demand mismatch.")
    }
