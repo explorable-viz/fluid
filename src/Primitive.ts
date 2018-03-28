@@ -1,41 +1,50 @@
 import { assert } from "./util/Core"
-import { __def, key } from "./Memo"
+import { __def, addr, key, keyP } from "./Memo"
 import { ν } from "./Runtime"
 import { Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
 
-function intToString2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
-   if (σ instanceof Trie.ConstStr) {
-      const v: Value.ConstStr = Value.ConstStr.at(key(intToString, arguments), x.toString())
-      return [v, σ.body]
-   } else {
-      return assert(false, "Demand mismatch.")
-   }
-}
+type Unary<T, V> = (x: T) => V
+type Binary<T, U, V> = (x: T, y: U) => V
+type Prim<T, U> = (x: T, σ: Trie.Trie<U>) => PrimResult<U>
 
-function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
-   function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
-      if (τ instanceof Trie.ConstInt) {
-        return [Value.ConstInt.at(key(minus, arguments), x.val - y.val), τ.body]
+// Note: primitives currently use a custom memoisation policy, although other approaches are possible.
+
+function unaryIntStr<T> (op: Unary<Value.ConstInt, Value.ConstStr>): Prim<Value.ConstInt, T> {
+   return function (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
+      if (σ instanceof Trie.ConstStr) {
+         const v: Value.ConstStr = Value.ConstStr.at(key(intToString, arguments), x.toString())
+         return [v, σ.body]
       } else {
          return assert(false, "Demand mismatch.")
       }
    }
-   if (σ instanceof Trie.Fun) {
-      const σʹ: Trie.ConstInt<PrimBody<any>> = Trie.ConstInt.at("", burble),
-            v: Value.PrimOp = Value.PrimOp.at(key(intToString, arguments), "minus" + " " + x, σʹ)
-      return [v, σ.body]
-   } else {
-      return assert(false, "Demand mismatch.")
-   }
 }
 
-type Binary<T, U, V> = (x: T, y: U) => V
-type Prim<T, U> = (x: T, σ: Trie.Trie<U>) => PrimResult<U>
+function binaryIntIntInt<T> (op: Binary<Value.ConstInt, Value.ConstInt, Value.ConstInt>): Value.PrimOp {
+   const α: Addr = addr(op)
+   function first (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
+      function second (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
+         const v: Value.ConstInt = op(x, y)
+         if (τ instanceof Trie.ConstInt) {
+            return [v, τ.body]
+         } else {
+            return assert(false, "Demand mismatch.")
+         }
+      }
+      if (σ instanceof Trie.Fun) {
+         const β: Addr = keyP(α, addr(x)),
+               v: Value.PrimOp = Value.PrimOp.at(β, op.name + " " + x, Trie.ConstInt.at(keyP(β, "σ"), second))
+         return [v, σ.body]
+      } else {
+         return assert(false, "Demand mismatch.")
+      }
+   }
+   return Value.PrimOp.at(α, name, Trie.ConstInt.at(keyP(α, "σ"), first))
+}
 
-// No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
 function binaryIntIntBool<T> (op: Binary<Value.ConstInt, Value.ConstInt, Value.Constr>): Prim<Value.ConstInt, T> {
    return function (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
       function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
@@ -58,8 +67,11 @@ function binaryIntIntBool<T> (op: Binary<Value.ConstInt, Value.ConstInt, Value.C
 
 // Fake "syntax" for primitive ops; might revisit.
 export const ops: Value.PrimOp[] = [
-   Value.PrimOp.at(ν(), "intToString", Trie.ConstInt.at(ν(), intToString2)),
-   Value.PrimOp.at(ν(), "minus", Trie.ConstInt.at(ν(), minus2)),
+   Value.PrimOp.at(ν(), "intToString", Trie.ConstInt.at(ν(), unaryIntStr(intToString))),
+   binaryIntIntInt(minus),
+   binaryIntIntInt(plus),
+   binaryIntIntInt(times),
+   binaryIntIntInt(div),
    Value.PrimOp.at(ν(), "equalInt", Trie.ConstInt.at(ν(), binaryIntIntBool(equalInt))),
    Value.PrimOp.at(ν(), "greaterInt", Trie.ConstInt.at(ν(), binaryIntIntBool(greaterInt))),
    Value.PrimOp.at(ν(), "lessInt", Trie.ConstInt.at(ν(), binaryIntIntBool(lessInt)))
@@ -73,6 +85,7 @@ function __false (α: Addr): Value.Constr {
    return Value.Constr.at(α, new Lex.Ctr("False"), [])
 }
 
+// No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
 __def(equalInt)
 export function equalInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
    const α: Addr = key(equalInt, arguments)

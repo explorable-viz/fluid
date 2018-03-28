@@ -125,8 +125,11 @@ export namespace Value {
          return this_
       }
    }
+
+   export class Prim {
+   }
    
-   export class ConstInt {
+   export class ConstInt extends Prim {
       val: number
    
       static at (α: Addr, val: number): ConstInt {
@@ -137,7 +140,7 @@ export namespace Value {
       }
    }
    
-   export class ConstStr {
+   export class ConstStr extends Prim {
       val: string
    
       static at (α: Addr, val: string): ConstStr {
@@ -173,87 +176,7 @@ export namespace Value {
          this_.__version()
          return this_
       }
-/*   
-      _apply (v: Value.Value | null): Value.Value | null {
-         if (v === null) {
-            return null
-         } else {
-            return this.__apply(v)
-         }
-      }
-   
-      __apply (v: Value.Value): Value.Value {
-         return abstractMethodError(this)
-      }
-*/
    }
-
-/*   
-   export class UnaryPrimOp extends PrimOp {
-      name: string
-   
-      static at (α: Addr, σ: Trie.Prim<PrimBody<any>>, name: string): UnaryPrimOp {
-         const this_: UnaryPrimOp = create(α, UnaryPrimOp)
-         this_.σ = σ
-         this_.name = name
-         this_.__version()
-         return this_
-      }
-   
-      __apply (v: Value.Value): Value.Value {
-         return __nonNull(unaryOps.get(this.name))(v)
-      }
-   
-      toString (): string {
-         return this.name
-      }
-   }
-   
-   export class BinaryPrimOp extends PrimOp {
-      name: string
-   
-      static at (α: Addr, σ: Trie.Prim<PrimBody<any>>, name: string): BinaryPrimOp {
-         const this_: BinaryPrimOp = create(α, BinaryPrimOp)
-         this_.σ = σ
-         this_.name = name
-         this_.__version()
-         return this_
-      }
-   
-      __apply (v1: Value.Value): PrimOp {
-         return partiallyApply(this, v1)
-      }
-      
-      toString (): string {
-         return this.name
-      }
-   }
-   
-   // Binary op that has been applied to a single operand. Should be a UnaryPrimOp, but TypeScript
-   // forces static methods to "override".
-   export class UnaryPartialPrimOp extends PrimOp {
-      name: string
-      binOp: BinaryPrimOp
-      v1: Value.Value
-   
-      static at (α: Addr, name: string, binOp: BinaryPrimOp, v1: Value.Value): UnaryPartialPrimOp {
-         const this_: UnaryPartialPrimOp = create(α, UnaryPartialPrimOp)
-         this_.name = name
-         this_.binOp = as(binOp, BinaryPrimOp)
-         this_.v1 = v1
-         this_.__version()
-         return this_
-      }
-   
-      __apply (v2: Value.Value): Value.Value {
-         return __nonNull(binaryOps.get(this.binOp.name))(this.v1, v2)
-      }
-   
-      toString (): string {
-         return this.name
-      }
-   }
-*/
 }
 
 export namespace Expr {
