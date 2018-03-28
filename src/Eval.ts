@@ -51,12 +51,16 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T> | null, e: Expr.Expr): EvalR
          const v: Value.Closure = Value.Closure.at(keyP(α, "val"), ρ, [], e)
          return __result(α, Trace.Empty.at(keyP(α, "trace")), v, new Map, σ.body)
       } else
-      if (e instanceof Expr.OpName && σ instanceof Trie.Fun) {
+      if (e instanceof Expr.PrimOp && σ instanceof Trie.Fun) {
+         return __result(α, Trace.Empty.at(keyP(α, "trace")), e.op, new Map, σ.body)
+      } else
+      if (e instanceof Expr.OpName) {
          if (!ρ.has(e.opName.str)) {
             return assert(false, "Operator not found.", e.opName)
          } else {
-            const v: Value.PrimOp = as(ρ.get(e.opName.str), Value.PrimOp)
-            return __result(α, Trace.Empty.at(keyP(α, "trace")), v, new Map, σ.body)
+            const cls: EnvEntry = __nonNull(ρ.get(e.opName.str)),
+                  [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(cls.ρ, σ, cls.e)
+            return __result(α, Trace.OpName.at(α, e.opName, tv.trace), tv.val, ρʺ, σv)
          }
       } else
       if (e instanceof Expr.Var) {

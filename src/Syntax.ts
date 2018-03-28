@@ -1,4 +1,4 @@
-import { __nonNull, as, assert } from "./util/Core"
+import { __nonNull, as, assert, abstractMethodError } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
@@ -22,26 +22,26 @@ export type Env = Map<string, EnvEntry | null>
 
 export namespace str {
    // Primitive ops.
-   export const concat: string = '++'
-   export const div: string = '/'
-   export const equal: string = '=='
-   export const greaterT: string = '>'
-   export const lessT: string = '<'
-   export const minus: string = '-'
-   export const plus: string = '+'
-   export const times: string = '*'
+   export const concat: string = "++"
+   export const div: string = "/"
+   export const equal: string = "=="
+   export const greaterT: string = ">"
+   export const lessT: string = "<"
+   export const minus: string = "-"
+   export const plus: string = "+"
+   export const times: string = "*"
 
    // Constants used for parsing, and also for toString() implementations.
-   export const arrow: string = '→'
+   export const arrow: string = "→"
    export const as: string = "as"
-   export const equals: string = '='
+   export const equals: string = "="
    export const fun: string = "fun"
    export const in_: string = "in"
    export const let_: string = "let"
    export const letRec: string = "letrec"
    export const match: string = "match"
-   export const parenL: string = '('
-   export const parenR: string = ')'
+   export const parenL: string = "("
+   export const parenR: string = ")"
    export const quotes: string = '"'
 }
 
@@ -81,6 +81,10 @@ export namespace Lex {
       constructor(str: string) {
          super(str)
       }
+
+      __OpName(): void {
+         // discriminator
+      }
    }
 
    export class StringLiteral extends Lexeme {
@@ -107,108 +111,6 @@ export namespace Lex {
 export namespace Value {
    export type Value = Closure | ConstInt | ConstStr | Constr | PrimOp
 
-   // Primitive ops; see 0.4.4 release notes. No literal forms; can only be used via operator names.
-   export class PrimOp {
-      _apply (v: Value | null): Value | null {
-         if (v === null) {
-            return null
-         } else {
-            return this.__apply(v)
-         }
-      }
-   
-      __apply (v: Value): Value {
-         return assert(false, "Would like this to be abstract.")
-      }
-   }
-   
-   // Assume all dynamic type-checking is performed inside the underlying JS operation, although
-   // currently there mostly isn't any.
-   export class UnaryPrimOp extends PrimOp {
-      name: string
-   
-      static at (α: Addr, name: string): UnaryPrimOp {
-         const this_: UnaryPrimOp = create(α, UnaryPrimOp)
-         this_.name = name
-         this_.__version()
-         return this_
-      }
-   
-      __apply (v: Value): Value {
-         return __nonNull(unaryOps.get(this.name))(v)
-      }
-   
-      toString (): string {
-         return this.name
-      }
-   }
-   
-   export class BinaryPrimOp extends PrimOp {
-      name: string
-   
-      static at (α: Addr, name: string): BinaryPrimOp {
-         const this_: BinaryPrimOp = create(α, BinaryPrimOp)
-         this_.name = name
-         this_.__version()
-         return this_
-      }
-   
-      __apply (v1: Value): PrimOp {
-         return partiallyApply(this, v1)
-      }
-   
-      
-      toString (): string {
-         return this.name
-      }
-   }
-   
-   // Binary op that has been applied to a single operand.
-   export class UnaryPartialPrimOp extends PrimOp {
-      name: string
-      binOp: BinaryPrimOp
-      v1: Value
-   
-      static at (α: Addr, name: string, binOp: BinaryPrimOp, v1: Value): UnaryPartialPrimOp {
-         const this_: UnaryPartialPrimOp = create(α, UnaryPartialPrimOp)
-         this_.name = name
-         this_.binOp = as(binOp, BinaryPrimOp)
-         this_.v1 = v1
-         this_.__version()
-         return this_
-      }
-   
-      __apply (v2: Value): Value {
-         return __nonNull(binaryOps.get(this.binOp.name))(this.v1, v2)
-      }
-   
-      toString (): string {
-         return this.name
-      }
-   }
-   
-   // Syntactically distinguish projection functions from other unary ops, previously because we generated an
-   // implementation; may no longer be necessary.
-   export class Proj extends PrimOp {
-      name: string
-   
-      static at (α: Addr, name: string): Proj {
-         const this_: Proj = create(α, Proj)
-         this_.name = name
-         this_.__version()
-         return this_
-      }
-   
-      __apply (v: Value): Value {
-         return __nonNull(projections.get(this.name))(v)
-      }
-   
-      toString (): string {
-         return this.name
-      }
-   }
-   
-   // Main difference between closure and environment entry is that closures are a value form.
    export class Closure {
       ρ: Env
       δ: Expr.RecDefinition[]
@@ -256,6 +158,86 @@ export namespace Value {
          this_.args = args
          this_.__version()
          return this_
+      }
+   }
+
+   // Primitive ops; see 0.4.4 release notes.
+   export class PrimOp {
+      _apply (v: Value.Value | null): Value.Value | null {
+         if (v === null) {
+            return null
+         } else {
+            return this.__apply(v)
+         }
+      }
+   
+      __apply (v: Value.Value): Value.Value {
+         return abstractMethodError(this)
+      }
+   }
+   
+   // Assume all dynamic type-checking is performed inside the underlying JS operation, although
+   // currently there mostly isn't any.
+   export class UnaryPrimOp extends PrimOp {
+      name: string
+   
+      static at (α: Addr, name: string): UnaryPrimOp {
+         const this_: UnaryPrimOp = create(α, UnaryPrimOp)
+         this_.name = name
+         this_.__version()
+         return this_
+      }
+   
+      __apply (v: Value.Value): Value.Value {
+         return __nonNull(unaryOps.get(this.name))(v)
+      }
+   
+      toString (): string {
+         return this.name
+      }
+   }
+   
+   export class BinaryPrimOp extends PrimOp {
+      name: string
+   
+      static at (α: Addr, name: string): BinaryPrimOp {
+         const this_: BinaryPrimOp = create(α, BinaryPrimOp)
+         this_.name = name
+         this_.__version()
+         return this_
+      }
+   
+      __apply (v1: Value.Value): PrimOp {
+         return partiallyApply(this, v1)
+      }
+      
+      toString (): string {
+         return this.name
+      }
+   }
+   
+   // Binary op that has been applied to a single operand. Should be a UnaryPrimOp, but TypeScript
+   // forces static methods to "override".
+   export class UnaryPartialPrimOp extends PrimOp {
+      name: string
+      binOp: BinaryPrimOp
+      v1: Value.Value
+   
+      static at (α: Addr, name: string, binOp: BinaryPrimOp, v1: Value.Value): UnaryPartialPrimOp {
+         const this_: UnaryPartialPrimOp = create(α, UnaryPartialPrimOp)
+         this_.name = name
+         this_.binOp = as(binOp, BinaryPrimOp)
+         this_.v1 = v1
+         this_.__version()
+         return this_
+      }
+   
+      __apply (v2: Value.Value): Value.Value {
+         return __nonNull(binaryOps.get(this.binOp.name))(this.v1, v2)
+      }
+   
+      toString (): string {
+         return this.name
       }
    }
 }
@@ -314,6 +296,7 @@ export namespace Expr {
          return this_
       }
    }
+
    export class Fun extends Expr {
       σ: Trie.Trie<Expr>
 
@@ -388,7 +371,20 @@ export namespace Expr {
          return this_
       }
    }
-  
+
+   // Like a (traditional) function literal wraps an expression, a prim op literal wraps a prim op; however
+   // we never bundle such a thing into a closure, but simply unwrap the contained prim op.
+   export class PrimOp extends Expr {
+      op: Value.PrimOp
+
+      static at (α: Addr, op: Value.PrimOp): PrimOp {
+         const this_: PrimOp = create(α, PrimOp)
+         this_.op = op
+         this_.__version()
+         return this_
+      }
+   }
+
    export class Var extends Expr {
       ident: Lex.Var
    
@@ -563,6 +559,19 @@ export namespace Trace {
       static at (α: Addr, tu: Traced, t: Trace): Match {
          const this_: Match = create(α, Match)
          this_.tu = as(tu, Traced)
+         this_.t = as(t, Trace)
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class OpName extends Trace {
+      x: Lex.OpName
+      t: Trace
+
+      static at (α: Addr, x: Lex.OpName, t: Trace): OpName {
+         const this_: OpName = create(α, OpName)
+         this_.x = as(x, Lex.OpName)
          this_.t = as(t, Trace)
          this_.__version()
          return this_
