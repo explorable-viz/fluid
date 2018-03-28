@@ -15,8 +15,16 @@ function intToString2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
 }
 
 function minus2<T> (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
+   function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
+      if (τ instanceof Trie.ConstInt) {
+         return [Value.ConstInt.at(key(minus, arguments), x.val - y.val), new Map, τ.body]
+      } else {
+         return assert(false, "Demand mismatch.")
+      }
+   }
    if (σ instanceof Trie.Fun) {
-      const v: Value.PrimOp = Value.UnaryPrimOp.at(key(intToString, arguments), 5, "minus-" + x)
+      const σʹ: Trie.ConstInt<PrimBody<any>> = Trie.ConstInt.at("", burble),
+            v: Value.PrimOp = Value.UnaryPrimOp.at(key(intToString, arguments), σʹ, "minus-" + x)
       return [v, new Map, σ.body]
    } else {
       return assert(false, "Demand mismatch.")
