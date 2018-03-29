@@ -1,4 +1,3 @@
-import { Ord } from "./util/Ord"
 import { __def, key, keyP } from "./Memo"
 import { create } from "./Runtime"
 
@@ -29,13 +28,12 @@ export class NonEmpty<V> {
       return this_
    }
 }
-/*
 
 __def(empty)
-export function empty <K extends Ord<K>, V> (): FiniteMap<K, V> {
+export function empty (): Empty {
    return Empty.at(key(empty, arguments))
 }
-
+/*
 __def(insert)
 export function insert <K extends Ord<K>, V> (m: FiniteMap<K, V>, k: K, v: V): FiniteMap<K, V> {
    const α: Addr = key(insert, arguments)
