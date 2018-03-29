@@ -3,7 +3,7 @@ import { __def, key } from "./Memo"
 import { create } from "./Runtime"
 
 // Hash-consed finite maps. Sensitive to key changes, which cause the identity of subtrees to change.
-abstract class FiniteMap<V> {
+export abstract class FiniteMap<V> {
    abstract get (k: string): V | undefined // ES6 map-style signature
 }
 
