@@ -7,7 +7,6 @@ export type PrimBody<T = any> = (v: Value.Value | null, σ: Trie.Trie<T>) => Pri
 
 type Unary<T, V> = (x: T) => V
 type Binary<T, U, V> = (x: T, y: U) => V
-type Prim<T, U> = (x: T, σ: Trie.Trie<U>) => PrimResult<U>
 
 function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && σ instanceof Trie.Fun) {
