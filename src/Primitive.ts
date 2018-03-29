@@ -4,7 +4,6 @@ import { Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
-
 type TrieCtr<T> = (α: Addr, body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
 
 function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
