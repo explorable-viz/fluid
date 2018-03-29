@@ -158,7 +158,7 @@ export const ops: Value.PrimOp[] = [
 // Only primitives at the moment; eventually other library code. Fake "syntax" for primitives.
 export function prelude (): Env {
    let ρ: Env = new Map
-   ops.forEach((op: Value.PrimOp) => {
+   ops.forEach((op: Value.PrimOp): void => {
       ρ = insert(ρ, op.name, {ρ: new Map, δ: [], e: Expr.PrimOp.at(ν(), op)})
    })
    return ρ
