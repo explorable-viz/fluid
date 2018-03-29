@@ -55,18 +55,6 @@ export function loadTestFile(folder: string, file: string): TestFile {
 
 // For now just see if all the examples run without an exception.
 export function testAll (): void {
-   console.log("Test profile: " + Profile[profile] + ".")
-
-   // Set the viz code.
-   function loadVizCode (): void {
-      const readReq = new XMLHttpRequest()
-      readReq.open("GET", "visualise.lcalc", true)
-      readReq.onload = () => {
-         runTest("arithmetic")
-      }
-      readReq.send(null)
-   }
-
+   console.log("Default test profile: " + Profile[defaultProfile] + ".")
    initialise()
-   loadVizCode()
 }
