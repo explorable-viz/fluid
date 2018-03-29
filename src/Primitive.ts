@@ -137,7 +137,7 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): Value.ConstStr {
    return Value.ConstStr.at(key(concat, arguments), x.val + y.val)
 }
 
-// Needs to come after all the __def forms above.
+// Must come after the __def forms above.
 export const ops: Value.PrimOp[] = [
    unary(error, Trie.ConstStr.at),
    unary(intToString, Trie.ConstInt.at),

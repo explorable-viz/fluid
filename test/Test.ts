@@ -15,7 +15,7 @@ before((done: MochaDone) => {
 describe("example", () => {
 	describe("arithmetic", () => {
 		const file: TestFile = loadExample("arithmetic")
-		it("parses ok", () => {
+		it("runs ok", () => {
 			runTest(__nonNull(file.text), Profile.Run)
 		})
 	})
