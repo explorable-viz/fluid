@@ -25,26 +25,30 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
+function makePrim<T extends Value.Value, V extends Value.Value> (
+   α: Addr, 
+   name: string, 
+   op: Unary<T, V>,
+   at1: (α: Addr, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
+): Value.PrimOp {
+   return Value.PrimOp.at(α, name, at1(keyP(α, "σ"), (x: T, σ: Trie.Trie<V>): PrimResult<V> => match(op(x), σ)))   
+}
+
 // Primitives currently use a custom memoisation policy, although other approaches are possible.
 function unary<T extends Value.Value, V extends Value.Value> (
    op: Unary<T, V>,
    at1: (α: Addr, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>,
 ): Value.PrimOp {
-   const α: Addr = addr(op)
-   return Value.PrimOp.at(α, op.name, at1(keyP(α, "σ"), (x: T, σ: Trie.Trie<V>) => match(op(x), σ)))
+   return makePrim(addr(op), op.name, op, at1)
 }
 
 function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
    op: Binary<T, U, V>,
-   at1: (α: Addr, body: PrimBody<null>) => Trie.Prim<PrimBody<null>>,
+   at1: (α: Addr, body: PrimBody<Value.PrimOp>) => Trie.Prim<PrimBody<Value.PrimOp>>,
    at2: (α: Addr, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
 ): Value.PrimOp {
    const α: Addr = addr(op)
-   function op_arg (x: T): Value.PrimOp {
-      const β: Addr = keyP(α, addr(x))
-      return Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), (y: U, σ: Trie.Trie<V>) => match(op(x, y), σ)))
-   }
-   return Value.PrimOp.at(α, op.name, at1(keyP(α, "σ"), (x: T, σ: Trie.Trie<null>) => match(op_arg(x), σ)))
+   return makePrim(α, op.name, (x: T) => makePrim(keyP(α, addr(x)), op.name + " " + x, (y: U) => op(x, y), at2), at1)
 }
 
 export const ops: Value.PrimOp[] = [
