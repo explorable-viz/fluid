@@ -1,25 +1,47 @@
-import { as, asOpt, assert } from "./util/Core"
+import { as, assert } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { Str } from "./BaseTypes"
 import { __def, key } from "./Memo"
-import { create, Traced } from "./Runtime"
+import { PrimBody } from "./Primitive"
+import { create } from "./Runtime"
 
-export type Env = Map<string, Value>
+export class EnvEntry {
+   ρ: Env
+   δ: Expr.RecDefinition[]
+   e: Expr.Expr
 
-// Constants used for parsing, and also for toString() implementations.
+   constructor(ρ: Env, δ: Expr.RecDefinition[], e: Expr.Expr) {
+      this.ρ = ρ
+      this.δ = δ
+      this.e = e
+   }
+}
+
+export type Env = Map<string, EnvEntry | null>
+
 export namespace str {
-   export const arrow: string = '→'
+   // Primitive ops.
+   export const concat: string = "++"
+   export const div: string = "/"
+   export const equal: string = "=="
+   export const greaterT: string = ">"
+   export const lessT: string = "<"
+   export const minus: string = "-"
+   export const plus: string = "+"
+   export const times: string = "*"
+
+   // Constants used for parsing, and also for toString() implementations.
+   export const arrow: string = "→"
    export const as: string = "as"
-   export const equals: string = '='
+   export const equals: string = "="
    export const fun: string = "fun"
    export const in_: string = "in"
    export const let_: string = "let"
    export const letRec: string = "letrec"
    export const match: string = "match"
-   export const parenL: string = '('
-   export const parenR: string = ')'
+   export const parenL: string = "("
+   export const parenR: string = ")"
    export const quotes: string = '"'
 }
 
@@ -59,6 +81,10 @@ export namespace Lex {
       constructor(str: string) {
          super(str)
       }
+
+      __OpName(): void {
+         // discriminator
+      }
    }
 
    export class StringLiteral extends Lexeme {
@@ -82,290 +108,466 @@ export namespace Lex {
    }
 }
 
-export type Value = Closure | ConstInt | ConstStr | Constr
+export namespace Value {
+   export type Value = Closure | ConstInt | ConstStr | Constr | PrimOp
 
-export class Closure {
-   ρ: Env
-   defs: RecDefinition[]
-   func: Fun
+   export class Closure {
+      ρ: Env
+      δ: Expr.RecDefinition[]
+      func: Expr.Fun
+   
+      static at (α: Addr, ρ: Env, δ: Expr.RecDefinition[], func: Expr.Fun): Closure {
+         const this_: Closure = create(α, Closure)
+         this_.ρ = ρ
+         this_.δ = δ
+         this_.func = as(func, Expr.Fun)
+         this_.__version()
+         return this_
+      }
+   }
 
-   static at (α: Addr, ρ: Env, defs: RecDefinition[], func: Fun): Closure {
-      const this_: Closure = create(α, Closure)
-      this_.ρ = ρ
-      this_.defs = defs
-      this_.func = as(func, Fun)
-      this_.__version()
-      return this_
+   export class Prim {
+      __Prim(): void {
+         // discriminator
+      }
+   }
+   
+   export class ConstInt extends Prim {
+      val: number
+   
+      static at (α: Addr, val: number): ConstInt {
+         const this_: ConstInt = create(α, ConstInt)
+         this_.val = val
+         this_.__version()
+         return this_
+      }
+   }
+   
+   export class ConstStr extends Prim {
+      val: string
+   
+      static at (α: Addr, val: string): ConstStr {
+         const this_: ConstStr = create(α, ConstStr)
+         this_.val = val
+         this_.__version()
+         return this_
+      }
+   }
+   
+   export class Constr {
+      ctr: Lex.Ctr
+      args: Traced[]
+   
+      static at (α: Addr, ctr: Lex.Ctr, args: Traced[]): Constr {
+         const this_: Constr = create(α, Constr)
+         this_.ctr = as(ctr, Lex.Ctr)
+         this_.args = args
+         this_.__version()
+         return this_
+      }
+   }
+
+   // Primitive ops; see 0.4.4 release notes.
+   export class PrimOp {
+      name: string
+      σ: Trie.Prim<PrimBody<any>>
+
+      static at (α: Addr, name: string, σ: Trie.Prim<PrimBody<any>>): PrimOp {
+         const this_: PrimOp = create(α, PrimOp)
+         this_.name = name
+         this_.σ = σ
+         this_.__version()
+         return this_
+      }
    }
 }
 
-export class ConstInt {
-   val: number
+export namespace Expr {
+   export class Expr {
+      __Expr(): void {
+         // discriminator
+      }
+   }
 
-   static at (α: Addr, val: number): ConstInt {
-      const this_: ConstInt = create(α, ConstInt)
+   export class App extends Expr {
+      func: Expr
+      arg: Expr
+
+      static at (α: Addr, func: Expr, arg: Expr): App {
+         const this_: App = create(α, App)
+         this_.func = as(func, Expr)
+         this_.arg = as(arg, Expr)
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class ConstInt extends Expr {
+      val: number
+   
+      static at (α: Addr, val: number): ConstInt {
+         const this_: ConstInt = create(α, ConstInt)
+         this_.val = val
+         this_.__version()
+         return this_
+      }
+   }
+   
+   export class ConstStr extends Expr {
+      val: string
+   
+      static at (α: Addr, val: string): ConstStr {
+         const this_: ConstStr = create(α, ConstStr)
+         this_.val = val
+         this_.__version()
+         return this_
+      }
+   }
+   
+   export class Constr extends Expr {
+      ctr: Lex.Ctr
+      args: Expr[]
+   
+      static at (α: Addr, ctr: Lex.Ctr, args: Expr[]): Constr {
+         const this_: Constr = create(α, Constr)
+         this_.ctr = as(ctr, Lex.Ctr)
+         this_.args = args
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class Fun extends Expr {
+      σ: Trie.Trie<Expr>
+
+      static at (α: Addr, σ: Trie.Trie<Expr>): Fun {
+         const this_: Fun = create(α, Fun)
+         this_.σ = as(σ, Trie.Trie)
+         this_.__version()
+         return this_
+      }
+   }
+
+   // A let is simply a match where the trie is a variable trie.
+   export class Let extends Expr {
+      e: Expr
+      σ: Trie.Var<Expr>
+
+      static at (α: Addr, e: Expr, σ: Trie.Var<Expr>): Let {
+         const this_: Let = create(α, Let)
+         this_.e = as(e, Expr)
+         this_.σ = as(σ, Trie.Var)
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class RecDefinition {
+      name: Lex.Var
+      func: Fun
+   
+      static at (α: Addr, name: Lex.Var, func: Fun): RecDefinition {
+         const this_: RecDefinition = create(α, RecDefinition)
+         this_.name = as(name, Lex.Var)
+         this_.func = as(func, Fun)
+         this_.__version()
+         return this_
+      }
+   }
+   
+   export class LetRec extends Expr {
+      δ: RecDefinition[]
+      e: Expr
+
+      static at (α: Addr, δ: RecDefinition[], e: Expr): LetRec {
+         const this_: LetRec = create(α, LetRec)
+         this_.δ = δ
+         this_.e = as(e, Expr)
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class MatchAs extends Expr {
+      e: Expr
+      σ: Trie.Trie<Expr>
+   
+      static at (α: Addr, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
+         const this_: MatchAs = create(α, MatchAs)
+         this_.e = as(e, Expr)
+         this_.σ = as(σ, Trie.Trie)
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class OpName extends Expr {
+      opName: Lex.OpName
+   
+      static at (α: Addr, opName: Lex.OpName): OpName {
+         const this_: OpName = create(α, OpName)
+         this_.opName = as(opName, Lex.OpName)
+         this_.__version()
+         return this_
+      }
+   }
+
+   // Like a (traditional) function literal wraps an expression, a prim op literal wraps a prim op; however
+   // we never bundle such a thing into a closure, but simply unwrap the contained prim op.
+   export class PrimOp extends Expr {
+      op: Value.PrimOp
+
+      static at (α: Addr, op: Value.PrimOp): PrimOp {
+         const this_: PrimOp = create(α, PrimOp)
+         this_.op = op
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class Var extends Expr {
+      ident: Lex.Var
+   
+      static at (α: Addr, ident: Lex.Var): Var {
+         const this_: Var = create(α, Var)
+         this_.ident = as(ident, Lex.Var)
+         this_.__version()
+         return this_
+      }
+   }
+}
+
+export class Traced<T extends Value.Value = Value.Value> {
+   trace: Trace.Trace
+   val: T | null
+
+   static at <T extends Value.Value> (α: Addr, trace: Trace.Trace, val: T | null): Traced<T> {
+      const this_: Traced<T> = create<Traced<T>>(α, Traced)
+      this_.trace = as(trace, Trace.Trace)
       this_.val = val
       this_.__version()
       return this_
    }
 }
 
-export class ConstStr {
-   val: string
+export namespace Trie {
+   // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
+   export class Trie<T> implements JoinSemilattice<Trie<T>> {
+      join (σ: Trie<T>): Trie<T> {
+         return join(this, σ)
+      }
+   }
 
-   static at (α: Addr, val: string): ConstStr {
-      const this_: ConstStr = create(α, ConstStr)
-      this_.val = val
-      this_.__version()
-      return this_
+   export class Prim<T> extends Trie<T> {
+      body: T
+   }
+
+   export class ConstInt<T> extends Prim<T> {
+      static is<T>(σ: Trie.Trie<T>): σ is ConstInt<T> {
+         return σ instanceof ConstInt;
+      }
+
+      static at <T> (α: Addr, body: T): ConstInt<T> {
+         const this_: ConstInt<T> = create<ConstInt<T>>(α, ConstInt)
+         this_.body = body
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class ConstStr<T> extends Prim<T> {
+      static is<T>(σ: Trie.Trie<T>): σ is ConstStr<T> {
+         return σ instanceof ConstStr;
+      }
+
+      static at <T> (α: Addr, body: T): ConstStr<T> {
+         const this_: ConstStr<T> = create<ConstStr<T>>(α, ConstStr)
+         this_.body = body
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class Constr<T> extends Trie<T> {
+      cases: Map<string, T>
+
+      static is<T>(σ: Trie.Trie<T>): σ is Constr<T> {
+         return σ instanceof Constr;
+      }
+
+      static at <T> (α: Addr, cases: Map<string, T>): Constr<T> {
+         const this_: Constr<T> = create<Constr<T>>(α, Constr)
+         this_.cases = cases
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class Var<T> extends Trie<T> {
+      x: Lex.Var
+      body: T
+
+      static is<T>(σ: Trie.Trie<T>): σ is Var<T> {
+         return σ instanceof Var;
+      }
+
+      static at <T> (α: Addr, x: Lex.Var, body: T): Var<T> {
+         const this_: Var<T> = create<Var<T>>(α, Var)
+         this_.x = as(x, Lex.Var)
+         this_.body = body
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class Fun<T> extends Trie<T> {
+      body: T
+
+      static is<T>(σ: Trie.Trie<T>): σ is Fun<T> {
+         return σ instanceof Fun;
+      }
+
+      static at <T> (α: Addr, body: T): Fun<T> {
+         const this_: Fun<T> = create<Fun<T>>(α, Fun)
+         this_.body = body
+         this_.__version()
+         return this_
+      }
+   }
+
+   // Addressing scheme doesn't yet support "member functions". Plus methods don't allow null receivers.
+   __def(join)
+   export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
+      const α: Addr = key(join, arguments)
+      if (σ === null) {
+         return τ
+      } else
+      if (τ === null) {
+         return σ
+      } else
+      if (Fun.is(σ) && Fun.is(τ)) {
+         return Fun.at(α, join(σ.body, τ.body))
+      } else
+      if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
+         return Var.at(α, σ.x, join(σ.body, τ.body))
+      } else
+      if (Constr.is(σ) && Constr.is(τ)) {
+         return Constr.at<T>(α, unionWith([σ.cases, τ.cases], ms => ms.reduce((x, y) => x.join(y))))
+      } else {
+         return assert(false, "Undefined join.", σ, τ)
+      }
    }
 }
 
-export class Constr {
-   ctr: Lex.Ctr
-   args: Traced[]
-
-   static at (α: Addr, ctr: Lex.Ctr, args: Traced[]): Constr {
-      const this_: Constr = create(α, Constr)
-      this_.ctr = as(ctr, Lex.Ctr)
-      this_.args = args
-      this_.__version()
-      return this_
+export namespace Trace {
+   export class Trace {
+      __Trace(): void {
+         // discriminator
+      }
    }
-}
+   
+   export class App extends Trace {
+      func: Traced
+      arg: Traced
+      body: Trace
 
-export class Trace {
-}
-
-// I don't think this is the same as ⊥; it represents the "end" of an explanation.
-export class EmptyTrace extends Trace {
-   static at (α: Addr): EmptyTrace {
-      const this_: Trace = create(α, EmptyTrace)
-      this_.__version()
-      return this_
+      static at (α: Addr, func: Traced, arg: Traced, body: Trace): App {
+         const this_: App = create(α, App)
+         this_.func = as(func, Traced)
+         this_.arg = as(arg, Traced)
+         this_.body = as(body, Trace)
+         this_.__version()
+         return this_
+      }
    }
-}
 
-export class OpName extends Trace {
-   opName: Lex.OpName
-
-   static at (α: Addr, opName: Lex.OpName): OpName {
-      const this_: OpName = create(α, OpName)
-      this_.opName = as(opName, Lex.OpName)
-      this_.__version()
-      return this_
+   // I don't think this is the same as ⊥; it represents the "end" of an explanation.
+   export class Empty extends Trace {
+      static at (α: Addr): Empty {
+         const this_: Empty = create(α, Empty)
+         this_.__version()
+         return this_
+      }
    }
-}
 
-export class Var extends Trace {
-   ident: Lex.Var
+   export class Let extends Trace {
+      tu: Traced
+      t: Trace
 
-   static at (α: Addr, ident: Lex.Var): Var {
-      const this_: Var = create(α, Var)
-      this_.ident = as(ident, Lex.Var)
-      this_.__version()
-      return this_
+      static at (α: Addr, tu: Traced, t: Trace): Match {
+         const this_: Match = create(α, Match)
+         this_.tu = as(tu, Traced)
+         this_.t = as(t, Trace)
+         this_.__version()
+         return this_
+      }
    }
-}
 
-// Expression form only. TODO: don't I need to unify this now with Closure?
-export class Fun extends Trace {
-   σ: Trie<Traced>
-
-   static at (α: Addr, σ: Trie<Traced>): Fun {
-      const this_: Fun = create(α, Fun)
-      this_.σ = as(σ, Trie)
-      this_.__version()
-      return this_
+   // Used to be something called RecBinding, but bindings doesn't seem to be stored in traces at the moment.
+   export class LetRec extends Trace {
+      δ: Expr.RecDefinition[]
+      t: Trace
+   
+      static at (α: Addr, δ: Expr.RecDefinition[], t: Trace): LetRec {
+         const this_: LetRec = create(α, LetRec)
+         this_.δ = δ
+         this_.t = as(t, Trace)
+         this_.__version()
+         return this_
+      }
    }
-}
+   
+      // See 0.6.1 release notes. Also 0.6.4 notes for discussion of expression/trace disparity.
+   export class Match extends Trace {
+      tu: Traced
+      t: Trace
 
-// Body of a lambda abstraction or primitive.
-export class AppBody {
-}
-
-// An application expression has an empty body.
-export class EmptyBody extends AppBody {
-   static at (α: Addr): EmptyBody {
-      return create(α, EmptyBody)
+      static at (α: Addr, tu: Traced, t: Trace): Match {
+         const this_: Match = create(α, Match)
+         this_.tu = as(tu, Traced)
+         this_.t = as(t, Trace)
+         this_.__version()
+         return this_
+      }
    }
-}
 
-// For primitives there is no trace part, but we will still show how the argument is consumed.
-// TODO: unify with matches?
-export class PrimBody extends AppBody {
-   param: Str
+   export class OpName extends Trace {
+      x: Lex.OpName
+      t: Trace
 
-   static at (α: Addr, param: Str): PrimBody {
-      const this_: PrimBody = create(α, PrimBody)
-      this_.param = as(param, Str)
-      this_.__version()
-      return this_
+      static at (α: Addr, x: Lex.OpName, t: Trace): OpName {
+         const this_: OpName = create(α, OpName)
+         this_.x = as(x, Lex.OpName)
+         this_.t = as(t, Trace)
+         this_.__version()
+         return this_
+      }
    }
-}
 
-export class FunBody extends AppBody {
-   x: Lex.Var
-   e: Traced
+   // For primitives there is no body, but we will still show how the argument is consumed.
+   export class PrimApp extends Trace {
+      op: Traced
+      arg: Traced
 
-   static at (α: Addr, x: Lex.Var, e: Traced): FunBody {
-      const this_: FunBody = create(α, FunBody)
-      this_.x = as(x, Lex.Var)
-      this_.e = as(e, Traced)
-      this_.__version()
-      return this_
+      static at (α: Addr, op: Traced, arg: Traced): PrimApp {
+         const this_: PrimApp = create(α, PrimApp)
+         this_.op = as(op, Traced)
+         this_.arg = as(arg, Traced)
+         this_.__version()
+         return this_
+      }
    }
-}
 
-export class App extends Trace {
-   func: Traced
-   arg: Traced
-   appBody: AppBody
+   export class Var extends Trace {
+      x: Lex.Var
+      t: Trace
 
-   static at (α: Addr, func: Traced, arg: Traced, appBody: AppBody): App {
-      const this_: App = create(α, App)
-      this_.func = as(func, Traced)
-      this_.arg = as(arg, Traced)
-      this_.appBody = as(appBody, AppBody)
-      this_.__version()
-      return this_
-   }
-}
-
-// See 0.6.1 release notes. Also 0.6.4 notes for discussion of expression/trace disparity.
-export class MatchAs extends Trace {
-   e: Traced
-   σ: Trie<Traced>
-
-   static at (α: Addr, e: Traced, σ: Trie<Traced>): MatchAs {
-      const this_: MatchAs = create(α, MatchAs)
-      this_.e = as(e, Traced)
-      this_.σ = as(σ, Trie)
-      this_.__version()
-      return this_
-   }
-}
-
-// Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
-export class Trie<T> implements JoinSemilattice<Trie<T>> {
-   join (σ: Trie<T>): Trie<T> {
-      return join(this, σ)
-   }
-}
-
-export class ConstrTrie<T> extends Trie<T> {
-   cases: Map<string, T>
-
-   static at <T> (α: Addr, cases: Map<string, T>): ConstrTrie<T> {
-      const this_: ConstrTrie<T> = create<ConstrTrie<T>>(α, ConstrTrie)
-      this_.cases = cases
-      this_.__version()
-      return this_
-   }
-}
-
-export class VarTrie<T> extends Trie<T> {
-   name: Lex.Var
-   body: T
-
-   static at <T> (α: Addr, name: Lex.Var, body: T): VarTrie<T> {
-      const this_: VarTrie<T> = create<VarTrie<T>>(α, VarTrie)
-      this_.name = as(name, Lex.Var)
-      this_.body = body
-      this_.__version()
-      return this_
-   }
-}
-
-export class FunTrie<T> extends Trie<T> {
-   body: T
-
-   static at <T> (α: Addr, body: T): FunTrie<T> {
-      const this_: FunTrie<T> = create<FunTrie<T>>(α, FunTrie)
-      this_.body = body
-      this_.__version()
-      return this_
-   }
-}
-
-// A let is simply a match where the trie is a variable trie.
-export class Let extends Trace {
-   e: Traced
-   σ: VarTrie<Object>
-
-   static at (α: Addr, e: Traced, σ: VarTrie<Object>): Let {
-      const this_: Let = create(α, Let)
-      this_.e = as(e, Traced)
-      this_.σ = as(σ, VarTrie)
-      this_.__version()
-      return this_
-   }
-}
-
-export class RecDefinition {
-   name: Lex.Var
-   func: Fun
-
-   static at (α: Addr, name: Lex.Var, func: Fun): RecDefinition {
-      const this_: RecDefinition = create(α, RecDefinition)
-      this_.name = as(name, Lex.Var)
-      this_.func = as(func, Fun)
-      this_.__version()
-      return this_
-   }
-}
-
-// Keep binding of recursive definitions to closures separate from the definitions themselves so that
-// closures can contain definitions without inducing cycles.
-export class RecBinding {
-   def: RecDefinition
-   valueOpt: Closure | null
-
-   static at (α: Addr, def: RecDefinition, valueOpt: Closure | null): RecBinding {
-      const this_: RecBinding = create(α, RecBinding)
-      this_.def = as(def, RecDefinition)
-      this_.valueOpt = asOpt(valueOpt, Closure)
-      this_.__version()
-      return this_
-   }
-}
-
-export class LetRec extends Trace {
-   bindings: RecBinding[]
-   body: Trace
-
-   static at (α: Addr, bindings: RecBinding[], body: Trace): LetRec {
-      const this_: LetRec = create(α, LetRec)
-      this_.bindings = bindings
-      this_.body = as(body, Trace)
-      this_.__version()
-      return this_
-   }
-}
-
-// Addressing scheme doesn't yet support "member functions". Plus methods don't allow null receivers.
-__def(join)
-export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
-   const α: Addr = key(join, arguments)
-   if (σ === null) {
-      return τ
-   } else
-   if (τ === null) {
-      return σ
-   } else
-   // The instanceof guards turns T into 'any'. Yuk.
-   if (σ instanceof FunTrie && τ instanceof FunTrie) {
-      const [σʹ, τʹ]: [FunTrie<T>, FunTrie<T>] = [σ, τ]
-      return FunTrie.at(α, join(σʹ.body, τʹ.body))
-   } else
-   if (σ instanceof VarTrie && τ instanceof VarTrie && eq(σ.name, τ.name)) {
-      const [σʹ, τʹ]: [VarTrie<T>, VarTrie<T>] = [σ, τ]
-      return VarTrie.at(α, σʹ.name, join(σʹ.body, τʹ.body))
-   } else
-   if (σ instanceof ConstrTrie && τ instanceof ConstrTrie) {
-      const [σʹ, τʹ]: [ConstrTrie<T>, ConstrTrie<T>] = [σ, τ]
-      return ConstrTrie.at<T>(α, unionWith([σʹ.cases, τʹ.cases], ms => ms.reduce((x, y) => x.join(y))))
-   } else {
-      return assert(false, 'Undefined join.', σ, τ)
+      static at (α: Addr, x: Lex.Var, t: Trace): Var {
+         const this_: Var = create(α, Var)
+         this_.x = as(x, Lex.Var)
+         this_.t = as(t, Trace)
+         this_.__version()
+         return this_
+      }
    }
 }
