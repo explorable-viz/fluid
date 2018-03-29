@@ -1,6 +1,6 @@
 import { zip } from "./util/Array"
 import { __nonNull, assert, as } from "./util/Core"
-import { concat, extend } from "./FiniteMap"
+import { concat, empty, extend, insert } from "./FiniteMap"
 import { __def, key, keyP } from "./Memo"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Env, EnvEntry, Expr, Trace, Traced, Trie, Value } from "./Syntax"
@@ -17,7 +17,7 @@ function __result<T> (α: Addr, t: Trace.Trace, v: Value.Value | null, ρ: Env, 
 // Don't think I capture the polymorphic type of the nested trie κ (which has a depth of n >= 0).
 function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
    if (es.length === 0) {
-      return [[], new Map, κ]
+      return [[], empty(), κ]
    } else {
       const σ: Trie.Trie<Object> = as(κ as Trie.Trie<Object>, Trie.Trie),
             [tv, ρʹ, κʹ]: EvalResult<Object> = eval_(ρ, σ, es[0]),
@@ -31,8 +31,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
    const α: Addr = key(eval_, arguments)
    assert(e !== undefined, "Missing constructor argument?")
    if (Trie.Var.is(σ)) {
-      const entries: [string, EnvEntry][] = [[σ.x.str, {ρ, δ: [], e}]]
-      return __result(α, Trace.Empty.at(α), null, new Map(entries), σ.body)
+      return __result(α, Trace.Empty.at(α), null, insert(empty(), σ.x.str, {ρ, δ: [], e}), σ.body)
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
          const σʹ: Object = σ.cases.get(e.ctr.str)!,
@@ -42,18 +41,18 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
          return __result(α, Trace.Empty.at(α), Value.Constr.at(β, e.ctr, tvs), ρʹ, κ as T)
       } else
       if (e instanceof Expr.ConstInt && Trie.ConstInt.is(σ)) {
-         return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), new Map, σ.body)
+         return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), empty(), σ.body)
       } else
       if (e instanceof Expr.ConstStr && Trie.ConstStr.is(σ)) {
-         return __result(α, Trace.Empty.at(α), Value.ConstStr.at(keyP(α, "val"), e.val), new Map, σ.body)
+         return __result(α, Trace.Empty.at(α), Value.ConstStr.at(keyP(α, "val"), e.val), empty(), σ.body)
 
       } else
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
          const v: Value.Closure = Value.Closure.at(keyP(α, "val"), ρ, [], e)
-         return __result(α, Trace.Empty.at(keyP(α, "trace")), v, new Map, σ.body)
+         return __result(α, Trace.Empty.at(keyP(α, "trace")), v, empty(), σ.body)
       } else
       if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
-         return __result(α, Trace.Empty.at(keyP(α, "trace")), e.op, new Map, σ.body)
+         return __result(α, Trace.Empty.at(keyP(α, "trace")), e.op, empty(), σ.body)
       } else
       if (e instanceof Expr.OpName || e instanceof Expr.Var) {
          const x: string = e instanceof Expr.OpName ? e.opName.str : e.ident.str
@@ -99,7 +98,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
          if (f instanceof Value.PrimOp) {
             const [tu, , σʹu]: EvalResult<PrimBody<T>> = eval_(ρ, f.σ, e.arg),
                   [v, σv]: PrimResult<T> = σʹu(tu.val, σ)
-            return __result(α, Trace.PrimApp.at(β, tf, tu), v, new Map, σv)
+            return __result(α, Trace.PrimApp.at(β, tf, tu), v, empty(), σv)
          } else {
             return assert(false, "Not a function.", f)
          }

@@ -1,7 +1,7 @@
 import { assert } from "./util/Core"
 import { empty, insert } from "./FiniteMap"
 import { __def, addr, key, keyP } from "./Memo"
-import { Env, Expr, Lex, Trie, Value } from "./Syntax"
+import { Env, Expr, Lex, Trie, Value, EnvEntry } from "./Syntax"
 import { ν } from "./Runtime"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
@@ -159,7 +159,8 @@ export const ops: Value.PrimOp[] = [
 export function prelude (): Env {
    let ρ: Env = empty()
    ops.forEach((op: Value.PrimOp): void => {
-      ρ = insert(ρ, op.name, {ρ: new Map, δ: [], e: Expr.PrimOp.at(ν(), op)})
+      const entry: EnvEntry = { ρ: empty(), δ: [], e: Expr.PrimOp.at(ν(), op) }
+      ρ = insert(ρ, op.name, entry)
    })
    return ρ
 }

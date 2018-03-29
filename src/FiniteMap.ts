@@ -9,6 +9,10 @@ export abstract class FiniteMap<V> {
    has (k:string): boolean {
       return this.get(k) !== undefined
    }
+
+   __FiniteMap(): void {
+      // discriminator (type-compatible with ES6 maps for as long as I abuse Object)
+   }
 }
 
 export class Empty<V> extends FiniteMap<V> {
