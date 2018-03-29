@@ -12,18 +12,7 @@ type Prim<T, U> = (x: T, σ: Trie.Trie<U>) => PrimResult<U>
 
 // Note: primitives currently use a custom memoisation policy, although other approaches are possible.
 
-function unaryIntStr<T> (op: Unary<Value.ConstInt, Value.ConstStr>): Prim<Value.ConstInt, T> {
-   return function (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
-      if (σ instanceof Trie.ConstStr) {
-         const v: Value.ConstStr = Value.ConstStr.at(key(intToString, arguments), x.toString())
-         return [v, σ.body]
-      } else {
-         return assert(false, "Demand mismatch.")
-      }
-   }
-}
-
-function matches<T> (v: Value.Prim, σ: Trie.Trie<T>): PrimResult<T> {
+function match<T> (v: Value.Prim, σ: Trie.Trie<T>): PrimResult<T> {
    if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
       return [v, σ.body]
    } else 
@@ -37,6 +26,14 @@ function matches<T> (v: Value.Prim, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
+function unary<T extends Value.Value, V extends Value.Value> (
+   op: Unary<T, V>,
+   at1: (α: Addr, body: PrimBody) => Trie.Prim<PrimBody>,
+): Value.PrimOp {
+   const α: Addr = addr(op)
+   return Value.PrimOp.at(α, name, at1(keyP(α, "σ"), (x: T, τ: Trie.Trie<T>) => match(op(x), τ)))
+}
+
 function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
    op: Binary<T, U, V>,
    at1: (α: Addr, body: PrimBody) => Trie.Prim<PrimBody>,
@@ -44,12 +41,9 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
 ): Value.PrimOp {
    const α: Addr = addr(op)
    function first (x: T, σ: Trie.Trie<any>): PrimResult<any> {
-      function second (y: U, τ: Trie.Trie<T>): PrimResult<T> {
-         return matches(op(x, y), τ)
-      }
       if (σ instanceof Trie.Fun) {
          const β: Addr = keyP(α, addr(x)),
-               v: Value.PrimOp = Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), second))
+               v: Value.PrimOp = Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), (y: U, τ: Trie.Trie<T>) => match(op(x, y), τ)))
          return [v, σ.body]
       } else {
          return assert(false, "Demand mismatch.")
@@ -58,58 +52,21 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
    return Value.PrimOp.at(α, name, at1(keyP(α, "σ"), first))
 }
 
-function binaryIntIntInt<T> (op: Binary<Value.ConstInt, Value.ConstInt, Value.ConstInt>): Value.PrimOp {
-   const α: Addr = addr(op)
-   function first (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
-      function second (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
-         const v: Value.ConstInt = op(x, y)
-         if (τ instanceof Trie.ConstInt) {
-            return [v, τ.body]
-         } else {
-            return assert(false, "Demand mismatch.")
-         }
-      }
-      if (σ instanceof Trie.Fun) {
-         const β: Addr = keyP(α, addr(x)),
-               v: Value.PrimOp = Value.PrimOp.at(β, op.name + " " + x, Trie.ConstInt.at(keyP(β, "σ"), second))
-         return [v, σ.body]
-      } else {
-         return assert(false, "Demand mismatch.")
-      }
-   }
-   return Value.PrimOp.at(α, name, Trie.ConstInt.at(keyP(α, "σ"), first))
-}
-
-function binaryIntIntBool<T> (op: Binary<Value.ConstInt, Value.ConstInt, Value.Constr>): Prim<Value.ConstInt, T> {
-   return function (x: Value.ConstInt, σ: Trie.Trie<T>): PrimResult<T> {
-      function burble (y: Value.ConstInt, τ: Trie.Trie<any>): PrimResult<any> {
-         const v: Value.Constr = op(x, y)
-         if (τ instanceof Trie.Constr && τ.cases.has(v.ctr.str)) {
-            return [v, τ.cases.get(v.ctr.str)]
-         } else {
-            return assert(false, "Demand mismatch.")
-         }
-      }
-      if (σ instanceof Trie.Fun) {
-         const σʹ: Trie.ConstInt<PrimBody<any>> = Trie.ConstInt.at("", burble),
-               v: Value.PrimOp = Value.PrimOp.at(key(intToString, arguments), "minus" + " " + x, σʹ)
-         return [v, σ.body]
-      } else {
-         return assert(false, "Demand mismatch.")
-      }
-   }
-}
-
 // Fake "syntax" for primitive ops; might revisit.
 export const ops: Value.PrimOp[] = [
-   Value.PrimOp.at(ν(), "intToString", Trie.ConstInt.at(ν(), unaryIntStr(intToString))),
+   unary(intToString, Trie.ConstInt.at),
+   unary(error, Trie.ConstStr.at),
    binary(minus, Trie.ConstInt.at, Trie.ConstInt.at),
-   binaryIntIntInt(plus),
-   binaryIntIntInt(times),
-   binaryIntIntInt(div),
-   Value.PrimOp.at(ν(), "equalInt", Trie.ConstInt.at(ν(), binaryIntIntBool(equalInt))),
-   Value.PrimOp.at(ν(), "greaterInt", Trie.ConstInt.at(ν(), binaryIntIntBool(greaterInt))),
-   Value.PrimOp.at(ν(), "lessInt", Trie.ConstInt.at(ν(), binaryIntIntBool(lessInt)))
+   binary(plus, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(times, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(div, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(equalInt, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(equalInt, Trie.ConstStr.at, Trie.ConstStr.at),
+   binary(greaterInt, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(greaterInt, Trie.ConstStr.at, Trie.ConstStr.at),
+   binary(lessInt, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(lessInt, Trie.ConstStr.at, Trie.ConstStr.at),
+   binary(concat, Trie.ConstStr.at, Trie.ConstStr.at),
 ]
 
 function __true (α: Addr): Value.Constr {
@@ -184,9 +141,11 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): Value.ConstStr {
 }
 
 // See 0.2.4 release notes re. primitive ops with identifiers as names.
+// Used to take an arbitrary value as an additional argument but now primitives must have
+// primitive arguments.
 __def(error)
-export function error (x: Object, message: Value.ConstStr): never {
-   return assert(false, "LambdaCalc error:\n" + message.val, x) as never
+export function error (message: Value.ConstStr): Value.Value {
+   return assert(false, "LambdaCalc error:\n" + message.val)
 }
 
 __def(intToString)
