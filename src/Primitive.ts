@@ -5,8 +5,7 @@ import { Lex, Trie, Value } from "./Syntax"
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
 
-type Unary<T, V> = (x: T) => V
-type Binary<T, U, V> = (x: T, y: U) => V
+type TrieCtr<T> = (α: Addr, body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
 
 function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
@@ -28,27 +27,30 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
 function makePrim<T extends Value.Value, V extends Value.Value> (
    α: Addr, 
    name: string, 
-   op: Unary<T, V>,
+   op: (x: T) => V,
    at1: (α: Addr, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
 ): Value.PrimOp {
-   return Value.PrimOp.at(α, name, at1(keyP(α, "σ"), (x: T, σ: Trie.Trie<V>): PrimResult<V> => match(op(x), σ)))   
+   const primBody: PrimBody<V> = (x: T, σ: Trie.Trie<V>): PrimResult<V> => match(op(x), σ)
+   return Value.PrimOp.at(α, name, at1(keyP(α, "σ"), primBody))   
 }
 
 // Primitives currently use a custom memoisation policy, although other approaches are possible.
 function unary<T extends Value.Value, V extends Value.Value> (
-   op: Unary<T, V>,
-   at1: (α: Addr, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>,
+   op: (x: T) => V,
+   at1: TrieCtr<V>,
 ): Value.PrimOp {
    return makePrim(addr(op), op.name, op, at1)
 }
 
 function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
-   op: Binary<T, U, V>,
-   at1: (α: Addr, body: PrimBody<Value.PrimOp>) => Trie.Prim<PrimBody<Value.PrimOp>>,
-   at2: (α: Addr, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
+   op: (x: T, y: U) => V,
+   at1: TrieCtr<Value.PrimOp>,
+   at2: TrieCtr<V>
 ): Value.PrimOp {
-   const α: Addr = addr(op)
-   return makePrim(α, op.name, (x: T) => makePrim(keyP(α, addr(x)), op.name + " " + x, (y: U) => op(x, y), at2), at1)
+   const α: Addr = addr(op),
+         op_x: (x: T) => Value.PrimOp = // op partially applied to x 
+            (x: T) => makePrim(keyP(α, addr(x)), op.name + " " + x, (y: U) => op(x, y), at2)
+   return makePrim(α, op.name, op_x, at1)
 }
 
 export const ops: Value.PrimOp[] = [
