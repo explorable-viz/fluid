@@ -2,17 +2,24 @@ import { __def, key, keyP } from "./Memo"
 import { create } from "./Runtime"
 
 // Hash-consed finite maps. Sensitive to key changes, which cause the identity of subtrees to change.
-type FiniteMap<V> = Empty | NonEmpty<V>
+abstract class FiniteMap<V> {
+   // ES6 map-style interface
+   abstract get (k: string): V | undefined
+}
 
-export class Empty {
-   static at (α: Addr): Empty {
-      const this_: Empty = create(α, Empty)
+export class Empty<V> extends FiniteMap<V> {
+   static at<V> (α: Addr): Empty<V> {
+      const this_: Empty<V> = create<Empty<V>>(α, Empty)
       this_.__version()
       return this_
    }
+
+   get (k: string): V | undefined {
+      return undefined 
+   }
 }
 
-export class NonEmpty<V> {
+export class NonEmpty<V> extends FiniteMap<V> {
    left: FiniteMap<V>
    k: string
    v: V
@@ -27,10 +34,22 @@ export class NonEmpty<V> {
       this_.__version()
       return this_
    }
+
+   get (k: string): V | undefined {
+      if (k <= this.k) {
+         if (this.k <= k) {
+            return this.v
+         } else {
+            return this.left.get(k)
+         }
+      } else {
+         return this.right.get(k)
+      }
+   }
 }
 
 __def(empty)
-export function empty (): Empty {
+export function empty<V> (): Empty<V> {
    return Empty.at(key(empty, arguments))
 }
 
@@ -58,25 +77,3 @@ export function extend<V> (m: FiniteMap<V>, kvs: [string, V][]): FiniteMap<V> {
    })
    return m
 }
-
-/*
-__def(get)
-export function get <K extends Ord<K>, V> (m: FiniteMap<K, V>, k: K): Prim.Option<V> {
-   const α: Addr = key(get, arguments)
-   return m.__visit({
-      is_Empty: (_) =>
-         None.at(α),
-      is_NonEmpty: (m) => {
-         if (k.leq(m.t.fst)) {
-            if (m.t.fst.leq(k)) {
-               return Some.at_(α, m.t.snd)
-            } else {
-               return get(m.left, k)
-            }
-         } else {
-            return get(m.right, k)
-         }
-      }
-   })
-}
-*/
