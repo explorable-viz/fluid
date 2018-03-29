@@ -6,7 +6,7 @@ import { Eval } from "../src/Eval"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
 import { ν } from "../src/Runtime"
-import { Env, Expr, Lex, Trie, Value } from "../src/Syntax"
+import { Env, Expr, Lex, Trie } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
 
@@ -16,7 +16,6 @@ export function initialise (): void {
       return "'" + this + "'"
    }
    initDataTypes()
-   baseEnv = prelude()
 }
 
 export enum Profile {
@@ -31,12 +30,12 @@ const σ: Trie.Trie<null> = Trie.Var.at(ν(), new Lex.Var("x"), null)
 export function runExample (p: Profile, src: string): void {
    const e: Expr.Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    if (p >= Profile.Run) {
-      const [tv, , ]: Eval.EvalResult<Value.Value> = Eval.eval_(baseEnv, σ, e)
+      const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(baseEnv, σ, e)
       console.log(tv)
    }
 }
 
-export let baseEnv: Env = null
+export let baseEnv: Env = prelude()
 
 export function runTest (prog: string, profile: Profile = defaultProfile): void {
    runExample(profile, prog)
