@@ -9,17 +9,17 @@ type Unary<T, V> = (x: T) => V
 type Binary<T, U, V> = (x: T, y: U) => V
 
 function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
-   if (v instanceof Value.PrimOp && σ instanceof Trie.Fun) {
+   if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
       return [v, σ.body]
    }  else
-   if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
+   if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
       return [v, σ.body]
    } else 
-   if (v instanceof Value.ConstStr && σ instanceof Trie.ConstStr) {
+   if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
       return [v, σ.body]
    } else 
-   if (v instanceof Value.Constr && σ instanceof Trie.Constr && σ.cases.has(v.ctr.str)) {
-      return σ.cases.get(v.ctr.str)
+   if (v instanceof Value.Constr && Trie.Constr.is(σ) && σ.cases.has(v.ctr.str)) {
+      return [v, σ.cases.get(v.ctr.str)!]
    } else {
       return assert(false, "Demand mismatch.")
    }

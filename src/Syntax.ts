@@ -363,6 +363,10 @@ export namespace Trie {
    }
 
    export class ConstInt<T> extends Prim<T> {
+      static is<T>(σ: Trie.Trie<T>): σ is ConstInt<T> {
+         return σ instanceof ConstInt;
+      }
+
       static at <T> (α: Addr, body: T): ConstInt<T> {
          const this_: ConstInt<T> = create<ConstInt<T>>(α, Fun)
          this_.body = body
@@ -372,6 +376,10 @@ export namespace Trie {
    }
 
    export class ConstStr<T> extends Prim<T> {
+      static is<T>(σ: Trie.Trie<T>): σ is ConstStr<T> {
+         return σ instanceof ConstStr;
+      }
+
       static at <T> (α: Addr, body: T): ConstStr<T> {
          const this_: ConstStr<T> = create<ConstStr<T>>(α, Fun)
          this_.body = body
@@ -382,6 +390,10 @@ export namespace Trie {
 
    export class Constr<T> extends Trie<T> {
       cases: Map<string, T>
+
+      static is<T>(σ: Trie.Trie<T>): σ is Constr<T> {
+         return σ instanceof Constr;
+      }
 
       static at <T> (α: Addr, cases: Map<string, T>): Constr<T> {
          const this_: Constr<T> = create<Constr<T>>(α, Constr)
@@ -395,6 +407,10 @@ export namespace Trie {
       x: Lex.Var
       body: T
 
+      static is<T>(σ: Trie.Trie<T>): σ is Var<T> {
+         return σ instanceof Var;
+      }
+
       static at <T> (α: Addr, x: Lex.Var, body: T): Var<T> {
          const this_: Var<T> = create<Var<T>>(α, Var)
          this_.x = as(x, Lex.Var)
@@ -406,6 +422,10 @@ export namespace Trie {
 
    export class Fun<T> extends Trie<T> {
       body: T
+
+      static is<T>(σ: Trie.Trie<T>): σ is Fun<T> {
+         return σ instanceof Fun;
+      }
 
       static at <T> (α: Addr, body: T): Fun<T> {
          const this_: Fun<T> = create<Fun<T>>(α, Fun)
@@ -425,18 +445,14 @@ export namespace Trie {
       if (τ === null) {
          return σ
       } else
-      // The instanceof guards turns T into 'any'. Yuk.
-      if (σ instanceof Fun && τ instanceof Fun) {
-         const [σʹ, τʹ]: [Fun<T>, Fun<T>] = [σ, τ]
-         return Fun.at(α, join(σʹ.body, τʹ.body))
+      if (Fun.is(σ) && Fun.is(τ)) {
+         return Fun.at(α, join(σ.body, τ.body))
       } else
-      if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
-         const [σʹ, τʹ]: [Var<T>, Var<T>] = [σ, τ]
-         return Var.at(α, σʹ.x, join(σʹ.body, τʹ.body))
+      if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
+         return Var.at(α, σ.x, join(σ.body, τ.body))
       } else
-      if (σ instanceof Constr && τ instanceof Constr) {
-         const [σʹ, τʹ]: [Constr<T>, Constr<T>] = [σ, τ]
-         return Constr.at<T>(α, unionWith([σʹ.cases, τʹ.cases], ms => ms.reduce((x, y) => x.join(y))))
+      if (Constr.is(σ) && Constr.is(τ)) {
+         return Constr.at<T>(α, unionWith([σ.cases, τ.cases], ms => ms.reduce((x, y) => x.join(y))))
       } else {
          return assert(false, "Undefined join.", σ, τ)
       }
