@@ -20,13 +20,13 @@ export enum Profile {
    Visualise
 }
 
-const profile = Profile.Parse
+const defaultProfile = Profile.Parse
 
 export function runExample (p: Profile, src: string): void {
    __nonNull(parse(Parse.expr, __nonNull(src))).ast
 }
 
-export function runTest (prog: string): void {
+export function runTest (prog: string, profile: Profile = defaultProfile): void {
    runExample(profile, prog)
 }
 
