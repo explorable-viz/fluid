@@ -44,7 +44,7 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
       const β: Addr = keyP(α, addr(x))
       return Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), (y: U, σ: Trie.Trie<V>) => match(op(x, y), σ)))
    }
-   return Value.PrimOp.at(α, op.name, at1(keyP(α, "σ"), (x: T, σ: Trie.Trie<any>) => match(op_arg(x), σ)))
+   return Value.PrimOp.at(α, op.name, at1(keyP(α, "σ"), (x: T, σ: Trie.Trie<null>) => match(op_arg(x), σ)))
 }
 
 export const ops: Value.PrimOp[] = [
