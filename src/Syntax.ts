@@ -19,7 +19,7 @@ export class EnvEntry {
    }
 }
 
-export type Env = Map<string, EnvEntry | null>
+export type Env = Map<string, EnvEntry>
 
 export namespace str {
    // Primitive ops.
