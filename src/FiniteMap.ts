@@ -5,6 +5,10 @@ import { create } from "./Runtime"
 // Hash-consed finite maps. Sensitive to key changes, which cause the identity of subtrees to change.
 export abstract class FiniteMap<V> {
    abstract get (k: string): V | undefined // ES6 map-style signature
+
+   has (k:string): boolean {
+      return this.get(k) !== undefined
+   }
 }
 
 export class Empty<V> extends FiniteMap<V> {

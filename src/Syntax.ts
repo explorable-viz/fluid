@@ -19,7 +19,7 @@ export class EnvEntry {
    }
 }
 
-export type Env = Map<string, EnvEntry>
+export type Env = FiniteMap<EnvEntry>
 
 export namespace str {
    // Primitive ops.
