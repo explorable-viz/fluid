@@ -2,7 +2,9 @@
 
 import * as $ from "jquery"
 import { initDataTypes } from "../src/DataType"
+import { Eval } from "../src/Eval"
 import { Parse } from "../src/Parse"
+import { Expr, Value } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
 
@@ -23,7 +25,11 @@ export enum Profile {
 const defaultProfile = Profile.Parse
 
 export function runExample (p: Profile, src: string): void {
-   __nonNull(parse(Parse.expr, __nonNull(src))).ast
+   const e: Expr.Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
+   if (p >= Profile.Run) {
+      const [tv, , ]: Eval.EvalResult<Value.Value> = Eval.eval_(baseEnv, null, e)
+      console.log(tv)
+   }
 }
 
 export function runTest (prog: string, profile: Profile = defaultProfile): void {
