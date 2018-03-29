@@ -49,8 +49,8 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
 }
 
 export const ops: Value.PrimOp[] = [
-   unary(intToString, Trie.ConstInt.at),
    unary(error, Trie.ConstStr.at),
+   unary(intToString, Trie.ConstInt.at),
    binary(minus, Trie.ConstInt.at, Trie.ConstInt.at),
    binary(plus, Trie.ConstInt.at, Trie.ConstInt.at),
    binary(times, Trie.ConstInt.at, Trie.ConstInt.at),
@@ -70,6 +70,19 @@ function __true (α: Addr): Value.Constr {
 
 function __false (α: Addr): Value.Constr {
    return Value.Constr.at(α, new Lex.Ctr("False"), [])
+}
+
+// See 0.2.4 release notes re. primitive ops with identifiers as names.
+// Used to take an arbitrary value as an additional argument but now primitives must have
+// primitive arguments.
+__def(error)
+export function error (message: Value.ConstStr): Value.Value {
+   return assert(false, "LambdaCalc error:\n" + message.val)
+}
+
+__def(intToString)
+export function intToString (x: Value.ConstInt): Value.ConstStr {
+   return Value.ConstStr.at(key(intToString, arguments), x.toString())
 }
 
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
@@ -133,17 +146,4 @@ export function div (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
 __def(concat)
 export function concat (x: Value.ConstStr, y: Value.ConstStr): Value.ConstStr {
    return Value.ConstStr.at(key(concat, arguments), x.val + y.val)
-}
-
-// See 0.2.4 release notes re. primitive ops with identifiers as names.
-// Used to take an arbitrary value as an additional argument but now primitives must have
-// primitive arguments.
-__def(error)
-export function error (message: Value.ConstStr): Value.Value {
-   return assert(false, "LambdaCalc error:\n" + message.val)
-}
-
-__def(intToString)
-export function intToString (x: Value.ConstInt): Value.ConstStr {
-   return Value.ConstStr.at(key(intToString, arguments), x.toString())
 }
