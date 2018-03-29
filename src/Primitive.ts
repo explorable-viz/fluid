@@ -3,7 +3,7 @@ import { __def, addr, key, keyP } from "./Memo"
 import { Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
-export type PrimBody<T = any> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
+export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
 
 type Unary<T, V> = (x: T) => V
 type Binary<T, U, V> = (x: T, y: U) => V
@@ -28,21 +28,21 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
 // Primitives currently use a custom memoisation policy, although other approaches are possible.
 function unary<T extends Value.Value, V extends Value.Value> (
    op: Unary<T, V>,
-   at1: (α: Addr, body: PrimBody) => Trie.Prim<PrimBody>,
+   at1: (α: Addr, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>,
 ): Value.PrimOp {
    const α: Addr = addr(op)
-   return Value.PrimOp.at(α, op.name, at1(keyP(α, "σ"), (x: T, τ: Trie.Trie<T>) => match(op(x), τ)))
+   return Value.PrimOp.at(α, op.name, at1(keyP(α, "σ"), (x: T, σ: Trie.Trie<V>) => match(op(x), σ)))
 }
 
 function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
    op: Binary<T, U, V>,
-   at1: (α: Addr, body: PrimBody) => Trie.Prim<PrimBody>,
-   at2: (α: Addr, body: PrimBody) => Trie.Prim<PrimBody>
+   at1: (α: Addr, body: PrimBody<null>) => Trie.Prim<PrimBody<null>>,
+   at2: (α: Addr, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
 ): Value.PrimOp {
    const α: Addr = addr(op)
    function op_arg (x: T): Value.PrimOp {
       const β: Addr = keyP(α, addr(x))
-      return Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), (y: U, τ: Trie.Trie<T>) => match(op(x, y), τ)))
+      return Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), (y: U, σ: Trie.Trie<V>) => match(op(x, y), σ)))
    }
    return Value.PrimOp.at(α, op.name, at1(keyP(α, "σ"), (x: T, σ: Trie.Trie<any>) => match(op_arg(x), σ)))
 }
