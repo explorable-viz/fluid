@@ -1,5 +1,5 @@
 import { assert } from "./util/Core"
-import { insert } from "./FiniteMap"
+import { empty, insert } from "./FiniteMap"
 import { __def, addr, key, keyP } from "./Memo"
 import { Env, Expr, Lex, Trie, Value } from "./Syntax"
 import { ν } from "./Runtime"
@@ -157,7 +157,7 @@ export const ops: Value.PrimOp[] = [
 
 // Only primitives at the moment; eventually other library code. Fake "syntax" for primitives.
 export function prelude (): Env {
-   let ρ: Env = new Map
+   let ρ: Env = empty()
    ops.forEach((op: Value.PrimOp): void => {
       ρ = insert(ρ, op.name, {ρ: new Map, δ: [], e: Expr.PrimOp.at(ν(), op)})
    })
