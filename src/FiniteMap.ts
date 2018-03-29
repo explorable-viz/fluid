@@ -1,3 +1,4 @@
+import { assert} from "./util/Core"
 import { __def, key, keyP } from "./Memo"
 import { create } from "./Runtime"
 
@@ -8,6 +9,10 @@ abstract class FiniteMap<V> {
 }
 
 export class Empty<V> extends FiniteMap<V> {
+   static is<V> (m: FiniteMap<V>): m is Empty<V> {
+      return m instanceof Empty
+   }
+
    static at<V> (α: Addr): Empty<V> {
       const this_: Empty<V> = create<Empty<V>>(α, Empty)
       this_.__version()
@@ -24,6 +29,10 @@ export class NonEmpty<V> extends FiniteMap<V> {
    k: string
    v: V
    right: FiniteMap<V>
+
+   static is<V> (m: FiniteMap<V>): m is NonEmpty<V> {
+      return m instanceof NonEmpty
+   }
 
    static at<V> (α: Addr, left: FiniteMap<V>, k: string, v: V, right: FiniteMap<V>): NonEmpty<V> {
       const this_: NonEmpty<V> = create<NonEmpty<V>>(α, NonEmpty)
@@ -56,9 +65,7 @@ export function empty<V> (): Empty<V> {
 __def(insert)
 export function insert<V> (m: FiniteMap<V>, k: string, v: V): FiniteMap<V> {
    const α: Addr = key(insert, arguments)
-   if (m instanceof Empty) {
-      return NonEmpty.at(α, m, k, v, m)
-   } else {
+   if (NonEmpty.is(m)) { // TS bug requires this branch first
       if (k <= m.k) {
          if (m.k <= k) {
             return NonEmpty.at(α, m.left, k, v, m.right)
@@ -68,6 +75,11 @@ export function insert<V> (m: FiniteMap<V>, k: string, v: V): FiniteMap<V> {
       } else {
          return NonEmpty.at(α, m.left, m.k, m.v, insert(m.right, k, v))
       }
+   } else
+   if (Empty.is(m)) {
+      return NonEmpty.at(α, m, k, v, m)
+   } else {
+      return assert(false)
    }
 }
 

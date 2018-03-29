@@ -363,8 +363,8 @@ export namespace Trie {
    }
 
    export class ConstInt<T> extends Prim<T> {
-      static is<T>(σ: Trie.Trie<T>): σ is ConstInt<T> {
-         return σ instanceof ConstInt;
+      static is<T> (σ: Trie.Trie<T>): σ is ConstInt<T> {
+         return σ instanceof ConstInt
       }
 
       static at <T> (α: Addr, body: T): ConstInt<T> {
@@ -376,8 +376,8 @@ export namespace Trie {
    }
 
    export class ConstStr<T> extends Prim<T> {
-      static is<T>(σ: Trie.Trie<T>): σ is ConstStr<T> {
-         return σ instanceof ConstStr;
+      static is<T> (σ: Trie.Trie<T>): σ is ConstStr<T> {
+         return σ instanceof ConstStr
       }
 
       static at <T> (α: Addr, body: T): ConstStr<T> {
@@ -391,8 +391,8 @@ export namespace Trie {
    export class Constr<T> extends Trie<T> {
       cases: Map<string, T>
 
-      static is<T>(σ: Trie.Trie<T>): σ is Constr<T> {
-         return σ instanceof Constr;
+      static is<T> (σ: Trie.Trie<T>): σ is Constr<T> {
+         return σ instanceof Constr
       }
 
       static at <T> (α: Addr, cases: Map<string, T>): Constr<T> {
@@ -407,8 +407,8 @@ export namespace Trie {
       x: Lex.Var
       body: T
 
-      static is<T>(σ: Trie.Trie<T>): σ is Var<T> {
-         return σ instanceof Var;
+      static is<T> (σ: Trie.Trie<T>): σ is Var<T> {
+         return σ instanceof Var
       }
 
       static at <T> (α: Addr, x: Lex.Var, body: T): Var<T> {
@@ -423,8 +423,8 @@ export namespace Trie {
    export class Fun<T> extends Trie<T> {
       body: T
 
-      static is<T>(σ: Trie.Trie<T>): σ is Fun<T> {
-         return σ instanceof Fun;
+      static is<T> (σ: Trie.Trie<T>): σ is Fun<T> {
+         return σ instanceof Fun
       }
 
       static at <T> (α: Addr, body: T): Fun<T> {
