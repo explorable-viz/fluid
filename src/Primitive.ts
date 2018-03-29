@@ -9,7 +9,7 @@ type Unary<T, V> = (x: T) => V
 type Binary<T, U, V> = (x: T, y: U) => V
 type Prim<T, U> = (x: T, σ: Trie.Trie<U>) => PrimResult<U>
 
-function match<T> (v: Value.Prim, σ: Trie.Trie<T>): PrimResult<T> {
+function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && σ instanceof Trie.Fun) {
       return [v, σ.body]
    }  else
@@ -32,7 +32,7 @@ function unary<T extends Value.Value, V extends Value.Value> (
    at1: (α: Addr, body: PrimBody) => Trie.Prim<PrimBody>,
 ): Value.PrimOp {
    const α: Addr = addr(op)
-   return Value.PrimOp.at(α, name, at1(keyP(α, "σ"), (x: T, τ: Trie.Trie<T>) => match(op(x), τ)))
+   return Value.PrimOp.at(α, op.name, at1(keyP(α, "σ"), (x: T, τ: Trie.Trie<T>) => match(op(x), τ)))
 }
 
 function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
@@ -41,12 +41,11 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
    at2: (α: Addr, body: PrimBody) => Trie.Prim<PrimBody>
 ): Value.PrimOp {
    const α: Addr = addr(op)
-   function first (x: T, σ: Trie.Trie<any>): PrimResult<any> {
-      const β: Addr = keyP(α, addr(x)),
-      v: Value.PrimOp = Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), (y: U, τ: Trie.Trie<T>) => match(op(x, y), τ)))
-      return match(v, σ)
+   function op_arg (x: T): Value.PrimOp {
+      const β: Addr = keyP(α, addr(x))
+      return Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), (y: U, τ: Trie.Trie<T>) => match(op(x, y), τ)))
    }
-   return Value.PrimOp.at(α, name, at1(keyP(α, "σ"), first))
+   return Value.PrimOp.at(α, op.name, at1(keyP(α, "σ"), (x: T, σ: Trie.Trie<any>) => match(op_arg(x), σ)))
 }
 
 export const ops: Value.PrimOp[] = [

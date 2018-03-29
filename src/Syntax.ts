@@ -127,6 +127,9 @@ export namespace Value {
    }
 
    export class Prim {
+      __Prim(): void {
+         // discriminator
+      }
    }
    
    export class ConstInt extends Prim {
