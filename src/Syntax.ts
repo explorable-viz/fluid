@@ -368,7 +368,7 @@ export namespace Trie {
       }
 
       static at <T> (α: Addr, body: T): ConstInt<T> {
-         const this_: ConstInt<T> = create<ConstInt<T>>(α, Fun)
+         const this_: ConstInt<T> = create<ConstInt<T>>(α, ConstInt)
          this_.body = body
          this_.__version()
          return this_
@@ -381,7 +381,7 @@ export namespace Trie {
       }
 
       static at <T> (α: Addr, body: T): ConstStr<T> {
-         const this_: ConstStr<T> = create<ConstStr<T>>(α, Fun)
+         const this_: ConstStr<T> = create<ConstStr<T>>(α, ConstStr)
          this_.body = body
          this_.__version()
          return this_

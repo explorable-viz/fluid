@@ -52,22 +52,6 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
    return makePrim(α, op.name, op_x, at1)
 }
 
-export const ops: Value.PrimOp[] = [
-   unary(error, Trie.ConstStr.at),
-   unary(intToString, Trie.ConstInt.at),
-   binary(minus, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(plus, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(times, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(div, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(equalInt, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(equalInt, Trie.ConstStr.at, Trie.ConstStr.at),
-   binary(greaterInt, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(greaterInt, Trie.ConstStr.at, Trie.ConstStr.at),
-   binary(lessInt, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(lessInt, Trie.ConstStr.at, Trie.ConstStr.at),
-   binary(concat, Trie.ConstStr.at, Trie.ConstStr.at),
-]
-
 function __true (α: Addr): Value.Constr {
    return Value.Constr.at(α, new Lex.Ctr("True"), [])
 }
@@ -151,3 +135,20 @@ __def(concat)
 export function concat (x: Value.ConstStr, y: Value.ConstStr): Value.ConstStr {
    return Value.ConstStr.at(key(concat, arguments), x.val + y.val)
 }
+
+// Needs to come after all the __def forms above.
+export const ops: Value.PrimOp[] = [
+   unary(error, Trie.ConstStr.at),
+   unary(intToString, Trie.ConstInt.at),
+   binary(minus, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(plus, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(times, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(div, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(equalInt, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(equalInt, Trie.ConstStr.at, Trie.ConstStr.at),
+   binary(greaterInt, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(greaterInt, Trie.ConstStr.at, Trie.ConstStr.at),
+   binary(lessInt, Trie.ConstInt.at, Trie.ConstInt.at),
+   binary(lessInt, Trie.ConstStr.at, Trie.ConstStr.at),
+   binary(concat, Trie.ConstStr.at, Trie.ConstStr.at),
+]
