@@ -33,35 +33,33 @@ __def(empty)
 export function empty (): Empty {
    return Empty.at(key(empty, arguments))
 }
-/*
+
 __def(insert)
-export function insert <K extends Ord<K>, V> (m: FiniteMap<K, V>, k: K, v: V): FiniteMap<K, V> {
+export function insert<V> (m: FiniteMap<V>, k: string, v: V): FiniteMap<V> {
    const α: Addr = key(insert, arguments)
-   return m.__visit({
-      is_Empty: (_) =>
-         NonEmpty.at_(α, m, Pair.at_(keyP(α, 't', 'val'), k, v), m),
-      is_NonEmpty: (m) => {
-         if (k.leq(m.t.fst)) {
-            if (m.t.fst.leq(k)) {
-               return NonEmpty.at_(α, m.left, Pair.at_(keyP(α, 't', 'val'), k, v), m.right)
-            } else {
-               return NonEmpty.at_(α, insert(m.left, k, v), m.t, m.right)
-            }
+   if (m instanceof Empty) {
+      return NonEmpty.at(α, m, k, v, m)
+   } else {
+      if (k <= m.k) {
+         if (m.k <= k) {
+            return NonEmpty.at(α, m.left, k, v, m.right)
          } else {
-            return NonEmpty.at_(α, m.left, m.t, insert(m.right, k, v))
+            return NonEmpty.at(α, insert(m.left, k, v), m.k, m.v, m.right)
          }
+      } else {
+         return NonEmpty.at(α, m.left, m.k, m.v, insert(m.right, k, v))
       }
-   })
+   }
 }
 
-__def(extend)
-export function extend <K extends Ord<K>, V> (m: FiniteMap<K, V>, kvs: List<Pair<K, V>>): FiniteMap<K, V> {
-   __forEach(kvs, (kv): void => {
-      m = insert(m, kv.fst, kv.snd)
+export function extend<V> (m: FiniteMap<V>, kvs: [string, V][]): FiniteMap<V> {
+   kvs.forEach(([k, v]): void => {
+      m = insert(m, k, v)
    })
    return m
 }
 
+/*
 __def(get)
 export function get <K extends Ord<K>, V> (m: FiniteMap<K, V>, k: K): Prim.Option<V> {
    const α: Addr = key(get, arguments)
