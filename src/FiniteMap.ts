@@ -1,11 +1,10 @@
 import { assert} from "./util/Core"
-import { __def, key, keyP } from "./Memo"
+import { __def, key } from "./Memo"
 import { create } from "./Runtime"
 
 // Hash-consed finite maps. Sensitive to key changes, which cause the identity of subtrees to change.
 abstract class FiniteMap<V> {
-   // ES6 map-style interface
-   abstract get (k: string): V | undefined
+   abstract get (k: string): V | undefined // ES6 map-style signature
 }
 
 export class Empty<V> extends FiniteMap<V> {
