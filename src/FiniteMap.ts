@@ -93,8 +93,15 @@ export function extend<V> (m: FiniteMap<V>, kvs: [string, V][]): FiniteMap<V> {
    return m
 }
 
-// Left-biased union, meaning m is preferred to mʹ when duplicate keys are encountered.
-// Calling this concat by analogy with the notation used in the paper.
+// Right-biased union (overrides m with the bindings in mʹ).
+// Called concat by analogy with notation used in the paper.
 export function concat<V> (m: FiniteMap<V>, mʹ: FiniteMap<V>): FiniteMap<V> {
-   return assert(false, "TODO")
+   if (NonEmpty.is(mʹ)) {
+      return insert(concat(concat(m, mʹ.left), mʹ.right), mʹ.k, mʹ.v)
+   } else
+   if (Empty.is(mʹ)) {
+      return m
+   } else {
+      return assert(false)
+   }
 }
