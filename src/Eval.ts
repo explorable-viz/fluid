@@ -1,6 +1,6 @@
 import { zip } from "./util/Array"
 import { __nonNull, assert, as } from "./util/Core"
-import { extend, union } from "./util/Map"
+import { extend, union } from "./FiniteMap"
 import { __def, key, keyP } from "./Memo"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Env, EnvEntry, Expr, Trace, Traced, Trie, Value } from "./Syntax"
@@ -22,7 +22,7 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
       const σ: Trie.Trie<Object> = as(κ as Trie.Trie<Object>, Trie.Trie),
             [tv, ρʹ, κʹ]: EvalResult<Object> = eval_(ρ, σ, es[0]),
             [tvs, ρʺ, κʺ]: EvalResults = evalSeq(ρ, κʹ, es.slice(1))
-      return [[tv].concat(tvs), union([ρʹ, ρʺ]), κʺ]
+      return [[tv].concat(tvs), union(ρʹ, ρʺ), κʺ]
    }
 }
 
@@ -70,7 +70,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
       } else
       if (e instanceof Expr.Let) {
          const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.σ, e.e),
-               [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(union([ρ, ρʹ]), σ, σu)
+               [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(union(ρ, ρʹ), σ, σu)
          return __result(α, Trace.Let.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
       } else 
       // See 0.3.4 release notes for semantics.
@@ -82,7 +82,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
       } else
       if (e instanceof Expr.MatchAs) {
          const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.σ, e.e),
-               [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(union([ρ, ρʹ]), σ, σu)
+               [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(union(ρ, ρʹ), σ, σu)
          return __result(α, Trace.Match.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
       } else
       if (e instanceof Expr.App) {
@@ -93,7 +93,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
             const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, f.func.σ, e.arg),
                   fs: EnvEntry[] = f.δ.map(def => new EnvEntry(f.ρ, f.δ, def.func)),
                   ρ1: Env = extend(f.ρ, zip(f.δ.map(def => def.name.str), fs)),
-                  [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(union([ρ1, ρ2]), σ, σʹu)
+                  [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(union(ρ1, ρ2), σ, σʹu)
             return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
          } else
          if (f instanceof Value.PrimOp) {
