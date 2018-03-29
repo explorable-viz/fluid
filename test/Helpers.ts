@@ -4,7 +4,8 @@ import * as $ from "jquery"
 import { initDataTypes } from "../src/DataType"
 import { Eval } from "../src/Eval"
 import { Parse } from "../src/Parse"
-import { Expr, Value } from "../src/Syntax"
+import { prelude } from "../src/Primitive"
+import { Env, Expr, Value } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
 
@@ -14,6 +15,7 @@ export function initialise (): void {
       return "'" + this + "'"
    }
    initDataTypes()
+   baseEnv = prelude()
 }
 
 export enum Profile {
@@ -31,6 +33,8 @@ export function runExample (p: Profile, src: string): void {
       console.log(tv)
    }
 }
+
+export let baseEnv: Env = null
 
 export function runTest (prog: string, profile: Profile = defaultProfile): void {
    runExample(profile, prog)

@@ -30,29 +30,29 @@ __def(eval_)
 export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
    const α: Addr = key(eval_, arguments)
    assert(e !== undefined, "Missing constructor argument?")
-   if (σ instanceof Trie.Var) {
+   if (Trie.Var.is(σ)) {
       const entries: [string, EnvEntry][] = [[σ.x.str, {ρ, δ: [], e}]]
       return __result(α, Trace.Empty.at(α), null, new Map(entries), σ.body)
    } else {
-      if (e instanceof Expr.Constr && σ instanceof Trie.Constr && σ.cases.has(e.ctr.str)) {
-         const σʹ: Object = σ.cases.get(e.ctr.str),
+      if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
+         const σʹ: Object = σ.cases.get(e.ctr.str)!,
                β: Addr = keyP(α, "val"),
                [tvs, ρʹ, κ]: EvalResults = evalSeq(ρ, σʹ, e.args)
          // have to cast κ without type information on constructor
          return __result(α, Trace.Empty.at(α), Value.Constr.at(β, e.ctr, tvs), ρʹ, κ as T)
       } else
-      if (e instanceof Expr.ConstInt && σ instanceof Trie.ConstInt) {
+      if (e instanceof Expr.ConstInt && Trie.ConstInt.is(σ)) {
          return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), new Map, σ.body)
       } else
-      if (e instanceof Expr.ConstStr && σ instanceof Trie.ConstStr) {
+      if (e instanceof Expr.ConstStr && Trie.ConstStr.is(σ)) {
          return __result(α, Trace.Empty.at(α), Value.ConstStr.at(keyP(α, "val"), e.val), new Map, σ.body)
 
       } else
-      if (e instanceof Expr.Fun && σ instanceof Trie.Fun) {
+      if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
          const v: Value.Closure = Value.Closure.at(keyP(α, "val"), ρ, [], e)
          return __result(α, Trace.Empty.at(keyP(α, "trace")), v, new Map, σ.body)
       } else
-      if (e instanceof Expr.PrimOp && σ instanceof Trie.Fun) {
+      if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
          return __result(α, Trace.Empty.at(keyP(α, "trace")), e.op, new Map, σ.body)
       } else
       if (e instanceof Expr.OpName || e instanceof Expr.Var) {
