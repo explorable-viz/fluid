@@ -3,24 +3,24 @@ import { __def, key, keyP } from "./Memo"
 import { create } from "./Runtime"
 
 // Hash-consed finite maps. Sensitive to key changes, which cause the identity of subtrees to change.
-type FiniteMap<K, V> = Empty<K, V> | NonEmpty<K, V>
+type FiniteMap<V> = Empty | NonEmpty<V>
 
-export class Empty<K, V> {
-   static at<K, V> (α: Addr): Empty<K, V> {
-      const this_: Empty<K, V> = create(α, Empty)
+export class Empty {
+   static at (α: Addr): Empty {
+      const this_: Empty = create(α, Empty)
       this_.__version()
       return this_
    }
 }
 
-export class NonEmpty<K, V> {
-   left: FiniteMap<K, V>
-   k: K
+export class NonEmpty<V> {
+   left: FiniteMap<V>
+   k: string
    v: V
-   right: FiniteMap<K, V>
+   right: FiniteMap<V>
 
-   static at<K, V> (α: Addr, left: FiniteMap<K, V>, k: K, v: V, right: FiniteMap<K, V>): NonEmpty<K, V> {
-      const this_: NonEmpty<K, V> = create<NonEmpty<K, V>>(α, NonEmpty)
+   static at<V> (α: Addr, left: FiniteMap<V>, k: string, v: V, right: FiniteMap<V>): NonEmpty<V> {
+      const this_: NonEmpty<V> = create<NonEmpty<V>>(α, NonEmpty)
       this_.left = left
       this_.k = k
       this_.v = v
