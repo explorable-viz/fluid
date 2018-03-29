@@ -1,6 +1,5 @@
 import { assert } from "./util/Core"
 import { __def, addr, key, keyP } from "./Memo"
-import { ν } from "./Runtime"
 import { Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
@@ -10,9 +9,10 @@ type Unary<T, V> = (x: T) => V
 type Binary<T, U, V> = (x: T, y: U) => V
 type Prim<T, U> = (x: T, σ: Trie.Trie<U>) => PrimResult<U>
 
-// Note: primitives currently use a custom memoisation policy, although other approaches are possible.
-
 function match<T> (v: Value.Prim, σ: Trie.Trie<T>): PrimResult<T> {
+   if (v instanceof Value.PrimOp && σ instanceof Trie.Fun) {
+      return [v, σ.body]
+   }  else
    if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
       return [v, σ.body]
    } else 
@@ -26,6 +26,7 @@ function match<T> (v: Value.Prim, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
+// Primitives currently use a custom memoisation policy, although other approaches are possible.
 function unary<T extends Value.Value, V extends Value.Value> (
    op: Unary<T, V>,
    at1: (α: Addr, body: PrimBody) => Trie.Prim<PrimBody>,
@@ -41,18 +42,13 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
 ): Value.PrimOp {
    const α: Addr = addr(op)
    function first (x: T, σ: Trie.Trie<any>): PrimResult<any> {
-      if (σ instanceof Trie.Fun) {
-         const β: Addr = keyP(α, addr(x)),
-               v: Value.PrimOp = Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), (y: U, τ: Trie.Trie<T>) => match(op(x, y), τ)))
-         return [v, σ.body]
-      } else {
-         return assert(false, "Demand mismatch.")
-      }
+      const β: Addr = keyP(α, addr(x)),
+      v: Value.PrimOp = Value.PrimOp.at(β, op.name + " " + x, at2(keyP(β, "σ"), (y: U, τ: Trie.Trie<T>) => match(op(x, y), τ)))
+      return match(v, σ)
    }
    return Value.PrimOp.at(α, name, at1(keyP(α, "σ"), first))
 }
 
-// Fake "syntax" for primitive ops; might revisit.
 export const ops: Value.PrimOp[] = [
    unary(intToString, Trie.ConstInt.at),
    unary(error, Trie.ConstStr.at),
