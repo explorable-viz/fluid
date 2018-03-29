@@ -1,6 +1,7 @@
 import { assert } from "./util/Core"
 import { __def, addr, key, keyP } from "./Memo"
-import { Lex, Trie, Value } from "./Syntax"
+import { Env, Expr, Lex, Trie, Value } from "./Syntax"
+import { ν } from "./Runtime"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
@@ -152,3 +153,12 @@ export const ops: Value.PrimOp[] = [
    binary(lessInt, Trie.ConstStr.at, Trie.ConstStr.at),
    binary(concat, Trie.ConstStr.at, Trie.ConstStr.at),
 ]
+
+// Only primitives at the moment; eventually other library code. Fake "syntax" for primitives.
+export function prelude (): Env {
+   const ρ: Env = new Map
+   ops.forEach((op: Value.PrimOp) => {
+      ρ.set(op.name, {ρ: new Map, δ: [], e: Expr.PrimOp.at(ν(), op)})
+   })
+   return ρ
+}

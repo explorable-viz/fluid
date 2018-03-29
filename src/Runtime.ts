@@ -1,7 +1,5 @@
 import { __shallowCopy, __shallowEq, assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
-import { ops } from "./Primitive"
-import { Env, Expr, Value } from "./Syntax"
 
 // At a given version (there is only one, currently) enforce "single assignment" semantics.
 Object.prototype.__version = function (): Object {
@@ -16,15 +14,6 @@ Object.prototype.__version = function (): Object {
 Object.defineProperty(Object.prototype, "__version", {
    enumerable: false
 })
-
-// Only primitives at the moment; eventually other library code. Fake "syntax" for primitives.
-export function prelude (): Env {
-   const ρ: Env = new Map
-   ops.forEach((op: Value.PrimOp) => {
-      ρ.set(op.name, {ρ: new Map, δ: [], e: Expr.PrimOp.at(ν(), op)})
-   })
-   return ρ
-}
 
 const __instances: Map<Addr, Object> = new Map
 
