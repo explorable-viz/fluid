@@ -146,11 +146,11 @@ export const ops: Value.PrimOp[] = [
    binary(times, Trie.ConstInt.at, Trie.ConstInt.at),
    binary(div, Trie.ConstInt.at, Trie.ConstInt.at),
    binary(equalInt, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(equalInt, Trie.ConstStr.at, Trie.ConstStr.at),
+   binary(equalStr, Trie.ConstStr.at, Trie.ConstStr.at),
    binary(greaterInt, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(greaterInt, Trie.ConstStr.at, Trie.ConstStr.at),
+   binary(greaterStr, Trie.ConstStr.at, Trie.ConstStr.at),
    binary(lessInt, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(lessInt, Trie.ConstStr.at, Trie.ConstStr.at),
+   binary(lessStr, Trie.ConstStr.at, Trie.ConstStr.at),
    binary(concat, Trie.ConstStr.at, Trie.ConstStr.at),
 ]
 
