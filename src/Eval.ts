@@ -26,6 +26,14 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
    }
 }
 
+function traceOf (α: Addr): Addr {
+   return keyP(α, "trace")
+}
+
+function valOf (α: Addr): Addr {
+   return keyP(α, "val")
+}
+
 __def(eval_)
 export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
    const α: Addr = key(eval_, arguments)
@@ -35,24 +43,23 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
          const σʹ: Object = σ.cases.get(e.ctr.str)!,
-               β: Addr = keyP(α, "val"),
                [tvs, ρʹ, κ]: EvalResults = evalSeq(ρ, σʹ, e.args)
          // have to cast κ without type information on constructor
-         return __result(α, Trace.Empty.at(α), Value.Constr.at(β, e.ctr, tvs), ρʹ, κ as T)
+         return __result(α, Trace.Empty.at(traceOf(α)), Value.Constr.at(valOf(α), e.ctr, tvs), ρʹ, κ as T)
       } else
       if (e instanceof Expr.ConstInt && Trie.ConstInt.is(σ)) {
-         return __result(α, Trace.Empty.at(α), Value.ConstInt.at(keyP(α, "val"), e.val), empty(), σ.body)
+         return __result(α, Trace.Empty.at(traceOf(α)), Value.ConstInt.at(valOf(α), e.val), empty(), σ.body)
       } else
       if (e instanceof Expr.ConstStr && Trie.ConstStr.is(σ)) {
-         return __result(α, Trace.Empty.at(α), Value.ConstStr.at(keyP(α, "val"), e.val), empty(), σ.body)
+         return __result(α, Trace.Empty.at(traceOf(α)), Value.ConstStr.at(valOf(α), e.val), empty(), σ.body)
 
       } else
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-         const v: Value.Closure = Value.Closure.at(keyP(α, "val"), ρ, [], e)
-         return __result(α, Trace.Empty.at(keyP(α, "trace")), v, empty(), σ.body)
+         const v: Value.Closure = Value.Closure.at(valOf(α), ρ, [], e)
+         return __result(α, Trace.Empty.at(traceOf(α)), v, empty(), σ.body)
       } else
       if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
-         return __result(α, Trace.Empty.at(keyP(α, "trace")), e.op, empty(), σ.body)
+         return __result(α, Trace.Empty.at(traceOf(α)), e.op, empty(), σ.body)
       } else
       if (e instanceof Expr.OpName || e instanceof Expr.Var) {
          const x: string = e instanceof Expr.OpName ? e.opName.str : e.ident.str
@@ -62,43 +69,42 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
             const cls: EnvEntry = __nonNull(ρ.get(x)),
                   [tv, ρʺ, σv]: EvalResult<T> = eval_(cls.ρ, σ, cls.e),
                   t: Trace.Trace = e instanceof Expr.OpName 
-                     ? Trace.OpName.at(α, e.opName, tv.trace)
-                     : Trace.Var.at(α, e.ident, tv.trace)
+                     ? Trace.OpName.at(traceOf(α), e.opName, tv.trace)
+                     : Trace.Var.at(traceOf(α), e.ident, tv.trace)
             return __result(α, t, tv.val, ρʺ, σv)
          }
       } else
       if (e instanceof Expr.Let) {
          const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.σ, e.e),
                [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(concat(ρ, ρʹ), σ, σu)
-         return __result(α, Trace.Let.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
+         return __result(α, Trace.Let.at(traceOf(α), tu, tv.trace), tv.val, ρʺ, κ)
       } else 
       // See 0.3.4 release notes for semantics.
       if (e instanceof Expr.LetRec) {
          const fs: EnvEntry[] = e.δ.map(def => new EnvEntry(ρ, e.δ, def.func)),
                ρʹ: Env = extend(ρ, zip(e.δ.map(def => def.name.str), fs)),
                [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(ρʹ, σ, e.e)
-         return __result(α, Trace.LetRec.at(keyP(α, "trace"), e.δ, tv.trace), tv.val, ρʺ, σv)
+         return __result(α, Trace.LetRec.at(traceOf(α), e.δ, tv.trace), tv.val, ρʺ, σv)
       } else
       if (e instanceof Expr.MatchAs) {
          const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.σ, e.e),
                [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(concat(ρ, ρʹ), σ, σu)
-         return __result(α, Trace.Match.at(keyP(α, "trace"), tu, tv.trace), tv.val, ρʺ, κ)
+         return __result(α, Trace.Match.at(traceOf(α), tu, tv.trace), tv.val, ρʺ, κ)
       } else
       if (e instanceof Expr.App) {
-         const β: Addr = keyP(α, "trace"),
-               [tf, ,]: EvalResult<null> = eval_<null>(ρ, Trie.Fun.at(keyP(α, "1"), null), e.func),
+         const [tf, ,]: EvalResult<null> = eval_<null>(ρ, Trie.Fun.at(keyP(α, "1"), null), e.func),
                f: Value.Value | null = tf.val
          if (f instanceof Value.Closure) {
             const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, f.func.σ, e.arg),
                   fs: EnvEntry[] = f.δ.map(def => new EnvEntry(f.ρ, f.δ, def.func)),
                   ρ1: Env = extend(f.ρ, zip(f.δ.map(def => def.name.str), fs)),
                   [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(concat(ρ1, ρ2), σ, σʹu)
-            return __result(α, Trace.App.at(β, tf, tu, tv.trace), tv.val, ρʹ, σv)
+            return __result(α, Trace.App.at(traceOf(α), tf, tu, tv.trace), tv.val, ρʹ, σv)
          } else
          if (f instanceof Value.PrimOp) {
             const [tu, , σʹu]: EvalResult<PrimBody<T>> = eval_(ρ, f.σ, e.arg),
                   [v, σv]: PrimResult<T> = σʹu(tu.val, σ)
-            return __result(α, Trace.PrimApp.at(β, tf, tu), v, empty(), σv)
+            return __result(α, Trace.PrimApp.at(traceOf(α), tf, tu), v, empty(), σv)
          } else {
             return assert(false, "Not a function.", f)
          }
