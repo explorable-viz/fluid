@@ -2,7 +2,10 @@ import { assert} from "./util/Core"
 import { __def, key } from "./Memo"
 import { create } from "./Runtime"
 
-// Hash-consed finite maps. Sensitive to key changes, which cause the identity of subtrees to change.
+// Hash-consed finite maps, implemented as snoc lists, so the identity of an environment can correspond 
+// to a sequence of substitutions. A tree implementation would make the identity of an environment sensitive
+// to keys, which would in turn require addressable strings to allow memo hits across changes to names.
+// Moreover environment identity depending on sort order of names would incrementalise quite differently.
 export abstract class FiniteMap<V> {
    abstract get (k: string): V | undefined // ES6 map-style signature
 
@@ -15,13 +18,13 @@ export abstract class FiniteMap<V> {
    }
 }
 
-export class Empty<V> extends FiniteMap<V> {
-   static is<V> (m: FiniteMap<V>): m is Empty<V> {
-      return m instanceof Empty
+export class Nil<V> extends FiniteMap<V> {
+   static is<V> (m: FiniteMap<V>): m is Nil<V> {
+      return m instanceof Nil
    }
 
-   static at<V> (α: Addr): Empty<V> {
-      const this_: Empty<V> = create<Empty<V>>(α, Empty)
+   static at<V> (α: Addr): Nil<V> {
+      const this_: Nil<V> = create<Nil<V>>(α, Nil)
       this_.__version()
       return this_
    }
@@ -31,35 +34,29 @@ export class Empty<V> extends FiniteMap<V> {
    }
 }
 
-export class NonEmpty<V> extends FiniteMap<V> {
-   left: FiniteMap<V>
+export class Snoc<V> extends FiniteMap<V> {
+   tail: FiniteMap<V>
    k: string
    v: V
-   right: FiniteMap<V>
 
-   static is<V> (m: FiniteMap<V>): m is NonEmpty<V> {
-      return m instanceof NonEmpty
+   static is<V> (m: FiniteMap<V>): m is Snoc<V> {
+      return m instanceof Snoc
    }
 
-   static at<V> (α: Addr, left: FiniteMap<V>, k: string, v: V, right: FiniteMap<V>): NonEmpty<V> {
-      const this_: NonEmpty<V> = create<NonEmpty<V>>(α, NonEmpty)
-      this_.left = left
+   static at<V> (α: Addr, tail: FiniteMap<V>, k: string, v: V): Snoc<V> {
+      const this_: Snoc<V> = create<Snoc<V>>(α, Snoc)
+      this_.tail = tail
       this_.k = k
       this_.v = v
-      this_.right = right
       this_.__version()
       return this_
    }
 
    get (k: string): V | undefined {
-      if (k <= this.k) {
-         if (this.k <= k) {
-            return this.v
-         } else {
-            return this.left.get(k)
-         }
+      if (this.k === k) {
+         return this.v
       } else {
-         return this.right.get(k)
+         return this.tail.get(k)
       }
    }
 }
