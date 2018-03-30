@@ -8,7 +8,7 @@ import { Env, EnvEntry, Expr, Trace, Traced, Trie, Value } from "./Syntax"
 export module Eval {
 
 export type EvalResult<T> = [Traced, Env, T]    // tv, ρ, σv
-type EvalResults = [Traced[], Env, Object] // tvs, ρ, σv
+type EvalResults = [Traced[], Env, Object]      // tvs, ρ, σv
 
 function __result<T> (α: Addr, t: Trace.Trace, v: Value.Value | null, ρ: Env, κ: T): EvalResult<T> {
    return [Traced.at(α, t, v), ρ, κ]

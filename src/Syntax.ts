@@ -121,7 +121,7 @@ export namespace Value {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
          this_.δ = δ
-         this_.func = as(func, Expr.Fun)
+         this_.func = func
          this_.__version()
          return this_
       }
@@ -161,7 +161,7 @@ export namespace Value {
    
       static at (α: Addr, ctr: Lex.Ctr, args: Traced[]): Constr {
          const this_: Constr = create(α, Constr)
-         this_.ctr = as(ctr, Lex.Ctr)
+         this_.ctr = ctr
          this_.args = args
          this_.__version()
          return this_
@@ -196,8 +196,8 @@ export namespace Expr {
 
       static at (α: Addr, func: Expr, arg: Expr): App {
          const this_: App = create(α, App)
-         this_.func = as(func, Expr)
-         this_.arg = as(arg, Expr)
+         this_.func = func
+         this_.arg = arg
          this_.__version()
          return this_
       }
@@ -231,7 +231,7 @@ export namespace Expr {
    
       static at (α: Addr, ctr: Lex.Ctr, args: Expr[]): Constr {
          const this_: Constr = create(α, Constr)
-         this_.ctr = as(ctr, Lex.Ctr)
+         this_.ctr = ctr
          this_.args = args
          this_.__version()
          return this_
@@ -243,7 +243,7 @@ export namespace Expr {
 
       static at (α: Addr, σ: Trie.Trie<Expr>): Fun {
          const this_: Fun = create(α, Fun)
-         this_.σ = as(σ, Trie.Trie)
+         this_.σ = σ
          this_.__version()
          return this_
       }
@@ -256,8 +256,8 @@ export namespace Expr {
 
       static at (α: Addr, e: Expr, σ: Trie.Var<Expr>): Let {
          const this_: Let = create(α, Let)
-         this_.e = as(e, Expr)
-         this_.σ = as(σ, Trie.Var)
+         this_.e = e
+         this_.σ = σ
          this_.__version()
          return this_
       }
@@ -269,8 +269,8 @@ export namespace Expr {
    
       static at (α: Addr, name: Lex.Var, func: Fun): RecDefinition {
          const this_: RecDefinition = create(α, RecDefinition)
-         this_.name = as(name, Lex.Var)
-         this_.func = as(func, Fun)
+         this_.name = name
+         this_.func = func
          this_.__version()
          return this_
       }
@@ -283,7 +283,7 @@ export namespace Expr {
       static at (α: Addr, δ: RecDefinition[], e: Expr): LetRec {
          const this_: LetRec = create(α, LetRec)
          this_.δ = δ
-         this_.e = as(e, Expr)
+         this_.e = e
          this_.__version()
          return this_
       }
@@ -295,8 +295,8 @@ export namespace Expr {
    
       static at (α: Addr, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
          const this_: MatchAs = create(α, MatchAs)
-         this_.e = as(e, Expr)
-         this_.σ = as(σ, Trie.Trie)
+         this_.e = e
+         this_.σ = σ
          this_.__version()
          return this_
       }
@@ -307,7 +307,7 @@ export namespace Expr {
    
       static at (α: Addr, opName: Lex.OpName): OpName {
          const this_: OpName = create(α, OpName)
-         this_.opName = as(opName, Lex.OpName)
+         this_.opName = opName
          this_.__version()
          return this_
       }
@@ -331,7 +331,7 @@ export namespace Expr {
    
       static at (α: Addr, ident: Lex.Var): Var {
          const this_: Var = create(α, Var)
-         this_.ident = as(ident, Lex.Var)
+         this_.ident = ident
          this_.__version()
          return this_
       }
@@ -344,7 +344,7 @@ export class Traced<T extends Value.Value = Value.Value> {
 
    static at <T extends Value.Value> (α: Addr, trace: Trace.Trace, val: T | null): Traced<T> {
       const this_: Traced<T> = create<Traced<T>>(α, Traced)
-      this_.trace = as(trace, Trace.Trace)
+      this_.trace = trace
       this_.val = val
       this_.__version()
       return this_
@@ -474,9 +474,9 @@ export namespace Trace {
 
       static at (α: Addr, func: Traced, arg: Traced, body: Trace): App {
          const this_: App = create(α, App)
-         this_.func = as(func, Traced)
-         this_.arg = as(arg, Traced)
-         this_.body = as(body, Trace)
+         this_.func = func
+         this_.arg = arg
+         this_.body = body
          this_.__version()
          return this_
       }
@@ -497,8 +497,8 @@ export namespace Trace {
 
       static at (α: Addr, tu: Traced, t: Trace): Match {
          const this_: Match = create(α, Match)
-         this_.tu = as(tu, Traced)
-         this_.t = as(t, Trace)
+         this_.tu = tu
+         this_.t = t
          this_.__version()
          return this_
       }
@@ -512,7 +512,7 @@ export namespace Trace {
       static at (α: Addr, δ: Expr.RecDefinition[], t: Trace): LetRec {
          const this_: LetRec = create(α, LetRec)
          this_.δ = δ
-         this_.t = as(t, Trace)
+         this_.t = t
          this_.__version()
          return this_
       }
@@ -525,8 +525,8 @@ export namespace Trace {
 
       static at (α: Addr, tu: Traced, t: Trace): Match {
          const this_: Match = create(α, Match)
-         this_.tu = as(tu, Traced)
-         this_.t = as(t, Trace)
+         this_.tu = tu
+         this_.t = t
          this_.__version()
          return this_
       }
@@ -538,8 +538,8 @@ export namespace Trace {
 
       static at (α: Addr, x: Lex.OpName, t: Trace): OpName {
          const this_: OpName = create(α, OpName)
-         this_.x = as(x, Lex.OpName)
-         this_.t = as(t, Trace)
+         this_.x = x
+         this_.t = t
          this_.__version()
          return this_
       }
@@ -552,8 +552,8 @@ export namespace Trace {
 
       static at (α: Addr, op: Traced, arg: Traced): PrimApp {
          const this_: PrimApp = create(α, PrimApp)
-         this_.op = as(op, Traced)
-         this_.arg = as(arg, Traced)
+         this_.op = op
+         this_.arg = arg
          this_.__version()
          return this_
       }
@@ -565,8 +565,8 @@ export namespace Trace {
 
       static at (α: Addr, x: Lex.Var, t: Trace): Var {
          const this_: Var = create(α, Var)
-         this_.x = as(x, Lex.Var)
-         this_.t = as(t, Trace)
+         this_.x = x
+         this_.t = t
          this_.__version()
          return this_
       }
