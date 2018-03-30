@@ -4,6 +4,12 @@ export function addr (o: Object): Addr {
    return __nonNull(o.__addr)
 }
 
+Object.defineProperty(Array.prototype, "addr", {
+   get: function () {
+      assert(false, "YES, HERE!")
+   }
+})
+
 // Require explicit callee (obtaining via IArguments not permitted in strict mode).
 export function key (callee: Function, args: IArguments): Addr {
    return addr(callee) + "(" + Array.from(args).map(o => addr(__nonNull(o))).join(",") + ")"
