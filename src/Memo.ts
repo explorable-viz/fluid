@@ -9,6 +9,10 @@ export function key (callee: Function, args: IArguments): Addr {
    return addr(callee) + "(" + Array.from(args).map(o => addr(__nonNull(o))).join(",") + ")"
 }
 
+export function keyA (callee: Function, ...args: Object[]): Addr {
+   return addr(callee) + "(" + Array.from(args).map(o => addr(__nonNull(o))).join(",") + ")"
+}
+
 export function keyP (α: Addr, ...path: string[]): Addr {
    return α + (path.length === 0 ? "" : ("." + path.join(".")))
 }

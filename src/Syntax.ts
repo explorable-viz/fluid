@@ -1,25 +1,11 @@
-import { as, assert } from "./util/Core"
+import { assert } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { FiniteMap } from "./FiniteMap"
+import { Env } from "./Env"
 import { __def, key } from "./Memo"
 import { PrimBody } from "./Primitive"
 import { create } from "./Runtime"
-
-export class EnvEntry {
-   ρ: Env
-   δ: Expr.RecDefinition[]
-   e: Expr.Expr
-
-   constructor(ρ: Env, δ: Expr.RecDefinition[], e: Expr.Expr) {
-      this.ρ = ρ
-      this.δ = δ
-      this.e = e
-   }
-}
-
-export type Env = FiniteMap<EnvEntry>
 
 export namespace str {
    // Primitive ops.
@@ -414,7 +400,7 @@ export namespace Trie {
 
       static at <T> (α: Addr, x: Lex.Var, body: T): Var<T> {
          const this_: Var<T> = create<Var<T>>(α, Var)
-         this_.x = as(x, Lex.Var)
+         this_.x = x
          this_.body = body
          this_.__version()
          return this_

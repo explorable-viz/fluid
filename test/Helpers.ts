@@ -2,11 +2,12 @@
 
 import * as $ from "jquery"
 import { initDataTypes } from "../src/DataType"
+import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
 import { ν } from "../src/Runtime"
-import { Env, Expr, Lex, Trie } from "../src/Syntax"
+import { Expr, Lex, Trie } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
 
