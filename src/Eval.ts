@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
 import { assert, as } from "./util/Core"
-import { Env, EnvEntry, get, has } from "./Env"
-import { __def, key, keyP } from "./Memo"
+import { Env, EnvEntry, entries, get, has } from "./Env"
+import { __def, keyA, keyP } from "./Memo"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
@@ -36,8 +36,7 @@ function valOf (α: Addr): Addr {
 
 __def(eval_)
 export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
-   const α: Addr = key(eval_, arguments)
-   assert(e !== undefined, "Missing constructor argument?")
+   const α: Addr = keyA(eval_, σ, ...entries(ρ))
    if (Trie.Var.is(σ)) {
       return __result(α, Trace.Empty.at(α), null, [[σ.x.str, {ρ, δ: [], e}]], σ.body)
    } else {
