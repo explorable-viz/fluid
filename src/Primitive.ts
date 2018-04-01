@@ -1,4 +1,4 @@
-import { assert } from "./util/Core"
+import { assert, funName } from "./util/Core"
 import { Env, EnvEntry } from "./Env"
 import { __def, addr, key, keyP } from "./Memo"
 import { Expr, Lex, Trie, Value } from "./Syntax"
@@ -40,7 +40,7 @@ function unary<T extends Value.Value, V extends Value.Value> (
    op: (x: T) => V,
    at1: TrieCtr<V>,
 ): Value.PrimOp {
-   return makePrim(addr(op), op.name, op, at1)
+   return makePrim(funName(op), op.name, op, at1)
 }
 
 function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
@@ -48,7 +48,7 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
    at1: TrieCtr<Value.PrimOp>,
    at2: TrieCtr<V>
 ): Value.PrimOp {
-   const α: Addr = addr(op),
+   const α: Addr = funName(op),
          op_x: (x: T) => Value.PrimOp = // op partially applied to x 
             (x: T) => makePrim(keyP(α, addr(x)), op.name + " " + x, (y: U) => op(x, y), at2)
    return makePrim(α, op.name, op_x, at1)
@@ -65,75 +65,62 @@ function __false (α: Addr): Value.Constr {
 // See 0.2.4 release notes re. primitive ops with identifiers as names.
 // Used to take an arbitrary value as an additional argument but now primitives must have
 // primitive arguments.
-__def(error)
 export function error (message: Value.ConstStr): Value.Value {
    return assert(false, "LambdaCalc error:\n" + message.val)
 }
 
-__def(intToString)
 export function intToString (x: Value.ConstInt): Value.ConstStr {
    return Value.ConstStr.at(key(intToString, arguments), x.toString())
 }
 
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
-__def(equalInt)
 export function equalInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
    const α: Addr = key(equalInt, arguments)
    return x.val === y.val ? __true(α) : __false(α)
 }
 
-__def(equalStr)
 export function equalStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
    const α: Addr = key(equalStr, arguments)
    return x.val === y.val ? __true(α) : __false(α)
 }
 
-__def(greaterInt)
 export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
    const α: Addr = key(greaterInt, arguments)
    return x.val > y.val ? __true(α) : __false(α)
 }
 
-__def(greaterStr)
 export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
    const α: Addr = key(greaterStr, arguments)
    return x.val > y.val ? __true(α) : __false(α)
 }
 
-__def(lessInt)
 export function lessInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
    const α: Addr = key(lessInt, arguments)
    return x.val > y.val ? __true(α) : __false(α)
 }
 
-__def(lessStr)
 export function lessStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
    const α: Addr = key(lessStr, arguments)
    return x.val > y.val ? __true(α) : __false(α)
 }
 
-__def(minus)
 export function minus (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
    return Value.ConstInt.at(key(minus, arguments), x.val - y.val)
 }
 
-__def(plus)
 export function plus (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
    return Value.ConstInt.at(key(plus, arguments), x.val + y.val)
 }
 
-__def(times)
 export function times (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
    return Value.ConstInt.at(key(times, arguments), x.val * y.val)
 }
 
-__def(div)
 export function div (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
    // Apparently this will round in the right direction.
    return Value.ConstInt.at(key(div, arguments), ~~(x.val / y.val))
 }
 
-__def(concat)
 export function concat (x: Value.ConstStr, y: Value.ConstStr): Value.ConstStr {
    return Value.ConstStr.at(key(concat, arguments), x.val + y.val)
 }
