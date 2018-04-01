@@ -1,6 +1,6 @@
 import { assert, funName } from "./util/Core"
 import { Env, EnvEntry } from "./Env"
-import { __def, addr, key, keyP } from "./Memo"
+import { addr, key, keyP } from "./Memo"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 import { ν } from "./Runtime"
 
@@ -125,7 +125,7 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): Value.ConstStr {
    return Value.ConstStr.at(key(concat, arguments), x.val + y.val)
 }
 
-// Must come after the __def forms above.
+// Must come after the definitions above.
 export const ops: Value.PrimOp[] = [
    unary(error, Trie.ConstStr.at),
    unary(intToString, Trie.ConstInt.at),

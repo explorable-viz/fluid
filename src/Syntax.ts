@@ -3,7 +3,7 @@ import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { Env } from "./Env"
-import { __def, key } from "./Memo"
+import { key } from "./Memo"
 import { PrimBody } from "./Primitive"
 import { create } from "./Runtime"
 
@@ -423,7 +423,6 @@ export namespace Trie {
    }
 
    // Addressing scheme doesn't yet support "member functions". Plus methods don't allow null receivers.
-   __def(join)
    export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
       const α: Addr = key(join, arguments)
       if (σ === null) {

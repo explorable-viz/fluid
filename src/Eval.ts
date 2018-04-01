@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
 import { assert, as } from "./util/Core"
 import { Env, EnvEntry, entries, get, has } from "./Env"
-import { __def, keyA, keyP } from "./Memo"
+import { keyA, keyP } from "./Memo"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
@@ -34,9 +34,8 @@ function valOf (α: Addr): Addr {
    return keyP(α, "val")
 }
 
-__def(eval_)
 export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
-   const α: Addr = keyA(eval_, σ, ...entries(ρ))
+   const α: Addr = keyA(eval_, e, σ, ...entries(ρ))
    if (Trie.Var.is(σ)) {
       return __result(α, Trace.Empty.at(α), null, [[σ.x.str, {ρ, δ: [], e}]], σ.body)
    } else {
