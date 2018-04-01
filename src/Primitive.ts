@@ -1,6 +1,6 @@
 import { assert, funName } from "./util/Core"
 import { Env, EnvEntry } from "./Env"
-import { addr, key, keyP } from "./Memo"
+import { Addr, addr, key, keyP } from "./Memo"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 import { ν } from "./Runtime"
 

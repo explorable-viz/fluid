@@ -1,6 +1,6 @@
 import { assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
-import { Addr, PersistentObject } from "./Object"
+import { Addr, PersistentObject } from "./Memo"
 
 const __instances: Map<Addr, PersistentObject> = new Map
 

@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
 import { assert, as } from "./util/Core"
 import { Env, EnvEntry, entries, get, has } from "./Env"
-import { keyA, keyP } from "./Memo"
+import { Addr, keyA, keyP } from "./Memo"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 

@@ -1,5 +1,3 @@
-/// <reference path="../src/Object.ts" />
-
 import * as $ from "jquery"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"

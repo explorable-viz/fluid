@@ -426,8 +426,7 @@ export namespace Trie {
       }
    }
 
-   // Addressing scheme doesn't yet support "member functions". Plus methods don't allow null receivers.
-   export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
+   export function join<T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
       const α: Addr = key(join, arguments)
       if (σ === null) {
          return τ
@@ -436,10 +435,10 @@ export namespace Trie {
          return σ
       } else
       if (Fun.is(σ) && Fun.is(τ)) {
-         return Fun.at(α, join(σ.body, τ.body))
+         return Fun.at(α, σ.body.join(τ.body))
       } else
       if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-         return Var.at(α, σ.x, join(σ.body, τ.body))
+         return Var.at(α, σ.x, σ.body.join(τ.body))
       } else
       if (Constr.is(σ) && Constr.is(τ)) {
          return Constr.at<T>(α, unionWith([σ.cases, τ.cases], ms => ms.reduce((x, y) => x.join(y))))
