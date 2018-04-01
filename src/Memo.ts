@@ -23,9 +23,3 @@ export function __def <T> (f: (...xs: Object[]) => T): void {
    assert(f.name !== undefined, "Memo-functions must be named.")
    f.__addr = f.name
 }
-
-export function __defLocal <T, U> (α: Addr, f: (t: T) => U): (t: T) => U {
-   assert(f.name !== undefined, "Memo-functions must be named.")
-   f.__addr = keyP(α, f.name)
-   return f
-}
