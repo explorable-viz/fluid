@@ -22,12 +22,8 @@ Object.defineProperty(PersistentObject.prototype, "__version", {
    enumerable: false
 })
 
-export function addr (o: PersistentObject): Addr {
-   return __nonNull(o.__addr)
-}
-
 export function keyA (callee: Function, ...args: PersistentObject[]): Addr {
-   return funName(callee) + "(" + Array.from(args).map(o => addr(__nonNull(o))).join(",") + ")"
+   return funName(callee) + "(" + Array.from(args).map(o => __nonNull(o).__addr).join(",") + ")"
 }
 
 export function keyP (α: Addr, ...path: string[]): Addr {

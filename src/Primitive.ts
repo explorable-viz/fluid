@@ -1,6 +1,6 @@
 import { assert, funName } from "./util/Core"
 import { Env, EnvEntry } from "./Env"
-import { Addr, addr, keyA, keyP } from "./Memo"
+import { Addr, keyA, keyP } from "./Memo"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 import { ν } from "./Runtime"
 
@@ -50,7 +50,7 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
 ): Value.PrimOp {
    const α: Addr = funName(op),
          op_x: (x: T) => Value.PrimOp = // op partially applied to x 
-            (x: T) => makePrim(keyP(α, addr(x)), op.name + " " + x, (y: U) => op(x, y), at2)
+            (x: T) => makePrim(keyP(α, x.__addr), op.name + " " + x, (y: U) => op(x, y), at2)
    return makePrim(α, op.name, op_x, at1)
 }
 

@@ -35,7 +35,7 @@ function valOf (α: Addr): Addr {
 }
 
 export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
-   const α: Addr = keyA(eval_, e, σ, ...entries(ρ))
+   const α: Addr = keyA(eval_, e, ...entries(ρ))
    if (Trie.Var.is(σ)) {
       return __result(α, Trace.Empty.at(α), null, [[σ.x.str, {ρ, δ: [], e}]], σ.body)
    } else {
