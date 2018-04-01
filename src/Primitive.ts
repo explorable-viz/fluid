@@ -1,6 +1,6 @@
 import { assert, funName } from "./util/Core"
 import { Env, EnvEntry } from "./Env"
-import { Addr, addr, key, keyP } from "./Memo"
+import { Addr, addr, keyA, keyP } from "./Memo"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 import { ν } from "./Runtime"
 
@@ -70,59 +70,59 @@ export function error (message: Value.ConstStr): Value.Value {
 }
 
 export function intToString (x: Value.ConstInt): Value.ConstStr {
-   return Value.ConstStr.at(key(intToString, arguments), x.toString())
+   return Value.ConstStr.at(keyA(intToString, x), x.toString())
 }
 
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
 export function equalInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
-   const α: Addr = key(equalInt, arguments)
+   const α: Addr = keyA(equalInt, x, y)
    return x.val === y.val ? __true(α) : __false(α)
 }
 
 export function equalStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
-   const α: Addr = key(equalStr, arguments)
+   const α: Addr = keyA(equalStr, x, y)
    return x.val === y.val ? __true(α) : __false(α)
 }
 
 export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
-   const α: Addr = key(greaterInt, arguments)
+   const α: Addr = keyA(greaterInt, x, y)
    return x.val > y.val ? __true(α) : __false(α)
 }
 
 export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
-   const α: Addr = key(greaterStr, arguments)
+   const α: Addr = keyA(greaterStr, x, y)
    return x.val > y.val ? __true(α) : __false(α)
 }
 
 export function lessInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
-   const α: Addr = key(lessInt, arguments)
+   const α: Addr = keyA(lessInt, x, y)
    return x.val > y.val ? __true(α) : __false(α)
 }
 
 export function lessStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
-   const α: Addr = key(lessStr, arguments)
+   const α: Addr = keyA(lessStr, x, y)
    return x.val > y.val ? __true(α) : __false(α)
 }
 
 export function minus (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
-   return Value.ConstInt.at(key(minus, arguments), x.val - y.val)
+   return Value.ConstInt.at(keyA(minus, x, y), x.val - y.val)
 }
 
 export function plus (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
-   return Value.ConstInt.at(key(plus, arguments), x.val + y.val)
+   return Value.ConstInt.at(keyA(plus, x, y), x.val + y.val)
 }
 
 export function times (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
-   return Value.ConstInt.at(key(times, arguments), x.val * y.val)
+   return Value.ConstInt.at(keyA(times, x, y), x.val * y.val)
 }
 
 export function div (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
    // Apparently this will round in the right direction.
-   return Value.ConstInt.at(key(div, arguments), ~~(x.val / y.val))
+   return Value.ConstInt.at(keyA(div, x, y), ~~(x.val / y.val))
 }
 
 export function concat (x: Value.ConstStr, y: Value.ConstStr): Value.ConstStr {
-   return Value.ConstStr.at(key(concat, arguments), x.val + y.val)
+   return Value.ConstStr.at(keyA(concat, x, y), x.val + y.val)
 }
 
 // Must come after the definitions above.

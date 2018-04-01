@@ -3,7 +3,7 @@ import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { Env } from "./Env"
-import { key, Addr, PersistentObject } from "./Memo"
+import { keyA, Addr, PersistentObject } from "./Memo"
 import { PrimBody } from "./Primitive"
 import { create } from "./Runtime"
 
@@ -427,7 +427,7 @@ export namespace Trie {
    }
 
    export function join<T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
-      const α: Addr = key(join, arguments)
+      const α: Addr = keyA(join, σ, τ)
       if (σ === null) {
          return τ
       } else

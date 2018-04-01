@@ -26,11 +26,6 @@ export function addr (o: PersistentObject): Addr {
    return __nonNull(o.__addr)
 }
 
-// Require explicit callee (obtaining via IArguments not permitted in strict mode).
-export function key (callee: Function, args: IArguments): Addr {
-   return funName(callee) + "(" + Array.from(args).map(o => addr(__nonNull(o))).join(",") + ")"
-}
-
 export function keyA (callee: Function, ...args: PersistentObject[]): Addr {
    return funName(callee) + "(" + Array.from(args).map(o => addr(__nonNull(o))).join(",") + ")"
 }
