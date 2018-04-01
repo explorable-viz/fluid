@@ -3,7 +3,7 @@ import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { Env } from "./Env"
-import { key } from "./Memo"
+import { key, Addr, PersistentObject } from "./Memo"
 import { PrimBody } from "./Primitive"
 import { create } from "./Runtime"
 
@@ -96,9 +96,13 @@ export namespace Lex {
 }
 
 export namespace Value {
-   export type Value = Closure | ConstInt | ConstStr | Constr | PrimOp
+   export class Value extends PersistentObject {
+      __Value(): void {
+         // discriminator
+      }
+   }
 
-   export class Closure {
+   export class Closure extends Value {
       ρ: Env
       δ: Expr.RecDefinition[]
       func: Expr.Fun
@@ -113,7 +117,7 @@ export namespace Value {
       }
    }
 
-   export class Prim {
+   export class Prim extends Value {
       __Prim(): void {
          // discriminator
       }
@@ -141,7 +145,7 @@ export namespace Value {
       }
    }
    
-   export class Constr {
+   export class Constr extends Value {
       ctr: Lex.Ctr
       args: Traced[]
    
@@ -155,7 +159,7 @@ export namespace Value {
    }
 
    // Primitive ops; see 0.4.4 release notes.
-   export class PrimOp {
+   export class PrimOp extends Value {
       name: string
       σ: Trie.Prim<PrimBody<any>>
 
@@ -170,7 +174,7 @@ export namespace Value {
 }
 
 export namespace Expr {
-   export class Expr {
+   export class Expr extends PersistentObject {
       __Expr(): void {
          // discriminator
       }
@@ -249,7 +253,7 @@ export namespace Expr {
       }
    }
 
-   export class RecDefinition {
+   export class RecDefinition extends PersistentObject {
       name: Lex.Var
       func: Fun
    
@@ -324,7 +328,7 @@ export namespace Expr {
    }
 }
 
-export class Traced<T extends Value.Value = Value.Value> {
+export class Traced<T extends Value.Value = Value.Value> extends PersistentObject {
    trace: Trace.Trace
    val: T | null
 
@@ -339,7 +343,7 @@ export class Traced<T extends Value.Value = Value.Value> {
 
 export namespace Trie {
    // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
-   export class Trie<T> implements JoinSemilattice<Trie<T>> {
+   export class Trie<T> extends PersistentObject implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
@@ -446,7 +450,7 @@ export namespace Trie {
 }
 
 export namespace Trace {
-   export class Trace {
+   export class Trace extends PersistentObject {
       __Trace(): void {
          // discriminator
       }

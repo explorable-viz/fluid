@@ -1,25 +1,12 @@
-import { __shallowCopy, __shallowEq, assert, className } from "./util/Core"
+import { assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
+import { Addr, PersistentObject } from "./Object"
 
-// At a given version (there is only one, currently) enforce "single assignment" semantics.
-Object.prototype.__version = function (): Object {
-   if (this.__history.length === 0) {
-      this.__history.push(__shallowCopy(this))
-   } else {
-      assert(__shallowEq(this, this.__history[0]))
-   }
-   return this
-}
-
-Object.defineProperty(Object.prototype, "__version", {
-   enumerable: false
-})
-
-const __instances: Map<Addr, Object> = new Map
+const __instances: Map<Addr, PersistentObject> = new Map
 
 // Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
-export function create <T> (α: Addr, ctr: Ctr<T>): T {
-   var o: Object | undefined = __instances.get(α)
+export function create <T extends PersistentObject> (α: Addr, ctr: Ctr<T>): T {
+   var o: PersistentObject | undefined = __instances.get(α)
    if (o === undefined) {
       o = new ctr
       // This may massively suck, performance-wise.
