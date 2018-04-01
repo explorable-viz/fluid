@@ -1,10 +1,10 @@
 import { Expr } from "./Syntax"
 
 // Environments are snoc lists. The identity of an evaluated term is the identity of the original expression
-// paired with the identity of all values used to close the term, in the order in which they were bound. 
-// This makes identity insensitive to the choice of names, and corresponds to the subsitution-based formalism.)
-// The identity of environments themselves is not relevant (since way only care about the sequence of values),
-// suggesting this implementation.
+// paired with the identity of all environment entries used to close the term, in the order in which they 
+// were bound. This makes identity insensitive to the choice of names, and is essentially the same as the
+// approach I used in my thesis ("translating" every function body by the identity of the argument used to
+// close it). This is *not* the same as hash-consing environments (which would consider the keys as well).
 
 export type Env = [string, EnvEntry][]
 
