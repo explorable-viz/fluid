@@ -3,9 +3,8 @@ import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { Env, EnvId } from "./Env"
-import { Id, PersistentObject, RawId } from "./Memo"
 import { PrimBody } from "./Primitive"
-import { create } from "./Runtime"
+import { Id, PersistentObject, RawId, create } from "./Runtime"
 
 // Fresh keys represent inputs to the system.
 export const ν: () => Expr.ExprId =

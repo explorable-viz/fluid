@@ -1,5 +1,5 @@
 import { assert, make } from "./util/Core"
-import { Id } from "./Memo"
+import { Id } from "./Runtime"
 import { Expr } from "./Syntax"
 
 export class EnvId extends Id {
