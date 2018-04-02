@@ -1,7 +1,7 @@
 import { assert, funName, make } from "./util/Core"
 import { Env, EnvEntry } from "./Env"
 import { Id } from "./Memo"
-import { Expr, Lex, Trie, Value } from "./Syntax"
+import { Expr, Lex, Trie, Value, ν } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
@@ -83,7 +83,7 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
    at2: TrieCtr<V>
 ): Value.PrimOp {
    const k: PrimId = PrimId.make(funName(op)),
-         partiallyApply: (x: T) => Value.PrimOp = // partially applied to x 
+         partiallyApply: (x: T) => Value.PrimOp =
             (x: T) => makePrim(PartialAppId.make(k, x.__id), op.name + " " + x, (y: U) => op(x, y), at2)
    return makePrim(k, op.name, partiallyApply, at1)
 }
