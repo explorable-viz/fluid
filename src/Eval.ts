@@ -72,8 +72,9 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
          kʹ: EvalTraceId = EvalTraceId.make(k)
    if (Trie.Var.is(σ)) {
       const t: Trace.Trace = Trace.Empty.at(EvalTraceId.make(k)),
-            entry: EnvEntry = new EnvEntry(ρ, j, [], e),
-            l: EnvEntryId = EnvEntryId.make(j, [].__id, e.__id)
+            δ_id: Expr.RecDefsId = Expr.RecDefsId.make(e.__id),
+            entry: EnvEntry = new EnvEntry(ρ, j, Expr.RecDefs.at(δ_id, []), e),
+            l: EnvEntryId = EnvEntryId.make(j, δ_id, e.__id)
       return __result(k, t, null, Env.singleton(σ.x.str, entry), EnvId.singleton(l), σ.body)
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
@@ -89,7 +90,8 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
          return __result(k, Trace.Empty.at(kʹ), Value.ConstStr.at(k, e.val), Env.empty(), EnvId.empty(), σ.body)
       } else
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-         return __result(k, Trace.Empty.at(kʹ), Value.Closure.at(k, ρ, j, [], e), Env.empty(), EnvId.empty(), σ.body)
+         const δ_id: Expr.RecDefsId = Expr.RecDefsId.make(e.__id)
+         return __result(k, Trace.Empty.at(kʹ), Value.Closure.at(k, ρ, j, Expr.RecDefs.at(δ_id, []), e), Env.empty(), EnvId.empty(), σ.body)
       } else
       if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
          return __result(k, Trace.Empty.at(kʹ), e.op, Env.empty(), EnvId.empty(), σ.body)
@@ -114,8 +116,8 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
       } else 
       // See 0.3.4 release notes for semantics.
       if (e instanceof Expr.LetRec) {
-         const fs: EnvEntry[] = e.δ.map(def => new EnvEntry(ρ, j, e.δ, def.func)),
-               ρʹ: Env = Env.extend(ρ, zip(e.δ.map(def => def.name.str), fs)),
+         const fs: EnvEntry[] = e.δ.defs.map(def => new EnvEntry(ρ, j, e.δ, def.def)),
+               ρʹ: Env = Env.extend(ρ, zip(e.δ.defs.map(def => def.x.str), fs)),
                jʹ: EnvId = EnvId.extend(j, fs.map((fʹ: EnvEntry) => EnvEntryId.make(fʹ.j, fʹ.δ.__id, fʹ.e.__id))),
                [tv, ρʺ, jʺ, σv]: EvalResult<T> = eval_<T>(ρʹ, jʹ, σ, e.e)
          return __result(k, Trace.LetRec.at(kʹ, e.δ, tv.trace), tv.val, ρʺ, jʺ, σv)
@@ -130,8 +132,8 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
                f: Value.Value | null = tf.val
          if (f instanceof Value.Closure) {
             const [tu, ρ2, j2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, j, f.func.σ, e.arg),
-                  fs: EnvEntry[] = f.δ.map(def => new EnvEntry(f.ρ, f.j, f.δ, def.func)),
-                  ρ1: Env = Env.extend(f.ρ, zip(f.δ.map(def => def.name.str), fs)),
+                  fs: EnvEntry[] = f.δ.defs.map(def => new EnvEntry(f.ρ, f.j, f.δ, def.def)),
+                  ρ1: Env = Env.extend(f.ρ, zip(f.δ.defs.map(def => def.x.str), fs)),
                   j1: EnvId = EnvId.extend(f.j, fs.map((fʹ: EnvEntry) => EnvEntryId.make(fʹ.j, fʹ.δ.__id, fʹ.e.__id))),
                   [tv, ρʹ, jʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), EnvId.concat(j1, j2), σ, σʹu)
             return __result(k, Trace.App.at(kʹ, tf, tu, tv.trace), tv.val, ρʹ, jʹ, σv)

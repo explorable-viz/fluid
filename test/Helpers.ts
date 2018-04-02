@@ -1,6 +1,6 @@
 import * as $ from "jquery"
 import { initDataTypes } from "../src/DataType"
-import { Env } from "../src/Env"
+import { Env, EnvId } from "../src/Env"
 import { Eval } from "../src/Eval"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
@@ -28,12 +28,12 @@ const σ: Trie.Trie<null> = Trie.Var.at(Trie.ExprTrieId.make(ν()), new Lex.Var(
 export function runExample (p: Profile, src: string): void {
    const e: Expr.Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    if (p >= Profile.Run) {
-      const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(baseEnv, σ, e)
+      const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(ρ, ρ_id, σ, e)
       console.log(tv)
    }
 }
 
-export let baseEnv: Env = prelude()
+export let [ρ, ρ_id]: [Env, EnvId] = prelude()
 
 export function runTest (prog: string, profile: Profile = defaultProfile): void {
    runExample(profile, prog)

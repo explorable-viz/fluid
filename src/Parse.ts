@@ -197,11 +197,11 @@ const let_: Parser<Expr.Let> =
          Expr.Let.at(ν(), e, Trie.Var.at(Trie.ExprTrieId.make(ν()), x, eʹ))
    )
 
-const recDefinition: Parser<Expr.RecDefinition> =
+const recDefinition: Parser<Expr.RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
       ([name, σ]: [Lex.Var, Trie.Trie<Traced>]) =>
-         Expr.RecDefinition.at(ν(), name, Expr.Fun.at(ν(), σ))
+         Expr.RecDef.at(Expr.RecDefId.make(ν()), name, Expr.Fun.at(ν(), σ))
    )
 
 const letrec: Parser<Expr.LetRec> =
@@ -210,8 +210,8 @@ const letrec: Parser<Expr.LetRec> =
          dropFirst(keyword(str.letRec), repeat1(recDefinition)),
          dropFirst(keyword(str.in_), expr)
       ),
-      ([defs, body]: [Expr.RecDefinition[], Expr.Expr]) =>
-         Expr.LetRec.at(ν(), defs, body)
+      ([defs, body]: [Expr.RecDef[], Expr.Expr]) =>
+         Expr.LetRec.at(ν(), Expr.RecDefs.at(Expr.RecDefsId.make(ν()), defs), body)
    )
 
 const constr: Parser<Expr.Constr> =

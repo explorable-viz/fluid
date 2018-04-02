@@ -126,14 +126,14 @@ export class ExtendEnv extends Env {
 
 export class EnvEntryId {
    j: EnvId
-   i: Expr.RecDefinitionId
-   iʹ: Expr.ExprId
+   δ_id: Expr.RecDefsId
+   i: Expr.ExprId
 
-   static make (j: EnvId, i: Expr.RecDefinitionId, iʹ: Expr.ExprId): EnvEntryId {
-      const this_: EnvEntryId = make(EnvEntryId, j, i, iʹ)
+   static make (j: EnvId, δ_id: Expr.RecDefsId, i: Expr.ExprId): EnvEntryId {
+      const this_: EnvEntryId = make(EnvEntryId, j, δ_id, i)
       this_.j = j
+      this_.δ_id = δ_id
       this_.i = i
-      this_.iʹ = iʹ
       return this_
    }
 }
@@ -141,10 +141,10 @@ export class EnvEntryId {
 export class EnvEntry {
    ρ: Env
    j: EnvId
-   δ: Expr.RecDefinition[]
+   δ: Expr.RecDefs
    e: Expr.Expr
 
-   constructor(ρ: Env, j: EnvId, δ: Expr.RecDefinition[], e: Expr.Expr) {
+   constructor(ρ: Env, j: EnvId, δ: Expr.RecDefs, e: Expr.Expr) {
       this.ρ = ρ
       this.j = j
       this.δ = δ

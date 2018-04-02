@@ -1,5 +1,5 @@
 import { assert, funName, make } from "./util/Core"
-import { Env, EnvEntry } from "./Env"
+import { Env, EnvEntry, EnvEntryId, EnvId } from "./Env"
 import { Id } from "./Memo"
 import { Expr, Lex, Trie, Value, ν } from "./Syntax"
 
@@ -206,12 +206,16 @@ export const ops: Value.PrimOp[] = [
    binary(concat, Trie.ConstStr.at, Trie.ConstStr.at),
 ]
 
-// Only primitives at the moment; eventually other library code. Fake "syntax" for primitives.
-export function prelude (): Env {
-   let ρ: Env = []
+// Fake "syntax" for primitives.
+export function prelude (): [Env, EnvId] {
+   let ρ: Env = Env.empty(),
+       j: EnvId = EnvId.empty()
    ops.forEach((op: Value.PrimOp): void => {
-      const entry: EnvEntry = { ρ: [], δ: [], e: Expr.PrimOp.at(ν(), op) }
-      ρ.push([op.name, entry])
+      const e: Expr.PrimOp = Expr.PrimOp.at(ν(), op),
+            δ: Expr.RecDefs = Expr.RecDefs.at(Expr.RecDefsId.make(ν()), []),
+            entry: EnvEntry = new EnvEntry(Env.empty(), EnvId.empty(), δ, e)
+      ρ = Env.extend(ρ, [[op.name, entry]])
+      j = EnvId.extend(j, [EnvEntryId.make(EnvId.empty(), δ.__id, e.__id)])
    })
-   return ρ
+   return [ρ, j]
 }

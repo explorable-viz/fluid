@@ -120,10 +120,10 @@ export namespace Value {
    export class Closure extends Value {
       ρ: Env
       j: EnvId
-      δ: Expr.RecDefinition[]
+      δ: Expr.RecDefs
       func: Expr.Fun
    
-      static at (α: ValId, ρ: Env, j: EnvId, δ: Expr.RecDefinition[], func: Expr.Fun): Closure {
+      static at (α: ValId, ρ: Env, j: EnvId, δ: Expr.RecDefs, func: Expr.Fun): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
          this_.j = j
@@ -284,38 +284,63 @@ export namespace Expr {
       }
    }
 
-   export class RecDefinitionId extends Id {
-      id: RawId
+   export class RecDefId extends Id {
+      i: ExprId
 
-      __RecDefinitionId(): void {
+      __RecDefId(): void {
          // discriminator
       }
    
-      static make (id: RawId): RecDefinitionId {
-         const this_: RecDefinitionId = make(RecDefinitionId, id)
-         this_.id = id
+      static make (i: ExprId): RecDefId {
+         const this_: RecDefId = make(RecDefId, i)
+         this_.i = i
          return this_
       }
    }
 
-   export class RecDefinition extends PersistentObject<RecDefinitionId> {
-      name: Lex.Var
-      func: Fun
+   export class RecDef extends PersistentObject<RecDefId> {
+      x: Lex.Var
+      def: Fun
    
-      static at (α: Id, name: Lex.Var, func: Fun): RecDefinition {
-         const this_: RecDefinition = create(α, RecDefinition)
-         this_.name = name
-         this_.func = func
+      static at (α: RecDefId, x: Lex.Var, def: Fun): RecDef {
+         const this_: RecDef = create(α, RecDef)
+         this_.x = x
+         this_.def = def
          this_.__version()
          return this_
       }
    }
+
+   export class RecDefsId extends Id {
+      i: ExprId
+
+      __RecDefsId(): void {
+         // discriminator
+      }
    
+      static make (i: ExprId): RecDefsId {
+         const this_: RecDefsId = make(RecDefsId, i)
+         this_.i = i
+         return this_
+      }
+   }
+
+   export class RecDefs extends PersistentObject<RecDefsId> {
+      defs: RecDef[]
+   
+      static at (α: RecDefsId, defs: RecDef[]): RecDefs {
+         const this_: RecDefs = create(α, RecDefs)
+         this_.defs = defs
+         this_.__version()
+         return this_
+      }
+   }
+
    export class LetRec extends Expr {
-      δ: RecDefinition[]
+      δ: RecDefs
       e: Expr
 
-      static at (α: Id, δ: RecDefinition[], e: Expr): LetRec {
+      static at (α: ExprId, δ: RecDefs, e: Expr): LetRec {
          const this_: LetRec = create(α, LetRec)
          this_.δ = δ
          this_.e = e
@@ -580,10 +605,10 @@ export namespace Trace {
 
    // Used to be something called RecBinding, but bindings doesn't seem to be stored in traces at the moment.
    export class LetRec extends Trace {
-      δ: Expr.RecDefinition[]
+      δ: Expr.RecDefs
       t: Trace
    
-      static at (α: Id, δ: Expr.RecDefinition[], t: Trace): LetRec {
+      static at (α: Id, δ: Expr.RecDefs, t: Trace): LetRec {
          const this_: LetRec = create(α, LetRec)
          this_.δ = δ
          this_.t = t
