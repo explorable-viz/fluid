@@ -72,7 +72,7 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
          kʹ: EvalTraceId = EvalTraceId.make(k)
    if (Trie.Var.is(σ)) {
       const t: Trace.Trace = Trace.Empty.at(EvalTraceId.make(k)),
-            entry: EnvEntry = {ρ, δ: [], e},
+            entry: EnvEntry = new EnvEntry(ρ, j, [], e),
             l: EnvEntryId = EnvEntryId.make(j, δ.__id, e.__id)
       return __result(k, t, null, Env.singleton(σ.x.str, entry), EnvId.singleton(l), σ.body)
    } else {
@@ -114,9 +114,9 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
       } else 
       // See 0.3.4 release notes for semantics.
       if (e instanceof Expr.LetRec) {
-         const fs: EnvEntry[] = e.δ.map(def => new EnvEntry(ρ, e.δ, def.func)),
+         const fs: EnvEntry[] = e.δ.map(def => new EnvEntry(ρ, j, e.δ, def.func)),
                ρʹ: Env = Env.extend(ρ, zip(e.δ.map(def => def.name.str), fs)),
-               jʹ: EnvId = EnvId.extend(j, fs.map((fʹ: EnvEntry) => EnvEntryId.make())),
+               jʹ: EnvId = EnvId.extend(j, fs.map((fʹ: EnvEntry) => EnvEntryId.make(fʹ.j, fʹ.δ.__id, fʹ.e.__id))),
                [tv, ρʺ, jʺ, σv]: EvalResult<T> = eval_<T>(ρʹ, jʹ, σ, e.e)
          return __result(k, Trace.LetRec.at(kʹ, e.δ, tv.trace), tv.val, ρʺ, jʺ, σv)
       } else
@@ -130,9 +130,9 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
                f: Value.Value | null = tf.val
          if (f instanceof Value.Closure) {
             const [tu, ρ2, j2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, j, f.func.σ, e.arg),
-                  fs: EnvEntry[] = f.δ.map(def => new EnvEntry(f.ρ, f.δ, def.func)),
+                  fs: EnvEntry[] = f.δ.map(def => new EnvEntry(f.ρ, f.j, f.δ, def.func)),
                   ρ1: Env = Env.extend(f.ρ, zip(f.δ.map(def => def.name.str), fs)),
-                  j1: EnvId = EnvId.extend(f.j, fs.map((fʹ: EnvEntry) => EnvEntryId.make())),
+                  j1: EnvId = EnvId.extend(f.j, fs.map((fʹ: EnvEntry) => EnvEntryId.make(fʹ.j, fʹ.δ.__id, fʹ.e.__id))),
                   [tv, ρʹ, jʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), EnvId.concat(j1, j2), σ, σʹu)
             return __result(k, Trace.App.at(kʹ, tf, tu, tv.trace), tv.val, ρʹ, jʹ, σv)
          } else

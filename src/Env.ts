@@ -140,11 +140,13 @@ export class EnvEntryId {
 
 export class EnvEntry {
    ρ: Env
+   j: EnvId,
    δ: Expr.RecDefinition[]
    e: Expr.Expr
 
-   constructor(ρ: Env, δ: Expr.RecDefinition[], e: Expr.Expr) {
+   constructor(ρ: Env, j: EnvId, δ: Expr.RecDefinition[], e: Expr.Expr) {
       this.ρ = ρ
+      this.j = j
       this.δ = δ
       this.e = e
    }
