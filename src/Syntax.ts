@@ -1,24 +1,20 @@
-import { as, assert } from "./util/Core"
+import { assert, make } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { __def, key } from "./Memo"
+import { Env, EnvId } from "./Env"
+import { Id, PersistentObject, RawId } from "./Memo"
 import { PrimBody } from "./Primitive"
 import { create } from "./Runtime"
 
-export class EnvEntry {
-   ρ: Env
-   δ: Expr.RecDefinition[]
-   e: Expr.Expr
-
-   constructor(ρ: Env, δ: Expr.RecDefinition[], e: Expr.Expr) {
-      this.ρ = ρ
-      this.δ = δ
-      this.e = e
-   }
-}
-
-export type Env = Map<string, EnvEntry | null>
+// Fresh keys represent inputs to the system.
+export const ν: () => Expr.ExprId =
+   (() => {
+      let count: number = 0
+      return () => {
+         return Expr.ExprId.make(count++)
+      }
+   })()
 
 export namespace str {
    // Primitive ops.
@@ -109,24 +105,36 @@ export namespace Lex {
 }
 
 export namespace Value {
-   export type Value = Closure | ConstInt | ConstStr | Constr | PrimOp
+   export class ValId extends Id {
+      __ValId(): void {
+         // discriminator
+      }
+   }
 
-   export class Closure {
+   export class Value extends PersistentObject<ValId> {
+      __Value(): void {
+         // discriminator
+      }
+   }
+
+   export class Closure extends Value {
       ρ: Env
-      δ: Expr.RecDefinition[]
+      j: EnvId
+      δ: Expr.RecDefs
       func: Expr.Fun
    
-      static at (α: Addr, ρ: Env, δ: Expr.RecDefinition[], func: Expr.Fun): Closure {
+      static at (α: ValId, ρ: Env, j: EnvId, δ: Expr.RecDefs, func: Expr.Fun): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
+         this_.j = j
          this_.δ = δ
-         this_.func = as(func, Expr.Fun)
+         this_.func = func
          this_.__version()
          return this_
       }
    }
 
-   export class Prim {
+   export class Prim extends Value {
       __Prim(): void {
          // discriminator
       }
@@ -135,7 +143,7 @@ export namespace Value {
    export class ConstInt extends Prim {
       val: number
    
-      static at (α: Addr, val: number): ConstInt {
+      static at (α: ValId, val: number): ConstInt {
          const this_: ConstInt = create(α, ConstInt)
          this_.val = val
          this_.__version()
@@ -146,7 +154,7 @@ export namespace Value {
    export class ConstStr extends Prim {
       val: string
    
-      static at (α: Addr, val: string): ConstStr {
+      static at (α: ValId, val: string): ConstStr {
          const this_: ConstStr = create(α, ConstStr)
          this_.val = val
          this_.__version()
@@ -154,13 +162,13 @@ export namespace Value {
       }
    }
    
-   export class Constr {
+   export class Constr extends Value {
       ctr: Lex.Ctr
       args: Traced[]
    
-      static at (α: Addr, ctr: Lex.Ctr, args: Traced[]): Constr {
+      static at (α: ValId, ctr: Lex.Ctr, args: Traced[]): Constr {
          const this_: Constr = create(α, Constr)
-         this_.ctr = as(ctr, Lex.Ctr)
+         this_.ctr = ctr
          this_.args = args
          this_.__version()
          return this_
@@ -168,11 +176,11 @@ export namespace Value {
    }
 
    // Primitive ops; see 0.4.4 release notes.
-   export class PrimOp {
+   export class PrimOp extends Value {
       name: string
       σ: Trie.Prim<PrimBody<any>>
 
-      static at (α: Addr, name: string, σ: Trie.Prim<PrimBody<any>>): PrimOp {
+      static at (α: ValId, name: string, σ: Trie.Prim<PrimBody<any>>): PrimOp {
          const this_: PrimOp = create(α, PrimOp)
          this_.name = name
          this_.σ = σ
@@ -183,7 +191,21 @@ export namespace Value {
 }
 
 export namespace Expr {
-   export class Expr {
+   export class ExprId extends Id {
+      id: RawId
+
+      __ExprId(): void {
+         // discriminator
+      }
+   
+      static make (id: RawId): ExprId {
+         const this_: ExprId = make(ExprId, id)
+         this_.id = id
+         return this_
+      }
+   }
+      
+   export class Expr extends PersistentObject<ExprId> {
       __Expr(): void {
          // discriminator
       }
@@ -193,10 +215,10 @@ export namespace Expr {
       func: Expr
       arg: Expr
 
-      static at (α: Addr, func: Expr, arg: Expr): App {
+      static at (α: ExprId, func: Expr, arg: Expr): App {
          const this_: App = create(α, App)
-         this_.func = as(func, Expr)
-         this_.arg = as(arg, Expr)
+         this_.func = func
+         this_.arg = arg
          this_.__version()
          return this_
       }
@@ -205,7 +227,7 @@ export namespace Expr {
    export class ConstInt extends Expr {
       val: number
    
-      static at (α: Addr, val: number): ConstInt {
+      static at (α: ExprId, val: number): ConstInt {
          const this_: ConstInt = create(α, ConstInt)
          this_.val = val
          this_.__version()
@@ -216,7 +238,7 @@ export namespace Expr {
    export class ConstStr extends Expr {
       val: string
    
-      static at (α: Addr, val: string): ConstStr {
+      static at (α: ExprId, val: string): ConstStr {
          const this_: ConstStr = create(α, ConstStr)
          this_.val = val
          this_.__version()
@@ -228,9 +250,9 @@ export namespace Expr {
       ctr: Lex.Ctr
       args: Expr[]
    
-      static at (α: Addr, ctr: Lex.Ctr, args: Expr[]): Constr {
+      static at (α: ExprId, ctr: Lex.Ctr, args: Expr[]): Constr {
          const this_: Constr = create(α, Constr)
-         this_.ctr = as(ctr, Lex.Ctr)
+         this_.ctr = ctr
          this_.args = args
          this_.__version()
          return this_
@@ -240,9 +262,9 @@ export namespace Expr {
    export class Fun extends Expr {
       σ: Trie.Trie<Expr>
 
-      static at (α: Addr, σ: Trie.Trie<Expr>): Fun {
+      static at (α: ExprId, σ: Trie.Trie<Expr>): Fun {
          const this_: Fun = create(α, Fun)
-         this_.σ = as(σ, Trie.Trie)
+         this_.σ = σ
          this_.__version()
          return this_
       }
@@ -253,36 +275,75 @@ export namespace Expr {
       e: Expr
       σ: Trie.Var<Expr>
 
-      static at (α: Addr, e: Expr, σ: Trie.Var<Expr>): Let {
+      static at (α: Id, e: Expr, σ: Trie.Var<Expr>): Let {
          const this_: Let = create(α, Let)
-         this_.e = as(e, Expr)
-         this_.σ = as(σ, Trie.Var)
+         this_.e = e
+         this_.σ = σ
          this_.__version()
          return this_
       }
    }
 
-   export class RecDefinition {
-      name: Lex.Var
-      func: Fun
+   export class RecDefId extends Id {
+      i: ExprId
+
+      __RecDefId(): void {
+         // discriminator
+      }
    
-      static at (α: Addr, name: Lex.Var, func: Fun): RecDefinition {
-         const this_: RecDefinition = create(α, RecDefinition)
-         this_.name = as(name, Lex.Var)
-         this_.func = as(func, Fun)
+      static make (i: ExprId): RecDefId {
+         const this_: RecDefId = make(RecDefId, i)
+         this_.i = i
+         return this_
+      }
+   }
+
+   export class RecDef extends PersistentObject<RecDefId> {
+      x: Lex.Var
+      def: Fun
+   
+      static at (α: RecDefId, x: Lex.Var, def: Fun): RecDef {
+         const this_: RecDef = create(α, RecDef)
+         this_.x = x
+         this_.def = def
          this_.__version()
          return this_
       }
    }
+
+   export class RecDefsId extends Id {
+      i: ExprId
+
+      __RecDefsId(): void {
+         // discriminator
+      }
    
+      static make (i: ExprId): RecDefsId {
+         const this_: RecDefsId = make(RecDefsId, i)
+         this_.i = i
+         return this_
+      }
+   }
+
+   export class RecDefs extends PersistentObject<RecDefsId> {
+      defs: RecDef[]
+   
+      static at (α: RecDefsId, defs: RecDef[]): RecDefs {
+         const this_: RecDefs = create(α, RecDefs)
+         this_.defs = defs
+         this_.__version()
+         return this_
+      }
+   }
+
    export class LetRec extends Expr {
-      δ: RecDefinition[]
+      δ: RecDefs
       e: Expr
 
-      static at (α: Addr, δ: RecDefinition[], e: Expr): LetRec {
+      static at (α: ExprId, δ: RecDefs, e: Expr): LetRec {
          const this_: LetRec = create(α, LetRec)
          this_.δ = δ
-         this_.e = as(e, Expr)
+         this_.e = e
          this_.__version()
          return this_
       }
@@ -292,10 +353,10 @@ export namespace Expr {
       e: Expr
       σ: Trie.Trie<Expr>
    
-      static at (α: Addr, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
+      static at (α: Id, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
          const this_: MatchAs = create(α, MatchAs)
-         this_.e = as(e, Expr)
-         this_.σ = as(σ, Trie.Trie)
+         this_.e = e
+         this_.σ = σ
          this_.__version()
          return this_
       }
@@ -304,9 +365,9 @@ export namespace Expr {
    export class OpName extends Expr {
       opName: Lex.OpName
    
-      static at (α: Addr, opName: Lex.OpName): OpName {
+      static at (α: Id, opName: Lex.OpName): OpName {
          const this_: OpName = create(α, OpName)
-         this_.opName = as(opName, Lex.OpName)
+         this_.opName = opName
          this_.__version()
          return this_
       }
@@ -317,7 +378,7 @@ export namespace Expr {
    export class PrimOp extends Expr {
       op: Value.PrimOp
 
-      static at (α: Addr, op: Value.PrimOp): PrimOp {
+      static at (α: Id, op: Value.PrimOp): PrimOp {
          const this_: PrimOp = create(α, PrimOp)
          this_.op = op
          this_.__version()
@@ -328,22 +389,28 @@ export namespace Expr {
    export class Var extends Expr {
       ident: Lex.Var
    
-      static at (α: Addr, ident: Lex.Var): Var {
+      static at (α: ExprId, ident: Lex.Var): Var {
          const this_: Var = create(α, Var)
-         this_.ident = as(ident, Lex.Var)
+         this_.ident = ident
          this_.__version()
          return this_
       }
    }
 }
 
-export class Traced<T extends Value.Value = Value.Value> {
+export class TracedId extends Id {
+   __TracedId (): void {
+      // discriminator
+   }
+}
+
+export class Traced<T extends Value.Value = Value.Value> extends PersistentObject<TracedId> {
    trace: Trace.Trace
    val: T | null
 
-   static at <T extends Value.Value> (α: Addr, trace: Trace.Trace, val: T | null): Traced<T> {
-      const this_: Traced<T> = create<Traced<T>>(α, Traced)
-      this_.trace = as(trace, Trace.Trace)
+   static at <T extends Value.Value> (α: TracedId, trace: Trace.Trace, val: T | null): Traced<T> {
+      const this_: Traced<T> = create<TracedId, Traced<T>>(α, Traced)
+      this_.trace = trace
       this_.val = val
       this_.__version()
       return this_
@@ -351,8 +418,25 @@ export class Traced<T extends Value.Value = Value.Value> {
 }
 
 export namespace Trie {
-   // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
-   export class Trie<T> implements JoinSemilattice<Trie<T>> {
+   export class TrieId extends Id {
+      __TrieId (): void {
+         // discriminator
+      }
+   }
+   
+   // A trie that arises in the raw syntax.
+   export class ExprTrieId extends TrieId {
+      i: Expr.ExprId
+      
+      static make (i: Expr.ExprId): ExprTrieId {
+         const this_: ExprTrieId = make(ExprTrieId, i)
+         this_.i = i
+         return this_
+      }
+   }
+   
+      // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
+   export class Trie<T> extends PersistentObject<TrieId> implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
@@ -363,12 +447,12 @@ export namespace Trie {
    }
 
    export class ConstInt<T> extends Prim<T> {
-      static is<T>(σ: Trie.Trie<T>): σ is ConstInt<T> {
-         return σ instanceof ConstInt;
+      static is<T> (σ: Trie.Trie<T>): σ is ConstInt<T> {
+         return σ instanceof ConstInt
       }
 
-      static at <T> (α: Addr, body: T): ConstInt<T> {
-         const this_: ConstInt<T> = create<ConstInt<T>>(α, ConstInt)
+      static at <T> (α: TrieId, body: T): ConstInt<T> {
+         const this_: ConstInt<T> = create<TrieId, ConstInt<T>>(α, ConstInt)
          this_.body = body
          this_.__version()
          return this_
@@ -376,12 +460,12 @@ export namespace Trie {
    }
 
    export class ConstStr<T> extends Prim<T> {
-      static is<T>(σ: Trie.Trie<T>): σ is ConstStr<T> {
-         return σ instanceof ConstStr;
+      static is<T> (σ: Trie.Trie<T>): σ is ConstStr<T> {
+         return σ instanceof ConstStr
       }
 
-      static at <T> (α: Addr, body: T): ConstStr<T> {
-         const this_: ConstStr<T> = create<ConstStr<T>>(α, ConstStr)
+      static at <T> (α: TrieId, body: T): ConstStr<T> {
+         const this_: ConstStr<T> = create<TrieId, ConstStr<T>>(α, ConstStr)
          this_.body = body
          this_.__version()
          return this_
@@ -391,12 +475,12 @@ export namespace Trie {
    export class Constr<T> extends Trie<T> {
       cases: Map<string, T>
 
-      static is<T>(σ: Trie.Trie<T>): σ is Constr<T> {
-         return σ instanceof Constr;
+      static is<T> (σ: Trie.Trie<T>): σ is Constr<T> {
+         return σ instanceof Constr
       }
 
-      static at <T> (α: Addr, cases: Map<string, T>): Constr<T> {
-         const this_: Constr<T> = create<Constr<T>>(α, Constr)
+      static at <T> (α: TrieId, cases: Map<string, T>): Constr<T> {
+         const this_: Constr<T> = create<TrieId, Constr<T>>(α, Constr)
          this_.cases = cases
          this_.__version()
          return this_
@@ -407,13 +491,13 @@ export namespace Trie {
       x: Lex.Var
       body: T
 
-      static is<T>(σ: Trie.Trie<T>): σ is Var<T> {
-         return σ instanceof Var;
+      static is<T> (σ: Trie.Trie<T>): σ is Var<T> {
+         return σ instanceof Var
       }
 
-      static at <T> (α: Addr, x: Lex.Var, body: T): Var<T> {
-         const this_: Var<T> = create<Var<T>>(α, Var)
-         this_.x = as(x, Lex.Var)
+      static at <T> (α: TrieId, x: Lex.Var, body: T): Var<T> {
+         const this_: Var<T> = create<TrieId, Var<T>>(α, Var)
+         this_.x = x
          this_.body = body
          this_.__version()
          return this_
@@ -423,22 +507,32 @@ export namespace Trie {
    export class Fun<T> extends Trie<T> {
       body: T
 
-      static is<T>(σ: Trie.Trie<T>): σ is Fun<T> {
-         return σ instanceof Fun;
+      static is<T> (σ: Trie.Trie<T>): σ is Fun<T> {
+         return σ instanceof Fun
       }
 
-      static at <T> (α: Addr, body: T): Fun<T> {
-         const this_: Fun<T> = create<Fun<T>>(α, Fun)
+      static at <T> (α: TrieId, body: T): Fun<T> {
+         const this_: Fun<T> = create<TrieId, Fun<T>>(α, Fun)
          this_.body = body
          this_.__version()
          return this_
       }
    }
 
-   // Addressing scheme doesn't yet support "member functions". Plus methods don't allow null receivers.
-   __def(join)
-   export function join <T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
-      const α: Addr = key(join, arguments)
+   class JoinTrieId extends TrieId {
+      σ_id: TrieId
+      τ_id: TrieId
+
+      static make (σ_id: TrieId, τ_id: TrieId): JoinTrieId {
+         const this_: JoinTrieId = make(JoinTrieId, σ_id, τ_id)
+         this_.σ_id = σ_id
+         this_.τ_id = τ_id
+         return this_
+      }
+   }
+
+   export function join<T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
+      const α: JoinTrieId = JoinTrieId.make(σ.__id, τ.__id)
       if (σ === null) {
          return τ
       } else
@@ -446,10 +540,10 @@ export namespace Trie {
          return σ
       } else
       if (Fun.is(σ) && Fun.is(τ)) {
-         return Fun.at(α, join(σ.body, τ.body))
+         return Fun.at(α, σ.body.join(τ.body))
       } else
       if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-         return Var.at(α, σ.x, join(σ.body, τ.body))
+         return Var.at(α, σ.x, σ.body.join(τ.body))
       } else
       if (Constr.is(σ) && Constr.is(τ)) {
          return Constr.at<T>(α, unionWith([σ.cases, τ.cases], ms => ms.reduce((x, y) => x.join(y))))
@@ -459,8 +553,14 @@ export namespace Trie {
    }
 }
 
+export class TraceId extends Id {
+   __TraceId(): void {
+      // discriminator
+   }
+}
+
 export namespace Trace {
-   export class Trace {
+   export class Trace extends PersistentObject<TraceId> {
       __Trace(): void {
          // discriminator
       }
@@ -471,11 +571,11 @@ export namespace Trace {
       arg: Traced
       body: Trace
 
-      static at (α: Addr, func: Traced, arg: Traced, body: Trace): App {
+      static at (α: Id, func: Traced, arg: Traced, body: Trace): App {
          const this_: App = create(α, App)
-         this_.func = as(func, Traced)
-         this_.arg = as(arg, Traced)
-         this_.body = as(body, Trace)
+         this_.func = func
+         this_.arg = arg
+         this_.body = body
          this_.__version()
          return this_
       }
@@ -483,7 +583,7 @@ export namespace Trace {
 
    // I don't think this is the same as ⊥; it represents the "end" of an explanation.
    export class Empty extends Trace {
-      static at (α: Addr): Empty {
+      static at (α: Id): Empty {
          const this_: Empty = create(α, Empty)
          this_.__version()
          return this_
@@ -494,10 +594,10 @@ export namespace Trace {
       tu: Traced
       t: Trace
 
-      static at (α: Addr, tu: Traced, t: Trace): Match {
+      static at (α: Id, tu: Traced, t: Trace): Match {
          const this_: Match = create(α, Match)
-         this_.tu = as(tu, Traced)
-         this_.t = as(t, Trace)
+         this_.tu = tu
+         this_.t = t
          this_.__version()
          return this_
       }
@@ -505,13 +605,13 @@ export namespace Trace {
 
    // Used to be something called RecBinding, but bindings doesn't seem to be stored in traces at the moment.
    export class LetRec extends Trace {
-      δ: Expr.RecDefinition[]
+      δ: Expr.RecDefs
       t: Trace
    
-      static at (α: Addr, δ: Expr.RecDefinition[], t: Trace): LetRec {
+      static at (α: Id, δ: Expr.RecDefs, t: Trace): LetRec {
          const this_: LetRec = create(α, LetRec)
          this_.δ = δ
-         this_.t = as(t, Trace)
+         this_.t = t
          this_.__version()
          return this_
       }
@@ -522,10 +622,10 @@ export namespace Trace {
       tu: Traced
       t: Trace
 
-      static at (α: Addr, tu: Traced, t: Trace): Match {
+      static at (α: Id, tu: Traced, t: Trace): Match {
          const this_: Match = create(α, Match)
-         this_.tu = as(tu, Traced)
-         this_.t = as(t, Trace)
+         this_.tu = tu
+         this_.t = t
          this_.__version()
          return this_
       }
@@ -535,10 +635,10 @@ export namespace Trace {
       x: Lex.OpName
       t: Trace
 
-      static at (α: Addr, x: Lex.OpName, t: Trace): OpName {
+      static at (α: Id, x: Lex.OpName, t: Trace): OpName {
          const this_: OpName = create(α, OpName)
-         this_.x = as(x, Lex.OpName)
-         this_.t = as(t, Trace)
+         this_.x = x
+         this_.t = t
          this_.__version()
          return this_
       }
@@ -549,10 +649,10 @@ export namespace Trace {
       op: Traced
       arg: Traced
 
-      static at (α: Addr, op: Traced, arg: Traced): PrimApp {
+      static at (α: Id, op: Traced, arg: Traced): PrimApp {
          const this_: PrimApp = create(α, PrimApp)
-         this_.op = as(op, Traced)
-         this_.arg = as(arg, Traced)
+         this_.op = op
+         this_.arg = arg
          this_.__version()
          return this_
       }
@@ -562,10 +662,10 @@ export namespace Trace {
       x: Lex.Var
       t: Trace
 
-      static at (α: Addr, x: Lex.Var, t: Trace): Var {
+      static at (α: Id, x: Lex.Var, t: Trace): Var {
          const this_: Var = create(α, Var)
-         this_.x = as(x, Lex.Var)
-         this_.t = as(t, Trace)
+         this_.x = x
+         this_.t = t
          this_.__version()
          return this_
       }

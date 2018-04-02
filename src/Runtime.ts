@@ -1,34 +1,36 @@
 import { __shallowCopy, __shallowEq, assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
+import { Id, PersistentObject } from "./Memo"
 
-// At a given version (there is only one, currently) enforce "single assignment" semantics.
-Object.prototype.__version = function (): Object {
-   if (this.__history.length === 0) {
-      this.__history.push(__shallowCopy(this))
-   } else {
-      assert(__shallowEq(this, this.__history[0]))
-   }
-   return this
-}
-
-Object.defineProperty(Object.prototype, "__version", {
-   enumerable: false
-})
-
-const __instances: Map<Addr, Object> = new Map
+const __instances: Map<Id, PersistentObject<Id>> = new Map
 
 // Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
-export function create <T> (α: Addr, ctr: Ctr<T>): T {
-   var o: Object | undefined = __instances.get(α)
+// Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
+export function create <I extends Id, T extends PersistentObject<I>> (α: I, ctr: Ctr<T>): T {
+   let o: PersistentObject<I> | undefined = __instances.get(α) as PersistentObject<I>
    if (o === undefined) {
-      o = new ctr
-      // This may massively suck, performance-wise.
-      Object.defineProperty(o, "__addr", {
+      o = Object.create(ctr.prototype) as T // new ctr doesn't work any more?
+      // This may massively suck, performance-wise. Define these rather than on PersistentObject
+      // to avoid constructors everywhere.
+      Object.defineProperty(o, "__id", {
          value: α,
          enumerable: false
       })
       Object.defineProperty(o, "__history", {
          value: [],
+         enumerable: false
+      })
+      // At a given version (there is only one, currently) enforce "single assignment" semantics.
+      Object.defineProperty(o, "__version", {
+         value: function (): Object {
+            const this_: PersistentObject<I> = this as PersistentObject<I>
+            if (this_.__history.length === 0) {
+               this_.__history.push(__shallowCopy(this_))
+            } else {
+               assert(__shallowEq(this, this_.__history[0]))
+            }
+            return this
+         },
          enumerable: false
       })
       __instances.set(α, o)
@@ -37,12 +39,3 @@ export function create <T> (α: Addr, ctr: Ctr<T>): T {
    }
    return o as T
 }
-
-// Fresh keys represent inputs to the system.
-export const ν: () => Addr =
-   (() => {
-      let count: number = 0
-      return () => {
-         return (count++).toString()
-      }
-   })()

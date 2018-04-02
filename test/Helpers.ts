@@ -1,8 +1,10 @@
-/// <reference path="../src/Object.ts" />
-
 import * as $ from "jquery"
 import { initDataTypes } from "../src/DataType"
+import { Env, EnvId } from "../src/Env"
+import { Eval } from "../src/Eval"
 import { Parse } from "../src/Parse"
+import { prelude } from "../src/Primitive"
+import { Expr, Lex, Trie, ν } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
 
@@ -20,13 +22,20 @@ export enum Profile {
    Visualise
 }
 
-const profile = Profile.Parse
+const defaultProfile = Profile.Parse
+const σ: Trie.Trie<null> = Trie.Var.at(Trie.ExprTrieId.make(ν()), new Lex.Var("x"), null)
 
 export function runExample (p: Profile, src: string): void {
-   __nonNull(parse(Parse.expr, __nonNull(src))).ast
+   const e: Expr.Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
+   if (p >= Profile.Run) {
+      const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(ρ, ρ_id, σ, e)
+      console.log(tv)
+   }
 }
 
-export function runTest (prog: string): void {
+export let [ρ, ρ_id]: [Env, EnvId] = prelude()
+
+export function runTest (prog: string, profile: Profile = defaultProfile): void {
    runExample(profile, prog)
 }
 
@@ -55,18 +64,6 @@ export function loadTestFile(folder: string, file: string): TestFile {
 
 // For now just see if all the examples run without an exception.
 export function testAll (): void {
-   console.log("Test profile: " + Profile[profile] + ".")
-
-   // Set the viz code.
-   function loadVizCode (): void {
-      const readReq = new XMLHttpRequest()
-      readReq.open("GET", "visualise.lcalc", true)
-      readReq.onload = () => {
-         runTest("arithmetic")
-      }
-      readReq.send(null)
-   }
-
+   console.log("Default test profile: " + Profile[defaultProfile] + ".")
    initialise()
-   loadVizCode()
 }
