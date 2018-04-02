@@ -1,4 +1,24 @@
-import { Expr } from "./Syntax"
+import { make } from "./util/Core"
+import { Id } from "./Memo"
+import { Expr, Value } from "./Syntax"
+
+export class EnvId extends Id {
+}
+
+export class EmptyEnvId extends EnvId { 
+   static make (): EnvId {
+      return make(EnvId)
+   }
+}
+
+export class ExtendEnvId extends EnvId {
+   j: EnvId
+   k: Value.ValId
+
+   static make (j: EnvId, k: Value.ValId): ExtendEnvId {
+      return make(ExtendEnvId, j, k)
+   }
+}
 
 // Environments are snoc lists. The identity of an evaluated term is the identity of the original expression
 // paired with the identity of all environment entries used to close the term, in the order in which they 

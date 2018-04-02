@@ -1,11 +1,16 @@
 import { __nonNull, __shallowCopy, __shallowEq, funName, assert } from "./util/Core"
 
-// Strings ok for small, flat keys; for large/nested keys we'll need trees.
-export type Addr = string
+export type RawId = number
 
-export class PersistentObject extends Object {
+export class Id {
+   __Id() {
+      // descriminator
+   }
+}
+
+export class PersistentObject<T extends Id> extends Object {
    __history: this[] = []
-   __addr: Addr
+   __id: T
 
    // At a given version (there is only one, currently) enforce "single assignment" semantics.
    __version (): Object {
@@ -22,10 +27,10 @@ Object.defineProperty(PersistentObject.prototype, "__version", {
    enumerable: false
 })
 
-export function keyA (callee: Function, ...args: PersistentObject[]): Addr {
-   return funName(callee) + "(" + Array.from(args).map(o => __nonNull(o).__addr).join(",") + ")"
+export function keyA (callee: Function, ...args: PersistentObject[]): Id {
+   return funName(callee) + "(" + Array.from(args).map(o => __nonNull(o).__id).join(",") + ")"
 }
 
-export function keyP (α: Addr, ...path: string[]): Addr {
+export function keyP (α: Id, ...path: string[]): Id {
    return α + (path.length === 0 ? "" : ("." + path.join(".")))
 }

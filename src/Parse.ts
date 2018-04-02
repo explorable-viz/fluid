@@ -3,8 +3,7 @@ import {
    dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, 
    symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { ν } from "./Runtime"
-import { Lex, Traced, str } from "./Syntax"
+import { Lex, Traced, str, ν } from "./Syntax"
 import { Expr, Trie } from "./Syntax"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,

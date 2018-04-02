@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
-import { assert, as } from "./util/Core"
+import { assert, as, make } from "./util/Core"
 import { Env, EnvEntry, entries, get, has } from "./Env"
-import { Addr, keyA, keyP } from "./Memo"
+import { Id, keyA, keyP } from "./Memo"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
@@ -10,7 +10,7 @@ export module Eval {
 export type EvalResult<T> = [Traced, Env, T]    // tv, ρ, σv
 type EvalResults = [Traced[], Env, Object]      // tvs, ρ, σv
 
-function __result<T> (α: Addr, t: Trace.Trace, v: Value.Value | null, ρ: Env, κ: T): EvalResult<T> {
+function __result<T> (α: Id, t: Trace.Trace, v: Value.Value | null, ρ: Env, κ: T): EvalResult<T> {
    return [Traced.at(α, t, v), ρ, κ]
 }
 
@@ -26,16 +26,16 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
    }
 }
 
-function traceOf (α: Addr): Addr {
+function traceOf (α: Id): Id {
    return keyP(α, "trace")
 }
 
-function valOf (α: Addr): Addr {
+function valOf (α: Id): Id {
    return keyP(α, "val")
 }
 
 export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
-   const α: Addr = keyA(eval_, e, ...entries(ρ))
+   const α: Id = keyA(eval_, e, ...entries(ρ))
    if (Trie.Var.is(σ)) {
       return __result(α, Trace.Empty.at(α), null, [[σ.x.str, {ρ, δ: [], e}]], σ.body)
    } else {

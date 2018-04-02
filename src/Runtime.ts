@@ -1,12 +1,13 @@
 import { assert, className } from "./util/Core"
 import { Ctr } from "./DataType"
-import { Addr, PersistentObject } from "./Memo"
+import { Id, PersistentObject } from "./Memo"
 
-const __instances: Map<Addr, PersistentObject> = new Map
+const __instances: Map<Id, PersistentObject<Id>> = new Map
 
 // Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
-export function create <T extends PersistentObject> (α: Addr, ctr: Ctr<T>): T {
-   var o: PersistentObject | undefined = __instances.get(α)
+// Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
+export function create <I extends Id, T extends PersistentObject<I>> (α: I, ctr: Ctr<T>): T {
+   var o: PersistentObject<I> | undefined = __instances.get(α) as PersistentObject<I>
    if (o === undefined) {
       o = new ctr
       // This may massively suck, performance-wise.
@@ -24,12 +25,3 @@ export function create <T extends PersistentObject> (α: Addr, ctr: Ctr<T>): T {
    }
    return o as T
 }
-
-// Fresh keys represent inputs to the system.
-export const ν: () => Addr =
-   (() => {
-      let count: number = 0
-      return () => {
-         return (count++).toString()
-      }
-   })()
