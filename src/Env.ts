@@ -53,7 +53,3 @@ export function get (ρ: Env, k: string): EnvEntry | undefined {
    }
    return undefined
 }
-
-export function entries (ρ: Env): EnvEntry[] {
-   return ρ.map(([x, entry]) => entry)
-}

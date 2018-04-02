@@ -371,13 +371,9 @@ export namespace Expr {
    }
 }
 
-class TracedId extends Id {
-   k: Value.ValId
-
-   static make (k: Value.ValId): TracedId {
-      const this_: TracedId = make(TracedId, k)
-      this_.k = k
-      return this_
+export class TracedId extends Id {
+   __TracedId (): void {
+      // discriminator
    }
 }
 
@@ -401,13 +397,13 @@ export namespace Trie {
       }
    }
    
-   // A trie that occurs in the raw syntax.
-   class RawTrieId extends TrieId {
-      id: RawId
+   // A trie that arises in the raw syntax.
+   export class ExprTrieId extends TrieId {
+      i: Expr.ExprId
       
-      static make (id: RawId): RawTrieId {
-         const this_: RawTrieId = make(RawTrieId, id)
-         this_.id = id
+      static make (i: Expr.ExprId): ExprTrieId {
+         const this_: ExprTrieId = make(ExprTrieId, i)
+         this_.i = i
          return this_
       }
    }
@@ -428,7 +424,7 @@ export namespace Trie {
          return σ instanceof ConstInt
       }
 
-      static at <T> (α: RawTrieId, body: T): ConstInt<T> {
+      static at <T> (α: TrieId, body: T): ConstInt<T> {
          const this_: ConstInt<T> = create<TrieId, ConstInt<T>>(α, ConstInt)
          this_.body = body
          this_.__version()
@@ -441,7 +437,7 @@ export namespace Trie {
          return σ instanceof ConstStr
       }
 
-      static at <T> (α: RawTrieId, body: T): ConstStr<T> {
+      static at <T> (α: TrieId, body: T): ConstStr<T> {
          const this_: ConstStr<T> = create<TrieId, ConstStr<T>>(α, ConstStr)
          this_.body = body
          this_.__version()
@@ -530,11 +526,9 @@ export namespace Trie {
    }
 }
 
-class TraceId extends Id {
-   k: Value.ValId
-
-   static make (k: Value.ValId): TraceId {
-      return make(TraceId, k)
+export class TraceId extends Id {
+   __TraceId(): void {
+      // discriminator
    }
 }
 

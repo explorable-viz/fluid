@@ -26,11 +26,3 @@ export class PersistentObject<T extends Id> extends Object {
 Object.defineProperty(PersistentObject.prototype, "__version", {
    enumerable: false
 })
-
-export function keyA (callee: Function, ...args: PersistentObject[]): Id {
-   return funName(callee) + "(" + Array.from(args).map(o => __nonNull(o).__id).join(",") + ")"
-}
-
-export function keyP (α: Id, ...path: string[]): Id {
-   return α + (path.length === 0 ? "" : ("." + path.join(".")))
-}
