@@ -1,6 +1,6 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { Profile, TestFile, initialise, loadTestFile, runTest } from "./Helpers"
+import { TestFile, initialise, loadTestFile, runTest } from "./Helpers"
 import { __nonNull } from "../src/util/Core"
 
 function loadExample(file: string): TestFile {
@@ -15,8 +15,8 @@ before((done: MochaDone) => {
 describe("example", () => {
 	describe("arithmetic", () => {
 		const file: TestFile = loadExample("arithmetic")
-		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run)
+		it("parses ok", () => {
+			runTest(__nonNull(file.text))
 		})
 	})
 

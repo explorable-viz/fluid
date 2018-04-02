@@ -1,5 +1,3 @@
-import { __shallowCopy, __shallowEq, assert } from "./util/Core"
-
 export type RawId = number
 
 export class Id {
@@ -9,20 +7,8 @@ export class Id {
 }
 
 export class PersistentObject<T extends Id> extends Object {
-   __history: this[] = []
-   __id: T
-
-   // At a given version (there is only one, currently) enforce "single assignment" semantics.
-   __version (): Object {
-      if (this.__history.length === 0) {
-         this.__history.push(__shallowCopy(this))
-      } else {
-         assert(__shallowEq(this, this.__history[0]))
-      }
-      return this
-   }
+   // Initialise these properties at object creation.
+   __history: this[] = undefined as any
+   __id: T = undefined as any
+   __version: () => Object = undefined as any
 }
-
-Object.defineProperty(PersistentObject.prototype, "__version", {
-   enumerable: false
-})
