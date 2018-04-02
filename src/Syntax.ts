@@ -106,17 +106,11 @@ export namespace Lex {
 
 export namespace Value {
    export class ValId extends Id {
-      j: EnvId
-      i: Expr.ExprId
-   
-      static make (j: EnvId, i: Expr.ExprId): ValId {
-         const this_: ValId = make(ValId, j, i)
-         this_.j = j
-         this_.i = i
-         return this_
+      __ValId(): void {
+         // discriminator
       }
    }
-      
+
    export class Value extends PersistentObject<ValId> {
       __Value(): void {
          // discriminator
@@ -400,22 +394,25 @@ export class Traced<T extends Value.Value = Value.Value> extends PersistentObjec
    }
 }
 
-class TrieId extends Id {
-}
-
-// A trie that occurs in the raw syntax.
-class RawTrieId extends TrieId {
-   id: RawId
-   
-   static make (id: RawId): RawTrieId {
-      const this_: RawTrieId = make(RawTrieId, id)
-      this_.id = id
-      return this_
-   }
-}
-
 export namespace Trie {
-   // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
+   export class TrieId extends Id {
+      __TrieId (): void {
+         // discriminator
+      }
+   }
+   
+   // A trie that occurs in the raw syntax.
+   class RawTrieId extends TrieId {
+      id: RawId
+      
+      static make (id: RawId): RawTrieId {
+         const this_: RawTrieId = make(RawTrieId, id)
+         this_.id = id
+         return this_
+      }
+   }
+   
+      // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
    export class Trie<T> extends PersistentObject<TrieId> implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)

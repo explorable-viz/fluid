@@ -1,6 +1,6 @@
 import { zip } from "./util/Array"
 import { assert, as, make } from "./util/Core"
-import { Env, EnvEntry, entries, get, has } from "./Env"
+import { Env, EnvEntry, EnvId, entries, get, has } from "./Env"
 import { Id, keyA, keyP } from "./Memo"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
@@ -23,6 +23,18 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
             [tv, ρʹ, κʹ]: EvalResult<Object> = eval_(ρ, σ, es[0]),
             [tvs, ρʺ, κʺ]: EvalResults = evalSeq(ρ, κʹ, es.slice(1))
       return [[tv].concat(tvs), ρʹ.concat(ρʺ), κʺ]
+   }
+}
+
+export class EvalId extends Value.ValId {
+   j: EnvId
+   i: Expr.ExprId
+
+   static make (j: EnvId, i: Expr.ExprId): EvalId {
+      const this_: EvalId = make(EvalId, j, i)
+      this_.j = j
+      this_.i = i
+      return this_
    }
 }
 
