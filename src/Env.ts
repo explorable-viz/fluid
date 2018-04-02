@@ -15,12 +15,19 @@ export class EnvId extends Id {
       return ExtendEnvId.make(EmptyEnvId.make(), k)
    }
 
+   static extend (j: EnvId, ks: EnvEntryId[]): EnvId {
+      ks.forEach((k: EnvEntryId): void => {
+         j = ExtendEnvId.make(j, k)
+      })
+      return j
+   }
+
    static concat (j: EnvId, jʹ: EnvId): EnvId {
       if (jʹ instanceof EmptyEnvId) {
          return j
       } else
       if (jʹ instanceof ExtendEnvId) {
-         return ExtendEnvId.make(EnvId.concat(j, j.ρ), jʹ.k, jʹ.v)
+         return ExtendEnvId.make(EnvId.concat(j, jʹ.j), jʹ.k)
       } else {
          return assert(false)
       }
@@ -117,7 +124,7 @@ export class ExtendEnv extends Env {
    }
 }
 
-class EnvEntryId {
+export class EnvEntryId {
    j: EnvId
    i: Expr.RecDefinitionId
    iʹ: Expr.ExprId
