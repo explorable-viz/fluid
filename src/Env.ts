@@ -140,7 +140,7 @@ export class EnvEntryId {
 
 export class EnvEntry {
    ρ: Env
-   j: EnvId,
+   j: EnvId
    δ: Expr.RecDefinition[]
    e: Expr.Expr
 
