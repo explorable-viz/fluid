@@ -1,7 +1,6 @@
 import { zip } from "./util/Array"
 import { assert, as, make } from "./util/Core"
 import { Env, EnvEntry, EnvId, get, has } from "./Env"
-import { Id } from "./Memo"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, TraceId, Traced, TracedId, Trie, Value } from "./Syntax"
 
@@ -19,7 +18,7 @@ class EvalId extends Value.ValId {
    }
 }
 
-export class EvalTracedId extends TracedId {
+class EvalTracedId extends TracedId {
    k: EvalId
 
    static make (k: EvalId): EvalTracedId {
@@ -29,11 +28,21 @@ export class EvalTracedId extends TracedId {
    }
 }
 
-export class EvalTraceId extends TraceId {
+class EvalTraceId extends TraceId {
    k: EvalId
 
    static make (k: EvalId): EvalTraceId {
       const this_: EvalTraceId = make(EvalTraceId, k)
+      this_.k = k
+      return this_
+   }
+}
+
+class FunDemandId extends Trie.TrieId {
+   k: EvalId   
+
+   static make (k: EvalId): FunDemandId {
+      const this_: FunDemandId = make(FunDemandId, k)
       this_.k = k
       return this_
    }
@@ -115,7 +124,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
          return __result(k, Trace.Match.at(kʹ, tu, tv.trace), tv.val, ρʺ, κ)
       } else
       if (e instanceof Expr.App) {
-         const [tf, ,]: EvalResult<null> = eval_<null>(ρ, Trie.Fun.at(keyP(α, "1"), null), e.func),
+         const [tf, ,]: EvalResult<null> = eval_(ρ, Trie.Fun.at(FunDemandId.make(k), null), e.func),
                f: Value.Value | null = tf.val
          if (f instanceof Value.Closure) {
             const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, f.func.σ, e.arg),
