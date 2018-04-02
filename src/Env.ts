@@ -3,6 +3,9 @@ import { Id } from "./Memo"
 import { Expr, Value } from "./Syntax"
 
 export class EnvId extends Id {
+   __EnvId (): void {
+      // discriminator
+   }
 }
 
 export class EmptyEnvId extends EnvId { 
