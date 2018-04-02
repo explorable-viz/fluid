@@ -1,4 +1,4 @@
-import { __nonNull, __shallowCopy, __shallowEq, funName, assert } from "./util/Core"
+import { __shallowCopy, __shallowEq, assert } from "./util/Core"
 
 export type RawId = number
 

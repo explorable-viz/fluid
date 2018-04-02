@@ -2,7 +2,7 @@ import { assert, make } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { Env, EnvId } from "./Env"
+import { Env } from "./Env"
 import { Id, PersistentObject, RawId } from "./Memo"
 import { PrimBody } from "./Primitive"
 import { create } from "./Runtime"
@@ -282,7 +282,7 @@ export namespace Expr {
       }
    }
 
-   class RecDefinitionId extends Id {
+   export class RecDefinitionId extends Id {
       id: RawId
 
       __RecDefinitionId(): void {

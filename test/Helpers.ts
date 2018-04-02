@@ -4,8 +4,7 @@ import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
-import { ν } from "../src/Runtime"
-import { Expr, Lex, Trie } from "../src/Syntax"
+import { Expr, Lex, Trie, ν } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
 
@@ -24,7 +23,7 @@ export enum Profile {
 }
 
 const defaultProfile = Profile.Parse
-const σ: Trie.Trie<null> = Trie.Var.at(ν(), new Lex.Var("x"), null)
+const σ: Trie.Trie<null> = Trie.Var.at(Trie.ExprTrieId.make(ν()), new Lex.Var("x"), null)
 
 export function runExample (p: Profile, src: string): void {
    const e: Expr.Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
