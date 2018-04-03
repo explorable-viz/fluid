@@ -1,4 +1,4 @@
-import { assert, make } from "./util/Core"
+import { __check, assert, make } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
@@ -218,7 +218,7 @@ export namespace Expr {
    
       static at (α: ExprId, val: number): ConstInt {
          const this_: ConstInt = create(α, ConstInt)
-         this_.val = val
+         this_.val = __check(val, x => !Number.isNaN(x))
          this_.__version()
          return this_
       }
