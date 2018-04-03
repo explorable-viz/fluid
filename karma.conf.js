@@ -45,19 +45,8 @@ module.exports = function (config) {
       autoWatch: true,
       singleRun: false,
       concurrency: Infinity,
-      browsers: ['ChromeHeadless'], // ['PhantomJS_debug'],
+      browsers: ['ChromeHeadless'],
       customLaunchers: {
-         'PhantomJS_debug': {
-            base: 'PhantomJS',
-            options: {
-               windowName: 'my-window',
-               settings: {
-                  webSecurityEnabled: false
-               },
-            },
-            flags: ['--load-images=true'],
-            debug: false
-         },
          'Chrome_with_debugging': {
             base: 'Chrome',
             flags: ['--remote-debugging-port=9222']
@@ -71,9 +60,6 @@ module.exports = function (config) {
          nameFormatter: undefined,
          classNameFormatter: undefined,
          properties: {}
-      },
-      phantomjsLauncher: {
-         exitOnResourceError: true
       },
    })
 }
