@@ -1,4 +1,4 @@
-import { __shallowCopy, __shallowEq, assert, className, funName } from "./util/Core"
+import { __shallowCopy, __shallowLeq, assert, className, funName } from "./util/Core"
 
 export interface Ctr<T> {
    new (): T
@@ -37,14 +37,14 @@ export function create <I extends Id, T extends PersistentObject<I>> (α: I, ctr
          value: [],
          enumerable: false
       })
-      // At a given version (there is only one, currently) enforce "single assignment" semantics.
+      // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
       Object.defineProperty(o, "__version", {
          value: function (): Object {
             const this_: PersistentObject<I> = this as PersistentObject<I>
             if (this_.__history.length === 0) {
                this_.__history.push(__shallowCopy(this_))
             } else {
-               assert(__shallowEq(this, this_.__history[0]), "Address collision.")
+               assert(__shallowLeq(this_.__history[0], this), "Address collision.")
             }
             return this
          },

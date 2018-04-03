@@ -52,8 +52,8 @@ class FunDemandId extends Trie.TrieId {
 export type EvalResult<T> = [Traced, Env, EnvId, T]    // tv, ρ, j, σv
 type EvalResults = [Traced[], Env, EnvId, Object]      // tvs, ρ, j, σv
 
-function __result<T> (α: EvalId, t: Trace.Trace, v: Value.Value | null, ρ: Env, j: EnvId, κ: T): EvalResult<T> {
-   return [Traced.at(EvalTracedId.make(α), t, v), ρ, j, κ]
+function __result<T> (k: EvalId, t: Trace.Trace, v: Value.Value | null, ρ: Env, j: EnvId, κ: T): EvalResult<T> {
+   return [Traced.at(EvalTracedId.make(k), t, v), ρ, j, κ]
 }
 
 // Don't think I capture the polymorphic type of the nested trie κ (which has a depth of n >= 0).
@@ -70,32 +70,31 @@ function evalSeq (ρ: Env, j: EnvId, κ: Object, es: Expr.Expr[]): EvalResults {
 
 export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
    const k: EvalId = EvalId.make(j, e.__id),
-         kʹ: EvalTraceId = EvalTraceId.make(k),
-         empty: Trace.Empty = Trace.Empty.at(kʹ)
+         kʹ: EvalTraceId = EvalTraceId.make(k)
    if (Trie.Var.is(σ)) {
       const δ_id: Expr.RecDefsId = Expr.RecDefsId.make(e.__id),
             entry: EnvEntry = new EnvEntry(ρ, j, Expr.RecDefs.at(δ_id, []), e),
             l: EnvEntryId = EnvEntryId.make(j, δ_id, e.__id)
-      return __result(k, empty, null, Env.singleton(σ.x.str, entry), EnvId.singleton(l), σ.body)
+      return __result(k, Trace.Empty.at(kʹ), null, Env.singleton(σ.x.str, entry), EnvId.singleton(l), σ.body)
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
          const σʹ: Object = σ.cases.get(e.ctr.str)!,
                [tvs, ρʹ, jʹ, κ]: EvalResults = evalSeq(ρ, j, σʹ, e.args)
          // have to cast κ without type information on constructor
-         return __result(k, empty, Value.Constr.at(k, e.ctr, tvs), ρʹ, jʹ, κ as T)
+         return __result(k, Trace.Empty.at(kʹ), Value.Constr.at(k, e.ctr, tvs), ρʹ, jʹ, κ as T)
       } else
       if (e instanceof Expr.ConstInt && Trie.ConstInt.is(σ)) {
-         return __result(k, empty, Value.ConstInt.at(k, e.val), Env.empty(), EnvId.empty(), σ.body)
+         return __result(k, Trace.Empty.at(kʹ), Value.ConstInt.at(k, e.val), Env.empty(), EnvId.empty(), σ.body)
       } else
       if (e instanceof Expr.ConstStr && Trie.ConstStr.is(σ)) {
-         return __result(k, empty, Value.ConstStr.at(k, e.val), Env.empty(), EnvId.empty(), σ.body)
+         return __result(k, Trace.Empty.at(kʹ), Value.ConstStr.at(k, e.val), Env.empty(), EnvId.empty(), σ.body)
       } else
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
          const δ_id: Expr.RecDefsId = Expr.RecDefsId.make(e.__id)
-         return __result(k, empty, Value.Closure.at(k, ρ, j, Expr.RecDefs.at(δ_id, []), e), Env.empty(), EnvId.empty(), σ.body)
+         return __result(k, Trace.Empty.at(kʹ), Value.Closure.at(k, ρ, j, Expr.RecDefs.at(δ_id, []), e), Env.empty(), EnvId.empty(), σ.body)
       } else
       if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
-         return __result(k, empty, e.op, Env.empty(), EnvId.empty(), σ.body)
+         return __result(k, Trace.Empty.at(kʹ), e.op, Env.empty(), EnvId.empty(), σ.body)
       } else
       if (e instanceof Expr.Var || e instanceof Expr.OpName) {
          const x: string = e instanceof Expr.OpName ? e.opName.str : e.ident.str
