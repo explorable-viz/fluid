@@ -560,7 +560,7 @@ export namespace Trace {
       arg: Traced
       body: Trace
 
-      static at (α: Id, func: Traced, arg: Traced, body: Trace): App {
+      static at (α: TraceId, func: Traced, arg: Traced, body: Trace): App {
          const this_: App = create(α, App)
          this_.func = func
          this_.arg = arg
@@ -572,7 +572,7 @@ export namespace Trace {
 
    // I don't think this is the same as ⊥; it represents the "end" of an explanation.
    export class Empty extends Trace {
-      static at (α: Id): Empty {
+      static at (α: TraceId): Empty {
          const this_: Empty = create(α, Empty)
          this_.__version()
          return this_
@@ -583,7 +583,7 @@ export namespace Trace {
       tu: Traced
       t: Trace
 
-      static at (α: Id, tu: Traced, t: Trace): Match {
+      static at (α: TraceId, tu: Traced, t: Trace): Match {
          const this_: Match = create(α, Match)
          this_.tu = tu
          this_.t = t
@@ -597,7 +597,7 @@ export namespace Trace {
       δ: Expr.RecDefs
       t: Trace
    
-      static at (α: Id, δ: Expr.RecDefs, t: Trace): LetRec {
+      static at (α: TraceId, δ: Expr.RecDefs, t: Trace): LetRec {
          const this_: LetRec = create(α, LetRec)
          this_.δ = δ
          this_.t = t
@@ -611,7 +611,7 @@ export namespace Trace {
       tu: Traced
       t: Trace
 
-      static at (α: Id, tu: Traced, t: Trace): Match {
+      static at (α: TraceId, tu: Traced, t: Trace): Match {
          const this_: Match = create(α, Match)
          this_.tu = tu
          this_.t = t
@@ -624,7 +624,7 @@ export namespace Trace {
       x: Lex.OpName
       t: Trace
 
-      static at (α: Id, x: Lex.OpName, t: Trace): OpName {
+      static at (α: TraceId, x: Lex.OpName, t: Trace): OpName {
          const this_: OpName = create(α, OpName)
          this_.x = x
          this_.t = t
@@ -638,7 +638,7 @@ export namespace Trace {
       op: Traced
       arg: Traced
 
-      static at (α: Id, op: Traced, arg: Traced): PrimApp {
+      static at (α: TraceId, op: Traced, arg: Traced): PrimApp {
          const this_: PrimApp = create(α, PrimApp)
          this_.op = op
          this_.arg = arg
@@ -651,7 +651,7 @@ export namespace Trace {
       x: Lex.Var
       t: Trace
 
-      static at (α: Id, x: Lex.Var, t: Trace): Var {
+      static at (α: TraceId, x: Lex.Var, t: Trace): Var {
          const this_: Var = create(α, Var)
          this_.x = x
          this_.t = t
