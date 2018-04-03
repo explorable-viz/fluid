@@ -29,7 +29,7 @@ export class EnvId extends Id {
       if (jʹ instanceof ExtendEnvId) {
          return ExtendEnvId.make(EnvId.concat(j, jʹ.j), jʹ.k)
       } else {
-         return assert(false, "", jʹ)
+         return assert(false)
       }
    }
 }
