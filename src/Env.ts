@@ -35,8 +35,8 @@ export class EnvId extends Id {
 }
 
 export class EmptyEnvId extends EnvId { 
-   static make (): EnvId {
-      return make(EnvId)
+   static make (): EmptyEnvId {
+      return make(EmptyEnvId)
    }
 }
 

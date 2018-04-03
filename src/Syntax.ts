@@ -1,4 +1,4 @@
-import { assert, make } from "./util/Core"
+import { __check, assert, make } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
@@ -15,18 +15,8 @@ export const ν: () => Expr.ExprId =
       }
    })()
 
+// Constants used for parsing, and also for toString() implementations.
 export namespace str {
-   // Primitive ops.
-   export const concat: string = "++"
-   export const div: string = "/"
-   export const equal: string = "=="
-   export const greaterT: string = ">"
-   export const lessT: string = "<"
-   export const minus: string = "-"
-   export const plus: string = "+"
-   export const times: string = "*"
-
-   // Constants used for parsing, and also for toString() implementations.
    export const arrow: string = "→"
    export const as: string = "as"
    export const equals: string = "="
@@ -228,7 +218,7 @@ export namespace Expr {
    
       static at (α: ExprId, val: number): ConstInt {
          const this_: ConstInt = create(α, ConstInt)
-         this_.val = val
+         this_.val = __check(val, x => !Number.isNaN(x))
          this_.__version()
          return this_
       }
@@ -570,7 +560,7 @@ export namespace Trace {
       arg: Traced
       body: Trace
 
-      static at (α: Id, func: Traced, arg: Traced, body: Trace): App {
+      static at (α: TraceId, func: Traced, arg: Traced, body: Trace): App {
          const this_: App = create(α, App)
          this_.func = func
          this_.arg = arg
@@ -582,7 +572,7 @@ export namespace Trace {
 
    // I don't think this is the same as ⊥; it represents the "end" of an explanation.
    export class Empty extends Trace {
-      static at (α: Id): Empty {
+      static at (α: TraceId): Empty {
          const this_: Empty = create(α, Empty)
          this_.__version()
          return this_
@@ -593,8 +583,12 @@ export namespace Trace {
       tu: Traced
       t: Trace
 
-      static at (α: Id, tu: Traced, t: Trace): Match {
-         const this_: Match = create(α, Match)
+      __Let (): void {
+         // discriminator
+      }
+
+      static at (α: TraceId, tu: Traced, t: Trace): Let {
+         const this_: Let = create(α, Let)
          this_.tu = tu
          this_.t = t
          this_.__version()
@@ -607,7 +601,7 @@ export namespace Trace {
       δ: Expr.RecDefs
       t: Trace
    
-      static at (α: Id, δ: Expr.RecDefs, t: Trace): LetRec {
+      static at (α: TraceId, δ: Expr.RecDefs, t: Trace): LetRec {
          const this_: LetRec = create(α, LetRec)
          this_.δ = δ
          this_.t = t
@@ -621,7 +615,11 @@ export namespace Trace {
       tu: Traced
       t: Trace
 
-      static at (α: Id, tu: Traced, t: Trace): Match {
+      __Match (): void {
+         // discriminator
+      }
+
+      static at (α: TraceId, tu: Traced, t: Trace): Match {
          const this_: Match = create(α, Match)
          this_.tu = tu
          this_.t = t
@@ -634,7 +632,7 @@ export namespace Trace {
       x: Lex.OpName
       t: Trace
 
-      static at (α: Id, x: Lex.OpName, t: Trace): OpName {
+      static at (α: TraceId, x: Lex.OpName, t: Trace): OpName {
          const this_: OpName = create(α, OpName)
          this_.x = x
          this_.t = t
@@ -648,7 +646,7 @@ export namespace Trace {
       op: Traced
       arg: Traced
 
-      static at (α: Id, op: Traced, arg: Traced): PrimApp {
+      static at (α: TraceId, op: Traced, arg: Traced): PrimApp {
          const this_: PrimApp = create(α, PrimApp)
          this_.op = op
          this_.arg = arg
@@ -661,7 +659,7 @@ export namespace Trace {
       x: Lex.Var
       t: Trace
 
-      static at (α: Id, x: Lex.Var, t: Trace): Var {
+      static at (α: TraceId, x: Lex.Var, t: Trace): Var {
          const this_: Var = create(α, Var)
          this_.x = x
          this_.t = t

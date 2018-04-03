@@ -23,9 +23,11 @@ export enum Profile {
 }
 
 const defaultProfile = Profile.Parse
-const σ: Trie.Trie<null> = Trie.Var.at(Trie.ExprTrieId.make(ν()), new Lex.Var("x"), null)
 
-export function runExample (p: Profile, src: string): void {
+export const σ_var: Trie.Trie<null> = Trie.Var.at(Trie.ExprTrieId.make(ν()), new Lex.Var("x"), null)
+export const σ_int: Trie.Trie<null> = Trie.ConstInt.at(Trie.ExprTrieId.make(ν()), null)
+
+export function runExample (p: Profile, src: string, σ: Trie.Trie<null>): void {
    const e: Expr.Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    if (p >= Profile.Run) {
       const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(ρ, ρ_id, σ, e)
@@ -35,8 +37,8 @@ export function runExample (p: Profile, src: string): void {
 
 export let [ρ, ρ_id]: [Env, EnvId] = prelude()
 
-export function runTest (prog: string, profile: Profile = defaultProfile): void {
-   runExample(profile, prog)
+export function runTest (prog: string, profile: Profile = defaultProfile, σ: Trie.Trie<null> = σ_var): void {
+   runExample(profile, prog, σ)
 }
 
 // An asychronously loading test file; when loading completes text will be non-null.

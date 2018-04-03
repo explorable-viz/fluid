@@ -3,7 +3,7 @@ var webpackConfig = require('./webpack.config');
 module.exports = function (config) {
    config.set({
       basePath: '',
-      frameworks: ['mocha', 'chai', 'es6-shim'],
+      frameworks: ['mocha', 'chai'],
       files: [
          './test/**/*.ts',
          {
@@ -45,19 +45,8 @@ module.exports = function (config) {
       autoWatch: true,
       singleRun: false,
       concurrency: Infinity,
-      browsers: ['PhantomJS_debug'],
+      browsers: ['ChromeHeadless'],
       customLaunchers: {
-         'PhantomJS_debug': {
-            base: 'PhantomJS',
-            options: {
-               windowName: 'my-window',
-               settings: {
-                  webSecurityEnabled: false
-               },
-            },
-            flags: ['--load-images=true'],
-            debug: false
-         },
          'Chrome_with_debugging': {
             base: 'Chrome',
             flags: ['--remote-debugging-port=9222']
@@ -72,8 +61,6 @@ module.exports = function (config) {
          classNameFormatter: undefined,
          properties: {}
       },
-      phantomjsLauncher: {
-         exitOnResourceError: true
-      },
    })
 }
+ 
