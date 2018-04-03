@@ -583,8 +583,12 @@ export namespace Trace {
       tu: Traced
       t: Trace
 
-      static at (α: TraceId, tu: Traced, t: Trace): Match {
-         const this_: Match = create(α, Match)
+      __Let (): void {
+         // discriminator
+      }
+
+      static at (α: TraceId, tu: Traced, t: Trace): Let {
+         const this_: Let = create(α, Let)
          this_.tu = tu
          this_.t = t
          this_.__version()
@@ -610,6 +614,10 @@ export namespace Trace {
    export class Match extends Trace {
       tu: Traced
       t: Trace
+
+      __Match (): void {
+         // discriminator
+      }
 
       static at (α: TraceId, tu: Traced, t: Trace): Match {
          const this_: Match = create(α, Match)

@@ -55,6 +55,13 @@ describe("example", () => {
 		})
 	})
 
+	describe("lexicalScoping", () => {
+		const file: TestFile = loadExample("lexicalScoping")
+		it("parses ok", () => {
+			runTest(__nonNull(file.text), Profile.Run, σ_int)
+		})
+	})
+
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
 		it("parses ok", () => {
