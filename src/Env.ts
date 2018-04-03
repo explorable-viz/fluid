@@ -29,14 +29,14 @@ export class EnvId extends Id {
       if (jʹ instanceof ExtendEnvId) {
          return ExtendEnvId.make(EnvId.concat(j, jʹ.j), jʹ.k)
       } else {
-         return assert(false)
+         return assert(false, "", jʹ)
       }
    }
 }
 
 export class EmptyEnvId extends EnvId { 
-   static make (): EnvId {
-      return make(EnvId)
+   static make (): EmptyEnvId {
+      return make(EmptyEnvId)
    }
 }
 
