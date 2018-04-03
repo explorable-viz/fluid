@@ -15,18 +15,8 @@ export const ν: () => Expr.ExprId =
       }
    })()
 
+// Constants used for parsing, and also for toString() implementations.
 export namespace str {
-   // Primitive ops.
-   export const concat: string = "++"
-   export const div: string = "/"
-   export const equal: string = "=="
-   export const greaterT: string = ">"
-   export const lessT: string = "<"
-   export const minus: string = "-"
-   export const plus: string = "+"
-   export const times: string = "*"
-
-   // Constants used for parsing, and also for toString() implementations.
    export const arrow: string = "→"
    export const as: string = "as"
    export const equals: string = "="

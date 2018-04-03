@@ -190,31 +190,31 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): Value.ConstStr {
 }
 
 // Must come after the definitions above.
-export const ops: Value.PrimOp[] = [
-   unary(error, Trie.ConstStr.at),
-   unary(intToString, Trie.ConstInt.at),
-   binary(minus, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(plus, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(times, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(div, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(equalInt, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(equalStr, Trie.ConstStr.at, Trie.ConstStr.at),
-   binary(greaterInt, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(greaterStr, Trie.ConstStr.at, Trie.ConstStr.at),
-   binary(lessInt, Trie.ConstInt.at, Trie.ConstInt.at),
-   binary(lessStr, Trie.ConstStr.at, Trie.ConstStr.at),
-   binary(concat, Trie.ConstStr.at, Trie.ConstStr.at),
+const ops: [string, Value.PrimOp][] = [
+   ["error", unary(error, Trie.ConstStr.at)],
+   ["intToString", unary(intToString, Trie.ConstInt.at)],
+   ["-", binary(minus, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["+", binary(plus, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["*", binary(times, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["/", binary(div, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["==", binary(equalInt, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["===", binary(equalStr, Trie.ConstStr.at, Trie.ConstStr.at)],
+   [">", binary(greaterInt, Trie.ConstInt.at, Trie.ConstInt.at)],
+   [">>", binary(greaterStr, Trie.ConstStr.at, Trie.ConstStr.at)],
+   ["<", binary(lessInt, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["<<", binary(lessStr, Trie.ConstStr.at, Trie.ConstStr.at)],
+   ["++", binary(concat, Trie.ConstStr.at, Trie.ConstStr.at)],
 ]
 
 // Fake "syntax" for primitives.
 export function prelude (): [Env, EnvId] {
    let ρ: Env = Env.empty(),
        j: EnvId = EnvId.empty()
-   ops.forEach((op: Value.PrimOp): void => {
+   ops.forEach(([x, op]: [string, Value.PrimOp]): void => {
       const e: Expr.PrimOp = Expr.PrimOp.at(ν(), op),
             δ: Expr.RecDefs = Expr.RecDefs.at(Expr.RecDefsId.make(ν()), []),
             entry: EnvEntry = new EnvEntry(Env.empty(), EnvId.empty(), δ, e)
-      ρ = Env.extend(ρ, [[op.name, entry]])
+      ρ = Env.extend(ρ, [[x, entry]])
       j = EnvId.extend(j, [EnvEntryId.make(EnvId.empty(), δ.__id, e.__id)])
    })
    return [ρ, j]
