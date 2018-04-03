@@ -3,7 +3,7 @@ var webpackConfig = require('./webpack.config');
 module.exports = function (config) {
    config.set({
       basePath: '',
-      frameworks: ['mocha', 'chai', 'es6-shim'],
+      frameworks: ['mocha', 'chai'],
       files: [
          './test/**/*.ts',
          {
@@ -45,7 +45,7 @@ module.exports = function (config) {
       autoWatch: true,
       singleRun: false,
       concurrency: Infinity,
-      browsers: ['PhantomJS_debug'],
+      browsers: ['ChromeHeadless'], // ['PhantomJS_debug'],
       customLaunchers: {
          'PhantomJS_debug': {
             base: 'PhantomJS',
@@ -77,3 +77,4 @@ module.exports = function (config) {
       },
    })
 }
+ 
