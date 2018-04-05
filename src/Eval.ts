@@ -56,7 +56,7 @@ function __result<T> (k: EvalId, t: Trace.Trace | null, v: Value.Value | null, �
    return [Traced.at(EvalTracedId.make(k), t, v), ρ, j, κ]
 }
 
-// Don't think I capture the polymorphic type of the nested trie κ (which has a depth of n >= 0).
+// Not capturing the polymorphic type of the nested trie κ (which has a depth of n >= 0).
 function evalSeq (ρ: Env, j: EnvId, κ: Object, es: Expr.Expr[]): EvalResults {
    if (es.length === 0) {
       return [[], Env.empty(), EnvId.empty(), κ]
@@ -68,7 +68,7 @@ function evalSeq (ρ: Env, j: EnvId, κ: Object, es: Expr.Expr[]): EvalResults {
    }
 }
 
-// Invariant: output trace and value are null iff σ is empty (i.e. a variable trie).
+// Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
 export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
    const k: EvalId = EvalId.make(j, e.__id),
          kʹ: EvalTraceId = EvalTraceId.make(k)

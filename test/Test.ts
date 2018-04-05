@@ -22,8 +22,8 @@ describe("example", () => {
 
 	describe("compose", () => {
 		const file: TestFile = loadExample("compose")
-		it("parses ok", () => {
-			runTest(__nonNull(file.text))
+		it("runs ok", () => {
+			runTest(__nonNull(file.text), Profile.Run, σ_int)
 		})
 	})
 
@@ -57,7 +57,7 @@ describe("example", () => {
 
 	describe("lexicalScoping", () => {
 		const file: TestFile = loadExample("lexicalScoping")
-		it("parses ok", () => {
+		it("runs ok", () => {
 			runTest(__nonNull(file.text), Profile.Run, σ_int)
 		})
 	})
