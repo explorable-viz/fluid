@@ -18,7 +18,7 @@ export class ExtendEnvEntries extends EnvEntries {
    entry: EnvEntry
 
    static make (j: EnvEntries, entry: EnvEntry): ExtendEnvEntries {
-      const this_: ExtendEnvEntries = make(ExtendEnvEntries, entry)
+      const this_: ExtendEnvEntries = make(ExtendEnvEntries, j, entry)
       this_.j = j
       this_.entry = entry
       return this_
