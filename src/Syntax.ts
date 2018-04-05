@@ -394,7 +394,7 @@ export class TracedId extends Id {
 }
 
 export class Traced<T extends Value.Value = Value.Value> extends PersistentObject<TracedId> {
-   trace: Trace.Trace
+   trace: Trace.Trace | null
    val: T | null
 
    static at <T extends Value.Value> (α: TracedId, trace: Trace.Trace, val: T | null): Traced<T> {

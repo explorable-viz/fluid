@@ -1,5 +1,5 @@
 import { zip } from "./util/Array"
-import { assert, as, make } from "./util/Core"
+import { __nonNull, assert, as, make } from "./util/Core"
 import { Env, EnvId, EnvEntry, EnvEntryId } from "./Env"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, TraceId, Traced, TracedId, Trie, Value } from "./Syntax"
@@ -68,6 +68,7 @@ function evalSeq (ρ: Env, j: EnvId, κ: Object, es: Expr.Expr[]): EvalResults {
    }
 }
 
+// Invariant: output trace and value are null iff σ is empty (i.e. a variable trie).
 export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
    const k: EvalId = EvalId.make(j, e.__id),
          kʹ: EvalTraceId = EvalTraceId.make(k)
@@ -104,15 +105,15 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
             const {ρ: ρʹ, j: jʹ, e: eʹ}: EnvEntry = ρ.get(x)!,
                   [tv, ρʺ, jʺ, σv]: EvalResult<T> = eval_(ρʹ, jʹ, σ, eʹ),
                   t: Trace.Trace = e instanceof Expr.OpName 
-                     ? Trace.OpName.at(kʹ, e.opName, tv.trace)
-                     : Trace.Var.at(kʹ, e.ident, tv.trace)
+                     ? Trace.OpName.at(kʹ, e.opName, __nonNull(tv.trace))
+                     : Trace.Var.at(kʹ, e.ident, __nonNull(tv.trace))
             return __result(k, t, tv.val, ρʺ, jʺ, σv)
          }
       } else
       if (e instanceof Expr.Let) {
          const [tu, ρʹ, jʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, j, e.σ, e.e),
                [tv, ρʺ, jʺ, κ]: EvalResult<T> = eval_<T>(Env.concat(ρ, ρʹ), EnvId.concat(j, jʹ), σ, σu)
-         return __result(k, Trace.Let.at(kʹ, tu, tv.trace), tv.val, ρʺ, jʺ, κ)
+         return __result(k, Trace.Let.at(kʹ, tu, __nonNull(tv.trace)), tv.val, ρʺ, jʺ, κ)
       } else 
       // See 0.3.4 release notes for semantics.
       if (e instanceof Expr.LetRec) {
@@ -120,12 +121,12 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
                ρʹ: Env = Env.extend(ρ, zip(e.δ.defs.map(def => def.x.str), fs)),
                jʹ: EnvId = EnvId.extend(j, fs.map((fʹ: EnvEntry) => EnvEntryId.make(fʹ.j, fʹ.δ.__id, fʹ.e.__id))),
                [tv, ρʺ, jʺ, σv]: EvalResult<T> = eval_<T>(ρʹ, jʹ, σ, e.e)
-         return __result(k, Trace.LetRec.at(kʹ, e.δ, tv.trace), tv.val, ρʺ, jʺ, σv)
+         return __result(k, Trace.LetRec.at(kʹ, e.δ, __nonNull(tv.trace)), tv.val, ρʺ, jʺ, σv)
       } else
       if (e instanceof Expr.MatchAs) {
          const [tu, ρʹ, jʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, j, e.σ, e.e),
                [tv, ρʺ, jʺ, κ]: EvalResult<T> = eval_<T>(Env.concat(ρ, ρʹ), EnvId.concat(j, jʹ), σ, σu)
-         return __result(k, Trace.Match.at(kʹ, tu, tv.trace), tv.val, ρʺ, jʺ, κ)
+         return __result(k, Trace.Match.at(kʹ, tu, __nonNull(tv.trace)), tv.val, ρʺ, jʺ, κ)
       } else
       if (e instanceof Expr.App) {
          const [tf, ,]: EvalResult<null> = eval_(ρ, j, Trie.Fun.at(FunDemandId.make(k), null), e.func),
@@ -136,7 +137,7 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
                   ρ1: Env = Env.extend(f.ρ, zip(f.δ.defs.map(def => def.x.str), fs)),
                   j1: EnvId = EnvId.extend(f.j, fs.map((fʹ: EnvEntry) => EnvEntryId.make(fʹ.j, fʹ.δ.__id, fʹ.e.__id))),
                   [tv, ρʹ, jʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), EnvId.concat(j1, j2), σ, σʹu)
-            return __result(k, Trace.App.at(kʹ, tf, tu, tv.trace), tv.val, ρʹ, jʹ, σv)
+            return __result(k, Trace.App.at(kʹ, tf, tu, __nonNull(tv.trace)), tv.val, ρʹ, jʹ, σv)
          } else
          if (f instanceof Value.PrimOp) {
             const [tu, , , σʹu]: EvalResult<PrimBody<T>> = eval_(ρ, j, f.σ, e.arg),

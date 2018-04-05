@@ -130,7 +130,7 @@ export class EnvEntryId {
    i: Expr.ExprId
 
    static make (j: EnvId, d: Expr.RecDefsId, i: Expr.ExprId): EnvEntryId {
-      const this_: EnvEntryId = make(EnvEntryId, j, δ_id, i)
+      const this_: EnvEntryId = make(EnvEntryId, j, d, i)
       this_.j = j
       this_.d = d
       this_.i = i
