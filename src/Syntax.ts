@@ -394,10 +394,10 @@ export class TracedId extends Id {
 }
 
 export class Traced<T extends Value.Value = Value.Value> extends PersistentObject<TracedId> {
-   trace: Trace.Trace
+   trace: Trace.Trace | null
    val: T | null
 
-   static at <T extends Value.Value> (α: TracedId, trace: Trace.Trace, val: T | null): Traced<T> {
+   static at <T extends Value.Value> (α: TracedId, trace: Trace.Trace | null, val: T | null): Traced<T> {
       const this_: Traced<T> = create<TracedId, Traced<T>>(α, Traced)
       this_.trace = trace
       this_.val = val
@@ -596,7 +596,7 @@ export namespace Trace {
       }
    }
 
-   // Used to be something called RecBinding, but bindings doesn't seem to be stored in traces at the moment.
+   // Used to be something called RecBinding, but bindings aren't stored in traces any more.
    export class LetRec extends Trace {
       δ: Expr.RecDefs
       t: Trace
@@ -610,7 +610,7 @@ export namespace Trace {
       }
    }
    
-      // See 0.6.1 release notes. Also 0.6.4 notes for discussion of expression/trace disparity.
+   // See 0.6.1 release notes.
    export class Match extends Trace {
       tu: Traced
       t: Trace
