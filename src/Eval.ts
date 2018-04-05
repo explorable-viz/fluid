@@ -72,9 +72,9 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
    const k: EvalId = EvalId.make(j, e.__id),
          kʹ: EvalTraceId = EvalTraceId.make(k)
    if (Trie.Var.is(σ)) {
-      const δ_id: Expr.RecDefsId = Expr.RecDefsId.make(e.__id),
-            entry: EnvEntry = new EnvEntry(ρ, j, Expr.RecDefs.at(δ_id, []), e),
-            l: EnvEntryId = EnvEntryId.make(j, δ_id, e.__id)
+      const d: Expr.RecDefsId = Expr.RecDefsId.make(e.__id),
+            entry: EnvEntry = new EnvEntry(ρ, j, Expr.RecDefs.at(d, []), e),
+            l: EnvEntryId = EnvEntryId.make(j, d, e.__id)
       return __result(k, Trace.Empty.at(kʹ), null, Env.singleton(σ.x.str, entry), EnvId.singleton(l), σ.body)
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
@@ -90,8 +90,8 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
          return __result(k, Trace.Empty.at(kʹ), Value.ConstStr.at(k, e.val), Env.empty(), EnvId.empty(), σ.body)
       } else
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-         const δ_id: Expr.RecDefsId = Expr.RecDefsId.make(e.__id)
-         return __result(k, Trace.Empty.at(kʹ), Value.Closure.at(k, ρ, j, Expr.RecDefs.at(δ_id, []), e), Env.empty(), EnvId.empty(), σ.body)
+         const d: Expr.RecDefsId = Expr.RecDefsId.make(e.__id)
+         return __result(k, Trace.Empty.at(kʹ), Value.Closure.at(k, ρ, j, Expr.RecDefs.at(d, []), e), Env.empty(), EnvId.empty(), σ.body)
       } else
       if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
          return __result(k, Trace.Empty.at(kʹ), e.op, Env.empty(), EnvId.empty(), σ.body)

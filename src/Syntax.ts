@@ -596,7 +596,7 @@ export namespace Trace {
       }
    }
 
-   // Used to be something called RecBinding, but bindings doesn't seem to be stored in traces at the moment.
+   // Used to be something called RecBinding, but bindings aren't stored in traces any more.
    export class LetRec extends Trace {
       δ: Expr.RecDefs
       t: Trace
@@ -610,7 +610,7 @@ export namespace Trace {
       }
    }
    
-      // See 0.6.1 release notes. Also 0.6.4 notes for discussion of expression/trace disparity.
+   // See 0.6.1 release notes.
    export class Match extends Trace {
       tu: Traced
       t: Trace
