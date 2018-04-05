@@ -57,7 +57,7 @@ export class ExtendEnvId extends EnvId {
 // were bound. This makes identity insensitive to the choice of names, and is essentially the same as the
 // approach I used in my thesis ("translating" every function body by the identity of the argument used to
 // close it). This is *not* the same as hash-consing environments (which would consider the keys as well).
-// Prefer inductive definition to an array, to align with definition of environment "ids".
+// Prefer inductive definition to an array, to align with definition of environment ids.
 
 export abstract class Env {
    __Env(): void {
