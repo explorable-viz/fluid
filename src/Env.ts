@@ -52,12 +52,11 @@ export class ExtendEnvId extends EnvId {
    }
 }
 
-// Environments are snoc lists. The identity of an evaluated term is the identity of the original expression
-// paired with the identity of all environment entries used to close the term, in the order in which they 
-// were bound. This makes identity insensitive to the choice of names, and is essentially the same as the
-// approach I used in my thesis ("translating" every function body by the identity of the argument used to
-// close it). This is *not* the same as hash-consing environments (which would consider the keys as well).
-// Prefer inductive definition to an array, to align with definition of environment ids.
+// Environments are snoc lists. An evaluation id is an expression id paired with the identity of all 
+// environment entries used to close the term, in the order in which they were bound. This makes evaluation
+// ids insensitive to the choice of names, and is essentially the same as the approach I used in my thesis. 
+// But although evaluation ids do not depend on the ids of environments themselves, we must still intern
+// environments in order to enforce the LVar semantics.
 
 export abstract class Env {
    __Env(): void {
@@ -71,16 +70,16 @@ export abstract class Env {
    }
 
    static empty (): EmptyEnv {
-      return new EmptyEnv
+      return EmptyEnv.make()
    }
 
    static singleton (k: string, v: EnvEntry): Env {
-      return new ExtendEnv(new EmptyEnv, k, v)
+      return ExtendEnv.make(Env.empty(), k, v)
    }
 
    static extend (ρ: Env, kvs: [string, EnvEntry][]): Env {
       kvs.forEach(([k, v]: [string, EnvEntry]) => {
-         ρ = new ExtendEnv(ρ, k, v)
+         ρ = ExtendEnv.make(ρ, k, v)
       })
       return ρ
    }
@@ -90,7 +89,7 @@ export abstract class Env {
          return ρ1
       } else
       if (ρ2 instanceof ExtendEnv) {
-         return new ExtendEnv(Env.concat(ρ1, ρ2.ρ), ρ2.k, ρ2.v)
+         return ExtendEnv.make(Env.concat(ρ1, ρ2.ρ), ρ2.k, ρ2.v)
       } else {
          return assert(false)
       }
@@ -98,6 +97,10 @@ export abstract class Env {
 }
 
 export class EmptyEnv extends Env {
+   static make (): EmptyEnv {
+      return make(EmptyEnv)
+   }
+
    get (k: string): undefined {
       return undefined
    }
@@ -108,11 +111,12 @@ export class ExtendEnv extends Env {
    k: string
    v: EnvEntry
 
-   constructor (ρ: Env, k: string, v: EnvEntry) {
-      super()
-      this.ρ = ρ
-      this.k = k
-      this.v = v
+   static make (ρ: Env, k: string, v: EnvEntry): ExtendEnv {
+      const this_: ExtendEnv = make(ExtendEnv, ρ, k, v)
+      this_.ρ = ρ
+      this_.k = k
+      this_.v = v
+      return this_
    }
 
    get (k: string): EnvEntry | undefined {
@@ -144,10 +148,12 @@ export class EnvEntry {
    δ: Expr.RecDefs
    e: Expr.Expr
 
-   constructor(ρ: Env, j: EnvId, δ: Expr.RecDefs, e: Expr.Expr) {
-      this.ρ = ρ
-      this.j = j
-      this.δ = δ
-      this.e = e
+   static make (ρ: Env, j: EnvId, δ: Expr.RecDefs, e: Expr.Expr): EnvEntry {
+      const this_: EnvEntry = make(EnvEntry)
+      this_.ρ = ρ
+      this_.j = j
+      this_.δ = δ
+      this_.e = e
+      return this_
    }
 }
