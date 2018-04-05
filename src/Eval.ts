@@ -1,4 +1,3 @@
-import { zip } from "./util/Array"
 import { __nonNull, assert, as, make } from "./util/Core"
 import { EmptyRecDefs, Env, EnvEntry, EnvEntries } from "./Env"
 import { PrimBody, PrimResult } from "./Primitive"
@@ -114,8 +113,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
       } else 
       // See 0.3.4 release notes for semantics.
       if (e instanceof Expr.LetRec) {
-         const fs: EnvEntry[] = e.δ.defs.map(def => EnvEntry.make(ρ, e.δ, def.def)),
-               ρʹ: Env = Env.extend(ρ, zip(e.δ.defs.map(def => def.x.str), fs)),
+         const ρʹ: Env = e.δ.closeDefs(ρ, e.δ),
                [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(ρʹ, σ, e.e)
          return __result(k, Trace.LetRec.at(kʹ, e.δ, __nonNull(tv.trace)), tv.val, ρʺ, σv)
       } else
@@ -129,8 +127,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
                f: Value.Value | null = tf.val
          if (f instanceof Value.Closure) {
             const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, f.func.σ, e.arg),
-                  fs: EnvEntry[] = f.δ.defs.map(def => EnvEntry.make(f.ρ, f.δ, def.def)),
-                  ρ1: Env = Env.extend(f.ρ, zip(f.δ.defs.map(def => def.x.str), fs)),
+                  ρ1: Env = f.δ.closeDefs(f.ρ, f.δ),
                   [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), σ, σʹu)
             return __result(k, Trace.App.at(kʹ, tf, tu, __nonNull(tv.trace)), tv.val, ρʹ, σv)
          } else

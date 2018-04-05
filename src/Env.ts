@@ -125,15 +125,21 @@ export class EnvEntry {
    }
 }
 
-export class RecDefs {
+export abstract class RecDefs {
    __RecDefs (): void {
       // discriminator
    }
+
+   abstract closeDefs (ρ: Env, δ: RecDefs): Env;
 }
 
 export class EmptyRecDefs extends RecDefs {
    static make (): EmptyRecDefs {
       return make(EmptyRecDefs)
+   }
+
+   closeDefs (ρ: Env, δ: RecDefs): Env {
+      return ρ
    }
 }
 
@@ -146,5 +152,9 @@ export class ExtendRecDefs extends RecDefs {
       this_.δ = δ
       this_.def = def
       return this_
+   }
+
+   closeDefs (ρ: Env, δ: RecDefs): Env {
+      return ExtendEnv.make(this.δ.closeDefs(ρ, δ), this.def.x.str, EnvEntry.make(ρ, δ, this.def.def))
    }
 }
