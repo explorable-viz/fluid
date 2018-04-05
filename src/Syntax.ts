@@ -2,7 +2,7 @@ import { __check, assert, make } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { Env, EnvId } from "./Env"
+import { Env, EnvId, RecDefs } from "./Env"
 import { PrimBody } from "./Primitive"
 import { Id, PersistentObject, RawId, create } from "./Runtime"
 
@@ -109,10 +109,10 @@ export namespace Value {
    export class Closure extends Value {
       ρ: Env
       j: EnvId
-      δ: Expr.RecDefs
+      δ: RecDefs
       func: Expr.Fun
    
-      static at (α: ValId, ρ: Env, j: EnvId, δ: Expr.RecDefs, func: Expr.Fun): Closure {
+      static at (α: ValId, ρ: Env, j: EnvId, δ: RecDefs, func: Expr.Fun): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
          this_.j = j
@@ -295,31 +295,6 @@ export namespace Expr {
          const this_: RecDef = create(α, RecDef)
          this_.x = x
          this_.def = def
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class RecDefsId extends Id {
-      i: ExprId
-
-      __RecDefsId(): void {
-         // discriminator
-      }
-   
-      static make (i: ExprId): RecDefsId {
-         const this_: RecDefsId = make(RecDefsId, i)
-         this_.i = i
-         return this_
-      }
-   }
-
-   export class RecDefs extends PersistentObject<RecDefsId> {
-      defs: RecDef[]
-   
-      static at (d: RecDefsId, defs: RecDef[]): RecDefs {
-         const this_: RecDefs = create(d, RecDefs)
-         this_.defs = defs
          this_.__version()
          return this_
       }
@@ -596,12 +571,11 @@ export namespace Trace {
       }
    }
 
-   // Used to be something called RecBinding, but bindings aren't stored in traces any more.
    export class LetRec extends Trace {
-      δ: Expr.RecDefs
+      δ: RecDefs
       t: Trace
    
-      static at (α: TraceId, δ: Expr.RecDefs, t: Trace): LetRec {
+      static at (α: TraceId, δ: RecDefs, t: Trace): LetRec {
          const this_: LetRec = create(α, LetRec)
          this_.δ = δ
          this_.t = t

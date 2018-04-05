@@ -1,6 +1,6 @@
 import { zip } from "./util/Array"
 import { __nonNull, assert, as, make } from "./util/Core"
-import { Env, EnvId, EnvEntry, EnvEntryId } from "./Env"
+import { EmptyRecDefs, Env, EnvId, EnvEntry, EnvEntryId } from "./Env"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, TraceId, Traced, TracedId, Trie, Value } from "./Syntax"
 
@@ -73,9 +73,8 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
    const k: EvalId = EvalId.make(j, e.__id),
          kʹ: EvalTraceId = EvalTraceId.make(k)
    if (Trie.Var.is(σ)) {
-      const d: Expr.RecDefsId = Expr.RecDefsId.make(e.__id),
-            entry: EnvEntry = EnvEntry.make(ρ, j, Expr.RecDefs.at(d, []), e),
-            l: EnvEntryId = EnvEntryId.make(j, d, e.__id)
+      const entry: EnvEntry = EnvEntry.make(ρ, j, EmptyRecDefs.make(), e),
+            l: EnvEntryId = EnvEntryId.make(j, entry.δ, e.__id)
       return __result(k, null, null, Env.singleton(σ.x.str, entry), EnvId.singleton(l), σ.body)
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
@@ -91,8 +90,7 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
          return __result(k, Trace.Empty.at(kʹ), Value.ConstStr.at(k, e.val), Env.empty(), EnvId.empty(), σ.body)
       } else
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-         const d: Expr.RecDefsId = Expr.RecDefsId.make(e.__id)
-         return __result(k, Trace.Empty.at(kʹ), Value.Closure.at(k, ρ, j, Expr.RecDefs.at(d, []), e), Env.empty(), EnvId.empty(), σ.body)
+         return __result(k, Trace.Empty.at(kʹ), Value.Closure.at(k, ρ, j, EmptyRecDefs.make(), e), Env.empty(), EnvId.empty(), σ.body)
       } else
       if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
          return __result(k, Trace.Empty.at(kʹ), e.op, Env.empty(), EnvId.empty(), σ.body)
@@ -119,7 +117,7 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
       if (e instanceof Expr.LetRec) {
          const fs: EnvEntry[] = e.δ.defs.map(def => EnvEntry.make(ρ, j, e.δ, def.def)),
                ρʹ: Env = Env.extend(ρ, zip(e.δ.defs.map(def => def.x.str), fs)),
-               jʹ: EnvId = EnvId.extend(j, fs.map((fʹ: EnvEntry) => EnvEntryId.make(fʹ.j, fʹ.δ.__id, fʹ.e.__id))),
+               jʹ: EnvId = EnvId.extend(j, fs.map((fʹ: EnvEntry) => EnvEntryId.make(fʹ.j, fʹ.δ, fʹ.e.__id))),
                [tv, ρʺ, jʺ, σv]: EvalResult<T> = eval_<T>(ρʹ, jʹ, σ, e.e)
          return __result(k, Trace.LetRec.at(kʹ, e.δ, __nonNull(tv.trace)), tv.val, ρʺ, jʺ, σv)
       } else
@@ -135,7 +133,7 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
             const [tu, ρ2, j2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, j, f.func.σ, e.arg),
                   fs: EnvEntry[] = f.δ.defs.map(def => EnvEntry.make(f.ρ, f.j, f.δ, def.def)),
                   ρ1: Env = Env.extend(f.ρ, zip(f.δ.defs.map(def => def.x.str), fs)),
-                  j1: EnvId = EnvId.extend(f.j, fs.map((fʹ: EnvEntry) => EnvEntryId.make(fʹ.j, fʹ.δ.__id, fʹ.e.__id))),
+                  j1: EnvId = EnvId.extend(f.j, fs.map((fʹ: EnvEntry) => EnvEntryId.make(fʹ.j, fʹ.δ, fʹ.e.__id))),
                   [tv, ρʹ, jʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), EnvId.concat(j1, j2), σ, σʹu)
             return __result(k, Trace.App.at(kʹ, tf, tu, __nonNull(tv.trace)), tv.val, ρʹ, jʹ, σv)
          } else

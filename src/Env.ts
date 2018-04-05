@@ -130,13 +130,13 @@ export class ExtendEnv extends Env {
 
 export class EnvEntryId {
    j: EnvId
-   d: Expr.RecDefsId
+   δ: RecDefs
    i: Expr.ExprId
 
-   static make (j: EnvId, d: Expr.RecDefsId, i: Expr.ExprId): EnvEntryId {
-      const this_: EnvEntryId = make(EnvEntryId, j, d, i)
+   static make (j: EnvId, δ: RecDefs, i: Expr.ExprId): EnvEntryId {
+      const this_: EnvEntryId = make(EnvEntryId, j, δ, i)
       this_.j = j
-      this_.d = d
+      this_.δ = δ
       this_.i = i
       return this_
    }
@@ -145,10 +145,10 @@ export class EnvEntryId {
 export class EnvEntry {
    ρ: Env
    j: EnvId
-   δ: Expr.RecDefs
+   δ: RecDefs
    e: Expr.Expr
 
-   static make (ρ: Env, j: EnvId, δ: Expr.RecDefs, e: Expr.Expr): EnvEntry {
+   static make (ρ: Env, j: EnvId, δ: RecDefs, e: Expr.Expr): EnvEntry {
       const this_: EnvEntry = make(EnvEntry)
       this_.ρ = ρ
       this_.j = j
