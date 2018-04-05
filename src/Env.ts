@@ -1,53 +1,26 @@
 import { assert, make } from "./util/Core"
-import { Id } from "./Runtime"
 import { Expr } from "./Syntax"
 
-export class EnvId extends Id {
-   __EnvId (): void {
+export class EnvEntries {
+   __EnvEntries (): void {
       // discriminator
    }
+}
 
-   static empty (): EmptyEnvId {
-      return EmptyEnvId.make()
-   }
-
-   static singleton (k: EnvEntryId): EnvId {
-      return ExtendEnvId.make(EmptyEnvId.make(), k)
-   }
-
-   static extend (j: EnvId, ks: EnvEntryId[]): EnvId {
-      ks.forEach((k: EnvEntryId): void => {
-         j = ExtendEnvId.make(j, k)
-      })
-      return j
-   }
-
-   static concat (j: EnvId, jʹ: EnvId): EnvId {
-      if (jʹ instanceof EmptyEnvId) {
-         return j
-      } else
-      if (jʹ instanceof ExtendEnvId) {
-         return ExtendEnvId.make(EnvId.concat(j, jʹ.j), jʹ.k)
-      } else {
-         return assert(false)
-      }
+export class EmptyEnvEntries extends EnvEntries { 
+   static make (): EmptyEnvEntries {
+      return make(EmptyEnvEntries)
    }
 }
 
-export class EmptyEnvId extends EnvId { 
-   static make (): EmptyEnvId {
-      return make(EmptyEnvId)
-   }
-}
+export class ExtendEnvEntries extends EnvEntries {
+   j: EnvEntries
+   entry: EnvEntry
 
-export class ExtendEnvId extends EnvId {
-   j: EnvId
-   k: EnvEntryId
-
-   static make (j: EnvId, k: EnvEntryId): ExtendEnvId {
-      const this_: ExtendEnvId = make(ExtendEnvId, j, k)
+   static make (j: EnvEntries, entry: EnvEntry): ExtendEnvEntries {
+      const this_: ExtendEnvEntries = make(ExtendEnvEntries, entry)
       this_.j = j
-      this_.k = k
+      this_.entry = entry
       return this_
    }
 }
@@ -62,6 +35,8 @@ export abstract class Env {
    __Env(): void {
       // discriminator
    }
+
+   abstract entries (): EnvEntries;
 
    abstract get (k: string): EnvEntry | undefined;
 
@@ -101,6 +76,10 @@ export class EmptyEnv extends Env {
       return make(EmptyEnv)
    }
 
+   entries (): EmptyEnvEntries {
+      return EmptyEnvEntries.make()
+   }
+
    get (k: string): undefined {
       return undefined
    }
@@ -119,6 +98,10 @@ export class ExtendEnv extends Env {
       return this_
    }
 
+   entries (): ExtendEnvEntries {
+      return ExtendEnvEntries.make(this.ρ.entries(), this.v)
+   }
+
    get (k: string): EnvEntry | undefined {
       if (this.k === k) {
          return this.v
@@ -128,30 +111,14 @@ export class ExtendEnv extends Env {
    }
 }
 
-export class EnvEntryId {
-   j: EnvId
-   δ: RecDefs
-   i: Expr.ExprId
-
-   static make (j: EnvId, δ: RecDefs, i: Expr.ExprId): EnvEntryId {
-      const this_: EnvEntryId = make(EnvEntryId, j, δ, i)
-      this_.j = j
-      this_.δ = δ
-      this_.i = i
-      return this_
-   }
-}
-
 export class EnvEntry {
    ρ: Env
-   j: EnvId
    δ: RecDefs
    e: Expr.Expr
 
-   static make (ρ: Env, j: EnvId, δ: RecDefs, e: Expr.Expr): EnvEntry {
+   static make (ρ: Env, δ: RecDefs, e: Expr.Expr): EnvEntry {
       const this_: EnvEntry = make(EnvEntry)
       this_.ρ = ρ
-      this_.j = j
       this_.δ = δ
       this_.e = e
       return this_

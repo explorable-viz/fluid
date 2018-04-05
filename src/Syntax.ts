@@ -2,7 +2,7 @@ import { __check, assert, make } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { Env, EnvId, RecDefs } from "./Env"
+import { Env, RecDefs } from "./Env"
 import { PrimBody } from "./Primitive"
 import { Id, PersistentObject, RawId, create } from "./Runtime"
 
@@ -108,14 +108,12 @@ export namespace Value {
 
    export class Closure extends Value {
       ρ: Env
-      j: EnvId
       δ: RecDefs
       func: Expr.Fun
    
-      static at (α: ValId, ρ: Env, j: EnvId, δ: RecDefs, func: Expr.Fun): Closure {
+      static at (α: ValId, ρ: Env, δ: RecDefs, func: Expr.Fun): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
-         this_.j = j
          this_.δ = δ
          this_.func = func
          this_.__version()
