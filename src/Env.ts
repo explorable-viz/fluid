@@ -157,3 +157,27 @@ export class EnvEntry {
       return this_
    }
 }
+
+export class RecDefs {
+   __RecDefs (): void {
+      // discriminator
+   }
+}
+
+export class EmptyRecDefs extends RecDefs {
+   static make (): EmptyRecDefs {
+      return make(EmptyRecDefs)
+   }
+}
+
+export class ExtendRecDefs extends RecDefs {
+   δ: RecDefs
+   def: Expr.RecDef
+
+   static make (δ: RecDefs, def: Expr.RecDef): ExtendRecDefs {
+      const this_: ExtendRecDefs = make(ExtendRecDefs, δ, def)
+      this_.δ = δ
+      this_.def = def
+      return this_
+   }
+}

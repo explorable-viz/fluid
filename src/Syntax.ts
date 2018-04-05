@@ -204,8 +204,8 @@ export namespace Expr {
       func: Expr
       arg: Expr
 
-      static at (α: ExprId, func: Expr, arg: Expr): App {
-         const this_: App = create(α, App)
+      static at (i: ExprId, func: Expr, arg: Expr): App {
+         const this_: App = create(i, App)
          this_.func = func
          this_.arg = arg
          this_.__version()
@@ -216,8 +216,8 @@ export namespace Expr {
    export class ConstInt extends Expr {
       val: number
    
-      static at (α: ExprId, val: number): ConstInt {
-         const this_: ConstInt = create(α, ConstInt)
+      static at (i: ExprId, val: number): ConstInt {
+         const this_: ConstInt = create(i, ConstInt)
          this_.val = __check(val, x => !Number.isNaN(x))
          this_.__version()
          return this_
@@ -227,8 +227,8 @@ export namespace Expr {
    export class ConstStr extends Expr {
       val: string
    
-      static at (α: ExprId, val: string): ConstStr {
-         const this_: ConstStr = create(α, ConstStr)
+      static at (i: ExprId, val: string): ConstStr {
+         const this_: ConstStr = create(i, ConstStr)
          this_.val = val
          this_.__version()
          return this_
@@ -239,8 +239,8 @@ export namespace Expr {
       ctr: Lex.Ctr
       args: Expr[]
    
-      static at (α: ExprId, ctr: Lex.Ctr, args: Expr[]): Constr {
-         const this_: Constr = create(α, Constr)
+      static at (i: ExprId, ctr: Lex.Ctr, args: Expr[]): Constr {
+         const this_: Constr = create(i, Constr)
          this_.ctr = ctr
          this_.args = args
          this_.__version()
@@ -251,8 +251,8 @@ export namespace Expr {
    export class Fun extends Expr {
       σ: Trie.Trie<Expr>
 
-      static at (α: ExprId, σ: Trie.Trie<Expr>): Fun {
-         const this_: Fun = create(α, Fun)
+      static at (i: ExprId, σ: Trie.Trie<Expr>): Fun {
+         const this_: Fun = create(i, Fun)
          this_.σ = σ
          this_.__version()
          return this_
@@ -264,8 +264,8 @@ export namespace Expr {
       e: Expr
       σ: Trie.Var<Expr>
 
-      static at (α: Id, e: Expr, σ: Trie.Var<Expr>): Let {
-         const this_: Let = create(α, Let)
+      static at (i: ExprId, e: Expr, σ: Trie.Var<Expr>): Let {
+         const this_: Let = create(i, Let)
          this_.e = e
          this_.σ = σ
          this_.__version()
@@ -317,8 +317,8 @@ export namespace Expr {
    export class RecDefs extends PersistentObject<RecDefsId> {
       defs: RecDef[]
    
-      static at (α: RecDefsId, defs: RecDef[]): RecDefs {
-         const this_: RecDefs = create(α, RecDefs)
+      static at (d: RecDefsId, defs: RecDef[]): RecDefs {
+         const this_: RecDefs = create(d, RecDefs)
          this_.defs = defs
          this_.__version()
          return this_
@@ -329,8 +329,8 @@ export namespace Expr {
       δ: RecDefs
       e: Expr
 
-      static at (α: ExprId, δ: RecDefs, e: Expr): LetRec {
-         const this_: LetRec = create(α, LetRec)
+      static at (i: ExprId, δ: RecDefs, e: Expr): LetRec {
+         const this_: LetRec = create(i, LetRec)
          this_.δ = δ
          this_.e = e
          this_.__version()
@@ -342,8 +342,8 @@ export namespace Expr {
       e: Expr
       σ: Trie.Trie<Expr>
    
-      static at (α: Id, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
-         const this_: MatchAs = create(α, MatchAs)
+      static at (i: ExprId, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
+         const this_: MatchAs = create(i, MatchAs)
          this_.e = e
          this_.σ = σ
          this_.__version()
@@ -354,8 +354,8 @@ export namespace Expr {
    export class OpName extends Expr {
       opName: Lex.OpName
    
-      static at (α: Id, opName: Lex.OpName): OpName {
-         const this_: OpName = create(α, OpName)
+      static at (i: ExprId, opName: Lex.OpName): OpName {
+         const this_: OpName = create(i, OpName)
          this_.opName = opName
          this_.__version()
          return this_
@@ -367,8 +367,8 @@ export namespace Expr {
    export class PrimOp extends Expr {
       op: Value.PrimOp
 
-      static at (α: Id, op: Value.PrimOp): PrimOp {
-         const this_: PrimOp = create(α, PrimOp)
+      static at (i: ExprId, op: Value.PrimOp): PrimOp {
+         const this_: PrimOp = create(i, PrimOp)
          this_.op = op
          this_.__version()
          return this_
@@ -378,8 +378,8 @@ export namespace Expr {
    export class Var extends Expr {
       ident: Lex.Var
    
-      static at (α: ExprId, ident: Lex.Var): Var {
-         const this_: Var = create(α, Var)
+      static at (i: ExprId, ident: Lex.Var): Var {
+         const this_: Var = create(i, Var)
          this_.ident = ident
          this_.__version()
          return this_
