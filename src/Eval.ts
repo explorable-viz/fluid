@@ -52,7 +52,7 @@ class FunDemandId extends Trie.TrieId {
 export type EvalResult<T> = [Traced, Env, EnvId, T]    // tv, ρ, j, σv
 type EvalResults = [Traced[], Env, EnvId, Object]      // tvs, ρ, j, σv
 
-function __result<T> (k: EvalId, t: Trace.Trace, v: Value.Value | null, ρ: Env, j: EnvId, κ: T): EvalResult<T> {
+function __result<T> (k: EvalId, t: Trace.Trace | null, v: Value.Value | null, ρ: Env, j: EnvId, κ: T): EvalResult<T> {
    return [Traced.at(EvalTracedId.make(k), t, v), ρ, j, κ]
 }
 
@@ -76,7 +76,7 @@ export function eval_<T> (ρ: Env, j: EnvId, σ: Trie.Trie<T>, e: Expr.Expr): Ev
       const d: Expr.RecDefsId = Expr.RecDefsId.make(e.__id),
             entry: EnvEntry = new EnvEntry(ρ, j, Expr.RecDefs.at(d, []), e),
             l: EnvEntryId = EnvEntryId.make(j, d, e.__id)
-      return __result(k, Trace.Empty.at(kʹ), null, Env.singleton(σ.x.str, entry), EnvId.singleton(l), σ.body)
+      return __result(k, null, null, Env.singleton(σ.x.str, entry), EnvId.singleton(l), σ.body)
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
          const σʹ: Object = σ.cases.get(e.ctr.str)!,
