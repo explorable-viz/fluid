@@ -124,14 +124,3 @@ export class EnvEntry {
       return this_
    }
 }
-
-export function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
-   if (δ_0 instanceof Expr.EmptyRecDefs) {
-      return ρ
-   } else 
-   if (δ_0 instanceof Expr.ExtendRecDefs) {
-      return ExtendEnv.make(closeDefs(δ_0.δ, ρ, δ), δ_0.def.x.str, EnvEntry.make(ρ, δ, δ_0.def.def))
-   } else {
-      return assert(false)
-   }
-}

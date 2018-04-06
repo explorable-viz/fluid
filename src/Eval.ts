@@ -1,5 +1,5 @@
 import { __nonNull, assert, as, make } from "./util/Core"
-import { Env, EnvEntries, EnvEntry, closeDefs } from "./Env"
+import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, TraceId, Traced, TracedId, Trie, Value } from "./Syntax"
 
@@ -53,6 +53,17 @@ type EvalResults = [Traced[], Env, Object]      // tvs, ρ, σv
 
 function __result<T> (k: EvalId, t: Trace.Trace | null, v: Value.Value | null, ρ: Env, κ: T): EvalResult<T> {
    return [Traced.at(EvalTracedId.make(k), t, v), ρ, κ]
+}
+
+function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
+   if (δ_0 instanceof Expr.EmptyRecDefs) {
+      return ρ
+   } else 
+   if (δ_0 instanceof Expr.ExtendRecDefs) {
+      return ExtendEnv.make(closeDefs(δ_0.δ, ρ, δ), δ_0.def.x.str, EnvEntry.make(ρ, δ, δ_0.def.def))
+   } else {
+      return assert(false)
+   }
 }
 
 // Not capturing the polymorphic type of the nested trie κ (which has a depth of n >= 0).
