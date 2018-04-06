@@ -1,6 +1,6 @@
 import { assert, funName, make } from "./util/Core"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
-import { ν, PersistentObject } from "./Runtime"
+import { ν, create, PersistentObject } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
@@ -78,6 +78,43 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
          partiallyApply: (x: T) => Value.PrimOp =
             (x: T) => makePrim(PartialAppId.make(k, x), op.name + " " + x, (y: U) => op(x, y), at2)
    return makePrim(k, op.name, partiallyApply, at1)
+}
+
+abstract class UnaryPrim extends Value.Value {
+}
+
+abstract class BinaryPrim extends UnaryPrim {
+   apply (x: Value.Value): (α: PersistentObject) => Value.Value {
+      return α => PartialApp.at(α, this, x)
+   }
+
+   abstract __apply (x: Value.Value, y: Value.Value): (α: PersistentObject) => Value.Value;
+}
+
+class PartialApp extends UnaryPrim {
+   op: BinaryPrim
+   x: Value.Value   
+
+   static at (α: PersistentObject, op: BinaryPrim, x: Value.Value): PartialApp {
+      const this_: PartialApp = create(α, PartialApp)
+      this_.op = op
+      this_.x = x
+      return this_
+   }
+
+   apply (y: Value.Value): (α: PersistentObject) => Value.Value {
+      return this.op.__apply(this.x, y)
+   }
+}
+
+class IntToString extends UnaryPrim {
+   static at (α: PersistentObject): IntToString {
+      return create(α, IntToString)
+   }
+
+   apply (x: Value.ConstInt): (α: PersistentObject) => Value.ConstStr {
+      return α => Value.ConstStr.at(α, x.toString())
+   }
 }
 
 class UnaryPrimResultId extends PersistentObject {
