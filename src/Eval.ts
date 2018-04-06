@@ -140,7 +140,7 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
          }
       }
    }
-   return assert(false, "Demand mismatch.", )
+   return assert(false, "Demand mismatch.", e, σ)
 }
 
 }
