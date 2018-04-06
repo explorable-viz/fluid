@@ -1,12 +1,37 @@
-import { __shallowCopy, __shallowLeq, assert, className, funName } from "./util/Core"
+import { __shallowCopy, __shallowLeq, assert, className, funName, make } from "./util/Core"
 
 export interface Ctr<T> {
    new (): T
 }
 
-export type RawId = number
+// Documents any persistent object (interned or versioned) which may be used as a memo key.
+export class PersistentObject {
+   __PersistentObject (): void {
+      // discriminator
+   }   
+}
 
-export class VersionedObject<K> extends Object {
+// A memo key which is sourced externally to the system.
+export class External extends PersistentObject {
+   id: number
+
+   static make (id: number): External {
+      const this_: External = make(External, id)
+      this_.id = id
+      return this_
+   }
+}
+
+// Fresh keys represent inputs to the system.
+export const ν: () => External =
+   (() => {
+      let count: number = 0
+      return () => {
+         return External.make(count++)
+      }
+   })()
+
+export class VersionedObject<K extends PersistentObject> extends PersistentObject {
    // Initialise these properties at object creation, rather than via constructor hierarchies.
    __history: this[] = undefined as any
    __id: K = undefined as any
@@ -14,12 +39,13 @@ export class VersionedObject<K> extends Object {
 }
 
 // Keys must be "memo" objects (interned or persistent).
-const __ctrInstances: Map<string, Map<Object, VersionedObject<Object>>> = new Map
+type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
+const __ctrInstances: Map<string, InstancesMap> = new Map
 
 // Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
 // Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
-export function create <K, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
-   let instances: Map<Object, VersionedObject<Object>> | undefined = __ctrInstances.get(ctr.name)
+export function create <K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
+   let instances: InstancesMap | undefined = __ctrInstances.get(ctr.name)
    if (instances === undefined) {
       instances = new Map
       __ctrInstances.set(ctr.name, instances)

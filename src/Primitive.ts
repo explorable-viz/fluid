@@ -1,6 +1,7 @@
 import { assert, funName, make } from "./util/Core"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
-import { Expr, Lex, Trie, Value, ν } from "./Syntax"
+import { ν } from "./Runtime"
+import { Expr, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>

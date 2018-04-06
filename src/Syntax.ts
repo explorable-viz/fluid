@@ -5,16 +5,7 @@ import { Lexeme } from "./util/parse/Core"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
 import { PrimBody } from "./Primitive"
-import { VersionedObject, RawId, create } from "./Runtime"
-
-// Fresh keys represent inputs to the system.
-export const ν: () => Expr.ExprId =
-   (() => {
-      let count: number = 0
-      return () => {
-         return Expr.ExprId.make(count++)
-      }
-   })()
+import { External, VersionedObject, PersistentObject, create } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
@@ -95,7 +86,7 @@ export namespace Lex {
 }
 
 export namespace Value {
-   export class ValId {
+   export class ValId extends PersistentObject {
       __ValId(): void {
          // discriminator
       }
@@ -179,21 +170,7 @@ export namespace Value {
 }
 
 export namespace Expr {
-   export class ExprId {
-      id: RawId
-
-      __ExprId(): void {
-         // discriminator
-      }
-   
-      static make (id: RawId): ExprId {
-         const this_: ExprId = make(ExprId, id)
-         this_.id = id
-         return this_
-      }
-   }
-      
-   export class Expr extends VersionedObject<ExprId> {
+   export class Expr extends VersionedObject<External> {
       __Expr(): void {
          // discriminator
       }
@@ -203,7 +180,7 @@ export namespace Expr {
       func: Expr
       arg: Expr
 
-      static at (i: ExprId, func: Expr, arg: Expr): App {
+      static at (i: External, func: Expr, arg: Expr): App {
          const this_: App = create(i, App)
          this_.func = func
          this_.arg = arg
@@ -215,7 +192,7 @@ export namespace Expr {
    export class ConstInt extends Expr {
       val: number
    
-      static at (i: ExprId, val: number): ConstInt {
+      static at (i: External, val: number): ConstInt {
          const this_: ConstInt = create(i, ConstInt)
          this_.val = __check(val, x => !Number.isNaN(x))
          this_.__version()
@@ -226,7 +203,7 @@ export namespace Expr {
    export class ConstStr extends Expr {
       val: string
    
-      static at (i: ExprId, val: string): ConstStr {
+      static at (i: External, val: string): ConstStr {
          const this_: ConstStr = create(i, ConstStr)
          this_.val = val
          this_.__version()
@@ -238,7 +215,7 @@ export namespace Expr {
       ctr: Lex.Ctr
       args: Expr[]
    
-      static at (i: ExprId, ctr: Lex.Ctr, args: Expr[]): Constr {
+      static at (i: External, ctr: Lex.Ctr, args: Expr[]): Constr {
          const this_: Constr = create(i, Constr)
          this_.ctr = ctr
          this_.args = args
@@ -250,7 +227,7 @@ export namespace Expr {
    export class Fun extends Expr {
       σ: Trie.Trie<Expr>
 
-      static at (i: ExprId, σ: Trie.Trie<Expr>): Fun {
+      static at (i: External, σ: Trie.Trie<Expr>): Fun {
          const this_: Fun = create(i, Fun)
          this_.σ = σ
          this_.__version()
@@ -263,7 +240,7 @@ export namespace Expr {
       e: Expr
       σ: Trie.Var<Expr>
 
-      static at (i: ExprId, e: Expr, σ: Trie.Var<Expr>): Let {
+      static at (i: External, e: Expr, σ: Trie.Var<Expr>): Let {
          const this_: Let = create(i, Let)
          this_.e = e
          this_.σ = σ
@@ -272,25 +249,11 @@ export namespace Expr {
       }
    }
 
-   export class RecDefId {
-      i: ExprId
-
-      __RecDefId(): void {
-         // discriminator
-      }
-   
-      static make (i: ExprId): RecDefId {
-         const this_: RecDefId = make(RecDefId, i)
-         this_.i = i
-         return this_
-      }
-   }
-
-   export class RecDef extends VersionedObject<RecDefId> {
+   export class RecDef extends VersionedObject<External> {
       x: Lex.Var
       def: Fun
    
-      static at (α: RecDefId, x: Lex.Var, def: Fun): RecDef {
+      static at (α: External, x: Lex.Var, def: Fun): RecDef {
          const this_: RecDef = create(α, RecDef)
          this_.x = x
          this_.def = def
@@ -299,8 +262,8 @@ export namespace Expr {
       }
    }
 
-   // Interned rather than persistent.
-   export abstract class RecDefs {
+   // Interned rather than versioned.
+   export abstract class RecDefs extends PersistentObject {
       __RecDefs (): void {
          // discriminator
       }
@@ -328,7 +291,7 @@ export namespace Expr {
       δ: RecDefs
       e: Expr
 
-      static at (i: ExprId, δ: RecDefs, e: Expr): LetRec {
+      static at (i: External, δ: RecDefs, e: Expr): LetRec {
          const this_: LetRec = create(i, LetRec)
          this_.δ = δ
          this_.e = e
@@ -341,7 +304,7 @@ export namespace Expr {
       e: Expr
       σ: Trie.Trie<Expr>
    
-      static at (i: ExprId, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
+      static at (i: External, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
          const this_: MatchAs = create(i, MatchAs)
          this_.e = e
          this_.σ = σ
@@ -353,7 +316,7 @@ export namespace Expr {
    export class OpName extends Expr {
       opName: Lex.OpName
    
-      static at (i: ExprId, opName: Lex.OpName): OpName {
+      static at (i: External, opName: Lex.OpName): OpName {
          const this_: OpName = create(i, OpName)
          this_.opName = opName
          this_.__version()
@@ -366,7 +329,7 @@ export namespace Expr {
    export class PrimOp extends Expr {
       op: Value.PrimOp
 
-      static at (i: ExprId, op: Value.PrimOp): PrimOp {
+      static at (i: External, op: Value.PrimOp): PrimOp {
          const this_: PrimOp = create(i, PrimOp)
          this_.op = op
          this_.__version()
@@ -377,7 +340,7 @@ export namespace Expr {
    export class Var extends Expr {
       ident: Lex.Var
    
-      static at (i: ExprId, ident: Lex.Var): Var {
+      static at (i: External, ident: Lex.Var): Var {
          const this_: Var = create(i, Var)
          this_.ident = ident
          this_.__version()
@@ -400,18 +363,18 @@ export class Traced<T extends Value.Value = Value.Value> extends VersionedObject
 }
 
 export namespace Trie {
-   export class TrieId {
+   export class TrieId extends PersistentObject {
       __TrieId (): void {
          // discriminator
       }
    }
    
    // A trie that arises in the raw syntax.
-   export class ExprTrieId extends TrieId {
-      i: Expr.ExprId
+   export class ExternalTrieId extends TrieId {
+      i: External
       
-      static make (i: Expr.ExprId): ExprTrieId {
-         const this_: ExprTrieId = make(ExprTrieId, i)
+      static make (i: External): ExternalTrieId {
+         const this_: ExternalTrieId = make(ExternalTrieId, i)
          this_.i = i
          return this_
       }
