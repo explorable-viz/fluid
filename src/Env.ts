@@ -1,68 +1,42 @@
 import { assert, make } from "./util/Core"
-import { Id } from "./Runtime"
 import { Expr } from "./Syntax"
 
-export class EnvId extends Id {
-   __EnvId (): void {
+export class EnvEntries {
+   __EnvEntries (): void {
       // discriminator
    }
+}
 
-   static empty (): EmptyEnvId {
-      return EmptyEnvId.make()
-   }
-
-   static singleton (k: EnvEntryId): EnvId {
-      return ExtendEnvId.make(EmptyEnvId.make(), k)
-   }
-
-   static extend (j: EnvId, ks: EnvEntryId[]): EnvId {
-      ks.forEach((k: EnvEntryId): void => {
-         j = ExtendEnvId.make(j, k)
-      })
-      return j
-   }
-
-   static concat (j: EnvId, jʹ: EnvId): EnvId {
-      if (jʹ instanceof EmptyEnvId) {
-         return j
-      } else
-      if (jʹ instanceof ExtendEnvId) {
-         return ExtendEnvId.make(EnvId.concat(j, jʹ.j), jʹ.k)
-      } else {
-         return assert(false)
-      }
+export class EmptyEnvEntries extends EnvEntries { 
+   static make (): EmptyEnvEntries {
+      return make(EmptyEnvEntries)
    }
 }
 
-export class EmptyEnvId extends EnvId { 
-   static make (): EmptyEnvId {
-      return make(EmptyEnvId)
-   }
-}
+export class ExtendEnvEntries extends EnvEntries {
+   j: EnvEntries
+   entry: EnvEntry
 
-export class ExtendEnvId extends EnvId {
-   j: EnvId
-   k: EnvEntryId
-
-   static make (j: EnvId, k: EnvEntryId): ExtendEnvId {
-      const this_: ExtendEnvId = make(ExtendEnvId, j, k)
+   static make (j: EnvEntries, entry: EnvEntry): ExtendEnvEntries {
+      const this_: ExtendEnvEntries = make(ExtendEnvEntries, j, entry)
       this_.j = j
-      this_.k = k
+      this_.entry = entry
       return this_
    }
 }
 
-// Environments are snoc lists. The identity of an evaluated term is the identity of the original expression
-// paired with the identity of all environment entries used to close the term, in the order in which they 
-// were bound. This makes identity insensitive to the choice of names, and is essentially the same as the
-// approach I used in my thesis ("translating" every function body by the identity of the argument used to
-// close it). This is *not* the same as hash-consing environments (which would consider the keys as well).
-// Prefer inductive definition to an array, to align with definition of environment "ids".
+// Environments are snoc lists. An evaluation id is an expression id paired with the identity of all 
+// environment entries used to close the term, in the order in which they were bound. This makes evaluation
+// ids insensitive to the choice of names, and is essentially the same as the approach I used in my thesis. 
+// But although evaluation ids do not depend on the ids of environments themselves, we still intern
+// environments to enable LVar semantics.
 
 export abstract class Env {
    __Env(): void {
       // discriminator
    }
+
+   abstract entries (): EnvEntries;
 
    abstract get (k: string): EnvEntry | undefined;
 
@@ -71,16 +45,16 @@ export abstract class Env {
    }
 
    static empty (): EmptyEnv {
-      return new EmptyEnv
+      return EmptyEnv.make()
    }
 
    static singleton (k: string, v: EnvEntry): Env {
-      return new ExtendEnv(new EmptyEnv, k, v)
+      return ExtendEnv.make(Env.empty(), k, v)
    }
 
    static extend (ρ: Env, kvs: [string, EnvEntry][]): Env {
       kvs.forEach(([k, v]: [string, EnvEntry]) => {
-         ρ = new ExtendEnv(ρ, k, v)
+         ρ = ExtendEnv.make(ρ, k, v)
       })
       return ρ
    }
@@ -90,7 +64,7 @@ export abstract class Env {
          return ρ1
       } else
       if (ρ2 instanceof ExtendEnv) {
-         return new ExtendEnv(Env.concat(ρ1, ρ2.ρ), ρ2.k, ρ2.v)
+         return ExtendEnv.make(Env.concat(ρ1, ρ2.ρ), ρ2.k, ρ2.v)
       } else {
          return assert(false)
       }
@@ -98,6 +72,14 @@ export abstract class Env {
 }
 
 export class EmptyEnv extends Env {
+   static make (): EmptyEnv {
+      return make(EmptyEnv)
+   }
+
+   entries (): EmptyEnvEntries {
+      return EmptyEnvEntries.make()
+   }
+
    get (k: string): undefined {
       return undefined
    }
@@ -108,11 +90,16 @@ export class ExtendEnv extends Env {
    k: string
    v: EnvEntry
 
-   constructor (ρ: Env, k: string, v: EnvEntry) {
-      super()
-      this.ρ = ρ
-      this.k = k
-      this.v = v
+   static make (ρ: Env, k: string, v: EnvEntry): ExtendEnv {
+      const this_: ExtendEnv = make(ExtendEnv, ρ, k, v)
+      this_.ρ = ρ
+      this_.k = k
+      this_.v = v
+      return this_
+   }
+
+   entries (): ExtendEnvEntries {
+      return ExtendEnvEntries.make(this.ρ.entries(), this.v)
    }
 
    get (k: string): EnvEntry | undefined {
@@ -124,30 +111,50 @@ export class ExtendEnv extends Env {
    }
 }
 
-export class EnvEntryId {
-   j: EnvId
-   d: Expr.RecDefsId
-   i: Expr.ExprId
+export class EnvEntry {
+   ρ: Env
+   δ: RecDefs
+   e: Expr.Expr
 
-   static make (j: EnvId, d: Expr.RecDefsId, i: Expr.ExprId): EnvEntryId {
-      const this_: EnvEntryId = make(EnvEntryId, j, d, i)
-      this_.j = j
-      this_.d = d
-      this_.i = i
+   static make (ρ: Env, δ: RecDefs, e: Expr.Expr): EnvEntry {
+      const this_: EnvEntry = make(EnvEntry, ρ, δ, e)
+      this_.ρ = ρ
+      this_.δ = δ
+      this_.e = e
       return this_
    }
 }
 
-export class EnvEntry {
-   ρ: Env
-   j: EnvId
-   δ: Expr.RecDefs
-   e: Expr.Expr
+export abstract class RecDefs {
+   __RecDefs (): void {
+      // discriminator
+   }
 
-   constructor(ρ: Env, j: EnvId, δ: Expr.RecDefs, e: Expr.Expr) {
-      this.ρ = ρ
-      this.j = j
-      this.δ = δ
-      this.e = e
+   abstract closeDefs (ρ: Env, δ: RecDefs): Env;
+}
+
+export class EmptyRecDefs extends RecDefs {
+   static make (): EmptyRecDefs {
+      return make(EmptyRecDefs)
+   }
+
+   closeDefs (ρ: Env, δ: RecDefs): Env {
+      return ρ
+   }
+}
+
+export class ExtendRecDefs extends RecDefs {
+   δ: RecDefs
+   def: Expr.RecDef
+
+   static make (δ: RecDefs, def: Expr.RecDef): ExtendRecDefs {
+      const this_: ExtendRecDefs = make(ExtendRecDefs, δ, def)
+      this_.δ = δ
+      this_.def = def
+      return this_
+   }
+
+   closeDefs (ρ: Env, δ: RecDefs): Env {
+      return ExtendEnv.make(this.δ.closeDefs(ρ, δ), this.def.x.str, EnvEntry.make(ρ, δ, this.def.def))
    }
 }

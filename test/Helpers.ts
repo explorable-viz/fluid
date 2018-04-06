@@ -1,6 +1,6 @@
 import * as $ from "jquery"
 import { initDataTypes } from "../src/DataType"
-import { Env, EnvId } from "../src/Env"
+import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
@@ -30,12 +30,12 @@ export const σ_int: Trie.Trie<null> = Trie.ConstInt.at(Trie.ExprTrieId.make(ν(
 export function runExample (p: Profile, src: string, σ: Trie.Trie<null>): void {
    const e: Expr.Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    if (p >= Profile.Run) {
-      const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(ρ, ρ_id, σ, e)
+      const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(ρ, e, σ)
       console.log(tv)
    }
 }
 
-export let [ρ, ρ_id]: [Env, EnvId] = prelude()
+export let ρ: Env = prelude()
 
 export function runTest (prog: string, profile: Profile = defaultProfile, σ: Trie.Trie<null> = σ_var): void {
    runExample(profile, prog, σ)

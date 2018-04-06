@@ -1,8 +1,9 @@
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
-   dropSecond, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, sequence, 
-   symbol, withAction, withJoin
+   dropSecond, lazySeq, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
+   sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
+import { RecDefs, EmptyRecDefs, ExtendRecDefs } from "./Env"
 import { Lex, Traced, str, ν } from "./Syntax"
 import { Expr, Trie } from "./Syntax"
 
@@ -197,21 +198,32 @@ const let_: Parser<Expr.Let> =
          Expr.Let.at(ν(), e, Trie.Var.at(Trie.ExprTrieId.make(ν()), x, eʹ))
    )
 
-const recDefinition: Parser<Expr.RecDef> =
+const recDef: Parser<Expr.RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
       ([name, σ]: [Lex.Var, Trie.Trie<Traced>]) =>
          Expr.RecDef.at(Expr.RecDefId.make(ν()), name, Expr.Fun.at(ν(), σ))
    )
 
+// These are *interned*; need to think about implications for editing the AST. 
+const recDefs: Parser<RecDefs> = optional(recDefs1(), EmptyRecDefs.make())
+
+function recDefs1 (): Parser<RecDefs> {
+   return (state: ParseState) =>
+      withAction(
+         lazySeq(recDef, () => recDefs),
+         ([def, δ]: [Expr.RecDef, RecDefs]) => ExtendRecDefs.make(δ, def)
+      )(state)
+}
+
 const letrec: Parser<Expr.LetRec> =
    withAction(
       seq(
-         dropFirst(keyword(str.letRec), repeat1(recDefinition)),
+         dropFirst(keyword(str.letRec), recDefs),
          dropFirst(keyword(str.in_), expr)
       ),
-      ([defs, body]: [Expr.RecDef[], Expr.Expr]) =>
-         Expr.LetRec.at(ν(), Expr.RecDefs.at(Expr.RecDefsId.make(ν()), defs), body)
+     ([δ, body]: [RecDefs, Expr.Expr]) => 
+         Expr.LetRec.at(ν(), δ, body)
    )
 
 const constr: Parser<Expr.Constr> =

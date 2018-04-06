@@ -1,5 +1,5 @@
 import { assert, funName, make } from "./util/Core"
-import { Env, EnvEntry, EnvEntryId, EnvId } from "./Env"
+import { EmptyRecDefs, Env, EnvEntry, ExtendEnv } from "./Env"
 import { Id } from "./Runtime"
 import { Expr, Lex, Trie, Value, ν } from "./Syntax"
 
@@ -207,15 +207,11 @@ const ops: [string, Value.PrimOp][] = [
 ]
 
 // Fake "syntax" for primitives.
-export function prelude (): [Env, EnvId] {
-   let ρ: Env = Env.empty(),
-       j: EnvId = EnvId.empty()
+export function prelude (): Env {
+   let ρ: Env = Env.empty()
    ops.forEach(([x, op]: [string, Value.PrimOp]): void => {
-      const e: Expr.PrimOp = Expr.PrimOp.at(ν(), op),
-            δ: Expr.RecDefs = Expr.RecDefs.at(Expr.RecDefsId.make(ν()), []),
-            entry: EnvEntry = new EnvEntry(Env.empty(), EnvId.empty(), δ, e)
-      ρ = Env.extend(ρ, [[x, entry]])
-      j = EnvId.extend(j, [EnvEntryId.make(EnvId.empty(), δ.__id, e.__id)])
+      const e: Expr.PrimOp = Expr.PrimOp.at(ν(), op)
+      ρ = ExtendEnv.make(ρ, x, EnvEntry.make(Env.empty(), EmptyRecDefs.make(), e))
    })
-   return [ρ, j]
+   return ρ
 }
