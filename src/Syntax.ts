@@ -3,6 +3,7 @@ import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { Env } from "./Env"
+import { Eval } from "./Eval"
 import { PrimBody } from "./Primitive"
 import { Id, PersistentObject, RawId, create } from "./Runtime"
 
@@ -540,14 +541,8 @@ export namespace Trie {
    }
 }
 
-export class TraceId extends Id {
-   __TraceId(): void {
-      // discriminator
-   }
-}
-
 export namespace Trace {
-   export class Trace extends PersistentObject<TraceId> {
+   export class Trace extends PersistentObject<Eval.Evaluand> {
       __Trace(): void {
          // discriminator
       }
@@ -558,8 +553,8 @@ export namespace Trace {
       arg: Traced
       body: Trace
 
-      static at (α: TraceId, func: Traced, arg: Traced, body: Trace): App {
-         const this_: App = create(α, App)
+      static at (k: Eval.Evaluand, func: Traced, arg: Traced, body: Trace): App {
+         const this_: App = create(k, App)
          this_.func = func
          this_.arg = arg
          this_.body = body
@@ -570,8 +565,8 @@ export namespace Trace {
 
    // Not to be confused with ⊥ (null); this is information about an absence, not the absence of information.
    export class Empty extends Trace {
-      static at (α: TraceId): Empty {
-         const this_: Empty = create(α, Empty)
+      static at (k: Eval.Evaluand): Empty {
+         const this_: Empty = create(k, Empty)
          this_.__version()
          return this_
       }
@@ -585,8 +580,8 @@ export namespace Trace {
          // discriminator
       }
 
-      static at (α: TraceId, tu: Traced, t: Trace): Let {
-         const this_: Let = create(α, Let)
+      static at (k: Eval.Evaluand, tu: Traced, t: Trace): Let {
+         const this_: Let = create(k, Let)
          this_.tu = tu
          this_.t = t
          this_.__version()
@@ -598,8 +593,8 @@ export namespace Trace {
       δ: Expr.RecDefs
       t: Trace
    
-      static at (α: TraceId, δ: Expr.RecDefs, t: Trace): LetRec {
-         const this_: LetRec = create(α, LetRec)
+      static at (k: Eval.Evaluand, δ: Expr.RecDefs, t: Trace): LetRec {
+         const this_: LetRec = create(k, LetRec)
          this_.δ = δ
          this_.t = t
          this_.__version()
@@ -616,8 +611,8 @@ export namespace Trace {
          // discriminator
       }
 
-      static at (α: TraceId, tu: Traced, t: Trace): Match {
-         const this_: Match = create(α, Match)
+      static at (k: Eval.Evaluand, tu: Traced, t: Trace): Match {
+         const this_: Match = create(k, Match)
          this_.tu = tu
          this_.t = t
          this_.__version()
@@ -629,8 +624,8 @@ export namespace Trace {
       x: Lex.OpName
       t: Trace
 
-      static at (α: TraceId, x: Lex.OpName, t: Trace): OpName {
-         const this_: OpName = create(α, OpName)
+      static at (k: Eval.Evaluand, x: Lex.OpName, t: Trace): OpName {
+         const this_: OpName = create(k, OpName)
          this_.x = x
          this_.t = t
          this_.__version()
@@ -643,8 +638,8 @@ export namespace Trace {
       op: Traced
       arg: Traced
 
-      static at (α: TraceId, op: Traced, arg: Traced): PrimApp {
-         const this_: PrimApp = create(α, PrimApp)
+      static at (k: Eval.Evaluand, op: Traced, arg: Traced): PrimApp {
+         const this_: PrimApp = create(k, PrimApp)
          this_.op = op
          this_.arg = arg
          this_.__version()
@@ -656,8 +651,8 @@ export namespace Trace {
       x: Lex.Var
       t: Trace
 
-      static at (α: TraceId, x: Lex.Var, t: Trace): Var {
-         const this_: Var = create(α, Var)
+      static at (k: Eval.Evaluand, x: Lex.Var, t: Trace): Var {
+         const this_: Var = create(k, Var)
          this_.x = x
          this_.t = t
          this_.__version()
