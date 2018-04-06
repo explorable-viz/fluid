@@ -2,7 +2,7 @@ import { __check, assert, make } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { Env, RecDefs } from "./Env"
+import { Env } from "./Env"
 import { PrimBody } from "./Primitive"
 import { Id, PersistentObject, RawId, create } from "./Runtime"
 
@@ -108,10 +108,10 @@ export namespace Value {
 
    export class Closure extends Value {
       ρ: Env
-      δ: RecDefs
+      δ: Expr.RecDefs
       func: Expr.Fun
    
-      static at (α: ValId, ρ: Env, δ: RecDefs, func: Expr.Fun): Closure {
+      static at (α: ValId, ρ: Env, δ: Expr.RecDefs, func: Expr.Fun): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
          this_.δ = δ
@@ -298,6 +298,30 @@ export namespace Expr {
       }
    }
 
+   export abstract class RecDefs {
+      __RecDefs (): void {
+         // discriminator
+      }
+   }
+   
+   export class EmptyRecDefs extends RecDefs {
+      static make (): EmptyRecDefs {
+         return make(EmptyRecDefs)
+      }
+   }
+   
+   export class ExtendRecDefs extends RecDefs {
+      δ: RecDefs
+      def: Expr.RecDef
+   
+      static make (δ: RecDefs, def: Expr.RecDef): ExtendRecDefs {
+         const this_: ExtendRecDefs = make(ExtendRecDefs, δ, def)
+         this_.δ = δ
+         this_.def = def
+         return this_
+      }
+   }
+   
    export class LetRec extends Expr {
       δ: RecDefs
       e: Expr
@@ -570,10 +594,10 @@ export namespace Trace {
    }
 
    export class LetRec extends Trace {
-      δ: RecDefs
+      δ: Expr.RecDefs
       t: Trace
    
-      static at (α: TraceId, δ: RecDefs, t: Trace): LetRec {
+      static at (α: TraceId, δ: Expr.RecDefs, t: Trace): LetRec {
          const this_: LetRec = create(α, LetRec)
          this_.δ = δ
          this_.t = t

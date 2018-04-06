@@ -1,5 +1,5 @@
 import { assert, funName, make } from "./util/Core"
-import { EmptyRecDefs, Env, EnvEntry, ExtendEnv } from "./Env"
+import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { Id } from "./Runtime"
 import { Expr, Lex, Trie, Value, ν } from "./Syntax"
 
@@ -211,7 +211,7 @@ export function prelude (): Env {
    let ρ: Env = Env.empty()
    ops.forEach(([x, op]: [string, Value.PrimOp]): void => {
       const e: Expr.PrimOp = Expr.PrimOp.at(ν(), op)
-      ρ = ExtendEnv.make(ρ, x, EnvEntry.make(Env.empty(), EmptyRecDefs.make(), e))
+      ρ = ExtendEnv.make(ρ, x, EnvEntry.make(Env.empty(), Expr.EmptyRecDefs.make(), e))
    })
    return ρ
 }

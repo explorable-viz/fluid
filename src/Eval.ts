@@ -1,5 +1,5 @@
 import { __nonNull, assert, as, make } from "./util/Core"
-import { EmptyRecDefs, Env, EnvEntry, EnvEntries } from "./Env"
+import { Env, EnvEntries, EnvEntry, closeDefs } from "./Env"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, TraceId, Traced, TracedId, Trie, Value } from "./Syntax"
 
@@ -72,7 +72,7 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
    const k: EvalId = EvalId.make(ρ.entries(), e.__id),
          kʹ: EvalTraceId = EvalTraceId.make(k)
    if (Trie.Var.is(σ)) {
-      const entry: EnvEntry = EnvEntry.make(ρ, EmptyRecDefs.make(), e)
+      const entry: EnvEntry = EnvEntry.make(ρ, Expr.EmptyRecDefs.make(), e)
       return __result(k, null, null, Env.singleton(σ.x.str, entry), σ.body)
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
@@ -88,7 +88,7 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
          return __result(k, Trace.Empty.at(kʹ), Value.ConstStr.at(k, e.val), Env.empty(), σ.body)
       } else
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-         return __result(k, Trace.Empty.at(kʹ), Value.Closure.at(k, ρ, EmptyRecDefs.make(), e), Env.empty(), σ.body)
+         return __result(k, Trace.Empty.at(kʹ), Value.Closure.at(k, ρ, Expr.EmptyRecDefs.make(), e), Env.empty(), σ.body)
       } else
       if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
          return __result(k, Trace.Empty.at(kʹ), e.op, Env.empty(), σ.body)
@@ -113,7 +113,7 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
       } else 
       // See 0.3.4 release notes for semantics.
       if (e instanceof Expr.LetRec) {
-         const ρʹ: Env = e.δ.closeDefs(ρ, e.δ),
+         const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
                [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(ρʹ, e.e, σ)
          return __result(k, Trace.LetRec.at(kʹ, e.δ, __nonNull(tv.trace)), tv.val, ρʺ, σv)
       } else
@@ -127,7 +127,7 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
                f: Value.Value | null = tf.val
          if (f instanceof Value.Closure) {
             const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, e.arg, f.func.σ),
-                  ρ1: Env = f.δ.closeDefs(f.ρ, f.δ),
+                  ρ1: Env = closeDefs(f.δ, f.ρ, f.δ),
                   [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), σʹu, σ)
             return __result(k, Trace.App.at(kʹ, tf, tu, __nonNull(tv.trace)), tv.val, ρʹ, σv)
          } else
