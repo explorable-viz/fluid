@@ -40,16 +40,6 @@ class ExternalPrimId extends PrimId {
    }
 }
 
-class PrimArgDemandId extends PersistentObject {
-   k: PrimId
-
-   static make (k: PrimId): PrimArgDemandId {
-      const this_: PrimArgDemandId = make(PrimArgDemandId, k)
-      this_.k = k
-      return this_
-   }
-}
-
 class PartialAppId extends PrimId {
    k: PrimId
    v: Value.Value
@@ -69,7 +59,7 @@ function makePrim<T extends Value.Value, V extends Value.Value> (
    at1: (α: PersistentObject, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
 ): Value.PrimOp {
    const primBody: PrimBody<V> = (x: T, σ: Trie.Trie<V>): PrimResult<V> => match(op(x), σ)
-   return Value.PrimOp.at(k, name,  at1(PrimArgDemandId.make(k), primBody))
+   return Value.PrimOp.at(k, name, at1(k, primBody))
 }
 
 function unary<T extends Value.Value, V extends Value.Value> (
