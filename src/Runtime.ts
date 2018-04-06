@@ -8,7 +8,7 @@ export type RawId = number
 
 export class Id {
    __Id() {
-      // descriminator
+      // discriminator
    }
 }
 
