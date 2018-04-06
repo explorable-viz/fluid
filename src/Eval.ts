@@ -1,7 +1,7 @@
 import { __nonNull, assert, as, make } from "./util/Core"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { PrimBody, PrimResult } from "./Primitive"
-import { Expr, Trace, Traced, TracedId, Trie, Value } from "./Syntax"
+import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
 export module Eval {
 
@@ -17,17 +17,6 @@ export class Evaluand extends Value.ValId {
    }
 }
 
-class EvalTracedId extends TracedId {
-   k: Evaluand
-
-   static make (k: Evaluand): EvalTracedId {
-      const this_: EvalTracedId = make(EvalTracedId, k)
-      this_.k = k
-      return this_
-      
-   }
-}
-
 class FunDemandId extends Trie.TrieId {
    k: Evaluand
 
@@ -40,10 +29,6 @@ class FunDemandId extends Trie.TrieId {
 
 export type EvalResult<T> = [Traced, Env, T]    // tv, ρ, σv
 type EvalResults = [Traced[], Env, Object]      // tvs, ρ, σv
-
-function __result<T> (k: Evaluand, t: Trace.Trace | null, v: Value.Value | null, ρ: Env, κ: T): EvalResult<T> {
-   return [Traced.at(EvalTracedId.make(k), t, v), ρ, κ]
-}
 
 function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
    if (δ_0 instanceof Expr.EmptyRecDefs) {
@@ -73,25 +58,25 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
    const k: Evaluand = Evaluand.make(ρ.entries(), e)
    if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Expr.EmptyRecDefs.make(), e)
-      return __result(k, null, null, Env.singleton(σ.x.str, entry), σ.body)
+      return [Traced.at(k, null, null), Env.singleton(σ.x.str, entry), σ.body]
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
          const σʹ: Object = σ.cases.get(e.ctr.str)!,
                [tvs, ρʹ, κ]: EvalResults = evalSeq(ρ, σʹ, e.args)
          // have to cast κ without type information on constructor
-         return __result(k, Trace.Empty.at(k), Value.Constr.at(k, e.ctr, tvs), ρʹ, κ as T)
+         return [Traced.at(k, Trace.Empty.at(k), Value.Constr.at(k, e.ctr, tvs)), ρʹ, κ as T]
       } else
       if (e instanceof Expr.ConstInt && Trie.ConstInt.is(σ)) {
-         return __result(k, Trace.Empty.at(k), Value.ConstInt.at(k, e.val), Env.empty(), σ.body)
+         return [Traced.at(k, Trace.Empty.at(k), Value.ConstInt.at(k, e.val)), Env.empty(), σ.body]
       } else
       if (e instanceof Expr.ConstStr && Trie.ConstStr.is(σ)) {
-         return __result(k, Trace.Empty.at(k), Value.ConstStr.at(k, e.val), Env.empty(), σ.body)
+         return [Traced.at(k, Trace.Empty.at(k), Value.ConstStr.at(k, e.val)), Env.empty(), σ.body]
       } else
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-         return __result(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, Expr.EmptyRecDefs.make(), e), Env.empty(), σ.body)
+         return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, Expr.EmptyRecDefs.make(), e)), Env.empty(), σ.body]
       } else
       if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
-         return __result(k, Trace.Empty.at(k), e.op, Env.empty(), σ.body)
+         return [Traced.at(k, Trace.Empty.at(k), e.op), Env.empty(), σ.body]
       } else
       if (e instanceof Expr.Var || e instanceof Expr.OpName) {
          const x: string = e instanceof Expr.OpName ? e.opName.str : e.ident.str
@@ -103,24 +88,24 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
                   t: Trace.Trace = e instanceof Expr.OpName 
                      ? Trace.OpName.at(k, e.opName, __nonNull(tv.trace))
                      : Trace.Var.at(k, e.ident, __nonNull(tv.trace))
-            return __result(k, t, tv.val, ρʺ, σv)
+            return [Traced.at(k, t, tv.val), ρʺ, σv]
          }
       } else
       if (e instanceof Expr.Let) {
          const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.e, e.σ),
                [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
-         return __result(k, Trace.Let.at(k, tu, __nonNull(tv.trace)), tv.val, ρʺ, κ)
+         return [Traced.at(k, Trace.Let.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
       } else 
       // See 0.3.4 release notes for semantics.
       if (e instanceof Expr.LetRec) {
          const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
                [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(ρʹ, e.e, σ)
-         return __result(k, Trace.LetRec.at(k, e.δ, __nonNull(tv.trace)), tv.val, ρʺ, σv)
+         return [Traced.at(k, Trace.LetRec.at(k, e.δ, __nonNull(tv.trace)), tv.val), ρʺ, σv]
       } else
       if (e instanceof Expr.MatchAs) {
          const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.e, e.σ),
                [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
-         return __result(k, Trace.Match.at(k, tu, __nonNull(tv.trace)), tv.val, ρʺ, κ)
+         return [Traced.at(k, Trace.Match.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
       } else
       if (e instanceof Expr.App) {
          const [tf, ,]: EvalResult<null> = eval_(ρ, e.func, Trie.Fun.at(FunDemandId.make(k), null)),
@@ -129,12 +114,12 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
             const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, e.arg, f.func.σ),
                   ρ1: Env = closeDefs(f.δ, f.ρ, f.δ),
                   [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), σʹu, σ)
-            return __result(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val, ρʹ, σv)
+            return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʹ, σv]
          } else
          if (f instanceof Value.PrimOp) {
             const [tu, , σʹu]: EvalResult<PrimBody<T>> = eval_(ρ, e.arg, f.σ),
                   [v, σv]: PrimResult<T> = σʹu(tu.val, σ)
-            return __result(k, Trace.PrimApp.at(k, tf, tu), v, Env.empty(), σv)
+            return [Traced.at(k, Trace.PrimApp.at(k, tf, tu), v), Env.empty(), σv]
          } else {
             return assert(false, "Not a function.", f)
          }

@@ -386,18 +386,12 @@ export namespace Expr {
    }
 }
 
-export class TracedId extends Id {
-   __TracedId (): void {
-      // discriminator
-   }
-}
-
-export class Traced<T extends Value.Value = Value.Value> extends PersistentObject<TracedId> {
+export class Traced<T extends Value.Value = Value.Value> extends PersistentObject<Eval.Evaluand> {
    trace: Trace.Trace | null
    val: T | null
 
-   static at <T extends Value.Value> (α: TracedId, trace: Trace.Trace | null, val: T | null): Traced<T> {
-      const this_: Traced<T> = create<TracedId, Traced<T>>(α, Traced)
+   static at <T extends Value.Value> (k: Eval.Evaluand, trace: Trace.Trace | null, val: T | null): Traced<T> {
+      const this_: Traced<T> = create<Eval.Evaluand, Traced<T>>(k, Traced)
       this_.trace = trace
       this_.val = val
       this_.__version()
