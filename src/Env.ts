@@ -117,7 +117,7 @@ export class EnvEntry {
    e: Expr.Expr
 
    static make (ρ: Env, δ: RecDefs, e: Expr.Expr): EnvEntry {
-      const this_: EnvEntry = make(EnvEntry)
+      const this_: EnvEntry = make(EnvEntry, ρ, δ, e)
       this_.ρ = ρ
       this_.δ = δ
       this_.e = e
