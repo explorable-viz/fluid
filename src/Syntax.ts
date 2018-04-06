@@ -5,7 +5,7 @@ import { Lexeme } from "./util/parse/Core"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
 import { PrimBody } from "./Primitive"
-import { Id, PersistentObject, RawId, create } from "./Runtime"
+import { VersionedObject, RawId, create } from "./Runtime"
 
 // Fresh keys represent inputs to the system.
 export const ν: () => Expr.ExprId =
@@ -95,13 +95,13 @@ export namespace Lex {
 }
 
 export namespace Value {
-   export class ValId extends Id {
+   export class ValId {
       __ValId(): void {
          // discriminator
       }
    }
 
-   export class Value extends PersistentObject<ValId> {
+   export class Value extends VersionedObject<ValId> {
       __Value(): void {
          // discriminator
       }
@@ -179,7 +179,7 @@ export namespace Value {
 }
 
 export namespace Expr {
-   export class ExprId extends Id {
+   export class ExprId {
       id: RawId
 
       __ExprId(): void {
@@ -193,7 +193,7 @@ export namespace Expr {
       }
    }
       
-   export class Expr extends PersistentObject<ExprId> {
+   export class Expr extends VersionedObject<ExprId> {
       __Expr(): void {
          // discriminator
       }
@@ -272,7 +272,7 @@ export namespace Expr {
       }
    }
 
-   export class RecDefId extends Id {
+   export class RecDefId {
       i: ExprId
 
       __RecDefId(): void {
@@ -286,7 +286,7 @@ export namespace Expr {
       }
    }
 
-   export class RecDef extends PersistentObject<RecDefId> {
+   export class RecDef extends VersionedObject<RecDefId> {
       x: Lex.Var
       def: Fun
    
@@ -386,7 +386,7 @@ export namespace Expr {
    }
 }
 
-export class Traced<T extends Value.Value = Value.Value> extends PersistentObject<Eval.Evaluand> {
+export class Traced<T extends Value.Value = Value.Value> extends VersionedObject<Eval.Evaluand> {
    trace: Trace.Trace | null
    val: T | null
 
@@ -400,7 +400,7 @@ export class Traced<T extends Value.Value = Value.Value> extends PersistentObjec
 }
 
 export namespace Trie {
-   export class TrieId extends Id {
+   export class TrieId {
       __TrieId (): void {
          // discriminator
       }
@@ -418,7 +418,7 @@ export namespace Trie {
    }
    
       // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
-   export class Trie<T> extends PersistentObject<TrieId> implements JoinSemilattice<Trie<T>> {
+   export class Trie<T> extends VersionedObject<TrieId> implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
@@ -536,7 +536,7 @@ export namespace Trie {
 }
 
 export namespace Trace {
-   export class Trace extends PersistentObject<Eval.Evaluand> {
+   export class Trace extends VersionedObject<Eval.Evaluand> {
       __Trace(): void {
          // discriminator
       }

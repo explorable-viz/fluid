@@ -1,11 +1,10 @@
 import { assert, funName, make } from "./util/Core"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
-import { Id } from "./Runtime"
 import { Expr, Lex, Trie, Value, ν } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
 export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
-type TrieCtr<T> = (α: Id, body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
+type TrieCtr<T> = (α: Object, body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
 
 function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
