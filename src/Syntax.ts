@@ -501,20 +501,20 @@ export namespace Trie {
       }
    }
 
-   class JoinTrieId extends TrieId {
-      σ_id: TrieId
-      τ_id: TrieId
+   class JoinTrieId<T> extends TrieId {
+      σ: Trie<T>
+      τ: Trie<T>
 
-      static make (σ_id: TrieId, τ_id: TrieId): JoinTrieId {
-         const this_: JoinTrieId = make(JoinTrieId, σ_id, τ_id)
-         this_.σ_id = σ_id
-         this_.τ_id = τ_id
+      static make<T> (σ: Trie<T>, τ: Trie<T>): JoinTrieId<T> {
+         const this_: JoinTrieId<T> = make(JoinTrieId, σ, τ)
+         this_.σ = σ
+         this_.τ = τ
          return this_
       }
    }
 
    export function join<T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
-      const α: JoinTrieId = JoinTrieId.make(σ.__id, τ.__id)
+      const α: JoinTrieId<T> = JoinTrieId.make(σ, τ)
       if (σ === null) {
          return τ
       } else
