@@ -363,25 +363,8 @@ export class Traced<T extends Value.Value = Value.Value> extends VersionedObject
 }
 
 export namespace Trie {
-   export class TrieId extends PersistentObject {
-      __TrieId (): void {
-         // discriminator
-      }
-   }
-   
-   // A trie that arises in the raw syntax.
-   export class ExternalTrieId extends TrieId {
-      i: External
-      
-      static make (i: External): ExternalTrieId {
-         const this_: ExternalTrieId = make(ExternalTrieId, i)
-         this_.i = i
-         return this_
-      }
-   }
-   
-      // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
-   export class Trie<T> extends VersionedObject<TrieId> implements JoinSemilattice<Trie<T>> {
+   // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
+   export class Trie<T> extends VersionedObject implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
@@ -396,8 +379,8 @@ export namespace Trie {
          return σ instanceof ConstInt
       }
 
-      static at <T> (α: TrieId, body: T): ConstInt<T> {
-         const this_: ConstInt<T> = create<TrieId, ConstInt<T>>(α, ConstInt)
+      static at <T> (α: PersistentObject, body: T): ConstInt<T> {
+         const this_: ConstInt<T> = create<PersistentObject, ConstInt<T>>(α, ConstInt)
          this_.body = body
          this_.__version()
          return this_
@@ -409,8 +392,8 @@ export namespace Trie {
          return σ instanceof ConstStr
       }
 
-      static at <T> (α: TrieId, body: T): ConstStr<T> {
-         const this_: ConstStr<T> = create<TrieId, ConstStr<T>>(α, ConstStr)
+      static at <T> (α: PersistentObject, body: T): ConstStr<T> {
+         const this_: ConstStr<T> = create<PersistentObject, ConstStr<T>>(α, ConstStr)
          this_.body = body
          this_.__version()
          return this_
@@ -424,8 +407,8 @@ export namespace Trie {
          return σ instanceof Constr
       }
 
-      static at <T> (α: TrieId, cases: Map<string, T>): Constr<T> {
-         const this_: Constr<T> = create<TrieId, Constr<T>>(α, Constr)
+      static at <T> (α: PersistentObject, cases: Map<string, T>): Constr<T> {
+         const this_: Constr<T> = create<PersistentObject, Constr<T>>(α, Constr)
          this_.cases = cases
          this_.__version()
          return this_
@@ -440,8 +423,8 @@ export namespace Trie {
          return σ instanceof Var
       }
 
-      static at <T> (α: TrieId, x: Lex.Var, body: T): Var<T> {
-         const this_: Var<T> = create<TrieId, Var<T>>(α, Var)
+      static at <T> (α: PersistentObject, x: Lex.Var, body: T): Var<T> {
+         const this_: Var<T> = create<PersistentObject, Var<T>>(α, Var)
          this_.x = x
          this_.body = body
          this_.__version()
@@ -456,20 +439,20 @@ export namespace Trie {
          return σ instanceof Fun
       }
 
-      static at <T> (α: TrieId, body: T): Fun<T> {
-         const this_: Fun<T> = create<TrieId, Fun<T>>(α, Fun)
+      static at <T> (α: PersistentObject, body: T): Fun<T> {
+         const this_: Fun<T> = create<PersistentObject, Fun<T>>(α, Fun)
          this_.body = body
          this_.__version()
          return this_
       }
    }
 
-   class JoinTrieId<T> extends TrieId {
+   class JoinTrie<T> extends PersistentObject {
       σ: Trie<T>
       τ: Trie<T>
 
-      static make<T> (σ: Trie<T>, τ: Trie<T>): JoinTrieId<T> {
-         const this_: JoinTrieId<T> = make(JoinTrieId, σ, τ)
+      static make<T> (σ: Trie<T>, τ: Trie<T>): JoinTrie<T> {
+         const this_: JoinTrie<T> = make(JoinTrie, σ, τ)
          this_.σ = σ
          this_.τ = τ
          return this_
@@ -477,7 +460,7 @@ export namespace Trie {
    }
 
    export function join<T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
-      const α: JoinTrieId<T> = JoinTrieId.make(σ, τ)
+      const α: JoinTrie<T> = JoinTrie.make(σ, τ)
       if (σ === null) {
          return τ
       } else

@@ -31,7 +31,7 @@ export const ν: () => External =
       }
    })()
 
-export class VersionedObject<K extends PersistentObject> extends PersistentObject {
+export class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these properties at object creation, rather than via constructor hierarchies.
    __history: this[] = undefined as any
    __id: K = undefined as any

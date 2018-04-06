@@ -1,6 +1,6 @@
 import { assert, funName, make } from "./util/Core"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
-import { ν } from "./Runtime"
+import { ν, PersistentObject } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
@@ -38,7 +38,7 @@ class PrimId extends Value.ValId {
    }
 }
 
-class PrimArgDemandId extends Trie.TrieId {
+class PrimArgDemandId extends PersistentObject {
    k: Value.ValId // containing primitive
 
    static make (k: Value.ValId): PrimArgDemandId {
@@ -64,7 +64,7 @@ function makePrim<T extends Value.Value, V extends Value.Value> (
    k: Value.ValId, 
    name: string, 
    op: (x: T) => V,
-   at1: (α: Trie.TrieId, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
+   at1: (α: PersistentObject, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
 ): Value.PrimOp {
    const primBody: PrimBody<V> = (x: T, σ: Trie.Trie<V>): PrimResult<V> => match(op(x), σ)
    return Value.PrimOp.at(k, name,  at1(PrimArgDemandId.make(k), primBody))

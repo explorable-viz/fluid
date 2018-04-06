@@ -17,16 +17,6 @@ export class Evaluand extends Value.ValId {
    }
 }
 
-class FunDemandId extends Trie.TrieId {
-   k: Evaluand
-
-   static make (k: Evaluand): FunDemandId {
-      const this_: FunDemandId = make(FunDemandId, k)
-      this_.k = k
-      return this_
-   }
-}
-
 export type EvalResult<T> = [Traced, Env, T]    // tv, ρ, σv
 type EvalResults = [Traced[], Env, Object]      // tvs, ρ, σv
 
@@ -108,7 +98,7 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
          return [Traced.at(k, Trace.Match.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
       } else
       if (e instanceof Expr.App) {
-         const [tf, ,]: EvalResult<null> = eval_(ρ, e.func, Trie.Fun.at(FunDemandId.make(k), null)),
+         const [tf, ,]: EvalResult<null> = eval_(ρ, e.func, Trie.Fun.at(k, null)),
                f: Value.Value | null = tf.val
          if (f instanceof Value.Closure) {
             const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, e.arg, f.func.σ),

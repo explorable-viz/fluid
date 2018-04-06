@@ -25,8 +25,8 @@ export enum Profile {
 
 const defaultProfile = Profile.Parse
 
-export const σ_var: Trie.Trie<null> = Trie.Var.at(Trie.ExternalTrieId.make(ν()), new Lex.Var("x"), null)
-export const σ_int: Trie.Trie<null> = Trie.ConstInt.at(Trie.ExternalTrieId.make(ν()), null)
+export const σ_var: Trie.Trie<null> = Trie.Var.at(ν(), new Lex.Var("x"), null)
+export const σ_int: Trie.Trie<null> = Trie.ConstInt.at(ν(), null)
 
 export function runExample (p: Profile, src: string, σ: Trie.Trie<null>): void {
    const e: Expr.Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
