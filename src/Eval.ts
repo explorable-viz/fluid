@@ -2,10 +2,11 @@ import { __nonNull, assert, as, make } from "./util/Core"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
+import { PersistentObject } from "./Runtime";
 
 export module Eval {
 
-export class Evaluand extends Value.ValId {
+export class Evaluand extends PersistentObject {
    j: EnvEntries
    e: Expr.Expr
 

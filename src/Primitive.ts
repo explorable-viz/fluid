@@ -24,7 +24,7 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
-class PrimId extends Value.ValId {
+class PrimId extends PersistentObject {
    op: string
 
    __PrimId (): void {
@@ -48,14 +48,14 @@ class PrimArgDemandId extends PersistentObject {
    }
 }
 
-class PartialAppId extends Value.ValId {
+class PartialAppId extends PersistentObject {
    k: PrimId
-   i: Value.ValId
+   v: Value.Value
 
-   static make (k: PrimId, i: Value.ValId): PartialAppId {
-      const this_: PartialAppId = make(PartialAppId, k, i)
+   static make (k: PrimId, v: Value.Value): PartialAppId {
+      const this_: PartialAppId = make(PartialAppId, k, v)
       this_.k = k
-      this_.i = i
+      this_.v = v
       return this_
    }
 }
@@ -84,39 +84,39 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
 ): Value.PrimOp {
    const k: PrimId = PrimId.make(funName(op)),
          partiallyApply: (x: T) => Value.PrimOp =
-            (x: T) => makePrim(PartialAppId.make(k, x.__id), op.name + " " + x, (y: U) => op(x, y), at2)
+            (x: T) => makePrim(PartialAppId.make(k, x), op.name + " " + x, (y: U) => op(x, y), at2)
    return makePrim(k, op.name, partiallyApply, at1)
 }
 
-class UnaryPrimResultId extends Value.ValId {
+class UnaryPrimResultId extends PersistentObject {
    op: string
-   k: Value.ValId
+   v: Value.Value
 
-   static make (op: string, k: Value.ValId): UnaryPrimResultId {
-      const this_: UnaryPrimResultId = make(UnaryPrimResultId, k)
-      this_.k = k
+   static make (op: string, v: Value.Value): UnaryPrimResultId {
+      const this_: UnaryPrimResultId = make(UnaryPrimResultId, v)
+      this_.v = v
       return this_
    }
 }
 
-class BinaryPrimResultId extends Value.ValId {
+class BinaryPrimResultId extends PersistentObject {
    op: string
-   k1: Value.ValId
-   k2: Value.ValId
+   v1: Value.Value
+   v2: Value.Value
 
-   static make (op: string, k1: Value.ValId, k2: Value.ValId): BinaryPrimResultId {
-      const this_: BinaryPrimResultId = make(BinaryPrimResultId, k1, k2)
-      this_.k1 = k1
-      this_.k2 = k2
+   static make (op: string, v1: Value.Value, v2: Value.Value): BinaryPrimResultId {
+      const this_: BinaryPrimResultId = make(BinaryPrimResultId, v1, v2)
+      this_.v1 = v1
+      this_.v2 = v2
       return this_
    }
 }
 
-function __true (α: Value.ValId): Value.Constr {
+function __true (α: PersistentObject): Value.Constr {
    return Value.Constr.at(α, new Lex.Ctr("True"), [])
 }
 
-function __false (α: Value.ValId): Value.Constr {
+function __false (α: PersistentObject): Value.Constr {
    return Value.Constr.at(α, new Lex.Ctr("False"), [])
 }
 
@@ -128,64 +128,64 @@ export function error (message: Value.ConstStr): Value.Value {
 }
 
 export function intToString (x: Value.ConstInt): Value.ConstStr {
-   const k: Value.ValId = UnaryPrimResultId.make(funName(intToString), x.__id)
+   const k: PersistentObject = UnaryPrimResultId.make(funName(intToString), x)
    return Value.ConstStr.at(k, x.toString())
 }
 
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
 export function equalInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
-   const k: Value.ValId = BinaryPrimResultId.make(funName(equalInt), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(equalInt), x, y)
    return x.val === y.val ? __true(k) : __false(k)
 }
 
 export function equalStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
-   const k: Value.ValId = BinaryPrimResultId.make(funName(equalStr), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(equalStr), x, y)
    return x.val === y.val ? __true(k) : __false(k)
 }
 
 export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
-   const k: Value.ValId = BinaryPrimResultId.make(funName(greaterInt), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(greaterInt), x, y)
    return x.val > y.val ? __true(k) : __false(k)
 }
 
 export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
-   const k: Value.ValId = BinaryPrimResultId.make(funName(greaterStr), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(greaterStr), x, y)
    return x.val > y.val ? __true(k) : __false(k)
 }
 
 export function lessInt (x: Value.ConstInt, y: Value.ConstInt): Value.Constr {
-   const k: Value.ValId = BinaryPrimResultId.make(funName(lessInt), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(lessInt), x, y)
    return x.val > y.val ? __true(k) : __false(k)
 }
 
 export function lessStr (x: Value.ConstStr, y: Value.ConstStr): Value.Constr {
-   const k: Value.ValId = BinaryPrimResultId.make(funName(lessStr), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(lessStr), x, y)
    return x.val > y.val ? __true(k) : __false(k)
 }
 
 export function minus (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
-   const k: Value.ValId = BinaryPrimResultId.make(funName(minus), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(minus), x, y)
    return Value.ConstInt.at(k, x.val - y.val)
 }
 
 export function plus (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
-   const k: Value.ValId = BinaryPrimResultId.make(funName(plus), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(plus), x, y)
    return Value.ConstInt.at(k, x.val + y.val)
 }
 
 export function times (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
-   const k: Value.ValId = BinaryPrimResultId.make(funName(times), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(times), x, y)
    return Value.ConstInt.at(k, x.val * y.val)
 }
 
 export function div (x: Value.ConstInt, y: Value.ConstInt): Value.ConstInt {
    // Apparently this will round in the right direction.
-   const k: Value.ValId = BinaryPrimResultId.make(funName(div), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(div), x, y)
    return Value.ConstInt.at(k, ~~(x.val / y.val))
 }
 
 export function concat (x: Value.ConstStr, y: Value.ConstStr): Value.ConstStr {
-   const k: Value.ValId = BinaryPrimResultId.make(funName(concat), x.__id, y.__id)
+   const k: PersistentObject = BinaryPrimResultId.make(funName(concat), x, y)
    return Value.ConstStr.at(k, x.val + y.val)
 }
 

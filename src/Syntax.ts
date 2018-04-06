@@ -86,13 +86,7 @@ export namespace Lex {
 }
 
 export namespace Value {
-   export class ValId extends PersistentObject {
-      __ValId(): void {
-         // discriminator
-      }
-   }
-
-   export class Value extends VersionedObject<ValId> {
+   export class Value extends VersionedObject {
       __Value(): void {
          // discriminator
       }
@@ -103,7 +97,7 @@ export namespace Value {
       δ: Expr.RecDefs
       func: Expr.Fun
    
-      static at (α: ValId, ρ: Env, δ: Expr.RecDefs, func: Expr.Fun): Closure {
+      static at (α: PersistentObject, ρ: Env, δ: Expr.RecDefs, func: Expr.Fun): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
          this_.δ = δ
@@ -122,7 +116,7 @@ export namespace Value {
    export class ConstInt extends Prim {
       val: number
    
-      static at (α: ValId, val: number): ConstInt {
+      static at (α: PersistentObject, val: number): ConstInt {
          const this_: ConstInt = create(α, ConstInt)
          this_.val = val
          this_.__version()
@@ -133,7 +127,7 @@ export namespace Value {
    export class ConstStr extends Prim {
       val: string
    
-      static at (α: ValId, val: string): ConstStr {
+      static at (α: PersistentObject, val: string): ConstStr {
          const this_: ConstStr = create(α, ConstStr)
          this_.val = val
          this_.__version()
@@ -145,7 +139,7 @@ export namespace Value {
       ctr: Lex.Ctr
       args: Traced[]
    
-      static at (α: ValId, ctr: Lex.Ctr, args: Traced[]): Constr {
+      static at (α: PersistentObject, ctr: Lex.Ctr, args: Traced[]): Constr {
          const this_: Constr = create(α, Constr)
          this_.ctr = ctr
          this_.args = args
@@ -159,7 +153,7 @@ export namespace Value {
       name: string
       σ: Trie.Prim<PrimBody<any>>
 
-      static at (α: ValId, name: string, σ: Trie.Prim<PrimBody<any>>): PrimOp {
+      static at (α: PersistentObject, name: string, σ: Trie.Prim<PrimBody<any>>): PrimOp {
          const this_: PrimOp = create(α, PrimOp)
          this_.name = name
          this_.σ = σ
