@@ -19,12 +19,17 @@ export class PersistentObject<T extends Id> extends Object {
    __version: () => Object = undefined as any
 }
 
-const __instances: Map<Id, PersistentObject<Id>> = new Map
+const __ctrInstances: Map<string, Map<Id, PersistentObject<Id>>> = new Map
 
 // Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
 // Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
 export function create <I extends Id, T extends PersistentObject<I>> (α: I, ctr: Ctr<T>): T {
-   let o: PersistentObject<I> | undefined = __instances.get(α) as PersistentObject<I>
+   let instances: Map<Id, PersistentObject<Id>> | undefined = __ctrInstances.get(ctr.name)
+   if (instances === undefined) {
+      instances = new Map
+      __ctrInstances.set(ctr.name, instances)
+   }
+   let o: PersistentObject<I> | undefined = instances.get(α) as PersistentObject<I>
    if (o === undefined) {
       o = Object.create(ctr.prototype) as T // new ctr doesn't work any more
       // This may massively suck, performance-wise. Define these here rather than on PersistentObject
@@ -50,7 +55,7 @@ export function create <I extends Id, T extends PersistentObject<I>> (α: I, ctr
          },
          enumerable: false
       })
-      __instances.set(α, o)
+      instances.set(α, o)
    } else {
       // initialisation should always version, which will enforce single-assignment, so this additional
       // check strictly unnecessary. However failing now avoids weird ill-formed objects.
