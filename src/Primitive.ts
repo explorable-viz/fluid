@@ -25,30 +25,32 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
 }
 
 class PrimId extends PersistentObject {
-   op: string
-
    __PrimId (): void {
       // discriminator
    }
+}
+
+class ExternalPrimId extends PrimId {
+   op: string
 
    static make (op: string): PrimId {
-      const this_: PrimId = make(PrimId, op)
+      const this_: ExternalPrimId = make(ExternalPrimId, op)
       this_.op = op
       return this_
    }
 }
 
 class PrimArgDemandId extends PersistentObject {
-   k: Value.ValId // containing primitive
+   k: PrimId
 
-   static make (k: Value.ValId): PrimArgDemandId {
+   static make (k: PrimId): PrimArgDemandId {
       const this_: PrimArgDemandId = make(PrimArgDemandId, k)
       this_.k = k
       return this_
    }
 }
 
-class PartialAppId extends PersistentObject {
+class PartialAppId extends PrimId {
    k: PrimId
    v: Value.Value
 
@@ -61,7 +63,7 @@ class PartialAppId extends PersistentObject {
 }
 
 function makePrim<T extends Value.Value, V extends Value.Value> (
-   k: Value.ValId, 
+   k: PrimId, 
    name: string, 
    op: (x: T) => V,
    at1: (α: PersistentObject, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
@@ -74,7 +76,7 @@ function unary<T extends Value.Value, V extends Value.Value> (
    op: (x: T) => V,
    at1: TrieCtr<V>,
 ): Value.PrimOp {
-   return makePrim(PrimId.make(funName(op)), op.name, op, at1)
+   return makePrim(ExternalPrimId.make(funName(op)), op.name, op, at1)
 }
 
 function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
@@ -82,7 +84,7 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
    at1: TrieCtr<Value.PrimOp>,
    at2: TrieCtr<V>
 ): Value.PrimOp {
-   const k: PrimId = PrimId.make(funName(op)),
+   const k: PrimId = ExternalPrimId.make(funName(op)),
          partiallyApply: (x: T) => Value.PrimOp =
             (x: T) => makePrim(PartialAppId.make(k, x), op.name + " " + x, (y: U) => op(x, y), at2)
    return makePrim(k, op.name, partiallyApply, at1)
