@@ -30,7 +30,7 @@ export const σ_int: Trie.Trie<null> = Trie.ConstInt.at(Trie.ExprTrieId.make(ν(
 export function runExample (p: Profile, src: string, σ: Trie.Trie<null>): void {
    const e: Expr.Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    if (p >= Profile.Run) {
-      const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(ρ, σ, e)
+      const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(ρ, e, σ)
       console.log(tv)
    }
 }

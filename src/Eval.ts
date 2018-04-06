@@ -61,14 +61,14 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
       return [[], Env.empty(), κ]
    } else {
       const σ: Trie.Trie<Object> = as(κ as Trie.Trie<Object>, Trie.Trie),
-            [tv, ρʹ, κʹ]: EvalResult<Object> = eval_(ρ, σ, es[0]),
+            [tv, ρʹ, κʹ]: EvalResult<Object> = eval_(ρ, es[0], σ),
             [tvs, ρʺ, κʺ]: EvalResults = evalSeq(ρ, κʹ, es.slice(1))
       return [[tv].concat(tvs), Env.concat(ρʹ, ρʺ), κʺ]
    }
 }
 
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
-export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T> {
+export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T> {
    const k: EvalId = EvalId.make(ρ.entries(), e.__id),
          kʹ: EvalTraceId = EvalTraceId.make(k)
    if (Trie.Var.is(σ)) {
@@ -99,7 +99,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
             return assert(false, "Name not found.", x)
          } else {
             const {ρ: ρʹ, e: eʹ}: EnvEntry = ρ.get(x)!,
-                  [tv, ρʺ, σv]: EvalResult<T> = eval_(ρʹ, σ, eʹ),
+                  [tv, ρʺ, σv]: EvalResult<T> = eval_(ρʹ, eʹ, σ),
                   t: Trace.Trace = e instanceof Expr.OpName 
                      ? Trace.OpName.at(kʹ, e.opName, __nonNull(tv.trace))
                      : Trace.Var.at(kʹ, e.ident, __nonNull(tv.trace))
@@ -107,32 +107,32 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
          }
       } else
       if (e instanceof Expr.Let) {
-         const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.σ, e.e),
-               [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(Env.concat(ρ, ρʹ), σ, σu)
+         const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.e, e.σ),
+               [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
          return __result(k, Trace.Let.at(kʹ, tu, __nonNull(tv.trace)), tv.val, ρʺ, κ)
       } else 
       // See 0.3.4 release notes for semantics.
       if (e instanceof Expr.LetRec) {
          const ρʹ: Env = e.δ.closeDefs(ρ, e.δ),
-               [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(ρʹ, σ, e.e)
+               [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(ρʹ, e.e, σ)
          return __result(k, Trace.LetRec.at(kʹ, e.δ, __nonNull(tv.trace)), tv.val, ρʺ, σv)
       } else
       if (e instanceof Expr.MatchAs) {
-         const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.σ, e.e),
-               [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(Env.concat(ρ, ρʹ), σ, σu)
+         const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.e, e.σ),
+               [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
          return __result(k, Trace.Match.at(kʹ, tu, __nonNull(tv.trace)), tv.val, ρʺ, κ)
       } else
       if (e instanceof Expr.App) {
-         const [tf, ,]: EvalResult<null> = eval_(ρ, Trie.Fun.at(FunDemandId.make(k), null), e.func),
+         const [tf, ,]: EvalResult<null> = eval_(ρ, e.func, Trie.Fun.at(FunDemandId.make(k), null)),
                f: Value.Value | null = tf.val
          if (f instanceof Value.Closure) {
-            const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, f.func.σ, e.arg),
+            const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, e.arg, f.func.σ),
                   ρ1: Env = f.δ.closeDefs(f.ρ, f.δ),
-                  [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), σ, σʹu)
+                  [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), σʹu, σ)
             return __result(k, Trace.App.at(kʹ, tf, tu, __nonNull(tv.trace)), tv.val, ρʹ, σv)
          } else
          if (f instanceof Value.PrimOp) {
-            const [tu, , σʹu]: EvalResult<PrimBody<T>> = eval_(ρ, f.σ, e.arg),
+            const [tu, , σʹu]: EvalResult<PrimBody<T>> = eval_(ρ, e.arg, f.σ),
                   [v, σv]: PrimResult<T> = σʹu(tu.val, σ)
             return __result(k, Trace.PrimApp.at(kʹ, tf, tu), v, Env.empty(), σv)
          } else {
@@ -140,7 +140,7 @@ export function eval_<T> (ρ: Env, σ: Trie.Trie<T>, e: Expr.Expr): EvalResult<T
          }
       }
    }
-   return assert(false, "Demand mismatch.")
+   return assert(false, "Demand mismatch.", )
 }
 
 }

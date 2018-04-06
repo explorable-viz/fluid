@@ -28,8 +28,8 @@ export class ExtendEnvEntries extends EnvEntries {
 // Environments are snoc lists. An evaluation id is an expression id paired with the identity of all 
 // environment entries used to close the term, in the order in which they were bound. This makes evaluation
 // ids insensitive to the choice of names, and is essentially the same as the approach I used in my thesis. 
-// But although evaluation ids do not depend on the ids of environments themselves, we must still intern
-// environments in order to enforce the LVar semantics.
+// But although evaluation ids do not depend on the ids of environments themselves, we still intern
+// environments to enable LVar semantics.
 
 export abstract class Env {
    __Env(): void {
