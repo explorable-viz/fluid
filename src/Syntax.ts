@@ -298,6 +298,7 @@ export namespace Expr {
       }
    }
 
+   // Interned rather than persistent.
    export abstract class RecDefs {
       __RecDefs (): void {
          // discriminator
@@ -567,7 +568,7 @@ export namespace Trace {
       }
    }
 
-   // I don't think this is the same as ⊥; it represents the "end" of an explanation.
+   // Not to be confused with ⊥ (null); this is information about an absence, not the absence of information.
    export class Empty extends Trace {
       static at (α: TraceId): Empty {
          const this_: Empty = create(α, Empty)
