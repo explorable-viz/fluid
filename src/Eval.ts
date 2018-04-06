@@ -5,22 +5,22 @@ import { Expr, Trace, TraceId, Traced, TracedId, Trie, Value } from "./Syntax"
 
 export module Eval {
 
-class EvalId extends Value.ValId {
+class Evaluand extends Value.ValId {
    j: EnvEntries
-   i: Expr.ExprId
+   e: Expr.Expr
 
-   static make (j: EnvEntries, i: Expr.ExprId): EvalId {
-      const this_: EvalId = make(EvalId, j, i)
+   static make (j: EnvEntries, e: Expr.Expr): Evaluand {
+      const this_: Evaluand = make(Evaluand, j, e)
       this_.j = j
-      this_.i = i
+      this_.e = e
       return this_
    }
 }
 
 class EvalTracedId extends TracedId {
-   k: EvalId
+   k: Evaluand
 
-   static make (k: EvalId): EvalTracedId {
+   static make (k: Evaluand): EvalTracedId {
       const this_: EvalTracedId = make(EvalTracedId, k)
       this_.k = k
       return this_
@@ -29,9 +29,9 @@ class EvalTracedId extends TracedId {
 }
 
 class EvalTraceId extends TraceId {
-   k: EvalId
+   k: Evaluand
 
-   static make (k: EvalId): EvalTraceId {
+   static make (k: Evaluand): EvalTraceId {
       const this_: EvalTraceId = make(EvalTraceId, k)
       this_.k = k
       return this_
@@ -39,9 +39,9 @@ class EvalTraceId extends TraceId {
 }
 
 class FunDemandId extends Trie.TrieId {
-   k: EvalId   
+   k: Evaluand
 
-   static make (k: EvalId): FunDemandId {
+   static make (k: Evaluand): FunDemandId {
       const this_: FunDemandId = make(FunDemandId, k)
       this_.k = k
       return this_
@@ -51,7 +51,7 @@ class FunDemandId extends Trie.TrieId {
 export type EvalResult<T> = [Traced, Env, T]    // tv, ρ, σv
 type EvalResults = [Traced[], Env, Object]      // tvs, ρ, σv
 
-function __result<T> (k: EvalId, t: Trace.Trace | null, v: Value.Value | null, ρ: Env, κ: T): EvalResult<T> {
+function __result<T> (k: Evaluand, t: Trace.Trace | null, v: Value.Value | null, ρ: Env, κ: T): EvalResult<T> {
    return [Traced.at(EvalTracedId.make(k), t, v), ρ, κ]
 }
 
@@ -80,7 +80,7 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
 
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
 export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T> {
-   const k: EvalId = EvalId.make(ρ.entries(), e.__id),
+   const k: Evaluand = Evaluand.make(ρ.entries(), e),
          kʹ: EvalTraceId = EvalTraceId.make(k)
    if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Expr.EmptyRecDefs.make(), e)
