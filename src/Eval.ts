@@ -1,4 +1,5 @@
 import { __nonNull, assert, as, make } from "./util/Core"
+import { ctrToDataType } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
@@ -52,6 +53,9 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
       return [Traced.at(k, null, null), Env.singleton(σ.x.str, entry), σ.body]
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
+         const ctr: string = e.ctr.str
+         assert(ctrToDataType.has(ctr), "No such constructor.", e)
+         assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === e.args.length, "Arity mismatch.", e)
          const σʹ: Object = σ.cases.get(e.ctr.str)!,
                [tvs, ρʹ, κ]: EvalResults = evalSeq(ρ, σʹ, e.args)
          // have to cast κ without type information on constructor
