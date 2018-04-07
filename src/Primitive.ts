@@ -34,11 +34,21 @@ function makePrim<T extends Value.Value, V extends Value.Value> (
    return Value.PrimOp.at(α, name, at1(α, primBody))
 }
 
-function makeUnary<T extends Value.Value, V extends Value.Value> (
-   op: (x: T) => (α: PersistentObject) => V,
-   at1: TrieCtr<V>,
-): Value.PrimOp {
-   return makePrim(ν(), funName(op), op, at1)
+class Unary<T extends Value.Value, V extends Value.Value> {
+   op: (x: T) => (α: PersistentObject) => V
+   at1: TrieCtr<V>
+
+   constructor(
+      op: (x: T) => (α: PersistentObject) => V,
+      at1: TrieCtr<V>
+   ) {
+      this.op = op
+      this.at1 = at1
+   }
+
+   get primOp(): Value.PrimOp {
+      return makePrim(ν(), funName(this.op), this.op, this.at1)
+   }
 }
 
 // Take care to ensure (JS) functions stored in persistent objects are only constructed once.
@@ -133,8 +143,8 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentOb
 
 // Must come after the definitions above.
 const ops: [string, Value.PrimOp][] = [
-   ["error", makeUnary(error, Trie.ConstStr.at)],
-   ["intToString", makeUnary(intToString, Trie.ConstInt.at)],
+   ["error", new Unary(error, Trie.ConstStr.at).primOp],
+   ["intToString", new Unary(intToString, Trie.ConstInt.at).primOp],
    ["-", new Binary(minus, Trie.ConstInt.at, Trie.ConstInt.at).primOp],
    ["+", new Binary(plus, Trie.ConstInt.at, Trie.ConstInt.at).primOp],
    ["*", new Binary(times, Trie.ConstInt.at, Trie.ConstInt.at).primOp],
