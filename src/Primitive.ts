@@ -1,11 +1,11 @@
-import { assert, funName, make } from "./util/Core"
+import { assert, funName } from "./util/Core"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { ν, PersistentObject } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
-export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => PrimResult<T>
-type TrieCtr<T> = (α: Object, body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
+export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => (α: PersistentObject) => PrimResult<T>
+type TrieCtr<T> = (α: PersistentObject, body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
 
 function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
@@ -24,26 +24,13 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
-// Want α to be a PrimOp, but need to break a cyclic dependency.
-class PrimApp extends PersistentObject {
-   α: PersistentObject
-   x: Value.Value
-
-   static make (α: PersistentObject, x: Value.Value): PrimApp {
-      const this_: PrimApp = make(PrimApp, α, x)
-      this_.α = α
-      this_.x = x
-      return this_
-   }
-}
-
 function makePrim<T extends Value.Value, V extends Value.Value> (
    α: PersistentObject, 
    name: string, 
    op: (x: T) => (α: PersistentObject) => V,
    at1: (α: PersistentObject, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
 ): Value.PrimOp {
-   const primBody: PrimBody<V> = (x: T, σ: Trie.Trie<V>): PrimResult<V> => match(op(x)(PrimApp.make(α, x)), σ)
+   const primBody: PrimBody<V> = (x: T, σ: Trie.Trie<V>) => (α: PersistentObject) => match(op(x)(α), σ)
    return Value.PrimOp.at(α, name, at1(α, primBody))
 }
 

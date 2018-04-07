@@ -109,7 +109,7 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
          } else
          if (f instanceof Value.PrimOp) {
             const [tu, , σʹu]: EvalResult<PrimBody<T>> = eval_(ρ, e.arg, f.σ),
-                  [v, σv]: PrimResult<T> = σʹu(tu.val, σ)
+                  [v, σv]: PrimResult<T> = σʹu(tu.val, σ)(k)
             return [Traced.at(k, Trace.PrimApp.at(k, tf, tu), v), Env.empty(), σv]
          } else {
             return assert(false, "Not a function.", f)
