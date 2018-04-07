@@ -5,7 +5,7 @@ import { Lexeme } from "./util/parse/Core"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
 import { PrimBody } from "./Primitive"
-import { External, VersionedObject, PersistentObject, create } from "./Runtime"
+import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
@@ -164,7 +164,7 @@ export namespace Value {
 }
 
 export namespace Expr {
-   export class Expr extends VersionedObject<External> {
+   export class Expr extends VersionedObject<ExternalObject> {
       __Expr(): void {
          // discriminator
       }
@@ -174,7 +174,7 @@ export namespace Expr {
       func: Expr
       arg: Expr
 
-      static at (i: External, func: Expr, arg: Expr): App {
+      static at (i: ExternalObject, func: Expr, arg: Expr): App {
          const this_: App = create(i, App)
          this_.func = func
          this_.arg = arg
@@ -186,7 +186,7 @@ export namespace Expr {
    export class ConstInt extends Expr {
       val: number
    
-      static at (i: External, val: number): ConstInt {
+      static at (i: ExternalObject, val: number): ConstInt {
          const this_: ConstInt = create(i, ConstInt)
          this_.val = __check(val, x => !Number.isNaN(x))
          this_.__version()
@@ -197,7 +197,7 @@ export namespace Expr {
    export class ConstStr extends Expr {
       val: string
    
-      static at (i: External, val: string): ConstStr {
+      static at (i: ExternalObject, val: string): ConstStr {
          const this_: ConstStr = create(i, ConstStr)
          this_.val = val
          this_.__version()
@@ -209,7 +209,7 @@ export namespace Expr {
       ctr: Lex.Ctr
       args: Expr[]
    
-      static at (i: External, ctr: Lex.Ctr, args: Expr[]): Constr {
+      static at (i: ExternalObject, ctr: Lex.Ctr, args: Expr[]): Constr {
          const this_: Constr = create(i, Constr)
          this_.ctr = ctr
          this_.args = args
@@ -221,7 +221,7 @@ export namespace Expr {
    export class Fun extends Expr {
       σ: Trie.Trie<Expr>
 
-      static at (i: External, σ: Trie.Trie<Expr>): Fun {
+      static at (i: ExternalObject, σ: Trie.Trie<Expr>): Fun {
          const this_: Fun = create(i, Fun)
          this_.σ = σ
          this_.__version()
@@ -234,7 +234,7 @@ export namespace Expr {
       e: Expr
       σ: Trie.Var<Expr>
 
-      static at (i: External, e: Expr, σ: Trie.Var<Expr>): Let {
+      static at (i: ExternalObject, e: Expr, σ: Trie.Var<Expr>): Let {
          const this_: Let = create(i, Let)
          this_.e = e
          this_.σ = σ
@@ -243,11 +243,11 @@ export namespace Expr {
       }
    }
 
-   export class RecDef extends VersionedObject<External> {
+   export class RecDef extends VersionedObject<ExternalObject> {
       x: Lex.Var
       def: Fun
    
-      static at (α: External, x: Lex.Var, def: Fun): RecDef {
+      static at (α: ExternalObject, x: Lex.Var, def: Fun): RecDef {
          const this_: RecDef = create(α, RecDef)
          this_.x = x
          this_.def = def
@@ -285,7 +285,7 @@ export namespace Expr {
       δ: RecDefs
       e: Expr
 
-      static at (i: External, δ: RecDefs, e: Expr): LetRec {
+      static at (i: ExternalObject, δ: RecDefs, e: Expr): LetRec {
          const this_: LetRec = create(i, LetRec)
          this_.δ = δ
          this_.e = e
@@ -298,7 +298,7 @@ export namespace Expr {
       e: Expr
       σ: Trie.Trie<Expr>
    
-      static at (i: External, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
+      static at (i: ExternalObject, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
          const this_: MatchAs = create(i, MatchAs)
          this_.e = e
          this_.σ = σ
@@ -310,7 +310,7 @@ export namespace Expr {
    export class OpName extends Expr {
       opName: Lex.OpName
    
-      static at (i: External, opName: Lex.OpName): OpName {
+      static at (i: ExternalObject, opName: Lex.OpName): OpName {
          const this_: OpName = create(i, OpName)
          this_.opName = opName
          this_.__version()
@@ -323,7 +323,7 @@ export namespace Expr {
    export class PrimOp extends Expr {
       op: Value.PrimOp
 
-      static at (i: External, op: Value.PrimOp): PrimOp {
+      static at (i: ExternalObject, op: Value.PrimOp): PrimOp {
          const this_: PrimOp = create(i, PrimOp)
          this_.op = op
          this_.__version()
@@ -334,7 +334,7 @@ export namespace Expr {
    export class Var extends Expr {
       ident: Lex.Var
    
-      static at (i: External, ident: Lex.Var): Var {
+      static at (i: ExternalObject, ident: Lex.Var): Var {
          const this_: Var = create(i, Var)
          this_.ident = ident
          this_.__version()

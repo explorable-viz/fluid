@@ -24,54 +24,45 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
-class PrimId extends PersistentObject {
-   op: string
-
-   static make (op: string): PrimId {
-      const this_: PrimId = make(PrimId, op)
-      this_.op = op
-      return this_
-   }
-}
-
+// Want α to be a PrimOp, but need to break a cyclic dependency.
 class PrimApp extends PersistentObject {
-   op: PrimId
+   α: PersistentObject
    x: Value.Value
 
-   static make (op: PrimId, x: Value.Value): PrimApp {
-      const this_: PrimApp = make(PrimApp, op, x)
-      this_.op = op
+   static make (α: PersistentObject, x: Value.Value): PrimApp {
+      const this_: PrimApp = make(PrimApp, α, x)
+      this_.α = α
       this_.x = x
       return this_
    }
 }
 
 function makePrim<T extends Value.Value, V extends Value.Value> (
-   k: PrimId, 
+   α: PersistentObject, 
    name: string, 
    op: (x: T) => (α: PersistentObject) => V,
    at1: (α: PersistentObject, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
 ): Value.PrimOp {
-   const primBody: PrimBody<V> = (x: T, σ: Trie.Trie<V>): PrimResult<V> => match(op(x)(PrimApp.make(k, x)), σ)
-   return Value.PrimOp.at(k, name, at1(k, primBody))
+   const primBody: PrimBody<V> = (x: T, σ: Trie.Trie<V>): PrimResult<V> => match(op(x)(PrimApp.make(α, x)), σ)
+   return Value.PrimOp.at(α, name, at1(α, primBody))
 }
 
-function unary<T extends Value.Value, V extends Value.Value> (
+function makeUnary<T extends Value.Value, V extends Value.Value> (
    op: (x: T) => (α: PersistentObject) => V,
    at1: TrieCtr<V>,
 ): Value.PrimOp {
-   return makePrim(PrimId.make(funName(op)), funName(op), op, at1)
+   return makePrim(ν(), funName(op), op, at1)
 }
 
-function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
+function makeBinary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
    op: (x: T, y: U) => (α: PersistentObject) => V,
    at1: TrieCtr<Value.PrimOp>,
    at2: TrieCtr<V>
 ): Value.PrimOp {
-   function partiallyApply (x: T): (k: PrimId) => Value.PrimOp {
-      return (k: PrimId) => makePrim(k, op.name + " " + x, (y: U) => op(x, y), at2)
+   function partiallyApply (x: T): (α: PersistentObject) => Value.PrimOp {
+      return (α: PersistentObject) => makePrim(α, op.name + " " + x, (y: U) => op(x, y), at2)
    }
-   return makePrim(PrimId.make(funName(op)), funName(op), partiallyApply, at1)
+   return makePrim(ν(), funName(op), partiallyApply, at1)
 }
 
 function __true (α: PersistentObject): Value.Constr {
@@ -141,19 +132,19 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentOb
 
 // Must come after the definitions above.
 const ops: [string, Value.PrimOp][] = [
-   ["error", unary(error, Trie.ConstStr.at)],
-   ["intToString", unary(intToString, Trie.ConstInt.at)],
-   ["-", binary(minus, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["+", binary(plus, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["*", binary(times, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["/", binary(div, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["==", binary(equalInt, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["===", binary(equalStr, Trie.ConstStr.at, Trie.ConstStr.at)],
-   [">", binary(greaterInt, Trie.ConstInt.at, Trie.ConstInt.at)],
-   [">>", binary(greaterStr, Trie.ConstStr.at, Trie.ConstStr.at)],
-   ["<", binary(lessInt, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["<<", binary(lessStr, Trie.ConstStr.at, Trie.ConstStr.at)],
-   ["++", binary(concat, Trie.ConstStr.at, Trie.ConstStr.at)],
+   ["error", makeUnary(error, Trie.ConstStr.at)],
+   ["intToString", makeUnary(intToString, Trie.ConstInt.at)],
+   ["-", makeBinary(minus, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["+", makeBinary(plus, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["*", makeBinary(times, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["/", makeBinary(div, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["==", makeBinary(equalInt, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["===", makeBinary(equalStr, Trie.ConstStr.at, Trie.ConstStr.at)],
+   [">", makeBinary(greaterInt, Trie.ConstInt.at, Trie.ConstInt.at)],
+   [">>", makeBinary(greaterStr, Trie.ConstStr.at, Trie.ConstStr.at)],
+   ["<", makeBinary(lessInt, Trie.ConstInt.at, Trie.ConstInt.at)],
+   ["<<", makeBinary(lessStr, Trie.ConstStr.at, Trie.ConstStr.at)],
+   ["++", makeBinary(concat, Trie.ConstStr.at, Trie.ConstStr.at)],
 ]
 
 // Fake "syntax" for primitives.

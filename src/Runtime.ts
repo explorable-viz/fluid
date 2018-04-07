@@ -11,23 +11,23 @@ export class PersistentObject {
    }   
 }
 
-// A memo key which is sourced externally to the system.
-export class External extends PersistentObject {
+// A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
+export class ExternalObject extends PersistentObject {
    id: number
 
-   static make (id: number): External {
-      const this_: External = make(External, id)
+   static make (id: number): ExternalObject {
+      const this_: ExternalObject = make(ExternalObject, id)
       this_.id = id
       return this_
    }
 }
 
 // Fresh keys represent inputs to the system.
-export const ν: () => External =
+export const ν: () => ExternalObject =
    (() => {
       let count: number = 0
       return () => {
-         return External.make(count++)
+         return ExternalObject.make(count++)
       }
    })()
 
