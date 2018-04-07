@@ -113,48 +113,14 @@ export class ExtendEnv extends Env {
 
 export class EnvEntry {
    ρ: Env
-   δ: RecDefs
+   δ: Expr.RecDefs
    e: Expr.Expr
 
-   static make (ρ: Env, δ: RecDefs, e: Expr.Expr): EnvEntry {
+   static make (ρ: Env, δ: Expr.RecDefs, e: Expr.Expr): EnvEntry {
       const this_: EnvEntry = make(EnvEntry, ρ, δ, e)
       this_.ρ = ρ
       this_.δ = δ
       this_.e = e
       return this_
-   }
-}
-
-export abstract class RecDefs {
-   __RecDefs (): void {
-      // discriminator
-   }
-
-   abstract closeDefs (ρ: Env, δ: RecDefs): Env;
-}
-
-export class EmptyRecDefs extends RecDefs {
-   static make (): EmptyRecDefs {
-      return make(EmptyRecDefs)
-   }
-
-   closeDefs (ρ: Env, δ: RecDefs): Env {
-      return ρ
-   }
-}
-
-export class ExtendRecDefs extends RecDefs {
-   δ: RecDefs
-   def: Expr.RecDef
-
-   static make (δ: RecDefs, def: Expr.RecDef): ExtendRecDefs {
-      const this_: ExtendRecDefs = make(ExtendRecDefs, δ, def)
-      this_.δ = δ
-      this_.def = def
-      return this_
-   }
-
-   closeDefs (ρ: Env, δ: RecDefs): Env {
-      return ExtendEnv.make(this.δ.closeDefs(ρ, δ), this.def.x.str, EnvEntry.make(ρ, δ, this.def.def))
    }
 }

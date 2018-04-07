@@ -3,8 +3,8 @@ import {
    dropSecond, lazySeq, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { RecDefs, EmptyRecDefs, ExtendRecDefs } from "./Env"
-import { Lex, Traced, str, ν } from "./Syntax"
+import { ν } from "./Runtime"
+import { Lex, Traced, str, } from "./Syntax"
 import { Expr, Trie } from "./Syntax"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
@@ -195,24 +195,24 @@ const let_: Parser<Expr.Let> =
          dropFirst(keyword(str.in_), expr)
       ),
       ([[x, e], eʹ]: [[Lex.Var, Expr.Expr], Expr.Expr]) =>
-         Expr.Let.at(ν(), e, Trie.Var.at(Trie.ExprTrieId.make(ν()), x, eʹ))
+         Expr.Let.at(ν(), e, Trie.Var.at(ν(), x, eʹ))
    )
 
 const recDef: Parser<Expr.RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
       ([name, σ]: [Lex.Var, Trie.Trie<Traced>]) =>
-         Expr.RecDef.at(Expr.RecDefId.make(ν()), name, Expr.Fun.at(ν(), σ))
+         Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), σ))
    )
 
 // These are *interned*; need to think about implications for editing the AST. 
-const recDefs: Parser<RecDefs> = optional(recDefs1(), EmptyRecDefs.make())
+const recDefs: Parser<Expr.RecDefs> = optional(recDefs1(), Expr.EmptyRecDefs.make())
 
-function recDefs1 (): Parser<RecDefs> {
+function recDefs1 (): Parser<Expr.RecDefs> {
    return (state: ParseState) =>
       withAction(
          lazySeq(recDef, () => recDefs),
-         ([def, δ]: [Expr.RecDef, RecDefs]) => ExtendRecDefs.make(δ, def)
+         ([def, δ]: [Expr.RecDef, Expr.RecDefs]) => Expr.ExtendRecDefs.make(δ, def)
       )(state)
 }
 
@@ -222,7 +222,7 @@ const letrec: Parser<Expr.LetRec> =
          dropFirst(keyword(str.letRec), recDefs),
          dropFirst(keyword(str.in_), expr)
       ),
-     ([δ, body]: [RecDefs, Expr.Expr]) => 
+     ([δ, body]: [Expr.RecDefs, Expr.Expr]) => 
          Expr.LetRec.at(ν(), δ, body)
    )
 
@@ -252,7 +252,7 @@ function constr_pattern (p: Parser<Object>): Parser<Trie.Constr<Object>> {
          ctr, 
          choice([dropFirst(symbol(str.parenL), args_pattern(dropFirst(symbol(str.parenR), p))), p])
       ),
-      ([ctr, z]: [Lex.Ctr, Traced]) => Trie.Constr.at(Trie.ExprTrieId.make(ν()), new Map([[ctr.str, z]])) 
+      ([ctr, z]: [Lex.Ctr, Traced]) => Trie.Constr.at(ν(), new Map([[ctr.str, z]])) 
    )
 }
 
@@ -262,14 +262,14 @@ function pair_pattern (p: Parser<Object>): Parser<Trie.Constr<Object>> {
          symbol(str.parenL), 
          pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
       ),
-      (σ: Trie.Trie<Traced>) => Trie.Constr.at(Trie.ExprTrieId.make(ν()), new Map([["Pair", σ]]))
+      (σ: Trie.Trie<Traced>) => Trie.Constr.at(ν(), new Map([["Pair", σ]]))
    )
 }
 
 function variable_pattern (p: Parser<Object>): Parser<Trie.Var<Object>> {
    return withAction(
       seq(var_, p), ([x, z]: [Lex.Var, Traced]) => 
-         Trie.Var.at(Trie.ExprTrieId.make(ν()), x, z)
+         Trie.Var.at(ν(), x, z)
       )
 }
 
