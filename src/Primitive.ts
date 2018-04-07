@@ -28,7 +28,7 @@ function makePrim<T extends Value.Value, V extends Value.Value> (
    α: PersistentObject, 
    name: string, 
    op: (x: T) => (α: PersistentObject) => V,
-   at1: (α: PersistentObject, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
+   at1: TrieCtr<V>
 ): Value.PrimOp {
    const primBody: PrimBody<V> = (x: T, σ: Trie.Trie<V>) => (α: PersistentObject) => match(op(x)(α), σ)
    return Value.PrimOp.at(α, name, at1(α, primBody))
