@@ -26,4 +26,20 @@ function initDataType <T> (d: DataType): void {
 export function initDataTypes (): void {
    assert(ctrToDataType.size === 0)
    initDataType(new DataType("Bool", new Map([["Bool", []], ["False", []]])))
+   initDataType(new DataType("Box", new Map([["Box", ["unbox"]]])))
+   initDataType(new DataType("List", new Map([["Nil", []], ["Cons", ["head", "tail"]]])))
+   initDataType(new DataType("Ordering", new Map([["LT", []], ["GT", []], ["EQ", []]])))
+   initDataType(new DataType("Pair", new Map([["Pair", ["fst", "snd"]]])))
+   initDataType(new DataType("Option", new Map([["None", []], ["Some", ["valOf"]]])))
+   initDataType(new DataType("Tree", new Map([["Empty", []], ["NonEmpty", ["left", "t", "right"]]])))
+   initDataType(new DataType("Unit", new Map([["Unit", []]])))
+   initDataType(new DataType("View", new Map([
+      ["Background", ["greyScale", "child"]],
+      ["EmptyView", []],
+      ["Word", ["bold", "greyScale", "str"]],
+      ["Horiz", ["child1", "child2"]],
+      ["RoundedCell", ["borderGreyScaleOpt", "child"]],
+      ["Space", []],
+      ["Vert", ["child1", "child2"]]
+   ])))
 }
