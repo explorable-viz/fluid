@@ -25,16 +25,10 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
 }
 
 class PrimId extends PersistentObject {
-   __PrimId (): void {
-      // discriminator
-   }
-}
-
-class ExternalPrimId extends PrimId {
    op: string
 
    static make (op: string): PrimId {
-      const this_: ExternalPrimId = make(ExternalPrimId, op)
+      const this_: PrimId = make(PrimId, op)
       this_.op = op
       return this_
    }
@@ -66,7 +60,7 @@ function unary<T extends Value.Value, V extends Value.Value> (
    op: (x: T) => (α: PersistentObject) => V,
    at1: TrieCtr<V>,
 ): Value.PrimOp {
-   return makePrim(ExternalPrimId.make(funName(op)), op.name, op, at1)
+   return makePrim(PrimId.make(funName(op)), op.name, op, at1)
 }
 
 function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
@@ -74,7 +68,7 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
    at1: TrieCtr<Value.PrimOp>,
    at2: TrieCtr<V>
 ): Value.PrimOp {
-   const k: PrimId = ExternalPrimId.make(funName(op))
+   const k: PrimId = PrimId.make(funName(op))
    function partiallyApply (x: T): (k: PrimId) => Value.PrimOp {
       return (k: PrimId) => {
          function blah (y: U): (α: PersistentObject) => V {
