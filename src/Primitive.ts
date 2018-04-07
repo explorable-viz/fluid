@@ -60,7 +60,7 @@ function unary<T extends Value.Value, V extends Value.Value> (
    op: (x: T) => (α: PersistentObject) => V,
    at1: TrieCtr<V>,
 ): Value.PrimOp {
-   return makePrim(PrimId.make(funName(op)), op.name, op, at1)
+   return makePrim(PrimId.make(funName(op)), funName(op), op, at1)
 }
 
 function binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
@@ -68,16 +68,10 @@ function binary<T extends Value.Value, U extends Value.Value, V extends Value.Va
    at1: TrieCtr<Value.PrimOp>,
    at2: TrieCtr<V>
 ): Value.PrimOp {
-   const k: PrimId = PrimId.make(funName(op))
    function partiallyApply (x: T): (k: PrimId) => Value.PrimOp {
-      return (k: PrimId) => {
-         function blah (y: U): (α: PersistentObject) => V {
-            return op(x, y)
-         }
-         return makePrim(k, op.name + " " + x, blah, at2)
-      }
+      return (k: PrimId) => makePrim(k, op.name + " " + x, (y: U) => op(x, y), at2)
    }
-   return makePrim(k, op.name, partiallyApply, at1)
+   return makePrim(PrimId.make(funName(op)), funName(op), partiallyApply, at1)
 }
 
 function __true (α: PersistentObject): Value.Constr {
