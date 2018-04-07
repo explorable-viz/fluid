@@ -122,6 +122,10 @@ export namespace Value {
          this_.__version()
          return this_
       }
+
+      toString (): string {
+         return `${this.val}`
+      }
    }
    
    export class ConstStr extends Prim {
@@ -132,6 +136,10 @@ export namespace Value {
          this_.val = val
          this_.__version()
          return this_
+      }
+
+      toString (): string {
+         return `"${this.val}"`
       }
    }
    
