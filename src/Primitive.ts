@@ -51,7 +51,6 @@ class Unary<T extends Value.Value, V extends Value.Value> {
    }
 }
 
-// Take care to ensure (JS) functions stored in persistent objects are only constructed once.
 class Binary<T extends Value.Value, U extends Value.Value, V extends Value.Value> {
    op: (x: T, y: U) => (α: PersistentObject) => V
    at1: TrieCtr<Value.PrimOp>
@@ -67,6 +66,7 @@ class Binary<T extends Value.Value, U extends Value.Value, V extends Value.Value
       this.at2 = at2      
    }
 
+   // Take care to ensure (JS) functions stored in persistent objects are only constructed once.
    partiallyApply: (x: T) => (α: PersistentObject) => Value.PrimOp =
       (x: T) => (α: PersistentObject) => 
          makePrim(α, this.op.name + " " + x, (y: U) => this.op(x, y), this.at2)
