@@ -34,14 +34,14 @@ function makePrim<T extends Value.Value, V extends Value.Value> (
    return Value.PrimOp.at(α, name, at1(α, primBody))
 }
 
-export function makeUnary<T extends Value.Value, V extends Value.Value> (
+function makeUnary<T extends Value.Value, V extends Value.Value> (
    op: (x: T) => (α: PersistentObject) => V,
    at1: TrieCtr<V>,
 ): Value.PrimOp {
    return makePrim(ν(), funName(op), op, at1)
 }
 
-export function makeBinary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
+function makeBinary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
    op: (x: T, y: U) => (α: PersistentObject) => V,
    at1: TrieCtr<Value.PrimOp>,
    at2: TrieCtr<V>
