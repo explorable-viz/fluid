@@ -85,6 +85,8 @@ export namespace Lex {
    }
 }
 
+export type Value = Value.Value
+
 export namespace Value {
    export class Value extends VersionedObject {
       __Value(): void {
@@ -171,6 +173,8 @@ export namespace Value {
    }
 }
 
+export type Expr = Expr.Expr
+
 export namespace Expr {
    export class Expr extends VersionedObject<ExternalObject> {
       __Expr(): void {
@@ -227,9 +231,9 @@ export namespace Expr {
    }
 
    export class Fun extends Expr {
-      σ: Trie.Trie<Expr>
+      σ: Trie<Expr>
 
-      static at (i: ExternalObject, σ: Trie.Trie<Expr>): Fun {
+      static at (i: ExternalObject, σ: Trie<Expr>): Fun {
          const this_: Fun = create(i, Fun)
          this_.σ = σ
          this_.__version()
@@ -304,9 +308,9 @@ export namespace Expr {
 
    export class MatchAs extends Expr {
       e: Expr
-      σ: Trie.Trie<Expr>
+      σ: Trie<Expr>
    
-      static at (i: ExternalObject, e: Expr, σ: Trie.Trie<Expr>): MatchAs {
+      static at (i: ExternalObject, e: Expr, σ: Trie<Expr>): MatchAs {
          const this_: MatchAs = create(i, MatchAs)
          this_.e = e
          this_.σ = σ
@@ -364,6 +368,8 @@ export class Traced<T extends Value.Value = Value.Value> extends VersionedObject
    }
 }
 
+export type Trie<T> = Trie.Trie<T>
+
 export namespace Trie {
    // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
    export class Trie<T> extends VersionedObject implements JoinSemilattice<Trie<T>> {
@@ -377,7 +383,7 @@ export namespace Trie {
    }
 
    export class ConstInt<T> extends Prim<T> {
-      static is<T> (σ: Trie.Trie<T>): σ is ConstInt<T> {
+      static is<T> (σ: Trie<T>): σ is ConstInt<T> {
          return σ instanceof ConstInt
       }
 
@@ -390,7 +396,7 @@ export namespace Trie {
    }
 
    export class ConstStr<T> extends Prim<T> {
-      static is<T> (σ: Trie.Trie<T>): σ is ConstStr<T> {
+      static is<T> (σ: Trie<T>): σ is ConstStr<T> {
          return σ instanceof ConstStr
       }
 
@@ -405,7 +411,7 @@ export namespace Trie {
    export class Constr<T> extends Trie<T> {
       cases: Map<string, T>
 
-      static is<T> (σ: Trie.Trie<T>): σ is Constr<T> {
+      static is<T> (σ: Trie<T>): σ is Constr<T> {
          return σ instanceof Constr
       }
 
@@ -421,7 +427,7 @@ export namespace Trie {
       x: Lex.Var
       body: T
 
-      static is<T> (σ: Trie.Trie<T>): σ is Var<T> {
+      static is<T> (σ: Trie<T>): σ is Var<T> {
          return σ instanceof Var
       }
 
@@ -437,7 +443,7 @@ export namespace Trie {
    export class Fun<T> extends Trie<T> {
       body: T
 
-      static is<T> (σ: Trie.Trie<T>): σ is Fun<T> {
+      static is<T> (σ: Trie<T>): σ is Fun<T> {
          return σ instanceof Fun
       }
 
@@ -482,6 +488,8 @@ export namespace Trie {
       }
    }
 }
+
+export type Trace = Trace.Trace
 
 export namespace Trace {
    export class Trace extends VersionedObject<Eval.Evaluand> {

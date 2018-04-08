@@ -25,12 +25,12 @@ export enum Profile {
 
 const defaultProfile = Profile.Parse
 
-export const σ_var: Trie.Trie<null> = Trie.Var.at(ν(), new Lex.Var("x"), null)
-export const σ_int: Trie.Trie<null> = Trie.ConstInt.at(ν(), null)
-export const σ_pair_int_int: Trie.Trie<null> = 
+export const σ_var: Trie<null> = Trie.Var.at(ν(), new Lex.Var("x"), null)
+export const σ_int: Trie<null> = Trie.ConstInt.at(ν(), null)
+export const σ_pair_int_int: Trie<null> = 
    Trie.Constr.at(ν(), new Map([["Pair", Trie.ConstInt.at(ν(), Trie.ConstInt.at(ν(), null))]]))
 
-export function runExample (p: Profile, src: string, σ: Trie.Trie<null>): void {
+export function runExample (p: Profile, src: string, σ: Trie<null>): void {
    const e: Expr.Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    if (p >= Profile.Run) {
       const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(ρ, e, σ)
@@ -40,7 +40,7 @@ export function runExample (p: Profile, src: string, σ: Trie.Trie<null>): void 
 
 export let ρ: Env = prelude()
 
-export function runTest (prog: string, profile: Profile = defaultProfile, σ: Trie.Trie<null> = σ_var): void {
+export function runTest (prog: string, profile: Profile = defaultProfile, σ: Trie<null> = σ_var): void {
    runExample(profile, prog, σ)
 }
 

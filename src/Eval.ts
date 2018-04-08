@@ -38,7 +38,7 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
    if (es.length === 0) {
       return [[], Env.empty(), κ]
    } else {
-      const σ: Trie.Trie<Object> = as(κ as Trie.Trie<Object>, Trie.Trie),
+      const σ: Trie<Object> = as(κ as Trie<Object>, Trie.Trie),
             [tv, ρʹ, κʹ]: EvalResult<Object> = eval_(ρ, es[0], σ),
             [tvs, ρʺ, κʺ]: EvalResults = evalSeq(ρ, κʹ, es.slice(1))
       return [[tv].concat(tvs), Env.concat(ρʹ, ρʺ), κʺ]
@@ -46,7 +46,7 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
 }
 
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
-export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T> {
+export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie<T>): EvalResult<T> {
    const k: Evaluand = Evaluand.make(ρ.entries(), e)
    if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Expr.EmptyRecDefs.make(), e)

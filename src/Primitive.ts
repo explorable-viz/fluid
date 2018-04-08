@@ -3,8 +3,6 @@ import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { ν, PersistentObject, ExternalObject } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
-type Value = Value.Value
-type Trie<T> = Trie.Trie<T>
 export type PrimResult<T> = [Value | null, T] // v, σv
 export type PrimBody<T> = (v: Value | null, σ: Trie<T>) => (α: PersistentObject) => PrimResult<T>
 type TrieCtr<T> = (α: PersistentObject, body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
