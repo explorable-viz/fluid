@@ -68,7 +68,7 @@ export function eval_<T> (ρ: Env, e: Expr, σ: Trie<T>): EvalResult<T> {
          return [Traced.at(k, Trace.Empty.at(k), Value.ConstStr.at(k, e.val)), Env.empty(), σ.body]
       } else
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, Expr.EmptyRecDefs.make(), e)), Env.empty(), σ.body]
+         return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, e)), Env.empty(), σ.body]
       } else
       if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
          return [Traced.at(k, Trace.Empty.at(k), e.op), Env.empty(), σ.body]
