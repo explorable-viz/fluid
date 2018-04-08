@@ -52,7 +52,7 @@ function makeBinary<T extends Value.Value, U extends Value.Value, V extends Valu
 ) {
    function partiallyApply (x: T): (α: PersistentObject) => Value.PrimOp {
       return (α: PersistentObject) => 
-         Value.PrimOp.at(α, op.name + " " + x, at2(α, primBody((y: U) => op(x, y))))
+         Value.PrimOp.at(α, op.name + " " + x, at2(α, primBody(memo((x: T) => (y: U) => op(x, y), null, x))))
    }
    const α: ExternalObject = ν()
    return Value.PrimOp.at(ν(), funName(op), at1(α, primBody(partiallyApply)))
