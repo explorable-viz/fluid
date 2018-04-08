@@ -355,11 +355,11 @@ export namespace Expr {
    }
 }
 
-export class Traced<T extends Value.Value = Value.Value> extends VersionedObject<Eval.Evaluand> {
+export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evaluand> {
    trace: Trace | null
    val: T | null
 
-   static at <T extends Value.Value> (k: Eval.Evaluand, trace: Trace | null, val: T | null): Traced<T> {
+   static at <T extends Value> (k: Eval.Evaluand, trace: Trace | null, val: T | null): Traced<T> {
       const this_: Traced<T> = create<Eval.Evaluand, Traced<T>>(k, Traced)
       this_.trace = trace
       this_.val = val

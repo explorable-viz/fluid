@@ -72,7 +72,7 @@ function __false (α: PersistentObject): Value.Constr {
 // See 0.2.4 release notes re. primitive ops with identifiers as names.
 // Used to take an arbitrary value as an additional argument but now primitives must have
 // primitive arguments.
-export function error (message: Value.ConstStr): (α: PersistentObject) => Value.Value {
+export function error (message: Value.ConstStr): (α: PersistentObject) => Value {
    return assert(false, "LambdaCalc error:\n" + message.val)
 }
 

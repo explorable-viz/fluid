@@ -104,7 +104,7 @@ export function eval_<T> (ρ: Env, e: Expr, σ: Trie<T>): EvalResult<T> {
       } else
       if (e instanceof Expr.App) {
          const [tf, ,]: EvalResult<null> = eval_(ρ, e.func, Trie.Fun.at(k, null)),
-               f: Value.Value | null = tf.val
+               f: Value | null = tf.val
          if (f instanceof Value.Closure) {
             const [tu, ρ2, σʹu]: EvalResult<Expr> = eval_(ρ, e.arg, f.func.σ),
                   ρ1: Env = closeDefs(f.δ, f.ρ, f.δ),
