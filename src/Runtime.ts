@@ -40,15 +40,15 @@ export class VersionedObject<K extends PersistentObject = PersistentObject> exte
 
 // Keys must be "memo" objects (interned or persistent).
 type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
-const __ctrInstances: Map<string, InstancesMap> = new Map
+const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
 
 // Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
 // Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
 export function create <K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
-   let instances: InstancesMap | undefined = __ctrInstances.get(ctr.name)
+   let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
       instances = new Map
-      __ctrInstances.set(ctr.name, instances)
+      __ctrInstances.set(ctr, instances)
    }
    let o: VersionedObject<K> | undefined = instances.get(α) as VersionedObject<K>
    if (o === undefined) {
@@ -70,7 +70,7 @@ export function create <K extends PersistentObject, T extends VersionedObject<K>
             if (this_.__history.length === 0) {
                this_.__history.push(__shallowCopy(this_))
             } else {
-               assert(__shallowLeq(this_.__history[0], this), "Address collision.")
+               assert(__shallowLeq(this_.__history[0], this), "Address collision (different property value).")
             }
             return this
          },
@@ -80,7 +80,7 @@ export function create <K extends PersistentObject, T extends VersionedObject<K>
    } else {
       // initialisation should always version, which will enforce single-assignment, so this additional
       // check strictly unnecessary. However failing now avoids weird ill-formed objects.
-      assert(o.constructor === ctr, "Address collision.", α, className(o), funName(ctr))
+      assert(o.constructor === ctr, "Address collision (different constructor).", α, className(o), funName(ctr))
    }
    return o as T
 }
