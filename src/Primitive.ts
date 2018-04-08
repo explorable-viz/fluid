@@ -32,32 +32,35 @@ function primBody<T extends Value, V extends Value> (op: Unary<T, V>): PrimBody<
    return memo<PrimBody<V>>(_primBody, null, op)
 }
 
-// Needs to be memoised so a PrimBody can be contained by a PrimOp.
+// Memoise for persistent PrimBody function objects.
 function _primBody<T extends Value, V extends Value> (op: Unary<T, V>): PrimBody<V> {
-   return (x: T, σ: Trie.Trie<V>) => 
+   return (x: T, σ: Trie<V>) => 
       (α: PersistentObject) => match(memo(op, null, x)(α), σ)
 }
 
-function makeUnary<T extends Value, V extends Value> (op: Unary<T, V>, arg1Trie: TrieCtr<V>) {
+function makeUnary<T extends Value, V extends Value> (
+   op: Unary<T, V>, trie1: TrieCtr<V>
+) {
    const α: ExternalObject = ν()
-   return Value.PrimOp.at(ν(), funName(op), arg1Trie(α, primBody(op)))
-}
-
-// Needs to be a "static" definition; can't memoise function expressions.
-function _burble<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, x: T): Unary<U, V> {
-   return (y: U) => op(x, y)
+   return Value.PrimOp.at(ν(), funName(op), trie1(α, primBody(op)))
 }
 
 function makeBinary<T extends Value, U extends Value, V extends Value> (
    op: Binary<T, U, V>,
-   arg1Trie: TrieCtr<Value.PrimOp>,
-   arg2Trie: TrieCtr<V>
+   trie1: TrieCtr<Value.PrimOp>,
+   trie2: TrieCtr<V>
 ) {   
-   const partiallyApply: Unary<T, Value.PrimOp> = 
+   const partialApp: Unary<T, Value.PrimOp> = 
       (x: T) => (α: PersistentObject) => 
-         Value.PrimOp.at(α, op.name + " " + x, arg2Trie(α, primBody(memo<Unary<U, V>>(_burble, null, op, x)))),
+         // memoise to obtain unique PrimBody for each partial application:
+         Value.PrimOp.at(α, op.name + " " + x, trie2(α, primBody(memo<Unary<U, V>>(partiallyApply, null, op, x)))),
          α: ExternalObject = ν()
-   return Value.PrimOp.at(ν(), funName(op), arg1Trie(α, primBody(partiallyApply)))
+   return Value.PrimOp.at(ν(), funName(op), trie1(α, primBody(partialApp)))
+}
+
+// Needs to be a "static" definition; can't memoise function expressions.
+function partiallyApply<T, U, V> (op: Binary<T, U, V>, x: T): Unary<U, V> {
+   return (y: U) => op(x, y)
 }
 
 function __true (α: PersistentObject): Value.Constr {
