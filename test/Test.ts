@@ -30,7 +30,7 @@ describe("example", () => {
 	describe("factorial", () => {
 		const file: TestFile = loadExample("factorial")
 		it("parses ok", () => {
-			runTest(__nonNull(file.text))
+			runTest(__nonNull(file.text), Profile.Run, σ_int)
 		})
 	})
 

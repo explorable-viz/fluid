@@ -78,8 +78,8 @@ export function eval_<T> (ρ: Env, e: Expr, σ: Trie<T>): EvalResult<T> {
          if (!ρ.has(x)) {
             return assert(false, "Name not found.", x)
          } else {
-            const {ρ: ρʹ, e: eʹ}: EnvEntry = ρ.get(x)!,
-                  [tv, ρʺ, σv]: EvalResult<T> = eval_(ρʹ, eʹ, σ),
+            const {ρ: ρʹ, δ, e: eʹ}: EnvEntry = ρ.get(x)!,
+                  [tv, ρʺ, σv]: EvalResult<T> = eval_(closeDefs(δ, ρʹ, δ), eʹ, σ),
                   t: Trace = e instanceof Expr.OpName 
                      ? Trace.OpName.at(k, e.opName, __nonNull(tv.trace))
                      : Trace.Var.at(k, e.ident, __nonNull(tv.trace))
@@ -106,10 +106,9 @@ export function eval_<T> (ρ: Env, e: Expr, σ: Trie<T>): EvalResult<T> {
          const [tf, ,]: EvalResult<null> = eval_(ρ, e.func, Trie.Fun.at(k, null)),
                f: Value | null = tf.val
          if (f instanceof Value.Closure) {
-            const [tu, ρ2, σʹu]: EvalResult<Expr> = eval_(ρ, e.arg, f.func.σ),
-                  ρ1: Env = closeDefs(f.δ, f.ρ, f.δ),
-                  [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), σʹu, σ)
-            return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʹ, σv]
+            const [tu, ρʹ, σʹu]: EvalResult<Expr> = eval_(ρ, e.arg, f.func.σ),
+                  [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(Env.concat(f.ρ, ρʹ), σʹu, σ)
+            return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʺ, σv]
          } else
          if (f instanceof Value.PrimOp) {
             const [tu, , σʹu]: EvalResult<PrimBody<T>> = eval_(ρ, e.arg, f.σ),
