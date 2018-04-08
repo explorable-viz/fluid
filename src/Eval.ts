@@ -1,4 +1,5 @@
 import { __nonNull, assert, as, make } from "./util/Core"
+import { ctrToDataType } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
@@ -8,9 +9,9 @@ export module Eval {
 
 export class Evaluand extends PersistentObject {
    j: EnvEntries
-   e: Expr.Expr
+   e: Expr
 
-   static make (j: EnvEntries, e: Expr.Expr): Evaluand {
+   static make (j: EnvEntries, e: Expr): Evaluand {
       const this_: Evaluand = make(Evaluand, j, e)
       this_.j = j
       this_.e = e
@@ -33,11 +34,11 @@ function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
 }
 
 // Not capturing the polymorphic type of the nested trie κ (which has a depth of n >= 0).
-function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
+function evalSeq (ρ: Env, κ: Object, es: Expr[]): EvalResults {
    if (es.length === 0) {
       return [[], Env.empty(), κ]
    } else {
-      const σ: Trie.Trie<Object> = as(κ as Trie.Trie<Object>, Trie.Trie),
+      const σ: Trie<Object> = as(κ as Trie<Object>, Trie.Trie),
             [tv, ρʹ, κʹ]: EvalResult<Object> = eval_(ρ, es[0], σ),
             [tvs, ρʺ, κʺ]: EvalResults = evalSeq(ρ, κʹ, es.slice(1))
       return [[tv].concat(tvs), Env.concat(ρʹ, ρʺ), κʺ]
@@ -45,13 +46,16 @@ function evalSeq (ρ: Env, κ: Object, es: Expr.Expr[]): EvalResults {
 }
 
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
-export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T> {
+export function eval_<T> (ρ: Env, e: Expr, σ: Trie<T>): EvalResult<T> {
    const k: Evaluand = Evaluand.make(ρ.entries(), e)
    if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Expr.EmptyRecDefs.make(), e)
       return [Traced.at(k, null, null), Env.singleton(σ.x.str, entry), σ.body]
    } else {
       if (e instanceof Expr.Constr && Trie.Constr.is(σ) && σ.cases.has(e.ctr.str)) {
+         const ctr: string = e.ctr.str
+         assert(ctrToDataType.has(ctr), "No such constructor.", e)
+         assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === e.args.length, "Arity mismatch.", e)
          const σʹ: Object = σ.cases.get(e.ctr.str)!,
                [tvs, ρʹ, κ]: EvalResults = evalSeq(ρ, σʹ, e.args)
          // have to cast κ without type information on constructor
@@ -76,14 +80,14 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
          } else {
             const {ρ: ρʹ, e: eʹ}: EnvEntry = ρ.get(x)!,
                   [tv, ρʺ, σv]: EvalResult<T> = eval_(ρʹ, eʹ, σ),
-                  t: Trace.Trace = e instanceof Expr.OpName 
+                  t: Trace = e instanceof Expr.OpName 
                      ? Trace.OpName.at(k, e.opName, __nonNull(tv.trace))
                      : Trace.Var.at(k, e.ident, __nonNull(tv.trace))
             return [Traced.at(k, t, tv.val), ρʺ, σv]
          }
       } else
       if (e instanceof Expr.Let) {
-         const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.e, e.σ),
+         const [tu, ρʹ, σu]: EvalResult<Expr> = eval_(ρ, e.e, e.σ),
                [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
          return [Traced.at(k, Trace.Let.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
       } else 
@@ -94,15 +98,15 @@ export function eval_<T> (ρ: Env, e: Expr.Expr, σ: Trie.Trie<T>): EvalResult<T
          return [Traced.at(k, Trace.LetRec.at(k, e.δ, __nonNull(tv.trace)), tv.val), ρʺ, σv]
       } else
       if (e instanceof Expr.MatchAs) {
-         const [tu, ρʹ, σu]: EvalResult<Expr.Expr> = eval_(ρ, e.e, e.σ),
+         const [tu, ρʹ, σu]: EvalResult<Expr> = eval_(ρ, e.e, e.σ),
                [tv, ρʺ, κ]: EvalResult<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
          return [Traced.at(k, Trace.Match.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
       } else
       if (e instanceof Expr.App) {
          const [tf, ,]: EvalResult<null> = eval_(ρ, e.func, Trie.Fun.at(k, null)),
-               f: Value.Value | null = tf.val
+               f: Value | null = tf.val
          if (f instanceof Value.Closure) {
-            const [tu, ρ2, σʹu]: EvalResult<Expr.Expr> = eval_(ρ, e.arg, f.func.σ),
+            const [tu, ρ2, σʹu]: EvalResult<Expr> = eval_(ρ, e.arg, f.func.σ),
                   ρ1: Env = closeDefs(f.δ, f.ρ, f.δ),
                   [tv, ρʹ, σv]: EvalResult<T> = eval_<T>(Env.concat(ρ1, ρ2), σʹu, σ)
             return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʹ, σv]

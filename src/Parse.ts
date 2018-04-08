@@ -148,20 +148,20 @@ function parenthesise<T> (p: Parser<T>): Parser<T> {
 const sectionOp: Parser<Expr.OpName> = parenthesise(symbolOp)
 
 // Consume no input, because application is represented simply by adjacency.
-const app_: Parser<(e1: Expr.Expr, e2: Expr.Expr) => Expr.App> =
+const app_: Parser<(e1: Expr, e2: Expr) => Expr.App> =
    withAction(
       constant(null),
-      (_: Expr.Expr) =>
-         (e1: Expr.Expr, e2: Expr.Expr): Expr.App => Expr.App.at(ν(), e1, e2)
+      (_: Expr) =>
+         (e1: Expr, e2: Expr): Expr.App => Expr.App.at(ν(), e1, e2)
    )
 
 function appOp (
-   opP: Parser<Expr.Expr>
-): Parser<(e1: Expr.Expr, e2: Expr.Expr) => Expr.App> {
+   opP: Parser<Expr>
+): Parser<(e1: Expr, e2: Expr) => Expr.App> {
    return withAction(
       opP,
       op =>
-         (e1: Expr.Expr, e2: Expr.Expr): Expr.App =>
+         (e1: Expr, e2: Expr): Expr.App =>
             Expr.App.at(ν(), Expr.App.at(ν(), op, e1), e2)
    )
 }
@@ -185,7 +185,7 @@ const integer: Parser<Expr.ConstInt> =
       lit => Expr.ConstInt.at(ν(), parseInt(lit.str))
    )
 
-const parenthExpr: Parser<Expr.Expr> = 
+const parenthExpr: Parser<Expr> = 
    parenthesise(expr)
 
 const let_: Parser<Expr.Let> =
@@ -194,14 +194,14 @@ const let_: Parser<Expr.Let> =
          dropFirst(keyword(str.let_), seq(dropSecond(var_, symbol(str.equals)), expr)),
          dropFirst(keyword(str.in_), expr)
       ),
-      ([[x, e], eʹ]: [[Lex.Var, Expr.Expr], Expr.Expr]) =>
+      ([[x, e], eʹ]: [[Lex.Var, Expr], Expr]) =>
          Expr.Let.at(ν(), e, Trie.Var.at(ν(), x, eʹ))
    )
 
 const recDef: Parser<Expr.RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
-      ([name, σ]: [Lex.Var, Trie.Trie<Traced>]) =>
+      ([name, σ]: [Lex.Var, Trie<Traced>]) =>
          Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), σ))
    )
 
@@ -222,25 +222,25 @@ const letrec: Parser<Expr.LetRec> =
          dropFirst(keyword(str.letRec), recDefs),
          dropFirst(keyword(str.in_), expr)
       ),
-     ([δ, body]: [Expr.RecDefs, Expr.Expr]) => 
+     ([δ, body]: [Expr.RecDefs, Expr]) => 
          Expr.LetRec.at(ν(), δ, body)
    )
 
 const constr: Parser<Expr.Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
-      ([ctr, args]: [Lex.Ctr, Expr.Expr[]]) =>
+      ([ctr, args]: [Lex.Ctr, Expr[]]) =>
          Expr.Constr.at(ν(), ctr, args)
    )
 
 const pair: Parser<Expr.Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
-      ([fst, snd]: [Expr.Expr, Expr.Expr]) =>
+      ([fst, snd]: [Expr, Expr]) =>
          Expr.Constr.at(ν(), new Lex.Ctr("Pair"), [fst, snd])
    )
 
-function args_pattern (p: Parser<Object>): Parser<Trie.Trie<Object>> {
+function args_pattern (p: Parser<Object>): Parser<Trie<Object>> {
    return (state: ParseState) => 
       pattern(choice([dropFirst(symbol(","), args_pattern(p)), p]))(state)
 }
@@ -262,7 +262,7 @@ function pair_pattern (p: Parser<Object>): Parser<Trie.Constr<Object>> {
          symbol(str.parenL), 
          pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
       ),
-      (σ: Trie.Trie<Traced>) => Trie.Constr.at(ν(), new Map([["Pair", σ]]))
+      (σ: Trie<Traced>) => Trie.Constr.at(ν(), new Map([["Pair", σ]]))
    )
 }
 
@@ -274,24 +274,24 @@ function variable_pattern (p: Parser<Object>): Parser<Trie.Var<Object>> {
 }
 
 // Wasn't able to figure out the trie type parameters. Using Object allows us not to care.
-function pattern (p: Parser<Object>): Parser<Trie.Trie<Object>> {
+function pattern (p: Parser<Object>): Parser<Trie<Object>> {
    return (state: ParseState) => 
-      choice<Trie.Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
+      choice<Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
 // Chain of singleton tries, terminating in an expression.
-const match: Parser<Trie.Trie<Expr.Expr>> = 
+const match: Parser<Trie<Expr>> = 
    pattern(dropFirst(symbol(str.arrow), expr))
 
 // Assume at least one match clause.
-function matches (state: ParseState): ParseResult<Trie.Trie<Expr.Expr>> | null {
+function matches (state: ParseState): ParseResult<Trie<Expr>> | null {
    return withAction(
-      choice<Trie.Trie<Expr.Expr>[]>([
+      choice<Trie<Expr>[]>([
          withAction(match, m => [m]),
          between(symbol("{"), sepBy1(match, symbol(";")), symbol("}"))
       ]),
-      (σs: Trie.Trie<Expr.Expr>[]) => {
-         let σ: Trie.Trie<Expr.Expr> = σs[0]
+      (σs: Trie<Expr>[]) => {
+         let σ: Trie<Expr> = σs[0]
          for (let i = 1; i < σs.length; ++i) {
             σ = Trie.join(σ, σs[i])
          } 
@@ -306,31 +306,31 @@ const matchAs: Parser<Expr.MatchAs> =
          dropFirst(keyword(str.match), expr),
          dropFirst(keyword(str.as), matches)
       ),
-      ([e, σ]: [Expr.Expr, Trie.Trie<Expr.Expr>]) => Expr.MatchAs.at(ν(), e, σ)
+      ([e, σ]: [Expr, Trie<Expr>]) => Expr.MatchAs.at(ν(), e, σ)
    )
 
 const fun: Parser<Expr.Fun> =
    withAction(
       dropFirst(keyword(str.fun), matches),
-      (σ: Trie.Trie<Traced>) => Expr.Fun.at(ν(), σ)
+      (σ: Trie<Traced>) => Expr.Fun.at(ν(), σ)
    )
 
 // Any expression other than an operator tree or application chain.
-const simpleExpr: Parser<Expr.Expr> =
-   choice<Expr.Expr>([
+const simpleExpr: Parser<Expr> =
+   choice<Expr>([
       variable, string_, integer, sectionOp, parenthExpr, pair, let_, letrec, constr, matchAs, fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.
-const appChain: Parser<Expr.Expr> = chainl1(simpleExpr, app_)
+const appChain: Parser<Expr> = chainl1(simpleExpr, app_)
 
 // An expression is an operator tree. An operator tree is a tree whose branches are infix
 // binary primitives and whose leaves are application chains.
-const productExpr: Parser<Expr.Expr> = chainl1(appChain, appOp(productOp))
-const sumExpr: Parser<Expr.Expr> = chainl1(productExpr, appOp(sumOp))
-const compareExpr: Parser<Expr.Expr> = chainl1(sumExpr, appOp(compareOp))
+const productExpr: Parser<Expr> = chainl1(appChain, appOp(productOp))
+const sumExpr: Parser<Expr> = chainl1(productExpr, appOp(sumOp))
+const compareExpr: Parser<Expr> = chainl1(sumExpr, appOp(compareOp))
 
-export function expr (state: ParseState): ParseResult<Expr.Expr> | null {
+export function expr (state: ParseState): ParseResult<Expr> | null {
    return compareExpr(state)
 }
 

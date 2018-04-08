@@ -1,13 +1,15 @@
-import { assert, funName } from "./util/Core"
+import { assert, funName, memo } from "./util/Core"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
-import { ν, PersistentObject } from "./Runtime"
+import { ν, PersistentObject, ExternalObject } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
-export type PrimResult<T> = [Value.Value | null, T] // v, σv
-export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => (α: PersistentObject) => PrimResult<T>
+export type PrimResult<T> = [Value | null, T] // v, σv
+export type PrimBody<T> = (v: Value | null, σ: Trie<T>) => (α: PersistentObject) => PrimResult<T>
 type TrieCtr<T> = (α: PersistentObject, body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
+type Unary<T, V> = (x: T) => (α: PersistentObject) => V
+type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
-function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
+function match<T> (v: Value, σ: Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
       return [v, σ.body]
    }  else
@@ -24,32 +26,39 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
-function makePrim<T extends Value.Value, V extends Value.Value> (
-   α: PersistentObject, 
-   name: string, 
-   op: (x: T) => (α: PersistentObject) => V,
-   at1: (α: PersistentObject, body: PrimBody<V>) => Trie.Prim<PrimBody<V>>
-): Value.PrimOp {
-   const primBody: PrimBody<V> = (x: T, σ: Trie.Trie<V>) => (α: PersistentObject) => match(op(x)(α), σ)
-   return Value.PrimOp.at(α, name, at1(α, primBody))
+function primBody<T extends Value, V extends Value> (op: Unary<T, V>): PrimBody<V> {
+   return memo<PrimBody<V>>(_primBody, null, op)
 }
 
-function makeUnary<T extends Value.Value, V extends Value.Value> (
-   op: (x: T) => (α: PersistentObject) => V,
-   at1: TrieCtr<V>,
-): Value.PrimOp {
-   return makePrim(ν(), funName(op), op, at1)
+// Memoise for persistent PrimBody function objects.
+function _primBody<T extends Value, V extends Value> (op: Unary<T, V>): PrimBody<V> {
+   return (x: T, σ: Trie<V>) => 
+      (α: PersistentObject) => match(memo(op, null, x)(α), σ)
 }
 
-function makeBinary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
-   op: (x: T, y: U) => (α: PersistentObject) => V,
-   at1: TrieCtr<Value.PrimOp>,
-   at2: TrieCtr<V>
-): Value.PrimOp {
-   function partiallyApply (x: T): (α: PersistentObject) => Value.PrimOp {
-      return (α: PersistentObject) => makePrim(α, op.name + " " + x, (y: U) => op(x, y), at2)
-   }
-   return makePrim(ν(), funName(op), partiallyApply, at1)
+function makeUnary<T extends Value, V extends Value> (
+   op: Unary<T, V>, trie1: TrieCtr<V>
+) {
+   const α: ExternalObject = ν()
+   return Value.PrimOp.at(ν(), funName(op), trie1(α, primBody(op)))
+}
+
+function makeBinary<T extends Value, U extends Value, V extends Value> (
+   op: Binary<T, U, V>,
+   trie1: TrieCtr<Value.PrimOp>,
+   trie2: TrieCtr<V>
+) {   
+   const partialApp: Unary<T, Value.PrimOp> = 
+      (x: T) => (α: PersistentObject) => 
+         // memoise to obtain unique PrimBody for each partial application:
+         Value.PrimOp.at(α, op.name + " " + x, trie2(α, primBody(memo<Unary<U, V>>(partiallyApply, null, op, x)))),
+         α: ExternalObject = ν()
+   return Value.PrimOp.at(ν(), funName(op), trie1(α, primBody(partialApp)))
+}
+
+// Needs to be a "static" definition; can't memoise function expressions.
+function partiallyApply<T, U, V> (op: Binary<T, U, V>, x: T): Unary<U, V> {
+   return (y: U) => op(x, y)
 }
 
 function __true (α: PersistentObject): Value.Constr {
@@ -63,7 +72,7 @@ function __false (α: PersistentObject): Value.Constr {
 // See 0.2.4 release notes re. primitive ops with identifiers as names.
 // Used to take an arbitrary value as an additional argument but now primitives must have
 // primitive arguments.
-export function error (message: Value.ConstStr): (α: PersistentObject) => Value.Value {
+export function error (message: Value.ConstStr): (α: PersistentObject) => Value {
    return assert(false, "LambdaCalc error:\n" + message.val)
 }
 
@@ -131,7 +140,7 @@ const ops: [string, Value.PrimOp][] = [
    [">>", makeBinary(greaterStr, Trie.ConstStr.at, Trie.ConstStr.at)],
    ["<", makeBinary(lessInt, Trie.ConstInt.at, Trie.ConstInt.at)],
    ["<<", makeBinary(lessStr, Trie.ConstStr.at, Trie.ConstStr.at)],
-   ["++", makeBinary(concat, Trie.ConstStr.at, Trie.ConstStr.at)],
+   ["++", makeBinary(concat, Trie.ConstStr.at, Trie.ConstStr.at)]
 ]
 
 // Fake "syntax" for primitives.

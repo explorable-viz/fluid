@@ -114,9 +114,9 @@ export class ExtendEnv extends Env {
 export class EnvEntry {
    ρ: Env
    δ: Expr.RecDefs
-   e: Expr.Expr
+   e: Expr
 
-   static make (ρ: Env, δ: Expr.RecDefs, e: Expr.Expr): EnvEntry {
+   static make (ρ: Env, δ: Expr.RecDefs, e: Expr): EnvEntry {
       const this_: EnvEntry = make(EnvEntry, ρ, δ, e)
       this_.ρ = ρ
       this_.δ = δ
