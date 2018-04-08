@@ -1,6 +1,6 @@
-import { assert, funName } from "./util/Core"
+import { assert, funName, memo } from "./util/Core"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
-import { ν, PersistentObject } from "./Runtime"
+import { ν, PersistentObject, ExternalObject } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value.Value | null, T] // v, σv
@@ -24,21 +24,25 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
-function makePrim<T extends Value.Value, V extends Value.Value> (
-   α: PersistentObject, 
-   name: string, 
-   op: (x: T) => (α: PersistentObject) => V,
-   at1: TrieCtr<V>
-): Value.PrimOp {
-   const primBody: PrimBody<V> = (x: T, σ: Trie.Trie<V>) => (α: PersistentObject) => match(op(x)(α), σ)
-   return Value.PrimOp.at(α, name, at1(α, primBody))
+function primBody<T extends Value.Value, V extends Value.Value> (
+   op: (x: T) => (α: PersistentObject) => V
+): PrimBody<V> {
+   return memo<PrimBody<V>>(_primBody, null, op)
+}
+
+// Needs to be memoised so a PrimBody can be contained by a PrimOp.
+function _primBody<T extends Value.Value, V extends Value.Value> (
+   op: (x: T) => (α: PersistentObject) => V
+): PrimBody<V> {
+   return (x: T, σ: Trie.Trie<V>) => (α: PersistentObject) => match(memo(op, null, x)(α), σ)
 }
 
 function makeUnary<T extends Value.Value, V extends Value.Value> (
    op: (x: T) => (α: PersistentObject) => V,
    at1: TrieCtr<V>
 ) {
-   return makePrim(ν(), funName(op), op, at1)
+   const α: ExternalObject = ν()
+   return Value.PrimOp.at(ν(), funName(op), at1(α, primBody(op)))
 }
 
 function makeBinary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
@@ -48,9 +52,10 @@ function makeBinary<T extends Value.Value, U extends Value.Value, V extends Valu
 ) {
    function partiallyApply (x: T): (α: PersistentObject) => Value.PrimOp {
       return (α: PersistentObject) => 
-         makePrim(α, op.name + " " + x, (y: U) => op(x, y), at2)
+         Value.PrimOp.at(α, op.name + " " + x, at2(α, primBody((y: U) => op(x, y))))
    }
-   return makePrim(ν(), funName(op), partiallyApply, at1)
+   const α: ExternalObject = ν()
+   return Value.PrimOp.at(ν(), funName(op), at1(α, primBody(partiallyApply)))
 }
 
 function __true (α: PersistentObject): Value.Constr {
