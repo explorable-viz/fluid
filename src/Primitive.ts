@@ -39,23 +39,37 @@ function _primBody<T extends Value.Value, V extends Value.Value> (
 
 function makeUnary<T extends Value.Value, V extends Value.Value> (
    op: (x: T) => (α: PersistentObject) => V,
-   at1: TrieCtr<V>
+   arg1Trie: TrieCtr<V>
 ) {
    const α: ExternalObject = ν()
-   return Value.PrimOp.at(ν(), funName(op), at1(α, primBody(op)))
+   return Value.PrimOp.at(ν(), funName(op), arg1Trie(α, primBody(op)))
+}
+
+function burble<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
+   op: (x: T, y: U) => (α: PersistentObject) => V,
+   x: T
+): (y: U) => (α: PersistentObject) => V {
+   return memo<(y: U) => (α: PersistentObject) => V>(_burble, null, op, x)
+}
+
+function _burble<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
+   op: (x: T, y: U) => (α: PersistentObject) => V,
+   x: T
+) {
+   return (y: U) => op(x, y)
 }
 
 function makeBinary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
    op: (x: T, y: U) => (α: PersistentObject) => V,
-   at1: TrieCtr<Value.PrimOp>,
-   at2: TrieCtr<V>
+   arg1Trie: TrieCtr<Value.PrimOp>,
+   arg2Trie: TrieCtr<V>
 ) {
    function partiallyApply (x: T): (α: PersistentObject) => Value.PrimOp {
       return (α: PersistentObject) => 
-         Value.PrimOp.at(α, op.name + " " + x, at2(α, primBody(memo((x: T) => (y: U) => op(x, y), null, x))))
+         Value.PrimOp.at(α, op.name + " " + x, arg2Trie(α, primBody(burble(op, x))))
    }
    const α: ExternalObject = ν()
-   return Value.PrimOp.at(ν(), funName(op), at1(α, primBody(partiallyApply)))
+   return Value.PrimOp.at(ν(), funName(op), arg1Trie(α, primBody(partiallyApply)))
 }
 
 function __true (α: PersistentObject): Value.Constr {
