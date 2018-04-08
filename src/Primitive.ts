@@ -3,11 +3,15 @@ import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { ν, PersistentObject, ExternalObject } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
-export type PrimResult<T> = [Value.Value | null, T] // v, σv
-export type PrimBody<T> = (v: Value.Value | null, σ: Trie.Trie<T>) => (α: PersistentObject) => PrimResult<T>
+type Value = Value.Value
+type Trie<T> = Trie.Trie<T>
+export type PrimResult<T> = [Value | null, T] // v, σv
+export type PrimBody<T> = (v: Value | null, σ: Trie<T>) => (α: PersistentObject) => PrimResult<T>
 type TrieCtr<T> = (α: PersistentObject, body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
+type Unary<T, V> = (x: T) => (α: PersistentObject) => V
+type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
-function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
+function match<T> (v: Value, σ: Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
       return [v, σ.body]
    }  else
@@ -24,51 +28,44 @@ function match<T> (v: Value.Value, σ: Trie.Trie<T>): PrimResult<T> {
    }
 }
 
-function primBody<T extends Value.Value, V extends Value.Value> (
-   op: (x: T) => (α: PersistentObject) => V
-): PrimBody<V> {
+function primBody<T extends Value, V extends Value> (op: Unary<T, V>): PrimBody<V> {
    return memo<PrimBody<V>>(_primBody, null, op)
 }
 
 // Needs to be memoised so a PrimBody can be contained by a PrimOp.
-function _primBody<T extends Value.Value, V extends Value.Value> (
-   op: (x: T) => (α: PersistentObject) => V
-): PrimBody<V> {
-   return (x: T, σ: Trie.Trie<V>) => (α: PersistentObject) => match(memo(op, null, x)(α), σ)
+function _primBody<T extends Value, V extends Value> (op: Unary<T, V>): PrimBody<V> {
+   return (x: T, σ: Trie.Trie<V>) => 
+      (α: PersistentObject) => match(memo(op, null, x)(α), σ)
 }
 
-function makeUnary<T extends Value.Value, V extends Value.Value> (
-   op: (x: T) => (α: PersistentObject) => V,
-   arg1Trie: TrieCtr<V>
-) {
+function makeUnary<T extends Value, V extends Value> (op: Unary<T, V>, arg1Trie: TrieCtr<V>) {
    const α: ExternalObject = ν()
    return Value.PrimOp.at(ν(), funName(op), arg1Trie(α, primBody(op)))
 }
 
-function burble<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
-   op: (x: T, y: U) => (α: PersistentObject) => V,
+function burble<T extends Value, U extends Value, V extends Value> (
+   op: Binary<T, U, V>,
    x: T
 ): (y: U) => (α: PersistentObject) => V {
    return memo<(y: U) => (α: PersistentObject) => V>(_burble, null, op, x)
 }
 
-function _burble<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
-   op: (x: T, y: U) => (α: PersistentObject) => V,
+function _burble<T extends Value, U extends Value, V extends Value> (
+   op: Binary<T, U, V>, 
    x: T
-) {
+): (y: U) => (α: PersistentObject) => V {
    return (y: U) => op(x, y)
 }
 
-function makeBinary<T extends Value.Value, U extends Value.Value, V extends Value.Value> (
-   op: (x: T, y: U) => (α: PersistentObject) => V,
+function makeBinary<T extends Value, U extends Value, V extends Value> (
+   op: Binary<T, U, V>,
    arg1Trie: TrieCtr<Value.PrimOp>,
    arg2Trie: TrieCtr<V>
-) {
-   function partiallyApply (x: T): (α: PersistentObject) => Value.PrimOp {
-      return (α: PersistentObject) => 
-         Value.PrimOp.at(α, op.name + " " + x, arg2Trie(α, primBody(burble(op, x))))
-   }
-   const α: ExternalObject = ν()
+) {   
+   const partiallyApply: Unary<T, Value.PrimOp> = 
+      (x: T) => (α: PersistentObject) => 
+         Value.PrimOp.at(α, op.name + " " + x, arg2Trie(α, primBody(burble(op, x)))),
+         α: ExternalObject = ν()
    return Value.PrimOp.at(ν(), funName(op), arg1Trie(α, primBody(partiallyApply)))
 }
 
