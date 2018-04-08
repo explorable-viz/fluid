@@ -43,17 +43,8 @@ function makeUnary<T extends Value, V extends Value> (op: Unary<T, V>, arg1Trie:
    return Value.PrimOp.at(ν(), funName(op), arg1Trie(α, primBody(op)))
 }
 
-function burble<T extends Value, U extends Value, V extends Value> (
-   op: Binary<T, U, V>,
-   x: T
-): (y: U) => (α: PersistentObject) => V {
-   return memo<(y: U) => (α: PersistentObject) => V>(_burble, null, op, x)
-}
-
-function _burble<T extends Value, U extends Value, V extends Value> (
-   op: Binary<T, U, V>, 
-   x: T
-): (y: U) => (α: PersistentObject) => V {
+// Needs to be a "static" definition; can't memoise function expressions.
+function _burble<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, x: T): Unary<U, V> {
    return (y: U) => op(x, y)
 }
 
@@ -64,7 +55,7 @@ function makeBinary<T extends Value, U extends Value, V extends Value> (
 ) {   
    const partiallyApply: Unary<T, Value.PrimOp> = 
       (x: T) => (α: PersistentObject) => 
-         Value.PrimOp.at(α, op.name + " " + x, arg2Trie(α, primBody(burble(op, x)))),
+         Value.PrimOp.at(α, op.name + " " + x, arg2Trie(α, primBody(memo<Unary<U, V>>(_burble, null, op, x)))),
          α: ExternalObject = ν()
    return Value.PrimOp.at(ν(), funName(op), arg1Trie(α, primBody(partiallyApply)))
 }
