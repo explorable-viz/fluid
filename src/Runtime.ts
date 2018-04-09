@@ -70,7 +70,10 @@ export function create <K extends PersistentObject, T extends VersionedObject<K>
             if (this_.__history.length === 0) {
                this_.__history.push(__shallowCopy(this_))
             } else {
-               assert(__shallowLeq(this_.__history[0], this), "Address collision (different property value).")
+               assert(
+                  __shallowLeq(this_.__history[0], this), 
+                  "Address collision (different property value).", this_, this_.__history[0]
+               )
             }
             return this
          },

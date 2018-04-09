@@ -43,8 +43,8 @@ describe("example", () => {
 
 	describe("foldr_sumSquares", () => {
 		const file: TestFile = loadExample("foldr_sumSquares")
-		it("parses ok", () => {
-			runTest(__nonNull(file.text))
+		it("runs ok", () => {
+			runTest(__nonNull(file.text), Profile.Run, σ_int)
 		})
 	})
 

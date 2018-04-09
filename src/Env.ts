@@ -1,7 +1,8 @@
 import { assert, make } from "./util/Core"
+import { PersistentObject } from "./Runtime"
 import { Expr } from "./Syntax"
 
-export class EnvEntries {
+export class EnvEntries extends PersistentObject {
    __EnvEntries (): void {
       // discriminator
    }
@@ -31,7 +32,7 @@ export class ExtendEnvEntries extends EnvEntries {
 // But although evaluation ids do not depend on the ids of environments themselves, we still intern
 // environments to enable LVar semantics.
 
-export abstract class Env {
+export abstract class Env extends PersistentObject {
    __Env(): void {
       // discriminator
    }

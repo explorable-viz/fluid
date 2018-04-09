@@ -266,7 +266,6 @@ export namespace Expr {
       }
    }
 
-   // Interned rather than versioned.
    export abstract class RecDefs extends PersistentObject {
       __RecDefs (): void {
          // discriminator
