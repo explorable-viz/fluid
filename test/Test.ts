@@ -71,8 +71,8 @@ describe("example", () => {
 
 	describe("map", () => {
 		const file: TestFile = loadExample("map")
-		it("parses ok", () => {
-			runTest(__nonNull(file.text))
+		it("runs ok", () => {
+			runTest(__nonNull(file.text), Profile.Run, σ_cons_int)
 		})
 	})
 
