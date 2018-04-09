@@ -1,5 +1,6 @@
 import { assert, funName, memo } from "./util/Core"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
+import { Nil } from "./List"
 import { ν, PersistentObject, ExternalObject } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
@@ -62,11 +63,11 @@ function partiallyApply<T, U, V> (op: Binary<T, U, V>, x: T): Unary<U, V> {
 }
 
 function __true (α: PersistentObject): Value.Constr {
-   return Value.Constr.at(α, new Lex.Ctr("True"), [])
+   return Value.Constr.at(α, new Lex.Ctr("True"), Nil.make())
 }
 
 function __false (α: PersistentObject): Value.Constr {
-   return Value.Constr.at(α, new Lex.Ctr("False"), [])
+   return Value.Constr.at(α, new Lex.Ctr("False"), Nil.make())
 }
 
 // See 0.2.4 release notes re. primitive ops with identifiers as names.

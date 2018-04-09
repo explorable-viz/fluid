@@ -1,6 +1,7 @@
 import { __nonNull, assert, as, make } from "./util/Core"
 import { ctrToDataType } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
+import { Cons, List, Nil } from "./List"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 import { PersistentObject } from "./Runtime";
@@ -20,7 +21,7 @@ export class Evaluand extends PersistentObject {
 }
 
 export type EvalResult<T> = [Traced, Env, T]    // tv, ρ, σv
-type EvalResults = [Traced[], Env, Object]      // tvs, ρ, σv
+type EvalResults = [List<Traced>, Env, Object]      // tvs, ρ, σv
 
 function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
    if (δ_0 instanceof Expr.EmptyRecDefs) {
@@ -34,14 +35,17 @@ function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
 }
 
 // Not capturing the polymorphic type of the nested trie κ (which has a depth of n >= 0).
-function evalSeq (ρ: Env, κ: Object, es: Expr[]): EvalResults {
-   if (es.length === 0) {
-      return [[], Env.empty(), κ]
-   } else {
+function evalSeq (ρ: Env, κ: Object, es: List<Expr>): EvalResults {
+   if (Cons.is(es)) {
       const σ: Trie<Object> = as(κ as Trie<Object>, Trie.Trie),
-            [tv, ρʹ, κʹ]: EvalResult<Object> = eval_(ρ, es[0], σ),
-            [tvs, ρʺ, κʺ]: EvalResults = evalSeq(ρ, κʹ, es.slice(1))
-      return [[tv].concat(tvs), Env.concat(ρʹ, ρʺ), κʺ]
+            [tv, ρʹ, κʹ]: EvalResult<Object> = eval_(ρ, es.head, σ),
+            [tvs, ρʺ, κʺ]: EvalResults = evalSeq(ρ, κʹ, es.tail)
+      return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κʺ]
+   } else
+   if (Nil.is(es)) { // TS bug requires guards in this order
+      return [Nil.make(), Env.empty(), κ]
+   } else {
+      return assert(false)
    }
 }
 

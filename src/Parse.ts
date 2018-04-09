@@ -3,7 +3,8 @@ import {
    dropSecond, lazySeq, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { ν } from "./Runtime"
+import { Cons, List, Nil } from "./List"
+import { ν, PersistentObject } from "./Runtime"
 import { Lex, Traced, str, } from "./Syntax"
 import { Expr, Trie } from "./Syntax"
 
@@ -226,6 +227,20 @@ const letrec: Parser<Expr.LetRec> =
          Expr.LetRec.at(ν(), δ, body)
    )
 
+// Zero or more matches of another parser, returning their results as a list.
+export function list<T extends PersistentObject>(p: Parser<T>): Parser<List<T>> {
+   return optional(list1(p), Nil.make())
+}
+
+// One or more matches of p, as a list.
+export function list1<T extends PersistentObject>(p: Parser<T>): Parser<List<T>> {
+   return withAction(
+      lazySeq(p, () => list(p)),
+      ([t, ts]: [T, List<T>]) => Cons.make(t, ts)
+   )
+}
+
+   
 const constr: Parser<Expr.Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
