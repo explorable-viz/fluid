@@ -1,4 +1,4 @@
-import { __shallowCopy, __shallowLeq, __shallowMergeAssign, assert, className, funName, make } from "./util/Core"
+import { __shallowCopy, __shallowMergeAssign, assert, className, funName, make } from "./util/Core"
 
 export interface Ctr<T> {
    new (): T
@@ -70,10 +70,6 @@ export function create <K extends PersistentObject, T extends VersionedObject<K>
             if (this_.__history.length === 0) {
                this_.__history.push(__shallowCopy(this_))
             } else {
-               assert(
-                  __shallowLeq(this_.__history[0], this),
-                  "Address collision (different property value).", this_, this_.__history[0]
-               )
                __shallowMergeAssign(this_.__history[0], this_)
             }
             return this
