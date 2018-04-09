@@ -34,12 +34,20 @@ export namespace τ {
       return Trie.ConstInt.at(ν(), t)
    }
 
-   export function pair<T> (t: T): Trie<T> {
-      return Trie.Constr.at(ν(), new Map([["Pair", t]]))
+   export function str<T> (t: T): Trie<T> {
+      return Trie.ConstStr.at(ν(), t)
    }
 
    export function cons<T> (t: T): Trie<T> {
       return Trie.Constr.at(ν(), new Map([["Cons", t]]))
+   }
+
+   export function pair<T> (t: T): Trie<T> {
+      return Trie.Constr.at(ν(), new Map([["Pair", t]]))
+   }
+
+   export function some<T> (t: T): Trie<T> {
+      return Trie.Constr.at(ν(), new Map([["Some", t]]))
    }
 }
 
