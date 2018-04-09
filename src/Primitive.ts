@@ -22,7 +22,7 @@ function match<T> (v: Value, σ: Trie<T>): PrimResult<T> {
    if (v instanceof Value.Constr && Trie.Constr.is(σ) && σ.cases.has(v.ctr.str)) {
       return [v, σ.cases.get(v.ctr.str)!]
    } else {
-      return assert(false, "Demand mismatch.")
+      return assert(false, "Primitive demand mismatch.", v, σ)
    }
 }
 
