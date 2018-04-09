@@ -92,8 +92,8 @@ describe("example", () => {
 
 	describe("reverse", () => {
 		const file: TestFile = loadExample("reverse")
-		it("parses ok", () => {
-			runTest(__nonNull(file.text))
+		it("runs ok", () => {
+			runTest(__nonNull(file.text), Profile.Run, σ_cons_int)
 		})
 	})
 
