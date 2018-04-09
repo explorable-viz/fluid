@@ -96,13 +96,11 @@ export namespace Value {
 
    export class Closure extends Value {
       ρ: Env
-      δ: Expr.RecDefs
       func: Expr.Fun
    
-      static at (α: PersistentObject, ρ: Env, δ: Expr.RecDefs, func: Expr.Fun): Closure {
+      static at (α: PersistentObject, ρ: Env, func: Expr.Fun): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
-         this_.δ = δ
          this_.func = func
          this_.__version()
          return this_

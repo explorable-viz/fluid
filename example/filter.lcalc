@@ -1,5 +1,5 @@
 letrec
-   fun filter {
+   fun filter p → fun {
       Nil → Nil;
       Cons(x, xs) →
          match p x as {

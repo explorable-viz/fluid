@@ -29,6 +29,8 @@ export const σ_var: Trie<null> = Trie.Var.at(ν(), new Lex.Var("x"), null)
 export const σ_int: Trie<null> = Trie.ConstInt.at(ν(), null)
 export const σ_pair_int_int: Trie<null> = 
    Trie.Constr.at(ν(), new Map([["Pair", Trie.ConstInt.at(ν(), Trie.ConstInt.at(ν(), null))]]))
+export const σ_cons_int: Trie<null> =
+   Trie.Constr.at(ν(), new Map([["Cons", Trie.ConstInt.at(ν(), σ_var)]]))
 
 export function runExample (p: Profile, src: string, σ: Trie<null>): void {
    const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
