@@ -4,6 +4,7 @@ import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
+import { List } from "./List"
 import { PrimBody } from "./Primitive"
 import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
 
@@ -145,9 +146,9 @@ export namespace Value {
    
    export class Constr extends Value {
       ctr: Lex.Ctr
-      args: Traced[]
+      args: List<Traced>
    
-      static at (α: PersistentObject, ctr: Lex.Ctr, args: Traced[]): Constr {
+      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Traced>): Constr {
          const this_: Constr = create(α, Constr)
          this_.ctr = ctr
          this_.args = args
@@ -217,9 +218,9 @@ export namespace Expr {
    
    export class Constr extends Expr {
       ctr: Lex.Ctr
-      args: Expr[]
+      args: List<Expr>
    
-      static at (i: ExternalObject, ctr: Lex.Ctr, args: Expr[]): Constr {
+      static at (i: ExternalObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
          const this_: Constr = create(i, Constr)
          this_.ctr = ctr
          this_.args = args
@@ -266,7 +267,6 @@ export namespace Expr {
       }
    }
 
-   // Interned rather than versioned.
    export abstract class RecDefs extends PersistentObject {
       __RecDefs (): void {
          // discriminator

@@ -25,12 +25,23 @@ export enum Profile {
 
 const defaultProfile = Profile.Parse
 
-export const σ_var: Trie<null> = Trie.Var.at(ν(), new Lex.Var("x"), null)
-export const σ_int: Trie<null> = Trie.ConstInt.at(ν(), null)
-export const σ_pair_int_int: Trie<null> = 
-   Trie.Constr.at(ν(), new Map([["Pair", Trie.ConstInt.at(ν(), Trie.ConstInt.at(ν(), null))]]))
-export const σ_cons_int: Trie<null> =
-   Trie.Constr.at(ν(), new Map([["Cons", Trie.ConstInt.at(ν(), σ_var)]]))
+export namespace τ {
+   export function var_<T> (t: T): Trie<T> {
+      return Trie.Var.at(ν(), new Lex.Var("x"), t)
+   }
+
+   export function int<T> (t: T): Trie<T> {
+      return Trie.ConstInt.at(ν(), t)
+   }
+
+   export function pair<T> (t: T): Trie<T> {
+      return Trie.Constr.at(ν(), new Map([["Pair", t]]))
+   }
+
+   export function cons<T> (t: T): Trie<T> {
+      return Trie.Constr.at(ν(), new Map([["Cons", t]]))
+   }
+}
 
 export function runExample (p: Profile, src: string, σ: Trie<null>): void {
    const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
@@ -42,7 +53,7 @@ export function runExample (p: Profile, src: string, σ: Trie<null>): void {
 
 export let ρ: Env = prelude()
 
-export function runTest (prog: string, profile: Profile = defaultProfile, σ: Trie<null> = σ_var): void {
+export function runTest (prog: string, profile: Profile = defaultProfile, σ: Trie<null> = τ.var_(null)): void {
    runExample(profile, prog, σ)
 }
 

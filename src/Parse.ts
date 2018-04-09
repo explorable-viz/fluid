@@ -3,6 +3,7 @@ import {
    dropSecond, lazySeq, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
+import { List } from "./List"
 import { ν } from "./Runtime"
 import { Lex, Traced, str, } from "./Syntax"
 import { Expr, Trie } from "./Syntax"
@@ -230,14 +231,14 @@ const constr: Parser<Expr.Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
       ([ctr, args]: [Lex.Ctr, Expr[]]) =>
-         Expr.Constr.at(ν(), ctr, args)
+         Expr.Constr.at(ν(), ctr, List.fromArray(args))
    )
 
 const pair: Parser<Expr.Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Expr, Expr]) =>
-         Expr.Constr.at(ν(), new Lex.Ctr("Pair"), [fst, snd])
+         Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
    )
 
 function args_pattern (p: Parser<Object>): Parser<Trie<Object>> {
