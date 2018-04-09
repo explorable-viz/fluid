@@ -7,6 +7,14 @@ export abstract class List<T extends PersistentObject> extends PersistentObject 
       // discriminator
    }
 
+   static fromArray<T extends PersistentObject> (xs: T[]): List<T> {
+      let xs_: List<T> = Nil.make()
+      for (let n: number = xs.length - 1; n >= 0; --n) {
+         xs_ = Cons.make(xs[n], xs_)
+      }
+      return xs_
+   }
+
    abstract length: number
 }
 
