@@ -65,7 +65,7 @@ describe("example", () => {
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
 		it("parses ok", () => {
-			runTest(__nonNull(file.text))
+			runTest(__nonNull(file.text), Profile.Run, τ.some(τ.str(null)))
 		})
 	})
 
@@ -78,8 +78,8 @@ describe("example", () => {
 
 	describe("mergeSort", () => {
 		const file: TestFile = loadExample("mergeSort")
-		it("parses ok", () => {
-			runTest(__nonNull(file.text))
+		it("runs ok", () => {
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.int(τ.var_(null))))
 		})
 	})
 
