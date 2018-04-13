@@ -1,11 +1,18 @@
 import { assert} from "./util/Core"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
-import { List } from "./List"
+import { Cons, List, Nil } from "./List"
 import { Expr, Trace, Traced, Value } from "./Syntax"
 
 export function substSeq (es: List<Expr.Expr>, θ: Env): List<Traced> {
-
+   if (Cons.is(es)) {
+      return Cons.make(subst(es.head, θ), substSeq(es.tail, θ))
+   } else
+   if (Nil.is(es)) {
+      return Nil.make()
+   } else {
+      return assert(false)
+   }
 }
 
 export function subst (e: Expr.Expr, θ: Env): Traced {
