@@ -2,6 +2,7 @@ import { assert} from "./util/Core"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
+import { FiniteMap } from "./FiniteMap"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
 export function instantiate (e: Expr.Expr, ρ: Env): Traced {
@@ -46,7 +47,7 @@ export function instantiate (e: Expr.Expr, ρ: Env): Traced {
    }
 }
 
-export function instantiateList (es: List<Expr.Expr>, ρ: Env): List<Traced> {
+function instantiateList (es: List<Expr.Expr>, ρ: Env): List<Traced> {
    if (Cons.is(es)) {
       return Cons.make(instantiate(es.head, ρ), instantiateList(es.tail, ρ))
    } else
@@ -57,9 +58,25 @@ export function instantiateList (es: List<Expr.Expr>, ρ: Env): List<Traced> {
    }
 }
 
+export function instantiateMap (es: FiniteMap<string, Expr>, ρ: Env): FiniteMap<string, Expr> {
+}
+
+// Should be able to give this a more specific type, but doesn't work with the type guards.
 function instantiateTrie (σ: Trie<Expr>, ρ: Env): Trie<Expr> {
    if (Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, instantiate(σ.body, ρ))
+   } else
+   if (Trie.ConstInt.is(σ)) {
+      return Trie.ConstInt.make(instantiate(σ.body, ρ))
+   } else
+   if (Trie.ConstStr.is(σ)) {
+      return Trie.ConstStr.make(instantiate(σ.body, ρ))
+   } else
+   if (Trie.Constr.is(σ)) {
+      return Trie.Constr.make(instantiateMap(σ.cases, ρ))
+   } else
+   if (Trie.Fun.is(σ)) {
+      return Trie.Fun.make(instantiate(σ.body, ρ))
    } else {
       return assert(false)
    }
