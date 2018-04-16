@@ -2,11 +2,11 @@ import { __check, assert, make } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { List } from "./BaseTypes"
+import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
 import { PrimBody } from "./Primitive"
-import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
+import { ExternalObject, VersionedObject, Persistent, PersistentObject, create } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
@@ -369,7 +369,6 @@ export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evalua
 export type Trie<T> = Trie.Trie<T>
 
 export namespace Trie {
-   // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
    export class Trie<T> extends VersionedObject implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
@@ -407,14 +406,14 @@ export namespace Trie {
    }
 
    // TODO: replace ES6 map by interned data structure.
-   export class Constr<T> extends Trie<T> {
-      cases: Map<string, T>
+   export class Constr<T extends Persistent> extends Trie<T> {
+      cases: List<Pair<string, T>>
 
-      static is<T> (σ: Trie<T>): σ is Constr<T> {
+      static is<T extends Persistent> (σ: Trie<T>): σ is Constr<T> {
          return σ instanceof Constr
       }
 
-      static at <T> (α: PersistentObject, cases: Map<string, T>): Constr<T> {
+      static at <T extends Persistent> (α: PersistentObject, cases: List<Pair<string, T>>): Constr<T> {
          const this_: Constr<T> = create<PersistentObject, Constr<T>>(α, Constr)
          this_.cases = cases
          this_.__version()

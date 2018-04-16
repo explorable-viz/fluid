@@ -4,17 +4,6 @@ import { Env } from "./Env"
 import { Eval } from "./Eval"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
-export function instantiateList (es: List<Expr.Expr>, ρ: Env): List<Traced> {
-   if (Cons.is(es)) {
-      return Cons.make(instantiate(es.head, ρ), instantiateList(es.tail, ρ))
-   } else
-   if (Nil.is(es)) {
-      return Nil.make()
-   } else {
-      return assert(false)
-   }
-}
-
 export function instantiate (e: Expr.Expr, ρ: Env): Traced {
    const i: Eval.Evaluand = Eval.Evaluand.make(ρ.entries(), e)
    if (e instanceof Expr.ConstInt) {
@@ -52,6 +41,17 @@ export function instantiate (e: Expr.Expr, ρ: Env): Traced {
    } else
    if (e instanceof Expr.App) {
       return Traced.at(i, Trace.App.at(i, instantiate(e.func, ρ), instantiate(e.arg, ρ), null), null)
+   } else {
+      return assert(false)
+   }
+}
+
+export function instantiateList (es: List<Expr.Expr>, ρ: Env): List<Traced> {
+   if (Cons.is(es)) {
+      return Cons.make(instantiate(es.head, ρ), instantiateList(es.tail, ρ))
+   } else
+   if (Nil.is(es)) {
+      return Nil.make()
    } else {
       return assert(false)
    }
