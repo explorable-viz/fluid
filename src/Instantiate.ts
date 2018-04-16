@@ -18,7 +18,6 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
       } else
       if (e instanceof Expr.Fun) {
          // No need to use "unknown" environment here because we have ρ.
-         // TODO
          return Traced.at(i, Trace.Empty.at(i), Value.Closure.at(i, ρ, instantiateTrie(e.σ, ρ)))
       } else
       if (e instanceof Expr.PrimOp) {
@@ -37,7 +36,6 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          return Traced.at(i, Trace.LetRec.at(i, e.δ, instantiate(ρ)(e.e).trace!), null)
       } else
       if (e instanceof Expr.MatchAs) {
-         // Do we want the σ in the match trace?
          return Traced.at(i, Trace.Match.at(i, instantiate(ρ)(e.e), null), null)
       } else
       if (e instanceof Expr.App) {

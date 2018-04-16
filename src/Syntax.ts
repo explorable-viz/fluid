@@ -533,7 +533,7 @@ export namespace Trace {
       }
    }
    
-   // See 0.6.1 release notes.
+   // Do we want the σ in the match trace as per the formalism?
    export class Match extends Trace {
       tu: Traced
       t: Trace | null
@@ -564,7 +564,6 @@ export namespace Trace {
       }
    }
 
-   // For primitives there is no body, but we will still show how the argument is consumed.
    export class PrimApp extends Trace {
       op: Traced
       arg: Traced
