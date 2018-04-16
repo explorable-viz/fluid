@@ -366,10 +366,11 @@ export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evalua
    }
 }
 
+// Tries are currently not versioned, for consistency with the spec.
 export type Trie<T> = Trie.Trie<T>
 
 export namespace Trie {
-   export class Trie<T> extends VersionedObject implements JoinSemilattice<Trie<T>> {
+   export class Trie<T> extends PersistentObject implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
@@ -384,10 +385,9 @@ export namespace Trie {
          return σ instanceof ConstInt
       }
 
-      static at <T> (α: PersistentObject, body: T): ConstInt<T> {
-         const this_: ConstInt<T> = create<PersistentObject, ConstInt<T>>(α, ConstInt)
+      static make <T> (body: T): ConstInt<T> {
+         const this_: ConstInt<T> = make<ConstInt<T>>(ConstInt, body)
          this_.body = body
-         this_.__version()
          return this_
       }
    }
@@ -397,10 +397,9 @@ export namespace Trie {
          return σ instanceof ConstStr
       }
 
-      static at <T> (α: PersistentObject, body: T): ConstStr<T> {
-         const this_: ConstStr<T> = create<PersistentObject, ConstStr<T>>(α, ConstStr)
+      static make <T> (body: T): ConstStr<T> {
+         const this_: ConstStr<T> = make<ConstStr<T>>(ConstStr, body)
          this_.body = body
-         this_.__version()
          return this_
       }
    }
@@ -413,10 +412,9 @@ export namespace Trie {
          return σ instanceof Constr
       }
 
-      static at <T extends Persistent> (α: PersistentObject, cases: FiniteMap<string, T>): Constr<T> {
-         const this_: Constr<T> = create<PersistentObject, Constr<T>>(α, Constr)
+      static make <T extends Persistent> (cases: FiniteMap<string, T>): Constr<T> {
+         const this_: Constr<T> = make<Constr<T>>(Constr, cases)
          this_.cases = cases
-         this_.__version()
          return this_
       }
    }
@@ -429,11 +427,10 @@ export namespace Trie {
          return σ instanceof Var
       }
 
-      static at <T> (α: PersistentObject, x: Lex.Var, body: T): Var<T> {
-         const this_: Var<T> = create<PersistentObject, Var<T>>(α, Var)
+      static make <T> (x: Lex.Var, body: T): Var<T> {
+         const this_: Var<T> = make<Var<T>>(Var, x, body)
          this_.x = x
          this_.body = body
-         this_.__version()
          return this_
       }
    }
@@ -445,28 +442,14 @@ export namespace Trie {
          return σ instanceof Fun
       }
 
-      static at <T> (α: PersistentObject, body: T): Fun<T> {
-         const this_: Fun<T> = create<PersistentObject, Fun<T>>(α, Fun)
+      static make <T> (body: T): Fun<T> {
+         const this_: Fun<T> = make<Fun<T>>(Fun, body)
          this_.body = body
-         this_.__version()
-         return this_
-      }
-   }
-
-   class JoinTrie<T> extends PersistentObject {
-      σ: Trie<T>
-      τ: Trie<T>
-
-      static make<T> (σ: Trie<T>, τ: Trie<T>): JoinTrie<T> {
-         const this_: JoinTrie<T> = make(JoinTrie, σ, τ)
-         this_.σ = σ
-         this_.τ = τ
          return this_
       }
    }
 
    export function join<T extends JoinSemilattice<T> & Persistent> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
-      const α: JoinTrie<T> = JoinTrie.make(σ, τ)
       if (σ === null) {
          return τ
       } else
@@ -474,13 +457,13 @@ export namespace Trie {
          return σ
       } else
       if (Fun.is(σ) && Fun.is(τ)) {
-         return Fun.at(α, σ.body.join(τ.body))
+         return Fun.make(σ.body.join(τ.body))
       } else
       if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-         return Var.at(α, σ.x, σ.body.join(τ.body))
+         return Var.make(σ.x, σ.body.join(τ.body))
       } else
       if (Constr.is(σ) && Constr.is(τ)) {
-         return Constr.at<T>(α, unionWith(σ.cases, τ.cases, (x, y) => x.join(y)))
+         return Constr.make<T>(unionWith(σ.cases, τ.cases, (x, y) => x.join(y)))
       } else {
          return assert(false, "Undefined join.", σ, τ)
       }

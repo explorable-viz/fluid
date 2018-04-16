@@ -59,7 +59,7 @@ export function instantiateList (es: List<Expr.Expr>, ρ: Env): List<Traced> {
 
 function instantiateTrie (σ: Trie<Expr>, ρ: Env): Trie<Expr> {
    if (Trie.Var.is(σ)) {
-      return Trie.Var.at(i, σ.x, instantiate(σ.body, ρ))
+      return Trie.Var.make(σ.x, instantiate(σ.body, ρ))
    } else {
       return assert(false)
    }

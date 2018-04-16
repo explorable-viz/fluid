@@ -197,7 +197,7 @@ const let_: Parser<Expr.Let> =
          dropFirst(keyword(str.in_), expr)
       ),
       ([[x, e], eʹ]: [[Lex.Var, Expr], Expr]) =>
-         Expr.Let.at(ν(), e, Trie.Var.at(ν(), x, eʹ))
+         Expr.Let.at(ν(), e, Trie.Var.make(x, eʹ))
    )
 
 const recDef: Parser<Expr.RecDef> =
@@ -271,7 +271,7 @@ function pair_pattern (p: Parser<PersistentObject>): Parser<Trie.Constr<Persiste
 function variable_pattern (p: Parser<PersistentObject>): Parser<Trie.Var<PersistentObject>> {
    return withAction(
       seq(var_, p), ([x, z]: [Lex.Var, Traced]) => 
-         Trie.Var.at(ν(), x, z)
+         Trie.Var.make(x, z)
       )
 }
 
