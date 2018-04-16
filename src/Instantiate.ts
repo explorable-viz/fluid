@@ -1,8 +1,7 @@
 import { assert} from "./util/Core"
-import { Cons, List, Nil } from "./BaseTypes"
+import { Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
-import { FiniteMap } from "./FiniteMap"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 
 export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
@@ -61,7 +60,9 @@ function instantiateTrie (σ: Trie<Expr>, ρ: Env): Trie<Expr> {
       return Trie.ConstStr.make(instantiate(ρ)(σ.body))
    } else
    if (Trie.Constr.is(σ)) {
-      return Trie.Constr.make(instantiateMap(σ.cases, ρ))
+      return Trie.Constr.make(σ.cases.map(
+         ({ fst: ctr, snd: body }: Pair<string, Expr>) => Pair.make(ctr, instantiate(ρ)(body)))
+      )
    } else
    if (Trie.Fun.is(σ)) {
       return Trie.Fun.make(instantiate(ρ)(σ.body))

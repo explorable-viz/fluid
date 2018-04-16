@@ -4,10 +4,6 @@ import { Persistent, PersistentObject } from "./Runtime"
 // Basic datatypes for interned structures.
 
 export abstract class List<T extends Persistent> extends PersistentObject {
-   __List (): void {
-      // discriminator
-   }
-
    static fromArray<T extends Persistent> (xs: T[]): List<T> {
       let xs_: List<T> = Nil.make()
       for (let n: number = xs.length - 1; n >= 0; --n) {
@@ -27,7 +23,7 @@ export class Nil<T extends Persistent> extends List<T> {
 
    static make<T extends Persistent> (): Nil<T> {
       return make<Nil<T>>(Nil)
-   }
+   }Tree
 
    get length (): number {
       return 0
@@ -57,7 +53,7 @@ export class Cons<T extends Persistent> extends List<T> {
       return 1 + this.tail.length
    }
 
-   map<U extends Persistent> (f: (t: T) => U): Nil<U> {
+   map<U extends Persistent> (f: (t: T) => U): Cons<U> {
       return Cons.make(f(this.head), this.tail.map(f))
    }
 }
@@ -74,10 +70,8 @@ export class Pair<T extends Persistent, U extends Persistent> extends Persistent
    }
 }
 
-export class Tree<T extends Persistent> extends PersistentObject {
-   __Tree (): void {
-      // discriminator
-   }
+export abstract class Tree<T extends Persistent> extends PersistentObject {
+   abstract map<U extends Persistent> (f: (t: T) => U): Tree<U>
 }
 
 export class Empty<T extends Persistent> extends Tree<T> {
@@ -86,7 +80,11 @@ export class Empty<T extends Persistent> extends Tree<T> {
    }
 
    static make<T extends Persistent> (): Empty<T> {
-      return make(Empty)
+      return make<Empty<T>>(Empty)
+   }
+
+   map<U extends Persistent> (f: (t: T) => U): Empty<U> {
+      return Empty.make()
    }
 }
 
@@ -105,5 +103,9 @@ export class NonEmpty<T extends Persistent> extends Tree<T> {
       this_.t = t
       this_.right = right
       return this_
+   }
+
+   map<U extends Persistent> (f: (t: T) => U): NonEmpty<U> {
+      return NonEmpty.make(this.left.map(f), f(this.t), this.right.map(f))
    }
 }
