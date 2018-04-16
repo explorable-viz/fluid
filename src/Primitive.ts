@@ -1,16 +1,17 @@
 import { assert, funName, memo } from "./util/Core"
+import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
-import { Nil } from "./List"
-import { ν, PersistentObject, ExternalObject } from "./Runtime"
+import { get, has } from "./FiniteMap"
+import { Persistent, PersistentObject, ν } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value | null, T] // v, σv
 export type PrimBody<T> = (v: Value | null, σ: Trie<T>) => (α: PersistentObject) => PrimResult<T>
-type TrieCtr<T> = (α: PersistentObject, body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
+type TrieCtr<T> = (body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
-function match<T> (v: Value, σ: Trie<T>): PrimResult<T> {
+function match<T extends Persistent> (v: Value, σ: Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
       return [v, σ.body]
    }  else
@@ -20,8 +21,8 @@ function match<T> (v: Value, σ: Trie<T>): PrimResult<T> {
    if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
       return [v, σ.body]
    } else 
-   if (v instanceof Value.Constr && Trie.Constr.is(σ) && σ.cases.has(v.ctr.str)) {
-      return [v, σ.cases.get(v.ctr.str)!]
+   if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
+      return [v, get(σ.cases, v.ctr.str)!]
    } else {
       return assert(false, "Primitive demand mismatch.", v, σ)
    }
@@ -40,8 +41,7 @@ function _primBody<T extends Value, V extends Value> (op: Unary<T, V>): PrimBody
 function makeUnary<T extends Value, V extends Value> (
    op: Unary<T, V>, trie1: TrieCtr<V>
 ) {
-   const α: ExternalObject = ν()
-   return Value.PrimOp.at(ν(), funName(op), trie1(α, primBody(op)))
+   return Value.PrimOp.at(ν(), funName(op), trie1(primBody(op)))
 }
 
 function makeBinary<T extends Value, U extends Value, V extends Value> (
@@ -52,9 +52,8 @@ function makeBinary<T extends Value, U extends Value, V extends Value> (
    const partialApp: Unary<T, Value.PrimOp> = 
       (x: T) => (α: PersistentObject) => 
          // memoise to obtain unique PrimBody for each partial application:
-         Value.PrimOp.at(α, op.name + " " + x, trie2(α, primBody(memo<Unary<U, V>>(partiallyApply, null, op, x)))),
-         α: ExternalObject = ν()
-   return Value.PrimOp.at(ν(), funName(op), trie1(α, primBody(partialApp)))
+         Value.PrimOp.at(α, op.name + " " + x, trie2(primBody(memo<Unary<U, V>>(partiallyApply, null, op, x))))
+   return Value.PrimOp.at(ν(), funName(op), trie1(primBody(partialApp)))
 }
 
 // Needs to be a "static" definition; can't memoise function expressions.
@@ -129,19 +128,19 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentOb
 
 // Must come after the definitions above.
 const ops: [string, Value.PrimOp][] = [
-   ["error", makeUnary(error, Trie.ConstStr.at)],
-   ["intToString", makeUnary(intToString, Trie.ConstInt.at)],
-   ["-", makeBinary(minus, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["+", makeBinary(plus, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["*", makeBinary(times, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["/", makeBinary(div, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["==", makeBinary(equalInt, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["===", makeBinary(equalStr, Trie.ConstStr.at, Trie.ConstStr.at)],
-   [">", makeBinary(greaterInt, Trie.ConstInt.at, Trie.ConstInt.at)],
-   [">>", makeBinary(greaterStr, Trie.ConstStr.at, Trie.ConstStr.at)],
-   ["<", makeBinary(lessInt, Trie.ConstInt.at, Trie.ConstInt.at)],
-   ["<<", makeBinary(lessStr, Trie.ConstStr.at, Trie.ConstStr.at)],
-   ["++", makeBinary(concat, Trie.ConstStr.at, Trie.ConstStr.at)]
+   ["error", makeUnary(error, Trie.ConstStr.make)],
+   ["intToString", makeUnary(intToString, Trie.ConstInt.make)],
+   ["-", makeBinary(minus, Trie.ConstInt.make, Trie.ConstInt.make)],
+   ["+", makeBinary(plus, Trie.ConstInt.make, Trie.ConstInt.make)],
+   ["*", makeBinary(times, Trie.ConstInt.make, Trie.ConstInt.make)],
+   ["/", makeBinary(div, Trie.ConstInt.make, Trie.ConstInt.make)],
+   ["==", makeBinary(equalInt, Trie.ConstInt.make, Trie.ConstInt.make)],
+   ["===", makeBinary(equalStr, Trie.ConstStr.make, Trie.ConstStr.make)],
+   [">", makeBinary(greaterInt, Trie.ConstInt.make, Trie.ConstInt.make)],
+   [">>", makeBinary(greaterStr, Trie.ConstStr.make, Trie.ConstStr.make)],
+   ["<", makeBinary(lessInt, Trie.ConstInt.make, Trie.ConstInt.make)],
+   ["<<", makeBinary(lessStr, Trie.ConstStr.make, Trie.ConstStr.make)],
+   ["++", makeBinary(concat, Trie.ConstStr.make, Trie.ConstStr.make)]
 ]
 
 // Fake "syntax" for primitives.

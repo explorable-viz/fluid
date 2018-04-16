@@ -1,12 +1,12 @@
 import { __check, assert, make } from "./util/Core"
-import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
+import { List } from "./BaseTypes"
 import { Env } from "./Env"
+import { FiniteMap, unionWith } from "./FiniteMap"
 import { Eval } from "./Eval"
-import { List } from "./List"
 import { PrimBody } from "./Primitive"
-import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
+import { ExternalObject, VersionedObject, Persistent, PersistentObject, create } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
@@ -97,12 +97,12 @@ export namespace Value {
 
    export class Closure extends Value {
       ρ: Env
-      func: Expr.Fun
+      σ: Trie<Expr>
    
-      static at (α: PersistentObject, ρ: Env, func: Expr.Fun): Closure {
+      static at (α: PersistentObject, ρ: Env, σ: Trie<Expr>): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
-         this_.func = func
+         this_.σ = σ
          this_.__version()
          return this_
       }
@@ -366,11 +366,11 @@ export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evalua
    }
 }
 
+// Tries are currently not versioned, for consistency with the spec.
 export type Trie<T> = Trie.Trie<T>
 
 export namespace Trie {
-   // Not abstract, so that I can assert it as a runtime type. Shouldn't T extend JoinSemilattice<T>?
-   export class Trie<T> extends VersionedObject implements JoinSemilattice<Trie<T>> {
+   export class Trie<T> extends PersistentObject implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
@@ -385,10 +385,9 @@ export namespace Trie {
          return σ instanceof ConstInt
       }
 
-      static at <T> (α: PersistentObject, body: T): ConstInt<T> {
-         const this_: ConstInt<T> = create<PersistentObject, ConstInt<T>>(α, ConstInt)
+      static make <T> (body: T): ConstInt<T> {
+         const this_: ConstInt<T> = make<ConstInt<T>>(ConstInt, body)
          this_.body = body
-         this_.__version()
          return this_
       }
    }
@@ -398,25 +397,24 @@ export namespace Trie {
          return σ instanceof ConstStr
       }
 
-      static at <T> (α: PersistentObject, body: T): ConstStr<T> {
-         const this_: ConstStr<T> = create<PersistentObject, ConstStr<T>>(α, ConstStr)
+      static make <T> (body: T): ConstStr<T> {
+         const this_: ConstStr<T> = make<ConstStr<T>>(ConstStr, body)
          this_.body = body
-         this_.__version()
          return this_
       }
    }
 
-   export class Constr<T> extends Trie<T> {
-      cases: Map<string, T>
+   // TODO: replace ES6 map by interned data structure.
+   export class Constr<T extends Persistent> extends Trie<T> {
+      cases: FiniteMap<string, T>
 
-      static is<T> (σ: Trie<T>): σ is Constr<T> {
+      static is<T extends Persistent> (σ: Trie<T>): σ is Constr<T> {
          return σ instanceof Constr
       }
 
-      static at <T> (α: PersistentObject, cases: Map<string, T>): Constr<T> {
-         const this_: Constr<T> = create<PersistentObject, Constr<T>>(α, Constr)
+      static make <T extends Persistent> (cases: FiniteMap<string, T>): Constr<T> {
+         const this_: Constr<T> = make<Constr<T>>(Constr, cases)
          this_.cases = cases
-         this_.__version()
          return this_
       }
    }
@@ -429,11 +427,10 @@ export namespace Trie {
          return σ instanceof Var
       }
 
-      static at <T> (α: PersistentObject, x: Lex.Var, body: T): Var<T> {
-         const this_: Var<T> = create<PersistentObject, Var<T>>(α, Var)
+      static make <T> (x: Lex.Var, body: T): Var<T> {
+         const this_: Var<T> = make<Var<T>>(Var, x, body)
          this_.x = x
          this_.body = body
-         this_.__version()
          return this_
       }
    }
@@ -445,28 +442,14 @@ export namespace Trie {
          return σ instanceof Fun
       }
 
-      static at <T> (α: PersistentObject, body: T): Fun<T> {
-         const this_: Fun<T> = create<PersistentObject, Fun<T>>(α, Fun)
+      static make <T> (body: T): Fun<T> {
+         const this_: Fun<T> = make<Fun<T>>(Fun, body)
          this_.body = body
-         this_.__version()
          return this_
       }
    }
 
-   class JoinTrie<T> extends PersistentObject {
-      σ: Trie<T>
-      τ: Trie<T>
-
-      static make<T> (σ: Trie<T>, τ: Trie<T>): JoinTrie<T> {
-         const this_: JoinTrie<T> = make(JoinTrie, σ, τ)
-         this_.σ = σ
-         this_.τ = τ
-         return this_
-      }
-   }
-
-   export function join<T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
-      const α: JoinTrie<T> = JoinTrie.make(σ, τ)
+   export function join<T extends JoinSemilattice<T> & Persistent> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
       if (σ === null) {
          return τ
       } else
@@ -474,13 +457,13 @@ export namespace Trie {
          return σ
       } else
       if (Fun.is(σ) && Fun.is(τ)) {
-         return Fun.at(α, σ.body.join(τ.body))
+         return Fun.make(σ.body.join(τ.body))
       } else
       if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-         return Var.at(α, σ.x, σ.body.join(τ.body))
+         return Var.make(σ.x, σ.body.join(τ.body))
       } else
       if (Constr.is(σ) && Constr.is(τ)) {
-         return Constr.at<T>(α, unionWith([σ.cases, τ.cases], ms => ms.reduce((x, y) => x.join(y))))
+         return Constr.make<T>(unionWith(σ.cases, τ.cases, (x, y) => x.join(y)))
       } else {
          return assert(false, "Undefined join.", σ, τ)
       }
@@ -499,9 +482,9 @@ export namespace Trace {
    export class App extends Trace {
       func: Traced
       arg: Traced
-      body: Trace
+      body: Trace | null
 
-      static at (k: Eval.Evaluand, func: Traced, arg: Traced, body: Trace): App {
+      static at (k: Eval.Evaluand, func: Traced, arg: Traced, body: Trace | null): App {
          const this_: App = create(k, App)
          this_.func = func
          this_.arg = arg
@@ -553,13 +536,13 @@ export namespace Trace {
    // See 0.6.1 release notes.
    export class Match extends Trace {
       tu: Traced
-      t: Trace
+      t: Trace | null
 
       __Match (): void {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, t: Trace): Match {
+      static at (k: Eval.Evaluand, tu: Traced, t: Trace | null): Match {
          const this_: Match = create(k, Match)
          this_.tu = tu
          this_.t = t
@@ -570,9 +553,9 @@ export namespace Trace {
 
    export class OpName extends Trace {
       x: Lex.OpName
-      t: Trace
+      t: Trace | null
 
-      static at (k: Eval.Evaluand, x: Lex.OpName, t: Trace): OpName {
+      static at (k: Eval.Evaluand, x: Lex.OpName, t: Trace | null): OpName {
          const this_: OpName = create(k, OpName)
          this_.x = x
          this_.t = t
@@ -597,9 +580,9 @@ export namespace Trace {
 
    export class Var extends Trace {
       x: Lex.Var
-      t: Trace
+      t: Trace | null
 
-      static at (k: Eval.Evaluand, x: Lex.Var, t: Trace): Var {
+      static at (k: Eval.Evaluand, x: Lex.Var, t: Trace | null): Var {
          const this_: Var = create(k, Var)
          this_.x = x
          this_.t = t

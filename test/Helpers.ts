@@ -2,9 +2,10 @@ import * as $ from "jquery"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
+import { singleton } from "../src/FiniteMap"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
-import { ν } from "../src/Runtime"
+import { Persistent } from "../src/Runtime"
 import { Expr, Lex, Trie } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
@@ -27,27 +28,27 @@ const defaultProfile = Profile.Parse
 
 export namespace τ {
    export function var_<T> (t: T): Trie<T> {
-      return Trie.Var.at(ν(), new Lex.Var("x"), t)
+      return Trie.Var.make(new Lex.Var("x"), t)
    }
 
    export function int<T> (t: T): Trie<T> {
-      return Trie.ConstInt.at(ν(), t)
+      return Trie.ConstInt.make(t)
    }
 
    export function str<T> (t: T): Trie<T> {
-      return Trie.ConstStr.at(ν(), t)
+      return Trie.ConstStr.make(t)
    }
 
-   export function cons<T> (t: T): Trie<T> {
-      return Trie.Constr.at(ν(), new Map([["Cons", t]]))
+   export function cons<T extends Persistent> (t: T): Trie<T> {
+      return Trie.Constr.make(singleton("Cons", t))
    }
 
-   export function pair<T> (t: T): Trie<T> {
-      return Trie.Constr.at(ν(), new Map([["Pair", t]]))
+   export function pair<T extends Persistent> (t: T): Trie<T> {
+      return Trie.Constr.make(singleton("Pair", t))
    }
 
-   export function some<T> (t: T): Trie<T> {
-      return Trie.Constr.at(ν(), new Map([["Some", t]]))
+   export function some<T extends Persistent> (t: T): Trie<T> {
+      return Trie.Constr.make(singleton("Some", t))
    }
 }
 

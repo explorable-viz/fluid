@@ -3,8 +3,9 @@ import {
    dropSecond, lazySeq, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { List } from "./List"
-import { ν } from "./Runtime"
+import { List } from "./BaseTypes"
+import { singleton } from "./FiniteMap"
+import { PersistentObject, ν } from "./Runtime"
 import { Lex, Traced, str, } from "./Syntax"
 import { Expr, Trie } from "./Syntax"
 
@@ -196,7 +197,7 @@ const let_: Parser<Expr.Let> =
          dropFirst(keyword(str.in_), expr)
       ),
       ([[x, e], eʹ]: [[Lex.Var, Expr], Expr]) =>
-         Expr.Let.at(ν(), e, Trie.Var.at(ν(), x, eʹ))
+         Expr.Let.at(ν(), e, Trie.Var.make(x, eʹ))
    )
 
 const recDef: Parser<Expr.RecDef> =
@@ -241,41 +242,41 @@ const pair: Parser<Expr.Constr> =
          Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern (p: Parser<Object>): Parser<Trie<Object>> {
+function args_pattern (p: Parser<PersistentObject>): Parser<Trie<PersistentObject>> {
    return (state: ParseState) => 
       pattern(choice([dropFirst(symbol(","), args_pattern(p)), p]))(state)
 }
 
 // Continuation-passing style means 'parenthesise' idiom doesn't work here.
-function constr_pattern (p: Parser<Object>): Parser<Trie.Constr<Object>> {
+function constr_pattern (p: Parser<PersistentObject>): Parser<Trie.Constr<PersistentObject>> {
    return withAction(
       seq(
          ctr, 
          choice([dropFirst(symbol(str.parenL), args_pattern(dropFirst(symbol(str.parenR), p))), p])
       ),
-      ([ctr, z]: [Lex.Ctr, Traced]) => Trie.Constr.at(ν(), new Map([[ctr.str, z]])) 
+      ([ctr, z]: [Lex.Ctr, Traced]) => Trie.Constr.make(singleton(ctr.str, z))
    )
 }
 
-function pair_pattern (p: Parser<Object>): Parser<Trie.Constr<Object>> {
+function pair_pattern (p: Parser<PersistentObject>): Parser<Trie.Constr<PersistentObject>> {
    return withAction(
       dropFirst(
          symbol(str.parenL), 
          pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
       ),
-      (σ: Trie<Traced>) => Trie.Constr.at(ν(), new Map([["Pair", σ]]))
+      (σ: Trie<Traced>) => Trie.Constr.make(singleton("Pair", σ))
    )
 }
 
-function variable_pattern (p: Parser<Object>): Parser<Trie.Var<Object>> {
+function variable_pattern (p: Parser<PersistentObject>): Parser<Trie.Var<PersistentObject>> {
    return withAction(
       seq(var_, p), ([x, z]: [Lex.Var, Traced]) => 
-         Trie.Var.at(ν(), x, z)
+         Trie.Var.make(x, z)
       )
 }
 
 // Wasn't able to figure out the trie type parameters. Using Object allows us not to care.
-function pattern (p: Parser<Object>): Parser<Trie<Object>> {
+function pattern (p: Parser<PersistentObject>): Parser<Trie<PersistentObject>> {
    return (state: ParseState) => 
       choice<Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
