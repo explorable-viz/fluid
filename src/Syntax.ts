@@ -97,12 +97,12 @@ export namespace Value {
 
    export class Closure extends Value {
       ρ: Env
-      func: Expr.Fun
+      σ: Trie<Expr>
    
-      static at (α: PersistentObject, ρ: Env, func: Expr.Fun): Closure {
+      static at (α: PersistentObject, ρ: Env, σ: Trie<Expr>): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
-         this_.func = func
+         this_.σ = σ
          this_.__version()
          return this_
       }
@@ -522,13 +522,13 @@ export namespace Trace {
 
    export class Let extends Trace {
       tu: Traced
-      t: Trace | null
+      t: Trace
 
       __Let (): void {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, t: Trace | null): Let {
+      static at (k: Eval.Evaluand, tu: Traced, t: Trace): Let {
          const this_: Let = create(k, Let)
          this_.tu = tu
          this_.t = t

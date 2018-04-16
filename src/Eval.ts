@@ -72,7 +72,7 @@ export function eval_<T> (ρ: Env, e: Expr, σ: Trie<T>): EvalResult<T> {
          return [Traced.at(k, Trace.Empty.at(k), Value.ConstStr.at(k, e.val)), Env.empty(), σ.body]
       } else
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, e)), Env.empty(), σ.body]
+         return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, e.σ)), Env.empty(), σ.body]
       } else
       if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
          return [Traced.at(k, Trace.Empty.at(k), e.op), Env.empty(), σ.body]
@@ -110,7 +110,7 @@ export function eval_<T> (ρ: Env, e: Expr, σ: Trie<T>): EvalResult<T> {
          const [tf, ,]: EvalResult<null> = eval_(ρ, e.func, Trie.Fun.at(k, null)),
                f: Value | null = tf.val
          if (f instanceof Value.Closure) {
-            const [tu, ρʹ, σʹu]: EvalResult<Expr> = eval_(ρ, e.arg, f.func.σ),
+            const [tu, ρʹ, σʹu]: EvalResult<Expr> = eval_(ρ, e.arg, f.σ),
                   [tv, ρʺ, σv]: EvalResult<T> = eval_<T>(Env.concat(f.ρ, ρʹ), σʹu, σ)
             return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʺ, σv]
          } else
