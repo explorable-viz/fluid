@@ -1,7 +1,8 @@
 import { assert, funName, memo } from "./util/Core"
+import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
-import { Nil } from "./List"
-import { ν, PersistentObject, ExternalObject } from "./Runtime"
+import { get, has } from "./FiniteMap"
+import { Persistent, PersistentObject, ExternalObject, ν } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value | null, T] // v, σv
@@ -10,7 +11,7 @@ type TrieCtr<T> = (α: PersistentObject, body: PrimBody<T>) => Trie.Prim<PrimBod
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
-function match<T> (v: Value, σ: Trie<T>): PrimResult<T> {
+function match<T extends Persistent> (v: Value, σ: Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
       return [v, σ.body]
    }  else
@@ -20,8 +21,8 @@ function match<T> (v: Value, σ: Trie<T>): PrimResult<T> {
    if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
       return [v, σ.body]
    } else 
-   if (v instanceof Value.Constr && Trie.Constr.is(σ) && σ.cases.has(v.ctr.str)) {
-      return [v, σ.cases.get(v.ctr.str)!]
+   if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
+      return [v, get(σ.cases, v.ctr.str)!]
    } else {
       return assert(false, "Primitive demand mismatch.", v, σ)
    }

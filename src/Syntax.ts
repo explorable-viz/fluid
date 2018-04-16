@@ -1,10 +1,9 @@
 import { __check, assert, make } from "./util/Core"
-import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
-import { List, Pair } from "./BaseTypes"
+import { List } from "./BaseTypes"
 import { Env } from "./Env"
-import { FiniteMap } from "./FiniteMap"
+import { FiniteMap, unionWith } from "./FiniteMap"
 import { Eval } from "./Eval"
 import { PrimBody } from "./Primitive"
 import { ExternalObject, VersionedObject, Persistent, PersistentObject, create } from "./Runtime"
@@ -414,7 +413,7 @@ export namespace Trie {
          return σ instanceof Constr
       }
 
-      static at <T extends Persistent> (α: PersistentObject, cases: List<Pair<string, T>>): Constr<T> {
+      static at <T extends Persistent> (α: PersistentObject, cases: FiniteMap<string, T>): Constr<T> {
          const this_: Constr<T> = create<PersistentObject, Constr<T>>(α, Constr)
          this_.cases = cases
          this_.__version()
@@ -466,7 +465,7 @@ export namespace Trie {
       }
    }
 
-   export function join<T extends JoinSemilattice<T>> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
+   export function join<T extends JoinSemilattice<T> & Persistent> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
       const α: JoinTrie<T> = JoinTrie.make(σ, τ)
       if (σ === null) {
          return τ
@@ -481,7 +480,7 @@ export namespace Trie {
          return Var.at(α, σ.x, σ.body.join(τ.body))
       } else
       if (Constr.is(σ) && Constr.is(τ)) {
-         return Constr.at<T>(α, unionWith([σ.cases, τ.cases], ms => ms.reduce((x, y) => x.join(y))))
+         return Constr.at<T>(α, unionWith(σ.cases, τ.cases, (x, y) => x.join(y)))
       } else {
          return assert(false, "Undefined join.", σ, τ)
       }

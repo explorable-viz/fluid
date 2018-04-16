@@ -42,10 +42,14 @@ export function insert <K extends Ord<K> & Persistent, V extends Persistent> (m:
       }
    } else
    if (Empty.is(m)) {
-      return NonEmpty.make(m, Pair.make(k, v), m),
+      return NonEmpty.make(m, Pair.make(k, v), m)
    } else {
       return assert(false)
    }
+}
+
+export function singleton <K extends Ord<K> & Persistent, V extends Persistent> (k: K, v: V): FiniteMap<K, V> {
+   return insert(Empty.make(), k, v)
 }
 
 // Union with a combining function.
