@@ -23,7 +23,7 @@ export class Nil<T extends Persistent> extends List<T> {
 
    static make<T extends Persistent> (): Nil<T> {
       return make<Nil<T>>(Nil)
-   }Tree
+   }
 
    get length (): number {
       return 0
