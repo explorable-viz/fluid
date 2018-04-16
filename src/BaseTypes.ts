@@ -90,7 +90,7 @@ export class NonEmpty<T extends Persistent> extends Tree<T> {
       return xs instanceof NonEmpty
    }
 
-   static at <T extends Persistent> (left: Tree<T>, t: T, right: Tree<T>): NonEmpty<T> {
+   static make<T extends Persistent> (left: Tree<T>, t: T, right: Tree<T>): NonEmpty<T> {
       const this_: NonEmpty<T> = make<NonEmpty<T>>(NonEmpty, left, t, right)
       this_.left = left
       this_.t = t

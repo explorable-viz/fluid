@@ -4,6 +4,7 @@ import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
+import { FiniteMap } from "./FiniteMap"
 import { Eval } from "./Eval"
 import { PrimBody } from "./Primitive"
 import { ExternalObject, VersionedObject, Persistent, PersistentObject, create } from "./Runtime"
@@ -407,7 +408,7 @@ export namespace Trie {
 
    // TODO: replace ES6 map by interned data structure.
    export class Constr<T extends Persistent> extends Trie<T> {
-      cases: List<Pair<string, T>>
+      cases: FiniteMap<string, T>
 
       static is<T extends Persistent> (σ: Trie<T>): σ is Constr<T> {
          return σ instanceof Constr

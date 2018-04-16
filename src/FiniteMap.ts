@@ -25,7 +25,27 @@ export function get <K extends Ord<K> & Persistent, V extends Persistent> (m: Fi
    }
 }
 
+export function has <K extends Ord<K> & Persistent, V extends Persistent> (m: FiniteMap<K, V>, k: K): boolean {
+   return get(m, k) !== undefined
+}
+
 export function insert <K extends Ord<K> & Persistent, V extends Persistent> (m: FiniteMap<K, V>, k: K, v: V): FiniteMap<K, V> {
+   if (NonEmpty.is(m)) {
+      if (k.leq(m.t.fst)) {
+         if (m.t.fst.leq(k)) {
+            return NonEmpty.make(m.left, Pair.make(k, v), m.right)
+         } else {
+            return NonEmpty.make(insert(m.left, k, v), m.t, m.right)
+         }
+      } else {
+         return NonEmpty.make(m.left, m.t, insert(m.right, k, v))
+      }
+   } else
+   if (Empty.is(m)) {
+      return NonEmpty.make(m, Pair.make(k, v), m),
+   } else {
+      return assert(false)
+   }
 }
 
 // Union with a combining function.
