@@ -499,9 +499,9 @@ export namespace Trace {
    export class App extends Trace {
       func: Traced
       arg: Traced
-      body: Trace
+      body: Trace | null
 
-      static at (k: Eval.Evaluand, func: Traced, arg: Traced, body: Trace): App {
+      static at (k: Eval.Evaluand, func: Traced, arg: Traced, body: Trace | null): App {
          const this_: App = create(k, App)
          this_.func = func
          this_.arg = arg
@@ -522,13 +522,13 @@ export namespace Trace {
 
    export class Let extends Trace {
       tu: Traced
-      t: Trace
+      t: Trace | null
 
       __Let (): void {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, t: Trace): Let {
+      static at (k: Eval.Evaluand, tu: Traced, t: Trace | null): Let {
          const this_: Let = create(k, Let)
          this_.tu = tu
          this_.t = t
@@ -553,13 +553,13 @@ export namespace Trace {
    // See 0.6.1 release notes.
    export class Match extends Trace {
       tu: Traced
-      t: Trace
+      t: Trace | null
 
       __Match (): void {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, t: Trace): Match {
+      static at (k: Eval.Evaluand, tu: Traced, t: Trace | null): Match {
          const this_: Match = create(k, Match)
          this_.tu = tu
          this_.t = t
@@ -570,9 +570,9 @@ export namespace Trace {
 
    export class OpName extends Trace {
       x: Lex.OpName
-      t: Trace
+      t: Trace | null
 
-      static at (k: Eval.Evaluand, x: Lex.OpName, t: Trace): OpName {
+      static at (k: Eval.Evaluand, x: Lex.OpName, t: Trace | null): OpName {
          const this_: OpName = create(k, OpName)
          this_.x = x
          this_.t = t
@@ -597,9 +597,9 @@ export namespace Trace {
 
    export class Var extends Trace {
       x: Lex.Var
-      t: Trace
+      t: Trace | null
 
-      static at (k: Eval.Evaluand, x: Lex.Var, t: Trace): Var {
+      static at (k: Eval.Evaluand, x: Lex.Var, t: Trace | null): Var {
          const this_: Var = create(k, Var)
          this_.x = x
          this_.t = t

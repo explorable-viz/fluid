@@ -1,5 +1,5 @@
 import { assert} from "./util/Core"
-import { Env, EnvEntry } from "./Env"
+import { Env } from "./Env"
 import { Eval } from "./Eval"
 import { Cons, List, Nil } from "./List"
 import { Expr, Trace, Traced, Value } from "./Syntax"
