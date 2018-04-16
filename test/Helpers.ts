@@ -5,7 +5,7 @@ import { Eval } from "../src/Eval"
 import { singleton } from "../src/FiniteMap"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
-import { Persistent, ν } from "../src/Runtime"
+import { Persistent } from "../src/Runtime"
 import { Expr, Lex, Trie } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
@@ -40,15 +40,15 @@ export namespace τ {
    }
 
    export function cons<T extends Persistent> (t: T): Trie<T> {
-      return Trie.Constr.at(ν(), singleton("Cons", t))
+      return Trie.Constr.make(singleton("Cons", t))
    }
 
    export function pair<T extends Persistent> (t: T): Trie<T> {
-      return Trie.Constr.at(ν(), singleton("Pair", t))
+      return Trie.Constr.make(singleton("Pair", t))
    }
 
    export function some<T extends Persistent> (t: T): Trie<T> {
-      return Trie.Constr.at(ν(), singleton("Some", t))
+      return Trie.Constr.make(singleton("Some", t))
    }
 }
 

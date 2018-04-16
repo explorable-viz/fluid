@@ -254,7 +254,7 @@ function constr_pattern (p: Parser<PersistentObject>): Parser<Trie.Constr<Persis
          ctr, 
          choice([dropFirst(symbol(str.parenL), args_pattern(dropFirst(symbol(str.parenR), p))), p])
       ),
-      ([ctr, z]: [Lex.Ctr, Traced]) => Trie.Constr.at(ν(), singleton(ctr.str, z))
+      ([ctr, z]: [Lex.Ctr, Traced]) => Trie.Constr.make(singleton(ctr.str, z))
    )
 }
 
@@ -264,7 +264,7 @@ function pair_pattern (p: Parser<PersistentObject>): Parser<Trie.Constr<Persiste
          symbol(str.parenL), 
          pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
       ),
-      (σ: Trie<Traced>) => Trie.Constr.at(ν(), singleton("Pair", σ))
+      (σ: Trie<Traced>) => Trie.Constr.make(singleton("Pair", σ))
    )
 }
 

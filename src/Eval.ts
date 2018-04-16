@@ -108,7 +108,7 @@ export function eval_<T> (ρ: Env, e: Expr, σ: Trie<T>): EvalResult<T> {
          return [Traced.at(k, Trace.Match.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
       } else
       if (e instanceof Expr.App) {
-         const [tf, ,]: EvalResult<null> = eval_(ρ, e.func, Trie.Fun.at(k, null)),
+         const [tf, ,]: EvalResult<null> = eval_(ρ, e.func, Trie.Fun.make(null)),
                f: Value | null = tf.val
          if (f instanceof Value.Closure) {
             const [tu, ρʹ, σʹu]: EvalResult<Expr> = eval_(ρ, e.arg, f.σ),
