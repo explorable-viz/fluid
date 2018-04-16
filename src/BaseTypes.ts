@@ -1,7 +1,7 @@
 import { make } from "./util/Core"
 import { PersistentObject } from "./Runtime"
 
-// Interned lists of persistent objects.
+// Interned lists.
 export abstract class List<T extends PersistentObject> extends PersistentObject {
    __List (): void {
       // discriminator
@@ -49,5 +49,18 @@ export class Cons<T extends PersistentObject> extends List<T> {
 
    get length (): number {
       return 1 + this.tail.length
+   }
+}
+
+// Interned pairs.
+export class Pair<T extends PersistentObject, U extends PersistentObject> {
+   fst: T
+   snd: U
+
+   static at <T extends PersistentObject, U extends PersistentObject> (fst: T, snd: U): Pair<T, U> {
+      const this_: Pair<T, U> = make<Pair<T, U>>(Pair, fst, snd)
+      this_.fst = fst
+      this_.snd = snd
+      return this_
    }
 }

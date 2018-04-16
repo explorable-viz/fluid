@@ -1,7 +1,7 @@
 import { __nonNull, assert, as, make } from "./util/Core"
+import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
-import { Cons, List, Nil } from "./List"
 import { PrimBody, PrimResult } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 import { PersistentObject } from "./Runtime";

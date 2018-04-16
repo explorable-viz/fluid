@@ -3,7 +3,7 @@ import {
    dropSecond, lazySeq, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { List } from "./List"
+import { List } from "./BaseTypes"
 import { ν } from "./Runtime"
 import { Lex, Traced, str, } from "./Syntax"
 import { Expr, Trie } from "./Syntax"

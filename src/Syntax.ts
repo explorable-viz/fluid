@@ -2,9 +2,9 @@ import { __check, assert, make } from "./util/Core"
 import { unionWith } from "./util/Map"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
+import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
-import { List } from "./List"
 import { PrimBody } from "./Primitive"
 import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
 
@@ -406,6 +406,7 @@ export namespace Trie {
       }
    }
 
+   // TODO: replace ES6 map by interned data structure.
    export class Constr<T> extends Trie<T> {
       cases: Map<string, T>
 
