@@ -24,10 +24,16 @@ function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimR
 
 export class PrimBody extends PersistentObject {
    // fields can't have polymorphic types
+   op: Binary<any, any, any>
+
+   static make<T, U, V> (op: Binary<T, U, V>): PrimBody {
+      const this_: PrimBody = make(PrimBody, op)
+      return this_
+   }
 
    // Access prim body via a method to reinstate the polymorphism via a cast.
    invoke<K extends PersistentObject | null> (v1: Value | null, v2: Value | null, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
-      return null as any
+      return α => match(this.op(v1, v2)(α), σ)
    }
 } 
 
@@ -48,7 +54,7 @@ export class BinOp extends PersistentObject {
 }
 
 function makeBinary<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, trie1: TrieCtr, trie2: TrieCtr): BinOp {
-   return BinOp.make(op.name, trie1(null), trie2(null), null)
+   return BinOp.make(op.name, trie1(null), trie2(null), PrimBody.make(op))
 }
 
 export const ops: Map<string, BinOp> = new Map([
