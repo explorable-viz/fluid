@@ -22,7 +22,7 @@ export class Evaluand extends PersistentObject {
 }
 
 export type Result<T> = [Traced, Env, T]        // tv, ρ, σv
-type Results = [List<Traced>, Env, Persistent]  // tvs, ρ, σv
+type Results = [List<Traced>, Env, PersistentObject]  // tvs, ρ, σv
 
 function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
    if (δ_0 instanceof Expr.EmptyRecDefs) {
@@ -36,9 +36,9 @@ function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
 }
 
 // Not capturing the polymorphic type of the nested trie κ (which has a depth of n >= 0).
-function evalSeq (ρ: Env, κ: Persistent, es: List<Expr>): Results {
+function evalSeq (ρ: Env, κ: PersistentObject, es: List<Expr>): Results {
    if (Cons.is(es)) {
-      const σ: Trie<Persistent> = as(κ as Trie<Persistent>, Trie.Trie),
+      const σ: Trie<PersistentObject> = as(κ as Trie<PersistentObject>, Trie.Trie),
             [tv, ρʹ, κʹ]: Result<Persistent> = eval_(ρ, es.head, σ),
             [tvs, ρʺ, κʺ]: Results = evalSeq(ρ, κʹ, es.tail)
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κʺ]
@@ -51,7 +51,7 @@ function evalSeq (ρ: Env, κ: Persistent, es: List<Expr>): Results {
 }
 
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
-export function eval_<T extends Persistent> (ρ: Env, e: Expr, σ: Trie<T>): Result<T> {
+export function eval_<T extends PersistentObject> (ρ: Env, e: Expr, σ: Trie<T>): Result<T> {
    const k: Evaluand = Evaluand.make(ρ.entries(), e)
    if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Expr.EmptyRecDefs.make(), e)

@@ -2,16 +2,16 @@ import { assert, funName, memo } from "./util/Core"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
-import { Persistent, PersistentObject, ν } from "./Runtime"
+import { PersistentObject, ν } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value | null, T] // v, σv
-export type PrimBody<T extends Persistent> = (v: Value | null, σ: Trie<T>) => (α: PersistentObject) => PrimResult<T>
-type TrieCtr<T extends Persistent> = (body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
+export type PrimBody<T extends PersistentObject | null> = (v: Value | null, σ: Trie<T>) => (α: PersistentObject) => PrimResult<T>
+type TrieCtr<T extends PersistentObject | null> = (body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
-function match<T extends Persistent> (v: Value, σ: Trie<T>): PrimResult<T> {
+function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
       return [v, σ.body]
    }  else
@@ -39,7 +39,8 @@ function _primBody<T extends Value, V extends Value> (op: Unary<T, V>): PrimBody
 }
 
 function makeUnary<T extends Value, V extends Value> (
-   op: Unary<T, V>, trie1: TrieCtr<V>
+   op: Unary<T, V>, 
+   trie1: TrieCtr<V>
 ) {
    return Value.PrimOp.at(ν(), funName(op), trie1(primBody(op)))
 }

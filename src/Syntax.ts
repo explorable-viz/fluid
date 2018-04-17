@@ -366,68 +366,68 @@ export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evalua
    }
 }
 
-// Tries are currently not versioned, as per the formalism.
-export type Trie<T extends Persistent> = Trie.Trie<T>
+// Tries are persistent but not versioned, as per the formalism.
+export type Trie<T extends PersistentObject | null> = Trie.Trie<T>
 
 export namespace Trie {
-   export class Trie<T extends Persistent> extends PersistentObject implements JoinSemilattice<Trie<T>> {
+   export class Trie<T extends PersistentObject | null> 
+      extends PersistentObject implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
    }
 
-   export class Prim<T extends Persistent> extends Trie<T> {
+   export class Prim<T extends PersistentObject | null> extends Trie<T> {
       body: T
    }
 
-   export class ConstInt<T extends Persistent> extends Prim<T> {
-      static is<T extends Persistent> (σ: Trie<T>): σ is ConstInt<T> {
+   export class ConstInt<T extends PersistentObject | null> extends Prim<T> {
+      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is ConstInt<T> {
          return σ instanceof ConstInt
       }
 
-      static make <T extends Persistent> (body: T): ConstInt<T> {
+      static make <T extends PersistentObject | null> (body: T): ConstInt<T> {
          const this_: ConstInt<T> = make<ConstInt<T>>(ConstInt, body)
          this_.body = body
          return this_
       }
    }
 
-   export class ConstStr<T extends Persistent> extends Prim<T> {
-      static is<T extends Persistent> (σ: Trie<T>): σ is ConstStr<T> {
+   export class ConstStr<T extends PersistentObject | null> extends Prim<T> {
+      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is ConstStr<T> {
          return σ instanceof ConstStr
       }
 
-      static make <T extends Persistent> (body: T): ConstStr<T> {
+      static make <T extends PersistentObject | null> (body: T): ConstStr<T> {
          const this_: ConstStr<T> = make<ConstStr<T>>(ConstStr, body)
          this_.body = body
          return this_
       }
    }
 
-   // TODO: replace ES6 map by interned data structure.
-   export class Constr<T extends Persistent> extends Trie<T> {
+   export class Constr<T extends PersistentObject | null> extends Trie<T> {
       cases: FiniteMap<string, T>
 
-      static is<T extends Persistent> (σ: Trie<T>): σ is Constr<T> {
+      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Constr<T> {
          return σ instanceof Constr
       }
 
-      static make <T extends Persistent> (cases: FiniteMap<string, T>): Constr<T> {
+      static make <T extends PersistentObject | null> (cases: FiniteMap<string, T>): Constr<T> {
          const this_: Constr<T> = make<Constr<T>>(Constr, cases)
          this_.cases = cases
          return this_
       }
    }
 
-   export class Var<T extends Persistent> extends Trie<T> {
+   export class Var<T extends PersistentObject | null> extends Trie<T> {
       x: Lex.Var
       body: T
 
-      static is<T extends Persistent> (σ: Trie<T>): σ is Var<T> {
+      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Var<T> {
          return σ instanceof Var
       }
 
-      static make <T extends Persistent> (x: Lex.Var, body: T): Var<T> {
+      static make <T extends PersistentObject | null> (x: Lex.Var, body: T): Var<T> {
          const this_: Var<T> = make<Var<T>>(Var, x, body)
          this_.x = x
          this_.body = body
@@ -435,21 +435,21 @@ export namespace Trie {
       }
    }
 
-   export class Fun<T extends Persistent> extends Trie<T> {
+   export class Fun<T extends PersistentObject | null> extends Trie<T> {
       body: T
 
-      static is<T extends Persistent> (σ: Trie<T>): σ is Fun<T> {
+      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Fun<T> {
          return σ instanceof Fun
       }
 
-      static make <T extends Persistent> (body: T): Fun<T> {
+      static make <T extends PersistentObject | null> (body: T): Fun<T> {
          const this_: Fun<T> = make<Fun<T>>(Fun, body)
          this_.body = body
          return this_
       }
    }
 
-   export function join<T extends JoinSemilattice<T> & Persistent> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
+   export function join<T extends JoinSemilattice<T> & PersistentObject> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
       if (σ === null) {
          return τ
       } else
