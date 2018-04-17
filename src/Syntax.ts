@@ -5,6 +5,7 @@ import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { Eval } from "./Eval"
+import { UnaryOp } from "./Primitive"
 import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
@@ -155,6 +156,17 @@ export namespace Value {
          return this_
       }
    }
+
+   export class PrimOp extends Value {
+      op: UnaryOp
+   
+      static at (α: PersistentObject, op: UnaryOp): PrimOp {
+         const this_: PrimOp = create(α, PrimOp)
+         this_.op = op
+         this_.__version()
+         return this_
+      }
+   }
 }
 
 export type Expr = Expr.Expr
@@ -234,6 +246,17 @@ export namespace Expr {
          const this_: Let = create(i, Let)
          this_.e = e
          this_.σ = σ
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class PrimOp extends Expr {
+      op: UnaryOp
+
+      static at (i: ExternalObject, op: UnaryOp): PrimOp {
+         const this_: PrimOp = create(i, PrimOp)
+         this_.op = op
          this_.__version()
          return this_
       }

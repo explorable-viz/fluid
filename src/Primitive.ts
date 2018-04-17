@@ -1,13 +1,13 @@
 import { assert, make } from "./util/Core"
 import { Nil } from "./BaseTypes"
-import { Env } from "./Env"
+import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
-import { PersistentObject } from "./Runtime"
-import { Lex, Trie, Value } from "./Syntax"
+import { PersistentObject, ν } from "./Runtime"
+import { Expr, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<K> = [Value | null, K]
 type TrieCtr = (body: null) => Trie.Prim<null>
-// type Unary<T, V> = (x: T) => (α: PersistentObject) => V
+type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
 function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimResult<T> {
@@ -24,12 +24,28 @@ function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimR
    }
 }
 
-export class PrimBody extends PersistentObject {
+export class UnaryBody extends PersistentObject {
+   // fields can't have polymorphic types
+   op: Unary<Value, Value>
+
+   static make<T extends Value, V extends Value> (op: Unary<T, V>): UnaryBody {
+      const this_: UnaryBody = make(UnaryBody, op)
+      this_.op = op
+      return this_
+   }
+
+   // Access prim body via a method to reinstate the polymorphism via a cast.
+   invoke<K extends PersistentObject | null> (v: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
+      return α => match(this.op(v)(α), σ)
+   }
+} 
+
+export class BinaryBody extends PersistentObject {
    // fields can't have polymorphic types
    op: Binary<Value, Value, Value>
 
-   static make<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>): PrimBody {
-      const this_: PrimBody = make(PrimBody, op)
+   static make<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>): BinaryBody {
+      const this_: BinaryBody = make(BinaryBody, op)
       this_.op = op
       return this_
    }
@@ -46,9 +62,9 @@ export class PrimOp extends PersistentObject {
 
 export class UnaryOp extends PrimOp {
    σ: Trie.Prim<null>
-   b: PrimBody
+   b: UnaryBody
 
-   static make (name: string, σ: Trie.Prim<null>, b: PrimBody): UnaryOp {
+   static make (name: string, σ: Trie.Prim<null>, b: UnaryBody): UnaryOp {
       const this_: UnaryOp = make(UnaryOp, σ, b)
       this_.name = name
       this_.σ = σ
@@ -60,9 +76,9 @@ export class UnaryOp extends PrimOp {
 export class BinOp extends PrimOp {
    σ1: Trie.Prim<null>
    σ2: Trie.Prim<null>
-   b: PrimBody
+   b: BinaryBody
 
-   static make (name: string, σ1: Trie.Prim<null>, σ2: Trie.Prim<null>, b: PrimBody): BinOp {
+   static make (name: string, σ1: Trie.Prim<null>, σ2: Trie.Prim<null>, b: BinaryBody): BinOp {
       const this_: BinOp = make(BinOp, σ1, σ2, b)
       this_.name = name
       this_.σ1 = σ1
@@ -72,19 +88,20 @@ export class BinOp extends PrimOp {
    }
 }
 
-/*
 function makeUnary<T extends Value, V extends Value> (op: Unary<T, V>, trie: TrieCtr): UnaryOp {
-   return UnaryOp.make(op.name, trie(null), PrimBody.make(op))
+   return UnaryOp.make(op.name, trie(null), UnaryBody.make(op))
 }
-*/
 
 function makeBinary<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, trie1: TrieCtr, trie2: TrieCtr): BinOp {
-   return BinOp.make(op.name, trie1(null), trie2(null), PrimBody.make(op))
+   return BinOp.make(op.name, trie1(null), trie2(null), BinaryBody.make(op))
 }
 
-export const ops: Map<string, BinOp> = new Map([
-//   ["error", makeUnary(error, Trie.ConstStr.make)],
-//   ["intToString", makeUnary(intToString, Trie.ConstInt.make)],
+const unaryOps: Map<string, UnaryOp> = new Map([
+   ["error", makeUnary(error, Trie.ConstStr.make)],
+   ["intToString", makeUnary(intToString, Trie.ConstInt.make)],
+   ])
+   
+export const binaryOps: Map<string, BinOp> = new Map([
    ["-", makeBinary(minus, Trie.ConstInt.make, Trie.ConstInt.make)],
    ["+", makeBinary(plus, Trie.ConstInt.make, Trie.ConstInt.make)],
    ["*", makeBinary(times, Trie.ConstInt.make, Trie.ConstInt.make)],
@@ -161,7 +178,11 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentOb
    return α => Value.ConstStr.at(α, x.val + y.val)
 }
 
-// Not adding primitive names to the prelude at the moment, because they aren't bona fide expressions.
+// Only primitive with identifiers as names are first-class and therefore appear in the prelude.
 export function prelude (): Env {
-   return Env.empty()
+   let ρ: Env = Env.empty()
+   unaryOps.forEach((op: UnaryOp, x: string): void => {
+      ρ = ExtendEnv.make(ρ, x, EnvEntry.make(Env.empty(), Expr.EmptyRecDefs.make(), Expr.PrimOp.at(ν(), op)))
+   })
+   return ρ
 }

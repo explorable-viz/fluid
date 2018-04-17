@@ -1,9 +1,9 @@
-import { __nonNull, assert, as, make } from "./util/Core"
+import { __nonNull, absurd, assert, as, make } from "./util/Core"
 import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
-import { BinOp, PrimResult, ops } from "./Primitive2"
+import { BinOp, PrimResult, binaryOps } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 import { Persistent, PersistentObject } from "./Runtime";
 
@@ -31,7 +31,7 @@ function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
    if (δ_0 instanceof Expr.ExtendRecDefs) {
       return ExtendEnv.make(closeDefs(δ_0.δ, ρ, δ), δ_0.def.x.str, EnvEntry.make(ρ, δ, δ_0.def.def))
    } else {
-      return assert(false)
+      return absurd()
    }
 }
 
@@ -46,7 +46,7 @@ function evalSeq (ρ: Env, κ: PersistentObject | null, es: List<Expr>): Results
    if (Nil.is(es)) {
       return [Nil.make(), Env.empty(), κ]
    } else {
-      return assert(false)
+      return absurd()
    }
 }
 
@@ -75,6 +75,9 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: 
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
          return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, e.σ)), Env.empty(), σ.body]
       } else
+      if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
+         return [Traced.at(k, Trace.Empty.at(k), Value.PrimOp.at(k, e.op)), Env.empty(), σ.body]
+      } else
       if (e instanceof Expr.Var) {
          const x: string = e.ident.str
          if (ρ.has(x)) {
@@ -83,15 +86,14 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: 
                   t: Trace = Trace.Var.at(k, e.ident, __nonNull(tv.trace))
             return [Traced.at(k, t, tv.val), ρʺ, σv]
          } else {
-            return assert(false, "Variable not found.", x)
+            return absurd("Variable not found.", x)
          }
    } else
       if (e instanceof Expr.Let) {
          const [tu, ρʹ, σu]: Result<Expr> = eval_(ρ, e.e, e.σ),
                [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
          return [Traced.at(k, Trace.Let.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
-      } else 
-      // See 0.3.4 release notes for semantics.
+      } else
       if (e instanceof Expr.LetRec) {
          const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
                [tv, ρʺ, σv]: Result<T> = eval_<T>(ρʹ, e.e, σ)
@@ -102,15 +104,16 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: 
                [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
          return [Traced.at(k, Trace.Match.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
       } else
+      // Operators (currently all binary) are "syntax", rather than names.
       if (e instanceof Expr.PrimApp) {
-         if (ops.has(e.opName.str)) {
-            const op: BinOp = ops.get(e.opName.str)!,
+         if (binaryOps.has(e.opName.str)) {
+            const op: BinOp = binaryOps.get(e.opName.str)!,
                   [tu1, ,]: Result<null> = eval_(ρ, e.e1, op.σ1),
                   [tu2, ,]: Result<null> = eval_(ρ, e.e2, op.σ2),
                   [v, σv]: PrimResult<T> = op.b.invoke(tu1.val!, tu2.val!, σ)(k)
             return [Traced.at(k, Trace.PrimApp.at(k, tu1, e.opName, tu2), v), Env.empty(), σv]
          } else {
-            return assert(false, "Operator name not found.", e.opName)
+            return absurd("Operator name not found.", e.opName)
          }
       } else
       if (e instanceof Expr.App) {
@@ -120,12 +123,18 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: 
             const [tu, ρʹ, σʹu]: Result<Expr> = eval_(ρ, e.arg, f.σ),
                   [tv, ρʺ, σv]: Result<T> = eval_<T>(Env.concat(f.ρ, ρʹ), σʹu, σ)
             return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʺ, σv]
+         } else
+         // Primitives with identifiers as names are unary and first-class.
+         if (f instanceof Value.PrimOp) {
+            const [tu, ,]: Result<null> = eval_(ρ, e.arg, f.op.σ),
+                  [v, κ]: PrimResult<T> = f.op.b.invoke(tu.val!, σ)(k)
+            return [Traced.at(k, Trace.App.at(k, tf, tu, null), v), Env.empty(), κ]
          } else {
-            return assert(false, "Not a function.", f)
+            return absurd("Not a function.", f)
          }
       }
    }
-   return assert(false, "Demand mismatch.", e, σ)
+   return absurd("Demand mismatch.", e, σ)
 }
 
 }
