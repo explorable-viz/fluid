@@ -20,14 +20,8 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          // No need to use "unknown" environment here because we have ρ.
          return Traced.at(i, Trace.Empty.at(i), Value.Closure.at(i, ρ, instantiateTrie(e.σ, ρ)))
       } else
-      if (e instanceof Expr.PrimOp) {
-         return Traced.at(i, Trace.Empty.at(i), e.op)
-      } else
       if (e instanceof Expr.Var) {
          return Traced.at(i, Trace.Var.at(i, e.ident, null), null)
-      } else
-      if (e instanceof Expr.OpName) {
-         return Traced.at(i, Trace.OpName.at(i, e.opName, null), null)
       } else
       if (e instanceof Expr.Let) {
          return Traced.at(i, Trace.Let.at(i, instantiate(ρ)(e.e), instantiate(ρ)(e.σ.body).trace!), null)
