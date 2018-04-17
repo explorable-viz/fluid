@@ -107,7 +107,7 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: 
             const op: BinOp = ops.get(e.opName.str)!,
                   [tu1, ,]: Result<null> = eval_(ρ, e.e1, op.σ1),
                   [tu2, ,]: Result<null> = eval_(ρ, e.e2, op.σ2),
-                  [v, σv]: PrimResult<T> = op.invoke(tu1.val!, tu2.val!, σ)(k)
+                  [v, σv]: PrimResult<T> = op.b.invoke(tu1.val!, tu2.val!, σ)(k)
             return [Traced.at(k, Trace.PrimApp.at(k, tu1, e.opName, tu2), v), Env.empty(), σv]
          } else {
             return assert(false, "Operator name not found.", e.opName)
