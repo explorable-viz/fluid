@@ -1,11 +1,26 @@
-import { make } from "./util/Core"
+import { assert, make } from "./util/Core"
 import { Env } from "./Env"
+import { get, has } from "./FiniteMap"
 import { PersistentObject } from "./Runtime"
 import { Trie, Value } from "./Syntax"
 
 export type PrimResult<K> = [Value | null, K]
 type TrieCtr = (body: null) => Trie.Prim<null>
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
+
+function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimResult<T> {
+   if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
+      return [v, σ.body]
+   } else 
+   if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
+      return [v, σ.body]
+   } else 
+   if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
+      return [v, get(σ.cases, v.ctr.str)!]
+   } else {
+      return assert(false, "Primitive demand mismatch.", v, σ)
+   }
+}
 
 export class PrimBody extends PersistentObject {
    // fields can't have polymorphic types
