@@ -7,7 +7,7 @@ import { Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<K> = [Value | null, K]
 type TrieCtr = (body: null) => Trie.Prim<null>
-type Unary<T, V> = (x: T) => (α: PersistentObject) => V
+// type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
 function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimResult<T> {

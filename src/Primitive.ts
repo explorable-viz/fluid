@@ -71,9 +71,7 @@ function __false (α: PersistentObject): Value.Constr {
    return Value.Constr.at(α, new Lex.Ctr("False"), Nil.make())
 }
 
-// See 0.2.4 release notes re. primitive ops with identifiers as names.
-// Used to take an arbitrary value as an additional argument but now primitives must have
-// primitive arguments.
+// Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
 export function error (message: Value.ConstStr): (α: PersistentObject) => Value {
    return assert(false, "LambdaCalc error:\n" + message.val)
 }

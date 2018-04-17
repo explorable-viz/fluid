@@ -8,4 +8,4 @@ letrec
          }
    }
 in
-filter ((<) 5) Cons(4, Cons(2, Cons(7, Nil)))
+filter (fun x → 5 < x) Cons(4, Cons(2, Cons(7, Nil)))
