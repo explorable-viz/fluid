@@ -3,7 +3,8 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
-import { PrimBody, PrimResult } from "./Primitive"
+import { PrimResult } from "./Primitive"
+import { Binary, ops } from "./Primitive2"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 import { Persistent, PersistentObject } from "./Runtime";
 
@@ -21,8 +22,8 @@ export class Evaluand extends PersistentObject {
    }
 }
 
-export type Result<T> = [Traced, Env, T]        // tv, ρ, σv
-type Results = [List<Traced>, Env, PersistentObject]  // tvs, ρ, σv
+export type Result<T> = [Traced, Env, T]                    // tv, ρ, σv
+type Results = [List<Traced>, Env, PersistentObject | null] // tvs, ρ, σv
 
 function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
    if (δ_0 instanceof Expr.EmptyRecDefs) {
@@ -36,7 +37,7 @@ function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
 }
 
 // Not capturing the polymorphic type of the nested trie κ (which has a depth of n >= 0).
-function evalSeq (ρ: Env, κ: PersistentObject, es: List<Expr>): Results {
+function evalSeq (ρ: Env, κ: PersistentObject | null, es: List<Expr>): Results {
    if (Cons.is(es)) {
       const σ: Trie<PersistentObject> = as(κ as Trie<PersistentObject>, Trie.Trie),
             [tv, ρʹ, κʹ]: Result<Persistent> = eval_(ρ, es.head, σ),
@@ -51,7 +52,7 @@ function evalSeq (ρ: Env, κ: PersistentObject, es: List<Expr>): Results {
 }
 
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
-export function eval_<T extends PersistentObject> (ρ: Env, e: Expr, σ: Trie<T>): Result<T> {
+export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: Trie<T>): Result<T> {
    const k: Evaluand = Evaluand.make(ρ.entries(), e)
    if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Expr.EmptyRecDefs.make(), e)
@@ -61,7 +62,7 @@ export function eval_<T extends PersistentObject> (ρ: Env, e: Expr, σ: Trie<T>
          const ctr: string = e.ctr.str
          assert(ctrToDataType.has(ctr), "No such constructor.", e)
          assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === e.args.length, "Arity mismatch.", e)
-         const σʹ: Persistent = get(σ.cases, e.ctr.str)!,
+         const σʹ: PersistentObject | null = get(σ.cases, e.ctr.str)!,
                [tvs, ρʹ, κ]: Results = evalSeq(ρ, σʹ, e.args)
          // have to cast κ without type information on constructor
          return [Traced.at(k, Trace.Empty.at(k), Value.Constr.at(k, e.ctr, tvs)), ρʹ, κ as T]
@@ -75,22 +76,17 @@ export function eval_<T extends PersistentObject> (ρ: Env, e: Expr, σ: Trie<T>
       if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
          return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, e.σ)), Env.empty(), σ.body]
       } else
-      if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), e.op), Env.empty(), σ.body]
-      } else
-      if (e instanceof Expr.Var || e instanceof Expr.OpName) {
-         const x: string = e instanceof Expr.OpName ? e.opName.str : e.ident.str
-         if (!ρ.has(x)) {
-            return assert(false, "Name not found.", x)
-         } else {
+      if (e instanceof Expr.Var) {
+         const x: string = e.ident.str
+         if (ρ.has(x)) {
             const {ρ: ρʹ, δ, e: eʹ}: EnvEntry = ρ.get(x)!,
                   [tv, ρʺ, σv]: Result<T> = eval_(closeDefs(δ, ρʹ, δ), eʹ, σ),
-                  t: Trace = e instanceof Expr.OpName 
-                     ? Trace.OpName.at(k, e.opName, __nonNull(tv.trace))
-                     : Trace.Var.at(k, e.ident, __nonNull(tv.trace))
+                  t: Trace = Trace.Var.at(k, e.ident, __nonNull(tv.trace))
             return [Traced.at(k, t, tv.val), ρʺ, σv]
+         } else {
+            return assert(false, "Variable not found.", x)
          }
-      } else
+   } else
       if (e instanceof Expr.Let) {
          const [tu, ρʹ, σu]: Result<Expr> = eval_(ρ, e.e, e.σ),
                [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
@@ -107,6 +103,17 @@ export function eval_<T extends PersistentObject> (ρ: Env, e: Expr, σ: Trie<T>
                [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
          return [Traced.at(k, Trace.Match.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
       } else
+      if (e instanceof Expr.PrimApp) {
+         if (ops.has(e.opName.str)) {
+            const op: Binary = ops.get(e.opName.str)!,
+                  [tu1, ,]: Result<null> = eval_(ρ, e.e1, op.σ1),
+                  [tu2, ,]: Result<null> = eval_(ρ, e.e2, op.σ2),
+                  [v, σv]: PrimResult<T> = op.invoke(tu1.val!, tu2.val!, σ)
+            return [Traced.at(k, Trace.PrimApp.at(k, tu1, e.opName, tu2), v), Env.empty(), σv]
+         } else {
+            return assert(false, "Operator name not found.", e.opName)
+         }
+      } else
       if (e instanceof Expr.App) {
          const [tf, ,]: Result<null> = eval_(ρ, e.func, Trie.Fun.make(null)),
                f: Value | null = tf.val
@@ -114,11 +121,6 @@ export function eval_<T extends PersistentObject> (ρ: Env, e: Expr, σ: Trie<T>
             const [tu, ρʹ, σʹu]: Result<Expr> = eval_(ρ, e.arg, f.σ),
                   [tv, ρʺ, σv]: Result<T> = eval_<T>(Env.concat(f.ρ, ρʹ), σʹu, σ)
             return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʺ, σv]
-         } else
-         if (f instanceof Value.PrimOp) {
-            const [tu, , σʹu]: Result<PrimBody<T>> = eval_(ρ, e.arg, f.σ),
-                  [v, σv]: PrimResult<T> = σʹu(tu.val, σ)(k)
-            return [Traced.at(k, Trace.PrimApp.at(k, tf, tu), v), Env.empty(), σv]
          } else {
             return assert(false, "Not a function.", f)
          }

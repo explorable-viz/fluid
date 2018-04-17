@@ -4,8 +4,8 @@ import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
 import { singleton } from "../src/FiniteMap"
 import { Parse } from "../src/Parse"
-import { prelude } from "../src/Primitive"
-import { Persistent } from "../src/Runtime"
+import { prelude } from "../src/Primitive2"
+import { PersistentObject } from "../src/Runtime"
 import { Expr, Lex, Trie } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
@@ -27,27 +27,27 @@ export enum Profile {
 const defaultProfile = Profile.Parse
 
 export namespace τ {
-   export function var_<T> (t: T): Trie<T> {
+   export function var_<T extends PersistentObject | null> (t: T): Trie<T> {
       return Trie.Var.make(new Lex.Var("x"), t)
    }
 
-   export function int<T> (t: T): Trie<T> {
+   export function int<T extends PersistentObject | null> (t: T): Trie<T> {
       return Trie.ConstInt.make(t)
    }
 
-   export function str<T> (t: T): Trie<T> {
+   export function str<T extends PersistentObject | null> (t: T): Trie<T> {
       return Trie.ConstStr.make(t)
    }
 
-   export function cons<T extends Persistent> (t: T): Trie<T> {
+   export function cons<T extends PersistentObject | null> (t: T): Trie<T> {
       return Trie.Constr.make(singleton("Cons", t))
    }
 
-   export function pair<T extends Persistent> (t: T): Trie<T> {
+   export function pair<T extends PersistentObject | null> (t: T): Trie<T> {
       return Trie.Constr.make(singleton("Pair", t))
    }
 
-   export function some<T extends Persistent> (t: T): Trie<T> {
+   export function some<T extends PersistentObject | null> (t: T): Trie<T> {
       return Trie.Constr.make(singleton("Some", t))
    }
 }

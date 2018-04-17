@@ -126,28 +126,18 @@ function isSumOp (opName: Lex.OpName): boolean {
    return opName.str.charAt(0) === "+" || opName.str.charAt(0) === "-"
 }
 
-const productOp: Parser<Expr.OpName> =
-   withAction(satisfying(opCandidate, isProductOp), opName => Expr.OpName.at(ν(), opName))
+const productOp: Parser<Lex.OpName> =
+   satisfying(opCandidate, isProductOp)
 
-const sumOp: Parser<Expr.OpName> =
-   withAction(satisfying(opCandidate, isSumOp), opName => Expr.OpName.at(ν(), opName))
+const sumOp: Parser<Lex.OpName> =
+   satisfying(opCandidate, isSumOp)
 
-const compareOp: Parser<Expr.OpName> =
-   withAction(
-      satisfying(opCandidate, opName => !isProductOp(opName) && !isSumOp(opName)),
-      opName => Expr.OpName.at(ν(), opName)
-   )
-
-const symbolOp: Parser<Expr.OpName> = 
-   choice([productOp, sumOp, compareOp])
+const compareOp: Parser<Lex.OpName> =
+   satisfying(opCandidate, opName => !isProductOp(opName) && !isSumOp(opName))
 
 function parenthesise<T> (p: Parser<T>): Parser<T> {
    return between(symbol(str.parenL), p, symbol(str.parenR))
 }
-
-// We permit Haskell-style "sections" in the surface syntax for convenience, but internally there is
-// no distinction between sections and infix.
-const sectionOp: Parser<Expr.OpName> = parenthesise(symbolOp)
 
 // Consume no input, because application is represented simply by adjacency.
 const app_: Parser<(e1: Expr, e2: Expr) => Expr.App> =
@@ -158,13 +148,13 @@ const app_: Parser<(e1: Expr, e2: Expr) => Expr.App> =
    )
 
 function appOp (
-   opP: Parser<Expr>
-): Parser<(e1: Expr, e2: Expr) => Expr.App> {
+   opP: Parser<Lex.OpName>
+): Parser<(e1: Expr, e2: Expr) => Expr.PrimApp> {
    return withAction(
       opP,
       op =>
-         (e1: Expr, e2: Expr): Expr.App =>
-            Expr.App.at(ν(), Expr.App.at(ν(), op, e1), e2)
+         (e1: Expr, e2: Expr): Expr.PrimApp =>
+            Expr.PrimApp.at(ν(), e1, op, e2)
    )
 }
 
@@ -320,14 +310,14 @@ const fun: Parser<Expr.Fun> =
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
    choice<Expr>([
-      variable, string_, integer, sectionOp, parenthExpr, pair, let_, letrec, constr, matchAs, fun
+      variable, string_, integer, parenthExpr, pair, let_, letrec, constr, matchAs, fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.
 const appChain: Parser<Expr> = chainl1(simpleExpr, app_)
 
 // An expression is an operator tree. An operator tree is a tree whose branches are infix
-// binary primitives and whose leaves are application chains.
+// binary primitives and whose leaves are application chains. "Sections" currently not supported.
 const productExpr: Parser<Expr> = chainl1(appChain, appOp(productOp))
 const sumExpr: Parser<Expr> = chainl1(productExpr, appOp(sumOp))
 const compareExpr: Parser<Expr> = chainl1(sumExpr, appOp(compareOp))

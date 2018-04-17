@@ -4,7 +4,7 @@ import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
 import { PersistentObject, ν } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
-
+/*
 export type PrimResult<T> = [Value | null, T] // v, σv
 export type PrimBody<T extends PersistentObject | null> = (v: Value | null, σ: Trie<T>) => (α: PersistentObject) => PrimResult<T>
 type TrieCtr<T extends PersistentObject | null> = (body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
@@ -153,3 +153,4 @@ export function prelude (): Env {
    })
    return ρ
 }
+*/

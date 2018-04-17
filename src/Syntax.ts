@@ -5,8 +5,7 @@ import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { Eval } from "./Eval"
-import { PrimBody } from "./Primitive"
-import { ExternalObject, VersionedObject, Persistent, PersistentObject, create } from "./Runtime"
+import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
@@ -298,6 +297,21 @@ export namespace Expr {
          const this_: MatchAs = create(i, MatchAs)
          this_.e = e
          this_.σ = σ
+         this_.__version()
+         return this_
+      }
+   }
+
+   export class PrimApp extends Expr {
+      e1: Expr
+      opName: Lex.OpName
+      e2: Expr
+
+      static at (i: ExternalObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
+         const this_: PrimApp = create(i, PrimApp)
+         this_.e1 = e1
+         this_.opName = opName
+         this_.e2 = e2
          this_.__version()
          return this_
       }
