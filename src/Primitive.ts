@@ -6,8 +6,8 @@ import { Persistent, PersistentObject, ν } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
 export type PrimResult<T> = [Value | null, T] // v, σv
-export type PrimBody<T> = (v: Value | null, σ: Trie<T>) => (α: PersistentObject) => PrimResult<T>
-type TrieCtr<T> = (body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
+export type PrimBody<T extends Persistent> = (v: Value | null, σ: Trie<T>) => (α: PersistentObject) => PrimResult<T>
+type TrieCtr<T extends Persistent> = (body: PrimBody<T>) => Trie.Prim<PrimBody<T>>
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 

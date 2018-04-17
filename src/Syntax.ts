@@ -366,38 +366,38 @@ export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evalua
    }
 }
 
-// Tries are currently not versioned, for consistency with the spec.
-export type Trie<T> = Trie.Trie<T>
+// Tries are currently not versioned, as per the formalism.
+export type Trie<T extends Persistent> = Trie.Trie<T>
 
 export namespace Trie {
-   export class Trie<T> extends PersistentObject implements JoinSemilattice<Trie<T>> {
+   export class Trie<T extends Persistent> extends PersistentObject implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
    }
 
-   export class Prim<T> extends Trie<T> {
+   export class Prim<T extends Persistent> extends Trie<T> {
       body: T
    }
 
-   export class ConstInt<T> extends Prim<T> {
-      static is<T> (σ: Trie<T>): σ is ConstInt<T> {
+   export class ConstInt<T extends Persistent> extends Prim<T> {
+      static is<T extends Persistent> (σ: Trie<T>): σ is ConstInt<T> {
          return σ instanceof ConstInt
       }
 
-      static make <T> (body: T): ConstInt<T> {
+      static make <T extends Persistent> (body: T): ConstInt<T> {
          const this_: ConstInt<T> = make<ConstInt<T>>(ConstInt, body)
          this_.body = body
          return this_
       }
    }
 
-   export class ConstStr<T> extends Prim<T> {
-      static is<T> (σ: Trie<T>): σ is ConstStr<T> {
+   export class ConstStr<T extends Persistent> extends Prim<T> {
+      static is<T extends Persistent> (σ: Trie<T>): σ is ConstStr<T> {
          return σ instanceof ConstStr
       }
 
-      static make <T> (body: T): ConstStr<T> {
+      static make <T extends Persistent> (body: T): ConstStr<T> {
          const this_: ConstStr<T> = make<ConstStr<T>>(ConstStr, body)
          this_.body = body
          return this_
@@ -419,15 +419,15 @@ export namespace Trie {
       }
    }
 
-   export class Var<T> extends Trie<T> {
+   export class Var<T extends Persistent> extends Trie<T> {
       x: Lex.Var
       body: T
 
-      static is<T> (σ: Trie<T>): σ is Var<T> {
+      static is<T extends Persistent> (σ: Trie<T>): σ is Var<T> {
          return σ instanceof Var
       }
 
-      static make <T> (x: Lex.Var, body: T): Var<T> {
+      static make <T extends Persistent> (x: Lex.Var, body: T): Var<T> {
          const this_: Var<T> = make<Var<T>>(Var, x, body)
          this_.x = x
          this_.body = body
@@ -435,14 +435,14 @@ export namespace Trie {
       }
    }
 
-   export class Fun<T> extends Trie<T> {
+   export class Fun<T extends Persistent> extends Trie<T> {
       body: T
 
-      static is<T> (σ: Trie<T>): σ is Fun<T> {
+      static is<T extends Persistent> (σ: Trie<T>): σ is Fun<T> {
          return σ instanceof Fun
       }
 
-      static make <T> (body: T): Fun<T> {
+      static make <T extends Persistent> (body: T): Fun<T> {
          const this_: Fun<T> = make<Fun<T>>(Fun, body)
          this_.body = body
          return this_
