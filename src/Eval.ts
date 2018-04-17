@@ -86,7 +86,7 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: 
                   t: Trace = Trace.Var.at(k, e.ident, __nonNull(tv.trace))
             return [Traced.at(k, t, tv.val), ρʺ, σv]
          } else {
-            return absurd("Variable not found.", x)
+            return assert(false, "Variable not found.", x)
          }
    } else
       if (e instanceof Expr.Let) {
@@ -113,7 +113,7 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: 
                   [v, σv]: PrimResult<T> = op.b.invoke(tu1.val!, tu2.val!, σ)(k)
             return [Traced.at(k, Trace.PrimApp.at(k, tu1, e.opName, tu2), v), Env.empty(), σv]
          } else {
-            return absurd("Operator name not found.", e.opName)
+            return assert(false, "Operator name not found.", e.opName)
          }
       } else
       if (e instanceof Expr.App) {
@@ -130,11 +130,11 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: 
                   [v, κ]: PrimResult<T> = f.op.b.invoke(tu.val!, σ)(k)
             return [Traced.at(k, Trace.App.at(k, tf, tu, null), v), Env.empty(), κ]
          } else {
-            return absurd("Not a function.", f)
+            return assert(false, "Not a function.", f)
          }
       }
    }
-   return absurd("Demand mismatch.", e, σ)
+   return assert(false, "Demand mismatch.", e, σ)
 }
 
 }
