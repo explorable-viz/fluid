@@ -1,4 +1,4 @@
-import { __check, assert, make } from "./util/Core"
+import { __check, absurd, make } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
@@ -464,7 +464,7 @@ export namespace Trie {
       if (Constr.is(σ) && Constr.is(τ)) {
          return Constr.make<T>(unionWith(σ.cases, τ.cases, (x, y) => x.join(y)))
       } else {
-         return assert(false, "Undefined join.", σ, τ)
+         return absurd("Undefined join.", σ, τ)
       }
    }
 }

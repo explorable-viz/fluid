@@ -1,4 +1,4 @@
-import { assert} from "./util/Core"
+import { absurd } from "./util/Core"
 import { Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
@@ -35,7 +35,7 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
       if (e instanceof Expr.App) {
          return Traced.at(i, Trace.App.at(i, instantiate(ρ)(e.func), instantiate(ρ)(e.arg), null), null)
       } else {
-         return assert(false)
+         return absurd()
       }
    }
 }
@@ -59,6 +59,6 @@ function instantiateTrie (σ: Trie<Expr>, ρ: Env): Trie<Expr> {
    if (Trie.Fun.is(σ)) {
       return Trie.Fun.make(instantiate(ρ)(σ.body))
    } else {
-      return assert(false)
+      return absurd()
    }
 }

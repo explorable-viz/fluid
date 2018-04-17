@@ -1,4 +1,4 @@
-import { assert, make } from "./util/Core"
+import { absurd, make } from "./util/Core"
 import { PersistentObject } from "./Runtime"
 import { Expr } from "./Syntax"
 
@@ -67,7 +67,7 @@ export abstract class Env extends PersistentObject {
       if (ρ2 instanceof ExtendEnv) {
          return ExtendEnv.make(Env.concat(ρ1, ρ2.ρ), ρ2.k, ρ2.v)
       } else {
-         return assert(false)
+         return absurd()
       }
    }
 }
