@@ -94,7 +94,7 @@ export class BinaryOp extends PrimOp {
       return this_
    }
 
-   static make_<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, trie1: TrieCtr, trie2: TrieCtr): BinOp {
+   static make_<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, trie1: TrieCtr, trie2: TrieCtr): BinaryOp {
       return BinaryOp.make(op.name, trie1(null), trie2(null), BinaryBody.make(op))
    }
 }

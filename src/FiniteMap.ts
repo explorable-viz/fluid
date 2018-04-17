@@ -1,4 +1,4 @@
-import { assert, absurd } from "./util/Core"
+import { absurd } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { Empty, NonEmpty, Pair, Tree } from "./BaseTypes"
 import { Persistent } from "./Runtime"

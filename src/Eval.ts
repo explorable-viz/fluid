@@ -3,7 +3,7 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
-import { BinOp, PrimResult, binaryOps } from "./Primitive"
+import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
 import { Persistent, PersistentObject } from "./Runtime";
 
@@ -107,7 +107,7 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: 
       // Operators (currently all binary) are "syntax", rather than names.
       if (e instanceof Expr.PrimApp) {
          if (binaryOps.has(e.opName.str)) {
-            const op: BinOp = binaryOps.get(e.opName.str)!,
+            const op: BinaryOp = binaryOps.get(e.opName.str)!,
                   [tu1, ,]: Result<null> = eval_(ρ, e.e1, op.σ1),
                   [tu2, ,]: Result<null> = eval_(ρ, e.e2, op.σ2),
                   [v, σv]: PrimResult<T> = op.b.invoke(tu1.val!, tu2.val!, σ)(k)
