@@ -156,20 +156,6 @@ export namespace Value {
          return this_
       }
    }
-
-   // Primitive ops; see 0.4.4 release notes.
-   export class PrimOp extends Value {
-      name: string
-      σ: Trie.Prim<PrimBody<any>>
-
-      static at (α: PersistentObject, name: string, σ: Trie.Prim<PrimBody<any>>): PrimOp {
-         const this_: PrimOp = create(α, PrimOp)
-         this_.name = name
-         this_.σ = σ
-         this_.__version()
-         return this_
-      }
-   }
 }
 
 export type Expr = Expr.Expr
@@ -312,30 +298,6 @@ export namespace Expr {
          const this_: MatchAs = create(i, MatchAs)
          this_.e = e
          this_.σ = σ
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class OpName extends Expr {
-      opName: Lex.OpName
-   
-      static at (i: ExternalObject, opName: Lex.OpName): OpName {
-         const this_: OpName = create(i, OpName)
-         this_.opName = opName
-         this_.__version()
-         return this_
-      }
-   }
-
-   // Like a (traditional) function literal wraps an expression, a prim op literal wraps a prim op; however
-   // we never bundle such a thing into a closure, but simply unwrap the contained prim op.
-   export class PrimOp extends Expr {
-      op: Value.PrimOp
-
-      static at (i: ExternalObject, op: Value.PrimOp): PrimOp {
-         const this_: PrimOp = create(i, PrimOp)
-         this_.op = op
          this_.__version()
          return this_
       }
@@ -565,13 +527,15 @@ export namespace Trace {
    }
 
    export class PrimApp extends Trace {
-      op: Traced
-      arg: Traced
+      arg1: Traced
+      opName: Lex.OpName
+      arg2: Traced
 
-      static at (k: Eval.Evaluand, op: Traced, arg: Traced): PrimApp {
+      static at (k: Eval.Evaluand, arg1: Traced, opName: Lex.OpName, arg2: Traced): PrimApp {
          const this_: PrimApp = create(k, PrimApp)
-         this_.op = op
-         this_.arg = arg
+         this_.arg1 = arg1
+         this_.opName = opName
+         this_.arg2 = arg2
          this_.__version()
          return this_
       }
