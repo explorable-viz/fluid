@@ -64,7 +64,7 @@ function reserved (str: string): Parser<string> {
 const ctr: Parser<Lex.Ctr> = 
    lexeme(satisfying(identCandidate, isCtr), Lex.Ctr)
 
-// Note that primitive operations that have names (e.g. reflect, intToString) are /exactly/ like regular
+// Note that primitive operations that have names (e.g. intToString) are /exactly/ like regular
 // identifiers. They can be shadowed, for example.
 const var_: Parser<Lex.Var> =
    lexeme(
