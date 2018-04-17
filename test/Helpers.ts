@@ -55,7 +55,7 @@ export namespace τ {
 export function runExample (p: Profile, src: string, σ: Trie<null>): void {
    const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    if (p >= Profile.Run) {
-      const [tv, , ]: Eval.EvalResult<null> = Eval.eval_(ρ, e, σ)
+      const [tv, , ]: Eval.Result<null> = Eval.eval_(ρ, e, σ)
       console.log(tv)
    }
 }
