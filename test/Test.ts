@@ -58,7 +58,7 @@ describe("example", () => {
 	describe("lexicalScoping", () => {
 		const file: TestFile = loadExample("lexicalScoping")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.int(null))
+			runTest(__nonNull(file.text), Profile.Run, τ.str(null))
 		})
 	})
 

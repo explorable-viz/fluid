@@ -99,7 +99,7 @@ function makeBinary<T extends Value, U extends Value, V extends Value> (op: Bina
 const unaryOps: Map<string, UnaryOp> = new Map([
    ["error", makeUnary(error, Trie.ConstStr.make)],
    ["intToString", makeUnary(intToString, Trie.ConstInt.make)],
-   ])
+])
    
 export const binaryOps: Map<string, BinOp> = new Map([
    ["-", makeBinary(minus, Trie.ConstInt.make, Trie.ConstInt.make)],
