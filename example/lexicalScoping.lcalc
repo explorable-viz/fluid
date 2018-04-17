@@ -1,2 +1,2 @@
 let decr = let x = 2 in fun y → y - x in
-let x = 8 in decr x
+let x = 8 in intToString (decr x)

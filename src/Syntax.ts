@@ -5,8 +5,8 @@ import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { Eval } from "./Eval"
-import { PrimBody } from "./Primitive"
-import { ExternalObject, VersionedObject, Persistent, PersistentObject, create } from "./Runtime"
+import { UnaryOp } from "./Primitive"
+import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
@@ -157,15 +157,12 @@ export namespace Value {
       }
    }
 
-   // Primitive ops; see 0.4.4 release notes.
    export class PrimOp extends Value {
-      name: string
-      σ: Trie.Prim<PrimBody<any>>
-
-      static at (α: PersistentObject, name: string, σ: Trie.Prim<PrimBody<any>>): PrimOp {
+      op: UnaryOp
+   
+      static at (α: PersistentObject, op: UnaryOp): PrimOp {
          const this_: PrimOp = create(α, PrimOp)
-         this_.name = name
-         this_.σ = σ
+         this_.op = op
          this_.__version()
          return this_
       }
@@ -254,6 +251,17 @@ export namespace Expr {
       }
    }
 
+   export class PrimOp extends Expr {
+      op: UnaryOp
+
+      static at (i: ExternalObject, op: UnaryOp): PrimOp {
+         const this_: PrimOp = create(i, PrimOp)
+         this_.op = op
+         this_.__version()
+         return this_
+      }
+   }
+
    export class RecDef extends VersionedObject<ExternalObject> {
       x: Lex.Var
       def: Fun
@@ -317,25 +325,16 @@ export namespace Expr {
       }
    }
 
-   export class OpName extends Expr {
+   export class PrimApp extends Expr {
+      e1: Expr
       opName: Lex.OpName
-   
-      static at (i: ExternalObject, opName: Lex.OpName): OpName {
-         const this_: OpName = create(i, OpName)
+      e2: Expr
+
+      static at (i: ExternalObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
+         const this_: PrimApp = create(i, PrimApp)
+         this_.e1 = e1
          this_.opName = opName
-         this_.__version()
-         return this_
-      }
-   }
-
-   // Like a (traditional) function literal wraps an expression, a prim op literal wraps a prim op; however
-   // we never bundle such a thing into a closure, but simply unwrap the contained prim op.
-   export class PrimOp extends Expr {
-      op: Value.PrimOp
-
-      static at (i: ExternalObject, op: Value.PrimOp): PrimOp {
-         const this_: PrimOp = create(i, PrimOp)
-         this_.op = op
+         this_.e2 = e2
          this_.__version()
          return this_
       }
@@ -366,68 +365,68 @@ export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evalua
    }
 }
 
-// Tries are currently not versioned, for consistency with the spec.
-export type Trie<T> = Trie.Trie<T>
+// Tries are persistent but not versioned, as per the formalism.
+export type Trie<T extends PersistentObject | null> = Trie.Trie<T>
 
 export namespace Trie {
-   export class Trie<T> extends PersistentObject implements JoinSemilattice<Trie<T>> {
+   export class Trie<T extends PersistentObject | null> 
+      extends PersistentObject implements JoinSemilattice<Trie<T>> {
       join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
    }
 
-   export class Prim<T> extends Trie<T> {
+   export class Prim<T extends PersistentObject | null> extends Trie<T> {
       body: T
    }
 
-   export class ConstInt<T> extends Prim<T> {
-      static is<T> (σ: Trie<T>): σ is ConstInt<T> {
+   export class ConstInt<T extends PersistentObject | null> extends Prim<T> {
+      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is ConstInt<T> {
          return σ instanceof ConstInt
       }
 
-      static make <T> (body: T): ConstInt<T> {
+      static make <T extends PersistentObject | null> (body: T): ConstInt<T> {
          const this_: ConstInt<T> = make<ConstInt<T>>(ConstInt, body)
          this_.body = body
          return this_
       }
    }
 
-   export class ConstStr<T> extends Prim<T> {
-      static is<T> (σ: Trie<T>): σ is ConstStr<T> {
+   export class ConstStr<T extends PersistentObject | null> extends Prim<T> {
+      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is ConstStr<T> {
          return σ instanceof ConstStr
       }
 
-      static make <T> (body: T): ConstStr<T> {
+      static make <T extends PersistentObject | null> (body: T): ConstStr<T> {
          const this_: ConstStr<T> = make<ConstStr<T>>(ConstStr, body)
          this_.body = body
          return this_
       }
    }
 
-   // TODO: replace ES6 map by interned data structure.
-   export class Constr<T extends Persistent> extends Trie<T> {
+   export class Constr<T extends PersistentObject | null> extends Trie<T> {
       cases: FiniteMap<string, T>
 
-      static is<T extends Persistent> (σ: Trie<T>): σ is Constr<T> {
+      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Constr<T> {
          return σ instanceof Constr
       }
 
-      static make <T extends Persistent> (cases: FiniteMap<string, T>): Constr<T> {
+      static make <T extends PersistentObject | null> (cases: FiniteMap<string, T>): Constr<T> {
          const this_: Constr<T> = make<Constr<T>>(Constr, cases)
          this_.cases = cases
          return this_
       }
    }
 
-   export class Var<T> extends Trie<T> {
+   export class Var<T extends PersistentObject | null> extends Trie<T> {
       x: Lex.Var
       body: T
 
-      static is<T> (σ: Trie<T>): σ is Var<T> {
+      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Var<T> {
          return σ instanceof Var
       }
 
-      static make <T> (x: Lex.Var, body: T): Var<T> {
+      static make <T extends PersistentObject | null> (x: Lex.Var, body: T): Var<T> {
          const this_: Var<T> = make<Var<T>>(Var, x, body)
          this_.x = x
          this_.body = body
@@ -435,21 +434,21 @@ export namespace Trie {
       }
    }
 
-   export class Fun<T> extends Trie<T> {
+   export class Fun<T extends PersistentObject | null> extends Trie<T> {
       body: T
 
-      static is<T> (σ: Trie<T>): σ is Fun<T> {
+      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Fun<T> {
          return σ instanceof Fun
       }
 
-      static make <T> (body: T): Fun<T> {
+      static make <T extends PersistentObject | null> (body: T): Fun<T> {
          const this_: Fun<T> = make<Fun<T>>(Fun, body)
          this_.body = body
          return this_
       }
    }
 
-   export function join<T extends JoinSemilattice<T> & Persistent> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
+   export function join<T extends JoinSemilattice<T> & PersistentObject> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
       if (σ === null) {
          return τ
       } else
@@ -533,7 +532,7 @@ export namespace Trace {
       }
    }
    
-   // See 0.6.1 release notes.
+   // Do we want the σ in the match trace as per the formalism?
    export class Match extends Trace {
       tu: Traced
       t: Trace | null
@@ -564,15 +563,16 @@ export namespace Trace {
       }
    }
 
-   // For primitives there is no body, but we will still show how the argument is consumed.
    export class PrimApp extends Trace {
-      op: Traced
-      arg: Traced
+      arg1: Traced
+      opName: Lex.OpName
+      arg2: Traced
 
-      static at (k: Eval.Evaluand, op: Traced, arg: Traced): PrimApp {
+      static at (k: Eval.Evaluand, arg1: Traced, opName: Lex.OpName, arg2: Traced): PrimApp {
          const this_: PrimApp = create(k, PrimApp)
-         this_.op = op
-         this_.arg = arg
+         this_.arg1 = arg1
+         this_.opName = opName
+         this_.arg2 = arg2
          this_.__version()
          return this_
       }
