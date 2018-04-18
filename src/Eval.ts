@@ -88,7 +88,7 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: 
          } else {
             return assert(false, "Variable not found.", x)
          }
-   } else
+      } else
       if (e instanceof Expr.Let) {
          const [tu, ρʹ, σu]: Result<Expr> = eval_(ρ, e.e, e.σ),
                [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
