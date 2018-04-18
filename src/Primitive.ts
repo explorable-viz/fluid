@@ -2,6 +2,7 @@ import { assert, make } from "./util/Core"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
+import { instantiate } from "./Instantiate"
 import { PersistentObject, ν } from "./Runtime"
 import { Expr, Lex, Trie, Value } from "./Syntax"
 
@@ -183,9 +184,10 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentOb
 
 // Only primitive with identifiers as names are first-class and therefore appear in the prelude.
 export function prelude (): Env {
+   const ρ_0: Env = Env.empty()
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
-      ρ = ExtendEnv.make(ρ, x, EnvEntry.make(Env.empty(), Expr.EmptyRecDefs.make(), Expr.PrimOp.at(ν(), op)))
+      ρ = ExtendEnv.make(ρ, x, EnvEntry.make(ρ_0, Nil.make(), instantiate(ρ_0)(Expr.PrimOp.at(ν(), op))))
    })
    return ρ
 }

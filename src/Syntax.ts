@@ -547,11 +547,11 @@ export namespace Trace {
       opName: Lex.OpName
       tv2: Traced
 
-      static at (k: Eval.Evaluand, e1: Traced, opName: Lex.OpName, e2: Traced): PrimApp {
+      static at (k: Eval.Evaluand, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
          const this_: PrimApp = create(k, PrimApp)
-         this_.e1 = e1
+         this_.tv1 = tv1
          this_.opName = opName
-         this_.e2 = e2
+         this_.tv2 = tv2
          this_.__version()
          return this_
       }
