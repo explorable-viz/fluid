@@ -51,8 +51,9 @@ function evalSeq (ρ: Env, κ: PersistentObject | null, es: List<Expr>): Results
    }
 }
 
-export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: Trie<T>): Result<T> {
-   return evalT(ρ, instantiate(ρ)(e), σ)
+// Probably want to memoise instantiate.
+export function eval_<T extends PersistentObject | null> (ρ: Env, e: Traced, σ: Trie<T>): Result<T> {
+   return evalT(ρ, instantiate(ρ)(e.__id.e), σ)
 }
 
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
@@ -67,12 +68,11 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
 
       } else
       if (t instanceof Trace.Var) {
-         const x: string = t.ident.str
+         const x: string = t.x.str
          if (ρ.has(x)) {
             const {ρ: ρʹ, δ, e: eʹ}: EnvEntry = ρ.get(x)!,
-                  [tv, ρʺ, σv]: Result<T> = eval_(closeDefs(δ, ρʹ, δ), eʹ, σ),
-                  t: Trace = Trace.Var.at(k, e.ident, __nonNull(tv.trace))
-            return [Traced.at(k, t, tv.val), ρʺ, σv]
+                  [tv, ρʺ, σv]: Result<T> = eval_(closeDefs(δ, ρʹ, δ), eʹ, σ)
+            return [Traced.at(k, Trace.Var.at(k, t.x, __nonNull(tv.trace)), tv.val), ρʺ, σv]
          } else {
             return assert(false, "Variable not found.", x)
          }
@@ -81,8 +81,8 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
          const [tf, ,]: Result<null> = eval_(ρ, t.func, Trie.Fun.make(null)),
                f: Value | null = tf.val
          if (f instanceof Value.Closure) {
-            const [tu, ρʹ, σʹu]: Result<Expr> = eval_(ρ, t.arg, f.σ),
-                  [tv, ρʺ, σv]: Result<T> = eval_<T>(Env.concat(f.ρ, ρʹ), σʹu, σ)
+            const [tu, ρʹ, eʹ]: Result<Traced> = eval_(ρ, t.arg, f.σ),
+                  [tv, ρʺ, σv]: Result<T> = eval_<T>(Env.concat(f.ρ, ρʹ), eʹ, σ)
             return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʺ, σv]
          } else
          // Primitives with identifiers as names are unary and first-class.
@@ -95,8 +95,8 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
          }
       } else
       if (t instanceof Trace.Let) {
-         const [tu, ρʹ, σu]: Result<Expr> = eval_(ρ, t.e, t.σ),
-               [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
+         const [tu, ρʹ, eʹ]: Result<Traced> = eval_(ρ, t.tu, t.σ),
+               [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), eʹ, σ)
          return [Traced.at(k, Trace.Let.at(k, tu, t.σ, __nonNull(tv.trace)), tv.val), ρʺ, κ]
       } else
       if (t instanceof Trace.LetRec) {
@@ -105,7 +105,7 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
          return [Traced.at(k, Trace.LetRec.at(k, t.δ, __nonNull(tv.trace)), tv.val), ρʺ, σv]
       } else
       if (t instanceof Trace.MatchAs) {
-         const [tu, ρʹ, σu]: Result<Expr> = eval_(ρ, t.tu, t.σ),
+         const [tu, ρʹ, σu]: Result<Traced> = eval_(ρ, t.tu, t.σ),
                [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
          return [Traced.at(k, Trace.MatchAs.at(k, tu, t.σ, __nonNull(tv.trace)), tv.val), ρʺ, κ]
       } else
