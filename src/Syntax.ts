@@ -511,14 +511,15 @@ export namespace Trace {
       }
    }
 
+   // Continuation here should really be a trace, not a traced value..
    export class LetRec extends Trace {
       δ: List<RecDef>
-      t: Trace
+      tv: Traced
    
-      static at (k: Eval.Evaluand, δ: List<RecDef>, t: Trace): LetRec {
+      static at (k: Eval.Evaluand, δ: List<RecDef>, tv: Traced): LetRec {
          const this_: LetRec = create(k, LetRec)
          this_.δ = δ
-         this_.t = t
+         this_.tv = tv
          this_.__version()
          return this_
       }

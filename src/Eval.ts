@@ -125,8 +125,8 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
       } else
       if (t instanceof Trace.LetRec) {
          const ρʹ: Env = closeDefs(t.δ, ρ, t.δ),
-               [tv, ρʺ, σv]: Result<T> = eval_<T>(ρʹ, t.t, σ)
-         return [Traced.at(k, Trace.LetRec.at(k, t.δ, __nonNull(tv.trace)), tv.val), ρʺ, σv]
+               [tv, ρʺ, σv]: Result<T> = eval_<T>(ρʹ, t.tv, σ)
+         return [Traced.at(k, Trace.LetRec.at(k, t.δ, tv), tv.val), ρʺ, σv]
       } else
       if (t instanceof Trace.MatchAs) {
          const [tu, ρʹ, σu]: Result<Traced> = eval_(ρ, t.tu, t.σ),

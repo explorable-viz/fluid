@@ -20,6 +20,9 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          // No need to use "unknown" environment here because we have ρ.
          return Traced.at(i, Trace.Empty.at(i), Value.Closure.at(i, ρ, instantiateTrie(ρ, e.σ)))
       } else
+      if (e instanceof Expr.PrimOp) {
+         return Traced.at(i, Trace.Empty.at(i), Value.PrimOp.at(i, e.op))
+      } else
       if (e instanceof Expr.Var) {
          return Traced.at(i, Trace.Var.at(i, e.x, null), null)
       } else
@@ -28,7 +31,7 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          return Traced.at(i, t, null)
       } else
       if (e instanceof Expr.LetRec) {
-         const t: Trace = Trace.LetRec.at(i, e.δ.map(def => Trace.RecDef.at(i, def.x, instantiate(ρ)(def.e))), instantiate(ρ)(e.e).trace!)
+         const t: Trace = Trace.LetRec.at(i, e.δ.map(def => Trace.RecDef.at(i, def.x, instantiate(ρ)(def.e))), instantiate(ρ)(e.e))
          return Traced.at(i, t, null)
       } else
       if (e instanceof Expr.MatchAs) {
@@ -36,6 +39,9 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
       } else
       if (e instanceof Expr.App) {
          return Traced.at(i, Trace.App.at(i, instantiate(ρ)(e.func), instantiate(ρ)(e.arg), null), null)
+      } else
+      if (e instanceof Expr.PrimApp) {
+         return Traced.at(i, Trace.PrimApp.at(i, instantiate(ρ)(e.e1), e.opName, instantiate(ρ)(e.e2)), null)
       } else {
          return absurd()
       }
