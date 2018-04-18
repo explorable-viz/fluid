@@ -3,6 +3,7 @@ import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
 import { singleton } from "../src/FiniteMap"
+import { instantiate } from "../src/Instantiate"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
 import { PersistentObject } from "../src/Runtime"
@@ -55,7 +56,7 @@ export namespace τ {
 export function runExample (p: Profile, src: string, σ: Trie<null>): void {
    const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    if (p >= Profile.Run) {
-      const [tv, , ]: Eval.Result<null> = Eval.eval_(ρ, e, σ)
+      const [tv, , ]: Eval.Result<null> = Eval.eval_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
    }
 }
