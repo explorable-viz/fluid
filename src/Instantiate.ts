@@ -24,10 +24,12 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          return Traced.at(i, Trace.Var.at(i, e.x, null), null)
       } else
       if (e instanceof Expr.Let) {
-         return Traced.at(i, Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, instantiate(ρ)(e.σ.body).trace!), null)
+         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, instantiate(ρ)(e.σ.body).trace!)
+         return Traced.at(i, t, null)
       } else
       if (e instanceof Expr.LetRec) {
-         return Traced.at(i, Trace.LetRec.at(i, e.δ, instantiate(ρ)(e.e).trace!), null)
+         const t: Trace = Trace.LetRec.at(i, e.δ.map(def => Trace.RecDef.at(i, def.x, instantiate(ρ)(def.e))), instantiate(ρ)(e.e).trace!)
+         return Traced.at(i, t, null)
       } else
       if (e instanceof Expr.MatchAs) {
          return Traced.at(i, Trace.MatchAs.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ), null), null)

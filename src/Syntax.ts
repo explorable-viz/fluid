@@ -97,9 +97,9 @@ export namespace Value {
 
    export class Closure extends Value {
       ρ: Env
-      σ: Trie<Expr>
+      σ: Trie<Traced>
    
-      static at (α: PersistentObject, ρ: Env, σ: Trie<Expr>): Closure {
+      static at (α: PersistentObject, ρ: Env, σ: Trie<Traced>): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
          this_.σ = σ
@@ -264,46 +264,22 @@ export namespace Expr {
 
    export class RecDef extends VersionedObject<ExternalObject> {
       x: Lex.Var
-      def: Fun
+      e: Expr
    
-      static at (α: ExternalObject, x: Lex.Var, def: Fun): RecDef {
+      static at (α: ExternalObject, x: Lex.Var, e: Expr): RecDef {
          const this_: RecDef = create(α, RecDef)
          this_.x = x
-         this_.def = def
+         this_.e = e
          this_.__version()
          return this_
       }
    }
 
-   export abstract class RecDefs extends PersistentObject {
-      __RecDefs (): void {
-         // discriminator
-      }
-   }
-   
-   export class EmptyRecDefs extends RecDefs {
-      static make (): EmptyRecDefs {
-         return make(EmptyRecDefs)
-      }
-   }
-   
-   export class ExtendRecDefs extends RecDefs {
-      δ: RecDefs
-      def: Expr.RecDef
-   
-      static make (δ: RecDefs, def: Expr.RecDef): ExtendRecDefs {
-         const this_: ExtendRecDefs = make(ExtendRecDefs, δ, def)
-         this_.δ = δ
-         this_.def = def
-         return this_
-      }
-   }
-   
    export class LetRec extends Expr {
-      δ: RecDefs
+      δ: List<RecDef>
       e: Expr
 
-      static at (i: ExternalObject, δ: RecDefs, e: Expr): LetRec {
+      static at (i: ExternalObject, δ: List<RecDef>, e: Expr): LetRec {
          const this_: LetRec = create(i, LetRec)
          this_.δ = δ
          this_.e = e
@@ -521,11 +497,24 @@ export namespace Trace {
       }
    }
 
+   export class RecDef extends VersionedObject<Eval.Evaluand> {
+      x: Lex.Var
+      tv: Traced
+   
+      static at (i: Eval.Evaluand, x: Lex.Var, tv: Traced): RecDef {
+         const this_: RecDef = create(i, RecDef)
+         this_.x = x
+         this_.tv = tv
+         this_.__version()
+         return this_
+      }
+   }
+
    export class LetRec extends Trace {
-      δ: Expr.RecDefs
+      δ: List<RecDef>
       t: Trace
    
-      static at (k: Eval.Evaluand, δ: Expr.RecDefs, t: Trace): LetRec {
+      static at (k: Eval.Evaluand, δ: List<RecDef>, t: Trace): LetRec {
          const this_: LetRec = create(k, LetRec)
          this_.δ = δ
          this_.t = t

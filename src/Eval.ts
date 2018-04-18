@@ -22,22 +22,23 @@ export class Evaluand extends PersistentObject {
    }
 }
 
-export type Result<T> = [Traced, Env, T]                    // tv, ρ, σv
-type Results = [List<Traced>, Env, PersistentObject | null] // tvs, ρ, σv
+export type Result<T> = [Traced, Env, T]                    // tv, ρ, κ
+type Results = [List<Traced>, Env, PersistentObject | null] // tvs, ρ, κ
 
-function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
-   if (δ_0 instanceof Expr.EmptyRecDefs) {
+// A snoc list would avoid reversing the order of the declarations, but semantically it's irrelevant.
+function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.RecDef>): Env {
+   if (Cons.is(δ)) {
+      return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, EnvEntry.make(ρ, δ_0, δ.head.tv))
+   } else
+   if (Nil.is(δ)) {
       return ρ
-   } else 
-   if (δ_0 instanceof Expr.ExtendRecDefs) {
-      return ExtendEnv.make(closeDefs(δ_0.δ, ρ, δ), δ_0.def.x.str, EnvEntry.make(ρ, δ, δ_0.def.def))
    } else {
       return absurd()
    }
 }
 
 // Not capturing the polymorphic type of the nested trie κ (which has a depth of n >= 0).
-function evalSeq (ρ: Env, κ: PersistentObject | null, es: List<Expr>): Results {
+function evalSeq (ρ: Env, κ: PersistentObject | null, es: List<Traced>): Results {
    if (Cons.is(es)) {
       const σ: Trie<PersistentObject> = as(κ as Trie<PersistentObject>, Trie.Trie),
             [tv, ρʹ, κʹ]: Result<Persistent> = eval_(ρ, es.head, σ),
@@ -60,13 +61,36 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
 export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ: Trie<T>): Result<T> {
    const k: Evaluand = e.__id
    if (Trie.Var.is(σ)) {
-      const entry: EnvEntry = EnvEntry.make(ρ, Expr.EmptyRecDefs.make(), e)
+      const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
       return [Traced.at(k, null, null), Env.singleton(σ.x.str, entry), σ.body]
    } else {
       const t: Trace | null = e.trace
       if (t instanceof Trace.Empty) {
-
-      } else
+         const v: Value | null = e.val
+         if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
+            const ctr: string = v.ctr.str
+            assert(ctrToDataType.has(ctr), "No such constructor.", e)
+            assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === v.args.length, "Arity mismatch.", e)
+            const σʹ: PersistentObject | null = get(σ.cases, v.ctr.str)!,
+                  [tvs, ρʹ, κ]: Results = evalSeq(ρ, σʹ, v.args)
+            // have to cast κ without type information on constructor
+            return [Traced.at(k, Trace.Empty.at(k), Value.Constr.at(k, v.ctr, tvs)), ρʹ, κ as T]
+         } else
+         if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
+            return [Traced.at(k, Trace.Empty.at(k), Value.ConstInt.at(k, v.val)), Env.empty(), σ.body]
+         } else
+         if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
+            return [Traced.at(k, Trace.Empty.at(k), Value.ConstStr.at(k, v.val)), Env.empty(), σ.body]
+         } else
+         if (v instanceof Value.Closure && Trie.Fun.is(σ)) {
+            return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, v.σ)), Env.empty(), σ.body]
+         } else
+         if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
+            return [Traced.at(k, Trace.Empty.at(k), Value.PrimOp.at(k, v.op)), Env.empty(), σ.body]
+         } else {
+            return assert(false, "Demand mismatch.", e, σ)
+         }
+      }
       if (t instanceof Trace.Var) {
          const x: string = t.x.str
          if (ρ.has(x)) {
@@ -120,31 +144,10 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
          } else {
             return assert(false, "Operator name not found.", t.opName)
          }
-      }
-
-      if (e instanceof Expr.Constr && Trie.Constr.is(σ) && has(σ.cases, e.ctr.str)) {
-         const ctr: string = e.ctr.str
-         assert(ctrToDataType.has(ctr), "No such constructor.", e)
-         assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === e.args.length, "Arity mismatch.", e)
-         const σʹ: PersistentObject | null = get(σ.cases, e.ctr.str)!,
-               [tvs, ρʹ, κ]: Results = evalSeq(ρ, σʹ, e.args)
-         // have to cast κ without type information on constructor
-         return [Traced.at(k, Trace.Empty.at(k), Value.Constr.at(k, e.ctr, tvs)), ρʹ, κ as T]
-      } else
-      if (e instanceof Expr.ConstInt && Trie.ConstInt.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), Value.ConstInt.at(k, e.val)), Env.empty(), σ.body]
-      } else
-      if (e instanceof Expr.ConstStr && Trie.ConstStr.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), Value.ConstStr.at(k, e.val)), Env.empty(), σ.body]
-      } else
-      if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, e.σ)), Env.empty(), σ.body]
-      } else
-      if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), Value.PrimOp.at(k, e.op)), Env.empty(), σ.body]
+      } else {
+         return assert(false, "Demand mismatch.", e, σ)
       }
    }
-   return assert(false, "Demand mismatch.", e, σ)
 }
 
 }

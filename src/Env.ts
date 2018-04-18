@@ -1,6 +1,7 @@
 import { absurd, make } from "./util/Core"
+import { List } from "./BaseTypes"
 import { PersistentObject } from "./Runtime"
-import { Expr } from "./Syntax"
+import { Trace, Traced } from "./Syntax"
 
 export class EnvEntries extends PersistentObject {
    __EnvEntries (): void {
@@ -114,10 +115,10 @@ export class ExtendEnv extends Env {
 
 export class EnvEntry {
    ρ: Env
-   δ: Expr.RecDefs
-   e: Expr
+   δ: List<Trace.RecDef>
+   e: Traced
 
-   static make (ρ: Env, δ: Expr.RecDefs, e: Expr): EnvEntry {
+   static make (ρ: Env, δ: List<Trace.RecDef>, e: Traced): EnvEntry {
       const this_: EnvEntry = make(EnvEntry, ρ, δ, e)
       this_.ρ = ρ
       this_.δ = δ
