@@ -18,19 +18,19 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
       } else
       if (e instanceof Expr.Fun) {
          // No need to use "unknown" environment here because we have ρ.
-         return Traced.at(i, Trace.Empty.at(i), Value.Closure.at(i, ρ, instantiateTrie(e.σ, ρ)))
+         return Traced.at(i, Trace.Empty.at(i), Value.Closure.at(i, ρ, instantiateTrie(ρ, e.σ)))
       } else
       if (e instanceof Expr.Var) {
-         return Traced.at(i, Trace.Var.at(i, e.ident, null), null)
+         return Traced.at(i, Trace.Var.at(i, e.x, null), null)
       } else
       if (e instanceof Expr.Let) {
-         return Traced.at(i, Trace.Let.at(i, instantiate(ρ)(e.e), instantiate(ρ)(e.σ.body).trace!), null)
+         return Traced.at(i, Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, instantiate(ρ)(e.σ.body).trace!), null)
       } else
       if (e instanceof Expr.LetRec) {
          return Traced.at(i, Trace.LetRec.at(i, e.δ, instantiate(ρ)(e.e).trace!), null)
       } else
       if (e instanceof Expr.MatchAs) {
-         return Traced.at(i, Trace.Match.at(i, instantiate(ρ)(e.e), null), null)
+         return Traced.at(i, Trace.MatchAs.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ), null), null)
       } else
       if (e instanceof Expr.App) {
          return Traced.at(i, Trace.App.at(i, instantiate(ρ)(e.func), instantiate(ρ)(e.arg), null), null)
@@ -40,8 +40,8 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
    }
 }
 
-// Should be able to give this a more specific type, but doesn't work with the type guards.
-function instantiateTrie (σ: Trie<Expr>, ρ: Env): Trie<Expr> {
+// Can't give this a more specific type without type variables of kind * -> *.
+function instantiateTrie (ρ: Env, σ: Trie<Expr>): Trie<Traced> {
    if (Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, instantiate(ρ)(σ.body))
    } else

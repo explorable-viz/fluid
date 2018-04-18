@@ -341,11 +341,11 @@ export namespace Expr {
    }
 
    export class Var extends Expr {
-      ident: Lex.Var
+      x: Lex.Var
    
-      static at (i: ExternalObject, ident: Lex.Var): Var {
+      static at (i: ExternalObject, x: Lex.Var): Var {
          const this_: Var = create(i, Var)
-         this_.ident = ident
+         this_.x = x
          this_.__version()
          return this_
       }
@@ -504,15 +504,17 @@ export namespace Trace {
 
    export class Let extends Trace {
       tu: Traced
+      σ: Trie.Var<Traced>
       t: Trace
 
       __Let (): void {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, t: Trace): Let {
+      static at (k: Eval.Evaluand, tu: Traced, σ: Trie.Var<Traced>, t: Trace): Let {
          const this_: Let = create(k, Let)
          this_.tu = tu
+         this_.σ = σ
          this_.t = t
          this_.__version()
          return this_
@@ -532,31 +534,19 @@ export namespace Trace {
       }
    }
    
-   // Do we want the σ in the match trace as per the formalism?
-   export class Match extends Trace {
+   export class MatchAs extends Trace {
       tu: Traced
+      σ: Trie<Traced>
       t: Trace | null
 
       __Match (): void {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, t: Trace | null): Match {
-         const this_: Match = create(k, Match)
+      static at (k: Eval.Evaluand, tu: Traced, σ: Trie<Traced>,  t: Trace | null): MatchAs {
+         const this_: MatchAs = create(k, MatchAs)
          this_.tu = tu
-         this_.t = t
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class OpName extends Trace {
-      x: Lex.OpName
-      t: Trace | null
-
-      static at (k: Eval.Evaluand, x: Lex.OpName, t: Trace | null): OpName {
-         const this_: OpName = create(k, OpName)
-         this_.x = x
+         this_.σ = σ
          this_.t = t
          this_.__version()
          return this_
@@ -564,15 +554,15 @@ export namespace Trace {
    }
 
    export class PrimApp extends Trace {
-      arg1: Traced
+      tv1: Traced
       opName: Lex.OpName
-      arg2: Traced
+      tv2: Traced
 
-      static at (k: Eval.Evaluand, arg1: Traced, opName: Lex.OpName, arg2: Traced): PrimApp {
+      static at (k: Eval.Evaluand, e1: Traced, opName: Lex.OpName, e2: Traced): PrimApp {
          const this_: PrimApp = create(k, PrimApp)
-         this_.arg1 = arg1
+         this_.e1 = e1
          this_.opName = opName
-         this_.arg2 = arg2
+         this_.e2 = e2
          this_.__version()
          return this_
       }
