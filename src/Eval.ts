@@ -58,19 +58,19 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
 }
 
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
-export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ: Trie<T>): Result<T> {
-   const k: Evaluand = e.__id
+export function evalT<T extends PersistentObject | null> (ρ: Env, tv: Traced, σ: Trie<T>): Result<T> {
+   const k: Evaluand = tv.__id
    if (Trie.Var.is(σ)) {
-      const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
+      const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), tv)
       return [Traced.at(k, null, null), Env.singleton(σ.x.str, entry), σ.body]
    } else {
-      const t: Trace | null = e.trace
+      const t: Trace | null = tv.trace
       if (t instanceof Trace.Empty) {
-         const v: Value | null = e.val
+         const v: Value | null = tv.val
          if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
             const ctr: string = v.ctr.str
-            assert(ctrToDataType.has(ctr), "No such constructor.", e)
-            assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === v.args.length, "Arity mismatch.", e)
+            assert(ctrToDataType.has(ctr), "No such constructor.", v.ctr)
+            assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === v.args.length, "Arity mismatch.", v.ctr)
             const σʹ: PersistentObject | null = get(σ.cases, v.ctr.str)!,
                   [tvs, ρʹ, κ]: Results = evalSeq(ρ, σʹ, v.args)
             // have to cast κ without type information on constructor
@@ -88,7 +88,7 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
          if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
             return [Traced.at(k, Trace.Empty.at(k), Value.PrimOp.at(k, v.op)), Env.empty(), σ.body]
          } else {
-            return assert(false, "Demand mismatch.", e, σ)
+            return assert(false, "Demand mismatch.", tv, σ)
          }
       }
       if (t instanceof Trace.Var) {
@@ -106,8 +106,8 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
                f: Value | null = tf.val
          if (f instanceof Value.Closure) {
             const [tu, ρʹ, eʹ]: Result<Traced> = eval_(ρ, t.arg, f.σ),
-                  [tv, ρʺ, σv]: Result<T> = eval_<T>(Env.concat(f.ρ, ρʹ), eʹ, σ)
-            return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʺ, σv]
+                  [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(f.ρ, ρʹ), eʹ, σ)
+            return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
          } else
          // Primitives with identifiers as names are unary and first-class.
          if (f instanceof Value.PrimOp) {
@@ -125,8 +125,8 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
       } else
       if (t instanceof Trace.LetRec) {
          const ρʹ: Env = closeDefs(t.δ, ρ, t.δ),
-               [tv, ρʺ, σv]: Result<T> = eval_<T>(ρʹ, t.tv, σ)
-         return [Traced.at(k, Trace.LetRec.at(k, t.δ, tv), tv.val), ρʺ, σv]
+               [tv, ρʺ, κ]: Result<T> = eval_<T>(ρʹ, t.tv, σ)
+         return [Traced.at(k, Trace.LetRec.at(k, t.δ, tv), tv.val), ρʺ, κ]
       } else
       if (t instanceof Trace.MatchAs) {
          const [tu, ρʹ, σu]: Result<Traced> = eval_(ρ, t.tu, t.σ),
@@ -139,13 +139,13 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
             const op: BinaryOp = binaryOps.get(t.opName.str)!,
                   [tv1, ,]: Result<null> = eval_(ρ, t.tv1, op.σ1),
                   [tv2, ,]: Result<null> = eval_(ρ, t.tv2, op.σ2),
-                  [v, σv]: PrimResult<T> = op.b.invoke(tv1.val!, tv2.val!, σ)(k)
-            return [Traced.at(k, Trace.PrimApp.at(k, tv1, t.opName, tv2), v), Env.empty(), σv]
+                  [v, κ]: PrimResult<T> = op.b.invoke(tv1.val!, tv2.val!, σ)(k)
+            return [Traced.at(k, Trace.PrimApp.at(k, tv1, t.opName, tv2), v), Env.empty(), κ]
          } else {
             return assert(false, "Operator name not found.", t.opName)
          }
       } else {
-         return assert(false, "Demand mismatch.", e, σ)
+         return assert(false, "Demand mismatch.", tv, σ)
       }
    }
 }

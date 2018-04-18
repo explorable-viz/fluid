@@ -482,7 +482,7 @@ export namespace Trace {
    export class Let extends Trace {
       tu: Traced
       σ: Trie.Var<Traced>
-      t: Trace
+      t: Trace | null
 
       __Let (): void {
          // discriminator

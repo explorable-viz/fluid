@@ -27,7 +27,7 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          return Traced.at(i, Trace.Var.at(i, e.x, null), null)
       } else
       if (e instanceof Expr.Let) {
-         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, instantiate(ρ)(e.σ.body).trace!)
+         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, null)
          return Traced.at(i, t, null)
       } else
       if (e instanceof Expr.LetRec) {
