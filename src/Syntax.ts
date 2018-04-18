@@ -328,6 +328,7 @@ export namespace Expr {
    }
 }
 
+// Can these be interned, rather than versioned?
 export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evaluand> {
    trace: Trace | null
    val: T | null
