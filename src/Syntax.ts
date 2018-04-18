@@ -328,7 +328,8 @@ export namespace Expr {
    }
 }
 
-// Can these be interned, rather than versioned?
+// Can these be interned, rather than versioned? Just realised interning objects with null fields won't respect 
+// the LVar semantics :-o
 export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evaluand> {
    trace: Trace | null
    val: T | null
