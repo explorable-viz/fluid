@@ -488,7 +488,7 @@ export namespace Trace {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, σ: Trie.Var<Traced>, t: Trace): Let {
+      static at (k: Eval.Evaluand, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
          const this_: Let = create(k, Let)
          this_.tu = tu
          this_.σ = σ
