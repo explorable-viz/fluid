@@ -1,5 +1,5 @@
 import { absurd } from "./util/Core"
-import { Pair } from "./BaseTypes"
+import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
 import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
@@ -27,11 +27,13 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          return Traced.at(i, Trace.Var.at(i, e.x, null), null)
       } else
       if (e instanceof Expr.Let) {
+         // Nrace must still be null even though I know "statically" which branch will be taken.
          const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, null)
          return Traced.at(i, t, null)
       } else
       if (e instanceof Expr.LetRec) {
-         const t: Trace = Trace.LetRec.at(i, e.δ.map(def => Trace.RecDef.at(i, def.x, instantiate(ρ)(def.e))), instantiate(ρ)(e.e))
+         const δ: List<Trace.RecDef> = e.δ.map(def => Trace.RecDef.at(i, def.x, instantiate(ρ)(def.e))),
+               t: Trace = Trace.LetRec.at(i, δ, instantiate(Eval.closeDefs(δ, ρ, δ))(e.e))
          return Traced.at(i, t, null)
       } else
       if (e instanceof Expr.MatchAs) {

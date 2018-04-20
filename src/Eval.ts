@@ -26,7 +26,7 @@ export type Result<T> = [Traced, Env, T]                    // tv, ρ, κ
 type Results = [List<Traced>, Env, PersistentObject | null] // tvs, ρ, κ
 
 // Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
-function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.RecDef>): Env {
+export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.RecDef>): Env {
    if (Cons.is(δ)) {
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, EnvEntry.make(ρ, δ_0, δ.head.tv))
    } else

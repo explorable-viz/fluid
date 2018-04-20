@@ -270,7 +270,7 @@ function pattern (p: Parser<PersistentObject>): Parser<Trie<PersistentObject>> {
       choice<Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
-// Chain of singleton tries, terminating in an expression.
+// Chain of singleton tries, followed by an expression.
 const match: Parser<Trie<Expr>> = 
    pattern(dropFirst(symbol(str.arrow), expr))
 
