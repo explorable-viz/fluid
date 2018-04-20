@@ -382,7 +382,7 @@ export namespace Trie {
    }
 
    export class Constr<T extends PersistentObject | null> extends Trie<T> {
-      cases: FiniteMap<string, T>
+      cases: FiniteMap<string, T> // this type can't be right
 
       static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Constr<T> {
          return σ instanceof Constr
