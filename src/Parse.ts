@@ -241,38 +241,37 @@ function args_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie<Expr>> {
 }
 
 // Continuation-passing style means 'parenthesise' idiom doesn't work here.
-function constr_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<Expr>> {
+function constr_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody<Expr>>> {
    return withAction(
       seq(
          ctr, 
          choice([dropFirst(symbol(str.parenL), args_pattern(dropFirst(symbol(str.parenR), p))), p])
       ),
-      ([ctr, z]: [Lex.Ctr, TrieBody<Expr>]): Trie.Constr<Expr> => {
+      ([ctr, z]: [Lex.Ctr, TrieBody<Expr>]): Trie.Constr<TrieBody<Expr>> => {
          assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
          return Trie.Constr.make(singleton(ctr.str, z))
       }
    )
 }
 
-function pair_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<Expr>> {
+function pair_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody<Expr>>> {
    return withAction(
       dropFirst(
          symbol(str.parenL), 
          pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
       ),
-      (σ: Trie<Expr>): Trie.Constr<Expr> => Trie.Constr.make(singleton("Pair", σ))
+      (σ: Trie<TrieBody<Expr>>): Trie.Constr<TrieBody<Expr>> => Trie.Constr.make(singleton("Pair", σ))
    )
 }
 
-function variable_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Var<Expr>> {
+function variable_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Var<TrieBody<Expr>>> {
    return withAction(
-      seq(var_, p), ([x, z]: [Lex.Var, TrieBody<Expr>]): Trie.Var<Expr> => 
+      seq(var_, p), ([x, z]: [Lex.Var, TrieBody<Expr>]): Trie.Var<TrieBody<Expr>> => 
          Trie.Var.make(x, z)
       )
 }
 
-// Wasn't able to figure out the trie type parameters. Using Object allows us not to care.
-function pattern (p: Parser<TrieBody<Expr>>): Parser<Trie<Expr>> {
+function pattern (p: Parser<TrieBody<Expr>>): Parser<Trie<TrieBody<Expr>>> {
    return (state: ParseState) => 
       choice<Trie<Expr>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
