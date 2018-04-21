@@ -1,12 +1,11 @@
 import { __nonNull, absurd, assert, make } from "./util/Core"
 import { Cons, List, Nil } from "./BaseTypes"
-import { ctrToDataType } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
-import { Persistent, PersistentObject } from "./Runtime";
+import { PersistentObject } from "./Runtime";
 
 export module Eval {
 
@@ -37,22 +36,15 @@ export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.Rec
    }
 }
 
+// Parser guarantees that values/patterns respect constructor signatures.
 function evalSeq<T extends PersistentObject | null> (ρ: Env, κ: TrieBody<T>, es: List<Traced>): Results<T> {
-   if (Cons.is(es)) {
-      if (Trie.Trie.is(κ)) {
-         const [tv, ρʹ, κʹ]: Result<TrieBody<T>> = eval_(ρ, es.head, κ),
-               [tvs, ρʺ, κʺ]: Results<T> = evalSeq(ρ, κʹ, es.tail)
-         return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κʺ]
-      } else {
-         return assert(false)
-      }
+   if (Cons.is(es) && Trie.Trie.is(κ)) {
+      const [tv, ρʹ, κʹ]: Result<TrieBody<T>> = eval_(ρ, es.head, κ),
+            [tvs, ρʺ, κʺ]: Results<T> = evalSeq(ρ, κʹ, es.tail)
+      return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κʺ]
    } else
-   if (Nil.is(es)) {
-      if (Trie.Trie.is(κ)) {
-         return assert(false)
-      } else {
-         return [Nil.make(), Env.empty(), κ]
-      }
+   if (Nil.is(es) && !Trie.Trie.is(κ)) {
+      return [Nil.make(), Env.empty(), κ]
    } else {
       return absurd()
    }
@@ -72,26 +64,23 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, tv: Traced, �
    } else {
       const t: Trace | null = tv.trace
       if (t instanceof Trace.Empty) {
-         const v: Value | null = tv.val
+         const v: Value = __nonNull(tv.val)
+         assert(v.__id === k && t.__id === k)
          if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
-            const ctr: string = v.ctr.str
-            assert(ctrToDataType.has(ctr), "No such constructor.", v.ctr)
-            assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === v.args.length, "Arity mismatch.", v.ctr)
-            const σʹ: TrieBody<T> = get(σ.cases, v.ctr.str)!,
-                  [tvs, ρʹ, κ]: Results<T> = evalSeq(ρ, σʹ, v.args)
-            return [Traced.at(k, Trace.Empty.at(k), Value.Constr.at(k, v.ctr, tvs)), ρʹ, κ]
+            const [, ρʹ, κ]: Results<T> = evalSeq(ρ, get(σ.cases, v.ctr.str)!, v.args)
+            return [Traced.at(k, t, v), ρʹ, κ]
          } else
          if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
-            return [Traced.at(k, Trace.Empty.at(k), Value.ConstInt.at(k, v.val)), Env.empty(), σ.body]
+            return [Traced.at(k, t, v), Env.empty(), σ.body]
          } else
          if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
-            return [Traced.at(k, Trace.Empty.at(k), Value.ConstStr.at(k, v.val)), Env.empty(), σ.body]
+            return [Traced.at(k, t, v), Env.empty(), σ.body]
          } else
          if (v instanceof Value.Closure && Trie.Fun.is(σ)) {
-            return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, v.σ)), Env.empty(), σ.body]
+            return [Traced.at(k, t, v), Env.empty(), σ.body]
          } else
          if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
-            return [Traced.at(k, Trace.Empty.at(k), Value.PrimOp.at(k, v.op)), Env.empty(), σ.body]
+            return [Traced.at(k, t, v), Env.empty(), σ.body]
          } else {
             return assert(false, "Demand mismatch.", tv, σ)
          }
@@ -120,7 +109,7 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, tv: Traced, �
                   [v, κ]: PrimResult<T> = f.op.b.invoke(tu.val!, σ)(k)
             return [Traced.at(k, Trace.App.at(k, tf, tu, null), v), Env.empty(), κ]
          } else {
-            return assert(false, "Not a function.", f)
+            return absurd()
          }
       } else
       if (t instanceof Trace.Let) {

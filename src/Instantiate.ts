@@ -1,5 +1,6 @@
-import { absurd } from "./util/Core"
+import { absurd, assert } from "./util/Core"
 import { List, Pair } from "./BaseTypes"
+import { ctrToDataType } from "./DataType"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
 import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
@@ -27,7 +28,7 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          return Traced.at(i, Trace.Var.at(i, e.x, null), null)
       } else
       if (e instanceof Expr.Let) {
-         // Nrace must still be null even though I know "statically" which branch will be taken.
+         // Trace must still be null even though I know "statically" which branch will be taken.
          const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, null)
          return Traced.at(i, t, null)
       } else
@@ -50,6 +51,15 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
    }
 }
 
+function instantiateTrieSeq (ρ: Env, κ: TrieBody<Expr>, n: number): TrieBody<Traced> {
+   if (n === 0 && κ instanceof Expr.Expr) {
+      return instantiate(ρ)(κ)
+   } else {
+
+      return instantiateTrieSeq(ρ, , n - 1)
+   }
+}
+
 // Can't give this a more specific type without type variables of kind * -> *.
 function instantiateTrie (ρ: Env, σ: Trie<Expr>): Trie<Traced> {
    if (Trie.Var.is(σ)) {
@@ -63,12 +73,8 @@ function instantiateTrie (ρ: Env, σ: Trie<Expr>): Trie<Traced> {
    } else
    if (Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: body }: Pair<string, TrieBody<Expr>>) => {
-            if (body instanceof Trie.Trie) {
-               return Pair.make(ctr, instantiateTrie(ρ, body))
-            } else {
-               return Pair.make(ctr, instantiate(ρ)(body))
-            }
+         ({ fst: ctr, snd: body }: Pair<string, TrieBody<Expr>>): Pair<string, TrieBody<Traced>> => {
+            return Pair.make(ctr, instantiateTrieSeq(ρ, body, ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length))
          })
       )
    } else

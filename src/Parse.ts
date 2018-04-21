@@ -1,9 +1,11 @@
+import { assert } from "./util/Core"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
    dropSecond, lazySeq, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
 import { Cons, List, Nil } from "./BaseTypes"
+import { ctrToDataType } from "./DataType"
 import { singleton } from "./FiniteMap"
 import { PersistentObject, ν } from "./Runtime"
 import { Lex, Traced, str, } from "./Syntax"
@@ -220,8 +222,11 @@ const letrec: Parser<Expr.LetRec> =
 const constr: Parser<Expr.Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
-      ([ctr, args]: [Lex.Ctr, Expr[]]) =>
-         Expr.Constr.at(ν(), ctr, List.fromArray(args))
+      ([ctr, args]: [Lex.Ctr, Expr[]]) => {
+         assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
+         assert(ctrToDataType.get(ctr.str)!.ctrs.get(ctr.str)!.length === args.length, "Arity mismatch.", ctr.str)
+         return Expr.Constr.at(ν(), ctr, List.fromArray(args))
+      }
    )
 
 const pair: Parser<Expr.Constr> =

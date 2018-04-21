@@ -1,16 +1,17 @@
-import { assert, make } from "./util/Core"
+import { absurd, assert, make } from "./util/Core"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { PersistentObject, ν } from "./Runtime"
-import { Expr, Lex, Trie, Value } from "./Syntax"
+import { Expr, Lex, Trie, TrieBody, Value } from "./Syntax"
 
 export type PrimResult<K> = [Value | null, K]
 type TrieCtr = (body: null) => Trie.Prim<null>
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
+// Parser guarantees that values/patterns respect constructor signatures.
 function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimResult<T> {
    if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
       return [v, σ.body]
@@ -22,7 +23,13 @@ function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimR
       return [v, σ.body]
    } else 
    if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
-      return [v, get(σ.cases, v.ctr.str)!]
+      const κ: TrieBody<T> = get(σ.cases, v.ctr.str)!
+      assert(v.args.length === 0, "Primitives must return nullary values.")
+      if (Trie.Trie.is(κ)) {
+         return absurd()
+      } else {
+         return [v, κ]
+      }
    } else {
       return assert(false, "Primitive demand mismatch.", v, σ)
    }
@@ -32,7 +39,6 @@ function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimR
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
 
 export class UnaryBody extends PersistentObject {
-   // 
    op: Unary<Value, Value>
 
    static make<T extends Value, V extends Value> (op: Unary<T, V>): UnaryBody {
