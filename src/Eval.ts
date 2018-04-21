@@ -5,7 +5,7 @@ import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
+import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
 import { Persistent, PersistentObject } from "./Runtime";
 
 export module Eval {
@@ -71,7 +71,7 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, tv: Traced, �
             const ctr: string = v.ctr.str
             assert(ctrToDataType.has(ctr), "No such constructor.", v.ctr)
             assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === v.args.length, "Arity mismatch.", v.ctr)
-            const σʹ: PersistentObject | null = get(σ.cases, v.ctr.str)!,
+            const σʹ: TrieBody<T> = get(σ.cases, v.ctr.str)!,
                   [tvs, ρʹ, κ]: Results = evalSeq(ρ, σʹ, v.args)
             // have to cast κ without type information on constructor
             return [Traced.at(k, Trace.Empty.at(k), Value.Constr.at(k, v.ctr, tvs)), ρʹ, κ as T]

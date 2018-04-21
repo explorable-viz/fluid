@@ -2,7 +2,7 @@ import { absurd } from "./util/Core"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval } from "./Eval"
-import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
+import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
 
 export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
    return function (e: Expr.Expr): Traced {
@@ -63,7 +63,13 @@ function instantiateTrie (ρ: Env, σ: Trie<Expr>): Trie<Traced> {
    } else
    if (Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: body }: Pair<string, Expr>) => Pair.make(ctr, instantiate(ρ)(body)))
+         ({ fst: ctr, snd: body }: Pair<string, TrieBody<Expr>>) => {
+            if (body instanceof Trie.Trie) {
+               return Pair.make(ctr, instantiateTrie(ρ, body))
+            } else {
+               return Pair.make(ctr, instantiate(ρ)(body))
+            }
+         })
       )
    } else
    if (Trie.Fun.is(σ)) {

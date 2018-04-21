@@ -342,6 +342,8 @@ export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evalua
    }
 }
 
+export type TrieBody<T extends PersistentObject | null> = T | Trie<T>
+
 // Tries are persistent but not versioned, as per the formalism.
 export type Trie<T extends PersistentObject | null> = Trie.Trie<T>
 
@@ -382,13 +384,13 @@ export namespace Trie {
    }
 
    export class Constr<T extends PersistentObject | null> extends Trie<T> {
-      cases: FiniteMap<string, T> // this type can't be right
+      cases: FiniteMap<string, TrieBody<T>>
 
       static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Constr<T> {
          return σ instanceof Constr
       }
 
-      static make <T extends PersistentObject | null> (cases: FiniteMap<string, T>): Constr<T> {
+      static make <T extends PersistentObject | null> (cases: FiniteMap<string, TrieBody<T>>): Constr<T> {
          const this_: Constr<T> = make<Constr<T>>(Constr, cases)
          this_.cases = cases
          return this_
@@ -439,7 +441,7 @@ export namespace Trie {
          return Var.make(σ.x, σ.body.join(τ.body))
       } else
       if (Constr.is(σ) && Constr.is(τ)) {
-         return Constr.make<T>(unionWith(σ.cases, τ.cases, (x, y) => x.join(y)))
+         return Constr.make(unionWith(σ.cases, τ.cases, (x: TrieBody<T>, y: TrieBody<T>): Trie<T> => join(x, y)))
       } else {
          return absurd("Undefined join.", σ, τ)
       }
