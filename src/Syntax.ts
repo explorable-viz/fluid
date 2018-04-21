@@ -360,7 +360,7 @@ export namespace Trie {
    }
 
    export class Prim<T extends PersistentObject | null> extends Trie<T> {
-      body: T
+      body: TrieBody<T>
    }
 
    export class ConstInt<T extends PersistentObject | null> extends Prim<T> {
@@ -368,7 +368,7 @@ export namespace Trie {
          return σ instanceof ConstInt
       }
 
-      static make <T extends PersistentObject | null> (body: T): ConstInt<T> {
+      static make <T extends PersistentObject | null> (body: TrieBody<T>): ConstInt<T> {
          const this_: ConstInt<T> = make<ConstInt<T>>(ConstInt, body)
          this_.body = body
          return this_
@@ -380,7 +380,7 @@ export namespace Trie {
          return σ instanceof ConstStr
       }
 
-      static make <T extends PersistentObject | null> (body: T): ConstStr<T> {
+      static make <T extends PersistentObject | null> (body: TrieBody<T>): ConstStr<T> {
          const this_: ConstStr<T> = make<ConstStr<T>>(ConstStr, body)
          this_.body = body
          return this_
@@ -403,13 +403,13 @@ export namespace Trie {
 
    export class Var<T extends PersistentObject | null> extends Trie<T> {
       x: Lex.Var
-      body: T
+      body: TrieBody<T>
 
       static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Var<T> {
          return σ instanceof Var
       }
 
-      static make <T extends PersistentObject | null> (x: Lex.Var, body: T): Var<T> {
+      static make <T extends PersistentObject | null> (x: Lex.Var, body: TrieBody<T>): Var<T> {
          const this_: Var<T> = make<Var<T>>(Var, x, body)
          this_.x = x
          this_.body = body
@@ -418,13 +418,13 @@ export namespace Trie {
    }
 
    export class Fun<T extends PersistentObject | null> extends Trie<T> {
-      body: T
+      body: TrieBody<T>
 
       static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Fun<T> {
          return σ instanceof Fun
       }
 
-      static make <T extends PersistentObject | null> (body: T): Fun<T> {
+      static make <T extends PersistentObject | null> (body: TrieBody<T>): Fun<T> {
          const this_: Fun<T> = make<Fun<T>>(Fun, body)
          this_.body = body
          return this_
@@ -439,10 +439,10 @@ export namespace Trie {
          return σ
       } else
       if (Fun.is(σ) && Fun.is(τ)) {
-         return Fun.make(σ.body.join(τ.body))
+         return Fun.make(join(σ.body, τ.body))
       } else
       if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-         return Var.make(σ.x, σ.body.join(τ.body))
+         return Var.make(σ.x, join(σ.body, τ.body))
       } else
       if (Constr.is(σ) && Constr.is(τ)) {
          return Constr.make(unionWith(σ.cases, τ.cases, (x: TrieBody<T>, y: TrieBody<T>): Trie<T> => join(x, y)))

@@ -15,6 +15,10 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          return Traced.at(i, Trace.Empty.at(i), Value.ConstStr.at(i, e.val))
       } else
       if (e instanceof Expr.Constr) {
+         // Could do this earlier (during parsing) or later (during evaluation).
+         const ctr: string = e.ctr.str
+         assert(ctrToDataType.has(ctr), "No such constructor.", e.ctr)
+         assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === e.args.length, "Arity mismatch.", e.ctr)
          return Traced.at(i, Trace.Empty.at(i), Value.Constr.at(i, e.ctr, e.args.map(instantiate(ρ))))
       } else
       if (e instanceof Expr.Fun) {
@@ -51,35 +55,34 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
    }
 }
 
-function instantiateTrieSeq (ρ: Env, κ: TrieBody<Expr>, n: number): TrieBody<Traced> {
-   if (n === 0 && κ instanceof Expr.Expr) {
-      return instantiate(ρ)(κ)
+function instantiateTrieBody (ρ: Env, κ: TrieBody<Expr>): TrieBody<Traced> {
+   if (κ instanceof Trie.Trie) {
+      return instantiateTrie(ρ, κ)
    } else {
-
-      return instantiateTrieSeq(ρ, , n - 1)
+      return instantiate(ρ)(κ)
    }
 }
 
 // Can't give this a more specific type without type variables of kind * -> *.
 function instantiateTrie (ρ: Env, σ: Trie<Expr>): Trie<Traced> {
    if (Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, instantiate(ρ)(σ.body))
+      return Trie.Var.make(σ.x, instantiateTrieBody(ρ, σ.body))
    } else
    if (Trie.ConstInt.is(σ)) {
-      return Trie.ConstInt.make(instantiate(ρ)(σ.body))
+      return Trie.ConstInt.make(instantiateTrieBody(ρ, σ.body))
    } else
    if (Trie.ConstStr.is(σ)) {
-      return Trie.ConstStr.make(instantiate(ρ)(σ.body))
+      return Trie.ConstStr.make(instantiateTrieBody(ρ, σ.body))
    } else
    if (Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: body }: Pair<string, TrieBody<Expr>>): Pair<string, TrieBody<Traced>> => {
-            return Pair.make(ctr, instantiateTrieSeq(ρ, body, ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length))
+         ({ fst: ctr, snd: κ }: Pair<string, TrieBody<Expr>>): Pair<string, TrieBody<Traced>> => {
+            return Pair.make(ctr, instantiateTrieBody(ρ, κ))
          })
       )
    } else
    if (Trie.Fun.is(σ)) {
-      return Trie.Fun.make(instantiate(ρ)(σ.body))
+      return Trie.Fun.make(instantiateTrieBody(ρ, σ.body))
    } else {
       return absurd()
    }
