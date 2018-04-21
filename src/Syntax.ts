@@ -350,7 +350,11 @@ export type Trie<T extends PersistentObject | null> = Trie.Trie<T>
 export namespace Trie {
    export class Trie<T extends PersistentObject | null> 
       extends PersistentObject implements JoinSemilattice<Trie<T>> {
-      join (σ: Trie<T>): Trie<T> {
+         static is<T extends PersistentObject | null> (x: TrieBody<T>): x is Trie<T> {
+            return x instanceof Trie
+         }
+   
+         join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
    }

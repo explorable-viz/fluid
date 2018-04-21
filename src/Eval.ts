@@ -1,4 +1,4 @@
-import { __nonNull, absurd, assert, as, make } from "./util/Core"
+import { __nonNull, absurd, assert, make } from "./util/Core"
 import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
@@ -22,8 +22,8 @@ export class Evaluand extends PersistentObject {
    }
 }
 
-export type Result<T> = [Traced, Env, T]                    // tv, ρ, κ
-type Results = [List<Traced>, Env, PersistentObject | null] // tvs, ρ, κ
+export type Result<T> = [Traced, Env, T] // tv, ρ, κ
+type Results<T> = [List<Traced>, Env, T] // tvs, ρ, κ
 
 // Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
 export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.RecDef>): Env {
@@ -37,16 +37,22 @@ export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.Rec
    }
 }
 
-// Not capturing the polymorphic type of the nested trie κ (which has a depth of n >= 0).
-function evalSeq (ρ: Env, κ: PersistentObject | null, es: List<Traced>): Results {
+function evalSeq<T extends PersistentObject | null> (ρ: Env, κ: TrieBody<T>, es: List<Traced>): Results<T> {
    if (Cons.is(es)) {
-      const σ: Trie<PersistentObject> = as(κ as Trie<PersistentObject>, Trie.Trie),
-            [tv, ρʹ, κʹ]: Result<Persistent> = eval_(ρ, es.head, σ),
-            [tvs, ρʺ, κʺ]: Results = evalSeq(ρ, κʹ, es.tail)
-      return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κʺ]
+      if (Trie.Trie.is(κ)) {
+         const [tv, ρʹ, κʹ]: Result<TrieBody<T>> = eval_(ρ, es.head, κ),
+               [tvs, ρʺ, κʺ]: Results<T> = evalSeq(ρ, κʹ, es.tail)
+         return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κʺ]
+      } else {
+         return assert(false)
+      }
    } else
    if (Nil.is(es)) {
-      return [Nil.make(), Env.empty(), κ]
+      if (Trie.Trie.is(κ)) {
+         return assert(false)
+      } else {
+         return [Nil.make(), Env.empty(), κ]
+      }
    } else {
       return absurd()
    }
@@ -72,9 +78,8 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, tv: Traced, �
             assert(ctrToDataType.has(ctr), "No such constructor.", v.ctr)
             assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === v.args.length, "Arity mismatch.", v.ctr)
             const σʹ: TrieBody<T> = get(σ.cases, v.ctr.str)!,
-                  [tvs, ρʹ, κ]: Results = evalSeq(ρ, σʹ, v.args)
-            // have to cast κ without type information on constructor
-            return [Traced.at(k, Trace.Empty.at(k), Value.Constr.at(k, v.ctr, tvs)), ρʹ, κ as T]
+                  [tvs, ρʹ, κ]: Results<T> = evalSeq(ρ, σʹ, v.args)
+            return [Traced.at(k, Trace.Empty.at(k), Value.Constr.at(k, v.ctr, tvs)), ρʹ, κ]
          } else
          if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
             return [Traced.at(k, Trace.Empty.at(k), Value.ConstInt.at(k, v.val)), Env.empty(), σ.body]
