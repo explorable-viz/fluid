@@ -44,7 +44,7 @@ function evalSeq<T extends PersistentObject | null> (ρ: Env, κ: TrieBody<T>, e
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κʺ]
    } else
    if (Nil.is(es)) {
-      // want to assert that κ is dynamically a T, but that's not the same as not being a Trie<T>.
+      // want to assert that κ is dynamically a T; not the same as not being a Trie.
       return [Nil.make(), Env.empty(), κ as T]
    } else {
       return absurd()
@@ -85,7 +85,7 @@ export function evalT<T extends PersistentObject | null> (ρ: Env, tv: Traced, �
          } else {
             return assert(false, "Demand mismatch.", tv, σ)
          }
-      }
+      } else
       if (t instanceof Trace.Var) {
          const x: string = t.x.str
          if (ρ.has(x)) {
