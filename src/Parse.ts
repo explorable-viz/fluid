@@ -240,7 +240,7 @@ function args_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie<Expr>> {
       pattern(choice([dropFirst(symbol(","), args_pattern(p)), p]))(state)
 }
 
-// Continuation-passing style means 'parenthesise' idiom doesn't work here.
+// Continuation-passing style means "parenthesise" idiom doesn't work here.
 function constr_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody<Expr>>> {
    return withAction(
       seq(
