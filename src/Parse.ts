@@ -7,8 +7,8 @@ import {
 import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { singleton } from "./FiniteMap"
-import { PersistentObject, ν } from "./Runtime"
-import { Expr, Lex, Traced, Trie, TrieBody, str } from "./Syntax"
+import { ν } from "./Runtime"
+import { Expr, Lex, Trie, TrieBody, str } from "./Syntax"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.
@@ -194,7 +194,7 @@ const let_: Parser<Expr.Let> =
 const recDef: Parser<Expr.RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
-      ([name, σ]: [Lex.Var, Trie<Traced>]) =>
+      ([name, σ]: [Lex.Var, Trie<Expr>]) =>
          Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), σ))
    )
 
@@ -309,7 +309,7 @@ const matchAs: Parser<Expr.MatchAs> =
 const fun: Parser<Expr.Fun> =
    withAction(
       dropFirst(keyword(str.fun), matches),
-      (σ: Trie<Traced>) => Expr.Fun.at(ν(), σ)
+      (σ: Trie<Expr>) => Expr.Fun.at(ν(), σ)
    )
 
 // Any expression other than an operator tree or application chain.
