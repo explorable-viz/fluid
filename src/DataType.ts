@@ -23,7 +23,7 @@ function initDataType <T> (d: DataType): void {
    
 export function initDataTypes (): void {
    assert(ctrToDataType.size === 0)
-   initDataType(new DataType("Bool", new Map([["Bool", []], ["False", []]])))
+   initDataType(new DataType("Bool", new Map([["True", []], ["False", []]])))
    initDataType(new DataType("Box", new Map([["Box", ["unbox"]]])))
    initDataType(new DataType("List", new Map([["Nil", []], ["Cons", ["head", "tail"]]])))
    initDataType(new DataType("Ordering", new Map([["LT", []], ["GT", []], ["EQ", []]])))

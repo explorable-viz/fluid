@@ -1,7 +1,7 @@
 import { assert } from "./util/Core"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
-   dropSecond, lazySeq, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
+   dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
 import { Cons, List, Nil } from "./BaseTypes"
@@ -203,7 +203,7 @@ const recDefs: Parser<List<Expr.RecDef>> = optional(recDefs1(), Nil.make())
 function recDefs1 (): Parser<List<Expr.RecDef>> {
    return (state: ParseState) =>
       withAction(
-         lazySeq(recDef, () => recDefs),
+         seqDep(recDef, (def: Expr.RecDef) => recDefs),
          ([def, δ]: [Expr.RecDef, List<Expr.RecDef>]) => Cons.make(def, δ)
       )(state)
 }
@@ -243,13 +243,13 @@ function args_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie<Expr>> {
 // Continuation-passing style means "parenthesise" idiom doesn't work here.
 function constr_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody<Expr>>> {
    return withAction(
-      seq(
+      seqDep(
          ctr, 
-         choice([dropFirst(symbol(str.parenL), args_pattern(dropFirst(symbol(str.parenR), p))), p])
+         ctr => choice([dropFirst(symbol(str.parenL), args_pattern(dropFirst(symbol(str.parenR), p))), p])
       ),
-      ([ctr, z]: [Lex.Ctr, TrieBody<Expr>]): Trie.Constr<TrieBody<Expr>> => {
+      ([ctr, κ]: [Lex.Ctr, TrieBody<Expr>]): Trie.Constr<TrieBody<Expr>> => {
          assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
-         return Trie.Constr.make(singleton(ctr.str, z))
+         return Trie.Constr.make(singleton(ctr.str, κ))
       }
    )
 }
