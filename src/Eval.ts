@@ -43,8 +43,9 @@ function evalSeq<T extends PersistentObject | null> (ρ: Env, κ: TrieBody<T>, e
             [tvs, ρʺ, κʺ]: Results<T> = evalSeq(ρ, κʹ, es.tail)
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κʺ]
    } else
-   if (Nil.is(es) && !Trie.Trie.is(κ)) {
-      return [Nil.make(), Env.empty(), κ]
+   if (Nil.is(es)) {
+      // want to assert that κ is dynamically a T, but that's not the same as not being a Trie<T>.
+      return [Nil.make(), Env.empty(), κ as T]
    } else {
       return absurd()
    }
@@ -58,7 +59,7 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, e: Traced, σ
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
 export function evalT<T extends PersistentObject | null> (ρ: Env, tv: Traced, σ: Trie<T>): Result<T> {
    const k: Evaluand = tv.__id
-   if (Trie.Var.is(σ) && !Trie.Trie.is(σ.body)) {
+   if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), tv)
       return [Traced.at(k, null, null), Env.singleton(σ.x.str, entry), σ.body]
    } else {
