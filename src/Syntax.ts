@@ -4,7 +4,7 @@ import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap, unionWith } from "./FiniteMap"
-import { Eval } from "./Eval"
+import { Runtime } from "./Eval"
 import { UnaryOp } from "./Primitive"
 import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
 
@@ -329,12 +329,12 @@ export namespace Expr {
 }
 
 // Can these be interned, rather than versioned?
-export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evaluand> {
+export class Traced<T extends Value = Value> extends VersionedObject<Runtime<Expr>> {
    trace: Trace | null
    val: T | null
 
-   static at <T extends Value> (k: Eval.Evaluand, trace: Trace | null, val: T | null): Traced<T> {
-      const this_: Traced<T> = create<Eval.Evaluand, Traced<T>>(k, Traced)
+   static at <T extends Value> (k: Runtime<Expr>, trace: Trace | null, val: T | null): Traced<T> {
+      const this_: Traced<T> = create<Runtime<Expr>, Traced<T>>(k, Traced)
       this_.trace = trace
       this_.val = val
       this_.__version()
@@ -455,7 +455,7 @@ export namespace Trie {
 export type Trace = Trace.Trace
 
 export namespace Trace {
-   export class Trace extends VersionedObject<Eval.Evaluand> {
+   export class Trace extends VersionedObject<Runtime<Expr>> {
       __Trace(): void {
          // discriminator
       }
@@ -466,7 +466,7 @@ export namespace Trace {
       arg: Traced
       body: Trace | null
 
-      static at (k: Eval.Evaluand, func: Traced, arg: Traced, body: Trace | null): App {
+      static at (k: Runtime<Expr>, func: Traced, arg: Traced, body: Trace | null): App {
          const this_: App = create(k, App)
          this_.func = func
          this_.arg = arg
@@ -478,7 +478,7 @@ export namespace Trace {
 
    // Not to be confused with ⊥ (null); this is information about an absence, not the absence of information.
    export class Empty extends Trace {
-      static at (k: Eval.Evaluand): Empty {
+      static at (k: Runtime<Expr>): Empty {
          const this_: Empty = create(k, Empty)
          this_.__version()
          return this_
@@ -494,7 +494,7 @@ export namespace Trace {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
          const this_: Let = create(k, Let)
          this_.tu = tu
          this_.σ = σ
@@ -504,11 +504,11 @@ export namespace Trace {
       }
    }
 
-   export class RecDef extends VersionedObject<Eval.Evaluand> {
+   export class RecDef extends VersionedObject<Runtime<Expr.RecDef>> {
       x: Lex.Var
       tv: Traced
    
-      static at (i: Eval.Evaluand, x: Lex.Var, tv: Traced): RecDef {
+      static at (i: Runtime<Expr.RecDef>, x: Lex.Var, tv: Traced): RecDef {
          const this_: RecDef = create(i, RecDef)
          this_.x = x
          this_.tv = tv
@@ -522,7 +522,7 @@ export namespace Trace {
       δ: List<RecDef>
       tv: Traced
    
-      static at (k: Eval.Evaluand, δ: List<RecDef>, tv: Traced): LetRec {
+      static at (k: Runtime<Expr>, δ: List<RecDef>, tv: Traced): LetRec {
          const this_: LetRec = create(k, LetRec)
          this_.δ = δ
          this_.tv = tv
@@ -540,7 +540,7 @@ export namespace Trace {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, σ: Trie<Traced>,  t: Trace | null): MatchAs {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>,  t: Trace | null): MatchAs {
          const this_: MatchAs = create(k, MatchAs)
          this_.tu = tu
          this_.σ = σ
@@ -555,7 +555,7 @@ export namespace Trace {
       opName: Lex.OpName
       tv2: Traced
 
-      static at (k: Eval.Evaluand, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
+      static at (k: Runtime<Expr>, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
          const this_: PrimApp = create(k, PrimApp)
          this_.tv1 = tv1
          this_.opName = opName
@@ -569,7 +569,7 @@ export namespace Trace {
       x: Lex.Var
       t: Trace | null
 
-      static at (k: Eval.Evaluand, x: Lex.Var, t: Trace | null): Var {
+      static at (k: Runtime<Expr>, x: Lex.Var, t: Trace | null): Var {
          const this_: Var = create(k, Var)
          this_.x = x
          this_.t = t

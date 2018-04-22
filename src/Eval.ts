@@ -7,19 +7,19 @@ import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
 import { PersistentObject } from "./Runtime";
 
-export module Eval {
-
-export class Evaluand extends PersistentObject {
+export class Runtime<T extends PersistentObject> extends PersistentObject {
    j: EnvEntries
-   e: Expr
+   t: T
 
-   static make (j: EnvEntries, e: Expr): Evaluand {
-      const this_: Evaluand = make(Evaluand, j, e)
+   static make<T extends PersistentObject> (j: EnvEntries, t: T): Runtime<T> {
+      const this_: Runtime<T> = make<Runtime<T>>(Runtime, j, t)
       this_.j = j
-      this_.e = e
+      this_.t = t
       return this_
    }
 }
+
+export module Eval {
 
 export type Result<T> = [Traced, Env, T] // tv, ρ, κ
 type Results<T> = [List<Traced>, Env, T] // tvs, ρ, κ
@@ -53,12 +53,12 @@ function evalSeq<T extends PersistentObject | null> (ρ: Env, κ: TrieBody<T>, e
 
 // Probably want to memoise instantiate.
 export function eval_<T extends PersistentObject | null> (ρ: Env, e: Traced, σ: Trie<T>): Result<T> {
-   return evalT(ρ, instantiate(ρ)(e.__id.e), σ)
+   return evalT(ρ, instantiate(ρ)(e.__id.t), σ)
 }
 
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
 export function evalT<T extends PersistentObject | null> (ρ: Env, tv: Traced, σ: Trie<T>): Result<T> {
-   const k: Evaluand = tv.__id
+   const k: Runtime<Expr> = tv.__id
    if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), tv)
       return [Traced.at(k, null, null), Env.singleton(σ.x.str, entry), σ.body]

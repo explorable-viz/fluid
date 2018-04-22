@@ -1,14 +1,19 @@
 import { __shallowCopy, __shallowMergeAssign, assert, className, funName, make } from "./util/Core"
+import { Eq } from "./util/Eq"
 
 export interface Ctr<T> {
    new (): T
 }
 
 // Documents any persistent object (interned or versioned) which may be used as a memo key.
-export class PersistentObject {
+export class PersistentObject implements Eq<PersistentObject> {
    __PersistentObject (): void {
       // discriminator
-   }   
+   }
+
+   eq (that: PersistentObject): boolean {
+      return this === that
+   }
 }
 
 export type Persistent = null | PersistentObject | string | number

@@ -2,12 +2,12 @@ import { absurd, assert } from "./util/Core"
 import { List, Pair } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { Env } from "./Env"
-import { Eval } from "./Eval"
+import { Eval, Runtime } from "./Eval"
 import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
 
 export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
    return function (e: Expr.Expr): Traced {
-      const i: Eval.Evaluand = Eval.Evaluand.make(ρ.entries(), e)
+      const i: Runtime<Expr> = Runtime.make(ρ.entries(), e)
       if (e instanceof Expr.ConstInt) {
          return Traced.at(i, Trace.Empty.at(i), Value.ConstInt.at(i, e.val))
       } else
@@ -37,8 +37,11 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          return Traced.at(i, t, null)
       } else
       if (e instanceof Expr.LetRec) {
-         const δ: List<Trace.RecDef> = e.δ.map(def => Trace.RecDef.at(i, def.x, instantiate(ρ)(def.e))),
-               t: Trace = Trace.LetRec.at(i, δ, instantiate(Eval.closeDefs(δ, ρ, δ))(e.e))
+         const δ: List<Trace.RecDef> = e.δ.map(def => {
+            const j: Runtime<Expr.RecDef> = Runtime.make(ρ.entries(), def)
+            return Trace.RecDef.at(j, def.x, instantiate(ρ)(def.e))
+         })
+         const t: Trace = Trace.LetRec.at(i, δ, instantiate(Eval.closeDefs(δ, ρ, δ))(e.e))
          return Traced.at(i, t, null)
       } else
       if (e instanceof Expr.MatchAs) {
