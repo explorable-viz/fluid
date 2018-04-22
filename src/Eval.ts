@@ -7,11 +7,11 @@ import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
 import { PersistentObject } from "./Runtime";
 
-export class Runtime<T extends PersistentObject> extends PersistentObject {
+export class Runtime<T extends Expr | Expr.RecDef> extends PersistentObject {
    j: EnvEntries
    t: T
 
-   static make<T extends PersistentObject> (j: EnvEntries, t: T): Runtime<T> {
+   static make<T extends Expr | Expr.RecDef> (j: EnvEntries, t: T): Runtime<T> {
       const this_: Runtime<T> = make<Runtime<T>>(Runtime, j, t)
       this_.j = j
       this_.t = t
