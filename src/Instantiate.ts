@@ -1,6 +1,5 @@
-import { absurd, assert } from "./util/Core"
+import { absurd } from "./util/Core"
 import { List, Pair } from "./BaseTypes"
-import { ctrToDataType } from "./DataType"
 import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
 import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
@@ -15,10 +14,7 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
          return Traced.at(i, Trace.Empty.at(i), Value.ConstStr.at(i, e.val))
       } else
       if (e instanceof Expr.Constr) {
-         // Could do this earlier (during parsing) or later (during evaluation).
-         const ctr: string = e.ctr.str
-         assert(ctrToDataType.has(ctr), "No such constructor.", e.ctr)
-         assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === e.args.length, "Arity mismatch.", e.ctr)
+         // Parser ensures constructors agree with constructor signatures.
          return Traced.at(i, Trace.Empty.at(i), Value.Constr.at(i, e.ctr, e.args.map(instantiate(ρ))))
       } else
       if (e instanceof Expr.Fun) {
