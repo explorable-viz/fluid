@@ -223,7 +223,11 @@ const constr: Parser<Expr.Constr> =
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
       ([ctr, args]: [Lex.Ctr, Expr[]]) => {
          assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
-         assert(ctrToDataType.get(ctr.str)!.ctrs.get(ctr.str)!.length === args.length, "Arity mismatch.", ctr.str)
+         assert(
+            ctrToDataType.get(ctr.str)!.ctrs.get(ctr.str)!.length === args.length, 
+            "Incorrect number of arguments to constructor.", 
+            ctr.str
+         )
          return Expr.Constr.at(ν(), ctr, List.fromArray(args))
       }
    )
@@ -235,9 +239,17 @@ const pair: Parser<Expr.Constr> =
          Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie<Expr>> {
-   return (state: ParseState) => 
-      pattern(choice([dropFirst(symbol(","), args_pattern(p)), p]))(state)
+function args_pattern (n: number, p: Parser<TrieBody<Expr>>): Parser<Trie<Expr>> {
+   return (state: ParseState) => {
+      assert(n >= 1, "Too many parameters in constructor pattern.")
+      return pattern(choice([
+         dropFirst(symbol(","), args_pattern(n - 1, p)), 
+         satisfying(p, () => {
+            assert(n === 1, "Too few parameters in constructor pattern.")
+            return true
+         })
+      ]))(state)
+   }
 }
 
 // Continuation-passing style means "parenthesise" idiom doesn't work here.
@@ -245,12 +257,18 @@ function constr_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody
    return withAction(
       seqDep(
          ctr, 
-         ctr => choice([dropFirst(symbol(str.parenL), args_pattern(dropFirst(symbol(str.parenR), p))), p])
+         (ctr: Lex.Ctr) => {
+            assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
+            const n: number = ctrToDataType.get(ctr.str)!.ctrs.get(ctr.str)!.length
+            if (n === 0) {
+               return p
+            } else {
+               return dropFirst(symbol(str.parenL), args_pattern(n, dropFirst(symbol(str.parenR), p)))
+            }
+         }
       ),
-      ([ctr, κ]: [Lex.Ctr, TrieBody<Expr>]): Trie.Constr<TrieBody<Expr>> => {
-         assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
-         return Trie.Constr.make(singleton(ctr.str, κ))
-      }
+      ([ctr, κ]: [Lex.Ctr, TrieBody<Expr>]): Trie.Constr<TrieBody<Expr>> =>
+         Trie.Constr.make(singleton(ctr.str, κ))
    )
 }
 
