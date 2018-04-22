@@ -218,6 +218,7 @@ const letrec: Parser<Expr.LetRec> =
          Expr.LetRec.at(ν(), δ, body)
    )
 
+// Enforce consistency with constructor signatures.
 const constr: Parser<Expr.Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
@@ -258,11 +259,13 @@ function constr_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody
          (ctr: Lex.Ctr) => {
             assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
             const n: number = ctrToDataType.get(ctr.str)!.ctrs.get(ctr.str)!.length
-            if (n === 0) {
-               return p
-            } else {
-               return dropFirst(symbol(str.parenL), args_pattern(n, dropFirst(symbol(str.parenR), p)))
-            }
+            return choice([
+               dropFirst(symbol(str.parenL), args_pattern(n, dropFirst(symbol(str.parenR), p))),
+               satisfying(p, () => {
+                  assert(n === 0, "Too few parameters in constructor pattern.")
+                  return true
+               })
+            ])
          }
       ),
       ([ctr, κ]: [Lex.Ctr, TrieBody<Expr>]): Trie.Constr<TrieBody<Expr>> =>
