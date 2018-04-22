@@ -7,14 +7,14 @@ import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
 import { PersistentObject } from "./Runtime";
 
-export class Runtime<T extends Expr | Expr.RecDef> extends PersistentObject {
+export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
    j: EnvEntries
-   t: T
+   e: E
 
-   static make<T extends Expr | Expr.RecDef> (j: EnvEntries, t: T): Runtime<T> {
-      const this_: Runtime<T> = make<Runtime<T>>(Runtime, j, t)
+   static make<E extends Expr | Expr.RecDef> (j: EnvEntries, e: E): Runtime<E> {
+      const this_: Runtime<E> = make<Runtime<E>>(Runtime, j, e)
       this_.j = j
-      this_.t = t
+      this_.e = e
       return this_
    }
 }
@@ -53,7 +53,7 @@ function evalSeq<T extends PersistentObject | null> (ρ: Env, κ: TrieBody<T>, e
 
 // Probably want to memoise instantiate.
 export function eval_<T extends PersistentObject | null> (ρ: Env, e: Traced, σ: Trie<T>): Result<T> {
-   return evalT(ρ, instantiate(ρ)(e.__id.t), σ)
+   return evalT(ρ, instantiate(ρ)(e.__id.e), σ)
 }
 
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
