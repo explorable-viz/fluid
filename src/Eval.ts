@@ -36,7 +36,7 @@ export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.Rec
    }
 }
 
-// Enforcement of constructor signatures is completely dynamic; need a type system to do it statically.
+// Parser ensures constructor patterns match of constructor signatures.
 function evalSeq<T extends PersistentObject | null> (ρ: Env, κ: TrieBody<T>, es: List<Traced>): Results<T> {
    if (Cons.is(es) && Trie.Trie.is(κ)) {
       const [tv, ρʹ, κʹ]: Result<TrieBody<T>> = eval_(ρ, es.head, κ),
