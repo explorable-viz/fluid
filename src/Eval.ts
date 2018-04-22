@@ -1,140 +1,148 @@
-import { __nonNull, absurd, assert, as, make } from "./util/Core"
+import { __nonNull, absurd, assert, make } from "./util/Core"
 import { Cons, List, Nil } from "./BaseTypes"
-import { ctrToDataType } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
-import { BinOp, PrimResult, binaryOps } from "./Primitive"
-import { Expr, Trace, Traced, Trie, Value } from "./Syntax"
-import { Persistent, PersistentObject } from "./Runtime";
+import { instantiate } from "./Instantiate"
+import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
+import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
+import { PersistentObject } from "./Runtime";
 
-export module Eval {
-
-export class Evaluand extends PersistentObject {
+export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
    j: EnvEntries
-   e: Expr
+   e: E
 
-   static make (j: EnvEntries, e: Expr): Evaluand {
-      const this_: Evaluand = make(Evaluand, j, e)
+   static make<E extends Expr | Expr.RecDef> (j: EnvEntries, e: E): Runtime<E> {
+      const this_: Runtime<E> = make<Runtime<E>>(Runtime, j, e)
       this_.j = j
       this_.e = e
       return this_
    }
 }
 
-export type Result<T> = [Traced, Env, T]                    // tv, ρ, σv
-type Results = [List<Traced>, Env, PersistentObject | null] // tvs, ρ, σv
+export module Eval {
 
-function closeDefs (δ_0: Expr.RecDefs, ρ: Env, δ: Expr.RecDefs): Env {
-   if (δ_0 instanceof Expr.EmptyRecDefs) {
+export type Result<T> = [Traced, Env, T] // tv, ρ, κ
+type Results<T> = [List<Traced>, Env, T] // tvs, ρ, κ
+
+// Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
+export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.RecDef>): Env {
+   if (Cons.is(δ)) {
+      return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, EnvEntry.make(ρ, δ_0, δ.head.tv))
+   } else
+   if (Nil.is(δ)) {
       return ρ
-   } else 
-   if (δ_0 instanceof Expr.ExtendRecDefs) {
-      return ExtendEnv.make(closeDefs(δ_0.δ, ρ, δ), δ_0.def.x.str, EnvEntry.make(ρ, δ, δ_0.def.def))
    } else {
       return absurd()
    }
 }
 
-// Not capturing the polymorphic type of the nested trie κ (which has a depth of n >= 0).
-function evalSeq (ρ: Env, κ: PersistentObject | null, es: List<Expr>): Results {
-   if (Cons.is(es)) {
-      const σ: Trie<PersistentObject> = as(κ as Trie<PersistentObject>, Trie.Trie),
-            [tv, ρʹ, κʹ]: Result<Persistent> = eval_(ρ, es.head, σ),
-            [tvs, ρʺ, κʺ]: Results = evalSeq(ρ, κʹ, es.tail)
+// Parser ensures constructor patterns agree with constructor signatures.
+function evalSeq<T extends PersistentObject | null> (ρ: Env, κ: TrieBody<T>, es: List<Traced>): Results<T> {
+   if (Cons.is(es) && Trie.Trie.is(κ)) {
+      const [tv, ρʹ, κʹ]: Result<TrieBody<T>> = eval_(ρ, es.head, κ),
+            [tvs, ρʺ, κʺ]: Results<T> = evalSeq(ρ, κʹ, es.tail)
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κʺ]
    } else
    if (Nil.is(es)) {
-      return [Nil.make(), Env.empty(), κ]
+      // want to assert that κ is dynamically a T; not the same as not being a Trie.
+      return [Nil.make(), Env.empty(), κ as T]
    } else {
       return absurd()
    }
 }
 
+// Probably want to memoise instantiate.
+export function eval_<T extends PersistentObject | null> (ρ: Env, e: Traced, σ: Trie<T>): Result<T> {
+   return evalT(ρ, instantiate(ρ)(e.__id.e), σ)
+}
+
 // Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
-export function eval_<T extends PersistentObject | null> (ρ: Env, e: Expr, σ: Trie<T>): Result<T> {
-   const k: Evaluand = Evaluand.make(ρ.entries(), e)
+export function evalT<T extends PersistentObject | null> (ρ: Env, tv: Traced, σ: Trie<T>): Result<T> {
+   const k: Runtime<Expr> = tv.__id
    if (Trie.Var.is(σ)) {
-      const entry: EnvEntry = EnvEntry.make(ρ, Expr.EmptyRecDefs.make(), e)
+      const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), tv)
       return [Traced.at(k, null, null), Env.singleton(σ.x.str, entry), σ.body]
    } else {
-      if (e instanceof Expr.Constr && Trie.Constr.is(σ) && has(σ.cases, e.ctr.str)) {
-         const ctr: string = e.ctr.str
-         assert(ctrToDataType.has(ctr), "No such constructor.", e)
-         assert(ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length === e.args.length, "Arity mismatch.", e)
-         const σʹ: PersistentObject | null = get(σ.cases, e.ctr.str)!,
-               [tvs, ρʹ, κ]: Results = evalSeq(ρ, σʹ, e.args)
-         // have to cast κ without type information on constructor
-         return [Traced.at(k, Trace.Empty.at(k), Value.Constr.at(k, e.ctr, tvs)), ρʹ, κ as T]
+      const t: Trace | null = tv.trace
+      if (t instanceof Trace.Empty) {
+         const v: Value = __nonNull(tv.val)
+         assert(v.__id === k && t.__id === k)
+         if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
+            const [, ρʹ, κ]: Results<T> = evalSeq(ρ, get(σ.cases, v.ctr.str)!, v.args)
+            return [Traced.at(k, t, v), ρʹ, κ]
+         } else
+         if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
+            return [Traced.at(k, t, v), Env.empty(), σ.body]
+         } else
+         if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
+            return [Traced.at(k, t, v), Env.empty(), σ.body]
+         } else
+         if (v instanceof Value.Closure && Trie.Fun.is(σ)) {
+            return [Traced.at(k, t, v), Env.empty(), σ.body]
+         } else
+         if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
+            return [Traced.at(k, t, v), Env.empty(), σ.body]
+         } else {
+            return assert(false, "Demand mismatch.", tv, σ)
+         }
       } else
-      if (e instanceof Expr.ConstInt && Trie.ConstInt.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), Value.ConstInt.at(k, e.val)), Env.empty(), σ.body]
-      } else
-      if (e instanceof Expr.ConstStr && Trie.ConstStr.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), Value.ConstStr.at(k, e.val)), Env.empty(), σ.body]
-      } else
-      if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), Value.Closure.at(k, ρ, e.σ)), Env.empty(), σ.body]
-      } else
-      if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
-         return [Traced.at(k, Trace.Empty.at(k), Value.PrimOp.at(k, e.op)), Env.empty(), σ.body]
-      } else
-      if (e instanceof Expr.Var) {
-         const x: string = e.ident.str
+      if (t instanceof Trace.Var) {
+         const x: string = t.x.str
          if (ρ.has(x)) {
             const {ρ: ρʹ, δ, e: eʹ}: EnvEntry = ρ.get(x)!,
-                  [tv, ρʺ, σv]: Result<T> = eval_(closeDefs(δ, ρʹ, δ), eʹ, σ),
-                  t: Trace = Trace.Var.at(k, e.ident, __nonNull(tv.trace))
-            return [Traced.at(k, t, tv.val), ρʺ, σv]
+                  [tv, ρʺ, σv]: Result<T> = eval_(closeDefs(δ, ρʹ, δ), eʹ, σ)
+            return [Traced.at(k, Trace.Var.at(k, t.x, __nonNull(tv.trace)), tv.val), ρʺ, σv]
          } else {
-            return absurd("Variable not found.", x)
-         }
-   } else
-      if (e instanceof Expr.Let) {
-         const [tu, ρʹ, σu]: Result<Expr> = eval_(ρ, e.e, e.σ),
-               [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
-         return [Traced.at(k, Trace.Let.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
-      } else
-      if (e instanceof Expr.LetRec) {
-         const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
-               [tv, ρʺ, σv]: Result<T> = eval_<T>(ρʹ, e.e, σ)
-         return [Traced.at(k, Trace.LetRec.at(k, e.δ, __nonNull(tv.trace)), tv.val), ρʺ, σv]
-      } else
-      if (e instanceof Expr.MatchAs) {
-         const [tu, ρʹ, σu]: Result<Expr> = eval_(ρ, e.e, e.σ),
-               [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
-         return [Traced.at(k, Trace.Match.at(k, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
-      } else
-      // Operators (currently all binary) are "syntax", rather than names.
-      if (e instanceof Expr.PrimApp) {
-         if (binaryOps.has(e.opName.str)) {
-            const op: BinOp = binaryOps.get(e.opName.str)!,
-                  [tu1, ,]: Result<null> = eval_(ρ, e.e1, op.σ1),
-                  [tu2, ,]: Result<null> = eval_(ρ, e.e2, op.σ2),
-                  [v, σv]: PrimResult<T> = op.b.invoke(tu1.val!, tu2.val!, σ)(k)
-            return [Traced.at(k, Trace.PrimApp.at(k, tu1, e.opName, tu2), v), Env.empty(), σv]
-         } else {
-            return absurd("Operator name not found.", e.opName)
+            return assert(false, "Variable not found.", x)
          }
       } else
-      if (e instanceof Expr.App) {
-         const [tf, ,]: Result<null> = eval_(ρ, e.func, Trie.Fun.make(null)),
+      if (t instanceof Trace.App) {
+         const [tf, ,]: Result<null> = eval_(ρ, t.func, Trie.Fun.make(null)),
                f: Value | null = tf.val
          if (f instanceof Value.Closure) {
-            const [tu, ρʹ, σʹu]: Result<Expr> = eval_(ρ, e.arg, f.σ),
-                  [tv, ρʺ, σv]: Result<T> = eval_<T>(Env.concat(f.ρ, ρʹ), σʹu, σ)
-            return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʺ, σv]
+            const [tu, ρʹ, eʹ]: Result<Traced> = eval_(ρ, t.arg, f.σ),
+                  [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(f.ρ, ρʹ), eʹ, σ)
+            return [Traced.at(k, Trace.App.at(k, tf, tu, __nonNull(tv.trace)), tv.val), ρʺ, κ]
          } else
          // Primitives with identifiers as names are unary and first-class.
          if (f instanceof Value.PrimOp) {
-            const [tu, ,]: Result<null> = eval_(ρ, e.arg, f.op.σ),
+            const [tu, ,]: Result<null> = eval_(ρ, t.arg, f.op.σ),
                   [v, κ]: PrimResult<T> = f.op.b.invoke(tu.val!, σ)(k)
             return [Traced.at(k, Trace.App.at(k, tf, tu, null), v), Env.empty(), κ]
          } else {
-            return absurd("Not a function.", f)
+            return absurd()
          }
+      } else
+      if (t instanceof Trace.Let) {
+         const [tu, ρʹ, eʹ]: Result<Traced> = eval_(ρ, t.tu, t.σ),
+               [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), eʹ, σ)
+         return [Traced.at(k, Trace.Let.at(k, tu, t.σ, __nonNull(tv.trace)), tv.val), ρʺ, κ]
+      } else
+      if (t instanceof Trace.LetRec) {
+         const ρʹ: Env = closeDefs(t.δ, ρ, t.δ),
+               [tv, ρʺ, κ]: Result<T> = eval_<T>(ρʹ, t.tv, σ)
+         return [Traced.at(k, Trace.LetRec.at(k, t.δ, tv), tv.val), ρʺ, κ]
+      } else
+      if (t instanceof Trace.MatchAs) {
+         const [tu, ρʹ, σu]: Result<Traced> = eval_(ρ, t.tu, t.σ),
+               [tv, ρʺ, κ]: Result<T> = eval_<T>(Env.concat(ρ, ρʹ), σu, σ)
+         return [Traced.at(k, Trace.MatchAs.at(k, tu, t.σ, __nonNull(tv.trace)), tv.val), ρʺ, κ]
+      } else
+      // Operators (currently all binary) are "syntax", rather than names.
+      if (t instanceof Trace.PrimApp) {
+         if (binaryOps.has(t.opName.str)) {
+            const op: BinaryOp = binaryOps.get(t.opName.str)!,
+                  [tv1, ,]: Result<null> = eval_(ρ, t.tv1, op.σ1),
+                  [tv2, ,]: Result<null> = eval_(ρ, t.tv2, op.σ2),
+                  [v, κ]: PrimResult<T> = op.b.invoke(tv1.val!, tv2.val!, σ)(k)
+            return [Traced.at(k, Trace.PrimApp.at(k, tv1, t.opName, tv2), v), Env.empty(), κ]
+         } else {
+            return assert(false, "Operator name not found.", t.opName)
+         }
+      } else {
+         return assert(false, "Demand mismatch.", tv, σ)
       }
    }
-   return absurd("Demand mismatch.", e, σ)
 }
 
 }

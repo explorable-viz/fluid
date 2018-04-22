@@ -1,4 +1,4 @@
-import { assert } from "./util/Core"
+import { absurd } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { Empty, NonEmpty, Pair, Tree } from "./BaseTypes"
 import { Persistent } from "./Runtime"
@@ -21,7 +21,7 @@ export function get <K extends Ord<K> & Persistent, V extends Persistent> (m: Fi
    if (Empty.is(m)) {
       return undefined
    } else {
-      return assert(false)
+      return absurd()
    }
 }
 
@@ -44,7 +44,7 @@ export function insert <K extends Ord<K> & Persistent, V extends Persistent> (m:
    if (Empty.is(m)) {
       return NonEmpty.make(m, Pair.make(k, v), m)
    } else {
-      return assert(false)
+      return absurd()
    }
 }
 
@@ -68,6 +68,6 @@ export function unionWith <K extends Ord<K> & Persistent, V extends Persistent> 
    if (Empty.is(mʹ)) {
       return m
    } else {
-      return assert(false)
+      return absurd()
    }
 }

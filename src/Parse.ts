@@ -1,13 +1,14 @@
+import { assert } from "./util/Core"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
-   dropSecond, lazySeq, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
+   dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { List } from "./BaseTypes"
+import { Cons, List, Nil } from "./BaseTypes"
+import { ctrToDataType } from "./DataType"
 import { singleton } from "./FiniteMap"
-import { PersistentObject, ν } from "./Runtime"
-import { Lex, Traced, str, } from "./Syntax"
-import { Expr, Trie } from "./Syntax"
+import { ν } from "./Runtime"
+import { Expr, Lex, Trie, TrieBody, str } from "./Syntax"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.
@@ -193,18 +194,17 @@ const let_: Parser<Expr.Let> =
 const recDef: Parser<Expr.RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
-      ([name, σ]: [Lex.Var, Trie<Traced>]) =>
+      ([name, σ]: [Lex.Var, Trie<Expr>]) =>
          Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), σ))
    )
 
-// These are *interned*; need to think about implications for editing the AST. 
-const recDefs: Parser<Expr.RecDefs> = optional(recDefs1(), Expr.EmptyRecDefs.make())
+const recDefs: Parser<List<Expr.RecDef>> = optional(recDefs1(), Nil.make())
 
-function recDefs1 (): Parser<Expr.RecDefs> {
+function recDefs1 (): Parser<List<Expr.RecDef>> {
    return (state: ParseState) =>
       withAction(
-         lazySeq(recDef, () => recDefs),
-         ([def, δ]: [Expr.RecDef, Expr.RecDefs]) => Expr.ExtendRecDefs.make(δ, def)
+         seqDep(recDef, (def: Expr.RecDef) => recDefs),
+         ([def, δ]: [Expr.RecDef, List<Expr.RecDef>]) => Cons.make(def, δ)
       )(state)
 }
 
@@ -214,15 +214,21 @@ const letrec: Parser<Expr.LetRec> =
          dropFirst(keyword(str.letRec), recDefs),
          dropFirst(keyword(str.in_), expr)
       ),
-     ([δ, body]: [Expr.RecDefs, Expr]) => 
+     ([δ, body]: [List<Expr.RecDef>, Expr]) => 
          Expr.LetRec.at(ν(), δ, body)
    )
 
+// Enforce consistency with constructor signatures.
 const constr: Parser<Expr.Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
-      ([ctr, args]: [Lex.Ctr, Expr[]]) =>
-         Expr.Constr.at(ν(), ctr, List.fromArray(args))
+      ([ctr, args]: [Lex.Ctr, Expr[]]) => {
+         assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
+         const n: number = ctrToDataType.get(ctr.str)!.ctrs.get(ctr.str)!.length
+         assert(n <= args.length, "Too few arguments to constructor.", ctr.str)
+         assert(n >= args.length, "Too many arguments to constructor.", ctr.str)
+         return Expr.Constr.at(ν(), ctr, List.fromArray(args))
+      }
    )
 
 const pair: Parser<Expr.Constr> =
@@ -232,46 +238,64 @@ const pair: Parser<Expr.Constr> =
          Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern (p: Parser<PersistentObject>): Parser<Trie<PersistentObject>> {
-   return (state: ParseState) => 
-      pattern(choice([dropFirst(symbol(","), args_pattern(p)), p]))(state)
+function args_pattern (n: number, p: Parser<TrieBody<Expr>>): Parser<Trie<Expr>> {
+   return (state: ParseState) => {
+      assert(n >= 1, "Too many parameters in constructor pattern.")
+      return pattern(choice([
+         dropFirst(symbol(","), args_pattern(n - 1, p)), 
+         satisfying(p, () => {
+            assert(n === 1, "Too few parameters in constructor pattern.")
+            return true
+         })
+      ]))(state)
+   }
 }
 
-// Continuation-passing style means 'parenthesise' idiom doesn't work here.
-function constr_pattern (p: Parser<PersistentObject>): Parser<Trie.Constr<PersistentObject>> {
+// Continuation-passing style means "parenthesise" idiom doesn't work here.
+function constr_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody<Expr>>> {
    return withAction(
-      seq(
+      seqDep(
          ctr, 
-         choice([dropFirst(symbol(str.parenL), args_pattern(dropFirst(symbol(str.parenR), p))), p])
+         (ctr: Lex.Ctr) => {
+            assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
+            const n: number = ctrToDataType.get(ctr.str)!.ctrs.get(ctr.str)!.length
+            return choice([
+               dropFirst(symbol(str.parenL), args_pattern(n, dropFirst(symbol(str.parenR), p))),
+               satisfying(p, () => {
+                  assert(n === 0, "Too few parameters in constructor pattern.")
+                  return true
+               })
+            ])
+         }
       ),
-      ([ctr, z]: [Lex.Ctr, Traced]) => Trie.Constr.make(singleton(ctr.str, z))
+      ([ctr, κ]: [Lex.Ctr, TrieBody<Expr>]): Trie.Constr<TrieBody<Expr>> =>
+         Trie.Constr.make(singleton(ctr.str, κ))
    )
 }
 
-function pair_pattern (p: Parser<PersistentObject>): Parser<Trie.Constr<PersistentObject>> {
+function pair_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody<Expr>>> {
    return withAction(
       dropFirst(
          symbol(str.parenL), 
          pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
       ),
-      (σ: Trie<Traced>) => Trie.Constr.make(singleton("Pair", σ))
+      (σ: Trie<TrieBody<Expr>>): Trie.Constr<TrieBody<Expr>> => Trie.Constr.make(singleton("Pair", σ))
    )
 }
 
-function variable_pattern (p: Parser<PersistentObject>): Parser<Trie.Var<PersistentObject>> {
+function variable_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Var<TrieBody<Expr>>> {
    return withAction(
-      seq(var_, p), ([x, z]: [Lex.Var, Traced]) => 
+      seq(var_, p), ([x, z]: [Lex.Var, TrieBody<Expr>]): Trie.Var<TrieBody<Expr>> => 
          Trie.Var.make(x, z)
       )
 }
 
-// Wasn't able to figure out the trie type parameters. Using Object allows us not to care.
-function pattern (p: Parser<PersistentObject>): Parser<Trie<PersistentObject>> {
+function pattern (p: Parser<TrieBody<Expr>>): Parser<Trie<TrieBody<Expr>>> {
    return (state: ParseState) => 
-      choice<Trie<Traced>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
+      choice<Trie<Expr>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
-// Chain of singleton tries, terminating in an expression.
+// Chain of singleton tries, followed by an expression.
 const match: Parser<Trie<Expr>> = 
    pattern(dropFirst(symbol(str.arrow), expr))
 
@@ -304,7 +328,7 @@ const matchAs: Parser<Expr.MatchAs> =
 const fun: Parser<Expr.Fun> =
    withAction(
       dropFirst(keyword(str.fun), matches),
-      (σ: Trie<Traced>) => Expr.Fun.at(ν(), σ)
+      (σ: Trie<Expr>) => Expr.Fun.at(ν(), σ)
    )
 
 // Any expression other than an operator tree or application chain.

@@ -1,7 +1,7 @@
 letrec
    fun map f → fun {
       Nil → Nil;
-      Cons(x, xs') → Cons(f x, map f xs')
+      Cons(x, xs) → Cons(f x, map f xs)
    }
 in
 let incr = fun x → 1 + x

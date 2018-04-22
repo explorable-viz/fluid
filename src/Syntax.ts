@@ -1,10 +1,10 @@
-import { __check, assert, make } from "./util/Core"
+import { __check, absurd, make } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap, unionWith } from "./FiniteMap"
-import { Eval } from "./Eval"
+import { Runtime } from "./Eval"
 import { UnaryOp } from "./Primitive"
 import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
 
@@ -97,9 +97,9 @@ export namespace Value {
 
    export class Closure extends Value {
       ρ: Env
-      σ: Trie<Expr>
+      σ: Trie<Traced>
    
-      static at (α: PersistentObject, ρ: Env, σ: Trie<Expr>): Closure {
+      static at (α: PersistentObject, ρ: Env, σ: Trie<Traced>): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
          this_.σ = σ
@@ -264,46 +264,22 @@ export namespace Expr {
 
    export class RecDef extends VersionedObject<ExternalObject> {
       x: Lex.Var
-      def: Fun
+      e: Expr
    
-      static at (α: ExternalObject, x: Lex.Var, def: Fun): RecDef {
+      static at (α: ExternalObject, x: Lex.Var, e: Expr): RecDef {
          const this_: RecDef = create(α, RecDef)
          this_.x = x
-         this_.def = def
+         this_.e = e
          this_.__version()
          return this_
       }
    }
 
-   export abstract class RecDefs extends PersistentObject {
-      __RecDefs (): void {
-         // discriminator
-      }
-   }
-   
-   export class EmptyRecDefs extends RecDefs {
-      static make (): EmptyRecDefs {
-         return make(EmptyRecDefs)
-      }
-   }
-   
-   export class ExtendRecDefs extends RecDefs {
-      δ: RecDefs
-      def: Expr.RecDef
-   
-      static make (δ: RecDefs, def: Expr.RecDef): ExtendRecDefs {
-         const this_: ExtendRecDefs = make(ExtendRecDefs, δ, def)
-         this_.δ = δ
-         this_.def = def
-         return this_
-      }
-   }
-   
    export class LetRec extends Expr {
-      δ: RecDefs
+      δ: List<RecDef>
       e: Expr
 
-      static at (i: ExternalObject, δ: RecDefs, e: Expr): LetRec {
+      static at (i: ExternalObject, δ: List<RecDef>, e: Expr): LetRec {
          const this_: LetRec = create(i, LetRec)
          this_.δ = δ
          this_.e = e
@@ -341,23 +317,24 @@ export namespace Expr {
    }
 
    export class Var extends Expr {
-      ident: Lex.Var
+      x: Lex.Var
    
-      static at (i: ExternalObject, ident: Lex.Var): Var {
+      static at (i: ExternalObject, x: Lex.Var): Var {
          const this_: Var = create(i, Var)
-         this_.ident = ident
+         this_.x = x
          this_.__version()
          return this_
       }
    }
 }
 
-export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evaluand> {
+// Can these be interned, rather than versioned?
+export class Traced<T extends Value = Value> extends VersionedObject<Runtime<Expr>> {
    trace: Trace | null
    val: T | null
 
-   static at <T extends Value> (k: Eval.Evaluand, trace: Trace | null, val: T | null): Traced<T> {
-      const this_: Traced<T> = create<Eval.Evaluand, Traced<T>>(k, Traced)
+   static at <T extends Value> (k: Runtime<Expr>, trace: Trace | null, val: T | null): Traced<T> {
+      const this_: Traced<T> = create<Runtime<Expr>, Traced<T>>(k, Traced)
       this_.trace = trace
       this_.val = val
       this_.__version()
@@ -365,13 +342,19 @@ export class Traced<T extends Value = Value> extends VersionedObject<Eval.Evalua
    }
 }
 
+export type TrieBody<T extends PersistentObject | null> = T | Trie<T>
+
 // Tries are persistent but not versioned, as per the formalism.
 export type Trie<T extends PersistentObject | null> = Trie.Trie<T>
 
 export namespace Trie {
    export class Trie<T extends PersistentObject | null> 
       extends PersistentObject implements JoinSemilattice<Trie<T>> {
-      join (σ: Trie<T>): Trie<T> {
+         static is<T extends PersistentObject | null> (x: TrieBody<T>): x is Trie<T> {
+            return x instanceof Trie
+         }
+   
+         join (σ: Trie<T>): Trie<T> {
          return join(this, σ)
       }
    }
@@ -405,13 +388,13 @@ export namespace Trie {
    }
 
    export class Constr<T extends PersistentObject | null> extends Trie<T> {
-      cases: FiniteMap<string, T>
+      cases: FiniteMap<string, TrieBody<T>>
 
       static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Constr<T> {
          return σ instanceof Constr
       }
 
-      static make <T extends PersistentObject | null> (cases: FiniteMap<string, T>): Constr<T> {
+      static make <T extends PersistentObject | null> (cases: FiniteMap<string, TrieBody<T>>): Constr<T> {
          const this_: Constr<T> = make<Constr<T>>(Constr, cases)
          this_.cases = cases
          return this_
@@ -462,9 +445,9 @@ export namespace Trie {
          return Var.make(σ.x, σ.body.join(τ.body))
       } else
       if (Constr.is(σ) && Constr.is(τ)) {
-         return Constr.make<T>(unionWith(σ.cases, τ.cases, (x, y) => x.join(y)))
+         return Constr.make(unionWith(σ.cases, τ.cases, (x: TrieBody<T>, y: TrieBody<T>): Trie<T> => join(x, y)))
       } else {
-         return assert(false, "Undefined join.", σ, τ)
+         return absurd("Undefined join.", σ, τ)
       }
    }
 }
@@ -472,7 +455,7 @@ export namespace Trie {
 export type Trace = Trace.Trace
 
 export namespace Trace {
-   export class Trace extends VersionedObject<Eval.Evaluand> {
+   export class Trace extends VersionedObject<Runtime<Expr>> {
       __Trace(): void {
          // discriminator
       }
@@ -483,7 +466,7 @@ export namespace Trace {
       arg: Traced
       body: Trace | null
 
-      static at (k: Eval.Evaluand, func: Traced, arg: Traced, body: Trace | null): App {
+      static at (k: Runtime<Expr>, func: Traced, arg: Traced, body: Trace | null): App {
          const this_: App = create(k, App)
          this_.func = func
          this_.arg = arg
@@ -495,7 +478,7 @@ export namespace Trace {
 
    // Not to be confused with ⊥ (null); this is information about an absence, not the absence of information.
    export class Empty extends Trace {
-      static at (k: Eval.Evaluand): Empty {
+      static at (k: Runtime<Expr>): Empty {
          const this_: Empty = create(k, Empty)
          this_.__version()
          return this_
@@ -504,59 +487,63 @@ export namespace Trace {
 
    export class Let extends Trace {
       tu: Traced
-      t: Trace
+      σ: Trie.Var<Traced>
+      t: Trace | null
 
       __Let (): void {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, t: Trace): Let {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
          const this_: Let = create(k, Let)
          this_.tu = tu
+         this_.σ = σ
          this_.t = t
          this_.__version()
          return this_
       }
    }
 
-   export class LetRec extends Trace {
-      δ: Expr.RecDefs
-      t: Trace
+   export class RecDef extends VersionedObject<Runtime<Expr.RecDef>> {
+      x: Lex.Var
+      tv: Traced
    
-      static at (k: Eval.Evaluand, δ: Expr.RecDefs, t: Trace): LetRec {
+      static at (i: Runtime<Expr.RecDef>, x: Lex.Var, tv: Traced): RecDef {
+         const this_: RecDef = create(i, RecDef)
+         this_.x = x
+         this_.tv = tv
+         this_.__version()
+         return this_
+      }
+   }
+
+   // Continuation here should really be a trace, not a traced value..
+   export class LetRec extends Trace {
+      δ: List<RecDef>
+      tv: Traced
+   
+      static at (k: Runtime<Expr>, δ: List<RecDef>, tv: Traced): LetRec {
          const this_: LetRec = create(k, LetRec)
          this_.δ = δ
-         this_.t = t
+         this_.tv = tv
          this_.__version()
          return this_
       }
    }
    
-   // Do we want the σ in the match trace as per the formalism?
-   export class Match extends Trace {
+   export class MatchAs extends Trace {
       tu: Traced
+      σ: Trie<Traced>
       t: Trace | null
 
       __Match (): void {
          // discriminator
       }
 
-      static at (k: Eval.Evaluand, tu: Traced, t: Trace | null): Match {
-         const this_: Match = create(k, Match)
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>,  t: Trace | null): MatchAs {
+         const this_: MatchAs = create(k, MatchAs)
          this_.tu = tu
-         this_.t = t
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class OpName extends Trace {
-      x: Lex.OpName
-      t: Trace | null
-
-      static at (k: Eval.Evaluand, x: Lex.OpName, t: Trace | null): OpName {
-         const this_: OpName = create(k, OpName)
-         this_.x = x
+         this_.σ = σ
          this_.t = t
          this_.__version()
          return this_
@@ -564,15 +551,15 @@ export namespace Trace {
    }
 
    export class PrimApp extends Trace {
-      arg1: Traced
+      tv1: Traced
       opName: Lex.OpName
-      arg2: Traced
+      tv2: Traced
 
-      static at (k: Eval.Evaluand, arg1: Traced, opName: Lex.OpName, arg2: Traced): PrimApp {
+      static at (k: Runtime<Expr>, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
          const this_: PrimApp = create(k, PrimApp)
-         this_.arg1 = arg1
+         this_.tv1 = tv1
          this_.opName = opName
-         this_.arg2 = arg2
+         this_.tv2 = tv2
          this_.__version()
          return this_
       }
@@ -582,7 +569,7 @@ export namespace Trace {
       x: Lex.Var
       t: Trace | null
 
-      static at (k: Eval.Evaluand, x: Lex.Var, t: Trace | null): Var {
+      static at (k: Runtime<Expr>, x: Lex.Var, t: Trace | null): Var {
          const this_: Var = create(k, Var)
          this_.x = x
          this_.t = t
