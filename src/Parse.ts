@@ -225,8 +225,8 @@ const constr: Parser<Expr.Constr> =
       ([ctr, args]: [Lex.Ctr, Expr[]]) => {
          assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
          const n: number = ctrToDataType.get(ctr.str)!.ctrs.get(ctr.str)!.length
-         assert(n <= args.length, "Too few arguments to constructor.", ctr.str)
-         assert(n >= args.length, "Too many arguments to constructor.", ctr.str)
+         assert(n <= args.length, "Too few arguments in constructor.", ctr.str)
+         assert(n >= args.length, "Too many arguments in constructor.", ctr.str)
          return Expr.Constr.at(ν(), ctr, List.fromArray(args))
       }
    )
