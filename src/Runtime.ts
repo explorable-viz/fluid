@@ -5,7 +5,8 @@ export interface Ctr<T> {
    new (): T
 }
 
-// Documents any persistent object (interned or versioned) which may be used as a memo key.
+// An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
+// interned objects are persistent objects.
 export class PersistentObject implements Eq<PersistentObject> {
    __PersistentObject (): void {
       // discriminator
@@ -14,32 +15,27 @@ export class PersistentObject implements Eq<PersistentObject> {
    eq (that: PersistentObject): boolean {
       return this === that
    }
+}
 
-   // Defined only if tgt, src are upper-bounded (LVar-style merge). Hmm, seems interned objects with null fields
-   // won't respect this - but perhaps interned objects don't have a meaningful identity, i.e. we should recurse
-   // into them when enforcing. Need to think about this.  
-   static __shallowMergeAssign (tgt: Object, src: Object): void {
-      assert(tgt.constructor === src.constructor)
-      for (let x of Object.keys(src)) {
-         const tgt_: any = tgt as any,
-               src_: any = src as any
-         if (tgt_[x] === null) {
-            tgt_[x] = src_[x]
+// Defined only if tgt, src are upper-bounded (LVar-style merge). Symmetric.
+function __shallowMergeAssign (tgt: Object, src: Object): void {
+   assert(tgt.constructor === src.constructor)
+   for (let x of Object.keys(src)) {
+      const tgt_: any = tgt as any,
+            src_: any = src as any
+      if (tgt_[x] === null) {
+         tgt_[x] = src_[x]
+      } else
+      if (src_[x] === null) {
+         src_[x] = tgt_[x]
+      } else {
+         if (tgt_[x] instanceof VersionedObject || typeof tgt_[x] === "number" || typeof tgt_[x] === "string") {
+            assert(tgt_[x].eq(src_[x]), `Address collision (different value for property "${x}").`, tgt, src)
          } else
-         if (src_[x] === null) {
-            // currently a no-op, but this should merge in the other direction, no?
+         if (tgt_[x] instanceof Object) {
+            __shallowMergeAssign(tgt_[x], src_[x])
          } else {
-            if (tgt_[x] instanceof VersionedObject) {
-               assert(tgt_[x].eq(src_[x]), `Address collision (different value for property "${x}").`, tgt, src)
-            } else
-            if (tgt_[x] instanceof Object) {
-               PersistentObject.__shallowMergeAssign(tgt_[x], src_[x])
-            } else
-            if (typeof tgt_[x] === "number" || typeof tgt_[x] === "string") {
-               assert(tgt_[x].eq(src_[x]), `Address collision (different value for property "${x}").`, tgt, src)
-            } else {
-               absurd()
-            }
+            absurd()
          }
       }
    }
@@ -77,7 +73,7 @@ export class VersionedObject<K extends PersistentObject = PersistentObject> exte
       if (this.__history.length === 0) {
          this.__history.push(__shallowCopy(this))
       } else {
-         PersistentObject.__shallowMergeAssign(this.__history[0], this)
+         __shallowMergeAssign(this.__history[0], this)
       }
       return this
    }
