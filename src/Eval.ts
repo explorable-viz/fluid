@@ -56,14 +56,14 @@ export function eval_<T extends PersistentObject | null> (ρ: Env, tv: Traced, �
    return evalT(ρ, instantiate(ρ)(tv.t!.__id.e), σ)
 }
 
-// Output trace and value are unknown (null) iff σ is empty (i.e. a variable trie).
+// Value is unknown (null) iff σ is a variable trie.
 export function evalT<T extends PersistentObject | null> (ρ: Env, tv: Traced, σ: Trie<T>): Result<T> {
-   const k: Runtime<Expr> = tv.t!.__id
+   const t: Trace | null = tv.t,
+         k: Runtime<Expr> = t.__id
    if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), tv)
-      return [Traced.make(null, null), Env.singleton(σ.x.str, entry), σ.body]
+      return [Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.body]
    } else {
-      const t: Trace | null = tv.t
       if (t instanceof Trace.Empty) {
          const v: Value = __nonNull(tv.v)
          assert(v.__id === k && t.__id === k)

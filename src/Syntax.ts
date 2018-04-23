@@ -329,10 +329,10 @@ export namespace Expr {
 }
 
 export class Traced<V extends Value = Value> extends PersistentObject {
-   t: Trace | null // when can the *trace* be null?
+   t: Trace
    v: V | null
 
-   static make <V extends Value> (t: Trace | null, v: V | null): Traced<V> {
+   static make <V extends Value> (t: Trace, v: V | null): Traced<V> {
       const this_: Traced<V> = make<Traced<V>>(Traced, t, v)
       this_.t = t
       this_.v = v
