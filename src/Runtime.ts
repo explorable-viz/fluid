@@ -39,10 +39,20 @@ export const ν: () => ExternalObject =
    })()
 
 export class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
-   // Initialise these properties at object creation, rather than via constructor hierarchies.
+   // Initialise these at object creation, so not enumerable.
    __history: this[] = undefined as any
    __id: K = undefined as any
-   __version: () => Object = undefined as any
+
+      // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
+   __version(): Object {
+      const this_: VersionedObject<K> = this as VersionedObject<K>
+      if (this_.__history.length === 0) {
+         this_.__history.push(__shallowCopy(this_))
+      } else {
+         __shallowMergeAssign(this_.__history[0], this_)
+      }
+      return this
+   }
 }
 
 // Keys must be "memo" objects (interned or persistent).
@@ -68,19 +78,6 @@ export function create<K extends PersistentObject, T extends VersionedObject<K>>
       })
       Object.defineProperty(o, "__history", {
          value: [],
-         enumerable: false
-      })
-      // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
-      Object.defineProperty(o, "__version", {
-         value: function (): Object {
-            const this_: VersionedObject<K> = this as VersionedObject<K>
-            if (this_.__history.length === 0) {
-               this_.__history.push(__shallowCopy(this_))
-            } else {
-               __shallowMergeAssign(this_.__history[0], this_)
-            }
-            return this
-         },
          enumerable: false
       })
       instances.set(α, o)
