@@ -51,7 +51,7 @@ const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
 
 // Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
 // Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
-export function create <K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
+export function create<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
    let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
       instances = new Map
