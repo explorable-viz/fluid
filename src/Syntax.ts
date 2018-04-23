@@ -328,16 +328,14 @@ export namespace Expr {
    }
 }
 
-// Can these be interned, rather than versioned?
-export class Traced<T extends Value = Value> extends VersionedObject<Runtime<Expr>> {
-   trace: Trace | null
-   val: T | null
+export class Traced<V extends Value = Value> extends PersistentObject {
+   t: Trace
+   v: V | null
 
-   static at <T extends Value> (k: Runtime<Expr>, trace: Trace | null, val: T | null): Traced<T> {
-      const this_: Traced<T> = create<Runtime<Expr>, Traced<T>>(k, Traced)
-      this_.trace = trace
-      this_.val = val
-      this_.__version()
+   static make <V extends Value> (t: Trace, v: V | null): Traced<V> {
+      const this_: Traced<V> = make<Traced<V>>(Traced, t, v)
+      this_.t = t
+      this_.v = v
       return this_
    }
 }

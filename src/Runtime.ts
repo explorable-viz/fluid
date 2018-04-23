@@ -1,11 +1,12 @@
-import { __shallowCopy, __shallowMergeAssign, assert, className, funName, make } from "./util/Core"
+import { __shallowCopy, absurd, assert, className, funName, make } from "./util/Core"
 import { Eq } from "./util/Eq"
 
 export interface Ctr<T> {
    new (): T
 }
 
-// Documents any persistent object (interned or versioned) which may be used as a memo key.
+// An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
+// interned objects are persistent objects.
 export class PersistentObject implements Eq<PersistentObject> {
    __PersistentObject (): void {
       // discriminator
@@ -13,6 +14,30 @@ export class PersistentObject implements Eq<PersistentObject> {
 
    eq (that: PersistentObject): boolean {
       return this === that
+   }
+}
+
+// Defined only if tgt, src are upper-bounded (LVar-style merge). Symmetric.
+function __shallowMergeAssign (tgt: Object, src: Object): void {
+   assert(tgt.constructor === src.constructor)
+   for (let x of Object.keys(src)) {
+      const tgt_: any = tgt as any,
+            src_: any = src as any
+      if (tgt_[x] === null) {
+         tgt_[x] = src_[x]
+      } else
+      if (src_[x] === null) {
+         src_[x] = tgt_[x]
+      } else {
+         if (tgt_[x] instanceof VersionedObject || typeof tgt_[x] === "number" || typeof tgt_[x] === "string") {
+            assert(tgt_[x].eq(src_[x]), `Address collision (different value for property "${x}").`, tgt, src)
+         } else
+         if (tgt_[x] instanceof Object) {
+            __shallowMergeAssign(tgt_[x], src_[x])
+         } else {
+            absurd()
+         }
+      }
    }
 }
 
@@ -39,10 +64,19 @@ export const ν: () => ExternalObject =
    })()
 
 export class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
-   // Initialise these properties at object creation, rather than via constructor hierarchies.
-   __history: this[] = undefined as any
+   // Initialise these at object creation (not enumerable).
+   __history: Object[] = undefined as any // history records only enumerable fields
    __id: K = undefined as any
-   __version: () => Object = undefined as any
+
+      // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
+   __version (): Object {
+      if (this.__history.length === 0) {
+         this.__history.push(__shallowCopy(this))
+      } else {
+         __shallowMergeAssign(this.__history[0], this)
+      }
+      return this
+   }
 }
 
 // Keys must be "memo" objects (interned or persistent).
@@ -51,7 +85,7 @@ const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
 
 // Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
 // Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
-export function create <K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
+export function create<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
    let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
       instances = new Map
@@ -68,19 +102,6 @@ export function create <K extends PersistentObject, T extends VersionedObject<K>
       })
       Object.defineProperty(o, "__history", {
          value: [],
-         enumerable: false
-      })
-      // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
-      Object.defineProperty(o, "__version", {
-         value: function (): Object {
-            const this_: VersionedObject<K> = this as VersionedObject<K>
-            if (this_.__history.length === 0) {
-               this_.__history.push(__shallowCopy(this_))
-            } else {
-               __shallowMergeAssign(this_.__history[0], this_)
-            }
-            return this
-         },
          enumerable: false
       })
       instances.set(α, o)
