@@ -1,4 +1,4 @@
-import { __shallowCopy, __shallowMergeAssign, assert, className, funName, make } from "./util/Core"
+import { __shallowCopy, assert, className, funName, make } from "./util/Core"
 import { Eq } from "./util/Eq"
 
 export interface Ctr<T> {
@@ -39,19 +39,37 @@ export const ν: () => ExternalObject =
    })()
 
 export class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
-   // Initialise these at object creation, so not enumerable.
-   __history: this[] = undefined as any
+   // Initialise these at object creation (not enumerable).
+   __history: Object[] = undefined as any // history records only enumerable fields
    __id: K = undefined as any
 
       // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
-   __version(): Object {
-      const this_: VersionedObject<K> = this as VersionedObject<K>
-      if (this_.__history.length === 0) {
-         this_.__history.push(__shallowCopy(this_))
+   __version (): Object {
+      if (this.__history.length === 0) {
+         this.__history.push(__shallowCopy(this))
       } else {
-         __shallowMergeAssign(this_.__history[0], this_)
+         VersionedObject.__shallowMergeAssign(this.__history[0], this)
       }
       return this
+   }
+
+   // Defined only if tgt, src are upper-bounded (LVar-style merge). Hmm, seems interned objects with null fields
+   // won't respect this - but perhaps interned objects don't have a meaningful identity, i.e. we should recurse
+   // into them when enforcing. Need to think about this.  
+   static __shallowMergeAssign (tgt: Object, src: VersionedObject): void {
+      for (let x of Object.keys(src)) {
+         const tgt_: any = tgt as any,
+               src_: any = src as any
+         if (tgt_[x] === null) {
+            tgt_[x] = src_[x]
+         } else
+         if (src_[x] === null) {
+            // no-op
+         } else {
+            // will fail if the field value doesn't implement Eq
+            assert(tgt_[x].eq(src_[x]), `Address collision (different value for property "${x}").`, tgt, src)
+         }
+      }
    }
 }
 
