@@ -144,6 +144,7 @@ export namespace Value {
       }
    }
    
+   // DELETE ME.
    export class Constr extends Value {
       ctr: Lex.Ctr
       args: List<Traced>
@@ -328,6 +329,7 @@ export namespace Expr {
    }
 }
 
+// Plugs a value into its explanation.
 export class Traced<V extends Value = Value> extends PersistentObject {
    t: Trace
    v: V | null
@@ -453,6 +455,7 @@ export namespace Trie {
 export type Trace = Trace.Trace
 
 export namespace Trace {
+   // A trace has a single hole, which can be plugged by pairing it with a value. 
    export class Trace extends VersionedObject<Runtime<Expr>> {
       __Trace(): void {
          // discriminator
@@ -474,13 +477,17 @@ export namespace Trace {
       }
    }
 
-   // Not to be confused with ⊥ (null); this is information about an absence, not the absence of information.
+   // Essentially ⊥ (null); we conflate information about an absence with the absence of information.
    export class Empty extends Trace {
       static at (k: Runtime<Expr>): Empty {
          const this_: Empty = create(k, Empty)
          this_.__version()
          return this_
       }
+   }
+
+   export class Constr extends Trace {
+      cases: FiniteMap<string, TrieBody<T>>
    }
 
    export class Let extends Trace {
