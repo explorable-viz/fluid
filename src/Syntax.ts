@@ -486,10 +486,6 @@ export namespace Trace {
       }
    }
 
-   export class Constr extends Trace {
-      cases: FiniteMap<string, TrieBody<K>>
-   }
-
    export class Let extends Trace {
       tu: Traced
       σ: Trie.Var<Traced>
