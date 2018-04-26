@@ -342,96 +342,96 @@ export class Traced<V extends Value = Value> extends PersistentObject {
    }
 }
 
-export type TrieBody<T extends PersistentObject | null> = T | Trie<T>
+export type TrieBody<K extends PersistentObject | null> = K | Trie<K>
 
 // Tries are persistent but not versioned, as per the formalism.
-export type Trie<T extends PersistentObject | null> = Trie.Trie<T>
+export type Trie<K extends PersistentObject | null> = Trie.Trie<K>
 
 export namespace Trie {
-   export class Trie<T extends PersistentObject | null> 
-      extends PersistentObject implements JoinSemilattice<Trie<T>> {
-         static is<T extends PersistentObject | null> (x: TrieBody<T>): x is Trie<T> {
-            return x instanceof Trie
-         }
-   
-         join (σ: Trie<T>): Trie<T> {
+   export class Trie<K extends PersistentObject | null> 
+      extends PersistentObject implements JoinSemilattice<Trie<K>> {
+      static is<K extends PersistentObject | null> (x: TrieBody<K>): x is Trie<K> {
+         return x instanceof Trie
+      }
+
+      join (σ: Trie<K>): Trie<K> {
          return join(this, σ)
       }
    }
 
-   export class Prim<T extends PersistentObject | null> extends Trie<T> {
-      body: T
+   export class Prim<K extends PersistentObject | null> extends Trie<K> {
+      body: K
    }
 
-   export class ConstInt<T extends PersistentObject | null> extends Prim<T> {
-      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is ConstInt<T> {
+   export class ConstInt<K extends PersistentObject | null> extends Prim<K> {
+      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is ConstInt<K> {
          return σ instanceof ConstInt
       }
 
-      static make <T extends PersistentObject | null> (body: T): ConstInt<T> {
-         const this_: ConstInt<T> = make<ConstInt<T>>(ConstInt, body)
+      static make <K extends PersistentObject | null> (body: K): ConstInt<K> {
+         const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, body)
          this_.body = body
          return this_
       }
    }
 
-   export class ConstStr<T extends PersistentObject | null> extends Prim<T> {
-      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is ConstStr<T> {
+   export class ConstStr<K extends PersistentObject | null> extends Prim<K> {
+      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is ConstStr<K> {
          return σ instanceof ConstStr
       }
 
-      static make <T extends PersistentObject | null> (body: T): ConstStr<T> {
-         const this_: ConstStr<T> = make<ConstStr<T>>(ConstStr, body)
+      static make <K extends PersistentObject | null> (body: K): ConstStr<K> {
+         const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, body)
          this_.body = body
          return this_
       }
    }
 
-   export class Constr<T extends PersistentObject | null> extends Trie<T> {
-      cases: FiniteMap<string, TrieBody<T>>
+   export class Constr<K extends PersistentObject | null> extends Trie<K> {
+      cases: FiniteMap<string, TrieBody<K>>
 
-      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Constr<T> {
+      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is Constr<K> {
          return σ instanceof Constr
       }
 
-      static make <T extends PersistentObject | null> (cases: FiniteMap<string, TrieBody<T>>): Constr<T> {
-         const this_: Constr<T> = make<Constr<T>>(Constr, cases)
+      static make <K extends PersistentObject | null> (cases: FiniteMap<string, TrieBody<K>>): Constr<K> {
+         const this_: Constr<K> = make<Constr<K>>(Constr, cases)
          this_.cases = cases
          return this_
       }
    }
 
-   export class Var<T extends PersistentObject | null> extends Trie<T> {
+   export class Var<K extends PersistentObject | null> extends Trie<K> {
       x: Lex.Var
-      body: T
+      body: K
 
-      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Var<T> {
+      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is Var<K> {
          return σ instanceof Var
       }
 
-      static make <T extends PersistentObject | null> (x: Lex.Var, body: T): Var<T> {
-         const this_: Var<T> = make<Var<T>>(Var, x, body)
+      static make <K extends PersistentObject | null> (x: Lex.Var, body: K): Var<K> {
+         const this_: Var<K> = make<Var<K>>(Var, x, body)
          this_.x = x
          this_.body = body
          return this_
       }
    }
 
-   export class Fun<T extends PersistentObject | null> extends Trie<T> {
-      body: T
+   export class Fun<K extends PersistentObject | null> extends Trie<K> {
+      body: K
 
-      static is<T extends PersistentObject | null> (σ: Trie<T>): σ is Fun<T> {
+      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is Fun<K> {
          return σ instanceof Fun
       }
 
-      static make <T extends PersistentObject | null> (body: T): Fun<T> {
-         const this_: Fun<T> = make<Fun<T>>(Fun, body)
+      static make <K extends PersistentObject | null> (body: K): Fun<K> {
+         const this_: Fun<K> = make<Fun<K>>(Fun, body)
          this_.body = body
          return this_
       }
    }
 
-   export function join<T extends JoinSemilattice<T> & PersistentObject> (σ: Trie<T>, τ: Trie<T>): Trie<T> {
+   export function join<K extends JoinSemilattice<K> & PersistentObject> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
       if (σ === null) {
          return τ
       } else
@@ -445,7 +445,7 @@ export namespace Trie {
          return Var.make(σ.x, σ.body.join(τ.body))
       } else
       if (Constr.is(σ) && Constr.is(τ)) {
-         return Constr.make(unionWith(σ.cases, τ.cases, (x: TrieBody<T>, y: TrieBody<T>): Trie<T> => join(x, y)))
+         return Constr.make(unionWith(σ.cases, τ.cases, (x: TrieBody<K>, y: TrieBody<K>): Trie<K> => join(x, y)))
       } else {
          return absurd("Undefined join.", σ, τ)
       }
@@ -487,7 +487,7 @@ export namespace Trace {
    }
 
    export class Constr extends Trace {
-      cases: FiniteMap<string, TrieBody<T>>
+      cases: FiniteMap<string, TrieBody<K>>
    }
 
    export class Let extends Trace {
