@@ -24,9 +24,6 @@ export namespace str {
 }
 
 export namespace Lex {
-   // With purely structural typing, these lexeme classes are identical, not just isomorphic. This
-   // mostly sucks in a class-oriented languages like JavaScript, so we add dummy discriminator methods.
-
    export class Ctr extends Lexeme {
       constructor(str: string) {
          super(str)
