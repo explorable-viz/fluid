@@ -339,7 +339,7 @@ export class Traced<V extends Value = Value> extends PersistentObject {
 }
 
 // Tries used to have type parameter K, as per the formalism, but in TypeScript it didn't really help.
-export type TrieBody = Expr | Traced | Trie | null
+export type Kont = Expr | Traced | Trie | null
 
 // Tries are persistent but not versioned, as per the formalism.
 export type Trie = Trie.Trie
@@ -353,11 +353,11 @@ export namespace Trie {
    }
 
    export class Prim extends Trie {
-      body: TrieBody
+      body: Kont
    }
 
    export class ConstInt extends Prim {
-      static make (body: TrieBody): ConstInt {
+      static make (body: Kont): ConstInt {
          const this_: ConstInt = make(ConstInt, body)
          this_.body = body
          return this_
@@ -365,7 +365,7 @@ export namespace Trie {
    }
 
    export class ConstStr extends Prim {
-      static make (body: TrieBody): ConstStr {
+      static make (body: Kont): ConstStr {
          const this_: ConstStr = make(ConstStr, body)
          this_.body = body
          return this_
@@ -373,9 +373,9 @@ export namespace Trie {
    }
 
    export class Constr extends Trie {
-      cases: FiniteMap<string, TrieBody>
+      cases: FiniteMap<string, Kont>
 
-      static make (cases: FiniteMap<string, TrieBody>): Constr {
+      static make (cases: FiniteMap<string, Kont>): Constr {
          const this_: Constr = make(Constr, cases)
          this_.cases = cases
          return this_
@@ -383,9 +383,9 @@ export namespace Trie {
    }
 
    export class Fun extends Trie {
-      body: TrieBody
+      body: Kont
 
-      static make (body: TrieBody): Fun {
+      static make (body: Kont): Fun {
          const this_: Fun = make(Fun, body)
          this_.body = body
          return this_
@@ -394,9 +394,9 @@ export namespace Trie {
 
    export class Var extends Trie {
       x: Lex.Var
-      body: TrieBody
+      body: Kont
 
-      static make (x: Lex.Var, body: TrieBody): Var {
+      static make (x: Lex.Var, body: Kont): Var {
          const this_: Var = make(Var, x, body)
          this_.x = x
          this_.body = body
@@ -405,7 +405,7 @@ export namespace Trie {
    }
 
    // join of expressions is undefined, which effectively means case branches never overlap.
-   function joinTrieBody (κ: TrieBody, κʹ: TrieBody): TrieBody {
+   function joinKont (κ: Kont, κʹ: Kont): Kont {
       if (κ instanceof Trie && κʹ instanceof Trie) {
          return join(κ, κʹ)
       } else {
@@ -415,13 +415,13 @@ export namespace Trie {
 
    export function join (σ: Trie, τ: Trie): Trie {
       if (σ instanceof Fun && τ instanceof Fun) {
-         return Fun.make(joinTrieBody(σ.body, τ.body))
+         return Fun.make(joinKont(σ.body, τ.body))
       } else
       if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
-         return Var.make(σ.x, joinTrieBody(σ.body, τ.body))
+         return Var.make(σ.x, joinKont(σ.body, τ.body))
       } else
       if (σ instanceof Constr && τ instanceof Constr) {
-         return Constr.make(unionWith(σ.cases, τ.cases, joinTrieBody))
+         return Constr.make(unionWith(σ.cases, τ.cases, joinKont))
       } else {
          return assert(false, "Undefined join.", σ, τ)
       }
@@ -447,13 +447,13 @@ export namespace MatchedTrie {
    }
 
    export class Prim extends MatchedTrie {
-      body: TrieBody
+      body: Kont
    }
 
    export class ConstInt extends Prim {
       val: number
 
-      static make (val: number, body: TrieBody): ConstInt {
+      static make (val: number, body: Kont): ConstInt {
          const this_: ConstInt = make(ConstInt, val, body)
          this_.val = val
          this_.body = body
@@ -464,7 +464,7 @@ export namespace MatchedTrie {
    export class ConstStr extends Prim {
       val: string
 
-      static make (val: string, body: TrieBody): ConstStr {
+      static make (val: string, body: Kont): ConstStr {
          const this_: ConstStr = make(ConstStr, val, body)
          this_.val = val
          this_.body = body
@@ -478,9 +478,9 @@ export namespace MatchedTrie {
    export class Fun extends MatchedTrie {
       ρ: Env
       σ: Trie
-      body: TrieBody
+      body: Kont
 
-      static make (ρ: Env, σ: Trie, body: TrieBody): Fun {
+      static make (ρ: Env, σ: Trie, body: Kont): Fun {
          const this_: Fun = make(Fun, ρ, σ, body)
          this_.ρ = ρ
          this_.σ = σ
@@ -492,9 +492,9 @@ export namespace MatchedTrie {
    // Is there any extra information a matched variable trie should carry?
    export class Var extends MatchedTrie {
       x: Lex.Var
-      body: TrieBody
+      body: Kont
 
-      static make (x: Lex.Var, body: TrieBody): Var {
+      static make (x: Lex.Var, body: Kont): Var {
          const this_: Var = make(Var, x, body)
          this_.x = x
          this_.body = body

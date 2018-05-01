@@ -2,7 +2,7 @@ import { absurd, assert } from "./util/Core"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
-import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
+import { Expr, Trace, Traced, Trie, Kont, Value } from "./Syntax"
 
 export function instantiate (ρ: Env): (e: Expr) => Traced {
    return function (e: Expr.Expr): Traced {
@@ -55,7 +55,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
 }
 
 // Turns an "expression" trie body into a "traced value" trie body.
-function instantiateTrieBody (ρ: Env, κ: TrieBody): TrieBody {
+function instantiateKont (ρ: Env, κ: Kont): Kont {
    if (κ instanceof Trie.Trie) {
       return instantiateTrie(ρ, κ)
    } else
@@ -69,23 +69,23 @@ function instantiateTrieBody (ρ: Env, κ: TrieBody): TrieBody {
 // Turns trie of expressions into trie of traced values.
 function instantiateTrie (ρ: Env, σ: Trie): Trie {
    if (σ instanceof Trie.Var) {
-      return Trie.Var.make(σ.x, instantiateTrieBody(ρ, σ.body))
+      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.body))
    } else
    if (σ instanceof Trie.ConstInt) {
-      return Trie.ConstInt.make(instantiateTrieBody(ρ, σ.body))
+      return Trie.ConstInt.make(instantiateKont(ρ, σ.body))
    } else
    if (σ instanceof Trie.ConstStr) {
-      return Trie.ConstStr.make(instantiateTrieBody(ρ, σ.body))
+      return Trie.ConstStr.make(instantiateKont(ρ, σ.body))
    } else
    if (σ instanceof Trie.Constr) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: κ }: Pair<string, TrieBody>): Pair<string, TrieBody> => {
-            return Pair.make(ctr, instantiateTrieBody(ρ, κ))
+         ({ fst: ctr, snd: κ }: Pair<string, Kont>): Pair<string, Kont> => {
+            return Pair.make(ctr, instantiateKont(ρ, κ))
          })
       )
    } else
    if (σ instanceof Trie.Fun) {
-      return Trie.Fun.make(instantiateTrieBody(ρ, σ.body))
+      return Trie.Fun.make(instantiateKont(ρ, σ.body))
    } else {
       return absurd()
    }

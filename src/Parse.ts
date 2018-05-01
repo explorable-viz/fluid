@@ -8,7 +8,7 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { singleton } from "./FiniteMap"
 import { ν } from "./Runtime"
-import { Expr, Lex, Trie, TrieBody, str } from "./Syntax"
+import { Expr, Kont, Lex, Trie, str } from "./Syntax"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.
@@ -238,7 +238,7 @@ const pair: Parser<Expr.Constr> =
          Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern (n: number, p: Parser<TrieBody>): Parser<Trie> {
+function args_pattern (n: number, p: Parser<Kont>): Parser<Trie> {
    return (state: ParseState) => {
       assert(n >= 1, "Too many parameters in constructor pattern.")
       return pattern(choice([
@@ -252,7 +252,7 @@ function args_pattern (n: number, p: Parser<TrieBody>): Parser<Trie> {
 }
 
 // Continuation-passing style means "parenthesise" idiom doesn't work here.
-function constr_pattern (p: Parser<TrieBody>): Parser<Trie.Constr> {
+function constr_pattern (p: Parser<Kont>): Parser<Trie.Constr> {
    return withAction(
       seqDep(
          ctr, 
@@ -268,12 +268,12 @@ function constr_pattern (p: Parser<TrieBody>): Parser<Trie.Constr> {
             ])
          }
       ),
-      ([ctr, κ]: [Lex.Ctr, TrieBody]): Trie.Constr =>
+      ([ctr, κ]: [Lex.Ctr, Kont]): Trie.Constr =>
          Trie.Constr.make(singleton(ctr.str, κ))
    )
 }
 
-function pair_pattern (p: Parser<TrieBody>): Parser<Trie.Constr> {
+function pair_pattern (p: Parser<Kont>): Parser<Trie.Constr> {
    return withAction(
       dropFirst(
          symbol(str.parenL), 
@@ -283,14 +283,14 @@ function pair_pattern (p: Parser<TrieBody>): Parser<Trie.Constr> {
    )
 }
 
-function variable_pattern (p: Parser<TrieBody>): Parser<Trie.Var> {
+function variable_pattern (p: Parser<Kont>): Parser<Trie.Var> {
    return withAction(
-      seq(var_, p), ([x, z]: [Lex.Var, TrieBody]): Trie.Var => 
+      seq(var_, p), ([x, z]: [Lex.Var, Kont]): Trie.Var => 
          Trie.Var.make(x, z)
       )
 }
 
-function pattern (p: Parser<TrieBody>): Parser<Trie> {
+function pattern (p: Parser<Kont>): Parser<Trie> {
    return (state: ParseState) => 
       choice<Trie>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }

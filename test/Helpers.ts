@@ -6,7 +6,7 @@ import { singleton } from "../src/FiniteMap"
 import { instantiate } from "../src/Instantiate"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
-import { Expr, Lex, Trie, TrieBody } from "../src/Syntax"
+import { Expr, Kont, Lex, Trie } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
 
@@ -27,27 +27,27 @@ export enum Profile {
 const defaultProfile = Profile.Parse
 
 export namespace τ {
-   export function var_ (t: TrieBody): Trie {
+   export function var_ (t: Kont): Trie {
       return Trie.Var.make(new Lex.Var("x"), t)
    }
 
-   export function int (t: TrieBody): Trie {
+   export function int (t: Kont): Trie {
       return Trie.ConstInt.make(t)
    }
 
-   export function str (t: TrieBody): Trie {
+   export function str (t: Kont): Trie {
       return Trie.ConstStr.make(t)
    }
 
-   export function cons (t: TrieBody) {
+   export function cons (t: Kont) {
       return Trie.Constr.make(singleton("Cons", t))
    }
 
-   export function pair (t: TrieBody): Trie {
+   export function pair (t: Kont): Trie {
       return Trie.Constr.make(singleton("Pair", t))
    }
 
-   export function some (t: TrieBody): Trie {
+   export function some (t: Kont): Trie {
       return Trie.Constr.make(singleton("Some", t))
    }
 }

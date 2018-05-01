@@ -4,9 +4,9 @@ import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { PersistentObject, ν } from "./Runtime"
-import { Expr, Lex, Trie, TrieBody, Value } from "./Syntax"
+import { Expr, Kont, Lex, Trie, Value } from "./Syntax"
 
-export type PrimResult = [Value | null, TrieBody]
+export type PrimResult = [Value | null, Kont]
 type TrieCtr = (body: null) => Trie.Prim
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
@@ -23,7 +23,7 @@ function match (v: Value, σ: Trie): PrimResult {
       return [v, σ.body]
    } else 
    if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
-      const κ: TrieBody = get(σ.cases, v.ctr.str)!
+      const κ: Kont = get(σ.cases, v.ctr.str)!
       assert(v.args.length === 0, "Primitives must return nullary values.")
       if (κ instanceof Trie.Trie) {
          return absurd()

@@ -4,7 +4,7 @@ import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
+import { Expr, Kont, Trace, Traced, Trie, Value } from "./Syntax"
 import { PersistentObject } from "./Runtime";
 
 export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
@@ -21,8 +21,8 @@ export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
 
 export module Eval {
 
-export type Result = [Traced, Env, TrieBody]    // tv, ρ, κ
-type Results = [List<Traced>, Env, TrieBody]    // tvs, ρ, κ
+export type Result = [Traced, Env, Kont]    // tv, ρ, κ
+type Results = [List<Traced>, Env, Kont]    // tvs, ρ, κ
 
 // Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
 export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.RecDef>): Env {
@@ -37,7 +37,7 @@ export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.Rec
 }
 
 // Parser ensures constructor patterns agree with constructor signatures.
-function evalSeq (ρ: Env, κ: TrieBody, es: List<Traced>): Results {
+function evalSeq (ρ: Env, κ: Kont, es: List<Traced>): Results {
    if (Cons.is(es) && κ instanceof Trie.Trie) {
       const [tv, ρʹ, κʹ]: Result = eval_(ρ, es.head, κ),
             [tvs, ρʺ, κʺ]: Results = evalSeq(ρ, κʹ, es.tail)
