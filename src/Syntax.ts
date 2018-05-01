@@ -447,16 +447,16 @@ export namespace MatchedTrie {
    }
 
    export class Prim extends MatchedTrie {
-      body: Kont
+      κ: Kont
    }
 
    export class ConstInt extends Prim {
       val: number
 
-      static make (val: number, body: Kont): ConstInt {
-         const this_: ConstInt = make(ConstInt, val, body)
+      static make (val: number, κ: Kont): ConstInt {
+         const this_: ConstInt = make(ConstInt, val, κ)
          this_.val = val
-         this_.body = body
+         this_.κ = κ
          return this_
       }
    }
@@ -464,10 +464,10 @@ export namespace MatchedTrie {
    export class ConstStr extends Prim {
       val: string
 
-      static make (val: string, body: Kont): ConstStr {
-         const this_: ConstStr = make(ConstStr, val, body)
+      static make (val: string, κ: Kont): ConstStr {
+         const this_: ConstStr = make(ConstStr, val, κ)
          this_.val = val
-         this_.body = body
+         this_.κ = κ
          return this_
       }
    }
@@ -478,13 +478,13 @@ export namespace MatchedTrie {
    export class Fun extends MatchedTrie {
       ρ: Env
       σ: Trie
-      body: Kont
+      κ: Kont
 
-      static make (ρ: Env, σ: Trie, body: Kont): Fun {
-         const this_: Fun = make(Fun, ρ, σ, body)
+      static make (ρ: Env, σ: Trie, κ: Kont): Fun {
+         const this_: Fun = make(Fun, ρ, σ, κ)
          this_.ρ = ρ
          this_.σ = σ
-         this_.body = body
+         this_.κ = κ
          return this_
       }
    }
