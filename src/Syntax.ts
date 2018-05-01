@@ -1,4 +1,4 @@
-import { __check, absurd, make } from "./util/Core"
+import { __check, assert, make } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
@@ -404,23 +404,26 @@ export namespace Trie {
       }
    }
 
+   // join of expressions is undefined, which effectively means case branches never overlap.
+   function joinTrieBody (κ: TrieBody, κʹ: TrieBody): TrieBody {
+      if (κ instanceof Trie && κʹ instanceof Trie) {
+         return join(κ, κʹ)
+      } else {
+         return assert(false, "Undefined join.", κ, κʹ)
+      }
+   }
+
    export function join (σ: Trie, τ: Trie): Trie {
-      if (σ === null) {
-         return τ
-      } else
-      if (τ === null) {
-         return σ
-      } else
       if (σ instanceof Fun && τ instanceof Fun) {
-         return Fun.make(σ.body.join(τ.body))
+         return Fun.make(joinTrieBody(σ.body, τ.body))
       } else
       if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
-         return Var.make(σ.x, σ.body.join(τ.body))
+         return Var.make(σ.x, joinTrieBody(σ.body, τ.body))
       } else
       if (σ instanceof Constr && τ instanceof Constr) {
-         return Constr.make(unionWith(σ.cases, τ.cases, (x: TrieBody, y: TrieBody): Trie => join(x, y)))
+         return Constr.make(unionWith(σ.cases, τ.cases, joinTrieBody))
       } else {
-         return absurd("Undefined join.", σ, τ)
+         return assert(false, "Undefined join.", σ, τ)
       }
    }
 }

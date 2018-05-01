@@ -6,8 +6,7 @@ import { singleton } from "../src/FiniteMap"
 import { instantiate } from "../src/Instantiate"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
-import { PersistentObject } from "../src/Runtime"
-import { Expr, Lex, Trie } from "../src/Syntax"
+import { Expr, Lex, Trie, TrieBody } from "../src/Syntax"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
 
@@ -28,42 +27,42 @@ export enum Profile {
 const defaultProfile = Profile.Parse
 
 export namespace τ {
-   export function var_<T extends PersistentObject | null> (t: T): Trie<T> {
+   export function var_ (t: TrieBody): Trie {
       return Trie.Var.make(new Lex.Var("x"), t)
    }
 
-   export function int<T extends PersistentObject | null> (t: T): Trie<T> {
+   export function int (t: TrieBody): Trie {
       return Trie.ConstInt.make(t)
    }
 
-   export function str<T extends PersistentObject | null> (t: T): Trie<T> {
+   export function str (t: TrieBody): Trie {
       return Trie.ConstStr.make(t)
    }
 
-   export function cons<T extends PersistentObject | null> (t: T): Trie<T> {
+   export function cons (t: TrieBody) {
       return Trie.Constr.make(singleton("Cons", t))
    }
 
-   export function pair<T extends PersistentObject | null> (t: T): Trie<T> {
+   export function pair (t: TrieBody): Trie {
       return Trie.Constr.make(singleton("Pair", t))
    }
 
-   export function some<T extends PersistentObject | null> (t: T): Trie<T> {
+   export function some (t: TrieBody): Trie {
       return Trie.Constr.make(singleton("Some", t))
    }
 }
 
-export function runExample (p: Profile, src: string, σ: Trie<null>): void {
+export function runExample (p: Profile, src: string, σ: Trie): void {
    const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    if (p >= Profile.Run) {
-      const [tv, , ]: Eval.Result<null> = Eval.eval_(ρ, instantiate(ρ)(e), σ)
+      const [tv, , ]: Eval.Result = Eval.eval_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
    }
 }
 
 export let ρ: Env = prelude()
 
-export function runTest (prog: string, profile: Profile = defaultProfile, σ: Trie<null> = τ.var_(null)): void {
+export function runTest (prog: string, profile: Profile = defaultProfile, σ: Trie = τ.var_(null)): void {
    runExample(profile, prog, σ)
 }
 
