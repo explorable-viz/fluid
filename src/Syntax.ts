@@ -451,6 +451,32 @@ export namespace Trie {
 export namespace MatchedTrie {
    export class MatchedTrie<K extends PersistentObject | null> extends PersistentObject  {
    }
+
+   export class Prim<K extends PersistentObject | null> extends MatchedTrie<K> {
+      body: K
+   }
+
+   export class ConstInt<K extends PersistentObject | null> extends Prim<K> {
+      val: number
+
+      static make <K extends PersistentObject | null> (val: number, body: K): ConstInt<K> {
+         const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, body)
+         this_.val = val
+         this_.body = body
+         return this_
+      }
+   }
+
+   export class ConstStr<K extends PersistentObject | null> extends Prim<K> {
+      val: string
+
+      static make <K extends PersistentObject | null> (val: string, body: K): ConstStr<K> {
+         const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, body)
+         this_.val = val
+         this_.body = body
+         return this_
+      }
+   }
 }
 
 export type Trace = Trace.Trace
