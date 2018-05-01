@@ -1,10 +1,11 @@
 import { __nonNull, absurd, as, assert, make } from "./util/Core"
-import { Cons, List, Nil } from "./BaseTypes"
+import { eq } from "./util/Ord"
+import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { Expr, Kont, MatchedTrie, Trace, Traced, Trie, Value } from "./Syntax"
+import { Expr, Kont, MatchedKont, MatchedTrie, Trace, Traced, Trie, Value } from "./Syntax"
 import { PersistentObject } from "./Runtime";
 
 export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
@@ -62,7 +63,7 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
          k: Runtime<Expr> = t.__id
    if (σ instanceof Trie.Var) {
       const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), tv)
-      return [Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.body]
+      return [Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ]
    } else {
       if (t instanceof Trace.Empty) {
          const v: Value = __nonNull(tv.v)
@@ -72,16 +73,16 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
             return [Traced.make(t, v), ρʹ, κ]
          } else
          if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
-            return [Traced.make(t, v), Env.empty(), σ.body]
+            return [Traced.make(t, v), Env.empty(), σ.κ]
          } else
          if (v instanceof Value.ConstStr && σ instanceof Trie.ConstStr) {
-            return [Traced.make(t, v), Env.empty(), σ.body]
+            return [Traced.make(t, v), Env.empty(), σ.κ]
          } else
          if (v instanceof Value.Closure && σ instanceof Trie.Fun) {
-            return [Traced.make(t, v), Env.empty(), σ.body]
+            return [Traced.make(t, v), Env.empty(), σ.κ]
          } else
          if (v instanceof Value.PrimOp && σ instanceof Trie.Fun) {
-            return [Traced.make(t, v), Env.empty(), σ.body]
+            return [Traced.make(t, v), Env.empty(), σ.κ]
          } else {
             return assert(false, "Demand mismatch.", tv, σ)
          }
@@ -152,6 +153,18 @@ export function match (σ: Trie, v: Value): MatchedTrie {
    } else
    if (σ instanceof Trie.Fun && v instanceof Value.Closure) {
       return MatchedTrie.Fun.make(v.ρ, v.σ, σ.κ)
+   } else
+   if (σ instanceof Trie.ConstInt && v instanceof Value.ConstInt) {
+      return MatchedTrie.ConstInt.make(v.val, σ.κ)
+   } else {
+   if (σ instanceof Trie.ConstStr && v instanceof Value.ConstStr) {
+      return MatchedTrie.ConstStr.make(v.val, σ.κ)
+   } else {
+   if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
+      return MatchedTrie.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
+         const κʹ: MatchedKont = eq(v.ctr.str, ctr)
+         return Pair.make(ctr, κʹ)
+      }))
    } else {
       return assert(false, "Demand mismatch.", v, σ)
    }
