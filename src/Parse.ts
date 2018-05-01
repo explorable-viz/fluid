@@ -194,7 +194,7 @@ const let_: Parser<Expr.Let> =
 const recDef: Parser<Expr.RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
-      ([name, σ]: [Lex.Var, Trie<Expr>]) =>
+      ([name, σ]: [Lex.Var, Trie]) =>
          Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), σ))
    )
 
@@ -238,7 +238,7 @@ const pair: Parser<Expr.Constr> =
          Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern (n: number, p: Parser<TrieBody<Expr>>): Parser<Trie<Expr>> {
+function args_pattern (n: number, p: Parser<TrieBody>): Parser<Trie> {
    return (state: ParseState) => {
       assert(n >= 1, "Too many parameters in constructor pattern.")
       return pattern(choice([
@@ -252,7 +252,7 @@ function args_pattern (n: number, p: Parser<TrieBody<Expr>>): Parser<Trie<Expr>>
 }
 
 // Continuation-passing style means "parenthesise" idiom doesn't work here.
-function constr_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody<Expr>>> {
+function constr_pattern (p: Parser<TrieBody>): Parser<Trie.Constr> {
    return withAction(
       seqDep(
          ctr, 
@@ -268,46 +268,46 @@ function constr_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody
             ])
          }
       ),
-      ([ctr, κ]: [Lex.Ctr, TrieBody<Expr>]): Trie.Constr<TrieBody<Expr>> =>
+      ([ctr, κ]: [Lex.Ctr, TrieBody]): Trie.Constr =>
          Trie.Constr.make(singleton(ctr.str, κ))
    )
 }
 
-function pair_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Constr<TrieBody<Expr>>> {
+function pair_pattern (p: Parser<TrieBody>): Parser<Trie.Constr> {
    return withAction(
       dropFirst(
          symbol(str.parenL), 
          pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
       ),
-      (σ: Trie<TrieBody<Expr>>): Trie.Constr<TrieBody<Expr>> => Trie.Constr.make(singleton("Pair", σ))
+      (σ: Trie): Trie.Constr => Trie.Constr.make(singleton("Pair", σ))
    )
 }
 
-function variable_pattern (p: Parser<TrieBody<Expr>>): Parser<Trie.Var<TrieBody<Expr>>> {
+function variable_pattern (p: Parser<TrieBody>): Parser<Trie.Var> {
    return withAction(
-      seq(var_, p), ([x, z]: [Lex.Var, TrieBody<Expr>]): Trie.Var<TrieBody<Expr>> => 
+      seq(var_, p), ([x, z]: [Lex.Var, TrieBody]): Trie.Var => 
          Trie.Var.make(x, z)
       )
 }
 
-function pattern (p: Parser<TrieBody<Expr>>): Parser<Trie<TrieBody<Expr>>> {
+function pattern (p: Parser<TrieBody>): Parser<Trie> {
    return (state: ParseState) => 
-      choice<Trie<Expr>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
+      choice<Trie>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
 // Chain of singleton tries, followed by an expression.
-const match: Parser<Trie<Expr>> = 
+const match: Parser<Trie> = 
    pattern(dropFirst(symbol(str.arrow), expr))
 
 // Assume at least one match clause.
-function matches (state: ParseState): ParseResult<Trie<Expr>> | null {
+function matches (state: ParseState): ParseResult<Trie> | null {
    return withAction(
-      choice<Trie<Expr>[]>([
+      choice<Trie[]>([
          withAction(match, m => [m]),
          between(symbol("{"), sepBy1(match, symbol(";")), symbol("}"))
       ]),
-      (σs: Trie<Expr>[]) => {
-         let σ: Trie<Expr> = σs[0]
+      (σs: Trie[]) => {
+         let σ: Trie = σs[0]
          for (let i = 1; i < σs.length; ++i) {
             σ = Trie.join(σ, σs[i])
          } 
@@ -322,13 +322,13 @@ const matchAs: Parser<Expr.MatchAs> =
          dropFirst(keyword(str.match), expr),
          dropFirst(keyword(str.as), matches)
       ),
-      ([e, σ]: [Expr, Trie<Expr>]) => Expr.MatchAs.at(ν(), e, σ)
+      ([e, σ]: [Expr, Trie]) => Expr.MatchAs.at(ν(), e, σ)
    )
 
 const fun: Parser<Expr.Fun> =
    withAction(
       dropFirst(keyword(str.fun), matches),
-      (σ: Trie<Expr>) => Expr.Fun.at(ν(), σ)
+      (σ: Trie) => Expr.Fun.at(ν(), σ)
    )
 
 // Any expression other than an operator tree or application chain.

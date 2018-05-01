@@ -94,9 +94,9 @@ export namespace Value {
 
    export class Closure extends Value {
       ρ: Env
-      σ: Trie<Traced>
+      σ: Trie
    
-      static at (α: PersistentObject, ρ: Env, σ: Trie<Traced>): Closure {
+      static at (α: PersistentObject, ρ: Env, σ: Trie): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
          this_.σ = σ
@@ -224,9 +224,9 @@ export namespace Expr {
    }
 
    export class Fun extends Expr {
-      σ: Trie<Expr>
+      σ: Trie
 
-      static at (i: ExternalObject, σ: Trie<Expr>): Fun {
+      static at (i: ExternalObject, σ: Trie): Fun {
          const this_: Fun = create(i, Fun)
          this_.σ = σ
          this_.__version()
@@ -237,9 +237,9 @@ export namespace Expr {
    // A let is simply a match where the trie is a variable trie.
    export class Let extends Expr {
       e: Expr
-      σ: Trie.Var<Expr>
+      σ: Trie.Var
 
-      static at (i: ExternalObject, e: Expr, σ: Trie.Var<Expr>): Let {
+      static at (i: ExternalObject, e: Expr, σ: Trie.Var): Let {
          const this_: Let = create(i, Let)
          this_.e = e
          this_.σ = σ
@@ -287,9 +287,9 @@ export namespace Expr {
 
    export class MatchAs extends Expr {
       e: Expr
-      σ: Trie<Expr>
+      σ: Trie
    
-      static at (i: ExternalObject, e: Expr, σ: Trie<Expr>): MatchAs {
+      static at (i: ExternalObject, e: Expr, σ: Trie): MatchAs {
          const this_: MatchAs = create(i, MatchAs)
          this_.e = e
          this_.σ = σ
@@ -338,170 +338,147 @@ export class Traced<V extends Value = Value> extends PersistentObject {
    }
 }
 
-export type TrieBody<K extends PersistentObject | null> = K | Trie<K>
+// Tries used to have type parameter K, as per the formalism, but in TypeScript it didn't really help.
+export type TrieBody = Expr | Traced | Trie | null
 
 // Tries are persistent but not versioned, as per the formalism.
-export type Trie<K extends PersistentObject | null> = Trie.Trie<K>
+export type Trie = Trie.Trie
 
 export namespace Trie {
-   export class Trie<K extends PersistentObject | null> 
-      extends PersistentObject implements JoinSemilattice<Trie<K>> {
-      static is<K extends PersistentObject | null> (x: TrieBody<K>): x is Trie<K> {
-         return x instanceof Trie
-      }
+   export class Trie extends PersistentObject implements JoinSemilattice<Trie> {
 
-      join (σ: Trie<K>): Trie<K> {
+      join (σ: Trie): Trie {
          return join(this, σ)
       }
    }
 
-   export class Prim<K extends PersistentObject | null> extends Trie<K> {
-      body: K
+   export class Prim extends Trie {
+      body: TrieBody
    }
 
-   export class ConstInt<K extends PersistentObject | null> extends Prim<K> {
-      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is ConstInt<K> {
-         return σ instanceof ConstInt
-      }
-
-      static make <K extends PersistentObject | null> (body: K): ConstInt<K> {
-         const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, body)
+   export class ConstInt extends Prim {
+      static make (body: TrieBody): ConstInt {
+         const this_: ConstInt = make(ConstInt, body)
          this_.body = body
          return this_
       }
    }
 
-   export class ConstStr<K extends PersistentObject | null> extends Prim<K> {
-      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is ConstStr<K> {
-         return σ instanceof ConstStr
-      }
-
-      static make <K extends PersistentObject | null> (body: K): ConstStr<K> {
-         const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, body)
+   export class ConstStr extends Prim {
+      static make (body: TrieBody): ConstStr {
+         const this_: ConstStr = make(ConstStr, body)
          this_.body = body
          return this_
       }
    }
 
-   export class Constr<K extends PersistentObject | null> extends Trie<K> {
-      cases: FiniteMap<string, TrieBody<K>>
+   export class Constr extends Trie {
+      cases: FiniteMap<string, TrieBody>
 
-      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is Constr<K> {
-         return σ instanceof Constr
-      }
-
-      static make <K extends PersistentObject | null> (cases: FiniteMap<string, TrieBody<K>>): Constr<K> {
-         const this_: Constr<K> = make<Constr<K>>(Constr, cases)
+      static make (cases: FiniteMap<string, TrieBody>): Constr {
+         const this_: Constr = make(Constr, cases)
          this_.cases = cases
          return this_
       }
    }
 
-   export class Fun<K extends PersistentObject | null> extends Trie<K> {
-      body: K
+   export class Fun extends Trie {
+      body: TrieBody
 
-      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is Fun<K> {
-         return σ instanceof Fun
-      }
-
-      static make <K extends PersistentObject | null> (body: K): Fun<K> {
-         const this_: Fun<K> = make<Fun<K>>(Fun, body)
+      static make (body: TrieBody): Fun {
+         const this_: Fun = make(Fun, body)
          this_.body = body
          return this_
       }
    }
 
-   export class Var<K extends PersistentObject | null> extends Trie<K> {
+   export class Var extends Trie {
       x: Lex.Var
-      body: K
+      body: TrieBody
 
-      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is Var<K> {
-         return σ instanceof Var
-      }
-
-      static make <K extends PersistentObject | null> (x: Lex.Var, body: K): Var<K> {
-         const this_: Var<K> = make<Var<K>>(Var, x, body)
+      static make (x: Lex.Var, body: TrieBody): Var {
+         const this_: Var = make(Var, x, body)
          this_.x = x
          this_.body = body
          return this_
       }
    }
 
-   export function join<K extends JoinSemilattice<K> & PersistentObject> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
+   export function join (σ: Trie, τ: Trie): Trie {
       if (σ === null) {
          return τ
       } else
       if (τ === null) {
          return σ
       } else
-      if (Fun.is(σ) && Fun.is(τ)) {
+      if (σ instanceof Fun && τ instanceof Fun) {
          return Fun.make(σ.body.join(τ.body))
       } else
-      if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
+      if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
          return Var.make(σ.x, σ.body.join(τ.body))
       } else
-      if (Constr.is(σ) && Constr.is(τ)) {
-         return Constr.make(unionWith(σ.cases, τ.cases, (x: TrieBody<K>, y: TrieBody<K>): Trie<K> => join(x, y)))
+      if (σ instanceof Constr && τ instanceof Constr) {
+         return Constr.make(unionWith(σ.cases, τ.cases, (x: TrieBody, y: TrieBody): Trie => join(x, y)))
       } else {
          return absurd("Undefined join.", σ, τ)
       }
    }
 }
 
-export class TracedMatch<K extends PersistentObject | null, T extends MatchedTrie<K>> extends PersistentObject {
+export class TracedMatch<T extends MatchedTrie> extends PersistentObject {
    t: Trace
-   ξ: MatchedTrie<T>
+   ξ: T
 
-   static make <K extends PersistentObject | null, T extends MatchedTrie<K>> (t: Trace, ξ: MatchedTrie<T>): TracedMatch<K, T> {
-      const this_: TracedMatch<K, T> = make<TracedMatch<K, T>>(TracedMatch, t, ξ)
+   static make<T extends MatchedTrie> (t: Trace, ξ: T): TracedMatch<T> {
+      const this_: TracedMatch<T> = make<TracedMatch<T>>(TracedMatch, t, ξ)
       this_.t = t
       this_.ξ = ξ
       return this_
    }
 }
 
-export type MatchedTrie<K extends PersistentObject | null> = MatchedTrie.MatchedTrie<K>
+export type MatchedTrie = MatchedTrie.MatchedTrie
 
 export namespace MatchedTrie {
-   export class MatchedTrie<K extends PersistentObject | null> extends PersistentObject  {
+   export class MatchedTrie extends PersistentObject {
    }
 
-   export class Prim<K extends PersistentObject | null> extends MatchedTrie<K> {
-      body: K
+   export class Prim extends MatchedTrie {
+      body: TrieBody
    }
 
-   export class ConstInt<K extends PersistentObject | null> extends Prim<K> {
+   export class ConstInt extends Prim {
       val: number
 
-      static make <K extends PersistentObject | null> (val: number, body: K): ConstInt<K> {
-         const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, val, body)
+      static make (val: number, body: TrieBody): ConstInt {
+         const this_: ConstInt = make(ConstInt, val, body)
          this_.val = val
          this_.body = body
          return this_
       }
    }
 
-   export class ConstStr<K extends PersistentObject | null> extends Prim<K> {
+   export class ConstStr extends Prim {
       val: string
 
-      static make <K extends PersistentObject | null> (val: string, body: K): ConstStr<K> {
-         const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, val, body)
+      static make (val: string, body: TrieBody): ConstStr {
+         const this_: ConstStr = make(ConstStr, val, body)
          this_.val = val
          this_.body = body
          return this_
       }
    }
 
-   export class Constr<K extends PersistentObject | null> extends MatchedTrie<K> {
+   export class Constr extends MatchedTrie {
    }
 
-   export class Fun<K extends PersistentObject | null> extends MatchedTrie<K> {
+   export class Fun extends MatchedTrie {
       ρ: Env
-      σ: Trie<Traced>
-      body: K
+      σ: Trie
+      body: TrieBody
 
-      static make <K extends PersistentObject | null> (ρ: Env, σ: Trie<Traced>, body: K): Fun<K> {
-         const this_: Fun<K> = make<Fun<K>>(Fun, ρ, σ, body)
+      static make (ρ: Env, σ: Trie, body: TrieBody): Fun {
+         const this_: Fun = make(Fun, ρ, σ, body)
          this_.ρ = ρ
          this_.σ = σ
          this_.body = body
@@ -510,12 +487,12 @@ export namespace MatchedTrie {
    }
 
    // Is there any extra information a matched variable trie should carry?
-   export class Var<K extends PersistentObject | null> extends MatchedTrie<K> {
+   export class Var extends MatchedTrie {
       x: Lex.Var
-      body: K
+      body: TrieBody
 
-      static make <K extends PersistentObject | null> (x: Lex.Var, body: K): Var<K> {
-         const this_: Var<K> = make<Var<K>>(Var, x, body)
+      static make (x: Lex.Var, body: TrieBody): Var {
+         const this_: Var = make(Var, x, body)
          this_.x = x
          this_.body = body
          return this_
@@ -558,14 +535,14 @@ export namespace Trace {
 
    export class Let extends Trace {
       tu: Traced
-      σ: Trie.Var<Traced>
+      σ: Trie.Var
       t: Trace | null
 
       __Let (): void {
          // discriminator
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var, t: Trace | null): Let {
          const this_: Let = create(k, Let)
          this_.tu = tu
          this_.σ = σ
@@ -604,14 +581,14 @@ export namespace Trace {
    
    export class MatchAs extends Trace {
       tu: Traced
-      σ: Trie<Traced>
+      σ: Trie
       t: Trace | null
 
       __Match (): void {
          // discriminator
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>,  t: Trace | null): MatchAs {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie,  t: Trace | null): MatchAs {
          const this_: MatchAs = create(k, MatchAs)
          this_.tu = tu
          this_.σ = σ

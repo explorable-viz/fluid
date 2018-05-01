@@ -1,10 +1,10 @@
-import { absurd } from "./util/Core"
+import { absurd, assert } from "./util/Core"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
 import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
 
-export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
+export function instantiate (ρ: Env): (e: Expr) => Traced {
    return function (e: Expr.Expr): Traced {
       const i: Runtime<Expr> = Runtime.make(ρ.entries(), e)
       if (e instanceof Expr.ConstInt) {
@@ -29,7 +29,7 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
       } else
       if (e instanceof Expr.Let) {
          // Trace must still be null even though I know "statically" which branch will be taken.
-         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, null)
+         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ), null)
          return Traced.make(t, null)
       } else
       if (e instanceof Expr.LetRec) {
@@ -54,33 +54,37 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
    }
 }
 
-function instantiateTrieBody (ρ: Env, κ: TrieBody<Expr>): TrieBody<Traced> {
+// Turns an "expression" trie body into a "traced value" trie body.
+function instantiateTrieBody (ρ: Env, κ: TrieBody): TrieBody {
    if (κ instanceof Trie.Trie) {
       return instantiateTrie(ρ, κ)
-   } else {
+   } else
+   if (κ instanceof Expr.Expr) {
       return instantiate(ρ)(κ)
+   } else {
+      return assert(false)
    }
 }
 
-// Can't give this a more specific type without type variables of kind * -> *.
-function instantiateTrie (ρ: Env, σ: Trie<Expr>): Trie<Traced> {
-   if (Trie.Var.is(σ)) {
+// Turns trie of expressions into trie of traced values.
+function instantiateTrie (ρ: Env, σ: Trie): Trie {
+   if (σ instanceof Trie.Var) {
       return Trie.Var.make(σ.x, instantiateTrieBody(ρ, σ.body))
    } else
-   if (Trie.ConstInt.is(σ)) {
+   if (σ instanceof Trie.ConstInt) {
       return Trie.ConstInt.make(instantiateTrieBody(ρ, σ.body))
    } else
-   if (Trie.ConstStr.is(σ)) {
+   if (σ instanceof Trie.ConstStr) {
       return Trie.ConstStr.make(instantiateTrieBody(ρ, σ.body))
    } else
-   if (Trie.Constr.is(σ)) {
+   if (σ instanceof Trie.Constr) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: κ }: Pair<string, TrieBody<Expr>>): Pair<string, TrieBody<Traced>> => {
+         ({ fst: ctr, snd: κ }: Pair<string, TrieBody>): Pair<string, TrieBody> => {
             return Pair.make(ctr, instantiateTrieBody(ρ, κ))
          })
       )
    } else
-   if (Trie.Fun.is(σ)) {
+   if (σ instanceof Trie.Fun) {
       return Trie.Fun.make(instantiateTrieBody(ρ, σ.body))
    } else {
       return absurd()
