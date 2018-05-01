@@ -326,12 +326,12 @@ export namespace Expr {
 }
 
 // Rename to Explained?
-export class Traced<V extends Value = Value> extends PersistentObject {
+export class Traced extends PersistentObject {
    t: Trace
-   v: V | null
+   v: Value | null
 
-   static make <V extends Value> (t: Trace, v: V | null): Traced<V> {
-      const this_: Traced<V> = make<Traced<V>>(Traced, t, v)
+   static make (t: Trace, v: Value | null): Traced {
+      const this_: Traced = make(Traced, t, v)
       this_.t = t
       this_.v = v
       return this_
@@ -428,17 +428,20 @@ export namespace Trie {
    }
 }
 
-export class TracedMatch<T extends MatchedTrie> extends PersistentObject {
+export class TracedMatch extends PersistentObject {
    t: Trace
-   ξ: T
+   ξ: MatchedTrie
 
-   static make<T extends MatchedTrie> (t: Trace, ξ: T): TracedMatch<T> {
-      const this_: TracedMatch<T> = make<TracedMatch<T>>(TracedMatch, t, ξ)
+   static make<T extends MatchedTrie> (t: Trace, ξ: MatchedTrie): TracedMatch {
+      const this_: TracedMatch = make(TracedMatch, t, ξ)
       this_.t = t
       this_.ξ = ξ
       return this_
    }
 }
+
+// Matched tries should have (executed) traced values as their bodies, but that requires more plugging in.
+type MatchedKont = Traced | Trie | MatchedTrie
 
 export type MatchedTrie = MatchedTrie.MatchedTrie
 
@@ -473,6 +476,13 @@ export namespace MatchedTrie {
    }
 
    export class Constr extends MatchedTrie {
+      cases: FiniteMap<string, MatchedKont>
+
+      static make (cases: FiniteMap<string, MatchedKont>): Constr {
+         const this_: Constr = make(Constr, cases)
+         this_.cases = cases
+         return this_
+      }
    }
 
    export class Fun extends MatchedTrie {
@@ -489,7 +499,7 @@ export namespace MatchedTrie {
       }
    }
 
-   // Is there any extra information a matched variable trie should carry?
+   // Any extra information a matched variable trie should carry?
    export class Var extends MatchedTrie {
       x: Lex.Var
       body: Kont
