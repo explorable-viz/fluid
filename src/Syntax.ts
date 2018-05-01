@@ -460,7 +460,7 @@ export namespace MatchedTrie {
       val: number
 
       static make <K extends PersistentObject | null> (val: number, body: K): ConstInt<K> {
-         const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, body)
+         const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, val, body)
          this_.val = val
          this_.body = body
          return this_
@@ -471,8 +471,22 @@ export namespace MatchedTrie {
       val: string
 
       static make <K extends PersistentObject | null> (val: string, body: K): ConstStr<K> {
-         const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, body)
+         const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, val, body)
          this_.val = val
+         this_.body = body
+         return this_
+      }
+   }
+
+   export class Fun<K extends PersistentObject | null> extends MatchedTrie<K> {
+      ρ: Env
+      σ: Trie<Traced>
+      body: K
+
+      static make <K extends PersistentObject | null> (ρ: Env, σ: Trie<Traced>, body: K): Fun<K> {
+         const this_: Fun<K> = make<Fun<K>>(Fun, ρ, σ, body)
+         this_.ρ = ρ
+         this_.σ = σ
          this_.body = body
          return this_
       }
