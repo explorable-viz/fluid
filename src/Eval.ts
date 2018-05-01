@@ -4,7 +4,7 @@ import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { Expr, Kont, Trace, Traced, Trie, Value } from "./Syntax"
+import { Expr, Kont, MatchedTrie, Trace, Traced, Trie, Value } from "./Syntax"
 import { PersistentObject } from "./Runtime";
 
 export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
@@ -142,6 +142,16 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
       } else {
          return assert(false, "Demand mismatch.", tv, σ)
       }
+   }
+}
+
+// The matched trie for any evaluation with demand σ yielding value v.
+function match (σ: Trie, v: Value): MatchedTrie {
+   if (σ instanceof Trie.Var) {
+      assert(v === null)
+      return MatchedTrie.Var.make(σ.x, σ.κ)
+   } else {
+      return assert(false)
    }
 }
 

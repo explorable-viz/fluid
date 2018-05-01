@@ -353,21 +353,21 @@ export namespace Trie {
    }
 
    export class Prim extends Trie {
-      body: Kont
+      κ: Kont
    }
 
    export class ConstInt extends Prim {
-      static make (body: Kont): ConstInt {
-         const this_: ConstInt = make(ConstInt, body)
-         this_.body = body
+      static make (κ: Kont): ConstInt {
+         const this_: ConstInt = make(ConstInt, κ)
+         this_.κ = κ
          return this_
       }
    }
 
    export class ConstStr extends Prim {
-      static make (body: Kont): ConstStr {
-         const this_: ConstStr = make(ConstStr, body)
-         this_.body = body
+      static make (κ: Kont): ConstStr {
+         const this_: ConstStr = make(ConstStr, κ)
+         this_.κ = κ
          return this_
       }
    }
@@ -383,23 +383,23 @@ export namespace Trie {
    }
 
    export class Fun extends Trie {
-      body: Kont
+      κ: Kont
 
-      static make (body: Kont): Fun {
-         const this_: Fun = make(Fun, body)
-         this_.body = body
+      static make (κ: Kont): Fun {
+         const this_: Fun = make(Fun, κ)
+         this_.κ = κ
          return this_
       }
    }
 
    export class Var extends Trie {
       x: Lex.Var
-      body: Kont
+      κ: Kont
 
-      static make (x: Lex.Var, body: Kont): Var {
-         const this_: Var = make(Var, x, body)
+      static make (x: Lex.Var, κ: Kont): Var {
+         const this_: Var = make(Var, x, κ)
          this_.x = x
-         this_.body = body
+         this_.κ = κ
          return this_
       }
    }
@@ -415,10 +415,10 @@ export namespace Trie {
 
    export function join (σ: Trie, τ: Trie): Trie {
       if (σ instanceof Fun && τ instanceof Fun) {
-         return Fun.make(joinKont(σ.body, τ.body))
+         return Fun.make(joinKont(σ.κ, τ.κ))
       } else
       if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
-         return Var.make(σ.x, joinKont(σ.body, τ.body))
+         return Var.make(σ.x, joinKont(σ.κ, τ.κ))
       } else
       if (σ instanceof Constr && τ instanceof Constr) {
          return Constr.make(unionWith(σ.cases, τ.cases, joinKont))
@@ -502,12 +502,12 @@ export namespace MatchedTrie {
    // Any extra information a matched variable trie should carry?
    export class Var extends MatchedTrie {
       x: Lex.Var
-      body: Kont
+      κ: Kont
 
-      static make (x: Lex.Var, body: Kont): Var {
-         const this_: Var = make(Var, x, body)
+      static make (x: Lex.Var, κ: Kont): Var {
+         const this_: Var = make(Var, x, κ)
          this_.x = x
-         this_.body = body
+         this_.κ = κ
          return this_
       }
    }
