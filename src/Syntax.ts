@@ -428,12 +428,12 @@ export namespace Trie {
    }
 }
 
-export class TracedMatch extends PersistentObject {
+export class TracedMatchedTrie extends PersistentObject {
    t: Trace
    ξ: MatchedTrie
 
-   static make<T extends MatchedTrie> (t: Trace, ξ: MatchedTrie): TracedMatch {
-      const this_: TracedMatch = make(TracedMatch, t, ξ)
+   static make (t: Trace, ξ: MatchedTrie): TracedMatchedTrie {
+      const this_: TracedMatchedTrie = make(TracedMatchedTrie, t, ξ)
       this_.t = t
       this_.ξ = ξ
       return this_
@@ -441,7 +441,7 @@ export class TracedMatch extends PersistentObject {
 }
 
 // Matched tries should have (executed) traced values as their bodies, but that requires more plugging in.
-type MatchedKont = Traced | Trie | MatchedTrie
+type MatchedKont = Traced | Trie | TracedMatchedTrie
 
 export type MatchedTrie = MatchedTrie.MatchedTrie
 
@@ -476,7 +476,7 @@ export namespace MatchedTrie {
    }
 
    export class Constr extends MatchedTrie {
-      cases: FiniteMap<string, MatchedKont>
+      cases: FiniteMap<string, MatchedKont> // exactly one will be "live"
 
       static make (cases: FiniteMap<string, MatchedKont>): Constr {
          const this_: Constr = make(Constr, cases)
