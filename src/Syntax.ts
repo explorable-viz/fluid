@@ -448,6 +448,20 @@ export namespace Trie {
    }
 }
 
+export class TracedMatch<K extends PersistentObject | null, T extends MatchedTrie<K>> extends PersistentObject {
+   t: Trace
+   ξ: MatchedTrie<T>
+
+   static make <K extends PersistentObject | null, T extends MatchedTrie<K>> (t: Trace, ξ: MatchedTrie<T>): TracedMatch<K, T> {
+      const this_: TracedMatch<K, T> = make<TracedMatch<K, T>>(TracedMatch, t, ξ)
+      this_.t = t
+      this_.ξ = ξ
+      return this_
+   }
+}
+
+export type MatchedTrie<K extends PersistentObject | null> = MatchedTrie.MatchedTrie<K>
+
 export namespace MatchedTrie {
    export class MatchedTrie<K extends PersistentObject | null> extends PersistentObject  {
    }
@@ -476,6 +490,9 @@ export namespace MatchedTrie {
          this_.body = body
          return this_
       }
+   }
+
+   export class Constr<K extends PersistentObject | null> extends MatchedTrie<K> {
    }
 
    export class Fun<K extends PersistentObject | null> extends MatchedTrie<K> {
