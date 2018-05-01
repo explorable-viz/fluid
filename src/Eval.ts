@@ -146,12 +146,14 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
 }
 
 // The matched trie for any evaluation with demand σ yielding value v.
-function match (σ: Trie, v: Value): MatchedTrie {
-   if (σ instanceof Trie.Var) {
-      assert(v === null)
+export function match (σ: Trie, v: Value): MatchedTrie {
+   if (σ instanceof Trie.Var && v === null) {
       return MatchedTrie.Var.make(σ.x, σ.κ)
+   } else
+   if (σ instanceof Trie.Fun && v instanceof Value.Closure) {
+      return MatchedTrie.Fun.make(v.ρ, v.σ, σ.κ)
    } else {
-      return assert(false)
+      return assert(false, "Demand mismatch.", v, σ)
    }
 }
 
