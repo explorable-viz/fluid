@@ -6,26 +6,26 @@ import { instantiate } from "./Instantiate"
 import { PersistentObject, ν } from "./Runtime"
 import { Expr, Lex, Trie, TrieBody, Value } from "./Syntax"
 
-export type PrimResult<K> = [Value | null, K]
-type TrieCtr = (body: null) => Trie.Prim<null>
+export type PrimResult = [Value | null, TrieBody]
+type TrieCtr = (body: null) => Trie.Prim
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
 // Parser guarantees that values/patterns respect constructor signatures.
-function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimResult<T> {
-   if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
+function match (v: Value, σ: Trie): PrimResult {
+   if (v instanceof Value.PrimOp && σ instanceof Trie.Fun) {
       return [v, σ.body]
    } else 
-   if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
+   if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
       return [v, σ.body]
    } else 
-   if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
+   if (v instanceof Value.ConstStr && σ instanceof Trie.ConstStr) {
       return [v, σ.body]
    } else 
-   if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
-      const κ: TrieBody<T> = get(σ.cases, v.ctr.str)!
+   if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
+      const κ: TrieBody = get(σ.cases, v.ctr.str)!
       assert(v.args.length === 0, "Primitives must return nullary values.")
-      if (Trie.Trie.is(κ)) {
+      if (κ instanceof Trie.Trie) {
          return absurd()
       } else {
          return [v, κ]
@@ -47,7 +47,7 @@ export class UnaryBody extends PersistentObject {
       return this_
    }
 
-   invoke<K extends PersistentObject | null> (v: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
+   invoke (v: Value, σ: Trie): (α: PersistentObject) => PrimResult {
       return α => match(this.op(v)(α), σ)
    }
 } 
@@ -61,7 +61,7 @@ export class BinaryBody extends PersistentObject {
       return this_
    }
 
-   invoke<K extends PersistentObject | null> (v1: Value, v2: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
+   invoke (v1: Value, v2: Value, σ: Trie): (α: PersistentObject) => PrimResult {
       return α => match(this.op(v1, v2)(α), σ)
    }
 } 
@@ -71,10 +71,10 @@ export class PrimOp extends PersistentObject {
 }
 
 export class UnaryOp extends PrimOp {
-   σ: Trie.Prim<null>
+   σ: Trie.Prim
    b: UnaryBody
 
-   static make (name: string, σ: Trie.Prim<null>, b: UnaryBody): UnaryOp {
+   static make (name: string, σ: Trie.Prim, b: UnaryBody): UnaryOp {
       const this_: UnaryOp = make(UnaryOp, σ, b)
       this_.name = name
       this_.σ = σ
@@ -88,11 +88,11 @@ export class UnaryOp extends PrimOp {
 }
 
 export class BinaryOp extends PrimOp {
-   σ1: Trie.Prim<null>
-   σ2: Trie.Prim<null>
+   σ1: Trie.Prim
+   σ2: Trie.Prim
    b: BinaryBody
 
-   static make (name: string, σ1: Trie.Prim<null>, σ2: Trie.Prim<null>, b: BinaryBody): BinaryOp {
+   static make (name: string, σ1: Trie.Prim, σ2: Trie.Prim, b: BinaryBody): BinaryOp {
       const this_: BinaryOp = make(BinaryOp, σ1, σ2, b)
       this_.name = name
       this_.σ1 = σ1
