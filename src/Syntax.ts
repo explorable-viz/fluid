@@ -397,6 +397,20 @@ export namespace Trie {
       }
    }
 
+   export class Fun<K extends PersistentObject | null> extends Trie<K> {
+      body: K
+
+      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is Fun<K> {
+         return σ instanceof Fun
+      }
+
+      static make <K extends PersistentObject | null> (body: K): Fun<K> {
+         const this_: Fun<K> = make<Fun<K>>(Fun, body)
+         this_.body = body
+         return this_
+      }
+   }
+
    export class Var<K extends PersistentObject | null> extends Trie<K> {
       x: Lex.Var
       body: K
@@ -408,20 +422,6 @@ export namespace Trie {
       static make <K extends PersistentObject | null> (x: Lex.Var, body: K): Var<K> {
          const this_: Var<K> = make<Var<K>>(Var, x, body)
          this_.x = x
-         this_.body = body
-         return this_
-      }
-   }
-
-   export class Fun<K extends PersistentObject | null> extends Trie<K> {
-      body: K
-
-      static is<K extends PersistentObject | null> (σ: Trie<K>): σ is Fun<K> {
-         return σ instanceof Fun
-      }
-
-      static make <K extends PersistentObject | null> (body: K): Fun<K> {
-         const this_: Fun<K> = make<Fun<K>>(Fun, body)
          this_.body = body
          return this_
       }
@@ -487,6 +487,19 @@ export namespace MatchedTrie {
          const this_: Fun<K> = make<Fun<K>>(Fun, ρ, σ, body)
          this_.ρ = ρ
          this_.σ = σ
+         this_.body = body
+         return this_
+      }
+   }
+
+   // Is there any extra information a matched variable trie should carry?
+   export class Var<K extends PersistentObject | null> extends MatchedTrie<K> {
+      x: Lex.Var
+      body: K
+
+      static make <K extends PersistentObject | null> (x: Lex.Var, body: K): Var<K> {
+         const this_: Var<K> = make<Var<K>>(Var, x, body)
+         this_.x = x
          this_.body = body
          return this_
       }
