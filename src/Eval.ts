@@ -162,8 +162,9 @@ export function match (σ: Trie, v: Value): MatchedTrie {
    } else {
    if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
       return MatchedTrie.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
-         const κʹ: MatchedKont = eq(v.ctr.str, ctr)
-         return Pair.make(ctr, κʹ)
+         if (v.ctr.str === ctr) {
+         } else {
+         }
       }))
    } else {
       return assert(false, "Demand mismatch.", v, σ)

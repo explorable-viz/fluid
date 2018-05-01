@@ -441,7 +441,7 @@ export class TracedMatchedTrie extends PersistentObject {
 }
 
 // Matched tries should have (executed) traced values as their bodies, but that requires more plugging in.
-export type MatchedKont = Traced | Trie | TracedMatchedTrie
+export type MatchedKont = Traced | Trie | TracedMatchedTrie | null
 
 export type MatchedTrie = MatchedTrie.MatchedTrie
 
