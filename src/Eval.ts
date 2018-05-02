@@ -5,7 +5,7 @@ import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { Expr, Kont, MatchedKont, MatchedTrie, Trace, Traced, Trie, Value } from "./Syntax"
+import { Expr, Kont, MatchedKont, MatchedTrie, Trace, Traced, TracedMatchedTrie, Trie, Value } from "./Syntax"
 import { PersistentObject } from "./Runtime";
 
 export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
@@ -38,14 +38,13 @@ export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.Rec
 }
 
 // Parser ensures constructor patterns agree with constructor signatures.
-function evalSeq (ρ: Env, κ: Kont, es: List<Traced>): Results {
+function evalArgs (ρ: Env, κ: Kont, es: List<Traced>): Results {
    if (Cons.is(es) && κ instanceof Trie.Trie) {
       const [tv, ρʹ, κʹ]: Result = eval_(ρ, es.head, κ),
-            [tvs, ρʺ, κʺ]: Results = evalSeq(ρ, κʹ, es.tail)
+            [tvs, ρʺ, κʺ]: Results = evalArgs(ρ, κʹ, es.tail)
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κʺ]
    } else
    if (Nil.is(es)) {
-      // want to assert that κ is dynamically what?
       return [Nil.make(), Env.empty(), κ]
    } else {
       return absurd()
@@ -69,7 +68,7 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
          const v: Value = __nonNull(tv.v)
          assert(v.__id === k && t.__id === k)
          if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
-            const [, ρʹ, κ]: Results = evalSeq(ρ, get(σ.cases, v.ctr.str)!, v.args)
+            const [, ρʹ, κ]: Results = evalArgs(ρ, get(σ.cases, v.ctr.str)!, v.args)
             return [Traced.make(t, v), ρʹ, κ]
          } else
          if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
@@ -146,8 +145,28 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
    }
 }
 
+// Parser ensures constructor patterns agree with constructor signatures.
+function matchArgs (κ: Kont, vs: List<Traced>): MatchedKont {
+   if (Cons.is(vs) && κ instanceof Trie.Trie) {
+      matchTraced(κ, vs.head)
+   } else
+   if (Nil.is(vs)) {
+      if (κ instanceof Expr.Expr) {
+         return absurd()
+      } else {
+         return κ
+      }
+   } else {
+      return absurd()
+   }
+}
+
+export function matchTraced (σ: Trie, tv: Traced): TracedMatchedTrie {
+   return TracedMatchedTrie.make(tv.t, match(σ, tv.v))
+}
+
 // The matched trie for any evaluation with demand σ yielding value v.
-export function match (σ: Trie, v: Value): MatchedTrie {
+export function match (σ: Trie, v: Value | null): MatchedTrie {
    if (σ instanceof Trie.Var && v === null) {
       return MatchedTrie.Var.make(σ.x, σ.κ)
    } else
@@ -162,16 +181,13 @@ export function match (σ: Trie, v: Value): MatchedTrie {
    } else {
    if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
       return MatchedTrie.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
-         if (κ instanceof Traced) {
-            return Pair.make(ctr, κ)
-         } else
-         if (κ instanceof Trie.Trie) {
-            if (v.ctr.str === ctr) {
-            } else {
-               return Pair.make(ctr, κ)
-            }
-         } else {
+         if (κ instanceof Expr.Expr) {
             return absurd()
+         } else 
+         if (v.ctr.str === ctr) {
+            return Pair.make(ctr, matchArgs(κ, v.args))
+         } else {
+            return Pair.make(ctr, κ)
          }
       }))
    } else {
