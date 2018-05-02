@@ -162,8 +162,16 @@ export function match (σ: Trie, v: Value): MatchedTrie {
    } else {
    if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
       return MatchedTrie.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
-         if (v.ctr.str === ctr) {
+         if (κ instanceof Traced) {
+            return Pair.make(ctr, κ)
+         } else
+         if (κ instanceof Trie.Trie) {
+            if (v.ctr.str === ctr) {
+            } else {
+               return Pair.make(ctr, κ)
+            }
          } else {
+            return absurd()
          }
       }))
    } else {
