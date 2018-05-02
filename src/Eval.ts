@@ -148,7 +148,7 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
 // Parser ensures constructor patterns agree with constructor signatures.
 function matchArgs (κ: Kont, vs: List<Traced>): MatchedKont {
    if (Cons.is(vs) && κ instanceof Trie.Trie) {
-      matchTraced(κ, vs.head)
+      TracedMatchedTrie.make(vs.head.t, match(κ, vs.head.v))
    } else
    if (Nil.is(vs)) {
       if (κ instanceof Expr.Expr) {
@@ -159,10 +159,6 @@ function matchArgs (κ: Kont, vs: List<Traced>): MatchedKont {
    } else {
       return absurd()
    }
-}
-
-export function matchTraced (σ: Trie, tv: Traced): TracedMatchedTrie {
-   return TracedMatchedTrie.make(tv.t, match(σ, tv.v))
 }
 
 // The matched trie for any evaluation with demand σ yielding value v.
