@@ -69,13 +69,13 @@ function instantiateKont (ρ: Env, κ: Kont): Kont {
 // Turns trie of expressions into trie of traced values.
 function instantiateTrie (ρ: Env, σ: Trie): Trie {
    if (σ instanceof Trie.Var) {
-      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.body))
+      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
    } else
    if (σ instanceof Trie.ConstInt) {
-      return Trie.ConstInt.make(instantiateKont(ρ, σ.body))
+      return Trie.ConstInt.make(instantiateKont(ρ, σ.κ))
    } else
    if (σ instanceof Trie.ConstStr) {
-      return Trie.ConstStr.make(instantiateKont(ρ, σ.body))
+      return Trie.ConstStr.make(instantiateKont(ρ, σ.κ))
    } else
    if (σ instanceof Trie.Constr) {
       return Trie.Constr.make(σ.cases.map(
@@ -85,7 +85,7 @@ function instantiateTrie (ρ: Env, σ: Trie): Trie {
       )
    } else
    if (σ instanceof Trie.Fun) {
-      return Trie.Fun.make(instantiateKont(ρ, σ.body))
+      return Trie.Fun.make(instantiateKont(ρ, σ.κ))
    } else {
       return absurd()
    }

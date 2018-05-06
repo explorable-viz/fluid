@@ -1,5 +1,4 @@
 import { __nonNull, absurd, as, assert, make } from "./util/Core"
-import { eq } from "./util/Ord"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { get, has } from "./FiniteMap"
@@ -148,7 +147,8 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
 // Parser ensures constructor patterns agree with constructor signatures.
 function matchArgs (κ: Kont, vs: List<Traced>): MatchedKont {
    if (Cons.is(vs) && κ instanceof Trie.Trie) {
-      TracedMatchedTrie.make(vs.head.t, match(κ, vs.head.v))
+      const ξ: MatchedTrie = match(κ, vs.head.v)
+      TracedMatchedTrie.make(vs.head.t, ξ)
    } else
    if (Nil.is(vs)) {
       if (κ instanceof Expr.Expr) {
@@ -171,10 +171,10 @@ export function match (σ: Trie, v: Value | null): MatchedTrie {
    } else
    if (σ instanceof Trie.ConstInt && v instanceof Value.ConstInt) {
       return MatchedTrie.ConstInt.make(v.val, σ.κ)
-   } else {
+   } else
    if (σ instanceof Trie.ConstStr && v instanceof Value.ConstStr) {
       return MatchedTrie.ConstStr.make(v.val, σ.κ)
-   } else {
+   } else
    if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
       return MatchedTrie.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
          if (κ instanceof Expr.Expr) {

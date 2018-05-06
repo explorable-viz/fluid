@@ -14,13 +14,13 @@ type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 // Parser guarantees that values/patterns respect constructor signatures.
 function match (v: Value, σ: Trie): PrimResult {
    if (v instanceof Value.PrimOp && σ instanceof Trie.Fun) {
-      return [v, σ.body]
+      return [v, σ.κ]
    } else 
    if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
-      return [v, σ.body]
+      return [v, σ.κ]
    } else 
    if (v instanceof Value.ConstStr && σ instanceof Trie.ConstStr) {
-      return [v, σ.body]
+      return [v, σ.κ]
    } else 
    if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
       const κ: Kont = get(σ.cases, v.ctr.str)!
