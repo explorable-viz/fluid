@@ -186,6 +186,7 @@ export type MatchedKont = Traced | Trie | TracedMatch | null
 
 export type Match = Match.Match
 
+// A trie which has been matched (executed) to a depth of at least one.
 export namespace Match {
    export class Match extends PersistentObject {
       __Match (): void {
@@ -193,7 +194,7 @@ export namespace Match {
       }
    }
 
-   // Embeds the tries into the matched tries.
+   // Tries are matched tries, to represent dead branches.
    export class Inj extends Match {
       σ: Trie
       
@@ -230,8 +231,9 @@ export namespace Match {
       }
    }
 
+   // Exactly one branch will be live, although currently no easy way to tell.
    export class Constr extends Match {
-      cases: FiniteMap<string, MatchedKont> // exactly one will be "live"
+      cases: FiniteMap<string, MatchedKont> 
 
       static make (cases: FiniteMap<string, MatchedKont>): Constr {
          const this_: Constr = make(Constr, cases)

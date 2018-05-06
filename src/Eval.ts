@@ -145,17 +145,27 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
    }
 }
 
-function matchArgs (vs: List<Traced>): (σ: MatchedKont) => TracedMatch {
-   return (σ: MatchedKont) => {
-      as(σ, Trie.Trie)
-      return null as any
+function matchArgs (vs: List<Traced>): (κ: MatchedKont) => MatchedKont {
+   return (κ: MatchedKont): MatchedKont => {
+      // Parser ensures constructor patterns agree with constructor signatures.
+      if (Cons.is(vs) && κ instanceof Trie.Trie) {
+         const ξ: Match = match(κ, vs.head.v), 
+         inj = (σ: MatchedKont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
+         // codomain of ξ is chain of *tries*; promote to traced matched tries to argument depth:
+         return TracedMatch.make(vs.head.t, map(matchArgs(vs.tail), inj, ξ))
+      } else
+      if (Nil.is(vs)) {
+         return κ
+      } else {
+         return absurd()
+      }
    }
 }
 
 function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont, ξ: Match): Match {
 }
 
-// The matched trie for any evaluation with demand σ yielding value v.
+// The match for any evaluation with demand σ which yielded value v.
 export function match (σ: Trie, v: Value | null): Match {
    if (σ instanceof Trie.Var && v === null) {
       return Match.Var.make(σ.x, σ.κ)
@@ -172,18 +182,7 @@ export function match (σ: Trie, v: Value | null): Match {
    if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
       return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
          if (v.ctr.str === ctr) {
-            // Parser ensures constructor patterns agree with constructor signatures.
-            if (Cons.is(v.args) && κ instanceof Trie.Trie) {
-               const ξ: Match = match(κ, v.args.head.v), 
-                     inj = (σ: MatchedKont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
-               // codomain of ξ is chain of *tries* which we now promote to traced matched tries:
-               return Pair.make(ctr, TracedMatch.make(v.args.head.t, map(matchArgs(v.args.tail), inj, ξ)))
-            } else
-            if (Nil.is(v.args)) {
-               return Pair.make(ctr, κ)
-            } else {
-               return absurd()
-            }
+            return Pair.make(ctr, matchArgs(v.args)(κ))
          } else {
             return Pair.make(ctr, κ)
          }
