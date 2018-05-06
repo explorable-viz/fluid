@@ -206,13 +206,13 @@ export namespace Match {
    }
 
    export class Prim extends Match {
-      κ: Kont
+      κ: MatchedKont
    }
 
    export class ConstInt extends Prim {
       val: number
 
-      static make (val: number, κ: Kont): ConstInt {
+      static make (val: number, κ: MatchedKont): ConstInt {
          const this_: ConstInt = make(ConstInt, val, κ)
          this_.val = val
          this_.κ = κ
@@ -223,7 +223,7 @@ export namespace Match {
    export class ConstStr extends Prim {
       val: string
 
-      static make (val: string, κ: Kont): ConstStr {
+      static make (val: string, κ: MatchedKont): ConstStr {
          const this_: ConstStr = make(ConstStr, val, κ)
          this_.val = val
          this_.κ = κ
@@ -245,7 +245,7 @@ export namespace Match {
    export class Fun extends Match {
       ρ: Env
       σ: Trie
-      κ: Kont
+      κ: MatchedKont
 
       static make (ρ: Env, σ: Trie, κ: Kont): Fun {
          const this_: Fun = make(Fun, ρ, σ, κ)
@@ -256,10 +256,10 @@ export namespace Match {
       }
    }
 
-   // Any extra information a matched variable trie should carry?
+   // Any extra information a variable math should carry?
    export class Var extends Match {
       x: Lex.Var
-      κ: Kont
+      κ: MatchedKont
 
       static make (x: Lex.Var, κ: Kont): Var {
          const this_: Var = make(Var, x, κ)
