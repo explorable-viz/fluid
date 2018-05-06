@@ -174,8 +174,9 @@ export function match (σ: Trie, v: Value | null): MatchedTrie {
          if (v.ctr.str === ctr) {
             // Parser ensures constructor patterns agree with constructor signatures.
             if (Cons.is(v.args) && κ instanceof Trie.Trie) {
-               const ξ: MatchedTrie = match(κ, v.args.head.v),
+               const ξ: MatchedTrie = match(κ, v.args.head.v), 
                      inj = (σ: MatchedKont) => TracedMatchedTrie.make(null, MatchedTrie.Inj.make(as(σ, Trie.Trie)))
+               // codomain of ξ is chain of *tries* which we now promote to traced matched tries:
                return Pair.make(ctr, TracedMatchedTrie.make(v.args.head.t, map(matchArgs(v.args.tail), inj, ξ)))
             } else
             if (Nil.is(v.args)) {
