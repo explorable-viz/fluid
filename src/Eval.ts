@@ -165,7 +165,10 @@ function matchArgs (vs: List<Traced>): (κ: MatchedKont) => MatchedKont {
 function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont, ξ: Match): Match {
    if (ξ instanceof Match.ConstInt) {
       return Match.ConstInt.make(ξ.val, f(ξ.κ))
-   }
+   } else
+   if (ξ instanceof Match.ConstStr) {
+      return Match.ConstStr.make(ξ.val, f(ξ.κ))
+   } else
 }
 
 // The match for any evaluation with demand σ which yielded value v.

@@ -247,7 +247,7 @@ export namespace Match {
       σ: Trie
       κ: MatchedKont
 
-      static make (ρ: Env, σ: Trie, κ: Kont): Fun {
+      static make (ρ: Env, σ: Trie, κ: MatchedKont): Fun {
          const this_: Fun = make(Fun, ρ, σ, κ)
          this_.ρ = ρ
          this_.σ = σ
@@ -261,7 +261,7 @@ export namespace Match {
       x: Lex.Var
       κ: MatchedKont
 
-      static make (x: Lex.Var, κ: Kont): Var {
+      static make (x: Lex.Var, κ: MatchedKont): Var {
          const this_: Var = make(Var, x, κ)
          this_.x = x
          this_.κ = κ
