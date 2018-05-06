@@ -148,8 +148,7 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
 // Parser ensures constructor patterns agree with constructor signatures.
 function matchArgs (κ: Kont, vs: List<Traced>): MatchedKont {
    if (Cons.is(vs) && κ instanceof Trie.Trie) {
-      const ξ: MatchedTrie = match(κ, vs.head.v)
-      TracedMatchedTrie.make(vs.head.t, ξ)
+      TracedMatchedTrie.make(vs.head.t, match(κ, vs.head.v))
    } else
    if (Nil.is(vs)) {
       return κ
