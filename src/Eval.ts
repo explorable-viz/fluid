@@ -152,7 +152,7 @@ function matchArgs (vs: List<Traced>): (κ: MatchedKont) => MatchedKont {
          const ξ: Match = match(κ, vs.head.v), 
                inj = (σ: MatchedKont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
          // codomain of ξ is chain of *tries*; promote to traced matches, until arguments run out:
-         return TracedMatch.make(vs.head.t, map(matchArgs(vs.tail), inj, ξ))
+         return TracedMatch.make(vs.head.t, map(matchArgs(vs.tail), inj)(ξ))
       } else
       if (Nil.is(vs)) {
          return κ
@@ -162,13 +162,32 @@ function matchArgs (vs: List<Traced>): (κ: MatchedKont) => MatchedKont {
    }
 }
 
-function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont, ξ: Match): Match {
-   if (ξ instanceof Match.ConstInt) {
-      return Match.ConstInt.make(ξ.val, f(ξ.κ))
-   } else
-   if (ξ instanceof Match.ConstStr) {
-      return Match.ConstStr.make(ξ.val, f(ξ.κ))
-   } else
+function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont): (ξ: Match) => Match {
+   return (ξ: Match): Match => {
+      if (ξ instanceof Match.ConstInt) {
+         return Match.ConstInt.make(ξ.val, f(ξ.κ))
+      } else
+      if (ξ instanceof Match.ConstStr) {
+         return Match.ConstStr.make(ξ.val, f(ξ.κ))
+      } else
+      if (ξ instanceof Match.Fun) {
+         return Match.Fun.make(ξ.ρ, ξ.σ, f(ξ.κ))
+      } else
+      if (ξ instanceof Match.Var) {
+         return Match.Var.make(ξ.x, f(ξ.κ))
+      } else
+      if (ξ instanceof Match.Constr) {
+         return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
+            if (/*ctr active */) {
+
+            } else {
+               return Pair.make(ctr, )
+            }
+         }))
+      } else {
+         return absurd()
+      }
+   }
 }
 
 // The match for any evaluation with demand σ which yielded value v.
