@@ -145,16 +145,14 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
    }
 }
 
-// Parser ensures constructor patterns agree with constructor signatures.
-function matchArgs (κ: Kont, vs: List<Traced>): MatchedKont {
-   if (Cons.is(vs) && κ instanceof Trie.Trie) {
-      TracedMatchedTrie.make(vs.head.t, match(κ, vs.head.v))
-   } else
-   if (Nil.is(vs)) {
-      return κ
-   } else {
-      return absurd()
+function matchArgs (vs: List<Traced>): (σ: MatchedKont) => TracedMatchedTrie {
+   return (σ: MatchedKont) => {
+      as(σ, Trie.Trie)
+      return null as any
    }
+}
+
+function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont, ξ: MatchedTrie): MatchedTrie {
 }
 
 // The matched trie for any evaluation with demand σ yielding value v.
@@ -174,7 +172,17 @@ export function match (σ: Trie, v: Value | null): MatchedTrie {
    if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
       return MatchedTrie.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
          if (v.ctr.str === ctr) {
-            return Pair.make(ctr, matchArgs(κ, v.args))
+            // Parser ensures constructor patterns agree with constructor signatures.
+            if (Cons.is(v.args) && κ instanceof Trie.Trie) {
+               const ξ: MatchedTrie = match(κ, v.args.head.v),
+                     inj = (σ: MatchedKont) => TracedMatchedTrie.make(null, MatchedTrie.Inj.make(as(σ, Trie.Trie)))
+               return Pair.make(ctr, TracedMatchedTrie.make(v.args.head.t, map(matchArgs(v.args.tail), inj, ξ)))
+            } else
+            if (Nil.is(v.args)) {
+               return Pair.make(ctr, κ)
+            } else {
+               return absurd()
+            }
          } else {
             return Pair.make(ctr, κ)
          }

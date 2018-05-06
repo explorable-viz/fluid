@@ -170,10 +170,10 @@ export namespace Trie {
 }
 
 export class TracedMatchedTrie extends PersistentObject {
-   t: Trace
+   t: Trace | null // null iff ξ represents a dead branch
    ξ: MatchedTrie
 
-   static make (t: Trace, ξ: MatchedTrie): TracedMatchedTrie {
+   static make (t: Trace | null, ξ: MatchedTrie): TracedMatchedTrie {
       const this_: TracedMatchedTrie = make(TracedMatchedTrie, t, ξ)
       this_.t = t
       this_.ξ = ξ
@@ -188,6 +188,20 @@ export type MatchedTrie = MatchedTrie.MatchedTrie
 
 export namespace MatchedTrie {
    export class MatchedTrie extends PersistentObject {
+      __MatchedTrie (): void {
+         // discriminator
+      }
+   }
+
+   // Embeds the tries into the matched tries.
+   export class Inj extends MatchedTrie {
+      σ: Trie
+      
+      static make (σ: Trie): Inj {
+         const this_: Inj = make(Inj, σ)
+         this_.σ = σ
+         return this_
+      }
    }
 
    export class Prim extends MatchedTrie {
