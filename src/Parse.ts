@@ -5,7 +5,7 @@ import {
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
 import { Cons, List, Nil } from "./BaseTypes"
-import { ctrToDataType } from "./DataType"
+import { arity } from "./DataType"
 import { singleton } from "./FiniteMap"
 import { ν } from "./Runtime"
 import { Expr, Lex, str } from "./Expr"
@@ -223,8 +223,7 @@ const constr: Parser<Expr.Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
       ([ctr, args]: [Lex.Ctr, Expr[]]) => {
-         assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
-         const n: number = ctrToDataType.get(ctr.str)!.ctrs.get(ctr.str)!.length
+         const n: number = arity(ctr.str)
          assert(n <= args.length, "Too few arguments in constructor.", ctr.str)
          assert(n >= args.length, "Too many arguments in constructor.", ctr.str)
          return Expr.Constr.at(ν(), ctr, List.fromArray(args))
@@ -257,8 +256,7 @@ function constr_pattern (p: Parser<Expr.Kont>): Parser<Expr.Trie.Constr> {
       seqDep(
          ctr, 
          (ctr: Lex.Ctr) => {
-            assert(ctrToDataType.has(ctr.str), "No such constructor.", ctr.str)
-            const n: number = ctrToDataType.get(ctr.str)!.ctrs.get(ctr.str)!.length
+            const n: number = arity(ctr.str)
             return choice([
                dropFirst(symbol(str.parenL), args_pattern(n, dropFirst(symbol(str.parenR), p))),
                satisfying(p, () => {

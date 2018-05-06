@@ -162,6 +162,23 @@ function matchArgs (vs: List<Traced>): (κ: MatchedKont) => MatchedKont {
    }
 }
 
+function mapArgs (
+   f: (κ: MatchedKont) => MatchedKont, 
+   g: (κ: MatchedKont) => MatchedKont, 
+   n: number
+): (κ: MatchedKont) => MatchedKont {
+   return (κ: MatchedKont): MatchedKont => {
+      if (n > 0) {
+
+      } else
+      if (n === 0) {
+         return κ
+      } else {
+         return absurd()
+      }
+   }
+}
+
 function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont): (ξ: Match) => Match {
    return (ξ: Match): Match => {
       if (ξ instanceof Match.ConstInt) {
@@ -181,7 +198,7 @@ function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => Match
             if (/*ctr active */) {
 
             } else {
-               return Pair.make(ctr, )
+               return Pair.make(ctr, mapArgs(g, g, ))
             }
          }))
       } else {

@@ -15,6 +15,11 @@ class DataType {
 // Populated by initDataTypes(). Constructors are not yet first-class. TODO: reinstate projections.
 export let ctrToDataType: Map<string, DataType> = new Map
 
+export function arity (ctr: string): number {
+   assert(ctrToDataType.has(ctr), "No such constructor.", ctr)
+   return ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length
+}
+
 function initDataType <T> (d: DataType): void {
    d.ctrs.forEach((_, ctr: string): void => {
       ctrToDataType.set(ctr, d)
