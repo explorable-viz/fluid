@@ -8,7 +8,7 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { singleton } from "./FiniteMap"
 import { ν } from "./Runtime"
-import { Expr, Kont, Lex, Trie, str } from "./Syntax"
+import { Expr, Lex, str } from "./Expr"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.
@@ -188,13 +188,13 @@ const let_: Parser<Expr.Let> =
          dropFirst(keyword(str.in_), expr)
       ),
       ([[x, e], eʹ]: [[Lex.Var, Expr], Expr]) =>
-         Expr.Let.at(ν(), e, Trie.Var.make(x, eʹ))
+         Expr.Let.at(ν(), e, Expr.Trie.Var.make(x, eʹ))
    )
 
 const recDef: Parser<Expr.RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
-      ([name, σ]: [Lex.Var, Trie]) =>
+      ([name, σ]: [Lex.Var, Expr.Trie]) =>
          Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), σ))
    )
 
@@ -238,7 +238,7 @@ const pair: Parser<Expr.Constr> =
          Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern (n: number, p: Parser<Kont>): Parser<Trie> {
+function args_pattern (n: number, p: Parser<Expr.Kont>): Parser<Expr.Trie> {
    return (state: ParseState) => {
       assert(n >= 1, "Too many parameters in constructor pattern.")
       return pattern(choice([
@@ -252,7 +252,7 @@ function args_pattern (n: number, p: Parser<Kont>): Parser<Trie> {
 }
 
 // Continuation-passing style means "parenthesise" idiom doesn't work here.
-function constr_pattern (p: Parser<Kont>): Parser<Trie.Constr> {
+function constr_pattern (p: Parser<Expr.Kont>): Parser<Expr.Trie.Constr> {
    return withAction(
       seqDep(
          ctr, 
@@ -268,48 +268,48 @@ function constr_pattern (p: Parser<Kont>): Parser<Trie.Constr> {
             ])
          }
       ),
-      ([ctr, κ]: [Lex.Ctr, Kont]): Trie.Constr =>
-         Trie.Constr.make(singleton(ctr.str, κ))
+      ([ctr, κ]: [Lex.Ctr, Expr.Kont]): Expr.Trie.Constr =>
+         Expr.Trie.Constr.make(singleton(ctr.str, κ))
    )
 }
 
-function pair_pattern (p: Parser<Kont>): Parser<Trie.Constr> {
+function pair_pattern (p: Parser<Expr.Kont>): Parser<Expr.Trie.Constr> {
    return withAction(
       dropFirst(
          symbol(str.parenL), 
          pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
       ),
-      (σ: Trie): Trie.Constr => Trie.Constr.make(singleton("Pair", σ))
+      (σ: Expr.Trie): Expr.Trie.Constr => Expr.Trie.Constr.make(singleton("Pair", σ))
    )
 }
 
-function variable_pattern (p: Parser<Kont>): Parser<Trie.Var> {
+function variable_pattern (p: Parser<Expr.Kont>): Parser<Expr.Trie.Var> {
    return withAction(
-      seq(var_, p), ([x, z]: [Lex.Var, Kont]): Trie.Var => 
-         Trie.Var.make(x, z)
+      seq(var_, p), ([x, z]: [Lex.Var, Expr.Kont]): Expr.Trie.Var => 
+         Expr.Trie.Var.make(x, z)
       )
 }
 
-function pattern (p: Parser<Kont>): Parser<Trie> {
+function pattern (p: Parser<Expr.Kont>): Parser<Expr.Trie> {
    return (state: ParseState) => 
-      choice<Trie>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
+      choice<Expr.Trie>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
 // Chain of singleton tries, followed by an expression.
-const match: Parser<Trie> = 
+const match: Parser<Expr.Trie> = 
    pattern(dropFirst(symbol(str.arrow), expr))
 
 // Assume at least one match clause.
-function matches (state: ParseState): ParseResult<Trie> | null {
+function matches (state: ParseState): ParseResult<Expr.Trie> | null {
    return withAction(
-      choice<Trie[]>([
+      choice<Expr.Trie[]>([
          withAction(match, m => [m]),
          between(symbol("{"), sepBy1(match, symbol(";")), symbol("}"))
       ]),
-      (σs: Trie[]) => {
-         let σ: Trie = σs[0]
+      (σs: Expr.Trie[]) => {
+         let σ: Expr.Trie = σs[0]
          for (let i = 1; i < σs.length; ++i) {
-            σ = Trie.join(σ, σs[i])
+            σ = Expr.Trie.join(σ, σs[i])
          } 
          return σ
       }
@@ -322,13 +322,13 @@ const matchAs: Parser<Expr.MatchAs> =
          dropFirst(keyword(str.match), expr),
          dropFirst(keyword(str.as), matches)
       ),
-      ([e, σ]: [Expr, Trie]) => Expr.MatchAs.at(ν(), e, σ)
+      ([e, σ]: [Expr, Expr.Trie]) => Expr.MatchAs.at(ν(), e, σ)
    )
 
 const fun: Parser<Expr.Fun> =
    withAction(
       dropFirst(keyword(str.fun), matches),
-      (σ: Trie) => Expr.Fun.at(ν(), σ)
+      (σ: Expr.Trie) => Expr.Fun.at(ν(), σ)
    )
 
 // Any expression other than an operator tree or application chain.

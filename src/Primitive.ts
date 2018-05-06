@@ -1,10 +1,11 @@
 import { absurd, assert, make } from "./util/Core"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
+import { Expr, Lex } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { PersistentObject, ν } from "./Runtime"
-import { Expr, Kont, Lex, Trie, Value } from "./Syntax"
+import { Kont, Value, Trie } from "./Traced"
 
 export type PrimResult = [Value | null, Kont]
 type TrieCtr = (body: null) => Trie.Prim
@@ -188,7 +189,7 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentOb
    return α => Value.ConstStr.at(α, x.val + y.val)
 }
 
-// Only primitive with identifiers as names are first-class and therefore appear in the prelude.
+// Only primitive with identifiers as names are first-class, and therefore appear in the prelude.
 export function prelude (): Env {
    const ρ_0: Env = Env.empty()
    let ρ: Env = Env.empty()

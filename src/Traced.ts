@@ -1,87 +1,11 @@
-import { __check, assert, make } from "./util/Core"
-import { JoinSemilattice, eq } from "./util/Ord"
-import { Lexeme } from "./util/parse/Core"
+import { make } from "./util/Core"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
-import { FiniteMap, unionWith } from "./FiniteMap"
+import { FiniteMap } from "./FiniteMap"
 import { Runtime } from "./Eval"
+import { Expr, Lex } from "./Expr"
 import { UnaryOp } from "./Primitive"
-import { ExternalObject, VersionedObject, PersistentObject, create } from "./Runtime"
-
-// Constants used for parsing, and also for toString() implementations.
-export namespace str {
-   export const arrow: string = "→"
-   export const as: string = "as"
-   export const equals: string = "="
-   export const fun: string = "fun"
-   export const in_: string = "in"
-   export const let_: string = "let"
-   export const letRec: string = "letrec"
-   export const match: string = "match"
-   export const parenL: string = "("
-   export const parenR: string = ")"
-   export const quotes: string = '"'
-}
-
-export namespace Lex {
-   export class Ctr extends Lexeme {
-      constructor(str: string) {
-         super(str)
-      }
-
-      __Ctr(): void {
-         // discriminator
-      }
-   }
-
-   export class IntLiteral extends Lexeme {
-      constructor(str: string) {
-         super(str)
-      }
-
-      toNumber(): number {
-         return parseInt(this.str)
-      }
-   }
-
-   export class Keyword extends Lexeme {
-      constructor(str: string) {
-         super(str)
-      }
-   }
-
-   // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
-   // Other uses of primitive operations are treated as variables.
-   export class OpName extends Lexeme {
-      constructor(str: string) {
-         super(str)
-      }
-
-      __OpName(): void {
-         // discriminator
-      }
-   }
-
-   export class StringLiteral extends Lexeme {
-      constructor(str: string) {
-         super(str)
-      }
-
-      toString(): string {
-         return str.quotes + this.str + str.quotes
-      }
-   }
-
-   export class Var extends Lexeme {
-      constructor(str: string) {
-         super(str)
-      }
-
-      __Var(): void {
-         // discriminator
-      }
-   }
-}
+import { VersionedObject, PersistentObject, create } from "./Runtime"
 
 export type Value = Value.Value
 
@@ -166,165 +90,6 @@ export namespace Value {
    }
 }
 
-export type Expr = Expr.Expr
-
-export namespace Expr {
-   export class Expr extends VersionedObject<ExternalObject> {
-      __Expr(): void {
-         // discriminator
-      }
-   }
-
-   export class App extends Expr {
-      func: Expr
-      arg: Expr
-
-      static at (i: ExternalObject, func: Expr, arg: Expr): App {
-         const this_: App = create(i, App)
-         this_.func = func
-         this_.arg = arg
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class ConstInt extends Expr {
-      val: number
-   
-      static at (i: ExternalObject, val: number): ConstInt {
-         const this_: ConstInt = create(i, ConstInt)
-         this_.val = __check(val, x => !Number.isNaN(x))
-         this_.__version()
-         return this_
-      }
-   }
-   
-   export class ConstStr extends Expr {
-      val: string
-   
-      static at (i: ExternalObject, val: string): ConstStr {
-         const this_: ConstStr = create(i, ConstStr)
-         this_.val = val
-         this_.__version()
-         return this_
-      }
-   }
-   
-   export class Constr extends Expr {
-      ctr: Lex.Ctr
-      args: List<Expr>
-   
-      static at (i: ExternalObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
-         const this_: Constr = create(i, Constr)
-         this_.ctr = ctr
-         this_.args = args
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class Fun extends Expr {
-      σ: Trie
-
-      static at (i: ExternalObject, σ: Trie): Fun {
-         const this_: Fun = create(i, Fun)
-         this_.σ = σ
-         this_.__version()
-         return this_
-      }
-   }
-
-   // A let is simply a match where the trie is a variable trie.
-   export class Let extends Expr {
-      e: Expr
-      σ: Trie.Var
-
-      static at (i: ExternalObject, e: Expr, σ: Trie.Var): Let {
-         const this_: Let = create(i, Let)
-         this_.e = e
-         this_.σ = σ
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class PrimOp extends Expr {
-      op: UnaryOp
-
-      static at (i: ExternalObject, op: UnaryOp): PrimOp {
-         const this_: PrimOp = create(i, PrimOp)
-         this_.op = op
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class RecDef extends VersionedObject<ExternalObject> {
-      x: Lex.Var
-      e: Expr
-   
-      static at (α: ExternalObject, x: Lex.Var, e: Expr): RecDef {
-         const this_: RecDef = create(α, RecDef)
-         this_.x = x
-         this_.e = e
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class LetRec extends Expr {
-      δ: List<RecDef>
-      e: Expr
-
-      static at (i: ExternalObject, δ: List<RecDef>, e: Expr): LetRec {
-         const this_: LetRec = create(i, LetRec)
-         this_.δ = δ
-         this_.e = e
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class MatchAs extends Expr {
-      e: Expr
-      σ: Trie
-   
-      static at (i: ExternalObject, e: Expr, σ: Trie): MatchAs {
-         const this_: MatchAs = create(i, MatchAs)
-         this_.e = e
-         this_.σ = σ
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class PrimApp extends Expr {
-      e1: Expr
-      opName: Lex.OpName
-      e2: Expr
-
-      static at (i: ExternalObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
-         const this_: PrimApp = create(i, PrimApp)
-         this_.e1 = e1
-         this_.opName = opName
-         this_.e2 = e2
-         this_.__version()
-         return this_
-      }
-   }
-
-   export class Var extends Expr {
-      x: Lex.Var
-   
-      static at (i: ExternalObject, x: Lex.Var): Var {
-         const this_: Var = create(i, Var)
-         this_.x = x
-         this_.__version()
-         return this_
-      }
-   }
-}
-
 // Rename to Explained?
 export class Traced extends PersistentObject {
    t: Trace
@@ -339,16 +104,15 @@ export class Traced extends PersistentObject {
 }
 
 // Tries used to have type parameter K, as per the formalism, but in TypeScript it didn't really help.
-export type Kont = Expr | Traced | Trie | null
+export type Kont = Traced | Trie | null
 
 // Tries are persistent but not versioned, as per the formalism.
 export type Trie = Trie.Trie
 
 export namespace Trie {
-   export class Trie extends PersistentObject implements JoinSemilattice<Trie> {
-
-      join (σ: Trie): Trie {
-         return join(this, σ)
+   export class Trie extends PersistentObject {
+      __Trie (): void {
+         // discriminator
       }
    }
 
@@ -401,29 +165,6 @@ export namespace Trie {
          this_.x = x
          this_.κ = κ
          return this_
-      }
-   }
-
-   // join of expressions is undefined, which effectively means case branches never overlap.
-   function joinKont (κ: Kont, κʹ: Kont): Kont {
-      if (κ instanceof Trie && κʹ instanceof Trie) {
-         return join(κ, κʹ)
-      } else {
-         return assert(false, "Undefined join.", κ, κʹ)
-      }
-   }
-
-   export function join (σ: Trie, τ: Trie): Trie {
-      if (σ instanceof Fun && τ instanceof Fun) {
-         return Fun.make(joinKont(σ.κ, τ.κ))
-      } else
-      if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
-         return Var.make(σ.x, joinKont(σ.κ, τ.κ))
-      } else
-      if (σ instanceof Constr && τ instanceof Constr) {
-         return Constr.make(unionWith(σ.cases, τ.cases, joinKont))
-      } else {
-         return assert(false, "Undefined join.", σ, τ)
       }
    }
 }

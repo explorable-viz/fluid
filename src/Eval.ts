@@ -1,11 +1,12 @@
 import { __nonNull, absurd, as, assert, make } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
+import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { Expr, Kont, MatchedKont, MatchedTrie, Trace, Traced, TracedMatchedTrie, Trie, Value } from "./Syntax"
 import { PersistentObject } from "./Runtime";
+import { Kont, MatchedKont, MatchedTrie, Trace, Traced, TracedMatchedTrie, Trie, Value } from "./Traced"
 
 export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
    j: EnvEntries
@@ -51,7 +52,7 @@ function evalArgs (ρ: Env, κ: Kont, es: List<Traced>): Results {
 }
 
 // Probably want to memoise instantiate.
-export function eval_<T extends PersistentObject | null> (ρ: Env, tv: Traced, σ: Trie): Result {
+export function eval_ (ρ: Env, tv: Traced, σ: Trie): Result {
    return evalT(ρ, instantiate(ρ)(tv.t!.__id.e), σ)
 }
 
@@ -151,11 +152,7 @@ function matchArgs (κ: Kont, vs: List<Traced>): MatchedKont {
       TracedMatchedTrie.make(vs.head.t, ξ)
    } else
    if (Nil.is(vs)) {
-      if (κ instanceof Expr.Expr) {
-         return absurd()
-      } else {
-         return κ
-      }
+      return κ
    } else {
       return absurd()
    }
@@ -177,9 +174,6 @@ export function match (σ: Trie, v: Value | null): MatchedTrie {
    } else
    if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
       return MatchedTrie.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
-         if (κ instanceof Expr.Expr) {
-            return absurd()
-         } else 
          if (v.ctr.str === ctr) {
             return Pair.make(ctr, matchArgs(κ, v.args))
          } else {

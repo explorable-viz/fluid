@@ -1,8 +1,9 @@
-import { absurd, assert } from "./util/Core"
+import { absurd } from "./util/Core"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
-import { Expr, Trace, Traced, Trie, Kont, Value } from "./Syntax"
+import { Expr } from "./Expr"
+import { Trace, Traced, Trie, Kont, Value } from "./Traced"
 
 export function instantiate (ρ: Env): (e: Expr) => Traced {
    return function (e: Expr.Expr): Traced {
@@ -54,37 +55,35 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
-// Turns an "expression" trie body into a "traced value" trie body.
-function instantiateKont (ρ: Env, κ: Kont): Kont {
-   if (κ instanceof Trie.Trie) {
+function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
+   if (κ instanceof Expr.Trie.Trie) {
       return instantiateTrie(ρ, κ)
    } else
    if (κ instanceof Expr.Expr) {
       return instantiate(ρ)(κ)
    } else {
-      return assert(false)
+      return absurd()
    }
 }
 
-// Turns trie of expressions into trie of traced values.
-function instantiateTrie (ρ: Env, σ: Trie): Trie {
-   if (σ instanceof Trie.Var) {
+function instantiateTrie (ρ: Env, σ: Expr.Trie): Trie {
+   if (σ instanceof Expr.Trie.Var) {
       return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
    } else
-   if (σ instanceof Trie.ConstInt) {
+   if (σ instanceof Expr.Trie.ConstInt) {
       return Trie.ConstInt.make(instantiateKont(ρ, σ.κ))
    } else
-   if (σ instanceof Trie.ConstStr) {
+   if (σ instanceof Expr.Trie.ConstStr) {
       return Trie.ConstStr.make(instantiateKont(ρ, σ.κ))
    } else
-   if (σ instanceof Trie.Constr) {
+   if (σ instanceof Expr.Trie.Constr) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: κ }: Pair<string, Kont>): Pair<string, Kont> => {
+         ({ fst: ctr, snd: κ }: Pair<string, Expr.Kont>): Pair<string, Kont> => {
             return Pair.make(ctr, instantiateKont(ρ, κ))
          })
       )
    } else
-   if (σ instanceof Trie.Fun) {
+   if (σ instanceof Expr.Trie.Fun) {
       return Trie.Fun.make(instantiateKont(ρ, σ.κ))
    } else {
       return absurd()
