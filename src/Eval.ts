@@ -6,7 +6,7 @@ import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { PersistentObject } from "./Runtime";
-import { Kont, MatchedKont, MatchedTrie, Trace, Traced, TracedMatchedTrie, Trie, Value } from "./Traced"
+import { Kont, MatchedKont, Match, Trace, Traced, TracedMatch, Trie, Value } from "./Traced"
 
 export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
    j: EnvEntries
@@ -145,39 +145,39 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
    }
 }
 
-function matchArgs (vs: List<Traced>): (σ: MatchedKont) => TracedMatchedTrie {
+function matchArgs (vs: List<Traced>): (σ: MatchedKont) => TracedMatch {
    return (σ: MatchedKont) => {
       as(σ, Trie.Trie)
       return null as any
    }
 }
 
-function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont, ξ: MatchedTrie): MatchedTrie {
+function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont, ξ: Match): Match {
 }
 
 // The matched trie for any evaluation with demand σ yielding value v.
-export function match (σ: Trie, v: Value | null): MatchedTrie {
+export function match (σ: Trie, v: Value | null): Match {
    if (σ instanceof Trie.Var && v === null) {
-      return MatchedTrie.Var.make(σ.x, σ.κ)
+      return Match.Var.make(σ.x, σ.κ)
    } else
    if (σ instanceof Trie.Fun && v instanceof Value.Closure) {
-      return MatchedTrie.Fun.make(v.ρ, v.σ, σ.κ)
+      return Match.Fun.make(v.ρ, v.σ, σ.κ)
    } else
    if (σ instanceof Trie.ConstInt && v instanceof Value.ConstInt) {
-      return MatchedTrie.ConstInt.make(v.val, σ.κ)
+      return Match.ConstInt.make(v.val, σ.κ)
    } else
    if (σ instanceof Trie.ConstStr && v instanceof Value.ConstStr) {
-      return MatchedTrie.ConstStr.make(v.val, σ.κ)
+      return Match.ConstStr.make(v.val, σ.κ)
    } else
    if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
-      return MatchedTrie.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
+      return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
          if (v.ctr.str === ctr) {
             // Parser ensures constructor patterns agree with constructor signatures.
             if (Cons.is(v.args) && κ instanceof Trie.Trie) {
-               const ξ: MatchedTrie = match(κ, v.args.head.v), 
-                     inj = (σ: MatchedKont) => TracedMatchedTrie.make(null, MatchedTrie.Inj.make(as(σ, Trie.Trie)))
+               const ξ: Match = match(κ, v.args.head.v), 
+                     inj = (σ: MatchedKont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
                // codomain of ξ is chain of *tries* which we now promote to traced matched tries:
-               return Pair.make(ctr, TracedMatchedTrie.make(v.args.head.t, map(matchArgs(v.args.tail), inj, ξ)))
+               return Pair.make(ctr, TracedMatch.make(v.args.head.t, map(matchArgs(v.args.tail), inj, ξ)))
             } else
             if (Nil.is(v.args)) {
                return Pair.make(ctr, κ)

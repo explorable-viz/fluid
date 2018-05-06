@@ -169,32 +169,32 @@ export namespace Trie {
    }
 }
 
-export class TracedMatchedTrie extends PersistentObject {
+export class TracedMatch extends PersistentObject {
    t: Trace | null // null iff ξ represents a dead branch
-   ξ: MatchedTrie
+   ξ: Match
 
-   static make (t: Trace | null, ξ: MatchedTrie): TracedMatchedTrie {
-      const this_: TracedMatchedTrie = make(TracedMatchedTrie, t, ξ)
+   static make (t: Trace | null, ξ: Match): TracedMatch {
+      const this_: TracedMatch = make(TracedMatch, t, ξ)
       this_.t = t
       this_.ξ = ξ
       return this_
    }
 }
 
-// Matched tries should have (executed) traced values as their bodies, but that requires more plugging in.
-export type MatchedKont = Traced | Trie | TracedMatchedTrie | null
+// Matched tries will eventually have *executed* traced values as their bodies, but not yet.
+export type MatchedKont = Traced | Trie | TracedMatch | null
 
-export type MatchedTrie = MatchedTrie.MatchedTrie
+export type Match = Match.Match
 
-export namespace MatchedTrie {
-   export class MatchedTrie extends PersistentObject {
-      __MatchedTrie (): void {
+export namespace Match {
+   export class Match extends PersistentObject {
+      __Match (): void {
          // discriminator
       }
    }
 
    // Embeds the tries into the matched tries.
-   export class Inj extends MatchedTrie {
+   export class Inj extends Match {
       σ: Trie
       
       static make (σ: Trie): Inj {
@@ -204,7 +204,7 @@ export namespace MatchedTrie {
       }
    }
 
-   export class Prim extends MatchedTrie {
+   export class Prim extends Match {
       κ: Kont
    }
 
@@ -230,7 +230,7 @@ export namespace MatchedTrie {
       }
    }
 
-   export class Constr extends MatchedTrie {
+   export class Constr extends Match {
       cases: FiniteMap<string, MatchedKont> // exactly one will be "live"
 
       static make (cases: FiniteMap<string, MatchedKont>): Constr {
@@ -240,7 +240,7 @@ export namespace MatchedTrie {
       }
    }
 
-   export class Fun extends MatchedTrie {
+   export class Fun extends Match {
       ρ: Env
       σ: Trie
       κ: Kont
@@ -255,7 +255,7 @@ export namespace MatchedTrie {
    }
 
    // Any extra information a matched variable trie should carry?
-   export class Var extends MatchedTrie {
+   export class Var extends Match {
       x: Lex.Var
       κ: Kont
 
