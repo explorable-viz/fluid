@@ -153,7 +153,7 @@ function matchArgs (vs: List<Traced>): (σ: Trie.Args) => Match.Args {
          const ξ: Match = match(σ, vs.head.v), 
                inj = (σ: MatchedKont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
          // codomain of ξ is chain of *tries*; promote to traced matches, until arguments run out:
-         return TracedMatch.make(vs.head.t, map(matchArgs(vs.tail), inj)(ξ))
+         return Match.Cons.make(TracedMatch.make(vs.head.t, map(matchArgs(vs.tail), inj)(ξ)))
       } else
       if (Nil.is(vs) && σ instanceof Trie.Nil) {
          return κ
