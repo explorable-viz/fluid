@@ -256,6 +256,22 @@ export namespace Expr {
          κ: Kont
       }
 
+      export class ConstInt extends Prim {
+         static make (κ: Kont): ConstInt {
+            const this_: ConstInt = make(ConstInt, κ)
+            this_.κ = κ
+            return this_
+         }
+      }
+
+      export class ConstStr extends Prim {
+         static make (κ: Kont): ConstStr {
+            const this_: ConstStr = make(ConstStr, κ)
+            this_.κ = κ
+            return this_
+         }
+      }
+
       // n-ary product
       export class Args extends Trie {
          __Args (): void {
@@ -281,22 +297,6 @@ export namespace Expr {
          static make (σ: Trie): Cons {
             const this_: Cons = make(Cons, σ)
             this_.σ = σ
-            return this_
-         }
-      }
-
-      export class ConstInt extends Prim {
-         static make (κ: Kont): ConstInt {
-            const this_: ConstInt = make(ConstInt, κ)
-            this_.κ = κ
-            return this_
-         }
-      }
-
-      export class ConstStr extends Prim {
-         static make (κ: Kont): ConstStr {
-            const this_: ConstStr = make(ConstStr, κ)
-            this_.κ = κ
             return this_
          }
       }

@@ -76,10 +76,16 @@ function instantiateTrie (ρ: Env, σ: Expr.Trie): Trie {
    if (σ instanceof Expr.Trie.ConstStr) {
       return Trie.ConstStr.make(instantiateKont(ρ, σ.κ))
    } else
+   if (σ instanceof Expr.Trie.Nil) {
+      return Trie.Nil.make(instantiateKont(ρ, σ.κ))
+   } else
+   if (σ instanceof Expr.Trie.Cons) {
+      return Trie.Cons.make(instantiateTrie(ρ, σ))
+   } else
    if (σ instanceof Expr.Trie.Constr) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: κ }: Pair<string, Expr.Kont>): Pair<string, Kont> => {
-            return Pair.make(ctr, instantiateKont(ρ, κ))
+         ({ fst: ctr, snd: σ }: Pair<string, Expr.Trie.Args>): Pair<string, Trie.Args> => {
+            return Pair.make(ctr, instantiateTrie(ρ, σ) as Trie.Args)
          })
       )
    } else
