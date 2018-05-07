@@ -1,5 +1,6 @@
 import { __nonNull, absurd, as, assert, make } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
+import { arity } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
@@ -192,13 +193,14 @@ function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => Match
       } else
       if (ξ instanceof Match.Var) {
          return Match.Var.make(ξ.x, f(ξ.κ))
-      } else
+      } else 
       if (ξ instanceof Match.Constr) {
          return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
-            if (/*ctr active */) {
-
+            const n: number = arity(ctr)
+            if (true /*ctr active */) {
+               return Pair.make(ctr, mapArgs(f, g, n))
             } else {
-               return Pair.make(ctr, mapArgs(g, g, ))
+               return Pair.make(ctr, mapArgs(g, g, n))
             }
          }))
       } else {

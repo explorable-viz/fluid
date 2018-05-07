@@ -237,16 +237,11 @@ const pair: Parser<Expr.Constr> =
          Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern (n: number, p: Parser<Expr.Kont>): Parser<Expr.Trie> {
-   return (state: ParseState) => {
-      assert(n >= 1, "Too many parameters in constructor pattern.")
-      return pattern(choice([
-         dropFirst(symbol(","), args_pattern(n - 1, p)), 
-         satisfying(p, () => {
-            assert(n === 1, "Too few parameters in constructor pattern.")
-            return true
-         })
-      ]))(state)
+function args_pattern (n: number, p: Parser<Expr.Kont>): Parser<Expr.Trie.Args> {
+   if (n === 0) {
+      return withAction(p, (κ: Expr.Kont) => Expr.Trie.Nil.make(κ))
+   } else {
+      return withAction(pattern(args_pattern(n - 1, p)), (σ: Expr.Trie) => Expr.Trie.Cons.make(σ))
    }
 }
 
@@ -255,29 +250,24 @@ function constr_pattern (p: Parser<Expr.Kont>): Parser<Expr.Trie.Constr> {
    return withAction(
       seqDep(
          ctr, 
-         (ctr: Lex.Ctr) => {
+         (ctr: Lex.Ctr): Parser<Expr.Trie.Args> => {
             const n: number = arity(ctr.str)
-            return choice([
-               dropFirst(symbol(str.parenL), args_pattern(n, dropFirst(symbol(str.parenR), p))),
-               satisfying(p, () => {
-                  assert(n === 0, "Too few parameters in constructor pattern.")
-                  return true
-               })
-            ])
+            if (n === 0) {
+               return withAction(p, (κ: Expr.Kont) => Expr.Trie.Nil.make(κ))
+            } else {
+               return dropFirst(symbol(str.parenL), args_pattern(n, dropFirst(symbol(str.parenR), p)))
+            }
          }
       ),
-      ([ctr, κ]: [Lex.Ctr, Expr.Kont]): Expr.Trie.Constr =>
-         Expr.Trie.Constr.make(singleton(ctr.str, κ))
+      ([ctr, σ]: [Lex.Ctr, Expr.Trie.Args]): Expr.Trie.Constr =>
+         Expr.Trie.Constr.make(singleton(ctr.str, σ))
    )
 }
 
 function pair_pattern (p: Parser<Expr.Kont>): Parser<Expr.Trie.Constr> {
    return withAction(
-      dropFirst(
-         symbol(str.parenL), 
-         pattern(dropFirst(symbol(","), pattern(dropFirst(symbol(str.parenR), p))))
-      ),
-      (σ: Expr.Trie): Expr.Trie.Constr => Expr.Trie.Constr.make(singleton("Pair", σ))
+      dropFirst(symbol(str.parenL), args_pattern(2, dropFirst(symbol(str.parenR), p))),
+      (σ: Expr.Trie.Args): Expr.Trie.Constr => Expr.Trie.Constr.make(singleton("Pair", σ))
    )
 }
 

@@ -247,7 +247,6 @@ export namespace Expr {
 
    export namespace Trie {
       export class Trie extends PersistentObject implements JoinSemilattice<Trie> {
-
          join (σ: Trie): Trie {
             return join(this, σ)
          }
@@ -255,6 +254,35 @@ export namespace Expr {
 
       export class Prim extends Trie {
          κ: Kont
+      }
+
+      // n-ary product
+      export class Args extends Trie {
+         __Args (): void {
+            // discriminator
+         }
+      }
+
+      // Maps zero arguments to κ.
+      export class Nil extends Args {
+         κ: Kont
+
+         static make (κ: Kont): Nil {
+            const this_: Nil = make(Nil, κ)
+            this_.κ = κ
+            return this_
+         }
+      }
+
+      // Maps a single argument to another args trie.
+      export class Cons extends Args {
+         σ: Trie
+
+         static make (σ: Trie): Cons {
+            const this_: Cons = make(Cons, σ)
+            this_.σ = σ
+            return this_
+         }
       }
 
       export class ConstInt extends Prim {
@@ -273,10 +301,11 @@ export namespace Expr {
          }
       }
 
+      // n-ary sum of n-ary products.
       export class Constr extends Trie {
-         cases: FiniteMap<string, Kont>
+         cases: FiniteMap<string, Args>
 
-         static make (cases: FiniteMap<string, Kont>): Constr {
+         static make (cases: FiniteMap<string, Args>): Constr {
             const this_: Constr = make(Constr, cases)
             this_.cases = cases
             return this_
@@ -314,6 +343,7 @@ export namespace Expr {
          }
       }
 
+      // Want to give this a polymorphic type, but doesn't work properly with instanceof.
       export function join (σ: Trie, τ: Trie): Trie {
          if (σ instanceof Fun && τ instanceof Fun) {
             return Fun.make(joinKont(σ.κ, τ.κ))
@@ -321,8 +351,14 @@ export namespace Expr {
          if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
             return Var.make(σ.x, joinKont(σ.κ, τ.κ))
          } else
+         if (σ instanceof Nil && τ instanceof Nil) {
+            return Nil.make(joinKont(σ.κ, τ.κ))
+         } else
+         if (σ instanceof Cons && τ instanceof Cons) {
+            return Cons.make(join(σ.σ, τ.σ))
+         } else
          if (σ instanceof Constr && τ instanceof Constr) {
-            return Constr.make(unionWith(σ.cases, τ.cases, joinKont))
+            return Constr.make(unionWith(σ.cases, τ.cases, join as (σ: Args, τ: Args) => Args))
          } else {
             return assert(false, "Undefined join.", σ, τ)
          }
