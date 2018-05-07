@@ -277,11 +277,11 @@ export namespace Match {
    }
 
    export class Cons extends Args {
-      ξ: Match
+      tξ: TracedMatch
 
-      static make (ξ: Match): Cons {
-         const this_: Cons = make(Cons, ξ)
-         this_.ξ = ξ
+      static make (tξ: TracedMatch): Cons {
+         const this_: Cons = make(Cons, tξ)
+         this_.tξ = tξ
          return this_
       }
    }

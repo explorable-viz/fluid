@@ -146,8 +146,8 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
    }
 }
 
-function matchArgs (vs: List<Traced>): (σ: Trie.Args) => MatchedKont {
-   return (σ: Trie.Args): MatchedKont => {
+function matchArgs (vs: List<Traced>): (σ: Trie.Args) => Match.Args {
+   return (σ: Trie.Args): Match.Args => {
       // Parser ensures constructor patterns agree with constructor signatures.
       if (Cons.is(vs) && σ instanceof Trie.Cons) {
          const ξ: Match = match(σ, vs.head.v), 
