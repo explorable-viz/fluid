@@ -146,16 +146,16 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
    }
 }
 
-function matchArgs (vs: List<Traced>): (κ: MatchedKont) => MatchedKont {
-   return (κ: MatchedKont): MatchedKont => {
+function matchArgs (vs: List<Traced>): (σ: Trie.Args) => MatchedKont {
+   return (σ: Trie.Args): MatchedKont => {
       // Parser ensures constructor patterns agree with constructor signatures.
-      if (Cons.is(vs) && κ instanceof Trie.Trie) {
-         const ξ: Match = match(κ, vs.head.v), 
+      if (Cons.is(vs) && σ instanceof Trie.Cons) {
+         const ξ: Match = match(σ, vs.head.v), 
                inj = (σ: MatchedKont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
          // codomain of ξ is chain of *tries*; promote to traced matches, until arguments run out:
          return TracedMatch.make(vs.head.t, map(matchArgs(vs.tail), inj)(ξ))
       } else
-      if (Nil.is(vs)) {
+      if (Nil.is(vs) && σ instanceof Trie.Nil) {
          return κ
       } else {
          return absurd()
@@ -195,7 +195,7 @@ function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => Match
          return Match.Var.make(ξ.x, f(ξ.κ))
       } else 
       if (ξ instanceof Match.Constr) {
-         return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
+         return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: κ }): Pair<string, Match.Args> => {
             const n: number = arity(ctr)
             if (true /*ctr active */) {
                return Pair.make(ctr, mapArgs(f, g, n))
@@ -224,11 +224,11 @@ export function match (σ: Trie, v: Value | null): Match {
       return Match.ConstStr.make(v.val, σ.κ)
    } else
    if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
-      return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: κ }): Pair<string, MatchedKont> => {
+      return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: σ }): Pair<string, MatchedKont> => {
          if (v.ctr.str === ctr) {
-            return Pair.make(ctr, matchArgs(v.args)(κ))
+            return Pair.make(ctr, matchArgs(v.args)(σ))
          } else {
-            return Pair.make(ctr, κ)
+            return Pair.make(ctr, σ)
          }
       }))
    } else {

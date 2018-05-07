@@ -260,6 +260,32 @@ export namespace Match {
       }
    }
 
+   export class Args extends Match {
+      __Args (): void {
+         // discriminator
+      }
+   }
+
+   export class Nil extends Args {
+      κ: MatchedKont
+
+      static make (κ: MatchedKont): Nil {
+         const this_: Nil = make(Nil, κ)
+         this_.κ = κ
+         return this_
+      }
+   }
+
+   export class Cons extends Args {
+      ξ: Match
+
+      static make (ξ: Match): Cons {
+         const this_: Cons = make(Cons, ξ)
+         this_.ξ = ξ
+         return this_
+      }
+   }
+
    // Exactly one branch will be live, although currently no easy way to tell.
    export class Constr extends Match {
       cases: FiniteMap<string, MatchedKont> 
