@@ -206,12 +206,14 @@ function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => Match
          return Match.Var.make(ξ.x, f(ξ.κ))
       } else 
       if (ξ instanceof Match.Constr) {
-         return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: κ }): Pair<string, Match.Args> => {
-            const n: number = arity(ctr)
-            if (true /*ctr active */) {
-               return Pair.make(ctr, mapArgs(f, g, n))
+         return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ξ }): Pair<string, Trie.Args | Match.Args> => {
+            if (Π_or_Ξ instanceof Match.Args) {
+               return Pair.make(ctr, mapArgs(f, g))
+            } else
+            if (Π_or_Ξ instanceof Trie.Args) {
+               return Pair.make(ctr, mapArgs(g, g))
             } else {
-               return Pair.make(ctr, mapArgs(g, g, n))
+               return absurd()
             }
          }))
       } else {
@@ -222,8 +224,7 @@ function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => Match
 
 function mapArgs (
    f: (κ: MatchedKont) => MatchedKont, 
-   g: (κ: MatchedKont) => MatchedKont, 
-   n: number
+   g: (κ: MatchedKont) => MatchedKont
 ): (κ: MatchedKont) => MatchedKont {
    return (κ: MatchedKont): MatchedKont => {
       if (n > 0) {
