@@ -156,7 +156,7 @@ function matchArgs (vs: List<Traced>): (σ: Trie.Args) => Match.Args {
          return Match.Cons.make(TracedMatch.make(vs.head.t, map(matchArgs(vs.tail), inj)(ξ)))
       } else
       if (Nil.is(vs) && σ instanceof Trie.Nil) {
-         return κ
+         return Match.Nil.make(σ.κ)
       } else {
          return absurd()
       }

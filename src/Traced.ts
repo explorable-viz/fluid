@@ -311,7 +311,7 @@ export namespace Match {
       }
    }
 
-   // Any extra information a variable math should carry?
+   // Any extra information a variable match should carry?
    export class Var extends Match {
       x: Lex.Var
       κ: MatchedKont
