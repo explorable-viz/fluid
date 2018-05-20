@@ -7,7 +7,7 @@ import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { PersistentObject } from "./Runtime";
-import { Kont, MatchedKont, Match, Trace, Traced, TracedMatch, Trie, Value } from "./Traced"
+import { Kont, MatchKont, Match, Trace, Traced, TracedMatch, Trie, Value } from "./Traced"
 
 export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
    j: EnvEntries
@@ -42,11 +42,11 @@ export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.Rec
 function evalArgs (ρ: Env, σ: Trie.Args, es: List<Traced>): Results {
    if (Cons.is(es) && σ instanceof Trie.Cons) {
       const [tv, ρʹ, σʹ]: Result = eval_(ρ, es.head, σ.σ),
-            [tvs, ρʺ, κ]: Results = evalArgs(ρ, σʹ as Trie.Args, es.tail)
+            [tvs, ρʺ, κ]: Results = evalArgs(ρ, as(σʹ, Trie.Args), es.tail)
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ]
    } else
    if (Nil.is(es) && σ instanceof Trie.Nil) {
-      return [Nil.make(), Env.empty(), σ.κ]
+      return [Nil.make(), Env.empty(), σ.κ] | Trie.Args
    } else {
       return absurd()
    }
@@ -178,8 +178,8 @@ function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
       // Parser ensures constructor patterns agree with constructor signatures.
       if (Cons.is(tvs) && Π instanceof Trie.Cons) {
          const ξ: Match = match(Π.σ, tvs.head.v), 
-               matchArgsʹ = (Π: MatchedKont): Match.Args => matchArgs(tvs.tail)(as(Π, Trie.Args)),
-               inj = (σ: MatchedKont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
+               matchArgsʹ = (Π: MatchKont): Match.Args => matchArgs(tvs.tail)(as(Π, Trie.Args)),
+               inj = (σ: Kont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
          // codomain of ξ is another Trie.Args; promote to Match.Args:
          return Match.Cons.make(TracedMatch.make(tvs.head.t, mapMatch(matchArgsʹ, inj)(ξ)))
       } else
@@ -191,7 +191,7 @@ function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
    }
 }
 
-function mapMatch (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont): (ξ: Match) => Match {
+function mapMatch (f: (κ: MatchKont) => MatchKont, g: (κ: Kont) => Kont): (ξ: Match) => Match {
    return (ξ: Match): Match => {
       if (ξ instanceof Match.ConstInt) {
          return Match.ConstInt.make(ξ.val, f(ξ.κ))
@@ -222,20 +222,48 @@ function mapMatch (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => 
    }
 }
 
-function mapTrieArgs (f: (κ: Kont) => Kont): (Π: Trie.Args) => Trie.Args {
-   return (Π: Trie.Args): Trie.Args => {
-      if (Π instanceof Trie.Nil) {
-         return Trie.Nil.make(f(Π.κ))
+function mapTrie (f: (κ: Kont) => Kont): (σ: Trie.Trie) => Trie.Trie {
+   return (σ: Trie.Trie): Trie.Trie => {
+      if (σ instanceof Trie.ConstInt) {
+         return Trie.ConstInt.make(f(σ.κ))
       } else
-      if (Π instanceof Trie.Cons) {
-         return Trie.Cons.make(Π.σ)
+      if (σ instanceof Trie.ConstStr) {
+         return Trie.ConstStr.make(f(σ.κ))
+      } else
+      if (σ instanceof Trie.Fun) {
+         return Trie.Fun.make(f(σ.κ))
+      } else
+      if (σ instanceof Trie.Var) {
+         return Trie.Var.make(σ.x, f(σ.κ))
+      } else 
+      if (σ instanceof Trie.Constr) {
+         return Trie.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Trie.Args> => {
+            if (Π instanceof Trie.Args) {
+               return Pair.make(ctr, mapTrieArgs(f)(Π))
+            } else {
+               return absurd()
+            }
+         }))
       } else {
          return absurd()
       }
    }
 }
 
-function mapMatchArgs (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont): (Ψ: Match.Args) => Match.Args {
+function mapTrieArgs (f: (κ: Kont) => Kont): (Π: Trie.Args) => Trie.Args {
+   return (Π: Trie.Args): Trie.Args => {
+      if (Π instanceof Trie.Nil) {
+         return Trie.Nil.make(f(Π.κ))
+      } else
+      if (Π instanceof Trie.Cons) {
+         return Trie.Cons.make(mapTrie(f)(Π.σ))
+      } else {
+         return absurd()
+      }
+   }
+}
+
+function mapMatchArgs (f: (κ: MatchKont) => MatchKont, g: (κ: Kont) => Kont): (Ψ: Match.Args) => Match.Args {
    return (Ψ: Match.Args): Match.Args => {
       if (Ψ instanceof Match.Nil) {
          return Match.Nil.make(f(Ψ.κ))

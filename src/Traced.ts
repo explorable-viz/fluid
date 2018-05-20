@@ -104,7 +104,7 @@ export class Traced extends PersistentObject {
 }
 
 // Tries used to have type parameter K, as per the formalism, but in TypeScript it didn't really help.
-export type Kont = Traced | Trie | null
+export type Kont = Traced | Trie | Trie.Args | null
 
 // Tries are persistent but not versioned, as per the formalism.
 export type Trie = Trie.Trie
@@ -211,7 +211,7 @@ export class TracedMatch extends PersistentObject {
 }
 
 // Matched tries will eventually have *executed* traced values as their bodies, but not yet.
-export type MatchedKont = Traced | Trie | TracedMatch | Match.Args | null
+export type MatchKont = Traced | Trie | Trie.Args | TracedMatch | Match.Args | null
 
 export type Match = Match.Match
 
@@ -235,13 +235,13 @@ export namespace Match {
    }
 
    export class Prim extends Match {
-      κ: MatchedKont
+      κ: MatchKont
    }
 
    export class ConstInt extends Prim {
       val: number
 
-      static make (val: number, κ: MatchedKont): ConstInt {
+      static make (val: number, κ: MatchKont): ConstInt {
          const this_: ConstInt = make(ConstInt, val, κ)
          this_.val = val
          this_.κ = κ
@@ -252,7 +252,7 @@ export namespace Match {
    export class ConstStr extends Prim {
       val: string
 
-      static make (val: string, κ: MatchedKont): ConstStr {
+      static make (val: string, κ: MatchKont): ConstStr {
          const this_: ConstStr = make(ConstStr, val, κ)
          this_.val = val
          this_.κ = κ
@@ -267,9 +267,9 @@ export namespace Match {
    }
 
    export class Nil extends Args {
-      κ: MatchedKont
+      κ: MatchKont
 
-      static make (κ: MatchedKont): Nil {
+      static make (κ: MatchKont): Nil {
          const this_: Nil = make(Nil, κ)
          this_.κ = κ
          return this_
@@ -300,9 +300,9 @@ export namespace Match {
    export class Fun extends Match {
       ρ: Env
       σ: Trie
-      κ: MatchedKont
+      κ: MatchKont
 
-      static make (ρ: Env, σ: Trie, κ: MatchedKont): Fun {
+      static make (ρ: Env, σ: Trie, κ: MatchKont): Fun {
          const this_: Fun = make(Fun, ρ, σ, κ)
          this_.ρ = ρ
          this_.σ = σ
@@ -314,9 +314,9 @@ export namespace Match {
    // Any extra information a variable match should carry?
    export class Var extends Match {
       x: Lex.Var
-      κ: MatchedKont
+      κ: MatchKont
 
-      static make (x: Lex.Var, κ: MatchedKont): Var {
+      static make (x: Lex.Var, κ: MatchKont): Var {
          const this_: Var = make(Var, x, κ)
          this_.x = x
          this_.κ = κ
