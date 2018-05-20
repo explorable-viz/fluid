@@ -37,7 +37,7 @@ describe("example", () => {
 	describe("filter", () => {
 		const file: TestFile = loadExample("filter")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.var_(null)))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
@@ -65,42 +65,42 @@ describe("example", () => {
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
 		it("parses ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.some(τ.arg(τ.str(null))))
+			runTest(__nonNull(file.text), Profile.Run, τ.some(τ.arg(τ.str(τ.endArgs(null)))))
 		})
 	})
 
 	describe("map", () => {
 		const file: TestFile = loadExample("map")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.var_(null)))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("mergeSort", () => {
 		const file: TestFile = loadExample("mergeSort")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.var_(null)))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("normalise", () => {
 		const file: TestFile = loadExample("normalise")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.pair(τ.arg(τ.int(τ.int(null)))))
+			runTest(__nonNull(file.text), Profile.Run, τ.pair(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("reverse", () => {
 		const file: TestFile = loadExample("reverse")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.var_(null)))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("zipW", () => {
 		const file: TestFile = loadExample("zipW")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.pair(τ.arg(τ.int(τ.int(τ.var_(null))))))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.pair(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.var_(τ.endArgs(null)))))))))))
 		})
 	})
 })

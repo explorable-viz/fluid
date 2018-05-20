@@ -32,16 +32,20 @@ export namespace τ {
       return Trie.Cons.make(σ)
    }
 
-   export function var_ (t: Kont): Trie {
-      return Trie.Var.make(new Lex.Var("x"), t)
+   export function endArgs (κ: Kont): Trie.Nil {
+      return Trie.Nil.make(κ)
    }
 
-   export function int (t: Kont): Trie {
-      return Trie.ConstInt.make(t)
+   export function var_ (κ: Kont): Trie {
+      return Trie.Var.make(new Lex.Var("x"), κ)
    }
 
-   export function str (t: Kont): Trie {
-      return Trie.ConstStr.make(t)
+   export function int (κ: Kont): Trie {
+      return Trie.ConstInt.make(κ)
+   }
+
+   export function str (κ: Kont): Trie {
+      return Trie.ConstStr.make(κ)
    }
 
    export function cons (Π: Trie.Args) {
