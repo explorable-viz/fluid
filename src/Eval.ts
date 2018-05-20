@@ -181,7 +181,7 @@ function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
                matchArgsʹ = (Π: MatchedKont): Match.Args => matchArgs(tvs.tail)(as(Π, Trie.Args)),
                inj = (σ: MatchedKont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
          // codomain of ξ is another Trie.Args; promote to Match.Args:
-         return Match.Cons.make(TracedMatch.make(tvs.head.t, map(matchArgsʹ, inj)(ξ)))
+         return Match.Cons.make(TracedMatch.make(tvs.head.t, mapMatch(matchArgsʹ, inj)(ξ)))
       } else
       if (Nil.is(tvs) && Π instanceof Trie.Nil) {
          return Match.Nil.make(Π.κ)
@@ -191,7 +191,7 @@ function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
    }
 }
 
-function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont): (ξ: Match) => Match {
+function mapMatch (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont): (ξ: Match) => Match {
    return (ξ: Match): Match => {
       if (ξ instanceof Match.ConstInt) {
          return Match.ConstInt.make(ξ.val, f(ξ.κ))
@@ -222,13 +222,13 @@ function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => Match
    }
 }
 
-function mapTrieArgs (f: (κ: MatchedKont) => MatchedKont): (Π: Trie.Args) => Trie.Args {
-   return (Π: Match.Args): Match.Args => {
-      if (Π instanceof Match.Nil) {
-         return Match.Nil.make(f(Π.κ))
+function mapTrieArgs (f: (κ: Kont) => Kont): (Π: Trie.Args) => Trie.Args {
+   return (Π: Trie.Args): Trie.Args => {
+      if (Π instanceof Trie.Nil) {
+         return Trie.Nil.make(f(Π.κ))
       } else
-      if (Π instanceof Match.Cons) {
-         return Match.Cons.make(TracedMatch.make(Π.tξ.t, map(f, g)(Π.tξ.ξ)))
+      if (Π instanceof Trie.Cons) {
+         return Trie.Cons.make(Π.σ)
       } else {
          return absurd()
       }
@@ -241,7 +241,7 @@ function mapMatchArgs (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont)
          return Match.Nil.make(f(Ψ.κ))
       } else
       if (Ψ instanceof Match.Cons) {
-         return Match.Cons.make(TracedMatch.make(Ψ.tξ.t, map(f, g)(Ψ.tξ.ξ)))
+         return Match.Cons.make(TracedMatch.make(Ψ.tξ.t, mapMatch(f, g)(Ψ.tξ.ξ)))
       } else {
          return absurd()
       }
