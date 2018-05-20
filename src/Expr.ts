@@ -272,8 +272,8 @@ export namespace Expr {
          }
       }
 
-      // n-ary product; a trie (for uniformity) but we only allow them inside constructors.
-      export class Args extends Trie {
+      // n-ary product.
+      export class Args extends PersistentObject {
          __Trie_Args (): void {
             // discriminator
          }
@@ -343,6 +343,17 @@ export namespace Expr {
          }
       }
 
+      function joinArgs (Π: Args, Πʹ: Args): Args {
+         if (Π instanceof Nil && Πʹ instanceof Nil) {
+            return Nil.make(joinKont(Π.κ, Πʹ.κ))
+         } else
+         if (Π instanceof Cons && Πʹ instanceof Cons) {
+            return Cons.make(join(Π.σ, Πʹ.σ))
+         } else {
+            return assert(false, "Undefined join.", Π, Πʹ)
+         }
+      }
+
       // Want to give this a polymorphic type, but doesn't work properly with instanceof.
       export function join (σ: Trie, τ: Trie): Trie {
          if (σ instanceof Fun && τ instanceof Fun) {
@@ -351,14 +362,8 @@ export namespace Expr {
          if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
             return Var.make(σ.x, joinKont(σ.κ, τ.κ))
          } else
-         if (σ instanceof Nil && τ instanceof Nil) {
-            return Nil.make(joinKont(σ.κ, τ.κ))
-         } else
-         if (σ instanceof Cons && τ instanceof Cons) {
-            return Cons.make(join(σ.σ, τ.σ))
-         } else
          if (σ instanceof Constr && τ instanceof Constr) {
-            return Constr.make(unionWith(σ.cases, τ.cases, join as (σ: Args, τ: Args) => Args))
+            return Constr.make(unionWith(σ.cases, τ.cases, joinArgs))
          } else {
             return assert(false, "Undefined join.", σ, τ)
          }

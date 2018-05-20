@@ -1,13 +1,12 @@
 import { __nonNull, absurd, as, assert, make } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
-import { arity } from "./DataType"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { PersistentObject } from "./Runtime";
-import { Kont, MatchKont, Match, Trace, Traced, TracedMatch, Trie, Value } from "./Traced"
+import { Kont, Match, Trace, Traced, TracedMatch, Trie, Value } from "./Traced"
 
 export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
    j: EnvEntries
@@ -46,7 +45,7 @@ function evalArgs (ρ: Env, σ: Trie.Args, es: List<Traced>): Results {
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ]
    } else
    if (Nil.is(es) && σ instanceof Trie.Nil) {
-      return [Nil.make(), Env.empty(), σ.κ] | Trie.Args
+      return [Nil.make(), Env.empty(), σ.κ]
    } else {
       return absurd()
    }
@@ -178,7 +177,7 @@ function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
       // Parser ensures constructor patterns agree with constructor signatures.
       if (Cons.is(tvs) && Π instanceof Trie.Cons) {
          const ξ: Match = match(Π.σ, tvs.head.v), 
-               matchArgsʹ = (Π: MatchKont): Match.Args => matchArgs(tvs.tail)(as(Π, Trie.Args)),
+               matchArgsʹ = (Π: Kont): Match.Args => matchArgs(tvs.tail)(as(Π, Trie.Args)),
                inj = (σ: Kont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
          // codomain of ξ is another Trie.Args; promote to Match.Args:
          return Match.Cons.make(TracedMatch.make(tvs.head.t, mapMatch(matchArgsʹ, inj)(ξ)))
@@ -191,7 +190,7 @@ function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
    }
 }
 
-function mapMatch (f: (κ: MatchKont) => MatchKont, g: (κ: Kont) => Kont): (ξ: Match) => Match {
+function mapMatch (f: (κ: Kont) => Kont, g: (κ: Kont) => Kont): (ξ: Match) => Match {
    return (ξ: Match): Match => {
       if (ξ instanceof Match.ConstInt) {
          return Match.ConstInt.make(ξ.val, f(ξ.κ))
@@ -263,7 +262,7 @@ function mapTrieArgs (f: (κ: Kont) => Kont): (Π: Trie.Args) => Trie.Args {
    }
 }
 
-function mapMatchArgs (f: (κ: MatchKont) => MatchKont, g: (κ: Kont) => Kont): (Ψ: Match.Args) => Match.Args {
+function mapMatchArgs (f: (κ: Kont) => Kont, g: (κ: Kont) => Kont): (Ψ: Match.Args) => Match.Args {
    return (Ψ: Match.Args): Match.Args => {
       if (Ψ instanceof Match.Nil) {
          return Match.Nil.make(f(Ψ.κ))
