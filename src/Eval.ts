@@ -206,12 +206,12 @@ function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => Match
          return Match.Var.make(ξ.x, f(ξ.κ))
       } else 
       if (ξ instanceof Match.Constr) {
-         return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ξ }): Pair<string, Trie.Args | Match.Args> => {
-            if (Π_or_Ξ instanceof Match.Args) {
-               return Pair.make(ctr, mapArgs(f, g))
+         return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Trie.Args | Match.Args> => {
+            if (Π_or_Ψ instanceof Match.Args) {
+               return Pair.make(ctr, mapMatchArgs(f, g)(Π_or_Ψ))
             } else
-            if (Π_or_Ξ instanceof Trie.Args) {
-               return Pair.make(ctr, mapArgs(g, g))
+            if (Π_or_Ψ instanceof Trie.Args) {
+               return Pair.make(ctr, mapTrieArgs(g)(Π_or_Ψ))
             } else {
                return absurd()
             }
@@ -222,16 +222,26 @@ function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => Match
    }
 }
 
-function mapArgs (
-   f: (κ: MatchedKont) => MatchedKont, 
-   g: (κ: MatchedKont) => MatchedKont
-): (κ: MatchedKont) => MatchedKont {
-   return (κ: MatchedKont): MatchedKont => {
-      if (n > 0) {
-
+function mapTrieArgs (f: (κ: MatchedKont) => MatchedKont): (Π: Trie.Args) => Trie.Args {
+   return (Π: Match.Args): Match.Args => {
+      if (Π instanceof Match.Nil) {
+         return Match.Nil.make(f(Π.κ))
       } else
-      if (n === 0) {
-         return κ
+      if (Π instanceof Match.Cons) {
+         return Match.Cons.make(TracedMatch.make(Π.tξ.t, map(f, g)(Π.tξ.ξ)))
+      } else {
+         return absurd()
+      }
+   }
+}
+
+function mapMatchArgs (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => MatchedKont): (Ψ: Match.Args) => Match.Args {
+   return (Ψ: Match.Args): Match.Args => {
+      if (Ψ instanceof Match.Nil) {
+         return Match.Nil.make(f(Ψ.κ))
+      } else
+      if (Ψ instanceof Match.Cons) {
+         return Match.Cons.make(TracedMatch.make(Ψ.tξ.t, map(f, g)(Ψ.tξ.ξ)))
       } else {
          return absurd()
       }

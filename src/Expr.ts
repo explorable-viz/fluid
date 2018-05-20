@@ -274,7 +274,7 @@ export namespace Expr {
 
       // n-ary product; a trie (for uniformity) but we only allow them inside constructors.
       export class Args extends Trie {
-         __Args (): void {
+         __Trie_Args (): void {
             // discriminator
          }
       }

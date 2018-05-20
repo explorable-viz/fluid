@@ -261,7 +261,7 @@ export namespace Match {
    }
 
    export class Args extends PersistentObject {
-      __Args (): void {
+      __Match_Args (): void {
          // discriminator
       }
    }
