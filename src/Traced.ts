@@ -137,7 +137,7 @@ export namespace Trie {
    }
 
    // n-ary product
-   export class Args extends Trie {
+   export class Args extends PersistentObject {
       __Args (): void {
          // discriminator
       }
@@ -211,7 +211,7 @@ export class TracedMatch extends PersistentObject {
 }
 
 // Matched tries will eventually have *executed* traced values as their bodies, but not yet.
-export type MatchedKont = Traced | Trie | TracedMatch | null
+export type MatchedKont = Traced | Trie | TracedMatch | Match.Args | null
 
 export type Match = Match.Match
 
@@ -260,7 +260,7 @@ export namespace Match {
       }
    }
 
-   export class Args extends Match {
+   export class Args extends PersistentObject {
       __Args (): void {
          // discriminator
       }
@@ -286,11 +286,11 @@ export namespace Match {
       }
    }
 
-   // Exactly one branch will be live, although currently no easy way to tell.
+   // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
    export class Constr extends Match {
-      cases: FiniteMap<string, MatchedKont> 
+      cases: FiniteMap<string, Trie.Args | Args> 
 
-      static make (cases: FiniteMap<string, MatchedKont>): Constr {
+      static make (cases: FiniteMap<string, Trie.Args | Args>): Constr {
          const this_: Constr = make(Constr, cases)
          this_.cases = cases
          return this_

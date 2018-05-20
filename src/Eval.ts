@@ -146,34 +146,45 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
    }
 }
 
-function matchArgs (vs: List<Traced>): (σ: Trie.Args) => Match.Args {
-   return (σ: Trie.Args): Match.Args => {
-      // Parser ensures constructor patterns agree with constructor signatures.
-      if (Cons.is(vs) && σ instanceof Trie.Cons) {
-         const ξ: Match = match(σ, vs.head.v), 
-               inj = (σ: MatchedKont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
-         // codomain of ξ is chain of *tries*; promote to traced matches, until arguments run out:
-         return Match.Cons.make(TracedMatch.make(vs.head.t, map(matchArgs(vs.tail), inj)(ξ)))
-      } else
-      if (Nil.is(vs) && σ instanceof Trie.Nil) {
-         return Match.Nil.make(σ.κ)
-      } else {
-         return absurd()
-      }
+// The match for any evaluation with demand σ which yielded value v.
+export function match (σ: Trie, v: Value | null): Match {
+   if (σ instanceof Trie.Var && v === null) {
+      return Match.Var.make(σ.x, σ.κ)
+   } else
+   if (σ instanceof Trie.Fun && v instanceof Value.Closure) {
+      return Match.Fun.make(v.ρ, v.σ, σ.κ)
+   } else
+   if (σ instanceof Trie.ConstInt && v instanceof Value.ConstInt) {
+      return Match.ConstInt.make(v.val, σ.κ)
+   } else
+   if (σ instanceof Trie.ConstStr && v instanceof Value.ConstStr) {
+      return Match.ConstStr.make(v.val, σ.κ)
+   } else
+   if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
+      return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Trie.Args | Match.Args> => {
+         if (v.ctr.str === ctr) {
+            return Pair.make(ctr, matchArgs(v.args)(Π))
+         } else {
+            return Pair.make(ctr, Π)
+         }
+      }))
+   } else {
+      return assert(false, "Demand mismatch.", v, σ)
    }
 }
 
-function mapArgs (
-   f: (κ: MatchedKont) => MatchedKont, 
-   g: (κ: MatchedKont) => MatchedKont, 
-   n: number
-): (κ: MatchedKont) => MatchedKont {
-   return (κ: MatchedKont): MatchedKont => {
-      if (n > 0) {
-
+function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
+   return (Π: Trie.Args): Match.Args => {
+      // Parser ensures constructor patterns agree with constructor signatures.
+      if (Cons.is(tvs) && Π instanceof Trie.Cons) {
+         const ξ: Match = match(Π.σ, tvs.head.v), 
+               matchArgsʹ = (Π: MatchedKont): Match.Args => matchArgs(tvs.tail)(as(Π, Trie.Args)),
+               inj = (σ: MatchedKont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
+         // codomain of ξ is another Trie.Args; promote to Match.Args:
+         return Match.Cons.make(TracedMatch.make(tvs.head.t, map(matchArgsʹ, inj)(ξ)))
       } else
-      if (n === 0) {
-         return κ
+      if (Nil.is(tvs) && Π instanceof Trie.Nil) {
+         return Match.Nil.make(Π.κ)
       } else {
          return absurd()
       }
@@ -209,30 +220,20 @@ function map (f: (κ: MatchedKont) => MatchedKont, g: (κ: MatchedKont) => Match
    }
 }
 
-// The match for any evaluation with demand σ which yielded value v.
-export function match (σ: Trie, v: Value | null): Match {
-   if (σ instanceof Trie.Var && v === null) {
-      return Match.Var.make(σ.x, σ.κ)
-   } else
-   if (σ instanceof Trie.Fun && v instanceof Value.Closure) {
-      return Match.Fun.make(v.ρ, v.σ, σ.κ)
-   } else
-   if (σ instanceof Trie.ConstInt && v instanceof Value.ConstInt) {
-      return Match.ConstInt.make(v.val, σ.κ)
-   } else
-   if (σ instanceof Trie.ConstStr && v instanceof Value.ConstStr) {
-      return Match.ConstStr.make(v.val, σ.κ)
-   } else
-   if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
-      return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: σ }): Pair<string, MatchedKont> => {
-         if (v.ctr.str === ctr) {
-            return Pair.make(ctr, matchArgs(v.args)(σ))
-         } else {
-            return Pair.make(ctr, σ)
-         }
-      }))
-   } else {
-      return assert(false, "Demand mismatch.", v, σ)
+function mapArgs (
+   f: (κ: MatchedKont) => MatchedKont, 
+   g: (κ: MatchedKont) => MatchedKont, 
+   n: number
+): (κ: MatchedKont) => MatchedKont {
+   return (κ: MatchedKont): MatchedKont => {
+      if (n > 0) {
+
+      } else
+      if (n === 0) {
+         return κ
+      } else {
+         return absurd()
+      }
    }
 }
 

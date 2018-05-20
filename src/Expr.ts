@@ -240,7 +240,7 @@ export namespace Expr {
    }
 
    // Distinguish tries as an expression form; using a single parameterised definition is messy.
-   export type Kont = Expr | Trie
+   export type Kont = Expr | Trie | Trie.Args
 
    // Tries are persistent but not versioned, as per the formalism.
    export type Trie = Trie.Trie
