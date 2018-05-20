@@ -37,7 +37,7 @@ describe("example", () => {
 	describe("filter", () => {
 		const file: TestFile = loadExample("filter")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.int(τ.var_(null))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.var_(null)))))
 		})
 	})
 
@@ -65,42 +65,42 @@ describe("example", () => {
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
 		it("parses ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.some(τ.str(null)))
+			runTest(__nonNull(file.text), Profile.Run, τ.some(τ.arg(τ.str(null))))
 		})
 	})
 
 	describe("map", () => {
 		const file: TestFile = loadExample("map")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.int(τ.var_(null))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.var_(null)))))
 		})
 	})
 
 	describe("mergeSort", () => {
 		const file: TestFile = loadExample("mergeSort")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.int(τ.var_(null))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.var_(null)))))
 		})
 	})
 
 	describe("normalise", () => {
 		const file: TestFile = loadExample("normalise")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.pair(τ.int(τ.int(null))))
+			runTest(__nonNull(file.text), Profile.Run, τ.pair(τ.arg(τ.int(τ.int(null)))))
 		})
 	})
 
 	describe("reverse", () => {
 		const file: TestFile = loadExample("reverse")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.int(τ.var_(null))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.var_(null)))))
 		})
 	})
 
 	describe("zipW", () => {
 		const file: TestFile = loadExample("zipW")
 		it("runs ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.pair(τ.int(τ.int(τ.var_(null))))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.pair(τ.arg(τ.int(τ.int(τ.var_(null))))))))
 		})
 	})
 })

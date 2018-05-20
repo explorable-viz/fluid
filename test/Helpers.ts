@@ -28,6 +28,10 @@ export enum Profile {
 const defaultProfile = Profile.Parse
 
 export namespace τ {
+   export function arg (σ: Trie): Trie.Cons {
+      return Trie.Cons.make(σ)
+   }
+
    export function var_ (t: Kont): Trie {
       return Trie.Var.make(new Lex.Var("x"), t)
    }
@@ -40,16 +44,16 @@ export namespace τ {
       return Trie.ConstStr.make(t)
    }
 
-   export function cons (t: Kont) {
-      return Trie.Constr.make(singleton("Cons", t))
+   export function cons (Π: Trie.Args) {
+      return Trie.Constr.make(singleton("Cons", Π))
    }
 
-   export function pair (t: Kont): Trie {
-      return Trie.Constr.make(singleton("Pair", t))
+   export function pair (Π: Trie.Args): Trie {
+      return Trie.Constr.make(singleton("Pair", Π))
    }
 
-   export function some (t: Kont): Trie {
-      return Trie.Constr.make(singleton("Some", t))
+   export function some (Π: Trie.Args): Trie {
+      return Trie.Constr.make(singleton("Some", Π))
    }
 }
 
