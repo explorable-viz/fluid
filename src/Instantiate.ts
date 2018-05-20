@@ -66,6 +66,17 @@ function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
    }
 }
 
+function instantiateArgs (ρ: Env, Π: Expr.Trie.Args): Trie.Args {
+   if (Π instanceof Expr.Trie.Nil) {
+      return Trie.Nil.make(instantiateKont(ρ, Π.κ))
+   } else
+   if (Π instanceof Expr.Trie.Cons) {
+      return Trie.Cons.make(instantiateTrie(ρ, Π.σ))
+   } else {
+      return absurd()
+   }
+}
+
 function instantiateTrie (ρ: Env, σ: Expr.Trie): Trie {
    if (σ instanceof Expr.Trie.Var) {
       return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
@@ -76,16 +87,10 @@ function instantiateTrie (ρ: Env, σ: Expr.Trie): Trie {
    if (σ instanceof Expr.Trie.ConstStr) {
       return Trie.ConstStr.make(instantiateKont(ρ, σ.κ))
    } else
-   if (σ instanceof Expr.Trie.Nil) {
-      return Trie.Nil.make(instantiateKont(ρ, σ.κ))
-   } else
-   if (σ instanceof Expr.Trie.Cons) {
-      return Trie.Cons.make(instantiateTrie(ρ, σ))
-   } else
    if (σ instanceof Expr.Trie.Constr) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: σ }: Pair<string, Expr.Trie.Args>): Pair<string, Trie.Args> => {
-            return Pair.make(ctr, instantiateTrie(ρ, σ) as Trie.Args)
+         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args>): Pair<string, Trie.Args> => {
+            return Pair.make(ctr, instantiateArgs(ρ, Π))
          })
       )
    } else
