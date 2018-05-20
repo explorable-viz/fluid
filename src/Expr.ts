@@ -27,7 +27,7 @@ export namespace Lex {
          super(str)
       }
 
-      __Ctr(): void {
+      __Lex_Ctr(): void {
          // discriminator
       }
    }
@@ -55,7 +55,7 @@ export namespace Lex {
          super(str)
       }
 
-      __OpName(): void {
+      __Lex_OpName(): void {
          // discriminator
       }
    }
@@ -75,7 +75,7 @@ export namespace Lex {
          super(str)
       }
 
-      __Var(): void {
+      __Lex_Var(): void {
          // discriminator
       }
    }
@@ -85,7 +85,7 @@ export type Expr = Expr.Expr
 
 export namespace Expr {
    export class Expr extends VersionedObject<ExternalObject> {
-      __Expr(): void {
+      __Expr_Expr(): void {
          // discriminator
       }
    }

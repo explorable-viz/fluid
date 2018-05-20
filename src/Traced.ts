@@ -11,7 +11,7 @@ export type Value = Value.Value
 
 export namespace Value {
    export class Value extends VersionedObject {
-      __Value(): void {
+      __Value_Value(): void {
          // discriminator
       }
    }
@@ -30,7 +30,7 @@ export namespace Value {
    }
 
    export class Prim extends Value {
-      __Prim(): void {
+      __Value_Prim(): void {
          // discriminator
       }
    }
@@ -111,7 +111,7 @@ export type Trie = Trie.Trie
 
 export namespace Trie {
    export class Trie extends PersistentObject {
-      __Trie (): void {
+      __Trie_Trie (): void {
          // discriminator
       }
    }
@@ -138,7 +138,7 @@ export namespace Trie {
 
    // n-ary product
    export class Args extends PersistentObject {
-      __Args (): void {
+      __Trie_Args (): void {
          // discriminator
       }
    }
@@ -218,7 +218,7 @@ export type Match = Match.Match
 // A trie which has been matched (executed) to a depth of at least one.
 export namespace Match {
    export class Match extends PersistentObject {
-      __Match (): void {
+      __Match_Match (): void {
          // discriminator
       }
    }
@@ -329,7 +329,7 @@ export type Trace = Trace.Trace
 
 export namespace Trace {
    export class Trace extends VersionedObject<Runtime<Expr>> {
-      __Trace(): void {
+      __Trace_Trace(): void {
          // discriminator
       }
    }
@@ -363,7 +363,7 @@ export namespace Trace {
       σ: Trie.Var
       t: Trace | null
 
-      __Let (): void {
+      __Trace_Let (): void {
          // discriminator
       }
 
@@ -409,7 +409,7 @@ export namespace Trace {
       σ: Trie
       t: Trace | null
 
-      __Match (): void {
+      __Trace_MatchAs (): void {
          // discriminator
       }
 
