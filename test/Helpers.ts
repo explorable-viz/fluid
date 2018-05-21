@@ -25,8 +25,6 @@ export enum Profile {
    Visualise
 }
 
-const defaultProfile = Profile.Parse
-
 export namespace τ {
    export function arg (σ: Trie): Trie.Cons {
       return Trie.Cons.make(σ)
@@ -71,7 +69,7 @@ export function runExample (p: Profile, src: string, σ: Trie): void {
 
 export let ρ: Env = prelude()
 
-export function runTest (prog: string, profile: Profile = defaultProfile, σ: Trie = τ.var_(null)): void {
+export function runTest (prog: string, profile: Profile, σ: Trie = τ.var_(null)): void {
    runExample(profile, prog, σ)
 }
 
@@ -100,6 +98,5 @@ export function loadTestFile(folder: string, file: string): TestFile {
 
 // For now just see if all the examples run without an exception.
 export function testAll (): void {
-   console.log("Default test profile: " + Profile[defaultProfile] + ".")
    initialise()
 }

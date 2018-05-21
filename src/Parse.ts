@@ -240,8 +240,17 @@ const pair: Parser<Expr.Constr> =
 function args_pattern (n: number, p: Parser<Expr.Kont>): Parser<Expr.Trie.Args> {
    if (n === 0) {
       return withAction(p, (κ: Expr.Kont) => Expr.Trie.Nil.make(κ))
+   } else
+   if (n === 1) {
+      return withAction(
+         pattern(p), 
+         (σ: Expr.Trie) => Expr.Trie.Cons.make(σ)
+      )
    } else {
-      return withAction(pattern(args_pattern(n - 1, p)), (σ: Expr.Trie) => Expr.Trie.Cons.make(σ))
+      return withAction(
+         pattern(dropFirst(symbol(","), args_pattern(n - 1, p))), 
+         (σ: Expr.Trie) => Expr.Trie.Cons.make(σ)
+      )
    }
 }
 
