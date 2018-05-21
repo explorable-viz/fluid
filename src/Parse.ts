@@ -259,15 +259,15 @@ function constr_pattern (p: Parser<Expr.Kont>): Parser<Expr.Trie.Constr> {
             }
          }
       ),
-      ([ctr, σ]: [Lex.Ctr, Expr.Trie.Args]): Expr.Trie.Constr =>
-         Expr.Trie.Constr.make(singleton(ctr.str, σ))
+      ([ctr, Π]: [Lex.Ctr, Expr.Trie.Args]): Expr.Trie.Constr =>
+         Expr.Trie.Constr.make(singleton(ctr.str, Π))
    )
 }
 
 function pair_pattern (p: Parser<Expr.Kont>): Parser<Expr.Trie.Constr> {
    return withAction(
       dropFirst(symbol(str.parenL), args_pattern(2, dropFirst(symbol(str.parenR), p))),
-      (σ: Expr.Trie.Args): Expr.Trie.Constr => Expr.Trie.Constr.make(singleton("Pair", σ))
+      (Π: Expr.Trie.Args): Expr.Trie.Constr => Expr.Trie.Constr.make(singleton("Pair", Π))
    )
 }
 

@@ -24,12 +24,12 @@ function match (v: Value, σ: Trie): PrimResult {
       return [v, σ.κ]
    } else 
    if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
-      const κ: Kont = get(σ.cases, v.ctr.str)!
+      const Π: Trie.Args = get(σ.cases, v.ctr.str)!
       assert(v.args.length === 0, "Primitives must return nullary values.")
-      if (κ instanceof Trie.Trie) {
-         return absurd()
+      if (Π instanceof Trie.Nil) {
+         return [v, Π.κ]
       } else {
-         return [v, κ]
+         return absurd()
       }
    } else {
       return assert(false, "Primitive demand mismatch.", v, σ)

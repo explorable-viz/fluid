@@ -90,8 +90,8 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
          const x: string = t.x.str
          if (ρ.has(x)) {
             const {ρ: ρʹ, δ, e: eʹ}: EnvEntry = ρ.get(x)!,
-                  [tv, ρʺ, σv]: Result = eval_(closeDefs(δ, ρʹ, δ), eʹ, σ)
-            return [Traced.make(Trace.Var.at(k, t.x, __nonNull(tv.t)), tv.v), ρʺ, σv]
+                  [tv, ρʺ, κ]: Result = eval_(closeDefs(δ, ρʹ, δ), eʹ, σ)
+            return [Traced.make(Trace.Var.at(k, t.x, __nonNull(tv.t)), tv.v), ρʺ, κ]
          } else {
             return assert(false, "Variable not found.", x)
          }
