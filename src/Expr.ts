@@ -338,6 +338,9 @@ export namespace Expr {
       function joinKont (κ: Kont, κʹ: Kont): Kont {
          if (κ instanceof Trie && κʹ instanceof Trie) {
             return join(κ, κʹ)
+         } else
+         if (κ instanceof Args && κʹ instanceof Args) {
+            return joinArgs(κ, κʹ)
          } else {
             return assert(false, "Undefined join.", κ, κʹ)
          }
