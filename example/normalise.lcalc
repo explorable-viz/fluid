@@ -1,1 +1,4 @@
-let (a, b) = (5, 6) in a
+let x = 6 in
+let y = 12 in
+let sum = x + y in 
+(x * 100 / sum, y * 100 / sum)
