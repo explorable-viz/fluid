@@ -38,14 +38,14 @@ export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.Rec
 }
 
 // Parser ensures constructor patterns agree with constructor signatures.
-function evalArgs (ρ: Env, σ: Trie.Args, es: List<Traced>): Results {
-   if (Cons.is(es) && σ instanceof Trie.Cons) {
-      const [tv, ρʹ, σʹ]: Result = eval_(ρ, es.head, σ.σ),
-            [tvs, ρʺ, κ]: Results = evalArgs(ρ, as(σʹ, Trie.Args), es.tail)
+function evalArgs (ρ: Env, Π: Trie.Args, es: List<Traced>): Results {
+   if (Cons.is(es) && Π instanceof Trie.Cons) {
+      const [tv, ρʹ, Πʹ]: Result = eval_(ρ, es.head, Π.σ),
+            [tvs, ρʺ, κ]: Results = evalArgs(ρ, as(Πʹ, Trie.Args), es.tail)
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ]
    } else
-   if (Nil.is(es) && σ instanceof Trie.Nil) {
-      return [Nil.make(), Env.empty(), σ.κ]
+   if (Nil.is(es) && Π instanceof Trie.Nil) {
+      return [Nil.make(), Env.empty(), Π.κ]
    } else {
       return absurd()
    }
