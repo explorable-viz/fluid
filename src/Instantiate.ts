@@ -2,9 +2,10 @@ import { absurd } from "./util/Core"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
-import { Expr, Trace, Traced, Trie, TrieBody, Value } from "./Syntax"
+import { Expr } from "./Expr"
+import { Trace, Traced, Trie, Kont, Value } from "./Traced"
 
-export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
+export function instantiate (ρ: Env): (e: Expr) => Traced {
    return function (e: Expr.Expr): Traced {
       const i: Runtime<Expr> = Runtime.make(ρ.entries(), e)
       if (e instanceof Expr.ConstInt) {
@@ -29,7 +30,7 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
       } else
       if (e instanceof Expr.Let) {
          // Trace must still be null even though I know "statically" which branch will be taken.
-         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, null)
+         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var, null)
          return Traced.make(t, null)
       } else
       if (e instanceof Expr.LetRec) {
@@ -54,34 +55,47 @@ export function instantiate (ρ: Env): (e: Expr.Expr) => Traced {
    }
 }
 
-function instantiateTrieBody (ρ: Env, κ: TrieBody<Expr>): TrieBody<Traced> {
-   if (κ instanceof Trie.Trie) {
+function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
+   if (κ instanceof Expr.Trie.Trie) {
       return instantiateTrie(ρ, κ)
-   } else {
+   } else
+   if (κ instanceof Expr.Expr) {
       return instantiate(ρ)(κ)
+   } else {
+      return absurd()
    }
 }
 
-// Can't give this a more specific type without type variables of kind * -> *.
-function instantiateTrie (ρ: Env, σ: Trie<Expr>): Trie<Traced> {
-   if (Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, instantiateTrieBody(ρ, σ.body))
+function instantiateArgs (ρ: Env, Π: Expr.Trie.Args): Trie.Args {
+   if (Π instanceof Expr.Trie.Nil) {
+      return Trie.Nil.make(instantiateKont(ρ, Π.κ))
    } else
-   if (Trie.ConstInt.is(σ)) {
-      return Trie.ConstInt.make(instantiateTrieBody(ρ, σ.body))
+   if (Π instanceof Expr.Trie.Cons) {
+      return Trie.Cons.make(instantiateTrie(ρ, Π.σ))
+   } else {
+      return absurd()
+   }
+}
+
+function instantiateTrie (ρ: Env, σ: Expr.Trie): Trie {
+   if (σ instanceof Expr.Trie.Var) {
+      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
    } else
-   if (Trie.ConstStr.is(σ)) {
-      return Trie.ConstStr.make(instantiateTrieBody(ρ, σ.body))
+   if (σ instanceof Expr.Trie.ConstInt) {
+      return Trie.ConstInt.make(instantiateKont(ρ, σ.κ))
    } else
-   if (Trie.Constr.is(σ)) {
+   if (σ instanceof Expr.Trie.ConstStr) {
+      return Trie.ConstStr.make(instantiateKont(ρ, σ.κ))
+   } else
+   if (σ instanceof Expr.Trie.Constr) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: κ }: Pair<string, TrieBody<Expr>>): Pair<string, TrieBody<Traced>> => {
-            return Pair.make(ctr, instantiateTrieBody(ρ, κ))
+         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args>): Pair<string, Trie.Args> => {
+            return Pair.make(ctr, instantiateArgs(ρ, Π))
          })
       )
    } else
-   if (Trie.Fun.is(σ)) {
-      return Trie.Fun.make(instantiateTrieBody(ρ, σ.body))
+   if (σ instanceof Expr.Trie.Fun) {
+      return Trie.Fun.make(instantiateKont(ρ, σ.κ))
    } else {
       return absurd()
    }

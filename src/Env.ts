@@ -1,7 +1,7 @@
 import { absurd, make } from "./util/Core"
 import { List } from "./BaseTypes"
 import { PersistentObject } from "./Runtime"
-import { Trace, Traced } from "./Syntax"
+import { Trace, Traced } from "./Traced"
 
 export class EnvEntries extends PersistentObject {
    __EnvEntries (): void {

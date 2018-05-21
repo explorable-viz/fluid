@@ -1,34 +1,35 @@
 import { absurd, assert, make } from "./util/Core"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
+import { Expr, Lex } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { PersistentObject, ν } from "./Runtime"
-import { Expr, Lex, Trie, TrieBody, Value } from "./Syntax"
+import { Kont, Value, Trie } from "./Traced"
 
-export type PrimResult<K> = [Value | null, K]
-type TrieCtr = (body: null) => Trie.Prim<null>
+export type PrimResult = [Value | null, Kont]
+type TrieCtr = (body: null) => Trie.Prim
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
 // Parser guarantees that values/patterns respect constructor signatures.
-function match<T extends PersistentObject | null> (v: Value, σ: Trie<T>): PrimResult<T> {
-   if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
-      return [v, σ.body]
+function match (v: Value, σ: Trie): PrimResult {
+   if (v instanceof Value.PrimOp && σ instanceof Trie.Fun) {
+      return [v, σ.κ]
    } else 
-   if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
-      return [v, σ.body]
+   if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
+      return [v, σ.κ]
    } else 
-   if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
-      return [v, σ.body]
+   if (v instanceof Value.ConstStr && σ instanceof Trie.ConstStr) {
+      return [v, σ.κ]
    } else 
-   if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
-      const κ: TrieBody<T> = get(σ.cases, v.ctr.str)!
+   if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
+      const Π: Trie.Args = get(σ.cases, v.ctr.str)!
       assert(v.args.length === 0, "Primitives must return nullary values.")
-      if (Trie.Trie.is(κ)) {
-         return absurd()
+      if (Π instanceof Trie.Nil) {
+         return [v, Π.κ]
       } else {
-         return [v, κ]
+         return absurd()
       }
    } else {
       return assert(false, "Primitive demand mismatch.", v, σ)
@@ -47,7 +48,7 @@ export class UnaryBody extends PersistentObject {
       return this_
    }
 
-   invoke<K extends PersistentObject | null> (v: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
+   invoke (v: Value, σ: Trie): (α: PersistentObject) => PrimResult {
       return α => match(this.op(v)(α), σ)
    }
 } 
@@ -61,7 +62,7 @@ export class BinaryBody extends PersistentObject {
       return this_
    }
 
-   invoke<K extends PersistentObject | null> (v1: Value, v2: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
+   invoke (v1: Value, v2: Value, σ: Trie): (α: PersistentObject) => PrimResult {
       return α => match(this.op(v1, v2)(α), σ)
    }
 } 
@@ -71,10 +72,10 @@ export class PrimOp extends PersistentObject {
 }
 
 export class UnaryOp extends PrimOp {
-   σ: Trie.Prim<null>
+   σ: Trie.Prim
    b: UnaryBody
 
-   static make (name: string, σ: Trie.Prim<null>, b: UnaryBody): UnaryOp {
+   static make (name: string, σ: Trie.Prim, b: UnaryBody): UnaryOp {
       const this_: UnaryOp = make(UnaryOp, σ, b)
       this_.name = name
       this_.σ = σ
@@ -88,11 +89,11 @@ export class UnaryOp extends PrimOp {
 }
 
 export class BinaryOp extends PrimOp {
-   σ1: Trie.Prim<null>
-   σ2: Trie.Prim<null>
+   σ1: Trie.Prim
+   σ2: Trie.Prim
    b: BinaryBody
 
-   static make (name: string, σ1: Trie.Prim<null>, σ2: Trie.Prim<null>, b: BinaryBody): BinaryOp {
+   static make (name: string, σ1: Trie.Prim, σ2: Trie.Prim, b: BinaryBody): BinaryOp {
       const this_: BinaryOp = make(BinaryOp, σ1, σ2, b)
       this_.name = name
       this_.σ1 = σ1
@@ -188,7 +189,7 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentOb
    return α => Value.ConstStr.at(α, x.val + y.val)
 }
 
-// Only primitive with identifiers as names are first-class and therefore appear in the prelude.
+// Only primitive with identifiers as names are first-class, and therefore appear in the prelude.
 export function prelude (): Env {
    const ρ_0: Env = Env.empty()
    let ρ: Env = Env.empty()

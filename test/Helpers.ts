@@ -2,12 +2,12 @@ import * as $ from "jquery"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
+import { Expr, Lex } from "../src/Expr"
 import { singleton } from "../src/FiniteMap"
 import { instantiate } from "../src/Instantiate"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
-import { PersistentObject } from "../src/Runtime"
-import { Expr, Lex, Trie } from "../src/Syntax"
+import { Kont, Trie } from "../src/Traced"
 import { parse } from "../src/util/parse/Core"
 import { __nonNull } from "../src/util/Core"
 
@@ -25,45 +25,51 @@ export enum Profile {
    Visualise
 }
 
-const defaultProfile = Profile.Parse
-
 export namespace τ {
-   export function var_<T extends PersistentObject | null> (t: T): Trie<T> {
-      return Trie.Var.make(new Lex.Var("x"), t)
+   export function arg (σ: Trie): Trie.Cons {
+      return Trie.Cons.make(σ)
    }
 
-   export function int<T extends PersistentObject | null> (t: T): Trie<T> {
-      return Trie.ConstInt.make(t)
+   export function endArgs (κ: Kont): Trie.Nil {
+      return Trie.Nil.make(κ)
    }
 
-   export function str<T extends PersistentObject | null> (t: T): Trie<T> {
-      return Trie.ConstStr.make(t)
+   export function var_ (κ: Kont): Trie {
+      return Trie.Var.make(new Lex.Var("x"), κ)
    }
 
-   export function cons<T extends PersistentObject | null> (t: T): Trie<T> {
-      return Trie.Constr.make(singleton("Cons", t))
+   export function int (κ: Kont): Trie {
+      return Trie.ConstInt.make(κ)
    }
 
-   export function pair<T extends PersistentObject | null> (t: T): Trie<T> {
-      return Trie.Constr.make(singleton("Pair", t))
+   export function str (κ: Kont): Trie {
+      return Trie.ConstStr.make(κ)
    }
 
-   export function some<T extends PersistentObject | null> (t: T): Trie<T> {
-      return Trie.Constr.make(singleton("Some", t))
+   export function cons (Π: Trie.Args) {
+      return Trie.Constr.make(singleton("Cons", Π))
+   }
+
+   export function pair (Π: Trie.Args): Trie {
+      return Trie.Constr.make(singleton("Pair", Π))
+   }
+
+   export function some (Π: Trie.Args): Trie {
+      return Trie.Constr.make(singleton("Some", Π))
    }
 }
 
-export function runExample (p: Profile, src: string, σ: Trie<null>): void {
+export function runExample (p: Profile, src: string, σ: Trie): void {
    const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    if (p >= Profile.Run) {
-      const [tv, , ]: Eval.Result<null> = Eval.eval_(ρ, instantiate(ρ)(e), σ)
+      const [tv, , ]: Eval.Result = Eval.eval_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
    }
 }
 
 export let ρ: Env = prelude()
 
-export function runTest (prog: string, profile: Profile = defaultProfile, σ: Trie<null> = τ.var_(null)): void {
+export function runTest (prog: string, profile: Profile, σ: Trie = τ.var_(null)): void {
    runExample(profile, prog, σ)
 }
 
@@ -92,6 +98,5 @@ export function loadTestFile(folder: string, file: string): TestFile {
 
 // For now just see if all the examples run without an exception.
 export function testAll (): void {
-   console.log("Default test profile: " + Profile[defaultProfile] + ".")
    initialise()
 }
