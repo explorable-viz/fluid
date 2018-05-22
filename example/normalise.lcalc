@@ -1,2 +1,2 @@
 let sum = 18 in 
-(600 / sum, 1200 / sum)
+(sum, 12)

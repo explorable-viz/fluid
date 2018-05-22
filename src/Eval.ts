@@ -70,8 +70,8 @@ export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
          const v: Value = __nonNull(tv.v)
          assert(v.__id === k && t.__id === k)
          if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
-            const [, ρʹ, κ]: Results = evalArgs(ρ, get(σ.cases, v.ctr.str)!, v.args)
-            return [Traced.make(t, v), ρʹ, κ]
+            const [args, ρʹ, κ]: Results = evalArgs(ρ, get(σ.cases, v.ctr.str)!, v.args)
+            return [Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ]
          } else
          if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
