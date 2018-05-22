@@ -145,22 +145,22 @@ export namespace Trie {
    }
 
    // Maps zero arguments to κ.
-   export class Nil extends Args {
+   export class End extends Args {
       κ: Kont
 
-      static make (κ: Kont): Nil {
-         const this_: Nil = make(Nil, κ)
+      static make (κ: Kont): End {
+         const this_: End = make(End, κ)
          this_.κ = κ
          return this_
       }
    }
 
    // Maps a single argument to another args trie.
-   export class Cons extends Args {
+   export class Next extends Args {
       σ: Trie
 
-      static make (σ: Trie): Cons {
-         const this_: Cons = make(Cons, σ)
+      static make (σ: Trie): Next {
+         const this_: Next = make(Next, σ)
          this_.σ = σ
          return this_
       }

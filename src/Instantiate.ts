@@ -70,11 +70,11 @@ function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
 }
 
 function instantiateArgs (ρ: Env, Π: Expr.Trie.Args): Trie.Args {
-   if (Π instanceof Expr.Trie.Nil) {
-      return Trie.Nil.make(instantiateKont(ρ, Π.κ))
+   if (Π instanceof Expr.Trie.End) {
+      return Trie.End.make(instantiateKont(ρ, Π.κ))
    } else
-   if (Π instanceof Expr.Trie.Cons) {
-      return Trie.Cons.make(instantiateTrie(ρ, Π.σ))
+   if (Π instanceof Expr.Trie.Next) {
+      return Trie.Next.make(instantiateTrie(ρ, Π.σ))
    } else {
       return absurd()
    }

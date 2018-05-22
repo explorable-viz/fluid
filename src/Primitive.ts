@@ -26,7 +26,7 @@ function match (v: Value, σ: Trie): PrimResult {
    if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
       const Π: Trie.Args = get(σ.cases, v.ctr.str)!
       assert(v.args.length === 0, "Primitives must return nullary values.")
-      if (Π instanceof Trie.Nil) {
+      if (Π instanceof Trie.End) {
          return [v, Π.κ]
       } else {
          return absurd()

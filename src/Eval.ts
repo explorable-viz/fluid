@@ -39,12 +39,12 @@ export function closeDefs (δ_0: List<Trace.RecDef>, ρ: Env, δ: List<Trace.Rec
 
 // Parser ensures constructor patterns agree with constructor signatures.
 function evalArgs (ρ: Env, Π: Trie.Args, es: List<Traced>): Results {
-   if (Cons.is(es) && Π instanceof Trie.Cons) {
+   if (Cons.is(es) && Π instanceof Trie.Next) {
       const [tv, ρʹ, Πʹ]: Result = eval_(ρ, es.head, Π.σ),
             [tvs, ρʺ, κ]: Results = evalArgs(ρ, as(Πʹ, Trie.Args), es.tail)
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ]
    } else
-   if (Nil.is(es) && Π instanceof Trie.Nil) {
+   if (Nil.is(es) && Π instanceof Trie.End) {
       return [Nil.make(), Env.empty(), Π.κ]
    } else {
       return absurd()
@@ -175,14 +175,14 @@ export function match (σ: Trie, v: Value | null): Match {
 function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
    return (Π: Trie.Args): Match.Args => {
       // Parser ensures constructor patterns agree with constructor signatures.
-      if (Cons.is(tvs) && Π instanceof Trie.Cons) {
+      if (Cons.is(tvs) && Π instanceof Trie.Next) {
          const ξ: Match = match(Π.σ, tvs.head.v), 
                matchArgsʹ = (Π: Kont): Match.Args => matchArgs(tvs.tail)(as(Π, Trie.Args)),
                inj = (σ: Kont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
          // codomain of ξ is another Trie.Args; promote to Match.Args:
          return Match.Cons.make(TracedMatch.make(tvs.head.t, mapMatch(matchArgsʹ, inj)(ξ)))
       } else
-      if (Nil.is(tvs) && Π instanceof Trie.Nil) {
+      if (Nil.is(tvs) && Π instanceof Trie.End) {
          return Match.Nil.make(Π.κ)
       } else {
          return absurd()
@@ -251,11 +251,11 @@ function mapTrie (f: (κ: Kont) => Kont): (σ: Trie.Trie) => Trie.Trie {
 
 function mapTrieArgs (f: (κ: Kont) => Kont): (Π: Trie.Args) => Trie.Args {
    return (Π: Trie.Args): Trie.Args => {
-      if (Π instanceof Trie.Nil) {
-         return Trie.Nil.make(f(Π.κ))
+      if (Π instanceof Trie.End) {
+         return Trie.End.make(f(Π.κ))
       } else
-      if (Π instanceof Trie.Cons) {
-         return Trie.Cons.make(mapTrie(f)(Π.σ))
+      if (Π instanceof Trie.Next) {
+         return Trie.Next.make(mapTrie(f)(Π.σ))
       } else {
          return absurd()
       }
