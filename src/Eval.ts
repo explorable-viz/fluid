@@ -1,4 +1,4 @@
-import { __nonNull, absurd, as, assert, make } from "./util/Core"
+import { __check, __nonNull, absurd, as, assert, make } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
@@ -53,10 +53,12 @@ function evalArgs (ρ: Env, Π: Trie.Args, es: List<Traced>): Results {
 
 // Probably want to memoise instantiate.
 export function eval_ (ρ: Env, tv: Traced, σ: Trie): Result {
-   return evalT(ρ, instantiate(ρ)(tv.t!.__id.e), σ)
+   return __check(
+      evalT(ρ, instantiate(ρ)(tv.t!.__id.e), σ), 
+      ([tv, ,]) => (tv.v === null) === (σ instanceof Trie.Var)
+   )
 }
 
-// Value is unknown (null) iff σ is a variable trie.
 export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
    const t: Trace | null = tv.t,
          k: Runtime<Expr> = t.__id
