@@ -180,10 +180,10 @@ function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
                matchArgsʹ = (Π: Kont): Match.Args => matchArgs(tvs.tail)(as(Π, Trie.Args)),
                inj = (σ: Kont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
          // codomain of ξ is another Trie.Args; promote to Match.Args:
-         return Match.Cons.make(TracedMatch.make(tvs.head.t, mapMatch(matchArgsʹ, inj)(ξ)))
+         return Match.Next.make(TracedMatch.make(tvs.head.t, mapMatch(matchArgsʹ, inj)(ξ)))
       } else
       if (Nil.is(tvs) && Π instanceof Trie.End) {
-         return Match.Nil.make(Π.κ)
+         return Match.End.make(Π.κ)
       } else {
          return absurd()
       }
@@ -264,11 +264,11 @@ function mapTrieArgs (f: (κ: Kont) => Kont): (Π: Trie.Args) => Trie.Args {
 
 function mapMatchArgs (f: (κ: Kont) => Kont, g: (κ: Kont) => Kont): (Ψ: Match.Args) => Match.Args {
    return (Ψ: Match.Args): Match.Args => {
-      if (Ψ instanceof Match.Nil) {
-         return Match.Nil.make(f(Ψ.κ))
+      if (Ψ instanceof Match.End) {
+         return Match.End.make(f(Ψ.κ))
       } else
-      if (Ψ instanceof Match.Cons) {
-         return Match.Cons.make(TracedMatch.make(Ψ.tξ.t, mapMatch(f, g)(Ψ.tξ.ξ)))
+      if (Ψ instanceof Match.Next) {
+         return Match.Next.make(TracedMatch.make(Ψ.tξ.t, mapMatch(f, g)(Ψ.tξ.ξ)))
       } else {
          return absurd()
       }

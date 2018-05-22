@@ -264,21 +264,21 @@ export namespace Match {
       }
    }
 
-   export class Nil extends Args {
+   export class End extends Args {
       κ: Kont
 
-      static make (κ: Kont): Nil {
-         const this_: Nil = make(Nil, κ)
+      static make (κ: Kont): End {
+         const this_: End = make(End, κ)
          this_.κ = κ
          return this_
       }
    }
 
-   export class Cons extends Args {
+   export class Next extends Args {
       tξ: TracedMatch
 
-      static make (tξ: TracedMatch): Cons {
-         const this_: Cons = make(Cons, tξ)
+      static make (tξ: TracedMatch): Next {
+         const this_: Next = make(Next, tξ)
          this_.tξ = tξ
          return this_
       }
