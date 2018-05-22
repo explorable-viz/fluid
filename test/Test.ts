@@ -16,28 +16,28 @@ describe("example", () => {
 	describe("arithmetic", () => {
 		const file: TestFile = loadExample("arithmetic")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Parse, τ.int(null))
+			runTest(__nonNull(file.text), Profile.Run, τ.int(null))
 		})
 	})
 
 	describe("compose", () => {
 		const file: TestFile = loadExample("compose")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Parse, τ.int(null))
+			runTest(__nonNull(file.text), Profile.Run, τ.int(null))
 		})
 	})
 
 	describe("factorial", () => {
 		const file: TestFile = loadExample("factorial")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Parse, τ.int(null))
+			runTest(__nonNull(file.text), Profile.Run, τ.int(null))
 		})
 	})
 
 	describe("filter", () => {
 		const file: TestFile = loadExample("filter")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Parse, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
@@ -58,7 +58,7 @@ describe("example", () => {
 	describe("lexicalScoping", () => {
 		const file: TestFile = loadExample("lexicalScoping")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Parse, τ.str(null))
+			runTest(__nonNull(file.text), Profile.Run, τ.str(null))
 		})
 	})
 
@@ -86,7 +86,7 @@ describe("example", () => {
 	describe("normalise", () => {
 		const file: TestFile = loadExample("normalise")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Parse, τ.pair(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(null)))))))
+			runTest(__nonNull(file.text), Profile.Run, τ.pair(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(null)))))))
 		})
 	})
 
