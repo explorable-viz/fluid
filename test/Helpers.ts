@@ -35,7 +35,7 @@ export namespace τ {
    }
 
    export function var_ (κ: Kont): Trie {
-      return Trie.Var.make(new Lex.Var("x"), κ)
+      return Trie.Var.make(new Lex.Var("q"), κ)
    }
 
    export function int (κ: Kont): Trie {
