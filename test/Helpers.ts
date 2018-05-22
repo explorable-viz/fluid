@@ -22,16 +22,17 @@ export function initialise (): void {
 export enum Profile {
    Parse,
    Run,
+   Match,
    Visualise
 }
 
 export namespace τ {
-   export function arg (σ: Trie): Trie.Cons {
-      return Trie.Cons.make(σ)
+   export function arg (σ: Trie): Trie.Next {
+      return Trie.Next.make(σ)
    }
 
-   export function endArgs (κ: Kont): Trie.Nil {
-      return Trie.Nil.make(κ)
+   export function endArgs (κ: Kont): Trie.End {
+      return Trie.End.make(κ)
    }
 
    export function var_ (κ: Kont): Trie {
@@ -65,7 +66,9 @@ export function runExample (p: Profile, src: string, σ: Trie): void {
    if (p >= Profile.Run) {
       const [tv, , ]: Eval.Result = Eval.eval_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
-//    console.log(Eval.match(σ, tv.v))
+      if (p >= Profile.Match) {
+         console.log(Eval.match(σ, tv.v))
+      }
    }
 }
 

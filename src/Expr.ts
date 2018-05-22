@@ -280,22 +280,22 @@ export namespace Expr {
       }
 
       // Maps zero arguments to κ.
-      export class Nil extends Args {
+      export class End extends Args {
          κ: Kont
 
-         static make (κ: Kont): Nil {
-            const this_: Nil = make(Nil, κ)
+         static make (κ: Kont): End {
+            const this_: End = make(End, κ)
             this_.κ = κ
             return this_
          }
       }
 
       // Maps a single argument to another args trie.
-      export class Cons extends Args {
+      export class Next extends Args {
          σ: Trie
 
-         static make (σ: Trie): Cons {
-            const this_: Cons = make(Cons, σ)
+         static make (σ: Trie): Next {
+            const this_: Next = make(Next, σ)
             this_.σ = σ
             return this_
          }
@@ -347,11 +347,11 @@ export namespace Expr {
       }
 
       function joinArgs (Π: Args, Πʹ: Args): Args {
-         if (Π instanceof Nil && Πʹ instanceof Nil) {
-            return Nil.make(joinKont(Π.κ, Πʹ.κ))
+         if (Π instanceof End && Πʹ instanceof End) {
+            return End.make(joinKont(Π.κ, Πʹ.κ))
          } else
-         if (Π instanceof Cons && Πʹ instanceof Cons) {
-            return Cons.make(join(Π.σ, Πʹ.σ))
+         if (Π instanceof Next && Πʹ instanceof Next) {
+            return Next.make(join(Π.σ, Πʹ.σ))
          } else {
             return assert(false, "Undefined join.", Π, Πʹ)
          }
