@@ -7,7 +7,7 @@ import { instantiate } from "./Instantiate"
 import { PersistentObject, ν } from "./Runtime"
 import { Kont, Value, Trie } from "./Traced"
 
-export type PrimResult = [Value | null, Kont]
+export type PrimResult = [Value, Kont]
 type TrieCtr = (body: null) => Trie.Prim
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V

@@ -65,7 +65,7 @@ export function runExample (p: Profile, src: string, σ: Trie): void {
    if (p >= Profile.Run) {
       const [tv, , ]: Eval.Result = Eval.eval_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
-//      console.log(Eval.match(σ, tv.v))
+      console.log(Eval.match(σ, tv.v))
    }
 }
 
