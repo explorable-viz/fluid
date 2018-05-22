@@ -86,7 +86,7 @@ describe("example", () => {
 	describe("normalise", () => {
 		const file: TestFile = loadExample("normalise")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.pair(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(null)))))))
+			runTest(__nonNull(file.text), Profile.Match, τ.pair(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(null)))))))
 		})
 	})
 
