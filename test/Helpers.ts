@@ -35,7 +35,7 @@ export namespace τ {
    }
 
    export function var_ (κ: Kont): Trie {
-      return Trie.Var.make(new Lex.Var("x"), κ)
+      return Trie.Var.make(new Lex.Var("q"), κ)
    }
 
    export function int (κ: Kont): Trie {
@@ -61,9 +61,11 @@ export namespace τ {
 
 export function runExample (p: Profile, src: string, σ: Trie): void {
    const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
+   console.log(Profile[p])
    if (p >= Profile.Run) {
       const [tv, , ]: Eval.Result = Eval.eval_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
+//    console.log(Eval.match(σ, tv.v))
    }
 }
 
