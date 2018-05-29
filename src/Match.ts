@@ -8,8 +8,8 @@ export function match (σ: Trie, v: Value | null): Match {
       // in general v is not null, even though the demand is null
       return Match.Var.make(σ.x, v, σ.κ)
    } else
-   if (σ instanceof Trie.Fun && v instanceof Value.Closure) {
-      return Match.Fun.make(v.ρ, v.σ, σ.κ)
+   if (σ instanceof Trie.Fun && (v instanceof Value.Closure || v instanceof Value.PrimOp)) {
+      return Match.Fun.make(v, σ.κ)
    } else
    if (σ instanceof Trie.ConstInt && v instanceof Value.ConstInt) {
       return Match.ConstInt.make(v.val, σ.κ)
@@ -56,7 +56,7 @@ function mapMatch (f: (κ: Kont) => Kont, g: (κ: Kont) => Kont): (ξ: Match) =>
          return Match.ConstStr.make(ξ.val, f(ξ.κ))
       } else
       if (ξ instanceof Match.Fun) {
-         return Match.Fun.make(ξ.ρ, ξ.σ, f(ξ.κ))
+         return Match.Fun.make(ξ.f, f(ξ.κ))
       } else
       if (ξ instanceof Match.Var) {
          return Match.Var.make(ξ.x, ξ.v, f(ξ.κ))

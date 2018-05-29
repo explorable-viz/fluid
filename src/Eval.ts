@@ -84,10 +84,7 @@ function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
          if (v instanceof Value.ConstStr && σ instanceof Trie.ConstStr) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
          } else
-         if (v instanceof Value.Closure && σ instanceof Trie.Fun) {
-            return [Traced.make(t, v), Env.empty(), σ.κ]
-         } else
-         if (v instanceof Value.PrimOp && σ instanceof Trie.Fun) {
+         if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && σ instanceof Trie.Fun) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
          } else {
             return assert(false, "Demand mismatch.", tv, σ)

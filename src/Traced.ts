@@ -297,14 +297,12 @@ export namespace Match {
    }
 
    export class Fun extends Match {
-      ρ: Env
-      σ: Trie
+      f: Value.Closure | Value.PrimOp
       κ: Kont
 
-      static make (ρ: Env, σ: Trie, κ: Kont): Fun {
-         const this_: Fun = make(Fun, ρ, σ, κ)
-         this_.ρ = ρ
-         this_.σ = σ
+      static make (f: Value.Closure | Value.PrimOp, κ: Kont): Fun {
+         const this_: Fun = make(Fun, f, κ)
+         this_.f = f
          this_.κ = κ
          return this_
       }
