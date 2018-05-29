@@ -221,18 +221,6 @@ export namespace Match {
       }
    }
 
-   // Tries are also matched tries, because we need live and dead branches to have a uniform codomain.
-   // TODO: not sure if this makes sense.
-   export class Inj extends Match {
-      σ: Trie
-      
-      static make (σ: Trie): Inj {
-         const this_: Inj = make(Inj, σ)
-         this_.σ = σ
-         return this_
-      }
-   }
-
    export class Prim extends Match {
       κ: Kont
    }

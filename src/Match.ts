@@ -35,8 +35,8 @@ function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
       // Parser ensures constructor patterns agree with constructor signatures.
       if (Cons.is(tvs) && Π instanceof Trie.Next) {
          const ξ: Match = match(Π.σ, tvs.head.v), 
-               inj = (σ: Kont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
-         // codomain of ξ is another Trie.Args; promote to Match.Args:
+               inj = (σ: Kont) => as(σ, Trie.Args)
+         // codomain of ξ is a Trie.Args; promote to Trie.Args | Match.Args:
          return Match.Next.make(TracedMatch.make(tvs.head.t, mapMatch(matchArgs(tvs.tail), inj)(ξ)))
       } else
       if (Nil.is(tvs) && Π instanceof Trie.End) {
