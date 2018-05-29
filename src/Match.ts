@@ -6,7 +6,7 @@ import { Kont, Match, Traced, TracedMatch, Trie, Value } from "./Traced"
 export function match (σ: Trie, v: Value | null): Match {
    if (σ instanceof Trie.Var) {
       // in general v is not null, even though the demand is null
-      return Match.Var.make(σ.x, σ.κ)
+      return Match.Var.make(σ.x, v, σ.κ)
    } else
    if (σ instanceof Trie.Fun && v instanceof Value.Closure) {
       return Match.Fun.make(v.ρ, v.σ, σ.κ)
@@ -59,7 +59,7 @@ function mapMatch (f: (κ: Kont) => Kont, g: (κ: Kont) => Kont): (ξ: Match) =>
          return Match.Fun.make(ξ.ρ, ξ.σ, f(ξ.κ))
       } else
       if (ξ instanceof Match.Var) {
-         return Match.Var.make(ξ.x, f(ξ.κ))
+         return Match.Var.make(ξ.x, ξ.v, f(ξ.κ))
       } else 
       if (ξ instanceof Match.Constr) {
          return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Trie.Args | Match.Args> => {

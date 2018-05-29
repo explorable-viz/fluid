@@ -310,15 +310,15 @@ export namespace Match {
       }
    }
 
-   // Need to think about how a variable match works when value it matches is non-null.
-   // Maybe we need a bottom pattern instead, and then the ability to attach names to any subpattern.
    export class Var extends Match {
       x: Lex.Var
+      v: Value | null
       κ: Kont
 
-      static make (x: Lex.Var, κ: Kont): Var {
-         const this_: Var = make(Var, x, κ)
+      static make (x: Lex.Var, v: Value | null, κ: Kont): Var {
+         const this_: Var = make(Var, x, v, κ)
          this_.x = x
+         this_.v = v
          this_.κ = κ
          return this_
       }
