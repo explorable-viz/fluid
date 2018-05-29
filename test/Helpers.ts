@@ -5,6 +5,7 @@ import { Eval } from "../src/Eval"
 import { Expr, Lex } from "../src/Expr"
 import { singleton } from "../src/FiniteMap"
 import { instantiate } from "../src/Instantiate"
+import { match } from "../src/Match"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
 import { Kont, Trie } from "../src/Traced"
@@ -67,7 +68,7 @@ export function runExample (p: Profile, src: string, σ: Trie): void {
       const [tv, , ]: Eval.Result = Eval.eval_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
       if (p >= Profile.Match) {
-         console.log(Eval.match(σ, tv.v))
+         console.log(match(σ, tv.v))
       }
    }
 }
