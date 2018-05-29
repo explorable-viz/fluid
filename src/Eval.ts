@@ -179,10 +179,9 @@ function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
       // Parser ensures constructor patterns agree with constructor signatures.
       if (Cons.is(tvs) && Π instanceof Trie.Next) {
          const ξ: Match = match(Π.σ, tvs.head.v), 
-               matchArgsʹ = (Π: Kont): Match.Args => matchArgs(tvs.tail)(as(Π, Trie.Args)),
                inj = (σ: Kont) => TracedMatch.make(null, Match.Inj.make(as(σ, Trie.Trie)))
          // codomain of ξ is another Trie.Args; promote to Match.Args:
-         return Match.Next.make(TracedMatch.make(tvs.head.t, mapMatch(matchArgsʹ, inj)(ξ)))
+         return Match.Next.make(TracedMatch.make(tvs.head.t, mapMatch(matchArgs(tvs.tail), inj)(ξ)))
       } else
       if (Nil.is(tvs) && Π instanceof Trie.End) {
          return Match.End.make(Π.κ)
@@ -270,7 +269,10 @@ function mapMatchArgs (f: (κ: Kont) => Kont, g: (κ: Kont) => Kont): (Ψ: Match
          return Match.End.make(f(Ψ.κ))
       } else
       if (Ψ instanceof Match.Next) {
-         return Match.Next.make(TracedMatch.make(Ψ.tξ.t, mapMatch(f, g)(Ψ.tξ.ξ)))
+         return Match.Next.make(
+            TracedMatch.make(Ψ.tξ.t,
+            mapMatch(mapMatchArgs(f, g), mapMatchArgs(g, g))(Ψ.tξ.ξ)) // "bivariance"
+         )
       } else {
          return absurd()
       }
