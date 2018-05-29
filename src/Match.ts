@@ -4,7 +4,8 @@ import { Kont, Match, Traced, TracedMatch, Trie, Value } from "./Traced"
 
 // The match for any evaluation with demand σ which yielded value v.
 export function match (σ: Trie, v: Value | null): Match {
-   if (σ instanceof Trie.Var && v === null) {
+   if (σ instanceof Trie.Var) {
+      // in general v is not null, even though the demand is null
       return Match.Var.make(σ.x, σ.κ)
    } else
    if (σ instanceof Trie.Fun && v instanceof Value.Closure) {

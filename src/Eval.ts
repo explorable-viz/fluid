@@ -57,12 +57,13 @@ export function eval_ (ρ: Env, tv: Traced, σ: Trie): Result {
    return __check(
       evalT(ρ, instantiate(ρ)(tv.t!.__id.e), σ), 
       ([tv, ,]) => {
-         match(σ, tv.v) // TEMP: check this doesn't crash.
+         match(σ, tv.v) // Temporarily, check this doesn't crash.
          return (tv.v === null) === (σ instanceof Trie.Var)
       }
    )
 }
 
+// Null means eval produced no information about v; the input traced value might be non-null.
 function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
    const t: Trace | null = tv.t,
          k: Runtime<Expr> = t.__id

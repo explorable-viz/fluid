@@ -222,6 +222,7 @@ export namespace Match {
    }
 
    // Tries are also matched tries, because we need live and dead branches to have a uniform codomain.
+   // TODO: not sure if this makes sense.
    export class Inj extends Match {
       σ: Trie
       
@@ -309,7 +310,8 @@ export namespace Match {
       }
    }
 
-   // Any extra information a variable match should carry?
+   // Need to think about how a variable match works when value it matches is non-null.
+   // Maybe we need a bottom pattern instead, and then the ability to attach names to any subpattern.
    export class Var extends Match {
       x: Lex.Var
       κ: Kont
