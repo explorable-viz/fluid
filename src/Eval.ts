@@ -4,6 +4,7 @@ import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
+import { match } from "./Match"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { PersistentObject } from "./Runtime";
 import { Kont, Trace, Traced, Trie, Value } from "./Traced"
@@ -55,11 +56,14 @@ function evalArgs (ρ: Env, Π: Trie.Args, es: List<Traced>): Results {
 export function eval_ (ρ: Env, tv: Traced, σ: Trie): Result {
    return __check(
       evalT(ρ, instantiate(ρ)(tv.t!.__id.e), σ), 
-      ([tv, ,]) => (tv.v === null) === (σ instanceof Trie.Var)
+      ([tv, ,]) => {
+         match(σ, tv.v) // TEMP: check this doesn't crash.
+         return (tv.v === null) === (σ instanceof Trie.Var)
+      }
    )
 }
 
-export function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
+function evalT (ρ: Env, tv: Traced, σ: Trie): Result {
    const t: Trace | null = tv.t,
          k: Runtime<Expr> = t.__id
    if (σ instanceof Trie.Var) {
