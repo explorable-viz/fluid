@@ -55,23 +55,9 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
-function instantiateKont<K> (ρ: Env, κ: K): Kont {
-   if (κ instanceof Expr.Trie.Trie) {
-      return instantiateTrie(ρ, κ)
-   } else
-   if (κ instanceof Expr.Expr) {
-      return instantiate(ρ)(κ)
-   } else
-   if (κ instanceof Expr.Trie.Args) {
-      return instantiateArgs(ρ, κ)
-   } else {
-      return absurd()
-   }
-}
-
-function instantiateArgs<K> (ρ: Env, Π: Expr.Trie.Args<K>): Trie.Args<K> {
+function instantiateArgs (ρ: Env, Π: Expr.Trie.Args<Expr>): Trie.Args<Traced> {
    if (Π instanceof Expr.Trie.End) {
-      return Trie.End.make(instantiateKont(ρ, Π.κ))
+      return Trie.End.make(instantiate(ρ)(Π.κ))
    } else
    if (Π instanceof Expr.Trie.Next) {
       return Trie.Next.make(instantiateTrie(ρ, Π.σ))
@@ -80,25 +66,25 @@ function instantiateArgs<K> (ρ: Env, Π: Expr.Trie.Args<K>): Trie.Args<K> {
    }
 }
 
-function instantiateTrie<K> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
+function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr>): Trie<Traced> {
    if (σ instanceof Expr.Trie.Var) {
-      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
+      return Trie.Var.make(σ.x, instantiate(ρ)(σ.κ))
    } else
    if (σ instanceof Expr.Trie.ConstInt) {
-      return Trie.ConstInt.make(instantiateKont(ρ, σ.κ))
+      return Trie.ConstInt.make(instantiate(ρ)(σ.κ))
    } else
    if (σ instanceof Expr.Trie.ConstStr) {
-      return Trie.ConstStr.make(instantiateKont(ρ, σ.κ))
+      return Trie.ConstStr.make(instantiate(ρ)(σ.κ))
    } else
    if (σ instanceof Expr.Trie.Constr) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args<K>>): Pair<string, Trie.Args<K>> => {
+         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args<Expr>>): Pair<string, Trie.Args<Traced>> => {
             return Pair.make(ctr, instantiateArgs(ρ, Π))
          })
       )
    } else
    if (σ instanceof Expr.Trie.Fun) {
-      return Trie.Fun.make(instantiateKont(ρ, σ.κ))
+      return Trie.Fun.make(instantiate(ρ)(σ.κ))
    } else {
       return absurd()
    }
