@@ -118,6 +118,10 @@ export namespace Trie {
    }
 
    export class ConstInt<K> extends Prim<K> {
+      static is<K> (σ: Trie<K>): σ is ConstInt<K> {
+         return σ instanceof ConstInt
+      }
+
       static make<K> (κ: K): ConstInt<K> {
          const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, κ)
          this_.κ = κ
@@ -126,6 +130,10 @@ export namespace Trie {
    }
 
    export class ConstStr<K> extends Prim<K> {
+      static is<K> (σ: Trie<K>): σ is ConstStr<K> {
+         return σ instanceof ConstStr
+      }
+
       static make<K> (κ: K): ConstStr<K> {
          const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
          this_.κ = κ
@@ -144,6 +152,10 @@ export namespace Trie {
    export class End<K> extends Args<K> {
       κ: K
 
+      static is<K> (Π: Args<K>): Π is End<K> {
+         return Π instanceof End
+      }
+
       static make<K> (κ: K): End<K> {
          const this_: End<K> = make<End<K>>(End, κ)
          this_.κ = κ
@@ -155,6 +167,10 @@ export namespace Trie {
    export class Next<K> extends Args<K> {
       σ: Trie<K>
 
+      static is<K> (Π: Args<K>): Π is Next<K> {
+         return Π instanceof Next
+      }
+
       static make<K> (σ: Trie<K>): Next<K> {
          const this_: Next<K> = make<Next<K>>(Next, σ)
          this_.σ = σ
@@ -164,6 +180,10 @@ export namespace Trie {
 
    export class Constr<K> extends Trie<K> {
       cases: FiniteMap<string, Args<K>>
+
+      static is<K> (σ: Trie<K>): σ is Constr<K> {
+         return σ instanceof Constr
+      }
 
       static make<K> (cases: FiniteMap<string, Args<K>>): Constr<K> {
          const this_: Constr<K> = make<Constr<K>>(Constr, cases)
@@ -175,6 +195,10 @@ export namespace Trie {
    export class Fun<K> extends Trie<K> {
       κ: K
 
+      static is<K> (σ: Trie<K>): σ is Fun<K> {
+         return σ instanceof Fun
+      }
+
       static make<K> (κ: K): Fun<K> {
          const this_: Fun<K> = make<Fun<K>>(Fun, κ)
          this_.κ = κ
@@ -185,6 +209,10 @@ export namespace Trie {
    export class Var<K> extends Trie<K> {
       x: Lex.Var
       κ: K
+
+      static is<K> (σ: Trie<K>): σ is Var<K> {
+         return σ instanceof Var
+      }
 
       static make<K> (x: Lex.Var, κ: K): Var<K> {
          const this_: Var<K> = make<Var<K>>(Var, x, κ)
@@ -224,6 +252,10 @@ export namespace Match {
    export class ConstInt<K> extends Prim<K> {
       val: number
 
+      static is<K> (ξ: Match<K>): ξ is ConstInt<K> {
+         return ξ instanceof ConstInt
+      }
+
       static make<K> (val: number, κ: K): ConstInt<K> {
          const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, val, κ)
          this_.val = val
@@ -234,6 +266,10 @@ export namespace Match {
 
    export class ConstStr<K> extends Prim<K> {
       val: string
+
+      static is<K> (ξ: Match<K>): ξ is ConstStr<K> {
+         return ξ instanceof ConstStr
+      }
 
       static make<K> (val: string, κ: K): ConstStr<K> {
          const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, val, κ)
@@ -252,6 +288,10 @@ export namespace Match {
    export class End<K> extends Args<K> {
       κ: K
 
+      static is<K> (Ψ: Args<K>): Ψ is End<K> {
+         return Ψ instanceof End
+      }
+
       static make<K> (κ: K): End<K> {
          const this_: End<K> = make<End<K>>(End, κ)
          this_.κ = κ
@@ -261,6 +301,10 @@ export namespace Match {
 
    export class Next<K> extends Args<K> {
       tξ: TracedMatch<K>
+
+      static is<K> (Ψ: Args<K>): Ψ is Next<K> {
+         return Ψ instanceof Next
+      }
 
       static make<K> (tξ: TracedMatch<K>): Next<K> {
          const this_: Next<K> = make<Next<K>>(Next, tξ)
@@ -273,6 +317,10 @@ export namespace Match {
    export class Constr<K> extends Match<K> {
       cases: FiniteMap<string, Trie.Args<K> | Args<K>> 
 
+      static is<K> (ξ: Match<K>): ξ is Constr<K> {
+         return ξ instanceof Constr
+      }
+
       static make<K> (cases: FiniteMap<string, Trie.Args<K> | Args<K>>): Constr<K> {
          const this_: Constr<K> = make(Constr, cases)
          this_.cases = cases
@@ -283,6 +331,10 @@ export namespace Match {
    export class Fun<K> extends Match<K> {
       f: Value.Closure | Value.PrimOp
       κ: K
+
+      static is<K> (ξ: Match<K>): ξ is Fun<K> {
+         return ξ instanceof Fun
+      }
 
       static make<K> (f: Value.Closure | Value.PrimOp, κ: K): Fun<K> {
          const this_: Fun<K> = make<Fun<K>>(Fun, f, κ)
@@ -296,6 +348,10 @@ export namespace Match {
       x: Lex.Var
       v: Value | null
       κ: K
+
+      static is<K> (ξ: Match<K>): ξ is Var<K> {
+         return ξ instanceof Var
+      }
 
       static make<K> (x: Lex.Var, v: Value | null, κ: K): Var<K> {
          const this_: Var<K> = make<Var<K>>(Var, x, v, κ)

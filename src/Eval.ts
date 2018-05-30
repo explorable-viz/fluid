@@ -58,7 +58,7 @@ export function eval_<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
       evalT(ρ, instantiate(ρ)(tv.t!.__id.e), σ), 
       ([tv, ,]) => {
          match(σ, tv.v) // Temporarily, check this doesn't crash.
-         return (tv.v === null) === (σ instanceof Trie.Var)
+         return (tv.v === null) === (Trie.Var.is(σ))
       }
    )
 }
@@ -67,24 +67,24 @@ export function eval_<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
 function evalT<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
    const t: Trace | null = tv.t,
          k: Runtime<Expr> = t.__id
-   if (σ instanceof Trie.Var) {
+   if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), tv)
       return [Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ]
    } else {
       if (t instanceof Trace.Empty) {
          const v: Value = __nonNull(tv.v)
          assert(v.__id === k && t.__id === k)
-         if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
+         if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
             const [args, ρʹ, κ]: Results<K> = evalArgs(ρ, get(σ.cases, v.ctr.str)!, v.args)
             return [Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ]
          } else
-         if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
+         if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
          } else
-         if (v instanceof Value.ConstStr && σ instanceof Trie.ConstStr) {
+         if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
          } else
-         if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && σ instanceof Trie.Fun) {
+         if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
          } else {
             return assert(false, "Demand mismatch.", tv, σ)

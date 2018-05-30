@@ -269,6 +269,10 @@ export namespace Expr {
       }
 
       export class ConstInt<K> extends Prim<K> {
+         static is<K> (σ: Trie<K>): σ is ConstInt<K> {
+            return σ instanceof ConstInt
+         }
+
          static make<K> (κ: K): ConstInt<K> {
             const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, κ)
             this_.κ = κ
@@ -277,6 +281,10 @@ export namespace Expr {
       }
 
       export class ConstStr<K> extends Prim<K> {
+         static is<K> (σ: Trie<K>): σ is ConstStr<K> {
+            return σ instanceof ConstStr
+         }
+
          static make<K> (κ: K): ConstStr<K> {
             const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
             this_.κ = κ
@@ -286,10 +294,6 @@ export namespace Expr {
 
       // n-ary product.
       export class Args<K> extends PersistentObject {
-         __Trie_Args (): void {
-            // discriminator
-         }
-
          static join<K extends JoinSemilattice<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
             if (Π instanceof End && Πʹ instanceof End) {
                return End.make(Π.κ.join(Πʹ.κ))
@@ -306,6 +310,10 @@ export namespace Expr {
       export class End<K> extends Args<K> {
          κ: K
 
+         static is<K> (Π: Args<K>): Π is End<K> {
+            return Π instanceof End
+         }
+
          static make<K> (κ: K): End<K> {
             const this_: End<K> = make<End<K>>(End, κ)
             this_.κ = κ
@@ -316,6 +324,10 @@ export namespace Expr {
       // Maps a single argument to another args trie.
       export class Next<K> extends Args<K> {
          σ: Trie<Args<K>>
+
+         static is<K> (Π: Args<K>): Π is Next<K> {
+            return Π instanceof Next
+         }
 
          static make<K> (σ: Trie<Args<K>>): Next<K> {
             const this_: Next<K> = make<Next<K>>(Next, σ)
@@ -328,6 +340,10 @@ export namespace Expr {
       export class Constr<K> extends Trie<K> {
          cases: FiniteMap<string, Args<K>>
 
+         static is<K> (σ: Trie<K>): σ is Constr<K> {
+            return σ instanceof Constr
+         }
+
          static make<K> (cases: FiniteMap<string, Args<K>>): Constr<K> {
             const this_: Constr<K> = make(Constr, cases)
             this_.cases = cases
@@ -337,6 +353,10 @@ export namespace Expr {
 
       export class Fun<K> extends Trie<K> {
          κ: K
+
+         static is<K> (σ: Trie<K>): σ is Fun<K> {
+            return σ instanceof Fun
+         }
 
          static make<K> (κ: K): Fun<K> {
             const this_: Fun<K> = make<Fun<K>>(Fun, κ)
@@ -348,6 +368,10 @@ export namespace Expr {
       export class Var<K> extends Trie<K> {
          x: Lex.Var
          κ: K
+
+         static is<K> (σ: Trie<K>): σ is Var<K> {
+            return σ instanceof Var
+         }
 
          static make<K> (x: Lex.Var, κ: K): Var<K> {
             const this_: Var<K> = make<Var<K>>(Var, x, κ)
