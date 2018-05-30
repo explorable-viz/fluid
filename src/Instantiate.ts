@@ -55,7 +55,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
-function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
+function instantiateKont<K extends Expr.Kont2<K>> (ρ: Env, κ: K): Kont {
    if (κ instanceof Expr.Trie.Trie) {
       return instantiateTrie(ρ, κ)
    } else
@@ -69,7 +69,7 @@ function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
    }
 }
 
-function instantiateArgs (ρ: Env, Π: Expr.Trie.Args): Trie.Args {
+function instantiateArgs<K extends Expr.Kont2<K>> (ρ: Env, Π: Expr.Trie.Args<K>): Trie.Args {
    if (Π instanceof Expr.Trie.End) {
       return Trie.End.make(instantiateKont(ρ, Π.κ))
    } else
@@ -80,7 +80,7 @@ function instantiateArgs (ρ: Env, Π: Expr.Trie.Args): Trie.Args {
    }
 }
 
-function instantiateTrie (ρ: Env, σ: Expr.Trie): Trie {
+function instantiateTrie<K extends Expr.Kont2<K>> (ρ: Env, σ: Expr.Trie<K>): Trie {
    if (σ instanceof Expr.Trie.Var) {
       return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
    } else
@@ -92,7 +92,7 @@ function instantiateTrie (ρ: Env, σ: Expr.Trie): Trie {
    } else
    if (σ instanceof Expr.Trie.Constr) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args>): Pair<string, Trie.Args> => {
+         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args<K>>): Pair<string, Trie.Args> => {
             return Pair.make(ctr, instantiateArgs(ρ, Π))
          })
       )
