@@ -103,34 +103,30 @@ export class Traced extends PersistentObject {
    }
 }
 
-// Not sure of the value of this if it doesn't have any methods.
-export interface Kont2<K extends Kont2<K>> {
-}
-
 // Tries are persistent but not versioned, as per the formalism.
-export type Trie<K extends Kont2<K>> = Trie.Trie<K>
+export type Trie<K> = Trie.Trie<K>
 
 export namespace Trie {
-   export class Trie<K extends Kont2<K>> extends PersistentObject implements Kont2<K> {
+   export class Trie<K> extends PersistentObject {
       __Trie_Trie (): void {
          // discriminator
       }
    }
 
-   export class Prim<K extends Kont2<K>> extends Trie<K> {
+   export class Prim<K> extends Trie<K> {
       κ: K
    }
 
-   export class ConstInt<K extends Kont2<K>> extends Prim<K> {
-      static make<K extends Kont2<K>> (κ: K): ConstInt<K> {
+   export class ConstInt<K> extends Prim<K> {
+      static make<K> (κ: K): ConstInt<K> {
          const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, κ)
          this_.κ = κ
          return this_
       }
    }
 
-   export class ConstStr<K extends Kont2<K>> extends Prim<K> {
-      static make<K extends Kont2<K>> (κ: K): ConstStr<K> {
+   export class ConstStr<K> extends Prim<K> {
+      static make<K> (κ: K): ConstStr<K> {
          const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
          this_.κ = κ
          return this_
@@ -138,17 +134,17 @@ export namespace Trie {
    }
 
    // n-ary product
-   export class Args<K extends Kont2<K>> extends PersistentObject implements Kont2<K> {
+   export class Args<K> extends PersistentObject {
       __Trie_Args (): void {
          // discriminator
       }
    }
 
    // Maps zero arguments to κ.
-   export class End<K extends Kont2<K>> extends Args<K> {
+   export class End<K> extends Args<K> {
       κ: K
 
-      static make<K extends Kont2<K>> (κ: K): End<K> {
+      static make<K> (κ: K): End<K> {
          const this_: End<K> = make<End<K>>(End, κ)
          this_.κ = κ
          return this_
@@ -156,41 +152,41 @@ export namespace Trie {
    }
 
    // Maps a single argument to another args trie.
-   export class Next<K extends Kont2<K>> extends Args<K> {
+   export class Next<K> extends Args<K> {
       σ: Trie<K>
 
-      static make<K extends Kont2<K>> (σ: Trie<K>): Next<K> {
+      static make<K> (σ: Trie<K>): Next<K> {
          const this_: Next<K> = make<Next<K>>(Next, σ)
          this_.σ = σ
          return this_
       }
    }
 
-   export class Constr<K extends Kont2<K>> extends Trie<K> {
+   export class Constr<K> extends Trie<K> {
       cases: FiniteMap<string, Args<K>>
 
-      static make<K extends Kont2<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+      static make<K> (cases: FiniteMap<string, Args<K>>): Constr<K> {
          const this_: Constr<K> = make<Constr<K>>(Constr, cases)
          this_.cases = cases
          return this_
       }
    }
 
-   export class Fun<K extends Kont2<K>> extends Trie<K> {
+   export class Fun<K> extends Trie<K> {
       κ: K
 
-      static make<K extends Kont2<K>> (κ: K): Fun<K> {
+      static make<K> (κ: K): Fun<K> {
          const this_: Fun<K> = make<Fun<K>>(Fun, κ)
          this_.κ = κ
          return this_
       }
    }
 
-   export class Var<K extends Kont2<K>> extends Trie<K> {
+   export class Var<K> extends Trie<K> {
       x: Lex.Var
       κ: K
 
-      static make<K extends Kont2<K>> (x: Lex.Var, κ: K): Var<K> {
+      static make<K> (x: Lex.Var, κ: K): Var<K> {
          const this_: Var<K> = make<Var<K>>(Var, x, κ)
          this_.x = x
          this_.κ = κ
@@ -199,11 +195,11 @@ export namespace Trie {
    }
 }
 
-export class TracedMatch<K extends Kont2<K>> extends PersistentObject {
+export class TracedMatch<K> extends PersistentObject {
    t: Trace | null // null iff ξ represents a dead branch
    ξ: Match<K>
 
-   static make<K extends Kont2<K>> (t: Trace | null, ξ: Match<K>): TracedMatch<K> {
+   static make<K> (t: Trace | null, ξ: Match<K>): TracedMatch<K> {
       const this_: TracedMatch<K> = make<TracedMatch<K>>(TracedMatch, t, ξ)
       this_.t = t
       this_.ξ = ξ
@@ -211,24 +207,24 @@ export class TracedMatch<K extends Kont2<K>> extends PersistentObject {
    }
 }
 
-export type Match<K extends Kont2<K>> = Match.Match<K>
+export type Match<K> = Match.Match<K>
 
 // A trie which has been matched (executed) to a depth of at least one.
 export namespace Match {
-   export class Match<K extends Kont2<K>> extends PersistentObject {
+   export class Match<K> extends PersistentObject {
       __Match_Match (): void {
          // discriminator
       }
    }
 
-   export class Prim<K extends Kont2<K>> extends Match<K> {
+   export class Prim<K> extends Match<K> {
       κ: K
    }
 
-   export class ConstInt<K extends Kont2<K>> extends Prim<K> {
+   export class ConstInt<K> extends Prim<K> {
       val: number
 
-      static make<K extends Kont2<K>> (val: number, κ: K): ConstInt<K> {
+      static make<K> (val: number, κ: K): ConstInt<K> {
          const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, val, κ)
          this_.val = val
          this_.κ = κ
@@ -236,10 +232,10 @@ export namespace Match {
       }
    }
 
-   export class ConstStr<K extends Kont2<K>> extends Prim<K> {
+   export class ConstStr<K> extends Prim<K> {
       val: string
 
-      static make<K extends Kont2<K>> (val: string, κ: K): ConstStr<K> {
+      static make<K> (val: string, κ: K): ConstStr<K> {
          const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, val, κ)
          this_.val = val
          this_.κ = κ
@@ -247,26 +243,26 @@ export namespace Match {
       }
    }
 
-   export class Args<K extends Kont2<K>> extends PersistentObject {
+   export class Args<K> extends PersistentObject {
       __Match_Args (): void {
          // discriminator
       }
    }
 
-   export class End<K extends Kont2<K>> extends Args<K> {
+   export class End<K> extends Args<K> {
       κ: K
 
-      static make<K extends Kont2<K>> (κ: K): End<K> {
+      static make<K> (κ: K): End<K> {
          const this_: End<K> = make<End<K>>(End, κ)
          this_.κ = κ
          return this_
       }
    }
 
-   export class Next<K extends Kont2<K>> extends Args<K> {
+   export class Next<K> extends Args<K> {
       tξ: TracedMatch<K>
 
-      static make<K extends Kont2<K>> (tξ: TracedMatch<K>): Next<K> {
+      static make<K> (tξ: TracedMatch<K>): Next<K> {
          const this_: Next<K> = make<Next<K>>(Next, tξ)
          this_.tξ = tξ
          return this_
@@ -274,21 +270,21 @@ export namespace Match {
    }
 
    // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
-   export class Constr<K extends Kont2<K>> extends Match<K> {
+   export class Constr<K> extends Match<K> {
       cases: FiniteMap<string, Trie.Args<K> | Args<K>> 
 
-      static make<K extends Kont2<K>> (cases: FiniteMap<string, Trie.Args<K> | Args<K>>): Constr<K> {
+      static make<K> (cases: FiniteMap<string, Trie.Args<K> | Args<K>>): Constr<K> {
          const this_: Constr<K> = make(Constr, cases)
          this_.cases = cases
          return this_
       }
    }
 
-   export class Fun<K extends Kont2<K>> extends Match<K> {
+   export class Fun<K> extends Match<K> {
       f: Value.Closure | Value.PrimOp
       κ: K
 
-      static make<K extends Kont2<K>> (f: Value.Closure | Value.PrimOp, κ: K): Fun<K> {
+      static make<K> (f: Value.Closure | Value.PrimOp, κ: K): Fun<K> {
          const this_: Fun<K> = make<Fun<K>>(Fun, f, κ)
          this_.f = f
          this_.κ = κ
@@ -296,12 +292,12 @@ export namespace Match {
       }
    }
 
-   export class Var<K extends Kont2<K>> extends Match<K> {
+   export class Var<K> extends Match<K> {
       x: Lex.Var
       v: Value | null
       κ: K
 
-      static make<K extends Kont2<K>> (x: Lex.Var, v: Value | null, κ: K): Var<K> {
+      static make<K> (x: Lex.Var, v: Value | null, κ: K): Var<K> {
          const this_: Var<K> = make<Var<K>>(Var, x, v, κ)
          this_.x = x
          this_.v = v

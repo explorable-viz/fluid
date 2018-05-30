@@ -55,7 +55,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
-function instantiateKont<K extends Expr.Kont2<K>> (ρ: Env, κ: K): Kont {
+function instantiateKont<K> (ρ: Env, κ: K): Kont {
    if (κ instanceof Expr.Trie.Trie) {
       return instantiateTrie(ρ, κ)
    } else
@@ -69,7 +69,7 @@ function instantiateKont<K extends Expr.Kont2<K>> (ρ: Env, κ: K): Kont {
    }
 }
 
-function instantiateArgs<K extends Expr.Kont2<K>> (ρ: Env, Π: Expr.Trie.Args<K>): Trie.Args {
+function instantiateArgs<K> (ρ: Env, Π: Expr.Trie.Args<K>): Trie.Args<K> {
    if (Π instanceof Expr.Trie.End) {
       return Trie.End.make(instantiateKont(ρ, Π.κ))
    } else
@@ -80,7 +80,7 @@ function instantiateArgs<K extends Expr.Kont2<K>> (ρ: Env, Π: Expr.Trie.Args<K
    }
 }
 
-function instantiateTrie<K extends Expr.Kont2<K>> (ρ: Env, σ: Expr.Trie<K>): Trie {
+function instantiateTrie<K> (ρ: Env, σ: Expr.Trie<K>): Trie {
    if (σ instanceof Expr.Trie.Var) {
       return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
    } else
