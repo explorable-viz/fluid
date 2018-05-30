@@ -30,7 +30,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
       } else
       if (e instanceof Expr.Let) {
          // Trace must still be null even though I know "statically" which branch will be taken.
-         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var, null)
+         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Expr>, null)
          return Traced.make(t, null)
       } else
       if (e instanceof Expr.LetRec) {
@@ -80,7 +80,7 @@ function instantiateArgs<K> (ρ: Env, Π: Expr.Trie.Args<K>): Trie.Args<K> {
    }
 }
 
-function instantiateTrie<K> (ρ: Env, σ: Expr.Trie<K>): Trie {
+function instantiateTrie<K> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
    if (σ instanceof Expr.Trie.Var) {
       return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
    } else
@@ -92,7 +92,7 @@ function instantiateTrie<K> (ρ: Env, σ: Expr.Trie<K>): Trie {
    } else
    if (σ instanceof Expr.Trie.Constr) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args<K>>): Pair<string, Trie.Args> => {
+         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args<K>>): Pair<string, Trie.Args<K>> => {
             return Pair.make(ctr, instantiateArgs(ρ, Π))
          })
       )
