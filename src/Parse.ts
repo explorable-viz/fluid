@@ -237,7 +237,7 @@ const pair: Parser<Expr.Constr> =
          Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern<K extends Expr.Kont2<K>> (n: number, p: Parser<K>): Parser<Expr.Trie.Args<K>> {
+function args_pattern<K> (n: number, p: Parser<K>): Parser<Expr.Trie.Args<K>> {
    if (n === 0) {
       return withAction(p, Expr.Trie.End.make)
    } else {
@@ -250,7 +250,7 @@ function args_pattern<K extends Expr.Kont2<K>> (n: number, p: Parser<K>): Parser
 }
 
 // Continuation-passing style means "parenthesise" idiom doesn't work here.
-function constr_pattern<K extends Expr.Kont2<K>> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
+function constr_pattern<K> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
    return withAction(
       seqDep(
          ctr, 
@@ -268,21 +268,21 @@ function constr_pattern<K extends Expr.Kont2<K>> (p: Parser<K>): Parser<Expr.Tri
    )
 }
 
-function pair_pattern<K extends Expr.Kont2<K>> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
+function pair_pattern<K> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
    return withAction(
       dropFirst(symbol(str.parenL), args_pattern(2, dropFirst(symbol(str.parenR), p))),
       (Π: Expr.Trie.Args<K>): Expr.Trie.Constr<K> => Expr.Trie.Constr.make(singleton("Pair", Π))
    )
 }
 
-function variable_pattern<K extends Expr.Kont2<K>> (p: Parser<K>): Parser<Expr.Trie.Var<K>> {
+function variable_pattern<K> (p: Parser<K>): Parser<Expr.Trie.Var<K>> {
    return withAction(
       seq(var_, p), ([x, κ]: [Lex.Var, K]): Expr.Trie.Var<K> => 
          Expr.Trie.Var.make(x, κ)
       )
 }
 
-function pattern<K extends Expr.Kont2<K>> (p: Parser<K>): Parser<Expr.Trie<K>> {
+function pattern<K> (p: Parser<K>): Parser<Expr.Trie<K>> {
    return (state: ParseState) => 
       choice<Expr.Trie<K>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
@@ -301,7 +301,7 @@ function matches (state: ParseState): ParseResult<Expr.Trie<Expr>> | null {
       (σs: Expr.Trie<Expr>[]) => {
          let σ: Expr.Trie<Expr> = σs[0]
          for (let i = 1; i < σs.length; ++i) {
-            σ = σ.join(σs[i])
+            σ = Expr.Trie.Trie.join(σ, σs[i])
          } 
          return σ
       }
