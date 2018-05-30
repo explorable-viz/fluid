@@ -5,7 +5,10 @@ import { Expr, Lex } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { PersistentObject, ν } from "./Runtime"
-import { Value, Trie } from "./Traced"
+import { Traced, Value } from "./Traced"
+
+import Args = Traced.Args
+import Trie = Traced.Trie
 
 export type PrimResult<K> = [Value, K]
 type TrieCtr = (body: null) => Trie.Prim<null>
@@ -24,9 +27,9 @@ function match<K> (v: Value, σ: Trie<K>): PrimResult<K> {
       return [v, σ.κ]
    } else 
    if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
-      const Π: Trie.Args<K> = get(σ.cases, v.ctr.str)!
+      const Π: Args<K> = get(σ.cases, v.ctr.str)!
       assert(v.args.length === 0, "Primitives must return nullary values.")
-      if (Π instanceof Trie.End) {
+      if (Π instanceof Args.End) {
          return [v, Π.κ]
       } else {
          return absurd()
