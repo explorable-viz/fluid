@@ -67,18 +67,18 @@ function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
    if (κ instanceof Expr.Expr) {
       return instantiate(ρ)(κ)
    } else
-   if (κ instanceof Expr.Trie.Args) {
+   if (κ instanceof Expr.Args.Args) {
       return instantiateArgs(ρ, κ)
    } else {
       return absurd()
    }
 }
 
-function instantiateArgs (ρ: Env, Π: Expr.Trie.Args<Expr.Kont>): Trie.Args<Kont> {
-   if (Expr.Trie.End.is(Π)) {
+function instantiateArgs (ρ: Env, Π: Expr.Args<Expr.Kont>): Trie.Args<Kont> {
+   if (Expr.Args.End.is(Π)) {
       return Trie.End.make(instantiateKont(ρ, Π.κ))
    } else
-   if (Expr.Trie.Next.is(Π)) {
+   if (Expr.Args.Next.is(Π)) {
       return Trie.Next.make(instantiateTrie(ρ, Π.σ))
    } else {
       return absurd()
@@ -97,7 +97,7 @@ function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Kont> {
    } else
    if (Expr.Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args<Expr.Kont>>): Pair<string, Trie.Args<Traced>> => {
+         ({ fst: ctr, snd: Π }: Pair<string, Expr.Args<Expr.Kont>>): Pair<string, Trie.Args<Traced>> => {
             return Pair.make(ctr, instantiateArgs(ρ, Π))
          })
       )

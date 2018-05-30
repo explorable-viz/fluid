@@ -244,63 +244,9 @@ export namespace Expr {
       }
    }
 
-   // Tries are persistent but not versioned, as per the formalism.
-   export type Trie<K> = Trie.Trie<K>
+   export type Args<K> = Args.Args<K>
 
-   // Common supertype of trie continuations.
-   export interface Kont {
-   }
-
-   export namespace Trie {
-      export class Trie<K> extends PersistentObject implements Kont, JoinSemilattice<Trie<K>> {
-         // This idiom to avoid type-spam.
-         join (τ: Trie<K>): Trie<K> {
-            return Trie.join(this, τ)
-         }
-
-         static join<K extends JoinSemilattice<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
-            if (Fun.is(σ) && Fun.is(τ)) {
-               return Fun.make(σ.κ.join(τ.κ))
-            } else
-            if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-               return Var.make(σ.x, σ.κ.join(τ.κ))
-            } else
-            if (Constr.is(σ) && Constr.is(τ)) {
-               return Constr.make(unionWith(σ.cases, τ.cases, Args.join))
-            } else {
-               return assert(false, "Undefined join.", this, τ)
-            }
-         }
-      }
-
-      export class Prim<K> extends Trie<K> {
-         κ: K
-      }
-
-      export class ConstInt<K> extends Prim<K> {
-         static is<K> (σ: Trie<K>): σ is ConstInt<K> {
-            return σ instanceof ConstInt
-         }
-
-         static make<K> (κ: K): ConstInt<K> {
-            const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, κ)
-            this_.κ = κ
-            return this_
-         }
-      }
-
-      export class ConstStr<K> extends Prim<K> {
-         static is<K> (σ: Trie<K>): σ is ConstStr<K> {
-            return σ instanceof ConstStr
-         }
-
-         static make<K> (κ: K): ConstStr<K> {
-            const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
-            this_.κ = κ
-            return this_
-         }
-      }
-
+   export namespace Args {
       // n-ary product.
       export class Args<K> extends PersistentObject implements Kont, JoinSemilattice<Args<K>> {
          __Expr_Args (): void {
@@ -316,7 +262,7 @@ export namespace Expr {
                return End.make(Π.κ.join(Πʹ.κ))
             } else
             if (Π instanceof Next && Πʹ instanceof Next) {
-               return Next.make(Trie.join(Π.σ, Πʹ.σ))
+               return Next.make(Π.σ.join(Πʹ.σ))
             } else {
                return assert(false, "Undefined join.", Π, Πʹ)
             }
@@ -349,6 +295,64 @@ export namespace Expr {
          static make<K> (σ: Trie<Args<K>>): Next<K> {
             const this_: Next<K> = make<Next<K>>(Next, σ)
             this_.σ = σ
+            return this_
+         }
+      }
+   }
+
+   // Tries are persistent but not versioned, as per the formalism.
+   export type Trie<K> = Trie.Trie<K>
+
+   // Common supertype of trie continuations.
+   export interface Kont {
+   }
+
+   export namespace Trie {
+      export class Trie<K> extends PersistentObject implements Kont, JoinSemilattice<Trie<K>> {
+         // This idiom to avoid type-spam.
+         join (τ: Trie<K>): Trie<K> {
+            return Trie.join(this, τ)
+         }
+
+         static join<K extends JoinSemilattice<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
+            if (Fun.is(σ) && Fun.is(τ)) {
+               return Fun.make(σ.κ.join(τ.κ))
+            } else
+            if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
+               return Var.make(σ.x, σ.κ.join(τ.κ))
+            } else
+            if (Constr.is(σ) && Constr.is(τ)) {
+               return Constr.make(unionWith(σ.cases, τ.cases, Args.Args.join))
+            } else {
+               return assert(false, "Undefined join.", this, τ)
+            }
+         }
+      }
+
+      export class Prim<K> extends Trie<K> {
+         κ: K
+      }
+
+      export class ConstInt<K> extends Prim<K> {
+         static is<K> (σ: Trie<K>): σ is ConstInt<K> {
+            return σ instanceof ConstInt
+         }
+
+         static make<K> (κ: K): ConstInt<K> {
+            const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, κ)
+            this_.κ = κ
+            return this_
+         }
+      }
+
+      export class ConstStr<K> extends Prim<K> {
+         static is<K> (σ: Trie<K>): σ is ConstStr<K> {
+            return σ instanceof ConstStr
+         }
+
+         static make<K> (κ: K): ConstStr<K> {
+            const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
+            this_.κ = κ
             return this_
          }
       }

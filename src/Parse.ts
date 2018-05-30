@@ -237,15 +237,15 @@ const pair: Parser<Expr.Constr> =
          Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern<K> (n: number, p: Parser<K>): Parser<Expr.Trie.Args<K>> {
+function args_pattern<K> (n: number, p: Parser<K>): Parser<Expr.Args<K>> {
    if (n === 0) {
-      return withAction(p, Expr.Trie.End.make)
+      return withAction(p, Expr.Args.End.make)
    } else {
       let pʹ = args_pattern(n - 1, p)
       if (n > 1) {
          pʹ = dropFirst(symbol(","), pʹ)
       }
-      return withAction(pattern(pʹ), Expr.Trie.Next.make)
+      return withAction(pattern(pʹ), Expr.Args.Next.make)
    }
 }
 
@@ -254,16 +254,16 @@ function constr_pattern<K> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
    return withAction(
       seqDep(
          ctr, 
-         (ctr: Lex.Ctr): Parser<Expr.Trie.Args<K>> => {
+         (ctr: Lex.Ctr): Parser<Expr.Args<K>> => {
             const n: number = arity(ctr.str)
             if (n === 0) {
-               return withAction(p, Expr.Trie.End.make)
+               return withAction(p, Expr.Args.End.make)
             } else {
                return dropFirst(symbol(str.parenL), args_pattern(n, dropFirst(symbol(str.parenR), p)))
             }
          }
       ),
-      ([ctr, Π]: [Lex.Ctr, Expr.Trie.Args<K>]): Expr.Trie.Constr<K> =>
+      ([ctr, Π]: [Lex.Ctr, Expr.Args<K>]): Expr.Trie.Constr<K> =>
          Expr.Trie.Constr.make(singleton(ctr.str, Π))
    )
 }
@@ -271,7 +271,7 @@ function constr_pattern<K> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
 function pair_pattern<K> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
    return withAction(
       dropFirst(symbol(str.parenL), args_pattern(2, dropFirst(symbol(str.parenR), p))),
-      (Π: Expr.Trie.Args<K>): Expr.Trie.Constr<K> => Expr.Trie.Constr.make(singleton("Pair", Π))
+      (Π: Expr.Args<K>): Expr.Trie.Constr<K> => Expr.Trie.Constr.make(singleton("Pair", Π))
    )
 }
 
