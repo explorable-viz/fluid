@@ -221,17 +221,6 @@ export namespace Match {
       }
    }
 
-   // Tries are also matched tries, because we need live and dead branches to have a uniform codomain.
-   export class Inj extends Match {
-      σ: Trie
-      
-      static make (σ: Trie): Inj {
-         const this_: Inj = make(Inj, σ)
-         this_.σ = σ
-         return this_
-      }
-   }
-
    export class Prim extends Match {
       κ: Kont
    }
@@ -296,27 +285,26 @@ export namespace Match {
    }
 
    export class Fun extends Match {
-      ρ: Env
-      σ: Trie
+      f: Value.Closure | Value.PrimOp
       κ: Kont
 
-      static make (ρ: Env, σ: Trie, κ: Kont): Fun {
-         const this_: Fun = make(Fun, ρ, σ, κ)
-         this_.ρ = ρ
-         this_.σ = σ
+      static make (f: Value.Closure | Value.PrimOp, κ: Kont): Fun {
+         const this_: Fun = make(Fun, f, κ)
+         this_.f = f
          this_.κ = κ
          return this_
       }
    }
 
-   // Any extra information a variable match should carry?
    export class Var extends Match {
       x: Lex.Var
+      v: Value | null
       κ: Kont
 
-      static make (x: Lex.Var, κ: Kont): Var {
-         const this_: Var = make(Var, x, κ)
+      static make (x: Lex.Var, v: Value | null, κ: Kont): Var {
+         const this_: Var = make(Var, x, v, κ)
          this_.x = x
+         this_.v = v
          this_.κ = κ
          return this_
       }

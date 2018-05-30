@@ -1,15 +1,16 @@
 import * as $ from "jquery"
+import { __nonNull, assert } from "../src/util/Core"
+import { parse } from "../src/util/parse/Core"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
 import { Expr, Lex } from "../src/Expr"
-import { singleton } from "../src/FiniteMap"
+import { singleton, unionWith } from "../src/FiniteMap"
 import { instantiate } from "../src/Instantiate"
+import { match } from "../src/Match"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
 import { Kont, Trie } from "../src/Traced"
-import { parse } from "../src/util/parse/Core"
-import { __nonNull } from "../src/util/Core"
 
 export function initialise (): void {
    // Fix the toString impl on String to behave sensibly.
@@ -35,29 +36,38 @@ export namespace τ {
       return Trie.End.make(κ)
    }
 
-   export function var_ (κ: Kont): Trie {
+   export function var_ (κ: Kont): Trie.Var {
       return Trie.Var.make(new Lex.Var("q"), κ)
    }
 
-   export function int (κ: Kont): Trie {
+   export function int (κ: Kont): Trie.Prim {
       return Trie.ConstInt.make(κ)
    }
 
-   export function str (κ: Kont): Trie {
+   export function str (κ: Kont): Trie.Prim {
       return Trie.ConstStr.make(κ)
    }
 
-   export function cons (Π: Trie.Args) {
+   export function cons (Π: Trie.Args): Trie.Constr {
       return Trie.Constr.make(singleton("Cons", Π))
    }
 
-   export function pair (Π: Trie.Args): Trie {
+   export function nil (Π: Trie.Args): Trie.Constr {
+      return Trie.Constr.make(singleton("Nil", Π))
+   }
+
+   export function pair (Π: Trie.Args): Trie.Constr {
       return Trie.Constr.make(singleton("Pair", Π))
    }
 
-   export function some (Π: Trie.Args): Trie {
+   export function some (Π: Trie.Args): Trie.Constr {
       return Trie.Constr.make(singleton("Some", Π))
    }
+}
+
+// Could have used join, but only defined for syntactic tries.
+export function merge (σ1: Trie.Constr, σ2: Trie.Constr): Trie.Constr {
+   return Trie.Constr.make(unionWith(σ1.cases, σ2.cases, (v: Trie.Args, vʹ: Trie.Args) => assert(false)))
 }
 
 export function runExample (p: Profile, src: string, σ: Trie): void {
@@ -67,7 +77,7 @@ export function runExample (p: Profile, src: string, σ: Trie): void {
       const [tv, , ]: Eval.Result = Eval.eval_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
       if (p >= Profile.Match) {
-         console.log(Eval.match(σ, tv.v))
+         console.log(match(σ, tv.v))
       }
    }
 }

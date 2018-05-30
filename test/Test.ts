@@ -100,7 +100,7 @@ describe("example", () => {
 	describe("zipW", () => {
 		const file: TestFile = loadExample("zipW")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Run, τ.cons(τ.arg(τ.pair(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(τ.var_(τ.endArgs(null))))))))))))
+			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.arg(τ.pair(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(τ.var_(τ.endArgs(null))))))))))))
 		})
 	})
 })
