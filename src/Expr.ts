@@ -243,7 +243,7 @@ export namespace Expr {
       }
    }
 
-   interface Kont2<K extends Kont2<K>> {
+   export interface Kont2<K extends Kont2<K>> {
       join (κ: K): K
    }
 
