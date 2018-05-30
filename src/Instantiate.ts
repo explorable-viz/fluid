@@ -3,7 +3,7 @@ import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
 import { Expr } from "./Expr"
-import { Trace, Traced, Trie, Kont, Value } from "./Traced"
+import { Trace, Traced, Trie, Value } from "./Traced"
 
 export function instantiate (ρ: Env): (e: Expr) => Traced {
    return function (e: Expr.Expr): Traced {
