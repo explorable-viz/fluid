@@ -10,7 +10,7 @@ import { instantiate } from "../src/Instantiate"
 import { match } from "../src/Match"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
-import { Kont, Trie } from "../src/Traced"
+import { Trie } from "../src/Traced"
 
 export function initialise (): void {
    // Fix the toString impl on String to behave sensibly.
@@ -28,53 +28,53 @@ export enum Profile {
 }
 
 export namespace τ {
-   export function arg (σ: Trie): Trie.Next {
+   export function arg<K> (σ: Trie<K>): Trie.Next<K> {
       return Trie.Next.make(σ)
    }
 
-   export function endArgs (κ: Kont): Trie.End {
+   export function endArgs<K> (κ: K): Trie.End<K> {
       return Trie.End.make(κ)
    }
 
-   export function var_ (κ: Kont): Trie.Var {
+   export function var_<K> (κ: K): Trie.Var<K> {
       return Trie.Var.make(new Lex.Var("q"), κ)
    }
 
-   export function int (κ: Kont): Trie.Prim {
+   export function int<K> (κ: K): Trie.Prim<K> {
       return Trie.ConstInt.make(κ)
    }
 
-   export function str (κ: Kont): Trie.Prim {
+   export function str<K> (κ: K): Trie.Prim<K> {
       return Trie.ConstStr.make(κ)
    }
 
-   export function cons (Π: Trie.Args): Trie.Constr {
+   export function cons<K> (Π: Trie.Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Cons", Π))
    }
 
-   export function nil (Π: Trie.Args): Trie.Constr {
+   export function nil<K> (Π: Trie.Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Nil", Π))
    }
 
-   export function pair (Π: Trie.Args): Trie.Constr {
+   export function pair<K> (Π: Trie.Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Pair", Π))
    }
 
-   export function some (Π: Trie.Args): Trie.Constr {
+   export function some<K> (Π: Trie.Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Some", Π))
    }
 }
 
 // Could have used join, but only defined for syntactic tries.
-export function merge (σ1: Trie.Constr, σ2: Trie.Constr): Trie.Constr {
-   return Trie.Constr.make(unionWith(σ1.cases, σ2.cases, (v: Trie.Args, vʹ: Trie.Args) => assert(false)))
+export function merge<K> (σ1: Trie.Constr<K>, σ2: Trie.Constr<K>): Trie.Constr<K> {
+   return Trie.Constr.make(unionWith(σ1.cases, σ2.cases, (v: Trie.Args<K>, vʹ: Trie.Args<K>) => assert(false)))
 }
 
-export function runExample (p: Profile, src: string, σ: Trie): void {
+export function runExample (p: Profile, src: string, σ: Trie<null>): void {
    const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    console.log(Profile[p])
    if (p >= Profile.Run) {
-      const [tv, , ]: Eval.Result = Eval.eval_(ρ, instantiate(ρ)(e), σ)
+      const [tv, , ]: Eval.Result<null> = Eval.eval_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
       if (p >= Profile.Match) {
          console.log(match(σ, tv.v))
@@ -84,7 +84,7 @@ export function runExample (p: Profile, src: string, σ: Trie): void {
 
 export let ρ: Env = prelude()
 
-export function runTest (prog: string, profile: Profile, σ: Trie = τ.var_(null)): void {
+export function runTest (prog: string, profile: Profile, σ: Trie<null> = τ.var_(null)): void {
    runExample(profile, prog, σ)
 }
 
