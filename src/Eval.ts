@@ -1,4 +1,4 @@
-import { __check, __nonNull, absurd, as, assert, make } from "./util/Core"
+import { __check, __nonNull, absurd, assert, make } from "./util/Core"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"

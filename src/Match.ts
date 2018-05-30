@@ -1,4 +1,4 @@
-import { absurd, as, assert } from "./util/Core"
+import { absurd, assert } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Match, Traced, TracedMatch, Trie, Value } from "./Traced"
 
@@ -30,7 +30,7 @@ export function match<K> (σ: Trie<K>, v: Value | null): Match<K> {
    }
 }
 
-function matchArgs<K> (tvs: List<Traced>): (Π: Trie.Args<K>) => Match.Args<K> {
+function matchArgs<K> (tvs: List<Traced>): (Π: Trie.Args<K>) => Trie.Args<K> | Match.Args<K> {
    return (Π: Trie.Args<K>): Match.Args<K> => {
       // Parser ensures constructor patterns agree with constructor signatures.
       if (Cons.is(tvs) && Π instanceof Trie.Next) {
