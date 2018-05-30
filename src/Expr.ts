@@ -309,7 +309,7 @@ export namespace Expr {
 
    export namespace Trie {
       export class Trie<K> extends PersistentObject implements Kont, JoinSemilattice<Trie<K>> {
-         // This idiom to avoid type-spam.
+         // This (unsound) idiom to avoid the semilattice constraint on K.
          join (τ: Trie<K>): Trie<K> {
             return Trie.join(this, τ)
          }

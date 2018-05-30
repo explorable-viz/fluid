@@ -67,11 +67,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
-// TypeScript generics are borked. For example:
-// Trie<Traced | Trie.Args<Traced>>    is assignable to     Trie<Traced>
-// Expr.Trie<Expr.Trie.Args<Expr>>     is assignable to     Expr.Trie<Expr>
-// Moreover, there isn't an easy way to relate the input and output types of instantiate.
-
+// See issue #33. The type Kont is mostly useless.
 function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
    if (κ instanceof Expr.Trie.Trie) {
       return instantiateTrie(ρ, κ)
