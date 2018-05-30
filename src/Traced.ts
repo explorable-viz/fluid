@@ -18,9 +18,9 @@ export namespace Value {
 
    export class Closure extends Value {
       ρ: Env
-      σ: Trie
+      σ: Trie<Traced>
    
-      static at (α: PersistentObject, ρ: Env, σ: Trie): Closure {
+      static at (α: PersistentObject, ρ: Env, σ: Trie<Traced>): Closure {
          const this_: Closure = create(α, Closure)
          this_.ρ = ρ
          this_.σ = σ
@@ -103,95 +103,95 @@ export class Traced extends PersistentObject {
    }
 }
 
-// Tries used to have type parameter K, as per the formalism, but in TypeScript it didn't really help.
-// Note that tries can contain match items, to allow a uniform continuation type.
-export type Kont = Traced | Trie | Trie.Args | TracedMatch | Match.Args | null
+// Not sure of the value of this if it doesn't have any methods.
+export interface Kont2<K extends Kont2<K>> {
+}
 
 // Tries are persistent but not versioned, as per the formalism.
-export type Trie = Trie.Trie
+export type Trie<K extends Kont2<K>> = Trie.Trie<K>
 
 export namespace Trie {
-   export class Trie extends PersistentObject {
+   export class Trie<K extends Kont2<K>> extends PersistentObject implements Kont2<K> {
       __Trie_Trie (): void {
          // discriminator
       }
    }
 
-   export class Prim extends Trie {
-      κ: Kont
+   export class Prim<K extends Kont2<K>> extends Trie<K> {
+      κ: K
    }
 
-   export class ConstInt extends Prim {
-      static make (κ: Kont): ConstInt {
-         const this_: ConstInt = make(ConstInt, κ)
+   export class ConstInt<K extends Kont2<K>> extends Prim<K> {
+      static make<K extends Kont2<K>> (κ: K): ConstInt<K> {
+         const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, κ)
          this_.κ = κ
          return this_
       }
    }
 
-   export class ConstStr extends Prim {
-      static make (κ: Kont): ConstStr {
-         const this_: ConstStr = make(ConstStr, κ)
+   export class ConstStr<K extends Kont2<K>> extends Prim<K> {
+      static make<K extends Kont2<K>> (κ: K): ConstStr<K> {
+         const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
          this_.κ = κ
          return this_
       }
    }
 
    // n-ary product
-   export class Args extends PersistentObject {
+   export class Args<K extends Kont2<K>> extends PersistentObject implements Kont2<K> {
       __Trie_Args (): void {
          // discriminator
       }
    }
 
    // Maps zero arguments to κ.
-   export class End extends Args {
-      κ: Kont
+   export class End<K extends Kont2<K>> extends Args<K> {
+      κ: K
 
-      static make (κ: Kont): End {
-         const this_: End = make(End, κ)
+      static make<K extends Kont2<K>> (κ: K): End<K> {
+         const this_: End<K> = make<End<K>>(End, κ)
          this_.κ = κ
          return this_
       }
    }
 
    // Maps a single argument to another args trie.
-   export class Next extends Args {
-      σ: Trie
+   export class Next<K extends Kont2<K>> extends Args<K> {
+      σ: Trie<K>
 
-      static make (σ: Trie): Next {
-         const this_: Next = make(Next, σ)
+      static make<K extends Kont2<K>> (σ: Trie<K>): Next<K> {
+         const this_: Next<K> = make<Next<K>>(Next, σ)
          this_.σ = σ
          return this_
       }
    }
 
-   export class Constr extends Trie {
-      cases: FiniteMap<string, Args>
+   export class Constr<K extends Kont2<K>> extends Trie<K> {
+      cases: FiniteMap<string, Args<K>>
 
-      static make (cases: FiniteMap<string, Args>): Constr {
-         const this_: Constr = make(Constr, cases)
+      static make<K extends Kont2<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+         const this_: Constr<K> = make<Constr<K>>(Constr, cases)
          this_.cases = cases
          return this_
       }
    }
 
-   export class Fun extends Trie {
-      κ: Kont
+   export class Fun<K extends Kont2<K>> extends Trie<K> {
+      κ: K
 
-      static make (κ: Kont): Fun {
-         const this_: Fun = make(Fun, κ)
+      static make<K extends Kont2<K>> (κ: K): Fun<K> {
+         const this_: Fun<K> = make<Fun<K>>(Fun, κ)
          this_.κ = κ
          return this_
       }
    }
 
-   export class Var extends Trie {
+   export class Var<K extends Kont2<K>> extends Trie<K> {
       x: Lex.Var
-      κ: Kont
+      κ: K
 
-      static make (x: Lex.Var, κ: Kont): Var {
-         const this_: Var = make(Var, x, κ)
+      static make<K extends Kont2<K>> (x: Lex.Var, κ: K): Var<K> {
+         const this_: Var<K> = make<Var<K>>(Var, x, κ)
          this_.x = x
          this_.κ = κ
          return this_
@@ -199,110 +199,110 @@ export namespace Trie {
    }
 }
 
-export class TracedMatch extends PersistentObject {
+export class TracedMatch<K extends Kont2<K>> extends PersistentObject {
    t: Trace | null // null iff ξ represents a dead branch
-   ξ: Match
+   ξ: Match<K>
 
-   static make (t: Trace | null, ξ: Match): TracedMatch {
-      const this_: TracedMatch = make(TracedMatch, t, ξ)
+   static make<K extends Kont2<K>> (t: Trace | null, ξ: Match<K>): TracedMatch<K> {
+      const this_: TracedMatch<K> = make<TracedMatch<K>>(TracedMatch, t, ξ)
       this_.t = t
       this_.ξ = ξ
       return this_
    }
 }
 
-export type Match = Match.Match
+export type Match<K extends Kont2<K>> = Match.Match<K>
 
 // A trie which has been matched (executed) to a depth of at least one.
 export namespace Match {
-   export class Match extends PersistentObject {
+   export class Match<K extends Kont2<K>> extends PersistentObject {
       __Match_Match (): void {
          // discriminator
       }
    }
 
-   export class Prim extends Match {
-      κ: Kont
+   export class Prim<K extends Kont2<K>> extends Match<K> {
+      κ: K
    }
 
-   export class ConstInt extends Prim {
+   export class ConstInt<K extends Kont2<K>> extends Prim<K> {
       val: number
 
-      static make (val: number, κ: Kont): ConstInt {
-         const this_: ConstInt = make(ConstInt, val, κ)
+      static make<K extends Kont2<K>> (val: number, κ: K): ConstInt<K> {
+         const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, val, κ)
          this_.val = val
          this_.κ = κ
          return this_
       }
    }
 
-   export class ConstStr extends Prim {
+   export class ConstStr<K extends Kont2<K>> extends Prim<K> {
       val: string
 
-      static make (val: string, κ: Kont): ConstStr {
-         const this_: ConstStr = make(ConstStr, val, κ)
+      static make<K extends Kont2<K>> (val: string, κ: K): ConstStr<K> {
+         const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, val, κ)
          this_.val = val
          this_.κ = κ
          return this_
       }
    }
 
-   export class Args extends PersistentObject {
+   export class Args<K extends Kont2<K>> extends PersistentObject {
       __Match_Args (): void {
          // discriminator
       }
    }
 
-   export class End extends Args {
-      κ: Kont
+   export class End<K extends Kont2<K>> extends Args<K> {
+      κ: K
 
-      static make (κ: Kont): End {
-         const this_: End = make(End, κ)
+      static make<K extends Kont2<K>> (κ: K): End<K> {
+         const this_: End<K> = make<End<K>>(End, κ)
          this_.κ = κ
          return this_
       }
    }
 
-   export class Next extends Args {
-      tξ: TracedMatch
+   export class Next<K extends Kont2<K>> extends Args<K> {
+      tξ: TracedMatch<K>
 
-      static make (tξ: TracedMatch): Next {
-         const this_: Next = make(Next, tξ)
+      static make<K extends Kont2<K>> (tξ: TracedMatch<K>): Next<K> {
+         const this_: Next<K> = make<Next<K>>(Next, tξ)
          this_.tξ = tξ
          return this_
       }
    }
 
    // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
-   export class Constr extends Match {
-      cases: FiniteMap<string, Trie.Args | Args> 
+   export class Constr<K extends Kont2<K>> extends Match<K> {
+      cases: FiniteMap<string, Trie.Args<K> | Args<K>> 
 
-      static make (cases: FiniteMap<string, Trie.Args | Args>): Constr {
-         const this_: Constr = make(Constr, cases)
+      static make<K extends Kont2<K>> (cases: FiniteMap<string, Trie.Args<K> | Args<K>>): Constr<K> {
+         const this_: Constr<K> = make(Constr, cases)
          this_.cases = cases
          return this_
       }
    }
 
-   export class Fun extends Match {
+   export class Fun<K extends Kont2<K>> extends Match<K> {
       f: Value.Closure | Value.PrimOp
-      κ: Kont
+      κ: K
 
-      static make (f: Value.Closure | Value.PrimOp, κ: Kont): Fun {
-         const this_: Fun = make(Fun, f, κ)
+      static make<K extends Kont2<K>> (f: Value.Closure | Value.PrimOp, κ: K): Fun<K> {
+         const this_: Fun<K> = make<Fun<K>>(Fun, f, κ)
          this_.f = f
          this_.κ = κ
          return this_
       }
    }
 
-   export class Var extends Match {
+   export class Var<K extends Kont2<K>> extends Match<K> {
       x: Lex.Var
       v: Value | null
-      κ: Kont
+      κ: K
 
-      static make (x: Lex.Var, v: Value | null, κ: Kont): Var {
-         const this_: Var = make(Var, x, v, κ)
+      static make<K extends Kont2<K>> (x: Lex.Var, v: Value | null, κ: K): Var<K> {
+         const this_: Var<K> = make<Var<K>>(Var, x, v, κ)
          this_.x = x
          this_.v = v
          this_.κ = κ
@@ -346,14 +346,14 @@ export namespace Trace {
 
    export class Let extends Trace {
       tu: Traced
-      σ: Trie.Var
+      σ: Trie.Var<Expr>
       t: Trace | null
 
       __Trace_Let (): void {
          // discriminator
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var, t: Trace | null): Let {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Expr>, t: Trace | null): Let {
          const this_: Let = create(k, Let)
          this_.tu = tu
          this_.σ = σ
@@ -392,14 +392,14 @@ export namespace Trace {
    
    export class MatchAs extends Trace {
       tu: Traced
-      σ: Trie
+      σ: Trie<Expr>
       t: Trace | null
 
       __Trace_MatchAs (): void {
          // discriminator
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie,  t: Trace | null): MatchAs {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Expr>,  t: Trace | null): MatchAs {
          const this_: MatchAs = create(k, MatchAs)
          this_.tu = tu
          this_.σ = σ
