@@ -55,6 +55,23 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
+// TypeScript generics stop working here. For example:
+// 
+// Type:                               is assignable to:
+// Trie<Traced | Trie.Args<Traced>>    Trie<Traced>
+// Expr.Trie<Expr.Trie.Args<Expr>>     Expr.Trie<Expr>
+
+function instantiateKont (ρ: Env, κ: Expr | Expr.Trie.Args<Expr>): Traced | Trie.Args<Traced> {
+   if (κ instanceof Expr.Expr) {
+      return instantiate(ρ)(κ)
+   } else
+   if (κ instanceof Expr.Trie.Args) {
+      return instantiateArgs(ρ, κ)
+   } else {
+      return absurd()
+   }
+}
+
 function instantiateArgs (ρ: Env, Π: Expr.Trie.Args<Expr>): Trie.Args<Traced> {
    if (Expr.Trie.End.is(Π)) {
       return Trie.End.make(instantiate(ρ)(Π.κ))
@@ -68,13 +85,13 @@ function instantiateArgs (ρ: Env, Π: Expr.Trie.Args<Expr>): Trie.Args<Traced> 
 
 function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr>): Trie<Traced> {
    if (Expr.Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, instantiate(ρ)(σ.κ))
+      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
    } else
    if (Expr.Trie.ConstInt.is(σ)) {
-      return Trie.ConstInt.make(instantiate(ρ)(σ.κ))
+      return Trie.ConstInt.make(instantiateKont(ρ, σ.κ))
    } else
    if (Expr.Trie.ConstStr.is(σ)) {
-      return Trie.ConstStr.make(instantiate(ρ)(σ.κ))
+      return Trie.ConstStr.make(instantiateKont(ρ, σ.κ))
    } else
    if (Expr.Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
@@ -84,7 +101,7 @@ function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr>): Trie<Traced> {
       )
    } else
    if (Expr.Trie.Fun.is(σ)) {
-      return Trie.Fun.make(instantiate(ρ)(σ.κ))
+      return Trie.Fun.make(instantiateKont(ρ,σ.κ))
    } else {
       return absurd()
    }

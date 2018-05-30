@@ -294,6 +294,10 @@ export namespace Expr {
 
       // n-ary product.
       export class Args<K> extends PersistentObject {
+         __Expr_Args (): void {
+            // discriminator
+         }
+
          static join<K extends JoinSemilattice<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
             if (Π instanceof End && Πʹ instanceof End) {
                return End.make(Π.κ.join(Πʹ.κ))
