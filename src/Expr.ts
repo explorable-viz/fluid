@@ -84,9 +84,13 @@ export namespace Lex {
 export type Expr = Expr.Expr
 
 export namespace Expr {
-   export class Expr extends VersionedObject<ExternalObject> {
+   export class Expr extends VersionedObject<ExternalObject> implements Kont2<Expr> {
       __Expr_Expr(): void {
          // discriminator
+      }
+
+      join (e: Expr): Expr {
+         return assert(false, "Expression join unsupported.")
       }
    }
 
@@ -139,9 +143,9 @@ export namespace Expr {
    }
 
    export class Fun extends Expr {
-      σ: Trie
+      σ: Trie<Expr>
 
-      static at (i: ExternalObject, σ: Trie): Fun {
+      static at (i: ExternalObject, σ: Trie<Expr>): Fun {
          const this_: Fun = create(i, Fun)
          this_.σ = σ
          this_.__version()
@@ -152,9 +156,9 @@ export namespace Expr {
    // A let is simply a match where the trie is a variable trie.
    export class Let extends Expr {
       e: Expr
-      σ: Trie.Var
+      σ: Trie.Var<Expr>
 
-      static at (i: ExternalObject, e: Expr, σ: Trie.Var): Let {
+      static at (i: ExternalObject, e: Expr, σ: Trie.Var<Expr>): Let {
          const this_: Let = create(i, Let)
          this_.e = e
          this_.σ = σ
@@ -202,9 +206,9 @@ export namespace Expr {
 
    export class MatchAs extends Expr {
       e: Expr
-      σ: Trie
+      σ: Trie<Expr>
    
-      static at (i: ExternalObject, e: Expr, σ: Trie): MatchAs {
+      static at (i: ExternalObject, e: Expr, σ: Trie<Expr>): MatchAs {
          const this_: MatchAs = create(i, MatchAs)
          this_.e = e
          this_.σ = σ
@@ -239,136 +243,120 @@ export namespace Expr {
       }
    }
 
-   // Distinguish tries as an expression form; using a single parameterised definition is messy.
-   export type Kont = Expr | Trie | Trie.Args
+   interface Kont2<K extends Kont2<K>> {
+      join (κ: K): K
+   }
 
    // Tries are persistent but not versioned, as per the formalism.
-   export type Trie = Trie.Trie
+   export type Trie<K extends Kont2<K>> = Trie.Trie<K>
 
    export namespace Trie {
-      export class Trie extends PersistentObject implements JoinSemilattice<Trie> {
-         join (σ: Trie): Trie {
-            return join(this, σ)
+      export class Trie<K extends Kont2<K>> extends PersistentObject implements Kont2<Trie<K>>, JoinSemilattice<Trie<K>> {
+         join (τ: Trie<K>): Trie<K> {
+            if (this instanceof Fun && τ instanceof Fun) {
+               return Fun.make(this.κ.join(τ.κ))
+            } else
+            if (this instanceof Var && τ instanceof Var && eq(this.x, τ.x)) {
+               return Var.make(this.x, this.κ.join(τ.κ))
+            } else
+            if (this instanceof Constr && τ instanceof Constr) {
+               return Constr.make(unionWith(this.cases, τ.cases, (Π: Args<K>, Πʹ: Args<K>) => Π.join(Πʹ)))
+            } else {
+               return assert(false, "Undefined join.", this, τ)
+            }
          }
       }
 
-      export class Prim extends Trie {
-         κ: Kont
+      export class Prim<K extends Kont2<K>> extends Trie<K> {
+         κ: K
       }
 
-      export class ConstInt extends Prim {
-         static make (κ: Kont): ConstInt {
-            const this_: ConstInt = make(ConstInt, κ)
+      export class ConstInt<K extends Kont2<K>> extends Prim<K> {
+         static make<K extends Kont2<K>> (κ: K): ConstInt<K> {
+            const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, κ)
             this_.κ = κ
             return this_
          }
       }
 
-      export class ConstStr extends Prim {
-         static make (κ: Kont): ConstStr {
-            const this_: ConstStr = make(ConstStr, κ)
+      export class ConstStr<K extends Kont2<K>> extends Prim<K> {
+         static make<K extends Kont2<K>> (κ: K): ConstStr<K> {
+            const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
             this_.κ = κ
             return this_
          }
       }
 
       // n-ary product.
-      export class Args extends PersistentObject {
+      export class Args<K extends Kont2<K>> extends PersistentObject implements Kont2<Args<K>> {
          __Trie_Args (): void {
             // discriminator
+         }
+
+         join (Π: Args<K>): Args<K> {
+            if (this instanceof End && Π instanceof End) {
+               return End.make(this.κ.join(Π.κ))
+            } else
+            if (this instanceof Next && Π instanceof Next) {
+               return Next.make(this.σ.join(Π.σ))
+            } else {
+               return assert(false, "Undefined join.", this, Π)
+            }
          }
       }
 
       // Maps zero arguments to κ.
-      export class End extends Args {
-         κ: Kont
+      export class End<K extends Kont2<K>> extends Args<K> {
+         κ: K
 
-         static make (κ: Kont): End {
-            const this_: End = make(End, κ)
+         static make<K extends Kont2<K>> (κ: K): End<K> {
+            const this_: End<K> = make<End<K>>(End, κ)
             this_.κ = κ
             return this_
          }
       }
 
       // Maps a single argument to another args trie.
-      export class Next extends Args {
-         σ: Trie
+      export class Next<K extends Kont2<K>> extends Args<K> {
+         σ: Trie<Args<K>>
 
-         static make (σ: Trie): Next {
-            const this_: Next = make(Next, σ)
+         static make<K extends Kont2<K>> (σ: Trie<Args<K>>): Next<K> {
+            const this_: Next<K> = make<Next<K>>(Next, σ)
             this_.σ = σ
             return this_
          }
       }
 
       // n-ary sum of n-ary products.
-      export class Constr extends Trie {
-         cases: FiniteMap<string, Args>
+      export class Constr<K extends Kont2<K>> extends Trie<K> {
+         cases: FiniteMap<string, Args<K>>
 
-         static make (cases: FiniteMap<string, Args>): Constr {
-            const this_: Constr = make(Constr, cases)
+         static make<K extends Kont2<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+            const this_: Constr<K> = make(Constr, cases)
             this_.cases = cases
             return this_
          }
       }
 
-      export class Fun extends Trie {
-         κ: Kont
+      export class Fun<K extends Kont2<K>> extends Trie<K> {
+         κ: K
 
-         static make (κ: Kont): Fun {
-            const this_: Fun = make(Fun, κ)
+         static make<K extends Kont2<K>> (κ: K): Fun<K> {
+            const this_: Fun<K> = make<Fun<K>>(Fun, κ)
             this_.κ = κ
             return this_
          }
       }
 
-      export class Var extends Trie {
+      export class Var<K extends Kont2<K>> extends Trie<K> {
          x: Lex.Var
-         κ: Kont
+         κ: K
 
-         static make (x: Lex.Var, κ: Kont): Var {
-            const this_: Var = make(Var, x, κ)
+         static make<K extends Kont2<K>> (x: Lex.Var, κ: K): Var<K> {
+            const this_: Var<K> = make<Var<K>>(Var, x, κ)
             this_.x = x
             this_.κ = κ
             return this_
-         }
-      }
-
-      // join of expressions is undefined, which effectively means case branches never overlap.
-      function joinKont (κ: Kont, κʹ: Kont): Kont {
-         if (κ instanceof Trie && κʹ instanceof Trie) {
-            return join(κ, κʹ)
-         } else
-         if (κ instanceof Args && κʹ instanceof Args) {
-            return joinArgs(κ, κʹ)
-         } else {
-            return assert(false, "Undefined join.", κ, κʹ)
-         }
-      }
-
-      function joinArgs (Π: Args, Πʹ: Args): Args {
-         if (Π instanceof End && Πʹ instanceof End) {
-            return End.make(joinKont(Π.κ, Πʹ.κ))
-         } else
-         if (Π instanceof Next && Πʹ instanceof Next) {
-            return Next.make(join(Π.σ, Πʹ.σ))
-         } else {
-            return assert(false, "Undefined join.", Π, Πʹ)
-         }
-      }
-
-      // Want to give this a polymorphic type, but doesn't work properly with instanceof.
-      export function join (σ: Trie, τ: Trie): Trie {
-         if (σ instanceof Fun && τ instanceof Fun) {
-            return Fun.make(joinKont(σ.κ, τ.κ))
-         } else
-         if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
-            return Var.make(σ.x, joinKont(σ.κ, τ.κ))
-         } else
-         if (σ instanceof Constr && τ instanceof Constr) {
-            return Constr.make(unionWith(σ.cases, τ.cases, joinArgs))
-         } else {
-            return assert(false, "Undefined join.", σ, τ)
          }
       }
    }
