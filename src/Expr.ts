@@ -85,7 +85,7 @@ export type Expr = Expr.Expr
 
 export namespace Expr {
    // Must be joinable, purely so that joining two expressions will fail.
-   export class Expr extends VersionedObject<ExternalObject> implements JoinSemilattice<Expr> {
+   export class Expr extends VersionedObject<ExternalObject> implements JoinSemilattice<Expr>, Kont {
       __Expr_Expr(): void {
          // discriminator
       }
@@ -247,8 +247,12 @@ export namespace Expr {
    // Tries are persistent but not versioned, as per the formalism.
    export type Trie<K> = Trie.Trie<K>
 
+   // Common supertype of trie continuations.
+   export interface Kont {
+   }
+
    export namespace Trie {
-      export class Trie<K> extends PersistentObject {
+      export class Trie<K> extends PersistentObject implements Kont {
          static join<K extends JoinSemilattice<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (σ instanceof Fun && τ instanceof Fun) {
                return Fun.make(σ.κ.join(τ.κ))
@@ -293,7 +297,7 @@ export namespace Expr {
       }
 
       // n-ary product.
-      export class Args<K> extends PersistentObject {
+      export class Args<K> extends PersistentObject implements Kont {
          __Expr_Args (): void {
             // discriminator
          }

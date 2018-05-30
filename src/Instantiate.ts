@@ -3,7 +3,7 @@ import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
 import { Expr } from "./Expr"
-import { Trace, Traced, Trie, Value } from "./Traced"
+import { Kont, Trace, Traced, Trie, Value } from "./Traced"
 
 export function instantiate (ρ: Env): (e: Expr) => Traced {
    return function (e: Expr.Expr): Traced {
@@ -56,14 +56,27 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
 }
 
 // TypeScript generics are borked. For example:
-// 
-// Type:                               is assignable to:
-// Trie<Traced | Trie.Args<Traced>>    Trie<Traced>
-// Expr.Trie<Expr.Trie.Args<Expr>>     Expr.Trie<Expr>
+// Trie<Traced | Trie.Args<Traced>>    is assignable to     Trie<Traced>
+// Expr.Trie<Expr.Trie.Args<Expr>>     is assignable to     Expr.Trie<Expr>
+// Moreover, there isn't an easy way to relate the input and output types of instantiate.
 
-function instantiateArgs (ρ: Env, Π: Expr.Trie.Args<Expr>): Trie.Args<Traced> {
+function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
+   if (κ instanceof Expr.Trie.Trie) {
+      return instantiateTrie(ρ, κ)
+   } else
+   if (κ instanceof Expr.Expr) {
+      return instantiate(ρ)(κ)
+   } else
+   if (κ instanceof Expr.Trie.Args) {
+      return instantiateArgs(ρ, κ)
+   } else {
+      return absurd()
+   }
+}
+
+function instantiateArgs (ρ: Env, Π: Expr.Trie.Args<Expr.Kont>): Trie.Args<Kont> {
    if (Expr.Trie.End.is(Π)) {
-      return Trie.End.make(instantiate(ρ)(Π.κ))
+      return Trie.End.make(instantiateKont(ρ, Π.κ))
    } else
    if (Expr.Trie.Next.is(Π)) {
       return Trie.Next.make(instantiateTrie(ρ, Π.σ))
@@ -72,25 +85,25 @@ function instantiateArgs (ρ: Env, Π: Expr.Trie.Args<Expr>): Trie.Args<Traced> 
    }
 }
 
-function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr>): Trie<Traced> {
+function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Kont> {
    if (Expr.Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, instantiate(ρ)(σ.κ))
+      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
    } else
    if (Expr.Trie.ConstInt.is(σ)) {
-      return Trie.ConstInt.make(instantiate(ρ)(σ.κ))
+      return Trie.ConstInt.make(instantiateKont(ρ, σ.κ))
    } else
    if (Expr.Trie.ConstStr.is(σ)) {
-      return Trie.ConstStr.make(instantiate(ρ)(σ.κ))
+      return Trie.ConstStr.make(instantiateKont(ρ, σ.κ))
    } else
    if (Expr.Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args<Expr>>): Pair<string, Trie.Args<Traced>> => {
+         ({ fst: ctr, snd: Π }: Pair<string, Expr.Trie.Args<Expr.Kont>>): Pair<string, Trie.Args<Traced>> => {
             return Pair.make(ctr, instantiateArgs(ρ, Π))
          })
       )
    } else
    if (Expr.Trie.Fun.is(σ)) {
-      return Trie.Fun.make(instantiate(ρ)(σ.κ))
+      return Trie.Fun.make(instantiateKont(ρ, σ.κ))
    } else {
       return absurd()
    }

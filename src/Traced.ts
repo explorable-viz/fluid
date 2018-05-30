@@ -91,7 +91,7 @@ export namespace Value {
 }
 
 // Rename to Explained?
-export class Traced extends PersistentObject {
+export class Traced extends PersistentObject implements Kont {
    t: Trace
    v: Value | null
 
@@ -106,8 +106,11 @@ export class Traced extends PersistentObject {
 // Tries are persistent but not versioned, as per the formalism.
 export type Trie<K> = Trie.Trie<K>
 
+export interface Kont {
+}
+
 export namespace Trie {
-   export class Trie<K> extends PersistentObject {
+   export class Trie<K> extends PersistentObject implements Kont {
       __Trie_Trie (): void {
          // discriminator
       }
@@ -142,7 +145,7 @@ export namespace Trie {
    }
 
    // n-ary product
-   export class Args<K> extends PersistentObject {
+   export class Args<K> extends PersistentObject implements Kont {
       __Trie_Args (): void {
          // discriminator
       }
