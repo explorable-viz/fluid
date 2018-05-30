@@ -252,15 +252,20 @@ export namespace Expr {
    }
 
    export namespace Trie {
-      export class Trie<K> extends PersistentObject implements Kont {
+      export class Trie<K> extends PersistentObject implements Kont, JoinSemilattice<Trie<K>> {
+         // This idiom to avoid type-spam.
+         join (τ: Trie<K>): Trie<K> {
+            return Trie.join(this, τ)
+         }
+
          static join<K extends JoinSemilattice<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
-            if (σ instanceof Fun && τ instanceof Fun) {
+            if (Fun.is(σ) && Fun.is(τ)) {
                return Fun.make(σ.κ.join(τ.κ))
             } else
-            if (σ instanceof Var && τ instanceof Var && eq(σ.x, τ.x)) {
+            if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
                return Var.make(σ.x, σ.κ.join(τ.κ))
             } else
-            if (σ instanceof Constr && τ instanceof Constr) {
+            if (Constr.is(σ) && Constr.is(τ)) {
                return Constr.make(unionWith(σ.cases, τ.cases, Args.join))
             } else {
                return assert(false, "Undefined join.", this, τ)
@@ -297,9 +302,13 @@ export namespace Expr {
       }
 
       // n-ary product.
-      export class Args<K> extends PersistentObject implements Kont {
+      export class Args<K> extends PersistentObject implements Kont, JoinSemilattice<Args<K>> {
          __Expr_Args (): void {
             // discriminator
+         }
+
+         join (Π: Args<K>): Args<K> {
+            return Args.join(this, Π)
          }
 
          static join<K extends JoinSemilattice<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
