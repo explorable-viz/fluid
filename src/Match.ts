@@ -1,9 +1,9 @@
 import { absurd, as, assert } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
-import { Kont, Match, Traced, TracedMatch, Trie, Value } from "./Traced"
+import { Match, Traced, TracedMatch, Trie, Value } from "./Traced"
 
 // The match for any evaluation with demand σ which yielded value v.
-export function match (σ: Trie, v: Value | null): Match {
+export function match<K> (σ: Trie<K>, v: Value | null): Match<K> {
    if (σ instanceof Trie.Var) {
       // in general v is not null, even though the demand is null
       return Match.Var.make(σ.x, v, σ.κ)
@@ -18,7 +18,7 @@ export function match (σ: Trie, v: Value | null): Match {
       return Match.ConstStr.make(v.val, σ.κ)
    } else
    if (σ instanceof Trie.Constr && v instanceof Value.Constr) {
-      return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Trie.Args | Match.Args> => {
+      return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Trie.Args<K> | Match.Args<K>> => {
          if (v.ctr.str === ctr) {
             return Pair.make(ctr, matchArgs(v.args)(Π))
          } else {
@@ -30,12 +30,12 @@ export function match (σ: Trie, v: Value | null): Match {
    }
 }
 
-function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
-   return (Π: Trie.Args): Match.Args => {
+function matchArgs<K> (tvs: List<Traced>): (Π: Trie.Args<K>) => Match.Args<K> {
+   return (Π: Trie.Args<K>): Match.Args<K> => {
       // Parser ensures constructor patterns agree with constructor signatures.
       if (Cons.is(tvs) && Π instanceof Trie.Next) {
-         const ξ: Match = match(Π.σ, tvs.head.v), 
-               inj = (σ: Kont) => as(σ, Trie.Args)
+         const ξ: Match<K> = match(Π.σ, tvs.head.v), 
+               inj = (Π: Trie.Args<K>): Trie.Args<K> => Π
          // codomain of ξ is a Trie.Args; promote to Trie.Args | Match.Args:
          return Match.Next.make(TracedMatch.make(tvs.head.t, mapMatch(matchArgs(tvs.tail), inj)(ξ)))
       } else
@@ -47,8 +47,8 @@ function matchArgs (tvs: List<Traced>): (Π: Trie.Args) => Match.Args {
    }
 }
 
-function mapMatch (f: (κ: Kont) => Kont, g: (κ: Kont) => Kont): (ξ: Match) => Match {
-   return (ξ: Match): Match => {
+function mapMatch<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (ξ: Match<K>) => Match<Kʹ> {
+   return (ξ: Match<K>): Match<Kʹ> => {
       if (ξ instanceof Match.ConstInt) {
          return Match.ConstInt.make(ξ.val, f(ξ.κ))
       } else
@@ -62,7 +62,7 @@ function mapMatch (f: (κ: Kont) => Kont, g: (κ: Kont) => Kont): (ξ: Match) =>
          return Match.Var.make(ξ.x, ξ.v, f(ξ.κ))
       } else 
       if (ξ instanceof Match.Constr) {
-         return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Trie.Args | Match.Args> => {
+         return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Trie.Args<Kʹ> | Match.Args<Kʹ>> => {
             if (Π_or_Ψ instanceof Match.Args) {
                return Pair.make(ctr, mapMatchArgs(f, g)(Π_or_Ψ))
             } else
@@ -78,8 +78,8 @@ function mapMatch (f: (κ: Kont) => Kont, g: (κ: Kont) => Kont): (ξ: Match) =>
    }
 }
 
-function mapTrie (f: (κ: Kont) => Kont): (σ: Trie.Trie) => Trie.Trie {
-   return (σ: Trie.Trie): Trie.Trie => {
+function mapTrie<K, Kʹ> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
+   return (σ: Trie.Trie<K>): Trie.Trie<Kʹ> => {
       if (σ instanceof Trie.ConstInt) {
          return Trie.ConstInt.make(f(σ.κ))
       } else
@@ -93,7 +93,7 @@ function mapTrie (f: (κ: Kont) => Kont): (σ: Trie.Trie) => Trie.Trie {
          return Trie.Var.make(σ.x, f(σ.κ))
       } else 
       if (σ instanceof Trie.Constr) {
-         return Trie.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Trie.Args> => {
+         return Trie.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Trie.Args<Kʹ>> => {
             if (Π instanceof Trie.Args) {
                return Pair.make(ctr, mapTrieArgs(f)(Π))
             } else {
@@ -106,8 +106,8 @@ function mapTrie (f: (κ: Kont) => Kont): (σ: Trie.Trie) => Trie.Trie {
    }
 }
 
-function mapTrieArgs (f: (κ: Kont) => Kont): (Π: Trie.Args) => Trie.Args {
-   return (Π: Trie.Args): Trie.Args => {
+function mapTrieArgs<K, Kʹ> (f: (κ: K) => Kʹ): (Π: Trie.Args<K>) => Trie.Args<Kʹ> {
+   return (Π: Trie.Args<K>): Trie.Args<Kʹ> => {
       if (Π instanceof Trie.End) {
          return Trie.End.make(f(Π.κ))
       } else
@@ -119,8 +119,8 @@ function mapTrieArgs (f: (κ: Kont) => Kont): (Π: Trie.Args) => Trie.Args {
    }
 }
 
-function mapMatchArgs (f: (κ: Kont) => Kont, g: (κ: Kont) => Kont): (Ψ: Match.Args) => Match.Args {
-   return (Ψ: Match.Args): Match.Args => {
+function mapMatchArgs<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (Ψ: Match.Args<K>) => Match.Args<Kʹ> {
+   return (Ψ: Match.Args<K>): Match.Args<Kʹ> => {
       if (Ψ instanceof Match.End) {
          return Match.End.make(f(Ψ.κ))
       } else
