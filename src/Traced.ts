@@ -342,14 +342,14 @@ export namespace Trace {
 
    export class Let extends Trace {
       tu: Traced
-      σ: Trie.Var<Expr>
+      σ: Trie.Var<Traced>
       t: Trace | null
 
       __Trace_Let (): void {
          // discriminator
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Expr>, t: Trace | null): Let {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
          const this_: Let = create(k, Let)
          this_.tu = tu
          this_.σ = σ
@@ -388,7 +388,7 @@ export namespace Trace {
    
    export class MatchAs extends Trace {
       tu: Traced
-      σ: Trie<Expr>
+      σ: Trie<Traced>
       t: Trace | null
 
       __Trace_MatchAs (): void {

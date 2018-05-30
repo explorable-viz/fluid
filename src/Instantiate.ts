@@ -30,7 +30,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
       } else
       if (e instanceof Expr.Let) {
          // Trace must still be null even though I know "statically" which branch will be taken.
-         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Expr>, null)
+         const t: Trace = Trace.Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, null)
          return Traced.make(t, null)
       } else
       if (e instanceof Expr.LetRec) {
