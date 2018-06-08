@@ -133,13 +133,13 @@ export namespace Traced {
 
       // Maps a single argument to another args trie.
       export class Next<K> extends Args<K> {
-         σ: Trie<K>
+         σ: Trie<Args<K>>
 
          static is<K> (Π: Args<K>): Π is Next<K> {
             return Π instanceof Next
          }
 
-         static make<K> (σ: Trie<K>): Next<K> {
+         static make<K> (σ: Trie<Args<K>>): Next<K> {
             const this_: Next<K> = make<Next<K>>(Next, σ)
             this_.σ = σ
             return this_

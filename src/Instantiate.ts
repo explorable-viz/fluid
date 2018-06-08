@@ -93,12 +93,12 @@ function instantiateArgs (ρ: Env, Π: Expr.Args<Expr.Kont>): Args<Kont> {
    }
 }
 
-function instantiateArgs2 (ρ: Env, Π: Expr.Args<Expr.Kont>): Args<Expr.Kont> {
+function instantiateArgs2<K> (ρ: Env, Π: Expr.Args<K>): Args<K> {
    if (Expr.Args.End.is(Π)) {
       return Args.End.make(Π.κ)
    } else
    if (Expr.Args.Next.is(Π)) {
-      return Args.Next.make(instantiateTrie2(ρ, Π.σ))
+      return Args.Next.make(instantiateTrieArgs(ρ, Π.σ))
    } else {
       return absurd()
    }
@@ -128,7 +128,10 @@ function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Kont> {
    }
 }
 
-function instantiateTrie2 (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Expr.Kont> {
+function instantiateTrieArgs<K> (ρ: Env, σ: Expr.Trie<Expr.Args<K>>): Trie<Args<K>> {
+}
+
+function instantiateTrie2<K> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
    if (Expr.Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, σ.κ)
    } else
@@ -140,7 +143,7 @@ function instantiateTrie2 (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Expr.Kont> {
    } else
    if (Expr.Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<string, Expr.Args<Expr.Kont>>): Pair<string, Args<Expr>> => {
+         ({ fst: ctr, snd: Π }: Pair<string, Expr.Args<K>>): Pair<string, Args<K>> => {
             return Pair.make(ctr, instantiateArgs2(ρ, Π))
          })
       )
