@@ -111,7 +111,7 @@ export namespace Traced {
    export namespace Args {
       // n-ary product
       export class Args<K> extends PersistentObject {
-         __Trie_Args (): void {
+         __Trie_Args (κ: K): void {
             // discriminator
          }
       }
