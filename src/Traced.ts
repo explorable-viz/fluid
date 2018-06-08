@@ -466,7 +466,7 @@ export namespace Traced {
          // discriminator
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Expr>,  t: Trace | null): MatchAs {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>,  t: Trace | null): MatchAs {
          const this_: MatchAs = create(k, MatchAs)
          this_.tu = tu
          this_.σ = σ
