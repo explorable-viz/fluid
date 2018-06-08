@@ -67,7 +67,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
-// See issue #33. The type Kont is mostly useless.
+// See issue #33.
 function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
    if (κ instanceof Expr.Trie.Trie) {
       return instantiateTrie(ρ, κ)
@@ -112,6 +112,30 @@ function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Kont> {
    } else
    if (Expr.Trie.Fun.is(σ)) {
       return Trie.Fun.make(instantiateKont(ρ, σ.κ))
+   } else {
+      return absurd()
+   }
+}
+
+function instantiateTrie2 (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Expr.Kont> {
+   if (Expr.Trie.Var.is(σ)) {
+      return Trie.Var.make(σ.x, σ.κ)
+   } else
+   if (Expr.Trie.ConstInt.is(σ)) {
+      return Trie.ConstInt.make(σ.κ)
+   } else
+   if (Expr.Trie.ConstStr.is(σ)) {
+      return Trie.ConstStr.make(σ.κ)
+   } else
+   if (Expr.Trie.Constr.is(σ)) {
+      return Trie.Constr.make(σ.cases.map(
+         ({ fst: ctr, snd: Π }: Pair<string, Expr.Args<Expr.Kont>>): Pair<string, Args<Expr.Kont>> => {
+            return Pair.make(ctr, instantiateArgs(ρ, Π))
+         })
+      )
+   } else
+   if (Expr.Trie.Fun.is(σ)) {
+      return Trie.Fun.make(σ.κ)
    } else {
       return absurd()
    }
