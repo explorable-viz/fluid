@@ -1,4 +1,4 @@
-import { __check, assert, make } from "./util/Core"
+import { Tag, __check, assert, make } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
@@ -86,6 +86,8 @@ export type Expr = Expr.Expr
 export namespace Expr {
    // Must be joinable, purely so that joining two expressions will fail.
    export class Expr extends VersionedObject<ExternalObject> implements JoinSemilattice<Expr>, Kont {
+      type: "Expr.Kont"
+
       __Expr_Expr(): void {
          // discriminator
       }
@@ -249,6 +251,8 @@ export namespace Expr {
    export namespace Args {
       // n-ary product.
       export class Args<K> extends PersistentObject implements Kont, JoinSemilattice<Args<K>> {
+         type: "Expr.Kont"
+
          __Expr_Args (): void {
             // discriminator
          }
@@ -303,12 +307,13 @@ export namespace Expr {
    // Tries are persistent but not versioned, as per the formalism.
    export type Trie<K> = Trie.Trie<K>
 
-   // Common supertype of trie continuations.
-   export interface Kont {
-   }
+   // Common supertype of trie continuations. Can't define recursive type alias.
+   export type Kont = Tag<"Expr.Kont">
 
    export namespace Trie {
       export class Trie<K> extends PersistentObject implements Kont, JoinSemilattice<Trie<K>> {
+         type: "Expr.Kont"
+
          // This (unsound) idiom to avoid the semilattice constraint on K.
          join (τ: Trie<K>): Trie<K> {
             return Trie.join(this, τ)

@@ -1,4 +1,4 @@
-import { make } from "./util/Core"
+import { Tag, assert, make } from "./util/Core"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -92,6 +92,7 @@ export namespace Value {
 
 // Rename to Explained?
 export class Traced extends PersistentObject implements Traced.Kont {
+   type: "Traced.Kont"
    t: Trace
    v: Value | null
 
@@ -111,6 +112,8 @@ export namespace Traced {
    export namespace Args {
       // n-ary product
       export class Args<K> extends PersistentObject implements Kont {
+         type: "Traced.Kont"
+
          __Trie_Args (): void {
             // discriminator
          }
@@ -150,12 +153,13 @@ export namespace Traced {
    // Tries are persistent but not versioned, as per the formalism.
    export type Trie<K> = Trie.Trie<K>
 
-   export interface Kont {
-   }
+   export type Kont = Tag<"Traced.Kont">
 
    export namespace Trie {
-      export class Trie<K> extends PersistentObject implements Kont {
-         __Trie_Trie (): void {
+      export abstract class Trie<K> extends PersistentObject implements Kont {
+         type: "Traced.Kont"
+
+         __Trie_Trie (κ: K): void {
             // discriminator
          }
       }
