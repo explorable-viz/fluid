@@ -83,7 +83,7 @@ function mapMatch<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (ξ: Match<K>)
    }
 }
 
-function mapTrie<K, Kʹ> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
+export function mapTrie<K, Kʹ> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
    return (σ: Trie.Trie<K>): Trie.Trie<Kʹ> => {
       if (Trie.ConstInt.is(σ)) {
          return Trie.ConstInt.make(f(σ.κ))
