@@ -83,7 +83,7 @@ function mapMatch<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (ξ: Match<K>)
    }
 }
 
-function mapTrie<K, Kʹ> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
+export function mapTrie<K, Kʹ> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
    return (σ: Trie.Trie<K>): Trie.Trie<Kʹ> => {
       if (Trie.ConstInt.is(σ)) {
          return Trie.ConstInt.make(f(σ.κ))
@@ -117,7 +117,7 @@ function mapTrieArgs<K, Kʹ> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
          return Args.End.make(f(Π.κ))
       } else
       if (Args.Next.is(Π)) {
-         return Args.Next.make(mapTrie(f)(Π.σ))
+         return Args.Next.make(mapTrie(mapTrieArgs(f))(Π.σ))
       } else {
          return absurd()
       }

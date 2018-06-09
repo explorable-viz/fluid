@@ -1,8 +1,10 @@
 import { absurd } from "./util/Core"
+import { JoinSemilattice } from "./util/Ord"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
 import { Expr } from "./Expr"
+import { mapTrie } from "./Match"
 import { Trace, Traced, Value } from "./Traced"
 
 import App = Traced.App
@@ -67,51 +69,59 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
-// See issue #33. The type Kont is mostly useless.
-function instantiateKont (ρ: Env, κ: Expr.Kont): Kont {
-   if (κ instanceof Expr.Trie.Trie) {
-      return instantiateTrie(ρ, κ)
-   } else
-   if (κ instanceof Expr.Expr) {
-      return instantiate(ρ)(κ)
-   } else
-   if (κ instanceof Expr.Args.Args) {
-      return instantiateArgs(ρ, κ)
-   } else {
-      return absurd()
+// See issue #33.
+function instantiateKont (ρ: Env): (κ: Expr.Kont) => Kont {
+   return function (κ: Expr.Kont): Kont {
+      if (κ instanceof Expr.Trie.Trie) {
+         return instantiateTrie(ρ, κ)
+      } else
+      if (κ instanceof Expr.Expr) {
+         return instantiate(ρ)(κ)
+      } else
+      if (κ instanceof Expr.Args.Args) {
+         return instantiateArgs(ρ)(κ)
+      } else {
+         return absurd()
+      }
    }
 }
 
-function instantiateArgs (ρ: Env, Π: Expr.Args<Expr.Kont>): Args<Kont> {
-   if (Expr.Args.End.is(Π)) {
-      return Args.End.make(instantiateKont(ρ, Π.κ))
-   } else
-   if (Expr.Args.Next.is(Π)) {
-      return Args.Next.make(instantiateTrie(ρ, Π.σ))
-   } else {
-      return absurd()
+function instantiateArgs<K extends JoinSemilattice<K>> (ρ: Env): (Π: Expr.Args<K>) => Args<K> {
+   return function (Π: Expr.Args<K>): Args<K> {
+      if (Expr.Args.End.is(Π)) {
+         return Args.End.make(Π.κ)
+      } else
+      if (Expr.Args.Next.is(Π)) {
+         return Args.Next.make(mapTrie(instantiateArgs(ρ))(instantiateTrie_(ρ, Π.σ)))
+      } else {
+         return absurd()
+      }
    }
 }
 
 function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Kont> {
+   return mapTrie(instantiateKont(ρ))(instantiateTrie_(ρ, σ))
+}
+
+function instantiateTrie_<K extends JoinSemilattice<K>> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
    if (Expr.Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
+      return Trie.Var.make(σ.x, σ.κ)
    } else
    if (Expr.Trie.ConstInt.is(σ)) {
-      return Trie.ConstInt.make(instantiateKont(ρ, σ.κ))
+      return Trie.ConstInt.make(σ.κ)
    } else
    if (Expr.Trie.ConstStr.is(σ)) {
-      return Trie.ConstStr.make(instantiateKont(ρ, σ.κ))
+      return Trie.ConstStr.make(σ.κ)
    } else
    if (Expr.Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<string, Expr.Args<Expr.Kont>>): Pair<string, Args<Traced>> => {
-            return Pair.make(ctr, instantiateArgs(ρ, Π))
+         ({ fst: ctr, snd: Π }: Pair<string, Expr.Args<K>>): Pair<string, Args<K>> => {
+            return Pair.make(ctr, instantiateArgs(ρ)(Π))
          })
       )
    } else
    if (Expr.Trie.Fun.is(σ)) {
-      return Trie.Fun.make(instantiateKont(ρ, σ.κ))
+      return Trie.Fun.make(σ.κ)
    } else {
       return absurd()
    }

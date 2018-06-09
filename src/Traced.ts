@@ -91,7 +91,7 @@ export namespace Value {
 }
 
 // Rename to Explained?
-export class Traced extends PersistentObject implements Traced.Kont {
+export class Traced extends PersistentObject {
    t: Trace
    v: Value | null
 
@@ -110,8 +110,8 @@ export namespace Traced {
 
    export namespace Args {
       // n-ary product
-      export class Args<K> extends PersistentObject implements Kont {
-         __Trie_Args (): void {
+      export class Args<K> extends PersistentObject {
+         __Trie_Args (κ: K): void {
             // discriminator
          }
       }
@@ -133,13 +133,13 @@ export namespace Traced {
 
       // Maps a single argument to another args trie.
       export class Next<K> extends Args<K> {
-         σ: Trie<K>
+         σ: Trie<Args<K>>
 
          static is<K> (Π: Args<K>): Π is Next<K> {
             return Π instanceof Next
          }
 
-         static make<K> (σ: Trie<K>): Next<K> {
+         static make<K> (σ: Trie<Args<K>>): Next<K> {
             const this_: Next<K> = make<Next<K>>(Next, σ)
             this_.σ = σ
             return this_
@@ -150,12 +150,11 @@ export namespace Traced {
    // Tries are persistent but not versioned, as per the formalism.
    export type Trie<K> = Trie.Trie<K>
 
-   export interface Kont {
-   }
+   export type Kont = Traced | Args<any> | Trie<any>
 
    export namespace Trie {
-      export class Trie<K> extends PersistentObject implements Kont {
-         __Trie_Trie (): void {
+      export abstract class Trie<K> extends PersistentObject {
+         __Trie_Trie (κ: K): void {
             // discriminator
          }
       }
@@ -462,7 +461,7 @@ export namespace Traced {
          // discriminator
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Expr>,  t: Trace | null): MatchAs {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>,  t: Trace | null): MatchAs {
          const this_: MatchAs = create(k, MatchAs)
          this_.tu = tu
          this_.σ = σ
