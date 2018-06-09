@@ -1,4 +1,5 @@
 import { absurd } from "./util/Core"
+import { JoinSemilattice } from "./util/Ord"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
@@ -85,13 +86,13 @@ function instantiateKont (ρ: Env): (κ: Expr.Kont) => Kont {
    }
 }
 
-function instantiateArgs<K> (ρ: Env): (Π: Expr.Args<K>) => Args<K> {
+function instantiateArgs<K extends JoinSemilattice<K>> (ρ: Env): (Π: Expr.Args<K>) => Args<K> {
    return function (Π: Expr.Args<K>): Args<K> {
       if (Expr.Args.End.is(Π)) {
          return Args.End.make(Π.κ)
       } else
       if (Expr.Args.Next.is(Π)) {
-         return Args.Next.make(mapTrie(instantiateArgs(ρ))(instantiateTrie2(ρ, Π.σ)))
+         return Args.Next.make(mapTrie(instantiateArgs(ρ))(instantiateTrie_(ρ, Π.σ)))
       } else {
          return absurd()
       }
@@ -99,10 +100,10 @@ function instantiateArgs<K> (ρ: Env): (Π: Expr.Args<K>) => Args<K> {
 }
 
 function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Kont> {
-   return mapTrie(instantiateKont(ρ))(instantiateTrie2(ρ, σ))
+   return mapTrie(instantiateKont(ρ))(instantiateTrie_(ρ, σ))
 }
 
-function instantiateTrie2<K> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
+function instantiateTrie_<K extends JoinSemilattice<K>> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
    if (Expr.Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, σ.κ)
    } else

@@ -244,12 +244,12 @@ export namespace Expr {
       }
    }
 
-   export type Args<K> = Args.Args<K>
+   export type Args<K extends JoinSemilattice<K>> = Args.Args<K>
 
    export namespace Args {
       // n-ary product.
-      export class Args<K> extends PersistentObject implements JoinSemilattice<Args<K>> {
-         __Expr_Args (): void {
+      export class Args<K extends JoinSemilattice<K>> extends PersistentObject implements JoinSemilattice<Args<K>> {
+         __Expr_Args (κ: K): void {
             // discriminator
          }
 
@@ -270,14 +270,14 @@ export namespace Expr {
       }
 
       // Maps zero arguments to κ.
-      export class End<K> extends Args<K> {
+      export class End<K extends JoinSemilattice<K>> extends Args<K> {
          κ: K
 
-         static is<K> (Π: Args<K>): Π is End<K> {
+         static is<K extends JoinSemilattice<K>> (Π: Args<K>): Π is End<K> {
             return Π instanceof End
          }
 
-         static make<K> (κ: K): End<K> {
+         static make<K extends JoinSemilattice<K>> (κ: K): End<K> {
             const this_: End<K> = make<End<K>>(End, κ)
             this_.κ = κ
             return this_
@@ -285,14 +285,14 @@ export namespace Expr {
       }
 
       // Maps a single argument to another args trie.
-      export class Next<K> extends Args<K> {
+      export class Next<K extends JoinSemilattice<K>> extends Args<K> {
          σ: Trie<Args<K>>
 
-         static is<K> (Π: Args<K>): Π is Next<K> {
+         static is<K extends JoinSemilattice<K>> (Π: Args<K>): Π is Next<K> {
             return Π instanceof Next
          }
 
-         static make<K> (σ: Trie<Args<K>>): Next<K> {
+         static make<K extends JoinSemilattice<K>> (σ: Trie<Args<K>>): Next<K> {
             const this_: Next<K> = make<Next<K>>(Next, σ)
             this_.σ = σ
             return this_
@@ -301,14 +301,17 @@ export namespace Expr {
    }
 
    // Tries are persistent but not versioned, as per the formalism.
-   export type Trie<K> = Trie.Trie<K>
+   export type Trie<K extends JoinSemilattice<K>> = Trie.Trie<K>
 
    // Use "any" because can't define recursive type alias.
    export type Kont = Expr | Args<any> | Trie<any>
 
    export namespace Trie {
-      export class Trie<K> extends PersistentObject implements JoinSemilattice<Trie<K>> {
-         // This (unsound) idiom to avoid the semilattice constraint on K.
+      export class Trie<K extends JoinSemilattice<K>> extends PersistentObject implements JoinSemilattice<Trie<K>> {
+         __Expr_Trie (κ: K): void {
+            // discriminator
+         }
+         
          join (τ: Trie<K>): Trie<K> {
             return Trie.join(this, τ)
          }
@@ -328,28 +331,28 @@ export namespace Expr {
          }
       }
 
-      export class Prim<K> extends Trie<K> {
+      export class Prim<K extends JoinSemilattice<K>> extends Trie<K> {
          κ: K
       }
 
-      export class ConstInt<K> extends Prim<K> {
-         static is<K> (σ: Trie<K>): σ is ConstInt<K> {
+      export class ConstInt<K extends JoinSemilattice<K>> extends Prim<K> {
+         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is ConstInt<K> {
             return σ instanceof ConstInt
          }
 
-         static make<K> (κ: K): ConstInt<K> {
+         static make<K extends JoinSemilattice<K>> (κ: K): ConstInt<K> {
             const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, κ)
             this_.κ = κ
             return this_
          }
       }
 
-      export class ConstStr<K> extends Prim<K> {
-         static is<K> (σ: Trie<K>): σ is ConstStr<K> {
+      export class ConstStr<K extends JoinSemilattice<K>> extends Prim<K> {
+         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is ConstStr<K> {
             return σ instanceof ConstStr
          }
 
-         static make<K> (κ: K): ConstStr<K> {
+         static make<K extends JoinSemilattice<K>> (κ: K): ConstStr<K> {
             const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
             this_.κ = κ
             return this_
@@ -357,43 +360,43 @@ export namespace Expr {
       }
 
       // n-ary sum of n-ary products.
-      export class Constr<K> extends Trie<K> {
+      export class Constr<K extends JoinSemilattice<K>> extends Trie<K> {
          cases: FiniteMap<string, Args<K>>
 
-         static is<K> (σ: Trie<K>): σ is Constr<K> {
+         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
 
-         static make<K> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+         static make<K extends JoinSemilattice<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
             const this_: Constr<K> = make(Constr, cases)
             this_.cases = cases
             return this_
          }
       }
 
-      export class Fun<K> extends Trie<K> {
+      export class Fun<K extends JoinSemilattice<K>> extends Trie<K> {
          κ: K
 
-         static is<K> (σ: Trie<K>): σ is Fun<K> {
+         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Fun<K> {
             return σ instanceof Fun
          }
 
-         static make<K> (κ: K): Fun<K> {
+         static make<K extends JoinSemilattice<K>> (κ: K): Fun<K> {
             const this_: Fun<K> = make<Fun<K>>(Fun, κ)
             this_.κ = κ
             return this_
          }
       }
 
-      export class Var<K> extends Trie<K> {
+      export class Var<K extends JoinSemilattice<K>> extends Trie<K> {
          x: Lex.Var
          κ: K
 
-         static is<K> (σ: Trie<K>): σ is Var<K> {
+         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
 
-         static make<K> (x: Lex.Var, κ: K): Var<K> {
+         static make<K extends JoinSemilattice<K>> (x: Lex.Var, κ: K): Var<K> {
             const this_: Var<K> = make<Var<K>>(Var, x, κ)
             this_.x = x
             this_.κ = κ
