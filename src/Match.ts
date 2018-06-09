@@ -117,7 +117,7 @@ function mapTrieArgs<K, Kʹ> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
          return Args.End.make(f(Π.κ))
       } else
       if (Args.Next.is(Π)) {
-         return Args.Next.make(mapTrie(f)(Π.σ))
+         return Args.Next.make(mapTrie(mapTrieArgs(f))(Π.σ))
       } else {
          return absurd()
       }

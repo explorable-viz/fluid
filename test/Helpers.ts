@@ -31,7 +31,7 @@ export enum Profile {
 }
 
 export namespace τ {
-   export function arg<K> (σ: Trie<K>): Args.Next<K> {
+   export function arg<K> (σ: Trie<Args<K>>): Args.Next<K> {
       return Args.Next.make(σ)
    }
 
