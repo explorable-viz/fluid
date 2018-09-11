@@ -8,6 +8,6 @@ letrec
    }
 in
 zipW
-   (fun (x, y) → (x + 1, y + 1))
+   (fun (x, y) → Point(x, y))
    Cons(10, Cons(12, Cons(13, Nil)))
    Cons(3, Cons(4, Cons(8, Nil)))

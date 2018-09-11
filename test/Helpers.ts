@@ -63,6 +63,10 @@ export namespace τ {
       return Trie.Constr.make(singleton("Pair", Π))
    }
 
+   export function point<K> (Π: Args<K>): Trie.Constr<K> {
+      return Trie.Constr.make(singleton("Point", Π))
+   }
+
    export function some<K> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Some", Π))
    }
