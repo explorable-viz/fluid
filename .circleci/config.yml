@@ -31,7 +31,7 @@ version: 2 # use CircleCI 2.0
 jobs: # a collection of steps
   build: # runs not using Workflows must have a `build` job as entry point
     working_directory: ~/mern-starter # directory where steps will run
-    docker: # must specify one of "macos", "machine", "docker"; not sure what the numbers mean though:
+    machine: # must specify one of "macos", "machine", "docker"
       - image: circleci/node:7.4.0 # ...with this image as the primary container; this is where all `steps` will run
       - image: mongo:3.4.4 # and this image as the secondary service container
     steps: # a collection of executable commands 
