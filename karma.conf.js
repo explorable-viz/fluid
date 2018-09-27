@@ -43,7 +43,7 @@ module.exports = function (config) {
       colors: true,
       logLevel: config.LOG_ERROR,
       autoWatch: true,
-      singleRun: false,
+      singleRun: true,
       concurrency: Infinity,
       browsers: ['ChromeHeadless'],
       customLaunchers: {
@@ -63,4 +63,3 @@ module.exports = function (config) {
       },
    })
 }
- 
