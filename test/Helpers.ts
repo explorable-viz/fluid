@@ -118,6 +118,10 @@ export function loadTestFile(folder: string, file: string): TestFile {
    return testFile
 }
 
+export function loadExample(file: string): TestFile {
+	return loadTestFile("example", file)
+}
+
 // For now just see if all the examples run without an exception.
 export function testAll (): void {
    initialise()
