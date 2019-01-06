@@ -1,5 +1,8 @@
+var HtmlWebpackPlugin = require('html-webpack-plugin');
+var path = require('path');
+
 module.exports = {
-   entry: "./test/Test.ts",
+   entry: "./test/App.ts",
    output: {
       filename: "bundle.js",
       library: "LambdaCalc",
@@ -24,6 +27,7 @@ module.exports = {
       ]
    },
    plugins: [
+      new HtmlWebpackPlugin(),
       // Plugin to show any webpack warnings and prevent tests from running
       // based on https://gist.github.com/Stuk/6b574049435df532e905
       function () {
