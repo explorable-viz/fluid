@@ -3,6 +3,7 @@ var path = require('path');
 
 module.exports = {
    entry: "./test/App.ts",
+   // entry: "./test/Test.ts",
    output: {
       filename: "bundle.js",
       library: "LambdaCalc",
@@ -28,8 +29,8 @@ module.exports = {
    },
    plugins: [
       new HtmlWebpackPlugin(),
-      // Plugin to show any webpack warnings and prevent tests from running
-      // based on https://gist.github.com/Stuk/6b574049435df532e905
+      // Plugin to show any webpack warnings and prevent tests from running.
+      // Based on https://gist.github.com/Stuk/6b574049435df532e905.
       function () {
          var errors = []
          this.plugin("done", function (stats) {
