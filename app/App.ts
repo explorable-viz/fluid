@@ -3,4 +3,4 @@
 
 // const file: TestFile = loadExample("factorial")
 // runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
-document.write('<h1>Hello World</h1>')
+document.write('<h1>Hello, World</h1>')
