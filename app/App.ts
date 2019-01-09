@@ -1,5 +1,5 @@
 // import { __nonNull } from "../src/util/Core"
-// import { Profile, TestFile, τ, loadExample, runTest } from "./Helpers"
+// import { Profile, TestFile, τ, loadExample, runTest } from "../test/Helpers"
 
 // const file: TestFile = loadExample("factorial")
 // runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
