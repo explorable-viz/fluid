@@ -60,7 +60,7 @@ describe("example", () => {
 
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
-		it("parses ok", () => {
+		it("ok", () => {
 			runTest(__nonNull(file.text), Profile.Match, τ.some(τ.arg(τ.str(τ.endArgs(null)))))
 		})
 	})
