@@ -6,34 +6,18 @@
 
 import * as THREE from "three"
 
-const scene = new THREE.Scene()
-const geometry = new THREE.BoxGeometry(1, 1, 1)
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-const cube = new THREE.Mesh(geometry, material)
-scene.add(cube)
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera( 75, 1, 0.1, 1000 );
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-camera.position.z = 5
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize( 600, 600 );
+document.body.appendChild( renderer.domElement );
 
-const renderer = new THREE.WebGLRenderer()
-document.body.appendChild(renderer.domElement)
+var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+var cube = new THREE.Mesh( geometry, material );
+scene.add( cube );
 
-window.addEventListener("resize", onWindowResize, false) 
-function onWindowResize() {
-    renderer.setSize(window.innerWidth, window.innerHeight)
-}
+camera.position.z = 5;
 
-function animate(): void {
-    requestAnimationFrame(animate)
-
-    cube.rotation.x += 0.01
-    cube.rotation.y += 0.01
-
-    renderer.render(scene, camera)
-}
-
-animate()
-
-const h = document.createElement("h1")
-h.appendChild(document.createTextNode("Hello, World"))  
-document.body.appendChild(h)
+renderer.render( scene, camera );
