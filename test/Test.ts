@@ -33,7 +33,7 @@ describe("example", () => {
 	describe("filter", () => {
 		const file: TestFile = loadExample("filter")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.int(τ.arg(τ.var_(τ.endArgs(null))))))
+			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
@@ -61,42 +61,42 @@ describe("example", () => {
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Match, τ.some(τ.str(τ.endArgs(null))))
+			runTest(__nonNull(file.text), Profile.Match, τ.some(τ.arg(τ.str(τ.endArgs(null)))))
 		})
 	})
 
 	describe("map", () => {
 		const file: TestFile = loadExample("map")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.int(τ.arg(τ.var_(τ.endArgs(null))))))
+			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("mergeSort", () => {
 		const file: TestFile = loadExample("mergeSort")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.int(τ.arg(τ.var_(τ.endArgs(null))))))
+			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("normalise", () => {
 		const file: TestFile = loadExample("normalise")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Match, τ.pair(τ.int(τ.arg(τ.int(τ.endArgs(null))))))
+			runTest(__nonNull(file.text), Profile.Match, τ.pair(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("reverse", () => {
 		const file: TestFile = loadExample("reverse")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.int(τ.arg(τ.var_(τ.endArgs(null))))))
+			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("zipW", () => {
 		const file: TestFile = loadExample("zipW")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.point(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(τ.var_(τ.endArgs(null))))))))))
+			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.arg(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(τ.var_(τ.endArgs(null))))))))))))
 		})
 	})
 })

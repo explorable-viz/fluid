@@ -50,24 +50,24 @@ export namespace τ {
       return Trie.ConstStr.make(κ)
    }
 
-   export function cons<K> (σ: Trie<Args<K>>): Trie.Constr<K> {
-      return Trie.Constr.make(singleton("Cons", arg(σ)))
+   export function cons<K> (Π: Args<K>): Trie.Constr<K> {
+      return Trie.Constr.make(singleton("Cons", Π))
    }
 
    export function nil<K> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Nil", Π))
    }
 
-   export function pair<K> (σ: Trie<Args<K>>): Trie.Constr<K> {
-      return Trie.Constr.make(singleton("Pair", arg(σ)))
+   export function pair<K> (Π: Args<K>): Trie.Constr<K> {
+      return Trie.Constr.make(singleton("Pair", Π))
    }
 
-   export function point<K> (σ: Trie<Args<K>>): Trie.Constr<K> {
-      return Trie.Constr.make(singleton("Point", arg(σ)))
+   export function point<K> (Π: Args<K>): Trie.Constr<K> {
+      return Trie.Constr.make(singleton("Point", Π))
    }
 
-   export function some<K> (σ: Trie<Args<K>>): Trie.Constr<K> {
-      return Trie.Constr.make(singleton("Some", arg(σ)))
+   export function some<K> (Π: Args<K>): Trie.Constr<K> {
+      return Trie.Constr.make(singleton("Some", Π))
    }
 }
 
