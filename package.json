@@ -17,6 +17,7 @@
     "@types/chai": "^3.4.35",
     "@types/jquery": "^3.3.1",
     "@types/mocha": "^2.2.48",
+    "@types/node": "^10.12.18",
     "chai": "^3.5.0",
     "karma": "^1.7.1",
     "karma-chai": "^0.1.0",
