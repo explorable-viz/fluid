@@ -1,10 +1,9 @@
-import { __nonNull } from "../src/util/Core"
-import { Profile, TestFile, τ, loadExample, runTest } from "../test/Helpers"
-
-const file: TestFile = loadExample("factorial")
-runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
-
 import * as THREE from "three"
+import { __nonNull } from "../src/util/Core"
+import { Profile, TestFile, τ, loadTestFile2, runTest } from "../test/Helpers"
+
+const file: TestFile = loadTestFile2("example", "factorial")
+runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
 
 var scene = new THREE.Scene()
 var camera = new THREE.PerspectiveCamera( 75, 1, 0.1, 1000 )

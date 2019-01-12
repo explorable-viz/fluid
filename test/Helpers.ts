@@ -1,4 +1,5 @@
 import * as $ from "jquery"
+import * as fs from "fs"
 import { __nonNull, assert } from "../src/util/Core"
 import { parse } from "../src/util/parse/Core"
 import { initDataTypes } from "../src/DataType"
@@ -105,7 +106,7 @@ export class TestFile {
 }
 
 // Maybe there's a way to use ES6 promises instead.
-export function loadTestFile(folder: string, file: string): TestFile {
+export function loadTestFile (folder: string, file: string): TestFile {
    let testFile: TestFile = new TestFile
    before((done: MochaDone) => {
       const filename: string = folder + "/" + file + ".lcalc"
@@ -118,7 +119,13 @@ export function loadTestFile(folder: string, file: string): TestFile {
    return testFile
 }
 
-export function loadExample(file: string): TestFile {
+export function loadTestFile2 (folder: string, file: string): TestFile {
+   let testFile: TestFile = new TestFile
+   testFile.text = fs.readFileSync(folder + "/" + file + ".lcalc", "utf8")
+   return testFile
+}
+
+export function loadExample (file: string): TestFile {
 	return loadTestFile("example", file)
 }
 
