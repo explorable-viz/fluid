@@ -1,16 +1,15 @@
 import * as THREE from "three"
 import { __nonNull } from "../src/util/Core"
-import { Eval } from "../src/Eval"
-import { instantiate } from "../src/Instantiate"
-import { Profile, TestFile, ρ, τ, initialise, loadTestFile, runTest } from "../test/Helpers"
+import { Traced } from "../src/Traced"
+import { Profile, TestFile, τ, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
 const file: TestFile = loadTestFile("example", "factorial")
 runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
 
-function getPoints (n: number): THREE.Vector3[] {
-   const [tv, , ]: Eval.Result<null> = Eval.eval_(ρ, instantiate(ρ)(e), σ)
-   return []
+export function getPoints (n: number): THREE.Vector3[] {
+   const tv: Traced | null = runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
+   return tv === null ? [] : []
 }
 
 const scene = new THREE.Scene()
