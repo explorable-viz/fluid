@@ -7,9 +7,10 @@ const file: TestFile = loadTestFile("example", "factorial")
 runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
 
 var scene = new THREE.Scene()
+scene.background = new THREE.Color( 0xffffff )
 var camera = new THREE.PerspectiveCamera( 45, 1, 1, 500 )
-camera.position.set( 0, 0, 100 );
-camera.lookAt( new THREE.Vector3(0, 0, 0) );
+camera.position.set( 0, 0, 100 )
+camera.lookAt( new THREE.Vector3(0, 0, 0) )
 
 var renderer = new THREE.WebGLRenderer()
 renderer.setSize( 600, 600 )
