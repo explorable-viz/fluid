@@ -1,11 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { Profile, TestFile, τ, initialise, loadTestFile, runTest } from "./Helpers"
+import { Profile, TestFile, τ, initialise, loadExample, runTest } from "./Helpers"
 import { __nonNull } from "../src/util/Core"
-
-function loadExample(file: string): TestFile {
-	return loadTestFile("example", file)
-}
 
 before((done: MochaDone) => {
 	initialise()
@@ -64,7 +60,7 @@ describe("example", () => {
 
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
-		it("parses ok", () => {
+		it("ok", () => {
 			runTest(__nonNull(file.text), Profile.Match, τ.some(τ.arg(τ.str(τ.endArgs(null)))))
 		})
 	})
