@@ -1,4 +1,3 @@
-import * as $ from "jquery"
 import { __nonNull, assert } from "../src/util/Core"
 import { parse } from "../src/util/parse/Core"
 import { initDataTypes } from "../src/DataType"
@@ -107,19 +106,6 @@ export class TestFile {
 // Maybe there's a way to use ES6 promises instead.
 export function loadTestFile (folder: string, file: string): TestFile {
    let testFile: TestFile = new TestFile
-   before((done: MochaDone) => {
-      const filename: string = folder + "/" + file + ".lcalc"
-      $.get(filename, text => {
-         testFile.text = text
-         console.log("Loaded " + filename)
-         done()
-      })
-   })
-   return testFile
-}
-
-export function loadTestFile2 (folder: string, file: string): TestFile {
-   let testFile: TestFile = new TestFile
    const xmlhttp = new XMLHttpRequest
    xmlhttp.open("GET", folder + "/" + file + ".lcalc", false)
    xmlhttp.send()
@@ -131,9 +117,4 @@ export function loadTestFile2 (folder: string, file: string): TestFile {
 
 export function loadExample (file: string): TestFile {
 	return loadTestFile("example", file)
-}
-
-// For now just see if all the examples run without an exception.
-export function testAll (): void {
-   initialise()
 }

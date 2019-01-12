@@ -1,8 +1,9 @@
 import * as THREE from "three"
 import { __nonNull } from "../src/util/Core"
-import { Profile, TestFile, τ, loadTestFile2, runTest } from "../test/Helpers"
+import { Profile, TestFile, τ, initialise, loadTestFile, runTest } from "../test/Helpers"
 
-const file: TestFile = loadTestFile2("example", "factorial")
+initialise()
+const file: TestFile = loadTestFile("example", "factorial")
 runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
 
 var scene = new THREE.Scene()
