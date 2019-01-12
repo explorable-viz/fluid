@@ -1,5 +1,4 @@
 import * as $ from "jquery"
-import * as fs from "fs"
 import { __nonNull, assert } from "../src/util/Core"
 import { parse } from "../src/util/parse/Core"
 import { initDataTypes } from "../src/DataType"
@@ -121,7 +120,12 @@ export function loadTestFile (folder: string, file: string): TestFile {
 
 export function loadTestFile2 (folder: string, file: string): TestFile {
    let testFile: TestFile = new TestFile
-   testFile.text = fs.readFileSync(folder + "/" + file + ".lcalc", "utf8")
+   const xmlhttp = new XMLHttpRequest
+   xmlhttp.open("GET", folder + "/" + file + ".lcalc", false)
+   xmlhttp.send()
+   if (xmlhttp.status === 200) {
+     testFile.text = xmlhttp.responseText
+   }
    return testFile
 }
 
