@@ -3,13 +3,24 @@ import { __nonNull } from "../src/util/Core"
 import { Traced } from "../src/Traced"
 import { Profile, TestFile, τ, initialise, loadTestFile, runTest } from "../test/Helpers"
 
-initialise()
-const file: TestFile = loadTestFile("example", "factorial")
-runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
+import Trie = Traced.Trie
 
-export function getPoints (n: number): THREE.Vector3[] {
-   const tv: Traced | null = runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
-   return tv === null ? [] : []
+initialise()
+const file: TestFile = loadTestFile("example", "zipW")
+getPoints(__nonNull(runTest(__nonNull(file.text), Profile.Match, points(3, null))))
+
+// Demand for list of points of length n.
+export function points<K> (n: number, κ: K): Trie.Constr<K> {
+   if (n === 0) {
+      return τ.nil(τ.endArgs(κ))
+   } else {
+      return τ.cons(τ.arg(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(points(n - 1, τ.endArgs(κ)))))))))))
+   }
+}
+
+export function getPoints (tv: Traced): THREE.Vector3[] {
+   console.log(tv.v)
+   return []
 }
 
 const scene = new THREE.Scene()
