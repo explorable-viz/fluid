@@ -61,7 +61,7 @@ describe("example", () => {
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Match, τ.some(τ.arg(τ.str(τ.endArgs(null)))))
+			runTest(__nonNull(file.text), Profile.Match, τ.some(τ.str(τ.endArgs(null))))
 		})
 	})
 
@@ -82,7 +82,7 @@ describe("example", () => {
 	describe("normalise", () => {
 		const file: TestFile = loadExample("normalise")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Match, τ.pair(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(null)))))))
+			runTest(__nonNull(file.text), Profile.Match, τ.pair(τ.int(τ.arg(τ.int(τ.endArgs(null))))))
 		})
 	})
 
@@ -96,7 +96,7 @@ describe("example", () => {
 	describe("zipW", () => {
 		const file: TestFile = loadExample("zipW")
 		it("ok", () => {
-			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(τ.var_(τ.endArgs(null)))))))))))
+			runTest(__nonNull(file.text), Profile.Match, τ.cons(τ.point(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(τ.var_(τ.endArgs(null))))))))))
 		})
 	})
 })
