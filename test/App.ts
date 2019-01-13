@@ -8,7 +8,7 @@ import Trie = Traced.Trie
 
 initialise()
 const file: TestFile = loadTestFile("example", "zipW")
-const points: THREE.Vector3[] = getPoints(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectPoints(3, null))))
+const points: THREE.Vector2[] = getPoints(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectPoints(3, null))))
 
 // Demand for list of points of length n.
 export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
@@ -20,7 +20,7 @@ export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
 }
 
 // Hack to suck out the leaf data. Might have to rethink what it means to match primitive data.
-export function getPoints (tv: Traced): THREE.Vector3[] {
+export function getPoints (tv: Traced): THREE.Vector2[] {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Cons") {
          const point_tvs: List<Traced> = tv.v.args
@@ -31,7 +31,7 @@ export function getPoints (tv: Traced): THREE.Vector3[] {
                if (Cons.is(x_y)) {
                   if (x_y.head.v instanceof Value.ConstInt && Cons.is(x_y.tail) &&
                      x_y.tail.head.v instanceof Value.ConstInt && Cons.is(point_tvs.tail)) {
-                        return [new THREE.Vector3(x_y.head.v.val, x_y.tail.head.v.val)]
+                        return [new THREE.Vector2(x_y.head.v.val, x_y.tail.head.v.val)]
                                  .concat(getPoints(point_tvs.tail.head))
                   }
                }
@@ -51,14 +51,17 @@ const camera = new THREE.PerspectiveCamera( 45, 1, 1, 500 )
 camera.position.set( 0, 0, 100 )
 camera.lookAt( new THREE.Vector3(0, 0, 0) )
 
-const renderer = new THREE.WebGLRenderer()
+const renderer = new THREE.WebGLRenderer
 renderer.setSize( 600, 600 )
 document.body.appendChild( renderer.domElement )
 
-const geometry = new THREE.Geometry()
-geometry.vertices.push(points[0])
-geometry.vertices.push(points[1])
-geometry.vertices.push(points[2])
+const poly = new THREE.Shape
+poly.moveTo(points[0].x, points[0].y)
+for (const point of points.slice(1)) {
+   poly.lineTo(point.x, point.y)
+}
+poly.lineTo(points[0].x, points[0].y)
+const geometry = new THREE.ShapeGeometry(poly)
 const material = new THREE.LineBasicMaterial( { color: 0x0000ff } )
 scene.add(new THREE.Line( geometry, material ))
 
