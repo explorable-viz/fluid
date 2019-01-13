@@ -8,14 +8,14 @@ import Trie = Traced.Trie
 
 initialise()
 const file: TestFile = loadTestFile("example", "zipW")
-getPoints(__nonNull(runTest(__nonNull(file.text), Profile.Match, points(3, null))))
+const points: THREE.Vector3[] = getPoints(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectPoints(3, null))))
 
 // Demand for list of points of length n.
-export function points<K> (n: number, κ: K): Trie.Constr<K> {
+export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
    if (n === 0) {
       return τ.nil(τ.endArgs(κ))
    } else {
-      return τ.cons(τ.arg(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(points(n - 1, τ.endArgs(κ)))))))))))
+      return τ.cons(τ.arg(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(expectPoints(n - 1, τ.endArgs(κ)))))))))))
    }
 }
 
@@ -56,9 +56,9 @@ renderer.setSize( 600, 600 )
 document.body.appendChild( renderer.domElement )
 
 const geometry = new THREE.Geometry()
-geometry.vertices.push(new THREE.Vector3( -10, 0, 0) )
-geometry.vertices.push(new THREE.Vector3( 0, 10, 0) )
-geometry.vertices.push(new THREE.Vector3( 10, 0, 0) )
+geometry.vertices.push(points[0])
+geometry.vertices.push(points[1])
+geometry.vertices.push(points[2])
 const material = new THREE.LineBasicMaterial( { color: 0x0000ff } )
 scene.add(new THREE.Line( geometry, material ))
 
