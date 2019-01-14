@@ -47,7 +47,7 @@ export function getPoints (tv: Traced): THREE.Vector2[] {
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color( 0xffffff )
-const camera = new THREE.PerspectiveCamera( 45, 1, 1, 500 )
+const camera = new THREE.PerspectiveCamera( 50, 1, 1, 500 )
 camera.position.set( 0, 0, 100 )
 camera.lookAt( new THREE.Vector3(0, 0, 0) )
 
@@ -55,14 +55,28 @@ const renderer = new THREE.WebGLRenderer
 renderer.setSize( 600, 600 )
 document.body.appendChild( renderer.domElement )
 
-const poly = new THREE.Shape
-poly.moveTo(points[0].x, points[0].y)
-for (const point of points.slice(1)) {
-   poly.lineTo(point.x, point.y)
-}
-poly.lineTo(points[0].x, points[0].y)
-const geometry = new THREE.ShapeGeometry(poly)
-const material = new THREE.LineBasicMaterial( { color: 0x0000ff } )
-scene.add(new THREE.Line( geometry, material ))
+const geometry = new THREE.Geometry()
+geometry.vertices.push(new THREE.Vector3(0,0,0))
+geometry.vertices.push(new THREE.Vector3(0,10,0))
+geometry.vertices.push(new THREE.Vector3(10,0,0))
+geometry.vertices.push(new THREE.Vector3(10,10,0))
+  
+geometry.faces.push(new THREE.Face3(0,1,2))
+geometry.faces.push(new THREE.Face3(1,2,3))
+
+const material = new THREE.MeshBasicMaterial( { color: 0xF6831E, side: THREE.DoubleSide } );
+const square_mesh = new THREE.Mesh(geometry, material)
+scene.add(square_mesh)
+
+points[0]
+// const poly = new THREE.Shape
+// poly.moveTo(points[0].x, points[0].y)
+// for (const point of points.slice(1)) {
+//     poly.lineTo(point.x, point.y)
+// }
+// poly.lineTo(points[0].x, points[0].y)
+// const geometry = new THREE.ShapeGeometry(poly)
+// const material = new THREE.LineBasicMaterial( { color: 0x0000ff } )
+// scene.add(new THREE.Line( geometry, material ))
 
 renderer.render( scene, camera )
