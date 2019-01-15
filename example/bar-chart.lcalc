@@ -14,11 +14,12 @@ let
    // discard x coordinates other than the first
    stackRight = fun {
       Nil → Nil;
-      Cons(Rect(x, y, w, h), rects) → stackRight' x rects
+      Cons(rect, rects) → 
+         match rect as Rect(x, y, w, h) → stackRight' x Cons(rect, rects)
    }
 in
 let
-   polyRect = fun Rect(x, y, w, h) → 
+   polyRect = fun Rect(x, y, w, h) →
       Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
 in
    // list of polygons, where each "polygon" is a list of points
