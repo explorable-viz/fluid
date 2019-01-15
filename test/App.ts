@@ -8,7 +8,7 @@ import Trie = Traced.Trie
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const points: THREE.Vector2[] = getPoints(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectRects(4, null))))
+const rects: THREE.Vector2[][] = getRects(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectRects(4, null))))
 
 // Demand for list of points of length n.
 export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
@@ -28,6 +28,21 @@ export function expectRects<K> (n: number, κ: K): Trie.Constr<K> {
 }
 
 // Hack to suck out the leaf data. Might have to rethink what it means to match primitive data.
+export function getRects (tv: Traced): THREE.Vector2[][] {
+   if (tv.v instanceof Value.Constr) {
+      if (tv.v.ctr.str === "Cons") {
+         const points_tvs: List<Traced> = tv.v.args
+         if (Cons.is(points_tvs) && Cons.is(points_tvs.tail)) {
+            return [getPoints(points_tvs.head)].concat(getRects(points_tvs.tail.head))
+         } 
+      } else
+      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
+         return []
+      }
+   }
+   return assert(false)
+}
+
 export function getPoints (tv: Traced): THREE.Vector2[] {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Cons") {
@@ -64,7 +79,7 @@ renderer.setSize( 600, 600 )
 document.body.appendChild( renderer.domElement )
 
 const geometry = new THREE.Geometry()
-for (const point of points.slice(1)) {
+for (const point of rects[0].slice(1)) {
    geometry.vertices.push(new THREE.Vector3(point.x, point.y, 0))
 }
   
@@ -75,7 +90,6 @@ const material = new THREE.MeshBasicMaterial( { color: 0xF6831E, side: THREE.Dou
 const square_mesh = new THREE.Mesh(geometry, material)
 scene.add(square_mesh)
 
-points[0]
 // const poly = new THREE.Shape
 // poly.moveTo(points[0].x, points[0].y)
 // for (const point of points.slice(1)) {
