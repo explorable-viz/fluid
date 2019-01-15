@@ -1,5 +1,19 @@
 let 
    data = Cons((2001, 15), Cons((2002, 8), Cons((2005, 22), Cons((2007, 9), Nil))))
+in 
+letrec 
+   fun stackRight' x → fun
+      Cons(Rect(_, y, w, h), rects) → Cons(Rect(w, y, w', h), stackRight' (x + w) rects)
+in
+let
+   // discard x coordinates after the first
+   stackRight = fun {
+      Nil → Nil;
+      Cons(Rect(x, y, w, h), rects) → stackRight' x rects
+   }
+in
+let
+   drawRect = fun Rect(x, y, w, h) → 
+      Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
 in
    map (fun (year, age) → Rect(0, 0, age, 5)) data
-   
