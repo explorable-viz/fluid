@@ -7,8 +7,8 @@ import { Profile, TestFile, τ, initialise, loadTestFile, runTest } from "../tes
 import Trie = Traced.Trie
 
 initialise()
-const file: TestFile = loadTestFile("example", "zipW")
-const points: THREE.Vector2[] = getPoints(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectPoints(4, null))))
+const file: TestFile = loadTestFile("example", "bar-chart")
+const points: THREE.Vector2[] = getPoints(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectRects(4, null))))
 
 // Demand for list of points of length n.
 export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
@@ -16,6 +16,14 @@ export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
       return τ.nil(τ.endArgs(κ))
    } else {
       return τ.cons(τ.arg(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(expectPoints(n - 1, τ.endArgs(κ)))))))))))
+   }
+}
+
+export function expectRects<K> (n: number, κ: K): Trie.Constr<K> {
+   if (n === 0) {
+      return τ.nil(τ.endArgs(κ))
+   } else {
+      return τ.cons(τ.arg(expectPoints(4, τ.arg(expectRects(n - 1, τ.endArgs(κ))))))
    }
 }
 
