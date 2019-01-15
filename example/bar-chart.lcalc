@@ -7,15 +7,13 @@ letrec
       Cons(x, xs) → Cons(f x, map f xs)
    }
 
-   fun stackRight' → fun
-      Cons(Rect(_, y, w, h), rects) → Cons(Rect(x, y, w, h), stackRight' (x + w) rects)
-in
-let
    // discard x coordinates other than the first
-   stackRight = fun {
+   fun stackRight {
       Nil → Nil;
-      Cons(rect, rects) → 
-         match rect as Rect(x, y, w, h) → stackRight' x Cons(rect, rects)
+      Cons(rect, Nil) → Cons(rect, Nil);
+      Cons(rect, Cons(Rect(_, y2, w2, h2), rects)) → 
+         match rect as Rect(x1, y1, w1, h1) →
+            Cons(Rect(x1, y1, w1, h1), stackRight Cons(Rect(x1 + w1, y2, w2, h2), rects))
    }
 in
 let
