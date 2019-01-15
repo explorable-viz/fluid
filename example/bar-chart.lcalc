@@ -7,7 +7,7 @@ letrec
       Cons(x, xs) → Cons(f x, map f xs)
    }
 
-   fun stackRight' x → fun
+   fun stackRight' → fun
       Cons(Rect(_, y, w, h), rects) → Cons(Rect(x, y, w, h), stackRight' (x + w) rects)
 in
 let
