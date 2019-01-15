@@ -79,7 +79,7 @@ renderer.setSize( 600, 600 )
 document.body.appendChild( renderer.domElement )
 
 const geometry = new THREE.Geometry()
-for (const point of rects[0].slice(1)) {
+for (const point of rects[0]) {
    geometry.vertices.push(new THREE.Vector3(point.x, point.y, 0))
 }
   
@@ -89,15 +89,5 @@ geometry.faces.push(new THREE.Face3(1,2,3))
 const material = new THREE.MeshBasicMaterial( { color: 0xF6831E, side: THREE.DoubleSide } );
 const square_mesh = new THREE.Mesh(geometry, material)
 scene.add(square_mesh)
-
-// const poly = new THREE.Shape
-// poly.moveTo(points[0].x, points[0].y)
-// for (const point of points.slice(1)) {
-//     poly.lineTo(point.x, point.y)
-// }
-// poly.lineTo(points[0].x, points[0].y)
-// const geometry = new THREE.ShapeGeometry(poly)
-// const material = new THREE.LineBasicMaterial( { color: 0x0000ff } )
-// scene.add(new THREE.Line( geometry, material ))
 
 renderer.render( scene, camera )

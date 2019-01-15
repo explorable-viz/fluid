@@ -21,4 +21,4 @@ let
       Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
 in
    // list of polygons, where each "polygon" is a list of points
-   map polyRect (stackRight (map (fun (year, age) → Rect(0, 0, age, 5)) data))
+   map polyRect (stackRight (map (fun (year, age) → Rect(0, 0, 5, age)) data))
