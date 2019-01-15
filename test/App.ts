@@ -84,7 +84,7 @@ for (const point of rects[0]) {
 }
   
 geometry.faces.push(new THREE.Face3(0,1,2))
-geometry.faces.push(new THREE.Face3(1,2,3))
+geometry.faces.push(new THREE.Face3(2,3,0))
 
 const material = new THREE.MeshBasicMaterial( { color: 0xF6831E, side: THREE.DoubleSide } );
 const square_mesh = new THREE.Mesh(geometry, material)
