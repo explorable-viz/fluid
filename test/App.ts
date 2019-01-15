@@ -8,7 +8,7 @@ import Trie = Traced.Trie
 
 initialise()
 const file: TestFile = loadTestFile("example", "zipW")
-const points: THREE.Vector2[] = getPoints(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectPoints(3, null))))
+const points: THREE.Vector2[] = getPoints(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectPoints(4, null))))
 
 // Demand for list of points of length n.
 export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
@@ -56,10 +56,9 @@ renderer.setSize( 600, 600 )
 document.body.appendChild( renderer.domElement )
 
 const geometry = new THREE.Geometry()
-geometry.vertices.push(new THREE.Vector3(0,0,0))
-geometry.vertices.push(new THREE.Vector3(0,10,0))
-geometry.vertices.push(new THREE.Vector3(10,0,0))
-geometry.vertices.push(new THREE.Vector3(10,10,0))
+for (const point of points.slice(1)) {
+   geometry.vertices.push(new THREE.Vector3(point.x, point.y, 0))
+}
   
 geometry.faces.push(new THREE.Face3(0,1,2))
 geometry.faces.push(new THREE.Face3(1,2,3))

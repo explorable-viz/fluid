@@ -1,0 +1,5 @@
+let 
+   data = Cons((2001, 15), Cons((2002, 8), Cons((2005, 22), Cons((2007, 9), Nil))))
+in
+   map (fun (year, age) → Rect(0, 0, age, 5)) data
+   

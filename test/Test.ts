@@ -16,6 +16,13 @@ describe("example", () => {
 		})
 	})
 
+	describe("bar-chart", () => {
+		const file: TestFile = loadExample("bar-chart")
+		it("ok", () => {
+			runTest(__nonNull(file.text), Profile.Match, τ.var_(null))
+		})
+	})
+
 	describe("compose", () => {
 		const file: TestFile = loadExample("compose")
 		it("ok", () => {
