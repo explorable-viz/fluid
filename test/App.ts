@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import * as polyline from "extrude-polyline"
 import { __nonNull, assert } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { Traced, Value } from "../src/Traced"
@@ -70,7 +71,7 @@ export function getPoints (tv: Traced): THREE.Vector2[] {
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color( 0xffffff )
-const camera = new THREE.PerspectiveCamera( 50, 1, 1, 500 )
+const camera = new THREE.PerspectiveCamera( 20, 1, 1, 500 )
 camera.position.set( 0, 0, 100 )
 camera.lookAt( new THREE.Vector3(0, 0, 0) )
 
@@ -88,14 +89,34 @@ class Rect extends THREE.Geometry {
       this.faces.push(new THREE.Face3(2,3,0))
    }
 
-   mesh (): THREE.Mesh {
-      const material = new THREE.MeshBasicMaterial( { color: 0xF6831E, side: THREE.DoubleSide } );
-      return new THREE.Mesh(this, material)
+   object3D (): THREE.Object3D {
+      return new THREE.Mesh(
+         this, 
+         new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
+      )
+   }
+}
+
+class Path extends THREE.Geometry {
+   constructor (path: THREE.Vector2[]) {
+      super()   
+      for (const point of path) {
+         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
+      }
+      // vertex 0 must appear twice to make a closed path
+      this.vertices.push(new THREE.Vector3(path[0].x, path[0].y, 0))
+   }
+
+   object3D (): THREE.Object3D {
+      return new THREE.Line(this, new THREE.LineBasicMaterial({ 
+         color: 0x000000 
+      }))
    }
 }
 
 for (let rect of rects) {
-   scene.add(new Rect(rect).mesh())
+   scene.add(new Rect(rect).object3D())
+   scene.add(new Path(rect).object3D())
 }
 
 renderer.render( scene, camera )

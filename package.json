@@ -5,6 +5,7 @@
   "main": "make",
   "dependencies": {
     "@types/three": "0.0.24",
+    "extrude-polyline": "^1.0.6",
     "html-webpack-plugin": "^3.2.0",
     "jquery": "^3.3.1",
     "mocha-headless-chrome": "^1.8.2",
