@@ -10,6 +10,7 @@
     "mocha-headless-chrome": "^1.8.2",
     "puppeteer": "^1.11.0",
     "three": "^0.81.2",
+    "three.meshline": "^1.1.0",
     "ts-loader": "^2.3.7",
     "typescript": "^2.8.1"
   },

@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import * as Meshline from "three.meshline"
 import { __nonNull, assert } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { Traced, Value } from "../src/Traced"
@@ -70,7 +71,7 @@ export function getPoints (tv: Traced): THREE.Vector2[] {
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color( 0xffffff )
-const camera = new THREE.PerspectiveCamera( 20, 1, 1, 500 )
+const camera = new THREE.PerspectiveCamera( 30, 1, 1, 500 )
 camera.position.set( 0, 0, 100 )
 camera.lookAt( new THREE.Vector3(0, 0, 0) )
 
@@ -107,9 +108,12 @@ class Path extends THREE.Geometry {
    }
 
    object3D (): THREE.Object3D {
-      return new THREE.Line(this, new THREE.LineBasicMaterial({ 
-         color: 0x000000 
-      }))
+      const line = new Meshline.MeshLine()
+      line.setGeometry(this)
+      const material = new Meshline.MeshLineMaterial({
+         color: new THREE.Color(0x000000)
+      })
+      return new THREE.Mesh( line.geometry, material )
    }
 }
 
