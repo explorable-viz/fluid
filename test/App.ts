@@ -79,7 +79,7 @@ const renderer = new THREE.WebGLRenderer
 renderer.setSize( 600, 600 )
 document.body.appendChild( renderer.domElement )
 
-class Rect extends THREE.Geometry {
+export class Rect extends THREE.Geometry {
    constructor (rect: THREE.Vector2[]) {
       super()   
       for (const point of rect) {
@@ -111,14 +111,16 @@ class Path extends THREE.Geometry {
       const line = new Meshline.MeshLine()
       line.setGeometry(this)
       const material = new Meshline.MeshLineMaterial({
-         color: new THREE.Color(0x000000)
+         color: new THREE.Color(0x000000),
+         sizeAttenuation: 0,
+         lineWidth: 0.020
       })
       return new THREE.Mesh( line.geometry, material )
    }
 }
 
 for (let rect of rects) {
-   scene.add(new Rect(rect).object3D())
+//   scene.add(new Rect(rect).object3D())
    scene.add(new Path(rect).object3D())
 }
 
