@@ -81,7 +81,7 @@ document.body.appendChild( renderer.domElement )
 class Rect extends THREE.Geometry {
    constructor (rect: THREE.Vector2[]) {
       super()   
-      for (const point of rects[0]) {
+      for (const point of rect) {
          this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
       }
       this.faces.push(new THREE.Face3(0,1,2))
@@ -94,6 +94,8 @@ class Rect extends THREE.Geometry {
    }
 }
 
-scene.add(new Rect(rects[0]).mesh())
+for (let rect of rects) {
+   scene.add(new Rect(rect).mesh())
+}
 
 renderer.render( scene, camera )
