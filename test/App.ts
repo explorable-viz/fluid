@@ -1,5 +1,4 @@
 import * as THREE from "three"
-import * as polyline from "extrude-polyline"
 import { __nonNull, assert } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { Traced, Value } from "../src/Traced"
@@ -97,26 +96,20 @@ class Rect extends THREE.Geometry {
    }
 }
 
-class Path {
-   points: [number, number][] = []
-
+class Path extends THREE.Geometry {
    constructor (path: THREE.Vector2[]) {
+      super()   
       for (const point of path) {
-         this.points.push([point.x, point.y])
+         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
       }
-      // point 0 must appear twice to make a closed path
-      this.points.push([path[0].x, path[0].y])
+      // vertex 0 must appear twice to make a closed path
+      this.vertices.push(new THREE.Vector3(path[0].x, path[0].y, 0))
    }
 
    object3D (): THREE.Object3D {
-      const stroke = polyline({ 
-          thickness: 20, 
-          cap: 'square',
-          join: 'bevel',
-          miterLimit: 10
-      })     
-      // builds a triangulated mesh from a polyline
-      return stroke.build(this.points)
+      return new THREE.Line(this, new THREE.LineBasicMaterial({ 
+         color: 0x000000 
+      }))
    }
 }
 
