@@ -8,12 +8,12 @@ letrec
    }
 
    // discard x coordinates other than the first
-   fun stackRight {
+   fun stackRight sep → fun {
       Nil → Nil;
       Cons(rect, Nil) → Cons(rect, Nil);
       Cons(rect, Cons(Rect(_, y2, w2, h2), rects)) → 
          match rect as Rect(x1, y1, w1, h1) →
-            Cons(Rect(x1, y1, w1, h1), stackRight Cons(Rect(x1 + w1, y2, w2, h2), rects))
+            Cons(Rect(x1, y1, w1, h1), stackRight sep Cons(Rect(x1 + w1 + sep, y2, w2, h2), rects))
    }
 in
 let
@@ -21,4 +21,4 @@ let
       Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
 in
    // list of polygons, where each "polygon" is a list of points
-   map polyRect (stackRight (map (fun (year, age) → Rect(0, 0, 5, age)) data))
+   map polyRect (stackRight 1 (map (fun (year, age) → Rect(0, 0, 5, age)) data))
