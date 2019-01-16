@@ -78,16 +78,22 @@ const renderer = new THREE.WebGLRenderer
 renderer.setSize( 600, 600 )
 document.body.appendChild( renderer.domElement )
 
-const geometry = new THREE.Geometry()
-for (const point of rects[0]) {
-   geometry.vertices.push(new THREE.Vector3(point.x, point.y, 0))
-}
-  
-geometry.faces.push(new THREE.Face3(0,1,2))
-geometry.faces.push(new THREE.Face3(2,3,0))
+class Rect extends THREE.Geometry {
+   constructor (rect: THREE.Vector2[]) {
+      super()   
+      for (const point of rects[0]) {
+         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
+      }
+      this.faces.push(new THREE.Face3(0,1,2))
+      this.faces.push(new THREE.Face3(2,3,0))
+   }
 
-const material = new THREE.MeshBasicMaterial( { color: 0xF6831E, side: THREE.DoubleSide } );
-const square_mesh = new THREE.Mesh(geometry, material)
-scene.add(square_mesh)
+   mesh (): THREE.Mesh {
+      const material = new THREE.MeshBasicMaterial( { color: 0xF6831E, side: THREE.DoubleSide } );
+      return new THREE.Mesh(this, material)
+   }
+}
+
+scene.add(new Rect(rects[0]).mesh())
 
 renderer.render( scene, camera )
