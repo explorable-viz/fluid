@@ -117,7 +117,24 @@ export class Rect extends THREE.Geometry {
    }
 }
 
-class Path extends THREE.Geometry {
+export class Path extends THREE.Geometry {
+   constructor (path: THREE.Vector2[]) {
+      super()   
+      for (const point of path) {
+         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
+      }
+      // vertex 0 must appear twice to make a closed path
+      this.vertices.push(new THREE.Vector3(path[0].x, path[0].y, 0))
+   }
+
+    object3D (): THREE.Object3D {
+      return new THREE.Line(this, new THREE.LineBasicMaterial({ 
+         color: 0x000000 
+      }))
+   }
+}
+
+export class ThickPath extends THREE.Geometry {
    constructor (path: THREE.Vector2[]) {
       super()   
       for (const point of path) {
@@ -140,7 +157,8 @@ class Path extends THREE.Geometry {
 }
 
 for (let rect of rects) {
-//   scene.add(new Rect(rect).object3D())
+   scene.add(new Rect(rect).object3D())
+//   scene.add(new ThickPath(rect).object3D())
    scene.add(new Path(rect).object3D())
 }
 
