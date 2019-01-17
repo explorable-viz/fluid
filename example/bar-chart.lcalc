@@ -9,18 +9,23 @@ letrec
       Nil → Nil;
       Cons(x, xs) → Cons(f x, map f xs)
    }
-
-   // discard x coordinates other than the first
-   fun stackRight sep → fun {
-      Nil → Nil;
-      Cons(rect, Nil) → Cons(rect, Nil);
-      Cons(rect, Cons(rect2, rects)) → 
-         Cons(rect, stackRight sep Cons(rect_put_x ((rect_get_x rect) + (rect_get_w rect) + sep) rect2, rects))
-   }
 in
 let
    rectAsPoly = fun Rect(x, y, w, h) →
       Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
 in
+let
+   // discard x coordinates other than the first
+   stackRight = fun sep → fun get_x → fun put_x → fun get_w → fun rects →
+      letrec 
+         fun stackRight' {
+            Nil → Nil;
+            Cons(rect, Nil) → Cons(rect, Nil);
+            Cons(rect, Cons(rect2, rects)) → 
+               Cons(rect, stackRight' Cons(put_x ((get_x rect) + (get_w rect) + sep) rect2, rects))
+         } 
+      in 
+      stackRight' rects
+in
    // list of polygons, where each "polygon" is a list of points
-   map rectAsPoly (stackRight 1 (map (fun (year, age) → Rect(0, 0, 5, age)) data))
+   map rectAsPoly (stackRight 1 rect_get_x rect_put_x rect_get_w (map (fun (year, age) → Rect(0, 0, 5, age)) data))
