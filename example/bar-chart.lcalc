@@ -2,7 +2,7 @@ let
    data = Cons((2001, 15), Cons((2002, 8), Cons((2005, 22), Cons((2007, 9), Nil))))
 in 
 let rect_get_x = fun Rect(x, y, w, h) → x in
-let rect_put_x = fun x Rect(_, y, w, h) → Rect(x, y, w, h) in
+let rect_put_x = fun x → fun Rect(_, y, w, h) → Rect(x, y, w, h) in
 let rect_get_w = fun Rect(x, y, w, h) → w in
 letrec 
    fun map f → fun {
@@ -14,8 +14,8 @@ letrec
    fun stackRight sep → fun {
       Nil → Nil;
       Cons(rect, Nil) → Cons(rect, Nil);
-      Cons(rect1, Cons(rect2, rects)) → 
-         Cons(rect1, stackRight sep Cons(rect_put_x (rect_get_x rect2 + rect_get_w rect1 + sep) rect2, rects))
+      Cons(rect, Cons(rect2, rects)) → 
+         Cons(rect, stackRight sep Cons(rect_put_x ((rect_get_x rect2) + (rect_get_w rect) + sep) rect2, rects))
    }
 in
 let
