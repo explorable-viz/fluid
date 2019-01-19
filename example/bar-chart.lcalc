@@ -16,6 +16,8 @@ letrec
          Cons(y, ys) → Cons(op(x, y), zipW op xs ys)
       }
    }
+   fun iterate f → fun x →
+      Cons(x, map f (iterate f x))
 in
 let
    rectAsPoly = fun Rect(x, y, w, h) →
@@ -36,7 +38,7 @@ let
 in
 let rects = (map (fun (year, age) → Rect(0, 0, 5, age)) data) in
 let rects' = 
-   zipW (fun (x, rect) → rect_put_x x rect) (Cons(1, Cons(2, Cons(3, Cons(4, Nil))))) rects
+   zipW (fun (x, rect) → rect_put_x x rect) (iterate (fun x → x + 1) 0) rects
    // stackRight 1 rect_get_x rect_put_x rect_get_w rects
 in 
    // list of polygons, where each "polygon" is a list of points
