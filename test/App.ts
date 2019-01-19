@@ -1,4 +1,6 @@
 import * as THREE from "three"
+import { OrbitControls } from "three-orbitcontrols-ts"
+import * as Meshline from "three.meshline"
 import { __nonNull, assert } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { Traced, Value } from "../src/Traced"
@@ -70,24 +72,100 @@ export function getPoints (tv: Traced): THREE.Vector2[] {
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color( 0xffffff )
-const camera = new THREE.PerspectiveCamera( 50, 1, 1, 500 )
+const camera = new THREE.PerspectiveCamera( 60, 1, 1, 200 )
 camera.position.set( 0, 0, 100 )
 camera.lookAt( new THREE.Vector3(0, 0, 0) )
 
 const renderer = new THREE.WebGLRenderer
 renderer.setSize( 600, 600 )
+
+const controls = new OrbitControls( camera, renderer.domElement );
+
+// How far you can orbit vertically, upper and lower limits.
+controls.minPolarAngle = 0;
+controls.maxPolarAngle = Math.PI;
+
+// How far you can dolly in and out ( PerspectiveCamera only )
+controls.minDistance = 0;
+controls.maxDistance = Infinity;
+
+controls.enableZoom = true; // Set to false to disable zooming
+controls.zoomSpeed = 1.0;
+
+controls.enablePan = true; // Set to false to disable panning (ie vertical and horizontal translations)
+
+controls.enableDamping = true; // Set to false to disable damping (ie inertia)
+controls.dampingFactor = 0.25;
+
 document.body.appendChild( renderer.domElement )
 
-const geometry = new THREE.Geometry()
-for (const point of rects[0]) {
-   geometry.vertices.push(new THREE.Vector3(point.x, point.y, 0))
+export class Rect extends THREE.Geometry {
+   constructor (rect: THREE.Vector2[]) {
+      super()   
+      for (const point of rect) {
+         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
+      }
+      this.faces.push(new THREE.Face3(0,1,2))
+      this.faces.push(new THREE.Face3(2,3,0))
+   }
+
+   object3D (): THREE.Object3D {
+      return new THREE.Mesh(
+         this, 
+         new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
+      )
+   }
 }
-  
-geometry.faces.push(new THREE.Face3(0,1,2))
-geometry.faces.push(new THREE.Face3(2,3,0))
 
-const material = new THREE.MeshBasicMaterial( { color: 0xF6831E, side: THREE.DoubleSide } );
-const square_mesh = new THREE.Mesh(geometry, material)
-scene.add(square_mesh)
+export class Path extends THREE.Geometry {
+   constructor (path: THREE.Vector2[]) {
+      super()   
+      for (const point of path) {
+         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
+      }
+      // vertex 0 must appear twice to make a closed path
+      this.vertices.push(new THREE.Vector3(path[0].x, path[0].y, 0))
+   }
 
-renderer.render( scene, camera )
+    object3D (): THREE.Object3D {
+      return new THREE.Line(this, new THREE.LineBasicMaterial({ 
+         color: 0x000000 
+      }))
+   }
+}
+
+export class ThickPath extends THREE.Geometry {
+   constructor (path: THREE.Vector2[]) {
+      super()   
+      for (const point of path) {
+         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
+      }
+      // vertex 0 must appear twice to make a closed path
+      this.vertices.push(new THREE.Vector3(path[0].x, path[0].y, 0))
+   }
+
+   object3D (): THREE.Object3D {
+      const line = new Meshline.MeshLine()
+      line.setGeometry(this)
+      const material = new Meshline.MeshLineMaterial({
+         color: new THREE.Color(0x000000),
+         sizeAttenuation: 0,
+         lineWidth: 0.020
+      })
+      return new THREE.Mesh( line.geometry, material )
+   }
+}
+
+for (let rect of rects) {
+   scene.add(new Rect(rect).object3D())
+//   scene.add(new ThickPath(rect).object3D())
+   scene.add(new Path(rect).object3D())
+}
+
+function render () {
+   renderer.render(scene, camera)
+}
+
+controls.addEventListener('change', render)
+
+render()

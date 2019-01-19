@@ -1,24 +1,31 @@
-let 
+let
    data = Cons((2001, 15), Cons((2002, 8), Cons((2005, 22), Cons((2007, 9), Nil))))
-in 
+in
+let rect_get_x = fun Rect(x, y, w, h) → x in
+let rect_put_x = fun x → fun Rect(_, y, w, h) → Rect(x, y, w, h) in
+let rect_get_w = fun Rect(x, y, w, h) → w in
 letrec 
    fun map f → fun {
       Nil → Nil;
       Cons(x, xs) → Cons(f x, map f xs)
    }
-
-   // discard x coordinates other than the first
-   fun stackRight {
-      Nil → Nil;
-      Cons(rect, Nil) → Cons(rect, Nil);
-      Cons(rect, Cons(Rect(_, y2, w2, h2), rects)) → 
-         match rect as Rect(x1, y1, w1, h1) →
-            Cons(Rect(x1, y1, w1, h1), stackRight Cons(Rect(x1 + w1, y2, w2, h2), rects))
-   }
 in
 let
-   polyRect = fun Rect(x, y, w, h) →
+   rectAsPoly = fun Rect(x, y, w, h) →
       Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
 in
+let
+   // discard x coordinates other than the first
+   stackRight = fun sep → fun get_x → fun put_x → fun get_w →
+      letrec 
+         fun stackRight' {
+            Nil → Nil;
+            Cons(shape, Nil) → Cons(shape, Nil);
+            Cons(shape, Cons(shape2, shapes)) → 
+               Cons(shape, stackRight' Cons(put_x ((get_x shape) + (get_w shape) + sep) shape2, shapes))
+         } 
+      in 
+      stackRight'
+in
    // list of polygons, where each "polygon" is a list of points
-   map polyRect (stackRight (map (fun (year, age) → Rect(0, 0, 5, age)) data))
+   map rectAsPoly (stackRight 1 rect_get_x rect_put_x rect_get_w (map (fun (year, age) → Rect(0, 0, 5, age)) data))
