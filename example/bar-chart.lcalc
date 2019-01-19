@@ -27,5 +27,8 @@ let
       in 
       stackRight'
 in
+let rects = (map (fun (year, age) → Rect(0, 0, 5, age)) data) in
+let rects' = stackRight 1 rect_get_x rect_put_x rect_get_w rects
+in 
    // list of polygons, where each "polygon" is a list of points
-   map rectAsPoly (stackRight 1 rect_get_x rect_put_x rect_get_w (map (fun (year, age) → Rect(0, 0, 5, age)) data))
+   map rectAsPoly rects'
