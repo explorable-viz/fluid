@@ -1,7 +1,7 @@
 letrec
-   fun zipW op → fun {
-      Nil → fun ys → Nil;
-      Cons(x, xs) → fun {
+   fun zipW op {
+      Nil ys → Nil;
+      Cons(x, xs) {
          Nil → Nil;
          Cons(y, ys) → Cons(op(x, y), zipW op xs ys)
       }
