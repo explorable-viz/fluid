@@ -289,12 +289,11 @@ function pattern<K extends JoinSemilattice<K>> (p: Parser<K>): Parser<Expr.Trie<
 }
 
 // Chain of singleton tries, followed by an expression.
-function match (state: ParseState): ParseResult<Expr.Trie<Expr>> | null {
-   return choice<Expr.Trie<Expr>>([
+const match: Parser<Expr.Trie<Expr>> =
+   choice<Expr.Trie<Expr>>([
       pattern(dropFirst(symbol(str.arrow), expr)),
       pattern(withAction(matches, (m): Expr => Expr.Fun.at(ν(), m))) // retarded cast
-   ])(state)
-}
+   ])
 
 // Assume at least one match clause.
 function matches (state: ParseState): ParseResult<Expr.Trie<Expr>> | null {
