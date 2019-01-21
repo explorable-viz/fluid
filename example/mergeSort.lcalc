@@ -24,6 +24,6 @@ letrec
          Cons(x, Cons(y, xs')) →
             match split xs as 
                (ys, zs) → merge (mergesort ys) (mergesort zs)
-     }
+      }
 in
 mergesort Cons(1, Cons(2, Cons(3, Nil)))
