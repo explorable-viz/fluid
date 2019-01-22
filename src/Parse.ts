@@ -4,7 +4,7 @@ import {
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { Cons, List, Nil } from "./BaseTypes"
+import { List } from "./BaseTypes"
 import { arity } from "./DataType"
 import { singleton } from "./FiniteMap"
 import { ν } from "./Runtime"
@@ -204,18 +204,13 @@ const recDef: Parser<Expr.RecDef> =
       ([x, e]: [Lex.Var, Expr.Expr]) => Expr.RecDef.at(ν(), x, e)
    )
 
-function recDefs1 (): Parser<List<Expr.RecDef>> {
-   return (state: ParseState) =>
-      withAction(
-         seq(recDef, optional(recDefs1(), Nil.make())),
-         ([def, δ]: [Expr.RecDef, List<Expr.RecDef>]) => Cons.make(def, δ)
-      )(state)
-}
+const recDefs1 : Parser<List<Expr.RecDef>> =
+   withAction(sepBy1(recDef, symbol(";")), (δ: Expr.RecDef[]) => List.fromArray(δ))
 
 const letrec: Parser<Expr.LetRec> =
    withAction(
       seq(
-         dropFirst(keyword(str.letRec), recDefs1()),
+         dropFirst(keyword(str.letRec), recDefs1),
          dropFirst(keyword(str.in_), expr)
       ),
      ([δ, body]: [List<Expr.RecDef>, Expr]) => 

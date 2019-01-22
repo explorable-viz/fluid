@@ -2,7 +2,7 @@ letrec
    append = fun {
       Nil → fun ys → ys;
       Cons(x, xs) → fun ys → Cons(x, append xs ys)
-   }
+   };
 
    reverse = fun {
       Nil → Nil;

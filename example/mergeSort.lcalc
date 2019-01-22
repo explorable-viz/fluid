@@ -1,12 +1,12 @@
 letrec
-   fun split {
+   split = fun {
       Nil → (Nil, Nil);
       Cons(x, xs') →
          match split xs' as 
             (ys, zs) → (Cons(x, zs), ys)
-   }
+   };
 
-   fun merge xs → fun ys →
+   merge = fun xs ys →
       match (xs, ys) as {
          (Nil, ys') → ys;
          (Cons(x, xs'), Nil) → xs;
@@ -15,10 +15,9 @@ letrec
                True → Cons(x, merge xs' ys);
                False → Cons(y, merge xs ys')
             }
-      }
+      };
 
-   // problem: previously this syntax was only allowed in letrecs, whereas now arbitrary functions can look like this.
-   fun mergesort xs →
+   mergesort = fun xs →
       match xs as {
          Nil → xs;
          Cons(x, Nil) → xs;
