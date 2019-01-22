@@ -22,6 +22,10 @@ letrec
       (True, xs) → Nil;
       (False, Nil) → Nil;
       (False, Cons(x, xs)) → take (n - 1) xs
+   };
+   length = fun {
+      Nil → 0;
+      Cons(x, xs) → 1 + length xs
    }
 in
 let
@@ -55,5 +59,5 @@ in
    // list of polygons, where each "polygon" is a list of points
    (
       map rectAsPoly rects', 
-      take 0 axis_x
+      take (length rects') axis_x
    )
