@@ -4,7 +4,7 @@ import {
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { Cons, List, Nil } from "./BaseTypes"
+import { List } from "./BaseTypes"
 import { arity } from "./DataType"
 import { singleton } from "./FiniteMap"
 import { ν } from "./Runtime"
@@ -120,12 +120,18 @@ const opCandidate: Parser<Lex.OpName> =
       Lex.OpName
    )
 
+// TODO: consolidate with Primitive.ts
 function isProductOp (opName: Lex.OpName): boolean {
-   return opName.str.charAt(0) === "*" || opName.str.charAt(0) === "/"
+   return opName.str === "*" || opName.str === "/"
 }
 
 function isSumOp (opName: Lex.OpName): boolean {
-   return opName.str.charAt(0) === "+" || opName.str.charAt(0) === "-"
+   return opName.str === "+" || opName.str === "-" || opName.str === "++"
+}
+
+function isCompareOp (opName: Lex.OpName): boolean {
+   return opName.str === "==" || opName.str === "===" || 
+          opName.str === "<" || opName.str === "<<" || opName.str === ">" || opName.str === ">>"
 }
 
 const productOp: Parser<Lex.OpName> =
@@ -135,7 +141,7 @@ const sumOp: Parser<Lex.OpName> =
    satisfying(opCandidate, isSumOp)
 
 const compareOp: Parser<Lex.OpName> =
-   satisfying(opCandidate, opName => !isProductOp(opName) && !isSumOp(opName))
+   satisfying(opCandidate, isCompareOp)
 
 function parenthesise<T> (p: Parser<T>): Parser<T> {
    return between(symbol(str.parenL), p, symbol(str.parenR))
@@ -194,25 +200,17 @@ const let_: Parser<Expr.Let> =
 
 const recDef: Parser<Expr.RecDef> =
    withAction(
-      seq(dropFirst(keyword(str.fun), var_), matches),
-      ([name, σ]: [Lex.Var, Expr.Trie<Expr>]) =>
-         Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), σ))
+      seq(dropSecond(var_, symbol(str.equals)), expr),
+      ([x, e]: [Lex.Var, Expr.Expr]) => Expr.RecDef.at(ν(), x, e)
    )
 
-const recDefs: Parser<List<Expr.RecDef>> = optional(recDefs1(), Nil.make())
-
-function recDefs1 (): Parser<List<Expr.RecDef>> {
-   return (state: ParseState) =>
-      withAction(
-         seqDep(recDef, (def: Expr.RecDef) => recDefs),
-         ([def, δ]: [Expr.RecDef, List<Expr.RecDef>]) => Cons.make(def, δ)
-      )(state)
-}
+const recDefs1 : Parser<List<Expr.RecDef>> =
+   withAction(sepBy1(recDef, symbol(";")), (δ: Expr.RecDef[]) => List.fromArray(δ))
 
 const letrec: Parser<Expr.LetRec> =
    withAction(
       seq(
-         dropFirst(keyword(str.letRec), recDefs),
+         dropFirst(keyword(str.letRec), recDefs1),
          dropFirst(keyword(str.in_), expr)
       ),
      ([δ, body]: [List<Expr.RecDef>, Expr]) => 
@@ -289,8 +287,11 @@ function pattern<K extends JoinSemilattice<K>> (p: Parser<K>): Parser<Expr.Trie<
 }
 
 // Chain of singleton tries, followed by an expression.
-const match: Parser<Expr.Trie<Expr>> = 
-   pattern(dropFirst(symbol(str.arrow), expr))
+const match: Parser<Expr.Trie<Expr>> =
+   choice<Expr.Trie<Expr>>([
+      pattern(dropFirst(symbol(str.arrow), expr)),
+      pattern(withAction(matches, (m): Expr => Expr.Fun.at(ν(), m))) // retarded cast
+   ])
 
 // Assume at least one match clause.
 function matches (state: ParseState): ParseResult<Expr.Trie<Expr>> | null {

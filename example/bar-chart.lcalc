@@ -2,13 +2,22 @@ let
    data = Cons((2001, 15), Cons((2002, 8), Cons((2005, 22), Cons((2007, 9), Nil))))
 in
 let rect_get_x = fun Rect(x, y, w, h) → x in
-let rect_put_x = fun x → fun Rect(_, y, w, h) → Rect(x, y, w, h) in
+let rect_put_x = fun x Rect(_, y, w, h) → Rect(x, y, w, h) in
 let rect_get_w = fun Rect(x, y, w, h) → w in
 letrec 
-   fun map f → fun {
+   map = fun f {
       Nil → Nil;
       Cons(x, xs) → Cons(f x, map f xs)
-   }
+   };
+   zipW = fun op {
+      Nil ys → Nil;
+      Cons(x, xs) {
+         Nil → Nil;
+         Cons(y, ys) → Cons(op(x, y), zipW op xs ys)
+      }
+   };
+   iterate = fun f x →
+      Cons(x, map f (iterate f x))
 in
 let
    rectAsPoly = fun Rect(x, y, w, h) →
@@ -16,9 +25,9 @@ let
 in
 let
    // discard x coordinates other than the first
-   stackRight = fun sep → fun get_x → fun put_x → fun get_w →
+   stackRight = fun sep get_x put_x get_w →
       letrec 
-         fun stackRight' {
+         stackRight' = fun {
             Nil → Nil;
             Cons(shape, Nil) → Cons(shape, Nil);
             Cons(shape, Cons(shape2, shapes)) → 
@@ -27,5 +36,14 @@ let
       in 
       stackRight'
 in
+let
+   spaceRight = fun sep put_x →
+      zipW (fun (x, shape) → put_x x shape) (iterate (fun x → x + sep) 0)
+in
+let rects = (map (fun (year, age) → Rect(0, 0, 5, age)) data) in
+let rects' = 
+   spaceRight 6 rect_put_x rects
+   // stackRight 1 rect_get_x rect_put_x rect_get_w rects
+in 
    // list of polygons, where each "polygon" is a list of points
-   map rectAsPoly (stackRight 1 rect_get_x rect_put_x rect_get_w (map (fun (year, age) → Rect(0, 0, 5, age)) data))
+   map rectAsPoly rects'
