@@ -120,12 +120,18 @@ const opCandidate: Parser<Lex.OpName> =
       Lex.OpName
    )
 
+// TODO: consolidate with Primitive.ts
 function isProductOp (opName: Lex.OpName): boolean {
-   return opName.str.charAt(0) === "*" || opName.str.charAt(0) === "/"
+   return opName.str === "*" || opName.str === "/"
 }
 
 function isSumOp (opName: Lex.OpName): boolean {
-   return opName.str.charAt(0) === "+" || opName.str.charAt(0) === "-"
+   return opName.str === "+" || opName.str === "-" || opName.str === "++"
+}
+
+function isCompareOp (opName: Lex.OpName): boolean {
+   return opName.str === "==" || opName.str === "===" || 
+          opName.str === "<" || opName.str === "<<" || opName.str === ">" || opName.str === ">>"
 }
 
 const productOp: Parser<Lex.OpName> =
@@ -135,7 +141,7 @@ const sumOp: Parser<Lex.OpName> =
    satisfying(opCandidate, isSumOp)
 
 const compareOp: Parser<Lex.OpName> =
-   satisfying(opCandidate, opName => !isProductOp(opName) && !isSumOp(opName))
+   satisfying(opCandidate, isCompareOp)
 
 function parenthesise<T> (p: Parser<T>): Parser<T> {
    return between(symbol(str.parenL), p, symbol(str.parenR))
@@ -194,17 +200,14 @@ const let_: Parser<Expr.Let> =
 
 const recDef: Parser<Expr.RecDef> =
    withAction(
-      seq(dropFirst(keyword(str.fun), var_), matches),
-      ([name, σ]: [Lex.Var, Expr.Trie<Expr>]) =>
-         Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), σ))
+      seq(dropSecond(var_, symbol(str.equals)), expr),
+      ([x, e]: [Lex.Var, Expr.Expr]) => Expr.RecDef.at(ν(), x, e)
    )
-
-const recDefs: Parser<List<Expr.RecDef>> = optional(recDefs1(), Nil.make())
 
 function recDefs1 (): Parser<List<Expr.RecDef>> {
    return (state: ParseState) =>
       withAction(
-         seqDep(recDef, (def: Expr.RecDef) => recDefs),
+         seq(recDef, optional(recDefs1(), Nil.make())),
          ([def, δ]: [Expr.RecDef, List<Expr.RecDef>]) => Cons.make(def, δ)
       )(state)
 }
@@ -212,7 +215,7 @@ function recDefs1 (): Parser<List<Expr.RecDef>> {
 const letrec: Parser<Expr.LetRec> =
    withAction(
       seq(
-         dropFirst(keyword(str.letRec), recDefs),
+         dropFirst(keyword(str.letRec), recDefs1()),
          dropFirst(keyword(str.in_), expr)
       ),
      ([δ, body]: [List<Expr.RecDef>, Expr]) => 

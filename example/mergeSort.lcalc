@@ -17,6 +17,7 @@ letrec
             }
       }
 
+   // problem: previously this syntax was only allowed in letrecs, whereas now arbitrary functions can look like this.
    fun mergesort xs →
       match xs as {
          Nil → xs;

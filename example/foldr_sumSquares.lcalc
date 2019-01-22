@@ -1,5 +1,5 @@
 letrec
-   fun foldr op z {
+   foldr = fun op z {
       Nil → z;
       Cons(x,xs) → op (x, foldr op z xs)
    }

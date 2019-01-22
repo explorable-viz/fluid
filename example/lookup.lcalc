@@ -9,7 +9,7 @@ let compare =
       }
 in
 letrec
-   fun lookup k {
+   lookup = fun k {
       Empty → None;
       NonEmpty(t1, (key, val), t2) →
          match compare (k, key) as {
