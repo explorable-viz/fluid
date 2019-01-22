@@ -10,10 +10,10 @@ import Trie = Traced.Trie
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const rects: THREE.Vector2[][] = getRects(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectRects(4, null))))
+const [rects, ]: THREE.Vector2[][][] = getRectsAxes(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectRectsAxes(null))))
 
 // Demand for list of points of length n.
-export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
+function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
    if (n === 0) {
       return τ.nil(τ.endArgs(κ))
    } else {
@@ -21,12 +21,28 @@ export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
    }
 }
 
-export function expectRects<K> (n: number, κ: K): Trie.Constr<K> {
+function expectRects<K> (n: number, κ: K): Trie.Constr<K> {
    if (n === 0) {
       return τ.nil(τ.endArgs(κ))
    } else {
       return τ.cons(τ.arg(expectPoints(4, τ.arg(expectRects(n - 1, τ.endArgs(κ))))))
    }
+}
+
+export function expectRectsAxes<K> (κ: K): Trie.Constr<K> {
+   return τ.pair(τ.arg(expectRects(4, τ.arg(expectRects(0, τ.endArgs(κ))))))
+}
+
+export function getRectsAxes (tv: Traced): [THREE.Vector2[][], THREE.Vector2[][]] {
+   if (tv.v instanceof Value.Constr) {
+      if (tv.v.ctr.str === "Pair") {
+         const rects_axes: List<Traced> = tv.v.args
+         if (Cons.is(rects_axes) && Cons.is(rects_axes.tail)) {
+            return [getRects(rects_axes.head), getRects(rects_axes.tail.head)]
+         }
+      }
+   }
+   return assert(false)
 }
 
 // Hack to suck out the leaf data. Might have to rethink what it means to match primitive data.
@@ -153,7 +169,7 @@ export class ThickPath extends THREE.Geometry {
 }
 
 function close (path: THREE.Vector2[]) {
-   return path.concat(path[path.length - 1])
+   return path.concat(path[0])
 }
 
 for (let rect of rects) {
