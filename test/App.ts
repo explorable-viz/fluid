@@ -123,8 +123,6 @@ export class Path extends THREE.Geometry {
       for (const point of path) {
          this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
       }
-      // vertex 0 must appear twice to make a closed path
-      this.vertices.push(new THREE.Vector3(path[0].x, path[0].y, 0))
    }
 
     object3D (): THREE.Object3D {
@@ -140,8 +138,6 @@ export class ThickPath extends THREE.Geometry {
       for (const point of path) {
          this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
       }
-      // vertex 0 must appear twice to make a closed path
-      this.vertices.push(new THREE.Vector3(path[0].x, path[0].y, 0))
    }
 
    object3D (): THREE.Object3D {
@@ -156,10 +152,14 @@ export class ThickPath extends THREE.Geometry {
    }
 }
 
+function close (path: THREE.Vector2[]) {
+   return path.concat(path[path.length - 1])
+}
+
 for (let rect of rects) {
    scene.add(new Rect(rect).object3D())
 //   scene.add(new ThickPath(rect).object3D())
-   scene.add(new Path(rect).object3D())
+   scene.add(new Path(close(rect)).object3D())
 }
 
 function render () {
