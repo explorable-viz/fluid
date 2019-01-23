@@ -10,10 +10,10 @@ import Trie = Traced.Trie
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const rects: THREE.Vector2[][] = getRects(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectRects(4, null))))
+const [rects, axes]: THREE.Vector2[][][] = getRectsAxes(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectRectsAxes(null))))
 
 // Demand for list of points of length n.
-export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
+function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
    if (n === 0) {
       return τ.nil(τ.endArgs(κ))
    } else {
@@ -21,12 +21,36 @@ export function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
    }
 }
 
-export function expectRects<K> (n: number, κ: K): Trie.Constr<K> {
+function expectRects<K> (n: number, κ: K): Trie.Constr<K> {
    if (n === 0) {
       return τ.nil(τ.endArgs(κ))
    } else {
       return τ.cons(τ.arg(expectPoints(4, τ.arg(expectRects(n - 1, τ.endArgs(κ))))))
    }
+}
+
+function expectLines<K> (n: number, κ: K): Trie.Constr<K> {
+   if (n === 0) {
+      return τ.nil(τ.endArgs(κ))
+   } else {
+      return τ.cons(τ.arg(expectPoints(2, τ.arg(expectLines(n - 1, τ.endArgs(κ))))))
+   }
+}
+
+export function expectRectsAxes<K> (κ: K): Trie.Constr<K> {
+   return τ.pair(τ.arg(expectRects(4, τ.arg(expectLines(4, τ.endArgs(κ))))))
+}
+
+export function getRectsAxes (tv: Traced): [THREE.Vector2[][], THREE.Vector2[][]] {
+   if (tv.v instanceof Value.Constr) {
+      if (tv.v.ctr.str === "Pair") {
+         const rects_axes: List<Traced> = tv.v.args
+         if (Cons.is(rects_axes) && Cons.is(rects_axes.tail)) {
+            return [getRects(rects_axes.head), getRects(rects_axes.tail.head)]
+         }
+      }
+   }
+   return assert(false)
 }
 
 // Hack to suck out the leaf data. Might have to rethink what it means to match primitive data.
@@ -57,7 +81,7 @@ export function getPoints (tv: Traced): THREE.Vector2[] {
                   if (x_y.head.v instanceof Value.ConstInt && Cons.is(x_y.tail) &&
                      x_y.tail.head.v instanceof Value.ConstInt && Cons.is(point_tvs.tail)) {
                         return [new THREE.Vector2(x_y.head.v.val, x_y.tail.head.v.val)]
-                                 .concat(getPoints(point_tvs.tail.head))
+                               .concat(getPoints(point_tvs.tail.head))
                   }
                }
             }
@@ -123,8 +147,6 @@ export class Path extends THREE.Geometry {
       for (const point of path) {
          this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
       }
-      // vertex 0 must appear twice to make a closed path
-      this.vertices.push(new THREE.Vector3(path[0].x, path[0].y, 0))
    }
 
     object3D (): THREE.Object3D {
@@ -140,8 +162,6 @@ export class ThickPath extends THREE.Geometry {
       for (const point of path) {
          this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
       }
-      // vertex 0 must appear twice to make a closed path
-      this.vertices.push(new THREE.Vector3(path[0].x, path[0].y, 0))
    }
 
    object3D (): THREE.Object3D {
@@ -156,10 +176,20 @@ export class ThickPath extends THREE.Geometry {
    }
 }
 
-for (let rect of rects) {
-   scene.add(new Rect(rect).object3D())
-//   scene.add(new ThickPath(rect).object3D())
-   scene.add(new Path(rect).object3D())
+function close (path: THREE.Vector2[]) {
+   return path.concat(path[0])
+}
+
+function populateScene (): void {
+   for (let rect of rects) {
+      assert(rect.length === 4)
+      scene.add(new Rect(rect).object3D())
+      scene.add(new Path(close(rect)).object3D())
+   }
+   for (let line of axes) {
+      assert(line.length === 2)
+      scene.add(new ThickPath(line).object3D())
+   }
 }
 
 function render () {
@@ -167,5 +197,5 @@ function render () {
 }
 
 controls.addEventListener('change', render)
-
+populateScene()
 render()

@@ -32,6 +32,13 @@ function __shallowMergeAssign (tgt: Object, src: Object): void {
          if (tgt_[x] instanceof VersionedObject || typeof tgt_[x] === "number" || typeof tgt_[x] === "string") {
             assert(tgt_[x].eq(src_[x]), `Address collision (different value for property "${x}").`, tgt, src)
          } else
+         // Interned child objects have distinct addresses iff they have different (but upper-bounded) 
+         // content; only really practical (and indeed useful) to assert this in the distinct case.
+         if (tgt_[x] instanceof PersistentObject) {
+            if (!tgt_[x].eq(src_[x])) {
+               __shallowMergeAssign(tgt_[x], src_[x])
+            }
+         } else
          if (tgt_[x] instanceof Object) {
             __shallowMergeAssign(tgt_[x], src_[x])
          } else {
@@ -83,7 +90,7 @@ export class VersionedObject<K extends PersistentObject = PersistentObject> exte
 type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
 const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
 
-// Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
+// The (possibly already extant) object uniquely identified by a memo-key. Needs to be initialised afterwards.
 // Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
 export function create<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
    let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
