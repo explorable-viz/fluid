@@ -61,5 +61,5 @@ in
    // list of polygons, where each "polygon" is a list of points
    (
       map rectAsPoly rects', 
-      take 1 axis_x
+      take 3 axis_x
    )

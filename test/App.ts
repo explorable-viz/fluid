@@ -38,7 +38,7 @@ function expectLines<K> (n: number, κ: K): Trie.Constr<K> {
 }
 
 export function expectRectsAxes<K> (κ: K): Trie.Constr<K> {
-   return τ.pair(τ.arg(expectRects(4, τ.arg(expectLines(1, τ.endArgs(κ))))))
+   return τ.pair(τ.arg(expectRects(4, τ.arg(expectLines(3, τ.endArgs(κ))))))
 }
 
 export function getRectsAxes (tv: Traced): [THREE.Vector2[][], THREE.Vector2[][]] {
@@ -184,7 +184,6 @@ function populateScene (): void {
    for (let rect of rects) {
       assert(rect.length === 4)
       scene.add(new Rect(rect).object3D())
-   //   scene.add(new ThickPath(rect).object3D())
       scene.add(new Path(close(rect)).object3D())
    }
    for (let line of axes) {
