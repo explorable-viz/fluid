@@ -23,27 +23,27 @@ export namespace str {
 
 export namespace Lex {
    export class Ctr extends Lexeme {
-      constructor(str: string) {
+      constructor (str: string) {
          super(str)
       }
 
-      __Lex_Ctr(): void {
+      __Lex_Ctr (): void {
          // discriminator
       }
    }
 
    export class IntLiteral extends Lexeme {
-      constructor(str: string) {
+      constructor (str: string) {
          super(str)
       }
 
-      toNumber(): number {
+      toNumber (): number {
          return parseInt(this.str)
       }
    }
 
    export class Keyword extends Lexeme {
-      constructor(str: string) {
+      constructor (str: string) {
          super(str)
       }
    }
@@ -51,31 +51,31 @@ export namespace Lex {
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
    // Other uses of primitive operations are treated as variables.
    export class OpName extends Lexeme {
-      constructor(str: string) {
+      constructor (str: string) {
          super(str)
       }
 
-      __Lex_OpName(): void {
+      __Lex_OpName (): void {
          // discriminator
       }
    }
 
    export class StringLiteral extends Lexeme {
-      constructor(str: string) {
+      constructor (str: string) {
          super(str)
       }
 
-      toString(): string {
+      toString (): string {
          return str.quotes + this.str + str.quotes
       }
    }
 
    export class Var extends Lexeme {
-      constructor(str: string) {
+      constructor (str: string) {
          super(str)
       }
 
-      __Lex_Var(): void {
+      __Lex_Var (): void {
          // discriminator
       }
    }
