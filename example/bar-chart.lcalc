@@ -21,7 +21,7 @@ letrec
    take = fun n xs → match (n == 0, xs) as {
       (True, xs) → Nil;
       (False, Nil) → Nil;
-      (False, Cons(x, xs)) → take (n - 1) xs
+      (False, Cons(x, xs)) → Cons(x, take (n - 1) xs)
    };
    length = fun {
       Nil → 0;
@@ -59,5 +59,5 @@ in
    // list of polygons, where each "polygon" is a list of points
    (
       map rectAsPoly rects', 
-      take (length rects') axis_x
+      take 1 (repeat Cons(Point(0, 0), Cons(Point(0, 2), Nil)))
    )
