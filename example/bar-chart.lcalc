@@ -54,11 +54,10 @@ in
 let rects = map (fun (year, age) → Rect(0, 0, 5, age)) data in
 let sep = 6 in
 let rects' = spaceRight sep rect_put_x rects in
-let axis_x = spaceRight sep 
-   (fun x' → map (point_put_x x')) 
-   (repeat (Cons(Point(0, 0), Cons(Point(0, 2), Nil))))
+let axis_x = 
+   let tick = Cons(Point(0, 0), Cons(Point(0, 2), Nil)) in
+   spaceRight sep (fun x' → map (point_put_x x')) (repeat tick)
 in 
-   // list of polygons, where each "polygon" is a list of points
    (
       map rectAsPoly rects', 
       take (length rects') axis_x
