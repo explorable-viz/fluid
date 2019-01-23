@@ -32,6 +32,13 @@ function __shallowMergeAssign (tgt: Object, src: Object): void {
          if (tgt_[x] instanceof VersionedObject || typeof tgt_[x] === "number" || typeof tgt_[x] === "string") {
             assert(tgt_[x].eq(src_[x]), `Address collision (different value for property "${x}").`, tgt, src)
          } else
+         // Interned child objects have distinct addresses iff they have different (but upper-bounded) 
+         // content; only really practical (and indeed useful) to assert this in the distinct case.
+         if (tgt_[x] instanceof PersistentObject) {
+            if (!tgt_[x].eq(src_[x])) {
+               __shallowMergeAssign(tgt_[x], src_[x])
+            }
+         } else
          if (tgt_[x] instanceof Object) {
             __shallowMergeAssign(tgt_[x], src_[x])
          } else {
