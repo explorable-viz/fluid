@@ -83,7 +83,7 @@ export class VersionedObject<K extends PersistentObject = PersistentObject> exte
 type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
 const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
 
-// Allocate a blank object uniquely identified by a memo-key. Needs to be initialised afterwards.
+// The (possibly already extant) object uniquely identified by a memo-key. Needs to be initialised afterwards.
 // Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
 export function create<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
    let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
