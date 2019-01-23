@@ -51,7 +51,7 @@ let
    spaceRight = fun sep put_x →
       zipW (fun (x, shape) → put_x x shape) (iterate (fun x → x + sep) 0)
 in
-let rects = (map (fun (year, age) → Rect(0, 0, 5, age)) data) in
+let rects = map (fun (year, age) → Rect(0, 0, 5, age)) data in
 let sep = 6 in
 let rects' = spaceRight sep rect_put_x rects in
 let axis_x = spaceRight sep 
