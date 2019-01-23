@@ -10,7 +10,7 @@ import Trie = Traced.Trie
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const [rects, ]: THREE.Vector2[][][] = getRectsAxes(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectRectsAxes(null))))
+const [rects, axes]: THREE.Vector2[][][] = getRectsAxes(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectRectsAxes(null))))
 
 // Demand for list of points of length n.
 function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
@@ -81,7 +81,7 @@ export function getPoints (tv: Traced): THREE.Vector2[] {
                   if (x_y.head.v instanceof Value.ConstInt && Cons.is(x_y.tail) &&
                      x_y.tail.head.v instanceof Value.ConstInt && Cons.is(point_tvs.tail)) {
                         return [new THREE.Vector2(x_y.head.v.val, x_y.tail.head.v.val)]
-                                 .concat(getPoints(point_tvs.tail.head))
+                               .concat(getPoints(point_tvs.tail.head))
                   }
                }
             }
@@ -180,10 +180,17 @@ function close (path: THREE.Vector2[]) {
    return path.concat(path[0])
 }
 
-for (let rect of rects) {
-   scene.add(new Rect(rect).object3D())
-//   scene.add(new ThickPath(rect).object3D())
-   scene.add(new Path(close(rect)).object3D())
+function populateScene (): void {
+   for (let rect of rects) {
+      assert(rect.length === 4)
+      scene.add(new Rect(rect).object3D())
+   //   scene.add(new ThickPath(rect).object3D())
+      scene.add(new Path(close(rect)).object3D())
+   }
+   for (let line of axes) {
+      assert(line.length === 2)
+      scene.add(new ThickPath(line).object3D())
+   }
 }
 
 function render () {
@@ -191,5 +198,5 @@ function render () {
 }
 
 controls.addEventListener('change', render)
-
+populateScene()
 render()
