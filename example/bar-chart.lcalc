@@ -1,6 +1,7 @@
 let
    data = Cons((2001, 15), Cons((2002, 8), Cons((2005, 22), Cons((2007, 9), Nil))))
 in
+let point_put_x = fun x Point(_, y) → Point(x, y) in
 let rect_get_x = fun Rect(x, y, w, h) → x in
 let rect_put_x = fun x Rect(_, y, w, h) → Rect(x, y, w, h) in
 let rect_get_w = fun Rect(x, y, w, h) → w in
@@ -52,12 +53,17 @@ let
 in
 let rects = (map (fun (year, age) → Rect(0, 0, 5, age)) data) in
 let sep = 6 in
-let rects' = spaceRight sep rect_put_x rects
+let rects' = spaceRight sep rect_put_x rects in
+letrec 
+   list_point_put_x = fun x' {
+      Nil → Nil;
+      Cons(p, ps) → Cons(point_put_x x' p, list_point_put_x x' ps)
+   }
 in
-let axis_x = spaceRight sep (repeat (Cons(Point(0, 0), Cons(Point(0, 2), Nil))))
+let axis_x = spaceRight sep list_point_put_x (repeat (Cons(Point(0, 0), Cons(Point(0, 2), Nil))))
 in 
    // list of polygons, where each "polygon" is a list of points
    (
       map rectAsPoly rects', 
-      take 1 (repeat Cons(Point(0, 0), Cons(Point(0, 2), Nil)))
+      take 1 axis_x
    )
