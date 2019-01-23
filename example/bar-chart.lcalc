@@ -1,10 +1,13 @@
 let
    data = Cons((2001, 15), Cons((2002, 8), Cons((2005, 22), Cons((2007, 9), Nil))))
 in
+let tail = fun Cons(x, xs) → xs in
+let point_get_x = fun Point(x, y) → x in
 let point_put_x = fun x Point(_, y) → Point(x, y) in
 let rect_get_x = fun Rect(x, y, w, h) → x in
 let rect_put_x = fun x Rect(_, y, w, h) → Rect(x, y, w, h) in
 let rect_get_w = fun Rect(x, y, w, h) → w in
+let incr = fun x get put shape → put (get shape + x) shape in 
 letrec 
    map = fun f {
       Nil → Nil;
@@ -51,12 +54,19 @@ let
    spaceRight = fun sep put_x →
       zipW (fun (x, shape) → put_x x shape) (iterate (fun x → x + sep) 0)
 in
+let
+   // discard x coordinates other than the first
+   spaceRight' = fun sep get_x put_x Cons(shape, shapes) →
+      Cons(shape, zipW (fun (x, shape) → put_x x shape) (tail (iterate (fun x → x + sep) (get_x shape))) shapes)
+in
 let rects = map (fun (year, age) → Rect(0, 0, 5, age)) data in
 let sep = 6 in
-let rects' = spaceRight sep rect_put_x rects in
+let rects' = spaceRight' sep rect_get_x rect_put_x rects in
 let axis_x = 
    let tick = Cons(Point(0, 0), Cons(Point(0, 2), Nil)) in
-   spaceRight sep (fun x' → map (point_put_x x')) (repeat tick)
+   spaceRight sep 
+      (fun x' → map (point_put_x x')) 
+      (repeat (map (incr 1 point_get_x point_put_x) tick))
 in 
    (
       map rectAsPoly rects', 
