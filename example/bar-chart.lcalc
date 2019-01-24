@@ -1,6 +1,14 @@
 let
    data = Cons((2001, 15), Cons((2002, 8), Cons((2005, 22), Cons((2007, 9), Nil))))
 in
+let id = fun x → x in
+letrec 
+   concat = fun {
+      Nil ys → ys;
+      Cons(x, xs) ys → Cons(x, concat xs ys)
+   } 
+in 
+// Field accessors/updaters
 let tail = fun Cons(x, xs) → xs in
 let point_get_x = fun Point(x, y) → x in
 let point_put_x = fun x Point(_, y) → Point(x, y) in
@@ -71,9 +79,13 @@ let axis = fun n width →
          (spaceRight sep
             (fun x' → map (point_put_x x'))
             (repeat tick))
-   in take n ticks
+   in
+   let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
+   Cons(line, take n ticks)
 in 
    (
       map rectAsPoly rects', 
-      map (map transpose) (axis (length rects') width)
+//      concat 
+//         Nil
+         (map (map transpose) (axis (length rects') width))
    )
