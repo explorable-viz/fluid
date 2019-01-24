@@ -70,7 +70,7 @@ let sep = width + 1 in
 let rects = map (fun (year, age) → Rect(0, 0, width, age)) data in
 let rects' = spaceRight' sep rect_get_x rect_put_x rects in
 let axis = fun n width →
-   let tick = Cons(Point(0, 0), Cons(Point(0, 2), Nil)) in
+   let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
    let ticks =
       map (fun tick → map (incr (width / 2) point_get_x point_put_x) tick)
          (spaceRight width
