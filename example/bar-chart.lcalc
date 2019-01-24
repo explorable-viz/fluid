@@ -64,14 +64,16 @@ let width = 6 in
 let sep = width + 1 in
 let rects = map (fun (year, age) → Rect(0, 0, width, age)) data in
 let rects' = spaceRight' sep rect_get_x rect_put_x rects in
-let axis = 
+let axis = fun n width →
    let tick = Cons(Point(0, 0), Cons(Point(0, 2), Nil)) in
-   map (fun tick → map (incr (width / 2) point_get_x point_put_x) tick)
-      (spaceRight sep
-         (fun x' → map (point_put_x x'))
-         (repeat tick))
+   let ticks =
+      map (fun tick → map (incr (width / 2) point_get_x point_put_x) tick)
+         (spaceRight sep
+            (fun x' → map (point_put_x x'))
+            (repeat tick))
+   in take n ticks
 in 
    (
       map rectAsPoly rects', 
-      take (length rects') (map (map transpose) axis)
+      map (map transpose) (axis (length rects') width)
    )
