@@ -38,7 +38,7 @@ function expectLines<K> (n: number, κ: K): Trie.Constr<K> {
 }
 
 export function expectRectsAxes<K> (κ: K): Trie.Constr<K> {
-   return τ.pair(τ.arg(expectRects(4, τ.arg(expectLines(4, τ.endArgs(κ))))))
+   return τ.pair(τ.arg(expectRects(4, τ.arg(expectLines(11, τ.endArgs(κ))))))
 }
 
 export function getRectsAxes (tv: Traced): [THREE.Vector2[][], THREE.Vector2[][]] {
@@ -121,7 +121,7 @@ controls.enablePan = true; // Set to false to disable panning (ie vertical and h
 controls.enableDamping = true; // Set to false to disable damping (ie inertia)
 controls.dampingFactor = 0.25;
 
-document.body.appendChild( renderer.domElement )
+document.body.appendChild(renderer.domElement)
 
 export class Rect extends THREE.Geometry {
    constructor (rect: THREE.Vector2[]) {
@@ -188,7 +188,7 @@ function populateScene (): void {
    }
    for (let line of axes) {
       assert(line.length === 2)
-      scene.add(new ThickPath(line).object3D())
+      scene.add(new Path(line).object3D())
    }
 }
 
@@ -196,6 +196,6 @@ function render () {
    renderer.render(scene, camera)
 }
 
-controls.addEventListener('change', render)
+controls.addEventListener("change", render)
 populateScene()
 render()

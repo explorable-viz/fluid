@@ -1,11 +1,12 @@
 let
    data = Cons((2001, 15), Cons((2002, 8), Cons((2005, 22), Cons((2007, 9), Nil))))
 in
-let point_put_x = fun x Point(_, y) → Point(x, y) in
-let rect_get_x = fun Rect(x, y, w, h) → x in
-let rect_put_x = fun x Rect(_, y, w, h) → Rect(x, y, w, h) in
-let rect_get_w = fun Rect(x, y, w, h) → w in
+let id = fun x → x in
 letrec 
+   concat = fun {
+      Nil ys → ys;
+      Cons(x, xs) ys → Cons(x, concat xs ys)
+   };
    map = fun f {
       Nil → Nil;
       Cons(x, xs) → Cons(f x, map f xs)
@@ -28,10 +29,19 @@ letrec
       Nil → 0;
       Cons(x, xs) → 1 + length xs
    }
-in
-let
-   rectAsPoly = fun Rect(x, y, w, h) →
-      Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
+in 
+// Field accessors/updaters
+let tail = fun Cons(x, xs) → xs in
+let point_get_x = fun Point(x, y) → x in
+let point_put_x = fun x Point(_, y) → Point(x, y) in
+let rect_get_x = fun Rect(x, y, w, h) → x in
+let rect_put_x = fun x Rect(_, y, w, h) → Rect(x, y, w, h) in
+let rect_get_w = fun Rect(x, y, w, h) → w in
+let incr = fun x get put shape → put (get shape + x) shape in 
+let transpose = fun Point(x, y) → Point(y, x) in 
+let translate = fun (dx, dy) Point(x, y) → Point(x + dx, y + dy) in 
+let rectAsPoly = fun Rect(x, y, w, h) →
+   Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
 in
 let
    // discard x coordinates other than the first
@@ -51,15 +61,27 @@ let
    spaceRight = fun sep put_x →
       zipW (fun (x, shape) → put_x x shape) (iterate (fun x → x + sep) 0)
 in
-let rects = map (fun (year, age) → Rect(0, 0, 5, age)) data in
-let sep = 6 in
-let rects' = spaceRight sep rect_put_x rects in
-let axis_x = spaceRight sep 
-   (fun x' → map (point_put_x x')) 
-   (repeat (Cons(Point(0, 0), Cons(Point(0, 2), Nil))))
-in 
-   // list of polygons, where each "polygon" is a list of points
+let
+   // discard x coordinates other than the first
+   spaceRight' = fun sep get_x put_x Cons(shape, shapes) →
+      Cons(shape, zipW (fun (x, shape) → put_x x shape) (tail (iterate (fun x → x + sep) (get_x shape))) shapes)
+in
+let width = 6 in
+let sep = width + 1 in
+let rects = map (fun (year, age) → Rect(0, 0, width, age)) data in
+let rects' = spaceRight' sep rect_get_x rect_put_x rects in
+let axis = fun margin n width →
+   let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
+   let ticks = spaceRight width
+      (fun x' → map (point_put_x x'))
+      (repeat tick)
+   in
+   let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
+   map (map (translate (0, 0 - margin))) Cons(line, take n ticks)
+in
    (
       map rectAsPoly rects', 
-      take (length rects') axis_x
+      concat 
+         (axis 1 5 7)
+         (map (map transpose) (axis 1 (length rects') width))
    )
