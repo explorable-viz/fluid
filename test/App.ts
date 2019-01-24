@@ -121,7 +121,7 @@ controls.enablePan = true; // Set to false to disable panning (ie vertical and h
 controls.enableDamping = true; // Set to false to disable damping (ie inertia)
 controls.dampingFactor = 0.25;
 
-document.body.appendChild( renderer.domElement )
+document.body.appendChild(renderer.domElement)
 
 export class Rect extends THREE.Geometry {
    constructor (rect: THREE.Vector2[]) {
@@ -188,7 +188,7 @@ function populateScene (): void {
    }
    for (let line of axes) {
       assert(line.length === 2)
-      scene.add(new ThickPath(line).object3D())
+      scene.add(new Path(line).object3D())
    }
 }
 
@@ -196,6 +196,6 @@ function render () {
    renderer.render(scene, camera)
 }
 
-controls.addEventListener('change', render)
+controls.addEventListener("change", render)
 populateScene()
 render()
