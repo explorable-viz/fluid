@@ -83,6 +83,6 @@ in
    (
       map rectAsPoly rects', 
       concat 
-         (axis 5 7)
+         (axis 5 2)
          (map (map transpose) (axis (length rects') width))
    )
