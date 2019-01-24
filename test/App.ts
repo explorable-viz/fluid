@@ -38,7 +38,7 @@ function expectLines<K> (n: number, κ: K): Trie.Constr<K> {
 }
 
 export function expectRectsAxes<K> (κ: K): Trie.Constr<K> {
-   return τ.pair(τ.arg(expectRects(4, τ.arg(expectLines(5, τ.endArgs(κ))))))
+   return τ.pair(τ.arg(expectRects(4, τ.arg(expectLines(11, τ.endArgs(κ))))))
 }
 
 export function getRectsAxes (tv: Traced): [THREE.Vector2[][], THREE.Vector2[][]] {

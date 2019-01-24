@@ -6,18 +6,7 @@ letrec
    concat = fun {
       Nil ys → ys;
       Cons(x, xs) ys → Cons(x, concat xs ys)
-   } 
-in 
-// Field accessors/updaters
-let tail = fun Cons(x, xs) → xs in
-let point_get_x = fun Point(x, y) → x in
-let point_put_x = fun x Point(_, y) → Point(x, y) in
-let rect_get_x = fun Rect(x, y, w, h) → x in
-let rect_put_x = fun x Rect(_, y, w, h) → Rect(x, y, w, h) in
-let rect_get_w = fun Rect(x, y, w, h) → w in
-let incr = fun x get put shape → put (get shape + x) shape in 
-let transpose = fun Point(x, y) → Point(y, x) in 
-letrec 
+   };
    map = fun f {
       Nil → Nil;
       Cons(x, xs) → Cons(f x, map f xs)
@@ -40,10 +29,18 @@ letrec
       Nil → 0;
       Cons(x, xs) → 1 + length xs
    }
-in
-let
-   rectAsPoly = fun Rect(x, y, w, h) →
-      Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
+in 
+// Field accessors/updaters
+let tail = fun Cons(x, xs) → xs in
+let point_get_x = fun Point(x, y) → x in
+let point_put_x = fun x Point(_, y) → Point(x, y) in
+let rect_get_x = fun Rect(x, y, w, h) → x in
+let rect_put_x = fun x Rect(_, y, w, h) → Rect(x, y, w, h) in
+let rect_get_w = fun Rect(x, y, w, h) → w in
+let incr = fun x get put shape → put (get shape + x) shape in 
+let transpose = fun Point(x, y) → Point(y, x) in 
+let rectAsPoly = fun Rect(x, y, w, h) →
+   Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
 in
 let
    // discard x coordinates other than the first
@@ -76,7 +73,7 @@ let axis = fun n width →
    let tick = Cons(Point(0, 0), Cons(Point(0, 2), Nil)) in
    let ticks =
       map (fun tick → map (incr (width / 2) point_get_x point_put_x) tick)
-         (spaceRight sep
+         (spaceRight sep // remove dependency on 'sep'
             (fun x' → map (point_put_x x'))
             (repeat tick))
    in
@@ -85,7 +82,7 @@ let axis = fun n width →
 in 
    (
       map rectAsPoly rects', 
-//      concat 
-//         Nil
+      concat 
+         (axis 5 4)
          (map (map transpose) (axis (length rects') width))
    )
