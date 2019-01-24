@@ -39,6 +39,7 @@ let rect_put_x = fun x Rect(_, y, w, h) → Rect(x, y, w, h) in
 let rect_get_w = fun Rect(x, y, w, h) → w in
 let incr = fun x get put shape → put (get shape + x) shape in 
 let transpose = fun Point(x, y) → Point(y, x) in 
+let translate = fun (dx, dy) Point(x, y) → Point(x + dx, y + dy) in 
 let rectAsPoly = fun Rect(x, y, w, h) →
    Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
 in
@@ -69,18 +70,18 @@ let width = 6 in
 let sep = width + 1 in
 let rects = map (fun (year, age) → Rect(0, 0, width, age)) data in
 let rects' = spaceRight' sep rect_get_x rect_put_x rects in
-let axis = fun n width →
+let axis = fun margin n width →
    let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
    let ticks = spaceRight width
       (fun x' → map (point_put_x x'))
       (repeat tick)
    in
    let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
-   Cons(line, take n ticks)
-in 
+   map (map (translate (0, 0 - margin))) Cons(line, take n ticks)
+in
    (
       map rectAsPoly rects', 
       concat 
-         (axis 5 2)
-         (map (map transpose) (axis (length rects') width))
+         (axis 1 5 7)
+         (map (map transpose) (axis 1 (length rects') width))
    )
