@@ -73,16 +73,16 @@ let axis = fun n width →
    let tick = Cons(Point(0, 0), Cons(Point(0, 2), Nil)) in
    let ticks =
       map (fun tick → map (incr (width / 2) point_get_x point_put_x) tick)
-         (spaceRight sep // remove dependency on 'sep'
+         (spaceRight width
             (fun x' → map (point_put_x x'))
             (repeat tick))
    in
-   let line = Cons(Point(0, 0), Cons(Point(n * sep, 0), Nil)) in
+   let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
    Cons(line, take n ticks)
 in 
    (
       map rectAsPoly rects', 
       concat 
-         (axis 5 6)
+         (axis 5 7)
          (map (map transpose) (axis (length rects') width))
    )
