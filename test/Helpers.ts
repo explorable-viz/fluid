@@ -70,8 +70,8 @@ export namespace τ {
       return Trie.Constr.make(singleton("Some", Π))
    }
 
-   export function top(): Trie.Top {
-      return Trie.Top.make()
+   export function top<K> (κ: K): Trie.Top<K> {
+      return Trie.Top.make(κ)
    }
 }
 

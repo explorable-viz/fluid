@@ -4,7 +4,6 @@ import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
-import { match } from "./Match"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { PersistentObject } from "./Runtime";
 import { Trace, Traced, Value } from "./Traced"
