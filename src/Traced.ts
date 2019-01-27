@@ -241,10 +241,19 @@ export namespace Traced {
          }
       }
 
-      // Has no syntactic counterpart; null isn't a JoinSemilattice, for one thing.
-      export class Top extends Trie<null> {
-         static make<K> (): Top {
-            return make(Top)
+      // Has no syntactic counterpart; null isn't a JoinSemilattice, for one thing. Wanted to fix
+      // K at null but that doesn't work with polymorphic code.
+      export class Top<K> extends Trie<K> {
+         κ: K
+
+         static is<K> (σ: Trie<K>): σ is Top<K> {
+            return σ instanceof Top
+         }
+
+         static make<K> (κ: K): Top<K> {
+            const this_: Top<K> = make<Top<K>>(Top, κ)
+            this_.κ = κ
+            return this_
          }
       }
    }

@@ -77,22 +77,11 @@ function evalArgs_top (ρ: Env, es: List<Traced>): Results<null> {
 }
 
 // Probably want to memoise instantiate.
-export function eval_top_<K> (ρ: Env, tv: Traced): Result<null> {
-   return __check(
-      evalT_top(ρ, instantiate(ρ)(tv.t!.__id.e)), 
-      ([tv, ,]) => tv.v !== null
-   )
-}
-
 export function eval_<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
    return __check(
       evalT(ρ, instantiate(ρ)(tv.t!.__id.e), σ), 
       ([tv, ,]) => (tv.v === null) === (Trie.Var.is(σ))
    )
-}
-
-function evalT_top (ρ: Env, tv: Traced): Result<null> {
-   
 }
 
 // Null means eval produced no information about v; the input traced value might be non-null.
@@ -110,7 +99,7 @@ function evalT<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
             const [args, ρʹ, κ]: Results<K> = evalArgs(ρ, get(σ.cases, v.ctr.str)!, v.args)
             return [Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ]
          } else
-         if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
+         if (v instanceof Value.ConstInt && (Trie.ConstInt.is(σ) || Trie.Top.is(σ))) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
          } else
          if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
