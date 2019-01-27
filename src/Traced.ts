@@ -147,6 +147,10 @@ export namespace Traced {
       }
 
       export class Top extends Args<void> {
+         static is<K> (Π: Args<void>): Π is Top {
+            return Π instanceof Next
+         }
+
          static make (): Top {
             return make(Top)
          }
