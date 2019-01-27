@@ -230,6 +230,13 @@ export namespace Traced {
             return this_
          }
       }
+
+      // Has no syntactic counterpart; null isn't a JoinSemilattice, for one thing.
+      export class Top extends Trie<null> {
+         static make<K> (): Top {
+            return make(Top)
+         }
+      }
    }
 
    export class TracedMatch<K> extends PersistentObject {

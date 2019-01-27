@@ -69,6 +69,10 @@ export namespace τ {
    export function some<K> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Some", Π))
    }
+
+   export function top(): Trie.Top {
+      return Trie.Top.make()
+   }
 }
 
 // Could have used join, but only defined for syntactic tries.
