@@ -145,6 +145,12 @@ export namespace Traced {
             return this_
          }
       }
+
+      export class Top extends Args<void> {
+         static make (): Top {
+            return make(Top)
+         }
+      }
    }
 
    // Tries are persistent but not versioned, as per the formalism.
