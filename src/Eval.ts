@@ -95,17 +95,25 @@ function evalT<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
       if (t instanceof Empty) {
          const v: Value = __nonNull(tv.v)
          assert(v.__id === k && t.__id === k)
-         if (v instanceof Value.Constr && Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
-            const [args, ρʹ, κ]: Results<K> = evalArgs(ρ, get(σ.cases, v.ctr.str)!, v.args)
-            return [Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ]
+         if (v instanceof Value.Constr) {
+            if (Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
+               const [args, ρʹ, κ]: Results<K> = evalArgs(ρ, get(σ.cases, v.ctr.str)!, v.args)
+               return [Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ]
+            } else
+            if (Trie.Top.is(σ)) {
+               const [args, ρʹ, κ]: Results<K> = evalArgs(ρ, Args.Top.make(σ.κ), v.args)
+               return [Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ]
+            } else {
+               return assert(false, "Demand mismatch.", tv, σ)
+            }
          } else
          if (v instanceof Value.ConstInt && (Trie.ConstInt.is(σ) || Trie.Top.is(σ))) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
          } else
-         if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
+         if (v instanceof Value.ConstStr && (Trie.ConstStr.is(σ) || Trie.Top.is(σ))) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
          } else
-         if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
+         if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
          } else {
             return assert(false, "Demand mismatch.", tv, σ)

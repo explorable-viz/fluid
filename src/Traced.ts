@@ -146,13 +146,17 @@ export namespace Traced {
          }
       }
 
-      export class Top extends Args<void> {
-         static is<K> (Π: Args<void>): Π is Top {
-            return Π instanceof Next
+      export class Top<K> extends Args<K> {
+         κ: K // want fix at null but couldn't make that work with the polymorphism
+
+         static is<K> (Π: Args<K>): Π is Top<K> {
+            return Π instanceof Top
          }
 
-         static make (): Top {
-            return make(Top)
+         static make<K> (κ: K): Top<K> {
+            const this_: Top<K> = make<Top<K>>(Top, κ)
+            this_.κ = κ
+            return this_
          }
       }
    }
