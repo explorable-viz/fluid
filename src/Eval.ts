@@ -51,26 +51,22 @@ export function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
 
 // Parser ensures constructor patterns agree with constructor signatures.
 function evalArgs<K> (ρ: Env, Π: Args<K>, es: List<Traced>): Results<K> {
-   if (Cons.is(es) && Π instanceof Args.Next) {
-      const [tv, ρʹ, Πʹ]: Result<Args<K>> = eval_(ρ, es.head, Π.σ),
+   if (Cons.is(es)) {
+      let σ
+      if (Π instanceof Args.Next) {
+         σ = Π.σ
+      } else 
+      if (Π instanceof Args.Top) {
+         σ = Trie.Top.make(Π.κ)
+      } else {
+         return absurd()
+      }
+      const [tv, ρʹ, Πʹ]: Result<Args<K>> = eval_(ρ, es.head, σ),
             [tvs, ρʺ, κ]: Results<K> = evalArgs(ρ, Πʹ, es.tail)
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ]
    } else
-   if (Nil.is(es) && Π instanceof Args.End) {
+   if (Nil.is(es) && (Π instanceof Args.End || Π instanceof Args.Top)) {
       return [Nil.make(), Env.empty(), Π.κ]
-   } else {
-      return absurd()
-   }
-}
-
-function evalArgs_top (ρ: Env, es: List<Traced>): Results<null> {
-   if (Cons.is(es)) {
-      const [tv, ρʹ, ]: Result<null> = eval_top_(ρ, es.head),
-            [tvs, ρʺ, ]: Results<null> = evalArgs_top(ρ, es.tail)
-      return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), null]
-   } else
-   if (Nil.is(es)) {
-      return [Nil.make(), Env.empty(), null]
    } else {
       return absurd()
    }
@@ -96,16 +92,17 @@ function evalT<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
          const v: Value = __nonNull(tv.v)
          assert(v.__id === k && t.__id === k)
          if (v instanceof Value.Constr) {
+            let σʹ
             if (Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
-               const [args, ρʹ, κ]: Results<K> = evalArgs(ρ, get(σ.cases, v.ctr.str)!, v.args)
-               return [Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ]
+               σʹ = get(σ.cases, v.ctr.str)!
             } else
             if (Trie.Top.is(σ)) {
-               const [args, ρʹ, κ]: Results<K> = evalArgs(ρ, Args.Top.make(σ.κ), v.args)
-               return [Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ]
+               σʹ = Args.Top.make(σ.κ)
             } else {
                return assert(false, "Demand mismatch.", tv, σ)
             }
+            const [args, ρʹ, κ]: Results<K> = evalArgs(ρ, σʹ, v.args)
+            return [Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ]
          } else
          if (v instanceof Value.ConstInt && (Trie.ConstInt.is(σ) || Trie.Top.is(σ))) {
             return [Traced.make(t, v), Env.empty(), σ.κ]

@@ -13,16 +13,16 @@ export function match<K> (σ: Trie<K>, v: Value | null): Match<K> {
       // in general v is not null, even though the demand is null
       return Match.Var.make(σ.x, v, σ.κ)
    } else
-   if (Trie.Fun.is(σ) && (v instanceof Value.Closure || v instanceof Value.PrimOp)) {
+   if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
       return Match.Fun.make(v, σ.κ)
    } else
-   if (Trie.ConstInt.is(σ) && v instanceof Value.ConstInt) {
+   if (v instanceof Value.ConstInt && (Trie.ConstInt.is(σ) || Trie.Top.is(σ))) {
       return Match.ConstInt.make(v.val, σ.κ)
    } else
-   if (Trie.ConstStr.is(σ) && v instanceof Value.ConstStr) {
+   if (v instanceof Value.ConstStr && (Trie.ConstStr.is(σ) || Trie.Top.is(σ))) {
       return Match.ConstStr.make(v.val, σ.κ)
    } else
-   if (Trie.Constr.is(σ) && v instanceof Value.Constr) {
+   if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
       return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
          if (v.ctr.str === ctr) {
             return Pair.make(ctr, matchArgs(v.args)(Π))
