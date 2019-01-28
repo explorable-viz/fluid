@@ -57,17 +57,17 @@ function matchArgs<K> (tvs: List<Traced>): (Π: Args<K>) => Match.Args<K> {
    return (Π: Args<K>): Match.Args<K> => {
       // Parser ensures constructor patterns agree with constructor signatures.
       if (Cons.is(tvs)) {
+         // codomain of ξ is Args; promote to Args | Match.Args:
          let ξʹ: Match<Args<K> | Match.Args<K>> 
          if (Args.Next.is(Π)) {
             const ξ: Match<Args<K>> = match(Π.σ, tvs.head.v), 
                   inj = (Π: Args<K>): Args<K> | Match.Args<K> => Π
-            // codomain of ξ is Args; promote to Args | Match.Args:
             ξʹ = mapMatch(matchArgs(tvs.tail), inj)(ξ)
          } else
          if (Args.Top.is(Π)) {
             const ξ: Match<Args<K>> = match(Trie.Top.make(Π.κ), tvs.head.v),
-                  matchArgsʹ: (_: Args<K>) => Match.Args<K> = () => matchArgs(tvs.tail)(Args.Top.make(Π.κ)),
-                  const_top: (_: Args<K>) => Args<K> | Match.Args<K> = () => Args.Top.make(Π.κ)
+                  matchArgsʹ: (Πʹ: Args<K>) => Match.Args<K> = () => matchArgs(tvs.tail)(Args.Top.make(Π.κ)),
+                  const_top: (Πʹ: Args<K>) => Args<K> | Match.Args<K> = () => Args.Top.make(Π.κ)
             ξʹ = mapMatch(matchArgsʹ, const_top)(ξ)
          } else {
             return absurd()
