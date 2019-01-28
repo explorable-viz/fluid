@@ -1,5 +1,7 @@
 import { absurd, assert } from "./util/Core"
-import { Cons, List, Nil, Pair } from "./BaseTypes"
+import { Cons, Empty, List, Nil, Pair } from "./BaseTypes"
+import { ctrToDataType } from "./DataType"
+import { FiniteMap, insert } from "./FiniteMap"
 import { Traced, Value } from "./Traced"
 
 import Args = Traced.Args
@@ -22,14 +24,30 @@ export function match<K> (σ: Trie<K>, v: Value | null): Match<K> {
    if (v instanceof Value.ConstStr && (Trie.ConstStr.is(σ) || Trie.Top.is(σ))) {
       return Match.ConstStr.make(v.val, σ.κ)
    } else
-   if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
-      return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
-         if (v.ctr.str === ctr) {
-            return Pair.make(ctr, matchArgs(v.args)(Π))
-         } else {
-            return Pair.make(ctr, Π)
-         }
-      }))
+   if (v instanceof Value.Constr) {
+      if (Trie.Constr.is(σ)) {
+         return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
+            if (v.ctr.str === ctr) {
+               return Pair.make(ctr, matchArgs(v.args)(Π))
+            } else {
+               return Pair.make(ctr, Π)
+            }
+         }))
+      } else
+      if (Trie.Top.is(σ)) {
+         let cases: FiniteMap<string, Args<K> | Match.Args<K>> = Empty.make()
+         ctrToDataType.get(v.ctr.str)!.ctrs.forEach((ctrs, ctrʹ) => {
+            // Somewhat odd that all branches share κ, but conceptually top-demands have a trivial κ anyway.
+            if (v.ctr.str === ctrʹ) {
+               cases = insert(cases, ctrʹ, matchArgs(v.args)(Args.Top.make(σ.κ)))
+            } else {
+               cases = insert(cases, ctrʹ, Args.Top.make(σ.κ))
+            }
+         })
+         return Match.Constr.make(cases)
+      } else {
+         return assert(false, "Demand mismatch.", v, σ)
+      }
    } else {
       return assert(false, "Demand mismatch.", v, σ)
    }
