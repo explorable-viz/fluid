@@ -90,7 +90,7 @@ export namespace Value {
    }
 }
 
-// Rename to Explained?
+// Called ExplVal in the formalism.
 export class Traced extends PersistentObject {
    t: Trace
    v: Value | null
@@ -111,7 +111,7 @@ export namespace Traced {
    export namespace Args {
       // n-ary product
       export class Args<K> extends PersistentObject {
-         __Trie_Args (κ: K): void {
+         __Traced_Args (κ: K): void {
             // discriminator
          }
       }
