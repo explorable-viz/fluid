@@ -6,4 +6,4 @@ letrec
 in
 let incr = fun x → 1 + x
 in
-map incr Cons(2, Cons(4, Cons(6, Nil)))
+map incr Cons(4, Cons(6, Nil))

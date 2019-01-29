@@ -90,7 +90,7 @@ export namespace Value {
    }
 }
 
-// Rename to Explained?
+// Called ExplVal in the formalism.
 export class Traced extends PersistentObject {
    t: Trace
    v: Value | null
@@ -111,7 +111,7 @@ export namespace Traced {
    export namespace Args {
       // n-ary product
       export class Args<K> extends PersistentObject {
-         __Trie_Args (κ: K): void {
+         __Traced_Args (κ: K): void {
             // discriminator
          }
       }
@@ -142,6 +142,20 @@ export namespace Traced {
          static make<K> (σ: Trie<Args<K>>): Next<K> {
             const this_: Next<K> = make<Next<K>>(Next, σ)
             this_.σ = σ
+            return this_
+         }
+      }
+
+      export class Top<K> extends Args<K> {
+         κ: K // want fix at null but couldn't make that work with the polymorphism
+
+         static is<K> (Π: Args<K>): Π is Top<K> {
+            return Π instanceof Top
+         }
+
+         static make<K> (κ: K): Top<K> {
+            const this_: Top<K> = make<Top<K>>(Top, κ)
+            this_.κ = κ
             return this_
          }
       }
@@ -226,6 +240,21 @@ export namespace Traced {
          static make<K> (x: Lex.Var, κ: K): Var<K> {
             const this_: Var<K> = make<Var<K>>(Var, x, κ)
             this_.x = x
+            this_.κ = κ
+            return this_
+         }
+      }
+
+      // Wanted to fix K at null but that doesn't work with polymorphic code.
+      export class Top<K> extends Trie<K> {
+         κ: K
+
+         static is<K> (σ: Trie<K>): σ is Top<K> {
+            return σ instanceof Top
+         }
+
+         static make<K> (κ: K): Top<K> {
+            const this_: Top<K> = make<Top<K>>(Top, κ)
             this_.κ = κ
             return this_
          }

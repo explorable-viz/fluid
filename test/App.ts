@@ -10,7 +10,7 @@ import Trie = Traced.Trie
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const [rects, axes]: THREE.Vector2[][][] = getRectsAxes(__nonNull(runTest(__nonNull(file.text), Profile.Match, expectRectsAxes(null))))
+const [rects, axes]: THREE.Vector2[][][] = getRectsAxes(__nonNull(runTest(__nonNull(file.text), Profile.Match, τ.top(null))))
 
 // Demand for list of points of length n.
 function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
