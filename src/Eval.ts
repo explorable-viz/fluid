@@ -51,11 +51,11 @@ export function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
 // Parser ensures constructor patterns agree with constructor signatures.
 function evalArgs<K> (ρ: Env, Π: Args<K>, es: List<Traced>): Results<K> {
    if (Cons.is(es)) {
-      let σ
-      if (Π instanceof Args.Next) {
+      let σ: Trie<Args<K>>
+      if (Args.Next.is(Π)) {
          σ = Π.σ
       } else 
-      if (Π instanceof Args.Top) {
+      if (Args.Top.is(Π)) {
          σ = Trie.Top.make(Args.Top.make(Π.κ))
       } else {
          return absurd()
@@ -64,7 +64,7 @@ function evalArgs<K> (ρ: Env, Π: Args<K>, es: List<Traced>): Results<K> {
             [tvs, ρʺ, κ]: Results<K> = evalArgs(ρ, Πʹ, es.tail)
       return [Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ]
    } else
-   if (Nil.is(es) && (Π instanceof Args.End || Π instanceof Args.Top)) {
+   if (Nil.is(es) && (Args.End.is(Π) || Args.Top.is(Π))) {
       return [Nil.make(), Env.empty(), Π.κ]
    } else {
       return absurd()
