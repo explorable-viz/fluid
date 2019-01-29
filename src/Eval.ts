@@ -91,7 +91,7 @@ function evalT<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
          const v: Value = __nonNull(tv.v)
          assert(v.__id === k && t.__id === k)
          if (v instanceof Value.Constr) {
-            let Π
+            let Π: Args<K>
             if (Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
                Π = get(σ.cases, v.ctr.str)!
             } else

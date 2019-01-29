@@ -102,11 +102,43 @@ function mapMatch<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (ξ: Match<K>)
                return Pair.make(ctr, mapMatchArgs(f, g)(Π_or_Ψ))
             } else
             if (Π_or_Ψ instanceof Args.Args) {
-               return Pair.make(ctr, mapTrieArgs(g)(Π_or_Ψ))
+               return Pair.make(ctr, mapArgs(g)(Π_or_Ψ))
             } else {
                return absurd()
             }
          }))
+      } else {
+         return absurd()
+      }
+   }
+}
+
+function mapArgs<K, Kʹ> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
+   return (Π: Args<K>): Args<Kʹ> => {
+      if (Args.End.is(Π)) {
+         return Args.End.make(f(Π.κ))
+      } else
+      if (Args.Next.is(Π)) {
+         return Args.Next.make(mapTrie(mapArgs(f))(Π.σ))
+      } else
+      if (Args.Top.is(Π)) {
+         return Args.Top.make(f(Π.κ))
+      } else {
+         return absurd()
+      }
+   }
+}
+
+function mapMatchArgs<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (Ψ: Match.Args<K>) => Match.Args<Kʹ> {
+   return (Ψ: Match.Args<K>): Match.Args<Kʹ> => {
+      if (Match.Args.End.is(Ψ)) {
+         return Match.Args.End.make(f(Ψ.κ))
+      } else
+      if (Match.Args.Next.is(Ψ)) {
+         return Match.Args.Next.make(
+            TracedMatch.make(Ψ.tξ.t,
+            mapMatch(mapMatchArgs(f, g), mapMatchArgs(g, g))(Ψ.tξ.ξ)) // "bivariance"
+         )
       } else {
          return absurd()
       }
@@ -130,40 +162,11 @@ export function mapTrie<K, Kʹ> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.
       if (Trie.Constr.is(σ)) {
          return Trie.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<Kʹ>> => {
             if (Π instanceof Args.Args) {
-               return Pair.make(ctr, mapTrieArgs(f)(Π))
+               return Pair.make(ctr, mapArgs(f)(Π))
             } else {
                return absurd()
             }
          }))
-      } else {
-         return absurd()
-      }
-   }
-}
-
-function mapTrieArgs<K, Kʹ> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
-   return (Π: Args<K>): Args<Kʹ> => {
-      if (Args.End.is(Π)) {
-         return Args.End.make(f(Π.κ))
-      } else
-      if (Args.Next.is(Π)) {
-         return Args.Next.make(mapTrie(mapTrieArgs(f))(Π.σ))
-      } else {
-         return absurd()
-      }
-   }
-}
-
-function mapMatchArgs<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (Ψ: Match.Args<K>) => Match.Args<Kʹ> {
-   return (Ψ: Match.Args<K>): Match.Args<Kʹ> => {
-      if (Match.Args.End.is(Ψ)) {
-         return Match.Args.End.make(f(Ψ.κ))
-      } else
-      if (Match.Args.Next.is(Ψ)) {
-         return Match.Args.Next.make(
-            TracedMatch.make(Ψ.tξ.t,
-            mapMatch(mapMatchArgs(f, g), mapMatchArgs(g, g))(Ψ.tξ.ξ)) // "bivariance"
-         )
       } else {
          return absurd()
       }

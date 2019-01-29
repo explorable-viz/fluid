@@ -15,22 +15,30 @@ type TrieCtr = (body: null) => Trie.Prim<null>
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
-// Parser guarantees that values/patterns respect constructor signatures.
+// Parser guarantees that values/patterns respect constructor signatures. 
+// TODO: rename to avoid confusion with Match.match.
 function match<K> (v: Value, σ: Trie<K>): PrimResult<K> {
-   if (v instanceof Value.PrimOp && σ instanceof Trie.Fun) {
+   if (v instanceof Value.PrimOp && (σ instanceof Trie.Fun || σ instanceof Trie.Top)) {
       return [v, σ.κ]
    } else 
-   if (v instanceof Value.ConstInt && σ instanceof Trie.ConstInt) {
+   if (v instanceof Value.ConstInt && (σ instanceof Trie.ConstInt || σ instanceof Trie.Top)) {
       return [v, σ.κ]
    } else 
-   if (v instanceof Value.ConstStr && σ instanceof Trie.ConstStr) {
+   if (v instanceof Value.ConstStr && (σ instanceof Trie.ConstStr || σ instanceof Trie.Top)) {
       return [v, σ.κ]
    } else 
-   if (v instanceof Value.Constr && σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
-      const Π: Args<K> = get(σ.cases, v.ctr.str)!
+   if (v instanceof Value.Constr) {
       assert(v.args.length === 0, "Primitives must return nullary values.")
-      if (Π instanceof Args.End) {
-         return [v, Π.κ]
+      if (σ instanceof Trie.Constr && has(σ.cases, v.ctr.str)) {
+         const Π: Args<K> = get(σ.cases, v.ctr.str)!
+         if (Π instanceof Args.End) {
+            return [v, Π.κ]
+         } else {
+            return absurd()
+         }
+      } else
+      if (σ instanceof Trie.Top) {
+         return [v, σ.κ]
       } else {
          return absurd()
       }
