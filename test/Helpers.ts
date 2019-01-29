@@ -25,7 +25,6 @@ export function initialise (): void {
 export enum Profile {
    Parse,
    Run,
-   Match,
    Visualise
 }
 
@@ -86,7 +85,7 @@ export function runExample (p: Profile, src: string, σ: Trie<null>): Traced | n
    if (p >= Profile.Run) {
       const [tv, , ]: Eval.Result<null> = Eval.evalT_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
-      if (p >= Profile.Match) {
+      if (!Trie.Top.is(σ)) {
          console.log(match(σ, tv.v))
       }
       return tv
@@ -96,8 +95,8 @@ export function runExample (p: Profile, src: string, σ: Trie<null>): Traced | n
 
 export let ρ: Env = prelude()
 
-export function runTest (prog: string, profile: Profile, σ: Trie<null> = τ.var_(null)): Traced | null {
-   return runExample(profile, prog, σ)
+export function runTest (prog: string, σ: Trie<null> = τ.top(null)): Traced | null {
+   return runExample(Profile.Run, prog, σ)
 }
 
 // An asychronously loading test file; when loading completes text will be non-null.
