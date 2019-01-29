@@ -84,7 +84,7 @@ export function runExample (p: Profile, src: string, σ: Trie<null>): Traced | n
    const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
    console.log(Profile[p])
    if (p >= Profile.Run) {
-      const [tv, , ]: Eval.Result<null> = Eval.eval_(ρ, instantiate(ρ)(e), σ)
+      const [tv, , ]: Eval.Result<null> = Eval.evalT_(ρ, instantiate(ρ)(e), σ)
       console.log(tv)
       if (p >= Profile.Match) {
          console.log(match(σ, tv.v))
