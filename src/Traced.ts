@@ -245,8 +245,7 @@ export namespace Traced {
          }
       }
 
-      // Has no syntactic counterpart; null isn't a JoinSemilattice, for one thing. Wanted to fix
-      // K at null but that doesn't work with polymorphic code.
+      // Wanted to fix K at null but that doesn't work with polymorphic code.
       export class Top<K> extends Trie<K> {
          κ: K
 
