@@ -4,42 +4,11 @@ import * as Meshline from "three.meshline"
 import { __nonNull, assert } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { Traced, Value } from "../src/Traced"
-import { Profile, TestFile, τ, initialise, loadTestFile, runTest } from "../test/Helpers"
-
-import Trie = Traced.Trie
+import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const [rects, axes]: THREE.Vector2[][][] = getRectsAxes(__nonNull(runTest(__nonNull(file.text), Profile.Match, τ.top(null))))
-
-// Demand for list of points of length n.
-function expectPoints<K> (n: number, κ: K): Trie.Constr<K> {
-   if (n === 0) {
-      return τ.nil(τ.endArgs(κ))
-   } else {
-      return τ.cons(τ.arg(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(expectPoints(n - 1, τ.endArgs(κ)))))))))))
-   }
-}
-
-function expectRects<K> (n: number, κ: K): Trie.Constr<K> {
-   if (n === 0) {
-      return τ.nil(τ.endArgs(κ))
-   } else {
-      return τ.cons(τ.arg(expectPoints(4, τ.arg(expectRects(n - 1, τ.endArgs(κ))))))
-   }
-}
-
-function expectLines<K> (n: number, κ: K): Trie.Constr<K> {
-   if (n === 0) {
-      return τ.nil(τ.endArgs(κ))
-   } else {
-      return τ.cons(τ.arg(expectPoints(2, τ.arg(expectLines(n - 1, τ.endArgs(κ))))))
-   }
-}
-
-export function expectRectsAxes<K> (κ: K): Trie.Constr<K> {
-   return τ.pair(τ.arg(expectRects(4, τ.arg(expectLines(11, τ.endArgs(κ))))))
-}
+const [rects, axes]: THREE.Vector2[][][] = getRectsAxes(__nonNull(runTest(__nonNull(file.text))))
 
 export function getRectsAxes (tv: Traced): [THREE.Vector2[][], THREE.Vector2[][]] {
    if (tv.v instanceof Value.Constr) {
