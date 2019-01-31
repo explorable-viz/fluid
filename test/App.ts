@@ -8,14 +8,14 @@ import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const [rects, axes]: [THREE.Vector2[][], THREE.Vector2[][]] = getRectsAxes(__nonNull(runTest(__nonNull(file.text))))
+const [rects, axes]: [Rect_New[], THREE.Vector2[][]] = getRectsAxes(__nonNull(runTest(__nonNull(file.text))))
 
-export function getRectsAxes (tv: Traced): [THREE.Vector2[][], THREE.Vector2[][]] {
+export function getRectsAxes (tv: Traced): [Rect_New[], THREE.Vector2[][]] {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Pair") {
          const rects_axes: List<Traced> = tv.v.args
          if (Cons.is(rects_axes) && Cons.is(rects_axes.tail)) {
-            return [getRects(rects_axes.head), getRects(rects_axes.tail.head)]
+            return [getRects_new(rects_axes.head), getRects(rects_axes.tail.head)]
          }
       }
    }
@@ -206,15 +206,14 @@ export class ThickPath extends THREE.Geometry {
    }
 }
 
-function close (path: THREE.Vector2[]) {
+export function close (path: THREE.Vector2[]) {
    return path.concat(path[0])
 }
 
 function populateScene (): void {
    for (let rect of rects) {
-      assert(rect.length === 4)
-      scene.add(new Rect(rect).object3D())
-      scene.add(new Path(close(rect)).object3D())
+      scene.add(rect.object3D())
+//      scene.add(new Path(close(rect)).object3D())
    }
    for (let line of axes) {
       assert(line.length === 2)

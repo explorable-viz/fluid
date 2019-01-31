@@ -80,7 +80,7 @@ let axis = fun margin n width →
    map (map (translate (0, 0 - margin))) Cons(line, take n ticks)
 in
    (
-      map rectAsPoly rects', 
+      rects',
       concat 
          (axis 1 5 7)
          (map (map transpose) (axis 1 (length rects') width))
