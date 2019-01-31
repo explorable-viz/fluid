@@ -34,6 +34,20 @@ class Rect_New {
       this.width = width
       this.height = height
    }
+
+   object3D (): THREE.Object3D {
+      const geometry: THREE.Geometry = new THREE.Geometry
+      geometry.vertices.push(new THREE.Vector3(this.x, this.y, 0))
+      geometry.vertices.push(new THREE.Vector3(this.x + this.width, this.y, 0))
+      geometry.vertices.push(new THREE.Vector3(this.x + this.width, this.y + this.height, 0))
+      geometry.vertices.push(new THREE.Vector3(this.x, this.y + this.height, 0))
+      geometry.faces.push(new THREE.Face3(0,1,2))
+      geometry.faces.push(new THREE.Face3(2,3,0))
+      return new THREE.Mesh(
+         geometry, 
+         new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
+      )
+   }
 }
 
 export function getRects_new (tv: Traced): Rect_New[] {
@@ -141,7 +155,7 @@ document.body.appendChild(renderer.domElement)
 
 export class Rect extends THREE.Geometry {
    constructor (rect: THREE.Vector2[]) {
-      super()   
+      super()
       for (const point of rect) {
          this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
       }
