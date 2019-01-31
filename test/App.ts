@@ -22,6 +22,53 @@ export function getRectsAxes (tv: Traced): [THREE.Vector2[][], THREE.Vector2[][]
    return assert(false)
 }
 
+class Rect_New {
+   x: number
+   y: number
+   width: number
+   height: number
+
+   constructor (x: number, y: number, width: number, height: number) {
+      this.x = x
+      this.y = y
+      this.width = width
+      this.height = height
+   }
+}
+
+export function getRects_new (tv: Traced): Rect_New[] {
+   if (tv.v instanceof Value.Constr) {
+      if (tv.v.ctr.str === "Cons") {
+         const rect_tvs: List<Traced> = tv.v.args
+         if (Cons.is(rect_tvs) && Cons.is(rect_tvs.tail)) {
+            return [getRect(rect_tvs.head)].concat(getRects_new(rect_tvs.tail.head))
+         } 
+      } else
+      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
+         return []
+      }
+   }
+   return assert(false)
+}
+
+function getRect (tv: Traced): Rect_New {
+   if (tv.v instanceof Value.Constr && tv.v.ctr.str === "Rect") {
+      const tvs: List<Traced> = tv.v.args
+      if (Cons.is(tvs) && tvs.head instanceof Value.ConstInt && 
+          Cons.is(tvs.tail) && tvs.tail.head instanceof Value.ConstInt &&
+          Cons.is(tvs.tail.tail) && tvs.tail.tail.head instanceof Value.ConstInt && 
+          Cons.is(tvs.tail.tail.tail) && tvs.tail.tail.tail.head instanceof Value.ConstInt) {
+         return new Rect_New(
+            tvs.head.val,
+            tvs.tail.head.val,
+            tvs.tail.tail.head.val,
+            tvs.tail.tail.tail.head.val
+         )
+      } 
+   }
+   return assert(false)
+}
+
 // Hack to suck out the leaf data. Might have to rethink what it means to match primitive data.
 export function getRects (tv: Traced): THREE.Vector2[][] {
    if (tv.v instanceof Value.Constr) {
