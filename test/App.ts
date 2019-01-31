@@ -8,7 +8,7 @@ import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const [rects, axes]: THREE.Vector2[][][] = getRectsAxes(__nonNull(runTest(__nonNull(file.text))))
+const [rects, axes]: [THREE.Vector2[][], THREE.Vector2[][]] = getRectsAxes(__nonNull(runTest(__nonNull(file.text))))
 
 export function getRectsAxes (tv: Traced): [THREE.Vector2[][], THREE.Vector2[][]] {
    if (tv.v instanceof Value.Constr) {
