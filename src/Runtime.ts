@@ -1,4 +1,4 @@
-import { __shallowCopy, absurd, assert, className, funName, make } from "./util/Core"
+import { absurd, assert, className, funName, make } from "./util/Core"
 import { Eq } from "./util/Eq"
 
 export interface Ctr<T> {
@@ -15,6 +15,14 @@ export class PersistentObject implements Eq<PersistentObject> {
    eq (that: PersistentObject): boolean {
       return this === that
    }
+}
+
+function __blankCopy<T extends Object> (src: T): T {
+   const tgt: T = Object.create(src.constructor.prototype) // new ctr no longer seems to work
+   for (let x of Object.keys(src)) {
+      (tgt as any)[x] = null
+   }
+   return tgt
 }
 
 // Defined only if tgt, src are upper-bounded (LVar-style merge). Symmetric.
@@ -78,10 +86,9 @@ export class VersionedObject<K extends PersistentObject = PersistentObject> exte
       // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
    __version (): Object {
       if (this.__history.length === 0) {
-         this.__history.push(__shallowCopy(this))
-      } else {
-         __shallowMergeAssign(this.__history[0], this)
+         this.__history.push(__blankCopy(this))
       }
+      __shallowMergeAssign(this.__history[0], this)
       return this
    }
 }

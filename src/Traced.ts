@@ -90,7 +90,7 @@ export namespace Value {
    }
 }
 
-// Called ExplVal in the formalism.
+// Called ExplVal in the formalism. Interned rather than versioned.
 export class Traced extends PersistentObject {
    t: Trace
    v: Value | null
