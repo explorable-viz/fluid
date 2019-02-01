@@ -7,7 +7,7 @@ import { Traced, Value } from "../src/Traced"
 import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
-const file: TestFile = loadTestFile("example", "bar-chart")
+const file: TestFile = loadTestFile("example", "temp")
 const [rects, axes]: [Rect_New[], THREE.Vector2[][]] = getRectsAxes(__nonNull(runTest(__nonNull(file.text))))
 
 export function getRectsAxes (tv: Traced): [Rect_New[], THREE.Vector2[][]] {
@@ -68,15 +68,15 @@ export function getRects_new (tv: Traced): Rect_New[] {
 function getRect (tv: Traced): Rect_New {
    if (tv.v instanceof Value.Constr && tv.v.ctr.str === "Rect") {
       const tvs: List<Traced> = tv.v.args
-      if (Cons.is(tvs) && tvs.head instanceof Value.ConstInt && 
-          Cons.is(tvs.tail) && tvs.tail.head instanceof Value.ConstInt &&
-          Cons.is(tvs.tail.tail) && tvs.tail.tail.head instanceof Value.ConstInt && 
-          Cons.is(tvs.tail.tail.tail) && tvs.tail.tail.tail.head instanceof Value.ConstInt) {
+      if (Cons.is(tvs) && tvs.head.v instanceof Value.ConstInt && 
+          Cons.is(tvs.tail) && tvs.tail.head.v instanceof Value.ConstInt &&
+          Cons.is(tvs.tail.tail) && tvs.tail.tail.head.v instanceof Value.ConstInt && 
+          Cons.is(tvs.tail.tail.tail) && tvs.tail.tail.tail.head.v instanceof Value.ConstInt) {
          return new Rect_New(
-            tvs.head.val,
-            tvs.tail.head.val,
-            tvs.tail.tail.head.val,
-            tvs.tail.tail.tail.head.val
+            tvs.head.v.val,
+            tvs.tail.head.v.val,
+            tvs.tail.tail.head.v.val,
+            tvs.tail.tail.tail.head.v.val
          )
       } 
    }
