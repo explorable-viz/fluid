@@ -6,23 +6,7 @@ import { Cons, List, Nil } from "../src/BaseTypes"
 import { Traced, Value } from "../src/Traced"
 import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
-initialise()
-const file: TestFile = loadTestFile("example", "temp")
-const [rects, axes]: [Rect_New[], THREE.Vector2[][]] = getRectsAxes(__nonNull(runTest(__nonNull(file.text))))
-
-export function getRectsAxes (tv: Traced): [Rect_New[], THREE.Vector2[][]] {
-   if (tv.v instanceof Value.Constr) {
-      if (tv.v.ctr.str === "Pair") {
-         const rects_axes: List<Traced> = tv.v.args
-         if (Cons.is(rects_axes) && Cons.is(rects_axes.tail)) {
-            return [getRects_new(rects_axes.head), getRects(rects_axes.tail.head)]
-         }
-      }
-   }
-   return assert(false)
-}
-
-class Rect_New {
+class Rect {
    x: number
    y: number
    width: number
@@ -50,7 +34,23 @@ class Rect_New {
    }
 }
 
-export function getRects_new (tv: Traced): Rect_New[] {
+initialise()
+const file: TestFile = loadTestFile("example", "bar-chart")
+const [rects, axes]: [Rect[], THREE.Vector2[][]] = getRectsAxes(__nonNull(runTest(__nonNull(file.text))))
+
+export function getRectsAxes (tv: Traced): [Rect[], THREE.Vector2[][]] {
+   if (tv.v instanceof Value.Constr) {
+      if (tv.v.ctr.str === "Pair") {
+         const rects_axes: List<Traced> = tv.v.args
+         if (Cons.is(rects_axes) && Cons.is(rects_axes.tail)) {
+            return [getRects_new(rects_axes.head), getRects(rects_axes.tail.head)]
+         }
+      }
+   }
+   return assert(false)
+}
+
+export function getRects_new (tv: Traced): Rect[] {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Cons") {
          const rect_tvs: List<Traced> = tv.v.args
@@ -65,14 +65,14 @@ export function getRects_new (tv: Traced): Rect_New[] {
    return assert(false)
 }
 
-function getRect (tv: Traced): Rect_New {
+function getRect (tv: Traced): Rect {
    if (tv.v instanceof Value.Constr && tv.v.ctr.str === "Rect") {
       const tvs: List<Traced> = tv.v.args
       if (Cons.is(tvs) && tvs.head.v instanceof Value.ConstInt && 
           Cons.is(tvs.tail) && tvs.tail.head.v instanceof Value.ConstInt &&
           Cons.is(tvs.tail.tail) && tvs.tail.tail.head.v instanceof Value.ConstInt && 
           Cons.is(tvs.tail.tail.tail) && tvs.tail.tail.tail.head.v instanceof Value.ConstInt) {
-         return new Rect_New(
+         return new Rect(
             tvs.head.v.val,
             tvs.tail.head.v.val,
             tvs.tail.tail.head.v.val,
@@ -152,24 +152,6 @@ controls.enableDamping = true; // Set to false to disable damping (ie inertia)
 controls.dampingFactor = 0.25;
 
 document.body.appendChild(renderer.domElement)
-
-export class Rect extends THREE.Geometry {
-   constructor (rect: THREE.Vector2[]) {
-      super()
-      for (const point of rect) {
-         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
-      }
-      this.faces.push(new THREE.Face3(0,1,2))
-      this.faces.push(new THREE.Face3(2,3,0))
-   }
-
-   object3D (): THREE.Object3D {
-      return new THREE.Mesh(
-         this, 
-         new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
-      )
-   }
-}
 
 export class Path extends THREE.Geometry {
    constructor (path: THREE.Vector2[]) {
