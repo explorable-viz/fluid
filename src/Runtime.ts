@@ -33,12 +33,12 @@ function __shallowMergeAssign (tgt: Object, src: Object): void {
       const tgt_: any = tgt as any,
             src_: any = src as any
       if (tgt_[x] === null) {
-         if (!(tgt_[x] instanceof PersistentObject)) {
+         if (!(tgt instanceof PersistentObject)) {
             tgt_[x] = src_[x]
          }
       } else
       if (src_[x] === null) {
-         if (src_[x] instanceof PersistentObject) {
+         if (src instanceof PersistentObject) {
             src_[x] = tgt_[x]
          }
       } else {
