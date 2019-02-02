@@ -20,14 +20,15 @@ import RecDef = Traced.RecDef
 import Var = Traced.Var
 
 export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
-   j: EnvEntries
-   e: E
+   constructor (
+      public j: EnvEntries,
+      public e: E
+   ) {
+      super()
+   }
 
    static make<E extends Expr | Expr.RecDef> (j: EnvEntries, e: E): Runtime<E> {
-      const this_: Runtime<E> = make<Runtime<E>>(Runtime, j, e)
-      this_.j = j
-      this_.e = e
-      return this_
+      return make<Runtime<E>>(Runtime, j, e)
    }
 }
 

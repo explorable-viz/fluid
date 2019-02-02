@@ -271,31 +271,35 @@ export namespace Expr {
 
       // Maps zero arguments to κ.
       export class End<K extends JoinSemilattice<K>> extends Args<K> {
-         κ: K
+         constructor (
+            public κ: K
+         ) {
+            super()
+         }
 
          static is<K extends JoinSemilattice<K>> (Π: Args<K>): Π is End<K> {
             return Π instanceof End
          }
 
          static make<K extends JoinSemilattice<K>> (κ: K): End<K> {
-            const this_: End<K> = make<End<K>>(End, κ)
-            this_.κ = κ
-            return this_
+            return make<End<K>>(End, κ)
          }
       }
 
       // Maps a single argument to another args trie.
       export class Next<K extends JoinSemilattice<K>> extends Args<K> {
-         σ: Trie<Args<K>>
+         constructor (
+            public σ: Trie<Args<K>>
+         ) {
+            super()
+         }
 
          static is<K extends JoinSemilattice<K>> (Π: Args<K>): Π is Next<K> {
             return Π instanceof Next
          }
 
          static make<K extends JoinSemilattice<K>> (σ: Trie<Args<K>>): Next<K> {
-            const this_: Next<K> = make<Next<K>>(Next, σ)
-            this_.σ = σ
-            return this_
+            return make<Next<K>>(Next, σ)
          }
       }
    }
@@ -332,7 +336,11 @@ export namespace Expr {
       }
 
       export class Prim<K extends JoinSemilattice<K>> extends Trie<K> {
-         κ: K
+         constructor (
+            public κ: K
+         ) {
+            super()
+         }
       }
 
       export class ConstInt<K extends JoinSemilattice<K>> extends Prim<K> {
@@ -341,9 +349,7 @@ export namespace Expr {
          }
 
          static make<K extends JoinSemilattice<K>> (κ: K): ConstInt<K> {
-            const this_: ConstInt<K> = make<ConstInt<K>>(ConstInt, κ)
-            this_.κ = κ
-            return this_
+            return make<ConstInt<K>>(ConstInt, κ)
          }
       }
 
@@ -354,53 +360,57 @@ export namespace Expr {
 
          static make<K extends JoinSemilattice<K>> (κ: K): ConstStr<K> {
             const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
-            this_.κ = κ
             return this_
          }
       }
 
       // n-ary sum of n-ary products.
       export class Constr<K extends JoinSemilattice<K>> extends Trie<K> {
-         cases: FiniteMap<string, Args<K>>
+         constructor (
+            public cases: FiniteMap<string, Args<K>>
+         ) {
+            super()
+         }
 
          static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
 
          static make<K extends JoinSemilattice<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
-            const this_: Constr<K> = make(Constr, cases)
-            this_.cases = cases
-            return this_
+            return make(Constr, cases)
          }
       }
 
       export class Fun<K extends JoinSemilattice<K>> extends Trie<K> {
-         κ: K
+         constructor (
+            public κ: K
+         ) {
+            super()
+         }
 
          static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Fun<K> {
             return σ instanceof Fun
          }
 
          static make<K extends JoinSemilattice<K>> (κ: K): Fun<K> {
-            const this_: Fun<K> = make<Fun<K>>(Fun, κ)
-            this_.κ = κ
-            return this_
+            return make<Fun<K>>(Fun, κ)
          }
       }
 
       export class Var<K extends JoinSemilattice<K>> extends Trie<K> {
-         x: Lex.Var
-         κ: K
+         constructor (
+            public x: Lex.Var,
+            public κ: K
+         ) {
+            super()
+         }
 
          static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
 
          static make<K extends JoinSemilattice<K>> (x: Lex.Var, κ: K): Var<K> {
-            const this_: Var<K> = make<Var<K>>(Var, x, κ)
-            this_.x = x
-            this_.κ = κ
-            return this_
+            return make<Var<K>>(Var, x, κ)
          }
       }
    }

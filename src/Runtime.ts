@@ -66,12 +66,14 @@ export type Persistent = null | PersistentObject | string | number
 
 // A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
 export class ExternalObject extends PersistentObject {
-   id: number
+   constructor (
+      public id: number
+   ) {
+      super()
+   }
 
    static make (id: number): ExternalObject {
-      const this_: ExternalObject = make(ExternalObject, id)
-      this_.id = id
-      return this_
+      return make(ExternalObject, id)
    }
 }
 

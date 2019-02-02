@@ -18,14 +18,15 @@ export class EmptyEnvEntries extends EnvEntries {
 }
 
 export class ExtendEnvEntries extends EnvEntries {
-   j: EnvEntries
-   entry: EnvEntry
+   constructor (
+      public j: EnvEntries,
+      public entry: EnvEntry
+   ) {
+      super()
+   }
 
    static make (j: EnvEntries, entry: EnvEntry): ExtendEnvEntries {
-      const this_: ExtendEnvEntries = make(ExtendEnvEntries, j, entry)
-      this_.j = j
-      this_.entry = entry
-      return this_
+      return make(ExtendEnvEntries, j, entry)
    }
 }
 
@@ -36,7 +37,7 @@ export class ExtendEnvEntries extends EnvEntries {
 // environments to enable LVar semantics.
 
 export abstract class Env extends PersistentObject {
-   __Env(): void {
+   __Env (): void {
       // discriminator
    }
 
@@ -90,16 +91,16 @@ export class EmptyEnv extends Env {
 }
 
 export class ExtendEnv extends Env {
-   ρ: Env
-   k: string
-   v: EnvEntry
+   constructor (
+      public ρ: Env,
+      public k: string,
+      public v: EnvEntry
+   ) {
+      super()
+   }
 
    static make (ρ: Env, k: string, v: EnvEntry): ExtendEnv {
-      const this_: ExtendEnv = make(ExtendEnv, ρ, k, v)
-      this_.ρ = ρ
-      this_.k = k
-      this_.v = v
-      return this_
+      return make(ExtendEnv, ρ, k, v)
    }
 
    entries (): ExtendEnvEntries {
@@ -116,15 +117,15 @@ export class ExtendEnv extends Env {
 }
 
 export class EnvEntry extends PersistentObject {
-   ρ: Env
-   δ: List<RecDef>
-   e: Traced
+   constructor (
+      public ρ: Env,
+      public δ: List<RecDef>,
+      public e: Traced
+   ) {
+      super()
+   }
 
    static make (ρ: Env, δ: List<RecDef>, e: Traced): EnvEntry {
-      const this_: EnvEntry = make(EnvEntry, ρ, δ, e)
-      this_.ρ = ρ
-      this_.δ = δ
-      this_.e = e
-      return this_
+      return make(EnvEntry, ρ, δ, e)
    }
 }
