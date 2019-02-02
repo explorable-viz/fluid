@@ -20,14 +20,15 @@ import RecDef = Traced.RecDef
 import Var = Traced.Var
 
 export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
-   j: EnvEntries
-   e: E
+   constructor (
+      public j: EnvEntries,
+      public e: E
+   ) {
+      super()
+   }
 
    static make<E extends Expr | Expr.RecDef> (j: EnvEntries, e: E): Runtime<E> {
-      const this_: Runtime<E> = make<Runtime<E>>(Runtime, j, e)
-      this_.j = j
-      this_.e = e
-      return this_
+      return make<Runtime<E>>(Runtime, j, e)
    }
 }
 
@@ -80,15 +81,16 @@ export function evalT_<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
 }
 
 // Null means eval produced no information about v; the input traced value might be non-null.
-function evalT<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
-   const t: Trace | null = tv.t,
+function evalT<K> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
+   assert(σ instanceof Trie.Trie)
+   const t: Trace | null = e.t,
          k: Runtime<Expr> = t.__id
    if (Trie.Var.is(σ)) {
-      const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), tv)
+      const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
       return [Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ]
    } else {
       if (t instanceof Empty) {
-         const v: Value = __nonNull(tv.v)
+         const v: Value = __nonNull(e.v)
          assert(v.__id === k && t.__id === k)
          if (v instanceof Value.Constr) {
             let Π: Args<K>
@@ -98,7 +100,7 @@ function evalT<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
             if (Trie.Top.is(σ)) {
                Π = Args.Top.make(σ.κ)
             } else {
-               return assert(false, "Demand mismatch.", tv, σ)
+               return assert(false, "Demand mismatch.", e, σ)
             }
             const [args, ρʹ, κ]: Results<K> = evalArgs(ρ, Π, v.args)
             return [Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ]
@@ -112,7 +114,7 @@ function evalT<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
          if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
             return [Traced.make(t, v), Env.empty(), σ.κ]
          } else {
-            return assert(false, "Demand mismatch.", tv, σ)
+            return assert(false, "Demand mismatch.", e, σ)
          }
       } else
       if (t instanceof Var) {
@@ -169,7 +171,7 @@ function evalT<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
             return assert(false, "Operator name not found.", t.opName)
          }
       } else {
-         return assert(false, "Demand mismatch.", tv, σ)
+         return assert(false, "Demand mismatch.", e, σ)
       }
    }
 }

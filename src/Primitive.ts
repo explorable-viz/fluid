@@ -53,10 +53,13 @@ function match<K> (v: Value, σ: Trie<K>): PrimResult<K> {
 export class UnaryBody extends PersistentObject {
    op: Unary<Value, Value>
 
+   constructor (op: Unary<Value, Value>) {
+      super()
+      this.op = op
+   }
+
    static make<T extends Value, V extends Value> (op: Unary<T, V>): UnaryBody {
-      const this_: UnaryBody = make(UnaryBody, op)
-      this_.op = op
-      return this_
+      return make(UnaryBody, op)
    }
 
    invoke<K> (v: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
@@ -67,10 +70,13 @@ export class UnaryBody extends PersistentObject {
 export class BinaryBody extends PersistentObject {
    op: Binary<Value, Value, Value>
 
+   constructor (op: Binary<Value, Value, Value>) {
+      super()
+      this.op = op
+   }
+
    static make<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>): BinaryBody {
-      const this_: BinaryBody = make(BinaryBody, op)
-      this_.op = op
-      return this_
+      return make(BinaryBody, op)
    }
 
    invoke<K> (v1: Value, v2: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
@@ -79,19 +85,21 @@ export class BinaryBody extends PersistentObject {
 } 
 
 export class PrimOp extends PersistentObject {
-   name: string
+   constructor (public name: string) {
+      super()
+   }
 }
 
 export class UnaryOp extends PrimOp {
-   σ: Trie.Prim<null>
-   b: UnaryBody
+   constructor (
+      name: string, 
+      public σ: Trie.Prim<null>, 
+      public b: UnaryBody) {
+      super(name)
+   }
 
    static make (name: string, σ: Trie.Prim<null>, b: UnaryBody): UnaryOp {
-      const this_: UnaryOp = make(UnaryOp, σ, b)
-      this_.name = name
-      this_.σ = σ
-      this_.b = b
-      return this_
+      return make(UnaryOp, name, σ, b)
    }
 
    static make_<T extends Value, V extends Value> (op: Unary<T, V>, trie: TrieCtr): UnaryOp {
@@ -100,17 +108,17 @@ export class UnaryOp extends PrimOp {
 }
 
 export class BinaryOp extends PrimOp {
-   σ1: Trie.Prim<null>
-   σ2: Trie.Prim<null>
-   b: BinaryBody
+   constructor (
+      name: string, 
+      public σ1: Trie.Prim<null>, 
+      public σ2: Trie.Prim<null>, 
+      public b: BinaryBody
+   ) {
+      super(name)
+   }
 
    static make (name: string, σ1: Trie.Prim<null>, σ2: Trie.Prim<null>, b: BinaryBody): BinaryOp {
-      const this_: BinaryOp = make(BinaryOp, σ1, σ2, b)
-      this_.name = name
-      this_.σ1 = σ1
-      this_.σ2 = σ2
-      this_.b = b
-      return this_
+      return make(BinaryOp, name, σ1, σ2, b)
    }
 
    static make_<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, trie1: TrieCtr, trie2: TrieCtr): BinaryOp {

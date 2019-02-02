@@ -40,9 +40,6 @@ let rect_get_w = fun Rect(x, y, w, h) → w in
 let incr = fun x get put shape → put (get shape + x) shape in 
 let transpose = fun Point(x, y) → Point(y, x) in 
 let translate = fun (dx, dy) Point(x, y) → Point(x + dx, y + dy) in 
-let rectAsPoly = fun Rect(x, y, w, h) →
-   Cons(Point(x, y), Cons(Point(x + w, y), Cons(Point(x + w, y + h), Cons(Point(x, y + h), Nil))))
-in
 let
    // discard x coordinates other than the first
    stackRight = fun sep get_x put_x get_w →

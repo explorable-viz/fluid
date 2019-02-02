@@ -1,4 +1,4 @@
-import { __shallowCopy, absurd, assert, className, funName, make } from "./util/Core"
+import { absurd, assert, className, funName, make } from "./util/Core"
 import { Eq } from "./util/Eq"
 
 export interface Ctr<T> {
@@ -17,29 +17,43 @@ export class PersistentObject implements Eq<PersistentObject> {
    }
 }
 
-// Defined only if tgt, src are upper-bounded (LVar-style merge). Symmetric.
+function __blankCopy<T extends Object> (src: T): T {
+   const tgt: T = Object.create(src.constructor.prototype) // new ctr no longer seems to work
+   for (let x of Object.keys(src)) {
+      (tgt as any)[x] = null
+   }
+   return tgt
+}
+
+// Defined only if tgt, src are upper-bounded. Persistent objects are immutable, whereas versioned objects merge 
+// (symmetrically) in an LVar-like way. Not convinced that there is a coherent design here.
 function __shallowMergeAssign (tgt: Object, src: Object): void {
    assert(tgt.constructor === src.constructor)
-   for (let x of Object.keys(src)) {
+   for (let [x,] of Object.entries(src)) {
       const tgt_: any = tgt as any,
             src_: any = src as any
       if (tgt_[x] === null) {
-         tgt_[x] = src_[x]
+         if (!(tgt instanceof PersistentObject)) {
+            tgt_[x] = src_[x]
+         }
       } else
       if (src_[x] === null) {
-         src_[x] = tgt_[x]
+         if (src instanceof PersistentObject) {
+            src_[x] = tgt_[x]
+         }
       } else {
-         if (tgt_[x] instanceof VersionedObject || typeof tgt_[x] === "number" || typeof tgt_[x] === "string") {
+         if ((tgt_[x] instanceof VersionedObject || typeof tgt_[x] === "number" || typeof tgt_[x] === "string")) {
             assert(tgt_[x].eq(src_[x]), `Address collision (different value for property "${x}").`, tgt, src)
          } else
          // Interned child objects have distinct addresses iff they have different (but upper-bounded) 
          // content; only really practical (and indeed useful) to assert this in the distinct case.
-         if (tgt_[x] instanceof PersistentObject) {
+         if (tgt_[x] instanceof PersistentObject && src_[x] instanceof PersistentObject) {
             if (!tgt_[x].eq(src_[x])) {
                __shallowMergeAssign(tgt_[x], src_[x])
             }
          } else
-         if (tgt_[x] instanceof Object) {
+         // TODO: I think this case only applies to lexemes, but shouldn't they be VersionedObjects?
+         if (tgt_[x] instanceof Object && src_[x] instanceof Object) {
             __shallowMergeAssign(tgt_[x], src_[x])
          } else {
             absurd()
@@ -52,12 +66,14 @@ export type Persistent = null | PersistentObject | string | number
 
 // A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
 export class ExternalObject extends PersistentObject {
-   id: number
+   constructor (
+      public id: number
+   ) {
+      super()
+   }
 
    static make (id: number): ExternalObject {
-      const this_: ExternalObject = make(ExternalObject, id)
-      this_.id = id
-      return this_
+      return make(ExternalObject, id)
    }
 }
 
@@ -78,10 +94,9 @@ export class VersionedObject<K extends PersistentObject = PersistentObject> exte
       // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
    __version (): Object {
       if (this.__history.length === 0) {
-         this.__history.push(__shallowCopy(this))
-      } else {
-         __shallowMergeAssign(this.__history[0], this)
+         this.__history.push(__blankCopy(this))
       }
+      __shallowMergeAssign(this.__history[0], this)
       return this
    }
 }
