@@ -82,6 +82,7 @@ export function evalT_<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
 
 // Null means eval produced no information about v; the input traced value might be non-null.
 function evalT<K> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
+   assert(σ instanceof Trie.Trie)
    const t: Trace | null = e.t,
          k: Runtime<Expr> = t.__id
    if (Trie.Var.is(σ)) {

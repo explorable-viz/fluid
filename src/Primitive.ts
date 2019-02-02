@@ -99,7 +99,7 @@ export class UnaryOp extends PrimOp {
    }
 
    static make (name: string, σ: Trie.Prim<null>, b: UnaryBody): UnaryOp {
-      return make(UnaryOp, σ, b)
+      return make(UnaryOp, name, σ, b)
    }
 
    static make_<T extends Value, V extends Value> (op: Unary<T, V>, trie: TrieCtr): UnaryOp {
@@ -118,7 +118,7 @@ export class BinaryOp extends PrimOp {
    }
 
    static make (name: string, σ1: Trie.Prim<null>, σ2: Trie.Prim<null>, b: BinaryBody): BinaryOp {
-      return make(BinaryOp, σ1, σ2, b)
+      return make(BinaryOp, name, σ1, σ2, b)
    }
 
    static make_<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, trie1: TrieCtr, trie2: TrieCtr): BinaryOp {
