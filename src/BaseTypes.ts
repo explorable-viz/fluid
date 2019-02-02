@@ -35,18 +35,19 @@ export class Nil<T extends Persistent> extends List<T> {
 }
 
 export class Cons<T extends Persistent> extends List<T> {
-   head: T
-   tail: List<T>
+   constructor (
+      public head: T,
+      public tail: List<T>
+   ) {
+      super()
+   }
 
    static is<T extends Persistent> (xs: List<T>): xs is Cons<T> {
       return xs instanceof Cons
    }
 
    static make<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
-      const this_: Cons<T> = make<Cons<T>>(Cons, head, tail)
-      this_.head = head
-      this_.tail = tail
-      return this_
+      return make<Cons<T>>(Cons, head, tail)
    }
 
    get length (): number {
@@ -59,14 +60,15 @@ export class Cons<T extends Persistent> extends List<T> {
 }
 
 export class Pair<T extends Persistent, U extends Persistent> extends PersistentObject {
-   fst: T
-   snd: U
+   constructor (
+      public fst: T,
+      public snd: U
+   ) {
+      super()
+   }
 
    static make<T extends Persistent, U extends Persistent> (fst: T, snd: U): Pair<T, U> {
-      const this_: Pair<T, U> = make<Pair<T, U>>(Pair, fst, snd)
-      this_.fst = fst
-      this_.snd = snd
-      return this_
+      return make<Pair<T, U>>(Pair, fst, snd)
    }
 }
 
@@ -89,20 +91,20 @@ export class Empty<T extends Persistent> extends Tree<T> {
 }
 
 export class NonEmpty<T extends Persistent> extends Tree<T> {
-   left: Tree<T>
-   t: T
-   right: Tree<T>
+   constructor (
+      public left: Tree<T>,
+      public t: T,
+      public right: Tree<T>
+   ) {
+      super()
+   }
 
    static is<T extends Persistent> (xs: Tree<T>): xs is NonEmpty<T> {
       return xs instanceof NonEmpty
    }
 
    static make<T extends Persistent> (left: Tree<T>, t: T, right: Tree<T>): NonEmpty<T> {
-      const this_: NonEmpty<T> = make<NonEmpty<T>>(NonEmpty, left, t, right)
-      this_.left = left
-      this_.t = t
-      this_.right = right
-      return this_
+      return make<NonEmpty<T>>(NonEmpty, left, t, right)
    }
 
    map<U extends Persistent> (f: (t: T) => U): NonEmpty<U> {
