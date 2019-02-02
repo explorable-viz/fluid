@@ -1,6 +1,6 @@
 {
    "compilerOptions": {
-      "target": "es5", // phantomJS doesn't support es6
+      "target": "es5", // es6 will require change to lookupArg for constructors
       "lib": ["es6", "dom"],
       "module": "commonjs",
       "noImplicitAny": true,

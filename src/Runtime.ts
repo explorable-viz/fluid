@@ -25,29 +25,36 @@ function __blankCopy<T extends Object> (src: T): T {
    return tgt
 }
 
-// Defined only if tgt, src are upper-bounded (LVar-style merge). Symmetric.
+// Defined only if tgt, src are upper-bounded. Persistent objects are immutable, whereas versioned objects merge 
+// (symmetrically) in an LVar-like way. Not convinced that there is a coherent design here.
 function __shallowMergeAssign (tgt: Object, src: Object): void {
    assert(tgt.constructor === src.constructor)
    for (let x of Object.keys(src)) {
       const tgt_: any = tgt as any,
             src_: any = src as any
       if (tgt_[x] === null) {
-         tgt_[x] = src_[x]
+         if (!(tgt_[x] instanceof PersistentObject)) {
+            tgt_[x] = src_[x]
+         }
       } else
       if (src_[x] === null) {
-         src_[x] = tgt_[x]
+         if (src_[x] instanceof PersistentObject) {
+            src_[x] = tgt_[x]
+         }
       } else {
-         if (tgt_[x] instanceof VersionedObject || typeof tgt_[x] === "number" || typeof tgt_[x] === "string") {
+         if ((tgt_[x] instanceof VersionedObject || typeof tgt_[x] === "number" || typeof tgt_[x] === "string")) {
             assert(tgt_[x].eq(src_[x]), `Address collision (different value for property "${x}").`, tgt, src)
          } else
          // Interned child objects have distinct addresses iff they have different (but upper-bounded) 
          // content; only really practical (and indeed useful) to assert this in the distinct case.
-         if (tgt_[x] instanceof PersistentObject) {
+         if (tgt_[x] instanceof PersistentObject && src_[x] instanceof PersistentObject) {
             if (!tgt_[x].eq(src_[x])) {
-               __shallowMergeAssign(tgt_[x], src_[x])
+               const xʹ: any = __shallowMergeAssign(tgt_[x], src_[x])
+               tgt_[x] = src_[x] = xʹ
             }
          } else
-         if (tgt_[x] instanceof Object) {
+         // TODO: I think this case only applies to lexemes, but shouldn't they be VersionedObjects?
+         if (tgt_[x] instanceof Object && src_[x] instanceof Object) {
             __shallowMergeAssign(tgt_[x], src_[x])
          } else {
             absurd()
