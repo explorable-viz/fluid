@@ -51,11 +51,8 @@ function __shallowMergeAssign (tgt: Object, src: Object): void {
             if (!tgt_[x].eq(src_[x])) {
                __shallowMergeAssign(tgt_[x], src_[x])
             }
-         } else
-         // TODO: I think this case only applies to lexemes, but shouldn't they be VersionedObjects?
-         if (tgt_[x] instanceof Object && src_[x] instanceof Object) {
-            __shallowMergeAssign(tgt_[x], src_[x])
          } else {
+            // Used to be a case for plain Object here (for lexemes?), but didn't seem to be used..
             absurd()
          }
       }
