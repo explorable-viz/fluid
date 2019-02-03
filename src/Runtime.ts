@@ -1,4 +1,4 @@
-import { Class, absurd, assert, className, funName, make, __nonNull } from "./util/Core"
+import { Class, assert, className, funName, make, __nonNull } from "./util/Core"
 import { Eq } from "./util/Eq"
 
 export interface Ctr<T> {
