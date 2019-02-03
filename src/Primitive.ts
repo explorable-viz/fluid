@@ -4,7 +4,7 @@ import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
-import { PersistentObject, ν } from "./Runtime"
+import { InternedObject, PersistentObject, ν } from "./Runtime"
 import { Traced, Value } from "./Traced"
 
 import Args = Traced.Args
@@ -50,7 +50,7 @@ function match<K> (v: Value, σ: Trie<K>): PrimResult<K> {
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
 
-export class UnaryBody extends PersistentObject {
+export class UnaryBody extends InternedObject {
    op: Unary<Value, Value>
 
    constructor (op: Unary<Value, Value>) {
@@ -67,7 +67,7 @@ export class UnaryBody extends PersistentObject {
    }
 } 
 
-export class BinaryBody extends PersistentObject {
+export class BinaryBody extends InternedObject {
    op: Binary<Value, Value, Value>
 
    constructor (op: Binary<Value, Value, Value>) {
@@ -84,7 +84,7 @@ export class BinaryBody extends PersistentObject {
    }
 } 
 
-export class PrimOp extends PersistentObject {
+export abstract class PrimOp extends InternedObject {
    constructor (public name: string) {
       super()
    }

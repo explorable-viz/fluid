@@ -66,6 +66,7 @@ export function getRects_new (tv: Traced): Rect[] {
 }
 
 function getRect (tv: Traced): Rect {
+   __nonNull(tv.v)
    if (tv.v instanceof Value.Constr && tv.v.ctr.str === "Rect") {
       const tvs: List<Traced> = tv.v.args
       if (Cons.is(tvs) && tvs.head.v instanceof Value.ConstInt && 

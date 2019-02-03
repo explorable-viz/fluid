@@ -1,11 +1,11 @@
 import { absurd, make } from "./util/Core"
 import { List } from "./BaseTypes"
-import { PersistentObject } from "./Runtime"
+import { InternedObject } from "./Runtime"
 import { Traced } from "./Traced"
 
 import RecDef = Traced.RecDef
 
-export class EnvEntries extends PersistentObject {
+export class EnvEntries extends InternedObject {
    __EnvEntries (): void {
       // discriminator
    }
@@ -36,7 +36,7 @@ export class ExtendEnvEntries extends EnvEntries {
 // But although evaluation ids do not depend on the ids of environments themselves, we still intern
 // environments to enable LVar semantics.
 
-export abstract class Env extends PersistentObject {
+export abstract class Env extends InternedObject {
    __Env (): void {
       // discriminator
    }
@@ -116,7 +116,7 @@ export class ExtendEnv extends Env {
    }
 }
 
-export class EnvEntry extends PersistentObject {
+export class EnvEntry extends InternedObject {
    constructor (
       public ρ: Env,
       public δ: List<RecDef>,
