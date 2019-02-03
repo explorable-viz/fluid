@@ -56,7 +56,6 @@ function __shallowMergeAssign (tgt: Object, src: Object): void {
          if (tgt_[x] instanceof Object && src_[x] instanceof Object) {
             __shallowMergeAssign(tgt_[x], src_[x])
          } else {
-            // used to be a case for Object, but didn't seem to be used
             absurd()
          }
       }

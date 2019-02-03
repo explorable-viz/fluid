@@ -253,7 +253,7 @@ export namespace Traced {
          }
 
          static make<K> (x: Lex.Var, κ: K): Var<K> {
-            return make<Var<K>>(Var, x, __check(κ, it => it !== undefined))
+            return make<Var<K>>(Var, x, κ)
          }
       }
 
