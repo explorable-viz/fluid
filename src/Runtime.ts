@@ -61,7 +61,7 @@ export function __merge (tgt: Object, src: Object): Object {
       // Two dubious assumptions, but hard to see another technique:
       // (1) entries are supplied in declaration-order (not guaranteed by language spec)
       // (2) constructor arguments also match declaration-order (easy constraint to violate)
-      return make(src.constructor as Class<InternedObject>, args)
+      return make(src.constructor as Class<InternedObject>, ...args)
    }
 }   
 
