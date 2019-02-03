@@ -1,4 +1,4 @@
-import { make, __check } from "./util/Core"
+import { make } from "./util/Core"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"

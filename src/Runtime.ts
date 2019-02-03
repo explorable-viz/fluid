@@ -1,4 +1,4 @@
-import { absurd, assert, className, funName, make } from "./util/Core"
+import { Class, absurd, assert, className, funName, make } from "./util/Core"
 import { Eq } from "./util/Eq"
 
 export interface Ctr<T> {
@@ -7,7 +7,7 @@ export interface Ctr<T> {
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
 // interned objects are persistent objects.
-export class PersistentObject implements Eq<PersistentObject> {
+export abstract class PersistentObject implements Eq<PersistentObject> {
    __PersistentObject (): void {
       // discriminator
    }
@@ -17,8 +17,32 @@ export class PersistentObject implements Eq<PersistentObject> {
    }
 }
 
+// TODO: tag all interned objects with this class.
+export abstract class InternedObject extends PersistentObject {
+   // Least upper bound of two upper-bounded interned objects.
+   static __merge (tgt: InternedObject, src: InternedObject): InternedObject {
+      if (src === null) {
+         return tgt
+      } else 
+      if (tgt === null) {
+         return src
+      } else
+      if (src === tgt) {
+         return src
+      } else {
+         // Two dubious assumptions, but hard to see another technique:
+         // (1) entries are supplied in declaration-order (not guaranteed by language spec)
+         // (2) constructor arguments also match declaration-order (easy constraint to violate)
+         const args: any[] = Object.entries(tgt).map(([k, v]: [string, any]): any => {
+            return InternedObject.__merge((tgt as any)[k], (src as any)[k])
+         })
+         return make(src.constructor as Class<InternedObject>, args)
+      }
+   }   
+}
+
 function __blankCopy<T extends Object> (src: T): T {
-   const tgt: T = Object.create(src.constructor.prototype) // new ctr no longer seems to work
+   const tgt: T = Object.create(src.constructor.prototype)
    for (let x of Object.keys(src)) {
       (tgt as any)[x] = null
    }
