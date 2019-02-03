@@ -1,4 +1,4 @@
-import { Class, absurd, assert, className, funName, make } from "./util/Core"
+import { Class, absurd, assert, className, funName, make, __nonNull } from "./util/Core"
 import { Eq } from "./util/Eq"
 
 export interface Ctr<T> {
@@ -27,6 +27,17 @@ function __blankCopy<T extends Object> (src: T): T {
       (tgt as any)[x] = null
    }
    return tgt
+}
+
+// Argument tgtState is a "value object" whose identity doesn't matter but whose state represents what we currently 
+// know about src. Precondition: the two are upper-bounded; postcondition is that they are equal.
+export function __mergeRoot (tgtState: Object, src: VersionedObject) {
+   assert(__nonNull(tgtState).constructor === __nonNull(src.constructor))
+   const tgtState_: any = tgtState as any,
+         src_: any = src as any
+   Object.keys(tgtState).forEach((k: string): void => {
+      tgtState_[k] = src_[k] = __merge(tgtState_[k], src_[k])
+   })
 }
 
 // Least upper bound of two upper-bounded objects.
