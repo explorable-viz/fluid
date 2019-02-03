@@ -49,18 +49,17 @@ export function __merge (tgt: Object, src: Object): Object {
       return src
    } else
    if (src === tgt) {
-      // need to deal with the versioned object case here, since they might not be structurally equal
       return src
    } else {
       assert(tgt.constructor === src.constructor)
       assert(!(tgt instanceof VersionedObject), "Upper-bounded versioned objects have the same address")
       assert(tgt instanceof InternedObject) // ignore other case for now
-      // Two dubious assumptions, but hard to see another technique:
-      // (1) entries are supplied in declaration-order (not guaranteed by language spec)
-      // (2) constructor arguments also match declaration-order (easy constraint to violate)
       const args: any[] = Object.keys(tgt).map((k: string): any => {
          return __merge((tgt as any)[k], (src as any)[k])
       })
+      // Two dubious assumptions, but hard to see another technique:
+      // (1) entries are supplied in declaration-order (not guaranteed by language spec)
+      // (2) constructor arguments also match declaration-order (easy constraint to violate)
       return make(src.constructor as Class<InternedObject>, args)
    }
 }   
