@@ -29,16 +29,16 @@ function __blankCopy<T extends Object> (src: T): T {
 // (symmetrically) in an LVar-like way. Not convinced that there is a coherent design here.
 function __shallowMergeAssign (tgt: Object, src: Object): void {
    assert(tgt.constructor === src.constructor)
-   for (let [x,] of Object.entries(src)) {
+   for (let x of Object.keys(src)) {
       const tgt_: any = tgt as any,
             src_: any = src as any
       if (tgt_[x] === null) {
-         if (!(tgt instanceof PersistentObject)) {
+         if (tgt instanceof VersionedObject) {
             tgt_[x] = src_[x]
          }
       } else
       if (src_[x] === null) {
-         if (src instanceof PersistentObject) {
+         if (src instanceof VersionedObject) {
             src_[x] = tgt_[x]
          }
       } else {
@@ -51,8 +51,12 @@ function __shallowMergeAssign (tgt: Object, src: Object): void {
             if (!tgt_[x].eq(src_[x])) {
                __shallowMergeAssign(tgt_[x], src_[x])
             }
+         } else
+         // TODO: I think this case only applies to lexemes, but shouldn't they be VersionedObjects?
+         if (tgt_[x] instanceof Object && src_[x] instanceof Object) {
+            __shallowMergeAssign(tgt_[x], src_[x])
          } else {
-            // Used to be a case for plain Object here (for lexemes?), but didn't seem to be used..
+            // used to be a case for Object, but didn't seem to be used
             absurd()
          }
       }
