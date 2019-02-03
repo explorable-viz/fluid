@@ -19,26 +19,6 @@ export abstract class PersistentObject implements Eq<PersistentObject> {
 
 // TODO: tag all interned objects with this class.
 export abstract class InternedObject extends PersistentObject {
-   // Least upper bound of two upper-bounded interned objects.
-   static __merge (tgt: InternedObject, src: InternedObject): InternedObject {
-      if (src === null) {
-         return tgt
-      } else 
-      if (tgt === null) {
-         return src
-      } else
-      if (src === tgt) {
-         return src
-      } else {
-         // Two dubious assumptions, but hard to see another technique:
-         // (1) entries are supplied in declaration-order (not guaranteed by language spec)
-         // (2) constructor arguments also match declaration-order (easy constraint to violate)
-         const args: any[] = Object.entries(tgt).map(([k, v]: [string, any]): any => {
-            return InternedObject.__merge((tgt as any)[k], (src as any)[k])
-         })
-         return make(src.constructor as Class<InternedObject>, args)
-      }
-   }   
 }
 
 function __blankCopy<T extends Object> (src: T): T {
@@ -48,6 +28,31 @@ function __blankCopy<T extends Object> (src: T): T {
    }
    return tgt
 }
+
+// Least upper bound of two upper-bounded objects.
+export function __merge (tgt: Object, src: Object): Object {
+   if (src === null) {
+      return tgt
+   } else 
+   if (tgt === null) {
+      return src
+   } else
+   if (src === tgt) {
+      // need to deal with the versioned object case here, since they might not be structurally equal
+      return src
+   } else {
+      assert(tgt.constructor === src.constructor)
+      assert(!(tgt instanceof VersionedObject), "Upper-bounded versioned objects have the same address")
+      assert(tgt instanceof InternedObject) // ignore other case for now
+      // Two dubious assumptions, but hard to see another technique:
+      // (1) entries are supplied in declaration-order (not guaranteed by language spec)
+      // (2) constructor arguments also match declaration-order (easy constraint to violate)
+      const args: any[] = Object.keys(tgt).map((k: string): any => {
+         return __merge((tgt as any)[k], (src as any)[k])
+      })
+      return make(src.constructor as Class<InternedObject>, args)
+   }
+}   
 
 // Defined only if tgt, src are upper-bounded. Persistent objects are immutable, whereas versioned objects merge 
 // (symmetrically) in an LVar-like way. Not convinced that there is a coherent design here.
