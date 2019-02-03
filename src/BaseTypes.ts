@@ -1,9 +1,9 @@
 import { make } from "./util/Core"
-import { Persistent, PersistentObject } from "./Runtime"
+import { InternedObject, Persistent } from "./Runtime"
 
 // Basic datatypes for interned structures.
 
-export abstract class List<T extends Persistent> extends PersistentObject {
+export abstract class List<T extends Persistent> extends InternedObject {
    static fromArray<T extends Persistent> (xs: T[]): List<T> {
       let xs_: List<T> = Nil.make()
       for (let n: number = xs.length - 1; n >= 0; --n) {
@@ -59,7 +59,7 @@ export class Cons<T extends Persistent> extends List<T> {
    }
 }
 
-export class Pair<T extends Persistent, U extends Persistent> extends PersistentObject {
+export class Pair<T extends Persistent, U extends Persistent> extends InternedObject {
    constructor (
       public fst: T,
       public snd: U
@@ -72,7 +72,7 @@ export class Pair<T extends Persistent, U extends Persistent> extends Persistent
    }
 }
 
-export abstract class Tree<T extends Persistent> extends PersistentObject {
+export abstract class Tree<T extends Persistent> extends InternedObject {
    abstract map<U extends Persistent> (f: (t: T) => U): Tree<U>
 }
 

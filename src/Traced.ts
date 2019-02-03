@@ -5,7 +5,7 @@ import { FiniteMap } from "./FiniteMap"
 import { Runtime } from "./Eval"
 import { Expr, Lex } from "./Expr"
 import { UnaryOp } from "./Primitive"
-import { VersionedObject, PersistentObject, create } from "./Runtime"
+import { InternedObject, VersionedObject, PersistentObject, create } from "./Runtime"
 
 export type Value = Value.Value
 
@@ -90,8 +90,8 @@ export namespace Value {
    }
 }
 
-// Called ExplVal in the formalism. Interned rather than versioned.
-export class Traced extends PersistentObject {
+// Called ExplVal in the formalism.
+export class Traced extends InternedObject {
    constructor (
       public t: Trace,
       public v: Value | null
@@ -111,7 +111,7 @@ export namespace Traced {
 
    export namespace Args {
       // n-ary product
-      export class Args<K> extends PersistentObject {
+      export class Args<K> extends InternedObject {
          __Traced_Args (κ: K): void {
             // discriminator
          }
@@ -168,13 +168,13 @@ export namespace Traced {
       }
    }
 
-   // Tries are persistent but not versioned, as per the formalism.
+   // Tries are interned rather than versioned, as per the formalism.
    export type Trie<K> = Trie.Trie<K>
 
    export type Kont = Traced | Args<any> | Trie<any>
 
    export namespace Trie {
-      export abstract class Trie<K> extends PersistentObject {
+      export abstract class Trie<K> extends InternedObject {
          __Trie_Trie (κ: K): void {
             // discriminator
          }
@@ -275,7 +275,7 @@ export namespace Traced {
       }
    }
 
-   export class TracedMatch<K> extends PersistentObject {
+   export class TracedMatch<K> extends InternedObject {
       constructor (
          public t: Trace | null, // null iff ξ represents a dead branch
          public ξ: Match<K>
@@ -295,7 +295,7 @@ export namespace Traced {
       export type Args<K> = Args.Args<K>
 
       export namespace Args {
-         export class Args<K> extends PersistentObject {
+         export class Args<K> extends InternedObject {
             __Match_Args (): void {
                // discriminator
             }
@@ -334,7 +334,7 @@ export namespace Traced {
          }
       }
 
-      export class Match<K> extends PersistentObject {
+      export class Match<K> extends InternedObject {
          __Match_Match (): void {
             // discriminator
          }

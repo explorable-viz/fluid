@@ -4,7 +4,7 @@ import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { UnaryOp } from "./Primitive"
-import { ExternalObject, PersistentObject, VersionedObject, create } from "./Runtime"
+import { ExternalObject, InternedObject, VersionedObject, create } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
@@ -248,7 +248,7 @@ export namespace Expr {
 
    export namespace Args {
       // n-ary product.
-      export class Args<K extends JoinSemilattice<K>> extends PersistentObject implements JoinSemilattice<Args<K>> {
+      export class Args<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Args<K>> {
          __Expr_Args (κ: K): void {
             // discriminator
          }
@@ -311,7 +311,7 @@ export namespace Expr {
    export type Kont = Expr | Args<any> | Trie<any>
 
    export namespace Trie {
-      export class Trie<K extends JoinSemilattice<K>> extends PersistentObject implements JoinSemilattice<Trie<K>> {
+      export class Trie<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Trie<K>> {
          __Expr_Trie (κ: K): void {
             // discriminator
          }

@@ -12,13 +12,14 @@ export abstract class PersistentObject implements Eq<PersistentObject> {
       // discriminator
    }
 
+   // The implementations of these are all identical but this forces a concrete partitioning.
+   abstract eq (that: PersistentObject): boolean
+}
+
+export abstract class InternedObject extends PersistentObject {
    eq (that: PersistentObject): boolean {
       return this === that
    }
-}
-
-// TODO: tag all interned objects with this class.
-export abstract class InternedObject extends PersistentObject {
 }
 
 function __blankCopy<T extends Object> (src: T): T {
@@ -31,7 +32,7 @@ function __blankCopy<T extends Object> (src: T): T {
 
 // Argument tgtState is a "value object" whose identity doesn't matter but whose state represents what we currently 
 // know about src. Precondition: the two are upper-bounded; postcondition is that they are equal.
-export function __mergeRoot (tgtState: Object, src: VersionedObject) {
+export function __mergeAssign (tgtState: Object, src: VersionedObject) {
    assert(__nonNull(tgtState).constructor === __nonNull(src.constructor))
    const tgtState_: any = tgtState as any,
          src_: any = src as any
@@ -66,7 +67,7 @@ export function __merge (tgt: Object, src: Object): Object {
 
 // Defined only if tgt, src are upper-bounded. Persistent objects are immutable, whereas versioned objects merge 
 // (symmetrically) in an LVar-like way. Not convinced that there is a coherent design here.
-function __shallowMergeAssign (tgt: Object, src: Object): void {
+export function __shallowMergeAssign (tgt: Object, src: Object): void {
    assert(tgt.constructor === src.constructor)
    for (let x of Object.keys(src)) {
       const tgt_: any = tgt as any,
@@ -104,7 +105,7 @@ function __shallowMergeAssign (tgt: Object, src: Object): void {
 export type Persistent = null | PersistentObject | string | number
 
 // A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
-export class ExternalObject extends PersistentObject {
+export class ExternalObject extends InternedObject {
    constructor (
       public id: number
    ) {
@@ -130,12 +131,15 @@ export class VersionedObject<K extends PersistentObject = PersistentObject> exte
    __history: Object[] = undefined as any // history records only enumerable fields
    __id: K = undefined as any
 
+   eq (that: PersistentObject): boolean {
+      return this === that
+   }
       // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
    __version (): Object {
       if (this.__history.length === 0) {
          this.__history.push(__blankCopy(this))
       }
-      __shallowMergeAssign(this.__history[0], this)
+      __mergeAssign(this.__history[0], this)
       return this
    }
 }

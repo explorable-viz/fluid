@@ -5,7 +5,7 @@ import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { PersistentObject } from "./Runtime";
+import { InternedObject } from "./Runtime";
 import { Trace, Traced, Value } from "./Traced"
 
 import App = Traced.App
@@ -19,7 +19,7 @@ import Trie = Traced.Trie
 import RecDef = Traced.RecDef
 import Var = Traced.Var
 
-export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
+export class Runtime<E extends Expr | Expr.RecDef> extends InternedObject {
    constructor (
       public j: EnvEntries,
       public e: E
