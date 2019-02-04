@@ -1,3 +1,4 @@
+import * as THREE from "three"
 import { absurd, make } from "./util/Core"
 import { Cons, List } from "../src/BaseTypes"
 import { InternedObject } from "./Runtime"

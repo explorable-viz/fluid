@@ -1,23 +1,22 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import * as Meshline from "three.meshline"
-import { __nonNull, assert, make, absurd } from "../src/util/Core"
-import { InternedObject } from "../src/Runtime"
+import { __nonNull, assert, absurd } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { Traced, Value } from "../src/Traced"
-import { Point, Rect} from "../src/Graphics"
+import { Point, Rect, object3D } from "../src/Graphics"
 import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const [rects, paths]: [Rect[], List<Point>[]] = getRectsPaths(__nonNull(runTest(__nonNull(file.text))))
+const [rects, paths]: [Object[], List<Point>[]] = getRectsPaths(__nonNull(runTest(__nonNull(file.text))))
 
-export function getRectsPaths (tv: Traced): [Rect[], List<Point>[]] {
+export function getRectsPaths (tv: Traced): [Object[], List<Point>[]] {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Pair") {
          const rects_axes: List<Traced> = tv.v.args
          if (Cons.is(rects_axes) && Cons.is(rects_axes.tail)) {
-            return [getRects(rects_axes.head), getPaths(rects_axes.tail.head)]
+            return [getElems(rects_axes.head), getPaths(rects_axes.tail.head)]
          }
       }
    }
@@ -58,21 +57,6 @@ function getRect (tv: Traced): Rect {
    return assert(false)
 }
 
-export function getPaths (tv: Traced): List<Point>[] {
-   if (tv.v instanceof Value.Constr) {
-      if (tv.v.ctr.str === "Cons") {
-         const points_tvs: List<Traced> = tv.v.args
-         if (Cons.is(points_tvs) && Cons.is(points_tvs.tail)) {
-            return [getPath(points_tvs.head)].concat(getPaths(points_tvs.tail.head))
-         } 
-      } else
-      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
-         return []
-      }
-   }
-   return assert(false)
-}
-
 export function getPath (tv: Traced): List<Point> {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Cons") {
@@ -95,6 +79,56 @@ export function getPath (tv: Traced): List<Point> {
       } else
       if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
          return Nil.make()
+      }
+   }
+   return assert(false)
+}
+
+// List at the outer level assumed to be a collection of graphics elements. List one level down
+// assumed to be a path (list of points).
+function getElems (tv: Traced): Object[] {
+   if (tv.v instanceof Value.Constr) {
+      if (tv.v.ctr.str === "Cons") {
+         const rect_tvs: List<Traced> = tv.v.args
+         if (Cons.is(rect_tvs) && Cons.is(rect_tvs.tail)) {
+            return [getElem(rect_tvs.head)].concat(getElems(rect_tvs.tail.head))
+         } 
+      } else
+      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
+         return []
+      }
+   }
+   return assert(false)
+}
+
+// Returns Object because we don't have a way of asserting List<A> is an Elem if A is an Elem.
+// TODO: use data type definitions to map constructor to appropriate function.
+function getElem (tv: Traced): Object {
+   __nonNull(tv.v)
+   if (tv.v instanceof Value.Constr) {
+      if (tv.v.ctr.str === "Cons" || tv.v.ctr.str === "Nil") {
+         return getPath(tv)
+      } else 
+      if (tv.v.ctr.str === "Rect") {
+         return getRect(tv)
+      } else {
+         return absurd()
+      }
+   } else {
+      return absurd()
+   }
+}
+
+export function getPaths (tv: Traced): List<Point>[] {
+   if (tv.v instanceof Value.Constr) {
+      if (tv.v.ctr.str === "Cons") {
+         const points_tvs: List<Traced> = tv.v.args
+         if (Cons.is(points_tvs) && Cons.is(points_tvs.tail)) {
+            return [getPath(points_tvs.head)].concat(getPaths(points_tvs.tail.head))
+         } 
+      } else
+      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
+         return []
       }
    }
    return assert(false)
