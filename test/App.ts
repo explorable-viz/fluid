@@ -11,28 +11,13 @@ initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
 const elems: Object[] = (([rects, paths]) => rects.concat(paths))(getRectsPaths(__nonNull(runTest(__nonNull(file.text)))))
 
-export function getRectsPaths (tv: Traced): [Object[], Object[]] {
+function getRectsPaths (tv: Traced): [Object[], Object[]] {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Pair") {
          const rects_axes: List<Traced> = tv.v.args
          if (Cons.is(rects_axes) && Cons.is(rects_axes.tail)) {
             return [getElems(rects_axes.head), getElems(rects_axes.tail.head)]
          }
-      }
-   }
-   return assert(false)
-}
-
-export function getRects (tv: Traced): Rect[] {
-   if (tv.v instanceof Value.Constr) {
-      if (tv.v.ctr.str === "Cons") {
-         const rect_tvs: List<Traced> = tv.v.args
-         if (Cons.is(rect_tvs) && Cons.is(rect_tvs.tail)) {
-            return [getRect(rect_tvs.head)].concat(getRects(rect_tvs.tail.head))
-         } 
-      } else
-      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
-         return []
       }
    }
    return assert(false)
@@ -57,7 +42,7 @@ function getRect (tv: Traced): Rect {
    return assert(false)
 }
 
-export function getPath (tv: Traced): List<Point> {
+function getPath (tv: Traced): List<Point> {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Cons") {
          const point_tvs: List<Traced> = tv.v.args
@@ -117,21 +102,6 @@ function getElem (tv: Traced): Object {
    } else {
       return absurd()
    }
-}
-
-export function getPaths (tv: Traced): List<Point>[] {
-   if (tv.v instanceof Value.Constr) {
-      if (tv.v.ctr.str === "Cons") {
-         const points_tvs: List<Traced> = tv.v.args
-         if (Cons.is(points_tvs) && Cons.is(points_tvs.tail)) {
-            return [getPath(points_tvs.head)].concat(getPaths(points_tvs.tail.head))
-         } 
-      } else
-      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
-         return []
-      }
-   }
-   return assert(false)
 }
 
 const scene = new THREE.Scene()
