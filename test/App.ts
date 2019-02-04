@@ -9,14 +9,14 @@ import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const [rects, paths]: [Object[], List<Point>[]] = getRectsPaths(__nonNull(runTest(__nonNull(file.text))))
+const [rects, paths]: [Object[], Object[]] = getRectsPaths(__nonNull(runTest(__nonNull(file.text))))
 
-export function getRectsPaths (tv: Traced): [Object[], List<Point>[]] {
+export function getRectsPaths (tv: Traced): [Object[], Object[]] {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Pair") {
          const rects_axes: List<Traced> = tv.v.args
          if (Cons.is(rects_axes) && Cons.is(rects_axes.tail)) {
-            return [getElems(rects_axes.head), getPaths(rects_axes.tail.head)]
+            return [getElems(rects_axes.head), getElems(rects_axes.tail.head)]
          }
       }
    }
