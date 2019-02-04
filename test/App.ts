@@ -10,6 +10,7 @@ import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
 
+// TODO: replace by a generic 'reflect' method?
 function getRect (tv: Traced): Rect {
    __nonNull(tv.v)
    if (tv.v instanceof Value.Constr && tv.v.ctr.str === "Rect") {
@@ -18,7 +19,7 @@ function getRect (tv: Traced): Rect {
           Cons.is(tvs.tail) && tvs.tail.head.v instanceof Value.ConstInt &&
           Cons.is(tvs.tail.tail) && tvs.tail.tail.head.v instanceof Value.ConstInt && 
           Cons.is(tvs.tail.tail.tail) && tvs.tail.tail.tail.head.v instanceof Value.ConstInt) {
-         return new Rect(
+         return Rect.make(
             tvs.head.v.val,
             tvs.tail.head.v.val,
             tvs.tail.tail.head.v.val,

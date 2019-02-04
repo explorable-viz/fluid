@@ -17,6 +17,10 @@ export class Rect {
       this.width = width
       this.height = height
    }
+
+   static make (x: number, y: number, width: number, height: number): Rect {
+      return make(Rect, x, y, width, height)
+   }
 }
 
 export class Point extends InternedObject { // for now
@@ -39,7 +43,7 @@ export function object3D (elem: Object): THREE.Object3D {
    if (elem instanceof Rect) {
       return rect_object3D(elem)
    } else 
-   if (elem instanceof List) { // ouch
+   if (elem instanceof List) { // ouch, silent any
       return path_object3D(elem)
    } else {
       return absurd()
