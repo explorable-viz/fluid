@@ -1,7 +1,7 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import * as Meshline from "three.meshline"
-import { __nonNull, assert, make } from "../src/util/Core"
+import { __nonNull, assert, make, absurd } from "../src/util/Core"
 import { InternedObject } from "../src/Runtime"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { Traced, Value } from "../src/Traced"
@@ -19,20 +19,6 @@ class Rect {
       this.width = width
       this.height = height
    }
-
-   object3D (): THREE.Object3D {
-      const geometry: THREE.Geometry = new THREE.Geometry
-      geometry.vertices.push(new THREE.Vector3(this.x, this.y, 0))
-      geometry.vertices.push(new THREE.Vector3(this.x + this.width, this.y, 0))
-      geometry.vertices.push(new THREE.Vector3(this.x + this.width, this.y + this.height, 0))
-      geometry.vertices.push(new THREE.Vector3(this.x, this.y + this.height, 0))
-      geometry.faces.push(new THREE.Face3(0,1,2))
-      geometry.faces.push(new THREE.Face3(2,3,0))
-      return new THREE.Mesh(
-         geometry, 
-         new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
-      )
-   }
 }
 
 class Point extends InternedObject { // for now
@@ -48,6 +34,32 @@ class Point extends InternedObject { // for now
    static make (x: number, y: number): Point {
       return make(Point, x, y)
    }
+}
+
+// We don't have anything like typeclasses.
+function object3D (elem: Object): THREE.Object3D {
+   if (elem instanceof Rect) {
+      return rect_object3D(elem)
+   } else 
+   if (elem instanceof List) { // ouch
+      return path_object3D(elem)
+   } else {
+      return absurd()
+   }
+}
+
+function rect_object3D (rect: Rect): THREE.Object3D {
+   const geometry: THREE.Geometry = new THREE.Geometry
+   geometry.vertices.push(new THREE.Vector3(rect.x, rect.y, 0))
+   geometry.vertices.push(new THREE.Vector3(rect.x + rect.width, rect.y, 0))
+   geometry.vertices.push(new THREE.Vector3(rect.x + rect.width, rect.y + rect.height, 0))
+   geometry.vertices.push(new THREE.Vector3(rect.x, rect.y + rect.height, 0))
+   geometry.faces.push(new THREE.Face3(0,1,2))
+   geometry.faces.push(new THREE.Face3(2,3,0))
+   return new THREE.Mesh(
+      geometry, 
+      new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
+   )
 }
 
 function path_object3D (points: List<Point>): THREE.Object3D {
@@ -182,21 +194,6 @@ controls.dampingFactor = 0.25;
 
 document.body.appendChild(renderer.domElement)
 
-export class Path extends THREE.Geometry {
-   constructor (path: THREE.Vector2[]) {
-      super()   
-      for (const point of path) {
-         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
-      }
-   }
-
-    object3D (): THREE.Object3D {
-      return new THREE.Line(this, new THREE.LineBasicMaterial({ 
-         color: 0x000000 
-      }))
-   }
-}
-
 export class ThickPath extends THREE.Geometry {
    constructor (path: THREE.Vector2[]) {
       super()   
@@ -223,11 +220,11 @@ export function close (path: THREE.Vector2[]) {
 
 function populateScene (): void {
    for (let rect of rects) {
-      scene.add(rect.object3D())
+      scene.add(object3D(rect))
 //      scene.add(new Path(close(rect)).object3D())
    }
    for (let path of paths) {
-      scene.add(path_object3D(path))
+      scene.add(object3D(path))
    }
 }
 
