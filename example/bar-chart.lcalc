@@ -76,9 +76,8 @@ let axis = fun margin n width →
    let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
    map (map (translate (0, 0 - margin))) Cons(line, take n ticks)
 in
-   (
-      rects',
-      concat 
+   concat
+      rects'
+      (concat 
          (axis 1 5 7)
-         (map (map transpose) (axis 1 (length rects') width))
-   )
+         (map (map transpose) (axis 1 (length rects') width)))
