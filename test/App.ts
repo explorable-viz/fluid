@@ -9,7 +9,7 @@ import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const [rects, paths]: [Object[], Object[]] = getRectsPaths(__nonNull(runTest(__nonNull(file.text))))
+const elems: Object[] = (([rects, paths]) => rects.concat(paths))(getRectsPaths(__nonNull(runTest(__nonNull(file.text)))))
 
 export function getRectsPaths (tv: Traced): [Object[], Object[]] {
    if (tv.v instanceof Value.Constr) {
@@ -188,13 +188,10 @@ export function close (path: THREE.Vector2[]) {
 }
 
 function populateScene (): void {
-   for (let rect of rects) {
-      scene.add(object3D(rect))
-//      scene.add(new Path(close(rect)).object3D())
+   for (let elem of elems) {
+      scene.add(object3D(elem))
    }
-   for (let path of paths) {
-      scene.add(object3D(path))
-   }
+// scene.add(new Path(close(rect)).object3D())
 }
 
 function render () {
