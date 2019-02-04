@@ -5,13 +5,14 @@ import { InternedObject } from "./Runtime"
 
 // Basic graphical datatypes.
 
-export class Rect {
+export class Rect extends InternedObject {
    x: number
    y: number
    width: number
    height: number
 
    constructor (x: number, y: number, width: number, height: number) {
+      super()
       this.x = x
       this.y = y
       this.width = width
@@ -43,7 +44,7 @@ export function object3D (elem: Object): THREE.Object3D {
    if (elem instanceof Rect) {
       return rect_object3D(elem)
    } else 
-   if (elem instanceof List) { // ouch, silent any
+   if (elem instanceof List) { // silent "any"
       return path_object3D(elem)
    } else {
       return absurd()
