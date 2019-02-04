@@ -1,7 +1,8 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import * as Meshline from "three.meshline"
-import { __nonNull, assert } from "../src/util/Core"
+import { __nonNull, assert, make } from "../src/util/Core"
+import { InternedObject } from "../src/Runtime"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { Traced, Value } from "../src/Traced"
 import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
@@ -34,28 +35,54 @@ class Rect {
    }
 }
 
+class Point extends InternedObject { // for now
+   x: number
+   y: number
+
+   constructor (x: number, y: number) {
+      super()
+      this.x = x
+      this.y = y
+   }
+
+   static make (x: number, y: number): Point {
+      return make(Point, x, y)
+   }
+}
+
+function path_object3D (points: List<Point>): THREE.Object3D {
+   const geometry: THREE.Geometry = new THREE.Geometry
+   while (Cons.is(points)) {
+      geometry.vertices.push(new THREE.Vector3(points.head.x, points.head.y, 0))
+      points = points.tail
+   }
+   return new THREE.Line(geometry, new THREE.LineBasicMaterial({ 
+      color: 0x000000 
+   }))
+}
+
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const [rects, axes]: [Rect[], THREE.Vector2[][]] = getRectsAxes(__nonNull(runTest(__nonNull(file.text))))
+const [rects, paths]: [Rect[], List<Point>[]] = getRectsPaths(__nonNull(runTest(__nonNull(file.text))))
 
-export function getRectsAxes (tv: Traced): [Rect[], THREE.Vector2[][]] {
+export function getRectsPaths (tv: Traced): [Rect[], List<Point>[]] {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Pair") {
          const rects_axes: List<Traced> = tv.v.args
          if (Cons.is(rects_axes) && Cons.is(rects_axes.tail)) {
-            return [getRects_new(rects_axes.head), getRects(rects_axes.tail.head)]
+            return [getRects(rects_axes.head), getPaths(rects_axes.tail.head)]
          }
       }
    }
    return assert(false)
 }
 
-export function getRects_new (tv: Traced): Rect[] {
+export function getRects (tv: Traced): Rect[] {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Cons") {
          const rect_tvs: List<Traced> = tv.v.args
          if (Cons.is(rect_tvs) && Cons.is(rect_tvs.tail)) {
-            return [getRect(rect_tvs.head)].concat(getRects_new(rect_tvs.tail.head))
+            return [getRect(rect_tvs.head)].concat(getRects(rect_tvs.tail.head))
          } 
       } else
       if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
@@ -84,13 +111,12 @@ function getRect (tv: Traced): Rect {
    return assert(false)
 }
 
-// Hack to suck out the leaf data. Might have to rethink what it means to match primitive data.
-export function getRects (tv: Traced): THREE.Vector2[][] {
+export function getPaths (tv: Traced): List<Point>[] {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Cons") {
          const points_tvs: List<Traced> = tv.v.args
          if (Cons.is(points_tvs) && Cons.is(points_tvs.tail)) {
-            return [getPoints(points_tvs.head)].concat(getRects(points_tvs.tail.head))
+            return [getPath(points_tvs.head)].concat(getPaths(points_tvs.tail.head))
          } 
       } else
       if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
@@ -100,7 +126,7 @@ export function getRects (tv: Traced): THREE.Vector2[][] {
    return assert(false)
 }
 
-export function getPoints (tv: Traced): THREE.Vector2[] {
+export function getPath (tv: Traced): List<Point> {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Cons") {
          const point_tvs: List<Traced> = tv.v.args
@@ -111,15 +137,17 @@ export function getPoints (tv: Traced): THREE.Vector2[] {
                if (Cons.is(x_y)) {
                   if (x_y.head.v instanceof Value.ConstInt && Cons.is(x_y.tail) &&
                      x_y.tail.head.v instanceof Value.ConstInt && Cons.is(point_tvs.tail)) {
-                        return [new THREE.Vector2(x_y.head.v.val, x_y.tail.head.v.val)]
-                               .concat(getPoints(point_tvs.tail.head))
+                        return Cons.make(
+                           Point.make(x_y.head.v.val, x_y.tail.head.v.val),
+                           getPath(point_tvs.tail.head)
+                        )
                   }
                }
             }
          } 
       } else
       if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
-         return []
+         return Nil.make()
       }
    }
    return assert(false)
@@ -198,9 +226,8 @@ function populateScene (): void {
       scene.add(rect.object3D())
 //      scene.add(new Path(close(rect)).object3D())
    }
-   for (let line of axes) {
-      assert(line.length === 2)
-      scene.add(new Path(line).object3D())
+   for (let path of paths) {
+      scene.add(path_object3D(path))
    }
 }
 
