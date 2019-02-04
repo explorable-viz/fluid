@@ -9,7 +9,6 @@ import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
-const elems: Object[] = getElems(__nonNull(runTest(__nonNull(file.text))))
 
 function getRect (tv: Traced): Rect {
    __nonNull(tv.v)
@@ -146,7 +145,7 @@ export function close (path: THREE.Vector2[]) {
 }
 
 function populateScene (): void {
-   for (let elem of elems) {
+   for (let elem of getElems(__nonNull(runTest(__nonNull(file.text))))) {
       scene.add(object3D(elem))
    }
 // scene.add(new Path(close(rect)).object3D())
