@@ -1,92 +1,42 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import * as Meshline from "three.meshline"
-import { __nonNull, assert, absurd } from "../src/util/Core"
+import { Class, Persistent, PersistentObject, __check, __nonNull, as, assert, absurd, make } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
+import { arity } from "../src/DataType"
 import { Traced, Value } from "../src/Traced"
-import { Point, Rect, object3D } from "../src/Graphics"
+import { Point, Rect, objects } from "../src/Graphics"
 import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
-const file: TestFile = loadTestFile("example", "bar-chart")
 
-// TODO: replace by a generic 'reflect' method?
-function getRect (tv: Traced): Rect {
-   __nonNull(tv.v)
-   if (tv.v instanceof Value.Constr && tv.v.ctr.str === "Rect") {
-      const tvs: List<Traced> = tv.v.args
-      if (Cons.is(tvs) && tvs.head.v instanceof Value.ConstInt && 
-          Cons.is(tvs.tail) && tvs.tail.head.v instanceof Value.ConstInt &&
-          Cons.is(tvs.tail.tail) && tvs.tail.tail.head.v instanceof Value.ConstInt && 
-          Cons.is(tvs.tail.tail.tail) && tvs.tail.tail.tail.head.v instanceof Value.ConstInt) {
-         return Rect.make(
-            tvs.head.v.val,
-            tvs.tail.head.v.val,
-            tvs.tail.tail.head.v.val,
-            tvs.tail.tail.tail.head.v.val
-         )
-      } 
-   }
-   return assert(false)
-}
+// intermediate value required to stop TS getting confused:
+const classFor_: [string, Class<PersistentObject>][] =
+   [["Cons", Cons],
+    ["Nil", Nil],
+    ["Point", Point],
+    ["Rect", Rect]]
+const classFor: Map<string, Class<PersistentObject>> = new Map(classFor_)
 
-function getPath (tv: Traced): List<Point> {
-   if (tv.v instanceof Value.Constr) {
-      if (tv.v.ctr.str === "Cons") {
-         const point_tvs: List<Traced> = tv.v.args
-         if (Cons.is(point_tvs)) {
-            const point: Traced = point_tvs.head
-            if (point.v instanceof Value.Constr && point.v.ctr.str === "Point") {
-               const x_y: List<Traced> = point.v.args
-               if (Cons.is(x_y)) {
-                  if (x_y.head.v instanceof Value.ConstInt && Cons.is(x_y.tail) &&
-                     x_y.tail.head.v instanceof Value.ConstInt && Cons.is(point_tvs.tail)) {
-                        return Cons.make(
-                           Point.make(x_y.head.v.val, x_y.tail.head.v.val),
-                           getPath(point_tvs.tail.head)
-                        )
-                  }
-               }
-            }
-         } 
-      } else
-      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
-         return Nil.make()
+function reflect (v: Value | null): Persistent { // weirdy number and string are subtypes of Object
+   if (v === null) {
+      return null
+   } else
+   if (v instanceof Value.ConstInt) {
+      return v.val
+   } else
+   if (v instanceof Value.ConstStr) {
+      return v.val
+   } else
+   if (v instanceof Value.Constr) {
+      const ctr: string = v.ctr.str
+      assert(classFor.has(ctr))
+      const args: Persistent[] = []
+      for (let tvs: List<Traced> = v.args; Cons.is(tvs);) {
+         args.push(reflect(tvs.head.v))
+         tvs = tvs.tail
       }
-   }
-   return assert(false)
-}
-
-// List at the outer level assumed to be a collection of graphics elements. List one level down
-// assumed to be a path (list of points).
-function getElems (tv: Traced): Object[] {
-   if (tv.v instanceof Value.Constr) {
-      if (tv.v.ctr.str === "Cons") {
-         const rect_tvs: List<Traced> = tv.v.args
-         if (Cons.is(rect_tvs) && Cons.is(rect_tvs.tail)) {
-            return [getElem(rect_tvs.head)].concat(getElems(rect_tvs.tail.head))
-         } 
-      } else
-      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
-         return []
-      }
-   }
-   return assert(false)
-}
-
-// Returns Object because we don't have a way of asserting List<A> is an Elem if A is an Elem.
-// TODO: use data type definitions to map constructor to appropriate function.
-function getElem (tv: Traced): Object {
-   __nonNull(tv.v)
-   if (tv.v instanceof Value.Constr) {
-      if (tv.v.ctr.str === "Cons" || tv.v.ctr.str === "Nil") {
-         return getPath(tv)
-      } else 
-      if (tv.v.ctr.str === "Rect") {
-         return getRect(tv)
-      } else {
-         return absurd()
-      }
+      // interning probably not what we want here, but for now will do
+      return make(classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
    } else {
       return absurd()
    }
@@ -121,35 +71,19 @@ controls.dampingFactor = 0.25;
 
 document.body.appendChild(renderer.domElement)
 
-export class ThickPath extends THREE.Geometry {
-   constructor (path: THREE.Vector2[]) {
-      super()   
-      for (const point of path) {
-         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
-      }
-   }
-
-   object3D (): THREE.Object3D {
-      const line = new Meshline.MeshLine()
-      line.setGeometry(this)
-      const material = new Meshline.MeshLineMaterial({
-         color: new THREE.Color(0x000000),
-         sizeAttenuation: 0,
-         lineWidth: 0.020
-      })
-      return new THREE.Mesh( line.geometry, material )
-   }
-}
-
 export function close (path: THREE.Vector2[]) {
    return path.concat(path[0])
 }
 
 function populateScene (): void {
-   for (let elem of getElems(__nonNull(runTest(__nonNull(file.text))))) {
-      scene.add(object3D(elem))
+   const file: TestFile = loadTestFile("example", "bar-chart"),
+         elems: List<Persistent> = as(reflect(__nonNull(runTest(__nonNull(file.text))).v), List)
+   for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
+      for (let obj of objects(elemsʹ.head)) {
+         scene.add(obj)
+      }
+      elemsʹ = elemsʹ.tail
    }
-// scene.add(new Path(close(rect)).object3D())
 }
 
 function render () {

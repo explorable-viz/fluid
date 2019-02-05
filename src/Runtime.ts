@@ -1,19 +1,8 @@
 import { Class, assert, className, funName, make, __nonNull } from "./util/Core"
-import { Eq } from "./util/Eq"
+import { PersistentObject } from "./util/Core"
 
 export interface Ctr<T> {
    new (): T
-}
-
-// An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
-// interned objects are persistent objects.
-export abstract class PersistentObject implements Eq<PersistentObject> {
-   __PersistentObject (): void {
-      // discriminator
-   }
-
-   // The implementations of these are all identical but this forces a concrete partitioning.
-   abstract eq (that: PersistentObject): boolean
 }
 
 export abstract class InternedObject extends PersistentObject {
@@ -64,8 +53,6 @@ export function __merge (tgt: Object, src: Object): Object {
       return make(src.constructor as Class<InternedObject>, ...args)
    }
 }   
-
-export type Persistent = null | PersistentObject | string | number
 
 // A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
 export class ExternalObject extends InternedObject {

@@ -1,5 +1,5 @@
-import { make } from "./util/Core"
-import { InternedObject, Persistent } from "./Runtime"
+import { make, Persistent } from "./util/Core"
+import { InternedObject } from "./Runtime"
 
 // Basic datatypes for interned structures.
 

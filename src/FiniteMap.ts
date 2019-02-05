@@ -1,7 +1,6 @@
-import { absurd } from "./util/Core"
+import { Persistent, absurd } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { Empty, NonEmpty, Pair, Tree } from "./BaseTypes"
-import { Persistent } from "./Runtime"
 
 // Interned finite maps. Sensitive to key changes, which cause the identity of subtrees to change.
 export type FiniteMap<K extends Ord<K> & Persistent, V extends Persistent> = Tree<Pair<K, V>>
