@@ -42,44 +42,56 @@ function __blankCopy<T extends Object> (src: T): T {
    return tgt
 }
 
+enum MergeResult {
+   Unchanged,     // no increase in knowledge
+   Increasing,    // strictly increasing; permitted at a world
+   NonIncreasing  // neither of the above; only permitted at a new world
+}
+
 // Argument tgtState is a "value object" whose identity doesn't matter but whose state represents what we currently 
 // know about src. Precondition: the two are upper-bounded; postcondition is that they are equal.
-function __mergeAssign (tgtState: Object, src: VersionedObject): boolean {
+function __mergeAssign (tgtState: Object, src: VersionedObject): MergeResult {
    assert(__nonNull(tgtState).constructor === __nonNull(src.constructor))
    const tgtState_: any = tgtState as any,
          src_: any = src as any
-   let modified: boolean = false
+   let result: MergeResult = MergeResult.Unchanged
    Object.keys(tgtState).forEach((k: string): void => {
-      const v: any = __merge(tgtState_[k], src_[k])
-      if (tgtState_[k] !== v || src_[k] !== v) {
-         modified = true
-         tgtState_[k] = src_[k] = v
+      const [v,]: [Object, MergeResult] = __merge(tgtState_[k], src_[k])
+      if (tgtState_[k] === null && v !== null) {
+         result = Math.max(result, MergeResult.Increasing)
+      } else 
+      if (tgtState_[k] !== null && v !== tgtState_[k]) {
+         result = Math.max(result, MergeResult.NonIncreasing)
       }
+      tgtState_[k] = src_[k] = v
    })
-   return modified
+   return result
 }
 
 // Least upper bound of two upper-bounded objects.
-function __merge (tgt: Object, src: Object): Object {
+function __merge (tgt: Object, src: Object): [Object, MergeResult] {
    if (src === null) {
-      return tgt
+      return [tgt, MergeResult.Unchanged]
    } else 
    if (tgt === null) {
-      return src
+      return [src, MergeResult.Increasing]
    } else
    if (src === tgt) {
-      return src
+      return [src, MergeResult.Unchanged]
+   } else
+   // upper-bounded versioned objects have the same address
+   if (tgt instanceof VersionedObject || tgt.constructor !== src.constructor) {
+      return [src, MergeResult.NonIncreasing]
    } else {
-      assert(tgt.constructor === src.constructor)
-      assert(!(tgt instanceof VersionedObject), "Upper-bounded versioned objects have the same address")
       assert(tgt instanceof InternedObject) // ignore other case for now
-      const args: any[] = Object.keys(tgt).map((k: string): any => {
-         return __merge((tgt as any)[k], (src as any)[k])
+      const args: Object[] = Object.keys(tgt).map((k: string): Object => {
+         let [arg,] = __merge((tgt as any)[k], (src as any)[k])
+         return arg
       })
       // Two dubious assumptions, but hard to see another technique:
       // (1) entries are supplied in declaration-order (not guaranteed by language spec)
       // (2) constructor arguments also match declaration-order (easy constraint to violate)
-      return make(src.constructor as Class<InternedObject>, ...args)
+      return [make(src.constructor as Class<InternedObject>, ...args), MergeResult.NonIncreasing]
    }
 }   
 
@@ -107,14 +119,22 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
    eq (that: PersistentObject): boolean {
       return this === that
    }
-      // At a given version, enforce "increasing" (LVar) semantics.
+      // At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
    __version (): Object {
-      let state: Object | undefined = this.__history.get(__w)
-      if (state === undefined) {
-         state = __blankCopy(this)
+      if (this.__history.size === 0) {
+         const state: Object = __blankCopy(this)
+         assert(__mergeAssign(state, this) <= MergeResult.Increasing)
          this.__history.set(__w, state)
+      } else {
+         const [w, state]: [World, Object] = mostRecent(this.__history, __w),
+               result: MergeResult = __mergeAssign(state, this)
+         if (w === __w) {
+            assert(result !== MergeResult.NonIncreasing, "Address collision.")   
+         } else
+         if (result !== MergeResult.Unchanged) {
+            this.__history.set(__w, state)
+         }
       }
-      __mergeAssign(state, this)
       return this
    }
 }
