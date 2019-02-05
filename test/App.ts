@@ -1,7 +1,7 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import * as Meshline from "three.meshline"
-import { Class, Persistent, PersistentObject, __check, __nonNull, assert, absurd, make } from "../src/util/Core"
+import { Class, Persistent, PersistentObject, __check, __nonNull, as, assert, absurd, make } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
 import { Traced, Value } from "../src/Traced"
@@ -9,7 +9,6 @@ import { Point, Rect, objects } from "../src/Graphics"
 import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
-const file: TestFile = loadTestFile("example", "bar-chart")
 
 // intermediate value required to stop TS getting confused:
 const classFor_: [string, Class<PersistentObject>][] =
@@ -20,6 +19,9 @@ const classFor_: [string, Class<PersistentObject>][] =
 const classFor: Map<string, Class<PersistentObject>> = new Map(classFor_)
 
 function reflect (v: Value | null): Persistent { // weirdy number and string are subtypes of Object
+   if (v === null) {
+      return null
+   } else
    if (v instanceof Value.ConstInt) {
       return v.val
    } else
@@ -39,23 +41,6 @@ function reflect (v: Value | null): Persistent { // weirdy number and string are
    } else {
       return absurd()
    }
-}
-
-// List at the outer level assumed to be a collection of graphics elements. List one level down
-// assumed to be a path (list of points).
-function getElems (tv: Traced): List<Persistent> {
-   if (tv.v instanceof Value.Constr) {
-      if (tv.v.ctr.str === "Cons") {
-         const rect_tvs: List<Traced> = tv.v.args
-         if (Cons.is(rect_tvs) && Cons.is(rect_tvs.tail)) {
-            return Cons.make(reflect(__nonNull(rect_tvs.head.v)), getElems(rect_tvs.tail.head))
-         } 
-      } else
-      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
-         return Nil.make()
-      }
-   }
-   return assert(false)
 }
 
 const scene = new THREE.Scene()
@@ -113,11 +98,13 @@ export function close (path: THREE.Vector2[]) {
 }
 
 function populateScene (): void {
-   for (let elems: List<Persistent> = getElems(__nonNull(runTest(__nonNull(file.text)))); Cons.is(elems);) {
-      for (let obj of objects(elems.head)) {
+   const file: TestFile = loadTestFile("example", "bar-chart"),
+         elems: List<Persistent> = as(reflect(__nonNull(runTest(__nonNull(file.text))).v), List)
+   for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
+      for (let obj of objects(elemsʹ.head)) {
          scene.add(obj)
       }
-      elems = elems.tail
+      elemsʹ = elemsʹ.tail
    }
 }
 
