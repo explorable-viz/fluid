@@ -475,30 +475,28 @@ export namespace Traced {
       σ: Trie.Var<Traced>
       t: Trace | null
 
-      __Trace_Let (): void {
-         // discriminator
+      constructor_ (tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): void {
+         this.tu = tu
+         this.σ = σ
+         this.t = t
       }
 
       static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
-         const this_: Let = create(k, Let)
-         this_.tu = tu
-         this_.σ = σ
-         this_.t = t
-         this_.__version()
-         return this_
+         return at(k, Let, tu, σ, t)
       }
    }
 
    export class RecDef extends VersionedObject<Runtime<Expr.RecDef>> {
       x: Lex.Var
       tv: Traced
+
+      constructor_ (x: Lex.Var, tv: Traced): void {
+         this.x = x
+         this.tv = tv
+      }
    
       static at (i: Runtime<Expr.RecDef>, x: Lex.Var, tv: Traced): RecDef {
-         const this_: RecDef = create(i, RecDef)
-         this_.x = x
-         this_.tv = tv
-         this_.__version()
-         return this_
+         return at(i, RecDef, x, tv)
       }
    }
 
@@ -507,12 +505,13 @@ export namespace Traced {
       δ: List<RecDef>
       tv: Traced
    
+      constructor_ (δ: List<RecDef>, tv: Traced): void {
+         this.δ = δ
+         this.tv = tv
+      }
+
       static at (k: Runtime<Expr>, δ: List<RecDef>, tv: Traced): LetRec {
-         const this_: LetRec = create(k, LetRec)
-         this_.δ = δ
-         this_.tv = tv
-         this_.__version()
-         return this_
+         return at(k, LetRec, δ, tv)
       }
    }
    
@@ -521,17 +520,14 @@ export namespace Traced {
       σ: Trie<Traced>
       t: Trace | null
 
-      __Trace_MatchAs (): void {
-         // discriminator
+      constructor_ (tu: Traced, σ: Trie<Traced>, t: Trace | null): void {
+         this.tu = tu
+         this.σ = σ
+         this.t = t
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>,  t: Trace | null): MatchAs {
-         const this_: MatchAs = create(k, MatchAs)
-         this_.tu = tu
-         this_.σ = σ
-         this_.t = t
-         this_.__version()
-         return this_
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>, t: Trace | null): MatchAs {
+         return at(k, MatchAs, tu, σ, t)
       }
    }
 
@@ -540,13 +536,14 @@ export namespace Traced {
       opName: Lex.OpName
       tv2: Traced
 
+      constructor_ (tv1: Traced, opName: Lex.OpName, tv2: Traced): void {
+         this.tv1 = tv1
+         this.opName = opName
+         this.tv2 = tv2
+      }
+
       static at (k: Runtime<Expr>, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
-         const this_: PrimApp = create(k, PrimApp)
-         this_.tv1 = tv1
-         this_.opName = opName
-         this_.tv2 = tv2
-         this_.__version()
-         return this_
+         return at(k, PrimApp, tv1, opName, tv2)
       }
    }
 
@@ -554,12 +551,13 @@ export namespace Traced {
       x: Lex.Var
       t: Trace | null
 
+      constructor_ (x: Lex.Var, t: Trace | null): void {
+         this.x = x
+         this.t = t
+      }
+
       static at (k: Runtime<Expr>, x: Lex.Var, t: Trace | null): Var {
-         const this_: Var = create(k, Var)
-         this_.x = x
-         this_.t = t
-         this_.__version()
-         return this_
+         return at(k, Var, x, t)
       }
    }
 }
