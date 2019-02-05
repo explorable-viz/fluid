@@ -1,6 +1,5 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import * as Meshline from "three.meshline"
 import { Class, Persistent, PersistentObject, __check, __nonNull, as, assert, absurd, make } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
@@ -71,27 +70,6 @@ controls.enableDamping = true; // Set to false to disable damping (ie inertia)
 controls.dampingFactor = 0.25;
 
 document.body.appendChild(renderer.domElement)
-
-// Currently unused.
-export class ThickPath extends THREE.Geometry {
-   constructor (path: THREE.Vector2[]) {
-      super()   
-      for (const point of path) {
-         this.vertices.push(new THREE.Vector3(point.x, point.y, 0))
-      }
-   }
-
-   object3D (): THREE.Object3D {
-      const line = new Meshline.MeshLine()
-      line.setGeometry(this)
-      const material = new Meshline.MeshLineMaterial({
-         color: new THREE.Color(0x000000),
-         sizeAttenuation: 0,
-         lineWidth: 0.020
-      })
-      return new THREE.Mesh( line.geometry, material )
-   }
-}
 
 export function close (path: THREE.Vector2[]) {
    return path.concat(path[0])
