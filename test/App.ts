@@ -1,8 +1,9 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import * as Meshline from "three.meshline"
-import { __nonNull, assert, absurd } from "../src/util/Core"
+import { Class, __check, __nonNull, assert, absurd, make } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
+import { arity } from "../src/DataType"
 import { Traced, Value } from "../src/Traced"
 import { Point, Rect, objects } from "../src/Graphics"
 import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
@@ -10,8 +11,32 @@ import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
 
+// intermediate value required to stop TS getting confused:
+const wurble: [string, Class<Object>][] =
+   [["Cons", Cons],
+   ["Nil", Nil],
+   ["Rect", Rect]]
+const burble: Map<string, Class<Object>> = new Map(wurble)
+
+export function getObj (tv: Traced): Object {
+   __nonNull(tv.v)
+   if (tv.v instanceof Value.Constr) {
+      const ctr: string = tv.v.ctr.str
+      assert(burble.has(ctr))
+      const args: Value[] = []
+      for (let tvs = tv.v.args; Cons.is(tvs);) {
+         args.push(__nonNull(tvs.head.v))
+         tvs = tvs.tail
+      }
+      return make(burble.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
+   } else {
+      return absurd()
+   }
+}
+
 // TODO: replace by a generic 'reflect' method?
 function getRect (tv: Traced): Rect {
+//   return getObj(tv) as Rect
    __nonNull(tv.v)
    if (tv.v instanceof Value.Constr && tv.v.ctr.str === "Rect") {
       const tvs: List<Traced> = tv.v.args
