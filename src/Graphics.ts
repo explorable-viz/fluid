@@ -1,6 +1,6 @@
 import * as THREE from "three"
 import { absurd, assert, make } from "./util/Core"
-import { Cons, List, Nil } from "../src/BaseTypes"
+import { Cons, List } from "../src/BaseTypes"
 import { InternedObject } from "./Runtime"
 
 // Basic graphical datatypes.
@@ -71,23 +71,16 @@ function path_stroke (points: List<Point>): THREE.Object3D {
 }
 
 function rect_path (rect: Rect): List<Point> {
-   return Cons.make(
+   return List.fromArray([
       Point.make(rect.x, rect.y),
-      Cons.make(
-         Point.make(rect.x + rect.width, rect.y),
-         Cons.make(
-            Point.make(rect.x + rect.width, rect.y + rect.height),
-            Cons.make(
-               Point.make(rect.x, rect.y + rect.height),
-               Nil.make()
-            )
-         )
-      )
-   )
+      Point.make(rect.x + rect.width, rect.y),
+      Point.make(rect.x + rect.width, rect.y + rect.height),
+      Point.make(rect.x, rect.y + rect.height)
+   ])
 }
 
 function rect_stroke (rect: Rect): THREE.Object3D {
-   return path_stroke(rect_path(rect))
+   return path_stroke(Cons.make(Point.make(rect.x, rect.y + rect.height), rect_path(rect)))
 }
 
 function rect_fill (rect: Rect): THREE.Object3D {
