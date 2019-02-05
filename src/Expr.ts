@@ -85,7 +85,7 @@ export type Expr = Expr.Expr
 
 export namespace Expr {
    // Must be joinable, purely so that joining two expressions will fail.
-   export class Expr extends VersionedObject<ExternalObject> implements JoinSemilattice<Expr> {
+   export abstract class Expr extends VersionedObject<ExternalObject> implements JoinSemilattice<Expr> {
       __Expr_Expr(): void {
          // discriminator
       }

@@ -78,22 +78,23 @@ export const ν: () => ExternalObject =
 
 export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
-   __history: Object[] = undefined as any // history records only enumerable fields
+   __history: Map<World, Object> = undefined as any // history records only enumerable fields
    __id: K = undefined as any
 
-   // ES6 only allows constructor calls via "new". TODO: make abstract. 
-   constructor_ (...args: any[]): void { // allow any signature to override
-   }
+   // ES6 only allows constructor calls via "new".
+   abstract constructor_ (...args: any[]): void
 
    eq (that: PersistentObject): boolean {
       return this === that
    }
-      // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
+      // At a given version, enforce "increasing" (LVar) semantics.
    __version (): Object {
-      if (this.__history.length === 0) {
-         this.__history.push(__blankCopy(this))
+      let state: Object | undefined = this.__history.get(__w)
+      if (state === undefined) {
+         state = __blankCopy(this)
+         this.__history.set(__w, state)
       }
-      __mergeAssign(this.__history[0], this)
+      __mergeAssign(state, this)
       return this
    }
 }
@@ -120,7 +121,7 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
          enumerable: false
       })
       Object.defineProperty(o, "__history", {
-         value: [],
+         value: new Map,
          enumerable: false
       })
       instances.set(α, o)
@@ -133,3 +134,8 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
    o.__version()
    return o as T
 }
+
+class World {
+}
+
+const __w: World = new World()

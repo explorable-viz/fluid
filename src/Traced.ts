@@ -10,7 +10,7 @@ import { InternedObject, VersionedObject, at } from "./Runtime"
 export type Value = Value.Value
 
 export namespace Value {
-   export class Value extends VersionedObject {
+   export abstract class Value extends VersionedObject {
       __Value_Value (): void {
          // discriminator
       }
@@ -30,7 +30,7 @@ export namespace Value {
       }
    }
 
-   export class Prim extends Value {
+   export abstract class Prim extends Value {
       __Value_Prim (): void {
          // discriminator
       }
@@ -440,7 +440,7 @@ export namespace Traced {
       }
    }
 
-   export class Trace extends VersionedObject<Runtime<Expr>> {
+   export abstract class Trace extends VersionedObject<Runtime<Expr>> {
       __Trace_Trace (): void {
          // discriminator
       }
