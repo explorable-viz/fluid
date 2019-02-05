@@ -25,8 +25,13 @@ export function __mergeAssign (tgtState: Object, src: VersionedObject) {
    assert(__nonNull(tgtState).constructor === __nonNull(src.constructor))
    const tgtState_: any = tgtState as any,
          src_: any = src as any
+// let modified: boolean = false
    Object.keys(tgtState).forEach((k: string): void => {
-      tgtState_[k] = src_[k] = __merge(tgtState_[k], src_[k])
+      const v: any = __merge(tgtState_[k], src_[k])
+      if (tgtState_[k] !== v || src_[k] !== v) {
+//       modified = true
+         tgtState_[k] = src_[k] = v
+      }
    })
 }
 
@@ -104,7 +109,6 @@ type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
 const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
 
 // The (possibly already extant) object uniquely identified by a memo-key. Needs to be initialised afterwards.
-// Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
 export function at<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>, ...args: any[]): T {
    let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
@@ -113,7 +117,7 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
    }
    let o: VersionedObject<K> | undefined = instances.get(α) as VersionedObject<K>
    if (o === undefined) {
-      o = Object.create(ctr.prototype) as T // new ctr doesn't work any more
+      o = Object.create(ctr.prototype) as T
       // This may massively suck, performance-wise. Define these here rather than on VersionedObject
       // to avoid constructors everywhere.
       Object.defineProperty(o, "__id", {
@@ -131,8 +135,7 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
       assert(o.constructor === ctr, "Address collision (different constructor).", α, className(o), funName(ctr))
    }
    o.constructor_(...args)
-   o.__version()
-   return o as T
+   return o.__version() as T
 }
 
 class World {
