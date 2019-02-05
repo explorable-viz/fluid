@@ -14,11 +14,12 @@ const file: TestFile = loadTestFile("example", "bar-chart")
 // intermediate value required to stop TS getting confused:
 const wurble: [string, Class<Object>][] =
    [["Cons", Cons],
-   ["Nil", Nil],
-   ["Rect", Rect]]
+    ["Nil", Nil],
+    ["Point", Point],
+    ["Rect", Rect]]
 const burble: Map<string, Class<Object>> = new Map(wurble)
 
-function getObj (v: Value | null): Object { // weirdy number and string are subtypes of Object
+function reflect (v: Value | null): Object { // weirdy number and string are subtypes of Object
    if (v instanceof Value.ConstInt) {
       return v.val
    } else
@@ -30,63 +31,22 @@ function getObj (v: Value | null): Object { // weirdy number and string are subt
       assert(burble.has(ctr))
       const args: Object[] = []
       for (let tvs: List<Traced> = v.args; Cons.is(tvs);) {
-         args.push(getObj(tvs.head.v))
+         args.push(reflect(tvs.head.v))
          tvs = tvs.tail
       }
+      // interning probably not what we want here, but for now will do
       return make(burble.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
    } else {
       return absurd()
    }
 }
 
-// TODO: replace by a generic 'reflect' method?
 function getRect (tv: Traced): Rect {
-   return getObj(__nonNull(tv.v)) as Rect
-/*
-   __nonNull(tv.v)
-   if (tv.v instanceof Value.Constr && tv.v.ctr.str === "Rect") {
-      const tvs: List<Traced> = tv.v.args
-      if (Cons.is(tvs) && tvs.head.v instanceof Value.ConstInt && 
-          Cons.is(tvs.tail) && tvs.tail.head.v instanceof Value.ConstInt &&
-          Cons.is(tvs.tail.tail) && tvs.tail.tail.head.v instanceof Value.ConstInt && 
-          Cons.is(tvs.tail.tail.tail) && tvs.tail.tail.tail.head.v instanceof Value.ConstInt) {
-         return Rect.make(
-            tvs.head.v.val,
-            tvs.tail.head.v.val,
-            tvs.tail.tail.head.v.val,
-            tvs.tail.tail.tail.head.v.val
-         )
-      } 
-   }
-   return assert(false)
-*/
+   return reflect(__nonNull(tv.v)) as Rect
 }
 
 function getPath (tv: Traced): List<Point> {
-   if (tv.v instanceof Value.Constr) {
-      if (tv.v.ctr.str === "Cons") {
-         const point_tvs: List<Traced> = tv.v.args
-         if (Cons.is(point_tvs)) {
-            const point: Traced = point_tvs.head
-            if (point.v instanceof Value.Constr && point.v.ctr.str === "Point") {
-               const x_y: List<Traced> = point.v.args
-               if (Cons.is(x_y)) {
-                  if (x_y.head.v instanceof Value.ConstInt && Cons.is(x_y.tail) &&
-                     x_y.tail.head.v instanceof Value.ConstInt && Cons.is(point_tvs.tail)) {
-                        return Cons.make(
-                           Point.make(x_y.head.v.val, x_y.tail.head.v.val),
-                           getPath(point_tvs.tail.head)
-                        )
-                  }
-               }
-            }
-         } 
-      } else
-      if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
-         return Nil.make()
-      }
-   }
-   return assert(false)
+   return reflect(__nonNull(tv.v)) as List<Point>
 }
 
 // List at the outer level assumed to be a collection of graphics elements. List one level down
