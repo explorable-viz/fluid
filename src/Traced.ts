@@ -5,7 +5,7 @@ import { FiniteMap } from "./FiniteMap"
 import { Runtime } from "./Eval"
 import { Expr, Lex } from "./Expr"
 import { UnaryOp } from "./Primitive"
-import { InternedObject, VersionedObject, at, create } from "./Runtime"
+import { InternedObject, VersionedObject, at } from "./Runtime"
 
 export type Value = Value.Value
 
@@ -38,12 +38,13 @@ export namespace Value {
    
    export class ConstInt extends Prim {
       val: number
+
+      constructor_ (val: number): void {
+         this.val = val
+      }
    
       static at (α: PersistentObject, val: number): ConstInt {
-         const this_: ConstInt = create(α, ConstInt)
-         this_.val = val
-         this_.__version()
-         return this_
+         return at(α, ConstInt, val)
       }
 
       toString (): string {
@@ -463,10 +464,11 @@ export namespace Traced {
 
    // Not the same as ⊥ (null); we distinguish information about an absence from the absence of information.
    export class Empty extends Trace {
+      constructor_ (): void {
+      }
+
       static at (k: Runtime<Expr>): Empty {
-         const this_: Empty = create(k, Empty)
-         this_.__version()
-         return this_
+         return at(k, Empty)
       }
    }
 

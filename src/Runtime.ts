@@ -134,32 +134,3 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
    o.__version()
    return o as T
 }
-
-// TODO: delete me
-export function create<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
-   let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
-   if (instances === undefined) {
-      instances = new Map
-      __ctrInstances.set(ctr, instances)
-   }
-   let o: VersionedObject<K> | undefined = instances.get(α) as VersionedObject<K>
-   if (o === undefined) {
-      o = Object.create(ctr.prototype) as T // new ctr doesn't work any more
-      // This may massively suck, performance-wise. Define these here rather than on VersionedObject
-      // to avoid constructors everywhere.
-      Object.defineProperty(o, "__id", {
-         value: α,
-         enumerable: false
-      })
-      Object.defineProperty(o, "__history", {
-         value: [],
-         enumerable: false
-      })
-      instances.set(α, o)
-   } else {
-      // initialisation should always version, which will enforce single-assignment, so this additional
-      // check strictly unnecessary. However failing now avoids weird ill-formed objects.
-      assert(o.constructor === ctr, "Address collision (different constructor).", α, className(o), funName(ctr))
-   }
-   return o as T
-}

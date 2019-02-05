@@ -4,7 +4,7 @@ import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { UnaryOp } from "./Primitive"
-import { ExternalObject, InternedObject, VersionedObject, create } from "./Runtime"
+import { ExternalObject, InternedObject, VersionedObject, at } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {
@@ -99,58 +99,63 @@ export namespace Expr {
       func: Expr
       arg: Expr
 
+      constructor_ (func: Expr, arg: Expr): void {
+         this.func = func
+         this.arg = arg
+      }
+
       static at (i: ExternalObject, func: Expr, arg: Expr): App {
-         const this_: App = create(i, App)
-         this_.func = func
-         this_.arg = arg
-         this_.__version()
-         return this_
+         return at(i, App, func, arg)
       }
    }
 
    export class ConstInt extends Expr {
       val: number
+
+      constructor_ (val: number): void {
+         this.val = __check(val, x => !Number.isNaN(x))
+      }
    
       static at (i: ExternalObject, val: number): ConstInt {
-         const this_: ConstInt = create(i, ConstInt)
-         this_.val = __check(val, x => !Number.isNaN(x))
-         this_.__version()
-         return this_
+         return at(i, ConstInt, val)
       }
    }
    
    export class ConstStr extends Expr {
       val: string
+
+      constructor_ (val: string): void {
+         this.val = val
+      }
    
       static at (i: ExternalObject, val: string): ConstStr {
-         const this_: ConstStr = create(i, ConstStr)
-         this_.val = val
-         this_.__version()
-         return this_
+         return at(i, ConstStr, val)
       }
    }
    
    export class Constr extends Expr {
       ctr: Lex.Ctr
       args: List<Expr>
+
+      constructor_ (ctr: Lex.Ctr, args: List<Expr>): void {
+         this.ctr = ctr
+         this.args = args
+      }
    
       static at (i: ExternalObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
-         const this_: Constr = create(i, Constr)
-         this_.ctr = ctr
-         this_.args = args
-         this_.__version()
-         return this_
+         return at(i, Constr, ctr, args)
       }
    }
 
    export class Fun extends Expr {
       σ: Trie<Expr>
 
+      constructor_ (σ: Trie<Expr>): void {
+         this.σ = σ
+      }
+
       static at (i: ExternalObject, σ: Trie<Expr>): Fun {
-         const this_: Fun = create(i, Fun)
-         this_.σ = σ
-         this_.__version()
-         return this_
+         return at(i, Fun, σ)
       }
    }
 
@@ -159,36 +164,39 @@ export namespace Expr {
       e: Expr
       σ: Trie.Var<Expr>
 
+      constructor_ (e: Expr, σ: Trie.Var<Expr>): void {
+         this.e = e
+         this.σ = σ
+      }
+
       static at (i: ExternalObject, e: Expr, σ: Trie.Var<Expr>): Let {
-         const this_: Let = create(i, Let)
-         this_.e = e
-         this_.σ = σ
-         this_.__version()
-         return this_
+         return at(i, Let, e, σ)
       }
    }
 
    export class PrimOp extends Expr {
       op: UnaryOp
 
+      constructor_ (op: UnaryOp): void {
+         this.op = op
+      }
+
       static at (i: ExternalObject, op: UnaryOp): PrimOp {
-         const this_: PrimOp = create(i, PrimOp)
-         this_.op = op
-         this_.__version()
-         return this_
+         return at(i, PrimOp, op)
       }
    }
 
    export class RecDef extends VersionedObject<ExternalObject> {
       x: Lex.Var
       e: Expr
+
+      constructor_ (x: Lex.Var, e: Expr): void {
+         this.x = x
+         this.e = e
+      }
    
       static at (α: ExternalObject, x: Lex.Var, e: Expr): RecDef {
-         const this_: RecDef = create(α, RecDef)
-         this_.x = x
-         this_.e = e
-         this_.__version()
-         return this_
+         return at(α, RecDef, x, e)
       }
    }
 
@@ -196,25 +204,27 @@ export namespace Expr {
       δ: List<RecDef>
       e: Expr
 
+      constructor_ (δ: List<RecDef>, e: Expr): void {
+         this.δ = δ
+         this.e = e
+      }
+
       static at (i: ExternalObject, δ: List<RecDef>, e: Expr): LetRec {
-         const this_: LetRec = create(i, LetRec)
-         this_.δ = δ
-         this_.e = e
-         this_.__version()
-         return this_
+         return at(i, LetRec, δ, e)
       }
    }
 
    export class MatchAs extends Expr {
       e: Expr
       σ: Trie<Expr>
+
+      constructor_ (e: Expr, σ: Trie<Expr>): void {
+         this.e = e
+         this.σ = σ
+      }
    
       static at (i: ExternalObject, e: Expr, σ: Trie<Expr>): MatchAs {
-         const this_: MatchAs = create(i, MatchAs)
-         this_.e = e
-         this_.σ = σ
-         this_.__version()
-         return this_
+         return at(i, MatchAs, e, σ)
       }
    }
 
@@ -223,24 +233,26 @@ export namespace Expr {
       opName: Lex.OpName
       e2: Expr
 
+      constructor_ (e1: Expr, opName: Lex.OpName, e2: Expr): void {
+         this.e1 = e1
+         this.opName = opName
+         this.e2 = e2
+      }
+
       static at (i: ExternalObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
-         const this_: PrimApp = create(i, PrimApp)
-         this_.e1 = e1
-         this_.opName = opName
-         this_.e2 = e2
-         this_.__version()
-         return this_
+         return at(i, PrimApp, e1, opName, e2)
       }
    }
 
    export class Var extends Expr {
       x: Lex.Var
+
+      constructor_ (x: Lex.Var): void {
+         this.x = x
+      }
    
       static at (i: ExternalObject, x: Lex.Var): Var {
-         const this_: Var = create(i, Var)
-         this_.x = x
-         this_.__version()
-         return this_
+         return at(i, Var, x)
       }
    }
 
