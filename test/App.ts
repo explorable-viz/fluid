@@ -18,14 +18,19 @@ const wurble: [string, Class<Object>][] =
    ["Rect", Rect]]
 const burble: Map<string, Class<Object>> = new Map(wurble)
 
-export function getObj (tv: Traced): Object {
-   __nonNull(tv.v)
-   if (tv.v instanceof Value.Constr) {
-      const ctr: string = tv.v.ctr.str
+function getObj (v: Value | null): Object { // weirdy number and string are subtypes of Object
+   if (v instanceof Value.ConstInt) {
+      return v.val
+   } else
+   if (v instanceof Value.ConstStr) {
+      return v.val
+   } else
+   if (v instanceof Value.Constr) {
+      const ctr: string = v.ctr.str
       assert(burble.has(ctr))
-      const args: Value[] = []
-      for (let tvs = tv.v.args; Cons.is(tvs);) {
-         args.push(__nonNull(tvs.head.v))
+      const args: Object[] = []
+      for (let tvs: List<Traced> = v.args; Cons.is(tvs);) {
+         args.push(getObj(tvs.head.v))
          tvs = tvs.tail
       }
       return make(burble.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
@@ -36,7 +41,8 @@ export function getObj (tv: Traced): Object {
 
 // TODO: replace by a generic 'reflect' method?
 function getRect (tv: Traced): Rect {
-//   return getObj(tv) as Rect
+   return getObj(__nonNull(tv.v)) as Rect
+/*
    __nonNull(tv.v)
    if (tv.v instanceof Value.Constr && tv.v.ctr.str === "Rect") {
       const tvs: List<Traced> = tv.v.args
@@ -53,6 +59,7 @@ function getRect (tv: Traced): Rect {
       } 
    }
    return assert(false)
+*/
 }
 
 function getPath (tv: Traced): List<Point> {
