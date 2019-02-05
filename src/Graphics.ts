@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { absurd, assert, make } from "./util/Core"
+import { Persistent, absurd, assert, make } from "./util/Core"
 import { Cons, List } from "../src/BaseTypes"
 import { InternedObject } from "./Runtime"
 
@@ -40,7 +40,7 @@ export class Point extends InternedObject { // for now
 }
 
 // We don't have anything like typeclasses yet.
-export function objects (elem: Object): THREE.Object3D[] {
+export function objects (elem: Persistent): THREE.Object3D[] {
    if (elem instanceof Rect) {
       return [rect_fill(elem), rect_stroke(elem)]
    } else 

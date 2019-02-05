@@ -1,10 +1,10 @@
-import { absurd, assert, make } from "./util/Core"
+import { absurd, assert, make, PersistentObject } from "./util/Core"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
-import { InternedObject, PersistentObject, ν } from "./Runtime"
+import { InternedObject, ν } from "./Runtime"
 import { Traced, Value } from "./Traced"
 
 import Args = Traced.Args

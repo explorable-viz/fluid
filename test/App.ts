@@ -1,7 +1,7 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import * as Meshline from "three.meshline"
-import { Class, __check, __nonNull, assert, absurd, make } from "../src/util/Core"
+import { Class, Persistent, PersistentObject, __check, __nonNull, assert, absurd, make } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
 import { Traced, Value } from "../src/Traced"
@@ -12,14 +12,14 @@ initialise()
 const file: TestFile = loadTestFile("example", "bar-chart")
 
 // intermediate value required to stop TS getting confused:
-const wurble: [string, Class<Object>][] =
+const classFor_: [string, Class<PersistentObject>][] =
    [["Cons", Cons],
     ["Nil", Nil],
     ["Point", Point],
     ["Rect", Rect]]
-const burble: Map<string, Class<Object>> = new Map(wurble)
+const classFor: Map<string, Class<PersistentObject>> = new Map(classFor_)
 
-function reflect (v: Value | null): Object { // weirdy number and string are subtypes of Object
+function reflect (v: Value | null): Persistent { // weirdy number and string are subtypes of Object
    if (v instanceof Value.ConstInt) {
       return v.val
    } else
@@ -28,14 +28,14 @@ function reflect (v: Value | null): Object { // weirdy number and string are sub
    } else
    if (v instanceof Value.Constr) {
       const ctr: string = v.ctr.str
-      assert(burble.has(ctr))
-      const args: Object[] = []
+      assert(classFor.has(ctr))
+      const args: Persistent[] = []
       for (let tvs: List<Traced> = v.args; Cons.is(tvs);) {
          args.push(reflect(tvs.head.v))
          tvs = tvs.tail
       }
       // interning probably not what we want here, but for now will do
-      return make(burble.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
+      return make(classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
    } else {
       return absurd()
    }
@@ -43,25 +43,19 @@ function reflect (v: Value | null): Object { // weirdy number and string are sub
 
 // List at the outer level assumed to be a collection of graphics elements. List one level down
 // assumed to be a path (list of points).
-function getElems (tv: Traced): Object[] {
+function getElems (tv: Traced): List<Persistent> {
    if (tv.v instanceof Value.Constr) {
       if (tv.v.ctr.str === "Cons") {
          const rect_tvs: List<Traced> = tv.v.args
          if (Cons.is(rect_tvs) && Cons.is(rect_tvs.tail)) {
-            return [getElem(rect_tvs.head)].concat(getElems(rect_tvs.tail.head))
+            return Cons.make(reflect(__nonNull(rect_tvs.head.v)), getElems(rect_tvs.tail.head))
          } 
       } else
       if (tv.v.ctr.str === "Nil" && Nil.is(tv.v.args)) {
-         return []
+         return Nil.make()
       }
    }
    return assert(false)
-}
-
-// Returns Object because we don't have a way of asserting List<A> is an Elem if A is an Elem.
-// TODO: use data type definitions to map constructor to appropriate function.
-function getElem (tv: Traced): Object {
-   return reflect(__nonNull(tv.v))
 }
 
 const scene = new THREE.Scene()
@@ -119,12 +113,12 @@ export function close (path: THREE.Vector2[]) {
 }
 
 function populateScene (): void {
-   for (let elem of getElems(__nonNull(runTest(__nonNull(file.text))))) {
-      for (let obj of objects(elem)) {
+   for (let elems: List<Persistent> = getElems(__nonNull(runTest(__nonNull(file.text)))); Cons.is(elems);) {
+      for (let obj of objects(elems.head)) {
          scene.add(obj)
       }
+      elems = elems.tail
    }
-// scene.add(new Path(close(rect)).object3D())
 }
 
 function render () {
