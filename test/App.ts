@@ -4,7 +4,7 @@ import * as Meshline from "three.meshline"
 import { __nonNull, assert, absurd } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { Traced, Value } from "../src/Traced"
-import { Point, Rect, object3D } from "../src/Graphics"
+import { Point, Rect, objects } from "../src/Graphics"
 import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
 
 initialise()
@@ -121,6 +121,7 @@ controls.dampingFactor = 0.25;
 
 document.body.appendChild(renderer.domElement)
 
+// Currently unused.
 export class ThickPath extends THREE.Geometry {
    constructor (path: THREE.Vector2[]) {
       super()   
@@ -147,7 +148,9 @@ export function close (path: THREE.Vector2[]) {
 
 function populateScene (): void {
    for (let elem of getElems(__nonNull(runTest(__nonNull(file.text))))) {
-      scene.add(object3D(elem))
+      for (let obj of objects(elem)) {
+         scene.add(obj)
+      }
    }
 // scene.add(new Path(close(rect)).object3D())
 }
