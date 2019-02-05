@@ -41,14 +41,6 @@ function reflect (v: Value | null): Object { // weirdy number and string are sub
    }
 }
 
-function getRect (tv: Traced): Rect {
-   return reflect(__nonNull(tv.v)) as Rect
-}
-
-function getPath (tv: Traced): List<Point> {
-   return reflect(__nonNull(tv.v)) as List<Point>
-}
-
 // List at the outer level assumed to be a collection of graphics elements. List one level down
 // assumed to be a path (list of points).
 function getElems (tv: Traced): Object[] {
@@ -69,19 +61,7 @@ function getElems (tv: Traced): Object[] {
 // Returns Object because we don't have a way of asserting List<A> is an Elem if A is an Elem.
 // TODO: use data type definitions to map constructor to appropriate function.
 function getElem (tv: Traced): Object {
-   __nonNull(tv.v)
-   if (tv.v instanceof Value.Constr) {
-      if (tv.v.ctr.str === "Cons" || tv.v.ctr.str === "Nil") {
-         return getPath(tv)
-      } else 
-      if (tv.v.ctr.str === "Rect") {
-         return getRect(tv)
-      } else {
-         return absurd()
-      }
-   } else {
-      return absurd()
-   }
+   return reflect(__nonNull(tv.v))
 }
 
 const scene = new THREE.Scene()
