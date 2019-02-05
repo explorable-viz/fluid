@@ -5,7 +5,7 @@ import { FiniteMap } from "./FiniteMap"
 import { Runtime } from "./Eval"
 import { Expr, Lex } from "./Expr"
 import { UnaryOp } from "./Primitive"
-import { InternedObject, VersionedObject, create } from "./Runtime"
+import { InternedObject, VersionedObject, at, create } from "./Runtime"
 
 export type Value = Value.Value
 
@@ -20,12 +20,13 @@ export namespace Value {
       ρ: Env
       σ: Traced.Trie<Traced>
    
+      constructor_ (ρ: Env, σ: Traced.Trie<Traced>): void {
+         this.ρ = ρ
+         this.σ = σ
+      }
+
       static at (α: PersistentObject, ρ: Env, σ: Traced.Trie<Traced>): Closure {
-         const this_: Closure = create(α, Closure)
-         this_.ρ = ρ
-         this_.σ = σ
-         this_.__version()
-         return this_
+         return at(α, Closure, ρ, σ)
       }
    }
 
@@ -52,12 +53,13 @@ export namespace Value {
    
    export class ConstStr extends Prim {
       val: string
+
+      constructor_ (val: string): void {
+         this.val = val
+      }
    
       static at (α: PersistentObject, val: string): ConstStr {
-         const this_: ConstStr = create(α, ConstStr)
-         this_.val = val
-         this_.__version()
-         return this_
+         return at(α, ConstStr, val)
       }
 
       toString (): string {
@@ -68,24 +70,26 @@ export namespace Value {
    export class Constr extends Value {
       ctr: Lex.Ctr
       args: List<Traced>
+
+      constructor_ (ctr: Lex.Ctr, args: List<Traced>): void {
+         this.ctr = ctr
+         this.args = args
+      }
    
       static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Traced>): Constr {
-         const this_: Constr = create(α, Constr)
-         this_.ctr = ctr
-         this_.args = args
-         this_.__version()
-         return this_
+         return at(α, Constr, ctr, args)
       }
    }
 
    export class PrimOp extends Value {
       op: UnaryOp
+
+      constructor_ (op: UnaryOp): void {
+         this.op = op
+      }
    
       static at (α: PersistentObject, op: UnaryOp): PrimOp {
-         const this_: PrimOp = create(α, PrimOp)
-         this_.op = op
-         this_.__version()
-         return this_
+         return at(α, PrimOp, op)
       }
    }
 }
@@ -446,13 +450,14 @@ export namespace Traced {
       arg: Traced
       body: Trace | null
 
+      constructor_ (func: Traced, arg: Traced, body: Trace | null): void {
+         this.func = func
+         this.arg = arg
+         this.body = body
+      }
+
       static at (k: Runtime<Expr>, func: Traced, arg: Traced, body: Trace | null): App {
-         const this_: App = create(k, App)
-         this_.func = func
-         this_.arg = arg
-         this_.body = body
-         this_.__version()
-         return this_
+         return at(k, App, func, arg, body)
       }
    }
 
