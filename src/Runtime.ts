@@ -205,6 +205,10 @@ class World extends InternedObject implements Ord<World> {
    static make (parent: World | null) {
       return make(World, parent)
    }
+
+   static newRevision (): World {
+      return __w = World.make(__w)
+   }
 }
 
-const __w: World = new World(null)
+let __w: World = new World(null)
