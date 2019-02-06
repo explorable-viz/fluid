@@ -97,8 +97,11 @@ function __merge (tgt: Object, src: Object): Object {
 // an interned object, nor vice versa.
 function __assign (tgt: Object, src: Object): [Object, boolean] {
    if (src === tgt) {
-      return [src, false]
+      return [tgt, false]
    } else
+   if (src === null || tgt === null) {
+      return [src, true]
+   } else 
    if (tgt instanceof VersionedObject && src instanceof VersionedObject) {
       return [src, true]
    } else {
@@ -109,7 +112,7 @@ function __assign (tgt: Object, src: Object): [Object, boolean] {
          // an interned object has changed only if its parts have changed
          let changed: boolean = false
          const args: Object[] = Object.keys(tgt).map((k: string): Object => {
-            let [arg, changedʹ] = __assign(tgt[k as keyof Object], [k as keyof Object])
+            let [arg, changedʹ] = __assign(tgt[k as keyof Object], src[k as keyof Object])
             changed = changed || changedʹ
             return arg
          })
