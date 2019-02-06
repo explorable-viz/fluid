@@ -79,9 +79,12 @@ export function merge<K> (σ1: Trie.Constr<K>, σ2: Trie.Constr<K>): Trie.Constr
    return Trie.Constr.make(unionWith(σ1.cases, σ2.cases, (v: Args<K>, vʹ: Args<K>) => assert(false)))
 }
 
-export function runExample (src: string, σ: Trie<null> = τ.top(null)): Traced | null {
-   const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
-   const [tv, , ]: Eval.Result<null> = Eval.evalT_(ρ, instantiate(ρ)(e), σ)
+export function parseExample (src: string | null): Expr {
+   return __nonNull(parse(Parse.expr, __nonNull(src))).ast
+}
+
+export function runExample (e: Expr, σ: Trie<null> = τ.top(null)): Traced {
+   const [tv, ,]: Eval.Result<null> = Eval.evalT_(ρ, instantiate(ρ)(e), σ)
    console.log(tv)
    if (!Trie.Top.is(σ)) {
       console.log(match(σ, tv.v))

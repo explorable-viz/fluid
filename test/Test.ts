@@ -1,7 +1,6 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { TestFile, τ, initialise, loadExample, runExample } from "./Helpers"
-import { __nonNull } from "../src/util/Core"
+import { TestFile, τ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 
 before((done: MochaDone) => {
 	initialise()
@@ -12,98 +11,98 @@ describe("example", () => {
 	describe("arithmetic", () => {
 		const file: TestFile = loadExample("arithmetic")
 		it("ok", () => {
-			runExample(__nonNull(file.text), τ.top(null))
+			runExample(parseExample(file.text), τ.top(null))
 		})
 	})
 
 	describe("bar-chart", () => {
 		const file: TestFile = loadExample("bar-chart")
 		it("ok", () => {
-			runExample(__nonNull(file.text), τ.var_(null))
+			runExample(parseExample(file.text), τ.var_(null))
 		})
 	})
 
 	describe("compose", () => {
 		const file: TestFile = loadExample("compose")
 		it("ok", () => {
-			runExample(__nonNull(file.text), τ.top(null))
+			runExample(parseExample(file.text), τ.top(null))
 		})
 	})
 
 	describe("factorial", () => {
 		const file: TestFile = loadExample("factorial")
 		it("ok", () => {
-			runExample(__nonNull(file.text), τ.top(null))
+			runExample(parseExample(file.text), τ.top(null))
 		})
 	})
 
 	describe("filter", () => {
 		const file: TestFile = loadExample("filter")
 		it("ok", () => {
-			runExample(__nonNull(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			runExample(parseExample(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("foldr_sumSquares", () => {
 		const file: TestFile = loadExample("foldr_sumSquares")
 		it("ok", () => {
-			runExample(__nonNull(file.text))
+			runExample(parseExample(file.text))
 		})
 	})
 
 	describe("length", () => {
 		const file: TestFile = loadExample("length")
 		it("ok", () => {
-			runExample(__nonNull(file.text))
+			runExample(parseExample(file.text))
 		})
 	})
 
 	describe("lexicalScoping", () => {
 		const file: TestFile = loadExample("lexicalScoping")
 		it("ok", () => {
-			runExample(__nonNull(file.text))
+			runExample(parseExample(file.text))
 		})
 	})
 
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
 		it("ok", () => {
-			runExample(__nonNull(file.text))
+			runExample(parseExample(file.text))
 		})
 	})
 
 	describe("map", () => {
 		const file: TestFile = loadExample("map")
 		it("ok", () => {
-			runExample(__nonNull(file.text))
+			runExample(parseExample(file.text))
 		})
 	})
 
 	describe("mergeSort", () => {
 		const file: TestFile = loadExample("mergeSort")
 		it("ok", () => {
-			runExample(__nonNull(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			runExample(parseExample(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("normalise", () => {
 		const file: TestFile = loadExample("normalise")
 		it("ok", () => {
-			runExample(__nonNull(file.text))
+			runExample(parseExample(file.text))
 		})
 	})
 
 	describe("reverse", () => {
 		const file: TestFile = loadExample("reverse")
 		it("ok", () => {
-			runExample(__nonNull(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			runExample(parseExample(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 
 	describe("zipW", () => {
 		const file: TestFile = loadExample("zipW")
 		it("ok", () => {
-			runExample(__nonNull(file.text), τ.cons(τ.arg(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(τ.var_(τ.endArgs(null))))))))))))
+			runExample(parseExample(file.text), τ.cons(τ.arg(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(τ.var_(τ.endArgs(null))))))))))))
 		})
 	})
 })
