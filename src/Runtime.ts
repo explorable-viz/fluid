@@ -82,10 +82,12 @@ function __merge (tgt: Object, src: Object): Object {
    } else
    if (src === tgt) {
       return src
+   } else 
+   if (tgt instanceof VersionedObject && src instanceof VersionedObject) {
+      return absurd("Address collision (different child).")
    } else {
-      assert(!(tgt instanceof VersionedObject), "Address collision (different child).")
+      assert(tgt instanceof InternedObject && src instanceof InternedObject)
       assert(tgt.constructor === src.constructor, "Address collision (different constructor).")
-      assert(tgt instanceof InternedObject)
       const args: Object[] = Object.keys(tgt).map((k: string): Object => {
          return __merge(tgt[k as keyof Object], src[k as keyof Object])
       })
@@ -93,8 +95,8 @@ function __merge (tgt: Object, src: Object): Object {
    }
 }
 
-// Invariant of the data model: a role inhabited by a versioned object can't be overwritten by 
-// an interned object, nor vice versa.
+// Candidate invariant of the data model (assumed here): a role inhabited by a versioned object
+// is never overwritten by an interned object, nor vice versa.
 function __assign (tgt: Object, src: Object): [Object, boolean] {
    if (src === tgt) {
       return [tgt, false]
