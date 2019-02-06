@@ -1,4 +1,4 @@
-import { Class, assert, make, __nonNull, absurd } from "./util/Core"
+import { Class, ValueObject, __log, __nonNull, assert, make, absurd } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { PersistentObject } from "./util/Core"
 
@@ -58,20 +58,6 @@ function __mergeState (tgt: Object, src: Object): void {
    })
 }
 
-// Assign contents of src to tgt; return whether anything changed. 
-function __assignState (tgt: Object, src: Object): boolean {
-   assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
-   let changed: boolean = false
-   const tgt_: ObjectState = tgt as ObjectState,
-         src_: ObjectState = src as ObjectState
-   Object.keys(tgt).forEach((k: string): void => {
-      const [v, changedʹ] = __assign(tgt_[k], src_[k])
-      tgt_[k] = v
-      changed = changed || changedʹ
-   })
-   return changed
-}
-
 // Least upper bound of two upper-bounded objects.
 function __merge (tgt: Object, src: Object): Object {
    if (src === null) {
@@ -85,18 +71,41 @@ function __merge (tgt: Object, src: Object): Object {
    } else 
    if (tgt instanceof VersionedObject && src instanceof VersionedObject) {
       return absurd("Address collision (different child).")
-   } else {
-      assert(tgt instanceof InternedObject && src instanceof InternedObject)
+   } else
+   if (tgt instanceof InternedObject && src instanceof InternedObject) {
       assert(tgt.constructor === src.constructor, "Address collision (different constructor).")
       const args: Object[] = Object.keys(tgt).map((k: string): Object => {
          return __merge(tgt[k as keyof Object], src[k as keyof Object])
       })
       return make(src.constructor as Class<InternedObject>, ...args)
+   } else
+   if (tgt instanceof ValueObject && src instanceof ValueObject) {
+      assert(tgt.eq(src))
+      return src
+   } else {
+      return absurd()
    }
 }
 
-// Candidate invariant of the data model (assumed here): a role inhabited by a versioned object
-// is never overwritten by an interned object, nor vice versa.
+// Assign contents of src to tgt; return whether anything changed. 
+function __assignState (tgt: Object, src: Object): boolean {
+   assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
+   let changed: boolean = false
+   const tgt_: ObjectState = tgt as ObjectState,
+         src_: ObjectState = src as ObjectState
+   Object.keys(tgt).forEach((k: string): void => {
+      const [v, changedʹ] = __assign(tgt_[k], src_[k])
+      tgt_[k] = v
+      changed = changed || changedʹ
+   })
+   if (changed) {
+      __log(src, src => src + " has changed.")
+   }
+   return changed
+}
+
+// Candidate invariant of the data model (assumed here): a role inhabited by a versioned object, interned
+// object or value object is never overwritten by an object of one of the other kinds.
 function __assign (tgt: Object, src: Object): [Object, boolean] {
    if (src === tgt) {
       return [tgt, false]
@@ -106,8 +115,8 @@ function __assign (tgt: Object, src: Object): [Object, boolean] {
    } else 
    if (tgt instanceof VersionedObject && src instanceof VersionedObject) {
       return [src, true]
-   } else {
-      assert(tgt instanceof InternedObject && src instanceof InternedObject)
+   } else 
+   if (tgt instanceof InternedObject && src instanceof InternedObject) {
       if (tgt.constructor !== src.constructor) {
          return [src, true]
       } else {
@@ -120,6 +129,11 @@ function __assign (tgt: Object, src: Object): [Object, boolean] {
          })
          return [make(src.constructor as Class<InternedObject>, ...args), changed]
       }
+   } else
+   if (tgt instanceof ValueObject && src instanceof ValueObject) {
+      return [src, !tgt.eq(src)]
+   } else {
+      return absurd()
    }
 }
 

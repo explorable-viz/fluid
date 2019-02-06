@@ -1,7 +1,9 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
+import { assert } from "../src/util/Core"
 import { Expr } from "../src/Expr"
 import { World } from "../src/Runtime"
+import { Traced} from "../src//Traced"
 import { TestFile, τ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 
 before((done: MochaDone) => {
@@ -42,9 +44,10 @@ describe("example", () => {
 		const file: TestFile = loadExample("filter")
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
-			runExample(e, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			const tv: Traced = runExample(e, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 			World.newRevision()
-			runExample(e, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			const tvʹ: Traced = runExample(e, τ.cons(τ.arg(τ.var_(τ.arg(τ.var_(τ.endArgs(null)))))))
+			assert(tv === tvʹ)
 		})
 	})
 
