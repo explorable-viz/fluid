@@ -1,4 +1,4 @@
-import { Class, assert, className, funName, make, __nonNull, absurd } from "./util/Core"
+import { Class, assert, make, __nonNull, absurd } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { PersistentObject } from "./util/Core"
 
@@ -92,23 +92,10 @@ function __merge (tgt: Object, src: Object): [Object, MergeResult] {
    }
 }   
 
-function mostRecent (history: Map<World, Object>, w: World): [World, Object] {
-   const v: Object | undefined = history.get(w)
-   if (v === undefined) {
-      if (w.parent !== null) {
-         return mostRecent(history, w.parent)
-      } else {
-         return absurd("No initial state.")
-      }
-   } else {
-      return [w, v]
-   }
-}
-
 export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
-   __history: Map<World, Object> = undefined as any // history records only enumerable fields
-   __id: K = undefined as any
+   private __history: Map<World, Object> = undefined as any // history records only enumerable fields
+   public __id: K = undefined as any
 
    // ES6 only allows constructor calls via "new".
    abstract constructor_ (...args: any[]): void
@@ -116,6 +103,20 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
    eq (that: PersistentObject): boolean {
       return this === that
    }
+
+   __mostRecent (w: World): [World, Object] {
+      const v: Object | undefined = this.__history.get(w)
+      if (v === undefined) {
+         if (w.parent !== null) {
+            return this.__mostRecent(w.parent)
+         } else {
+            return absurd("No initial state.")
+         }
+      } else {
+         return [w, v]
+      }
+   }
+   
       // At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
    __version (): Object {
       if (this.__history.size === 0) {
@@ -123,12 +124,12 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
          assert(__mergeAssign(state, this) <= MergeResult.Increasing)
          this.__history.set(__w, state)
       } else {
-         const [w, state]: [World, Object] = mostRecent(this.__history, __w),
+         const [w, state]: [World, Object] = this.__mostRecent(__w),
                result: MergeResult = __mergeAssign(state, this)
          if (w === __w) {
-            assert(result !== MergeResult.NonIncreasing, "Address collision.")   
+            assert(result < MergeResult.NonIncreasing, "Address collision.")   
          } else
-         if (result !== MergeResult.Unchanged) {
+         if (result > MergeResult.Unchanged) {
             this.__history.set(__w, state)
          }
       }
@@ -161,10 +162,6 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
          enumerable: false
       })
       instances.set(α, o)
-   } else {
-      // Initialisation calls __version, which enforces single-assignment, so this additional
-      // check strictly unnecessary. However failing now avoids weird ill-formed objects.
-      assert(o.constructor === ctr, "Address collision (different constructor).", α, className(o), funName(ctr))
    }
    o.constructor_(...args)
    return o.__version() as T
