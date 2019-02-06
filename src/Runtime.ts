@@ -42,60 +42,84 @@ function __blankCopy<T extends Object> (src: T): T {
    return tgt
 }
 
-enum MergeResult {
-   Unchanged,     // no increase in knowledge
-   Increasing,    // strictly increasing; permitted at a world
-   NonIncreasing  // neither of the above; only permitted at a new world
+export interface ObjectState extends Object {
+   [index: string]: Object
 }
 
-// Argument tgtState is a "value object" whose identity doesn't matter but whose state represents what we currently 
+// Argument tgt is a "state object" whose identity doesn't matter but whose contents represents what we currently 
 // know about src. Precondition: the two are upper-bounded; postcondition is that they are equal.
-function __mergeAssign (tgtState: Object, src: VersionedObject): MergeResult {
-   assert(__nonNull(tgtState).constructor === __nonNull(src.constructor))
-   const tgtState_: any = tgtState as any,
-         src_: any = src as any
-   let result: MergeResult = MergeResult.Unchanged
-   Object.keys(tgtState).forEach((k: string): void => {
-      const [v, resultʹ]: [Object, MergeResult] = __merge(tgtState_[k], src_[k])
-      result = Math.max(result, resultʹ)
-      tgtState_[k] = src_[k] = v
+function __mergeState (tgt: Object, src: Object): void {
+   assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
+   const tgt_: ObjectState = tgt as ObjectState,
+         src_: ObjectState = src as ObjectState
+   Object.keys(tgt).forEach((k: string): void => {
+      tgt_[k] = src_[k] = __merge(tgt_[k], src_[k])
    })
-   return result
+}
+
+function __assignState (tgt: Object, src: Object): boolean {
+   assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
+   let changed: boolean = false
+   const tgt_: ObjectState = tgt as ObjectState,
+         src_: ObjectState = src as ObjectState
+   Object.keys(tgt).forEach((k: string): void => {
+      const [v, changedʹ] = __assign(tgt_[k], src_[k])
+      tgt_[k] = v
+      changed = changed || changedʹ
+   })
+   return changed
 }
 
 // Least upper bound of two upper-bounded objects.
-function __merge (tgt: Object, src: Object): [Object, MergeResult] {
+function __merge (tgt: Object, src: Object): Object {
    if (src === null) {
-      return [tgt, MergeResult.Unchanged]
+      return tgt
    } else 
    if (tgt === null) {
-      return [src, MergeResult.Increasing]
+      return src
    } else
    if (src === tgt) {
-      return [src, MergeResult.Unchanged]
-   } else
-   // upper-bounded versioned objects have the same address
-   if (tgt instanceof VersionedObject || tgt.constructor !== src.constructor) {
-      return [src, MergeResult.NonIncreasing]
+      return src
    } else {
+      assert(!(tgt instanceof VersionedObject), "Address collision (different child).")
+      assert(tgt.constructor === src.constructor, "Address collision (different constructor).")
       assert(tgt instanceof InternedObject)
-      let result: MergeResult = MergeResult.Unchanged
       const args: Object[] = Object.keys(tgt).map((k: string): Object => {
-         let [arg, resultʹ] = __merge((tgt as any)[k], (src as any)[k])
-         result = Math.max(result, resultʹ)
-         return arg
+         return __merge(tgt[k as keyof Object], src[k as keyof Object])
       })
-      // Two dubious assumptions, but hard to see another technique:
-      // (1) entries are supplied in declaration-order (not guaranteed by language spec)
-      // (2) constructor arguments also match declaration-order (easy constraint to violate)
-      return [make(src.constructor as Class<InternedObject>, ...args), result]
+      return make(src.constructor as Class<InternedObject>, ...args)
+   }
+}
+
+// Invariant of the data model: a role inhabited by a versioned object can't be overwritten by 
+// an interned object, nor vice versa.
+function __assign (tgt: Object, src: Object): [Object, boolean] {
+   if (src === tgt) {
+      return [src, false]
+   } else
+   if (tgt instanceof VersionedObject && src instanceof VersionedObject) {
+      return [src, true]
+   } else {
+      assert(tgt instanceof InternedObject && src instanceof InternedObject)
+      if (tgt.constructor !== src.constructor) {
+         return [src, true]
+      } else {
+         // an interned object has changed only if its parts have changed
+         let changed: boolean = false
+         const args: Object[] = Object.keys(tgt).map((k: string): Object => {
+            let [arg, changedʹ] = __assign(tgt[k as keyof Object], [k as keyof Object])
+            changed = changed || changedʹ
+            return arg
+         })
+         return [make(src.constructor as Class<InternedObject>, ...args), changed]
+      }
    }
 }
 
 export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
    private __history: Map<World, Object> = undefined as any // history records only enumerable fields
-   public __id: K = undefined as any
+   __id: K = undefined as any
 
    // ES6 only allows constructor calls via "new".
    abstract constructor_ (...args: any[]): void
@@ -117,21 +141,20 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
       }
    }
    
-   // At a given world, enforce "increasing" (LVar) semantics. In particular, "setting" something to null doesn't 
-   // replace by null, but preserves the existing value. Only permit non-increasing changes at new worlds.
-   __version (): Object {
+   // At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
+   __commit (): Object {
       if (this.__history.size === 0) {
          const state: Object = __blankCopy(this)
-         assert(__mergeAssign(state, this) <= MergeResult.Increasing)
+         __mergeState(state, this)
          this.__history.set(__w, state)
       } else {
-         const [w, state]: [World, Object] = this.__mostRecent(__w),
-               result: MergeResult = __mergeAssign(state, this)
+         const [w, state]: [World, Object] = this.__mostRecent(__w)
          if (w === __w) {
-            assert(result < MergeResult.NonIncreasing, "Address collision.")   
-         } else
-         if (result > MergeResult.Unchanged) {
-            this.__history.set(__w, state)
+            __mergeState(state, this)
+         } else {
+            if (__assignState(state, this)) {
+               this.__history.set(__w, state)
+            }
          }
       }
       return this
@@ -165,7 +188,7 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
       instances.set(α, o)
    }
    o.constructor_(...args)
-   return o.__version() as T
+   return o.__commit() as T
 }
 
 class World extends InternedObject implements Ord<World> {
