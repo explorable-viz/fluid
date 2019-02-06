@@ -90,7 +90,7 @@ function __merge (tgt: Object, src: Object): [Object, MergeResult] {
       // (2) constructor arguments also match declaration-order (easy constraint to violate)
       return [make(src.constructor as Class<InternedObject>, ...args), result]
    }
-}   
+}
 
 export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
@@ -117,7 +117,8 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
       }
    }
    
-      // At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
+   // At a given world, enforce "increasing" (LVar) semantics. In particular, "setting" something to null doesn't 
+   // replace by null, but preserves the existing value. Only permit non-increasing changes at new worlds.
    __version (): Object {
       if (this.__history.size === 0) {
          const state: Object = __blankCopy(this)
