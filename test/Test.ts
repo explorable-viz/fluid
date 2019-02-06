@@ -1,5 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
+import { Expr } from "../src/Expr"
+import { World } from "../src/Runtime"
 import { TestFile, τ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 
 before((done: MochaDone) => {
@@ -39,7 +41,10 @@ describe("example", () => {
 	describe("filter", () => {
 		const file: TestFile = loadExample("filter")
 		it("ok", () => {
-			runExample(parseExample(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			const e: Expr = parseExample(file.text)
+			runExample(e, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			World.newRevision()
+			runExample(e, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
 		})
 	})
 

@@ -193,7 +193,7 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
    return o.__commit() as T
 }
 
-class World extends InternedObject implements Ord<World> {
+export class World extends InternedObject implements Ord<World> {
    constructor (public parent: World | null) {
       super()
    }
