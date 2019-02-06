@@ -56,13 +56,8 @@ function __mergeAssign (tgtState: Object, src: VersionedObject): MergeResult {
          src_: any = src as any
    let result: MergeResult = MergeResult.Unchanged
    Object.keys(tgtState).forEach((k: string): void => {
-      const [v,]: [Object, MergeResult] = __merge(tgtState_[k], src_[k])
-      if (tgtState_[k] === null && v !== null) {
-         result = Math.max(result, MergeResult.Increasing)
-      } else 
-      if (tgtState_[k] !== null && v !== tgtState_[k]) {
-         result = Math.max(result, MergeResult.NonIncreasing)
-      }
+      const [v, resultʹ]: [Object, MergeResult] = __merge(tgtState_[k], src_[k])
+      result = Math.max(result, resultʹ)
       tgtState_[k] = src_[k] = v
    })
    return result
@@ -83,15 +78,17 @@ function __merge (tgt: Object, src: Object): [Object, MergeResult] {
    if (tgt instanceof VersionedObject || tgt.constructor !== src.constructor) {
       return [src, MergeResult.NonIncreasing]
    } else {
-      assert(tgt instanceof InternedObject) // ignore other case for now
+      assert(tgt instanceof InternedObject)
+      let result: MergeResult = MergeResult.Unchanged
       const args: Object[] = Object.keys(tgt).map((k: string): Object => {
-         let [arg,] = __merge((tgt as any)[k], (src as any)[k])
+         let [arg, resultʹ] = __merge((tgt as any)[k], (src as any)[k])
+         result = Math.max(result, resultʹ)
          return arg
       })
       // Two dubious assumptions, but hard to see another technique:
       // (1) entries are supplied in declaration-order (not guaranteed by language spec)
       // (2) constructor arguments also match declaration-order (easy constraint to violate)
-      return [make(src.constructor as Class<InternedObject>, ...args), MergeResult.NonIncreasing]
+      return [make(src.constructor as Class<InternedObject>, ...args), result]
    }
 }   
 
