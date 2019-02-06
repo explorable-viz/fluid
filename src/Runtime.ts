@@ -42,12 +42,13 @@ function __blankCopy<T extends Object> (src: T): T {
    return tgt
 }
 
+// "State object" whose identity doesn't matter and whose contents we can access by key.
 export interface ObjectState extends Object {
    [index: string]: Object
 }
 
-// Argument tgt is a "state object" whose identity doesn't matter but whose contents represents what we currently 
-// know about src. Precondition: the two are upper-bounded; postcondition is that they are equal.
+// Combine information from src into tgt and vice versa, at an existing world.
+// Precondition: the two are upper-bounded; postcondition: they are equal.
 function __mergeState (tgt: Object, src: Object): void {
    assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
    const tgt_: ObjectState = tgt as ObjectState,
@@ -57,6 +58,7 @@ function __mergeState (tgt: Object, src: Object): void {
    })
 }
 
+// Assign contents of src to tgt; return whether anything changed. 
 function __assignState (tgt: Object, src: Object): boolean {
    assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
    let changed: boolean = false
