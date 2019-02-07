@@ -79,25 +79,20 @@ export function merge<K> (σ1: Trie.Constr<K>, σ2: Trie.Constr<K>): Trie.Constr
    return Trie.Constr.make(unionWith(σ1.cases, σ2.cases, (v: Args<K>, vʹ: Args<K>) => assert(false)))
 }
 
-export function runExample (p: Profile, src: string, σ: Trie<null>): Traced | null {
-   const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
-   console.log(Profile[p])
-   if (p >= Profile.Run) {
-      const [tv, , ]: Eval.Result<null> = Eval.evalT_(ρ, instantiate(ρ)(e), σ)
-      console.log(tv)
-      if (!Trie.Top.is(σ)) {
-         console.log(match(σ, tv.v))
-      }
-      return tv
+export function parseExample (src: string | null): Expr {
+   return __nonNull(parse(Parse.expr, __nonNull(src))).ast
+}
+
+export function runExample (e: Expr, σ: Trie<null> = τ.top(null)): Traced {
+   const [tv, ,]: Eval.Result<null> = Eval.evalT_(ρ, instantiate(ρ)(e), σ)
+   console.log(tv)
+   if (!Trie.Top.is(σ)) {
+      console.log(match(σ, tv.v))
    }
-   return null
+   return tv
 }
 
 export let ρ: Env = prelude()
-
-export function runTest (prog: string, σ: Trie<null> = τ.top(null)): Traced | null {
-   return runExample(Profile.Run, prog, σ)
-}
 
 // An asychronously loading test file; when loading completes text will be non-null.
 export class TestFile {

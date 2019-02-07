@@ -1,4 +1,5 @@
-import { Class, assert, className, funName, make, __nonNull } from "./util/Core"
+import { Class, ValueObject, __nonNull, assert, absurd, make } from "./util/Core"
+import { Ord } from "./util/Ord"
 import { PersistentObject } from "./util/Core"
 
 export interface Ctr<T> {
@@ -10,49 +11,6 @@ export abstract class InternedObject extends PersistentObject {
       return this === that
    }
 }
-
-function __blankCopy<T extends Object> (src: T): T {
-   const tgt: T = Object.create(src.constructor.prototype)
-   for (let x of Object.keys(src)) {
-      (tgt as any)[x] = null
-   }
-   return tgt
-}
-
-// Argument tgtState is a "value object" whose identity doesn't matter but whose state represents what we currently 
-// know about src. Precondition: the two are upper-bounded; postcondition is that they are equal.
-export function __mergeAssign (tgtState: Object, src: VersionedObject) {
-   assert(__nonNull(tgtState).constructor === __nonNull(src.constructor))
-   const tgtState_: any = tgtState as any,
-         src_: any = src as any
-   Object.keys(tgtState).forEach((k: string): void => {
-      tgtState_[k] = src_[k] = __merge(tgtState_[k], src_[k])
-   })
-}
-
-// Least upper bound of two upper-bounded objects.
-export function __merge (tgt: Object, src: Object): Object {
-   if (src === null) {
-      return tgt
-   } else 
-   if (tgt === null) {
-      return src
-   } else
-   if (src === tgt) {
-      return src
-   } else {
-      assert(tgt.constructor === src.constructor)
-      assert(!(tgt instanceof VersionedObject), "Upper-bounded versioned objects have the same address")
-      assert(tgt instanceof InternedObject) // ignore other case for now
-      const args: any[] = Object.keys(tgt).map((k: string): any => {
-         return __merge((tgt as any)[k], (src as any)[k])
-      })
-      // Two dubious assumptions, but hard to see another technique:
-      // (1) entries are supplied in declaration-order (not guaranteed by language spec)
-      // (2) constructor arguments also match declaration-order (easy constraint to violate)
-      return make(src.constructor as Class<InternedObject>, ...args)
-   }
-}   
 
 // A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
 export class ExternalObject extends InternedObject {
@@ -76,20 +34,128 @@ export const ν: () => ExternalObject =
       }
    })()
 
-export class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
+function __blankCopy<T extends Object> (src: T): T {
+   const tgt: T = Object.create(src.constructor.prototype)
+   for (let x of Object.keys(src)) {
+      (tgt as any)[x] = null
+   }
+   return tgt
+}
+
+// "State object" whose identity doesn't matter and whose contents we can access by key.
+export interface ObjectState extends Object {
+   [index: string]: Object
+}
+
+// Combine information from src into tgt and vice versa, at an existing world.
+// Precondition: the two are upper-bounded; postcondition: they are equal.
+function __mergeState (tgt: Object, src: Object): void {
+   assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
+   const tgt_: ObjectState = tgt as ObjectState,
+         src_: ObjectState = src as ObjectState
+   Object.keys(tgt).forEach((k: string): void => {
+      tgt_[k] = src_[k] = __merge(tgt_[k], src_[k])
+   })
+}
+
+// Least upper bound of two upper-bounded objects.
+function __merge (tgt: Object, src: Object): Object {
+   if (src === null) {
+      return tgt
+   } else 
+   if (tgt === null) {
+      return src
+   } else
+   if (src === tgt) {
+      return src
+   } else 
+   if (tgt instanceof VersionedObject && src instanceof VersionedObject) {
+      return absurd("Address collision (different child).")
+   } else
+   if (tgt instanceof InternedObject && src instanceof InternedObject) {
+      assert(tgt.constructor === src.constructor, "Address collision (different constructor).")
+      const args: Object[] = Object.keys(tgt).map((k: string): Object => {
+         return __merge(tgt[k as keyof Object], src[k as keyof Object])
+      })
+      return make(src.constructor as Class<InternedObject>, ...args)
+   } else
+   if (tgt instanceof ValueObject && src instanceof ValueObject) {
+      assert(tgt.eq(src))
+      return src
+   } else {
+      return absurd()
+   }
+}
+
+// Assign contents of src to tgt; return whether anything changed. TODO: whether anything changed is not
+// necessarily significant because of call-by-need: a slot may evolve from null to non-null during a run.
+function __assignState (tgt: Object, src: Object): boolean {
+   assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
+   let changed: boolean = false
+   const tgt_: ObjectState = tgt as ObjectState,
+         src_: ObjectState = src as ObjectState
+   Object.keys(tgt).forEach((k: string): void => {
+      if (!eq(tgt_[k], src_[k])) {
+         tgt_[k] = src_[k]
+         changed = true
+      }
+   })
+   return changed
+}
+
+function eq (tgt: Object, src: Object): boolean {
+   if (tgt instanceof ValueObject && src instanceof ValueObject) {
+      return tgt.eq(src)
+   } else {
+      return tgt === src
+   }
+}
+
+export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
-   __history: Object[] = undefined as any // history records only enumerable fields
+   private __history: Map<World, Object> = undefined as any // history records only enumerable fields
    __id: K = undefined as any
+
+   // ES6 only allows constructor calls via "new".
+   abstract constructor_ (...args: any[]): void
 
    eq (that: PersistentObject): boolean {
       return this === that
    }
-      // At a given version (there is only one, currently) enforce "increasing" (LVar) semantics.
-   __version (): Object {
-      if (this.__history.length === 0) {
-         this.__history.push(__blankCopy(this))
+
+   __mostRecent (w: World): [World, Object] {
+      const v: Object | undefined = this.__history.get(w)
+      if (v === undefined) {
+         if (w.parent !== null) {
+            return this.__mostRecent(w.parent)
+         } else {
+            return absurd("No initial state.")
+         }
+      } else {
+         return [w, v]
       }
-      __mergeAssign(this.__history[0], this)
+   }
+   
+   // At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
+   __commit (): Object {
+      if (this.__history.size === 0) {
+         const state: Object = __blankCopy(this)
+         __mergeState(state, this)
+         this.__history.set(__w, state)
+      } else {
+         const [w, state]: [World, Object] = this.__mostRecent(__w)
+         if (w === __w) {
+            __mergeState(state, this)
+         } else {
+            // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
+            const prev: Object = __blankCopy(this)
+            __mergeState(prev, state)
+            if (__assignState(state, this)) {
+               this.__history.set(w, prev)
+               this.__history.set(__w, state)
+            }
+         }
+      }
       return this
    }
 }
@@ -99,8 +165,7 @@ type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
 const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
 
 // The (possibly already extant) object uniquely identified by a memo-key. Needs to be initialised afterwards.
-// Unfortunately the Id type constraint is rather weak in TypeScript because of "bivariance".
-export function create<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>): T {
+export function at<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>, ...args: any[]): T {
    let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
       instances = new Map
@@ -108,7 +173,7 @@ export function create<K extends PersistentObject, T extends VersionedObject<K>>
    }
    let o: VersionedObject<K> | undefined = instances.get(α) as VersionedObject<K>
    if (o === undefined) {
-      o = Object.create(ctr.prototype) as T // new ctr doesn't work any more
+      o = Object.create(ctr.prototype) as T
       // This may massively suck, performance-wise. Define these here rather than on VersionedObject
       // to avoid constructors everywhere.
       Object.defineProperty(o, "__id", {
@@ -116,14 +181,31 @@ export function create<K extends PersistentObject, T extends VersionedObject<K>>
          enumerable: false
       })
       Object.defineProperty(o, "__history", {
-         value: [],
+         value: new Map,
          enumerable: false
       })
       instances.set(α, o)
-   } else {
-      // initialisation should always version, which will enforce single-assignment, so this additional
-      // check strictly unnecessary. However failing now avoids weird ill-formed objects.
-      assert(o.constructor === ctr, "Address collision (different constructor).", α, className(o), funName(ctr))
    }
-   return o as T
+   o.constructor_(...args)
+   return o.__commit() as T
 }
+
+export class World extends InternedObject implements Ord<World> {
+   constructor (public parent: World | null) {
+      super()
+   }
+
+   leq (w: World): boolean {
+      return this === w || (this.parent !== null && this.parent.leq(w))
+   }
+
+   static make (parent: World | null) {
+      return make(World, parent)
+   }
+
+   static newRevision (): World {
+      return __w = World.make(__w)
+   }
+}
+
+let __w: World = new World(null)

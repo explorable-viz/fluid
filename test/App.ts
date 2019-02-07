@@ -5,7 +5,7 @@ import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
 import { Traced, Value } from "../src/Traced"
 import { Point, Rect, objects } from "../src/Graphics"
-import { TestFile, initialise, loadTestFile, runTest } from "../test/Helpers"
+import { TestFile, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
 
 initialise()
 
@@ -77,7 +77,7 @@ export function close (path: THREE.Vector2[]) {
 
 function populateScene (): void {
    const file: TestFile = loadTestFile("example", "bar-chart"),
-         elems: List<Persistent> = as(reflect(__nonNull(runTest(__nonNull(file.text))).v), List)
+         elems: List<Persistent> = as(reflect(__nonNull(runExample(parseExample(file.text))).v), List)
    for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
       for (let obj of objects(elemsʹ.head)) {
          scene.add(obj)

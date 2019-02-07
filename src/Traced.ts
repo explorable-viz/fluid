@@ -5,44 +5,42 @@ import { FiniteMap } from "./FiniteMap"
 import { Runtime } from "./Eval"
 import { Expr, Lex } from "./Expr"
 import { UnaryOp } from "./Primitive"
-import { InternedObject, VersionedObject, create } from "./Runtime"
+import { InternedObject, VersionedObject, at } from "./Runtime"
 
 export type Value = Value.Value
 
 export namespace Value {
-   export class Value extends VersionedObject {
-      __Value_Value (): void {
-         // discriminator
-      }
+   export abstract class Value extends VersionedObject {
+      __subtag: "Value.Value"
    }
 
    export class Closure extends Value {
       ρ: Env
       σ: Traced.Trie<Traced>
    
+      constructor_ (ρ: Env, σ: Traced.Trie<Traced>): void {
+         this.ρ = ρ
+         this.σ = σ
+      }
+
       static at (α: PersistentObject, ρ: Env, σ: Traced.Trie<Traced>): Closure {
-         const this_: Closure = create(α, Closure)
-         this_.ρ = ρ
-         this_.σ = σ
-         this_.__version()
-         return this_
+         return at(α, Closure, ρ, σ)
       }
    }
 
-   export class Prim extends Value {
-      __Value_Prim (): void {
-         // discriminator
-      }
-   }
+   export abstract class Prim extends Value {
+      __subsubtag: "Value.Prim"
+  }
    
    export class ConstInt extends Prim {
       val: number
+
+      constructor_ (val: number): void {
+         this.val = val
+      }
    
       static at (α: PersistentObject, val: number): ConstInt {
-         const this_: ConstInt = create(α, ConstInt)
-         this_.val = val
-         this_.__version()
-         return this_
+         return at(α, ConstInt, val)
       }
 
       toString (): string {
@@ -52,12 +50,13 @@ export namespace Value {
    
    export class ConstStr extends Prim {
       val: string
+
+      constructor_ (val: string): void {
+         this.val = val
+      }
    
       static at (α: PersistentObject, val: string): ConstStr {
-         const this_: ConstStr = create(α, ConstStr)
-         this_.val = val
-         this_.__version()
-         return this_
+         return at(α, ConstStr, val)
       }
 
       toString (): string {
@@ -68,24 +67,26 @@ export namespace Value {
    export class Constr extends Value {
       ctr: Lex.Ctr
       args: List<Traced>
+
+      constructor_ (ctr: Lex.Ctr, args: List<Traced>): void {
+         this.ctr = ctr
+         this.args = args
+      }
    
       static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Traced>): Constr {
-         const this_: Constr = create(α, Constr)
-         this_.ctr = ctr
-         this_.args = args
-         this_.__version()
-         return this_
+         return at(α, Constr, ctr, args)
       }
    }
 
    export class PrimOp extends Value {
       op: UnaryOp
+
+      constructor_ (op: UnaryOp): void {
+         this.op = op
+      }
    
       static at (α: PersistentObject, op: UnaryOp): PrimOp {
-         const this_: PrimOp = create(α, PrimOp)
-         this_.op = op
-         this_.__version()
-         return this_
+         return at(α, PrimOp, op)
       }
    }
 }
@@ -112,9 +113,7 @@ export namespace Traced {
    export namespace Args {
       // n-ary product
       export class Args<K> extends InternedObject {
-         __Traced_Args (κ: K): void {
-            // discriminator
-         }
+         __subtag: "Traced.Args"
       }
 
       // Maps zero arguments to κ.
@@ -175,9 +174,7 @@ export namespace Traced {
 
    export namespace Trie {
       export abstract class Trie<K> extends InternedObject {
-         __Trie_Trie (κ: K): void {
-            // discriminator
-         }
+         __subtag: "Trie.Trie"
       }
 
       export class Prim<K> extends Trie<K> {
@@ -296,9 +293,7 @@ export namespace Traced {
 
       export namespace Args {
          export class Args<K> extends InternedObject {
-            __Match_Args (): void {
-               // discriminator
-            }
+            __subtag: "Match.Args"
          }
    
          export class End<K> extends Args<K> {
@@ -335,9 +330,7 @@ export namespace Traced {
       }
 
       export class Match<K> extends InternedObject {
-         __Match_Match (): void {
-            // discriminator
-         }
+         __subtag: "Match.Match"
       }
 
       export class Prim<K> extends Match<K> {
@@ -435,10 +428,8 @@ export namespace Traced {
       }
    }
 
-   export class Trace extends VersionedObject<Runtime<Expr>> {
-      __Trace_Trace (): void {
-         // discriminator
-      }
+   export abstract class Trace extends VersionedObject<Runtime<Expr>> {
+      __subtag: "Trace.Trace"
    }
    
    export class App extends Trace {
@@ -446,22 +437,24 @@ export namespace Traced {
       arg: Traced
       body: Trace | null
 
+      constructor_ (func: Traced, arg: Traced, body: Trace | null): void {
+         this.func = func
+         this.arg = arg
+         this.body = body
+      }
+
       static at (k: Runtime<Expr>, func: Traced, arg: Traced, body: Trace | null): App {
-         const this_: App = create(k, App)
-         this_.func = func
-         this_.arg = arg
-         this_.body = body
-         this_.__version()
-         return this_
+         return at(k, App, func, arg, body)
       }
    }
 
    // Not the same as ⊥ (null); we distinguish information about an absence from the absence of information.
    export class Empty extends Trace {
+      constructor_ (): void {
+      }
+
       static at (k: Runtime<Expr>): Empty {
-         const this_: Empty = create(k, Empty)
-         this_.__version()
-         return this_
+         return at(k, Empty)
       }
    }
 
@@ -470,30 +463,28 @@ export namespace Traced {
       σ: Trie.Var<Traced>
       t: Trace | null
 
-      __Trace_Let (): void {
-         // discriminator
+      constructor_ (tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): void {
+         this.tu = tu
+         this.σ = σ
+         this.t = t
       }
 
       static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
-         const this_: Let = create(k, Let)
-         this_.tu = tu
-         this_.σ = σ
-         this_.t = t
-         this_.__version()
-         return this_
+         return at(k, Let, tu, σ, t)
       }
    }
 
    export class RecDef extends VersionedObject<Runtime<Expr.RecDef>> {
       x: Lex.Var
       tv: Traced
+
+      constructor_ (x: Lex.Var, tv: Traced): void {
+         this.x = x
+         this.tv = tv
+      }
    
       static at (i: Runtime<Expr.RecDef>, x: Lex.Var, tv: Traced): RecDef {
-         const this_: RecDef = create(i, RecDef)
-         this_.x = x
-         this_.tv = tv
-         this_.__version()
-         return this_
+         return at(i, RecDef, x, tv)
       }
    }
 
@@ -502,12 +493,13 @@ export namespace Traced {
       δ: List<RecDef>
       tv: Traced
    
+      constructor_ (δ: List<RecDef>, tv: Traced): void {
+         this.δ = δ
+         this.tv = tv
+      }
+
       static at (k: Runtime<Expr>, δ: List<RecDef>, tv: Traced): LetRec {
-         const this_: LetRec = create(k, LetRec)
-         this_.δ = δ
-         this_.tv = tv
-         this_.__version()
-         return this_
+         return at(k, LetRec, δ, tv)
       }
    }
    
@@ -516,17 +508,14 @@ export namespace Traced {
       σ: Trie<Traced>
       t: Trace | null
 
-      __Trace_MatchAs (): void {
-         // discriminator
+      constructor_ (tu: Traced, σ: Trie<Traced>, t: Trace | null): void {
+         this.tu = tu
+         this.σ = σ
+         this.t = t
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>,  t: Trace | null): MatchAs {
-         const this_: MatchAs = create(k, MatchAs)
-         this_.tu = tu
-         this_.σ = σ
-         this_.t = t
-         this_.__version()
-         return this_
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>, t: Trace | null): MatchAs {
+         return at(k, MatchAs, tu, σ, t)
       }
    }
 
@@ -535,13 +524,14 @@ export namespace Traced {
       opName: Lex.OpName
       tv2: Traced
 
+      constructor_ (tv1: Traced, opName: Lex.OpName, tv2: Traced): void {
+         this.tv1 = tv1
+         this.opName = opName
+         this.tv2 = tv2
+      }
+
       static at (k: Runtime<Expr>, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
-         const this_: PrimApp = create(k, PrimApp)
-         this_.tv1 = tv1
-         this_.opName = opName
-         this_.tv2 = tv2
-         this_.__version()
-         return this_
+         return at(k, PrimApp, tv1, opName, tv2)
       }
    }
 
@@ -549,12 +539,13 @@ export namespace Traced {
       x: Lex.Var
       t: Trace | null
 
+      constructor_ (x: Lex.Var, t: Trace | null): void {
+         this.x = x
+         this.t = t
+      }
+
       static at (k: Runtime<Expr>, x: Lex.Var, t: Trace | null): Var {
-         const this_: Var = create(k, Var)
-         this_.x = x
-         this_.t = t
-         this_.__version()
-         return this_
+         return at(k, Var, x, t)
       }
    }
 }

@@ -6,9 +6,7 @@ import { Traced } from "./Traced"
 import RecDef = Traced.RecDef
 
 export class EnvEntries extends InternedObject {
-   __EnvEntries (): void {
-      // discriminator
-   }
+   __subtag: "EnvEntries"
 }
 
 export class EmptyEnvEntries extends EnvEntries { 
@@ -37,9 +35,7 @@ export class ExtendEnvEntries extends EnvEntries {
 // environments to enable LVar semantics.
 
 export abstract class Env extends InternedObject {
-   __Env (): void {
-      // discriminator
-   }
+   __subtag: "Env"
 
    abstract entries (): EnvEntries;
 
