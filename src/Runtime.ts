@@ -120,14 +120,13 @@ function __assign (tgt: Object, src: Object): [Object, boolean] {
       if (tgt.constructor !== src.constructor) {
          return [src, true]
       } else {
-         // an interned object has changed only if its parts have changed
-         let changed: boolean = false
          const args: Object[] = Object.keys(tgt).map((k: string): Object => {
-            let [arg, changedʹ] = __assign(tgt[k as keyof Object], src[k as keyof Object])
-            changed = changed || changedʹ
+            let [arg,] = __assign(tgt[k as keyof Object], src[k as keyof Object])
             return arg
          })
-         return [make(src.constructor as Class<InternedObject>, ...args), changed]
+         // an interned object has changed only if its parts have changed
+         const v: Object = make(src.constructor as Class<InternedObject>, ...args)
+         return [v, v !== tgt]
       }
    } else
    if (tgt instanceof ValueObject && src instanceof ValueObject) {
