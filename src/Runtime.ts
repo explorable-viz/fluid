@@ -173,11 +173,12 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
          if (w === __w) {
             __mergeState(state, this)
          } else {
-            // copy-on-write:
+            // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
+            const prev: Object = __blankCopy(this)
+            __mergeState(prev, state)
             if (__assignState(state, this)) {
-               const newState: Object = __blankCopy(this)
-               __mergeState(newState, this)
-               this.__history.set(__w, newState)
+               this.__history.set(w, prev)
+               this.__history.set(__w, state)
             }
          }
       }
