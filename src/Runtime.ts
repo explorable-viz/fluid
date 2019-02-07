@@ -45,7 +45,7 @@ function __blankCopy<T extends Object> (src: T): T {
 
 // "State object" whose identity doesn't matter and whose contents we can access by key.
 export interface ObjectState extends Object {
-   [index: string]: Object
+   [index: string]: Object | null
 }
 
 // Combine information from src into tgt and vice versa, at an existing world.
@@ -60,7 +60,7 @@ function __mergeState (tgt: Object, src: Object): void {
 }
 
 // Least upper bound of two upper-bounded objects.
-function __merge (tgt: Object, src: Object): Object {
+function __merge (tgt: Object | null, src: Object | null): Object | null {
    if (src === null) {
       return tgt
    } else 
@@ -75,7 +75,7 @@ function __merge (tgt: Object, src: Object): Object {
    } else
    if (tgt instanceof InternedObject && src instanceof InternedObject) {
       assert(tgt.constructor === src.constructor, "Address collision (different constructor).")
-      const args: Object[] = Object.keys(tgt).map((k: string): Object => {
+      const args: (Object | null)[] = Object.keys(tgt).map((k: string): Object | null => {
          return __merge(tgt[k as keyof Object], src[k as keyof Object])
       })
       return make(src.constructor as Class<InternedObject>, ...args)
@@ -104,7 +104,7 @@ function __assignState (tgt: Object, src: Object): boolean {
    return changed
 }
 
-function eq (tgt: Object, src: Object): boolean {
+function eq (tgt: Object | null, src: Object | null): boolean {
    if (tgt instanceof ValueObject && src instanceof ValueObject) {
       return tgt.eq(src)
    } else {
@@ -166,10 +166,10 @@ type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
 const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
 
 // Datatype-generic construction.
-export function constructor_<T extends VersionedObject> (this_: VersionedObject, ...args: Object[]): void {
+export function constructor_ (this_: VersionedObject, ...args: (Object | null)[]): void {
    const ks: string[] = Object.keys(this_)
    assert(ks.length === args.length)
-   zip(ks, args).forEach(([k, arg]: [string, Object]): void => {
+   zip(ks, args).forEach(([k, arg]: [string, Object | null]): void => {
       (this_ as Object as ObjectState)[k] = arg
    })
 }
