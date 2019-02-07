@@ -108,7 +108,7 @@ function __assignState (tgt: Object, src: Object): boolean {
 // object or value object is never overwritten by an object of one of the other kinds.
 function __assign (tgt: Object, src: Object): [Object, boolean] {
    if (src === tgt) {
-      return [tgt, false]
+      return [src, false]
    } else
    if (src === null || tgt === null) {
       return [src, true]
