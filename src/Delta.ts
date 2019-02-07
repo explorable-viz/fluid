@@ -1,5 +1,4 @@
 import { Env } from "./Env"
-import { World } from "./Runtime"
 import { Traced, Value } from "./Traced"
 import { PersistentObject } from "./util/Core"
 
