@@ -183,7 +183,7 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
    }
    let o: VersionedObject<K> | undefined = instances.get(α) as VersionedObject<K>
    if (o === undefined) {
-      o = Object.create(ctr.prototype) as T
+      o = new ctr // Object.create(ctr.prototype) as T
       // This may massively suck, performance-wise. Define these here rather than on VersionedObject
       // to avoid constructors everywhere.
       Object.defineProperty(o, "__id", {
@@ -196,6 +196,7 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
       })
       instances.set(α, o)
    }
+   // Couldn't get datatype-generic construction to work because fields not created by "new ctr".
    o.constructor_(...args)
    return o.__commit() as T
 }
