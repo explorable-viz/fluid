@@ -42,8 +42,12 @@ export function diffClosure (tgt: Value.Closure, src: Value.Closure): Delta<Valu
    }
 }
 
-export function diff<T extends VersionedObject> (tgt: T, src: T): Delta<T, keyof VersionedObject> {
+export function diffState<T extends Object> (tgt: T, src: T): Delta<T, keyof Object> {
    const tgt_: ObjectState = tgt as Object as ObjectState, // cast a suitable spell
          src_: ObjectState = src as Object as ObjectState
    Object.keys(tgt).map((k: string) => diff(tgt_[k], src_[k]))
+}
+
+export function diff<T extends Object> (tgt: T | null, src: T | null): DeltaRef<T> {
+
 }
