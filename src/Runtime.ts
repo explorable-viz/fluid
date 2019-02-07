@@ -1,4 +1,4 @@
-import { Class, ValueObject, __log, __nonNull, assert, make, absurd } from "./util/Core"
+import { Class, ValueObject, __log, __nonNull, assert, absurd, className, make } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { PersistentObject } from "./util/Core"
 
@@ -99,7 +99,7 @@ function __assignState (tgt: Object, src: Object): boolean {
       changed = changed || changedʹ
    })
    if (changed) {
-      __log(src, src => src + " has changed.")
+      __log(src, src => className(src) + " has changed:")
    }
    return changed
 }
