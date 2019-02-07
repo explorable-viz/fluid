@@ -94,9 +94,10 @@ function __assignState (tgt: Object, src: Object): boolean {
    const tgt_: ObjectState = tgt as ObjectState,
          src_: ObjectState = src as ObjectState
    Object.keys(tgt).forEach((k: string): void => {
-      const [v, changedʹ] = __assign(tgt_[k], src_[k])
-      tgt_[k] = v
-      changed = changed || changedʹ
+      if (!eq(tgt_[k], src_[k])) {
+         tgt_[k] = src_[k]
+         changed = true
+      }
    })
    if (changed) {
       __log(src, src => className(src) + " has changed:")
@@ -104,29 +105,11 @@ function __assignState (tgt: Object, src: Object): boolean {
    return changed
 }
 
-// Candidate invariant of the data model (assumed here): a role inhabited by a versioned object, interned
-// object or value object is never overwritten by an object of one of the other kinds.
-function __assign (tgt: Object, src: Object): [Object, boolean] {
-   if (src === tgt) {
-      return [src, false]
-   } else
-   if (src === null || tgt === null) {
-      return [src, true]
-   } else 
-   if (tgt instanceof VersionedObject && src instanceof VersionedObject) {
-      return [src, true]
-   } else 
-   if (tgt instanceof InternedObject && src instanceof InternedObject) {
-      if (tgt.constructor !== src.constructor) {
-         return [src, true]
-      } else {
-         return [src, src !== tgt]
-      }
-   } else
+function eq (tgt: Object, src: Object): boolean {
    if (tgt instanceof ValueObject && src instanceof ValueObject) {
-      return [src, !tgt.eq(src)]
+      return tgt.eq(src)
    } else {
-      return absurd()
+      return tgt === src
    }
 }
 
