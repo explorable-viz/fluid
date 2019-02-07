@@ -1,4 +1,4 @@
-import { Env } from "./Env"
+import { Env, EmptyEnv } from "./Env"
 import { Value } from "./Traced"
 
 // EXPERIMENT
@@ -18,4 +18,5 @@ class DeltaRef<T extends Object> {
 
 export function blah (v: Delta<Value.Closure>): void {
    const ρ: Delta<Env> = v.ρ.ref
+   ρ instanceof EmptyEnv // proxies so instanceof works?
 }
