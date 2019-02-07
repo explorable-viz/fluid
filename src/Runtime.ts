@@ -1,3 +1,4 @@
+import { zip } from "./util/Array"
 import { Class, ValueObject, __nonNull, assert, absurd, make } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { PersistentObject } from "./util/Core"
@@ -117,7 +118,7 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
    __id: K = undefined as any
 
    // ES6 only allows constructor calls via "new".
-   abstract constructor_ (...args: any[]): void
+   abstract constructor_ (...args: (Object | null)[]): void
 
    eq (that: PersistentObject): boolean {
       return this === that
@@ -164,8 +165,17 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
 type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
 const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
 
+// Datatype-generic construction.
+export function constructor_<T extends VersionedObject> (this_: VersionedObject, ...args: Object[]): void {
+   const ks: string[] = Object.keys(this_)
+   assert(ks.length === args.length)
+   zip(ks, args).forEach(([k, arg]: [string, Object]): void => {
+      (this_ as Object as ObjectState)[k] = arg
+   })
+}
+
 // The (possibly already extant) object uniquely identified by a memo-key. Needs to be initialised afterwards.
-export function at<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>, ...args: any[]): T {
+export function at<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>, ...args: (Object | null)[]): T {
    let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
       instances = new Map

@@ -1,4 +1,5 @@
 import { Env } from "./Env"
+import { ObjectState, VersionedObject } from "./Runtime"
 import { Traced, Value } from "./Traced"
 import { PersistentObject } from "./util/Core"
 
@@ -25,13 +26,24 @@ class DeltaRef<T extends Object> {
    }
 }
 
-type OmittedProps = "__id" | "__commit" | "__mostRecent" | "__tag" | "__subtag" | "eq" | "constructor_"
+// Generic implementation. No implements clause because I don't statically specify my members.
+export class DeltaVersionedObject<T> {
+   constructor_ (...args: Object[]): void {
+      // TODO: set properties
+   }
+}
 
-export function diff (tgt: Value.Closure, src: Value.Closure): Delta<Value.Closure, OmittedProps> {
+export function diffClosure (tgt: Value.Closure, src: Value.Closure): Delta<Value.Closure, "__subtag" | keyof VersionedObject> {
    const ρ: DeltaRef<Env> = new DeltaRef<Env>(RefDelta.Unchanged, tgt.ρ)
    const σ: DeltaRef<Trie<Traced>> = new DeltaRef<Trie<Traced>>(RefDelta.Changed, src.σ)
    return {
       ρ: ρ,
       σ: σ
    }
+}
+
+export function diff<T extends VersionedObject> (tgt: T, src: T): Delta<T, keyof VersionedObject> {
+   const tgt_: ObjectState = tgt as Object as ObjectState, // cast a suitable spell
+         src_: ObjectState = src as Object as ObjectState
+   Object.keys(tgt).map((k: string) => diff(tgt_[k], src_[k]))
 }
