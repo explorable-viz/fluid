@@ -23,12 +23,10 @@ export namespace str {
 
 export namespace Lex {
    export class Ctr extends Lexeme {
+      __tag: "Lex.Ctr"
+
       constructor (str: string) {
          super(str)
-      }
-
-      __Lex_Ctr (): void {
-         // discriminator
       }
    }
 
@@ -51,12 +49,10 @@ export namespace Lex {
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
    // Other uses of primitive operations are treated as variables.
    export class OpName extends Lexeme {
+      __tag: "Lex.OpName"
+
       constructor (str: string) {
          super(str)
-      }
-
-      __Lex_OpName (): void {
-         // discriminator
       }
    }
 
@@ -71,12 +67,10 @@ export namespace Lex {
    }
 
    export class Var extends Lexeme {
+      __tag: "Lex.Var"
+      
       constructor (str: string) {
          super(str)
-      }
-
-      __Lex_Var (): void {
-         // discriminator
       }
    }
 }
@@ -86,9 +80,7 @@ export type Expr = Expr.Expr
 export namespace Expr {
    // Must be joinable, purely so that joining two expressions will fail.
    export abstract class Expr extends VersionedObject<ExternalObject> implements JoinSemilattice<Expr> {
-      __Expr_Expr(): void {
-         // discriminator
-      }
+      __subtag: "Expr.Expr"
 
       join (e: Expr): Expr {
          return assert(false, "Expression join unsupported.")
@@ -261,9 +253,7 @@ export namespace Expr {
    export namespace Args {
       // n-ary product.
       export class Args<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Args<K>> {
-         __Expr_Args (κ: K): void {
-            // discriminator
-         }
+         __subtag: "Expr.Args.Args"
 
          join (Π: Args<K>): Args<K> {
             return Args.join(this, Π)
@@ -324,9 +314,7 @@ export namespace Expr {
 
    export namespace Trie {
       export class Trie<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Trie<K>> {
-         __Expr_Trie (κ: K): void {
-            // discriminator
-         }
+         __subtag: "Expr.Trie"
          
          join (τ: Trie<K>): Trie<K> {
             return Trie.join(this, τ)

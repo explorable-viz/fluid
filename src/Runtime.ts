@@ -1,4 +1,4 @@
-import { Class, ValueObject, __log, __nonNull, assert, absurd, className, make } from "./util/Core"
+import { Class, ValueObject, __nonNull, assert, absurd, make } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { PersistentObject } from "./util/Core"
 
@@ -87,7 +87,8 @@ function __merge (tgt: Object, src: Object): Object {
    }
 }
 
-// Assign contents of src to tgt; return whether anything changed. 
+// Assign contents of src to tgt; return whether anything changed. TODO: whether anything changed is not
+// necessarily significant because of call-by-need: a slot may evolve from null to non-null during a run.
 function __assignState (tgt: Object, src: Object): boolean {
    assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
    let changed: boolean = false
@@ -99,9 +100,6 @@ function __assignState (tgt: Object, src: Object): boolean {
          changed = true
       }
    })
-   if (changed) {
-      __log(src, src => className(src) + " has changed:")
-   }
    return changed
 }
 

@@ -11,9 +11,7 @@ export type Value = Value.Value
 
 export namespace Value {
    export abstract class Value extends VersionedObject {
-      __Value_Value (): void {
-         // discriminator
-      }
+      __subtag: "Value.Value"
    }
 
    export class Closure extends Value {
@@ -31,10 +29,8 @@ export namespace Value {
    }
 
    export abstract class Prim extends Value {
-      __Value_Prim (): void {
-         // discriminator
-      }
-   }
+      __subsubtag: "Value.Prim"
+  }
    
    export class ConstInt extends Prim {
       val: number
@@ -117,9 +113,7 @@ export namespace Traced {
    export namespace Args {
       // n-ary product
       export class Args<K> extends InternedObject {
-         __Traced_Args (κ: K): void {
-            // discriminator
-         }
+         __subtag: "Traced.Args"
       }
 
       // Maps zero arguments to κ.
@@ -180,9 +174,7 @@ export namespace Traced {
 
    export namespace Trie {
       export abstract class Trie<K> extends InternedObject {
-         __Trie_Trie (κ: K): void {
-            // discriminator
-         }
+         __subtag: "Trie.Trie"
       }
 
       export class Prim<K> extends Trie<K> {
@@ -301,9 +293,7 @@ export namespace Traced {
 
       export namespace Args {
          export class Args<K> extends InternedObject {
-            __Match_Args (): void {
-               // discriminator
-            }
+            __subtag: "Match.Args"
          }
    
          export class End<K> extends Args<K> {
@@ -340,9 +330,7 @@ export namespace Traced {
       }
 
       export class Match<K> extends InternedObject {
-         __Match_Match (): void {
-            // discriminator
-         }
+         __subtag: "Match.Match"
       }
 
       export class Prim<K> extends Match<K> {
@@ -441,9 +429,7 @@ export namespace Traced {
    }
 
    export abstract class Trace extends VersionedObject<Runtime<Expr>> {
-      __Trace_Trace (): void {
-         // discriminator
-      }
+      __subtag: "Trace.Trace"
    }
    
    export class App extends Trace {
