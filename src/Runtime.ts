@@ -128,7 +128,7 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
 // Versioned objects can have different metatypes at different worlds; here we assume T is its type at the 
 // current world.
 export function getProp<T extends VersionedObject> (o: T, k: keyof T): Object | null {
-   return (stateAt(o, __w)[1] as Object as T)[k]
+   return stateAt(o, __w)[1][k as string]
 }
 
 export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
@@ -224,4 +224,4 @@ export class World extends InternedObject implements Ord<World> {
    }
 }
 
-let __w: World = new World(null)
+export let __w: World = new World(null)
