@@ -79,7 +79,8 @@ export function close (path: THREE.Vector2[]) {
 
 function populateScene (): void {
    const file: TestFile = loadTestFile("example", "bar-chart"),
-         elems: List<Persistent> = as(reflect(__nonNull(runExample(parseExample(file.text))).v), List),
+         v: Value.Value = __nonNull(runExample(parseExample(file.text))).v,
+         elems: List<Persistent> = as(reflect(v), List),
          w: World = __w
    World.newRevision()
    // TODO: make some change at __w and reevaluate
