@@ -1,10 +1,10 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { Class, Persistent, PersistentObject, __check, __nonNull, as, assert, absurd, make } from "../src/util/Core"
+import { Class, Persistent, __check, __nonNull, as, absurd, make } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
 import { diffProp } from "../src/Delta"
-import { World, __w } from "../src/Runtime"
+import { InternedObject, VersionedObject, World, __w, at } from "../src/Runtime"
 import { Traced, Value } from "../src/Traced"
 import { Point, Rect, objects } from "../src/Graphics"
 import { TestFile, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
@@ -12,14 +12,28 @@ import { TestFile, initialise, loadTestFile, runExample, parseExample } from "..
 initialise()
 
 // intermediate value required to stop TS getting confused:
-const classFor_: [string, Class<PersistentObject>][] =
+const classFor_: [string, Class<VersionedObject>][] =
    [["Cons", Cons],
     ["Nil", Nil],
     ["Point", Point],
     ["Rect", Rect]]
-const classFor: Map<string, Class<PersistentObject>> = new Map(classFor_)
+const classFor: Map<string, Class<VersionedObject>> = new Map(classFor_)
 
-function reflect (v: Value | null): Persistent { // weirdy number and string are subtypes of Object
+// Not really convinced by this pattern - wouldn't it make more sense to use the function objects themselves
+// to partition the memo keys, as I did in lambdacalc-old?
+class Reflect extends InternedObject {
+   constructor (
+      public v: Value
+   ) {
+      super()
+   }
+
+   static make (v: Value): Reflect {
+      return make<Reflect>(Reflect, v)
+   }
+}
+
+function reflect (v: Value | null): Persistent { // weirdly number and string are subtypes of Object
    if (v === null) {
       return null
    } else
@@ -30,15 +44,14 @@ function reflect (v: Value | null): Persistent { // weirdy number and string are
       return v.val
    } else
    if (v instanceof Value.Constr) {
-      const ctr: string = v.ctr.str
-      assert(classFor.has(ctr))
-      const args: Persistent[] = []
+      const ctr: string = __check(v.ctr.str, it => classFor.has(it)),
+            args: Persistent[] = []
       for (let tvs: List<Traced> = v.args; Cons.is(tvs);) {
          args.push(reflect(tvs.head.v))
          tvs = tvs.tail
       }
       // interning probably not what we want here, but for now will do
-      return make(classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
+      return at(Reflect.make(v), classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
    } else {
       return absurd()
    }
