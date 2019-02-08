@@ -1,7 +1,7 @@
+import { PersistentObject, ValueObject } from "./util/Core"
 import { Env } from "./Env"
 import { ObjectState, VersionedObject } from "./Runtime"
 import { Traced, Value } from "./Traced"
-import { PersistentObject } from "./util/Core"
 
 type Trie<T> = Traced.Trie<T>
 
@@ -13,15 +13,11 @@ export type Delta<T, K extends keyof T> = {
    [P in keyof Omit<T, K>]: T[P] extends PersistentObject ? DeltaRef<T[P]> : T[P] 
 }
 
-enum RefDelta {
-   Unchanged,
-   Changed
-}
-
+// Should these be interned (or value objects)?
 class DeltaRef<T extends Object> {
    constructor (
-      public delta: RefDelta,
-      public ref: T
+      public changed: boolean,
+      public ref: T | null
    ) {
    }
 }
@@ -46,8 +42,13 @@ export function diffState<T extends Object> (tgt: T, src: T): Delta<T, keyof Obj
    const tgt_: ObjectState = tgt as Object as ObjectState, // cast a suitable spell
          src_: ObjectState = src as Object as ObjectState
    Object.keys(tgt).map((k: string) => diff(tgt_[k], src_[k]))
+
 }
 
 export function diff<T extends Object> (tgt: T | null, src: T | null): DeltaRef<T> {
-
+   if (tgt instanceof ValueObject && src instanceof ValueObject) {
+      return new DeltaRef(tgt.eq(src), tgt)
+   } else {
+      return new DeltaRef(tgt === src, tgt)
+   }
 }
