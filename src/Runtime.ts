@@ -35,10 +35,11 @@ export const ν: () => ExternalObject =
       }
    })()
 
-function __blankCopy<T extends Object> (src: T): T {
-   const tgt: T = Object.create(src.constructor.prototype)
+// Not sure what the T parameter is for here but Typescript seems to get confused without it.
+function __blankCopy<T extends VersionedObject> (src: T): ObjectState {
+   const tgt: ObjectState = Object.create(src.constructor.prototype)
    for (let x of Object.keys(src)) {
-      (tgt as any)[x] = null
+      tgt[x] = null
    }
    return tgt
 }
@@ -50,12 +51,11 @@ export interface ObjectState extends Object {
 
 // Combine information from src into tgt and vice versa, at an existing world.
 // Precondition: the two are upper-bounded; postcondition: they are equal.
-function __mergeState (tgt: Object, src: Object): void {
+function __mergeState (tgt: ObjectState, src: Object): void {
    assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
-   const tgt_: ObjectState = tgt as ObjectState,
-         src_: ObjectState = src as ObjectState
+   const src_: ObjectState = src as ObjectState
    Object.keys(tgt).forEach((k: string): void => {
-      tgt_[k] = src_[k] = __merge(tgt_[k], src_[k])
+      tgt[k] = src_[k] = __merge(tgt[k], src_[k])
    })
 }
 
@@ -90,14 +90,13 @@ function __merge (tgt: Object | null, src: Object | null): Object | null {
 
 // Assign contents of src to tgt; return whether anything changed. TODO: whether anything changed is not
 // necessarily significant because of call-by-need: a slot may evolve from null to non-null during a run.
-function __assignState (tgt: Object, src: Object): boolean {
+function __assignState (tgt: ObjectState, src: Object): boolean {
    assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
    let changed: boolean = false
-   const tgt_: ObjectState = tgt as ObjectState,
-         src_: ObjectState = src as ObjectState
+   const src_: ObjectState = src as ObjectState
    Object.keys(tgt).forEach((k: string): void => {
-      if (!eq(tgt_[k], src_[k])) {
-         tgt_[k] = src_[k]
+      if (!eq(tgt[k], src_[k])) {
+         tgt[k] = src_[k]
          changed = true
       }
    })
@@ -112,9 +111,28 @@ function eq (tgt: Object | null, src: Object | null): boolean {
    }
 }
 
+// State of o at w, plus predecessor of w at which that state was set.
+function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
+   const v: ObjectState | undefined = o.__history.get(w)
+   if (v === undefined) {
+      if (w.parent !== null) {
+         return stateAt(o, w.parent)
+      } else {
+         return absurd("No initial state.")
+      }
+   } else {
+      return [w, v]
+   }
+}
+
+/*
+function getProp<T extends VersionedObject> (o: T, k: keyof T): Object | null {
+}
+*/
+
 export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
-   private __history: Map<World, Object> = undefined as any // history records only enumerable fields
+   __history: Map<World, ObjectState> = undefined as any // history records only enumerable fields
    __id: K = undefined as any
 
    // ES6 only allows constructor calls via "new".
@@ -124,32 +142,19 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
       return this === that
    }
 
-   __mostRecent (w: World): [World, Object] {
-      const v: Object | undefined = this.__history.get(w)
-      if (v === undefined) {
-         if (w.parent !== null) {
-            return this.__mostRecent(w.parent)
-         } else {
-            return absurd("No initial state.")
-         }
-      } else {
-         return [w, v]
-      }
-   }
-   
    // At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
    __commit (): Object {
       if (this.__history.size === 0) {
-         const state: Object = __blankCopy(this)
+         const state: ObjectState = __blankCopy(this)
          __mergeState(state, this)
          this.__history.set(__w, state)
       } else {
-         const [w, state]: [World, Object] = this.__mostRecent(__w)
+         const [w, state]: [World, ObjectState] = stateAt(this, __w)
          if (w === __w) {
             __mergeState(state, this)
          } else {
             // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
-            const prev: Object = __blankCopy(this)
+            const prev: ObjectState = __blankCopy(this)
             __mergeState(prev, state)
             if (__assignState(state, this)) {
                this.__history.set(w, prev)
@@ -161,7 +166,7 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
    }
 }
 
-// Keys must be "memo" objects (interned or persistent).
+// Keys must be "memo" (persistent) objects.
 type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
 const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
 
@@ -174,7 +179,7 @@ export function constructor_ (this_: VersionedObject, ...args: (Object | null)[]
    })
 }
 
-// The (possibly already extant) object uniquely identified by a memo-key. Needs to be initialised afterwards.
+// The (possibly already extant) object uniquely identified by a memo-key.
 export function at<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>, ...args: (Object | null)[]): T {
    let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
@@ -184,8 +189,7 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
    let o: VersionedObject<K> | undefined = instances.get(α) as VersionedObject<K>
    if (o === undefined) {
       o = new ctr
-      // This may massively suck, performance-wise. Define these here rather than on VersionedObject
-      // to avoid constructors everywhere.
+      // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
       Object.defineProperty(o, "__id", {
          value: α,
          enumerable: false
