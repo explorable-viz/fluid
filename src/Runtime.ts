@@ -125,10 +125,11 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
    }
 }
 
-/*
-function getProp<T extends VersionedObject> (o: T, k: keyof T): Object | null {
+// Versioned objects can have different metatypes at different worlds; here we assume T is its type at the 
+// current world.
+export function getProp<T extends VersionedObject> (o: T, k: keyof T): Object | null {
+   return (stateAt(o, __w)[1] as Object as T)[k]
 }
-*/
 
 export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
