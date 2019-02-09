@@ -34,7 +34,7 @@ const reservedWord: Parser<string> =
       reserved(str.let_), reserved(str.letRec)
    ])
 
-function keyword(str: string): Parser<Lex.Keyword> {
+function keyword (str: string): Parser<Lex.Keyword> {
    return lexeme(reserved(str), Lex.Keyword)
 }
 

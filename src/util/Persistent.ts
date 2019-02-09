@@ -22,17 +22,17 @@ export abstract class ValueObject implements Eq<ValueObject> {
 // Curried map from constructors and arguments to constructed objects; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
-const __instances: Map<any, Object> = new Map()
+const __instances: Map<Persistent, Object> = new Map()
 
 // For memoisation purposes, treat the constructor itself as argument -1.
 function lookupArg (
    ctr: new (...args: Persistent[]) => Object,
-   m: Map<any, Object>,
-   args: any[],
+   m: Map<Persistent, Object>,
+   args: Persistent[],
    n: number
 ): Object {
-   const k = n === -1 ? ctr : args[n]
-   let v = m.get(k)
+   const k: Persistent = n === -1 ? ctr : args[n]
+   let v: Object | undefined = m.get(k)
    if (v === undefined) {
       if (n === args.length - 1) {
       v = new ctr(...args)
