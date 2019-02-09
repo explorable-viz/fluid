@@ -1,7 +1,7 @@
 import { zip } from "./Array"
 import { Class, NullaryClass, __nonNull, assert, absurd } from "./Core"
 import { Ord } from "./Ord"
-import { PersistentObject, make } from "./Persistent"
+import { Persistent, PersistentObject, make } from "./Persistent"
 
 // TODO: move to same module as `make`?
 export abstract class InternedObject extends PersistentObject {
@@ -42,8 +42,8 @@ function __blankCopy<T extends VersionedObject> (src: T): ObjectState {
 }
 
 // "State object" whose identity doesn't matter and whose contents we can access by key.
-export interface ObjectState extends Object {
-   [index: string]: Object | null
+export interface ObjectState {
+   [index: string]: Persistent
 }
 
 // Combine information from src into tgt and vice versa, at an existing world.
@@ -57,7 +57,7 @@ function __mergeState (tgt: ObjectState, src: Object): void {
 }
 
 // Least upper bound of two upper-bounded objects.
-function __merge (tgt: Object | null, src: Object | null): Object | null {
+function __merge (tgt: Persistent, src: Persistent): Persistent {
    if (src === null) {
       return tgt
    } else 
@@ -72,8 +72,10 @@ function __merge (tgt: Object | null, src: Object | null): Object | null {
    } else
    if (tgt instanceof InternedObject && src instanceof InternedObject) {
       assert(tgt.constructor === src.constructor, "Address collision (different constructor).")
-      const args: (Object | null)[] = Object.keys(tgt).map((k: string): Object | null => {
-         return __merge(tgt[k as keyof Object], src[k as keyof Object])
+      const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
+            src_: ObjectState = src as Object as ObjectState,
+            args: Persistent[] = Object.keys(tgt).map((k: string): Persistent => {
+         return __merge(tgt_[k], src_[k])
       })
       return make(src.constructor as Class<InternedObject>, ...args)
    } else {
@@ -157,10 +159,10 @@ type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
 const __ctrInstances: Map<NullaryClass<VersionedObject>, InstancesMap> = new Map
 
 // Datatype-generic construction.
-export function constructor_ (this_: VersionedObject, ...args: (Object | null)[]): void {
+export function constructor_ (this_: VersionedObject, ...args: Persistent[]): void {
    const ks: string[] = Object.keys(this_)
    assert(ks.length === args.length)
-   zip(ks, args).forEach(([k, arg]: [string, Object | null]): void => {
+   zip(ks, args).forEach(([k, arg]: [string, Persistent]): void => {
       (this_ as Object as ObjectState)[k] = arg // retarded
    })
 }
