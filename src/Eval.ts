@@ -1,11 +1,12 @@
-import { __check, __nonNull, absurd, assert, make } from "./util/Core"
+import { __check, __nonNull, absurd, assert } from "./util/Core"
+import { make } from "./util/Persistent"
+import { InternedObject } from "./util/Versioned";
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { InternedObject } from "./Runtime";
 import { Trace, Traced, Value } from "./Traced"
 
 import App = Traced.App

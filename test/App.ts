@@ -1,12 +1,13 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { Class, Persistent, PersistentObject, __check, __nonNull, as, absurd, make } from "../src/util/Core"
+import { Class, __check, __nonNull, as, absurd } from "../src/util/Core"
+import { Persistent, PersistentObject, make } from "../src/util/Persistent"
+import { InternedObject, World/*, __w*/ } from "../src/util/Versioned"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
 // import { diffProp } from "../src/Delta"
-import { InternedObject, World/*, __w*/ } from "../src/Runtime"
-import { Traced, Value } from "../src/Traced"
 import { Point, Rect, objects } from "../src/Graphics"
+import { Traced, Value } from "../src/Traced"
 import { TestFile, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
 
 initialise()

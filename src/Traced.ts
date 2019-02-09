@@ -1,11 +1,11 @@
-import { make, PersistentObject } from "./util/Core"
+import { make, PersistentObject } from "./util/Persistent"
+import { InternedObject, VersionedObject, at } from "./util/Versioned"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
 import { Runtime } from "./Eval"
 import { Expr, Lex } from "./Expr"
 import { UnaryOp } from "./Primitive"
-import { InternedObject, VersionedObject, at } from "./Runtime"
 
 export type Value = Value.Value
 

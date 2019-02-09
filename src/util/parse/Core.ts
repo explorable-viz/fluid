@@ -1,5 +1,6 @@
-import { Ord, eq } from '../Ord'
-import { ValueObject, __nonNull } from '../Core'
+import { Ord, eq } from "../Ord"
+import { __nonNull } from "../Core"
+import { ValueObject } from "../Persistent"
 
 export interface SyntaxNode {
 }

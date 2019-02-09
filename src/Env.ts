@@ -1,6 +1,7 @@
-import { absurd, make } from "./util/Core"
+import { absurd } from "./util/Core"
+import { make } from "./util/Persistent"
+import { InternedObject } from "./util/Versioned"
 import { List } from "./BaseTypes"
-import { InternedObject } from "./Runtime"
 import { Traced } from "./Traced"
 
 import RecDef = Traced.RecDef

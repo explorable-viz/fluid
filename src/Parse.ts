@@ -1,4 +1,6 @@
 import { assert } from "./util/Core"
+import { JoinSemilattice } from "./util/Ord";
+import { ν } from "./util/Versioned"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
@@ -6,10 +8,8 @@ import {
 } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { arity } from "./DataType"
-import { singleton } from "./FiniteMap"
-import { ν } from "./Runtime"
 import { Expr, Lex, str } from "./Expr"
-import { JoinSemilattice } from "./util/Ord";
+import { singleton } from "./FiniteMap"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.

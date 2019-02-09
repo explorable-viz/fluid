@@ -1,10 +1,11 @@
-import { __check, assert, make } from "./util/Core"
+import { __check, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
+import { make } from "./util/Persistent"
+import { ExternalObject, InternedObject, VersionedObject, at } from "./util/Versioned"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { UnaryOp } from "./Primitive"
-import { ExternalObject, InternedObject, VersionedObject, at } from "./Runtime"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace str {

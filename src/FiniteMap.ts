@@ -1,5 +1,6 @@
-import { Persistent, absurd } from "./util/Core"
+import { absurd } from "./util/Core"
 import { Ord } from "./util/Ord"
+import { Persistent } from "./util/Persistent"
 import { Empty, NonEmpty, Pair, Tree } from "./BaseTypes"
 
 // Interned finite maps. Sensitive to key changes, which cause the identity of subtrees to change.
