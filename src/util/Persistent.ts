@@ -13,12 +13,6 @@ export abstract class PersistentObject implements Eq<PersistentObject> {
 // Functions are persistent to support primitives.
 export type Persistent = null | PersistentObject | string | number | Function
 
-// Tag class that identifies dynamically that an object has a structural notion of equality (i.e. is not
-// persistent).
-export abstract class ValueObject implements Eq<ValueObject> {
-   abstract eq (o: ValueObject): boolean
-}
-
 // Curried map from constructors and arguments to constructed objects; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.

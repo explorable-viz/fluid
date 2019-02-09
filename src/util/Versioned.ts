@@ -1,7 +1,7 @@
 import { zip } from "./Array"
 import { Class, NullaryClass, __nonNull, assert, absurd } from "./Core"
 import { Ord } from "./Ord"
-import { PersistentObject, ValueObject, make } from "./Persistent"
+import { PersistentObject, make } from "./Persistent"
 
 // TODO: move to same module as `make`?
 export abstract class InternedObject extends PersistentObject {
@@ -76,10 +76,6 @@ function __merge (tgt: Object | null, src: Object | null): Object | null {
          return __merge(tgt[k as keyof Object], src[k as keyof Object])
       })
       return make(src.constructor as Class<InternedObject>, ...args)
-   } else
-   if (tgt instanceof ValueObject && src instanceof ValueObject) {
-      assert(tgt.eq(src))
-      return src
    } else {
       return absurd()
    }
@@ -92,7 +88,7 @@ function __assignState (tgt: ObjectState, src: Object): boolean {
    let changed: boolean = false
    const src_: ObjectState = src as ObjectState
    Object.keys(tgt).forEach((k: string): void => {
-      if (!eq(tgt[k], src_[k])) {
+      if (tgt[k] !== src_[k]) {
          tgt[k] = src_[k]
          changed = true
       }
@@ -121,14 +117,6 @@ function __commit (o: VersionedObject): Object {
       }
    }
    return o
-}
-
-function eq (tgt: Object | null, src: Object | null): boolean {
-   if (tgt instanceof ValueObject && src instanceof ValueObject) {
-      return tgt.eq(src)
-   } else {
-      return tgt === src
-   }
 }
 
 // State of o at w, plus predecessor of w at which that state was set.
