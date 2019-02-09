@@ -1,11 +1,7 @@
 import { zip } from "./util/Array"
-import { Class, ValueObject, __nonNull, assert, absurd, make } from "./util/Core"
+import { Class, NullaryClass, __nonNull, assert, absurd } from "./util/Core"
 import { Ord } from "./util/Ord"
-import { PersistentObject } from "./util/Core"
-
-export interface NullaryClass<T> {
-   new (): T
-}
+import { PersistentObject, ValueObject, make } from "./Persistent"
 
 export abstract class InternedObject extends PersistentObject {
    eq (that: PersistentObject): boolean {
