@@ -1,3 +1,3 @@
 export interface Eq<K> {
-   eq (b: K): boolean
+   eq (that: K): boolean
 }

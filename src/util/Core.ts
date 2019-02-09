@@ -104,7 +104,9 @@ export abstract class ValueObject implements Eq<ValueObject> {
    abstract eq (o: ValueObject): boolean
 }
 
-// Curried map from constructors and arguments to constructed objects.
+// Curried map from constructors and arguments to constructed objects; curried because composite keys would 
+// require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
+// involve the same memoisation logic.
 const __instances: Map<any, Object> = new Map()
 
 // For memoisation purposes, treat the constructor itself as argument -1.
@@ -127,27 +129,6 @@ function lookupArg (
    return v
 }
 
-// For memoisation purposes, treat the function itself as argument -1.
-// Functionality of f hard to assert because of allocation of new objects.
-function lookupArg_ (
-   f: (...args: any[]) => any,
-   m: Map<any, any>,
-   args: any[],
-   n: number
-): any {
-   const k = n === -1 ? f : args[n]
-   let v = m.get(k)
-   if (v === undefined) {
-      if (n === args.length - 1) {
-         v = f.apply(args[0], args.slice(1))
-      } else {
-         v = new Map()
-      }
-      m.set(k, v)
-   }
-   return v
-}
-
 // Hash-consing (interning) object construction. TODO: replace "any" by Persistent?
 export function make<T extends PersistentObject> (ctr: Class<T>, ...args: any[]): T {
    let v: Object = lookupArg(ctr, __instances, args, -1)
@@ -156,16 +137,5 @@ export function make<T extends PersistentObject> (ctr: Class<T>, ...args: any[])
       v = lookupArg(ctr, v as Map<any, Object>, args, n)
    }
    Object.freeze(v)
-   return v as T
-}
-
-// Memoisation. For a non-member function, use null as args[0]. 
-// TODO: reimplement hash-consing using this.
-export function memo<T> (f: (...args: any[]) => T, ...args: any[]): T {
-   var v: any = lookupArg_(f, __instances, args, -1)
-   for (var n: number = 0; n < args.length; ++n) {
-      // since there are more arguments, the last v was a (nested) map
-      v = lookupArg_(f, v as Map<any, any>, args, n)
-   }
    return v as T
 }
