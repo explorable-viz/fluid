@@ -1,10 +1,10 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { Class, Persistent, __check, __nonNull, as, absurd, make } from "../src/util/Core"
+import { Class, Persistent, PersistentObject, __check, __nonNull, as, absurd, make } from "../src/util/Core"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
-import { diffProp } from "../src/Delta"
-import { InternedObject, VersionedObject, World, __w, at } from "../src/Runtime"
+// import { diffProp } from "../src/Delta"
+import { InternedObject, World/*, __w*/ } from "../src/Runtime"
 import { Traced, Value } from "../src/Traced"
 import { Point, Rect, objects } from "../src/Graphics"
 import { TestFile, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
@@ -12,16 +12,16 @@ import { TestFile, initialise, loadTestFile, runExample, parseExample } from "..
 initialise()
 
 // intermediate value required to stop TS getting confused:
-const classFor_: [string, Class<VersionedObject>][] =
+const classFor_: [string, Class<PersistentObject>][] =
    [["Cons", Cons],
     ["Nil", Nil],
     ["Point", Point],
     ["Rect", Rect]]
-const classFor: Map<string, Class<VersionedObject>> = new Map(classFor_)
+const classFor: Map<string, Class<PersistentObject>> = new Map(classFor_)
 
 // Not really convinced by this pattern - wouldn't it make more sense to use the function objects themselves
 // to partition the memo keys, as I did in lambdacalc-old?
-class Reflect extends InternedObject {
+export class Reflect extends InternedObject {
    constructor (
       public v: Value
    ) {
@@ -50,8 +50,9 @@ function reflect (v: Value | null): Persistent { // weirdly number and string ar
          args.push(reflect(tvs.head.v))
          tvs = tvs.tail
       }
-      // interning probably not what we want here, but for now will do
-      return at(Reflect.make(v), classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
+      // interning not what we want here
+      return make(classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
+//    return at(Reflect.make(v), classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
    } else {
       return absurd()
    }
@@ -92,14 +93,14 @@ export function close (path: THREE.Vector2[]) {
 
 function populateScene (): void {
    const file: TestFile = loadTestFile("example", "bar-chart"),
-         v: Value.Value = __nonNull(runExample(parseExample(file.text))).v,
-         elems: List<Persistent> = as(reflect(v), List),
-         w: World = __w
+         v: Value.Value = __nonNull(runExample(parseExample(file.text)).v),
+         elems: List<Persistent> = as(reflect(v), List)/*,
+         w: World = __w*/
    World.newRevision()
    // TODO: make some change at __w and reevaluate
    for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
       // assume only increasing or decreasing changes (to or from null):
-      const changed: boolean = diffProp(elemsʹ, "head", w)
+//      diffProp(elemsʹ, "head", w)
       for (let obj of objects(elemsʹ.head)) {
          scene.add(obj)
       }

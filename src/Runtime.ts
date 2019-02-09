@@ -3,7 +3,7 @@ import { Class, ValueObject, __nonNull, assert, absurd, make } from "./util/Core
 import { Ord } from "./util/Ord"
 import { PersistentObject } from "./util/Core"
 
-export interface Ctr<T> {
+export interface NullaryClass<T> {
    new (): T
 }
 
@@ -103,6 +103,29 @@ function __assignState (tgt: ObjectState, src: Object): boolean {
    return changed
 }
 
+// At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
+function __commit (o: VersionedObject): Object {
+   if (o.__history.size === 0) {
+      const state: ObjectState = __blankCopy(o)
+      __mergeState(state, o)
+      o.__history.set(__w, state)
+   } else {
+      const [w, state]: [World, ObjectState] = stateAt(o, __w)
+      if (w === __w) {
+         __mergeState(state, o)
+      } else {
+         // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
+         const prev: ObjectState = __blankCopy(o)
+         __mergeState(prev, state)
+         if (__assignState(state, o)) {
+            o.__history.set(w, prev)
+            o.__history.set(__w, state)
+         }
+      }
+   }
+   return o
+}
+
 function eq (tgt: Object | null, src: Object | null): boolean {
    if (tgt instanceof ValueObject && src instanceof ValueObject) {
       return tgt.eq(src)
@@ -142,34 +165,11 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
    eq (that: PersistentObject): boolean {
       return this === that
    }
-
-   // At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
-   __commit (): Object {
-      if (this.__history.size === 0) {
-         const state: ObjectState = __blankCopy(this)
-         __mergeState(state, this)
-         this.__history.set(__w, state)
-      } else {
-         const [w, state]: [World, ObjectState] = stateAt(this, __w)
-         if (w === __w) {
-            __mergeState(state, this)
-         } else {
-            // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
-            const prev: ObjectState = __blankCopy(this)
-            __mergeState(prev, state)
-            if (__assignState(state, this)) {
-               this.__history.set(w, prev)
-               this.__history.set(__w, state)
-            }
-         }
-      }
-      return this
-   }
 }
 
 // Keys must be "memo" (persistent) objects.
 type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
-const __ctrInstances: Map<Ctr<VersionedObject>, InstancesMap> = new Map
+const __ctrInstances: Map<NullaryClass<VersionedObject>, InstancesMap> = new Map
 
 // Datatype-generic construction.
 export function constructor_ (this_: VersionedObject, ...args: (Object | null)[]): void {
@@ -181,7 +181,7 @@ export function constructor_ (this_: VersionedObject, ...args: (Object | null)[]
 }
 
 // The (possibly already extant) object uniquely identified by a memo-key.
-export function at<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: Ctr<T>, ...args: (Object | null)[]): T {
+export function at<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: NullaryClass<T>, ...args: (Object | null)[]): T {
    let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
       instances = new Map
@@ -203,7 +203,7 @@ export function at<K extends PersistentObject, T extends VersionedObject<K>> (α
    }
    // Couldn't get datatype-generic construction to work because fields not created by "new ctr".
    o.constructor_(...args)
-   return o.__commit() as T
+   return __commit(o) as T
 }
 
 export class World extends InternedObject implements Ord<World> {
