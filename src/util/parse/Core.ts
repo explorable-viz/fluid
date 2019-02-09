@@ -1,18 +1,14 @@
 import { Ord, eq } from "../Ord"
 import { __nonNull } from "../Core"
-import { ValueObject } from "../Persistent"
+import { make } from "../Persistent"
+import { InternedObject } from "../Versioned"
 
 export interface SyntaxNode {
 }
 
-// The parser builds a list of these, which must have contiguous spans.
-export class Lexeme extends ValueObject implements SyntaxNode, Ord<Lexeme> {
-   str: string
-
-   constructor (str: string) {
-      super()
-      this.str = str
-   }
+// The parser builds a list of these. Currently interned, but will probably need to become versioned.
+export abstract class Lexeme extends InternedObject implements SyntaxNode, Ord<Lexeme> {
+   abstract str: string
 
    eq (l: Lexeme): boolean {
       return eq(this, l)
@@ -24,9 +20,6 @@ export class Lexeme extends ValueObject implements SyntaxNode, Ord<Lexeme> {
 
    toString (): string {
       return this.str
-   }
-
-   __Lexeme (): void {
    }
 }
 
@@ -46,16 +39,16 @@ export class Pos {
    line: number
    ch: number // call this 'ch' to implicitly implement CodeMirror.Position
 
-   constructor(line: number, ch: number) {
+   constructor( line: number, ch: number) {
       this.line = line
       this.ch = ch
    }
 
-   toString(): string {
+   toString (): string {
       return '(' + this.line + ', ' + this.ch + ')'
    }
 
-   equals(that: Pos): boolean {
+   equals (that: Pos): boolean {
       return this.line == that.line && this.ch === that.ch
    }
 }
@@ -74,7 +67,7 @@ export class ParseState {
    length: number
    buffer: Buffer // sequence of tokens recognised so far
 
-   constructor(input: string, pos: Pos, index: number, buffer: Buffer) {
+   constructor (input: string, pos: Pos, index: number, buffer: Buffer) {
       this.input = input
       this.pos = pos
       this.index = index
@@ -82,7 +75,7 @@ export class ParseState {
       this.buffer = buffer
    }
 
-   from(index: number, nextLine: boolean = false): ParseState {
+   from (index: number, nextLine: boolean = false): ParseState {
       const pos: Pos = nextLine
          ? new Pos(this.pos.line + 1, 0)
          : new Pos(this.pos.line, this.pos.ch + index)
@@ -92,22 +85,22 @@ export class ParseState {
    }
 
    // TODO: assert that lexemes have contiguous spans, i.e. represent a linear consumption of the input.
-   append([l, [from, to]]: [Lexeme, Span]): ParseState {
+   append ([l, [from, to]]: [Lexeme, Span]): ParseState {
       return new ParseState(this.input, this.pos, this.index, this.buffer.concat([[l, [from, to]]]))
    }
 
    // My first n characters.
-   first(n: number): string {
+   first (n: number): string {
       return this.input.substring(this.index, this.index + n)
    }
 
-   at(index: number): string {
+   at (index: number): string {
       return this.input.charAt(this.index + index)
    }
 }
 
-export function regExp(r: RegExp): Parser<string> {
-   function regExp_(state: ParseState): ParseResult<string> | null {
+export function regExp (r: RegExp): Parser<string> {
+   function regExp_ (state: ParseState): ParseResult<string> | null {
       const ms: string[] | null = state.first(state.length).match(r)
       if (ms !== null) {
          const s: string = ms[0]
@@ -120,31 +113,55 @@ export function regExp(r: RegExp): Parser<string> {
 }
 
 export class Whitespace extends Lexeme {
-   constructor(str: string) {
-      super(str)
+   __subtag: "Whitespace"
+
+   constructor (
+      public str: string
+   ) {
+      super()
+   }
+
+   static make (str: string): Whitespace {
+      return make(Whitespace, str)
    }
 }
 
 export class SingleLineComment extends Lexeme {
-   constructor(str: string) {
-      super(str)
+   __subtag: "SingleLineComment"
+
+   constructor (
+      public str: string
+   ) {
+      super()
+   }
+
+   static make (str: string): SingleLineComment {
+      return make(SingleLineComment, str)
    }
 }
 
 // Does this serve any purpose?
 export class Operator extends Lexeme {
-   constructor(str: string) {
-      super(str)
+   __subtag: "Operator"
+
+   constructor (
+      public str: string
+   ) {
+      super()
+   }
+
+   static make (str: string): Operator {
+      return make(Operator, str)
    }
 }
 
-export type LexemeClass<L extends Lexeme> = { new (str: string): L }
+export type LexemeClass<L extends Lexeme> = new (str: string) => L
 
 function token<L extends Lexeme>(p: Parser<string>, C: LexemeClass<L>): Parser<L> {
-   function token_(state: ParseState): ParseResult<L> | null {
+   function token_ (state: ParseState): ParseResult<L> | null {
       const r: ParseResult<string> | null = p(state)
       if (r !== null) {
-         const l: L = new C(r.ast)
+         const l: L = make(C, r.ast)
          return {
             state: r.state.append([l, [state.pos, r.state.pos]]),
             matched: r.matched,
@@ -162,7 +179,7 @@ const newLine: Parser<string> = regExp(/^\n/)
 const newLines: Parser<string> = withAction(repeat1(newLine), strs => strs.join())
 const whitespace: Parser<Whitespace> = token(choice([horizWhitespace, newLines]), Whitespace)
 const singleLineComment: Parser<SingleLineComment> = token(regExp(/^\/\/.*/), SingleLineComment)
-const ignore: Parser<Lexeme[]> = repeat(choice([whitespace, singleLineComment]))
+const ignore: Parser<Lexeme[]> = repeat(choice<Lexeme>([whitespace, singleLineComment]))
 
 // Match the supplied string with leading whitespace/comments, p, and then eof.
 export function parse<T extends SyntaxNode>(p: Parser<T>, str: string): ParseResult<T> | null {

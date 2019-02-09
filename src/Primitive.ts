@@ -147,11 +147,11 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
 ])
 
 function __true (α: PersistentObject): Value.Constr {
-   return Value.Constr.at(α, new Lex.Ctr("True"), Nil.make())
+   return Value.Constr.at(α, Lex.Ctr.make("True"), Nil.make())
 }
 
 function __false (α: PersistentObject): Value.Constr {
-   return Value.Constr.at(α, new Lex.Ctr("False"), Nil.make())
+   return Value.Constr.at(α, Lex.Ctr.make("False"), Nil.make())
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.

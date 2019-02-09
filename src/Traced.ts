@@ -167,7 +167,7 @@ export namespace Traced {
       }
    }
 
-   // Tries are interned rather than versioned, as per the formalism.
+   // Tries are interned rather than versioned, as per the formalism (but don't really understand why).
    export type Trie<K> = Trie.Trie<K>
 
    export type Kont = Traced | Args<any> | Trie<any>

@@ -173,7 +173,7 @@ export function constructor_ (this_: VersionedObject, ...args: (Object | null)[]
    const ks: string[] = Object.keys(this_)
    assert(ks.length === args.length)
    zip(ks, args).forEach(([k, arg]: [string, Object | null]): void => {
-      (this_ as Object as ObjectState)[k] = arg
+      (this_ as Object as ObjectState)[k] = arg // retarded
    })
 }
 

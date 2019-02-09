@@ -24,54 +24,96 @@ export namespace str {
 
 export namespace Lex {
    export class Ctr extends Lexeme {
-      __tag: "Lex.Ctr"
+      __subtag: "Lex.Ctr"
 
-      constructor (str: string) {
-         super(str)
+      constructor (
+         public str: string
+      ) {
+         super()
+      }
+
+      static make (str: string): Ctr {
+         return make(Ctr, str)
       }
    }
 
+   // Literal lexemes are elided when constructing abstract syntax to avoid additional level of structure.
    export class IntLiteral extends Lexeme {
-      constructor (str: string) {
-         super(str)
+      constructor (
+         public str: string
+      ) {
+         super()
       }
 
       toNumber (): number {
          return parseInt(this.str)
       }
+
+      static make (str: string): IntLiteral {
+         return make(IntLiteral, str)
+      }
    }
 
+   // Keywords also elided, but we'll probably want that in the syntax at some point.
    export class Keyword extends Lexeme {
-      constructor (str: string) {
-         super(str)
+      __subtag: "Lex.StringLiteral"
+
+      constructor (
+         public str: string
+      ) {
+         super()
+      }
+
+      static make (str: string): Keyword {
+         return make(Keyword, str)
       }
    }
 
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
    // Other uses of primitive operations are treated as variables.
    export class OpName extends Lexeme {
-      __tag: "Lex.OpName"
+      __subtag: "Lex.OpName"
 
-      constructor (str: string) {
-         super(str)
+      constructor (
+         public str: string
+      ) {
+         super()
+      }
+
+      static make (str: string): OpName {
+         return make(OpName, str)
       }
    }
 
    export class StringLiteral extends Lexeme {
-      constructor (str: string) {
-         super(str)
+      __subtag: "Lex.StringLiteral"
+
+      constructor (
+         public str: string
+      ) {
+         super()
       }
 
       toString (): string {
          return str.quotes + this.str + str.quotes
       }
+
+      static make (str: string): StringLiteral {
+         return make(StringLiteral, str)
+      }
    }
 
    export class Var extends Lexeme {
-      __tag: "Lex.Var"
-      
-      constructor (str: string) {
-         super(str)
+      __subtag: "Lex.Var"
+
+      constructor (
+         public str: string
+      ) {
+         super()
+      }
+
+      static make (str: string): Var {
+         return make(Var, str)
       }
    }
 }

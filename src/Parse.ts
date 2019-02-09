@@ -234,7 +234,7 @@ const pair: Parser<Expr.Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Expr, Expr]) =>
-         Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
+         Expr.Constr.at(ν(), Lex.Ctr.make("Pair"), List.fromArray([fst, snd]))
    )
 
 function args_pattern<K extends JoinSemilattice<K> & Persistent> (n: number, p: Parser<K>): Parser<Expr.Args<K>> {

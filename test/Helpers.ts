@@ -1,4 +1,5 @@
 import { __nonNull, assert } from "../src/util/Core"
+import { Persistent } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
@@ -13,7 +14,6 @@ import { Traced } from "../src/Traced"
 
 import Args = Traced.Args
 import Trie = Traced.Trie
-import { Persistent } from "../src/util/Persistent";
 
 export function initialise (): void {
    // Fix the toString impl on String to behave sensibly.
@@ -39,7 +39,7 @@ export namespace τ {
    }
 
    export function var_<K extends Persistent> (κ: K): Trie.Var<K> {
-      return Trie.Var.make(new Lex.Var("q"), κ)
+      return Trie.Var.make(Lex.Var.make("q"), κ)
    }
 
    export function int<K extends Persistent> (κ: K): Trie.Prim<K> {

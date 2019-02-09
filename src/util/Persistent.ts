@@ -24,13 +24,13 @@ export abstract class ValueObject implements Eq<ValueObject> {
 // involve the same memoisation logic.
 const __instances: Map<Persistent, Object> = new Map()
 
-// For memoisation purposes, treat the constructor itself as argument -1.
 function lookupArg (
    ctr: new (...args: Persistent[]) => Object,
    m: Map<Persistent, Object>,
    args: Persistent[],
    n: number
 ): Object {
+   // for memoisation purposes, treat constructor itself as argument -1
    const k: Persistent = n === -1 ? ctr : args[n]
    let v: Object | undefined = m.get(k)
    if (v === undefined) {
@@ -49,7 +49,7 @@ export function make<T extends PersistentObject> (ctr: Class<T>, ...args: Persis
    let v: Object = lookupArg(ctr, __instances, args, -1)
    for (var n: number = 0; n < args.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
-      v = lookupArg(ctr, v as Map<any, Object>, args, n)
+      v = lookupArg(ctr, v as Map<Persistent, Object>, args, n)
    }
    Object.freeze(v)
    return v as T
