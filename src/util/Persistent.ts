@@ -10,7 +10,8 @@ export abstract class PersistentObject implements Eq<PersistentObject> {
    abstract eq (that: PersistentObject): boolean
 }
 
-export type Persistent = null | PersistentObject | string | number
+// Functions are persistent to support primitives.
+export type Persistent = null | PersistentObject | string | number | Function
 
 // Tag class that identifies dynamically that an object has a structural notion of equality (i.e. is not
 // persistent).
