@@ -1,4 +1,4 @@
-import { make, PersistentObject } from "./util/Persistent"
+import { make, Persistent, PersistentObject } from "./util/Persistent"
 import { InternedObject, VersionedObject, at } from "./util/Versioned"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
@@ -128,7 +128,7 @@ export namespace Traced {
             return Π instanceof End
          }
 
-         static make<K> (κ: K): End<K> {
+         static make<K extends Persistent> (κ: K): End<K> {
             return make<End<K>>(End, κ)
          }
       }
@@ -161,7 +161,7 @@ export namespace Traced {
             return Π instanceof Top
          }
 
-         static make<K> (κ: K): Top<K> {
+         static make<K extends Persistent> (κ: K): Top<K> {
             return make<Top<K>>(Top, κ)
          }
       }
@@ -190,7 +190,7 @@ export namespace Traced {
             return σ instanceof ConstInt
          }
 
-         static make<K> (κ: K): ConstInt<K> {
+         static make<K extends Persistent> (κ: K): ConstInt<K> {
             return make<ConstInt<K>>(ConstInt, κ)
          }
       }
@@ -200,7 +200,7 @@ export namespace Traced {
             return σ instanceof ConstStr
          }
 
-         static make<K> (κ: K): ConstStr<K> {
+         static make<K extends Persistent> (κ: K): ConstStr<K> {
             return make<ConstStr<K>>(ConstStr, κ)
          }
       }
@@ -232,7 +232,7 @@ export namespace Traced {
             return σ instanceof Fun
          }
 
-         static make<K> (κ: K): Fun<K> {
+         static make<K extends Persistent> (κ: K): Fun<K> {
             return make<Fun<K>>(Fun, κ)
          }
       }
@@ -249,7 +249,7 @@ export namespace Traced {
             return σ instanceof Var
          }
 
-         static make<K> (x: Lex.Var, κ: K): Var<K> {
+         static make<K extends Persistent> (x: Lex.Var, κ: K): Var<K> {
             return make<Var<K>>(Var, x, κ)
          }
       }
@@ -266,7 +266,7 @@ export namespace Traced {
             return σ instanceof Top
          }
 
-         static make<K> (κ: K): Top<K> {
+         static make<K extends Persistent> (κ: K): Top<K> {
             return make<Top<K>>(Top, κ)
          }
       }
@@ -307,7 +307,7 @@ export namespace Traced {
                return Ψ instanceof End
             }
    
-            static make<K> (κ: K): End<K> {
+            static make<K extends Persistent> (κ: K): End<K> {
                return make<End<K>>(End, κ)
             }
          }
@@ -353,7 +353,7 @@ export namespace Traced {
             return ξ instanceof ConstInt
          }
 
-         static make<K> (val: number, κ: K): ConstInt<K> {
+         static make<K extends Persistent> (val: number, κ: K): ConstInt<K> {
             return make<ConstInt<K>>(ConstInt, val, κ)
          }
       }
@@ -370,7 +370,7 @@ export namespace Traced {
             return ξ instanceof ConstStr
          }
 
-         static make<K> (val: string, κ: K): ConstStr<K> {
+         static make<K extends Persistent> (val: string, κ: K): ConstStr<K> {
             return make<ConstStr<K>>(ConstStr, val, κ)
          }
       }
@@ -404,7 +404,7 @@ export namespace Traced {
             return ξ instanceof Fun
          }
 
-         static make<K> (f: Value.Closure | Value.PrimOp, κ: K): Fun<K> {
+         static make<K extends Persistent> (f: Value.Closure | Value.PrimOp, κ: K): Fun<K> {
             return make<Fun<K>>(Fun, f, κ)
          }
       }
@@ -422,7 +422,7 @@ export namespace Traced {
             return ξ instanceof Var
          }
 
-         static make<K> (x: Lex.Var, v: Value | null, κ: K): Var<K> {
+         static make<K extends Persistent> (x: Lex.Var, v: Value | null, κ: K): Var<K> {
             return make<Var<K>>(Var, x, v, κ)
          }
       }

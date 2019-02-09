@@ -1,6 +1,6 @@
 import { __check, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { make } from "./util/Persistent"
+import { Persistent, make } from "./util/Persistent"
 import { ExternalObject, InternedObject, VersionedObject, at } from "./util/Versioned"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
@@ -284,7 +284,7 @@ export namespace Expr {
             return Π instanceof End
          }
 
-         static make<K extends JoinSemilattice<K>> (κ: K): End<K> {
+         static make<K extends JoinSemilattice<K> & Persistent> (κ: K): End<K> {
             return make<End<K>>(End, κ)
          }
       }
@@ -321,7 +321,7 @@ export namespace Expr {
             return Trie.join(this, τ)
          }
 
-         static join<K extends JoinSemilattice<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
+         static join<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Fun.is(σ) && Fun.is(τ)) {
                return Fun.make(σ.κ.join(τ.κ))
             } else
@@ -349,7 +349,7 @@ export namespace Expr {
             return σ instanceof ConstInt
          }
 
-         static make<K extends JoinSemilattice<K>> (κ: K): ConstInt<K> {
+         static make<K extends JoinSemilattice<K> & Persistent> (κ: K): ConstInt<K> {
             return make<ConstInt<K>>(ConstInt, κ)
          }
       }
@@ -359,7 +359,7 @@ export namespace Expr {
             return σ instanceof ConstStr
          }
 
-         static make<K extends JoinSemilattice<K>> (κ: K): ConstStr<K> {
+         static make<K extends JoinSemilattice<K> & Persistent> (κ: K): ConstStr<K> {
             const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
             return this_
          }
@@ -393,7 +393,7 @@ export namespace Expr {
             return σ instanceof Fun
          }
 
-         static make<K extends JoinSemilattice<K>> (κ: K): Fun<K> {
+         static make<K extends JoinSemilattice<K> & Persistent> (κ: K): Fun<K> {
             return make<Fun<K>>(Fun, κ)
          }
       }
@@ -410,7 +410,7 @@ export namespace Expr {
             return σ instanceof Var
          }
 
-         static make<K extends JoinSemilattice<K>> (x: Lex.Var, κ: K): Var<K> {
+         static make<K extends JoinSemilattice<K> & Persistent> (x: Lex.Var, κ: K): Var<K> {
             return make<Var<K>>(Var, x, κ)
          }
       }
