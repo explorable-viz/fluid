@@ -1,10 +1,11 @@
-import { absurd, assert, make, PersistentObject } from "./util/Core"
+import { absurd, assert } from "./util/Core"
+import { PersistentObject, make } from "./util/Persistent"
+import { InternedObject, ν } from "./util/Versioned"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
-import { InternedObject, ν } from "./Runtime"
 import { Traced, Value } from "./Traced"
 
 import Args = Traced.Args
@@ -146,11 +147,11 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
 ])
 
 function __true (α: PersistentObject): Value.Constr {
-   return Value.Constr.at(α, new Lex.Ctr("True"), Nil.make())
+   return Value.Constr.at(α, Lex.Ctr.make("True"), Nil.make())
 }
 
 function __false (α: PersistentObject): Value.Constr {
-   return Value.Constr.at(α, new Lex.Ctr("False"), Nil.make())
+   return Value.Constr.at(α, Lex.Ctr.make("False"), Nil.make())
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.

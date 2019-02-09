@@ -1,4 +1,5 @@
 import { __nonNull, assert } from "../src/util/Core"
+import { Persistent } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
@@ -33,23 +34,23 @@ export namespace τ {
       return Args.Next.make(σ)
    }
 
-   export function endArgs<K> (κ: K): Args.End<K> {
+   export function endArgs<K extends Persistent> (κ: K): Args.End<K> {
       return Args.End.make(κ)
    }
 
-   export function var_<K> (κ: K): Trie.Var<K> {
-      return Trie.Var.make(new Lex.Var("q"), κ)
+   export function var_<K extends Persistent> (κ: K): Trie.Var<K> {
+      return Trie.Var.make(Lex.Var.make("q"), κ)
    }
 
-   export function int<K> (κ: K): Trie.Prim<K> {
+   export function int<K extends Persistent> (κ: K): Trie.Prim<K> {
       return Trie.ConstInt.make(κ)
    }
 
-   export function str<K> (κ: K): Trie.Prim<K> {
+   export function str<K extends Persistent> (κ: K): Trie.Prim<K> {
       return Trie.ConstStr.make(κ)
    }
 
-   export function cons<K> (Π: Args<K>): Trie.Constr<K> {
+   export function cons<K extends Persistent> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Cons", Π))
    }
 
@@ -69,7 +70,7 @@ export namespace τ {
       return Trie.Constr.make(singleton("Some", Π))
    }
 
-   export function top<K> (κ: K): Trie.Top<K> {
+   export function top<K extends Persistent> (κ: K): Trie.Top<K> {
       return Trie.Top.make(κ)
    }
 }

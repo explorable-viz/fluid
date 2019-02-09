@@ -1,9 +1,9 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { assert } from "../src/util/Core"
+import { World } from "../src/util/Versioned"
 import { Expr } from "../src/Expr"
-import { World } from "../src/Runtime"
-import { Traced} from "../src//Traced"
+import { Traced} from "../src/Traced"
 import { TestFile, τ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 
 before((done: MochaDone) => {

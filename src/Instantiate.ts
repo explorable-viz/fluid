@@ -1,5 +1,6 @@
 import { absurd } from "./util/Core"
 import { JoinSemilattice } from "./util/Ord"
+import { Persistent } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
@@ -86,7 +87,7 @@ function instantiateKont (ρ: Env): (κ: Expr.Kont) => Kont {
    }
 }
 
-function instantiateArgs<K extends JoinSemilattice<K>> (ρ: Env): (Π: Expr.Args<K>) => Args<K> {
+function instantiateArgs<K extends JoinSemilattice<K> & Persistent> (ρ: Env): (Π: Expr.Args<K>) => Args<K> {
    return function (Π: Expr.Args<K>): Args<K> {
       if (Expr.Args.End.is(Π)) {
          return Args.End.make(Π.κ)
@@ -103,7 +104,7 @@ function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Kont> {
    return mapTrie(instantiateKont(ρ))(instantiateTrie_(ρ, σ))
 }
 
-function instantiateTrie_<K extends JoinSemilattice<K>> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
+function instantiateTrie_<K extends JoinSemilattice<K> & Persistent> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
    if (Expr.Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, σ.κ)
    } else

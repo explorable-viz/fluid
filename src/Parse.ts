@@ -1,4 +1,7 @@
 import { assert } from "./util/Core"
+import { JoinSemilattice } from "./util/Ord";
+import { Persistent } from "./util/Persistent"
+import { ν } from "./util/Versioned"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
@@ -6,10 +9,8 @@ import {
 } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { arity } from "./DataType"
-import { singleton } from "./FiniteMap"
-import { ν } from "./Runtime"
 import { Expr, Lex, str } from "./Expr"
-import { JoinSemilattice } from "./util/Ord";
+import { singleton } from "./FiniteMap"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
 // whenever the recursive nature of the grammar causes a problem with variable initialisation.
@@ -33,7 +34,7 @@ const reservedWord: Parser<string> =
       reserved(str.let_), reserved(str.letRec)
    ])
 
-function keyword(str: string): Parser<Lex.Keyword> {
+function keyword (str: string): Parser<Lex.Keyword> {
    return lexeme(reserved(str), Lex.Keyword)
 }
 
@@ -233,10 +234,10 @@ const pair: Parser<Expr.Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Expr, Expr]) =>
-         Expr.Constr.at(ν(), new Lex.Ctr("Pair"), List.fromArray([fst, snd]))
+         Expr.Constr.at(ν(), Lex.Ctr.make("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern<K extends JoinSemilattice<K>> (n: number, p: Parser<K>): Parser<Expr.Args<K>> {
+function args_pattern<K extends JoinSemilattice<K> & Persistent> (n: number, p: Parser<K>): Parser<Expr.Args<K>> {
    if (n === 0) {
       return withAction(p, Expr.Args.End.make)
    } else {
@@ -249,7 +250,7 @@ function args_pattern<K extends JoinSemilattice<K>> (n: number, p: Parser<K>): P
 }
 
 // Continuation-passing style means "parenthesise" idiom doesn't work here.
-function constr_pattern<K extends JoinSemilattice<K>> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
+function constr_pattern<K extends JoinSemilattice<K> & Persistent> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
    return withAction(
       seqDep(
          ctr, 
@@ -267,21 +268,21 @@ function constr_pattern<K extends JoinSemilattice<K>> (p: Parser<K>): Parser<Exp
    )
 }
 
-function pair_pattern<K extends JoinSemilattice<K>> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
+function pair_pattern<K extends JoinSemilattice<K> & Persistent> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
    return withAction(
       dropFirst(symbol(str.parenL), args_pattern(2, dropFirst(symbol(str.parenR), p))),
       (Π: Expr.Args<K>): Expr.Trie.Constr<K> => Expr.Trie.Constr.make(singleton("Pair", Π))
    )
 }
 
-function variable_pattern<K extends JoinSemilattice<K>> (p: Parser<K>): Parser<Expr.Trie.Var<K>> {
+function variable_pattern<K extends JoinSemilattice<K> & Persistent> (p: Parser<K>): Parser<Expr.Trie.Var<K>> {
    return withAction(
       seq(var_, p), ([x, κ]: [Lex.Var, K]): Expr.Trie.Var<K> => 
          Expr.Trie.Var.make(x, κ)
       )
 }
 
-function pattern<K extends JoinSemilattice<K>> (p: Parser<K>): Parser<Expr.Trie<K>> {
+function pattern<K extends JoinSemilattice<K> & Persistent> (p: Parser<K>): Parser<Expr.Trie<K>> {
    return (state: ParseState) => 
       choice<Expr.Trie<K>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }

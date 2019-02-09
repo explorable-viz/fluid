@@ -1,11 +1,12 @@
-import { __check, __nonNull, absurd, assert, make } from "./util/Core"
+import { __check, __nonNull, absurd, assert } from "./util/Core"
+import { make, Persistent } from "./util/Persistent"
+import { InternedObject } from "./util/Versioned";
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { InternedObject } from "./Runtime";
 import { Trace, Traced, Value } from "./Traced"
 
 import App = Traced.App
@@ -50,7 +51,7 @@ export function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
 }
 
 // Parser ensures constructor patterns agree with constructor signatures.
-function evalArgs<K> (ρ: Env, Π: Args<K>, es: List<Traced>): Results<K> {
+function evalArgs<K extends Persistent> (ρ: Env, Π: Args<K>, es: List<Traced>): Results<K> {
    if (Cons.is(es)) {
       let σ: Trie<Args<K>>
       if (Args.Next.is(Π)) {
@@ -73,7 +74,7 @@ function evalArgs<K> (ρ: Env, Π: Args<K>, es: List<Traced>): Results<K> {
 }
 
 // Probably want to memoise instantiate.
-export function evalT_<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
+export function evalT_<K extends Persistent> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
    return __check(
       evalT(ρ, instantiate(ρ)(tv.t!.__id.e), σ), 
       ([tv, ,]) => (tv.v === null) === (Trie.Var.is(σ))
@@ -81,7 +82,7 @@ export function evalT_<K> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
 }
 
 // Null means eval produced no information about v; the input traced value might be non-null.
-function evalT<K> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
+function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    assert(σ instanceof Trie.Trie)
    const t: Trace | null = e.t,
          k: Runtime<Expr> = t.__id

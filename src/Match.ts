@@ -1,4 +1,5 @@
 import { absurd, assert } from "./util/Core"
+import { Persistent } from "./util/Persistent"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Traced, Value } from "./Traced"
 
@@ -8,7 +9,7 @@ import TracedMatch = Traced.TracedMatch
 import Trie = Traced.Trie
 
 // The match for any evaluation with demand σ which yielded value v.
-export function match<K> (σ: Trie<K>, v: Value | null): Match<K> {
+export function match<K extends Persistent> (σ: Trie<K>, v: Value | null): Match<K> {
    if (Trie.Var.is(σ)) {
       // in general v is not null, even though the demand is null
       return Match.Var.make(σ.x, v, σ.κ)
@@ -35,7 +36,7 @@ export function match<K> (σ: Trie<K>, v: Value | null): Match<K> {
    }
 }
 
-function matchArgs<K> (tvs: List<Traced>): (Π: Args<K>) => Match.Args<K> {
+function matchArgs<K extends Persistent> (tvs: List<Traced>): (Π: Args<K>) => Match.Args<K> {
    return (Π: Args<K>): Match.Args<K> => {
       // Parser ensures constructor patterns agree with constructor signatures.
       if (Cons.is(tvs) && Args.Next.is(Π)) {
@@ -53,7 +54,7 @@ function matchArgs<K> (tvs: List<Traced>): (Π: Args<K>) => Match.Args<K> {
    }
 }
 
-function mapMatch<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (ξ: Match<K>) => Match<Kʹ> {
+function mapMatch<K extends Persistent, Kʹ extends Persistent> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (ξ: Match<K>) => Match<Kʹ> {
    return (ξ: Match<K>): Match<Kʹ> => {
       if (Match.ConstInt.is(ξ)) {
          return Match.ConstInt.make(ξ.val, f(ξ.κ))
@@ -84,7 +85,7 @@ function mapMatch<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (ξ: Match<K>)
    }
 }
 
-function mapArgs<K, Kʹ> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
+function mapArgs<K extends Persistent, Kʹ extends Persistent> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
    return (Π: Args<K>): Args<Kʹ> => {
       if (Args.End.is(Π)) {
          return Args.End.make(f(Π.κ))
@@ -97,7 +98,7 @@ function mapArgs<K, Kʹ> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
    }
 }
 
-function mapMatchArgs<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (Ψ: Match.Args<K>) => Match.Args<Kʹ> {
+function mapMatchArgs<K extends Persistent, Kʹ extends Persistent> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (Ψ: Match.Args<K>) => Match.Args<Kʹ> {
    return (Ψ: Match.Args<K>): Match.Args<Kʹ> => {
       if (Match.Args.End.is(Ψ)) {
          return Match.Args.End.make(f(Ψ.κ))
@@ -113,7 +114,7 @@ function mapMatchArgs<K, Kʹ> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (Ψ: Match
    }
 }
 
-export function mapTrie<K, Kʹ> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
+export function mapTrie<K extends Persistent, Kʹ extends Persistent> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
    return (σ: Trie.Trie<K>): Trie.Trie<Kʹ> => {
       if (Trie.ConstInt.is(σ)) {
          return Trie.ConstInt.make(f(σ.κ))

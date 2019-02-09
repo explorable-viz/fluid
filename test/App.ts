@@ -1,10 +1,13 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { Class, Persistent, PersistentObject, __check, __nonNull, as, assert, absurd, make } from "../src/util/Core"
+import { Class, __check, __nonNull, as, absurd } from "../src/util/Core"
+import { Persistent, PersistentObject, make } from "../src/util/Persistent"
+import { InternedObject, World/*, __w*/ } from "../src/util/Versioned"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
-import { Traced, Value } from "../src/Traced"
+// import { diffProp } from "../src/Delta"
 import { Point, Rect, objects } from "../src/Graphics"
+import { Traced, Value } from "../src/Traced"
 import { TestFile, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
 
 initialise()
@@ -17,7 +20,21 @@ const classFor_: [string, Class<PersistentObject>][] =
     ["Rect", Rect]]
 const classFor: Map<string, Class<PersistentObject>> = new Map(classFor_)
 
-function reflect (v: Value | null): Persistent { // weirdy number and string are subtypes of Object
+// Not really convinced by this pattern - wouldn't it make more sense to use the function objects themselves
+// to partition the memo keys, as I did in lambdacalc-old?
+export class Reflect extends InternedObject {
+   constructor (
+      public v: Value
+   ) {
+      super()
+   }
+
+   static make (v: Value): Reflect {
+      return make<Reflect>(Reflect, v)
+   }
+}
+
+function reflect (v: Value | null): Persistent { // weirdly number and string are subtypes of Object
    if (v === null) {
       return null
    } else
@@ -28,15 +45,15 @@ function reflect (v: Value | null): Persistent { // weirdy number and string are
       return v.val
    } else
    if (v instanceof Value.Constr) {
-      const ctr: string = v.ctr.str
-      assert(classFor.has(ctr))
-      const args: Persistent[] = []
+      const ctr: string = __check(v.ctr.str, it => classFor.has(it)),
+            args: Persistent[] = []
       for (let tvs: List<Traced> = v.args; Cons.is(tvs);) {
          args.push(reflect(tvs.head.v))
          tvs = tvs.tail
       }
-      // interning probably not what we want here, but for now will do
+      // interning not what we want here
       return make(classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
+//    return at(Reflect.make(v), classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
    } else {
       return absurd()
    }
@@ -77,8 +94,14 @@ export function close (path: THREE.Vector2[]) {
 
 function populateScene (): void {
    const file: TestFile = loadTestFile("example", "bar-chart"),
-         elems: List<Persistent> = as(reflect(__nonNull(runExample(parseExample(file.text))).v), List)
+         v: Value.Value = __nonNull(runExample(parseExample(file.text)).v),
+         elems: List<Persistent> = as(reflect(v), List)/*,
+         w: World = __w*/
+   World.newRevision()
+   // TODO: make some change at __w and reevaluate
    for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
+      // assume only increasing or decreasing changes (to or from null):
+//      diffProp(elemsʹ, "head", w)
       for (let obj of objects(elemsʹ.head)) {
          scene.add(obj)
       }

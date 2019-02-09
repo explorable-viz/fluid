@@ -1,3 +1,0 @@
-[submodule "src/util"]
-	path = src/util
-	url = git@github.com:rolyp/util.git
