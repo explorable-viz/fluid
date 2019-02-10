@@ -57,7 +57,7 @@ type VersionedObjects = Map<PersistentObject, VersionedObject>
 const __ctrInstances: Map<PersistentClass<VersionedObject>, VersionedObjects> = new Map
 
 function lookupArg<T extends InternedObject> (
-   ctr: InternedClass<T>, 
+   ctr: PersistentClass<T>, 
    m: InternedObjects, 
    args: Persistent[], 
    n: number
@@ -77,11 +77,10 @@ function lookupArg<T extends InternedObject> (
    return v
 }
 
-type InternedClass<T extends InternedObject> = new (...args: Persistent[]) => T
 type PersistentClass<T extends PersistentObject> = new () => T
 
 // Hash-consing (interning) object construction.
-export function make<T extends InternedObject> (ctr: InternedClass<T>, ...args: Persistent[]): T {
+export function make<T extends InternedObject> (ctr: PersistentClass<T>, ...args: Persistent[]): T {
    let v: InternedObject | Map<Persistent, Object> = lookupArg(ctr, __instances, args, -1)
    for (var n: number = 0; n < args.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
