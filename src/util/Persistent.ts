@@ -1,5 +1,4 @@
 import { Class, __nonNull, absurd, assert } from "./Core"
-import { zip } from "./Array"
 import { Eq } from "./Eq"
 import { Ord } from "./Ord"
 
@@ -238,15 +237,6 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
 // current world.
 export function getProp<T extends VersionedObject> (o: T, k: keyof T): Persistent {
    return stateAt(o, __w)[1][k as string]
-}
-
-// Datatype-generic construction.
-export function constructor_ (this_: VersionedObject, ...args: Persistent[]): void {
-   const ks: string[] = Object.keys(this_)
-   assert(ks.length === args.length)
-   zip(ks, args).forEach(([k, arg]: [string, Persistent]): void => {
-      (this_ as Object as ObjectState)[k] = arg // retarded
-   })
 }
 
 export class World extends InternedObject implements Ord<World> {
