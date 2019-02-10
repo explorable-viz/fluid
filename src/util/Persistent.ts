@@ -53,7 +53,7 @@ export abstract class VersionedObject<K extends InternedObject = InternedObject>
 // Curried map from constructors and arguments to interned objects; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
-type InternedObjects = Map<Persistent, InternedObject>
+type InternedObjects = Map<Persistent, InternedObject | Map<Persistent, Object>> // approximate recursive type
 const __instances: InternedObjects = new Map
 
 // For versioned objects the map is not curried but takes an (interned) composite key.
@@ -61,19 +61,19 @@ type VersionedObjects = Map<InternedObject, VersionedObject>
 const __ctrInstances: Map<NullaryClass<VersionedObject>, VersionedObjects> = new Map
 
 function lookupArg<T extends InternedObject> (
-   ctr: InternedClass<T>,
-   m: Map<Persistent, Object>,
-   args: Persistent[],
+   ctr: InternedClass<T>, 
+   m: InternedObjects, 
+   args: Persistent[], 
    n: number
-): Object {
+): InternedObject | Map<Persistent, Object> {
    // for memoisation purposes, treat constructor itself as argument -1
    const k: Persistent = n === -1 ? ctr : args[n]
-   let v: Object | undefined = m.get(k)
+   let v: InternedObject | Map<Persistent, Object> | undefined = m.get(k)
    if (v === undefined) {
       if (n === args.length - 1) {
-      v = new ctr(...args)
+         v = new ctr(...args)
       } else {
-         v = new Map()
+         v = new Map
       }
       m.set(k, v)
    }
@@ -84,10 +84,10 @@ type InternedClass<T extends InternedObject> = new (...args: Persistent[]) => T
 
 // Hash-consing (interning) object construction.
 export function make<T extends InternedObject> (ctr: InternedClass<T>, ...args: Persistent[]): T {
-   let v: Object = lookupArg(ctr, __instances, args, -1)
+   let v: InternedObject | Map<Persistent, Object> = lookupArg(ctr, __instances, args, -1)
    for (var n: number = 0; n < args.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
-      v = lookupArg(ctr, v as Map<Persistent, Object>, args, n)
+      v = lookupArg(ctr, v as InternedObjects, args, n)
    }
    Object.freeze(v)
    return v as T
