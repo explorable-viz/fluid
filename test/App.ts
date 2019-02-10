@@ -1,10 +1,10 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import { Class, __check, __nonNull, as, absurd } from "../src/util/Core"
-import { Persistent, PersistentObject, World, at, make, /*, __w*/ } from "../src/util/Persistent"
+import { diffProp } from "../src/util/Delta"
+import { Persistent, PersistentObject, World, at, make, __w } from "../src/util/Persistent"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
-// import { diffProp } from "../src/Delta"
 import { Point, Rect, objects } from "../src/Graphics"
 import { Traced, Value } from "../src/Traced"
 import { TestFile, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
@@ -92,13 +92,13 @@ export function close (path: THREE.Vector2[]) {
 function populateScene (): void {
    const file: TestFile = loadTestFile("example", "bar-chart"),
          v: Value.Value = __nonNull(runExample(parseExample(file.text)).v),
-         elems: List<Persistent> = as(reflect(v), List)/*,
-         w: World = __w*/
+         elems: List<Persistent> = as(reflect(v), List),
+         w: World = __w
    World.newRevision()
    // TODO: make some change at __w and reevaluate
    for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
       // assume only increasing or decreasing changes (to or from null):
-//      diffProp(elemsʹ, "head", w)
+      diffProp(elemsʹ, "head", w)
       for (let obj of objects(elemsʹ.head)) {
          scene.add(obj)
       }
