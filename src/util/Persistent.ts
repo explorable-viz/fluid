@@ -50,13 +50,17 @@ export abstract class VersionedObject<K extends InternedObject = InternedObject>
    }
 }
 
-// Curried map from constructors and arguments to constructed objects; curried because composite keys would 
+// Curried map from constructors and arguments to interned objects; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
-const __instances: Map<Persistent, Object> = new Map()
+const __instances: Map<Persistent, InternedObject> = new Map
+
+// For versioned objects the map is not curried but takes an (interned) composite key.
+type InstancesMap = Map<InternedObject, VersionedObject>
+const __ctrInstances: Map<NullaryClass<VersionedObject>, InstancesMap> = new Map
 
 function lookupArg (
-   ctr: new (...args: Persistent[]) => Object,
+   ctr: new (...args: Persistent[]) => InternedObject,
    m: Map<Persistent, Object>,
    args: Persistent[],
    n: number
@@ -76,7 +80,7 @@ function lookupArg (
 }
 
 // Hash-consing (interning) object construction.
-export function make<T extends PersistentObject> (ctr: Class<T>, ...args: Persistent[]): T {
+export function make<T extends InternedObject> (ctr: Class<T>, ...args: Persistent[]): T {
    let v: Object = lookupArg(ctr, __instances, args, -1)
    for (var n: number = 0; n < args.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
@@ -203,9 +207,6 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
 export function getProp<T extends VersionedObject> (o: T, k: keyof T): Persistent {
    return stateAt(o, __w)[1][k as string]
 }
-
-type InstancesMap = Map<InternedObject, VersionedObject>
-const __ctrInstances: Map<NullaryClass<VersionedObject>, InstancesMap> = new Map
 
 // Datatype-generic construction.
 export function constructor_ (this_: VersionedObject, ...args: Persistent[]): void {
