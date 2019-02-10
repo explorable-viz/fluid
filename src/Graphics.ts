@@ -1,11 +1,11 @@
 import * as THREE from "three"
 import { absurd, assert } from "./util/Core"
-import { InternedObject, Persistent, make } from "./util/Persistent"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { Cons, List } from "./BaseTypes"
 
 // Basic graphical datatypes.
 
-export class Rect extends InternedObject {
+export class Rect extends PersistentObject {
    x: number
    y: number
    width: number
@@ -23,7 +23,7 @@ export class Rect extends InternedObject {
    }
 }
 
-export class Point extends InternedObject { // for now
+export class Point extends PersistentObject {
    x: number
    y: number
 

@@ -1,11 +1,11 @@
 import { absurd } from "./util/Core"
-import { InternedObject, make } from "./util/Persistent"
+import { PersistentObject, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Traced } from "./Traced"
 
 import RecDef = Traced.RecDef
 
-export abstract class EnvEntries extends InternedObject {
+export abstract class EnvEntries extends PersistentObject {
    __subtag: "EnvEntries"
 }
 
@@ -41,7 +41,7 @@ export class ExtendEnvEntries extends EnvEntries {
 // But although evaluation ids do not depend on the ids of environments themselves, we still intern
 // environments to enable LVar semantics.
 
-export abstract class Env extends InternedObject {
+export abstract class Env extends PersistentObject {
    __subtag: "Env"
 
    abstract entries (): EnvEntries;
@@ -128,7 +128,7 @@ export class ExtendEnv extends Env {
    }
 }
 
-export class EnvEntry extends InternedObject {
+export class EnvEntry extends PersistentObject {
    ρ: Env
    δ: List<RecDef>
    e: Traced

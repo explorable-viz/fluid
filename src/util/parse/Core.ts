@@ -1,12 +1,12 @@
 import { Ord, eq } from "../Ord"
 import { __nonNull } from "../Core"
-import { InternedObject, make } from "../Persistent"
+import { PersistentObject, make } from "../Persistent"
 
 export interface SyntaxNode {
 }
 
 // The parser builds a list of these. Currently interned, but will probably need to become versioned.
-export abstract class Lexeme extends InternedObject implements SyntaxNode, Ord<Lexeme> {
+export abstract class Lexeme extends PersistentObject implements SyntaxNode, Ord<Lexeme> {
    abstract str: string
 
    eq (l: Lexeme): boolean {

@@ -1,8 +1,8 @@
-import { InternedObject, Persistent, make } from "./util/Persistent"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
 
 // Basic datatypes for interned structures.
 
-export abstract class List<T extends Persistent> extends InternedObject {
+export abstract class List<T extends Persistent> extends PersistentObject {
    static fromArray<T extends Persistent> (xs: T[]): List<T> {
       let xs_: List<T> = Nil.make()
       for (let n: number = xs.length - 1; n >= 0; --n) {
@@ -65,17 +65,7 @@ export class Cons<T extends Persistent> extends List<T> {
    }
 }
 
-type InternedClass2<T extends InternedObject> = new (...args: Persistent[]) => T
-
-export function make2<T extends InternedObject> (ctr: InternedClass2<T>, ...args: Persistent[]): T {
-   return new ctr("")
-}
-
-export function wib<T extends Persistent> (): Cons<T> {
-   return make2(Cons) as Cons<T>
-}
-
-export class Pair<T extends Persistent, U extends Persistent> extends InternedObject {
+export class Pair<T extends Persistent, U extends Persistent> extends PersistentObject {
    fst: T
    snd: U
 
@@ -92,7 +82,7 @@ export class Pair<T extends Persistent, U extends Persistent> extends InternedOb
    }
 }
 
-export abstract class Tree<T extends Persistent> extends InternedObject {
+export abstract class Tree<T extends Persistent> extends PersistentObject {
    abstract map<U extends Persistent> (f: (t: T) => U): Tree<U>
 }
 
@@ -105,7 +95,7 @@ export class Empty<T extends Persistent> extends Tree<T> {
    }
 
    static make<T extends Persistent> (): Empty<T> {
-      return make<Empty<T>>(Empty)
+      return make(Empty) as Empty<T>
    }
 
    map<U extends Persistent> (f: (t: T) => U): Empty<U> {

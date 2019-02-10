@@ -1,5 +1,5 @@
 import { __check, __nonNull, absurd, assert } from "./util/Core"
-import { InternedObject, Persistent, make } from "./util/Persistent"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
@@ -19,7 +19,7 @@ import Trie = Traced.Trie
 import RecDef = Traced.RecDef
 import Var = Traced.Var
 
-export class Runtime<E extends Expr | Expr.RecDef> extends InternedObject {
+export class Runtime<E extends Expr | Expr.RecDef> extends PersistentObject {
    public j: EnvEntries
    public e: E
 

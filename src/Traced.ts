@@ -1,4 +1,4 @@
-import { InternedObject, Persistent, PersistentObject, VersionedObject, at, make } from "./util/Persistent"
+import { Persistent, PersistentObject, VersionedObject, at, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -91,7 +91,7 @@ export namespace Value {
 }
 
 // Called ExplVal in the formalism.
-export class Traced extends InternedObject {
+export class Traced extends PersistentObject {
    t: Trace
    v: Value | null
 
@@ -115,7 +115,7 @@ export namespace Traced {
 
    export namespace Args {
       // n-ary product
-      export abstract class Args<K> extends InternedObject {
+      export abstract class Args<K> extends PersistentObject {
          __subtag: "Traced.Args"
       }
 
@@ -182,7 +182,7 @@ export namespace Traced {
    export type Kont = Traced | Args<any> | Trie<any>
 
    export namespace Trie {
-      export abstract class Trie<K> extends InternedObject {
+      export abstract class Trie<K> extends PersistentObject {
          __subtag: "Trie.Trie"
       }
 
@@ -293,7 +293,7 @@ export namespace Traced {
       }
    }
 
-   export class TracedMatch<K> extends InternedObject {
+   export class TracedMatch<K> extends PersistentObject {
       t: Trace | null // null iff ξ represents a dead branch
       ξ: Match<K>
 
@@ -317,7 +317,7 @@ export namespace Traced {
       export type Args<K> = Args.Args<K>
 
       export namespace Args {
-         export abstract class Args<K> extends InternedObject {
+         export abstract class Args<K> extends PersistentObject {
             __subtag: "Match.Args"
          }
    
@@ -358,7 +358,7 @@ export namespace Traced {
          }
       }
 
-      export abstract class Match<K> extends InternedObject {
+      export abstract class Match<K> extends PersistentObject {
          __subtag: "Match.Match"
       }
 

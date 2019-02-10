@@ -18,10 +18,6 @@ export abstract class PersistentObject implements Eq<PersistentObject> {
 // Functions are persistent to support primitives.
 export type Persistent = null | PersistentObject | string | number | Function
 
-export abstract class InternedObject extends PersistentObject {
-   __tagʹ: "InternedObject"
-}
-
 // Versioned objects are persistent objects that have state that varies across worlds.
 export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
@@ -30,7 +26,7 @@ export abstract class VersionedObject<K extends PersistentObject = PersistentObj
 }
 
 // A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
-export class ExternalObject extends InternedObject {
+export class ExternalObject extends PersistentObject {
    public id: number
 
    constructor_ (
@@ -243,7 +239,7 @@ export function getProp<T extends VersionedObject> (o: T, k: keyof T): Persisten
    return stateAt(o, __w)[1][k as string]
 }
 
-export class World extends InternedObject implements Ord<World> {
+export class World extends PersistentObject implements Ord<World> {
    public parent: World | null
 
    constructor_ (

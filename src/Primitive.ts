@@ -1,5 +1,5 @@
 import { absurd, assert } from "./util/Core"
-import { InternedObject, Persistent, make, ν } from "./util/Persistent"
+import { Persistent, PersistentObject, make, ν } from "./util/Persistent"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
@@ -12,8 +12,8 @@ import Trie = Traced.Trie
 
 export type PrimResult<K> = [Value, K]
 type TrieCtr = (body: null) => Trie.Prim<null>
-type Unary<T, V> = (x: T) => (α: InternedObject) => V
-type Binary<T, U, V> = (x: T, y: U) => (α: InternedObject) => V
+type Unary<T, V> = (x: T) => (α: PersistentObject) => V
+type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
 // Parser guarantees that values/patterns respect constructor signatures. 
 // TODO: rename to avoid confusion with Match.match.
@@ -50,7 +50,7 @@ function match<K extends Persistent> (v: Value, σ: Trie<K>): PrimResult<K> {
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
 
-export class UnaryBody extends InternedObject {
+export class UnaryBody extends PersistentObject {
    op: Unary<Value, Value>
 
    constructor_ (op: Unary<Value, Value>) {
@@ -61,12 +61,12 @@ export class UnaryBody extends InternedObject {
       return make(UnaryBody, op)
    }
 
-   invoke<K extends Persistent> (v: Value, σ: Trie<K>): (α: InternedObject) => PrimResult<K> {
+   invoke<K extends Persistent> (v: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
       return α => match(this.op(v)(α), σ)
    }
 } 
 
-export class BinaryBody extends InternedObject {
+export class BinaryBody extends PersistentObject {
    op: Binary<Value, Value, Value>
 
    constructor_ (op: Binary<Value, Value, Value>) {
@@ -77,12 +77,12 @@ export class BinaryBody extends InternedObject {
       return make(BinaryBody, op)
    }
 
-   invoke<K extends Persistent> (v1: Value, v2: Value, σ: Trie<K>): (α: InternedObject) => PrimResult<K> {
+   invoke<K extends Persistent> (v1: Value, v2: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
       return α => match(this.op(v1, v2)(α), σ)
    }
 } 
 
-export abstract class PrimOp extends InternedObject {
+export abstract class PrimOp extends PersistentObject {
    name: string
 }
 
@@ -154,66 +154,66 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
    ["++", BinaryOp.make_(concat, Trie.ConstStr.make, Trie.ConstStr.make)]
 ])
 
-function __true (α: InternedObject): Value.Constr {
+function __true (α: PersistentObject): Value.Constr {
    return Value.Constr.at(α, Lex.Ctr.make("True"), Nil.make())
 }
 
-function __false (α: InternedObject): Value.Constr {
+function __false (α: PersistentObject): Value.Constr {
    return Value.Constr.at(α, Lex.Ctr.make("False"), Nil.make())
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
-export function error (message: Value.ConstStr): (α: InternedObject) => Value {
+export function error (message: Value.ConstStr): (α: PersistentObject) => Value {
    return assert(false, "LambdaCalc error:\n" + message.val)
 }
 
-export function intToString (x: Value.ConstInt): (α: InternedObject) => Value.ConstStr {
+export function intToString (x: Value.ConstInt): (α: PersistentObject) => Value.ConstStr {
    return α => Value.ConstStr.at(α, x.toString())
 }
 
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
-export function equalInt (x: Value.ConstInt, y: Value.ConstInt): (α: InternedObject) => Value.Constr {
+export function equalInt (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.Constr {
    return α => x.val === y.val ? __true(α) : __false(α)
 }
 
-export function equalStr (x: Value.ConstStr, y: Value.ConstStr): (α: InternedObject) => Value.Constr {
+export function equalStr (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentObject) => Value.Constr {
    return α => x.val === y.val ? __true(α) : __false(α)
 }
 
-export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): (α: InternedObject) => Value.Constr {
+export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.Constr {
    return α => x.val > y.val ? __true(α) : __false(α)
 }
 
-export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): (α: InternedObject) => Value.Constr {
+export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentObject) => Value.Constr {
    return α => x.val > y.val ? __true(α) : __false(α)
 }
 
-export function lessInt (x: Value.ConstInt, y: Value.ConstInt): (α: InternedObject) => Value.Constr {
+export function lessInt (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.Constr {
    return α => x.val > y.val ? __true(α) : __false(α)
 }
 
-export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (α: InternedObject) => Value.Constr {
+export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentObject) => Value.Constr {
    return α => x.val > y.val ? __true(α) : __false(α)
 }
 
-export function minus (x: Value.ConstInt, y: Value.ConstInt): (α: InternedObject) => Value.ConstInt {
+export function minus (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.ConstInt {
    return α => Value.ConstInt.at(α, x.val - y.val)
 }
 
-export function plus (x: Value.ConstInt, y: Value.ConstInt): (α: InternedObject) => Value.ConstInt {
+export function plus (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.ConstInt {
    return α => Value.ConstInt.at(α, x.val + y.val)
 }
 
-export function times (x: Value.ConstInt, y: Value.ConstInt): (α: InternedObject) => Value.ConstInt {
+export function times (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.ConstInt {
    return α => Value.ConstInt.at(α, x.val * y.val)
 }
 
-export function div (x: Value.ConstInt, y: Value.ConstInt): (α: InternedObject) => Value.ConstInt {
+export function div (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.ConstInt {
    // Apparently this will round in the right direction.
    return α => Value.ConstInt.at(α, ~~(x.val / y.val))
 }
 
-export function concat (x: Value.ConstStr, y: Value.ConstStr): (α: InternedObject) => Value.ConstStr {
+export function concat (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentObject) => Value.ConstStr {
    return α => Value.ConstStr.at(α, x.val + y.val)
 }
 

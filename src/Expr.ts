@@ -1,6 +1,6 @@
 import { __check, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { ExternalObject, InternedObject, Persistent, VersionedObject, at, make } from "./util/Persistent"
+import { ExternalObject, Persistent, PersistentObject, VersionedObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -301,7 +301,7 @@ export namespace Expr {
 
    export namespace Args {
       // n-ary product.
-      export abstract class Args<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Args<K>> {
+      export abstract class Args<K extends JoinSemilattice<K>> extends PersistentObject implements JoinSemilattice<Args<K>> {
          __subtag: "Expr.Args.Args"
 
          join (Π: Args<K>): Args<K> {
@@ -366,7 +366,7 @@ export namespace Expr {
    export type Kont = Expr | Args<any> | Trie<any>
 
    export namespace Trie {
-      export abstract class Trie<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Trie<K>> {
+      export abstract class Trie<K extends JoinSemilattice<K>> extends PersistentObject implements JoinSemilattice<Trie<K>> {
          __subtag: "Expr.Trie"
          
          join (τ: Trie<K>): Trie<K> {
