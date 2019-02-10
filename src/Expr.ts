@@ -304,6 +304,7 @@ export namespace Expr {
       // n-ary product.
       export abstract class Args<K extends JoinSemilattice<K>> implements PersistentObject, JoinSemilattice<Args<K>> {
          __subtag: "Expr.Args.Args"
+         abstract constructor_ (...args: Persistent[]): void
 
          join (Π: Args<K>): Args<K> {
             return Args.join(this, Π)

@@ -18,7 +18,6 @@ import PrimApp = Traced.PrimApp
 import Trie = Traced.Trie
 import RecDef = Traced.RecDef
 import Var = Traced.Var
-import { version } from "punycode";
 
 export class Runtime<E extends Expr | Expr.RecDef> implements PersistentObject {
    public j: EnvEntries

@@ -8,6 +8,7 @@ export interface SyntaxNode {
 // The parser builds a list of these. Currently interned, but will probably need to become versioned.
 export abstract class Lexeme implements PersistentObject, SyntaxNode, Ord<Lexeme> {
    abstract str: string
+   abstract constructor_ (str: string): void
 
    eq (l: Lexeme): boolean {
       return eq(this, l)

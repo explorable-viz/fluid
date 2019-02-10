@@ -22,9 +22,7 @@ export interface VersionedObject<K extends PersistentObject = PersistentObject> 
 export class ExternalObject implements PersistentObject {
    public id: number
 
-   constructor_ (
-      id: number
-   ) {
+   constructor_ (id: number) {
       this.id = id
    }
 

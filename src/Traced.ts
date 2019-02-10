@@ -186,6 +186,7 @@ export namespace Traced {
    export namespace Trie {
       export abstract class Trie<K> implements PersistentObject {
          __subtag: "Trie.Trie"
+         abstract constructor_ (...args: Persistent[]): void
       }
 
       export abstract class Prim<K> extends Trie<K> {
@@ -321,6 +322,7 @@ export namespace Traced {
       export namespace Args {
          export abstract class Args<K> implements PersistentObject {
             __subtag: "Match.Args"
+            abstract constructor_ (...args: Persistent[]): void
          }
    
          export class End<K extends Persistent> extends Args<K> {
