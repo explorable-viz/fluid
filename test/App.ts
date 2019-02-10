@@ -1,7 +1,7 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import { Class, __check, __nonNull, as, absurd } from "../src/util/Core"
-import { InternedObject, Persistent, World, make, /*, __w*/ } from "../src/util/Persistent"
+import { Persistent, PersistentObject, World, at, make, /*, __w*/ } from "../src/util/Persistent"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
 // import { diffProp } from "../src/Delta"
@@ -12,21 +12,19 @@ import { TestFile, initialise, loadTestFile, runExample, parseExample } from "..
 initialise()
 
 // intermediate value required to stop TS getting confused:
-const classFor_: [string, Class<InternedObject>][] =
+const classFor_: [string, Class<PersistentObject>][] =
    [["Cons", Cons],
     ["Nil", Nil],
     ["Point", Point],
     ["Rect", Rect]]
-const classFor: Map<string, Class<InternedObject>> = new Map(classFor_)
+const classFor: Map<string, Class<PersistentObject>> = new Map(classFor_)
 
 // Not really convinced by this pattern - wouldn't it make more sense to use the function objects themselves
 // to partition the memo keys, as I did in lambdacalc-old?
-export class Reflect extends InternedObject {
+class Reflect implements PersistentObject {
    v: Value
 
-   constructor_ (
-      v: Value
-   ) {
+   constructor_ (v: Value) {
       this.v = v
    }
 
@@ -52,9 +50,7 @@ function reflect (v: Value | null): Persistent { // weirdly number and string ar
          args.push(reflect(tvs.head.v))
          tvs = tvs.tail
       }
-      // interning not what we want here
-      return make(classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
-//    return at(Reflect.make(v), classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
+      return at(Reflect.make(v), classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
    } else {
       return absurd()
    }
