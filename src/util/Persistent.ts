@@ -1,4 +1,4 @@
-import { Class, NullaryClass, __nonNull, absurd, assert } from "./Core"
+import { Class, __nonNull, absurd, assert } from "./Core"
 import { zip } from "./Array"
 import { Eq } from "./Eq"
 import { Ord } from "./Ord"
@@ -56,9 +56,11 @@ export abstract class VersionedObject<K extends InternedObject = InternedObject>
 type InternedObjects = Map<Persistent, InternedObject | Map<Persistent, Object>> // approximate recursive type
 const __instances: InternedObjects = new Map
 
-// For versioned objects the map is not curried but takes an (interned) composite key.
+// For versioned objects the map is not curried but takes an (interned) composite key. TODO: treating the constructor
+// as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
+// "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
 type VersionedObjects = Map<InternedObject, VersionedObject>
-const __ctrInstances: Map<NullaryClass<VersionedObject>, VersionedObjects> = new Map
+const __ctrInstances: Map<PersistentClass<VersionedObject>, VersionedObjects> = new Map
 
 function lookupArg<T extends InternedObject> (
    ctr: InternedClass<T>, 
@@ -81,6 +83,7 @@ function lookupArg<T extends InternedObject> (
 }
 
 type InternedClass<T extends InternedObject> = new (...args: Persistent[]) => T
+type PersistentClass<T extends PersistentObject> = new () => T
 
 // Hash-consing (interning) object construction.
 export function make<T extends InternedObject> (ctr: InternedClass<T>, ...args: Persistent[]): T {
@@ -94,7 +97,7 @@ export function make<T extends InternedObject> (ctr: InternedClass<T>, ...args: 
 }
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<K extends InternedObject, T extends VersionedObject<K>> (α: K, ctr: NullaryClass<T>, ...args: Persistent[]): T {
+export function at<K extends InternedObject, T extends VersionedObject<K>> (α: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
    let instances: VersionedObjects | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
       instances = new Map

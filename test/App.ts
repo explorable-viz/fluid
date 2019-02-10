@@ -1,7 +1,7 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import { Class, __check, __nonNull, as, absurd } from "../src/util/Core"
-import { InternedObject, Persistent, PersistentObject, World, make, /*, __w*/ } from "../src/util/Persistent"
+import { InternedObject, Persistent, World, make, /*, __w*/ } from "../src/util/Persistent"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
 // import { diffProp } from "../src/Delta"
