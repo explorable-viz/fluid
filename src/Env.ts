@@ -6,7 +6,7 @@ import { Traced } from "./Traced"
 import RecDef = Traced.RecDef
 
 export abstract class EnvEntries implements PersistentObject {
-   __subtag: "EnvEntries"
+   __tag: "EnvEntries"
    abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 }
 
@@ -43,7 +43,7 @@ export class ExtendEnvEntries extends EnvEntries {
 // environments to enable LVar semantics.
 
 export abstract class Env implements PersistentObject {
-   __subtag: "Env"
+   __tag: "Env"
 
    abstract entries (): EnvEntries;
    abstract get (k: string): EnvEntry | undefined;

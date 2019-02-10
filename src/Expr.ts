@@ -23,7 +23,7 @@ export namespace str {
 
 export namespace Lex {
    export class Ctr extends Lexeme {
-      __subtag: "Lex.Ctr"
+      __tag: "Lex.Ctr"
       str: string
 
       constructor_ (
@@ -58,7 +58,7 @@ export namespace Lex {
 
    // Keywords also elided, but we'll probably want that in the syntax at some point.
    export class Keyword extends Lexeme {
-      __subtag: "Lex.StringLiteral"
+      __tag: "Lex.StringLiteral"
       str: string
 
       constructor_ (
@@ -75,7 +75,7 @@ export namespace Lex {
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
    // Other uses of primitive operations are treated as variables.
    export class OpName extends Lexeme {
-      __subtag: "Lex.OpName"
+      __tag: "Lex.OpName"
       str: string
 
       constructor_ (
@@ -90,7 +90,7 @@ export namespace Lex {
    }
 
    export class StringLiteral extends Lexeme {
-      __subtag: "Lex.StringLiteral"
+      __tag: "Lex.StringLiteral"
       str: string
 
       constructor_ (
@@ -109,7 +109,7 @@ export namespace Lex {
    }
 
    export class Var extends Lexeme {
-      __subtag: "Lex.Var"
+      __tag: "Lex.Var"
       str: string
 
       constructor_ (
@@ -129,7 +129,7 @@ export type Expr = Expr.Expr
 export namespace Expr {
    // Must be joinable, purely so that joining two expressions will fail.
    export abstract class Expr implements PersistentObject, JoinSemilattice<Expr> {
-      __subtag: "Expr.Expr"
+      __tag: "Expr.Expr"
       abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 
       join (e: Expr): Expr {
@@ -303,7 +303,7 @@ export namespace Expr {
    export namespace Args {
       // n-ary product.
       export abstract class Args<K extends JoinSemilattice<K>> implements PersistentObject, JoinSemilattice<Args<K>> {
-         __subtag: "Expr.Args.Args"
+         __tag: "Expr.Args.Args"
          abstract constructor_ (...args: Persistent[]): void
 
          join (Π: Args<K>): Args<K> {
@@ -369,7 +369,7 @@ export namespace Expr {
 
    export namespace Trie {
       export abstract class Trie<K extends JoinSemilattice<K>> implements PersistentObject, JoinSemilattice<Trie<K>> {
-         __subtag: "Expr.Trie"
+         __tag: "Expr.Trie"
          abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
          
          join (τ: Trie<K>): Trie<K> {

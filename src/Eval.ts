@@ -23,10 +23,7 @@ export class Runtime<E extends Expr | Expr.RecDef> implements PersistentObject {
    public j: EnvEntries
    public e: E
 
-   constructor_ (
-      j: EnvEntries,
-      e: E
-   ) {
+   constructor_ (j: EnvEntries, e: E) {
       this.j = j
       this.e = e
    }
@@ -102,7 +99,7 @@ function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
          if (t instanceof Empty) {
             const v: Value = __nonNull(e.v)
             if (versioned(v)) {
-               assert(v.__id === k && t.__id === k)
+               assert(v.__id === t.__id)
                if (v instanceof Value.Constr) {
                   let Π: Args<K>
                   if (Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {

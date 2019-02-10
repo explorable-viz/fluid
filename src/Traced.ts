@@ -10,7 +10,7 @@ export type Value = Value.Value
 
 export namespace Value {
    export abstract class Value implements PersistentObject {
-      __subtag: "Value.Value"
+      __tag: "Value.Value"
       abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
    }
 
@@ -117,7 +117,7 @@ export namespace Traced {
    export namespace Args {
       // n-ary product
       export abstract class Args<K> implements PersistentObject {
-         __subtag: "Traced.Args"
+         __tag: "Traced.Args"
          abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
       }
 
@@ -185,7 +185,7 @@ export namespace Traced {
 
    export namespace Trie {
       export abstract class Trie<K> implements PersistentObject {
-         __subtag: "Trie.Trie"
+         __tag: "Trie.Trie"
          abstract constructor_ (...args: Persistent[]): void
       }
 
@@ -321,7 +321,7 @@ export namespace Traced {
 
       export namespace Args {
          export abstract class Args<K> implements PersistentObject {
-            __subtag: "Match.Args"
+            __tag: "Match.Args"
             abstract constructor_ (...args: Persistent[]): void
          }
    
@@ -363,7 +363,7 @@ export namespace Traced {
       }
 
       export abstract class Match<K> implements PersistentObject {
-         __subtag: "Match.Match"
+         __tag: "Match.Match"
          abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
       }
 
@@ -477,7 +477,7 @@ export namespace Traced {
    }
 
    export abstract class Trace implements PersistentObject {
-      __subtag: "Trace.Trace"
+      __tag: "Trace.Trace"
       abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
    }
    

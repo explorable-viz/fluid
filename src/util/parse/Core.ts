@@ -113,7 +113,7 @@ export function regExp (r: RegExp): Parser<string> {
 }
 
 export class Whitespace extends Lexeme {
-   __subtag: "Whitespace"
+   __tag: "Whitespace"
    str: string
 
    constructor_ (str: string): void {
@@ -126,7 +126,7 @@ export class Whitespace extends Lexeme {
 }
 
 export class SingleLineComment extends Lexeme {
-   __subtag: "SingleLineComment"
+   __tag: "SingleLineComment"
    str: string
 
    constructor_ (str: string): void {
@@ -140,7 +140,7 @@ export class SingleLineComment extends Lexeme {
 
 // Does this serve any purpose?
 export class Operator extends Lexeme {
-   __subtag: "Operator"
+   __tag: "Operator"
    str: string
 
    constructor_ (str: string): void {
