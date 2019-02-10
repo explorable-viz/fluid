@@ -16,6 +16,8 @@ export abstract class PersistentObject implements Eq<PersistentObject> {
 export type Persistent = null | PersistentObject | string | number | Function
 
 export abstract class InternedObject extends PersistentObject {
+   __tagʹ: "InternedObject"
+
    eq (that: PersistentObject): boolean {
       return this === that
    }
@@ -35,13 +37,13 @@ export class ExternalObject extends InternedObject {
 }
 
 // Versioned objects are persistent objects that have state that varies across worlds.
-export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
+export abstract class VersionedObject<K extends InternedObject = InternedObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
    __history: Map<World, ObjectState> = undefined as any // history records only enumerable fields
    __id: K = undefined as any
 
    // ES6 only allows constructor calls via "new".
-   abstract constructor_ (...args: (Object | null)[]): void
+   abstract constructor_ (...args: Persistent[]): void
 
    eq (that: PersistentObject): boolean {
       return this === that
@@ -198,11 +200,11 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
 
 // Versioned objects can have different metatypes at different worlds; here we assume T is its type at the 
 // current world.
-export function getProp<T extends VersionedObject> (o: T, k: keyof T): Object | null {
+export function getProp<T extends VersionedObject> (o: T, k: keyof T): Persistent {
    return stateAt(o, __w)[1][k as string]
 }
 
-type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
+type InstancesMap = Map<InternedObject, VersionedObject>
 const __ctrInstances: Map<NullaryClass<VersionedObject>, InstancesMap> = new Map
 
 // Datatype-generic construction.
@@ -215,7 +217,7 @@ export function constructor_ (this_: VersionedObject, ...args: Persistent[]): vo
 }
 
 // The (possibly already extant) object uniquely identified by a memo-key.
-export function at<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: NullaryClass<T>, ...args: (Object | null)[]): T {
+export function at<K extends InternedObject, T extends VersionedObject<K>> (α: K, ctr: NullaryClass<T>, ...args: Persistent[]): T {
    let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
       instances = new Map
