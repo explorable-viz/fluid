@@ -12,12 +12,12 @@ import { TestFile, initialise, loadTestFile, runExample, parseExample } from "..
 initialise()
 
 // intermediate value required to stop TS getting confused:
-const classFor_: [string, Class<PersistentObject>][] =
+const classFor_: [string, Class<InternedObject>][] =
    [["Cons", Cons],
     ["Nil", Nil],
     ["Point", Point],
     ["Rect", Rect]]
-const classFor: Map<string, Class<PersistentObject>> = new Map(classFor_)
+const classFor: Map<string, Class<InternedObject>> = new Map(classFor_)
 
 // Not really convinced by this pattern - wouldn't it make more sense to use the function objects themselves
 // to partition the memo keys, as I did in lambdacalc-old?
