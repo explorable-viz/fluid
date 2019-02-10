@@ -92,11 +92,15 @@ export namespace Value {
 
 // Called ExplVal in the formalism.
 export class Traced extends InternedObject {
-   constructor (
-      public t: Trace,
-      public v: Value | null
+   t: Trace
+   v: Value | null
+
+   constructor_ (
+      t: Trace,
+      v: Value | null
    ) {
-      super()
+      this.t = t
+      this.v = v
    }
 
    static make (t: Trace, v: Value | null): Traced {
@@ -111,16 +115,18 @@ export namespace Traced {
 
    export namespace Args {
       // n-ary product
-      export class Args<K> extends InternedObject {
+      export abstract class Args<K> extends InternedObject {
          __subtag: "Traced.Args"
       }
 
       // Maps zero arguments to κ.
       export class End<K extends Persistent> extends Args<K> {
-         constructor (
-            public κ: K
+         κ: K
+
+         constructor_ (
+            κ: K
          ) {
-            super()
+            this.κ = κ
          }
 
          static is<K extends Persistent> (Π: Args<K>): Π is End<K> {
@@ -134,10 +140,12 @@ export namespace Traced {
 
       // Maps a single argument to another args trie.
       export class Next<K> extends Args<K> {
-         constructor (
-            public σ: Trie<Args<K>>
+         σ: Trie<Args<K>>
+
+         constructor_ (
+            σ: Trie<Args<K>>
          ) {
-            super()
+            this.σ = σ
          }
 
          static is<K> (Π: Args<K>): Π is Next<K> {
@@ -150,10 +158,12 @@ export namespace Traced {
       }
 
       export class Top<K extends Persistent> extends Args<K> {
-         constructor (
-            public κ: K // want fix at null but couldn't make that work with the polymorphism
+         κ: K // want fix at null but couldn't make that work with the polymorphism
+
+         constructor_ (
+            κ: K
          ) {
-            super()
+            this.κ = κ
          }
 
          static is<K extends Persistent> (Π: Args<K>): Π is Top<K> {
@@ -176,15 +186,15 @@ export namespace Traced {
          __subtag: "Trie.Trie"
       }
 
-      export class Prim<K> extends Trie<K> {
-         constructor (
-            public κ: K
-         ) {
-            super()
-         }
+      export abstract class Prim<K> extends Trie<K> {
+         κ: K
       }
 
       export class ConstInt<K extends Persistent> extends Prim<K> {
+         constructor_ (κ: K) {
+            this.κ = κ
+         }
+
          static is<K extends Persistent> (σ: Trie<K>): σ is ConstInt<K> {
             return σ instanceof ConstInt
          }
@@ -195,6 +205,10 @@ export namespace Traced {
       }
 
       export class ConstStr<K extends Persistent> extends Prim<K> {
+         constructor_ (κ: K) {
+            this.κ = κ
+         }
+
          static is<K extends Persistent> (σ: Trie<K>): σ is ConstStr<K> {
             return σ instanceof ConstStr
          }
@@ -205,10 +219,10 @@ export namespace Traced {
       }
 
       export class Constr<K> extends Trie<K> {
-         constructor (
-            public cases: FiniteMap<string, Args<K>>
-         ) {
-            super()
+         cases: FiniteMap<string, Args<K>>
+
+         constructor_ (cases: FiniteMap<string, Args<K>>) {
+            this.cases = cases
          }
 
          static is<K> (σ: Trie<K>): σ is Constr<K> {
@@ -221,10 +235,12 @@ export namespace Traced {
       }
 
       export class Fun<K extends Persistent> extends Trie<K> {
-         constructor (
-            public κ: K
+         κ: K
+
+         constructor_ (
+            κ: K
          ) {
-            super()
+            this.κ = κ
          }
 
          static is<K extends Persistent> (σ: Trie<K>): σ is Fun<K> {
@@ -237,11 +253,15 @@ export namespace Traced {
       }
 
       export class Var<K extends Persistent> extends Trie<K> {
-         constructor (
-            public x: Lex.Var,
-            public κ: K
+         x: Lex.Var
+         κ: K
+
+         constructor_ (
+            x: Lex.Var,
+            κ: K
          ) {
-            super()
+            this.x = x
+            this.κ = κ
          }
 
          static is<K extends Persistent> (σ: Trie<K>): σ is Var<K> {
@@ -255,10 +275,12 @@ export namespace Traced {
 
       // Wanted to fix K at null but that doesn't work with polymorphic code.
       export class Top<K extends Persistent> extends Trie<K> {
-         constructor (
-            public κ: K
+         κ: K
+
+         constructor_ (
+            κ: K
          ) {
-            super()
+            this.κ = κ
          }
 
          static is<K extends Persistent> (σ: Trie<K>): σ is Top<K> {
@@ -272,11 +294,15 @@ export namespace Traced {
    }
 
    export class TracedMatch<K> extends InternedObject {
-      constructor (
-         public t: Trace | null, // null iff ξ represents a dead branch
-         public ξ: Match<K>
+      t: Trace | null // null iff ξ represents a dead branch
+      ξ: Match<K>
+
+   constructor_ (
+         t: Trace | null,
+         ξ: Match<K>
       ) {
-         super()
+         this.t = t
+         this.ξ = ξ
       }
 
       static make<K> (t: Trace | null, ξ: Match<K>): TracedMatch<K> {
@@ -291,15 +317,17 @@ export namespace Traced {
       export type Args<K> = Args.Args<K>
 
       export namespace Args {
-         export class Args<K> extends InternedObject {
+         export abstract class Args<K> extends InternedObject {
             __subtag: "Match.Args"
          }
    
          export class End<K extends Persistent> extends Args<K> {
-            constructor (
-               public κ: K
+            κ: K
+
+            constructor_ (
+               κ: K
             ) {
-               super()
+               this.κ = κ
             }
    
             static is<K extends Persistent> (Ψ: Args<K>): Ψ is End<K> {
@@ -312,10 +340,12 @@ export namespace Traced {
          }
    
          export class Next<K> extends Args<K> {
-            constructor (
-               public tξ: TracedMatch<K>
+            tξ: TracedMatch<K>
+
+            constructor_ (
+               tξ: TracedMatch<K>
             ) {
-               super()
+               this.tξ = tξ
             }
    
             static is<K> (Ψ: Args<K>): Ψ is Next<K> {
@@ -328,24 +358,23 @@ export namespace Traced {
          }
       }
 
-      export class Match<K> extends InternedObject {
+      export abstract class Match<K> extends InternedObject {
          __subtag: "Match.Match"
       }
 
-      export class Prim<K> extends Match<K> {
-         constructor (
-            public κ: K
-         ) {
-            super()
-         }
+      export abstract class Prim<K extends Persistent> extends Match<K> {
+         κ: K
       }
 
       export class ConstInt<K extends Persistent> extends Prim<K> {
-         constructor (
-            public val: number,
+         val: number
+
+         constructor_ (
+            val: number,
             κ: K
          ) {
-            super(κ)
+            this.val
+            this.κ = κ
          }
 
          static is<K extends Persistent> (ξ: Match<K>): ξ is ConstInt<K> {
@@ -358,11 +387,14 @@ export namespace Traced {
       }
 
       export class ConstStr<K extends Persistent> extends Prim<K> {
-         constructor (
-            public val: string,
+         val: string
+
+         constructor_ (
+            val: string,
             κ: K
          ) {
-            super(κ)
+            this.val = val
+            this.κ = κ
          }
 
          static is<K extends Persistent> (ξ: Match<K>): ξ is ConstStr<K> {
@@ -376,10 +408,12 @@ export namespace Traced {
 
       // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
       export class Constr<K> extends Match<K> {
-         constructor (
-            public cases: FiniteMap<string, Traced.Args<K> | Args<K>> 
+         cases: FiniteMap<string, Traced.Args<K> | Args<K>> 
+
+         constructor_ (
+            cases: FiniteMap<string, Traced.Args<K> | Args<K>> 
          ) {
-            super()
+            this.cases = cases
          }
 
          static is<K> (ξ: Match<K>): ξ is Constr<K> {
@@ -392,11 +426,15 @@ export namespace Traced {
       }
 
       export class Fun<K extends Persistent> extends Match<K> {
-         constructor (
-            public f: Value.Closure | Value.PrimOp,
-            public κ: K
+         f: Value.Closure | Value.PrimOp
+         κ: K
+   
+         constructor_ (
+            f: Value.Closure | Value.PrimOp,
+            κ: K
          ) {
-            super()
+            this.f = f
+            this.κ = κ
          }
 
          static is<K extends Persistent> (ξ: Match<K>): ξ is Fun<K> {
@@ -409,12 +447,18 @@ export namespace Traced {
       }
 
       export class Var<K extends Persistent> extends Match<K> {
-         constructor (
-            public x: Lex.Var,
-            public v: Value | null,
-            public κ: K
+         x: Lex.Var
+         v: Value | null
+         κ: K
+
+            constructor_ (
+            x: Lex.Var,
+            v: Value | null,
+            κ: K
          ) {
-            super()
+            this.x = x
+            this.v = v
+            this.κ = κ
          }
 
          static is<K extends Persistent> (ξ: Match<K>): ξ is Var<K> {

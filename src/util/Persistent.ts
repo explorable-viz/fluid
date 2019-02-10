@@ -7,8 +7,12 @@ import { Ord } from "./Ord"
 export abstract class PersistentObject implements Eq<PersistentObject> {
    __tag: "PersistentObject"
 
-   // The implementations of these are all identical but this forces a concrete partitioning.
-   abstract eq (that: PersistentObject): boolean
+   eq (that: PersistentObject): boolean {
+      return this === that
+   }
+
+   // ES6 only allows constructor calls via "new".
+   abstract constructor_ (...args: Persistent[]): void
 }
 
 // Functions are persistent to support primitives.
@@ -16,23 +20,6 @@ export type Persistent = null | PersistentObject | string | number | Function
 
 export abstract class InternedObject extends PersistentObject {
    __tagʹ: "InternedObject"
-
-   eq (that: PersistentObject): boolean {
-      return this === that
-   }
-}
-
-// A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
-export class ExternalObject extends InternedObject {
-   constructor (
-      public id: number
-   ) {
-      super()
-   }
-
-   static make (id: number): ExternalObject {
-      return make(ExternalObject, id)
-   }
 }
 
 // Versioned objects are persistent objects that have state that varies across worlds.
@@ -40,12 +27,20 @@ export abstract class VersionedObject<K extends InternedObject = InternedObject>
    // Initialise these at object creation (not enumerable).
    __history: Map<World, ObjectState> = undefined as any // history records only enumerable fields
    __id: K = undefined as any
+}
 
-   // ES6 only allows constructor calls via "new".
-   abstract constructor_ (...args: Persistent[]): void
+// A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
+export class ExternalObject extends InternedObject {
+   public id: number
 
-   eq (that: PersistentObject): boolean {
-      return this === that
+   constructor_ (
+      id: number
+   ) {
+      this.id = id
+   }
+
+   static make (id: number): ExternalObject {
+      return make(ExternalObject, id)
    }
 }
 
@@ -72,7 +67,8 @@ function lookupArg<T extends InternedObject> (
    let v: InternedObject | Map<Persistent, Object> | undefined = m.get(k)
    if (v === undefined) {
       if (n === args.length - 1) {
-         v = new ctr(...args)
+         v = new ctr
+         v.constructor_(...args)
       } else {
          v = new Map
       }
@@ -240,8 +236,12 @@ export function getProp<T extends VersionedObject> (o: T, k: keyof T): Persisten
 }
 
 export class World extends InternedObject implements Ord<World> {
-   constructor (public parent: World | null) {
-      super()
+   public parent: World | null
+
+   constructor_ (
+      parent: World | null
+   ) {
+      this.parent = parent
    }
 
    leq (w: World): boolean {
@@ -257,4 +257,4 @@ export class World extends InternedObject implements Ord<World> {
    }
 }
 
-export let __w: World = new World(null)
+export let __w: World = World.make(null)

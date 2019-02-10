@@ -22,10 +22,12 @@ const classFor: Map<string, Class<InternedObject>> = new Map(classFor_)
 // Not really convinced by this pattern - wouldn't it make more sense to use the function objects themselves
 // to partition the memo keys, as I did in lambdacalc-old?
 export class Reflect extends InternedObject {
-   constructor (
-      public v: Value
+   v: Value
+
+   constructor_ (
+      v: Value
    ) {
-      super()
+      this.v = v
    }
 
    static make (v: Value): Reflect {

@@ -11,8 +11,7 @@ export class Rect extends InternedObject {
    width: number
    height: number
 
-   constructor (x: number, y: number, width: number, height: number) {
-      super()
+   constructor_ (x: number, y: number, width: number, height: number) {
       this.x = x
       this.y = y
       this.width = width
@@ -28,8 +27,7 @@ export class Point extends InternedObject { // for now
    x: number
    y: number
 
-   constructor (x: number, y: number) {
-      super()
+   constructor_ (x: number, y: number) {
       this.x = x
       this.y = y
    }

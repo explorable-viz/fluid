@@ -53,8 +53,7 @@ function match<K extends Persistent> (v: Value, σ: Trie<K>): PrimResult<K> {
 export class UnaryBody extends InternedObject {
    op: Unary<Value, Value>
 
-   constructor (op: Unary<Value, Value>) {
-      super()
+   constructor_ (op: Unary<Value, Value>) {
       this.op = op
    }
 
@@ -70,8 +69,7 @@ export class UnaryBody extends InternedObject {
 export class BinaryBody extends InternedObject {
    op: Binary<Value, Value, Value>
 
-   constructor (op: Binary<Value, Value, Value>) {
-      super()
+   constructor_ (op: Binary<Value, Value, Value>) {
       this.op = op
    }
 
@@ -85,17 +83,21 @@ export class BinaryBody extends InternedObject {
 } 
 
 export abstract class PrimOp extends InternedObject {
-   constructor (public name: string) {
-      super()
-   }
+   name: string
 }
 
 export class UnaryOp extends PrimOp {
-   constructor (
+   σ: Trie.Prim<null>
+   b: UnaryBody
+
+   constructor_ (
       name: string, 
-      public σ: Trie.Prim<null>, 
-      public b: UnaryBody) {
-      super(name)
+      σ: Trie.Prim<null>,
+      b: UnaryBody
+   ) {
+      this.name = name
+      this.σ = σ
+      this.b = b
    }
 
    static make (name: string, σ: Trie.Prim<null>, b: UnaryBody): UnaryOp {
@@ -108,13 +110,20 @@ export class UnaryOp extends PrimOp {
 }
 
 export class BinaryOp extends PrimOp {
-   constructor (
+   σ1: Trie.Prim<null>
+   σ2: Trie.Prim<null> 
+   b: BinaryBody
+
+   constructor_ (
       name: string, 
-      public σ1: Trie.Prim<null>, 
-      public σ2: Trie.Prim<null>, 
-      public b: BinaryBody
+      σ1: Trie.Prim<null>, 
+      σ2: Trie.Prim<null>, 
+      b: BinaryBody
    ) {
-      super(name)
+      this.name = name
+      this.σ1 = σ1
+      this.σ2 = σ2
+      this.b = b
    }
 
    static make (name: string, σ1: Trie.Prim<null>, σ2: Trie.Prim<null>, b: BinaryBody): BinaryOp {

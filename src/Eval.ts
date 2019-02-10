@@ -20,11 +20,15 @@ import RecDef = Traced.RecDef
 import Var = Traced.Var
 
 export class Runtime<E extends Expr | Expr.RecDef> extends InternedObject {
-   constructor (
-      public j: EnvEntries,
-      public e: E
+   public j: EnvEntries
+   public e: E
+
+   constructor_ (
+      j: EnvEntries,
+      e: E
    ) {
-      super()
+      this.j = j
+      this.e = e
    }
 
    static make<E extends Expr | Expr.RecDef> (j: EnvEntries, e: E): Runtime<E> {

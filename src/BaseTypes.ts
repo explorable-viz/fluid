@@ -15,7 +15,10 @@ export abstract class List<T extends Persistent> extends InternedObject {
    abstract map<U extends Persistent> (f: (t: T) => U): List<U>
 }
 
-export class Nil<T extends Persistent> extends List<T> { 
+export class Nil<T extends Persistent> extends List<T> {
+   constructor_ () {
+   }
+
    static is<T extends Persistent> (xs: List<T>): xs is Nil<T> {
       return xs instanceof Nil
    }
@@ -34,11 +37,15 @@ export class Nil<T extends Persistent> extends List<T> {
 }
 
 export class Cons<T extends Persistent> extends List<T> {
-   constructor (
-      public head: T,
-      public tail: List<T>
+   head: T
+   tail: List<T>
+   
+   constructor_ (
+      head: T,
+      tail: List<T>
    ) {
-      super()
+      this.head = head
+      this.tail = tail
    }
 
    static is<T extends Persistent> (xs: List<T>): xs is Cons<T> {
@@ -69,11 +76,15 @@ export function wib<T extends Persistent> (): Cons<T> {
 }
 
 export class Pair<T extends Persistent, U extends Persistent> extends InternedObject {
-   constructor (
-      public fst: T,
-      public snd: U
+   fst: T
+   snd: U
+
+   constructor_ (
+      fst: T,
+      snd: U
    ) {
-      super()
+      this.fst = fst
+      this.snd = snd
    }
 
    static make<T extends Persistent, U extends Persistent> (fst: T, snd: U): Pair<T, U> {
@@ -86,6 +97,9 @@ export abstract class Tree<T extends Persistent> extends InternedObject {
 }
 
 export class Empty<T extends Persistent> extends Tree<T> {
+   constructor_ () {      
+   }
+
    static is<T extends Persistent> (xs: Tree<T>): xs is Empty<T> {
       return xs instanceof Empty
    }
@@ -100,12 +114,18 @@ export class Empty<T extends Persistent> extends Tree<T> {
 }
 
 export class NonEmpty<T extends Persistent> extends Tree<T> {
-   constructor (
-      public left: Tree<T>,
-      public t: T,
-      public right: Tree<T>
+   left: Tree<T>
+   t: T
+   right: Tree<T>
+
+   constructor_ (
+      left: Tree<T>,
+      t: T,
+      right: Tree<T>
    ) {
-      super()
+      this.left = left
+      this.t = t
+      this.right = right
    }
 
    static is<T extends Persistent> (xs: Tree<T>): xs is NonEmpty<T> {

@@ -113,11 +113,10 @@ export function regExp (r: RegExp): Parser<string> {
 
 export class Whitespace extends Lexeme {
    __subtag: "Whitespace"
+   str: string
 
-   constructor (
-      public str: string
-   ) {
-      super()
+   constructor_ (str: string): void {
+      this.str = str
    }
 
    static make (str: string): Whitespace {
@@ -127,11 +126,10 @@ export class Whitespace extends Lexeme {
 
 export class SingleLineComment extends Lexeme {
    __subtag: "SingleLineComment"
+   str: string
 
-   constructor (
-      public str: string
-   ) {
-      super()
+   constructor_ (str: string): void {
+      this.str = str
    }
 
    static make (str: string): SingleLineComment {
@@ -142,11 +140,10 @@ export class SingleLineComment extends Lexeme {
 // Does this serve any purpose?
 export class Operator extends Lexeme {
    __subtag: "Operator"
+   str: string
 
-   constructor (
-      public str: string
-   ) {
-      super()
+   constructor_ (str: string): void {
+      this.str = str
    }
 
    static make (str: string): Operator {
@@ -154,7 +151,7 @@ export class Operator extends Lexeme {
    }
 }
 
-export type LexemeClass<L extends Lexeme> = new (str: string) => L
+export type LexemeClass<L extends Lexeme> = new () => L
 
 function token<L extends Lexeme>(p: Parser<string>, C: LexemeClass<L>): Parser<L> {
    function token_ (state: ParseState): ParseResult<L> | null {

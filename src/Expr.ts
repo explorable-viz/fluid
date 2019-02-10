@@ -24,11 +24,12 @@ export namespace str {
 export namespace Lex {
    export class Ctr extends Lexeme {
       __subtag: "Lex.Ctr"
+      str: string
 
-      constructor (
-         public str: string
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       static make (str: string): Ctr {
@@ -38,10 +39,12 @@ export namespace Lex {
 
    // Literal lexemes are elided when constructing abstract syntax to avoid additional level of structure.
    export class IntLiteral extends Lexeme {
-      constructor (
-         public str: string
+      str: string
+
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       toNumber (): number {
@@ -56,11 +59,12 @@ export namespace Lex {
    // Keywords also elided, but we'll probably want that in the syntax at some point.
    export class Keyword extends Lexeme {
       __subtag: "Lex.StringLiteral"
+      str: string
 
-      constructor (
-         public str: string
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       static make (str: string): Keyword {
@@ -72,11 +76,12 @@ export namespace Lex {
    // Other uses of primitive operations are treated as variables.
    export class OpName extends Lexeme {
       __subtag: "Lex.OpName"
+      str: string
 
-      constructor (
-         public str: string
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       static make (str: string): OpName {
@@ -86,11 +91,12 @@ export namespace Lex {
 
    export class StringLiteral extends Lexeme {
       __subtag: "Lex.StringLiteral"
+      str: string
 
-      constructor (
-         public str: string
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       toString (): string {
@@ -104,11 +110,12 @@ export namespace Lex {
 
    export class Var extends Lexeme {
       __subtag: "Lex.Var"
+      str: string
 
-      constructor (
-         public str: string
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       static make (str: string): Var {
@@ -294,7 +301,7 @@ export namespace Expr {
 
    export namespace Args {
       // n-ary product.
-      export class Args<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Args<K>> {
+      export abstract class Args<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Args<K>> {
          __subtag: "Expr.Args.Args"
 
          join (Π: Args<K>): Args<K> {
@@ -315,10 +322,12 @@ export namespace Expr {
 
       // Maps zero arguments to κ.
       export class End<K extends JoinSemilattice<K> & Persistent> extends Args<K> {
-         constructor (
-            public κ: K
+         κ: K
+
+         constructor_ (
+            κ: K
          ) {
-            super()
+            this.κ = κ
          }
 
          static is<K extends JoinSemilattice<K> & Persistent> (Π: Args<K>): Π is End<K> {
@@ -332,10 +341,12 @@ export namespace Expr {
 
       // Maps a single argument to another args trie.
       export class Next<K extends JoinSemilattice<K>> extends Args<K> {
-         constructor (
-            public σ: Trie<Args<K>>
+         σ: Trie<Args<K>>
+
+         constructor_ (
+            σ: Trie<Args<K>>
          ) {
-            super()
+            this.σ = σ
          }
 
          static is<K extends JoinSemilattice<K>> (Π: Args<K>): Π is Next<K> {
@@ -355,7 +366,7 @@ export namespace Expr {
    export type Kont = Expr | Args<any> | Trie<any>
 
    export namespace Trie {
-      export class Trie<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Trie<K>> {
+      export abstract class Trie<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Trie<K>> {
          __subtag: "Expr.Trie"
          
          join (τ: Trie<K>): Trie<K> {
@@ -377,11 +388,13 @@ export namespace Expr {
          }
       }
 
-      export class Prim<K extends JoinSemilattice<K>> extends Trie<K> {
-         constructor (
-            public κ: K
+      export class Prim<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
+         κ: K
+         
+         constructor_ (
+            κ: K
          ) {
-            super()
+            this.κ = κ
          }
       }
 
@@ -407,10 +420,12 @@ export namespace Expr {
 
       // n-ary sum of n-ary products.
       export class Constr<K extends JoinSemilattice<K>> extends Trie<K> {
-         constructor (
-            public cases: FiniteMap<string, Args<K>>
+         cases: FiniteMap<string, Args<K>>
+
+         constructor_ (
+            cases: FiniteMap<string, Args<K>>
          ) {
-            super()
+            this.cases = cases
          }
 
          static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Constr<K> {
@@ -423,10 +438,12 @@ export namespace Expr {
       }
 
       export class Fun<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
-         constructor (
-            public κ: K
+         κ: K
+
+         constructor_ (
+            κ: K
          ) {
-            super()
+            this.κ = κ
          }
 
          static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is Fun<K> {
@@ -439,11 +456,15 @@ export namespace Expr {
       }
 
       export class Var<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
-         constructor (
-            public x: Lex.Var,
-            public κ: K
+         x: Lex.Var
+         κ: K
+
+         constructor_ (
+            x: Lex.Var,
+            κ: K
          ) {
-            super()
+            this.x = x
+            this.κ = κ
          }
 
          static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is Var<K> {
