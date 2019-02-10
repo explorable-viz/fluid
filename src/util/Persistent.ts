@@ -47,24 +47,24 @@ export class ExternalObject extends InternedObject {
 // Curried map from constructors and arguments to interned objects; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
-type InternedObjects = Map<Persistent, InternedObject | Map<Persistent, Object>> // approximate recursive type
+type InternedObjects = Map<Persistent, PersistentObject | Map<Persistent, Object>> // approximate recursive type
 const __instances: InternedObjects = new Map
 
 // For versioned objects the map is not curried but takes an (interned) composite key. TODO: treating the constructor
 // as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
 // "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
-type VersionedObjects = Map<PersistentObject, VersionedObject>
-const __ctrInstances: Map<PersistentClass<VersionedObject>, VersionedObjects> = new Map
+type VersionedObjects = Map<PersistentObject, PersistentObject>
+const __ctrInstances: Map<PersistentClass<PersistentObject>, VersionedObjects> = new Map
 
-function lookupArg<T extends InternedObject> (
+function lookupArg<T extends PersistentObject> (
    ctr: PersistentClass<T>, 
    m: InternedObjects, 
    args: Persistent[], 
    n: number
-): InternedObject | Map<Persistent, Object> {
+): PersistentObject | Map<Persistent, Object> {
    // for memoisation purposes, treat constructor itself as argument -1
    const k: Persistent = n === -1 ? ctr : args[n]
-   let v: InternedObject | Map<Persistent, Object> | undefined = m.get(k)
+   let v: PersistentObject | Map<Persistent, Object> | undefined = m.get(k)
    if (v === undefined) {
       if (n === args.length - 1) {
          v = new ctr
@@ -81,7 +81,7 @@ type PersistentClass<T extends PersistentObject> = new () => T
 
 // Hash-consing (interning) object construction.
 export function make<T extends InternedObject> (ctr: PersistentClass<T>, ...args: Persistent[]): T {
-   let v: InternedObject | Map<Persistent, Object> = lookupArg(ctr, __instances, args, -1)
+   let v: PersistentObject | Map<Persistent, Object> = lookupArg(ctr, __instances, args, -1)
    for (var n: number = 0; n < args.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
       v = lookupArg(ctr, v as InternedObjects, args, n)
