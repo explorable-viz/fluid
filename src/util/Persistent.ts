@@ -23,7 +23,7 @@ export abstract class InternedObject extends PersistentObject {
 }
 
 // Versioned objects are persistent objects that have state that varies across worlds.
-export abstract class VersionedObject<K extends InternedObject = InternedObject> extends PersistentObject {
+export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
    __history: Map<World, ObjectState> = undefined as any // history records only enumerable fields
    __id: K = undefined as any
@@ -53,7 +53,7 @@ const __instances: InternedObjects = new Map
 // For versioned objects the map is not curried but takes an (interned) composite key. TODO: treating the constructor
 // as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
 // "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
-type VersionedObjects = Map<InternedObject, VersionedObject>
+type VersionedObjects = Map<PersistentObject, VersionedObject>
 const __ctrInstances: Map<PersistentClass<VersionedObject>, VersionedObjects> = new Map
 
 function lookupArg<T extends InternedObject> (
@@ -91,8 +91,17 @@ export function make<T extends InternedObject> (ctr: InternedClass<T>, ...args: 
    return v as T
 }
 
+function versioned (o: PersistentObject): boolean {
+   return (o as any).__id !== undefined
+}
+
+function interned (o: PersistentObject): boolean {
+   return !versioned(o)
+}
+
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<K extends InternedObject, T extends VersionedObject<K>> (α: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
+export function at<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
+   assert(interned(α))
    let instances: VersionedObjects | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
       instances = new Map

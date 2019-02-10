@@ -1,4 +1,4 @@
-import { InternedObject, Persistent, VersionedObject, at, make } from "./util/Persistent"
+import { InternedObject, Persistent, PersistentObject, VersionedObject, at, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -22,7 +22,7 @@ export namespace Value {
          this.σ = σ
       }
 
-      static at (α: InternedObject, ρ: Env, σ: Traced.Trie<Traced>): Closure {
+      static at (α: PersistentObject, ρ: Env, σ: Traced.Trie<Traced>): Closure {
          return at(α, Closure, ρ, σ)
       }
    }
@@ -38,7 +38,7 @@ export namespace Value {
          this.val = val
       }
    
-      static at (α: InternedObject, val: number): ConstInt {
+      static at (α: PersistentObject, val: number): ConstInt {
          return at(α, ConstInt, val)
       }
 
@@ -54,7 +54,7 @@ export namespace Value {
          this.val = val
       }
    
-      static at (α: InternedObject, val: string): ConstStr {
+      static at (α: PersistentObject, val: string): ConstStr {
          return at(α, ConstStr, val)
       }
 
@@ -72,7 +72,7 @@ export namespace Value {
          this.args = args
       }
    
-      static at (α: InternedObject, ctr: Lex.Ctr, args: List<Traced>): Constr {
+      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Traced>): Constr {
          return at(α, Constr, ctr, args)
       }
    }
@@ -84,7 +84,7 @@ export namespace Value {
          this.op = op
       }
    
-      static at (α: InternedObject, op: UnaryOp): PrimOp {
+      static at (α: PersistentObject, op: UnaryOp): PrimOp {
          return at(α, PrimOp, op)
       }
    }
