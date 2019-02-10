@@ -15,6 +15,39 @@ export abstract class PersistentObject implements Eq<PersistentObject> {
 // Functions are persistent to support primitives.
 export type Persistent = null | PersistentObject | string | number | Function
 
+export abstract class InternedObject extends PersistentObject {
+   eq (that: PersistentObject): boolean {
+      return this === that
+   }
+}
+
+// A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
+export class ExternalObject extends InternedObject {
+   constructor (
+      public id: number
+   ) {
+      super()
+   }
+
+   static make (id: number): ExternalObject {
+      return make(ExternalObject, id)
+   }
+}
+
+// Versioned objects are persistent objects that have state that varies across worlds.
+export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
+   // Initialise these at object creation (not enumerable).
+   __history: Map<World, ObjectState> = undefined as any // history records only enumerable fields
+   __id: K = undefined as any
+
+   // ES6 only allows constructor calls via "new".
+   abstract constructor_ (...args: (Object | null)[]): void
+
+   eq (that: PersistentObject): boolean {
+      return this === that
+   }
+}
+
 // Curried map from constructors and arguments to constructed objects; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
@@ -49,26 +82,6 @@ export function make<T extends PersistentObject> (ctr: Class<T>, ...args: Persis
    }
    Object.freeze(v)
    return v as T
-}
-
-// TODO: move to same module as `make`?
-export abstract class InternedObject extends PersistentObject {
-   eq (that: PersistentObject): boolean {
-      return this === that
-   }
-}
-
-// A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
-export class ExternalObject extends InternedObject {
-   constructor (
-      public id: number
-   ) {
-      super()
-   }
-
-   static make (id: number): ExternalObject {
-      return make(ExternalObject, id)
-   }
 }
 
 // Fresh keys represent inputs to the system.
@@ -189,20 +202,6 @@ export function getProp<T extends VersionedObject> (o: T, k: keyof T): Object | 
    return stateAt(o, __w)[1][k as string]
 }
 
-export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
-   // Initialise these at object creation (not enumerable).
-   __history: Map<World, ObjectState> = undefined as any // history records only enumerable fields
-   __id: K = undefined as any
-
-   // ES6 only allows constructor calls via "new".
-   abstract constructor_ (...args: (Object | null)[]): void
-
-   eq (that: PersistentObject): boolean {
-      return this === that
-   }
-}
-
-// Keys must be "memo" (persistent) objects.
 type InstancesMap = Map<PersistentObject, VersionedObject<PersistentObject>>
 const __ctrInstances: Map<NullaryClass<VersionedObject>, InstancesMap> = new Map
 
