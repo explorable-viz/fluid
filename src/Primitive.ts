@@ -1,5 +1,5 @@
 import { absurd, assert } from "./util/Core"
-import { InternedObject, make, ν } from "./util/Persistent"
+import { InternedObject, Persistent, make, ν } from "./util/Persistent"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
@@ -17,7 +17,7 @@ type Binary<T, U, V> = (x: T, y: U) => (α: InternedObject) => V
 
 // Parser guarantees that values/patterns respect constructor signatures. 
 // TODO: rename to avoid confusion with Match.match.
-function match<K> (v: Value, σ: Trie<K>): PrimResult<K> {
+function match<K extends Persistent> (v: Value, σ: Trie<K>): PrimResult<K> {
    if (v instanceof Value.PrimOp && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
       return [v, σ.κ]
    } else 
@@ -62,7 +62,7 @@ export class UnaryBody extends InternedObject {
       return make(UnaryBody, op)
    }
 
-   invoke<K> (v: Value, σ: Trie<K>): (α: InternedObject) => PrimResult<K> {
+   invoke<K extends Persistent> (v: Value, σ: Trie<K>): (α: InternedObject) => PrimResult<K> {
       return α => match(this.op(v)(α), σ)
    }
 } 
@@ -79,7 +79,7 @@ export class BinaryBody extends InternedObject {
       return make(BinaryBody, op)
    }
 
-   invoke<K> (v1: Value, v2: Value, σ: Trie<K>): (α: InternedObject) => PrimResult<K> {
+   invoke<K extends Persistent> (v1: Value, v2: Value, σ: Trie<K>): (α: InternedObject) => PrimResult<K> {
       return α => match(this.op(v1, v2)(α), σ)
    }
 } 

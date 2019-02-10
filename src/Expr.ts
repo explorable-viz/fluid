@@ -314,19 +314,19 @@ export namespace Expr {
       }
 
       // Maps zero arguments to κ.
-      export class End<K extends JoinSemilattice<K>> extends Args<K> {
+      export class End<K extends JoinSemilattice<K> & Persistent> extends Args<K> {
          constructor (
             public κ: K
          ) {
             super()
          }
 
-         static is<K extends JoinSemilattice<K>> (Π: Args<K>): Π is End<K> {
+         static is<K extends JoinSemilattice<K> & Persistent> (Π: Args<K>): Π is End<K> {
             return Π instanceof End
          }
 
          static make<K extends JoinSemilattice<K> & Persistent> (κ: K): End<K> {
-            return make<End<K>>(End, κ)
+            return make(End, κ) as End<K>
          }
       }
 
@@ -385,24 +385,23 @@ export namespace Expr {
          }
       }
 
-      export class ConstInt<K extends JoinSemilattice<K>> extends Prim<K> {
-         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is ConstInt<K> {
+      export class ConstInt<K extends JoinSemilattice<K> & Persistent> extends Prim<K> {
+         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is ConstInt<K> {
             return σ instanceof ConstInt
          }
 
          static make<K extends JoinSemilattice<K> & Persistent> (κ: K): ConstInt<K> {
-            return make<ConstInt<K>>(ConstInt, κ)
+            return make(ConstInt, κ) as ConstInt<K>
          }
       }
 
-      export class ConstStr<K extends JoinSemilattice<K>> extends Prim<K> {
-         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is ConstStr<K> {
+      export class ConstStr<K extends JoinSemilattice<K> & Persistent> extends Prim<K> {
+         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is ConstStr<K> {
             return σ instanceof ConstStr
          }
 
          static make<K extends JoinSemilattice<K> & Persistent> (κ: K): ConstStr<K> {
-            const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
-            return this_
+            return make(ConstStr, κ) as ConstStr<K>
          }
       }
 
@@ -423,23 +422,23 @@ export namespace Expr {
          }
       }
 
-      export class Fun<K extends JoinSemilattice<K>> extends Trie<K> {
+      export class Fun<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
          constructor (
             public κ: K
          ) {
             super()
          }
 
-         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Fun<K> {
+         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is Fun<K> {
             return σ instanceof Fun
          }
 
          static make<K extends JoinSemilattice<K> & Persistent> (κ: K): Fun<K> {
-            return make<Fun<K>>(Fun, κ)
+            return make(Fun, κ) as Fun<K>
          }
       }
 
-      export class Var<K extends JoinSemilattice<K>> extends Trie<K> {
+      export class Var<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
          constructor (
             public x: Lex.Var,
             public κ: K
@@ -447,12 +446,12 @@ export namespace Expr {
             super()
          }
 
-         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Var<K> {
+         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
 
          static make<K extends JoinSemilattice<K> & Persistent> (x: Lex.Var, κ: K): Var<K> {
-            return make<Var<K>>(Var, x, κ)
+            return make(Var, x, κ) as Var<K>
          }
       }
    }

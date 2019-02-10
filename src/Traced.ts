@@ -116,19 +116,19 @@ export namespace Traced {
       }
 
       // Maps zero arguments to κ.
-      export class End<K> extends Args<K> {
+      export class End<K extends Persistent> extends Args<K> {
          constructor (
             public κ: K
          ) {
             super()
          }
 
-         static is<K> (Π: Args<K>): Π is End<K> {
+         static is<K extends Persistent> (Π: Args<K>): Π is End<K> {
             return Π instanceof End
          }
 
          static make<K extends Persistent> (κ: K): End<K> {
-            return make<End<K>>(End, κ)
+            return make(End, κ) as End<K>
          }
       }
 
@@ -145,23 +145,23 @@ export namespace Traced {
          }
 
          static make<K> (σ: Trie<Args<K>>): Next<K> {
-            return make<Next<K>>(Next, σ)
+            return make(Next, σ)
          }
       }
 
-      export class Top<K> extends Args<K> {
+      export class Top<K extends Persistent> extends Args<K> {
          constructor (
             public κ: K // want fix at null but couldn't make that work with the polymorphism
          ) {
             super()
          }
 
-         static is<K> (Π: Args<K>): Π is Top<K> {
+         static is<K extends Persistent> (Π: Args<K>): Π is Top<K> {
             return Π instanceof Top
          }
 
          static make<K extends Persistent> (κ: K): Top<K> {
-            return make<Top<K>>(Top, κ)
+            return make(Top, κ) as Top<K>
          }
       }
    }
@@ -184,23 +184,23 @@ export namespace Traced {
          }
       }
 
-      export class ConstInt<K> extends Prim<K> {
-         static is<K> (σ: Trie<K>): σ is ConstInt<K> {
+      export class ConstInt<K extends Persistent> extends Prim<K> {
+         static is<K extends Persistent> (σ: Trie<K>): σ is ConstInt<K> {
             return σ instanceof ConstInt
          }
 
          static make<K extends Persistent> (κ: K): ConstInt<K> {
-            return make<ConstInt<K>>(ConstInt, κ)
+            return make(ConstInt, κ) as ConstInt<K>
          }
       }
 
-      export class ConstStr<K> extends Prim<K> {
-         static is<K> (σ: Trie<K>): σ is ConstStr<K> {
+      export class ConstStr<K extends Persistent> extends Prim<K> {
+         static is<K extends Persistent> (σ: Trie<K>): σ is ConstStr<K> {
             return σ instanceof ConstStr
          }
 
          static make<K extends Persistent> (κ: K): ConstStr<K> {
-            return make<ConstStr<K>>(ConstStr, κ)
+            return make(ConstStr, κ) as ConstStr<K>
          }
       }
 
@@ -216,27 +216,27 @@ export namespace Traced {
          }
 
          static make<K> (cases: FiniteMap<string, Args<K>>): Constr<K> {
-            return make<Constr<K>>(Constr, cases)
+            return make(Constr, cases)
          }
       }
 
-      export class Fun<K> extends Trie<K> {
+      export class Fun<K extends Persistent> extends Trie<K> {
          constructor (
             public κ: K
          ) {
             super()
          }
 
-         static is<K> (σ: Trie<K>): σ is Fun<K> {
+         static is<K extends Persistent> (σ: Trie<K>): σ is Fun<K> {
             return σ instanceof Fun
          }
 
          static make<K extends Persistent> (κ: K): Fun<K> {
-            return make<Fun<K>>(Fun, κ)
+            return make(Fun, κ) as Fun<K>
          }
       }
 
-      export class Var<K> extends Trie<K> {
+      export class Var<K extends Persistent> extends Trie<K> {
          constructor (
             public x: Lex.Var,
             public κ: K
@@ -244,29 +244,29 @@ export namespace Traced {
             super()
          }
 
-         static is<K> (σ: Trie<K>): σ is Var<K> {
+         static is<K extends Persistent> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
 
          static make<K extends Persistent> (x: Lex.Var, κ: K): Var<K> {
-            return make<Var<K>>(Var, x, κ)
+            return make(Var, x, κ) as Var<K>
          }
       }
 
       // Wanted to fix K at null but that doesn't work with polymorphic code.
-      export class Top<K> extends Trie<K> {
+      export class Top<K extends Persistent> extends Trie<K> {
          constructor (
             public κ: K
          ) {
             super()
          }
 
-         static is<K> (σ: Trie<K>): σ is Top<K> {
+         static is<K extends Persistent> (σ: Trie<K>): σ is Top<K> {
             return σ instanceof Top
          }
 
          static make<K extends Persistent> (κ: K): Top<K> {
-            return make<Top<K>>(Top, κ)
+            return make(Top, κ) as Top<K>
          }
       }
    }
@@ -280,7 +280,7 @@ export namespace Traced {
       }
 
       static make<K> (t: Trace | null, ξ: Match<K>): TracedMatch<K> {
-         return make<TracedMatch<K>>(TracedMatch, t, ξ)
+         return make(TracedMatch, t, ξ)
       }
    }
 
@@ -295,19 +295,19 @@ export namespace Traced {
             __subtag: "Match.Args"
          }
    
-         export class End<K> extends Args<K> {
+         export class End<K extends Persistent> extends Args<K> {
             constructor (
                public κ: K
             ) {
                super()
             }
    
-            static is<K> (Ψ: Args<K>): Ψ is End<K> {
+            static is<K extends Persistent> (Ψ: Args<K>): Ψ is End<K> {
                return Ψ instanceof End
             }
    
             static make<K extends Persistent> (κ: K): End<K> {
-               return make<End<K>>(End, κ)
+               return make(End, κ) as End<K>
             }
          }
    
@@ -323,7 +323,7 @@ export namespace Traced {
             }
    
             static make<K> (tξ: TracedMatch<K>): Next<K> {
-               return make<Next<K>>(Next, tξ)
+               return make(Next, tξ)
             }
          }
       }
@@ -340,7 +340,7 @@ export namespace Traced {
          }
       }
 
-      export class ConstInt<K> extends Prim<K> {
+      export class ConstInt<K extends Persistent> extends Prim<K> {
          constructor (
             public val: number,
             κ: K
@@ -348,16 +348,16 @@ export namespace Traced {
             super(κ)
          }
 
-         static is<K> (ξ: Match<K>): ξ is ConstInt<K> {
+         static is<K extends Persistent> (ξ: Match<K>): ξ is ConstInt<K> {
             return ξ instanceof ConstInt
          }
 
          static make<K extends Persistent> (val: number, κ: K): ConstInt<K> {
-            return make<ConstInt<K>>(ConstInt, val, κ)
+            return make(ConstInt, val, κ) as ConstInt<K>
          }
       }
 
-      export class ConstStr<K> extends Prim<K> {
+      export class ConstStr<K extends Persistent> extends Prim<K> {
          constructor (
             public val: string,
             κ: K
@@ -365,12 +365,12 @@ export namespace Traced {
             super(κ)
          }
 
-         static is<K> (ξ: Match<K>): ξ is ConstStr<K> {
+         static is<K extends Persistent> (ξ: Match<K>): ξ is ConstStr<K> {
             return ξ instanceof ConstStr
          }
 
          static make<K extends Persistent> (val: string, κ: K): ConstStr<K> {
-            return make<ConstStr<K>>(ConstStr, val, κ)
+            return make(ConstStr, val, κ) as ConstStr<K>
          }
       }
 
@@ -391,7 +391,7 @@ export namespace Traced {
          }
       }
 
-      export class Fun<K> extends Match<K> {
+      export class Fun<K extends Persistent> extends Match<K> {
          constructor (
             public f: Value.Closure | Value.PrimOp,
             public κ: K
@@ -399,16 +399,16 @@ export namespace Traced {
             super()
          }
 
-         static is<K> (ξ: Match<K>): ξ is Fun<K> {
+         static is<K extends Persistent> (ξ: Match<K>): ξ is Fun<K> {
             return ξ instanceof Fun
          }
 
          static make<K extends Persistent> (f: Value.Closure | Value.PrimOp, κ: K): Fun<K> {
-            return make<Fun<K>>(Fun, f, κ)
+            return make(Fun, f, κ) as Fun<K>
          }
       }
 
-      export class Var<K> extends Match<K> {
+      export class Var<K extends Persistent> extends Match<K> {
          constructor (
             public x: Lex.Var,
             public v: Value | null,
@@ -417,12 +417,12 @@ export namespace Traced {
             super()
          }
 
-         static is<K> (ξ: Match<K>): ξ is Var<K> {
+         static is<K extends Persistent> (ξ: Match<K>): ξ is Var<K> {
             return ξ instanceof Var
          }
 
          static make<K extends Persistent> (x: Lex.Var, v: Value | null, κ: K): Var<K> {
-            return make<Var<K>>(Var, x, v, κ)
+            return make(Var, x, v, κ) as Var<K>
          }
       }
    }

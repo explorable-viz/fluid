@@ -28,7 +28,7 @@ export class Runtime<E extends Expr | Expr.RecDef> extends InternedObject {
    }
 
    static make<E extends Expr | Expr.RecDef> (j: EnvEntries, e: E): Runtime<E> {
-      return make<Runtime<E>>(Runtime, j, e)
+      return make(Runtime, j, e) as Runtime<E>
    }
 }
 

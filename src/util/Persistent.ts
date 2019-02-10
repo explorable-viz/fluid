@@ -53,14 +53,15 @@ export abstract class VersionedObject<K extends InternedObject = InternedObject>
 // Curried map from constructors and arguments to interned objects; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
-const __instances: Map<Persistent, InternedObject> = new Map
+type InternedObjects = Map<Persistent, InternedObject>
+const __instances: InternedObjects = new Map
 
 // For versioned objects the map is not curried but takes an (interned) composite key.
-type InstancesMap = Map<InternedObject, VersionedObject>
-const __ctrInstances: Map<NullaryClass<VersionedObject>, InstancesMap> = new Map
+type VersionedObjects = Map<InternedObject, VersionedObject>
+const __ctrInstances: Map<NullaryClass<VersionedObject>, VersionedObjects> = new Map
 
-function lookupArg (
-   ctr: new (...args: Persistent[]) => InternedObject,
+function lookupArg<T extends InternedObject> (
+   ctr: InternedClass<T>,
    m: Map<Persistent, Object>,
    args: Persistent[],
    n: number
@@ -79,8 +80,10 @@ function lookupArg (
    return v
 }
 
+type InternedClass<T extends InternedObject> = new (...args: Persistent[]) => T
+
 // Hash-consing (interning) object construction.
-export function make<T extends InternedObject> (ctr: Class<T>, ...args: Persistent[]): T {
+export function make<T extends InternedObject> (ctr: InternedClass<T>, ...args: Persistent[]): T {
    let v: Object = lookupArg(ctr, __instances, args, -1)
    for (var n: number = 0; n < args.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
@@ -88,6 +91,32 @@ export function make<T extends InternedObject> (ctr: Class<T>, ...args: Persiste
    }
    Object.freeze(v)
    return v as T
+}
+
+// The (possibly already extant) versioned object uniquely identified by a memo-key.
+export function at<K extends InternedObject, T extends VersionedObject<K>> (α: K, ctr: NullaryClass<T>, ...args: Persistent[]): T {
+   let instances: VersionedObjects | undefined = __ctrInstances.get(ctr)
+   if (instances === undefined) {
+      instances = new Map
+      __ctrInstances.set(ctr, instances)
+   }
+   let o: VersionedObject<K> | undefined = instances.get(α) as VersionedObject<K>
+   if (o === undefined) {
+      o = new ctr
+      // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
+      Object.defineProperty(o, "__id", {
+         value: α,
+         enumerable: false
+      })
+      Object.defineProperty(o, "__history", {
+         value: new Map,
+         enumerable: false
+      })
+      instances.set(α, o)
+   }
+   // Couldn't get datatype-generic construction to work because fields not created by "new ctr".
+   o.constructor_(...args)
+   return __commit(o) as T
 }
 
 // Fresh keys represent inputs to the system.
@@ -215,32 +244,6 @@ export function constructor_ (this_: VersionedObject, ...args: Persistent[]): vo
    zip(ks, args).forEach(([k, arg]: [string, Persistent]): void => {
       (this_ as Object as ObjectState)[k] = arg // retarded
    })
-}
-
-// The (possibly already extant) object uniquely identified by a memo-key.
-export function at<K extends InternedObject, T extends VersionedObject<K>> (α: K, ctr: NullaryClass<T>, ...args: Persistent[]): T {
-   let instances: InstancesMap | undefined = __ctrInstances.get(ctr)
-   if (instances === undefined) {
-      instances = new Map
-      __ctrInstances.set(ctr, instances)
-   }
-   let o: VersionedObject<K> | undefined = instances.get(α) as VersionedObject<K>
-   if (o === undefined) {
-      o = new ctr
-      // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
-      Object.defineProperty(o, "__id", {
-         value: α,
-         enumerable: false
-      })
-      Object.defineProperty(o, "__history", {
-         value: new Map,
-         enumerable: false
-      })
-      instances.set(α, o)
-   }
-   // Couldn't get datatype-generic construction to work because fields not created by "new ctr".
-   o.constructor_(...args)
-   return __commit(o) as T
 }
 
 export class World extends InternedObject implements Ord<World> {

@@ -46,7 +46,7 @@ export class Cons<T extends Persistent> extends List<T> {
    }
 
    static make<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
-      return make<Cons<T>>(Cons, head, tail)
+      return make(Cons, head, tail) as Cons<T>
    }
 
    get length (): number {
@@ -58,6 +58,16 @@ export class Cons<T extends Persistent> extends List<T> {
    }
 }
 
+type InternedClass2<T extends InternedObject> = new (...args: Persistent[]) => T
+
+export function make2<T extends InternedObject> (ctr: InternedClass2<T>, ...args: Persistent[]): T {
+   return new ctr("")
+}
+
+export function wib<T extends Persistent> (): Cons<T> {
+   return make2(Cons) as Cons<T>
+}
+
 export class Pair<T extends Persistent, U extends Persistent> extends InternedObject {
    constructor (
       public fst: T,
@@ -67,7 +77,7 @@ export class Pair<T extends Persistent, U extends Persistent> extends InternedOb
    }
 
    static make<T extends Persistent, U extends Persistent> (fst: T, snd: U): Pair<T, U> {
-      return make<Pair<T, U>>(Pair, fst, snd)
+      return make(Pair, fst, snd) as Pair<T, U>
    }
 }
 
@@ -103,7 +113,7 @@ export class NonEmpty<T extends Persistent> extends Tree<T> {
    }
 
    static make<T extends Persistent> (left: Tree<T>, t: T, right: Tree<T>): NonEmpty<T> {
-      return make<NonEmpty<T>>(NonEmpty, left, t, right)
+      return make(NonEmpty, left, t, right) as NonEmpty<T>
    }
 
    map<U extends Persistent> (f: (t: T) => U): NonEmpty<U> {
