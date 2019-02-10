@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd, assert } from "./Core"
+import { __nonNull, absurd, assert } from "./Core"
 import { Eq } from "./Eq"
 import { Ord } from "./Ord"
 
@@ -77,10 +77,10 @@ function lookupArg<T extends PersistentObject> (
    return v
 }
 
-type PersistentClass<T extends PersistentObject> = new () => T
+type PersistentClass<T extends PersistentObject = PersistentObject> = new () => T
 
 // Hash-consing (interning) object construction.
-export function make<T extends InternedObject> (ctr: PersistentClass<T>, ...args: Persistent[]): T {
+export function make<T extends PersistentObject> (ctr: PersistentClass<T>, ...args: Persistent[]): T {
    let v: PersistentObject | Map<Persistent, Object> = lookupArg(ctr, __instances, args, -1)
    for (var n: number = 0; n < args.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
@@ -90,11 +90,11 @@ export function make<T extends InternedObject> (ctr: PersistentClass<T>, ...args
    return v as T
 }
 
-function versioned (o: PersistentObject): boolean {
+function versioned (o: Persistent): boolean {
    return (o as any).__id !== undefined
 }
 
-function interned (o: PersistentObject): boolean {
+function interned (o: Persistent): boolean {
    return !versioned(o)
 }
 
@@ -169,17 +169,17 @@ function __merge (tgt: Persistent, src: Persistent): Persistent {
    if (src === tgt) {
       return src
    } else 
-   if (tgt instanceof VersionedObject && src instanceof VersionedObject) {
+   if (versioned(tgt) && versioned(src)) {
       return absurd("Address collision (different child).")
    } else
-   if (tgt instanceof InternedObject && src instanceof InternedObject) {
+   if (interned(tgt) && interned(src)) {
       assert(tgt.constructor === src.constructor, "Address collision (different constructor).")
       const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
             src_: ObjectState = src as Object as ObjectState,
             args: Persistent[] = Object.keys(tgt).map((k: string): Persistent => {
          return __merge(tgt_[k], src_[k])
       })
-      return make(src.constructor as Class<InternedObject>, ...args)
+      return make(src.constructor as PersistentClass, ...args)
    } else {
       return absurd()
    }
