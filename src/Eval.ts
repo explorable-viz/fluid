@@ -1,6 +1,5 @@
 import { __check, __nonNull, absurd, assert } from "./util/Core"
-import { make, Persistent } from "./util/Persistent"
-import { InternedObject } from "./util/Versioned";
+import { InternedObject, Persistent, make } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"

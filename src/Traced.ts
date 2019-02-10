@@ -1,5 +1,4 @@
-import { make, Persistent, PersistentObject } from "./util/Persistent"
-import { InternedObject, VersionedObject, at } from "./util/Versioned"
+import { InternedObject, Persistent, PersistentObject, VersionedObject, at, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"

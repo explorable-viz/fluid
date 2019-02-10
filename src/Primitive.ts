@@ -1,6 +1,5 @@
 import { absurd, assert } from "./util/Core"
-import { PersistentObject, make } from "./util/Persistent"
-import { InternedObject, ν } from "./util/Versioned"
+import { InternedObject, PersistentObject, make, ν } from "./util/Persistent"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"

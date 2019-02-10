@@ -1,7 +1,6 @@
 import * as THREE from "three"
 import { absurd, assert } from "./util/Core"
-import { Persistent, make } from "./util/Persistent"
-import { InternedObject } from "./util/Versioned"
+import { InternedObject, Persistent, make } from "./util/Persistent"
 import { Cons, List } from "./BaseTypes"
 
 // Basic graphical datatypes.

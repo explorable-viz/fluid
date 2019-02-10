@@ -1,7 +1,6 @@
 import { __check, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { Persistent, make } from "./util/Persistent"
-import { ExternalObject, InternedObject, VersionedObject, at } from "./util/Versioned"
+import { ExternalObject, InternedObject, Persistent, VersionedObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"

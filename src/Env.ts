@@ -1,6 +1,5 @@
 import { absurd } from "./util/Core"
-import { make } from "./util/Persistent"
-import { InternedObject } from "./util/Versioned"
+import { InternedObject, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Traced } from "./Traced"
 

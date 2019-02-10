@@ -1,7 +1,6 @@
 import { Ord, eq } from "../Ord"
 import { __nonNull } from "../Core"
-import { make } from "../Persistent"
-import { InternedObject } from "../Versioned"
+import { InternedObject, make } from "../Persistent"
 
 export interface SyntaxNode {
 }
