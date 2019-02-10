@@ -1,6 +1,6 @@
 import { __check, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { ExternalObject, Persistent, PersistentObject, VersionedObject, at, make } from "./util/Persistent"
+import { ExternalObject, Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -128,8 +128,9 @@ export type Expr = Expr.Expr
 
 export namespace Expr {
    // Must be joinable, purely so that joining two expressions will fail.
-   export abstract class Expr extends VersionedObject<ExternalObject> implements JoinSemilattice<Expr> {
+   export abstract class Expr implements PersistentObject, JoinSemilattice<Expr> {
       __subtag: "Expr.Expr"
+      abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 
       join (e: Expr): Expr {
          return assert(false, "Expression join unsupported.")
@@ -227,7 +228,7 @@ export namespace Expr {
       }
    }
 
-   export class RecDef extends VersionedObject<ExternalObject> {
+   export class RecDef implements PersistentObject {
       x: Lex.Var
       e: Expr
 
@@ -301,7 +302,7 @@ export namespace Expr {
 
    export namespace Args {
       // n-ary product.
-      export abstract class Args<K extends JoinSemilattice<K>> extends PersistentObject implements JoinSemilattice<Args<K>> {
+      export abstract class Args<K extends JoinSemilattice<K>> implements PersistentObject, JoinSemilattice<Args<K>> {
          __subtag: "Expr.Args.Args"
 
          join (Π: Args<K>): Args<K> {
@@ -366,8 +367,9 @@ export namespace Expr {
    export type Kont = Expr | Args<any> | Trie<any>
 
    export namespace Trie {
-      export abstract class Trie<K extends JoinSemilattice<K>> extends PersistentObject implements JoinSemilattice<Trie<K>> {
+      export abstract class Trie<K extends JoinSemilattice<K>> implements PersistentObject, JoinSemilattice<Trie<K>> {
          __subtag: "Expr.Trie"
+         abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
          
          join (τ: Trie<K>): Trie<K> {
             return Trie.join(this, τ)

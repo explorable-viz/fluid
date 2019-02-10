@@ -1,4 +1,4 @@
-import { Persistent, PersistentObject, VersionedObject, at, make } from "./util/Persistent"
+import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -9,8 +9,9 @@ import { UnaryOp } from "./Primitive"
 export type Value = Value.Value
 
 export namespace Value {
-   export abstract class Value extends VersionedObject {
+   export abstract class Value implements PersistentObject {
       __subtag: "Value.Value"
+      abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
    }
 
    export class Closure extends Value {
@@ -91,7 +92,7 @@ export namespace Value {
 }
 
 // Called ExplVal in the formalism.
-export class Traced extends PersistentObject {
+export class Traced implements PersistentObject {
    t: Trace
    v: Value | null
 
@@ -115,8 +116,9 @@ export namespace Traced {
 
    export namespace Args {
       // n-ary product
-      export abstract class Args<K> extends PersistentObject {
+      export abstract class Args<K> implements PersistentObject {
          __subtag: "Traced.Args"
+         abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
       }
 
       // Maps zero arguments to κ.
@@ -182,7 +184,7 @@ export namespace Traced {
    export type Kont = Traced | Args<any> | Trie<any>
 
    export namespace Trie {
-      export abstract class Trie<K> extends PersistentObject {
+      export abstract class Trie<K> implements PersistentObject {
          __subtag: "Trie.Trie"
       }
 
@@ -293,7 +295,7 @@ export namespace Traced {
       }
    }
 
-   export class TracedMatch<K> extends PersistentObject {
+   export class TracedMatch<K> implements PersistentObject {
       t: Trace | null // null iff ξ represents a dead branch
       ξ: Match<K>
 
@@ -317,7 +319,7 @@ export namespace Traced {
       export type Args<K> = Args.Args<K>
 
       export namespace Args {
-         export abstract class Args<K> extends PersistentObject {
+         export abstract class Args<K> implements PersistentObject {
             __subtag: "Match.Args"
          }
    
@@ -358,8 +360,9 @@ export namespace Traced {
          }
       }
 
-      export abstract class Match<K> extends PersistentObject {
+      export abstract class Match<K> implements PersistentObject {
          __subtag: "Match.Match"
+         abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
       }
 
       export abstract class Prim<K extends Persistent> extends Match<K> {
@@ -451,7 +454,7 @@ export namespace Traced {
          v: Value | null
          κ: K
 
-            constructor_ (
+         constructor_ (
             x: Lex.Var,
             v: Value | null,
             κ: K
@@ -471,8 +474,9 @@ export namespace Traced {
       }
    }
 
-   export abstract class Trace extends VersionedObject<Runtime<Expr>> {
+   export abstract class Trace implements PersistentObject {
       __subtag: "Trace.Trace"
+      abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
    }
    
    export class App extends Trace {
@@ -517,7 +521,7 @@ export namespace Traced {
       }
    }
 
-   export class RecDef extends VersionedObject<Runtime<Expr.RecDef>> {
+   export class RecDef implements PersistentObject {
       x: Lex.Var
       tv: Traced
 

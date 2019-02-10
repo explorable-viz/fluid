@@ -2,7 +2,7 @@ import { Persistent, PersistentObject, make } from "./util/Persistent"
 
 // Basic datatypes for interned structures.
 
-export abstract class List<T extends Persistent> extends PersistentObject {
+export abstract class List<T extends Persistent> implements PersistentObject {
    static fromArray<T extends Persistent> (xs: T[]): List<T> {
       let xs_: List<T> = Nil.make()
       for (let n: number = xs.length - 1; n >= 0; --n) {
@@ -13,6 +13,7 @@ export abstract class List<T extends Persistent> extends PersistentObject {
 
    abstract length: number
    abstract map<U extends Persistent> (f: (t: T) => U): List<U>
+   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 }
 
 export class Nil<T extends Persistent> extends List<T> {
@@ -65,7 +66,7 @@ export class Cons<T extends Persistent> extends List<T> {
    }
 }
 
-export class Pair<T extends Persistent, U extends Persistent> extends PersistentObject {
+export class Pair<T extends Persistent, U extends Persistent> implements PersistentObject {
    fst: T
    snd: U
 
@@ -82,8 +83,9 @@ export class Pair<T extends Persistent, U extends Persistent> extends Persistent
    }
 }
 
-export abstract class Tree<T extends Persistent> extends PersistentObject {
+export abstract class Tree<T extends Persistent> implements PersistentObject {
    abstract map<U extends Persistent> (f: (t: T) => U): Tree<U>
+   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 }
 
 export class Empty<T extends Persistent> extends Tree<T> {

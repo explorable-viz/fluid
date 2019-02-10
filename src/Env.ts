@@ -1,12 +1,13 @@
 import { absurd } from "./util/Core"
-import { PersistentObject, make } from "./util/Persistent"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Traced } from "./Traced"
 
 import RecDef = Traced.RecDef
 
-export abstract class EnvEntries extends PersistentObject {
+export abstract class EnvEntries implements PersistentObject {
    __subtag: "EnvEntries"
+   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 }
 
 export class EmptyEnvEntries extends EnvEntries { 
@@ -41,12 +42,12 @@ export class ExtendEnvEntries extends EnvEntries {
 // But although evaluation ids do not depend on the ids of environments themselves, we still intern
 // environments to enable LVar semantics.
 
-export abstract class Env extends PersistentObject {
+export abstract class Env implements PersistentObject {
    __subtag: "Env"
 
    abstract entries (): EnvEntries;
-
    abstract get (k: string): EnvEntry | undefined;
+   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 
    has (k: string): boolean {
       return this.get(k) !== undefined
@@ -128,7 +129,7 @@ export class ExtendEnv extends Env {
    }
 }
 
-export class EnvEntry extends PersistentObject {
+export class EnvEntry implements PersistentObject {
    ρ: Env
    δ: List<RecDef>
    e: Traced

@@ -5,7 +5,7 @@ import { Cons, List } from "./BaseTypes"
 
 // Basic graphical datatypes.
 
-export class Rect extends PersistentObject {
+export class Rect implements PersistentObject {
    x: number
    y: number
    width: number
@@ -23,7 +23,7 @@ export class Rect extends PersistentObject {
    }
 }
 
-export class Point extends PersistentObject {
+export class Point implements PersistentObject {
    x: number
    y: number
 

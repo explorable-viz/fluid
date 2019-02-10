@@ -1,32 +1,25 @@
 import { __nonNull, absurd, assert } from "./Core"
-import { Eq } from "./Eq"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
 // interned objects are persistent objects.
-export abstract class PersistentObject implements Eq<PersistentObject> {
-   __tag: "PersistentObject"
-
-   eq (that: PersistentObject): boolean {
-      return this === that
-   }
-
+export interface PersistentObject {
    // ES6 only allows constructor calls via "new".
-   abstract constructor_ (...args: Persistent[]): void
+   constructor_ (...args: Persistent[]): void
 }
 
 // Functions are persistent to support primitives.
 export type Persistent = null | PersistentObject | string | number | Function
 
 // Versioned objects are persistent objects that have state that varies across worlds.
-export abstract class VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
+export interface VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
    // Initialise these at object creation (not enumerable).
-   __history: Map<World, ObjectState> = undefined as any // history records only enumerable fields
-   __id: K = undefined as any
+   __history: Map<World, ObjectState> // history records only enumerable fields
+   __id: K
 }
 
 // A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
-export class ExternalObject extends PersistentObject {
+export class ExternalObject implements PersistentObject {
    public id: number
 
    constructor_ (
@@ -86,23 +79,23 @@ export function make<T extends PersistentObject> (ctr: PersistentClass<T>, ...ar
    return v as T
 }
 
-function versioned (o: Persistent): boolean {
+export function versioned (o: Persistent): o is VersionedObject {
    return (o as any).__id !== undefined
 }
 
-function interned (o: Persistent): boolean {
+export function interned (o: Persistent): boolean {
    return !versioned(o)
 }
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<K extends PersistentObject, T extends VersionedObject<K>> (α: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
+export function at<K extends PersistentObject, T extends PersistentObject> (α: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
    assert(interned(α))
    let instances: VersionedObjects | undefined = __ctrInstances.get(ctr)
    if (instances === undefined) {
       instances = new Map
       __ctrInstances.set(ctr, instances)
    }
-   let o: VersionedObject<K> | undefined = instances.get(α) as VersionedObject<K>
+   let o: PersistentObject | undefined = instances.get(α) as PersistentObject
    if (o === undefined) {
       o = new ctr
       // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
@@ -197,26 +190,30 @@ function __assignState (tgt: ObjectState, src: Object): boolean {
 }
 
 // At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
-function __commit (o: VersionedObject): Object {
-   if (o.__history.size === 0) {
-      const state: ObjectState = __blankCopy(o)
-      __mergeState(state, o)
-      o.__history.set(__w, state)
-   } else {
-      const [w, state]: [World, ObjectState] = stateAt(o, __w)
-      if (w === __w) {
+function __commit (o: PersistentObject): Object {
+   if (versioned(o)) {
+      if (o.__history.size === 0) {
+         const state: ObjectState = __blankCopy(o)
          __mergeState(state, o)
+         o.__history.set(__w, state)
       } else {
-         // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
-         const prev: ObjectState = __blankCopy(o)
-         __mergeState(prev, state)
-         if (__assignState(state, o)) {
-            o.__history.set(w, prev)
-            o.__history.set(__w, state)
+         const [w, state]: [World, ObjectState] = stateAt(o, __w)
+         if (w === __w) {
+            __mergeState(state, o)
+         } else {
+            // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
+            const prev: ObjectState = __blankCopy(o)
+            __mergeState(prev, state)
+            if (__assignState(state, o)) {
+               o.__history.set(w, prev)
+               o.__history.set(__w, state)
+            }
          }
       }
+      return o
+   } else {
+      return absurd()
    }
-   return o
 }
 
 // State of o at w, plus predecessor of w at which that state was set.
@@ -239,13 +236,17 @@ export function getProp<T extends VersionedObject> (o: T, k: keyof T): Persisten
    return stateAt(o, __w)[1][k as string]
 }
 
-export class World extends PersistentObject implements Ord<World> {
+export class World implements PersistentObject, Ord<World> {
    public parent: World | null
 
    constructor_ (
       parent: World | null
    ) {
       this.parent = parent
+   }
+
+   eq (w: World): boolean {
+      return this === w
    }
 
    leq (w: World): boolean {

@@ -50,7 +50,7 @@ function match<K extends Persistent> (v: Value, σ: Trie<K>): PrimResult<K> {
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
 
-export class UnaryBody extends PersistentObject {
+export class UnaryBody implements PersistentObject {
    op: Unary<Value, Value>
 
    constructor_ (op: Unary<Value, Value>) {
@@ -66,7 +66,7 @@ export class UnaryBody extends PersistentObject {
    }
 } 
 
-export class BinaryBody extends PersistentObject {
+export class BinaryBody implements PersistentObject {
    op: Binary<Value, Value, Value>
 
    constructor_ (op: Binary<Value, Value, Value>) {
@@ -82,8 +82,9 @@ export class BinaryBody extends PersistentObject {
    }
 } 
 
-export abstract class PrimOp extends PersistentObject {
+export abstract class PrimOp implements PersistentObject {
    name: string
+   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 }
 
 export class UnaryOp extends PrimOp {
