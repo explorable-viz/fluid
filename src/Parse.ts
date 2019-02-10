@@ -1,7 +1,6 @@
 import { assert } from "./util/Core"
 import { JoinSemilattice } from "./util/Ord";
-import { Persistent } from "./util/Persistent"
-import { ν } from "./util/Versioned"
+import { Persistent, ν } from "./util/Persistent"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 

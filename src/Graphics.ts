@@ -1,19 +1,17 @@
 import * as THREE from "three"
 import { absurd, assert } from "./util/Core"
-import { Persistent, make } from "./util/Persistent"
-import { InternedObject } from "./util/Versioned"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { Cons, List } from "./BaseTypes"
 
 // Basic graphical datatypes.
 
-export class Rect extends InternedObject {
+export class Rect implements PersistentObject {
    x: number
    y: number
    width: number
    height: number
 
-   constructor (x: number, y: number, width: number, height: number) {
-      super()
+   constructor_ (x: number, y: number, width: number, height: number) {
       this.x = x
       this.y = y
       this.width = width
@@ -25,12 +23,11 @@ export class Rect extends InternedObject {
    }
 }
 
-export class Point extends InternedObject { // for now
+export class Point implements PersistentObject {
    x: number
    y: number
 
-   constructor (x: number, y: number) {
-      super()
+   constructor_ (x: number, y: number) {
       this.x = x
       this.y = y
    }

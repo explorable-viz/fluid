@@ -1,7 +1,6 @@
 import { __check, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { Persistent, make } from "./util/Persistent"
-import { ExternalObject, InternedObject, VersionedObject, at } from "./util/Versioned"
+import { ExternalObject, Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -24,12 +23,13 @@ export namespace str {
 
 export namespace Lex {
    export class Ctr extends Lexeme {
-      __subtag: "Lex.Ctr"
+      __tag: "Lex.Ctr"
+      str: string
 
-      constructor (
-         public str: string
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       static make (str: string): Ctr {
@@ -39,10 +39,12 @@ export namespace Lex {
 
    // Literal lexemes are elided when constructing abstract syntax to avoid additional level of structure.
    export class IntLiteral extends Lexeme {
-      constructor (
-         public str: string
+      str: string
+
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       toNumber (): number {
@@ -56,12 +58,13 @@ export namespace Lex {
 
    // Keywords also elided, but we'll probably want that in the syntax at some point.
    export class Keyword extends Lexeme {
-      __subtag: "Lex.StringLiteral"
+      __tag: "Lex.StringLiteral"
+      str: string
 
-      constructor (
-         public str: string
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       static make (str: string): Keyword {
@@ -72,12 +75,13 @@ export namespace Lex {
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
    // Other uses of primitive operations are treated as variables.
    export class OpName extends Lexeme {
-      __subtag: "Lex.OpName"
+      __tag: "Lex.OpName"
+      str: string
 
-      constructor (
-         public str: string
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       static make (str: string): OpName {
@@ -86,12 +90,13 @@ export namespace Lex {
    }
 
    export class StringLiteral extends Lexeme {
-      __subtag: "Lex.StringLiteral"
+      __tag: "Lex.StringLiteral"
+      str: string
 
-      constructor (
-         public str: string
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       toString (): string {
@@ -104,12 +109,13 @@ export namespace Lex {
    }
 
    export class Var extends Lexeme {
-      __subtag: "Lex.Var"
+      __tag: "Lex.Var"
+      str: string
 
-      constructor (
-         public str: string
+      constructor_ (
+         str: string
       ) {
-         super()
+         this.str = str
       }
 
       static make (str: string): Var {
@@ -122,8 +128,9 @@ export type Expr = Expr.Expr
 
 export namespace Expr {
    // Must be joinable, purely so that joining two expressions will fail.
-   export abstract class Expr extends VersionedObject<ExternalObject> implements JoinSemilattice<Expr> {
-      __subtag: "Expr.Expr"
+   export abstract class Expr implements PersistentObject, JoinSemilattice<Expr> {
+      __tag: "Expr.Expr"
+      abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 
       join (e: Expr): Expr {
          return assert(false, "Expression join unsupported.")
@@ -221,7 +228,7 @@ export namespace Expr {
       }
    }
 
-   export class RecDef extends VersionedObject<ExternalObject> {
+   export class RecDef implements PersistentObject {
       x: Lex.Var
       e: Expr
 
@@ -295,8 +302,9 @@ export namespace Expr {
 
    export namespace Args {
       // n-ary product.
-      export class Args<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Args<K>> {
-         __subtag: "Expr.Args.Args"
+      export abstract class Args<K extends JoinSemilattice<K>> implements PersistentObject, JoinSemilattice<Args<K>> {
+         __tag: "Expr.Args.Args"
+         abstract constructor_ (...args: Persistent[]): void
 
          join (Π: Args<K>): Args<K> {
             return Args.join(this, Π)
@@ -315,28 +323,32 @@ export namespace Expr {
       }
 
       // Maps zero arguments to κ.
-      export class End<K extends JoinSemilattice<K>> extends Args<K> {
-         constructor (
-            public κ: K
+      export class End<K extends JoinSemilattice<K> & Persistent> extends Args<K> {
+         κ: K
+
+         constructor_ (
+            κ: K
          ) {
-            super()
+            this.κ = κ
          }
 
-         static is<K extends JoinSemilattice<K>> (Π: Args<K>): Π is End<K> {
+         static is<K extends JoinSemilattice<K> & Persistent> (Π: Args<K>): Π is End<K> {
             return Π instanceof End
          }
 
          static make<K extends JoinSemilattice<K> & Persistent> (κ: K): End<K> {
-            return make<End<K>>(End, κ)
+            return make(End, κ) as End<K>
          }
       }
 
       // Maps a single argument to another args trie.
       export class Next<K extends JoinSemilattice<K>> extends Args<K> {
-         constructor (
-            public σ: Trie<Args<K>>
+         σ: Trie<Args<K>>
+
+         constructor_ (
+            σ: Trie<Args<K>>
          ) {
-            super()
+            this.σ = σ
          }
 
          static is<K extends JoinSemilattice<K>> (Π: Args<K>): Π is Next<K> {
@@ -356,8 +368,9 @@ export namespace Expr {
    export type Kont = Expr | Args<any> | Trie<any>
 
    export namespace Trie {
-      export class Trie<K extends JoinSemilattice<K>> extends InternedObject implements JoinSemilattice<Trie<K>> {
-         __subtag: "Expr.Trie"
+      export abstract class Trie<K extends JoinSemilattice<K>> implements PersistentObject, JoinSemilattice<Trie<K>> {
+         __tag: "Expr.Trie"
+         abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
          
          join (τ: Trie<K>): Trie<K> {
             return Trie.join(this, τ)
@@ -378,41 +391,44 @@ export namespace Expr {
          }
       }
 
-      export class Prim<K extends JoinSemilattice<K>> extends Trie<K> {
-         constructor (
-            public κ: K
+      export class Prim<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
+         κ: K
+         
+         constructor_ (
+            κ: K
          ) {
-            super()
+            this.κ = κ
          }
       }
 
-      export class ConstInt<K extends JoinSemilattice<K>> extends Prim<K> {
-         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is ConstInt<K> {
+      export class ConstInt<K extends JoinSemilattice<K> & Persistent> extends Prim<K> {
+         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is ConstInt<K> {
             return σ instanceof ConstInt
          }
 
          static make<K extends JoinSemilattice<K> & Persistent> (κ: K): ConstInt<K> {
-            return make<ConstInt<K>>(ConstInt, κ)
+            return make(ConstInt, κ) as ConstInt<K>
          }
       }
 
-      export class ConstStr<K extends JoinSemilattice<K>> extends Prim<K> {
-         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is ConstStr<K> {
+      export class ConstStr<K extends JoinSemilattice<K> & Persistent> extends Prim<K> {
+         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is ConstStr<K> {
             return σ instanceof ConstStr
          }
 
          static make<K extends JoinSemilattice<K> & Persistent> (κ: K): ConstStr<K> {
-            const this_: ConstStr<K> = make<ConstStr<K>>(ConstStr, κ)
-            return this_
+            return make(ConstStr, κ) as ConstStr<K>
          }
       }
 
       // n-ary sum of n-ary products.
       export class Constr<K extends JoinSemilattice<K>> extends Trie<K> {
-         constructor (
-            public cases: FiniteMap<string, Args<K>>
+         cases: FiniteMap<string, Args<K>>
+
+         constructor_ (
+            cases: FiniteMap<string, Args<K>>
          ) {
-            super()
+            this.cases = cases
          }
 
          static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Constr<K> {
@@ -424,36 +440,42 @@ export namespace Expr {
          }
       }
 
-      export class Fun<K extends JoinSemilattice<K>> extends Trie<K> {
-         constructor (
-            public κ: K
+      export class Fun<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
+         κ: K
+
+         constructor_ (
+            κ: K
          ) {
-            super()
+            this.κ = κ
          }
 
-         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Fun<K> {
+         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is Fun<K> {
             return σ instanceof Fun
          }
 
          static make<K extends JoinSemilattice<K> & Persistent> (κ: K): Fun<K> {
-            return make<Fun<K>>(Fun, κ)
+            return make(Fun, κ) as Fun<K>
          }
       }
 
-      export class Var<K extends JoinSemilattice<K>> extends Trie<K> {
-         constructor (
-            public x: Lex.Var,
-            public κ: K
+      export class Var<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
+         x: Lex.Var
+         κ: K
+
+         constructor_ (
+            x: Lex.Var,
+            κ: K
          ) {
-            super()
+            this.x = x
+            this.κ = κ
          }
 
-         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Var<K> {
+         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
 
          static make<K extends JoinSemilattice<K> & Persistent> (x: Lex.Var, κ: K): Var<K> {
-            return make<Var<K>>(Var, x, κ)
+            return make(Var, x, κ) as Var<K>
          }
       }
    }

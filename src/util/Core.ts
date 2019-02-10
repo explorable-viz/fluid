@@ -3,12 +3,7 @@ export interface Tag<T extends string> {
    typename: T
 }
 
-// TODO: consolidate these.
 export type Class<T> = new (...args: any[]) => T
-
-export interface NullaryClass<T> {
-   new (): T
-}
 
 // Possibly abstract class; see https://stackoverflow.com/questions/36886082.
 export type AClass<T> = Function & { prototype: T }

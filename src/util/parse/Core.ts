@@ -1,14 +1,14 @@
 import { Ord, eq } from "../Ord"
 import { __nonNull } from "../Core"
-import { make } from "../Persistent"
-import { InternedObject } from "../Versioned"
+import { PersistentObject, make } from "../Persistent"
 
 export interface SyntaxNode {
 }
 
 // The parser builds a list of these. Currently interned, but will probably need to become versioned.
-export abstract class Lexeme extends InternedObject implements SyntaxNode, Ord<Lexeme> {
+export abstract class Lexeme implements PersistentObject, SyntaxNode, Ord<Lexeme> {
    abstract str: string
+   abstract constructor_ (str: string): void
 
    eq (l: Lexeme): boolean {
       return eq(this, l)
@@ -113,12 +113,11 @@ export function regExp (r: RegExp): Parser<string> {
 }
 
 export class Whitespace extends Lexeme {
-   __subtag: "Whitespace"
+   __tag: "Whitespace"
+   str: string
 
-   constructor (
-      public str: string
-   ) {
-      super()
+   constructor_ (str: string): void {
+      this.str = str
    }
 
    static make (str: string): Whitespace {
@@ -127,12 +126,11 @@ export class Whitespace extends Lexeme {
 }
 
 export class SingleLineComment extends Lexeme {
-   __subtag: "SingleLineComment"
+   __tag: "SingleLineComment"
+   str: string
 
-   constructor (
-      public str: string
-   ) {
-      super()
+   constructor_ (str: string): void {
+      this.str = str
    }
 
    static make (str: string): SingleLineComment {
@@ -142,12 +140,11 @@ export class SingleLineComment extends Lexeme {
 
 // Does this serve any purpose?
 export class Operator extends Lexeme {
-   __subtag: "Operator"
+   __tag: "Operator"
+   str: string
 
-   constructor (
-      public str: string
-   ) {
-      super()
+   constructor_ (str: string): void {
+      this.str = str
    }
 
    static make (str: string): Operator {
@@ -155,9 +152,9 @@ export class Operator extends Lexeme {
    }
 }
 
-export type LexemeClass<L extends Lexeme> = new (str: string) => L
+export type LexemeClass<L extends Lexeme> = new () => L
 
-function token<L extends Lexeme>(p: Parser<string>, C: LexemeClass<L>): Parser<L> {
+function token<L extends Lexeme> (p: Parser<string>, C: LexemeClass<L>): Parser<L> {
    function token_ (state: ParseState): ParseResult<L> | null {
       const r: ParseResult<string> | null = p(state)
       if (r !== null) {

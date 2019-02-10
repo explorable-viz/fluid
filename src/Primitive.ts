@@ -1,6 +1,5 @@
 import { absurd, assert } from "./util/Core"
-import { PersistentObject, make } from "./util/Persistent"
-import { InternedObject, ν } from "./util/Versioned"
+import { Persistent, PersistentObject, make, ν } from "./util/Persistent"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
@@ -18,7 +17,7 @@ type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
 // Parser guarantees that values/patterns respect constructor signatures. 
 // TODO: rename to avoid confusion with Match.match.
-function match<K> (v: Value, σ: Trie<K>): PrimResult<K> {
+function match<K extends Persistent> (v: Value, σ: Trie<K>): PrimResult<K> {
    if (v instanceof Value.PrimOp && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
       return [v, σ.κ]
    } else 
@@ -51,11 +50,10 @@ function match<K> (v: Value, σ: Trie<K>): PrimResult<K> {
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
 
-export class UnaryBody extends InternedObject {
+export class UnaryBody implements PersistentObject {
    op: Unary<Value, Value>
 
-   constructor (op: Unary<Value, Value>) {
-      super()
+   constructor_ (op: Unary<Value, Value>) {
       this.op = op
    }
 
@@ -63,16 +61,15 @@ export class UnaryBody extends InternedObject {
       return make(UnaryBody, op)
    }
 
-   invoke<K> (v: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
+   invoke<K extends Persistent> (v: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
       return α => match(this.op(v)(α), σ)
    }
 } 
 
-export class BinaryBody extends InternedObject {
+export class BinaryBody implements PersistentObject {
    op: Binary<Value, Value, Value>
 
-   constructor (op: Binary<Value, Value, Value>) {
-      super()
+   constructor_ (op: Binary<Value, Value, Value>) {
       this.op = op
    }
 
@@ -80,23 +77,28 @@ export class BinaryBody extends InternedObject {
       return make(BinaryBody, op)
    }
 
-   invoke<K> (v1: Value, v2: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
+   invoke<K extends Persistent> (v1: Value, v2: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
       return α => match(this.op(v1, v2)(α), σ)
    }
 } 
 
-export abstract class PrimOp extends InternedObject {
-   constructor (public name: string) {
-      super()
-   }
+export abstract class PrimOp implements PersistentObject {
+   name: string
+   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 }
 
 export class UnaryOp extends PrimOp {
-   constructor (
+   σ: Trie.Prim<null>
+   b: UnaryBody
+
+   constructor_ (
       name: string, 
-      public σ: Trie.Prim<null>, 
-      public b: UnaryBody) {
-      super(name)
+      σ: Trie.Prim<null>,
+      b: UnaryBody
+   ) {
+      this.name = name
+      this.σ = σ
+      this.b = b
    }
 
    static make (name: string, σ: Trie.Prim<null>, b: UnaryBody): UnaryOp {
@@ -109,13 +111,20 @@ export class UnaryOp extends PrimOp {
 }
 
 export class BinaryOp extends PrimOp {
-   constructor (
+   σ1: Trie.Prim<null>
+   σ2: Trie.Prim<null> 
+   b: BinaryBody
+
+   constructor_ (
       name: string, 
-      public σ1: Trie.Prim<null>, 
-      public σ2: Trie.Prim<null>, 
-      public b: BinaryBody
+      σ1: Trie.Prim<null>, 
+      σ2: Trie.Prim<null>, 
+      b: BinaryBody
    ) {
-      super(name)
+      this.name = name
+      this.σ1 = σ1
+      this.σ2 = σ2
+      this.b = b
    }
 
    static make (name: string, σ1: Trie.Prim<null>, σ2: Trie.Prim<null>, b: BinaryBody): BinaryOp {

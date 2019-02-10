@@ -1,27 +1,34 @@
 import { absurd } from "./util/Core"
-import { make } from "./util/Persistent"
-import { InternedObject } from "./util/Versioned"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Traced } from "./Traced"
 
 import RecDef = Traced.RecDef
 
-export class EnvEntries extends InternedObject {
-   __subtag: "EnvEntries"
+export abstract class EnvEntries implements PersistentObject {
+   __tag: "EnvEntries"
+   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 }
 
 export class EmptyEnvEntries extends EnvEntries { 
+   constructor_ () {
+   }
+
    static make (): EmptyEnvEntries {
       return make(EmptyEnvEntries)
    }
 }
 
 export class ExtendEnvEntries extends EnvEntries {
-   constructor (
-      public j: EnvEntries,
-      public entry: EnvEntry
+   j: EnvEntries
+   entry: EnvEntry
+
+   constructor_ (
+      j: EnvEntries,
+      entry: EnvEntry
    ) {
-      super()
+      this.j = j
+      this.entry = entry
    }
 
    static make (j: EnvEntries, entry: EnvEntry): ExtendEnvEntries {
@@ -35,12 +42,12 @@ export class ExtendEnvEntries extends EnvEntries {
 // But although evaluation ids do not depend on the ids of environments themselves, we still intern
 // environments to enable LVar semantics.
 
-export abstract class Env extends InternedObject {
-   __subtag: "Env"
+export abstract class Env implements PersistentObject {
+   __tag: "Env"
 
    abstract entries (): EnvEntries;
-
    abstract get (k: string): EnvEntry | undefined;
+   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 
    has (k: string): boolean {
       return this.get(k) !== undefined
@@ -74,6 +81,9 @@ export abstract class Env extends InternedObject {
 }
 
 export class EmptyEnv extends Env {
+   constructor_ () {
+   }
+
    static make (): EmptyEnv {
       return make(EmptyEnv)
    }
@@ -88,12 +98,18 @@ export class EmptyEnv extends Env {
 }
 
 export class ExtendEnv extends Env {
-   constructor (
-      public ρ: Env,
-      public k: string,
-      public v: EnvEntry
+   ρ: Env
+   k: string
+   v: EnvEntry
+
+   constructor_ (
+      ρ: Env,
+      k: string,
+      v: EnvEntry
    ) {
-      super()
+      this.ρ = ρ
+      this.k = k
+      this.v = v
    }
 
    static make (ρ: Env, k: string, v: EnvEntry): ExtendEnv {
@@ -113,13 +129,19 @@ export class ExtendEnv extends Env {
    }
 }
 
-export class EnvEntry extends InternedObject {
-   constructor (
-      public ρ: Env,
-      public δ: List<RecDef>,
-      public e: Traced
+export class EnvEntry implements PersistentObject {
+   ρ: Env
+   δ: List<RecDef>
+   e: Traced
+
+   constructor_ (
+      ρ: Env,
+      δ: List<RecDef>,
+      e: Traced
    ) {
-      super()
+      this.ρ = ρ
+      this.δ = δ
+      this.e = e
    }
 
    static make (ρ: Env, δ: List<RecDef>, e: Traced): EnvEntry {
