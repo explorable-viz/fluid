@@ -5,7 +5,7 @@ import { diffProp } from "../src/util/Delta"
 import { Persistent, PersistentObject, VersionedObject, World, at, make, versioned, __w } from "../src/util/Persistent"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
-import { Expr } from "../src/Expr"
+import { Expr, Lex } from "../src/Expr"
 import { Point, Rect, objects } from "../src/Graphics"
 import { Traced, Value } from "../src/Traced"
 import { initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
@@ -99,24 +99,27 @@ function populateScene (): void {
          v: Value.Value = __nonNull(runExample(e).v),
          elems: List<Persistent> = as(reflect(v), List),
          w: World = __w
-   if (versioned(e)) {
-      let here: Persistent = e
-      here = from(here as PersistentObject, Expr.Let, "e")
-      here = from(here as PersistentObject, Expr.Constr, "args")
-      here = from(here as PersistentObject, Cons, "head")
+   let here: Persistent = e
+   here = from(here as PersistentObject, Expr.Let, "e")
+   here = from(here as PersistentObject, Expr.Constr, "args")
+   here = from(here as PersistentObject, Cons, "tail")
+
+   const here_: Expr.Constr = here as Expr.Constr
+   if (versioned(here)) {
+      Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(null, as(here_.args, Cons).tail))
       World.newRevision()
-      
-      // TODO: make some change at __w and reevaluate
-      for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
-         // assume only increasing or decreasing changes (to or from null):
-         diffProp(elemsʹ, "head", w)
-         for (let obj of objects(elemsʹ.head)) {
-            scene.add(obj)
-         }
-         elemsʹ = elemsʹ.tail
-      }
    } else {
       absurd()
+   }
+   
+   // TODO: make some change at __w and reevaluate
+   for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
+      // assume only increasing or decreasing changes (to or from null):
+      diffProp(elemsʹ, "head", w)
+      for (let obj of objects(elemsʹ.head)) {
+         scene.add(obj)
+      }
+      elemsʹ = elemsʹ.tail
    }
 }
 

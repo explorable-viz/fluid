@@ -1,6 +1,6 @@
 import { __check, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { ExternalObject, Persistent, PersistentObject, at, make } from "./util/Persistent"
+import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -146,8 +146,8 @@ export namespace Expr {
          this.arg = arg
       }
 
-      static at (i: ExternalObject, func: Expr, arg: Expr): App {
-         return at(i, App, func, arg)
+      static at (α: PersistentObject, func: Expr, arg: Expr): App {
+         return at(α, App, func, arg)
       }
    }
 
@@ -158,8 +158,8 @@ export namespace Expr {
          this.val = __check(val, x => !Number.isNaN(x))
       }
    
-      static at (i: ExternalObject, val: number): ConstInt {
-         return at(i, ConstInt, val)
+      static at (α: PersistentObject, val: number): ConstInt {
+         return at(α, ConstInt, val)
       }
    }
    
@@ -170,8 +170,8 @@ export namespace Expr {
          this.val = val
       }
    
-      static at (i: ExternalObject, val: string): ConstStr {
-         return at(i, ConstStr, val)
+      static at (α: PersistentObject, val: string): ConstStr {
+         return at(α, ConstStr, val)
       }
    }
    
@@ -184,8 +184,8 @@ export namespace Expr {
          this.args = args
       }
    
-      static at (i: ExternalObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
-         return at(i, Constr, ctr, args)
+      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
+         return at(α, Constr, ctr, args)
       }
    }
 
@@ -196,8 +196,8 @@ export namespace Expr {
          this.σ = σ
       }
 
-      static at (i: ExternalObject, σ: Trie<Expr>): Fun {
-         return at(i, Fun, σ)
+      static at (α: PersistentObject, σ: Trie<Expr>): Fun {
+         return at(α, Fun, σ)
       }
    }
 
@@ -211,8 +211,8 @@ export namespace Expr {
          this.σ = σ
       }
 
-      static at (i: ExternalObject, e: Expr, σ: Trie.Var<Expr>): Let {
-         return at(i, Let, e, σ)
+      static at (α: PersistentObject, e: Expr, σ: Trie.Var<Expr>): Let {
+         return at(α, Let, e, σ)
       }
    }
 
@@ -223,8 +223,8 @@ export namespace Expr {
          this.op = op
       }
 
-      static at (i: ExternalObject, op: UnaryOp): PrimOp {
-         return at(i, PrimOp, op)
+      static at (α: PersistentObject, op: UnaryOp): PrimOp {
+         return at(α, PrimOp, op)
       }
    }
 
@@ -237,7 +237,7 @@ export namespace Expr {
          this.e = e
       }
    
-      static at (α: ExternalObject, x: Lex.Var, e: Expr): RecDef {
+      static at (α: PersistentObject, x: Lex.Var, e: Expr): RecDef {
          return at(α, RecDef, x, e)
       }
    }
@@ -251,8 +251,8 @@ export namespace Expr {
          this.e = e
       }
 
-      static at (i: ExternalObject, δ: List<RecDef>, e: Expr): LetRec {
-         return at(i, LetRec, δ, e)
+      static at (α: PersistentObject, δ: List<RecDef>, e: Expr): LetRec {
+         return at(α, LetRec, δ, e)
       }
    }
 
@@ -265,8 +265,8 @@ export namespace Expr {
          this.σ = σ
       }
    
-      static at (i: ExternalObject, e: Expr, σ: Trie<Expr>): MatchAs {
-         return at(i, MatchAs, e, σ)
+      static at (α: PersistentObject, e: Expr, σ: Trie<Expr>): MatchAs {
+         return at(α, MatchAs, e, σ)
       }
    }
 
@@ -281,8 +281,8 @@ export namespace Expr {
          this.e2 = e2
       }
 
-      static at (i: ExternalObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
-         return at(i, PrimApp, e1, opName, e2)
+      static at (α: PersistentObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
+         return at(α, PrimApp, e1, opName, e2)
       }
    }
 
@@ -293,8 +293,8 @@ export namespace Expr {
          this.x = x
       }
    
-      static at (i: ExternalObject, x: Lex.Var): Var {
-         return at(i, Var, x)
+      static at (α: PersistentObject, x: Lex.Var): Var {
+         return at(α, Var, x)
       }
    }
 
