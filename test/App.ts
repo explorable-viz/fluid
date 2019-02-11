@@ -102,8 +102,9 @@ function populateScene (): void {
    here = from(here as PersistentObject, Expr.Let, "e")
    here = from(here as PersistentObject, Expr.Constr, "args")
    here = from(here as PersistentObject, Cons, "tail")
+   here = from(here as PersistentObject, Cons, "head")
 
-   const here_: Expr.Constr = here as Expr.Constr
+   const here_: Expr.Constr = as(here, Expr.Constr)
    let w: World 
    if (versioned(here)) {
       w = World.newRevision()

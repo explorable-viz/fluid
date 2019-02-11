@@ -78,11 +78,11 @@ export function make<T extends PersistentObject> (ctr: PersistentClass<T>, ...ar
 }
 
 export function versioned (o: Persistent): o is VersionedObject {
-   return (o as any).__id !== undefined
+   return o !== null && (o as any).__id !== undefined
 }
 
 export function interned (o: Persistent): boolean {
-   return !versioned(o)
+   return o !== null && !versioned(o)
 }
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
