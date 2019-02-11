@@ -91,11 +91,11 @@ function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
    assert(σ instanceof Trie.Trie)
    const t: Trace̊ = e.t
    if (versioned(t)) {
-      const k: Runtime<Expr> = t.__id as Runtime<Expr>
       if (Trie.Var.is(σ)) {
          const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
          return [Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ]
       } else {
+         const k: Runtime<Expr> = t.__id as Runtime<Expr>
          if (t instanceof Empty) {
             const v: Value = __nonNull(e.v)
             if (versioned(v)) {
@@ -182,7 +182,7 @@ function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
                return absurd("Operator name not found.", t.opName)
             }
          } else {
-            return absurd("Demand mismatch.", e, σ)
+            return absurd("Unimplemented expression form.", e, σ)
          }
       }
    } else {
