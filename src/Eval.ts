@@ -6,7 +6,7 @@ import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { Trace, Traced, Value } from "./Traced"
+import { Trace̊, Traced, Value, Value̊ } from "./Traced"
 
 import App = Traced.App
 import Args = Traced.Args
@@ -89,13 +89,13 @@ export function evalT_<K extends Persistent> (ρ: Env, tv: Traced, σ: Trie<K>):
 // Null means eval produced no information about v; the input traced value might be non-null.
 function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    assert(σ instanceof Trie.Trie)
-   const t: Trace | null = e.t
-   if (versioned(t)) {
-      const k: Runtime<Expr> = t.__id as Runtime<Expr>
-      if (Trie.Var.is(σ)) {
-         const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
-         return [Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ]
-      } else {
+   const t: Trace̊ = e.t
+   if (Trie.Var.is(σ)) {
+      const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
+      return [Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ]
+   } else {
+      if (versioned(t)) {
+         const k: Runtime<Expr> = t.__id as Runtime<Expr>
          if (t instanceof Empty) {
             const v: Value = __nonNull(e.v)
             if (versioned(v)) {
@@ -140,7 +140,7 @@ function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
          } else
          if (t instanceof App) {
             const [tf, ,]: Result<null> = evalT_(ρ, t.func, Trie.Fun.make(null)),
-                  f: Value | null = tf.v
+                  f: Value̊ = tf.v
             if (f instanceof Value.Closure) {
                const [tu, ρʹ, eʹ]: Result<Traced> = evalT_(ρ, t.arg, f.σ),
                      [tv, ρʺ, κ]: Result<K> = evalT_(Env.concat(f.ρ, ρʹ), eʹ, σ)
@@ -182,11 +182,11 @@ function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
                return absurd("Operator name not found.", t.opName)
             }
          } else {
-            return absurd("Demand mismatch.", e, σ)
+            return absurd("Unimplemented expression form.", t)
          }
+      } else {
+         return absurd()
       }
-   } else {
-      return absurd()
    }
 }
 

@@ -2,6 +2,8 @@ import { Persistent, PersistentObject, make } from "./util/Persistent"
 
 // Basic datatypes for interned structures.
 
+export type List̊<T extends Persistent> = List<T> | null
+
 export abstract class List<T extends Persistent> implements PersistentObject {
    static fromArray<T extends Persistent> (xs: T[]): List<T> {
       let xs_: List<T> = Nil.make()

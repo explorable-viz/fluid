@@ -7,6 +7,7 @@ import { Expr, Lex } from "./Expr"
 import { UnaryOp } from "./Primitive"
 
 export type Value = Value.Value
+export type Value̊ = Value | null
 
 export namespace Value {
    export abstract class Value implements PersistentObject {
@@ -93,23 +94,24 @@ export namespace Value {
 
 // Called ExplVal in the formalism.
 export class Traced implements PersistentObject {
-   t: Trace
-   v: Value | null
+   t: Trace̊
+   v: Value̊
 
    constructor_ (
-      t: Trace,
-      v: Value | null
+      t: Trace̊,
+      v: Value̊
    ) {
       this.t = t
       this.v = v
    }
 
-   static make (t: Trace, v: Value | null): Traced {
+   static make (t: Trace̊, v: Value̊): Traced {
       return make(Traced, t, v)
    }
 }
 
 export type Trace = Traced.Trace
+export type Trace̊ = Trace | null
 
 export namespace Traced {
    export type Args<K> = Args.Args<K>
@@ -182,7 +184,8 @@ export namespace Traced {
    export type Trie<K> = Trie.Trie<K>
 
    export type Kont = Traced | Args<any> | Trie<any>
-
+   export type Kont̊ = Kont | null
+   
    export namespace Trie {
       export abstract class Trie<K> implements PersistentObject {
          __tag: "Trie.Trie"

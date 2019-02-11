@@ -1,8 +1,8 @@
 import { __check, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { ExternalObject, Persistent, PersistentObject, at, make } from "./util/Persistent"
+import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
-import { List } from "./BaseTypes"
+import { List, } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { UnaryOp } from "./Primitive"
 
@@ -21,6 +21,7 @@ export namespace str {
    export const quotes: string = '"'
 }
 
+// Don't I want to allow Lexeme.str to be null?
 export namespace Lex {
    export class Ctr extends Lexeme {
       __tag: "Lex.Ctr"
@@ -125,6 +126,7 @@ export namespace Lex {
 }
 
 export type Expr = Expr.Expr
+export type Expr̊ = Expr | null
 
 export namespace Expr {
    // Must be joinable, purely so that joining two expressions will fail.
@@ -138,16 +140,16 @@ export namespace Expr {
    }
 
    export class App extends Expr {
-      func: Expr
-      arg: Expr
+      func: Expr̊
+      arg: Expr̊
 
-      constructor_ (func: Expr, arg: Expr): void {
+      constructor_ (func: Expr̊, arg: Expr̊): void {
          this.func = func
          this.arg = arg
       }
 
-      static at (i: ExternalObject, func: Expr, arg: Expr): App {
-         return at(i, App, func, arg)
+      static at (α: PersistentObject, func: Expr̊, arg: Expr̊): App {
+         return at(α, App, func, arg)
       }
    }
 
@@ -158,8 +160,8 @@ export namespace Expr {
          this.val = __check(val, x => !Number.isNaN(x))
       }
    
-      static at (i: ExternalObject, val: number): ConstInt {
-         return at(i, ConstInt, val)
+      static at (α: PersistentObject, val: number): ConstInt {
+         return at(α, ConstInt, val)
       }
    }
    
@@ -170,22 +172,22 @@ export namespace Expr {
          this.val = val
       }
    
-      static at (i: ExternalObject, val: string): ConstStr {
-         return at(i, ConstStr, val)
+      static at (α: PersistentObject, val: string): ConstStr {
+         return at(α, ConstStr, val)
       }
    }
    
    export class Constr extends Expr {
       ctr: Lex.Ctr
-      args: List<Expr>
+      args: List<Expr̊>
 
-      constructor_ (ctr: Lex.Ctr, args: List<Expr>): void {
+      constructor_ (ctr: Lex.Ctr, args: List<Expr̊>): void {
          this.ctr = ctr
          this.args = args
       }
    
-      static at (i: ExternalObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
-         return at(i, Constr, ctr, args)
+      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Expr̊>): Constr {
+         return at(α, Constr, ctr, args)
       }
    }
 
@@ -196,23 +198,23 @@ export namespace Expr {
          this.σ = σ
       }
 
-      static at (i: ExternalObject, σ: Trie<Expr>): Fun {
-         return at(i, Fun, σ)
+      static at (α: PersistentObject, σ: Trie<Expr>): Fun {
+         return at(α, Fun, σ)
       }
    }
 
    // A let is simply a match where the trie is a variable trie.
    export class Let extends Expr {
-      e: Expr
+      e: Expr̊
       σ: Trie.Var<Expr>
 
-      constructor_ (e: Expr, σ: Trie.Var<Expr>): void {
+      constructor_ (e: Expr̊, σ: Trie.Var<Expr>): void {
          this.e = e
          this.σ = σ
       }
 
-      static at (i: ExternalObject, e: Expr, σ: Trie.Var<Expr>): Let {
-         return at(i, Let, e, σ)
+      static at (α: PersistentObject, e: Expr̊, σ: Trie.Var<Expr>): Let {
+         return at(α, Let, e, σ)
       }
    }
 
@@ -223,66 +225,66 @@ export namespace Expr {
          this.op = op
       }
 
-      static at (i: ExternalObject, op: UnaryOp): PrimOp {
-         return at(i, PrimOp, op)
+      static at (α: PersistentObject, op: UnaryOp): PrimOp {
+         return at(α, PrimOp, op)
       }
    }
 
    export class RecDef implements PersistentObject {
       x: Lex.Var
-      e: Expr
+      e: Expr̊
 
-      constructor_ (x: Lex.Var, e: Expr): void {
+      constructor_ (x: Lex.Var, e: Expr̊): void {
          this.x = x
          this.e = e
       }
    
-      static at (α: ExternalObject, x: Lex.Var, e: Expr): RecDef {
+      static at (α: PersistentObject, x: Lex.Var, e: Expr̊): RecDef {
          return at(α, RecDef, x, e)
       }
    }
 
    export class LetRec extends Expr {
       δ: List<RecDef>
-      e: Expr
+      e: Expr̊
 
-      constructor_ (δ: List<RecDef>, e: Expr): void {
+      constructor_ (δ: List<RecDef>, e: Expr̊): void {
          this.δ = δ
          this.e = e
       }
 
-      static at (i: ExternalObject, δ: List<RecDef>, e: Expr): LetRec {
-         return at(i, LetRec, δ, e)
+      static at (α: PersistentObject, δ: List<RecDef>, e: Expr̊): LetRec {
+         return at(α, LetRec, δ, e)
       }
    }
 
    export class MatchAs extends Expr {
-      e: Expr
+      e: Expr̊
       σ: Trie<Expr>
 
-      constructor_ (e: Expr, σ: Trie<Expr>): void {
+      constructor_ (e: Expr̊, σ: Trie<Expr>): void {
          this.e = e
          this.σ = σ
       }
    
-      static at (i: ExternalObject, e: Expr, σ: Trie<Expr>): MatchAs {
-         return at(i, MatchAs, e, σ)
+      static at (α: PersistentObject, e: Expr̊, σ: Trie<Expr>): MatchAs {
+         return at(α, MatchAs, e, σ)
       }
    }
 
    export class PrimApp extends Expr {
-      e1: Expr
+      e1: Expr̊
       opName: Lex.OpName
-      e2: Expr
+      e2: Expr̊
 
-      constructor_ (e1: Expr, opName: Lex.OpName, e2: Expr): void {
+      constructor_ (e1: Expr̊, opName: Lex.OpName, e2: Expr̊): void {
          this.e1 = e1
          this.opName = opName
          this.e2 = e2
       }
 
-      static at (i: ExternalObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
-         return at(i, PrimApp, e1, opName, e2)
+      static at (α: PersistentObject, e1: Expr̊, opName: Lex.OpName, e2: Expr̊): PrimApp {
+         return at(α, PrimApp, e1, opName, e2)
       }
    }
 
@@ -293,8 +295,8 @@ export namespace Expr {
          this.x = x
       }
    
-      static at (i: ExternalObject, x: Lex.Var): Var {
-         return at(i, Var, x)
+      static at (α: PersistentObject, x: Lex.Var): Var {
+         return at(α, Var, x)
       }
    }
 
