@@ -113,7 +113,7 @@ function populateScene (): void {
 
       for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
          // assume only increasing or decreasing changes (to or from null):
-         diffProp(elemsʹ, "head", w)
+         assert(!diffProp(elemsʹ, "head", w))
          for (let obj of objects(elemsʹ.head)) {
             scene.add(obj)
          }

@@ -6,7 +6,7 @@ import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { Trace, Traced, Traced̊, Value } from "./Traced"
+import { Trace̊, Traced, Value, Value̊ } from "./Traced"
 
 import App = Traced.App
 import Args = Traced.Args
@@ -74,7 +74,7 @@ function evalArgs<K extends Persistent> (ρ: Env, Π: Args<K>, es: List<Traced>)
 }
 
 // Probably want to memoise instantiate.
-export function evalT_<K extends Persistent> (ρ: Env, tv: Traced̊, σ: Trie<K>): Result<K> {
+export function evalT_<K extends Persistent> (ρ: Env, tv: Traced, σ: Trie<K>): Result<K> {
    if (versioned(tv.t)) {
       const k: Runtime<Expr> = tv.t!.__id as Runtime<Expr>
       return __check(
@@ -87,9 +87,9 @@ export function evalT_<K extends Persistent> (ρ: Env, tv: Traced̊, σ: Trie<K>
 }
 
 // Null means eval produced no information about v; the input traced value might be non-null.
-function evalT<K extends Persistent> (ρ: Env, e: Traced̊, σ: Trie<K>): Result<K> {
+function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    assert(σ instanceof Trie.Trie)
-   const t: Trace | null = e.t
+   const t: Trace̊ = e.t
    if (versioned(t)) {
       const k: Runtime<Expr> = t.__id as Runtime<Expr>
       if (Trie.Var.is(σ)) {
@@ -140,7 +140,7 @@ function evalT<K extends Persistent> (ρ: Env, e: Traced̊, σ: Trie<K>): Result
          } else
          if (t instanceof App) {
             const [tf, ,]: Result<null> = evalT_(ρ, t.func, Trie.Fun.make(null)),
-                  f: Value | null = tf.v
+                  f: Value̊ = tf.v
             if (f instanceof Value.Closure) {
                const [tu, ρʹ, eʹ]: Result<Traced> = evalT_(ρ, t.arg, f.σ),
                      [tv, ρʺ, κ]: Result<K> = evalT_(Env.concat(f.ρ, ρʹ), eʹ, σ)

@@ -7,6 +7,7 @@ import { Expr, Lex } from "./Expr"
 import { UnaryOp } from "./Primitive"
 
 export type Value = Value.Value
+export type Value̊ = Value | null
 
 export namespace Value {
    export abstract class Value implements PersistentObject {
@@ -73,7 +74,7 @@ export namespace Value {
          this.args = args
       }
    
-      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Traced̊>): Constr {
+      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Traced>): Constr {
          return at(α, Constr, ctr, args)
       }
    }
@@ -91,27 +92,26 @@ export namespace Value {
    }
 }
 
-export type Traced̊ = Traced | null
-
 // Called ExplVal in the formalism.
 export class Traced implements PersistentObject {
-   t: Trace
-   v: Value | null
+   t: Trace̊
+   v: Value̊
 
    constructor_ (
-      t: Trace,
-      v: Value | null
+      t: Trace̊,
+      v: Value̊
    ) {
       this.t = t
       this.v = v
    }
 
-   static make (t: Trace, v: Value | null): Traced {
+   static make (t: Trace̊, v: Value̊): Traced {
       return make(Traced, t, v)
    }
 }
 
 export type Trace = Traced.Trace
+export type Trace̊ = Trace | null
 
 export namespace Traced {
    export type Args<K> = Args.Args<K>
@@ -495,7 +495,7 @@ export namespace Traced {
          this.body = body
       }
 
-      static at (k: Runtime<Expr>, func: Traced̊, arg: Traced̊, body: Trace | null): App {
+      static at (k: Runtime<Expr>, func: Traced, arg: Traced, body: Trace | null): App {
          return at(k, App, func, arg, body)
       }
    }
@@ -521,21 +521,21 @@ export namespace Traced {
          this.t = t
       }
 
-      static at (k: Runtime<Expr>, tu: Traced̊, σ: Trie.Var<Traced>, t: Trace | null): Let {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
          return at(k, Let, tu, σ, t)
       }
    }
 
    export class RecDef implements PersistentObject {
       x: Lex.Var
-      tv: Traced̊
+      tv: Traced
 
-      constructor_ (x: Lex.Var, tv: Traced̊): void {
+      constructor_ (x: Lex.Var, tv: Traced): void {
          this.x = x
          this.tv = tv
       }
    
-      static at (i: Runtime<Expr.RecDef>, x: Lex.Var, tv: Traced̊): RecDef {
+      static at (i: Runtime<Expr.RecDef>, x: Lex.Var, tv: Traced): RecDef {
          return at(i, RecDef, x, tv)
       }
    }
@@ -543,14 +543,14 @@ export namespace Traced {
    // Continuation here should really be a trace, not a traced value.
    export class LetRec extends Trace {
       δ: List<RecDef>
-      tv: Traced̊
+      tv: Traced
    
-      constructor_ (δ: List<RecDef>, tv: Traced̊): void {
+      constructor_ (δ: List<RecDef>, tv: Traced): void {
          this.δ = δ
          this.tv = tv
       }
 
-      static at (k: Runtime<Expr>, δ: List<RecDef>, tv: Traced̊): LetRec {
+      static at (k: Runtime<Expr>, δ: List<RecDef>, tv: Traced): LetRec {
          return at(k, LetRec, δ, tv)
       }
    }
@@ -566,7 +566,7 @@ export namespace Traced {
          this.t = t
       }
 
-      static at (k: Runtime<Expr>, tu: Traced̊, σ: Trie<Traced>, t: Trace | null): MatchAs {
+      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>, t: Trace | null): MatchAs {
          return at(k, MatchAs, tu, σ, t)
       }
    }
@@ -582,7 +582,7 @@ export namespace Traced {
          this.tv2 = tv2
       }
 
-      static at (k: Runtime<Expr>, tv1: Traced̊, opName: Lex.OpName, tv2: Traced̊): PrimApp {
+      static at (k: Runtime<Expr>, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
          return at(k, PrimApp, tv1, opName, tv2)
       }
    }

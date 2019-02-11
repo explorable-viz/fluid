@@ -6,7 +6,7 @@ import { Env } from "./Env"
 import { Eval, Runtime } from "./Eval"
 import { Expr, Expr̊ } from "./Expr"
 import { mapTrie } from "./Match"
-import { Trace, Traced, Traced̊, Value } from "./Traced"
+import { Trace, Traced, Value } from "./Traced"
 
 import App = Traced.App
 import Args = Traced.Args
@@ -21,10 +21,10 @@ import RecDef = Traced.RecDef
 import Trie = Traced.Trie
 import Var = Traced.Var
 
-export function instantiate (ρ: Env): (e: Expr̊) => Traced̊ {
-   return function (e: Expr̊): Traced̊ {
+export function instantiate (ρ: Env): (e: Expr̊) => Traced {
+   return function (e: Expr̊): Traced {
       if (e === null) {
-         return null
+         return Traced.make(null, null)
       } else {
          const i: Runtime<Expr> = Runtime.make(ρ.entries(), e)
          if (e instanceof Expr.ConstInt) {
