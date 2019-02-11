@@ -1,8 +1,8 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { Class, __check, __nonNull, as, absurd } from "../src/util/Core"
+import { Class, __check, __nonNull, absurd, as, assert } from "../src/util/Core"
 import { diffProp } from "../src/util/Delta"
-import { Persistent, PersistentObject, VersionedObject, World, at, make, versioned, __w } from "../src/util/Persistent"
+import { Persistent, PersistentObject, World, at, make, versioned, __w } from "../src/util/Persistent"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
 import { Expr, Lex } from "../src/Expr"
@@ -97,21 +97,20 @@ function from<T extends PersistentObject> (o: PersistentObject, cls: Class<T>, p
 function populateScene (): void {
    const e: Expr.Expr = parseExample(loadTestFile("example", "bar-chart").text),
          v: Value.Value = __nonNull(runExample(e).v),
-         elems: List<Persistent> = as(reflect(v), List),
-         w: World = __w
+         elems: List<Persistent> = as(reflect(v), List)
    let here: Persistent = e
    here = from(here as PersistentObject, Expr.Let, "e")
    here = from(here as PersistentObject, Expr.Constr, "args")
    here = from(here as PersistentObject, Cons, "tail")
 
    const here_: Expr.Constr = here as Expr.Constr
+   let w: World 
    if (versioned(here)) {
-      World.newRevision()
+      w = World.newRevision()
       Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(null, as(here_.args, Cons).tail)) // clunky
+      assert(__nonNull(runExample(e).v) === v)
+      World.undo()
 
-      const vʹ: Value.Value = __nonNull(runExample(e).v),
-
-      // TODO: reevaluate
       for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
          // assume only increasing or decreasing changes (to or from null):
          diffProp(elemsʹ, "head", w)

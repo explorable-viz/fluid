@@ -258,6 +258,14 @@ export class World implements PersistentObject, Ord<World> {
    static newRevision (): World {
       return __w = World.make(__w)
    }
+
+   static undo (): void {
+      if (__w.parent !== null) {
+         __w = __w.parent
+      } else {
+         absurd()
+      }
+   }
 }
 
 export let __w: World = World.make(null)
