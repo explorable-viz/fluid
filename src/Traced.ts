@@ -1,8 +1,8 @@
-import { Persistent, PersistentObject, at, make } from "./util/Persistent"
+import { absurd } from "./util/Core"
+import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
-import { Runtime } from "./Eval"
 import { Expr, Lex } from "./Expr"
 import { UnaryOp } from "./Primitive"
 
@@ -495,8 +495,8 @@ export namespace Traced {
          this.body = body
       }
 
-      static at (k: Runtime<Expr>, func: Traced, arg: Traced, body: Trace | null): App {
-         return at(k, App, func, arg, body)
+      static at (α: PersistentObject, func: Traced, arg: Traced, body: Trace | null): App {
+         return at(α, App, func, arg, body)
       }
    }
 
@@ -505,8 +505,8 @@ export namespace Traced {
       constructor_ (): void {
       }
 
-      static at (k: Runtime<Expr>): Empty {
-         return at(k, Empty)
+      static at (α: PersistentObject): Empty {
+         return at(α, Empty)
       }
    }
 
@@ -521,8 +521,8 @@ export namespace Traced {
          this.t = t
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
-         return at(k, Let, tu, σ, t)
+      static at (α: PersistentObject, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
+         return at(α, Let, tu, σ, t)
       }
    }
 
@@ -534,9 +534,18 @@ export namespace Traced {
          this.x = x
          this.tv = tv
       }
+
+      // Like environments, these don't have entirely null forms, but preserve the name structure.
+      bottom (): RecDef {
+         if (versioned(this)) {
+            return RecDef.at(this.__id, this.x, Traced.make(null, null))
+         } else {
+            return absurd()
+         }
+      }
    
-      static at (i: Runtime<Expr.RecDef>, x: Lex.Var, tv: Traced): RecDef {
-         return at(i, RecDef, x, tv)
+      static at (α: PersistentObject, x: Lex.Var, tv: Traced): RecDef {
+         return at(α, RecDef, x, tv)
       }
    }
 
@@ -550,8 +559,8 @@ export namespace Traced {
          this.tv = tv
       }
 
-      static at (k: Runtime<Expr>, δ: List<RecDef>, tv: Traced): LetRec {
-         return at(k, LetRec, δ, tv)
+      static at (α: PersistentObject, δ: List<RecDef>, tv: Traced): LetRec {
+         return at(α, LetRec, δ, tv)
       }
    }
    
@@ -566,8 +575,8 @@ export namespace Traced {
          this.t = t
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>, t: Trace | null): MatchAs {
-         return at(k, MatchAs, tu, σ, t)
+      static at (α: PersistentObject, tu: Traced, σ: Trie<Traced>, t: Trace | null): MatchAs {
+         return at(α, MatchAs, tu, σ, t)
       }
    }
 
@@ -582,8 +591,8 @@ export namespace Traced {
          this.tv2 = tv2
       }
 
-      static at (k: Runtime<Expr>, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
-         return at(k, PrimApp, tv1, opName, tv2)
+      static at (α: PersistentObject, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
+         return at(α, PrimApp, tv1, opName, tv2)
       }
    }
 
@@ -596,8 +605,8 @@ export namespace Traced {
          this.t = t
       }
 
-      static at (k: Runtime<Expr>, x: Lex.Var, t: Trace | null): Var {
-         return at(k, Var, x, t)
+      static at (α: PersistentObject, x: Lex.Var, t: Trace | null): Var {
+         return at(α, Var, x, t)
       }
    }
 }
