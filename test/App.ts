@@ -106,20 +106,22 @@ function populateScene (): void {
 
    const here_: Expr.Constr = here as Expr.Constr
    if (versioned(here)) {
-      Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(null, as(here_.args, Cons).tail))
       World.newRevision()
+      Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(null, as(here_.args, Cons).tail)) // clunky
+
+      const vʹ: Value.Value = __nonNull(runExample(e).v),
+
+      // TODO: reevaluate
+      for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
+         // assume only increasing or decreasing changes (to or from null):
+         diffProp(elemsʹ, "head", w)
+         for (let obj of objects(elemsʹ.head)) {
+            scene.add(obj)
+         }
+         elemsʹ = elemsʹ.tail
+      }
    } else {
       absurd()
-   }
-   
-   // TODO: make some change at __w and reevaluate
-   for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
-      // assume only increasing or decreasing changes (to or from null):
-      diffProp(elemsʹ, "head", w)
-      for (let obj of objects(elemsʹ.head)) {
-         scene.add(obj)
-      }
-      elemsʹ = elemsʹ.tail
    }
 }
 
