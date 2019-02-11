@@ -8,7 +8,7 @@ import { arity } from "../src/DataType"
 import { Expr } from "../src/Expr"
 import { Point, Rect, objects } from "../src/Graphics"
 import { Traced, Value } from "../src/Traced"
-import { TestFile, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
+import { initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
 
 initialise()
 
@@ -91,7 +91,7 @@ export function close (path: THREE.Vector2[]) {
 }
 
 function blah<T extends Expr.Expr> (e: Expr.Expr, cls: Class<T>, prop: keyof T): Object {
-   return as<Expr.Expr, T>(e, cls)[prop]
+   return as<Expr.Expr, T>(e, cls)[prop] as any
 }
 
 function populateScene (): void {
