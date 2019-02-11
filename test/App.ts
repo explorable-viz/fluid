@@ -109,7 +109,7 @@ function populateScene (): void {
    if (versioned(here)) {
       w = World.newRevision()
       Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr̊>(null, as(here_.args, Cons).tail)) // clunky
-      assert(__nonNull(runExample(e).v) === v)
+      assert(__nonNull(runExample(e).v) === v) // make consistent - should it be an invariant that every world is consistent?
       World.undo()
 
       for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {

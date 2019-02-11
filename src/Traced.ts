@@ -3,7 +3,7 @@ import { Persistent, PersistentObject, at, make, versioned } from "./util/Persis
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
-import { Expr, Lex } from "./Expr"
+import { Lex } from "./Expr"
 import { UnaryOp } from "./Primitive"
 
 export type Value = Value.Value
