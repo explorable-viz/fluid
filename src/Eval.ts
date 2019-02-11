@@ -96,7 +96,7 @@ function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
    } else {
       if (t === null) {
          assert(e.v === null)
-         return [e, Env.empty(), null]
+         return [e, null, null]
       } else
       if (versioned(t)) {
          const k: Runtime<Expr> = t.__id as Runtime<Expr>
