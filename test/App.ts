@@ -5,6 +5,7 @@ import { diffProp } from "../src/util/Delta"
 import { Persistent, PersistentObject, World, at, make, __w } from "../src/util/Persistent"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
+import { Expr } from "../src/Expr"
 import { Point, Rect, objects } from "../src/Graphics"
 import { Traced, Value } from "../src/Traced"
 import { TestFile, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
@@ -89,12 +90,18 @@ export function close (path: THREE.Vector2[]) {
    return path.concat(path[0])
 }
 
+function blah<T extends Expr.Expr> (e: Expr.Expr, cls: Class<T>, prop: keyof T): Object {
+   return as<Expr.Expr, T>(e, cls)[prop]
+}
+
 function populateScene (): void {
-   const file: TestFile = loadTestFile("example", "bar-chart"),
-         v: Value.Value = __nonNull(runExample(parseExample(file.text)).v),
+   const e: Expr.Let = as(parseExample(loadTestFile("example", "bar-chart").text), Expr.Let),
+         v: Value.Value = __nonNull(runExample(e).v),
          elems: List<Persistent> = as(reflect(v), List),
          w: World = __w
+   blah(e.e, Expr.Constr, "args")
    World.newRevision()
+   
    // TODO: make some change at __w and reevaluate
    for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
       // assume only increasing or decreasing changes (to or from null):
