@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
-import { Traced } from "./Traced"
+import { Traced, Traced̊ } from "./Traced"
 
 import RecDef = Traced.RecDef
 
@@ -132,19 +132,19 @@ export class ExtendEnv extends Env {
 export class EnvEntry implements PersistentObject {
    ρ: Env
    δ: List<RecDef>
-   e: Traced
+   e: Traced̊
 
    constructor_ (
       ρ: Env,
       δ: List<RecDef>,
-      e: Traced
+      e: Traced̊
    ) {
       this.ρ = ρ
       this.δ = δ
       this.e = e
    }
 
-   static make (ρ: Env, δ: List<RecDef>, e: Traced): EnvEntry {
+   static make (ρ: Env, δ: List<RecDef>, e: Traced̊): EnvEntry {
       return make(EnvEntry, ρ, δ, e)
    }
 }
