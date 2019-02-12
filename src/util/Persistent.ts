@@ -2,7 +2,8 @@ import { __nonNull, absurd, assert } from "./Core"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
-// interned objects are persistent objects.
+// interned objects are persistent objects. Interface so can be extended by VersionedObject, which it is
+// convenient to have as an interface.
 export interface PersistentObject {
    // ES6 only allows constructor calls via "new".
    constructor_ (...args: Persistent[]): void
