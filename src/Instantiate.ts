@@ -10,6 +10,7 @@ import { Trace, Traced, Value } from "./Traced"
 
 import App = Traced.App
 import Args = Traced.Args
+import Bot = Traced.Bot
 import Empty = Traced.Empty
 import Kont = Traced.Kont
 import Kont̊ = Traced.Kont̊
@@ -24,6 +25,9 @@ import Var = Traced.Var
 export function instantiate (ρ: Env): (e: Expr) => Traced {
    return function (e: Expr): Traced {
       const i: Runtime<Expr> = Runtime.make(ρ.entries(), e)
+      if (e instanceof Expr.Bot) {
+         return Traced.make(Bot.at(i), null)
+      } else 
       if (e instanceof Expr.ConstInt) {
          return Traced.make(Empty.at(i), Value.ConstInt.at(i, e.val))
       } else
