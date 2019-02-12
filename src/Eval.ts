@@ -10,6 +10,7 @@ import { Trace, Traced, Value, Value̊ } from "./Traced"
 
 import App = Traced.App
 import Args = Traced.Args
+import Bot = Traced.Bot
 import Empty = Traced.Empty
 import Let = Traced.Let
 import LetRec = Traced.LetRec
@@ -96,6 +97,9 @@ function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
    } else {
       if (versioned(t)) {
          const k: Runtime<Expr> = t.__id as Runtime<Expr>
+         if (t instanceof Bot) {
+            return [Traced.make(t, null), null, null]
+         } else
          if (t instanceof Empty) {
             const v: Value = __nonNull(e.v)
             if (versioned(v)) {
