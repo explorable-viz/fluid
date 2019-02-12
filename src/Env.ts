@@ -42,6 +42,8 @@ export class ExtendEnvEntries extends EnvEntries {
 // But although evaluation ids do not depend on the ids of environments themselves, we still intern
 // environments to enable LVar semantics.
 
+export type Env̊ = Env | null
+
 export abstract class Env implements PersistentObject {
    abstract entries (): EnvEntries;
    abstract get (k: string): EnvEntry | undefined;
@@ -67,6 +69,14 @@ export abstract class Env implements PersistentObject {
          ρ = ExtendEnv.make(ρ, k, v)
       })
       return ρ
+   }
+
+   static concat̊ (ρ1: Env̊, ρ2: Env̊): Env̊ {
+      if (ρ1 === null || ρ2 === null) {
+         return null
+      } else {
+         return Env.concat(ρ1, ρ2)
+      }
    }
 
    static concat (ρ1: Env, ρ2: Env): Env {
