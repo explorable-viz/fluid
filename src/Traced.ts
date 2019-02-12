@@ -94,24 +94,27 @@ export namespace Value {
 
 // Called ExplVal in the formalism.
 export class Traced implements PersistentObject {
-   t: Trace̊
+   t: Trace
    v: Value̊
 
    constructor_ (
-      t: Trace̊,
+      t: Trace,
       v: Value̊
    ) {
       this.t = t
       this.v = v
    }
 
-   static make (t: Trace̊, v: Value̊): Traced {
+   static make (t: Trace, v: Value̊): Traced {
       return make(Traced, t, v)
+   }
+
+   bottom (): Traced {
+      return make(Traced, this.t.bottom(), null)
    }
 }
 
 export type Trace = Traced.Trace
-export type Trace̊ = Trace | null
 
 export namespace Traced {
    export type Args<K> = Args.Args<K>
@@ -482,8 +485,27 @@ export namespace Traced {
    export abstract class Trace implements PersistentObject {
       __tag: "Trace.Trace"
       abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+
+      bottom (): Trace {
+         if (versioned(this)) {
+            return Bot.at(this.__id)
+         } else {
+            return absurd()
+         }
+      }
    }
-   
+
+   export class Bot extends Trace {
+      __subtag: "Trace.Bot"
+
+      constructor_ (): void {
+      }
+
+      static at (α: PersistentObject): Bot {
+         return at(α, Bot)
+      }
+   }
+
    export class App extends Trace {
       func: Traced
       arg: Traced
@@ -538,7 +560,7 @@ export namespace Traced {
       // Like environments, these don't have entirely null forms, but preserve the name structure.
       bottom (): RecDef {
          if (versioned(this)) {
-            return RecDef.at(this.__id, this.x, Traced.make(null, null))
+            return RecDef.at(this.__id, this.x, this.tv.bottom())
          } else {
             return absurd()
          }

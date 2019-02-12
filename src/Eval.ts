@@ -6,7 +6,7 @@ import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
-import { Trace̊, Traced, Value, Value̊ } from "./Traced"
+import { Trace, Traced, Value, Value̊ } from "./Traced"
 
 import App = Traced.App
 import Args = Traced.Args
@@ -89,7 +89,7 @@ export function evalT_<K extends Persistent> (ρ: Env, tv: Traced, σ: Trie<K>):
 // Null means eval produced no information about v; the input traced value might be non-null.
 function evalT<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    assert(σ instanceof Trie.Trie)
-   const t: Trace̊ = e.t
+   const t: Trace = e.t
    if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
       return [Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ]

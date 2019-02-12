@@ -1,6 +1,6 @@
-import { __check, assert } from "./util/Core"
+import { __check, absurd, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { Persistent, PersistentObject, at, make } from "./util/Persistent"
+import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List, } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -126,7 +126,6 @@ export namespace Lex {
 }
 
 export type Expr = Expr.Expr
-export type Expr̊ = Expr | null
 
 export namespace Expr {
    // Must be joinable, purely so that joining two expressions will fail.
@@ -137,18 +136,37 @@ export namespace Expr {
       join (e: Expr): Expr {
          return assert(false, "Expression join unsupported.")
       }
+
+      bottom (): Expr {
+         if (versioned(this)) {
+            return Bot.at(this.__id)
+         } else {
+            return absurd()
+         }
+      }
+   }
+
+   export class Bot extends Expr {
+      __subtag: "Expr.Bot"
+
+      constructor_ (): void {
+      }
+
+      static at (α: PersistentObject): Bot {
+         return at(α, Bot)
+      }
    }
 
    export class App extends Expr {
-      func: Expr̊
-      arg: Expr̊
+      func: Expr
+      arg: Expr
 
-      constructor_ (func: Expr̊, arg: Expr̊): void {
+      constructor_ (func: Expr, arg: Expr): void {
          this.func = func
          this.arg = arg
       }
 
-      static at (α: PersistentObject, func: Expr̊, arg: Expr̊): App {
+      static at (α: PersistentObject, func: Expr, arg: Expr): App {
          return at(α, App, func, arg)
       }
    }
@@ -179,14 +197,14 @@ export namespace Expr {
    
    export class Constr extends Expr {
       ctr: Lex.Ctr
-      args: List<Expr̊>
+      args: List<Expr>
 
-      constructor_ (ctr: Lex.Ctr, args: List<Expr̊>): void {
+      constructor_ (ctr: Lex.Ctr, args: List<Expr>): void {
          this.ctr = ctr
          this.args = args
       }
    
-      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Expr̊>): Constr {
+      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
          return at(α, Constr, ctr, args)
       }
    }
@@ -205,15 +223,15 @@ export namespace Expr {
 
    // A let is simply a match where the trie is a variable trie.
    export class Let extends Expr {
-      e: Expr̊
+      e: Expr
       σ: Trie.Var<Expr>
 
-      constructor_ (e: Expr̊, σ: Trie.Var<Expr>): void {
+      constructor_ (e: Expr, σ: Trie.Var<Expr>): void {
          this.e = e
          this.σ = σ
       }
 
-      static at (α: PersistentObject, e: Expr̊, σ: Trie.Var<Expr>): Let {
+      static at (α: PersistentObject, e: Expr, σ: Trie.Var<Expr>): Let {
          return at(α, Let, e, σ)
       }
    }
@@ -232,58 +250,58 @@ export namespace Expr {
 
    export class RecDef implements PersistentObject {
       x: Lex.Var
-      e: Expr̊
+      e: Expr
 
-      constructor_ (x: Lex.Var, e: Expr̊): void {
+      constructor_ (x: Lex.Var, e: Expr): void {
          this.x = x
          this.e = e
       }
    
-      static at (α: PersistentObject, x: Lex.Var, e: Expr̊): RecDef {
+      static at (α: PersistentObject, x: Lex.Var, e: Expr): RecDef {
          return at(α, RecDef, x, e)
       }
    }
 
    export class LetRec extends Expr {
       δ: List<RecDef>
-      e: Expr̊
+      e: Expr
 
-      constructor_ (δ: List<RecDef>, e: Expr̊): void {
+      constructor_ (δ: List<RecDef>, e: Expr): void {
          this.δ = δ
          this.e = e
       }
 
-      static at (α: PersistentObject, δ: List<RecDef>, e: Expr̊): LetRec {
+      static at (α: PersistentObject, δ: List<RecDef>, e: Expr): LetRec {
          return at(α, LetRec, δ, e)
       }
    }
 
    export class MatchAs extends Expr {
-      e: Expr̊
+      e: Expr
       σ: Trie<Expr>
 
-      constructor_ (e: Expr̊, σ: Trie<Expr>): void {
+      constructor_ (e: Expr, σ: Trie<Expr>): void {
          this.e = e
          this.σ = σ
       }
    
-      static at (α: PersistentObject, e: Expr̊, σ: Trie<Expr>): MatchAs {
+      static at (α: PersistentObject, e: Expr, σ: Trie<Expr>): MatchAs {
          return at(α, MatchAs, e, σ)
       }
    }
 
    export class PrimApp extends Expr {
-      e1: Expr̊
+      e1: Expr
       opName: Lex.OpName
-      e2: Expr̊
+      e2: Expr
 
-      constructor_ (e1: Expr̊, opName: Lex.OpName, e2: Expr̊): void {
+      constructor_ (e1: Expr, opName: Lex.OpName, e2: Expr): void {
          this.e1 = e1
          this.opName = opName
          this.e2 = e2
       }
 
-      static at (α: PersistentObject, e1: Expr̊, opName: Lex.OpName, e2: Expr̊): PrimApp {
+      static at (α: PersistentObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
          return at(α, PrimApp, e1, opName, e2)
       }
    }

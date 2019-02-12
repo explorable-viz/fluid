@@ -5,7 +5,7 @@ import { diffProp } from "../src/util/Delta"
 import { Persistent, PersistentObject, World, at, make, versioned } from "../src/util/Persistent"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
-import { Expr, Expr̊, Lex } from "../src/Expr"
+import { Expr, Lex } from "../src/Expr"
 import { Point, Rect, objects } from "../src/Graphics"
 import { Traced, Value } from "../src/Traced"
 import { initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
@@ -108,7 +108,8 @@ function populateScene (): void {
    let w: World 
    if (versioned(here)) {
       w = World.newRevision()
-      Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr̊>(null, as(here_.args, Cons).tail)) // clunky
+      const args: Cons<Expr> = as(here_.args, Cons)
+      Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(args.head.bottom(), args.tail)) // clunky
       assert(__nonNull(runExample(e).v) === v) // make consistent - should it be an invariant that every world is consistent?
       World.undo()
 
