@@ -1,4 +1,4 @@
-import { __nonNull, absurd, assert, className } from "./Core"
+import { __nonNull, absurd, as, assert, className } from "./Core"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
@@ -94,7 +94,7 @@ export function at<K extends PersistentObject, T extends PersistentObject> (α: 
       instances = new Map
       __ctrInstances.set(ctr, instances)
    }
-   let o: PersistentObject | undefined = instances.get(α) as PersistentObject
+   let o: PersistentObject | undefined = instances.get(α)
    if (o === undefined) {
       o = new ctr
       // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
@@ -234,8 +234,14 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
 
 // Versioned objects can have different metatypes at different worlds; here we assume T is its type at the 
 // current world.
-export function getProp<T extends VersionedObject> (o: T, k: keyof T): Persistent {
-   return stateAt(o, __w)[1][k as string]
+export function getProp<T extends PersistentObject> (α: PersistentObject, cls: PersistentClass<T>, k: keyof T): Persistent {
+   const o: PersistentObject = __nonNull(__nonNull(__ctrInstances.get(cls)).get(α)),
+         oʹ: T = as(o, cls)
+   if (versioned(oʹ)) {
+      return stateAt(oʹ, __w)[1][k as keyof ObjectState]
+   } else {
+      return absurd()
+   }
 }
 
 export class World implements PersistentObject, Ord<World> {

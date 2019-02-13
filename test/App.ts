@@ -1,7 +1,6 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import { Class, __check, __nonNull, absurd, as, assert } from "../src/util/Core"
-import { diffProp } from "../src/util/Delta"
 import { Persistent, PersistentObject, World, at, make, versioned } from "../src/util/Persistent"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
@@ -105,9 +104,8 @@ function populateScene (): void {
    here = from(here as PersistentObject, Cons, "head")
 
    const here_: Expr.Constr = as(here, Expr.Constr)
-   let w: World 
    if (versioned(here)) {
-      w = World.newRevision()
+      World.newRevision()
       const args: Cons<Expr> = as(here_.args, Cons)
       Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(args.head.bottom(), args.tail)) // clunky
       assert(__nonNull(runExample(e).v) === v) // make consistent - should it be an invariant that every world is consistent?
@@ -115,7 +113,6 @@ function populateScene (): void {
 
       for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
          // assume only increasing or decreasing changes (to or from null):
-         assert(!diffProp(elemsʹ, "head", w))
          for (let obj of objects(elemsʹ.head)) {
             scene.add(obj)
          }

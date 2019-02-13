@@ -1,5 +1,5 @@
 import { __check, __nonNull, absurd, assert } from "./util/Core"
-import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
+import { Persistent, PersistentObject, at, getProp, make, versioned } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
@@ -147,7 +147,10 @@ function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
          return Result.at(out, Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ)
       } else {
          if (t instanceof Bot) {
-            return Result.at(out, Traced.make(t, null), absurd(), absurd()) // TODO
+            // we can assume there is a "baseline" computation with a non-bottom output environment
+            // moreover environments are "rigid designators" (denote the same thing in every world)
+            const ρ_0: Env = getProp(out, Result, "ρ") as Env
+            return Result.at(out, Traced.make(t, null), ρ_0.bottom(), absurd()) // TODO
          } else
          if (t instanceof Empty) {
             const v: Value = __nonNull(e.v)
