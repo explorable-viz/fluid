@@ -85,7 +85,7 @@ export function parseExample (src: string | null): Expr {
 }
 
 export function runExample (e: Expr, σ: Trie<null> = τ.top(null)): Traced {
-   const [tv, ,]: Eval.Result<null> = Eval.evalT_(ρ, instantiate(ρ)(e), σ)
+   const {tv}: Eval.Result<null> = Eval.eval__(ρ, instantiate(ρ)(e), σ)
    console.log(tv)
    if (!Trie.Top.is(σ)) {
       console.log(match(σ, tv.v))

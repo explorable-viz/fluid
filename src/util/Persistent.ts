@@ -1,4 +1,4 @@
-import { __nonNull, absurd, assert } from "./Core"
+import { __nonNull, absurd, assert, className } from "./Core"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
@@ -161,7 +161,10 @@ function __merge (tgt: Persistent, src: Persistent): Persistent {
       return absurd("Address collision (different child).")
    } else
    if (interned(tgt) && interned(src)) {
-      assert(tgt.constructor === src.constructor, "Address collision (different constructor).")
+      assert(
+         tgt.constructor === src.constructor, 
+         `Address collision (tgt ${className(tgt)} !== src ${className(src)}).`
+      )
       const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
             src_: ObjectState = src as Object as ObjectState,
             args: Persistent[] = Object.keys(tgt).map((k: string): Persistent => {

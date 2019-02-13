@@ -3,7 +3,7 @@ import { JoinSemilattice } from "./util/Ord"
 import { Persistent } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { Eval, Runtime } from "./Eval"
+import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { mapTrie } from "./Match"
 import { Trace, Traced, Value } from "./Traced"
@@ -24,7 +24,7 @@ import Var = Traced.Var
 
 export function instantiate (ρ: Env): (e: Expr) => Traced {
    return function (e: Expr): Traced {
-      const i: Runtime<Expr> = Runtime.make(ρ.entries(), e)
+      const i: Eval.Runtime<Expr> = Eval.Runtime.make(ρ.entries(), e)
       if (e instanceof Expr.Bot) {
          return Traced.make(Bot.at(i), null)
       } else 
@@ -55,7 +55,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
       } else
       if (e instanceof Expr.LetRec) {
          const δ: List<RecDef> = e.δ.map(def => {
-            const j: Runtime<Expr.RecDef> = Runtime.make(ρ.entries(), def)
+            const j: Eval.Runtime<Expr.RecDef> = Eval.Runtime.make(ρ.entries(), def)
             return RecDef.at(j, def.x, instantiate(ρ)(def.e))
          })
          const t: Trace = LetRec.at(i, δ, instantiate(Eval.closeDefs(δ, ρ, δ))(e.e))
