@@ -1,4 +1,4 @@
-import { absurd } from "./util/Core"
+import { __nonNull, absurd } from "./util/Core"
 import { JoinSemilattice } from "./util/Ord"
 import { Persistent } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
@@ -37,7 +37,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
       } else
       if (e instanceof Expr.Constr) {
          // Parser ensures constructors agree with constructor signatures.
-         return Traced.make(Empty.at(i), Value.Constr.at(iᵥ, e.ctr, e.args.map(instantiate(ρ))))
+         return Traced.make(Empty.at(i), Value.Constr.at(iᵥ, e.ctr, __nonNull(e.args).map(instantiate(ρ))))
       } else
       if (e instanceof Expr.Fun) {
          // No need to use "unknown" environment here because we have ρ.

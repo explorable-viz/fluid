@@ -36,13 +36,14 @@ export class ExternalObject implements PersistentObject {
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
 type InternedObjects = Map<Persistent, PersistentObject | Map<Persistent, Object>> // approximate recursive type
-const __instances: InternedObjects = new Map
+const __internedObjs: InternedObjects = new Map
 
 // For versioned objects the map is not curried but takes an (interned) composite key. TODO: treating the constructor
 // as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
 // "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
 type VersionedObjects = Map<PersistentObject, PersistentObject>
-const __ctrInstances: Map<PersistentClass<PersistentObject>, VersionedObjects> = new Map
+// const __ctrInstances: Map<PersistentClass<PersistentObject>, VersionedObjects> = new Map
+const __versionedObjs: VersionedObjects = new Map
 
 function lookupArg<T extends PersistentObject> (
    ctr: PersistentClass<T>, 
@@ -69,7 +70,7 @@ type PersistentClass<T extends PersistentObject = PersistentObject> = new () => 
 
 // Hash-consing (interning) object construction.
 export function make<T extends PersistentObject> (ctr: PersistentClass<T>, ...args: Persistent[]): T {
-   let v: PersistentObject | Map<Persistent, Object> = lookupArg(ctr, __instances, args, -1)
+   let v: PersistentObject | Map<Persistent, Object> = lookupArg(ctr, __internedObjs, args, -1)
    for (var n: number = 0; n < args.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
       v = lookupArg(ctr, v as InternedObjects, args, n)
@@ -89,12 +90,12 @@ export function interned (o: Persistent): boolean {
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
 export function at<K extends PersistentObject, T extends PersistentObject> (α: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
    assert(interned(α))
-   let instances: VersionedObjects | undefined = __ctrInstances.get(ctr)
-   if (instances === undefined) {
-      instances = new Map
-      __ctrInstances.set(ctr, instances)
-   }
-   let o: PersistentObject | undefined = instances.get(α)
+//   let instances: VersionedObjects | undefined = __ctrInstances.get(ctr)
+//   if (instances === undefined) {
+//      instances = new Map
+//      __ctrInstances.set(ctr, instances)
+//   }
+   let o: PersistentObject | undefined = __versionedObjs.get(α)
    if (o === undefined) {
       o = new ctr
       // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
@@ -106,7 +107,7 @@ export function at<K extends PersistentObject, T extends PersistentObject> (α: 
          value: new Map,
          enumerable: false
       })
-      instances.set(α, o)
+      __versionedObjs.set(α, o)
    }
    // Couldn't get datatype-generic construction to work because fields not created by "new ctr".
    o.constructor_(...args)
@@ -235,7 +236,7 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
 // Versioned objects can have different metatypes at different worlds; here we assume T is its type at the 
 // current world.
 export function getProp<T extends PersistentObject> (α: PersistentObject, cls: PersistentClass<T>, k: keyof T): Persistent {
-   const o: PersistentObject = __nonNull(__nonNull(__ctrInstances.get(cls)).get(α)),
+   const o: PersistentObject = __nonNull(__versionedObjs.get(α)),
          oʹ: T = as(o, cls)
    if (versioned(oʹ)) {
       return stateAt(oʹ, __w)[1][k as keyof ObjectState]
