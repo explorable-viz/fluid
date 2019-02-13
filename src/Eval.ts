@@ -132,7 +132,7 @@ function evalArgs<K extends Persistent> (ρ: Env, Π: Args<K>, es: List<Traced>)
 // Preprocess with call to instantiate. 
 export function eval__<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    if (versioned(e.t)) {
-      const k: EvalId<Expr, "trace"> = e.t!.__id as EvalId<Expr, "trace">
+      const k: TraceId<Expr> = e.t!.__id as TraceId<Expr>
       return __check(
          eval_(ρ, instantiate(ρ)(k.e), σ), 
          ({tv}) => (tv.v === null) === (Trie.Var.is(σ))
@@ -147,8 +147,8 @@ export function eval__<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): 
 function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    const t: Trace = e.t
    if (versioned(t)) {
-      const k: EvalId<Expr, "trace"> = t.__id as EvalId<Expr, "trace">,
-            kᵥ: EvalId<Expr, "val"> = EvalId.make(k.j, k.e, "val"),
+      const k: TraceId<Expr> = t.__id as EvalId<Expr, "trace">,
+            kᵥ: ValId = EvalId.make(k.j, k.e, "val"),
             out: EvalKey<K> = EvalKey.make(k.j, k.e, σ)
       if (Trie.Var.is(σ)) {
          const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
@@ -163,7 +163,7 @@ function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
          if (t instanceof Empty) {
             const v: Value = __nonNull(e.v)
             if (versioned(v)) {
-               assert(v.__id === kᵥ) // do I even need kᵥ?
+               assert(v.__id === kᵥ)
                if (v instanceof Value.Constr) {
                   let Π: Args<K>
                   if (Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
