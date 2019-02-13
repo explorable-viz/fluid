@@ -1,4 +1,4 @@
-import { __nonNull, absurd, as, assert, className } from "./Core"
+import { Class, __nonNull, absurd, as, assert, className } from "./Core"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
@@ -42,7 +42,6 @@ const __internedObjs: InternedObjects = new Map
 // as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
 // "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
 type VersionedObjects = Map<PersistentObject, PersistentObject>
-// const __ctrInstances: Map<PersistentClass<PersistentObject>, VersionedObjects> = new Map
 const __versionedObjs: VersionedObjects = new Map
 
 function lookupArg<T extends PersistentObject> (
@@ -87,14 +86,21 @@ export function interned (o: Persistent): boolean {
    return o !== null && !versioned(o)
 }
 
+// Unlikely to be either performant or entirely sound. Want to emulate the post-state of new ctr. Probably need to
+// worry about how this works with inherited properties.
+function reclassify (o: Object, ctr: Class<Object>): void {
+   const proto: Object = Object.getPrototypeOf(new ctr)
+   if (Object.getPrototypeOf(o) !== proto) {
+      for (const k of Object.keys(o)) {
+         assert(delete o[k as keyof Object])
+      }
+      Object.setPrototypeOf(o, proto)
+   }
+}
+
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
 export function at<K extends PersistentObject, T extends PersistentObject> (α: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
    assert(interned(α))
-//   let instances: VersionedObjects | undefined = __ctrInstances.get(ctr)
-//   if (instances === undefined) {
-//      instances = new Map
-//      __ctrInstances.set(ctr, instances)
-//   }
    let o: PersistentObject | undefined = __versionedObjs.get(α)
    if (o === undefined) {
       o = new ctr
@@ -108,6 +114,8 @@ export function at<K extends PersistentObject, T extends PersistentObject> (α: 
          enumerable: false
       })
       __versionedObjs.set(α, o)
+   } else {
+      reclassify(o, ctr)
    }
    // Couldn't get datatype-generic construction to work because fields not created by "new ctr".
    o.constructor_(...args)
