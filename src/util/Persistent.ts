@@ -148,11 +148,25 @@ export interface ObjectState {
 // Combine information from src into tgt and vice versa, at an existing world.
 // Precondition: the two are upper-bounded; postcondition: they are equal.
 function __mergeState (tgt: ObjectState, src: Object): void {
-   assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
    const src_: ObjectState = src as ObjectState
-   Object.keys(tgt).forEach((k: string): void => {
-      tgt[k] = src_[k] = __merge(tgt[k], src_[k])
-   })
+   // TODO: remove hardcoded dependency on "Bot"
+   if (className(tgt) === "Bot") {
+      reclassify(tgt, src.constructor as Class<Object>)
+      Object.keys(src).forEach((k: string): void => {
+         tgt[k] = src_[k]
+      })
+   } else 
+   if (className(src) === "Bot") {
+      reclassify(src, tgt.constructor as Class<Object>)
+      Object.keys(tgt).forEach((k: string): void => {
+         src_[k] = tgt[k]
+      })
+   } else {
+      assert(tgt.constructor === src.constructor)
+      Object.keys(tgt).forEach((k: string): void => {
+         tgt[k] = src_[k] = __merge(tgt[k], src_[k])
+      })
+   }
 }
 
 // Least upper bound of two upper-bounded objects.
