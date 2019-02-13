@@ -3,7 +3,7 @@ import { JoinSemilattice } from "./util/Ord"
 import { Persistent } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { Eval } from "./Eval"
+import { Eval, EvalId, TraceId, ValId } from "./Eval"
 import { Expr } from "./Expr"
 import { mapTrie } from "./Match"
 import { Trace, Traced, Value } from "./Traced"
@@ -24,26 +24,27 @@ import Var = Traced.Var
 
 export function instantiate (ρ: Env): (e: Expr) => Traced {
    return function (e: Expr): Traced {
-      const i: Eval.Runtime<Expr> = Eval.Runtime.make(ρ.entries(), e)
+      const i: TraceId<Expr> = EvalId.make(ρ.entries(), e, "trace"),
+            iᵥ: ValId = EvalId.make(ρ.entries(), e, "val")
       if (e instanceof Expr.Bot) {
          return Traced.make(Bot.at(i), null)
       } else 
       if (e instanceof Expr.ConstInt) {
-         return Traced.make(Empty.at(i), Value.ConstInt.at(i, e.val))
+         return Traced.make(Empty.at(i), Value.ConstInt.at(iᵥ, e.val))
       } else
       if (e instanceof Expr.ConstStr) {
-         return Traced.make(Empty.at(i), Value.ConstStr.at(i, e.val))
+         return Traced.make(Empty.at(i), Value.ConstStr.at(iᵥ, e.val))
       } else
       if (e instanceof Expr.Constr) {
          // Parser ensures constructors agree with constructor signatures.
-         return Traced.make(Empty.at(i), Value.Constr.at(i, e.ctr, e.args.map(instantiate(ρ))))
+         return Traced.make(Empty.at(i), Value.Constr.at(iᵥ, e.ctr, e.args.map(instantiate(ρ))))
       } else
       if (e instanceof Expr.Fun) {
          // No need to use "unknown" environment here because we have ρ.
-         return Traced.make(Empty.at(i), Value.Closure.at(i, ρ, instantiateTrie(ρ, e.σ)))
+         return Traced.make(Empty.at(i), Value.Closure.at(iᵥ, ρ, instantiateTrie(ρ, e.σ)))
       } else
       if (e instanceof Expr.PrimOp) {
-         return Traced.make(Empty.at(i), Value.PrimOp.at(i, e.op))
+         return Traced.make(Empty.at(i), Value.PrimOp.at(iᵥ, e.op))
       } else
       if (e instanceof Expr.Var) {
          return Traced.make(Var.at(i, e.x, null), null)
@@ -55,7 +56,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
       } else
       if (e instanceof Expr.LetRec) {
          const δ: List<RecDef> = e.δ.map(def => {
-            const j: Eval.Runtime<Expr.RecDef> = Eval.Runtime.make(ρ.entries(), def)
+            const j: EvalId<Expr.RecDef, "trace"> = EvalId.make(ρ.entries(), def, "trace")
             return RecDef.at(j, def.x, instantiate(ρ)(def.e))
          })
          const t: Trace = LetRec.at(i, δ, instantiate(Eval.closeDefs(δ, ρ, δ))(e.e))

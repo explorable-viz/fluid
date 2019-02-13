@@ -3,9 +3,11 @@ import { Persistent, PersistentObject, at, make, versioned } from "./util/Persis
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
-import { Lex } from "./Expr"
+import { Expr, Lex } from "./Expr"
+import { TraceId, ValId } from "./Eval"
 import { UnaryOp } from "./Primitive"
 
+export type Expr = Expr.Expr
 export type Value = Value.Value
 export type Value̊ = Value | null
 
@@ -24,8 +26,8 @@ export namespace Value {
          this.σ = σ
       }
 
-      static at (α: PersistentObject, ρ: Env, σ: Traced.Trie<Traced>): Closure {
-         return at(α, Closure, ρ, σ)
+      static at (k: ValId, ρ: Env, σ: Traced.Trie<Traced>): Closure {
+         return at(k, Closure, ρ, σ)
       }
    }
 
@@ -40,8 +42,8 @@ export namespace Value {
          this.val = val
       }
    
-      static at (α: PersistentObject, val: number): ConstInt {
-         return at(α, ConstInt, val)
+      static at (k: ValId, val: number): ConstInt {
+         return at(k, ConstInt, val)
       }
 
       toString (): string {
@@ -56,8 +58,8 @@ export namespace Value {
          this.val = val
       }
    
-      static at (α: PersistentObject, val: string): ConstStr {
-         return at(α, ConstStr, val)
+      static at (k: ValId, val: string): ConstStr {
+         return at(k, ConstStr, val)
       }
 
       toString (): string {
@@ -74,8 +76,8 @@ export namespace Value {
          this.args = args
       }
    
-      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Traced>): Constr {
-         return at(α, Constr, ctr, args)
+      static at (k: ValId, ctr: Lex.Ctr, args: List<Traced>): Constr {
+         return at(k, Constr, ctr, args)
       }
    }
 
@@ -86,8 +88,8 @@ export namespace Value {
          this.op = op
       }
    
-      static at (α: PersistentObject, op: UnaryOp): PrimOp {
-         return at(α, PrimOp, op)
+      static at (k: ValId, op: UnaryOp): PrimOp {
+         return at(k, PrimOp, op)
       }
    }
 }
@@ -130,9 +132,7 @@ export namespace Traced {
       export class End<K extends Persistent> extends Args<K> {
          κ: K
 
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
 
@@ -149,9 +149,7 @@ export namespace Traced {
       export class Next<K> extends Args<K> {
          σ: Trie<Args<K>>
 
-         constructor_ (
-            σ: Trie<Args<K>>
-         ) {
+         constructor_ (σ: Trie<Args<K>>) {
             this.σ = σ
          }
 
@@ -167,9 +165,7 @@ export namespace Traced {
       export class Top<K extends Persistent> extends Args<K> {
          κ: K // want fix at null but couldn't make that work with the polymorphism
 
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
 
@@ -246,9 +242,7 @@ export namespace Traced {
       export class Fun<K extends Persistent> extends Trie<K> {
          κ: K
 
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
 
@@ -265,10 +259,7 @@ export namespace Traced {
          x: Lex.Var
          κ: K
 
-         constructor_ (
-            x: Lex.Var,
-            κ: K
-         ) {
+         constructor_ (x: Lex.Var, κ: K) {
             this.x = x
             this.κ = κ
          }
@@ -286,9 +277,7 @@ export namespace Traced {
       export class Top<K extends Persistent> extends Trie<K> {
          κ: K
 
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
 
@@ -306,10 +295,7 @@ export namespace Traced {
       t: Trace | null // null iff ξ represents a dead branch
       ξ: Match<K>
 
-   constructor_ (
-         t: Trace | null,
-         ξ: Match<K>
-      ) {
+   constructor_ (t: Trace | null, ξ: Match<K>) {
          this.t = t
          this.ξ = ξ
       }
@@ -334,9 +320,7 @@ export namespace Traced {
          export class End<K extends Persistent> extends Args<K> {
             κ: K
 
-            constructor_ (
-               κ: K
-            ) {
+            constructor_ (κ: K) {
                this.κ = κ
             }
    
@@ -352,9 +336,7 @@ export namespace Traced {
          export class Next<K> extends Args<K> {
             tξ: TracedMatch<K>
 
-            constructor_ (
-               tξ: TracedMatch<K>
-            ) {
+            constructor_ (tξ: TracedMatch<K>) {
                this.tξ = tξ
             }
    
@@ -380,10 +362,7 @@ export namespace Traced {
       export class ConstInt<K extends Persistent> extends Prim<K> {
          val: number
 
-         constructor_ (
-            val: number,
-            κ: K
-         ) {
+         constructor_ (val: number, κ: K) {
             this.val
             this.κ = κ
          }
@@ -400,10 +379,7 @@ export namespace Traced {
       export class ConstStr<K extends Persistent> extends Prim<K> {
          val: string
 
-         constructor_ (
-            val: string,
-            κ: K
-         ) {
+         constructor_ (val: string, κ: K) {
             this.val = val
             this.κ = κ
          }
@@ -421,9 +397,7 @@ export namespace Traced {
       export class Constr<K> extends Match<K> {
          cases: FiniteMap<string, Traced.Args<K> | Args<K>> 
 
-         constructor_ (
-            cases: FiniteMap<string, Traced.Args<K> | Args<K>> 
-         ) {
+         constructor_ (cases: FiniteMap<string, Traced.Args<K> | Args<K>>) {
             this.cases = cases
          }
 
@@ -440,10 +414,7 @@ export namespace Traced {
          f: Value.Closure | Value.PrimOp
          κ: K
    
-         constructor_ (
-            f: Value.Closure | Value.PrimOp,
-            κ: K
-         ) {
+         constructor_ (f: Value.Closure | Value.PrimOp, κ: K) {
             this.f = f
             this.κ = κ
          }
@@ -462,11 +433,7 @@ export namespace Traced {
          v: Value | null
          κ: K
 
-         constructor_ (
-            x: Lex.Var,
-            v: Value | null,
-            κ: K
-         ) {
+         constructor_ (x: Lex.Var, v: Value | null, κ: K) {
             this.x = x
             this.v = v
             this.κ = κ
@@ -488,7 +455,7 @@ export namespace Traced {
 
       bottom (): Trace {
          if (versioned(this)) {
-            return Bot.at(this.__id)
+            return Bot.at(this.__id as TraceId<Expr>)
          } else {
             return absurd()
          }
@@ -501,8 +468,8 @@ export namespace Traced {
       constructor_ (): void {
       }
 
-      static at (α: PersistentObject): Bot {
-         return at(α, Bot)
+      static at (k: TraceId<Expr>): Bot {
+         return at(k, Bot)
       }
    }
 
@@ -517,8 +484,8 @@ export namespace Traced {
          this.body = body
       }
 
-      static at (α: PersistentObject, func: Traced, arg: Traced, body: Trace | null): App {
-         return at(α, App, func, arg, body)
+      static at (k: TraceId<Expr>, func: Traced, arg: Traced, body: Trace | null): App {
+         return at(k, App, func, arg, body)
       }
    }
 
@@ -527,8 +494,8 @@ export namespace Traced {
       constructor_ (): void {
       }
 
-      static at (α: PersistentObject): Empty {
-         return at(α, Empty)
+      static at (k: TraceId<Expr>): Empty {
+         return at(k, Empty)
       }
    }
 
@@ -543,8 +510,8 @@ export namespace Traced {
          this.t = t
       }
 
-      static at (α: PersistentObject, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
-         return at(α, Let, tu, σ, t)
+      static at (k: TraceId<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
+         return at(k, Let, tu, σ, t)
       }
    }
 
@@ -560,14 +527,14 @@ export namespace Traced {
       // Like environments, these don't have entirely null forms, but preserve the name structure.
       bottom (): RecDef {
          if (versioned(this)) {
-            return RecDef.at(this.__id, this.x, this.tv.bottom())
+            return RecDef.at(this.__id as TraceId<Expr.RecDef>, this.x, this.tv.bottom())
          } else {
             return absurd()
          }
       }
    
-      static at (α: PersistentObject, x: Lex.Var, tv: Traced): RecDef {
-         return at(α, RecDef, x, tv)
+      static at (k: TraceId<Expr.RecDef>, x: Lex.Var, tv: Traced): RecDef {
+         return at(k, RecDef, x, tv)
       }
    }
 
@@ -581,8 +548,8 @@ export namespace Traced {
          this.tv = tv
       }
 
-      static at (α: PersistentObject, δ: List<RecDef>, tv: Traced): LetRec {
-         return at(α, LetRec, δ, tv)
+      static at (k: TraceId<Expr>, δ: List<RecDef>, tv: Traced): LetRec {
+         return at(k, LetRec, δ, tv)
       }
    }
    
@@ -597,8 +564,8 @@ export namespace Traced {
          this.t = t
       }
 
-      static at (α: PersistentObject, tu: Traced, σ: Trie<Traced>, t: Trace | null): MatchAs {
-         return at(α, MatchAs, tu, σ, t)
+      static at (k: TraceId<Expr>, tu: Traced, σ: Trie<Traced>, t: Trace | null): MatchAs {
+         return at(k, MatchAs, tu, σ, t)
       }
    }
 
@@ -613,8 +580,8 @@ export namespace Traced {
          this.tv2 = tv2
       }
 
-      static at (α: PersistentObject, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
-         return at(α, PrimApp, tv1, opName, tv2)
+      static at (k: TraceId<Expr>, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
+         return at(k, PrimApp, tv1, opName, tv2)
       }
    }
 
@@ -627,8 +594,8 @@ export namespace Traced {
          this.t = t
       }
 
-      static at (α: PersistentObject, x: Lex.Var, t: Trace | null): Var {
-         return at(α, Var, x, t)
+      static at (k: TraceId<Expr>, x: Lex.Var, t: Trace | null): Var {
+         return at(k, Var, x, t)
       }
    }
 }

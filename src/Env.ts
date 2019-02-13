@@ -5,6 +5,7 @@ import { Traced } from "./Traced"
 
 import RecDef = Traced.RecDef
 
+// An environment whose names have been projected away, leaving only a list of the bound entities.
 export abstract class EnvEntries implements PersistentObject {
    __tag: "EnvEntries"
    abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def

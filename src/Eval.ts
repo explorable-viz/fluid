@@ -20,37 +20,44 @@ import Trie = Traced.Trie
 import RecDef = Traced.RecDef
 import Var = Traced.Var
 
-export module Eval {
+export class EvalId<E extends Expr | Expr.RecDef, T extends "val" | "trace"> {
+   j: EnvEntries
+   e: E
+   tag: T
 
-export class Runtime<E extends Expr | Expr.RecDef> implements PersistentObject {
-   public j: EnvEntries
-   public e: E
-
-   constructor_ (j: EnvEntries, e: E) {
+   constructor_ (j: EnvEntries, e: E, tag: T) {
       this.j = j
       this.e = e
+      this.tag = tag
    }
 
-   static make<E extends Expr | Expr.RecDef> (j: EnvEntries, e: E): Runtime<E> {
-      return make(Runtime, j, e) as Runtime<E>
+   static make<E extends Expr | Expr.RecDef, T extends "val" | "trace"> (j: EnvEntries, e: E, tag: T): EvalId<E, T> {
+      return make(EvalId, j, e, tag) as EvalId<E, T>
    }
 }
 
-// Note that a "runtime id" is not a suitable memo-key for eval_: different demands will produce output environments of 
+export type ValId = EvalId<Expr, "val">
+export type TraceId<E extends Expr | Expr.RecDef> = EvalId<E, "trace">
+
+export module Eval {
+
+// Note that an "eval id" is not a suitable memo-key for eval_: different demands will produce output environments of 
 // different shapes. (For the same reason, eval_ is only monotone w.r.t. σ in the output environment if the ordering on
 // tries implies equality of binding structure.) This effectively serves as an eval_ memo key in the meantime; probably
 // want to subsume this into some memoisation infrastructure at some point.
 class EvalKey<K extends Persistent> implements PersistentObject {
-   k: Runtime<Expr>
+   j: EnvEntries
+   e: Expr
    σ: Trie<K>
 
-   constructor_ (k: Runtime<Expr>, σ: Trie<K>) {
-      this.k = k
+   constructor_ (j: EnvEntries, e: Expr, σ: Trie<K>) {
+      this.j = j
+      this.e = e
       this.σ = σ
    }
 
-   static make<K extends Persistent> (k: Runtime<Expr>, σ: Trie<K>): EvalKey<K> {
-      return make(EvalKey, k, σ) as EvalKey<K>
+   static make<K extends Persistent> (j: EnvEntries, e: Expr, σ: Trie<K>): EvalKey<K> {
+      return make(EvalKey, j, e, σ) as EvalKey<K>
    }
 }
    
@@ -125,7 +132,7 @@ function evalArgs<K extends Persistent> (ρ: Env, Π: Args<K>, es: List<Traced>)
 // Preprocess with call to instantiate. 
 export function eval__<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    if (versioned(e.t)) {
-      const k: Runtime<Expr> = e.t!.__id as Runtime<Expr>
+      const k: EvalId<Expr, "trace"> = e.t!.__id as EvalId<Expr, "trace">
       return __check(
          eval_(ρ, instantiate(ρ)(k.e), σ), 
          ({tv}) => (tv.v === null) === (Trie.Var.is(σ))
@@ -140,22 +147,23 @@ export function eval__<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): 
 function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    const t: Trace = e.t
    if (versioned(t)) {
-      const k: Runtime<Expr> = t.__id as Runtime<Expr>,
-            out: EvalKey<K> = EvalKey.make(k, σ)
+      const k: EvalId<Expr, "trace"> = t.__id as EvalId<Expr, "trace">,
+            kᵥ: EvalId<Expr, "val"> = EvalId.make(k.j, k.e, "val"),
+            out: EvalKey<K> = EvalKey.make(k.j, k.e, σ)
       if (Trie.Var.is(σ)) {
          const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
          return Result.at(out, Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ)
       } else {
          if (t instanceof Bot) {
-            // we can assume there is a "baseline" computation with a non-bottom output environment
-            // moreover environments are "rigid designators" (denote the same thing in every world)
+            // We can assume there is a "baseline" computation with a non-bottom output environment.
+            // Moreover environments are "rigid designators" (denote the same thing in every world).
             const ρ_0: Env = getProp(out, Result, "ρ") as Env
             return Result.at(out, Traced.make(t, null), ρ_0.bottom(), absurd()) // TODO
          } else
          if (t instanceof Empty) {
             const v: Value = __nonNull(e.v)
             if (versioned(v)) {
-               assert(v.__id === t.__id)
+               assert(v.__id === kᵥ) // do I even need kᵥ?
                if (v instanceof Value.Constr) {
                   let Π: Args<K>
                   if (Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
@@ -167,7 +175,7 @@ function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
                      return absurd("Demand mismatch.", e, σ)
                   }
                   const {tvs: args, ρ: ρʹ, κ}: Results<K> = evalArgs(ρ, Π, v.args)
-                  return Result.at(out, Traced.make(t, Value.Constr.at(k, v.ctr, args)), ρʹ, κ)
+                  return Result.at(out, Traced.make(t, Value.Constr.at(kᵥ, v.ctr, args)), ρʹ, κ)
                } else
                if (v instanceof Value.ConstInt && (Trie.ConstInt.is(σ) || Trie.Top.is(σ))) {
                   return Result.at(out, Traced.make(t, v), Env.empty(), σ.κ)
@@ -205,7 +213,7 @@ function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
             // Primitives with identifiers as names are unary and first-class.
             if (f instanceof Value.PrimOp) {
                const {tv: tu}: Result<null> = eval__(ρ, t.arg, f.op.σ),
-                     [v, κ]: PrimResult<K> = f.op.b.invoke(tu.v!, σ)(k)
+                     [v, κ]: PrimResult<K> = f.op.b.invoke(tu.v!, σ)(kᵥ)
                return Result.at(out, Traced.make(App.at(k, tf, tu, null), v), Env.empty(), κ)
             } else {
                return absurd()
@@ -232,7 +240,7 @@ function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
                const op: BinaryOp = binaryOps.get(t.opName.str)!,
                      {tv: tv1}: Result<null> = eval__(ρ, t.tv1, op.σ1),
                      {tv: tv2}: Result<null> = eval__(ρ, t.tv2, op.σ2),
-                     [v, κ]: PrimResult<K> = op.b.invoke(tv1.v!, tv2.v!, σ)(k)
+                     [v, κ]: PrimResult<K> = op.b.invoke(tv1.v!, tv2.v!, σ)(kᵥ)
                return Result.at(out, Traced.make(PrimApp.at(k, tv1, t.opName, tv2), v), Env.empty(), κ)
             } else {
                return absurd("Operator name not found.", t.opName)

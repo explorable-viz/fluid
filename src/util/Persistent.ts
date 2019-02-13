@@ -156,7 +156,7 @@ function __merge (tgt: Persistent, src: Persistent): Persistent {
    } else
    if (src === tgt) {
       return src
-   } else 
+   } else
    if (versioned(tgt) && versioned(src)) {
       return absurd("Address collision (different child).")
    } else
