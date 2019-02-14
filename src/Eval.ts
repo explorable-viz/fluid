@@ -157,10 +157,11 @@ function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
          return Result.at(out, Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ)
       } else {
          if (t instanceof Bot) {
-            // We can assume there is a "baseline" computation with a non-bottom output environment.
+            // We can assume there is a "baseline" computation with non-bottom outputs.
             // Moreover environments are "rigid designators" (denote the same thing in every world).
-            const ρ_0: Env = getProp(out, Result, "ρ") as Env
-            return Result.at(out, Traced.make(t, null), ρ_0.bottom(), absurd()) // TODO
+            const ρ_0: Env = getProp(out, Result, "ρ") as Env,
+                  κ_0: K = getProp(out, Result, "κ") as K
+            return Result.at(out, Traced.make(t, null), ρ_0.bottom(), κ_0.bottom())
          } else
          if (t instanceof Empty) {
             const v: Value = __nonNull(e.v)
