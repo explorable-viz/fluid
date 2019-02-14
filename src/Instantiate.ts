@@ -1,6 +1,6 @@
 import { __nonNull, absurd } from "./util/Core"
 import { JoinSemilattice } from "./util/Ord"
-import { Persistent } from "./util/Persistent"
+import { PersistentObject } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, EvalId, TraceId, ValId } from "./Eval"
@@ -75,9 +75,9 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
-// See issue #33.
-function instantiateKont (ρ: Env): (κ: Expr.Kont) => Kont {
-   return function (κ: Expr.Kont): Kont {
+// See issue #33. Not sure these types make a lot of sense.
+function instantiateKont<K extends JoinSemilattice<K> & PersistentObject & Expr.Kont<K>> (ρ: Env): (κ: K) => Kont {
+   return function (κ: K): Kont {
       if (κ instanceof Expr.Trie.Trie) {
          return instantiateTrie(ρ, κ)
       } else
@@ -89,7 +89,7 @@ function instantiateKont (ρ: Env): (κ: Expr.Kont) => Kont {
    }
 }
 
-function instantiateArgs<K extends JoinSemilattice<K> & Persistent> (ρ: Env): (Π: Expr.Args<K>) => Args<K> {
+function instantiateArgs<K extends Expr.Kont<K>> (ρ: Env): (Π: Expr.Args<K>) => Args<K> {
    return function (Π: Expr.Args<K>): Args<K> {
       if (Expr.Args.End.is(Π)) {
          return Args.End.make(Π.κ)
@@ -102,11 +102,11 @@ function instantiateArgs<K extends JoinSemilattice<K> & Persistent> (ρ: Env): (
    }
 }
 
-function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Kont> {
-   return mapTrie(instantiateKont(ρ))(instantiateTrie_(ρ, σ))
+function instantiateTrie<K extends Expr.Kont<K>> (ρ: Env, σ: Expr.Trie<K>): Trie<Kont> {
+   return mapTrie(instantiateKont<K>(ρ))(instantiateTrie_(ρ, σ))
 }
 
-function instantiateTrie_<K extends JoinSemilattice<K> & Persistent> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
+function instantiateTrie_<K extends Expr.Kont<K>> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
    if (Expr.Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, σ.κ)
    } else
