@@ -182,7 +182,7 @@ export namespace Traced {
    // Tries are interned rather than versioned, as per the formalism (but don't really understand why).
    export type Trie<K> = Trie.Trie<K>
 
-   export type Kont = Traced | Args<any> | Trie<any>
+   export type Kont = Traced | Trie<any>
    
    export namespace Trie {
       export abstract class Trie<K> implements PersistentObject {
