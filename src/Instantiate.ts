@@ -13,7 +13,6 @@ import Args = Traced.Args
 import Bot = Traced.Bot
 import Empty = Traced.Empty
 import Kont = Traced.Kont
-import Kont̊ = Traced.Kont̊
 import Let = Traced.Let
 import LetRec = Traced.LetRec
 import MatchAs = Traced.MatchAs
@@ -77,8 +76,8 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
 }
 
 // See issue #33.
-function instantiateKont (ρ: Env): (κ: Expr.Kont) => Kont̊ {
-   return function (κ: Expr.Kont): Kont̊ {
+function instantiateKont (ρ: Env): (κ: Expr.Kont) => Kont {
+   return function (κ: Expr.Kont): Kont {
       if (κ instanceof Expr.Trie.Trie) {
          return instantiateTrie(ρ, κ)
       } else

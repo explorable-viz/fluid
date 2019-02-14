@@ -183,7 +183,6 @@ export namespace Traced {
    export type Trie<K> = Trie.Trie<K>
 
    export type Kont = Traced | Args<any> | Trie<any>
-   export type Kont̊ = Kont | null
    
    export namespace Trie {
       export abstract class Trie<K> implements PersistentObject {
