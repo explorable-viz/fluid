@@ -125,11 +125,8 @@ export namespace Traced {
       // n-ary product
       export abstract class Args<K> implements Kont<Args<K>> {
          __tag: "Traced.Args"
-         abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
-         
-         bottom (): Args<K> {
-            return absurd("Not implemented yet")
-         }
+         abstract constructor_ (...args: Persistent[]): void 
+         abstract bottom (): Args<K>
       }
 
       // Maps zero arguments to κ.
@@ -146,6 +143,10 @@ export namespace Traced {
 
          static make<K extends Persistent> (κ: K): End<K> {
             return make(End, κ) as End<K>
+         }
+
+         bottom (): End<K> {
+            return absurd("Not implemented yet")
          }
       }
 
@@ -164,21 +165,29 @@ export namespace Traced {
          static make<K> (σ: Trie<Args<K>>): Next<K> {
             return make(Next, σ)
          }
+
+         bottom (): Next<K> {
+            return absurd("Not implemented yet")
+         }
       }
 
-      export class Top<K extends Persistent> extends Args<K> {
+      export class Top<K extends Kont<K>> extends Args<K> {
          κ: K // want fix at null but couldn't make that work with the polymorphism
 
          constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (Π: Args<K>): Π is Top<K> {
+         static is<K extends Kont<K>> (Π: Args<K>): Π is Top<K> {
             return Π instanceof Top
          }
 
-         static make<K extends Persistent> (κ: K): Top<K> {
+         static make<K extends Kont<K>> (κ: K): Top<K> {
             return make(Top, κ) as Top<K>
+         }
+
+         bottom (): Top<K> {
+            return absurd("Not implemented yet")
          }
       }
    }
@@ -188,6 +197,20 @@ export namespace Traced {
 
    export interface Kont<K> extends PersistentObject {
       bottom (): K
+   }
+
+   // Unit continuation.
+   export class VoidKont implements Kont<VoidKont> {
+      constructor_ (): void {
+      }
+
+      bottom (): VoidKont {
+         return absurd("Not implemented yet")
+      }
+
+      static make (): VoidKont {
+         return make(VoidKont)
+      }
    }
 
    export namespace Trie {

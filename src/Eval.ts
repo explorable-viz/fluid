@@ -12,6 +12,7 @@ import App = Traced.App
 import Args = Traced.Args
 import Bot = Traced.Bot
 import Empty = Traced.Empty
+import Kont = Traced.Kont
 import Let = Traced.Let
 import LetRec = Traced.LetRec
 import MatchAs = Traced.MatchAs
@@ -19,6 +20,7 @@ import PrimApp = Traced.PrimApp
 import Trie = Traced.Trie
 import RecDef = Traced.RecDef
 import Var = Traced.Var
+import VoidKont = Traced.VoidKont
 
 export class EvalId<E extends Expr | Expr.RecDef, T extends "val" | "trace"> {
    j: EnvEntries
@@ -45,7 +47,7 @@ export module Eval {
 // different shapes. (For the same reason, eval_ is only monotone w.r.t. σ in the output environment if the ordering on
 // tries implies equality of binding structure.) This effectively serves as an eval_ memo key in the meantime; probably
 // want to subsume this into some memoisation infrastructure at some point.
-class EvalKey<K extends Persistent> implements PersistentObject {
+class EvalKey<K extends Kont<K>> implements PersistentObject {
    j: EnvEntries
    e: Expr
    σ: Trie<K>
@@ -56,13 +58,13 @@ class EvalKey<K extends Persistent> implements PersistentObject {
       this.σ = σ
    }
 
-   static make<K extends Persistent> (j: EnvEntries, e: Expr, σ: Trie<K>): EvalKey<K> {
+   static make<K extends Kont<K>> (j: EnvEntries, e: Expr, σ: Trie<K>): EvalKey<K> {
       return make(EvalKey, j, e, σ) as EvalKey<K>
    }
 }
    
 // Versioned so that we can access prior value of the environment when forward-slicing.
-export class Result<K extends Persistent> implements PersistentObject {
+export class Result<K extends Kont<K>> implements PersistentObject {
    tv: Traced
    ρ: Env
    κ: K
@@ -73,7 +75,7 @@ export class Result<K extends Persistent> implements PersistentObject {
       this.κ = κ
    }
 
-   static at<K extends Persistent> (α: PersistentObject, tv: Traced, ρ: Env, κ: K): Result<K> {
+   static at<K extends Kont<K>> (α: PersistentObject, tv: Traced, ρ: Env, κ: K): Result<K> {
       return at(α, Result, tv, ρ, κ) as Result<K>
    }
 }
@@ -107,7 +109,7 @@ export function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
 }
 
 // Parser ensures constructor patterns agree with constructor signatures.
-function evalArgs<K extends Persistent> (ρ: Env, Π: Args<K>, es: List<Traced>): Results<K> {
+function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): Results<K> {
    if (Cons.is(es)) {
       let σ: Trie<Args<K>>
       if (Args.Next.is(Π)) {
@@ -130,7 +132,7 @@ function evalArgs<K extends Persistent> (ρ: Env, Π: Args<K>, es: List<Traced>)
 }
 
 // Preprocess with call to instantiate. 
-export function eval__<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
+export function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    if (versioned(e.t)) {
       const k: TraceId<Expr> = e.t!.__id as TraceId<Expr>
       return __check(
@@ -144,7 +146,7 @@ export function eval__<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): 
 
 // Null means eval produced no information about v; the input traced value might be non-null.
 // By the time we get here e should have been "instantiated" with respect to ρ.
-function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
+function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    const t: Trace = e.t
    if (versioned(t)) {
       const k: TraceId<Expr> = t.__id as EvalId<Expr, "trace">,
@@ -203,7 +205,7 @@ function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
             }
          } else
          if (t instanceof App) {
-            const {tv: tf}: Result<null> = eval__(ρ, t.func, Trie.Fun.make(null)),
+            const {tv: tf}: Result<VoidKont> = eval__(ρ, t.func, Trie.Fun.make(VoidKont.make())),
                   f: Value̊ = tf.v
             if (f instanceof Value.Closure) {
                const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Traced> = eval__(ρ, t.arg, f.σ),
@@ -212,7 +214,7 @@ function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
             } else
             // Primitives with identifiers as names are unary and first-class.
             if (f instanceof Value.PrimOp) {
-               const {tv: tu}: Result<null> = eval__(ρ, t.arg, f.op.σ),
+               const {tv: tu}: Result<VoidKont> = eval__(ρ, t.arg, f.op.σ),
                      [v, κ]: PrimResult<K> = f.op.b.invoke(tu.v!, σ)(kᵥ)
                return Result.at(out, Traced.make(App.at(k, tf, tu, null), v), Env.empty(), κ)
             } else {
@@ -238,8 +240,8 @@ function eval_<K extends Persistent> (ρ: Env, e: Traced, σ: Trie<K>): Result<K
          if (t instanceof PrimApp) {
             if (binaryOps.has(t.opName.str)) {
                const op: BinaryOp = binaryOps.get(t.opName.str)!,
-                     {tv: tv1}: Result<null> = eval__(ρ, t.tv1, op.σ1),
-                     {tv: tv2}: Result<null> = eval__(ρ, t.tv2, op.σ2),
+                     {tv: tv1}: Result<VoidKont> = eval__(ρ, t.tv1, op.σ1),
+                     {tv: tv2}: Result<VoidKont> = eval__(ρ, t.tv2, op.σ2),
                      [v, κ]: PrimResult<K> = op.b.invoke(tv1.v!, tv2.v!, σ)(kᵥ)
                return Result.at(out, Traced.make(PrimApp.at(k, tv1, t.opName, tv2), v), Env.empty(), κ)
             } else {

@@ -11,9 +11,10 @@ import { Traced, Value } from "./Traced"
 import Args = Traced.Args
 import Kont = Traced.Kont
 import Trie = Traced.Trie
+import VoidKont = Traced.VoidKont
 
 export type PrimResult<K> = [Value, K]
-type TrieCtr = (body: null) => Trie.Prim<null>
+type TrieCtr = (body: VoidKont) => Trie.Prim<VoidKont>
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
@@ -90,12 +91,12 @@ export abstract class PrimOp implements PersistentObject {
 }
 
 export class UnaryOp extends PrimOp {
-   σ: Trie.Prim<null>
+   σ: Trie.Prim<VoidKont>
    b: UnaryBody
 
    constructor_ (
       name: string, 
-      σ: Trie.Prim<null>,
+      σ: Trie.Prim<VoidKont>,
       b: UnaryBody
    ) {
       this.name = name
@@ -103,24 +104,24 @@ export class UnaryOp extends PrimOp {
       this.b = b
    }
 
-   static make (name: string, σ: Trie.Prim<null>, b: UnaryBody): UnaryOp {
+   static make (name: string, σ: Trie.Prim<VoidKont>, b: UnaryBody): UnaryOp {
       return make(UnaryOp, name, σ, b)
    }
 
    static make_<T extends Value, V extends Value> (op: Unary<T, V>, trie: TrieCtr): UnaryOp {
-      return UnaryOp.make(op.name, trie(null), UnaryBody.make(op))
+      return UnaryOp.make(op.name, trie(VoidKont.make()), UnaryBody.make(op))
    }
 }
 
 export class BinaryOp extends PrimOp {
-   σ1: Trie.Prim<null>
-   σ2: Trie.Prim<null> 
+   σ1: Trie.Prim<VoidKont>
+   σ2: Trie.Prim<VoidKont> 
    b: BinaryBody
 
    constructor_ (
       name: string, 
-      σ1: Trie.Prim<null>, 
-      σ2: Trie.Prim<null>, 
+      σ1: Trie.Prim<VoidKont>, 
+      σ2: Trie.Prim<VoidKont>, 
       b: BinaryBody
    ) {
       this.name = name
@@ -129,12 +130,12 @@ export class BinaryOp extends PrimOp {
       this.b = b
    }
 
-   static make (name: string, σ1: Trie.Prim<null>, σ2: Trie.Prim<null>, b: BinaryBody): BinaryOp {
+   static make (name: string, σ1: Trie.Prim<VoidKont>, σ2: Trie.Prim<VoidKont>, b: BinaryBody): BinaryOp {
       return make(BinaryOp, name, σ1, σ2, b)
    }
 
    static make_<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, trie1: TrieCtr, trie2: TrieCtr): BinaryOp {
-      return BinaryOp.make(op.name, trie1(null), trie2(null), BinaryBody.make(op))
+      return BinaryOp.make(op.name, trie1(VoidKont.make()), trie2(VoidKont.make()), BinaryBody.make(op))
    }
 }
 
