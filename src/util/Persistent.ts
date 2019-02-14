@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd, as, assert, className } from "./Core"
+import { Class, __nonNull, absurd, as, assert, className, classOf } from "./Core"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
@@ -131,8 +131,7 @@ export const ν: () => ExternalObject =
       }
    })()
 
-// Not sure what the T parameter is for here but Typescript seems to get confused without it.
-function __blankCopy<T extends VersionedObject> (src: T): ObjectState {
+function __blankCopy (src: Object): ObjectState {
    const tgt: ObjectState = Object.create(src.constructor.prototype)
    for (let x of Object.keys(src)) {
       tgt[x] = null
@@ -149,15 +148,15 @@ export interface ObjectState {
 // Precondition: the two are upper-bounded; postcondition: they are equal.
 function __mergeState (tgt: ObjectState, src: Object): void {
    const src_: ObjectState = src as ObjectState
-   // TODO: remove hardcoded dependency on "Bot"
+   // TODO: remove hardcoded dependency on "Bot".
    if (className(tgt) === "Bot") {
-      reclassify(tgt, src.constructor as Class<Object>)
+      reclassify(tgt, classOf(src))
       Object.keys(src).forEach((k: string): void => {
          tgt[k] = src_[k]
       })
    } else 
    if (className(src) === "Bot") {
-      reclassify(src, tgt.constructor as Class<Object>)
+      reclassify(src, classOf(tgt))
       Object.keys(tgt).forEach((k: string): void => {
          src_[k] = tgt[k]
       })
@@ -202,8 +201,8 @@ function __merge (tgt: Persistent, src: Persistent): Persistent {
 // Assign contents of src to tgt; return whether anything changed. TODO: whether anything changed is not
 // necessarily significant because of call-by-need: a slot may evolve from null to non-null during a run.
 function __assignState (tgt: ObjectState, src: Object): boolean {
-   assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
-   let changed: boolean = false
+   let changed: boolean = __nonNull(tgt).constructor !== __nonNull(src.constructor)
+   reclassify(tgt, classOf(src))
    const src_: ObjectState = src as ObjectState
    Object.keys(tgt).forEach((k: string): void => {
       if (tgt[k] !== src_[k]) {
@@ -222,15 +221,15 @@ function __commit (o: PersistentObject): Object {
          __mergeState(state, o)
          o.__history.set(__w, state)
       } else {
-         const [w, state]: [World, ObjectState] = stateAt(o, __w)
-         if (w === __w) {
+         const [lastModified, state]: [World, ObjectState] = stateAt(o, __w)
+         if (lastModified === __w) {
             __mergeState(state, o)
          } else {
             // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
-            const prev: ObjectState = __blankCopy(o)
+            const prev: ObjectState = __blankCopy(state)
             __mergeState(prev, state)
             if (__assignState(state, o)) {
-               o.__history.set(w, prev)
+               o.__history.set(lastModified, prev)
                o.__history.set(__w, state)
             }
          }
