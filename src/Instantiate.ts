@@ -83,9 +83,6 @@ function instantiateKont (ρ: Env): (κ: Expr.Kont) => Kont {
       } else
       if (κ instanceof Expr.Expr) {
          return instantiate(ρ)(κ)
-//      } else
-//      if (κ instanceof Expr.Args.Args) {
-//         return instantiateArgs(ρ)(κ)
       } else {
          return absurd()
       }

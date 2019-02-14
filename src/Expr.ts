@@ -385,7 +385,7 @@ export namespace Expr {
    export type Trie<K extends JoinSemilattice<K>> = Trie.Trie<K>
 
    // Use "any" because can't define recursive type alias.
-   export type Kont = Expr | Args<any> | Trie<any>
+   export type Kont = Expr | Trie<any>
 
    export namespace Trie {
       export abstract class Trie<K extends JoinSemilattice<K>> implements PersistentObject, JoinSemilattice<Trie<K>> {
