@@ -123,9 +123,13 @@ export namespace Traced {
 
    export namespace Args {
       // n-ary product
-      export abstract class Args<K> implements PersistentObject {
+      export abstract class Args<K> implements Kont<Args<K>> {
          __tag: "Traced.Args"
          abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+         
+         bottom (): Args<K> {
+            return absurd("Not implemented yet")
+         }
       }
 
       // Maps zero arguments to κ.
@@ -180,81 +184,87 @@ export namespace Traced {
    }
 
    // Tries are interned rather than versioned, as per the formalism (but don't really understand why).
-   export type Trie<K> = Trie.Trie<K>
+   export type Trie<K extends Kont<K>> = Trie.Trie<K>
 
-   export type Kont = Traced | Trie<any>
-   
+   export interface Kont<K> extends PersistentObject {
+      bottom (): K
+   }
+
    export namespace Trie {
-      export abstract class Trie<K> implements PersistentObject {
+      export abstract class Trie<K extends Kont<K>> implements Kont<Trie<K>> {
          __tag: "Trie.Trie"
          abstract constructor_ (...args: Persistent[]): void
+
+         bottom (): Trie<K> {
+            return absurd("Not implemented yet")
+         }
       }
 
-      export abstract class Prim<K> extends Trie<K> {
+      export abstract class Prim<K extends Kont<K>> extends Trie<K> {
          κ: K
       }
 
-      export class ConstInt<K extends Persistent> extends Prim<K> {
+      export class ConstInt<K extends Kont<K>> extends Prim<K> {
          constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (σ: Trie<K>): σ is ConstInt<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is ConstInt<K> {
             return σ instanceof ConstInt
          }
 
-         static make<K extends Persistent> (κ: K): ConstInt<K> {
+         static make<K extends Kont<K>> (κ: K): ConstInt<K> {
             return make(ConstInt, κ) as ConstInt<K>
          }
       }
 
-      export class ConstStr<K extends Persistent> extends Prim<K> {
+      export class ConstStr<K extends Kont<K>> extends Prim<K> {
          constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (σ: Trie<K>): σ is ConstStr<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is ConstStr<K> {
             return σ instanceof ConstStr
          }
 
-         static make<K extends Persistent> (κ: K): ConstStr<K> {
+         static make<K extends Kont<K>> (κ: K): ConstStr<K> {
             return make(ConstStr, κ) as ConstStr<K>
          }
       }
 
-      export class Constr<K> extends Trie<K> {
+      export class Constr<K extends Kont<K>> extends Trie<K> {
          cases: FiniteMap<string, Args<K>>
 
          constructor_ (cases: FiniteMap<string, Args<K>>) {
             this.cases = cases
          }
 
-         static is<K> (σ: Trie<K>): σ is Constr<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
 
-         static make<K> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+         static make<K extends Kont<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
             return make(Constr, cases)
          }
       }
 
-      export class Fun<K extends Persistent> extends Trie<K> {
+      export class Fun<K extends Kont<K>> extends Trie<K> {
          κ: K
 
          constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (σ: Trie<K>): σ is Fun<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Fun<K> {
             return σ instanceof Fun
          }
 
-         static make<K extends Persistent> (κ: K): Fun<K> {
+         static make<K extends Kont<K>> (κ: K): Fun<K> {
             return make(Fun, κ) as Fun<K>
          }
       }
 
-      export class Var<K extends Persistent> extends Trie<K> {
+      export class Var<K extends Kont<K>> extends Trie<K> {
          x: Lex.Var
          κ: K
 
@@ -263,28 +273,28 @@ export namespace Traced {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (σ: Trie<K>): σ is Var<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
 
-         static make<K extends Persistent> (x: Lex.Var, κ: K): Var<K> {
+         static make<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
             return make(Var, x, κ) as Var<K>
          }
       }
 
       // Wanted to fix K at null but that doesn't work with polymorphic code.
-      export class Top<K extends Persistent> extends Trie<K> {
+      export class Top<K extends Kont<K>> extends Trie<K> {
          κ: K
 
          constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (σ: Trie<K>): σ is Top<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Top<K> {
             return σ instanceof Top
          }
 
-         static make<K extends Persistent> (κ: K): Top<K> {
+         static make<K extends Kont<K>> (κ: K): Top<K> {
             return make(Top, κ) as Top<K>
          }
       }

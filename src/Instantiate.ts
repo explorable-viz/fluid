@@ -1,6 +1,4 @@
 import { __nonNull, absurd } from "./util/Core"
-import { JoinSemilattice } from "./util/Ord"
-import { PersistentObject } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, EvalId, TraceId, ValId } from "./Eval"
@@ -75,14 +73,14 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
-// See issue #33. Not sure these types make a lot of sense.
-function instantiateKont<K extends JoinSemilattice<K> & PersistentObject & Expr.Kont<K>> (ρ: Env): (κ: K) => Kont {
-   return function (κ: K): Kont {
+// See issue #33. These is some sort of heinousness to covert the continuation type.
+function instantiateKont<K extends Expr.Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env): (κ: K) => Kʹ {
+   return function (κ: K): Kʹ {
       if (κ instanceof Expr.Trie.Trie) {
-         return instantiateTrie(ρ, κ)
+         return instantiateTrie<K, Kʹ>(ρ, κ) as any as Kʹ // ouch
       } else
       if (κ instanceof Expr.Expr) {
-         return instantiate(ρ)(κ)
+         return instantiate(ρ)(κ) as any as Kʹ // also ouch
       } else {
          return absurd()
       }
@@ -102,8 +100,8 @@ function instantiateArgs<K extends Expr.Kont<K>> (ρ: Env): (Π: Expr.Args<K>) =
    }
 }
 
-function instantiateTrie<K extends Expr.Kont<K>> (ρ: Env, σ: Expr.Trie<K>): Trie<Kont> {
-   return mapTrie(instantiateKont<K>(ρ))(instantiateTrie_(ρ, σ))
+function instantiateTrie<K extends Expr.Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, σ: Expr.Trie<K>): Trie<Kʹ> {
+   return mapTrie(instantiateKont<K, Kʹ>(ρ))(instantiateTrie_(ρ, σ))
 }
 
 function instantiateTrie_<K extends Expr.Kont<K>> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {

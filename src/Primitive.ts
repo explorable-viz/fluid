@@ -9,6 +9,7 @@ import { instantiate } from "./Instantiate"
 import { Traced, Value } from "./Traced"
 
 import Args = Traced.Args
+import Kont = Traced.Kont
 import Trie = Traced.Trie
 
 export type PrimResult<K> = [Value, K]
@@ -18,7 +19,7 @@ type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
 // Parser guarantees that values/patterns respect constructor signatures. 
 // TODO: rename to avoid confusion with Match.match.
-function match<K extends Persistent> (v: Value, σ: Trie<K>): PrimResult<K> {
+function match<K extends Kont<K>> (v: Value, σ: Trie<K>): PrimResult<K> {
    if (v instanceof Value.PrimOp && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
       return [v, σ.κ]
    } else 
@@ -62,7 +63,7 @@ export class UnaryBody implements PersistentObject {
       return make(UnaryBody, op)
    }
 
-   invoke<K extends Persistent> (v: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
+   invoke<K extends Kont<K>> (v: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
       return k => match(this.op(v)(k), σ)
    }
 } 
@@ -78,7 +79,7 @@ export class BinaryBody implements PersistentObject {
       return make(BinaryBody, op)
    }
 
-   invoke<K extends Persistent> (v1: Value, v2: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
+   invoke<K extends Kont<K>> (v1: Value, v2: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
       return k => match(this.op(v1, v2)(k), σ)
    }
 } 
