@@ -95,8 +95,7 @@ function from<T extends PersistentObject> (o: PersistentObject, cls: Class<T>, p
 
 function populateScene (): void {
    const e: Expr = parseExample(loadTestFile("example", "bar-chart").text),
-         v: Value = __nonNull(runExample(e).v),
-         elems: List<Persistent> = as(reflect(v), List)
+         v: Value = __nonNull(runExample(e).v)
    let here: Persistent = e
    here = from(here as PersistentObject, Expr.Let, "e")
    here = from(here as PersistentObject, Expr.Constr, "args")
@@ -109,8 +108,9 @@ function populateScene (): void {
       const args: Cons<Expr> = as(here_.args, Cons)
       Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(args.head.bottom(), args.tail)) // clunky
       assert(__nonNull(runExample(e).v) === v) // make consistent - should it be an invariant that every world is consistent?
-      World.undo()
+//      World.undo()
 
+      const elems: List<Persistent> = as(reflect(v), List)
       for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
          // assume only increasing or decreasing changes (to or from null):
          for (let obj of objects(elemsʹ.head)) {

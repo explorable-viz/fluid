@@ -141,17 +141,7 @@ export function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Res
       const k: TraceId<Expr> = e.t!.__id as TraceId<Expr>
       return __check(
          eval_(ρ, instantiate(ρ)(k.e), σ), 
-         ({tv}) => {
-            if (tv.v === null) {
-               if (!(Trie.Var.is(σ) || ultimatelyBot(tv.t))) {
-                  return false
-               } else {
-                  return true
-               }
-            } else {
-               return true
-            }
-         }
+         ({tv}) => (tv.v === null) === (Trie.Var.is(σ) || ultimatelyBot(tv.t))
       )
    } else {
       return absurd()
