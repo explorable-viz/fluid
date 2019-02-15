@@ -8,7 +8,7 @@ export type Class<T> = new (...args: any[]) => T
 // Possibly abstract class; see https://stackoverflow.com/questions/36886082.
 export type AClass<T> = Function & { prototype: T }
 
-export function classOf<T> (x: T): AClass<T> {
+export function classOf<T> (x: T): Class<T> {
    return __nonNull(x).constructor as Class<T>
 }
 

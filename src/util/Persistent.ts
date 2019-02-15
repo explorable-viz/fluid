@@ -1,8 +1,9 @@
-import { __nonNull, absurd, assert } from "./Core"
+import { Class, __nonNull, absurd, as, assert, className, classOf } from "./Core"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
-// interned objects are persistent objects.
+// interned objects are persistent objects. Interface so can be extended by VersionedObject, which it is
+// convenient to have as an interface.
 export interface PersistentObject {
    // ES6 only allows constructor calls via "new".
    constructor_ (...args: Persistent[]): void
@@ -35,13 +36,13 @@ export class ExternalObject implements PersistentObject {
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
 type InternedObjects = Map<Persistent, PersistentObject | Map<Persistent, Object>> // approximate recursive type
-const __instances: InternedObjects = new Map
+const __internedObjs: InternedObjects = new Map
 
 // For versioned objects the map is not curried but takes an (interned) composite key. TODO: treating the constructor
 // as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
 // "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
 type VersionedObjects = Map<PersistentObject, PersistentObject>
-const __ctrInstances: Map<PersistentClass<PersistentObject>, VersionedObjects> = new Map
+const __versionedObjs: VersionedObjects = new Map
 
 function lookupArg<T extends PersistentObject> (
    ctr: PersistentClass<T>, 
@@ -68,7 +69,7 @@ type PersistentClass<T extends PersistentObject = PersistentObject> = new () => 
 
 // Hash-consing (interning) object construction.
 export function make<T extends PersistentObject> (ctr: PersistentClass<T>, ...args: Persistent[]): T {
-   let v: PersistentObject | Map<Persistent, Object> = lookupArg(ctr, __instances, args, -1)
+   let v: PersistentObject | Map<Persistent, Object> = lookupArg(ctr, __internedObjs, args, -1)
    for (var n: number = 0; n < args.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
       v = lookupArg(ctr, v as InternedObjects, args, n)
@@ -85,15 +86,22 @@ export function interned (o: Persistent): boolean {
    return o !== null && !versioned(o)
 }
 
+// Unlikely to be either performant or entirely sound. Want to emulate the post-state of new ctr. Probably need to
+// worry about how this works with inherited properties.
+function reclassify (o: Object, ctr: Class<Object>): void {
+   const proto: Object = Object.getPrototypeOf(new ctr)
+   if (Object.getPrototypeOf(o) !== proto) {
+      for (const k of Object.keys(o)) {
+         assert(delete o[k as keyof Object])
+      }
+      Object.setPrototypeOf(o, proto)
+   }
+}
+
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
 export function at<K extends PersistentObject, T extends PersistentObject> (α: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
    assert(interned(α))
-   let instances: VersionedObjects | undefined = __ctrInstances.get(ctr)
-   if (instances === undefined) {
-      instances = new Map
-      __ctrInstances.set(ctr, instances)
-   }
-   let o: PersistentObject | undefined = instances.get(α) as PersistentObject
+   let o: PersistentObject | undefined = __versionedObjs.get(α)
    if (o === undefined) {
       o = new ctr
       // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
@@ -105,7 +113,9 @@ export function at<K extends PersistentObject, T extends PersistentObject> (α: 
          value: new Map,
          enumerable: false
       })
-      instances.set(α, o)
+      __versionedObjs.set(α, o)
+   } else {
+      reclassify(o, ctr)
    }
    // Couldn't get datatype-generic construction to work because fields not created by "new ctr".
    o.constructor_(...args)
@@ -121,8 +131,7 @@ export const ν: () => ExternalObject =
       }
    })()
 
-// Not sure what the T parameter is for here but Typescript seems to get confused without it.
-function __blankCopy<T extends VersionedObject> (src: T): ObjectState {
+function __blankCopy (src: Object): ObjectState {
    const tgt: ObjectState = Object.create(src.constructor.prototype)
    for (let x of Object.keys(src)) {
       tgt[x] = null
@@ -138,11 +147,25 @@ export interface ObjectState {
 // Combine information from src into tgt and vice versa, at an existing world.
 // Precondition: the two are upper-bounded; postcondition: they are equal.
 function __mergeState (tgt: ObjectState, src: Object): void {
-   assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
    const src_: ObjectState = src as ObjectState
-   Object.keys(tgt).forEach((k: string): void => {
-      tgt[k] = src_[k] = __merge(tgt[k], src_[k])
-   })
+   // TODO: remove hardcoded dependency on "Bot".
+   if (className(tgt) === "Bot") {
+      reclassify(tgt, classOf(src))
+      Object.keys(src).forEach((k: string): void => {
+         tgt[k] = src_[k]
+      })
+   } else 
+   if (className(src) === "Bot") {
+      reclassify(src, classOf(tgt))
+      Object.keys(tgt).forEach((k: string): void => {
+         src_[k] = tgt[k]
+      })
+   } else {
+      assert(tgt.constructor === src.constructor)
+      Object.keys(tgt).forEach((k: string): void => {
+         tgt[k] = src_[k] = __merge(tgt[k], src_[k])
+      })
+   }
 }
 
 // Least upper bound of two upper-bounded objects.
@@ -155,12 +178,15 @@ function __merge (tgt: Persistent, src: Persistent): Persistent {
    } else
    if (src === tgt) {
       return src
-   } else 
+   } else
    if (versioned(tgt) && versioned(src)) {
       return absurd("Address collision (different child).")
    } else
    if (interned(tgt) && interned(src)) {
-      assert(tgt.constructor === src.constructor, "Address collision (different constructor).")
+      assert(
+         tgt.constructor === src.constructor, 
+         `Address collision (tgt ${className(tgt)} !== src ${className(src)}).`
+      )
       const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
             src_: ObjectState = src as Object as ObjectState,
             args: Persistent[] = Object.keys(tgt).map((k: string): Persistent => {
@@ -175,8 +201,8 @@ function __merge (tgt: Persistent, src: Persistent): Persistent {
 // Assign contents of src to tgt; return whether anything changed. TODO: whether anything changed is not
 // necessarily significant because of call-by-need: a slot may evolve from null to non-null during a run.
 function __assignState (tgt: ObjectState, src: Object): boolean {
-   assert(__nonNull(tgt).constructor === __nonNull(src.constructor))
-   let changed: boolean = false
+   let changed: boolean = __nonNull(tgt).constructor !== __nonNull(src.constructor)
+   reclassify(tgt, classOf(src))
    const src_: ObjectState = src as ObjectState
    Object.keys(tgt).forEach((k: string): void => {
       if (tgt[k] !== src_[k]) {
@@ -195,15 +221,15 @@ function __commit (o: PersistentObject): Object {
          __mergeState(state, o)
          o.__history.set(__w, state)
       } else {
-         const [w, state]: [World, ObjectState] = stateAt(o, __w)
-         if (w === __w) {
+         const [lastModified, state]: [World, ObjectState] = stateAt(o, __w)
+         if (lastModified === __w) {
             __mergeState(state, o)
          } else {
             // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
-            const prev: ObjectState = __blankCopy(o)
+            const prev: ObjectState = __blankCopy(state)
             __mergeState(prev, state)
             if (__assignState(state, o)) {
-               o.__history.set(w, prev)
+               o.__history.set(lastModified, prev)
                o.__history.set(__w, state)
             }
          }
@@ -230,8 +256,14 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
 
 // Versioned objects can have different metatypes at different worlds; here we assume T is its type at the 
 // current world.
-export function getProp<T extends VersionedObject> (o: T, k: keyof T): Persistent {
-   return stateAt(o, __w)[1][k as string]
+export function getProp<T extends PersistentObject> (α: PersistentObject, cls: PersistentClass<T>, k: keyof T): Persistent {
+   const o: PersistentObject = __nonNull(__versionedObjs.get(α)),
+         oʹ: T = as(o, cls)
+   if (versioned(oʹ)) {
+      return stateAt(oʹ, __w)[1][k as keyof ObjectState]
+   } else {
+      return absurd()
+   }
 }
 
 export class World implements PersistentObject, Ord<World> {

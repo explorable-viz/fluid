@@ -1,11 +1,13 @@
-import { Persistent, PersistentObject, at, make } from "./util/Persistent"
+import { absurd } from "./util/Core"
+import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
-import { Runtime } from "./Eval"
 import { Expr, Lex } from "./Expr"
+import { TraceId, ValId } from "./Eval"
 import { UnaryOp } from "./Primitive"
 
+export type Expr = Expr.Expr
 export type Value = Value.Value
 export type Value̊ = Value | null
 
@@ -24,8 +26,8 @@ export namespace Value {
          this.σ = σ
       }
 
-      static at (α: PersistentObject, ρ: Env, σ: Traced.Trie<Traced>): Closure {
-         return at(α, Closure, ρ, σ)
+      static at (k: ValId, ρ: Env, σ: Traced.Trie<Traced>): Closure {
+         return at(k, Closure, ρ, σ)
       }
    }
 
@@ -40,8 +42,8 @@ export namespace Value {
          this.val = val
       }
    
-      static at (α: PersistentObject, val: number): ConstInt {
-         return at(α, ConstInt, val)
+      static at (k: ValId, val: number): ConstInt {
+         return at(k, ConstInt, val)
       }
 
       toString (): string {
@@ -56,8 +58,8 @@ export namespace Value {
          this.val = val
       }
    
-      static at (α: PersistentObject, val: string): ConstStr {
-         return at(α, ConstStr, val)
+      static at (k: ValId, val: string): ConstStr {
+         return at(k, ConstStr, val)
       }
 
       toString (): string {
@@ -74,8 +76,8 @@ export namespace Value {
          this.args = args
       }
    
-      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Traced>): Constr {
-         return at(α, Constr, ctr, args)
+      static at (k: ValId, ctr: Lex.Ctr, args: List<Traced>): Constr {
+         return at(k, Constr, ctr, args)
       }
    }
 
@@ -86,27 +88,31 @@ export namespace Value {
          this.op = op
       }
    
-      static at (α: PersistentObject, op: UnaryOp): PrimOp {
-         return at(α, PrimOp, op)
+      static at (k: ValId, op: UnaryOp): PrimOp {
+         return at(k, PrimOp, op)
       }
    }
 }
 
 // Called ExplVal in the formalism.
 export class Traced implements PersistentObject {
-   t: Trace̊
+   t: Trace
    v: Value̊
 
    constructor_ (
-      t: Trace̊,
+      t: Trace,
       v: Value̊
    ) {
       this.t = t
       this.v = v
    }
 
-   static make (t: Trace̊, v: Value̊): Traced {
+   static make (t: Trace, v: Value̊): Traced {
       return make(Traced, t, v)
+   }
+
+   bottom (): Traced {
+      return make(Traced, this.t.bottom(), null)
    }
 }
 
@@ -118,18 +124,17 @@ export namespace Traced {
 
    export namespace Args {
       // n-ary product
-      export abstract class Args<K> implements PersistentObject {
+      export abstract class Args<K> implements Kont<Args<K>> {
          __tag: "Traced.Args"
-         abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+         abstract constructor_ (...args: Persistent[]): void 
+         abstract bottom (): Args<K>
       }
 
       // Maps zero arguments to κ.
       export class End<K extends Persistent> extends Args<K> {
          κ: K
 
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
 
@@ -140,15 +145,17 @@ export namespace Traced {
          static make<K extends Persistent> (κ: K): End<K> {
             return make(End, κ) as End<K>
          }
+
+         bottom (): End<K> {
+            return absurd("Not implemented yet")
+         }
       }
 
       // Maps a single argument to another args trie.
       export class Next<K> extends Args<K> {
          σ: Trie<Args<K>>
 
-         constructor_ (
-            σ: Trie<Args<K>>
-         ) {
+         constructor_ (σ: Trie<Args<K>>) {
             this.σ = σ
          }
 
@@ -159,159 +166,187 @@ export namespace Traced {
          static make<K> (σ: Trie<Args<K>>): Next<K> {
             return make(Next, σ)
          }
+
+         bottom (): Next<K> {
+            return absurd("Not implemented yet")
+         }
       }
 
-      export class Top<K extends Persistent> extends Args<K> {
+      export class Top<K extends Kont<K>> extends Args<K> {
          κ: K // want fix at null but couldn't make that work with the polymorphism
 
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (Π: Args<K>): Π is Top<K> {
+         static is<K extends Kont<K>> (Π: Args<K>): Π is Top<K> {
             return Π instanceof Top
          }
 
-         static make<K extends Persistent> (κ: K): Top<K> {
+         static make<K extends Kont<K>> (κ: K): Top<K> {
             return make(Top, κ) as Top<K>
+         }
+
+         bottom (): Top<K> {
+            return absurd("Not implemented yet")
          }
       }
    }
 
    // Tries are interned rather than versioned, as per the formalism (but don't really understand why).
-   export type Trie<K> = Trie.Trie<K>
+   export type Trie<K extends Kont<K>> = Trie.Trie<K>
 
-   export type Kont = Traced | Args<any> | Trie<any>
-   export type Kont̊ = Kont | null
-   
-   export namespace Trie {
-      export abstract class Trie<K> implements PersistentObject {
-         __tag: "Trie.Trie"
-         abstract constructor_ (...args: Persistent[]): void
+   export interface Kont<K> extends PersistentObject {
+      bottom (): K
+   }
+
+   // Unit continuation.
+   export class VoidKont implements Kont<VoidKont> {
+      constructor_ (): void {
       }
 
-      export abstract class Prim<K> extends Trie<K> {
+      bottom (): VoidKont {
+         return absurd("Not implemented yet")
+      }
+
+      static make (): VoidKont {
+         return make(VoidKont)
+      }
+   }
+
+   export namespace Trie {
+      export abstract class Trie<K extends Kont<K>> implements Kont<Trie<K>> {
+         __tag: "Trie.Trie"
+         abstract constructor_ (...args: Persistent[]): void
+
+         bottom (): Bot<K> {
+            return Bot.make()
+         }
+      }
+
+      export class Bot<K extends Kont<K>> extends Trie<K> {
+         constructor_ () {
+         }
+
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Bot<K> {
+            return σ instanceof Bot
+         }
+
+         static make<K extends Kont<K>> (): Bot<K> {
+            return make(Bot) as Bot<K>
+         }
+      }
+
+      export abstract class Prim<K extends Kont<K>> extends Trie<K> {
          κ: K
       }
 
-      export class ConstInt<K extends Persistent> extends Prim<K> {
+      export class ConstInt<K extends Kont<K>> extends Prim<K> {
          constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (σ: Trie<K>): σ is ConstInt<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is ConstInt<K> {
             return σ instanceof ConstInt
          }
 
-         static make<K extends Persistent> (κ: K): ConstInt<K> {
+         static make<K extends Kont<K>> (κ: K): ConstInt<K> {
             return make(ConstInt, κ) as ConstInt<K>
          }
       }
 
-      export class ConstStr<K extends Persistent> extends Prim<K> {
+      export class ConstStr<K extends Kont<K>> extends Prim<K> {
          constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (σ: Trie<K>): σ is ConstStr<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is ConstStr<K> {
             return σ instanceof ConstStr
          }
 
-         static make<K extends Persistent> (κ: K): ConstStr<K> {
+         static make<K extends Kont<K>> (κ: K): ConstStr<K> {
             return make(ConstStr, κ) as ConstStr<K>
          }
       }
 
-      export class Constr<K> extends Trie<K> {
+      export class Constr<K extends Kont<K>> extends Trie<K> {
          cases: FiniteMap<string, Args<K>>
 
          constructor_ (cases: FiniteMap<string, Args<K>>) {
             this.cases = cases
          }
 
-         static is<K> (σ: Trie<K>): σ is Constr<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
 
-         static make<K> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+         static make<K extends Kont<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
             return make(Constr, cases)
          }
       }
 
-      export class Fun<K extends Persistent> extends Trie<K> {
+      export class Fun<K extends Kont<K>> extends Trie<K> {
          κ: K
 
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (σ: Trie<K>): σ is Fun<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Fun<K> {
             return σ instanceof Fun
          }
 
-         static make<K extends Persistent> (κ: K): Fun<K> {
+         static make<K extends Kont<K>> (κ: K): Fun<K> {
             return make(Fun, κ) as Fun<K>
          }
       }
 
-      export class Var<K extends Persistent> extends Trie<K> {
+      export class Var<K extends Kont<K>> extends Trie<K> {
          x: Lex.Var
          κ: K
 
-         constructor_ (
-            x: Lex.Var,
-            κ: K
-         ) {
+         constructor_ (x: Lex.Var, κ: K) {
             this.x = x
             this.κ = κ
          }
 
-         static is<K extends Persistent> (σ: Trie<K>): σ is Var<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
 
-         static make<K extends Persistent> (x: Lex.Var, κ: K): Var<K> {
+         static make<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
             return make(Var, x, κ) as Var<K>
          }
       }
 
       // Wanted to fix K at null but that doesn't work with polymorphic code.
-      export class Top<K extends Persistent> extends Trie<K> {
+      export class Top<K extends Kont<K>> extends Trie<K> {
          κ: K
 
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends Persistent> (σ: Trie<K>): σ is Top<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Top<K> {
             return σ instanceof Top
          }
 
-         static make<K extends Persistent> (κ: K): Top<K> {
+         static make<K extends Kont<K>> (κ: K): Top<K> {
             return make(Top, κ) as Top<K>
          }
       }
    }
 
    export class TracedMatch<K> implements PersistentObject {
-      t: Trace | null // null iff ξ represents a dead branch
+      t: Trace̊ // null iff ξ represents a dead branch
       ξ: Match<K>
 
-   constructor_ (
-         t: Trace | null,
-         ξ: Match<K>
-      ) {
+   constructor_ (t: Trace̊, ξ: Match<K>) {
          this.t = t
          this.ξ = ξ
       }
 
-      static make<K> (t: Trace | null, ξ: Match<K>): TracedMatch<K> {
+      static make<K> (t: Trace̊, ξ: Match<K>): TracedMatch<K> {
          return make(TracedMatch, t, ξ)
       }
    }
@@ -331,9 +366,7 @@ export namespace Traced {
          export class End<K extends Persistent> extends Args<K> {
             κ: K
 
-            constructor_ (
-               κ: K
-            ) {
+            constructor_ (κ: K) {
                this.κ = κ
             }
    
@@ -349,9 +382,7 @@ export namespace Traced {
          export class Next<K> extends Args<K> {
             tξ: TracedMatch<K>
 
-            constructor_ (
-               tξ: TracedMatch<K>
-            ) {
+            constructor_ (tξ: TracedMatch<K>) {
                this.tξ = tξ
             }
    
@@ -377,10 +408,7 @@ export namespace Traced {
       export class ConstInt<K extends Persistent> extends Prim<K> {
          val: number
 
-         constructor_ (
-            val: number,
-            κ: K
-         ) {
+         constructor_ (val: number, κ: K) {
             this.val
             this.κ = κ
          }
@@ -397,10 +425,7 @@ export namespace Traced {
       export class ConstStr<K extends Persistent> extends Prim<K> {
          val: string
 
-         constructor_ (
-            val: string,
-            κ: K
-         ) {
+         constructor_ (val: string, κ: K) {
             this.val = val
             this.κ = κ
          }
@@ -418,9 +443,7 @@ export namespace Traced {
       export class Constr<K> extends Match<K> {
          cases: FiniteMap<string, Traced.Args<K> | Args<K>> 
 
-         constructor_ (
-            cases: FiniteMap<string, Traced.Args<K> | Args<K>> 
-         ) {
+         constructor_ (cases: FiniteMap<string, Traced.Args<K> | Args<K>>) {
             this.cases = cases
          }
 
@@ -437,10 +460,7 @@ export namespace Traced {
          f: Value.Closure | Value.PrimOp
          κ: K
    
-         constructor_ (
-            f: Value.Closure | Value.PrimOp,
-            κ: K
-         ) {
+         constructor_ (f: Value.Closure | Value.PrimOp, κ: K) {
             this.f = f
             this.κ = κ
          }
@@ -459,11 +479,7 @@ export namespace Traced {
          v: Value | null
          κ: K
 
-         constructor_ (
-            x: Lex.Var,
-            v: Value | null,
-            κ: K
-         ) {
+         constructor_ (x: Lex.Var, v: Value | null, κ: K) {
             this.x = x
             this.v = v
             this.κ = κ
@@ -482,20 +498,39 @@ export namespace Traced {
    export abstract class Trace implements PersistentObject {
       __tag: "Trace.Trace"
       abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+
+      bottom (): Trace {
+         if (versioned(this)) {
+            return Bot.at(this.__id as TraceId<Expr>)
+         } else {
+            return absurd()
+         }
+      }
    }
-   
+
+   export class Bot extends Trace {
+      __subtag: "Trace.Bot"
+
+      constructor_ (): void {
+      }
+
+      static at (k: TraceId<Expr>): Bot {
+         return at(k, Bot)
+      }
+   }
+
    export class App extends Trace {
       func: Traced
       arg: Traced
-      body: Trace | null
+      body: Trace̊
 
-      constructor_ (func: Traced, arg: Traced, body: Trace | null): void {
+      constructor_ (func: Traced, arg: Traced, body: Trace̊): void {
          this.func = func
          this.arg = arg
          this.body = body
       }
 
-      static at (k: Runtime<Expr>, func: Traced, arg: Traced, body: Trace | null): App {
+      static at (k: TraceId<Expr>, func: Traced, arg: Traced, body: Trace̊): App {
          return at(k, App, func, arg, body)
       }
    }
@@ -505,7 +540,7 @@ export namespace Traced {
       constructor_ (): void {
       }
 
-      static at (k: Runtime<Expr>): Empty {
+      static at (k: TraceId<Expr>): Empty {
          return at(k, Empty)
       }
    }
@@ -513,15 +548,15 @@ export namespace Traced {
    export class Let extends Trace {
       tu: Traced
       σ: Trie.Var<Traced>
-      t: Trace | null
+      t: Trace̊
 
-      constructor_ (tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): void {
+      constructor_ (tu: Traced, σ: Trie.Var<Traced>, t: Trace̊): void {
          this.tu = tu
          this.σ = σ
          this.t = t
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
+      static at (k: TraceId<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace̊): Let {
          return at(k, Let, tu, σ, t)
       }
    }
@@ -534,9 +569,18 @@ export namespace Traced {
          this.x = x
          this.tv = tv
       }
+
+      // Like environments, these don't have entirely null forms, but preserve the name structure.
+      bottom (): RecDef {
+         if (versioned(this)) {
+            return RecDef.at(this.__id as TraceId<Expr.RecDef>, this.x, this.tv.bottom())
+         } else {
+            return absurd()
+         }
+      }
    
-      static at (i: Runtime<Expr.RecDef>, x: Lex.Var, tv: Traced): RecDef {
-         return at(i, RecDef, x, tv)
+      static at (k: TraceId<Expr.RecDef>, x: Lex.Var, tv: Traced): RecDef {
+         return at(k, RecDef, x, tv)
       }
    }
 
@@ -550,7 +594,7 @@ export namespace Traced {
          this.tv = tv
       }
 
-      static at (k: Runtime<Expr>, δ: List<RecDef>, tv: Traced): LetRec {
+      static at (k: TraceId<Expr>, δ: List<RecDef>, tv: Traced): LetRec {
          return at(k, LetRec, δ, tv)
       }
    }
@@ -558,15 +602,15 @@ export namespace Traced {
    export class MatchAs extends Trace {
       tu: Traced
       σ: Trie<Traced>
-      t: Trace | null
+      t: Trace̊
 
-      constructor_ (tu: Traced, σ: Trie<Traced>, t: Trace | null): void {
+      constructor_ (tu: Traced, σ: Trie<Traced>, t: Trace̊): void {
          this.tu = tu
          this.σ = σ
          this.t = t
       }
 
-      static at (k: Runtime<Expr>, tu: Traced, σ: Trie<Traced>, t: Trace | null): MatchAs {
+      static at (k: TraceId<Expr>, tu: Traced, σ: Trie<Traced>, t: Trace̊): MatchAs {
          return at(k, MatchAs, tu, σ, t)
       }
    }
@@ -582,21 +626,21 @@ export namespace Traced {
          this.tv2 = tv2
       }
 
-      static at (k: Runtime<Expr>, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
+      static at (k: TraceId<Expr>, tv1: Traced, opName: Lex.OpName, tv2: Traced): PrimApp {
          return at(k, PrimApp, tv1, opName, tv2)
       }
    }
 
    export class Var extends Trace {
       x: Lex.Var
-      t: Trace | null
+      t: Trace̊
 
-      constructor_ (x: Lex.Var, t: Trace | null): void {
+      constructor_ (x: Lex.Var, t: Trace̊): void {
          this.x = x
          this.t = t
       }
 
-      static at (k: Runtime<Expr>, x: Lex.Var, t: Trace | null): Var {
+      static at (k: TraceId<Expr>, x: Lex.Var, t: Trace̊): Var {
          return at(k, Var, x, t)
       }
    }

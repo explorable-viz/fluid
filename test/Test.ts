@@ -6,6 +6,8 @@ import { Expr } from "../src/Expr"
 import { Traced} from "../src/Traced"
 import { TestFile, τ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 
+import VoidKont = Traced.VoidKont
+
 before((done: MochaDone) => {
 	initialise()
 	done()
@@ -15,28 +17,28 @@ describe("example", () => {
 	describe("arithmetic", () => {
 		const file: TestFile = loadExample("arithmetic")
 		it("ok", () => {
-			runExample(parseExample(file.text), τ.top(null))
+			runExample(parseExample(file.text), τ.top(VoidKont.make()))
 		})
 	})
 
 	describe("bar-chart", () => {
 		const file: TestFile = loadExample("bar-chart")
 		it("ok", () => {
-			runExample(parseExample(file.text), τ.var_(null))
+			runExample(parseExample(file.text), τ.var_(VoidKont.make()))
 		})
 	})
 
 	describe("compose", () => {
 		const file: TestFile = loadExample("compose")
 		it("ok", () => {
-			runExample(parseExample(file.text), τ.top(null))
+			runExample(parseExample(file.text), τ.top(VoidKont.make()))
 		})
 	})
 
 	describe("factorial", () => {
 		const file: TestFile = loadExample("factorial")
 		it("ok", () => {
-			runExample(parseExample(file.text), τ.top(null))
+			runExample(parseExample(file.text), τ.top(VoidKont.make()))
 		})
 	})
 
@@ -44,9 +46,9 @@ describe("example", () => {
 		const file: TestFile = loadExample("filter")
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
-			const tv: Traced = runExample(e, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			const tv: Traced = runExample(e, τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(VoidKont.make())))))))
 			World.newRevision()
-			const tvʹ: Traced = runExample(e, τ.cons(τ.arg(τ.var_(τ.arg(τ.var_(τ.endArgs(null)))))))
+			const tvʹ: Traced = runExample(e, τ.cons(τ.arg(τ.var_(τ.arg(τ.var_(τ.endArgs(VoidKont.make())))))))
 			assert(tv === tvʹ)
 		})
 	})
@@ -89,7 +91,7 @@ describe("example", () => {
 	describe("mergeSort", () => {
 		const file: TestFile = loadExample("mergeSort")
 		it("ok", () => {
-			runExample(parseExample(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			runExample(parseExample(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(VoidKont.make())))))))
 		})
 	})
 
@@ -103,14 +105,14 @@ describe("example", () => {
 	describe("reverse", () => {
 		const file: TestFile = loadExample("reverse")
 		it("ok", () => {
-			runExample(parseExample(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(null)))))))
+			runExample(parseExample(file.text), τ.cons(τ.arg(τ.int(τ.arg(τ.var_(τ.endArgs(VoidKont.make())))))))
 		})
 	})
 
 	describe("zipW", () => {
 		const file: TestFile = loadExample("zipW")
 		it("ok", () => {
-			runExample(parseExample(file.text), τ.cons(τ.arg(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(τ.var_(τ.endArgs(null))))))))))))
+			runExample(parseExample(file.text), τ.cons(τ.arg(τ.point(τ.arg(τ.int(τ.arg(τ.int(τ.endArgs(τ.arg(τ.var_(τ.endArgs(VoidKont.make()))))))))))))
 		})
 	})
 })

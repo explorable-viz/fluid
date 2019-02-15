@@ -5,6 +5,7 @@ import { Traced } from "./Traced"
 
 import RecDef = Traced.RecDef
 
+// An environment whose names have been projected away, leaving only a list of the bound entities.
 export abstract class EnvEntries implements PersistentObject {
    __tag: "EnvEntries"
    abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
@@ -43,8 +44,6 @@ export class ExtendEnvEntries extends EnvEntries {
 // environments to enable LVar semantics.
 
 export abstract class Env implements PersistentObject {
-   __tag: "Env"
-
    abstract entries (): EnvEntries;
    abstract get (k: string): EnvEntry | undefined;
    abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
@@ -52,6 +51,9 @@ export abstract class Env implements PersistentObject {
    has (k: string): boolean {
       return this.get(k) !== undefined
    }
+
+   // There isn't a single bottom (null) environment but rather one for each environment "shape".
+   abstract bottom (): Env
 
    static empty (): EmptyEnv {
       return EmptyEnv.make()
@@ -95,6 +97,10 @@ export class EmptyEnv extends Env {
    get (k: string): undefined {
       return undefined
    }
+
+   bottom (): EmptyEnv {
+      return EmptyEnv.make()
+   }
 }
 
 export class ExtendEnv extends Env {
@@ -127,6 +133,10 @@ export class ExtendEnv extends Env {
          return this.ρ.get(k)
       }
    }
+
+   bottom (): ExtendEnv {
+      return ExtendEnv.make(this.ρ.bottom(), this.k, this.v.bottom())
+   }
 }
 
 export class EnvEntry implements PersistentObject {
@@ -146,5 +156,9 @@ export class EnvEntry implements PersistentObject {
 
    static make (ρ: Env, δ: List<RecDef>, e: Traced): EnvEntry {
       return make(EnvEntry, ρ, δ, e)
+   }
+
+   bottom (): EnvEntry {
+      return EnvEntry.make(this.ρ.bottom(), this.δ.map(def => def.bottom()), this.e.bottom())
    }
 }

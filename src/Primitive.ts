@@ -3,21 +3,24 @@ import { Persistent, PersistentObject, make, ν } from "./util/Persistent"
 import { Nil } from "./BaseTypes"
 import { Env, EnvEntry, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
+import { ValId } from "./Eval"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
 import { Traced, Value } from "./Traced"
 
 import Args = Traced.Args
+import Kont = Traced.Kont
 import Trie = Traced.Trie
+import VoidKont = Traced.VoidKont
 
 export type PrimResult<K> = [Value, K]
-type TrieCtr = (body: null) => Trie.Prim<null>
+type TrieCtr = (body: VoidKont) => Trie.Prim<VoidKont>
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
 // Parser guarantees that values/patterns respect constructor signatures. 
 // TODO: rename to avoid confusion with Match.match.
-function match<K extends Persistent> (v: Value, σ: Trie<K>): PrimResult<K> {
+function match<K extends Kont<K>> (v: Value, σ: Trie<K>): PrimResult<K> {
    if (v instanceof Value.PrimOp && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
       return [v, σ.κ]
    } else 
@@ -61,8 +64,8 @@ export class UnaryBody implements PersistentObject {
       return make(UnaryBody, op)
    }
 
-   invoke<K extends Persistent> (v: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
-      return α => match(this.op(v)(α), σ)
+   invoke<K extends Kont<K>> (v: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
+      return k => match(this.op(v)(k), σ)
    }
 } 
 
@@ -77,8 +80,8 @@ export class BinaryBody implements PersistentObject {
       return make(BinaryBody, op)
    }
 
-   invoke<K extends Persistent> (v1: Value, v2: Value, σ: Trie<K>): (α: PersistentObject) => PrimResult<K> {
-      return α => match(this.op(v1, v2)(α), σ)
+   invoke<K extends Kont<K>> (v1: Value, v2: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
+      return k => match(this.op(v1, v2)(k), σ)
    }
 } 
 
@@ -88,12 +91,12 @@ export abstract class PrimOp implements PersistentObject {
 }
 
 export class UnaryOp extends PrimOp {
-   σ: Trie.Prim<null>
+   σ: Trie.Prim<VoidKont>
    b: UnaryBody
 
    constructor_ (
       name: string, 
-      σ: Trie.Prim<null>,
+      σ: Trie.Prim<VoidKont>,
       b: UnaryBody
    ) {
       this.name = name
@@ -101,24 +104,24 @@ export class UnaryOp extends PrimOp {
       this.b = b
    }
 
-   static make (name: string, σ: Trie.Prim<null>, b: UnaryBody): UnaryOp {
+   static make (name: string, σ: Trie.Prim<VoidKont>, b: UnaryBody): UnaryOp {
       return make(UnaryOp, name, σ, b)
    }
 
    static make_<T extends Value, V extends Value> (op: Unary<T, V>, trie: TrieCtr): UnaryOp {
-      return UnaryOp.make(op.name, trie(null), UnaryBody.make(op))
+      return UnaryOp.make(op.name, trie(VoidKont.make()), UnaryBody.make(op))
    }
 }
 
 export class BinaryOp extends PrimOp {
-   σ1: Trie.Prim<null>
-   σ2: Trie.Prim<null> 
+   σ1: Trie.Prim<VoidKont>
+   σ2: Trie.Prim<VoidKont> 
    b: BinaryBody
 
    constructor_ (
       name: string, 
-      σ1: Trie.Prim<null>, 
-      σ2: Trie.Prim<null>, 
+      σ1: Trie.Prim<VoidKont>, 
+      σ2: Trie.Prim<VoidKont>, 
       b: BinaryBody
    ) {
       this.name = name
@@ -127,12 +130,12 @@ export class BinaryOp extends PrimOp {
       this.b = b
    }
 
-   static make (name: string, σ1: Trie.Prim<null>, σ2: Trie.Prim<null>, b: BinaryBody): BinaryOp {
+   static make (name: string, σ1: Trie.Prim<VoidKont>, σ2: Trie.Prim<VoidKont>, b: BinaryBody): BinaryOp {
       return make(BinaryOp, name, σ1, σ2, b)
    }
 
    static make_<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, trie1: TrieCtr, trie2: TrieCtr): BinaryOp {
-      return BinaryOp.make(op.name, trie1(null), trie2(null), BinaryBody.make(op))
+      return BinaryOp.make(op.name, trie1(VoidKont.make()), trie2(VoidKont.make()), BinaryBody.make(op))
    }
 }
 
@@ -155,12 +158,12 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
    ["++", BinaryOp.make_(concat, Trie.ConstStr.make, Trie.ConstStr.make)]
 ])
 
-function __true (α: PersistentObject): Value.Constr {
-   return Value.Constr.at(α, Lex.Ctr.make("True"), Nil.make())
+function __true (k: ValId): Value.Constr {
+   return Value.Constr.at(k, Lex.Ctr.make("True"), Nil.make())
 }
 
-function __false (α: PersistentObject): Value.Constr {
-   return Value.Constr.at(α, Lex.Ctr.make("False"), Nil.make())
+function __false (k: ValId): Value.Constr {
+   return Value.Constr.at(k, Lex.Ctr.make("False"), Nil.make())
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
@@ -168,54 +171,54 @@ export function error (message: Value.ConstStr): (α: PersistentObject) => Value
    return assert(false, "LambdaCalc error:\n" + message.val)
 }
 
-export function intToString (x: Value.ConstInt): (α: PersistentObject) => Value.ConstStr {
-   return α => Value.ConstStr.at(α, x.toString())
+export function intToString (x: Value.ConstInt): (k: ValId) => Value.ConstStr {
+   return k => Value.ConstStr.at(k, x.toString())
 }
 
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
-export function equalInt (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.Constr {
-   return α => x.val === y.val ? __true(α) : __false(α)
+export function equalInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.Constr {
+   return k => x.val === y.val ? __true(k) : __false(k)
 }
 
-export function equalStr (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentObject) => Value.Constr {
-   return α => x.val === y.val ? __true(α) : __false(α)
+export function equalStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId) => Value.Constr {
+   return k => x.val === y.val ? __true(k) : __false(k)
 }
 
-export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.Constr {
-   return α => x.val > y.val ? __true(α) : __false(α)
+export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.Constr {
+   return k => x.val > y.val ? __true(k) : __false(k)
 }
 
-export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentObject) => Value.Constr {
-   return α => x.val > y.val ? __true(α) : __false(α)
+export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId) => Value.Constr {
+   return k => x.val > y.val ? __true(k) : __false(k)
 }
 
-export function lessInt (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.Constr {
-   return α => x.val > y.val ? __true(α) : __false(α)
+export function lessInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.Constr {
+   return k => x.val > y.val ? __true(k) : __false(k)
 }
 
-export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentObject) => Value.Constr {
-   return α => x.val > y.val ? __true(α) : __false(α)
+export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId) => Value.Constr {
+   return k => x.val > y.val ? __true(k) : __false(k)
 }
 
-export function minus (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.ConstInt {
-   return α => Value.ConstInt.at(α, x.val - y.val)
+export function minus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.ConstInt {
+   return k => Value.ConstInt.at(k, x.val - y.val)
 }
 
-export function plus (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.ConstInt {
-   return α => Value.ConstInt.at(α, x.val + y.val)
+export function plus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.ConstInt {
+   return k => Value.ConstInt.at(k, x.val + y.val)
 }
 
-export function times (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.ConstInt {
-   return α => Value.ConstInt.at(α, x.val * y.val)
+export function times (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.ConstInt {
+   return k => Value.ConstInt.at(k, x.val * y.val)
 }
 
-export function div (x: Value.ConstInt, y: Value.ConstInt): (α: PersistentObject) => Value.ConstInt {
+export function div (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.ConstInt {
    // Apparently this will round in the right direction.
-   return α => Value.ConstInt.at(α, ~~(x.val / y.val))
+   return k => Value.ConstInt.at(k, ~~(x.val / y.val))
 }
 
-export function concat (x: Value.ConstStr, y: Value.ConstStr): (α: PersistentObject) => Value.ConstStr {
-   return α => Value.ConstStr.at(α, x.val + y.val)
+export function concat (x: Value.ConstStr, y: Value.ConstStr): (k: ValId) => Value.ConstStr {
+   return k => Value.ConstStr.at(k, x.val + y.val)
 }
 
 // Only primitive with identifiers as names are first-class, and therefore appear in the prelude.

@@ -1,18 +1,16 @@
-import { absurd } from "./util/Core"
-import { JoinSemilattice } from "./util/Ord"
-import { Persistent } from "./util/Persistent"
+import { __nonNull, absurd } from "./util/Core"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { Eval, Runtime } from "./Eval"
-import { Expr, Expr̊ } from "./Expr"
+import { Eval, EvalId, TraceId, ValId } from "./Eval"
+import { Expr } from "./Expr"
 import { mapTrie } from "./Match"
 import { Trace, Traced, Value } from "./Traced"
 
 import App = Traced.App
 import Args = Traced.Args
+import Bot = Traced.Bot
 import Empty = Traced.Empty
 import Kont = Traced.Kont
-import Kont̊ = Traced.Kont̊
 import Let = Traced.Let
 import LetRec = Traced.LetRec
 import MatchAs = Traced.MatchAs
@@ -21,78 +19,75 @@ import RecDef = Traced.RecDef
 import Trie = Traced.Trie
 import Var = Traced.Var
 
-export function instantiate (ρ: Env): (e: Expr̊) => Traced {
-   return function (e: Expr̊): Traced {
-      if (e === null) {
-         return Traced.make(null, null)
-      } else {
-         const i: Runtime<Expr> = Runtime.make(ρ.entries(), e)
-         if (e instanceof Expr.ConstInt) {
-            return Traced.make(Empty.at(i), Value.ConstInt.at(i, e.val))
-         } else
-         if (e instanceof Expr.ConstStr) {
-            return Traced.make(Empty.at(i), Value.ConstStr.at(i, e.val))
-         } else
-         if (e instanceof Expr.Constr) {
-            // Parser ensures constructors agree with constructor signatures.
-            return Traced.make(Empty.at(i), Value.Constr.at(i, e.ctr, e.args.map(instantiate(ρ))))
-         } else
-         if (e instanceof Expr.Fun) {
-            // No need to use "unknown" environment here because we have ρ.
-            return Traced.make(Empty.at(i), Value.Closure.at(i, ρ, instantiateTrie(ρ, e.σ)))
-         } else
-         if (e instanceof Expr.PrimOp) {
-            return Traced.make(Empty.at(i), Value.PrimOp.at(i, e.op))
-         } else
-         if (e instanceof Expr.Var) {
-            return Traced.make(Var.at(i, e.x, null), null)
-         } else
-         if (e instanceof Expr.Let) {
-            // Trace must still be null even though I know "statically" which branch will be taken.
-            const t: Trace = Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, null)
-            return Traced.make(t, null)
-         } else
-         if (e instanceof Expr.LetRec) {
-            const δ: List<RecDef> = e.δ.map(def => {
-               const j: Runtime<Expr.RecDef> = Runtime.make(ρ.entries(), def)
-               return RecDef.at(j, def.x, instantiate(ρ)(def.e))
-            })
-            const t: Trace = LetRec.at(i, δ, instantiate(Eval.closeDefs(δ, ρ, δ))(e.e))
-            return Traced.make(t, null)
-         } else
-         if (e instanceof Expr.MatchAs) {
-            return Traced.make(MatchAs.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ), null), null)
-         } else
-         if (e instanceof Expr.App) {
-            return Traced.make(App.at(i, instantiate(ρ)(e.func), instantiate(ρ)(e.arg), null), null)
-         } else
-         if (e instanceof Expr.PrimApp) {
-            return Traced.make(PrimApp.at(i, instantiate(ρ)(e.e1), e.opName, instantiate(ρ)(e.e2)), null)
-         } else {
-            return absurd()
-         }
-      }
-   }
-}
-
-// See issue #33.
-function instantiateKont (ρ: Env): (κ: Expr.Kont) => Kont̊ {
-   return function (κ: Expr.Kont): Kont̊ {
-      if (κ instanceof Expr.Trie.Trie) {
-         return instantiateTrie(ρ, κ)
+export function instantiate (ρ: Env): (e: Expr) => Traced {
+   return function (e: Expr): Traced {
+      const i: TraceId<Expr> = EvalId.make(ρ.entries(), e, "trace"),
+            iᵥ: ValId = EvalId.make(ρ.entries(), e, "val")
+      if (e instanceof Expr.Bot) {
+         return Traced.make(Bot.at(i), null)
+      } else 
+      if (e instanceof Expr.ConstInt) {
+         return Traced.make(Empty.at(i), Value.ConstInt.at(iᵥ, e.val))
       } else
-      if (κ instanceof Expr.Expr) {
-         return instantiate(ρ)(κ)
+      if (e instanceof Expr.ConstStr) {
+         return Traced.make(Empty.at(i), Value.ConstStr.at(iᵥ, e.val))
       } else
-      if (κ instanceof Expr.Args.Args) {
-         return instantiateArgs(ρ)(κ)
+      if (e instanceof Expr.Constr) {
+         // Parser ensures constructors agree with constructor signatures.
+         return Traced.make(Empty.at(i), Value.Constr.at(iᵥ, e.ctr, __nonNull(e.args).map(instantiate(ρ))))
+      } else
+      if (e instanceof Expr.Fun) {
+         // No need to use "unknown" environment here because we have ρ.
+         return Traced.make(Empty.at(i), Value.Closure.at(iᵥ, ρ, instantiateTrie(ρ, e.σ)))
+      } else
+      if (e instanceof Expr.PrimOp) {
+         return Traced.make(Empty.at(i), Value.PrimOp.at(iᵥ, e.op))
+      } else
+      if (e instanceof Expr.Var) {
+         return Traced.make(Var.at(i, e.x, null), null)
+      } else
+      if (e instanceof Expr.Let) {
+         // Trace must still be null even though I know "statically" which branch will be taken.
+         const t: Trace = Let.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Traced>, null)
+         return Traced.make(t, null)
+      } else
+      if (e instanceof Expr.LetRec) {
+         const δ: List<RecDef> = e.δ.map(def => {
+            const j: EvalId<Expr.RecDef, "trace"> = EvalId.make(ρ.entries(), def, "trace")
+            return RecDef.at(j, def.x, instantiate(ρ)(def.e))
+         })
+         const t: Trace = LetRec.at(i, δ, instantiate(Eval.closeDefs(δ, ρ, δ))(e.e))
+         return Traced.make(t, null)
+      } else
+      if (e instanceof Expr.MatchAs) {
+         return Traced.make(MatchAs.at(i, instantiate(ρ)(e.e), instantiateTrie(ρ, e.σ), null), null)
+      } else
+      if (e instanceof Expr.App) {
+         return Traced.make(App.at(i, instantiate(ρ)(e.func), instantiate(ρ)(e.arg), null), null)
+      } else
+      if (e instanceof Expr.PrimApp) {
+         return Traced.make(PrimApp.at(i, instantiate(ρ)(e.e1), e.opName, instantiate(ρ)(e.e2)), null)
       } else {
          return absurd()
       }
    }
 }
 
-function instantiateArgs<K extends JoinSemilattice<K> & Persistent> (ρ: Env): (Π: Expr.Args<K>) => Args<K> {
+// See issue #33. These is some sort of heinousness to covert the continuation type.
+function instantiateKont<K extends Expr.Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env): (κ: K) => Kʹ {
+   return function (κ: K): Kʹ {
+      if (κ instanceof Expr.Trie.Trie) {
+         return instantiateTrie<K, Kʹ>(ρ, κ) as any as Kʹ // ouch
+      } else
+      if (κ instanceof Expr.Expr) {
+         return instantiate(ρ)(κ) as any as Kʹ // also ouch
+      } else {
+         return absurd()
+      }
+   }
+}
+
+function instantiateArgs<K extends Expr.Kont<K>> (ρ: Env): (Π: Expr.Args<K>) => Args<K> {
    return function (Π: Expr.Args<K>): Args<K> {
       if (Expr.Args.End.is(Π)) {
          return Args.End.make(Π.κ)
@@ -105,11 +100,11 @@ function instantiateArgs<K extends JoinSemilattice<K> & Persistent> (ρ: Env): (
    }
 }
 
-function instantiateTrie (ρ: Env, σ: Expr.Trie<Expr.Kont>): Trie<Kont> {
-   return mapTrie(instantiateKont(ρ))(instantiateTrie_(ρ, σ))
+function instantiateTrie<K extends Expr.Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, σ: Expr.Trie<K>): Trie<Kʹ> {
+   return mapTrie(instantiateKont<K, Kʹ>(ρ))(instantiateTrie_(ρ, σ))
 }
 
-function instantiateTrie_<K extends JoinSemilattice<K> & Persistent> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
+function instantiateTrie_<K extends Expr.Kont<K>> (ρ: Env, σ: Expr.Trie<K>): Trie<K> {
    if (Expr.Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, σ.κ)
    } else

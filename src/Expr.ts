@@ -1,6 +1,6 @@
-import { __check, assert } from "./util/Core"
+import { __check, absurd, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { Persistent, PersistentObject, at, make } from "./util/Persistent"
+import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List, } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -126,7 +126,6 @@ export namespace Lex {
 }
 
 export type Expr = Expr.Expr
-export type Expr̊ = Expr | null
 
 export namespace Expr {
    // Must be joinable, purely so that joining two expressions will fail.
@@ -137,18 +136,37 @@ export namespace Expr {
       join (e: Expr): Expr {
          return assert(false, "Expression join unsupported.")
       }
+
+      bottom (): Expr {
+         if (versioned(this)) {
+            return Bot.at(this.__id)
+         } else {
+            return absurd()
+         }
+      }
+   }
+
+   export class Bot extends Expr {
+      __subtag: "Expr.Bot"
+
+      constructor_ (): void {
+      }
+
+      static at (α: PersistentObject): Bot {
+         return at(α, Bot)
+      }
    }
 
    export class App extends Expr {
-      func: Expr̊
-      arg: Expr̊
+      func: Expr
+      arg: Expr
 
-      constructor_ (func: Expr̊, arg: Expr̊): void {
+      constructor_ (func: Expr, arg: Expr): void {
          this.func = func
          this.arg = arg
       }
 
-      static at (α: PersistentObject, func: Expr̊, arg: Expr̊): App {
+      static at (α: PersistentObject, func: Expr, arg: Expr): App {
          return at(α, App, func, arg)
       }
    }
@@ -179,14 +197,14 @@ export namespace Expr {
    
    export class Constr extends Expr {
       ctr: Lex.Ctr
-      args: List<Expr̊>
+      args: List<Expr>
 
-      constructor_ (ctr: Lex.Ctr, args: List<Expr̊>): void {
+      constructor_ (ctr: Lex.Ctr, args: List<Expr>): void {
          this.ctr = ctr
          this.args = args
       }
    
-      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Expr̊>): Constr {
+      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
          return at(α, Constr, ctr, args)
       }
    }
@@ -205,15 +223,15 @@ export namespace Expr {
 
    // A let is simply a match where the trie is a variable trie.
    export class Let extends Expr {
-      e: Expr̊
+      e: Expr
       σ: Trie.Var<Expr>
 
-      constructor_ (e: Expr̊, σ: Trie.Var<Expr>): void {
+      constructor_ (e: Expr, σ: Trie.Var<Expr>): void {
          this.e = e
          this.σ = σ
       }
 
-      static at (α: PersistentObject, e: Expr̊, σ: Trie.Var<Expr>): Let {
+      static at (α: PersistentObject, e: Expr, σ: Trie.Var<Expr>): Let {
          return at(α, Let, e, σ)
       }
    }
@@ -232,58 +250,58 @@ export namespace Expr {
 
    export class RecDef implements PersistentObject {
       x: Lex.Var
-      e: Expr̊
+      e: Expr
 
-      constructor_ (x: Lex.Var, e: Expr̊): void {
+      constructor_ (x: Lex.Var, e: Expr): void {
          this.x = x
          this.e = e
       }
    
-      static at (α: PersistentObject, x: Lex.Var, e: Expr̊): RecDef {
+      static at (α: PersistentObject, x: Lex.Var, e: Expr): RecDef {
          return at(α, RecDef, x, e)
       }
    }
 
    export class LetRec extends Expr {
       δ: List<RecDef>
-      e: Expr̊
+      e: Expr
 
-      constructor_ (δ: List<RecDef>, e: Expr̊): void {
+      constructor_ (δ: List<RecDef>, e: Expr): void {
          this.δ = δ
          this.e = e
       }
 
-      static at (α: PersistentObject, δ: List<RecDef>, e: Expr̊): LetRec {
+      static at (α: PersistentObject, δ: List<RecDef>, e: Expr): LetRec {
          return at(α, LetRec, δ, e)
       }
    }
 
    export class MatchAs extends Expr {
-      e: Expr̊
+      e: Expr
       σ: Trie<Expr>
 
-      constructor_ (e: Expr̊, σ: Trie<Expr>): void {
+      constructor_ (e: Expr, σ: Trie<Expr>): void {
          this.e = e
          this.σ = σ
       }
    
-      static at (α: PersistentObject, e: Expr̊, σ: Trie<Expr>): MatchAs {
+      static at (α: PersistentObject, e: Expr, σ: Trie<Expr>): MatchAs {
          return at(α, MatchAs, e, σ)
       }
    }
 
    export class PrimApp extends Expr {
-      e1: Expr̊
+      e1: Expr
       opName: Lex.OpName
-      e2: Expr̊
+      e2: Expr
 
-      constructor_ (e1: Expr̊, opName: Lex.OpName, e2: Expr̊): void {
+      constructor_ (e1: Expr, opName: Lex.OpName, e2: Expr): void {
          this.e1 = e1
          this.opName = opName
          this.e2 = e2
       }
 
-      static at (α: PersistentObject, e1: Expr̊, opName: Lex.OpName, e2: Expr̊): PrimApp {
+      static at (α: PersistentObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
          return at(α, PrimApp, e1, opName, e2)
       }
    }
@@ -300,19 +318,23 @@ export namespace Expr {
       }
    }
 
-   export type Args<K extends JoinSemilattice<K>> = Args.Args<K>
+   export type Args<K extends Kont<K>> = Args.Args<K>
 
    export namespace Args {
       // n-ary product.
-      export abstract class Args<K extends JoinSemilattice<K>> implements PersistentObject, JoinSemilattice<Args<K>> {
+      export abstract class Args<K extends Kont<K>> implements Kont<Args<K>> {
          __tag: "Expr.Args.Args"
          abstract constructor_ (...args: Persistent[]): void
+
+         bottom (): Args<K> {
+            return absurd("Not implemented yet")
+         }
 
          join (Π: Args<K>): Args<K> {
             return Args.join(this, Π)
          }
 
-         static join<K extends JoinSemilattice<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
+         static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
             if (Π instanceof End && Πʹ instanceof End) {
                return End.make(Π.κ.join(Πʹ.κ))
             } else
@@ -325,60 +347,61 @@ export namespace Expr {
       }
 
       // Maps zero arguments to κ.
-      export class End<K extends JoinSemilattice<K> & Persistent> extends Args<K> {
+      export class End<K extends Kont<K>> extends Args<K> {
          κ: K
 
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends JoinSemilattice<K> & Persistent> (Π: Args<K>): Π is End<K> {
+         static is<K extends Kont<K>> (Π: Args<K>): Π is End<K> {
             return Π instanceof End
          }
 
-         static make<K extends JoinSemilattice<K> & Persistent> (κ: K): End<K> {
+         static make<K extends Kont<K>> (κ: K): End<K> {
             return make(End, κ) as End<K>
          }
       }
 
       // Maps a single argument to another args trie.
-      export class Next<K extends JoinSemilattice<K>> extends Args<K> {
+      export class Next<K extends Kont<K>> extends Args<K> {
          σ: Trie<Args<K>>
 
-         constructor_ (
-            σ: Trie<Args<K>>
-         ) {
+         constructor_ (σ: Trie<Args<K>>) {
             this.σ = σ
          }
 
-         static is<K extends JoinSemilattice<K>> (Π: Args<K>): Π is Next<K> {
+         static is<K extends Kont<K>> (Π: Args<K>): Π is Next<K> {
             return Π instanceof Next
          }
 
-         static make<K extends JoinSemilattice<K>> (σ: Trie<Args<K>>): Next<K> {
-            return make<Next<K>>(Next, σ)
+         static make<K extends Kont<K>> (σ: Trie<Args<K>>): Next<K> {
+            return make(Next, σ) as Next<K>
          }
       }
    }
 
    // Tries are persistent but not versioned, as per the formalism.
-   export type Trie<K extends JoinSemilattice<K>> = Trie.Trie<K>
+   export type Trie<K extends Kont<K>> = Trie.Trie<K>
 
-   // Use "any" because can't define recursive type alias.
-   export type Kont = Expr | Args<any> | Trie<any>
+   export interface Kont<K> extends JoinSemilattice<K>, PersistentObject {
+      bottom (): K
+   }
 
    export namespace Trie {
-      export abstract class Trie<K extends JoinSemilattice<K>> implements PersistentObject, JoinSemilattice<Trie<K>> {
+      export abstract class Trie<K extends Kont<K>> implements Kont<Trie<K>> {
          __tag: "Expr.Trie"
-         abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+         abstract constructor_ (...args: Persistent[]): void
+
+         bottom (): Trie<K> {
+            return absurd("Not implemented yet")
+         }
          
          join (τ: Trie<K>): Trie<K> {
             return Trie.join(this, τ)
          }
 
-         static join<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
+         static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Fun.is(σ) && Fun.is(τ)) {
                return Fun.make(σ.κ.join(τ.κ))
             } else
@@ -393,90 +416,81 @@ export namespace Expr {
          }
       }
 
-      export class Prim<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
+      export class Prim<K extends Kont<K> & Persistent> extends Trie<K> {
          κ: K
          
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
       }
 
-      export class ConstInt<K extends JoinSemilattice<K> & Persistent> extends Prim<K> {
-         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is ConstInt<K> {
+      export class ConstInt<K extends Kont<K>> extends Prim<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is ConstInt<K> {
             return σ instanceof ConstInt
          }
 
-         static make<K extends JoinSemilattice<K> & Persistent> (κ: K): ConstInt<K> {
+         static make<K extends Kont<K>> (κ: K): ConstInt<K> {
             return make(ConstInt, κ) as ConstInt<K>
          }
       }
 
-      export class ConstStr<K extends JoinSemilattice<K> & Persistent> extends Prim<K> {
-         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is ConstStr<K> {
+      export class ConstStr<K extends Kont<K>> extends Prim<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is ConstStr<K> {
             return σ instanceof ConstStr
          }
 
-         static make<K extends JoinSemilattice<K> & Persistent> (κ: K): ConstStr<K> {
+         static make<K extends Kont<K>> (κ: K): ConstStr<K> {
             return make(ConstStr, κ) as ConstStr<K>
          }
       }
 
       // n-ary sum of n-ary products.
-      export class Constr<K extends JoinSemilattice<K>> extends Trie<K> {
+      export class Constr<K extends Kont<K>> extends Trie<K> {
          cases: FiniteMap<string, Args<K>>
 
-         constructor_ (
-            cases: FiniteMap<string, Args<K>>
-         ) {
+         constructor_ (cases: FiniteMap<string, Args<K>>) {
             this.cases = cases
          }
 
-         static is<K extends JoinSemilattice<K>> (σ: Trie<K>): σ is Constr<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
 
-         static make<K extends JoinSemilattice<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+         static make<K extends Kont<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
             return make(Constr, cases)
          }
       }
 
-      export class Fun<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
+      export class Fun<K extends Kont<K>> extends Trie<K> {
          κ: K
 
-         constructor_ (
-            κ: K
-         ) {
+         constructor_ (κ: K) {
             this.κ = κ
          }
 
-         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is Fun<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Fun<K> {
             return σ instanceof Fun
          }
 
-         static make<K extends JoinSemilattice<K> & Persistent> (κ: K): Fun<K> {
+         static make<K extends Kont<K>> (κ: K): Fun<K> {
             return make(Fun, κ) as Fun<K>
          }
       }
 
-      export class Var<K extends JoinSemilattice<K> & Persistent> extends Trie<K> {
+      export class Var<K extends Kont<K>> extends Trie<K> {
          x: Lex.Var
          κ: K
 
-         constructor_ (
-            x: Lex.Var,
-            κ: K
-         ) {
+         constructor_ (x: Lex.Var, κ: K) {
             this.x = x
             this.κ = κ
          }
 
-         static is<K extends JoinSemilattice<K> & Persistent> (σ: Trie<K>): σ is Var<K> {
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
 
-         static make<K extends JoinSemilattice<K> & Persistent> (x: Lex.Var, κ: K): Var<K> {
+         static make<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
             return make(Var, x, κ) as Var<K>
          }
       }

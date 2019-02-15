@@ -4,12 +4,13 @@ import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Traced, Value } from "./Traced"
 
 import Args = Traced.Args
+import Kont = Traced.Kont
 import Match = Traced.Match
 import TracedMatch = Traced.TracedMatch
 import Trie = Traced.Trie
 
 // The match for any evaluation with demand σ which yielded value v.
-export function match<K extends Persistent> (σ: Trie<K>, v: Value | null): Match<K> {
+export function match<K extends Kont<K>> (σ: Trie<K>, v: Value | null): Match<K> {
    if (Trie.Var.is(σ)) {
       // in general v is not null, even though the demand is null
       return Match.Var.make(σ.x, v, σ.κ)
@@ -114,7 +115,7 @@ function mapMatchArgs<K extends Persistent, Kʹ extends Persistent> (f: (κ: K) 
    }
 }
 
-export function mapTrie<K extends Persistent, Kʹ extends Persistent> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
+export function mapTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
    return (σ: Trie.Trie<K>): Trie.Trie<Kʹ> => {
       if (Trie.ConstInt.is(σ)) {
          return Trie.ConstInt.make(f(σ.κ))

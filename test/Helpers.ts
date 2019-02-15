@@ -1,5 +1,4 @@
 import { __nonNull, assert } from "../src/util/Core"
-import { Persistent } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
@@ -13,7 +12,9 @@ import { prelude } from "../src/Primitive"
 import { Traced } from "../src/Traced"
 
 import Args = Traced.Args
+import Kont = Traced.Kont
 import Trie = Traced.Trie
+import VoidKont = Traced.VoidKont
 
 export function initialise (): void {
    // Fix the toString impl on String to behave sensibly.
@@ -30,53 +31,53 @@ export enum Profile {
 }
 
 export namespace τ {
-   export function arg<K> (σ: Trie<Args<K>>): Args.Next<K> {
+   export function arg<K extends Kont<K>> (σ: Trie<Args<K>>): Args.Next<K> {
       return Args.Next.make(σ)
    }
 
-   export function endArgs<K extends Persistent> (κ: K): Args.End<K> {
+   export function endArgs<K extends Kont<K>> (κ: K): Args.End<K> {
       return Args.End.make(κ)
    }
 
-   export function var_<K extends Persistent> (κ: K): Trie.Var<K> {
+   export function var_<K extends Kont<K>> (κ: K): Trie.Var<K> {
       return Trie.Var.make(Lex.Var.make("q"), κ)
    }
 
-   export function int<K extends Persistent> (κ: K): Trie.Prim<K> {
+   export function int<K extends Kont<K>> (κ: K): Trie.Prim<K> {
       return Trie.ConstInt.make(κ)
    }
 
-   export function str<K extends Persistent> (κ: K): Trie.Prim<K> {
+   export function str<K extends Kont<K>> (κ: K): Trie.Prim<K> {
       return Trie.ConstStr.make(κ)
    }
 
-   export function cons<K extends Persistent> (Π: Args<K>): Trie.Constr<K> {
+   export function cons<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Cons", Π))
    }
 
-   export function nil<K> (Π: Args<K>): Trie.Constr<K> {
+   export function nil<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Nil", Π))
    }
 
-   export function pair<K> (Π: Args<K>): Trie.Constr<K> {
+   export function pair<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Pair", Π))
    }
 
-   export function point<K> (Π: Args<K>): Trie.Constr<K> {
+   export function point<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Point", Π))
    }
 
-   export function some<K> (Π: Args<K>): Trie.Constr<K> {
+   export function some<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Some", Π))
    }
 
-   export function top<K extends Persistent> (κ: K): Trie.Top<K> {
+   export function top<K extends Kont<K>> (κ: K): Trie.Top<K> {
       return Trie.Top.make(κ)
    }
 }
 
 // Could have used join, but only defined for syntactic tries.
-export function merge<K> (σ1: Trie.Constr<K>, σ2: Trie.Constr<K>): Trie.Constr<K> {
+export function merge<K extends Kont<K>> (σ1: Trie.Constr<K>, σ2: Trie.Constr<K>): Trie.Constr<K> {
    return Trie.Constr.make(unionWith(σ1.cases, σ2.cases, (v: Args<K>, vʹ: Args<K>) => assert(false)))
 }
 
@@ -84,8 +85,8 @@ export function parseExample (src: string | null): Expr {
    return __nonNull(parse(Parse.expr, __nonNull(src))).ast
 }
 
-export function runExample (e: Expr, σ: Trie<null> = τ.top(null)): Traced {
-   const [tv, ,]: Eval.Result<null> = Eval.evalT_(ρ, instantiate(ρ)(e), σ)
+export function runExample (e: Expr, σ: Trie<VoidKont> = τ.top(VoidKont.make())): Traced {
+   const {tv}: Eval.Result<VoidKont> = Eval.eval__(ρ, instantiate(ρ)(e), σ)
    console.log(tv)
    if (!Trie.Top.is(σ)) {
       console.log(match(σ, tv.v))
