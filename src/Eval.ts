@@ -131,13 +131,27 @@ function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): R
    }
 }
 
+function ultimatelyBot (t: Trace): boolean {
+   return t instanceof Bot || (t instanceof Var && ultimatelyBot(__nonNull(t.t)))
+}
+
 // Preprocess with call to instantiate. 
 export function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    if (versioned(e.t)) {
       const k: TraceId<Expr> = e.t!.__id as TraceId<Expr>
       return __check(
          eval_(ρ, instantiate(ρ)(k.e), σ), 
-         ({tv}) => (tv.v === null) === (Trie.Var.is(σ))
+         ({tv}) => {
+            if (tv.v === null) {
+               if (!(Trie.Var.is(σ) || ultimatelyBot(tv.t))) {
+                  return false
+               } else {
+                  return true
+               }
+            } else {
+               return true
+            }
+         }
       )
    } else {
       return absurd()
@@ -197,7 +211,7 @@ function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
          } else
          if (t instanceof Var) {
             const x: string = t.x.str
-            if (ρ.has(x)) {
+            if (ρ.has(x)) { 
                const {ρ: ρʹ, δ, e: eʹ}: EnvEntry = ρ.get(x)!,
                      {tv, ρ: ρʺ, κ}: Result<K> = eval__(closeDefs(δ, ρʹ, δ), eʹ, σ)
                return Result.at(out, Traced.make(Var.at(k, t.x, __nonNull(tv.t)), tv.v), ρʺ, κ)

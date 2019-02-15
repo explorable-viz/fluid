@@ -117,6 +117,7 @@ export class Traced implements PersistentObject {
 }
 
 export type Trace = Traced.Trace
+export type Trace̊ = Trace | null
 
 export namespace Traced {
    export type Args<K> = Args.Args<K>
@@ -218,8 +219,21 @@ export namespace Traced {
          __tag: "Trie.Trie"
          abstract constructor_ (...args: Persistent[]): void
 
-         bottom (): Trie<K> {
-            return absurd("Not implemented yet")
+         bottom (): Bot<K> {
+            return Bot.make()
+         }
+      }
+
+      export class Bot<K extends Kont<K>> extends Trie<K> {
+         constructor_ () {
+         }
+
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Bot<K> {
+            return σ instanceof Bot
+         }
+
+         static make<K extends Kont<K>> (): Bot<K> {
+            return make(Bot) as Bot<K>
          }
       }
 
@@ -324,15 +338,15 @@ export namespace Traced {
    }
 
    export class TracedMatch<K> implements PersistentObject {
-      t: Trace | null // null iff ξ represents a dead branch
+      t: Trace̊ // null iff ξ represents a dead branch
       ξ: Match<K>
 
-   constructor_ (t: Trace | null, ξ: Match<K>) {
+   constructor_ (t: Trace̊, ξ: Match<K>) {
          this.t = t
          this.ξ = ξ
       }
 
-      static make<K> (t: Trace | null, ξ: Match<K>): TracedMatch<K> {
+      static make<K> (t: Trace̊, ξ: Match<K>): TracedMatch<K> {
          return make(TracedMatch, t, ξ)
       }
    }
@@ -508,15 +522,15 @@ export namespace Traced {
    export class App extends Trace {
       func: Traced
       arg: Traced
-      body: Trace | null
+      body: Trace̊
 
-      constructor_ (func: Traced, arg: Traced, body: Trace | null): void {
+      constructor_ (func: Traced, arg: Traced, body: Trace̊): void {
          this.func = func
          this.arg = arg
          this.body = body
       }
 
-      static at (k: TraceId<Expr>, func: Traced, arg: Traced, body: Trace | null): App {
+      static at (k: TraceId<Expr>, func: Traced, arg: Traced, body: Trace̊): App {
          return at(k, App, func, arg, body)
       }
    }
@@ -534,15 +548,15 @@ export namespace Traced {
    export class Let extends Trace {
       tu: Traced
       σ: Trie.Var<Traced>
-      t: Trace | null
+      t: Trace̊
 
-      constructor_ (tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): void {
+      constructor_ (tu: Traced, σ: Trie.Var<Traced>, t: Trace̊): void {
          this.tu = tu
          this.σ = σ
          this.t = t
       }
 
-      static at (k: TraceId<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace | null): Let {
+      static at (k: TraceId<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace̊): Let {
          return at(k, Let, tu, σ, t)
       }
    }
@@ -588,15 +602,15 @@ export namespace Traced {
    export class MatchAs extends Trace {
       tu: Traced
       σ: Trie<Traced>
-      t: Trace | null
+      t: Trace̊
 
-      constructor_ (tu: Traced, σ: Trie<Traced>, t: Trace | null): void {
+      constructor_ (tu: Traced, σ: Trie<Traced>, t: Trace̊): void {
          this.tu = tu
          this.σ = σ
          this.t = t
       }
 
-      static at (k: TraceId<Expr>, tu: Traced, σ: Trie<Traced>, t: Trace | null): MatchAs {
+      static at (k: TraceId<Expr>, tu: Traced, σ: Trie<Traced>, t: Trace̊): MatchAs {
          return at(k, MatchAs, tu, σ, t)
       }
    }
@@ -619,14 +633,14 @@ export namespace Traced {
 
    export class Var extends Trace {
       x: Lex.Var
-      t: Trace | null
+      t: Trace̊
 
-      constructor_ (x: Lex.Var, t: Trace | null): void {
+      constructor_ (x: Lex.Var, t: Trace̊): void {
          this.x = x
          this.t = t
       }
 
-      static at (k: TraceId<Expr>, x: Lex.Var, t: Trace | null): Var {
+      static at (k: TraceId<Expr>, x: Lex.Var, t: Trace̊): Var {
          return at(k, Var, x, t)
       }
    }
