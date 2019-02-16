@@ -1,4 +1,5 @@
 import { __nonNull, absurd } from "./util/Core"
+import { versioned} from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Eval, EvalId, TraceId, ValId } from "./Eval"
@@ -18,6 +19,74 @@ import PrimApp = Traced.PrimApp
 import RecDef = Traced.RecDef
 import Trie = Traced.Trie
 import Var = Traced.Var
+
+export function instantiate2 (ρ: Env): (tv: Traced) => Traced {
+   return function (tv: Traced): Traced {
+      const {t, v} = tv
+      if (versioned(t)) {
+         const k: TraceId<Expr> = t.__id as TraceId<Expr>
+         const i: TraceId<Expr> = EvalId.make(ρ.entries(), k.e, "trace"),
+               iᵥ: ValId = EvalId.make(ρ.entries(), k.e, "val")
+         if (t instanceof Bot) {
+            return Traced.make(Bot.at(i), null)
+         } else
+         if (t instanceof Empty) {
+            if (v instanceof Value.ConstInt) {
+               return Traced.make(Empty.at(i), Value.ConstInt.at(iᵥ, v.val))
+            } else
+            if (v instanceof Value.ConstStr) {
+               return Traced.make(Empty.at(i), Value.ConstStr.at(iᵥ, v.val))
+            } else
+            if (v instanceof Value.Constr) {
+               // Parser ensures constructors agree with constructor signatures.
+               return Traced.make(Empty.at(i), Value.Constr.at(iᵥ, v.ctr, __nonNull(v.args).map(instantiate2(ρ))))
+            } else
+            if (v instanceof Value.Closure) {
+               // No need to use "unknown" environment here because we have ρ.
+               return Traced.make(Empty.at(i), Value.Closure.at(iᵥ, ρ, instantiateTrie2(ρ, v.σ)))
+            } else
+            if (v instanceof Value.PrimOp) {
+               return Traced.make(Empty.at(i), Value.PrimOp.at(iᵥ, v.op))
+            } else {
+               return absurd()
+            }
+         } else
+         if (t instanceof Var) {
+            return Traced.make(Var.at(i, t.x, null), null)
+         } else
+         if (t instanceof Let) {
+            // Trace must still be null even though I know "statically" which branch will be taken.
+            const tʹ: Trace = Let.at(i, instantiate2(ρ)(t.tu), instantiateTrie2(ρ, t.σ) as Trie.Var<Traced>, null)
+            return Traced.make(tʹ, null)
+         } else
+         if (t instanceof LetRec) {
+            const δ: List<RecDef> = t.δ.map(def => {
+               const j: EvalId<Expr.RecDef, "trace"> = EvalId.make(ρ.entries(), def, "trace")
+               return RecDef.at(j, def.x, instantiate2(ρ)(def.tv))
+            })
+            const tʹ: Trace = LetRec.at(i, δ, instantiate2(Eval.closeDefs(δ, ρ, δ))(t.tv))
+            return Traced.make(tʹ, null)
+         } else
+         if (t instanceof MatchAs) {
+            return Traced.make(MatchAs.at(i, instantiate2(ρ)(t.tu), instantiateTrie2(ρ, t.σ), null), null)
+         } else
+         if (t instanceof App) {
+            return Traced.make(App.at(i, instantiate2(ρ)(t.func), instantiate2(ρ)(t.arg), null), null)
+         } else
+         if (t instanceof PrimApp) {
+            return Traced.make(PrimApp.at(i, instantiate2(ρ)(t.tv1), t.opName, instantiate2(ρ)(t.tv2)), null)
+         } else {
+            return absurd()
+         }
+      } else {
+         return absurd()
+      }
+   }
+}
+
+function instantiateTrie2<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, σ: Trie<K>): Trie<Kʹ> {
+   return mapTrie(instantiateKont<K, Kʹ>(ρ))(instantiateTrie_(ρ, σ))
+}
 
 export function instantiate (ρ: Env): (e: Expr) => Traced {
    return function (e: Expr): Traced {
