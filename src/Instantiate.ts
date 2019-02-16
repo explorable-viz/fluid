@@ -24,8 +24,8 @@ export function instantiate2 (ρ: Env): (tv: Traced) => Traced {
    return function (tv: Traced): Traced {
       const {t, v} = tv
       if (versioned(t)) {
-         const k: TraceId<Expr> = t.__id as TraceId<Expr>
-         const i: TraceId<Expr> = EvalId.make(ρ.entries(), k.e, "trace"),
+         const k: TraceId<Expr> = t.__id as TraceId<Expr>,
+               i: TraceId<Expr> = EvalId.make(ρ.entries(), k.e, "trace"),
                iᵥ: ValId = EvalId.make(ρ.entries(), k.e, "val")
          if (t instanceof Bot) {
             return Traced.make(Bot.at(i), null)
@@ -61,8 +61,13 @@ export function instantiate2 (ρ: Env): (tv: Traced) => Traced {
          } else
          if (t instanceof LetRec) {
             const δ: List<RecDef> = t.δ.map(def => {
-               const j: EvalId<Expr.RecDef, "trace"> = EvalId.make(ρ.entries(), def, "trace")
-               return RecDef.at(j, def.x, instantiate2(ρ)(def.tv))
+               if (versioned(def)) {
+                  const jʹ = def.__id as TraceId<Expr.RecDef>,
+                        j: EvalId<Expr.RecDef, "trace"> = EvalId.make(ρ.entries(), jʹ.e, "trace")
+                  return RecDef.at(j, def.x, instantiate2(ρ)(def.tv))
+               } else {
+                  return absurd()
+               }
             })
             const tʹ: Trace = LetRec.at(i, δ, instantiate2(Eval.closeDefs(δ, ρ, δ))(t.tv))
             return Traced.make(tʹ, null)
@@ -84,8 +89,59 @@ export function instantiate2 (ρ: Env): (tv: Traced) => Traced {
    }
 }
 
+// See issue #33. These is some sort of heinousness to covert the continuation type.
+function instantiateKont2<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env): (κ: K) => Kʹ {
+   return function (κ: K): Kʹ {
+      if (κ instanceof Trie.Trie) {
+         return instantiateTrie2<K, Kʹ>(ρ, κ) as any as Kʹ // ouch
+      } else
+      if (κ instanceof Traced) {
+         return instantiate2(ρ)(κ) as any as Kʹ // also ouch
+      } else {
+         return absurd()
+      }
+   }
+}
+
+function instantiateArgs2<K extends Kont<K>> (ρ: Env): (Π: Args<K>) => Args<K> {
+   return function (Π: Args<K>): Args<K> {
+      if (Args.End.is(Π)) {
+         return Args.End.make(Π.κ)
+      } else
+      if (Args.Next.is(Π)) {
+         return Args.Next.make(mapTrie(instantiateArgs2(ρ))(instantiateTrie2_(ρ, Π.σ)))
+      } else {
+         return absurd()
+      }
+   }
+}
+
 function instantiateTrie2<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, σ: Trie<K>): Trie<Kʹ> {
-   return mapTrie(instantiateKont<K, Kʹ>(ρ))(instantiateTrie_(ρ, σ))
+   return mapTrie(instantiateKont2<K, Kʹ>(ρ))(instantiateTrie2_(ρ, σ))
+}
+
+function instantiateTrie2_<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
+   if (Trie.Var.is(σ)) {
+      return Trie.Var.make(σ.x, σ.κ)
+   } else
+   if (Trie.ConstInt.is(σ)) {
+      return Trie.ConstInt.make(σ.κ)
+   } else
+   if (Trie.ConstStr.is(σ)) {
+      return Trie.ConstStr.make(σ.κ)
+   } else
+   if (Trie.Constr.is(σ)) {
+      return Trie.Constr.make(σ.cases.map(
+         ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
+            return Pair.make(ctr, instantiateArgs2(ρ)(Π))
+         })
+      )
+   } else
+   if (Trie.Fun.is(σ)) {
+      return Trie.Fun.make(σ.κ)
+   } else {
+      return absurd()
+   }
 }
 
 export function instantiate (ρ: Env): (e: Expr) => Traced {
