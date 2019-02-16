@@ -136,7 +136,7 @@ function ultimatelyBot (t: Trace): boolean {
 }
 
 // Preprocess with call to instantiate. 
-export function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
+function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    if (versioned(e.t)) {
       const k: TraceId<Expr> = e.t!.__id as TraceId<Expr>
       return __check(
