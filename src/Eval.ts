@@ -150,7 +150,7 @@ export function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Res
 
 // Null means eval produced no information about v; the input traced value might be non-null.
 // By the time we get here e should have been "instantiated" with respect to ρ.
-function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
+export function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    const t: Trace = e.t
    if (versioned(t)) {
       const k: TraceId<Expr> = t.__id as EvalId<Expr, "trace">,
