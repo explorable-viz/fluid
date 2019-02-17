@@ -203,7 +203,7 @@ export namespace Traced {
          }
 
          static make<K extends Kont<K>> (): Bot<K> {
-            return make(Top) as Bot<K>
+            return make(Bot) as Bot<K>
          }
 
          bottom (): Bot<K> {
@@ -228,7 +228,7 @@ export namespace Traced {
       }
 
       static make (): BotKont {
-         return make(Bot)
+         return make(BotKont)
       }
    }
 

@@ -1,5 +1,5 @@
 import { __nonNull, absurd, assert } from "./util/Core"
-import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
+import { PersistentObject, at, make, versioned } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
@@ -76,6 +76,9 @@ export class Result<K extends Kont<K>> implements PersistentObject {
    }
 
    static at<K extends Kont<K>> (α: PersistentObject, tv: Traced, ρ: Env, κ: K): Result<K> {
+      if (κ instanceof Traced.Bot) {
+         return absurd()
+      }
       return at(α, Result, tv, ρ, κ) as Result<K>
    }
 }
@@ -132,8 +135,15 @@ function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): R
          return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
       }
    } else
-   if (Nil.is(es) && (Args.End.is(Π) || Args.Top.is(Π))) {
-      return Results.make(Nil.make(), Env.empty(), Π.κ)
+   if (Nil.is(es)) {
+      if (Args.End.is(Π) || Args.Top.is(Π)) {
+         return Results.make(Nil.make(), Env.empty(), Π.κ)
+      } else
+      if (Args.Bot.is(Π)) {
+         return Results.make(Nil.make(), Env.empty(), BotKont.make() as K)
+      } else {
+         return absurd()
+      }
    } else {
       return absurd()
    }
@@ -157,6 +167,9 @@ export function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Resu
       const k: TraceId<Expr> = t.__id as TraceId<Expr>,
             kᵥ: ValId = EvalId.make(k.j, k.e, "val"),
             out: EvalKey<K> = EvalKey.make(k.j, k.e, σ)
+      if (σ instanceof Trie.Bot) { // 'is' check confuses compiler
+         return Result.at(out, Traced.make(t, null), Bot.make(), BotKont.make() as K)
+      } else
       if (Trie.Var.is(σ)) {
          const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
          return Result.at(out, Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ)
@@ -182,13 +195,13 @@ export function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Resu
                   return Result.at(out, Traced.make(t, Value.Constr.at(kᵥ, v.ctr, args)), ρʹ, κ)
                } else
                if (v instanceof Value.ConstInt && (Trie.ConstInt.is(σ) || Trie.Top.is(σ))) {
-                  return Result.at(out, Traced.make(t, v), Env.empty(), σ.κ)
+                  return Result.at(out, e, Env.empty(), σ.κ)
                } else
                if (v instanceof Value.ConstStr && (Trie.ConstStr.is(σ) || Trie.Top.is(σ))) {
-                  return Result.at(out, Traced.make(t, v), Env.empty(), σ.κ)
+                  return Result.at(out, e, Env.empty(), σ.κ)
                } else
                if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
-                  return Result.at(out, Traced.make(t, v), Env.empty(), σ.κ)
+                  return Result.at(out, e, Env.empty(), σ.κ)
                } else {
                   return absurd("Demand mismatch.", e, σ)
                }
