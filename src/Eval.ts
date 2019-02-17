@@ -80,7 +80,7 @@ export class Result<K extends Kont<K>> implements PersistentObject {
    }
 }
 
-export class Results<K extends Persistent> implements PersistentObject {
+export class Results<K extends Kont<K>> implements PersistentObject {
    tvs: List<Traced>
    ρ: Env
    κ: K
@@ -91,7 +91,7 @@ export class Results<K extends Persistent> implements PersistentObject {
       this.κ = κ
    }
 
-   static make<K extends Persistent> (tvs: List<Traced>, ρ: Env, κ: K): Results<K> {
+   static make<K extends Kont<K>> (tvs: List<Traced>, ρ: Env, κ: K): Results<K> {
       return make(Results, tvs, ρ, κ) as Results<K>
    }
 }
