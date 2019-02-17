@@ -71,6 +71,9 @@ export abstract class Env implements PersistentObject {
    }
 
    static concat (ρ1: Env, ρ2: Env): Env {
+      if (ρ2 instanceof Bot) {
+         return Bot.make()
+      } else
       if (ρ2 instanceof EmptyEnv) {
          return ρ1
       } else
@@ -79,6 +82,27 @@ export abstract class Env implements PersistentObject {
       } else {
          return absurd()
       }
+   }
+}
+
+export class Bot extends Env {
+   constructor_ () {
+   }
+
+   static make (): Bot {
+      return make(Bot)
+   }
+
+   entries (): EmptyEnvEntries {
+      return absurd()
+   }
+
+   get (k: string): undefined {
+      return absurd()
+   }
+
+   bottom (): Bot {
+      return Bot.make()
    }
 }
 

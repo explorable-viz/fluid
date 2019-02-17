@@ -200,6 +200,19 @@ export namespace Traced {
       bottom (): K
    }
 
+   export class BotKont implements Kont<BotKont> {
+      constructor_ (): void {
+      }
+
+      bottom (): BotKont {
+         return BotKont.make()
+      }
+
+      static make (): BotKont {
+         return make(BotKont)
+      }
+   }
+
    // Unit continuation.
    export class VoidKont implements Kont<VoidKont> {
       constructor_ (): void {

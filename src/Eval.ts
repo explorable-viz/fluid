@@ -1,7 +1,7 @@
-import { __check, __nonNull, absurd, assert } from "./util/Core"
-import { Persistent, PersistentObject, at, getProp, make, versioned } from "./util/Persistent"
+import { __nonNull, absurd, assert } from "./util/Core"
+import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
-import { Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
+import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
@@ -10,7 +10,7 @@ import { Trace, Traced, Value, Value̊ } from "./Traced"
 
 import App = Traced.App
 import Args = Traced.Args
-import Bot = Traced.Bot
+import BotKont = Traced.BotKont
 import Empty = Traced.Empty
 import Kont = Traced.Kont
 import Let = Traced.Let
@@ -120,9 +120,13 @@ function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): R
       } else {
          return absurd()
       }
-      const {tv, ρ: ρʹ, κ: Πʹ}: Result<Args<K>> = eval__(ρ, es.head, σ),
-            {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, Πʹ, es.tail)
-      return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
+      const {tv, ρ: ρʹ, κ: Πʹ}: Result<Args<K>> = eval__(ρ, es.head, σ)
+      if (Πʹ instanceof BotKont) {
+         return Results.make(Cons.make(tv, es.tail.map(e => Traced.make(e.t, null))), Bot.make(), BotKont.make() as K)
+      } else {
+         const {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, Πʹ, es.tail)
+         return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
+      }
    } else
    if (Nil.is(es) && (Args.End.is(Π) || Args.Top.is(Π))) {
       return Results.make(Nil.make(), Env.empty(), Π.κ)
@@ -131,18 +135,11 @@ function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): R
    }
 }
 
-function ultimatelyBot (t: Trace): boolean {
-   return t instanceof Bot || (t instanceof Var && ultimatelyBot(__nonNull(t.t)))
-}
-
-// Preprocess with call to instantiate. 
+// Preprocess with call to instantiate. TODO: why this approach rather than the one in the paper?
 function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    if (versioned(e.t)) {
       const k: TraceId<Expr> = e.t!.__id as TraceId<Expr>
-      return __check(
-         eval_(ρ, instantiate(ρ)(k.e), σ), 
-         ({tv}) => (tv.v === null) === (Trie.Var.is(σ) || ultimatelyBot(tv.t))
-      )
+      return eval_(ρ, instantiate(ρ)(k.e), σ)
    } else {
       return absurd()
    }
@@ -153,19 +150,15 @@ function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> 
 export function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
    const t: Trace = e.t
    if (versioned(t)) {
-      const k: TraceId<Expr> = t.__id as EvalId<Expr, "trace">,
+      const k: TraceId<Expr> = t.__id as TraceId<Expr>,
             kᵥ: ValId = EvalId.make(k.j, k.e, "val"),
             out: EvalKey<K> = EvalKey.make(k.j, k.e, σ)
       if (Trie.Var.is(σ)) {
          const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
          return Result.at(out, Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ)
       } else {
-         if (t instanceof Bot) {
-            // We can assume there is a "baseline" computation with non-bottom outputs.
-            // Moreover environments are "rigid designators" (denote the same thing in every world).
-            const ρ_0: Env = getProp(out, Result, "ρ") as Env,
-                  κ_0: K = getProp(out, Result, "κ") as K
-            return Result.at(out, Traced.make(t, null), ρ_0.bottom(), κ_0.bottom())
+         if (t instanceof Traced.Bot) {
+            return Result.at(out, Traced.make(t, null), Bot.make(), BotKont.make() as K) // polymorphic abuse
          } else
          if (t instanceof Empty) {
             const v: Value = __nonNull(e.v)
@@ -213,9 +206,13 @@ export function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Resu
             const {tv: tf}: Result<VoidKont> = eval__(ρ, t.func, Trie.Fun.make(VoidKont.make())),
                   f: Value̊ = tf.v
             if (f instanceof Value.Closure) {
-               const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Traced> = eval__(ρ, t.arg, f.σ),
-                     {tv, ρ: ρʺ, κ}: Result<K> = eval__(Env.concat(f.ρ, ρʹ), eʹ, σ)
-               return Result.at(out, Traced.make(App.at(k, tf, tu, __nonNull(tv.t)), tv.v), ρʺ, κ)
+               const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Traced> = eval__(ρ, t.arg, f.σ)
+               if (eʹ instanceof BotKont) {
+                  return Result.at(out, Traced.make(App.at(k, tf, tu, null), null), Bot.make(), BotKont.make() as K)
+               } else {
+                  const {tv, ρ: ρʺ, κ}: Result<K> = eval__(Env.concat(f.ρ, ρʹ), eʹ, σ)
+                  return Result.at(out, Traced.make(App.at(k, tf, tu, __nonNull(tv.t)), tv.v), ρʺ, κ)
+               }
             } else
             // Primitives with identifiers as names are unary and first-class.
             if (f instanceof Value.PrimOp) {
