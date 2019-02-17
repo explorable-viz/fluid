@@ -117,12 +117,16 @@ function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): R
       } else 
       if (Args.Top.is(Π)) {
          σ = Trie.Top.make(Args.Top.make(Π.κ))
+      } else
+      if (Args.Bot.is(Π)) {
+         σ = Trie.Bot.make()
       } else {
          return absurd()
       }
       const {tv, ρ: ρʹ, κ: Πʹ}: Result<Args<K>> = eval__(ρ, es.head, σ)
       if (Πʹ instanceof BotKont) {
-         return Results.make(Cons.make(tv, es.tail.map(e => Traced.make(e.t, null))), Bot.make(), BotKont.make() as K)
+         const {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, Args.Bot.make(), es.tail)
+         return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
       } else {
          const {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, Πʹ, es.tail)
          return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)

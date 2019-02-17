@@ -191,6 +191,25 @@ export namespace Traced {
             return absurd("Not implemented yet")
          }
       }
+
+      export class Bot<K extends Kont<K>> extends Args<K> {
+         κ: K // want fix at null but couldn't make that work with the polymorphism
+
+         constructor_ () {
+         }
+
+         static is<K extends Kont<K>> (Π: Args<K>): Π is Bot<K> {
+            return Π instanceof Bot
+         }
+
+         static make<K extends Kont<K>> (): Bot<K> {
+            return make(Top) as Bot<K>
+         }
+
+         bottom (): Bot<K> {
+            return Bot.make()
+         }
+      }
    }
 
    // Tries are interned rather than versioned, as per the formalism (but don't really understand why).
@@ -209,7 +228,7 @@ export namespace Traced {
       }
 
       static make (): BotKont {
-         return make(BotKont)
+         return make(Bot)
       }
    }
 
