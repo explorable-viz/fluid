@@ -117,7 +117,7 @@ function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): R
       let σ: Trie<Args<K>>
       if (Args.Next.is(Π)) {
          σ = Π.σ
-      } else 
+      } else
       if (Args.Top.is(Π)) {
          σ = Trie.Top.make(Args.Top.make(Π.κ))
       } else
@@ -128,8 +128,14 @@ function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): R
       }
       const {tv, ρ: ρʹ, κ: Πʹ}: Result<Args<K>> = eval__(ρ, es.head, σ)
       if (Πʹ instanceof BotKont) {
-         const {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, Args.Bot.make(), es.tail)
-         return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
+         // hacky but let's try it
+         if (σ instanceof Trie.Top) {
+            const {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, σ.κ, es.tail)
+            return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
+         } else {
+            const {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, Args.Bot.make(), es.tail)
+            return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
+         }
       } else {
          const {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, Πʹ, es.tail)
          return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
@@ -168,14 +174,14 @@ export function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Resu
             kᵥ: ValId = EvalId.make(k.j, k.e, "val"),
             out: EvalKey<K> = EvalKey.make(k.j, k.e, σ)
       if (σ instanceof Trie.Bot) { // 'is' check confuses compiler
-         return Result.at(out, Traced.make(t, null), Bot.make(), BotKont.make() as K)
+         return Result.at(out, e, Bot.make(), BotKont.make() as K)
       } else
       if (Trie.Var.is(σ)) {
          const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
-         return Result.at(out, Traced.make(t, null), Env.singleton(σ.x.str, entry), σ.κ)
+         return Result.at(out, e, Env.singleton(σ.x.str, entry), σ.κ)
       } else {
          if (t instanceof Traced.Bot) {
-            return Result.at(out, Traced.make(t, null), Bot.make(), BotKont.make() as K) // polymorphic abuse
+            return Result.at(out, e, Bot.make(), BotKont.make() as K) // polymorphic abuse
          } else
          if (t instanceof Empty) {
             const v: Value = __nonNull(e.v)
