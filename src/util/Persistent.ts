@@ -82,6 +82,14 @@ export function versioned (o: Persistent): o is VersionedObject {
    return o !== null && (__nonNull(o) as any).__id !== undefined
 }
 
+export function asVersioned<T extends Persistent> (o: T): T & VersionedObject {
+   if (versioned(o)) {
+      return o
+   } else {
+      return absurd()
+   }
+}
+
 export function interned (o: Persistent): boolean {
    return o !== null && !versioned(o)
 }
