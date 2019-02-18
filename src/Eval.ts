@@ -126,20 +126,11 @@ function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): R
       } else {
          return absurd()
       }
-      const {tv, ρ: ρʹ, κ: Πʹ}: Result<Args<K>> = eval__(ρ, es.head, σ)
-      if (Πʹ instanceof BotKont) {
-         // hacky but let's try it
-         if (σ instanceof Trie.Top) {
-            const {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, σ.κ, es.tail)
-            return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
-         } else {
-            const {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, Args.Bot.make(), es.tail)
-            return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
-         }
-      } else {
-         const {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, Πʹ, es.tail)
-         return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
-      }
+      const {tv, ρ: ρʹ, κ: Πʹ}: Result<Args<K>> = eval__(ρ, es.head, σ),
+            // propagate bot except in the top case (ouch - see issue #3)
+            Πʺ: Args<K> = Πʹ instanceof BotKont ? (σ instanceof Trie.Top ? σ.κ : Args.Bot.make()) : Πʹ,
+            {tvs, ρ: ρʺ, κ}: Results<K> = evalArgs(ρ, Πʺ, es.tail)
+      return Results.make(Cons.make(tv, tvs), Env.concat(ρʹ, ρʺ), κ)
    } else
    if (Nil.is(es)) {
       if (Args.End.is(Π) || Args.Top.is(Π)) {
