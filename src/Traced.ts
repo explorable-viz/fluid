@@ -257,6 +257,7 @@ export namespace Traced {
       }
 
       export class Bot<K extends Kont<K>> extends Trie<K> {
+         __subtag: "Trie.Trie.Bot"
          constructor_ () {
          }
 
@@ -541,7 +542,7 @@ export namespace Traced {
    }
 
    export class Bot extends Trace {
-      __subtag: "Trace.Bot"
+      __subtag: "Trace.Trace.Bot"
 
       constructor_ (): void {
       }

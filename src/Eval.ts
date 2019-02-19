@@ -159,7 +159,7 @@ export function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Resu
          k: TraceId<Expr> = t.__id as TraceId<Expr>,
          kᵥ: ValId = EvalId.make(k.j, k.e, "val"),
          out: EvalKey<K> = EvalKey.make(k.j, k.e, σ)
-   if (σ instanceof Trie.Bot) { // 'is' check confuses compiler
+   if (Trie.Bot.is(σ)) { 
       return Result.at(out, e, Bot.make(), BotKont.make() as K)
    } else
    if (Trie.Var.is(σ)) {
