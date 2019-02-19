@@ -147,12 +147,9 @@ function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): R
 
 // Preprocess with call to instantiate. TODO: why this approach rather than the one in the paper?
 function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
-   if (versioned(e.t)) {
-      const k: TraceId<Expr> = e.t!.__id as TraceId<Expr>
-      return eval_(ρ, instantiate(ρ)(k.e), σ)
-   } else {
-      return absurd()
-   }
+   const t: Trace & VersionedObject = asVersioned(e.t),
+         k: TraceId<Expr> = t!.__id as TraceId<Expr>
+   return eval_(ρ, instantiate(ρ)(k.e), σ)
 }
 
 // Null means eval produced no information about v; the input traced value might be non-null.
