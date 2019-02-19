@@ -19,6 +19,8 @@ export interface VersionedObject<K extends PersistentObject = PersistentObject> 
    __id: K
 }
 
+export type Versioned<T> = T & VersionedObject
+
 // A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
 export class ExternalObject implements PersistentObject {
    public id: number
@@ -82,7 +84,7 @@ export function versioned (o: Persistent): o is VersionedObject {
    return o !== null && (__nonNull(o) as any).__id !== undefined
 }
 
-export function asVersioned<T extends Persistent> (o: T): T & VersionedObject {
+export function asVersioned<T extends Persistent> (o: T): Versioned<T> {
    if (versioned(o)) {
       return o
    } else {

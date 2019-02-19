@@ -1,5 +1,5 @@
 import { __nonNull, absurd, assert } from "./util/Core"
-import { PersistentObject, VersionedObject, at, make, asVersioned } from "./util/Persistent"
+import { PersistentObject, Versioned, at, make, asVersioned } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
@@ -147,7 +147,7 @@ function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>, es: List<Traced>): R
 
 // Preprocess with call to instantiate. TODO: why this approach rather than the one in the paper?
 function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
-   const t: Trace & VersionedObject = asVersioned(e.t),
+   const t: Versioned<Trace> = asVersioned(e.t),
          k: TraceId<Expr> = t!.__id as TraceId<Expr>
    return eval_(ρ, instantiate(ρ)(k.e), σ)
 }
@@ -155,7 +155,7 @@ function eval__<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> 
 // Null means eval produced no information about v; the input traced value might be non-null.
 // By the time we get here e should have been "instantiated" with respect to ρ.
 export function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Result<K> {
-   const t: Trace & VersionedObject = asVersioned(e.t),
+   const t: Versioned<Trace> = asVersioned(e.t),
          k: TraceId<Expr> = t.__id as TraceId<Expr>,
          kᵥ: ValId = EvalId.make(k.j, k.e, "val"),
          out: EvalKey<K> = EvalKey.make(k.j, k.e, σ)
@@ -171,7 +171,7 @@ export function eval_<K extends Kont<K>> (ρ: Env, e: Traced, σ: Trie<K>): Resu
          return Result.at(out, e, Bot.make(), σ instanceof Trie.Top ? σ.κ : BotKont.make() as K) 
       } else
       if (t instanceof Empty) {
-         const v: Value & VersionedObject = __nonNull(asVersioned(e.v))
+         const v: Versioned<Value> = __nonNull(asVersioned(e.v))
          assert(v.__id === kᵥ)
          if (v instanceof Value.Constr) {
             let Π: Args<K>
