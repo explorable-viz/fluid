@@ -112,7 +112,7 @@ export class Traced implements PersistentObject {
    }
 
    bottom (): Traced {
-      return make(Traced, this.t.bottom(), null)
+      return Traced.make(this.t.bottom(), null)
    }
 }
 
@@ -508,10 +508,10 @@ export namespace Traced {
 
       export class Var<K extends Persistent> extends Match<K> {
          x: Lex.Var
-         v: Value | null
+         v: Value̊
          κ: K
 
-         constructor_ (x: Lex.Var, v: Value | null, κ: K) {
+         constructor_ (x: Lex.Var, v: Value̊, κ: K) {
             this.x = x
             this.v = v
             this.κ = κ

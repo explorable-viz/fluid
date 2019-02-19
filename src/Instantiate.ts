@@ -198,7 +198,7 @@ export function instantiate (ρ: Env): (e: Expr) => Traced {
    }
 }
 
-// See issue #33. Some sort of heinousness to covert the continuation type.
+// See issue #33. These is some sort of heinousness to covert the continuation type.
 function instantiateKont<K extends Expr.Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env): (κ: K) => Kʹ {
    return function (κ: K): Kʹ {
       if (κ instanceof Expr.Trie.Trie) {
