@@ -1,5 +1,5 @@
 import { absurd } from "./util/Core"
-import { PersistentObject, Versioned, at, make, asVersioned } from "./util/Persistent"
+import { PersistentObject, Versioned, at, make } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
@@ -25,45 +25,54 @@ type Tag = "expr" | "val" | "trace"
 
 // The "runtime identity" of an expression. In the formalism we use a "flat" representation so that e always has an external id;
 // here it is more convenient to use an isomorphic nested format.
-export class EvalId<T extends Tag> implements PersistentObject {
+export class ExprId implements PersistentObject {
    j: EnvEntries
    e: Versioned<Expr | RecDef>
+
+   constructor_ (j: EnvEntries, e: Versioned<Expr | RecDef>) {
+      this.j = j
+      this.e = e
+   }
+
+   static make<T extends Tag> (j: EnvEntries, e: Versioned<Expr | RecDef>): ExprId {
+      return make(ExprId, j, e)
+   }
+}
+
+class Tagged<T extends Tag> implements PersistentObject {
+   e: Expr
    tag: T
 
-   constructor_ (j: EnvEntries, e: Versioned<Expr | RecDef>, tag: T) {
-      this.j = j
+   constructor_ (e: Expr, tag: T) {
       this.e = e
       this.tag = tag
    }
 
-   static make<T extends Tag> (j: EnvEntries, e: Versioned<Expr | RecDef>, tag: T): EvalId<T> {
-      return make(EvalId, j, e, tag) as EvalId<T>
+   static make<T extends Tag> (e: Expr, tag: T): Tagged<T> {
+      return make(Tagged, e, tag) as Tagged<T>
    }
 }
 
-export type ExprId = EvalId<"expr">
-export type ValId = EvalId<"val">
-export type TraceId = EvalId<"trace">
+export type ValId = Tagged<"val">
+export type TraceId = Tagged<"trace">
 
 export module Eval {
 
-// Note that an "eval id" is not a suitable memo-key for eval_: different demands will produce output environments of 
-// different shapes. (For the same reason, eval_ is only monotone w.r.t. σ in the output environment if the ordering on
-// tries implies equality of binding structure.) This effectively serves as an eval_ memo key in the meantime; probably
-// want to subsume this into some memoisation infrastructure at some point.
+// Note that even though the environment argument is effectively baked into an "expr id", it remains an ynsuitable memo-key for eval_: 
+// different demands will produce output environments of different shapes. (For the same reason, eval_ is only monotone w.r.t. σ in the 
+// output environment if the ordering on tries implies equality of binding structure.) This effectively serves as an eval_ memo key in
+// the meantime; probably want to subsume this into some memoisation infrastructure at some point.
 class EvalKey<K extends Expr.Kont<K>> implements PersistentObject {
-   j: EnvEntries
    e: Expr
    σ: Trie<K>
 
-   constructor_ (j: EnvEntries, e: Expr, σ: Trie<K>) {
-      this.j = j
+   constructor_ (e: Expr, σ: Trie<K>) {
       this.e = e
       this.σ = σ
    }
 
-   static make<K extends Expr.Kont<K>> (j: EnvEntries, e: Expr, σ: Trie<K>): EvalKey<K> {
-      return make(EvalKey, j, e, σ) as EvalKey<K>
+   static make<K extends Expr.Kont<K>> (e: Expr, σ: Trie<K>): EvalKey<K> {
+      return make(EvalKey, e, σ) as EvalKey<K>
    }
 }
    
@@ -147,10 +156,9 @@ function evalArgs<K extends Expr.Kont<K>> (ρ: Env, Π: Expr.Args<K>, es: List<E
 }
 
 export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): Result<K> {
-   const e_: Versioned<Expr> = asVersioned(e),
-         k: TraceId = e_.__id as TraceId,
-         kᵥ: ValId = EvalId.make(k.j, k.e, "val"),
-         out: EvalKey<K> = EvalKey.make(k.j, k.e as Expr, σ)
+   const k: TraceId = Tagged.make(e, "trace"),
+         kᵥ: ValId = Tagged.make(e, "val"),
+         out: EvalKey<K> = EvalKey.make(e, σ)
    // An unevaluated expression has a bot trace for the sake of monotonicity across computations; might
    // want to reinstate the embedding of expressions into traces here.
    if (Trie.Bot.is(σ)) { 

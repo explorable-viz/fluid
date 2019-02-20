@@ -2,7 +2,7 @@ import { __nonNull, absurd } from "./util/Core"
 import { asVersioned } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { Eval, EvalId, ExprId } from "./Eval"
+import { Eval, ExprId } from "./Eval"
 import { Expr } from "./Expr"
 
 import App = Expr.App
@@ -24,7 +24,7 @@ import Var = Expr.Var
 import mapTrie = Expr.Trie.mapTrie
 
 export function instantiate (ρ: Env, e: Expr): Expr {
-   const j: ExprId = EvalId.make(ρ.entries(), asVersioned(e), "expr")
+   const j: ExprId = ExprId.make(ρ.entries(), asVersioned(e))
    if (e instanceof Bot) {
       return Bot.at(j)
    } else 
@@ -52,7 +52,7 @@ export function instantiate (ρ: Env, e: Expr): Expr {
    } else
    if (e instanceof LetRec) {
       const δ: List<RecDef> = e.δ.map(def => {
-         const i: ExprId = EvalId.make(ρ.entries(), asVersioned(def), "expr")
+         const i: ExprId = ExprId.make(ρ.entries(), asVersioned(def))
          return RecDef.at(i, def.x, instantiate(ρ, def.e))
       })
       return LetRec.at(j, δ, instantiate(Eval.closeDefs(δ, ρ, δ), e.e))
