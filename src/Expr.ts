@@ -1,8 +1,8 @@
 import { __check, absurd, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { Persistent, PersistentObject, Versioned, asVersioned, at, make, versioned } from "./util/Persistent"
+import { Persistent, PersistentObject, asVersioned, at, make, versioned } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
-import { List, } from "./BaseTypes"
+import { List, Pair } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { UnaryOp } from "./Primitive"
 
@@ -610,6 +610,47 @@ export namespace Expr {
 
          static make<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
             return make(Var, x, κ) as Var<K>
+         }
+      }
+
+      function mapArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
+         return (Π: Args<K>): Args<Kʹ> => {
+            if (Args.End.is(Π)) {
+               return Args.End.make(f(Π.κ))
+            } else
+            if (Args.Next.is(Π)) {
+               return Args.Next.make(mapTrie(mapArgs(f))(Π.σ))
+            } else {
+               return absurd()
+            }
+         }
+      }
+      
+      export function mapTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (σ: Trie<K>) => Trie<Kʹ> {
+         return (σ: Trie<K>): Trie.Trie<Kʹ> => {
+            if (ConstInt.is(σ)) {
+               return ConstInt.make(f(σ.κ))
+            } else
+            if (ConstStr.is(σ)) {
+               return ConstStr.make(f(σ.κ))
+            } else
+            if (Fun.is(σ)) {
+               return Fun.make(f(σ.κ))
+            } else
+            if (Var.is(σ)) {
+               return Var.make(σ.x, f(σ.κ))
+            } else 
+            if (Constr.is(σ)) {
+               return Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<Kʹ>> => {
+                  if (Π instanceof Args.Args) {
+                     return Pair.make(ctr, mapArgs(f)(Π))
+                  } else {
+                     return absurd()
+                  }
+               }))
+            } else {
+               return absurd()
+            }
          }
       }
    }

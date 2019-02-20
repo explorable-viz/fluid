@@ -6,10 +6,8 @@ import { Expr, Lex } from "./Expr"
 import { ValId } from "./Eval"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
-import { Traced, Value } from "./Traced"
+import { Value } from "./Traced"
 
-import Args = Traced.Args
-import Kont = Traced.Kont
 import Trie = Expr.Trie
 import VoidKont = Expr.VoidKont
 
@@ -20,7 +18,7 @@ type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
 // Parser guarantees that values/patterns respect constructor signatures. 
 // TODO: rename to avoid confusion with Match.match.
-function match<K extends Kont<K>> (v: Value, σ: Trie<K>): PrimResult<K> {
+function match<K extends Expr.Kont<K>> (v: Value, σ: Trie<K>): PrimResult<K> {
    if (v instanceof Value.PrimOp && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
       return [v, σ.κ]
    } else 
@@ -33,8 +31,8 @@ function match<K extends Kont<K>> (v: Value, σ: Trie<K>): PrimResult<K> {
    if (v instanceof Value.Constr) {
       assert(v.args.length === 0, "Primitives must return nullary values.")
       if (Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
-         const Π: Args<K> = get(σ.cases, v.ctr.str)!
-         if (Args.End.is(Π)) {
+         const Π: Expr.Args<K> = get(σ.cases, v.ctr.str)!
+         if (Expr.Args.End.is(Π)) {
             return [v, Π.κ]
          } else {
             return absurd()
@@ -64,7 +62,7 @@ export class UnaryBody implements PersistentObject {
       return make(UnaryBody, op)
    }
 
-   invoke<K extends Kont<K>> (v: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
+   invoke<K extends Expr.Kont<K>> (v: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
       return k => match(this.op(v)(k), σ)
    }
 } 
@@ -80,7 +78,7 @@ export class BinaryBody implements PersistentObject {
       return make(BinaryBody, op)
    }
 
-   invoke<K extends Kont<K>> (v1: Value, v2: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
+   invoke<K extends Expr.Kont<K>> (v1: Value, v2: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
       return k => match(this.op(v1, v2)(k), σ)
    }
 } 
@@ -226,7 +224,7 @@ export function prelude (): Env {
    const ρ_0: Env = Env.empty()
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
-      ρ = ExtendEnv.make(ρ, x, EnvEntry.make(ρ_0, Nil.make(), instantiate(ρ_0)(Expr.PrimOp.at(ν(), op))))
+      ρ = ExtendEnv.make(ρ, x, EnvEntry.make(ρ_0, Nil.make(), instantiate(ρ_0, Expr.PrimOp.at(ν(), op))))
    })
    return ρ
 }
