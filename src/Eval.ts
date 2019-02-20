@@ -147,16 +147,18 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Expr.Trie<K
          k: TraceId<Expr> = e_.__id as TraceId<Expr>,
          kᵥ: ValId = EvalId.make(k.j, k.e, "val"),
          out: EvalKey<K> = EvalKey.make(k.j, k.e, σ)
+   // An unevaluated expression has a bot trace for the sake of monotonicity across computations; might
+   // want to reinstate the embedding of expressions into traces here.
    if (Expr.Trie.Bot.is(σ)) { 
-      return Result.at(out, e, Bot.make(), BotKont.make() as K)
+      return Result.at(out, Traced.make(Traced.Bot.at(k), null), Bot.make(), BotKont.make() as K)
    } else
    if (Expr.Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
-      return Result.at(out, e, Env.singleton(σ.x.str, entry), σ.κ)
+      return Result.at(out, Traced.make(Traced.Bot.at(k), null), Env.singleton(σ.x.str, entry), σ.κ)
    } else
    if (e instanceof Expr.Bot) {
        // top demands "match" bottom; see issue #74
-      return Result.at(out, e, Bot.make(), σ instanceof Trie.Top ? σ.κ : BotKont.make() as K) 
+      return Result.at(out, Traced.make(Traced.Bot.at(k), null), Bot.make(), σ instanceof Trie.Top ? σ.κ : BotKont.make() as K) 
    } else
    if (e instanceof Expr.Constr) {
       let Π: Expr.Args<K>
@@ -166,7 +168,6 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Expr.Trie<K
       if (Expr.Trie.Top.is(σ)) {
          Π = Expr.Args.Top.make(σ.κ)
       } else {
-         // leave out Top case for now
          return absurd("Demand mismatch.", e, σ)
       }
       const {tvs: args, ρ: ρʹ, κ}: Results<K> = evalArgs(ρ, Π, e.args)

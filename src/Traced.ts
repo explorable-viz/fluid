@@ -1,5 +1,5 @@
 import { absurd } from "./util/Core"
-import { Persistent, PersistentObject, Versioned, asVersioned, at, make, versioned } from "./util/Persistent"
+import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -14,7 +14,7 @@ export type Value̊ = Value | null
 export namespace Value {
    export abstract class Value implements PersistentObject {
       __tag: "Value.Value"
-      abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+      abstract constructor_ (...args: Persistent[]): void
    }
 
    export class Closure extends Value {
@@ -402,12 +402,20 @@ export namespace Traced {
 
    // A trie which has been matched (executed) to a depth of at least one.
    export namespace Match {
-      export type Args<K> = Args.Args<K>
+      export type Args<K extends Expr.Kont<K>> = Args.Args<K>
 
       export namespace Args {
-         export abstract class Args<K> implements PersistentObject {
+         export abstract class Args<K> implements Expr.Kont<Args<K>> {
             __tag: "Match.Args"
             abstract constructor_ (...args: Persistent[]): void
+   
+            bottom (): Args<K> {
+               return absurd("Not implemented yet")
+            }
+   
+            join (Π: Args<K>): Args<K> {
+               return absurd("Not implemented yet")
+            }
          }
    
          export class End<K extends Persistent> extends Args<K> {
@@ -487,18 +495,18 @@ export namespace Traced {
       }
 
       // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
-      export class Constr<K> extends Match<K> {
-         cases: FiniteMap<string, Traced.Args<K> | Args<K>> 
+      export class Constr<K extends Expr.Kont<K>> extends Match<K> {
+         cases: FiniteMap<string, Expr.Args<K> | Args<K>> 
 
-         constructor_ (cases: FiniteMap<string, Traced.Args<K> | Args<K>>) {
+         constructor_ (cases: FiniteMap<string, Expr.Args<K> | Args<K>>) {
             this.cases = cases
          }
 
-         static is<K> (ξ: Match<K>): ξ is Constr<K> {
+         static is<K extends Expr.Kont<K>> (ξ: Match<K>): ξ is Constr<K> {
             return ξ instanceof Constr
          }
 
-         static make<K> (cases: FiniteMap<string, Traced.Args<K> | Args<K>>): Constr<K> {
+         static make<K extends Expr.Kont<K>> (cases: FiniteMap<string, Expr.Args<K> | Args<K>>): Constr<K> {
             return make(Constr, cases)
          }
       }

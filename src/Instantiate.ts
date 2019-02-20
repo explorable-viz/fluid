@@ -20,6 +20,7 @@ import PrimOp = Expr.PrimOp
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 import Var = Expr.Var
+import mapTrie = Expr.Trie.mapTrie
 
 export function instantiate (ρ: Env, e: Expr): Expr {
    const i: TraceId<Expr> = EvalId.make(ρ.entries(), e, "trace"),

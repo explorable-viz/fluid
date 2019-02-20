@@ -11,10 +11,10 @@ import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
 import { Traced } from "../src/Traced"
 
-import Args = Traced.Args
-import Kont = Traced.Kont
-import Trie = Traced.Trie
-import VoidKont = Traced.VoidKont
+import Args = Expr.Args
+import Kont = Expr.Kont
+import Trie = Expr.Trie
+import VoidKont = Expr.VoidKont
 
 export function initialise (): void {
    // Fix the toString impl on String to behave sensibly.
@@ -86,7 +86,7 @@ export function parseExample (src: string | null): Expr {
 }
 
 export function runExample (e: Expr, σ: Trie<VoidKont> = τ.top(VoidKont.make())): Traced {
-   const {tv}: Eval.Result<VoidKont> = Eval.eval_(ρ, instantiate(ρ)(e), σ)
+   const {tv}: Eval.Result<VoidKont> = Eval.eval_(ρ, instantiate(ρ, e), σ)
    console.log(tv)
    if (!Trie.Top.is(σ)) {
       console.log(match(σ, tv.v))

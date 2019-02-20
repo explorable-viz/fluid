@@ -2,9 +2,6 @@ import { absurd } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Expr } from "./Expr"
-import { Traced } from "./Traced"
-
-import RecDef = Traced.RecDef
 
 // An environment whose names have been projected away, leaving only a list of the bound entities.
 export abstract class EnvEntries implements PersistentObject {
