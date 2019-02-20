@@ -403,7 +403,7 @@ export namespace Expr {
          }
 
          join (Π: End<K>): End<K> {
-            return absurd("Not implemented yet")
+            return super.join(Π) as End<K>
          }
 
          static is<K extends Kont<K>> (Π: Args<K>): Π is End<K> {
@@ -428,7 +428,7 @@ export namespace Expr {
          }
 
          join (Π: Next<K>): Next<K> {
-            return absurd("Not implemented yet")
+            return super.join(Π) as Next<K>
          }
 
          static is<K extends Kont<K>> (Π: Args<K>): Π is Next<K> {
