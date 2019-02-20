@@ -227,7 +227,7 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
    } else
    if (e instanceof Expr.Let) {
       const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Expr> = eval_(ρ, e.e, e.σ),
-            {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(ρ, ρʹ), eʹ, σ)
+            {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ), σ)
       return Result.at(out, Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, tv.t)), tv.v), ρʺ, κ)
    } else
    if (e instanceof Expr.LetRec) {
@@ -237,7 +237,7 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
    } else
    if (e instanceof Expr.MatchAs) {
       const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Expr> = eval_(ρ, e.e, e.σ),
-            {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(ρ, ρʹ), eʹ, σ)
+            {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ), σ)
       return Result.at(out, Traced.make(MatchAs.at(k, tu, e.σ, tv.t), tv.v), ρʺ, κ)
    } else
    // Operators (currently all binary) are "syntax", rather than names.
