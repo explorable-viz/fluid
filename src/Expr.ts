@@ -431,10 +431,10 @@ export namespace Expr {
    // Use the same heinous cast as used in 'instantiateKont'.
    function join<K extends Kont<K>> (κ: K, κʹ: K): K {
       if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
-         return Trie.Trie.join<K>(κʹ, κʹ) as any as K
+         return Trie.Trie.join<K>(κ, κʹ) as any as K
       } else
       if (κ instanceof Args.Args && κʹ instanceof Args.Args) {
-         return Args.Args.join<K>(κʹ, κʹ) as any as K
+         return Args.Args.join<K>(κ, κʹ) as any as K
       } else {
          return absurd("Unsupported join.")
       }
