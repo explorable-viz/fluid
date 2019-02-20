@@ -1,5 +1,5 @@
 import { absurd } from "./util/Core"
-import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
+import { Persistent, PersistentObject, asVersioned, at, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -304,14 +304,10 @@ export namespace Traced {
 
    export abstract class Trace implements PersistentObject, Expr.Kont<Trace> {
       __tag: "Trace.Trace"
-      abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+      abstract constructor_ (...args: Persistent[]): void
 
       bottom (): Trace {
-         if (versioned(this)) {
-            return Bot.at(this.__id as TraceId<Expr>)
-         } else {
-            return absurd()
-         }
+         return Bot.at(asVersioned(this).__id as TraceId)
       }
 
       join (t: Trace): Trace {
@@ -325,7 +321,7 @@ export namespace Traced {
       constructor_ (): void {
       }
 
-      static at (k: TraceId<Expr>): Bot {
+      static at (k: TraceId): Bot {
          return at(k, Bot)
       }
    }
@@ -341,7 +337,7 @@ export namespace Traced {
          this.body = body
       }
 
-      static at (k: TraceId<Expr>, func: Traced, arg: Traced, body: Trace): App {
+      static at (k: TraceId, func: Traced, arg: Traced, body: Trace): App {
          return at(k, App, func, arg, body)
       }
    }
@@ -355,7 +351,7 @@ export namespace Traced {
          this.arg = arg
       }
 
-      static at (k: TraceId<Expr>, func: Traced, arg: Traced): App {
+      static at (k: TraceId, func: Traced, arg: Traced): App {
          return at(k, App, func, arg)
       }
    }
@@ -365,7 +361,7 @@ export namespace Traced {
       constructor_ (): void {
       }
 
-      static at (k: TraceId<Expr>): Empty {
+      static at (k: TraceId): Empty {
          return at(k, Empty)
       }
    }
@@ -379,7 +375,7 @@ export namespace Traced {
          this.σ = σ
       }
 
-      static at (k: TraceId<Expr>, tu: Traced, σ: Expr.Trie.Var<Trace>): Let {
+      static at (k: TraceId, tu: Traced, σ: Expr.Trie.Var<Trace>): Let {
          return at(k, Let, tu, σ)
       }
    }
@@ -394,7 +390,7 @@ export namespace Traced {
          this.tv = tv
       }
 
-      static at (k: TraceId<Expr>, δ: List<Expr.RecDef>, tv: Traced): LetRec {
+      static at (k: TraceId, δ: List<Expr.RecDef>, tv: Traced): LetRec {
          return at(k, LetRec, δ, tv)
       }
    }
@@ -410,7 +406,7 @@ export namespace Traced {
          this.t = t
       }
 
-      static at (k: TraceId<Expr>, tu: Traced, σ: Expr.Trie<Expr>, t: Trace): MatchAs {
+      static at (k: TraceId, tu: Traced, σ: Expr.Trie<Expr>, t: Trace): MatchAs {
          return at(k, MatchAs, tu, σ, t)
       }
    }
@@ -426,7 +422,7 @@ export namespace Traced {
          this.tv2 = tv2
       }
 
-      static at (k: TraceId<Expr>, tv1: Traced, opName: Lex.OpName, tv2: Traced): BinaryApp {
+      static at (k: TraceId, tv1: Traced, opName: Lex.OpName, tv2: Traced): BinaryApp {
          return at(k, BinaryApp, tv1, opName, tv2)
       }
    }
@@ -440,7 +436,7 @@ export namespace Traced {
          this.t = t
       }
 
-      static at (k: TraceId<Expr>, x: Lex.Var, t: Trace): Var {
+      static at (k: TraceId, x: Lex.Var, t: Trace): Var {
          return at(k, Var, x, t)
       }
    }

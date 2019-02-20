@@ -1,4 +1,4 @@
-import { __check, __nonNull, absurd } from "./util/Core"
+import { __check, absurd } from "./util/Core"
 import { ExternalObject, PersistentObject, Versioned, at, make, asVersioned } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
