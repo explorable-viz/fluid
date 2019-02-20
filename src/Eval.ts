@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
 import { PersistentObject, Versioned, at, make } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
-import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
+import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv, EmptyEnv } from "./Env"
 import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
@@ -116,7 +116,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, EnvEntry.make(ρ, δ_0, δ.head.e))
    } else
    if (Nil.is(δ)) {
-      return ρ
+      return EmptyEnv.make()
    } else {
       return absurd()
    }
@@ -202,7 +202,8 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
       const x: string = e.x.str
       if (ρ.has(x)) { 
          const {ρ: ρʹ, δ, e: eʹ}: EnvEntry = ρ.get(x)!,
-               {tv, ρ: ρʺ, κ}: Result<K> = eval_(closeDefs(δ, ρʹ, δ), eʹ, σ)
+               ρᵣ = closeDefs(δ, ρʹ, δ),
+               {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(ρʹ, ρᵣ), instantiate(ρᵣ, eʹ), σ)
          return Result.at(out, Traced.make(Var.at(k, e.x, tv.t), tv.v), ρʺ, κ)
       } else {
          return absurd("Variable not found.", x)
@@ -232,7 +233,7 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
-            {tv, ρ: ρʺ, κ}: Result<K> = eval_(ρʹ, e.e, σ)
+            {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, e.e), σ)
       return Result.at(out, Traced.make(LetRec.at(k, e.δ, tv), tv.v), ρʺ, κ)
    } else
    if (e instanceof Expr.MatchAs) {
