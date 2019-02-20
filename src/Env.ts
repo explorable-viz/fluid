@@ -1,14 +1,12 @@
 import { absurd } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
-import { Traced } from "./Traced"
-
-import RecDef = Traced.RecDef
+import { Expr } from "./Expr"
 
 // An environment whose names have been projected away, leaving only a list of the bound entities.
 export abstract class EnvEntries implements PersistentObject {
    __tag: "EnvEntries"
-   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+   abstract constructor_ (...args: Persistent[]): void 
 }
 
 export class EmptyEnvEntries extends EnvEntries { 
@@ -46,7 +44,7 @@ export class ExtendEnvEntries extends EnvEntries {
 export abstract class Env implements PersistentObject {
    abstract entries (): EnvEntries;
    abstract get (k: string): EnvEntry | undefined;
-   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+   abstract constructor_ (...args: Persistent[]): void
 
    has (k: string): boolean {
       return this.get(k) !== undefined
@@ -71,6 +69,9 @@ export abstract class Env implements PersistentObject {
    }
 
    static concat (ρ1: Env, ρ2: Env): Env {
+      if (ρ2 instanceof Bot) {
+         return Bot.make()
+      } else
       if (ρ2 instanceof EmptyEnv) {
          return ρ1
       } else
@@ -79,6 +80,27 @@ export abstract class Env implements PersistentObject {
       } else {
          return absurd()
       }
+   }
+}
+
+export class Bot extends Env {
+   constructor_ () {
+   }
+
+   static make (): Bot {
+      return make(Bot)
+   }
+
+   entries (): EmptyEnvEntries {
+      return absurd()
+   }
+
+   get (k: string): undefined {
+      return absurd()
+   }
+
+   bottom (): Bot {
+      return Bot.make()
    }
 }
 
@@ -141,20 +163,20 @@ export class ExtendEnv extends Env {
 
 export class EnvEntry implements PersistentObject {
    ρ: Env
-   δ: List<RecDef>
-   e: Traced
+   δ: List<Expr.RecDef>
+   e: Expr
 
    constructor_ (
       ρ: Env,
-      δ: List<RecDef>,
-      e: Traced
+      δ: List<Expr.RecDef>,
+      e: Expr
    ) {
       this.ρ = ρ
       this.δ = δ
       this.e = e
    }
 
-   static make (ρ: Env, δ: List<RecDef>, e: Traced): EnvEntry {
+   static make (ρ: Env, δ: List<Expr.RecDef>, e: Expr): EnvEntry {
       return make(EnvEntry, ρ, δ, e)
    }
 

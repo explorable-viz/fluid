@@ -6,7 +6,7 @@ import { Expr } from "../src/Expr"
 import { Traced} from "../src/Traced"
 import { TestFile, τ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 
-import VoidKont = Traced.VoidKont
+import VoidKont = Expr.VoidKont
 
 before((done: MochaDone) => {
 	initialise()

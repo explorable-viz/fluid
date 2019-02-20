@@ -95,22 +95,20 @@ function from<T extends PersistentObject> (o: PersistentObject, cls: Class<T>, p
 
 function populateScene (): void {
    const e: Expr = parseExample(loadTestFile("example", "bar-chart").text),
-         v: Value = __nonNull(runExample(e).v),
-         elems: List<Persistent> = as(reflect(v), List)
+         v: Value = __nonNull(runExample(e).v)
    let here: Persistent = e
    here = from(here as PersistentObject, Expr.Let, "e")
-   here = from(here as PersistentObject, Expr.Constr, "args")
-   here = from(here as PersistentObject, Cons, "tail")
-   here = from(here as PersistentObject, Cons, "head")
 
    const here_: Expr.Constr = as(here, Expr.Constr)
    if (versioned(here)) {
       World.newRevision()
       const args: Cons<Expr> = as(here_.args, Cons)
       Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(args.head.bottom(), args.tail)) // clunky
-      assert(__nonNull(runExample(e).v) === v) // make consistent - should it be an invariant that every world is consistent?
+      const vʹ: Value = __nonNull(runExample(e).v) // make consistent - is there an invariant that every world is consistent?
+      assert(vʹ !== v) // should be equal :-/
       World.undo()
 
+      const elems: List<Persistent> = as(reflect(vʹ), List)
       for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
          // assume only increasing or decreasing changes (to or from null):
          for (let obj of objects(elemsʹ.head)) {

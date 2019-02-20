@@ -1,8 +1,8 @@
 import { __check, absurd, assert } from "./util/Core"
-import { JoinSemilattice, eq } from "./util/Ord"
-import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
+import { eq } from "./util/Ord"
+import { Persistent, PersistentObject, asVersioned, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
-import { List, } from "./BaseTypes"
+import { List, Pair } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { UnaryOp } from "./Primitive"
 
@@ -128,21 +128,12 @@ export namespace Lex {
 export type Expr = Expr.Expr
 
 export namespace Expr {
-   // Must be joinable, purely so that joining two expressions will fail.
-   export abstract class Expr implements PersistentObject, JoinSemilattice<Expr> {
+   export abstract class Expr implements PersistentObject {
       __tag: "Expr.Expr"
-      abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
-
-      join (e: Expr): Expr {
-         return assert(false, "Expression join unsupported.")
-      }
+      abstract constructor_ (...args: Persistent[]): void 
 
       bottom (): Expr {
-         if (versioned(this)) {
-            return Bot.at(this.__id)
-         } else {
-            return absurd()
-         }
+         return Bot.at(asVersioned(this).__id)
       }
    }
 
@@ -256,7 +247,12 @@ export namespace Expr {
          this.x = x
          this.e = e
       }
-   
+ 
+      // Like environments, these don't have entirely bottom forms, but preserve the name structure.
+      bottom (): RecDef {
+         return RecDef.at(asVersioned(this).__id as PersistentObject, this.x, this.e.bottom())
+      }   
+  
       static at (α: PersistentObject, x: Lex.Var, e: Expr): RecDef {
          return at(α, RecDef, x, e)
       }
@@ -290,7 +286,7 @@ export namespace Expr {
       }
    }
 
-   export class PrimApp extends Expr {
+   export class BinaryApp extends Expr {
       e1: Expr
       opName: Lex.OpName
       e2: Expr
@@ -301,8 +297,8 @@ export namespace Expr {
          this.e2 = e2
       }
 
-      static at (α: PersistentObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
-         return at(α, PrimApp, e1, opName, e2)
+      static at (α: PersistentObject, e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
+         return at(α, BinaryApp, e1, opName, e2)
       }
    }
 
@@ -330,19 +326,54 @@ export namespace Expr {
             return absurd("Not implemented yet")
          }
 
-         join (Π: Args<K>): Args<K> {
-            return Args.join(this, Π)
-         }
-
          static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
             if (Π instanceof End && Πʹ instanceof End) {
-               return End.make(Π.κ.join(Πʹ.κ))
+               return End.make(join(Π.κ, Πʹ.κ))
             } else
             if (Π instanceof Next && Πʹ instanceof Next) {
-               return Next.make(Π.σ.join(Πʹ.σ))
+               return Next.make(join(Π.σ, Πʹ.σ))
             } else {
                return assert(false, "Undefined join.", Π, Πʹ)
             }
+         }
+      }
+
+      export class Top<K extends Kont<K>> extends Args<K> {
+         κ: K // want fix at null but couldn't make that work with the polymorphism
+
+         constructor_ (κ: K) {
+            this.κ = κ
+         }
+
+         static is<K extends Kont<K>> (Π: Args<K>): Π is Top<K> {
+            return Π instanceof Top
+         }
+
+         static make<K extends Kont<K>> (κ: K): Top<K> {
+            return make(Top, κ) as Top<K>
+         }
+
+         bottom (): Top<K> {
+            return absurd("Not implemented yet")
+         }
+      }
+
+      export class Bot<K extends Kont<K>> extends Args<K> {
+         κ: K // want fix at null but couldn't make that work with the polymorphism
+
+         constructor_ () {
+         }
+
+         static is<K extends Kont<K>> (Π: Args<K>): Π is Bot<K> {
+            return Π instanceof Bot
+         }
+
+         static make<K extends Kont<K>> (): Bot<K> {
+            return make(Bot) as Bot<K>
+         }
+
+         bottom (): Bot<K> {
+            return Bot.make()
          }
       }
 
@@ -352,6 +383,10 @@ export namespace Expr {
 
          constructor_ (κ: K) {
             this.κ = κ
+         }
+
+         bottom (): End<K> {
+            return absurd("Not implemented yet")
          }
 
          static is<K extends Kont<K>> (Π: Args<K>): Π is End<K> {
@@ -371,6 +406,10 @@ export namespace Expr {
             this.σ = σ
          }
 
+         bottom (): Next<K> {
+            return absurd("Not implemented yet")
+         }
+
          static is<K extends Kont<K>> (Π: Args<K>): Π is Next<K> {
             return Π instanceof Next
          }
@@ -384,9 +423,53 @@ export namespace Expr {
    // Tries are persistent but not versioned, as per the formalism.
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
 
-   export interface Kont<K> extends JoinSemilattice<K>, PersistentObject {
+   export interface Kont<K> extends PersistentObject {
       bottom (): K
    }
+
+   // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
+   // Use the same heinous cast as used in 'instantiateKont'.
+   function join<K extends Kont<K>> (κ: K, κʹ: K): K {
+      if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
+         return Trie.Trie.join<K>(κ, κʹ) as any as K
+      } else
+      if (κ instanceof Args.Args && κʹ instanceof Args.Args) {
+         return Args.Args.join<K>(κ, κʹ) as any as K
+      } else {
+         return absurd("Unsupported join.")
+      }
+   }
+
+   export class BotKont implements Kont<BotKont> {
+      __tag: "Expr.BotKont"
+
+      constructor_ (): void {
+      }
+
+      bottom (): BotKont {
+         return BotKont.make()
+      }
+
+      static make (): BotKont {
+         return make(BotKont)
+      }
+   }
+
+   // Unit continuation.
+   export class VoidKont implements Kont<VoidKont> {
+      __tag: "Expr.VoidKont"
+
+      constructor_ (): void {
+      }
+
+      bottom (): VoidKont {
+         return absurd("Not implemented yet")
+      }
+
+      static make (): VoidKont {
+         return make(VoidKont)
+      }
+   }   
 
    export namespace Trie {
       export abstract class Trie<K extends Kont<K>> implements Kont<Trie<K>> {
@@ -397,22 +480,49 @@ export namespace Expr {
             return absurd("Not implemented yet")
          }
          
-         join (τ: Trie<K>): Trie<K> {
-            return Trie.join(this, τ)
-         }
-
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Fun.is(σ) && Fun.is(τ)) {
-               return Fun.make(σ.κ.join(τ.κ))
+               return Fun.make(join(σ.κ, τ.κ))
             } else
             if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-               return Var.make(σ.x, σ.κ.join(τ.κ))
+               return Var.make(σ.x, join(σ.κ, τ.κ))
             } else
             if (Constr.is(σ) && Constr.is(τ)) {
                return Constr.make(unionWith(σ.cases, τ.cases, Args.Args.join))
             } else {
                return assert(false, "Undefined join.", this, τ)
             }
+         }
+      }
+
+      export class Bot<K extends Kont<K>> extends Trie<K> {
+         __subtag: "Expr.Trie.Bot"
+         constructor_ () {
+         }
+
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Bot<K> {
+            return σ instanceof Bot
+         }
+
+         static make<K extends Kont<K>> (): Bot<K> {
+            return make(Bot) as Bot<K>
+         }
+      }
+
+      // Wanted to fix K at null but that doesn't work with polymorphic code.
+      export class Top<K extends Kont<K>> extends Trie<K> {
+         κ: K
+
+         constructor_ (κ: K) {
+            this.κ = κ
+         }
+
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Top<K> {
+            return σ instanceof Top
+         }
+
+         static make<K extends Kont<K>> (κ: K): Top<K> {
+            return make(Top, κ) as Top<K>
          }
       }
 
@@ -492,6 +602,47 @@ export namespace Expr {
 
          static make<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
             return make(Var, x, κ) as Var<K>
+         }
+      }
+
+      function mapArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
+         return (Π: Args<K>): Args<Kʹ> => {
+            if (Args.End.is(Π)) {
+               return Args.End.make(f(Π.κ))
+            } else
+            if (Args.Next.is(Π)) {
+               return Args.Next.make(mapTrie(mapArgs(f))(Π.σ))
+            } else {
+               return absurd()
+            }
+         }
+      }
+      
+      export function mapTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (σ: Trie<K>) => Trie<Kʹ> {
+         return (σ: Trie<K>): Trie.Trie<Kʹ> => {
+            if (ConstInt.is(σ)) {
+               return ConstInt.make(f(σ.κ))
+            } else
+            if (ConstStr.is(σ)) {
+               return ConstStr.make(f(σ.κ))
+            } else
+            if (Fun.is(σ)) {
+               return Fun.make(f(σ.κ))
+            } else
+            if (Var.is(σ)) {
+               return Var.make(σ.x, f(σ.κ))
+            } else 
+            if (Constr.is(σ)) {
+               return Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<Kʹ>> => {
+                  if (Π instanceof Args.Args) {
+                     return Pair.make(ctr, mapArgs(f)(Π))
+                  } else {
+                     return absurd()
+                  }
+               }))
+            } else {
+               return absurd()
+            }
          }
       }
    }
