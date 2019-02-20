@@ -1,5 +1,5 @@
 import { __check, absurd, assert } from "./util/Core"
-import { JoinSemilattice, eq } from "./util/Ord"
+import { eq } from "./util/Ord"
 import { Persistent, PersistentObject, asVersioned, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List, Pair } from "./BaseTypes"
@@ -128,14 +128,9 @@ export namespace Lex {
 export type Expr = Expr.Expr
 
 export namespace Expr {
-   // Must be joinable, purely so that joining two expressions will fail.
-   export abstract class Expr implements PersistentObject, JoinSemilattice<Expr> {
+   export abstract class Expr implements PersistentObject {
       __tag: "Expr.Expr"
-      abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
-
-      join (e: Expr): Expr {
-         return absurd("Expression join unsupported.")
-      }
+      abstract constructor_ (...args: Persistent[]): void 
 
       bottom (): Expr {
          return Bot.at(asVersioned(this).__id)
@@ -331,16 +326,12 @@ export namespace Expr {
             return absurd("Not implemented yet")
          }
 
-         join (Π: Args<K>): Args<K> {
-            return Args.join(this, Π)
-         }
-
          static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
             if (Π instanceof End && Πʹ instanceof End) {
-               return End.make(Π.κ.join(Πʹ.κ))
+               return End.make(join(Π.κ, Πʹ.κ))
             } else
             if (Π instanceof Next && Πʹ instanceof Next) {
-               return Next.make(Π.σ.join(Πʹ.σ))
+               return Next.make(join(Π.σ, Πʹ.σ))
             } else {
                return assert(false, "Undefined join.", Π, Πʹ)
             }
@@ -356,10 +347,6 @@ export namespace Expr {
 
          static is<K extends Kont<K>> (Π: Args<K>): Π is Top<K> {
             return Π instanceof Top
-         }
-
-         join (Π: Top<K>): Top<K> {
-            return absurd("Not implemented yet")
          }
 
          static make<K extends Kont<K>> (κ: K): Top<K> {
@@ -402,10 +389,6 @@ export namespace Expr {
             return absurd("Not implemented yet")
          }
 
-         join (Π: End<K>): End<K> {
-            return super.join(Π) as End<K>
-         }
-
          static is<K extends Kont<K>> (Π: Args<K>): Π is End<K> {
             return Π instanceof End
          }
@@ -427,10 +410,6 @@ export namespace Expr {
             return absurd("Not implemented yet")
          }
 
-         join (Π: Next<K>): Next<K> {
-            return super.join(Π) as Next<K>
-         }
-
          static is<K extends Kont<K>> (Π: Args<K>): Π is Next<K> {
             return Π instanceof Next
          }
@@ -444,8 +423,21 @@ export namespace Expr {
    // Tries are persistent but not versioned, as per the formalism.
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
 
-   export interface Kont<K> extends JoinSemilattice<K>, PersistentObject {
+   export interface Kont<K> extends PersistentObject {
       bottom (): K
+   }
+
+   // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
+   // Use the same heinous cast as used in 'instantiateKont'.
+   function join<K extends Kont<K>> (κ: K, κʹ: K): K {
+      if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
+         return Trie.Trie.join<K>(κʹ, κʹ) as any as K
+      } else
+      if (κ instanceof Args.Args && κʹ instanceof Args.Args) {
+         return Args.Args.join<K>(κʹ, κʹ) as any as K
+      } else {
+         return absurd("Unsupported join.")
+      }
    }
 
    export class BotKont implements Kont<BotKont> {
@@ -456,10 +448,6 @@ export namespace Expr {
 
       bottom (): BotKont {
          return BotKont.make()
-      }
-
-      join (κ: BotKont): BotKont {
-         return absurd("Not implemented yet")
       }
 
       static make (): BotKont {
@@ -478,10 +466,6 @@ export namespace Expr {
          return absurd("Not implemented yet")
       }
 
-      join (κ: VoidKont): VoidKont {
-         return this 
-      }
-
       static make (): VoidKont {
          return make(VoidKont)
       }
@@ -496,16 +480,12 @@ export namespace Expr {
             return absurd("Not implemented yet")
          }
          
-         join (τ: Trie<K>): Trie<K> {
-            return Trie.join(this, τ)
-         }
-
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Fun.is(σ) && Fun.is(τ)) {
-               return Fun.make(σ.κ.join(τ.κ))
+               return Fun.make(join(σ.κ, τ.κ))
             } else
             if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-               return Var.make(σ.x, σ.κ.join(τ.κ))
+               return Var.make(σ.x, join(σ.κ, τ.κ))
             } else
             if (Constr.is(σ) && Constr.is(τ)) {
                return Constr.make(unionWith(σ.cases, τ.cases, Args.Args.join))
