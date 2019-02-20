@@ -27,7 +27,7 @@ export function match<K extends Kont<K>> (σ: Trie<K>, v: Value̊): Match<K> {
    if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
       return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
          if (v.ctr.str === ctr) {
-            return Pair.make(ctr, matchArgs(v.args)(Π))
+            return Pair.make(ctr, matchArgs(v.args, Π))
          } else {
             return Pair.make(ctr, Π)
          }
@@ -37,52 +37,48 @@ export function match<K extends Kont<K>> (σ: Trie<K>, v: Value̊): Match<K> {
    }
 }
 
-function matchArgs<K extends Kont<K>> (tvs: List<Traced>): (Π: Args<K>) => Match.Args<K> {
-   return (Π: Args<K>): Match.Args<K> => {
-      // Parser ensures constructor patterns agree with constructor signatures.
-      if (Cons.is(tvs) && Args.Next.is(Π)) {
-         // codomain of ξ is Args; promote to Args | Match.Args:
-         const ξ: Match<Args<K>> = match(Π.σ, tvs.head.v), 
-               inj = (Π: Args<K>): Args<K> | Match.Args<K> => Π, 
-               ξʹ = mapMatch(matchArgs(tvs.tail), inj)(ξ)
-         return Match.Args.Next.make(TracedMatch.make(tvs.head.t, ξʹ))
-      } else
-      if (Nil.is(tvs) && (Args.End.is(Π) || Args.Top.is(Π))) {
-         return Match.Args.End.make(Π.κ)
-      } else {
-         return absurd()
-      }
+function matchArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): Match.Args<K> {
+   // Parser ensures constructor patterns agree with constructor signatures.
+   if (Cons.is(tvs) && Args.Next.is(Π)) {
+      // codomain of ξ is Args; promote to Args | Match.Args:
+      const ξ: Match<Args<K>> = match(Π.σ, tvs.head.v), 
+            inj = (Π: Args<K>): Args<K> | Match.Args<K> => Π, 
+            ξʹ = mapMatch(Π => matchArgs(tvs.tail, Π), inj, ξ)
+      return Match.Args.Next.make(TracedMatch.make(tvs.head.t, ξʹ))
+   } else
+   if (Nil.is(tvs) && (Args.End.is(Π) || Args.Top.is(Π))) {
+      return Match.Args.End.make(Π.κ)
+   } else {
+      return absurd()
    }
 }
 
-function mapMatch<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (ξ: Match<K>) => Match<Kʹ> {
-   return (ξ: Match<K>): Match<Kʹ> => {
-      if (Match.ConstInt.is(ξ)) {
-         return Match.ConstInt.make(ξ.val, f(ξ.κ))
-      } else
-      if (Match.ConstStr.is(ξ)) {
-         return Match.ConstStr.make(ξ.val, f(ξ.κ))
-      } else
-      if (Match.Fun.is(ξ)) {
-         return Match.Fun.make(ξ.f, f(ξ.κ))
-      } else
-      if (Match.Var.is(ξ)) {
-         return Match.Var.make(ξ.x, ξ.v, f(ξ.κ))
-      } else 
-      if (Match.Constr.is(ξ)) {
-         return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<Kʹ> | Match.Args<Kʹ>> => {
-            if (Π_or_Ψ instanceof Match.Args.Args) {
-               return Pair.make(ctr, mapMatchArgs(f, g)(Π_or_Ψ))
-            } else
-            if (Π_or_Ψ instanceof Args.Args) {
-               return Pair.make(ctr, mapArgs(g)(Π_or_Ψ))
-            } else {
-               return absurd()
-            }
-         }))
-      } else {
-         return absurd()
-      }
+function mapMatch<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ, ξ: Match<K>): Match<Kʹ> {
+   if (Match.ConstInt.is(ξ)) {
+      return Match.ConstInt.make(ξ.val, f(ξ.κ))
+   } else
+   if (Match.ConstStr.is(ξ)) {
+      return Match.ConstStr.make(ξ.val, f(ξ.κ))
+   } else
+   if (Match.Fun.is(ξ)) {
+      return Match.Fun.make(ξ.f, f(ξ.κ))
+   } else
+   if (Match.Var.is(ξ)) {
+      return Match.Var.make(ξ.x, ξ.v, f(ξ.κ))
+   } else 
+   if (Match.Constr.is(ξ)) {
+      return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<Kʹ> | Match.Args<Kʹ>> => {
+         if (Π_or_Ψ instanceof Match.Args.Args) {
+            return Pair.make(ctr, mapMatchArgs(f, g, Π_or_Ψ))
+         } else
+         if (Π_or_Ψ instanceof Args.Args) {
+            return Pair.make(ctr, mapArgs(g)(Π_or_Ψ))
+         } else {
+            return absurd()
+         }
+      }))
+   } else {
+      return absurd()
    }
 }
 
@@ -99,19 +95,17 @@ function mapArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): 
    }
 }
 
-function mapMatchArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ): (Ψ: Match.Args<K>) => Match.Args<Kʹ> {
-   return (Ψ: Match.Args<K>): Match.Args<Kʹ> => {
-      if (Match.Args.End.is(Ψ)) {
-         return Match.Args.End.make(f(Ψ.κ))
-      } else
-      if (Match.Args.Next.is(Ψ)) {
-         return Match.Args.Next.make(
-            TracedMatch.make(Ψ.tξ.t,
-            mapMatch(mapMatchArgs(f, g), mapMatchArgs(g, g))(Ψ.tξ.ξ)) // "bivariance"
-         )
-      } else {
-         return absurd()
-      }
+function mapMatchArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ, Ψ: Match.Args<K>): Match.Args<Kʹ> {
+   if (Match.Args.End.is(Ψ)) {
+      return Match.Args.End.make(f(Ψ.κ))
+   } else
+   if (Match.Args.Next.is(Ψ)) {
+      return Match.Args.Next.make(
+         TracedMatch.make(Ψ.tξ.t,
+         mapMatch((Ψ: Match.Args<K>) => mapMatchArgs(f, g, Ψ), (Ψ: Match.Args<K>) => mapMatchArgs(g, g, Ψ), Ψ.tξ.ξ)) // "bivariance"
+      )
+   } else {
+      return absurd()
    }
 }
 
