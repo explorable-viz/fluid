@@ -1,5 +1,5 @@
-import { __nonNull, absurd } from "./util/Core"
-import { PersistentObject, Versioned, at, make, asVersioned } from "./util/Persistent"
+import { __check, __nonNull, absurd } from "./util/Core"
+import { ExternalObject, PersistentObject, Versioned, at, make, asVersioned } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
@@ -8,35 +8,42 @@ import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { Traced, Value, Value̊ } from "./Traced"
 
 import App = Traced.App
+import BinaryApp = Traced.BinaryApp
 import BotKont = Expr.BotKont
 import Empty = Traced.Empty
 import Kont = Expr.Kont
 import Let = Traced.Let
 import LetRec = Traced.LetRec
 import MatchAs = Traced.MatchAs
-import PrimApp = Traced.PrimApp
+import RecDef = Expr.RecDef
 import Trie = Expr.Trie
+import UnaryApp = Traced.UnaryApp
 import Var = Traced.Var
 import VoidKont = Expr.VoidKont
 
-export class EvalId<E extends Expr | Expr.RecDef, T extends "val" | "trace"> {
+type Tag = "expr" | "val" | "trace"
+
+// The "runtime identity" of an expression. Always grounds out in an equivalent expression whose id is external.
+export class EvalId<T extends Tag> implements PersistentObject {
    j: EnvEntries
-   e: E
+   e: Versioned<Expr | RecDef>
    tag: T
 
-   constructor_ (j: EnvEntries, e: E, tag: T) {
+   constructor_ (j: EnvEntries, e: Versioned<Expr | RecDef>, tag: T) {
       this.j = j
-      this.e = e
+      // enforcing this invariant would require parameterising Expr by the type of its id:
+      this.e = __check(e, it => it.__id instanceof ExternalObject)
       this.tag = tag
    }
 
-   static make<E extends Expr | Expr.RecDef, T extends "val" | "trace"> (j: EnvEntries, e: E, tag: T): EvalId<E, T> {
-      return make(EvalId, j, e, tag) as EvalId<E, T>
+   static make<T extends Tag> (j: EnvEntries, e: Versioned<Expr | RecDef>, tag: T): EvalId<T> {
+      return make(EvalId, j, e, tag) as EvalId<T>
    }
 }
 
-export type ValId = EvalId<Expr, "val">
-export type TraceId<E extends Expr | Expr.RecDef> = EvalId<E, "trace">
+export type ExprId = EvalId<"expr">
+export type ValId = EvalId<"val">
+export type TraceId = EvalId<"trace">
 
 export module Eval {
 
@@ -141,9 +148,9 @@ function evalArgs<K extends Expr.Kont<K>> (ρ: Env, Π: Expr.Args<K>, es: List<E
 
 export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): Result<K> {
    const e_: Versioned<Expr> = asVersioned(e),
-         k: TraceId<Expr> = e_.__id as TraceId<Expr>,
+         k: TraceId = e_.__id as TraceId,
          kᵥ: ValId = EvalId.make(k.j, k.e, "val"),
-         out: EvalKey<K> = EvalKey.make(k.j, k.e, σ)
+         out: EvalKey<K> = EvalKey.make(k.j, k.e as Expr, σ)
    // An unevaluated expression has a bot trace for the sake of monotonicity across computations; might
    // want to reinstate the embedding of expressions into traces here.
    if (Trie.Bot.is(σ)) { 
@@ -187,7 +194,7 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
       if (ρ.has(x)) { 
          const {ρ: ρʹ, δ, e: eʹ}: EnvEntry = ρ.get(x)!,
                {tv, ρ: ρʺ, κ}: Result<K> = eval_(closeDefs(δ, ρʹ, δ), eʹ, σ)
-         return Result.at(out, Traced.make(Var.at(k, e.x, __nonNull(tv.t)), tv.v), ρʺ, κ)
+         return Result.at(out, Traced.make(Var.at(k, e.x, tv.t), tv.v), ρʺ, κ)
       } else {
          return absurd("Variable not found.", x)
       }
@@ -198,13 +205,13 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
       if (f instanceof Value.Closure2) {
          const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Expr> = eval_(ρ, e.arg, f.σ),
                {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(f.ρ, ρʹ), eʹ, σ)
-         return Result.at(out, Traced.make(App.at(k, tf, tu, __nonNull(tv.t)), tv.v), ρʺ, κ)
+         return Result.at(out, Traced.make(App.at(k, tf, tu, tv.t), tv.v), ρʺ, κ)
       } else
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
          const {tv: tu}: Result<VoidKont> = eval_(ρ, e.arg, f.op.σ),
                [v, κ]: PrimResult<K> = f.op.b.invoke(tu.v!, σ)(kᵥ)
-         return Result.at(out, Traced.make(App.at(k, tf, tu, null), v), Env.empty(), κ)
+         return Result.at(out, Traced.make(UnaryApp.at(k, tf, tu), v), Env.empty(), κ)
       } else {
          return absurd()
       }
@@ -212,7 +219,7 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
    if (e instanceof Expr.Let) {
       const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Expr> = eval_(ρ, e.e, e.σ),
             {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(ρ, ρʹ), eʹ, σ)
-      return Result.at(out, Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, __nonNull(tv.t))), tv.v), ρʺ, κ)
+      return Result.at(out, Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, tv.t)), tv.v), ρʺ, κ)
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
@@ -222,16 +229,16 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
    if (e instanceof Expr.MatchAs) {
       const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Expr> = eval_(ρ, e.e, e.σ),
             {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(ρ, ρʹ), eʹ, σ)
-      return Result.at(out, Traced.make(MatchAs.at(k, tu, e.σ, __nonNull(tv.t)), tv.v), ρʺ, κ)
+      return Result.at(out, Traced.make(MatchAs.at(k, tu, e.σ, tv.t), tv.v), ρʺ, κ)
    } else
    // Operators (currently all binary) are "syntax", rather than names.
-   if (e instanceof Expr.PrimApp) {
+   if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.str)) {
          const op: BinaryOp = binaryOps.get(e.opName.str)!,
                {tv: tv1}: Result<VoidKont> = eval_(ρ, e.e1, op.σ1),
                {tv: tv2}: Result<VoidKont> = eval_(ρ, e.e2, op.σ2),
                [v, κ]: PrimResult<K> = op.b.invoke(tv1.v!, tv2.v!, σ)(kᵥ)
-         return Result.at(out, Traced.make(PrimApp.at(k, tv1, e.opName, tv2), v), Env.empty(), κ)
+         return Result.at(out, Traced.make(BinaryApp.at(k, tv1, e.opName, tv2), v), Env.empty(), κ)
       } else {
          return absurd("Operator name not found.", e.opName)
       }

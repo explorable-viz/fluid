@@ -1,6 +1,6 @@
 import { __check, absurd, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { Persistent, PersistentObject, asVersioned, at, make, versioned } from "./util/Persistent"
+import { Persistent, PersistentObject, asVersioned, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List, Pair } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -138,11 +138,7 @@ export namespace Expr {
       }
 
       bottom (): Expr {
-         if (versioned(this)) {
-            return Bot.at(this.__id)
-         } else {
-            return absurd()
-         }
+         return Bot.at(asVersioned(this).__id)
       }
    }
 
@@ -259,7 +255,7 @@ export namespace Expr {
  
       // Like environments, these don't have entirely bottom forms, but preserve the name structure.
       bottom (): RecDef {
-         return RecDef.at(asVersioned(this).__id, this.x, this.e.bottom())
+         return RecDef.at(asVersioned(this).__id as PersistentObject, this.x, this.e.bottom())
       }   
   
       static at (α: PersistentObject, x: Lex.Var, e: Expr): RecDef {
@@ -295,7 +291,7 @@ export namespace Expr {
       }
    }
 
-   export class PrimApp extends Expr {
+   export class BinaryApp extends Expr {
       e1: Expr
       opName: Lex.OpName
       e2: Expr
@@ -306,8 +302,8 @@ export namespace Expr {
          this.e2 = e2
       }
 
-      static at (α: PersistentObject, e1: Expr, opName: Lex.OpName, e2: Expr): PrimApp {
-         return at(α, PrimApp, e1, opName, e2)
+      static at (α: PersistentObject, e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
+         return at(α, BinaryApp, e1, opName, e2)
       }
    }
 
@@ -402,6 +398,14 @@ export namespace Expr {
             this.κ = κ
          }
 
+         bottom (): End<K> {
+            return absurd("Not implemented yet")
+         }
+
+         join (Π: End<K>): End<K> {
+            return absurd("Not implemented yet")
+         }
+
          static is<K extends Kont<K>> (Π: Args<K>): Π is End<K> {
             return Π instanceof End
          }
@@ -417,6 +421,14 @@ export namespace Expr {
 
          constructor_ (σ: Trie<Args<K>>) {
             this.σ = σ
+         }
+
+         bottom (): Next<K> {
+            return absurd("Not implemented yet")
+         }
+
+         join (Π: Next<K>): Next<K> {
+            return absurd("Not implemented yet")
          }
 
          static is<K extends Kont<K>> (Π: Args<K>): Π is Next<K> {

@@ -156,12 +156,12 @@ const app_: Parser<(e1: Expr, e2: Expr) => Expr.App> =
 
 function appOp (
    opP: Parser<Lex.OpName>
-): Parser<(e1: Expr, e2: Expr) => Expr.PrimApp> {
+): Parser<(e1: Expr, e2: Expr) => Expr.BinaryApp> {
    return withAction(
       opP,
       op =>
-         (e1: Expr, e2: Expr): Expr.PrimApp =>
-            Expr.PrimApp.at(ν(), e1, op, e2)
+         (e1: Expr, e2: Expr): Expr.BinaryApp =>
+            Expr.BinaryApp.at(ν(), e1, op, e2)
    )
 }
 
