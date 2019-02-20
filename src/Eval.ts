@@ -4,6 +4,7 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
+import { instantiate } from "./Instantiate"
 import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { Traced, Value, Value̊ } from "./Traced"
 
@@ -185,16 +186,16 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
       const {tvs: args, ρ: ρʹ, κ}: Results<K> = evalArgs(ρ, Π, e.args)
       return Result.at(out, Traced.make(Empty.at(k), Value.Constr.at(kᵥ, e.ctr, args)), ρʹ, κ)
    } else
-   if (e instanceof Expr.ConstInt && Trie.ConstInt.is(σ)) {
+   if (e instanceof Expr.ConstInt && (Trie.ConstInt.is(σ) || Trie.Top.is(σ))) {
       return Result.at(out, Traced.make(Empty.at(k), Value.ConstInt.at(kᵥ, e.val)), Env.empty(), σ.κ)
    } else
-   if (e instanceof Expr.ConstStr && Trie.ConstStr.is(σ)) {
+   if (e instanceof Expr.ConstStr && (Trie.ConstStr.is(σ) || Trie.Top.is(σ))) {
       return Result.at(out, Traced.make(Empty.at(k), Value.ConstStr.at(kᵥ, e.val)), Env.empty(), σ.κ)
    } else
-   if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
-      return Result.at(out, Traced.make(Empty.at(k), Value.Closure2.at(kᵥ, ρ, e.σ)), Env.empty(), σ.κ)
+   if (e instanceof Expr.Fun && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
+      return Result.at(out, Traced.make(Empty.at(k), Value.Closure.at(kᵥ, ρ, e.σ)), Env.empty(), σ.κ)
    } else
-   if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
+   if (e instanceof Expr.PrimOp && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
       return Result.at(out, Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.op)), Env.empty(), σ.κ)
    } else
    if (e instanceof Expr.Var) {
@@ -210,9 +211,9 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
    if (e instanceof Expr.App) {
       const {tv: tf}: Result<VoidKont> = eval_(ρ, e.func, Trie.Fun.make(Expr.VoidKont.make())),
             f: Value̊ = tf.v
-      if (f instanceof Value.Closure2) {
+      if (f instanceof Value.Closure) {
          const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Expr> = eval_(ρ, e.arg, f.σ),
-               {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(f.ρ, ρʹ), eʹ, σ)
+               {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(f.ρ, ρʹ), instantiate(ρʹ, eʹ), σ)
          return Result.at(out, Traced.make(App.at(k, tf, tu, tv.t), tv.v), ρʺ, κ)
       } else
       // Primitives with identifiers as names are unary and first-class.

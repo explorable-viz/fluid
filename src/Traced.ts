@@ -33,20 +33,6 @@ export namespace Value {
       }
    }
 
-   export class Closure2 extends Value {
-      ρ: Env
-      σ: Expr.Trie<Expr>
-   
-      constructor_ (ρ: Env, σ: Expr.Trie<Expr>): void {
-         this.ρ = ρ
-         this.σ = σ
-      }
-
-      static at (k: ValId, ρ: Env, σ: Expr.Trie<Expr>): Closure {
-         return at(k, Closure, ρ, σ)
-      }
-   }
-
    export abstract class Prim extends Value {
       __subsubtag: "Value.Prim"
    }
