@@ -250,7 +250,7 @@ export namespace Expr {
  
       // Like environments, these don't have entirely bottom forms, but preserve the name structure.
       bottom (): RecDef {
-         return RecDef.at(asVersioned(this).__id as PersistentObject, this.x, this.e.bottom())
+         return RecDef.at(asVersioned(this).__id, this.x, this.e.bottom())
       }   
   
       static at (α: PersistentObject, x: Lex.Var, e: Expr): RecDef {

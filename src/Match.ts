@@ -1,7 +1,7 @@
-import { absurd, assert } from "./util/Core"
+import { absurd } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Expr } from "./Expr"
-import { Traced, Value } from "./Traced"
+import { Traced, Value, Value̊ } from "./Traced"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
@@ -10,7 +10,7 @@ import TracedMatch = Traced.TracedMatch
 import Trie = Expr.Trie
 
 // The match for any evaluation with demand σ which yielded value v.
-export function match<K extends Kont<K>> (σ: Trie<K>, v: Value | null): Match<K> {
+export function match<K extends Kont<K>> (σ: Trie<K>, v: Value̊): Match<K> {
    if (Trie.Var.is(σ)) {
       // in general v is not null, even though the demand is null
       return Match.Var.make(σ.x, v, σ.κ)
@@ -33,7 +33,7 @@ export function match<K extends Kont<K>> (σ: Trie<K>, v: Value | null): Match<K
          }
       }))
    } else {
-      return assert(false, "Demand mismatch.", v, σ)
+      return absurd("Demand mismatch.", v, σ)
    }
 }
 
