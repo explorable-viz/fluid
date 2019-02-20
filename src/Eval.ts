@@ -1,5 +1,5 @@
-import { __check, absurd } from "./util/Core"
-import { ExternalObject, PersistentObject, Versioned, at, make, asVersioned } from "./util/Persistent"
+import { absurd } from "./util/Core"
+import { PersistentObject, Versioned, at, make, asVersioned } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
@@ -23,7 +23,8 @@ import VoidKont = Expr.VoidKont
 
 type Tag = "expr" | "val" | "trace"
 
-// The "runtime identity" of an expression. Always grounds out in an equivalent expression whose id is external.
+// The "runtime identity" of an expression. In the formalism we use a "flat" representation so that e always has an external id;
+// here it is more convenient to use an isomorphic nested format.
 export class EvalId<T extends Tag> implements PersistentObject {
    j: EnvEntries
    e: Versioned<Expr | RecDef>
@@ -31,8 +32,7 @@ export class EvalId<T extends Tag> implements PersistentObject {
 
    constructor_ (j: EnvEntries, e: Versioned<Expr | RecDef>, tag: T) {
       this.j = j
-      // enforcing this invariant would require parameterising Expr by the type of its id:
-      this.e = __check(e, it => it.__id instanceof ExternalObject)
+      this.e = e
       this.tag = tag
    }
 

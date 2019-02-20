@@ -1,4 +1,4 @@
-import { __nonNull, absurd, as } from "./util/Core"
+import { __nonNull, absurd } from "./util/Core"
 import { asVersioned } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
@@ -24,49 +24,47 @@ import Var = Expr.Var
 import mapTrie = Expr.Trie.mapTrie
 
 export function instantiate (ρ: Env, e: Expr): Expr {
-   const j: ExprId = as(asVersioned(e).__id, EvalId), // unenforced invariant
-         jʹ: ExprId = EvalId.make(ρ.entries(), j.e, "expr")
+   const j: ExprId = EvalId.make(ρ.entries(), asVersioned(e), "expr")
    if (e instanceof Bot) {
-      return Bot.at(jʹ)
+      return Bot.at(j)
    } else 
    if (e instanceof ConstInt) {
-      return ConstInt.at(jʹ, e.val)
+      return ConstInt.at(j, e.val)
    } else
    if (e instanceof ConstStr) {
-      return ConstStr.at(jʹ, e.val)
+      return ConstStr.at(j, e.val)
    } else
    if (e instanceof Constr) {
       // Parser ensures constructors agree with constructor signatures.
-      return Constr.at(jʹ, e.ctr, __nonNull(e.args).map(e => instantiate(ρ, e)))
+      return Constr.at(j, e.ctr, __nonNull(e.args).map(e => instantiate(ρ, e)))
    } else
    if (e instanceof Fun) {
-      return Fun.at(jʹ, instantiateTrie(ρ, e.σ))
+      return Fun.at(j, instantiateTrie(ρ, e.σ))
    } else
    if (e instanceof PrimOp) {
-      return PrimOp.at(jʹ, e.op)
+      return PrimOp.at(j, e.op)
    } else
    if (e instanceof Var) {
-      return Var.at(jʹ, e.x)
+      return Var.at(j, e.x)
    } else
    if (e instanceof Let) {
-      return Let.at(jʹ, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Expr>)
+      return Let.at(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Expr>)
    } else
    if (e instanceof LetRec) {
       const δ: List<RecDef> = e.δ.map(def => {
-         const i: ExprId = as(asVersioned(def).__id, EvalId),
-               iʹ: ExprId = EvalId.make(ρ.entries(), i.e, "expr")
-         return RecDef.at(iʹ, def.x, instantiate(ρ, def.e))
+         const i: ExprId = EvalId.make(ρ.entries(), asVersioned(def), "expr")
+         return RecDef.at(i, def.x, instantiate(ρ, def.e))
       })
-      return LetRec.at(jʹ, δ, instantiate(Eval.closeDefs(δ, ρ, δ), e.e))
+      return LetRec.at(j, δ, instantiate(Eval.closeDefs(δ, ρ, δ), e.e))
    } else
    if (e instanceof MatchAs) {
-      return MatchAs.at(jʹ, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
+      return MatchAs.at(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
    } else
    if (e instanceof App) {
-      return App.at(jʹ, instantiate(ρ, e.func), instantiate(ρ, e.arg))
+      return App.at(j, instantiate(ρ, e.func), instantiate(ρ, e.arg))
    } else
    if (e instanceof BinaryApp) {
-      return BinaryApp.at(jʹ, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2))
+      return BinaryApp.at(j, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2))
    } else {
       return absurd()
    }
