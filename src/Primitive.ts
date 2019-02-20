@@ -10,8 +10,8 @@ import { Traced, Value } from "./Traced"
 
 import Args = Traced.Args
 import Kont = Traced.Kont
-import Trie = Traced.Trie
-import VoidKont = Traced.VoidKont
+import Trie = Expr.Trie
+import VoidKont = Expr.VoidKont
 
 export type PrimResult<K> = [Value, K]
 type TrieCtr = (body: VoidKont) => Trie.Prim<VoidKont>

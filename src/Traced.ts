@@ -1,5 +1,5 @@
 import { absurd } from "./util/Core"
-import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
+import { Persistent, PersistentObject, Versioned, asVersioned, at, make, versioned } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -31,9 +31,23 @@ export namespace Value {
       }
    }
 
+   export class Closure2 extends Value {
+      ρ: Env
+      σ: Expr.Trie<Expr>
+   
+      constructor_ (ρ: Env, σ: Expr.Trie<Expr>): void {
+         this.ρ = ρ
+         this.σ = σ
+      }
+
+      static at (k: ValId, ρ: Env, σ: Expr.Trie<Expr>): Closure {
+         return at(k, Closure, ρ, σ)
+      }
+   }
+
    export abstract class Prim extends Value {
       __subsubtag: "Value.Prim"
-  }
+   }
    
    export class ConstInt extends Prim {
       val: number
@@ -528,7 +542,7 @@ export namespace Traced {
       }
    }
 
-   export abstract class Trace implements PersistentObject {
+   export abstract class Trace implements PersistentObject, Expr.Kont<Trace> {
       __tag: "Trace.Trace"
       abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 
@@ -538,6 +552,10 @@ export namespace Traced {
          } else {
             return absurd()
          }
+      }
+
+      join (t: Trace): Trace {
+         return absurd("Trace join unsupported.")
       }
    }
 
@@ -580,17 +598,15 @@ export namespace Traced {
 
    export class Let extends Trace {
       tu: Traced
-      σ: Trie.Var<Traced>
-      t: Trace̊
+      σ: Expr.Trie.Var<Trace>
 
-      constructor_ (tu: Traced, σ: Trie.Var<Traced>, t: Trace̊): void {
+      constructor_ (tu: Traced, σ: Expr.Trie.Var<Trace>): void {
          this.tu = tu
          this.σ = σ
-         this.t = t
       }
 
-      static at (k: TraceId<Expr>, tu: Traced, σ: Trie.Var<Traced>, t: Trace̊): Let {
-         return at(k, Let, tu, σ, t)
+      static at (k: TraceId<Expr>, tu: Traced, σ: Expr.Trie.Var<Trace>): Let {
+         return at(k, Let, tu, σ)
       }
    }
 
@@ -603,15 +619,6 @@ export namespace Traced {
          this.tv = tv
       }
 
-      // Like environments, these don't have entirely null forms, but preserve the name structure.
-      bottom (): RecDef {
-         if (versioned(this)) {
-            return RecDef.at(this.__id as TraceId<Expr.RecDef>, this.x, this.tv.bottom())
-         } else {
-            return absurd()
-         }
-      }
-   
       static at (k: TraceId<Expr.RecDef>, x: Lex.Var, tv: Traced): RecDef {
          return at(k, RecDef, x, tv)
       }
@@ -619,31 +626,31 @@ export namespace Traced {
 
    // Continuation here should really be a trace, not a traced value.
    export class LetRec extends Trace {
-      δ: List<RecDef>
+      δ: List<Expr.RecDef>
       tv: Traced
    
-      constructor_ (δ: List<RecDef>, tv: Traced): void {
+      constructor_ (δ: List<Expr.RecDef>, tv: Traced): void {
          this.δ = δ
          this.tv = tv
       }
 
-      static at (k: TraceId<Expr>, δ: List<RecDef>, tv: Traced): LetRec {
+      static at (k: TraceId<Expr>, δ: List<Expr.RecDef>, tv: Traced): LetRec {
          return at(k, LetRec, δ, tv)
       }
    }
    
    export class MatchAs extends Trace {
       tu: Traced
-      σ: Trie<Traced>
+      σ: Expr.Trie<Expr>
       t: Trace̊
 
-      constructor_ (tu: Traced, σ: Trie<Traced>, t: Trace̊): void {
+      constructor_ (tu: Traced, σ: Expr.Trie<Expr>, t: Trace̊): void {
          this.tu = tu
          this.σ = σ
          this.t = t
       }
 
-      static at (k: TraceId<Expr>, tu: Traced, σ: Trie<Traced>, t: Trace̊): MatchAs {
+      static at (k: TraceId<Expr>, tu: Traced, σ: Expr.Trie<Expr>, t: Trace̊): MatchAs {
          return at(k, MatchAs, tu, σ, t)
       }
    }

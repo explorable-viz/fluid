@@ -1,6 +1,7 @@
 import { absurd } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
+import { Expr } from "./Expr"
 import { Traced } from "./Traced"
 
 import RecDef = Traced.RecDef
@@ -8,7 +9,7 @@ import RecDef = Traced.RecDef
 // An environment whose names have been projected away, leaving only a list of the bound entities.
 export abstract class EnvEntries implements PersistentObject {
    __tag: "EnvEntries"
-   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+   abstract constructor_ (...args: Persistent[]): void 
 }
 
 export class EmptyEnvEntries extends EnvEntries { 
@@ -46,7 +47,7 @@ export class ExtendEnvEntries extends EnvEntries {
 export abstract class Env implements PersistentObject {
    abstract entries (): EnvEntries;
    abstract get (k: string): EnvEntry | undefined;
-   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+   abstract constructor_ (...args: Persistent[]): void
 
    has (k: string): boolean {
       return this.get(k) !== undefined
@@ -165,20 +166,20 @@ export class ExtendEnv extends Env {
 
 export class EnvEntry implements PersistentObject {
    ρ: Env
-   δ: List<RecDef>
-   e: Traced
+   δ: List<Expr.RecDef>
+   e: Expr
 
    constructor_ (
       ρ: Env,
-      δ: List<RecDef>,
-      e: Traced
+      δ: List<Expr.RecDef>,
+      e: Expr
    ) {
       this.ρ = ρ
       this.δ = δ
       this.e = e
    }
 
-   static make (ρ: Env, δ: List<RecDef>, e: Traced): EnvEntry {
+   static make (ρ: Env, δ: List<Expr.RecDef>, e: Expr): EnvEntry {
       return make(EnvEntry, ρ, δ, e)
    }
 

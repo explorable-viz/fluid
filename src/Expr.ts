@@ -1,6 +1,6 @@
 import { __check, absurd, assert } from "./util/Core"
 import { JoinSemilattice, eq } from "./util/Ord"
-import { Persistent, PersistentObject, at, make, versioned } from "./util/Persistent"
+import { Persistent, PersistentObject, Versioned, asVersioned, at, make, versioned } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List, } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -134,7 +134,7 @@ export namespace Expr {
       abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
 
       join (e: Expr): Expr {
-         return assert(false, "Expression join unsupported.")
+         return absurd("Expression join unsupported.")
       }
 
       bottom (): Expr {
@@ -256,7 +256,12 @@ export namespace Expr {
          this.x = x
          this.e = e
       }
-   
+ 
+      // Like environments, these don't have entirely bottom forms, but preserve the name structure.
+      bottom (): RecDef {
+         return RecDef.at(asVersioned(this).__id, this.x, this.e.bottom())
+      }   
+  
       static at (α: PersistentObject, x: Lex.Var, e: Expr): RecDef {
          return at(α, RecDef, x, e)
       }
@@ -346,6 +351,49 @@ export namespace Expr {
          }
       }
 
+      export class Top<K extends Kont<K>> extends Args<K> {
+         κ: K // want fix at null but couldn't make that work with the polymorphism
+
+         constructor_ (κ: K) {
+            this.κ = κ
+         }
+
+         static is<K extends Kont<K>> (Π: Args<K>): Π is Top<K> {
+            return Π instanceof Top
+         }
+
+         join (Π: Top<K>): Top<K> {
+            return absurd("Not implemented yet")
+         }
+
+         static make<K extends Kont<K>> (κ: K): Top<K> {
+            return make(Top, κ) as Top<K>
+         }
+
+         bottom (): Top<K> {
+            return absurd("Not implemented yet")
+         }
+      }
+
+      export class Bot<K extends Kont<K>> extends Args<K> {
+         κ: K // want fix at null but couldn't make that work with the polymorphism
+
+         constructor_ () {
+         }
+
+         static is<K extends Kont<K>> (Π: Args<K>): Π is Bot<K> {
+            return Π instanceof Bot
+         }
+
+         static make<K extends Kont<K>> (): Bot<K> {
+            return make(Bot) as Bot<K>
+         }
+
+         bottom (): Bot<K> {
+            return Bot.make()
+         }
+      }
+
       // Maps zero arguments to κ.
       export class End<K extends Kont<K>> extends Args<K> {
          κ: K
@@ -388,6 +436,45 @@ export namespace Expr {
       bottom (): K
    }
 
+   export class BotKont implements Kont<BotKont> {
+      __tag: "Expr.BotKont"
+
+      constructor_ (): void {
+      }
+
+      bottom (): BotKont {
+         return BotKont.make()
+      }
+
+      join (κ: BotKont): BotKont {
+         return absurd("Not implemented yet")
+      }
+
+      static make (): BotKont {
+         return make(BotKont)
+      }
+   }
+
+   // Unit continuation.
+   export class VoidKont implements Kont<VoidKont> {
+      __tag: "Expr.VoidKont"
+
+      constructor_ (): void {
+      }
+
+      bottom (): VoidKont {
+         return absurd("Not implemented yet")
+      }
+
+      join (κ: VoidKont): VoidKont {
+         return this 
+      }
+
+      static make (): VoidKont {
+         return make(VoidKont)
+      }
+   }   
+
    export namespace Trie {
       export abstract class Trie<K extends Kont<K>> implements Kont<Trie<K>> {
          __tag: "Expr.Trie"
@@ -413,6 +500,37 @@ export namespace Expr {
             } else {
                return assert(false, "Undefined join.", this, τ)
             }
+         }
+      }
+
+      export class Bot<K extends Kont<K>> extends Trie<K> {
+         __subtag: "Expr.Trie.Bot"
+         constructor_ () {
+         }
+
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Bot<K> {
+            return σ instanceof Bot
+         }
+
+         static make<K extends Kont<K>> (): Bot<K> {
+            return make(Bot) as Bot<K>
+         }
+      }
+
+      // Wanted to fix K at null but that doesn't work with polymorphic code.
+      export class Top<K extends Kont<K>> extends Trie<K> {
+         κ: K
+
+         constructor_ (κ: K) {
+            this.κ = κ
+         }
+
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Top<K> {
+            return σ instanceof Top
+         }
+
+         static make<K extends Kont<K>> (κ: K): Top<K> {
+            return make(Top, κ) as Top<K>
          }
       }
 
