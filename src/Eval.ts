@@ -8,16 +8,16 @@ import { BinaryOp, PrimResult, binaryOps } from "./Primitive"
 import { Traced, Value, Value̊ } from "./Traced"
 
 import App = Traced.App
-import BotKont = Traced.BotKont
+import BotKont = Expr.BotKont
 import Empty = Traced.Empty
-import Kont = Traced.Kont
+import Kont = Expr.Kont
 import Let = Traced.Let
 import LetRec = Traced.LetRec
 import MatchAs = Traced.MatchAs
 import PrimApp = Traced.PrimApp
-import Trie = Traced.Trie
+import Trie = Expr.Trie
 import Var = Traced.Var
-import VoidKont = Traced.VoidKont
+import VoidKont = Expr.VoidKont
 
 export class EvalId<E extends Expr | Expr.RecDef, T extends "val" | "trace"> {
    j: EnvEntries
@@ -47,15 +47,15 @@ export module Eval {
 class EvalKey<K extends Expr.Kont<K>> implements PersistentObject {
    j: EnvEntries
    e: Expr
-   σ: Expr.Trie<K>
+   σ: Trie<K>
 
-   constructor_ (j: EnvEntries, e: Expr, σ: Expr.Trie<K>) {
+   constructor_ (j: EnvEntries, e: Expr, σ: Trie<K>) {
       this.j = j
       this.e = e
       this.σ = σ
    }
 
-   static make<K extends Expr.Kont<K>> (j: EnvEntries, e: Expr, σ: Expr.Trie<K>): EvalKey<K> {
+   static make<K extends Expr.Kont<K>> (j: EnvEntries, e: Expr, σ: Trie<K>): EvalKey<K> {
       return make(EvalKey, j, e, σ) as EvalKey<K>
    }
 }
@@ -73,9 +73,6 @@ export class Result<K extends Kont<K>> implements PersistentObject {
    }
 
    static at<K extends Kont<K>> (α: PersistentObject, tv: Traced, ρ: Env, κ: K): Result<K> {
-      if (κ instanceof Traced.Bot) {
-         return absurd()
-      }
       return at(α, Result, tv, ρ, κ) as Result<K>
    }
 }
@@ -111,15 +108,15 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
 // Parser ensures constructor patterns agree with constructor signatures.
 function evalArgs<K extends Expr.Kont<K>> (ρ: Env, Π: Expr.Args<K>, es: List<Expr>): Results<K> {
    if (Cons.is(es)) {
-      let σ: Expr.Trie<Expr.Args<K>>
+      let σ: Trie<Expr.Args<K>>
       if (Expr.Args.Next.is(Π)) {
          σ = Π.σ
       } else
       if (Expr.Args.Top.is(Π)) {
-         σ = Expr.Trie.Top.make(Expr.Args.Top.make(Π.κ))
+         σ = Trie.Top.make(Expr.Args.Top.make(Π.κ))
       } else
       if (Expr.Args.Bot.is(Π)) {
-         σ = Expr.Trie.Bot.make()
+         σ = Trie.Bot.make()
       } else {
          return absurd()
       }
@@ -133,7 +130,7 @@ function evalArgs<K extends Expr.Kont<K>> (ρ: Env, Π: Expr.Args<K>, es: List<E
          return Results.make(Nil.make(), Env.empty(), Π.κ)
       } else
       if (Expr.Args.Bot.is(Π)) {
-         return Results.make(Nil.make(), Env.empty(), BotKont.make() as K)
+         return Results.make(Nil.make(), Env.empty(), BotKont.make() as any) // ouch
       } else {
          return absurd()
       }
@@ -142,30 +139,30 @@ function evalArgs<K extends Expr.Kont<K>> (ρ: Env, Π: Expr.Args<K>, es: List<E
    }
 }
 
-export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Expr.Trie<K>): Result<K> {
+export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): Result<K> {
    const e_: Versioned<Expr> = asVersioned(e),
          k: TraceId<Expr> = e_.__id as TraceId<Expr>,
          kᵥ: ValId = EvalId.make(k.j, k.e, "val"),
          out: EvalKey<K> = EvalKey.make(k.j, k.e, σ)
    // An unevaluated expression has a bot trace for the sake of monotonicity across computations; might
    // want to reinstate the embedding of expressions into traces here.
-   if (Expr.Trie.Bot.is(σ)) { 
-      return Result.at(out, Traced.make(Traced.Bot.at(k), null), Bot.make(), BotKont.make() as K)
+   if (Trie.Bot.is(σ)) { 
+      return Result.at(out, Traced.make(Traced.Bot.at(k), null), Bot.make(), BotKont.make() as any) // ouch
    } else
-   if (Expr.Trie.Var.is(σ)) {
+   if (Trie.Var.is(σ)) {
       const entry: EnvEntry = EnvEntry.make(ρ, Nil.make(), e)
       return Result.at(out, Traced.make(Traced.Bot.at(k), null), Env.singleton(σ.x.str, entry), σ.κ)
    } else
    if (e instanceof Expr.Bot) {
        // top demands "match" bottom; see issue #74
-      return Result.at(out, Traced.make(Traced.Bot.at(k), null), Bot.make(), σ instanceof Trie.Top ? σ.κ : BotKont.make() as K) 
+      return Result.at(out, Traced.make(Traced.Bot.at(k), null), Bot.make(), σ instanceof Trie.Top ? σ.κ : BotKont.make() as any) // ouch 
    } else
    if (e instanceof Expr.Constr) {
       let Π: Expr.Args<K>
-      if (Expr.Trie.Constr.is(σ) && has(σ.cases, e.ctr.str)) {
+      if (Trie.Constr.is(σ) && has(σ.cases, e.ctr.str)) {
          Π = get(σ.cases, e.ctr.str)!
       } else 
-      if (Expr.Trie.Top.is(σ)) {
+      if (Trie.Top.is(σ)) {
          Π = Expr.Args.Top.make(σ.κ)
       } else {
          return absurd("Demand mismatch.", e, σ)
@@ -173,16 +170,16 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Expr.Trie<K
       const {tvs: args, ρ: ρʹ, κ}: Results<K> = evalArgs(ρ, Π, e.args)
       return Result.at(out, Traced.make(Empty.at(k), Value.Constr.at(kᵥ, e.ctr, args)), ρʹ, κ)
    } else
-   if (e instanceof Expr.ConstInt && Expr.Trie.ConstInt.is(σ)) {
+   if (e instanceof Expr.ConstInt && Trie.ConstInt.is(σ)) {
       return Result.at(out, Traced.make(Empty.at(k), Value.ConstInt.at(kᵥ, e.val)), Env.empty(), σ.κ)
    } else
-   if (e instanceof Expr.ConstStr && Expr.Trie.ConstStr.is(σ)) {
+   if (e instanceof Expr.ConstStr && Trie.ConstStr.is(σ)) {
       return Result.at(out, Traced.make(Empty.at(k), Value.ConstStr.at(kᵥ, e.val)), Env.empty(), σ.κ)
    } else
-   if (e instanceof Expr.Fun && Expr.Trie.Fun.is(σ)) {
+   if (e instanceof Expr.Fun && Trie.Fun.is(σ)) {
       return Result.at(out, Traced.make(Empty.at(k), Value.Closure2.at(kᵥ, ρ, e.σ)), Env.empty(), σ.κ)
    } else
-   if (e instanceof Expr.PrimOp && Expr.Trie.Fun.is(σ)) {
+   if (e instanceof Expr.PrimOp && Trie.Fun.is(σ)) {
       return Result.at(out, Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.op)), Env.empty(), σ.κ)
    } else
    if (e instanceof Expr.Var) {
@@ -196,7 +193,7 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Expr.Trie<K
       }
    } else
    if (e instanceof Expr.App) {
-      const {tv: tf}: Result<VoidKont> = eval_(ρ, e.func, Expr.Trie.Fun.make(Expr.VoidKont.make())),
+      const {tv: tf}: Result<VoidKont> = eval_(ρ, e.func, Trie.Fun.make(Expr.VoidKont.make())),
             f: Value̊ = tf.v
       if (f instanceof Value.Closure2) {
          const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Expr> = eval_(ρ, e.arg, f.σ),
@@ -215,7 +212,7 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Expr.Trie<K
    if (e instanceof Expr.Let) {
       const {tv: tu, ρ: ρʹ, κ: eʹ}: Result<Expr> = eval_(ρ, e.e, e.σ),
             {tv, ρ: ρʺ, κ}: Result<K> = eval_(Env.concat(ρ, ρʹ), eʹ, σ)
-      return Result.at(out, Traced.make(Let.at(k, tu, Expr.Trie.Var.make(e.σ.x, __nonNull(tv.t))), tv.v), ρʺ, κ)
+      return Result.at(out, Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, __nonNull(tv.t))), tv.v), ρʺ, κ)
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
