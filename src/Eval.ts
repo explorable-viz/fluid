@@ -18,7 +18,7 @@ import Trie = Expr.Trie
 import UnaryApp = Traced.UnaryApp
 import Var = Traced.Var
 
-type Tag = "expr" | "val" | "trace"
+type Tag = "val" | "trace"
 
 // The "runtime identity" of an expression. In the formalism we use a "flat" representation so that e always has an external id;
 // here it is more convenient to use an isomorphic nested format.
