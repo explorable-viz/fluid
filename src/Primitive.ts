@@ -3,11 +3,12 @@ import { Persistent, PersistentObject, ν, make } from "./util/Persistent"
 import { Nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
-import { ValId } from "./Eval"
+import { Tagged, TraceId, ValId } from "./Eval"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
-import { Value } from "./Traced"
+import { Traced, Value } from "./Traced"
 
+import Empty = Traced.Empty
 import Trie = Expr.Trie
 import VoidKont = Expr.VoidKont
 
@@ -213,10 +214,12 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): (k: ValId) => Val
 
 // Only primitive with identifiers as names are first-class, and therefore appear in the prelude.
 export function prelude (): Env {
-   const ρ_0: Env = Env.empty()
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
-      ρ = ExtendEnv.make(ρ, x, EnvEntry.make(ρ_0, Nil.make(), instantiate(ρ_0, Expr.PrimOp.at(ν(), op))))
+      const e: Expr = Expr.PrimOp.at(ν(), op),
+            k: TraceId = Tagged.make(e, "trace"),
+            kᵥ: ValId = Tagged.make(e, "val")
+      ρ = ExtendEnv.make(ρ, x, Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, op)))
    })
    return ρ
 }

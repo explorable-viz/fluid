@@ -36,7 +36,7 @@ export class ExprId implements PersistentObject {
    }
 }
 
-class Tagged<T extends Tag> implements PersistentObject {
+export class Tagged<T extends Tag> implements PersistentObject {
    e: Expr
    tag: T
 
@@ -71,7 +71,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    }
 }
 
-export function eval_new (ρ: Env, e: Expr): Traced {
+export function eval_ (ρ: Env, e: Expr): Traced {
    const k: TraceId = Tagged.make(e, "trace"),
          kᵥ: ValId = Tagged.make(e, "val")
    // An unevaluated expression has a bot trace for the sake of monotonicity across computations; might
@@ -80,7 +80,7 @@ export function eval_new (ρ: Env, e: Expr): Traced {
      return Traced.make(Traced.Bot.at(k), null)
    } else
    if (e instanceof Expr.Constr) {
-      return Traced.make(Empty.at(k), Value.Constr.at(kᵥ, e.ctr, e.args.map(e => eval_new(ρ, e))))
+      return Traced.make(Empty.at(k), Value.Constr.at(kᵥ, e.ctr, e.args.map(e => eval_(ρ, e))))
    } else
    if (e instanceof Expr.ConstInt) {
       return Traced.make(Empty.at(k), Value.ConstInt.at(kᵥ, e.val))
@@ -104,45 +104,45 @@ export function eval_new (ρ: Env, e: Expr): Traced {
       }
    } else
    if (e instanceof Expr.App) {
-      const tf: Traced = eval_new(ρ, e.func),
+      const tf: Traced = eval_(ρ, e.func),
             f: Value̊ = tf.v
       if (f instanceof Value.Closure) {
-         const tu: Traced = eval_new(ρ, e.arg),
+         const tu: Traced = eval_(ρ, e.arg),
                {ρ: ρʹ, κ: eʹ} = match(tu, f.σ),
-               tv: Traced = eval_new(Env.concat(f.ρ, ρʹ), instantiate(ρʹ, eʹ))
+               tv: Traced = eval_(Env.concat(f.ρ, ρʹ), instantiate(ρʹ, eʹ))
          return Traced.make(App.at(k, tf, tu, tv.t), tv.v)
       } else
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
-         const tu: Traced = eval_new(ρ, e.arg)
+         const tu: Traced = eval_(ρ, e.arg)
          return Traced.make(UnaryApp.at(k, tf, tu), f.op.b.op(tu.v!)(kᵥ))
       } else {
          return absurd()
       }
    } else
    if (e instanceof Expr.Let) {
-      const tu: Traced = eval_new(ρ, e.e), 
+      const tu: Traced = eval_(ρ, e.e), 
             {ρ: ρʹ, κ: eʹ} = match(e.σ),
-            tv: Traced = eval_new(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+            tv: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
       return Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, tv.t)), tv.v)
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
-            tv: Traced = eval_new(Env.concat(ρ, ρʹ), instantiate(ρʹ, e.e))
+            tv: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, e.e))
       return Traced.make(LetRec.at(k, e.δ, tv), tv.v)
    } else
    if (e instanceof Expr.MatchAs) {
-      const tu: Traced = eval_new(ρ, e.e),
+      const tu: Traced = eval_(ρ, e.e),
             {ρ: ρʹ, κ: eʹ} = match(tu, e.σ),
-            tv = eval_new(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+            tv = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
       return Traced.make(MatchAs.at(k, tu, e.σ, tv.t), tv.v)
    } else
    // Operators (currently all binary) are "syntax", rather than names.
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.str)) {
          const op: BinaryOp = binaryOps.get(e.opName.str)!,
-               tv1: Traced = eval_new(ρ, e.e1),
-               tv2: Traced = eval_new(ρ, e.e2),
+               tv1: Traced = eval_(ρ, e.e1),
+               tv2: Traced = eval_(ρ, e.e2),
                v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ)
          return Traced.make(BinaryApp.at(k, tv1, e.opName, tv2), v)
       } else {
