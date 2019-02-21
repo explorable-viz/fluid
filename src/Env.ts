@@ -2,6 +2,7 @@ import { absurd } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Expr } from "./Expr"
+import { Traced } from "./Traced"
 
 // An environment whose names have been projected away, leaving only a list of the bound entities.
 export abstract class EnvEntries implements PersistentObject {
@@ -182,5 +183,19 @@ export class EnvEntry implements PersistentObject {
 
    bottom (): EnvEntry {
       return EnvEntry.make(this.ρ.bottom(), this.δ.map(def => def.bottom()), this.e.bottom())
+   }
+}
+
+export class EnvEntryNew implements PersistentObject {
+   tv: Traced
+
+   constructor_ (
+      tv: Traced
+   ) {
+      this.tv = tv
+   }
+
+   static make (tv: Traced): EnvEntryNew {
+      return make(EnvEntryNew, tv)
    }
 }

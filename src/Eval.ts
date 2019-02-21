@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
 import { PersistentObject, Versioned, at, make } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
-import { Bot, Env, EnvEntries, EnvEntry, ExtendEnv, EmptyEnv } from "./Env"
+import { Bot, Env, EnvEntries, EnvEntry, EnvEntryNew, ExtendEnv, EmptyEnv } from "./Env"
 import { Expr } from "./Expr"
 import { get, has } from "./FiniteMap"
 import { instantiate } from "./Instantiate"
@@ -176,6 +176,15 @@ export function eval_new (ρ: Env, e: Expr): Traced {
    } else
    if (e instanceof Expr.PrimOp) {
       return Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.op))
+   } else
+   if (e instanceof Expr.Var) {
+      const x: string = e.x.str
+      if (ρ.has(x)) { 
+         const {tv}: EnvEntryNew = ρ.get(x)!
+         return Traced.make(Var.at(k, e.x, tv.t), tv.v)
+      } else {
+         return absurd("Variable not found.", x)
+      }
    }
 }
 
