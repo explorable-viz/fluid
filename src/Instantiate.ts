@@ -97,15 +97,10 @@ function instantiateTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, σ:
    return mapTrie((κ: K) => instantiateKont<K, Kʹ>(ρ, κ))(instantiateTrie_(ρ, σ))
 }
 
+// This looks weird - why no instantiateKont?
 function instantiateTrie_<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
    if (Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, σ.κ)
-   } else
-   if (Trie.ConstInt.is(σ)) {
-      return Trie.ConstInt.make(σ.κ)
-   } else
-   if (Trie.ConstStr.is(σ)) {
-      return Trie.ConstStr.make(σ.κ)
    } else
    if (Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(

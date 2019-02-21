@@ -9,25 +9,17 @@ import { Traced, Value } from "./Traced"
 
 import Empty = Traced.Empty
 import Trie = Expr.Trie
-import VoidKont = Expr.VoidKont
 
 export type PrimResult<K> = [Value, K]
-type TrieCtr = (body: VoidKont) => Trie.Prim<VoidKont>
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
 
 // Parser guarantees that values/patterns respect constructor signatures. 
 // TODO: rename to avoid confusion with Match.match.
 export function match<K extends Expr.Kont<K>> (v: Value, σ: Trie<K>): PrimResult<K> {
-   if (v instanceof Value.PrimOp && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
+   if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
       return [v, σ.κ]
-   } else 
-   if (v instanceof Value.ConstInt && (Trie.ConstInt.is(σ) || Trie.Top.is(σ))) {
-      return [v, σ.κ]
-   } else 
-   if (v instanceof Value.ConstStr && (Trie.ConstStr.is(σ) || Trie.Top.is(σ ))) {
-      return [v, σ.κ]
-   } else 
+   } else
    if (v instanceof Value.Constr) {
       assert(v.args.length === 0, "Primitives must return nullary values.")
       if (Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
@@ -37,9 +29,6 @@ export function match<K extends Expr.Kont<K>> (v: Value, σ: Trie<K>): PrimResul
          } else {
             return absurd()
          }
-      } else
-      if (Trie.Top.is(σ)) {
-         return [v, σ.κ]
       } else {
          return absurd()
       }
@@ -95,7 +84,7 @@ export class UnaryOp extends PrimOp {
       return make(UnaryOp, name, b)
    }
 
-   static make_<T extends Value, V extends Value> (op: Unary<T, V>, trie: TrieCtr): UnaryOp {
+   static make_<T extends Value, V extends Value> (op: Unary<T, V>): UnaryOp {
       return UnaryOp.make(op.name, UnaryBody.make(op))
    }
 }
@@ -121,8 +110,8 @@ export class BinaryOp extends PrimOp {
 }
 
 const unaryOps: Map<string, UnaryOp> = new Map([
-   [error.name, UnaryOp.make_(error, Trie.ConstStr.make)],
-   [intToString.name, UnaryOp.make_(intToString, Trie.ConstInt.make)],
+   [error.name, UnaryOp.make_(error)],
+   [intToString.name, UnaryOp.make_(intToString)],
 ])
    
 export const binaryOps: Map<string, BinaryOp> = new Map([

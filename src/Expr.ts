@@ -338,26 +338,6 @@ export namespace Expr {
          }
       }
 
-      export class Top<K extends Kont<K>> extends Args<K> {
-         κ: K // want fix at null but couldn't make that work with the polymorphism
-
-         constructor_ (κ: K) {
-            this.κ = κ
-         }
-
-         static is<K extends Kont<K>> (Π: Args<K>): Π is Top<K> {
-            return Π instanceof Top
-         }
-
-         static make<K extends Kont<K>> (κ: K): Top<K> {
-            return make(Top, κ) as Top<K>
-         }
-
-         bottom (): Top<K> {
-            return absurd("Not implemented yet")
-         }
-      }
-
       export class Bot<K extends Kont<K>> extends Args<K> {
          κ: K // want fix at null but couldn't make that work with the polymorphism
 
@@ -509,51 +489,6 @@ export namespace Expr {
          }
       }
 
-      // Wanted to fix K at null but that doesn't work with polymorphic code.
-      export class Top<K extends Kont<K>> extends Trie<K> {
-         κ: K
-
-         constructor_ (κ: K) {
-            this.κ = κ
-         }
-
-         static is<K extends Kont<K>> (σ: Trie<K>): σ is Top<K> {
-            return σ instanceof Top
-         }
-
-         static make<K extends Kont<K>> (κ: K): Top<K> {
-            return make(Top, κ) as Top<K>
-         }
-      }
-
-      export class Prim<K extends Kont<K> & Persistent> extends Trie<K> {
-         κ: K
-         
-         constructor_ (κ: K) {
-            this.κ = κ
-         }
-      }
-
-      export class ConstInt<K extends Kont<K>> extends Prim<K> {
-         static is<K extends Kont<K>> (σ: Trie<K>): σ is ConstInt<K> {
-            return σ instanceof ConstInt
-         }
-
-         static make<K extends Kont<K>> (κ: K): ConstInt<K> {
-            return make(ConstInt, κ) as ConstInt<K>
-         }
-      }
-
-      export class ConstStr<K extends Kont<K>> extends Prim<K> {
-         static is<K extends Kont<K>> (σ: Trie<K>): σ is ConstStr<K> {
-            return σ instanceof ConstStr
-         }
-
-         static make<K extends Kont<K>> (κ: K): ConstStr<K> {
-            return make(ConstStr, κ) as ConstStr<K>
-         }
-      }
-
       // n-ary sum of n-ary products.
       export class Constr<K extends Kont<K>> extends Trie<K> {
          cases: FiniteMap<string, Args<K>>
@@ -620,12 +555,6 @@ export namespace Expr {
       
       export function mapTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (σ: Trie<K>) => Trie<Kʹ> {
          return (σ: Trie<K>): Trie.Trie<Kʹ> => {
-            if (ConstInt.is(σ)) {
-               return ConstInt.make(f(σ.κ))
-            } else
-            if (ConstStr.is(σ)) {
-               return ConstStr.make(f(σ.κ))
-            } else
             if (Fun.is(σ)) {
                return Fun.make(f(σ.κ))
             } else

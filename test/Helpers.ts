@@ -41,14 +41,6 @@ export namespace τ {
       return Trie.Var.make(Lex.Var.make("q"), κ)
    }
 
-   export function int<K extends Kont<K>> (κ: K): Trie.Prim<K> {
-      return Trie.ConstInt.make(κ)
-   }
-
-   export function str<K extends Kont<K>> (κ: K): Trie.Prim<K> {
-      return Trie.ConstStr.make(κ)
-   }
-
    export function cons<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Cons", Π))
    }
@@ -67,10 +59,6 @@ export namespace τ {
 
    export function some<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
       return Trie.Constr.make(singleton("Some", Π))
-   }
-
-   export function top<K extends Kont<K>> (κ: K): Trie.Top<K> {
-      return Trie.Top.make(κ)
    }
 }
 

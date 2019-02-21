@@ -18,10 +18,10 @@ export function match<K extends Kont<K>> (σ: Trie<K>, v: Value̊): Match<K> {
    if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
       return Match.Fun.make(v, σ.κ)
    } else
-   if (v instanceof Value.ConstInt && Trie.ConstInt.is(σ)) {
+   if (v instanceof Value.ConstInt) {
       return Match.ConstInt.make(v.val, σ.κ)
    } else
-   if (v instanceof Value.ConstStr && Trie.ConstStr.is(σ)) {
+   if (v instanceof Value.ConstStr) {
       return Match.ConstStr.make(v.val, σ.κ)
    } else
    if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
@@ -46,7 +46,7 @@ function matchArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): Match.Ar
             ξʹ = mapMatch(Π => matchArgs(tvs.tail, Π), inj, ξ)
       return Match.Args.Next.make(TracedMatch.make(tvs.head.t, ξʹ))
    } else
-   if (Nil.is(tvs) && (Args.End.is(Π) || Args.Top.is(Π))) {
+   if (Nil.is(tvs) && Args.End.is(Π)) {
       return Match.Args.End.make(Π.κ)
    } else {
       return absurd()
@@ -109,14 +109,8 @@ function mapMatchArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => K
    }
 }
 
-export function mapTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
+export function mapTrie2<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
    return (σ: Trie.Trie<K>): Trie.Trie<Kʹ> => {
-      if (Trie.ConstInt.is(σ)) {
-         return Trie.ConstInt.make(f(σ.κ))
-      } else
-      if (Trie.ConstStr.is(σ)) {
-         return Trie.ConstStr.make(f(σ.κ))
-      } else
       if (Trie.Fun.is(σ)) {
          return Trie.Fun.make(f(σ.κ))
       } else
