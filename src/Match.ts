@@ -1,57 +1,14 @@
 import { absurd } from "./util/Core"
-import { Cons, List, Nil, Pair } from "./BaseTypes"
+import { Pair } from "./BaseTypes"
 import { Expr } from "./Expr"
-import { Traced, Value, Value̊ } from "./Traced"
+import { Traced } from "./Traced"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
 import Match = Traced.Match
 import TracedMatch = Traced.TracedMatch
 import Trie = Expr.Trie
-
-// The match for any evaluation with demand σ which yielded value v.
-export function match<K extends Kont<K>> (σ: Trie<K>, v: Value̊): Match<K> {
-   if (Trie.Var.is(σ)) {
-      // in general v is not null, even though the demand is null
-      return Match.Var.make(σ.x, v, σ.κ)
-   } else
-   if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
-      return Match.Fun.make(v, σ.κ)
-   } else
-   if (v instanceof Value.ConstInt) {
-      return Match.ConstInt.make(v.val, σ.κ)
-   } else
-   if (v instanceof Value.ConstStr) {
-      return Match.ConstStr.make(v.val, σ.κ)
-   } else
-   if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
-      return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
-         if (v.ctr.str === ctr) {
-            return Pair.make(ctr, matchArgs(v.args, Π))
-         } else {
-            return Pair.make(ctr, Π)
-         }
-      }))
-   } else {
-      return absurd("Demand mismatch.", v, σ)
-   }
-}
-
-function matchArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): Match.Args<K> {
-   // Parser ensures constructor patterns agree with constructor signatures.
-   if (Cons.is(tvs) && Args.Next.is(Π)) {
-      // codomain of ξ is Args; promote to Args | Match.Args:
-      const ξ: Match<Args<K>> = match(Π.σ, tvs.head.v), 
-            inj = (Π: Args<K>): Args<K> | Match.Args<K> => Π, 
-            ξʹ = mapMatch(Π => matchArgs(tvs.tail, Π), inj, ξ)
-      return Match.Args.Next.make(TracedMatch.make(tvs.head.t, ξʹ))
-   } else
-   if (Nil.is(tvs) && Args.End.is(Π)) {
-      return Match.Args.End.make(Π.κ)
-   } else {
-      return absurd()
-   }
-}
+import mapTrie = Expr.Trie.mapTrie
 
 function mapMatch<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ, ξ: Match<K>): Match<Kʹ> {
    if (Match.ConstInt.is(ξ)) {
