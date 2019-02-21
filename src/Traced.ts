@@ -152,10 +152,6 @@ export namespace Traced {
             bottom (): Args<K> {
                return absurd("Not implemented yet")
             }
-   
-            join (Π: Args<K>): Args<K> {
-               return absurd("Not implemented yet")
-            }
          }
    
          export class End<K extends Persistent> extends Args<K> {
@@ -258,10 +254,6 @@ export namespace Traced {
 
       bottom (): Trace {
          return Bot.at(asVersioned(this).__id as TraceId)
-      }
-
-      join (t: Trace): Trace {
-         return absurd("Trace join unsupported.")
       }
    }
 
