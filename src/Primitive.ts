@@ -1,41 +1,16 @@
-import { absurd, assert } from "./util/Core"
+import { assert } from "./util/Core"
 import { Persistent, PersistentObject, ν, make } from "./util/Persistent"
 import { Nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
 import { Tagged, TraceId, ValId } from "./Eval"
-import { get, has } from "./FiniteMap"
 import { Traced, Value } from "./Traced"
 
 import Empty = Traced.Empty
-import Trie = Expr.Trie
 
 export type PrimResult<K> = [Value, K]
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
-
-// Parser guarantees that values/patterns respect constructor signatures. 
-// TODO: rename to avoid confusion with Match.match.
-export function match<K extends Expr.Kont<K>> (v: Value, σ: Trie<K>): PrimResult<K> {
-   if (v instanceof Value.PrimOp && Trie.Fun.is(σ)) {
-      return [v, σ.κ]
-   } else
-   if (v instanceof Value.Constr) {
-      assert(v.args.length === 0, "Primitives must return nullary values.")
-      if (Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
-         const Π: Expr.Args<K> = get(σ.cases, v.ctr.str)!
-         if (Expr.Args.End.is(Π)) {
-            return [v, Π.κ]
-         } else {
-            return absurd()
-         }
-      } else {
-         return absurd()
-      }
-   } else {
-      return assert(false, "Primitive demand mismatch.", v, σ)
-   }
-}
 
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
