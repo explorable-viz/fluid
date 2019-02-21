@@ -11,12 +11,6 @@ import Trie = Expr.Trie
 import mapTrie = Expr.Trie.mapTrie
 
 function mapMatch<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ, ξ: Match<K>): Match<Kʹ> {
-   if (Match.ConstInt.is(ξ)) {
-      return Match.ConstInt.make(ξ.val, f(ξ.κ))
-   } else
-   if (Match.ConstStr.is(ξ)) {
-      return Match.ConstStr.make(ξ.val, f(ξ.κ))
-   } else
    if (Match.Fun.is(ξ)) {
       return Match.Fun.make(ξ.f, f(ξ.κ))
    } else
