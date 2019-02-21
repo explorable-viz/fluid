@@ -199,8 +199,9 @@ const let_: Parser<Expr.Let> =
 
 const recDef: Parser<Expr.RecDef> =
    withAction(
-      seq(dropSecond(var_, symbol(str.equals)), expr),
-      ([x, e]: [Lex.Var, Expr.Expr]) => Expr.RecDef.at(ν(), x, e)
+      seq(dropFirst(keyword(str.fun), var_), matches),
+      ([name, σ]: [Lex.Var, Expr.Trie<Expr>]) =>
+         Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), σ))
    )
 
 const recDefs1 : Parser<List<Expr.RecDef>> =

@@ -21,15 +21,17 @@ export namespace Value {
 
    export class Closure extends Value {
       ρ: Env
+      δ: List<Expr.RecDef>
       σ: Trie<Expr>
    
-      constructor_ (ρ: Env, σ: Trie<Expr>): void {
+      constructor_ (ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): void {
          this.ρ = ρ
+         this.δ = δ
          this.σ = σ
       }
 
-      static at (k: ValId, ρ: Env, σ: Trie<Expr>): Closure {
-         return at(k, Closure, ρ, σ)
+      static at (k: ValId, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
+         return at(k, Closure, ρ, δ, σ)
       }
    }
 

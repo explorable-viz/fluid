@@ -1,7 +1,7 @@
 import { absurd, assert } from "./util/Core"
 import { Persistent, PersistentObject, ν, make } from "./util/Persistent"
 import { Nil } from "./BaseTypes"
-import { Env, EnvEntry, ExtendEnv } from "./Env"
+import { Env, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
 import { ValId } from "./Eval"
 import { get, has } from "./FiniteMap"
@@ -61,10 +61,6 @@ export class UnaryBody implements PersistentObject {
    static make<T extends Value, V extends Value> (op: Unary<T, V>): UnaryBody {
       return make(UnaryBody, op)
    }
-
-   invoke<K extends Expr.Kont<K>> (v: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
-      return k => match(this.op(v)(k), σ)
-   }
 } 
 
 export class BinaryBody implements PersistentObject {
@@ -76,10 +72,6 @@ export class BinaryBody implements PersistentObject {
 
    static make<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>): BinaryBody {
       return make(BinaryBody, op)
-   }
-
-   invoke<K extends Expr.Kont<K>> (v1: Value, v2: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
-      return k => match(this.op(v1, v2)(k), σ)
    }
 } 
 
