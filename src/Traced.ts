@@ -196,44 +196,6 @@ export namespace Traced {
          abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
       }
 
-      export abstract class Prim<K extends Persistent> extends Match<K> {
-         κ: K
-      }
-
-      export class ConstInt<K extends Persistent> extends Prim<K> {
-         val: number
-
-         constructor_ (val: number, κ: K) {
-            this.val
-            this.κ = κ
-         }
-
-         static is<K extends Persistent> (ξ: Match<K>): ξ is ConstInt<K> {
-            return ξ instanceof ConstInt
-         }
-
-         static make<K extends Persistent> (val: number, κ: K): ConstInt<K> {
-            return make(ConstInt, val, κ) as ConstInt<K>
-         }
-      }
-
-      export class ConstStr<K extends Persistent> extends Prim<K> {
-         val: string
-
-         constructor_ (val: string, κ: K) {
-            this.val = val
-            this.κ = κ
-         }
-
-         static is<K extends Persistent> (ξ: Match<K>): ξ is ConstStr<K> {
-            return ξ instanceof ConstStr
-         }
-
-         static make<K extends Persistent> (val: string, κ: K): ConstStr<K> {
-            return make(ConstStr, val, κ) as ConstStr<K>
-         }
-      }
-
       // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
       export class Constr<K extends Expr.Kont<K>> extends Match<K> {
          cases: FiniteMap<string, Expr.Args<K> | Args<K>> 
