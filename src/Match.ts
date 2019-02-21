@@ -12,7 +12,7 @@ import Trie = Expr.Trie
 import mapTrie = Expr.Trie.mapTrie
 
 // The match for any evaluation with demand σ which yielded value v.
-export function match<K extends Kont<K>> (σ: Trie<K>, tv: Traced): Match<K> {
+export function match<K extends Kont<K>> (tv: Traced, σ: Trie<K>, ): Match<K> {
    const v: Value̊ = tv.v
    if (Trie.Var.is(σ)) {
       return Match.Var.make(σ.x, v, σ.κ) // Env.singleton(σ.x.str, tv)
@@ -37,7 +37,7 @@ function matchArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): Match.Ar
    // Parser ensures constructor patterns agree with constructor signatures.
    if (Cons.is(tvs) && Args.Next.is(Π)) {
       // codomain of ξ is Args; promote to Args | Match.Args:
-      const ξ: Match<Args<K>> = match(Π.σ, tvs.head), 
+      const ξ: Match<Args<K>> = match(tvs.head, Π.σ), 
             inj = (Π: Args<K>): Args<K> | Match.Args<K> => Π, 
             ξʹ = mapMatch(Π => matchArgs(tvs.tail, Π), inj, ξ)
       return Match.Args.Next.make(TracedMatch.make(tvs.head.t, ξʹ))
