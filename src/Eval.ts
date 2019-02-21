@@ -156,13 +156,36 @@ function evalArgs<K extends Expr.Kont<K>> (ρ: Env, Π: Expr.Args<K>, es: List<E
    }
 }
 
+export function eval_new (ρ: Env, e: Expr): Traced {
+   const k: TraceId = Tagged.make(e, "trace"),
+         kᵥ: ValId = Tagged.make(e, "val")
+   if (e instanceof Expr.Bot) {
+     return Traced.make(Traced.Bot.at(k), null)
+   } else
+   if (e instanceof Expr.Constr) {
+      return Traced.make(Empty.at(k), Value.Constr.at(kᵥ, e.ctr, e.args.map(e => eval_new(ρ, e))))
+   } else
+   if (e instanceof Expr.ConstInt) {
+      return Traced.make(Empty.at(k), Value.ConstInt.at(kᵥ, e.val))
+   } else
+   if (e instanceof Expr.ConstStr) {
+      return Traced.make(Empty.at(k), Value.ConstStr.at(kᵥ, e.val))
+   } else
+   if (e instanceof Expr.Fun) {
+      return Traced.make(Empty.at(k), Value.Closure.at(kᵥ, ρ, e.σ))
+   } else
+   if (e instanceof Expr.PrimOp) {
+      return Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.op))
+   }
+}
+
 export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): Result<K> {
    const k: TraceId = Tagged.make(e, "trace"),
          kᵥ: ValId = Tagged.make(e, "val"),
          out: EvalKey<K> = EvalKey.make(e, σ)
    // An unevaluated expression has a bot trace for the sake of monotonicity across computations; might
    // want to reinstate the embedding of expressions into traces here.
-   if (Trie.Bot.is(σ)) { 
+   if (Trie.Bot.is(σ)) {
       return Result.at(out, Traced.make(Traced.Bot.at(k), null), Bot.make(), BotKont.make() as any) // ouch
    } else
    if (Trie.Var.is(σ)) {
@@ -253,7 +276,7 @@ export function eval_<K extends Expr.Kont<K>> (ρ: Env, e: Expr, σ: Trie<K>): R
          return absurd("Operator name not found.", e.opName)
       }
    } else {
-      return absurd("Unimplemented expression form.", e)
+      return absurd("Demand mismatch.", e, σ)
    }
 }
 
