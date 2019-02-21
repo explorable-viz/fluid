@@ -7,7 +7,6 @@ import Args = Expr.Args
 import Kont = Expr.Kont
 import Match = Traced.Match
 import TracedMatch = Traced.TracedMatch
-import Trie = Expr.Trie
 import mapTrie = Expr.Trie.mapTrie
 
 function mapMatch<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ, g: (κ: K) => Kʹ, ξ: Match<K>): Match<Kʹ> {
@@ -57,27 +56,5 @@ function mapMatchArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => K
       )
    } else {
       return absurd()
-   }
-}
-
-export function mapTrie2<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (σ: Trie.Trie<K>) => Trie.Trie<Kʹ> {
-   return (σ: Trie.Trie<K>): Trie.Trie<Kʹ> => {
-      if (Trie.Fun.is(σ)) {
-         return Trie.Fun.make(f(σ.κ))
-      } else
-      if (Trie.Var.is(σ)) {
-         return Trie.Var.make(σ.x, f(σ.κ))
-      } else 
-      if (Trie.Constr.is(σ)) {
-         return Trie.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<Kʹ>> => {
-            if (Π instanceof Args.Args) {
-               return Pair.make(ctr, mapArgs(f)(Π))
-            } else {
-               return absurd()
-            }
-         }))
-      } else {
-         return absurd()
-      }
    }
 }
