@@ -1,5 +1,6 @@
 import { absurd } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
+import { Env } from "./Env"
 import { Expr } from "./Expr"
 import { Traced, Value, Value̊ } from "./Traced"
 
@@ -11,10 +12,10 @@ import Trie = Expr.Trie
 import mapTrie = Expr.Trie.mapTrie
 
 // The match for any evaluation with demand σ which yielded value v.
-export function match<K extends Kont<K>> (σ: Trie<K>, v: Value̊): Match<K> {
+export function match<K extends Kont<K>> (σ: Trie<K>, tv: Traced): Match<K> {
+   const v: Value̊ = tv.v
    if (Trie.Var.is(σ)) {
-      // in general v is not null, even though the demand is null
-      return Match.Var.make(σ.x, v, σ.κ)
+      return Match.Var.make(σ.x, v, σ.κ) // Env.singleton(σ.x.str, tv)
    } else
    if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
       return Match.Fun.make(v, σ.κ)
@@ -36,7 +37,7 @@ function matchArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): Match.Ar
    // Parser ensures constructor patterns agree with constructor signatures.
    if (Cons.is(tvs) && Args.Next.is(Π)) {
       // codomain of ξ is Args; promote to Args | Match.Args:
-      const ξ: Match<Args<K>> = match(Π.σ, tvs.head.v), 
+      const ξ: Match<Args<K>> = match(Π.σ, tvs.head), 
             inj = (Π: Args<K>): Args<K> | Match.Args<K> => Π, 
             ξʹ = mapMatch(Π => matchArgs(tvs.tail, Π), inj, ξ)
       return Match.Args.Next.make(TracedMatch.make(tvs.head.t, ξʹ))

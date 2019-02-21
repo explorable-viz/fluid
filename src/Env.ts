@@ -11,8 +11,8 @@ import { Traced } from "./Traced"
 
 export abstract class Env implements PersistentObject {
    // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
-   abstract entries (): List<Traced>;
-   abstract get (k: string): Traced | undefined;
+   abstract entries (): List<Traced>
+   abstract get (k: string): Traced | undefined
    abstract constructor_ (...args: Persistent[]): void
 
    has (k: string): boolean {
