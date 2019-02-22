@@ -4,6 +4,7 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EmptyEnv, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
 import { instantiate } from "./Instantiate"
+import { lookup } from "./Match"
 import { BinaryOp, binaryOps } from "./Primitive"
 import { Traced, Value, Value̊ } from "./Traced"
 
@@ -108,7 +109,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
             f: Value̊ = tf.v
       if (f instanceof Value.Closure) {
          const tu: Traced = eval_(ρ, e.arg),
-               {ρ: ρʹ, κ: eʹ} = match(tu, f.σ),
+               [ρʹ, eʹ] = lookup(tu, f.σ),
                tv: Traced = eval_(Env.concat(f.ρ, ρʹ), instantiate(ρʹ, eʹ))
          return Traced.make(App.at(k, tf, tu, tv.t), tv.v)
       } else
@@ -122,7 +123,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    } else
    if (e instanceof Expr.Let) {
       const tu: Traced = eval_(ρ, e.e), 
-            {ρ: ρʹ, κ: eʹ} = match(e.σ),
+            [ρʹ, eʹ] = lookup(tu, e.σ),
             tv: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
       return Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, tv.t)), tv.v)
    } else
@@ -133,7 +134,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: Traced = eval_(ρ, e.e),
-            {ρ: ρʹ, κ: eʹ} = match(tu, e.σ),
+            [ρʹ, eʹ] = lookup(tu, e.σ),
             tv = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
       return Traced.make(MatchAs.at(k, tu, e.σ, tv.t), tv.v)
    } else
