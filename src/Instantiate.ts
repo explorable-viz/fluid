@@ -2,7 +2,7 @@ import { __nonNull, absurd } from "./util/Core"
 import { asVersioned } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { Eval, ExprId } from "./Eval"
+import { ExprId } from "./Eval"
 import { Expr } from "./Expr"
 
 import App = Expr.App
@@ -55,7 +55,7 @@ export function instantiate (ρ: Env, e: Expr): Expr {
          const i: ExprId = ExprId.make(ρ.entries(), asVersioned(def))
          return RecDef.at(i, def.x, instantiate(ρ, def.e))
       })
-      return LetRec.at(j, δ, instantiate(Eval.closeDefs(δ, ρ, δ), e.e))
+      return LetRec.at(j, δ, instantiate(ρ, e.e))
    } else
    if (e instanceof MatchAs) {
       return MatchAs.at(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
