@@ -142,8 +142,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.str)) {
          const op: BinaryOp = binaryOps.get(e.opName.str)!,
-               tv1: Traced = eval_(ρ, e.e1),
-               tv2: Traced = eval_(ρ, e.e2),
+               [tv1, tv2]: [Traced, Traced] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
                v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ)
          return Traced.make(BinaryApp.at(k, tv1, e.opName, tv2), v)
       } else {

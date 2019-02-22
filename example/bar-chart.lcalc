@@ -2,7 +2,7 @@ let
    data = Cons((2001, 15), Cons((2002, 8), Nil))
 in
 letrec 
-   map = fun f {
+   fun map f {
       Nil → Nil;
       Cons(x, xs) → Cons(f x, map f xs)
    } in 

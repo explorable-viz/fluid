@@ -1,12 +1,12 @@
 letrec
-   split = fun {
+   fun split {
       Nil → (Nil, Nil);
       Cons(x, xs') →
          match split xs' as 
             (ys, zs) → (Cons(x, zs), ys)
    };
 
-   merge = fun xs ys →
+   fun merge xs ys →
       match (xs, ys) as {
          (Nil, ys') → ys;
          (Cons(x, xs'), Nil) → xs;
@@ -17,7 +17,7 @@ letrec
             }
       };
 
-   mergesort = fun xs →
+   fun mergesort xs →
       match xs as {
          Nil → xs;
          Cons(x, Nil) → xs;

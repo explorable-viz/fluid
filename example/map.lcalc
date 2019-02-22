@@ -1,5 +1,5 @@
 letrec
-   map = fun f {
+   fun map f {
       Nil → Nil;
       Cons(x, xs) → Cons(f x, map f xs)
    }
