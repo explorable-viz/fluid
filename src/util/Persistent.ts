@@ -141,15 +141,6 @@ export const ν: () => ExternalObject =
       }
    })()
 
-function __copy (src: Object): ObjectState {
-   const tgt: ObjectState = Object.create(src.constructor.prototype),
-         src_: ObjectState = src as ObjectState
-   Object.keys(tgt).forEach((k: string): void => {
-      tgt[k] = src_[k]
-   })
-   return tgt
-}
-
 // "State object" whose identity doesn't matter and whose contents we can access by key.
 export interface ObjectState {
    [index: string]: Persistent
@@ -159,34 +150,15 @@ export interface ObjectState {
 // Precondition: the two are upper-bounded; postcondition: they are equal.
 function __mergeState (tgt: ObjectState, src: Object): void {
    const src_: ObjectState = src as ObjectState
-   // TODO: remove hardcoded dependency on "Bot".
-   if (className(tgt) === "Bot") {
-      reclassify(tgt, classOf(src))
-      Object.keys(src).forEach((k: string): void => {
-         tgt[k] = src_[k]
-      })
-   } else 
-   if (className(src) === "Bot") {
-      reclassify(src, classOf(tgt))
-      Object.keys(tgt).forEach((k: string): void => {
-         src_[k] = tgt[k]
-      })
-   } else {
-      assert(tgt.constructor === src.constructor)
-      Object.keys(tgt).forEach((k: string): void => {
-         tgt[k] = src_[k] = __merge(tgt[k], src_[k])
-      })
-   }
+   assert(tgt.constructor === src.constructor)
+   Object.keys(tgt).forEach((k: string): void => {
+      tgt[k] = src_[k] = __merge(tgt[k], src_[k])
+   })
 }
 
-// Least upper bound of two upper-bounded objects.
+// Verify that properties are always assigned consistently. Used to implement LVar-style increasing
+// semantics, but that was only needed for call-by-need.
 function __merge (tgt: Persistent, src: Persistent): Persistent {
-   if (src === null) {
-      return tgt
-   } else 
-   if (tgt === null) {
-      return src
-   } else
    if (src === tgt) {
       return src
    } else
@@ -212,8 +184,13 @@ function __merge (tgt: Persistent, src: Persistent): Persistent {
    }
 }
 
-// Assign contents of src to tgt; return whether anything changed. TODO: whether anything changed is not
-// necessarily significant because of call-by-need: a slot may evolve from null to non-null during a run.
+function __copy (src: Object): ObjectState {
+   const tgt: ObjectState = Object.create(src.constructor.prototype)
+   __assignState(tgt, src)
+   return tgt
+}
+
+// Assign contents of src to tgt; return whether anything changed.
 function __assignState (tgt: ObjectState, src: Object): boolean {
    let changed: boolean = __nonNull(tgt).constructor !== __nonNull(src.constructor)
    reclassify(tgt, classOf(src))
