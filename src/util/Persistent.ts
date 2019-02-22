@@ -146,41 +146,38 @@ export interface ObjectState {
    [index: string]: Persistent
 }
 
-// Combine information from src into tgt and vice versa, at an existing world.
-// Precondition: the two are equal.
-function __assignState (tgt: ObjectState, src: Object): void {
+// Ensure previous value of state is equal to current value at an existing world.
+function __assertEqualState (tgt: ObjectState, src: Object): void {
    const src_: ObjectState = src as ObjectState
    assert(tgt.constructor === src.constructor)
    Object.keys(tgt).forEach((k: string): void => {
-      tgt[k] = src_[k] = __assign(tgt[k], src_[k])
+      __assertEqual(tgt[k], src_[k])
    })
 }
 
 // Verify that properties are always assigned consistently. Used to implement LVar-style increasing
 // semantics, but that was only needed for call-by-need.
-function __assign (tgt: Persistent, src: Persistent): Persistent {
-   if (src === tgt) {
-      return src
-   } else
-   if (tgt === null || src === null) {
-      return absurd("Address collision (different child).")
-   } else
-   if (versioned(tgt) && versioned(src)) {
-      return absurd("Address collision (different child).")
-   } else
-   if (interned(tgt) && interned(src)) {
-      assert(
-         tgt.constructor === src.constructor, 
-         `Address collision (tgt ${className(tgt)} !== src ${className(src)}).`
-      )
-      const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
-            src_: ObjectState = src as Object as ObjectState,
-            args: Persistent[] = Object.keys(tgt).map((k: string): Persistent => {
-         return __assign(tgt_[k], src_[k])
-      })
-      return make(src.constructor as PersistentClass, ...args)
-   } else {
-      return absurd()
+function __assertEqual (tgt: Persistent, src: Persistent): void {
+   if (src !== tgt) {
+      if (tgt === null || src === null) {
+         return absurd("Address collision (different child).")
+      } else
+      if (versioned(tgt) && versioned(src)) {
+         return absurd("Address collision (different child).")
+      } else
+      if (interned(tgt) && interned(src)) {
+         assert(
+            tgt.constructor === src.constructor, 
+            `Address collision (tgt ${className(tgt)} !== src ${className(src)}).`
+         )
+         const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
+               src_: ObjectState = src as Object as ObjectState
+         Object.keys(tgt).forEach((k: string): void => {
+            __assertEqual(tgt_[k], src_[k])
+         })
+      } else {
+         return absurd()
+      }
    }
 }
 
@@ -212,7 +209,7 @@ function __commit (o: Versioned<PersistentObject>): Object {
    } else {
       const [lastModified, state]: [World, ObjectState] = stateAt(o, __w)
       if (lastModified === __w) {
-         __assignState(state, o)
+         __assertEqualState(state, o)
       } else {
          // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
          const prev: ObjectState = __copy(state)
