@@ -231,7 +231,6 @@ function __assignState (tgt: ObjectState, src: Object): boolean {
 function __commit (o: Versioned<PersistentObject>): Object {
    if (o.__history.size === 0) {
       const state: ObjectState = __copy(o)
-//      __mergeState(state, o)
       o.__history.set(__w, state)
    } else {
       const [lastModified, state]: [World, ObjectState] = stateAt(o, __w)
@@ -240,7 +239,6 @@ function __commit (o: Versioned<PersistentObject>): Object {
       } else {
          // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
          const prev: ObjectState = __copy(state)
-//         __mergeState(prev, state)
          if (__assignState(state, o)) {
             o.__history.set(lastModified, prev)
             o.__history.set(__w, state)
