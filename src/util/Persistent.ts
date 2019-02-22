@@ -147,18 +147,18 @@ export interface ObjectState {
 }
 
 // Combine information from src into tgt and vice versa, at an existing world.
-// Precondition: the two are upper-bounded; postcondition: they are equal.
-function __mergeState (tgt: ObjectState, src: Object): void {
+// Precondition: the two are equal.
+function __assignState (tgt: ObjectState, src: Object): void {
    const src_: ObjectState = src as ObjectState
    assert(tgt.constructor === src.constructor)
    Object.keys(tgt).forEach((k: string): void => {
-      tgt[k] = src_[k] = __merge(tgt[k], src_[k])
+      tgt[k] = src_[k] = __assign(tgt[k], src_[k])
    })
 }
 
 // Verify that properties are always assigned consistently. Used to implement LVar-style increasing
 // semantics, but that was only needed for call-by-need.
-function __merge (tgt: Persistent, src: Persistent): Persistent {
+function __assign (tgt: Persistent, src: Persistent): Persistent {
    if (src === tgt) {
       return src
    } else
@@ -176,7 +176,7 @@ function __merge (tgt: Persistent, src: Persistent): Persistent {
       const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
             src_: ObjectState = src as Object as ObjectState,
             args: Persistent[] = Object.keys(tgt).map((k: string): Persistent => {
-         return __merge(tgt_[k], src_[k])
+         return __assign(tgt_[k], src_[k])
       })
       return make(src.constructor as PersistentClass, ...args)
    } else {
@@ -186,12 +186,12 @@ function __merge (tgt: Persistent, src: Persistent): Persistent {
 
 function __copy (src: Object): ObjectState {
    const tgt: ObjectState = Object.create(src.constructor.prototype)
-   __assignState(tgt, src)
+   __newState(tgt, src)
    return tgt
 }
 
-// Assign contents of src to tgt; return whether anything changed.
-function __assignState (tgt: ObjectState, src: Object): boolean {
+// Set contents of src to tgt; return whether anything changed.
+function __newState (tgt: ObjectState, src: Object): boolean {
    let changed: boolean = __nonNull(tgt).constructor !== __nonNull(src.constructor)
    reclassify(tgt, classOf(src))
    const src_: ObjectState = src as ObjectState
@@ -212,11 +212,11 @@ function __commit (o: Versioned<PersistentObject>): Object {
    } else {
       const [lastModified, state]: [World, ObjectState] = stateAt(o, __w)
       if (lastModified === __w) {
-         __mergeState(state, o)
+         __assignState(state, o)
       } else {
          // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
          const prev: ObjectState = __copy(state)
-         if (__assignState(state, o)) {
+         if (__newState(state, o)) {
             o.__history.set(lastModified, prev)
             o.__history.set(__w, state)
          }
