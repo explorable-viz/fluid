@@ -11,11 +11,52 @@ import TracedMatch = Traced.TracedMatch
 import Trie = Expr.Trie
 import mapTrie = Expr.Trie.mapTrie
 
-// The match for any evaluation with demand σ which yielded value v.
-export function match<K extends Kont<K>> (tv: Traced, σ: Trie<K>, ): Match<K> {
+export function lookup<K extends Kont<K>> (tv: Traced, σ: Trie<K>): [Env, K] {
    const v: Value̊ = tv.v
    if (Trie.Var.is(σ)) {
-      return Match.Var.make(σ.x, v, σ.κ) // Env.singleton(σ.x.str, tv)
+      return [Env.singleton(σ.x.str, tv), σ.κ]
+   } else
+   if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
+      return [Env.empty(), σ.κ]
+   } else
+   if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
+      let ρ_κ: [Env, K] | null = null
+      σ.cases.map(({ fst: ctr, snd: Π }): null => {
+         if (v.ctr.str === ctr) {
+            ρ_κ = lookupArgs(v.args, Π)
+         }
+         return null
+      })
+      if (ρ_κ === null) {
+         return absurd("Demand mismatch.", v, σ)
+      } else {
+         return ρ_κ
+      }
+   } else {
+      return absurd("Demand mismatch.", v, σ)
+   }
+}
+
+function lookupArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): [Env, K] {
+   // Parser ensures constructor patterns agree with constructor signatures.
+   if (Cons.is(tvs) && Args.Next.is(Π)) {
+      // codomain of ξ is Args; promote to Args | Match.Args:
+      const [ρ, Πʹ]: [Env, Args<K>] = lookup(tvs.head, Π.σ), 
+            [ρʹ, κ] = lookupArgs(tvs.tail, Πʹ)
+      return [Env.concat(ρ, ρʹ), κ]
+   } else
+   if (Nil.is(tvs) && Args.End.is(Π)) {
+      return [Env.empty(), Π.κ]
+   } else {
+      return absurd()
+   }
+}
+
+// The match for any evaluation with demand σ which yielded value v.
+export function match<K extends Kont<K>> (tv: Traced, σ: Trie<K>): Match<K> {
+   const v: Value̊ = tv.v
+   if (Trie.Var.is(σ)) {
+      return Match.Var.make(σ.x, v, σ.κ) 
    } else
    if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
       return Match.Fun.make(v, σ.κ)
