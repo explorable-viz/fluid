@@ -20,7 +20,7 @@ export namespace Value {
    }
 
    export class Closure extends Value {
-      ρ: Env
+      ρ: Env // ρ is _not_ closing for σ; need to extend with the bindings in δ
       δ: List<Expr.RecDef>
       σ: Trie<Expr>
    

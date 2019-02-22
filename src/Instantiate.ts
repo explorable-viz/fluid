@@ -53,7 +53,7 @@ export function instantiate (ρ: Env, e: Expr): Expr {
    if (e instanceof LetRec) {
       const δ: List<RecDef> = e.δ.map(def => {
          const i: ExprId = ExprId.make(ρ.entries(), asVersioned(def))
-         return RecDef.at(i, def.x, instantiate(ρ, def.e))
+         return RecDef.at(i, def.x, instantiate(ρ, def.f) as Fun)
       })
       return LetRec.at(j, δ, instantiate(ρ, e.e))
    } else

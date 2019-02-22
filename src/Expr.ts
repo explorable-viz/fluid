@@ -241,20 +241,20 @@ export namespace Expr {
 
    export class RecDef implements PersistentObject {
       x: Lex.Var
-      e: Expr
+      f: Fun
 
-      constructor_ (x: Lex.Var, e: Expr): void {
+      constructor_ (x: Lex.Var, f: Fun): void {
          this.x = x
-         this.e = e
+         this.f = f
       }
  
       // Like environments, these don't have entirely bottom forms, but preserve the name structure.
       bottom (): RecDef {
-         return RecDef.at(asVersioned(this).__id, this.x, this.e.bottom())
+         return RecDef.at(asVersioned(this).__id, this.x, this.f.bottom() as Fun)
       }   
   
-      static at (α: PersistentObject, x: Lex.Var, e: Expr): RecDef {
-         return at(α, RecDef, x, e)
+      static at (α: PersistentObject, x: Lex.Var, f: Fun): RecDef {
+         return at(α, RecDef, x, f)
       }
    }
 

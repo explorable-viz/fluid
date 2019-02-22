@@ -11,6 +11,7 @@ import { Traced, Value, Value̊ } from "./Traced"
 import App = Traced.App
 import BinaryApp = Traced.BinaryApp
 import Empty = Traced.Empty
+import Fun = Expr.Fun
 import Let = Traced.Let
 import LetRec = Traced.LetRec
 import MatchAs = Traced.MatchAs
@@ -59,10 +60,10 @@ export module Eval {
 // Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
-      const e: Expr = δ.head.e,
-            k: TraceId = Tagged.make(e, "trace"),
-            kᵥ: ValId = Tagged.make(e, "val"),
-            tv: Traced = Traced.make(Empty.at(k), Value.Closure.at(kᵥ, ρ, δ_0, Trie.Var.make(δ.head.x, e)))
+      const f: Fun = δ.head.f,
+            k: TraceId = Tagged.make(f, "trace"),
+            kᵥ: ValId = Tagged.make(f, "val"),
+            tv: Traced = Traced.make(Empty.at(k), Value.Closure.at(kᵥ, ρ, δ_0, f.σ))
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, tv)
    } else
    if (Nil.is(δ)) {
@@ -110,7 +111,8 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       if (f instanceof Value.Closure) {
          const tu: Traced = eval_(ρ, e.arg),
                [ρʹ, eʹ] = lookup(tu, f.σ),
-               tv: Traced = eval_(Env.concat(f.ρ, ρʹ), instantiate(ρʹ, eʹ))
+               ρᶠ: Env = Env.concat(f.ρ, closeDefs(f.δ, f.ρ, f.δ)),
+               tv: Traced = eval_(Env.concat(ρᶠ, ρʹ), instantiate(ρʹ, eʹ))
          return Traced.make(App.at(k, tf, tu, tv.t), tv.v)
       } else
       // Primitives with identifiers as names are unary and first-class.
