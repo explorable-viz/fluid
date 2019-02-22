@@ -129,7 +129,7 @@ export function at<K extends PersistentObject, T extends PersistentObject> (α: 
    }
    // Couldn't get datatype-generic construction to work because fields not created by "new ctr".
    o.constructor_(...args)
-   return __commit(o) as T
+   return __commit(asVersioned(o)) as T
 }
 
 // Fresh keys represent inputs to the system.
@@ -141,11 +141,12 @@ export const ν: () => ExternalObject =
       }
    })()
 
-function __blankCopy (src: Object): ObjectState {
-   const tgt: ObjectState = Object.create(src.constructor.prototype)
-   for (let x of Object.keys(src)) {
-      tgt[x] = null
-   }
+function __copy (src: Object): ObjectState {
+   const tgt: ObjectState = Object.create(src.constructor.prototype),
+         src_: ObjectState = src as ObjectState
+   Object.keys(tgt).forEach((k: string): void => {
+      tgt[k] = src_[k]
+   })
    return tgt
 }
 
@@ -189,6 +190,9 @@ function __merge (tgt: Persistent, src: Persistent): Persistent {
    if (src === tgt) {
       return src
    } else
+   if (tgt === null || src === null) {
+      return absurd("Address collision (different child).")
+   } else
    if (versioned(tgt) && versioned(src)) {
       return absurd("Address collision (different child).")
    } else
@@ -224,30 +228,26 @@ function __assignState (tgt: ObjectState, src: Object): boolean {
 }
 
 // At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
-function __commit (o: PersistentObject): Object {
-   if (versioned(o)) {
-      if (o.__history.size === 0) {
-         const state: ObjectState = __blankCopy(o)
+function __commit (o: Versioned<PersistentObject>): Object {
+   if (o.__history.size === 0) {
+      const state: ObjectState = __copy(o)
+//      __mergeState(state, o)
+      o.__history.set(__w, state)
+   } else {
+      const [lastModified, state]: [World, ObjectState] = stateAt(o, __w)
+      if (lastModified === __w) {
          __mergeState(state, o)
-         o.__history.set(__w, state)
       } else {
-         const [lastModified, state]: [World, ObjectState] = stateAt(o, __w)
-         if (lastModified === __w) {
-            __mergeState(state, o)
-         } else {
-            // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
-            const prev: ObjectState = __blankCopy(state)
-            __mergeState(prev, state)
-            if (__assignState(state, o)) {
-               o.__history.set(lastModified, prev)
-               o.__history.set(__w, state)
-            }
+         // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
+         const prev: ObjectState = __copy(state)
+//         __mergeState(prev, state)
+         if (__assignState(state, o)) {
+            o.__history.set(lastModified, prev)
+            o.__history.set(__w, state)
          }
       }
-      return o
-   } else {
-      return absurd()
    }
+   return o
 }
 
 // State of o at w, plus predecessor of w at which that state was set.
@@ -268,12 +268,8 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
 // current world.
 export function getProp<T extends PersistentObject> (α: PersistentObject, cls: PersistentClass<T>, k: keyof T): Persistent {
    const o: PersistentObject = __nonNull(__versionedObjs.get(α)),
-         oʹ: T = as(o, cls)
-   if (versioned(oʹ)) {
-      return stateAt(oʹ, __w)[1][k as keyof ObjectState]
-   } else {
-      return absurd()
-   }
+         oʹ: Versioned<T> = asVersioned(as<PersistentObject, T>(o, cls))
+   return stateAt(oʹ, __w)[1][k as keyof ObjectState]
 }
 
 export class World implements PersistentObject, Ord<World> {
