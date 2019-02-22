@@ -129,7 +129,7 @@ export function at<K extends PersistentObject, T extends PersistentObject> (α: 
    }
    // Couldn't get datatype-generic construction to work because fields not created by "new ctr".
    o.constructor_(...args)
-   return __commit(o) as T
+   return __commit(asVersioned(o)) as T
 }
 
 // Fresh keys represent inputs to the system.
@@ -141,76 +141,54 @@ export const ν: () => ExternalObject =
       }
    })()
 
-function __blankCopy (src: Object): ObjectState {
-   const tgt: ObjectState = Object.create(src.constructor.prototype)
-   for (let x of Object.keys(src)) {
-      tgt[x] = null
-   }
-   return tgt
-}
-
 // "State object" whose identity doesn't matter and whose contents we can access by key.
 export interface ObjectState {
    [index: string]: Persistent
 }
 
-// Combine information from src into tgt and vice versa, at an existing world.
-// Precondition: the two are upper-bounded; postcondition: they are equal.
-function __mergeState (tgt: ObjectState, src: Object): void {
+// Ensure previous value of state is equal to current value at an existing world.
+function __assertEqualState (tgt: ObjectState, src: Object): void {
    const src_: ObjectState = src as ObjectState
-   // TODO: remove hardcoded dependency on "Bot".
-   if (className(tgt) === "Bot") {
-      reclassify(tgt, classOf(src))
-      Object.keys(src).forEach((k: string): void => {
-         tgt[k] = src_[k]
-      })
-   } else 
-   if (className(src) === "Bot") {
-      reclassify(src, classOf(tgt))
-      Object.keys(tgt).forEach((k: string): void => {
-         src_[k] = tgt[k]
-      })
-   } else {
-      assert(tgt.constructor === src.constructor)
-      Object.keys(tgt).forEach((k: string): void => {
-         tgt[k] = src_[k] = __merge(tgt[k], src_[k])
-      })
+   assert(tgt.constructor === src.constructor)
+   Object.keys(tgt).forEach((k: string): void => {
+      __assertEqual(tgt[k], src_[k])
+   })
+}
+
+// Verify that properties are always assigned consistently. Used to implement LVar-style increasing
+// semantics, but that was only needed for call-by-need.
+function __assertEqual (tgt: Persistent, src: Persistent): void {
+   if (src !== tgt) {
+      if (tgt === null || src === null) {
+         return absurd("Address collision (different child).")
+      } else
+      if (versioned(tgt) && versioned(src)) {
+         return absurd("Address collision (different child).")
+      } else
+      if (interned(tgt) && interned(src)) {
+         assert(
+            tgt.constructor === src.constructor, 
+            `Address collision (tgt ${className(tgt)} !== src ${className(src)}).`
+         )
+         const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
+               src_: ObjectState = src as Object as ObjectState
+         Object.keys(tgt).forEach((k: string): void => {
+            __assertEqual(tgt_[k], src_[k])
+         })
+      } else {
+         return absurd()
+      }
    }
 }
 
-// Least upper bound of two upper-bounded objects.
-function __merge (tgt: Persistent, src: Persistent): Persistent {
-   if (src === null) {
-      return tgt
-   } else 
-   if (tgt === null) {
-      return src
-   } else
-   if (src === tgt) {
-      return src
-   } else
-   if (versioned(tgt) && versioned(src)) {
-      return absurd("Address collision (different child).")
-   } else
-   if (interned(tgt) && interned(src)) {
-      assert(
-         tgt.constructor === src.constructor, 
-         `Address collision (tgt ${className(tgt)} !== src ${className(src)}).`
-      )
-      const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
-            src_: ObjectState = src as Object as ObjectState,
-            args: Persistent[] = Object.keys(tgt).map((k: string): Persistent => {
-         return __merge(tgt_[k], src_[k])
-      })
-      return make(src.constructor as PersistentClass, ...args)
-   } else {
-      return absurd()
-   }
+function __copy (src: Object): ObjectState {
+   const tgt: ObjectState = Object.create(src.constructor.prototype)
+   __newState(tgt, src)
+   return tgt
 }
 
-// Assign contents of src to tgt; return whether anything changed. TODO: whether anything changed is not
-// necessarily significant because of call-by-need: a slot may evolve from null to non-null during a run.
-function __assignState (tgt: ObjectState, src: Object): boolean {
+// Set contents of src to tgt; return whether anything changed.
+function __newState (tgt: ObjectState, src: Object): boolean {
    let changed: boolean = __nonNull(tgt).constructor !== __nonNull(src.constructor)
    reclassify(tgt, classOf(src))
    const src_: ObjectState = src as ObjectState
@@ -224,30 +202,24 @@ function __assignState (tgt: ObjectState, src: Object): boolean {
 }
 
 // At a given world, enforce "increasing" (LVar) semantics. Only permit non-increasing changes at new worlds.
-function __commit (o: PersistentObject): Object {
-   if (versioned(o)) {
-      if (o.__history.size === 0) {
-         const state: ObjectState = __blankCopy(o)
-         __mergeState(state, o)
-         o.__history.set(__w, state)
+function __commit (o: Versioned<PersistentObject>): Object {
+   if (o.__history.size === 0) {
+      const state: ObjectState = __copy(o)
+      o.__history.set(__w, state)
+   } else {
+      const [lastModified, state]: [World, ObjectState] = stateAt(o, __w)
+      if (lastModified === __w) {
+         __assertEqualState(state, o)
       } else {
-         const [lastModified, state]: [World, ObjectState] = stateAt(o, __w)
-         if (lastModified === __w) {
-            __mergeState(state, o)
-         } else {
-            // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
-            const prev: ObjectState = __blankCopy(state)
-            __mergeState(prev, state)
-            if (__assignState(state, o)) {
-               o.__history.set(lastModified, prev)
-               o.__history.set(__w, state)
-            }
+         // Semantics of copy-on-write but inefficient - we create the copy even if we don't need it: 
+         const prev: ObjectState = __copy(state)
+         if (__newState(state, o)) {
+            o.__history.set(lastModified, prev)
+            o.__history.set(__w, state)
          }
       }
-      return o
-   } else {
-      return absurd()
    }
+   return o
 }
 
 // State of o at w, plus predecessor of w at which that state was set.
@@ -268,12 +240,8 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
 // current world.
 export function getProp<T extends PersistentObject> (α: PersistentObject, cls: PersistentClass<T>, k: keyof T): Persistent {
    const o: PersistentObject = __nonNull(__versionedObjs.get(α)),
-         oʹ: T = as(o, cls)
-   if (versioned(oʹ)) {
-      return stateAt(oʹ, __w)[1][k as keyof ObjectState]
-   } else {
-      return absurd()
-   }
+         oʹ: Versioned<T> = asVersioned(as<PersistentObject, T>(o, cls))
+   return stateAt(oʹ, __w)[1][k as keyof ObjectState]
 }
 
 export class World implements PersistentObject, Ord<World> {

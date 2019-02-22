@@ -2,7 +2,7 @@ import { __nonNull, absurd } from "./util/Core"
 import { asVersioned } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { Eval, ExprId } from "./Eval"
+import { ExprId } from "./Eval"
 import { Expr } from "./Expr"
 
 import App = Expr.App
@@ -53,9 +53,9 @@ export function instantiate (ρ: Env, e: Expr): Expr {
    if (e instanceof LetRec) {
       const δ: List<RecDef> = e.δ.map(def => {
          const i: ExprId = ExprId.make(ρ.entries(), asVersioned(def))
-         return RecDef.at(i, def.x, instantiate(ρ, def.e))
+         return RecDef.at(i, def.x, instantiate(ρ, def.f) as Fun)
       })
-      return LetRec.at(j, δ, instantiate(Eval.closeDefs(δ, ρ, δ), e.e))
+      return LetRec.at(j, δ, instantiate(ρ, e.e))
    } else
    if (e instanceof MatchAs) {
       return MatchAs.at(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
@@ -97,15 +97,10 @@ function instantiateTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, σ:
    return mapTrie((κ: K) => instantiateKont<K, Kʹ>(ρ, κ))(instantiateTrie_(ρ, σ))
 }
 
+// This looks weird - why no instantiateKont?
 function instantiateTrie_<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
    if (Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, σ.κ)
-   } else
-   if (Trie.ConstInt.is(σ)) {
-      return Trie.ConstInt.make(σ.κ)
-   } else
-   if (Trie.ConstStr.is(σ)) {
-      return Trie.ConstStr.make(σ.κ)
    } else
    if (Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(

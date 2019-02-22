@@ -1,52 +1,16 @@
-import { absurd, assert } from "./util/Core"
+import { assert } from "./util/Core"
 import { Persistent, PersistentObject, ν, make } from "./util/Persistent"
 import { Nil } from "./BaseTypes"
-import { Env, EnvEntry, ExtendEnv } from "./Env"
+import { Env, ExtendEnv } from "./Env"
 import { Expr, Lex } from "./Expr"
-import { ValId } from "./Eval"
-import { get, has } from "./FiniteMap"
-import { instantiate } from "./Instantiate"
-import { Value } from "./Traced"
+import { Tagged, TraceId, ValId } from "./Eval"
+import { Traced, Value } from "./Traced"
 
-import Trie = Expr.Trie
-import VoidKont = Expr.VoidKont
+import Empty = Traced.Empty
 
 export type PrimResult<K> = [Value, K]
-type TrieCtr = (body: VoidKont) => Trie.Prim<VoidKont>
 type Unary<T, V> = (x: T) => (α: PersistentObject) => V
 type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
-
-// Parser guarantees that values/patterns respect constructor signatures. 
-// TODO: rename to avoid confusion with Match.match.
-function match<K extends Expr.Kont<K>> (v: Value, σ: Trie<K>): PrimResult<K> {
-   if (v instanceof Value.PrimOp && (Trie.Fun.is(σ) || Trie.Top.is(σ))) {
-      return [v, σ.κ]
-   } else 
-   if (v instanceof Value.ConstInt && (Trie.ConstInt.is(σ) || Trie.Top.is(σ))) {
-      return [v, σ.κ]
-   } else 
-   if (v instanceof Value.ConstStr && (Trie.ConstStr.is(σ) || Trie.Top.is(σ ))) {
-      return [v, σ.κ]
-   } else 
-   if (v instanceof Value.Constr) {
-      assert(v.args.length === 0, "Primitives must return nullary values.")
-      if (Trie.Constr.is(σ) && has(σ.cases, v.ctr.str)) {
-         const Π: Expr.Args<K> = get(σ.cases, v.ctr.str)!
-         if (Expr.Args.End.is(Π)) {
-            return [v, Π.κ]
-         } else {
-            return absurd()
-         }
-      } else
-      if (Trie.Top.is(σ)) {
-         return [v, σ.κ]
-      } else {
-         return absurd()
-      }
-   } else {
-      return assert(false, "Primitive demand mismatch.", v, σ)
-   }
-}
 
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
@@ -61,10 +25,6 @@ export class UnaryBody implements PersistentObject {
    static make<T extends Value, V extends Value> (op: Unary<T, V>): UnaryBody {
       return make(UnaryBody, op)
    }
-
-   invoke<K extends Expr.Kont<K>> (v: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
-      return k => match(this.op(v)(k), σ)
-   }
 } 
 
 export class BinaryBody implements PersistentObject {
@@ -77,10 +37,6 @@ export class BinaryBody implements PersistentObject {
    static make<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>): BinaryBody {
       return make(BinaryBody, op)
    }
-
-   invoke<K extends Expr.Kont<K>> (v1: Value, v2: Value, σ: Trie<K>): (k: ValId) => PrimResult<K> {
-      return k => match(this.op(v1, v2)(k), σ)
-   }
 } 
 
 export abstract class PrimOp implements PersistentObject {
@@ -89,71 +45,62 @@ export abstract class PrimOp implements PersistentObject {
 }
 
 export class UnaryOp extends PrimOp {
-   σ: Trie.Prim<VoidKont>
    b: UnaryBody
 
    constructor_ (
       name: string, 
-      σ: Trie.Prim<VoidKont>,
       b: UnaryBody
    ) {
       this.name = name
-      this.σ = σ
       this.b = b
    }
 
-   static make (name: string, σ: Trie.Prim<VoidKont>, b: UnaryBody): UnaryOp {
-      return make(UnaryOp, name, σ, b)
+   static make (name: string, b: UnaryBody): UnaryOp {
+      return make(UnaryOp, name, b)
    }
 
-   static make_<T extends Value, V extends Value> (op: Unary<T, V>, trie: TrieCtr): UnaryOp {
-      return UnaryOp.make(op.name, trie(VoidKont.make()), UnaryBody.make(op))
+   static make_<T extends Value, V extends Value> (op: Unary<T, V>): UnaryOp {
+      return UnaryOp.make(op.name, UnaryBody.make(op))
    }
 }
 
 export class BinaryOp extends PrimOp {
-   σ1: Trie.Prim<VoidKont>
-   σ2: Trie.Prim<VoidKont> 
    b: BinaryBody
 
    constructor_ (
       name: string, 
-      σ1: Trie.Prim<VoidKont>, 
-      σ2: Trie.Prim<VoidKont>, 
       b: BinaryBody
    ) {
       this.name = name
-      this.σ1 = σ1
-      this.σ2 = σ2
       this.b = b
    }
 
-   static make (name: string, σ1: Trie.Prim<VoidKont>, σ2: Trie.Prim<VoidKont>, b: BinaryBody): BinaryOp {
-      return make(BinaryOp, name, σ1, σ2, b)
+   static make (name: string, b: BinaryBody): BinaryOp {
+      return make(BinaryOp, name, b)
    }
 
-   static make_<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>, trie1: TrieCtr, trie2: TrieCtr): BinaryOp {
-      return BinaryOp.make(op.name, trie1(VoidKont.make()), trie2(VoidKont.make()), BinaryBody.make(op))
+   static make_<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>): BinaryOp {
+      return BinaryOp.make(op.name, BinaryBody.make(op))
    }
 }
 
 const unaryOps: Map<string, UnaryOp> = new Map([
-   [error.name, UnaryOp.make_(error, Trie.ConstStr.make)],
-   [intToString.name, UnaryOp.make_(intToString, Trie.ConstInt.make)],
+   [error.name, UnaryOp.make_(error)],
+   [intToString.name, UnaryOp.make_(intToString)],
 ])
    
 export const binaryOps: Map<string, BinaryOp> = new Map([
-   ["-", BinaryOp.make_(minus, Trie.ConstInt.make, Trie.ConstInt.make)],
-   ["+", BinaryOp.make_(plus, Trie.ConstInt.make, Trie.ConstInt.make)],
-   ["*", BinaryOp.make_(times, Trie.ConstInt.make, Trie.ConstInt.make)],
-   ["/", BinaryOp.make_(div, Trie.ConstInt.make, Trie.ConstInt.make)],
-   ["==", BinaryOp.make_(equalInt, Trie.ConstInt.make, Trie.ConstInt.make)],
-   ["===", BinaryOp.make_(equalStr, Trie.ConstStr.make, Trie.ConstStr.make)],
-   [">", BinaryOp.make_(greaterInt, Trie.ConstInt.make, Trie.ConstInt.make)],
-   [">>", BinaryOp.make_(greaterStr, Trie.ConstStr.make, Trie.ConstStr.make)],
-   ["<", BinaryOp.make_(lessInt, Trie.ConstInt.make, Trie.ConstInt.make)],
-   ["<<", BinaryOp.make_(lessStr, Trie.ConstStr.make, Trie.ConstStr.make)],
-   ["++", BinaryOp.make_(concat, Trie.ConstStr.make, Trie.ConstStr.make)]
+   ["-", BinaryOp.make_(minus)],
+   ["+", BinaryOp.make_(plus)],
+   ["*", BinaryOp.make_(times)],
+   ["/", BinaryOp.make_(div)],
+   ["==", BinaryOp.make_(equalInt)],
+   ["===", BinaryOp.make_(equalStr)],
+   [">", BinaryOp.make_(greaterInt)],
+   [">>", BinaryOp.make_(greaterStr)],
+   ["<", BinaryOp.make_(lessInt)],
+   ["<<", BinaryOp.make_(lessStr)],
+   ["++", BinaryOp.make_(concat)]
 ])
 
 function __true (k: ValId): Value.Constr {
@@ -221,10 +168,12 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): (k: ValId) => Val
 
 // Only primitive with identifiers as names are first-class, and therefore appear in the prelude.
 export function prelude (): Env {
-   const ρ_0: Env = Env.empty()
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
-      ρ = ExtendEnv.make(ρ, x, EnvEntry.make(ρ_0, Nil.make(), instantiate(ρ_0, Expr.PrimOp.at(ν(), op))))
+      const e: Expr = Expr.PrimOp.at(ν(), op),
+            k: TraceId = Tagged.make(e, "trace"),
+            kᵥ: ValId = Tagged.make(e, "val")
+      ρ = ExtendEnv.make(ρ, x, Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, op)))
    })
    return ρ
 }

@@ -1,10 +1,10 @@
 letrec
-   append = fun {
+   fun append {
       Nil → fun ys → ys;
       Cons(x, xs) → fun ys → Cons(x, append xs ys)
    };
 
-   reverse = fun {
+   fun reverse {
       Nil → Nil;
       Cons(x, xs) → append (reverse xs) Cons(x, Nil)
    }

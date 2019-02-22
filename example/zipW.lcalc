@@ -1,5 +1,5 @@
 letrec
-   zipW = fun op {
+   fun zipW op {
       Nil ys → Nil;
       Cons(x, xs) {
          Nil → Nil;

@@ -1,5 +1,5 @@
 letrec
-   length = fun {
+   fun length {
       Nil → 0;
       Cons(x, xs') → 1 + length xs'
    }
