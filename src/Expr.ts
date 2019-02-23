@@ -461,9 +461,6 @@ export namespace Expr {
          }
          
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
-            if (Fun.is(σ) && Fun.is(τ)) {
-               return Fun.make(join(σ.κ, τ.κ))
-            } else
             if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
                return Var.make(σ.x, join(σ.κ, τ.κ))
             } else
@@ -506,22 +503,6 @@ export namespace Expr {
          }
       }
 
-      export class Fun<K extends Kont<K>> extends Trie<K> {
-         κ: K
-
-         constructor_ (κ: K) {
-            this.κ = κ
-         }
-
-         static is<K extends Kont<K>> (σ: Trie<K>): σ is Fun<K> {
-            return σ instanceof Fun
-         }
-
-         static make<K extends Kont<K>> (κ: K): Fun<K> {
-            return make(Fun, κ) as Fun<K>
-         }
-      }
-
       export class Var<K extends Kont<K>> extends Trie<K> {
          x: Lex.Var
          κ: K
@@ -555,9 +536,6 @@ export namespace Expr {
       
       export function mapTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (σ: Trie<K>) => Trie<Kʹ> {
          return (σ: Trie<K>): Trie.Trie<Kʹ> => {
-            if (Fun.is(σ)) {
-               return Fun.make(f(σ.κ))
-            } else
             if (Var.is(σ)) {
                return Var.make(σ.x, f(σ.κ))
             } else 

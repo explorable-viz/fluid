@@ -108,9 +108,6 @@ function instantiateTrie_<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
             return Pair.make(ctr, instantiateArgs(ρ, Π))
          })
       )
-   } else
-   if (Trie.Fun.is(σ)) {
-      return Trie.Fun.make(σ.κ)
    } else {
       return absurd()
    }

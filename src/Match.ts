@@ -16,9 +16,6 @@ export function lookup<K extends Kont<K>> (tv: Traced, σ: Trie<K>): [Env, K] {
    if (Trie.Var.is(σ)) {
       return [Env.singleton(σ.x.str, tv), σ.κ]
    } else
-   if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
-      return [Env.empty(), σ.κ]
-   } else
    if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
       let ρ_κ: [Env, K] | null = null
       σ.cases.map(({ fst: ctr, snd: Π }): null => {
@@ -57,9 +54,6 @@ export function match<K extends Kont<K>> (tv: Traced, σ: Trie<K>): Match<K> {
    const v: Value̊ = tv.v
    if (Trie.Var.is(σ)) {
       return Match.Var.make(σ.x, v, σ.κ) 
-   } else
-   if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
-      return Match.Fun.make(v, σ.κ)
    } else
    if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
       return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
