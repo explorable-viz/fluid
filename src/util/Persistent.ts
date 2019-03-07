@@ -10,7 +10,7 @@ export interface PersistentObject {
 }
 
 // Functions are persistent to support primitives.
-export type Persistent = null | PersistentObject | string | number | Function
+export type Persistent = null | PersistentObject | boolean | string | number | Function
 
 // Versioned objects are persistent objects that have state that varies across worlds.
 export interface VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {

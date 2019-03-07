@@ -42,4 +42,13 @@ export type Comparator<T> = (x: T, y: T) => number
 
 export interface JoinSemilattice<T> {
    join (t: T): T
+   bot (): T
+}
+
+export interface MeetSemilattice<T> {
+   meet (t: T): T
+   top (): T
+}
+
+export interface Lattice<T> extends JoinSemilattice<T>, MeetSemilattice<T> {
 }
