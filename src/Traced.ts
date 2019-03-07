@@ -10,7 +10,7 @@ import Trie = Expr.Trie
 
 export type Expr = Expr.Expr
 export type Value = Value.Value
-export type Value̊ = Value | null
+// export type Value̊ = Value | null
 
 export namespace Value {
    export abstract class Value implements PersistentObject {
@@ -220,10 +220,10 @@ export namespace Traced {
 
       export class Var<K extends Persistent> extends Match<K> {
          x: Lex.Var
-         v: Value̊
+         v: Value
          κ: K
 
-         constructor_ (x: Lex.Var, v: Value̊, κ: K) {
+         constructor_ (x: Lex.Var, v: Value, κ: K) {
             this.x = x
             this.v = v
             this.κ = κ
@@ -233,7 +233,7 @@ export namespace Traced {
             return ξ instanceof Var
          }
 
-         static make<K extends Persistent> (x: Lex.Var, v: Value̊, κ: K): Var<K> {
+         static make<K extends Persistent> (x: Lex.Var, v: Value, κ: K): Var<K> {
             return make(Var, x, v, κ) as Var<K>
          }
       }

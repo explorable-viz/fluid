@@ -6,7 +6,7 @@ import { Expr } from "./Expr"
 import { instantiate } from "./Instantiate"
 import { lookup } from "./Match"
 import { BinaryOp, binaryOps } from "./Primitive"
-import { Traced, Value, Value̊ } from "./Traced"
+import { Traced, Value } from "./Traced"
 
 import App = Traced.App
 import BinaryApp = Traced.BinaryApp
@@ -102,7 +102,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    } else
    if (e instanceof Expr.App) {
       const tf: Traced = eval_(ρ, e.func),
-            f: Value̊ = tf.v
+            f: Value = tf.v
       if (f instanceof Value.Closure) {
          const tu: Traced = eval_(ρ, e.arg),
                [ρʹ, eʹ] = lookup(tu, f.σ),

@@ -2,7 +2,7 @@ import { absurd } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Expr } from "./Expr"
-import { Traced, Value, Value̊ } from "./Traced"
+import { Traced, Value } from "./Traced"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
@@ -12,7 +12,7 @@ import Trie = Expr.Trie
 import mapTrie = Expr.Trie.mapTrie
 
 export function lookup<K extends Kont<K>> (tv: Traced, σ: Trie<K>): [Env, K] {
-   const v: Value̊ = tv.v
+   const v: Value = tv.v
    if (Trie.Var.is(σ)) {
       return [Env.singleton(σ.x.str, tv), σ.κ]
    } else
@@ -51,7 +51,7 @@ function lookupArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): [Env, K
 
 // The match for any evaluation with demand σ which yielded value v.
 export function match<K extends Kont<K>> (tv: Traced, σ: Trie<K>): Match<K> {
-   const v: Value̊ = tv.v
+   const v: Value = tv.v
    if (Trie.Var.is(σ)) {
       return Match.Var.make(σ.x, v, σ.κ) 
    } else
