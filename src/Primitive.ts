@@ -7,10 +7,11 @@ import { Tagged, TraceId, ValId } from "./Eval"
 import { Traced, Value } from "./Traced"
 
 import Empty = Traced.Empty
+import { Annotation } from "./Annotated";
 
 export type PrimResult<K> = [Value, K]
-type Unary<T, V> = (x: T) => (α: PersistentObject) => V
-type Binary<T, U, V> = (x: T, y: U) => (α: PersistentObject) => V
+type Unary<T, V> = (x: T) => (k: PersistentObject, α: Annotation) => V
+type Binary<T, U, V> = (x: T, y: U) => (k: PersistentObject, α: Annotation) => V
 
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
@@ -103,67 +104,67 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
    ["++", BinaryOp.make_(concat)]
 ])
 
-function __true (k: ValId): Value.Constr {
-   return Value.Constr.at(k, Lex.Ctr.make("True"), Nil.make())
+function __true (k: ValId, α: Annotation): Value.Constr {
+   return Value.Constr.at(k, α, Lex.Ctr.make("True"), Nil.make())
 }
 
-function __false (k: ValId): Value.Constr {
-   return Value.Constr.at(k, Lex.Ctr.make("False"), Nil.make())
+function __false (k: ValId, α: Annotation): Value.Constr {
+   return Value.Constr.at(k, α, Lex.Ctr.make("False"), Nil.make())
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
-export function error (message: Value.ConstStr): (α: PersistentObject) => Value {
+export function error (message: Value.ConstStr): (k: PersistentObject) => Value {
    return assert(false, "LambdaCalc error:\n" + message.val)
 }
 
-export function intToString (x: Value.ConstInt): (k: ValId) => Value.ConstStr {
-   return k => Value.ConstStr.at(k, x.toString())
+export function intToString (x: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstStr {
+   return (k, α) => Value.ConstStr.at(k, α, x.toString())
 }
 
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
-export function equalInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.Constr {
-   return k => x.val === y.val ? __true(k) : __false(k)
+export function equalInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.Constr {
+   return x.val === y.val ? __true : __false
 }
 
-export function equalStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId) => Value.Constr {
-   return k => x.val === y.val ? __true(k) : __false(k)
+export function equalStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.Constr {
+   return x.val === y.val ? __true : __false
 }
 
-export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.Constr {
-   return k => x.val > y.val ? __true(k) : __false(k)
+export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.Constr {
+   return x.val > y.val ? __true : __false
 }
 
-export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId) => Value.Constr {
-   return k => x.val > y.val ? __true(k) : __false(k)
+export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.Constr {
+   return x.val > y.val ? __true : __false
 }
 
-export function lessInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.Constr {
-   return k => x.val > y.val ? __true(k) : __false(k)
+export function lessInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.Constr {
+   return x.val > y.val ? __true : __false
 }
 
-export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId) => Value.Constr {
-   return k => x.val > y.val ? __true(k) : __false(k)
+export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.Constr {
+   return x.val > y.val ? __true : __false
 }
 
-export function minus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.ConstInt {
-   return k => Value.ConstInt.at(k, x.val - y.val)
+export function minus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
+   return (k, α) => Value.ConstInt.at(k, α, x.val - y.val)
 }
 
-export function plus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.ConstInt {
-   return k => Value.ConstInt.at(k, x.val + y.val)
+export function plus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
+   return (k, α) => Value.ConstInt.at(k, α, x.val + y.val)
 }
 
-export function times (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.ConstInt {
-   return k => Value.ConstInt.at(k, x.val * y.val)
+export function times (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
+   return (k, α) => Value.ConstInt.at(k, α, x.val * y.val)
 }
 
-export function div (x: Value.ConstInt, y: Value.ConstInt): (k: ValId) => Value.ConstInt {
+export function div (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
    // Apparently this will round in the right direction.
-   return k => Value.ConstInt.at(k, ~~(x.val / y.val))
+   return (k, α) => Value.ConstInt.at(k, α, ~~(x.val / y.val))
 }
 
-export function concat (x: Value.ConstStr, y: Value.ConstStr): (k: ValId) => Value.ConstStr {
-   return k => Value.ConstStr.at(k, x.val + y.val)
+export function concat (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.ConstStr {
+   return (k, α) => Value.ConstStr.at(k, α, x.val + y.val)
 }
 
 // Only primitive with identifiers as names are first-class, and therefore appear in the prelude.
@@ -173,7 +174,7 @@ export function prelude (): Env {
       const e: Expr = Expr.PrimOp.at(ν(), op),
             k: TraceId = Tagged.make(e, "trace"),
             kᵥ: ValId = Tagged.make(e, "val")
-      ρ = ExtendEnv.make(ρ, x, Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, op)))
+      ρ = ExtendEnv.make(ρ, x, Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.α, op)))
    })
    return ρ
 }

@@ -2,6 +2,7 @@ import { __check, absurd, assert } from "./util/Core"
 import { eq } from "./util/Ord"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
+import { Annotated } from "./Annotated"
 import { List, Pair } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { UnaryOp } from "./Primitive"
@@ -127,7 +128,7 @@ export namespace Lex {
 export type Expr = Expr.Expr
 
 export namespace Expr {
-   export abstract class Expr implements PersistentObject {
+   export abstract class Expr extends Annotated implements PersistentObject {
       __tag: "Expr.Expr"
       abstract constructor_ (...args: Persistent[]): void 
    }
@@ -141,8 +142,8 @@ export namespace Expr {
          this.arg = arg
       }
 
-      static at (α: PersistentObject, func: Expr, arg: Expr): App {
-         return at(α, App, func, arg)
+      static at (k: PersistentObject, func: Expr, arg: Expr): App {
+         return at(k, App, func, arg)
       }
    }
 
@@ -153,8 +154,8 @@ export namespace Expr {
          this.val = __check(val, x => !Number.isNaN(x))
       }
    
-      static at (α: PersistentObject, val: number): ConstInt {
-         return at(α, ConstInt, val)
+      static at (k: PersistentObject, val: number): ConstInt {
+         return at(k, ConstInt, val)
       }
    }
    
@@ -165,8 +166,8 @@ export namespace Expr {
          this.val = val
       }
    
-      static at (α: PersistentObject, val: string): ConstStr {
-         return at(α, ConstStr, val)
+      static at (k: PersistentObject, val: string): ConstStr {
+         return at(k, ConstStr, val)
       }
    }
    
@@ -179,8 +180,8 @@ export namespace Expr {
          this.args = args
       }
    
-      static at (α: PersistentObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
-         return at(α, Constr, ctr, args)
+      static at (k: PersistentObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
+         return at(k, Constr, ctr, args)
       }
    }
 
@@ -191,8 +192,8 @@ export namespace Expr {
          this.σ = σ
       }
 
-      static at (α: PersistentObject, σ: Trie<Expr>): Fun {
-         return at(α, Fun, σ)
+      static at (k: PersistentObject, σ: Trie<Expr>): Fun {
+         return at(k, Fun, σ)
       }
    }
 
@@ -206,8 +207,8 @@ export namespace Expr {
          this.σ = σ
       }
 
-      static at (α: PersistentObject, e: Expr, σ: Trie.Var<Expr>): Let {
-         return at(α, Let, e, σ)
+      static at (k: PersistentObject, e: Expr, σ: Trie.Var<Expr>): Let {
+         return at(k, Let, e, σ)
       }
    }
 
@@ -218,8 +219,8 @@ export namespace Expr {
          this.op = op
       }
 
-      static at (α: PersistentObject, op: UnaryOp): PrimOp {
-         return at(α, PrimOp, op)
+      static at (k: PersistentObject, op: UnaryOp): PrimOp {
+         return at(k, PrimOp, op)
       }
    }
 
@@ -232,8 +233,8 @@ export namespace Expr {
          this.f = f
       }
  
-      static at (α: PersistentObject, x: Lex.Var, f: Fun): RecDef {
-         return at(α, RecDef, x, f)
+      static at (k: PersistentObject, x: Lex.Var, f: Fun): RecDef {
+         return at(k, RecDef, x, f)
       }
    }
 
@@ -246,8 +247,8 @@ export namespace Expr {
          this.e = e
       }
 
-      static at (α: PersistentObject, δ: List<RecDef>, e: Expr): LetRec {
-         return at(α, LetRec, δ, e)
+      static at (k: PersistentObject, δ: List<RecDef>, e: Expr): LetRec {
+         return at(k, LetRec, δ, e)
       }
    }
 
@@ -260,8 +261,8 @@ export namespace Expr {
          this.σ = σ
       }
    
-      static at (α: PersistentObject, e: Expr, σ: Trie<Expr>): MatchAs {
-         return at(α, MatchAs, e, σ)
+      static at (k: PersistentObject, e: Expr, σ: Trie<Expr>): MatchAs {
+         return at(k, MatchAs, e, σ)
       }
    }
 
@@ -276,8 +277,8 @@ export namespace Expr {
          this.e2 = e2
       }
 
-      static at (α: PersistentObject, e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
-         return at(α, BinaryApp, e1, opName, e2)
+      static at (k: PersistentObject, e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
+         return at(k, BinaryApp, e1, opName, e2)
       }
    }
 
@@ -288,8 +289,8 @@ export namespace Expr {
          this.x = x
       }
    
-      static at (α: PersistentObject, x: Lex.Var): Var {
-         return at(α, Var, x)
+      static at (k: PersistentObject, x: Lex.Var): Var {
+         return at(k, Var, x)
       }
    }
 

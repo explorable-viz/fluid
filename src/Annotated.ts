@@ -32,8 +32,8 @@ class Bool implements Lattice<Bool>, PersistentObject {
    }
 }
 
-type Annotation = Bool
+export type Annotation = Bool // for now
 
 export class Annotated {
-   ann: Annotation
+   α: Annotation
 }

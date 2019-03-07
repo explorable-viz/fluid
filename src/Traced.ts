@@ -1,5 +1,5 @@
-import { Lattice } from "./util/Ord"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
+import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -13,7 +13,7 @@ export type Expr = Expr.Expr
 export type Value = Value.Value
 
 export namespace Value {
-   export abstract class Value implements PersistentObject {
+   export abstract class Value extends Annotated implements PersistentObject {
       __tag: "Value.Value"
       abstract constructor_ (...args: Persistent[]): void
    }
@@ -23,14 +23,15 @@ export namespace Value {
       δ: List<Expr.RecDef>
       σ: Trie<Expr>
    
-      constructor_ (ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): void {
+      constructor_ (α: Annotation, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): void {
+         this.α = α
          this.ρ = ρ
          this.δ = δ
          this.σ = σ
       }
 
-      static at (k: ValId, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
-         return at(k, Closure, ρ, δ, σ)
+      static at (k: ValId, α: Annotation, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
+         return at(k, Closure, α, ρ, δ, σ)
       }
    }
 
@@ -41,12 +42,13 @@ export namespace Value {
    export class ConstInt extends Prim {
       val: number
 
-      constructor_ (val: number): void {
+      constructor_ (α: Annotation, val: number): void {
+         this.α = α
          this.val = val
       }
    
-      static at (k: ValId, val: number): ConstInt {
-         return at(k, ConstInt, val)
+      static at (k: ValId, α: Annotation, val: number): ConstInt {
+         return at(k, ConstInt, α, val)
       }
 
       toString (): string {
@@ -57,12 +59,13 @@ export namespace Value {
    export class ConstStr extends Prim {
       val: string
 
-      constructor_ (val: string): void {
+      constructor_ (α: Annotation, val: string): void {
+         this.α = α
          this.val = val
       }
    
-      static at (k: ValId, val: string): ConstStr {
-         return at(k, ConstStr, val)
+      static at (k: ValId, α: Annotation, val: string): ConstStr {
+         return at(k, ConstStr, α, val)
       }
 
       toString (): string {
@@ -74,25 +77,27 @@ export namespace Value {
       ctr: Lex.Ctr
       args: List<Traced>
 
-      constructor_ (ctr: Lex.Ctr, args: List<Traced>): void {
+      constructor_ (α: Annotation, ctr: Lex.Ctr, args: List<Traced>): void {
+         this.α = α
          this.ctr = ctr
          this.args = args
       }
    
-      static at (k: ValId, ctr: Lex.Ctr, args: List<Traced>): Constr {
-         return at(k, Constr, ctr, args)
+      static at (k: ValId, α: Annotation, ctr: Lex.Ctr, args: List<Traced>): Constr {
+         return at(k, Constr, α, ctr, args)
       }
    }
 
    export class PrimOp extends Value {
       op: UnaryOp
 
-      constructor_ (op: UnaryOp): void {
+      constructor_ (α: Annotation, op: UnaryOp): void {
+         this.α = α
          this.op = op
       }
    
-      static at (k: ValId, op: UnaryOp): PrimOp {
-         return at(k, PrimOp, op)
+      static at (k: ValId, α: Annotation, op: UnaryOp): PrimOp {
+         return at(k, PrimOp, α, op)
       }
    }
 }

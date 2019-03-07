@@ -63,7 +63,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
       const f: Fun = δ.head.f,
             k: TraceId = Tagged.make(f, "trace"),
             kᵥ: ValId = Tagged.make(f, "val"),
-            tv: Traced = Traced.make(Empty.at(k), Value.Closure.at(kᵥ, ρ, δ_0, f.σ))
+            tv: Traced = Traced.make(Empty.at(k), Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, tv)
    } else
    if (Nil.is(δ)) {
@@ -86,7 +86,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       return Traced.make(Empty.at(k), Value.ConstStr.at(kᵥ, e.val))
    } else
    if (e instanceof Expr.Fun) {
-      return Traced.make(Empty.at(k), Value.Closure.at(kᵥ, ρ, Nil.make(), e.σ))
+      return Traced.make(Empty.at(k), Value.Closure.at(kᵥ, e.α, ρ, Nil.make(), e.σ))
    } else
    if (e instanceof Expr.PrimOp) {
       return Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.op))

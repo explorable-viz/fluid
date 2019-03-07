@@ -109,21 +109,21 @@ function reclassify (o: Object, ctr: Class<Object>): void {
 }
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<K extends PersistentObject, T extends PersistentObject> (α: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
-   assert(interned(α))
-   let o: PersistentObject | undefined = __versionedObjs.get(α)
+export function at<K extends PersistentObject, T extends PersistentObject> (k: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
+   assert(interned(k))
+   let o: PersistentObject | undefined = __versionedObjs.get(k)
    if (o === undefined) {
       o = new ctr
       // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
       Object.defineProperty(o, "__id", {
-         value: α,
+         value: k,
          enumerable: false
       })
       Object.defineProperty(o, "__history", {
          value: new Map,
          enumerable: false
       })
-      __versionedObjs.set(α, o)
+      __versionedObjs.set(k, o)
    } else {
       reclassify(o, ctr)
    }
@@ -238,10 +238,10 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
 
 // Versioned objects can have different metatypes at different worlds; here we assume T is its type at the 
 // current world.
-export function getProp<T extends PersistentObject> (α: PersistentObject, cls: PersistentClass<T>, k: keyof T): Persistent {
-   const o: PersistentObject = __nonNull(__versionedObjs.get(α)),
+export function getProp<T extends PersistentObject> (k: PersistentObject, cls: PersistentClass<T>, prop: keyof T): Persistent {
+   const o: PersistentObject = __nonNull(__versionedObjs.get(k)),
          oʹ: Versioned<T> = asVersioned(as<PersistentObject, T>(o, cls))
-   return stateAt(oʹ, __w)[1][k as keyof ObjectState]
+   return stateAt(oʹ, __w)[1][prop as keyof ObjectState]
 }
 
 export class World implements PersistentObject, Ord<World> {
