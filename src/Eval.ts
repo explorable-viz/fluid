@@ -138,9 +138,9 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    // Operators (currently all binary) are "syntax", rather than names.
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.str)) {
-         const op: BinaryOp = binaryOps.get(e.opName.str)!,
+         const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
                [tv1, tv2]: [Traced, Traced] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
-               v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ)
+               v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ, e.e1.α.join(e.e2.α).join(e.α))
          return Traced.make(BinaryApp.at(k, tv1, e.opName, tv2), v)
       } else {
          return absurd("Operator name not found.", e.opName)
