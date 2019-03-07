@@ -172,7 +172,7 @@ export function concat (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: An
 export function prelude (): Env {
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
-      const e: Expr = Expr.PrimOp.at(ν(), ann.bot, op),
+      const e: Expr = Expr.PrimOp.at(ν(), ann.top, op),
             k: TraceId = Tagged.make(e, "trace"),
             kᵥ: ValId = Tagged.make(e, "val")
       ρ = ExtendEnv.make(ρ, x, Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.α, op)))
