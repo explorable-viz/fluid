@@ -1,5 +1,4 @@
-import { absurd } from "./util/Core"
-import { Persistent, PersistentObject, asVersioned, at, make } from "./util/Persistent"
+import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -101,22 +100,18 @@ export namespace Value {
 // Called ExplVal in the formalism.
 export class Traced implements PersistentObject {
    t: Trace
-   v: Value̊
+   v: Value
 
    constructor_ (
       t: Trace,
-      v: Value̊
+      v: Value
    ) {
       this.t = t
       this.v = v
    }
 
-   static make (t: Trace, v: Value̊): Traced {
+   static make (t: Trace, v: Value): Traced {
       return make(Traced, t, v)
-   }
-
-   bottom (): Traced {
-      return Traced.make(this.t.bottom(), null)
    }
 }
 
@@ -148,10 +143,6 @@ export namespace Traced {
          export abstract class Args<K> implements Expr.Kont<Args<K>> {
             __tag: "Match.Args"
             abstract constructor_ (...args: Persistent[]): void
-   
-            bottom (): Args<K> {
-               return absurd("Not implemented yet")
-            }
          }
    
          export class End<K extends Persistent> extends Args<K> {
@@ -251,21 +242,6 @@ export namespace Traced {
    export abstract class Trace implements PersistentObject, Expr.Kont<Trace> {
       __tag: "Trace.Trace"
       abstract constructor_ (...args: Persistent[]): void
-
-      bottom (): Trace {
-         return Bot.at(asVersioned(this).__id as TraceId)
-      }
-   }
-
-   export class Bot extends Trace {
-      __subtag: "Trace.Trace.Bot"
-
-      constructor_ (): void {
-      }
-
-      static at (k: TraceId): Bot {
-         return at(k, Bot)
-      }
    }
 
    export class App extends Trace {

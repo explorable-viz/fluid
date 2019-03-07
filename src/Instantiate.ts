@@ -8,7 +8,6 @@ import { Expr } from "./Expr"
 import App = Expr.App
 import Args = Expr.Args
 import BinaryApp = Expr.BinaryApp
-import Bot = Expr.Bot
 import ConstInt = Expr.ConstInt
 import ConstStr = Expr.ConstStr
 import Constr = Expr.Constr
@@ -25,9 +24,6 @@ import mapTrie = Expr.Trie.mapTrie
 
 export function instantiate (ρ: Env, e: Expr): Expr {
    const j: ExprId = ExprId.make(ρ.entries(), asVersioned(e))
-   if (e instanceof Bot) {
-      return Bot.at(j)
-   } else 
    if (e instanceof ConstInt) {
       return ConstInt.at(j, e.val)
    } else

@@ -1,6 +1,6 @@
 import { __check, absurd, assert } from "./util/Core"
 import { eq } from "./util/Ord"
-import { Persistent, PersistentObject, asVersioned, at, make } from "./util/Persistent"
+import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { List, Pair } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -21,7 +21,6 @@ export namespace str {
    export const quotes: string = '"'
 }
 
-// Don't I want to allow Lexeme.str to be null?
 export namespace Lex {
    export class Ctr extends Lexeme {
       __tag: "Lex.Ctr"
@@ -131,21 +130,6 @@ export namespace Expr {
    export abstract class Expr implements PersistentObject {
       __tag: "Expr.Expr"
       abstract constructor_ (...args: Persistent[]): void 
-
-      bottom (): Expr {
-         return Bot.at(asVersioned(this).__id)
-      }
-   }
-
-   export class Bot extends Expr {
-      __subtag: "Expr.Bot"
-
-      constructor_ (): void {
-      }
-
-      static at (α: PersistentObject): Bot {
-         return at(α, Bot)
-      }
    }
 
    export class App extends Expr {
@@ -248,11 +232,6 @@ export namespace Expr {
          this.f = f
       }
  
-      // Like environments, these don't have entirely bottom forms, but preserve the name structure.
-      bottom (): RecDef {
-         return RecDef.at(asVersioned(this).__id, this.x, this.f.bottom() as Fun)
-      }   
-  
       static at (α: PersistentObject, x: Lex.Var, f: Fun): RecDef {
          return at(α, RecDef, x, f)
       }
@@ -322,10 +301,6 @@ export namespace Expr {
          __tag: "Expr.Args.Args"
          abstract constructor_ (...args: Persistent[]): void
 
-         bottom (): Args<K> {
-            return absurd("Not implemented yet")
-         }
-
          static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
             if (Π instanceof End && Πʹ instanceof End) {
                return End.make(join(Π.κ, Πʹ.κ))
@@ -338,35 +313,12 @@ export namespace Expr {
          }
       }
 
-      export class Bot<K extends Kont<K>> extends Args<K> {
-         κ: K // want fix at null but couldn't make that work with the polymorphism
-
-         constructor_ () {
-         }
-
-         static is<K extends Kont<K>> (Π: Args<K>): Π is Bot<K> {
-            return Π instanceof Bot
-         }
-
-         static make<K extends Kont<K>> (): Bot<K> {
-            return make(Bot) as Bot<K>
-         }
-
-         bottom (): Bot<K> {
-            return Bot.make()
-         }
-      }
-
       // Maps zero arguments to κ.
       export class End<K extends Kont<K>> extends Args<K> {
          κ: K
 
          constructor_ (κ: K) {
             this.κ = κ
-         }
-
-         bottom (): End<K> {
-            return absurd("Not implemented yet")
          }
 
          static is<K extends Kont<K>> (Π: Args<K>): Π is End<K> {
@@ -386,10 +338,6 @@ export namespace Expr {
             this.σ = σ
          }
 
-         bottom (): Next<K> {
-            return absurd("Not implemented yet")
-         }
-
          static is<K extends Kont<K>> (Π: Args<K>): Π is Next<K> {
             return Π instanceof Next
          }
@@ -404,7 +352,7 @@ export namespace Expr {
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
 
    export interface Kont<K> extends PersistentObject {
-      bottom (): K
+      // bit meaningless if empty
    }
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
@@ -420,30 +368,11 @@ export namespace Expr {
       }
    }
 
-   export class BotKont implements Kont<BotKont> {
-      __tag: "Expr.BotKont"
-
-      constructor_ (): void {
-      }
-
-      bottom (): BotKont {
-         return BotKont.make()
-      }
-
-      static make (): BotKont {
-         return make(BotKont)
-      }
-   }
-
    // Unit continuation.
    export class VoidKont implements Kont<VoidKont> {
       __tag: "Expr.VoidKont"
 
       constructor_ (): void {
-      }
-
-      bottom (): VoidKont {
-         return absurd("Not implemented yet")
       }
 
       static make (): VoidKont {
@@ -456,10 +385,6 @@ export namespace Expr {
          __tag: "Expr.Trie"
          abstract constructor_ (...args: Persistent[]): void
 
-         bottom (): Trie<K> {
-            return absurd("Not implemented yet")
-         }
-         
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
                return Var.make(σ.x, join(σ.κ, τ.κ))
@@ -469,20 +394,6 @@ export namespace Expr {
             } else {
                return assert(false, "Undefined join.", this, τ)
             }
-         }
-      }
-
-      export class Bot<K extends Kont<K>> extends Trie<K> {
-         __subtag: "Expr.Trie.Bot"
-         constructor_ () {
-         }
-
-         static is<K extends Kont<K>> (σ: Trie<K>): σ is Bot<K> {
-            return σ instanceof Bot
-         }
-
-         static make<K extends Kont<K>> (): Bot<K> {
-            return make(Bot) as Bot<K>
          }
       }
 

@@ -76,11 +76,6 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
 export function eval_ (ρ: Env, e: Expr): Traced {
    const k: TraceId = Tagged.make(e, "trace"),
          kᵥ: ValId = Tagged.make(e, "val")
-   // An unevaluated expression has a bot trace for the sake of monotonicity across computations; might
-   // want to reinstate the embedding of expressions into traces here.
-   if (e instanceof Expr.Bot) {
-     return Traced.make(Traced.Bot.at(k), null)
-   } else
    if (e instanceof Expr.Constr) {
       return Traced.make(Empty.at(k), Value.Constr.at(kᵥ, e.ctr, e.args.map(e => eval_(ρ, e))))
    } else
