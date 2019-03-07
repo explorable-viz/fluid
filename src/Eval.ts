@@ -1,5 +1,6 @@
 import { absurd } from "./util/Core"
 import { PersistentObject, Versioned, make } from "./util/Persistent"
+import { ann } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EmptyEnv, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
@@ -113,7 +114,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
          const tu: Traced = eval_(ρ, e.arg)
-         return Traced.make(UnaryApp.at(k, tf, tu), f.op.b.op(tu.v!)(kᵥ, f.α.meet(e.α)))
+         return Traced.make(UnaryApp.at(k, tf, tu), f.op.b.op(tu.v!)(kᵥ, ann.meet(f.α, e.α)))
       } else {
          return absurd()
       }
@@ -140,7 +141,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       if (binaryOps.has(e.opName.str)) {
          const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
                [tv1, tv2]: [Traced, Traced] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
-               v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ, e.e1.α.meet(e.e2.α).meet(e.α))
+               v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ, ann.meet(e.e1.α, e.e2.α, e.α))
          return Traced.make(BinaryApp.at(k, tv1, e.opName, tv2), v)
       } else {
          return absurd("Operator name not found.", e.opName)

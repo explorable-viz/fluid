@@ -1,38 +1,20 @@
 import { Lattice } from "./util/Ord"
-import { PersistentObject, make } from "./util/Persistent"
 
-class Bool implements Lattice<Bool>, PersistentObject {
-   b: boolean
+export class BoolLattice implements Lattice<boolean> {
+   bot = false
+   top = true
 
-   static tt: Bool = Bool.make(true)
-   static ff: Bool = Bool.make(false)
-
-   bot (): Bool {
-      return Bool.ff
+   join (...bs: boolean[]): boolean {
+      return bs.reduce((b1, b2) => b1 || b2)
    }
 
-   join (that: Bool): Bool {
-      return Bool.make(this.b || that.b)
-   }
-
-   top (): Bool {
-      return Bool.tt
-   }
-
-   meet (that: Bool): Bool {
-      return Bool.make(this.b && that.b)
-   }
-
-   constructor_ (b: boolean) {
-      this.b = b
-   }
-
-   static make (b: boolean): Bool {
-      return make(Bool, b)
+   meet (...bs: boolean[]): boolean {
+      return bs.reduce((b1, b2) => b1 && b2)
    }
 }
 
-export type Annotation = Bool // for now
+export const ann: Lattice<Annotation> = new BoolLattice()
+export type Annotation = boolean // for now
 
 export class Annotated {
    α: Annotation
