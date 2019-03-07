@@ -2,7 +2,7 @@ import { __check, absurd, assert } from "./util/Core"
 import { eq } from "./util/Ord"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
-import { Annotated } from "./Annotated"
+import { Annotated, Annotation } from "./Annotated"
 import { List, Pair } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { UnaryOp } from "./Primitive"
@@ -137,37 +137,40 @@ export namespace Expr {
       func: Expr
       arg: Expr
 
-      constructor_ (func: Expr, arg: Expr): void {
+      constructor_ (α: Annotation, func: Expr, arg: Expr): void {
+         this.α = α
          this.func = func
          this.arg = arg
       }
 
-      static at (k: PersistentObject, func: Expr, arg: Expr): App {
-         return at(k, App, func, arg)
+      static at (k: PersistentObject, α: Annotation, func: Expr, arg: Expr): App {
+         return at(k, App, α, func, arg)
       }
    }
 
    export class ConstInt extends Expr {
       val: number
 
-      constructor_ (val: number): void {
+      constructor_ (α: Annotation, val: number): void {
+         this.α = α
          this.val = __check(val, x => !Number.isNaN(x))
       }
    
-      static at (k: PersistentObject, val: number): ConstInt {
-         return at(k, ConstInt, val)
+      static at (k: PersistentObject, α: Annotation, val: number): ConstInt {
+         return at(k, ConstInt, α, val)
       }
    }
    
    export class ConstStr extends Expr {
       val: string
 
-      constructor_ (val: string): void {
+      constructor_ (α: Annotation, val: string): void {
+         this.α = α
          this.val = val
       }
    
-      static at (k: PersistentObject, val: string): ConstStr {
-         return at(k, ConstStr, val)
+      static at (k: PersistentObject, α: Annotation,val: string): ConstStr {
+         return at(k, ConstStr, α, val)
       }
    }
    
@@ -175,25 +178,27 @@ export namespace Expr {
       ctr: Lex.Ctr
       args: List<Expr>
 
-      constructor_ (ctr: Lex.Ctr, args: List<Expr>): void {
+      constructor_ (α: Annotation, ctr: Lex.Ctr, args: List<Expr>): void {
+         this.α = α
          this.ctr = ctr
          this.args = args
       }
    
-      static at (k: PersistentObject, ctr: Lex.Ctr, args: List<Expr>): Constr {
-         return at(k, Constr, ctr, args)
+      static at (k: PersistentObject, α: Annotation, ctr: Lex.Ctr, args: List<Expr>): Constr {
+         return at(k, Constr, α, ctr, args)
       }
    }
 
    export class Fun extends Expr {
       σ: Trie<Expr>
 
-      constructor_ (σ: Trie<Expr>): void {
+      constructor_ (α: Annotation, σ: Trie<Expr>): void {
+         this.α = α
          this.σ = σ
       }
 
-      static at (k: PersistentObject, σ: Trie<Expr>): Fun {
-         return at(k, Fun, σ)
+      static at (k: PersistentObject, α: Annotation, σ: Trie<Expr>): Fun {
+         return at(k, Fun, α, σ)
       }
    }
 
@@ -202,25 +207,27 @@ export namespace Expr {
       e: Expr
       σ: Trie.Var<Expr>
 
-      constructor_ (e: Expr, σ: Trie.Var<Expr>): void {
+      constructor_ (α: Annotation, e: Expr, σ: Trie.Var<Expr>): void {
+         this.α = α
          this.e = e
          this.σ = σ
       }
 
-      static at (k: PersistentObject, e: Expr, σ: Trie.Var<Expr>): Let {
-         return at(k, Let, e, σ)
+      static at (k: PersistentObject, α: Annotation, e: Expr, σ: Trie.Var<Expr>): Let {
+         return at(k, Let, α, e, σ)
       }
    }
 
    export class PrimOp extends Expr {
       op: UnaryOp
 
-      constructor_ (op: UnaryOp): void {
+      constructor_ (α: Annotation, op: UnaryOp): void {
+         this.α = α
          this.op = op
       }
 
-      static at (k: PersistentObject, op: UnaryOp): PrimOp {
-         return at(k, PrimOp, op)
+      static at (k: PersistentObject, α: Annotation, op: UnaryOp): PrimOp {
+         return at(k, PrimOp, α, op)
       }
    }
 
@@ -242,13 +249,14 @@ export namespace Expr {
       δ: List<RecDef>
       e: Expr
 
-      constructor_ (δ: List<RecDef>, e: Expr): void {
+      constructor_ (α: Annotation, δ: List<RecDef>, e: Expr): void {
+         this.α = α
          this.δ = δ
          this.e = e
       }
 
-      static at (k: PersistentObject, δ: List<RecDef>, e: Expr): LetRec {
-         return at(k, LetRec, δ, e)
+      static at (k: PersistentObject, α: Annotation, δ: List<RecDef>, e: Expr): LetRec {
+         return at(k, LetRec, α, δ, e)
       }
    }
 
@@ -256,13 +264,13 @@ export namespace Expr {
       e: Expr
       σ: Trie<Expr>
 
-      constructor_ (e: Expr, σ: Trie<Expr>): void {
+      constructor_ (α: Annotation, e: Expr, σ: Trie<Expr>): void {
          this.e = e
          this.σ = σ
       }
    
-      static at (k: PersistentObject, e: Expr, σ: Trie<Expr>): MatchAs {
-         return at(k, MatchAs, e, σ)
+      static at (k: PersistentObject, α: Annotation, e: Expr, σ: Trie<Expr>): MatchAs {
+         return at(k, MatchAs, α, e, σ)
       }
    }
 
@@ -271,26 +279,28 @@ export namespace Expr {
       opName: Lex.OpName
       e2: Expr
 
-      constructor_ (e1: Expr, opName: Lex.OpName, e2: Expr): void {
+      constructor_ (α: Annotation, e1: Expr, opName: Lex.OpName, e2: Expr): void {
+         this.α = α
          this.e1 = e1
          this.opName = opName
          this.e2 = e2
       }
 
-      static at (k: PersistentObject, e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
-         return at(k, BinaryApp, e1, opName, e2)
+      static at (k: PersistentObject, α: Annotation, e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
+         return at(k, BinaryApp, α, e1, opName, e2)
       }
    }
 
    export class Var extends Expr {
       x: Lex.Var
 
-      constructor_ (x: Lex.Var): void {
+      constructor_ (α: Annotation, x: Lex.Var): void {
+         this.α = α
          this.x = x
       }
    
-      static at (k: PersistentObject, x: Lex.Var): Var {
-         return at(k, Var, x)
+      static at (k: PersistentObject, α: Annotation, x: Lex.Var): Var {
+         return at(k, Var, α, x)
       }
    }
 
