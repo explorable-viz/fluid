@@ -77,19 +77,19 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    const k: TraceId = Tagged.make(e, "trace"),
          kᵥ: ValId = Tagged.make(e, "val")
    if (e instanceof Expr.Constr) {
-      return Traced.make(Empty.at(k), Value.Constr.at(kᵥ, e.ctr, e.args.map(e => eval_(ρ, e))))
+      return Traced.make(Empty.at(k), Value.Constr.at(kᵥ, e.α, e.ctr, e.args.map(e => eval_(ρ, e))))
    } else
    if (e instanceof Expr.ConstInt) {
-      return Traced.make(Empty.at(k), Value.ConstInt.at(kᵥ, e.val))
+      return Traced.make(Empty.at(k), Value.ConstInt.at(kᵥ, e.α, e.val))
    } else
    if (e instanceof Expr.ConstStr) {
-      return Traced.make(Empty.at(k), Value.ConstStr.at(kᵥ, e.val))
+      return Traced.make(Empty.at(k), Value.ConstStr.at(kᵥ, e.α, e.val))
    } else
    if (e instanceof Expr.Fun) {
       return Traced.make(Empty.at(k), Value.Closure.at(kᵥ, e.α, ρ, Nil.make(), e.σ))
    } else
    if (e instanceof Expr.PrimOp) {
-      return Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.op))
+      return Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.α, e.op))
    } else
    if (e instanceof Expr.Var) {
       const x: string = e.x.str
@@ -113,7 +113,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
          const tu: Traced = eval_(ρ, e.arg)
-         return Traced.make(UnaryApp.at(k, tf, tu), f.op.b.op(tu.v!)(kᵥ))
+         return Traced.make(UnaryApp.at(k, tf, tu), f.op.b.op(tu.v!)(kᵥ, f.α.meet(e.α)))
       } else {
          return absurd()
       }
@@ -140,7 +140,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       if (binaryOps.has(e.opName.str)) {
          const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
                [tv1, tv2]: [Traced, Traced] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
-               v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ, e.e1.α.join(e.e2.α).join(e.α))
+               v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ, e.e1.α.meet(e.e2.α).meet(e.α))
          return Traced.make(BinaryApp.at(k, tv1, e.opName, tv2), v)
       } else {
          return absurd("Operator name not found.", e.opName)
