@@ -1,4 +1,4 @@
-import { Class, __nonNull, __log, absurd, as, assert, className, classOf } from "./Core"
+import { Class, __nonNull, absurd, as, assert, className, classOf } from "./Core"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
@@ -206,9 +206,6 @@ function __newState (tgt: ObjectState, src: Object): boolean {
 function __commit (o: Versioned<PersistentObject>): Object {
    if (o.__history.size === 0) {
       const state: ObjectState = __copy(o)
-      if (className(o) === "Closure") {
-         __log(state)
-      }
       o.__history.set(__w, state)
    } else {
       const [lastModified, state]: [World, ObjectState] = stateAt(o, __w)
