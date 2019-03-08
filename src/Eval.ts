@@ -96,7 +96,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       const x: string = e.x.str
       if (ρ.has(x)) { 
          const {t, v}: Traced = ρ.get(x)!
-         return Traced.make(Var.at(k, e.x, t), v.copyAt(kᵥ, ann.bot))
+         return Traced.make(Var.at(k, e.x, t), v.copyAt(kᵥ, ann.meet(v.α, e.α)))
       } else {
          return absurd("Variable not found.", x)
       }
