@@ -1,6 +1,9 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { TestFile, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { TestFile, from, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { Persistent, PersistentObject, World } from "../src/util/Persistent"
+import { ann } from "../src/Annotated"
+import { Expr } from "../src/Expr"
 
 before((done: MochaDone) => {
 	initialise()
@@ -11,7 +14,14 @@ describe("example", () => {
 	describe("arithmetic", () => {
 		const file: TestFile = loadExample("arithmetic")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text)
+			runExample(e)
+			World.newRevision()
+			let here: Persistent = e
+			here = from(here as PersistentObject, Expr.BinaryApp, "e1")
+			const hereʹ: Expr = here as Expr
+			hereʹ.setα(ann.bot)
+			runExample(e)
 		})
 	})
 

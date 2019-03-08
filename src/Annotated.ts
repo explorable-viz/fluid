@@ -1,6 +1,6 @@
 import { classOf } from "./util/Core"
 import { Lattice } from "./util/Ord"
-import { Persistent, PersistentClass, PersistentObject, at, fieldVals } from "./util/Persistent"
+import { Persistent, PersistentClass, PersistentObject, Versioned, asVersioned, at, fieldVals } from "./util/Persistent"
 
 export class BoolLattice implements Lattice<boolean> {
    bot = false
@@ -27,5 +27,10 @@ export abstract class Annotated implements PersistentObject {
    copyAt<T extends Annotated & PersistentObject> (k: PersistentObject, α: Annotation): T {
       const cls: PersistentClass<T> = classOf(this) as PersistentClass<Annotated & PersistentObject> as PersistentClass<T> // TS can't cope
       return at<PersistentObject, T>(k, cls, α, ...fieldVals(this).slice(1))
+   }
+
+   setα (α: Annotation): void {
+      const hereʹ: Versioned<this> = asVersioned(this)
+      hereʹ.copyAt(hereʹ.__id, α)
    }
 }

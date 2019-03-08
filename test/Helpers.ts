@@ -1,4 +1,5 @@
-import { __nonNull, assert } from "../src/util/Core"
+import { Class, __nonNull, as, assert } from "../src/util/Core"
+import { Persistent, PersistentObject } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
@@ -20,6 +21,10 @@ export function initialise (): void {
       return "'" + this + "'"
    }
    initDataTypes()
+}
+
+export function from<T extends PersistentObject> (o: PersistentObject, cls: Class<T>, prop: keyof T): Persistent {
+   return as<PersistentObject, T>(o, cls)[prop] as any as Persistent
 }
 
 export enum Profile {
