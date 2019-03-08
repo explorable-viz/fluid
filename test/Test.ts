@@ -1,9 +1,11 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { TestFile, from, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { assert } from "../src/util/Core"
 import { Persistent, PersistentObject, World } from "../src/util/Persistent"
 import { ann } from "../src/Annotated"
 import { Expr } from "../src/Expr"
+import { Value } from "../src/Traced"
 
 before((done: MochaDone) => {
 	initialise()
@@ -21,7 +23,8 @@ describe("example", () => {
 			here = from(here as PersistentObject, Expr.BinaryApp, "e1")
 			const hereʹ: Expr = here as Expr
 			hereʹ.setα(ann.bot)
-			runExample(e)
+			const v: Value = runExample(e).v
+			assert(v.α === ann.bot)
 		})
 	})
 
