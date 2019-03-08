@@ -23,8 +23,8 @@ export function initialise (): void {
    initDataTypes()
 }
 
-export function from<T extends PersistentObject> (o: PersistentObject, cls: Class<T>, prop: keyof T): Persistent {
-   return as<PersistentObject, T>(o, cls)[prop] as any as Persistent
+export function from<T extends PersistentObject> (o: Persistent, cls: Class<T>, prop: keyof T): Persistent {
+   return as(o as PersistentObject, cls)[prop] as any as Persistent
 }
 
 export enum Profile {
