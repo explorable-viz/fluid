@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { TestFile, from, initialise, loadExample, parseExample, runExample } from "./Helpers"
-import { assert } from "../src/util/Core"
+import { __check, as, assert } from "../src/util/Core"
 import { Persistent, PersistentObject, World } from "../src/util/Persistent"
 import { ann } from "../src/Annotated"
 import { Cons } from "../src/BaseTypes"
@@ -75,16 +75,23 @@ describe("example", () => {
 			here = from(here as PersistentObject, Expr.App, "arg")
 			here = from(here as PersistentObject, Expr.Constr, "args")
 			let elem: Persistent = from(here as PersistentObject, Cons, "head"),
-				 elemʹ: Expr = elem as Expr
+				 elemʹ: Expr = as(elem, Expr.Expr)
 			elemʹ.setα(ann.bot)
 			here = from(here as PersistentObject, Cons, "tail")
 			here = from(here as PersistentObject, Cons, "head")
 			here = from(here as PersistentObject, Expr.Constr, "args")
 			elem = from(here as PersistentObject, Cons, "head")
-			elem = elem as Expr
+			elemʹ = as(elem, Expr.Expr)
 			elemʹ.setα(ann.bot)
-			const v: Value = runExample(e).v
+			let v: Value = runExample(e).v
 			assert(v.α !== ann.bot)
+			World.newRevision()
+			here = from(here as PersistentObject, Cons, "tail")
+			here = from(here as PersistentObject, Cons, "head")
+			elemʹ = __check(as(here, Expr.Constr), it => it.ctr.str === "Nil")
+			elemʹ.setα(ann.bot)
+			v = runExample(e).v
+			assert(v.α === ann.bot)
 		})
 	})
 
