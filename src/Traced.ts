@@ -1,5 +1,6 @@
-import { absurd } from "./util/Core"
-import { Persistent, PersistentObject, asVersioned, at, make } from "./util/Persistent"
+import { classOf } from "./util/Core"
+import { Persistent, PersistentClass, PersistentObject, at, fieldVals, make } from "./util/Persistent"
+import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -11,12 +12,17 @@ import Trie = Expr.Trie
 
 export type Expr = Expr.Expr
 export type Value = Value.Value
-export type Value̊ = Value | null
 
 export namespace Value {
-   export abstract class Value implements PersistentObject {
+   export abstract class Value extends Annotated implements PersistentObject {
       __tag: "Value.Value"
       abstract constructor_ (...args: Persistent[]): void
+
+      // Could avoid these shenanigans if we had AnnotatedValue as an explicit wrapper.
+      copyAt<T extends Value> (k: ValId, α: Annotation): T {
+         const cls: PersistentClass<T> = classOf(this) as PersistentClass<Value> as PersistentClass<T> // TS can't cope
+         return at<ValId, T>(k, cls, α, ...fieldVals(this).slice(1))
+      }
    }
 
    export class Closure extends Value {
@@ -24,14 +30,15 @@ export namespace Value {
       δ: List<Expr.RecDef>
       σ: Trie<Expr>
    
-      constructor_ (ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): void {
+      constructor_ (α: Annotation, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): void {
+         this.α = α
          this.ρ = ρ
          this.δ = δ
          this.σ = σ
       }
 
-      static at (k: ValId, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
-         return at(k, Closure, ρ, δ, σ)
+      static at (k: ValId, α: Annotation, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
+         return at(k, Closure, α, ρ, δ, σ)
       }
    }
 
@@ -42,12 +49,13 @@ export namespace Value {
    export class ConstInt extends Prim {
       val: number
 
-      constructor_ (val: number): void {
+      constructor_ (α: Annotation, val: number): void {
+         this.α = α
          this.val = val
       }
    
-      static at (k: ValId, val: number): ConstInt {
-         return at(k, ConstInt, val)
+      static at (k: ValId, α: Annotation, val: number): ConstInt {
+         return at(k, ConstInt, α, val)
       }
 
       toString (): string {
@@ -58,12 +66,13 @@ export namespace Value {
    export class ConstStr extends Prim {
       val: string
 
-      constructor_ (val: string): void {
+      constructor_ (α: Annotation, val: string): void {
+         this.α = α
          this.val = val
       }
    
-      static at (k: ValId, val: string): ConstStr {
-         return at(k, ConstStr, val)
+      static at (k: ValId, α: Annotation, val: string): ConstStr {
+         return at(k, ConstStr, α, val)
       }
 
       toString (): string {
@@ -75,25 +84,27 @@ export namespace Value {
       ctr: Lex.Ctr
       args: List<Traced>
 
-      constructor_ (ctr: Lex.Ctr, args: List<Traced>): void {
+      constructor_ (α: Annotation, ctr: Lex.Ctr, args: List<Traced>): void {
+         this.α = α
          this.ctr = ctr
          this.args = args
       }
    
-      static at (k: ValId, ctr: Lex.Ctr, args: List<Traced>): Constr {
-         return at(k, Constr, ctr, args)
+      static at (k: ValId, α: Annotation, ctr: Lex.Ctr, args: List<Traced>): Constr {
+         return at(k, Constr, α, ctr, args)
       }
    }
 
    export class PrimOp extends Value {
       op: UnaryOp
 
-      constructor_ (op: UnaryOp): void {
+      constructor_ (α: Annotation, op: UnaryOp): void {
+         this.α = α
          this.op = op
       }
    
-      static at (k: ValId, op: UnaryOp): PrimOp {
-         return at(k, PrimOp, op)
+      static at (k: ValId, α: Annotation, op: UnaryOp): PrimOp {
+         return at(k, PrimOp, α, op)
       }
    }
 }
@@ -101,22 +112,18 @@ export namespace Value {
 // Called ExplVal in the formalism.
 export class Traced implements PersistentObject {
    t: Trace
-   v: Value̊
+   v: Value
 
    constructor_ (
       t: Trace,
-      v: Value̊
+      v: Value
    ) {
       this.t = t
       this.v = v
    }
 
-   static make (t: Trace, v: Value̊): Traced {
+   static make (t: Trace, v: Value): Traced {
       return make(Traced, t, v)
-   }
-
-   bottom (): Traced {
-      return Traced.make(this.t.bottom(), null)
    }
 }
 
@@ -148,10 +155,6 @@ export namespace Traced {
          export abstract class Args<K> implements Expr.Kont<Args<K>> {
             __tag: "Match.Args"
             abstract constructor_ (...args: Persistent[]): void
-   
-            bottom (): Args<K> {
-               return absurd("Not implemented yet")
-            }
          }
    
          export class End<K extends Persistent> extends Args<K> {
@@ -229,10 +232,10 @@ export namespace Traced {
 
       export class Var<K extends Persistent> extends Match<K> {
          x: Lex.Var
-         v: Value̊
+         v: Value
          κ: K
 
-         constructor_ (x: Lex.Var, v: Value̊, κ: K) {
+         constructor_ (x: Lex.Var, v: Value, κ: K) {
             this.x = x
             this.v = v
             this.κ = κ
@@ -242,7 +245,7 @@ export namespace Traced {
             return ξ instanceof Var
          }
 
-         static make<K extends Persistent> (x: Lex.Var, v: Value̊, κ: K): Var<K> {
+         static make<K extends Persistent> (x: Lex.Var, v: Value, κ: K): Var<K> {
             return make(Var, x, v, κ) as Var<K>
          }
       }
@@ -251,21 +254,6 @@ export namespace Traced {
    export abstract class Trace implements PersistentObject, Expr.Kont<Trace> {
       __tag: "Trace.Trace"
       abstract constructor_ (...args: Persistent[]): void
-
-      bottom (): Trace {
-         return Bot.at(asVersioned(this).__id as TraceId)
-      }
-   }
-
-   export class Bot extends Trace {
-      __subtag: "Trace.Trace.Bot"
-
-      constructor_ (): void {
-      }
-
-      static at (k: TraceId): Bot {
-         return at(k, Bot)
-      }
    }
 
    export class App extends Trace {

@@ -19,9 +19,6 @@ export abstract class Env implements PersistentObject {
       return this.get(k) !== undefined
    }
 
-   // There isn't a single bottom (null) environment but rather one for each environment "shape".
-   abstract bottom (): Env
-
    static empty (): EmptyEnv {
       return EmptyEnv.make()
    }
@@ -38,9 +35,6 @@ export abstract class Env implements PersistentObject {
    }
 
    static concat (ρ1: Env, ρ2: Env): Env {
-      if (ρ2 instanceof Bot) {
-         return Bot.make()
-      } else
       if (ρ2 instanceof EmptyEnv) {
          return ρ1
       } else
@@ -49,27 +43,6 @@ export abstract class Env implements PersistentObject {
       } else {
          return absurd()
       }
-   }
-}
-
-export class Bot extends Env {
-   constructor_ () {
-   }
-
-   static make (): Bot {
-      return make(Bot)
-   }
-
-   entries (): List<Traced> {
-      return absurd()
-   }
-
-   get (k: string): undefined {
-      return absurd()
-   }
-
-   bottom (): Bot {
-      return Bot.make()
    }
 }
 
@@ -87,10 +60,6 @@ export class EmptyEnv extends Env {
 
    get (k: string): undefined {
       return undefined
-   }
-
-   bottom (): EmptyEnv {
-      return EmptyEnv.make()
    }
 }
 
@@ -123,9 +92,5 @@ export class ExtendEnv extends Env {
       } else {
          return this.ρ.get(k)
       }
-   }
-
-   bottom (): ExtendEnv {
-      return ExtendEnv.make(this.ρ.bottom(), this.k, this.tv.bottom())
    }
 }

@@ -2,7 +2,7 @@ import { absurd } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Expr } from "./Expr"
-import { Traced, Value, Value̊ } from "./Traced"
+import { Traced, Value } from "./Traced"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
@@ -12,12 +12,9 @@ import Trie = Expr.Trie
 import mapTrie = Expr.Trie.mapTrie
 
 export function lookup<K extends Kont<K>> (tv: Traced, σ: Trie<K>): [Env, K] {
-   const v: Value̊ = tv.v
+   const v: Value = tv.v
    if (Trie.Var.is(σ)) {
       return [Env.singleton(σ.x.str, tv), σ.κ]
-   } else
-   if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
-      return [Env.empty(), σ.κ]
    } else
    if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
       let ρ_κ: [Env, K] | null = null
@@ -54,12 +51,9 @@ function lookupArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): [Env, K
 
 // The match for any evaluation with demand σ which yielded value v.
 export function match<K extends Kont<K>> (tv: Traced, σ: Trie<K>): Match<K> {
-   const v: Value̊ = tv.v
+   const v: Value = tv.v
    if (Trie.Var.is(σ)) {
       return Match.Var.make(σ.x, v, σ.κ) 
-   } else
-   if ((v instanceof Value.Closure || v instanceof Value.PrimOp) && Trie.Fun.is(σ)) {
-      return Match.Fun.make(v, σ.κ)
    } else
    if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
       return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {

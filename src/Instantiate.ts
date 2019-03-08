@@ -8,7 +8,6 @@ import { Expr } from "./Expr"
 import App = Expr.App
 import Args = Expr.Args
 import BinaryApp = Expr.BinaryApp
-import Bot = Expr.Bot
 import ConstInt = Expr.ConstInt
 import ConstStr = Expr.ConstStr
 import Constr = Expr.Constr
@@ -25,46 +24,43 @@ import mapTrie = Expr.Trie.mapTrie
 
 export function instantiate (ρ: Env, e: Expr): Expr {
    const j: ExprId = ExprId.make(ρ.entries(), asVersioned(e))
-   if (e instanceof Bot) {
-      return Bot.at(j)
-   } else 
    if (e instanceof ConstInt) {
-      return ConstInt.at(j, e.val)
+      return ConstInt.at(j, e.α, e.val)
    } else
    if (e instanceof ConstStr) {
-      return ConstStr.at(j, e.val)
+      return ConstStr.at(j, e.α, e.val)
    } else
    if (e instanceof Constr) {
       // Parser ensures constructors agree with constructor signatures.
-      return Constr.at(j, e.ctr, __nonNull(e.args).map(e => instantiate(ρ, e)))
+      return Constr.at(j, e.α, e.ctr, __nonNull(e.args).map(e => instantiate(ρ, e)))
    } else
    if (e instanceof Fun) {
-      return Fun.at(j, instantiateTrie(ρ, e.σ))
+      return Fun.at(j, e.α, instantiateTrie(ρ, e.σ))
    } else
    if (e instanceof PrimOp) {
-      return PrimOp.at(j, e.op)
+      return PrimOp.at(j, e.α, e.op)
    } else
    if (e instanceof Var) {
-      return Var.at(j, e.x)
+      return Var.at(j, e.α, e.x)
    } else
    if (e instanceof Let) {
-      return Let.at(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Expr>)
+      return Let.at(j, e.α, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Expr>)
    } else
    if (e instanceof LetRec) {
       const δ: List<RecDef> = e.δ.map(def => {
          const i: ExprId = ExprId.make(ρ.entries(), asVersioned(def))
          return RecDef.at(i, def.x, instantiate(ρ, def.f) as Fun)
       })
-      return LetRec.at(j, δ, instantiate(ρ, e.e))
+      return LetRec.at(j, e.α, δ, instantiate(ρ, e.e))
    } else
    if (e instanceof MatchAs) {
-      return MatchAs.at(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
+      return MatchAs.at(j, e.α, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
    } else
    if (e instanceof App) {
-      return App.at(j, instantiate(ρ, e.func), instantiate(ρ, e.arg))
+      return App.at(j, e.α, instantiate(ρ, e.func), instantiate(ρ, e.arg))
    } else
    if (e instanceof BinaryApp) {
-      return BinaryApp.at(j, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2))
+      return BinaryApp.at(j, e.α, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2))
    } else {
       return absurd()
    }
@@ -108,9 +104,6 @@ function instantiateTrie_<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
             return Pair.make(ctr, instantiateArgs(ρ, Π))
          })
       )
-   } else
-   if (Trie.Fun.is(σ)) {
-      return Trie.Fun.make(σ.κ)
    } else {
       return absurd()
    }

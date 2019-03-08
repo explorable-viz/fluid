@@ -5,6 +5,7 @@ import {
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
+import { ann } from "./Annotated"
 import { List } from "./BaseTypes"
 import { arity } from "./DataType"
 import { Expr, Lex, str } from "./Expr"
@@ -74,7 +75,7 @@ const var_: Parser<Lex.Var> =
    )
 
 const variable: Parser<Expr.Var> =
-   withAction(var_, (x: Lex.Var) => Expr.Var.at(ν(), x))
+   withAction(var_, (x: Lex.Var) => Expr.Var.at(ν(), ann.top, x))
 
 // Only allow Unicode escape sequences (i.e. no hex or octal escapes, nor "character" escapes such as \r).
 const hexDigit: Parser<string> = 
@@ -151,7 +152,7 @@ const app_: Parser<(e1: Expr, e2: Expr) => Expr.App> =
    withAction(
       constant(null),
       (_: Expr) =>
-         (e1: Expr, e2: Expr): Expr.App => Expr.App.at(ν(), e1, e2)
+         (e1: Expr, e2: Expr): Expr.App => Expr.App.at(ν(), ann.top, e1, e2)
    )
 
 function appOp (
@@ -161,14 +162,14 @@ function appOp (
       opP,
       op =>
          (e1: Expr, e2: Expr): Expr.BinaryApp =>
-            Expr.BinaryApp.at(ν(), e1, op, e2)
+            Expr.BinaryApp.at(ν(), ann.top, e1, op, e2)
    )
 }
 
 const string_: Parser<Expr.ConstStr> =
    withAction(
       lexeme(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),), Lex.StringLiteral),
-      lit => Expr.ConstStr.at(ν(), lit.str)
+      lit => Expr.ConstStr.at(ν(), ann.top, lit.str)
    )
 
 const integer: Parser<Expr.ConstInt> =
@@ -181,7 +182,7 @@ const integer: Parser<Expr.ConstInt> =
          ]),
          Lex.IntLiteral
       ),
-      lit => Expr.ConstInt.at(ν(), parseInt(lit.str))
+      lit => Expr.ConstInt.at(ν(), ann.top, parseInt(lit.str))
    )
 
 const parenthExpr: Parser<Expr> = 
@@ -194,14 +195,14 @@ const let_: Parser<Expr.Let> =
          dropFirst(keyword(str.in_), expr)
       ),
       ([[x, e], eʹ]: [[Lex.Var, Expr], Expr]) =>
-         Expr.Let.at(ν(), e, Expr.Trie.Var.make(x, eʹ))
+         Expr.Let.at(ν(), ann.top, e, Expr.Trie.Var.make(x, eʹ))
    )
 
 const recDef: Parser<Expr.RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
       ([name, σ]: [Lex.Var, Expr.Trie<Expr>]) =>
-         Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), σ))
+         Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), ann.top, σ))
    )
 
 const recDefs1 : Parser<List<Expr.RecDef>> =
@@ -214,7 +215,7 @@ const letrec: Parser<Expr.LetRec> =
          dropFirst(keyword(str.in_), expr)
       ),
      ([δ, body]: [List<Expr.RecDef>, Expr]) => 
-         Expr.LetRec.at(ν(), δ, body)
+         Expr.LetRec.at(ν(), ann.top, δ, body)
    )
 
 // Enforce consistency with constructor signatures.
@@ -225,7 +226,7 @@ const constr: Parser<Expr.Constr> =
          const n: number = arity(ctr.str)
          assert(n <= args.length, "Too few arguments in constructor.", ctr.str)
          assert(n >= args.length, "Too many arguments in constructor.", ctr.str)
-         return Expr.Constr.at(ν(), ctr, List.fromArray(args))
+         return Expr.Constr.at(ν(), ann.top, ctr, List.fromArray(args))
       }
    )
 
@@ -233,7 +234,7 @@ const pair: Parser<Expr.Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Expr, Expr]) =>
-         Expr.Constr.at(ν(), Lex.Ctr.make("Pair"), List.fromArray([fst, snd]))
+         Expr.Constr.at(ν(), ann.top, Lex.Ctr.make("Pair"), List.fromArray([fst, snd]))
    )
 
 function args_pattern<K extends Expr.Kont<K>> (n: number, p: Parser<K>): Parser<Expr.Args<K>> {
@@ -290,7 +291,7 @@ function pattern<K extends Expr.Kont<K>> (p: Parser<K>): Parser<Expr.Trie<K>> {
 const match: Parser<Expr.Trie<Expr>> =
    choice<Expr.Trie<Expr>>([
       pattern(dropFirst(symbol(str.arrow), expr)),
-      pattern(withAction(matches, (m): Expr => Expr.Fun.at(ν(), m))) // retarded cast
+      pattern(withAction(matches, (m): Expr => Expr.Fun.at(ν(), ann.top, m))) // retarded cast
    ])
 
 // Assume at least one match clause.
@@ -316,13 +317,13 @@ const matchAs: Parser<Expr.MatchAs> =
          dropFirst(keyword(str.match), expr),
          dropFirst(keyword(str.as), matches)
       ),
-      ([e, σ]: [Expr, Expr.Trie<Expr>]) => Expr.MatchAs.at(ν(), e, σ)
+      ([e, σ]: [Expr, Expr.Trie<Expr>]) => Expr.MatchAs.at(ν(), ann.top, e, σ)
    )
 
 const fun: Parser<Expr.Fun> =
    withAction(
       dropFirst(keyword(str.fun), matches),
-      (σ: Expr.Trie<Expr>) => Expr.Fun.at(ν(), σ)
+      (σ: Expr.Trie<Expr>) => Expr.Fun.at(ν(), ann.top, σ)
    )
 
 // Any expression other than an operator tree or application chain.

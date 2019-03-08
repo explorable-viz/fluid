@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd, as, assert, className, classOf } from "./Core"
+import { Class, __nonNull, absurd, as, assert, classOf } from "./Core"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
@@ -10,7 +10,7 @@ export interface PersistentObject {
 }
 
 // Functions are persistent to support primitives.
-export type Persistent = null | PersistentObject | string | number | Function
+export type Persistent = null | PersistentObject | boolean | string | number | Function
 
 // Versioned objects are persistent objects that have state that varies across worlds.
 export interface VersionedObject<K extends PersistentObject = PersistentObject> extends PersistentObject {
@@ -67,7 +67,7 @@ function lookupArg<T extends PersistentObject> (
    return v
 }
 
-type PersistentClass<T extends PersistentObject = PersistentObject> = new () => T
+export type PersistentClass<T extends PersistentObject = PersistentObject> = new () => T
 
 // Hash-consing (interning) object construction.
 export function make<T extends PersistentObject> (ctr: PersistentClass<T>, ...args: Persistent[]): T {
@@ -101,7 +101,7 @@ export function interned (o: Persistent): boolean {
 function reclassify (o: Object, ctr: Class<Object>): void {
    const proto: Object = Object.getPrototypeOf(new ctr)
    if (Object.getPrototypeOf(o) !== proto) {
-      for (const k of Object.keys(o)) {
+      for (const k of fields(o)) {
          assert(delete o[k as keyof Object])
       }
       Object.setPrototypeOf(o, proto)
@@ -109,21 +109,21 @@ function reclassify (o: Object, ctr: Class<Object>): void {
 }
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<K extends PersistentObject, T extends PersistentObject> (α: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
-   assert(interned(α))
-   let o: PersistentObject | undefined = __versionedObjs.get(α)
+export function at<K extends PersistentObject, T extends PersistentObject> (k: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
+   assert(interned(k))
+   let o: PersistentObject | undefined = __versionedObjs.get(k)
    if (o === undefined) {
       o = new ctr
       // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
       Object.defineProperty(o, "__id", {
-         value: α,
+         value: k,
          enumerable: false
       })
       Object.defineProperty(o, "__history", {
          value: new Map,
          enumerable: false
       })
-      __versionedObjs.set(α, o)
+      __versionedObjs.set(k, o)
    } else {
       reclassify(o, ctr)
    }
@@ -147,38 +147,14 @@ export interface ObjectState {
 }
 
 // Ensure previous value of state is equal to current value at an existing world.
+// Used to implement LVar-style increasing semantics, but that was only needed for call-by-need.
 function __assertEqualState (tgt: ObjectState, src: Object): void {
    const src_: ObjectState = src as ObjectState
    assert(tgt.constructor === src.constructor)
-   Object.keys(tgt).forEach((k: string): void => {
-      __assertEqual(tgt[k], src_[k])
+   assert(fields(tgt).length === fields(src).length)
+   fields(tgt).forEach((k: string): void => {
+      assert(tgt[k] === src_[k])
    })
-}
-
-// Verify that properties are always assigned consistently. Used to implement LVar-style increasing
-// semantics, but that was only needed for call-by-need.
-function __assertEqual (tgt: Persistent, src: Persistent): void {
-   if (src !== tgt) {
-      if (tgt === null || src === null) {
-         return absurd("Address collision (different child).")
-      } else
-      if (versioned(tgt) && versioned(src)) {
-         return absurd("Address collision (different child).")
-      } else
-      if (interned(tgt) && interned(src)) {
-         assert(
-            tgt.constructor === src.constructor, 
-            `Address collision (tgt ${className(tgt)} !== src ${className(src)}).`
-         )
-         const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
-               src_: ObjectState = src as Object as ObjectState
-         Object.keys(tgt).forEach((k: string): void => {
-            __assertEqual(tgt_[k], src_[k])
-         })
-      } else {
-         return absurd()
-      }
-   }
 }
 
 function __copy (src: Object): ObjectState {
@@ -192,7 +168,7 @@ function __newState (tgt: ObjectState, src: Object): boolean {
    let changed: boolean = __nonNull(tgt).constructor !== __nonNull(src.constructor)
    reclassify(tgt, classOf(src))
    const src_: ObjectState = src as ObjectState
-   Object.keys(tgt).forEach((k: string): void => {
+   fields(src).forEach((k: string): void => {
       if (tgt[k] !== src_[k]) {
          tgt[k] = src_[k]
          changed = true
@@ -236,12 +212,21 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
    }
 }
 
+// Standardise what we mean by the fields of an object.
+export function fields (o: Object): string[] {
+   return Object.keys(o)
+}
+
+export function fieldVals (o: Object): Persistent[] {
+   return fields(o).map(k => (o as ObjectState)[k])
+}
+
 // Versioned objects can have different metatypes at different worlds; here we assume T is its type at the 
 // current world.
-export function getProp<T extends PersistentObject> (α: PersistentObject, cls: PersistentClass<T>, k: keyof T): Persistent {
-   const o: PersistentObject = __nonNull(__versionedObjs.get(α)),
+export function getProp<T extends PersistentObject> (k: PersistentObject, cls: PersistentClass<T>, prop: keyof T): Persistent {
+   const o: PersistentObject = __nonNull(__versionedObjs.get(k)),
          oʹ: Versioned<T> = asVersioned(as<PersistentObject, T>(o, cls))
-   return stateAt(oʹ, __w)[1][k as keyof ObjectState]
+   return stateAt(oʹ, __w)[1][prop as keyof ObjectState]
 }
 
 export class World implements PersistentObject, Ord<World> {
