@@ -101,7 +101,7 @@ export function interned (o: Persistent): boolean {
 function reclassify (o: Object, ctr: Class<Object>): void {
    const proto: Object = Object.getPrototypeOf(new ctr)
    if (Object.getPrototypeOf(o) !== proto) {
-      for (const k of Object.keys(o)) {
+      for (const k of fields(o)) {
          assert(delete o[k as keyof Object])
       }
       Object.setPrototypeOf(o, proto)
@@ -150,7 +150,8 @@ export interface ObjectState {
 function __assertEqualState (tgt: ObjectState, src: Object): void {
    const src_: ObjectState = src as ObjectState
    assert(tgt.constructor === src.constructor)
-   Object.keys(tgt).forEach((k: string): void => {
+   assert(fields(tgt).length === fields(src).length)
+   fields(tgt).forEach((k: string): void => {
       __assertEqual(tgt[k], src_[k])
    })
 }
@@ -172,7 +173,7 @@ function __assertEqual (tgt: Persistent, src: Persistent): void {
          )
          const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
                src_: ObjectState = src as Object as ObjectState
-         Object.keys(tgt).forEach((k: string): void => {
+         fields(tgt).forEach((k: string): void => {
             __assertEqual(tgt_[k], src_[k])
          })
       } else {
@@ -192,7 +193,7 @@ function __newState (tgt: ObjectState, src: Object): boolean {
    let changed: boolean = __nonNull(tgt).constructor !== __nonNull(src.constructor)
    reclassify(tgt, classOf(src))
    const src_: ObjectState = src as ObjectState
-   Object.keys(tgt).forEach((k: string): void => {
+   fields(tgt).forEach((k: string): void => {
       if (tgt[k] !== src_[k]) {
          tgt[k] = src_[k]
          changed = true
@@ -234,6 +235,15 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
    } else {
       return [w, v]
    }
+}
+
+// Standardise what we mean by the fields of an object.
+export function fields (o: Object): string[] {
+   return Object.keys(o)
+}
+
+export function fieldVals (o: Object): Persistent[] {
+   return fields(o).map(k => (o as ObjectState)[k])
 }
 
 // Versioned objects can have different metatypes at different worlds; here we assume T is its type at the 
