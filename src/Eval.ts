@@ -139,7 +139,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
             tv: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, e.e))
-      return Traced.make(LetRec.at(k, e.δ, tv), tv.v.copyAt(kᵥ, ann.bot))
+      return Traced.make(LetRec.at(k, e.δ, tv), tv.v.copyAt(kᵥ, ann.meet(tv.v.α, e.α)))
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: Traced = eval_(ρ, e.e),
