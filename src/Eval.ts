@@ -145,7 +145,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       const tu: Traced = eval_(ρ, e.e),
             [ρʹ, eʹ] = lookup(tu, e.σ),
             {t, v} = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
-      return Traced.make(MatchAs.at(k, tu, e.σ, t), v.copyAt(kᵥ, ann.bot))
+      return Traced.make(MatchAs.at(k, tu, e.σ, t), v.copyAt(kᵥ, ann.meet(v.α, e.α)))
    } else {
       return absurd("Unimplemented expression form.", e)
    }
