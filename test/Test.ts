@@ -4,6 +4,7 @@ import { TestFile, from, initialise, loadExample, parseExample, runExample } fro
 import { assert } from "../src/util/Core"
 import { Persistent, PersistentObject, World } from "../src/util/Persistent"
 import { ann } from "../src/Annotated"
+import { Cons } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { Value } from "../src/Traced"
 
@@ -66,7 +67,24 @@ describe("example", () => {
 	describe("length", () => {
 		const file: TestFile = loadExample("length")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text)
+			runExample(e)
+			World.newRevision()
+			let here: Persistent = e
+			here = from(here as PersistentObject, Expr.LetRec, "e")
+			here = from(here as PersistentObject, Expr.App, "arg")
+			here = from(here as PersistentObject, Expr.Constr, "args")
+			let elem: Persistent = from(here as PersistentObject, Cons, "head"),
+				 elemʹ: Expr = elem as Expr
+			elemʹ.setα(ann.bot)
+			here = from(here as PersistentObject, Cons, "tail")
+			here = from(here as PersistentObject, Cons, "head")
+			here = from(here as PersistentObject, Expr.Constr, "args")
+			elem = from(here as PersistentObject, Cons, "head")
+			elem = elem as Expr
+			elemʹ.setα(ann.bot)
+			const v: Value = runExample(e).v
+			assert(v.α !== ann.bot)
 		})
 	})
 
