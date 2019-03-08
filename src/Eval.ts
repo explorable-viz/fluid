@@ -1,5 +1,5 @@
-import { absurd, classOf } from "./util/Core"
-import { PersistentObject, Versioned, asVersioned, at, fieldVals, make } from "./util/Persistent"
+import { absurd/*, classOf*/ } from "./util/Core"
+import { PersistentObject, Versioned/*, asVersioned, at, fieldVals*/, make } from "./util/Persistent"
 import { ann } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EmptyEnv, ExtendEnv } from "./Env"
@@ -97,7 +97,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       if (ρ.has(x)) { 
          const {t, v}: Traced = ρ.get(x)!
          // Surely this should not be allowed:
-         at(asVersioned(v).__id, classOf(v), ann.bot, ...fieldVals(v).slice(1))
+//       at(asVersioned(v).__id, classOf(v), ann.bot, ...fieldVals(v).slice(1))
 //       at(asVersioned(v).__id, classOf(v), ann.top, ...fieldVals(v).slice(1))
          return Traced.make(Var.at(k, e.x, t), v)
       } else {

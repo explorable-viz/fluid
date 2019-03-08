@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd, as, assert, className, classOf } from "./Core"
+import { Class, __nonNull, absurd, as, assert, classOf } from "./Core"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
@@ -147,39 +147,14 @@ export interface ObjectState {
 }
 
 // Ensure previous value of state is equal to current value at an existing world.
+// Used to implement LVar-style increasing semantics, but that was only needed for call-by-need.
 function __assertEqualState (tgt: ObjectState, src: Object): void {
    const src_: ObjectState = src as ObjectState
    assert(tgt.constructor === src.constructor)
    assert(fields(tgt).length === fields(src).length)
    fields(tgt).forEach((k: string): void => {
-      __assertEqual(tgt[k], src_[k])
+      assert(tgt[k] === src_[k])
    })
-}
-
-// Verify that properties are always assigned consistently. Used to implement LVar-style increasing
-// semantics, but that was only needed for call-by-need.
-function __assertEqual (tgt: Persistent, src: Persistent): void {
-   if (src !== tgt) {
-      if (tgt === null || src === null) {
-         return absurd("Address collision (different child).")
-      } else
-      if (versioned(tgt) && versioned(src)) {
-         return absurd("Address collision (different child).")
-      } else
-      if (interned(tgt) && interned(src)) {
-         assert(
-            tgt.constructor === src.constructor, 
-            `Address collision (tgt ${className(tgt)} !== src ${className(src)}).`
-         )
-         const tgt_: ObjectState = tgt as Object as ObjectState, // retarded
-               src_: ObjectState = src as Object as ObjectState
-         fields(tgt).forEach((k: string): void => {
-            __assertEqual(tgt_[k], src_[k])
-         })
-      } else {
-         return absurd()
-      }
-   }
 }
 
 function __copy (src: Object): ObjectState {
