@@ -1,5 +1,5 @@
-import { absurd/*, classOf*/ } from "./util/Core"
-import { PersistentObject, Versioned/*, asVersioned, at, fieldVals*/, make } from "./util/Persistent"
+import { absurd } from "./util/Core"
+import { PersistentObject, Versioned, make } from "./util/Persistent"
 import { ann } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EmptyEnv, ExtendEnv } from "./Env"
@@ -96,10 +96,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       const x: string = e.x.str
       if (ρ.has(x)) { 
          const {t, v}: Traced = ρ.get(x)!
-         // Surely this should not be allowed:
-//       at(asVersioned(v).__id, classOf(v), ann.bot, ...fieldVals(v).slice(1))
-//       at(asVersioned(v).__id, classOf(v), ann.top, ...fieldVals(v).slice(1))
-         return Traced.make(Var.at(k, e.x, t), v)
+         return Traced.make(Var.at(k, e.x, t), v.copyAt(kᵥ, ann.bot))
       } else {
          return absurd("Variable not found.", x)
       }
@@ -112,7 +109,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
                [ρʹ, eʹ] = lookup(tu, f.σ),
                ρᶠ: Env = Env.concat(f.ρ, closeDefs(f.δ, f.ρ, f.δ)),
                tv: Traced = eval_(Env.concat(ρᶠ, ρʹ), instantiate(ρʹ, eʹ))
-         return Traced.make(App.at(k, tf, tu, tv.t), tv.v)
+         return Traced.make(App.at(k, tf, tu, tv.t), tv.v.copyAt(kᵥ, ann.bot))
       } else
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
@@ -121,23 +118,6 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       } else {
          return absurd()
       }
-   } else
-   if (e instanceof Expr.Let) {
-      const tu: Traced = eval_(ρ, e.e), 
-            [ρʹ, eʹ] = lookup(tu, e.σ),
-            tv: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
-      return Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, tv.t)), tv.v)
-   } else
-   if (e instanceof Expr.LetRec) {
-      const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
-            tv: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, e.e))
-      return Traced.make(LetRec.at(k, e.δ, tv), tv.v)
-   } else
-   if (e instanceof Expr.MatchAs) {
-      const tu: Traced = eval_(ρ, e.e),
-            [ρʹ, eʹ] = lookup(tu, e.σ),
-            tv = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
-      return Traced.make(MatchAs.at(k, tu, e.σ, tv.t), tv.v)
    } else
    // Operators (currently all binary) are "syntax", rather than names.
    if (e instanceof Expr.BinaryApp) {
@@ -149,6 +129,23 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       } else {
          return absurd("Operator name not found.", e.opName)
       }
+   } else
+   if (e instanceof Expr.Let) {
+      const tu: Traced = eval_(ρ, e.e), 
+            [ρʹ, eʹ] = lookup(tu, e.σ),
+            tv: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+      return Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, tv.t)), tv.v.copyAt(kᵥ, ann.bot))
+   } else
+   if (e instanceof Expr.LetRec) {
+      const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
+            tv: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, e.e))
+      return Traced.make(LetRec.at(k, e.δ, tv), tv.v.copyAt(kᵥ, ann.bot))
+   } else
+   if (e instanceof Expr.MatchAs) {
+      const tu: Traced = eval_(ρ, e.e),
+            [ρʹ, eʹ] = lookup(tu, e.σ),
+            tv = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+      return Traced.make(MatchAs.at(k, tu, e.σ, tv.t), tv.v.copyAt(kᵥ, ann.bot))
    } else {
       return absurd("Unimplemented expression form.", e)
    }

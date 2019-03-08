@@ -1,4 +1,5 @@
-import { Persistent, PersistentObject, at, make } from "./util/Persistent"
+import { classOf } from "./util/Core"
+import { Persistent, PersistentClass, PersistentObject, at, fieldVals, make } from "./util/Persistent"
 import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
@@ -16,6 +17,12 @@ export namespace Value {
    export abstract class Value extends Annotated implements PersistentObject {
       __tag: "Value.Value"
       abstract constructor_ (...args: Persistent[]): void
+
+      // Could avoid these shenanigans if we had AnnotatedValue as an explicit wrapper.
+      copyAt<T extends Value> (k: ValId, α: Annotation): T {
+         const cls: PersistentClass<T> = classOf(this) as PersistentClass<Value> as PersistentClass<T> // TS can't cope
+         return at<ValId, T>(k, cls, α, ...fieldVals(this).slice(1))
+      }
    }
 
    export class Closure extends Value {

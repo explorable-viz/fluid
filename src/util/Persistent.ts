@@ -67,7 +67,7 @@ function lookupArg<T extends PersistentObject> (
    return v
 }
 
-type PersistentClass<T extends PersistentObject = PersistentObject> = new () => T
+export type PersistentClass<T extends PersistentObject = PersistentObject> = new () => T
 
 // Hash-consing (interning) object construction.
 export function make<T extends PersistentObject> (ctr: PersistentClass<T>, ...args: Persistent[]): T {
