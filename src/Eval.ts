@@ -109,12 +109,12 @@ export function eval_ (ρ: Env, e: Expr): Traced {
                [ρʹ, eʹ] = lookup(tu, f.σ),
                ρᶠ: Env = Env.concat(f.ρ, closeDefs(f.δ, f.ρ, f.δ)),
                tv: Traced = eval_(Env.concat(ρᶠ, ρʹ), instantiate(ρʹ, eʹ))
-         return Traced.make(App.at(k, tf, tu, tv.t), tv.v.copyAt(kᵥ, ann.bot))
+         return Traced.make(App.at(k, tf, tu, tv.t), tv.v.copyAt(kᵥ, ann.meet(f.α, tv.v.α, e.α)))
       } else
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
          const tu: Traced = eval_(ρ, e.arg)
-         return Traced.make(UnaryApp.at(k, tf, tu), f.op.b.op(tu.v!)(kᵥ, ann.meet(f.α, e.α)))
+         return Traced.make(UnaryApp.at(k, tf, tu), f.op.b.op(tu.v!)(kᵥ, ann.meet(f.α, tu.v.α, e.α)))
       } else {
          return absurd()
       }
