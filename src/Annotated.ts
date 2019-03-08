@@ -1,4 +1,6 @@
+import { classOf } from "./util/Core"
 import { Lattice } from "./util/Ord"
+import { Persistent, PersistentClass, PersistentObject, at, fieldVals } from "./util/Persistent"
 
 export class BoolLattice implements Lattice<boolean> {
    bot = false
@@ -16,6 +18,14 @@ export class BoolLattice implements Lattice<boolean> {
 export const ann: Lattice<Annotation> = new BoolLattice()
 export type Annotation = boolean // for now
 
-export class Annotated {
+export abstract class Annotated implements PersistentObject {
    α: Annotation
+
+   abstract constructor_ (...args: Persistent[]): void // annoying to have to dup method signature
+
+   // Could avoid these shenanigans if we had AnnotatedValue as an explicit wrapper.
+   copyAt<T extends Annotated & PersistentObject> (k: PersistentObject, α: Annotation): T {
+      const cls: PersistentClass<T> = classOf(this) as PersistentClass<Annotated & PersistentObject> as PersistentClass<T> // TS can't cope
+      return at<PersistentObject, T>(k, cls, α, ...fieldVals(this).slice(1))
+   }
 }

@@ -1,4 +1,5 @@
 import { absurd } from "./util/Core"
+import { Annotation, ann } from "./Annotated"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Expr } from "./Expr"
@@ -11,39 +12,40 @@ import TracedMatch = Traced.TracedMatch
 import Trie = Expr.Trie
 import mapTrie = Expr.Trie.mapTrie
 
-export function lookup<K extends Kont<K>> (tv: Traced, σ: Trie<K>): [Env, K] {
+export function lookup<K extends Kont<K>> (tv: Traced, σ: Trie<K>): [Env, K, Annotation] {
    const v: Value = tv.v
    if (Trie.Var.is(σ)) {
-      return [Env.singleton(σ.x.str, tv), σ.κ]
+      return [Env.singleton(σ.x.str, tv), σ.κ, ann.top]
    } else
    if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
-      let ρ_κ: [Env, K] | null = null
+      let result: [Env, K, Annotation] | null = null
       σ.cases.map(({ fst: ctr, snd: Π }): null => {
          if (v.ctr.str === ctr) {
-            ρ_κ = lookupArgs(v.args, Π)
+            const [ρ, κ, α]: [Env, K, Annotation] = lookupArgs(v.args, Π)
+            result = [ρ, κ, ann.meet(α, v.α)]
          }
          return null
       })
-      if (ρ_κ === null) {
-         return absurd("Demand mismatch.", v, σ)
+      if (result === null) {
+         return absurd("Pattern mismatch.", v, σ)
       } else {
-         return ρ_κ
+         return result
       }
    } else {
-      return absurd("Demand mismatch.", v, σ)
+      return absurd("Pattern mismatch.", v, σ)
    }
 }
 
-function lookupArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): [Env, K] {
+function lookupArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): [Env, K, Annotation] {
    // Parser ensures constructor patterns agree with constructor signatures.
    if (Cons.is(tvs) && Args.Next.is(Π)) {
       // codomain of ξ is Args; promote to Args | Match.Args:
-      const [ρ, Πʹ]: [Env, Args<K>] = lookup(tvs.head, Π.σ), 
-            [ρʹ, κ] = lookupArgs(tvs.tail, Πʹ)
-      return [Env.concat(ρ, ρʹ), κ]
+      const [ρ, Πʹ, α]: [Env, Args<K>, Annotation] = lookup(tvs.head, Π.σ), 
+            [ρʹ, κ, αʹ]: [Env, K, Annotation] = lookupArgs(tvs.tail, Πʹ)
+      return [Env.concat(ρ, ρʹ), κ, ann.meet(α, αʹ)]
    } else
    if (Nil.is(tvs) && Args.End.is(Π)) {
-      return [Env.empty(), Π.κ]
+      return [Env.empty(), Π.κ, ann.top]
    } else {
       return absurd()
    }
