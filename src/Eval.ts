@@ -106,10 +106,10 @@ export function eval_ (ρ: Env, e: Expr): Traced {
             f: Value = tf.v
       if (f instanceof Value.Closure) {
          const tu: Traced = eval_(ρ, e.arg),
-               [ρʹ, eʹ] = lookup(tu, f.σ),
+               [ρʹ, eʹ, α] = lookup(tu, f.σ),
                ρᶠ: Env = Env.concat(f.ρ, closeDefs(f.δ, f.ρ, f.δ)),
                {t, v}: Traced = eval_(Env.concat(ρᶠ, ρʹ), instantiate(ρʹ, eʹ))
-         return Traced.make(App.at(k, tf, tu, t), v.copyAt(kᵥ, ann.meet(f.α, v.α, e.α)))
+         return Traced.make(App.at(k, tf, tu, t), v.copyAt(kᵥ, ann.meet(f.α, α, v.α, e.α)))
       } else
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
@@ -132,9 +132,9 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    } else
    if (e instanceof Expr.Let) {
       const tu: Traced = eval_(ρ, e.e), 
-            [ρʹ, eʹ] = lookup(tu, e.σ),
+            [ρʹ, eʹ, α] = lookup(tu, e.σ),
             {t, v}: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
-      return Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, t)), v.copyAt(kᵥ, ann.meet(v.α, e.α)))
+      return Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, t)), v.copyAt(kᵥ, ann.meet(α, v.α, e.α)))
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
@@ -143,9 +143,9 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: Traced = eval_(ρ, e.e),
-            [ρʹ, eʹ] = lookup(tu, e.σ),
+            [ρʹ, eʹ, α] = lookup(tu, e.σ),
             {t, v} = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
-      return Traced.make(MatchAs.at(k, tu, e.σ, t), v.copyAt(kᵥ, ann.meet(v.α, e.α)))
+      return Traced.make(MatchAs.at(k, tu, e.σ, t), v.copyAt(kᵥ, ann.meet(α, v.α, e.α)))
    } else {
       return absurd("Unimplemented expression form.", e)
    }
