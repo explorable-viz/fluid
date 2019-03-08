@@ -131,7 +131,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       }
    } else
    if (e instanceof Expr.Let) {
-      const tu: Traced = eval_(ρ, e.e), 
+      const tu: Traced = eval_(ρ, e.e),
             [ρʹ, eʹ, α] = lookup(tu, e.σ),
             {t, v}: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
       return Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, t)), v.copyAt(kᵥ, ann.meet(α, v.α, e.α)))

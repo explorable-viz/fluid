@@ -1,5 +1,4 @@
-import { classOf } from "./util/Core"
-import { Persistent, PersistentClass, PersistentObject, at, fieldVals, make } from "./util/Persistent"
+import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
