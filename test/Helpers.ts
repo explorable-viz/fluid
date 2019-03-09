@@ -1,6 +1,7 @@
 import { AClass, Class, __nonNull, absurd, as, assert } from "../src/util/Core"
 import { Persistent, PersistentObject } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
+import { Cons } from "../src/BaseTypes"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
@@ -31,7 +32,7 @@ export class Cursor {
       this.o = o
    }
 
-   from<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
+   to<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
       const oʹ: T[keyof T] = as<Persistent, T>(this.o, cls)[prop] // TypeScript nonsense
       this.o = oʹ as any as PersistentObject
       return this
@@ -55,6 +56,16 @@ export class Cursor {
          this.o = o
       }
       return this
+   }
+
+   toElem (n: number): Cursor {
+      if (n === 0) {
+         this.to(Cons, "head")
+         return this
+      } else {
+         this.to(Cons, "tail")
+         return this.toElem(n - 1)
+      }
    }
 }
 
