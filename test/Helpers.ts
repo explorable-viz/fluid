@@ -1,4 +1,4 @@
-import { Class, __nonNull, as, assert } from "../src/util/Core"
+import { AClass, Class, __nonNull, absurd, as, assert } from "../src/util/Core"
 import { Persistent, PersistentObject } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
 import { initDataTypes } from "../src/DataType"
@@ -23,8 +23,39 @@ export function initialise (): void {
    initDataTypes()
 }
 
-export function from<T extends PersistentObject> (o: Persistent, cls: Class<T>, prop: keyof T): Persistent {
-   return as(o as PersistentObject, cls)[prop] as any as Persistent
+export class Cursor {
+   prev: PersistentObject[] = []
+   o: PersistentObject
+
+   constructor (o: PersistentObject) {
+      this.o = o
+   }
+
+   from<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
+      const oʹ: T[keyof T] = as<Persistent, T>(this.o, cls)[prop] // TypeScript nonsense
+      this.o = oʹ as any as PersistentObject
+      return this
+   }
+
+   at<T extends PersistentObject> (cls: AClass<T>, f: (o: T) => void): Cursor {
+      f(as<PersistentObject, T>(this.o, cls))
+      return this
+   }
+
+   push (): Cursor {
+      this.prev.push(this.o)
+      return this
+   }
+
+   pop (): Cursor {
+      const o: PersistentObject | undefined = this.prev.pop()
+      if (o === undefined) {
+         return absurd()
+      } else {
+         this.o = o
+      }
+      return this
+   }
 }
 
 export enum Profile {

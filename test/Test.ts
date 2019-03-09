@@ -1,12 +1,12 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { TestFile, from, initialise, loadExample, parseExample, runExample } from "./Helpers"
-import { __check, as, assert } from "../src/util/Core"
-import { Persistent, World } from "../src/util/Persistent"
+import { Cursor, TestFile, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { assert } from "../src/util/Core"
+import { World } from "../src/util/Persistent"
 import { ann } from "../src/Annotated"
 import { Cons } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
-import { Value } from "../src/Traced"
+import { Traced, Value } from "../src/Traced"
 
 import Trie = Expr.Trie
 
@@ -22,10 +22,9 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			World.newRevision()
-			let here: Persistent = e
-			here = from(here, Expr.BinaryApp, "e1")
-			const hereʹ: Expr = here as Expr
-			hereʹ.setα(ann.bot)
+			const here: Cursor = new Cursor(e)
+			here.from(Expr.BinaryApp, "e1")
+				 .at(Expr.Expr, e => e.setα(ann.bot))
 			const v: Value = runExample(e).v
 			assert(v.α === ann.bot)
 		})
@@ -72,26 +71,27 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			World.newRevision()
-			let here: Persistent = e
-			here = from(here, Expr.LetRec, "e")
-			here = from(here, Expr.App, "arg")
-			here = from(here, Expr.Constr, "args")
-			let elem: Persistent = from(here, Cons, "head"),
-				 elemʹ: Expr = as(elem, Expr.Expr)
-			elemʹ.setα(ann.bot)
-			here = from(here, Cons, "tail")
-			here = from(here, Cons, "head")
-			here = from(here, Expr.Constr, "args")
-			elem = from(here, Cons, "head")
-			elemʹ = as(elem, Expr.Expr)
-			elemʹ.setα(ann.bot)
+			const here: Cursor = new Cursor(e)
+			here.from(Expr.LetRec, "e")
+				 .from(Expr.App, "arg")
+				 .from(Expr.Constr, "args")
+				 .push()
+				 .from(Cons, "head")
+	  			 .at(Expr.Expr, e => e.setα(ann.bot))
+			here.pop()
+				 .from(Cons, "tail")
+				 .from(Cons, "head")
+				 .from(Expr.Constr, "args")
+				 .push()
+				 .from(Cons, "head")
+				 .at(Expr.Expr, e => e.setα(ann.bot))
 			let v: Value = runExample(e).v
 			assert(v.α !== ann.bot)
 			World.newRevision()
-			here = from(here, Cons, "tail")
-			here = from(here, Cons, "head")
-			elemʹ = __check(as(here, Expr.Constr), it => it.ctr.str === "Nil")
-			elemʹ.setα(ann.bot)
+			here.pop()
+				 .from(Cons, "tail")
+				 .from(Cons, "head")
+				 .at(Expr.Constr, e => e.setα(ann.bot))
 			v = runExample(e).v
 			assert(v.α === ann.bot)
 		})
@@ -117,17 +117,25 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			World.newRevision()
-			let here: Persistent = e
-			here = from(here, Expr.LetRec, "e")
-			here = from(here, Expr.Let, "σ")
-			here = from(here, Trie.Var, "κ")
-			here = from(here, Expr.App, "arg")
-			here = from(here, Expr.Constr, "args")
-			let elem: Persistent = from(here, Cons, "head"),
-				 elemʹ: Expr = as(elem, Expr.Expr)
-			elemʹ.setα(ann.bot)
+			let here: Cursor = new Cursor(e)
+			here.from(Expr.LetRec, "e")
+				 .from(Expr.Let, "σ")
+				 .from(Trie.Var, "κ")
+				 .from(Expr.App, "arg")
+				 .from(Expr.Constr, "args")
+				 .from(Cons, "head")
+				 .at(Expr.Expr, e => e.setα(ann.bot))
 			let v: Value = runExample(e).v
 			assert(v.α !== ann.bot)
+			here = new Cursor(v)
+			here.from(Value.Constr, "args")
+				 .push()
+				 .from(Cons, "head")
+				 .at(Traced, tv => assert(tv.v.α === ann.bot))
+				 .pop()
+				 .from(Cons, "tail")
+				 .from(Cons, "head")
+				 .at(Traced, tv => assert(tv.v.α !== ann.bot))
 		})
 	})
 

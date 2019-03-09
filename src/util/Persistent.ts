@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd, as, assert, classOf } from "./Core"
+import { Class, __nonNull, absurd, assert, classOf } from "./Core"
 import { Ord } from "./Ord"
 
 // An object which can be used as a key in an ES6 map (i.e. one for which equality is ===). In particular
@@ -219,14 +219,6 @@ export function fields (o: Object): string[] {
 
 export function fieldVals (o: Object): Persistent[] {
    return fields(o).map(k => (o as ObjectState)[k])
-}
-
-// Versioned objects can have different metatypes at different worlds; here we assume T is its type at the 
-// current world.
-export function getProp<T extends PersistentObject> (k: PersistentObject, cls: PersistentClass<T>, prop: keyof T): Persistent {
-   const o: PersistentObject = __nonNull(__versionedObjs.get(k)),
-         oʹ: Versioned<T> = asVersioned(as<PersistentObject, T>(o, cls))
-   return stateAt(oʹ, __w)[1][prop as keyof ObjectState]
 }
 
 export class World implements PersistentObject, Ord<World> {
