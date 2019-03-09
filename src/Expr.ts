@@ -1,4 +1,4 @@
-import { __check, __nonNull, absurd, assert } from "./util/Core"
+import { __check, absurd, assert } from "./util/Core"
 import { eq } from "./util/Ord"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
