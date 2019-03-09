@@ -1,6 +1,16 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { TestFile, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { Cursor, TestFile, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { NonEmpty } from "../src/BaseTypes"
+import { assert } from "../src/util/Core"
+import { World } from "../src/util/Persistent"
+import { ann } from "../src/Annotated"
+import { Cons, Pair } from "../src/BaseTypes"
+import { Expr } from "../src/Expr"
+import { Traced, Value } from "../src/Traced"
+
+import Args = Expr.Args
+import Trie = Expr.Trie
 
 before((done: MochaDone) => {
 	initialise()
@@ -11,7 +21,14 @@ describe("example", () => {
 	describe("arithmetic", () => {
 		const file: TestFile = loadExample("arithmetic")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text)
+			runExample(e)
+			World.newRevision()
+			const here: Cursor = new Cursor(e)
+			here.from(Expr.BinaryApp, "e1")
+				 .at(Expr.Expr, e => e.setα(ann.bot))
+			const v: Value = runExample(e).v
+			assert(v.α === ann.bot)
 		})
 	})
 
@@ -39,7 +56,46 @@ describe("example", () => {
 	describe("filter", () => {
 		const file: TestFile = loadExample("filter")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text)
+			runExample(e)
+			World.newRevision()
+			let here: Cursor = new Cursor(e)
+			here.from(Expr.LetRec, "δ")
+				 .from(Cons, "head")
+				 .from(Expr.RecDef, "f")
+				 .from(Expr.Fun, "σ")
+				 .from(Trie.Var, "κ")
+				 .from(Expr.Fun, "σ")
+				 .from(Trie.Constr, "cases")
+				 .from(NonEmpty, "left")
+				 .from(NonEmpty, "t")
+				 .from(Pair, "snd")
+				 .from(Args.Next, "σ")
+				 .from(Trie.Var, "κ")
+				 .from(Args.Next, "σ")
+				 .from(Trie.Var, "κ")
+				 .from(Args.End, "κ")
+				 .from(Expr.MatchAs, "σ")
+				 .from(Trie.Constr, "cases")
+				 .from(NonEmpty, "t")
+				 .from(Pair, "snd")
+				 .from(Args.End, "κ")
+				 .from(Expr.Constr, "args")
+				 .from(Cons, "head")
+				 .at(Expr.Var, e => e.setα(ann.bot))
+			const v: Value = runExample(e).v
+			assert(v.α !== ann.bot)
+			here = new Cursor(v)
+			here.from(Value.Constr, "args")
+				 .push()
+				 .from(Cons, "head")
+				 .from(Traced, "v")
+				 .at(Value.ConstInt, v => v.α === ann.bot)
+				 .pop()
+				 .from(Cons, "tail")
+				 .from(Cons, "head")
+				 .from(Traced, "v")
+				 .at(Value.Constr, v => v.ctr.str === "Nil")
 		})
 	})
 
@@ -53,7 +109,32 @@ describe("example", () => {
 	describe("length", () => {
 		const file: TestFile = loadExample("length")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text)
+			runExample(e)
+			World.newRevision()
+			const here: Cursor = new Cursor(e)
+			here.from(Expr.LetRec, "e")
+				 .from(Expr.App, "arg")
+				 .from(Expr.Constr, "args")
+				 .push()
+				 .from(Cons, "head")
+	  			 .at(Expr.Expr, e => e.setα(ann.bot))
+			here.pop()
+				 .from(Cons, "tail")
+				 .from(Cons, "head")
+				 .from(Expr.Constr, "args")
+				 .push()
+				 .from(Cons, "head")
+				 .at(Expr.Expr, e => e.setα(ann.bot))
+			let v: Value = runExample(e).v
+			assert(v.α !== ann.bot)
+			World.newRevision()
+			here.pop()
+				 .from(Cons, "tail")
+				 .from(Cons, "head")
+				 .at(Expr.Constr, e => e.setα(ann.bot))
+			v = runExample(e).v
+			assert(v.α === ann.bot)
 		})
 	})
 
@@ -74,7 +155,28 @@ describe("example", () => {
 	describe("map", () => {
 		const file: TestFile = loadExample("map")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text)
+			runExample(e)
+			World.newRevision()
+			let here: Cursor = new Cursor(e)
+			here.from(Expr.LetRec, "e")
+				 .from(Expr.Let, "σ")
+				 .from(Trie.Var, "κ")
+				 .from(Expr.App, "arg")
+				 .from(Expr.Constr, "args")
+				 .from(Cons, "head")
+				 .at(Expr.Expr, e => e.setα(ann.bot))
+			let v: Value = runExample(e).v
+			assert(v.α !== ann.bot)
+			here = new Cursor(v)
+			here.from(Value.Constr, "args")
+				 .push()
+				 .from(Cons, "head")
+				 .at(Traced, tv => assert(tv.v.α === ann.bot))
+				 .pop()
+				 .from(Cons, "tail")
+				 .from(Cons, "head")
+				 .at(Traced, tv => assert(tv.v.α !== ann.bot))
 		})
 	})
 

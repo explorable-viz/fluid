@@ -124,7 +124,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       if (binaryOps.has(e.opName.str)) {
          const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
                [tv1, tv2]: [Traced, Traced] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
-               v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ, ann.meet(e.e1.α, e.e2.α, e.α))
+               v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ, ann.meet(tv1.v.α, tv2.v.α, e.α))
          return Traced.make(BinaryApp.at(k, tv1, e.opName, tv2), v)
       } else {
          return absurd("Operator name not found.", e.opName)

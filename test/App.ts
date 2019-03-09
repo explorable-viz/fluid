@@ -7,7 +7,7 @@ import { arity } from "../src/DataType"
 import { Expr, Lex } from "../src/Expr"
 import { Point, Rect, objects } from "../src/Graphics"
 import { Traced, Value } from "../src/Traced"
-import { initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
+import { from, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
 
 initialise()
 
@@ -87,10 +87,6 @@ document.body.appendChild(renderer.domElement)
 
 export function close (path: THREE.Vector2[]) {
    return path.concat(path[0])
-}
-
-function from<T extends PersistentObject> (o: PersistentObject, cls: Class<T>, prop: keyof T): Persistent {
-   return as<PersistentObject, T>(o, cls)[prop] as any as Persistent
 }
 
 function populateScene (): void {

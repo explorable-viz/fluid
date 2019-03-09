@@ -265,6 +265,7 @@ export namespace Expr {
       σ: Trie<Expr>
 
       constructor_ (α: Annotation, e: Expr, σ: Trie<Expr>): void {
+         this.α = α
          this.e = e
          this.σ = σ
       }

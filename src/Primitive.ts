@@ -140,11 +140,11 @@ export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α
 }
 
 export function lessInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.Constr {
-   return x.val > y.val ? __true : __false
+   return x.val < y.val ? __true : __false
 }
 
 export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.Constr {
-   return x.val > y.val ? __true : __false
+   return x.val < y.val ? __true : __false
 }
 
 export function minus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
