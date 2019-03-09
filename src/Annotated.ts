@@ -1,4 +1,4 @@
-import { classOf } from "./util/Core"
+import { __nonNull, classOf } from "./util/Core"
 import { Lattice } from "./util/Ord"
 import { Persistent, PersistentClass, PersistentObject, Versioned, asVersioned, at, fieldVals } from "./util/Persistent"
 
@@ -6,12 +6,13 @@ export class BoolLattice implements Lattice<boolean> {
    bot = false
    top = true
 
+   // Important to assert that arguments are defined since undefined propagates in an unhelpful way.
    join (...bs: boolean[]): boolean {
-      return bs.reduce((b1, b2) => b1 || b2)
+      return bs.reduce((b1, b2) => __nonNull(b1) || __nonNull(b2))
    }
 
    meet (...bs: boolean[]): boolean {
-      return bs.reduce((b1, b2) => b1 && b2)
+      return bs.reduce((b1, b2) => __nonNull(b1) && __nonNull(b2))
    }
 }
 
