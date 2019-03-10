@@ -1,7 +1,7 @@
 import { AClass, Class, __nonNull, absurd, as, assert } from "../src/util/Core"
 import { Persistent, PersistentObject } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
-import { Cons } from "../src/BaseTypes"
+import { Cons, NonEmpty, Pair } from "../src/BaseTypes"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
@@ -58,14 +58,34 @@ export class Cursor {
       return this
    }
 
+   // Helpers specific to certain data types.
+
    toElem (n: number): Cursor {
       if (n === 0) {
-         this.to(Cons, "head")
-         return this
+         return this.to(Cons, "head")
       } else {
          this.to(Cons, "tail")
          return this.toElem(n - 1)
       }
+   }
+
+   constrArg (n: number): Cursor {
+      return this.to(Expr.Constr, "args")
+                 .toElem(n)
+   }
+
+   nodeValue (): Cursor {
+      return this.to(NonEmpty, "t")
+                 .to(Pair, "snd")
+   }
+
+   arg<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
+      return this.to(Args.Next, "σ")
+                 .to(cls, prop)
+   }
+
+   end (): Cursor {
+      return this.to(Args.End, "κ")
    }
 }
 

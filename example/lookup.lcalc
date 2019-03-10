@@ -20,9 +20,9 @@ letrec
    }
 in
 lookup
-   4
+   6
    NonEmpty(
-      NonEmpty(Empty, (3,"simon"), Empty),
-      (4,"john"),
-      NonEmpty(NonEmpty(Empty, (6,"sarah"), Empty), (7,"claire"), Empty)
+      NonEmpty(Empty, (3, "simon"), Empty),
+      (4, "john"),
+      NonEmpty(NonEmpty(Empty, (6, "sarah"), Empty), (7, "claire"), Empty)
    )

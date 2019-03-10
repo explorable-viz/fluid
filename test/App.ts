@@ -4,10 +4,10 @@ import { Class, __check, __nonNull, absurd, as, assert } from "../src/util/Core"
 import { Persistent, PersistentObject, World, at, make, versioned } from "../src/util/Persistent"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
-import { Expr, Lex } from "../src/Expr"
+import { Expr } from "../src/Expr"
 import { Point, Rect, objects } from "../src/Graphics"
 import { Traced, Value } from "../src/Traced"
-import { from, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
+import { Cursor, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
 
 initialise()
 
@@ -92,11 +92,9 @@ export function close (path: THREE.Vector2[]) {
 function populateScene (): void {
    const e: Expr = parseExample(loadTestFile("example", "bar-chart").text),
          v: Value = __nonNull(runExample(e).v)
-   let here: Persistent = e
-   here = from(here as PersistentObject, Expr.Let, "e")
-
-   const here_: Expr.Constr = as(here, Expr.Constr)
-   if (versioned(here)) {
+   let here: Cursor = new Cursor(e)
+   here.to(Expr.Let, "e")
+       .at(Expr.Constr, here_ => {
       World.newRevision()
       const args: Cons<Expr> = as(here_.args, Cons)
       // want to do: Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(args.head.bottom(), args.tail))
@@ -112,9 +110,7 @@ function populateScene (): void {
          }
          elemsʹ = elemsʹ.tail
       }
-   } else {
-      absurd()
-   }
+   })
 }
 
 function render () {

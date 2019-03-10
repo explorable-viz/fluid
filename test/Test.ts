@@ -5,11 +5,9 @@ import { NonEmpty } from "../src/BaseTypes"
 import { assert } from "../src/util/Core"
 import { World } from "../src/util/Persistent"
 import { ann } from "../src/Annotated"
-import { Pair } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { Traced, Value } from "../src/Traced"
 
-import Args = Expr.Args
 import Trie = Expr.Trie
 
 before((done: MochaDone) => {
@@ -68,20 +66,14 @@ describe("example", () => {
 				 .to(Expr.Fun, "σ")
 				 .to(Trie.Constr, "cases")
 				 .to(NonEmpty, "left")
-				 .to(NonEmpty, "t")
-				 .to(Pair, "snd")
-				 .to(Args.Next, "σ")
-				 .to(Trie.Var, "κ")
-				 .to(Args.Next, "σ")
-				 .to(Trie.Var, "κ")
-				 .to(Args.End, "κ")
+				 .nodeValue()
+				 .arg(Trie.Var, "κ")
+				 .arg(Trie.Var, "κ")
+				 .end()
 				 .to(Expr.MatchAs, "σ")
 				 .to(Trie.Constr, "cases")
-				 .to(NonEmpty, "t")
-				 .to(Pair, "snd")
-				 .to(Args.End, "κ")
-				 .to(Expr.Constr, "args")
-				 .toElem(0)
+				 .nodeValue().end()
+				 .constrArg(0)
 				 .at(Expr.Var, e => e.setα(ann.bot))
 			const v: Value = runExample(e).v
 			assert(v.α !== ann.bot)
@@ -114,21 +106,19 @@ describe("example", () => {
 			const here: Cursor = new Cursor(e)
 			here.to(Expr.LetRec, "e")
 				 .to(Expr.App, "arg")
-				 .to(Expr.Constr, "args")
 				 .push()
-				 .toElem(0)
+				 .constrArg(0)
 	  			 .at(Expr.Expr, e => e.setα(ann.bot))
-			here.pop()
-				 .toElem(1)
-				 .to(Expr.Constr, "args")
+				 .pop()
+				 .constrArg(1)
 				 .push()
-				 .toElem(0)
+				 .constrArg(0)
 				 .at(Expr.Expr, e => e.setα(ann.bot))
 			let v: Value = runExample(e).v
 			assert(v.α !== ann.bot)
 			World.newRevision()
 			here.pop()
-				 .toElem(1)
+				 .constrArg(1)
 				 .at(Expr.Constr, e => e.setα(ann.bot))
 			v = runExample(e).v
 			assert(v.α === ann.bot)
@@ -145,7 +135,20 @@ describe("example", () => {
 	describe("lookup", () => {
 		const file: TestFile = loadExample("lookup")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text)
+			runExample(e)
+			World.newRevision()
+			const here: Cursor = new Cursor(e)
+			here.to(Expr.Let, "σ")
+				 .to(Trie.Var, "κ")
+				 .to(Expr.LetRec, "e")
+				 .to(Expr.App, "arg")
+				 .constrArg(0)
+				 .constrArg(1)
+				 .constrArg(0)
+				 .at(Expr.ConstInt, e => e.setα(ann.bot))
+			const v = runExample(e).v
+			assert(v.α !== ann.bot)
 		})
 	})
 
