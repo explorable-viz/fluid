@@ -188,13 +188,34 @@ export function uneval ({ρ, t, v}: Traced): Expr {
          return Expr.PrimOp.at(k, v.α, v.op)
       } else
       if (v instanceof Value.Constr) {
+         // reverse order but shouldn't matter in absence of side-effects:
          return Expr.Constr.at(k, v.α, v.ctr, v.args.map(uneval))
       } else {
          return absurd()
       }
    } else
    if (t instanceof Var) {
-      
+      const x: string = t.x.str
+      bot(ρ)
+      assert(ρ.has(x))
+         ρ.get(x)!.v.setα(v.α)
+         return Expr.Var.at(k, v.α, t.x)
+   }
+   else
+   if (t instanceof App) {
+      const f: Value.Closure | Value.PrimOp = t.func.v as (Value.Closure | Value.PrimOp)
+      if (f instanceof Value.Closure) {
+         return Expr.App.at(k, v.α, uneval(t.func).setα(v.α), uneval(t.arg).setα(v.α))
+      } else
+      if (f instanceof Value.PrimOp) {
+         return Expr.App.at(k, v.α, uneval(t.func).setα(v.α), uneval(t.arg).setα(v.α))
+      } else {
+         return absurd()
+      }
+   } else
+   if (t instanceof BinaryApp) {
+      assert(binaryOps.has(t.opName.str))
+      return Expr.BinaryApp.at(k, v.α, uneval(t.tv1).setα(v.α), t.opName, uneval(t.tv2).setα(v.α))
    } else {
       return absurd()
    }

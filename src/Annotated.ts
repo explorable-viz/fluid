@@ -49,9 +49,10 @@ export abstract class Annotated implements PersistentObject {
       return at<PersistentObject, T>(k, cls, α, ...fieldVals(this).slice(1))
    }
 
-   setα (α: Annotation): void {
+   setα (α: Annotation): this {
       const hereʹ: Versioned<this> = asVersioned(this)
       hereʹ.copyAt(hereʹ.__id, α)
+      return this
    }
 }
 
