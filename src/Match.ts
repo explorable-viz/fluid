@@ -2,17 +2,17 @@ import { absurd } from "./util/Core"
 import { Annotation, ann } from "./Annotated"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env } from "./Env"
+import { ExplVal, Value } from "./ExplVal"
 import { Expr } from "./Expr"
-import { Traced, Value } from "./Traced"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
-import Match = Traced.Match
-import TracedMatch = Traced.TracedMatch
+import Match = ExplVal.Match
+import ExplValMatch = ExplVal.ExplValMatch
 import Trie = Expr.Trie
 import mapTrie = Expr.Trie.mapTrie
 
-export function lookup<K extends Kont<K>> (tv: Traced, σ: Trie<K>): [Env, K, Annotation] {
+export function lookup<K extends Kont<K>> (tv: ExplVal, σ: Trie<K>): [Env, K, Annotation] {
    const v: Value = tv.v
    if (Trie.Var.is(σ)) {
       return [Env.singleton(σ.x.str, tv), σ.κ, ann.top]
@@ -36,7 +36,7 @@ export function lookup<K extends Kont<K>> (tv: Traced, σ: Trie<K>): [Env, K, An
    }
 }
 
-function lookupArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): [Env, K, Annotation] {
+function lookupArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, K, Annotation] {
    // Parser ensures constructor patterns agree with constructor signatures.
    if (Cons.is(tvs) && Args.Next.is(Π)) {
       // codomain of ξ is Args; promote to Args | Match.Args:
@@ -52,7 +52,7 @@ function lookupArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): [Env, K
 }
 
 // The match for any evaluation with demand σ which yielded value v.
-export function match<K extends Kont<K>> (tv: Traced, σ: Trie<K>): Match<K> {
+export function match<K extends Kont<K>> (tv: ExplVal, σ: Trie<K>): Match<K> {
    const v: Value = tv.v
    if (Trie.Var.is(σ)) {
       return Match.Var.make(σ.x, v, σ.κ) 
@@ -70,14 +70,14 @@ export function match<K extends Kont<K>> (tv: Traced, σ: Trie<K>): Match<K> {
    }
 }
 
-function matchArgs<K extends Kont<K>> (tvs: List<Traced>, Π: Args<K>): Match.Args<K> {
+function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): Match.Args<K> {
    // Parser ensures constructor patterns agree with constructor signatures.
    if (Cons.is(tvs) && Args.Next.is(Π)) {
       // codomain of ξ is Args; promote to Args | Match.Args:
       const ξ: Match<Args<K>> = match(tvs.head, Π.σ), 
             inj = (Π: Args<K>): Args<K> | Match.Args<K> => Π, 
             ξʹ = mapMatch(Π => matchArgs(tvs.tail, Π), inj, ξ)
-      return Match.Args.Next.make(TracedMatch.make(tvs.head.t, ξʹ))
+      return Match.Args.Next.make(ExplValMatch.make(tvs.head.t, ξʹ))
    } else
    if (Nil.is(tvs) && Args.End.is(Π)) {
       return Match.Args.End.make(Π.κ)
@@ -128,7 +128,7 @@ function mapMatchArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => K
    } else
    if (Match.Args.Next.is(Ψ)) {
       return Match.Args.Next.make(
-         TracedMatch.make(Ψ.tξ.t,
+         ExplValMatch.make(Ψ.tξ.t,
          mapMatch((Ψ: Match.Args<K>) => mapMatchArgs(f, g, Ψ), (Ψ: Match.Args<K>) => mapMatchArgs(g, g, Ψ), Ψ.tξ.ξ)) // "bivariance"
       )
    } else {

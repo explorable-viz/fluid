@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
-import { Traced } from "./Traced"
+import { ExplVal } from "./ExplVal"
 
 // Environments are snoc lists. An evaluation id is an expression id paired with the identity of all 
 // environment entries used to close the term, in the order in which they were bound. This makes evaluation
@@ -11,8 +11,8 @@ import { Traced } from "./Traced"
 
 export abstract class Env implements PersistentObject {
    // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
-   abstract entries (): List<Traced>
-   abstract get (k: string): Traced | undefined
+   abstract entries (): List<ExplVal>
+   abstract get (k: string): ExplVal | undefined
    abstract constructor_ (...args: Persistent[]): void
 
    has (k: string): boolean {
@@ -23,12 +23,12 @@ export abstract class Env implements PersistentObject {
       return EmptyEnv.make()
    }
 
-   static singleton (k: string, tv: Traced): Env {
+   static singleton (k: string, tv: ExplVal): Env {
       return ExtendEnv.make(Env.empty(), k, tv)
    }
 
-   static extend (ρ: Env, kvs: [string, Traced][]): Env {
-      kvs.forEach(([k, tv]: [string, Traced]) => {
+   static extend (ρ: Env, kvs: [string, ExplVal][]): Env {
+      kvs.forEach(([k, tv]: [string, ExplVal]) => {
          ρ = ExtendEnv.make(ρ, k, tv)
       })
       return ρ
@@ -54,7 +54,7 @@ export class EmptyEnv extends Env {
       return make(EmptyEnv)
    }
 
-   entries (): Nil<Traced> {
+   entries (): Nil<ExplVal> {
       return Nil.make()
    }
 
@@ -66,27 +66,27 @@ export class EmptyEnv extends Env {
 export class ExtendEnv extends Env {
    ρ: Env
    k: string
-   tv: Traced
+   tv: ExplVal
 
    constructor_ (
       ρ: Env,
       k: string,
-      tv: Traced
+      tv: ExplVal
    ) {
       this.ρ = ρ
       this.k = k
       this.tv = tv
    }
 
-   static make (ρ: Env, k: string, tv: Traced): ExtendEnv {
+   static make (ρ: Env, k: string, tv: ExplVal): ExtendEnv {
       return make(ExtendEnv, ρ, k, tv)
    }
 
-   entries (): Cons<Traced> {
+   entries (): Cons<ExplVal> {
       return Cons.make(this.tv, this.ρ.entries())
    }
 
-   get (k: string): Traced | undefined {
+   get (k: string): ExplVal | undefined {
       if (this.k === k) {
          return this.tv
       } else {

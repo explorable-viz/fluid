@@ -6,7 +6,7 @@ import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
 import { Expr } from "../src/Expr"
 import { Point, Rect, objects } from "../src/Graphics"
-import { Traced, Value } from "../src/Traced"
+import { ExplVal, Value } from "../src/ExplVal"
 import { Cursor, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
 
 initialise()
@@ -46,7 +46,7 @@ function reflect (v: Value | null): Persistent { // weirdly number and string ar
    if (v instanceof Value.Constr) {
       const ctr: string = __check(v.ctr.str, it => classFor.has(it)),
             args: Persistent[] = []
-      for (let tvs: List<Traced> = v.args; Cons.is(tvs);) {
+      for (let tvs: List<ExplVal> = v.args; Cons.is(tvs);) {
          args.push(reflect(tvs.head.v))
          tvs = tvs.tail
       }
