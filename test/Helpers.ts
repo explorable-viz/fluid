@@ -69,8 +69,9 @@ export class Cursor {
       }
    }
 
-   constrArg (n: number): Cursor {
-      return this.to(Expr.Constr, "args")
+   constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
+      return this.at(Expr.Constr, e => assert(e.ctr.str === ctr))
+                 .to(Expr.Constr, "args")
                  .toElem(n)
    }
 
