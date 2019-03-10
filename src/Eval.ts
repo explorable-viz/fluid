@@ -81,7 +81,7 @@ export function uncloseDefs (ρ: Env): [List<Expr.RecDef>, Env, List<Expr.RecDef
    let ρʹ: Env | null = null
    fs.map((f: Value.Closure): null => {
       if (ρʹ !== null) {
-         // ρʹ = meet(ρʹ, f.ρ)
+         // ρʹ = join(ρʹ, f.ρ)
       }
       return null
    })
