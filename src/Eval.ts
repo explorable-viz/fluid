@@ -189,7 +189,12 @@ export function uneval ({ρ, t, v}: Traced): Expr {
       } else
       if (v instanceof Value.Constr) {
          return Expr.Constr.at(k, v.α, v.ctr, v.args.map(uneval))
+      } else {
+         return absurd()
       }
+   } else
+   if (t instanceof Var) {
+      
    } else {
       return absurd()
    }
