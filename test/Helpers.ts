@@ -10,7 +10,7 @@ import { singleton, unionWith } from "../src/FiniteMap"
 import { instantiate } from "../src/Instantiate"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
-import { Traced } from "../src/Traced"
+import { Traced, Value } from "../src/Traced"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
@@ -43,6 +43,10 @@ export class Cursor {
       return this
    }
 
+   assert<T extends PersistentObject> (cls: AClass<T>, pred: (o: T) => boolean): Cursor {
+      return this.at(cls, o => assert(pred(o)))
+   }
+
    push (): Cursor {
       this.prev.push(this.o)
       return this
@@ -72,6 +76,12 @@ export class Cursor {
    constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
       return this.at(Expr.Constr, e => assert(e.ctr.str === ctr))
                  .to(Expr.Constr, "args")
+                 .toElem(n)
+   }
+
+   val_constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
+      return this.at(Value.Constr, e => assert(e.ctr.str === ctr))
+                 .to(Value.Constr, "args")
                  .toElem(n)
    }
 
