@@ -100,7 +100,6 @@ function populateScene (): void {
       // want to do: Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(args.head.bottom(), args.tail))
       const vʹ: Value = __nonNull(runExample(e).v) // make consistent - is there an invariant that every world is consistent?
       assert(vʹ === v)
-      World.undo()
 
       const elems: List<Persistent> = as(reflect(vʹ), List)
       for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
