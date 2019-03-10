@@ -64,7 +64,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
       const f: Fun = δ.head.f,
             k: TraceId = Tagged.make(f, "trace"),
             kᵥ: ValId = Tagged.make(f, "val"),
-            tv: Traced = Traced.make(Empt y.at(k), Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
+            tv: Traced = Traced.make(Empty.at(k), Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, tv)
    } else
    if (Nil.is(δ)) {
@@ -81,10 +81,11 @@ export function uncloseDefs (ρ: Env): [List<Expr.RecDef>, Env, List<Expr.RecDef
    let ρʹ: Env | null = null
    fs.map((f: Value.Closure): null => {
       if (ρʹ !== null) {
-         ρʹ = meet(ρʹ, f.ρ)
+         // ρʹ = meet(ρʹ, f.ρ)
       }
       return null
    })
+   return absurd()
 }
 
 export function eval_ (ρ: Env, e: Expr): Traced {

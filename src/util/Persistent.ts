@@ -141,7 +141,8 @@ export const ν: () => ExternalObject =
       }
    })()
 
-// "State object" whose identity doesn't matter and whose contents we can access by key.
+// "State object" whose identity doesn't matter and whose contents we can access by key. Might make sense to merge 
+// this into PersistentObject but would probably require some shenanigans to exclude non-string properties.
 export interface ObjectState {
    [index: string]: Persistent
 }
@@ -158,7 +159,7 @@ function __assertEqualState (tgt: ObjectState, src: Object): void {
 }
 
 function __copy (src: Object): ObjectState {
-   const tgt: ObjectState = Object.create(src.constructor.prototype)
+   const tgt: ObjectState = new (src.constructor as Class<ObjectState>)
    __newState(tgt, src)
    return tgt
 }
