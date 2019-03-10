@@ -21,7 +21,7 @@ import Trie = Expr.Trie
 import UnaryApp = ExplVal.UnaryApp
 import Var = ExplVal.Var
 
-type Tag = "val" | "trace"
+type Tag = "val" | "expl"
 
 // The "runtime identity" of an expression. In the formalism we use a "flat" representation so that e always has an external id;
 // here it is more convenient to use an isomorphic nested format.
@@ -54,7 +54,7 @@ export class Tagged<T extends Tag> implements PersistentObject {
 }
 
 export type ValId = Tagged<"val">
-export type TraceId = Tagged<"trace">
+export type ExplId = Tagged<"expl">
 
 export module Eval {
 
@@ -62,7 +62,7 @@ export module Eval {
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
       const f: Fun = δ.head.f,
-            k: TraceId = Tagged.make(f, "trace"),
+            k: ExplId = Tagged.make(f, "expl"),
             kᵥ: ValId = Tagged.make(f, "val"),
             tv: ExplVal = ExplVal.make(ρ, Empty.at(k), Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, tv)
@@ -89,7 +89,7 @@ export function uncloseDefs (ρ: Env): [List<Expr.RecDef>, Env, List<Expr.RecDef
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplVal {
-   const k: TraceId = Tagged.make(e, "trace"),
+   const k: ExplId = Tagged.make(e, "expl"),
          kᵥ: ValId = Tagged.make(e, "val")
    if (e instanceof Expr.ConstInt) {
       return ExplVal.make(ρ, Empty.at(k), Value.ConstInt.at(kᵥ, e.α, e.val))

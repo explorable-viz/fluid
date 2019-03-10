@@ -5,7 +5,7 @@ import { Nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { ExplVal, Value } from "./ExplVal"
 import { Expr, Lex } from "./Expr"
-import { Tagged, TraceId, ValId } from "./Eval"
+import { Tagged, ExplId, ValId } from "./Eval"
 
 import Empty = ExplVal.Empty
 import { Annotation } from "./Annotated";
@@ -173,7 +173,7 @@ export function prelude (): Env {
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
       const e: Expr = Expr.PrimOp.at(ν(), ann.top, op),
-            k: TraceId = Tagged.make(e, "trace"),
+            k: ExplId = Tagged.make(e, "expl"),
             kᵥ: ValId = Tagged.make(e, "val")
       ρ = ExtendEnv.make(ρ, x, ExplVal.make(ρ, Empty.at(k), Value.PrimOp.at(kᵥ, e.α, op)))
    })
