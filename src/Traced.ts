@@ -104,19 +104,22 @@ export namespace Value {
 
 // Called ExplVal in the formalism.
 export class Traced implements PersistentObject {
+   ρ: Env // needed for uneval
    t: Trace
    v: Value
 
    constructor_ (
+      ρ: Env,
       t: Trace,
       v: Value
    ) {
+      this.ρ = ρ
       this.t = t
       this.v = v
    }
 
-   static make (t: Trace, v: Value): Traced {
-      return make(Traced, t, v)
+   static make (ρ: Env, t: Trace, v: Value): Traced {
+      return make(Traced, ρ, t, v)
    }
 }
 

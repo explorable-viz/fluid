@@ -175,7 +175,7 @@ export function prelude (): Env {
       const e: Expr = Expr.PrimOp.at(ν(), ann.top, op),
             k: TraceId = Tagged.make(e, "trace"),
             kᵥ: ValId = Tagged.make(e, "val")
-      ρ = ExtendEnv.make(ρ, x, Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.α, op)))
+      ρ = ExtendEnv.make(ρ, x, Traced.make(ρ, Empty.at(k), Value.PrimOp.at(kᵥ, e.α, op)))
    })
    return ρ
 }

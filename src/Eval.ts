@@ -1,6 +1,6 @@
 import { absurd, as, assert } from "./util/Core"
-import { PersistentObject, Versioned, make } from "./util/Persistent"
-import { ann } from "./Annotated"
+import { PersistentObject, Versioned, make, asVersioned } from "./util/Persistent"
+import { ann, bot } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EmptyEnv, ExtendEnv } from "./Env"
 import { Expr } from "./Expr"
@@ -64,7 +64,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
       const f: Fun = δ.head.f,
             k: TraceId = Tagged.make(f, "trace"),
             kᵥ: ValId = Tagged.make(f, "val"),
-            tv: Traced = Traced.make(Empty.at(k), Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
+            tv: Traced = Traced.make(ρ, Empty.at(k), Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, tv)
    } else
    if (Nil.is(δ)) {
@@ -92,25 +92,25 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    const k: TraceId = Tagged.make(e, "trace"),
          kᵥ: ValId = Tagged.make(e, "val")
    if (e instanceof Expr.Constr) {
-      return Traced.make(Empty.at(k), Value.Constr.at(kᵥ, e.α, e.ctr, e.args.map(e => eval_(ρ, e))))
+      return Traced.make(ρ, Empty.at(k), Value.Constr.at(kᵥ, e.α, e.ctr, e.args.map(e => eval_(ρ, e))))
    } else
    if (e instanceof Expr.ConstInt) {
-      return Traced.make(Empty.at(k), Value.ConstInt.at(kᵥ, e.α, e.val))
+      return Traced.make(ρ, Empty.at(k), Value.ConstInt.at(kᵥ, e.α, e.val))
    } else
    if (e instanceof Expr.ConstStr) {
-      return Traced.make(Empty.at(k), Value.ConstStr.at(kᵥ, e.α, e.val))
+      return Traced.make(ρ, Empty.at(k), Value.ConstStr.at(kᵥ, e.α, e.val))
    } else
    if (e instanceof Expr.Fun) {
-      return Traced.make(Empty.at(k), Value.Closure.at(kᵥ, e.α, ρ, Nil.make(), e.σ))
+      return Traced.make(ρ, Empty.at(k), Value.Closure.at(kᵥ, e.α, ρ, Nil.make(), e.σ))
    } else
    if (e instanceof Expr.PrimOp) {
-      return Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.α, e.op))
+      return Traced.make(ρ, Empty.at(k), Value.PrimOp.at(kᵥ, e.α, e.op))
    } else
    if (e instanceof Expr.Var) {
       const x: string = e.x.str
       if (ρ.has(x)) { 
          const {t, v}: Traced = ρ.get(x)!
-         return Traced.make(Var.at(k, e.x, t), v.copyAt(kᵥ, ann.meet(v.α, e.α)))
+         return Traced.make(ρ, Var.at(k, e.x, t), v.copyAt(kᵥ, ann.meet(v.α, e.α)))
       } else {
          return absurd("Variable not found.", x)
       }
@@ -123,12 +123,12 @@ export function eval_ (ρ: Env, e: Expr): Traced {
                [ρʹ, eʹ, α] = lookup(tu, f.σ),
                ρᶠ: Env = Env.concat(f.ρ, closeDefs(f.δ, f.ρ, f.δ)),
                {t, v}: Traced = eval_(Env.concat(ρᶠ, ρʹ), instantiate(ρʹ, eʹ))
-         return Traced.make(App.at(k, tf, tu, t), v.copyAt(kᵥ, ann.meet(f.α, α, v.α, e.α)))
+         return Traced.make(ρ, App.at(k, tf, tu, t), v.copyAt(kᵥ, ann.meet(f.α, α, v.α, e.α)))
       } else
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
          const tu: Traced = eval_(ρ, e.arg)
-         return Traced.make(UnaryApp.at(k, tf, tu), f.op.b.op(tu.v!)(kᵥ, ann.meet(f.α, tu.v.α, e.α)))
+         return Traced.make(ρ, UnaryApp.at(k, tf, tu), f.op.b.op(tu.v!)(kᵥ, ann.meet(f.α, tu.v.α, e.α)))
       } else {
          return absurd()
       }
@@ -139,7 +139,7 @@ export function eval_ (ρ: Env, e: Expr): Traced {
          const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
                [tv1, tv2]: [Traced, Traced] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
                v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ, ann.meet(tv1.v.α, tv2.v.α, e.α))
-         return Traced.make(BinaryApp.at(k, tv1, e.opName, tv2), v)
+         return Traced.make(ρ, BinaryApp.at(k, tv1, e.opName, tv2), v)
       } else {
          return absurd("Operator name not found.", e.opName)
       }
@@ -148,20 +148,39 @@ export function eval_ (ρ: Env, e: Expr): Traced {
       const tu: Traced = eval_(ρ, e.e),
             [ρʹ, eʹ, α] = lookup(tu, e.σ),
             {t, v}: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
-      return Traced.make(Let.at(k, tu, Trie.Var.make(e.σ.x, t)), v.copyAt(kᵥ, ann.meet(α, v.α, e.α)))
+      return Traced.make(ρ, Let.at(k, tu, Trie.Var.make(e.σ.x, t)), v.copyAt(kᵥ, ann.meet(α, v.α, e.α)))
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
             tv: Traced = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, e.e))
-      return Traced.make(LetRec.at(k, e.δ, tv), tv.v.copyAt(kᵥ, ann.meet(tv.v.α, e.α)))
+      return Traced.make(ρ, LetRec.at(k, e.δ, tv), tv.v.copyAt(kᵥ, ann.meet(tv.v.α, e.α)))
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: Traced = eval_(ρ, e.e),
             [ρʹ, eʹ, α] = lookup(tu, e.σ),
             {t, v} = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
-      return Traced.make(MatchAs.at(k, tu, e.σ, t), v.copyAt(kᵥ, ann.meet(α, v.α, e.α)))
+      return Traced.make(ρ, MatchAs.at(k, tu, e.σ, t), v.copyAt(kᵥ, ann.meet(α, v.α, e.α)))
    } else {
       return absurd("Unimplemented expression form.", e)
+   }
+}
+
+export function uneval ({ρ, t, v}: Traced): [Env, Expr] {
+   const kᵥ: ValId = asVersioned(v).__id as ValId,
+         k: ExprId = asVersioned(kᵥ.e).__id as ExprId
+   if (t instanceof Empty) {
+      if (v instanceof Value.ConstInt) {
+         return [bot(ρ), Expr.ConstInt.at(k, v.α, v.val)]
+      } else
+      if (v instanceof Value.ConstStr) {
+         return [bot(ρ), Expr.ConstStr.at(k, v.α, v.val)]
+      } else
+      if (v instanceof Value.Closure) {
+         assert(v.δ.length === 0)
+         return [v.ρ, Expr.Fun.at(k, v.α, v.σ)]
+      }
+   } else {
+      return absurd()
    }
 }
 

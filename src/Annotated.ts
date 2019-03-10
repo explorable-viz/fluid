@@ -1,4 +1,4 @@
-import { __nonNull, classOf, } from "./util/Core"
+import { __nonNull, absurd, assert, classOf, } from "./util/Core"
 import { Lattice } from "./util/Ord"
 import { 
    ObjectState, Persistent, PersistentClass, PersistentObject, Versioned, asVersioned, at, fieldVals, fields 
@@ -53,17 +53,49 @@ export abstract class Annotated implements PersistentObject {
       const hereʹ: Versioned<this> = asVersioned(this)
       hereʹ.copyAt(hereʹ.__id, α)
    }
+}
 
-   // An annotation lattice induces a lattice for me.
-   join2<T extends Annotated> (o1: T, o2: T): void {
-      this.setα(ann.join(o1.α, o2.α))
-      const o1ʹ: ObjectState = o1 as Object as ObjectState        // TypeScript gibberish
-      const o2ʹ: ObjectState = o2 as Object as ObjectState        // TypeScript gibberish
-      fields(this).forEach((k: string): void => {
-         const v: Persistent = (this as Object as ObjectState)[k] // TypeScript gibberish
-         if (v instanceof Annotated) {
-            v.join2(o1ʹ[k] as Annotated, o2ʹ[k] as Annotated)
-         }
+// An annotation lattice induces a lattice for any object that potentially contains annotations. They behave with imperative LVar-like 
+// semantics.
+
+export function bot<T extends Persistent> (tgt: T): T {
+   if (tgt === null || typeof tgt === "number" || typeof tgt === "string") {
+      return tgt
+   } else
+   if (tgt instanceof Object) { // annoying that PersistentObject isn't a class
+      if (tgt instanceof Annotated) {
+         tgt.setα(ann.bot)
+      }
+      fields(tgt).forEach((k: string): void => {
+         bot((tgt as Object as ObjectState)[k]) // TypeScript gibberish
       })
+      return tgt
+   } else {
+      return absurd()
+   }
+}
+
+export function join2<T extends Persistent> (tgt: T, src: T): T {
+   if (tgt === null && src === null) {
+      return tgt
+   } else
+   if (typeof tgt === "number" && typeof src === "number") {
+      assert(tgt === src)
+      return tgt
+   } else
+   if (typeof tgt === "string" && typeof src === "string") {
+      assert(tgt === src)
+      return tgt
+   } else
+   if (tgt instanceof Object && src instanceof Object) { // annoying that PersistentObject isn't a class
+      if (tgt instanceof Annotated && src instanceof Annotated) {
+         tgt.setα(ann.join(src.α, tgt.α))
+      }
+      fields(tgt).forEach((k: string): void => {
+         join2((tgt as Object as ObjectState)[k], (src as Object as ObjectState)[k]) // TypeScript gibberish
+      })
+      return tgt
+   } else {
+      return absurd()
    }
 }
