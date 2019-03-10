@@ -91,9 +91,6 @@ export function uncloseDefs (ρ: Env): [List<Expr.RecDef>, Env, List<Expr.RecDef
 export function eval_ (ρ: Env, e: Expr): Traced {
    const k: TraceId = Tagged.make(e, "trace"),
          kᵥ: ValId = Tagged.make(e, "val")
-   if (e instanceof Expr.Constr) {
-      return Traced.make(ρ, Empty.at(k), Value.Constr.at(kᵥ, e.α, e.ctr, e.args.map(e => eval_(ρ, e))))
-   } else
    if (e instanceof Expr.ConstInt) {
       return Traced.make(ρ, Empty.at(k), Value.ConstInt.at(kᵥ, e.α, e.val))
    } else
@@ -105,6 +102,9 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    } else
    if (e instanceof Expr.PrimOp) {
       return Traced.make(ρ, Empty.at(k), Value.PrimOp.at(kᵥ, e.α, e.op))
+   } else
+   if (e instanceof Expr.Constr) {
+      return Traced.make(ρ, Empty.at(k), Value.Constr.at(kᵥ, e.α, e.ctr, e.args.map(e => eval_(ρ, e))))
    } else
    if (e instanceof Expr.Var) {
       const x: string = e.x.str
@@ -165,22 +165,30 @@ export function eval_ (ρ: Env, e: Expr): Traced {
    }
 }
 
-export function uneval ({ρ, t, v}: Traced): [Env, Expr] {
+// Output environment is written to.
+export function uneval ({ρ, t, v}: Traced): Expr {
    const kᵥ: ValId = asVersioned(v).__id as ValId,
          k: ExprId = asVersioned(kᵥ.e).__id as ExprId
    if (t instanceof Empty) {
       if (v instanceof Value.ConstInt) {
-         return [bot(ρ), Expr.ConstInt.at(k, v.α, v.val)]
+         bot(ρ)
+         return Expr.ConstInt.at(k, v.α, v.val)
       } else
       if (v instanceof Value.ConstStr) {
-         return [bot(ρ), Expr.ConstStr.at(k, v.α, v.val)]
+         bot(ρ)
+         return Expr.ConstStr.at(k, v.α, v.val)
       } else
       if (v instanceof Value.Closure) {
          assert(v.δ.length === 0)
-         return [v.ρ, Expr.Fun.at(k, v.α, v.σ)]
+         bot(ρ)
+         return Expr.Fun.at(k, v.α, v.σ)
       } else 
       if (v instanceof Value.PrimOp) {
-         return [bot(ρ), Expr.PrimOp.at(k, v.α, v.op)]
+         bot(ρ)
+         return Expr.PrimOp.at(k, v.α, v.op)
+      } else
+      if (v instanceof Value.Constr) {
+         return Expr.Constr.at(k, v.α, v.ctr, v.args.map(uneval))
       }
    } else {
       return absurd()
