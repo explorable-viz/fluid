@@ -1,4 +1,4 @@
-import { absurd } from "./util/Core"
+import { absurd, as, assert } from "./util/Core"
 import { PersistentObject, Versioned, make } from "./util/Persistent"
 import { ann } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
@@ -64,7 +64,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
       const f: Fun = δ.head.f,
             k: TraceId = Tagged.make(f, "trace"),
             kᵥ: ValId = Tagged.make(f, "val"),
-            tv: Traced = Traced.make(Empty.at(k), Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
+            tv: Traced = Traced.make(Empt y.at(k), Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, tv)
    } else
    if (Nil.is(δ)) {
@@ -72,6 +72,19 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    } else {
       return absurd()
    }
+}
+
+export function uncloseDefs (ρ: Env): [List<Expr.RecDef>, Env, List<Expr.RecDef>] {
+   // ρ is a collection of one or more closures.
+   const fs: List<Value.Closure> = ρ.entries().map(tv => as(tv.v, Value.Closure))
+   assert (fs.length > 0)
+   let ρʹ: Env | null = null
+   fs.map((f: Value.Closure): null => {
+      if (ρʹ !== null) {
+         ρʹ = meet(ρʹ, f.ρ)
+      }
+      return null
+   })
 }
 
 export function eval_ (ρ: Env, e: Expr): Traced {
