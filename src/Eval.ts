@@ -178,6 +178,9 @@ export function uneval ({ρ, t, v}: Traced): [Env, Expr] {
       if (v instanceof Value.Closure) {
          assert(v.δ.length === 0)
          return [v.ρ, Expr.Fun.at(k, v.α, v.σ)]
+      } else 
+      if (v instanceof Value.PrimOp) {
+         return [bot(ρ), Expr.PrimOp.at(k, v.α, v.op)]
       }
    } else {
       return absurd()
