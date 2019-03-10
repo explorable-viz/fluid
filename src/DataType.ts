@@ -25,7 +25,7 @@ function initDataType <T> (d: DataType): void {
       ctrToDataType.set(ctr, d)
    })
 }
-   
+
 export function initDataTypes (): void {
    assert(ctrToDataType.size === 0)
    initDataType(new DataType("Bool", new Map([["True", []], ["False", []]])))
