@@ -44,6 +44,17 @@ export abstract class Env implements PersistentObject {
          return absurd()
       }
    }
+
+   // The ρ1 satisfying concat(ρ1, ρ2) = ρ, supposing there is one. Not very efficient.
+   static unconcat (ρ: Env, ρ2: Env): Env {
+      const ρʹ: Env = ρ
+      for (; ρ instanceof ExtendEnv; ρ = ρ.ρ) {
+         if (Env.concat(ρ, ρ2) === ρʹ) {
+            return ρ
+         }
+      }
+      return absurd()
+   }
 }
 
 export class EmptyEnv extends Env {
@@ -68,11 +79,7 @@ export class ExtendEnv extends Env {
    k: string
    tv: ExplVal
 
-   constructor_ (
-      ρ: Env,
-      k: string,
-      tv: ExplVal
-   ) {
+   constructor_ (ρ: Env, k: string, tv: ExplVal) {
       this.ρ = ρ
       this.k = k
       this.tv = tv

@@ -6,7 +6,7 @@ import { Env, EmptyEnv, ExtendEnv } from "./Env"
 import { ExplVal, Value } from "./ExplVal"
 import { Expr } from "./Expr"
 import { instantiate } from "./Instantiate"
-import { lookup } from "./Match"
+import { lookup, unlookup } from "./Match"
 import { BinaryOp, binaryOps } from "./Primitive"
 
 import App = ExplVal.App
@@ -74,7 +74,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    }
 }
 
-export function uncloseDefs (ρ: Env): [List<Expr.RecDef>, Env, List<Expr.RecDef>] {
+export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
    // ρ is a collection of one or more closures.
    const fs: List<Value.Closure> = ρ.entries().map(tv => as(tv.v, Value.Closure))
    assert (fs.length > 0)
@@ -147,8 +147,8 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    if (e instanceof Expr.Let) {
       const tu: ExplVal = eval_(ρ, e.e),
             [ρʹ, eʹ, α] = lookup(tu, e.σ),
-            {t, v}: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
-      return ExplVal.make(ρ, Let.at(k, tu, Trie.Var.make(e.σ.x, t)), v.copyAt(kᵥ, ann.meet(α, v.α, e.α)))
+            tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+      return ExplVal.make(ρ, Let.at(k, tu, Trie.Var.make(e.σ.x, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
@@ -206,8 +206,10 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       const f: Value.Closure | Value.PrimOp = t.func.v as (Value.Closure | Value.PrimOp)
       if (f instanceof Value.Closure) {
          t.body.v.setα(v.α)
-         uneval(t.body)
-         return Expr.App.at(k, v.α, uneval(t.func).setα(v.α), uneval(t.arg).setα(v.α))
+         unlookup(t.ρ, uneval(t.body), v.α)
+         uncloseDefs(f.ρ)
+         f.setα(v.α)
+         return Expr.App.at(k, v.α, uneval(t.func), uneval(t.arg))
       } else
       if (f instanceof Value.PrimOp) {
          return Expr.App.at(k, v.α, uneval(t.func).setα(v.α), uneval(t.arg).setα(v.α))
@@ -217,7 +219,15 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    } else
    if (t instanceof BinaryApp) {
       assert(binaryOps.has(t.opName.str))
-      return Expr.BinaryApp.at(k, v.α, uneval(t.tv1).setα(v.α), t.opName, uneval(t.tv2).setα(v.α))
+      t.tv1.v.setα(v.α)
+      t.tv2.v.setα(v.α)
+      return Expr.BinaryApp.at(k, v.α, uneval(t.tv1), t.opName, uneval(t.tv2))
+   } else
+   if (t instanceof Let) {
+      t.σ.κ.v.setα(v.α)
+      const eʹ: Expr = uneval(t.σ.κ),
+            e: Expr = uneval(t.tu) // unlookup not required - suffices to uneval in reverse order
+      return Expr.Let.at(k, v.α, e, Trie.Var.make(t.σ.x, eʹ))
    } else {
       return absurd()
    }

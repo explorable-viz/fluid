@@ -36,6 +36,10 @@ export function lookup<K extends Kont<K>> (tv: ExplVal, σ: Trie<K>): [Env, K, A
    }
 }
 
+export function unlookup<K extends Kont<K>> (ρ: Env, κ: K, α: Annotation): [ExplVal, Trie<K>] {
+   throw new Error("Not yet implemented")
+}
+
 function lookupArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, K, Annotation] {
    // Parser ensures constructor patterns agree with constructor signatures.
    if (Cons.is(tvs) && Args.Next.is(Π)) {
