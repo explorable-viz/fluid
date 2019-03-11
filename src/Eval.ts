@@ -74,18 +74,14 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    }
 }
 
+// ρ is a collection of one or more closures. Note that the required joins have already been computed.
 export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
-   // ρ is a collection of one or more closures.
    const fs: List<Value.Closure> = ρ.entries().map(tv => as(tv.v, Value.Closure))
-   assert (fs.length > 0)
-   let ρʹ: Env | null = null
-   fs.map((f: Value.Closure): null => {
-      if (ρʹ !== null) {
-         // ρʹ = join(ρʹ, f.ρ)
-      }
-      return null
-   })
-   return absurd()
+   if (Cons.is(fs)) {
+      return [fs.head.ρ, fs.head.δ]
+   } else {
+      return absurd()
+   }
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplVal {
