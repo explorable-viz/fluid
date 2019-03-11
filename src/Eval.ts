@@ -228,6 +228,9 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       const eʹ: Expr = uneval(t.σ.κ),
             e: Expr = uneval(t.tu) // unlookup not required - suffices to uneval in reverse order
       return Expr.Let.at(k, v.α, e, Trie.Var.make(t.σ.x, eʹ))
+   } else
+   if (t instanceof MatchAs) {
+      
    } else {
       return absurd()
    }

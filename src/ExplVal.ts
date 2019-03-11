@@ -187,7 +187,7 @@ export namespace ExplVal {
 
       export abstract class Match<K> implements PersistentObject {
          __tag: "Match.Match"
-         abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+         abstract constructor_ (...args: Persistent[]): void
       }
 
       // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
@@ -254,8 +254,8 @@ export namespace ExplVal {
    export class App extends Expl {
       func: ExplVal
       arg: ExplVal
-      ρ: Env         // environment extension derived from matching argument; used for bwd slicing
-      body: ExplVal  // could just be an Expl, but bwd slicing needs the environment
+      ρ: Env         // environment extension derived from matching argument, for uneval
+      body: ExplVal  // technically Expl would suffice, but for uneval we want environment
 
       constructor_ (func: ExplVal, arg: ExplVal, ρ: Env, body: ExplVal): void {
          this.func = func
@@ -294,7 +294,7 @@ export namespace ExplVal {
 
    export class Let extends Expl {
       tu: ExplVal
-      σ: Expr.Trie.Var<ExplVal> // could just be an Expl, but for bwd slicing want environment too
+      σ: Expr.Trie.Var<ExplVal> // technically Expl would suffice, but for uneval we want environment
 
       constructor_ (tu: ExplVal, σ: Expr.Trie.Var<ExplVal>): void {
          this.tu = tu
@@ -323,16 +323,16 @@ export namespace ExplVal {
    export class MatchAs extends Expl {
       tu: ExplVal
       σ: Expr.Trie<Expr>
-      t: Expl
+      tv: ExplVal // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (tu: ExplVal, σ: Expr.Trie<Expr>, t: Expl): void {
+      constructor_ (tu: ExplVal, σ: Expr.Trie<Expr>, tv: ExplVal): void {
          this.tu = tu
          this.σ = σ
-         this.t = t
+         this.tv = tv
       }
 
-      static at (k: ExplId, tu: ExplVal, σ: Expr.Trie<Expr>, t: Expl): MatchAs {
-         return at(k, MatchAs, tu, σ, t)
+      static at (k: ExplId, tu: ExplVal, σ: Expr.Trie<Expr>, tv: ExplVal): MatchAs {
+         return at(k, MatchAs, tu, σ, tv)
       }
    }
 
