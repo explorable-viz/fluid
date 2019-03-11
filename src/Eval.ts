@@ -231,8 +231,9 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    } else
    if (t instanceof LetRec) {
       t.tv.v.setα(v.α)
-      uneval(t.tv)
-      uncloseDefs(t.ρ_defs)
+      const e: Expr = uneval(t.tv),
+            [, δ]: [Env, List<RecDef>] = uncloseDefs(t.ρ_defs)
+      return Expr.LetRec.at(k, v.α, δ, e)
    } else
    if (t instanceof MatchAs) {
       t.tv.v.setα(v.α)
