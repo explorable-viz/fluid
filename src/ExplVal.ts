@@ -254,18 +254,20 @@ export namespace ExplVal {
    export class App extends Expl {
       func: ExplVal
       arg: ExplVal
-      ρ: Env         // environment extension derived from matching argument, for uneval
-      body: ExplVal  // technically Expl would suffice, but for uneval we want environment
+      ρ_defs: Env       // from closeDefs, for uneval
+      ρ_match: Env      // from matching argument, for uneval
+      body: ExplVal     // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (func: ExplVal, arg: ExplVal, ρ: Env, body: ExplVal): void {
+      constructor_ (func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: ExplVal): void {
          this.func = func
          this.arg = arg
-         this.ρ = ρ
+         this.ρ_defs = ρ_defs
+         this.ρ_match = ρ_match
          this.body = body
       }
 
-      static at (k: ExplId, func: ExplVal, arg: ExplVal, ρ: Env, body: ExplVal): App {
-         return at(k, App, func, arg, ρ, body)
+      static at (k: ExplId, func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: ExplVal): App {
+         return at(k, App, func, arg, ρ_defs, ρ_match, body)
       }
    }
 
@@ -308,32 +310,35 @@ export namespace ExplVal {
 
    export class LetRec extends Expl {
       δ: List<Expr.RecDef>
+      ρ_defs: Env      // from closeDefs, for uneval
       tv: ExplVal
    
-      constructor_ (δ: List<Expr.RecDef>, tv: ExplVal): void {
+      constructor_ (δ: List<Expr.RecDef>, ρ_defs: Env, tv: ExplVal): void {
          this.δ = δ
+         this.ρ_defs = ρ_defs
          this.tv = tv
       }
 
-      static at (k: ExplId, δ: List<Expr.RecDef>, tv: ExplVal): LetRec {
-         return at(k, LetRec, δ, tv)
+      static at (k: ExplId, δ: List<Expr.RecDef>, ρ_defs: Env, tv: ExplVal): LetRec {
+         return at(k, LetRec, δ, ρ_defs, tv)
       }
    }
    
    export class MatchAs extends Expl {
       tu: ExplVal
       σ: Expr.Trie<Expr>
-      ρ: Env      // environment extension derived from matching argument, for uneval
-      tv: ExplVal // technically Expl would suffice, but for uneval we want environment
+      ρ_match: Env      // from matching argument, for uneval
+      tv: ExplVal       // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (tu: ExplVal, σ: Expr.Trie<Expr>, tv: ExplVal): void {
+      constructor_ (tu: ExplVal, σ: Expr.Trie<Expr>, ρ_match: Env, tv: ExplVal): void {
          this.tu = tu
          this.σ = σ
+         this.ρ_match = ρ_match
          this.tv = tv
       }
 
-      static at (k: ExplId, tu: ExplVal, σ: Expr.Trie<Expr>, tv: ExplVal): MatchAs {
-         return at(k, MatchAs, tu, σ, tv)
+      static at (k: ExplId, tu: ExplVal, σ: Expr.Trie<Expr>, ρ_match: Env, tv: ExplVal): MatchAs {
+         return at(k, MatchAs, tu, σ, ρ_match, tv)
       }
    }
 

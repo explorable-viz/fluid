@@ -121,9 +121,9 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
       if (f instanceof Value.Closure) {
          const tu: ExplVal = eval_(ρ, e.arg),
                [ρʹ, eʹ, α] = lookup(tu, f.σ),
-               ρᶠ: Env = Env.concat(f.ρ, closeDefs(f.δ, f.ρ, f.δ)),
-               tv: ExplVal = eval_(Env.concat(ρᶠ, ρʹ), instantiate(ρʹ, eʹ))
-         return ExplVal.make(ρ, App.at(k, tf, tu, ρʹ, tv), tv.v.copyAt(kᵥ, ann.meet(f.α, α, tv.v.α, e.α)))
+               ρ_defs: Env = closeDefs(f.δ, f.ρ, f.δ),
+               tv: ExplVal = eval_(Env.concat(Env.concat(f.ρ, ρ_defs), ρʹ), instantiate(ρʹ, eʹ))
+         return ExplVal.make(ρ, App.at(k, tf, tu, ρʹ, ρ_defs, tv), tv.v.copyAt(kᵥ, ann.meet(f.α, α, tv.v.α, e.α)))
       } else
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
@@ -153,13 +153,13 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
             tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, e.e))
-      return ExplVal.make(ρ, LetRec.at(k, e.δ, tv), tv.v.copyAt(kᵥ, ann.meet(tv.v.α, e.α)))
+      return ExplVal.make(ρ, LetRec.at(k, e.δ, ρʹ, tv), tv.v.copyAt(kᵥ, ann.meet(tv.v.α, e.α)))
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplVal = eval_(ρ, e.e),
             [ρʹ, eʹ, α] = lookup(tu, e.σ),
-            {t, v} = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
-      return ExplVal.make(ρ, MatchAs.at(k, tu, e.σ, t), v.copyAt(kᵥ, ann.meet(α, v.α, e.α)))
+            tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+      return ExplVal.make(ρ, MatchAs.at(k, tu, e.σ, ρʹ, tv), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else {
       return absurd("Unimplemented expression form.", e)
    }
@@ -206,8 +206,8 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       const f: Value.Closure | Value.PrimOp = t.func.v as (Value.Closure | Value.PrimOp)
       if (f instanceof Value.Closure) {
          t.body.v.setα(v.α)
-         unlookup(t.ρ, uneval(t.body), v.α)
-         uncloseDefs(f.ρ) // TODO: fix
+         unlookup(t.ρ_match, uneval(t.body), v.α)
+         uncloseDefs(t.ρ_defs)
          f.setα(v.α)
          return Expr.App.at(k, v.α, uneval(t.func), uneval(t.arg))
       } else
@@ -232,11 +232,11 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    if (t instanceof LetRec) {
       t.tv.v.setα(v.α)
       uneval(t.tv)
-      uncloseDefs()
+      uncloseDefs(t.ρ_defs)
    } else
    if (t instanceof MatchAs) {
       t.tv.v.setα(v.α)
-      unlookup(t.ρ, uneval(t.tv), v.α)
+      unlookup(t.ρ_match, uneval(t.tv), v.α)
       return Expr.MatchAs.at(k, v.α, uneval(t.tu), t.σ)
    } else {
       return absurd()
