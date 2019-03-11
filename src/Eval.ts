@@ -207,7 +207,7 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       if (f instanceof Value.Closure) {
          t.body.v.setα(v.α)
          unlookup(t.ρ, uneval(t.body), v.α)
-         uncloseDefs(f.ρ)
+         uncloseDefs(f.ρ) // TODO: fix
          f.setα(v.α)
          return Expr.App.at(k, v.α, uneval(t.func), uneval(t.arg))
       } else
@@ -229,9 +229,15 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
             e: Expr = uneval(t.tu) // unlookup not required - suffices to uneval in reverse order
       return Expr.Let.at(k, v.α, e, Trie.Var.make(t.σ.x, eʹ))
    } else
+   if (t instanceof LetRec) {
+      t.tv.v.setα(v.α)
+      uneval(t.tv)
+      uncloseDefs()
+   } else
    if (t instanceof MatchAs) {
       t.tv.v.setα(v.α)
       unlookup(t.ρ, uneval(t.tv), v.α)
+      return Expr.MatchAs.at(k, v.α, uneval(t.tu), t.σ)
    } else {
       return absurd()
    }
