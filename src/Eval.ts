@@ -230,7 +230,8 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       return Expr.Let.at(k, v.α, e, Trie.Var.make(t.σ.x, eʹ))
    } else
    if (t instanceof MatchAs) {
-      
+      t.tv.v.setα(v.α)
+      unlookup(t.ρ, uneval(t.tv), v.α)
    } else {
       return absurd()
    }

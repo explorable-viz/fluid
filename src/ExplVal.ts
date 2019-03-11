@@ -323,6 +323,7 @@ export namespace ExplVal {
    export class MatchAs extends Expl {
       tu: ExplVal
       σ: Expr.Trie<Expr>
+      ρ: Env      // environment extension derived from matching argument, for uneval
       tv: ExplVal // technically Expl would suffice, but for uneval we want environment
 
       constructor_ (tu: ExplVal, σ: Expr.Trie<Expr>, tv: ExplVal): void {
