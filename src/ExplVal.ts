@@ -1,10 +1,11 @@
+import { __nonNull } from "./util/Core"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
 import { Expr, Lex } from "./Expr"
-import { TraceId, ValId } from "./Eval"
+import { ExplId, ValId } from "./Eval"
 import { UnaryOp } from "./Primitive"
 
 import Trie = Expr.Trie
@@ -75,15 +76,15 @@ export namespace Value {
    
    export class Constr extends Value {
       ctr: Lex.Ctr
-      args: List<Traced>
+      args: List<ExplVal>
 
-      constructor_ (α: Annotation, ctr: Lex.Ctr, args: List<Traced>): void {
+      constructor_ (α: Annotation, ctr: Lex.Ctr, args: List<ExplVal>): void {
          this.α = α
          this.ctr = ctr
          this.args = args
       }
    
-      static at (k: ValId, α: Annotation, ctr: Lex.Ctr, args: List<Traced>): Constr {
+      static at (k: ValId, α: Annotation, ctr: Lex.Ctr, args: List<ExplVal>): Constr {
          return at(k, Constr, α, ctr, args)
       }
    }
@@ -102,39 +103,41 @@ export namespace Value {
    }
 }
 
-// Called ExplVal in the formalism.
-export class Traced implements PersistentObject {
-   t: Trace
+export class ExplVal implements PersistentObject {
+   ρ: Env // needed for uneval
+   t: Expl
    v: Value
 
    constructor_ (
-      t: Trace,
+      ρ: Env,
+      t: Expl,
       v: Value
    ) {
+      this.ρ = ρ
       this.t = t
       this.v = v
    }
 
-   static make (t: Trace, v: Value): Traced {
-      return make(Traced, t, v)
+   static make (ρ: Env, t: Expl, v: Value): ExplVal {
+      return make(ExplVal, ρ, t, v)
    }
 }
 
-export type Trace = Traced.Trace
-export type Trace̊ = Trace | null
+export type Expl = ExplVal.Expl
+export type Expl̊ = Expl | null
 
-export namespace Traced {
-   export class TracedMatch<K> implements PersistentObject {
-      t: Trace̊ // null iff ξ represents a dead branch
+export namespace ExplVal {
+   export class ExplValMatch<K extends Expr.Kont<K>> implements PersistentObject {
+      t: Expl̊ // null iff ξ represents a dead branch
       ξ: Match<K>
 
-   constructor_ (t: Trace̊, ξ: Match<K>) {
+   constructor_ (t: Expl̊, ξ: Match<K>) {
          this.t = t
          this.ξ = ξ
       }
 
-      static make<K> (t: Trace̊, ξ: Match<K>): TracedMatch<K> {
-         return make(TracedMatch, t, ξ)
+      static make<K extends Expr.Kont<K>> (t: Expl̊, ξ: Match<K>): ExplValMatch<K> {
+         return make(ExplValMatch, t, ξ) as ExplValMatch<K>
       }
    }
 
@@ -145,47 +148,53 @@ export namespace Traced {
       export type Args<K extends Expr.Kont<K>> = Args.Args<K>
 
       export namespace Args {
-         export abstract class Args<K> implements Expr.Kont<Args<K>> {
+         export abstract class Args<K extends Expr.Kont<K>> implements Expr.Kont<Args<K>> {
             __tag: "Match.Args"
+            abstract κ: K
             abstract constructor_ (...args: Persistent[]): void
          }
-   
-         export class End<K extends Persistent> extends Args<K> {
+
+         export class End<K extends Expr.Kont<K>> extends Args<K> {
             κ: K
 
             constructor_ (κ: K) {
                this.κ = κ
             }
    
-            static is<K extends Persistent> (Ψ: Args<K>): Ψ is End<K> {
+            static is<K extends Expr.Kont<K>> (Ψ: Args<K>): Ψ is End<K> {
                return Ψ instanceof End
             }
    
-            static make<K extends Persistent> (κ: K): End<K> {
+            static make<K extends Expr.Kont<K>> (κ: K): End<K> {
                return make(End, κ) as End<K>
             }
          }
    
-         export class Next<K> extends Args<K> {
-            tξ: TracedMatch<K>
+         export class Next<K extends Expr.Kont<K>> extends Args<K> {
+            tξ: ExplValMatch<K>
 
-            constructor_ (tξ: TracedMatch<K>) {
+            constructor_ (tξ: ExplValMatch<K>) {
                this.tξ = tξ
             }
-   
-            static is<K> (Ψ: Args<K>): Ψ is Next<K> {
+
+            get κ(): K {
+               return this.tξ.ξ.κ
+            }
+
+            static is<K extends Expr.Kont<K>> (Ψ: Args<K>): Ψ is Next<K> {
                return Ψ instanceof Next
             }
    
-            static make<K> (tξ: TracedMatch<K>): Next<K> {
-               return make(Next, tξ)
+            static make<K extends Expr.Kont<K>> (tξ: ExplValMatch<K>): Next<K> {
+               return make(Next, tξ) as Next<K>
             }
          }
       }
 
       export abstract class Match<K> implements PersistentObject {
          __tag: "Match.Match"
-         abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+         abstract κ: K
+         abstract constructor_ (...args: Persistent[]): void
       }
 
       // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
@@ -196,41 +205,32 @@ export namespace Traced {
             this.cases = cases
          }
 
+         get κ(): K {
+            let κ: K // TypeScript flow analysis confused by K | null
+            this.cases.map(({snd: args}): null => {
+               if (args instanceof Args.Args) {
+                  κ = args.κ
+               }
+               return null
+            })
+            return __nonNull(κ!) // workaround
+         }
+
          static is<K extends Expr.Kont<K>> (ξ: Match<K>): ξ is Constr<K> {
             return ξ instanceof Constr
          }
 
          static make<K extends Expr.Kont<K>> (cases: FiniteMap<string, Expr.Args<K> | Args<K>>): Constr<K> {
-            return make(Constr, cases)
-         }
-      }
-
-      export class Fun<K extends Persistent> extends Match<K> {
-         f: Value.Closure | Value.PrimOp
-         κ: K
-   
-         constructor_ (f: Value.Closure | Value.PrimOp, κ: K) {
-            this.f = f
-            this.κ = κ
-         }
-
-         static is<K extends Persistent> (ξ: Match<K>): ξ is Fun<K> {
-            return ξ instanceof Fun
-         }
-
-         static make<K extends Persistent> (f: Value.Closure | Value.PrimOp, κ: K): Fun<K> {
-            return make(Fun, f, κ) as Fun<K>
+            return make(Constr, cases) as Constr<K>
          }
       }
 
       export class Var<K extends Persistent> extends Match<K> {
          x: Lex.Var
-         v: Value
          κ: K
 
-         constructor_ (x: Lex.Var, v: Value, κ: K) {
+         constructor_ (x: Lex.Var, κ: K) {
             this.x = x
-            this.v = v
             this.κ = κ
          }
 
@@ -238,128 +238,134 @@ export namespace Traced {
             return ξ instanceof Var
          }
 
-         static make<K extends Persistent> (x: Lex.Var, v: Value, κ: K): Var<K> {
-            return make(Var, x, v, κ) as Var<K>
+         static make<K extends Persistent> (x: Lex.Var, κ: K): Var<K> {
+            return make(Var, x, κ) as Var<K>
          }
       }
    }
 
-   export abstract class Trace implements PersistentObject, Expr.Kont<Trace> {
-      __tag: "Trace.Trace"
+   export abstract class Expl implements PersistentObject, Expr.Kont<Expl> {
+      __tag: "Expl.Expl"
       abstract constructor_ (...args: Persistent[]): void
    }
 
-   export class App extends Trace {
-      func: Traced
-      arg: Traced
-      body: Trace
+   export class App extends Expl {
+      func: ExplVal
+      arg: ExplVal
+      ρ_defs: Env       // from closeDefs, for uneval
+      ρ_match: Env      // from matching argument, for uneval
+      body: ExplVal     // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (func: Traced, arg: Traced, body: Trace): void {
+      constructor_ (func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: ExplVal): void {
          this.func = func
          this.arg = arg
+         this.ρ_defs = ρ_defs
+         this.ρ_match = ρ_match
          this.body = body
       }
 
-      static at (k: TraceId, func: Traced, arg: Traced, body: Trace): App {
-         return at(k, App, func, arg, body)
+      static at (k: ExplId, func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: ExplVal): App {
+         return at(k, App, func, arg, ρ_defs, ρ_match, body)
       }
    }
 
-   export class UnaryApp extends Trace {
-      func: Traced
-      arg: Traced
+   export class UnaryApp extends Expl {
+      func: ExplVal
+      arg: ExplVal
 
-      constructor_ (func: Traced, arg: Traced): void {
+      constructor_ (func: ExplVal, arg: ExplVal): void {
          this.func = func
          this.arg = arg
       }
 
-      static at (k: TraceId, func: Traced, arg: Traced): App {
+      static at (k: ExplId, func: ExplVal, arg: ExplVal): App {
          return at(k, App, func, arg)
       }
    }
 
-   // Not the same as ⊥ (null); we distinguish information about an absence from the absence of information.
-   export class Empty extends Trace {
+   export class Empty extends Expl {
       constructor_ (): void {
       }
 
-      static at (k: TraceId): Empty {
+      static at (k: ExplId): Empty {
          return at(k, Empty)
       }
    }
 
-   export class Let extends Trace {
-      tu: Traced
-      σ: Expr.Trie.Var<Trace>
+   export class Let extends Expl {
+      tu: ExplVal
+      σ: Expr.Trie.Var<ExplVal> // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (tu: Traced, σ: Expr.Trie.Var<Trace>): void {
+      constructor_ (tu: ExplVal, σ: Expr.Trie.Var<ExplVal>): void {
          this.tu = tu
          this.σ = σ
       }
 
-      static at (k: TraceId, tu: Traced, σ: Expr.Trie.Var<Trace>): Let {
+      static at (k: ExplId, tu: ExplVal, σ: Expr.Trie.Var<ExplVal>): Let {
          return at(k, Let, tu, σ)
       }
    }
 
-   // Continuation here should really be a trace, not a traced value.
-   export class LetRec extends Trace {
+   export class LetRec extends Expl {
       δ: List<Expr.RecDef>
-      tv: Traced
+      ρ_defs: Env      // from closeDefs, for uneval
+      tv: ExplVal
    
-      constructor_ (δ: List<Expr.RecDef>, tv: Traced): void {
+      constructor_ (δ: List<Expr.RecDef>, ρ_defs: Env, tv: ExplVal): void {
          this.δ = δ
+         this.ρ_defs = ρ_defs
          this.tv = tv
       }
 
-      static at (k: TraceId, δ: List<Expr.RecDef>, tv: Traced): LetRec {
-         return at(k, LetRec, δ, tv)
+      static at (k: ExplId, δ: List<Expr.RecDef>, ρ_defs: Env, tv: ExplVal): LetRec {
+         return at(k, LetRec, δ, ρ_defs, tv)
       }
    }
    
-   export class MatchAs extends Trace {
-      tu: Traced
+   export class MatchAs extends Expl {
+      tu: ExplVal
       σ: Expr.Trie<Expr>
-      t: Trace
+      ρ_match: Env      // from matching argument, for uneval
+      tv: ExplVal       // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (tu: Traced, σ: Expr.Trie<Expr>, t: Trace): void {
+      constructor_ (tu: ExplVal, σ: Expr.Trie<Expr>, ρ_match: Env, tv: ExplVal): void {
          this.tu = tu
          this.σ = σ
-         this.t = t
+         this.ρ_match = ρ_match
+         this.tv = tv
       }
 
-      static at (k: TraceId, tu: Traced, σ: Expr.Trie<Expr>, t: Trace): MatchAs {
-         return at(k, MatchAs, tu, σ, t)
+      static at (k: ExplId, tu: ExplVal, σ: Expr.Trie<Expr>, ρ_match: Env, tv: ExplVal): MatchAs {
+         return at(k, MatchAs, tu, σ, ρ_match, tv)
       }
    }
 
-   export class BinaryApp extends Trace {
-      tv1: Traced
+   export class BinaryApp extends Expl {
+      tv1: ExplVal
       opName: Lex.OpName
-      tv2: Traced
+      tv2: ExplVal
 
-      constructor_ (tv1: Traced, opName: Lex.OpName, tv2: Traced): void {
+      constructor_ (tv1: ExplVal, opName: Lex.OpName, tv2: ExplVal): void {
          this.tv1 = tv1
          this.opName = opName
          this.tv2 = tv2
       }
 
-      static at (k: TraceId, tv1: Traced, opName: Lex.OpName, tv2: Traced): BinaryApp {
+      static at (k: ExplId, tv1: ExplVal, opName: Lex.OpName, tv2: ExplVal): BinaryApp {
          return at(k, BinaryApp, tv1, opName, tv2)
       }
    }
 
-   export class Var extends Trace {
+   export class Var extends Expl {
       x: Lex.Var
-      t: Trace
+      t: Expl
 
-      constructor_ (x: Lex.Var, t: Trace): void {
+      constructor_ (x: Lex.Var, t: Expl): void {
          this.x = x
          this.t = t
       }
 
-      static at (k: TraceId, x: Lex.Var, t: Trace): Var {
+      static at (k: ExplId, x: Lex.Var, t: Expl): Var {
          return at(k, Var, x, t)
       }
    }

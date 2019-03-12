@@ -3,11 +3,11 @@ import { Persistent, PersistentObject, ν, make } from "./util/Persistent"
 import { ann } from "./Annotated"
 import { Nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
+import { ExplVal, Value } from "./ExplVal"
 import { Expr, Lex } from "./Expr"
-import { Tagged, TraceId, ValId } from "./Eval"
-import { Traced, Value } from "./Traced"
+import { Tagged, ExplId, ValId } from "./Eval"
 
-import Empty = Traced.Empty
+import Empty = ExplVal.Empty
 import { Annotation } from "./Annotated";
 
 export type PrimResult<K> = [Value, K]
@@ -173,9 +173,9 @@ export function prelude (): Env {
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
       const e: Expr = Expr.PrimOp.at(ν(), ann.top, op),
-            k: TraceId = Tagged.make(e, "trace"),
+            k: ExplId = Tagged.make(e, "expl"),
             kᵥ: ValId = Tagged.make(e, "val")
-      ρ = ExtendEnv.make(ρ, x, Traced.make(Empty.at(k), Value.PrimOp.at(kᵥ, e.α, op)))
+      ρ = ExtendEnv.make(ρ, x, ExplVal.make(ρ, Empty.at(k), Value.PrimOp.at(kᵥ, e.α, op)))
    })
    return ρ
 }

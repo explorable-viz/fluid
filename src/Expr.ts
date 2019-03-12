@@ -380,18 +380,6 @@ export namespace Expr {
       }
    }
 
-   // Unit continuation.
-   export class VoidKont implements Kont<VoidKont> {
-      __tag: "Expr.VoidKont"
-
-      constructor_ (): void {
-      }
-
-      static make (): VoidKont {
-         return make(VoidKont)
-      }
-   }   
-
    export namespace Trie {
       export abstract class Trie<K extends Kont<K>> implements Kont<Trie<K>> {
          __tag: "Expr.Trie"

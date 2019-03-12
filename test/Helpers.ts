@@ -10,7 +10,7 @@ import { singleton, unionWith } from "../src/FiniteMap"
 import { instantiate } from "../src/Instantiate"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
-import { Traced, Value } from "../src/Traced"
+import { ExplVal, Value } from "../src/ExplVal"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
@@ -149,8 +149,8 @@ export function parseExample (src: string | null): Expr {
    return __nonNull(parse(Parse.expr, __nonNull(src))).ast
 }
 
-export function runExample (e: Expr): Traced {
-   const tv: Traced = Eval.eval_(ρ, instantiate(ρ, e))
+export function runExample (e: Expr): ExplVal {
+   const tv: ExplVal = Eval.eval_(ρ, instantiate(ρ, e))
    console.log(tv)
    return tv
 }

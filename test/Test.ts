@@ -6,7 +6,7 @@ import { assert } from "../src/util/Core"
 import { World } from "../src/util/Persistent"
 import { ann } from "../src/Annotated"
 import { Expr } from "../src/Expr"
-import { Traced, Value } from "../src/Traced"
+import { ExplVal, Value } from "../src/ExplVal"
 
 import Trie = Expr.Trie
 
@@ -80,11 +80,11 @@ describe("example", () => {
 			here = new Cursor(v)
 			here.push()
 				 .val_constrArg("Cons", 0)
-				 .to(Traced, "v")
+				 .to(ExplVal, "v")
 				 .assert(Value.ConstInt, v => v.α === ann.bot)
 				 .pop()
  				 .val_constrArg("Cons", 1)
-				 .to(Traced, "v")
+				 .to(ExplVal, "v")
 				 .assert(Value.Constr, v => v.ctr.str === "Nil")
 		})
 	})
@@ -176,10 +176,10 @@ describe("example", () => {
 			here = new Cursor(v)
 			here.push()
 				 .val_constrArg("Cons", 0)
-				 .assert(Traced, tv => tv.v.α === ann.bot)
+				 .assert(ExplVal, tv => tv.v.α === ann.bot)
 				 .pop()
 				 .val_constrArg("Cons", 1)
-				 .assert(Traced, tv => tv.v.α !== ann.bot)
+				 .assert(ExplVal, tv => tv.v.α !== ann.bot)
 		})
 	})
 
@@ -214,11 +214,11 @@ describe("example", () => {
 			here.assert(Value.Constr, v => v.α === ann.bot)
 				 .push()
 				 .val_constrArg("Cons", 0)
-				 .to(Traced, "v")
+				 .to(ExplVal, "v")
 				 .assert(Value.ConstInt, v => v.α !== ann.bot)
 				 .pop()
 				 .val_constrArg("Cons", 1)
-				 .to(Traced, "v")
+				 .to(ExplVal, "v")
 				 .assert(Value.Constr, v => v.α !== ann.bot)
 		})
 	})
