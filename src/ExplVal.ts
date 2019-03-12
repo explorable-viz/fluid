@@ -1,7 +1,7 @@
 import { __nonNull } from "./util/Core"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Annotated, Annotation } from "./Annotated"
-import { List } from "./BaseTypes"
+import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
 import { Expr, Lex } from "./Expr"
@@ -103,7 +103,8 @@ export namespace Value {
    }
 }
 
-export class ExplVal implements PersistentObject {
+export class ExplVal implements PersistentObject, Expr.Kont<ExplVal> {
+   __tag: "ExplVal"
    ρ: Env // needed for uneval
    t: Expl
    v: Value
@@ -131,9 +132,17 @@ export namespace ExplVal {
       t: Expl̊ // null iff ξ represents a dead branch
       ξ: Match<K>
 
-   constructor_ (t: Expl̊, ξ: Match<K>) {
+      constructor_ (t: Expl̊, ξ: Match<K>) {
          this.t = t
          this.ξ = ξ
+      }
+
+      get κ (): K {
+         return this.ξ.κ
+      }
+
+      setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): ExplValMatch<Kʹ> {
+         return ExplValMatch.make(this.t, this.ξ.setκ(κ))
       }
 
       static make<K extends Expr.Kont<K>> (t: Expl̊, ξ: Match<K>): ExplValMatch<K> {
@@ -151,6 +160,7 @@ export namespace ExplVal {
          export abstract class Args<K extends Expr.Kont<K>> implements Expr.Kont<Args<K>> {
             __tag: "Match.Args"
             abstract κ: K
+            abstract setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Args<Kʹ> // _not_ setting a property!
             abstract constructor_ (...args: Persistent[]): void
          }
 
@@ -159,6 +169,10 @@ export namespace ExplVal {
 
             constructor_ (κ: K) {
                this.κ = κ
+            }
+
+            setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): End<Kʹ> {
+               return End.make(κ)
             }
    
             static is<K extends Expr.Kont<K>> (Ψ: Args<K>): Ψ is End<K> {
@@ -177,10 +191,14 @@ export namespace ExplVal {
                this.tξ = tξ
             }
 
-            get κ(): K {
-               return this.tξ.ξ.κ
+            get κ (): K {
+               return this.tξ.κ
             }
 
+            setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Next<Kʹ> {
+               return Next.make(this.tξ.setκ(κ))
+            }
+   
             static is<K extends Expr.Kont<K>> (Ψ: Args<K>): Ψ is Next<K> {
                return Ψ instanceof Next
             }
@@ -194,6 +212,7 @@ export namespace ExplVal {
       export abstract class Match<K> implements PersistentObject {
          __tag: "Match.Match"
          abstract κ: K
+         abstract setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Match<Kʹ> // _not_ setting a property!
          abstract constructor_ (...args: Persistent[]): void
       }
 
@@ -205,7 +224,7 @@ export namespace ExplVal {
             this.cases = cases
          }
 
-         get κ(): K {
+         get κ (): K {
             let κ: K // TypeScript flow analysis confused by K | null
             this.cases.map(({snd: args}): null => {
                if (args instanceof Args.Args) {
@@ -214,6 +233,19 @@ export namespace ExplVal {
                return null
             })
             return __nonNull(κ!) // workaround
+         }
+
+         // This is borked: TypeScript allows Args<K> to convert to Args<Kʹ> even though Kʹ and K are unrelated.
+         // Ironically I do actually want K to be a subtype of Kʹ. Maybe need to reinstate mapMatch :-o
+         setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Constr<Kʹ> {
+            return Constr.make(
+               this.cases.map(({fst: ctr, snd: args}): Pair<string, Expr.Args<Kʹ> | Args<Kʹ>> => {
+                  if (args instanceof Args.Args) {
+                     return Pair.make(ctr, args.setκ(κ))
+                  }
+                  return Pair.make(ctr, args) // broken but safe coercion?
+               })
+            )
          }
 
          static is<K extends Expr.Kont<K>> (ξ: Match<K>): ξ is Constr<K> {
@@ -234,6 +266,10 @@ export namespace ExplVal {
             this.κ = κ
          }
 
+         setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Var<Kʹ> {
+            return Var.make(this.x, κ)
+         }
+
          static is<K extends Persistent> (ξ: Match<K>): ξ is Var<K> {
             return ξ instanceof Var
          }
@@ -244,7 +280,7 @@ export namespace ExplVal {
       }
    }
 
-   export abstract class Expl implements PersistentObject, Expr.Kont<Expl> {
+   export abstract class Expl implements PersistentObject {
       __tag: "Expl.Expl"
       abstract constructor_ (...args: Persistent[]): void
    }

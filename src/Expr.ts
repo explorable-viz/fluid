@@ -128,7 +128,7 @@ export namespace Lex {
 export type Expr = Expr.Expr
 
 export namespace Expr {
-   export abstract class Expr extends Annotated implements PersistentObject {
+   export abstract class Expr extends Annotated implements PersistentObject, Kont<Expr> {
       __tag: "Expr.Expr"
       abstract constructor_ (...args: Persistent[]): void 
    }
@@ -364,11 +364,11 @@ export namespace Expr {
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
 
    export interface Kont<K> extends PersistentObject {
-      // bit meaningless if empty
+      __tag: string // require continuation types to be pseudo-nominal
    }
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
-   // Use the same heinous cast as used in 'instantiateKont'.
+   // Use the same heinous cast as used in 'instantiateKont'. Note this join is unrelated to the annotation lattice.
    function join<K extends Kont<K>> (κ: K, κʹ: K): K {
       if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
          return Trie.Trie.join<K>(κ, κʹ) as any as K
