@@ -2,12 +2,11 @@ import { absurd } from "./util/Core"
 import { Annotation, ann } from "./Annotated"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { ExplVal, Value } from "./ExplVal"
+import { ExplVal, Match, Value } from "./ExplVal"
 import { Expr } from "./Expr"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
-import Match = ExplVal.Match
 import Trie = Expr.Trie
 
 export function match<K extends Kont<K>> (tv: ExplVal, σ: Trie<K>): [Env, Match<K>, Annotation] {

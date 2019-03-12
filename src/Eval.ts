@@ -144,7 +144,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
       const tu: ExplVal = eval_(ρ, e.e),
             [ρʹ, ξ, α] = match<Expr>(tu, e.σ), // TS needs a hint
             tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, ξ.κ))
-      return ExplVal.make(ρ, Let.at(k, tu, Trie.Var.make(e.σ.x, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
+      return ExplVal.make(ρ, Let.at(k, tu, ξ.setκ(tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
