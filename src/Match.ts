@@ -21,18 +21,19 @@ export function match<K extends Kont<K>> (tv: ExplVal, σ: Trie<K>): [Env, Match
          if (v.ctr.str === ctr) {
             const [ρ, Ψ, α]: [Env, Match.Args<K>, Annotation] = matchArgs(v.args, Π)
             ρ_α = [ρ, α]
-            return Pair.make(ctr, Ψ) // ann.meet(α, v.α)
+            return Pair.make(ctr, Ψ)
          } else {
             return Pair.make(ctr, Π)
          }
       }))
       if (ρ_α! === undefined) { // workaround
-         return absurd("Pattern mismatch.", v, σ)
+         return absurd("Pattern mismatch: wrong data type.", v, σ)
       } else {
-         return [ρ_α[0], ξ, ρ_α[1]]
+         const [ρ, α]: [Env, Annotation] = ρ_α!
+         return [ρ, ξ, ann.meet(α, v.α)]
       }
    } else {
-      return absurd("Pattern mismatch.", v, σ)
+      return absurd("Pattern mismatch: not a data type.", v, σ)
    }
 }
 

@@ -380,18 +380,6 @@ export namespace Expr {
       }
    }
 
-   // Unit continuation.
-   export class VoidKont implements Kont<VoidKont> {
-      __tag: "Expr.VoidKont"
-
-      constructor_ (): void {
-      }
-
-      static make (): VoidKont {
-         return make(VoidKont)
-      }
-   }   
-
    export namespace Trie {
       export abstract class Trie<K extends Kont<K>> implements Kont<Trie<K>> {
          __tag: "Expr.Trie"
@@ -441,6 +429,38 @@ export namespace Expr {
 
          static make<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
             return make(Var, x, κ) as Var<K>
+         }
+      }
+
+      function mapArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
+         return (Π: Args<K>): Args<Kʹ> => {
+            if (Args.End.is(Π)) {
+               return Args.End.make(f(Π.κ))
+            } else
+            if (Args.Next.is(Π)) {
+               return Args.Next.make(mapTrie(mapArgs(f))(Π.σ))
+            } else {
+               return absurd()
+            }
+         }
+      }
+      
+      export function mapTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (σ: Trie<K>) => Trie<Kʹ> {
+         return (σ: Trie<K>): Trie.Trie<Kʹ> => {
+            if (Var.is(σ)) {
+               return Var.make(σ.x, f(σ.κ))
+            } else 
+            if (Constr.is(σ)) {
+               return Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<Kʹ>> => {
+                  if (Π instanceof Args.Args) {
+                     return Pair.make(ctr, mapArgs(f)(Π))
+                  } else {
+                     return absurd()
+                  }
+               }))
+            } else {
+               return absurd()
+            }
          }
       }
    }
