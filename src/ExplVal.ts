@@ -152,7 +152,7 @@ export namespace ExplVal {
 
    export type Match<K> = Match.Match<K>
 
-   // A trie which has been matched (executed) to a depth of at least one.
+   // A trie which has been matched to a depth of at least one.
    export namespace Match {
       export type Args<K extends Expr.Kont<K>> = Args.Args<K>
 
@@ -288,11 +288,11 @@ export namespace ExplVal {
    export class App extends Expl {
       func: ExplVal
       arg: ExplVal
-      ρ_defs: Env       // from closeDefs, for uneval
-      ρ_match: Env      // from matching argument, for uneval
-      body: ExplVal     // technically Expl would suffice, but for uneval we want environment
+      ρ_defs: Env             // from closeDefs, for uneval
+      ρ_match: Env            // from matching argument, for uneval
+      body: Match<ExplVal>    // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: ExplVal): void {
+      constructor_ (func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: Match<ExplVal>): void {
          this.func = func
          this.arg = arg
          this.ρ_defs = ρ_defs
@@ -300,7 +300,7 @@ export namespace ExplVal {
          this.body = body
       }
 
-      static at (k: ExplId, func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: ExplVal): App {
+      static at (k: ExplId, func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: Match<ExplVal>): App {
          return at(k, App, func, arg, ρ_defs, ρ_match, body)
       }
    }

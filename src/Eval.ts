@@ -119,7 +119,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
                [ρʹ, ξ, α] = match(tu, f.σ),
                ρ_defs: Env = closeDefs(f.δ, f.ρ, f.δ),
                tv: ExplVal = eval_(Env.concat(Env.concat(f.ρ, ρ_defs), ρʹ), instantiate(ρʹ, ξ.κ))
-         return ExplVal.make(ρ, App.at(k, tf, tu, ρʹ, ρ_defs, tv), tv.v.copyAt(kᵥ, ann.meet(f.α, α, tv.v.α, e.α)))
+         return ExplVal.make(ρ, App.at(k, tf, tu, ρʹ, ρ_defs, ξ.setκ(tv)), tv.v.copyAt(kᵥ, ann.meet(f.α, α, tv.v.α, e.α)))
       } else
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
@@ -201,8 +201,9 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    if (t instanceof App) {
       const f: Value.Closure | Value.PrimOp = t.func.v as (Value.Closure | Value.PrimOp)
       if (f instanceof Value.Closure) {
-         t.body.v.setα(v.α)
-         unmatch(t.ρ_match, uneval(t.body), v.α)
+         const tv: ExplVal = t.body.κ
+         tv.v.setα(v.α)
+         unmatch(t.ρ_match, uneval(tv), v.α)
          uncloseDefs(t.ρ_defs)
          f.setα(v.α)
          return Expr.App.at(k, v.α, uneval(t.func), uneval(t.arg))
