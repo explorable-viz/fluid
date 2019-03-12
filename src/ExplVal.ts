@@ -394,15 +394,13 @@ export namespace ExplVal {
 
    export class Var extends Expl {
       x: Lex.Var
-      t: Expl
 
-      constructor_ (x: Lex.Var, t: Expl): void {
+      constructor_ (x: Lex.Var): void {
          this.x = x
-         this.t = t
       }
 
-      static at (k: ExplId, x: Lex.Var, t: Expl): Var {
-         return at(k, Var, x, t)
+      static at (k: ExplId, x: Lex.Var): Var {
+         return at(k, Var, x)
       }
    }
 }

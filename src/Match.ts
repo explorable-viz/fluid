@@ -9,10 +9,9 @@ import Args = Expr.Args
 import Kont = Expr.Kont
 import Trie = Expr.Trie
 
-export function match<K extends Kont<K>> (tv: ExplVal, σ: Trie<K>): [Env, Match<K>, Annotation] {
-   const v: Value = tv.v
+export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match<K>, Annotation] {
    if (Trie.Var.is(σ)) {
-      return [Env.singleton(σ.x.str, tv), Match.Var.make(σ.x, σ.κ), ann.top]
+      return [Env.singleton(σ.x.str, v), Match.Var.make(σ.x, σ.κ), ann.top]
    } else
    if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
       let ρ_α: [Env, Annotation] // actually may be null, but TypeScript can't handle it
@@ -43,10 +42,11 @@ export function unmatch<K extends Kont<K>> (ρ: Env, κ: K, α: Annotation): [Ex
 function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, Match.Args<K>, Annotation] {
    // Parser ensures constructor patterns agree with constructor signatures.
    if (Cons.is(tvs) && Args.Next.is(Π)) {
+      const {t, v} = tvs.head
       // codomain of ξ is Args; promote to Args | Match.Args:
-      const [ρ, ξ, α]: [Env, Match<Args<K>>, Annotation] = match(tvs.head, Π.σ), 
-            [ρʹ, κ, αʹ]: [Env, Match.Args<K>, Annotation] = matchArgs(tvs.tail, ξ.κ)
-      return [Env.concat(ρ, ρʹ), κ, ann.meet(α, αʹ)]
+      const [ρ, ξ, α]: [Env, Match<Args<K>>, Annotation] = match(v, Π.σ), 
+            [ρʹ, Ψ, αʹ]: [Env, Match.Args<K>, Annotation] = matchArgs(tvs.tail, ξ.κ)
+      return [Env.concat(ρ, ρʹ), Match.Args.Next.make(ExplVal.Match.make(t, ξ.setκ(Ψ.κ))), ann.meet(α, αʹ)]
    } else
    if (Nil.is(tvs) && Args.End.is(Π)) {
       return [Env.empty(), Match.Args.End.make(Π.κ), ann.top]

@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { Cons, List, Nil } from "./BaseTypes"
-import { ExplVal } from "./ExplVal"
+import { Value } from "./ExplVal"
 
 // Environments are snoc lists. An evaluation id is an expression id paired with the identity of all 
 // environment entries used to close the term, in the order in which they were bound. This makes evaluation
@@ -11,8 +11,8 @@ import { ExplVal } from "./ExplVal"
 
 export abstract class Env implements PersistentObject {
    // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
-   abstract entries (): List<ExplVal>
-   abstract get (k: string): ExplVal | undefined
+   abstract entries (): List<Value>
+   abstract get (k: string): Value | undefined
    abstract constructor_ (...args: Persistent[]): void
 
    has (k: string): boolean {
@@ -23,13 +23,13 @@ export abstract class Env implements PersistentObject {
       return EmptyEnv.make()
    }
 
-   static singleton (k: string, tv: ExplVal): Env {
-      return ExtendEnv.make(Env.empty(), k, tv)
+   static singleton (k: string, v: Value): Env {
+      return ExtendEnv.make(Env.empty(), k, v)
    }
 
-   static extend (ρ: Env, kvs: [string, ExplVal][]): Env {
-      kvs.forEach(([k, tv]: [string, ExplVal]) => {
-         ρ = ExtendEnv.make(ρ, k, tv)
+   static extend (ρ: Env, kvs: [string, Value][]): Env {
+      kvs.forEach(([k, v]: [string, Value]) => {
+         ρ = ExtendEnv.make(ρ, k, v)
       })
       return ρ
    }
@@ -39,7 +39,7 @@ export abstract class Env implements PersistentObject {
          return ρ1
       } else
       if (ρ2 instanceof ExtendEnv) {
-         return ExtendEnv.make(Env.concat(ρ1, ρ2.ρ), ρ2.k, ρ2.tv)
+         return ExtendEnv.make(Env.concat(ρ1, ρ2.ρ), ρ2.k, ρ2.v)
       } else {
          return absurd()
       }
@@ -54,7 +54,7 @@ export class EmptyEnv extends Env {
       return make(EmptyEnv)
    }
 
-   entries (): Nil<ExplVal> {
+   entries (): Nil<Value> {
       return Nil.make()
    }
 
@@ -66,25 +66,25 @@ export class EmptyEnv extends Env {
 export class ExtendEnv extends Env {
    ρ: Env
    k: string
-   tv: ExplVal
+   v: Value
 
-   constructor_ (ρ: Env, k: string, tv: ExplVal) {
+   constructor_ (ρ: Env, k: string, v: Value) {
       this.ρ = ρ
       this.k = k
-      this.tv = tv
+      this.v = v
    }
 
-   static make (ρ: Env, k: string, tv: ExplVal): ExtendEnv {
-      return make(ExtendEnv, ρ, k, tv)
+   static make (ρ: Env, k: string, v: Value): ExtendEnv {
+      return make(ExtendEnv, ρ, k, v)
    }
 
-   entries (): Cons<ExplVal> {
-      return Cons.make(this.tv, this.ρ.entries())
+   entries (): Cons<Value> {
+      return Cons.make(this.v, this.ρ.entries())
    }
 
-   get (k: string): ExplVal | undefined {
+   get (k: string): Value | undefined {
       if (this.k === k) {
-         return this.tv
+         return this.v
       } else {
          return this.ρ.get(k)
       }
