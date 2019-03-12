@@ -227,12 +227,10 @@ export namespace ExplVal {
 
       export class Var<K extends Persistent> extends Match<K> {
          x: Lex.Var
-         v: Value
          κ: K
 
-         constructor_ (x: Lex.Var, v: Value, κ: K) {
+         constructor_ (x: Lex.Var, κ: K) {
             this.x = x
-            this.v = v
             this.κ = κ
          }
 
@@ -240,8 +238,8 @@ export namespace ExplVal {
             return ξ instanceof Var
          }
 
-         static make<K extends Persistent> (x: Lex.Var, v: Value, κ: K): Var<K> {
-            return make(Var, x, v, κ) as Var<K>
+         static make<K extends Persistent> (x: Lex.Var, κ: K): Var<K> {
+            return make(Var, x, κ) as Var<K>
          }
       }
    }

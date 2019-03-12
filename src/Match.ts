@@ -59,7 +59,7 @@ function lookupArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, 
 export function match<K extends Kont<K>> (tv: ExplVal, σ: Trie<K>): Match<K> {
    const v: Value = tv.v
    if (Trie.Var.is(σ)) {
-      return Match.Var.make(σ.x, v, σ.κ) 
+      return Match.Var.make(σ.x, σ.κ) 
    } else
    if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
       return Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
@@ -95,7 +95,7 @@ function mapMatch<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ, 
       return Match.Fun.make(ξ.f, f(ξ.κ))
    } else
    if (Match.Var.is(ξ)) {
-      return Match.Var.make(ξ.x, ξ.v, f(ξ.κ))
+      return Match.Var.make(ξ.x, f(ξ.κ))
    } else 
    if (Match.Constr.is(ξ)) {
       return Match.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<Kʹ> | Match.Args<Kʹ>> => {
