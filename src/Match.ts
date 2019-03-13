@@ -46,7 +46,11 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match<K>
 
 export function unmatch<K extends Kont<K>> (ρ: Env, ξ: Match<K>, α: Annotation): [Value, Trie<K>] {
    if (Match.Var.is(ξ)) {
-
+      if (ρ.has(ξ.x.str)) {
+         return [ρ.get(ξ.x.str)!, Trie.Var.make(ξ.x, ξ.κ)]
+      } else {
+         return absurd()
+      }
    } else 
    if (Match.Constr.is(ξ)) {
 
