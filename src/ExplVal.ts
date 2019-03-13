@@ -4,7 +4,7 @@ import { Annotated, Annotation } from "./Annotated"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
-import { Expr, Lex } from "./Expr"
+import { Expr, Kont, Lex } from "./Expr"
 import { ExplId, ValId } from "./Eval"
 import { UnaryOp } from "./Primitive"
 
@@ -103,7 +103,7 @@ export namespace Value {
    }
 }
 
-export class ExplVal implements PersistentObject, Expr.Kont<ExplVal> {
+export class ExplVal implements PersistentObject, Kont<ExplVal> {
    __tag: "ExplVal"
    ρ: Env // needed for uneval
    t: Expl
@@ -128,40 +128,40 @@ export type Match<K> = Match.Match<K>
 
 // A trie which has been matched to a depth of at least one.
 export namespace Match {
-   export type Args<K extends Expr.Kont<K>> = Args.Args<K>
+   export type Args<K extends Kont<K>> = Args.Args<K>
 
    export namespace Args {
-      export abstract class Args<K extends Expr.Kont<K>> implements Expr.Kont<Args<K>> {
+      export abstract class Args<K extends Kont<K>> implements Kont<Args<K>> {
          __tag: "Match.Args"
          abstract κ: K
-         abstract setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Args<Kʹ> // _not_ setting a property!
+         abstract setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Args<Kʹ> // _not_ setting a property!
          abstract constructor_ (...args: Persistent[]): void
       }
 
-      export class End<K extends Expr.Kont<K>> extends Args<K> {
+      export class End<K extends Kont<K>> extends Args<K> {
          κ: K
 
          constructor_ (κ: K) {
             this.κ = κ
          }
 
-         setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): End<Kʹ> {
+         setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): End<Kʹ> {
             return End.make(κ)
          }
 
-         static is<K extends Expr.Kont<K>> (Ψ: Args<K>): Ψ is End<K> {
+         static is<K extends Kont<K>> (Ψ: Args<K>): Ψ is End<K> {
             return Ψ instanceof End
          }
 
-         static make<K extends Expr.Kont<K>> (κ: K): End<K> {
+         static make<K extends Kont<K>> (κ: K): End<K> {
             return make(End, κ) as End<K>
          }
       }
 
-      export class Next<K extends Expr.Kont<K>> extends Args<K> {
-         tξ: ExplVal.Match<K>
+      export class Next<K extends Kont<K>> extends Args<K> {
+         tξ: ExplMatch<K>
 
-         constructor_ (tξ: ExplVal.Match<K>) {
+         constructor_ (tξ: ExplMatch<K>) {
             this.tξ = tξ
          }
 
@@ -169,15 +169,15 @@ export namespace Match {
             return this.tξ.κ
          }
 
-         setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Next<Kʹ> {
+         setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Next<Kʹ> {
             return Next.make(this.tξ.setκ(κ))
          }
 
-         static is<K extends Expr.Kont<K>> (Ψ: Args<K>): Ψ is Next<K> {
+         static is<K extends Kont<K>> (Ψ: Args<K>): Ψ is Next<K> {
             return Ψ instanceof Next
          }
 
-         static make<K extends Expr.Kont<K>> (tξ: ExplVal.Match<K>): Next<K> {
+         static make<K extends Kont<K>> (tξ: ExplMatch<K>): Next<K> {
             return make(Next, tξ) as Next<K>
          }
       }
@@ -186,12 +186,12 @@ export namespace Match {
    export abstract class Match<K> implements PersistentObject {
       __tag: "Match.Match"
       abstract κ: K
-      abstract setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Match<Kʹ> // _not_ setting a property!
+      abstract setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Match<Kʹ> // _not_ setting a property!
       abstract constructor_ (...args: Persistent[]): void
    }
 
    // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
-   export class Constr<K extends Expr.Kont<K>> extends Match<K> {
+   export class Constr<K extends Kont<K>> extends Match<K> {
       cases: FiniteMap<string, Expr.Args<K> | Args<K>> 
 
       constructor_ (cases: FiniteMap<string, Expr.Args<K> | Args<K>>) {
@@ -211,7 +211,7 @@ export namespace Match {
 
       // This is borked: TypeScript allows Args<K> to convert to Args<Kʹ> even though Kʹ and K are unrelated.
       // Ironically I do actually want K to be a subtype of Kʹ. Maybe need to reinstate mapMatch :-o
-      setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Constr<Kʹ> {
+      setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Constr<Kʹ> {
          return Constr.make(
             this.cases.map(({fst: ctr, snd: args}): Pair<string, Expr.Args<Kʹ> | Args<Kʹ>> => {
                if (args instanceof Args.Args) {
@@ -222,11 +222,11 @@ export namespace Match {
          )
       }
 
-      static is<K extends Expr.Kont<K>> (ξ: Match<K>): ξ is Constr<K> {
+      static is<K extends Kont<K>> (ξ: Match<K>): ξ is Constr<K> {
          return ξ instanceof Constr
       }
 
-      static make<K extends Expr.Kont<K>> (cases: FiniteMap<string, Expr.Args<K> | Args<K>>): Constr<K> {
+      static make<K extends Kont<K>> (cases: FiniteMap<string, Expr.Args<K> | Args<K>>): Constr<K> {
          return make(Constr, cases) as Constr<K>
       }
    }
@@ -240,7 +240,7 @@ export namespace Match {
          this.κ = κ
       }
 
-      setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Var<Kʹ> {
+      setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Var<Kʹ> {
          return Var.make(this.x, κ)
       }
 
@@ -254,31 +254,32 @@ export namespace Match {
    }
 }
 
+export class ExplMatch<K extends Kont<K>> implements PersistentObject {
+   t: Expl̊ // null iff ξ represents a dead branch
+   ξ: Match.Match<K>
+
+   constructor_ (t: Expl̊, ξ: Match<K>) {
+      this.t = t
+      this.ξ = ξ
+   }
+
+   get κ (): K {
+      return this.ξ.κ
+   }
+
+   setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): ExplMatch<Kʹ> {
+      return ExplMatch.make(this.t, this.ξ.setκ(κ))
+   }
+
+   static make<K extends Kont<K>> (t: Expl̊, ξ: Match<K>): ExplMatch<K> {
+      return make(ExplMatch, t, ξ) as ExplMatch<K>
+   }
+}
+
 export type Expl = ExplVal.Expl
 export type Expl̊ = Expl | null
 
 export namespace ExplVal {
-   export class Match<K extends Expr.Kont<K>> implements PersistentObject {
-      t: Expl̊ // null iff ξ represents a dead branch
-      ξ: Match.Match<K>
-
-      constructor_ (t: Expl̊, ξ: Match.Match<K>) {
-         this.t = t
-         this.ξ = ξ
-      }
-
-      get κ (): K {
-         return this.ξ.κ
-      }
-
-      setκ<Kʹ extends Expr.Kont<Kʹ>> (κ: Kʹ): Match<Kʹ> {
-         return Match.make(this.t, this.ξ.setκ(κ))
-      }
-
-      static make<K extends Expr.Kont<K>> (t: Expl̊, ξ: Match.Match<K>): Match<K> {
-         return make(Match, t, ξ) as Match<K>
-      }
-   }
 
    export abstract class Expl implements PersistentObject {
       __tag: "Expl.Expl"

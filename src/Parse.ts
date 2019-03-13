@@ -8,7 +8,7 @@ import {
 import { ann } from "./Annotated"
 import { List } from "./BaseTypes"
 import { arity } from "./DataType"
-import { Expr, Lex, str } from "./Expr"
+import { Expr, Kont, Lex, str } from "./Expr"
 import { singleton } from "./FiniteMap"
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
@@ -237,7 +237,7 @@ const pair: Parser<Expr.Constr> =
          Expr.Constr.at(ν(), ann.top, Lex.Ctr.make("Pair"), List.fromArray([fst, snd]))
    )
 
-function args_pattern<K extends Expr.Kont<K>> (n: number, p: Parser<K>): Parser<Expr.Args<K>> {
+function args_pattern<K extends Kont<K>> (n: number, p: Parser<K>): Parser<Expr.Args<K>> {
    if (n === 0) {
       return withAction(p, Expr.Args.End.make)
    } else {
@@ -250,7 +250,7 @@ function args_pattern<K extends Expr.Kont<K>> (n: number, p: Parser<K>): Parser<
 }
 
 // Continuation-passing style means "parenthesise" idiom doesn't work here.
-function constr_pattern<K extends Expr.Kont<K>> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
+function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
    return withAction(
       seqDep(
          ctr, 
@@ -268,21 +268,21 @@ function constr_pattern<K extends Expr.Kont<K>> (p: Parser<K>): Parser<Expr.Trie
    )
 }
 
-function pair_pattern<K extends Expr.Kont<K>> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
+function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Expr.Trie.Constr<K>> {
    return withAction(
       dropFirst(symbol(str.parenL), args_pattern(2, dropFirst(symbol(str.parenR), p))),
       (Π: Expr.Args<K>): Expr.Trie.Constr<K> => Expr.Trie.Constr.make(singleton("Pair", Π))
    )
 }
 
-function variable_pattern<K extends Expr.Kont<K>> (p: Parser<K>): Parser<Expr.Trie.Var<K>> {
+function variable_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Expr.Trie.Var<K>> {
    return withAction(
       seq(var_, p), ([x, κ]: [Lex.Var, K]): Expr.Trie.Var<K> => 
          Expr.Trie.Var.make(x, κ)
       )
 }
 
-function pattern<K extends Expr.Kont<K>> (p: Parser<K>): Parser<Expr.Trie<K>> {
+function pattern<K extends Kont<K>> (p: Parser<K>): Parser<Expr.Trie<K>> {
    return (state: ParseState) => 
       choice<Expr.Trie<K>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }

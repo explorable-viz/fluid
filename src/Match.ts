@@ -2,11 +2,10 @@ import { absurd } from "./util/Core"
 import { Annotation, ann } from "./Annotated"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { ExplVal, Match, Value } from "./ExplVal"
-import { Expr } from "./Expr"
+import { ExplMatch, ExplVal, Match, Value } from "./ExplVal"
+import { Expr, Kont } from "./Expr"
 
 import Args = Expr.Args
-import Kont = Expr.Kont
 import Trie = Expr.Trie
 
 export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match<K>, Annotation] {
@@ -46,7 +45,7 @@ function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, M
       // codomain of ξ is Args; promote to Args | Match.Args:
       const [ρ, ξ, α]: [Env, Match<Args<K>>, Annotation] = match(v, Π.σ), 
             [ρʹ, Ψ, αʹ]: [Env, Match.Args<K>, Annotation] = matchArgs(tvs.tail, ξ.κ)
-      return [Env.concat(ρ, ρʹ), Match.Args.Next.make(ExplVal.Match.make(t, ξ.setκ(Ψ.κ))), ann.meet(α, αʹ)]
+      return [Env.concat(ρ, ρʹ), Match.Args.Next.make(ExplMatch.make(t, ξ.setκ(Ψ.κ))), ann.meet(α, αʹ)]
    } else
    if (Nil.is(tvs) && Args.End.is(Π)) {
       return [Env.empty(), Match.Args.End.make(Π.κ), ann.top]

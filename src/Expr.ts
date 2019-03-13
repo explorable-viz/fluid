@@ -126,6 +126,7 @@ export namespace Lex {
 }
 
 export type Expr = Expr.Expr
+export type Kont<K> = Expr.Kont<K>
 
 export namespace Expr {
    export abstract class Expr extends Annotated implements PersistentObject, Kont<Expr> {
