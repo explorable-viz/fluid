@@ -287,8 +287,8 @@ export namespace ExplVal {
    }
 
    export class App extends Expl {
-      func: ExplVal
-      arg: ExplVal
+      func: ExplVal           // Expl would suffice, but for uneval we need address of function
+      arg: ExplVal            // Expl would suffice, but more uniform this way
       ρ_defs: Env             // from closeDefs, for uneval
       ρ_match: Env            // from matching argument, for uneval
       body: Match<ExplVal>    // technically Expl would suffice, but for uneval we want environment
