@@ -1,7 +1,6 @@
-import { __nonNull } from "./util/Core"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Annotated, Annotation } from "./Annotated"
-import { List, Pair } from "./BaseTypes"
+import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
 import { Expr, Kont, Lex } from "./Expr"
@@ -109,11 +108,7 @@ export class ExplVal implements PersistentObject, Kont<ExplVal> {
    t: Expl
    v: Value
 
-   constructor_ (
-      ρ: Env,
-      t: Expl,
-      v: Value
-   ) {
+   constructor_ (ρ: Env, t: Expl, v: Value) {
       this.ρ = ρ
       this.t = t
       this.v = v
@@ -128,65 +123,76 @@ export type Match<K> = Match.Match<K>
 
 // A trie which has been matched to a depth of at least one.
 export namespace Match {
+   export class Plug<K extends Kont<K>, M extends Match<K>> implements PersistentObject {
+      ξ: M    // has a single hole (null) continuation filled by κ
+      κ: K
+
+      constructor_ (ξ: M, κ: K): void {
+         this.ξ = ξ
+         this.κ = κ
+      }
+
+      static make<K extends Kont<K>, M extends Match<K>> (ξ: M, κ: K): Plug<K, M> {
+         return make(Plug, ξ, κ) as Plug<K, M>
+      }
+   }
+   
    export type Args<K extends Kont<K>> = Args.Args<K>
 
    export namespace Args {
+      export class Plug<K extends Kont<K>, M extends Args<K>> implements PersistentObject {
+         Ψ: M    // has a single hole (null) continuation filled by κ
+         κ: K
+   
+         constructor_ (Ψ: M, κ: K): void {
+            this.Ψ = Ψ
+            this.κ = κ
+         }
+   
+         static make<K extends Kont<K>, M extends Args<K>> (Ψ: M, κ: K): Plug<K, M> {
+            return make(Plug, Ψ, κ) as Plug<K, M>
+         }
+      }
+      
       export abstract class Args<K extends Kont<K>> implements Kont<Args<K>> {
          __tag: "Match.Args"
-         abstract κ: K
-         abstract setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Args<Kʹ> // _not_ setting a property!
          abstract constructor_ (...args: Persistent[]): void
       }
 
       export class End<K extends Kont<K>> extends Args<K> {
-         κ: K
-
-         constructor_ (κ: K) {
-            this.κ = κ
-         }
-
-         setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): End<Kʹ> {
-            return End.make(κ)
+         constructor_ (): void {
          }
 
          static is<K extends Kont<K>> (Ψ: Args<K>): Ψ is End<K> {
             return Ψ instanceof End
          }
 
-         static make<K extends Kont<K>> (κ: K): End<K> {
-            return make(End, κ) as End<K>
+         static make<K extends Kont<K>> (): End<K> {
+            return make(End) as End<K>
          }
       }
 
       export class Next<K extends Kont<K>> extends Args<K> {
          tξ: ExplMatch<K>
+         Ψ: Args<K>
 
-         constructor_ (tξ: ExplMatch<K>) {
+         constructor_ (tξ: ExplMatch<K>, Ψ: Args<K>) {
             this.tξ = tξ
-         }
-
-         get κ (): K {
-            return this.tξ.κ
-         }
-
-         setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Next<Kʹ> {
-            return Next.make(this.tξ.setκ(κ))
+            this.Ψ = Ψ
          }
 
          static is<K extends Kont<K>> (Ψ: Args<K>): Ψ is Next<K> {
             return Ψ instanceof Next
          }
 
-         static make<K extends Kont<K>> (tξ: ExplMatch<K>): Next<K> {
-            return make(Next, tξ) as Next<K>
+         static make<K extends Kont<K>> (tξ: ExplMatch<K>, Ψ: Args<K>): Next<K> {
+            return make(Next, tξ, Ψ) as Next<K>
          }
       }
    }
 
    export abstract class Match<K> implements PersistentObject {
       __tag: "Match.Match"
-      abstract κ: K
-      abstract setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Match<Kʹ> // _not_ setting a property!
       abstract constructor_ (...args: Persistent[]): void
    }
 
@@ -196,30 +202,6 @@ export namespace Match {
 
       constructor_ (cases: FiniteMap<string, Expr.Args<K> | Args<K>>) {
          this.cases = cases
-      }
-
-      get κ (): K {
-         let κ: K // TypeScript flow analysis confused by K | null
-         this.cases.map(({snd: args}): null => {
-            if (args instanceof Args.Args) {
-               κ = args.κ
-            }
-            return null
-         })
-         return __nonNull(κ!) // workaround
-      }
-
-      // This is borked: TypeScript allows Args<K> to convert to Args<Kʹ> even though Kʹ and K are unrelated.
-      // Ironically I do actually want K to be a subtype of Kʹ. Maybe need to reinstate mapMatch :-o
-      setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Constr<Kʹ> {
-         return Constr.make(
-            this.cases.map(({fst: ctr, snd: args}): Pair<string, Expr.Args<Kʹ> | Args<Kʹ>> => {
-               if (args instanceof Args.Args) {
-                  return Pair.make(ctr, args.setκ(κ))
-               }
-               return Pair.make(ctr, args) // broken but safe coercion?
-            })
-         )
       }
 
       static is<K extends Kont<K>> (ξ: Match<K>): ξ is Constr<K> {
@@ -233,23 +215,17 @@ export namespace Match {
 
    export class Var<K extends Persistent> extends Match<K> {
       x: Lex.Var
-      κ: K
 
-      constructor_ (x: Lex.Var, κ: K) {
+      constructor_ (x: Lex.Var) {
          this.x = x
-         this.κ = κ
-      }
-
-      setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Var<Kʹ> {
-         return Var.make(this.x, κ)
       }
 
       static is<K extends Persistent> (ξ: Match<K>): ξ is Var<K> {
          return ξ instanceof Var
       }
 
-      static make<K extends Persistent> (x: Lex.Var, κ: K): Var<K> {
-         return make(Var, x, κ) as Var<K>
+      static make<K extends Persistent> (x: Lex.Var): Var<K> {
+         return make(Var, x) as Var<K>
       }
    }
 }
@@ -261,14 +237,6 @@ export class ExplMatch<K extends Kont<K>> implements PersistentObject {
    constructor_ (t: Expl̊, ξ: Match<K>) {
       this.t = t
       this.ξ = ξ
-   }
-
-   get κ (): K {
-      return this.ξ.κ
-   }
-
-   setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): ExplMatch<Kʹ> {
-      return ExplMatch.make(this.t, this.ξ.setκ(κ))
    }
 
    static make<K extends Kont<K>> (t: Expl̊, ξ: Match<K>): ExplMatch<K> {
@@ -287,22 +255,22 @@ export namespace ExplVal {
    }
 
    export class App extends Expl {
-      func: ExplVal
-      arg: ExplVal
-      ρ_defs: Env             // from closeDefs, for uneval
-      ρ_match: Env            // from matching argument, for uneval
-      body: Match<ExplVal>    // technically Expl would suffice, but for uneval we want environment
+      func: ExplVal                             // Expl would suffice, but for uneval we need address of function
+      arg: ExplVal                              // Expl would suffice, but more uniform this way
+      ρ_defs: Env                               // from closeDefs, for uneval
+      ρ_match: Env                              // from matching argument, for uneval
+      ξtv: Match.Plug<ExplVal, Match<ExplVal>>  // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: Match<ExplVal>): void {
+      constructor_ (func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): void {
          this.func = func
          this.arg = arg
          this.ρ_defs = ρ_defs
          this.ρ_match = ρ_match
-         this.body = body
+         this.ξtv = ξtv
       }
 
-      static at (k: ExplId, func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: Match<ExplVal>): App {
-         return at(k, App, func, arg, ρ_defs, ρ_match, body)
+      static at (k: ExplId, func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): App {
+         return at(k, App, func, arg, ρ_defs, ρ_match, ξtv)
       }
    }
 
@@ -331,15 +299,15 @@ export namespace ExplVal {
 
    export class Let extends Expl {
       tu: ExplVal
-      ξ: Match.Var<ExplVal> // technically Expl would suffice, but for uneval we want environment
+      ξtv: Match.Plug<ExplVal, Match.Var<ExplVal>> // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (tu: ExplVal, ξ: Match.Var<ExplVal>): void {
+      constructor_ (tu: ExplVal, ξtv: Match.Plug<ExplVal, Match.Var<ExplVal>>): void {
          this.tu = tu
-         this.ξ = ξ
+         this.ξtv = ξtv
       }
 
-      static at (k: ExplId, tu: ExplVal, ξ: Match.Var<ExplVal>): Let {
-         return at(k, Let, tu, ξ)
+      static at (k: ExplId, tu: ExplVal, ξt: Match.Plug<ExplVal, Match.Var<ExplVal>>): Let {
+         return at(k, Let, tu, ξt)
       }
    }
 
@@ -361,19 +329,17 @@ export namespace ExplVal {
    
    export class MatchAs extends Expl {
       tu: ExplVal
-      σ: Expr.Trie<Expr>
-      ρ_match: Env      // from matching argument, for uneval
-      tv: ExplVal       // technically Expl would suffice, but for uneval we want environment
+      ρ_match: Env                              // from matching argument, for uneval
+      ξtv: Match.Plug<ExplVal, Match<ExplVal>>  // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (tu: ExplVal, σ: Expr.Trie<Expr>, ρ_match: Env, tv: ExplVal): void {
+      constructor_ (tu: ExplVal, ρ_match: Env, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): void {
          this.tu = tu
-         this.σ = σ
          this.ρ_match = ρ_match
-         this.tv = tv
+         this.ξtv = ξtv
       }
 
-      static at (k: ExplId, tu: ExplVal, σ: Expr.Trie<Expr>, ρ_match: Env, tv: ExplVal): MatchAs {
-         return at(k, MatchAs, tu, σ, ρ_match, tv)
+      static at (k: ExplId, tu: ExplVal, ρ_match: Env, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): MatchAs {
+         return at(k, MatchAs, tu, ρ_match, ξtv)
       }
    }
 
