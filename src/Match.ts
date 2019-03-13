@@ -21,14 +21,13 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Pl
    if (Trie.Constr.is(σ)) {
       if (v instanceof Value.Constr) {
          let ρ_κ_α: [Env, K, Annotation] // actually may be null, but TypeScript gets confused
-         const ξ: Match<K> = Match.Constr.make(σ.cases.map((ctr_Π): Pair<string, Args<K> | Match.Args<K>> => {
-            const { fst: ctr, snd: Π } = ctr_Π
+         const ξ: Match<K> = Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
             if (v.ctr.str === ctr) {
                const [ρ, {Ψ, κ}, α]: [Env, Match.Args.Plug<K, Match.Args<K>>, Annotation] = matchArgs(v.args, Π)
                ρ_κ_α = [ρ, κ, α]
                return Pair.make(ctr, Ψ)
             } else {
-               return ctr_Π
+               return Pair.make(ctr, Π)
             }
          }))
          if (ρ_κ_α! === undefined) { // workaround
@@ -55,6 +54,13 @@ export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Mat
    } else 
    if (Match.Constr.is(ξ)) {
       const σ: Trie<K> = Trie.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<K>> => {
+         if (Π_or_Ψ instanceof Match.Args.Args) {
+            const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(null, Match.Args.Plug.make(Π_or_Ψ, κ), α)
+            return Pair.make(ctr, Π)
+         } else {
+            // TODO: mapArgs to set annotations to bot
+            return Pair.make(ctr, Π_or_Ψ)
+         }
       }))
    } else {
       return absurd()
