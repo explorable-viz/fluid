@@ -45,6 +45,8 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Pl
 }
 
 export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Match<K>>, α: Annotation): [Value, Trie<K>] {
+   throw new Error("Not implemented yet")
+/*
    if (Match.Var.is(ξ)) {
       if (ρ.has(ξ.x.str)) {
          return [ρ.get(ξ.x.str)!, Trie.Var.make(ξ.x, κ)]
@@ -62,9 +64,11 @@ export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Mat
             return Pair.make(ctr, Π_or_Ψ)
          }
       }))
+      return [null, σ]
    } else {
       return absurd()
    }
+*/
 }
 
 function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, Match.Args.Plug<K, Match.Args<K>>, Annotation] {
@@ -82,7 +86,7 @@ function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, M
       return absurd()
    }
 }
-
+/*
 function unmatchArgs<K extends Kont<K>> (ρ: Env, {Ψ, κ}: Match.Args.Plug<K, Match.Args<K>>, α: Annotation): [List<ExplVal>, Args<K>] {
    if (Match.Args.Next.is(Ψ)) {
       const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(null, Match.Args.Plug.make(Ψ.Ψ, κ), α),
@@ -96,3 +100,4 @@ function unmatchArgs<K extends Kont<K>> (ρ: Env, {Ψ, κ}: Match.Args.Plug<K, M
       return absurd()
    }
 }
+*/
