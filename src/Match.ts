@@ -1,5 +1,4 @@
 import { absurd } from "./util/Core"
-import { PersistentObject, make } from "./util/Persistent"
 import { Annotation, ann } from "./Annotated"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env } from "./Env"
@@ -10,21 +9,9 @@ import { Expr, Kont } from "./Expr"
 import Args = Expr.Args
 import Trie = Expr.Trie
 
-export class MatchId implements PersistentObject {
-   v: Value
-
-   constructor_ (v: Value): void {
-      this.v = v
-   }
-}
-
-function matchId (v: Value): MatchId {
-   return make(MatchId, v)
-}
-
 // Expose as a separate method for use by 'let'.
 export function matchVar<K extends Kont<K>> (v: Value, σ: Trie.Var<K>): [Env, Match.Plug<K, Match.Var<K>>, Annotation] {
-   return [Env.singleton(σ.x.str, v), Match.plug(Match.var_(matchId(v), σ.x), σ.κ), ann.top]
+   return [Env.singleton(σ.x.str, v), Match.plug(Match.var_(σ.x), σ.κ), ann.top]
 }
 
 export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Plug<K, Match<K>>, Annotation] {
@@ -34,7 +21,7 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Pl
    if (Trie.Constr.is(σ)) {
       if (v instanceof Value.Constr) {
          let ρ_κ_α: [Env, K, Annotation] // actually may be null, but TypeScript gets confused
-         const ξ: Match<K> = Match.constr(matchId(v), σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
+         const ξ: Match<K> = Match.constr(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
             if (v.ctr.str === ctr) {
                const [ρ, {Ψ, κ}, α] = matchArgs(v.args, Π)
                ρ_κ_α = [ρ, κ, α]

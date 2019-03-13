@@ -5,7 +5,6 @@ import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
 import { Expr, Kont, Lex } from "./Expr"
 import { ExplId, ValId } from "./Eval"
-import { MatchId } from "./Match"
 import { UnaryOp } from "./Primitive"
 
 import Trie = Expr.Trie
@@ -211,8 +210,8 @@ export namespace Match {
       }
    }
 
-   export function constr<K extends Kont<K>> (k: MatchId, cases: FiniteMap<string, Expr.Args<K> | Args<K>>): Constr<K> {
-      return at(k, Constr, cases) as Constr<K>
+   export function constr<K extends Kont<K>> (cases: FiniteMap<string, Expr.Args<K> | Args<K>>): Constr<K> {
+      return make(Constr, cases) as Constr<K>
    }
 
    export class Var<K extends Persistent> extends Match<K> {
@@ -227,8 +226,8 @@ export namespace Match {
       }
    }
 
-   export function var_<K extends Persistent> (k: MatchId, x: Lex.Var): Var<K> {
-      return at(k, Var, x) as Var<K>
+   export function var_<K extends Persistent> (x: Lex.Var): Var<K> {
+      return make(Var, x) as Var<K>
    }
 }
 

@@ -381,6 +381,9 @@ export namespace Expr {
       }
    }
 
+   // Tries are interned, not versioned, as per the formalism; it might make sense for tries to be versioned so we 
+   // can key match ids on (value id, trie id), but resist for now to avoid having to synthesise ids for the 
+   // output of join, instantiate and mapTrie.
    export namespace Trie {
       export abstract class Trie<K extends Kont<K>> implements Kont<Trie<K>> {
          __tag: "Expr.Trie"
