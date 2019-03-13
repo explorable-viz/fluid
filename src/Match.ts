@@ -2,6 +2,7 @@ import { absurd } from "./util/Core"
 import { Annotation, ann } from "./Annotated"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env } from "./Env"
+import { error } from "./Eval"
 import { ExplMatch, ExplVal, Match, Value } from "./ExplVal"
 import { Expr, Kont } from "./Expr"
 
@@ -17,30 +18,41 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match<K>
    if (Trie.Var.is(σ)) {
       return matchVar(v, σ)
    } else
-   if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
-      let ρ_α: [Env, Annotation] // actually may be null, but TypeScript can't handle it
-      const ξ: Match<K> = Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
-         if (v.ctr.str === ctr) {
-            const [ρ, Ψ, α]: [Env, Match.Args<K>, Annotation] = matchArgs(v.args, Π)
-            ρ_α = [ρ, α]
-            return Pair.make(ctr, Ψ)
+   if (Trie.Constr.is(σ)) {
+      if (v instanceof Value.Constr) {
+         let ρ_α: [Env, Annotation] // actually may be null, but TypeScript can't handle it
+         const ξ: Match<K> = Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
+            if (v.ctr.str === ctr) {
+               const [ρ, Ψ, α]: [Env, Match.Args<K>, Annotation] = matchArgs(v.args, Π)
+               ρ_α = [ρ, α]
+               return Pair.make(ctr, Ψ)
+            } else {
+               return Pair.make(ctr, Π)
+            }
+         }))
+         if (ρ_α! === undefined) { // workaround
+            return error("Pattern mismatch: wrong data type.", v, σ)
          } else {
-            return Pair.make(ctr, Π)
+            const [ρ, α]: [Env, Annotation] = ρ_α!
+            return [ρ, ξ, ann.meet(α, v.α)]
          }
-      }))
-      if (ρ_α! === undefined) { // workaround
-         return absurd("Pattern mismatch: wrong data type.", v, σ)
       } else {
-         const [ρ, α]: [Env, Annotation] = ρ_α!
-         return [ρ, ξ, ann.meet(α, v.α)]
+         return error("Pattern mismatch: not a data type.", v, σ)
       }
    } else {
-      return absurd("Pattern mismatch: not a data type.", v, σ)
+      return absurd()
    }
 }
 
-export function unmatch<K extends Kont<K>> (ρ: Env, κ: Match<K>, α: Annotation): [Value, Trie<K>] {
-   throw new Error("Not yet implemented")
+export function unmatch<K extends Kont<K>> (ρ: Env, ξ: Match<K>, α: Annotation): [Value, Trie<K>] {
+   if (Match.Var.is(ξ)) {
+
+   } else 
+   if (Match.Constr.is(ξ)) {
+
+   } else {
+      return absurd()
+   }
 }
 
 function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, Match.Args<K>, Annotation] {

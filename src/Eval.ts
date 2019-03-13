@@ -53,6 +53,15 @@ export class Tagged<T extends Tag> implements PersistentObject {
    }
 }
 
+// User-level error.
+export function error (msg: string, ...xs: any[]): any {
+   if (xs.length > 0) {
+      console.warn("Error data:\n")
+      xs.forEach(x => console.warn(x))
+   }
+   throw new Error("User error")
+}
+
 export type ValId = Tagged<"val">
 export type ExplId = Tagged<"expl">
 
@@ -106,7 +115,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
          const v: Value = ρ.get(x)!
          return ExplVal.make(ρ, Var.at(k, e.x), v.copyAt(kᵥ, ann.meet(v.α, e.α)))
       } else {
-         return absurd("Variable not found.", x)
+         return error("Variable not found.", x)
       }
    } else
    if (e instanceof Expr.App) {
@@ -135,7 +144,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
                v: Value = op.b.op(tv1.v!, tv2.v!)(kᵥ, ann.meet(tv1.v.α, tv2.v.α, e.α))
          return ExplVal.make(ρ, BinaryApp.at(k, tv1, e.opName, tv2), v)
       } else {
-         return absurd("Operator name not found.", e.opName)
+         return error("Operator name not found.", e.opName)
       }
    } else
    if (e instanceof Expr.Let) {
