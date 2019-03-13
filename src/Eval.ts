@@ -208,9 +208,9 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    if (t instanceof App) {
       const f: Value.Closure | Value.PrimOp = t.func.v as (Value.Closure | Value.PrimOp)
       if (f instanceof Value.Closure) {
-         const tv: ExplVal = t.ξtv.κ
+         const {ξ, κ: tv} = t.ξtv
          tv.v.setα(v.α)
-         unmatch(t.ρ_match, t.ξtv.setκ(uneval(tv)), v.α)
+         unmatch(t.ρ_match, Match.Plug.make(ξ, uneval(tv)), v.α)
          uncloseDefs(t.ρ_defs)
          f.setα(v.α)
          return Expr.App.at(k, v.α, uneval(t.func), uneval(t.arg))
@@ -228,11 +228,11 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       return Expr.BinaryApp.at(k, v.α, uneval(t.tv1), t.opName, uneval(t.tv2))
    } else
    if (t instanceof Let) {
-      const tv: ExplVal = t.ξtv.κ
+      const {ξ, κ: tv} = t.ξtv
       tv.v.setα(v.α)
       const eʹ: Expr = uneval(tv),
             e: Expr = uneval(t.tu) // unmatch not required - suffices to uneval in reverse order
-      return Expr.Let.at(k, v.α, e, Trie.Var.make(t.ξtv.x, eʹ))
+      return Expr.Let.at(k, v.α, e, Trie.Var.make(ξ.x, eʹ))
    } else
    if (t instanceof LetRec) {
       t.tv.v.setα(v.α)
