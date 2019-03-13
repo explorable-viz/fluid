@@ -219,10 +219,11 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       return Expr.BinaryApp.at(k, v.α, uneval(t.tv1), t.opName, uneval(t.tv2))
    } else
    if (t instanceof Let) {
-      t.σ.κ.v.setα(v.α)
-      const eʹ: Expr = uneval(t.σ.κ),
+      const tv: ExplVal = t.ξ.κ
+      tv.v.setα(v.α)
+      const eʹ: Expr = uneval(tv),
             e: Expr = uneval(t.tu) // unmatch not required - suffices to uneval in reverse order
-      return Expr.Let.at(k, v.α, e, Trie.Var.make(t.σ.x, eʹ))
+      return Expr.Let.at(k, v.α, e, Trie.Var.make(t.ξ.x, eʹ))
    } else
    if (t instanceof LetRec) {
       t.tv.v.setα(v.α)
