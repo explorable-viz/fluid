@@ -45,6 +45,8 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match<K>
 }
 
 export function unmatch<K extends Kont<K>> (ρ: Env, ξ: Match<K>, α: Annotation): [Value, Trie<K>] {
+   throw new Error("Not implemented yet")
+/*
    if (Match.Var.is(ξ)) {
       if (ρ.has(ξ.x.str)) {
          return [ρ.get(ξ.x.str)!, Trie.Var.make(ξ.x, ξ.κ)]
@@ -53,10 +55,12 @@ export function unmatch<K extends Kont<K>> (ρ: Env, ξ: Match<K>, α: Annotatio
       }
    } else 
    if (Match.Constr.is(ξ)) {
-
+      const σ: Trie<K> = Trie.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<K>> => {
+      }))
    } else {
       return absurd()
    }
+*/
 }
 
 function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, Match.Args<K>, Annotation] {
@@ -74,3 +78,15 @@ function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, M
       return absurd()
    }
 }
+
+/*
+function unmatchArgs<K extends Kont<K>> (ρ: Env, Ψ: Match.Args<K>, α: Annotation): [List<ExplVal>, Args<K>] {
+   if (Match.Args.Next.is(Ψ)) {
+   } else
+   if (Match.Args.End.is(Ψ)) {
+      return [Nil.make(), Args.End.make(Ψ.κ)]
+   } else {
+      return absurd()
+   }
+}
+*/
