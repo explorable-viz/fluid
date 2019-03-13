@@ -45,7 +45,7 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Pl
    }
 }
 
-export function unmatch<K extends Kont<K>> (ρ: Env, ξ: Match<K>, α: Annotation): [Value, Trie<K>] {
+export function unmatch<K extends Kont<K>> (ρ: Env, ξκ: Match.Plug<K, Match<K>>, α: Annotation): [Value, Trie<K>] {
    throw new Error("Not implemented yet")
 /*
    if (Match.Var.is(ξ)) {
