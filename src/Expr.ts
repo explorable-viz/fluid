@@ -361,7 +361,7 @@ export namespace Expr {
       }
    }
 
-   // Tries are persistent but not versioned, as per the formalism.
+   // Tries are now versioned, since (trie id, value id) is needed to determine match id.
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
 
    export interface Kont<K> extends PersistentObject {
