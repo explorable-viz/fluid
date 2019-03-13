@@ -3,7 +3,7 @@ import { PersistentObject, Versioned, make, asVersioned } from "./util/Persisten
 import { ann, bot } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EmptyEnv, ExtendEnv } from "./Env"
-import { ExplVal, Value } from "./ExplVal"
+import { ExplVal, Match, Value } from "./ExplVal"
 import { Expr } from "./Expr"
 import { instantiate } from "./Instantiate"
 import { match, matchVar, unmatch } from "./Match"
@@ -123,10 +123,10 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
             f: Value = tf.v
       if (f instanceof Value.Closure) {
          const tu: ExplVal = eval_(ρ, e.arg),
-               [ρʹ, ξ, α] = match(tu.v, f.σ),
+               [ρʹ, {ξ, κ: eʹ}, α] = match(tu.v, f.σ),
                ρ_defs: Env = closeDefs(f.δ, f.ρ, f.δ),
-               tv: ExplVal = eval_(Env.concat(Env.concat(f.ρ, ρ_defs), ρʹ), instantiate(ρʹ, ξ.κ))
-         return ExplVal.make(ρ, App.at(k, tf, tu, ρʹ, ρ_defs, ξ.setκ(tv)), tv.v.copyAt(kᵥ, ann.meet(f.α, α, tv.v.α, e.α)))
+               tv: ExplVal = eval_(Env.concat(Env.concat(f.ρ, ρ_defs), ρʹ), instantiate(ρʹ, eʹ))
+         return ExplVal.make(ρ, App.at(k, tf, tu, ρʹ, ρ_defs, Match.Plug.make(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(f.α, α, tv.v.α, e.α)))
       } else
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
@@ -149,9 +149,9 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    } else
    if (e instanceof Expr.Let) {
       const tu: ExplVal = eval_(ρ, e.e),
-            [ρʹ, ξ, α] = matchVar<Expr>(tu.v, e.σ),
-            tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, ξ.κ))
-      return ExplVal.make(ρ, Let.at(k, tu, ξ.setκ(tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
+            [ρʹ, {ξ, κ: eʹ}, α] = matchVar<Expr>(tu.v, e.σ),
+            tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+      return ExplVal.make(ρ, Let.at(k, tu, Match.Plug.make(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
@@ -160,9 +160,9 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplVal = eval_(ρ, e.e),
-            [ρʹ, ξ, α] = match(tu.v, e.σ),
-            tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, ξ.κ))
-      return ExplVal.make(ρ, MatchAs.at(k, tu, ρʹ, ξ.setκ(tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
+            [ρʹ, {ξ, κ: eʹ}, α] = match(tu.v, e.σ),
+            tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+      return ExplVal.make(ρ, MatchAs.at(k, tu, ρʹ, Match.Plug.make(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else {
       return absurd("Unimplemented expression form.", e)
    }

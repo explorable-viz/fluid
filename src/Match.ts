@@ -10,31 +10,32 @@ import Args = Expr.Args
 import Trie = Expr.Trie
 
 // Expose as a separate method for use by 'let'.
-export function matchVar<K extends Kont<K>> (v: Value, σ: Trie.Var<K>): [Env, Match.Var<K>, Annotation] {
-   return [Env.singleton(σ.x.str, v), Match.Var.make(σ.x, σ.κ), ann.top]
+export function matchVar<K extends Kont<K>> (v: Value, σ: Trie.Var<K>): [Env, Match.Plug<K, Match.Var<K>>, Annotation] {
+   return [Env.singleton(σ.x.str, v), Match.Plug.make(Match.Var.make(σ.x), σ.κ), ann.top]
 }
 
-export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match<K>, Annotation] {
+export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Plug<K, Match<K>>, Annotation] {
    if (Trie.Var.is(σ)) {
       return matchVar(v, σ)
    } else
    if (Trie.Constr.is(σ)) {
       if (v instanceof Value.Constr) {
-         let ρ_α: [Env, Annotation] // actually may be null, but TypeScript can't handle it
-         const ξ: Match<K> = Match.Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
+         let ρ_κ_α: [Env, K, Annotation] // actually may be null, but TypeScript gets confused
+         const ξ: Match<K> = Match.Constr.make(σ.cases.map((ctr_Π): Pair<string, Args<K> | Match.Args<K>> => {
+            const { fst: ctr, snd: Π } = ctr_Π
             if (v.ctr.str === ctr) {
-               const [ρ, Ψ, α]: [Env, Match.Args<K>, Annotation] = matchArgs(v.args, Π)
-               ρ_α = [ρ, α]
+               const [ρ, {Ψ, κ}, α]: [Env, Match.Args.Plug<K, Match.Args<K>>, Annotation] = matchArgs(v.args, Π)
+               ρ_κ_α = [ρ, κ, α]
                return Pair.make(ctr, Ψ)
             } else {
-               return Pair.make(ctr, Π)
+               return ctr_Π
             }
          }))
-         if (ρ_α! === undefined) { // workaround
+         if (ρ_κ_α! === undefined) { // workaround
             return error("Pattern mismatch: wrong data type.", v, σ)
          } else {
-            const [ρ, α]: [Env, Annotation] = ρ_α!
-            return [ρ, ξ, ann.meet(α, v.α)]
+            const [ρ, κ, α]: [Env, K, Annotation] = ρ_κ_α!
+            return [ρ, Match.Plug.make(ξ, κ), ann.meet(α, v.α)]
          }
       } else {
          return error("Pattern mismatch: not a data type.", v, σ)
@@ -63,17 +64,17 @@ export function unmatch<K extends Kont<K>> (ρ: Env, ξ: Match<K>, α: Annotatio
 */
 }
 
-function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, Match.Args<K>, Annotation] {
+function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, Match.Args.Plug<K, Match.Args<K>>, Annotation] {
    // Parser ensures constructor patterns agree with constructor signatures.
    if (Cons.is(tvs) && Args.Next.is(Π)) {
       const {t, v} = tvs.head
       // codomain of ξ is Args; promote to Args | Match.Args:
-      const [ρ, ξ, α]: [Env, Match<Args<K>>, Annotation] = match(v, Π.σ), 
-            [ρʹ, Ψ, αʹ]: [Env, Match.Args<K>, Annotation] = matchArgs(tvs.tail, ξ.κ)
-      return [Env.concat(ρ, ρʹ), Match.Args.Next.make(ExplMatch.make(t, ξ.setκ(Ψ.κ))), ann.meet(α, αʹ)]
+      const [ρ, {ξ, κ: Πʹ}, α]: [Env, Match.Plug<Args<K>, Match<Args<K>>>, Annotation] = match(v, Π.σ),
+            [ρʹ, {Ψ, κ}, αʹ]: [Env, Match.Args.Plug<K, Match.Args<K>>, Annotation] = matchArgs(tvs.tail, Πʹ)
+      return [Env.concat(ρ, ρʹ), Match.Args.Plug.make(Match.Args.Next.make(ExplMatch.make(t, ξ), Ψ), κ), ann.meet(α, αʹ)]
    } else
    if (Nil.is(tvs) && Args.End.is(Π)) {
-      return [Env.empty(), Match.Args.End.make(Π.κ), ann.top]
+      return [Env.empty(), Match.Args.Plug.make(Match.Args.End.make<K>(), Π.κ), ann.top]
    } else {
       return absurd()
    }
