@@ -197,12 +197,16 @@ export namespace Match {
       abstract constructor_ (...args: Persistent[]): void
    }
 
-   // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
+   // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args). Currently caches
+   // the value originally matched, so a slice of it can be reconstructed at the right location; the alternative
+   // would be to have matches have ids determined by the input value and trie (but that requires versioned tries).
    export class Constr<K extends Kont<K>> extends Match<K> {
       cases: FiniteMap<string, Expr.Args<K> | Args<K>> 
+      v: Value.Constr 
 
-      constructor_ (cases: FiniteMap<string, Expr.Args<K> | Args<K>>) {
+      constructor_ (cases: FiniteMap<string, Expr.Args<K> | Args<K>>, v: Value.Constr) {
          this.cases = cases
+         this.v = v
       }
 
       static is<K extends Kont<K>> (ξ: Match<K>): ξ is Constr<K> {
@@ -210,8 +214,8 @@ export namespace Match {
       }
    }
 
-   export function constr<K extends Kont<K>> (cases: FiniteMap<string, Expr.Args<K> | Args<K>>): Constr<K> {
-      return make(Constr, cases) as Constr<K>
+   export function constr<K extends Kont<K>> (cases: FiniteMap<string, Expr.Args<K> | Args<K>>, v: Value.Constr): Constr<K> {
+      return make(Constr, cases, v) as Constr<K>
    }
 
    export class Var<K extends Persistent> extends Match<K> {

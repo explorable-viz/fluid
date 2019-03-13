@@ -1,9 +1,10 @@
 import { absurd } from "./util/Core"
+import { asVersioned } from "./util/Persistent"
 import { Annotation, ann } from "./Annotated"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { error } from "./Eval"
-import { ExplVal, Match, Value, explMatch } from "./ExplVal"
+import { ExplVal, Match, Value, explMatch, explVal } from "./ExplVal"
+import { ValId, error } from "./Eval"
 import { Expr, Kont } from "./Expr"
 
 import Args = Expr.Args
@@ -20,7 +21,7 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Pl
    } else
    if (Trie.Constr.is(σ)) {
       if (v instanceof Value.Constr) {
-         let ρ_κ_α: [Env, K, Annotation] // actually may be null, but TypeScript gets confused
+         let ρ_κ_α: [Env, K, Annotation] // actually may be null, but TypeScript confused
          const ξ: Match<K> = Match.constr(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
             if (v.ctr.str === ctr) {
                const [ρ, {Ψ, κ}, α] = matchArgs(v.args, Π)
@@ -29,8 +30,8 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Pl
             } else {
                return Pair.make(ctr, Π)
             }
-         }))
-         if (ρ_κ_α! === undefined) { // workaround
+         }), v) // store v as well to provide location for unmatch
+         if (ρ_κ_α! === undefined) {
             return error("Pattern mismatch: wrong data type.", v, σ)
          } else {
             const [ρ, κ, α]: [Env, K, Annotation] = ρ_κ_α!
@@ -45,8 +46,6 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Pl
 }
 
 export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Match<K>>, α: Annotation): [Value, Trie<K>] {
-   throw new Error("Not implemented yet")
-/*
    if (Match.Var.is(ξ)) {
       if (ρ.has(ξ.x.str)) {
          return [ρ.get(ξ.x.str)!, Trie.Var.make(ξ.x, κ)]
@@ -55,20 +54,28 @@ export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Mat
       }
    } else 
    if (Match.Constr.is(ξ)) {
+      let ctr_tus: [string, List<ExplVal>] // actually may be null, but TypeScript confused
       const σ: Trie<K> = Trie.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<K>> => {
          if (Π_or_Ψ instanceof Match.Args.Args) {
-            const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(null, Match.Args.Plug.make(Π_or_Ψ, κ), α)
+            const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(null, Match.Args.plug(Π_or_Ψ, κ), α)
+            ctr_tus = [ctr, tus]
             return Pair.make(ctr, Π)
          } else {
             // TODO: mapArgs to set annotations to bot
             return Pair.make(ctr, Π_or_Ψ)
          }
       }))
-      return [null, σ]
+      if (ctr_tus! === undefined) {
+         return absurd()
+      } else {
+         const [, tus] = ctr_tus
+         // use the cached matched value to extract target address, and also to avoid recreating the constructor
+         const k: ValId = asVersioned(ξ.v).__id as ValId
+         return [Value.Constr.at(k, α, ξ.v.ctr, tus), σ]
+      }
    } else {
       return absurd()
    }
-*/
 }
 
 function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, Match.Args.Plug<K, Match.Args<K>>, Annotation] {
@@ -86,13 +93,13 @@ function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, M
       return absurd()
    }
 }
-/*
+
 function unmatchArgs<K extends Kont<K>> (ρ: Env, {Ψ, κ}: Match.Args.Plug<K, Match.Args<K>>, α: Annotation): [List<ExplVal>, Args<K>] {
    if (Match.Args.Next.is(Ψ)) {
-      const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(null, Match.Args.Plug.make(Ψ.Ψ, κ), α),
+      const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(null, Match.Args.plug(Ψ.Ψ, κ), α),
             {t, ξ} = Ψ.tξ,
-            [u, σ] = unmatch(null, Match.Plug.make(ξ, Π), α)
-      return [Cons.make(ExplVal.make(null, t, u), tus), Args.Next.make(σ)]
+            [u, σ] = unmatch(null, Match.plug(ξ, Π), α)
+      return [Cons.make(explVal(null, t, u), tus), Args.Next.make(σ)]
    } else
    if (Match.Args.End.is(Ψ)) {
       return [Nil.make(), Args.End.make(κ)]
@@ -100,4 +107,3 @@ function unmatchArgs<K extends Kont<K>> (ρ: Env, {Ψ, κ}: Match.Args.Plug<K, M
       return absurd()
    }
 }
-*/
