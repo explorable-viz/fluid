@@ -3,7 +3,7 @@ import { asVersioned } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { ExprId } from "./Eval"
-import { Expr } from "./Expr"
+import { Expr, Kont } from "./Expr"
 
 import App = Expr.App
 import Args = Expr.Args
@@ -12,7 +12,6 @@ import ConstInt = Expr.ConstInt
 import ConstStr = Expr.ConstStr
 import Constr = Expr.Constr
 import Fun = Expr.Fun
-import Kont = Expr.Kont
 import Let = Expr.Let
 import LetRec = Expr.LetRec
 import MatchAs = Expr.MatchAs

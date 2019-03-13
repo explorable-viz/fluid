@@ -5,15 +5,14 @@ import { Cons, NonEmpty, Pair } from "../src/BaseTypes"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
-import { Expr, Lex } from "../src/Expr"
+import { ExplVal, Value } from "../src/ExplVal"
+import { Expr, Kont, Lex } from "../src/Expr"
 import { singleton, unionWith } from "../src/FiniteMap"
 import { instantiate } from "../src/Instantiate"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
-import { ExplVal, Value } from "../src/ExplVal"
 
 import Args = Expr.Args
-import Kont = Expr.Kont
 import Trie = Expr.Trie
 
 export function initialise (): void {

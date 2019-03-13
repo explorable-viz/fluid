@@ -6,7 +6,7 @@ import { Env, EmptyEnv, ExtendEnv } from "./Env"
 import { ExplVal, Value } from "./ExplVal"
 import { Expr } from "./Expr"
 import { instantiate } from "./Instantiate"
-import { match, unmatch } from "./Match"
+import { match, matchVar, unmatch } from "./Match"
 import { BinaryOp, binaryOps } from "./Primitive"
 
 import App = ExplVal.App
@@ -26,15 +26,15 @@ type Tag = "val" | "expl"
 // The "runtime identity" of an expression. In the formalism we use a "flat" representation so that e always has an external id;
 // here it is more convenient to use an isomorphic nested format.
 export class ExprId implements PersistentObject {
-   j: List<ExplVal>
+   j: List<Value>
    e: Versioned<Expr | RecDef>
 
-   constructor_ (j: List<ExplVal>, e: Versioned<Expr | RecDef>) {
+   constructor_ (j: List<Value>, e: Versioned<Expr | RecDef>) {
       this.j = j
       this.e = e
    }
 
-   static make<T extends Tag> (j: List<ExplVal>, e: Versioned<Expr | RecDef>): ExprId {
+   static make<T extends Tag> (j: List<Value>, e: Versioned<Expr | RecDef>): ExprId {
       return make(ExprId, j, e)
    }
 }
@@ -62,10 +62,8 @@ export module Eval {
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
       const f: Fun = δ.head.f,
-            k: ExplId = Tagged.make(f, "expl"),
-            kᵥ: ValId = Tagged.make(f, "val"),
-            tv: ExplVal = ExplVal.make(ρ, Empty.at(k), Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
-      return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, tv)
+            kᵥ: ValId = Tagged.make(f, "val")
+      return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
    } else
    if (Nil.is(δ)) {
       return EmptyEnv.make()
@@ -76,7 +74,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
 
 // ρ is a collection of one or more closures. Note that the required joins have already been computed.
 export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
-   const fs: List<Value.Closure> = ρ.entries().map(tv => as(tv.v, Value.Closure))
+   const fs: List<Value.Closure> = ρ.entries().map(v => as(v, Value.Closure))
    if (Cons.is(fs)) {
       return [fs.head.ρ, fs.head.δ]
    } else {
@@ -105,8 +103,8 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    if (e instanceof Expr.Var) {
       const x: string = e.x.str
       if (ρ.has(x)) { 
-         const {t, v}: ExplVal = ρ.get(x)!
-         return ExplVal.make(ρ, Var.at(k, e.x, t), v.copyAt(kᵥ, ann.meet(v.α, e.α)))
+         const v: Value = ρ.get(x)!
+         return ExplVal.make(ρ, Var.at(k, e.x), v.copyAt(kᵥ, ann.meet(v.α, e.α)))
       } else {
          return absurd("Variable not found.", x)
       }
@@ -116,10 +114,10 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
             f: Value = tf.v
       if (f instanceof Value.Closure) {
          const tu: ExplVal = eval_(ρ, e.arg),
-               [ρʹ, ξ, α] = match(tu, f.σ),
+               [ρʹ, ξ, α] = match(tu.v, f.σ),
                ρ_defs: Env = closeDefs(f.δ, f.ρ, f.δ),
                tv: ExplVal = eval_(Env.concat(Env.concat(f.ρ, ρ_defs), ρʹ), instantiate(ρʹ, ξ.κ))
-         return ExplVal.make(ρ, App.at(k, tf, tu, ρʹ, ρ_defs, tv), tv.v.copyAt(kᵥ, ann.meet(f.α, α, tv.v.α, e.α)))
+         return ExplVal.make(ρ, App.at(k, tf, tu, ρʹ, ρ_defs, ξ.setκ(tv)), tv.v.copyAt(kᵥ, ann.meet(f.α, α, tv.v.α, e.α)))
       } else
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
@@ -142,9 +140,9 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    } else
    if (e instanceof Expr.Let) {
       const tu: ExplVal = eval_(ρ, e.e),
-            [ρʹ, ξ, α] = match<Expr>(tu, e.σ), // TS needs a hint
+            [ρʹ, ξ, α] = matchVar<Expr>(tu.v, e.σ),
             tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, ξ.κ))
-      return ExplVal.make(ρ, Let.at(k, tu, Trie.Var.make(e.σ.x, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
+      return ExplVal.make(ρ, Let.at(k, tu, ξ.setκ(tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
@@ -153,7 +151,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplVal = eval_(ρ, e.e),
-            [ρʹ, ξ, α] = match(tu, e.σ),
+            [ρʹ, ξ, α] = match(tu.v, e.σ),
             tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, ξ.κ))
       return ExplVal.make(ρ, MatchAs.at(k, tu, e.σ, ρʹ, tv), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else {
@@ -194,15 +192,16 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       const x: string = t.x.str
       bot(ρ)
       assert(ρ.has(x))
-         ρ.get(x)!.v.setα(v.α)
+         ρ.get(x)!.setα(v.α)
          return Expr.Var.at(k, v.α, t.x)
    }
    else
    if (t instanceof App) {
       const f: Value.Closure | Value.PrimOp = t.func.v as (Value.Closure | Value.PrimOp)
       if (f instanceof Value.Closure) {
-         t.body.v.setα(v.α)
-         unmatch(t.ρ_match, uneval(t.body), v.α)
+         const tv: ExplVal = t.body.κ
+         tv.v.setα(v.α)
+         unmatch(t.ρ_match, uneval(tv), v.α)
          uncloseDefs(t.ρ_defs)
          f.setα(v.α)
          return Expr.App.at(k, v.α, uneval(t.func), uneval(t.arg))
@@ -220,10 +219,11 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       return Expr.BinaryApp.at(k, v.α, uneval(t.tv1), t.opName, uneval(t.tv2))
    } else
    if (t instanceof Let) {
-      t.σ.κ.v.setα(v.α)
-      const eʹ: Expr = uneval(t.σ.κ),
+      const tv: ExplVal = t.ξ.κ
+      tv.v.setα(v.α)
+      const eʹ: Expr = uneval(tv),
             e: Expr = uneval(t.tu) // unmatch not required - suffices to uneval in reverse order
-      return Expr.Let.at(k, v.α, e, Trie.Var.make(t.σ.x, eʹ))
+      return Expr.Let.at(k, v.α, e, Trie.Var.make(t.ξ.x, eʹ))
    } else
    if (t instanceof LetRec) {
       t.tv.v.setα(v.α)

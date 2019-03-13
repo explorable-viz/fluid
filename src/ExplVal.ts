@@ -1,10 +1,10 @@
 import { __nonNull } from "./util/Core"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Annotated, Annotation } from "./Annotated"
-import { List } from "./BaseTypes"
+import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
-import { Expr, Lex } from "./Expr"
+import { Expr, Kont, Lex } from "./Expr"
 import { ExplId, ValId } from "./Eval"
 import { UnaryOp } from "./Primitive"
 
@@ -103,7 +103,8 @@ export namespace Value {
    }
 }
 
-export class ExplVal implements PersistentObject {
+export class ExplVal implements PersistentObject, Kont<ExplVal> {
+   __tag: "ExplVal"
    ρ: Env // needed for uneval
    t: Expl
    v: Value
@@ -123,128 +124,164 @@ export class ExplVal implements PersistentObject {
    }
 }
 
+export type Match<K> = Match.Match<K>
+
+// A trie which has been matched to a depth of at least one.
+export namespace Match {
+   export type Args<K extends Kont<K>> = Args.Args<K>
+
+   export namespace Args {
+      export abstract class Args<K extends Kont<K>> implements Kont<Args<K>> {
+         __tag: "Match.Args"
+         abstract κ: K
+         abstract setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Args<Kʹ> // _not_ setting a property!
+         abstract constructor_ (...args: Persistent[]): void
+      }
+
+      export class End<K extends Kont<K>> extends Args<K> {
+         κ: K
+
+         constructor_ (κ: K) {
+            this.κ = κ
+         }
+
+         setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): End<Kʹ> {
+            return End.make(κ)
+         }
+
+         static is<K extends Kont<K>> (Ψ: Args<K>): Ψ is End<K> {
+            return Ψ instanceof End
+         }
+
+         static make<K extends Kont<K>> (κ: K): End<K> {
+            return make(End, κ) as End<K>
+         }
+      }
+
+      export class Next<K extends Kont<K>> extends Args<K> {
+         tξ: ExplMatch<K>
+
+         constructor_ (tξ: ExplMatch<K>) {
+            this.tξ = tξ
+         }
+
+         get κ (): K {
+            return this.tξ.κ
+         }
+
+         setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Next<Kʹ> {
+            return Next.make(this.tξ.setκ(κ))
+         }
+
+         static is<K extends Kont<K>> (Ψ: Args<K>): Ψ is Next<K> {
+            return Ψ instanceof Next
+         }
+
+         static make<K extends Kont<K>> (tξ: ExplMatch<K>): Next<K> {
+            return make(Next, tξ) as Next<K>
+         }
+      }
+   }
+
+   export abstract class Match<K> implements PersistentObject {
+      __tag: "Match.Match"
+      abstract κ: K
+      abstract setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Match<Kʹ> // _not_ setting a property!
+      abstract constructor_ (...args: Persistent[]): void
+   }
+
+   // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
+   export class Constr<K extends Kont<K>> extends Match<K> {
+      cases: FiniteMap<string, Expr.Args<K> | Args<K>> 
+
+      constructor_ (cases: FiniteMap<string, Expr.Args<K> | Args<K>>) {
+         this.cases = cases
+      }
+
+      get κ (): K {
+         let κ: K // TypeScript flow analysis confused by K | null
+         this.cases.map(({snd: args}): null => {
+            if (args instanceof Args.Args) {
+               κ = args.κ
+            }
+            return null
+         })
+         return __nonNull(κ!) // workaround
+      }
+
+      // This is borked: TypeScript allows Args<K> to convert to Args<Kʹ> even though Kʹ and K are unrelated.
+      // Ironically I do actually want K to be a subtype of Kʹ. Maybe need to reinstate mapMatch :-o
+      setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Constr<Kʹ> {
+         return Constr.make(
+            this.cases.map(({fst: ctr, snd: args}): Pair<string, Expr.Args<Kʹ> | Args<Kʹ>> => {
+               if (args instanceof Args.Args) {
+                  return Pair.make(ctr, args.setκ(κ))
+               }
+               return Pair.make(ctr, args) // broken but safe coercion?
+            })
+         )
+      }
+
+      static is<K extends Kont<K>> (ξ: Match<K>): ξ is Constr<K> {
+         return ξ instanceof Constr
+      }
+
+      static make<K extends Kont<K>> (cases: FiniteMap<string, Expr.Args<K> | Args<K>>): Constr<K> {
+         return make(Constr, cases) as Constr<K>
+      }
+   }
+
+   export class Var<K extends Persistent> extends Match<K> {
+      x: Lex.Var
+      κ: K
+
+      constructor_ (x: Lex.Var, κ: K) {
+         this.x = x
+         this.κ = κ
+      }
+
+      setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): Var<Kʹ> {
+         return Var.make(this.x, κ)
+      }
+
+      static is<K extends Persistent> (ξ: Match<K>): ξ is Var<K> {
+         return ξ instanceof Var
+      }
+
+      static make<K extends Persistent> (x: Lex.Var, κ: K): Var<K> {
+         return make(Var, x, κ) as Var<K>
+      }
+   }
+}
+
+export class ExplMatch<K extends Kont<K>> implements PersistentObject {
+   t: Expl̊ // null iff ξ represents a dead branch
+   ξ: Match.Match<K>
+
+   constructor_ (t: Expl̊, ξ: Match<K>) {
+      this.t = t
+      this.ξ = ξ
+   }
+
+   get κ (): K {
+      return this.ξ.κ
+   }
+
+   setκ<Kʹ extends Kont<Kʹ>> (κ: Kʹ): ExplMatch<Kʹ> {
+      return ExplMatch.make(this.t, this.ξ.setκ(κ))
+   }
+
+   static make<K extends Kont<K>> (t: Expl̊, ξ: Match<K>): ExplMatch<K> {
+      return make(ExplMatch, t, ξ) as ExplMatch<K>
+   }
+}
+
 export type Expl = ExplVal.Expl
 export type Expl̊ = Expl | null
 
 export namespace ExplVal {
-   export class ExplValMatch<K extends Expr.Kont<K>> implements PersistentObject {
-      t: Expl̊ // null iff ξ represents a dead branch
-      ξ: Match<K>
 
-   constructor_ (t: Expl̊, ξ: Match<K>) {
-         this.t = t
-         this.ξ = ξ
-      }
-
-      static make<K extends Expr.Kont<K>> (t: Expl̊, ξ: Match<K>): ExplValMatch<K> {
-         return make(ExplValMatch, t, ξ) as ExplValMatch<K>
-      }
-   }
-
-   export type Match<K> = Match.Match<K>
-
-   // A trie which has been matched (executed) to a depth of at least one.
-   export namespace Match {
-      export type Args<K extends Expr.Kont<K>> = Args.Args<K>
-
-      export namespace Args {
-         export abstract class Args<K extends Expr.Kont<K>> implements Expr.Kont<Args<K>> {
-            __tag: "Match.Args"
-            abstract κ: K
-            abstract constructor_ (...args: Persistent[]): void
-         }
-
-         export class End<K extends Expr.Kont<K>> extends Args<K> {
-            κ: K
-
-            constructor_ (κ: K) {
-               this.κ = κ
-            }
-   
-            static is<K extends Expr.Kont<K>> (Ψ: Args<K>): Ψ is End<K> {
-               return Ψ instanceof End
-            }
-   
-            static make<K extends Expr.Kont<K>> (κ: K): End<K> {
-               return make(End, κ) as End<K>
-            }
-         }
-   
-         export class Next<K extends Expr.Kont<K>> extends Args<K> {
-            tξ: ExplValMatch<K>
-
-            constructor_ (tξ: ExplValMatch<K>) {
-               this.tξ = tξ
-            }
-
-            get κ(): K {
-               return this.tξ.ξ.κ
-            }
-
-            static is<K extends Expr.Kont<K>> (Ψ: Args<K>): Ψ is Next<K> {
-               return Ψ instanceof Next
-            }
-   
-            static make<K extends Expr.Kont<K>> (tξ: ExplValMatch<K>): Next<K> {
-               return make(Next, tξ) as Next<K>
-            }
-         }
-      }
-
-      export abstract class Match<K> implements PersistentObject {
-         __tag: "Match.Match"
-         abstract κ: K
-         abstract constructor_ (...args: Persistent[]): void
-      }
-
-      // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args).
-      export class Constr<K extends Expr.Kont<K>> extends Match<K> {
-         cases: FiniteMap<string, Expr.Args<K> | Args<K>> 
-
-         constructor_ (cases: FiniteMap<string, Expr.Args<K> | Args<K>>) {
-            this.cases = cases
-         }
-
-         get κ(): K {
-            let κ: K // TypeScript flow analysis confused by K | null
-            this.cases.map(({snd: args}): null => {
-               if (args instanceof Args.Args) {
-                  κ = args.κ
-               }
-               return null
-            })
-            return __nonNull(κ!) // workaround
-         }
-
-         static is<K extends Expr.Kont<K>> (ξ: Match<K>): ξ is Constr<K> {
-            return ξ instanceof Constr
-         }
-
-         static make<K extends Expr.Kont<K>> (cases: FiniteMap<string, Expr.Args<K> | Args<K>>): Constr<K> {
-            return make(Constr, cases) as Constr<K>
-         }
-      }
-
-      export class Var<K extends Persistent> extends Match<K> {
-         x: Lex.Var
-         κ: K
-
-         constructor_ (x: Lex.Var, κ: K) {
-            this.x = x
-            this.κ = κ
-         }
-
-         static is<K extends Persistent> (ξ: Match<K>): ξ is Var<K> {
-            return ξ instanceof Var
-         }
-
-         static make<K extends Persistent> (x: Lex.Var, κ: K): Var<K> {
-            return make(Var, x, κ) as Var<K>
-         }
-      }
-   }
-
-   export abstract class Expl implements PersistentObject, Expr.Kont<Expl> {
+   export abstract class Expl implements PersistentObject {
       __tag: "Expl.Expl"
       abstract constructor_ (...args: Persistent[]): void
    }
@@ -252,11 +289,11 @@ export namespace ExplVal {
    export class App extends Expl {
       func: ExplVal
       arg: ExplVal
-      ρ_defs: Env       // from closeDefs, for uneval
-      ρ_match: Env      // from matching argument, for uneval
-      body: ExplVal     // technically Expl would suffice, but for uneval we want environment
+      ρ_defs: Env             // from closeDefs, for uneval
+      ρ_match: Env            // from matching argument, for uneval
+      body: Match<ExplVal>    // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: ExplVal): void {
+      constructor_ (func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: Match<ExplVal>): void {
          this.func = func
          this.arg = arg
          this.ρ_defs = ρ_defs
@@ -264,7 +301,7 @@ export namespace ExplVal {
          this.body = body
       }
 
-      static at (k: ExplId, func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: ExplVal): App {
+      static at (k: ExplId, func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, body: Match<ExplVal>): App {
          return at(k, App, func, arg, ρ_defs, ρ_match, body)
       }
    }
@@ -294,15 +331,15 @@ export namespace ExplVal {
 
    export class Let extends Expl {
       tu: ExplVal
-      σ: Expr.Trie.Var<ExplVal> // technically Expl would suffice, but for uneval we want environment
+      ξ: Match.Var<ExplVal> // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (tu: ExplVal, σ: Expr.Trie.Var<ExplVal>): void {
+      constructor_ (tu: ExplVal, ξ: Match.Var<ExplVal>): void {
          this.tu = tu
-         this.σ = σ
+         this.ξ = ξ
       }
 
-      static at (k: ExplId, tu: ExplVal, σ: Expr.Trie.Var<ExplVal>): Let {
-         return at(k, Let, tu, σ)
+      static at (k: ExplId, tu: ExplVal, ξ: Match.Var<ExplVal>): Let {
+         return at(k, Let, tu, ξ)
       }
    }
 
@@ -358,15 +395,13 @@ export namespace ExplVal {
 
    export class Var extends Expl {
       x: Lex.Var
-      t: Expl
 
-      constructor_ (x: Lex.Var, t: Expl): void {
+      constructor_ (x: Lex.Var): void {
          this.x = x
-         this.t = t
       }
 
-      static at (k: ExplId, x: Lex.Var, t: Expl): Var {
-         return at(k, Var, x, t)
+      static at (k: ExplId, x: Lex.Var): Var {
+         return at(k, Var, x)
       }
    }
 }
