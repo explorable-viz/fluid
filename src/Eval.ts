@@ -6,7 +6,7 @@ import { Env, EmptyEnv, ExtendEnv } from "./Env"
 import { ExplVal, Value } from "./ExplVal"
 import { Expr } from "./Expr"
 import { instantiate } from "./Instantiate"
-import { match, unmatch } from "./Match"
+import { match, matchVar, unmatch } from "./Match"
 import { BinaryOp, binaryOps } from "./Primitive"
 
 import App = ExplVal.App
@@ -140,7 +140,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    } else
    if (e instanceof Expr.Let) {
       const tu: ExplVal = eval_(ρ, e.e),
-            [ρʹ, ξ, α] = match<Expr>(tu.v, e.σ), // TS needs a hint
+            [ρʹ, ξ, α] = matchVar<Expr>(tu.v, e.σ),
             tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, ξ.κ))
       return ExplVal.make(ρ, Let.at(k, tu, ξ.setκ(tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else

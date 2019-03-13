@@ -8,9 +8,14 @@ import { Expr, Kont } from "./Expr"
 import Args = Expr.Args
 import Trie = Expr.Trie
 
+// Expose as a separate method for use by 'let'.
+export function matchVar<K extends Kont<K>> (v: Value, σ: Trie.Var<K>): [Env, Match.Var<K>, Annotation] {
+   return [Env.singleton(σ.x.str, v), Match.Var.make(σ.x, σ.κ), ann.top]
+}
+
 export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match<K>, Annotation] {
    if (Trie.Var.is(σ)) {
-      return [Env.singleton(σ.x.str, v), Match.Var.make(σ.x, σ.κ), ann.top]
+      return matchVar(v, σ)
    } else
    if (v instanceof Value.Constr && Trie.Constr.is(σ)) {
       let ρ_α: [Env, Annotation] // actually may be null, but TypeScript can't handle it
