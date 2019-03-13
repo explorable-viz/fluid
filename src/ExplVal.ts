@@ -361,19 +361,17 @@ export namespace ExplVal {
    
    export class MatchAs extends Expl {
       tu: ExplVal
-      σ: Expr.Trie<Expr>
-      ρ_match: Env      // from matching argument, for uneval
-      tv: ExplVal       // technically Expl would suffice, but for uneval we want environment
+      ρ_match: Env         // from matching argument, for uneval
+      ξ: Match<ExplVal>   // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (tu: ExplVal, σ: Expr.Trie<Expr>, ρ_match: Env, tv: ExplVal): void {
+      constructor_ (tu: ExplVal, ρ_match: Env, ξ: Match<ExplVal>): void {
          this.tu = tu
-         this.σ = σ
          this.ρ_match = ρ_match
-         this.tv = tv
+         this.ξ = ξ
       }
 
-      static at (k: ExplId, tu: ExplVal, σ: Expr.Trie<Expr>, ρ_match: Env, tv: ExplVal): MatchAs {
-         return at(k, MatchAs, tu, σ, ρ_match, tv)
+      static at (k: ExplId, tu: ExplVal, ρ_match: Env, ξ: Match<ExplVal>): MatchAs {
+         return at(k, MatchAs, tu, ρ_match, ξ)
       }
    }
 
