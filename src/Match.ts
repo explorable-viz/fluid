@@ -12,11 +12,11 @@ import Args = Expr.Args
 import Trie = Expr.Trie
 
 // Expose as a separate method for use by 'let'.
-export function matchVar<K extends Kont<K>> (v: Value, σ: Trie.Var<K>): [Env, Match.Plug<K, Match.Var<K>>, Annotation] {
-   return [Env.singleton(σ.x.str, v), Match.plug(Match.var_(Env.singleton(σ.x.str, v), σ.x, v), σ.κ), ann.top]
+export function matchVar<K extends Kont<K>> (v: Value, σ: Trie.Var<K>): [Match.Plug<K, Match.Var<K>>, Annotation] {
+   return [Match.plug(Match.var_(Env.singleton(σ.x.str, v), σ.x, v), σ.κ), ann.top]
 }
 
-export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Plug<K, Match<K>>, Annotation] {
+export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Match.Plug<K, Match<K>>, Annotation] {
    if (Trie.Var.is(σ)) {
       return matchVar(v, σ)
    } else
@@ -27,7 +27,7 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Pl
          // return Ψ.ρ
          const cases: FiniteMap<string, Args<K> | Match.Args<K>> = σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
             if (v.ctr.str === ctr) {
-               const [, Ψκ, α] = matchArgs(v.args, Π)
+               const [Ψκ, α] = matchArgs(v.args, Π)
                Ψκ_α = [Ψκ, α]
                return Pair.make(ctr, Ψκ.Ψ)
             } else {
@@ -39,7 +39,7 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Pl
          } else {
             const [{Ψ, κ}, α] = Ψκ_α!
             // store v as well to provide location for unmatch
-            return [Ψ.ρ, Match.plug(Match.constr(Ψ.ρ, cases, v), κ), ann.meet(α, v.α)]
+            return [Match.plug(Match.constr(Ψ.ρ, cases, v), κ), ann.meet(α, v.α)]
          }
       } else {
          return error("Pattern mismatch: not a data type.", v, σ)
@@ -84,16 +84,16 @@ export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Mat
    }
 }
 
-function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, Match.Args.Plug<K, Match.Args<K>>, Annotation] {
+function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Match.Args.Plug<K, Match.Args<K>>, Annotation] {
    if (Cons.is(tvs) && Args.Next.is(Π)) {
       const {t, v} = tvs.head
       // codomain of ξ is Args; promote to Args | Match.Args:
-      const [ρ, {ξ, κ: Πʹ}, α] = match(v, Π.σ),
-            [ρʹ, {Ψ, κ}, αʹ] = matchArgs(tvs.tail, Πʹ)
-      return [Env.concat(ρ, ρʹ), Match.Args.plug(Match.Args.next(Env.concat(ξ.ρ, Ψ.ρ), explMatch(t, ξ), Ψ), κ), ann.meet(α, αʹ)]
+      const [{ξ, κ: Πʹ}, α] = match(v, Π.σ),
+            [{Ψ, κ}, αʹ] = matchArgs(tvs.tail, Πʹ)
+      return [Match.Args.plug(Match.Args.next(Env.concat(ξ.ρ, Ψ.ρ), explMatch(t, ξ), Ψ), κ), ann.meet(α, αʹ)]
    } else
    if (Nil.is(tvs) && Args.End.is(Π)) {
-      return [Env.empty(), Match.Args.plug(Match.Args.end<K>(Env.empty()), Π.κ), ann.top]
+      return [Match.Args.plug(Match.Args.end<K>(Env.empty()), Π.κ), ann.top]
    } else {
       return absurd()
    }

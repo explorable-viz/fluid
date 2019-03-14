@@ -131,7 +131,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
             f: Value = tf.v
       if (f instanceof Value.Closure) {
          const tu: ExplVal = eval_(ρ, e.arg),
-               [, {ξ, κ: eʹ}, α] = match(tu.v, f.σ),
+               [{ξ, κ: eʹ}, α] = match(tu.v, f.σ),
                ρ_defs: Env = closeDefs(f.δ, f.ρ, f.δ),
                tv: ExplVal = eval_(Env.concat(Env.concat(f.ρ, ρ_defs), ξ.ρ), instantiate(ξ.ρ, eʹ))
          return explVal(ρ, app(k, tf, tu, ρ_defs, Match.plug(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(f.α, α, tv.v.α, e.α)))
@@ -157,7 +157,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    } else
    if (e instanceof Expr.Let) {
       const tu: ExplVal = eval_(ρ, e.e),
-            [, {ξ, κ: eʹ}, α] = matchVar<Expr>(tu.v, e.σ),
+            [{ξ, κ: eʹ}, α] = matchVar<Expr>(tu.v, e.σ),
             tv: ExplVal = eval_(Env.concat(ρ, ξ.ρ), instantiate(ξ.ρ, eʹ))
       return explVal(ρ, let_(k, tu, Match.plug(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else
@@ -168,7 +168,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplVal = eval_(ρ, e.e),
-            [, {ξ, κ: eʹ}, α] = match(tu.v, e.σ),
+            [{ξ, κ: eʹ}, α] = match(tu.v, e.σ),
             tv: ExplVal = eval_(Env.concat(ρ, ξ.ρ), instantiate(ξ.ρ, eʹ))
       return explVal(ρ, matchAs(k, tu, Match.plug(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else {
