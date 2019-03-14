@@ -21,7 +21,9 @@ import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 import Var = Expr.Var
 
-export function instantiate (ρ: Env, e: Expr): Expr {
+// F-bounded polymorphism doesn't really work well here. I've used it for the smaller helper functions 
+// (but with horrendous casts), but not for the two main top-level functions.
+export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    const j: ExprId = exprId(ρ.entries(), asVersioned(e))
    if (e instanceof ConstInt) {
       return ConstInt.at(j, e.α, e.val)
@@ -90,6 +92,14 @@ export function uninstantiate (e: Expr): Expr {
    if (e instanceof Let) {
       return Let.at(k, α, uninstantiate(e.e), uninstantiateTrie(e.σ))
    } else
+   if (e instanceof LetRec) {
+      const δ: List<RecDef> = e.δ.map(def => {
+         const defʹ: Versioned<RecDef> = (asVersioned(def).__id as ExprId).e as Versioned<RecDef>,
+               i: PersistentObject = defʹ.__id
+         return RecDef.at(i, def.x, uninstantiate(def.f) as Fun)
+      })
+      return LetRec.at(k, α, δ, uninstantiate(e.e))
+   } else
    if (e instanceof MatchAs) {
       return MatchAs.at(k, α, uninstantiate(e.e), uninstantiateTrie(e.σ))
    } else
@@ -103,7 +113,6 @@ export function uninstantiate (e: Expr): Expr {
    }
 }
 
-// F-bounded polymorphism doesn't really work well here.
 function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T): T {
    if (Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ) as K) as Trie<K> as T
@@ -127,7 +136,7 @@ function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): T {
    }
 }
 
-// See issue #33. These is some sort of heinousness to covert the continuation type.
+// See issue #33.
 function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
    if (κ instanceof Trie.Trie) {
       return instantiateTrie<K, Trie<K>>(ρ, κ) as K 
