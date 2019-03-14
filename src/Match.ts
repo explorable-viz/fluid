@@ -63,8 +63,7 @@ export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Mat
          } else
          if (Π_or_Ψ instanceof Args.Args) {
             const Π_or_Ψʹ: Args.Args<K> = Π_or_Ψ  // recover type lost by instanceof
-            // TODO: mapArgs to set annotations to bot
-            return Pair.make(ctr, Trie.mapArgs((k: K): K => k, Π_or_Ψʹ))
+            return Pair.make(ctr, Π_or_Ψʹ)
          } else {
             return absurd()
          }
