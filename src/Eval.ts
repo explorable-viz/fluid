@@ -5,7 +5,7 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EmptyEnv, ExtendEnv } from "./Env"
 import { ExplVal, Match, Value, explVal } from "./ExplVal"
 import { Expr } from "./Expr"
-import { instantiate } from "./Instantiate"
+import { instantiate, uninstantiate } from "./Instantiate"
 import { match, matchVar, unmatch } from "./Match"
 import { BinaryOp, binaryOps } from "./Primitive"
 
@@ -234,7 +234,7 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    if (t instanceof Let) {
       const {ξ, κ: tv} = t.ξtv
       tv.v.setα(v.α)
-      const eʹ: Expr = uneval(tv),
+      const eʹ: Expr = uninstantiate(uneval(tv)),
             e: Expr = uneval(t.tu) // unmatch not required - suffices to uneval in reverse order
       return Expr.Let.at(k, v.α, e, Trie.Var.make(ξ.x, eʹ))
    } else

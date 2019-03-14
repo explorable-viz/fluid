@@ -1,5 +1,5 @@
 import { __nonNull, absurd } from "./util/Core"
-import { asVersioned } from "./util/Persistent"
+import { PersistentObject, Versioned, asVersioned } from "./util/Persistent"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { ExprId, exprId } from "./Eval"
@@ -62,6 +62,16 @@ export function instantiate (ρ: Env, e: Expr): Expr {
       return BinaryApp.at(j, e.α, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2))
    } else {
       return absurd()
+   }
+}
+
+// It's enough just to return the original expression. To reconstruct the environment would require
+// some redesign. Whereas instantiate sets annotations, uninstantiate must merge them.
+export function uninstantiate (e: Expr): Expr {
+   const eʹ: Versioned<Expr> = (asVersioned(e).__id as ExprId).e,
+         k: PersistentObject = eʹ.__id
+   if (e instanceof ConstInt) {
+      return ConstInt.at(k, e.α, e.val)
    }
 }
 
