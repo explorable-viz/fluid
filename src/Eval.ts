@@ -218,7 +218,7 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       if (f instanceof Value.Closure) {
          const {ξ, κ: tv} = t.ξtv
          tv.v.setα(v.α)
-         unmatch(ξ.ρ, Match.plug(ξ, uneval(tv)), v.α)
+         unmatch(Match.plug(ξ, uneval(tv)), v.α)
          uncloseDefs(t.ρ_defs)
          f.setα(v.α)
          return Expr.App.at(k, v.α, uneval(t.func), uneval(t.arg))
@@ -251,7 +251,7 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    if (t instanceof MatchAs) {
       const {ξ, κ: tv} = t.ξtv
       tv.v.setα(v.α)
-      const [, σ] = unmatch(ξ.ρ, Match.plug(ξ, uneval(tv)), v.α)
+      const [, σ] = unmatch(Match.plug(ξ, uneval(tv)), v.α)
       return Expr.MatchAs.at(k, v.α, uneval(t.tu), σ)
    } else {
       return absurd()

@@ -49,10 +49,10 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Match.Plug<K,
    }
 }
 
-export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Match<K>>, α: Annotation): [Value, Trie<K>] {
+export function unmatch<K extends Kont<K>> ({ξ, κ}: Match.Plug<K, Match<K>>, α: Annotation): [Value, Trie<K>] {
    if (Match.Var.is(ξ)) {
-      if (ρ.has(ξ.x.str)) {
-         return [ρ.get(ξ.x.str)!, Trie.Var.make(ξ.x, κ)]
+      if (ξ.ρ.has(ξ.x.str)) {
+         return [ξ.ρ.get(ξ.x.str)!, Trie.Var.make(ξ.x, κ)]
       } else {
          return absurd()
       }
@@ -61,7 +61,7 @@ export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Mat
       let tus: List<ExplVal> // actually may be null, but TypeScript assigns type "never"
       const σ: Trie<K> = Trie.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<K>> => {
          if (Π_or_Ψ instanceof Match.Args.Args) {
-            const [tusʹ, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(ρ, Match.Args.plug(Π_or_Ψ, κ), α)
+            const [tusʹ, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Match.Args.plug(Π_or_Ψ, κ), α)
             tus = tusʹ
             return Pair.make(ctr, Π)
          } else
@@ -99,11 +99,11 @@ function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Match.
    }
 }
 
-function unmatchArgs<K extends Kont<K>> (ρ: Env, {Ψ, κ}: Match.Args.Plug<K, Match.Args<K>>, α: Annotation): [List<ExplVal>, Args<K>] {
+function unmatchArgs<K extends Kont<K>> ({Ψ, κ}: Match.Args.Plug<K, Match.Args<K>>, α: Annotation): [List<ExplVal>, Args<K>] {
    if (Match.Args.Next.is(Ψ)) {
-      const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Ψ.Ψ.ρ, Match.Args.plug(Ψ.Ψ, κ), α),
+      const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Match.Args.plug(Ψ.Ψ, κ), α),
             {t, ξ} = Ψ.tξ,
-            [u, σ] = unmatch(ξ.ρ, Match.plug(ξ, Π), α)
+            [u, σ] = unmatch(Match.plug(ξ, Π), α)
       return [Cons.make(explVal(Env.concat(ξ.ρ, Ψ.Ψ.ρ), t, u), tus), Args.Next.make(σ)]
    } else
    if (Match.Args.End.is(Ψ)) {
