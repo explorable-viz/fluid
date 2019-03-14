@@ -91,12 +91,12 @@ export function uninstantiate (e: Expr): Expr {
 }
 
 // See issue #33. These is some sort of heinousness to covert the continuation type.
-function instantiateKont<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, κ: K): Kʹ {
+function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
    if (κ instanceof Trie.Trie) {
-      return instantiateTrie<K, Kʹ>(ρ, κ) as any as Kʹ // ouch
+      return instantiateTrie<K>(ρ, κ) as K // ouch
    } else
    if (κ instanceof Expr.Expr) {
-      return instantiate(ρ, κ) as any as Kʹ // also ouch
+      return instantiate(ρ, κ) as any as K // also ouch
    } else {
       return absurd()
    }
@@ -113,11 +113,11 @@ function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
    }
 }
 
-function instantiateTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, σ: Trie<K>): Trie<Kʹ> {
-   return mapTrie((κ: K) => instantiateKont<K, Kʹ>(ρ, κ))(instantiateTrie_(ρ, σ))
+function instantiateTrie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
+   return mapTrie((κ: K) => instantiateKont<K>(ρ, κ))(instantiateTrie_(ρ, σ))
 }
 
-function uninstantiateTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (σ: Trie<K>): Trie<Kʹ> {
+function uninstantiateTrie<K extends Kont<K>> (σ: Trie<K>): Trie<K> {
    throw new Error("Not implemented yet")
 }
 
