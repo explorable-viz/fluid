@@ -125,8 +125,8 @@ export type Match<K> = Match.Match<K>
 // versioned; this is to allow unevaluation to recover the matched value.
 export namespace Match {
    export class Plug<K extends Kont<K>, M extends Match<K>> implements PersistentObject {
-      ξ: M    // has a single hole (null) continuation filled by κ
-      κ: K
+      ξ: M    
+      κ: K  // fills the single hole in ξ
 
       constructor_ (ξ: M, κ: K): void {
          this.ξ = ξ
@@ -142,8 +142,8 @@ export namespace Match {
 
    export namespace Args {
       export class Plug<K extends Kont<K>, M extends Args<K>> implements PersistentObject {
-         Ψ: M    // has a single hole (null) continuation filled by κ
-         κ: K
+         Ψ: M  
+         κ: K  // fills the single hole in Ψ
    
          constructor_ (Ψ: M, κ: K): void {
             this.Ψ = Ψ
@@ -199,7 +199,7 @@ export namespace Match {
 
    // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args). Currently caches
    // the value originally matched, so a slice of it can be reconstructed at the right location; the alternative
-   // would be to have matches have ids determined by the input value and trie (but that requires versioned tries).
+   // would be to have match ids determined by the input value and trie (but that requires versioned tries).
    export class Constr<K extends Kont<K>> extends Match<K> {
       cases: FiniteMap<string, Expr.Args<K> | Args<K>> 
       v: Value.Constr 

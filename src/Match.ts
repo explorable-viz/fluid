@@ -57,7 +57,7 @@ export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Mat
       let tus: List<ExplVal> // actually may be null, but TypeScript assigns type "never"
       const σ: Trie<K> = Trie.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<K>> => {
          if (Π_or_Ψ instanceof Match.Args.Args) {
-            const [tusʹ, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(null, Match.Args.plug(Π_or_Ψ, κ), α)
+            const [tusʹ, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(ρ, Match.Args.plug(Π_or_Ψ, κ), α)
             tus = tusʹ
             return Pair.make(ctr, Π)
          } else
