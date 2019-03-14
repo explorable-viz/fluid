@@ -157,8 +157,8 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    } else
    if (e instanceof Expr.Let) {
       const tu: ExplVal = eval_(ρ, e.e),
-            [ρʹ, {ξ, κ: eʹ}, α] = matchVar<Expr>(tu.v, e.σ),
-            tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+            [, {ξ, κ: eʹ}, α] = matchVar<Expr>(tu.v, e.σ),
+            tv: ExplVal = eval_(Env.concat(ρ, ξ.ρ), instantiate(ξ.ρ, eʹ))
       return explVal(ρ, let_(k, tu, Match.plug(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else
    if (e instanceof Expr.LetRec) {
