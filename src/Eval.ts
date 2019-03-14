@@ -41,10 +41,10 @@ export class ExprId implements PersistentObject {
       this.j = j
       this.e = e
    }
+}
 
-   static make<T extends Tag> (j: List<Value>, e: Versioned<Expr | RecDef>): ExprId {
-      return make(ExprId, j, e)
-   }
+export function exprId<T extends Tag> (j: List<Value>, e: Versioned<Expr | RecDef>): ExprId {
+   return make(ExprId, j, e)
 }
 
 export class Tagged<T extends Tag> implements PersistentObject {
@@ -55,10 +55,10 @@ export class Tagged<T extends Tag> implements PersistentObject {
       this.e = e
       this.tag = tag
    }
+}
 
-   static make<T extends Tag> (e: Expr, tag: T): Tagged<T> {
-      return make(Tagged, e, tag) as Tagged<T>
-   }
+export function tagged<T extends Tag> (e: Expr, tag: T): Tagged<T> {
+   return make(Tagged, e, tag) as Tagged<T>
 }
 
 // User-level error.
@@ -79,8 +79,8 @@ export module Eval {
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
       const f: Fun = δ.head.f,
-            kᵥ: ValId = Tagged.make(f, "val")
-      return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, Value.Closure.at(kᵥ, f.α, ρ, δ_0, f.σ))
+            kᵥ: ValId = tagged(f, "val")
+      return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, Value.closure(kᵥ, f.α, ρ, δ_0, f.σ))
    } else
    if (Nil.is(δ)) {
       return EmptyEnv.make()
@@ -100,22 +100,22 @@ export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplVal {
-   const k: ExplId = Tagged.make(e, "expl"),
-         kᵥ: ValId = Tagged.make(e, "val")
+   const k: ExplId = tagged(e, "expl"),
+         kᵥ: ValId = tagged(e, "val")
    if (e instanceof Expr.ConstInt) {
-      return explVal(ρ, empty(k), Value.ConstInt.at(kᵥ, e.α, e.val))
+      return explVal(ρ, empty(k), Value.constInt(kᵥ, e.α, e.val))
    } else
    if (e instanceof Expr.ConstStr) {
-      return explVal(ρ, empty(k), Value.ConstStr.at(kᵥ, e.α, e.val))
+      return explVal(ρ, empty(k), Value.constStr(kᵥ, e.α, e.val))
    } else
    if (e instanceof Expr.Fun) {
-      return explVal(ρ, empty(k), Value.Closure.at(kᵥ, e.α, ρ, Nil.make(), e.σ))
+      return explVal(ρ, empty(k), Value.closure(kᵥ, e.α, ρ, Nil.make(), e.σ))
    } else
    if (e instanceof Expr.PrimOp) {
-      return explVal(ρ, empty(k), Value.PrimOp.at(kᵥ, e.α, e.op))
+      return explVal(ρ, empty(k), Value.primOp(kᵥ, e.α, e.op))
    } else
    if (e instanceof Expr.Constr) {
-      return explVal(ρ, empty(k), Value.Constr.at(kᵥ, e.α, e.ctr, e.args.map(e => eval_(ρ, e))))
+      return explVal(ρ, empty(k), Value.constr(kᵥ, e.α, e.ctr, e.args.map(e => eval_(ρ, e))))
    } else
    if (e instanceof Expr.Var) {
       const x: string = e.x.str

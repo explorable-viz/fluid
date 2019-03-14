@@ -77,7 +77,7 @@ export function unmatch<K extends Kont<K>> ({ξ, κ}: Match.Plug<K, Match<K>>, �
       } else {
          // use the cached matched value to extract target address, and also to avoid recreating the constructor
          const k: ValId = asVersioned(ξ.v).__id as ValId
-         return [Value.Constr.at(k, α, ξ.v.ctr, tus!), σ]
+         return [Value.constr(k, α, ξ.v.ctr, tus!), σ]
       }
    } else {
       return absurd()

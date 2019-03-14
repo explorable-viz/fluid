@@ -29,10 +29,10 @@ export namespace Value {
          this.δ = δ
          this.σ = σ
       }
+   }
 
-      static at (k: ValId, α: Annotation, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
-         return at(k, Closure, α, ρ, δ, σ)
-      }
+   export function closure (k: ValId, α: Annotation, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
+      return at(k, Closure, α, ρ, δ, σ)
    }
 
    export abstract class Prim extends Value {
@@ -47,15 +47,15 @@ export namespace Value {
          this.val = val
       }
    
-      static at (k: ValId, α: Annotation, val: number): ConstInt {
-         return at(k, ConstInt, α, val)
-      }
-
       toString (): string {
          return `${this.val}`
       }
    }
    
+   export function constInt (k: ValId, α: Annotation, val: number): ConstInt {
+      return at(k, ConstInt, α, val)
+   }
+
    export class ConstStr extends Prim {
       val: string
 
@@ -64,15 +64,15 @@ export namespace Value {
          this.val = val
       }
    
-      static at (k: ValId, α: Annotation, val: string): ConstStr {
-         return at(k, ConstStr, α, val)
-      }
-
       toString (): string {
          return `"${this.val}"`
       }
    }
    
+   export function constStr (k: ValId, α: Annotation, val: string): ConstStr {
+      return at(k, ConstStr, α, val)
+   }
+
    export class Constr extends Value {
       ctr: Lex.Ctr
       args: List<ExplVal>
@@ -82,10 +82,10 @@ export namespace Value {
          this.ctr = ctr
          this.args = args
       }
+   }
    
-      static at (k: ValId, α: Annotation, ctr: Lex.Ctr, args: List<ExplVal>): Constr {
-         return at(k, Constr, α, ctr, args)
-      }
+   export function constr (k: ValId, α: Annotation, ctr: Lex.Ctr, args: List<ExplVal>): Constr {
+      return at(k, Constr, α, ctr, args)
    }
 
    export class PrimOp extends Value {
@@ -95,10 +95,10 @@ export namespace Value {
          this.α = α
          this.op = op
       }
+   }
    
-      static at (k: ValId, α: Annotation, op: UnaryOp): PrimOp {
-         return at(k, PrimOp, α, op)
-      }
+   export function primOp (k: ValId, α: Annotation, op: UnaryOp): PrimOp {
+      return at(k, PrimOp, α, op)
    }
 }
 

@@ -5,7 +5,7 @@ import { Nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { Value } from "./ExplVal"
 import { Expr, Lex } from "./Expr"
-import { Tagged, ValId } from "./Eval"
+import { ValId, tagged } from "./Eval"
 
 import { Annotation } from "./Annotated";
 
@@ -105,11 +105,11 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
 ])
 
 function __true (k: ValId, α: Annotation): Value.Constr {
-   return Value.Constr.at(k, α, Lex.Ctr.make("True"), Nil.make())
+   return Value.constr(k, α, Lex.Ctr.make("True"), Nil.make())
 }
 
 function __false (k: ValId, α: Annotation): Value.Constr {
-   return Value.Constr.at(k, α, Lex.Ctr.make("False"), Nil.make())
+   return Value.constr(k, α, Lex.Ctr.make("False"), Nil.make())
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
@@ -118,7 +118,7 @@ export function error (message: Value.ConstStr): (k: PersistentObject) => Value 
 }
 
 export function intToString (x: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstStr {
-   return (k, α) => Value.ConstStr.at(k, α, x.toString())
+   return (k, α) => Value.constStr(k, α, x.toString())
 }
 
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
@@ -147,24 +147,24 @@ export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: A
 }
 
 export function minus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
-   return (k, α) => Value.ConstInt.at(k, α, x.val - y.val)
+   return (k, α) => Value.constInt(k, α, x.val - y.val)
 }
 
 export function plus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
-   return (k, α) => Value.ConstInt.at(k, α, x.val + y.val)
+   return (k, α) => Value.constInt(k, α, x.val + y.val)
 }
 
 export function times (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
-   return (k, α) => Value.ConstInt.at(k, α, x.val * y.val)
+   return (k, α) => Value.constInt(k, α, x.val * y.val)
 }
 
 export function div (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
    // Apparently this will round in the right direction.
-   return (k, α) => Value.ConstInt.at(k, α, ~~(x.val / y.val))
+   return (k, α) => Value.constInt(k, α, ~~(x.val / y.val))
 }
 
 export function concat (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.ConstStr {
-   return (k, α) => Value.ConstStr.at(k, α, x.val + y.val)
+   return (k, α) => Value.constStr(k, α, x.val + y.val)
 }
 
 // Only primitive with identifiers as names are first-class, and therefore appear in the prelude.
@@ -172,8 +172,8 @@ export function prelude (): Env {
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
       const e: Expr = Expr.PrimOp.at(ν(), ann.top, op),
-            kᵥ: ValId = Tagged.make(e, "val")
-      ρ = ExtendEnv.make(ρ, x, Value.PrimOp.at(kᵥ, e.α, op))
+            kᵥ: ValId = tagged(e, "val")
+      ρ = ExtendEnv.make(ρ, x, Value.primOp(kᵥ, e.α, op))
    })
    return ρ
 }
