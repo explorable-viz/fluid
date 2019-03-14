@@ -54,6 +54,12 @@ export abstract class Annotated implements PersistentObject {
       hereʹ.copyAt(hereʹ.__id, α)
       return this
    }
+
+   joinα (α: Annotation): this {
+      const hereʹ: Versioned<this> = asVersioned(this)
+      hereʹ.copyAt(hereʹ.__id, ann.join(this.α, α))
+      return this
+   }
 }
 
 // An annotation lattice induces a lattice for any object that potentially contains annotations. They behave with imperative 

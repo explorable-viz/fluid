@@ -208,7 +208,7 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    if (t instanceof Var) {
       const x: string = t.x.str
       assert(ρ.has(x))
-      ρ.get(x)!.setα(v.α)
+      ρ.get(x)!.joinα(v.α)
       return Expr.Var.at(kₑ, v.α, t.x)
    }
    else
@@ -216,40 +216,40 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       const f: Value.Closure | Value.PrimOp = t.func.v as (Value.Closure | Value.PrimOp)
       if (f instanceof Value.Closure) {
          const {ξ, κ: tv} = t.ξtv
-         tv.v.setα(v.α)
+         tv.v.joinα(v.α)
          unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
          uncloseDefs(t.ρ_defs)
-         f.setα(v.α)
+         f.joinα(v.α)
          return Expr.App.at(kₑ, v.α, uneval(t.func), uneval(t.arg))
       } else
       if (f instanceof Value.PrimOp) {
-         return Expr.App.at(kₑ, v.α, uneval(t.func).setα(v.α), uneval(t.arg).setα(v.α))
+         return Expr.App.at(kₑ, v.α, uneval(t.func).joinα(v.α), uneval(t.arg).joinα(v.α))
       } else {
          return absurd()
       }
    } else
    if (t instanceof BinaryApp) {
       assert(binaryOps.has(t.opName.str))
-      t.tv1.v.setα(v.α)
-      t.tv2.v.setα(v.α)
+      t.tv1.v.joinα(v.α)
+      t.tv2.v.joinα(v.α)
       return Expr.BinaryApp.at(kₑ, v.α, uneval(t.tv1), t.opName, uneval(t.tv2))
    } else
    if (t instanceof Let) {
       const {ξ, κ: tv} = t.ξtv
-      tv.v.setα(v.α)
+      tv.v.joinα(v.α)
       const eʹ: Expr = uninstantiate(uneval(tv)),
             e: Expr = uneval(t.tu) // unmatch not required - suffices to uneval in reverse order
       return Expr.Let.at(kₑ, v.α, e, Trie.Var.make(ξ.x, eʹ))
    } else
    if (t instanceof LetRec) {
-      t.tv.v.setα(v.α)
+      t.tv.v.joinα(v.α)
       const e: Expr = uninstantiate(uneval(t.tv)),
             [, δ]: [Env, List<RecDef>] = uncloseDefs(t.ρ_defs)
       return Expr.LetRec.at(kₑ, v.α, δ, e)
    } else
    if (t instanceof MatchAs) {
       const {ξ, κ: tv} = t.ξtv
-      tv.v.setα(v.α)
+      tv.v.joinα(v.α)
       const [, σ] = unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
       return Expr.MatchAs.at(kₑ, v.α, uneval(t.tu), σ)
    } else {
