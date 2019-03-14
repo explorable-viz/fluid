@@ -1,10 +1,11 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { Cursor, TestFile, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { Cursor, TestFile, ρ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 import { NonEmpty } from "../src/BaseTypes"
 import { assert } from "../src/util/Core"
 import { World } from "../src/util/Persistent"
 import { ann } from "../src/Annotated"
+import { Eval } from "../src/Eval"
 import { Expr } from "../src/Expr"
 import { ExplVal, Value } from "../src/ExplVal"
 
@@ -25,7 +26,7 @@ describe("example", () => {
 			const here: Cursor = new Cursor(e)
 			here.to(Expr.BinaryApp, "e1")
 				 .at(Expr.Expr, e => e.setα(ann.bot))
-			const v: Value = runExample(e).v
+			const v: Value = Eval.eval_(ρ, e).v
 			assert(v.α === ann.bot)
 		})
 	})
