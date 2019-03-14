@@ -42,7 +42,7 @@ export function instantiate (ρ: Env, e: Expr): Expr {
       return Var.at(j, e.α, e.x)
    } else
    if (e instanceof Let) {
-      return Let.at(j, e.α, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Expr>)
+      return Let.at(j, e.α, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
    } else
    if (e instanceof LetRec) {
       const δ: List<RecDef> = e.δ.map(def => {
@@ -86,29 +86,33 @@ export function uninstantiate (e: Expr): Expr {
    } else
    if (e instanceof Var) {
       return Var.at(k, α, e.x)
+   } else
+   if (e instanceof Let) {
+      return Let.at(k, α, uninstantiate(e.e), uninstantiateTrie(e.σ))
    } else {
       return absurd()
    }
 }
 
-function instantiateTrie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
+// F-bounded polymorphism doesn't really work well here.
+function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T): T {
    if (Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
+      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ) as K) as Trie<K> as T
    } else
    if (Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
          ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
             return Pair.make(ctr, instantiateArgs(ρ, Π))
          })
-      )
+      ) as Trie<K> as T
    } else {
       return absurd()
    }
 }
 
-function uninstantiateTrie<K extends Kont<K>> (σ: Trie<K>): Trie<K> {
+function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): T {
    if (Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, uninstantiateKont(σ.κ))
+      return Trie.Var.make(σ.x, uninstantiateKont(σ.κ)) as Trie<K> as T
    } else {
       return absurd()
    }
