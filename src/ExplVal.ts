@@ -1,9 +1,8 @@
-import { __nonNull, as } from "./util/Core"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
-import { FiniteMap, get } from "./FiniteMap"
+import { FiniteMap } from "./FiniteMap"
 import { Expr, Kont, Lex } from "./Expr"
 import { ExplId, ValId } from "./Eval"
 import { UnaryOp } from "./Primitive"
@@ -159,15 +158,12 @@ export namespace Match {
       export abstract class Args<K extends Kont<K>> implements Kont<Args<K>> {
          __tag: "Match.Args"
          abstract constructor_ (...args: Persistent[]): void
-         abstract ρ: Env
+         ρ: Env
       }
 
       export class End<K extends Kont<K>> extends Args<K> {
-         constructor_ (): void {
-         }
-
-         get ρ (): Env {
-            return Env.empty()
+         constructor_ (ρ: Env): void {
+            this.ρ = ρ
          }
 
          static is<K extends Kont<K>> (Ψ: Args<K>): Ψ is End<K> {
@@ -175,21 +171,18 @@ export namespace Match {
          }
       }
 
-      export function end<K extends Kont<K>> (): End<K> {
-         return make(End) as End<K>
+      export function end<K extends Kont<K>> (ρ: Env): End<K> {
+         return make(End, ρ) as End<K>
       }
 
       export class Next<K extends Kont<K>> extends Args<K> {
          tξ: ExplMatch<K>
          Ψ: Args<K>
 
-         constructor_ (tξ: ExplMatch<K>, Ψ: Args<K>) {
+         constructor_ (ρ: Env, tξ: ExplMatch<K>, Ψ: Args<K>) {
+            this.ρ = ρ
             this.tξ = tξ
             this.Ψ = Ψ
-         }
-
-         get ρ (): Env {
-            return Env.concat(this.tξ.ξ.ρ, this.Ψ.ρ)
          }
 
          static is<K extends Kont<K>> (Ψ: Args<K>): Ψ is Next<K> {
@@ -197,15 +190,15 @@ export namespace Match {
          }
       }
 
-      export function next<K extends Kont<K>> (tξ: ExplMatch<K>, Ψ: Args<K>): Next<K> {
-         return make(Next, tξ, Ψ) as Next<K>
+      export function next<K extends Kont<K>> (ρ: Env, tξ: ExplMatch<K>, Ψ: Args<K>): Next<K> {
+         return make(Next, ρ, tξ, Ψ) as Next<K>
       }
    }
 
    export abstract class Match<K> implements PersistentObject {
       __tag: "Match.Match"
       abstract constructor_ (...args: Persistent[]): void
-      abstract ρ: Env
+      ρ: Env
    }
 
    // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args). Currently caches
@@ -213,16 +206,12 @@ export namespace Match {
    // would be to have match ids determined by the input value and trie (but that requires versioned tries).
    export class Constr<K extends Kont<K>> extends Match<K> {
       cases: FiniteMap<string, Expr.Args<K> | Args<K>> 
-      v: Value.Constr 
+      v: Value.Constr
 
-      constructor_ (cases: FiniteMap<string, Expr.Args<K> | Args<K>>, v: Value.Constr) {
+      constructor_ (ρ: Env, cases: FiniteMap<string, Expr.Args<K> | Args<K>>, v: Value.Constr) {
+         this.ρ = ρ
          this.cases = cases
          this.v = v
-      }
-
-      get ρ (): Env {
-         const Ψ: Args<K> = as(__nonNull(get(this.cases, this.v.ctr.str)), Args.Args)
-         return Ψ.ρ
       }
 
       static is<K extends Kont<K>> (ξ: Match<K>): ξ is Constr<K> {
@@ -230,30 +219,27 @@ export namespace Match {
       }
    }
 
-   export function constr<K extends Kont<K>> (cases: FiniteMap<string, Expr.Args<K> | Args<K>>, v: Value.Constr): Constr<K> {
-      return make(Constr, cases, v) as Constr<K>
+   export function constr<K extends Kont<K>> (ρ: Env, cases: FiniteMap<string, Expr.Args<K> | Args<K>>, v: Value.Constr): Constr<K> {
+      return make(Constr, ρ, cases, v) as Constr<K>
    }
 
    export class Var<K extends Persistent> extends Match<K> {
       x: Lex.Var
       v: Value
 
-      constructor_ (x: Lex.Var, v: Value) {
+      constructor_ (ρ: Env, x: Lex.Var, v: Value) {
+         this.ρ = ρ
          this.x = x
          this.v = v
       }
       
-      get ρ (): Env {
-         return Env.singleton(this.x.str, this.v)
-      }
-
       static is<K extends Persistent> (ξ: Match<K>): ξ is Var<K> {
          return ξ instanceof Var
       }
    }
 
-   export function var_<K extends Persistent> (x: Lex.Var, v: Value): Var<K> {
-      return make(Var, x, v) as Var<K>
+   export function var_<K extends Persistent> (ρ: Env, x: Lex.Var, v: Value): Var<K> {
+      return make(Var, ρ, x, v) as Var<K>
    }
 }
 
