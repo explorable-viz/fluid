@@ -286,7 +286,7 @@ export namespace ExplVal {
       ρ_defs: Env                               // from closeDefs, for uneval
       ξtv: Match.Plug<ExplVal, Match<ExplVal>>  // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (func: ExplVal, arg: ExplVal, ρ_defs: Env, ρ_match: Env, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): void {
+      constructor_ (func: ExplVal, arg: ExplVal, ρ_defs: Env, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): void {
          this.func = func
          this.arg = arg
          this.ρ_defs = ρ_defs
@@ -353,18 +353,16 @@ export namespace ExplVal {
 
    export class MatchAs extends Expl {
       tu: ExplVal
-      ρ_match: Env                              // from matching argument, for uneval
       ξtv: Match.Plug<ExplVal, Match<ExplVal>>  // technically Expl would suffice, but for uneval we want environment
 
-      constructor_ (tu: ExplVal, ρ_match: Env, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): void {
+      constructor_ (tu: ExplVal, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): void {
          this.tu = tu
-         this.ρ_match = ρ_match
          this.ξtv = ξtv
       }
    }
 
-   export function matchAs (k: ExplId, tu: ExplVal, ρ_match: Env, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): MatchAs {
-      return at(k, MatchAs, tu, ρ_match, ξtv)
+   export function matchAs (k: ExplId, tu: ExplVal, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): MatchAs {
+      return at(k, MatchAs, tu, ξtv)
    }
 
    export class BinaryApp extends Expl {

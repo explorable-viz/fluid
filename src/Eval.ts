@@ -168,9 +168,9 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplVal = eval_(ρ, e.e),
-            [ρʹ, {ξ, κ: eʹ}, α] = match(tu.v, e.σ),
-            tv: ExplVal = eval_(Env.concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
-      return explVal(ρ, matchAs(k, tu, ρʹ, Match.plug(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
+            [, {ξ, κ: eʹ}, α] = match(tu.v, e.σ),
+            tv: ExplVal = eval_(Env.concat(ρ, ξ.ρ), instantiate(ξ.ρ, eʹ))
+      return explVal(ρ, matchAs(k, tu, Match.plug(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else {
       return absurd("Unimplemented expression form.", e)
    }
@@ -251,7 +251,7 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    if (t instanceof MatchAs) {
       const {ξ, κ: tv} = t.ξtv
       tv.v.setα(v.α)
-      const [, σ] = unmatch(t.ρ_match, Match.plug(ξ, uneval(tv)), v.α)
+      const [, σ] = unmatch(ξ.ρ, Match.plug(ξ, uneval(tv)), v.α)
       return Expr.MatchAs.at(k, v.α, uneval(t.tu), σ)
    } else {
       return absurd()
