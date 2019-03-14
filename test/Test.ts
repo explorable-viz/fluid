@@ -4,7 +4,7 @@ import { Cursor, TestFile, ρ, initialise, loadExample, parseExample, runExample
 import { NonEmpty } from "../src/BaseTypes"
 import { assert } from "../src/util/Core"
 import { World } from "../src/util/Persistent"
-import { ann } from "../src/Annotated"
+import { ann, setall } from "../src/Annotated"
 import { Eval } from "../src/Eval"
 import { Expr } from "../src/Expr"
 import { ExplVal, Value } from "../src/ExplVal"
@@ -103,6 +103,7 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			World.newRevision()
+			setall(e, ann.top)
 			const here: Cursor = new Cursor(e)
 			here.to(Expr.LetRec, "e")
 				 .to(Expr.App, "arg")
@@ -114,13 +115,13 @@ describe("example", () => {
 				 .push()
 				 .constrArg("Cons", 0)
 				 .at(Expr.Expr, e => e.setα(ann.bot))
-			let v: Value = runExample(e).v
+			let v: Value = Eval.eval_(ρ, e).v
 			assert(v.α !== ann.bot)
 			World.newRevision()
 			here.pop()
 				 .constrArg("Cons", 1)
 				 .at(Expr.Constr, e => e.setα(ann.bot))
-			v = runExample(e).v
+			v = Eval.eval_(ρ, e).v
 			assert(v.α === ann.bot)
 		})
 	})
