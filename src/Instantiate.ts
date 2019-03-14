@@ -20,7 +20,6 @@ import PrimOp = Expr.PrimOp
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 import Var = Expr.Var
-import mapTrie = Expr.Trie.mapTrie
 
 export function instantiate (ρ: Env, e: Expr): Expr {
    const j: ExprId = exprId(ρ.entries(), asVersioned(e))
@@ -87,7 +86,28 @@ export function uninstantiate (e: Expr): Expr {
    } else
    if (e instanceof Var) {
       return Var.at(k, α, e.x)
+   } else {
+      return absurd()
    }
+}
+
+function instantiateTrie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
+   if (Trie.Var.is(σ)) {
+      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ))
+   } else
+   if (Trie.Constr.is(σ)) {
+      return Trie.Constr.make(σ.cases.map(
+         ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
+            return Pair.make(ctr, instantiateArgs(ρ, Π))
+         })
+      )
+   } else {
+      return absurd()
+   }
+}
+
+function uninstantiateTrie<K extends Kont<K>> (σ: Trie<K>): Trie<K> {
+   throw new Error("Not implemented yet")
 }
 
 // See issue #33. These is some sort of heinousness to covert the continuation type.
@@ -96,7 +116,10 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
       return instantiateTrie<K>(ρ, κ) as K // ouch
    } else
    if (κ instanceof Expr.Expr) {
-      return instantiate(ρ, κ) as any as K // also ouch
+      return instantiate(ρ, κ) as any as K // ouch
+   } else
+   if (κ instanceof Args.Args) {
+      return instantiateArgs(ρ, κ) as K    // also ouch
    } else {
       return absurd()
    }
@@ -104,34 +127,10 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
 
 function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
    if (Args.End.is(Π)) {
-      return Args.End.make(Π.κ)
+      return Args.End.make(instantiateKont(ρ, Π.κ))
    } else
    if (Args.Next.is(Π)) {
-      return Args.Next.make(mapTrie((Π: Args<K>) => instantiateArgs(ρ, Π))(instantiateTrie_(ρ, Π.σ)))
-   } else {
-      return absurd()
-   }
-}
-
-function instantiateTrie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
-   return mapTrie((κ: K) => instantiateKont<K>(ρ, κ))(instantiateTrie_(ρ, σ))
-}
-
-function uninstantiateTrie<K extends Kont<K>> (σ: Trie<K>): Trie<K> {
-   throw new Error("Not implemented yet")
-}
-
-// This looks weird - why no instantiateKont?
-function instantiateTrie_<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
-   if (Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, σ.κ)
-   } else
-   if (Trie.Constr.is(σ)) {
-      return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
-            return Pair.make(ctr, instantiateArgs(ρ, Π))
-         })
-      )
+      return Args.Next.make(instantiateTrie(ρ, Π.σ))
    } else {
       return absurd()
    }
