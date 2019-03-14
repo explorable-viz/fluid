@@ -89,6 +89,15 @@ export function uninstantiate (e: Expr): Expr {
    } else
    if (e instanceof Let) {
       return Let.at(k, α, uninstantiate(e.e), uninstantiateTrie(e.σ))
+   } else
+   if (e instanceof MatchAs) {
+      return MatchAs.at(k, α, uninstantiate(e.e), uninstantiateTrie(e.σ))
+   } else
+   if (e instanceof App) {
+      return App.at(k, α, uninstantiate(e.func), uninstantiate(e.arg))
+   } else
+   if (e instanceof BinaryApp) {
+      return BinaryApp.at(k, α, uninstantiate(e.e1), e.opName, uninstantiate(e.e2))
    } else {
       return absurd()
    }
@@ -121,13 +130,13 @@ function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): T {
 // See issue #33. These is some sort of heinousness to covert the continuation type.
 function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
    if (κ instanceof Trie.Trie) {
-      return instantiateTrie<K>(ρ, κ) as K // ouch
+      return instantiateTrie<K, Trie<K>>(ρ, κ) as K 
    } else
    if (κ instanceof Expr.Expr) {
-      return instantiate(ρ, κ) as any as K // ouch
+      return instantiate(ρ, κ) as Kont<K> as K
    } else
    if (κ instanceof Args.Args) {
-      return instantiateArgs(ρ, κ) as K    // also ouch
+      return instantiateArgs(ρ, κ) as K
    } else {
       return absurd()
    }
@@ -135,7 +144,7 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
 
 function uninstantiateKont<K extends Kont<K>> (κ: K): K {
    if (κ instanceof Trie.Trie) {
-      return uninstantiateTrie<K>(κ) as K
+      return uninstantiateTrie<K, Trie<K>>(κ) as K
    } else
    if (κ instanceof Expr.Expr) {
       return uninstantiate(κ) as any as K
