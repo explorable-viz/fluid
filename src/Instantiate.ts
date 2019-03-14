@@ -107,7 +107,11 @@ function instantiateTrie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
 }
 
 function uninstantiateTrie<K extends Kont<K>> (σ: Trie<K>): Trie<K> {
-   throw new Error("Not implemented yet")
+   if (Trie.Var.is(σ)) {
+      return Trie.Var.make(σ.x, uninstantiateKont(σ.κ))
+   } else {
+      return absurd()
+   }
 }
 
 // See issue #33. These is some sort of heinousness to covert the continuation type.
@@ -125,12 +129,37 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
    }
 }
 
+function uninstantiateKont<K extends Kont<K>> (κ: K): K {
+   if (κ instanceof Trie.Trie) {
+      return uninstantiateTrie<K>(κ) as K
+   } else
+   if (κ instanceof Expr.Expr) {
+      return uninstantiate(κ) as any as K
+   } else
+   if (κ instanceof Args.Args) {
+      return uninstantiateArgs(κ) as K
+   } else {
+      return absurd()
+   }
+}
+
 function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
    if (Args.End.is(Π)) {
       return Args.End.make(instantiateKont(ρ, Π.κ))
    } else
    if (Args.Next.is(Π)) {
       return Args.Next.make(instantiateTrie(ρ, Π.σ))
+   } else {
+      return absurd()
+   }
+}
+
+function uninstantiateArgs<K extends Kont<K>> (Π: Args<K>): Args<K> {
+   if (Args.End.is(Π)) {
+      return Args.End.make(uninstantiateKont(Π.κ))
+   } else
+   if (Args.Next.is(Π)) {
+      return Args.Next.make(uninstantiateTrie(Π.σ))
    } else {
       return absurd()
    }
