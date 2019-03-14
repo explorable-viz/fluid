@@ -54,21 +54,24 @@ export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Mat
       }
    } else 
    if (Match.Constr.is(ξ)) {
-      let ctr_tus: [string, List<ExplVal>] // actually may be null, but TypeScript confused
+      let tus: List<ExplVal> // actually may be null, but TypeScript assigns type "never"
       const σ: Trie<K> = Trie.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<K>> => {
          if (Π_or_Ψ instanceof Match.Args.Args) {
-            const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(null, Match.Args.plug(Π_or_Ψ, κ), α)
-            ctr_tus = [ctr, tus]
+            const [tusʹ, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(null, Match.Args.plug(Π_or_Ψ, κ), α)
+            tus = tusʹ
             return Pair.make(ctr, Π)
-         } else {
+         } else
+         if (Π_or_Ψ instanceof Args.Args) {
+            const Π_or_Ψʹ: Args.Args<K> = Π_or_Ψ  // recover type lost by instanceof
             // TODO: mapArgs to set annotations to bot
-            return Pair.make(ctr, Π_or_Ψ)
+            return Pair.make(ctr, Trie.mapArgs((k: K): K => k, Π_or_Ψʹ))
+         } else {
+            return absurd()
          }
       }))
-      if (ctr_tus! === undefined) {
+      if (tus! === undefined) {
          return absurd()
       } else {
-         const [, tus] = ctr_tus
          // use the cached matched value to extract target address, and also to avoid recreating the constructor
          const k: ValId = asVersioned(ξ.v).__id as ValId
          return [Value.Constr.at(k, α, ξ.v.ctr, tus), σ]
@@ -79,7 +82,6 @@ export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Mat
 }
 
 function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, Match.Args.Plug<K, Match.Args<K>>, Annotation] {
-   // Parser ensures constructor patterns agree with constructor signatures.
    if (Cons.is(tvs) && Args.Next.is(Π)) {
       const {t, v} = tvs.head
       // codomain of ξ is Args; promote to Args | Match.Args:

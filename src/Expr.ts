@@ -324,6 +324,10 @@ export namespace Expr {
                return assert(false, "Undefined join.", Π, Πʹ)
             }
          }
+
+         static is<K extends Kont<K>> (Π: Object): Π is Args<K> {
+            return Π instanceof Args
+         }
       }
 
       // Maps zero arguments to κ.
@@ -436,16 +440,14 @@ export namespace Expr {
          }
       }
 
-      function mapArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
-         return (Π: Args<K>): Args<Kʹ> => {
-            if (Args.End.is(Π)) {
-               return Args.End.make(f(Π.κ))
-            } else
-            if (Args.Next.is(Π)) {
-               return Args.Next.make(mapTrie(mapArgs(f))(Π.σ))
-            } else {
-               return absurd()
-            }
+      export function mapArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ, Π: Args<K>): Args<Kʹ> {
+         if (Args.End.is(Π)) {
+            return Args.End.make(f(Π.κ))
+         } else
+         if (Args.Next.is(Π)) {
+            return Args.Next.make(mapTrie((Π: Args<K>): Args<Kʹ> => mapArgs(f, Π))(Π.σ))
+         } else {
+            return absurd()
          }
       }
       
@@ -457,7 +459,7 @@ export namespace Expr {
             if (Constr.is(σ)) {
                return Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<Kʹ>> => {
                   if (Π instanceof Args.Args) {
-                     return Pair.make(ctr, mapArgs(f)(Π))
+                     return Pair.make(ctr, mapArgs(f, Π))
                   } else {
                      return absurd()
                   }
