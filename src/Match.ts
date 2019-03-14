@@ -12,7 +12,7 @@ import Trie = Expr.Trie
 
 // Expose as a separate method for use by 'let'.
 export function matchVar<K extends Kont<K>> (v: Value, σ: Trie.Var<K>): [Env, Match.Plug<K, Match.Var<K>>, Annotation] {
-   return [Env.singleton(σ.x.str, v), Match.plug(Match.var_(σ.x), σ.κ), ann.top]
+   return [Env.singleton(σ.x.str, v), Match.plug(Match.var_(σ.x, v), σ.κ), ann.top]
 }
 
 export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Env, Match.Plug<K, Match<K>>, Annotation] {
@@ -74,7 +74,7 @@ export function unmatch<K extends Kont<K>> (ρ: Env, {ξ, κ}: Match.Plug<K, Mat
       } else {
          // use the cached matched value to extract target address, and also to avoid recreating the constructor
          const k: ValId = asVersioned(ξ.v).__id as ValId
-         return [Value.Constr.at(k, α, ξ.v.ctr, tus), σ]
+         return [Value.Constr.at(k, α, ξ.v.ctr, tus!), σ]
       }
    } else {
       return absurd()
@@ -98,10 +98,10 @@ function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Env, M
 
 function unmatchArgs<K extends Kont<K>> (ρ: Env, {Ψ, κ}: Match.Args.Plug<K, Match.Args<K>>, α: Annotation): [List<ExplVal>, Args<K>] {
    if (Match.Args.Next.is(Ψ)) {
-      const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(null, Match.Args.plug(Ψ.Ψ, κ), α),
+      const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Ψ.Ψ.ρ, Match.Args.plug(Ψ.Ψ, κ), α),
             {t, ξ} = Ψ.tξ,
-            [u, σ] = unmatch(null, Match.plug(ξ, Π), α)
-      return [Cons.make(explVal(null, t, u), tus), Args.Next.make(σ)]
+            [u, σ] = unmatch(ξ.ρ, Match.plug(ξ, Π), α)
+      return [Cons.make(explVal(Env.concat(ξ.ρ, Ψ.Ψ.ρ), t, u), tus), Args.Next.make(σ)]
    } else
    if (Match.Args.End.is(Ψ)) {
       return [Nil.make(), Args.End.make(κ)]
