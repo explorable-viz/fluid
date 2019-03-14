@@ -43,7 +43,7 @@ export abstract class Annotated implements PersistentObject {
 
    abstract constructor_ (...args: Persistent[]): void // annoying to have to dup method signature
 
-   // Could avoid these shenanigans if we had AnnotatedValue as an explicit wrapper.
+   // Could avoid these shenanigans if we had AnnotatedValue as an explicit wrapper (depends on α being first argument).
    copyAt<T extends Annotated & PersistentObject> (k: PersistentObject, α: Annotation): T {
       const cls: PersistentClass<T> = classOf(this) as PersistentClass<Annotated & PersistentObject> as PersistentClass<T> // TS can't cope
       return at<PersistentObject, T>(k, cls, α, ...fieldVals(this).slice(1))
@@ -58,16 +58,18 @@ export abstract class Annotated implements PersistentObject {
 
 // An annotation lattice induces a lattice for any object that potentially contains annotations. They behave with imperative 
 // LVar-like semantics, so although there is a notion of join/meet, we don't actually need to define them.
-export function bot<T extends Persistent> (tgt: T): T {
+export function setall<T extends Persistent> (tgt: T, α: Annotation): T {
    if (tgt === null || typeof tgt === "number" || typeof tgt === "string") {
       return tgt
    } else
    if (tgt instanceof Object) { // annoying that PersistentObject isn't a class
       if (tgt instanceof Annotated) {
-         tgt.setα(ann.bot)
+         tgt.setα(α)
       }
       fields(tgt).forEach((k: string): void => {
-         bot((tgt as Object as ObjectState)[k]) // TypeScript gibberish
+         if (k !== "α") { // perhaps α shouldn't be an enumerable field 
+            setall((tgt as Object as ObjectState)[k], α) // TypeScript gibberish
+         }
       })
       return tgt
    } else {

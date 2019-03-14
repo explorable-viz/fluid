@@ -2,7 +2,7 @@ import { absurd, as, assert } from "./util/Core"
 import { PersistentObject, Versioned, make, asVersioned } from "./util/Persistent"
 import { ann } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
-import { Env, EmptyEnv, ExtendEnv } from "./Env"
+import { Env, ExtendEnv } from "./Env"
 import { ExplVal, Match, Value, explVal } from "./ExplVal"
 import { Expr } from "./Expr"
 import { instantiate, uninstantiate } from "./Instantiate"
@@ -83,7 +83,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, Value.closure(kᵥ, f.α, ρ, δ_0, f.σ))
    } else
    if (Nil.is(δ)) {
-      return EmptyEnv.make()
+      return Env.empty()
    } else {
       return absurd()
    }
@@ -94,6 +94,9 @@ export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
    const fs: List<Value.Closure> = ρ.entries().map(v => as(v, Value.Closure))
    if (Cons.is(fs)) {
       return [fs.head.ρ, fs.head.δ]
+   } else
+   if (Nil.is(fs)) {
+      return [Env.empty(), Nil.make()]
    } else {
       return absurd()
    }
