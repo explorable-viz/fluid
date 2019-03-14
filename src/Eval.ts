@@ -1,6 +1,6 @@
 import { absurd, as, assert } from "./util/Core"
 import { PersistentObject, Versioned, make, asVersioned } from "./util/Persistent"
-import { ann, bot } from "./Annotated"
+import { ann } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, EmptyEnv, ExtendEnv } from "./Env"
 import { ExplVal, Match, Value, explVal } from "./ExplVal"
@@ -158,7 +158,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    } else
    if (e instanceof Expr.Let) {
       const tu: ExplVal = eval_(ρ, e.e),
-            [{ξ, κ: eʹ}, α] = matchVar<Expr>(tu.v, e.σ),
+            [{ξ, κ: eʹ}, α] = matchVar(tu.v, e.σ),
             tv: ExplVal = eval_(Env.concat(ρ, ξ.ρ), instantiate(ξ.ρ, eʹ))
       return explVal(ρ, let_(k, tu, Match.plug(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(α, tv.v.α, e.α)))
    } else
@@ -183,20 +183,16 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
          k: ExprId = asVersioned(kᵥ.e).__id as ExprId
    if (t instanceof Empty) {
       if (v instanceof Value.ConstInt) {
-         bot(ρ)
          return Expr.ConstInt.at(k, v.α, v.val)
       } else
       if (v instanceof Value.ConstStr) {
-         bot(ρ)
          return Expr.ConstStr.at(k, v.α, v.val)
       } else
       if (v instanceof Value.Closure) {
          assert(v.δ.length === 0)
-         bot(ρ)
          return Expr.Fun.at(k, v.α, v.σ)
       } else 
       if (v instanceof Value.PrimOp) {
-         bot(ρ)
          return Expr.PrimOp.at(k, v.α, v.op)
       } else
       if (v instanceof Value.Constr) {
@@ -208,10 +204,9 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    } else
    if (t instanceof Var) {
       const x: string = t.x.str
-      bot(ρ)
       assert(ρ.has(x))
-         ρ.get(x)!.setα(v.α)
-         return Expr.Var.at(k, v.α, t.x)
+      ρ.get(x)!.setα(v.α)
+      return Expr.Var.at(k, v.α, t.x)
    }
    else
    if (t instanceof App) {
