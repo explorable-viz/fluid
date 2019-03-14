@@ -1,8 +1,9 @@
-import { __nonNull, absurd } from "./util/Core"
-import { asVersioned } from "./util/Persistent"
+import { absurd } from "./util/Core"
+import { PersistentObject, Versioned, asVersioned } from "./util/Persistent"
+import { Annotation, ann } from "./Annotated"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { ExprId } from "./Eval"
+import { ExprId, exprId } from "./Eval"
 import { Expr, Kont } from "./Expr"
 
 import App = Expr.App
@@ -19,10 +20,11 @@ import PrimOp = Expr.PrimOp
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 import Var = Expr.Var
-import mapTrie = Expr.Trie.mapTrie
 
-export function instantiate (ρ: Env, e: Expr): Expr {
-   const j: ExprId = ExprId.make(ρ.entries(), asVersioned(e))
+// F-bounded polymorphism doesn't really work well here. I've used it for the smaller helper functions 
+// (but with horrendous casts), but not for the two main top-level functions.
+export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
+   const j: ExprId = exprId(ρ.entries(), asVersioned(e))
    if (e instanceof ConstInt) {
       return ConstInt.at(j, e.α, e.val)
    } else
@@ -30,8 +32,7 @@ export function instantiate (ρ: Env, e: Expr): Expr {
       return ConstStr.at(j, e.α, e.val)
    } else
    if (e instanceof Constr) {
-      // Parser ensures constructors agree with constructor signatures.
-      return Constr.at(j, e.α, e.ctr, __nonNull(e.args).map(e => instantiate(ρ, e)))
+      return Constr.at(j, e.α, e.ctr, e.args.map(e => instantiate(ρ, e)))
    } else
    if (e instanceof Fun) {
       return Fun.at(j, e.α, instantiateTrie(ρ, e.σ))
@@ -43,11 +44,11 @@ export function instantiate (ρ: Env, e: Expr): Expr {
       return Var.at(j, e.α, e.x)
    } else
    if (e instanceof Let) {
-      return Let.at(j, e.α, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ) as Trie.Var<Expr>)
+      return Let.at(j, e.α, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
    } else
    if (e instanceof LetRec) {
       const δ: List<RecDef> = e.δ.map(def => {
-         const i: ExprId = ExprId.make(ρ.entries(), asVersioned(def))
+         const i: ExprId = exprId(ρ.entries(), asVersioned(def))
          return RecDef.at(i, def.x, instantiate(ρ, def.f) as Fun)
       })
       return LetRec.at(j, e.α, δ, instantiate(ρ, e.e))
@@ -65,13 +66,100 @@ export function instantiate (ρ: Env, e: Expr): Expr {
    }
 }
 
-// See issue #33. These is some sort of heinousness to covert the continuation type.
-function instantiateKont<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, κ: K): Kʹ {
+// It's enough just to return original expression; reconstructing environment would require rethinking. 
+export function uninstantiate (e: Expr): Expr {
+   const eʹ: Versioned<Expr> = (asVersioned(e).__id as ExprId).e as Versioned<Expr>,
+         k: PersistentObject = eʹ.__id,
+         α: Annotation = ann.join(eʹ.α, e.α) // uninstantiate must merge annotations into the source
+   if (e instanceof ConstInt) {
+      return ConstInt.at(k, α, e.val)
+   } else
+   if (e instanceof ConstStr) {
+      return ConstStr.at(k, α, e.val)
+   } else
+   if (e instanceof Constr) {
+      return Constr.at(k, α, e.ctr, e.args.map(e => uninstantiate(e)))
+   } else
+   if (e instanceof Fun) {
+      return Fun.at(k, α, uninstantiateTrie(e.σ))
+   } else
+   if (e instanceof PrimOp) {
+      return PrimOp.at(k, α, e.op)
+   } else
+   if (e instanceof Var) {
+      return Var.at(k, α, e.x)
+   } else
+   if (e instanceof Let) {
+      return Let.at(k, α, uninstantiate(e.e), uninstantiateTrie(e.σ))
+   } else
+   if (e instanceof LetRec) {
+      const δ: List<RecDef> = e.δ.map(def => {
+         const defʹ: Versioned<RecDef> = (asVersioned(def).__id as ExprId).e as Versioned<RecDef>,
+               i: PersistentObject = defʹ.__id
+         return RecDef.at(i, def.x, uninstantiate(def.f) as Fun)
+      })
+      return LetRec.at(k, α, δ, uninstantiate(e.e))
+   } else
+   if (e instanceof MatchAs) {
+      return MatchAs.at(k, α, uninstantiate(e.e), uninstantiateTrie(e.σ))
+   } else
+   if (e instanceof App) {
+      return App.at(k, α, uninstantiate(e.func), uninstantiate(e.arg))
+   } else
+   if (e instanceof BinaryApp) {
+      return BinaryApp.at(k, α, uninstantiate(e.e1), e.opName, uninstantiate(e.e2))
+   } else {
+      return absurd()
+   }
+}
+
+function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T): T {
+   if (Trie.Var.is(σ)) {
+      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ) as K) as Trie<K> as T
+   } else
+   if (Trie.Constr.is(σ)) {
+      return Trie.Constr.make(σ.cases.map(
+         ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
+            return Pair.make(ctr, instantiateArgs(ρ, Π))
+         })
+      ) as Trie<K> as T
+   } else {
+      return absurd()
+   }
+}
+
+function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): T {
+   if (Trie.Var.is(σ)) {
+      return Trie.Var.make(σ.x, uninstantiateKont(σ.κ)) as Trie<K> as T
+   } else {
+      return absurd()
+   }
+}
+
+// See issue #33.
+function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
    if (κ instanceof Trie.Trie) {
-      return instantiateTrie<K, Kʹ>(ρ, κ) as any as Kʹ // ouch
+      return instantiateTrie<K, Trie<K>>(ρ, κ) as K 
    } else
    if (κ instanceof Expr.Expr) {
-      return instantiate(ρ, κ) as any as Kʹ // also ouch
+      return instantiate(ρ, κ) as Kont<K> as K
+   } else
+   if (κ instanceof Args.Args) {
+      return instantiateArgs(ρ, κ) as K
+   } else {
+      return absurd()
+   }
+}
+
+function uninstantiateKont<K extends Kont<K>> (κ: K): K {
+   if (κ instanceof Trie.Trie) {
+      return uninstantiateTrie<K, Trie<K>>(κ) as K
+   } else
+   if (κ instanceof Expr.Expr) {
+      return uninstantiate(κ) as any as K
+   } else
+   if (κ instanceof Args.Args) {
+      return uninstantiateArgs(κ) as K
    } else {
       return absurd()
    }
@@ -79,30 +167,21 @@ function instantiateKont<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, κ:
 
 function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
    if (Args.End.is(Π)) {
-      return Args.End.make(Π.κ)
+      return Args.End.make(instantiateKont(ρ, Π.κ))
    } else
    if (Args.Next.is(Π)) {
-      return Args.Next.make(mapTrie((Π: Args<K>) => instantiateArgs(ρ, Π))(instantiateTrie_(ρ, Π.σ)))
+      return Args.Next.make(instantiateTrie(ρ, Π.σ))
    } else {
       return absurd()
    }
 }
 
-function instantiateTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, σ: Trie<K>): Trie<Kʹ> {
-   return mapTrie((κ: K) => instantiateKont<K, Kʹ>(ρ, κ))(instantiateTrie_(ρ, σ))
-}
-
-// This looks weird - why no instantiateKont?
-function instantiateTrie_<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Trie<K> {
-   if (Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, σ.κ)
+function uninstantiateArgs<K extends Kont<K>> (Π: Args<K>): Args<K> {
+   if (Args.End.is(Π)) {
+      return Args.End.make(uninstantiateKont(Π.κ))
    } else
-   if (Trie.Constr.is(σ)) {
-      return Trie.Constr.make(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
-            return Pair.make(ctr, instantiateArgs(ρ, Π))
-         })
-      )
+   if (Args.Next.is(Π)) {
+      return Args.Next.make(uninstantiateTrie(Π.σ))
    } else {
       return absurd()
    }

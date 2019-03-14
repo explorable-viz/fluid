@@ -3,7 +3,7 @@ import { eq } from "./util/Ord"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Lexeme } from "./util/parse/Core"
 import { Annotated, Annotation } from "./Annotated"
-import { List, Pair } from "./BaseTypes"
+import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { UnaryOp } from "./Primitive"
 
@@ -324,6 +324,10 @@ export namespace Expr {
                return assert(false, "Undefined join.", Π, Πʹ)
             }
          }
+
+         static is<K extends Kont<K>> (Π: Object): Π is Args<K> {
+            return Π instanceof Args
+         }
       }
 
       // Maps zero arguments to κ.
@@ -361,7 +365,7 @@ export namespace Expr {
       }
    }
 
-   // Tries are persistent but not versioned, as per the formalism.
+   // Tries are now versioned, since (trie id, value id) is needed to determine match id.
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
 
    export interface Kont<K> extends PersistentObject {
@@ -381,6 +385,9 @@ export namespace Expr {
       }
    }
 
+   // Tries are interned, not versioned, as per the formalism; it might make sense for tries to be versioned so we 
+   // can key match ids on (value id, trie id), but resist for now to avoid having to synthesise ids for the 
+   // output of join, instantiate and mapTrie.
    export namespace Trie {
       export abstract class Trie<K extends Kont<K>> implements Kont<Trie<K>> {
          __tag: "Expr.Trie"
@@ -430,38 +437,6 @@ export namespace Expr {
 
          static make<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
             return make(Var, x, κ) as Var<K>
-         }
-      }
-
-      function mapArgs<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (Π: Args<K>) => Args<Kʹ> {
-         return (Π: Args<K>): Args<Kʹ> => {
-            if (Args.End.is(Π)) {
-               return Args.End.make(f(Π.κ))
-            } else
-            if (Args.Next.is(Π)) {
-               return Args.Next.make(mapTrie(mapArgs(f))(Π.σ))
-            } else {
-               return absurd()
-            }
-         }
-      }
-      
-      export function mapTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (f: (κ: K) => Kʹ): (σ: Trie<K>) => Trie<Kʹ> {
-         return (σ: Trie<K>): Trie.Trie<Kʹ> => {
-            if (Var.is(σ)) {
-               return Var.make(σ.x, f(σ.κ))
-            } else 
-            if (Constr.is(σ)) {
-               return Constr.make(σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<Kʹ>> => {
-                  if (Π instanceof Args.Args) {
-                     return Pair.make(ctr, mapArgs(f)(Π))
-                  } else {
-                     return absurd()
-                  }
-               }))
-            } else {
-               return absurd()
-            }
          }
       }
    }
