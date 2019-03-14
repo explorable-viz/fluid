@@ -145,11 +145,12 @@ export function merge<K extends Kont<K>> (σ1: Trie.Constr<K>, σ2: Trie.Constr<
 }
 
 export function parseExample (src: string | null): Expr {
-   return __nonNull(parse(Parse.expr, __nonNull(src))).ast
+   const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
+   return instantiate(ρ, e)
 }
 
 export function runExample (e: Expr): ExplVal {
-   const tv: ExplVal = Eval.eval_(ρ, instantiate(ρ, e))
+   const tv: ExplVal = Eval.eval_(ρ, e)
    console.log(tv)
    return tv
 }

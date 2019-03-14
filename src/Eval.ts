@@ -182,25 +182,25 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
 
 // Output environment is written to.
 export function uneval ({ρ, t, v}: ExplVal): Expr {
-   const kᵥ: ValId = asVersioned(v).__id as ValId,
-         k: ExprId = asVersioned(kᵥ.e).__id as ExprId
+   const k: ExplId = asVersioned(t).__id as ExplId,
+         kₑ: ExprId = asVersioned(k.e).__id as ExprId
    if (t instanceof Empty) {
       if (v instanceof Value.ConstInt) {
-         return Expr.ConstInt.at(k, v.α, v.val)
+         return Expr.ConstInt.at(kₑ, v.α, v.val)
       } else
       if (v instanceof Value.ConstStr) {
-         return Expr.ConstStr.at(k, v.α, v.val)
+         return Expr.ConstStr.at(kₑ, v.α, v.val)
       } else
       if (v instanceof Value.Closure) {
          assert(v.δ.length === 0)
-         return Expr.Fun.at(k, v.α, v.σ)
+         return Expr.Fun.at(kₑ, v.α, v.σ)
       } else 
       if (v instanceof Value.PrimOp) {
-         return Expr.PrimOp.at(k, v.α, v.op)
+         return Expr.PrimOp.at(kₑ, v.α, v.op)
       } else
       if (v instanceof Value.Constr) {
          // reverse order but shouldn't matter in absence of side-effects:
-         return Expr.Constr.at(k, v.α, v.ctr, v.args.map(uneval))
+         return Expr.Constr.at(kₑ, v.α, v.ctr, v.args.map(uneval))
       } else {
          return absurd()
       }
@@ -209,7 +209,7 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       const x: string = t.x.str
       assert(ρ.has(x))
       ρ.get(x)!.setα(v.α)
-      return Expr.Var.at(k, v.α, t.x)
+      return Expr.Var.at(kₑ, v.α, t.x)
    }
    else
    if (t instanceof App) {
@@ -220,10 +220,10 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
          unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
          uncloseDefs(t.ρ_defs)
          f.setα(v.α)
-         return Expr.App.at(k, v.α, uneval(t.func), uneval(t.arg))
+         return Expr.App.at(kₑ, v.α, uneval(t.func), uneval(t.arg))
       } else
       if (f instanceof Value.PrimOp) {
-         return Expr.App.at(k, v.α, uneval(t.func).setα(v.α), uneval(t.arg).setα(v.α))
+         return Expr.App.at(kₑ, v.α, uneval(t.func).setα(v.α), uneval(t.arg).setα(v.α))
       } else {
          return absurd()
       }
@@ -232,26 +232,26 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       assert(binaryOps.has(t.opName.str))
       t.tv1.v.setα(v.α)
       t.tv2.v.setα(v.α)
-      return Expr.BinaryApp.at(k, v.α, uneval(t.tv1), t.opName, uneval(t.tv2))
+      return Expr.BinaryApp.at(kₑ, v.α, uneval(t.tv1), t.opName, uneval(t.tv2))
    } else
    if (t instanceof Let) {
       const {ξ, κ: tv} = t.ξtv
       tv.v.setα(v.α)
       const eʹ: Expr = uninstantiate(uneval(tv)),
             e: Expr = uneval(t.tu) // unmatch not required - suffices to uneval in reverse order
-      return Expr.Let.at(k, v.α, e, Trie.Var.make(ξ.x, eʹ))
+      return Expr.Let.at(kₑ, v.α, e, Trie.Var.make(ξ.x, eʹ))
    } else
    if (t instanceof LetRec) {
       t.tv.v.setα(v.α)
       const e: Expr = uninstantiate(uneval(t.tv)),
             [, δ]: [Env, List<RecDef>] = uncloseDefs(t.ρ_defs)
-      return Expr.LetRec.at(k, v.α, δ, e)
+      return Expr.LetRec.at(kₑ, v.α, δ, e)
    } else
    if (t instanceof MatchAs) {
       const {ξ, κ: tv} = t.ξtv
       tv.v.setα(v.α)
       const [, σ] = unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
-      return Expr.MatchAs.at(k, v.α, uneval(t.tu), σ)
+      return Expr.MatchAs.at(kₑ, v.α, uneval(t.tu), σ)
    } else {
       return absurd()
    }
