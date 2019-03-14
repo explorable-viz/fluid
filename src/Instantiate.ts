@@ -1,5 +1,6 @@
 import { __nonNull, absurd } from "./util/Core"
 import { PersistentObject, Versioned, asVersioned } from "./util/Persistent"
+import { Annotation, ann } from "./Annotated"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { ExprId, exprId } from "./Eval"
@@ -30,8 +31,7 @@ export function instantiate (ρ: Env, e: Expr): Expr {
       return ConstStr.at(j, e.α, e.val)
    } else
    if (e instanceof Constr) {
-      // Parser ensures constructors agree with constructor signatures.
-      return Constr.at(j, e.α, e.ctr, __nonNull(e.args).map(e => instantiate(ρ, e)))
+      return Constr.at(j, e.α, e.ctr, e.args.map(e => instantiate(ρ, e)))
    } else
    if (e instanceof Fun) {
       return Fun.at(j, e.α, instantiateTrie(ρ, e.σ))
@@ -65,13 +65,25 @@ export function instantiate (ρ: Env, e: Expr): Expr {
    }
 }
 
-// It's enough just to return the original expression. To reconstruct the environment would require
-// some redesign. Whereas instantiate sets annotations, uninstantiate must merge them.
+// It's enough just to return original expression; reconstructing environment would require rethinking. 
 export function uninstantiate (e: Expr): Expr {
-   const eʹ: Versioned<Expr> = (asVersioned(e).__id as ExprId).e,
-         k: PersistentObject = eʹ.__id
+   const eʹ: Versioned<Expr> = (asVersioned(e).__id as ExprId).e as Versioned<Expr>,
+         k: PersistentObject = eʹ.__id,
+         α: Annotation = ann.join(eʹ.α, e.α) // uninstantiate must merge annotations into the source
    if (e instanceof ConstInt) {
-      return ConstInt.at(k, e.α, e.val)
+      return ConstInt.at(k, α, e.val)
+   } else
+   if (e instanceof ConstStr) {
+      return ConstStr.at(k, α, e.val)
+   } else
+   if (e instanceof Constr) {
+      return Constr.at(k, α, e.ctr, e.args.map(e => uninstantiate(e)))
+   } else
+   if (e instanceof PrimOp) {
+      return PrimOp.at(k, α, e.op)
+   } else
+   if (e instanceof Var) {
+      return Var.at(k, α, e.x)
    }
 }
 
