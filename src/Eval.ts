@@ -133,7 +133,8 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
          const tu: ExplVal = eval_(ρ, e.arg),
                [{ξ, κ: eʹ}, α] = match(tu.v, f.σ),
                ρ_defs: Env = closeDefs(f.δ, f.ρ, f.δ),
-               tv: ExplVal = eval_(Env.concat(Env.concat(f.ρ, ρ_defs), ξ.ρ), instantiate(ξ.ρ, eʹ))
+               ρʹ: Env = Env.concat(ρ_defs, ξ.ρ),
+               tv: ExplVal = eval_(Env.concat(f.ρ, ρʹ), instantiate(ρʹ, eʹ))
          return explVal(ρ, app(k, tf, tu, ρ_defs, Match.plug(ξ, tv)), tv.v.copyAt(kᵥ, ann.meet(f.α, α, tv.v.α, e.α)))
       } else
       // Primitives with identifiers as names are unary and first-class.
