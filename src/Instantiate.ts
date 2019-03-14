@@ -1,4 +1,4 @@
-import { __nonNull, absurd } from "./util/Core"
+import { absurd } from "./util/Core"
 import { PersistentObject, Versioned, asVersioned } from "./util/Persistent"
 import { Annotation, ann } from "./Annotated"
 import { List, Pair } from "./BaseTypes"
@@ -79,6 +79,9 @@ export function uninstantiate (e: Expr): Expr {
    if (e instanceof Constr) {
       return Constr.at(k, α, e.ctr, e.args.map(e => uninstantiate(e)))
    } else
+   if (e instanceof Fun) {
+      return Fun.at(k, α, uninstantiateTrie(e.σ))
+   } else
    if (e instanceof PrimOp) {
       return PrimOp.at(k, α, e.op)
    } else
@@ -112,6 +115,10 @@ function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
 
 function instantiateTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (ρ: Env, σ: Trie<K>): Trie<Kʹ> {
    return mapTrie((κ: K) => instantiateKont<K, Kʹ>(ρ, κ))(instantiateTrie_(ρ, σ))
+}
+
+function uninstantiateTrie<K extends Kont<K>, Kʹ extends Kont<Kʹ>> (σ: Trie<K>): Trie<Kʹ> {
+   throw new Error("Not implemented yet")
 }
 
 // This looks weird - why no instantiateKont?
