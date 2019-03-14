@@ -1,6 +1,7 @@
 import { AClass, Class, __nonNull, absurd, as, assert } from "../src/util/Core"
-import { Persistent, PersistentObject } from "../src/util/Persistent"
+import { Persistent, PersistentObject, World } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
+import { ann, setall } from "../src/Annotated"
 import { Cons, NonEmpty, Pair } from "../src/BaseTypes"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
@@ -152,6 +153,14 @@ export function parseExample (src: string | null): Expr {
 export function runExample (e: Expr): ExplVal {
    const tv: ExplVal = Eval.eval_(ρ, e)
    console.log(tv)
+   World.newRevision()
+   setall(tv, ann.bot)
+   World.newRevision()
+   const here: Cursor = new Cursor(tv)
+   here.to(ExplVal, "v")
+       .at(Value.Value, v => v.setα(ann.top))
+   let eʹ: Expr = Eval.uneval(tv)
+   assert(e === eʹ)
    return tv
 }
 

@@ -4,8 +4,7 @@ import { Cursor, TestFile, initialise, loadExample, parseExample, runExample } f
 import { NonEmpty } from "../src/BaseTypes"
 import { assert } from "../src/util/Core"
 import { World } from "../src/util/Persistent"
-import { ann, setall } from "../src/Annotated"
-import { Eval } from "../src/Eval"
+import { ann } from "../src/Annotated"
 import { Expr } from "../src/Expr"
 import { ExplVal, Value } from "../src/ExplVal"
 
@@ -41,16 +40,7 @@ describe("example", () => {
 	describe("compose", () => {
 		const file: TestFile = loadExample("compose")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text),
-					tv: ExplVal = runExample(e)
-			World.newRevision()
-			setall(tv, ann.bot)
-			World.newRevision()
-			const here: Cursor = new Cursor(tv)
-			here.to(ExplVal, "v")
-				 .at(Value.ConstInt, v => v.setα(ann.top))
-			let eʹ: Expr = Eval.uneval(tv)
-			assert(e === eʹ)
+			runExample(parseExample(file.text))
 		})
 	})
 
