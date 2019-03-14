@@ -214,7 +214,7 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       if (f instanceof Value.Closure) {
          const {ξ, κ: tv} = t.ξtv
          tv.v.setα(v.α)
-         unmatch(Match.plug(ξ, uneval(tv)), v.α)
+         unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
          uncloseDefs(t.ρ_defs)
          f.setα(v.α)
          return Expr.App.at(k, v.α, uneval(t.func), uneval(t.arg))
@@ -240,14 +240,14 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    } else
    if (t instanceof LetRec) {
       t.tv.v.setα(v.α)
-      const e: Expr = uneval(t.tv),
+      const e: Expr = uninstantiate(uneval(t.tv)),
             [, δ]: [Env, List<RecDef>] = uncloseDefs(t.ρ_defs)
       return Expr.LetRec.at(k, v.α, δ, e)
    } else
    if (t instanceof MatchAs) {
       const {ξ, κ: tv} = t.ξtv
       tv.v.setα(v.α)
-      const [, σ] = unmatch(Match.plug(ξ, uneval(tv)), v.α)
+      const [, σ] = unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
       return Expr.MatchAs.at(k, v.α, uneval(t.tu), σ)
    } else {
       return absurd()
