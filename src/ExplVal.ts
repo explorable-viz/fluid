@@ -1,3 +1,4 @@
+import { __nonNull } from "./util/Core"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
@@ -276,13 +277,12 @@ export namespace ExplVal {
          this.func = func
          this.arg = arg
          this.ρ_defs = ρ_defs
-         this.ρ_defs = ρ_defs
          this.ξtv = ξtv
       }
    }
 
    export function app (k: ExplId, func: ExplVal, arg: ExplVal, ρ_defs: Env, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): App {
-      return at(k, App, func, arg, ρ_defs, ξtv)
+      return at(k, App, func, __nonNull(arg), __nonNull(ρ_defs), ξtv)
    }
 
    export class UnaryApp extends Expl {
@@ -295,8 +295,8 @@ export namespace ExplVal {
       }
    }
 
-   export function unaryApp (k: ExplId, func: ExplVal, arg: ExplVal): App {
-      return at(k, App, func, arg)
+   export function unaryApp (k: ExplId, func: ExplVal, arg: ExplVal): UnaryApp {
+      return at(k, UnaryApp, func, arg)
    }
 
    export class Empty extends Expl {
