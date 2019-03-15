@@ -276,6 +276,7 @@ export namespace ExplVal {
          this.func = func
          this.arg = arg
          this.ρ_defs = ρ_defs
+         this.ρ_defs = ρ_defs
          this.ξtv = ξtv
       }
    }
