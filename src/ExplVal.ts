@@ -1,4 +1,4 @@
-import { __nonNull } from "./util/Core"
+import { __nonNull, assert } from "./util/Core"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
@@ -117,6 +117,9 @@ export class ExplVal implements PersistentObject, Kont<ExplVal> {
 }
 
 export function explVal (ρ: Env, t: Expl, v: Value): ExplVal {
+   if (t instanceof ExplVal.Var) {
+      assert(ρ.has(t.x.str))
+   }
    return make(ExplVal, ρ, t, v)
 }
 
