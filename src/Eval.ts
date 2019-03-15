@@ -15,6 +15,7 @@ import Empty = ExplVal.Empty
 import Let = ExplVal.Let
 import LetRec = ExplVal.LetRec
 import MatchAs = ExplVal.MatchAs
+import UnaryApp = ExplVal.UnaryApp
 import Var = ExplVal.Var
 
 import app = ExplVal.app
@@ -213,20 +214,17 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    }
    else
    if (t instanceof App) {
-      const f: Value.Closure | Value.PrimOp = t.func.v as (Value.Closure | Value.PrimOp)
-      if (f instanceof Value.Closure) {
-         const {ξ, κ: tv} = t.ξtv
-         tv.v.joinα(v.α)
-         unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
-         uncloseDefs(t.ρ_defs)
-         f.joinα(v.α)
-         return Expr.App.at(kₑ, v.α, uneval(t.func), uneval(t.arg))
-      } else
-      if (f instanceof Value.PrimOp) {
-         return Expr.App.at(kₑ, v.α, uneval(t.func).joinα(v.α), uneval(t.arg).joinα(v.α))
-      } else {
-         return absurd()
-      }
+      assert(t.func.v instanceof Value.Closure)
+      const {ξ, κ: tv} = t.ξtv
+      tv.v.joinα(v.α)
+      unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
+      uncloseDefs(t.ρ_defs)
+      t.func.v.joinα(v.α)
+      return Expr.App.at(kₑ, v.α, uneval(t.func), uneval(t.arg))
+   } else
+   if (t instanceof UnaryApp) {
+      assert(t.func.v instanceof Value.PrimOp)
+      return Expr.App.at(kₑ, v.α, uneval(t.func).joinα(v.α), uneval(t.arg).joinα(v.α))
    } else
    if (t instanceof BinaryApp) {
       assert(binaryOps.has(t.opName.str))
