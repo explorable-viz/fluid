@@ -224,7 +224,9 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    } else
    if (t instanceof UnaryApp) {
       assert(t.func.v instanceof Value.PrimOp)
-      return Expr.App.at(kₑ, v.α, uneval(t.func).joinα(v.α), uneval(t.arg).joinα(v.α))
+      t.func.v.joinα(v.α)
+      t.arg.v.joinα(v.α)
+      return Expr.App.at(kₑ, v.α, uneval(t.func), uneval(t.arg))
    } else
    if (t instanceof BinaryApp) {
       assert(binaryOps.has(t.opName.str))
