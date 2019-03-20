@@ -99,7 +99,7 @@ class MemoFun<T extends PersistentObject> implements Memoisable<T> {
    }
 
    call (args: Persistent[]): T {
-      return this.f(...args)
+      return this.f.apply(args[0], args.slice(1))
    }
 }
 
