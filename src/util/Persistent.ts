@@ -34,31 +34,24 @@ export class ExternalObject implements PersistentObject {
    }
 }
 
-// Curried map from constructors and arguments to interned objects; curried because composite keys would 
+// Curried map from constructors and arguments to cached values; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
-type InternedObjects = Map<Persistent, PersistentObject | Map<Persistent, Object>> // approximate recursive type
-const __internedObjs: InternedObjects = new Map
-
-// For versioned objects the map is not curried but takes an (interned) composite key. TODO: treating the constructor
-// as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
-// "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
-type VersionedObjects = Map<PersistentObject, PersistentObject>
-const __versionedObjs: VersionedObjects = new Map
+type MemoTable = Map<Persistent, PersistentObject | Map<Persistent, Object>> // approximate recursive type
+const __memoTable: MemoTable = new Map
 
 function lookupArg<T extends PersistentObject> (
-   ctr: PersistentClass<T>, 
-   m: InternedObjects, 
+   f: Memoisable<T>, 
+   m: MemoTable, 
    args: Persistent[], 
    n: number
 ): PersistentObject | Map<Persistent, Object> {
-   // for memoisation purposes, treat constructor itself as argument -1
-   const k: Persistent = n === -1 ? ctr : args[n]
+   // for memoisation purposes, treat f's key as argument -1
+   const k: Persistent = n === -1 ? f.key : args[n]
    let v: PersistentObject | Map<Persistent, Object> | undefined = m.get(k)
    if (v === undefined) {
       if (n === args.length - 1) {
-         v = new ctr
-         v.constructor_(...args)
+         v = f.call(args)
       } else {
          v = new Map
       }
@@ -69,15 +62,69 @@ function lookupArg<T extends PersistentObject> (
 
 export type PersistentClass<T extends PersistentObject = PersistentObject> = new () => T
 
+// Unify memo-functions and interned classes.
+interface Memoisable<T extends PersistentObject> {
+   key: Persistent
+   call (args: Persistent[]): T
+}
+
+class MemoCtr<T extends PersistentObject> implements Memoisable<T> {
+   ctr: PersistentClass<T>
+
+   constructor (ctr: PersistentClass<T>) {
+      this.ctr = ctr
+   }
+
+   get key (): Persistent {
+      return this.ctr
+   } 
+
+   call (args: Persistent[]): T {
+      const o: T = new this.ctr
+      o.constructor_(...args)
+      Object.freeze(o)
+      return o
+   }
+}
+
+class MemoFun<T extends PersistentObject> implements Memoisable<T> {
+   f: (...args: Persistent[]) => T
+
+   constructor (f: (...args: Persistent[]) => T) {
+      this.f = f
+   }
+
+   get key (): Persistent {
+      return this.f
+   }
+
+   call (args: Persistent[]): T {
+      return this.f.apply(args[0], args.slice(1))
+   }
+}
+
+export function memoCall<T extends PersistentObject> (f: Memoisable<T>, args: Persistent[]): T {
+   let v: PersistentObject | Map<Persistent, Object> = lookupArg(f, __memoTable, args, -1)
+   for (let n: number = 0; n < args.length; ++n) {
+      // since there are more arguments, the last v was a (nested) map
+      v = lookupArg(f, v as MemoTable, args, n)
+   }
+   return v as T
+}
+
 // Hash-consing (interning) object construction.
 export function make<T extends PersistentObject> (ctr: PersistentClass<T>, ...args: Persistent[]): T {
-   let v: PersistentObject | Map<Persistent, Object> = lookupArg(ctr, __internedObjs, args, -1)
-   for (var n: number = 0; n < args.length; ++n) {
-      // since there are more arguments, the last v was a (nested) map
-      v = lookupArg(ctr, v as InternedObjects, args, n)
-   }
-   Object.freeze(v)
-   return v as T
+   return memoCall(new MemoCtr(ctr), args)
+}
+
+// Memoisation.
+export function memo<T extends PersistentObject> (f: (...args: Persistent[]) => T, ...args: Persistent[]): T {
+   return memoCall(new MemoFun(f), args)
+}
+
+// Static (non-instance) functions need null as "this" argument.
+export function memo_static<T extends PersistentObject> (f: (...args: any[]) => T, ...args: any[]): T {
+   return memo(f, null, ...args)
 }
 
 export function versioned (o: Persistent): o is VersionedObject {
@@ -107,6 +154,12 @@ function reclassify (o: Object, ctr: Class<Object>): void {
       Object.setPrototypeOf(o, proto)
    }
 }
+
+// For versioned objects the map is not curried but takes an (interned) composite key. TODO: treating the constructor
+// as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
+// "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
+type VersionedObjects = Map<PersistentObject, PersistentObject>
+const __versionedObjs: VersionedObjects = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
 export function at<K extends PersistentObject, T extends PersistentObject> (k: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
@@ -222,46 +275,10 @@ export function fieldVals (o: Object): Persistent[] {
    return fields(o).map(k =>  (o as ObjectState)[k])
 }
 
-// For memoisation purposes, treat the function itself as argument -1.
-// Functionality of f hard to assert because of allocation of new objects.
-function lookupArg_(
-   f: (...args: any[]) => any,
-   m: Map<any, any>,
-   args: any[],
-   n: number
-): any {
-   const k = n === -1 ? f : args[n]
-   let v = m.get(k)
-   if (v === undefined) {
-      if (n === args.length - 1) {
-         v = f.apply(args[0], args.slice(1))
-      } else {
-         v = new Map()
-      }
-      m.set(k, v)
-   }
-   return v
-}
-
-// Curried map from constructors and arguments to constructed objects.
-var __instances: Map<any, Object> = new Map()
-
-// Memoisation. TODO: reimplement hash-consing using this.
-export function memo<T>(f: (...args: any[]) => T, ...args: any[]): T {
-   var v: any = lookupArg_(f, __instances, args, -1)
-   for (var n: number = 0; n < args.length; ++n) {
-      // since there are more arguments, the last v was a (nested) map
-      v = lookupArg_(f, <Map<any, any>>v, args, n)
-   }
-   return <T>v
-}
-
 export class World implements PersistentObject, Ord<World> {
    public parent: World | null
 
-   constructor_ (
-      parent: World | null
-   ) {
+   constructor_ (parent: World | null) {
       this.parent = parent
    }
 

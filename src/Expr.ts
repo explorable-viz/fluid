@@ -232,17 +232,18 @@ export namespace Expr {
       }
    }
 
-   export class RecDef implements PersistentObject {
+   export class RecDef extends Annotated implements PersistentObject {
       x: Lex.Var
-      f: Fun
+      σ: Trie<Expr>
 
-      constructor_ (x: Lex.Var, f: Fun): void {
+      constructor_ (α: Annotation, x: Lex.Var, σ: Trie<Expr>): void {
+         this.α = α
          this.x = x
-         this.f = f
+         this.σ = σ
       }
  
-      static at (k: PersistentObject, x: Lex.Var, f: Fun): RecDef {
-         return at(k, RecDef, x, f)
+      static at (k: PersistentObject, α: Annotation, x: Lex.Var, σ: Trie<Expr>): RecDef {
+         return at(k, RecDef, α, x, σ)
       }
    }
 

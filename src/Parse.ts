@@ -202,7 +202,7 @@ const recDef: Parser<Expr.RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
       ([name, σ]: [Lex.Var, Expr.Trie<Expr>]) =>
-         Expr.RecDef.at(ν(), name, Expr.Fun.at(ν(), ann.top, σ))
+         Expr.RecDef.at(ν(), ann.top, name, σ)
    )
 
 const recDefs1 : Parser<List<Expr.RecDef>> =

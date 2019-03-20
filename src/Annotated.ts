@@ -1,7 +1,7 @@
 import { __nonNull, absurd, classOf, } from "./util/Core"
 import { Lattice } from "./util/Ord"
 import { 
-   ObjectState, Persistent, PersistentClass, PersistentObject, Versioned, asVersioned, at, fieldVals, fields, memo
+   ObjectState, Persistent, PersistentClass, PersistentObject, Versioned, asVersioned, at, fieldVals, fields, memo_static
 } from "./util/Persistent"
 
 abstract class LatticeImpl<T> implements Lattice<T> {
@@ -62,20 +62,15 @@ export abstract class Annotated implements PersistentObject {
    }
 }
 
-// An annotation lattice induces a lattice for any object that potentially contains annotations. They behave with imperative 
-// LVar-like semantics, so although there is a notion of join/meet, we don't actually need to define them.
-export class Setall {
-   static count: number
-}
-
 // Memoising an imperative function makes the side-effect idempotent. Not clear yet how to "partially" memoise LVar-like 
 // functions like joinα, but setall isn't one of those.
 export function setall<T extends Persistent> (tgt: T, α: Annotation): T {
-   return memo(setall_, null, tgt, α) // static functions need null as "this" argument
+   return memo_static(setall_, tgt, α)
 }
 
+// An annotation lattice induces a lattice for any object that potentially contains annotations. They behave with imperative 
+// LVar-like semantics, so although there is a notion of join/meet, we don't actually need to define them.
 export function setall_<T extends Persistent> (tgt: T, α: Annotation): T {
-   ++Setall.count
    if (tgt === null || typeof tgt === "number" || typeof tgt === "string") {
       return tgt
    } else
