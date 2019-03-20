@@ -184,7 +184,8 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
 // Output environment is written to.
 export function uneval ({ρ, t, v}: ExplVal): Expr {
    const k: ExplId = asVersioned(t).__id as ExplId,
-         kₑ: ExprId = asVersioned(k.e).__id as ExprId
+         e: Expr = k.e,
+         kₑ: ExprId = asVersioned(e).__id as ExprId
    if (t instanceof Empty) {
       if (v instanceof Value.ConstInt) {
          return Expr.ConstInt.at(kₑ, v.α, v.val)
@@ -194,7 +195,7 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       } else
       if (v instanceof Value.Closure) {
          assert(v.δ.length === 0)
-         return Expr.Fun.at(kₑ, v.α, v.σ)
+         return e.joinα(v.α)
       } else 
       if (v instanceof Value.PrimOp) {
          return Expr.PrimOp.at(kₑ, v.α, v.op)
