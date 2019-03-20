@@ -1,7 +1,7 @@
 import { __nonNull, absurd, classOf, } from "./util/Core"
 import { Lattice } from "./util/Ord"
 import { 
-   ObjectState, Persistent, PersistentClass, PersistentObject, Versioned, asVersioned, at, fieldVals, fields 
+   ObjectState, Persistent, PersistentClass, PersistentObject, Versioned, asVersioned, at, fieldVals, fields, memo
 } from "./util/Persistent"
 
 abstract class LatticeImpl<T> implements Lattice<T> {
@@ -67,7 +67,14 @@ export abstract class Annotated implements PersistentObject {
 export class Setall {
    static count: number
 }
+
+// Memoising an imperative function makes the side-effect idempotent. Not clear yet how to "partially" memoise LVar-like 
+// functions like joinα, but setall isn't one of those.
 export function setall<T extends Persistent> (tgt: T, α: Annotation): T {
+   return memo(setall_, null, tgt, α) // static functions need null as "this" argument
+}
+
+export function setall_<T extends Persistent> (tgt: T, α: Annotation): T {
    ++Setall.count
    if (tgt === null || typeof tgt === "number" || typeof tgt === "string") {
       return tgt
