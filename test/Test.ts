@@ -202,7 +202,7 @@ describe("example", () => {
 					tv: ExplVal = Eval.eval_(ρ, e)
 			World.newRevision()
 			setall(e, ann.bot)
-			setall(tv.v, ann.bot)
+			setall(tv, ann.bot)
 			World.newRevision()
 			let here: Cursor = new Cursor(tv)
 			here.to(ExplVal, "v")
