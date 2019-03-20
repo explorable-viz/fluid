@@ -4,7 +4,7 @@ import { Cursor, TestFile, ρ, initialise, loadExample, parseExample, runExample
 import { NonEmpty } from "../src/BaseTypes"
 import { assert } from "../src/util/Core"
 import { World } from "../src/util/Persistent"
-import { ann } from "../src/Annotated"
+import { ann, setall } from "../src/Annotated"
 import { Eval } from "../src/Eval"
 import { Expr } from "../src/Expr"
 import { ExplVal, Value } from "../src/ExplVal"
@@ -58,6 +58,7 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			World.newRevision()
+			setall(e, ann.top)
 			let here: Cursor = new Cursor(e)
 			here.to(Expr.LetRec, "δ")
 				 .toElem(0)
