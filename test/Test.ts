@@ -102,7 +102,7 @@ describe("example", () => {
 		const file: TestFile = loadExample("length")
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
-			runExample(e)
+			// erasing the elements doesn't affect the count:
 			World.newRevision()
 			setall(e, ann.top)
 			const here: Cursor = new Cursor(e)
@@ -118,6 +118,7 @@ describe("example", () => {
 				 .at(Expr.Expr, e => e.setα(ann.bot))
 			let v: Value = Eval.eval_(ρ, e).v
 			assert(v.α !== ann.bot)
+			// deleting the tail of the tail means length can't be computed:
 			World.newRevision()
 			here.pop()
 				 .constrArg("Cons", 1)
