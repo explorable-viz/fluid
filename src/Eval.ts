@@ -1,11 +1,11 @@
 import { absurd, as, assert } from "./util/Core"
-import { PersistentObject, Versioned, make, asVersioned } from "./util/Persistent"
+import { PersistentObject, make, asVersioned } from "./util/Persistent"
 import { ann } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { ExplVal, Match, Value, explVal } from "./ExplVal"
 import { Expr } from "./Expr"
-import { instantiate, uninstantiate } from "./Instantiate"
+import { ExprId, instantiate, uninstantiate } from "./Instantiate"
 import { match, matchVar, unmatch } from "./Match"
 import { BinaryOp, binaryOps } from "./Primitive"
 
@@ -31,22 +31,6 @@ import unaryApp = ExplVal.unaryApp
 import var_ = ExplVal.var_
 
 type Tag = "val" | "expl"
-
-// The "runtime identity" of an expression. In the formalism we use a "flat" representation so that e always has an external id;
-// here it is more convenient to use an isomorphic nested format.
-export class ExprId implements PersistentObject {
-   j: List<Value>
-   e: Versioned<Expr | RecDef>
-
-   constructor_ (j: List<Value>, e: Versioned<Expr | RecDef>) {
-      this.j = j
-      this.e = e
-   }
-}
-
-export function exprId<T extends Tag> (j: List<Value>, e: Versioned<Expr | RecDef>): ExprId {
-   return make(ExprId, j, e)
-}
 
 export class Tagged<T extends Tag> implements PersistentObject {
    e: Expr

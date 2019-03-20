@@ -234,7 +234,14 @@ describe("example", () => {
 	describe("zipW", () => {
 		const file: TestFile = loadExample("zipW")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text),
+				   tv: ExplVal = Eval.eval_(ρ, e)
+			World.newRevision()
+			setall(tv, ann.bot)
+			World.newRevision()
+			setall(tv.v, ann.top)
+			Eval.uneval(tv)
+			// TODO: check trailing part of longer list is discarded
 		})
 	})
 })

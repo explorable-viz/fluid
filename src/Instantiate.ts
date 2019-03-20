@@ -1,10 +1,10 @@
 import { absurd } from "./util/Core"
-import { PersistentObject, Versioned, asVersioned } from "./util/Persistent"
+import { PersistentObject, Versioned, asVersioned, make } from "./util/Persistent"
 import { Annotation, ann } from "./Annotated"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"
-import { ExprId, exprId } from "./Eval"
 import { Expr, Kont } from "./Expr"
+import { Value } from "./ExplVal"
 
 import App = Expr.App
 import Args = Expr.Args
@@ -20,6 +20,22 @@ import PrimOp = Expr.PrimOp
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 import Var = Expr.Var
+
+// The "runtime identity" of an expression. In the formalism we use a "flat" representation so that e always has an external id;
+// here it is more convenient to use an isomorphic nested format.
+export class ExprId implements PersistentObject {
+   j: List<Value>
+   e: Versioned<Expr | RecDef>
+
+   constructor_ (j: List<Value>, e: Versioned<Expr | RecDef>) {
+      this.j = j
+      this.e = e
+   }
+}
+
+export function exprId (j: List<Value>, e: Versioned<Expr | RecDef>): ExprId {
+   return make(ExprId, j, e)
+}
 
 // F-bounded polymorphism doesn't really work well here. I've used it for the smaller helper functions 
 // (but with horrendous casts), but not for the two main top-level functions.
