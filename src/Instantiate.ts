@@ -65,7 +65,7 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    if (e instanceof LetRec) {
       const δ: List<RecDef> = e.δ.map(def => {
          const i: ExprId = exprId(ρ.entries(), asVersioned(def))
-         return RecDef.at(i, def.x, instantiate(ρ, def.f) as Fun)
+         return RecDef.at(i, def.α, def.x, instantiateTrie(ρ, def.σ))
       })
       return LetRec.at(j, e.α, δ, instantiate(ρ, e.e))
    } else
@@ -112,7 +112,7 @@ export function uninstantiate (e: Expr): Expr {
       const δ: List<RecDef> = e.δ.map(def => {
          const defʹ: Versioned<RecDef> = (asVersioned(def).__id as ExprId).e as Versioned<RecDef>,
                i: PersistentObject = defʹ.__id
-         return RecDef.at(i, def.x, uninstantiate(def.f) as Fun)
+         return RecDef.at(i, ann.join(defʹ.α, def.α), def.x, uninstantiateTrie(def.σ))
       })
       return LetRec.at(k, α, δ, uninstantiate(e.e))
    } else

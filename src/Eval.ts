@@ -21,7 +21,6 @@ import Var = ExplVal.Var
 import app = ExplVal.app
 import binaryApp = ExplVal.binaryApp
 import empty = ExplVal.empty
-import Fun = Expr.Fun
 import let_ = ExplVal.let_
 import letRec = ExplVal.letRec
 import matchAs = ExplVal.matchAs
@@ -33,16 +32,16 @@ import var_ = ExplVal.var_
 type Tag = "val" | "expl"
 
 export class Tagged<T extends Tag> implements PersistentObject {
-   e: Expr
+   e: Expr | RecDef
    tag: T
 
-   constructor_ (e: Expr, tag: T) {
+   constructor_ (e: Expr | RecDef, tag: T) {
       this.e = e
       this.tag = tag
    }
 }
 
-export function tagged<T extends Tag> (e: Expr, tag: T): Tagged<T> {
+export function tagged<T extends Tag> (e: Expr | RecDef, tag: T): Tagged<T> {
    return make(Tagged, e, tag) as Tagged<T>
 }
 
@@ -63,9 +62,9 @@ export module Eval {
 // Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
-      const f: Fun = δ.head.f,
-            kᵥ: ValId = tagged(f, "val")
-      return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, Value.closure(kᵥ, f.α, ρ, δ_0, f.σ))
+      const def: RecDef = δ.head,
+            kᵥ: ValId = tagged(def, "val")
+      return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), def.x.str, Value.closure(kᵥ, def.α, ρ, δ_0, def.σ))
    } else
    if (Nil.is(δ)) {
       return Env.empty()
@@ -168,7 +167,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
 // Output environment is written to.
 export function uneval ({ρ, t, v}: ExplVal): Expr {
    const k: ExplId = asVersioned(t).__id as ExplId,
-         e: Expr = k.e,
+         e: Expr = k.e as Expr,
          kₑ: ExprId = asVersioned(e).__id as ExprId
    if (t instanceof Empty) {
       if (v instanceof Value.ConstInt) {
