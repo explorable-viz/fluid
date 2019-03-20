@@ -208,6 +208,7 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			World.newRevision()
+			setall(e, ann.top)
 			let here: Cursor = new Cursor(e)
 			here.to(Expr.LetRec, "e")
 				 .to(Expr.App, "arg")
