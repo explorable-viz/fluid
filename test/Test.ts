@@ -4,7 +4,7 @@ import { Cursor, TestFile, ρ, initialise, loadExample, parseExample, runExample
 import { NonEmpty } from "../src/BaseTypes"
 import { assert } from "../src/util/Core"
 import { World } from "../src/util/Persistent"
-import { ann, setall, Setall } from "../src/Annotated"
+import { ann, setall } from "../src/Annotated"
 import { Eval } from "../src/Eval"
 import { Expr } from "../src/Expr"
 import { ExplVal, Value } from "../src/ExplVal"
@@ -191,9 +191,7 @@ describe("example", () => {
 	describe("mergeSort", () => {
 		const file: TestFile = loadExample("mergeSort")
 		it("ok", () => {
-			Setall.count = 0
 			runExample(parseExample(file.text))
-			console.log(Setall.count + " calls to setall")
 		})
 	})
 
@@ -237,7 +235,7 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text),
 				   tv: ExplVal = Eval.eval_(ρ, e)
 			World.newRevision()
-			setall(tv, ann.bot)
+			setall(e, ann.bot)
 			World.newRevision()
 			setall(tv.v, ann.top)
 			Eval.uneval(tv)
