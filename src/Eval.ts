@@ -63,10 +63,10 @@ export function tagged<T extends Tag> (e: Expr, tag: T): Tagged<T> {
 }
 
 // User-level error.
-export function error (msg: string, ...xs: any[]): any {
-   if (xs.length > 0) {
+export function error (msg: string, ...x̅: any[]): any {
+   if (x̅.length > 0) {
       console.warn("Error data:\n")
-      xs.forEach(x => console.warn(x))
+      x̅.forEach(x => console.warn(x))
    }
    throw new Error("User error")
 }
@@ -92,11 +92,11 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
 
 // ρ is a collection of one or more closures. Note that the required joins have already been computed.
 export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
-   const fs: List<Value.Closure> = ρ.entries().map(v => as(v, Value.Closure))
-   if (Cons.is(fs)) {
-      return [fs.head.ρ, fs.head.δ]
+   const f̅: List<Value.Closure> = ρ.entries().map(v => as(v, Value.Closure))
+   if (Cons.is(f̅)) {
+      return [f̅.head.ρ, f̅.head.δ]
    } else
-   if (Nil.is(fs)) {
+   if (Nil.is(f̅)) {
       return [Env.empty(), Nil.make()]
    } else {
       return absurd()

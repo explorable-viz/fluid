@@ -236,7 +236,7 @@ export namespace Match {
          this.x = x
          this.v = v
       }
-      
+
       static is<K extends Persistent> (ξ: Match<K>): ξ is Var<K> {
          return ξ instanceof Var
       }
