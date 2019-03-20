@@ -1,10 +1,11 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { Cursor, TestFile, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { Cursor, TestFile, ρ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 import { NonEmpty } from "../src/BaseTypes"
 import { assert } from "../src/util/Core"
 import { World } from "../src/util/Persistent"
-import { ann } from "../src/Annotated"
+import { ann, setall, Setall } from "../src/Annotated"
+import { Eval } from "../src/Eval"
 import { Expr } from "../src/Expr"
 import { ExplVal, Value } from "../src/ExplVal"
 
@@ -25,7 +26,7 @@ describe("example", () => {
 			const here: Cursor = new Cursor(e)
 			here.to(Expr.BinaryApp, "e1")
 				 .at(Expr.Expr, e => e.setα(ann.bot))
-			const v: Value = runExample(e).v
+			const v: Value = Eval.eval_(ρ, e).v
 			assert(v.α === ann.bot)
 		})
 	})
@@ -57,6 +58,7 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			World.newRevision()
+			setall(e, ann.top)
 			let here: Cursor = new Cursor(e)
 			here.to(Expr.LetRec, "δ")
 				 .toElem(0)
@@ -75,7 +77,7 @@ describe("example", () => {
 				 .nodeValue().end()
 				 .constrArg("Cons", 0)
 				 .at(Expr.Var, e => e.setα(ann.bot))
-			const v: Value = runExample(e).v
+			const v: Value = Eval.eval_(ρ, e).v
 			assert(v.α !== ann.bot)
 			here = new Cursor(v)
 			here.push()
@@ -102,6 +104,7 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			World.newRevision()
+			setall(e, ann.top)
 			const here: Cursor = new Cursor(e)
 			here.to(Expr.LetRec, "e")
 				 .to(Expr.App, "arg")
@@ -113,13 +116,13 @@ describe("example", () => {
 				 .push()
 				 .constrArg("Cons", 0)
 				 .at(Expr.Expr, e => e.setα(ann.bot))
-			let v: Value = runExample(e).v
+			let v: Value = Eval.eval_(ρ, e).v
 			assert(v.α !== ann.bot)
 			World.newRevision()
 			here.pop()
 				 .constrArg("Cons", 1)
 				 .at(Expr.Constr, e => e.setα(ann.bot))
-			v = runExample(e).v
+			v = Eval.eval_(ρ, e).v
 			assert(v.α === ann.bot)
 		})
 	})
@@ -147,13 +150,14 @@ describe("example", () => {
 				 .constrArg("NonEmpty", 1)
 				 .constrArg("Pair", 0)
 				 .at(Expr.ConstInt, e => e.setα(ann.bot))
-			let v = runExample(e).v
+			let v = Eval.eval_(ρ, e).v
 			assert(v.α !== ann.bot)
+			World.newRevision()
 			here.pop()
 				 .constrArg("NonEmpty", 1)
 				 .constrArg("Pair", 0)
 				 .at(Expr.ConstInt, e => e.setα(ann.bot))
-			v = runExample(e).v
+			v = Eval.eval_(ρ, e).v
 			assert(v.α === ann.bot)
 		})
 	})
@@ -164,6 +168,7 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			World.newRevision()
+			setall(e, ann.top)
 			let here: Cursor = new Cursor(e)
 			here.to(Expr.LetRec, "e")
 				 .to(Expr.Let, "σ")
@@ -171,7 +176,7 @@ describe("example", () => {
 				 .to(Expr.App, "arg")
 				 .constrArg("Cons", 0)
 				 .at(Expr.Expr, e => e.setα(ann.bot))
-			let v: Value = runExample(e).v
+			let v: Value = Eval.eval_(ρ, e).v
 			assert(v.α !== ann.bot)
 			here = new Cursor(v)
 			here.push()
@@ -186,7 +191,9 @@ describe("example", () => {
 	describe("mergeSort", () => {
 		const file: TestFile = loadExample("mergeSort")
 		it("ok", () => {
+			Setall.count = 0
 			runExample(parseExample(file.text))
+			console.log(Setall.count + " calls to setall")
 		})
 	})
 
@@ -203,13 +210,14 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			World.newRevision()
+			setall(e, ann.top)
 			let here: Cursor = new Cursor(e)
 			here.to(Expr.LetRec, "e")
 				 .to(Expr.App, "arg")
 				 .constrArg("Cons", 1)
 				 .constrArg("Cons", 1)
 				 .at(Expr.Expr, e => e.setα(ann.bot))
-			let v: Value = runExample(e).v
+			let v: Value = Eval.eval_(ρ, e).v
 			here = new Cursor(v)
 			here.assert(Value.Constr, v => v.α === ann.bot)
 				 .push()

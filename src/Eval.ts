@@ -2,7 +2,7 @@ import { absurd, as, assert } from "./util/Core"
 import { PersistentObject, Versioned, make, asVersioned } from "./util/Persistent"
 import { ann } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
-import { Env, EmptyEnv, ExtendEnv } from "./Env"
+import { Env, ExtendEnv } from "./Env"
 import { ExplVal, Match, Value, explVal } from "./ExplVal"
 import { Expr } from "./Expr"
 import { instantiate, uninstantiate } from "./Instantiate"
@@ -15,6 +15,7 @@ import Empty = ExplVal.Empty
 import Let = ExplVal.Let
 import LetRec = ExplVal.LetRec
 import MatchAs = ExplVal.MatchAs
+import UnaryApp = ExplVal.UnaryApp
 import Var = ExplVal.Var
 
 import app = ExplVal.app
@@ -62,10 +63,10 @@ export function tagged<T extends Tag> (e: Expr, tag: T): Tagged<T> {
 }
 
 // User-level error.
-export function error (msg: string, ...xs: any[]): any {
-   if (xs.length > 0) {
+export function error (msg: string, ...x̅: any[]): any {
+   if (x̅.length > 0) {
       console.warn("Error data:\n")
-      xs.forEach(x => console.warn(x))
+      x̅.forEach(x => console.warn(x))
    }
    throw new Error("User error")
 }
@@ -83,7 +84,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), δ.head.x.str, Value.closure(kᵥ, f.α, ρ, δ_0, f.σ))
    } else
    if (Nil.is(δ)) {
-      return EmptyEnv.make()
+      return Env.empty()
    } else {
       return absurd()
    }
@@ -91,9 +92,12 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
 
 // ρ is a collection of one or more closures. Note that the required joins have already been computed.
 export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
-   const fs: List<Value.Closure> = ρ.entries().map(v => as(v, Value.Closure))
-   if (Cons.is(fs)) {
-      return [fs.head.ρ, fs.head.δ]
+   const f̅: List<Value.Closure> = ρ.entries().map(v => as(v, Value.Closure))
+   if (Cons.is(f̅)) {
+      return [f̅.head.ρ, f̅.head.δ]
+   } else
+   if (Nil.is(f̅)) {
+      return [Env.empty(), Nil.make()]
    } else {
       return absurd()
    }
@@ -179,25 +183,26 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
 
 // Output environment is written to.
 export function uneval ({ρ, t, v}: ExplVal): Expr {
-   const kᵥ: ValId = asVersioned(v).__id as ValId,
-         k: ExprId = asVersioned(kᵥ.e).__id as ExprId
+   const k: ExplId = asVersioned(t).__id as ExplId,
+         e: Expr = k.e,
+         kₑ: ExprId = asVersioned(e).__id as ExprId
    if (t instanceof Empty) {
       if (v instanceof Value.ConstInt) {
-         return Expr.ConstInt.at(k, v.α, v.val)
+         return Expr.ConstInt.at(kₑ, v.α, v.val)
       } else
       if (v instanceof Value.ConstStr) {
-         return Expr.ConstStr.at(k, v.α, v.val)
+         return Expr.ConstStr.at(kₑ, v.α, v.val)
       } else
       if (v instanceof Value.Closure) {
          assert(v.δ.length === 0)
-         return Expr.Fun.at(k, v.α, v.σ)
+         return e.joinα(v.α)
       } else 
       if (v instanceof Value.PrimOp) {
-         return Expr.PrimOp.at(k, v.α, v.op)
+         return Expr.PrimOp.at(kₑ, v.α, v.op)
       } else
       if (v instanceof Value.Constr) {
          // reverse order but shouldn't matter in absence of side-effects:
-         return Expr.Constr.at(k, v.α, v.ctr, v.args.map(uneval))
+         return Expr.Constr.at(kₑ, v.α, v.ctr, v.args.map(uneval))
       } else {
          return absurd()
       }
@@ -205,50 +210,49 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    if (t instanceof Var) {
       const x: string = t.x.str
       assert(ρ.has(x))
-      ρ.get(x)!.setα(v.α)
-      return Expr.Var.at(k, v.α, t.x)
+      ρ.get(x)!.joinα(v.α)
+      return Expr.Var.at(kₑ, v.α, t.x)
    }
    else
    if (t instanceof App) {
-      const f: Value.Closure | Value.PrimOp = t.func.v as (Value.Closure | Value.PrimOp)
-      if (f instanceof Value.Closure) {
-         const {ξ, κ: tv} = t.ξtv
-         tv.v.setα(v.α)
-         unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
-         uncloseDefs(t.ρ_defs)
-         f.setα(v.α)
-         return Expr.App.at(k, v.α, uneval(t.func), uneval(t.arg))
-      } else
-      if (f instanceof Value.PrimOp) {
-         return Expr.App.at(k, v.α, uneval(t.func).setα(v.α), uneval(t.arg).setα(v.α))
-      } else {
-         return absurd()
-      }
+      assert(t.func.v instanceof Value.Closure)
+      const {ξ, κ: tv} = t.ξtv
+      tv.v.joinα(v.α)
+      unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
+      uncloseDefs(t.ρ_defs)
+      t.func.v.joinα(v.α)
+      return Expr.App.at(kₑ, v.α, uneval(t.func), uneval(t.arg))
+   } else
+   if (t instanceof UnaryApp) {
+      assert(t.func.v instanceof Value.PrimOp)
+      t.func.v.joinα(v.α)
+      t.arg.v.joinα(v.α)
+      return Expr.App.at(kₑ, v.α, uneval(t.func), uneval(t.arg))
    } else
    if (t instanceof BinaryApp) {
       assert(binaryOps.has(t.opName.str))
-      t.tv1.v.setα(v.α)
-      t.tv2.v.setα(v.α)
-      return Expr.BinaryApp.at(k, v.α, uneval(t.tv1), t.opName, uneval(t.tv2))
+      t.tv1.v.joinα(v.α)
+      t.tv2.v.joinα(v.α)
+      return Expr.BinaryApp.at(kₑ, v.α, uneval(t.tv1), t.opName, uneval(t.tv2))
    } else
    if (t instanceof Let) {
       const {ξ, κ: tv} = t.ξtv
-      tv.v.setα(v.α)
+      tv.v.joinα(v.α)
       const eʹ: Expr = uninstantiate(uneval(tv)),
             e: Expr = uneval(t.tu) // unmatch not required - suffices to uneval in reverse order
-      return Expr.Let.at(k, v.α, e, Trie.Var.make(ξ.x, eʹ))
+      return Expr.Let.at(kₑ, v.α, e, Trie.Var.make(ξ.x, eʹ))
    } else
    if (t instanceof LetRec) {
-      t.tv.v.setα(v.α)
+      t.tv.v.joinα(v.α)
       const e: Expr = uninstantiate(uneval(t.tv)),
             [, δ]: [Env, List<RecDef>] = uncloseDefs(t.ρ_defs)
-      return Expr.LetRec.at(k, v.α, δ, e)
+      return Expr.LetRec.at(kₑ, v.α, δ, e)
    } else
    if (t instanceof MatchAs) {
       const {ξ, κ: tv} = t.ξtv
-      tv.v.setα(v.α)
+      tv.v.joinα(v.α)
       const [, σ] = unmatch(Match.plug(ξ, uninstantiate(uneval(tv))), v.α)
-      return Expr.MatchAs.at(k, v.α, uneval(t.tu), σ)
+      return Expr.MatchAs.at(kₑ, v.α, uneval(t.tu), σ)
    } else {
       return absurd()
    }

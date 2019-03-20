@@ -1,3 +1,4 @@
+import { __nonNull, assert } from "./util/Core"
 import { Persistent, PersistentObject, at, make } from "./util/Persistent"
 import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
@@ -116,6 +117,7 @@ export class ExplVal implements PersistentObject, Kont<ExplVal> {
 }
 
 export function explVal (ρ: Env, t: Expl, v: Value): ExplVal {
+   assert(!(t instanceof ExplVal.Var) || ρ.has(t.x.str))
    return make(ExplVal, ρ, t, v)
 }
 
@@ -195,10 +197,12 @@ export namespace Match {
       }
    }
 
+   // The environment ρ is completely determined by other properties of the match, but the convention is that all
+   // properties are set externally via the constructor.
    export abstract class Match<K> implements PersistentObject {
       __tag: "Match.Match"
       abstract constructor_ (...args: Persistent[]): void
-      ρ: Env
+      ρ: Env 
    }
 
    // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args). Currently caches
@@ -232,7 +236,7 @@ export namespace Match {
          this.x = x
          this.v = v
       }
-      
+
       static is<K extends Persistent> (ξ: Match<K>): ξ is Var<K> {
          return ξ instanceof Var
       }
@@ -244,17 +248,19 @@ export namespace Match {
 }
 
 export class ExplMatch<K extends Kont<K>> implements PersistentObject {
+   ρ: Env // by analogy with ExplVal
    t: Expl
    ξ: Match.Match<K>
 
-   constructor_ (t: Expl, ξ: Match<K>) {
+   constructor_ (ρ: Env, t: Expl, ξ: Match<K>) {
+      this.ρ = ρ
       this.t = t
       this.ξ = ξ
    }
 }
 
-export function explMatch<K extends Kont<K>> (t: Expl, ξ: Match<K>): ExplMatch<K> {
-   return make(ExplMatch, t, ξ) as ExplMatch<K>
+export function explMatch<K extends Kont<K>> (ρ: Env, t: Expl, ξ: Match<K>): ExplMatch<K> {
+   return make(ExplMatch, ρ, t, ξ) as ExplMatch<K>
 }
 
 export type Expl = ExplVal.Expl
@@ -281,7 +287,7 @@ export namespace ExplVal {
    }
 
    export function app (k: ExplId, func: ExplVal, arg: ExplVal, ρ_defs: Env, ξtv: Match.Plug<ExplVal, Match<ExplVal>>): App {
-      return at(k, App, func, arg, ρ_defs, ξtv)
+      return at(k, App, func, __nonNull(arg), __nonNull(ρ_defs), ξtv)
    }
 
    export class UnaryApp extends Expl {
@@ -294,8 +300,8 @@ export namespace ExplVal {
       }
    }
 
-   export function unaryApp (k: ExplId, func: ExplVal, arg: ExplVal): App {
-      return at(k, App, func, arg)
+   export function unaryApp (k: ExplId, func: ExplVal, arg: ExplVal): UnaryApp {
+      return at(k, UnaryApp, func, arg)
    }
 
    export class Empty extends Expl {

@@ -1,7 +1,7 @@
 import { __nonNull, absurd, classOf, } from "./util/Core"
 import { Lattice } from "./util/Ord"
 import { 
-   ObjectState, Persistent, PersistentClass, PersistentObject, Versioned, asVersioned, at, fieldVals, fields 
+   ObjectState, Persistent, PersistentClass, PersistentObject, Versioned, asVersioned, at, fieldVals, fields, memo
 } from "./util/Persistent"
 
 abstract class LatticeImpl<T> implements Lattice<T> {
@@ -43,7 +43,7 @@ export abstract class Annotated implements PersistentObject {
 
    abstract constructor_ (...args: Persistent[]): void // annoying to have to dup method signature
 
-   // Could avoid these shenanigans if we had AnnotatedValue as an explicit wrapper.
+   // Could avoid these shenanigans if we had AnnotatedValue as an explicit wrapper (depends on α being first argument).
    copyAt<T extends Annotated & PersistentObject> (k: PersistentObject, α: Annotation): T {
       const cls: PersistentClass<T> = classOf(this) as PersistentClass<Annotated & PersistentObject> as PersistentClass<T> // TS can't cope
       return at<PersistentObject, T>(k, cls, α, ...fieldVals(this).slice(1))
@@ -54,20 +54,39 @@ export abstract class Annotated implements PersistentObject {
       hereʹ.copyAt(hereʹ.__id, α)
       return this
    }
+
+   joinα (α: Annotation): this {
+      const hereʹ: Versioned<this> = asVersioned(this)
+      hereʹ.copyAt(hereʹ.__id, ann.join(this.α, α))
+      return this
+   }
 }
 
 // An annotation lattice induces a lattice for any object that potentially contains annotations. They behave with imperative 
 // LVar-like semantics, so although there is a notion of join/meet, we don't actually need to define them.
-export function bot<T extends Persistent> (tgt: T): T {
+export class Setall {
+   static count: number
+}
+
+// Memoising an imperative function makes the side-effect idempotent. Not clear yet how to "partially" memoise LVar-like 
+// functions like joinα, but setall isn't one of those.
+export function setall<T extends Persistent> (tgt: T, α: Annotation): T {
+   return memo(setall_, null, tgt, α) // static functions need null as "this" argument
+}
+
+export function setall_<T extends Persistent> (tgt: T, α: Annotation): T {
+   ++Setall.count
    if (tgt === null || typeof tgt === "number" || typeof tgt === "string") {
       return tgt
    } else
    if (tgt instanceof Object) { // annoying that PersistentObject isn't a class
       if (tgt instanceof Annotated) {
-         tgt.setα(ann.bot)
+         tgt.setα(α)
       }
       fields(tgt).forEach((k: string): void => {
-         bot((tgt as Object as ObjectState)[k]) // TypeScript gibberish
+         if (k !== "α") { // perhaps α shouldn't be an enumerable field 
+            setall((tgt as Object as ObjectState)[k], α) // TypeScript gibberish
+         }
       })
       return tgt
    } else {

@@ -131,6 +131,13 @@ function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T):
 function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): T {
    if (Trie.Var.is(σ)) {
       return Trie.Var.make(σ.x, uninstantiateKont(σ.κ)) as Trie<K> as T
+   } else
+   if (Trie.Constr.is(σ)) {
+      return Trie.Constr.make(σ.cases.map(
+         ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
+            return Pair.make(ctr, uninstantiateArgs(Π))
+         })
+      ) as Trie<K> as T
    } else {
       return absurd()
    }

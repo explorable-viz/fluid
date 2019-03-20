@@ -84,15 +84,15 @@ export function unmatch<K extends Kont<K>> ({ξ, κ}: Match.Plug<K, Match<K>>, �
    }
 }
 
-function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Match.Args.Plug<K, Match.Args<K>>, Annotation] {
-   if (Cons.is(tvs) && Args.Next.is(Π)) {
-      const {t, v} = tvs.head
+function matchArgs<K extends Kont<K>> (tv̅: List<ExplVal>, Π: Args<K>): [Match.Args.Plug<K, Match.Args<K>>, Annotation] {
+   if (Cons.is(tv̅) && Args.Next.is(Π)) {
+      const {ρ, t, v} = tv̅.head
       // codomain of ξ is Args; promote to Args | Match.Args:
       const [{ξ, κ: Πʹ}, α] = match(v, Π.σ),
-            [{Ψ, κ}, αʹ] = matchArgs(tvs.tail, Πʹ)
-      return [Match.Args.plug(Match.Args.next(Env.concat(ξ.ρ, Ψ.ρ), explMatch(t, ξ), Ψ), κ), ann.meet(α, αʹ)]
+            [{Ψ, κ}, αʹ] = matchArgs(tv̅.tail, Πʹ)
+      return [Match.Args.plug(Match.Args.next(Env.concat(ξ.ρ, Ψ.ρ), explMatch(ρ, t, ξ), Ψ), κ), ann.meet(α, αʹ)]
    } else
-   if (Nil.is(tvs) && Args.End.is(Π)) {
+   if (Nil.is(tv̅) && Args.End.is(Π)) {
       return [Match.Args.plug(Match.Args.end<K>(Env.empty()), Π.κ), ann.top]
    } else {
       return absurd()
@@ -101,10 +101,10 @@ function matchArgs<K extends Kont<K>> (tvs: List<ExplVal>, Π: Args<K>): [Match.
 
 function unmatchArgs<K extends Kont<K>> ({Ψ, κ}: Match.Args.Plug<K, Match.Args<K>>, α: Annotation): [List<ExplVal>, Args<K>] {
    if (Match.Args.Next.is(Ψ)) {
-      const [tus, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Match.Args.plug(Ψ.Ψ, κ), α),
-            {t, ξ} = Ψ.tξ,
+      const [tu̅, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Match.Args.plug(Ψ.Ψ, κ), α),
+            {ρ, t, ξ} = Ψ.tξ,
             [u, σ] = unmatch(Match.plug(ξ, Π), α)
-      return [Cons.make(explVal(Env.concat(ξ.ρ, Ψ.Ψ.ρ), t, u), tus), Args.Next.make(σ)]
+      return [Cons.make(explVal(ρ, t, u), tu̅), Args.Next.make(σ)]
    } else
    if (Match.Args.End.is(Ψ)) {
       return [Nil.make(), Args.End.make(κ)]

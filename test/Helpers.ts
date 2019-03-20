@@ -1,6 +1,7 @@
 import { AClass, Class, __nonNull, absurd, as, assert } from "../src/util/Core"
-import { Persistent, PersistentObject } from "../src/util/Persistent"
+import { Persistent, PersistentObject, World } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
+import { ann, setall } from "../src/Annotated"
 import { Cons, NonEmpty, Pair } from "../src/BaseTypes"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
@@ -145,13 +146,21 @@ export function merge<K extends Kont<K>> (σ1: Trie.Constr<K>, σ2: Trie.Constr<
 }
 
 export function parseExample (src: string | null): Expr {
-   return __nonNull(parse(Parse.expr, __nonNull(src))).ast
+   const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
+   return instantiate(ρ, e)
 }
 
-export function runExample (e: Expr): ExplVal {
-   const tv: ExplVal = Eval.eval_(ρ, instantiate(ρ, e))
+export function runExample (e: Expr): void {
+   const tv: ExplVal = Eval.eval_(ρ, e)
    console.log(tv)
-   return tv
+   World.newRevision()
+   setall(tv, ann.bot)
+   World.newRevision()
+   const here: Cursor = new Cursor(tv)
+   here.to(ExplVal, "v")
+       .at(Value.Value, v => v.setα(ann.top))
+   let eʹ: Expr = Eval.uneval(tv)
+   assert(e === eʹ)
 }
 
 export let ρ: Env = prelude()
