@@ -150,7 +150,7 @@ export function parseExample (src: string | null): Expr {
    return instantiate(ρ, e)
 }
 
-export function runExample (e: Expr): ExplVal {
+export function runExample (e: Expr): void {
    const tv: ExplVal = Eval.eval_(ρ, e)
    console.log(tv)
    World.newRevision()
@@ -161,7 +161,6 @@ export function runExample (e: Expr): ExplVal {
        .at(Value.Value, v => v.setα(ann.top))
    let eʹ: Expr = Eval.uneval(tv)
    assert(e === eʹ)
-   return tv
 }
 
 export let ρ: Env = prelude()
