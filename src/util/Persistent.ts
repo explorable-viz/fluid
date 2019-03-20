@@ -34,21 +34,15 @@ export class ExternalObject implements PersistentObject {
    }
 }
 
-// Curried map from constructors and arguments to interned objects; curried because composite keys would 
+// Curried map from constructors and arguments to cached values; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
-type InternedObjects = Map<Persistent, PersistentObject | Map<Persistent, Object>> // approximate recursive type
-const __internedObjs: InternedObjects = new Map
-
-// For versioned objects the map is not curried but takes an (interned) composite key. TODO: treating the constructor
-// as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
-// "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
-type VersionedObjects = Map<PersistentObject, PersistentObject>
-const __versionedObjs: VersionedObjects = new Map
+type MemoTable = Map<Persistent, PersistentObject | Map<Persistent, Object>> // approximate recursive type
+const __memoTable: MemoTable = new Map
 
 function lookupArg<T extends PersistentObject> (
    f: Memoisable<T>, 
-   m: InternedObjects, 
+   m: MemoTable, 
    args: Persistent[], 
    n: number
 ): PersistentObject | Map<Persistent, Object> {
@@ -110,10 +104,10 @@ class MemoFun<T extends PersistentObject> implements Memoisable<T> {
 }
 
 export function memoCall<T extends PersistentObject> (f: Memoisable<T>, args: Persistent[]): T {
-   let v: PersistentObject | Map<Persistent, Object> = lookupArg(f, __internedObjs, args, -1)
+   let v: PersistentObject | Map<Persistent, Object> = lookupArg(f, __memoTable, args, -1)
    for (let n: number = 0; n < args.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
-      v = lookupArg(f, v as InternedObjects, args, n)
+      v = lookupArg(f, v as MemoTable, args, n)
    }
    return v as T
 }
@@ -160,6 +154,12 @@ function reclassify (o: Object, ctr: Class<Object>): void {
       Object.setPrototypeOf(o, proto)
    }
 }
+
+// For versioned objects the map is not curried but takes an (interned) composite key. TODO: treating the constructor
+// as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
+// "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
+type VersionedObjects = Map<PersistentObject, PersistentObject>
+const __versionedObjs: VersionedObjects = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
 export function at<K extends PersistentObject, T extends PersistentObject> (k: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
