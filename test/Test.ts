@@ -198,7 +198,19 @@ describe("example", () => {
 	describe("normalise", () => {
 		const file: TestFile = loadExample("normalise")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text),
+					tv: ExplVal = Eval.eval_(ρ, e)
+			World.newRevision()
+			setall(e, ann.bot)
+			setall(tv.v, ann.bot)
+			World.newRevision()
+			let here: Cursor = new Cursor(tv)
+			here.to(ExplVal, "v")
+				 .at(Value.Value, v => v.setα(ann.top))
+			Eval.uneval(tv)
+			here = new Cursor(e)
+			here.to(Expr.Let, "e")
+				 .assert(Expr.ConstInt, e => e.α === ann.bot)
 		})
 	})
 
