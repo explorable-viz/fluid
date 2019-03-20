@@ -151,6 +151,7 @@ describe("example", () => {
 				 .at(Expr.ConstInt, e => e.setα(ann.bot))
 			let v = runExample(e).v
 			assert(v.α !== ann.bot)
+			World.newRevision()
 			here.pop()
 				 .constrArg("NonEmpty", 1)
 				 .constrArg("Pair", 0)
