@@ -1,7 +1,7 @@
 import { AClass, Class, __nonNull, absurd, as, assert } from "../src/util/Core"
 import { Persistent, PersistentObject, World } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
-import { ann, setall } from "../src/Annotated"
+import { Annotated, ann, setall } from "../src/Annotated"
 import { Cons, NonEmpty, Pair } from "../src/BaseTypes"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
@@ -45,6 +45,14 @@ export class Cursor {
 
    assert<T extends PersistentObject> (cls: AClass<T>, pred: (o: T) => boolean): Cursor {
       return this.at(cls, o => assert(pred(o)))
+   }
+
+   needed (): Cursor {
+      return this.assert(Annotated, o => o.α === ann.top)
+   }
+
+   notNeeded (): Cursor {
+      return this.assert(Annotated, o => o.α === ann.bot)
    }
 
    push (): Cursor {
