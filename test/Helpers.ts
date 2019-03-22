@@ -152,13 +152,13 @@ export abstract class BwdSlice {
       setall(tv, ann.bot) // is that necessary given what I've just done?
       World.newRevision()
       this.val = new Cursor(tv.v)
-      this.setup(this.val)
+      this.setup()
       this.expr = new Cursor(Eval.uneval(tv))
-      this.expect(this.expr)
+      this.expect()
    }
 
-   abstract setup (val: Cursor): void
-   abstract expect (expr: Cursor): void
+   abstract setup (): void
+   abstract expect (): void
 }
 
 export enum Profile {

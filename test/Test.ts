@@ -121,16 +121,17 @@ describe("example", () => {
 			})(e)
 			// needing the result only needs the cons cells:
 			new (class extends BwdSlice {
-				setup (val: Cursor): void {
-					val.need()
+				setup (): void {
+					this.val.need()
 				}
-				expect (expr: Cursor): void {
-					expr.to(Expr.LetRec, "e")
-						 .to(Expr.App, "arg").needed()
-						 .push().constrArg("Cons", 0).notNeeded().pop()
-						 .constrArg("Cons", 1).needed()
-						 .push().constrArg("Cons", 0).notNeeded().pop()
-						 .constrArg("Cons", 1).needed()
+				expect (): void {
+					this.expr
+						.to(Expr.LetRec, "e")
+						.to(Expr.App, "arg").needed()
+						.push().constrArg("Cons", 0).notNeeded().pop()
+						.constrArg("Cons", 1).needed()
+						.push().constrArg("Cons", 0).notNeeded().pop()
+						.constrArg("Cons", 1).needed()
 				}
 			})(e)
 		})
@@ -211,27 +212,30 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			// retaining only pair constructor discards both subcomputations:
 			new (class extends BwdSlice {
-				setup (val: Cursor): void {
-					val.need()
+				setup (): void {
+					this.val.need()
 				}
-				expect (expr: Cursor): void {
-					expr.push().to(Expr.Let, "e").notNeeded().pop()
-						 .to(Expr.Let, "σ")
-						 .to(Trie.Var, "κ")
-						 .to(Expr.Let, "e").notNeeded()
+				expect (): void {
+					this.expr
+						.push().to(Expr.Let, "e").notNeeded().pop()
+						.to(Expr.Let, "σ")
+						.to(Trie.Var, "κ")
+						.to(Expr.Let, "e").notNeeded()
 				}
 			})(e)
 			// retaining either component of pair retains both subcomputations:
 			new (class extends BwdSlice {
-				setup (val: Cursor): void {
-					val.val_constrArg("Pair", 0)
+				setup (): void {
+					this.val
+						.val_constrArg("Pair", 0)
 						.to(ExplVal, "v").need()
 				}
-				expect (expr: Cursor): void {
-					expr.push().to(Expr.Let, "e").needed().pop()
-						 .to(Expr.Let, "σ")
-						 .to(Trie.Var, "κ")
-						 .to(Expr.Let, "e").needed()
+				expect (): void {
+					this.expr
+						.push().to(Expr.Let, "e").needed().pop()
+						.to(Expr.Let, "σ")
+						.to(Trie.Var, "κ")
+						.to(Expr.Let, "e").needed()
 				}
 			})(e)
 		})
@@ -266,21 +270,22 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			// needing first cons cell of output needs same amount of input lists
 			const last = new (class extends BwdSlice {
-				setup (val: Cursor): void {
-					val.need()
+				setup (): void {
+					this.val.need()
 				}
-				expect (expr: Cursor): void {
-					expr.push()
-						 	.to(Expr.LetRec, "e")
-						  	.to(Expr.App, "arg").needed().pop()
-					expr.push()
+				expect (): void {
+					this.expr
+						.push()
+							.to(Expr.LetRec, "e")
+							.to(Expr.App, "arg").needed().pop()
+						.push()
 							.to(Expr.LetRec, "e")
 						  	.to(Expr.App, "func")
 						  	.to(Expr.App, "arg").needed().pop()
-					expr.to(Expr.LetRec, "δ")
-						 .toElem(0).needed()
-						 .to(Expr.RecDef, "σ")
-						 .to(Trie.Var, "κ").needed()
+						.to(Expr.LetRec, "δ")
+						.toElem(0).needed()
+						.to(Expr.RecDef, "σ")
+						.to(Trie.Var, "κ").needed()
 				}
 			})(e)
 			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
