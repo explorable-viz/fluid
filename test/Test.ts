@@ -21,11 +21,11 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			new (class extends FwdSlice {
-				setup (expr: Cursor): void {
-					expr.to(Expr.BinaryApp, "e1").notNeed()
+				setup (): void {
+					this.expr.to(Expr.BinaryApp, "e1").notNeed()
 				}
-				expect (val: Cursor): void {
-					val.notNeeded()
+				expect (): void {
+					this.val.notNeeded()
 				} 
 			})(e)
 		})
@@ -58,25 +58,27 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			new (class extends FwdSlice {
-				setup (expr: Cursor): void {
-					expr.to(Expr.LetRec, "δ")
-						 .toElem(0)
-						 .to(Expr.RecDef, "σ")
-						 .to(Trie.Var, "κ")
-						 .to(Expr.Fun, "σ")
-						 .to(Trie.Constr, "cases")
-						 .to(NonEmpty, "left")
-						 .nodeValue()
-						 .arg(Trie.Var, "κ")
-						 .arg(Trie.Var, "κ")
-						 .end()
-						 .to(Expr.MatchAs, "σ")
-						 .to(Trie.Constr, "cases")
-						 .nodeValue().end()
-						 .constrArg("Cons", 0).notNeed()
+				setup (): void {
+					this.expr
+						.to(Expr.LetRec, "δ")
+						.toElem(0)
+						.to(Expr.RecDef, "σ")
+						.to(Trie.Var, "κ")
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.to(NonEmpty, "left")
+						.nodeValue()
+						.arg(Trie.Var, "κ")
+						.arg(Trie.Var, "κ")
+						.end()
+						.to(Expr.MatchAs, "σ")
+						.to(Trie.Constr, "cases")
+						.nodeValue().end()
+						.constrArg("Cons", 0).notNeed()
 				}
-				expect (val: Cursor): void {
-					val.need()
+				expect (): void {
+					this.val
+						.need()
 						.push().val_constrArg("Cons", 0).to(ExplVal, "v").notNeeded().pop()
 						.val_constrArg("Cons", 1)
 						.to(ExplVal, "v")
@@ -99,24 +101,26 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			// erasing the elements doesn't affect the count:
 			let test = new (class extends FwdSlice {
-				setup (expr: Cursor): void {
-					expr.to(Expr.LetRec, "e")
-						 .to(Expr.App, "arg")
-						 .push().constrArg("Cons", 0).notNeed().pop()
-						 .push().constrArg("Cons", 0).notNeed().pop()
+				setup (): void {
+					this.expr
+						.to(Expr.LetRec, "e")
+						.to(Expr.App, "arg")
+						.push().constrArg("Cons", 0).notNeed().pop()
+						.push().constrArg("Cons", 0).notNeed().pop()
 				}
-				expect (val: Cursor): void {
-					val.needed()
+				expect (): void {
+					this.val.needed()
 				}
 			})(e)
 			// deleting the tail of the tail means length can't be computed:
 			new (class extends FwdSlice {
-				setup (expr: Cursor): void {
-					expr.goto(test.e)
-						 .constrArg("Cons", 1).notNeed()
+				setup (): void {
+					this.expr
+						.goto(test.e)
+						.constrArg("Cons", 1).notNeed()
 				}
-				expect (val: Cursor): void {
-					val.notNeeded()
+				expect (): void {
+					this.val.notNeeded()
 				}
 			})(e)
 			// needing the result only needs the cons cells:
@@ -150,28 +154,30 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			const last = new (class extends FwdSlice {
-				setup (expr: Cursor): void {
-					expr.to(Expr.Let, "σ")
-						 .to(Trie.Var, "κ")
-						 .to(Expr.LetRec, "e")
-						 .to(Expr.App, "arg")
-						 .push()
+				setup (): void {
+					this.expr
+						.to(Expr.Let, "σ")
+						.to(Trie.Var, "κ")
+						.to(Expr.LetRec, "e")
+						.to(Expr.App, "arg")
+						.push()
 							.constrArg("NonEmpty", 0)
 							.constrArg("NonEmpty", 1)
 							.constrArg("Pair", 0).notNeed().pop()
 				}
-				expect (val: Cursor): void {
-					val.needed()
+				expect (): void {
+					this.val.needed()
 				}
 			})(e)
 			new (class extends FwdSlice {
-				setup (expr: Cursor): void {
-					expr.goto(last.e)
-						 .constrArg("NonEmpty", 1)
-						 .constrArg("Pair", 0).notNeed()
+				setup (): void {
+					this.expr
+						.goto(last.e)
+						.constrArg("NonEmpty", 1)
+						.constrArg("Pair", 0).notNeed()
 				}
-				expect (val: Cursor): void {
-					val.notNeeded()
+				expect (): void {
+					this.val.notNeeded()
 				}
 			})(e)
 		})
@@ -183,15 +189,17 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			new (class extends FwdSlice {
-				setup (expr: Cursor): void {
-					expr.to(Expr.LetRec, "e")
- 						 .to(Expr.Let, "σ")
- 						 .to(Trie.Var, "κ")
-					 	 .to(Expr.App, "arg")
-						 .constrArg("Cons", 0).notNeed()
+				setup (): void {
+					this.expr
+						.to(Expr.LetRec, "e")
+ 						.to(Expr.Let, "σ")
+ 						.to(Trie.Var, "κ")
+					 	.to(Expr.App, "arg")
+						.constrArg("Cons", 0).notNeed()
 				  }
-				expect (val: Cursor): void {
-					val.push().val_constrArg("Cons", 0).to(ExplVal, "v").notNeeded().pop()
+				expect (): void {
+					this.val
+						.push().val_constrArg("Cons", 0).to(ExplVal, "v").notNeeded().pop()
 						.val_constrArg("Cons", 1)
 						.to(ExplVal, "v").needed()
 				}
@@ -247,14 +255,16 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
 			new (class extends FwdSlice {
-				setup (expr: Cursor): void {
-					expr.to(Expr.LetRec, "e")
- 						 .to(Expr.App, "arg")
- 						 .constrArg("Cons", 1)
- 						 .constrArg("Cons", 1).notNeed()
+				setup (): void {
+					this.expr
+						.to(Expr.LetRec, "e")
+ 						.to(Expr.App, "arg")
+ 						.constrArg("Cons", 1)
+ 						.constrArg("Cons", 1).notNeed()
 				}
-				expect (val: Cursor): void {
-					val.notNeeded()
+				expect (): void {
+					this.val
+						.notNeeded()
 						.push().val_constrArg("Cons", 0).to(ExplVal, "v").needed()
 						.pop()
 						.val_constrArg("Cons", 1)
@@ -293,8 +303,8 @@ describe("example", () => {
 			const tv: ExplVal = Eval.eval_(ρ, e)
 			const val: Cursor = new Cursor(tv.v)
 			val.push()
-					.val_constrArg("Cons", 0)
-					.to(ExplVal, "v").need()
+				.val_constrArg("Cons", 0)
+				.to(ExplVal, "v").need()
 			Eval.uneval(tv)
 			const fun: Cursor = new Cursor(e)
 			fun.to(Expr.LetRec, "e")

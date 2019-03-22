@@ -123,17 +123,19 @@ export class Cursor {
 
 export abstract class FwdSlice {
    expr: Cursor
+   val: Cursor
 
    constructor (e: Expr) {
       World.newRevision()
       setall(e, ann.top) // parser should no longer need to do this
       this.expr = new Cursor(e)
-      this.setup(this.expr)
-      this.expect(new Cursor(Eval.eval_(ρ, e).v))
+      this.setup()
+      this.val = new Cursor(Eval.eval_(ρ, e).v)
+      this.expect()
    }
 
-   abstract setup (expr: Cursor): void
-   abstract expect (val: Cursor): void
+   abstract setup (): void
+   abstract expect (): void
 
    get e (): Expr {
       return this.expr.o as Expr
