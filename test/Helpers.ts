@@ -55,6 +55,14 @@ export class Cursor {
       return this.assert(Annotated, o => o.α === ann.bot)
    }
 
+   need (): Cursor {
+      return this.at(Annotated, o => o.setα(ann.top))
+   }
+
+   notNeed (): Cursor {
+      return this.at(Annotated, o => o.setα(ann.bot))
+   }
+
    push (): Cursor {
       this.prev.push(this.o)
       return this
@@ -106,6 +114,17 @@ export class Cursor {
    end (): Cursor {
       return this.to(Args.End, "κ")
    }
+}
+
+export abstract class FwdSlice {
+   constructor (e: Expr) {
+      World.newRevision()
+      this.setup(new Cursor(e))
+      this.expect(new Cursor(Eval.eval_(ρ, e).v))
+   }
+
+   abstract setup (expr: Cursor): void
+   abstract expect (val: Cursor): void
 }
 
 export enum Profile {
