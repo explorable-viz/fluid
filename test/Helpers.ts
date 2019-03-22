@@ -7,8 +7,8 @@ import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
 import { ExplVal, Value } from "../src/ExplVal"
-import { Expr, Kont, Lex } from "../src/Expr"
-import { singleton, unionWith } from "../src/FiniteMap"
+import { Expr, Kont } from "../src/Expr"
+import { unionWith } from "../src/FiniteMap"
 import { instantiate } from "../src/Instantiate"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
@@ -167,40 +167,6 @@ export enum Profile {
    Parse,
    Run,
    Visualise
-}
-
-export namespace τ {
-   export function arg<K extends Kont<K>> (σ: Trie<Args<K>>): Args.Next<K> {
-      return Args.Next.make(σ)
-   }
-
-   export function endArgs<K extends Kont<K>> (κ: K): Args.End<K> {
-      return Args.End.make(κ)
-   }
-
-   export function var_<K extends Kont<K>> (κ: K): Trie.Var<K> {
-      return Trie.Var.make(Lex.Var.make("q"), κ)
-   }
-
-   export function cons<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
-      return Trie.Constr.make(singleton("Cons", Π))
-   }
-
-   export function nil<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
-      return Trie.Constr.make(singleton("Nil", Π))
-   }
-
-   export function pair<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
-      return Trie.Constr.make(singleton("Pair", Π))
-   }
-
-   export function point<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
-      return Trie.Constr.make(singleton("Point", Π))
-   }
-
-   export function some<K extends Kont<K>> (Π: Args<K>): Trie.Constr<K> {
-      return Trie.Constr.make(singleton("Some", Π))
-   }
 }
 
 // Could have used join, but only defined for syntactic tries.
