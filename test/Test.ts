@@ -318,6 +318,7 @@ describe("example", () => {
 						.goto(last.expr.o) // bit hacky
 						.to(Expr.Fun, "σ")
 						.to(Trie.Constr, "cases")
+						.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
 						.to(NonEmpty, "left")
 						.nodeValue()			 
 						.arg(Trie.Var, "κ")
