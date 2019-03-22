@@ -1,6 +1,6 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { Cursor, FwdSlice, TestFile, ρ, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { BwdSlice, Cursor, FwdSlice, TestFile, ρ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 import { NonEmpty } from "../src/BaseTypes"
 import { assert } from "../src/util/Core"
 import { World } from "../src/util/Persistent"
@@ -100,35 +100,41 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
 			// erasing the elements doesn't affect the count:
-			World.newRevision()
-			setall(e, ann.top)
-			let here: Cursor = new Cursor(e)
-			here.to(Expr.LetRec, "e")
-				 .to(Expr.App, "arg")
-				 .push().constrArg("Cons", 0).notNeed().pop()
-				 .push().constrArg("Cons", 0).notNeed().pop()
-			let tv: ExplVal = Eval.eval_(ρ, e)
-			assert(tv.v.α !== ann.bot)
+			let test = new (class extends FwdSlice {
+				setup (expr: Cursor): void {
+					expr.to(Expr.LetRec, "e")
+						.to(Expr.App, "arg")
+						.push().constrArg("Cons", 0).notNeed().pop()
+						.push().constrArg("Cons", 0).notNeed().pop()
+				}
+				expect (val: Cursor): void {
+					val.needed()
+				}
+			})(e)
 			// deleting the tail of the tail means length can't be computed:
-			World.newRevision()
-			here.constrArg("Cons", 1).notNeed()
-			tv = Eval.eval_(ρ, e)
-			new Cursor(tv.v).notNeeded()
+			new (class extends FwdSlice {
+				setup (expr: Cursor): void {
+					expr.goto(test.e)
+					expr.constrArg("Cons", 1).notNeed()
+				}
+				expect (val: Cursor): void {
+					val.notNeeded()
+				}
+			})(e)
 			// needing the result only needs the cons cells:
-			World.newRevision()
-			setall(e, ann.bot)
-			setall(tv, ann.bot)
-			World.newRevision()
-			here = new Cursor(tv.v)
-			here.need()
-			Eval.uneval(tv)
-			here = new Cursor(e)
-			here.to(Expr.LetRec, "e")
-				 .to(Expr.App, "arg").needed()
-				 .push().constrArg("Cons", 0).notNeeded().pop()
-				 .constrArg("Cons", 1).needed()
-				 .push().constrArg("Cons", 0).notNeeded().pop()
-				 .constrArg("Cons", 1).needed()
+			new (class extends BwdSlice {
+				setup (val: Cursor): void {
+					val.need()
+				}
+				expect (expr: Cursor): void {
+					expr.to(Expr.LetRec, "e")
+						.to(Expr.App, "arg").needed()
+						.push().constrArg("Cons", 0).notNeeded().pop()
+						.constrArg("Cons", 1).needed()
+						.push().constrArg("Cons", 0).notNeeded().pop()
+						.constrArg("Cons", 1).needed()
+				}
+			})(e)
 		})
 	})
 

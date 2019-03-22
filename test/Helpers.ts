@@ -32,6 +32,10 @@ export class Cursor {
       this.o = o
    }
 
+   goto (o: PersistentObject): void {
+      this.o = o
+   }
+
    to<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
       const oʹ: T[keyof T] = as<Persistent, T>(this.o, cls)[prop] // TypeScript nonsense
       this.o = oʹ as any as PersistentObject
@@ -117,15 +121,38 @@ export class Cursor {
 }
 
 export abstract class FwdSlice {
+   expr: Cursor
+
    constructor (e: Expr) {
       World.newRevision()
       setall(e, ann.top) // parser should no longer need to do this
-      this.setup(new Cursor(e))
+      this.expr = new Cursor(e)
+      this.setup(this.expr)
       this.expect(new Cursor(Eval.eval_(ρ, e).v))
    }
 
    abstract setup (expr: Cursor): void
    abstract expect (val: Cursor): void
+
+   get e (): Expr {
+      return this.expr.o as Expr
+   }
+}
+
+// Precondition: must be safe to reexecute e in the current revision, to obtain a trace.
+export abstract class BwdSlice {
+   constructor (e: Expr) {
+      World.newRevision()
+      setall(e, ann.bot)
+      const tv: ExplVal = Eval.eval_(ρ, e)
+      setall(tv, ann.bot)
+      World.newRevision()
+      this.setup(new Cursor(tv.v))
+      this.expect(new Cursor(Eval.uneval(tv)))
+   }
+
+   abstract setup (val: Cursor): void
+   abstract expect (expr: Cursor): void
 }
 
 export enum Profile {
