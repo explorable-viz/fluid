@@ -1,12 +1,9 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { NonEmpty } from "../src/BaseTypes"
-import { World } from "../src/util/Persistent"
-import { Eval } from "../src/Eval"
 import { Expr } from "../src/Expr"
 import { ExplVal, Value } from "../src/ExplVal"
-import { Cursor } from "./Cursor"
-import { BwdSlice, FwdSlice, TestFile, ρ, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { BwdSlice, FwdSlice, TestFile, initialise, loadExample, parseExample, runExample } from "./Helpers"
 
 import Trie = Expr.Trie
 
@@ -318,30 +315,27 @@ describe("example", () => {
 						.arg(Trie.Var, "κ")
 						.arg(Trie.Var, "κ")
 						.end().needed()
-					}
+						.goto(last.expr.o) // bit hacky
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.to(NonEmpty, "left")
+						.nodeValue()			 
+						.arg(Trie.Var, "κ")
+						.arg(Trie.Var, "κ")
+						.end().needed()
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.to(NonEmpty, "left")
+						.nodeValue()			 
+						.arg(Trie.Var, "κ")
+						.arg(Trie.Var, "κ")
+						.end().needed()
+						.constrArg("Cons", 0).needed()
+						.to(Expr.App, "arg").needed()
+						.push().constrArg("Pair", 0).notNeeded().pop()
+						.push().constrArg("Pair", 1).notNeeded()
+				}
 			})(e)
-			World.newRevision()
-			const tv: ExplVal = Eval.eval_(ρ, e)
-			World.newRevision()
-			Eval.uneval(tv)
-			new Cursor(last.expr.o).to(Expr.Fun, "σ")
-				.to(Trie.Constr, "cases")
-				.to(NonEmpty, "left")
-				.nodeValue()			 
-				.arg(Trie.Var, "κ")
-				.arg(Trie.Var, "κ")
-				.end().needed()
-				.to(Expr.Fun, "σ")
-				.to(Trie.Constr, "cases")
-				.to(NonEmpty, "left")
-				.nodeValue()			 
-				.arg(Trie.Var, "κ")
-				.arg(Trie.Var, "κ")
-				.end().needed()
-				.constrArg("Cons", 0).needed()
-				.to(Expr.App, "arg").needed()
-				.push().constrArg("Pair", 0).notNeeded().pop()
-				.push().constrArg("Pair", 1).notNeeded()
 		})
 	})
 })
