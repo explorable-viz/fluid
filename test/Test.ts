@@ -1,11 +1,12 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { BwdSlice, Cursor, FwdSlice, TestFile, ρ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 import { NonEmpty } from "../src/BaseTypes"
 import { World } from "../src/util/Persistent"
 import { Eval } from "../src/Eval"
 import { Expr } from "../src/Expr"
 import { ExplVal, Value } from "../src/ExplVal"
+import { Cursor } from "./Cursor"
+import { BwdSlice, FwdSlice, TestFile, ρ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 
 import Trie = Expr.Trie
 

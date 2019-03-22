@@ -1,13 +1,15 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import { Class, __check, __nonNull, absurd, as, assert } from "../src/util/Core"
-import { Persistent, PersistentObject, World, at, make, versioned } from "../src/util/Persistent"
+import { Persistent, PersistentObject, World, at, make } from "../src/util/Persistent"
 import { Cons, List, Nil } from "../src/BaseTypes"
 import { arity } from "../src/DataType"
 import { Expr } from "../src/Expr"
+import { Eval } from "../src/Eval"
 import { Point, Rect, objects } from "../src/Graphics"
 import { ExplVal, Value } from "../src/ExplVal"
-import { Cursor, initialise, loadTestFile, runExample, parseExample } from "../test/Helpers"
+import { Cursor } from "../test/Cursor"
+import { ρ, initialise, loadTestFile, parseExample } from "../test/Helpers"
 
 initialise()
 
@@ -91,14 +93,14 @@ export function close (path: THREE.Vector2[]) {
 
 function populateScene (): void {
    const e: Expr = parseExample(loadTestFile("example", "bar-chart").text),
-         v: Value = __nonNull(runExample(e).v)
+         v: Value = __nonNull(Eval.eval_(ρ, e).v)
    let here: Cursor = new Cursor(e)
    here.to(Expr.Let, "e")
        .at(Expr.Constr, here_ => {
       World.newRevision()
       const args: Cons<Expr> = as(here_.args, Cons)
       // want to do: Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(args.head.bottom(), args.tail))
-      const vʹ: Value = __nonNull(runExample(e).v) // make consistent - is there an invariant that every world is consistent?
+      const vʹ: Value = __nonNull(Eval.eval_(ρ, e).v) // make consistent - is there an invariant that every world is consistent?
       assert(vʹ === v)
 
       const elems: List<Persistent> = as(reflect(vʹ), List)

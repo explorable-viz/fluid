@@ -1,8 +1,7 @@
-import { AClass, Class, __nonNull, absurd, as, assert } from "../src/util/Core"
-import { Persistent, PersistentObject, World } from "../src/util/Persistent"
+import { __nonNull, assert } from "../src/util/Core"
+import { World } from "../src/util/Persistent"
 import { parse } from "../src/util/parse/Core"
-import { Annotated, ann, setall } from "../src/Annotated"
-import { Cons, NonEmpty, Pair } from "../src/BaseTypes"
+import { ann, setall } from "../src/Annotated"
 import { initDataTypes } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Eval } from "../src/Eval"
@@ -12,6 +11,7 @@ import { unionWith } from "../src/FiniteMap"
 import { instantiate } from "../src/Instantiate"
 import { Parse } from "../src/Parse"
 import { prelude } from "../src/Primitive"
+import { Cursor } from "./Cursor"
 
 import Args = Expr.Args
 import Trie = Expr.Trie
@@ -22,103 +22,6 @@ export function initialise (): void {
       return "'" + this + "'"
    }
    initDataTypes()
-}
-
-export class Cursor {
-   prev: PersistentObject[] = []
-   o: PersistentObject
-
-   constructor (o: PersistentObject) {
-      this.goto(o)
-   }
-
-   goto (o: PersistentObject): Cursor {
-      this.o = o
-      return this
-   }
-
-   to<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
-      const oʹ: T[keyof T] = as<Persistent, T>(this.o, cls)[prop] // TypeScript nonsense
-      this.o = oʹ as any as PersistentObject
-      return this
-   }
-
-   at<T extends PersistentObject> (cls: AClass<T>, f: (o: T) => void): Cursor {
-      f(as<PersistentObject, T>(this.o, cls))
-      return this
-   }
-
-   assert<T extends PersistentObject> (cls: AClass<T>, pred: (o: T) => boolean): Cursor {
-      return this.at(cls, o => assert(pred(o)))
-   }
-
-   needed (): Cursor {
-      return this.assert(Annotated, o => o.α === ann.top)
-   }
-
-   notNeeded (): Cursor {
-      return this.assert(Annotated, o => o.α === ann.bot)
-   }
-
-   need (): Cursor {
-      return this.at(Annotated, o => o.setα(ann.top))
-   }
-
-   notNeed (): Cursor {
-      return this.at(Annotated, o => o.setα(ann.bot))
-   }
-
-   push (): Cursor {
-      this.prev.push(this.o)
-      return this
-   }
-
-   pop (): Cursor {
-      const o: PersistentObject | undefined = this.prev.pop()
-      if (o === undefined) {
-         return absurd()
-      } else {
-         this.o = o
-      }
-      return this
-   }
-
-   // Helpers specific to certain data types.
-
-   toElem (n: number): Cursor {
-      if (n === 0) {
-         return this.to(Cons, "head")
-      } else {
-         this.to(Cons, "tail")
-         return this.toElem(n - 1)
-      }
-   }
-
-   constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
-      return this.at(Expr.Constr, e => assert(e.ctr.str === ctr))
-                 .to(Expr.Constr, "args")
-                 .toElem(n)
-   }
-
-   val_constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
-      return this.at(Value.Constr, e => assert(e.ctr.str === ctr))
-                 .to(Value.Constr, "args")
-                 .toElem(n)
-   }
-
-   nodeValue (): Cursor {
-      return this.to(NonEmpty, "t")
-                 .to(Pair, "snd")
-   }
-
-   arg<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
-      return this.to(Args.Next, "σ")
-                 .to(cls, prop)
-   }
-
-   end (): Cursor {
-      return this.to(Args.End, "κ")
-   }
 }
 
 export abstract class FwdSlice {
