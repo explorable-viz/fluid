@@ -150,23 +150,31 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
-			World.newRevision()
-			const here: Cursor = new Cursor(e)
-			here.to(Expr.Let, "σ")
-				 .to(Trie.Var, "κ")
-				 .to(Expr.LetRec, "e")
-				 .to(Expr.App, "arg")
-				 .push()
-					.constrArg("NonEmpty", 0)
-					.constrArg("NonEmpty", 1)
-					.constrArg("Pair", 0).notNeed().pop()
-			let v = Eval.eval_(ρ, e).v
-			new Cursor(v).needed()
-			World.newRevision()
-			here.constrArg("NonEmpty", 1)
-				 .constrArg("Pair", 0).notNeed()
-			v = Eval.eval_(ρ, e).v
-			assert(v.α === ann.bot)
+			const last = new (class extends FwdSlice {
+				setup (expr: Cursor): void {
+					expr.to(Expr.Let, "σ")
+						 .to(Trie.Var, "κ")
+						 .to(Expr.LetRec, "e")
+						 .to(Expr.App, "arg")
+						 .push()
+							.constrArg("NonEmpty", 0)
+							.constrArg("NonEmpty", 1)
+							.constrArg("Pair", 0).notNeed().pop()
+				}
+				expect (val: Cursor): void {
+					val.needed()
+				}
+			})(e)
+			new (class extends FwdSlice {
+				setup (expr: Cursor): void {
+					expr.goto(last.e)
+					expr.constrArg("NonEmpty", 1)
+						 .constrArg("Pair", 0).notNeed()
+				}
+				expect (val: Cursor): void {
+					val.notNeeded()
+				}
+			})(e)
 		})
 	})
 
