@@ -299,24 +299,30 @@ describe("example", () => {
 				}
 			})(e)
 			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val
+						.val_constrArg("Cons", 0)
+						.to(ExplVal, "v").need()
+				}
+				expect (): void {
+					this.expr
+						.to(Expr.LetRec, "e")
+						.to(Expr.App, "func")
+						.to(Expr.App, "func")
+						.to(Expr.App, "arg")
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.nodeValue()
+						.arg(Trie.Var, "κ")
+						.arg(Trie.Var, "κ")
+						.end().needed()
+					}
+			})(e)
 			World.newRevision()
 			const tv: ExplVal = Eval.eval_(ρ, e)
-			const val: Cursor = new Cursor(tv.v)
-			val.push()
-				.val_constrArg("Cons", 0)
-				.to(ExplVal, "v").need()
+			World.newRevision()
 			Eval.uneval(tv)
-			const fun: Cursor = new Cursor(e)
-			fun.to(Expr.LetRec, "e")
-				.to(Expr.App, "func")
-				.to(Expr.App, "func")
-				.to(Expr.App, "arg")
-				.to(Expr.Fun, "σ")
-				.to(Trie.Constr, "cases")
-				.nodeValue()
-				.arg(Trie.Var, "κ")
-				.arg(Trie.Var, "κ")
-				.end().needed()
 			new Cursor(last.expr.o).to(Expr.Fun, "σ")
 				.to(Trie.Constr, "cases")
 				.to(NonEmpty, "left")

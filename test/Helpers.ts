@@ -150,8 +150,8 @@ export abstract class BwdSlice {
    constructor (e: Expr) {
       World.newRevision()
       setall(e, ann.bot)
-      const tv: ExplVal = Eval.eval_(ρ, e)
-      setall(tv, ann.bot) // is that necessary given what I've just done?
+      const tv: ExplVal = Eval.eval_(ρ, e) // just to obtain tv
+      setall(tv, ann.bot) // necessary given what I've just done?
       World.newRevision()
       this.val = new Cursor(tv.v)
       this.setup()
