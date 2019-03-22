@@ -119,6 +119,7 @@ export class Cursor {
 export abstract class FwdSlice {
    constructor (e: Expr) {
       World.newRevision()
+      setall(e, ann.top) // parser should no longer need to do this
       this.setup(new Cursor(e))
       this.expect(new Cursor(Eval.eval_(ρ, e).v))
    }
