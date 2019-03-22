@@ -29,11 +29,12 @@ export class Cursor {
    o: PersistentObject
 
    constructor (o: PersistentObject) {
-      this.o = o
+      this.goto(o)
    }
 
-   goto (o: PersistentObject): void {
+   goto (o: PersistentObject): Cursor {
       this.o = o
+      return this
    }
 
    to<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
@@ -141,14 +142,19 @@ export abstract class FwdSlice {
 
 // Precondition: must be safe to reexecute e in the current revision, to obtain a trace.
 export abstract class BwdSlice {
+   val: Cursor
+   expr: Cursor
+
    constructor (e: Expr) {
       World.newRevision()
       setall(e, ann.bot)
       const tv: ExplVal = Eval.eval_(ρ, e)
-      setall(tv, ann.bot)
+      setall(tv, ann.bot) // is that necessary given what I've just done?
       World.newRevision()
-      this.setup(new Cursor(tv.v))
-      this.expect(new Cursor(Eval.uneval(tv)))
+      this.val = new Cursor(tv.v)
+      this.setup(this.val)
+      this.expr = new Cursor(Eval.uneval(tv))
+      this.expect(this.expr)
    }
 
    abstract setup (val: Cursor): void
