@@ -25,7 +25,6 @@ import let_ = ExplVal.let_
 import letRec = ExplVal.letRec
 import matchAs = ExplVal.matchAs
 import RecDef = Expr.RecDef
-import Trie = Expr.Trie
 import unaryApp = ExplVal.unaryApp
 import var_ = ExplVal.var_
 
@@ -230,11 +229,10 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
       return e.joinα(v.α)
    } else
    if (t instanceof Let) {
-      const {ξ, κ: tv} = t.ξtv
+      const {κ: tv} = t.ξtv
       tv.v.joinα(v.α)
-      const eʹ: Expr = uninstantiate(uneval(tv))
+      uninstantiate(uneval(tv))
       uneval(t.tu) // unmatch not required - suffices to uneval in reverse order
-      Trie.Var.make(ξ.x, eʹ)
       return e.joinα(v.α)
    } else
    if (t instanceof LetRec) {
