@@ -31,7 +31,7 @@ class Reflect implements PersistentObject {
    }
 
    static make (v: Value): Reflect {
-      return make<Reflect>(Reflect, v)
+      return make(Reflect, v)
    }
 }
 
@@ -100,12 +100,9 @@ function populateScene (): void {
       World.newRevision()
       const args: Cons<Expr> = as(here_.args, Cons)
       // want to do: Expr.Constr.at(here.__id, Lex.Ctr.make("Cons"), Cons.make<Expr>(args.head.bottom(), args.tail))
-      const vʹ: Value = __nonNull(Eval.eval_(ρ, e).v) // make consistent - is there an invariant that every world is consistent?
-      assert(vʹ === v)
-
-      const elems: List<Persistent> = as(reflect(vʹ), List)
+      Eval.eval_(ρ, e)
+      const elems: List<Persistent> = as(reflect(v), List)
       for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
-         // assume only increasing or decreasing changes (to or from null):
          for (let obj of objects(elemsʹ.head)) {
             scene.add(obj)
          }

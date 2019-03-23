@@ -332,7 +332,7 @@ describe("example", () => {
 						.arg(Trie.Var, "κ")
 						.end().needed()
 						.constrArg("Cons", 0).needed()
-						.to(Expr.App, "arg").needed()
+						.to(Expr.App, "arg").needed() // application of op
 						.push().constrArg("Pair", 0).notNeeded().pop()
 						.push().constrArg("Pair", 1).notNeeded()
 				}
