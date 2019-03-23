@@ -1,13 +1,9 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { Cursor, TestFile, ρ, initialise, loadExample, parseExample, runExample } from "./Helpers"
 import { NonEmpty } from "../src/BaseTypes"
-import { assert } from "../src/util/Core"
-import { World } from "../src/util/Persistent"
-import { ann, setall } from "../src/Annotated"
-import { Eval } from "../src/Eval"
 import { Expr } from "../src/Expr"
 import { ExplVal, Value } from "../src/ExplVal"
+import { BwdSlice, FwdSlice, TestFile, initialise, loadExample, parseExample, runExample } from "./Helpers"
 
 import Trie = Expr.Trie
 
@@ -22,19 +18,29 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
-			World.newRevision()
-			const here: Cursor = new Cursor(e)
-			here.to(Expr.BinaryApp, "e1")
-				 .at(Expr.Expr, e => e.setα(ann.bot))
-			const v: Value = Eval.eval_(ρ, e).v
-			assert(v.α === ann.bot)
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr.to(Expr.BinaryApp, "e1").notNeed()
+				}
+				expect (): void {
+					this.val.notNeeded()
+				} 
+			})(e)
 		})
 	})
 
 	describe("bar-chart", () => {
 		const file: TestFile = loadExample("bar-chart")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text)
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr.needed()
+				}
+			})(e)
 		})
 	})
 
@@ -57,36 +63,34 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
-			World.newRevision()
-			setall(e, ann.top)
-			let here: Cursor = new Cursor(e)
-			here.to(Expr.LetRec, "δ")
-				 .toElem(0)
-				 .to(Expr.RecDef, "σ")
-				 .to(Trie.Var, "κ")
-				 .to(Expr.Fun, "σ")
-				 .to(Trie.Constr, "cases")
-				 .to(NonEmpty, "left")
-				 .nodeValue()
-				 .arg(Trie.Var, "κ")
-				 .arg(Trie.Var, "κ")
-				 .end()
-				 .to(Expr.MatchAs, "σ")
-				 .to(Trie.Constr, "cases")
-				 .nodeValue().end()
-				 .constrArg("Cons", 0)
-				 .at(Expr.Var, e => e.setα(ann.bot))
-			const v: Value = Eval.eval_(ρ, e).v
-			assert(v.α !== ann.bot)
-			here = new Cursor(v)
-			here.push()
-				 .val_constrArg("Cons", 0)
-				 .to(ExplVal, "v")
-				 .assert(Value.ConstInt, v => v.α === ann.bot)
-				 .pop()
- 				 .val_constrArg("Cons", 1)
-				 .to(ExplVal, "v")
-				 .assert(Value.Constr, v => v.ctr.str === "Nil")
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.to(Expr.LetRec, "δ")
+						.toElem(0)
+						.to(Expr.RecDef, "σ")
+						.to(Trie.Var, "κ")
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.to(NonEmpty, "left")
+						.nodeValue()
+						.arg(Trie.Var, "κ")
+						.arg(Trie.Var, "κ")
+						.end()
+						.to(Expr.MatchAs, "σ")
+						.to(Trie.Constr, "cases")
+						.nodeValue().end()
+						.constrArg("Cons", 0).notNeed()
+				}
+				expect (): void {
+					this.val
+						.need()
+						.push().val_constrArg("Cons", 0).to(ExplVal, "v").notNeeded().pop()
+						.val_constrArg("Cons", 1)
+						.to(ExplVal, "v")
+						.assert(Value.Constr, v => v.ctr.str === "Nil")
+				}
+			})(e)
 		})
 	})
 
@@ -102,52 +106,44 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
 			// erasing the elements doesn't affect the count:
-			World.newRevision()
-			setall(e, ann.top)
-			let here: Cursor = new Cursor(e)
-			here.to(Expr.LetRec, "e")
-				 .to(Expr.App, "arg")
-				 .push()
-				 .constrArg("Cons", 0)
-	  			 .at(Expr.Expr, e => e.setα(ann.bot))
-				 .pop()
-
-				 .push()
-				 .constrArg("Cons", 0)
-				 .at(Expr.Expr, e => e.setα(ann.bot))
-			let tv: ExplVal = Eval.eval_(ρ, e)
-			assert(tv.v.α !== ann.bot)
+			let test = new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.to(Expr.LetRec, "e")
+						.to(Expr.App, "arg")
+						.push().constrArg("Cons", 0).notNeed().pop()
+						.push().constrArg("Cons", 0).notNeed().pop()
+				}
+				expect (): void {
+					this.val.needed()
+				}
+			})(e)
 			// deleting the tail of the tail means length can't be computed:
-			World.newRevision()
-			here.pop()
-				 .constrArg("Cons", 1)
-				 .at(Expr.Constr, e => e.setα(ann.bot))
-			tv = Eval.eval_(ρ, e)
-			assert(tv.v.α === ann.bot)
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.goto(test.e)
+						.constrArg("Cons", 1).notNeed()
+				}
+				expect (): void {
+					this.val.notNeeded()
+				}
+			})(e)
 			// needing the result only needs the cons cells:
-			World.newRevision()
-			setall(e, ann.bot)
-			setall(tv, ann.bot)
-			World.newRevision()
-			here = new Cursor(tv.v)
-			here.at(Value.ConstInt, v => v.setα(ann.top))
-			Eval.uneval(tv)
-			here = new Cursor(e)
-			here.to(Expr.LetRec, "e")
-				 .to(Expr.App, "arg")
-				 .assert(Expr.Constr, e => e.α === ann.top)
-				 .push()
-					.constrArg("Cons", 0)
-					.assert(Expr.ConstInt, e => e.α === ann.bot)
-					.pop()
-				 .constrArg("Cons", 1)
-				 .assert(Expr.Constr, e => e.α === ann.top)
-				 .push()
-					.constrArg("Cons", 0)
-					.assert(Expr.ConstInt, e => e.α === ann.bot)
-					.pop()
-				 .constrArg("Cons", 1)
-				 .assert(Expr.Constr, e => e.α === ann.top)
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr
+						.to(Expr.LetRec, "e")
+						.to(Expr.App, "arg").needed()
+						.push().constrArg("Cons", 0).notNeeded().pop()
+						.constrArg("Cons", 1).needed()
+						.push().constrArg("Cons", 0).notNeeded().pop()
+						.constrArg("Cons", 1).needed()
+				}
+			})(e)
 		})
 	})
 
@@ -163,26 +159,33 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
-			World.newRevision()
-			const here: Cursor = new Cursor(e)
-			here.to(Expr.Let, "σ")
-				 .to(Trie.Var, "κ")
-				 .to(Expr.LetRec, "e")
-				 .to(Expr.App, "arg")
-				 .push()
-					.constrArg("NonEmpty", 0)
-					.constrArg("NonEmpty", 1)
-					.constrArg("Pair", 0)
-					.at(Expr.ConstInt, e => e.setα(ann.bot))
-					.pop()
-			let v = Eval.eval_(ρ, e).v
-			assert(v.α !== ann.bot)
-			World.newRevision()
-			here.constrArg("NonEmpty", 1)
-				 .constrArg("Pair", 0)
-				 .at(Expr.ConstInt, e => e.setα(ann.bot))
-			v = Eval.eval_(ρ, e).v
-			assert(v.α === ann.bot)
+			const last = new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.to(Expr.Let, "σ")
+						.to(Trie.Var, "κ")
+						.to(Expr.LetRec, "e")
+						.to(Expr.App, "arg")
+						.push()
+							.constrArg("NonEmpty", 0)
+							.constrArg("NonEmpty", 1)
+							.constrArg("Pair", 0).notNeed().pop()
+				}
+				expect (): void {
+					this.val.needed()
+				}
+			})(e)
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.goto(last.e)
+						.constrArg("NonEmpty", 1)
+						.constrArg("Pair", 0).notNeed()
+				}
+				expect (): void {
+					this.val.notNeeded()
+				}
+			})(e)
 		})
 	})
 
@@ -191,24 +194,22 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
-			World.newRevision()
-			setall(e, ann.top)
-			let here: Cursor = new Cursor(e)
-			here.to(Expr.LetRec, "e")
-				 .to(Expr.Let, "σ")
-				 .to(Trie.Var, "κ")
-				 .to(Expr.App, "arg")
-				 .constrArg("Cons", 0)
-				 .at(Expr.Expr, e => e.setα(ann.bot))
-			let v: Value = Eval.eval_(ρ, e).v
-			assert(v.α !== ann.bot)
-			here = new Cursor(v)
-			here.push()
-					.val_constrArg("Cons", 0)
-					.assert(ExplVal, tv => tv.v.α === ann.bot)
-					.pop()
-				 .val_constrArg("Cons", 1)
-				 .assert(ExplVal, tv => tv.v.α !== ann.bot)
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.to(Expr.LetRec, "e")
+ 						.to(Expr.Let, "σ")
+ 						.to(Trie.Var, "κ")
+					 	.to(Expr.App, "arg")
+						.constrArg("Cons", 0).notNeed()
+				  }
+				expect (): void {
+					this.val
+						.push().val_constrArg("Cons", 0).to(ExplVal, "v").notNeeded().pop()
+						.val_constrArg("Cons", 1)
+						.to(ExplVal, "v").needed()
+				}
+			})(e)
 		})
 	})
 
@@ -222,41 +223,35 @@ describe("example", () => {
 	describe("normalise", () => {
 		const file: TestFile = loadExample("normalise")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text),
-					tv: ExplVal = Eval.eval_(ρ, e)
-			World.newRevision()
-			setall(e, ann.bot)
-			setall(tv, ann.bot)
+			const e: Expr = parseExample(file.text)
 			// retaining only pair constructor discards both subcomputations:
-			World.newRevision()
-			let here: Cursor = new Cursor(tv.v)
-			here.at(Value.Constr, v => v.setα(ann.top))
-			Eval.uneval(tv)
-			here = new Cursor(e)
-			here.push()
-					.to(Expr.Let, "e")
-					.assert(Expr.ConstInt, e => e.α === ann.bot)
-					.pop()
-				 .to(Expr.Let, "σ")
-				 .to(Trie.Var, "κ")
-				 .to(Expr.Let, "e")
-				 .assert(Expr.ConstInt, e => e.α === ann.bot)
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr
+						.push().to(Expr.Let, "e").notNeeded().pop()
+						.to(Expr.Let, "σ")
+						.to(Trie.Var, "κ")
+						.to(Expr.Let, "e").notNeeded()
+				}
+			})(e)
 			// retaining either component of pair retains both subcomputations:
-			World.newRevision()
-			here = new Cursor(tv.v)
-			here.val_constrArg("Pair", 0)
-				 .to(ExplVal, "v")
-				 .at(Value.ConstInt, v => v.setα(ann.top))
-			Eval.uneval(tv)
-			here = new Cursor(e)
-			here.push()
-					.to(Expr.Let, "e")
-					.assert(Expr.ConstInt, e => e.α === ann.top)
-					.pop()
-				 .to(Expr.Let, "σ")
-				 .to(Trie.Var, "κ")
-				 .to(Expr.Let, "e")
-				 .assert(Expr.ConstInt, e => e.α === ann.top)
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val
+						.val_constrArg("Pair", 0)
+						.to(ExplVal, "v").need()
+				}
+				expect (): void {
+					this.expr
+						.push().to(Expr.Let, "e").needed().pop()
+						.to(Expr.Let, "σ")
+						.to(Trie.Var, "κ")
+						.to(Expr.Let, "e").needed()
+				}
+			})(e)
 		})
 	})
 
@@ -265,75 +260,91 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parseExample(file.text)
 			runExample(e)
-			World.newRevision()
-			setall(e, ann.top)
-			let here: Cursor = new Cursor(e)
-			here.to(Expr.LetRec, "e")
-				 .to(Expr.App, "arg")
-				 .constrArg("Cons", 1)
-				 .constrArg("Cons", 1)
-				 .at(Expr.Expr, e => e.setα(ann.bot))
-			let v: Value = Eval.eval_(ρ, e).v
-			here = new Cursor(v)
-			here.assert(Value.Constr, v => v.α === ann.bot)
-				 .push()
-				 .val_constrArg("Cons", 0)
-				 .to(ExplVal, "v")
-				 .assert(Value.ConstInt, v => v.α !== ann.bot)
-				 .pop()
-				 .val_constrArg("Cons", 1)
-				 .to(ExplVal, "v")
-				 .assert(Value.Constr, v => v.α !== ann.bot)
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.to(Expr.LetRec, "e")
+ 						.to(Expr.App, "arg")
+ 						.constrArg("Cons", 1)
+ 						.constrArg("Cons", 1).notNeed()
+				}
+				expect (): void {
+					this.val
+						.notNeeded()
+						.push().val_constrArg("Cons", 0).to(ExplVal, "v").needed()
+						.pop()
+						.val_constrArg("Cons", 1)
+						.to(ExplVal, "v").needed()
+				}
+			})(e)
 		})
 	})
 
 	describe("zipW", () => {
 		const file: TestFile = loadExample("zipW")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text),
-				   tv: ExplVal = Eval.eval_(ρ, e)
-			World.newRevision()
-			setall(e, ann.bot)
-			setall(tv, ann.bot)
+			const e: Expr = parseExample(file.text)
 			// needing first cons cell of output needs same amount of input lists
-			World.newRevision()
-			const val: Cursor = new Cursor(tv.v)
-			val.at(Value.Constr, v => v.setα(ann.top))
-			Eval.uneval(tv)
-			const list2: Cursor = new Cursor(e)
-			list2.to(Expr.LetRec, "e")
-				  .to(Expr.App, "arg")
-				  .assert(Expr.Constr, e => e.α === ann.top)
-			const list1: Cursor = new Cursor(e)
-			list1.to(Expr.LetRec, "e")
-				  .to(Expr.App, "func")
-				  .to(Expr.App, "arg")
-				  .assert(Expr.Constr, e => e.α === ann.top)
-			const zipW: Cursor = new Cursor(e)
-			zipW.to(Expr.LetRec, "δ")
-				.toElem(0)
-				.assert(Expr.RecDef, e => e.α === ann.top)
-				.to(Expr.RecDef, "σ")
-				.to(Trie.Var, "κ")
+			const last = new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr
+						.push()
+							.to(Expr.LetRec, "e")
+							.to(Expr.App, "arg").needed().pop()
+						.push()
+							.to(Expr.LetRec, "e")
+						  	.to(Expr.App, "func")
+						  	.to(Expr.App, "arg").needed().pop()
+						.to(Expr.LetRec, "δ")
+						.toElem(0).needed()
+						.to(Expr.RecDef, "σ")
+						.to(Trie.Var, "κ").needed()
+				}
+			})(e)
 			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
-			World.newRevision()
-			val.push()
-					.val_constrArg("Cons", 0)
-					.to(ExplVal, "v")
-					.at(Value.Constr, v => v.setα(ann.top))
-			Eval.uneval(tv)
-			const fun: Cursor = new Cursor(e)
-			fun.to(Expr.LetRec, "e")
-				.to(Expr.App, "func")
-				.to(Expr.App, "func")
-				.to(Expr.App, "arg")
-				.to(Expr.Fun, "σ")
-				.to(Trie.Constr, "cases")
-				.nodeValue()
-				.arg(Trie.Var, "κ")
-				.arg(Trie.Var, "κ")
-				.end()
-				.assert(Expr.Constr, e => e.α === ann.top)
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val
+						.val_constrArg("Cons", 0)
+						.to(ExplVal, "v").need()
+				}
+				expect (): void {
+					this.expr
+						.to(Expr.LetRec, "e")
+						.to(Expr.App, "func")
+						.to(Expr.App, "func")
+						.to(Expr.App, "arg")
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.nodeValue()
+						.arg(Trie.Var, "κ")
+						.arg(Trie.Var, "κ")
+						.end().needed()
+						.goto(last.expr.o) // bit hacky
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
+						.to(NonEmpty, "left")
+						.nodeValue()			 
+						.arg(Trie.Var, "κ")
+						.arg(Trie.Var, "κ")
+						.end().needed()
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.to(NonEmpty, "left")
+						.nodeValue()			 
+						.arg(Trie.Var, "κ")
+						.arg(Trie.Var, "κ")
+						.end().needed()
+						.constrArg("Cons", 0).needed()
+						.to(Expr.App, "arg").needed() // application of op
+						.push().constrArg("Pair", 0).notNeeded().pop()
+						.push().constrArg("Pair", 1).notNeeded()
+				}
+			})(e)
 		})
 	})
 })

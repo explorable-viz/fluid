@@ -15,7 +15,9 @@ module.exports = function (config) {
          }
       ],
       exclude: [
+         // otherwise these will also appear as entry points
          './test/App.ts',
+         './test/Cursor.ts',
          './test/Helpers.ts'
       ],
       preprocessors: {
