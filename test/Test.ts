@@ -32,7 +32,15 @@ describe("example", () => {
 	describe("bar-chart", () => {
 		const file: TestFile = loadExample("bar-chart")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			const e: Expr = parseExample(file.text)
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr.needed()
+				}
+			})(e)
 		})
 	})
 
