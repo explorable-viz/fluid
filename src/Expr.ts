@@ -145,10 +145,10 @@ export namespace Expr {
          this.func = func
          this.arg = arg
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, func: Expr, arg: Expr): App {
-         return at(k, App, α, func, arg)
-      }
+   export function app (k: PersistentObject, α: Annotation, func: Expr, arg: Expr): App {
+      return at(k, App, α, func, arg)
    }
 
    export class ConstInt extends Expr {
@@ -158,12 +158,12 @@ export namespace Expr {
          this.α = α
          this.val = __check(val, x => !Number.isNaN(x))
       }
-   
-      static at (k: PersistentObject, α: Annotation, val: number): ConstInt {
-         return at(k, ConstInt, α, val)
-      }
    }
    
+   export function constInt (k: PersistentObject, α: Annotation, val: number): ConstInt {
+      return at(k, ConstInt, α, val)
+   }
+
    export class ConstStr extends Expr {
       val: string
 
@@ -171,12 +171,12 @@ export namespace Expr {
          this.α = α
          this.val = val
       }
-   
-      static at (k: PersistentObject, α: Annotation,val: string): ConstStr {
-         return at(k, ConstStr, α, val)
-      }
    }
    
+   export function constStr (k: PersistentObject, α: Annotation,val: string): ConstStr {
+      return at(k, ConstStr, α, val)
+   }
+
    export class Constr extends Expr {
       ctr: Lex.Ctr
       args: List<Expr>
@@ -186,10 +186,10 @@ export namespace Expr {
          this.ctr = ctr
          this.args = args
       }
+   }
    
-      static at (k: PersistentObject, α: Annotation, ctr: Lex.Ctr, args: List<Expr>): Constr {
-         return at(k, Constr, α, ctr, args)
-      }
+   export function constr (k: PersistentObject, α: Annotation, ctr: Lex.Ctr, args: List<Expr>): Constr {
+      return at(k, Constr, α, ctr, args)
    }
 
    export class Fun extends Expr {
@@ -199,10 +199,10 @@ export namespace Expr {
          this.α = α
          this.σ = σ
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, σ: Trie<Expr>): Fun {
-         return at(k, Fun, α, σ)
-      }
+   export function fun (k: PersistentObject, α: Annotation, σ: Trie<Expr>): Fun {
+      return at(k, Fun, α, σ)
    }
 
    // A let is simply a match where the trie is a variable trie.
@@ -215,10 +215,10 @@ export namespace Expr {
          this.e = e
          this.σ = σ
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, e: Expr, σ: Trie.Var<Expr>): Let {
-         return at(k, Let, α, e, σ)
-      }
+   export function let_ (k: PersistentObject, α: Annotation, e: Expr, σ: Trie.Var<Expr>): Let {
+      return at(k, Let, α, e, σ)
    }
 
    export class PrimOp extends Expr {
@@ -228,10 +228,10 @@ export namespace Expr {
          this.α = α
          this.op = op
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, op: UnaryOp): PrimOp {
-         return at(k, PrimOp, α, op)
-      }
+   export function primOp (k: PersistentObject, α: Annotation, op: UnaryOp): PrimOp {
+      return at(k, PrimOp, α, op)
    }
 
    export class RecDef extends Annotated implements PersistentObject {
@@ -243,10 +243,10 @@ export namespace Expr {
          this.x = x
          this.σ = σ
       }
+   }
  
-      static at (k: PersistentObject, α: Annotation, x: Lex.Var, σ: Trie<Expr>): RecDef {
-         return at(k, RecDef, α, x, σ)
-      }
+   export function recDef (k: PersistentObject, α: Annotation, x: Lex.Var, σ: Trie<Expr>): RecDef {
+      return at(k, RecDef, α, x, σ)
    }
 
    export class LetRec extends Expr {
@@ -258,10 +258,10 @@ export namespace Expr {
          this.δ = δ
          this.e = e
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, δ: List<RecDef>, e: Expr): LetRec {
-         return at(k, LetRec, α, δ, e)
-      }
+   export function letRec (k: PersistentObject, α: Annotation, δ: List<RecDef>, e: Expr): LetRec {
+      return at(k, LetRec, α, δ, e)
    }
 
    export class MatchAs extends Expr {
@@ -273,10 +273,10 @@ export namespace Expr {
          this.e = e
          this.σ = σ
       }
+   }
    
-      static at (k: PersistentObject, α: Annotation, e: Expr, σ: Trie<Expr>): MatchAs {
-         return at(k, MatchAs, α, e, σ)
-      }
+   export function matchAs (k: PersistentObject, α: Annotation, e: Expr, σ: Trie<Expr>): MatchAs {
+      return at(k, MatchAs, α, e, σ)
    }
 
    export class BinaryApp extends Expr {
@@ -290,10 +290,10 @@ export namespace Expr {
          this.opName = opName
          this.e2 = e2
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
-         return at(k, BinaryApp, α, e1, opName, e2)
-      }
+   export function binaryApp (k: PersistentObject, α: Annotation, e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
+      return at(k, BinaryApp, α, e1, opName, e2)
    }
 
    export class Var extends Expr {
@@ -303,10 +303,10 @@ export namespace Expr {
          this.α = α
          this.x = x
       }
+   }
    
-      static at (k: PersistentObject, α: Annotation, x: Lex.Var): Var {
-         return at(k, Var, α, x)
-      }
+   export function var_ (k: PersistentObject, α: Annotation, x: Lex.Var): Var {
+      return at(k, Var, α, x)
    }
 
    export type Args<K extends Kont<K>> = Args.Args<K>

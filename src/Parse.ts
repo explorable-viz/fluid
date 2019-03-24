@@ -89,7 +89,7 @@ const var_: Parser<Lex.Var> =
    )
 
 const variable: Parser<Var> =
-   withAction(var_, (x: Lex.Var) => Var.at(ν(), ann.top, x))
+   withAction(var_, (x: Lex.Var) => Expr.var_(ν(), ann.top, x))
 
 // Only allow Unicode escape sequences (i.e. no hex or octal escapes, nor "character" escapes such as \r).
 const hexDigit: Parser<string> = 
@@ -166,7 +166,7 @@ const app_: Parser<(e1: Expr, e2: Expr) => App> =
    withAction(
       constant(null),
       (_: Expr) =>
-         (e1: Expr, e2: Expr): App => App.at(ν(), ann.top, e1, e2)
+         (e1: Expr, e2: Expr): App => Expr.app(ν(), ann.top, e1, e2)
    )
 
 function appOp (
@@ -176,14 +176,14 @@ function appOp (
       opP,
       op =>
          (e1: Expr, e2: Expr): BinaryApp =>
-            BinaryApp.at(ν(), ann.top, e1, op, e2)
+            Expr.binaryApp(ν(), ann.top, e1, op, e2)
    )
 }
 
 const string_: Parser<ConstStr> =
    withAction(
       lexeme(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),), Lex.StringLiteral),
-      lit => ConstStr.at(ν(), ann.top, lit.str)
+      lit => Expr.constStr(ν(), ann.top, lit.str)
    )
 
 const integer: Parser<ConstInt> =
@@ -196,7 +196,7 @@ const integer: Parser<ConstInt> =
          ]),
          Lex.IntLiteral
       ),
-      lit => ConstInt.at(ν(), ann.top, parseInt(lit.str))
+      lit => Expr.constInt(ν(), ann.top, parseInt(lit.str))
    )
 
 const parenthExpr: Parser<Expr> = 
@@ -209,14 +209,14 @@ const let_: Parser<Let> =
          dropFirst(keyword(str.in_), expr)
       ),
       ([[x, e], eʹ]: [[Lex.Var, Expr], Expr]) =>
-         Let.at(ν(), ann.top, e, Trie.var_(x, eʹ))
+         Expr.let_(ν(), ann.top, e, Trie.var_(x, eʹ))
    )
 
 const recDef: Parser<RecDef> =
    withAction(
       seq(dropFirst(keyword(str.fun), var_), matches),
       ([name, σ]: [Lex.Var, Trie<Expr>]) =>
-         RecDef.at(ν(), ann.top, name, σ)
+         Expr.recDef(ν(), ann.top, name, σ)
    )
 
 const recDefs1 : Parser<List<RecDef>> =
@@ -229,7 +229,7 @@ const letrec: Parser<LetRec> =
          dropFirst(keyword(str.in_), expr)
       ),
      ([δ, body]: [List<RecDef>, Expr]) => 
-         LetRec.at(ν(), ann.top, δ, body)
+         Expr.letRec(ν(), ann.top, δ, body)
    )
 
 // Enforce consistency with constructor signatures.
@@ -240,7 +240,7 @@ const constr: Parser<Constr> =
          const n: number = arity(ctr.str)
          assert(n <= args.length, "Too few arguments in constructor.", ctr.str)
          assert(n >= args.length, "Too many arguments in constructor.", ctr.str)
-         return Constr.at(ν(), ann.top, ctr, List.fromArray(args))
+         return Expr.constr(ν(), ann.top, ctr, List.fromArray(args))
       }
    )
 
@@ -248,7 +248,7 @@ const pair: Parser<Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Expr, Expr]) =>
-         Constr.at(ν(), ann.top, Lex.ctr("Pair"), List.fromArray([fst, snd]))
+         Expr.constr(ν(), ann.top, Lex.ctr("Pair"), List.fromArray([fst, snd]))
    )
 
 function args_pattern<K extends Kont<K>> (n: number, p: Parser<K>): Parser<Args<K>> {
@@ -305,7 +305,7 @@ function pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {
 const match: Parser<Trie<Expr>> =
    choice<Trie<Expr>>([
       pattern(dropFirst(symbol(str.arrow), expr)),
-      pattern(withAction(matches, (m): Expr => Fun.at(ν(), ann.top, m))) // retarded cast
+      pattern(withAction(matches, (m): Expr => Expr.fun(ν(), ann.top, m))) // retarded cast
    ])
 
 // Assume at least one match clause.
@@ -331,13 +331,13 @@ const matchAs: Parser<MatchAs> =
          dropFirst(keyword(str.match), expr),
          dropFirst(keyword(str.as), matches)
       ),
-      ([e, σ]: [Expr, Trie<Expr>]) => MatchAs.at(ν(), ann.top, e, σ)
+      ([e, σ]: [Expr, Trie<Expr>]) => Expr.matchAs(ν(), ann.top, e, σ)
    )
 
 const fun: Parser<Fun> =
    withAction(
       dropFirst(keyword(str.fun), matches),
-      (σ: Trie<Expr>) => Fun.at(ν(), ann.top, σ)
+      (σ: Trie<Expr>) => Expr.fun(ν(), ann.top, σ)
    )
 
 // Any expression other than an operator tree or application chain.
