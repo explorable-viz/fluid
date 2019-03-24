@@ -1,7 +1,8 @@
 import { __nonNull, absurd, classOf, } from "./util/Core"
 import { Lattice } from "./util/Ord"
 import { 
-   ObjectState, Persistent, PersistentClass, PersistentObject, Versioned, asVersioned, at, fieldVals, fields, memo_static
+   MemoArgs, MemoFunType, ObjectState, Persistent, PersistentClass, PersistentObject, Versioned, 
+   asVersioned, at, fieldVals, fields, memo_static
 } from "./util/Persistent"
 
 abstract class LatticeImpl<T> implements Lattice<T> {
@@ -41,7 +42,7 @@ export type Annotation = boolean // for now
 export abstract class Annotated implements PersistentObject {
    α: Annotation
 
-   abstract constructor_ (...args: Persistent[]): void // annoying to have to dup method signature
+   abstract constructor_ (...args: MemoArgs): void // annoying to have to dup method signature
 
    // Could avoid these shenanigans if we had AnnotatedValue as an explicit wrapper (depends on α being first argument).
    copyAt<T extends Annotated & PersistentObject> (k: PersistentObject, α: Annotation): T {
@@ -65,7 +66,7 @@ export abstract class Annotated implements PersistentObject {
 // Memoising an imperative function makes any side effects idempotent. Not clear yet how to "partially" memoise LVar-like 
 // functions like joinα, but setall isn't one of those.
 export function setall<T extends Persistent> (tgt: T, α: Annotation): T {
-   return memo_static<T>(setall_<T>, tgt, α)
+   return memo_static<T>(setall_ as MemoFunType<T>, tgt, α)
 }
 
 // An annotation lattice induces a lattice for any object that potentially contains annotations. They behave with imperative 

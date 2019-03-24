@@ -6,7 +6,7 @@ import { Ord } from "./Ord"
 // convenient to have as an interface.
 export interface PersistentObject {
    // ES6 only allows constructor calls via "new".
-   constructor_ (...args: Persistent[]): void
+   constructor_ (...args: MemoArgs): void
 }
 
 // Functions are persistent to support primitives.
@@ -43,7 +43,7 @@ const __memoTable: MemoTable = new Map
 function lookupArg<T extends Persistent> (
    f: Memoisable<T>, 
    m: MemoTable, 
-   args: Persistent[], 
+   args: MemoArgs, 
    n: number
 ): Persistent | Map<Persistent, Object> {
    // for memoisation purposes, treat f's key as argument -1
@@ -66,7 +66,7 @@ export type PersistentClass<T extends PersistentObject = PersistentObject> = new
 // Unify memo-functions and interned classes.
 interface Memoisable<T extends Persistent> {
    key: Persistent
-   call (args: Persistent[]): T
+   call (args: MemoArgs): T
 }
 
 class MemoCtr<T extends PersistentObject> implements Memoisable<T> {
@@ -80,7 +80,7 @@ class MemoCtr<T extends PersistentObject> implements Memoisable<T> {
       return this.ctr
    } 
 
-   call (args: Persistent[]): T {
+   call (args: MemoArgs): T {
       const o: T = new this.ctr
       o.constructor_(...args)
       Object.freeze(o)
@@ -88,8 +88,8 @@ class MemoCtr<T extends PersistentObject> implements Memoisable<T> {
    }
 }
 
-type MemoFunType<T extends Persistent> = (...args: Persistent[]) => T
-type MemoArgs = Persistent[]
+export type MemoFunType<T extends Persistent> = (...args: MemoArgs) => T
+export type MemoArgs = Persistent[]
 
 class MemoFun<T extends Persistent> implements Memoisable<T> {
    f: MemoFunType<T>
@@ -166,7 +166,7 @@ type VersionedObjects = Map<PersistentObject, PersistentObject>
 const __versionedObjs: VersionedObjects = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<K extends PersistentObject, T extends PersistentObject> (k: K, ctr: PersistentClass<T>, ...args: Persistent[]): T {
+export function at<K extends PersistentObject, T extends PersistentObject> (k: K, ctr: PersistentClass<T>, ...args: MemoArgs): T {
    assert(interned(k))
    let o: PersistentObject | undefined = __versionedObjs.get(k)
    if (o === undefined) {
@@ -275,7 +275,7 @@ export function fields (o: Object): string[] {
    return Object.keys(o)
 }
 
-export function fieldVals (o: Object): Persistent[] {
+export function fieldVals (o: Object): MemoArgs {
    return fields(o).map(k =>  (o as ObjectState)[k])
 }
 
