@@ -18,7 +18,6 @@ letrec
          Cons(y, ys) → Cons(op(x, y), zipW op xs ys)
       }
    };
-   // in CBV we probably want a different implementation :-/
    fun iterate n f x → match n == 0 as {
       True → Nil;
       False → Cons(x, map f (iterate (n - 1) f x))

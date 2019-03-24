@@ -62,10 +62,10 @@ export abstract class Annotated implements PersistentObject {
    }
 }
 
-// Memoising an imperative function makes the side-effect idempotent. Not clear yet how to "partially" memoise LVar-like 
+// Memoising an imperative function makes any side effects idempotent. Not clear yet how to "partially" memoise LVar-like 
 // functions like joinα, but setall isn't one of those.
 export function setall<T extends Persistent> (tgt: T, α: Annotation): T {
-   return memo_static(setall_, tgt, α)
+   return memo_static<T>(setall_<T>, tgt, α)
 }
 
 // An annotation lattice induces a lattice for any object that potentially contains annotations. They behave with imperative 
