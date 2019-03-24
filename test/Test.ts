@@ -3,7 +3,7 @@
 import { NonEmpty } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { ExplVal, Value } from "../src/ExplVal"
-import { BwdSlice, FwdSlice, TestFile, initialise, loadExample, parseExample, runExample } from "./Helpers"
+import { BwdSlice, FwdSlice, TestFile, initialise, loadExample, parseExample, runExample } from "./util/Core"
 
 import Trie = Expr.Trie
 
