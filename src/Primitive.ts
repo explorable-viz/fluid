@@ -106,11 +106,11 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
 ])
 
 function __true (k: ValId, α: Annotation): Value.Constr {
-   return Value.constr(k, α, Lex.Ctr.make("True"), nil())
+   return Value.constr(k, α, Lex.ctr("True"), nil())
 }
 
 function __false (k: ValId, α: Annotation): Value.Constr {
-   return Value.constr(k, α, Lex.Ctr.make("False"), nil())
+   return Value.constr(k, α, Lex.ctr("False"), nil())
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.

@@ -33,14 +33,15 @@ export namespace Lex {
       ) {
          this.str = str
       }
+   }
 
-      static make (str: string): Ctr {
-         return make(Ctr, str)
-      }
+   export function ctr (str: string): Ctr {
+      return make(Ctr, str)
    }
 
    // Literal lexemes are elided when constructing abstract syntax to avoid additional level of structure.
    export class IntLiteral extends Lexeme {
+      __tag: "Lex.IntLiteral"
       str: string
 
       constructor_ (
@@ -52,15 +53,15 @@ export namespace Lex {
       toNumber (): number {
          return parseInt(this.str)
       }
+   }
 
-      static make (str: string): IntLiteral {
-         return make(IntLiteral, str)
-      }
+   export function intLiteral (str: string): IntLiteral {
+      return make(IntLiteral, str)
    }
 
    // Keywords also elided, but we'll probably want that in the syntax at some point.
    export class Keyword extends Lexeme {
-      __tag: "Lex.StringLiteral"
+      __tag: "Lex.Keyword"
       str: string
 
       constructor_ (
@@ -68,10 +69,10 @@ export namespace Lex {
       ) {
          this.str = str
       }
+   }
 
-      static make (str: string): Keyword {
-         return make(Keyword, str)
-      }
+   export function keyword (str: string): Keyword {
+      return make(Keyword, str)
    }
 
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
@@ -85,10 +86,10 @@ export namespace Lex {
       ) {
          this.str = str
       }
+   }
 
-      static make (str: string): OpName {
-         return make(OpName, str)
-      }
+   export function opName (str: string): OpName {
+      return make(OpName, str)
    }
 
    export class StringLiteral extends Lexeme {
@@ -104,10 +105,10 @@ export namespace Lex {
       toString (): string {
          return str.quotes + this.str + str.quotes
       }
+   }
 
-      static make (str: string): StringLiteral {
-         return make(StringLiteral, str)
-      }
+   export function strLiteral (str: string): StringLiteral {
+      return make(StringLiteral, str)
    }
 
    export class Var extends Lexeme {
@@ -119,10 +120,10 @@ export namespace Lex {
       ) {
          this.str = str
       }
+   }
 
-      static make (str: string): Var {
-         return make(Var, str)
-      }
+   export function var_ (str: string): Var {
+      return make(Var, str)
    }
 }
 
@@ -318,10 +319,10 @@ export namespace Expr {
 
          static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
             if (Π instanceof End && Πʹ instanceof End) {
-               return End.make(join(Π.κ, Πʹ.κ))
+               return end(join(Π.κ, Πʹ.κ))
             } else
             if (Π instanceof Next && Πʹ instanceof Next) {
-               return Next.make(join(Π.σ, Πʹ.σ))
+               return next(join(Π.σ, Πʹ.σ))
             } else {
                return assert(false, "Undefined join.", Π, Πʹ)
             }
@@ -343,10 +344,10 @@ export namespace Expr {
          static is<K extends Kont<K>> (Π: Args<K>): Π is End<K> {
             return Π instanceof End
          }
+      }
 
-         static make<K extends Kont<K>> (κ: K): End<K> {
-            return make(End, κ) as End<K>
-         }
+      export function end<K extends Kont<K>> (κ: K): End<K> {
+         return make(End, κ) as End<K>
       }
 
       // Maps a single argument to another args trie.
@@ -360,10 +361,10 @@ export namespace Expr {
          static is<K extends Kont<K>> (Π: Args<K>): Π is Next<K> {
             return Π instanceof Next
          }
+      }
 
-         static make<K extends Kont<K>> (σ: Trie<Args<K>>): Next<K> {
-            return make(Next, σ) as Next<K>
-         }
+      export function next<K extends Kont<K>> (σ: Trie<Args<K>>): Next<K> {
+         return make(Next, σ) as Next<K>
       }
    }
 
@@ -397,10 +398,10 @@ export namespace Expr {
 
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-               return Var.make(σ.x, join(σ.κ, τ.κ))
+               return var_(σ.x, join(σ.κ, τ.κ))
             } else
             if (Constr.is(σ) && Constr.is(τ)) {
-               return Constr.make(unionWith(σ.cases, τ.cases, Args.Args.join))
+               return constr(unionWith(σ.cases, τ.cases, Args.Args.join))
             } else {
                return assert(false, "Undefined join.", this, τ)
             }
@@ -418,10 +419,10 @@ export namespace Expr {
          static is<K extends Kont<K>> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
+      }
 
-         static make<K extends Kont<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
-            return make(Constr, cases)
-         }
+      export function constr<K extends Kont<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+         return make(Constr, cases)
       }
 
       export class Var<K extends Kont<K>> extends Trie<K> {
@@ -436,10 +437,10 @@ export namespace Expr {
          static is<K extends Kont<K>> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
+      }
 
-         static make<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
-            return make(Var, x, κ) as Var<K>
-         }
+      export function var_<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
+         return make(Var, x, κ) as Var<K>
       }
    }
 }

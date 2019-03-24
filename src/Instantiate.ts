@@ -132,10 +132,10 @@ export function uninstantiate (e: Expr): Expr {
 
 function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T): T {
    if (Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, instantiateKont(ρ, σ.κ) as K) as Trie<K> as T
+      return Trie.var_(σ.x, instantiateKont(ρ, σ.κ) as K) as Trie<K> as T
    } else
    if (Trie.Constr.is(σ)) {
-      return Trie.Constr.make(σ.cases.map(
+      return Trie.constr(σ.cases.map(
          ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
             return pair(ctr, instantiateArgs(ρ, Π))
          })
@@ -147,10 +147,10 @@ function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T):
 
 function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): T {
    if (Trie.Var.is(σ)) {
-      return Trie.Var.make(σ.x, uninstantiateKont(σ.κ)) as Trie<K> as T
+      return Trie.var_(σ.x, uninstantiateKont(σ.κ)) as Trie<K> as T
    } else
    if (Trie.Constr.is(σ)) {
-      return Trie.Constr.make(σ.cases.map(
+      return Trie.constr(σ.cases.map(
          ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
             return pair(ctr, uninstantiateArgs(Π))
          })
@@ -191,10 +191,10 @@ function uninstantiateKont<K extends Kont<K>> (κ: K): K {
 
 function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
    if (Args.End.is(Π)) {
-      return Args.End.make(instantiateKont(ρ, Π.κ))
+      return Args.end(instantiateKont(ρ, Π.κ))
    } else
    if (Args.Next.is(Π)) {
-      return Args.Next.make(instantiateTrie(ρ, Π.σ))
+      return Args.next(instantiateTrie(ρ, Π.σ))
    } else {
       return absurd()
    }
@@ -202,10 +202,10 @@ function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
 
 function uninstantiateArgs<K extends Kont<K>> (Π: Args<K>): Args<K> {
    if (Args.End.is(Π)) {
-      return Args.End.make(uninstantiateKont(Π.κ))
+      return Args.end(uninstantiateKont(Π.κ))
    } else
    if (Args.Next.is(Π)) {
-      return Args.Next.make(uninstantiateTrie(Π.σ))
+      return Args.next(uninstantiateTrie(Π.σ))
    } else {
       return absurd()
    }
