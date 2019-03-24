@@ -1,6 +1,6 @@
+import { Annotated, ann } from "../src/util/Annotated"
 import { AClass, Class, absurd, as, assert } from "../src/util/Core"
 import { Persistent, PersistentObject } from "../src/util/Persistent"
-import { Annotated, ann } from "../src/Annotated"
 import { Cons, NonEmpty, Pair } from "../src/BaseTypes"
 import { Value } from "../src/ExplVal"
 import { Expr } from "../src/Expr"

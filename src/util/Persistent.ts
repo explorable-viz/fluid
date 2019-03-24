@@ -3,7 +3,7 @@
 // convenient to have as an interface.
 export interface PersistentObject {
    // ES6 only allows constructor calls via "new".
-   constructor_ (...args: MemoArgs): void
+   constructor_ (...v̅: MemoArgs): void
 }
 
 // Functions are persistent to support primitives.
@@ -15,12 +15,7 @@ export type Persistent = PersistentObject | boolean | string | number | Function
 type MemoTable = Map<Persistent, Persistent | Map<Persistent, Object>> // approximate recursive type
 const __memoTable: MemoTable = new Map
 
-function lookupArg<T extends Persistent> (
-   f: Memoisable<T>, 
-   m: MemoTable, 
-   v̅: MemoArgs, 
-   n: number
-): Persistent | Map<Persistent, Object> {
+function lookupArg<T extends Persistent> (f: Memoisable<T>, m: MemoTable, v̅: MemoArgs, n: number): Persistent | Map<Persistent, Object> {
    // for memoisation purposes, treat f's key as argument -1
    const k: Persistent = n === -1 ? f.key : v̅[n]
    let v: Persistent | Map<Persistent, Object> | undefined = m.get(k)

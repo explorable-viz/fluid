@@ -1,14 +1,12 @@
+import { Annotation, ann } from "./util/Annotated"
 import { assert } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { ν } from "./util/Versioned"
-import { ann } from "./Annotated"
 import { nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { Value } from "./ExplVal"
 import { Expr, Lex } from "./Expr"
 import { ValId, tagged } from "./Eval"
-
-import { Annotation } from "./Annotated";
 
 export type PrimResult<K> = [Value, K]
 type Unary<T, V> = (x: T) => (k: PersistentObject, α: Annotation) => V

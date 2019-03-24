@@ -1,7 +1,7 @@
+import { Annotated, Annotation } from "./util/Annotated"
 import { __nonNull, assert } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { at } from "./util/Versioned"
-import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"

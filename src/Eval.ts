@@ -1,7 +1,7 @@
+import { ann } from "./util/Annotated"
 import { absurd, as, assert } from "./util/Core"
 import { PersistentObject, make } from "./util/Persistent"
 import { asVersioned } from "./util/Versioned"
-import { ann } from "./Annotated"
 import { Cons, List, Nil, nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { ExplVal, Match, Value, explVal } from "./ExplVal"

@@ -164,7 +164,8 @@ function stateAt (o: VersionedObject, w: World): [World, ObjectState] {
    }
 }
 
-// Standardise what we mean by the fields of an object.
+// Standardise what we mean by the fields of an object. The fields of an object includes its annotation, so that
+// enforcing single-assignment semantics includes annotations.
 export function fields (o: Object): string[] {
    return Object.keys(o)
 }

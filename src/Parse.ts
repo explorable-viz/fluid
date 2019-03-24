@@ -1,3 +1,4 @@
+import { ann } from "./util/Annotated"
 import { assert } from "./util/Core"
 import { ν } from "./util/Versioned"
 import { 
@@ -5,7 +6,6 @@ import {
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { ann } from "./Annotated"
 import { List } from "./BaseTypes"
 import { arity } from "./DataType"
 import { Expr, Kont, Lex, str } from "./Expr"
