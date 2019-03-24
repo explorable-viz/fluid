@@ -2,7 +2,7 @@ import { assert } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { ν } from "./util/Versioned"
 import { ann } from "./Annotated"
-import { Nil } from "./BaseTypes"
+import { nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { Value } from "./ExplVal"
 import { Expr, Lex } from "./Expr"
@@ -106,11 +106,11 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
 ])
 
 function __true (k: ValId, α: Annotation): Value.Constr {
-   return Value.constr(k, α, Lex.Ctr.make("True"), Nil.make())
+   return Value.constr(k, α, Lex.Ctr.make("True"), nil())
 }
 
 function __false (k: ValId, α: Annotation): Value.Constr {
-   return Value.constr(k, α, Lex.Ctr.make("False"), Nil.make())
+   return Value.constr(k, α, Lex.Ctr.make("False"), nil())
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.

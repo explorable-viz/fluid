@@ -1,7 +1,7 @@
 import * as THREE from "three"
 import { absurd, assert } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
-import { Cons, List } from "./BaseTypes"
+import { Cons, List, cons } from "./BaseTypes"
 
 // Basic graphical datatypes.
 
@@ -78,7 +78,7 @@ function rect_path (rect: Rect): List<Point> {
 }
 
 function rect_stroke (rect: Rect): THREE.Object3D {
-   return path_stroke(Cons.make(Point.make(rect.x, rect.y + rect.height), rect_path(rect)))
+   return path_stroke(cons(Point.make(rect.x, rect.y + rect.height), rect_path(rect)))
 }
 
 function rect_fill (rect: Rect): THREE.Object3D {

@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { Persistent } from "./util/Persistent"
-import { Empty, NonEmpty, Pair, Tree } from "./BaseTypes"
+import { Empty, NonEmpty, Pair, Tree, empty, nonEmpty, pair } from "./BaseTypes"
 
 // Interned finite maps. Sensitive to key changes, which cause the identity of subtrees to change.
 export type FiniteMap<K extends Ord<K> & Persistent, V extends Persistent> = Tree<Pair<K, V>>
@@ -33,23 +33,23 @@ export function insert <K extends Ord<K> & Persistent, V extends Persistent> (m:
    if (NonEmpty.is(m)) {
       if (k.leq(m.t.fst)) {
          if (m.t.fst.leq(k)) {
-            return NonEmpty.make(m.left, Pair.make(k, v), m.right)
+            return nonEmpty(m.left, pair(k, v), m.right)
          } else {
-            return NonEmpty.make(insert(m.left, k, v), m.t, m.right)
+            return nonEmpty(insert(m.left, k, v), m.t, m.right)
          }
       } else {
-         return NonEmpty.make(m.left, m.t, insert(m.right, k, v))
+         return nonEmpty(m.left, m.t, insert(m.right, k, v))
       }
    } else
    if (Empty.is(m)) {
-      return NonEmpty.make(m, Pair.make(k, v), m)
+      return nonEmpty(m, pair(k, v), m)
    } else {
       return absurd()
    }
 }
 
 export function singleton <K extends Ord<K> & Persistent, V extends Persistent> (k: K, v: V): FiniteMap<K, V> {
-   return insert(Empty.make(), k, v)
+   return insert(empty(), k, v)
 }
 
 // Union with a combining function.

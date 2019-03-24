@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
 import { asVersioned } from "./util/Versioned"
 import { Annotation, ann } from "./Annotated"
-import { Cons, List, Nil, Pair } from "./BaseTypes"
+import { Cons, List, Nil, Pair, cons, nil, pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { ExplVal, Match, Value, explMatch, explVal } from "./ExplVal"
 import { ValId, error } from "./Eval"
@@ -29,9 +29,9 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Match.Plug<K,
             if (v.ctr.str === ctr) {
                const [Ψκ, α] = matchArgs(v.args, Π)
                Ψκ_α = [Ψκ, α]
-               return Pair.make(ctr, Ψκ.Ψ)
+               return pair(ctr, Ψκ.Ψ)
             } else {
-               return Pair.make(ctr, Π)
+               return pair(ctr, Π)
             }
          })
          if (Ψκ_α! === undefined) {
@@ -63,11 +63,11 @@ export function unmatch<K extends Kont<K>> ({ξ, κ}: Match.Plug<K, Match<K>>, �
          if (Π_or_Ψ instanceof Match.Args.Args) {
             const [tusʹ, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Match.Args.plug(Π_or_Ψ, κ), α)
             tus = tusʹ
-            return Pair.make(ctr, Π)
+            return pair(ctr, Π)
          } else
          if (Π_or_Ψ instanceof Args.Args) {
             const Π_or_Ψʹ: Args.Args<K> = Π_or_Ψ  // recover type lost by instanceof
-            return Pair.make(ctr, Π_or_Ψʹ)
+            return pair(ctr, Π_or_Ψʹ)
          } else {
             return absurd()
          }
@@ -104,10 +104,10 @@ function unmatchArgs<K extends Kont<K>> ({Ψ, κ}: Match.Args.Plug<K, Match.Args
       const [tu̅, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Match.Args.plug(Ψ.Ψ, κ), α),
             {ρ, t, ξ} = Ψ.tξ,
             [u, σ] = unmatch(Match.plug(ξ, Π), α)
-      return [Cons.make(explVal(ρ, t, u), tu̅), Args.Next.make(σ)]
+      return [cons(explVal(ρ, t, u), tu̅), Args.Next.make(σ)]
    } else
    if (Match.Args.End.is(Ψ)) {
-      return [Nil.make(), Args.End.make(κ)]
+      return [nil(), Args.End.make(κ)]
    } else {
       return absurd()
    }

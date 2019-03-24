@@ -2,7 +2,7 @@ import { absurd } from "./util/Core"
 import { PersistentObject, make } from "./util/Persistent"
 import { Versioned, asVersioned } from "./util/Versioned"
 import { Annotation, ann } from "./Annotated"
-import { List, Pair } from "./BaseTypes"
+import { List, Pair, pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { Expr, Kont } from "./Expr"
 import { Value } from "./ExplVal"
@@ -137,7 +137,7 @@ function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T):
    if (Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
          ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
-            return Pair.make(ctr, instantiateArgs(ρ, Π))
+            return pair(ctr, instantiateArgs(ρ, Π))
          })
       ) as Trie<K> as T
    } else {
@@ -152,7 +152,7 @@ function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): T {
    if (Trie.Constr.is(σ)) {
       return Trie.Constr.make(σ.cases.map(
          ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
-            return Pair.make(ctr, uninstantiateArgs(Π))
+            return pair(ctr, uninstantiateArgs(Π))
          })
       ) as Trie<K> as T
    } else {

@@ -4,9 +4,9 @@ import { Persistent, PersistentObject, make } from "./util/Persistent"
 
 export abstract class List<T extends Persistent> implements PersistentObject {
    static fromArray<T extends Persistent> (xs: T[]): List<T> {
-      let xs_: List<T> = Nil.make()
+      let xs_: List<T> = nil()
       for (let n: number = xs.length - 1; n >= 0; --n) {
-         xs_ = Cons.make(xs[n], xs_)
+         xs_ = cons(xs[n], xs_)
       }
       return xs_
    }
@@ -24,17 +24,17 @@ export class Nil<T extends Persistent> extends List<T> {
       return xs instanceof Nil
    }
 
-   static make<T extends Persistent> (): Nil<T> {
-      return make<Nil<T>>(Nil)
-   }
-
    get length (): number {
       return 0
    }
 
    map<U extends Persistent> (f: (t: T) => U): Nil<U> {
-      return Nil.make()
+      return nil()
    }
+}
+
+export function nil<T extends Persistent> (): Nil<T> {
+   return make<Nil<T>>(Nil)
 }
 
 export class Cons<T extends Persistent> extends List<T> {
@@ -53,17 +53,17 @@ export class Cons<T extends Persistent> extends List<T> {
       return xs instanceof Cons
    }
 
-   static make<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
-      return make(Cons, head, tail) as Cons<T>
-   }
-
    get length (): number {
       return 1 + this.tail.length
    }
 
    map<U extends Persistent> (f: (t: T) => U): Cons<U> {
-      return Cons.make(f(this.head), this.tail.map(f))
+      return cons(f(this.head), this.tail.map(f))
    }
+}
+
+export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
+   return make(Cons, head, tail) as Cons<T>
 }
 
 export class Pair<T extends Persistent, U extends Persistent> implements PersistentObject {
@@ -77,10 +77,10 @@ export class Pair<T extends Persistent, U extends Persistent> implements Persist
       this.fst = fst
       this.snd = snd
    }
+}
 
-   static make<T extends Persistent, U extends Persistent> (fst: T, snd: U): Pair<T, U> {
-      return make(Pair, fst, snd) as Pair<T, U>
-   }
+export function pair<T extends Persistent, U extends Persistent> (fst: T, snd: U): Pair<T, U> {
+   return make(Pair, fst, snd) as Pair<T, U>
 }
 
 export abstract class Tree<T extends Persistent> implements PersistentObject {
@@ -96,13 +96,13 @@ export class Empty<T extends Persistent> extends Tree<T> {
       return xs instanceof Empty
    }
 
-   static make<T extends Persistent> (): Empty<T> {
-      return make(Empty) as Empty<T>
-   }
-
    map<U extends Persistent> (f: (t: T) => U): Empty<U> {
-      return Empty.make()
+      return empty()
    }
+}
+
+export function empty<T extends Persistent> (): Empty<T> {
+   return make(Empty) as Empty<T>
 }
 
 export class NonEmpty<T extends Persistent> extends Tree<T> {
@@ -124,13 +124,13 @@ export class NonEmpty<T extends Persistent> extends Tree<T> {
       return xs instanceof NonEmpty
    }
 
-   static make<T extends Persistent> (left: Tree<T>, t: T, right: Tree<T>): NonEmpty<T> {
-      return make(NonEmpty, left, t, right) as NonEmpty<T>
-   }
-
    map<U extends Persistent> (f: (t: T) => U): NonEmpty<U> {
-      return NonEmpty.make(this.left.map(f), f(this.t), this.right.map(f))
+      return nonEmpty(this.left.map(f), f(this.t), this.right.map(f))
    }
+}
+
+export function nonEmpty <T extends Persistent> (left: Tree<T>, t: T, right: Tree<T>): NonEmpty<T> {
+   return make(NonEmpty, left, t, right) as NonEmpty<T>
 }
 
 export abstract class Option<T extends Persistent> implements PersistentObject {

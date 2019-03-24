@@ -1,6 +1,6 @@
 import { absurd } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
-import { Cons, List, Nil } from "./BaseTypes"
+import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { Value } from "./ExplVal"
 
 // Environments are snoc lists. An evaluation id is an expression id paired with the identity of all 
@@ -55,7 +55,7 @@ export class EmptyEnv extends Env {
    }
 
    entries (): Nil<Value> {
-      return Nil.make()
+      return nil()
    }
 
    get (k: string): undefined {
@@ -79,7 +79,7 @@ export class ExtendEnv extends Env {
    }
 
    entries (): Cons<Value> {
-      return Cons.make(this.v, this.ρ.entries())
+      return cons(this.v, this.ρ.entries())
    }
 
    get (k: string): Value | undefined {

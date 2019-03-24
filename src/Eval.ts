@@ -2,7 +2,7 @@ import { absurd, as, assert } from "./util/Core"
 import { PersistentObject, make } from "./util/Persistent"
 import { asVersioned } from "./util/Versioned"
 import { ann } from "./Annotated"
-import { Cons, List, Nil } from "./BaseTypes"
+import { Cons, List, Nil, nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { ExplVal, Match, Value, explVal } from "./ExplVal"
 import { Expr } from "./Expr"
@@ -85,7 +85,7 @@ export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
       return [f̅.head.ρ, f̅.head.δ]
    } else
    if (Nil.is(f̅)) {
-      return [Env.empty(), Nil.make()]
+      return [Env.empty(), nil()]
    } else {
       return absurd()
    }
@@ -101,7 +101,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
       return explVal(ρ, empty(k), Value.constStr(kᵥ, e.α, e.val))
    } else
    if (e instanceof Expr.Fun) {
-      return explVal(ρ, empty(k), Value.closure(kᵥ, e.α, ρ, Nil.make(), e.σ))
+      return explVal(ρ, empty(k), Value.closure(kᵥ, e.α, ρ, nil(), e.σ))
    } else
    if (e instanceof Expr.PrimOp) {
       return explVal(ρ, empty(k), Value.primOp(kᵥ, e.α, e.op))
