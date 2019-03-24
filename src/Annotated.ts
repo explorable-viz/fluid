@@ -7,14 +7,14 @@ abstract class LatticeImpl<T> implements Lattice<T> {
    abstract bot: T
    abstract top: T
 
-   join (...ts: T[]): T {
-      return ts.reduce((t1, t2) => this.join2(t1, t2))
+   join (...t̅: T[]): T {
+      return t̅.reduce((t1, t2) => this.join2(t1, t2))
    }
 
    abstract join2 (t1: T, t2: T): T
 
-   meet (...ts: T[]): T {
-      return ts.reduce((t1, t2) => this.meet2(t1, t2))
+   meet (...t̅: T[]): T {
+      return t̅.reduce((t1, t2) => this.meet2(t1, t2))
    }
 
    abstract meet2 (t1: T, t2: T): T
@@ -40,7 +40,7 @@ export type Annotation = boolean // for now
 export abstract class Annotated implements PersistentObject {
    α: Annotation
 
-   abstract constructor_ (...args: MemoArgs): void // annoying to have to dup method signature
+   abstract constructor_ (...v̅: MemoArgs): void // annoying to have to dup method signature
 
    // Could avoid these shenanigans if we had AnnotatedValue as an explicit wrapper (depends on α being first argument).
    copyAt<T extends Annotated & PersistentObject> (k: PersistentObject, α: Annotation): T {

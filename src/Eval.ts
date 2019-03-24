@@ -29,7 +29,7 @@ import RecDef = Expr.RecDef
 import unaryApp = ExplVal.unaryApp
 import var_ = ExplVal.var_
 
-type Tag = "val" | "expl"
+type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
 export class Tagged<T extends Tag> implements PersistentObject {
    e: Expr | RecDef
@@ -54,8 +54,8 @@ export function error (msg: string, ...x̅: any[]): any {
    throw new Error("User error")
 }
 
-export type ValId = Tagged<"val">
-export type ExplId = Tagged<"expl">
+export type ValId = Tagged<"v">
+export type ExplId = Tagged<"t">
 
 export module Eval {
 
@@ -63,7 +63,7 @@ export module Eval {
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
-            kᵥ: ValId = tagged(def, "val")
+            kᵥ: ValId = tagged(def, "v")
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), def.x.str, Value.closure(kᵥ, def.α, ρ, δ_0, def.σ))
    } else
    if (Nil.is(δ)) {
@@ -92,8 +92,8 @@ export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplVal {
-   const k: ExplId = tagged(e, "expl"),
-         kᵥ: ValId = tagged(e, "val")
+   const k: ExplId = tagged(e, "t"),
+         kᵥ: ValId = tagged(e, "v")
    if (e instanceof Expr.ConstInt) {
       return explVal(ρ, empty(k), Value.constInt(kᵥ, e.α, e.val))
    } else

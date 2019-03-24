@@ -43,7 +43,7 @@ export class BinaryBody implements PersistentObject {
 
 export abstract class PrimOp implements PersistentObject {
    name: string
-   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+   abstract constructor_ (...v̅: Persistent[]): void
 }
 
 export class UnaryOp extends PrimOp {
@@ -173,7 +173,7 @@ export function prelude (): Env {
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
       const e: Expr = Expr.primOp(ν(), ann.top, op),
-            kᵥ: ValId = tagged(e, "val")
+            kᵥ: ValId = tagged(e, "v")
       ρ = ExtendEnv.make(ρ, x, Value.primOp(kᵥ, e.α, op))
    })
    return ρ

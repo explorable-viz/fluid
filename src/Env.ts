@@ -13,7 +13,7 @@ export abstract class Env implements PersistentObject {
    // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
    abstract entries (): List<Value>
    abstract get (k: string): Value | undefined
-   abstract constructor_ (...args: Persistent[]): void
+   abstract constructor_ (...v̅: Persistent[]): void
 
    has (k: string): boolean {
       return this.get(k) !== undefined
@@ -27,8 +27,8 @@ export abstract class Env implements PersistentObject {
       return ExtendEnv.make(Env.empty(), k, v)
    }
 
-   static extend (ρ: Env, kvs: [string, Value][]): Env {
-      kvs.forEach(([k, v]: [string, Value]) => {
+   static extend (ρ: Env, kv̅: [string, Value][]): Env {
+      kv̅.forEach(([k, v]: [string, Value]) => {
          ρ = ExtendEnv.make(ρ, k, v)
       })
       return ρ

@@ -236,11 +236,11 @@ const letrec: Parser<LetRec> =
 const constr: Parser<Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
-      ([ctr, args]: [Lex.Ctr, Expr[]]) => {
+      ([ctr, e̅]: [Lex.Ctr, Expr[]]) => {
          const n: number = arity(ctr.str)
-         assert(n <= args.length, "Too few arguments in constructor.", ctr.str)
-         assert(n >= args.length, "Too many arguments in constructor.", ctr.str)
-         return Expr.constr(ν(), ann.top, ctr, List.fromArray(args))
+         assert(n <= e̅.length, "Too few arguments in constructor.", ctr.str)
+         assert(n >= e̅.length, "Too many arguments in constructor.", ctr.str)
+         return Expr.constr(ν(), ann.top, ctr, List.fromArray(e̅))
       }
    )
 
@@ -315,10 +315,10 @@ function matches (state: ParseState): ParseResult<Trie<Expr>> | null {
          withAction(match, m => [m]),
          between(symbol("{"), sepBy1(match, symbol(";")), symbol("}"))
       ]),
-      (σs: Trie<Expr>[]) => {
-         let σ: Trie<Expr> = σs[0]
-         for (let i = 1; i < σs.length; ++i) {
-            σ = Trie.Trie.join(σ, σs[i])
+      (σ̅: Trie<Expr>[]) => {
+         let σ: Trie<Expr> = σ̅[0]
+         for (let i = 1; i < σ̅.length; ++i) {
+            σ = Trie.Trie.join(σ, σ̅[i])
          } 
          return σ
       }

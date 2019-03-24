@@ -170,7 +170,7 @@ export function fields (o: Object): string[] {
 }
 
 export function fieldVals (o: Object): MemoArgs {
-   return fields(o).map(k =>  (o as ObjectState)[k])
+   return fields(o).map(k => (o as ObjectState)[k])
 }
 
 export class World implements PersistentObject, Ord<World> {
