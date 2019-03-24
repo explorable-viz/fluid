@@ -2,7 +2,7 @@
 
 import { NonEmpty } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
-import { ExplVal, Value } from "../src/ExplVal"
+import { Value } from "../src/ExplVal"
 import { BwdSlice, FwdSlice, TestFile, initialise, loadExample, parseExample, runExample } from "./util/Core"
 
 import Trie = Expr.Trie
@@ -35,7 +35,12 @@ describe("example", () => {
 			const e: Expr = parseExample(file.text)
 			new (class extends BwdSlice {
 				setup (): void {
-					this.val.need()
+					this.val
+						.need()
+						.val_constrArg("Cons", 0).value()
+						.need()
+						.val_constrArg("Rect", 2).value()
+						.need()
 				}
 				expect (): void {
 					this.expr.needed()
@@ -85,9 +90,8 @@ describe("example", () => {
 				expect (): void {
 					this.val
 						.need()
-						.push().val_constrArg("Cons", 0).to(ExplVal, "v").notNeeded().pop()
-						.val_constrArg("Cons", 1)
-						.to(ExplVal, "v")
+						.push().val_constrArg("Cons", 0).value().notNeeded().pop()
+						.val_constrArg("Cons", 1).value()
 						.assert(Value.Constr, v => v.ctr.str === "Nil")
 				}
 			})(e)
@@ -205,9 +209,8 @@ describe("example", () => {
 				  }
 				expect (): void {
 					this.val
-						.push().val_constrArg("Cons", 0).to(ExplVal, "v").notNeeded().pop()
-						.val_constrArg("Cons", 1)
-						.to(ExplVal, "v").needed()
+						.push().val_constrArg("Cons", 0).value().notNeeded().pop()
+						.val_constrArg("Cons", 1).value().needed()
 				}
 			})(e)
 		})
@@ -241,8 +244,7 @@ describe("example", () => {
 			new (class extends BwdSlice {
 				setup (): void {
 					this.val
-						.val_constrArg("Pair", 0)
-						.to(ExplVal, "v").need()
+						.val_constrArg("Pair", 0).value().need()
 				}
 				expect (): void {
 					this.expr
@@ -271,10 +273,9 @@ describe("example", () => {
 				expect (): void {
 					this.val
 						.notNeeded()
-						.push().val_constrArg("Cons", 0).to(ExplVal, "v").needed()
+						.push().val_constrArg("Cons", 0).value().needed()
 						.pop()
-						.val_constrArg("Cons", 1)
-						.to(ExplVal, "v").needed()
+						.val_constrArg("Cons", 1).value().needed()
 				}
 			})(e)
 		})
@@ -308,8 +309,7 @@ describe("example", () => {
 			new (class extends BwdSlice {
 				setup (): void {
 					this.val
-						.val_constrArg("Cons", 0)
-						.to(ExplVal, "v").need()
+						.val_constrArg("Cons", 0).value().need()
 				}
 				expect (): void {
 					this.expr
