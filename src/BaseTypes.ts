@@ -2,8 +2,6 @@ import { Persistent, PersistentObject, make } from "./util/Persistent"
 
 // Basic datatypes for interned structures.
 
-export type List̊<T extends Persistent> = List<T> | null
-
 export abstract class List<T extends Persistent> implements PersistentObject {
    static fromArray<T extends Persistent> (xs: T[]): List<T> {
       let xs_: List<T> = Nil.make()
@@ -116,7 +114,7 @@ export class NonEmpty<T extends Persistent> extends Tree<T> {
       left: Tree<T>,
       t: T,
       right: Tree<T>
-   ) {
+   ): void {
       this.left = left
       this.t = t
       this.right = right
@@ -133,4 +131,38 @@ export class NonEmpty<T extends Persistent> extends Tree<T> {
    map<U extends Persistent> (f: (t: T) => U): NonEmpty<U> {
       return NonEmpty.make(this.left.map(f), f(this.t), this.right.map(f))
    }
+}
+
+export abstract class Option<T extends Persistent> implements PersistentObject {
+   __tag: "Option"
+   abstract constructor_ (...args: Persistent[]): void 
+}
+
+export class None<T extends Persistent> extends Option<T> {
+   constructor_ (): void {
+   }
+
+   static is<T extends Persistent> (x: Option<T>): x is None<T> {
+      return x instanceof None
+   }
+}
+
+export function none<T extends Persistent> (): None<T> {
+   return make(None)
+}
+
+export class Some<T extends Persistent> extends Option<T> {
+   t: T
+
+   constructor_ (t: T): void {
+      this.t = t
+   }
+
+   static is<T extends Persistent> (x: Option<T>): x is Some<T> {
+      return x instanceof Some
+   }
+}
+
+export function some <T extends Persistent> (t: T): Some<T> {
+   return make(Some, t) as Some<T>
 }

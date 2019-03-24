@@ -1,5 +1,6 @@
 import { absurd } from "./util/Core"
-import { PersistentObject, Versioned, asVersioned, make } from "./util/Persistent"
+import { PersistentObject, make } from "./util/Persistent"
+import { Versioned, asVersioned } from "./util/Versioned"
 import { Annotation, ann } from "./Annotated"
 import { List, Pair } from "./BaseTypes"
 import { Env } from "./Env"

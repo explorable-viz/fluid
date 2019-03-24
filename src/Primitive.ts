@@ -1,5 +1,6 @@
 import { assert } from "./util/Core"
-import { Persistent, PersistentObject, ν, make } from "./util/Persistent"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
+import { ν } from "./util/Versioned"
 import { ann } from "./Annotated"
 import { Nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"

@@ -1,5 +1,5 @@
 import { assert } from "./util/Core"
-import { ν } from "./util/Persistent"
+import { ν } from "./util/Versioned"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 

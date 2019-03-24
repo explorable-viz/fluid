@@ -1,5 +1,5 @@
 import { absurd } from "./util/Core"
-import { asVersioned } from "./util/Persistent"
+import { asVersioned } from "./util/Versioned"
 import { Annotation, ann } from "./Annotated"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env } from "./Env"

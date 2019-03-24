@@ -1,5 +1,5 @@
 import { __nonNull, assert } from "../src/util/Core"
-import { World } from "../src/util/Persistent"
+import { World } from "../src/util/Versioned"
 import { parse } from "../src/util/parse/Core"
 import { ann, setall } from "../src/Annotated"
 import { initDataTypes } from "../src/DataType"

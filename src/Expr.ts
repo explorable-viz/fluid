@@ -1,6 +1,7 @@
 import { __check, absurd, assert } from "./util/Core"
 import { eq } from "./util/Ord"
-import { Persistent, PersistentObject, at, make } from "./util/Persistent"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
+import { at } from "./util/Versioned"
 import { Lexeme } from "./util/parse/Core"
 import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
