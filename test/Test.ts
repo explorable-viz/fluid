@@ -37,10 +37,9 @@ describe("example", () => {
 				setup (): void {
 					this.val
 						.need()
-						.val_constrArg("Cons", 0).value()
-						.need()
-						.val_constrArg("Rect", 2).value()
-						.need()
+						.val_constrArg("Cons", 0).value().need()
+						.push().val_constrArg("Rect", 2).value().need().pop() // width
+						.push().val_constrArg("Rect", 3).value().need().pop() // height
 				}
 				expect (): void {
 					this.expr.needed()

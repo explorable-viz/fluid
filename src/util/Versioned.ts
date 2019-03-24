@@ -13,7 +13,7 @@ export interface VersionedObject<K extends PersistentObject = PersistentObject> 
 export type Versioned<T> = T & VersionedObject
 
 export function versioned (o: Persistent): o is VersionedObject {
-   return o !== null && (__nonNull(o) as any).__id !== undefined
+   return (__nonNull(o) as any).__id !== undefined
 }
 
 export function asVersioned<T extends Persistent> (o: T): Versioned<T> {
@@ -25,7 +25,7 @@ export function asVersioned<T extends Persistent> (o: T): Versioned<T> {
 }
 
 export function interned (o: Persistent): boolean {
-   return o !== null && !versioned(o)
+   return !versioned(o)
 }
 
 // Unlikely to be either performant or entirely sound. Want to emulate the post-state of new ctr. Probably need to
