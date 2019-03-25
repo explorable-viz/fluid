@@ -7,12 +7,12 @@ import { Cons, List, cons } from "./BaseTypes"
 // Basic graphical datatypes.
 
 export class Rect extends Annotated {
-   x: number
-   y: number
-   width: number
-   height: number
+   x: Number
+   y: Number
+   width: Number
+   height: Number
 
-   constructor_ (α: Annotation, x: number, y: number, width: number, height: number) {
+   constructor_ (α: Annotation, x: Number, y: Number, width: Number, height: Number) {
       this.α = α
       this.x = x
       this.y = y
@@ -21,22 +21,22 @@ export class Rect extends Annotated {
    }
 }
 
-export function rect (x: number, y: number, width: number, height: number): Rect {
+export function rect (x: Number, y: Number, width: Number, height: Number): Rect {
    return make(Rect, ann.bot, x, y, width, height)
 }
 
 export class Point extends Annotated {
-   x: number
-   y: number
+   x: Number
+   y: Number
 
-   constructor_ (α: Annotation, x: number, y: number) {
+   constructor_ (α: Annotation, x: Number, y: Number) {
       this.α = α
       this.x = x
       this.y = y
    }
 }
 
-export function point (x: number, y: number): Point {
+export function point (x: Number, y: Number): Point {
    return make(Point, ann.bot, x, y)
 }
 
@@ -56,7 +56,7 @@ function newPathGeometry (points: List<Point>): THREE.Geometry {
    const geometry: THREE.Geometry = new THREE.Geometry
    while (Cons.is(points)) {
       const point: Point = as(points.head, Point)
-      geometry.vertices.push(new THREE.Vector3(point.x, point.y, 0))
+      geometry.vertices.push(new THREE.Vector3(point.x.valueOf(), point.y.valueOf(), 0))
       points = points.tail
    }
    return geometry
@@ -74,14 +74,14 @@ function path_stroke (points: List<Point>): THREE.Object3D {
 function rect_path (rect: Rect): List<Point> {
    return List.fromArray([
       point(rect.x, rect.y),
-      point(rect.x + rect.width, rect.y),
-      point(rect.x + rect.width, rect.y + rect.height),
-      point(rect.x, rect.y + rect.height)
+      point(rect.x.valueOf() + rect.width.valueOf(), rect.y),
+      point(rect.x.valueOf() + rect.width.valueOf(), rect.y.valueOf() + rect.height.valueOf()),
+      point(rect.x, rect.y.valueOf() + rect.height.valueOf())
    ])
 }
 
 function rect_stroke (rect: Rect): THREE.Object3D {
-   return path_stroke(cons(point(rect.x, rect.y + rect.height), rect_path(rect)))
+   return path_stroke(cons(point(rect.x, rect.y.valueOf() + rect.height.valueOf()), rect_path(rect)))
 }
 
 function rect_fill (rect: Rect): THREE.Object3D {

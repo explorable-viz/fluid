@@ -40,10 +40,10 @@ class Reflect implements PersistentObject {
 
 function reflect (v: Value): Persistent { // weirdly number and string are subtypes of Object
    if (v instanceof Value.ConstInt) {
-      return v.val
+      return (v.val as any as Annotated).α = v.α // saves introducing my own annotated primitive objects
    } else
    if (v instanceof Value.ConstStr) {
-      return v.val
+      return (v.val as any as Annotated).α = v.α
    } else
    if (v instanceof Value.Constr) {
       const ctr: string = __check(v.ctr.str, it => classFor.has(it)),

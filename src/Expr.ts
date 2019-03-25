@@ -28,9 +28,7 @@ export namespace Lex {
       __tag: "Lex.Ctr"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
    }
@@ -44,9 +42,7 @@ export namespace Lex {
       __tag: "Lex.IntLiteral"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
 
@@ -64,9 +60,7 @@ export namespace Lex {
       __tag: "Lex.Keyword"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
    }
@@ -81,9 +75,7 @@ export namespace Lex {
       __tag: "Lex.OpName"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
    }
@@ -96,9 +88,7 @@ export namespace Lex {
       __tag: "Lex.StringLiteral"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
 
@@ -115,9 +105,7 @@ export namespace Lex {
       __tag: "Lex.Var"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
    }
@@ -152,28 +140,28 @@ export namespace Expr {
    }
 
    export class ConstInt extends Expr {
-      val: number
+      val: Number
 
-      constructor_ (α: Annotation, val: number): void {
+      constructor_ (α: Annotation, val: Number): void {
          this.α = α
-         this.val = __check(val, x => !Number.isNaN(x))
+         this.val = __check(val, x => !Number.isNaN(x.valueOf()))
       }
    }
    
-   export function constInt (k: PersistentObject, α: Annotation, val: number): ConstInt {
+   export function constInt (k: PersistentObject, α: Annotation, val: Number): ConstInt {
       return at(k, ConstInt, α, val)
    }
 
    export class ConstStr extends Expr {
-      val: string
+      val: String
 
-      constructor_ (α: Annotation, val: string): void {
+      constructor_ (α: Annotation, val: String): void {
          this.α = α
          this.val = val
       }
    }
    
-   export function constStr (k: PersistentObject, α: Annotation,val: string): ConstStr {
+   export function constStr (k: PersistentObject, α: Annotation, val: String): ConstStr {
       return at(k, ConstStr, α, val)
    }
 

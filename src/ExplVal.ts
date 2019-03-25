@@ -1,5 +1,5 @@
 import { Annotation } from "./util/Annotated"
-import { __nonNull, assert } from "./util/Core"
+import { __nonNull, as, assert } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { AnnotatedVersioned, at } from "./util/Versioned"
 import { List } from "./BaseTypes"
@@ -42,36 +42,36 @@ export namespace Value {
    }
    
    export class ConstInt extends Prim {
-      val: number
+      val: Number
 
-      constructor_ (α: Annotation, val: number): void {
+      constructor_ (α: Annotation, val: Number): void {
          this.α = α
-         this.val = val
+         this.val = as(val, Number)
       }
    
       toString (): string {
-         return `${this.val}`
+         return `${this.val.valueOf()}`
       }
    }
    
-   export function constInt (k: ValId, α: Annotation, val: number): ConstInt {
+   export function constInt (k: ValId, α: Annotation, val: Number): ConstInt {
       return at(k, ConstInt, α, val)
    }
 
    export class ConstStr extends Prim {
-      val: string
+      val: String
 
-      constructor_ (α: Annotation, val: string): void {
+      constructor_ (α: Annotation, val: String): void {
          this.α = α
-         this.val = val
+         this.val = as(val, String)
       }
    
       toString (): string {
-         return `"${this.val}"`
+         return `"${this.val.valueOf()}"`
       }
    }
    
-   export function constStr (k: ValId, α: Annotation, val: string): ConstStr {
+   export function constStr (k: ValId, α: Annotation, val: String): ConstStr {
       return at(k, ConstStr, α, val)
    }
 

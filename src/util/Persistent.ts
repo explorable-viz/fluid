@@ -6,8 +6,9 @@ export interface PersistentObject {
    constructor_ (...v̅: MemoArgs): void
 }
 
-// Functions are persistent to support primitives.
-export type Persistent = PersistentObject | boolean | string | number | Function
+// Functions are persistent to support primitives. We use the object counterparts of each primitive type 
+// so that we can store annotations on (reflected) values.
+export type Persistent = PersistentObject | Boolean | String | Number | Function
 
 // Curried map from constructors and arguments to cached values; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
