@@ -1,6 +1,6 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { Class, __check, __nonNull, absurd, as } from "../util/Core"
+import { Class, __check, absurd, as } from "../util/Core"
 import { Persistent, PersistentObject, make } from "../util/Persistent"
 import { World, at } from "../util/Versioned"
 import { Cons, List, Nil } from "../BaseTypes"

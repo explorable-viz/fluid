@@ -1,6 +1,7 @@
+import { Annotated, Annotation, ann } from "./Annotated"
 import { Class, __nonNull, absurd, assert, classOf } from "./Core"
 import { Ord } from "./Ord"
-import { MemoArgs, Persistent, PersistentClass, PersistentObject, make } from "./Persistent"
+import { MemoArgs, MemoFunType, Persistent, PersistentClass, PersistentObject, make, memo } from "./Persistent"
 import { Some, Option, some, none } from "../BaseTypes" // TODO: fix upwards dependency
 
 // Versioned objects are persistent objects that have state that varies across worlds.
@@ -199,3 +200,46 @@ export class World implements PersistentObject, Ord<World> {
 }
 
 export let __w: World = World.make(none())
+
+export abstract class AnnotatedVersioned extends Annotated {
+   abstract constructor_ (...v̅: MemoArgs): void
+
+   // Could avoid these shenanigans if we had AnnotatedValue as an explicit wrapper (depends on α being first argument).
+   copyAt<T extends Annotated & PersistentObject> (k: PersistentObject, α: Annotation): T {
+      const cls: PersistentClass<T> = classOf(this) as PersistentClass<Annotated & PersistentObject> as PersistentClass<T> // TS can't cope
+      return at<PersistentObject, T>(k, cls, α, ...fieldVals(this).slice(1))
+   }
+
+   setα (α: Annotation): this {
+      const hereʹ: Versioned<this> = asVersioned(this)
+      hereʹ.copyAt(hereʹ.__id, α)
+      return this
+   }
+
+   joinα (α: Annotation): this {
+      const hereʹ: Versioned<this> = asVersioned(this)
+      hereʹ.copyAt(hereʹ.__id, ann.join(this.α, α))
+      return this
+   }
+}
+
+// Memoising an imperative function makes any side effects idempotent. Not clear yet how to "partially" memoise LVar-like 
+// functions like joinα, but setall isn't one of those.
+export function setall<T extends PersistentObject> (tgt: T, α: Annotation): T {
+   return memo<T>(setall_ as MemoFunType<T>, tgt, α)
+}
+
+// An annotation lattice induces a lattice for any object that potentially contains annotations. They behave with imperative 
+// LVar-like semantics, so although there is a notion of join/meet, we don't actually need to define them.
+export function setall_<T extends PersistentObject> (tgt: T, α: Annotation): T {
+   if (tgt instanceof AnnotatedVersioned) {
+      tgt.setα(α)
+   }
+   fields(tgt).forEach((k: string): void => {
+      const v: Persistent = (tgt as Object as ObjectState)[k] // TypeScript gibberish
+      if (v instanceof Object) { // annoying that PersistentObject isn't a class
+         setall(v as PersistentObject, α) 
+      }
+   })
+   return tgt
+}

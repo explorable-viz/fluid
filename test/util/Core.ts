@@ -1,6 +1,6 @@
-import { ann, setall } from "../../src/util/Annotated"
+import { ann } from "../../src/util/Annotated"
 import { __nonNull, assert } from "../../src/util/Core"
-import { World } from "../../src/util/Versioned"
+import { World, setall } from "../../src/util/Versioned"
 import { parse } from "../../src/util/parse/Core"
 import { initDataTypes } from "../../src/DataType"
 import { Env } from "../../src/Env"

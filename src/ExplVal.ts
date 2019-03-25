@@ -1,7 +1,7 @@
-import { Annotated, Annotation } from "./util/Annotated"
+import { Annotation } from "./util/Annotated"
 import { __nonNull, assert } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
-import { at } from "./util/Versioned"
+import { AnnotatedVersioned, at } from "./util/Versioned"
 import { List } from "./BaseTypes"
 import { Env } from "./Env"
 import { FiniteMap } from "./FiniteMap"
@@ -15,7 +15,7 @@ export type Expr = Expr.Expr
 export type Value = Value.Value
 
 export namespace Value {
-   export abstract class Value extends Annotated implements PersistentObject {
+   export abstract class Value extends AnnotatedVersioned implements PersistentObject {
       __tag: "Value.Value"
       abstract constructor_ (...args: Persistent[]): void
    }

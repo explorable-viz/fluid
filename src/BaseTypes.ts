@@ -1,8 +1,9 @@
-import { Persistent, PersistentObject, make } from "./util/Persistent"
+import { Annotated, Annotation, ann } from "./util/Annotated"
+import { Persistent, make } from "./util/Persistent"
 
-// Basic datatypes for interned structures.
+// Basic datatypes for interned structures. Annotated, but default to bot.
 
-export abstract class List<T extends Persistent> implements PersistentObject {
+export abstract class List<T extends Persistent> extends Annotated {
    static fromArray<T extends Persistent> (x̅: T[]): List<T> {
       let x̅ʹ: List<T> = nil()
       for (let n: number = x̅.length - 1; n >= 0; --n) {
@@ -17,7 +18,8 @@ export abstract class List<T extends Persistent> implements PersistentObject {
 }
 
 export class Nil<T extends Persistent> extends List<T> {
-   constructor_ () {
+   constructor_ (α: Annotation) {
+      this.α = α
    }
 
    static is<T extends Persistent> (x̅: List<T>): x̅ is Nil<T> {
@@ -34,17 +36,15 @@ export class Nil<T extends Persistent> extends List<T> {
 }
 
 export function nil<T extends Persistent> (): Nil<T> {
-   return make<Nil<T>>(Nil)
+   return make<Nil<T>>(Nil, ann.bot)
 }
 
 export class Cons<T extends Persistent> extends List<T> {
    head: T
    tail: List<T>
    
-   constructor_ (
-      head: T,
-      tail: List<T>
-   ) {
+   constructor_ (α: Annotation, head: T, tail: List<T>) {
+      this.α = α
       this.head = head
       this.tail = tail
    }
@@ -63,33 +63,32 @@ export class Cons<T extends Persistent> extends List<T> {
 }
 
 export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
-   return make(Cons, head, tail) as Cons<T>
+   return make(Cons, ann.bot, head, tail) as Cons<T>
 }
 
-export class Pair<T extends Persistent, U extends Persistent> implements PersistentObject {
+export class Pair<T extends Persistent, U extends Persistent> extends Annotated {
    fst: T
    snd: U
 
-   constructor_ (
-      fst: T,
-      snd: U
-   ) {
+   constructor_ (α: Annotation, fst: T, snd: U) {
+      this.α = α
       this.fst = fst
       this.snd = snd
    }
 }
 
 export function pair<T extends Persistent, U extends Persistent> (fst: T, snd: U): Pair<T, U> {
-   return make(Pair, fst, snd) as Pair<T, U>
+   return make(Pair, ann.bot, fst, snd) as Pair<T, U>
 }
 
-export abstract class Tree<T extends Persistent> implements PersistentObject {
+export abstract class Tree<T extends Persistent> extends Annotated {
    abstract map<U extends Persistent> (f: (t: T) => U): Tree<U>
    abstract constructor_ (...v̅: Persistent[]): void 
 }
 
 export class Empty<T extends Persistent> extends Tree<T> {
-   constructor_ () {      
+   constructor_ (α: Annotation) {
+      this.α = α
    }
 
    static is<T extends Persistent> (t: Tree<T>): t is Empty<T> {
@@ -102,7 +101,7 @@ export class Empty<T extends Persistent> extends Tree<T> {
 }
 
 export function empty<T extends Persistent> (): Empty<T> {
-   return make(Empty) as Empty<T>
+   return make(Empty, ann.bot) as Empty<T>
 }
 
 export class NonEmpty<T extends Persistent> extends Tree<T> {
@@ -110,11 +109,8 @@ export class NonEmpty<T extends Persistent> extends Tree<T> {
    t: T
    right: Tree<T>
 
-   constructor_ (
-      left: Tree<T>,
-      t: T,
-      right: Tree<T>
-   ): void {
+   constructor_ (α: Annotation, left: Tree<T>, t: T, right: Tree<T>): void {
+      this.α = α
       this.left = left
       this.t = t
       this.right = right
@@ -130,16 +126,17 @@ export class NonEmpty<T extends Persistent> extends Tree<T> {
 }
 
 export function nonEmpty <T extends Persistent> (left: Tree<T>, t: T, right: Tree<T>): NonEmpty<T> {
-   return make(NonEmpty, left, t, right) as NonEmpty<T>
+   return make(NonEmpty, ann.bot, left, t, right) as NonEmpty<T>
 }
 
-export abstract class Option<T extends Persistent> implements PersistentObject {
+export abstract class Option<T extends Persistent> extends Annotated {
    __tag: "Option"
    abstract constructor_ (...v̅: Persistent[]): void 
 }
 
 export class None<T extends Persistent> extends Option<T> {
-   constructor_ (): void {
+   constructor_ (α: Annotation): void {
+      this.α = α
    }
 
    static is<T extends Persistent> (x: Option<T>): x is None<T> {
@@ -148,13 +145,14 @@ export class None<T extends Persistent> extends Option<T> {
 }
 
 export function none<T extends Persistent> (): None<T> {
-   return make(None)
+   return make(None, ann.bot)
 }
 
 export class Some<T extends Persistent> extends Option<T> {
    t: T
 
-   constructor_ (t: T): void {
+   constructor_ (α: Annotation, t: T): void {
+      this.α = α
       this.t = t
    }
 
@@ -164,5 +162,5 @@ export class Some<T extends Persistent> extends Option<T> {
 }
 
 export function some <T extends Persistent> (t: T): Some<T> {
-   return make(Some, t) as Some<T>
+   return make(Some, ann.bot, t) as Some<T>
 }

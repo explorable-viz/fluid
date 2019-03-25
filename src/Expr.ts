@@ -1,8 +1,8 @@
-import { Annotated, Annotation } from "./util/Annotated"
+import { Annotation } from "./util/Annotated"
 import { __check, absurd, assert } from "./util/Core"
 import { eq } from "./util/Ord"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
-import { at } from "./util/Versioned"
+import { AnnotatedVersioned, at } from "./util/Versioned"
 import { Lexeme } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -131,7 +131,7 @@ export type Expr = Expr.Expr
 export type Kont<K> = Expr.Kont<K>
 
 export namespace Expr {
-   export abstract class Expr extends Annotated implements PersistentObject, Kont<Expr> {
+   export abstract class Expr extends AnnotatedVersioned implements Kont<Expr> {
       __tag: "Expr.Expr"
       abstract constructor_ (...args: Persistent[]): void 
    }
@@ -234,7 +234,7 @@ export namespace Expr {
       return at(k, PrimOp, α, op)
    }
 
-   export class RecDef extends Annotated implements PersistentObject {
+   export class RecDef extends AnnotatedVersioned {
       x: Lex.Var
       σ: Trie<Expr>
 
