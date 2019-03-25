@@ -96,7 +96,7 @@ function populateScene (): void {
    let here: Cursor = new Cursor(e)
    here
       .to(Expr.Let, "e")
-      .constrArg("Cons", 1)
+      .constrArg("Cons", 0)
       .constrArg("Pair", 1)
       .notNeed()
    const v: Value = Eval.eval_(ρ, e).v,

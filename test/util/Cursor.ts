@@ -79,13 +79,13 @@ export class Cursor {
    }
 
    constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
-      return this.at(Expr.Constr, e => assert(e.ctr.str === ctr))
+      return this.at(Expr.Constr, e => assert(e.ctr.str === ctr, `${e.ctr.str} !== ${ctr}`))
                  .to(Expr.Constr, "args")
                  .toElem(n)
    }
 
    val_constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
-      return this.at(Value.Constr, e => assert(e.ctr.str === ctr))
+      return this.at(Value.Constr, e => assert(e.ctr.str === ctr, `${e.ctr.str} !== ${ctr}`))
                  .to(Value.Constr, "args")
                  .toElem(n)
    }
