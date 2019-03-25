@@ -60,7 +60,7 @@ in
 let
    // discard x coordinates other than the first
    spaceRight' = fun sep get_x put_x Cons(shape, shapes) →
-      Cons(shape, zipW (fun (x, shape) → put_x x shape) (tail (iterate (length shapes) (fun x → x + sep) (get_x shape))) shapes)
+      Cons(shape, zipW (fun (x, shape) → put_x x shape) (tail (iterate (length shapes + 1) (fun x → x + sep) (get_x shape))) shapes)
 in
 let width = 6 in
 let sep = width + 1 in
