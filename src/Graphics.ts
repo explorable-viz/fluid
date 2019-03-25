@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { absurd, assert } from "./util/Core"
+import { absurd, as } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { Cons, List, cons } from "./BaseTypes"
 
@@ -52,8 +52,8 @@ export function objects (elem: Persistent): THREE.Object3D[] {
 function newPathGeometry (points: List<Point>): THREE.Geometry {
    const geometry: THREE.Geometry = new THREE.Geometry
    while (Cons.is(points)) {
-      assert(points.head instanceof Point)
-      geometry.vertices.push(new THREE.Vector3(points.head.x, points.head.y, 0))
+      const point: Point = as(points.head, Point)
+      geometry.vertices.push(new THREE.Vector3(point.x, point.y, 0))
       points = points.tail
    }
    return geometry
