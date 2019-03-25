@@ -100,7 +100,7 @@ function populateScene (): void {
       .constrArg("Pair", 1)
       .notNeed()
    const v: Value = Eval.eval_(ρ, e).v,
-         elems: List<Persistent> = as(reflect(v), List)
+         elems: List<Persistent> = as(reflect(v), List) // List<Rect | List<Point>>
    for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
       for (let obj of objects(elemsʹ.head)) {
          scene.add(obj)

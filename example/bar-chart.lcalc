@@ -51,6 +51,7 @@ let
       in 
       stackRight'
 in
+// these two operate on abstract shapes (that support an x property), preserving their type
 let
    // drop all x coordinates
    spaceRight = fun sep put_x shapes →
@@ -75,6 +76,7 @@ let axis = fun margin n width →
    let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
    map (map (translate (0, 0 - margin))) Cons(line, ticks n)
 in
+   // currently required to be List<Rect | List<Point>>
    concat
       rects'
       (concat 
