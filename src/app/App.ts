@@ -1,6 +1,7 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { Class, __check, absurd, as } from "../util/Core"
+import { Annotated } from "../util/Annotated"
+import { Class, __check, absurd, as, assert } from "../util/Core"
 import { Persistent, PersistentObject, make } from "../util/Persistent"
 import { World, at } from "../util/Versioned"
 import { Cons, List, Nil } from "../BaseTypes"
@@ -51,7 +52,9 @@ function reflect (v: Value): Persistent { // weirdly number and string are subty
          args.push(reflect(tvs.head.v))
          tvs = tvs.tail
       }
-      return at(Reflect.make(v), classFor.get(ctr)!, ...__check(args, it => it.length === arity(ctr)))
+      assert(args.length === arity(ctr))
+      // α doesn't appear as argument of user-level data types; sanity-check that reflective counterpart expects it
+      return as(at(Reflect.make(v), classFor.get(ctr)!, v.α, ...args), Annotated)
    } else {
       return absurd()
    }

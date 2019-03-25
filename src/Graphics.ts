@@ -1,40 +1,43 @@
 import * as THREE from "three"
+import { Annotated, Annotation, ann } from "./util/Annotated"
 import { absurd, as } from "./util/Core"
-import { Persistent, PersistentObject, make } from "./util/Persistent"
+import { Persistent, make } from "./util/Persistent"
 import { Cons, List, cons } from "./BaseTypes"
 
 // Basic graphical datatypes.
 
-export class Rect implements PersistentObject {
+export class Rect extends Annotated {
    x: number
    y: number
    width: number
    height: number
 
-   constructor_ (x: number, y: number, width: number, height: number) {
+   constructor_ (α: Annotation, x: number, y: number, width: number, height: number) {
+      this.α = α
       this.x = x
       this.y = y
       this.width = width
       this.height = height
    }
-
-   static make (x: number, y: number, width: number, height: number): Rect {
-      return make(Rect, x, y, width, height)
-   }
 }
 
-export class Point implements PersistentObject {
+export function rect (x: number, y: number, width: number, height: number): Rect {
+   return make(Rect, ann.bot, x, y, width, height)
+}
+
+export class Point extends Annotated {
    x: number
    y: number
 
-   constructor_ (x: number, y: number) {
+   constructor_ (α: Annotation, x: number, y: number) {
+      this.α = α
       this.x = x
       this.y = y
    }
+}
 
-   static make (x: number, y: number): Point {
-      return make(Point, x, y)
-   }
+export function point (x: number, y: number): Point {
+   return make(Point, ann.bot, x, y)
 }
 
 // We don't have anything like typeclasses yet.
@@ -70,15 +73,15 @@ function path_stroke (points: List<Point>): THREE.Object3D {
 
 function rect_path (rect: Rect): List<Point> {
    return List.fromArray([
-      Point.make(rect.x, rect.y),
-      Point.make(rect.x + rect.width, rect.y),
-      Point.make(rect.x + rect.width, rect.y + rect.height),
-      Point.make(rect.x, rect.y + rect.height)
+      point(rect.x, rect.y),
+      point(rect.x + rect.width, rect.y),
+      point(rect.x + rect.width, rect.y + rect.height),
+      point(rect.x, rect.y + rect.height)
    ])
 }
 
 function rect_stroke (rect: Rect): THREE.Object3D {
-   return path_stroke(cons(Point.make(rect.x, rect.y + rect.height), rect_path(rect)))
+   return path_stroke(cons(point(rect.x, rect.y + rect.height), rect_path(rect)))
 }
 
 function rect_fill (rect: Rect): THREE.Object3D {
