@@ -3,7 +3,7 @@ import { AnnNumber } from "./app/Reflect"
 import { Annotated, Annotation, ann } from "./util/Annotated"
 import { absurd, as } from "./util/Core"
 import { Persistent, make } from "./util/Persistent"
-import { Cons, List, cons } from "./BaseTypes"
+import { Cons, List } from "./BaseTypes"
 
 // Basic graphical datatypes.
 
@@ -64,13 +64,12 @@ export class RectFill extends GraphicsElement {
    }
 }
 
-// We don't have anything like typeclasses yet.
-export function objects (elem: Persistent): THREE.Object3D[] {
-   if (elem instanceof Rect) {
-      return [rect_fill(elem), rect_stroke(elem)]
-   } else 
-   if (elem instanceof List/*<Point>*/) { // silent "any"
-      return [path_stroke(elem)]
+export function objects3D (elem: GraphicsElement): THREE.Object3D[] {
+   if (elem instanceof PathStroke) {
+      return [path_stroke(elem.points)]
+   } else
+   if (elem instanceof RectFill) {
+      return [rect_fill(elem.points), path_stroke(elem.points)]
    } else {
       return absurd()
    }
@@ -95,21 +94,8 @@ function path_stroke (points: List<Point>): THREE.Object3D {
    )
 }
 
-function rect_path (rect: Rect): List<Point> {
-   return List.fromArray([
-      point(rect.x, rect.y),
-      point(rect.x.n + rect.width.n, rect.y),
-      point(rect.x.n + rect.width.n, rect.y.n + rect.height.n),
-      point(rect.x, rect.y.n + rect.height.n)
-   ])
-}
-
-function rect_stroke (rect: Rect): THREE.Object3D {
-   return path_stroke(cons(point(rect.x, rect.y.n + rect.height.n), rect_path(rect)))
-}
-
-function rect_fill (rect: Rect): THREE.Object3D {
-   const geometry: THREE.Geometry = newPathGeometry(rect_path(rect))
+function rect_fill (rect_path: List<Point>): THREE.Object3D {
+   const geometry: THREE.Geometry = newPathGeometry(rect_path)
    geometry.faces.push(new THREE.Face3(0,1,2))
    geometry.faces.push(new THREE.Face3(2,3,0))
    return new THREE.Mesh(

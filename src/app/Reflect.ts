@@ -1,5 +1,5 @@
 import { Annotation, Annotated } from "../util/Annotated"
-import { Class, __check, __nonNull, absurd, as, assert } from "../util/Core"
+import { Class, __check, absurd, as, assert } from "../util/Core"
 import { Persistent, PersistentObject, make } from "../util/Persistent"
 import { at } from "../util/Versioned"
 import { Cons, List, Nil } from "../BaseTypes"

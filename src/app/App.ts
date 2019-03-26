@@ -1,12 +1,11 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import { as } from "../util/Core"
-import { Persistent } from "../util/Persistent"
 import { World } from "../util/Versioned"
 import { Cons, List } from "../BaseTypes"
 import { Expr } from "../Expr"
 import { Eval } from "../Eval"
-import { objects } from "../Graphics"
+import { GraphicsElement, objects3D } from "../Graphics"
 import { Value } from "../ExplVal"
 // TODO: move test-dependent stuff out of app
 import { Cursor } from "../../test/util/Cursor"
@@ -58,9 +57,9 @@ function populateScene (): void {
       .constrArg("Pair", 1)
       .notNeed()
    const v: Value = Eval.eval_(ρ, e).v,
-         elems: List<Persistent> = as(reflect(v), List) // List<Rect | List<Point>>
-   for (let elemsʹ: List<Persistent> = elems; Cons.is(elemsʹ);) {
-      for (let obj of objects(elemsʹ.head)) {
+         elems: List<GraphicsElement> = as(reflect(v), List)
+   for (let elemsʹ: List<GraphicsElement> = elems; Cons.is(elemsʹ);) {
+      for (let obj of objects3D(as(elemsʹ.head, GraphicsElement))) {
          scene.add(obj)
       }
       elemsʹ = elemsʹ.tail
