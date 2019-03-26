@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { AnnNumber } from "./app/Reflect"
 import { Annotated, Annotation, ann } from "./util/Annotated"
 import { absurd, as } from "./util/Core"
 import { Persistent, make } from "./util/Persistent"
@@ -7,12 +8,12 @@ import { Cons, List, cons } from "./BaseTypes"
 // Basic graphical datatypes.
 
 export class Rect extends Annotated {
-   x: Number
-   y: Number
-   width: Number
-   height: Number
+   x: AnnNumber
+   y: AnnNumber
+   width: AnnNumber
+   height: AnnNumber
 
-   constructor_ (α: Annotation, x: Number, y: Number, width: Number, height: Number) {
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, width: AnnNumber, height: AnnNumber): void {
       this.α = α
       this.x = x
       this.y = y
@@ -21,23 +22,46 @@ export class Rect extends Annotated {
    }
 }
 
-export function rect (x: Number, y: Number, width: Number, height: Number): Rect {
+export function rect (x: AnnNumber, y: AnnNumber, width: AnnNumber, height: AnnNumber): Rect {
    return make(Rect, ann.bot, x, y, width, height)
 }
 
 export class Point extends Annotated {
-   x: Number
-   y: Number
+   x: AnnNumber
+   y: AnnNumber
 
-   constructor_ (α: Annotation, x: Number, y: Number) {
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber): void {
       this.α = α
       this.x = x
       this.y = y
    }
 }
 
-export function point (x: Number, y: Number): Point {
+export function point (x: AnnNumber, y: AnnNumber): Point {
    return make(Point, ann.bot, x, y)
+}
+
+export abstract class GraphicsElement extends Annotated {
+   abstract constructor_ (...v̅: Persistent[]): void
+}
+
+export class PathStroke extends GraphicsElement {
+   points: List<Point>
+
+   constructor_ (α: Annotation, points: List<Point>): void {
+      this.α = α
+      this.points = points
+   }
+}
+
+// TODO: generalise to any (closed) path.
+export class RectFill extends GraphicsElement {
+   points: List<Point>
+
+   constructor_ (α: Annotation, points: List<Point>): void {
+      this.α = α
+      this.points = points
+   }
 }
 
 // We don't have anything like typeclasses yet.
@@ -56,7 +80,7 @@ function newPathGeometry (points: List<Point>): THREE.Geometry {
    const geometry: THREE.Geometry = new THREE.Geometry
    while (Cons.is(points)) {
       const point: Point = as(points.head, Point)
-      geometry.vertices.push(new THREE.Vector3(point.x.valueOf(), point.y.valueOf(), 0))
+      geometry.vertices.push(new THREE.Vector3(point.x.n, point.y.n, 0))
       points = points.tail
    }
    return geometry
@@ -74,14 +98,14 @@ function path_stroke (points: List<Point>): THREE.Object3D {
 function rect_path (rect: Rect): List<Point> {
    return List.fromArray([
       point(rect.x, rect.y),
-      point(rect.x.valueOf() + rect.width.valueOf(), rect.y),
-      point(rect.x.valueOf() + rect.width.valueOf(), rect.y.valueOf() + rect.height.valueOf()),
-      point(rect.x, rect.y.valueOf() + rect.height.valueOf())
+      point(rect.x.n + rect.width.n, rect.y),
+      point(rect.x.n + rect.width.n, rect.y.n + rect.height.n),
+      point(rect.x, rect.y.n + rect.height.n)
    ])
 }
 
 function rect_stroke (rect: Rect): THREE.Object3D {
-   return path_stroke(cons(point(rect.x, rect.y.valueOf() + rect.height.valueOf()), rect_path(rect)))
+   return path_stroke(cons(point(rect.x, rect.y.n + rect.height.n), rect_path(rect)))
 }
 
 function rect_fill (rect: Rect): THREE.Object3D {

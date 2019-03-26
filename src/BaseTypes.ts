@@ -1,35 +1,5 @@
 import { Annotated, Annotation, ann } from "./util/Annotated"
-import { Persistent, PersistentObject, make } from "./util/Persistent"
-
-// Reflected versions of primitive constants; should be able to switch to a compiler and use these directly.
-// Can't extend built-in classes because they require initialisation at construction-time.
-
-export class AnnBoolean extends Annotated implements PersistentObject {
-   b: boolean
-
-   constructor_ (α: Annotation, b: boolean) {
-      this.α = α
-      this.b = b
-   }
-}
-
-export class AnnNumber extends Annotated implements PersistentObject {
-   n: number
-
-   constructor_ (α: Annotation, n: number) {
-      this.α = α
-      this.n = n
-   }
-}
-
-export class AnnString extends Annotated implements PersistentObject {
-   str: string
-
-   constructor_ (α: Annotation, str: string) {
-      this.α = α
-      this.str = str
-   }
-}
+import { Persistent, make } from "./util/Persistent"
 
 // Basic datatypes for interned structures. Annotated, but default to bot.
 
@@ -44,7 +14,7 @@ export abstract class List<T extends Persistent> extends Annotated {
 
    abstract length: number
    abstract map<U extends Persistent> (f: (t: T) => U): List<U>
-   abstract constructor_ (...v̅: Persistent[]): void // TS requires duplicate def
+   abstract constructor_ (...v̅: Persistent[]): void
 }
 
 export class Nil<T extends Persistent> extends List<T> {

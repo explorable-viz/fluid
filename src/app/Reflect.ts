@@ -1,4 +1,4 @@
-import { Annotation, Annotated, ann } from "../util/Annotated"
+import { Annotation, Annotated } from "../util/Annotated"
 import { Class, __check, __nonNull, absurd, as, assert } from "../util/Core"
 import { Persistent, PersistentObject, make } from "../util/Persistent"
 import { at } from "../util/Versioned"
@@ -9,15 +9,6 @@ import { Point, Rect } from "../Graphics"
 
 // Reflected versions of primitive constants; should be able to switch to a compiler and use these directly.
 // Can't extend built-in classes because they require initialisation at construction-time.
-
-export class AnnBoolean extends Annotated implements PersistentObject {
-   b: boolean
-
-   constructor_ (α: Annotation, b: boolean) {
-      this.α = α
-      this.b = b
-   }
-}
 
 export class AnnNumber extends Annotated implements PersistentObject {
    n: number
@@ -59,13 +50,12 @@ class Reflect implements PersistentObject {
 }
 
 export function reflect (v: Value): Persistent { 
+   const k: Reflect = Reflect.make(v)
    if (v instanceof Value.ConstInt) {
-      const vʹ: Number = new Number(v.val.valueOf())
-      ; (vʹ as any as Annotated).α = ann.meet(__nonNull((v.val as any as Annotated).α), v.α)
-      return vʹ
+      return at(k, AnnNumber, v.α, v.val)
    } else
    if (v instanceof Value.ConstStr) {
-      return (v.val as any as Annotated).α = v.α
+      return at(k, AnnString, v.α, v.val)
    } else
    if (v instanceof Value.Constr) {
       const ctr: string = __check(v.ctr.str, it => classFor.has(it)),
@@ -76,7 +66,7 @@ export function reflect (v: Value): Persistent {
       }
       assert(args.length === arity(ctr))
       // α doesn't appear as argument of user-level data types; sanity-check that reflective counterpart expects it
-      return as(at(Reflect.make(v), classFor.get(ctr)!, v.α, ...args), Annotated)
+      return as(at(k, classFor.get(ctr)!, v.α, ...args), Annotated)
    } else {
       return absurd()
    }
