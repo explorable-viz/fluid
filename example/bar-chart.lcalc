@@ -66,7 +66,7 @@ let width = 6 in
 let sep = width + 1 in
 let rects = map (fun (year, age) → Rect(0, 0, width, age)) data in
 let rects' = spaceRight' sep rect_get_x rect_put_x rects in
-let axis = fun margin n width →
+let axis = fun margin n width → // returns List<List<Point>>
    let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
    let ticks = fun n → 
       spaceRight width
@@ -91,10 +91,8 @@ letrec
    }
 in
    // required to be List<GraphicsElement>
-//   Cons(
-//      PathStroke(axis 1 5 7),
-//      Cons(
-//         PathStroke(map (map transpose) (axis 1 (length rects') width)),
-         renderRects rects'
-//      )
-//   )
+   concat
+      (map (fun ps → PathStroke(ps)) (axis 1 5 7))
+      (concat
+         (map (fun ps → PathStroke(map transpose ps)) (axis 1 (length rects') width))
+         (renderRects rects'))
