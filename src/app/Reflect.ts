@@ -1,11 +1,11 @@
 import { Annotation, Annotated } from "../util/Annotated"
-import { Class, __check, absurd, as, assert } from "../util/Core"
+import { Class, __check, absurd, as, assert, funName } from "../util/Core"
 import { Persistent, PersistentObject, make } from "../util/Persistent"
 import { at } from "../util/Versioned"
 import { Cons, List, Nil } from "../BaseTypes"
 import { arity } from "../DataType"
 import { ExplVal, Value } from "../ExplVal"
-import { Point, Rect } from "../Graphics"
+import { PathStroke, Point, RectFill } from "../Graphics"
 
 // Reflected versions of primitive constants; should be able to switch to a compiler and use these directly.
 // Can't extend built-in classes because they require initialisation at construction-time.
@@ -29,12 +29,15 @@ export class AnnString extends Annotated implements PersistentObject {
 }
 
 // intermediate value required to stop TS getting confused:
-const classFor_: [string, Class<PersistentObject>][] =
-   [["Cons", Cons],
-    ["Nil", Nil],
-    ["Point", Point],
-    ["Rect", Rect]],
-   classFor: Map<string, Class<PersistentObject>> = new Map(classFor_)
+const classFor_: Class<PersistentObject>[] =
+   [Cons,
+    Nil,
+    PathStroke,
+    Point,
+    RectFill],
+   classFor: Map<string, Class<PersistentObject>> = new Map(
+      classFor_.map((cls): [string, Class<PersistentObject>] => [funName(cls), cls])
+   )
 
 // TODO: use function objects themselves to partition memo keys, as per lambdacalc-old?
 class Reflect implements PersistentObject {
