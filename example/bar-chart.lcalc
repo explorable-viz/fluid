@@ -90,9 +90,9 @@ let renderRects = fun {
 in
    // required to be List<GraphicsElement>
    Cons(
-      PathStroke(axis 1 5 7)
+      PathStroke(axis 1 5 7),
       Cons(
-         PathStroke(map (map transpose) (axis 1 (length rects') width))
+         PathStroke(map (map transpose) (axis 1 (length rects') width)),
          renderRects rects'
       )
    )
