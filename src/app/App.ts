@@ -1,64 +1,19 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { Annotated } from "../util/Annotated"
-import { Class, __check, absurd, as, assert } from "../util/Core"
-import { Persistent, PersistentObject, make } from "../util/Persistent"
-import { World, at } from "../util/Versioned"
-import { Cons, List, Nil } from "../BaseTypes"
-import { arity } from "../DataType"
+import { as } from "../util/Core"
+import { Persistent } from "../util/Persistent"
+import { World } from "../util/Versioned"
+import { Cons, List } from "../BaseTypes"
 import { Expr } from "../Expr"
 import { Eval } from "../Eval"
-import { Point, Rect, objects } from "../Graphics"
-import { ExplVal, Value } from "../ExplVal"
+import { objects } from "../Graphics"
+import { Value } from "../ExplVal"
 // TODO: move test-dependent stuff out of app
 import { Cursor } from "../../test/util/Cursor"
 import { ρ, initialise, loadTestFile, parseExample } from "../../test/util/Core"
+import { reflect } from "./Reflect"
 
 initialise()
-
-// intermediate value required to stop TS getting confused:
-const classFor_: [string, Class<PersistentObject>][] =
-   [["Cons", Cons],
-    ["Nil", Nil],
-    ["Point", Point],
-    ["Rect", Rect]]
-const classFor: Map<string, Class<PersistentObject>> = new Map(classFor_)
-
-// Not really convinced by this pattern - wouldn't it make more sense to use the function objects themselves
-// to partition the memo keys, as I did in lambdacalc-old?
-class Reflect implements PersistentObject {
-   v: Value
-
-   constructor_ (v: Value) {
-      this.v = v
-   }
-
-   static make (v: Value): Reflect {
-      return make(Reflect, v)
-   }
-}
-
-function reflect (v: Value): Persistent { // weirdly number and string are subtypes of Object
-   if (v instanceof Value.ConstInt) {
-      return (v.val as any as Annotated).α = v.α // saves introducing my own annotated primitive objects
-   } else
-   if (v instanceof Value.ConstStr) {
-      return (v.val as any as Annotated).α = v.α
-   } else
-   if (v instanceof Value.Constr) {
-      const ctr: string = __check(v.ctr.str, it => classFor.has(it)),
-            args: Persistent[] = []
-      for (let tvs: List<ExplVal> = v.args; Cons.is(tvs);) {
-         args.push(reflect(tvs.head.v))
-         tvs = tvs.tail
-      }
-      assert(args.length === arity(ctr))
-      // α doesn't appear as argument of user-level data types; sanity-check that reflective counterpart expects it
-      return as(at(Reflect.make(v), classFor.get(ctr)!, v.α, ...args), Annotated)
-   } else {
-      return absurd()
-   }
-}
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color( 0xffffff )

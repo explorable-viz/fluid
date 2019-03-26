@@ -183,7 +183,7 @@ function appOp (
 const string_: Parser<ConstStr> =
    withAction(
       lexeme(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),), Lex.StringLiteral),
-      lit => Expr.constStr(ν(), ann.top, new String(lit.str))
+      lit => Expr.constStr(ν(), ann.top, lit.str)
    )
 
 const integer: Parser<ConstInt> =
@@ -196,7 +196,7 @@ const integer: Parser<ConstInt> =
          ]),
          Lex.IntLiteral
       ),
-      lit => Expr.constInt(ν(), ann.top, new Number(parseInt(lit.str)))
+      lit => Expr.constInt(ν(), ann.top, parseInt(lit.str))
    )
 
 const parenthExpr: Parser<Expr> = 
