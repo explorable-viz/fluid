@@ -37,9 +37,11 @@ describe("example", () => {
 				setup (): void {
 					this.val
 						.need()
+						.val_constrArg("Cons", 1).value()
+						.val_constrArg("Cons", 1).value()
 						.val_constrArg("Cons", 0).value().need()
-						.push().val_constrArg("Rect", 2).value().need().pop() // width
-						.push().val_constrArg("Rect", 3).value().need().pop() // height
+						.val_constrArg("PathStroke", 0).value()
+						.val_constrArg("Cons", 0).value().need() // first point
 				}
 				expect (): void {
 					this.expr.needed()
