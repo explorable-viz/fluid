@@ -82,11 +82,13 @@ let rectPath = fun Rect(x, y, w, h) →
    Cons(Point(x + w, y + h),
    Cons(Point(x, y + h), Nil))))
 in
-let renderRects = fun {
-   Nil → Nil;
-   Cons(r, rs) → 
-      Cons(PathStroke(Cons(Point(x, y + h), ps)), Cons(RectFill(ps), renderRects(rs)))
-}
+letrec 
+   fun renderRects {
+      Nil → Nil;
+      Cons(r, rs) → match r as Rect(x, y, w, h) →
+         let ps = rectPath r in
+         Cons(PathStroke(Cons(Point(x, y + h), ps)), Cons(RectFill(ps), renderRects(rs)))
+   }
 in
    // required to be List<GraphicsElement>
    Cons(

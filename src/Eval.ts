@@ -51,7 +51,7 @@ export function error (msg: string, ...x̅: any[]): any {
       console.warn("Error data:\n")
       x̅.forEach(x => console.warn(x))
    }
-   throw new Error("User error")
+   throw new Error("User error: " + msg)
 }
 
 export type ValId = Tagged<"v">
