@@ -99,9 +99,9 @@ function pointHighlights (points: List<Point>): THREE.Object3D[] {
    const highlights: THREE.Object3D[] = []
    for (; Cons.is(points); points = points.tail) {
       const point: Point = points.head
-      if (!point.α) {
+      if (!point.x.α || !point.y.α) {
          console.log(point)
-         highlights.push(circle(point, 10))
+         highlights.push(circle(point, 0.5))
       }
    }
    return highlights

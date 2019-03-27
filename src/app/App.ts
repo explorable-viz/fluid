@@ -53,7 +53,7 @@ function populateScene (): void {
    let here: Cursor = new Cursor(e)
    here
       .to(Expr.Let, "e")
-      .constrArg("Cons", 0)
+      .constrArg("Cons", 0).notNeed()
       .constrArg("Pair", 1).notNeed()
    const v: Value = Eval.eval_(ρ, e).v,
          elems: List<GraphicsElement> = as(reflect(v), List)
