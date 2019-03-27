@@ -18,7 +18,6 @@ letrec
          Cons(y, ys) → Cons(op(x, y), zipW op xs ys)
       }
    };
-   // in CBV we probably want a different implementation :-/
    fun iterate n f x → match n == 0 as {
       True → Nil;
       False → Cons(x, map f (iterate (n - 1) f x))
@@ -52,6 +51,7 @@ let
       in 
       stackRight'
 in
+// these two operate on abstract shapes (that support an x property), preserving their type
 let
    // drop all x coordinates
    spaceRight = fun sep put_x shapes →
@@ -60,13 +60,13 @@ in
 let
    // discard x coordinates other than the first
    spaceRight' = fun sep get_x put_x Cons(shape, shapes) →
-      Cons(shape, zipW (fun (x, shape) → put_x x shape) (tail (iterate (length shapes) (fun x → x + sep) (get_x shape))) shapes)
+      Cons(shape, zipW (fun (x, shape) → put_x x shape) (tail (iterate (length shapes + 1) (fun x → x + sep) (get_x shape))) shapes)
 in
 let width = 6 in
 let sep = width + 1 in
 let rects = map (fun (year, age) → Rect(0, 0, width, age)) data in
 let rects' = spaceRight' sep rect_get_x rect_put_x rects in
-let axis = fun margin n width →
+let axis = fun margin n width → // returns List<List<Point>>
    let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
    let ticks = fun n → 
       spaceRight width
@@ -76,8 +76,23 @@ let axis = fun margin n width →
    let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
    map (map (translate (0, 0 - margin))) Cons(line, ticks n)
 in
+let rectPath = fun Rect(x, y, w, h) →
+   Cons(Point(x, y),
+   Cons(Point(x + w, y),
+   Cons(Point(x + w, y + h),
+   Cons(Point(x, y + h), Nil))))
+in
+letrec 
+   fun renderRects {
+      Nil → Nil;
+      Cons(r, rs) → match r as Rect(x, y, w, h) →
+         let ps = rectPath r in
+         Cons(RectFill(ps), Cons(PathStroke(Cons(Point(x, y + h), ps)), renderRects(rs)))
+   }
+in
+   // required to be List<GraphicsElement>
    concat
-      rects'
-      (concat 
-         (axis 1 5 7)
-         (map (map transpose) (axis 1 (length rects') width)))
+      (map (fun ps → PathStroke(ps)) (axis 1 5 7))
+      (concat
+         (map (fun ps → PathStroke(map transpose ps)) (axis 1 (length rects') width))
+         (renderRects rects'))

@@ -1,9 +1,10 @@
-import { AClass, Class, absurd, as, assert } from "../src/util/Core"
-import { Persistent, PersistentObject } from "../src/util/Persistent"
-import { Annotated, ann } from "../src/Annotated"
-import { Cons, NonEmpty, Pair } from "../src/BaseTypes"
-import { Value } from "../src/ExplVal"
-import { Expr } from "../src/Expr"
+import { ann } from "../../src/util/Annotated"
+import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
+import { Persistent, PersistentObject } from "../../src/util/Persistent"
+import { AnnotatedVersioned } from "../../src/util/Versioned"
+import { Cons, NonEmpty, Pair } from "../../src/BaseTypes"
+import { ExplVal, Value } from "../../src/ExplVal"
+import { Expr } from "../../src/Expr"
 
 import Args = Expr.Args
 
@@ -36,19 +37,19 @@ export class Cursor {
    }
 
    needed (): Cursor {
-      return this.assert(Annotated, o => o.α === ann.top)
+      return this.assert(AnnotatedVersioned, o => o.α === ann.top)
    }
 
    notNeeded (): Cursor {
-      return this.assert(Annotated, o => o.α === ann.bot)
+      return this.assert(AnnotatedVersioned, o => o.α === ann.bot)
    }
 
    need (): Cursor {
-      return this.at(Annotated, o => o.setα(ann.top))
+      return this.at(AnnotatedVersioned, o => o.setα(ann.top))
    }
 
    notNeed (): Cursor {
-      return this.at(Annotated, o => o.setα(ann.bot))
+      return this.at(AnnotatedVersioned, o => o.setα(ann.bot))
    }
 
    push (): Cursor {
@@ -78,15 +79,19 @@ export class Cursor {
    }
 
    constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
-      return this.at(Expr.Constr, e => assert(e.ctr.str === ctr))
+      return this.at(Expr.Constr, e => assert(e.ctr.str === ctr, `${e.ctr.str} !== ${ctr}`))
                  .to(Expr.Constr, "args")
                  .toElem(n)
    }
 
    val_constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
-      return this.at(Value.Constr, e => assert(e.ctr.str === ctr))
+      return this.at(Value.Constr, e => assert(e.ctr.str === ctr, `${e.ctr.str} !== ${ctr}`))
                  .to(Value.Constr, "args")
                  .toElem(n)
+   }
+
+   value (): Cursor {
+      return this.to(ExplVal, "v")
    }
 
    nodeValue (): Cursor {

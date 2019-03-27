@@ -1,16 +1,16 @@
-import { __nonNull, assert } from "../src/util/Core"
-import { World } from "../src/util/Persistent"
-import { parse } from "../src/util/parse/Core"
-import { ann, setall } from "../src/Annotated"
-import { initDataTypes } from "../src/DataType"
-import { Env } from "../src/Env"
-import { Eval } from "../src/Eval"
-import { ExplVal, Value } from "../src/ExplVal"
-import { Expr, Kont } from "../src/Expr"
-import { unionWith } from "../src/FiniteMap"
-import { instantiate } from "../src/Instantiate"
-import { Parse } from "../src/Parse"
-import { prelude } from "../src/Primitive"
+import { ann } from "../../src/util/Annotated"
+import { __nonNull, assert } from "../../src/util/Core"
+import { World, setall } from "../../src/util/Versioned"
+import { parse } from "../../src/util/parse/Core"
+import { initDataTypes } from "../../src/DataType"
+import { Env } from "../../src/Env"
+import { Eval } from "../../src/Eval"
+import { ExplVal, Value } from "../../src/ExplVal"
+import { Expr, Kont } from "../../src/Expr"
+import { unionWith } from "../../src/FiniteMap"
+import { instantiate } from "../../src/Instantiate"
+import { Parse } from "../../src/Parse"
+import { prelude } from "../../src/Primitive"
 import { Cursor } from "./Cursor"
 
 import Args = Expr.Args
@@ -74,7 +74,7 @@ export enum Profile {
 
 // Could have used join, but only defined for syntactic tries.
 export function merge<K extends Kont<K>> (σ1: Trie.Constr<K>, σ2: Trie.Constr<K>): Trie.Constr<K> {
-   return Trie.Constr.make(unionWith(σ1.cases, σ2.cases, (v: Args<K>, vʹ: Args<K>) => assert(false)))
+   return Trie.constr(unionWith(σ1.cases, σ2.cases, (v: Args<K>, vʹ: Args<K>) => assert(false)))
 }
 
 export function parseExample (src: string | null): Expr {

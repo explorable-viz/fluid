@@ -36,18 +36,18 @@ export function asOpt<U, T extends U> (x: U, cls: AClass<T>): T {
    }
 }
 
-export function assert (b: boolean, msg?: string, ...xs: any[]): any {
+export function assert (b: boolean, msg?: string, ...x̅: any[]): any {
    if (!b) {
-      if (xs.length > 0) {
+      if (x̅.length > 0) {
          console.warn("Assertion data:\n")
-         xs.forEach(x => console.warn(x))
+         x̅.forEach(x => console.warn(x))
       }
       throw new Error(msg || "Assertion failure")
    }
 }
 
-export function absurd (msg?: string, ...xs: any[]): any {
-   assert(false, msg, ...xs)
+export function absurd (msg?: string, ...x̅: any[]): any {
+   assert(false, msg, ...x̅)
 }
 
 // Useful when a notionally abstract class needs to be concrete.

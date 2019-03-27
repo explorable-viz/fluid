@@ -1,8 +1,9 @@
+import { Annotation } from "./util/Annotated"
 import { __check, absurd, assert } from "./util/Core"
 import { eq } from "./util/Ord"
-import { Persistent, PersistentObject, at, make } from "./util/Persistent"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
+import { AnnotatedVersioned, at } from "./util/Versioned"
 import { Lexeme } from "./util/parse/Core"
-import { Annotated, Annotation } from "./Annotated"
 import { List } from "./BaseTypes"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { UnaryOp } from "./Primitive"
@@ -27,50 +28,45 @@ export namespace Lex {
       __tag: "Lex.Ctr"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
+   }
 
-      static make (str: string): Ctr {
-         return make(Ctr, str)
-      }
+   export function ctr (str: string): Ctr {
+      return make(Ctr, str)
    }
 
    // Literal lexemes are elided when constructing abstract syntax to avoid additional level of structure.
    export class IntLiteral extends Lexeme {
+      __tag: "Lex.IntLiteral"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
 
       toNumber (): number {
          return parseInt(this.str)
       }
+   }
 
-      static make (str: string): IntLiteral {
-         return make(IntLiteral, str)
-      }
+   export function intLiteral (str: string): IntLiteral {
+      return make(IntLiteral, str)
    }
 
    // Keywords also elided, but we'll probably want that in the syntax at some point.
    export class Keyword extends Lexeme {
-      __tag: "Lex.StringLiteral"
+      __tag: "Lex.Keyword"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
+   }
 
-      static make (str: string): Keyword {
-         return make(Keyword, str)
-      }
+   export function keyword (str: string): Keyword {
+      return make(Keyword, str)
    }
 
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
@@ -79,49 +75,43 @@ export namespace Lex {
       __tag: "Lex.OpName"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
+   }
 
-      static make (str: string): OpName {
-         return make(OpName, str)
-      }
+   export function opName (str: string): OpName {
+      return make(OpName, str)
    }
 
    export class StringLiteral extends Lexeme {
       __tag: "Lex.StringLiteral"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
 
       toString (): string {
          return str.quotes + this.str + str.quotes
       }
+   }
 
-      static make (str: string): StringLiteral {
-         return make(StringLiteral, str)
-      }
+   export function strLiteral (str: string): StringLiteral {
+      return make(StringLiteral, str)
    }
 
    export class Var extends Lexeme {
       __tag: "Lex.Var"
       str: string
 
-      constructor_ (
-         str: string
-      ) {
+      constructor_ (str: string) {
          this.str = str
       }
+   }
 
-      static make (str: string): Var {
-         return make(Var, str)
-      }
+   export function var_ (str: string): Var {
+      return make(Var, str)
    }
 }
 
@@ -129,7 +119,7 @@ export type Expr = Expr.Expr
 export type Kont<K> = Expr.Kont<K>
 
 export namespace Expr {
-   export abstract class Expr extends Annotated implements PersistentObject, Kont<Expr> {
+   export abstract class Expr extends AnnotatedVersioned implements Kont<Expr> {
       __tag: "Expr.Expr"
       abstract constructor_ (...args: Persistent[]): void 
    }
@@ -143,10 +133,10 @@ export namespace Expr {
          this.func = func
          this.arg = arg
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, func: Expr, arg: Expr): App {
-         return at(k, App, α, func, arg)
-      }
+   export function app (k: PersistentObject, α: Annotation, func: Expr, arg: Expr): App {
+      return at(k, App, α, func, arg)
    }
 
    export class ConstInt extends Expr {
@@ -156,12 +146,12 @@ export namespace Expr {
          this.α = α
          this.val = __check(val, x => !Number.isNaN(x))
       }
-   
-      static at (k: PersistentObject, α: Annotation, val: number): ConstInt {
-         return at(k, ConstInt, α, val)
-      }
    }
    
+   export function constInt (k: PersistentObject, α: Annotation, val: number): ConstInt {
+      return at(k, ConstInt, α, val)
+   }
+
    export class ConstStr extends Expr {
       val: string
 
@@ -169,12 +159,12 @@ export namespace Expr {
          this.α = α
          this.val = val
       }
-   
-      static at (k: PersistentObject, α: Annotation,val: string): ConstStr {
-         return at(k, ConstStr, α, val)
-      }
    }
    
+   export function constStr (k: PersistentObject, α: Annotation, val: string): ConstStr {
+      return at(k, ConstStr, α, val)
+   }
+
    export class Constr extends Expr {
       ctr: Lex.Ctr
       args: List<Expr>
@@ -184,10 +174,10 @@ export namespace Expr {
          this.ctr = ctr
          this.args = args
       }
+   }
    
-      static at (k: PersistentObject, α: Annotation, ctr: Lex.Ctr, args: List<Expr>): Constr {
-         return at(k, Constr, α, ctr, args)
-      }
+   export function constr (k: PersistentObject, α: Annotation, ctr: Lex.Ctr, args: List<Expr>): Constr {
+      return at(k, Constr, α, ctr, args)
    }
 
    export class Fun extends Expr {
@@ -197,10 +187,10 @@ export namespace Expr {
          this.α = α
          this.σ = σ
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, σ: Trie<Expr>): Fun {
-         return at(k, Fun, α, σ)
-      }
+   export function fun (k: PersistentObject, α: Annotation, σ: Trie<Expr>): Fun {
+      return at(k, Fun, α, σ)
    }
 
    // A let is simply a match where the trie is a variable trie.
@@ -213,10 +203,10 @@ export namespace Expr {
          this.e = e
          this.σ = σ
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, e: Expr, σ: Trie.Var<Expr>): Let {
-         return at(k, Let, α, e, σ)
-      }
+   export function let_ (k: PersistentObject, α: Annotation, e: Expr, σ: Trie.Var<Expr>): Let {
+      return at(k, Let, α, e, σ)
    }
 
    export class PrimOp extends Expr {
@@ -226,13 +216,13 @@ export namespace Expr {
          this.α = α
          this.op = op
       }
-
-      static at (k: PersistentObject, α: Annotation, op: UnaryOp): PrimOp {
-         return at(k, PrimOp, α, op)
-      }
    }
 
-   export class RecDef extends Annotated implements PersistentObject {
+   export function primOp (k: PersistentObject, α: Annotation, op: UnaryOp): PrimOp {
+      return at(k, PrimOp, α, op)
+   }
+
+   export class RecDef extends AnnotatedVersioned {
       x: Lex.Var
       σ: Trie<Expr>
 
@@ -241,10 +231,10 @@ export namespace Expr {
          this.x = x
          this.σ = σ
       }
+   }
  
-      static at (k: PersistentObject, α: Annotation, x: Lex.Var, σ: Trie<Expr>): RecDef {
-         return at(k, RecDef, α, x, σ)
-      }
+   export function recDef (k: PersistentObject, α: Annotation, x: Lex.Var, σ: Trie<Expr>): RecDef {
+      return at(k, RecDef, α, x, σ)
    }
 
    export class LetRec extends Expr {
@@ -256,10 +246,10 @@ export namespace Expr {
          this.δ = δ
          this.e = e
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, δ: List<RecDef>, e: Expr): LetRec {
-         return at(k, LetRec, α, δ, e)
-      }
+   export function letRec (k: PersistentObject, α: Annotation, δ: List<RecDef>, e: Expr): LetRec {
+      return at(k, LetRec, α, δ, e)
    }
 
    export class MatchAs extends Expr {
@@ -271,10 +261,10 @@ export namespace Expr {
          this.e = e
          this.σ = σ
       }
+   }
    
-      static at (k: PersistentObject, α: Annotation, e: Expr, σ: Trie<Expr>): MatchAs {
-         return at(k, MatchAs, α, e, σ)
-      }
+   export function matchAs (k: PersistentObject, α: Annotation, e: Expr, σ: Trie<Expr>): MatchAs {
+      return at(k, MatchAs, α, e, σ)
    }
 
    export class BinaryApp extends Expr {
@@ -288,10 +278,10 @@ export namespace Expr {
          this.opName = opName
          this.e2 = e2
       }
+   }
 
-      static at (k: PersistentObject, α: Annotation, e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
-         return at(k, BinaryApp, α, e1, opName, e2)
-      }
+   export function binaryApp (k: PersistentObject, α: Annotation, e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
+      return at(k, BinaryApp, α, e1, opName, e2)
    }
 
    export class Var extends Expr {
@@ -301,10 +291,10 @@ export namespace Expr {
          this.α = α
          this.x = x
       }
+   }
    
-      static at (k: PersistentObject, α: Annotation, x: Lex.Var): Var {
-         return at(k, Var, α, x)
-      }
+   export function var_ (k: PersistentObject, α: Annotation, x: Lex.Var): Var {
+      return at(k, Var, α, x)
    }
 
    export type Args<K extends Kont<K>> = Args.Args<K>
@@ -317,10 +307,10 @@ export namespace Expr {
 
          static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
             if (Π instanceof End && Πʹ instanceof End) {
-               return End.make(join(Π.κ, Πʹ.κ))
+               return end(join(Π.κ, Πʹ.κ))
             } else
             if (Π instanceof Next && Πʹ instanceof Next) {
-               return Next.make(join(Π.σ, Πʹ.σ))
+               return next(join(Π.σ, Πʹ.σ))
             } else {
                return assert(false, "Undefined join.", Π, Πʹ)
             }
@@ -342,10 +332,10 @@ export namespace Expr {
          static is<K extends Kont<K>> (Π: Args<K>): Π is End<K> {
             return Π instanceof End
          }
+      }
 
-         static make<K extends Kont<K>> (κ: K): End<K> {
-            return make(End, κ) as End<K>
-         }
+      export function end<K extends Kont<K>> (κ: K): End<K> {
+         return make(End, κ) as End<K>
       }
 
       // Maps a single argument to another args trie.
@@ -359,10 +349,10 @@ export namespace Expr {
          static is<K extends Kont<K>> (Π: Args<K>): Π is Next<K> {
             return Π instanceof Next
          }
+      }
 
-         static make<K extends Kont<K>> (σ: Trie<Args<K>>): Next<K> {
-            return make(Next, σ) as Next<K>
-         }
+      export function next<K extends Kont<K>> (σ: Trie<Args<K>>): Next<K> {
+         return make(Next, σ) as Next<K>
       }
    }
 
@@ -396,10 +386,10 @@ export namespace Expr {
 
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-               return Var.make(σ.x, join(σ.κ, τ.κ))
+               return var_(σ.x, join(σ.κ, τ.κ))
             } else
             if (Constr.is(σ) && Constr.is(τ)) {
-               return Constr.make(unionWith(σ.cases, τ.cases, Args.Args.join))
+               return constr(unionWith(σ.cases, τ.cases, Args.Args.join))
             } else {
                return assert(false, "Undefined join.", this, τ)
             }
@@ -417,10 +407,10 @@ export namespace Expr {
          static is<K extends Kont<K>> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
+      }
 
-         static make<K extends Kont<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
-            return make(Constr, cases)
-         }
+      export function constr<K extends Kont<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+         return make(Constr, cases)
       }
 
       export class Var<K extends Kont<K>> extends Trie<K> {
@@ -435,10 +425,10 @@ export namespace Expr {
          static is<K extends Kont<K>> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
+      }
 
-         static make<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
-            return make(Var, x, κ) as Var<K>
-         }
+      export function var_<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
+         return make(Var, x, κ) as Var<K>
       }
    }
 }

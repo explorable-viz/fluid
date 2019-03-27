@@ -1,7 +1,8 @@
+import { ann } from "./util/Annotated"
 import { absurd, as, assert } from "./util/Core"
-import { PersistentObject, make, asVersioned } from "./util/Persistent"
-import { ann } from "./Annotated"
-import { Cons, List, Nil } from "./BaseTypes"
+import { PersistentObject, make } from "./util/Persistent"
+import { asVersioned } from "./util/Versioned"
+import { Cons, List, Nil, nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { ExplVal, Match, Value, explVal } from "./ExplVal"
 import { Expr } from "./Expr"
@@ -28,7 +29,7 @@ import RecDef = Expr.RecDef
 import unaryApp = ExplVal.unaryApp
 import var_ = ExplVal.var_
 
-type Tag = "val" | "expl"
+type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
 export class Tagged<T extends Tag> implements PersistentObject {
    e: Expr | RecDef
@@ -50,11 +51,11 @@ export function error (msg: string, ...x̅: any[]): any {
       console.warn("Error data:\n")
       x̅.forEach(x => console.warn(x))
    }
-   throw new Error("User error")
+   throw new Error("User error: " + msg)
 }
 
-export type ValId = Tagged<"val">
-export type ExplId = Tagged<"expl">
+export type ValId = Tagged<"v">
+export type ExplId = Tagged<"t">
 
 export module Eval {
 
@@ -62,7 +63,7 @@ export module Eval {
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
-            kᵥ: ValId = tagged(def, "val")
+            kᵥ: ValId = tagged(def, "v")
       return ExtendEnv.make(closeDefs(δ_0, ρ, δ.tail), def.x.str, Value.closure(kᵥ, def.α, ρ, δ_0, def.σ))
    } else
    if (Nil.is(δ)) {
@@ -84,15 +85,15 @@ export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
       return [f̅.head.ρ, f̅.head.δ]
    } else
    if (Nil.is(f̅)) {
-      return [Env.empty(), Nil.make()]
+      return [Env.empty(), nil()]
    } else {
       return absurd()
    }
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplVal {
-   const k: ExplId = tagged(e, "expl"),
-         kᵥ: ValId = tagged(e, "val")
+   const k: ExplId = tagged(e, "t"),
+         kᵥ: ValId = tagged(e, "v")
    if (e instanceof Expr.ConstInt) {
       return explVal(ρ, empty(k), Value.constInt(kᵥ, e.α, e.val))
    } else
@@ -100,7 +101,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
       return explVal(ρ, empty(k), Value.constStr(kᵥ, e.α, e.val))
    } else
    if (e instanceof Expr.Fun) {
-      return explVal(ρ, empty(k), Value.closure(kᵥ, e.α, ρ, Nil.make(), e.σ))
+      return explVal(ρ, empty(k), Value.closure(kᵥ, e.α, ρ, nil(), e.σ))
    } else
    if (e instanceof Expr.PrimOp) {
       return explVal(ρ, empty(k), Value.primOp(kᵥ, e.α, e.op))

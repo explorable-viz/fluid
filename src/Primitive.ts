@@ -1,13 +1,12 @@
+import { Annotation, ann } from "./util/Annotated"
 import { assert } from "./util/Core"
-import { Persistent, PersistentObject, ν, make } from "./util/Persistent"
-import { ann } from "./Annotated"
-import { Nil } from "./BaseTypes"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
+import { ν } from "./util/Versioned"
+import { nil } from "./BaseTypes"
 import { Env, ExtendEnv } from "./Env"
 import { Value } from "./ExplVal"
 import { Expr, Lex } from "./Expr"
 import { ValId, tagged } from "./Eval"
-
-import { Annotation } from "./Annotated";
 
 export type PrimResult<K> = [Value, K]
 type Unary<T, V> = (x: T) => (k: PersistentObject, α: Annotation) => V
@@ -42,7 +41,7 @@ export class BinaryBody implements PersistentObject {
 
 export abstract class PrimOp implements PersistentObject {
    name: string
-   abstract constructor_ (...args: Persistent[]): void // TS requires duplicate def
+   abstract constructor_ (...v̅: Persistent[]): void
 }
 
 export class UnaryOp extends PrimOp {
@@ -105,11 +104,11 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
 ])
 
 function __true (k: ValId, α: Annotation): Value.Constr {
-   return Value.constr(k, α, Lex.Ctr.make("True"), Nil.make())
+   return Value.constr(k, α, Lex.ctr("True"), nil())
 }
 
 function __false (k: ValId, α: Annotation): Value.Constr {
-   return Value.constr(k, α, Lex.Ctr.make("False"), Nil.make())
+   return Value.constr(k, α, Lex.ctr("False"), nil())
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
@@ -123,11 +122,11 @@ export function intToString (x: Value.ConstInt): (k: ValId, α: Annotation) => V
 
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
 export function equalInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.Constr {
-   return x.val === y.val ? __true : __false
+   return x.val.valueOf() === y.val.valueOf() ? __true : __false
 }
 
 export function equalStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.Constr {
-   return x.val === y.val ? __true : __false
+   return x.val.valueOf() === y.val.valueOf() ? __true : __false
 }
 
 export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.Constr {
@@ -147,32 +146,32 @@ export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: A
 }
 
 export function minus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
-   return (k, α) => Value.constInt(k, α, x.val - y.val)
+   return (k, α) => Value.constInt(k, α, x.val.valueOf() - y.val.valueOf())
 }
 
 export function plus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
-   return (k, α) => Value.constInt(k, α, x.val + y.val)
+   return (k, α) => Value.constInt(k, α, x.val.valueOf() + y.val.valueOf())
 }
 
 export function times (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
-   return (k, α) => Value.constInt(k, α, x.val * y.val)
+   return (k, α) => Value.constInt(k, α, x.val.valueOf() * y.val.valueOf())
 }
 
 export function div (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
    // Apparently this will round in the right direction.
-   return (k, α) => Value.constInt(k, α, ~~(x.val / y.val))
+   return (k, α) => Value.constInt(k, α, ~~(x.val.valueOf() / y.val.valueOf()))
 }
 
 export function concat (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.ConstStr {
-   return (k, α) => Value.constStr(k, α, x.val + y.val)
+   return (k, α) => Value.constStr(k, α, x.val.valueOf() + y.val.valueOf())
 }
 
 // Only primitive with identifiers as names are first-class, and therefore appear in the prelude.
 export function prelude (): Env {
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
-      const e: Expr = Expr.PrimOp.at(ν(), ann.top, op),
-            kᵥ: ValId = tagged(e, "val")
+      const e: Expr = Expr.primOp(ν(), ann.top, op),
+            kᵥ: ValId = tagged(e, "v")
       ρ = ExtendEnv.make(ρ, x, Value.primOp(kᵥ, e.α, op))
    })
    return ρ

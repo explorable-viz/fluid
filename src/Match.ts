@@ -1,7 +1,7 @@
+import { Annotation, ann } from "./util/Annotated"
 import { absurd } from "./util/Core"
-import { asVersioned } from "./util/Persistent"
-import { Annotation, ann } from "./Annotated"
-import { Cons, List, Nil, Pair } from "./BaseTypes"
+import { asVersioned } from "./util/Versioned"
+import { Cons, List, Nil, Pair, cons, nil, pair } from "./BaseTypes"
 import { Env } from "./Env"
 import { ExplVal, Match, Value, explMatch, explVal } from "./ExplVal"
 import { ValId, error } from "./Eval"
@@ -23,15 +23,13 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Match.Plug<K,
    if (Trie.Constr.is(σ)) {
       if (v instanceof Value.Constr) {
          let Ψκ_α: [Match.Args.Plug<K, Match.Args<K>>, Annotation] // actually may be null, but TypeScript confused
-         // const Ψ: Args<K> = as(__nonNull(get(this.cases, this.v.ctr.str)), Args.Args)
-         // return Ψ.ρ
          const cases: FiniteMap<string, Args<K> | Match.Args<K>> = σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
             if (v.ctr.str === ctr) {
                const [Ψκ, α] = matchArgs(v.args, Π)
                Ψκ_α = [Ψκ, α]
-               return Pair.make(ctr, Ψκ.Ψ)
+               return pair(ctr, Ψκ.Ψ)
             } else {
-               return Pair.make(ctr, Π)
+               return pair(ctr, Π)
             }
          })
          if (Ψκ_α! === undefined) {
@@ -52,22 +50,22 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Match.Plug<K,
 export function unmatch<K extends Kont<K>> ({ξ, κ}: Match.Plug<K, Match<K>>, α: Annotation): [Value, Trie<K>] {
    if (Match.Var.is(ξ)) {
       if (ξ.ρ.has(ξ.x.str)) {
-         return [ξ.ρ.get(ξ.x.str)!, Trie.Var.make(ξ.x, κ)]
+         return [ξ.ρ.get(ξ.x.str)!, Trie.var_(ξ.x, κ)]
       } else {
          return absurd()
       }
    } else 
    if (Match.Constr.is(ξ)) {
       let tus: List<ExplVal> // actually may be null, but TypeScript assigns type "never"
-      const σ: Trie<K> = Trie.Constr.make(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<K>> => {
+      const σ: Trie<K> = Trie.constr(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<K>> => {
          if (Π_or_Ψ instanceof Match.Args.Args) {
             const [tusʹ, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Match.Args.plug(Π_or_Ψ, κ), α)
             tus = tusʹ
-            return Pair.make(ctr, Π)
+            return pair(ctr, Π)
          } else
          if (Π_or_Ψ instanceof Args.Args) {
             const Π_or_Ψʹ: Args.Args<K> = Π_or_Ψ  // recover type lost by instanceof
-            return Pair.make(ctr, Π_or_Ψʹ)
+            return pair(ctr, Π_or_Ψʹ)
          } else {
             return absurd()
          }
@@ -104,10 +102,10 @@ function unmatchArgs<K extends Kont<K>> ({Ψ, κ}: Match.Args.Plug<K, Match.Args
       const [tu̅, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Match.Args.plug(Ψ.Ψ, κ), α),
             {ρ, t, ξ} = Ψ.tξ,
             [u, σ] = unmatch(Match.plug(ξ, Π), α)
-      return [Cons.make(explVal(ρ, t, u), tu̅), Args.Next.make(σ)]
+      return [cons(explVal(ρ, t, u), tu̅), Args.next(σ)]
    } else
    if (Match.Args.End.is(Ψ)) {
-      return [Nil.make(), Args.End.make(κ)]
+      return [nil(), Args.end(κ)]
    } else {
       return absurd()
    }

@@ -1,6 +1,6 @@
 import { absurd } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
-import { Cons, List, Nil } from "./BaseTypes"
+import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { Value } from "./ExplVal"
 
 // Environments are snoc lists. An evaluation id is an expression id paired with the identity of all 
@@ -13,7 +13,7 @@ export abstract class Env implements PersistentObject {
    // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
    abstract entries (): List<Value>
    abstract get (k: string): Value | undefined
-   abstract constructor_ (...args: Persistent[]): void
+   abstract constructor_ (...v̅: Persistent[]): void
 
    has (k: string): boolean {
       return this.get(k) !== undefined
@@ -27,8 +27,8 @@ export abstract class Env implements PersistentObject {
       return ExtendEnv.make(Env.empty(), k, v)
    }
 
-   static extend (ρ: Env, kvs: [string, Value][]): Env {
-      kvs.forEach(([k, v]: [string, Value]) => {
+   static extend (ρ: Env, kv̅: [string, Value][]): Env {
+      kv̅.forEach(([k, v]: [string, Value]) => {
          ρ = ExtendEnv.make(ρ, k, v)
       })
       return ρ
@@ -55,7 +55,7 @@ export class EmptyEnv extends Env {
    }
 
    entries (): Nil<Value> {
-      return Nil.make()
+      return nil()
    }
 
    get (k: string): undefined {
@@ -79,7 +79,7 @@ export class ExtendEnv extends Env {
    }
 
    entries (): Cons<Value> {
-      return Cons.make(this.v, this.ρ.entries())
+      return cons(this.v, this.ρ.entries())
    }
 
    get (k: string): Value | undefined {
