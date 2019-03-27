@@ -54,8 +54,7 @@ function populateScene (): void {
    here
       .to(Expr.Let, "e")
       .constrArg("Cons", 0)
-      .constrArg("Pair", 1)
-      .notNeed()
+      .constrArg("Pair", 1).notNeed()
    const v: Value = Eval.eval_(ρ, e).v,
          elems: List<GraphicsElement> = as(reflect(v), List)
    for (let elemsʹ: List<GraphicsElement> = elems; Cons.is(elemsʹ);) {

@@ -69,7 +69,7 @@ export function objects3D (elem: GraphicsElement): THREE.Object3D[] {
       return [path_stroke(elem.points)]
    } else
    if (elem instanceof RectFill) {
-      return [rect_fill(elem.points), path_stroke(elem.points)]
+      return [rect_fill(elem.points)] //, path_stroke(elem.points)]
    } else {
       return absurd()
    }
@@ -87,7 +87,7 @@ function newPathGeometry (points: List<Point>): THREE.Geometry {
 
 function path_stroke (points: List<Point>): THREE.Object3D {
    return new THREE.Line(
-      newPathGeometry(points), 
+      newPathGeometry(points),
       new THREE.LineBasicMaterial({ 
          color: 0x000000 
       })
