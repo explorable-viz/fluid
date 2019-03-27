@@ -66,10 +66,10 @@ export class RectFill extends GraphicsElement {
 
 export function objects3D (elem: GraphicsElement): THREE.Object3D[] {
    if (elem instanceof PathStroke) {
-      return [path_stroke(elem.points)]
+      return pathStroke(elem.points)
    } else
    if (elem instanceof RectFill) {
-      return [rect_fill(elem.points)]
+      return rectFill(elem.points)
    } else {
       return absurd()
    }
@@ -85,21 +85,44 @@ function newPathGeometry (points: List<Point>): THREE.Geometry {
    return geometry
 }
 
-function path_stroke (points: List<Point>): THREE.Object3D {
-   return new THREE.Line(
+function circle (pos: Point, radius: number): THREE.Object3D {
+   const material = new THREE.LineBasicMaterial({ color: 0x0000ff }),
+         geometry = new THREE.CircleGeometry( radius, 64 )
+   geometry.vertices.shift() // remove center vertex
+   const circle: THREE.LineLoop = new THREE.LineLoop(geometry, material)
+   circle.position.x = pos.x.n
+   circle.position.y = pos.y.n
+   return circle
+}
+
+function pointHighlights (points: List<Point>): THREE.Object3D[] {
+   const highlights: THREE.Object3D[] = []
+   for (; Cons.is(points); points = points.tail) {
+      const point: Point = points.head
+      if (!point.α) {
+         console.log(point)
+         highlights.push(circle(point, 10))
+      }
+   }
+   return highlights
+}
+
+function pathStroke (points: List<Point>): THREE.Object3D[] {
+   const stroke: THREE.Line = new THREE.Line(
       newPathGeometry(points),
       new THREE.LineBasicMaterial({ 
          color: 0x000000 
       })
    )
+   return [stroke, ...pointHighlights(points)]
 }
 
-function rect_fill (rect_path: List<Point>): THREE.Object3D {
+function rectFill (rect_path: List<Point>): THREE.Object3D[] {
    const geometry: THREE.Geometry = newPathGeometry(rect_path)
    geometry.faces.push(new THREE.Face3(0,1,2))
    geometry.faces.push(new THREE.Face3(2,3,0))
-   return new THREE.Mesh(
+   return [new THREE.Mesh(
       geometry, 
       new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
-   )
+   )]
 }

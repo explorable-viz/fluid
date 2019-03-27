@@ -53,9 +53,9 @@ class Reflect implements PersistentObject {
 }
 
 export function reflect (v: Value): Persistent { 
-   if (!v.α) {
-      console.log(v)
-   }
+// if (!v.α) {
+//    console.log(v)
+// }
    const k: Reflect = Reflect.make(v)
    if (v instanceof Value.ConstInt) {
       return at(k, AnnNumber, v.α, v.val)
@@ -77,3 +77,4 @@ export function reflect (v: Value): Persistent {
       return absurd()
    }
 }
+    
