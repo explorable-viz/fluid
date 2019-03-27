@@ -69,7 +69,7 @@ export function objects3D (elem: GraphicsElement): THREE.Object3D[] {
       return [path_stroke(elem.points)]
    } else
    if (elem instanceof RectFill) {
-      return [rect_fill(elem.points)] //, path_stroke(elem.points)]
+      return [rect_fill(elem.points)]
    } else {
       return absurd()
    }
