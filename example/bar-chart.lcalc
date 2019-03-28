@@ -76,10 +76,10 @@ let axis = fun margin n width → // returns List<List<Point>>
    map (map (translate (0, 0 - margin))) Cons(line, ticks n)
 in
 let rectPath = fun Rect(x, y, w, h) →
-   Cons(Point(x, y),
-   Cons(Point(x + w, y),
-   Cons(Point(x + w, y + h),
-   Cons(Point(x, y + h), Nil))))
+   Cons(Point(0, 0),
+   Cons(Point(w, 0),
+   Cons(Point(w, h),
+   Cons(Point(0, h), Nil))))
 in
 letrec 
    fun renderRects {
