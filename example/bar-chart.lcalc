@@ -37,7 +37,7 @@ let repeat = fun n → iterate n id in
 let tail = fun Cons(x, xs) → xs in
 let point_get_x = fun Point(x, y) → x in
 let point_put_x = fun x Point(_, y) → Point(x, y) in
-let rect_get_w = fun Rect(x, y, w, h) → w in
+let rect_get_w = fun Rect(w, h) → w in
 let incr = fun x get put shape → put (get shape + x) shape in 
 let transpose = fun Point(x, y) → Point(y, x) in 
 let translate = fun (dx, dy) Point(x, y) → Point(x + dx, y + dy) in 
@@ -62,7 +62,7 @@ let
 in
 let width = 6 in
 let sep = width + 1 in
-let rects = map (fun (year, age) → Rect(0, 0, width, age)) data in
+let rects = map (fun (year, age) → Rect(width, age)) data in
 let axis = fun margin n width → // returns List<List<Point>>
    let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
    let ticks = fun n →
@@ -73,7 +73,7 @@ let axis = fun margin n width → // returns List<List<Point>>
    let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
    map (map (translate (0, 0 - margin))) Cons(line, ticks n)
 in
-let rectPath = fun Rect(x, y, w, h) →
+let rectPath = fun Rect(w, h) →
    Cons(Point(0, 0),
    Cons(Point(w, 0),
    Cons(Point(w, h),
