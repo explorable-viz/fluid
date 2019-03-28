@@ -98,7 +98,7 @@ export class Canvas3D {
 
    pathStroke (points: List<Point>): THREE.Object3D[] {
       const stroke: THREE.Line = new THREE.Line(
-         newPathGeometry(points),
+         this.newPathGeometry(points),
          new THREE.LineBasicMaterial({ 
             color: 0x000000 
          })
@@ -107,7 +107,7 @@ export class Canvas3D {
    }
 
    rectFill (rect_path: List<Point>): THREE.Object3D[] {
-      const geometry: THREE.Geometry = newPathGeometry(rect_path)
+      const geometry: THREE.Geometry = this.newPathGeometry(rect_path)
       geometry.faces.push(new THREE.Face3(0,1,2))
       geometry.faces.push(new THREE.Face3(2,3,0))
       return [new THREE.Mesh(
@@ -115,16 +115,16 @@ export class Canvas3D {
          new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
       )]
    }
-}
 
-function newPathGeometry (points: List<Point>): THREE.Geometry {
-   const geometry: THREE.Geometry = new THREE.Geometry
-   while (Cons.is(points)) {
-      const point: Point = as(points.head, Point)
-      geometry.vertices.push(new THREE.Vector3(point.x.n, point.y.n, 0))
-      points = points.tail
-   }
-   return geometry
+   newPathGeometry (points: List<Point>): THREE.Geometry {
+      const geometry: THREE.Geometry = new THREE.Geometry
+      while (Cons.is(points)) {
+         const point: Point = as(points.head, Point)
+         geometry.vertices.push(new THREE.Vector3(point.x.n + this.vec.x, point.y.n + this.vec.y, 0))
+         points = points.tail
+      }
+      return geometry
+   }   
 }
 
 function circle (pos: Point, radius: number): THREE.Object3D {

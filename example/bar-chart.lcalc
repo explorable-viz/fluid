@@ -7,6 +7,11 @@ letrec
       Nil ys → ys;
       Cons(x, xs) ys → Cons(x, concat xs ys)
    };
+   fun intersperse {
+      Nil sep → Nil;
+      Cons(x, Nil) sep → Cons(x, Nil);
+      Cons(x, Cons(y, ys)) sep → Cons(x, Cons(sep, intersperse Cons(y, ys)))
+   };
    fun map f {
       Nil → Nil;
       Cons(x, xs) → Cons(f x, map f xs)
