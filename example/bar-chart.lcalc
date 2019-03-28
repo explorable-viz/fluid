@@ -82,7 +82,7 @@ in
 letrec 
    fun renderRects {
       Nil → Nil;
-      Cons(r, rs) → match r as Rect(x, y, w, h) →
+      Cons(r, rs) → 
          let ps = rectPath r in
          Cons(RectFill(ps), Cons(PathStroke(ps), Cons(Translate(Point(sep, 0)), renderRects(rs))))
    }

@@ -96,6 +96,7 @@ export class Canvas3D {
       }
    }
 
+   // Assume closed path for now.
    pathStroke (points: List<Point>): THREE.Object3D[] {
       const stroke: THREE.LineLoop = new THREE.LineLoop(
          this.newPathGeometry(points),
