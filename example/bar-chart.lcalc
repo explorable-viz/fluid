@@ -84,7 +84,7 @@ letrec
       Nil → Nil;
       Cons(r, rs) → match r as Rect(x, y, w, h) →
          let ps = rectPath r in
-         Cons(RectFill(ps), Cons(PathStroke(Cons(Point(x, y + h), ps)), Cons(Translate(Point(sep, 0)), renderRects(rs))))
+         Cons(RectFill(ps), Cons(PathStroke(ps), Cons(Translate(Point(sep, 0)), renderRects(rs))))
    }
 in
    // required to be List<GraphicsElement>
