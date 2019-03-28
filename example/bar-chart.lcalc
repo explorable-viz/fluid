@@ -7,6 +7,11 @@ letrec
       Nil ys → ys;
       Cons(x, xs) ys → Cons(x, concat xs ys)
    };
+   fun intersperse {
+      Nil sep → Nil;
+      Cons(x, Nil) sep → Cons(x, Nil);
+      Cons(x, Cons(y, ys)) sep → Cons(x, Cons(sep, intersperse Cons(y, ys)))
+   };
    fun map f {
       Nil → Nil;
       Cons(x, xs) → Cons(f x, map f xs)
@@ -32,9 +37,7 @@ let repeat = fun n → iterate n id in
 let tail = fun Cons(x, xs) → xs in
 let point_get_x = fun Point(x, y) → x in
 let point_put_x = fun x Point(_, y) → Point(x, y) in
-let rect_get_x = fun Rect(x, y, w, h) → x in
-let rect_put_x = fun x Rect(_, y, w, h) → Rect(x, y, w, h) in
-let rect_get_w = fun Rect(x, y, w, h) → w in
+let rect_get_w = fun Rect(w, h) → w in
 let incr = fun x get put shape → put (get shape + x) shape in 
 let transpose = fun Point(x, y) → Point(y, x) in 
 let translate = fun (dx, dy) Point(x, y) → Point(x + dx, y + dy) in 
@@ -57,18 +60,12 @@ let
    spaceRight = fun sep put_x shapes →
       zipW (fun (x, shape) → put_x x shape) (iterate (length shapes) (fun x → x + sep) 0) shapes
 in
-let
-   // discard x coordinates other than the first
-   spaceRight' = fun sep get_x put_x Cons(shape, shapes) →
-      Cons(shape, zipW (fun (x, shape) → put_x x shape) (tail (iterate (length shapes + 1) (fun x → x + sep) (get_x shape))) shapes)
-in
 let width = 6 in
 let sep = width + 1 in
-let rects = map (fun (year, age) → Rect(0, 0, width, age)) data in
-let rects' = spaceRight' sep rect_get_x rect_put_x rects in
+let rects = map (fun (year, age) → Rect(width, age)) data in
 let axis = fun margin n width → // returns List<List<Point>>
    let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
-   let ticks = fun n → 
+   let ticks = fun n →
       spaceRight width
          (fun x' → map (point_put_x x'))
          (repeat n tick)
@@ -76,23 +73,23 @@ let axis = fun margin n width → // returns List<List<Point>>
    let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
    map (map (translate (0, 0 - margin))) Cons(line, ticks n)
 in
-let rectPath = fun Rect(x, y, w, h) →
-   Cons(Point(x, y),
-   Cons(Point(x + w, y),
-   Cons(Point(x + w, y + h),
-   Cons(Point(x, y + h), Nil))))
+let rectPath = fun Rect(w, h) →
+   Cons(Point(0, 0),
+   Cons(Point(w, 0),
+   Cons(Point(w, h),
+   Cons(Point(0, h), Nil))))
 in
 letrec 
    fun renderRects {
       Nil → Nil;
-      Cons(r, rs) → match r as Rect(x, y, w, h) →
+      Cons(r, rs) → 
          let ps = rectPath r in
-         Cons(RectFill(ps), Cons(PathStroke(Cons(Point(x, y + h), ps)), renderRects(rs)))
+         Cons(RectFill(ps), Cons(PathStroke(ps), Cons(Translate(Point(sep, 0)), renderRects(rs))))
    }
 in
    // required to be List<GraphicsElement>
    concat
       (map (fun ps → PathStroke(ps)) (axis 1 5 7))
       (concat
-         (map (fun ps → PathStroke(map transpose ps)) (axis 1 (length rects') width))
-         (renderRects rects'))
+         (map (fun ps → PathStroke(map transpose ps)) (axis 1 (length rects) width))
+         (renderRects rects))
