@@ -4,11 +4,7 @@
 
 # Installation
 
-- Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/). Then:
-
-  ```bash
-  npm install
-  ```
+- Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/). Then run `npm install`.
 
 - To run the tests in debug mode with Chrome, run `karma start --browsers=Chrome --singleRun=false`.
 
