@@ -68,7 +68,7 @@ let rects = map (fun (year, age) → Rect(0, 0, width, age)) data in
 let rects' = spaceRight' sep rect_get_x rect_put_x rects in
 let axis = fun margin n width → // returns List<List<Point>>
    let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
-   let ticks = fun n → 
+   let ticks = fun n →
       spaceRight width
          (fun x' → map (point_put_x x'))
          (repeat n tick)

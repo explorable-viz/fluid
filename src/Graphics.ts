@@ -64,14 +64,56 @@ export class RectFill extends GraphicsElement {
    }
 }
 
-export function objects3D (elem: GraphicsElement): THREE.Object3D[] {
-   if (elem instanceof PathStroke) {
-      return pathStroke(elem.points)
-   } else
-   if (elem instanceof RectFill) {
-      return rectFill(elem.points)
-   } else {
-      return absurd()
+export class Translate extends GraphicsElement {
+   vec: Point
+
+   constructor_ (α: Annotation, vec: Point): void {
+      this.α = α
+      this.vec = vec
+   }
+}
+
+export class Canvas3D {
+   vec: THREE.Vector2 // current linear transformation (so far only translation)
+
+   constructor () {
+      this.vec = new THREE.Vector2(0, 0)
+   }
+
+   objects3D (elem: GraphicsElement): THREE.Object3D[] {
+      if (elem instanceof PathStroke) {
+         return this.pathStroke(elem.points)
+      } else
+      if (elem instanceof RectFill) {
+         return this.rectFill(elem.points)
+      } else
+      if (elem instanceof Translate) {
+         this.vec.setX(this.vec.x + elem.vec.x.n)
+         this.vec.setY(this.vec.y + elem.vec.y.n)
+         return []
+      } else {
+         return absurd()
+      }
+   }
+
+   pathStroke (points: List<Point>): THREE.Object3D[] {
+      const stroke: THREE.Line = new THREE.Line(
+         newPathGeometry(points),
+         new THREE.LineBasicMaterial({ 
+            color: 0x000000 
+         })
+      )
+      return [stroke, ...pointHighlights(points)]
+   }
+
+   rectFill (rect_path: List<Point>): THREE.Object3D[] {
+      const geometry: THREE.Geometry = newPathGeometry(rect_path)
+      geometry.faces.push(new THREE.Face3(0,1,2))
+      geometry.faces.push(new THREE.Face3(2,3,0))
+      return [new THREE.Mesh(
+         geometry, 
+         new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
+      )]
    }
 }
 
@@ -105,24 +147,4 @@ function pointHighlights (points: List<Point>): THREE.Object3D[] {
       }
    }
    return highlights
-}
-
-function pathStroke (points: List<Point>): THREE.Object3D[] {
-   const stroke: THREE.Line = new THREE.Line(
-      newPathGeometry(points),
-      new THREE.LineBasicMaterial({ 
-         color: 0x000000 
-      })
-   )
-   return [stroke, ...pointHighlights(points)]
-}
-
-function rectFill (rect_path: List<Point>): THREE.Object3D[] {
-   const geometry: THREE.Geometry = newPathGeometry(rect_path)
-   geometry.faces.push(new THREE.Face3(0,1,2))
-   geometry.faces.push(new THREE.Face3(2,3,0))
-   return [new THREE.Mesh(
-      geometry, 
-      new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
-   )]
 }
