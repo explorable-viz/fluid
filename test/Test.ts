@@ -37,9 +37,13 @@ describe("example", () => {
 				setup (): void {
 					this.val
 						.need()
+						.val_constrArg("Graphic", 0).value()
 						.val_constrArg("Cons", 1).value()
 						.val_constrArg("Cons", 1).value()
 						.val_constrArg("Cons", 0).value().need()
+						.val_constrArg("Graphic", 0).value()
+						.val_constrArg("Cons", 1).value()
+						.val_constrArg("Cons", 0).value()
 						.val_constrArg("PathStroke", 0).value()
 						.val_constrArg("Cons", 0).value().need() // first point
 				}

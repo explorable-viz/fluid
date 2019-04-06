@@ -4,9 +4,8 @@ in
 let width = 6 in
 let sep = width + 1 in
 let rects = map (fun (year, age) → Rect(width, age)) data in
-// required to be List<GraphicsElement>
-concat
-   (map (fun ps → PathStroke(ps)) (axis 1 5 7))
-   (concat
-      (map (fun ps → PathStroke(map transpose ps)) (axis 1 (length rects) width))
-      (renderRects sep rects))
+Graphic(
+   Cons(Graphic(map (fun ps → PathStroke(ps)) (axis 1 5 7)),
+   Cons(Graphic(map (fun ps → PathStroke(map transpose ps)) (axis 1 (length rects) width)),
+   Cons(Graphic(renderRects sep rects),Nil)))
+)
