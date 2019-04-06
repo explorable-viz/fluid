@@ -263,7 +263,6 @@ describe("example", () => {
 				setup (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.LetRec, "e")
  						.to(Expr.App, "arg")
  						.constrArg("Cons", 1)
  						.constrArg("Cons", 1).notNeed()

@@ -39,12 +39,6 @@ let axis = fun margin n width → // returns List<List<Point>>
    let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
    map (map (translate (0, 0 - margin))) Cons(line, ticks n)
 in
-let rectPath = fun Rect(w, h) →
-   Cons(Point(0, 0),
-   Cons(Point(w, 0),
-   Cons(Point(w, h),
-   Cons(Point(0, h), Nil))))
-in
 letrec 
    fun renderRects {
       Nil → Nil;

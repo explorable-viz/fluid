@@ -1,2 +1,8 @@
 fun transpose Point(x, y) → Point(y, x);
-fun translate (dx, dy) Point(x, y) → Point(x + dx, y + dy)
+fun translate (dx, dy) Point(x, y) → Point(x + dx, y + dy);
+
+fun rectPath Rect(w, h) →
+   Cons(Point(0, 0),
+   Cons(Point(w, 0),
+   Cons(Point(w, h),
+   Cons(Point(0, h), Nil))))
