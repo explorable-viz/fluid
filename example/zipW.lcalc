@@ -1,12 +1,3 @@
-letrec
-   fun zipW op {
-      Nil ys → Nil;
-      Cons(x, xs) {
-         Nil → Nil;
-         Cons(y, ys) → Cons(op(x, y), zipW op xs ys)
-      }
-   }
-in
 zipW
    (fun (x, y) → Point(x, y))
    Cons(10, Cons(12, Cons(20, Nil)))

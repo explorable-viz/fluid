@@ -283,18 +283,17 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
+						.push()
+							.toRecDef("zipW").needed()
+							.to(Expr.RecDef, "σ")
+							.to(Trie.Var, "κ").needed()
+							.pop()
 						.skipImports()
 						.push()
-							.to(Expr.LetRec, "e")
 							.to(Expr.App, "arg").needed().pop()
 						.push()
-							.to(Expr.LetRec, "e")
-						  	.to(Expr.App, "func")
+							.to(Expr.App, "func")
 						  	.to(Expr.App, "arg").needed().pop()
-						.to(Expr.LetRec, "δ")
-						.toElem(0).needed()
-						.to(Expr.RecDef, "σ")
-						.to(Trie.Var, "κ").needed()
 				}
 			})(e)
 			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
@@ -306,7 +305,6 @@ describe("example", () => {
 				expect (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.LetRec, "e")
 						.to(Expr.App, "func")
 						.to(Expr.App, "func")
 						.to(Expr.App, "arg")
