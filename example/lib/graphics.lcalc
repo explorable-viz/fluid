@@ -25,13 +25,9 @@ fun rectPath Rect(w, h) →
    Cons(Point(w, h),
    Cons(Point(0, h), Nil))));
 
-// TODO: reimplement using map.
-fun renderRects {
-   Nil → Nil;
-   Cons(r, rs) → 
-      let ps = rectPath r in
-      Cons(Graphic(Cons(RectFill(ps), Cons(PathStroke(ps), Nil))), renderRects rs)
-};
+// Rect → Graphic
+fun renderRect r → 
+   let ps = rectPath r in Graphic(Cons(RectFill(ps), Cons(PathStroke(ps), Nil)));
 
 // Int → Int → Int → List<List<Point>>
 fun axis margin n width → 
