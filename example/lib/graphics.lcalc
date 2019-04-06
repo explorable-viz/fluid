@@ -26,4 +26,15 @@ fun renderRects sep {
    Cons(r, rs) → 
       let ps = rectPath r in
       Cons(RectFill(ps), Cons(PathStroke(ps), Cons(Translate(Point(sep, 0)), renderRects sep rs)))
-}
+};
+
+// returns List<List<Point>>
+fun axis margin n width → 
+   let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
+   let ticks = fun n →
+      spaceRight width
+         (fun x' → map (point_put_x x'))
+         (repeat n tick)
+   in
+   let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
+   map (map (translate (0, 0 - margin))) Cons(line, ticks n)
