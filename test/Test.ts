@@ -3,7 +3,7 @@
 import { NonEmpty } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { Value } from "../src/ExplVal"
-import { BwdSlice, FwdSlice, TestFile, initialise, loadExample, parseExample, runExample } from "./util/Core"
+import { BwdSlice, FwdSlice, initialise, loadExample, parseExample, runExample } from "./util/Core"
 
 import Trie = Expr.Trie
 
@@ -14,13 +14,14 @@ before((done: MochaDone) => {
 
 describe("example", () => {
 	describe("arithmetic", () => {
-		const file: TestFile = loadExample("arithmetic")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("arithmetic"))
 			runExample(e)
 			new (class extends FwdSlice {
 				setup (): void {
-					this.expr.to(Expr.BinaryApp, "e1").notNeed()
+					this.expr
+						.skipImports()
+						.to(Expr.BinaryApp, "e1").notNeed()
 				}
 				expect (): void {
 					this.val.notNeeded()
@@ -30,9 +31,8 @@ describe("example", () => {
 	})
 
 	describe("bar-chart", () => {
-		const file: TestFile = loadExample("bar-chart")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("bar-chart"))
 			new (class extends BwdSlice {
 				setup (): void {
 					this.val
@@ -51,29 +51,25 @@ describe("example", () => {
 	})
 
 	describe("compose", () => {
-		const file: TestFile = loadExample("compose")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			runExample(parseExample(loadExample("compose")))
 		})
 	})
 
 	describe("factorial", () => {
-		const file: TestFile = loadExample("factorial")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			runExample(parseExample(loadExample("factorial")))
 		})
 	})
 
 	describe("filter", () => {
-		const file: TestFile = loadExample("filter")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("filter"))
 			runExample(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
-						.to(Expr.LetRec, "δ")
-						.toElem(0)
+						.toRecDef("filter")
 						.to(Expr.RecDef, "σ")
 						.to(Trie.Var, "κ")
 						.to(Expr.Fun, "σ")
@@ -100,21 +96,19 @@ describe("example", () => {
 	})
 
 	describe("foldr_sumSquares", () => {
-		const file: TestFile = loadExample("foldr_sumSquares")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			runExample(parseExample(loadExample("foldr_sumSquares")))
 		})
 	})
 
 	describe("length", () => {
-		const file: TestFile = loadExample("length")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("length"))
 			// erasing the elements doesn't affect the count:
 			let test = new (class extends FwdSlice {
 				setup (): void {
 					this.expr
-						.to(Expr.LetRec, "e")
+						.skipImports()
 						.to(Expr.App, "arg")
 						.push().constrArg("Cons", 0).notNeed().pop()
 						.push().constrArg("Cons", 0).notNeed().pop()
@@ -141,7 +135,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
-						.to(Expr.LetRec, "e")
+						.skipImports()
 						.to(Expr.App, "arg").needed()
 						.push().constrArg("Cons", 0).notNeeded().pop()
 						.constrArg("Cons", 1).needed()
@@ -153,20 +147,19 @@ describe("example", () => {
 	})
 
 	describe("lexicalScoping", () => {
-		const file: TestFile = loadExample("lexicalScoping")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			runExample(parseExample(loadExample("lexicalScoping")))
 		})
 	})
 
 	describe("lookup", () => {
-		const file: TestFile = loadExample("lookup")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("lookup"))
 			runExample(e)
 			const last = new (class extends FwdSlice {
 				setup (): void {
 					this.expr
+						.skipImports()
 						.to(Expr.Let, "σ")
 						.to(Trie.Var, "κ")
 						.to(Expr.LetRec, "e")
@@ -195,15 +188,14 @@ describe("example", () => {
 	})
 
 	describe("map", () => {
-		const file: TestFile = loadExample("map")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("map"))
 			runExample(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
-						.to(Expr.LetRec, "e")
- 						.to(Expr.Let, "σ")
+						.skipImports()
+						.to(Expr.Let, "σ")
  						.to(Trie.Var, "κ")
 					 	.to(Expr.App, "arg")
 						.constrArg("Cons", 0).notNeed()
@@ -218,16 +210,14 @@ describe("example", () => {
 	})
 
 	describe("mergeSort", () => {
-		const file: TestFile = loadExample("mergeSort")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			runExample(parseExample(loadExample("mergeSort")))
 		})
 	})
 
 	describe("normalise", () => {
-		const file: TestFile = loadExample("normalise")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("normalise"))
 			// retaining only pair constructor discards both subcomputations:
 			new (class extends BwdSlice {
 				setup (): void {
@@ -235,6 +225,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
+						.skipImports()
 						.push().to(Expr.Let, "e").notNeeded().pop()
 						.to(Expr.Let, "σ")
 						.to(Trie.Var, "κ")
@@ -249,6 +240,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
+						.skipImports()
 						.push().to(Expr.Let, "e").needed().pop()
 						.to(Expr.Let, "σ")
 						.to(Trie.Var, "κ")
@@ -259,14 +251,13 @@ describe("example", () => {
 	})
 
 	describe("reverse", () => {
-		const file: TestFile = loadExample("reverse")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("reverse"))
 			runExample(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
-						.to(Expr.LetRec, "e")
+						.skipImports()
  						.to(Expr.App, "arg")
  						.constrArg("Cons", 1)
  						.constrArg("Cons", 1).notNeed()
@@ -283,27 +274,26 @@ describe("example", () => {
 	})
 
 	describe("zipW", () => {
-		const file: TestFile = loadExample("zipW")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("zipW"))
 			// needing first cons cell of output needs same amount of input lists
-			const last = new (class extends BwdSlice {
+			new (class extends BwdSlice {
 				setup (): void {
 					this.val.need()
 				}
 				expect (): void {
 					this.expr
 						.push()
-							.to(Expr.LetRec, "e")
+							.toRecDef("zipW").needed()
+							.to(Expr.RecDef, "σ")
+							.to(Trie.Var, "κ").needed()
+							.pop()
+						.skipImports()
+						.push()
 							.to(Expr.App, "arg").needed().pop()
 						.push()
-							.to(Expr.LetRec, "e")
-						  	.to(Expr.App, "func")
+							.to(Expr.App, "func")
 						  	.to(Expr.App, "arg").needed().pop()
-						.to(Expr.LetRec, "δ")
-						.toElem(0).needed()
-						.to(Expr.RecDef, "σ")
-						.to(Trie.Var, "κ").needed()
 				}
 			})(e)
 			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
@@ -314,7 +304,31 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
-						.to(Expr.LetRec, "e")
+						.push()
+							.toRecDef("zipW")
+							.to(Expr.RecDef, "σ")
+							.to(Trie.Var, "κ")
+							.to(Expr.Fun, "σ")
+							.to(Trie.Constr, "cases")
+							.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
+							.to(NonEmpty, "left")
+							.nodeValue()			 
+							.arg(Trie.Var, "κ")
+							.arg(Trie.Var, "κ")
+							.end().needed()
+							.to(Expr.Fun, "σ")
+							.to(Trie.Constr, "cases")
+							.to(NonEmpty, "left")
+							.nodeValue()			 
+							.arg(Trie.Var, "κ")
+							.arg(Trie.Var, "κ")
+							.end().needed()
+							.constrArg("Cons", 0).needed()
+							.to(Expr.App, "arg").needed() // application of op
+							.push().constrArg("Pair", 0).notNeeded().pop()
+							.push().constrArg("Pair", 1).notNeeded().pop()
+							.pop()
+						.skipImports()
 						.to(Expr.App, "func")
 						.to(Expr.App, "func")
 						.to(Expr.App, "arg")
@@ -324,26 +338,6 @@ describe("example", () => {
 						.arg(Trie.Var, "κ")
 						.arg(Trie.Var, "κ")
 						.end().needed()
-						.goto(last.expr.o) // bit hacky
-						.to(Expr.Fun, "σ")
-						.to(Trie.Constr, "cases")
-						.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
-						.to(NonEmpty, "left")
-						.nodeValue()			 
-						.arg(Trie.Var, "κ")
-						.arg(Trie.Var, "κ")
-						.end().needed()
-						.to(Expr.Fun, "σ")
-						.to(Trie.Constr, "cases")
-						.to(NonEmpty, "left")
-						.nodeValue()			 
-						.arg(Trie.Var, "κ")
-						.arg(Trie.Var, "κ")
-						.end().needed()
-						.constrArg("Cons", 0).needed()
-						.to(Expr.App, "arg").needed() // application of op
-						.push().constrArg("Pair", 0).notNeeded().pop()
-						.push().constrArg("Pair", 1).notNeeded()
 				}
 			})(e)
 		})

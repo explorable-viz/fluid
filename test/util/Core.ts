@@ -1,7 +1,7 @@
 import { ann } from "../../src/util/Annotated"
 import { __nonNull, assert } from "../../src/util/Core"
-import { World, setall } from "../../src/util/Versioned"
-import { parse } from "../../src/util/parse/Core"
+import { World, setall, ν } from "../../src/util/Versioned"
+import { successfulParse } from "../../src/util/parse/Core"
 import { initDataTypes } from "../../src/DataType"
 import { Env } from "../../src/Env"
 import { Eval } from "../../src/Eval"
@@ -77,9 +77,17 @@ export function merge<K extends Kont<K>> (σ1: Trie.Constr<K>, σ2: Trie.Constr<
    return Trie.constr(unionWith(σ1.cases, σ2.cases, (v: Args<K>, vʹ: Args<K>) => assert(false)))
 }
 
-export function parseExample (src: string | null): Expr {
-   const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
-   return instantiate(ρ, e)
+// Kindergarten modules: load another file as though it were a letrec block, with body e.
+export function prependModule (src: string, e: Expr): Expr.LetRec {
+   return Expr.letRec(ν(), ann.top, successfulParse(Parse.recDefs1, src), e)
+}
+
+export function parseExample (src: string): Expr {
+   return instantiate(ρ, 
+      prependModule(loadLib("prelude"), 
+      prependModule(loadLib("graphics"), 
+      successfulParse(Parse.expr, src)))
+   )
 }
 
 export function runExample (e: Expr): void {
@@ -91,7 +99,7 @@ export function runExample (e: Expr): void {
    const here: Cursor = new Cursor(tv)
    here.to(ExplVal, "v")
        .at(Value.Value, v => v.setα(ann.top))
-   let eʹ: Expr = Eval.uneval(tv)
+   const eʹ: Expr = Eval.uneval(tv)
    assert(e === eʹ)
 }
 
@@ -101,23 +109,27 @@ export let ρ: Env = prelude()
 export class TestFile {
    text: string | null
 
-   constructor() {
+   constructor () {
       this.text = null
    }
 }
 
 // Maybe there's a way to use ES6 promises instead.
-export function loadTestFile (folder: string, file: string): TestFile {
+export function loadTestFile (folder: string, file: string): string {
    let testFile: TestFile = new TestFile
-   const xmlhttp = new XMLHttpRequest
+   const xmlhttp: XMLHttpRequest = new XMLHttpRequest
    xmlhttp.open("GET", folder + "/" + file + ".lcalc", false)
    xmlhttp.send()
    if (xmlhttp.status === 200) {
-     testFile.text = xmlhttp.responseText
+      testFile.text = xmlhttp.responseText
    }
-   return testFile
+   return __nonNull(testFile.text)
 }
 
-export function loadExample (file: string): TestFile {
-	return loadTestFile("example", file)
+export function loadExample (file: string): string {
+	return __nonNull(loadTestFile("example", file))
+}
+
+export function loadLib (file: string): string {
+	return __nonNull(loadTestFile("example/lib", file))
 }

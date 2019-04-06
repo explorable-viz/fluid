@@ -178,8 +178,12 @@ const whitespace: Parser<Whitespace> = token(choice([horizWhitespace, newLines])
 const singleLineComment: Parser<SingleLineComment> = token(regExp(/^\/\/.*/), SingleLineComment)
 const ignore: Parser<Lexeme[]> = repeat(choice<Lexeme>([whitespace, singleLineComment]))
 
+export function successfulParse<T extends SyntaxNode>(p: Parser<T>, str: string): T {
+   return __nonNull(parse(p, str)).ast
+}
+
 // Match the supplied string with leading whitespace/comments, p, and then eof.
-export function parse<T extends SyntaxNode>(p: Parser<T>, str: string): ParseResult<T> | null {
+function parse<T extends SyntaxNode>(p: Parser<T>, str: string): ParseResult<T> | null {
    const p_: Parser<T> = withAction(
       seq(seq(ignore, p), eof),
       ([[_, t], eof]: [[Lexeme[], T], null]) => t

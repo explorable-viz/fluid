@@ -1,0 +1,40 @@
+// eventually replace these two by auto-generated getters/setters
+fun point_get_x Point(x, y) → 
+   x;
+
+fun point_put_x x Point(_, y) → 
+   Point(x, y);
+
+fun transpose Point(x, y) → 
+   Point(y, x);
+
+fun translate (dx, dy) Point(x, y) → 
+   Point(x + dx, y + dy);
+
+// drop all x coordinates
+fun spaceRight sep put_x shapes →
+   zipW (fun (x, shape) → put_x x shape) (iterate (length shapes) (fun x → x + sep) 0) shapes;
+
+fun rectPath Rect(w, h) →
+   Cons(Point(0, 0),
+   Cons(Point(w, 0),
+   Cons(Point(w, h),
+   Cons(Point(0, h), Nil))));
+
+fun renderRects sep {
+   Nil → Nil;
+   Cons(r, rs) → 
+      let ps = rectPath r in
+      Cons(RectFill(ps), Cons(PathStroke(ps), Cons(Translate(Point(sep, 0)), renderRects sep rs)))
+};
+
+// returns List<List<Point>>
+fun axis margin n width → 
+   let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
+   let ticks = fun n →
+      spaceRight width
+         (fun x' → map (point_put_x x'))
+         (repeat n tick)
+   in
+   let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
+   map (map (translate (0, 0 - margin))) Cons(line, ticks n)

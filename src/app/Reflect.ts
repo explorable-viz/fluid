@@ -54,9 +54,6 @@ class Reflect implements PersistentObject {
 }
 
 export function reflect (v: Value): Persistent { 
-// if (!v.α) {
-//    console.log(v)
-// }
    const k: Reflect = Reflect.make(v)
    if (v instanceof Value.ConstInt) {
       return at(k, AnnNumber, v.α, v.val)
@@ -74,8 +71,10 @@ export function reflect (v: Value): Persistent {
       assert(args.length === arity(ctr))
       // α doesn't appear as argument of user-level data types; sanity-check that reflective counterpart expects it
       return as(at(k, classFor.get(ctr)!, v.α, ...args), Annotated)
+   } else 
+   if (v instanceof Value.Closure) {
+      return absurd("Unexpected closure; too few arguments to function?")
    } else {
       return absurd()
    }
 }
-    

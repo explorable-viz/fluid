@@ -1,11 +1,1 @@
-letrec
-   fun filter p {
-      Nil → Nil;
-      Cons(x, xs) →
-         match p x as {
-            True → Cons(x, filter p xs);
-            False → filter p xs
-         }
-   }
-in
 filter (fun x → 5 < x) Cons(4, Cons(2, Cons(7, Nil)))

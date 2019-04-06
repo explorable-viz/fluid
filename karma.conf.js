@@ -7,7 +7,7 @@ module.exports = function (config) {
       files: [
          './test/**/*.ts',
          {
-            pattern: './example/*.lcalc',
+            pattern: './example/**/*.lcalc',
             watched: true,
             included: false,
             served: true,

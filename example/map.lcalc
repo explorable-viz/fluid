@@ -1,9 +1,3 @@
-letrec
-   fun map f {
-      Nil → Nil;
-      Cons(x, xs) → Cons(f x, map f xs)
-   }
-in
 let incr = fun x → 1 + x
 in
 map incr Cons(4, Cons(6, Nil))
