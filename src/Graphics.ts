@@ -80,6 +80,16 @@ export class Translate extends GraphicsElement {
    }
 }
 
+// Swaps x and y. Could subsume by a more general notion of reflection.
+export class Transpose extends GraphicsElement {
+   elem: GraphicsElement
+
+   constructor_ (α: Annotation, elem: GraphicsElement): void {
+      this.α = α
+      this.elem = elem
+   }
+}
+
 export class Canvas3D {
    transforms: THREE.Vector2[] // stack of active linear transformations (so far only translation)
 
@@ -104,6 +114,13 @@ export class Canvas3D {
       if (elem instanceof Translate) {
          const transform: THREE.Vector2 = this.transforms.slice(-1)[0]
          this.transforms.push(new THREE.Vector2(transform.x + elem.vec.x.n, transform.y + elem.vec.y.n))
+         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
+         this.transforms.pop()
+         return objects
+      } else
+      if (elem instanceof Transpose) {
+         const transform: THREE.Vector2 = this.transforms.slice(-1)[0]
+         this.transforms.push(new THREE.Vector2(transform.y, transform.x))
          const objects: THREE.Object3D[] = this.objects3D(elem.elem)
          this.transforms.pop()
          return objects

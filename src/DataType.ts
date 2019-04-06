@@ -42,6 +42,7 @@ export function initDataTypes (): void {
       ["PathStroke", ["points"]], 
       ["RectFill", ["points"]], 
       ["Translate", ["vec", "elem"]],
+      ["Transpose", ["elem"]],
       ["Graphic", ["elems"]]
    ])))
 }
