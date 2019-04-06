@@ -21,16 +21,33 @@ export class Cursor {
       return this
    }
 
+   skipImport (): Cursor {
+      return this.to(Expr.LetRec, "e") // all "modules" have this form
+   }
+
    skipImports (): Cursor {
       return this
-         .to(Expr.LetRec, "e") // prelude
-         .to(Expr.LetRec, "e") // graphics
+         .skipImport() // prelude
+         .skipImport() // graphics
    }
 
    to<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
       const oʹ: T[keyof T] = as<Persistent, T>(this.o, cls)[prop] // TypeScript nonsense
       this.o = oʹ as any as PersistentObject
       return this
+   }
+
+   toRecDef (fun: string): Cursor {
+      this.to(Expr.LetRec, "δ")
+      while (true) {
+         this.push().toElem(0)
+         if (as(this.o, Expr.RecDef).x.str === fun) {
+            break
+         } else {
+            this.pop().to(Cons, "tail")
+         }
+      }
+      return this.pop().toElem(0) // clear stack
    }
 
    at<T extends PersistentObject> (cls: AClass<T>, f: (o: T) => void): Cursor {

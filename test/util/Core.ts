@@ -84,8 +84,8 @@ export function prependModule (src: string, e: Expr): Expr.LetRec {
 
 export function parseExample (src: string): Expr {
    return instantiate(ρ, 
-      prependModule(loadLib("graphics"), 
       prependModule(loadLib("prelude"), 
+      prependModule(loadLib("graphics"), 
       successfulParse(Parse.expr, src)))
    )
 }

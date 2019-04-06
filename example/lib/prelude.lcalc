@@ -11,6 +11,20 @@ fun concat {
    Cons(x, xs) ys → Cons(x, concat xs ys)
 };
 
+fun filter p {
+   Nil → Nil;
+   Cons(x, xs) →
+      match p x as {
+         True → Cons(x, filter p xs);
+         False → filter p xs
+      }
+};
+
+fun foldr op z {
+   Nil → z;
+   Cons(x, xs) → op (x, foldr op z xs)
+};
+
 fun id x → 
    x;
 

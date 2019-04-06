@@ -69,9 +69,7 @@ describe("example", () => {
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
-						.skipImports()
-						.to(Expr.LetRec, "δ")
-						.toElem(0)
+						.toRecDef("filter")
 						.to(Expr.RecDef, "σ")
 						.to(Trie.Var, "κ")
 						.to(Expr.Fun, "σ")
