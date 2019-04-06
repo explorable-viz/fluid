@@ -109,7 +109,6 @@ describe("example", () => {
 				setup (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.LetRec, "e")
 						.to(Expr.App, "arg")
 						.push().constrArg("Cons", 0).notNeed().pop()
 						.push().constrArg("Cons", 0).notNeed().pop()
@@ -137,7 +136,6 @@ describe("example", () => {
 				expect (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.LetRec, "e")
 						.to(Expr.App, "arg").needed()
 						.push().constrArg("Cons", 0).notNeeded().pop()
 						.constrArg("Cons", 1).needed()

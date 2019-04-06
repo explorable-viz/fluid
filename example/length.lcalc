@@ -1,7 +1,1 @@
-letrec
-   fun length {
-      Nil → 0;
-      Cons(x, xs') → 1 + length xs'
-   }
-in
 length Cons(2, Cons(3, Nil))
