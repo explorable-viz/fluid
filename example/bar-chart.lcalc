@@ -14,17 +14,9 @@ let axis = fun margin n width → // returns List<List<Point>>
    let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
    map (map (translate (0, 0 - margin))) Cons(line, ticks n)
 in
-letrec 
-   fun renderRects {
-      Nil → Nil;
-      Cons(r, rs) → 
-         let ps = rectPath r in
-         Cons(RectFill(ps), Cons(PathStroke(ps), Cons(Translate(Point(sep, 0)), renderRects(rs))))
-   }
-in
-   // required to be List<GraphicsElement>
-   concat
-      (map (fun ps → PathStroke(ps)) (axis 1 5 7))
-      (concat
-         (map (fun ps → PathStroke(map transpose ps)) (axis 1 (length rects) width))
-         (renderRects rects))
+// required to be List<GraphicsElement>
+concat
+   (map (fun ps → PathStroke(ps)) (axis 1 5 7))
+   (concat
+      (map (fun ps → PathStroke(map transpose ps)) (axis 1 (length rects) width))
+      (renderRects sep rects))

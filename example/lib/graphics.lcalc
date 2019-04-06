@@ -19,4 +19,11 @@ fun rectPath Rect(w, h) →
    Cons(Point(0, 0),
    Cons(Point(w, 0),
    Cons(Point(w, h),
-   Cons(Point(0, h), Nil))))
+   Cons(Point(0, h), Nil))));
+
+fun renderRects sep {
+   Nil → Nil;
+   Cons(r, rs) → 
+      let ps = rectPath r in
+      Cons(RectFill(ps), Cons(PathStroke(ps), Cons(Translate(Point(sep, 0)), renderRects sep rs)))
+}

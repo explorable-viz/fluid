@@ -71,8 +71,10 @@ export function reflect (v: Value): Persistent {
       assert(args.length === arity(ctr))
       // α doesn't appear as argument of user-level data types; sanity-check that reflective counterpart expects it
       return as(at(k, classFor.get(ctr)!, v.α, ...args), Annotated)
+   } else 
+   if (v instanceof Value.Closure) {
+      return absurd("Unexpected closure; too few arguments to function?")
    } else {
       return absurd()
    }
 }
-    
