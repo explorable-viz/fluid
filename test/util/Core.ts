@@ -82,9 +82,12 @@ export function prependModule (src: string, e: Expr): Expr.LetRec {
    return Expr.letRec(ν(), ann.top, successfulParse(Parse.recDefs1, src), e)
 }
 
-export function parseExample (src: string | null): Expr {
-   const e: Expr = successfulParse(Parse.expr, __nonNull(src))
-   return instantiate(ρ, prependModule(__nonNull(loadLib("graphics")), prependModule(__nonNull(loadLib("prelude")), e)))
+export function parseExample (src: string): Expr {
+   return instantiate(ρ, 
+      prependModule(loadLib("graphics"), 
+      prependModule(loadLib("prelude"), 
+      successfulParse(Parse.expr, src)))
+   )
 }
 
 export function runExample (e: Expr): void {
@@ -106,13 +109,13 @@ export let ρ: Env = prelude()
 export class TestFile {
    text: string | null
 
-   constructor() {
+   constructor () {
       this.text = null
    }
 }
 
 // Maybe there's a way to use ES6 promises instead.
-export function loadTestFile (folder: string, file: string): string | null {
+export function loadTestFile (folder: string, file: string): string {
    let testFile: TestFile = new TestFile
    const xmlhttp = new XMLHttpRequest
    xmlhttp.open("GET", folder + "/" + file + ".lcalc", false)
@@ -120,13 +123,13 @@ export function loadTestFile (folder: string, file: string): string | null {
    if (xmlhttp.status === 200) {
      testFile.text = xmlhttp.responseText
    }
-   return testFile.text
+   return __nonNull(testFile.text)
 }
 
-export function loadExample (file: string): string | null {
-	return loadTestFile("example", file)
+export function loadExample (file: string): string {
+	return __nonNull(loadTestFile("example", file))
 }
 
-export function loadLib (file: string): string | null {
-	return loadTestFile("example/lib", file)
+export function loadLib (file: string): string {
+	return __nonNull(loadTestFile("example/lib", file))
 }
