@@ -11,9 +11,13 @@ fun transpose Point(x, y) →
 fun translate (dx, dy) Point(x, y) → 
    Point(x + dx, y + dy);
 
-// drop all x coordinates
+// drop all x coordinates (TODO: replaces uses of this by translation-based one)
 fun spaceRight sep put_x shapes →
    zipW (fun (x, shape) → put_x x shape) (iterate (length shapes) (fun x → x + sep) 0) shapes;
+
+// Int → List<Graphic> → List<Graphic>
+fun spaceRight' sep gs →
+   zipW (fun (x, g) → Translate(Point(x, 0), g)) (iterate (length gs) (fun x → x + sep) 0) gs;
 
 fun rectPath Rect(w, h) →
    Cons(Point(0, 0),
@@ -21,22 +25,16 @@ fun rectPath Rect(w, h) →
    Cons(Point(w, h),
    Cons(Point(0, h), Nil))));
 
-// Int → List<GraphicsElement>
-fun renderRects sep {
+// TODO: reimplement using map.
+fun renderRects' {
    Nil → Nil;
    Cons(r, rs) → 
       let ps = rectPath r in
-      Cons(Graphic(Cons(RectFill(ps), Cons(PathStroke(ps), Nil))), 
-      Cons(Translate(Point(sep, 0)), renderRects sep rs))
+      Cons(Graphic(Cons(RectFill(ps), Cons(PathStroke(ps), Nil))), renderRects' rs)
 };
 
-// TODO: reimplement using map.
-fun renderRects' sep {
-   Nil → Nil;
-   Cons(r, rs) → 
-      let ps = rectPath r in
-      Cons(Graphic(Cons(RectFill(ps), Cons(PathStroke(ps), Nil))), renderRects sep rs)
-};
+fun renderRects2 sep rs → 
+   spaceRight' sep (renderRects' rs);
 
 // Int → Int → Int → List<List<Point>>
 fun axis margin n width → 
