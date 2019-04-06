@@ -15,7 +15,7 @@ fun translate (dx, dy) Point(x, y) →
 fun spaceRight sep put_x shapes →
    zipW (fun (x, shape) → put_x x shape) (iterate (length shapes) (fun x → x + sep) 0) shapes;
 
-// Int → List<Graphic> → List<Graphic>
+// Int → List<GraphicsElement> → List<GraphicsElement>
 fun spaceRight' sep gs →
    zipW (fun (x, g) → Translate(Point(x, 0), g)) (iterate (length gs) (fun x → x + sep) 0) gs;
 

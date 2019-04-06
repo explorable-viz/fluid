@@ -75,9 +75,9 @@ export class RectFill extends GraphicsElement {
 
 export class Translate extends GraphicsElement {
    vec: Point
-   elem: Graphic
+   elem: GraphicsElement
 
-   constructor_ (α: Annotation, vec: Point, elem: Graphic): void {
+   constructor_ (α: Annotation, vec: Point, elem: GraphicsElement): void {
       this.α = α
       this.vec = vec
       this.elem = elem
