@@ -19,7 +19,9 @@ describe("example", () => {
 			runExample(e)
 			new (class extends FwdSlice {
 				setup (): void {
-					this.expr.to(Expr.BinaryApp, "e1").notNeed()
+					this.expr
+						.skipPrelude()
+						.to(Expr.BinaryApp, "e1").notNeed()
 				}
 				expect (): void {
 					this.val.notNeeded()
@@ -67,6 +69,7 @@ describe("example", () => {
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
+						.skipPrelude()
 						.to(Expr.LetRec, "δ")
 						.toElem(0)
 						.to(Expr.RecDef, "σ")
@@ -107,6 +110,7 @@ describe("example", () => {
 			let test = new (class extends FwdSlice {
 				setup (): void {
 					this.expr
+						.skipPrelude()
 						.to(Expr.LetRec, "e")
 						.to(Expr.App, "arg")
 						.push().constrArg("Cons", 0).notNeed().pop()
@@ -134,6 +138,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
+						.skipPrelude()
 						.to(Expr.LetRec, "e")
 						.to(Expr.App, "arg").needed()
 						.push().constrArg("Cons", 0).notNeeded().pop()
@@ -158,6 +163,7 @@ describe("example", () => {
 			const last = new (class extends FwdSlice {
 				setup (): void {
 					this.expr
+						.skipPrelude()
 						.to(Expr.Let, "σ")
 						.to(Trie.Var, "κ")
 						.to(Expr.LetRec, "e")
@@ -192,6 +198,7 @@ describe("example", () => {
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
+						.skipPrelude()
 						.to(Expr.LetRec, "e")
  						.to(Expr.Let, "σ")
  						.to(Trie.Var, "κ")
@@ -223,6 +230,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
+						.skipPrelude()
 						.push().to(Expr.Let, "e").notNeeded().pop()
 						.to(Expr.Let, "σ")
 						.to(Trie.Var, "κ")
@@ -237,6 +245,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
+						.skipPrelude()
 						.push().to(Expr.Let, "e").needed().pop()
 						.to(Expr.Let, "σ")
 						.to(Trie.Var, "κ")
@@ -253,6 +262,7 @@ describe("example", () => {
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
+						.skipPrelude()
 						.to(Expr.LetRec, "e")
  						.to(Expr.App, "arg")
  						.constrArg("Cons", 1)
@@ -279,6 +289,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
+						.skipPrelude()
 						.push()
 							.to(Expr.LetRec, "e")
 							.to(Expr.App, "arg").needed().pop()
@@ -300,6 +311,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
+						.skipPrelude()
 						.to(Expr.LetRec, "e")
 						.to(Expr.App, "func")
 						.to(Expr.App, "func")

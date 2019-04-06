@@ -21,6 +21,10 @@ export class Cursor {
       return this
    }
 
+   skipPrelude (): Cursor {
+      return this.to(Expr.LetRec, "e")
+   }
+
    to<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
       const oʹ: T[keyof T] = as<Persistent, T>(this.o, cls)[prop] // TypeScript nonsense
       this.o = oʹ as any as PersistentObject
