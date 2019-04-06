@@ -45,6 +45,15 @@ export abstract class GraphicsElement extends Annotated {
    abstract constructor_ (...v̅: Persistent[]): void
 }
 
+export class Graphic extends GraphicsElement {
+   elems: List<GraphicsElement>
+
+   constructor_ (α: Annotation, elems: List<GraphicsElement>): void {
+      this.α = α
+      this.elems = elems
+   }
+}
+
 export class PathStroke extends GraphicsElement {
    points: List<Point>
 
@@ -81,6 +90,13 @@ export class Canvas3D {
    }
 
    objects3D (elem: GraphicsElement): THREE.Object3D[] {
+      if (elem instanceof Graphic) {   
+         const objects: THREE.Object3D[] = []
+         for (let elems: List<GraphicsElement> = elem.elems; Cons.is(elems); elems = elems.tail) {
+            objects.push(...this.objects3D(elem))
+         }
+         return objects
+      }
       if (elem instanceof PathStroke) {
          return this.pathStroke(elem.points)
       } else
