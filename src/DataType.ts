@@ -38,5 +38,10 @@ export function initDataTypes (): void {
    initDataType(new DataType("Option", new Map([["None", []], ["Some", ["valOf"]]])))
    initDataType(new DataType("Tree", new Map([["Empty", []], ["NonEmpty", ["left", "t", "right"]]])))
    initDataType(new DataType("Unit", new Map([["Unit", []]])))
-   initDataType(new DataType("GraphicsElement", new Map([["PathStroke", ["points"]], ["RectFill", ["points"]], ["Translate", ["vec"]]])))
+   initDataType(new DataType("GraphicsElement", new Map([
+      ["PathStroke", ["points" /*List<Point>*/]], 
+      ["RectFill", ["points" /*List<Point>*/]], 
+      ["Translate", ["vec" /*Point*/]],
+      ["Graphic", ["elems" /*List<GraphicsElement>*/]]
+   ])))
 }

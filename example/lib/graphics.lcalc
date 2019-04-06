@@ -21,6 +21,7 @@ fun rectPath Rect(w, h) →
    Cons(Point(w, h),
    Cons(Point(0, h), Nil))));
 
+// Int → List<GraphicsElement>
 fun renderRects sep {
    Nil → Nil;
    Cons(r, rs) → 
