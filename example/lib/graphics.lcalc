@@ -33,9 +33,6 @@ fun renderRects {
       Cons(Graphic(Cons(RectFill(ps), Cons(PathStroke(ps), Nil))), renderRects rs)
 };
 
-fun renderRects2 sep rs → 
-   spaceRight' sep (renderRects rs);
-
 // Int → Int → Int → List<List<Point>>
 fun axis margin n width → 
    let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
