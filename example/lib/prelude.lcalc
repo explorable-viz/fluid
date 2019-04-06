@@ -57,6 +57,10 @@ fun reverse {
    Cons(x, xs) → append (reverse xs) Cons(x, Nil)
 };
 
+// delete when we reinstate projection functions
+fun tail 
+   Cons(x, xs) → xs;
+
 fun zipW op {
    Nil ys → Nil;
    Cons(x, xs) {

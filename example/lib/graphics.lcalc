@@ -1,5 +1,19 @@
-fun transpose Point(x, y) → Point(y, x);
-fun translate (dx, dy) Point(x, y) → Point(x + dx, y + dy);
+// eventually replace these two by auto-generated getters/setters
+fun point_get_x Point(x, y) → 
+   x;
+
+fun point_put_x x Point(_, y) → 
+   Point(x, y);
+
+fun transpose Point(x, y) → 
+   Point(y, x);
+
+fun translate (dx, dy) Point(x, y) → 
+   Point(x + dx, y + dy);
+
+// drop all x coordinates
+fun spaceRight sep put_x shapes →
+   zipW (fun (x, shape) → put_x x shape) (iterate (length shapes) (fun x → x + sep) 0) shapes;
 
 fun rectPath Rect(w, h) →
    Cons(Point(0, 0),

@@ -1,18 +1,6 @@
 let
    data = Cons((2001, 15), Cons((2002, 8), Cons((2005, 22), Cons((2007, 9), Nil))))
 in
-// Field accessors/updaters
-let tail = fun Cons(x, xs) → xs in
-let point_get_x = fun Point(x, y) → x in
-let point_put_x = fun x Point(_, y) → Point(x, y) in
-let rect_get_w = fun Rect(w, h) → w in
-let incr = fun x get put shape → put (get shape + x) shape in 
-// these two operate on abstract shapes (that support an x property), preserving their type
-let
-   // drop all x coordinates
-   spaceRight = fun sep put_x shapes →
-      zipW (fun (x, shape) → put_x x shape) (iterate (length shapes) (fun x → x + sep) 0) shapes
-in
 let width = 6 in
 let sep = width + 1 in
 let rects = map (fun (year, age) → Rect(width, age)) data in
