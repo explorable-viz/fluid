@@ -30,6 +30,14 @@ fun renderRects sep {
       Cons(Translate(Point(sep, 0)), renderRects sep rs))
 };
 
+// TODO: reimplement using map.
+fun renderRects' sep {
+   Nil → Nil;
+   Cons(r, rs) → 
+      let ps = rectPath r in
+      Cons(Graphic(Cons(RectFill(ps), Cons(PathStroke(ps), Nil))), renderRects sep rs)
+};
+
 // Int → Int → Int → List<List<Point>>
 fun axis margin n width → 
    let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
