@@ -52,6 +52,7 @@ function populateScene (): void {
    World.newRevision()
    let here: Cursor = new Cursor(e)
    here
+      .skipImports()
       .to(Expr.Let, "e")
       .constrArg("Cons", 0).notNeed()
       .constrArg("Pair", 1).notNeed()
