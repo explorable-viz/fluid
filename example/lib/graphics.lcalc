@@ -8,6 +8,7 @@ fun point_put_x x Point(_, y) →
 fun transpose Point(x, y) → 
    Point(y, x);
 
+// Point → Point → Point
 fun translate (dx, dy) Point(x, y) → 
    Point(x + dx, y + dy);
 
@@ -38,4 +39,12 @@ fun axis margin n width →
          (repeat n tick)
    in
    let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
-   map (map (translate (0, 0 - margin))) Cons(line, ticks n)
+   map (map (translate (0, 0 - margin))) Cons(line, ticks n);
+
+// Int → Int → Int → List<GraphicsElement>
+fun axis2 margin n width → 
+   let tick = PathStroke(Cons(Point(0, 0), Cons(Point(0, -2), Nil))) in
+   let ticks = fun n → spaceRight' width (repeat n tick)
+   in
+   let line = PathStroke(Cons(Point(0, 0), Cons(Point(n * width, 0), Nil))) in
+   map (fun g → Translate(Point(0, 0 - margin), g)) Cons(line, ticks n)
