@@ -7,19 +7,6 @@ let point_get_x = fun Point(x, y) → x in
 let point_put_x = fun x Point(_, y) → Point(x, y) in
 let rect_get_w = fun Rect(w, h) → w in
 let incr = fun x get put shape → put (get shape + x) shape in 
-let
-   // discard x coordinates other than the first
-   stackRight = fun sep get_x put_x get_w →
-      letrec 
-         fun stackRight' {
-            Nil → Nil;
-            Cons(shape, Nil) → Cons(shape, Nil);
-            Cons(shape, Cons(shape2, shapes)) → 
-               Cons(shape, stackRight' Cons(put_x ((get_x shape) + (get_w shape) + sep) shape2, shapes))
-         } 
-      in 
-      stackRight'
-in
 // these two operate on abstract shapes (that support an x property), preserving their type
 let
    // drop all x coordinates
