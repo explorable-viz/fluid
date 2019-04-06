@@ -75,18 +75,20 @@ export class RectFill extends GraphicsElement {
 
 export class Translate extends GraphicsElement {
    vec: Point
+   elem: Graphic
 
-   constructor_ (α: Annotation, vec: Point): void {
+   constructor_ (α: Annotation, vec: Point, elem: Graphic): void {
       this.α = α
       this.vec = vec
+      this.elem = elem
    }
 }
 
 export class Canvas3D {
-   vec: THREE.Vector2 // current linear transformation (so far only translation)
+   transforms: THREE.Vector2[] // stack of active linear transformations (so far only translation)
 
    constructor () {
-      this.vec = new THREE.Vector2(0, 0)
+      this.transforms = [new THREE.Vector2(0, 0)]
    }
 
    objects3D (elem: GraphicsElement): THREE.Object3D[] {
@@ -104,9 +106,11 @@ export class Canvas3D {
          return this.rectFill(elem.points)
       } else
       if (elem instanceof Translate) {
-         this.vec.setX(this.vec.x + elem.vec.x.n)
-         this.vec.setY(this.vec.y + elem.vec.y.n)
-         return []
+         const transform: THREE.Vector2 = this.transforms.slice(-1)[0]
+         this.transforms.push(new THREE.Vector2(transform.x + elem.vec.x.n, transform.y + elem.vec.y.n))
+         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
+         this.transforms.pop()
+         return objects
       } else {
          return absurd()
       }
@@ -136,8 +140,9 @@ export class Canvas3D {
    newPathGeometry (points: List<Point>): THREE.Geometry {
       const geometry: THREE.Geometry = new THREE.Geometry
       while (Cons.is(points)) {
-         const point: Point = as(points.head, Point)
-         geometry.vertices.push(new THREE.Vector3(point.x.n + this.vec.x, point.y.n + this.vec.y, 0))
+         const point: Point = as(points.head, Point),
+               transform: THREE.Vector2 = this.transforms.slice(-1)[0]
+         geometry.vertices.push(new THREE.Vector3(point.x.n + transform.x, point.y.n + transform.y, 0))
          points = points.tail
       }
       return geometry
