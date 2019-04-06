@@ -1,0 +1,2 @@
+fun transpose Point(x, y) → Point(y, x);
+fun translate (dx, dy) Point(x, y) → Point(x + dx, y + dy)

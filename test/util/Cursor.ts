@@ -21,8 +21,10 @@ export class Cursor {
       return this
    }
 
-   skipPrelude (): Cursor {
-      return this.to(Expr.LetRec, "e")
+   skipImports (): Cursor {
+      return this
+         .to(Expr.LetRec, "e") // prelude
+         .to(Expr.LetRec, "e") // graphics
    }
 
    to<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {

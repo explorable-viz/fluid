@@ -7,8 +7,6 @@ let point_get_x = fun Point(x, y) → x in
 let point_put_x = fun x Point(_, y) → Point(x, y) in
 let rect_get_w = fun Rect(w, h) → w in
 let incr = fun x get put shape → put (get shape + x) shape in 
-let transpose = fun Point(x, y) → Point(y, x) in 
-let translate = fun (dx, dy) Point(x, y) → Point(x + dx, y + dy) in 
 let
    // discard x coordinates other than the first
    stackRight = fun sep get_x put_x get_w →
