@@ -195,8 +195,7 @@ describe("example", () => {
 				setup (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.LetRec, "e")
- 						.to(Expr.Let, "σ")
+						.to(Expr.Let, "σ")
  						.to(Trie.Var, "κ")
 					 	.to(Expr.App, "arg")
 						.constrArg("Cons", 0).notNeed()
