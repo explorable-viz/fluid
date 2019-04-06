@@ -8,22 +8,18 @@ import { Cons, List } from "./BaseTypes"
 // Basic graphical datatypes.
 
 export class Rect extends Annotated {
-   x: AnnNumber
-   y: AnnNumber
    width: AnnNumber
    height: AnnNumber
 
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, width: AnnNumber, height: AnnNumber): void {
+   constructor_ (α: Annotation, width: AnnNumber, height: AnnNumber): void {
       this.α = α
-      this.x = x
-      this.y = y
       this.width = width
       this.height = height
    }
 }
 
-export function rect (x: AnnNumber, y: AnnNumber, width: AnnNumber, height: AnnNumber): Rect {
-   return make(Rect, ann.bot, x, y, width, height)
+export function rect (width: AnnNumber, height: AnnNumber): Rect {
+   return make(Rect, ann.bot, width, height)
 }
 
 export class Point extends Annotated {

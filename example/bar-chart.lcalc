@@ -5,7 +5,7 @@ let width = 6 in
 let sep = width + 1 in
 let rects = map (fun (year, age) → Rect(width, age)) data in
 Graphic(
-   Cons(Graphic(axis2 1 5 7),
+   Cons(axis2 1 5 7,
    Cons(Graphic(map (fun ps → PathStroke(map transpose ps)) (axis 1 (length rects) width)),
    Cons(Graphic(spaceRight' sep (map renderRect rects)), Nil)))
 )
