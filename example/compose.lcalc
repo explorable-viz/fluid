@@ -1,3 +1,2 @@
-let compose = fun f g x → f (g x) in
 let incr = fun n → n + 1 in
-incr (incr 3)
+(compose incr incr) 3

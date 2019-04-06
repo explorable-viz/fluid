@@ -3,6 +3,9 @@ fun append {
    Cons(x, xs) ys → Cons(x, append xs ys)
 };
 
+fun compose f g x → 
+   f (g x);
+
 fun concat {
    Nil ys → ys;
    Cons(x, xs) ys → Cons(x, concat xs ys)
