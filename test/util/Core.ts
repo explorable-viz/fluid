@@ -99,7 +99,7 @@ export function runExample (e: Expr): void {
    const here: Cursor = new Cursor(tv)
    here.to(ExplVal, "v")
        .at(Value.Value, v => v.setα(ann.top))
-   let eʹ: Expr = Eval.uneval(tv)
+   const eʹ: Expr = Eval.uneval(tv)
    assert(e === eʹ)
 }
 
@@ -117,11 +117,11 @@ export class TestFile {
 // Maybe there's a way to use ES6 promises instead.
 export function loadTestFile (folder: string, file: string): string {
    let testFile: TestFile = new TestFile
-   const xmlhttp = new XMLHttpRequest
+   const xmlhttp: XMLHttpRequest = new XMLHttpRequest
    xmlhttp.open("GET", folder + "/" + file + ".lcalc", false)
    xmlhttp.send()
    if (xmlhttp.status === 200) {
-     testFile.text = xmlhttp.responseText
+      testFile.text = xmlhttp.responseText
    }
    return __nonNull(testFile.text)
 }
