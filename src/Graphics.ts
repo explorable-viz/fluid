@@ -93,7 +93,7 @@ export class Canvas3D {
       if (elem instanceof Graphic) {   
          const objects: THREE.Object3D[] = []
          for (let elems: List<GraphicsElement> = elem.elems; Cons.is(elems); elems = elems.tail) {
-            objects.push(...this.objects3D(elem))
+            objects.push(...this.objects3D(elems.head))
          }
          return objects
       }

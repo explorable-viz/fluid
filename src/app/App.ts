@@ -5,7 +5,7 @@ import { World } from "../util/Versioned"
 import { Cons, List } from "../BaseTypes"
 import { Expr } from "../Expr"
 import { Eval } from "../Eval"
-import { GraphicsElement, Canvas3D } from "../Graphics"
+import { Graphic, GraphicsElement, Canvas3D } from "../Graphics"
 import { Value } from "../ExplVal"
 // TODO: move test-dependent stuff out of app
 import { Cursor } from "../../test/util/Cursor"
@@ -57,7 +57,7 @@ function populateScene (): void {
       .constrArg("Cons", 0).notNeed()
       .constrArg("Pair", 1).notNeed()
    const v: Value = Eval.eval_(ρ, e).v,
-         elems: List<GraphicsElement> = as(reflect(v), List),
+         elems: List<GraphicsElement> = as(reflect(v), Graphic).elems,
          canvas: Canvas3D = new Canvas3D()
    for (let elemsʹ: List<GraphicsElement> = elems; Cons.is(elemsʹ);) {
       for (let obj of canvas.objects3D(as(elemsʹ.head, GraphicsElement))) {
