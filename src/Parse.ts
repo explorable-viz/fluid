@@ -219,7 +219,7 @@ const recDef: Parser<RecDef> =
          Expr.recDef(ν(), ann.top, name, σ)
    )
 
-const recDefs1 : Parser<List<RecDef>> =
+export const recDefs1 : Parser<List<RecDef>> =
    withAction(sepBy1(recDef, symbol(";")), (δ: RecDef[]) => List.fromArray(δ))
 
 const letrec: Parser<LetRec> =

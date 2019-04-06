@@ -1,7 +1,8 @@
 import { ann } from "../../src/util/Annotated"
 import { __nonNull, assert } from "../../src/util/Core"
-import { World, setall } from "../../src/util/Versioned"
-import { parse } from "../../src/util/parse/Core"
+import { World, setall, ν } from "../../src/util/Versioned"
+import { successfulParse } from "../../src/util/parse/Core"
+import { List } from "../../src/BaseTypes"
 import { initDataTypes } from "../../src/DataType"
 import { Env } from "../../src/Env"
 import { Eval } from "../../src/Eval"
@@ -77,9 +78,14 @@ export function merge<K extends Kont<K>> (σ1: Trie.Constr<K>, σ2: Trie.Constr<
    return Trie.constr(unionWith(σ1.cases, σ2.cases, (v: Args<K>, vʹ: Args<K>) => assert(false)))
 }
 
+// Kindergarten modules: load another file as though it were a letrec block, with body e.
+export function prependModule (src: string, e: Expr): Expr.LetRec {
+   const δ: List<Expr.RecDef> = successfulParse(Parse.recDefs1, src)
+   return Expr.letRec(ν(), ann.top, δ, e)
+}
+
 export function parseExample (src: string | null): Expr {
-   const e: Expr = __nonNull(parse(Parse.expr, __nonNull(src))).ast
-   return instantiate(ρ, e)
+   return instantiate(ρ, successfulParse(Parse.expr, __nonNull(src)))
 }
 
 export function runExample (e: Expr): void {

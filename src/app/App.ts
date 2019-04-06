@@ -1,6 +1,6 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { as } from "../util/Core"
+import { __nonNull, as } from "../util/Core"
 import { World } from "../util/Versioned"
 import { Cons, List } from "../BaseTypes"
 import { Expr } from "../Expr"
@@ -48,7 +48,7 @@ export function close (path: THREE.Vector2[]) {
 }
 
 function populateScene (): void {
-   const e: Expr = parseExample(loadTestFile("example", "bar-chart").text)
+   const e: Expr = parseExample(__nonNull(loadTestFile("example", "bar-chart").text))
    World.newRevision()
    let here: Cursor = new Cursor(e)
    here
