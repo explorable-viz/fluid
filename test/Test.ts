@@ -277,7 +277,7 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parseExample(loadExample("zipW"))
 			// needing first cons cell of output needs same amount of input lists
-			const last = new (class extends BwdSlice {
+			new (class extends BwdSlice {
 				setup (): void {
 					this.val.need()
 				}
@@ -304,6 +304,30 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.expr
+						.push()
+							.toRecDef("zipW")
+							.to(Expr.RecDef, "σ")
+							.to(Trie.Var, "κ")
+							.to(Expr.Fun, "σ")
+							.to(Trie.Constr, "cases")
+							.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
+							.to(NonEmpty, "left")
+							.nodeValue()			 
+							.arg(Trie.Var, "κ")
+							.arg(Trie.Var, "κ")
+							.end().needed()
+							.to(Expr.Fun, "σ")
+							.to(Trie.Constr, "cases")
+							.to(NonEmpty, "left")
+							.nodeValue()			 
+							.arg(Trie.Var, "κ")
+							.arg(Trie.Var, "κ")
+							.end().needed()
+							.constrArg("Cons", 0).needed()
+							.to(Expr.App, "arg").needed() // application of op
+							.push().constrArg("Pair", 0).notNeeded().pop()
+							.push().constrArg("Pair", 1).notNeeded().pop()
+							.pop()
 						.skipImports()
 						.to(Expr.App, "func")
 						.to(Expr.App, "func")
@@ -314,26 +338,6 @@ describe("example", () => {
 						.arg(Trie.Var, "κ")
 						.arg(Trie.Var, "κ")
 						.end().needed()
-						.goto(last.expr.o) // bit hacky
-						.to(Expr.Fun, "σ")
-						.to(Trie.Constr, "cases")
-						.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
-						.to(NonEmpty, "left")
-						.nodeValue()			 
-						.arg(Trie.Var, "κ")
-						.arg(Trie.Var, "κ")
-						.end().needed()
-						.to(Expr.Fun, "σ")
-						.to(Trie.Constr, "cases")
-						.to(NonEmpty, "left")
-						.nodeValue()			 
-						.arg(Trie.Var, "κ")
-						.arg(Trie.Var, "κ")
-						.end().needed()
-						.constrArg("Cons", 0).needed()
-						.to(Expr.App, "arg").needed() // application of op
-						.push().constrArg("Pair", 0).notNeeded().pop()
-						.push().constrArg("Pair", 1).notNeeded()
 				}
 			})(e)
 		})
