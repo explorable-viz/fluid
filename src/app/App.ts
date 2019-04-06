@@ -1,6 +1,6 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { __nonNull, as } from "../util/Core"
+import { as } from "../util/Core"
 import { World } from "../util/Versioned"
 import { Cons, List } from "../BaseTypes"
 import { Expr } from "../Expr"
@@ -9,7 +9,7 @@ import { GraphicsElement, Canvas3D } from "../Graphics"
 import { Value } from "../ExplVal"
 // TODO: move test-dependent stuff out of app
 import { Cursor } from "../../test/util/Cursor"
-import { ρ, initialise, loadTestFile, parseExample } from "../../test/util/Core"
+import { ρ, initialise, loadExample, parseExample } from "../../test/util/Core"
 import { reflect } from "./Reflect"
 
 initialise()
@@ -48,7 +48,7 @@ export function close (path: THREE.Vector2[]) {
 }
 
 function populateScene (): void {
-   const e: Expr = parseExample(__nonNull(loadTestFile("example", "bar-chart").text))
+   const e: Expr = parseExample(loadExample("bar-chart"))
    World.newRevision()
    let here: Cursor = new Cursor(e)
    here

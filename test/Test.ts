@@ -3,7 +3,7 @@
 import { NonEmpty } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { Value } from "../src/ExplVal"
-import { BwdSlice, FwdSlice, TestFile, initialise, loadExample, parseExample, runExample } from "./util/Core"
+import { BwdSlice, FwdSlice, initialise, loadExample, parseExample, runExample } from "./util/Core"
 
 import Trie = Expr.Trie
 
@@ -14,9 +14,8 @@ before((done: MochaDone) => {
 
 describe("example", () => {
 	describe("arithmetic", () => {
-		const file: TestFile = loadExample("arithmetic")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("arithmetic"))
 			runExample(e)
 			new (class extends FwdSlice {
 				setup (): void {
@@ -30,9 +29,8 @@ describe("example", () => {
 	})
 
 	describe("bar-chart", () => {
-		const file: TestFile = loadExample("bar-chart")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("bar-chart"))
 			new (class extends BwdSlice {
 				setup (): void {
 					this.val
@@ -51,23 +49,20 @@ describe("example", () => {
 	})
 
 	describe("compose", () => {
-		const file: TestFile = loadExample("compose")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			runExample(parseExample(loadExample("compose")))
 		})
 	})
 
 	describe("factorial", () => {
-		const file: TestFile = loadExample("factorial")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			runExample(parseExample(loadExample("factorial")))
 		})
 	})
 
 	describe("filter", () => {
-		const file: TestFile = loadExample("filter")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("filter"))
 			runExample(e)
 			new (class extends FwdSlice {
 				setup (): void {
@@ -100,16 +95,14 @@ describe("example", () => {
 	})
 
 	describe("foldr_sumSquares", () => {
-		const file: TestFile = loadExample("foldr_sumSquares")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			runExample(parseExample(loadExample("foldr_sumSquares")))
 		})
 	})
 
 	describe("length", () => {
-		const file: TestFile = loadExample("length")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("length"))
 			// erasing the elements doesn't affect the count:
 			let test = new (class extends FwdSlice {
 				setup (): void {
@@ -153,16 +146,14 @@ describe("example", () => {
 	})
 
 	describe("lexicalScoping", () => {
-		const file: TestFile = loadExample("lexicalScoping")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			runExample(parseExample(loadExample("lexicalScoping")))
 		})
 	})
 
 	describe("lookup", () => {
-		const file: TestFile = loadExample("lookup")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("lookup"))
 			runExample(e)
 			const last = new (class extends FwdSlice {
 				setup (): void {
@@ -195,9 +186,8 @@ describe("example", () => {
 	})
 
 	describe("map", () => {
-		const file: TestFile = loadExample("map")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("map"))
 			runExample(e)
 			new (class extends FwdSlice {
 				setup (): void {
@@ -218,16 +208,14 @@ describe("example", () => {
 	})
 
 	describe("mergeSort", () => {
-		const file: TestFile = loadExample("mergeSort")
 		it("ok", () => {
-			runExample(parseExample(file.text))
+			runExample(parseExample(loadExample("mergeSort")))
 		})
 	})
 
 	describe("normalise", () => {
-		const file: TestFile = loadExample("normalise")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("normalise"))
 			// retaining only pair constructor discards both subcomputations:
 			new (class extends BwdSlice {
 				setup (): void {
@@ -259,9 +247,8 @@ describe("example", () => {
 	})
 
 	describe("reverse", () => {
-		const file: TestFile = loadExample("reverse")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("reverse"))
 			runExample(e)
 			new (class extends FwdSlice {
 				setup (): void {
@@ -283,9 +270,8 @@ describe("example", () => {
 	})
 
 	describe("zipW", () => {
-		const file: TestFile = loadExample("zipW")
 		it("ok", () => {
-			const e: Expr = parseExample(file.text)
+			const e: Expr = parseExample(loadExample("zipW"))
 			// needing first cons cell of output needs same amount of input lists
 			const last = new (class extends BwdSlice {
 				setup (): void {

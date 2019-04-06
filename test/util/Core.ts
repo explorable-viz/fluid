@@ -2,7 +2,6 @@ import { ann } from "../../src/util/Annotated"
 import { __nonNull, assert } from "../../src/util/Core"
 import { World, setall, ν } from "../../src/util/Versioned"
 import { successfulParse } from "../../src/util/parse/Core"
-import { List } from "../../src/BaseTypes"
 import { initDataTypes } from "../../src/DataType"
 import { Env } from "../../src/Env"
 import { Eval } from "../../src/Eval"
@@ -80,8 +79,7 @@ export function merge<K extends Kont<K>> (σ1: Trie.Constr<K>, σ2: Trie.Constr<
 
 // Kindergarten modules: load another file as though it were a letrec block, with body e.
 export function prependModule (src: string, e: Expr): Expr.LetRec {
-   const δ: List<Expr.RecDef> = successfulParse(Parse.recDefs1, src)
-   return Expr.letRec(ν(), ann.top, δ, e)
+   return Expr.letRec(ν(), ann.top, successfulParse(Parse.recDefs1, src), e)
 }
 
 export function parseExample (src: string | null): Expr {
@@ -113,7 +111,7 @@ export class TestFile {
 }
 
 // Maybe there's a way to use ES6 promises instead.
-export function loadTestFile (folder: string, file: string): TestFile {
+export function loadTestFile (folder: string, file: string): string | null {
    let testFile: TestFile = new TestFile
    const xmlhttp = new XMLHttpRequest
    xmlhttp.open("GET", folder + "/" + file + ".lcalc", false)
@@ -121,9 +119,9 @@ export function loadTestFile (folder: string, file: string): TestFile {
    if (xmlhttp.status === 200) {
      testFile.text = xmlhttp.responseText
    }
-   return testFile
+   return testFile.text
 }
 
-export function loadExample (file: string): TestFile {
+export function loadExample (file: string): string | null {
 	return loadTestFile("example", file)
 }
