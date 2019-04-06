@@ -12,14 +12,11 @@ fun transpose Point(x, y) →
 fun translate (dx, dy) Point(x, y) → 
    Point(x + dx, y + dy);
 
-// drop all x coordinates (TODO: replaces uses of this by translation-based one)
-fun spaceRight sep put_x shapes →
-   zipW (fun (x, shape) → put_x x shape) (iterate (length shapes) (fun x → x + sep) 0) shapes;
-
 // Int → List<GraphicsElement> → List<GraphicsElement>
-fun spaceRight' sep gs →
+fun spaceRight sep gs →
    zipW (fun (x, g) → Translate(Point(x, 0), g)) (iterate (length gs) (fun x → x + sep) 0) gs;
 
+// Rect → List<Point>
 fun rectPath Rect(w, h) →
    Cons(Point(0, 0),
    Cons(Point(w, 0),
@@ -30,21 +27,10 @@ fun rectPath Rect(w, h) →
 fun renderRect r → 
    let ps = rectPath r in Graphic(Cons(RectFill(ps), Cons(PathStroke(ps), Nil)));
 
-// Int → Int → Int → List<List<Point>>
-fun axis margin n width → 
-   let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
-   let ticks = fun n →
-      spaceRight width
-         (fun x' → map (point_put_x x'))
-         (repeat n tick)
-   in
-   let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
-   map (map (translate (0, 0 - margin))) Cons(line, ticks n);
-
 // Int → Int → Int → Graphic
-fun axis2 margin n width → 
+fun axis margin n width → 
    let tick = PathStroke(Cons(Point(0, 0), Cons(Point(0, -2), Nil))) in
-   let ticks = fun n → spaceRight' width (repeat n tick)
+   let ticks = fun n → spaceRight width (repeat n tick)
    in
    let line = PathStroke(Cons(Point(0, 0), Cons(Point(n * width, 0), Nil))) in
    Graphic(map (fun g → Translate(Point(0, 0 - margin), g)) Cons(line, ticks n))

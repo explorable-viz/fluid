@@ -90,11 +90,13 @@ export class Transpose extends GraphicsElement {
    }
 }
 
+type Transform = (p: THREE.Vector2) => THREE.Vector2
+
 export class Canvas3D {
-   transforms: THREE.Vector2[] // stack of active linear transformations (so far only translation)
+   transforms: Transform[] // stack of active linear transformations (so far only translation)
 
    constructor () {
-      this.transforms = [new THREE.Vector2(0, 0)]
+      this.transforms = [x => x]
    }
 
    objects3D (elem: GraphicsElement): THREE.Object3D[] {
@@ -112,15 +114,21 @@ export class Canvas3D {
          return this.rectFill(elem.points)
       } else
       if (elem instanceof Translate) {
-         const transform: THREE.Vector2 = this.transforms.slice(-1)[0]
-         this.transforms.push(new THREE.Vector2(transform.x + elem.vec.x.n, transform.y + elem.vec.y.n))
+         const transform: Transform = this.transforms.slice(-1)[0]
+         this.transforms.push(p => {
+            let {x, y}: THREE.Vector2 = transform(p)
+            return new THREE.Vector2(x + elem.vec.x.n, y + elem.vec.y.n)
+         })
          const objects: THREE.Object3D[] = this.objects3D(elem.elem)
          this.transforms.pop()
          return objects
       } else
       if (elem instanceof Transpose) {
-         const transform: THREE.Vector2 = this.transforms.slice(-1)[0]
-         this.transforms.push(new THREE.Vector2(transform.y, transform.x))
+         const transform: Transform = this.transforms.slice(-1)[0]
+         this.transforms.push(p => {
+            let {x, y}: THREE.Vector2 = transform(p)
+            return new THREE.Vector2(y, x)
+         })
          const objects: THREE.Object3D[] = this.objects3D(elem.elem)
          this.transforms.pop()
          return objects
@@ -154,8 +162,9 @@ export class Canvas3D {
       const geometry: THREE.Geometry = new THREE.Geometry
       while (Cons.is(points)) {
          const point: Point = as(points.head, Point),
-               transform: THREE.Vector2 = this.transforms.slice(-1)[0]
-         geometry.vertices.push(new THREE.Vector3(point.x.n + transform.x, point.y.n + transform.y, 0))
+               transform2: Transform = this.transforms.slice(-1)[0],
+               {x, y}: THREE.Vector2 = transform2(new THREE.Vector2(point.x.n, point.y.n))
+         geometry.vertices.push(new THREE.Vector3(x, y, 0))
          points = points.tail
       }
       return geometry
