@@ -1,7 +1,7 @@
 import * as THREE from "three"
 import { AnnNumber } from "./app/Reflect"
 import { Annotated, Annotation, ann } from "./util/Annotated"
-import { absurd, as } from "./util/Core"
+import { absurd, as, assert } from "./util/Core"
 import { Persistent, make } from "./util/Persistent"
 import { Cons, List } from "./BaseTypes"
 
@@ -93,10 +93,15 @@ export class Transpose extends GraphicsElement {
 type Transform = (p: THREE.Vector2) => THREE.Vector2
 
 export class Canvas3D {
-   transforms: Transform[] // stack of active linear transformations (so far only translation)
+   transforms: Transform[] // stack of successive compositions of linear transformations
 
    constructor () {
       this.transforms = [x => x]
+   }
+
+   get transform (): Transform {
+      assert(this.transforms.length > 0)
+      return this.transforms[this.transforms.length - 1]
    }
 
    objects3D (elem: GraphicsElement): THREE.Object3D[] {
@@ -114,7 +119,7 @@ export class Canvas3D {
          return this.rectFill(elem.points)
       } else
       if (elem instanceof Translate) {
-         const transform: Transform = this.transforms.slice(-1)[0]
+         const transform: Transform = this.transform
          this.transforms.push(p => {
             let {x, y}: THREE.Vector2 = transform(p)
             return new THREE.Vector2(x + elem.vec.x.n, y + elem.vec.y.n)
@@ -124,7 +129,7 @@ export class Canvas3D {
          return objects
       } else
       if (elem instanceof Transpose) {
-         const transform: Transform = this.transforms.slice(-1)[0]
+         const transform: Transform = this.transform
          this.transforms.push(p => {
             let {x, y}: THREE.Vector2 = transform(p)
             return new THREE.Vector2(y, x)
@@ -137,7 +142,7 @@ export class Canvas3D {
       }
    }
 
-   // Assume closed path for now.
+   // Closes the supplied path.
    pathStroke (points: List<Point>): THREE.Object3D[] {
       const stroke: THREE.LineLoop = new THREE.LineLoop(
          this.newPathGeometry(points),
@@ -150,8 +155,8 @@ export class Canvas3D {
 
    rectFill (rect_path: List<Point>): THREE.Object3D[] {
       const geometry: THREE.Geometry = this.newPathGeometry(rect_path)
-      geometry.faces.push(new THREE.Face3(0,1,2))
-      geometry.faces.push(new THREE.Face3(2,3,0))
+      geometry.faces.push(new THREE.Face3(0, 1, 2))
+      geometry.faces.push(new THREE.Face3(2, 3, 0))
       return [new THREE.Mesh(
          geometry, 
          new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
@@ -159,11 +164,11 @@ export class Canvas3D {
    }
 
    newPathGeometry (points: List<Point>): THREE.Geometry {
-      const geometry: THREE.Geometry = new THREE.Geometry
+      const geometry: THREE.Geometry = new THREE.Geometry,
+            transform: Transform = this.transform
       while (Cons.is(points)) {
          const point: Point = as(points.head, Point),
-               transform2: Transform = this.transforms.slice(-1)[0],
-               {x, y}: THREE.Vector2 = transform2(new THREE.Vector2(point.x.n, point.y.n))
+               {x, y}: THREE.Vector2 = transform(new THREE.Vector2(point.x.n, point.y.n))
          geometry.vertices.push(new THREE.Vector3(x, y, 0))
          points = points.tail
       }
@@ -173,7 +178,7 @@ export class Canvas3D {
 
 function circle (pos: Point, radius: number): THREE.Object3D {
    const material = new THREE.LineBasicMaterial({ color: 0x0000ff }),
-         geometry = new THREE.CircleGeometry( radius, 64 )
+         geometry = new THREE.CircleGeometry(radius, 64)
    geometry.vertices.shift() // remove center vertex
    const circle: THREE.LineLoop = new THREE.LineLoop(geometry, material)
    circle.position.x = pos.x.n
