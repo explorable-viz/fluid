@@ -13,10 +13,10 @@ fun rectPath Rect(w, h) →
 fun renderRect r → 
    let ps = rectPath r in Graphic(Cons(RectFill(ps), Cons(PathStroke(ps), Nil)));
 
-// Int → Int → Int → Graphic
+// Int → Int → Int → GraphicElement
 fun axis margin n width → 
    let tick = PathStroke(Cons(Point(0, 0), Cons(Point(0, -2), Nil))) in
    let ticks = fun n → spaceRight width (repeat n tick)
    in
    let line = PathStroke(Cons(Point(0, 0), Cons(Point(n * width, 0), Nil))) in
-   Graphic(map (fun g → Translate(0, 0 - margin, g)) Cons(line, ticks n))
+   Translate(0, 0 - margin, Graphic(Cons(line, ticks n)))
