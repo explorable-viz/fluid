@@ -122,9 +122,8 @@ export class Canvas3D {
       } else
       if (elem instanceof Translate) {
          const transform: Transform = this.transform
-         this.transforms.push(p => {
-            let {x, y}: THREE.Vector2 = transform(p)
-            return new THREE.Vector2(x + elem.x.n, y + elem.y.n)
+         this.transforms.push(({x, y}): THREE.Vector2 => {
+            return transform(new THREE.Vector2(x + elem.x.n, y + elem.y.n))
          })
          const objects: THREE.Object3D[] = this.objects3D(elem.elem)
          this.transforms.pop()
@@ -132,9 +131,8 @@ export class Canvas3D {
       } else
       if (elem instanceof Transpose) {
          const transform: Transform = this.transform
-         this.transforms.push(p => {
-            let {x, y}: THREE.Vector2 = transform(p)
-            return new THREE.Vector2(y, x)
+         this.transforms.push(({x, y}): THREE.Vector2 => {
+            return transform(new THREE.Vector2(y, x))
          })
          const objects: THREE.Object3D[] = this.objects3D(elem.elem)
          this.transforms.pop()
