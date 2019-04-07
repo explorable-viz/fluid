@@ -70,12 +70,14 @@ export class RectFill extends GraphicsElement {
 }
 
 export class Translate extends GraphicsElement {
-   vec: Point
+   x: AnnNumber
+   y: AnnNumber
    elem: GraphicsElement
 
-   constructor_ (α: Annotation, vec: Point, elem: GraphicsElement): void {
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, elem: GraphicsElement): void {
       this.α = α
-      this.vec = vec
+      this.x = x
+      this.y = y
       this.elem = elem
    }
 }
@@ -122,7 +124,7 @@ export class Canvas3D {
          const transform: Transform = this.transform
          this.transforms.push(p => {
             let {x, y}: THREE.Vector2 = transform(p)
-            return new THREE.Vector2(x + elem.vec.x.n, y + elem.vec.y.n)
+            return new THREE.Vector2(x + elem.x.n, y + elem.y.n)
          })
          const objects: THREE.Object3D[] = this.objects3D(elem.elem)
          this.transforms.pop()

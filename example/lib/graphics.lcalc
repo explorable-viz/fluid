@@ -8,13 +8,9 @@ fun point_put_x x Point(_, y) →
 fun transpose Point(x, y) → 
    Point(y, x);
 
-// Point → Point → Point
-fun translate (dx, dy) Point(x, y) → 
-   Point(x + dx, y + dy);
-
 // Int → List<GraphicsElement> → List<GraphicsElement>
 fun spaceRight sep gs →
-   zipW (fun (x, g) → Translate(Point(x, 0), g)) (iterate (length gs) (fun x → x + sep) 0) gs;
+   zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
 
 // Rect → List<Point>
 fun rectPath Rect(w, h) →
@@ -33,4 +29,4 @@ fun axis margin n width →
    let ticks = fun n → spaceRight width (repeat n tick)
    in
    let line = PathStroke(Cons(Point(0, 0), Cons(Point(n * width, 0), Nil))) in
-   Graphic(map (fun g → Translate(Point(0, 0 - margin), g)) Cons(line, ticks n))
+   Graphic(map (fun g → Translate(0, 0 - margin, g)) Cons(line, ticks n))

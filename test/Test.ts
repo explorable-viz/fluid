@@ -44,7 +44,7 @@ describe("example", () => {
 						.val_constrArg("Graphic", 0).value() // translated rectangles
 						.val_constrArg("Cons", 1).value() // tail
 						.val_constrArg("Cons", 0).value() // second translated rectangle
-						.val_constrArg("Translate", 1).value() // rectangle
+						.val_constrArg("Translate", 2).value() // rectangle
 						.val_constrArg("Graphic", 0).value() // fill & stroke
 						.val_constrArg("Cons", 1).value() // tail
 						.val_constrArg("Cons", 0).value() // fill
