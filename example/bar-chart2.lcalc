@@ -1,0 +1,9 @@
+let data = [(2001, 15), (2002, 8), (2005, 22), (2007, 9)] in
+let width = 6 in
+let sep = width + 1 in
+let rects = map (fun (year, age) → Rect(width, age)) data in
+Graphic([
+   axis 1 5 7,
+   Transpose(axis 1 (length rects) width),
+   Graphic(spaceRight sep (map renderRect rects))
+])
