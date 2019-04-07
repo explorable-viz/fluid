@@ -1,0 +1,25 @@
+{
+    "name": "lambdacalc",
+    "displayName": "LambdaCalc",
+    "description": "",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.33.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "lcalc",
+            "aliases": ["LambdaCalc", "lcalc"],
+            "extensions": [".lcalc"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "lcalc",
+            "scopeName": "source.lcalc",
+            "path": "./syntaxes/lcalc.tmLanguage.json"
+        }]
+    }
+}
