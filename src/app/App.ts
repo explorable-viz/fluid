@@ -2,7 +2,6 @@ import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import { as } from "../util/Core"
 import { World } from "../util/Versioned"
-import { Cons, List } from "../BaseTypes"
 import { Expr } from "../Expr"
 import { Eval } from "../Eval"
 import { GraphicsElement, Canvas3D } from "../Graphics"
@@ -57,13 +56,10 @@ function populateScene (): void {
       .constrArg("Cons", 0).notNeed()
       .constrArg("Pair", 1).notNeed()
    const v: Value = Eval.eval_(ρ, e).v,
-         elems: List<GraphicsElement> = as(reflect(v), List),
+         elem: GraphicsElement = as(reflect(v), GraphicsElement),
          canvas: Canvas3D = new Canvas3D()
-   for (let elemsʹ: List<GraphicsElement> = elems; Cons.is(elemsʹ);) {
-      for (let obj of canvas.objects3D(as(elemsʹ.head, GraphicsElement))) {
-         scene.add(obj)
-      }
-      elemsʹ = elemsʹ.tail
+   for (let obj of canvas.objects3D(elem)) {
+      scene.add(obj)
    }
 }
 

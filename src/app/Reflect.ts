@@ -5,7 +5,7 @@ import { at } from "../util/Versioned"
 import { Cons, List, Nil } from "../BaseTypes"
 import { arity } from "../DataType"
 import { ExplVal, Value } from "../ExplVal"
-import { PathStroke, Point, RectFill, Translate } from "../Graphics"
+import { Graphic, PathStroke, Point, RectFill, Translate, Transpose } from "../Graphics"
 
 // Reflected versions of primitive constants; should be able to switch to a compiler and use these directly.
 // Can't extend built-in classes because they require initialisation at construction-time.
@@ -31,11 +31,13 @@ export class AnnString extends Annotated implements PersistentObject {
 // intermediate value required to stop TS getting confused:
 const classFor_: Class<PersistentObject>[] =
    [Cons,
+    Graphic,
     Nil,
     PathStroke,
     Point,
     RectFill,
-    Translate],
+    Translate,
+    Transpose],
    classFor: Map<string, Class<PersistentObject>> = new Map(
       classFor_.map((cls): [string, Class<PersistentObject>] => [funName(cls), cls])
    )

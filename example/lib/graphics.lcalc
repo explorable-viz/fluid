@@ -1,41 +1,22 @@
-// eventually replace these two by auto-generated getters/setters
-fun point_get_x Point(x, y) → 
-   x;
+// Int → List<GraphicsElement> → List<GraphicsElement>
+fun spaceRight sep gs →
+   zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
 
-fun point_put_x x Point(_, y) → 
-   Point(x, y);
-
-fun transpose Point(x, y) → 
-   Point(y, x);
-
-fun translate (dx, dy) Point(x, y) → 
-   Point(x + dx, y + dy);
-
-// drop all x coordinates
-fun spaceRight sep put_x shapes →
-   zipW (fun (x, shape) → put_x x shape) (iterate (length shapes) (fun x → x + sep) 0) shapes;
-
+// Rect → List<Point>
 fun rectPath Rect(w, h) →
    Cons(Point(0, 0),
    Cons(Point(w, 0),
    Cons(Point(w, h),
    Cons(Point(0, h), Nil))));
 
-// Int → List<GraphicsElement>
-fun renderRects sep {
-   Nil → Nil;
-   Cons(r, rs) → 
-      let ps = rectPath r in
-      Cons(RectFill(ps), Cons(PathStroke(ps), Cons(Translate(Point(sep, 0)), renderRects sep rs)))
-};
+// Rect → Graphic
+fun renderRect r → 
+   let ps = rectPath r in Graphic(Cons(RectFill(ps), Cons(PathStroke(ps), Nil)));
 
-// returns List<List<Point>>
+// Int → Int → Int → GraphicElement
 fun axis margin n width → 
-   let tick = Cons(Point(0, 0), Cons(Point(0, -2), Nil)) in
-   let ticks = fun n →
-      spaceRight width
-         (fun x' → map (point_put_x x'))
-         (repeat n tick)
+   let tick = PathStroke(Cons(Point(0, 0), Cons(Point(0, -2), Nil))) in
+   let ticks = fun n → spaceRight width (repeat n tick)
    in
-   let line = Cons(Point(0, 0), Cons(Point(n * width, 0), Nil)) in
-   map (map (translate (0, 0 - margin))) Cons(line, ticks n)
+   let line = PathStroke(Cons(Point(0, 0), Cons(Point(n * width, 0), Nil))) in
+   Translate(0, 0 - margin, Graphic(Cons(line, ticks n)))

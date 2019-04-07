@@ -1,29 +1,25 @@
 import * as THREE from "three"
 import { AnnNumber } from "./app/Reflect"
 import { Annotated, Annotation, ann } from "./util/Annotated"
-import { absurd, as } from "./util/Core"
+import { absurd, as, assert } from "./util/Core"
 import { Persistent, make } from "./util/Persistent"
 import { Cons, List } from "./BaseTypes"
 
 // Basic graphical datatypes.
 
 export class Rect extends Annotated {
-   x: AnnNumber
-   y: AnnNumber
    width: AnnNumber
    height: AnnNumber
 
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, width: AnnNumber, height: AnnNumber): void {
+   constructor_ (α: Annotation, width: AnnNumber, height: AnnNumber): void {
       this.α = α
-      this.x = x
-      this.y = y
       this.width = width
       this.height = height
    }
 }
 
-export function rect (x: AnnNumber, y: AnnNumber, width: AnnNumber, height: AnnNumber): Rect {
-   return make(Rect, ann.bot, x, y, width, height)
+export function rect (width: AnnNumber, height: AnnNumber): Rect {
+   return make(Rect, ann.bot, width, height)
 }
 
 export class Point extends Annotated {
@@ -43,6 +39,15 @@ export function point (x: AnnNumber, y: AnnNumber): Point {
 
 export abstract class GraphicsElement extends Annotated {
    abstract constructor_ (...v̅: Persistent[]): void
+}
+
+export class Graphic extends GraphicsElement {
+   elems: List<GraphicsElement>
+
+   constructor_ (α: Annotation, elems: List<GraphicsElement>): void {
+      this.α = α
+      this.elems = elems
+   }
 }
 
 export class PathStroke extends GraphicsElement {
@@ -65,22 +70,50 @@ export class RectFill extends GraphicsElement {
 }
 
 export class Translate extends GraphicsElement {
-   vec: Point
+   x: AnnNumber
+   y: AnnNumber
+   elem: GraphicsElement
 
-   constructor_ (α: Annotation, vec: Point): void {
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, elem: GraphicsElement): void {
       this.α = α
-      this.vec = vec
+      this.x = x
+      this.y = y
+      this.elem = elem
    }
 }
 
+// Swaps x and y. Could subsume by a more general notion of reflection.
+export class Transpose extends GraphicsElement {
+   elem: GraphicsElement
+
+   constructor_ (α: Annotation, elem: GraphicsElement): void {
+      this.α = α
+      this.elem = elem
+   }
+}
+
+type Transform = (p: THREE.Vector2) => THREE.Vector2
+
 export class Canvas3D {
-   vec: THREE.Vector2 // current linear transformation (so far only translation)
+   transforms: Transform[] // stack of successive compositions of linear transformations
 
    constructor () {
-      this.vec = new THREE.Vector2(0, 0)
+      this.transforms = [x => x]
+   }
+
+   get transform (): Transform {
+      assert(this.transforms.length > 0)
+      return this.transforms[this.transforms.length - 1]
    }
 
    objects3D (elem: GraphicsElement): THREE.Object3D[] {
+      if (elem instanceof Graphic) {   
+         const objects: THREE.Object3D[] = []
+         for (let elems: List<GraphicsElement> = elem.elems; Cons.is(elems); elems = elems.tail) {
+            objects.push(...this.objects3D(elems.head))
+         }
+         return objects
+      }
       if (elem instanceof PathStroke) {
          return this.pathStroke(elem.points)
       } else
@@ -88,15 +121,28 @@ export class Canvas3D {
          return this.rectFill(elem.points)
       } else
       if (elem instanceof Translate) {
-         this.vec.setX(this.vec.x + elem.vec.x.n)
-         this.vec.setY(this.vec.y + elem.vec.y.n)
-         return []
+         const transform: Transform = this.transform
+         this.transforms.push(({x, y}): THREE.Vector2 => {
+            return transform(new THREE.Vector2(x + elem.x.n, y + elem.y.n))
+         })
+         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
+         this.transforms.pop()
+         return objects
+      } else
+      if (elem instanceof Transpose) {
+         const transform: Transform = this.transform
+         this.transforms.push(({x, y}): THREE.Vector2 => {
+            return transform(new THREE.Vector2(y, x))
+         })
+         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
+         this.transforms.pop()
+         return objects
       } else {
          return absurd()
       }
    }
 
-   // Assume closed path for now.
+   // Closes the supplied path.
    pathStroke (points: List<Point>): THREE.Object3D[] {
       const stroke: THREE.LineLoop = new THREE.LineLoop(
          this.newPathGeometry(points),
@@ -109,8 +155,8 @@ export class Canvas3D {
 
    rectFill (rect_path: List<Point>): THREE.Object3D[] {
       const geometry: THREE.Geometry = this.newPathGeometry(rect_path)
-      geometry.faces.push(new THREE.Face3(0,1,2))
-      geometry.faces.push(new THREE.Face3(2,3,0))
+      geometry.faces.push(new THREE.Face3(0, 1, 2))
+      geometry.faces.push(new THREE.Face3(2, 3, 0))
       return [new THREE.Mesh(
          geometry, 
          new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
@@ -118,10 +164,12 @@ export class Canvas3D {
    }
 
    newPathGeometry (points: List<Point>): THREE.Geometry {
-      const geometry: THREE.Geometry = new THREE.Geometry
+      const geometry: THREE.Geometry = new THREE.Geometry,
+            transform: Transform = this.transform
       while (Cons.is(points)) {
-         const point: Point = as(points.head, Point)
-         geometry.vertices.push(new THREE.Vector3(point.x.n + this.vec.x, point.y.n + this.vec.y, 0))
+         const point: Point = as(points.head, Point),
+               {x, y}: THREE.Vector2 = transform(new THREE.Vector2(point.x.n, point.y.n))
+         geometry.vertices.push(new THREE.Vector3(x, y, 0))
          points = points.tail
       }
       return geometry
@@ -130,7 +178,7 @@ export class Canvas3D {
 
 function circle (pos: Point, radius: number): THREE.Object3D {
    const material = new THREE.LineBasicMaterial({ color: 0x0000ff }),
-         geometry = new THREE.CircleGeometry( radius, 64 )
+         geometry = new THREE.CircleGeometry(radius, 64)
    geometry.vertices.shift() // remove center vertex
    const circle: THREE.LineLoop = new THREE.LineLoop(geometry, material)
    circle.position.x = pos.x.n
