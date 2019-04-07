@@ -68,3 +68,4 @@ fun zipW op {
       Cons(y, ys) → Cons(op(x, y), zipW op xs ys)
    }
 }
+

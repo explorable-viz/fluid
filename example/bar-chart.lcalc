@@ -4,8 +4,8 @@ in
 let width = 6 in
 let sep = width + 1 in
 let rects = map (fun (year, age) → Rect(width, age)) data in
-Transpose(Graphic(
+Graphic(
    Cons(axis 1 5 7,
    Cons(Transpose(axis 1 (length rects) width),
    Cons(Graphic(spaceRight sep (map renderRect rects)), Nil)))
-))
+)
