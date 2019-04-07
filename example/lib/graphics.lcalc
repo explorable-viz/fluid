@@ -1,13 +1,3 @@
-// eventually replace these two by auto-generated getters/setters
-fun point_get_x Point(x, y) → 
-   x;
-
-fun point_put_x x Point(_, y) → 
-   Point(x, y);
-
-fun transpose Point(x, y) → 
-   Point(y, x);
-
 // Int → List<GraphicsElement> → List<GraphicsElement>
 fun spaceRight sep gs →
    zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
