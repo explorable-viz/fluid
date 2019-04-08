@@ -1,6 +1,6 @@
 letrec
    fun split {
-      Nil → ([], []);
+      [] → ([], []);
       Cons(x, xs') →
          match split xs' as 
             (ys, zs) → ([x, ...zs], ys)
@@ -8,8 +8,8 @@ letrec
 
    fun merge xs ys →
       match (xs, ys) as {
-         (Nil, ys') → ys;
-         (Cons(x, xs'), Nil) → xs;
+         ([], ys') → ys;
+         (Cons(x, xs'), []) → xs;
          (Cons(x, xs'), Cons(y, ys')) →
             match x < y as {
                True → [x, ...merge xs' ys];
@@ -19,8 +19,8 @@ letrec
 
    fun mergesort xs →
       match xs as {
-         Nil → xs;
-         Cons(x, Nil) → xs;
+         [] → xs;
+         Cons(x, []) → xs;
          Cons(x, Cons(y, xs')) →
             match split xs as 
                (ys, zs) → merge (mergesort ys) (mergesort zs)

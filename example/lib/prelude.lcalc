@@ -1,5 +1,5 @@
 fun append {
-   Nil ys → ys;
+   [] ys → ys;
    Cons(x, xs) ys → [x, ...append xs ys]
 };
 
@@ -7,12 +7,12 @@ fun compose f g x →
    f (g x);
 
 fun concat {
-   Nil ys → ys;
+   [] ys → ys;
    Cons(x, xs) ys → [x, ...concat xs ys]
 };
 
 fun filter p {
-   Nil → [];
+   [] → [];
    Cons(x, xs) →
       match p x as {
          True → [x, ...filter p xs];
@@ -21,7 +21,7 @@ fun filter p {
 };
 
 fun foldr op z {
-   Nil → z;
+   [] → z;
    Cons(x, xs) → op (x, foldr op z xs)
 };
 
@@ -29,8 +29,8 @@ fun id x →
    x;
 
 fun intersperse {
-   Nil sep → [];
-   Cons(x, Nil) sep → [x];
+   [] sep → [];
+   Cons(x, []) sep → [x];
    Cons(x, Cons(y, ys)) sep → [x, sep, ...intersperse Cons(y, ys)]
 };
 
@@ -40,12 +40,12 @@ fun iterate n f x → match n == 0 as {
 };
 
 fun length {
-   Nil → 0;
+   [] → 0;
    Cons(x, xs) → 1 + length xs
 };
 
 fun map f {
-   Nil → Nil;
+   [] → [];
    Cons(x, xs) → [f x, ...map f xs]
 };
 
@@ -53,7 +53,7 @@ fun repeat n →
    iterate n id;
 
 fun reverse {
-   Nil → Nil;
+   [] → [];
    Cons(x, xs) → append (reverse xs) [x]
 };
 
@@ -62,9 +62,9 @@ fun tail
    Cons(x, xs) → xs;
 
 fun zipW op {
-   Nil ys → [];
+   [] ys → [];
    Cons(x, xs) {
-      Nil → [];
+      [] → [];
       Cons(y, ys) → [op(x, y), ...zipW op xs ys]
    }
 }

@@ -178,12 +178,12 @@ const whitespace: Parser<Whitespace> = token(choice([horizWhitespace, newLines])
 const singleLineComment: Parser<SingleLineComment> = token(regExp(/^\/\/.*/), SingleLineComment)
 const ignore: Parser<Lexeme[]> = repeat(choice<Lexeme>([whitespace, singleLineComment]))
 
-export function successfulParse<T extends SyntaxNode>(p: Parser<T>, str: string): T {
+export function successfulParse<T extends SyntaxNode> (p: Parser<T>, str: string): T {
    return __nonNull(parse(p, str)).ast
 }
 
 // Match the supplied string with leading whitespace/comments, p, and then eof.
-function parse<T extends SyntaxNode>(p: Parser<T>, str: string): ParseResult<T> | null {
+function parse<T extends SyntaxNode> (p: Parser<T>, str: string): ParseResult<T> | null {
    const p_: Parser<T> = withAction(
       seq(seq(ignore, p), eof),
       ([[_, t], eof]: [[Lexeme[], T], null]) => t
@@ -192,7 +192,7 @@ function parse<T extends SyntaxNode>(p: Parser<T>, str: string): ParseResult<T> 
 }
 
 // As p, but transform its result by f.
-export function withAction<T, U>(p: Parser<T>, f: (t: T) => U): Parser<U> {
+export function withAction<T, U> (p: Parser<T>, f: (t: T) => U): Parser<U> {
    function withAction_(state: ParseState): ParseResult<U> | null {
       const r: ParseResult<T> | null = p(state)
       if (r !== null) {
@@ -204,17 +204,17 @@ export function withAction<T, U>(p: Parser<T>, f: (t: T) => U): Parser<U> {
 }
 
 // Combine a parser with an action which applies array "join" with an empty separator.
-export function withJoin<T>(p: Parser<T[]>): Parser<string> {
+export function withJoin<T> (p: Parser<T[]>): Parser<string> {
    return withAction(p, (ast: T[]) => ast.join(''))
 }
 
-export function lexeme<L extends Lexeme>(p: Parser<string>, C: LexemeClass<L>): Parser<L> {
+export function lexeme<L extends Lexeme> (p: Parser<string>, C: LexemeClass<L>): Parser<L> {
    return dropSecond(token(p, C), ignore)
 }
 
 // Parse a particular symbol.
-export function symbol(s: string): Parser<Operator> {
-   function symbol_(state: ParseState): ParseResult<string> | null {
+export function symbol (s: string): Parser<Operator> {
+   function symbol_ (state: ParseState): ParseResult<string> | null {
       if (state.length >= s.length && state.first(s.length) == s) {
          return { state: state.from(s.length), matched: s, ast: s }
       }
@@ -230,8 +230,8 @@ export function ch(c: string): Parser<string> {
 
 // Match a single character in an inclusive range ("a" to "z" for example).
 // The AST node is the single-character string that was parsed.
-export function range(lower: string, upper: string): Parser<string> {
-   function range_(state: ParseState): ParseResult<string> | null {
+export function range (lower: string, upper: string): Parser<string> {
+   function range_ (state: ParseState): ParseResult<string> | null {
       if (state.length < 1)
          return null
       const ch: string = state.at(0)
@@ -244,8 +244,8 @@ export function range(lower: string, upper: string): Parser<string> {
 
 // Negate a single-character parser. So negate(range('a', 'z')) will
 // match anything except the characters in the range.
-export function negate(p: Parser<string>): Parser<string> {
-   function negate_(state: ParseState): ParseResult<string> | null {
+export function negate (p: Parser<string>): Parser<string> {
+   function negate_ (state: ParseState): ParseResult<string> | null {
       if (state.length >= 1) {
          const r = p(state)
          if (r === null)
@@ -258,14 +258,14 @@ export function negate(p: Parser<string>): Parser<string> {
 }
 
 // TODO: replace by existing foldl in BaseTypes.
-export function foldLeft<T, U>(f: (x: T, y: U) => T, acc: T, xs: U[]): T {
+export function foldLeft<T, U> (f: (x: T, y: U) => T, acc: T, xs: U[]): T {
    for (let i: number = 0; i < xs.length; ++i)
       acc = f(acc, xs[i])
    return acc
 }
 
 // Matches empty string only if there is no more input.
-export function eof(state: ParseState): ParseResult<null> | null {
+export function eof (state: ParseState): ParseResult<null> | null {
    if (state.length == 0)
       return { state: state, matched: '', ast: null }
    else
@@ -273,7 +273,7 @@ export function eof(state: ParseState): ParseResult<null> | null {
 }
 
 // Always succeeds, consuming no input and returning the supplied AST.
-export function constant<T>(t: T): Parser<T> {
+export function constant<T> (t: T): Parser<T> {
    function constant_(state: ParseState): ParseResult<T> {
       return { state: state, matched: '', ast: t }
    }
@@ -283,7 +283,7 @@ export function constant<T>(t: T): Parser<T> {
 export const skip: Parser<null> = constant(null)
 
 // Strict (non-lazy) sequential composition.
-export function seq<T, U>(p1: Parser<T>, p2: Parser<U>): Parser<[T, U]> {
+export function seq<T, U> (p1: Parser<T>, p2: Parser<U>): Parser<[T, U]> {
    return lazySeqDep(p1, (t: T) => p2)
 }
 
@@ -293,7 +293,7 @@ export function seqDep<T, U> (p1: Parser<T>, p2: (t: T) => Parser<U>): Parser<[T
 
 // Lazy sequential composition, for heterogeneously typed sequences. Matches both or neither,
 // only instantiating the second parser if needed. Allow dependency of p2 on result of p1.
-export function lazySeqDep<T, U>(p1: Parser<T>, p2: (t: T) => Parser<U>): Parser<[T, U]> {
+export function lazySeqDep<T, U> (p1: Parser<T>, p2: (t: T) => Parser<U>): Parser<[T, U]> {
    function lazySeq_(state: ParseState): ParseResult<[T, U]> | null {
       const result1: ParseResult<T> | null = p1(state)
       if (result1 === null) {
@@ -314,22 +314,22 @@ export function lazySeqDep<T, U>(p1: Parser<T>, p2: (t: T) => Parser<U>): Parser
    return lazySeq_
 }
 
-export function dropSecond<T, U>(p1: Parser<T>, p2: Parser<U>): Parser<T> {
+export function dropSecond<T, U> (p1: Parser<T>, p2: Parser<U>): Parser<T> {
    return withAction<[T, U], T>(seq(p1, p2), p => p[0])
 }
 
-export function dropFirst<T, U>(p1: Parser<T>, p2: Parser<U>): Parser<U> {
+export function dropFirst<T, U> (p1: Parser<T>, p2: Parser<U>): Parser<U> {
    return withAction<[T, U], U>(seq(p1, p2), p => p[1])
 }
 
 // Succeed only if all the parsers in the supplied sequence succeed. Return an array of
 // their ASTs.
-export function sequence<T>(ps: Parser<T>[]): Parser<T[]> {
+export function sequence<T> (ps: Parser<T>[]): Parser<T[]> {
    return sequence_<T>(ps, 0)
 }
 
 // Auxiliary function for sequence<T>, which additionally takes an index into the array.
-function sequence_<T>(ps: Parser<T>[], i: number): Parser<T[]> {
+function sequence_<T> (ps: Parser<T>[], i: number): Parser<T[]> {
    if (i === ps.length) {
       return constant<T[]>([])
    }
@@ -341,7 +341,7 @@ function sequence_<T>(ps: Parser<T>[], i: number): Parser<T[]> {
 
 // Tries each of the given parsers in order, succeeding at the first successful parse,
 // failing otherwise.
-export function choice<T>(ps: Parser<T>[]): Parser<T> {
+export function choice<T> (ps: Parser<T>[]): Parser<T> {
    function choice_(state: ParseState): ParseResult<T> | null {
       for (let i: number = 0; i < ps.length; ++i) {
          const result: ParseResult<T> | null = ps[i](state)
@@ -355,7 +355,7 @@ export function choice<T>(ps: Parser<T>[]): Parser<T> {
 
 // Succeeds if p1 matches and p2 does not, or p1 matches and the matched text is
 // longer than p2's. Useful for things like: butnot(identifier, reservedWord).
-export function butnot<T, U>(p1: Parser<T>, p2: Parser<U>): Parser<T> {
+export function butnot<T, U> (p1: Parser<T>, p2: Parser<U>): Parser<T> {
    function butnot_(state: ParseState): ParseResult<T> | null {
       const br: ParseResult<U> | null = p2(state)
       if (br === null) {
@@ -393,7 +393,7 @@ export function optional<T> (p: Parser<T>, t: () => T): Parser<T> {
    return optional_
 }
 
-export function satisfying<T>(p: Parser<T>, pred: (ast: T) => boolean): Parser<T> {
+export function satisfying<T> (p: Parser<T>, pred: (ast: T) => boolean): Parser<T> {
    function satisfying_(state: ParseState): ParseResult<T> | null {
       const r: ParseResult<T> | null = p(state)
       if (r !== null && pred(r.ast))
@@ -403,12 +403,12 @@ export function satisfying<T>(p: Parser<T>, pred: (ast: T) => boolean): Parser<T
    return satisfying_
 }
 
-export function between<T1, T, T2>(p1: Parser<T1>, p: Parser<T>, p2: Parser<T2>): Parser<T> {
+export function between <T1, T, T2>(p1: Parser<T1>, p: Parser<T>, p2: Parser<T2>): Parser<T> {
    return dropFirst(p1, dropSecond(p, p2))
 }
 
 // Discards the ASTs associated with the separators.
-export function sepBy1<T, U>(p: Parser<T>, sep: Parser<U>): Parser<T[]> {
+export function sepBy1<T, U>( p: Parser<T>, sep: Parser<U>): Parser<T[]> {
    return withAction(
       seq(p, repeat(dropFirst(sep, p))),
       ([t, ts]: [T, T[]]): T[] => [t].concat(ts)
@@ -418,7 +418,7 @@ export function sepBy1<T, U>(p: Parser<T>, sep: Parser<U>): Parser<T[]> {
 // One or more occurrences of p, separated by applications of an operator. Returns the value
 // obtained by left-associative application of successive functions returned by appOp to
 // successive values returned by p.
-export function chainl1<T>(p: Parser<T>, appOp: Parser<(x: T, y: T) => T>): Parser<T> {
+export function chainl1<T> (p: Parser<T>, appOp: Parser<(x: T, y: T) => T>): Parser<T> {
    return withAction(
       seq(p, repeat(seq(appOp, p))),
       ([f, t]: [T, [(x: T, y: T) => T, T][]]) =>

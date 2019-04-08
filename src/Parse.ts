@@ -301,6 +301,14 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
    )
 }
 
+function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+   return withAction(p, (κ: K) => Trie.constr(singleton("Nil", Args.end(κ))))
+}
+
+function list_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+   return dropFirst(symbol(str.bracketL), list_patternʹ(dropFirst(symbol(str.bracketR), p)))
+}
+
 function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       dropFirst(symbol(str.parenL), args_pattern(2, dropFirst(symbol(str.parenR), p))),
@@ -317,7 +325,7 @@ function variable_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Var<K>>
 
 function pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {
    return (state: ParseState) => 
-      choice<Trie<K>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
+      choice<Trie<K>>([variable_pattern(p), list_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
 // Chain of singleton tries, followed by an expression.
