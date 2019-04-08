@@ -1,3 +1,2 @@
-let incr = fun x → 1 + x
-in
-map incr Cons(4, Cons(6, Nil))
+let incr = fun x → 1 + x in
+map incr [4, 6]

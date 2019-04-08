@@ -12,6 +12,8 @@ import { UnaryOp } from "./Primitive"
 export namespace str {
    export const arrow: string = "→"
    export const as: string = "as"
+   export const bracketL: string = "["
+   export const bracketR: string = "]"
    export const equals: string = "="
    export const fun: string = "fun"
    export const in_: string = "in"

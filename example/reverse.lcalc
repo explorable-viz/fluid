@@ -1,1 +1,1 @@
-reverse Cons(1, Cons(2, Nil))
+reverse [1, 2]

@@ -6,7 +6,7 @@ import {
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { List } from "./BaseTypes"
+import { List, nil } from "./BaseTypes"
 import { arity } from "./DataType"
 import { Expr, Kont, Lex, str } from "./Expr"
 import { singleton } from "./FiniteMap"
@@ -244,6 +244,25 @@ const constr: Parser<Constr> =
       }
    )
 
+const listRestOpt: Parser<Expr> = 
+   optional(dropFirst(seq(symbol(","), symbol("...")), expr), Expr.constr(ν(), ann.top, Lex.ctr("Nil"), nil()))
+
+const listʹ: Parser<Constr> =
+   optional(
+      withAction(
+         seq(sepBy1(expr, symbol(",")), listRestOpt),
+         ([e̅, e]): Expr.Constr => {
+            return [...e̅, e].reverse().reduce((e̅ʹ, eʹ) => {
+               return Expr.constr(ν(), ann.top, Lex.ctr("Cons"), List.fromArray([eʹ, e̅ʹ]))
+            }) as Expr.Constr
+         }
+      ),
+      Expr.constr(ν(), ann.top, Lex.ctr("Nil"), nil())
+   )
+
+const list: Parser<Constr> =
+   between(symbol(str.bracketL), listʹ, symbol(str.bracketR))
+
 const pair: Parser<Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
@@ -343,7 +362,7 @@ const fun: Parser<Fun> =
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
    choice<Expr>([
-      variable, string_, integer, parenthExpr, pair, let_, letrec, constr, matchAs, fun
+      variable, string_, integer, parenthExpr, pair, let_, letrec, list, constr, matchAs, fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.
