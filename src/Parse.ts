@@ -335,9 +335,9 @@ function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> 
 
 function variable_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Var<K>> {
    return withAction(
-      seq(var_, p), ([x, κ]: [Lex.Var, K]): Trie.Var<K> => 
-         Trie.var_(x, κ)
-      )
+      seq(var_, p), 
+      ([x, κ]: [Lex.Var, K]): Trie.Var<K> => Trie.var_(x, κ)
+   )
 }
 
 function pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {

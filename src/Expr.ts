@@ -344,7 +344,7 @@ export namespace Expr {
       export class Next<K extends Kont<K>> extends Args<K> {
          σ: Trie<Args<K>>
 
-         constructor_ (σ: Trie<Args<K>>) {
+         constructor_ (σ: Trie<Args<K>>): void {
             this.σ = σ
          }
 
