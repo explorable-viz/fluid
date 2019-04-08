@@ -311,16 +311,13 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
    )
 }
 
-function listRestOpt_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Args<K>> {
+function listRest_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Args<K>> {
    return dropFirst(symbol(","), dropFirst(symbol("..."), withAction(pattern(withAction(p, Args.end)), Args.next)))
 }
 
 function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return choice([
-      withAction(
-         withAction(pattern(listRestOpt_pattern(p)), Args.next), 
-         (Π: Args<K>) => Trie.constr(singleton("Cons", Π))
-      ),
+      withAction(pattern(listRest_pattern(p)), (σ: Trie<Args<K>>) => Trie.constr(singleton("Cons", Args.next(σ)))),
       withAction(p, (κ: K) => Trie.constr(singleton("Nil", Args.end(κ))))
    ])
 }
