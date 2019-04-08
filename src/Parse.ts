@@ -235,7 +235,7 @@ const letrec: Parser<LetRec> =
 // Enforce consistency with constructor signatures.
 const constr: Parser<Constr> =
    withAction(
-      seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
+      seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), () => [])),
       ([ctr, e̅]: [Lex.Ctr, Expr[]]) => {
          const n: number = arity(ctr.str)
          assert(n <= e̅.length, "Too few arguments in constructor.", ctr.str)
@@ -245,7 +245,7 @@ const constr: Parser<Constr> =
    )
 
 const listRestOpt: Parser<Expr> = 
-   optional(dropFirst(seq(symbol(","), symbol("...")), expr), Expr.constr(ν(), ann.top, Lex.ctr("Nil"), nil()))
+   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(ν(), ann.top, Lex.ctr("Nil"), nil()))
 
 const listʹ: Parser<Constr> =
    optional(
@@ -257,7 +257,7 @@ const listʹ: Parser<Constr> =
             }) as Expr.Constr
          }
       ),
-      Expr.constr(ν(), ann.top, Lex.ctr("Nil"), nil())
+      () => Expr.constr(ν(), ann.top, Lex.ctr("Nil"), nil())
    )
 
 const list: Parser<Constr> =

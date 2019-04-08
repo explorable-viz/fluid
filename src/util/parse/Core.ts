@@ -372,22 +372,23 @@ export function butnot<T, U>(p1: Parser<T>, p2: Parser<U>): Parser<T> {
 }
 
 // Zero or more matches of another parser, returning their results as an array.
-export function repeat<T>(p: Parser<T>): Parser<T[]> {
-   return optional(repeat1(p), [])
+export function repeat<T> (p: Parser<T>): Parser<T[]> {
+   return optional(repeat1(p), () => [])
 }
 
 // One or more matches of p.
-export function repeat1<T>(p: Parser<T>): Parser<T[]> {
+export function repeat1<T> (p: Parser<T>): Parser<T[]> {
    return withAction(
       lazySeqDep(p, () => repeat(p)),
       ([t, ts]: [T, T[]]) => [t].concat(ts)
    )
 }
 
-// Zero or one match of p, returning the supplied AST if there is no match.
-export function optional<T>(p: Parser<T>, t: T): Parser<T> {
+// Zero or one match of p, returning the AST supplied by t if there is no match. The default value
+// is supplied by a function as it may be need to be created by a side-effecting function.
+export function optional<T> (p: Parser<T>, t: () => T): Parser<T> {
    function optional_(state: ParseState): ParseResult<T> | null {
-      return p(state) || constant<T>(t)(state)
+      return p(state) || constant<T>(t())(state)
    }
    return optional_
 }

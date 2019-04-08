@@ -1,6 +1,6 @@
 fun append {
    Nil ys → ys;
-   Cons(x, xs) ys → Cons(x, append xs ys)
+   Cons(x, xs) ys → [x, ...append xs ys]
 };
 
 fun compose f g x → 
@@ -8,11 +8,11 @@ fun compose f g x →
 
 fun concat {
    Nil ys → ys;
-   Cons(x, xs) ys → Cons(x, concat xs ys)
+   Cons(x, xs) ys → [x, ...concat xs ys]
 };
 
 fun filter p {
-   Nil → Nil;
+   Nil → [];
    Cons(x, xs) →
       match p x as {
          True → [x, ...filter p xs];
@@ -29,14 +29,14 @@ fun id x →
    x;
 
 fun intersperse {
-   Nil sep → Nil;
+   Nil sep → [];
    Cons(x, Nil) sep → [x];
    Cons(x, Cons(y, ys)) sep → [x, sep, ...intersperse Cons(y, ys)]
 };
 
 fun iterate n f x → match n == 0 as {
-   True → Nil;
-   False → Cons(x, map f (iterate (n - 1) f x))
+   True → [];
+   False → [x, ...map f (iterate (n - 1) f x)]
 };
 
 fun length {
@@ -54,7 +54,7 @@ fun repeat n →
 
 fun reverse {
    Nil → Nil;
-   Cons(x, xs) → append (reverse xs) Cons(x, Nil)
+   Cons(x, xs) → append (reverse xs) [x]
 };
 
 // delete when we reinstate projection functions
@@ -62,9 +62,9 @@ fun tail
    Cons(x, xs) → xs;
 
 fun zipW op {
-   Nil ys → Nil;
+   Nil ys → [];
    Cons(x, xs) {
-      Nil → Nil;
+      Nil → [];
       Cons(y, ys) → [op(x, y), ...zipW op xs ys]
    }
 }
