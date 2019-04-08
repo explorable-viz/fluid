@@ -282,16 +282,6 @@ function args_pattern<K extends Kont<K>> (n: number, p: Parser<K>): Parser<Args<
    }
 }
 
-/*
-
-args_pattern(0, p) = withAction(p, Args.end)
-args_pattern(1, p) = withAction(pattern(withAction(p, Args.end)), Args.next)
-args_pattern(2, p) = withAction(pattern(dropFirst(symbol(","), withAction(pattern(withAction(p, Args.end)), Args.next))), Args.next)
-
-withAction(pattern(dropFirst(symbol(","), withAction(pattern(withAction(p, Args.end)), Args.next))), Args.next)
-
-*/
-
 // Continuation-passing style means "parenthesise" idiom doesn't work here.
 function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
@@ -311,8 +301,17 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
    )
 }
 
-function listRest_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Args<K>> {
-   return dropFirst(symbol(","), dropFirst(symbol("..."), withAction(pattern(withAction(p, Args.end)), Args.next)))
+function listRest_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Args.Next<K>> {
+   return choice([
+      dropFirst(symbol(","), dropFirst(symbol("..."), withAction(pattern(withAction(p, Args.end)), Args.next))),
+      dropFirst(
+         symbol(","), 
+         withAction(
+            pattern(withAction(p, (κ: K) => Args.next(Trie.constr(singleton("Nil", Args.end(κ)))))),
+            (σ: Trie<Args.Next<K>>) => Args.next(Trie.constr(singleton("Cons", Args.next(σ))))
+         )
+      )
+   ])
 }
 
 function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
