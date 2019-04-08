@@ -311,13 +311,14 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
    )
 }
 
+function listRestOpt_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Args<K>> {
+   return dropFirst(symbol(","), dropFirst(symbol("..."), withAction(pattern(withAction(p, Args.end)), Args.next)))
+}
+
 function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return choice([
       withAction(
-         withAction(
-            pattern(dropFirst(symbol(","), dropFirst(symbol("..."), withAction(pattern(withAction(p, Args.end)), Args.next)))), 
-            Args.next
-         ), 
+         withAction(pattern(listRestOpt_pattern(p)), Args.next), 
          (Π: Args<K>) => Trie.constr(singleton("Cons", Π))
       ),
       withAction(p, (κ: K) => Trie.constr(singleton("Nil", Args.end(κ))))
@@ -347,11 +348,10 @@ function pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {
       choice<Trie<K>>([variable_pattern(p), list_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
-// Chain of singleton tries, followed by an expression.
 const match: Parser<Trie<Expr>> =
    choice<Trie<Expr>>([
       pattern(dropFirst(symbol(str.arrow), expr)),
-      pattern(withAction(matches, (m): Expr => Expr.fun(ν(), ann.top, m)))
+      pattern(withAction(matches, (σ: Trie<Expr>): Expr => Expr.fun(ν(), ann.top, σ)))
    ])
 
 // Assume at least one match clause.
@@ -383,7 +383,7 @@ const matchAs: Parser<MatchAs> =
 const fun: Parser<Fun> =
    withAction(
       dropFirst(keyword(str.fun), matches),
-      (σ: Trie<Expr>) => Expr.fun(ν(), ann.top, σ)
+      (σ: Trie<Expr>): Fun => Expr.fun(ν(), ann.top, σ)
    )
 
 // Any expression other than an operator tree or application chain.
