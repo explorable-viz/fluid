@@ -1,3 +1,1 @@
-foldr (fun (x, y) → x * x + y * y)
-      0
-      Cons(4, Cons(2, Cons(2, Nil)))
+foldr (fun (x, y) → x * x + y * y) 0 [4, 2, 2]
