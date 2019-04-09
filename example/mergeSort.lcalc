@@ -19,7 +19,7 @@ letrec
 
    fun mergesort xs →
       match xs as {
-         Nil → xs;
+         [] → xs;
          Cons(x, []) → xs;
          Cons(x, [y, ...xs']) →
             match split xs as 

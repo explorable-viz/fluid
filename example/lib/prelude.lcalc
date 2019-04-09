@@ -28,12 +28,6 @@ fun foldr op z {
 fun id x → 
    x;
 
-fun wibble {
-   [] → [];
-   Cons(x, []) → [x];
-   [x, y] → [x, y]
-};
-
 fun intersperse {
    [] sep → [];
    Cons(x, []) sep → [x];
