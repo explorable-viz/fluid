@@ -21,7 +21,7 @@ letrec
       match xs as {
          [] → xs;
          [x] → xs;
-         [x, ...[y, ...xs']] →
+         [x, y, ...xs'] →
             match split xs as 
                (ys, zs) → merge (mergesort ys) (mergesort zs)
       }
