@@ -94,8 +94,8 @@ export function uncloseDefs (ρ: Env): [Env, List<Expr.RecDef>] {
 export function eval_ (ρ: Env, e: Expr): ExplVal {
    const k: ExplId = tagged(e, "t"),
          kᵥ: ValId = tagged(e, "v")
-   if (e instanceof Expr.ConstInt) {
-      return explVal(ρ, empty(k), Value.constInt(kᵥ, e.α, e.val))
+   if (e instanceof Expr.ConstNum) {
+      return explVal(ρ, empty(k), Value.constNum(kᵥ, e.α, e.val))
    } else
    if (e instanceof Expr.ConstStr) {
       return explVal(ρ, empty(k), Value.constStr(kᵥ, e.α, e.val))
@@ -174,7 +174,7 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
    const k: ExplId = asVersioned(t).__id as ExplId,
          e: Expr = k.e as Expr
    if (t instanceof Empty) {
-      if (v instanceof Value.ConstInt) {
+      if (v instanceof Value.ConstNum) {
          return e.joinα(v.α)
       } else
       if (v instanceof Value.ConstStr) {

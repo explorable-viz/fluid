@@ -40,8 +40,8 @@ export namespace Lex {
    }
 
    // Literal lexemes are elided when constructing abstract syntax to avoid additional level of structure.
-   export class IntLiteral extends Lexeme {
-      __tag: "Lex.IntLiteral"
+   export class NumLiteral extends Lexeme {
+      __tag: "Lex.NumLiteral"
       str: string
 
       constructor_ (str: string) {
@@ -49,12 +49,12 @@ export namespace Lex {
       }
 
       toNumber (): number {
-         return parseInt(this.str)
+         return new Number(this.str).valueOf()
       }
    }
 
-   export function intLiteral (str: string): IntLiteral {
-      return make(IntLiteral, str)
+   export function numLiteral (str: string): NumLiteral {
+      return make(NumLiteral, str)
    }
 
    // Keywords also elided, but we'll probably want that in the syntax at some point.
@@ -152,6 +152,19 @@ export namespace Expr {
    
    export function constInt (k: PersistentObject, α: Annotation, val: number): ConstInt {
       return at(k, ConstInt, α, val)
+   }
+
+   export class ConstNum extends Expr {
+      val: number
+
+      constructor_ (α: Annotation, val: number): void {
+         this.α = α
+         this.val = __check(val, x => !Number.isNaN(x))
+      }
+   }
+   
+   export function constNum (k: PersistentObject, α: Annotation, val: number): ConstNum {
+      return at(k, ConstNum, α, val)
    }
 
    export class ConstStr extends Expr {

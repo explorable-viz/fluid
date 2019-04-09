@@ -41,7 +41,7 @@ export namespace Value {
       __subsubtag: "Value.Prim"
    }
    
-   export class ConstInt extends Prim {
+   export class ConstNum extends Prim {
       val: number
 
       constructor_ (α: Annotation, val: number): void {
@@ -54,8 +54,8 @@ export namespace Value {
       }
    }
    
-   export function constInt (k: ValId, α: Annotation, val: number): ConstInt {
-      return at(k, ConstInt, α, val)
+   export function constNum (k: ValId, α: Annotation, val: number): ConstNum {
+      return at(k, ConstNum, α, val)
    }
 
    export class ConstStr extends Prim {
