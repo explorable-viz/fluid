@@ -97,6 +97,9 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    if (e instanceof Expr.ConstInt) {
       return explVal(ρ, empty(k), Value.constInt(kᵥ, e.α, e.val))
    } else
+   if (e instanceof Expr.ConstNum) {
+      return explVal(ρ, empty(k), Value.constNum(kᵥ, e.α, e.val))
+   } else
    if (e instanceof Expr.ConstStr) {
       return explVal(ρ, empty(k), Value.constStr(kᵥ, e.α, e.val))
    } else
@@ -175,6 +178,9 @@ export function uneval ({ρ, t, v}: ExplVal): Expr {
          e: Expr = k.e as Expr
    if (t instanceof Empty) {
       if (v instanceof Value.ConstInt) {
+         return e.joinα(v.α)
+      } else
+      if (v instanceof Value.ConstNum) {
          return e.joinα(v.α)
       } else
       if (v instanceof Value.ConstStr) {

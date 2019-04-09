@@ -11,6 +11,7 @@ import App = Expr.App
 import Args = Expr.Args
 import BinaryApp = Expr.BinaryApp
 import ConstInt = Expr.ConstInt
+import ConstNum = Expr.ConstNum
 import ConstStr = Expr.ConstStr
 import Constr = Expr.Constr
 import Fun = Expr.Fun
@@ -44,6 +45,9 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    const j: ExprId = exprId(ρ.entries(), asVersioned(e))
    if (e instanceof ConstInt) {
       return Expr.constInt(j, e.α, e.val)
+   } else
+   if (e instanceof ConstNum) {
+      return Expr.constNum(j, e.α, e.val)
    } else
    if (e instanceof ConstStr) {
       return Expr.constStr(j, e.α, e.val)
@@ -90,6 +94,9 @@ export function uninstantiate (e: Expr): Expr {
          α: Annotation = ann.join(eʹ.α, e.α) // uninstantiate must merge annotations into the source
    if (e instanceof ConstInt) {
       return Expr.constInt(k, α, e.val)
+   } else
+   if (e instanceof ConstNum) {
+      return Expr.constNum(k, α, e.val)
    } else
    if (e instanceof ConstStr) {
       return Expr.constStr(k, α, e.val)

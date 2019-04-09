@@ -57,6 +57,23 @@ export namespace Lex {
       return make(IntLiteral, str)
    }
 
+   export class NumLiteral extends Lexeme {
+      __tag: "Lex.NumLiteral"
+      str: string
+
+      constructor_ (str: string) {
+         this.str = str
+      }
+
+      toNumber (): number {
+         return new Number(this.str).valueOf()
+      }
+   }
+
+   export function numLiteral (str: string): NumLiteral {
+      return make(NumLiteral, str)
+   }
+
    // Keywords also elided, but we'll probably want that in the syntax at some point.
    export class Keyword extends Lexeme {
       __tag: "Lex.Keyword"
@@ -152,6 +169,19 @@ export namespace Expr {
    
    export function constInt (k: PersistentObject, α: Annotation, val: number): ConstInt {
       return at(k, ConstInt, α, val)
+   }
+
+   export class ConstNum extends Expr {
+      val: number
+
+      constructor_ (α: Annotation, val: number): void {
+         this.α = α
+         this.val = __check(val, x => !Number.isNaN(x))
+      }
+   }
+   
+   export function constNum (k: PersistentObject, α: Annotation, val: number): ConstNum {
+      return at(k, ConstNum, α, val)
    }
 
    export class ConstStr extends Expr {

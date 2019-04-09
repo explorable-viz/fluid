@@ -58,6 +58,23 @@ export namespace Value {
       return at(k, ConstInt, α, val)
    }
 
+   export class ConstNum extends Prim {
+      val: number
+
+      constructor_ (α: Annotation, val: number): void {
+         this.α = α
+         this.val = val
+      }
+   
+      toString (): string {
+         return `${this.val}`
+      }
+   }
+   
+   export function constNum (k: ValId, α: Annotation, val: number): ConstNum {
+      return at(k, ConstNum, α, val)
+   }
+
    export class ConstStr extends Prim {
       val: string
 

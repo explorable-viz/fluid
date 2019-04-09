@@ -1,5 +1,19 @@
 let
-   data = [(2001, 15), (2002, 8), (2005, 22), (2007, 9)]
+   // http://www.ren21.net/gsr-2016/00-Reference-Tables.php
+   // http://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
+   // http://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2
+   data1 = [
+      (2015, [
+         ("China", [
+            ("Bio-power", 10)
+         ])
+      ])
+   ]
+in
+let
+   data = [
+      (2001, 15), (2002, 8), (2005, 22), (2007, 9)
+   ]
 in
 let width = 6 in
 let sep = width + 1 in

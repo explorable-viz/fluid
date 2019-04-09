@@ -15,6 +15,7 @@ import App = Expr.App
 import Args = Expr.Args
 import BinaryApp = Expr.BinaryApp
 import ConstInt = Expr.ConstInt
+import ConstNum = Expr.ConstNum
 import ConstStr = Expr.ConstStr
 import Constr = Expr.Constr
 import Fun = Expr.Fun
@@ -183,10 +184,10 @@ function appOp (
 const string_: Parser<ConstStr> =
    withAction(
       lexeme(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),), Lex.StringLiteral),
-      lit => Expr.constStr(ν(), ann.top, lit.str)
+      lit => Expr.constStr(ν(), ann.top, lit.toString())
    )
 
-const integer: Parser<ConstInt> =
+export const integer: Parser<ConstInt> =
    withAction(
       lexeme(
          choice<string>([
@@ -196,10 +197,38 @@ const integer: Parser<ConstInt> =
          ]),
          Lex.IntLiteral
       ),
-      lit => Expr.constInt(ν(), ann.top, parseInt(lit.str))
+      lit => Expr.constInt(ν(), ann.top, lit.toNumber())
    )
 
-const parenthExpr: Parser<Expr> = 
+// JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
+// I'm assuming (but haven't checked that) DIGIT is defined as
+const DIGIT: Parser<string> = range("0", "9")
+// decimal-point = %x2E       ; .
+const decimal_point = ch(".")
+// digit1-9 = %x31-39         ; 1-9
+const digit1to9: Parser<string> = range("1", "9")
+// e = %x65 / %x45            ; e E
+const e: Parser<string> = choice([ch("e"), ch("E")])
+// minus = %x2D               ; -
+const minus: Parser<string> = ch("-")
+// plus = %x2B                ; +
+const plus: Parser<string> = ch("+")
+// zero = %x30                ; 0
+const zero: Parser<string> = ch("0")
+// exp = e [ minus / plus ] 1*DIGIT
+const exp: Parser<string> = withJoin(sequence([e, optional(choice([minus, plus]), () => ""), withJoin(repeat1(DIGIT))]))
+// frac = decimal-point 1*DIGIT
+const frac = withJoin(sequence([decimal_point, withJoin(repeat1(DIGIT))]))
+// int = zero / ( digit1-9 *DIGIT )
+const int: Parser<string> = choice([zero, withJoin(sequence([digit1to9, withJoin(repeat(DIGIT))]))])
+// number = [ minus ] int [ frac ] [ exp ]
+const numberʹ: Parser<string> = 
+   withJoin(sequence([optional(minus, () => ""), int, optional(frac, () => ""), optional(exp, () => "")]))
+
+const number_: Parser<ConstNum> =
+   withAction(lexeme(numberʹ, Lex.NumLiteral), lit => Expr.constNum(ν(), ann.top, lit.toNumber()))
+
+const parenthExpr: Parser<Expr> =
    parenthesise(expr)
 
 const let_: Parser<Let> =
@@ -389,7 +418,7 @@ const fun: Parser<Fun> =
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
    choice<Expr>([
-      variable, string_, integer, parenthExpr, pair, let_, letrec, list, constr, matchAs, fun
+      variable, string_, number_, parenthExpr, pair, let_, letrec, list, constr, matchAs, fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.
