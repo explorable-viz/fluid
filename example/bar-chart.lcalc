@@ -1,23 +1,105 @@
+// The original dataset sometimes has '~0' instead of '0'. Including only 3 top countries here.
 let
-   // http://www.ren21.net/gsr-2016/00-Reference-Tables.php
-   // http://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
-   // http://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2
-   data1 = [
+   data = [
+      // http://www.ren21.net/gsr-2016/00-Reference-Tables.php
       (2015, [
          ("China", [
-            ("Bio-power", 10)
+            ("Bio", 10.3),
+            ("Geothermal", 0),
+            ("Hydro", 296),
+            ("Ocean", 0),
+            ("Solar", 44),
+            ("CSP", 0),
+            ("Wind", 145)
+         ]),
+         ("United States", [
+            ("Bio", 16.7),
+            ("Geothermal", 3.6),
+            ("Hydro", 80),
+            ("Ocean", 0),
+            ("Solar", 26),
+            ("CSP", 1.7),
+            ("Wind", 74)
+         ]),
+         ("Germany", [
+            ("Bio", 7.1),
+            ("Geothermal", 0),
+            ("Hydro", 5.6),
+            ("Ocean", 0),
+            ("Solar", 40),
+            ("CSP", 0),
+            ("Wind", 45)
+         ])
+      ]),
+      // http://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
+      (2016, [
+         ("China", [
+            ("Bio", 12),
+            ("Geothermal", 0),
+            ("Hydro", 305),
+            ("Ocean", 0),
+            ("Solar", 77),
+            ("CSP", 0),
+            ("Wind", 169)
+         ]),
+         ("United States", [
+            ("Bio", 16.8),
+            ("Geothermal", 3.6),
+            ("Hydro", 80),
+            ("Ocean", 0),
+            ("Solar", 41),
+            ("CSP", 1.7),
+            ("Wind", 82)
+         ]),
+         ("Germany", [
+            ("Bio", 7.6),
+            ("Geothermal", 0),
+            ("Hydro", 5.6),
+            ("Ocean", 0),
+            ("Solar", 41),
+            ("CSP", 0),
+            ("Wind", 50)
+         ])
+      ]),
+      // http://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2
+      (2017, [
+         ("China", [
+            ("Bio", 14.9),
+            ("Geothermal", 0),
+            ("Hydro", 313),
+            ("Ocean", 0),
+            ("Solar", 131),
+            ("CSP", 0),
+            ("Wind", 188)
+         ]),
+         ("United States", [
+            ("Bio", 16.7),
+            ("Geothermal", 2.5),
+            ("Hydro", 80),
+            ("Ocean", 0),
+            ("Solar", 51),
+            ("CSP", 1.7),
+            ("Wind", 89)
+         ]),
+         ("Germany", [
+            ("Bio", 8),
+            ("Geothermal", 0),
+            ("Hydro", 5.6),
+            ("Ocean", 0),
+            ("Solar", 42),
+            ("CSP", 0),
+            ("Wind", 56)
          ])
       ])
    ]
 in
-let
-   data = [
-      (2001, 15), (2002, 8), (2005, 22), (2007, 9)
-   ]
-in
+// List<Pair<string, number>> → number
+let totalRenewable = fun data → sum (map snd data) in
+// List<Pair<string, List<Pair<string, number>>>> → number
+let totalAllCountries = fun data → length (map (fun x → 1) data) in // sum (map (compose totalRenewable snd) data) in
 let width = 6 in
 let sep = width + 1 in
-let rects = map (fun (year, age) → Rect(width, age)) data in
+let rects = map (fun (year, data) → Rect(width, totalAllCountries data)) data in
 Graphic([
    axis 1 5 7,
    Transpose(axis 1 (length rects) width),

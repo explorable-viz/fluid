@@ -3,6 +3,7 @@ fun append {
    [x, ...xs] ys → [x, ...append xs ys]
 };
 
+// Would like infix operators. (b → c) → (a → b) → a → c
 fun compose f g x → 
    f (g x);
 
@@ -20,10 +21,18 @@ fun filter p {
       }
 };
 
+// (a → b) → Pair(a, c) → Pair(b, c)
+fun first f (a, c) → 
+   (f a, c);
+
+
 fun foldr op z {
    [] → z;
    [x, ...xs] → op (x, foldr op z xs)
 };
+
+fun fst (x, y) → 
+   x;
 
 fun id x → 
    x;
@@ -56,6 +65,17 @@ fun reverse {
    [] → [];
    [x, ...xs] → append (reverse xs) [x]
 };
+
+// (a → b) → Pair(c, a) → Pair(c, b)
+fun second f (c, a) → 
+   (c, f a);
+
+fun snd (x, y) → 
+   y;
+
+// List<number> → number
+fun sum xs → 
+   foldr (fun (x, y) → x + y) 0 xs;
 
 // delete when we reinstate projection functions
 fun tail [x, ...xs] → xs;
