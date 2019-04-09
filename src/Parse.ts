@@ -301,7 +301,7 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
    )
 }
 
-function listRest_pattern <K extends Kont<K>> (p: Parser<Args.End<K>>): Parser<Trie<Args.Next<K>>> {
+function listRest_pattern <K extends Kont<K>> (p: Parser<Args.End<K>>): Parser<Trie<Args.End<K>>> {
    return (state: ParseState) => 
       choice([
          dropFirst(symbol(","), dropFirst(symbol("..."), pattern(p))),
