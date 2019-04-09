@@ -305,12 +305,12 @@ function listRest_pattern <K extends Kont<K>> (p: Parser<Args.End<K>>): Parser<T
    return (state: ParseState) => 
       choice([
          dropFirst(symbol(","), dropFirst(symbol("..."), pattern(p))),
-         dropFirst(symbol(","), wibble(p)),
+         dropFirst(symbol(","), list1_pattern(p)),
          withAction(p, (κ: Args.End<K>) => Trie.constr(singleton("Nil", Args.end(κ))))
       ])(state)
 }
 
-function wibble<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+function list1_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       pattern(withAction(listRest_pattern(withAction(p, Args.end)), Args.next)),
       (σ: Trie<Args.Next<K>>) => Trie.constr(singleton("Cons", Args.next(σ))) 
@@ -319,7 +319,7 @@ function wibble<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
 
 function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return choice([
-      wibble(p),
+      list1_pattern(p),
       withAction(p, (κ: K) => Trie.constr(singleton("Nil", Args.end(κ))))
    ])
 }
