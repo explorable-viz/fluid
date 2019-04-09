@@ -6,7 +6,7 @@ import {
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
-import { List } from "./BaseTypes"
+import { List, nil } from "./BaseTypes"
 import { arity } from "./DataType"
 import { Expr, Kont, Lex, str } from "./Expr"
 import { singleton } from "./FiniteMap"
@@ -235,7 +235,7 @@ const letrec: Parser<LetRec> =
 // Enforce consistency with constructor signatures.
 const constr: Parser<Constr> =
    withAction(
-      seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), [])),
+      seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), () => [])),
       ([ctr, e̅]: [Lex.Ctr, Expr[]]) => {
          const n: number = arity(ctr.str)
          assert(n <= e̅.length, "Too few arguments in constructor.", ctr.str)
@@ -243,6 +243,25 @@ const constr: Parser<Constr> =
          return Expr.constr(ν(), ann.top, ctr, List.fromArray(e̅))
       }
    )
+
+const listRestOpt: Parser<Expr> = 
+   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(ν(), ann.top, Lex.ctr("Nil"), nil()))
+
+const listʹ: Parser<Constr> =
+   optional(
+      withAction(
+         seq(sepBy1(expr, symbol(",")), listRestOpt),
+         ([e̅, e]): Expr.Constr => {
+            return [...e̅, e].reverse().reduce((e̅ʹ, eʹ) => {
+               return Expr.constr(ν(), ann.top, Lex.ctr("Cons"), List.fromArray([eʹ, e̅ʹ]))
+            }) as Expr.Constr
+         }
+      ),
+      () => Expr.constr(ν(), ann.top, Lex.ctr("Nil"), nil())
+   )
+
+const list: Parser<Constr> =
+   between(symbol(str.bracketL), listʹ, symbol(str.bracketR))
 
 const pair: Parser<Constr> =
    withAction(
@@ -282,6 +301,34 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
    )
 }
 
+// This was very hard to figure out; the types aren't helping as much as they should.
+function listRest_pattern <K extends Kont<K>> (p: Parser<Args.End<K>>): Parser<Trie<Args.End<K>>> {
+   return (state: ParseState) => 
+      choice([
+         dropFirst(symbol(","), dropFirst(symbol("..."), pattern(p))),
+         dropFirst(symbol(","), list1_pattern(p)),
+         withAction(p, (κ: Args.End<K>) => Trie.constr(singleton("Nil", Args.end(κ))))
+      ])(state)
+}
+
+function list1_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+   return withAction(
+      pattern(withAction(listRest_pattern(withAction(p, Args.end)), Args.next)),
+      (σ: Trie<Args.Next<K>>) => Trie.constr(singleton("Cons", Args.next(σ))) 
+   )
+}
+
+function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+   return choice([
+      list1_pattern(p),
+      withAction(p, (κ: K) => Trie.constr(singleton("Nil", Args.end(κ))))
+   ])
+}
+
+function list_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+   return dropFirst(symbol(str.bracketL), list_patternʹ(dropFirst(symbol(str.bracketR), p)))
+}
+
 function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       dropFirst(symbol(str.parenL), args_pattern(2, dropFirst(symbol(str.parenR), p))),
@@ -291,21 +338,20 @@ function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> 
 
 function variable_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Var<K>> {
    return withAction(
-      seq(var_, p), ([x, κ]: [Lex.Var, K]): Trie.Var<K> => 
-         Trie.var_(x, κ)
-      )
+      seq(var_, p), 
+      ([x, κ]: [Lex.Var, K]): Trie.Var<K> => Trie.var_(x, κ)
+   )
 }
 
 function pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {
    return (state: ParseState) => 
-      choice<Trie<K>>([variable_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
+      choice<Trie<K>>([variable_pattern(p), list_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }
 
-// Chain of singleton tries, followed by an expression.
 const match: Parser<Trie<Expr>> =
    choice<Trie<Expr>>([
       pattern(dropFirst(symbol(str.arrow), expr)),
-      pattern(withAction(matches, (m): Expr => Expr.fun(ν(), ann.top, m))) // retarded cast
+      pattern(withAction(matches, (σ: Trie<Expr>): Expr => Expr.fun(ν(), ann.top, σ)))
    ])
 
 // Assume at least one match clause.
@@ -337,13 +383,13 @@ const matchAs: Parser<MatchAs> =
 const fun: Parser<Fun> =
    withAction(
       dropFirst(keyword(str.fun), matches),
-      (σ: Trie<Expr>) => Expr.fun(ν(), ann.top, σ)
+      (σ: Trie<Expr>): Fun => Expr.fun(ν(), ann.top, σ)
    )
 
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
    choice<Expr>([
-      variable, string_, integer, parenthExpr, pair, let_, letrec, constr, matchAs, fun
+      variable, string_, integer, parenthExpr, pair, let_, letrec, list, constr, matchAs, fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.

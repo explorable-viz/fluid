@@ -1,70 +1,69 @@
 fun append {
-   Nil ys → ys;
-   Cons(x, xs) ys → Cons(x, append xs ys)
+   [] ys → ys;
+   [x, ...xs] ys → [x, ...append xs ys]
 };
 
 fun compose f g x → 
    f (g x);
 
 fun concat {
-   Nil ys → ys;
-   Cons(x, xs) ys → Cons(x, concat xs ys)
+   [] ys → ys;
+   [x, ...xs] ys → [x, ...concat xs ys]
 };
 
 fun filter p {
-   Nil → Nil;
-   Cons(x, xs) →
+   [] → [];
+   [x, ...xs] →
       match p x as {
-         True → Cons(x, filter p xs);
+         True → [x, ...filter p xs];
          False → filter p xs
       }
 };
 
 fun foldr op z {
-   Nil → z;
-   Cons(x, xs) → op (x, foldr op z xs)
+   [] → z;
+   [x, ...xs] → op (x, foldr op z xs)
 };
 
 fun id x → 
    x;
 
 fun intersperse {
-   Nil sep → Nil;
-   Cons(x, Nil) sep → Cons(x, Nil);
-   Cons(x, Cons(y, ys)) sep → Cons(x, Cons(sep, intersperse Cons(y, ys)))
+   [] sep → [];
+   [x] sep → [x];
+   [x, y, ...ys] sep → [x, sep, ...intersperse [y, ...ys]]
 };
 
 fun iterate n f x → match n == 0 as {
-   True → Nil;
-   False → Cons(x, map f (iterate (n - 1) f x))
+   True → [];
+   False → [x, ...map f (iterate (n - 1) f x)]
 };
 
 fun length {
-   Nil → 0;
-   Cons(x, xs) → 1 + length xs
+   [] → 0;
+   [x, ...xs] → 1 + length xs
 };
 
 fun map f {
-   Nil → Nil;
-   Cons(x, xs) → Cons(f x, map f xs)
+   [] → [];
+   [x, ...xs] → [f x, ...map f xs]
 };
 
 fun repeat n → 
    iterate n id;
 
 fun reverse {
-   Nil → Nil;
-   Cons(x, xs) → append (reverse xs) Cons(x, Nil)
+   [] → [];
+   [x, ...xs] → append (reverse xs) [x]
 };
 
 // delete when we reinstate projection functions
-fun tail 
-   Cons(x, xs) → xs;
+fun tail [x, ...xs] → xs;
 
 fun zipW op {
-   Nil ys → Nil;
-   Cons(x, xs) {
-      Nil → Nil;
-      Cons(y, ys) → Cons(op(x, y), zipW op xs ys)
+   [] ys → [];
+   [x, ...xs] {
+      [] → [];
+      [y, ...ys] → [op(x, y), ...zipW op xs ys]
    }
 }

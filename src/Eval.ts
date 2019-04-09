@@ -1,5 +1,5 @@
 import { ann } from "./util/Annotated"
-import { absurd, as, assert } from "./util/Core"
+import { absurd, as, assert, className } from "./util/Core"
 import { PersistentObject, make } from "./util/Persistent"
 import { asVersioned } from "./util/Versioned"
 import { Cons, List, Nil, nil } from "./BaseTypes"
@@ -134,7 +134,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
          const tu: ExplVal = eval_(ρ, e.arg)
          return explVal(ρ, unaryApp(k, tf, tu), f.op.b.op(tu.v!)(kᵥ, ann.meet(f.α, tu.v.α, e.α)))
       } else {
-         return absurd()
+         return error(`Cannot apply a ${className(f)}`, f)
       }
    } else
    // Operators (currently all binary) are "syntax", rather than names.

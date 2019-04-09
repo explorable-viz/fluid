@@ -150,7 +150,7 @@ export class Canvas3D {
             color: 0x000000 
          })
       )
-      return [stroke, ...pointHighlights(points)]
+      return [stroke, ...this.pointHighlights(points)]
    }
 
    rectFill (rect_path: List<Point>): THREE.Object3D[] {
@@ -174,26 +174,27 @@ export class Canvas3D {
       }
       return geometry
    }   
+
+   pointHighlights (points: List<Point>): THREE.Object3D[] {
+      const highlights: THREE.Object3D[] = [],
+            transform: Transform = this.transform
+      for (; Cons.is(points); points = points.tail) {
+         const point: Point = points.head,
+               p: THREE.Vector2 = transform(new THREE.Vector2(point.x.n, point.y.n))
+         if (!point.x.α || !point.y.α) {
+            highlights.push(circle(p, 0.5))
+         }
+      }
+      return highlights
+   }
 }
 
-function circle (pos: Point, radius: number): THREE.Object3D {
+function circle (pos: THREE.Vector2, radius: number): THREE.Object3D {
    const material = new THREE.LineBasicMaterial({ color: 0x0000ff }),
          geometry = new THREE.CircleGeometry(radius, 64)
    geometry.vertices.shift() // remove center vertex
    const circle: THREE.LineLoop = new THREE.LineLoop(geometry, material)
-   circle.position.x = pos.x.n
-   circle.position.y = pos.y.n
+   circle.position.x = pos.x
+   circle.position.y = pos.y
    return circle
-}
-
-function pointHighlights (points: List<Point>): THREE.Object3D[] {
-   const highlights: THREE.Object3D[] = []
-   for (; Cons.is(points); points = points.tail) {
-      const point: Point = points.head
-      if (!point.x.α || !point.y.α) {
-         console.log(point)
-         highlights.push(circle(point, 0.5))
-      }
-   }
-   return highlights
 }

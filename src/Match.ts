@@ -23,15 +23,16 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Match.Plug<K,
    if (Trie.Constr.is(σ)) {
       if (v instanceof Value.Constr) {
          let Ψκ_α: [Match.Args.Plug<K, Match.Args<K>>, Annotation] // actually may be null, but TypeScript confused
-         const cases: FiniteMap<string, Args<K> | Match.Args<K>> = σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
-            if (v.ctr.str === ctr) {
-               const [Ψκ, α] = matchArgs(v.args, Π)
-               Ψκ_α = [Ψκ, α]
-               return pair(ctr, Ψκ.Ψ)
-            } else {
-               return pair(ctr, Π)
-            }
-         })
+         const cases: FiniteMap<string, Args<K> | Match.Args<K>> = 
+            σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
+               if (v.ctr.str === ctr) {
+                  const [Ψκ, α] = matchArgs(v.args, Π)
+                  Ψκ_α = [Ψκ, α]
+                  return pair(ctr, Ψκ.Ψ)
+               } else {
+                  return pair(ctr, Π)
+               }
+            })
          if (Ψκ_α! === undefined) {
             return error("Pattern mismatch: wrong data type.", v, σ)
          } else {

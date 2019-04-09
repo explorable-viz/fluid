@@ -106,7 +106,7 @@ function __assertEqualState (tgt: ObjectState, src: Object): void {
    assert(tgt.constructor === src.constructor)
    assert(fields(tgt).length === fields(src).length)
    fields(tgt).forEach((k: string): void => {
-      assert(tgt[k] === src_[k])
+      assert(tgt[k] === src_[k], "Incompatible field values", tgt, src_)
    })
 }
 

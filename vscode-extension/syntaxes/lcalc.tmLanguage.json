@@ -1,0 +1,32 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "LambdaCalc",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.lcalc",
+				"match": "\\b(as|fun|in|let|letrec|match)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.lcalc",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.lcalc",
+					"match": "\\\\."
+				}
+			]
+		}
+	},
+	"scopeName": "source.lcalc"
+}

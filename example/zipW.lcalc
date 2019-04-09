@@ -1,4 +1,1 @@
-zipW
-   (fun (x, y) → Point(x, y))
-   Cons(10, Cons(12, Cons(20, Nil)))
-   Cons(3, Cons(4, Cons(8, Cons(16, Nil))))
+zipW (fun (x, y) → Point(x, y)) [10, 12, 20] [3, 4, 8, 16]
