@@ -258,6 +258,12 @@ describe("example", () => {
 		})
 	})
 
+	describe("pattern-match", () => {
+		it("ok", () => {
+			runExample(parseExample(loadExample("pattern-match")))
+		})
+	})
+
 	describe("reverse", () => {
 		it("ok", () => {
 			const e: Expr = parseExample(loadExample("reverse"))
