@@ -310,7 +310,8 @@ function listRest_pattern <K extends Kont<K>> (p: Parser<K>): Parser<Args.Next<K
             pattern(withAction(p, (κ: K) => Args.next(Trie.constr(singleton("Nil", Args.end(Args.end(κ))))))),
             (σ: Trie<Args.Next<K>>) => Args.next(Trie.constr(singleton("Cons", Args.next(σ))))
          )
-      )
+      ),
+      withAction(p, (κ: K) => Args.next(Trie.constr(singleton("Nil", Args.end(Args.end(κ))))))
    ])
 }
 
@@ -318,10 +319,6 @@ function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
    return choice([
       withAction(
          pattern(listRest_pattern(p)),
-         (σ: Trie<Args.Next<K>>) => Trie.constr(singleton("Cons", Args.next(σ))) 
-      ),
-      withAction(
-         pattern(withAction(p, (κ: K) => Args.next(Trie.constr(singleton("Nil", Args.end(Args.end(κ))))))),
          (σ: Trie<Args.Next<K>>) => Trie.constr(singleton("Cons", Args.next(σ))) 
       ),
       withAction(p, (κ: K) => Trie.constr(singleton("Nil", Args.end(κ))))
