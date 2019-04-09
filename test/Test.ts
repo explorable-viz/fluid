@@ -35,21 +35,7 @@ describe("example", () => {
 			const e: Expr = parseExample(loadExample("bar-chart"))
 			new (class extends BwdSlice {
 				setup (): void {
-					this.val
-						.need()
-						.val_constrArg("Graphic", 0).value()
-						.val_constrArg("Cons", 1).value() // first axis
-						.val_constrArg("Cons", 1).value() // second axis
-						.val_constrArg("Cons", 0).value().need() // chart
-						.val_constrArg("Graphic", 0).value() // translated rectangles
-						.val_constrArg("Cons", 1).value() // tail
-						.val_constrArg("Cons", 0).value() // second translated rectangle
-						.val_constrArg("Translate", 2).value() // rectangle
-						.val_constrArg("Graphic", 0).value() // fill & stroke
-						.val_constrArg("Cons", 1).value() // tail
-						.val_constrArg("Cons", 0).value() // fill
-						.val_constrArg("PathStroke", 0).value()
-						.val_constrArg("Cons", 0).value().need() // first point
+					this.val.need()
 				}
 				expect (): void {
 					this.expr.needed()
