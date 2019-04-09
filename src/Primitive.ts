@@ -116,12 +116,12 @@ export function error (message: Value.ConstStr): (k: PersistentObject) => Value 
    return assert(false, "LambdaCalc error:\n" + message.val)
 }
 
-export function intToString (x: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstStr {
+export function intToString (x: Value.ConstNum): (k: ValId, α: Annotation) => Value.ConstStr {
    return (k, α) => Value.constStr(k, α, x.toString())
 }
 
 // No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
-export function equalInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.Constr {
+export function equalInt (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.Constr {
    return x.val.valueOf() === y.val.valueOf() ? __true : __false
 }
 
@@ -129,7 +129,7 @@ export function equalStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: 
    return x.val.valueOf() === y.val.valueOf() ? __true : __false
 }
 
-export function greaterInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.Constr {
+export function greaterInt (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.Constr {
    return x.val > y.val ? __true : __false
 }
 
@@ -137,7 +137,7 @@ export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α
    return x.val > y.val ? __true : __false
 }
 
-export function lessInt (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.Constr {
+export function lessInt (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.Constr {
    return x.val < y.val ? __true : __false
 }
 
@@ -145,21 +145,21 @@ export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: A
    return x.val < y.val ? __true : __false
 }
 
-export function minus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
-   return (k, α) => Value.constInt(k, α, x.val.valueOf() - y.val.valueOf())
+export function minus (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.ConstNum {
+   return (k, α) => Value.constNum(k, α, x.val.valueOf() - y.val.valueOf())
 }
 
-export function plus (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
-   return (k, α) => Value.constInt(k, α, x.val.valueOf() + y.val.valueOf())
+export function plus (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.ConstNum {
+   return (k, α) => Value.constNum(k, α, x.val.valueOf() + y.val.valueOf())
 }
 
-export function times (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
-   return (k, α) => Value.constInt(k, α, x.val.valueOf() * y.val.valueOf())
+export function times (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.ConstNum {
+   return (k, α) => Value.constNum(k, α, x.val.valueOf() * y.val.valueOf())
 }
 
-export function div (x: Value.ConstInt, y: Value.ConstInt): (k: ValId, α: Annotation) => Value.ConstInt {
-   // Apparently this will round in the right direction.
-   return (k, α) => Value.constInt(k, α, ~~(x.val.valueOf() / y.val.valueOf()))
+// If we want integer division, apparently ~~(x / y) will round in the right direction.
+export function div (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.ConstNum {
+   return (k, α) => Value.constNum(k, α, x.val.valueOf() / y.val.valueOf())
 }
 
 export function concat (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.ConstStr {

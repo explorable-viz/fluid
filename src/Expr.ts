@@ -40,23 +40,6 @@ export namespace Lex {
    }
 
    // Literal lexemes are elided when constructing abstract syntax to avoid additional level of structure.
-   export class IntLiteral extends Lexeme {
-      __tag: "Lex.IntLiteral"
-      str: string
-
-      constructor_ (str: string) {
-         this.str = str
-      }
-
-      toNumber (): number {
-         return parseInt(this.str)
-      }
-   }
-
-   export function intLiteral (str: string): IntLiteral {
-      return make(IntLiteral, str)
-   }
-
    export class NumLiteral extends Lexeme {
       __tag: "Lex.NumLiteral"
       str: string

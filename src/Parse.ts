@@ -14,7 +14,6 @@ import { singleton } from "./FiniteMap"
 import App = Expr.App
 import Args = Expr.Args
 import BinaryApp = Expr.BinaryApp
-import ConstInt = Expr.ConstInt
 import ConstNum = Expr.ConstNum
 import ConstStr = Expr.ConstStr
 import Constr = Expr.Constr
@@ -121,9 +120,6 @@ const escapeSeq: Parser<string> =
 const stringCh: Parser<string> =
    choice<string>([negate(choice<string>([ch('"'), ch("\\"), ch("\r"), ch("\n")])), escapeSeq])
 
-const decimalDigits: Parser<string> = 
-   withJoin(repeat1(range("0", "9")))
-
 // To avoid having to deal with arbitrary operator precedence, we classify all operators as one of three
 // kinds, depending on the initial character. See 0.5.1 release notes.
 const opCandidate: Parser<Lex.OpName> =
@@ -185,19 +181,6 @@ const string_: Parser<ConstStr> =
    withAction(
       lexeme(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),), Lex.StringLiteral),
       lit => Expr.constStr(ν(), ann.top, lit.toString())
-   )
-
-export const integer: Parser<ConstInt> =
-   withAction(
-      lexeme(
-         choice<string>([
-            decimalDigits,
-            withJoin(sequence([ch("+"), decimalDigits])),
-            withJoin(sequence([ch("-"), decimalDigits]))
-         ]),
-         Lex.IntLiteral
-      ),
-      lit => Expr.constInt(ν(), ann.top, lit.toNumber())
    )
 
 // JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
