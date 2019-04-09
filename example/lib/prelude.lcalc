@@ -30,8 +30,8 @@ fun id x →
 
 fun intersperse {
    [] sep → [];
-   Cons(x, []) sep → [x];
-   Cons(x, [y, ...ys]) sep → [x, sep, ...intersperse Cons(y, ys)]
+   [x] sep → [x];
+   [x, ...[y, ...ys]] sep → [x, sep, ...intersperse Cons(y, ys)]
 };
 
 fun iterate n f x → match n == 0 as {

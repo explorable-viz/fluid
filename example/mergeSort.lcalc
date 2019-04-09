@@ -20,8 +20,8 @@ letrec
    fun mergesort xs →
       match xs as {
          [] → xs;
-         Cons(x, []) → xs;
-         Cons(x, [y, ...xs']) →
+         [x] → xs;
+         [x, ...[y, ...xs']] →
             match split xs as 
                (ys, zs) → merge (mergesort ys) (mergesort zs)
       }
