@@ -136,5 +136,5 @@ let lineGraph = Graphic([
 ]) in
 Graphic([
    barGraph,
-   Translate(40, 0, lineGraph)
+   Translate(fst (dimensions barGraph), 0, lineGraph)
 ])

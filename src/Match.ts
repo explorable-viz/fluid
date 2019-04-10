@@ -1,5 +1,5 @@
 import { Annotation, ann } from "./util/Annotated"
-import { absurd } from "./util/Core"
+import { absurd, className } from "./util/Core"
 import { asVersioned } from "./util/Versioned"
 import { Cons, List, Nil, Pair, cons, nil, pair } from "./BaseTypes"
 import { Env } from "./Env"
@@ -41,7 +41,7 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Match.Plug<K,
             return [Match.plug(Match.constr(Ψ.ρ, cases, v), κ), ann.meet(α, v.α)]
          }
       } else {
-         return error("Pattern mismatch: not a data type.", v, σ)
+         return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, σ)
       }
    } else {
       return absurd()

@@ -12,14 +12,25 @@ fun close [x, ...xs] → append [x, ...xs] [x];
 fun renderRect r → 
    let ps = rectPath r in Graphic([RectFill(ps), PathStroke(close(ps))]);
 
+// List(Pair(number, number)) → Pair(number, number)
+fun pathDimensions ps → 
+   match unzip ps as (ws, hs) → (max ws, max hs);
+
 // Graphic → Pair(number, number)
 fun dimensions {
-// PathStroke(ps) → ;
-// RectFill(ps) → ;
-   Scale(x, y, g) → match dimensions elem as (w, h) → (w * x, h * y);
-   Translate(x, y, g) → match dimensions elem as (w, h) → (w + x, h + y);
-   Transpose(elem) → swap (dimensions elem);
-   Graphic(gs) → match unzip (map dimensions gs) as (ws, hs) → (max ws, max hs)
+   PathStroke(ps) → 
+      pathDimensions (map (fun Point(x, y) → (x, y))) ps;
+   RectFill(ps) →
+      pathDimensions (map (fun Point(x, y) → (x, y))) ps;
+   Scale(x, y, g) → 
+      match dimensions g as (w, h) → (w * x, h * y);
+   Translate(x, y, g) → 
+      match dimensions g as (w, h) → (w + x, h + y);
+   Transpose(g) → 
+      swap (dimensions g);
+   Graphic(gs) → 
+      match unzip (map dimensions gs) as (ws, hs) → 
+         (max ws, max hs)
 };
 
 // number → number → number → GraphicElement
