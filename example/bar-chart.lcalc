@@ -100,6 +100,19 @@ let
       ])
    ]
 in
+letrec 
+   // Put data into a treemap instead?
+   fun lookupStr k [(k', v), ...kvs] → 
+      match k === k' as {
+         True → v;
+         False → lookupStr k kvs
+      };
+   fun lookupNum k [(k', v), ...kvs] → 
+      match k == k' as {
+         True → v;
+         False → lookupNum k kvs
+      }
+in
 // CountryData → Output
 let countryTotal = compose sum (map snd) in
 // AnnualData → Output
@@ -107,7 +120,10 @@ let annualTotal = compose sum (map (compose countryTotal snd)) in
 let y_scale = 1 / 30 in
 let x_scale = 6 in
 let sep = x_scale * 1.16 in
-let rects = map (fun (year, annualData) → Rect(x_scale, (annualTotal annualData) * y_scale)) data in
+let rects = map 
+   (fun (country, countryData) → Rect(x_scale, (countryTotal countryData) * y_scale)) 
+   (lookupNum 2017 data)
+in
 // Data → Year
 let firstYear = head (map fst data) in
 let ps = map (fun (year, annualData) → Point((year - firstYear) * x_scale, (annualTotal annualData) * y_scale)) data in
