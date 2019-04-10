@@ -1,13 +1,16 @@
-// Int → List<GraphicsElement> → List<GraphicsElement>
+// Int → List(GraphicsElement) → List(GraphicsElement)
 fun spaceRight sep gs →
    zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
 
-// Rect → List<Point>
+// Rect → List(Point)
 fun rectPath Rect(w, h) → [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
+
+// List(Point) → List(Point)
+fun close [x, ...xs] → append [x, ...xs] [x];
 
 // Rect → Graphic
 fun renderRect r → 
-   let ps = rectPath r in Graphic([RectFill(ps), PathStroke(ps)]);
+   let ps = rectPath r in Graphic([RectFill(ps), PathStroke(close(ps))]);
 
 // Int → Int → Int → GraphicElement
 fun axis margin n width → 

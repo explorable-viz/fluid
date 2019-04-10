@@ -1,5 +1,5 @@
 import { Annotation, ann } from "./util/Annotated"
-import { assert } from "./util/Core"
+import { as, assert } from "./util/Core"
 import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { ν } from "./util/Versioned"
 import { nil } from "./BaseTypes"
@@ -7,6 +7,10 @@ import { Env, ExtendEnv } from "./Env"
 import { Value } from "./ExplVal"
 import { Expr, Lex } from "./Expr"
 import { ValId, tagged } from "./Eval"
+
+import ConstNum = Value.ConstNum
+import ConstStr = Value.ConstStr
+import Constr = Value.Constr
 
 export type PrimResult<K> = [Value, K]
 type Unary<T, V> = (x: T) => (k: PersistentObject, α: Annotation) => V
@@ -47,10 +51,7 @@ export abstract class PrimOp implements PersistentObject {
 export class UnaryOp extends PrimOp {
    b: UnaryBody
 
-   constructor_ (
-      name: string, 
-      b: UnaryBody
-   ) {
+   constructor_ (name: string, b: UnaryBody) {
       this.name = name
       this.b = b
    }
@@ -67,10 +68,7 @@ export class UnaryOp extends PrimOp {
 export class BinaryOp extends PrimOp {
    b: BinaryBody
 
-   constructor_ (
-      name: string, 
-      b: BinaryBody
-   ) {
+   constructor_ (name: string, b: BinaryBody) {
       this.name = name
       this.b = b
    }
@@ -103,67 +101,67 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
    ["++", BinaryOp.make_(concat)]
 ])
 
-function __true (k: ValId, α: Annotation): Value.Constr {
+function __true (k: ValId, α: Annotation): Constr {
    return Value.constr(k, α, Lex.ctr("True"), nil())
 }
 
-function __false (k: ValId, α: Annotation): Value.Constr {
+function __false (k: ValId, α: Annotation): Constr {
    return Value.constr(k, α, Lex.ctr("False"), nil())
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
-export function error (message: Value.ConstStr): (k: PersistentObject) => Value {
+export function error (message: ConstStr): (k: PersistentObject) => Value {
    return assert(false, "LambdaCalc error:\n" + message.val)
 }
 
-export function intToString (x: Value.ConstNum): (k: ValId, α: Annotation) => Value.ConstStr {
+export function intToString (x: ConstNum): (k: ValId, α: Annotation) => ConstStr {
    return (k, α) => Value.constStr(k, α, x.toString())
 }
 
-// No longer support overloaded functions, since the demand-indexed semantics is non-trivial.
-export function equalInt (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.Constr {
-   return x.val.valueOf() === y.val.valueOf() ? __true : __false
+// No longer support overloaded functions, since the pattern-matching semantics is non-trivial; might require typecase.
+export function equalInt (x: ConstNum, y: ConstNum): (k: ValId, α: Annotation) => Constr {
+   return as(x, ConstNum).val === as(y, ConstNum).val ? __true : __false
 }
 
-export function equalStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.Constr {
-   return x.val.valueOf() === y.val.valueOf() ? __true : __false
+export function equalStr (x: ConstStr, y: ConstStr): (k: ValId, α: Annotation) => Constr {
+   return as(x, ConstStr).val === as(y, ConstStr).val ? __true : __false
 }
 
-export function greaterInt (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.Constr {
-   return x.val > y.val ? __true : __false
+export function greaterInt (x: ConstNum, y: ConstNum): (k: ValId, α: Annotation) => Constr {
+   return as(x, ConstNum).val > as(y, ConstNum).val ? __true : __false
 }
 
-export function greaterStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.Constr {
-   return x.val > y.val ? __true : __false
+export function greaterStr (x: ConstStr, y: ConstStr): (k: ValId, α: Annotation) => Constr {
+   return as(x, ConstStr).val > as(y, ConstStr).val ? __true : __false
 }
 
-export function lessInt (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.Constr {
-   return x.val < y.val ? __true : __false
+export function lessInt (x: ConstNum, y: ConstNum): (k: ValId, α: Annotation) => Constr {
+   return as(x, ConstNum).val < as(y, ConstNum).val ? __true : __false
 }
 
-export function lessStr (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.Constr {
-   return x.val < y.val ? __true : __false
+export function lessStr (x: ConstStr, y: ConstStr): (k: ValId, α: Annotation) => Constr {
+   return as(x, ConstStr).val < as(y, ConstStr).val ? __true : __false
 }
 
-export function minus (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.ConstNum {
-   return (k, α) => Value.constNum(k, α, x.val.valueOf() - y.val.valueOf())
+export function minus (x: ConstNum, y: ConstNum): (k: ValId, α: Annotation) => ConstNum {
+   return (k, α) => Value.constNum(k, α, as(x, ConstNum).val - as(y, ConstNum).val)
 }
 
-export function plus (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.ConstNum {
-   return (k, α) => Value.constNum(k, α, x.val.valueOf() + y.val.valueOf())
+export function plus (x: ConstNum, y: ConstNum): (k: ValId, α: Annotation) => ConstNum {
+   return (k, α) => Value.constNum(k, α, as(x, ConstNum).val + as(y, ConstNum).val)
 }
 
-export function times (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.ConstNum {
-   return (k, α) => Value.constNum(k, α, x.val.valueOf() * y.val.valueOf())
+export function times (x: ConstNum, y: ConstNum): (k: ValId, α: Annotation) => ConstNum {
+   return (k, α) => Value.constNum(k, α, as(x, ConstNum).val * as(y, ConstNum).val)
 }
 
 // If we want integer division, apparently ~~(x / y) will round in the right direction.
-export function div (x: Value.ConstNum, y: Value.ConstNum): (k: ValId, α: Annotation) => Value.ConstNum {
-   return (k, α) => Value.constNum(k, α, x.val.valueOf() / y.val.valueOf())
+export function div (x: ConstNum, y: ConstNum): (k: ValId, α: Annotation) => ConstNum {
+   return (k, α) => Value.constNum(k, α, as(x, ConstNum).val / as(y, ConstNum).val)
 }
 
-export function concat (x: Value.ConstStr, y: Value.ConstStr): (k: ValId, α: Annotation) => Value.ConstStr {
-   return (k, α) => Value.constStr(k, α, x.val.valueOf() + y.val.valueOf())
+export function concat (x: ConstStr, y: ConstStr): (k: ValId, α: Annotation) => ConstStr {
+   return (k, α) => Value.constStr(k, α, as(x, ConstStr).val + as(y, ConstStr).val)
 }
 
 // Only primitive with identifiers as names are first-class, and therefore appear in the prelude.

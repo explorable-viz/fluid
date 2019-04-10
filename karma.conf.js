@@ -3,6 +3,11 @@ var webpackConfig = require('./webpack.config');
 module.exports = function (config) {
    config.set({
       basePath: '',
+      client: {
+         mocha: {
+           timeout : 6000 // default 2000; runs much slower in CircleCI environment
+         }
+      },
       frameworks: ['mocha', 'chai'],
       files: [
          './test/**/*.ts',
