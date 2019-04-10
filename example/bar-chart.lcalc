@@ -104,15 +104,16 @@ in
 let countryTotal = compose sum (map snd) in
 // AnnualData → Output
 let annualTotal = compose sum (map (compose countryTotal snd)) in
-let width = 6 in
-let sep = width + 1 in
-let rects = map (fun (year, annualData) → Rect(width, (annualTotal annualData) / 30)) data in
+let y_scale = 1 / 30 in
+let x_scale = 6 in
+let sep = x_scale * 1.16 in
+let rects = map (fun (year, annualData) → Rect(x_scale, (annualTotal annualData) * y_scale)) data in
 // Data → Year
 let firstYear = head (map fst data) in
-let ps = map (fun (year, annualData) → Point((year - firstYear) * width, (annualTotal annualData) / 30)) data in
+let ps = map (fun (year, annualData) → Point((year - firstYear) * x_scale, (annualTotal annualData) * y_scale)) data in
 let barGraph = Graphic([
       axis 1 5 7,
-      Transpose(axis 1 (length rects) width),
+      Transpose(axis 1 (length rects) x_scale),
       Graphic(spaceRight sep (map renderRect rects))
    ]) in
 let lineGraph = Graphic([
