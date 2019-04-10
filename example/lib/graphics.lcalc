@@ -6,7 +6,7 @@ fun spaceRight sep gs →
 fun rectPath Rect(w, h) → [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
 
 // List(Point) → List(Point)
-fun close [x, ...xs] → append [x, ...xs] [x];
+fun close [x, ...xs] → concat [x, ...xs] [x];
 
 // Rect → Graphic
 fun renderRect r → 

@@ -1,9 +1,6 @@
-fun append {
-   [] ys → ys;
-   [x, ...xs] ys → [x, ...append xs ys]
-};
-
-// Would like infix operators. (b → c) → (a → b) → a → c
+// List(a) → List(a) → List(a)
+// (b → c) → (a → b) → a → c
+// Would like infix operators. 
 fun compose f g x → 
    f (g x);
 
@@ -74,7 +71,7 @@ fun repeat n →
 
 fun reverse {
    [] → [];
-   [x, ...xs] → append (reverse xs) [x]
+   [x, ...xs] → concat (reverse xs) [x]
 };
 
 // (a → b) → Pair(c, a) → Pair(c, b)
