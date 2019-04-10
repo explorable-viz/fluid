@@ -107,6 +107,8 @@ let annualTotal = compose sum (map (compose countryTotal snd)) in
 let width = 6 in
 let sep = width + 1 in
 let rects = map (fun (year, annualData) → Rect(width, (annualTotal annualData) / 30)) data in
+// Data → Year
+let firstYear = head (map fst data) in
 Graphic([
    axis 1 5 7,
    Transpose(axis 1 (length rects) width),
