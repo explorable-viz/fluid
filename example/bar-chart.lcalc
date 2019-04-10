@@ -110,8 +110,15 @@ let rects = map (fun (year, annualData) → Rect(width, (annualTotal annualData)
 // Data → Year
 let firstYear = head (map fst data) in
 let ps = map (fun (year, annualData) → Point((year - firstYear) * width, (annualTotal annualData) / 30)) data in
+let barGraph = Graphic([
+      axis 1 5 7,
+      Transpose(axis 1 (length rects) width),
+      Graphic(spaceRight sep (map renderRect rects))
+   ]) in
+let lineGraph = Graphic([
+   PathStroke(ps)
+]) in
 Graphic([
-   axis 1 5 7,
-   Transpose(axis 1 (length rects) width),
-   Graphic(spaceRight sep (map renderRect rects))
+   barGraph,
+   Translate(40, 0, lineGraph)
 ])
