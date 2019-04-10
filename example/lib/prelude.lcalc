@@ -31,6 +31,11 @@ fun foldr op z {
    [x, ...xs] → op (x, foldr op z xs)
 };
 
+fun foldr1 op {
+   [x] → x;
+   [x, y, ...xs] → op (x, foldr1 op [y, ...xs])
+};
+
 fun fst (x, y) → 
    x;
 
@@ -61,6 +66,9 @@ fun map f {
    [x, ...xs] → [f x, ...map f xs]
 };
 
+fun max xs →
+   foldr1 (fun (n, m) → match n > m as { True → n; False → m }) xs;
+
 fun repeat n → 
    iterate n id;
 
@@ -80,8 +88,17 @@ fun snd (x, y) →
 fun sum xs → 
    foldr (fun (x, y) → x + y) 0 xs;
 
+fun swap (a, b) →
+   (b, a);
+
 fun tail [x, ...xs] → 
    xs;
+
+fun unzip {
+   [] → [];
+   [(x, y), ...xys] → 
+      match unzip xys as (xs, ys) → ([x, ...xs], [y, ...ys])
+};
 
 fun zipW op {
    [] ys → [];
