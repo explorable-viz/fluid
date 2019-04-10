@@ -119,7 +119,6 @@ let countryTotal = compose sum (map snd) in
 let annualTotal = compose sum (map (compose countryTotal snd)) in
 let y_scale = 1 / 30 in
 let x_scale = 6 in
-let sep = x_scale * 1.16 in
 let rects = map 
    (fun (country, countryData) → Rect(x_scale, countryTotal countryData))
    (lookupNum 2015 data)
@@ -130,7 +129,7 @@ let ps = map (fun (year, annualData) → Point(year - firstYear, annualTotal ann
 let barGraph = Graphic([
       axis 1 5 7,
       Transpose(axis 1 (length rects) x_scale),
-      Scale(1, y_scale, Graphic(spaceRight sep (map renderRect rects)))
+      Scale(1, y_scale, Graphic(spaceRight (x_scale * 1.16) (map renderRect rects)))
    ]) in
 let lineGraph = Graphic([
    Scale(x_scale, y_scale, PathStroke(ps))
