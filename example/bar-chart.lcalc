@@ -135,7 +135,9 @@ let barGraph = Graphic([
 let lineGraph = Graphic([
    PathStroke(ps)
 ]) in
-Graphic([
-   barGraph,
-   Translate(40, 0, lineGraph)
-])
+Scale(1, 0.5, 
+   Graphic([
+      barGraph,
+      Translate(40, 0, lineGraph)
+   ])
+)

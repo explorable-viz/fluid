@@ -5,7 +5,7 @@ import { at } from "../util/Versioned"
 import { Cons, List, Nil } from "../BaseTypes"
 import { arity } from "../DataType"
 import { ExplVal, Value } from "../ExplVal"
-import { Graphic, PathStroke, Point, RectFill, Translate, Transpose } from "../Graphics"
+import { Graphic, PathStroke, Point, RectFill, Scale, Translate, Transpose } from "../Graphics"
 
 // Reflected versions of primitive constants; should be able to switch to a compiler and use these directly.
 // Can't extend built-in classes because they require initialisation at construction-time.
@@ -36,6 +36,7 @@ const classFor_: Class<PersistentObject>[] =
     PathStroke,
     Point,
     RectFill,
+    Scale,
     Translate,
     Transpose],
    classFor: Map<string, Class<PersistentObject>> = new Map(
