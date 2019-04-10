@@ -29,8 +29,7 @@ fun dimensions {
    Transpose(g) → 
       swap (dimensions g);
    Graphic(gs) → 
-      match unzip (map dimensions gs) as (ws, hs) → 
-         (max ws, max hs)
+      pathDimensions (map dimensions gs)
 };
 
 // number → number → number → GraphicElement
