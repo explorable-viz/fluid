@@ -53,8 +53,12 @@ function populateScene (): void {
    here
       .skipImports()
       .to(Expr.Let, "e")
-      .constrArg("Cons", 0).notNeed()
-      .constrArg("Pair", 1).notNeed()
+      .constrArg("Cons", 0)
+      .constrArg("Pair", 1)
+      .constrArg("Cons", 0)
+      .constrArg("Pair", 1)
+      .constrArg("Cons", 0)
+      .constrArg("Pair", 1).notNeed() // 2015 > China > Bio > [here]
    const v: Value = Eval.eval_(ρ, e).v,
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
          canvas: Canvas3D = new Canvas3D()

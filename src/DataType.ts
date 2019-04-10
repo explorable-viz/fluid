@@ -41,6 +41,7 @@ export function initDataTypes (): void {
    initDataType(new DataType("GraphicsElement", new Map([
       ["PathStroke", ["points"]], 
       ["RectFill", ["points"]], 
+      ["Scale", ["x", "y", "elem"]],
       ["Translate", ["x", "y", "elem"]],
       ["Transpose", ["elem"]],
       ["Graphic", ["elems"]]

@@ -69,6 +69,19 @@ export class RectFill extends GraphicsElement {
    }
 }
 
+export class Scale extends GraphicsElement {
+   x: AnnNumber
+   y: AnnNumber
+   elem: GraphicsElement
+
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, elem: GraphicsElement): void {
+      this.α = α
+      this.x = x
+      this.y = y
+      this.elem = elem
+   }
+}
+
 export class Translate extends GraphicsElement {
    x: AnnNumber
    y: AnnNumber
@@ -119,6 +132,16 @@ export class Canvas3D {
       } else
       if (elem instanceof RectFill) {
          return this.rectFill(elem.points)
+      } else
+      // TODO: factor out common handling.
+      if (elem instanceof Scale) {
+         const transform: Transform = this.transform
+         this.transforms.push(({x, y}): THREE.Vector2 => {
+            return transform(new THREE.Vector2(x * elem.x.n, y * elem.y.n))
+         })
+         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
+         this.transforms.pop()
+         return objects
       } else
       if (elem instanceof Translate) {
          const transform: Transform = this.transform

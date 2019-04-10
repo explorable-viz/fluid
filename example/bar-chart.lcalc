@@ -100,23 +100,39 @@ let
       ])
    ]
 in
+letrec 
+   // Put data into a treemap instead?
+   fun lookupStr k [(k', v), ...kvs] → 
+      match k === k' as {
+         True → v;
+         False → lookupStr k kvs
+      };
+   fun lookupNum k [(k', v), ...kvs] → 
+      match k == k' as {
+         True → v;
+         False → lookupNum k kvs
+      }
+in
 // CountryData → Output
 let countryTotal = compose sum (map snd) in
 // AnnualData → Output
 let annualTotal = compose sum (map (compose countryTotal snd)) in
-let width = 6 in
-let sep = width + 1 in
-let rects = map (fun (year, annualData) → Rect(width, (annualTotal annualData) / 30)) data in
+let rects = map 
+   (fun (country, countryData) → Rect(1, countryTotal countryData))
+   (lookupNum 2015 data)
+in
 // Data → Year
 let firstYear = head (map fst data) in
-let ps = map (fun (year, annualData) → Point((year - firstYear) * width, (annualTotal annualData) / 30)) data in
+let ps = map (fun (year, annualData) → Point(year - firstYear, annualTotal annualData)) data in
+let y_scale = 1 / 30 in
+let x_scale = 6 in
 let barGraph = Graphic([
-      axis 1 5 7,
-      Transpose(axis 1 (length rects) width),
-      Graphic(spaceRight sep (map renderRect rects))
+      x_axis 1 5 7,
+      Transpose(Scale(x_scale, 1, x_axis 1 (length rects) 1)),
+      Scale(x_scale, y_scale, Graphic(spaceRight 1.16 (map renderRect rects)))
    ]) in
 let lineGraph = Graphic([
-   PathStroke(ps)
+   Scale(x_scale, y_scale, PathStroke(ps))
 ]) in
 Graphic([
    barGraph,
