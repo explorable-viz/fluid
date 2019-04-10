@@ -34,6 +34,9 @@ fun foldr op z {
 fun fst (x, y) → 
    x;
 
+fun head [x, ...xs] → 
+   x;
+
 fun id x → 
    x;
 
@@ -77,8 +80,8 @@ fun snd (x, y) →
 fun sum xs → 
    foldr (fun (x, y) → x + y) 0 xs;
 
-// delete when we reinstate projection functions
-fun tail [x, ...xs] → xs;
+fun tail [x, ...xs] → 
+   xs;
 
 fun zipW op {
    [] ys → [];
