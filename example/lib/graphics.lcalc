@@ -16,12 +16,12 @@ fun renderRect r →
 fun pathDimensions ps → 
    match unzip ps as (ws, hs) → (max ws, max hs);
 
-// Graphic → Pair(number, number)
+// GraphicElement → Pair(number, number)
 fun dimensions {
    PathStroke(ps) → 
-      pathDimensions (map (fun Point(x, y) → (x, y))) ps;
+      pathDimensions (map (fun Point(x, y) → (x, y)) ps);
    RectFill(ps) →
-      pathDimensions (map (fun Point(x, y) → (x, y))) ps;
+      pathDimensions (map (fun Point(x, y) → (x, y)) ps);
    Scale(x, y, g) → 
       match dimensions g as (w, h) → (w * x, h * y);
    Translate(x, y, g) → 
