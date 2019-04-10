@@ -73,7 +73,7 @@ fun second f (c, a) →
 fun snd (x, y) → 
    y;
 
-// List<number> → number
+// List(number) → number
 fun sum xs → 
    foldr (fun (x, y) → x + y) 0 xs;
 

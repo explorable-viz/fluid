@@ -93,10 +93,11 @@ let
       ])
    ]
 in
-// List<Pair<string, number>> → number
-let totalRenewable = fun data → sum (map snd data) in
-// List<Pair<string, List<Pair<string, number>>>> → number
-let totalAllCountries = fun data → sum (map (compose totalRenewable snd) data) in
+// typedef CountryData = List(Pair(string, number)) 
+// CountryData → number
+let totalRenewable = compose sum (map snd) in
+// List(Pair(string, CountryData)) → number
+let totalAllCountries = compose sum (map (compose totalRenewable snd)) in
 let width = 6 in
 let sep = width + 1 in
 let rects = map (fun (year, data) → Rect(width, (totalAllCountries data) / 30)) data in
