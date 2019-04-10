@@ -51,10 +51,7 @@ export abstract class PrimOp implements PersistentObject {
 export class UnaryOp extends PrimOp {
    b: UnaryBody
 
-   constructor_ (
-      name: string, 
-      b: UnaryBody
-   ) {
+   constructor_ (name: string, b: UnaryBody) {
       this.name = name
       this.b = b
    }
@@ -71,10 +68,7 @@ export class UnaryOp extends PrimOp {
 export class BinaryOp extends PrimOp {
    b: BinaryBody
 
-   constructor_ (
-      name: string, 
-      b: BinaryBody
-   ) {
+   constructor_ (name: string, b: BinaryBody) {
       this.name = name
       this.b = b
    }

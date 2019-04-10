@@ -1,6 +1,9 @@
-// typedef Data = List(Pair(number, AnnualData))
-// typedef AnnualData = List(Pair(string, CountryData))
-// typedef CountryData = List(Pair(string, number)) 
+// typedef Year = number
+// typedef Country = string
+// typedef EnergyType = string
+// typedef Data = List(Pair(Year, AnnualData))
+// typedef AnnualData = List(Pair(Country, CountryData))
+// typedef CountryData = List(Pair(EnergyType, number)) 
 // The original dataset sometimes has '~0' instead of '0'. Including only 3 top countries here.
 let
    data = [
@@ -97,14 +100,14 @@ let
    ]
 in
 // CountryData → number
-let totalRenewable = compose sum (map snd) in
+let countryTotal = compose sum (map snd) in
 // AnnualData → number
-let totalAllCountries = compose sum (map (compose totalRenewable snd)) in
+let annualTotal = compose sum (map (compose countryTotal snd)) in
 let width = 6 in
 let sep = width + 1 in
-let rects = map (fun (year, data) → Rect(width, (totalAllCountries data) / 30)) data in
+let rects = map (fun (year, annualData) → Rect(width, (annualTotal annualData) / 30)) data in
 let firstYear = head (map fst data) in
-let ps = map (fun (year, data) → Point(year - firstYear, totalRenewable data)) data in
+let ps = map (fun (year, annualData) → Point(year - firstYear, annualTotal annualData)) data in
 Graphic([
    axis 1 5 7,
    Transpose(axis 1 (length rects) width),
