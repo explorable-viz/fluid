@@ -95,7 +95,7 @@ fun tail [x, ...xs] →
    xs;
 
 fun unzip {
-   [] → [];
+   [] → ([], []);
    [(x, y), ...xys] → 
       match unzip xys as (xs, ys) → ([x, ...xs], [y, ...ys])
 };
