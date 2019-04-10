@@ -122,7 +122,7 @@ let x_scale = 6 in
 let sep = x_scale * 1.16 in
 let rects = map 
    (fun (country, countryData) → Rect(x_scale, (countryTotal countryData) * y_scale)) 
-   (lookupNum 2017 data)
+   (lookupNum 2015 data)
 in
 // Data → Year
 let firstYear = head (map fst data) in
