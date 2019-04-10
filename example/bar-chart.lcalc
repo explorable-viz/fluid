@@ -1,10 +1,3 @@
-// typedef Year = number
-// typedef Country = string
-// typedef EnergyType = string
-// typedef Output = number
-// typedef Data = List(Pair(Year, AnnualData))
-// typedef AnnualData = List(Pair(Country, CountryData))
-// typedef CountryData = List(Pair(EnergyType, Output)) 
 // The original dataset sometimes has '~0' instead of '0'. Including only 3 top countries here.
 let
    data = [
@@ -100,25 +93,16 @@ let
       ])
    ]
 in
-// CountryData → Output
-let countryTotal = compose sum (map snd) in
-// AnnualData → Output
-let annualTotal = compose sum (map (compose countryTotal snd)) in
+// typedef CountryData = List(Pair(string, number)) 
+// CountryData → number
+let totalRenewable = compose sum (map snd) in
+// List(Pair(string, CountryData)) → number
+let totalAllCountries = compose sum (map (compose totalRenewable snd)) in
 let width = 6 in
 let sep = width + 1 in
-let rects = map (fun (year, annualData) → Rect(width, (annualTotal annualData) / 30)) data in
-// Data → Year
-let firstYear = head (map fst data) in
-// let ps = map (fun (year, annualData) → Point((year - firstYear) * width, (annualTotal annualData)/ 30)) data in
-let barGraph = Graphic([
-      axis 1 5 7,
-      Transpose(axis 1 (length rects) width),
-      Graphic(spaceRight sep (map renderRect rects))
-   ]) in
-// let lineGraph = Graphic([
-//    PathStroke(ps)
-// ]) in
-// Graphic([
-   barGraph //,
-//    Translate(40, 0, lineGraph)
-// ])
+let rects = map (fun (year, data) → Rect(width, (totalAllCountries data) / 30)) data in
+Graphic([
+   axis 1 5 7,
+   Transpose(axis 1 (length rects) width),
+   Graphic(spaceRight sep (map renderRect rects))
+])
