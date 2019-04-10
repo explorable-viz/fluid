@@ -115,7 +115,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
          const v: Value = ρ.get(x)!
          return explVal(ρ, var_(k, e.x), v.copyAt(kᵥ, ann.meet(v.α, e.α)))
       } else {
-         return error("Variable not found.", x)
+         return error(`Variable '${x}' not found.`)
       }
    } else
    if (e instanceof Expr.App) {
