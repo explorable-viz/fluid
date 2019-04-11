@@ -43,9 +43,10 @@ fun renderRect r →
 // GraphicsElement → number
 fun width g → fst (dimensions g);
 
+// Negatively offset; client code responsible for translating into positive space (if desired).
 // number → number → number → GraphicElement
-fun x_axis margin n width → 
-   let tick = PathStroke([Point(0, 0), Point(0, -2)]) in
+fun x_axis margin n width tickHeight →
+   let tick = PathStroke([Point(0, 0), Point(0, 0 - tickHeight)]) in
    let ticks = fun n → spaceRight width (repeat n tick) in
    let line = PathStroke([Point(0, 0), Point(n * width, 0)]) in
    Translate(0, 0 - margin, Graphic([line, ...ticks n]))

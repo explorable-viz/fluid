@@ -126,12 +126,13 @@ let firstYear = head (map fst data) in
 let ps = map (fun (year, annualData) → Point(year - firstYear, annualTotal annualData)) data in
 let y_scale = 1 / 30 in
 let x_scale = 6 in
+let tickLength = 2 in
 let barGraph = Graphic([
-      x_axis 1 5 7,
-      Transpose(Scale(x_scale, 1, x_axis 1 (length rects) 1)),
+      x_axis 1 5 7 2,
+      Transpose(Scale(x_scale, 1, x_axis 1 (length rects) 1 2)),
       Scale(x_scale, y_scale, Graphic(spaceRight 1.16 (map renderRect rects)))
    ]) in
 let lineGraph = Graphic([
    Scale(x_scale, y_scale, PathStroke(ps))
 ]) in
-stackRight [barGraph, lineGraph, barGraph]
+stackRight [barGraph, lineGraph, Translate(0, 14, barGraph)]
