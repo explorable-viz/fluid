@@ -27,7 +27,7 @@ camera.lookAt(new THREE.Vector3(0, 0, 0))
 
 const renderer = new THREE.WebGLRenderer
 renderer.setSize(1200, 1200)
-renderer.setViewport(0, 0, 800, 800)
+renderer.setViewport(0, 0, 1200, 1200)
 
 const controls = new OrbitControls( camera, renderer.domElement );
 
