@@ -2,7 +2,7 @@ import { assert } from "./util/Core"
 
 // The fields of a constructor have a total ordering independent of their lexicographical ordering.
 // This is the order in which they are defined in the class definition (TODO: check). Not interned.
-class DataType {
+export class DataType {
    name: string
    ctrs: Map<string, string[]>  // fields of my constructors
 

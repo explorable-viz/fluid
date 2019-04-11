@@ -1,7 +1,8 @@
 import { Annotation, ann } from "./util/Annotated"
-import { absurd, className } from "./util/Core"
+import { __nonNull, absurd, className } from "./util/Core"
 import { asVersioned } from "./util/Versioned"
-import { Cons, List, Nil, Pair, cons, nil, pair } from "./BaseTypes"
+import { Cons, List, Nil, NonEmpty, Pair, cons, nil, pair } from "./BaseTypes"
+import { DataType, ctrToDataType } from "./DataType"
 import { Env } from "./Env"
 import { ExplVal, Match, Value, explMatch, explVal } from "./ExplVal"
 import { ValId, error } from "./Eval"
@@ -34,7 +35,8 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Match.Plug<K,
                }
             })
          if (Ψκ_α! === undefined) {
-            return error("Pattern mismatch: wrong data type.", v, σ)
+            const datatype: DataType = __nonNull(ctrToDataType.get((σ.cases as NonEmpty<Pair<string, Args<K>>>).t.fst))
+            return error(`Pattern mismatch: found ${v.ctr}, expected ${datatype.name}.`, v, σ)
          } else {
             const [{Ψ, κ}, α] = Ψκ_α!
             // store v as well to provide location for unmatch

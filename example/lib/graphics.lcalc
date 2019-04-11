@@ -17,6 +17,9 @@ fun dimensions {
       pathDimensions (map dimensions gs)
 };
 
+// GraphicsElement → number
+fun height g → snd (dimensions g);
+
 // List(Pair(number, number)) → Pair(number, number)
 fun pathDimensions ps → 
    match unzip ps as (ws, hs) → (max ws, max hs);
@@ -25,12 +28,19 @@ fun pathDimensions ps →
 fun spaceRight sep gs →
    zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
 
+// List(GraphicsElement) → List(GraphicsElement)
+fun stackRight gs →
+   zipW (fun (x, g) → Translate(x, 0, g)) gs [0, ...map width gs];
+
 // Rect → List(Point)
 fun rectPath Rect(w, h) → [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
 
 // Rect → Graphic
 fun renderRect r → 
    let ps = rectPath r in Graphic([RectFill(ps), PathStroke(close(ps))]);
+
+// GraphicsElement → number
+fun width g → fst (dimensions g);
 
 // number → number → number → GraphicElement
 fun x_axis margin n width → 
