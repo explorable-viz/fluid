@@ -4,12 +4,13 @@ import { as } from "../util/Core"
 import { World } from "../util/Versioned"
 import { Expr } from "../Expr"
 import { Eval } from "../Eval"
-import { GraphicsElement, Canvas3D } from "../Graphics"
+import { GraphicsElement } from "../Graphics"
 import { Value } from "../ExplVal"
 // TODO: move test-dependent stuff out of app
 import { Cursor } from "../../test/util/Cursor"
 import { ρ, initialise, loadExample, parseExample } from "../../test/util/Core"
 import { reflect } from "./Reflect"
+import { Canvas3D } from "./Render"
 
 initialise()
 

@@ -28,9 +28,9 @@ fun pathDimensions ps →
 fun spaceRight sep gs →
    zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
 
-// List(GraphicsElement) → List(GraphicsElement)
+// List(GraphicsElement) → Graphic
 fun stackRight gs →
-   zipW (fun (x, g) → Translate(x, 0, g)) [0, ...map width gs] gs;
+   foldr (fun (g, g') → Graphic([g, Translate(width g, 0, g')])) Graphic([]) gs;
 
 // Rect → List(Point)
 fun rectPath Rect(w, h) → [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
