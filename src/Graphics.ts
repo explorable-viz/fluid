@@ -1,9 +1,28 @@
-import * as THREE from "three"
-import { AnnNumber } from "./app/Reflect"
 import { Annotated, Annotation, ann } from "./util/Annotated"
-import { absurd, as, assert } from "./util/Core"
-import { Persistent, make } from "./util/Persistent"
-import { Cons, List } from "./BaseTypes"
+import { as } from "./util/Core"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
+import { List } from "./BaseTypes"
+
+// Reflected versions of primitive constants; should be able to switch to a compiler and use these directly.
+// Can't extend built-in classes because they require initialisation at construction-time.
+
+export class AnnNumber extends Annotated implements PersistentObject {
+   n: number
+
+   constructor_ (α: Annotation, n: number) {
+      this.α = α
+      this.n = n
+   }
+}
+
+export class AnnString extends Annotated implements PersistentObject {
+   str: string
+
+   constructor_ (α: Annotation, str: string) {
+      this.α = α
+      this.str = str
+   }
+}
 
 // Basic graphical datatypes.
 
@@ -13,8 +32,8 @@ export class Rect extends Annotated {
 
    constructor_ (α: Annotation, width: AnnNumber, height: AnnNumber): void {
       this.α = α
-      this.width = width
-      this.height = height
+      this.width = as(width, AnnNumber)
+      this.height = as(height, AnnNumber)
    }
 }
 
@@ -28,8 +47,8 @@ export class Point extends Annotated {
 
    constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber): void {
       this.α = α
-      this.x = x
-      this.y = y
+      this.x = as(x, AnnNumber)
+      this.y = as(y, AnnNumber)
    }
 }
 
@@ -42,11 +61,11 @@ export abstract class GraphicsElement extends Annotated {
 }
 
 export class Graphic extends GraphicsElement {
-   elems: List<GraphicsElement>
+   gs: List<GraphicsElement>
 
-   constructor_ (α: Annotation, elems: List<GraphicsElement>): void {
+   constructor_ (α: Annotation, gs: List<GraphicsElement>): void {
       this.α = α
-      this.elems = elems
+      this.gs = as(gs, List)
    }
 }
 
@@ -55,7 +74,7 @@ export class PathStroke extends GraphicsElement {
 
    constructor_ (α: Annotation, points: List<Point>): void {
       this.α = α
-      this.points = points
+      this.points = as(points, List)
    }
 }
 
@@ -65,158 +84,42 @@ export class RectFill extends GraphicsElement {
 
    constructor_ (α: Annotation, points: List<Point>): void {
       this.α = α
-      this.points = points
+      this.points = as(points, List)
    }
 }
 
 export class Scale extends GraphicsElement {
    x: AnnNumber
    y: AnnNumber
-   elem: GraphicsElement
+   g: GraphicsElement
 
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, elem: GraphicsElement): void {
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, g: GraphicsElement): void {
       this.α = α
-      this.x = x
-      this.y = y
-      this.elem = elem
+      this.x = as(x, AnnNumber)
+      this.y = as(y, AnnNumber)
+      this.g = as(g, GraphicsElement)
    }
 }
 
 export class Translate extends GraphicsElement {
    x: AnnNumber
    y: AnnNumber
-   elem: GraphicsElement
+   g: GraphicsElement
 
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, elem: GraphicsElement): void {
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, g: GraphicsElement): void {
       this.α = α
-      this.x = x
-      this.y = y
-      this.elem = elem
+      this.x = as(x, AnnNumber)
+      this.y = as(y, AnnNumber)
+      this.g = as(g, GraphicsElement)
    }
 }
 
 // Swaps x and y. Could subsume by a more general notion of reflection.
 export class Transpose extends GraphicsElement {
-   elem: GraphicsElement
+   g: GraphicsElement
 
-   constructor_ (α: Annotation, elem: GraphicsElement): void {
+   constructor_ (α: Annotation, g: GraphicsElement): void {
       this.α = α
-      this.elem = elem
+      this.g = as(g, GraphicsElement)
    }
-}
-
-type Transform = (p: THREE.Vector2) => THREE.Vector2
-
-export class Canvas3D {
-   transforms: Transform[] // stack of successive compositions of linear transformations
-
-   constructor () {
-      this.transforms = [x => x]
-   }
-
-   get transform (): Transform {
-      assert(this.transforms.length > 0)
-      return this.transforms[this.transforms.length - 1]
-   }
-
-   objects3D (elem: GraphicsElement): THREE.Object3D[] {
-      if (elem instanceof Graphic) {   
-         const objects: THREE.Object3D[] = []
-         for (let elems: List<GraphicsElement> = elem.elems; Cons.is(elems); elems = elems.tail) {
-            objects.push(...this.objects3D(elems.head))
-         }
-         return objects
-      }
-      if (elem instanceof PathStroke) {
-         return this.pathStroke(elem.points)
-      } else
-      if (elem instanceof RectFill) {
-         return this.rectFill(elem.points)
-      } else
-      // TODO: factor out common handling.
-      if (elem instanceof Scale) {
-         const transform: Transform = this.transform
-         this.transforms.push(({x, y}): THREE.Vector2 => {
-            return transform(new THREE.Vector2(x * elem.x.n, y * elem.y.n))
-         })
-         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
-         this.transforms.pop()
-         return objects
-      } else
-      if (elem instanceof Translate) {
-         const transform: Transform = this.transform
-         this.transforms.push(({x, y}): THREE.Vector2 => {
-            return transform(new THREE.Vector2(x + elem.x.n, y + elem.y.n))
-         })
-         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
-         this.transforms.pop()
-         return objects
-      } else
-      if (elem instanceof Transpose) {
-         const transform: Transform = this.transform
-         this.transforms.push(({x, y}): THREE.Vector2 => {
-            return transform(new THREE.Vector2(y, x))
-         })
-         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
-         this.transforms.pop()
-         return objects
-      } else {
-         return absurd()
-      }
-   }
-
-   pathStroke (points: List<Point>): THREE.Object3D[] {
-      const stroke: THREE.Line = new THREE.Line(
-         this.newPathGeometry(points),
-         new THREE.LineBasicMaterial({ 
-            color: 0x000000 
-         })
-      )
-      return [stroke, ...this.pointHighlights(points)]
-   }
-
-   rectFill (rect_path: List<Point>): THREE.Object3D[] {
-      const geometry: THREE.Geometry = this.newPathGeometry(rect_path)
-      geometry.faces.push(new THREE.Face3(0, 1, 2))
-      geometry.faces.push(new THREE.Face3(2, 3, 0))
-      return [new THREE.Mesh(
-         geometry, 
-         new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
-      )]
-   }
-
-   newPathGeometry (points: List<Point>): THREE.Geometry {
-      const geometry: THREE.Geometry = new THREE.Geometry,
-            transform: Transform = this.transform
-      while (Cons.is(points)) {
-         const point: Point = as(points.head, Point),
-               {x, y}: THREE.Vector2 = transform(new THREE.Vector2(point.x.n, point.y.n))
-         geometry.vertices.push(new THREE.Vector3(x, y, 0))
-         points = points.tail
-      }
-      return geometry
-   }   
-
-   pointHighlights (points: List<Point>): THREE.Object3D[] {
-      const highlights: THREE.Object3D[] = [],
-            transform: Transform = this.transform
-      for (; Cons.is(points); points = points.tail) {
-         const point: Point = points.head,
-               p: THREE.Vector2 = transform(new THREE.Vector2(point.x.n, point.y.n))
-         if (!point.x.α || !point.y.α) {
-            highlights.push(circle(p, 0.5))
-         }
-      }
-      return highlights
-   }
-}
-
-function circle (pos: THREE.Vector2, radius: number): THREE.Object3D {
-   const material = new THREE.LineBasicMaterial({ color: 0x0000ff }),
-         geometry = new THREE.CircleGeometry(radius, 64)
-   geometry.vertices.shift() // remove center vertex
-   const circle: THREE.LineLoop = new THREE.LineLoop(geometry, material)
-   circle.position.x = pos.x
-   circle.position.y = pos.y
-   return circle
 }

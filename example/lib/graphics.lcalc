@@ -1,20 +1,52 @@
-// Int → List(GraphicsElement) → List(GraphicsElement)
+// List(Point) → List(Point)
+fun close [x, ...xs] → concat [x, ...xs] [x];
+
+// GraphicElement → Pair(number, number)
+fun dimensions {
+   PathStroke(ps) → 
+      pathDimensions (map (fun Point(x, y) → (x, y)) ps);
+   RectFill(ps) →
+      pathDimensions (map (fun Point(x, y) → (x, y)) ps);
+   Scale(x, y, g) → 
+      match dimensions g as (w, h) → (w * x, h * y);
+   Translate(x, y, g) → 
+      match dimensions g as (w, h) → (w + x, h + y);
+   Transpose(g) → 
+      swap (dimensions g);
+   Graphic(gs) → 
+      pathDimensions (map dimensions gs)
+};
+
+// GraphicsElement → number
+fun height g → snd (dimensions g);
+
+// List(Pair(number, number)) → Pair(number, number)
+fun pathDimensions ps → 
+   match unzip ps as (xs, ys) → (max xs, max ys);
+
+// number → List(GraphicsElement) → List(GraphicsElement)
 fun spaceRight sep gs →
    zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
 
+// Unlike spaceRight, produces a nested structure.
+// List(GraphicsElement) → Graphic
+fun stackRight gs →
+   foldr (fun (g, g') → Graphic([g, Translate(width g, 0, g')])) Graphic([]) gs;
+
 // Rect → List(Point)
 fun rectPath Rect(w, h) → [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
-
-// List(Point) → List(Point)
-fun close [x, ...xs] → append [x, ...xs] [x];
 
 // Rect → Graphic
 fun renderRect r → 
    let ps = rectPath r in Graphic([RectFill(ps), PathStroke(close(ps))]);
 
-// Int → Int → Int → GraphicElement
-fun x_axis margin n width → 
-   let tick = PathStroke([Point(0, 0), Point(0, -2)]) in
+// GraphicsElement → number
+fun width g → fst (dimensions g);
+
+// Negatively offset; client code responsible for translating into positive space (if desired).
+// number → number → number → GraphicElement
+fun x_axis margin n width tickHeight →
+   let tick = PathStroke([Point(0, 0), Point(0, 0 - tickHeight)]) in
    let ticks = fun n → spaceRight width (repeat n tick) in
    let line = PathStroke([Point(0, 0), Point(n * width, 0)]) in
    Translate(0, 0 - margin, Graphic([line, ...ticks n]))
