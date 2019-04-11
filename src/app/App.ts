@@ -14,13 +14,19 @@ import { reflect } from "./Reflect"
 initialise()
 
 const scene = new THREE.Scene()
-scene.background = new THREE.Color( 0xffffff )
-const camera = new THREE.PerspectiveCamera( 60, 1, 1, 200 )
-camera.position.set( 0, 0, 100 )
-camera.lookAt( new THREE.Vector3(0, 0, 0) )
+scene.background = new THREE.Color(0xffffff)
+const camera = new THREE.PerspectiveCamera(
+   /* field of view (degrees) */ 90,
+   /* aspect ratio */            1,
+   /* near */                    1,
+   /* far */                     1000
+)
+camera.position.set(0, 0, 100)
+camera.lookAt(new THREE.Vector3(0, 0, 0))
 
 const renderer = new THREE.WebGLRenderer
-renderer.setSize( 600, 600 )
+renderer.setSize(1200, 1200)
+renderer.setViewport(0, 0, 800, 800)
 
 const controls = new OrbitControls( camera, renderer.domElement );
 

@@ -107,6 +107,7 @@ export class Transpose extends GraphicsElement {
 
 type Transform = (p: THREE.Vector2) => THREE.Vector2
 
+// TODO: rename to avoid conceptual clash with WebGL canvas.
 export class Canvas3D {
    transforms: Transform[] // stack of successive compositions of linear transformations
 

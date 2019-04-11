@@ -22,7 +22,7 @@ fun height g → snd (dimensions g);
 
 // List(Pair(number, number)) → Pair(number, number)
 fun pathDimensions ps → 
-   match unzip ps as (ws, hs) → (max ws, max hs);
+   match unzip ps as (xs, ys) → (max xs, max ys);
 
 // number → List(GraphicsElement) → List(GraphicsElement)
 fun spaceRight sep gs →
