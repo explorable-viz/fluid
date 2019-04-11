@@ -86,6 +86,10 @@ fun reverse {
    [x, ...xs] → concat (reverse xs) [x]
 };
 
+// number → number → number
+fun roundTo n m → 
+   ceiling (n / m) * m;
+
 // (a → b) → Pair(c, a) → Pair(c, b)
 fun second f (c, a) → 
    (c, f a);

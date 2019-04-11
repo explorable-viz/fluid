@@ -136,7 +136,10 @@ let barGraph =
       Transpose(Scale(x_scale, 1, x_axis axis_margin (length rects) 1 tickLength)),
       Scale(x_scale, y_scale, Graphic(spaceRight 1.16 (map renderRect rects)))
    ])) in
-let lineGraph = Graphic([
-   Scale(x_scale, y_scale, PathStroke(ps))
-]) in
+let lineGraph =
+   let x_offset = axis_margin + tickLength in
+   let y_offset = x_offset in
+   Translate(x_offset, y_offset, Graphic([
+      Scale(x_scale, y_scale, PathStroke(ps))
+   ])) in
 stackRight [barGraph, lineGraph, Translate(0, 14, barGraph)]

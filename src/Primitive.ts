@@ -83,6 +83,7 @@ export class BinaryOp extends PrimOp {
 }
 
 const unaryOps: Map<string, UnaryOp> = new Map([
+   [ceiling.name, UnaryOp.make_(ceiling)],
    [error.name, UnaryOp.make_(error)],
    [intToString.name, UnaryOp.make_(intToString)],
 ])
@@ -107,6 +108,10 @@ function __true (k: ValId, α: Annotation): Constr {
 
 function __false (k: ValId, α: Annotation): Constr {
    return Value.constr(k, α, Lex.ctr("False"), nil())
+}
+
+export function ceiling (x: ConstNum): (k: ValId, α: Annotation) => ConstNum {
+   return (k, α) => Value.constNum(k, α, Math.ceil(x.val))
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
