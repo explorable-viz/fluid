@@ -1,20 +1,5 @@
-// Int → List(GraphicsElement) → List(GraphicsElement)
-fun spaceRight sep gs →
-   zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
-
-// Rect → List(Point)
-fun rectPath Rect(w, h) → [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
-
 // List(Point) → List(Point)
 fun close [x, ...xs] → concat [x, ...xs] [x];
-
-// Rect → Graphic
-fun renderRect r → 
-   let ps = rectPath r in Graphic([RectFill(ps), PathStroke(close(ps))]);
-
-// List(Pair(number, number)) → Pair(number, number)
-fun pathDimensions ps → 
-   match unzip ps as (ws, hs) → (max ws, max hs);
 
 // GraphicElement → Pair(number, number)
 fun dimensions {
@@ -31,6 +16,21 @@ fun dimensions {
    Graphic(gs) → 
       pathDimensions (map dimensions gs)
 };
+
+// List(Pair(number, number)) → Pair(number, number)
+fun pathDimensions ps → 
+   match unzip ps as (ws, hs) → (max ws, max hs);
+
+// number → List(GraphicsElement) → List(GraphicsElement)
+fun spaceRight sep gs →
+   zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
+
+// Rect → List(Point)
+fun rectPath Rect(w, h) → [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
+
+// Rect → Graphic
+fun renderRect r → 
+   let ps = rectPath r in Graphic([RectFill(ps), PathStroke(close(ps))]);
 
 // number → number → number → GraphicElement
 fun x_axis margin n width → 

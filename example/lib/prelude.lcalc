@@ -1,14 +1,15 @@
-// List(a) → List(a) → List(a)
 // (b → c) → (a → b) → a → c
 // Would like infix operators. 
 fun compose f g x → 
    f (g x);
 
+// List(a) → List(a) → List(a)
 fun concat {
    [] ys → ys;
    [x, ...xs] ys → [x, ...concat xs ys]
 };
 
+// (a → Bool) → List(a) → List(a)
 fun filter p {
    [] → [];
    [x, ...xs] →
@@ -22,53 +23,64 @@ fun filter p {
 fun first f (a, c) → 
    (f a, c);
 
-
+// (Pair(a, b) → b) → b → List(a) → b
 fun foldr op z {
    [] → z;
    [x, ...xs] → op (x, foldr op z xs)
 };
 
+// (Pair(a, b) → b) → List(a) → b
 fun foldr1 op {
    [x] → x;
    [x, y, ...xs] → op (x, foldr1 op [y, ...xs])
 };
 
+// Pair(a, b) → a
 fun fst (x, y) → 
    x;
 
+// List(a) → a
 fun head [x, ...xs] → 
    x;
 
+// a → a
 fun id x → 
    x;
 
+// List(a) → a → List(a)
 fun intersperse {
    [] sep → [];
    [x] sep → [x];
    [x, y, ...ys] sep → [x, sep, ...intersperse [y, ...ys]]
 };
 
+// number → (a → a) → a → List(a)
 fun iterate n f x → match n == 0 as {
    True → [];
    False → [x, ...map f (iterate (n - 1) f x)]
 };
 
+// List(a) → number
 fun length {
    [] → 0;
    [x, ...xs] → 1 + length xs
 };
 
+// (a → b) → List(a) → List(b)
 fun map f {
    [] → [];
    [x, ...xs] → [f x, ...map f xs]
 };
 
+// List(number) → number
 fun max xs →
    foldr1 (fun (n, m) → match n > m as { True → n; False → m }) xs;
 
+// number → a → List(a)
 fun repeat n → 
    iterate n id;
 
+// List(a) → List(a)
 fun reverse {
    [] → [];
    [x, ...xs] → concat (reverse xs) [x]
@@ -78,6 +90,7 @@ fun reverse {
 fun second f (c, a) → 
    (c, f a);
 
+// Pair(a, b) → b
 fun snd (x, y) → 
    y;
 
@@ -85,9 +98,11 @@ fun snd (x, y) →
 fun sum xs → 
    foldr (fun (x, y) → x + y) 0 xs;
 
+// Pair(a, b) → Pair(b, a)
 fun swap (a, b) →
    (b, a);
 
+// List(a) → List(a)
 fun tail [x, ...xs] → 
    xs;
 
@@ -98,6 +113,7 @@ fun unzip {
       match unzip xys as (xs, ys) → ([x, ...xs], [y, ...ys])
 };
 
+// (Pair(a, b) → c) → List(a) → List(b) → List(c)
 fun zipW op {
    [] ys → [];
    [x, ...xs] {
