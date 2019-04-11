@@ -1,32 +1,11 @@
-import { Annotation, Annotated } from "../util/Annotated"
+import { Annotated } from "../util/Annotated"
 import { Class, __check, __nonNull, absurd, as, assert, funName } from "../util/Core"
 import { Persistent, PersistentObject, make } from "../util/Persistent"
 import { at } from "../util/Versioned"
 import { Cons, List, Nil } from "../BaseTypes"
 import { arity } from "../DataType"
 import { ExplVal, Value } from "../ExplVal"
-import { Graphic, PathStroke, Point, RectFill, Scale, Translate, Transpose } from "../Graphics"
-
-// Reflected versions of primitive constants; should be able to switch to a compiler and use these directly.
-// Can't extend built-in classes because they require initialisation at construction-time.
-
-export class AnnNumber extends Annotated implements PersistentObject {
-   n: number
-
-   constructor_ (α: Annotation, n: number) {
-      this.α = α
-      this.n = n
-   }
-}
-
-export class AnnString extends Annotated implements PersistentObject {
-   str: string
-
-   constructor_ (α: Annotation, str: string) {
-      this.α = α
-      this.str = str
-   }
-}
+import { AnnNumber, AnnString, Graphic, PathStroke, Point, RectFill, Scale, Translate, Transpose } from "../Graphics"
 
 // intermediate value required to stop TS getting confused:
 const classFor_: Class<PersistentObject>[] =

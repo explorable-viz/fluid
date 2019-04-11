@@ -1,8 +1,28 @@
-import { AnnNumber } from "./app/Reflect"
 import { Annotated, Annotation, ann } from "./util/Annotated"
 import { as } from "./util/Core"
-import { Persistent, make } from "./util/Persistent"
+import { Persistent, PersistentObject, make } from "./util/Persistent"
 import { List } from "./BaseTypes"
+
+// Reflected versions of primitive constants; should be able to switch to a compiler and use these directly.
+// Can't extend built-in classes because they require initialisation at construction-time.
+
+export class AnnNumber extends Annotated implements PersistentObject {
+   n: number
+
+   constructor_ (α: Annotation, n: number) {
+      this.α = α
+      this.n = n
+   }
+}
+
+export class AnnString extends Annotated implements PersistentObject {
+   str: string
+
+   constructor_ (α: Annotation, str: string) {
+      this.α = α
+      this.str = str
+   }
+}
 
 // Basic graphical datatypes.
 

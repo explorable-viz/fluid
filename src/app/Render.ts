@@ -2,7 +2,6 @@ import * as THREE from "three"
 import { absurd, as, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Graphic, GraphicsElement, PathStroke, Point, RectFill, Scale, Translate, Transpose } from "../Graphics"
-
 type Transform = (p: THREE.Vector2) => THREE.Vector2
 
 // TODO: rename to avoid conceptual clash with WebGL canvas.
