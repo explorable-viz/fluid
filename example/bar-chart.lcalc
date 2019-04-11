@@ -134,4 +134,4 @@ let barGraph = Graphic([
 let lineGraph = Graphic([
    Scale(x_scale, y_scale, PathStroke(ps))
 ]) in
-stackRight [barGraph, Scale(4, 1, lineGraph), barGraph]
+stackRight [barGraph, lineGraph, barGraph]
