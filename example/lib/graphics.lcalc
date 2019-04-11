@@ -28,6 +28,7 @@ fun pathDimensions ps →
 fun spaceRight sep gs →
    zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
 
+// Unlike spaceRight, produces a nested structure.
 // List(GraphicsElement) → Graphic
 fun stackRight gs →
    foldr (fun (g, g') → Graphic([g, Translate(width g, 0, g')])) Graphic([]) gs;
