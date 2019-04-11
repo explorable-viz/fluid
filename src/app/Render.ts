@@ -17,45 +17,45 @@ export class Canvas3D {
       return this.transforms[this.transforms.length - 1]
    }
 
-   objects3D (elem: GraphicsElement): THREE.Object3D[] {
-      if (elem instanceof Graphic) {   
+   objects3D (g: GraphicsElement): THREE.Object3D[] {
+      if (g instanceof Graphic) {   
          const objects: THREE.Object3D[] = []
-         for (let elems: List<GraphicsElement> = elem.elems; Cons.is(elems); elems = elems.tail) {
-            objects.push(...this.objects3D(elems.head))
+         for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
+            objects.push(...this.objects3D(gs.head))
          }
          return objects
       }
-      if (elem instanceof PathStroke) {
-         return this.pathStroke(elem.points)
+      if (g instanceof PathStroke) {
+         return this.pathStroke(g.points)
       } else
-      if (elem instanceof RectFill) {
-         return this.rectFill(elem.points)
+      if (g instanceof RectFill) {
+         return this.rectFill(g.points)
       } else
       // TODO: factor out common handling.
-      if (elem instanceof Scale) {
+      if (g instanceof Scale) {
          const transform: Transform = this.transform
          this.transforms.push(({x, y}): THREE.Vector2 => {
-            return transform(new THREE.Vector2(x * elem.x.n, y * elem.y.n))
+            return transform(new THREE.Vector2(x * g.x.n, y * g.y.n))
          })
-         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
+         const objects: THREE.Object3D[] = this.objects3D(g.g)
          this.transforms.pop()
          return objects
       } else
-      if (elem instanceof Translate) {
+      if (g instanceof Translate) {
          const transform: Transform = this.transform
          this.transforms.push(({x, y}): THREE.Vector2 => {
-            return transform(new THREE.Vector2(x + elem.x.n, y + elem.y.n))
+            return transform(new THREE.Vector2(x + g.x.n, y + g.y.n))
          })
-         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
+         const objects: THREE.Object3D[] = this.objects3D(g.g)
          this.transforms.pop()
          return objects
       } else
-      if (elem instanceof Transpose) {
+      if (g instanceof Transpose) {
          const transform: Transform = this.transform
          this.transforms.push(({x, y}): THREE.Vector2 => {
             return transform(new THREE.Vector2(y, x))
          })
-         const objects: THREE.Object3D[] = this.objects3D(elem.elem)
+         const objects: THREE.Object3D[] = this.objects3D(g.g)
          this.transforms.pop()
          return objects
       } else {

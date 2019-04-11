@@ -61,11 +61,11 @@ export abstract class GraphicsElement extends Annotated {
 }
 
 export class Graphic extends GraphicsElement {
-   elems: List<GraphicsElement>
+   gs: List<GraphicsElement>
 
-   constructor_ (α: Annotation, elems: List<GraphicsElement>): void {
+   constructor_ (α: Annotation, gs: List<GraphicsElement>): void {
       this.α = α
-      this.elems = as(elems, List)
+      this.gs = as(gs, List)
    }
 }
 
@@ -74,7 +74,7 @@ export class PathStroke extends GraphicsElement {
 
    constructor_ (α: Annotation, points: List<Point>): void {
       this.α = α
-      this.points = points
+      this.points = as(points, List)
    }
 }
 
@@ -84,42 +84,42 @@ export class RectFill extends GraphicsElement {
 
    constructor_ (α: Annotation, points: List<Point>): void {
       this.α = α
-      this.points = points
+      this.points = as(points, List)
    }
 }
 
 export class Scale extends GraphicsElement {
    x: AnnNumber
    y: AnnNumber
-   elem: GraphicsElement
+   g: GraphicsElement
 
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, elem: GraphicsElement): void {
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, g: GraphicsElement): void {
       this.α = α
-      this.x = x
-      this.y = y
-      this.elem = elem
+      this.x = as(x, AnnNumber)
+      this.y = as(y, AnnNumber)
+      this.g = as(g, GraphicsElement)
    }
 }
 
 export class Translate extends GraphicsElement {
    x: AnnNumber
    y: AnnNumber
-   elem: GraphicsElement
+   g: GraphicsElement
 
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, elem: GraphicsElement): void {
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, g: GraphicsElement): void {
       this.α = α
-      this.x = x
-      this.y = y
-      this.elem = elem
+      this.x = as(x, AnnNumber)
+      this.y = as(y, AnnNumber)
+      this.g = as(g, GraphicsElement)
    }
 }
 
 // Swaps x and y. Could subsume by a more general notion of reflection.
 export class Transpose extends GraphicsElement {
-   elem: GraphicsElement
+   g: GraphicsElement
 
-   constructor_ (α: Annotation, elem: GraphicsElement): void {
+   constructor_ (α: Annotation, g: GraphicsElement): void {
       this.α = α
-      this.elem = elem
+      this.g = as(g, GraphicsElement)
    }
 }
