@@ -30,7 +30,7 @@ fun spaceRight sep gs →
 
 // List(GraphicsElement) → List(GraphicsElement)
 fun stackRight gs →
-   zipW (fun (x, g) → Translate(x, 0, g)) gs [0, ...map width gs];
+   zipW (fun (x, g) → Translate(x, 0, g)) [0, ...map width gs] gs;
 
 // Rect → List(Point)
 fun rectPath Rect(w, h) → [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];

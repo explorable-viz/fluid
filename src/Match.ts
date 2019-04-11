@@ -35,8 +35,8 @@ export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Match.Plug<K,
                }
             })
          if (Ψκ_α! === undefined) {
-            const datatype: DataType = __nonNull(ctrToDataType.get((σ.cases as NonEmpty<Pair<string, Args<K>>>).t.fst))
-            return error(`Pattern mismatch: found ${v.ctr}, expected ${datatype.name}.`, v, σ)
+            const d: DataType = __nonNull(ctrToDataType.get((σ.cases as NonEmpty<Pair<string, Args<K>>>).t.fst))
+            return error(`Pattern mismatch: found ${v.ctr}, expected ${d.name}.`, v, σ)
          } else {
             const [{Ψ, κ}, α] = Ψκ_α!
             // store v as well to provide location for unmatch
