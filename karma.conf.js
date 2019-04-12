@@ -46,6 +46,8 @@ module.exports = function (config) {
       reporters: ['mocha', 'junit'],
       port: 8081,
       captureTimeout: 20000,
+      browserDisconnectTimeout : 20000,
+      browserNoActivityTimeout : 20000,
       colors: true,
       logLevel: config.LOG_ERROR,
       autoWatch: true,
