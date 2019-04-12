@@ -250,8 +250,8 @@ const constr: Parser<Constr> =
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), () => [])),
       ([ctr, e̅]: [Lex.Ctr, Expr[]]) => {
          const n: number = arity(ctr.str)
-         assert(n <= e̅.length, "Too few arguments in constructor.", ctr.str)
-         assert(n >= e̅.length, "Too many arguments in constructor.", ctr.str)
+         assert(n <= e̅.length,`Too few arguments to constructor ${ctr.str}.`)
+         assert(n >= e̅.length, `Too many arguments to constructor ${ctr.str}.`)
          return Expr.constr(ν(), ann.top, ctr, List.fromArray(e̅))
       }
    )

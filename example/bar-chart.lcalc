@@ -36,6 +36,15 @@ let
             ("Solar", 40),
             ("CSP", 0),
             ("Wind", 45)
+         ]),
+         ("Japan", [
+            ("Bio", 4.8),
+            ("Geothermal", 0.5),
+            ("Hydro", 22),
+            ("Ocean", 0),
+            ("Solar", 34),
+            ("CSP", 0),
+            ("Wind", 3)
          ])
       ]),
       // http://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
@@ -66,6 +75,15 @@ let
             ("Solar", 41),
             ("CSP", 0),
             ("Wind", 50)
+         ]),
+         ("Japan", [
+            ("Bio", 4.1),
+            ("Geothermal", 0.5),
+            ("Hydro", 23),
+            ("Ocean", 0),
+            ("Solar", 43),
+            ("CSP", 0),
+            ("Wind", 3.2)
          ])
       ]),
       // http://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2
@@ -96,12 +114,21 @@ let
             ("Solar", 42),
             ("CSP", 0),
             ("Wind", 56)
+         ]),
+         ("Japan", [
+            ("Bio", 3.6),
+            ("Geothermal", 0.5),
+            ("Hydro", 23),
+            ("Ocean", 0),
+            ("Solar", 49),
+            ("CSP", 0),
+            ("Wind", 3.4)
          ])
       ])
    ]
 in
 letrec 
-   // Put data into a treemap instead?
+   // Put data into a map instead?
    fun lookupStr k [(k', v), ...kvs] → 
       match k === k' as {
          True → v;
@@ -128,15 +155,16 @@ let y_scale = 1 / 30 in
 let x_scale = 6 in
 let tickLength = 2 in
 let axis_margin = 1 in
+let x_offset = axis_margin + tickLength in
+let y_offset = x_offset in
 let barGraph = 
-   let x_offset = axis_margin + tickLength in
-   let y_offset = x_offset in
-   Translate(x_offset, y_offset, Graphic([
-      x_axis axis_margin 5 7 tickLength,
-      Transpose(Scale(x_scale, 1, x_axis axis_margin (length rects) 1 tickLength)),
-      Scale(x_scale, y_scale, Graphic(spaceRight 1.16 (map renderRect rects)))
-   ])) in
-let lineGraph = Graphic([
-   Scale(x_scale, y_scale, PathStroke(ps))
-]) in
-stackRight [barGraph, lineGraph, Translate(0, 14, barGraph)]
+   translate x_offset y_offset Graphic([
+      scale x_scale 1 (x_axis axis_margin 5 1.16 tickLength),
+      transpose (scale x_scale 1 (x_axis axis_margin (length rects) 1 tickLength)),
+      scale x_scale y_scale Graphic(spaceRight 1.16 (map renderRect rects))
+   ]) in
+let lineGraph =
+   translate x_offset y_offset Graphic([
+      linePlot Scale(x_scale, y_scale) ps
+   ]) in
+stackRight [barGraph, lineGraph]

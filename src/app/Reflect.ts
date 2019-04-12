@@ -5,7 +5,7 @@ import { at } from "../util/Versioned"
 import { Cons, List, Nil } from "../BaseTypes"
 import { arity } from "../DataType"
 import { ExplVal, Value } from "../ExplVal"
-import { AnnNumber, AnnString, Graphic, PathStroke, Point, RectFill, Scale, Translate, Transpose } from "../Graphics"
+import { AnnNumber, AnnString, Graphic, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
 
 // intermediate value required to stop TS getting confused:
 const classFor_: Class<PersistentObject>[] =
@@ -15,6 +15,7 @@ const classFor_: Class<PersistentObject>[] =
     PathStroke,
     Point,
     RectFill,
+    Transform,
     Scale,
     Translate,
     Transpose],
