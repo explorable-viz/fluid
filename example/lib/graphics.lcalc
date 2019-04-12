@@ -24,6 +24,26 @@ fun height g → snd (dimensions g);
 fun pathDimensions ps → 
    match unzip ps as (xs, ys) → (max xs, max ys);
 
+// The cross used for rendering the points of a line plot.
+// number → Point → Graphic
+fun plotPoint radius Point(x, y) → 
+   Graphic([
+      PathStroke([Point(x - radius, y - radius), Point(x + radius, y + radius)]),
+      PathStroke([Point(x - radius, y + radius), Point(x + radius, y - radius)])
+   ]);
+
+// Rect → List(Point)
+fun rectPath Rect(w, h) → 
+   [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
+
+// List(Point) → Graphic
+fun linePlot ps → 
+   Graphic([PathStroke(ps), ...map (plotPoint 0.16) ps]);
+
+// Rect → Graphic
+fun renderRect r → 
+   let ps = rectPath r in Graphic([RectFill(ps), PathStroke(close(ps))]);
+
 // number → List(GraphicsElement) → List(GraphicsElement)
 fun spaceRight sep gs →
    zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
@@ -33,17 +53,10 @@ fun spaceRight sep gs →
 fun stackRight gs →
    foldr (fun (g, g') → Graphic([g, Translate(width g, 0, g')])) Graphic([]) gs;
 
-// Rect → List(Point)
-fun rectPath Rect(w, h) → [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
-
-// Rect → Graphic
-fun renderRect r → 
-   let ps = rectPath r in Graphic([RectFill(ps), PathStroke(close(ps))]);
-
 // GraphicsElement → number
 fun width g → fst (dimensions g);
 
-// Negatively offset from (0, 0) by margin
+// Negatively offset from (0, 0) by margin from (0, 0); client code responsible for translating into positive space (if desired).
 // number → number → number → GraphicElement
 fun x_axis margin n width tickHeight →
    let tick = PathStroke([Point(0, 0), Point(0, 0 - tickHeight)]) in
