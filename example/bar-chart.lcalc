@@ -165,6 +165,6 @@ let barGraph =
    ]) in
 let lineGraph =
    translate x_offset y_offset Graphic([
-      scale x_scale y_scale (linePlot ps)
+      linePlot Scale(x_scale, y_scale) ps
    ]) in
 stackRight [barGraph, lineGraph]

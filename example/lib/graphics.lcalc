@@ -20,25 +20,33 @@ fun dimensions {
 // GraphicsElement → number
 fun height g → snd (dimensions g);
 
+// LinearTransform → LinearTransform
+fun invert {
+   Scale(x, y) → Scale(1 / x, 1 / y);           // unfortunately not a true inverse..
+   Translate(x, y) → Translate(0 - x, 0 - y);   // no unary negation yet
+   Transpose → Transpose                        // self-involutive
+};
+
+// List(Point) → LinearTransform → Graphic
+fun linePlot t ps →
+   let points = map (fun Point(x, y) → translate x y (Transform(invert t, plotPoint 0.5))) ps in 
+   Transform(t, Graphic([PathStroke(ps), ...points]));
+
 // List(Pair(number, number)) → Pair(number, number)
 fun pathDimensions ps → 
    match unzip ps as (xs, ys) → (max xs, max ys);
 
-// The cross used for rendering the points of a line plot.
-// number → Point → Graphic
-fun plotPoint radius Point(x, y) → 
+// (0,0)-based cross used to render points of a line plot.
+// number → Graphic
+fun plotPoint radius → 
    Graphic([
-      PathStroke([Point(x - radius, y - radius), Point(x + radius, y + radius)]),
-      PathStroke([Point(x - radius, y + radius), Point(x + radius, y - radius)])
+      PathStroke([Point(0 - radius, 0 - radius), Point(radius, radius)]),
+      PathStroke([Point(0 - radius, radius), Point(radius, 0 - radius)])
    ]);
 
 // Rect → List(Point)
 fun rectPath Rect(w, h) →
    [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
-
-// List(Point) → Graphic
-fun linePlot ps → 
-   Graphic([PathStroke(ps), ...map (plotPoint 0.16) ps]);
 
 // Rect → Graphic
 fun renderRect r → 
