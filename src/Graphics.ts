@@ -88,7 +88,11 @@ export class RectFill extends GraphicsElement {
    }
 }
 
-export class Scale extends GraphicsElement {
+export abstract class LinearTransform extends Annotated {
+   abstract constructor_ (...v̅: Persistent[]): void
+}
+
+export class Scale extends LinearTransform {
    x: AnnNumber
    y: AnnNumber
    g: GraphicsElement
@@ -101,7 +105,7 @@ export class Scale extends GraphicsElement {
    }
 }
 
-export class Translate extends GraphicsElement {
+export class Translate extends LinearTransform {
    x: AnnNumber
    y: AnnNumber
    g: GraphicsElement
@@ -115,11 +119,22 @@ export class Translate extends GraphicsElement {
 }
 
 // Swaps x and y. Could subsume by a more general notion of reflection.
-export class Transpose extends GraphicsElement {
+export class Transpose extends LinearTransform {
    g: GraphicsElement
 
    constructor_ (α: Annotation, g: GraphicsElement): void {
       this.α = α
+      this.g = as(g, GraphicsElement)
+   }
+}
+
+export class Transform extends GraphicsElement {
+   t: LinearTransform
+   g: GraphicsElement
+
+   constructor_ (α: Annotation, t: LinearTransform, g: GraphicsElement): void {
+      this.α = α
+      this.t = as(t, LinearTransform)
       this.g = as(g, GraphicsElement)
    }
 }

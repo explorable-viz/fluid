@@ -41,9 +41,12 @@ export function initDataTypes (): void {
    initDataType(new DataType("GraphicsElement", new Map([
       ["PathStroke", ["points"]], 
       ["RectFill", ["points"]], 
-      ["Scale", ["x", "y", "elem"]],
-      ["Translate", ["x", "y", "elem"]],
-      ["Transpose", ["elem"]],
+      ["Transform", ["t", "g"]],
       ["Graphic", ["elems"]]
+   ])))
+   initDataType(new DataType("LinearTransform", new Map([
+      ["Scale", ["x", "y"]],
+      ["Translate", ["x", "y"]],
+      ["Transpose", []]
    ])))
 }

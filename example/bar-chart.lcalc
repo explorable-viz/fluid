@@ -158,13 +158,13 @@ let axis_margin = 1 in
 let x_offset = axis_margin + tickLength in
 let y_offset = x_offset in
 let barGraph = 
-   Translate(x_offset, y_offset, Graphic([
-      Scale(x_scale, 1, x_axis axis_margin 5 1.16 tickLength),
-      Transpose(Scale(x_scale, 1, x_axis axis_margin (length rects) 1 tickLength)),
-      Scale(x_scale, y_scale, Graphic(spaceRight 1.16 (map renderRect rects)))
-   ])) in
+   translate x_offset y_offset Graphic([
+      scale x_scale 1 (x_axis axis_margin 5 1.16 tickLength),
+      transpose (scale x_scale 1 (x_axis axis_margin (length rects) 1 tickLength)),
+      scale x_scale y_scale Graphic(spaceRight 1.16 (map renderRect rects))
+   ]) in
 let lineGraph =
-   Translate(x_offset, y_offset, Graphic([
-      Scale(x_scale, y_scale, linePlot(ps))
-   ])) in
+   translate x_offset y_offset Graphic([
+      scale x_scale y_scale linePlot(ps)
+   ]) in
 stackRight [barGraph, lineGraph]

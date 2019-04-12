@@ -7,14 +7,14 @@ fun dimensions {
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
    RectFill(ps) →
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
-   Scale(x, y, g) → 
-      match dimensions g as (w, h) → (w * x, h * y);
-   Translate(x, y, g) → 
-      match dimensions g as (w, h) → (w + x, h + y);
-   Transpose(g) → 
-      swap (dimensions g);
    Graphic(gs) → 
-      pathDimensions (map dimensions gs)
+      pathDimensions (map dimensions gs);
+   Transform(Scale(x, y), g) → 
+      match dimensions g as (w, h) → (w * x, h * y);
+   Transform(Translate(x, y), g) → 
+      match dimensions g as (w, h) → (w + x, h + y);
+   Transform(Transpose, g) → 
+      swap (dimensions g)
 };
 
 // GraphicsElement → number
@@ -33,7 +33,7 @@ fun plotPoint radius Point(x, y) →
    ]);
 
 // Rect → List(Point)
-fun rectPath Rect(w, h) → 
+fun rectPath Rect(w, h) →
    [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
 
 // List(Point) → Graphic
@@ -44,14 +44,23 @@ fun linePlot ps →
 fun renderRect r → 
    let ps = rectPath r in Graphic([RectFill(ps), PathStroke(close(ps))]);
 
+fun scale x y g →
+   Transform(Scale(x, y), g);
+
 // number → List(GraphicsElement) → List(GraphicsElement)
 fun spaceRight sep gs →
-   zipW (fun (x, g) → Translate(x, 0, g)) (iterate (length gs) (fun x → x + sep) 0) gs;
+   zipW (translate x) (iterate (length gs) (fun x → x + sep) 0) gs;
 
 // Unlike spaceRight, produces a nested structure.
 // List(GraphicsElement) → Graphic
 fun stackRight gs →
-   foldr (fun (g, g') → Graphic([g, Translate(width g, 0, g')])) Graphic([]) gs;
+   foldr (fun (g, g') → Graphic([g, translate (width g) 0 g'])) Graphic([]) gs;
+
+fun translate x y g →
+   Transform(Translate(x, y), g);
+
+fun transpose g →
+   Transform(Transpose, g);
 
 // GraphicsElement → number
 fun width g → fst (dimensions g);
@@ -62,4 +71,4 @@ fun x_axis margin n width tickHeight →
    let tick = PathStroke([Point(0, 0), Point(0, 0 - tickHeight)]) in
    let ticks = fun n → spaceRight width (repeat n tick) in
    let line = PathStroke([Point(0, 0), Point(n * width, 0)]) in
-   Translate(0, 0 - margin, Graphic([line, ...ticks n]))
+   translate 0 (0 - margin) Graphic([line, ...ticks n])
