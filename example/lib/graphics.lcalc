@@ -49,7 +49,7 @@ fun scale x y g →
 
 // number → List(GraphicsElement) → List(GraphicsElement)
 fun spaceRight sep gs →
-   zipW (translate x) (iterate (length gs) (fun x → x + sep) 0) gs;
+   zipW (fun (x, g) → translate x 0 g) (iterate (length gs) (fun x → x + sep) 0) gs;
 
 // Unlike spaceRight, produces a nested structure.
 // List(GraphicsElement) → Graphic

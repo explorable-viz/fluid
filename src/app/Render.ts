@@ -1,18 +1,19 @@
 import * as THREE from "three"
 import { absurd, as, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
-import { Graphic, GraphicsElement, PathStroke, Point, RectFill, Scale, Translate, Transpose } from "../Graphics"
-type Transform = (p: THREE.Vector2) => THREE.Vector2
+import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
+
+type TransformFun = (p: THREE.Vector2) => THREE.Vector2
 
 // TODO: rename to avoid conceptual clash with WebGL canvas.
 export class Canvas3D {
-   transforms: Transform[] // stack of successive compositions of linear transformations
+   transforms: TransformFun[] // stack of successive compositions of linear transformations
 
    constructor () {
       this.transforms = [x => x]
    }
 
-   get transform (): Transform {
+   get transform (): TransformFun {
       assert(this.transforms.length > 0)
       return this.transforms[this.transforms.length - 1]
    }
@@ -31,33 +32,38 @@ export class Canvas3D {
       if (g instanceof RectFill) {
          return this.rectFill(g.points)
       } else
-      // TODO: factor out common handling.
-      if (g instanceof Scale) {
-         const transform: Transform = this.transform
-         this.transforms.push(({x, y}): THREE.Vector2 => {
-            return transform(new THREE.Vector2(x * g.x.n, y * g.y.n))
-         })
-         const objects: THREE.Object3D[] = this.objects3D(g.g)
-         this.transforms.pop()
-         return objects
-      } else
-      if (g instanceof Translate) {
-         const transform: Transform = this.transform
-         this.transforms.push(({x, y}): THREE.Vector2 => {
-            return transform(new THREE.Vector2(x + g.x.n, y + g.y.n))
-         })
-         const objects: THREE.Object3D[] = this.objects3D(g.g)
-         this.transforms.pop()
-         return objects
-      } else
-      if (g instanceof Transpose) {
-         const transform: Transform = this.transform
-         this.transforms.push(({x, y}): THREE.Vector2 => {
-            return transform(new THREE.Vector2(y, x))
-         })
-         const objects: THREE.Object3D[] = this.objects3D(g.g)
-         this.transforms.pop()
-         return objects
+      if (g instanceof Transform) {
+         // TODO: factor out common handling.
+         const t: LinearTransform = g.t
+         if (t instanceof Scale) {
+            const transform: TransformFun = this.transform
+            this.transforms.push(({x, y}): THREE.Vector2 => {
+               return transform(new THREE.Vector2(x * t.x.n, y * t.y.n))
+            })
+            const objects: THREE.Object3D[] = this.objects3D(g.g)
+            this.transforms.pop()
+            return objects
+         } else
+         if (t instanceof Translate) {
+            const transform: TransformFun = this.transform
+            this.transforms.push(({x, y}): THREE.Vector2 => {
+               return transform(new THREE.Vector2(x + t.x.n, y + t.y.n))
+            })
+            const objects: THREE.Object3D[] = this.objects3D(g.g)
+            this.transforms.pop()
+            return objects
+         } else
+         if (t instanceof Transpose) {
+            const transform: TransformFun = this.transform
+            this.transforms.push(({x, y}): THREE.Vector2 => {
+               return transform(new THREE.Vector2(y, x))
+            })
+            const objects: THREE.Object3D[] = this.objects3D(g.g)
+            this.transforms.pop()
+            return objects
+         } else {
+            return absurd()
+         }
       } else {
          return absurd()
       }
@@ -85,7 +91,7 @@ export class Canvas3D {
 
    newPathGeometry (points: List<Point>): THREE.Geometry {
       const geometry: THREE.Geometry = new THREE.Geometry,
-            transform: Transform = this.transform
+            transform: TransformFun = this.transform
       while (Cons.is(points)) {
          const point: Point = as(points.head, Point),
                {x, y}: THREE.Vector2 = transform(new THREE.Vector2(point.x.n, point.y.n))
@@ -97,7 +103,7 @@ export class Canvas3D {
 
    pointHighlights (points: List<Point>): THREE.Object3D[] {
       const highlights: THREE.Object3D[] = [],
-            transform: Transform = this.transform
+            transform: TransformFun = this.transform
       for (; Cons.is(points); points = points.tail) {
          const point: Point = points.head,
                p: THREE.Vector2 = transform(new THREE.Vector2(point.x.n, point.y.n))

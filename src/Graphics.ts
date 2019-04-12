@@ -95,36 +95,29 @@ export abstract class LinearTransform extends Annotated {
 export class Scale extends LinearTransform {
    x: AnnNumber
    y: AnnNumber
-   g: GraphicsElement
 
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, g: GraphicsElement): void {
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber): void {
       this.α = α
       this.x = as(x, AnnNumber)
       this.y = as(y, AnnNumber)
-      this.g = as(g, GraphicsElement)
    }
 }
 
 export class Translate extends LinearTransform {
    x: AnnNumber
    y: AnnNumber
-   g: GraphicsElement
 
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber, g: GraphicsElement): void {
+   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber): void {
       this.α = α
       this.x = as(x, AnnNumber)
       this.y = as(y, AnnNumber)
-      this.g = as(g, GraphicsElement)
    }
 }
 
 // Swaps x and y. Could subsume by a more general notion of reflection.
 export class Transpose extends LinearTransform {
-   g: GraphicsElement
-
-   constructor_ (α: Annotation, g: GraphicsElement): void {
+   constructor_ (α: Annotation): void {
       this.α = α
-      this.g = as(g, GraphicsElement)
    }
 }
 
