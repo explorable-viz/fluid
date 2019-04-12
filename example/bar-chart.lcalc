@@ -36,6 +36,15 @@ let
             ("Solar", 40),
             ("CSP", 0),
             ("Wind", 45)
+         ]),
+         ("Japan", [
+            ("Bio", 4.8),
+            ("Geothermal", 0.5),
+            ("Hydro", 22),
+            ("Ocean", 0),
+            ("Solar", 34),
+            ("CSP", 0),
+            ("Wind", 3)
          ])
       ]),
       // http://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
@@ -66,6 +75,15 @@ let
             ("Solar", 41),
             ("CSP", 0),
             ("Wind", 50)
+         ]),
+         ("Japan", [
+            ("Bio", 4.1),
+            ("Geothermal", 0.5),
+            ("Hydro", 23),
+            ("Ocean", 0),
+            ("Solar", 43),
+            ("CSP", 0),
+            ("Wind", 3.2)
          ])
       ]),
       // http://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2
@@ -96,12 +114,21 @@ let
             ("Solar", 42),
             ("CSP", 0),
             ("Wind", 56)
+         ]),
+         ("Japan", [
+            ("Bio", 3.6),
+            ("Geothermal", 0.5),
+            ("Hydro", 23),
+            ("Ocean", 0),
+            ("Solar", 49),
+            ("CSP", 0),
+            ("Wind", 3.4)
          ])
       ])
    ]
 in
 letrec 
-   // Put data into a treemap instead?
+   // Put data into a map instead?
    fun lookupStr k [(k', v), ...kvs] → 
       match k === k' as {
          True → v;
@@ -140,4 +167,4 @@ let lineGraph =
    Translate(x_offset, y_offset, Graphic([
       Scale(x_scale, y_scale, PathStroke(ps))
    ])) in
-stackRight [barGraph, lineGraph, Translate(0, 14, barGraph)]
+stackRight [barGraph, lineGraph]

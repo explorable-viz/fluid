@@ -43,7 +43,7 @@ fun renderRect r →
 // GraphicsElement → number
 fun width g → fst (dimensions g);
 
-// Negatively offset; client code responsible for translating into positive space (if desired).
+// Negatively offset from (0, 0) by margin
 // number → number → number → GraphicElement
 fun x_axis margin n width tickHeight →
    let tick = PathStroke([Point(0, 0), Point(0, 0 - tickHeight)]) in
