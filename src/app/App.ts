@@ -1,6 +1,6 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { as } from "../util/Core"
+import { __nonNull, as } from "../util/Core"
 import { World } from "../util/Versioned"
 import { Expr } from "../Expr"
 import { Eval } from "../Eval"
@@ -10,7 +10,7 @@ import { Value } from "../ExplVal"
 import { Cursor } from "../../test/util/Cursor"
 import { ρ, initialise, loadExample, parseExample } from "../../test/util/Core"
 import { reflect } from "./Reflect"
-import { Canvas3D } from "./Render"
+import { Renderer } from "./Render"
 
 initialise()
 
@@ -47,6 +47,9 @@ controls.enablePan = true; // Set to false to disable panning (ie vertical and h
 controls.enableDamping = true; // Set to false to disable damping (ie inertia)
 controls.dampingFactor = 0.25;
 
+const canvas2d: HTMLCanvasElement = document.createElement("canvas")
+
+document.body.appendChild(canvas2d)
 document.body.appendChild(renderer.domElement)
 
 export function close (path: THREE.Vector2[]) {
@@ -60,6 +63,8 @@ function populateScene (): void {
    here
       .skipImports()
       .to(Expr.Let, "e")
+   const data: Expr.Constr = as(here.o, Expr.Constr)
+   here
       .constrArg("Cons", 0)
       .constrArg("Pair", 1)
       .constrArg("Cons", 0)
@@ -68,10 +73,30 @@ function populateScene (): void {
       .constrArg("Pair", 1).notNeed() // 2015 > China > Bio > [here]
    const v: Value = Eval.eval_(ρ, e).v,
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
-         canvas: Canvas3D = new Canvas3D()
-   for (let obj of canvas.objects3D(elem)) {
+         renderer: Renderer = new Renderer()
+   for (let obj of renderer.objects3D(elem)) {
       scene.add(obj)
    }
+   scene.add(dataView(data))
+}
+
+function dataView (data: Expr.Constr): THREE.Object3D {
+   const ctx: CanvasRenderingContext2D = __nonNull(canvas2d.getContext("2d"))
+
+   ctx.font = "20pt Arial"
+   ctx.fillStyle = "red"
+   ctx.fillRect(0, 0, canvas2d.width, canvas2d.height)
+   ctx.fillStyle = "white"
+   ctx.fillRect(10, 10, canvas2d.width - 20, canvas2d.height - 20)
+   ctx.fillStyle = "black"
+   ctx.textAlign = "center"
+   ctx.textBaseline = "middle"
+   ctx.fillText(new Date().getTime().toString(), canvas2d.width / 2, canvas2d.height / 2)
+
+   const texture = new THREE.Texture(canvas2d),
+         material = new THREE.MeshBasicMaterial({ map: texture }),
+         geometry = new THREE.BoxGeometry(200, 200, 200)
+   return new THREE.Mesh(geometry, material)
 }
 
 function render () {
