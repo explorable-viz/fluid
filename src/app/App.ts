@@ -17,7 +17,8 @@ import { Renderer } from "./Render"
 initialise()
 
 const scene = new THREE.Scene(),
-      canvas2d: HTMLCanvasElement = document.createElement("canvas"),
+      dataCanvas: HTMLCanvasElement = document.createElement("canvas"),
+      viewCanvas: HTMLCanvasElement = document.createElement("canvas"),
       renderer = new THREE.WebGLRenderer,
       camera = new THREE.PerspectiveCamera(
          /* field of view (degrees) */ 90,
@@ -53,10 +54,13 @@ function initialiseScene (): void {
    controls.dampingFactor = 0.25
    controls.addEventListener("change", render)
    
-   canvas2d.style.verticalAlign = "top"
-   canvas2d.style.display = "inline-block"
+   dataCanvas.style.verticalAlign = "top"
+   dataCanvas.style.display = "inline-block"
+   viewCanvas.style.verticalAlign = "top"
+   viewCanvas.style.display = "inline-block"
    renderer.domElement.style.display = "inline-block"
-   document.body.appendChild(canvas2d)
+   document.body.appendChild(dataCanvas)
+   document.body.appendChild(viewCanvas)
    document.body.appendChild(renderer.domElement)
 }
 
@@ -83,16 +87,16 @@ function populateScene (): void {
    const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr), // eval just to get a handle on it
          v: Value = Eval.eval_(ρ, e).v,
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
-         renderer: Renderer = new Renderer()
+         renderer: Renderer = new Renderer(__nonNull(dataCanvas.getContext("2d")))
    for (let obj of renderer.objects3D(elem)) {
       scene.add(obj)
    }
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
-   const dataRenderer = new DataRenderer(canvas2d),
+   const dataRenderer = new DataRenderer(__nonNull(dataCanvas.getContext("2d"))),
          dataʹ: Data = as(reflect(data), List)
-   dataRenderer.dataView(dataʹ) // draw once to compute size
-   canvas2d.height = (dataRenderer.lines) * dataRenderer.lineHeight
-   scene.add(dataRenderer.dataView(dataʹ)) // draw again
+   dataRenderer.render(dataʹ) // draw once to compute size
+   dataCanvas.height = (dataRenderer.lines) * dataRenderer.lineHeight
+   scene.add(dataRenderer.render(dataʹ)) // draw again
 }
 
 function to3DTextureMap (canvas2d: HTMLCanvasElement): THREE.Object3D {
@@ -109,8 +113,8 @@ class DataRenderer {
    lineHeight: number
    lines: number
 
-   constructor (canvas2d: HTMLCanvasElement) {
-      this.ctx = __nonNull(canvas2d.getContext("2d"))
+   constructor (cxt: CanvasRenderingContext2D) {
+      this.ctx = cxt
       this.ctx.font = "10pt Arial"
       this.ctx.textAlign = "left"
       this.ctx.textBaseline = "middle"
@@ -120,10 +124,10 @@ class DataRenderer {
       this.lineHeight = this.ctx.measureText("M").width
    }
 
-   dataView (data: Data): THREE.Object3D {
+   render (data: Data): THREE.Object3D {
       this.lines = 0
       this.renderData(0, data)
-      return to3DTextureMap(canvas2d)
+      return to3DTextureMap(dataCanvas)
    }
 
    renderData (indentx: number, data: Data): void {

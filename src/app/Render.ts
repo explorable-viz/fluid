@@ -7,8 +7,10 @@ type TransformFun = (p: THREE.Vector2) => THREE.Vector2
 
 export class Renderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
+   ctx: CanvasRenderingContext2D
 
-   constructor () {
+   constructor (ctx: CanvasRenderingContext2D) {
+      this.ctx = ctx
       this.transforms = [x => x]
    }
 
