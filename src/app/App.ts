@@ -1,9 +1,9 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { __nonNull, as } from "../util/Core"
+import { __nonNull, absurd, as } from "../util/Core"
 import { PersistentObject} from "../util/Persistent"
 import { World } from "../util/Versioned"
-import { List, Pair } from "../BaseTypes"
+import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Expr } from "../Expr"
 import { Eval } from "../Eval"
 import { AnnNumber, AnnString, GraphicsElement } from "../Graphics"
@@ -86,27 +86,66 @@ function populateScene (): void {
       scene.add(obj)
    }
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
-   scene.add(dataView(as(reflect(data), List)))
+   scene.add(new DataRenderer(canvas2d).dataView(as(reflect(data), List)))
 }
 
 type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
 
-function dataView (data: Data): THREE.Object3D {
-   const ctx: CanvasRenderingContext2D = __nonNull(canvas2d.getContext("2d"))
-   ctx.font = "20pt Arial"
-   ctx.fillStyle = "red"
-   ctx.fillRect(0, 0, canvas2d.width, canvas2d.height)
-   ctx.fillStyle = "white"
-   ctx.fillRect(10, 10, canvas2d.width - 20, canvas2d.height - 20)
-   ctx.fillStyle = "black"
-   ctx.textAlign = "center"
-   ctx.textBaseline = "middle"
-   ctx.fillText(new Date().getTime().toString(), canvas2d.width / 2, canvas2d.height / 2)
+class DataRenderer {
+   ctx: CanvasRenderingContext2D
+   lineHeight: number
+   currentLine: number
+   textx: number = 0
 
-   const texture = new THREE.Texture(canvas2d),
-         material = new THREE.MeshBasicMaterial({ map: texture }),
-         geometry = new THREE.BoxGeometry(200, 200, 200)
-   return new THREE.Mesh(geometry, material)
+   constructor (canvas2d: HTMLCanvasElement) {
+      this.ctx = __nonNull(canvas2d.getContext("2d"))
+      this.ctx.font = "10pt Arial"
+//      this.ctx.fillStyle = "red"
+//      this.ctx.fillRect(0, 0, canvas2d.width, canvas2d.height)
+//      this.ctx.fillStyle = "white"
+//      this.ctx.fillRect(10, 10, canvas2d.width - 20, canvas2d.height - 20)
+      this.ctx.fillStyle = "black"
+      this.ctx.textAlign = "left"
+      this.ctx.textBaseline = "middle"
+
+      // No easy way to access text height, but this will do for now.
+      // https://stackoverflow.com/questions/1134586
+      this.lineHeight = this.ctx.measureText('M').width
+   }
+
+   dataView (data: Data): THREE.Object3D {
+      this.currentLine = 1
+      this.renderData(data)
+      const texture = new THREE.Texture(canvas2d),
+            material = new THREE.MeshBasicMaterial({ map: texture }),
+            geometry = new THREE.BoxGeometry(200, 200, 200)
+      return new THREE.Mesh(geometry, material)
+   }
+
+   renderData (data: Data): void {
+      if (Cons.is(data)) {
+         const key: AnnNumber | AnnString = as(data.head, Pair).fst
+         let keyStr: string
+         if (key instanceof AnnNumber) {
+            keyStr = key.n.toString()
+         } else
+         if (key instanceof AnnString) {
+            keyStr = key.str
+         } else {
+            return absurd()
+         }
+         this.ctx.fillText(keyStr, this.textx, this.currentLine * this.lineHeight)
+         this.textx += this.ctx.measureText(keyStr).width
+         ++this.currentLine
+         this.textx = 0
+         this.renderData(data.tail)
+      } else
+      if (Nil.is(data)) {
+         return
+      } else {
+         return absurd()
+      }
+   }
 }
 
 function render () {
