@@ -12,7 +12,7 @@ import { Value } from "../ExplVal"
 import { Cursor } from "../../test/util/Cursor"
 import { ρ, initialise, load, parse } from "../../test/util/Core"
 import { reflect } from "./Reflect"
-import { Renderer } from "./Render"
+import { Renderer, to3DTextureMap } from "./Render"
 
 initialise()
 
@@ -91,19 +91,13 @@ function populateScene (): void {
    for (let obj of renderer.objects3D(elem)) {
       scene.add(obj)
    }
+   scene.add(renderer.render(elem))
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
    const dataRenderer = new DataRenderer(__nonNull(dataCanvas.getContext("2d"))),
          dataʹ: Data = as(reflect(data), List)
    dataRenderer.render(dataʹ) // draw once to compute size
    dataCanvas.height = (dataRenderer.lines) * dataRenderer.lineHeight
    scene.add(dataRenderer.render(dataʹ)) // draw again
-}
-
-function to3DTextureMap (canvas2d: HTMLCanvasElement): THREE.Object3D {
-   const texture = new THREE.Texture(canvas2d),
-   material = new THREE.MeshBasicMaterial({ map: texture }),
-   geometry = new THREE.BoxGeometry(200, 200, 200)
-   return new THREE.Mesh(geometry, material)
 }
 
 type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
@@ -118,7 +112,6 @@ class DataRenderer {
       this.ctx.font = "10pt Arial"
       this.ctx.textAlign = "left"
       this.ctx.textBaseline = "middle"
-
       // No easy way to access text height, but this will do for now.
       // https://stackoverflow.com/questions/1134586
       this.lineHeight = this.ctx.measureText("M").width
@@ -127,7 +120,7 @@ class DataRenderer {
    render (data: Data): THREE.Object3D {
       this.lines = 0
       this.renderData(0, data)
-      return to3DTextureMap(dataCanvas)
+      return to3DTextureMap(this.ctx.canvas)
    }
 
    renderData (indentx: number, data: Data): void {

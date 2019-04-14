@@ -3,6 +3,13 @@ import { absurd, as, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
 
+export function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
+   const texture = new THREE.Texture(canvas),
+   material = new THREE.MeshBasicMaterial({ map: texture }),
+   geometry = new THREE.BoxGeometry(200, 200, 200)
+   return new THREE.Mesh(geometry, material)
+}
+
 type TransformFun = (p: THREE.Vector2) => THREE.Vector2
 
 export class Renderer {
@@ -17,6 +24,14 @@ export class Renderer {
    get transform (): TransformFun {
       assert(this.transforms.length > 0)
       return this.transforms[this.transforms.length - 1]
+   }
+
+   render (g: GraphicsElement): THREE.Object3D {
+      this.renderElement(g)
+      return to3DTextureMap(this.ctx.canvas)
+   }
+
+   renderElement (g: GraphicsElement): void {
    }
 
    objects3D (g: GraphicsElement): THREE.Object3D[] {
