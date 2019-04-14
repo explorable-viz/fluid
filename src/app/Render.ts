@@ -11,19 +11,27 @@ export function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
 }
 
 type TransformFun = (p: THREE.Vector2) => THREE.Vector2
+type TransformFun2 = (p: [number, number]) => [number, number]
 
 export class Renderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
+   transforms2: TransformFun2[] // stack of successive compositions of linear transformations
    ctx: CanvasRenderingContext2D
 
    constructor (ctx: CanvasRenderingContext2D) {
       this.ctx = ctx
       this.transforms = [x => x]
+      this.transforms2 = [([x, y]) => [x, y]]
    }
 
    get transform (): TransformFun {
       assert(this.transforms.length > 0)
       return this.transforms[this.transforms.length - 1]
+   }
+
+   get transform2 (): TransformFun2 {
+      assert(this.transforms2.length > 0)
+      return this.transforms2[this.transforms2.length - 1]
    }
 
    render (g: GraphicsElement): THREE.Object3D {
@@ -38,36 +46,37 @@ export class Renderer {
          }
       } else 
       if (g instanceof PathStroke) {
-         // TODO
+         this.pathStroke2(g.points)
       } else
       if (g instanceof RectFill) {
-         // TODO
+         this.rectFill2(g.points)
       } else
       if (g instanceof Transform) {
          // TODO: factor out common handling.
          const t: LinearTransform = g.t
          if (t instanceof Scale) {
-            const transform: TransformFun = this.transform
-            this.transforms.push(({x, y}): THREE.Vector2 => {
-               return transform(new THREE.Vector2(x * t.x.n, y * t.y.n))
+            const transform: TransformFun2 = this.transform2
+            this.transforms2.push(([x, y]): [number, number] => {
+               return transform([x * t.x.n, y * t.y.n])
             })
-            this.render(g.g)
-            this.transforms.pop()
+            this.renderElement(g.g)
+            this.transforms2.pop()
          } else
          if (t instanceof Translate) {
-            const transform: TransformFun = this.transform
-            this.transforms.push(({x, y}): THREE.Vector2 => {
-               return transform(new THREE.Vector2(x + t.x.n, y + t.y.n))
+            const transform: TransformFun2 = this.transform2
+            this.transforms2.push(([x, y]): [number, number] => {
+               return transform([x + t.x.n, y + t.y.n])
             })
-            this.render(g.g)
+            this.renderElement(g.g)
+            this.transforms2.pop()
          } else
          if (t instanceof Transpose) {
-            const transform: TransformFun = this.transform
-            this.transforms.push(({x, y}): THREE.Vector2 => {
-               return transform(new THREE.Vector2(y, x))
+            const transform: TransformFun2 = this.transform2
+            this.transforms2.push(([x, y]): [number, number] => {
+               return transform([y, x])
             })
-            this.render(g.g)
-            this.transforms.pop()
+            this.renderElement(g.g)
+            this.transforms2.pop()
          } else {
             return absurd()
          }
@@ -128,6 +137,23 @@ export class Renderer {
       }
    }
 
+   path2D (points: List<Point>): Path2D {
+      const region: Path2D = new Path2D,
+            transform: TransformFun2 = this.transform2
+      if (Cons.is(points)) {
+         const [x, y]: [number, number] = transform([points.head.x.n, points.head.y.n])
+         region.moveTo(x, y)
+         points = points.tail
+         for (; Cons.is(points); points = points.tail) {
+            const [x, y]: [number, number] = transform([points.head.x.n, points.head.y.n])
+            region.lineTo(x, y)
+         }
+      } else {
+         return absurd()
+      }
+      return region
+   }
+
    pathStroke (points: List<Point>): THREE.Object3D[] {
       const stroke: THREE.Line = new THREE.Line(
          this.newPathGeometry(points),
@@ -138,6 +164,12 @@ export class Renderer {
       return [stroke, ...this.pointHighlights(points)]
    }
 
+   pathStroke2 (points: List<Point>): void {
+      const region: Path2D = this.path2D(points)
+      this.ctx.strokeStyle = "black"
+      this.ctx.stroke(region)
+   }
+
    rectFill (rect_path: List<Point>): THREE.Object3D[] {
       const geometry: THREE.Geometry = this.newPathGeometry(rect_path)
       geometry.faces.push(new THREE.Face3(0, 1, 2))
@@ -146,6 +178,12 @@ export class Renderer {
          geometry, 
          new THREE.MeshBasicMaterial({ color: 0xF6831E, side: THREE.DoubleSide })
       )]
+   }
+
+   rectFill2 (rect_path: List<Point>): void {
+      const region: Path2D = this.path2D(rect_path)
+      this.ctx.fillStyle = "green"
+      this.ctx.fill(region)
    }
 
    newPathGeometry (points: List<Point>): THREE.Geometry {
