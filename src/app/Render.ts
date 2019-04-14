@@ -3,7 +3,7 @@ import { absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
 
-export function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
+function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
    const texture = new THREE.Texture(canvas),
    material = new THREE.MeshBasicMaterial({ map: texture }),
    geometry = new THREE.BoxGeometry(200, 200, 200)

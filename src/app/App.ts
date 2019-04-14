@@ -12,13 +12,13 @@ import { Value } from "../ExplVal"
 import { Cursor } from "../../test/util/Cursor"
 import { ρ, initialise, load, parse } from "../../test/util/Core"
 import { reflect } from "./Reflect"
-import { GraphicsRenderer, to3DTextureMap } from "./Render"
+import { GraphicsRenderer } from "./Render"
 
 initialise()
 
 const scene = new THREE.Scene(),
       dataCanvas: HTMLCanvasElement = document.createElement("canvas"),
-      viewCanvas: HTMLCanvasElement = document.createElement("canvas"),
+      graphCanvas: HTMLCanvasElement = document.createElement("canvas"),
       webGLRenderer = new THREE.WebGLRenderer,
       camera = new THREE.PerspectiveCamera(
          /* field of view (degrees) */ 90,
@@ -52,15 +52,15 @@ function initialiseScene (): void {
    
    dataCanvas.style.verticalAlign = "top"
    dataCanvas.style.display = "inline-block"
-   viewCanvas.height = 800
-   viewCanvas.width = 800
-   viewCanvas.style.verticalAlign = "top"
-   viewCanvas.style.display = "inline-block"
+   graphCanvas.height = 800
+   graphCanvas.width = 800
+//   graphCanvas.style.verticalAlign = "top"
+//   graphCanvas.style.display = "inline-block"
    webGLRenderer.setSize(800, 800)
    webGLRenderer.setViewport(0, 0, 800, 800)
    webGLRenderer.domElement.style.display = "inline-block"
    document.body.appendChild(dataCanvas)
-   document.body.appendChild(viewCanvas)
+//   document.body.appendChild(graphCanvas)
    document.body.appendChild(webGLRenderer.domElement)
 }
 
@@ -87,14 +87,14 @@ function populateScene (): void {
    const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr), // eval just to get a handle on it
          v: Value = Eval.eval_(ρ, e).v,
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
-         graphicsRenderer: GraphicsRenderer = new GraphicsRenderer(__nonNull(viewCanvas.getContext("2d")))
+         graphicsRenderer: GraphicsRenderer = new GraphicsRenderer(__nonNull(graphCanvas.getContext("2d")))
    scene.add(graphicsRenderer.render(elem))
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
    const dataRenderer = new DataRenderer(__nonNull(dataCanvas.getContext("2d"))),
          dataʹ: Data = as(reflect(data), List)
    dataRenderer.render(dataʹ) // draw once to compute size
    dataCanvas.height = (dataRenderer.lines) * dataRenderer.lineHeight
-   scene.add(dataRenderer.render(dataʹ)) // draw again
+   dataRenderer.render(dataʹ) // draw again
 }
 
 type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
@@ -114,10 +114,9 @@ class DataRenderer {
       this.lineHeight = this.ctx.measureText("M").width
    }
 
-   render (data: Data): THREE.Object3D {
+   render (data: Data): void {
       this.lines = 0
       this.renderData(0, data)
-      return to3DTextureMap(this.ctx.canvas)
    }
 
    renderData (indentx: number, data: Data): void {
