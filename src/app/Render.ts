@@ -21,7 +21,7 @@ export class Renderer {
    constructor (ctx: CanvasRenderingContext2D) {
       this.ctx = ctx
       this.transforms = [x => x]
-      this.transforms2 = [([x, y]) => [x, y]]
+      this.transforms2 = [([x, y]) => [x * 6, y * 6]]
    }
 
    get transform (): TransformFun {

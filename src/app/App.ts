@@ -56,6 +56,8 @@ function initialiseScene (): void {
    
    dataCanvas.style.verticalAlign = "top"
    dataCanvas.style.display = "inline-block"
+   viewCanvas.height = 800
+   viewCanvas.width = 800
    viewCanvas.style.verticalAlign = "top"
    viewCanvas.style.display = "inline-block"
    renderer.domElement.style.display = "inline-block"
