@@ -3,7 +3,7 @@
 import { NonEmpty } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { Value } from "../src/ExplVal"
-import { BwdSlice, FwdSlice, initialise, loadExample, parseExample, runExample } from "./util/Core"
+import { BwdSlice, FwdSlice, initialise, load, parse, run } from "./util/Core"
 
 import Trie = Expr.Trie
 
@@ -15,8 +15,8 @@ before((done: MochaDone) => {
 describe("example", () => {
 	describe("arithmetic", () => {
 		it("ok", () => {
-			const e: Expr = parseExample(loadExample("arithmetic"))
-			runExample(e)
+			const e: Expr = parse(load("arithmetic"))
+			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -32,7 +32,7 @@ describe("example", () => {
 
 	describe("bar-chart", () => {
 		it("ok", () => {
-			const e: Expr = parseExample(loadExample("bar-chart"))
+			const e: Expr = parse(load("bar-chart"))
 			new (class extends BwdSlice {
 				setup (): void {
 					this.val.need()
@@ -46,20 +46,20 @@ describe("example", () => {
 
 	describe("compose", () => {
 		it("ok", () => {
-			runExample(parseExample(loadExample("compose")))
+			run(parse(load("compose")))
 		})
 	})
 
 	describe("factorial", () => {
 		it("ok", () => {
-			runExample(parseExample(loadExample("factorial")))
+			run(parse(load("factorial")))
 		})
 	})
 
 	describe("filter", () => {
 		it("ok", () => {
-			const e: Expr = parseExample(loadExample("filter"))
-			runExample(e)
+			const e: Expr = parse(load("filter"))
+			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -91,13 +91,13 @@ describe("example", () => {
 
 	describe("foldr_sumSquares", () => {
 		it("ok", () => {
-			runExample(parseExample(loadExample("foldr_sumSquares")))
+			run(parse(load("foldr_sumSquares")))
 		})
 	})
 
 	describe("length", () => {
 		it("ok", () => {
-			const e: Expr = parseExample(loadExample("length"))
+			const e: Expr = parse(load("length"))
 			// erasing the elements doesn't affect the count:
 			let test = new (class extends FwdSlice {
 				setup (): void {
@@ -142,14 +142,14 @@ describe("example", () => {
 
 	describe("lexicalScoping", () => {
 		it("ok", () => {
-			runExample(parseExample(loadExample("lexicalScoping")))
+			run(parse(load("lexicalScoping")))
 		})
 	})
 
 	describe("lookup", () => {
 		it("ok", () => {
-			const e: Expr = parseExample(loadExample("lookup"))
-			runExample(e)
+			const e: Expr = parse(load("lookup"))
+			run(e)
 			const last = new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -183,8 +183,8 @@ describe("example", () => {
 
 	describe("map", () => {
 		it("ok", () => {
-			const e: Expr = parseExample(loadExample("map"))
-			runExample(e)
+			const e: Expr = parse(load("map"))
+			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -205,13 +205,13 @@ describe("example", () => {
 
 	describe("mergeSort", () => {
 		it("ok", () => {
-			runExample(parseExample(loadExample("mergeSort")))
+			run(parse(load("mergeSort")))
 		})
 	})
 
 	describe("normalise", () => {
 		it("ok", () => {
-			const e: Expr = parseExample(loadExample("normalise"))
+			const e: Expr = parse(load("normalise"))
 			// retaining only pair constructor discards both subcomputations:
 			new (class extends BwdSlice {
 				setup (): void {
@@ -246,14 +246,14 @@ describe("example", () => {
 
 	describe("pattern-match", () => {
 		it("ok", () => {
-			runExample(parseExample(loadExample("pattern-match")))
+			run(parse(load("pattern-match")))
 		})
 	})
 
 	describe("reverse", () => {
 		it("ok", () => {
-			const e: Expr = parseExample(loadExample("reverse"))
-			runExample(e)
+			const e: Expr = parse(load("reverse"))
+			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -275,7 +275,7 @@ describe("example", () => {
 
 	describe("zipW", () => {
 		it("ok", () => {
-			const e: Expr = parseExample(loadExample("zipW"))
+			const e: Expr = parse(load("zipW"))
 			// needing first cons cell of output needs same amount of input lists
 			new (class extends BwdSlice {
 				setup (): void {

@@ -2,7 +2,7 @@ import { Annotated } from "../util/Annotated"
 import { Class, __check, __nonNull, absurd, as, assert, funName } from "../util/Core"
 import { Persistent, PersistentObject, make } from "../util/Persistent"
 import { at } from "../util/Versioned"
-import { Cons, List, Nil } from "../BaseTypes"
+import { Cons, Pair, List, Nil } from "../BaseTypes"
 import { arity } from "../DataType"
 import { ExplVal, Value } from "../ExplVal"
 import { AnnNumber, AnnString, Graphic, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
@@ -13,6 +13,7 @@ const classFor_: Class<PersistentObject>[] =
     Graphic,
     Nil,
     PathStroke,
+    Pair,
     Point,
     RectFill,
     Transform,
