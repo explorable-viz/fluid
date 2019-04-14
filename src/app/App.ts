@@ -71,23 +71,28 @@ function populateScene (): void {
    here
       .skipImports()
       .to(Expr.Let, "e")
-   const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr) // eval just to get a handle on it
-   here
       .constrArg("Cons", 0)
       .constrArg("Pair", 1)
       .constrArg("Cons", 0)
       .constrArg("Pair", 1)
       .constrArg("Cons", 0)
       .constrArg("Pair", 1).notNeed() // 2015 > China > Bio > [here]
-   const v: Value = Eval.eval_(ρ, e).v,
+   here = new Cursor(e)
+      .skipImports()
+      .to(Expr.Let, "e")
+   const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr), // eval just to get a handle on it
+         v: Value = Eval.eval_(ρ, e).v,
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
          renderer: Renderer = new Renderer()
    for (let obj of renderer.objects3D(elem)) {
       scene.add(obj)
    }
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
-   const dataRenderer = new DataRenderer(canvas2d)
-   scene.add(dataRenderer.dataView(as(reflect(data), List)))
+   const dataRenderer = new DataRenderer(canvas2d),
+         dataʹ: Data = as(reflect(data), List)
+   dataRenderer.dataView(dataʹ) // draw once to compute size
+   canvas2d.height = (dataRenderer.lines) * dataRenderer.lineHeight
+   scene.add(dataRenderer.dataView(dataʹ)) // draw again
 }
 
 type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
@@ -95,12 +100,11 @@ type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate r
 class DataRenderer {
    ctx: CanvasRenderingContext2D
    lineHeight: number
-   currentLine: number
+   lines: number
 
    constructor (canvas2d: HTMLCanvasElement) {
       this.ctx = __nonNull(canvas2d.getContext("2d"))
       this.ctx.font = "10pt Arial"
-      this.ctx.fillStyle = "black"
       this.ctx.textAlign = "left"
       this.ctx.textBaseline = "middle"
 
@@ -110,9 +114,8 @@ class DataRenderer {
    }
 
    dataView (data: Data): THREE.Object3D {
-      this.currentLine = 1
+      this.lines = 0
       this.renderData(0, data)
-      this.ctx.canvas.height = 1000
       const texture = new THREE.Texture(canvas2d),
             material = new THREE.MeshBasicMaterial({ map: texture }),
             geometry = new THREE.BoxGeometry(200, 200, 200)
@@ -121,8 +124,10 @@ class DataRenderer {
 
    renderData (indentx: number, data: Data): void {
       if (Cons.is(data)) {
+         ++this.lines
          const { fst: key, snd: val }: Pair<AnnNumber | AnnString, PersistentObject> = as(data.head, Pair)
          let keyStr: string
+         this.ctx.fillStyle = key.α ? "black" : "red"
          if (key instanceof AnnNumber) {
             keyStr = key.n.toString()
          } else
@@ -131,23 +136,23 @@ class DataRenderer {
          } else {
             return absurd()
          }
-         this.ctx.fillText(keyStr, indentx, this.currentLine * this.lineHeight)
+         this.ctx.fillText(keyStr, indentx, this.lines * this.lineHeight)
          const newIndentx = indentx + this.ctx.measureText(keyStr).width
          let valStr: string
          if (val instanceof List) {
             this.renderData(newIndentx, val as Data)
-         } else {
+         } else 
+         if (val instanceof AnnNumber || val instanceof AnnString) {
+            this.ctx.fillStyle = val.α ? "black" : "red"
             if (val instanceof AnnNumber) {
                valStr = val.n.toString()
-            } else
-            if (val instanceof AnnString) {
-               valStr = val.str
             } else {
-               return absurd()
+               valStr = val.str
             }
-            this.ctx.fillText(valStr, newIndentx, this.currentLine * this.lineHeight)
+            this.ctx.fillText(valStr, newIndentx, this.lines * this.lineHeight)
+         } else {
+            return absurd()
          }
-         ++this.currentLine
          this.renderData(indentx, data.tail)
       } else
       if (Nil.is(data)) {
