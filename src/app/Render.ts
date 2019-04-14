@@ -182,7 +182,7 @@ export class Renderer {
 
    rectFill2 (rect_path: List<Point>): void {
       const region: Path2D = this.path2D(rect_path)
-      this.ctx.fillStyle = "green"
+      this.ctx.fillStyle = "#F6831E"
       this.ctx.fill(region)
    }
 
