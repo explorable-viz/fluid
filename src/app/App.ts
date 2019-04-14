@@ -87,7 +87,7 @@ function populateScene (): void {
    const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr), // eval just to get a handle on it
          v: Value = Eval.eval_(ρ, e).v,
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
-         renderer: Renderer = new Renderer(__nonNull(dataCanvas.getContext("2d")))
+         renderer: Renderer = new Renderer(__nonNull(viewCanvas.getContext("2d")))
    for (let obj of renderer.objects3D(elem)) {
       scene.add(obj)
    }
