@@ -136,6 +136,7 @@ class DataRenderer {
          } else {
             return absurd()
          }
+         keyStr += ": "
          this.ctx.fillText(keyStr, indentx, this.lines * this.lineHeight)
          const newIndentx = indentx + this.ctx.measureText(keyStr).width
          let valStr: string
