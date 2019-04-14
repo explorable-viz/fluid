@@ -95,6 +95,13 @@ function populateScene (): void {
    scene.add(dataRenderer.dataView(dataʹ)) // draw again
 }
 
+function to3DTextureMap (canvas2d: HTMLCanvasElement): THREE.Object3D {
+   const texture = new THREE.Texture(canvas2d),
+   material = new THREE.MeshBasicMaterial({ map: texture }),
+   geometry = new THREE.BoxGeometry(200, 200, 200)
+   return new THREE.Mesh(geometry, material)
+}
+
 type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
 
 class DataRenderer {
@@ -116,10 +123,7 @@ class DataRenderer {
    dataView (data: Data): THREE.Object3D {
       this.lines = 0
       this.renderData(0, data)
-      const texture = new THREE.Texture(canvas2d),
-            material = new THREE.MeshBasicMaterial({ map: texture }),
-            geometry = new THREE.BoxGeometry(200, 200, 200)
-      return new THREE.Mesh(geometry, material)
+      return to3DTextureMap(canvas2d)
    }
 
    renderData (indentx: number, data: Data): void {
