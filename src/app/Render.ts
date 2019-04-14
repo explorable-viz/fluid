@@ -164,10 +164,42 @@ export class Renderer {
       return [stroke, ...this.pointHighlights(points)]
    }
 
+   pointHighlights (points: List<Point>): THREE.Object3D[] {
+      const highlights: THREE.Object3D[] = [],
+            transform: TransformFun = this.transform
+      for (; Cons.is(points); points = points.tail) {
+         const point: Point = points.head,
+               p: THREE.Vector2 = transform(new THREE.Vector2(point.x.n, point.y.n))
+         if (!point.x.α || !point.y.α) {
+            highlights.push(circle(p, 0.5))
+         }
+      }
+      return highlights
+   }
+
    pathStroke2 (points: List<Point>): void {
       const region: Path2D = this.path2D(points)
       this.ctx.strokeStyle = "black"
       this.ctx.stroke(region)
+      this.pointHighlights2(points)
+   }
+
+   pointHighlights2 (points: List<Point>): void {
+      const transform: TransformFun2 = this.transform2
+      for (; Cons.is(points); points = points.tail) {
+         const point: Point = points.head,
+               [x, y]: [number, number] = transform([point.x.n, point.y.n])
+         if (!point.x.α || !point.y.α) {
+            this.circle2(x, y, 3)
+         }
+      }
+   }
+
+   circle2 (x: number, y: number, radius: number): void {
+      this.ctx.beginPath()
+      this.ctx.arc(x, y, radius, 0, 2 * Math.PI)
+      this.ctx.strokeStyle = "#0000ff"
+      this.ctx.stroke()
    }
 
    rectFill (rect_path: List<Point>): THREE.Object3D[] {
@@ -197,19 +229,6 @@ export class Renderer {
       }
       return geometry
    }   
-
-   pointHighlights (points: List<Point>): THREE.Object3D[] {
-      const highlights: THREE.Object3D[] = [],
-            transform: TransformFun = this.transform
-      for (; Cons.is(points); points = points.tail) {
-         const point: Point = points.head,
-               p: THREE.Vector2 = transform(new THREE.Vector2(point.x.n, point.y.n))
-         if (!point.x.α || !point.y.α) {
-            highlights.push(circle(p, 0.5))
-         }
-      }
-      return highlights
-   }
 }
 
 function circle (pos: THREE.Vector2, radius: number): THREE.Object3D {
