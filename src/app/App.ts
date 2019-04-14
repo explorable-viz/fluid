@@ -14,43 +14,49 @@ import { Renderer } from "./Render"
 
 initialise()
 
-const scene = new THREE.Scene()
-scene.background = new THREE.Color(0xffffff)
-const camera = new THREE.PerspectiveCamera(
-   /* field of view (degrees) */ 90,
-   /* aspect ratio */            1,
-   /* near */                    1,
-   /* far */                     1000
-)
-camera.position.set(0, 0, 100)
-camera.lookAt(new THREE.Vector3(0, 0, 0))
-
-const renderer = new THREE.WebGLRenderer
-renderer.setSize(1200, 1200)
-renderer.setViewport(0, 0, 1200, 1200)
-
-const controls = new OrbitControls( camera, renderer.domElement );
-
-// How far you can orbit vertically, upper and lower limits.
-controls.minPolarAngle = 0;
-controls.maxPolarAngle = Math.PI;
-
-// How far you can dolly in and out ( PerspectiveCamera only )
-controls.minDistance = 0;
-controls.maxDistance = Infinity;
-
-controls.enableZoom = true; // Set to false to disable zooming
-controls.zoomSpeed = 1.0;
-
-controls.enablePan = true; // Set to false to disable panning (ie vertical and horizontal translations)
-
-controls.enableDamping = true; // Set to false to disable damping (ie inertia)
-controls.dampingFactor = 0.25;
-
-const canvas2d: HTMLCanvasElement = document.createElement("canvas")
-
-document.body.appendChild(canvas2d)
-document.body.appendChild(renderer.domElement)
+const scene = new THREE.Scene(),
+      canvas2d: HTMLCanvasElement = document.createElement("canvas"),
+      renderer = new THREE.WebGLRenderer,
+      camera = new THREE.PerspectiveCamera(
+         /* field of view (degrees) */ 90,
+         /* aspect ratio */            1,
+         /* near */                    1,
+         /* far */                     1000
+      )
+   
+function initialiseScene (): void {
+   scene.background = new THREE.Color(0xffffff)
+   camera.position.set(0, 0, 75)
+   camera.lookAt(new THREE.Vector3(0, 0, 0))
+   
+   renderer.setSize(800, 800)
+   renderer.setViewport(0, 0, 800, 800)
+   
+   const controls = new OrbitControls(camera, renderer.domElement)
+   
+   // How far you can orbit vertically, upper and lower limits.
+   controls.minPolarAngle = 0
+   controls.maxPolarAngle = Math.PI
+   
+   // How far you can dolly in and out ( PerspectiveCamera only )
+   controls.minDistance = 0
+   controls.maxDistance = Infinity
+   
+   controls.enableZoom = true // Set to false to disable zooming
+   controls.zoomSpeed = 1.0
+   
+   controls.enablePan = true // Set to false to disable panning (ie vertical and horizontal translations)
+   
+   controls.enableDamping = true // Set to false to disable damping (ie inertia)
+   controls.dampingFactor = 0.25
+   controls.addEventListener("change", render)
+   
+   canvas2d.style.verticalAlign = "top"
+   canvas2d.style.display = "inline-block"
+   renderer.domElement.style.display = "inline-block"
+   document.body.appendChild(canvas2d)
+   document.body.appendChild(renderer.domElement)
+}
 
 export function close (path: THREE.Vector2[]) {
    return path.concat(path[0])
@@ -103,6 +109,6 @@ function render () {
    renderer.render(scene, camera)
 }
 
-controls.addEventListener("change", render)
+initialiseScene()
 populateScene()
 render()
