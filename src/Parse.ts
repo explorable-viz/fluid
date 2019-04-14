@@ -180,7 +180,7 @@ function appOp (
 const string_: Parser<ConstStr> =
    withAction(
       lexeme(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),), Lex.StringLiteral),
-      lit => Expr.constStr(ν(), ann.top, lit.toString())
+      lit => Expr.constStr(ν(), ann.top, lit.str)
    )
 
 // JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
