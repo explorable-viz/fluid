@@ -32,16 +32,13 @@ function initialiseScene (): void {
    camera.position.set(0, 0, 75)
    camera.lookAt(new THREE.Vector3(0, 0, 0))
    
-   renderer.setSize(800, 800)
-   renderer.setViewport(0, 0, 800, 800)
-   
    const controls = new OrbitControls(camera, renderer.domElement)
    
    // How far you can orbit vertically, upper and lower limits.
    controls.minPolarAngle = 0
    controls.maxPolarAngle = Math.PI
    
-   // How far you can dolly in and out ( PerspectiveCamera only )
+   // How far you can dolly in and out (PerspectiveCamera only)
    controls.minDistance = 0
    controls.maxDistance = Infinity
    
@@ -60,6 +57,8 @@ function initialiseScene (): void {
    viewCanvas.width = 800
    viewCanvas.style.verticalAlign = "top"
    viewCanvas.style.display = "inline-block"
+   renderer.setSize(800, 800)
+   renderer.setViewport(0, 0, 800, 800)
    renderer.domElement.style.display = "inline-block"
    document.body.appendChild(dataCanvas)
    document.body.appendChild(viewCanvas)
