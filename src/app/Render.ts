@@ -12,7 +12,7 @@ export function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
 
 type TransformFun = (p: [number, number]) => [number, number]
 
-export class Renderer {
+export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
    ctx: CanvasRenderingContext2D
 
