@@ -95,15 +95,10 @@ class DataRenderer {
    ctx: CanvasRenderingContext2D
    lineHeight: number
    currentLine: number
-   textx: number = 0
 
    constructor (canvas2d: HTMLCanvasElement) {
       this.ctx = __nonNull(canvas2d.getContext("2d"))
       this.ctx.font = "10pt Arial"
-//      this.ctx.fillStyle = "red"
-//      this.ctx.fillRect(0, 0, canvas2d.width, canvas2d.height)
-//      this.ctx.fillStyle = "white"
-//      this.ctx.fillRect(10, 10, canvas2d.width - 20, canvas2d.height - 20)
       this.ctx.fillStyle = "black"
       this.ctx.textAlign = "left"
       this.ctx.textBaseline = "middle"
@@ -115,16 +110,16 @@ class DataRenderer {
 
    dataView (data: Data): THREE.Object3D {
       this.currentLine = 1
-      this.renderData(data)
+      this.renderData(0, data)
       const texture = new THREE.Texture(canvas2d),
             material = new THREE.MeshBasicMaterial({ map: texture }),
             geometry = new THREE.BoxGeometry(200, 200, 200)
       return new THREE.Mesh(geometry, material)
    }
 
-   renderData (data: Data): void {
+   renderData (indentx: number, data: Data): void {
       if (Cons.is(data)) {
-         const key: AnnNumber | AnnString = as(data.head, Pair).fst
+         const { fst: key, snd: val }: Pair<AnnNumber | AnnString, PersistentObject> = as(data.head, Pair)
          let keyStr: string
          if (key instanceof AnnNumber) {
             keyStr = key.n.toString()
@@ -134,11 +129,23 @@ class DataRenderer {
          } else {
             return absurd()
          }
-         this.ctx.fillText(keyStr, this.textx, this.currentLine * this.lineHeight)
-         this.textx += this.ctx.measureText(keyStr).width
+         this.ctx.fillText(keyStr, indentx, this.currentLine * this.lineHeight)
+         indentx += this.ctx.measureText(keyStr).width
+         let valStr: string
+         if (val instanceof AnnNumber) {
+            valStr = val.n.toString()
+         } else
+         if (val instanceof AnnString) {
+            valStr = val.str
+         }
+         if (val instanceof List) {
+            this.renderData(indentx, val as Data)
+         } else {
+            return absurd()
+         }
+         this.ctx.fillText(valStr, indentx, this.currentLine * this.lineHeight)
          ++this.currentLine
-         this.textx = 0
-         this.renderData(data.tail)
+         this.renderData(indentx, data.tail)
       } else
       if (Nil.is(data)) {
          return
