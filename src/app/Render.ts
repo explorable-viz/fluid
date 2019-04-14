@@ -32,6 +32,49 @@ export class Renderer {
    }
 
    renderElement (g: GraphicsElement): void {
+      if (g instanceof Graphic) {   
+         for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
+            this.renderElement(gs.head)
+         }
+      } else 
+      if (g instanceof PathStroke) {
+         // TODO
+      } else
+      if (g instanceof RectFill) {
+         // TODO
+      } else
+      if (g instanceof Transform) {
+         // TODO: factor out common handling.
+         const t: LinearTransform = g.t
+         if (t instanceof Scale) {
+            const transform: TransformFun = this.transform
+            this.transforms.push(({x, y}): THREE.Vector2 => {
+               return transform(new THREE.Vector2(x * t.x.n, y * t.y.n))
+            })
+            this.render(g.g)
+            this.transforms.pop()
+         } else
+         if (t instanceof Translate) {
+            const transform: TransformFun = this.transform
+            this.transforms.push(({x, y}): THREE.Vector2 => {
+               return transform(new THREE.Vector2(x + t.x.n, y + t.y.n))
+            })
+            this.render(g.g)
+         } else
+         if (t instanceof Transpose) {
+            const transform: TransformFun = this.transform
+            this.transforms.push(({x, y}): THREE.Vector2 => {
+               return transform(new THREE.Vector2(y, x))
+            })
+            this.render(g.g)
+            this.transforms.pop()
+         } else {
+            return absurd()
+         }
+      }
+      else {
+         return absurd()
+      }
    }
 
    objects3D (g: GraphicsElement): THREE.Object3D[] {
@@ -41,7 +84,7 @@ export class Renderer {
             objects.push(...this.objects3D(gs.head))
          }
          return objects
-      }
+      } else
       if (g instanceof PathStroke) {
          return this.pathStroke(g.points)
       } else
