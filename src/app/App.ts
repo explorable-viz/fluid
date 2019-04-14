@@ -130,20 +130,21 @@ class DataRenderer {
             return absurd()
          }
          this.ctx.fillText(keyStr, indentx, this.currentLine * this.lineHeight)
-         indentx += this.ctx.measureText(keyStr).width
+         const newIndentx = indentx + this.ctx.measureText(keyStr).width
          let valStr: string
-         if (val instanceof AnnNumber) {
-            valStr = val.n.toString()
-         } else
-         if (val instanceof AnnString) {
-            valStr = val.str
-         }
          if (val instanceof List) {
-            this.renderData(indentx, val as Data)
+            this.renderData(newIndentx, val as Data)
          } else {
-            return absurd()
+            if (val instanceof AnnNumber) {
+               valStr = val.n.toString()
+            } else
+            if (val instanceof AnnString) {
+               valStr = val.str
+            } else {
+               return absurd()
+            }
+            this.ctx.fillText(valStr, newIndentx, this.currentLine * this.lineHeight)
          }
-         this.ctx.fillText(valStr, indentx, this.currentLine * this.lineHeight)
          ++this.currentLine
          this.renderData(indentx, data.tail)
       } else
