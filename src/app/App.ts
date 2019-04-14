@@ -86,7 +86,8 @@ function populateScene (): void {
       scene.add(obj)
    }
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
-   scene.add(new DataRenderer(canvas2d).dataView(as(reflect(data), List)))
+   const dataRenderer = new DataRenderer(canvas2d)
+   scene.add(dataRenderer.dataView(as(reflect(data), List)))
 }
 
 type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
@@ -105,12 +106,13 @@ class DataRenderer {
 
       // No easy way to access text height, but this will do for now.
       // https://stackoverflow.com/questions/1134586
-      this.lineHeight = this.ctx.measureText('M').width
+      this.lineHeight = this.ctx.measureText("M").width
    }
 
    dataView (data: Data): THREE.Object3D {
       this.currentLine = 1
       this.renderData(0, data)
+      this.ctx.canvas.height = 1000
       const texture = new THREE.Texture(canvas2d),
             material = new THREE.MeshBasicMaterial({ map: texture }),
             geometry = new THREE.BoxGeometry(200, 200, 200)
