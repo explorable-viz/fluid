@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import { absurd, as, assert } from "../util/Core"
+import { absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
 
@@ -10,20 +10,20 @@ export function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
    return new THREE.Mesh(geometry, material)
 }
 
-type TransformFun2 = (p: [number, number]) => [number, number]
+type TransformFun = (p: [number, number]) => [number, number]
 
 export class Renderer {
-   transforms2: TransformFun2[] // stack of successive compositions of linear transformations
+   transforms: TransformFun[] // stack of successive compositions of linear transformations
    ctx: CanvasRenderingContext2D
 
    constructor (ctx: CanvasRenderingContext2D) {
       this.ctx = ctx
-      this.transforms2 = [([x, y]) => [x * 5, 800 -(y * 5)]] // TODO: fix
+      this.transforms = [([x, y]) => [x * 5, 800 -(y * 5)]] // TODO: fix
    }
 
-   get transform2 (): TransformFun2 {
-      assert(this.transforms2.length > 0)
-      return this.transforms2[this.transforms2.length - 1]
+   get transform2 (): TransformFun {
+      assert(this.transforms.length > 0)
+      return this.transforms[this.transforms.length - 1]
    }
 
    render (g: GraphicsElement): THREE.Object3D {
@@ -47,28 +47,28 @@ export class Renderer {
          // TODO: factor out common handling.
          const t: LinearTransform = g.t
          if (t instanceof Scale) {
-            const transform: TransformFun2 = this.transform2
-            this.transforms2.push(([x, y]): [number, number] => {
+            const transform: TransformFun = this.transform2
+            this.transforms.push(([x, y]): [number, number] => {
                return transform([x * t.x.n, y * t.y.n])
             })
             this.renderElement(g.g)
-            this.transforms2.pop()
+            this.transforms.pop()
          } else
          if (t instanceof Translate) {
-            const transform: TransformFun2 = this.transform2
-            this.transforms2.push(([x, y]): [number, number] => {
+            const transform: TransformFun = this.transform2
+            this.transforms.push(([x, y]): [number, number] => {
                return transform([x + t.x.n, y + t.y.n])
             })
             this.renderElement(g.g)
-            this.transforms2.pop()
+            this.transforms.pop()
          } else
          if (t instanceof Transpose) {
-            const transform: TransformFun2 = this.transform2
-            this.transforms2.push(([x, y]): [number, number] => {
+            const transform: TransformFun = this.transform2
+            this.transforms.push(([x, y]): [number, number] => {
                return transform([y, x])
             })
             this.renderElement(g.g)
-            this.transforms2.pop()
+            this.transforms.pop()
          } else {
             return absurd()
          }
@@ -80,7 +80,7 @@ export class Renderer {
 
    path2D (points: List<Point>): Path2D {
       const region: Path2D = new Path2D,
-            transform: TransformFun2 = this.transform2
+            transform: TransformFun = this.transform2
       if (Cons.is(points)) {
          const [x, y]: [number, number] = transform([points.head.x.n, points.head.y.n])
          region.moveTo(x, y)
@@ -103,7 +103,7 @@ export class Renderer {
    }
 
    pointHighlights2 (points: List<Point>): void {
-      const transform: TransformFun2 = this.transform2
+      const transform: TransformFun = this.transform2
       for (; Cons.is(points); points = points.tail) {
          const point: Point = points.head,
                [x, y]: [number, number] = transform([point.x.n, point.y.n])
