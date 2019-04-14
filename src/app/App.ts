@@ -1,14 +1,16 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 import { __nonNull, as } from "../util/Core"
+import { PersistentObject} from "../util/Persistent"
 import { World } from "../util/Versioned"
+import { List, Pair } from "../BaseTypes"
 import { Expr } from "../Expr"
 import { Eval } from "../Eval"
-import { GraphicsElement } from "../Graphics"
+import { AnnNumber, AnnString, GraphicsElement } from "../Graphics"
 import { Value } from "../ExplVal"
 // TODO: move test-dependent stuff out of app
 import { Cursor } from "../../test/util/Cursor"
-import { ρ, initialise, loadExample, parseExample } from "../../test/util/Core"
+import { ρ, initialise, load, parse } from "../../test/util/Core"
 import { reflect } from "./Reflect"
 import { Renderer } from "./Render"
 
@@ -63,13 +65,13 @@ export function close (path: THREE.Vector2[]) {
 }
 
 function populateScene (): void {
-   const e: Expr = parseExample(loadExample("bar-chart"))
+   const e: Expr = parse(load("bar-chart"))
    World.newRevision()
    let here: Cursor = new Cursor(e)
    here
       .skipImports()
       .to(Expr.Let, "e")
-   const data: Expr.Constr = as(here.o, Expr.Constr)
+   const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr) // eval just to get a handle on it
    here
       .constrArg("Cons", 0)
       .constrArg("Pair", 1)
@@ -83,12 +85,14 @@ function populateScene (): void {
    for (let obj of renderer.objects3D(elem)) {
       scene.add(obj)
    }
-   scene.add(dataView(data))
+   // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
+   scene.add(dataView(as(reflect(data), List)))
 }
 
-function dataView (data: Expr.Constr): THREE.Object3D {
-   const ctx: CanvasRenderingContext2D = __nonNull(canvas2d.getContext("2d"))
+type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
 
+function dataView (data: Data): THREE.Object3D {
+   const ctx: CanvasRenderingContext2D = __nonNull(canvas2d.getContext("2d"))
    ctx.font = "20pt Arial"
    ctx.fillStyle = "red"
    ctx.fillRect(0, 0, canvas2d.width, canvas2d.height)

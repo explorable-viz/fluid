@@ -82,7 +82,7 @@ export function prependModule (src: string, e: Expr): Expr.LetRec {
    return Expr.letRec(ν(), ann.top, successfulParse(Parse.recDefs1, src), e)
 }
 
-export function parseExample (src: string): Expr {
+export function parse (src: string): Expr {
    return instantiate(ρ, 
       prependModule(loadLib("prelude"), 
       prependModule(loadLib("graphics"), 
@@ -90,7 +90,7 @@ export function parseExample (src: string): Expr {
    )
 }
 
-export function runExample (e: Expr): void {
+export function run (e: Expr): void {
    const tv: ExplVal = Eval.eval_(ρ, e)
    console.log(tv)
    World.newRevision()
@@ -126,7 +126,7 @@ export function loadTestFile (folder: string, file: string): string {
    return __nonNull(testFile.text)
 }
 
-export function loadExample (file: string): string {
+export function load (file: string): string {
 	return __nonNull(loadTestFile("example", file))
 }
 
