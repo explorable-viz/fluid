@@ -21,7 +21,7 @@ export class Renderer {
       this.transforms = [([x, y]) => [x * 5, 800 -(y * 5)]] // TODO: fix
    }
 
-   get transform2 (): TransformFun {
+   get transform (): TransformFun {
       assert(this.transforms.length > 0)
       return this.transforms[this.transforms.length - 1]
    }
@@ -38,16 +38,16 @@ export class Renderer {
          }
       } else 
       if (g instanceof PathStroke) {
-         this.pathStroke2(g.points)
+         this.pathStroke(g.points)
       } else
       if (g instanceof RectFill) {
-         this.rectFill2(g.points)
+         this.rectFill(g.points)
       } else
       if (g instanceof Transform) {
          // TODO: factor out common handling.
          const t: LinearTransform = g.t
          if (t instanceof Scale) {
-            const transform: TransformFun = this.transform2
+            const transform: TransformFun = this.transform
             this.transforms.push(([x, y]): [number, number] => {
                return transform([x * t.x.n, y * t.y.n])
             })
@@ -55,7 +55,7 @@ export class Renderer {
             this.transforms.pop()
          } else
          if (t instanceof Translate) {
-            const transform: TransformFun = this.transform2
+            const transform: TransformFun = this.transform
             this.transforms.push(([x, y]): [number, number] => {
                return transform([x + t.x.n, y + t.y.n])
             })
@@ -63,7 +63,7 @@ export class Renderer {
             this.transforms.pop()
          } else
          if (t instanceof Transpose) {
-            const transform: TransformFun = this.transform2
+            const transform: TransformFun = this.transform
             this.transforms.push(([x, y]): [number, number] => {
                return transform([y, x])
             })
@@ -79,14 +79,13 @@ export class Renderer {
    }
 
    path2D (points: List<Point>): Path2D {
-      const region: Path2D = new Path2D,
-            transform: TransformFun = this.transform2
+      const region: Path2D = new Path2D
       if (Cons.is(points)) {
-         const [x, y]: [number, number] = transform([points.head.x.n, points.head.y.n])
+         const [x, y]: [number, number] = this.transform([points.head.x.n, points.head.y.n])
          region.moveTo(x, y)
          points = points.tail
          for (; Cons.is(points); points = points.tail) {
-            const [x, y]: [number, number] = transform([points.head.x.n, points.head.y.n])
+            const [x, y]: [number, number] = this.transform([points.head.x.n, points.head.y.n])
             region.lineTo(x, y)
          }
       } else {
@@ -95,32 +94,31 @@ export class Renderer {
       return region
    }
 
-   pathStroke2 (points: List<Point>): void {
+   pathStroke (points: List<Point>): void {
       const region: Path2D = this.path2D(points)
       this.ctx.strokeStyle = "black"
       this.ctx.stroke(region)
-      this.pointHighlights2(points)
+      this.pointHighlights(points)
    }
 
-   pointHighlights2 (points: List<Point>): void {
-      const transform: TransformFun = this.transform2
+   pointHighlights (points: List<Point>): void {
       for (; Cons.is(points); points = points.tail) {
          const point: Point = points.head,
-               [x, y]: [number, number] = transform([point.x.n, point.y.n])
+               [x, y]: [number, number] = this.transform([point.x.n, point.y.n])
          if (!point.x.α || !point.y.α) {
-            this.circle2(x, y, 3)
+            this.circle(x, y, 3)
          }
       }
    }
 
-   circle2 (x: number, y: number, radius: number): void {
+   circle (x: number, y: number, radius: number): void {
       this.ctx.beginPath()
       this.ctx.arc(x, y, radius, 0, 2 * Math.PI)
       this.ctx.strokeStyle = "#0000ff"
       this.ctx.stroke()
    }
 
-   rectFill2 (rect_path: List<Point>): void {
+   rectFill (rect_path: List<Point>): void {
       const region: Path2D = this.path2D(rect_path)
       this.ctx.fillStyle = "#F6831E"
       this.ctx.fill(region)
