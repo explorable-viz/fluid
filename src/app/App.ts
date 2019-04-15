@@ -60,9 +60,8 @@ class App {
          .to(Expr.Let, "e")
       const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr), // eval just to get a handle on it
             v: Value = Eval.eval_(ρ, e).v,
-            elem: GraphicsElement = as(reflect(v), GraphicsElement),
             graphRenderer: GraphicsRenderer = new GraphicsRenderer(this.graphCanvas)
-      graphRenderer.render(elem)
+      graphRenderer.render(as(reflect(v), GraphicsElement))
       // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
       const dataRenderer = new DataRenderer(this.dataCanvas),
             dataʹ: Data = as(reflect(data), List)
