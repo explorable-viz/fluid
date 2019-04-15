@@ -14,8 +14,6 @@ import { Data, DataRenderer } from "./DataRenderer"
 import { GraphicsRenderer } from "./GraphicsRenderer"
 import { reflect } from "./Reflect"
 
-initialise()
-
 const scene = new THREE.Scene(),
       dataCanvas: HTMLCanvasElement = document.createElement("canvas"),
       graphCanvas: HTMLCanvasElement = document.createElement("canvas"),
@@ -27,6 +25,11 @@ const scene = new THREE.Scene(),
          /* far */                     1000
       )
    
+initialise()
+initialiseScene()
+populateScene()
+render()
+
 function initialiseScene (): void {
    scene.background = new THREE.Color(0xffffff)
    camera.position.set(0, 0, 75)
@@ -63,10 +66,6 @@ function initialiseScene (): void {
    document.body.appendChild(dataCanvas)
    document.body.appendChild(graphCanvas)
    document.body.appendChild(renderer.domElement)
-}
-
-export function close (path: THREE.Vector2[]) {
-   return path.concat(path[0])
 }
 
 function populateScene (): void {
@@ -110,7 +109,3 @@ function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
 function render () {
    renderer.render(scene, camera)
 }
-
-initialiseScene()
-populateScene()
-render()
