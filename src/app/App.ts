@@ -17,26 +17,19 @@ import { reflect } from "./Reflect"
 
 const graphicsPane3D = new GraphicsPane3D(),
       dataCanvas: HTMLCanvasElement = document.createElement("canvas"),
-      graphCanvas: HTMLCanvasElement = document.createElement("canvas"),
-      renderer = new THREE.WebGLRenderer,
-      camera = new THREE.PerspectiveCamera(
-         /* field of view (degrees) */ 90,
-         /* aspect ratio */            1,
-         /* near */                    1,
-         /* far */                     1000
-      )
+      graphCanvas: HTMLCanvasElement = document.createElement("canvas")
    
 initialise()
 initialiseScene()
 populateScene()
-render()
+graphicsPane3D.render()
 
 function initialiseScene (): void {
    graphicsPane3D.scene.background = new THREE.Color(0xffffff)
-   camera.position.set(0, 0, 75)
-   camera.lookAt(new THREE.Vector3(0, 0, 0))
+   graphicsPane3D.camera.position.set(0, 0, 75)
+   graphicsPane3D.camera.lookAt(new THREE.Vector3(0, 0, 0))
    
-   const controls = new OrbitControls(camera, renderer.domElement)
+   const controls = new OrbitControls(graphicsPane3D.camera, graphicsPane3D.renderer.domElement)
    
    // How far you can orbit vertically, upper and lower limits.
    controls.minPolarAngle = 0
@@ -53,7 +46,7 @@ function initialiseScene (): void {
    
    controls.enableDamping = true // Set to false to disable damping (ie inertia)
    controls.dampingFactor = 0.25
-   controls.addEventListener("change", render)
+   controls.addEventListener("change", graphicsPane3D.render)
    
    dataCanvas.style.verticalAlign = "top"
    dataCanvas.style.display = "inline-block"
@@ -61,12 +54,12 @@ function initialiseScene (): void {
    graphCanvas.width = 600
    graphCanvas.style.verticalAlign = "top"
    graphCanvas.style.display = "inline-block"
-   renderer.setSize(800, 800)
-   renderer.setViewport(0, 0, 800, 800)
-   renderer.domElement.style.display = "inline-block"
+   graphicsPane3D.renderer.setSize(800, 800)
+   graphicsPane3D.renderer.setViewport(0, 0, 800, 800)
+   graphicsPane3D.renderer.domElement.style.display = "inline-block"
    document.body.appendChild(dataCanvas)
    document.body.appendChild(graphCanvas)
-   document.body.appendChild(renderer.domElement)
+   document.body.appendChild(graphicsPane3D.renderer.domElement)
 }
 
 function populateScene (): void {
@@ -105,8 +98,4 @@ function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
    const material = new THREE.MeshBasicMaterial({ map: texture }),
          geometry = new THREE.BoxGeometry(200, 200, 200)
    return new THREE.Mesh(geometry, material)
-}
-
-function render () {
-   renderer.render(graphicsPane3D.scene, camera)
 }
