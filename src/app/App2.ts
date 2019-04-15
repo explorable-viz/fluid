@@ -1,4 +1,3 @@
-import * as THREE from "three"
 import { __nonNull } from "../util/Core"
 import { GraphicsPane3D2 } from "./GraphicsPane3D2"
 
@@ -21,21 +20,17 @@ function renderCanvas() {
 }
 
 function init() {
-   document.body.appendChild(graphicsPane3D.renderer.domElement);
-   graphicsPane3D.texture = new THREE.Texture(canvas);
-   var material = new THREE.MeshBasicMaterial({ map: graphicsPane3D.texture });
-   graphicsPane3D.geometry = new THREE.BoxGeometry( 200, 200, 200 );
-   graphicsPane3D.mesh = new THREE.Mesh( graphicsPane3D.geometry, material );
-   graphicsPane3D.scene.add( graphicsPane3D.mesh );
+   document.body.appendChild(graphicsPane3D.renderer.domElement)
+   graphicsPane3D.setCanvas(canvas)
    canvas.width = canvas.height = size;
 }
 
 function render() {
-   renderCanvas();
-   graphicsPane3D.texture.needsUpdate = true;
-   graphicsPane3D.mesh.rotation.y += 1;
-   graphicsPane3D.renderer.render(graphicsPane3D.scene, graphicsPane3D.camera);
+   renderCanvas()
+   graphicsPane3D.texture.needsUpdate = true
+   graphicsPane3D.mesh.rotation.y += 1
+   graphicsPane3D.renderer.render(graphicsPane3D.scene, graphicsPane3D.camera)
 }
 
-init();
-render();
+init()
+render()

@@ -16,4 +16,12 @@ export class GraphicsPane3D2 {
       this.camera.position.z = 500
       this.scene.add(this.camera)
    }
+
+   setCanvas (canvas: HTMLCanvasElement): void {
+      this.texture = new THREE.Texture(canvas)
+      const material = new THREE.MeshBasicMaterial({ map: this.texture })
+      this.geometry = new THREE.BoxGeometry(200, 200, 200)
+      this.mesh = new THREE.Mesh(this.geometry, material)
+      this.scene.add(this.mesh)
+   }
 }
