@@ -51,23 +51,24 @@ class App2 {
       return [as(reflect(data), List), as(reflect(v), GraphicsElement)]
    }
 
-   render() {
+   render () {
       this.renderCanvas()
       this.graphicsPane3D.texture.needsUpdate = true
       this.graphicsPane3D.mesh.rotation.y += 1
       this.graphicsPane3D.renderer.render(this.graphicsPane3D.scene, this.graphicsPane3D.camera)
    }
 
-   renderCanvas() {
-      this.ctx.font = '20pt Arial'
-      this.ctx.fillStyle = 'red'
-      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
-      this.ctx.fillStyle = 'white'
-      this.ctx.fillRect(10, 10, this.canvas.width - 20, this.canvas.height - 20)
-      this.ctx.fillStyle = 'black'
-      this.ctx.textAlign = "center"
-      this.ctx.textBaseline = "middle"
-      this.ctx.fillText(new Date().getTime().toString(), this.canvas.width / 2, this.canvas.height / 2)
+   renderCanvas () {
+      const ctx: CanvasRenderingContext2D = __nonNull(this.canvas.getContext('2d'))
+      ctx.font = '20pt Arial'
+      ctx.fillStyle = 'red'
+      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+      ctx.fillStyle = 'white'
+      ctx.fillRect(10, 10, this.canvas.width - 20, this.canvas.height - 20)
+      ctx.fillStyle = 'black'
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      ctx.fillText(new Date().getTime().toString(), this.canvas.width / 2, this.canvas.height / 2)
    }
 }
 
