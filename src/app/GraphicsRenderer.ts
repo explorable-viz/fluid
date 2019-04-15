@@ -4,6 +4,29 @@ import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill,
 
 type TransformFun = (p: [number, number]) => [number, number]
 
+function scale (t: Scale): TransformFun {
+   return ([x, y]): [number, number] => {
+      return [x * t.x.n, y * t.y.n]
+   }
+}
+
+function translate (t: Translate): TransformFun {
+   return ([x, y]): [number, number] => {
+      return [x + t.x.n, y + t.y.n]
+   }
+}
+
+function precompose (f1: TransformFun, f2: TransformFun): TransformFun {
+   return ([x, y]): [number, number] => {
+      return f1(f2([x, y]))
+   }
+}
+
+const transpose: TransformFun =
+   ([x, y]): [number, number] => {
+      return [y, x]
+   }
+
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
    canvas: HTMLCanvasElement
@@ -43,25 +66,19 @@ export class GraphicsRenderer {
          const t: LinearTransform = g.t
          if (t instanceof Scale) {
             const transform: TransformFun = this.transform
-            this.transforms.push(([x, y]): [number, number] => {
-               return transform([x * t.x.n, y * t.y.n])
-            })
+            this.transforms.push(precompose(transform, scale(t)))
             this.renderElement(g.g)
             this.transforms.pop()
          } else
          if (t instanceof Translate) {
             const transform: TransformFun = this.transform
-            this.transforms.push(([x, y]): [number, number] => {
-               return transform([x + t.x.n, y + t.y.n])
-            })
+            this.transforms.push(precompose(transform, translate(t)))
             this.renderElement(g.g)
             this.transforms.pop()
          } else
          if (t instanceof Transpose) {
             const transform: TransformFun = this.transform
-            this.transforms.push(([x, y]): [number, number] => {
-               return transform([y, x])
-            })
+            this.transforms.push(precompose(transform, transpose))
             this.renderElement(g.g)
             this.transforms.pop()
          } else {
