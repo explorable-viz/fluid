@@ -26,7 +26,7 @@ class App {
    initialise (): void {
       initialise()
       this.initialiseScene()
-      this.populateScene()
+      this.populateScene(loadExample())
       this.graphicsPane3D.render()
    }
 
@@ -42,7 +42,7 @@ class App {
       document.body.appendChild(this.graphicsPane3D.renderer.domElement)
    }   
 
-   populateScene (): void {
+   loadExample (): [Data, GraphicsElement] {
       const e: Expr = parse(load("bar-chart"))
       World.newRevision()
       let here: Cursor = new Cursor(e)
@@ -59,15 +59,18 @@ class App {
          .skipImports()
          .to(Expr.Let, "e")
       const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr), // eval just to get a handle on it
-            v: Value = Eval.eval_(ρ, e).v,
-            graphRenderer: GraphicsRenderer = new GraphicsRenderer(this.graphCanvas)
-      graphRenderer.render(as(reflect(v), GraphicsElement))
+            v: Value = Eval.eval_(ρ, e).v
+      return [as(reflect(data), List), as(reflect(v), GraphicsElement)]
+   }
+
+   populateScene ([data, g]: [Data, GraphicsElement]): void {
+      const graphRenderer: GraphicsRenderer = new GraphicsRenderer(this.graphCanvas)
+      graphRenderer.render(g)
       // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
-      const dataRenderer = new DataRenderer(this.dataCanvas),
-            dataʹ: Data = as(reflect(data), List)
-      dataRenderer.render(dataʹ) // draw once to compute size
+      const dataRenderer = new DataRenderer(this.dataCanvas)
+      dataRenderer.render(data) // draw once to compute size
       this.dataCanvas.height = (dataRenderer.lines) * dataRenderer.lineHeight
-      dataRenderer.render(dataʹ) // draw again
+      dataRenderer.render(data) // draw again
       this.graphicsPane3D.setPane(this.graphCanvas)
    }
 }
