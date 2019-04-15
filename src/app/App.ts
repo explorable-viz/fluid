@@ -1,18 +1,18 @@
 import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
-import { __nonNull, absurd, as } from "../util/Core"
-import { PersistentObject} from "../util/Persistent"
+import { __nonNull, as } from "../util/Core"
 import { World } from "../util/Versioned"
-import { Cons, List, Nil, Pair } from "../BaseTypes"
+import { List } from "../BaseTypes"
 import { Expr } from "../Expr"
 import { Eval } from "../Eval"
-import { AnnNumber, AnnString, GraphicsElement } from "../Graphics"
+import { GraphicsElement } from "../Graphics"
 import { Value } from "../ExplVal"
 // TODO: move test-dependent stuff out of app
 import { Cursor } from "../../test/util/Cursor"
 import { ρ, initialise, load, parse } from "../../test/util/Core"
+import { Data, DataRenderer } from "./DataRenderer"
+import { GraphicsRenderer } from "./GraphicsRenderer"
 import { reflect } from "./Reflect"
-import { Renderer } from "./Render"
 
 initialise()
 
@@ -88,8 +88,9 @@ function populateScene (): void {
    const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr), // eval just to get a handle on it
          v: Value = Eval.eval_(ρ, e).v,
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
-         renderer: Renderer = new Renderer(__nonNull(graphCanvas.getContext("2d")))
-   scene.add(renderer.render(elem))
+         graphRenderer: GraphicsRenderer = new GraphicsRenderer(__nonNull(graphCanvas.getContext("2d")))
+   graphRenderer.render(elem)
+   scene.add(to3DTextureMap(graphCanvas))
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
    const dataRenderer = new DataRenderer(__nonNull(dataCanvas.getContext("2d"))),
          dataʹ: Data = as(reflect(data), List)
@@ -98,68 +99,12 @@ function populateScene (): void {
    dataRenderer.render(dataʹ) // draw again
 }
 
-type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
-
-class DataRenderer {
-   ctx: CanvasRenderingContext2D
-   lineHeight: number
-   lines: number
-
-   constructor (cxt: CanvasRenderingContext2D) {
-      this.ctx = cxt
-      this.ctx.font = "10pt Arial"
-      this.ctx.textAlign = "left"
-      this.ctx.textBaseline = "middle"
-      // No easy way to access text height, but this will do for now.
-      // https://stackoverflow.com/questions/1134586
-      this.lineHeight = this.ctx.measureText("M").width
-   }
-
-   render (data: Data): void {
-      this.lines = 0
-      this.renderData(0, data)
-   }
-
-   renderData (indentx: number, data: Data): void {
-      if (Cons.is(data)) {
-         ++this.lines
-         const { fst: key, snd: val }: Pair<AnnNumber | AnnString, PersistentObject> = as(data.head, Pair)
-         let keyStr: string
-         this.ctx.fillStyle = key.α ? "black" : "red"
-         if (key instanceof AnnNumber) {
-            keyStr = key.n.toString()
-         } else
-         if (key instanceof AnnString) {
-            keyStr = key.str
-         } else {
-            return absurd()
-         }
-         keyStr += ": "
-         this.ctx.fillText(keyStr, indentx, this.lines * this.lineHeight)
-         const newIndentx = indentx + this.ctx.measureText(keyStr).width
-         let valStr: string
-         if (val instanceof List) {
-            this.renderData(newIndentx, val as Data)
-         } else 
-         if (val instanceof AnnNumber || val instanceof AnnString) {
-            this.ctx.fillStyle = val.α ? "black" : "red"
-            if (val instanceof AnnNumber) {
-               valStr = val.n.toString()
-            } else {
-               valStr = val.str
-            }
-            this.ctx.fillText(valStr, newIndentx, this.lines * this.lineHeight)
-         } else {
-            return absurd()
-         }
-         this.renderData(indentx, data.tail)
-      } else
-      if (Nil.is(data)) {
-         return
-      } else {
-         return absurd()
-      }
-   }
+function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
+   const texture = new THREE.Texture(canvas)
+   texture.needsUpdate = true
+   const material = new THREE.MeshBasicMaterial({ map: texture }),
+         geometry = new THREE.BoxGeometry(200, 200, 200)
+   return new THREE.Mesh(geometry, material)
 }
 
 function render () {

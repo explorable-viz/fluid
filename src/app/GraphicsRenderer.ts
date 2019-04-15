@@ -1,19 +1,10 @@
-import * as THREE from "three"
 import { absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
 
-export function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
-   const texture = new THREE.Texture(canvas)
-   texture.needsUpdate = true
-   const material = new THREE.MeshBasicMaterial({ map: texture }),
-         geometry = new THREE.BoxGeometry(200, 200, 200)
-   return new THREE.Mesh(geometry, material)
-}
-
 type TransformFun = (p: [number, number]) => [number, number]
 
-export class Renderer {
+export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
    ctx: CanvasRenderingContext2D
 
@@ -27,9 +18,8 @@ export class Renderer {
       return this.transforms[this.transforms.length - 1]
    }
 
-   render (g: GraphicsElement): THREE.Object3D {
+   render (g: GraphicsElement): void {
       this.renderElement(g)
-      return to3DTextureMap(this.ctx.canvas)
    }
 
    renderElement (g: GraphicsElement): void {
