@@ -12,14 +12,14 @@ import { Value } from "../ExplVal"
 import { Cursor } from "../../test/util/Cursor"
 import { ρ, initialise, load, parse } from "../../test/util/Core"
 import { reflect } from "./Reflect"
-import { GraphicsRenderer } from "./Render"
+import { Renderer } from "./Render"
 
 initialise()
 
 const scene = new THREE.Scene(),
       dataCanvas: HTMLCanvasElement = document.createElement("canvas"),
       graphCanvas: HTMLCanvasElement = document.createElement("canvas"),
-      webGLRenderer = new THREE.WebGLRenderer,
+      renderer = new THREE.WebGLRenderer,
       camera = new THREE.PerspectiveCamera(
          /* field of view (degrees) */ 90,
          /* aspect ratio */            1,
@@ -32,7 +32,7 @@ function initialiseScene (): void {
    camera.position.set(0, 0, 75)
    camera.lookAt(new THREE.Vector3(0, 0, 0))
    
-   const controls = new OrbitControls(camera, webGLRenderer.domElement)
+   const controls = new OrbitControls(camera, renderer.domElement)
    
    // How far you can orbit vertically, upper and lower limits.
    controls.minPolarAngle = 0
@@ -46,22 +46,23 @@ function initialiseScene (): void {
    controls.zoomSpeed = 1.0
    
    controls.enablePan = true // Set to false to disable panning (ie vertical and horizontal translations)
+   
    controls.enableDamping = true // Set to false to disable damping (ie inertia)
    controls.dampingFactor = 0.25
    controls.addEventListener("change", render)
    
    dataCanvas.style.verticalAlign = "top"
    dataCanvas.style.display = "inline-block"
-   graphCanvas.height = 800
-   graphCanvas.width = 800
-//   graphCanvas.style.verticalAlign = "top"
-//   graphCanvas.style.display = "inline-block"
-   webGLRenderer.setSize(800, 800)
-   webGLRenderer.setViewport(0, 0, 800, 800)
-   webGLRenderer.domElement.style.display = "inline-block"
+   graphCanvas.height = 600
+   graphCanvas.width = 600
+   graphCanvas.style.verticalAlign = "top"
+   graphCanvas.style.display = "inline-block"
+   renderer.setSize(800, 800)
+   renderer.setViewport(0, 0, 800, 800)
+   renderer.domElement.style.display = "inline-block"
    document.body.appendChild(dataCanvas)
-//   document.body.appendChild(graphCanvas)
-   document.body.appendChild(webGLRenderer.domElement)
+   document.body.appendChild(graphCanvas)
+   document.body.appendChild(renderer.domElement)
 }
 
 export function close (path: THREE.Vector2[]) {
@@ -87,8 +88,8 @@ function populateScene (): void {
    const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr), // eval just to get a handle on it
          v: Value = Eval.eval_(ρ, e).v,
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
-         graphicsRenderer: GraphicsRenderer = new GraphicsRenderer(__nonNull(graphCanvas.getContext("2d")))
-   scene.add(graphicsRenderer.render(elem))
+         renderer: Renderer = new Renderer(__nonNull(graphCanvas.getContext("2d")))
+   scene.add(renderer.render(elem))
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
    const dataRenderer = new DataRenderer(__nonNull(dataCanvas.getContext("2d"))),
          dataʹ: Data = as(reflect(data), List)
@@ -162,7 +163,7 @@ class DataRenderer {
 }
 
 function render () {
-   webGLRenderer.render(scene, camera)
+   renderer.render(scene, camera)
 }
 
 initialiseScene()
