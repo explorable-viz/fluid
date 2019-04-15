@@ -4,15 +4,21 @@ import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill,
 
 type TransformFun = (p: [number, number]) => [number, number]
 
+// No counterpart of this in the graphics DSL yet.
+const reflect_y: TransformFun =
+   ([x, y]): [number, number] => {
+      return [x, -y]
+   }
+
 function scale (x_scale: number, y_scale: number): TransformFun {
    return ([x, y]): [number, number] => {
       return [x * x_scale, y * y_scale]
    }
 }
 
-function translate (t: Translate): TransformFun {
+function translate (x_inc: number, y_inc: number): TransformFun {
    return ([x, y]): [number, number] => {
-      return [x + t.x.n, y + t.y.n]
+      return [x + x_inc, y + y_inc]
    }
 }
 
@@ -35,7 +41,7 @@ export class GraphicsRenderer {
    constructor (canvas: HTMLCanvasElement) {
       this.canvas = canvas
       this.ctx = __nonNull(canvas.getContext("2d"))
-      this.transforms = [precompose(([x, y]) => [x, 100 - y], scale(5, 5))] // TODO: fix
+      this.transforms = [precompose(precompose(translate(0, 100), reflect_y), scale(5, 5))] // TODO: fix
    }
 
    get transform (): TransformFun {
@@ -72,7 +78,7 @@ export class GraphicsRenderer {
          } else
          if (t instanceof Translate) {
             const transform: TransformFun = this.transform
-            this.transforms.push(precompose(transform, translate(t)))
+            this.transforms.push(precompose(transform, translate(t.x.n, t.y.n)))
             this.renderElement(g.g)
             this.transforms.pop()
          } else
