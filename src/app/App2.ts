@@ -61,19 +61,6 @@ class App2 {
    renderGraphic (g: GraphicsElement): void {
       new GraphicsRenderer(this.canvas).render(g)
    }
-
-   renderCanvas () {
-      const ctx: CanvasRenderingContext2D = __nonNull(this.canvas.getContext('2d'))
-      ctx.font = '20pt Arial'
-      ctx.fillStyle = 'red'
-      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
-      ctx.fillStyle = 'white'
-      ctx.fillRect(10, 10, this.canvas.width - 20, this.canvas.height - 20)
-      ctx.fillStyle = 'black'
-      ctx.textAlign = "center"
-      ctx.textBaseline = "middle"
-      ctx.fillText(new Date().getTime().toString(), this.canvas.width / 2, this.canvas.height / 2)
-   }
 }
 
 new App2().initialise()
