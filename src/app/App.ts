@@ -1,48 +1,41 @@
 import { as } from "../util/Core"
 import { World } from "../util/Versioned"
-import { List } from "../BaseTypes"
-import { Expr } from "../Expr"
+import { List} from "../BaseTypes"
 import { Eval } from "../Eval"
-import { GraphicsElement } from "../Graphics"
 import { Value } from "../ExplVal"
-import { Cursor } from "../../test/util/Cursor"
+import { Expr } from "../Expr"
+import { GraphicsElement } from "../Graphics"
 import { ρ, initialise, load, parse } from "../../test/util/Core"
+import { Cursor } from "../../test/util/Cursor"
 import { Data, DataRenderer } from "./DataRenderer"
-import { GraphicsPane3D } from "./GraphicsPane3D"
+import { GraphicsPane3D2 } from "./GraphicsPane3D2"
 import { GraphicsRenderer } from "./GraphicsRenderer"
-import { reflect } from "./Reflect"
+import { reflect} from "./Reflect"
 
-class App {
-   graphicsPane3D: GraphicsPane3D
+class App2 {
    dataCanvas: HTMLCanvasElement
-   graphCanvas: HTMLCanvasElement
-
+   graphicsCanvas: HTMLCanvasElement
+   graphicsPane3D: GraphicsPane3D2
+   
    constructor () {
-      this.graphicsPane3D = new GraphicsPane3D()
-      this.dataCanvas = document.createElement("canvas"),
-      this.graphCanvas = document.createElement("canvas")
+      this.dataCanvas = document.createElement("canvas")
+      this.graphicsCanvas = document.createElement("canvas")
+      this.graphicsPane3D = new GraphicsPane3D2(600, 600)
    }
 
-   initialise (): void {
+   initialise () {
       initialise()
-      this.initialiseScene()
-      const [data, g]: [Data, GraphicsElement] = this.loadExample()
-      this.renderData(data)
-      this.renderGraphic(g)
-   }
-
-   initialiseScene (): void {
       this.dataCanvas.style.verticalAlign = "top"
       this.dataCanvas.style.display = "inline-block"
-      this.graphCanvas.height = 600
-      this.graphCanvas.width = 600
-      this.graphCanvas.style.verticalAlign = "top"
-      this.graphCanvas.style.display = "inline-block"
+      this.graphicsPane3D.renderer.domElement.style.verticalAlign = "top"
+      this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
-      document.body.appendChild(this.graphCanvas)
       document.body.appendChild(this.graphicsPane3D.renderer.domElement)
-   }   
-
+      this.graphicsPane3D.setCanvas(this.graphicsCanvas)
+      this.graphicsCanvas.width = this.graphicsCanvas.height = 256
+      this.render()
+   }
+   
    loadExample (): [Data, GraphicsElement] {
       const e: Expr = parse(load("bar-chart"))
       World.newRevision()
@@ -64,6 +57,15 @@ class App {
       return [as(reflect(data), List), as(reflect(v), GraphicsElement)]
    }
 
+   render () {
+      const [data, g]: [Data, GraphicsElement] = this.loadExample()
+      this.renderData(data)
+      this.renderGraphic(g)
+      this.graphicsPane3D.texture.needsUpdate = true
+      this.graphicsPane3D.mesh.rotation.y += 1
+      this.graphicsPane3D.renderer.render(this.graphicsPane3D.scene, this.graphicsPane3D.camera)
+   }
+
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
    renderData (data: Data): void {
       const dataRenderer = new DataRenderer(this.dataCanvas)
@@ -73,10 +75,8 @@ class App {
    }
 
    renderGraphic (g: GraphicsElement): void {
-      new GraphicsRenderer(this.graphCanvas).render(g)
-      this.graphicsPane3D.setPane(this.graphCanvas)
-      this.graphicsPane3D.render()
+      new GraphicsRenderer(this.graphicsCanvas).render(g)
    }
 }
-   
-new App().initialise()
+
+new App2().initialise()
