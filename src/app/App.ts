@@ -26,8 +26,9 @@ class App {
    initialise (): void {
       initialise()
       this.initialiseScene()
-      this.populateScene(loadExample())
-      this.graphicsPane3D.render()
+      const [data, g]: [Data, GraphicsElement] = this.loadExample()
+      this.renderData(data)
+      this.renderGraphic(g)
    }
 
    initialiseScene (): void {
@@ -63,15 +64,18 @@ class App {
       return [as(reflect(data), List), as(reflect(v), GraphicsElement)]
    }
 
-   populateScene ([data, g]: [Data, GraphicsElement]): void {
-      const graphRenderer: GraphicsRenderer = new GraphicsRenderer(this.graphCanvas)
-      graphRenderer.render(g)
-      // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
+   // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
+   renderData (data: Data): void {
       const dataRenderer = new DataRenderer(this.dataCanvas)
       dataRenderer.render(data) // draw once to compute size
       this.dataCanvas.height = (dataRenderer.lines) * dataRenderer.lineHeight
       dataRenderer.render(data) // draw again
       this.graphicsPane3D.setPane(this.graphCanvas)
+   }
+
+   renderGraphic (g: GraphicsElement): void {
+      new GraphicsRenderer(this.graphCanvas).render(g)
+      this.graphicsPane3D.render()
    }
 }
    
