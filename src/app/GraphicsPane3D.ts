@@ -36,4 +36,16 @@ export class GraphicsPane3D {
    render () {
       this.renderer.render(this.scene, this.camera)
    }
+
+   setPane (canvas: HTMLCanvasElement): void {
+      this.scene.add(this.to3DTextureMap(canvas))
+   }
+
+   to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
+      const texture = new THREE.Texture(canvas)
+      texture.needsUpdate = true
+      const material = new THREE.MeshBasicMaterial({ map: texture }),
+            geometry = new THREE.BoxGeometry(200, 200, 200)
+      return new THREE.Mesh(geometry, material)
+   }
 }

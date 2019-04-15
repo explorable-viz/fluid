@@ -1,4 +1,3 @@
-import * as THREE from "three"
 import { __nonNull, as } from "../util/Core"
 import { World } from "../util/Versioned"
 import { List } from "../BaseTypes"
@@ -59,19 +58,11 @@ function populateScene (): void {
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
          graphRenderer: GraphicsRenderer = new GraphicsRenderer(__nonNull(graphCanvas.getContext("2d")))
    graphRenderer.render(elem)
-   graphicsPane3D.scene.add(to3DTextureMap(graphCanvas))
+   graphicsPane3D.setPane(graphCanvas)
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
    const dataRenderer = new DataRenderer(__nonNull(dataCanvas.getContext("2d"))),
          dataʹ: Data = as(reflect(data), List)
    dataRenderer.render(dataʹ) // draw once to compute size
    dataCanvas.height = (dataRenderer.lines) * dataRenderer.lineHeight
    dataRenderer.render(dataʹ) // draw again
-}
-
-function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
-   const texture = new THREE.Texture(canvas)
-   texture.needsUpdate = true
-   const material = new THREE.MeshBasicMaterial({ map: texture }),
-         geometry = new THREE.BoxGeometry(200, 200, 200)
-   return new THREE.Mesh(geometry, material)
 }
