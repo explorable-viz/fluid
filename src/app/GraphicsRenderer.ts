@@ -21,6 +21,8 @@ export class GraphicsRenderer {
    }
 
    render (g: GraphicsElement): void {
+      this.ctx.fillStyle = "white"
+		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
       this.renderElement(g)
    }
 
