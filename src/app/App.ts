@@ -31,7 +31,7 @@ class App2 {
       this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
       document.body.appendChild(this.graphicsCanvas)
-      document.body.appendChild(this.graphicsPane3D.renderer.domElement)
+      // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       this.graphicsPane3D.setCanvas(this.graphicsCanvas)
       this.graphicsCanvas.width = this.graphicsCanvas.height = 256
       this.render()
