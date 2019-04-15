@@ -20,11 +20,15 @@ class App2 {
    constructor () {
       this.dataCanvas = document.createElement("canvas")
       this.graphicsCanvas = document.createElement("canvas")
-      this.graphicsPane3D = new GraphicsPane3D2(window.innerWidth, window.innerHeight / 2)
+      this.graphicsPane3D = new GraphicsPane3D2(600, 600)
    }
 
    initialise () {
       initialise()
+      this.dataCanvas.style.verticalAlign = "top"
+      this.dataCanvas.style.display = "inline-block"
+      this.graphicsPane3D.renderer.domElement.style.verticalAlign = "top"
+      this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
       document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       this.graphicsPane3D.setCanvas(this.graphicsCanvas)
