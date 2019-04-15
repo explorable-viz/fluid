@@ -2,7 +2,7 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 var path = require('path');
 
 module.exports = {
-   entry: ["./src/app/App.ts"],
+   entry: ["./src/app/App2.ts"],
    output: {
       filename: "bundle.js",
       library: "LambdaCalc",
