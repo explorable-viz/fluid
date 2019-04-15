@@ -8,19 +8,19 @@ import { GraphicsElement } from "../Graphics"
 import { ρ, initialise, load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { Data, DataRenderer } from "./DataRenderer"
-import { GraphicsPane3D2 } from "./GraphicsPane3D2"
+import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer } from "./GraphicsRenderer"
 import { reflect} from "./Reflect"
 
 class App2 {
    dataCanvas: HTMLCanvasElement
    graphicsCanvas: HTMLCanvasElement
-   graphicsPane3D: GraphicsPane3D2
+   graphicsPane3D: GraphicsPane3D
    
    constructor () {
       this.dataCanvas = document.createElement("canvas")
       this.graphicsCanvas = document.createElement("canvas")
-      this.graphicsPane3D = new GraphicsPane3D2(600, 600)
+      this.graphicsPane3D = new GraphicsPane3D(600, 600)
    }
 
    initialise () {

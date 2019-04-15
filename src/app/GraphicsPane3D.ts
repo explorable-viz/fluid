@@ -2,25 +2,27 @@ import * as THREE from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
 export class GraphicsPane3D {
+   camera: THREE.Camera
    scene: THREE.Scene
    renderer: THREE.WebGLRenderer
-   camera: THREE.Camera
-   
-   constructor () {
-      this.scene = new THREE.Scene
+   geometry: THREE.Geometry
+   texture: THREE.Texture
+   mesh: THREE.Mesh
+
+   constructor (width: number, height: number) {
       this.renderer = new THREE.WebGLRenderer
-      this.renderer.setSize(800, 800)
-      this.renderer.setViewport(0, 0, 800, 800)
-      this.renderer.domElement.style.display = "inline-block"
+      this.renderer.setSize(width, height)
+      this.scene = new THREE.Scene
+      this.scene.background = new THREE.Color(0xffffff)
       this.camera = new THREE.PerspectiveCamera(
-         /* field of view (degrees) */ 90,
-         /* aspect ratio */            1,
-         /* near */                    1,
+         /* field of view (degrees) */ 70, 
+         /* aspect ratio */            width / height, 
+         /* near */                    1, 
          /* far */                     1000
       )
-      this.scene.background = new THREE.Color(0xffffff)
-      this.camera.position.set(0, 0, 75)
-      this.camera.lookAt(new THREE.Vector3(0, 0, 0))
+      this.camera.position.z = 500
+      this.scene.add(this.camera)
+
       const controls = new OrbitControls(this.camera, this.renderer.domElement)
       // how far you can orbit vertically, upper and lower limits:
       controls.minPolarAngle = 0
@@ -33,22 +35,19 @@ export class GraphicsPane3D {
       controls.enablePan = true
       controls.enableDamping = true 
       controls.dampingFactor = 0.25
-      controls.addEventListener("change", this.render)
+      controls.addEventListener("change", () => { this.render() })
    }
 
-   render () {
+   setCanvas (canvas: HTMLCanvasElement): void {
+      this.texture = new THREE.Texture(canvas)
+      const material = new THREE.MeshBasicMaterial({ map: this.texture })
+      this.geometry = new THREE.BoxGeometry(200, 200, 200)
+      this.mesh = new THREE.Mesh(this.geometry, material)
+      this.scene.add(this.mesh)
+   }
+
+   render (): void {
+      this.texture.needsUpdate = true
       this.renderer.render(this.scene, this.camera)
-   }
-
-   setPane (canvas: HTMLCanvasElement): void {
-      this.scene.add(this.to3DTextureMap(canvas))
-   }
-
-   to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
-      const texture = new THREE.Texture(canvas)
-      texture.needsUpdate = true
-      const material = new THREE.MeshBasicMaterial({ map: texture }),
-            geometry = new THREE.BoxGeometry(200, 200, 200)
-      return new THREE.Mesh(geometry, material)
    }
 }
