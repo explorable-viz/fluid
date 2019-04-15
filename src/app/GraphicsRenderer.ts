@@ -6,9 +6,11 @@ type TransformFun = (p: [number, number]) => [number, number]
 
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
+   canvas: HTMLCanvasElement
    ctx: CanvasRenderingContext2D
 
    constructor (canvas: HTMLCanvasElement) {
+      this.canvas = canvas
       this.ctx = __nonNull(canvas.getContext("2d"))
       this.transforms = [([x, y]) => [x * 5, 600 -(y * 5)]] // TODO: fix
    }
@@ -18,8 +20,22 @@ export class GraphicsRenderer {
       return this.transforms[this.transforms.length - 1]
    }
 
+   renderDummyData (): void {
+      const ctx: CanvasRenderingContext2D = __nonNull(this.canvas.getContext('2d'))
+      ctx.font = '20pt Arial'
+      ctx.fillStyle = 'red'
+      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+      ctx.fillStyle = 'white'
+      ctx.fillRect(10, 10, this.canvas.width - 20, this.canvas.height - 20)
+      ctx.fillStyle = 'black'
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      ctx.fillText(new Date().getTime().toString(), this.canvas.width / 2, this.canvas.height / 2)
+   }
+
    render (g: GraphicsElement): void {
-      this.renderElement(g)
+      this.renderDummyData()
+//      this.renderElement(g)
    }
 
    renderElement (g: GraphicsElement): void {

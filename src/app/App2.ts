@@ -9,16 +9,15 @@ import { ρ, initialise, load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { Data } from "./DataRenderer"
 import { GraphicsPane3D2 } from "./GraphicsPane3D2"
+import { GraphicsRenderer } from "./GraphicsRenderer"
 import { reflect} from "./Reflect"
 
 class App2 {
    canvas: HTMLCanvasElement
-   ctx: CanvasRenderingContext2D
    graphicsPane3D: GraphicsPane3D2
    
    constructor () {
       this.canvas = document.createElement("canvas")
-      this.ctx = __nonNull(this.canvas.getContext('2d')),
       this.graphicsPane3D = new GraphicsPane3D2(window.innerWidth, window.innerHeight / 2)
    }
 
@@ -27,7 +26,8 @@ class App2 {
       document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       this.graphicsPane3D.setCanvas(this.canvas)
       this.canvas.width = this.canvas.height = 256
-      this.render()
+      const [, g]: [Data, GraphicsElement] = this.loadExample()
+      this.render(g)
    }
    
    loadExample (): [Data, GraphicsElement] {
@@ -51,11 +51,15 @@ class App2 {
       return [as(reflect(data), List), as(reflect(v), GraphicsElement)]
    }
 
-   render () {
-      this.renderCanvas()
+   render (g: GraphicsElement) {
+      this.renderGraphic(g)
       this.graphicsPane3D.texture.needsUpdate = true
       this.graphicsPane3D.mesh.rotation.y += 1
       this.graphicsPane3D.renderer.render(this.graphicsPane3D.scene, this.graphicsPane3D.camera)
+   }
+
+   renderGraphic (g: GraphicsElement): void {
+      new GraphicsRenderer(this.canvas).render(g)
    }
 
    renderCanvas () {
