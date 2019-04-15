@@ -11,10 +11,11 @@ import { Value } from "../ExplVal"
 import { Cursor } from "../../test/util/Cursor"
 import { ρ, initialise, load, parse } from "../../test/util/Core"
 import { Data, DataRenderer } from "./DataRenderer"
+import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer } from "./GraphicsRenderer"
 import { reflect } from "./Reflect"
 
-const scene = new THREE.Scene(),
+const graphicsPane3D = new GraphicsPane3D(),
       dataCanvas: HTMLCanvasElement = document.createElement("canvas"),
       graphCanvas: HTMLCanvasElement = document.createElement("canvas"),
       renderer = new THREE.WebGLRenderer,
@@ -31,7 +32,7 @@ populateScene()
 render()
 
 function initialiseScene (): void {
-   scene.background = new THREE.Color(0xffffff)
+   graphicsPane3D.scene.background = new THREE.Color(0xffffff)
    camera.position.set(0, 0, 75)
    camera.lookAt(new THREE.Vector3(0, 0, 0))
    
@@ -89,7 +90,7 @@ function populateScene (): void {
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
          graphRenderer: GraphicsRenderer = new GraphicsRenderer(__nonNull(graphCanvas.getContext("2d")))
    graphRenderer.render(elem)
-   scene.add(to3DTextureMap(graphCanvas))
+   graphicsPane3D.scene.add(to3DTextureMap(graphCanvas))
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
    const dataRenderer = new DataRenderer(__nonNull(dataCanvas.getContext("2d"))),
          dataʹ: Data = as(reflect(data), List)
@@ -107,5 +108,5 @@ function to3DTextureMap (canvas: HTMLCanvasElement): THREE.Object3D {
 }
 
 function render () {
-   renderer.render(scene, camera)
+   renderer.render(graphicsPane3D.scene, camera)
 }
