@@ -70,7 +70,7 @@ class App {
       dataRenderer.render(data) // draw once to compute size
       this.dataCanvas.height = (dataRenderer.lines) * dataRenderer.lineHeight
       dataRenderer.render(data) // draw again
-      this.graphicsPane3D.setPane(this.graphCanvas)
+       this.graphicsPane3D.setPane(this.graphCanvas)
    }
 
    renderGraphic (g: GraphicsElement): void {
