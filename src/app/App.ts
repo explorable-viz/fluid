@@ -1,5 +1,4 @@
 import * as THREE from "three"
-import { OrbitControls } from "three-orbitcontrols-ts"
 import { __nonNull, as } from "../util/Core"
 import { World } from "../util/Versioned"
 import { List } from "../BaseTypes"
@@ -25,29 +24,6 @@ populateScene()
 graphicsPane3D.render()
 
 function initialiseScene (): void {
-   graphicsPane3D.scene.background = new THREE.Color(0xffffff)
-   graphicsPane3D.camera.position.set(0, 0, 75)
-   graphicsPane3D.camera.lookAt(new THREE.Vector3(0, 0, 0))
-   
-   const controls = new OrbitControls(graphicsPane3D.camera, graphicsPane3D.renderer.domElement)
-   
-   // How far you can orbit vertically, upper and lower limits.
-   controls.minPolarAngle = 0
-   controls.maxPolarAngle = Math.PI
-   
-   // How far you can dolly in and out (PerspectiveCamera only)
-   controls.minDistance = 0
-   controls.maxDistance = Infinity
-   
-   controls.enableZoom = true // Set to false to disable zooming
-   controls.zoomSpeed = 1.0
-   
-   controls.enablePan = true // Set to false to disable panning (ie vertical and horizontal translations)
-   
-   controls.enableDamping = true // Set to false to disable damping (ie inertia)
-   controls.dampingFactor = 0.25
-   controls.addEventListener("change", graphicsPane3D.render)
-   
    dataCanvas.style.verticalAlign = "top"
    dataCanvas.style.display = "inline-block"
    graphCanvas.height = 600
