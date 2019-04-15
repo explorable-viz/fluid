@@ -20,20 +20,7 @@ export class GraphicsRenderer {
       return this.transforms[this.transforms.length - 1]
    }
 
-   renderDummyData (): void {
-      this.ctx.font = '20pt Arial'
-      this.ctx.fillStyle = 'red'
-      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
-      this.ctx.fillStyle = 'white'
-      this.ctx.fillRect(10, 10, this.canvas.width - 20, this.canvas.height - 20)
-      this.ctx.fillStyle = 'black'
-      this.ctx.textAlign = "center"
-      this.ctx.textBaseline = "middle"
-      this.ctx.fillText(new Date().getTime().toString(), this.canvas.width / 2, this.canvas.height / 2)
-   }
-
    render (g: GraphicsElement): void {
-//      this.renderDummyData()
       this.renderElement(g)
    }
 
