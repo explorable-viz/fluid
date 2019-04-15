@@ -41,7 +41,7 @@ export class GraphicsRenderer {
    constructor (canvas: HTMLCanvasElement) {
       this.canvas = canvas
       this.ctx = __nonNull(canvas.getContext("2d"))
-      this.transforms = [precompose(precompose(translate(0, 100), reflect_y), scale(5, 5))] // TODO: fix
+      this.transforms = [precompose(translate(0, 100), reflect_y)] // TODO: fix
    }
 
    get transform (): TransformFun {

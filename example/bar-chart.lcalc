@@ -151,10 +151,10 @@ in
 // Data → Year
 let firstYear = head (map fst data) in
 let ps = map (fun (year, annualData) → Point(year - firstYear, annualTotal annualData)) data in
-let y_scale = 1 / 30 in
-let x_scale = 6 in
-let tickLength = 2 in
-let axis_margin = 1 in
+let y_scale = 1 / 6 in
+let x_scale = 30 in
+let tickLength = 8 in
+let axis_margin = 5 in
 let x_offset = axis_margin + tickLength in
 let y_offset = x_offset in
 let barGraph = 
