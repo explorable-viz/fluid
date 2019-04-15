@@ -68,25 +68,15 @@ export class GraphicsRenderer {
          this.rectFill(g.points)
       } else
       if (g instanceof Transform) {
-         // TODO: factor out common handling.
          const t: LinearTransform = g.t
          if (t instanceof Scale) {
-            const transform: TransformFun = this.transform
-            this.transforms.push(precompose(transform, scale(t.x.n, t.y.n)))
-            this.renderElement(g.g)
-            this.transforms.pop()
+            this.renderWith(g.g, scale(t.x.n, t.y.n))
          } else
          if (t instanceof Translate) {
-            const transform: TransformFun = this.transform
-            this.transforms.push(precompose(transform, translate(t.x.n, t.y.n)))
-            this.renderElement(g.g)
-            this.transforms.pop()
+            this.renderWith(g.g, translate(t.x.n, t.y.n))
          } else
          if (t instanceof Transpose) {
-            const transform: TransformFun = this.transform
-            this.transforms.push(precompose(transform, transpose))
-            this.renderElement(g.g)
-            this.transforms.pop()
+            this.renderWith(g.g, transpose)
          } else {
             return absurd()
          }
@@ -94,6 +84,13 @@ export class GraphicsRenderer {
       else {
          return absurd()
       }
+   }
+
+   renderWith (g: GraphicsElement, f: TransformFun): void {
+      const transform: TransformFun = this.transform
+      this.transforms.push(precompose(transform, f))
+      this.renderElement(g)
+      this.transforms.pop()
    }
 
    path2D (points: List<Point>): Path2D {
@@ -138,7 +135,7 @@ export class GraphicsRenderer {
 
    rectFill (rect_path: List<Point>): void {
       const region: Path2D = this.path2D(rect_path)
-      this.ctx.fillStyle = "#F6831E"
+      this.ctx.fillStyle = "#f6831e"
       this.ctx.fill(region)
    }
 }
