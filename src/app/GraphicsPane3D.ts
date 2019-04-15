@@ -20,7 +20,7 @@ export class GraphicsPane3D {
          /* near */                    1, 
          /* far */                     1000
       )
-      this.camera.position.z = 280
+      this.camera.position.z = 330
       this.scene.add(this.camera)
 
       const controls = new OrbitControls(this.camera, this.renderer.domElement)

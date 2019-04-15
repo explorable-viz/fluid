@@ -22,7 +22,7 @@ function translate (x_inc: number, y_inc: number): TransformFun {
    }
 }
 
-function precompose (f1: TransformFun, f2: TransformFun): TransformFun {
+function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
    return ([x, y]): [number, number] => {
       return f1(f2([x, y]))
    }
@@ -41,7 +41,8 @@ export class GraphicsRenderer {
    constructor (canvas: HTMLCanvasElement) {
       this.canvas = canvas
       this.ctx = __nonNull(canvas.getContext("2d"))
-      this.transforms = [precompose(translate(0, 100), reflect_y)] // TODO: fix
+      // convert to a bottom-left frame of reference
+      this.transforms = [postcompose(translate(0, canvas.height), reflect_y)]
    }
 
    get transform (): TransformFun {
@@ -88,7 +89,7 @@ export class GraphicsRenderer {
 
    renderWith (g: GraphicsElement, f: TransformFun): void {
       const transform: TransformFun = this.transform
-      this.transforms.push(precompose(transform, f))
+      this.transforms.push(postcompose(transform, f))
       this.renderElement(g)
       this.transforms.pop()
    }
