@@ -1,4 +1,4 @@
-import { absurd, as } from "../util/Core"
+import { __nonNull, absurd, as } from "../util/Core"
 import { PersistentObject } from "../util/Persistent"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { AnnNumber, AnnString } from "../Graphics"
@@ -10,8 +10,8 @@ export class DataRenderer {
    lineHeight: number
    lines: number
 
-   constructor (cxt: CanvasRenderingContext2D) {
-      this.ctx = cxt
+   constructor (canvas: HTMLCanvasElement) {
+      this.ctx = __nonNull(canvas.getContext("2d"))
       this.ctx.font = "10pt Arial"
       this.ctx.textAlign = "left"
       this.ctx.textBaseline = "middle"

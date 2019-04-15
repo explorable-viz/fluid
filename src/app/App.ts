@@ -1,4 +1,4 @@
-import { __nonNull, as } from "../util/Core"
+import { as } from "../util/Core"
 import { World } from "../util/Versioned"
 import { List } from "../BaseTypes"
 import { Expr } from "../Expr"
@@ -29,9 +29,6 @@ function initialiseScene (): void {
    graphCanvas.width = 600
    graphCanvas.style.verticalAlign = "top"
    graphCanvas.style.display = "inline-block"
-   graphicsPane3D.renderer.setSize(800, 800)
-   graphicsPane3D.renderer.setViewport(0, 0, 800, 800)
-   graphicsPane3D.renderer.domElement.style.display = "inline-block"
    document.body.appendChild(dataCanvas)
    document.body.appendChild(graphCanvas)
    document.body.appendChild(graphicsPane3D.renderer.domElement)
@@ -56,13 +53,13 @@ function populateScene (): void {
    const data: Value.Constr = as(Eval.eval_(ρ, as(here.o, Expr.Constr)).v, Value.Constr), // eval just to get a handle on it
          v: Value = Eval.eval_(ρ, e).v,
          elem: GraphicsElement = as(reflect(v), GraphicsElement),
-         graphRenderer: GraphicsRenderer = new GraphicsRenderer(__nonNull(graphCanvas.getContext("2d")))
+         graphRenderer: GraphicsRenderer = new GraphicsRenderer(graphCanvas)
    graphRenderer.render(elem)
-   graphicsPane3D.setPane(graphCanvas)
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
-   const dataRenderer = new DataRenderer(__nonNull(dataCanvas.getContext("2d"))),
+   const dataRenderer = new DataRenderer(dataCanvas),
          dataʹ: Data = as(reflect(data), List)
    dataRenderer.render(dataʹ) // draw once to compute size
    dataCanvas.height = (dataRenderer.lines) * dataRenderer.lineHeight
    dataRenderer.render(dataʹ) // draw again
+   graphicsPane3D.setPane(graphCanvas)
 }

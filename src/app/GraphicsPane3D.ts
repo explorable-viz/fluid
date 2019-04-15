@@ -9,6 +9,9 @@ export class GraphicsPane3D {
    constructor () {
       this.scene = new THREE.Scene
       this.renderer = new THREE.WebGLRenderer
+      this.renderer.setSize(800, 800)
+      this.renderer.setViewport(0, 0, 800, 800)
+      this.renderer.domElement.style.display = "inline-block"
       this.camera = new THREE.PerspectiveCamera(
          /* field of view (degrees) */ 90,
          /* aspect ratio */            1,

@@ -1,4 +1,4 @@
-import { absurd, assert } from "../util/Core"
+import { __nonNull, absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
 
@@ -8,8 +8,8 @@ export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
    ctx: CanvasRenderingContext2D
 
-   constructor (ctx: CanvasRenderingContext2D) {
-      this.ctx = ctx
+   constructor (canvas: HTMLCanvasElement) {
+      this.ctx = __nonNull(canvas.getContext("2d"))
       this.transforms = [([x, y]) => [x * 5, 600 -(y * 5)]] // TODO: fix
    }
 
