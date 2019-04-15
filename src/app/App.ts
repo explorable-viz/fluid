@@ -62,7 +62,7 @@ class App2 {
       const [data, g]: [Data, GraphicsElement] = this.loadExample()
       this.renderData(data)
       this.renderGraphic(g)
-      this.graphicsPane3D.render()
+      // this.graphicsPane3D.render()
    }
 
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
