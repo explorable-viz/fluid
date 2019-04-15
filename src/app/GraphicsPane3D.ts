@@ -15,12 +15,12 @@ export class GraphicsPane3D {
       this.scene = new THREE.Scene
       this.scene.background = new THREE.Color(0xffffff)
       this.camera = new THREE.PerspectiveCamera(
-         /* field of view (degrees) */ 30,
+         /* field of view (degrees) */ 90,
          /* aspect ratio */            width / height, 
          /* near */                    1, 
          /* far */                     1000
       )
-      this.camera.position.z = 1000
+      this.camera.position.z = 280
       this.scene.add(this.camera)
 
       const controls = new OrbitControls(this.camera, this.renderer.domElement)
