@@ -61,9 +61,7 @@ class App2 {
       const [data, g]: [Data, GraphicsElement] = this.loadExample()
       this.renderData(data)
       this.renderGraphic(g)
-      this.graphicsPane3D.texture.needsUpdate = true
-      this.graphicsPane3D.mesh.rotation.y += 1
-      this.graphicsPane3D.renderer.render(this.graphicsPane3D.scene, this.graphicsPane3D.camera)
+      this.graphicsPane3D.render()
    }
 
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.

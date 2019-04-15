@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import { OrbitControls } from "three-orbitcontrols-ts"
 
 export class GraphicsPane3D2 {
    camera: THREE.Camera
@@ -15,6 +16,20 @@ export class GraphicsPane3D2 {
       this.camera = new THREE.PerspectiveCamera(70, width / height, 1, 1000)
       this.camera.position.z = 500
       this.scene.add(this.camera)
+
+      const controls = new OrbitControls(this.camera, this.renderer.domElement)
+      // how far you can orbit vertically, upper and lower limits:
+      controls.minPolarAngle = 0
+      controls.maxPolarAngle = Math.PI
+      // how far you can dolly in and out (PerspectiveCamera only):
+      controls.minDistance = 0
+      controls.maxDistance = Infinity
+      controls.enableZoom = true
+      controls.zoomSpeed = 1.0
+      controls.enablePan = true
+      controls.enableDamping = true 
+      controls.dampingFactor = 0.25
+      controls.addEventListener("change", () => { this.render() })
    }
 
    setCanvas (canvas: HTMLCanvasElement): void {
@@ -23,5 +38,11 @@ export class GraphicsPane3D2 {
       this.geometry = new THREE.BoxGeometry(200, 200, 200)
       this.mesh = new THREE.Mesh(this.geometry, material)
       this.scene.add(this.mesh)
+   }
+
+   render (): void {
+      this.texture.needsUpdate = true
+//      this.mesh.rotation.y += 1
+      this.renderer.render(this.scene, this.camera)
    }
 }
