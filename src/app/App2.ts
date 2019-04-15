@@ -1,4 +1,4 @@
-import { __nonNull, as } from "../util/Core"
+import { as } from "../util/Core"
 import { World } from "../util/Versioned"
 import { List} from "../BaseTypes"
 import { Eval } from "../Eval"
@@ -7,27 +7,29 @@ import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { ρ, initialise, load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
-import { Data } from "./DataRenderer"
+import { Data, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D2 } from "./GraphicsPane3D2"
 import { GraphicsRenderer } from "./GraphicsRenderer"
 import { reflect} from "./Reflect"
 
 class App2 {
-   canvas: HTMLCanvasElement
+   dataCanvas: HTMLCanvasElement
+   graphicsCanvas: HTMLCanvasElement
    graphicsPane3D: GraphicsPane3D2
    
    constructor () {
-      this.canvas = document.createElement("canvas")
+      this.dataCanvas = document.createElement("canvas")
+      this.graphicsCanvas = document.createElement("canvas")
       this.graphicsPane3D = new GraphicsPane3D2(window.innerWidth, window.innerHeight / 2)
    }
 
    initialise () {
       initialise()
+      document.body.appendChild(this.dataCanvas)
       document.body.appendChild(this.graphicsPane3D.renderer.domElement)
-      this.graphicsPane3D.setCanvas(this.canvas)
-      this.canvas.width = this.canvas.height = 256
-      const [, g]: [Data, GraphicsElement] = this.loadExample()
-      this.render(g)
+      this.graphicsPane3D.setCanvas(this.graphicsCanvas)
+      this.graphicsCanvas.width = this.graphicsCanvas.height = 256
+      this.render()
    }
    
    loadExample (): [Data, GraphicsElement] {
@@ -51,15 +53,25 @@ class App2 {
       return [as(reflect(data), List), as(reflect(v), GraphicsElement)]
    }
 
-   render (g: GraphicsElement) {
+   render () {
+      const [data, g]: [Data, GraphicsElement] = this.loadExample()
+      this.renderData(data)
       this.renderGraphic(g)
       this.graphicsPane3D.texture.needsUpdate = true
       this.graphicsPane3D.mesh.rotation.y += 1
       this.graphicsPane3D.renderer.render(this.graphicsPane3D.scene, this.graphicsPane3D.camera)
    }
 
+   // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
+   renderData (data: Data): void {
+      const dataRenderer = new DataRenderer(this.dataCanvas)
+      dataRenderer.render(data) // draw once to compute size
+      this.dataCanvas.height = (dataRenderer.lines) * dataRenderer.lineHeight
+      dataRenderer.render(data) // draw again
+   }
+
    renderGraphic (g: GraphicsElement): void {
-      new GraphicsRenderer(this.canvas).render(g)
+      new GraphicsRenderer(this.graphicsCanvas).render(g)
    }
 }
 
