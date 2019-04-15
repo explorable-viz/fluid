@@ -12,7 +12,7 @@ export class GraphicsRenderer {
    constructor (canvas: HTMLCanvasElement) {
       this.canvas = canvas
       this.ctx = __nonNull(canvas.getContext("2d"))
-      this.transforms = [([x, y]) => [x * 5, 600 -(y * 5)]] // TODO: fix
+      this.transforms = [([x, y]) => [x * 5, 100 -(y * 5)]] // TODO: fix
    }
 
    get transform (): TransformFun {
@@ -33,8 +33,8 @@ export class GraphicsRenderer {
    }
 
    render (g: GraphicsElement): void {
-      this.renderDummyData()
-//      this.renderElement(g)
+//      this.renderDummyData()
+      this.renderElement(g)
    }
 
    renderElement (g: GraphicsElement): void {
