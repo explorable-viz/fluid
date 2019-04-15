@@ -4,9 +4,9 @@ import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill,
 
 type TransformFun = (p: [number, number]) => [number, number]
 
-function scale (t: Scale): TransformFun {
+function scale (x_scale: number, y_scale: number): TransformFun {
    return ([x, y]): [number, number] => {
-      return [x * t.x.n, y * t.y.n]
+      return [x * x_scale, y * y_scale]
    }
 }
 
@@ -35,7 +35,7 @@ export class GraphicsRenderer {
    constructor (canvas: HTMLCanvasElement) {
       this.canvas = canvas
       this.ctx = __nonNull(canvas.getContext("2d"))
-      this.transforms = [([x, y]) => [x * 5, 100 -(y * 5)]] // TODO: fix
+      this.transforms = [precompose(([x, y]) => [x, 100 - y], scale(5, 5))] // TODO: fix
    }
 
    get transform (): TransformFun {
@@ -66,7 +66,7 @@ export class GraphicsRenderer {
          const t: LinearTransform = g.t
          if (t instanceof Scale) {
             const transform: TransformFun = this.transform
-            this.transforms.push(precompose(transform, scale(t)))
+            this.transforms.push(precompose(transform, scale(t.x.n, t.y.n)))
             this.renderElement(g.g)
             this.transforms.pop()
          } else
