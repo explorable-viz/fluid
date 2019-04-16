@@ -120,7 +120,6 @@ export class DataRenderer {
    }
 
    render (data: Data): void {
-      this.lines = 0
       const pres: Presentation = new Presentation(this.ctx)
       this.renderData(0, data, pres)
       this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
@@ -129,11 +128,9 @@ export class DataRenderer {
 
    renderData (indentx: number, data: Data, pres: Presentation): void {
       if (Cons.is(data)) {
-         ++this.lines
          pres.newLine(indentx)
          const { fst: key, snd: val }: Pair<AnnNumber | AnnString, PersistentObject> = as(data.head, Pair)
          let keyStr: string
-         this.ctx.fillStyle = key.α ? "black" : "red"
          if (key instanceof AnnNumber) {
             keyStr = key.n.toString()
             pres.push(new AnnNumberToken(key))
@@ -146,22 +143,16 @@ export class DataRenderer {
          }
          keyStr += ": "
          pres.push(new StringToken(": "))
-         this.ctx.fillText(keyStr, indentx, this.lines * this.lineHeight)
          const newIndentx = indentx + this.ctx.measureText(keyStr).width
-         let valStr: string
          if (val instanceof List) {
             this.renderData(newIndentx, val as Data, pres)
          } else 
          if (val instanceof AnnNumber || val instanceof AnnString) {
-            this.ctx.fillStyle = val.α ? "black" : "red"
             if (val instanceof AnnNumber) {
-               valStr = val.n.toString()
                pres.push(new AnnNumberToken(val))
             } else {
-               valStr = val.str
                pres.push(new AnnStringToken(val))
             }
-            this.ctx.fillText(valStr, newIndentx, this.lines * this.lineHeight)
          } else {
             return absurd()
          }
