@@ -10,10 +10,11 @@ abstract class Token {
    abstract fillStyle: string
 }
 
-class AnnNumberToken {
+class AnnNumberToken extends Token {
    n: AnnNumber
 
    constructor (n: AnnNumber) {
+      super()
       this.n = n
    }
 
@@ -26,10 +27,11 @@ class AnnNumberToken {
    }
 }
 
-class AnnStringToken {
+class AnnStringToken extends Token {
    str: AnnString
 
    constructor (str: AnnString) {
+      super()
       this.str = str
    }
 
@@ -42,10 +44,11 @@ class AnnStringToken {
    }
 }
 
-class StringToken {
+class StringToken extends Token {
    str: string
 
    constructor (str: string) {
+      super()
       this.str = str
    }
 
@@ -59,24 +62,40 @@ class StringToken {
 }
 
 class Line {
-   indentx: number
-   tokens: Token[]
+   tokens: [number, Token][]
 
-   constructor (indentx: number) {
-      this.indentx = indentx
+   constructor () {
       this.tokens = []
    }
 }
 
 class Presentation {
+   ctx: CanvasRenderingContext2D
+   indentx: number
    lines: Line[]
 
+   constructor (ctx: CanvasRenderingContext2D) {
+      this.ctx = ctx
+      this.indentx = 0
+      this.lines = []
+   }
+
    newLine (indentx: number): void {
-      this.lines.push(new Line(indentx))
+      this.lines.push(new Line)
+      this.indentx = indentx
    }
 
    push (token: Token): void {
-      this.lines[this.lines.length - 1].tokens.push()
+      this.indentx += this.ctx.measureText(token.text).width
+      this.lines[this.lines.length - 1].tokens.push([this.indentx, token])
+   }
+
+   draw (lineHeight: number): void {
+      this.lines.forEach(line => {
+         line.tokens.forEach(([x, token]) => {
+            this.ctx.fillText(token.text, x, this.lines.length * lineHeight)
+         })
+      })
    }
 }
 
@@ -101,7 +120,7 @@ export class DataRenderer {
 
    render (data: Data): void {
       this.lines = 0
-      this.renderData(0, data, new Presentation)
+      this.renderData(0, data, new Presentation(this.ctx))
    }
 
    renderData (indentx: number, data: Data, pres: Presentation): void {
