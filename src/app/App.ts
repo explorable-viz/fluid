@@ -7,7 +7,7 @@ import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { ρ, initialise, load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
-import { Data, DataRenderer } from "./DataRenderer"
+import { Data, DataView, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer } from "./GraphicsRenderer"
 import { reflect} from "./Reflect"
@@ -67,10 +67,12 @@ class App2 {
 
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
    renderData (data: Data): void {
-      const dataRenderer = new DataRenderer(this.dataCanvas)
-      dataRenderer.render(data) // draw once to compute size
-      this.dataCanvas.height = (dataRenderer.lines) * dataRenderer.lineHeight
-      dataRenderer.render(data) // draw again
+      this.dataCanvas.height = 400
+      this.dataCanvas.width = 400
+      const view: DataView = new DataRenderer(this.dataCanvas, data).view
+      this.dataCanvas.height = view.height + 1 // not sure why extra pixel is essential
+      this.dataCanvas.width = view.width
+      view.draw()
    }
 
    renderGraphic (g: GraphicsElement): void {
