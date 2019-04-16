@@ -91,9 +91,9 @@ class Presentation {
    }
 
    draw (lineHeight: number): void {
-      this.lines.forEach(line => {
+      this.lines.forEach((line: Line, n: number): void => {
          line.tokens.forEach(([x, token]) => {
-            this.ctx.fillText(token.text, x, this.lines.length * lineHeight)
+            this.ctx.fillText(token.text, x, n * lineHeight)
          })
       })
    }
@@ -120,7 +120,10 @@ export class DataRenderer {
 
    render (data: Data): void {
       this.lines = 0
-      this.renderData(0, data, new Presentation(this.ctx))
+      const pres: Presentation = new Presentation(this.ctx)
+      this.renderData(0, data, pres)
+//      this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
+      pres.draw(this.lineHeight)
    }
 
    renderData (indentx: number, data: Data, pres: Presentation): void {
