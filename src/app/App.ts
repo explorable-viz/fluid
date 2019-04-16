@@ -67,8 +67,10 @@ class App2 {
 
    // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
    renderData (data: Data): void {
+      this.dataCanvas.height = 400
+      this.dataCanvas.width = 400
       const view: DataView = new DataRenderer(this.dataCanvas, data).view
-      this.dataCanvas.height = view.height
+      this.dataCanvas.height = view.height + 1 // not sure why extra pixel is essential
       this.dataCanvas.width = view.width
       view.draw()
    }

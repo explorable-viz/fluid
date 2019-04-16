@@ -109,30 +109,27 @@ export class DataView {
 }
 
 export class DataRenderer {
-   ctx: CanvasRenderingContext2D
    view: DataView
 
    constructor (canvas: HTMLCanvasElement, data: Data) {
-      this.ctx = __nonNull(canvas.getContext("2d"))
-      this.ctx.font = "10pt Arial"
-      this.ctx.textAlign = "left"
-      this.ctx.textBaseline = "middle"
+      const ctx: CanvasRenderingContext2D = __nonNull(canvas.getContext("2d"))
+      // for some reason setting font doesn't change font size but only affects spacing :-/
+      ctx.textAlign = "left"
+      ctx.textBaseline = "middle"
       canvas.addEventListener("mousemove", (e: MouseEvent): void => {
            e.clientX
            e.clientY
       })
       // No easy way to access text height, but this will do for now.
       // https://stackoverflow.com/questions/1134586
-      this.view = new DataView(this.ctx, this.ctx.measureText("M").width)
+      this.view = new DataView(ctx, ctx.measureText("M").width * 1.4)
       this.renderData(0, data)
-      this.view.draw()
    }
 
    renderData (indentx: number, data: Data): void {
       if (Cons.is(data)) {
          this.view.newLine(indentx)
          const { fst: key, snd: val }: Pair<AnnNumber | AnnString, PersistentObject> = as(data.head, Pair)
-         this.ctx.fillStyle = key.α ? "black" : "red"
          if (key instanceof AnnNumber) {
             this.view.push(new AnnNumberToken(key))
          } else {
