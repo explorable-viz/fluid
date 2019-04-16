@@ -75,6 +75,7 @@ export class DataView {
    indentx: number
    lines: Line[]
    width: number
+   lastMouseToken: Token | null 
 
    constructor (ctx: CanvasRenderingContext2D, lineHeight: number) {
       this.ctx = ctx
@@ -109,14 +110,17 @@ export class DataView {
 
    onMouseMove (x: number, y: number): void {
       const line: Line = this.lines[Math.floor(y / this.lineHeight)]
-      let lastToken: Token | null = null
-      for (let [xʹ, token] of line.tokens) {
+      let token: Token | null = null
+      for (let [xʹ, tokenʹ] of line.tokens) {
          if (xʹ > x) {
             break
          }
-         lastToken = token
+         token = tokenʹ
       }
-      console.log(lastToken !== null ? lastToken.text : "(no token)")
+      if (token !== this.lastMouseToken) {
+         this.lastMouseToken = token
+         console.log(token !== null ? token.text : "(no token)")
+      }
    }
 }
 
