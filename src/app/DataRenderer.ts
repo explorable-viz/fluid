@@ -69,14 +69,17 @@ class Line {
    }
 }
 
-class Presentation {
+export class DataView {
    ctx: CanvasRenderingContext2D
+   lineHeight: number
    indentx: number
    lines: Line[]
+   width: number
 
-   constructor (ctx: CanvasRenderingContext2D) {
+   constructor (ctx: CanvasRenderingContext2D, lineHeight: number) {
       this.ctx = ctx
-      this.indentx = 0
+      this.lineHeight = lineHeight
+      this.indentx = this.width = 0
       this.lines = []
    }
 
@@ -88,72 +91,68 @@ class Presentation {
    push (token: Token): void {
       this.lines[this.lines.length - 1].tokens.push([this.indentx, token])
       this.indentx += this.ctx.measureText(token.text).width
+      this.width = Math.max(this.width, this.indentx)
    }
 
-   draw (lineHeight: number): void {
+   draw (): void {
       this.lines.forEach((line: Line, n: number): void => {
          line.tokens.forEach(([x, token]) => {
             this.ctx.fillStyle = token.fillStyle
-            this.ctx.fillText(token.text, x, (n + 1) * lineHeight)
+            this.ctx.fillText(token.text, x, (n + 1) * this.lineHeight)
          })
       })
+   }
+
+   get height (): number {
+      return this.lines.length * this.lineHeight
    }
 }
 
 export class DataRenderer {
    ctx: CanvasRenderingContext2D
-   lineHeight: number
-   lines: number
+   view: DataView
 
-   constructor (canvas: HTMLCanvasElement) {
+   constructor (canvas: HTMLCanvasElement, data: Data) {
       this.ctx = __nonNull(canvas.getContext("2d"))
       this.ctx.font = "10pt Arial"
       this.ctx.textAlign = "left"
       this.ctx.textBaseline = "middle"
-      // No easy way to access text height, but this will do for now.
-      // https://stackoverflow.com/questions/1134586
-      this.lineHeight = this.ctx.measureText("M").width
       canvas.addEventListener("mousemove", (e: MouseEvent): void => {
            e.clientX
            e.clientY
       })
+      // No easy way to access text height, but this will do for now.
+      // https://stackoverflow.com/questions/1134586
+      this.view = new DataView(this.ctx, this.ctx.measureText("M").width)
+      this.renderData(0, data)
+      this.view.draw()
    }
 
-   render (data: Data): void {
-      this.lines = 0
-      const pres: Presentation = new Presentation(this.ctx)
-      this.renderData(0, data, pres)
-      this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
-      pres.draw(this.lineHeight)
-   }
-
-   renderData (indentx: number, data: Data, pres: Presentation): void {
+   renderData (indentx: number, data: Data): void {
       if (Cons.is(data)) {
-         ++this.lines
-         pres.newLine(indentx)
+         this.view.newLine(indentx)
          const { fst: key, snd: val }: Pair<AnnNumber | AnnString, PersistentObject> = as(data.head, Pair)
          this.ctx.fillStyle = key.α ? "black" : "red"
          if (key instanceof AnnNumber) {
-            pres.push(new AnnNumberToken(key))
+            this.view.push(new AnnNumberToken(key))
          } else {
-            pres.push(new AnnStringToken(key))
+            this.view.push(new AnnStringToken(key))
          }
-         pres.push(new StringToken(": "))
+         this.view.push(new StringToken(": "))
          if (val instanceof List) {
-            this.renderData(pres.indentx, val as Data, pres)
+            this.renderData(this.view.indentx, val as Data)
          } else 
          if (val instanceof AnnNumber || val instanceof AnnString) {
             if (val instanceof AnnNumber) {
-               pres.push(new AnnNumberToken(val))
+               this.view.push(new AnnNumberToken(val))
             } else {
-               pres.push(new AnnStringToken(val))
+               this.view.push(new AnnStringToken(val))
             }
          }
-         this.renderData(indentx, data.tail, pres)
+         this.renderData(indentx, data.tail)
       } else
       if (Nil.is(data)) {
          return
       }
    }
 }
-
