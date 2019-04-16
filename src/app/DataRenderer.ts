@@ -86,8 +86,8 @@ class Presentation {
    }
 
    push (token: Token): void {
-      this.indentx += this.ctx.measureText(token.text).width
       this.lines[this.lines.length - 1].tokens.push([this.indentx, token])
+      this.indentx += this.ctx.measureText(token.text).width
    }
 
    draw (lineHeight: number): void {
@@ -123,7 +123,7 @@ export class DataRenderer {
       this.lines = 0
       const pres: Presentation = new Presentation(this.ctx)
       this.renderData(0, data, pres)
-//      this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
+      this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
       pres.draw(this.lineHeight)
    }
 
@@ -156,8 +156,10 @@ export class DataRenderer {
             this.ctx.fillStyle = val.α ? "black" : "red"
             if (val instanceof AnnNumber) {
                valStr = val.n.toString()
+               pres.push(new AnnNumberToken(val))
             } else {
                valStr = val.str
+               pres.push(new AnnStringToken(val))
             }
             this.ctx.fillText(valStr, newIndentx, this.lines * this.lineHeight)
          } else {
