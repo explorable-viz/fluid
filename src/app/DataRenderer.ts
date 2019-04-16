@@ -1,4 +1,4 @@
-import { __nonNull, absurd, as } from "../util/Core"
+import { __nonNull, as } from "../util/Core"
 import { PersistentObject } from "../util/Persistent"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { AnnNumber, AnnString } from "../Graphics"
@@ -135,11 +135,8 @@ export class DataRenderer {
          this.ctx.fillStyle = key.α ? "black" : "red"
          if (key instanceof AnnNumber) {
             pres.push(new AnnNumberToken(key))
-         } else
-         if (key instanceof AnnString) {
-            pres.push(new AnnStringToken(key))
          } else {
-            return absurd()
+            pres.push(new AnnStringToken(key))
          }
          pres.push(new StringToken(": "))
          if (val instanceof List) {
@@ -151,15 +148,11 @@ export class DataRenderer {
             } else {
                pres.push(new AnnStringToken(val))
             }
-         } else {
-            return absurd()
          }
          this.renderData(indentx, data.tail, pres)
       } else
       if (Nil.is(data)) {
          return
-      } else {
-         return absurd()
       }
    }
 }
