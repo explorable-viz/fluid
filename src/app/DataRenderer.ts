@@ -106,6 +106,18 @@ export class DataView {
    get height (): number {
       return this.lines.length * this.lineHeight
    }
+
+   onMouseMove (x: number, y: number): void {
+      const line: Line = this.lines[Math.floor(y / this.lineHeight)]
+      let lastToken: Token | null = null
+      for (let [xʹ, token] of line.tokens) {
+         if (xʹ > x) {
+            break
+         }
+         lastToken = token
+      }
+      console.log(lastToken !== null ? lastToken.text : "(no token)")
+   }
 }
 
 export class DataRenderer {
@@ -115,14 +127,13 @@ export class DataRenderer {
       const ctx: CanvasRenderingContext2D = __nonNull(canvas.getContext("2d"))
       // for some reason setting font doesn't change font size but only affects spacing :-/
       ctx.textAlign = "left"
-      ctx.textBaseline = "middle"
-      canvas.addEventListener("mousemove", (e: MouseEvent): void => {
-           e.clientX
-           e.clientY
-      })
       // No easy way to access text height, but this will do for now.
       // https://stackoverflow.com/questions/1134586
       this.view = new DataView(ctx, ctx.measureText("M").width * 1.4)
+      canvas.addEventListener("mousemove", (e: MouseEvent): void => {
+         const rect: ClientRect = canvas.getBoundingClientRect()
+         this.view.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)
+      })
       this.renderData(0, data)
    }
 
