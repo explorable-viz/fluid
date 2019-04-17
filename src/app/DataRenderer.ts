@@ -1,13 +1,15 @@
 import { __nonNull, as } from "../util/Core"
-import { PersistentObject } from "../util/Persistent"
+import { MemoArgs, PersistentObject, make } from "../util/Persistent"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { AnnNumber, AnnString } from "../Graphics"
 
 export type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
 
-abstract class Token {
+abstract class Token implements PersistentObject {
    abstract text: string
    abstract fillStyle: string
+
+   abstract constructor_ (...v̅: MemoArgs): void
 
    abstract onMouseEnter (): void
    abstract onMouseExit (): void
@@ -16,8 +18,7 @@ abstract class Token {
 class AnnNumberToken extends Token {
    n: AnnNumber
 
-   constructor (n: AnnNumber) {
-      super()
+   constructor_ (n: AnnNumber) {
       this.n = n
    }
 
@@ -38,11 +39,14 @@ class AnnNumberToken extends Token {
    }
 }
 
+function annNumberToken (n: AnnNumber): AnnNumberToken {
+   return make(AnnNumberToken, n)
+}
+
 class AnnStringToken extends Token {
    str: AnnString
 
-   constructor (str: AnnString) {
-      super()
+   constructor_ (str: AnnString) {
       this.str = str
    }
 
@@ -63,11 +67,14 @@ class AnnStringToken extends Token {
    }
 }
 
+function annStringToken (str: AnnString): AnnStringToken {
+   return make(AnnStringToken, str)
+}
+
 class StringToken extends Token {
    str: string
 
-   constructor (str: string) {
-      super()
+   constructor_ (str: string) {
       this.str = str
    }
 
@@ -84,6 +91,10 @@ class StringToken extends Token {
 
    onMouseExit (): void {
    }
+}
+
+function stringToken (str: string): StringToken {
+   return make(StringToken, str)
 }
 
 class Line {
@@ -143,10 +154,8 @@ export class DataView {
          }
          token = tokenʹ
       }
-      if (token !== this.lastMouseToken) {
-         if (token !== null) {
-            token.onMouseEnter()
-         }
+      if (token !== this.lastMouseToken && token !== null) {
+         token.onMouseEnter()
          if (this.lastMouseToken !== null) {
             this.lastMouseToken.onMouseExit()
          }
@@ -174,19 +183,19 @@ export class DataRenderer {
          this.view.newLine(indentx)
          const { fst: key, snd: val }: Pair<AnnNumber | AnnString, PersistentObject> = as(data.head, Pair)
          if (key instanceof AnnNumber) {
-            this.view.push(new AnnNumberToken(key))
+            this.view.push(annNumberToken(key))
          } else {
-            this.view.push(new AnnStringToken(key))
+            this.view.push(annStringToken(key))
          }
-         this.view.push(new StringToken(": "))
+         this.view.push(stringToken(": "))
          if (val instanceof List) {
             this.renderData(this.view.indentx, val as Data)
          } else 
          if (val instanceof AnnNumber || val instanceof AnnString) {
             if (val instanceof AnnNumber) {
-               this.view.push(new AnnNumberToken(val))
+               this.view.push(annNumberToken(val))
             } else {
-               this.view.push(new AnnStringToken(val))
+               this.view.push(annStringToken(val))
             }
          }
          this.renderData(indentx, data.tail)
