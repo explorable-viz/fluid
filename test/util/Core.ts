@@ -5,7 +5,7 @@ import { successfulParse } from "../../src/util/parse/Core"
 import { initDataTypes } from "../../src/DataType"
 import { Env } from "../../src/Env"
 import { Eval } from "../../src/Eval"
-import { ExplVal, Value } from "../../src/ExplVal"
+import { ExplVal } from "../../src/ExplVal"
 import { Expr, Kont } from "../../src/Expr"
 import { unionWith } from "../../src/FiniteMap"
 import { instantiate } from "../../src/Instantiate"
@@ -24,7 +24,7 @@ export function initialise (): void {
    initDataTypes()
 }
 
-export abstract class FwdSlice {
+export class FwdSlice {
    expr: Cursor
    val: Cursor
 
@@ -37,8 +37,11 @@ export abstract class FwdSlice {
       this.expect()
    }
 
-   abstract setup (): void
-   abstract expect (): void
+   setup (): void {      
+   }
+
+   expect (): void {
+   }
 
    get e (): Expr {
       return this.expr.o as Expr
@@ -46,7 +49,7 @@ export abstract class FwdSlice {
 }
 
 // Precondition: must be safe to reexecute e in the current revision, to obtain a trace.
-export abstract class BwdSlice {
+export class BwdSlice {
    val: Cursor
    expr: Cursor
 
@@ -54,7 +57,6 @@ export abstract class BwdSlice {
       World.newRevision()
       setall(e, ann.bot)
       const tv: ExplVal = Eval.eval_(prelude, e) // just to obtain tv
-      setall(tv, ann.bot) // necessary given what I've just done?
       World.newRevision()
       this.val = new Cursor(tv.v)
       this.setup()
@@ -62,8 +64,11 @@ export abstract class BwdSlice {
       this.expect()
    }
 
-   abstract setup (): void
-   abstract expect (): void
+   setup (): void {
+   }
+
+   expect (): void {      
+   }
 }
 
 export enum Profile {
@@ -88,19 +93,6 @@ export function parse (src: string): Expr {
       prependModule(loadLib("graphics"), 
       successfulParse(Parse.expr, src)))
    )
-}
-
-export function run (e: Expr): void {
-   const tv: ExplVal = Eval.eval_(prelude, e)
-   console.log(tv)
-   World.newRevision()
-   setall(tv, ann.bot)
-   World.newRevision()
-   const here: Cursor = new Cursor(tv)
-   here.to(ExplVal, "v")
-       .at(Value.Value, v => v.setα(ann.top))
-   const eʹ: Expr = Eval.uneval(tv)
-   assert(e === eʹ)
 }
 
 export let prelude: Env = createPrelude()

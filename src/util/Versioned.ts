@@ -1,7 +1,7 @@
 import { Annotated, Annotation, ann } from "./Annotated"
 import { Class, __nonNull, absurd, assert, classOf } from "./Core"
 import { Ord } from "./Ord"
-import { MemoArgs, MemoFunType, Persistent, PersistentClass, PersistentObject, make, memo } from "./Persistent"
+import { MemoArgs, Persistent, PersistentClass, PersistentObject, make } from "./Persistent"
 import { Some, Option, some, none } from "../BaseTypes" // TODO: fix upwards dependency
 
 // Versioned objects are persistent objects that have state that varies across worlds.
@@ -229,7 +229,7 @@ export abstract class AnnotatedVersioned extends Annotated {
 // Memoising an imperative function makes any side effects idempotent. Not clear yet how to "partially" memoise LVar-like 
 // functions like joinα, but setall isn't one of those.
 export function setall<T extends PersistentObject> (tgt: T, α: Annotation): T {
-   return memo<T>(setall_ as MemoFunType<T>, tgt, α)
+   return setall_(tgt, α)
 }
 
 // An annotation lattice induces a lattice for any object that potentially contains annotations. They behave with imperative 

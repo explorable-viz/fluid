@@ -3,7 +3,7 @@
 import { NonEmpty } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { Value } from "../src/ExplVal"
-import { BwdSlice, FwdSlice, initialise, load, parse, run } from "./util/Core"
+import { BwdSlice, FwdSlice, initialise, load, parse } from "./util/Core"
 
 import Trie = Expr.Trie
 
@@ -16,7 +16,6 @@ describe("example", () => {
 	describe("arithmetic", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("arithmetic"))
-			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -46,20 +45,23 @@ describe("example", () => {
 
 	describe("compose", () => {
 		it("ok", () => {
-			run(parse(load("compose")))
+			const e: Expr = parse(load("compose"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
 	describe("factorial", () => {
 		it("ok", () => {
-			run(parse(load("factorial")))
+			const e: Expr = parse(load("factorial"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
 	describe("filter", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("filter"))
-			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -91,7 +93,9 @@ describe("example", () => {
 
 	describe("foldr_sumSquares", () => {
 		it("ok", () => {
-			run(parse(load("foldr_sumSquares")))
+			const e: Expr = parse(load("foldr_sumSquares"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -142,14 +146,15 @@ describe("example", () => {
 
 	describe("lexicalScoping", () => {
 		it("ok", () => {
-			run(parse(load("lexicalScoping")))
+			const e: Expr = parse(load("lexicalScoping"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
 	describe("lookup", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("lookup"))
-			run(e)
 			const last = new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -184,7 +189,6 @@ describe("example", () => {
 	describe("map", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("map"))
-			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -205,7 +209,9 @@ describe("example", () => {
 
 	describe("mergeSort", () => {
 		it("ok", () => {
-			run(parse(load("mergeSort")))
+			const e: Expr = parse(load("mergeSort"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -246,14 +252,15 @@ describe("example", () => {
 
 	describe("pattern-match", () => {
 		it("ok", () => {
-			run(parse(load("pattern-match")))
+			const e: Expr = parse(load("pattern-match"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
 	describe("reverse", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("reverse"))
-			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
