@@ -82,6 +82,7 @@ class App {
       const view: DataView = new DataRenderer(this.dataCanvas, data).view
       this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
+         World.newRevision() // ouch
          view.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)
       })
       this.dataCanvas.height = view.height + 1 // not sure why extra pixel is essential

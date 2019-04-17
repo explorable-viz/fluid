@@ -107,6 +107,7 @@ export class DataView {
       this.lineHeight = lineHeight
       this.indentx = this.width = 0
       this.lines = []
+      this.lastMouseToken = null
    }
 
    newLine (indentx: number): void {
