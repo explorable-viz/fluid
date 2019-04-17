@@ -12,8 +12,8 @@ abstract class Token implements PersistentObject {
 
    abstract constructor_ (...v̅: MemoArgs): void
 
-   abstract onMouseEnter (): void
-   abstract onMouseExit (): void
+   abstract clearAnnotation (): void
+   abstract setAnnotation (): void
 }
 
 class AnnNumberToken extends Token {
@@ -31,12 +31,12 @@ class AnnNumberToken extends Token {
       return this.n.α ? "black" : "red"
    }
 
-   onMouseEnter (): void {
+   clearAnnotation (): void {
       console.log(`Clearing annotation on ${this.text}`)
       this.n.setα(false)
    }
 
-   onMouseExit (): void {
+   setAnnotation (): void {
       this.n.setα(true)
    }
 }
@@ -60,12 +60,12 @@ class AnnStringToken extends Token {
       return this.str.α ? "black" : "red"
    }
 
-   onMouseEnter (): void {
+   clearAnnotation (): void {
       console.log(`Clearing annotation on ${this.text}`)
       this.str.setα(false)
    }
 
-   onMouseExit (): void {
+   setAnnotation (): void {
       this.str.setα(true)
    }
 }
@@ -89,10 +89,10 @@ class StringToken extends Token {
       return "black"
    }
 
-   onMouseEnter (): void {
+   clearAnnotation (): void {
    }
 
-   onMouseExit (): void {
+   setAnnotation (): void {
    }
 }
 
@@ -148,7 +148,8 @@ export class DataView {
       return this.lines.length * this.lineHeight
    }
 
-   onMouseMove (x: number, y: number): void {
+   // Return whether any annotations changed.
+   onMouseMove (x: number, y: number): boolean {
       const line: Line = this.lines[Math.floor(y / this.lineHeight)]
       let token: Token | null = null
       for (let [xʹ, tokenʹ] of line.tokens) {
@@ -159,11 +160,14 @@ export class DataView {
       }
       if (token !== this.lastMouseToken && token !== null) {
          World.newRevision() // ouch
-         token.onMouseEnter()
+         token.clearAnnotation()
          if (this.lastMouseToken !== null) {
-            this.lastMouseToken.onMouseExit()
+            this.lastMouseToken.setAnnotation()
          }
          this.lastMouseToken = token
+         return true
+      } else {
+         return false
       }
    }
 }
