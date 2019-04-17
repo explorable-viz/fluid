@@ -17,8 +17,10 @@ class App {
    data_e: Expr                     // expression for data (value bound by let)
    data_t: Expl                     // trace for data
    data: Data                       // data reflected into meta-level
-   graphics: GraphicsElement        // chart computed by from data
+   dataView: DataView
    dataCanvas: HTMLCanvasElement
+
+   graphics: GraphicsElement        // chart computed by from data
    graphicsCanvas: HTMLCanvasElement
    graphicsPane3D: GraphicsPane3D
    
@@ -37,7 +39,6 @@ class App {
       this.graphicsPane3D.setCanvas(this.graphicsCanvas)
       this.graphicsCanvas.width = this.graphicsCanvas.height = 256
       this.loadExample()
-      this.render()
    }
    
    loadExample (): void {
@@ -46,6 +47,8 @@ class App {
       here.skipImports().to(Expr.Let, "e")
       this.data_e = as(here.o, Expr.Constr)
       this.fwdSlice()
+      this.renderData(this.data)
+      this.draw()
    }
 
    // On passes other than the first, the assignments here are redundant.
@@ -61,29 +64,27 @@ class App {
       Eval.uneval(explVal(prelude, this.data_t, reify(this.data)))
       World.newRevision()
       this.fwdSlice()
-      this.render()
+      this.draw()
    }
 
-   render () {
-      this.renderData(this.data)
-      this.renderGraphics(this.graphics)
+   draw (): void {
+      this.dataView.draw()
+      this.renderGraphics(this.graphics) // TODO: adopt same "view" pattern?
       // this.graphicsPane3D.render()
    }
 
-   // TODO: when backward slicing, will have to "re-get" the state of data to pick up the slicing information; not nice.
    renderData (data: Data): void {
       this.dataCanvas.height = 400
       this.dataCanvas.width = 400
-      const view: DataView = new DataRenderer(this.dataCanvas, data).view
+      this.dataView = new DataRenderer(this.dataCanvas, data).view
       this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
          World.newRevision() // ouch
-         view.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)
+         this.dataView.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)
          this.redo_fwdSlice()
       })
-      this.dataCanvas.height = view.height + 1 // not sure why extra pixel is essential
-      this.dataCanvas.width = view.width
-      view.draw()
+      this.dataCanvas.height = this.dataView.height + 1 // not sure why extra pixel is essential
+      this.dataCanvas.width = this.dataView.width
    }
 
    renderGraphics (g: GraphicsElement): void {
