@@ -59,6 +59,7 @@ class App {
    // Push changes from data back to source code, then forward slice.
    redo_fwdSlice (): void {
       Eval.uneval(explVal(prelude, this.data_t, reify(this.data)))
+      World.newRevision()
       this.fwdSlice()
       this.render()
    }
@@ -78,6 +79,7 @@ class App {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
          World.newRevision() // ouch
          view.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)
+         this.redo_fwdSlice()
       })
       this.dataCanvas.height = view.height + 1 // not sure why extra pixel is essential
       this.dataCanvas.width = view.width
