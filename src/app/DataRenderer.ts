@@ -11,12 +11,16 @@ abstract class Token implements PersistentObject {
    abstract fillStyle: string
 
    abstract constructor_ (...v̅: MemoArgs): void
+}
+
+abstract class AnnotatedToken extends Token {
+   abstract constructor_ (...v̅: MemoArgs): void
 
    abstract clearAnnotation (): void
    abstract setAnnotation (): void
 }
 
-class AnnNumberToken extends Token {
+class AnnNumberToken extends AnnotatedToken {
    n: AnnNumber
 
    constructor_ (n: AnnNumber) {
@@ -45,7 +49,7 @@ function annNumberToken (n: AnnNumber): AnnNumberToken {
    return make(AnnNumberToken, n)
 }
 
-class AnnStringToken extends Token {
+class AnnStringToken extends AnnotatedToken {
    str: AnnString
 
    constructor_ (str: AnnString) {
@@ -88,12 +92,6 @@ class StringToken extends Token {
    get fillStyle (): string {
       return "black"
    }
-
-   clearAnnotation (): void {
-   }
-
-   setAnnotation (): void {
-   }
 }
 
 function stringToken (str: string): StringToken {
@@ -114,7 +112,7 @@ export class DataView {
    indentx: number
    lines: Line[]
    width: number
-   lastMouseToken: Token | null 
+   lastMouseToken: AnnotatedToken | null 
 
    constructor (ctx: CanvasRenderingContext2D, lineHeight: number) {
       this.ctx = ctx
@@ -158,7 +156,7 @@ export class DataView {
          }
          token = tokenʹ
       }
-      if (token !== this.lastMouseToken && token !== null) {
+      if (token !== this.lastMouseToken && token instanceof AnnotatedToken) {
          World.newRevision() // ouch
          token.clearAnnotation()
          if (this.lastMouseToken !== null) {
