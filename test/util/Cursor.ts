@@ -7,6 +7,7 @@ import { ExplVal, Value } from "../../src/ExplVal"
 import { Expr } from "../../src/Expr"
 
 import Args = Expr.Args
+import Trie = Expr.Trie
 
 export class Cursor {
    prev: PersistentObject[] = []
@@ -127,7 +128,17 @@ export class Cursor {
                  .to(cls, prop)
    }
 
+   arg_var<T extends PersistentObject> (x: string): Cursor {
+      return this.to(Args.Next, "σ")
+                 .var_(x)
+   }
+
    end (): Cursor {
       return this.to(Args.End, "κ")
+   }
+
+   var_ (x: string): Cursor {
+      return this.assert(Trie.Var, σ => σ.x.str === x)
+                 .to(Trie.Var, "κ")      
    }
 }
