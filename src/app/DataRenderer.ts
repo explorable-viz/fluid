@@ -1,4 +1,4 @@
-import { __nonNull, as } from "../util/Core"
+import { as } from "../util/Core"
 import { MemoArgs, PersistentObject, make } from "../util/Persistent"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { AnnNumber, AnnString } from "../Graphics"
@@ -31,6 +31,7 @@ class AnnNumberToken extends Token {
    }
 
    onMouseEnter (): void {
+      console.log(`Clearing annotation on ${this.text}`)
       this.n.setα(false)
    }
 
@@ -59,6 +60,7 @@ class AnnStringToken extends Token {
    }
 
    onMouseEnter (): void {
+      console.log(`Clearing annotation on ${this.text}`)
       this.str.setα(false)
    }
 
@@ -160,7 +162,6 @@ export class DataView {
             this.lastMouseToken.onMouseExit()
          }
          this.lastMouseToken = token
-         console.log(token !== null ? token.text : "(no token)")
       }
    }
 }
@@ -168,8 +169,7 @@ export class DataView {
 export class DataRenderer {
    view: DataView
 
-   constructor (canvas: HTMLCanvasElement, data: Data) {
-      const ctx: CanvasRenderingContext2D = __nonNull(canvas.getContext("2d"))
+   constructor (ctx: CanvasRenderingContext2D, data: Data) {
       // for some reason setting font doesn't change font size but only affects spacing :-/
       ctx.textAlign = "left"
       // No easy way to access text height, but this will do for now.

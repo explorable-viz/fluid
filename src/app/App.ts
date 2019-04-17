@@ -1,4 +1,4 @@
-import { as } from "../util/Core"
+import { __nonNull, as } from "../util/Core"
 import { World } from "../util/Versioned"
 import { List} from "../BaseTypes"
 import { Eval } from "../Eval"
@@ -16,9 +16,10 @@ class App {
    e: Expr                          // body of outermost let
    data_e: Expr                     // expression for data (value bound by let)
    data_t: Expl                     // trace for data
-   data: Data                       // data reflected into meta-level
+   data: Data                       // data reflected up to meta-level
    dataView: DataView
    dataCanvas: HTMLCanvasElement
+   dataCtx: CanvasRenderingContext2D
 
    graphics: GraphicsElement        // chart computed by from data
    graphicsCanvas: HTMLCanvasElement
@@ -27,6 +28,7 @@ class App {
    constructor () {
       initialise()
       this.dataCanvas = document.createElement("canvas")
+      this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
       this.graphicsCanvas = document.createElement("canvas")
       this.graphicsPane3D = new GraphicsPane3D(600, 600)
       this.dataCanvas.style.verticalAlign = "top"
@@ -68,6 +70,7 @@ class App {
    }
 
    draw (): void {
+      this.dataCtx.clearRect(0, 0, this.dataCanvas.width, this.dataCanvas.height)
       this.dataView.draw()
       this.renderGraphics(this.graphics) // TODO: adopt same "view" pattern?
       // this.graphicsPane3D.render()
@@ -76,7 +79,7 @@ class App {
    renderData (data: Data): void {
       this.dataCanvas.height = 400
       this.dataCanvas.width = 400
-      this.dataView = new DataRenderer(this.dataCanvas, data).view
+      this.dataView = new DataRenderer(this.dataCtx, data).view
       this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
          World.newRevision() // ouch
