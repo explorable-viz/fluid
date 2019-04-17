@@ -13,7 +13,9 @@ import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer } from "./GraphicsRenderer"
 import { reflect, reify } from "./Reflect"
 
-class App2 {
+class App {
+   data: Data
+   graphics: GraphicsElement
    dataCanvas: HTMLCanvasElement
    graphicsCanvas: HTMLCanvasElement
    graphicsPane3D: GraphicsPane3D
@@ -35,6 +37,9 @@ class App2 {
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       this.graphicsPane3D.setCanvas(this.graphicsCanvas)
       this.graphicsCanvas.width = this.graphicsCanvas.height = 256
+      const [data, graphics]: [Data, GraphicsElement] = this.loadExample()
+      this.data = data
+      this.graphics = graphics
       this.render()
    }
    
@@ -65,9 +70,8 @@ class App2 {
    }
 
    render () {
-      const [data, g]: [Data, GraphicsElement] = this.loadExample()
-      this.renderData(data)
-      this.renderGraphics(g)
+      this.renderData(this.data)
+      this.renderGraphics(this.graphics)
       // this.graphicsPane3D.render()
    }
 
@@ -90,4 +94,4 @@ class App2 {
    }
 }
 
-new App2().initialise()
+new App().initialise()
