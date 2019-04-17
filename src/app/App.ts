@@ -1,12 +1,11 @@
 import { as } from "../util/Core"
 import { World } from "../util/Versioned"
 import { List} from "../BaseTypes"
-import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expl, ExplVal, Value, explVal } from "../ExplVal"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
-import { ρ, initialise, load, parse } from "../../test/util/Core"
+import { initialise, load, parse, prelude } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { Data, DataView, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D } from "./GraphicsPane3D"
@@ -14,20 +13,20 @@ import { GraphicsRenderer } from "./GraphicsRenderer"
 import { reflect, reify } from "./Reflect"
 
 class App {
-   data: Data
-   graphics: GraphicsElement
+   e: Expr                          // body of outermost let
+   data_e: Expr                     // expression for data (value bound by let)
+   data_t: Expl                     // trace for data
+   data: Data                       // data reflected into meta-level
+   graphics: GraphicsElement        // chart computed by from data
    dataCanvas: HTMLCanvasElement
    graphicsCanvas: HTMLCanvasElement
    graphicsPane3D: GraphicsPane3D
    
    constructor () {
+      initialise()
       this.dataCanvas = document.createElement("canvas")
       this.graphicsCanvas = document.createElement("canvas")
       this.graphicsPane3D = new GraphicsPane3D(600, 600)
-   }
-
-   initialise () {
-      initialise()
       this.dataCanvas.style.verticalAlign = "top"
       this.dataCanvas.style.display = "inline-block"
       this.graphicsPane3D.renderer.domElement.style.verticalAlign = "top"
@@ -37,36 +36,31 @@ class App {
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       this.graphicsPane3D.setCanvas(this.graphicsCanvas)
       this.graphicsCanvas.width = this.graphicsCanvas.height = 256
-      const [data, graphics]: [Data, GraphicsElement] = this.loadExample()
-      this.data = data
-      this.graphics = graphics
+      this.loadExample()
       this.render()
    }
    
-   loadExample (): [Data, GraphicsElement] {
-      const e: Expr = parse(load("bar-chart"))
-      World.newRevision()
-      let here: Cursor = new Cursor(e)
-      here
-         .skipImports()
-         .to(Expr.Let, "e")
-         .constrArg("Cons", 0)
-         .constrArg("Pair", 1)
-         .constrArg("Cons", 0)
-         .constrArg("Pair", 1)
-         .constrArg("Cons", 0)
-         .constrArg("Pair", 1).notNeed() // 2015 > China > Bio > [here]
-      here = new Cursor(e)
-         .skipImports()
-         .to(Expr.Let, "e")
-      const tv: ExplVal = Eval.eval_(ρ, as(here.o, Expr.Constr)),
-            data: Value.Constr = as(tv.v, Value.Constr), // eval just to get a handle on it
-            v: Value = Eval.eval_(ρ, e).v
-      return [as(reflect(data), List), as(reflect(v), GraphicsElement)]
+   loadExample (): void {
+      this.e = parse(load("bar-chart"))
+      let here: Cursor = new Cursor(this.e)
+      here.skipImports().to(Expr.Let, "e")
+      this.data_e = as(here.o, Expr.Constr)
+      this.fwdSlice()
    }
 
-   wibble (ρ: Env, t: Expl, data: Data): void {
-      Eval.uneval(explVal(ρ, t, reify(data))) // push changes from data back to source code
+   // On passes other than the first, the assignments here are redundant.
+   fwdSlice (): void {
+      const { t, v: data }: ExplVal = Eval.eval_(prelude, this.data_e)
+      this.data_t = t
+      this.data = as(reflect(as(data, Value.Constr)), List)
+      this.graphics = as(reflect(Eval.eval_(prelude, this.e).v), GraphicsElement)
+   }
+
+   // Push changes from data back to source code, then forward slice.
+   redo_fwdSlice (): void {
+      Eval.uneval(explVal(prelude, this.data_t, reify(this.data)))
+      this.fwdSlice()
+      this.render()
    }
 
    render () {
@@ -95,4 +89,4 @@ class App {
    }
 }
 
-new App().initialise()
+new App()

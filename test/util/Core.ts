@@ -10,7 +10,7 @@ import { Expr, Kont } from "../../src/Expr"
 import { unionWith } from "../../src/FiniteMap"
 import { instantiate } from "../../src/Instantiate"
 import { Parse } from "../../src/Parse"
-import { prelude } from "../../src/Primitive"
+import { createPrelude } from "../../src/Primitive"
 import { Cursor } from "./Cursor"
 
 import Args = Expr.Args
@@ -33,7 +33,7 @@ export abstract class FwdSlice {
       setall(e, ann.top) // parser should no longer need to do this
       this.expr = new Cursor(e)
       this.setup()
-      this.val = new Cursor(Eval.eval_(ρ, e).v)
+      this.val = new Cursor(Eval.eval_(prelude, e).v)
       this.expect()
    }
 
@@ -53,7 +53,7 @@ export abstract class BwdSlice {
    constructor (e: Expr) {
       World.newRevision()
       setall(e, ann.bot)
-      const tv: ExplVal = Eval.eval_(ρ, e) // just to obtain tv
+      const tv: ExplVal = Eval.eval_(prelude, e) // just to obtain tv
       setall(tv, ann.bot) // necessary given what I've just done?
       World.newRevision()
       this.val = new Cursor(tv.v)
@@ -83,7 +83,7 @@ export function prependModule (src: string, e: Expr): Expr.LetRec {
 }
 
 export function parse (src: string): Expr {
-   return instantiate(ρ, 
+   return instantiate(prelude, 
       prependModule(loadLib("prelude"), 
       prependModule(loadLib("graphics"), 
       successfulParse(Parse.expr, src)))
@@ -91,7 +91,7 @@ export function parse (src: string): Expr {
 }
 
 export function run (e: Expr): void {
-   const tv: ExplVal = Eval.eval_(ρ, e)
+   const tv: ExplVal = Eval.eval_(prelude, e)
    console.log(tv)
    World.newRevision()
    setall(tv, ann.bot)
@@ -103,7 +103,7 @@ export function run (e: Expr): void {
    assert(e === eʹ)
 }
 
-export let ρ: Env = prelude()
+export let prelude: Env = createPrelude()
 
 // An asychronously loading test file; when loading completes text will be non-null.
 export class TestFile {
@@ -127,9 +127,9 @@ export function loadTestFile (folder: string, file: string): string {
 }
 
 export function load (file: string): string {
-	return __nonNull(loadTestFile("example", file))
+	return loadTestFile("example", file)
 }
 
 export function loadLib (file: string): string {
-	return __nonNull(loadTestFile("example/lib", file))
+	return loadTestFile("example/lib", file)
 }
