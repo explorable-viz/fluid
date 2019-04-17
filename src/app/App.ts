@@ -1,5 +1,6 @@
+import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
-import { World } from "../util/Versioned"
+import { World, setall } from "../util/Versioned"
 import { List} from "../BaseTypes"
 import { Eval } from "../Eval"
 import { Expl, ExplVal, Value, explVal } from "../ExplVal"
@@ -62,6 +63,8 @@ class App {
 
    // Push changes from data back to source code, then forward slice.
    redo_fwdSlice (): void {
+      setall(this.data_e, ann.bot)
+      World.newRevision()
       Eval.uneval(explVal(prelude, this.data_t, reify(this.data)))
       World.newRevision()
       this.fwdSlice()
