@@ -1,12 +1,13 @@
 import { Annotated, Annotation, ann } from "./util/Annotated"
 import { as } from "./util/Core"
-import { Persistent, PersistentObject, make } from "./util/Persistent"
+import { Persistent, make } from "./util/Persistent"
+import { AnnotatedVersioned } from "./util/Versioned"
 import { List } from "./BaseTypes"
 
 // Reflected versions of primitive constants; should be able to switch to a compiler and use these directly.
 // Can't extend built-in classes because they require initialisation at construction-time.
 
-export class AnnNumber extends Annotated implements PersistentObject {
+export class AnnNumber extends AnnotatedVersioned {
    n: number
 
    constructor_ (α: Annotation, n: number) {
@@ -15,7 +16,7 @@ export class AnnNumber extends Annotated implements PersistentObject {
    }
 }
 
-export class AnnString extends Annotated implements PersistentObject {
+export class AnnString extends AnnotatedVersioned {
    str: string
 
    constructor_ (α: Annotation, str: string) {

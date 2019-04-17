@@ -8,6 +8,9 @@ export type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approx
 abstract class Token {
    abstract text: string
    abstract fillStyle: string
+
+   abstract onMouseEnter (): void
+   abstract onMouseExit (): void
 }
 
 class AnnNumberToken extends Token {
@@ -24,6 +27,14 @@ class AnnNumberToken extends Token {
 
    get fillStyle (): string {
       return this.n.α ? "black" : "red"
+   }
+
+   onMouseEnter (): void {
+      this.n.setα(false)
+   }
+
+   onMouseExit (): void {
+      this.n.setα(true)
    }
 }
 
@@ -42,6 +53,14 @@ class AnnStringToken extends Token {
    get fillStyle (): string {
       return this.str.α ? "black" : "red"
    }
+
+   onMouseEnter (): void {
+      this.str.setα(false)
+   }
+
+   onMouseExit (): void {
+      this.str.setα(true)
+   }
 }
 
 class StringToken extends Token {
@@ -58,6 +77,12 @@ class StringToken extends Token {
 
    get fillStyle (): string {
       return "black"
+   }
+
+   onMouseEnter (): void {
+   }
+
+   onMouseExit (): void {
    }
 }
 
@@ -118,6 +143,12 @@ export class DataView {
          token = tokenʹ
       }
       if (token !== this.lastMouseToken) {
+         if (token !== null) {
+            token.onMouseEnter()
+         }
+         if (this.lastMouseToken !== null) {
+            this.lastMouseToken.onMouseExit()
+         }
          this.lastMouseToken = token
          console.log(token !== null ? token.text : "(no token)")
       }
@@ -134,10 +165,6 @@ export class DataRenderer {
       // No easy way to access text height, but this will do for now.
       // https://stackoverflow.com/questions/1134586
       this.view = new DataView(ctx, ctx.measureText("M").width * 1.4)
-      canvas.addEventListener("mousemove", (e: MouseEvent): void => {
-         const rect: ClientRect = canvas.getBoundingClientRect()
-         this.view.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)
-      })
       this.renderData(0, data)
    }
 

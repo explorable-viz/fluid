@@ -235,8 +235,7 @@ export function setall_<T extends PersistentObject> (tgt: T, α: Annotation): T 
    if (tgt instanceof AnnotatedVersioned) {
       tgt.setα(α)
    }
-   fields(tgt).forEach((k: string): void => {
-      const v: Persistent = (tgt as Object as ObjectState)[k] // TypeScript gibberish
+   fieldVals(tgt).forEach((v: Persistent): void => {
       if (v instanceof Object) { // annoying that PersistentObject isn't a class
          setall(v as PersistentObject, α) 
       }

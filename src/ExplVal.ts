@@ -15,7 +15,7 @@ export type Expr = Expr.Expr
 export type Value = Value.Value
 
 export namespace Value {
-   export abstract class Value extends AnnotatedVersioned implements PersistentObject {
+   export abstract class Value extends AnnotatedVersioned {
       __tag: "Value.Value"
       abstract constructor_ (...args: Persistent[]): void
    }
@@ -106,7 +106,7 @@ export namespace Value {
 
 export class ExplVal implements PersistentObject, Kont<ExplVal> {
    __tag: "ExplVal"
-   ρ: Env // needed for uneval
+   ρ: Env // original input environment; needed for uneval
    t: Expl
    v: Value
 
@@ -203,14 +203,14 @@ export namespace Match {
    export abstract class Match<K> implements PersistentObject {
       __tag: "Match.Match"
       abstract constructor_ (...args: Persistent[]): void
-      ρ: Env 
+      ρ: Env
    }
 
    // Exactly one branch will be live (i.e. an instanceof Match.Args rather than Trie.Args). Currently caches
    // the value originally matched, so a slice of it can be reconstructed at the right location; the alternative
    // would be to have match ids determined by the input value and trie (but that requires versioned tries).
    export class Constr<K extends Kont<K>> extends Match<K> {
-      cases: FiniteMap<string, Expr.Args<K> | Args<K>> 
+      cases: FiniteMap<string, Expr.Args<K> | Args<K>>
       v: Value.Constr
 
       constructor_ (ρ: Env, cases: FiniteMap<string, Expr.Args<K> | Args<K>>, v: Value.Constr) {
