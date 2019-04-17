@@ -1,5 +1,6 @@
 import { as } from "../util/Core"
 import { MemoArgs, PersistentObject, make } from "../util/Persistent"
+import { World } from "../util/Versioned"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { AnnNumber, AnnString } from "../Graphics"
 
@@ -157,6 +158,7 @@ export class DataView {
          token = tokenʹ
       }
       if (token !== this.lastMouseToken && token !== null) {
+         World.newRevision() // ouch
          token.onMouseEnter()
          if (this.lastMouseToken !== null) {
             this.lastMouseToken.onMouseExit()

@@ -194,7 +194,10 @@ export class World implements PersistentObject, Ord<World> {
       return make(World, parent)
    }
 
+   static revisions: number = 0
+
    static newRevision (): World {
+      console.log(`At revision ${World.revisions++}`)
       return __w = World.make(some(__w))
    }
 }

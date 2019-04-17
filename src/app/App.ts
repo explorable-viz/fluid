@@ -20,7 +20,6 @@ class App {
    dataView: DataView
    dataCanvas: HTMLCanvasElement
    dataCtx: CanvasRenderingContext2D
-
    graphics: GraphicsElement        // chart computed by from data
    graphicsCanvas: HTMLCanvasElement
    graphicsPane3D: GraphicsPane3D
@@ -82,7 +81,6 @@ class App {
       this.dataView = new DataRenderer(this.dataCtx, data).view
       this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
-         World.newRevision() // ouch
          this.dataView.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)
          this.redo_fwdSlice()
       })
