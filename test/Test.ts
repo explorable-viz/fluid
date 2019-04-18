@@ -3,7 +3,7 @@
 import { NonEmpty } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { Value } from "../src/ExplVal"
-import { BwdSlice, FwdSlice, initialise, load, parse, run } from "./util/Core"
+import { BwdSlice, FwdSlice, initialise, load, parse } from "./util/Core"
 
 import Trie = Expr.Trie
 
@@ -16,7 +16,6 @@ describe("example", () => {
 	describe("arithmetic", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("arithmetic"))
-			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -46,32 +45,34 @@ describe("example", () => {
 
 	describe("compose", () => {
 		it("ok", () => {
-			run(parse(load("compose")))
+			const e: Expr = parse(load("compose"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
 	describe("factorial", () => {
 		it("ok", () => {
-			run(parse(load("factorial")))
+			const e: Expr = parse(load("factorial"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
 	describe("filter", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("filter"))
-			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
 						.toRecDef("filter")
 						.to(Expr.RecDef, "σ")
-						.to(Trie.Var, "κ")
+						.var_("p")
 						.to(Expr.Fun, "σ")
 						.to(Trie.Constr, "cases")
 						.to(NonEmpty, "left")
 						.nodeValue()
-						.arg(Trie.Var, "κ")
-						.arg(Trie.Var, "κ")
+						.arg_var("x").arg_var("xs")
 						.end()
 						.to(Expr.MatchAs, "σ")
 						.to(Trie.Constr, "cases")
@@ -91,7 +92,9 @@ describe("example", () => {
 
 	describe("foldr_sumSquares", () => {
 		it("ok", () => {
-			run(parse(load("foldr_sumSquares")))
+			const e: Expr = parse(load("foldr_sumSquares"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -142,20 +145,21 @@ describe("example", () => {
 
 	describe("lexicalScoping", () => {
 		it("ok", () => {
-			run(parse(load("lexicalScoping")))
+			const e: Expr = parse(load("lexicalScoping"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
 	describe("lookup", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("lookup"))
-			run(e)
 			const last = new (class extends FwdSlice {
 				setup (): void {
 					this.expr
 						.skipImports()
 						.to(Expr.Let, "σ")
-						.to(Trie.Var, "κ")
+						.var_("compare")
 						.to(Expr.LetRec, "e")
 						.to(Expr.App, "arg")
 						.push()
@@ -184,13 +188,12 @@ describe("example", () => {
 	describe("map", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("map"))
-			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
 						.skipImports()
 						.to(Expr.Let, "σ")
- 						.to(Trie.Var, "κ")
+ 						.var_("incr")
 					 	.to(Expr.App, "arg")
 						.constrArg("Cons", 0).notNeed()
 				  }
@@ -205,7 +208,9 @@ describe("example", () => {
 
 	describe("mergeSort", () => {
 		it("ok", () => {
-			run(parse(load("mergeSort")))
+			const e: Expr = parse(load("mergeSort"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -222,7 +227,7 @@ describe("example", () => {
 						.skipImports()
 						.push().to(Expr.Let, "e").notNeeded().pop()
 						.to(Expr.Let, "σ")
-						.to(Trie.Var, "κ")
+						.var_("x")
 						.to(Expr.Let, "e").notNeeded()
 				}
 			})(e)
@@ -237,7 +242,7 @@ describe("example", () => {
 						.skipImports()
 						.push().to(Expr.Let, "e").needed().pop()
 						.to(Expr.Let, "σ")
-						.to(Trie.Var, "κ")
+						.var_("x")
 						.to(Expr.Let, "e").needed()
 				}
 			})(e)
@@ -246,14 +251,15 @@ describe("example", () => {
 
 	describe("pattern-match", () => {
 		it("ok", () => {
-			run(parse(load("pattern-match")))
+			const e: Expr = parse(load("pattern-match"))
+			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
 	describe("reverse", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("reverse"))
-			run(e)
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -286,7 +292,7 @@ describe("example", () => {
 						.push()
 							.toRecDef("zipW").needed()
 							.to(Expr.RecDef, "σ")
-							.to(Trie.Var, "κ").needed()
+							.var_("op").needed()
 							.pop()
 						.skipImports()
 						.push()
@@ -307,24 +313,22 @@ describe("example", () => {
 						.push()
 							.toRecDef("zipW")
 							.to(Expr.RecDef, "σ")
-							.to(Trie.Var, "κ")
+							.var_("op")
 							.to(Expr.Fun, "σ")
 							.to(Trie.Constr, "cases")
 							.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
 							.to(NonEmpty, "left")
 							.nodeValue()			 
-							.arg(Trie.Var, "κ")
-							.arg(Trie.Var, "κ")
-							.end().needed()
+							.arg_var("x").arg_var("xs")
+							.end().notNeeded()
 							.to(Expr.Fun, "σ")
 							.to(Trie.Constr, "cases")
 							.to(NonEmpty, "left")
 							.nodeValue()			 
-							.arg(Trie.Var, "κ")
-							.arg(Trie.Var, "κ")
-							.end().needed()
-							.constrArg("Cons", 0).needed()
-							.to(Expr.App, "arg").needed() // application of op
+							.arg_var("y").arg_var("ys")
+							.end().notNeeded()				 // cons constructor
+							.constrArg("Cons", 0).needed() // application of op
+							.to(Expr.App, "arg").needed()  // pair constructor
 							.push().constrArg("Pair", 0).notNeeded().pop()
 							.push().constrArg("Pair", 1).notNeeded().pop()
 							.pop()
@@ -335,8 +339,8 @@ describe("example", () => {
 						.to(Expr.Fun, "σ")
 						.to(Trie.Constr, "cases")
 						.nodeValue()
-						.arg(Trie.Var, "κ")
-						.arg(Trie.Var, "κ")
+						.arg_var("x")
+						.arg_var("y")
 						.end().needed()
 				}
 			})(e)

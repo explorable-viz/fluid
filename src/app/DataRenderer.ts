@@ -1,20 +1,29 @@
-import { __nonNull, as } from "../util/Core"
-import { PersistentObject } from "../util/Persistent"
+import { as } from "../util/Core"
+import { MemoArgs, PersistentObject, make } from "../util/Persistent"
+import { World } from "../util/Versioned"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { AnnNumber, AnnString } from "../Graphics"
 
 export type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
 
-abstract class Token {
+abstract class Token implements PersistentObject {
    abstract text: string
    abstract fillStyle: string
+
+   abstract constructor_ (...v̅: MemoArgs): void
 }
 
-class AnnNumberToken extends Token {
+abstract class AnnotatedToken extends Token {
+   abstract constructor_ (...v̅: MemoArgs): void
+
+   abstract clearAnnotation (): void
+   abstract setAnnotation (): void
+}
+
+class AnnNumberToken extends AnnotatedToken {
    n: AnnNumber
 
-   constructor (n: AnnNumber) {
-      super()
+   constructor_ (n: AnnNumber) {
       this.n = n
    }
 
@@ -25,13 +34,25 @@ class AnnNumberToken extends Token {
    get fillStyle (): string {
       return this.n.α ? "black" : "red"
    }
+
+   clearAnnotation (): void {
+      console.log(`Clearing annotation on ${this.text}`)
+      this.n.setα(false)
+   }
+
+   setAnnotation (): void {
+      this.n.setα(true)
+   }
 }
 
-class AnnStringToken extends Token {
+function annNumberToken (n: AnnNumber): AnnNumberToken {
+   return make(AnnNumberToken, n)
+}
+
+class AnnStringToken extends AnnotatedToken {
    str: AnnString
 
-   constructor (str: AnnString) {
-      super()
+   constructor_ (str: AnnString) {
       this.str = str
    }
 
@@ -42,13 +63,25 @@ class AnnStringToken extends Token {
    get fillStyle (): string {
       return this.str.α ? "black" : "red"
    }
+
+   clearAnnotation (): void {
+      console.log(`Clearing annotation on ${this.text}`)
+      this.str.setα(false)
+   }
+
+   setAnnotation (): void {
+      this.str.setα(true)
+   }
+}
+
+function annStringToken (str: AnnString): AnnStringToken {
+   return make(AnnStringToken, str)
 }
 
 class StringToken extends Token {
    str: string
 
-   constructor (str: string) {
-      super()
+   constructor_ (str: string) {
       this.str = str
    }
 
@@ -59,6 +92,10 @@ class StringToken extends Token {
    get fillStyle (): string {
       return "black"
    }
+}
+
+function stringToken (str: string): StringToken {
+   return make(StringToken, str)
 }
 
 class Line {
@@ -75,13 +112,14 @@ export class DataView {
    indentx: number
    lines: Line[]
    width: number
-   lastMouseToken: Token | null 
+   lastMouseToken: AnnotatedToken | null 
 
    constructor (ctx: CanvasRenderingContext2D, lineHeight: number) {
       this.ctx = ctx
       this.lineHeight = lineHeight
       this.indentx = this.width = 0
       this.lines = []
+      this.lastMouseToken = null
    }
 
    newLine (indentx: number): void {
@@ -108,7 +146,8 @@ export class DataView {
       return this.lines.length * this.lineHeight
    }
 
-   onMouseMove (x: number, y: number): void {
+   // Return whether any annotations changed.
+   onMouseMove (x: number, y: number): boolean {
       const line: Line = this.lines[Math.floor(y / this.lineHeight)]
       let token: Token | null = null
       for (let [xʹ, tokenʹ] of line.tokens) {
@@ -117,9 +156,16 @@ export class DataView {
          }
          token = tokenʹ
       }
-      if (token !== this.lastMouseToken) {
+      if (token !== this.lastMouseToken && token instanceof AnnotatedToken) {
+         World.newRevision() // ouch
+         token.clearAnnotation()
+         if (this.lastMouseToken !== null) {
+            this.lastMouseToken.setAnnotation()
+         }
          this.lastMouseToken = token
-         console.log(token !== null ? token.text : "(no token)")
+         return true
+      } else {
+         return false
       }
    }
 }
@@ -127,17 +173,12 @@ export class DataView {
 export class DataRenderer {
    view: DataView
 
-   constructor (canvas: HTMLCanvasElement, data: Data) {
-      const ctx: CanvasRenderingContext2D = __nonNull(canvas.getContext("2d"))
+   constructor (ctx: CanvasRenderingContext2D, data: Data) {
       // for some reason setting font doesn't change font size but only affects spacing :-/
       ctx.textAlign = "left"
       // No easy way to access text height, but this will do for now.
       // https://stackoverflow.com/questions/1134586
       this.view = new DataView(ctx, ctx.measureText("M").width * 1.4)
-      canvas.addEventListener("mousemove", (e: MouseEvent): void => {
-         const rect: ClientRect = canvas.getBoundingClientRect()
-         this.view.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)
-      })
       this.renderData(0, data)
    }
 
@@ -146,19 +187,19 @@ export class DataRenderer {
          this.view.newLine(indentx)
          const { fst: key, snd: val }: Pair<AnnNumber | AnnString, PersistentObject> = as(data.head, Pair)
          if (key instanceof AnnNumber) {
-            this.view.push(new AnnNumberToken(key))
+            this.view.push(annNumberToken(key))
          } else {
-            this.view.push(new AnnStringToken(key))
+            this.view.push(annStringToken(key))
          }
-         this.view.push(new StringToken(": "))
+         this.view.push(stringToken(": "))
          if (val instanceof List) {
             this.renderData(this.view.indentx, val as Data)
          } else 
          if (val instanceof AnnNumber || val instanceof AnnString) {
             if (val instanceof AnnNumber) {
-               this.view.push(new AnnNumberToken(val))
+               this.view.push(annNumberToken(val))
             } else {
-               this.view.push(new AnnStringToken(val))
+               this.view.push(annStringToken(val))
             }
          }
          this.renderData(indentx, data.tail)

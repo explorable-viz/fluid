@@ -6,15 +6,17 @@ export interface PersistentObject {
    constructor_ (...v̅: MemoArgs): void
 }
 
-// Functions are persistent to support primitives. We use the object counterparts of each primitive type 
-// so that we can store annotations on (reflected) values.
-export type Persistent = PersistentObject | Boolean | String | Number | Function
+// Functions are persistent to support primitives.
+export type Persistent = PersistentObject | boolean | string | number | Function
 
 // Curried map from constructors and arguments to cached values; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
 type MemoTable = Map<Persistent, Persistent | Map<Persistent, Object>> // approximate recursive type
-const __memoTable: MemoTable = new Map
+
+// Hash-consed constructors are invariant across worlds, whereas functions are not.
+const __ctrMemo: MemoTable = new Map
+export const __funMemo: MemoTable = new Map
 
 function lookupArg<T extends Persistent> (f: Memoisable<T>, m: MemoTable, v̅: MemoArgs, n: number): Persistent | Map<Persistent, Object> {
    // for memoisation purposes, treat f's key as argument -1
@@ -80,8 +82,8 @@ class MemoFun<T extends Persistent> implements Memoisable<T> {
    }
 }
 
-export function memoCall<T extends Persistent> (f: Memoisable<T>, v̅: MemoArgs): T {
-   let v: Persistent | Map<Persistent, Object> = lookupArg(f, __memoTable, v̅, -1)
+export function memoCall<T extends Persistent> (memo: MemoTable, f: Memoisable<T>, v̅: MemoArgs): T {
+   let v: Persistent | Map<Persistent, Object> = lookupArg(f, memo, v̅, -1)
    for (let n: number = 0; n < v̅.length; ++n) {
       // since there are more arguments, the last v was a (nested) map
       v = lookupArg(f, v as MemoTable, v̅, n)
@@ -91,10 +93,10 @@ export function memoCall<T extends Persistent> (f: Memoisable<T>, v̅: MemoArgs)
 
 // Hash-consing (interning) object construction.
 export function make<T extends PersistentObject> (ctr: PersistentClass<T>, ...v̅: MemoArgs): T {
-   return memoCall(new MemoCtr(ctr), v̅)
+   return memoCall(__ctrMemo, new MemoCtr(ctr), v̅)
 }
 
 // Memoisation.
 export function memo<T extends Persistent> (f: MemoFunType<T>, ...v̅: MemoArgs): T {
-   return memoCall(new MemoFun(f), v̅)
+   return memoCall(__funMemo, new MemoFun(f), v̅)
 }

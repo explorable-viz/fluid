@@ -170,7 +170,7 @@ export function concat (x: ConstStr, y: ConstStr): (k: ValId, α: Annotation) =>
 }
 
 // Only primitive with identifiers as names are first-class, and therefore appear in the prelude.
-export function prelude (): Env {
+export function createPrelude (): Env {
    let ρ: Env = Env.empty()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
       const e: Expr = Expr.primOp(ν(), ann.top, op),

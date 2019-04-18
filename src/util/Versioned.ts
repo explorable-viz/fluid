@@ -1,7 +1,7 @@
 import { Annotated, Annotation, ann } from "./Annotated"
 import { Class, __nonNull, absurd, assert, classOf } from "./Core"
 import { Ord } from "./Ord"
-import { MemoArgs, MemoFunType, Persistent, PersistentClass, PersistentObject, make, memo } from "./Persistent"
+import { MemoArgs, MemoFunType, Persistent, PersistentClass, PersistentObject, __funMemo, make, memo } from "./Persistent"
 import { Some, Option, some, none } from "../BaseTypes" // TODO: fix upwards dependency
 
 // Versioned objects are persistent objects that have state that varies across worlds.
@@ -194,7 +194,11 @@ export class World implements PersistentObject, Ord<World> {
       return make(World, parent)
    }
 
+   static revisions: number = 0
+
    static newRevision (): World {
+      console.log(`At revision ${World.revisions++}`)
+      __funMemo.clear()
       return __w = World.make(some(__w))
    }
 }
@@ -235,8 +239,7 @@ export function setall_<T extends PersistentObject> (tgt: T, α: Annotation): T 
    if (tgt instanceof AnnotatedVersioned) {
       tgt.setα(α)
    }
-   fields(tgt).forEach((k: string): void => {
-      const v: Persistent = (tgt as Object as ObjectState)[k] // TypeScript gibberish
+   fieldVals(tgt).forEach((v: Persistent): void => {
       if (v instanceof Object) { // annoying that PersistentObject isn't a class
          setall(v as PersistentObject, α) 
       }

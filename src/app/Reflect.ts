@@ -1,7 +1,7 @@
 import { Annotated } from "../util/Annotated"
-import { Class, __check, __nonNull, absurd, as, assert, funName } from "../util/Core"
+import { Class, __check, __nonNull, absurd, as, assert, className, classOf, funName } from "../util/Core"
 import { Persistent, PersistentObject, make } from "../util/Persistent"
-import { at } from "../util/Versioned"
+import { asVersioned, at, fieldVals } from "../util/Versioned"
 import { Cons, Pair, List, Nil } from "../BaseTypes"
 import { arity } from "../DataType"
 import { ExplVal, Value } from "../ExplVal"
@@ -61,4 +61,23 @@ export function reflect (v: Value): Persistent {
    } else {
       return absurd()
    }
+}
+
+export function reify (v: Persistent): Value {
+   const vʹ: Value = as(asVersioned(v).__id, Reflect).v
+   if (v instanceof AnnNumber) {
+      vʹ.setα(v.α)
+   } else
+   if (v instanceof AnnString) {
+      vʹ.setα(v.α)
+   } else {
+      if (v instanceof Annotated) {
+         assert(classFor.get(className(v)) === classOf(v))
+         fieldVals(v).slice(1).forEach(reify) // slice to skip initial annotations field
+         vʹ.setα(v.α)
+      } else {
+         return absurd()
+      }
+   }
+   return vʹ
 }

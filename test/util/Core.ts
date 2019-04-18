@@ -5,12 +5,12 @@ import { successfulParse } from "../../src/util/parse/Core"
 import { initDataTypes } from "../../src/DataType"
 import { Env } from "../../src/Env"
 import { Eval } from "../../src/Eval"
-import { ExplVal, Value } from "../../src/ExplVal"
+import { ExplVal } from "../../src/ExplVal"
 import { Expr, Kont } from "../../src/Expr"
 import { unionWith } from "../../src/FiniteMap"
 import { instantiate } from "../../src/Instantiate"
 import { Parse } from "../../src/Parse"
-import { prelude } from "../../src/Primitive"
+import { createPrelude } from "../../src/Primitive"
 import { Cursor } from "./Cursor"
 
 import Args = Expr.Args
@@ -24,7 +24,7 @@ export function initialise (): void {
    initDataTypes()
 }
 
-export abstract class FwdSlice {
+export class FwdSlice {
    expr: Cursor
    val: Cursor
 
@@ -33,12 +33,15 @@ export abstract class FwdSlice {
       setall(e, ann.top) // parser should no longer need to do this
       this.expr = new Cursor(e)
       this.setup()
-      this.val = new Cursor(Eval.eval_(ρ, e).v)
+      this.val = new Cursor(Eval.eval_(prelude, e).v)
       this.expect()
    }
 
-   abstract setup (): void
-   abstract expect (): void
+   setup (): void {      
+   }
+
+   expect (): void {
+   }
 
    get e (): Expr {
       return this.expr.o as Expr
@@ -46,15 +49,15 @@ export abstract class FwdSlice {
 }
 
 // Precondition: must be safe to reexecute e in the current revision, to obtain a trace.
-export abstract class BwdSlice {
+export class BwdSlice {
    val: Cursor
    expr: Cursor
 
    constructor (e: Expr) {
       World.newRevision()
       setall(e, ann.bot)
-      const tv: ExplVal = Eval.eval_(ρ, e) // just to obtain tv
-      setall(tv, ann.bot) // necessary given what I've just done?
+      const tv: ExplVal = Eval.eval_(prelude, e) // just to obtain tv
+      setall(tv, ann.bot) // TODO: contrive a test that reveals why this matters :-/
       World.newRevision()
       this.val = new Cursor(tv.v)
       this.setup()
@@ -62,8 +65,11 @@ export abstract class BwdSlice {
       this.expect()
    }
 
-   abstract setup (): void
-   abstract expect (): void
+   setup (): void {
+   }
+
+   expect (): void {      
+   }
 }
 
 export enum Profile {
@@ -83,27 +89,14 @@ export function prependModule (src: string, e: Expr): Expr.LetRec {
 }
 
 export function parse (src: string): Expr {
-   return instantiate(ρ, 
+   return instantiate(prelude, 
       prependModule(loadLib("prelude"), 
       prependModule(loadLib("graphics"), 
       successfulParse(Parse.expr, src)))
    )
 }
 
-export function run (e: Expr): void {
-   const tv: ExplVal = Eval.eval_(ρ, e)
-   console.log(tv)
-   World.newRevision()
-   setall(tv, ann.bot)
-   World.newRevision()
-   const here: Cursor = new Cursor(tv)
-   here.to(ExplVal, "v")
-       .at(Value.Value, v => v.setα(ann.top))
-   const eʹ: Expr = Eval.uneval(tv)
-   assert(e === eʹ)
-}
-
-export let ρ: Env = prelude()
+export let prelude: Env = createPrelude()
 
 // An asychronously loading test file; when loading completes text will be non-null.
 export class TestFile {
@@ -127,9 +120,9 @@ export function loadTestFile (folder: string, file: string): string {
 }
 
 export function load (file: string): string {
-	return __nonNull(loadTestFile("example", file))
+	return loadTestFile("example", file)
 }
 
 export function loadLib (file: string): string {
-	return __nonNull(loadTestFile("example/lib", file))
+	return loadTestFile("example/lib", file)
 }

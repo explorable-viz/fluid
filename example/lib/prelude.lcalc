@@ -122,6 +122,6 @@ fun zipW op {
    [] ys → [];
    [x, ...xs] {
       [] → [];
-      [y, ...ys] → [op(x, y), ...zipW op xs ys]
+      [y, ...ys] → [op (x, y), ...zipW op xs ys]
    }
 }
