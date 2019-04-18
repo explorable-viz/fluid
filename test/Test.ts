@@ -320,15 +320,15 @@ describe("example", () => {
 							.to(NonEmpty, "left")
 							.nodeValue()			 
 							.arg_var("x").arg_var("xs")
-							.end()//.needed()
+							.end().notNeeded()
 							.to(Expr.Fun, "σ")
 							.to(Trie.Constr, "cases")
 							.to(NonEmpty, "left")
 							.nodeValue()			 
 							.arg_var("y").arg_var("ys")
-							.end()//.needed()
-							.constrArg("Cons", 0).needed()
-							.to(Expr.App, "arg").needed() // application of op
+							.end().notNeeded()				 // cons constructor
+							.constrArg("Cons", 0).needed() // application of op
+							.to(Expr.App, "arg").needed()  // pair constructor
 							.push().constrArg("Pair", 0).notNeeded().pop()
 							.push().constrArg("Pair", 1).notNeeded().pop()
 							.pop()

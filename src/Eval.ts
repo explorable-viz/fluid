@@ -169,7 +169,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
    }
 }
 
-// Output environment is written to.
+// Avoid excessive joins via a merging implementation; assumes no annotations on expression or intermediate values.
 export function uneval ({ρ, t, v}: ExplVal): Expr {
    const k: ExplId = asVersioned(t).__id as ExplId,
          e: Expr = k.e as Expr

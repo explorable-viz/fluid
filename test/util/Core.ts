@@ -57,6 +57,7 @@ export class BwdSlice {
       World.newRevision()
       setall(e, ann.bot)
       const tv: ExplVal = Eval.eval_(prelude, e) // just to obtain tv
+      setall(tv, ann.bot) // TODO: contrive a test that reveals why this matters :-/
       World.newRevision()
       this.val = new Cursor(tv.v)
       this.setup()
