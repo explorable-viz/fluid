@@ -29,7 +29,7 @@ fun invert {
 
 // List(Point) → LinearTransform → Graphic
 fun linePlot t ps →
-   let points = map (fun Point(x, y) → translate x y (Transform(invert t, plotPoint 0.5))) ps in 
+   let points = map (fun Point(x, y) → translate x y (Transform(invert t, plotPoint 2.5))) ps in 
    Transform(t, Graphic([PathStroke(ps), ...points]));
 
 // List(Pair(number, number)) → Pair(number, number)
