@@ -39,7 +39,7 @@ class App {
       document.body.appendChild(this.graphicsCanvas)
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       this.graphicsPane3D.setCanvas(this.graphicsCanvas)
-      this.graphicsCanvas.width = this.graphicsCanvas.height = 256
+      this.graphicsCanvas.width = this.graphicsCanvas.height = 400
       this.loadExample()
    }
    
