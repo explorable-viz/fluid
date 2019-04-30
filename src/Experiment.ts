@@ -50,20 +50,20 @@ function constructʹ (tgt: Value, state: Stateʹ): Value {
 }
 
 abstract class List<T> extends Explainable<List<T>> {
-   abstract classify (σ: ListTrie<T>): void
+   abstract classify<U> (σ: ListTrie<T, U>): void
 }
 
-interface Trie {
+interface Trie<U> {
 }
 
-interface ListTrie<T> extends Trie {
-   isNil (xs: Nil<T>): void
-   isCons (xs: Cons<T>): void
+interface ListTrie<T, U> extends Trie<U> {
+   isNil (xs: Nil<T>): U
+   isCons (xs: Cons<T>): U
 }
 
 export class Nil<T> extends List<T> {
-   classify (σ: ListTrie<T>): void {
-      σ.isNil(this)
+   classify<U> (σ: ListTrie<T, U>): U {
+      return σ.isNil(this)
    }
 }
 
@@ -71,8 +71,8 @@ export class Cons<T> extends List<T> {
    head: T
    tail: List<T>
 
-   classify (σ: ListTrie<T>): void {
-      σ.isCons(this)
+   classify<U> (σ: ListTrie<T, U>): U {
+      return σ.isCons(this)
    }
 }
 
@@ -91,11 +91,12 @@ type Datatype = {
    fields: string[]
 } 
 
-// How to exclude metadata in a way that's consistent with Metadata<T>?
+// TODO: exclude metadata in a way that's consistent with Metadata<T>
 export function isField (prop: string): boolean {
    throw new Error
 }
 
+// Utterly dependent on fields being provided in declaration order, although not part of spec :-/
 export function fields (cls: Class<Value>): string[] {
    const proto: Object = Object.getPrototypeOf(new cls)
    return Object.getOwnPropertyNames(proto).filter(isField)
@@ -112,9 +113,20 @@ const datatypeFor_: Class<Value>[] =
 
 export function eval_ (ρ: Env, e: Expr): ExplVal {
    if (e instanceof Expr.Constr) {
-      const tv̅ = e.args.map(e => eval_(ρ, e)),
-            d: Datatype = __nonNull(datatypeFor.get(e.ctr.str))
-      return [empty(), make(d.cls, state)]
+      const e̅: List<Expr> = e.args,
+            d: Datatype = __nonNull(datatypeFor.get(e.ctr.str)),
+            state: Stateʹ = {}
+      for (const f of d.fields) {
+         e̅.classify({
+            isNil(e̅: Nil<Expr>): void {
+               absurd()
+            },
+            isCons(e̅: Cons<Expr>): void {
+               state[f] = eval_(ρ, e̅.head)
+            }
+         })
+      }
+      return [empty(), construct(new d.cls, state)]
    } else {
       return absurd()
    }
