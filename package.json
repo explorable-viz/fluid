@@ -13,7 +13,7 @@
     "three-orbitcontrols-ts": "^0.1.2",
     "three.meshline": "^1.2.0",
     "ts-loader": "^2.3.7",
-    "typescript": "^2.9.2"
+    "typescript": "^3.4.5"
   },
   "devDependencies": {
     "@types/chai": "^3.4.35",

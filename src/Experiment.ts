@@ -46,5 +46,5 @@ export class Cons<T> extends List<T> {
 }
 
 export function cons<T> (head: T, tail: List<T>): List<T> {
-   return construct(new Cons, { head: "", tail: null })
+   return construct(new Cons, { head: head, tail: tail })
 }
