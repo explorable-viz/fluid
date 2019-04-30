@@ -3,16 +3,24 @@ import { __nonNull } from "./util/Core"
 class Expl {
 }
 
-type State<T> = {
-   readonly [prop in keyof T]: T[prop]
+type State<T> = CoreProps<T>
+
+// Gather the metadata properties associated with T.
+interface Metadata<T> {
+   __expl?: Map<CoreProps<T>, Expl>
+   expl (prop: CoreProps<T>): Expl
+   classify (σ: T): void
 }
 
-abstract class Explainable<T> {
-   expl (prop: keyof T): Expl {
+type CoreProps<T> = Pick<T, Exclude<keyof T, keyof Metadata<T>>>
+
+abstract class Explainable<T> implements Metadata<T> {
+   expl (prop: CoreProps<T>): Expl {
       return __nonNull(__nonNull(this.__expl).get(prop))
    }
 
-   __expl?: Map<keyof T, Expl>
+   __expl?: Map<CoreProps<T>, Expl> // Todo: switch to object
+   abstract classify (σ: Trie): void
 }
 
 // Not easy to put this into Explainable and have it be specifically typed enough.
@@ -25,7 +33,10 @@ abstract class List<T> extends Explainable<List<T>> {
    abstract classify (σ: ListTrie<T>): void
 }
 
-interface ListTrie<T> {
+interface Trie {
+}
+
+interface ListTrie<T> extends Trie {
    isNil (xs: Nil<T>): void
    isCons (xs: Cons<T>): void
 }
