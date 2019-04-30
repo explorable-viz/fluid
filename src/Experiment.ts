@@ -4,22 +4,23 @@ class Expl {
 }
 
 type State<T> = CoreProps<T>
+type ExplState<T> = { [prop in keyof CoreProps<T>]: Expl }
 
 // Gather the metadata properties associated with T.
 interface Metadata<T> {
-   __expl?: Map<CoreProps<T>, Expl>
-   expl (prop: CoreProps<T>): Expl
+   __expl?: ExplState<T>
+   expl (prop: keyof CoreProps<T>): Expl
    classify (σ: T): void
-}
+}  
 
 type CoreProps<T> = Pick<T, Exclude<keyof T, keyof Metadata<T>>>
 
 abstract class Explainable<T> implements Metadata<T> {
-   expl (prop: CoreProps<T>): Expl {
-      return __nonNull(__nonNull(this.__expl).get(prop))
+   expl (prop: keyof CoreProps<T>): Expl {
+      return __nonNull(this.__expl)[prop]
    }
 
-   __expl?: Map<CoreProps<T>, Expl> // Todo: switch to object
+   __expl?: ExplState<T>
    abstract classify (σ: Trie): void
 }
 
