@@ -1,6 +1,17 @@
 import { Class, __nonNull, absurd, funName } from "./util/Core"
 import { Env } from "./Env"
-import { Expr } from "./Expr"
+
+namespace Expr {
+   export class Expr {
+   }
+
+   export class Constr {
+      ctr: string
+      args: List<Expr>
+   }
+}
+
+type Expr = Expr.Expr
 
 class Expl {
 }
@@ -35,7 +46,7 @@ abstract class Value {
 
 abstract class Explainable<T> extends Value implements Metadata<T> {
    expl?: ExplState<T>
-   abstract classify (σ: Trie): void
+   abstract classify<U> (σ: Trie<U>): U
 }
 
 // Not easy to put this into Explainable and have it be specifically typed enough.
@@ -50,7 +61,7 @@ function constructʹ (tgt: Value, state: Stateʹ): Value {
 }
 
 abstract class List<T> extends Explainable<List<T>> {
-   abstract classify<U> (σ: ListTrie<T, U>): void
+   abstract classify<U> (σ: ListTrie<T, U>): U
 }
 
 interface Trie<U> {
@@ -113,16 +124,17 @@ const datatypeFor_: Class<Value>[] =
 
 export function eval_ (ρ: Env, e: Expr): ExplVal {
    if (e instanceof Expr.Constr) {
-      const e̅: List<Expr> = e.args,
-            d: Datatype = __nonNull(datatypeFor.get(e.ctr.str)),
+      const d: Datatype = __nonNull(datatypeFor.get(e.ctr)),
             state: Stateʹ = {}
+      let e̅: List<Expr> = e.args
       for (const f of d.fields) {
          e̅.classify({
-            isNil(e̅: Nil<Expr>): void {
+            isNil(e̅ʹ: Nil<Expr>): void {
                absurd()
             },
-            isCons(e̅: Cons<Expr>): void {
-               state[f] = eval_(ρ, e̅.head)
+            isCons(e̅ʹ: Cons<Expr>): void {
+               state[f] = eval_(ρ, e̅ʹ.head)
+               e̅ = e̅ʹ.tail
             }
          })
       }
