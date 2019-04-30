@@ -12,12 +12,13 @@ abstract class Explainable<T> {
       return __nonNull(__nonNull(this.__expl).get(prop))
    }
 
-   constructor_ (state: State<T>): this {
-      // copy state to fields
-      return this
-   }
-
    __expl?: Map<keyof T, Expl>
+}
+
+// Not easy to put this into Explainable and have it be specifically typed enough.
+function construct<T> (tgt: T, state: State<T>): T {
+   // copy state to fields of tgt
+   return tgt
 }
 
 abstract class List<T> extends Explainable<List<T>> {
@@ -45,5 +46,5 @@ export class Cons<T> extends List<T> {
 }
 
 export function cons<T> (head: T, tail: List<T>): List<T> {
-   return new Cons().constructor_({ head: "", tail: null })
+   return construct(new Cons, { head: "", tail: null })
 }
