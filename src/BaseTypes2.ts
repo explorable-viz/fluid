@@ -1,4 +1,4 @@
-import { Explainable, make } from "./ExplVal2"
+import { Explainable, Fun, make } from "./ExplVal2"
 
 export abstract class List<T> extends Explainable<List<T>> {
    abstract match<U> (σ: ListFun<T, U>): U

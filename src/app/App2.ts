@@ -1,4 +1,6 @@
-import { Expr, eval_, nil } from "../Experiment"
+import { nil } from "../BaseTypes2"
+import { eval_ } from "../Eval2"
+import { Expr } from "../Expr2"
 
 class App {
    constructor () {

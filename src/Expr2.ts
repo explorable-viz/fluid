@@ -1,5 +1,6 @@
 import { List } from "./BaseTypes2"
-import { Explainable } from "./ExplVal2"
+import { Explainable, make } from "./ExplVal2"
+import { FiniteMap } from "./FiniteMap2"
 
 export namespace Expr {
    export abstract class Expr extends Explainable<Expr> {

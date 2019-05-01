@@ -1,7 +1,7 @@
 import { Class } from "./util/Core"
 
 // Value in the metalanguage.
-abstract class Value {
+export abstract class Value {
 }
 
 export abstract class Explainable<T> extends Value implements Metadata<T> {
@@ -9,7 +9,7 @@ export abstract class Explainable<T> extends Value implements Metadata<T> {
    abstract match<U> (σ: Fun<U>): U
 }
 
-class Fun<U> extends Value {
+export class Fun<U> extends Value {
 }
 
 type State<T> = CoreProps<T>
@@ -32,7 +32,7 @@ interface Metadata<T> {
 type CoreProps<T> = Pick<T, Exclude<keyof T, keyof Metadata<T>>>
 
 // Not easy to put this into Explainable and have it be specifically typed enough.
-function construct<T> (tgt: T, state: State<T>): T {
+export function construct<T> (tgt: T, state: State<T>): T {
    return constructʹ(tgt, state) as T
 }
 
@@ -46,11 +46,11 @@ export function make<T> (ctr: Class<T>, state: State<T>): T {
    return construct(new ctr, state)
 }
 
-namespace Expl {
+export namespace Expl {
    export class Expl {
    }
 
-   class Empty extends Expl {
+   export class Empty extends Expl {
    }
 
    export function empty (): Empty {
@@ -59,3 +59,5 @@ namespace Expl {
 }
 
 type Expl = Expl.Expl
+
+export type ExplVal = [Expl, Value]
