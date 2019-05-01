@@ -17,7 +17,8 @@ namespace Expr {
    }
 
    interface ExprFun<U> {
-      Constr(ctr: string, args: List<Expr>): U
+      Constr (ctr: string, args: List<Expr>): U
+      MatchAs (e: Expr, σ: Trie<Expr>): U
    }
 
    export class Constr extends Expr {
@@ -26,6 +27,15 @@ namespace Expr {
 
       match<U> (σ: ExprFun<U>): U {
          return σ.Constr(this.ctr, this.args)
+      }
+   }
+
+   export class MatchAs extends Expr {
+      e: Expr
+      σ: Trie<Expr>
+
+      match<U> (σ: ExprFun<U>): U {
+         return σ.MatchAs(this.e, this.match)
       }
    }
 
@@ -209,20 +219,24 @@ const datatypeFor_: Class<Value>[] =
 export function eval_ (ρ: Env, e: Expr): ExplVal {
    return e.match({
       Constr(ctr, args): ExplVal {
-      const d: Datatype = __nonNull(datatypeFor.get(ctr)),
-            state: Stateʹ = {}
-      let e̅: List<Expr> = args
-      for (const f of d.fields) {
-         e̅.match({
-            Nil(): void {
-               absurd()
-            },
-            Cons(e: Expr, e̅ʹ: List<Expr>): void {
-               state[f] = eval_(ρ, e)
-               e̅ = e̅ʹ
-            }
-         })
+         const d: Datatype = __nonNull(datatypeFor.get(ctr)),
+               state: Stateʹ = {}
+         let e̅: List<Expr> = args
+         for (const f of d.fields) {
+            e̅.match({
+               Nil(): void {
+                  absurd()
+               },
+               Cons(e: Expr, e̅ʹ: List<Expr>): void {
+                  state[f] = eval_(ρ, e)
+                  e̅ = e̅ʹ
+               }
+            })
+         }
+         return [Expl.empty(), construct(new d.cls, state)]
+      },
+      MatchAs(e, σ): ExplVal {
+         throw new Error  
       }
-      return [Expl.empty(), construct(new d.cls, state)]
-   }
-})}
+   })
+}
