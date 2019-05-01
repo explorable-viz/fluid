@@ -18,6 +18,7 @@ namespace Expr {
 
    interface ExprFun<U> {
       Constr (ctr: string, args: List<Expr>): U
+      Fun (σ: Trie<Expr>): U
       MatchAs (e: Expr, σ: Trie<Expr>): U
    }
 
@@ -27,6 +28,14 @@ namespace Expr {
 
       match<U> (σ: ExprFun<U>): U {
          return σ.Constr(this.ctr, this.args)
+      }
+   }
+
+   export class Fun extends Expr {
+      σ: Trie<Expr>
+
+      match<U> (σ: ExprFun<U>): U {
+         return σ.Fun(this.σ)
       }
    }
 
@@ -235,8 +244,11 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
          }
          return [Expl.empty(), construct(new d.cls, state)]
       },
+      Fun(σ): ExplVal {
+         throw new Error
+      },
       MatchAs(e, σ): ExplVal {
-         throw new Error  
+         throw new Error
       }
    })
 }
