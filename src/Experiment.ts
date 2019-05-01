@@ -150,9 +150,9 @@ export class Cons<T> extends List<T> {
    }
 }
 
-interface ListFun<T, U> extends Fun<U> {
-   Nil (): U
-   Cons (x: T, xs: List<T>): U
+abstract class ListFun<T, U> extends Fun<U> {
+   abstract Nil (): U
+   abstract Cons (x: T, xs: List<T>): U
 }
 
 export function cons<T> (head: T, tail: List<T>): List<T> {
