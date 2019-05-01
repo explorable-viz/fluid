@@ -200,6 +200,7 @@ export type FiniteMap<K extends Ord<K>, V> = Tree<Pair<K, V>>
 
 type ExplVal = [Expl, Value]
 
+// TODO: doh, this is only a constructor of a datatype, not a datatype.
 type Datatype = {
    cls: Class<Value>, 
    fields: string[]
