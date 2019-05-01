@@ -11,7 +11,7 @@ abstract class Explainable<T> extends Value implements Metadata<T> {
    abstract match<U> (σ: Fun<U>): U
 }
 
-namespace Expr {
+export namespace Expr {
    export abstract class Expr extends Explainable<Expr> {
       abstract match<U> (σ: ExprFun<U>): U
    }
@@ -31,6 +31,10 @@ namespace Expr {
       }
    }
 
+   export function constr (ctr: string, args: List<Expr>): Constr {
+      return make(Constr, { ctr, args })
+   }
+
    export class Fun extends Expr {
       σ: Trie<Expr>
 
@@ -44,7 +48,7 @@ namespace Expr {
       σ: Trie<Expr>
 
       match<U> (σ: ExprFun<U>): U {
-         return σ.MatchAs(this.e, this.match)
+         return σ.MatchAs(this.e, this.σ)
       }
    }
 
@@ -96,7 +100,7 @@ namespace Expr {
    }
 }
 
-type Expr = Expr.Expr
+export type Expr = Expr.Expr
 
 namespace Expl {
    export class Expl {
@@ -159,6 +163,10 @@ export class Nil<T> extends List<T> {
    }
 }
 
+export function nil<T> (): List<T> {
+   return make(Nil, {})
+}
+
 export class Cons<T> extends List<T> {
    head: T
    tail: List<T>
@@ -168,13 +176,13 @@ export class Cons<T> extends List<T> {
    }
 }
 
+export function cons<T> (head: T, tail: List<T>): List<T> {
+   return make(Cons, { head, tail })
+}
+
 abstract class ListFun<T, U> extends Fun<U> {
    abstract Nil (): U
    abstract Cons (x: T, xs: List<T>): U
-}
-
-export function cons<T> (head: T, tail: List<T>): List<T> {
-   return make(Cons, { head, tail })
 }
 
 export class Pair<T, U> extends Explainable<Pair<T, U>> {
@@ -264,7 +272,9 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
          return [Expl.empty(), construct(new d.cls, state)]
       },
       Fun(σ): ExplVal {
-         throw new Error
+         return σ.match({
+
+         })
       },
       MatchAs(e, σ): ExplVal {
          throw new Error
