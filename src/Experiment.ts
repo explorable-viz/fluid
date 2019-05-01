@@ -128,7 +128,7 @@ function make<T> (ctr: Class<T>, state: State<T>): T {
    return construct(new ctr, state)
 }
 
-interface Fun<U> {
+class Fun<U> extends Value {
 }
 
 abstract class List<T> extends Explainable<List<T>> {
