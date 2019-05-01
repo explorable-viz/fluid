@@ -2,13 +2,31 @@ import { Ord } from "./util/Ord"
 import { Class, __nonNull, absurd, funName } from "./util/Core"
 import { Env } from "./Env"
 
+// Value in the metalanguage.
+abstract class Value {
+}
+
+abstract class Explainable<T> extends Value implements Metadata<T> {
+   expl?: ExplState<T>
+   abstract match<U> (σ: Fun<U>): U
+}
+
 namespace Expr {
-   export class Expr {
+   export abstract class Expr extends Explainable<Expr> {
+      abstract match<U> (σ: ExprFun<U>): U
    }
 
-   export class Constr {
+   interface ExprFun<U> {
+      Constr(ctr: string, args: List<Expr>): U
+   }
+
+   export class Constr extends Expr {
       ctr: string
       args: List<Expr>
+
+      match<U> (σ: ExprFun<U>): U {
+         return σ.Constr(this.ctr, this.args)
+      }
    }
 
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
@@ -75,15 +93,6 @@ interface Metadata<T> {
 }  
 
 type CoreProps<T> = Pick<T, Exclude<keyof T, keyof Metadata<T>>>
-
-// Value in the metalanguage.
-abstract class Value {
-}
-
-abstract class Explainable<T> extends Value implements Metadata<T> {
-   expl?: ExplState<T>
-   abstract match<U> (σ: Fun<U>): U
-}
 
 // Not easy to put this into Explainable and have it be specifically typed enough.
 function construct<T> (tgt: T, state: State<T>): T {
@@ -198,10 +207,11 @@ const datatypeFor_: Class<Value>[] =
    )
 
 export function eval_ (ρ: Env, e: Expr): ExplVal {
-   if (e instanceof Expr.Constr) {
-      const d: Datatype = __nonNull(datatypeFor.get(e.ctr)),
+   return e.match({
+      Constr(ctr, args): ExplVal {
+      const d: Datatype = __nonNull(datatypeFor.get(ctr)),
             state: Stateʹ = {}
-      let e̅: List<Expr> = e.args
+      let e̅: List<Expr> = args
       for (const f of d.fields) {
          e̅.match({
             Nil(): void {
@@ -214,7 +224,5 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
          })
       }
       return [Expl.empty(), construct(new d.cls, state)]
-   } else {
-      return absurd()
    }
-}
+})}
