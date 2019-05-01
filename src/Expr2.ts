@@ -11,9 +11,18 @@ export namespace Expr {
    }
 
    interface ExprFun<U> {
+      Var (): U
       Constr (ctr: string, args: List<Expr>): U
       Fun (σ: Trie<Expr>): U
       MatchAs (e: Expr, σ: Trie<Expr>): U
+   }
+
+   export class Var extends Expr {
+      x: string
+
+      __match <U> (σ: ExprFun<U>): U {
+         return σ.Var()
+      }
    }
 
    export class Constr extends Expr {
@@ -68,6 +77,7 @@ export namespace Expr {
 
    namespace Trie {
       export abstract class Trie<K extends Kont<K>> extends Explainable<Trie<K>> implements Kont<Trie<K>> {
+         abstract __match<U> (σ: TrieFun<K, U>): U
       }
 
       interface TrieFun<K, U> {
