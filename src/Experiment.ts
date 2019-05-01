@@ -43,15 +43,19 @@ namespace Expr {
 
 type Expr = Expr.Expr
 
-class Expl {
+namespace Expl {
+   export class Expl {
+   }
+
+   class Empty extends Expl {
+   }
+
+   export function empty (): Empty {
+      return make(Empty, {})
+   }
 }
 
-class Empty extends Expl {
-}
-
-export function empty (): Empty {
-   return make(Empty, {})
-}
+type Expl = Expl.Expl
 
 type State<T> = CoreProps<T>
 
@@ -132,15 +136,36 @@ export class Pair<T, U> extends Explainable<Pair<T, U>> {
    snd: U
 
    match<V> (σ: PairFun<T, U, V>): V {
-      return σ.isPair(this)
+      return σ.Pair(this.fst, this.snd)
    }
 }
 
 interface PairFun<T, U, V> extends Fun<V> {
-   isPair (xs: Pair<T, U>): V}
+   Pair (fst: T, snd: U): V
+}
 
-export function pair<T, U> (fst: T, snd: U): Pair<T, U> {
-   return make<Pair<T, U>>(Pair, { fst, snd })
+export abstract class Tree<T> extends Explainable<Tree<T>> {
+}
+
+export class Empty<T> extends Tree<T> {
+   match<U> (σ: TreeFun<T, U>): U {
+      return σ.Empty()
+   }
+}
+
+export class NonEmpty<T> extends Tree<T> {
+   left: Tree<T>
+   t: T
+   right: Tree<T>
+
+   match<U> (σ: TreeFun<T, U>): U {
+      return σ.NonEmpty(this.left, this.t, this.right)
+   }
+}
+
+interface TreeFun<T, U> extends Fun<U> {
+   Empty (): U
+   NonEmpty (left: Tree<T>, t: T, right: Tree<T>): U
 }
 
 export type FiniteMap<K extends Ord<K>, V> = Tree<Pair<K, V>>
@@ -188,7 +213,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
             }
          })
       }
-      return [empty(), construct(new d.cls, state)]
+      return [Expl.empty(), construct(new d.cls, state)]
    } else {
       return absurd()
    }
