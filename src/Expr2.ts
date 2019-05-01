@@ -4,7 +4,7 @@ import { FiniteMap } from "./FiniteMap2"
 
 export namespace Expr {
    export abstract class Expr extends Explainable<Expr> {
-      abstract match<U> (σ: ExprFun<U>): U
+      abstract __match<U> (σ: ExprFun<U>): U
    }
 
    interface ExprFun<U> {
@@ -17,7 +17,13 @@ export namespace Expr {
       ctr: string
       args: List<Expr>
 
-      match<U> (σ: ExprFun<U>): U {
+      constructor (ctr: string, args: List<Expr>) {
+         super()
+         this.ctr = ctr
+         this.args = args
+      }
+
+      __match<U> (σ: ExprFun<U>): U {
          return σ.Constr(this.ctr, this.args)
       }
    }
@@ -29,7 +35,7 @@ export namespace Expr {
    export class Fun extends Expr {
       σ: Trie<Expr>
 
-      match<U> (σ: ExprFun<U>): U {
+      __match<U> (σ: ExprFun<U>): U {
          return σ.Fun(this.σ)
       }
    }
@@ -38,7 +44,7 @@ export namespace Expr {
       e: Expr
       σ: Trie<Expr>
 
-      match<U> (σ: ExprFun<U>): U {
+      __match<U> (σ: ExprFun<U>): U {
          return σ.MatchAs(this.e, this.σ)
       }
    }
@@ -75,7 +81,7 @@ export namespace Expr {
       export class Constr<K extends Kont<K>> extends Trie<K> {
          cases: FiniteMap<string, Args<K>>
 
-         match<U> (σ: TrieFun<K, U>): U {
+         __match<U> (σ: TrieFun<K, U>): U {
             return σ.Constr(this.cases)
          }
       }
@@ -84,7 +90,7 @@ export namespace Expr {
          x: string
          κ: K
 
-         match<U> (σ: TrieFun<K, U>): U {
+         __match<U> (σ: TrieFun<K, U>): U {
             return σ.Var(this.x, this.κ)
          }
       }

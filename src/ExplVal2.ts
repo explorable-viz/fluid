@@ -5,8 +5,8 @@ export abstract class Value {
 }
 
 export abstract class Explainable<T> extends Value implements Metadata<T> {
-   expl?: ExplState<T>
-   abstract match<U> (σ: Fun<U>): U
+   __expl?: ExplState<T>
+   abstract __match<U> (σ: Fun<U>): U
 }
 
 export class Fun<U> extends Value {
@@ -15,7 +15,7 @@ export class Fun<U> extends Value {
 type State<T> = CoreProps<T>
 
 // Dynamic version of State?
-export interface Stateʹ {
+export interface State_Dyn {
    [prop: string]: Value
 }
 
@@ -23,21 +23,23 @@ type ExplState<T> = {
    [prop in keyof CoreProps<T>]: Expl 
 }
 
-// Gather the metadata properties associated with T.
+// Gather the metadata properties associated with T. The __ prefix indicates these properties must not be treated as "data fields";
+// statically, we can express that by excluding all properties which are properties of Metadata, but dynamically there isn't an easy way
+// to express that.
 interface Metadata<T> {
-   expl?: ExplState<T>
-   match (σ: T): void
+   __expl?: ExplState<T>
+   __match (σ: T): void
 }  
 
 type CoreProps<T> = Pick<T, Exclude<keyof T, keyof Metadata<T>>>
 
 // Not easy to put this into Explainable and have it be specifically typed enough.
 export function construct<T> (tgt: T, state: State<T>): T {
-   return constructʹ(tgt, state) as T
+   return construct_dyn(tgt, state) as T
 }
 
 // Dynamic version of construct.
-function constructʹ (tgt: Value, state: Stateʹ): Value {
+function construct_dyn (tgt: Value, state: State_Dyn): Value {
    // TODO: copy state to fields of tgt
    return tgt
 }

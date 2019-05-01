@@ -2,16 +2,16 @@ import { __nonNull, absurd } from "./util/Core"
 import { List } from "./BaseTypes2"
 import { DataType, datatypeFor } from "./DataType2"
 import { Expr } from "./Expr2"
-import { Expl, ExplVal, Stateʹ, construct } from "./ExplVal2"
+import { Expl, ExplVal, State_Dyn, construct } from "./ExplVal2"
 
 export function eval_ (e: Expr): ExplVal {
-   return e.match({
+   return e.__match({
       Constr(ctr, args): ExplVal {
          const d: DataType = __nonNull(datatypeFor.get(ctr)),
-               state: Stateʹ = {}
+               state: State_Dyn = {}
          let e̅: List<Expr> = args
          for (const f of d.fields) {
-            e̅.match({
+            e̅.__match({
                Nil(): void {
                   absurd()
                },
@@ -24,7 +24,7 @@ export function eval_ (e: Expr): ExplVal {
          return [Expl.empty(), construct(new d.cls, state)]
       },
       Fun(σ): ExplVal {
-         return σ.match({
+         return σ.__match({
 
          })
       },

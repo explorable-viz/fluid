@@ -18,13 +18,12 @@ export const datatypeFor: Map<string, DataType> = new Map(
       datatypeFor_.map((cls): [string, DataType] => [funName(__nonNull(cls)), { cls, fields: fields(cls) }])
    )
 
-// TODO: exclude metadata in a way that's consistent with Metadata<T>
+// Exclude metadata in a way that's consistent with the naming convention of Metadata<T>. Ouch.
 export function isField (prop: string): boolean {
-   throw new Error
+   return !prop.startsWith("__")
 }
 
 // Utterly dependent on fields being provided in declaration order, although not part of spec :-/
 export function fields (cls: Class<Value>): string[] {
-   const proto: Object = Object.getPrototypeOf(new cls)
-   return Object.getOwnPropertyNames(proto).filter(isField)
+   return Object.getOwnPropertyNames(new cls).filter(isField)
 }
