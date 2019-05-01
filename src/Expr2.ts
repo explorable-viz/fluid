@@ -2,6 +2,9 @@ import { List } from "./BaseTypes2"
 import { Explainable, make } from "./ExplVal2"
 import { FiniteMap } from "./FiniteMap2"
 
+// use to initialise fields for reflection, without requiring constructors
+const _: any = undefined 
+
 export namespace Expr {
    export abstract class Expr extends Explainable<Expr> {
       abstract __match<U> (σ: ExprFun<U>): U
@@ -14,14 +17,8 @@ export namespace Expr {
    }
 
    export class Constr extends Expr {
-      ctr: string
-      args: List<Expr>
-
-      constructor (ctr: string, args: List<Expr>) {
-         super()
-         this.ctr = ctr
-         this.args = args
-      }
+      ctr: string = _
+      args: List<Expr> = _
 
       __match<U> (σ: ExprFun<U>): U {
          return σ.Constr(this.ctr, this.args)
@@ -33,7 +30,7 @@ export namespace Expr {
    }
 
    export class Fun extends Expr {
-      σ: Trie<Expr>
+      σ: Trie<Expr> = _
 
       __match<U> (σ: ExprFun<U>): U {
          return σ.Fun(this.σ)
@@ -41,8 +38,8 @@ export namespace Expr {
    }
 
    export class MatchAs extends Expr {
-      e: Expr
-      σ: Trie<Expr>
+      e: Expr = _
+      σ: Trie<Expr> = _
 
       __match<U> (σ: ExprFun<U>): U {
          return σ.MatchAs(this.e, this.σ)
@@ -79,7 +76,7 @@ export namespace Expr {
       }
       
       export class Constr<K extends Kont<K>> extends Trie<K> {
-         cases: FiniteMap<string, Args<K>>
+         cases: FiniteMap<string, Args<K>> = _
 
          __match<U> (σ: TrieFun<K, U>): U {
             return σ.Constr(this.cases)
@@ -87,8 +84,8 @@ export namespace Expr {
       }
 
       export class Var<K extends Kont<K>> extends Trie<K> {
-         x: string
-         κ: K
+         x: string = _
+         κ: K = _
 
          __match<U> (σ: TrieFun<K, U>): U {
             return σ.Var(this.x, this.κ)
