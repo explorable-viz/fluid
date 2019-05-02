@@ -11,7 +11,7 @@ export namespace Expr {
    }
 
    interface ExprFun<U> {
-      Var (): U
+      Var (x: string): U
       Constr (ctr: string, args: List<Expr>): U
       Fun (σ: Trie<Expr>): U
       MatchAs (e: Expr, σ: Trie<Expr>): U
@@ -21,7 +21,7 @@ export namespace Expr {
       x: string
 
       __match <U> (σ: ExprFun<U>): U {
-         return σ.Var()
+         return σ.Var(this.x)
       }
    }
 
