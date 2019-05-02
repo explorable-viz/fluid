@@ -6,16 +6,12 @@ import { State_Dyn, Value, construct } from "./ExplVal2"
 
 type Env = never // for now
 
-function lookup (x: string): (ρ: Env) => Value {
-   throw new Error
-}
-
 // Repeatedly reinterprets subexpressions, so probably as slow as the previous implementation.
 // Should be able to significantly speed up by memoisation.
 export function interpret (e: Expr): (ρ: Env) => Value {
    return e.__match({
       Var(x): (ρ: Env) => Value {
-         return lookup(x)
+         return (ρ: Env) => __nonNull(ρ[x])
       },
       Constr(ctr, args): (ρ: Env) => Value {
          return (ρ: Env): Value => {
@@ -23,7 +19,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
                   state: State_Dyn = {}
             let e̅: List<Expr> = args
             for (const f of d.fields) {
-               e̅.__match({
+               e̅.__match<void>({
                   Nil(): void {
                      absurd()
                   },
@@ -51,8 +47,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
       },
       MatchAs(e, σ): (ρ: Env) => Value {
          return (ρ: Env): Value => {
-            interpret(e)(ρ)
-            throw new Error
+            return interpret(interpret(e)(ρ).__match<Expr>(σ))(ρ)
          }
       }
    })

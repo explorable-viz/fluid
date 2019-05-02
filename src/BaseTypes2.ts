@@ -1,4 +1,4 @@
-import { Explainable, Fun, make } from "./ExplVal2"
+import { Explainable, Fun, Value, make } from "./ExplVal2"
 
 export abstract class List<T> extends Explainable<List<T>> {
    abstract __match<U> (σ: ListFun<T, U>): U
@@ -14,7 +14,7 @@ export function nil<T> (): List<T> {
    return make(Nil, {})
 }
 
-export class Cons<T> extends List<T> {
+export class Cons<T extends Value> extends List<T> {
    head: T
    tail: List<T>
 
@@ -23,7 +23,7 @@ export class Cons<T> extends List<T> {
    }
 }
 
-export function cons<T> (head: T, tail: List<T>): List<T> {
+export function cons<T extends Value> (head: T, tail: List<T>): List<T> {
    return make(Cons, { head, tail })
 }
 

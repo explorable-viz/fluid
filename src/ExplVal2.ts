@@ -2,17 +2,15 @@ import { Class } from "./util/Core"
 
 // Value in the metalanguage.
 export abstract class Value {
+   abstract __match<U> (σ: Fun<U>): U
 }
 
 export abstract class Explainable<T> extends Value implements Metadata<T> {
    __expl?: ExplState<T>
-   abstract __match<U> (σ: Fun<U>): U
 }
 
-export class Fun<U> extends Value {
+export abstract class Fun<T> {
 }
-
-type State<T> = CoreProps<T>
 
 // Dynamic version of State?
 export interface State_Dyn {
@@ -20,7 +18,7 @@ export interface State_Dyn {
 }
 
 type ExplState<T> = { 
-   [prop in keyof CoreProps<T>]: Expl 
+   [prop in keyof State<T>]: Expl 
 }
 
 // Gather the metadata properties associated with T. The __ prefix indicates these properties must not be treated as "data fields";
@@ -28,13 +26,15 @@ type ExplState<T> = {
 // to express that.
 interface Metadata<T> {
    __expl?: ExplState<T>
-   __match (σ: T): void
+   __match<U> (σ: Fun<U>): U
 }  
 
-type CoreProps<T> = Pick<T, Exclude<keyof T, keyof Metadata<T>>>
+type State<T> = {
+   [prop in Exclude<keyof T, keyof Metadata<T>>]: T[prop] extends Value ? T[prop] : never
+}
 
 // Not easy to put this into Explainable and have it be specifically typed enough.
-export function construct<T> (tgt: T, state: State<T>): T {
+export function construct<T extends Value> (tgt: T, state: State<T>): T {
    return construct_dyn(tgt, state) as T
 }
 
@@ -44,19 +44,27 @@ function construct_dyn (tgt: Value, state: State_Dyn): Value {
    return tgt
 }
 
-export function make<T> (ctr: Class<T>, state: State<T>): T {
+export function make<T extends Value> (ctr: Class<T>, state: State<T>): T {
    return construct(new ctr, state)
 }
 
 export namespace Expl {
-   export class Expl {
+   export abstract class Expl extends Value {
+      abstract __match<U> (σ: ExplFun<U>): U
    }
 
    export class Empty extends Expl {
+      __match<U> (σ: ExplFun<U>): U {
+         return σ.Empty()
+      }
    }
 
    export function empty (): Empty {
       return make(Empty, {})
+   }
+
+   interface ExplFun<U> extends Fun<U> {
+      Empty (): U
    }
 }
 
