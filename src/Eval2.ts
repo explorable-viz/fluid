@@ -73,15 +73,13 @@ function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<[Env, K]> {
    }))
 }
 
-/*
-function interpretArgs (Π: Args<Expr>): Func<InterpretExpr> {
-   return Π.__match(new (class extends ArgsFunc<Expr, Func<InterpretExpr>> {
-      End (): Func<InterpretExpr> {
-
+function interpretArgs<K extends Kont<K>> (Π: Args<K>): Func<[Env, K]> {
+   return Π.__match(new (class extends ArgsFunc<K, Func<[Env, K]>> {
+      End (): Func<[Env, K]> {
+         
       }
-      Next (σ: Trie<Args<Expr>>): Func<InterpretExpr> {
+      Next (σ: Trie<Args<K>>): Func<[Env, K]> {
 
       }
    }))
 }
-*/
