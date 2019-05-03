@@ -1,9 +1,9 @@
-import { __nonNull, absurd } from "./util/Core"
+import { __nonNull, absurd, error } from "./util/Core"
 import { List, ListFunc, map } from "./BaseTypes2"
 import { DataType, datatypeFor } from "./DataType2"
-import { Env, concat, singleton } from "./Env2"
+import { Env, concat, empty, singleton } from "./Env2"
 import { Expr } from "./Expr2"
-import { State_Dyn, Func, Value, construct } from "./ExplVal2"
+import { ArgumentsFunc, Constr, Func, Func_Dyn, State_Dyn, Value, construct } from "./ExplVal2"
 import { FiniteMap } from "./FiniteMap2"
 
 import Args = Expr.Args
@@ -63,23 +63,49 @@ function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<[Env, K]> {
          }
       }
       Constr (cases: FiniteMap<string, Args<K>>): Func<[Env, K]> {
-         const handlers: State_Dyn = {} // TODO: fix type
-         // create a "fun object" o such that
+         const handlers: Func<[Env, K]> = {
+            __apply (v: Value): [Env, K] {
+               if (v instanceof Constr) {
+                  return v.__match(this)
+               } else {
+                  return error("Not a datatype")
+               }
+            }
+         }
+         const handlers_dyn: Func_Dyn<[Env, K]> = handlers as any // urgh
          map(cases, ({ fst: ctr, snd: Π }): void => {
-            handlers[ctr] = null as any // whose value is a function from arguments to Value obtained by 
+            handlers_dyn[ctr] = interpretArgs(Π)
          })
-         throw new Error
+         return handlers
       }
    }))
 }
 
-function interpretArgs<K extends Kont<K>> (Π: Args<K>): Func<[Env, K]> {
+function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<[Env, K]> {
    return Π.__match(new (class extends ArgsFunc<K, Func<[Env, K]>> {
-      End (): Func<[Env, K]> {
-         
+      End (κ: K): ArgumentsFunc<[Env, K]> {
+         return {
+            __apply (v̅: Value[]): [Env, K] {
+               if (v̅.length === 0) {
+                  return [empty(), κ]
+               } else {
+                  return error("Wrong number of arguments")
+               }
+            }
+         }
       }
       Next (σ: Trie<Args<K>>): Func<[Env, K]> {
-
+         return {
+            __apply (v̅: Value[]): [Env, K] {
+               if (v̅.length === 0) {
+                  return error("Wrong number of arguments")
+               } else {
+                  const [ρ, Π]: [Env, Args<K>] = interpretTrie(σ).__apply(v̅[0]),
+                        [ρʹ, κ]: [Env, K] = interpretArgs(Π).__apply(v̅.slice(1))
+                  return [concat(ρ, ρʹ), κ]
+               }
+            }
+         }
       }
    }))
 }

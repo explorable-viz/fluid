@@ -31,6 +31,15 @@ export abstract class Func<T> extends Value {
    }
 }
 
+export abstract class ArgumentsFunc<T> extends Value {
+   abstract __apply (v̅: Value[]): T
+}
+
+// Can't add __apply to this because inconsistent with index signature.
+export interface Func_Dyn<T> {
+   [ctr: string]: Func<T>
+}
+
 // Dynamic version of State?
 export interface State_Dyn {
    [prop: string]: Value
