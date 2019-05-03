@@ -1,5 +1,5 @@
 import { List } from "./BaseTypes2"
-import { Constr as Constrʹ, Func, make } from "./ExplVal2"
+import { Constr as Constrʹ, ConstrFunc, make } from "./ExplVal2"
 import { FiniteMap } from "./FiniteMap2"
 
 // use to initialise fields for reflection, without requiring constructors
@@ -10,7 +10,7 @@ export namespace Expr {
       abstract __match<U> (σ: ExprFunc<U>): U
    }
 
-   export abstract class ExprFunc<U> extends Func<U> {
+   export abstract class ExprFunc<U> extends ConstrFunc<U> {
       abstract Var (x: string): U
       abstract Constr (ctr: string, args: List<Expr>): U
       abstract Fun (σ: Trie<Expr>): U
@@ -67,7 +67,7 @@ export namespace Expr {
          abstract __match<U> (σ: ArgsFunc<K, U>): U
       }
 
-      export abstract class ArgsFunc<K, U> extends Func<U> {
+      export abstract class ArgsFunc<K, U> extends ConstrFunc<U> {
          abstract End (κ: K): U
          abstract Next (σ: Trie<Args<K>>): U
       }
@@ -94,7 +94,7 @@ export namespace Expr {
          abstract __match<U> (σ: TrieFunc<K, U>): U
       }
 
-      export abstract class TrieFunc<K, U> extends Func<U> {
+      export abstract class TrieFunc<K, U> extends ConstrFunc<U> {
          abstract Constr (cases: FiniteMap<string, Args<K>>): U
          abstract Var (x: string, κ: K): U
       }

@@ -1,4 +1,4 @@
-import { Constr, Func, Value, make } from "./ExplVal2"
+import { ArgumentsFunc, Constr, ConstrFunc, Value, make } from "./ExplVal2"
 
 export abstract class List<T> extends Constr<List<T>> {
    abstract __match<U> (σ: ListFunc<T, U>): U
@@ -27,7 +27,7 @@ export function cons<T extends Value> (head: T, tail: List<T>): List<T> {
    return make(Cons, { head, tail })
 }
 
-export abstract class ListFunc<T, U> extends Func<U> {
+export abstract class ListFunc<T, U> extends ConstrFunc<U> {
    abstract Nil (): U
    abstract Cons (x: T, xs: List<T>): U
 }
@@ -41,8 +41,8 @@ export class Pair<T, U> extends Constr<Pair<T, U>> {
    }
 }
 
-abstract class PairFunc<T, U, V> extends Func<V> {
-   abstract Pair (fst: T, snd: U): V
+abstract class PairFunc<T, U, V> extends ConstrFunc<V> {
+   abstract Pair (): ArgumentsFunc<V> // (fst: T, snd: U): V
 }
 
 export abstract class Tree<T> extends Constr<Tree<T>> {
@@ -65,7 +65,7 @@ export class NonEmpty<T> extends Tree<T> {
    }
 }
 
-abstract class TreeFunc<T, U> extends Func<U> {
+abstract class TreeFunc<T, U> extends ConstrFunc<U> {
    abstract Empty (): U
    abstract NonEmpty (left: Tree<T>, t: T, right: Tree<T>): U
 }

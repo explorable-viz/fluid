@@ -18,7 +18,7 @@ export function interpret (e: Expr): InterpretExpr {
       Var (x: string): InterpretExpr {
          return (ρ: Env) => __nonNull(ρ[x])
       }
-      Constr(ctr: string, args: List<Expr>): InterpretExpr {
+      Constr (ctr: string, args: List<Expr>): InterpretExpr {
          return (ρ: Env): Value => {
             const d: DataType = __nonNull(datatypeFor.get(ctr)),
                   state: State_Dyn = {}

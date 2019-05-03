@@ -1,6 +1,6 @@
-import { Class, __nonNull, funName } from "./util/Core"
+import { Class, __nonNull, classOf, funName } from "./util/Core"
 import { Cons, Nil } from "./BaseTypes2"
-import { Expl, Value } from "./ExplVal2"
+import { Constr, Expl, State_Dyn, Value } from "./ExplVal2"
 
 // TODO: doh, this is only a constructor of a datatype, not a datatype.
 export type DataType = {
@@ -26,4 +26,8 @@ export function isField (prop: string): boolean {
 // Utterly dependent on fields being provided in declaration order, although not part of spec :-/
 export function fields (cls: Class<Value>): string[] {
    return Object.getOwnPropertyNames(new cls).filter(isField)
+}
+
+export function fieldVals (v: Constr<Value>): Value[] {
+   return fields(classOf(v)).map(k => (v as any as State_Dyn)[k]) // ugh
 }

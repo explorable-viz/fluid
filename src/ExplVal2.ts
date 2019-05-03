@@ -1,4 +1,4 @@
-import { Class } from "./util/Core"
+import { Class, error } from "./util/Core"
 
 // Value in the metalanguage.
 export abstract class Value {
@@ -17,16 +17,23 @@ export class Number extends Value {
 
 // Value of a datatype constructor.
 export abstract class Constr<T> extends Value implements Metadata<T> {
-   abstract __match<U> (σ: Func<U>): U
+   abstract __match<U> (σ: ConstrFunc<U>): U
 }
 
-// Called Func to avoid confusion with expression-level Fun.
+// Func to distinguish from expression-level Fun.
 export abstract class Func<T> extends Value {
+   abstract __apply (v: Value): T
+}
+
+// Should be abstract but currently construct dynamic instances of these.
+export class ConstrFunc<T> extends Func<T> {
    __apply (v: Value): T {
       if (v instanceof Constr) {
          return v.__match(this)
+         // Less performant but generic alternative:
+         // return (this as any as Func_Dyn<T>)[className(v)].__apply(fieldVals(v))
       } else {
-         throw new Error // must be function or primitive
+         return error("Not a datatype")
       }
    }
 }
@@ -37,7 +44,7 @@ export abstract class ArgumentsFunc<T> extends Value {
 
 // Can't add __apply to this because inconsistent with index signature.
 export interface Func_Dyn<T> {
-   [ctr: string]: Func<T>
+   [ctr: string]: ArgumentsFunc<T>
 }
 
 // Dynamic version of State?
@@ -54,7 +61,7 @@ type ExplState<T> = {
 // to express that.
 interface Metadata<T> {
    __expl?: ExplState<T>
-   __match<U> (σ: Func<U>): U
+   __match<U> (σ: ConstrFunc<U>): U
 }  
 
 type State<T> = {
@@ -91,7 +98,7 @@ export namespace Expl {
       return make(Empty, {})
    }
 
-   abstract class ExplFunc<U> extends Func<U> {
+   abstract class ExplFunc<U> extends ConstrFunc<U> {
       abstract Empty (): U
    }
 }
