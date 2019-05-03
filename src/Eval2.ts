@@ -50,6 +50,10 @@ export function interpret (e: Expr): InterpretExpr {
    }))
 }
 
+function extend (ρ: Env, x: string, v: Value): Env {
+   throw new Error
+}
+
 function interpretTrie<T> (σ: Trie<T>): (ρ: Env) => Func<T> {
    return σ.__match(new (class extends TrieFunc<T, (ρ: Env) => Func<T>> {
       Var(x: string, κ: T): (ρ: Env) => Func<T> {
