@@ -1,6 +1,7 @@
 import { __nonNull, absurd } from "./util/Core"
 import { List, ListFunc, map } from "./BaseTypes2"
 import { DataType, datatypeFor } from "./DataType2"
+import { Env, concat, singleton } from "./Env2"
 import { Expr } from "./Expr2"
 import { State_Dyn, Func, Value, construct } from "./ExplVal2"
 import { FiniteMap } from "./FiniteMap2"
@@ -11,7 +12,6 @@ import ExprFunc = Expr.ExprFunc
 import Trie = Expr.Trie
 import TrieFunc = Trie.TrieFunc
 
-type Env = never // for now
 type InterpretExpr = (ρ: Env) => Value
 
 // Repeatedly reinterprets subexpressions, so probably as slow as the previous implementation.
@@ -45,26 +45,23 @@ export function interpret (e: Expr): InterpretExpr {
       }
       MatchAs (e: Expr, σ: Trie<Expr>): InterpretExpr {
          return (ρ: Env): Value => {
-            return interpretTrie(σ).__apply(interpret(e)(ρ))
+            const [ρʹ, eʹ] = interpretTrie(σ).__apply(interpret(e)(ρ))
+            return interpret(eʹ)(concat(ρ, ρʹ))
          }
       }
    }))
 }
 
-function extend (ρ: Env, x: string, v: Value): Env {
-   throw new Error
-}
-
-function interpretTrie (σ: Trie<Expr>): Func<InterpretExpr> {
-   return σ.__match(new (class extends TrieFunc<Expr, Func<InterpretExpr>> {
-      Var (x: string, κ: Expr): Func<InterpretExpr> {
+function interpretTrie (σ: Trie<Expr>): Func<[Env, Expr]> {
+   return σ.__match(new (class extends TrieFunc<Expr, Func<[Env, Expr]>> {
+      Var (x: string, κ: Expr): Func<[Env, Expr]> {
          return {
-            __apply (v: Value): InterpretExpr {
-               return (ρ: Env) => interpret(κ)(extend(ρ, x, v))
+            __apply (v: Value): [Env, Expr] {
+               return [singleton(x, v), κ]
             }
          }
       }
-      Constr (cases: FiniteMap<string, Args<Expr>>): Func<InterpretExpr> {
+      Constr (cases: FiniteMap<string, Args<Expr>>): Func<[Env, Expr]> {
          const handlers: State_Dyn = {} // TODO: fix type
          // create a "fun object" o such that
          map(cases, ({ fst: ctr, snd: Π }): void => {
@@ -75,6 +72,7 @@ function interpretTrie (σ: Trie<Expr>): Func<InterpretExpr> {
    }))
 }
 
+/*
 function interpretArgs (Π: Args<Expr>): Func<InterpretExpr> {
    return Π.__match(new (class extends ArgsFunc<Expr, Func<InterpretExpr>> {
       End (): Func<InterpretExpr> {
@@ -85,3 +83,4 @@ function interpretArgs (Π: Args<Expr>): Func<InterpretExpr> {
       }
    }))
 }
+*/
