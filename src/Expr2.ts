@@ -63,15 +63,29 @@ export namespace Expr {
    export type Args<K extends Kont<K>> = Args.Args<K>
 
    export namespace Args {
-      export abstract class Args<K extends Kont<K>> implements Kont<Args<K>> {
+      export abstract class Args<K extends Kont<K>> extends Constrʹ<Args<K>> implements Kont<Args<K>> {
+         abstract __match<U> (σ: ArgsFunc<K, U>): U
       }
 
+      export abstract class ArgsFunc<K, U> extends Func<U> {
+         abstract End (κ: K): U
+         abstract Next (σ: Trie<Args<K>>): U
+      }
+      
       export class End<K extends Kont<K>> extends Args<K> {
          κ: K
+
+         __match<U> (σ: ArgsFunc<K, U>): U {
+            return σ.End(this.κ)
+         }
       }
 
       export class Next<K extends Kont<K>> extends Args<K> {
          σ: Trie<Args<K>>
+
+         __match<U> (σ: ArgsFunc<K, U>): U {
+            return σ.Next(this.σ)
+         }
       }
    }
 

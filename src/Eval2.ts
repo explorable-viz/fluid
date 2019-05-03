@@ -6,6 +6,7 @@ import { State_Dyn, Func, Value, construct } from "./ExplVal2"
 import { FiniteMap } from "./FiniteMap2"
 
 import Args = Expr.Args
+import ArgsFunc = Args.ArgsFunc
 import ExprFunc = Expr.ExprFunc
 import Trie = Expr.Trie
 import TrieFunc = Trie.TrieFunc
@@ -70,6 +71,17 @@ function interpretTrie (σ: Trie<Expr>): Func<InterpretExpr> {
             handlers[ctr] = null as any // whose value is a function from arguments to Value obtained by 
          })
          throw new Error
+      }
+   }))
+}
+
+function interpretArgs (Π: Args<Expr>): Func<InterpretExpr> {
+   return Π.__match(new (class extends ArgsFunc<Expr, Func<InterpretExpr>> {
+      End (): Func<InterpretExpr> {
+
+      }
+      Next (σ: Trie<Args<Expr>>): Func<InterpretExpr> {
+
       }
    }))
 }
