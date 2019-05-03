@@ -1,11 +1,11 @@
 import { Annotation, ann } from "./util/Annotated"
-import { __nonNull, absurd, className } from "./util/Core"
+import { __nonNull, absurd, className, error } from "./util/Core"
 import { asVersioned } from "./util/Versioned"
 import { Cons, List, Nil, NonEmpty, Pair, cons, nil, pair } from "./BaseTypes"
 import { DataType, ctrToDataType } from "./DataType"
 import { Env } from "./Env"
 import { ExplVal, Match, Value, explMatch, explVal } from "./ExplVal"
-import { ValId, error } from "./Eval"
+import { ValId } from "./Eval"
 import { Expr, Kont } from "./Expr"
 import { FiniteMap } from "./FiniteMap"
 
