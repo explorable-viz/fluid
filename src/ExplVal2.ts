@@ -1,4 +1,5 @@
-import { Class, error } from "./util/Core"
+import { Class, className, error } from "./util/Core"
+import { fieldVals } from "./DataType2"
 
 // Value in the metalanguage.
 export abstract class Value {
@@ -17,7 +18,9 @@ export class Number extends Value {
 
 // Value of a datatype constructor.
 export abstract class Constr<T> extends Value implements Metadata<T> {
-   abstract __match<U> (σ: ConstrFunc<U>): U
+   __match<U> (σ: ConstrFunc<U>): U {
+      return σ.__apply(this)
+   }
 }
 
 // Func to distinguish from expression-level Fun.
@@ -25,13 +28,11 @@ export abstract class Func<T> extends Value {
    abstract __apply (v: Value): T
 }
 
-// Should be abstract but currently construct dynamic instances of these.
 export class ConstrFunc<T> extends Func<T> {
    __apply (v: Value): T {
       if (v instanceof Constr) {
-         return v.__match(this)
-         // Less performant but generic alternative:
-         // return (this as any as Func_Dyn<T>)[className(v)].__apply(fieldVals(v))
+         // Probably slow compared to visitor pattern :-o
+         return (this as any as Func_Dyn<T>)[className(v)].__apply(fieldVals(v))
       } else {
          return error("Not a datatype")
       }
