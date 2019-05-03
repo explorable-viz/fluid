@@ -2,14 +2,18 @@ import { Class } from "./util/Core"
 
 // Value in the metalanguage.
 export abstract class Value {
-   abstract __match<U> (σ: Fun<U>): U
+   abstract __match<U> (σ: Func<U>): U
 }
 
 export abstract class Explainable<T> extends Value implements Metadata<T> {
    __expl?: ExplState<T>
 }
 
-export abstract class Fun<T> {
+// Called Func to avoid confusion with expression-level Fun.
+export abstract class Func<T> {
+   __apply (v: Value): T {
+      return v.__match(this)
+   }
 }
 
 // Dynamic version of State?
@@ -26,7 +30,7 @@ type ExplState<T> = {
 // to express that.
 interface Metadata<T> {
    __expl?: ExplState<T>
-   __match<U> (σ: Fun<U>): U
+   __match<U> (σ: Func<U>): U
 }  
 
 type State<T> = {
@@ -50,11 +54,11 @@ export function make<T extends Value> (ctr: Class<T>, state: State<T>): T {
 
 export namespace Expl {
    export abstract class Expl extends Value {
-      abstract __match<U> (σ: ExplFun<U>): U
+      abstract __match<U> (σ: ExplFunc<U>): U
    }
 
    export class Empty extends Expl {
-      __match<U> (σ: ExplFun<U>): U {
+      __match<U> (σ: ExplFunc<U>): U {
          return σ.Empty()
       }
    }
@@ -63,8 +67,8 @@ export namespace Expl {
       return make(Empty, {})
    }
 
-   interface ExplFun<U> extends Fun<U> {
-      Empty (): U
+   abstract class ExplFunc<U> extends Func<U> {
+      abstract Empty (): U
    }
 }
 
