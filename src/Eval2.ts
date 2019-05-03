@@ -9,6 +9,7 @@ import { FiniteMap } from "./FiniteMap2"
 import Args = Expr.Args
 import ArgsFunc = Args.ArgsFunc
 import ExprFunc = Expr.ExprFunc
+import Kont = Expr.Kont
 import Trie = Expr.Trie
 import TrieFunc = Trie.TrieFunc
 
@@ -52,16 +53,16 @@ export function interpret (e: Expr): InterpretExpr {
    }))
 }
 
-function interpretTrie (σ: Trie<Expr>): Func<[Env, Expr]> {
-   return σ.__match(new (class extends TrieFunc<Expr, Func<[Env, Expr]>> {
-      Var (x: string, κ: Expr): Func<[Env, Expr]> {
+function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<[Env, K]> {
+   return σ.__match(new (class extends TrieFunc<K, Func<[Env, K]>> {
+      Var (x: string, κ: K): Func<[Env, K]> {
          return {
-            __apply (v: Value): [Env, Expr] {
+            __apply (v: Value): [Env, K] {
                return [singleton(x, v), κ]
             }
          }
       }
-      Constr (cases: FiniteMap<string, Args<Expr>>): Func<[Env, Expr]> {
+      Constr (cases: FiniteMap<string, Args<K>>): Func<[Env, K]> {
          const handlers: State_Dyn = {} // TODO: fix type
          // create a "fun object" o such that
          map(cases, ({ fst: ctr, snd: Π }): void => {
