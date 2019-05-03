@@ -1,12 +1,12 @@
 import { List } from "./BaseTypes2"
-import { Explainable, Func, make } from "./ExplVal2"
+import { Constr as Constrʹ, Func, make } from "./ExplVal2"
 import { FiniteMap } from "./FiniteMap2"
 
 // use to initialise fields for reflection, without requiring constructors
 const _: any = undefined 
 
 export namespace Expr {
-   export abstract class Expr extends Explainable<Expr> {
+   export abstract class Expr extends Constrʹ<Expr> {
       abstract __match<U> (σ: ExprFunc<U>): U
    }
 
@@ -76,7 +76,7 @@ export namespace Expr {
    }
 
    export namespace Trie {
-      export abstract class Trie<K extends Kont<K>> extends Explainable<Trie<K>> implements Kont<Trie<K>> {
+      export abstract class Trie<K extends Kont<K>> extends Constrʹ<Trie<K>> implements Kont<Trie<K>> {
          abstract __match<U> (σ: TrieFunc<K, U>): U
       }
 

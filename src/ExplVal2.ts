@@ -2,17 +2,32 @@ import { Class } from "./util/Core"
 
 // Value in the metalanguage.
 export abstract class Value {
+}
+
+export abstract class PrimValue extends Value {
+}
+
+export class String extends Value {
+   val: string
+}
+
+export class Number extends Value {
+   val: number
+}
+
+// Value of a datatype constructor.
+export abstract class Constr<T> extends Value implements Metadata<T> {
    abstract __match<U> (σ: Func<U>): U
 }
 
-export abstract class Explainable<T> extends Value implements Metadata<T> {
-   __expl?: ExplState<T>
-}
-
 // Called Func to avoid confusion with expression-level Fun.
-export abstract class Func<T> {
+export abstract class Func<T> extends Value {
    __apply (v: Value): T {
-      return v.__match(this)
+      if (v instanceof Constr) {
+         return v.__match(this)
+      } else {
+         throw new Error // must be function or primitive
+      }
    }
 }
 

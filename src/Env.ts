@@ -27,13 +27,6 @@ export abstract class Env implements PersistentObject {
       return ExtendEnv.make(Env.empty(), k, v)
    }
 
-   static extend (ρ: Env, kv̅: [string, Value][]): Env {
-      kv̅.forEach(([k, v]: [string, Value]) => {
-         ρ = ExtendEnv.make(ρ, k, v)
-      })
-      return ρ
-   }
-
    static concat (ρ1: Env, ρ2: Env): Env {
       if (ρ2 instanceof EmptyEnv) {
          return ρ1

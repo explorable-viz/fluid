@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd } from "./util/Core"
+import { __nonNull, absurd } from "./util/Core"
 import { List, ListFunc, map } from "./BaseTypes2"
 import { DataType, datatypeFor } from "./DataType2"
 import { Expr } from "./Expr2"
@@ -40,28 +40,28 @@ export function interpret (e: Expr): InterpretExpr {
          }
       }
       Fun(σ: Trie<Expr>): InterpretExpr {
-         return σ.__match(new (class extends TrieFunc<Expr, InterpretExpr> {
-            Var(x: string, κ: Expr): (ρ: Env) => Value {
-               throw new Error
-            }
-            Constr(cases: FiniteMap<string, Args<Expr>>): InterpretExpr {
-               const handlers: State_Dyn = {} // TODO: fix type
-               // create a "fun object" o such that
-               map(cases, ({ fst: ctr, snd: Π }): void => {
-                  handlers[ctr] = null // whose value is a function from arguments to Value obtained by 
-               })
-               throw new Error
-            }
-         }))
+         return interpretTrie(σ)
       }
       MatchAs(e: Expr, σ: Trie<Expr>): InterpretExpr {
          return (ρ: Env): Value => {
-            return interpret(interpret(e)(ρ).__match(interpretTrie(σ)))(ρ)
+            return interpret(interpretTrie(σ)(ρ).__apply(interpret(e)(ρ)))(ρ)
          }
       }
    }))
 }
 
-function interpretTrie<T> (σ: Trie<T>): Func<T> {
-
+function interpretTrie<T> (σ: Trie<T>): (ρ: Env) => Func<T> {
+   return σ.__match(new (class extends TrieFunc<T, (ρ: Env) => Func<T>> {
+      Var(x: string, κ: T): (ρ: Env) => Func<T> {
+         throw new Error
+      }
+      Constr(cases: FiniteMap<string, Args<T>>): (ρ: Env) => Func<T> {
+         const handlers: State_Dyn = {} // TODO: fix type
+         // create a "fun object" o such that
+         map(cases, ({ fst: ctr, snd: Π }): void => {
+            handlers[ctr] = null as any // whose value is a function from arguments to Value obtained by 
+         })
+         throw new Error
+      }
+   }))
 }

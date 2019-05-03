@@ -1,6 +1,6 @@
-import { Explainable, Func, Value, make } from "./ExplVal2"
+import { Constr, Func, Value, make } from "./ExplVal2"
 
-export abstract class List<T> extends Explainable<List<T>> {
+export abstract class List<T> extends Constr<List<T>> {
    abstract __match<U> (σ: ListFunc<T, U>): U
 }
 
@@ -32,7 +32,7 @@ export abstract class ListFunc<T, U> extends Func<U> {
    abstract Cons (x: T, xs: List<T>): U
 }
 
-export class Pair<T, U> extends Explainable<Pair<T, U>> {
+export class Pair<T, U> extends Constr<Pair<T, U>> {
    fst: T
    snd: U
 
@@ -45,7 +45,7 @@ abstract class PairFunc<T, U, V> extends Func<V> {
    abstract Pair (fst: T, snd: U): V
 }
 
-export abstract class Tree<T> extends Explainable<Tree<T>> {
+export abstract class Tree<T> extends Constr<Tree<T>> {
    abstract __match<U> (σ: TreeFunc<T, U>): U
 }
 
