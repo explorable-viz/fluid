@@ -14,6 +14,14 @@ export namespace Expr {
       arg: Expr = _
    }
 
+   export class ConstNum extends Expr {
+      val: number
+   }
+   
+   export class ConstStr extends Expr {
+      val: string
+   }
+
    export class Var extends Expr {
       x: string = _
    }

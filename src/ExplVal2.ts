@@ -1,19 +1,27 @@
 import { Class, className, error } from "./util/Core"
 import { fieldVals } from "./DataType2"
 
-// Value in the metalanguage.
+// Value in the metalanguage. TODO: rename to PersistentObj?
 export abstract class Value {
 }
 
-export abstract class PrimValue extends Value {
+type Persistent = Value | string | number
+
+export class Num extends Value {
+   val: number
 }
 
-export class String extends Value {
+export function num (val: number): Num {
+   return make(Num, val)
+}
+
+export class Str extends Value {
    val: string
 }
 
-export class Number extends Value {
-   val: number
+export function str (val: string): Num {
+   const blah: Persistent = val
+   return make(Str, blah)
 }
 
 // Value of a datatype constructor.
@@ -62,11 +70,10 @@ type ExplState<T> = {
 // to express that.
 interface Metadata<T> {
    __expl?: ExplState<T>
-   __match<U> (σ: ConstrFunc<U>): U
 }  
 
 type State<T> = {
-   [prop in Exclude<keyof T, keyof Metadata<T>>]: T[prop] extends Value ? T[prop] : never
+   [prop in Exclude<keyof T, keyof Metadata<T>>]: T[prop] extends Persistent ? T[prop] : never
 }
 
 // Not easy to put this into Explainable and have it be specifically typed enough.
