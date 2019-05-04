@@ -12,16 +12,15 @@ export class Num extends Value {
 }
 
 export function num (val: number): Num {
-   return make(Num, val)
+   return make(Num, { val })
 }
 
 export class Str extends Value {
    val: string
 }
 
-export function str (val: string): Num {
-   const blah: Persistent = val
-   return make(Str, blah)
+export function str (val: string): Str {
+   return make(Str, { val })
 }
 
 // Value of a datatype constructor.
@@ -70,6 +69,7 @@ type ExplState<T> = {
 // to express that.
 interface Metadata<T> {
    __expl?: ExplState<T>
+   __match<U> (σ: ConstrFunc<U>): U
 }  
 
 type State<T> = {
