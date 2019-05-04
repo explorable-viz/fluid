@@ -1,9 +1,9 @@
-import { __nonNull, absurd } from "./util/Core"
+import { __nonNull, absurd, error } from "./util/Core"
 import { Cons, List, Nil } from "./BaseTypes2"
 import { DataType, datatypeFor } from "./DataType2"
 import { Env, concat } from "./Env2"
 import { Expr } from "./Expr2"
-import { State_Dyn, Value, construct } from "./ExplVal2"
+import { Func, State_Dyn, Value, construct } from "./ExplVal2"
 import { interpretTrie } from "./Match2"
 
 type InterpretExpr = (ρ: Env) => Value
@@ -13,6 +13,18 @@ type InterpretExpr = (ρ: Env) => Value
 export function interpret (e: Expr): InterpretExpr {
    if (e instanceof Expr.Var) {
       return (ρ: Env) => __nonNull(ρ[e.x])
+   } else
+   if (e instanceof Expr.App) {
+      return (ρ: Env) => {
+         const f: Value = interpret(e.func)(ρ)
+         if (f instanceof Func) {
+            const [ρʹ, eʹ]: [Env, Expr] = f.__apply(interpret(e.arg))
+            // TODO: closeDefs
+            return interpret(eʹ)(concat(ρ, ρʹ))
+         } else {
+            return error("Not a function")
+         }
+      }
    } else
    if (e instanceof Expr.Constr) {
       return (ρ: Env): Value => {
@@ -36,7 +48,7 @@ export function interpret (e: Expr): InterpretExpr {
    } else
    if (e instanceof Expr.MatchAs) {
       return (ρ: Env): Value => {
-         const [ρʹ, eʹ] = interpretTrie(e.σ).__apply(interpret(e)(ρ))
+         const [ρʹ, eʹ]: [Env, Expr] = interpretTrie(e.σ).__apply(interpret(e)(ρ))
          return interpret(eʹ)(concat(ρ, ρʹ))
       }
    } else {

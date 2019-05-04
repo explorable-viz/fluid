@@ -86,21 +86,13 @@ export function make<T extends Value> (ctr: Class<T>, state: State<T>): T {
 
 export namespace Expl {
    export abstract class Expl extends Value {
-      abstract __match<U> (σ: ExplFunc<U>): U
    }
 
    export class Empty extends Expl {
-      __match<U> (σ: ExplFunc<U>): U {
-         return σ.Empty()
-      }
    }
 
    export function empty (): Empty {
       return make(Empty, {})
-   }
-
-   abstract class ExplFunc<U> extends ConstrFunc<U> {
-      abstract Empty (): U
    }
 }
 
