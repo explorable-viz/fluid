@@ -1,9 +1,27 @@
+import { Lexeme } from "./util/parse/Core2"
 import { List } from "./BaseTypes2"
 import { Constr as Constrʹ, make } from "./ExplVal2"
 import { FiniteMap } from "./FiniteMap2"
 
 // use to initialise fields for reflection, without requiring constructors
 const _: any = undefined 
+
+export namespace Lex {
+   // Probably better to replace the Lexeme subtypes with a discriminated union.
+   export class Ctr extends Lexeme {
+      str: string = _
+   }
+
+   // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
+   // Other uses of primitive operations are treated as variables.
+   export class OpName extends Lexeme {
+      str: string = _
+   }
+
+   export class Var extends Lexeme {
+      str: string = _
+   }
+}
 
 export namespace Expr {
    export abstract class Expr extends Constrʹ<Expr> {
@@ -23,15 +41,15 @@ export namespace Expr {
    }
 
    export class Var extends Expr {
-      x: string = _
+      x: Lex.Var = _
    }
 
    export class Constr extends Expr {
-      ctr: string = _
+      ctr: Lex.Ctr = _
       args: List<Expr> = _
    }
 
-   export function constr (ctr: string, args: List<Expr>): Constr {
+   export function constr (ctr: Lex.Ctr, args: List<Expr>): Constr {
       return make(Constr, { ctr, args })
    }
 
@@ -48,6 +66,12 @@ export namespace Expr {
    export class MatchAs extends Expr {
       e: Expr = _
       σ: Trie<Expr> = _
+   }
+
+   export class BinaryApp extends Expr {
+      e1: Expr = _
+      opName: Lex.OpName = _
+      e2: Expr = _
    }
 
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
@@ -79,7 +103,7 @@ export namespace Expr {
       }
 
       export class Var<K extends Kont<K>> extends Trie<K> {
-         x: string = _
+         x: Lex.Var = _
          κ: K = _
       }
    }

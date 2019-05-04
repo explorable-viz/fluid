@@ -5,7 +5,8 @@ import { fieldVals } from "./DataType2"
 export abstract class Value {
 }
 
-type Persistent = Value | string | number
+// Functions are persistent to support primitives.
+type Persistent = Value | string | number | Function
 
 export class Num extends Value {
    val: number

@@ -1,5 +1,22 @@
 import { Constr, Value, make } from "./ExplVal2"
 
+export abstract class Bool extends Constr<Bool> {
+}
+
+export class True extends Bool {
+}
+
+export function true_ (): Bool {
+   return make(True, {})
+}
+
+export class False extends Bool {
+}
+
+export function false_ (): Bool {
+   return make(False, {})
+}
+
 export abstract class List<T> extends Constr<List<T>> {
 }
 

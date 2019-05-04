@@ -5,6 +5,7 @@ import { Env, concat } from "./Env2"
 import { Expr } from "./Expr2"
 import { Func, State_Dyn, Value, construct, num, str } from "./ExplVal2"
 import { interpretTrie } from "./Match2"
+import { BinaryOp, binaryOps } from "./Primitive2"
 
 type InterpretExpr = (ρ: Env) => Value
 
@@ -22,7 +23,7 @@ export function interpret (e: Expr): InterpretExpr {
          return interpretTrie(e.σ)
       } else
       if (e instanceof Expr.Var) {
-         return __nonNull(ρ[e.x])
+         return __nonNull(ρ[e.x.str])
       } else
       if (e instanceof Expr.App) {
          const f: Value = interpret(e.func)(ρ)
@@ -35,8 +36,18 @@ export function interpret (e: Expr): InterpretExpr {
             return error("Not a function")
          }
       } else
+      // Operators (currently all binary) are "syntax", rather than names.
+      if (e instanceof Expr.BinaryApp) {
+         if (binaryOps.has(e.opName.str)) {
+            const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
+                  [v1, v2]: [Value, Value] = [interpret(e.e1)(ρ), interpret(e.e2)(ρ)]
+            return op.b.op(v1, v2)
+         } else {
+            return error("Operator name not found.", e.opName)
+         }
+      } else
       if (e instanceof Expr.Constr) {
-         const d: DataType = __nonNull(datatypeFor.get(e.ctr)),
+         const d: DataType = __nonNull(datatypeFor.get(e.ctr.str)),
                state: State_Dyn = {}
          let e̅: List<Expr> = e.args
          for (const f of d.fields) {
