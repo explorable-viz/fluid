@@ -31,6 +31,12 @@ export namespace Expr {
       σ: Trie<Expr> = _
    }
 
+   // A let is simply a match where the trie is a variable trie.
+   export class Let extends Expr {
+      e: Expr = _
+      σ: Trie.Var<Expr> = _
+   }
+
    export class MatchAs extends Expr {
       e: Expr = _
       σ: Trie<Expr> = _

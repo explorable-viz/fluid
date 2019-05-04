@@ -141,19 +141,6 @@ export namespace Expr {
       return at(k, App, α, func, arg)
    }
 
-   export class ConstInt extends Expr {
-      val: number
-
-      constructor_ (α: Annotation, val: number): void {
-         this.α = α
-         this.val = __check(val, x => !Number.isNaN(x))
-      }
-   }
-   
-   export function constInt (k: PersistentObject, α: Annotation, val: number): ConstInt {
-      return at(k, ConstInt, α, val)
-   }
-
    export class ConstNum extends Expr {
       val: number
 
