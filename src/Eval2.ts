@@ -1,12 +1,27 @@
 import { __nonNull, absurd, className, error } from "./util/Core"
-import { Cons, List, Nil } from "./BaseTypes2"
+import { Cons, List, Nil, nil } from "./BaseTypes2"
 import { DataType, datatypeFor } from "./DataType2"
-import { Env } from "./Env2"
+import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Closure, closure } from "./ExplVal2"
 import { Expr } from "./Expr2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
 import { State_Dyn, Value, PrimOp, construct, num, primOp, str } from "./Value2"
+
+module Eval {
+
+// Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
+export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
+   if (Cons.is(δ)) {
+      const def: Expr.RecDef = δ.head
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x.str, closure(ρ, δ_0, interpretTrie(def.σ)))
+   } else
+   if (Nil.is(δ)) {
+      return emptyEnv()
+   } else {
+      return absurd()
+   }
+}
 
 type InterpretExpr = (ρ: Env) => Value
 
@@ -21,7 +36,7 @@ export function interpret (e: Expr): InterpretExpr {
          return str(e.val)
       } else
       if (e instanceof Expr.Fun) {
-         return closure(ρ, interpretTrie(e.σ))
+         return closure(ρ, nil(), interpretTrie(e.σ))
       } else
       if (e instanceof Expr.Var) {
          const x: string = e.x.str
@@ -85,4 +100,6 @@ export function interpret (e: Expr): InterpretExpr {
          return absurd()
       }
    }
+}
+
 }
