@@ -1,4 +1,4 @@
-import { AClass, Class, __nonNull, assert, classOf, funName } from "./util/Core"
+import { AClass, Class, __nonNull, assert, funName } from "./util/Core"
 import { Bool, Cons, Empty, False, List, NonEmpty, Nil, Pair, Tree, True } from "./BaseTypes2"
 import { Constr, State, Value } from "./Value2"
 
@@ -14,8 +14,8 @@ export class DataType {
    }
 }
 
-// Constructor of a datatype, not to be confused with an instance of such a thing (Constr) or name of such a thing (Lex.Ctr).
-// Fields have a total ordering given by the order of definition in the corresponding class.
+// Constructor of a datatype, not to be confused with an instance of such a thing (Constr) or name of such a thing
+// (Lex.Ctr). Fields have a total ordering given by the order of definition in the corresponding class.
 export class Ctr {
    C: Class<Constr<Value>>
    f̅: string[]
@@ -30,9 +30,6 @@ export class Ctr {
    }
 }
 
-// Populated by initDataTypes(). Constructors are not yet first-class. TODO: reinstate projections.
-export let ctrToDataType: Map<string, DataType> = new Map
-
 export function ctrFor (ctr: string): Ctr {
    return ctrToDataType.get(ctr)!.ctrs.get(ctr)!
 }
@@ -41,6 +38,22 @@ export function arity (ctr: string): number {
    assert(ctrToDataType.has(ctr), "No such constructor.", ctr)
    return ctrFor(ctr).f̅.length
 }
+
+// Exclude metadata according to our convention.
+export function isField (prop: string): boolean {
+   return !prop.startsWith("__")
+}
+
+function fields (v: Constr<Value>): string[] {
+   return Object.getOwnPropertyNames(v).filter(isField)
+}
+
+export function fieldValues (v: Constr<Value>): Value[] {
+   return fields(v).map(k => (v as State)[k])
+}
+
+// Populated by initDataTypes(). Constructors are not yet first-class. TODO: reinstate projections.
+export let ctrToDataType: Map<string, DataType> = new Map
 
 export function initDataType<T> (D: AClass<T>, ctrC̅: Class<T>[]) {
    const ctrs: [string, Ctr][] = ctrC̅.map(
@@ -58,17 +71,4 @@ export function initDataTypes (): void {
    initDataType(List, [Nil, Cons])
    initDataType(Pair, [Pair])
    initDataType(Tree, [Empty, NonEmpty])
-}
-
-// Exclude metadata according to our convention.
-export function isField (prop: string): boolean {
-   return !prop.startsWith("__")
-}
-
-function fields (v: Constr<Value>): string[] {
-   return Object.getOwnPropertyNames(v).filter(isField)
-}
-
-export function fieldValues (v: Constr<Value>): Value[] {
-   return fields(v).map(k => (v as State)[k])
 }
