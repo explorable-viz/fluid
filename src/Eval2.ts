@@ -8,7 +8,7 @@ import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
 import { State_Dyn, Value, PrimOp, construct, num, primOp, str } from "./Value2"
 
-module Eval {
+export module Eval {
 
 // Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
@@ -52,9 +52,9 @@ export function interpret (e: Expr): InterpretExpr {
       if (e instanceof Expr.App) {
          const v: Value = interpret(e.func)(ρ)
          if (v instanceof Closure) {
-            const [ρʹ, eʹ]: [Env, Expr] = v.f.__apply(interpret(e.arg))
-            // TODO: closeDefs
-            return interpret(eʹ)(Env.concat(ρ, ρʹ))
+            const [ρʹ, eʹ]: [Env, Expr] = v.f.__apply(interpret(e.arg)),
+                  ρ_defs: Env = closeDefs(v.δ, v.ρ, v.δ)
+            return interpret(eʹ)(Env.concat(ρ, Env.concat(ρ_defs, ρʹ)))
          } else
          // Primitives with identifiers as names are unary and first-class.
          if (v instanceof PrimOp) {
@@ -93,11 +93,15 @@ export function interpret (e: Expr): InterpretExpr {
          const [ρʹ, eʹ]: [Env, Expr] = interpretTrie<Expr>(e.σ).__apply(interpret(e.e)(ρ))
          return interpret(eʹ)(Env.concat(ρ, ρʹ))
       } else
-      if (e instanceof Expr.MatchAs) {
+      if (e instanceof Expr.LetRec) {
+         const ρʹ: Env = closeDefs(e.δ, ρ, e.δ)
+         return interpret(e.e)(Env.concat(ρ, ρʹ))
+      } else
+         if (e instanceof Expr.MatchAs) {
          const [ρʹ, eʹ]: [Env, Expr] = interpretTrie(e.σ).__apply(interpret(e)(ρ))
          return interpret(eʹ)(Env.concat(ρ, ρʹ))
       } else {
-         return absurd()
+         return absurd("Unimplemented expression form.", e)
       }
    }
 }
