@@ -9,14 +9,26 @@ export namespace Lex {
       str: string = _
    }
 
+   export function ctr (str: string): Ctr {
+      return make(Ctr, { str })
+   }
+
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
    // Other uses of primitive operations are treated as variables.
    export class OpName extends Lexeme {
       str: string = _
    }
 
+   export function opName (str: string): OpName {
+      return make(OpName, { str })
+   }
+
    export class Var extends Lexeme {
       str: string = _
+   }
+
+   export function var_ (str: string): Var {
+      return make(Var, { str })
    }
 }
 
