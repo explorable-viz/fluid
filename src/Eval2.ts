@@ -1,7 +1,8 @@
-import { __nonNull, absurd, assert, error } from "./util/Core"
+import { __nonNull, absurd, error } from "./util/Core"
 import { Cons, List, Nil } from "./BaseTypes2"
 import { DataType, datatypeFor } from "./DataType2"
 import { Env } from "./Env2"
+import { Closure, closure } from "./ExplVal2"
 import { Expr } from "./Expr2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
@@ -20,7 +21,7 @@ export function interpret (e: Expr): InterpretExpr {
          return str(e.val)
       } else
       if (e instanceof Expr.Fun) {
-         return interpretTrie(e.σ)
+         return closure(ρ, interpretTrie(e.σ))
       } else
       if (e instanceof Expr.Var) {
          const x: string = e.x.str
@@ -31,10 +32,9 @@ export function interpret (e: Expr): InterpretExpr {
          }
          } else
       if (e instanceof Expr.App) {
-         const f: Value = interpret(e.func)(ρ)
-         if (f instanceof Func) {
-            const [ρʹ, eʹ]: [Env, Expr] = f.__apply(interpret(e.arg))
-            assert(eʹ instanceof Expr.Expr) // f silently has type Func<any>, ouch
+         const v: Value = interpret(e.func)(ρ)
+         if (v instanceof Closure) {
+            const [ρʹ, eʹ]: [Env, Expr] = v.f.__apply(interpret(e.arg))
             // TODO: closeDefs
             return interpret(eʹ)(Env.concat(ρ, ρʹ))
          } else {
