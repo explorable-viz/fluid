@@ -1,6 +1,6 @@
 import { absurd, error } from "./util/Core"
 import { map } from "./BaseTypes2"
-import { Env, concat, empty, singleton } from "./Env2"
+import { Env, emptyEnv } from "./Env2"
 import { ArgumentsFunc, ConstrFunc, Func, Value } from "./ExplVal2"
 import { Expr } from "./Expr2"
 
@@ -12,7 +12,7 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<[Env, K]> {
    if (Trie.Var.is(σ)) {
       return {
          __apply (v: Value): [Env, K] {
-            return [singleton(σ.x.str, v), σ.κ]
+            return [Env.singleton(σ.x.str, v), σ.κ]
          }
       }
    } else
@@ -32,7 +32,7 @@ function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<[Env, K]>
       return {
          __apply (v̅: Value[]): [Env, K] {
             if (v̅.length === 0) {
-               return [empty(), Π.κ]
+               return [emptyEnv(), Π.κ]
             } else {
                return error("Wrong number of arguments")
             }
@@ -47,7 +47,7 @@ function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<[Env, K]>
             } else {
                const [ρ, Πʹ]: [Env, Args<K>] = interpretTrie(Π.σ).__apply(v̅[0]),
                      [ρʹ, κ]: [Env, K] = interpretArgs(Πʹ).__apply(v̅.slice(1))
-               return [concat(ρ, ρʹ), κ]
+               return [Env.concat(ρ, ρʹ), κ]
             }
          }
       }

@@ -1,7 +1,7 @@
 import { __nonNull, absurd, assert, error } from "./util/Core"
 import { Cons, List, Nil } from "./BaseTypes2"
 import { DataType, datatypeFor } from "./DataType2"
-import { Env, concat } from "./Env2"
+import { Env } from "./Env2"
 import { Expr } from "./Expr2"
 import { Func, State_Dyn, Value, construct, num, str } from "./ExplVal2"
 import { interpretTrie } from "./Match2"
@@ -36,7 +36,7 @@ export function interpret (e: Expr): InterpretExpr {
             const [ρʹ, eʹ]: [Env, Expr] = f.__apply(interpret(e.arg))
             assert(eʹ instanceof Expr.Expr) // f silently has type Func<any>, ouch
             // TODO: closeDefs
-            return interpret(eʹ)(concat(ρ, ρʹ))
+            return interpret(eʹ)(Env.concat(ρ, ρʹ))
          } else {
             return error("Not a function")
          }
