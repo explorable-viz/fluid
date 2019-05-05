@@ -3,6 +3,7 @@ import { Expr } from "./Expr2"
 import { Func, Env } from "./Func2"
 import { Value, make } from "./Value2"
 
+// TODO: break dependency on Expr, by compiling expressions to values?
 export class Closure extends Value {
    ρ: Env // ρ is _not_ closing for σ; need to extend with the bindings in δ
    δ: List<Expr.RecDef>
