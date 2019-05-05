@@ -76,7 +76,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          const ctr: Ctr = ctrFor(e.ctr.str),
                state: State = {}
          let e̅: List<Expr> = e.args
-         for (const f of ctr.fields) {
+         for (const f of ctr.f̅) {
             if (Cons.is(e̅)) {
                state[f] = interpret(e̅.head)(ρ)
                e̅ = e̅.tail
@@ -85,7 +85,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
                absurd()
             } 
          }
-         return make(ctr.cls, state)
+         return make(ctr.C, state)
       } else 
       if (e instanceof Expr.Let) {
          const [ρʹ, eʹ]: [Env, Expr] = interpretTrie<Expr>(e.σ).__apply(interpret(e.e)(ρ))
