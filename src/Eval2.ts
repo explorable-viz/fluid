@@ -1,6 +1,6 @@
 import { __nonNull, absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes2"
-import { DataType, datatypeFor } from "./DataType2"
+import { Ctr, ctrFor } from "./DataType2"
 import { Closure, closure } from "./ExplVal2"
 import { Expr } from "./Expr2"
 import { Env, emptyEnv, extendEnv } from "./Func2"
@@ -73,10 +73,10 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          }
       } else
       if (e instanceof Expr.Constr) {
-         const d: DataType = __nonNull(datatypeFor.get(e.ctr.str)),
+         const ctr: Ctr = ctrFor(e.ctr.str),
                state: State = {}
          let e̅: List<Expr> = e.args
-         for (const f of d.fields) {
+         for (const f of ctr.fields) {
             if (Cons.is(e̅)) {
                state[f] = interpret(e̅.head)(ρ)
                e̅ = e̅.tail
@@ -85,7 +85,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
                absurd()
             } 
          }
-         return make(d.cls, state)
+         return make(ctr.cls, state)
       } else 
       if (e instanceof Expr.Let) {
          const [ρʹ, eʹ]: [Env, Expr] = interpretTrie<Expr>(e.σ).__apply(interpret(e.e)(ρ))
