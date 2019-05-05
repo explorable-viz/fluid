@@ -123,7 +123,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
          const tu: ExplVal = eval_(ρ, e.arg)
-         return explVal(ρ, unaryApp(k, tf, tu), f.op.b.op(tu.v!)(kᵥ, ann.meet(f.α, tu.v.α, e.α)))
+         return explVal(ρ, unaryApp(k, tf, tu), f.op.b.op(tu.v)(kᵥ, ann.meet(f.α, tu.v.α, e.α)))
       } else {
          return error(`Cannot apply a ${className(f)}`, f)
       }

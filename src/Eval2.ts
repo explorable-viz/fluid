@@ -1,4 +1,4 @@
-import { __nonNull, absurd, error } from "./util/Core"
+import { __nonNull, absurd, className, error } from "./util/Core"
 import { Cons, List, Nil } from "./BaseTypes2"
 import { DataType, datatypeFor } from "./DataType2"
 import { Env } from "./Env2"
@@ -6,7 +6,7 @@ import { Closure, closure } from "./ExplVal2"
 import { Expr } from "./Expr2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
-import { State_Dyn, Value, construct, num, primOp, str } from "./Value2"
+import { State_Dyn, Value, PrimOp, construct, num, primOp, str } from "./Value2"
 
 type InterpretExpr = (ρ: Env) => Value
 
@@ -40,8 +40,13 @@ export function interpret (e: Expr): InterpretExpr {
             const [ρʹ, eʹ]: [Env, Expr] = v.f.__apply(interpret(e.arg))
             // TODO: closeDefs
             return interpret(eʹ)(Env.concat(ρ, ρʹ))
+         } else
+         // Primitives with identifiers as names are unary and first-class.
+         if (v instanceof PrimOp) {
+            const u: Value = interpret(e.arg)(ρ)
+            return v.op.b.op(u)
          } else {
-            return error("Not a function")
+            return error(`Cannot apply a ${className(v)}`, v)
          }
       } else
       // Operators (currently all binary) are "syntax", rather than names.
