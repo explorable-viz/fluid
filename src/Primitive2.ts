@@ -1,6 +1,6 @@
 import { as, assert } from "./util/Core"
 import { Bool, true_, false_ } from "./BaseTypes2"
-import { Env, emptyEnv, extendEnv } from "./Env2"
+import { Env, emptyEnv, extendEnv } from "./Func2"
 import { Num, Str, _, Value, make, num, primOp, str } from "./Value2"
 
 type Unary<T, V> = (x: T) => V

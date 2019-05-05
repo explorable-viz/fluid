@@ -1,9 +1,34 @@
-import { absurd } from "./util/Core"
+import { absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
-import { Value, _, make } from "./Value2"
+import { fieldVals } from "./DataType2"
+import { Value, Constr, _, make } from "./Value2"
+
+// Func to distinguish from expression-level Fun.
+export abstract class Func<T> extends Value {
+   abstract __apply (v: Value): [Env, T]
+}
+
+export class ConstrFunc<T> extends Func<T> {
+   __apply (v: Value): [Env, T] {
+      if (v instanceof Constr) {
+         // Probably slow compared to visitor pattern :-o
+         return (this as any as Func_Dyn<T>)[className(v)].__apply(fieldVals(v))
+      } else {
+         return error("Not a datatype")
+      }
+   }
+}
+
+export abstract class ArgumentsFunc<T> extends Value {
+   abstract __apply (v̅: Value[]): [Env, T]
+}
+
+// Can't add __apply to this because inconsistent with index signature.
+export interface Func_Dyn<T> {
+   [ctr: string]: ArgumentsFunc<T>
+}
 
 // Environments are snoc lists.
-
 export abstract class Env implements Value {
    // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
    abstract entries (): List<Value>
