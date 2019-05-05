@@ -6,7 +6,7 @@ import { Closure, closure } from "./ExplVal2"
 import { Expr } from "./Expr2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
-import { State_Dyn, Value, construct, num, str } from "./Value2"
+import { State_Dyn, Value, construct, num, primOp, str } from "./Value2"
 
 type InterpretExpr = (ρ: Env) => Value
 
@@ -30,7 +30,10 @@ export function interpret (e: Expr): InterpretExpr {
          } else {
             return error(`Variable '${x}' not found.`)
          }
-         } else
+      } else
+      if (e instanceof Expr.PrimOp) {
+         return primOp(e.op)
+      } else
       if (e instanceof Expr.App) {
          const v: Value = interpret(e.func)(ρ)
          if (v instanceof Closure) {

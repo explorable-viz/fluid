@@ -1,6 +1,7 @@
 import { Class, className, error } from "./util/Core"
 import { fieldVals } from "./DataType2"
 import { Env } from "./Env2"
+import { UnaryOp } from "./Primitive2"
 
 // use to initialise fields for reflection, without requiring constructors
 export const _: any = undefined 
@@ -30,6 +31,14 @@ export function str (val: string): Str {
 
 // Tags a value of a datatype constructor.
 export abstract class Constr<T> extends Value {
+}
+
+export class PrimOp extends Value {
+   op: UnaryOp
+}
+
+export function primOp (op: UnaryOp): PrimOp {
+   return make(PrimOp, { op })
 }
 
 // Func to distinguish from expression-level Fun.

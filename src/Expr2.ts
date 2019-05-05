@@ -1,6 +1,7 @@
 import { Lexeme } from "./util/parse/Core2"
 import { List } from "./BaseTypes2"
 import { FiniteMap } from "./FiniteMap2"
+import { UnaryOp } from "./Primitive2"
 import { Constr as Constrʹ, _, make } from "./Value2"
 
 export namespace Lex {
@@ -70,6 +71,32 @@ export namespace Expr {
    export class Let extends Expr {
       e: Expr = _
       σ: Trie.Var<Expr> = _
+   }
+
+   export class PrimOp extends Expr {
+      op: UnaryOp = _
+   }
+
+   export function primOp (op: UnaryOp): PrimOp {
+      return make(PrimOp, { op })
+   }
+
+   export class RecDef extends Constrʹ<RecDef> {
+      x: Lex.Var = _
+      σ: Trie<Expr> = _
+   }
+ 
+   export function recDef (x: Lex.Var, σ: Trie<Expr>): RecDef {
+      return make(RecDef, { x, σ })
+   }
+
+   export class LetRec extends Expr {
+      δ: List<RecDef> = _
+      e: Expr = _
+   }
+
+   export function letRec (δ: List<RecDef>, e: Expr): LetRec {
+      return make(LetRec, { δ, e })
    }
 
    export class MatchAs extends Expr {
