@@ -1,6 +1,6 @@
 import { Ord, eq } from "../Ord"
 import { __nonNull } from "../Core"
-import { Value, make } from "../../ExplVal2"
+import { Value, _, make } from "../../ExplVal2"
 
 export interface SyntaxNode {
 }
@@ -44,7 +44,7 @@ export class Pos {
    }
 
    toString (): string {
-      return '(' + this.line + ', ' + this.ch + ')'
+      return "(" + this.line + ", " + this.ch + ")"
    }
 
    equals (that: Pos): boolean {
@@ -112,42 +112,27 @@ export function regExp (r: RegExp): Parser<string> {
 }
 
 export class Whitespace extends Lexeme {
-   __tag: "Whitespace"
-   str: string
-
-   constructor_ (str: string): void {
-      this.str = str
-   }
+   str: string = _
 
    static make (str: string): Whitespace {
-      return make(Whitespace, str)
+      return make(Whitespace, { str })
    }
 }
 
 export class SingleLineComment extends Lexeme {
-   __tag: "SingleLineComment"
-   str: string
-
-   constructor_ (str: string): void {
-      this.str = str
-   }
+   str: string = _
 
    static make (str: string): SingleLineComment {
-      return make(SingleLineComment, str)
+      return make(SingleLineComment, { str })
    }
 }
 
 // Does this serve any purpose?
 export class Operator extends Lexeme {
-   __tag: "Operator"
-   str: string
-
-   constructor_ (str: string): void {
-      this.str = str
-   }
+   str: string = _
 
    static make (str: string): Operator {
-      return make(Operator, str)
+      return make(Operator, { str })
    }
 }
 
@@ -157,7 +142,7 @@ function token<L extends Lexeme> (p: Parser<string>, C: LexemeClass<L>): Parser<
    function token_ (state: ParseState): ParseResult<L> | null {
       const r: ParseResult<string> | null = p(state)
       if (r !== null) {
-         const l: L = make(C, r.ast)
+         const l: L = make(C, { str: r.ast } )
          return {
             state: r.state.append([l, [state.pos, r.state.pos]]),
             matched: r.matched,

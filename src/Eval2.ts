@@ -23,8 +23,13 @@ export function interpret (e: Expr): InterpretExpr {
          return interpretTrie(e.σ)
       } else
       if (e instanceof Expr.Var) {
-         return __nonNull(ρ[e.x.str])
-      } else
+         const x: string = e.x.str
+         if (ρ.has(x)) { 
+            return ρ.get(x)!
+         } else {
+            return error(`Variable '${x}' not found.`)
+         }
+         } else
       if (e instanceof Expr.App) {
          const f: Value = interpret(e.func)(ρ)
          if (f instanceof Func) {

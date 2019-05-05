@@ -1,6 +1,9 @@
 import { Class, className, error } from "./util/Core"
 import { fieldVals } from "./DataType2"
 
+// use to initialise fields for reflection, without requiring constructors
+export const _: any = undefined 
+
 // Value in the metalanguage. TODO: rename to PersistentObj?
 export abstract class Value {
 }
@@ -25,7 +28,7 @@ export function str (val: string): Str {
 }
 
 // Value of a datatype constructor.
-export abstract class Constr<T> extends Value implements Metadata<T> {
+export abstract class Constr<T> extends Value {
    __match<U> (σ: ConstrFunc<U>): U {
       return σ.__apply(this)
    }
@@ -56,39 +59,16 @@ export interface Func_Dyn<T> {
    [ctr: string]: ArgumentsFunc<T>
 }
 
-// Dynamic version of State?
 export interface State_Dyn {
-   [prop: string]: Value
+   [prop: string]: Persistent
 }
 
-type ExplState<T> = { 
-   [prop in keyof State<T>]: Expl 
-}
-
-// Gather the metadata properties associated with T. The __ prefix indicates these properties must not be treated as "data fields";
-// statically, we can express that by excluding all properties which are properties of Metadata, but dynamically there isn't an easy way
-// to express that.
-interface Metadata<T> {
-   __expl?: ExplState<T>
-   __match<U> (σ: ConstrFunc<U>): U
-}  
-
-type State<T> = {
-   [prop in Exclude<keyof T, keyof Metadata<T>>]: T[prop] extends Persistent ? T[prop] : never
-}
-
-// Not easy to put this into Explainable and have it be specifically typed enough.
-export function construct<T extends Value> (tgt: T, state: State<T>): T {
-   return construct_dyn(tgt, state) as T
-}
-
-// Dynamic version of construct.
-function construct_dyn (tgt: Value, state: State_Dyn): Value {
+export function construct<T extends Value> (tgt: T, state: State_Dyn): T {
    // TODO: copy state to fields of tgt
    return tgt
 }
 
-export function make<T extends Value> (ctr: Class<T>, state: State<T>): T {
+export function make<T extends Value> (ctr: Class<T>, state: State_Dyn): T {
    return construct(new ctr, state)
 }
 

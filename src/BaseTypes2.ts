@@ -1,4 +1,4 @@
-import { Constr, Value, make } from "./ExplVal2"
+import { Constr, Value, _, make } from "./ExplVal2"
 
 export abstract class Bool extends Constr<Bool> {
 }
@@ -31,21 +31,21 @@ export function nil<T> (): List<T> {
 }
 
 export class Cons<T extends Value> extends List<T> {
-   head: T
-   tail: List<T>
+   head: T = _
+   tail: List<T> = _
 
    static is<T> (xs: List<T>): xs is Cons<T> {
       return xs instanceof Cons
    }
 }
 
-export function cons<T extends Value> (head: T, tail: List<T>): List<T> {
-   return make(Cons, { head, tail })
+export function cons<T extends Value> (head: T, tail: List<T>): Cons<T> {
+   return make<Cons<T>>(Cons, { head, tail })
 }
 
 export class Pair<T, U> extends Constr<Pair<T, U>> {
-   fst: T
-   snd: U
+   fst: T = _
+   snd: U = _
 }
 
 export abstract class Tree<T> extends Constr<Tree<T>> {
@@ -55,9 +55,9 @@ export class Empty<T> extends Tree<T> {
 }
 
 export class NonEmpty<T> extends Tree<T> {
-   left: Tree<T>
-   t: T
-   right: Tree<T>
+   left: Tree<T> = _
+   t: T = _
+   right: Tree<T> = _
 }
 
 export function map<T, U> (t: Tree<T>, f: (t: T) => U): Tree<U> {

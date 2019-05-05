@@ -9,14 +9,14 @@ import Kont = Expr.Kont
 import Trie = Expr.Trie
 
 export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<[Env, K]> {
-   if (σ instanceof Trie.Var) {
+   if (Trie.Var.is(σ)) {
       return {
          __apply (v: Value): [Env, K] {
-            return [singleton(σ.x, v), σ.κ]
+            return [singleton(σ.x.str, v), σ.κ]
          }
       }
    } else
-   if (σ instanceof Trie.Constr) {
+   if (Trie.Constr.is(σ)) {
       const f: Func<[Env, K]> = new ConstrFunc<[Env, K]>()
       map(σ.cases, ({ fst: ctr, snd: Π }): void => {
          (f as any)[ctr] = interpretArgs(Π)
@@ -28,7 +28,7 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<[Env, K]> {
 }
 
 function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<[Env, K]> {
-   if (Π instanceof Args.End) {
+   if (Args.End.is(Π)) {
       return {
          __apply (v̅: Value[]): [Env, K] {
             if (v̅.length === 0) {
@@ -39,7 +39,7 @@ function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<[Env, K]>
          }
       }
    } else
-   if (Π instanceof Args.Next) {
+   if (Args.Next.is(Π)) {
       return {
          __apply (v̅: Value[]): [Env, K] {
             if (v̅.length === 0) {

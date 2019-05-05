@@ -1,10 +1,7 @@
 import { Lexeme } from "./util/parse/Core2"
 import { List } from "./BaseTypes2"
-import { Constr as Constrʹ, make } from "./ExplVal2"
+import { Constr as Constrʹ, _, make } from "./ExplVal2"
 import { FiniteMap } from "./FiniteMap2"
-
-// use to initialise fields for reflection, without requiring constructors
-const _: any = undefined 
 
 export namespace Lex {
    // Probably better to replace the Lexeme subtypes with a discriminated union.
@@ -33,11 +30,11 @@ export namespace Expr {
    }
 
    export class ConstNum extends Expr {
-      val: number
+      val: number = _
    }
    
    export class ConstStr extends Expr {
-      val: string
+      val: string = _
    }
 
    export class Var extends Expr {
@@ -86,11 +83,19 @@ export namespace Expr {
       }
 
       export class End<K extends Kont<K>> extends Args<K> {
-         κ: K
+         κ: K = _
+
+         static is<K extends Kont<K>> (Π: Args<K>): Π is End<K> {
+            return Π instanceof End
+         }
       }
 
       export class Next<K extends Kont<K>> extends Args<K> {
-         σ: Trie<Args<K>>
+         σ: Trie<Args<K>> = _
+
+         static is<K extends Kont<K>> (Π: Args<K>): Π is Next<K> {
+            return Π instanceof Next
+         }
       }
    }
 
@@ -100,11 +105,19 @@ export namespace Expr {
 
       export class Constr<K extends Kont<K>> extends Trie<K> {
          cases: FiniteMap<string, Args<K>> = _
+
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Constr<K> {
+            return σ instanceof Constr
+         }
       }
 
       export class Var<K extends Kont<K>> extends Trie<K> {
          x: Lex.Var = _
          κ: K = _
+
+         static is<K extends Kont<K>> (σ: Trie<K>): σ is Var<K> {
+            return σ instanceof Var
+         }
       }
    }
 }
