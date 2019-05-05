@@ -6,7 +6,7 @@ import { Expr } from "./Expr2"
 import { Env, emptyEnv, extendEnv } from "./Func2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
-import { State_Dyn, Value, PrimOp, construct, num, primOp, str } from "./Value2"
+import { PrimOp, State, Value, make, num, primOp, str } from "./Value2"
 
 export module Eval {
 
@@ -23,11 +23,9 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    }
 }
 
-type InterpretExpr = (ρ: Env) => Value
-
 // Repeatedly reinterprets subexpressions, so probably as slow as the previous implementation.
 // Should be able to significantly speed up by memoisation.
-export function interpret (e: Expr): InterpretExpr {
+export function interpret (e: Expr): (ρ: Env) => Value {
    return (ρ: Env): Value => {
       if (e instanceof Expr.ConstNum) {
          return num(e.val)
@@ -76,7 +74,7 @@ export function interpret (e: Expr): InterpretExpr {
       } else
       if (e instanceof Expr.Constr) {
          const d: DataType = __nonNull(datatypeFor.get(e.ctr.str)),
-               state: State_Dyn = {}
+               state: State = {}
          let e̅: List<Expr> = e.args
          for (const f of d.fields) {
             if (Cons.is(e̅)) {
@@ -87,7 +85,7 @@ export function interpret (e: Expr): InterpretExpr {
                absurd()
             } 
          }
-         return construct(new d.cls, state)
+         return make(d.cls, state)
       } else 
       if (e instanceof Expr.Let) {
          const [ρʹ, eʹ]: [Env, Expr] = interpretTrie<Expr>(e.σ).__apply(interpret(e.e)(ρ))

@@ -1,31 +1,31 @@
 import { absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { fieldVals } from "./DataType2"
-import { Constr, Value, _, make } from "./Value2"
+import { Constr, State, Value, _, make } from "./Value2"
 
 // Func to distinguish from expression-level Fun.
-export abstract class Func<T> extends Value {
-   abstract __apply (v: Value): [Env, T]
+export abstract class Func<K> extends Value {
+   abstract __apply (v: Value): [Env, K]
 }
 
-export class ConstrFunc<T> extends Func<T> {
-   __apply (v: Value): [Env, T] {
+export class ConstrFunc<K> extends Func<K> {
+   __apply (v: Value): [Env, K] {
       if (v instanceof Constr) {
          // Probably slow compared to visitor pattern :-o
-         return (this as any as Func_Dyn<T>)[className(v)].__apply(fieldVals(v))
+         return (this as any as Func_State<K>)[className(v)].__apply(fieldVals(v))
       } else {
          return error("Not a datatype")
       }
    }
 }
 
-export abstract class ArgumentsFunc<T> extends Value {
-   abstract __apply (v̅: Value[]): [Env, T]
+export abstract class ArgumentsFunc<K> extends Value {
+   abstract __apply (v̅: Value[]): [Env, K]
 }
 
 // Can't add __apply to this because inconsistent with index signature.
-export interface Func_Dyn<T> {
-   [ctr: string]: ArgumentsFunc<T>
+export interface Func_State<K> extends State {
+   [ctr: string]: ArgumentsFunc<K>
 }
 
 // Environments are snoc lists.

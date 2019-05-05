@@ -1,7 +1,7 @@
 import { Class, __nonNull, classOf, funName } from "./util/Core"
 import { Cons, Nil } from "./BaseTypes2"
 import { Expl } from "./ExplVal2"
-import { Constr, State_Dyn, Value } from "./Value2"
+import { Constr, State, Value } from "./Value2"
 
 // TODO: doh, this is only a constructor of a datatype, not a datatype.
 export type DataType = {
@@ -30,5 +30,5 @@ export function fields (cls: Class<Value>): string[] {
 }
 
 export function fieldVals (v: Constr<Value>): Value[] {
-   return fields(classOf(v)).map(k => (v as any as State_Dyn)[k]) // ugh
+   return fields(classOf(v)).map(k => (v as State)[k])
 }

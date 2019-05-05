@@ -1,6 +1,6 @@
 import { absurd, error } from "./util/Core"
 import { map } from "./BaseTypes2"
-import { ArgumentsFunc, ConstrFunc, Func, Env, emptyEnv } from "./Func2"
+import { ArgumentsFunc, ConstrFunc, Func, Func_State, Env, emptyEnv } from "./Func2"
 import { Value } from "./Value2"
 import { Expr } from "./Expr2"
 
@@ -19,7 +19,7 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
    if (Trie.Constr.is(σ)) {
       const f: Func<K> = new ConstrFunc<K>()
       map(σ.cases, ({ fst: ctr, snd: Π }): void => {
-         (f as any)[ctr] = interpretArgs(Π)
+         (f as any as Func_State<K>)[ctr] = interpretArgs(Π)
       })
       return f
    } else {

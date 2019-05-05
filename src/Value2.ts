@@ -39,15 +39,16 @@ export function primOp (op: UnaryOp): PrimOp {
    return make(PrimOp, { op })
 }
 
-export interface State_Dyn {
+// Dynamic interface to a value object.
+export interface State {
    [prop: string]: Persistent
 }
 
-export function construct<T extends Value> (tgt: T, state: State_Dyn): T {
+export function construct<T extends Value> (tgt: T, state: State): T {
    // TODO: copy state to fields of tgt
    return tgt
 }
 
-export function make<T extends Value> (ctr: Class<T>, state: State_Dyn): T {
+export function make<T extends Value> (ctr: Class<T>, state: State): T {
    return construct(new ctr, state)
 }
