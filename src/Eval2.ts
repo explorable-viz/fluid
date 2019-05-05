@@ -6,7 +6,7 @@ import { Closure, closure } from "./ExplVal2"
 import { Expr } from "./Expr2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
-import { Func, State_Dyn, Value, construct, num, str } from "./Value2"
+import { State_Dyn, Value, construct, num, str } from "./Value2"
 
 type InterpretExpr = (ρ: Env) => Value
 

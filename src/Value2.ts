@@ -1,5 +1,6 @@
 import { Class, className, error } from "./util/Core"
 import { fieldVals } from "./DataType2"
+import { Env } from "./Env2"
 
 // use to initialise fields for reflection, without requiring constructors
 export const _: any = undefined 
@@ -33,11 +34,11 @@ export abstract class Constr<T> extends Value {
 
 // Func to distinguish from expression-level Fun.
 export abstract class Func<T> extends Value {
-   abstract __apply (v: Value): T
+   abstract __apply (v: Value): [Env, T]
 }
 
 export class ConstrFunc<T> extends Func<T> {
-   __apply (v: Value): T {
+   __apply (v: Value): [Env, T] {
       if (v instanceof Constr) {
          // Probably slow compared to visitor pattern :-o
          return (this as any as Func_Dyn<T>)[className(v)].__apply(fieldVals(v))
@@ -48,7 +49,7 @@ export class ConstrFunc<T> extends Func<T> {
 }
 
 export abstract class ArgumentsFunc<T> extends Value {
-   abstract __apply (v̅: Value[]): T
+   abstract __apply (v̅: Value[]): [Env, T]
 }
 
 // Can't add __apply to this because inconsistent with index signature.
