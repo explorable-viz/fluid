@@ -1,6 +1,6 @@
 import { as } from "./util/Core"
 import { Bool, true_, false_ } from "./BaseTypes2"
-import { Num, Str, Value, make, num, str } from "./ExplVal2"
+import { Num, Str, Value, make, num, str } from "./Value2"
 
 type Binary<T, U, V> = (x: T, y: U) => V
 

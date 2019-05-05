@@ -1,7 +1,7 @@
 import { absurd, error } from "./util/Core"
 import { map } from "./BaseTypes2"
 import { Env, emptyEnv } from "./Env2"
-import { ArgumentsFunc, ConstrFunc, Func, Value } from "./ExplVal2"
+import { ArgumentsFunc, ConstrFunc, Func, Value } from "./Value2"
 import { Expr } from "./Expr2"
 
 import Args = Expr.Args

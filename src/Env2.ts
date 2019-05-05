@@ -1,6 +1,6 @@
 import { absurd } from "./util/Core"
-import { Value, _, make } from "./ExplVal2"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
+import { Value, _, make } from "./Value2"
 
 // Environments are snoc lists.
 

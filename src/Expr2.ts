@@ -1,7 +1,7 @@
 import { Lexeme } from "./util/parse/Core2"
 import { List } from "./BaseTypes2"
-import { Constr as Constrʹ, _, make } from "./ExplVal2"
 import { FiniteMap } from "./FiniteMap2"
+import { Constr as Constrʹ, _, make } from "./Value2"
 
 export namespace Lex {
    // Probably better to replace the Lexeme subtypes with a discriminated union.

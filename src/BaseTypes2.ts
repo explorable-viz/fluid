@@ -1,4 +1,4 @@
-import { Constr, Value, _, make } from "./ExplVal2"
+import { Constr, Value, _, make } from "./Value2"
 
 export abstract class Bool extends Constr<Bool> {
 }

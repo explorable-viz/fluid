@@ -3,9 +3,9 @@ import { Cons, List, Nil } from "./BaseTypes2"
 import { DataType, datatypeFor } from "./DataType2"
 import { Env } from "./Env2"
 import { Expr } from "./Expr2"
-import { Func, State_Dyn, Value, construct, num, str } from "./ExplVal2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
+import { Func, State_Dyn, Value, construct, num, str } from "./Value2"
 
 type InterpretExpr = (ρ: Env) => Value
 
@@ -68,11 +68,11 @@ export function interpret (e: Expr): InterpretExpr {
       } else 
       if (e instanceof Expr.Let) {
          const [ρʹ, eʹ]: [Env, Expr] = interpretTrie<Expr>(e.σ).__apply(interpret(e.e)(ρ))
-         return interpret(eʹ)(concat(ρ, ρʹ))
+         return interpret(eʹ)(Env.concat(ρ, ρʹ))
       } else
       if (e instanceof Expr.MatchAs) {
          const [ρʹ, eʹ]: [Env, Expr] = interpretTrie(e.σ).__apply(interpret(e)(ρ))
-         return interpret(eʹ)(concat(ρ, ρʹ))
+         return interpret(eʹ)(Env.concat(ρ, ρʹ))
       } else {
          return absurd()
       }

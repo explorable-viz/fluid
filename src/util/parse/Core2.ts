@@ -1,6 +1,6 @@
 import { Ord, eq } from "../Ord"
 import { __nonNull } from "../Core"
-import { Value, _, make } from "../../ExplVal2"
+import { Value, _, make } from "../../Value2" // TODO: fix upwards dependency
 
 export interface SyntaxNode {
 }

@@ -1,6 +1,7 @@
 import { Class, __nonNull, classOf, funName } from "./util/Core"
 import { Cons, Nil } from "./BaseTypes2"
-import { Constr, Expl, State_Dyn, Value } from "./ExplVal2"
+import { Expl } from "./ExplVal2"
+import { Constr, State_Dyn, Value } from "./Value2"
 
 // TODO: doh, this is only a constructor of a datatype, not a datatype.
 export type DataType = {
