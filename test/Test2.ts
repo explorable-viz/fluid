@@ -13,7 +13,7 @@ describe("example", () => {
 	describe("test", () => {
 		it("ok", () => {
          Expr.constr(Lex.ctr("Nil"), nil())
-         assert(fields(Expr.Constr).toString() === ["ctr", "args"].toString())
+         assert(fields(new Expr.Constr).toString() === ["ctr", "args"].toString())
 //         eval_(e)
       })
 	})

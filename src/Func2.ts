@@ -1,6 +1,6 @@
 import { absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
-import { fieldVals } from "./DataType2"
+import { fieldValues } from "./DataType2"
 import { Constr, State, Value, _, make } from "./Value2"
 
 // Func to distinguish from expression-level Fun.
@@ -12,7 +12,7 @@ export class ConstrFunc<K> extends Func<K> {
    __apply (v: Value): [Env, K] {
       if (v instanceof Constr) {
          // Probably slow compared to visitor pattern :-o
-         return (this as any as Func_State<K>)[className(v)].__apply(fieldVals(v))
+         return (this as any as Func_State<K>)[className(v)].__apply(fieldValues(v))
       } else {
          return error("Not a datatype")
       }

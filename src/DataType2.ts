@@ -44,7 +44,7 @@ export function isField (prop: string): boolean {
    return !prop.startsWith("__")
 }
 
-function fields (v: Constr<Value>): string[] {
+export function fields (v: Constr<Value>): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
 }
 
