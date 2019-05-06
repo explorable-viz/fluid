@@ -1,5 +1,5 @@
 import { ann } from "./util/Annotated"
-import { absurd, as, assert, className } from "./util/Core"
+import { absurd, as, assert, className, error } from "./util/Core"
 import { PersistentObject, make } from "./util/Persistent"
 import { asVersioned } from "./util/Versioned"
 import { Cons, List, Nil, nil } from "./BaseTypes"
@@ -43,15 +43,6 @@ export class Tagged<T extends Tag> implements PersistentObject {
 
 export function tagged<T extends Tag> (e: Expr | RecDef, tag: T): Tagged<T> {
    return make(Tagged, e, tag) as Tagged<T>
-}
-
-// User-level error.
-export function error (msg: string, ...x̅: any[]): any {
-   if (x̅.length > 0) {
-      console.warn("Error data:\n")
-      x̅.forEach(x => console.warn(x))
-   }
-   throw new Error("User error: " + msg)
 }
 
 export type ValId = Tagged<"v">
@@ -132,7 +123,7 @@ export function eval_ (ρ: Env, e: Expr): ExplVal {
       // Primitives with identifiers as names are unary and first-class.
       if (f instanceof Value.PrimOp) {
          const tu: ExplVal = eval_(ρ, e.arg)
-         return explVal(ρ, unaryApp(k, tf, tu), f.op.b.op(tu.v!)(kᵥ, ann.meet(f.α, tu.v.α, e.α)))
+         return explVal(ρ, unaryApp(k, tf, tu), f.op.b.op(tu.v)(kᵥ, ann.meet(f.α, tu.v.α, e.α)))
       } else {
          return error(`Cannot apply a ${className(f)}`, f)
       }
