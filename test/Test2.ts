@@ -1,20 +1,16 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { assert } from "../src/util/Core"
-import { nil } from "../src/BaseTypes2"
-import { fields } from "../src/DataType2"
-import { Expr, Lex } from "../src/Expr2"
+import { initialise, load, parse } from "./util/Core2"
 
 before((done: MochaDone) => {
+	initialise()
 	done()
 })
 
 describe("example", () => {
-	describe("test", () => {
+	describe("arithmetic", () => {
 		it("ok", () => {
-         Expr.constr(Lex.ctr("Nil"), nil())
-         assert(fields(new Expr.Constr).toString() === ["ctr", "args"].toString())
-//         eval_(e)
-      })
+			parse(load("arithmetic"))
+		})
 	})
 })
