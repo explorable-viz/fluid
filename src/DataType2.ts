@@ -1,6 +1,6 @@
 import { AClass, Class, __nonNull, assert, funName } from "./util/Core"
 import { Bool, Cons, Empty, False, List, NonEmpty, Nil, Pair, Tree, True } from "./BaseTypes2"
-import { Constr, State, Value } from "./Value2"
+import { Constr, Persistent, State, Value } from "./Value2"
 
 // Neither of these are reflective because of non-standard fields.
 
@@ -48,14 +48,14 @@ export function fields (v: Constr<Value>): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
 }
 
-export function fieldValues (v: Constr<Value>): Value[] {
-   return fields(v).map(k => (v as State)[k])
+export function fieldValues (v: Constr<Value>): Persistent[] {
+   return fields(v).map(k => (v as any as State)[k])
 }
 
 // Populated by initDataTypes(). Constructors are not yet first-class. TODO: reinstate projections.
 export let ctrToDataType: Map<string, DataType> = new Map
 
-export function initDataType<T> (D: AClass<T>, ctrC̅: Class<T>[]) {
+export function initDataType<T extends Constr<Value>> (D: AClass<T>, ctrC̅: Class<T>[]) {
    const ctrs: [string, Ctr][] = ctrC̅.map(
             (C: Class<T>): [string, Ctr] => [funName(C), new Ctr(C, fields(new C))]
          ),

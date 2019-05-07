@@ -11,7 +11,7 @@ export class Closure extends Value {
 }
 
 export function closure (ρ: Env, δ: List<Expr.RecDef>, f: Func<Expr>): Closure {
-   return make(Closure, { ρ, δ, f })
+   return make(Closure, ρ, δ, f)
 }
 
 export namespace Expl {
@@ -22,7 +22,7 @@ export namespace Expl {
    }
 
    export function empty (): Empty {
-      return make(Empty, {})
+      return make(Empty)
    }
 }
 

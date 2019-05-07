@@ -6,7 +6,7 @@ import { Expr } from "./Expr2"
 import { Env, emptyEnv, extendEnv } from "./Func2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
-import { PrimOp, State, Value, make, num, primOp, str } from "./Value2"
+import { PrimOp, Value, make, num, primOp, str } from "./Value2"
 
 export module Eval {
 
@@ -50,7 +50,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
       if (e instanceof Expr.App) {
          const v: Value = interpret(e.func)(ρ)
          if (v instanceof Closure) {
-            const [ρʹ, eʹ]: [Env, Expr] = v.f.__apply(interpret(e.arg)),
+            const [ρʹ, eʹ]: [Env, Expr] = v.f.__apply(interpret(e.arg)(ρ)),
                   ρ_defs: Env = closeDefs(v.δ, v.ρ, v.δ)
             return interpret(eʹ)(Env.concat(ρ, Env.concat(ρ_defs, ρʹ)))
          } else
@@ -73,19 +73,9 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          }
       } else
       if (e instanceof Expr.Constr) {
-         const ctr: Ctr = ctrFor(e.ctr.str),
-               state: State = {}
-         let e̅: List<Expr> = e.args
-         for (const f of ctr.f̅) {
-            if (Cons.is(e̅)) {
-               state[f] = interpret(e̅.head)(ρ)
-               e̅ = e̅.tail
-            } else
-            if (Nil.is(e̅)) {
-               absurd()
-            } 
-         }
-         return make(ctr.C, state)
+         const ctr: Ctr = ctrFor(e.ctr.str)
+         let v̅: Value[] = e.args.toArray().map((e: Expr) => interpret(e)(ρ))
+         return make(ctr.C, ...v̅)
       } else 
       if (e instanceof Expr.Let) {
          const [ρʹ, eʹ]: [Env, Expr] = interpretTrie<Expr>(e.σ).__apply(interpret(e.e)(ρ))

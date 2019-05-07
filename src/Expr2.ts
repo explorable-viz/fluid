@@ -11,7 +11,7 @@ export namespace Lex {
    }
 
    export function ctr (str: string): Ctr {
-      return make(Ctr, { str })
+      return make(Ctr, str)
    }
 
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
@@ -21,7 +21,7 @@ export namespace Lex {
    }
 
    export function opName (str: string): OpName {
-      return make(OpName, { str })
+      return make(OpName, str)
    }
 
    export class Var extends Lexeme {
@@ -29,7 +29,7 @@ export namespace Lex {
    }
 
    export function var_ (str: string): Var {
-      return make(Var, { str })
+      return make(Var, str)
    }
 }
 
@@ -60,7 +60,7 @@ export namespace Expr {
    }
 
    export function constr (ctr: Lex.Ctr, args: List<Expr>): Constr {
-      return make(Constr, { ctr, args })
+      return make(Constr, ctr, args)
    }
 
    export class Fun extends Expr {
@@ -78,7 +78,7 @@ export namespace Expr {
    }
 
    export function primOp (op: UnaryOp): PrimOp {
-      return make(PrimOp, { op })
+      return make(PrimOp, op)
    }
 
    export class RecDef extends Constrʹ<RecDef> {
@@ -87,7 +87,7 @@ export namespace Expr {
    }
  
    export function recDef (x: Lex.Var, σ: Trie<Expr>): RecDef {
-      return make(RecDef, { x, σ })
+      return make(RecDef, x, σ)
    }
 
    export class LetRec extends Expr {
@@ -96,7 +96,7 @@ export namespace Expr {
    }
 
    export function letRec (δ: List<RecDef>, e: Expr): LetRec {
-      return make(LetRec, { δ, e })
+      return make(LetRec, δ, e)
    }
 
    export class MatchAs extends Expr {

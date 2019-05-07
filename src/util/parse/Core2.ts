@@ -6,7 +6,7 @@ export interface SyntaxNode {
 }
 
 // The parser builds a list of these. Currently interned, but will probably need to become versioned.
-export abstract class Lexeme implements Value, SyntaxNode, Ord<Lexeme> {
+export abstract class Lexeme extends Value implements SyntaxNode, Ord<Lexeme> {
    abstract str: string
 
    eq (l: Lexeme): boolean {
@@ -115,7 +115,7 @@ export class Whitespace extends Lexeme {
    str: string = _
 
    static make (str: string): Whitespace {
-      return make(Whitespace, { str })
+      return make(Whitespace, str)
    }
 }
 
@@ -123,7 +123,7 @@ export class SingleLineComment extends Lexeme {
    str: string = _
 
    static make (str: string): SingleLineComment {
-      return make(SingleLineComment, { str })
+      return make(SingleLineComment, str)
    }
 }
 
@@ -132,7 +132,7 @@ export class Operator extends Lexeme {
    str: string = _
 
    static make (str: string): Operator {
-      return make(Operator, { str })
+      return make(Operator, str)
    }
 }
 
@@ -142,7 +142,7 @@ function token<L extends Lexeme> (p: Parser<string>, C: LexemeClass<L>): Parser<
    function token_ (state: ParseState): ParseResult<L> | null {
       const r: ParseResult<string> | null = p(state)
       if (r !== null) {
-         const l: L = make(C, { str: r.ast } )
+         const l: L = make(C, r.ast )
          return {
             state: r.state.append([l, [state.pos, r.state.pos]]),
             matched: r.matched,

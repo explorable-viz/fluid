@@ -10,11 +10,11 @@ import Trie = Expr.Trie
 
 export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
    if (Trie.Var.is(σ)) {
-      return {
+      return new (class extends Func<K> {
          __apply (v: Value): [Env, K] {
             return [Env.singleton(σ.x.str, v), σ.κ]
          }
-      }
+      })
    } else
    if (Trie.Constr.is(σ)) {
       const f: Func<K> = new ConstrFunc<K>()
@@ -29,7 +29,7 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
 
 function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<K> {
    if (Args.End.is(Π)) {
-      return {
+      return new (class extends ArgumentsFunc<K> {
          __apply (v̅: Value[]): [Env, K] {
             if (v̅.length === 0) {
                return [emptyEnv(), Π.κ]
@@ -37,10 +37,10 @@ function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<K> {
                return error("Wrong number of arguments")
             }
          }
-      }
+      })
    } else
    if (Args.Next.is(Π)) {
-      return {
+      return new (class extends ArgumentsFunc<K> {
          __apply (v̅: Value[]): [Env, K] {
             if (v̅.length === 0) {
                return error("Wrong number of arguments")
@@ -50,7 +50,7 @@ function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<K> {
                return [Env.concat(ρ, ρʹ), κ]
             }
          }
-      }
+      })
    } else {
       return absurd()
    }

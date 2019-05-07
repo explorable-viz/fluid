@@ -14,18 +14,18 @@ export class UnaryBody extends Value {
 } 
 
 function unaryBody<T extends Value, V extends Value> (op: Unary<T, V>): UnaryBody {
-   return make(UnaryBody, { op })
+   return make(UnaryBody, op)
 }
 
-export class BinaryBody implements Value {
+export class BinaryBody extends Value {
    op: Binary<Value, Value, Value> = _
 } 
 
 function binaryBody<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>): BinaryBody {
-   return make(BinaryBody, { op })
+   return make(BinaryBody, op)
 }
 
-export abstract class PrimOp implements Value {
+export abstract class PrimOp extends Value {
    name: string = _
 }
 
@@ -34,7 +34,7 @@ export class UnaryOp extends PrimOp {
 }
 
 function unary (name: string, b: UnaryBody): UnaryOp {
-   return make(UnaryOp, { name, b })
+   return make(UnaryOp, name, b)
 }
 
 function unary_<T extends Value, V extends Value> (op: Unary<T, V>): UnaryOp {
@@ -46,7 +46,7 @@ export class BinaryOp extends PrimOp {
 }
 
 function binary (name: string, b: BinaryBody): BinaryOp {
-   return make(BinaryOp, { name, b })
+   return make(BinaryOp, name, b)
 }
 
 function binary_<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>): BinaryOp {
