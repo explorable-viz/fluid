@@ -1,5 +1,4 @@
 import { Class, assert } from "./util/Core"
-import { fields } from "./DataType2"
 import { UnaryOp } from "./Primitive2"
 
 // use to initialise fields for reflection, without requiring constructors
@@ -14,7 +13,7 @@ export abstract class Value {
 export type Persistent = Value | string | number | Function
 
 export class Num extends Value {
-   val: number
+   val: number = _
 }
 
 export function num (val: number): Num {
@@ -22,7 +21,7 @@ export function num (val: number): Num {
 }
 
 export class Str extends Value {
-   val: string
+   val: string = _
 }
 
 export function str (val: string): Str {
@@ -34,7 +33,7 @@ export abstract class Constr<T> extends Value {
 }
 
 export class PrimOp extends Value {
-   op: UnaryOp
+   op: UnaryOp = _
 }
 
 export function primOp (op: UnaryOp): PrimOp {
@@ -120,4 +119,17 @@ export function construct<T extends Value> (tgt: T, v̅: Persistent[]): void {
    f̅.forEach((f: string): void => {
       tgtʹ[f] = v̅[n++]
    })
+}
+
+// Exclude metadata according to our convention.
+export function isField (prop: string): boolean {
+   return !prop.startsWith("__")
+}
+
+export function fields (v: Constr<Value>): string[] {
+   return Object.getOwnPropertyNames(v).filter(isField)
+}
+
+export function fieldValues (v: Constr<Value>): Persistent[] {
+   return fields(v).map(k => (v as any as State)[k])
 }

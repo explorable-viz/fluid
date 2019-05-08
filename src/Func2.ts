@@ -1,7 +1,6 @@
 import { absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
-import { fieldValues } from "./DataType2"
-import { Constr, Persistent, State, Value, _, make } from "./Value2"
+import { Constr, Persistent, State, Value, _, fieldValues, make } from "./Value2"
 
 // Func to distinguish from expression-level Fun.
 export abstract class Func<K> extends Value {

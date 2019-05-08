@@ -42,7 +42,7 @@ function unary_<T extends Value, V extends Value> (op: Unary<T, V>): UnaryOp {
 }
 
 export class BinaryOp extends PrimOp {
-   b: BinaryBody
+   b: BinaryBody = _
 }
 
 function binary (name: string, b: BinaryBody): BinaryOp {

@@ -35,7 +35,7 @@ export namespace Lex {
 
    // Literal lexemes are elided when constructing abstract syntax to avoid additional level of structure.
    export class NumLiteral extends Lexeme {
-      str: string
+      str: string = _
 
       toNumber (): number {
          return new Number(this.str).valueOf()
@@ -48,7 +48,7 @@ export namespace Lex {
 
    // Keywords also elided, but we'll probably want that in the syntax at some point.
    export class Keyword extends Lexeme {
-      str: string
+      str: string = _
    }
 
    export function keyword (str: string): Keyword {
@@ -66,7 +66,7 @@ export namespace Lex {
    }
 
    export class StringLiteral extends Lexeme {
-      str: string
+      str: string = _
 
       toString (): string {
          return str.quotes + this.str + str.quotes

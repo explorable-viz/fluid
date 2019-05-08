@@ -1,6 +1,6 @@
 import { AClass, Class, __nonNull, assert, funName } from "./util/Core"
 import { Bool, Cons, Empty, False, List, NonEmpty, Nil, Pair, Tree, True } from "./BaseTypes2"
-import { Constr, Persistent, State, Value } from "./Value2"
+import { Constr, Value, fields } from "./Value2"
 
 // Neither of these are reflective because of non-standard fields.
 
@@ -37,19 +37,6 @@ export function ctrFor (ctr: string): Ctr {
 export function arity (ctr: string): number {
    assert(ctrToDataType.has(ctr), "No such constructor.", ctr)
    return ctrFor(ctr).f̅.length
-}
-
-// Exclude metadata according to our convention.
-export function isField (prop: string): boolean {
-   return !prop.startsWith("__")
-}
-
-export function fields (v: Constr<Value>): string[] {
-   return Object.getOwnPropertyNames(v).filter(isField)
-}
-
-export function fieldValues (v: Constr<Value>): Persistent[] {
-   return fields(v).map(k => (v as any as State)[k])
 }
 
 // Populated by initDataTypes(). Constructors are not yet first-class. TODO: reinstate projections.
