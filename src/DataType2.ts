@@ -1,5 +1,6 @@
 import { AClass, Class, __nonNull, assert, funName } from "./util/Core"
 import { Bool, Cons, Empty, False, List, NonEmpty, Nil, Pair, Tree, True } from "./BaseTypes2"
+import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, Rect, RectFill, Scale, Transform, Translate, Transpose } from "./Graphics2"
 import { Constr, Value, fields } from "./Value2"
 
 // Neither of these are reflective because of non-standard fields.
@@ -55,7 +56,11 @@ export function initDataType<T extends Constr<Value>> (D: AClass<T>, ctrC̅: Cla
 // This until we have datatype definitions.
 export function initDataTypes (): void {
    initDataType(Bool, [True, False])
+   initDataType(GraphicsElement, [PathStroke, RectFill, Transform, Graphic])
+   initDataType(LinearTransform, [Scale, Translate, Transpose])
    initDataType(List, [Nil, Cons])
    initDataType(Pair, [Pair])
+   initDataType(Point, [Point])
+   initDataType(Rect, [Rect])
    initDataType(Tree, [Empty, NonEmpty])
 }
