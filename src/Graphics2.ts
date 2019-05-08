@@ -46,8 +46,8 @@ export class Scale extends LinearTransform {
 }
 
 export class Translate extends LinearTransform {
-   x: Num
-   y: Num
+   x: Num = _
+   y: Num = _
 }
 
 // Swaps x and y. Could subsume by a more general notion of reflection.
