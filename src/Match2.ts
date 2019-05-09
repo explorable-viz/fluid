@@ -40,7 +40,7 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
 
 function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<K> {
    if (Args.End.is(Π)) {
-      return new (class extends ArgumentsFunc<K> {
+      return new (class EndFunc extends ArgumentsFunc<K> {
          __apply (v̅: Value[]): [Env, K] {
             if (v̅.length === 0) {
                return [emptyEnv(), Π.κ]
@@ -51,7 +51,7 @@ function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<K> {
       })
    } else
    if (Args.Next.is(Π)) {
-      return new (class extends ArgumentsFunc<K> {
+      return new (class NextFunc extends ArgumentsFunc<K> {
          __apply (v̅: Value[]): [Env, K] {
             if (v̅.length === 0) {
                return error("Wrong number of arguments")
