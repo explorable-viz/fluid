@@ -13,7 +13,7 @@ export class ConstrFunc<K> extends Func<K> {
          // Probably slow compared to visitor pattern :-o
          return (this as any as Func_State<K>)[className(v)].__apply(fieldValues(v))
       } else {
-         return error("Not a datatype")
+         return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, this)
       }
    }
 }

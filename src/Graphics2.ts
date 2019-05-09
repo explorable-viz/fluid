@@ -1,9 +1,9 @@
-import { Num, Value, _, make } from "./Value2"
+import { Constr, Num, _, make } from "./Value2"
 import { List } from "./BaseTypes2"
 
 // Basic graphical datatypes.
 
-export class Rect extends Value {
+export class Rect extends Constr<Rect> {
    width: Num = _
    height: Num = _
 }
@@ -12,7 +12,7 @@ export function rect (width: Num, height: Num): Rect {
    return make(Rect, width, height)
 }
 
-export class Point extends Value {
+export class Point extends Constr<Point> {
    x: Num = _
    y: Num = _
 }
@@ -21,7 +21,7 @@ export function point (x: Num, y: Num): Point {
    return make(Point, x, y)
 }
 
-export abstract class GraphicsElement extends Value {
+export abstract class GraphicsElement extends Constr<GraphicsElement> {
 }
 
 export class Graphic extends GraphicsElement {
@@ -37,7 +37,7 @@ export class RectFill extends GraphicsElement {
    points: List<Point> = _
 }
 
-export abstract class LinearTransform extends Value {
+export abstract class LinearTransform extends Constr<LinearTransform> {
 }
 
 export class Scale extends LinearTransform {
