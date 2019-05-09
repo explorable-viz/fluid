@@ -1,6 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { initialise, load, parse } from "./util/Core2"
+import { initialise, load, parse, prelude } from "./util/Core2"
+import { Eval } from "../src/Eval2"
 
 before((done: MochaDone) => {
 	initialise()
@@ -10,7 +11,7 @@ before((done: MochaDone) => {
 describe("example", () => {
 	describe("arithmetic", () => {
 		it("ok", () => {
-			parse(load("arithmetic"))
+			Eval.interpret(parse(load("arithmetic")))(prelude)
 		})
 	})
 })
