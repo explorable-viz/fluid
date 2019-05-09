@@ -5,12 +5,12 @@ module.exports = function (config) {
       basePath: '',
       client: {
          mocha: {
-           timeout : 30000 // default 2000; runs much slower in CircleCI environment
+           timeout: 30000 // default 2000; runs much slower in CircleCI environment
          }
       },
       frameworks: ['mocha', 'chai'],
       files: [
-         './test/**/*.ts',
+         './test/**/Test2.ts',
          {
             pattern: './example/**/*.lcalc',
             watched: true,
