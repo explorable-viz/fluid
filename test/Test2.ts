@@ -9,9 +9,29 @@ before((done: MochaDone) => {
 })
 
 describe("example", () => {
+   // putting test name in a variable interacts poorly with asynchronous execution
+   
 	describe("arithmetic", () => {
 		it("ok", () => {
-			Eval.interpret(parse(load("arithmetic")))(prelude)
+			console.log(Eval.interpret(parse(load("arithmetic")))(prelude))
 		})
 	})
+
+   describe("compose", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("compose")))(prelude))
+		})
+	})
+
+	describe("lexicalScoping", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("lexicalScoping")))(prelude))
+		})
+	})
+
+	describe("normalise", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("normalise")))(prelude))
+		})
+   })
 })
