@@ -8,9 +8,8 @@ before((done: MochaDone) => {
 	done()
 })
 
+// putting test name in a variable interacts poorly with asynchronous execution
 describe("example", () => {
-   // putting test name in a variable interacts poorly with asynchronous execution
-   
 	xdescribe("arithmetic", () => {
 		it("ok", () => {
 			console.log(Eval.interpret(parse(load("arithmetic")))(prelude))
@@ -23,7 +22,13 @@ describe("example", () => {
 		})
 	})
 
-	describe("lexicalScoping", () => {
+   describe("factorial", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("factorial")))(prelude))
+		})
+	})
+
+	xdescribe("lexicalScoping", () => {
 		it("ok", () => {
 			console.log(Eval.interpret(parse(load("lexicalScoping")))(prelude))
 		})

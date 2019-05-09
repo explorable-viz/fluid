@@ -86,7 +86,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          return interpret(e.e)(Env.concat(ρ, ρʹ))
       } else
          if (e instanceof Expr.MatchAs) {
-         const [ρʹ, eʹ]: [Env, Expr] = interpretTrie(e.σ).__apply(interpret(e)(ρ))
+         const [ρʹ, eʹ]: [Env, Expr] = interpretTrie(e.σ).__apply(interpret(e.e)(ρ))
          return interpret(eʹ)(Env.concat(ρ, ρʹ))
       } else {
          return absurd("Unimplemented expression form.", e)

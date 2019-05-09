@@ -27,9 +27,9 @@ export function prependModule (src: string, e: Expr): Expr.LetRec {
 }
 
 export function parse (src: string): Expr {
-   return prependModule(loadLib("prelude"), 
-          prependModule(loadLib("graphics"), 
-          successfulParse(Parse.expr, src)))
+   // return prependModule(loadLib("prelude"), 
+          // prependModule(loadLib("graphics"), 
+   return successfulParse(Parse.expr, src) // ))
 }
 
 export let prelude: Env = createPrelude()
