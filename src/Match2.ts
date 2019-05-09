@@ -1,6 +1,6 @@
 import { absurd, error } from "./util/Core"
-import { ArgumentsFunc, ConstrFunc, Func, Func_State, Env, emptyEnv } from "./Func2"
-import { Value } from "./Value2"
+import { ArgumentsFunc, Func, Env, emptyEnv } from "./Func2"
+import { Value, make } from "./Value2"
 import { Expr } from "./Expr2"
 
 import Args = Expr.Args
@@ -16,11 +16,8 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
       })
    } else
    if (Trie.Constr.is(σ)) {
-      const f: Func<K> = new ConstrFunc<K>()
-      σ.cases.toArray().map(({ fst: ctr, snd: Π }): void => {
-         (f as any as Func_State<K>)[ctr] = interpretArgs(Π)
-      })
-      return f
+      let f̅: ArgumentsFunc<K>[] = σ.cases.toArray().map(({ snd: Π }) => interpretArgs(Π))
+      return make(C, ...f̅)
    } else {
       return absurd()
    }

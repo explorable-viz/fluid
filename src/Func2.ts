@@ -7,7 +7,8 @@ export abstract class Func<K> extends Value {
    abstract __apply (v: Value): [Env, K]
 }
 
-export class ConstrFunc<K> extends Func<K> {
+// Concrete instances must have a field per constructor, in *lexicographical* order.
+export abstract class ConstrFunc<K> extends Func<K> {
    __apply (v: Value): [Env, K] {
       if (v instanceof Constr) {
          // Probably slow compared to visitor pattern :-o

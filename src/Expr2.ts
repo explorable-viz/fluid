@@ -23,8 +23,9 @@ export namespace str {
    export const quotes: string = '"'
 }
 
+// Most of the lexical classes, e.g. Ctr, Var and literals, are elided in the syntax to avoid unneeded indirection.
 export namespace Lex {
-   // Probably better to replace the Lexeme subtypes with a discriminated union.
+   // Maybe replace Lexeme subtypes with discriminated union?
    export class Ctr extends Lexeme {
       str: string = _
    }
@@ -33,7 +34,6 @@ export namespace Lex {
       return make(Ctr, str)
    }
 
-   // Literal lexemes are elided when constructing abstract syntax to avoid additional level of structure.
    export class NumLiteral extends Lexeme {
       str: string = _
 
@@ -46,7 +46,6 @@ export namespace Lex {
       return make(NumLiteral, str)
    }
 
-   // Keywords also elided, but we'll probably want that in the syntax at some point.
    export class Keyword extends Lexeme {
       str: string = _
    }
@@ -77,7 +76,6 @@ export namespace Lex {
       return make(StringLiteral, str)
    }
 
-   // Variable lexemes are also elided, as per literals.
    export class Var extends Lexeme {
       str: string = _
    }
@@ -120,11 +118,11 @@ export namespace Expr {
    }
 
    export class Constr extends Expr {
-      ctr: Lex.Ctr = _
+      ctr: string = _
       args: List<Expr> = _
    }
 
-   export function constr (ctr: Lex.Ctr, args: List<Expr>): Constr {
+   export function constr (ctr: string, args: List<Expr>): Constr {
       return make(Constr, ctr, args)
    }
 
