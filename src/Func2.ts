@@ -1,7 +1,6 @@
 import { absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
-import { fieldValues } from "./DataType2"
-import { Constr, State, Value, _, make } from "./Value2"
+import { Constr, Persistent, State, Value, _, fieldValues, make } from "./Value2"
 
 // Func to distinguish from expression-level Fun.
 export abstract class Func<K> extends Value {
@@ -14,13 +13,13 @@ export class ConstrFunc<K> extends Func<K> {
          // Probably slow compared to visitor pattern :-o
          return (this as any as Func_State<K>)[className(v)].__apply(fieldValues(v))
       } else {
-         return error("Not a datatype")
+         return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, this)
       }
    }
 }
 
 export abstract class ArgumentsFunc<K> extends Value {
-   abstract __apply (v̅: Value[]): [Env, K]
+   abstract __apply (v̅: Persistent[]): [Env, K]
 }
 
 // Can't add __apply to this because inconsistent with index signature.
@@ -29,7 +28,7 @@ export interface Func_State<K> extends State {
 }
 
 // Environments are snoc lists.
-export abstract class Env implements Value {
+export abstract class Env extends Value {
    // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
    abstract entries (): List<Value>
    abstract get (k: string): Value | undefined
@@ -65,7 +64,7 @@ export class EmptyEnv extends Env {
 }
 
 export function emptyEnv (): EmptyEnv {
-   return make(EmptyEnv, {})
+   return make(EmptyEnv)
 }
 
 export class ExtendEnv extends Env {
@@ -87,5 +86,5 @@ export class ExtendEnv extends Env {
 }
 
 export function extendEnv (ρ: Env, k: string, v: Value): ExtendEnv {
-   return make(ExtendEnv, { ρ, k, v })
+   return make(ExtendEnv, ρ, k, v)
 }

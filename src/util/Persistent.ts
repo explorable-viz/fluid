@@ -43,18 +43,18 @@ interface Memoisable<T extends Persistent> {
 }
 
 class MemoCtr<T extends PersistentObject> implements Memoisable<T> {
-   ctr: PersistentClass<T>
+   C: PersistentClass<T>
 
-   constructor (ctr: PersistentClass<T>) {
-      this.ctr = ctr
+   constructor (C: PersistentClass<T>) {
+      this.C = C
    }
 
    get key (): Persistent {
-      return this.ctr
+      return this.C
    } 
 
    call (v̅: MemoArgs): T {
-      const o: T = new this.ctr
+      const o: T = new this.C
       o.constructor_(...v̅)
       Object.freeze(o)
       return o

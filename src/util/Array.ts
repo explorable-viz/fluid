@@ -19,3 +19,15 @@ export function counts<T> (x̅: T[]): Map<T, number> {
 export function zip<T, U> (x̅: T[], y̅: U[]): [T, U][] {
    return x̅.map((x: T, n: number): [T, U] => [x, y̅[n]])
 }
+
+export function eq<T> (x̅: T[], y̅: T[]): boolean {
+   let n: number = x̅.length
+   if (n != y̅.length) {
+      return false
+   } else {
+      while (n--) {
+         if (x̅[n] !== y̅[n]) return false;
+      }
+      return true
+   }
+}
