@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd, error } from "./util/Core"
+import { Class, __nonNull, absurd, assert, error } from "./util/Core"
 import { Pair } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
 import { ArgumentsFunc, ConstrFunc, Func, Env, emptyEnv } from "./Func2"
@@ -23,13 +23,15 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
             d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
             c̅ʹ: string[] = [...d.ctrs.keys()].sort(), // inefficient to do this here
             f̅: ArgumentsFunc<K>[] = []
-      for (let n: number = 0; n < c̅ʹ.length; ++n) {
-         if (c̅.includes(c̅ʹ[n])) {
-            f̅.push(interpretArgs(cases[n].snd))
+      let n: number = 0
+      for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
+         if (c̅.includes(c̅ʹ[nʹ])) {
+            f̅.push(interpretArgs(cases[n++].snd))
          } else {
             f̅.push(undefined as any)
          }
       }
+      assert(n === cases.length)
       return make(d.elimC as Class<ConstrFunc<K>>, ...f̅)
    } else {
       return absurd()
