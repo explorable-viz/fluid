@@ -87,7 +87,7 @@ const var_: Parser<Lex.Var> =
    )
 
 const variable: Parser<Var> =
-   withAction(var_, (x: Lex.Var) => Expr.var_(x))
+   withAction(var_, (x: Lex.Var) => Expr.var_(x.str))
 
 // Only allow Unicode escape sequences (i.e. no hex or octal escapes, nor "character" escapes such as \r).
 const hexDigit: Parser<string> = 
@@ -219,7 +219,7 @@ const let_: Parser<Let> =
          dropFirst(keyword(str.in_), expr)
       ),
       ([[x, e], eʹ]: [[Lex.Var, Expr], Expr]) =>
-         Expr.let_(e, Trie.var_(x, eʹ))
+         Expr.let_(e, Trie.var_(x.str, eʹ))
    )
 
 const recDef: Parser<RecDef> =
@@ -349,7 +349,7 @@ function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> 
 function variable_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Var<K>> {
    return withAction(
       seq(var_, p), 
-      ([x, κ]: [Lex.Var, K]): Trie.Var<K> => Trie.var_(x, κ)
+      ([x, κ]: [Lex.Var, K]): Trie.Var<K> => Trie.var_(x.str, κ)
    )
 }
 

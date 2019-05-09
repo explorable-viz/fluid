@@ -37,7 +37,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          return closure(ρ, nil(), interpretTrie(e.σ))
       } else
       if (e instanceof Expr.Var) {
-         const x: string = e.x.str
+         const x: string = e.x
          if (ρ.has(x)) { 
             return ρ.get(x)!
          } else {

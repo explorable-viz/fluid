@@ -11,7 +11,7 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
    if (Trie.Var.is(σ)) {
       return new (class extends Func<K> {
          __apply (v: Value): [Env, K] {
-            return [Env.singleton(σ.x.str, v), σ.κ]
+            return [Env.singleton(σ.x, v), σ.κ]
          }
       })
    } else

@@ -77,6 +77,7 @@ export namespace Lex {
       return make(StringLiteral, str)
    }
 
+   // Variable lexemes are also elided, as per literals.
    export class Var extends Lexeme {
       str: string = _
    }
@@ -191,10 +192,10 @@ export namespace Expr {
    }
 
    export class Var extends Expr {
-      x: Lex.Var = _
+      x: string = _
    }
 
-   export function var_ (x: Lex.Var): Var {
+   export function var_ (x: string): Var {
       return make(Var, x)
    }
 
@@ -284,7 +285,7 @@ export namespace Expr {
       }
 
       export class Var<K extends Kont<K>> extends Trie<K> {
-         x: Lex.Var = _
+         x: string = _
          κ: K = _
 
          static is<K extends Kont<K>> (σ: Trie<K>): σ is Var<K> {
@@ -292,7 +293,7 @@ export namespace Expr {
          }
       }
 
-      export function var_<K extends Kont<K>> (x: Lex.Var, κ: K): Var<K> {
+      export function var_<K extends Kont<K>> (x: string, κ: K): Var<K> {
          return make<Var<K>>(Var, x, κ)
       }
    }
