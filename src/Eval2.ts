@@ -1,6 +1,6 @@
 import { __nonNull, absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes2"
-import { Ctr, ctrFor } from "./DataType2"
+import { ctrFor } from "./DataType2"
 import { Closure, closure } from "./ExplVal2"
 import { Expr } from "./Expr2"
 import { Env, emptyEnv, extendEnv } from "./Func2"
@@ -74,7 +74,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
       } else
       if (e instanceof Expr.Constr) {
          let v̅: Value[] = e.args.toArray().map((e: Expr) => interpret(e)(ρ))
-         return make(ctrFor(e.ctr.str).C, ...v̅)
+         return make(ctrFor(e.ctr).C, ...v̅)
       } else 
       if (e instanceof Expr.Let) {
          const [ρʹ, eʹ]: [Env, Expr] = interpretTrie<Expr>(e.σ).__apply(interpret(e.e)(ρ))

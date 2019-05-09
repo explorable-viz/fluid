@@ -1,10 +1,10 @@
-import { assert } from "./util/Core"
+import { assert, funName } from "./util/Core"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core2"
-import { List, nil } from "./BaseTypes2"
+import { Cons, List, Nil, Pair, nil } from "./BaseTypes2"
 import { arity } from "./DataType2"
 import { Expr, Kont, Lex, str } from "./Expr2"
 import { singleton } from "./FiniteMap2"
@@ -250,12 +250,12 @@ const constr: Parser<Constr> =
          const n: number = arity(ctr.str)
          assert(n <= e̅.length,`Too few arguments to constructor ${ctr.str}.`)
          assert(n >= e̅.length, `Too many arguments to constructor ${ctr.str}.`)
-         return Expr.constr(ctr, List.fromArray(e̅))
+         return Expr.constr(ctr.str, List.fromArray(e̅))
       }
    )
 
 const listRestOpt: Parser<Expr> = 
-   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(Lex.ctr("Nil"), nil()))
+   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(funName(Nil), nil()))
 
 const listʹ: Parser<Constr> =
    optional(
@@ -263,11 +263,11 @@ const listʹ: Parser<Constr> =
          seq(sepBy1(expr, symbol(",")), listRestOpt),
          ([e̅, e]): Expr.Constr => {
             return [...e̅, e].reverse().reduce((e̅ʹ, eʹ) => {
-               return Expr.constr(Lex.ctr("Cons"), List.fromArray([eʹ, e̅ʹ]))
+               return Expr.constr(funName(Cons), List.fromArray([eʹ, e̅ʹ]))
             }) as Expr.Constr
          }
       ),
-      () => Expr.constr(Lex.ctr("Nil"), nil())
+      () => Expr.constr(funName(Nil), nil())
    )
 
 const list: Parser<Constr> =
@@ -277,7 +277,7 @@ const pair: Parser<Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Expr, Expr]) =>
-         Expr.constr(Lex.ctr("Pair"), List.fromArray([fst, snd]))
+         Expr.constr(funName(Pair), List.fromArray([fst, snd]))
    )
 
 function args_pattern<K extends Kont<K>> (n: number, p: Parser<K>): Parser<Args<K>> {

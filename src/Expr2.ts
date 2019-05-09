@@ -211,7 +211,7 @@ export namespace Expr {
       if (κ instanceof Args.Args && κʹ instanceof Args.Args) {
          return Args.Args.join<K>(κ, κʹ) as any as K
       } else {
-         return absurd("Unsupported join.")
+         return absurd("Undefined join.")
       }
    }
 

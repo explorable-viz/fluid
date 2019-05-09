@@ -1,4 +1,3 @@
-import { ConstrFunc } from "./Func2"
 import { Constr, Persistent, _, make } from "./Value2"
 
 export abstract class Bool extends Constr<Bool> {
@@ -37,11 +36,6 @@ export abstract class List<T> extends Constr<List<T>> {
 
    abstract toArray_ (x̅: T[]): void
 }
-
-export class ListFunc<K> extends ConstrFunc<K> {
-   Cons = _
-   Nil = _
-} 
 
 export class Nil<T> extends List<T> {
    static is<T> (xs: List<T>): xs is Nil<T> {

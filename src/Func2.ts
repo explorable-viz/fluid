@@ -1,6 +1,6 @@
 import { absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
-import { Constr, Persistent, State, Value, _, fieldValues, make } from "./Value2"
+import { Constr, Persistent, Value, _, fieldValues, make } from "./Value2"
 
 // Func to distinguish from expression-level Fun.
 export abstract class Func<K> extends Value {
@@ -8,7 +8,7 @@ export abstract class Func<K> extends Value {
 }
 
 // Concrete instances must have a field per constructor, in *lexicographical* order.
-export abstract class ConstrFunc<K> extends Func<K> {
+export abstract class ConstrFunc<K extends Persistent = Persistent> extends Func<K> {
    __apply (v: Value): [Env, K] {
       if (v instanceof Constr) {
          // Probably slow compared to visitor pattern :-o
@@ -24,7 +24,7 @@ export abstract class ArgumentsFunc<K> extends Value {
 }
 
 // Can't add __apply to this because inconsistent with index signature.
-export interface Func_State<K> extends State {
+export interface Func_State<K> {
    [ctr: string]: ArgumentsFunc<K>
 }
 

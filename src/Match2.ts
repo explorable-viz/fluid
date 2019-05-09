@@ -1,5 +1,7 @@
-import { absurd, error } from "./util/Core"
-import { ArgumentsFunc, Func, Env, emptyEnv } from "./Func2"
+import { Class, __nonNull, absurd, error } from "./util/Core"
+import { Pair } from "./BaseTypes2"
+import { ctrToDataType } from "./DataType2"
+import { ArgumentsFunc, ConstrFunc, Func, Env, emptyEnv } from "./Func2"
 import { Value, make } from "./Value2"
 import { Expr } from "./Expr2"
 
@@ -16,8 +18,10 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
       })
    } else
    if (Trie.Constr.is(σ)) {
-      let f̅: ArgumentsFunc<K>[] = σ.cases.toArray().map(({ snd: Π }) => interpretArgs(Π))
-      return make(C, ...f̅)
+      const cases: Pair<string, Args<K>>[] = σ.cases.toArray(),
+            elimC: Class<ConstrFunc<K>> = __nonNull(ctrToDataType.get(cases[0].fst)).elimC as Class<ConstrFunc<K>>
+      let f̅: ArgumentsFunc<K>[] = cases.map(({ snd: Π }) => interpretArgs(Π))
+      return make(elimC, ...f̅)
    } else {
       return absurd()
    }
