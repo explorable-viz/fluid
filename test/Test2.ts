@@ -14,6 +14,12 @@ describe("example", () => {
 		it("ok", () => {
 			console.log(Eval.interpret(parse(load("arithmetic")))(prelude))
 		})
+   })
+   
+   describe("bar-chart", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("bar-chart")))(prelude))
+		})
 	})
 
    xdescribe("compose", () => {
@@ -25,6 +31,18 @@ describe("example", () => {
    describe("factorial", () => {
 		it("ok", () => {
 			console.log(Eval.interpret(parse(load("factorial")))(prelude))
+		})
+	})
+
+   describe("filter", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("filter")))(prelude))
+		})
+	})
+
+   describe("foldr_sumSquares", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("foldr_sumSquares")))(prelude))
 		})
 	})
 
@@ -40,9 +58,39 @@ describe("example", () => {
 		})
 	})
 
+   describe("map", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("map")))(prelude))
+		})
+	})
+
+   describe("mergeSort", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("mergeSort")))(prelude))
+		})
+	})
+
 	xdescribe("normalise", () => {
 		it("ok", () => {
 			console.log(Eval.interpret(parse(load("normalise")))(prelude))
+		})
+   })
+
+	describe("pattern-match", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("pattern-match")))(prelude))
+		})
+   })
+
+	describe("reverse", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("reverse")))(prelude))
+		})
+   })
+
+	describe("zipW", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("zipW")))(prelude))
 		})
    })
 })
