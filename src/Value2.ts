@@ -1,4 +1,4 @@
-import { Class, assert } from "./util/Core"
+import { Class, __check, assert } from "./util/Core"
 import { UnaryOp } from "./Primitive2"
 
 // use to initialise fields for reflection, without requiring constructors
@@ -25,7 +25,7 @@ export class Str extends Value {
 }
 
 export function str (val: string): Str {
-   return make(Str, val)
+   return make(Str, __check(val, it => typeof it === "string"))
 }
 
 // Tags a value of a datatype constructor.

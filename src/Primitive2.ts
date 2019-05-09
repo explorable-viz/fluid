@@ -83,7 +83,7 @@ export function error (message: Str): Value {
 }
 
 export function intToString (x: Num): Str {
-   return str(x.toString())
+   return str(x.val.toString())
 }
 
 // No longer support overloaded functions, since the pattern-matching semantics is non-trivial; might require typecase.
