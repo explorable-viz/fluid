@@ -28,6 +28,12 @@ describe("example", () => {
 		})
 	})
 
+   describe("length", () => {
+		it("ok", () => {
+			console.log(Eval.interpret(parse(load("length")))(prelude))
+		})
+	})
+
 	xdescribe("lexicalScoping", () => {
 		it("ok", () => {
 			console.log(Eval.interpret(parse(load("lexicalScoping")))(prelude))
