@@ -52,7 +52,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          if (v instanceof Closure) {
             const [ρʹ, eʹ]: [Env, Expr] = v.f.__apply(interpret(e.arg)(ρ)),
                   ρ_defs: Env = closeDefs(v.δ, v.ρ, v.δ)
-            return interpret(eʹ)(Env.concat(ρ, Env.concat(ρ_defs, ρʹ)))
+            return interpret(eʹ)(Env.concat(v.ρ, Env.concat(ρ_defs, ρʹ)))
          } else
          // Primitives with identifiers as names are unary and first-class.
          if (v instanceof PrimOp) {
