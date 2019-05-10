@@ -1,4 +1,4 @@
-import { assert, funName } from "./util/Core"
+import { assert } from "./util/Core"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
    dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
@@ -255,7 +255,7 @@ const constr: Parser<Constr> =
    )
 
 const listRestOpt: Parser<Expr> = 
-   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(funName(Nil), nil()))
+   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(Nil.name, nil()))
 
 const listʹ: Parser<Constr> =
    optional(
@@ -263,11 +263,11 @@ const listʹ: Parser<Constr> =
          seq(sepBy1(expr, symbol(",")), listRestOpt),
          ([e̅, e]): Expr.Constr => {
             return [...e̅, e].reverse().reduce((e̅ʹ, eʹ) => {
-               return Expr.constr(funName(Cons), List.fromArray([eʹ, e̅ʹ]))
+               return Expr.constr(Cons.name, List.fromArray([eʹ, e̅ʹ]))
             }) as Expr.Constr
          }
       ),
-      () => Expr.constr(funName(Nil), nil())
+      () => Expr.constr(Nil.name, nil())
    )
 
 const list: Parser<Constr> =
@@ -277,7 +277,7 @@ const pair: Parser<Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Expr, Expr]) =>
-         Expr.constr(funName(Pair), List.fromArray([fst, snd]))
+         Expr.constr(Pair.name, List.fromArray([fst, snd]))
    )
 
 function args_pattern<K extends Kont<K>> (n: number, p: Parser<K>): Parser<Args<K>> {

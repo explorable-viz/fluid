@@ -109,7 +109,7 @@ export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
    return memoCall(__ctrMemo, new MemoCtr(C), v̅)
 }
 
-// Depends heavily on (1) JavaScript implementation returning fields in definition-order; and (2)
+// Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
 export function construct<T extends Value> (tgt: T, v̅: Persistent[]): void {
    const tgtʹ: State = tgt as any as State,

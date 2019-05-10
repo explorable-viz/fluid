@@ -1,4 +1,4 @@
-import { AClass, Class, __nonNull, assert, funName } from "./util/Core"
+import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { Bool, Cons, Empty, False, List, NonEmpty, Nil, Pair, Tree, True } from "./BaseTypes2"
 import { ConstrFunc } from "./Func2"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, Rect, RectFill, Scale, Transform, Translate, Transpose } from "./Graphics2"
@@ -28,10 +28,6 @@ export class Ctr {
       this.C = C
       this.f̅ = f̅
    }
-
-   get name (): string {
-      return funName(this.C)
-   }
 }
 
 export function ctrFor (ctr: string): Ctr {
@@ -47,24 +43,26 @@ export function arity (ctr: string): number {
 export let ctrToDataType: Map<string, DataType> = new Map
 
 export function initDataType<T extends Constr> (D: AClass<T>, ctrC̅: Class<T>[]) {
+   ctrC̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // probably consistent with string <
    const ctrs: [string, Ctr][] = ctrC̅.map(
-            (C: Class<T>): [string, Ctr] => [funName(C), new Ctr(C, fields(new C))]
+            (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
-         elimC_name: string = funName(D) + "Func",
+         elimC_name: string = D.name + "Func",
          elimC: Class<ConstrFunc> = {
             // https://stackoverflow.com/questions/33605775
             [elimC_name]: class extends ConstrFunc {
                constructor () {
                   super()
+                  // lexicographical order hopefully preserved by getOwnPropertyNames()
                   ctrC̅.forEach((C: Class<T>): void => {
-                     (this as any as State)[funName(C)] = _
+                     (this as any as State)[C.name] = _
                   })
                }
             }
          }[elimC_name],
-         datatype: DataType = new DataType(funName(D), elimC, new Map(ctrs))
+         datatype: DataType = new DataType(D.name, elimC, new Map(ctrs))
    ctrC̅.forEach((C: Class<T>): void => {
-      ctrToDataType.set(funName(C), datatype)
+      ctrToDataType.set(C.name, datatype)
    })
 }
 

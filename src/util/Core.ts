@@ -13,18 +13,14 @@ export function classOf<T> (x: T): Class<T> {
 }
 
 export function className(o: Object): string {
-   return funName(classOf(o))
+   return classOf(o).name
 }
 
-export function funName<T> (fun: AClass<T>): string {
-   return __nonNull(fun.name)
-}
-
-export function as<U, T extends U> (x: U, cls: AClass<T>): T {
-   if (__nonNull(x) instanceof cls) {
+export function as<U, T extends U> (x: U, C: AClass<T>): T {
+   if (__nonNull(x) instanceof C) {
       return <T>x
    } else {
-      return assert(false, "[as] Expected " + funName(cls) + ", got " + className(x))
+      return assert(false, "[as] Expected " + C.name + ", got " + className(x))
    }
 }
 

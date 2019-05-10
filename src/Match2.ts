@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd, assert, error } from "./util/Core"
+import { Class, __nonNull, absurd, assert } from "./util/Core"
 import { Pair } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
 import { ArgumentsFunc, ConstrFunc, Func, Env, emptyEnv } from "./Func2"
@@ -21,7 +21,7 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
       const cases: Pair<string, Args<K>>[] = σ.cases.toArray(),
             c̅: string[] = cases.map(({ fst: c }) => c),
             d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
-            c̅ʹ: string[] = [...d.ctrs.keys()].sort(), // inefficient to do this here
+            c̅ʹ: string[] = [...d.ctrs.keys()], // also sorted
             f̅: ArgumentsFunc<K>[] = []
       let n: number = 0
       for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
@@ -38,6 +38,7 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
    }
 }
 
+// Parser enforces that constructor arity is correct.
 function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<K> {
    if (Args.End.is(Π)) {
       return new (class EndFunc extends ArgumentsFunc<K> {
@@ -45,7 +46,7 @@ function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<K> {
             if (v̅.length === 0) {
                return [emptyEnv(), Π.κ]
             } else {
-               return error("Wrong number of arguments")
+               return absurd("Too many arguments to constructor.")
             }
          }
       })
@@ -54,7 +55,7 @@ function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<K> {
       return new (class NextFunc extends ArgumentsFunc<K> {
          __apply (v̅: Value[]): [Env, K] {
             if (v̅.length === 0) {
-               return error("Wrong number of arguments")
+               return absurd("Too few arguments to constructor.")
             } else {
                const [ρ, Πʹ]: [Env, Args<K>] = interpretTrie(Π.σ).__apply(v̅[0]),
                      [ρʹ, κ]: [Env, K] = interpretArgs(Πʹ).__apply(v̅.slice(1))

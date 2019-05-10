@@ -1,5 +1,5 @@
 import { Annotated } from "../util/Annotated"
-import { Class, __check, __nonNull, absurd, as, assert, className, classOf, funName } from "../util/Core"
+import { Class, __check, __nonNull, absurd, as, assert, className, classOf } from "../util/Core"
 import { Persistent, PersistentObject, make } from "../util/Persistent"
 import { asVersioned, at, fieldVals } from "../util/Versioned"
 import { Cons, Pair, List, Nil } from "../BaseTypes"
@@ -21,7 +21,7 @@ const classFor_: Class<PersistentObject>[] =
     Translate,
     Transpose],
    classFor: Map<string, Class<PersistentObject>> = new Map(
-      classFor_.map((cls): [string, Class<PersistentObject>] => [funName(__nonNull(cls)), cls])
+      classFor_.map((cls): [string, Class<PersistentObject>] => [__nonNull(cls).name, cls])
    )
 
 // TODO: use function objects themselves to partition memo keys, as per lambdacalc-old?
