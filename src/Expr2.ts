@@ -89,7 +89,25 @@ export type Expr = Expr.Expr
 export type Kont<K> = Expr.Kont<K>
 
 export namespace Expr {
-   export abstract class Expr extends Constrʹ<Expr> {
+   export abstract class Kont<K> extends Constrʹ<K> {
+      __subtag: "Kont"
+   }
+
+   // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
+   // Use the same heinous cast as used in 'instantiateKont'. Note this join is unrelated to the annotation lattice.
+   function join<K extends Kont<K>> (κ: K, κʹ: K): K {
+      if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
+         return Trie.Trie.join<K>(κ, κʹ) as any as K
+      } else
+      if (κ instanceof Args.Args && κʹ instanceof Args.Args) {
+         return Args.Args.join<K>(κ, κʹ) as any as K
+      } else {
+         return absurd("Undefined join.")
+      }
+   }
+
+   export abstract class Expr extends Kont<Expr> {
+      __subtag: "Kont"
    }
 
    export class App extends Expr {
@@ -198,27 +216,12 @@ export namespace Expr {
    }
 
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
-
-   export interface Kont<K> extends Constrʹ<K> {
-   }
-
-   // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
-   // Use the same heinous cast as used in 'instantiateKont'. Note this join is unrelated to the annotation lattice.
-   function join<K extends Kont<K>> (κ: K, κʹ: K): K {
-      if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
-         return Trie.Trie.join<K>(κ, κʹ) as any as K
-      } else
-      if (κ instanceof Args.Args && κʹ instanceof Args.Args) {
-         return Args.Args.join<K>(κ, κʹ) as any as K
-      } else {
-         return absurd("Undefined join.")
-      }
-   }
-
    export type Args<K extends Kont<K>> = Args.Args<K>
 
    export namespace Args {
-      export abstract class Args<K extends Kont<K>> extends Constrʹ<Args<K>> implements Kont<Args<K>> {
+      export abstract class Args<K extends Kont<K>> extends Kont<Args<K>> {
+         __subtag: "Kont"
+
          static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
             if (Π instanceof End && Πʹ instanceof End) {
                return end(join(Π.κ, Πʹ.κ))
@@ -257,7 +260,9 @@ export namespace Expr {
    }
 
    export namespace Trie {
-      export abstract class Trie<K extends Kont<K>> extends Constrʹ<Trie<K>> implements Kont<Trie<K>> {
+      export abstract class Trie<K extends Kont<K>> extends Kont<Trie<K>> {
+         __subtag: "Kont"
+
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
                return var_(σ.x, join(σ.κ, τ.κ))

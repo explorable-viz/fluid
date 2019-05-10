@@ -2,6 +2,11 @@ import { absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { Constr, Persistent, Value, _, fieldValues, make } from "./Value2"
 
+// "Semantic" continuation
+export interface SemKont<K> {
+   __subtag: "SemKont"
+}
+
 // Func to distinguish from expression-level Fun.
 export abstract class Func<K> extends Value {
    abstract __apply (v: Value): [Env, K]
@@ -11,8 +16,7 @@ export abstract class Func<K> extends Value {
 export abstract class ConstrFunc<K extends Persistent = Persistent> extends Func<K> {
    __apply (v: Value): [Env, K] {
       if (v instanceof Constr) {
-         // Probably slow compared to visitor pattern :-o
-         return (this as any as Func_State<K>)[className(v)].__apply(fieldValues(v))
+         return ((this as any)[className(v)] as ArgumentsFunc<K>).__apply(fieldValues(v))
       } else {
          return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, this)
       }
@@ -21,11 +25,6 @@ export abstract class ConstrFunc<K extends Persistent = Persistent> extends Func
 
 export abstract class ArgumentsFunc<K> extends Value {
    abstract __apply (v̅: Persistent[]): [Env, K]
-}
-
-// Can't add __apply to this because inconsistent with index signature.
-export interface Func_State<K> {
-   [ctr: string]: ArgumentsFunc<K>
 }
 
 // Environments are snoc lists.
