@@ -2,11 +2,6 @@ import { absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { Constr, Persistent, Value, _, fieldValues, make } from "./Value2"
 
-// "Semantic" continuation
-export interface SemKont<K> {
-   __subtag: "SemKont"
-}
-
 // Func to distinguish from expression-level Fun.
 export abstract class Func<K> extends Value {
    abstract __apply (v: Value): [Env, K]
