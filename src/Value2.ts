@@ -29,7 +29,7 @@ export function str (val: string): Str {
 }
 
 // Tags a value of a datatype constructor.
-export abstract class Constr<T> extends Value {
+export abstract class Constr<T = Value> extends Value {
 }
 
 export class PrimOp extends Value {
@@ -109,7 +109,7 @@ export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
    return memoCall(__ctrMemo, new MemoCtr(C), v̅)
 }
 
-// Depends heavily on (1) JavaScript implementation returning fields in definition-order; and (2)
+// Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
 export function construct<T extends Value> (tgt: T, v̅: Persistent[]): void {
    const tgtʹ: State = tgt as any as State,
@@ -126,10 +126,10 @@ export function isField (prop: string): boolean {
    return !prop.startsWith("__")
 }
 
-export function fields (v: Constr<Value>): string[] {
+export function fields (v: Constr): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
 }
 
-export function fieldValues (v: Constr<Value>): Persistent[] {
+export function fieldValues (v: Constr): Persistent[] {
    return fields(v).map(k => (v as any as State)[k])
 }

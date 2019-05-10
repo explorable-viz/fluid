@@ -1,6 +1,8 @@
-import { absurd, error } from "./util/Core"
-import { ArgumentsFunc, ConstrFunc, Func, Func_State, Env, emptyEnv } from "./Func2"
-import { Value } from "./Value2"
+import { Class, __nonNull, absurd, assert } from "./util/Core"
+import { Pair } from "./BaseTypes2"
+import { DataType, ctrToDataType } from "./DataType2"
+import { ArgumentsFunc, ConstrFunc, Func, Env, emptyEnv } from "./Func2"
+import { Value, make } from "./Value2"
 import { Expr } from "./Expr2"
 
 import Args = Expr.Args
@@ -16,33 +18,44 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
       })
    } else
    if (Trie.Constr.is(σ)) {
-      const f: Func<K> = new ConstrFunc<K>()
-      σ.cases.toArray().map(({ fst: ctr, snd: Π }): void => {
-         (f as any as Func_State<K>)[ctr] = interpretArgs(Π)
-      })
-      return f
+      const cases: Pair<string, Args<K>>[] = σ.cases.toArray(),
+            c̅: string[] = cases.map(({ fst: c }) => c),
+            d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
+            c̅ʹ: string[] = [...d.ctrs.keys()], // also sorted
+            f̅: ArgumentsFunc<K>[] = []
+      let n: number = 0
+      for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
+         if (c̅.includes(c̅ʹ[nʹ])) {
+            f̅.push(interpretArgs(cases[n++].snd))
+         } else {
+            f̅.push(undefined as any)
+         }
+      }
+      assert(n === cases.length)
+      return make(d.elimC as Class<ConstrFunc<K>>, ...f̅)
    } else {
       return absurd()
    }
 }
 
+// Parser enforces that constructor arity is correct.
 function interpretArgs<K extends Kont<K>> (Π: Args<K>): ArgumentsFunc<K> {
    if (Args.End.is(Π)) {
-      return new (class extends ArgumentsFunc<K> {
+      return new (class EndFunc extends ArgumentsFunc<K> {
          __apply (v̅: Value[]): [Env, K] {
             if (v̅.length === 0) {
                return [emptyEnv(), Π.κ]
             } else {
-               return error("Wrong number of arguments")
+               return absurd("Too many arguments to constructor.")
             }
          }
       })
    } else
    if (Args.Next.is(Π)) {
-      return new (class extends ArgumentsFunc<K> {
+      return new (class NextFunc extends ArgumentsFunc<K> {
          __apply (v̅: Value[]): [Env, K] {
             if (v̅.length === 0) {
-               return error("Wrong number of arguments")
+               return absurd("Too few arguments to constructor.")
             } else {
                const [ρ, Πʹ]: [Env, Args<K>] = interpretTrie(Π.σ).__apply(v̅[0]),
                      [ρʹ, κ]: [Env, K] = interpretArgs(Πʹ).__apply(v̅.slice(1))
