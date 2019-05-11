@@ -7,10 +7,10 @@ import { Value, _, make } from "./Value2"
 export class Closure extends Value {
    ρ: Env = _ // ρ is _not_ closing for σ; need to extend with the bindings in δ
    δ: List<Expr.RecDef> = _
-   f: Func<Expr> = _
+   f: Func = _
 }
 
-export function closure (ρ: Env, δ: List<Expr.RecDef>, f: Func<Expr>): Closure {
+export function closure (ρ: Env, δ: List<Expr.RecDef>, f: Func): Closure {
    return make(Closure, ρ, δ, f)
 }
 

@@ -3,23 +3,23 @@ import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { Constr, Persistent, Value, _, fieldValues, make } from "./Value2"
 
 // Func to distinguish from expression-level Fun.
-export abstract class Func<K> extends Value {
-   abstract __apply (v: Value): [Env, K]
+export abstract class Func extends Value {
+   abstract __apply (v: Value): Value
 }
 
 // Concrete instances must have a field per constructor, in *lexicographical* order.
-export abstract class ConstrFunc<K extends Persistent = Persistent> extends Func<K> {
-   __apply (v: Value): [Env, K] {
+export abstract class ConstrFunc extends Func {
+   __apply (v: Value): Value {
       if (v instanceof Constr) {
-         return ((this as any)[className(v)] as ArgumentsFunc<K>).__apply(fieldValues(v))
+         return ((this as any)[className(v)] as ArgumentsFunc).__apply(fieldValues(v))
       } else {
          return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, this)
       }
    }
 }
 
-export abstract class ArgumentsFunc<K> extends Value {
-   abstract __apply (v̅: Persistent[]): [Env, K]
+export abstract class ArgumentsFunc extends Value {
+   abstract __apply (v̅: Persistent[]): Value
 }
 
 // Environments are snoc lists.

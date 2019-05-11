@@ -1,9 +1,9 @@
 import { __nonNull, absurd, className, error } from "./util/Core"
-import { Cons, List, Nil, nil } from "./BaseTypes2"
+import { Cons, List, Nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
-import { Closure, closure } from "./ExplVal2"
+import { closure } from "./ExplVal2"
 import { Expr } from "./Expr2"
-import { Env, emptyEnv, extendEnv } from "./Func2"
+import { Env, Func, emptyEnv, extendEnv } from "./Func2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
 import { PrimOp, Value, make, num, primOp, str } from "./Value2"
@@ -34,7 +34,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          return str(e.val)
       } else
       if (e instanceof Expr.Fun) {
-         return closure(ρ, nil(), interpretTrie(e.σ))
+         return interpretTrie(e.σ)(ρ)
       } else
       if (e instanceof Expr.Var) {
          const x: string = e.x
@@ -49,10 +49,8 @@ export function interpret (e: Expr): (ρ: Env) => Value {
       } else
       if (e instanceof Expr.App) {
          const v: Value = interpret(e.func)(ρ)
-         if (v instanceof Closure) {
-            const [ρʹ, eʹ]: [Env, Expr] = v.f.__apply(interpret(e.arg)(ρ)),
-                  ρ_defs: Env = closeDefs(v.δ, v.ρ, v.δ)
-            return interpret(eʹ)(Env.concat(v.ρ, Env.concat(ρ_defs, ρʹ)))
+         if (v instanceof Func) {
+            return v.__apply(interpret(e.arg)(ρ))
          } else
          // Primitives with identifiers as names are unary and first-class.
          if (v instanceof PrimOp) {
@@ -77,16 +75,14 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          return make(ctrFor(e.ctr).C, ...v̅)
       } else 
       if (e instanceof Expr.Let) {
-         const [ρʹ, eʹ]: [Env, Expr] = interpretTrie<Expr>(e.σ).__apply(interpret(e.e)(ρ))
-         return interpret(eʹ)(Env.concat(ρ, ρʹ))
+         return interpretTrie(e.σ)(ρ).__apply(interpret(e.e)(ρ))
       } else
       if (e instanceof Expr.LetRec) {
          const ρʹ: Env = closeDefs(e.δ, ρ, e.δ)
          return interpret(e.e)(Env.concat(ρ, ρʹ))
       } else
       if (e instanceof Expr.MatchAs) {
-         const [ρʹ, eʹ]: [Env, Expr] = interpretTrie(e.σ).__apply(interpret(e.e)(ρ))
-         return interpret(eʹ)(Env.concat(ρ, ρʹ))
+         return interpretTrie(e.σ)(ρ).__apply(interpret(e.e)(ρ))
       } else {
          return absurd("Unimplemented expression form.", e)
       }
