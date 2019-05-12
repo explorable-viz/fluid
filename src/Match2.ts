@@ -1,7 +1,7 @@
-import { Class, __nonNull, absurd, as, assert } from "./util/Core"
+import { __nonNull, absurd, as, assert } from "./util/Core"
 import { Pair } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
-import { ArgumentsFunc, ConstrFunc, Func, Env } from "./Func2"
+import { ArgumentsFunc, Func, Env } from "./Func2"
 import { Value, make } from "./Value2"
 import { Eval } from "./Eval2"
 import { Expr } from "./Expr2"
@@ -45,7 +45,7 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): (ρ: Env) => Fun
             }
          }
          assert(n === cases.length)
-         return make(d.elimC as Class<ConstrFunc>, ...f̅)
+         return make(d.elimC, ...f̅)
       } else {
          return absurd()
       }
