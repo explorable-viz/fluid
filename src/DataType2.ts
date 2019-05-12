@@ -1,6 +1,6 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { Bool, Cons, Empty, False, List, NonEmpty, Nil, Pair, Tree, True } from "./BaseTypes2"
-import { ConstrFunc } from "./Func2"
+import { ConstrFunc } from "./Match2"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, Rect, RectFill, Scale, Transform, Translate, Transpose } from "./Graphics2"
 import { Constr, State, _, fields } from "./Value2"
 
