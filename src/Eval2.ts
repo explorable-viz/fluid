@@ -1,12 +1,26 @@
 import { __nonNull, absurd, className, error } from "./util/Core"
+import { Cons, List, Nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Expr } from "./Expr2"
-import { Env, Func } from "./Func2"
+import { Env, Func, emptyEnv, extendEnv } from "./Func2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
 import { PrimOp, Value, make, num, primOp, str } from "./Value2"
 
 export module Eval {
+
+// Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
+export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
+   if (Cons.is(δ)) {
+      const def: Expr.RecDef = δ.head
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x.str, closure(ρ, δ_0, interpretTrie(def.σ)))
+   } else
+   if (Nil.is(δ)) {
+      return emptyEnv()
+   } else {
+      return absurd()
+   }
+}
 
 // Repeatedly reinterprets subexpressions, so probably as slow as the previous implementation.
 // Should be able to significantly speed up by memoisation.
