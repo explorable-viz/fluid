@@ -9,7 +9,9 @@ export abstract class Value {
    __tag: "Value"
 }
 
-// Functions are persistent to support primitives.
+// Functions are persistent to support primitives. Primitive data types like Num and Str contain
+// ES6 primitives like number and string, which are (currently) "persistent" for interning purposes
+// but are not "values" because they are not observable to user code.
 export type Persistent = Value | string | number | Function
 
 export class Num extends Value {
@@ -28,7 +30,7 @@ export function str (val: string): Str {
    return make(Str, __check(val, it => typeof it === "string"))
 }
 
-// Tags a value of a datatype constructor.
+// Tags a value of a datatype constructor; fields are always Values, not just Persistent.
 export abstract class Constr<T = Value> extends Value {
 }
 
@@ -130,6 +132,6 @@ export function fields (v: Constr): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
 }
 
-export function fieldValues (v: Constr): Persistent[] {
-   return fields(v).map(k => (v as any as State)[k])
+export function fieldValues (v: Constr): Value[] {
+   return fields(v).map(k => (v as any as State)[k] as Value)
 }

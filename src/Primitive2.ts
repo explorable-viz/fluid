@@ -9,48 +9,32 @@ type Binary<T, U, V> = (x: T, y: U) => V
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
 
-export class UnaryBody extends Value {
-   op: Unary<Value, Value> = _
-} 
-
-function unaryBody<T extends Value, V extends Value> (op: Unary<T, V>): UnaryBody {
-   return make(UnaryBody, op)
-}
-
-export class BinaryBody extends Value {
-   op: Binary<Value, Value, Value> = _
-} 
-
-function binaryBody<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>): BinaryBody {
-   return make(BinaryBody, op)
-}
-
 export abstract class PrimOp extends Value {
    name: string = _
 }
 
 export class UnaryOp extends PrimOp {
-   b: UnaryBody = _
+   op: Unary<Value, Value> = _
 }
 
-function unary (name: string, b: UnaryBody): UnaryOp {
-   return make(UnaryOp, name, b)
+function unary (name: string, op: Unary<Value, Value>): UnaryOp {
+   return make(UnaryOp, name, op)
 }
 
 function unary_<T extends Value, V extends Value> (op: Unary<T, V>): UnaryOp {
-   return unary(op.name, unaryBody(op))
+   return unary(op.name, op)
 }
 
 export class BinaryOp extends PrimOp {
-   b: BinaryBody = _
+   op: Binary<Value, Value, Value> = _
 }
 
-function binary (name: string, b: BinaryBody): BinaryOp {
-   return make(BinaryOp, name, b)
+function binary (name: string, op: Binary<Value, Value, Value>): BinaryOp {
+   return make(BinaryOp, name, op)
 }
 
 function binary_<T extends Value, U extends Value, V extends Value> (op: Binary<T, U, V>): BinaryOp {
-   return binary(op.name, binaryBody(op))
+   return binary(op.name, op)
 }
 
 const unaryOps: Map<string, UnaryOp> = new Map([

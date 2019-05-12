@@ -1,6 +1,6 @@
 import { absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
-import { Constr, Persistent, Value, _, fieldValues, make } from "./Value2"
+import { Constr, Value, _, fieldValues, make } from "./Value2"
 
 // Func to distinguish from expression-level Fun.
 export abstract class Func extends Value {
@@ -19,7 +19,7 @@ export abstract class ConstrFunc extends Func {
 }
 
 export abstract class ArgumentsFunc extends Value {
-   abstract __apply (v̅: Persistent[]): Value
+   abstract __apply (v̅: Value[]): Value
 }
 
 // Environments are snoc lists.

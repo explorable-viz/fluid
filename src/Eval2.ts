@@ -59,7 +59,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          // Primitives with identifiers as names are unary and first-class.
          if (v instanceof PrimOp) {
             const u: Value = interpret(e.arg)(ρ)
-            return v.op.b.op(u)
+            return v.op.op(u)
          } else {
             return error(`Cannot apply a ${className(v)}`, v)
          }
@@ -69,7 +69,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          if (binaryOps.has(e.opName.str)) {
             const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
                   [v1, v2]: [Value, Value] = [interpret(e.e1)(ρ), interpret(e.e2)(ρ)]
-            return op.b.op(v1, v2)
+            return op.op(v1, v2)
          } else {
             return error("Operator name not found.", e.opName)
          }
