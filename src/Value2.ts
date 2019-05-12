@@ -4,7 +4,7 @@ import { UnaryOp } from "./Primitive2"
 // use to initialise fields for reflection, without requiring constructors
 export const _: any = undefined 
 
-// Value in the metalanguage. TODO: rename to PersistentObj?
+// Value in the metalanguage.
 export abstract class Value {
    __tag: "Value"
 }
@@ -30,7 +30,7 @@ export function str (val: string): Str {
    return make(Str, __check(val, it => typeof it === "string"))
 }
 
-// Tags a value of a datatype constructor; fields are always Values, not just Persistent.
+// Tags a value of a datatype constructor; fields are always Values, because they are observable to user code.
 export abstract class Constr<T = Value> extends Value {
 }
 

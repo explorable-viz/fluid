@@ -1,10 +1,10 @@
-import { __nonNull, absurd, as, assert } from "./util/Core"
+import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Pair } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
-import { ArgumentsFunc, Func, Env } from "./Func2"
-import { Value, make } from "./Value2"
+import { Func, Env } from "./Func2"
 import { Eval } from "./Eval2"
 import { Expr } from "./Expr2"
+import { Constr, Value, _, fieldValues, make } from "./Value2"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
@@ -27,11 +27,7 @@ function interpretKont<K extends Kont<K>> (κ: K): (ρ: Env) => Value {
 export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): (ρ: Env) => Func {
    return (ρ: Env): Func => {
       if (Trie.Var.is(σ)) {
-         return new (class extends Func {
-            __apply (v: Value): Value {
-               return interpretKont(σ.κ)(Env.concat(ρ, Env.singleton(σ.x, v)))
-            }
-         })
+         return varFunc(σ, ρ)
       } else
       if (Trie.Constr.is(σ)) {
          const cases: Pair<string, Args<K>>[] = σ.cases.toArray(),
@@ -55,33 +51,79 @@ export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): (ρ: Env) => Fun
    }
 }
 
-// Parser ensures that constructor calls are saturated.
+// Parser ensures constructor calls are saturated.
 function interpretArgs<K extends Kont<K>> (Π: Args<K>): (ρ: Env) => ArgumentsFunc {
    return (ρ: Env): ArgumentsFunc => {
       if (Args.End.is(Π)) {
-         return new (class EndFunc extends ArgumentsFunc {
-            __apply (v̅: Value[]): Value {
-               if (v̅.length === 0) {
-                  return interpretKont(Π.κ)(ρ)
-               } else {
-                  return absurd("Too many arguments to constructor.")
-               }
-            }
-         })
+         return endFunc(Π, ρ)
       } else
       if (Args.Next.is(Π)) {
-         return new (class NextFunc extends ArgumentsFunc {
-            __apply (v̅: Value[]): Value {
-               if (v̅.length === 0) {
-                  return absurd("Too few arguments to constructor.")
-               } else {
-                  const f: ArgumentsFunc = as(interpretTrie(Π.σ)(ρ).__apply(v̅[0]), ArgumentsFunc)
-                  return f.__apply(v̅.slice(1))
-               }
-            }
-         })
+         return nextFunc(Π, ρ)
       } else {
          return absurd()
       }
    }
+}
+
+class VarFunc<K extends Kont<K>> extends Func {
+   σ: Trie.Var<K> = _
+   ρ: Env = _
+
+   __apply (v: Value): Value {
+      return interpretKont(this.σ.κ)(Env.concat(this.ρ, Env.singleton(this.σ.x, v)))
+   }
+}
+
+function varFunc<K extends Kont<K>> (σ: Trie.Var<K>, ρ: Env): VarFunc<K> {
+   return make<VarFunc<K>>(VarFunc, σ, ρ)
+}
+
+// Concrete instances must have a field per constructor, in *lexicographical* order.
+export abstract class ConstrFunc extends Func {
+   __apply (v: Value): Value {
+      if (v instanceof Constr) {
+         return ((this as any)[className(v)] as ArgumentsFunc).__apply(fieldValues(v))
+      } else {
+         return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, this)
+      }
+   }
+}
+
+export abstract class ArgumentsFunc extends Value {
+   abstract __apply (v̅: Value[]): Value
+}
+
+class EndFunc<K extends Kont<K>> extends ArgumentsFunc {
+   Π: Args.End<K> = _
+   ρ: Env = _
+   
+   __apply (v̅: Value[]): Value {
+      if (v̅.length === 0) {
+         return interpretKont(this.Π.κ)(this.ρ)
+      } else {
+         return absurd("Too many arguments to constructor.")
+      }
+   }
+}
+
+function endFunc<K extends Kont<K>> (Π: Args.End<K>, ρ: Env): EndFunc<K> {
+   return make<EndFunc<K>>(EndFunc, Π, ρ)
+}
+
+class NextFunc<K extends Kont<K>> extends ArgumentsFunc {
+   Π: Args.Next<K> = _
+   ρ: Env = _
+
+   __apply (v̅: Value[]): Value {
+      if (v̅.length === 0) {
+         return absurd("Too few arguments to constructor.")
+      } else {
+         const f: ArgumentsFunc = as(interpretTrie(this.Π.σ)(this.ρ).__apply(v̅[0]), ArgumentsFunc)
+         return f.__apply(v̅.slice(1))
+      }
+   }
+}
+
+function nextFunc<K extends Kont<K>> (Π: Args.Next<K>, ρ: Env): NextFunc<K> {
+   return make(NextFunc, Π, ρ)
 }
