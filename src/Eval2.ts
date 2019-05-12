@@ -15,7 +15,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
       const def: Expr.RecDef = δ.head,
             f: Func = new (class extends Func {
                __apply (v: Value): Value {
-                  return interpretTrie(def.σ)(Env.concat(ρ, closeDefs(δ_0, ρ, δ))).__apply(v)
+                  return interpretTrie(def.σ)(Env.concat(ρ, closeDefs(δ_0, ρ, δ_0))).__apply(v)
                }
             })
       return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x.str, f)
