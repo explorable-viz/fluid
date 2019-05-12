@@ -66,7 +66,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
                   [v1, v2]: [Value, Value] = [interpret(e.e1)(ρ), interpret(e.e2)(ρ)]
             return op.__apply(pair(v1, v2))
          } else {
-            return error("Operator name not found.", e.opName)
+            return error(`Operator ${e.opName} not found.`)
          }
       } else
       if (e instanceof Expr.Constr) {
@@ -83,7 +83,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
       if (e instanceof Expr.MatchAs) {
          return interpretTrie(e.σ)(ρ).__apply(interpret(e.e)(ρ))
       } else {
-         return absurd("Unimplemented expression form.", e)
+         return absurd(`Unimplemented expression form: ${className(e)}.`)
       }
    }
 }

@@ -1,11 +1,12 @@
 import { Class, __check, assert } from "./util/Core"
+import { Annotation } from "./Annotated2"
 
 // use to initialise fields for reflection, without requiring constructors
 export const _: any = undefined 
 
 // Value in the metalanguage.
 export abstract class Value {
-   __tag: "Value"
+   __α: Annotation = _ // for some (meta)values this may remain undefined, e.g. tries
 }
 
 // Functions are persistent to support primitives. Primitive data types like Num and Str contain

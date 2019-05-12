@@ -1,6 +1,5 @@
 import { __nonNull } from "./util/Core"
 import { Lattice } from "./util/Ord"
-import { Value, _ } from "./Value2"
 
 abstract class LatticeImpl<T> implements Lattice<T> {
    abstract bot: T
@@ -35,7 +34,3 @@ export class BoolLattice extends LatticeImpl<boolean> {
 
 export const ann: Lattice<Annotation> = new BoolLattice()
 export type Annotation = boolean // for now
-
-export abstract class AnnotatedValue extends Value {
-   α: Annotation = _
-}
