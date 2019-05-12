@@ -12,8 +12,13 @@ export module Eval {
 // Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
-      const def: Expr.RecDef = δ.head
-      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x.str, closure(ρ, δ_0, interpretTrie(def.σ)))
+      const def: Expr.RecDef = δ.head,
+            f: Func = new (class extends Func {
+               __apply (v: Value): Value {
+                  return interpretTrie(def.σ)(Env.concat(ρ, closeDefs(δ_0, ρ, δ))).__apply(v)
+               }
+            })
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x.str, f)
    } else
    if (Nil.is(δ)) {
       return emptyEnv()
@@ -77,7 +82,8 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          return interpretTrie(e.σ)(ρ).__apply(interpret(e.e)(ρ))
       } else
       if (e instanceof Expr.LetRec) {
-         return interpret(e.e)(ρ)
+         const ρʹ: Env = closeDefs(e.δ, ρ, e.δ)
+         return interpret(e.e)(Env.concat(ρ, ρʹ))
       } else
       if (e instanceof Expr.MatchAs) {
          return interpretTrie(e.σ)(ρ).__apply(interpret(e.e)(ρ))

@@ -16,6 +16,9 @@ function interpretKont<K extends Kont<K>> (κ: K): (ρ: Env) => Value {
    } else
    if (κ instanceof Trie.Trie) {
       return interpretTrie(κ)
+   } else
+   if (κ instanceof Args.Args) {
+      return interpretArgs(κ)
    } else {
       return absurd()
    }
