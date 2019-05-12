@@ -1,5 +1,4 @@
 import { Class, __check, assert } from "./util/Core"
-import { UnaryOp } from "./Primitive2"
 
 // use to initialise fields for reflection, without requiring constructors
 export const _: any = undefined 
@@ -32,14 +31,6 @@ export function str (val: string): Str {
 
 // Tags a value of a datatype constructor; fields are always Values, because they are observable to user code.
 export abstract class Constr<T = Value> extends Value {
-}
-
-export class PrimOp extends Value {
-   op: UnaryOp = _
-}
-
-export function primOp (op: UnaryOp): PrimOp {
-   return make(PrimOp, op)
 }
 
 // Dynamic interface to a value object.

@@ -1,11 +1,11 @@
 import { __nonNull, absurd, className, error } from "./util/Core"
-import { Cons, List, Nil } from "./BaseTypes2"
+import { Cons, List, Nil, pair } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Expr } from "./Expr2"
 import { Env, Func, emptyEnv, extendEnv } from "./Func2"
 import { interpretTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
-import { PrimOp, Value, make, num, primOp, str } from "./Value2"
+import { Value, make, num, str } from "./Value2"
 
 export module Eval {
 
@@ -49,17 +49,12 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          }
       } else
       if (e instanceof Expr.PrimOp) {
-         return primOp(e.op)
+         return e.op
       } else
       if (e instanceof Expr.App) {
          const v: Value = interpret(e.func)(ρ)
          if (v instanceof Func) {
             return v.__apply(interpret(e.arg)(ρ))
-         } else
-         // Primitives with identifiers as names are unary and first-class.
-         if (v instanceof PrimOp) {
-            const u: Value = interpret(e.arg)(ρ)
-            return v.op.op(u)
          } else {
             return error(`Cannot apply a ${className(v)}`, v)
          }
@@ -69,7 +64,7 @@ export function interpret (e: Expr): (ρ: Env) => Value {
          if (binaryOps.has(e.opName.str)) {
             const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
                   [v1, v2]: [Value, Value] = [interpret(e.e1)(ρ), interpret(e.e2)(ρ)]
-            return op.op(v1, v2)
+            return op.__apply(pair(v1, v2))
          } else {
             return error("Operator name not found.", e.opName)
          }
