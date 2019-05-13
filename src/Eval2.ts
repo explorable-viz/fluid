@@ -78,12 +78,12 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    // Operators (currently all binary) are "syntax", rather than names.
    if (e instanceof Expr.BinaryApp) {
-      if (binaryOps.has(e.opName.str)) {
-         const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
+      if (binaryOps.has(e.opName.val)) {
+         const op: BinaryOp = binaryOps.get(e.opName.val)!, // opName lacks annotations
                [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
          return explValue(Expl.binaryApp(tv1, e.opName, tv2), op.__apply(pair(tv1.v, tv2.v)))
       } else {
-         return error(`Operator ${e.opName.str} not found.`)
+         return error(`Operator ${e.opName.val} not found.`)
       }
    } else
    if (e instanceof Expr.Let) {

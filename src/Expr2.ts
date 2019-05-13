@@ -33,16 +33,6 @@ export namespace Lex {
    export function ctr (str: string): Ctr {
       return make(Ctr, str)
    }
-
-   // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
-   // Other uses of primitive operations are treated as variables.
-   export class OpName extends Lexeme {
-      str: string = _
-   }
-
-   export function opName (str: string): OpName {
-      return make(OpName, str)
-   }
 }
 
 export type Expr = Expr.Expr
@@ -161,11 +151,11 @@ export namespace Expr {
 
    export class BinaryApp extends Expr {
       e1: Expr = _
-      opName: Lex.OpName = _
+      opName: Str = _
       e2: Expr = _
    }
 
-   export function binaryApp (e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
+   export function binaryApp (e1: Expr, opName: Str, e2: Expr): BinaryApp {
       return make(BinaryApp, e1, opName, e2)
    }
 

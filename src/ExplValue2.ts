@@ -1,5 +1,5 @@
 import { Env } from "./Env2"
-import { Expr, Lex } from "./Expr2"
+import { Expr } from "./Expr2"
 import { List } from "./BaseTypes2"
 import { Constr, Str, Value, _, make } from "./Value2"
 
@@ -63,11 +63,11 @@ export namespace Expl {
 
    export class BinaryApp extends Expl {
       tv1: ExplValue = _
-      opName: Lex.OpName = _
+      opName: Str = _
       tv2: ExplValue = _
    }
 
-   export function binaryApp (tv1: ExplValue, opName: Lex.OpName, tv2: ExplValue): BinaryApp {
+   export function binaryApp (tv1: ExplValue, opName: Str, tv2: ExplValue): BinaryApp {
       return make(BinaryApp, tv1, opName, tv2)
    }
 

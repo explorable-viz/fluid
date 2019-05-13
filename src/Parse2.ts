@@ -121,37 +121,36 @@ const stringCh: Parser<string> =
 
 // To avoid having to deal with arbitrary operator precedence, we classify all operators as one of three
 // kinds, depending on the initial character. See 0.5.1 release notes.
-const opCandidate: Parser<Lex.OpName> =
-   lexeme(
+const opCandidate: Parser<string> =
+   lexeme_(
       butnot(
          withJoin(repeat1(choice([ch("+"), ch("*"), ch("/"), ch("-"), ch("="), ch("<"), ch(">")]))),
          symbol(strings.equals)
-      ),
-      Lex.OpName
+      )
    )
 
 // TODO: consolidate with Primitive.ts
-function isProductOp (opName: Lex.OpName): boolean {
-   return opName.str === "*" || opName.str === "/"
+function isProductOp (opName: string): boolean {
+   return opName === "*" || opName === "/"
 }
 
-function isSumOp (opName: Lex.OpName): boolean {
-   return opName.str === "+" || opName.str === "-" || opName.str === "++"
+function isSumOp (opName: string): boolean {
+   return opName === "+" || opName === "-" || opName === "++"
 }
 
-function isCompareOp (opName: Lex.OpName): boolean {
-   return opName.str === "==" || opName.str === "===" || 
-          opName.str === "<" || opName.str === "<<" || opName.str === ">" || opName.str === ">>"
+function isCompareOp (opName: string): boolean {
+   return opName === "==" || opName === "===" || 
+          opName === "<" || opName === "<<" || opName === ">" || opName === ">>"
 }
 
-const productOp: Parser<Lex.OpName> =
-   satisfying(opCandidate, isProductOp)
+const productOp: Parser<Str> =
+   withAction(satisfying(opCandidate, isProductOp), str)
 
-const sumOp: Parser<Lex.OpName> =
-   satisfying(opCandidate, isSumOp)
+const sumOp: Parser<Str> =
+   withAction(satisfying(opCandidate, isSumOp), str)
 
-const compareOp: Parser<Lex.OpName> =
-   satisfying(opCandidate, isCompareOp)
+const compareOp: Parser<Str> =
+   withAction(satisfying(opCandidate, isCompareOp), str)
 
 function parenthesise<T> (p: Parser<T>): Parser<T> {
    return between(symbol(strings.parenL), p, symbol(strings.parenR))
@@ -165,9 +164,7 @@ const app_: Parser<(e1: Expr, e2: Expr) => App> =
          (e1: Expr, e2: Expr): App => Expr.app(e1, e2)
    )
 
-function appOp (
-   opP: Parser<Lex.OpName>
-): Parser<(e1: Expr, e2: Expr) => BinaryApp> {
+function appOp (opP: Parser<Str>): Parser<(e1: Expr, e2: Expr) => BinaryApp> {
    return withAction(
       opP,
       op =>
@@ -310,7 +307,7 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
       ([ctr, Π]: [Lex.Ctr, Args<K>]): Trie.Constr<K> =>
          Trie.constr(singleton(str(ctr.str), Π))
    )
-}
+}str
 
 // This was very hard to figure out; the types aren't helping as much as they should.
 function listRest_pattern <K extends Kont<K>> (p: Parser<Args.End<K>>): Parser<Trie<Args.End<K>>> {
