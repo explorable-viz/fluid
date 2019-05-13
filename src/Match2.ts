@@ -4,7 +4,7 @@ import { DataType, ctrToDataType } from "./DataType2"
 import { Func, Env } from "./Func2"
 import { Eval } from "./Eval2"
 import { Expr } from "./Expr2"
-import { Constr, Value, _, fieldValues, make } from "./Value2"
+import { Constr, Str, Value, _, fieldValues, make } from "./Value2"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
@@ -29,8 +29,8 @@ export function evalTrie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Func {
       return varFunc(σ, ρ)
    } else
    if (Trie.Constr.is(σ)) {
-      const cases: Pair<string, Args<K>>[] = σ.cases.toArray(),
-            c̅: string[] = cases.map(({ fst: c }) => c),
+      const cases: Pair<Str, Args<K>>[] = σ.cases.toArray(),
+            c̅: string[] = cases.map(({ fst: c }) => c.val),
             d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
             c̅ʹ: string[] = [...d.ctrs.keys()], // also sorted
             f̅: ArgumentsFunc[] = []

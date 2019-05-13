@@ -270,14 +270,14 @@ export namespace Expr {
       }
 
       export class Constr<K extends Kont<K>> extends Trie<K> {
-         cases: FiniteMap<string, Args<K>> = _
+         cases: FiniteMap<Args<K>> = _
 
          static is<K extends Kont<K>> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
       }
 
-      export function constr<K extends Kont<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+      export function constr<K extends Kont<K>> (cases: FiniteMap<Args<K>>): Constr<K> {
          return make(Constr, cases)
       }
 

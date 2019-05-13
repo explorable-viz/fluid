@@ -6,8 +6,9 @@ import {
 } from "./util/parse/Core2"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes2"
 import { arity } from "./DataType2"
-import { Expr, Kont, Lex, str } from "./Expr2"
+import { Expr, Kont, Lex, str as strings } from "./Expr2"
 import { singleton } from "./FiniteMap2"
+import { str } from "./Value2"
 
 import App = Expr.App
 import Args = Expr.Args
@@ -41,8 +42,8 @@ function isCtr (str: string): boolean {
 
 const reservedWord: Parser<string> =
    choice<string>([
-      reserved(str.as), reserved(str.match), reserved(str.fun), reserved(str.in_),
-      reserved(str.let_), reserved(str.letRec)
+      reserved(strings.as), reserved(strings.match), reserved(strings.fun), reserved(strings.in_),
+      reserved(strings.let_), reserved(strings.letRec)
    ])
 
 function keyword (str: string): Parser<string> {
@@ -124,7 +125,7 @@ const opCandidate: Parser<Lex.OpName> =
    lexeme(
       butnot(
          withJoin(repeat1(choice([ch("+"), ch("*"), ch("/"), ch("-"), ch("="), ch("<"), ch(">")]))),
-         symbol(str.equals)
+         symbol(strings.equals)
       ),
       Lex.OpName
    )
@@ -153,7 +154,7 @@ const compareOp: Parser<Lex.OpName> =
    satisfying(opCandidate, isCompareOp)
 
 function parenthesise<T> (p: Parser<T>): Parser<T> {
-   return between(symbol(str.parenL), p, symbol(str.parenR))
+   return between(symbol(strings.parenL), p, symbol(strings.parenR))
 }
 
 // Consume no input, because application is represented simply by adjacency.
@@ -215,8 +216,8 @@ const parenthExpr: Parser<Expr> =
 const let_: Parser<Let> =
    withAction(
       seq(
-         dropFirst(keyword(str.let_), seq(dropSecond(var_, symbol(str.equals)), expr)),
-         dropFirst(keyword(str.in_), expr)
+         dropFirst(keyword(strings.let_), seq(dropSecond(var_, symbol(strings.equals)), expr)),
+         dropFirst(keyword(strings.in_), expr)
       ),
       ([[x, e], eʹ]: [[Lex.Var, Expr], Expr]) =>
          Expr.let_(e, Trie.var_(x.str, eʹ))
@@ -224,7 +225,7 @@ const let_: Parser<Let> =
 
 const recDef: Parser<RecDef> =
    withAction(
-      seq(dropFirst(keyword(str.fun), var_), matches),
+      seq(dropFirst(keyword(strings.fun), var_), matches),
       ([name, σ]: [Lex.Var, Trie<Expr>]) =>
          Expr.recDef(name, σ)
    )
@@ -235,8 +236,8 @@ export const recDefs1 : Parser<List<RecDef>> =
 const letrec: Parser<LetRec> =
    withAction(
       seq(
-         dropFirst(keyword(str.letRec), recDefs1),
-         dropFirst(keyword(str.in_), expr)
+         dropFirst(keyword(strings.letRec), recDefs1),
+         dropFirst(keyword(strings.in_), expr)
       ),
      ([δ, body]: [List<RecDef>, Expr]) => 
          Expr.letRec(δ, body)
@@ -271,7 +272,7 @@ const listʹ: Parser<Constr> =
    )
 
 const list: Parser<Constr> =
-   between(symbol(str.bracketL), listʹ, symbol(str.bracketR))
+   between(symbol(strings.bracketL), listʹ, symbol(strings.bracketR))
 
 const pair: Parser<Constr> =
    withAction(
@@ -302,12 +303,12 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
             if (n === 0) {
                return withAction(p, Args.end)
             } else {
-               return dropFirst(symbol(str.parenL), args_pattern(n, dropFirst(symbol(str.parenR), p)))
+               return dropFirst(symbol(strings.parenL), args_pattern(n, dropFirst(symbol(strings.parenR), p)))
             }
          }
       ),
       ([ctr, Π]: [Lex.Ctr, Args<K>]): Trie.Constr<K> =>
-         Trie.constr(singleton(ctr.str, Π))
+         Trie.constr(singleton(str(ctr.str), Π))
    )
 }
 
@@ -317,32 +318,32 @@ function listRest_pattern <K extends Kont<K>> (p: Parser<Args.End<K>>): Parser<T
       choice([
          dropFirst(symbol(","), dropFirst(symbol("..."), pattern(p))),
          dropFirst(symbol(","), list1_pattern(p)),
-         withAction(p, (κ: Args.End<K>) => Trie.constr(singleton("Nil", Args.end(κ))))
+         withAction(p, (κ: Args.End<K>) => Trie.constr(singleton(str("Nil"), Args.end(κ))))
       ])(state)
 }
 
 function list1_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       pattern(withAction(listRest_pattern(withAction(p, Args.end)), Args.next)),
-      (σ: Trie<Args.Next<K>>) => Trie.constr(singleton("Cons", Args.next(σ))) 
+      (σ: Trie<Args.Next<K>>) => Trie.constr(singleton(str("Cons"), Args.next(σ))) 
    )
 }
 
 function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return choice([
       list1_pattern(p),
-      withAction(p, (κ: K) => Trie.constr(singleton("Nil", Args.end(κ))))
+      withAction(p, (κ: K) => Trie.constr(singleton(str("Nil"), Args.end(κ))))
    ])
 }
 
 function list_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
-   return dropFirst(symbol(str.bracketL), list_patternʹ(dropFirst(symbol(str.bracketR), p)))
+   return dropFirst(symbol(strings.bracketL), list_patternʹ(dropFirst(symbol(strings.bracketR), p)))
 }
 
 function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
-      dropFirst(symbol(str.parenL), args_pattern(2, dropFirst(symbol(str.parenR), p))),
-      (Π: Args<K>): Trie.Constr<K> => Trie.constr(singleton("Pair", Π))
+      dropFirst(symbol(strings.parenL), args_pattern(2, dropFirst(symbol(strings.parenR), p))),
+      (Π: Args<K>): Trie.Constr<K> => Trie.constr(singleton(str("Pair"), Π))
    )
 }
 
@@ -360,7 +361,7 @@ function pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {
 
 const match: Parser<Trie<Expr>> =
    choice<Trie<Expr>>([
-      pattern(dropFirst(symbol(str.arrow), expr)),
+      pattern(dropFirst(symbol(strings.arrow), expr)),
       pattern(withAction(matches, (σ: Trie<Expr>): Expr => Expr.fun(σ)))
    ])
 
@@ -384,15 +385,15 @@ function matches (state: ParseState): ParseResult<Trie<Expr>> | null {
 const matchAs: Parser<MatchAs> =
    withAction(
       seq(
-         dropFirst(keyword(str.match), expr),
-         dropFirst(keyword(str.as), matches)
+         dropFirst(keyword(strings.match), expr),
+         dropFirst(keyword(strings.as), matches)
       ),
       ([e, σ]: [Expr, Trie<Expr>]) => Expr.matchAs(e, σ)
    )
 
 const fun: Parser<Fun> =
    withAction(
-      dropFirst(keyword(str.fun), matches),
+      dropFirst(keyword(strings.fun), matches),
       (σ: Trie<Expr>): Fun => Expr.fun(σ)
    )
 
