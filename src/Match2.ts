@@ -1,7 +1,7 @@
 import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Pair } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
-import { Func, Env } from "./Func2"
+import { Func, Env, concat, singleton } from "./Func2"
 import { Eval } from "./Eval2"
 import { Expr } from "./Expr2"
 import { Constr, Str, Value, _, fieldValues, make } from "./Value2"
@@ -66,7 +66,7 @@ class VarFunc<K extends Kont<K>> extends Func {
    ρ: Env = _
 
    __apply (v: Value): Value {
-      return evalKont(Env.concat(this.ρ, Env.singleton(this.σ.x.val, v)), this.σ.κ)
+      return evalKont(concat(this.ρ, singleton(this.σ.x.val, v)), this.σ.κ)
    }
 }
 

@@ -3,7 +3,7 @@ import { Cons, List, Nil, pair } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
-import { Env, Func, emptyEnv, extendEnv } from "./Func2"
+import { Env, Func, concat, emptyEnv, extendEnv, get, has } from "./Func2"
 import { evalTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
 import { Value, _, make } from "./Value2"
@@ -33,7 +33,7 @@ class RecFunc extends Func {
    δ: List<Expr.RecDef> = _
 
    __apply (v: Value): Value {
-      return evalTrie(Env.concat(this.ρ, closeDefs(this.δ, this.ρ, this.δ)), this.σ).__apply(v)
+      return evalTrie(concat(this.ρ, closeDefs(this.δ, this.ρ, this.δ)), this.σ).__apply(v)
    }
 }
 
@@ -59,8 +59,8 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.empty(), make(ctrFor(e.ctr).C, ...v̅))
    } else 
    if (e instanceof Expr.Var) {
-      if (ρ.has(e.x.val)) { 
-         return explValue(Expl.var_(e.x), ρ.get(e.x.val)!)
+      if (has(ρ, e.x.val)) { 
+         return explValue(Expl.var_(e.x), get(ρ, e.x.val)!)
       } else {
          return error(`Variable '${e.x.val}' not found.`)
       }
@@ -92,7 +92,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
-            tv: ExplValue = eval_(Env.concat(ρ, ρʹ), e.e)
+            tv: ExplValue = eval_(concat(ρ, ρʹ), e.e)
       return explValue(Expl.letRec(e.δ, ρʹ, tv), tv.v)
    } else
    if (e instanceof Expr.MatchAs) {
