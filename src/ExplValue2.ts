@@ -1,4 +1,4 @@
-import { Env } from "./Func2"
+import { Env } from "./Env2"
 import { Expr, Lex } from "./Expr2"
 import { List } from "./BaseTypes2"
 import { Constr, Str, Value, _, make } from "./Value2"
