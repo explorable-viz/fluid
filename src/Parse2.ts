@@ -6,7 +6,7 @@ import {
 } from "./util/parse/Core2"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes2"
 import { arity } from "./DataType2"
-import { Expr, Kont, Lex, str as strings } from "./Expr2"
+import { Expr, Kont, Lex, strings } from "./Expr2"
 import { singleton } from "./FiniteMap2"
 import { str } from "./Value2"
 
@@ -208,7 +208,7 @@ const numberʹ: Parser<string> =
    withJoin(sequence([optional(minus, () => ""), int, optional(frac, () => ""), optional(exp, () => "")]))
 
 const number_: Parser<ConstNum> =
-   withAction(lexeme(numberʹ, Lex.NumLiteral), lit => Expr.constNum(lit.toNumber()))
+   withAction(lexeme_(numberʹ), lit => Expr.constNum(new Number(lit).valueOf()))
 
 const parenthExpr: Parser<Expr> =
    parenthesise(expr)

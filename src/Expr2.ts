@@ -7,7 +7,7 @@ import { UnaryOp } from "./Primitive2"
 import { Constr as Constrʹ, _, make } from "./Value2"
 
 // Constants used for parsing, and also for toString() implementations.
-export namespace str {
+export namespace strings {
    export const arrow: string = "→"
    export const as: string = "as"
    export const bracketL: string = "["
@@ -34,18 +34,6 @@ export namespace Lex {
       return make(Ctr, str)
    }
 
-   export class NumLiteral extends Lexeme {
-      str: string = _
-
-      toNumber (): number {
-         return new Number(this.str).valueOf()
-      }
-   }
-
-   export function numLiteral (str: string): NumLiteral {
-      return make(NumLiteral, str)
-   }
-
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
    // Other uses of primitive operations are treated as variables.
    export class OpName extends Lexeme {
@@ -60,7 +48,7 @@ export namespace Lex {
       str: string = _
 
       toString (): string {
-         return str.quotes + this.str + str.quotes
+         return strings.quotes + this.str + strings.quotes
       }
    }
 
