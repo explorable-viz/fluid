@@ -245,15 +245,15 @@ const constr: Parser<Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), () => [])),
       ([c, e̅]: [Str, Expr[]]) => {
-         const n: number = arity(c.val)
+         const n: number = arity(c)
          assert(n <= e̅.length,`Too few arguments to constructor ${c.val}.`)
          assert(n >= e̅.length, `Too many arguments to constructor ${c.val}.`)
-         return Expr.constr(c.val, List.fromArray(e̅))
+         return Expr.constr(c, List.fromArray(e̅))
       }
    )
 
 const listRestOpt: Parser<Expr> = 
-   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(Nil.name, nil()))
+   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(str(Nil.name), nil()))
 
 const listʹ: Parser<Constr> =
    optional(
@@ -261,11 +261,11 @@ const listʹ: Parser<Constr> =
          seq(sepBy1(expr, symbol(",")), listRestOpt),
          ([e̅, e]): Expr.Constr => {
             return [...e̅, e].reverse().reduce((e̅ʹ, eʹ) => {
-               return Expr.constr(Cons.name, List.fromArray([eʹ, e̅ʹ]))
+               return Expr.constr(str(Cons.name), List.fromArray([eʹ, e̅ʹ]))
             }) as Expr.Constr
          }
       ),
-      () => Expr.constr(Nil.name, nil())
+      () => Expr.constr(str(Nil.name), nil())
    )
 
 const list: Parser<Constr> =
@@ -275,7 +275,7 @@ const pair: Parser<Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Expr, Expr]) =>
-         Expr.constr(Pair.name, List.fromArray([fst, snd]))
+         Expr.constr(str(Pair.name), List.fromArray([fst, snd]))
    )
 
 function args_pattern<K extends Kont<K>> (n: number, p: Parser<K>): Parser<Args<K>> {
@@ -296,7 +296,7 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
       seqDep(
          ctr, 
          (c: Str): Parser<Args<K>> => {
-            const n: number = arity(c.val)
+            const n: number = arity(c)
             if (n === 0) {
                return withAction(p, Args.end)
             } else {

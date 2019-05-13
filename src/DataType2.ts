@@ -2,7 +2,7 @@ import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { Bool, Cons, Empty, False, List, NonEmpty, Nil, Pair, Tree, True } from "./BaseTypes2"
 import { ConstrFunc } from "./Match2"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, Rect, RectFill, Scale, Transform, Translate, Transpose } from "./Graphics2"
-import { Constr, State, _, fields } from "./Value2"
+import { Constr, State, Str, _, fields } from "./Value2"
 
 // Neither of these are currently reflective because of non-standard fields.
 
@@ -30,12 +30,12 @@ export class Ctr {
    }
 }
 
-export function ctrFor (ctr: string): Ctr {
-   return ctrToDataType.get(ctr)!.ctrs.get(ctr)!
+export function ctrFor (ctr: Str): Ctr {
+   return ctrToDataType.get(ctr.val)!.ctrs.get(ctr.val)!
 }
 
-export function arity (ctr: string): number {
-   assert(ctrToDataType.has(ctr), "No such constructor.", ctr)
+export function arity (ctr: Str): number {
+   assert(ctrToDataType.has(ctr.val), `No such constructor: "${ctr.val}".`,)
    return ctrFor(ctr).f̅.length
 }
 
