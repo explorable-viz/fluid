@@ -38,8 +38,8 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.empty(), e.op)
    } else
    if (e instanceof Expr.Constr) {
-      let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e).v)
-      return explValue(Expl.empty(), make(ctrFor(e.ctr).C, ...v̅))
+      let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
+      return explValue(Expl.empty(), make(ctrFor(e.ctr).C, ...tv̅.map(({ v }) => v)))
    } else 
    if (e instanceof Expr.Var) {
       if (has(ρ, e.x)) { 
@@ -75,7 +75,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.Let) {
       const tu: ExplValue = eval_(ρ, e.e),
-            [ρʹ, eʹ]: [Env, Expr] = evalTrie(e.σ).__apply(tu.v),
+            [ρʹ, eʹ]: [Env, Expr] = evalTrie<Expr>(e.σ).__apply(tu.v),
             tv: ExplValue = eval_(concat(ρ, ρʹ), eʹ)
       return explValue(Expl.let_(tu, tv), tv.v)
    } else

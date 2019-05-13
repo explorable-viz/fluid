@@ -30,7 +30,7 @@ export function str (val: string): Str {
    return make(Str, __check(val, it => typeof it === "string"))
 }
 
-// Tags a value of a datatype constructor; fields are always Values, because they are observable to user code.
+// Tags a value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
 export abstract class Constr<T = Value> extends Value {
 }
 

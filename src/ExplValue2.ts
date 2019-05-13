@@ -90,3 +90,11 @@ export class ExplValue<T extends Value = Value> extends Constr<ExplValue> {
 export function explValue<T extends Value = Value> (t: Expl, v: T): ExplValue<T> {
    return make(ExplValue, t, v) as ExplValue<T>
 }
+
+export type Expls<T> = {
+   [expl in keyof T]: Expl
+}
+
+export function expls<T extends Value> (v: Constr<T>): Expls<T> {
+   throw new Error
+}
