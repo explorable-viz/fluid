@@ -193,7 +193,11 @@ export function withJoin<T> (p: Parser<T[]>): Parser<string> {
 }
 
 export function lexeme<L extends Lexeme> (p: Parser<string>, C: LexemeClass<L>): Parser<L> {
-   return dropSecond(token(p, C), ignore)
+   return lexeme_(token(p, C))
+}
+
+export function lexeme_<T> (p: Parser<T>): Parser<T> {
+   return dropSecond(p, ignore)
 }
 
 // Parse a particular symbol.

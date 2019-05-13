@@ -1,7 +1,7 @@
 import { assert } from "./util/Core"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
-   dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
+   dropSecond, seqDep, lexeme, lexeme_, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core2"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes2"
@@ -45,8 +45,8 @@ const reservedWord: Parser<string> =
       reserved(str.let_), reserved(str.letRec)
    ])
 
-function keyword (str: string): Parser<Lex.Keyword> {
-   return lexeme(reserved(str), Lex.Keyword)
+function keyword (str: string): Parser<string> {
+   return lexeme_(reserved(str))
 }
 
 // No Unicode support for identifiers yet.

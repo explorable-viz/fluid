@@ -46,14 +46,6 @@ export namespace Lex {
       return make(NumLiteral, str)
    }
 
-   export class Keyword extends Lexeme {
-      str: string = _
-   }
-
-   export function keyword (str: string): Keyword {
-      return make(Keyword, str)
-   }
-
    // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
    // Other uses of primitive operations are treated as variables.
    export class OpName extends Lexeme {
