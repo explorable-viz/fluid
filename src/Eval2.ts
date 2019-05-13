@@ -32,7 +32,7 @@ class RecFunc extends Func {
    ρ: Env = _
    δ: List<Expr.RecDef> = _
 
-   __apply (v: Value): ExplValue {
+   __apply (v: Value): Value {
       return evalTrie(Env.concat(this.ρ, closeDefs(this.δ, this.ρ, this.δ)), this.σ).__apply(v)
    }
 }
@@ -55,7 +55,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.empty(), e.op)
    } else
    if (e instanceof Expr.Constr) {
-      let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
+      let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e).v)
       return explValue(Expl.empty(), make(ctrFor(e.ctr).C, ...v̅))
    } else 
    if (e instanceof Expr.Var) {
@@ -69,8 +69,8 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       const tf: ExplValue = eval_(ρ, e.func)
       if (tf.v instanceof Func) {
          const tu: ExplValue = eval_(ρ, e.arg),
-               tv: ExplValue = tf.v.__apply(tu.v)
-         return explValue(Expl.app(tf, tv, null), tv.v)
+               tv: ExplValue = explValue(Expl.empty(), tf.v.__apply(tu.v)) // for now
+         return explValue(Expl.app(tf, tu, tv), tv.v)
       } else {
          return error(`Cannot apply a ${className(tf.v)}`)
       }
@@ -87,7 +87,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.Let) {
       const tu: ExplValue = eval_(ρ, e.e),
-            tv: ExplValue = evalTrie(ρ, e.σ).__apply(tu.v)
+            tv: ExplValue = explValue(Expl.empty(), evalTrie(ρ, e.σ).__apply(tu.v)) // for now
       return explValue(Expl.let_(tu, tv), tv.v)
    } else
    if (e instanceof Expr.LetRec) {
@@ -97,7 +97,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
-            tv: ExplValue = evalTrie(ρ, e.σ).__apply(tu.v)
+            tv: ExplValue = explValue(Expl.empty(), evalTrie(ρ, e.σ).__apply(tu.v))
       return explValue(Expl.matchAs(tu, tv), tv.v)
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
