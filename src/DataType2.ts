@@ -8,10 +8,10 @@ import { Constr, State, Str, _, fields } from "./Value2"
 
 export class DataType {
    name: string
-   elimC: Class<ConstrFunc>
-   ctrs: Map<string, Ctr>  // fields of my constructors
+   elimC: Class<ConstrFunc<any>> // not sure how better to parameterise 
+   ctrs: Map<string, Ctr>        // fields of my constructors
 
-   constructor (name: string, elimC: Class<ConstrFunc>, ctrs: Map<string, Ctr>) {
+   constructor (name: string, elimC: Class<ConstrFunc<any>>, ctrs: Map<string, Ctr>) {
       this.name = name
       this.elimC = elimC
       this.ctrs = ctrs
@@ -48,9 +48,9 @@ export function initDataType<T extends Constr> (D: AClass<T>, ctrC̅: Class<T>[]
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
          elimC_name: string = D.name + "Func",
-         elimC: Class<ConstrFunc> = {
+         elimC: Class<ConstrFunc<any>> = {
             // https://stackoverflow.com/questions/33605775
-            [elimC_name]: class extends ConstrFunc {
+            [elimC_name]: class extends ConstrFunc<any> {
                constructor () {
                   super()
                   // lexicographical order hopefully preserved by getOwnPropertyNames()
