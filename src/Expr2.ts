@@ -75,11 +75,11 @@ export namespace Expr {
    }
 
    export class Constr extends Expr {
-      ctr: string = _
+      ctr: Str = _
       args: List<Expr> = _
    }
 
-   export function constr (ctr: string, args: List<Expr>): Constr {
+   export function constr (ctr: Str, args: List<Expr>): Constr {
       return make(Constr, ctr, args)
    }
 
