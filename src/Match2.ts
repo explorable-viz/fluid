@@ -10,58 +10,54 @@ import Args = Expr.Args
 import Kont = Expr.Kont
 import Trie = Expr.Trie
 
-function interpretKont<K extends Kont<K>> (κ: K): (ρ: Env) => Value {
+function eval_Kont<K extends Kont<K>> (ρ: Env, κ: K): Value {
    if (κ instanceof Expr.Expr) {
-      return Eval.interpret(κ)
+      return Eval.eval_(ρ, κ)
    } else
    if (κ instanceof Trie.Trie) {
-      return interpretTrie(κ)
+      return eval_Trie(ρ, κ)
    } else
    if (κ instanceof Args.Args) {
-      return interpretArgs(κ)
+      return eval_Args(ρ, κ)
    } else {
       return absurd()
    }
 }
 
-export function interpretTrie<K extends Kont<K>> (σ: Trie<K>): (ρ: Env) => Func {
-   return (ρ: Env): Func => {
-      if (Trie.Var.is(σ)) {
-         return varFunc(σ, ρ)
-      } else
-      if (Trie.Constr.is(σ)) {
-         const cases: Pair<string, Args<K>>[] = σ.cases.toArray(),
-               c̅: string[] = cases.map(({ fst: c }) => c),
-               d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
-               c̅ʹ: string[] = [...d.ctrs.keys()], // also sorted
-               f̅: ArgumentsFunc[] = []
-         let n: number = 0
-         for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
-            if (c̅.includes(c̅ʹ[nʹ])) {
-               f̅.push(interpretArgs(cases[n++].snd)(ρ))
-            } else {
-               f̅.push(undefined as any)
-            }
+export function eval_Trie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Func {
+   if (Trie.Var.is(σ)) {
+      return varFunc(σ, ρ)
+   } else
+   if (Trie.Constr.is(σ)) {
+      const cases: Pair<string, Args<K>>[] = σ.cases.toArray(),
+            c̅: string[] = cases.map(({ fst: c }) => c),
+            d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
+            c̅ʹ: string[] = [...d.ctrs.keys()], // also sorted
+            f̅: ArgumentsFunc[] = []
+      let n: number = 0
+      for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
+         if (c̅.includes(c̅ʹ[nʹ])) {
+            f̅.push(eval_Args(ρ, cases[n++].snd))
+         } else {
+            f̅.push(undefined as any)
          }
-         assert(n === cases.length)
-         return make(d.elimC, ...f̅)
-      } else {
-         return absurd()
       }
+      assert(n === cases.length)
+      return make(d.elimC, ...f̅)
+   } else {
+      return absurd()
    }
 }
 
 // Parser ensures constructor calls are saturated.
-function interpretArgs<K extends Kont<K>> (Π: Args<K>): (ρ: Env) => ArgumentsFunc {
-   return (ρ: Env): ArgumentsFunc => {
-      if (Args.End.is(Π)) {
-         return endFunc(Π, ρ)
-      } else
-      if (Args.Next.is(Π)) {
-         return nextFunc(Π, ρ)
-      } else {
-         return absurd()
-      }
+function eval_Args<K extends Kont<K>> (ρ: Env, Π: Args<K>): ArgumentsFunc {
+   if (Args.End.is(Π)) {
+      return endFunc(Π, ρ)
+   } else
+   if (Args.Next.is(Π)) {
+      return nextFunc(Π, ρ)
+   } else {
+      return absurd()
    }
 }
 
@@ -70,7 +66,7 @@ class VarFunc<K extends Kont<K>> extends Func {
    ρ: Env = _
 
    __apply (v: Value): Value {
-      return interpretKont(this.σ.κ)(Env.concat(this.ρ, Env.singleton(this.σ.x, v)))
+      return eval_Kont(Env.concat(this.ρ, Env.singleton(this.σ.x, v)), this.σ.κ)
    }
 }
 
@@ -99,7 +95,7 @@ class EndFunc<K extends Kont<K>> extends ArgumentsFunc {
    
    __apply (v̅: Value[]): Value {
       if (v̅.length === 0) {
-         return interpretKont(this.Π.κ)(this.ρ)
+         return eval_Kont(this.ρ, this.Π.κ)
       } else {
          return absurd("Too many arguments to constructor.")
       }
@@ -118,7 +114,7 @@ class NextFunc<K extends Kont<K>> extends ArgumentsFunc {
       if (v̅.length === 0) {
          return absurd("Too few arguments to constructor.")
       } else {
-         const f: ArgumentsFunc = as(interpretTrie(this.Π.σ)(this.ρ).__apply(v̅[0]), ArgumentsFunc)
+         const f: ArgumentsFunc = as(eval_Trie(this.ρ, this.Π.σ).__apply(v̅[0]), ArgumentsFunc)
          return f.__apply(v̅.slice(1))
       }
    }

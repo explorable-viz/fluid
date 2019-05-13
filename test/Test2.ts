@@ -12,85 +12,85 @@ before((done: MochaDone) => {
 describe("example", () => {
 	describe("arithmetic", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("arithmetic")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("arithmetic"))))
 		})
    })
    
    describe("bar-chart", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("bar-chart")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("bar-chart"))))
 		})
 	})
 
    describe("compose", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("compose")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("compose"))))
 		})
 	})
 
    describe("factorial", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("factorial")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("factorial"))))
 		})
 	})
 
    describe("filter", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("filter")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("filter"))))
 		})
 	})
 
    describe("foldr_sumSquares", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("foldr_sumSquares")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("foldr_sumSquares"))))
 		})
 	})
 
    describe("length", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("length")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("length"))))
 		})
 	})
 
 	describe("lexicalScoping", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("lexicalScoping")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("lexicalScoping"))))
 		})
 	})
 
    describe("map", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("map")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("map"))))
 		})
 	})
 
    describe("mergeSort", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("mergeSort")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("mergeSort"))))
 		})
 	})
 
 	describe("normalise", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("normalise")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("normalise"))))
 		})
    })
 
 	describe("pattern-match", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("pattern-match")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("pattern-match"))))
 		})
    })
 
 	describe("reverse", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("reverse")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("reverse"))))
 		})
    })
 
 	describe("zipW", () => {
 		it("ok", () => {
-			console.log(Eval.interpret(parse(load("zipW")))(prelude))
+			console.log(Eval.eval_(prelude, parse(load("zipW"))))
 		})
    })
 })
