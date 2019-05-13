@@ -1,6 +1,7 @@
 import { __nonNull, absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, pair } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
+import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { Env, Func, emptyEnv, extendEnv } from "./Func2"
 import { evalTrie } from "./Match2"
@@ -40,58 +41,64 @@ function recFunc (σ: Trie<Expr>, ρ: Env, δ: List<Expr.RecDef>): RecFunc {
    return make(RecFunc, σ, ρ, δ)
 }
 
-export function eval_ (ρ: Env, e: Expr): Value {
+export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.ConstNum) {
-      return num(e.val)
+      return explValue(Expl.empty(), num(e.val)
    } else
    if (e instanceof Expr.ConstStr) {
-      return str(e.val)
+      return explValue(Expl.empty(), str(e.val))
    } else
    if (e instanceof Expr.Fun) {
-      return evalTrie(ρ, e.σ)
-   } else
-   if (e instanceof Expr.Var) {
-      const x: string = e.x
-      if (ρ.has(x)) { 
-         return ρ.get(x)!
-      } else {
-         return error(`Variable '${x}' not found.`)
-      }
+      return explValue(Expl.empty(), evalTrie(ρ, e.σ))
    } else
    if (e instanceof Expr.PrimOp) {
-      return e.op
+      return explValue(Expl.empty(), e.op)
+   } else
+   if (e instanceof Expr.Constr) {
+      let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
+      return explValue(Expl.empty(), make(ctrFor(e.ctr).C, ...v̅))
+   } else 
+   if (e instanceof Expr.Var) {
+      if (ρ.has(e.x)) { 
+         return explValue(Expl.var_(e.x), ρ.get(e.x)!)
+      } else {
+         return error(`Variable '${e.x}' not found.`)
+      }
    } else
    if (e instanceof Expr.App) {
-      const v: Value = eval_(ρ, e.func)
-      if (v instanceof Func) {
-         return v.__apply(eval_(ρ, e.arg))
+      const tf: ExplValue = eval_(ρ, e.func)
+      if (tf.v instanceof Func) {
+         const tu: ExplValue = eval_(ρ, e.arg),
+               tv: ExplValue = tf.v.__apply(tu.v)
+         return explValue(Expl.app(tf, tv, null), tv.v)
       } else {
-         return error(`Cannot apply a ${className(v)}`, v)
+         return error(`Cannot apply a ${className(tf.v)}`)
       }
    } else
    // Operators (currently all binary) are "syntax", rather than names.
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.str)) {
          const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
-               [v1, v2]: [Value, Value] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
-         return op.__apply(pair(v1, v2))
+               [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
+         return explValue(Expl.binaryApp(tv1, e.opName, tv2), op.__apply(pair(tv1.v, tv2.v)))
       } else {
          return error(`Operator ${e.opName} not found.`)
       }
    } else
-   if (e instanceof Expr.Constr) {
-      let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
-      return make(ctrFor(e.ctr).C, ...v̅)
-   } else 
    if (e instanceof Expr.Let) {
-      return evalTrie(ρ, e.σ).__apply(eval_(ρ, e.e))
+      const tu: ExplValue = eval_(ρ, e.e),
+            tv: ExplValue = evalTrie(ρ, e.σ).__apply(tu.v)
+      return explValue(Expl.let_(tu, tv), tv.v)
    } else
    if (e instanceof Expr.LetRec) {
-      const ρʹ: Env = closeDefs(e.δ, ρ, e.δ)
-      return eval_(Env.concat(ρ, ρʹ), e.e)
+      const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
+            tv: ExplValue = eval_(Env.concat(ρ, ρʹ), e.e)
+      return explValue(Expl.letRec(e.δ, ρʹ, tv), tv.v)
    } else
    if (e instanceof Expr.MatchAs) {
-      return evalTrie(ρ, e.σ).__apply(eval_(ρ, e.e))
+      const tu: ExplValue = eval_(ρ, e.e),
+            tv: ExplValue = evalTrie(ρ, e.σ).__apply(tu.v)
+      return explValue(Expl.matchAs(tu, tv), tv.v)
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
