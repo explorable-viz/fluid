@@ -129,7 +129,7 @@ export function concat (x: Str, y: Str): Str {
 export function createPrelude (): Env {
    let ρ: Env = emptyEnv()
    unaryOps.forEach((op: UnaryOp, x: string): void => {
-      ρ = extendEnv(ρ, x, op)
+      ρ = extendEnv(ρ, str(x), op)
    })
    return ρ
 }

@@ -1,6 +1,6 @@
 import { absurd } from "./util/Core"
 import { List, cons, nil } from "./BaseTypes2"
-import { Value, _, make } from "./Value2"
+import { Str, Value, _, make } from "./Value2"
 
 // Func to distinguish from expression-level Fun.
 export abstract class Func extends Value {
@@ -20,11 +20,11 @@ export function emptyEnv (): EmptyEnv {
 
 export class ExtendEnv extends Env {
    ρ: Env = _
-   k: string = _
+   k: Str = _
    v: Value = _
 }
 
-export function extendEnv (ρ: Env, k: string, v: Value): ExtendEnv {
+export function extendEnv (ρ: Env, k: Str, v: Value): ExtendEnv {
    return make(ExtendEnv, ρ, k, v)
 }
 
@@ -40,12 +40,12 @@ export function entries (ρ: Env): List<Value> {
    }
 }
 
-export function get (ρ: Env, k: string): Value | undefined {
+export function get (ρ: Env, k: Str): Value | undefined {
    if (ρ instanceof EmptyEnv) {
       return undefined
    } else
    if (ρ instanceof ExtendEnv) {
-      if (ρ.k === k) {
+      if (ρ.k.val === k.val) {
          return ρ.v
       } else {
          return get(ρ.ρ, k)
@@ -55,11 +55,11 @@ export function get (ρ: Env, k: string): Value | undefined {
    }
 }
 
-export function has (ρ: Env, k: string): boolean {
+export function has (ρ: Env, k: Str): boolean {
    return get(ρ, k) !== undefined
 }
 
-export function singleton (k: string, v: Value): Env {
+export function singleton (k: Str, v: Value): Env {
    return extendEnv(emptyEnv(), k, v)
 }
 

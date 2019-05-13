@@ -16,7 +16,7 @@ export module Eval {
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
       const { σ, x }: Expr.RecDef = δ.head
-      return extendEnv(closeDefs(δ_0, ρ, δ.tail), x.val, recFunc(σ, ρ, δ_0))
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), x, recFunc(σ, ρ, δ_0))
    } else
    if (Nil.is(δ)) {
       return emptyEnv()
@@ -59,8 +59,8 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.empty(), make(ctrFor(e.ctr).C, ...v̅))
    } else 
    if (e instanceof Expr.Var) {
-      if (has(ρ, e.x.val)) { 
-         return explValue(Expl.var_(e.x), get(ρ, e.x.val)!)
+      if (has(ρ, e.x)) { 
+         return explValue(Expl.var_(e.x), get(ρ, e.x)!)
       } else {
          return error(`Variable '${e.x.val}' not found.`)
       }
