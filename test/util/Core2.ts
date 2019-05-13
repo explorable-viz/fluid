@@ -1,8 +1,8 @@
 import { __nonNull } from "../../src/util/Core"
 import { successfulParse } from "../../src/util/parse/Core2"
 import { initDataTypes } from "../../src/DataType2"
+import { Env } from "../../src/Env2"
 import { Expr } from "../../src/Expr2"
-import { Env } from "../../src/Func2"
 import { Parse } from "../../src/Parse2"
 import { createPrelude } from "../../src/Primitive2"
 

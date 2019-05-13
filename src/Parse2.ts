@@ -1,13 +1,14 @@
 import { assert } from "./util/Core"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
-   dropSecond, seqDep, lexeme, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
+   dropSecond, seqDep, lexeme_, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core2"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes2"
 import { arity } from "./DataType2"
-import { Expr, Kont, Lex, str } from "./Expr2"
+import { Expr, Kont, strings } from "./Expr2"
 import { singleton } from "./FiniteMap2"
+import { Str, num, str } from "./Value2"
 
 import App = Expr.App
 import Args = Expr.Args
@@ -41,12 +42,12 @@ function isCtr (str: string): boolean {
 
 const reservedWord: Parser<string> =
    choice<string>([
-      reserved(str.as), reserved(str.match), reserved(str.fun), reserved(str.in_),
-      reserved(str.let_), reserved(str.letRec)
+      reserved(strings.as), reserved(strings.match), reserved(strings.fun), reserved(strings.in_),
+      reserved(strings.let_), reserved(strings.letRec)
    ])
 
-function keyword (str: string): Parser<Lex.Keyword> {
-   return lexeme(reserved(str), Lex.Keyword)
+function keyword (str: string): Parser<string> {
+   return lexeme_(reserved(str))
 }
 
 // No Unicode support for identifiers yet.
@@ -75,19 +76,19 @@ function reserved (str: string): Parser<string> {
    }
 }
 
-const ctr: Parser<Lex.Ctr> = 
-   lexeme(satisfying(identCandidate, isCtr), Lex.Ctr)
+const ctr: Parser<Str> =
+   withAction(lexeme_(satisfying(identCandidate, isCtr)), str)
 
 // Note that primitive operations that have names (e.g. intToString) are /exactly/ like regular
 // identifiers. They can be shadowed, for example.
-const var_: Parser<Lex.Var> =
-   lexeme(
-      butnot(satisfying(identCandidate, str => !isCtr(str)), reservedWord),
-      Lex.Var
+const var_: Parser<Str> =
+   withAction(
+      lexeme_(butnot(satisfying(identCandidate, str => !isCtr(str)), reservedWord)),
+      str
    )
 
 const variable: Parser<Var> =
-   withAction(var_, (x: Lex.Var) => Expr.var_(x.str))
+   withAction(var_, (x: Str) => Expr.var_(x))
 
 // Only allow Unicode escape sequences (i.e. no hex or octal escapes, nor "character" escapes such as \r).
 const hexDigit: Parser<string> = 
@@ -120,40 +121,39 @@ const stringCh: Parser<string> =
 
 // To avoid having to deal with arbitrary operator precedence, we classify all operators as one of three
 // kinds, depending on the initial character. See 0.5.1 release notes.
-const opCandidate: Parser<Lex.OpName> =
-   lexeme(
+const opCandidate: Parser<string> =
+   lexeme_(
       butnot(
          withJoin(repeat1(choice([ch("+"), ch("*"), ch("/"), ch("-"), ch("="), ch("<"), ch(">")]))),
-         symbol(str.equals)
-      ),
-      Lex.OpName
+         symbol(strings.equals)
+      )
    )
 
 // TODO: consolidate with Primitive.ts
-function isProductOp (opName: Lex.OpName): boolean {
-   return opName.str === "*" || opName.str === "/"
+function isProductOp (opName: string): boolean {
+   return opName === "*" || opName === "/"
 }
 
-function isSumOp (opName: Lex.OpName): boolean {
-   return opName.str === "+" || opName.str === "-" || opName.str === "++"
+function isSumOp (opName: string): boolean {
+   return opName === "+" || opName === "-" || opName === "++"
 }
 
-function isCompareOp (opName: Lex.OpName): boolean {
-   return opName.str === "==" || opName.str === "===" || 
-          opName.str === "<" || opName.str === "<<" || opName.str === ">" || opName.str === ">>"
+function isCompareOp (opName: string): boolean {
+   return opName === "==" || opName === "===" || 
+          opName === "<" || opName === "<<" || opName === ">" || opName === ">>"
 }
 
-const productOp: Parser<Lex.OpName> =
-   satisfying(opCandidate, isProductOp)
+const productOp: Parser<Str> =
+   withAction(satisfying(opCandidate, isProductOp), str)
 
-const sumOp: Parser<Lex.OpName> =
-   satisfying(opCandidate, isSumOp)
+const sumOp: Parser<Str> =
+   withAction(satisfying(opCandidate, isSumOp), str)
 
-const compareOp: Parser<Lex.OpName> =
-   satisfying(opCandidate, isCompareOp)
+const compareOp: Parser<Str> =
+   withAction(satisfying(opCandidate, isCompareOp), str)
 
 function parenthesise<T> (p: Parser<T>): Parser<T> {
-   return between(symbol(str.parenL), p, symbol(str.parenR))
+   return between(symbol(strings.parenL), p, symbol(strings.parenR))
 }
 
 // Consume no input, because application is represented simply by adjacency.
@@ -164,9 +164,7 @@ const app_: Parser<(e1: Expr, e2: Expr) => App> =
          (e1: Expr, e2: Expr): App => Expr.app(e1, e2)
    )
 
-function appOp (
-   opP: Parser<Lex.OpName>
-): Parser<(e1: Expr, e2: Expr) => BinaryApp> {
+function appOp (opP: Parser<Str>): Parser<(e1: Expr, e2: Expr) => BinaryApp> {
    return withAction(
       opP,
       op =>
@@ -177,8 +175,8 @@ function appOp (
 
 const string_: Parser<ConstStr> =
    withAction(
-      lexeme(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),), Lex.StringLiteral),
-      lit => Expr.constStr(lit.str)
+      lexeme_(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),)),
+      lit => Expr.constStr(str(lit))
    )
 
 // JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
@@ -207,7 +205,7 @@ const numberʹ: Parser<string> =
    withJoin(sequence([optional(minus, () => ""), int, optional(frac, () => ""), optional(exp, () => "")]))
 
 const number_: Parser<ConstNum> =
-   withAction(lexeme(numberʹ, Lex.NumLiteral), lit => Expr.constNum(lit.toNumber()))
+   withAction(lexeme_(numberʹ), lit => Expr.constNum(num(new Number(lit).valueOf())))
 
 const parenthExpr: Parser<Expr> =
    parenthesise(expr)
@@ -215,17 +213,17 @@ const parenthExpr: Parser<Expr> =
 const let_: Parser<Let> =
    withAction(
       seq(
-         dropFirst(keyword(str.let_), seq(dropSecond(var_, symbol(str.equals)), expr)),
-         dropFirst(keyword(str.in_), expr)
+         dropFirst(keyword(strings.let_), seq(dropSecond(var_, symbol(strings.equals)), expr)),
+         dropFirst(keyword(strings.in_), expr)
       ),
-      ([[x, e], eʹ]: [[Lex.Var, Expr], Expr]) =>
-         Expr.let_(e, Trie.var_(x.str, eʹ))
+      ([[x, e], eʹ]: [[Str, Expr], Expr]) =>
+         Expr.let_(e, Trie.var_(x, eʹ))
    )
 
 const recDef: Parser<RecDef> =
    withAction(
-      seq(dropFirst(keyword(str.fun), var_), matches),
-      ([name, σ]: [Lex.Var, Trie<Expr>]) =>
+      seq(dropFirst(keyword(strings.fun), var_), matches),
+      ([name, σ]: [Str, Trie<Expr>]) =>
          Expr.recDef(name, σ)
    )
 
@@ -235,8 +233,8 @@ export const recDefs1 : Parser<List<RecDef>> =
 const letrec: Parser<LetRec> =
    withAction(
       seq(
-         dropFirst(keyword(str.letRec), recDefs1),
-         dropFirst(keyword(str.in_), expr)
+         dropFirst(keyword(strings.letRec), recDefs1),
+         dropFirst(keyword(strings.in_), expr)
       ),
      ([δ, body]: [List<RecDef>, Expr]) => 
          Expr.letRec(δ, body)
@@ -246,11 +244,11 @@ const letrec: Parser<LetRec> =
 const constr: Parser<Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), () => [])),
-      ([ctr, e̅]: [Lex.Ctr, Expr[]]) => {
-         const n: number = arity(ctr.str)
-         assert(n <= e̅.length,`Too few arguments to constructor ${ctr.str}.`)
-         assert(n >= e̅.length, `Too many arguments to constructor ${ctr.str}.`)
-         return Expr.constr(ctr.str, List.fromArray(e̅))
+      ([c, e̅]: [Str, Expr[]]) => {
+         const n: number = arity(c.val)
+         assert(n <= e̅.length,`Too few arguments to constructor ${c.val}.`)
+         assert(n >= e̅.length, `Too many arguments to constructor ${c.val}.`)
+         return Expr.constr(c.val, List.fromArray(e̅))
       }
    )
 
@@ -271,7 +269,7 @@ const listʹ: Parser<Constr> =
    )
 
 const list: Parser<Constr> =
-   between(symbol(str.bracketL), listʹ, symbol(str.bracketR))
+   between(symbol(strings.bracketL), listʹ, symbol(strings.bracketR))
 
 const pair: Parser<Constr> =
    withAction(
@@ -297,19 +295,19 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
    return withAction(
       seqDep(
          ctr, 
-         (ctr: Lex.Ctr): Parser<Args<K>> => {
-            const n: number = arity(ctr.str)
+         (c: Str): Parser<Args<K>> => {
+            const n: number = arity(c.val)
             if (n === 0) {
                return withAction(p, Args.end)
             } else {
-               return dropFirst(symbol(str.parenL), args_pattern(n, dropFirst(symbol(str.parenR), p)))
+               return dropFirst(symbol(strings.parenL), args_pattern(n, dropFirst(symbol(strings.parenR), p)))
             }
          }
       ),
-      ([ctr, Π]: [Lex.Ctr, Args<K>]): Trie.Constr<K> =>
-         Trie.constr(singleton(ctr.str, Π))
+      ([c, Π]: [Str, Args<K>]): Trie.Constr<K> =>
+         Trie.constr(singleton(c, Π))
    )
-}
+}str
 
 // This was very hard to figure out; the types aren't helping as much as they should.
 function listRest_pattern <K extends Kont<K>> (p: Parser<Args.End<K>>): Parser<Trie<Args.End<K>>> {
@@ -317,39 +315,39 @@ function listRest_pattern <K extends Kont<K>> (p: Parser<Args.End<K>>): Parser<T
       choice([
          dropFirst(symbol(","), dropFirst(symbol("..."), pattern(p))),
          dropFirst(symbol(","), list1_pattern(p)),
-         withAction(p, (κ: Args.End<K>) => Trie.constr(singleton("Nil", Args.end(κ))))
+         withAction(p, (κ: Args.End<K>) => Trie.constr(singleton(str("Nil"), Args.end(κ))))
       ])(state)
 }
 
 function list1_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       pattern(withAction(listRest_pattern(withAction(p, Args.end)), Args.next)),
-      (σ: Trie<Args.Next<K>>) => Trie.constr(singleton("Cons", Args.next(σ))) 
+      (σ: Trie<Args.Next<K>>) => Trie.constr(singleton(str("Cons"), Args.next(σ))) 
    )
 }
 
 function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return choice([
       list1_pattern(p),
-      withAction(p, (κ: K) => Trie.constr(singleton("Nil", Args.end(κ))))
+      withAction(p, (κ: K) => Trie.constr(singleton(str("Nil"), Args.end(κ))))
    ])
 }
 
 function list_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
-   return dropFirst(symbol(str.bracketL), list_patternʹ(dropFirst(symbol(str.bracketR), p)))
+   return dropFirst(symbol(strings.bracketL), list_patternʹ(dropFirst(symbol(strings.bracketR), p)))
 }
 
 function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
-      dropFirst(symbol(str.parenL), args_pattern(2, dropFirst(symbol(str.parenR), p))),
-      (Π: Args<K>): Trie.Constr<K> => Trie.constr(singleton("Pair", Π))
+      dropFirst(symbol(strings.parenL), args_pattern(2, dropFirst(symbol(strings.parenR), p))),
+      (Π: Args<K>): Trie.Constr<K> => Trie.constr(singleton(str("Pair"), Π))
    )
 }
 
 function variable_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Var<K>> {
    return withAction(
       seq(var_, p), 
-      ([x, κ]: [Lex.Var, K]): Trie.Var<K> => Trie.var_(x.str, κ)
+      ([x, κ]: [Str, K]): Trie.Var<K> => Trie.var_(x, κ)
    )
 }
 
@@ -360,7 +358,7 @@ function pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {
 
 const match: Parser<Trie<Expr>> =
    choice<Trie<Expr>>([
-      pattern(dropFirst(symbol(str.arrow), expr)),
+      pattern(dropFirst(symbol(strings.arrow), expr)),
       pattern(withAction(matches, (σ: Trie<Expr>): Expr => Expr.fun(σ)))
    ])
 
@@ -384,15 +382,15 @@ function matches (state: ParseState): ParseResult<Trie<Expr>> | null {
 const matchAs: Parser<MatchAs> =
    withAction(
       seq(
-         dropFirst(keyword(str.match), expr),
-         dropFirst(keyword(str.as), matches)
+         dropFirst(keyword(strings.match), expr),
+         dropFirst(keyword(strings.as), matches)
       ),
       ([e, σ]: [Expr, Trie<Expr>]) => Expr.matchAs(e, σ)
    )
 
 const fun: Parser<Fun> =
    withAction(
-      dropFirst(keyword(str.fun), matches),
+      dropFirst(keyword(strings.fun), matches),
       (σ: Trie<Expr>): Fun => Expr.fun(σ)
    )
 

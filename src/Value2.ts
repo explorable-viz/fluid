@@ -1,12 +1,12 @@
 import { Class, __check, assert } from "./util/Core"
-import { UnaryOp } from "./Primitive2"
+import { Annotation } from "./Annotated2"
 
 // use to initialise fields for reflection, without requiring constructors
 export const _: any = undefined 
 
 // Value in the metalanguage.
 export abstract class Value {
-   __tag: "Value"
+   __α: Annotation = _ // for some (meta)values this may remain undefined, e.g. tries
 }
 
 // Functions are persistent to support primitives. Primitive data types like Num and Str contain
@@ -32,14 +32,6 @@ export function str (val: string): Str {
 
 // Tags a value of a datatype constructor; fields are always Values, because they are observable to user code.
 export abstract class Constr<T = Value> extends Value {
-}
-
-export class PrimOp extends Value {
-   op: UnaryOp = _
-}
-
-export function primOp (op: UnaryOp): PrimOp {
-   return make(PrimOp, op)
 }
 
 // Dynamic interface to a value object.

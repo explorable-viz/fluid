@@ -1,13 +1,12 @@
 import { absurd } from "./util/Core"
 import { eq } from "./util/Ord"
-import { Lexeme } from "./util/parse/Core2"
 import { List } from "./BaseTypes2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
 import { UnaryOp } from "./Primitive2"
-import { Constr as Constrʹ, _, make } from "./Value2"
+import { Constr as Constrʹ, Num, Str, _, make } from "./Value2"
 
 // Constants used for parsing, and also for toString() implementations.
-export namespace str {
+export namespace strings {
    export const arrow: string = "→"
    export const as: string = "as"
    export const bracketL: string = "["
@@ -23,72 +22,12 @@ export namespace str {
    export const quotes: string = '"'
 }
 
-// Most of the lexical classes, e.g. Ctr, Var and literals, are elided in the syntax to avoid unneeded indirection.
-export namespace Lex {
-   // Maybe replace Lexeme subtypes with discriminated union?
-   export class Ctr extends Lexeme {
-      str: string = _
-   }
-
-   export function ctr (str: string): Ctr {
-      return make(Ctr, str)
-   }
-
-   export class NumLiteral extends Lexeme {
-      str: string = _
-
-      toNumber (): number {
-         return new Number(this.str).valueOf()
-      }
-   }
-
-   export function numLiteral (str: string): NumLiteral {
-      return make(NumLiteral, str)
-   }
-
-   export class Keyword extends Lexeme {
-      str: string = _
-   }
-
-   export function keyword (str: string): Keyword {
-      return make(Keyword, str)
-   }
-
-   // The name of a primitive operation, such as * or +, where that name is /not/ a standard identifier.
-   // Other uses of primitive operations are treated as variables.
-   export class OpName extends Lexeme {
-      str: string = _
-   }
-
-   export function opName (str: string): OpName {
-      return make(OpName, str)
-   }
-
-   export class StringLiteral extends Lexeme {
-      str: string = _
-
-      toString (): string {
-         return str.quotes + this.str + str.quotes
-      }
-   }
-
-   export function strLiteral (str: string): StringLiteral {
-      return make(StringLiteral, str)
-   }
-
-   export class Var extends Lexeme {
-      str: string = _
-   }
-
-   export function var_ (str: string): Var {
-      return make(Var, str)
-   }
-}
-
 export type Expr = Expr.Expr
 export type Kont<K> = Expr.Kont<K>
 
 export namespace Expr {
+   // It would be nice if (non-argument) tries only had argument tries as their continuations and vice-
+   // versa, but that doesn't quite work because a Constr<K> has an underlying map to Args<K>.
    export abstract class Kont<K> extends Constrʹ<K> {
       __subtag: "Kont"
    }
@@ -120,18 +59,18 @@ export namespace Expr {
    }
 
    export class ConstNum extends Expr {
-      val: number = _
+      val: Num = _
    }
    
-   export function constNum (val: number): ConstNum {
+   export function constNum (val: Num): ConstNum {
       return make(ConstNum, val)
    }
 
    export class ConstStr extends Expr {
-      val: string = _
+      val: Str = _
    }
 
-   export function constStr (val: string): ConstStr {
+   export function constStr (val: Str): ConstStr {
       return make(ConstStr, val)
    }
 
@@ -171,11 +110,11 @@ export namespace Expr {
    }
 
    export class RecDef extends Constrʹ<RecDef> {
-      x: Lex.Var = _
+      x: Str = _
       σ: Trie<Expr> = _
    }
  
-   export function recDef (x: Lex.Var, σ: Trie<Expr>): RecDef {
+   export function recDef (x: Str, σ: Trie<Expr>): RecDef {
       return make(RecDef, x, σ)
    }
 
@@ -199,19 +138,19 @@ export namespace Expr {
 
    export class BinaryApp extends Expr {
       e1: Expr = _
-      opName: Lex.OpName = _
+      opName: Str = _
       e2: Expr = _
    }
 
-   export function binaryApp (e1: Expr, opName: Lex.OpName, e2: Expr): BinaryApp {
+   export function binaryApp (e1: Expr, opName: Str, e2: Expr): BinaryApp {
       return make(BinaryApp, e1, opName, e2)
    }
 
    export class Var extends Expr {
-      x: string = _
+      x: Str = _
    }
 
-   export function var_ (x: string): Var {
+   export function var_ (x: Str): Var {
       return make(Var, x)
    }
 
@@ -264,7 +203,7 @@ export namespace Expr {
          __subtag: "Kont"
 
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
-            if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
+            if (Var.is(σ) && Var.is(τ) && eq(σ.x.val, τ.x.val)) {
                return var_(σ.x, join(σ.κ, τ.κ))
             } else
             if (Constr.is(σ) && Constr.is(τ)) {
@@ -276,19 +215,19 @@ export namespace Expr {
       }
 
       export class Constr<K extends Kont<K>> extends Trie<K> {
-         cases: FiniteMap<string, Args<K>> = _
+         cases: FiniteMap<Args<K>> = _
 
          static is<K extends Kont<K>> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
       }
 
-      export function constr<K extends Kont<K>> (cases: FiniteMap<string, Args<K>>): Constr<K> {
+      export function constr<K extends Kont<K>> (cases: FiniteMap<Args<K>>): Constr<K> {
          return make(Constr, cases)
       }
 
       export class Var<K extends Kont<K>> extends Trie<K> {
-         x: string = _
+         x: Str = _
          κ: K = _
 
          static is<K extends Kont<K>> (σ: Trie<K>): σ is Var<K> {
@@ -296,7 +235,7 @@ export namespace Expr {
          }
       }
 
-      export function var_<K extends Kont<K>> (x: string, κ: K): Var<K> {
+      export function var_<K extends Kont<K>> (x: Str, κ: K): Var<K> {
          return make<Var<K>>(Var, x, κ)
       }
    }

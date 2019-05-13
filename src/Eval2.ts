@@ -1,24 +1,23 @@
 import { __nonNull, absurd, className, error } from "./util/Core"
-import { Cons, List, Nil } from "./BaseTypes2"
+import { Cons, List, Nil, pair } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
+import { Env, concat, emptyEnv, extendEnv, get, has } from "./Env2"
+import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
-import { Env, Func, emptyEnv, extendEnv } from "./Func2"
-import { interpretTrie } from "./Match2"
+import { Func } from "./Func2"
+import { evalTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
-import { PrimOp, Value, make, num, primOp, str } from "./Value2"
+import { Value, _, make } from "./Value2"
+
+import Trie = Expr.Trie
 
 export module Eval {
 
-// Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
+// Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
-      const def: Expr.RecDef = δ.head,
-            f: Func = new (class extends Func {
-               __apply (v: Value): Value {
-                  return interpretTrie(def.σ)(Env.concat(ρ, closeDefs(δ_0, ρ, δ_0))).__apply(v)
-               }
-            })
-      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x.str, f)
+      const { σ, x }: Expr.RecDef = δ.head
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), x, recFunc(σ, ρ, δ_0))
    } else
    if (Nil.is(δ)) {
       return emptyEnv()
@@ -27,69 +26,82 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    }
 }
 
-// Repeatedly reinterprets subexpressions, so probably as slow as the previous implementation.
-// Should be able to significantly speed up by memoisation.
-export function interpret (e: Expr): (ρ: Env) => Value {
-   return (ρ: Env): Value => {
-      if (e instanceof Expr.ConstNum) {
-         return num(e.val)
-      } else
-      if (e instanceof Expr.ConstStr) {
-         return str(e.val)
-      } else
-      if (e instanceof Expr.Fun) {
-         return interpretTrie(e.σ)(ρ)
-      } else
-      if (e instanceof Expr.Var) {
-         const x: string = e.x
-         if (ρ.has(x)) { 
-            return ρ.get(x)!
-         } else {
-            return error(`Variable '${x}' not found.`)
-         }
-      } else
-      if (e instanceof Expr.PrimOp) {
-         return primOp(e.op)
-      } else
-      if (e instanceof Expr.App) {
-         const v: Value = interpret(e.func)(ρ)
-         if (v instanceof Func) {
-            return v.__apply(interpret(e.arg)(ρ))
-         } else
-         // Primitives with identifiers as names are unary and first-class.
-         if (v instanceof PrimOp) {
-            const u: Value = interpret(e.arg)(ρ)
-            return v.op.op(u)
-         } else {
-            return error(`Cannot apply a ${className(v)}`, v)
-         }
-      } else
-      // Operators (currently all binary) are "syntax", rather than names.
-      if (e instanceof Expr.BinaryApp) {
-         if (binaryOps.has(e.opName.str)) {
-            const op: BinaryOp = binaryOps.get(e.opName.str)!, // opName lacks annotations
-                  [v1, v2]: [Value, Value] = [interpret(e.e1)(ρ), interpret(e.e2)(ρ)]
-            return op.op(v1, v2)
-         } else {
-            return error("Operator name not found.", e.opName)
-         }
-      } else
-      if (e instanceof Expr.Constr) {
-         let v̅: Value[] = e.args.toArray().map((e: Expr) => interpret(e)(ρ))
-         return make(ctrFor(e.ctr).C, ...v̅)
-      } else 
-      if (e instanceof Expr.Let) {
-         return interpretTrie(e.σ)(ρ).__apply(interpret(e.e)(ρ))
-      } else
-      if (e instanceof Expr.LetRec) {
-         const ρʹ: Env = closeDefs(e.δ, ρ, e.δ)
-         return interpret(e.e)(Env.concat(ρ, ρʹ))
-      } else
-      if (e instanceof Expr.MatchAs) {
-         return interpretTrie(e.σ)(ρ).__apply(interpret(e.e)(ρ))
+// I still have expressions in the "semantic" domain, because we have to construct the environment
+// as we go along for recursion.
+class RecFunc extends Func {
+   σ: Trie<Expr> = _
+   ρ: Env = _
+   δ: List<Expr.RecDef> = _
+
+   __apply (v: Value): Value {
+      return evalTrie(concat(this.ρ, closeDefs(this.δ, this.ρ, this.δ)), this.σ).__apply(v)
+   }
+}
+
+function recFunc (σ: Trie<Expr>, ρ: Env, δ: List<Expr.RecDef>): RecFunc {
+   return make(RecFunc, σ, ρ, δ)
+}
+
+export function eval_ (ρ: Env, e: Expr): ExplValue {
+   if (e instanceof Expr.ConstNum) {
+      return explValue(Expl.empty(), e.val)
+   } else
+   if (e instanceof Expr.ConstStr) {
+      return explValue(Expl.empty(), e.val)
+   } else
+   if (e instanceof Expr.Fun) {
+      return explValue(Expl.empty(), evalTrie(ρ, e.σ))
+   } else
+   if (e instanceof Expr.PrimOp) {
+      return explValue(Expl.empty(), e.op)
+   } else
+   if (e instanceof Expr.Constr) {
+      let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e).v)
+      return explValue(Expl.empty(), make(ctrFor(e.ctr).C, ...v̅))
+   } else 
+   if (e instanceof Expr.Var) {
+      if (has(ρ, e.x)) { 
+         return explValue(Expl.var_(e.x), get(ρ, e.x)!)
       } else {
-         return absurd("Unimplemented expression form.", e)
+         return error(`Variable '${e.x.val}' not found.`)
       }
+   } else
+   if (e instanceof Expr.App) {
+      const tf: ExplValue = eval_(ρ, e.func)
+      if (tf.v instanceof Func) {
+         const tu: ExplValue = eval_(ρ, e.arg),
+               tv: ExplValue = explValue(Expl.empty(), tf.v.__apply(tu.v)) // for now
+         return explValue(Expl.app(tf, tu, tv), tv.v)
+      } else {
+         return error(`Cannot apply a ${className(tf.v)}`)
+      }
+   } else
+   // Operators (currently all binary) are "syntax", rather than names.
+   if (e instanceof Expr.BinaryApp) {
+      if (binaryOps.has(e.opName.val)) {
+         const op: BinaryOp = binaryOps.get(e.opName.val)!, // opName lacks annotations
+               [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
+         return explValue(Expl.binaryApp(tv1, e.opName, tv2), op.__apply(pair(tv1.v, tv2.v)))
+      } else {
+         return error(`Operator ${e.opName.val} not found.`)
+      }
+   } else
+   if (e instanceof Expr.Let) {
+      const tu: ExplValue = eval_(ρ, e.e),
+            tv: ExplValue = explValue(Expl.empty(), evalTrie(ρ, e.σ).__apply(tu.v)) // for now
+      return explValue(Expl.let_(tu, tv), tv.v)
+   } else
+   if (e instanceof Expr.LetRec) {
+      const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
+            tv: ExplValue = eval_(concat(ρ, ρʹ), e.e)
+      return explValue(Expl.letRec(e.δ, ρʹ, tv), tv.v)
+   } else
+   if (e instanceof Expr.MatchAs) {
+      const tu: ExplValue = eval_(ρ, e.e),
+            tv: ExplValue = explValue(Expl.empty(), evalTrie(ρ, e.σ).__apply(tu.v))
+      return explValue(Expl.matchAs(tu, tv), tv.v)
+   } else {
+      return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
 }
 
