@@ -1,10 +1,11 @@
 import { absurd } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
+import { ExplValue } from "./ExplValue2"
 import { Value, _, make } from "./Value2"
 
 // Func to distinguish from expression-level Fun.
 export abstract class Func extends Value {
-   abstract __apply (v: Value): Value
+   abstract __apply (v: Value): ExplValue
 }
 
 // Environments are snoc lists.

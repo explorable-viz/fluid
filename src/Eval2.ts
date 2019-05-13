@@ -32,7 +32,7 @@ class RecFunc extends Func {
    ρ: Env = _
    δ: List<Expr.RecDef> = _
 
-   __apply (v: Value): Value {
+   __apply (v: Value): ExplValue {
       return evalTrie(Env.concat(this.ρ, closeDefs(this.δ, this.ρ, this.δ)), this.σ).__apply(v)
    }
 }
@@ -43,7 +43,7 @@ function recFunc (σ: Trie<Expr>, ρ: Env, δ: List<Expr.RecDef>): RecFunc {
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.ConstNum) {
-      return explValue(Expl.empty(), num(e.val)
+      return explValue(Expl.empty(), num(e.val))
    } else
    if (e instanceof Expr.ConstStr) {
       return explValue(Expl.empty(), str(e.val))

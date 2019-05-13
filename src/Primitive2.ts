@@ -32,7 +32,7 @@ function unary_<T extends Value, V extends Value> (op: Unary<T, V>): UnaryOp {
 export class BinaryOp extends PrimOp {
    op: Binary<Value, Value, Value> = _
 
-   __apply ({ fst: v1, snd: v2 }: Pair<Value, Value>): Value {
+   __apply ({ fst: v1, snd: v2 }: Pair<Value, Value>): ExplValue {
       return this.op(v1, v2)
    }
 }

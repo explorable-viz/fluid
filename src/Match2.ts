@@ -78,7 +78,7 @@ function varFunc<K extends Kont<K>> (σ: Trie.Var<K>, ρ: Env): VarFunc<K> {
 export abstract class ConstrFunc extends Func {
    __apply (v: Value): Value {
       if (v instanceof Constr) {
-         return ((this as any)[className(v)] as ArgumentsFunc).__apply(fieldValues(v))
+         return as((this as any)[className(v)], ArgumentsFunc).__apply(fieldValues(v)
       } else {
          return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, this)
       }

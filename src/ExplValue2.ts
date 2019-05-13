@@ -82,11 +82,11 @@ export namespace Expl {
 
 type Expl = Expl.Expl
 
-export class ExplValue extends Constr<ExplValue> {
+export class ExplValue<T extends Value = Value> extends Constr<ExplValue> {
    t: Expl = _
-   v: Value = _
+   v: T = _
 }
 
-export function explValue (t: Expl, v: Value): ExplValue {
-   return make(ExplValue, t, v)
+export function explValue<T extends Value = Value> (t: Expl, v: T): ExplValue<T> {
+   return make(ExplValue, t, v) as ExplValue<T>
 }
