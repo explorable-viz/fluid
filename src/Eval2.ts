@@ -5,26 +5,39 @@ import { Expr } from "./Expr2"
 import { Env, Func, emptyEnv, extendEnv } from "./Func2"
 import { evalTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
-import { Value, make, num, str } from "./Value2"
+import { Value, _, make, num, str } from "./Value2"
+
+import Trie = Expr.Trie
 
 export module Eval {
 
-// Environments are snoc-lists, so this reverses declaration order, but semantically it's irrelevant.
+// Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
-      const def: Expr.RecDef = δ.head,
-            f: Func = new (class extends Func {
-               __apply (v: Value): Value {
-                  return evalTrie(Env.concat(ρ, closeDefs(δ_0, ρ, δ_0)), def.σ).__apply(v)
-               }
-            })
-      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x.str, f)
+      const { σ, x }: Expr.RecDef = δ.head
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), x.str, recFunc(σ, ρ, δ_0))
    } else
    if (Nil.is(δ)) {
       return emptyEnv()
    } else {
       return absurd()
    }
+}
+
+// I still have expressions in the "semantic" domain, because we have to construct the environment
+// as we go along for recursion.
+class RecFunc extends Func {
+   σ: Trie<Expr> = _
+   ρ: Env = _
+   δ: List<Expr.RecDef> = _
+
+   __apply (v: Value): Value {
+      return evalTrie(Env.concat(this.ρ, closeDefs(this.δ, this.ρ, this.δ)), this.σ).__apply(v)
+   }
+}
+
+function recFunc (σ: Trie<Expr>, ρ: Env, δ: List<Expr.RecDef>): RecFunc {
+   return make(RecFunc, σ, ρ, δ)
 }
 
 export function eval_ (ρ: Env, e: Expr): Value {
