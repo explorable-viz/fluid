@@ -66,7 +66,7 @@ class VarFunc<K extends Kont<K>> extends Func {
    ρ: Env = _
 
    __apply (v: Value): Value {
-      return evalKont(Env.concat(this.ρ, Env.singleton(this.σ.x, v)), this.σ.κ)
+      return evalKont(Env.concat(this.ρ, Env.singleton(this.σ.x.val, v)), this.σ.κ)
    }
 }
 

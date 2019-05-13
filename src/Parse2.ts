@@ -8,7 +8,7 @@ import { Cons, List, Nil, Pair, nil } from "./BaseTypes2"
 import { arity } from "./DataType2"
 import { Expr, Kont, Lex, strings } from "./Expr2"
 import { singleton } from "./FiniteMap2"
-import { num, str } from "./Value2"
+import { Str, num, str } from "./Value2"
 
 import App = Expr.App
 import Args = Expr.Args
@@ -81,14 +81,14 @@ const ctr: Parser<Lex.Ctr> =
 
 // Note that primitive operations that have names (e.g. intToString) are /exactly/ like regular
 // identifiers. They can be shadowed, for example.
-const var_: Parser<Lex.Var> =
-   lexeme(
-      butnot(satisfying(identCandidate, str => !isCtr(str)), reservedWord),
-      Lex.Var
+const var_: Parser<Str> =
+   withAction(
+      lexeme_(butnot(satisfying(identCandidate, str => !isCtr(str)), reservedWord)),
+      str
    )
 
 const variable: Parser<Var> =
-   withAction(var_, (x: Lex.Var) => Expr.var_(x.str))
+   withAction(var_, (x: Str) => Expr.var_(x))
 
 // Only allow Unicode escape sequences (i.e. no hex or octal escapes, nor "character" escapes such as \r).
 const hexDigit: Parser<string> = 
@@ -219,14 +219,14 @@ const let_: Parser<Let> =
          dropFirst(keyword(strings.let_), seq(dropSecond(var_, symbol(strings.equals)), expr)),
          dropFirst(keyword(strings.in_), expr)
       ),
-      ([[x, e], eʹ]: [[Lex.Var, Expr], Expr]) =>
-         Expr.let_(e, Trie.var_(x.str, eʹ))
+      ([[x, e], eʹ]: [[Str, Expr], Expr]) =>
+         Expr.let_(e, Trie.var_(x, eʹ))
    )
 
 const recDef: Parser<RecDef> =
    withAction(
       seq(dropFirst(keyword(strings.fun), var_), matches),
-      ([name, σ]: [Lex.Var, Trie<Expr>]) =>
+      ([name, σ]: [Str, Trie<Expr>]) =>
          Expr.recDef(name, σ)
    )
 
@@ -350,7 +350,7 @@ function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> 
 function variable_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Var<K>> {
    return withAction(
       seq(var_, p), 
-      ([x, κ]: [Lex.Var, K]): Trie.Var<K> => Trie.var_(x.str, κ)
+      ([x, κ]: [Str, K]): Trie.Var<K> => Trie.var_(x, κ)
    )
 }
 

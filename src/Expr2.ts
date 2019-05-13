@@ -43,14 +43,6 @@ export namespace Lex {
    export function opName (str: string): OpName {
       return make(OpName, str)
    }
-
-   export class Var extends Lexeme {
-      str: string = _
-   }
-
-   export function var_ (str: string): Var {
-      return make(Var, str)
-   }
 }
 
 export type Expr = Expr.Expr
@@ -141,11 +133,11 @@ export namespace Expr {
    }
 
    export class RecDef extends Constrʹ<RecDef> {
-      x: Lex.Var = _
+      x: Str = _
       σ: Trie<Expr> = _
    }
  
-   export function recDef (x: Lex.Var, σ: Trie<Expr>): RecDef {
+   export function recDef (x: Str, σ: Trie<Expr>): RecDef {
       return make(RecDef, x, σ)
    }
 
@@ -178,10 +170,10 @@ export namespace Expr {
    }
 
    export class Var extends Expr {
-      x: string = _
+      x: Str = _
    }
 
-   export function var_ (x: string): Var {
+   export function var_ (x: Str): Var {
       return make(Var, x)
    }
 
@@ -234,7 +226,7 @@ export namespace Expr {
          __subtag: "Kont"
 
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
-            if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
+            if (Var.is(σ) && Var.is(τ) && eq(σ.x.val, τ.x.val)) {
                return var_(σ.x, join(σ.κ, τ.κ))
             } else
             if (Constr.is(σ) && Constr.is(τ)) {
@@ -258,7 +250,7 @@ export namespace Expr {
       }
 
       export class Var<K extends Kont<K>> extends Trie<K> {
-         x: string = _
+         x: Str = _
          κ: K = _
 
          static is<K extends Kont<K>> (σ: Trie<K>): σ is Var<K> {
@@ -266,7 +258,7 @@ export namespace Expr {
          }
       }
 
-      export function var_<K extends Kont<K>> (x: string, κ: K): Var<K> {
+      export function var_<K extends Kont<K>> (x: Str, κ: K): Var<K> {
          return make<Var<K>>(Var, x, κ)
       }
    }

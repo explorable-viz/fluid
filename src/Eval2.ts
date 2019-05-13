@@ -16,7 +16,7 @@ export module Eval {
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
       const { σ, x }: Expr.RecDef = δ.head
-      return extendEnv(closeDefs(δ_0, ρ, δ.tail), x.str, recFunc(σ, ρ, δ_0))
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), x.val, recFunc(σ, ρ, δ_0))
    } else
    if (Nil.is(δ)) {
       return emptyEnv()
@@ -59,10 +59,10 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.empty(), make(ctrFor(e.ctr).C, ...v̅))
    } else 
    if (e instanceof Expr.Var) {
-      if (ρ.has(e.x)) { 
-         return explValue(Expl.var_(e.x), ρ.get(e.x)!)
+      if (ρ.has(e.x.val)) { 
+         return explValue(Expl.var_(e.x), ρ.get(e.x.val)!)
       } else {
-         return error(`Variable '${e.x}' not found.`)
+         return error(`Variable '${e.x.val}' not found.`)
       }
    } else
    if (e instanceof Expr.App) {
@@ -82,7 +82,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
                [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
          return explValue(Expl.binaryApp(tv1, e.opName, tv2), op.__apply(pair(tv1.v, tv2.v)))
       } else {
-         return error(`Operator ${e.opName} not found.`)
+         return error(`Operator ${e.opName.str} not found.`)
       }
    } else
    if (e instanceof Expr.Let) {

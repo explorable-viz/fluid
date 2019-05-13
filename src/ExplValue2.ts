@@ -1,7 +1,7 @@
 import { Env } from "./Func2"
 import { Expr, Lex } from "./Expr2"
 import { List } from "./BaseTypes2"
-import { Constr, Value, _, make } from "./Value2"
+import { Constr, Str, Value, _, make } from "./Value2"
 
 export namespace Expl {
    export abstract class Expl extends Constr<Expl> {
@@ -72,10 +72,10 @@ export namespace Expl {
    }
 
    export class Var extends Expl {
-      x: Lex.Var = _
+      x: Str = _
    }
 
-   export function var_ (x: string): Var {
+   export function var_ (x: Str): Var {
       return make(Var, x)
    }
 }
