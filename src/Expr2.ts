@@ -1,6 +1,5 @@
 import { absurd } from "./util/Core"
 import { eq } from "./util/Ord"
-import { Lexeme } from "./util/parse/Core2"
 import { List } from "./BaseTypes2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
 import { UnaryOp } from "./Primitive2"
@@ -21,18 +20,6 @@ export namespace strings {
    export const parenL: string = "("
    export const parenR: string = ")"
    export const quotes: string = '"'
-}
-
-// Most of the lexical classes, e.g. Ctr, Var and literals, are elided in the syntax to avoid unneeded indirection.
-export namespace Lex {
-   // Maybe replace Lexeme subtypes with discriminated union?
-   export class Ctr extends Lexeme {
-      str: string = _
-   }
-
-   export function ctr (str: string): Ctr {
-      return make(Ctr, str)
-   }
 }
 
 export type Expr = Expr.Expr

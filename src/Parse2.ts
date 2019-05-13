@@ -1,12 +1,12 @@
 import { assert } from "./util/Core"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
-   dropSecond, seqDep, lexeme, lexeme_, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
+   dropSecond, seqDep, lexeme_, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core2"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes2"
 import { arity } from "./DataType2"
-import { Expr, Kont, Lex, strings } from "./Expr2"
+import { Expr, Kont, strings } from "./Expr2"
 import { singleton } from "./FiniteMap2"
 import { Str, num, str } from "./Value2"
 
@@ -76,8 +76,8 @@ function reserved (str: string): Parser<string> {
    }
 }
 
-const ctr: Parser<Lex.Ctr> = 
-   lexeme(satisfying(identCandidate, isCtr), Lex.Ctr)
+const ctr: Parser<Str> =
+   withAction(lexeme_(satisfying(identCandidate, isCtr)), str)
 
 // Note that primitive operations that have names (e.g. intToString) are /exactly/ like regular
 // identifiers. They can be shadowed, for example.
@@ -244,11 +244,11 @@ const letrec: Parser<LetRec> =
 const constr: Parser<Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), () => [])),
-      ([ctr, e̅]: [Lex.Ctr, Expr[]]) => {
-         const n: number = arity(ctr.str)
-         assert(n <= e̅.length,`Too few arguments to constructor ${ctr.str}.`)
-         assert(n >= e̅.length, `Too many arguments to constructor ${ctr.str}.`)
-         return Expr.constr(ctr.str, List.fromArray(e̅))
+      ([c, e̅]: [Str, Expr[]]) => {
+         const n: number = arity(c.val)
+         assert(n <= e̅.length,`Too few arguments to constructor ${c.val}.`)
+         assert(n >= e̅.length, `Too many arguments to constructor ${c.val}.`)
+         return Expr.constr(c.val, List.fromArray(e̅))
       }
    )
 
@@ -295,8 +295,8 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
    return withAction(
       seqDep(
          ctr, 
-         (ctr: Lex.Ctr): Parser<Args<K>> => {
-            const n: number = arity(ctr.str)
+         (c: Str): Parser<Args<K>> => {
+            const n: number = arity(c.val)
             if (n === 0) {
                return withAction(p, Args.end)
             } else {
@@ -304,8 +304,8 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
             }
          }
       ),
-      ([ctr, Π]: [Lex.Ctr, Args<K>]): Trie.Constr<K> =>
-         Trie.constr(singleton(str(ctr.str), Π))
+      ([c, Π]: [Str, Args<K>]): Trie.Constr<K> =>
+         Trie.constr(singleton(c, Π))
    )
 }str
 
