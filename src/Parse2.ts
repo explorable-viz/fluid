@@ -8,7 +8,7 @@ import { Cons, List, Nil, Pair, nil } from "./BaseTypes2"
 import { arity } from "./DataType2"
 import { Expr, Kont, Lex, strings } from "./Expr2"
 import { singleton } from "./FiniteMap2"
-import { str } from "./Value2"
+import { num, str } from "./Value2"
 
 import App = Expr.App
 import Args = Expr.Args
@@ -178,8 +178,8 @@ function appOp (
 
 const string_: Parser<ConstStr> =
    withAction(
-      lexeme(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),), Lex.StringLiteral),
-      lit => Expr.constStr(lit.str)
+      lexeme_(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),)),
+      lit => Expr.constStr(str(lit))
    )
 
 // JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
@@ -208,7 +208,7 @@ const numberʹ: Parser<string> =
    withJoin(sequence([optional(minus, () => ""), int, optional(frac, () => ""), optional(exp, () => "")]))
 
 const number_: Parser<ConstNum> =
-   withAction(lexeme_(numberʹ), lit => Expr.constNum(new Number(lit).valueOf()))
+   withAction(lexeme_(numberʹ), lit => Expr.constNum(num(new Number(lit).valueOf())))
 
 const parenthExpr: Parser<Expr> =
    parenthesise(expr)

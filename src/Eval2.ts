@@ -6,7 +6,7 @@ import { Expr } from "./Expr2"
 import { Env, Func, emptyEnv, extendEnv } from "./Func2"
 import { evalTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
-import { Value, _, make, num, str } from "./Value2"
+import { Value, _, make } from "./Value2"
 
 import Trie = Expr.Trie
 
@@ -43,10 +43,10 @@ function recFunc (σ: Trie<Expr>, ρ: Env, δ: List<Expr.RecDef>): RecFunc {
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.ConstNum) {
-      return explValue(Expl.empty(), num(e.val))
+      return explValue(Expl.empty(), e.val)
    } else
    if (e instanceof Expr.ConstStr) {
-      return explValue(Expl.empty(), str(e.val))
+      return explValue(Expl.empty(), e.val)
    } else
    if (e instanceof Expr.Fun) {
       return explValue(Expl.empty(), evalTrie(ρ, e.σ))

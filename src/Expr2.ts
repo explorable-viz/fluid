@@ -4,7 +4,7 @@ import { Lexeme } from "./util/parse/Core2"
 import { List } from "./BaseTypes2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
 import { UnaryOp } from "./Primitive2"
-import { Constr as Constrʹ, _, make } from "./Value2"
+import { Constr as Constrʹ, Num, Str, _, make } from "./Value2"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -42,18 +42,6 @@ export namespace Lex {
 
    export function opName (str: string): OpName {
       return make(OpName, str)
-   }
-
-   export class StringLiteral extends Lexeme {
-      str: string = _
-
-      toString (): string {
-         return strings.quotes + this.str + strings.quotes
-      }
-   }
-
-   export function strLiteral (str: string): StringLiteral {
-      return make(StringLiteral, str)
    }
 
    export class Var extends Lexeme {
@@ -102,18 +90,18 @@ export namespace Expr {
    }
 
    export class ConstNum extends Expr {
-      val: number = _
+      val: Num = _
    }
    
-   export function constNum (val: number): ConstNum {
+   export function constNum (val: Num): ConstNum {
       return make(ConstNum, val)
    }
 
    export class ConstStr extends Expr {
-      val: string = _
+      val: Str = _
    }
 
-   export function constStr (val: string): ConstStr {
+   export function constStr (val: Str): ConstStr {
       return make(ConstStr, val)
    }
 
