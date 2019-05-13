@@ -10,21 +10,21 @@ import Args = Expr.Args
 import Kont = Expr.Kont
 import Trie = Expr.Trie
 
-function eval_Kont<K extends Kont<K>> (ρ: Env, κ: K): Value {
+function evalKont<K extends Kont<K>> (ρ: Env, κ: K): Value {
    if (κ instanceof Expr.Expr) {
       return Eval.eval_(ρ, κ)
    } else
    if (κ instanceof Trie.Trie) {
-      return eval_Trie(ρ, κ)
+      return evalTrie(ρ, κ)
    } else
    if (κ instanceof Args.Args) {
-      return eval_Args(ρ, κ)
+      return evalArgs(ρ, κ)
    } else {
       return absurd()
    }
 }
 
-export function eval_Trie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Func {
+export function evalTrie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Func {
    if (Trie.Var.is(σ)) {
       return varFunc(σ, ρ)
    } else
@@ -37,7 +37,7 @@ export function eval_Trie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Func {
       let n: number = 0
       for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
          if (c̅.includes(c̅ʹ[nʹ])) {
-            f̅.push(eval_Args(ρ, cases[n++].snd))
+            f̅.push(evalArgs(ρ, cases[n++].snd))
          } else {
             f̅.push(undefined as any)
          }
@@ -50,7 +50,7 @@ export function eval_Trie<K extends Kont<K>> (ρ: Env, σ: Trie<K>): Func {
 }
 
 // Parser ensures constructor calls are saturated.
-function eval_Args<K extends Kont<K>> (ρ: Env, Π: Args<K>): ArgumentsFunc {
+function evalArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): ArgumentsFunc {
    if (Args.End.is(Π)) {
       return endFunc(Π, ρ)
    } else
@@ -66,7 +66,7 @@ class VarFunc<K extends Kont<K>> extends Func {
    ρ: Env = _
 
    __apply (v: Value): Value {
-      return eval_Kont(Env.concat(this.ρ, Env.singleton(this.σ.x, v)), this.σ.κ)
+      return evalKont(Env.concat(this.ρ, Env.singleton(this.σ.x, v)), this.σ.κ)
    }
 }
 
@@ -95,7 +95,7 @@ class EndFunc<K extends Kont<K>> extends ArgumentsFunc {
    
    __apply (v̅: Value[]): Value {
       if (v̅.length === 0) {
-         return eval_Kont(this.ρ, this.Π.κ)
+         return evalKont(this.ρ, this.Π.κ)
       } else {
          return absurd("Too many arguments to constructor.")
       }
@@ -114,7 +114,7 @@ class NextFunc<K extends Kont<K>> extends ArgumentsFunc {
       if (v̅.length === 0) {
          return absurd("Too few arguments to constructor.")
       } else {
-         const f: ArgumentsFunc = as(eval_Trie(this.ρ, this.Π.σ).__apply(v̅[0]), ArgumentsFunc)
+         const f: ArgumentsFunc = as(evalTrie(this.ρ, this.Π.σ).__apply(v̅[0]), ArgumentsFunc)
          return f.__apply(v̅.slice(1))
       }
    }

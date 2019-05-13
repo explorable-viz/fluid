@@ -3,7 +3,7 @@ import { Cons, List, Nil, pair } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Expr } from "./Expr2"
 import { Env, Func, emptyEnv, extendEnv } from "./Func2"
-import { eval_Trie } from "./Match2"
+import { evalTrie } from "./Match2"
 import { BinaryOp, binaryOps } from "./Primitive2"
 import { Value, make, num, str } from "./Value2"
 
@@ -15,7 +15,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
       const def: Expr.RecDef = δ.head,
             f: Func = new (class extends Func {
                __apply (v: Value): Value {
-                  return eval_Trie(Env.concat(ρ, closeDefs(δ_0, ρ, δ_0)), def.σ).__apply(v)
+                  return evalTrie(Env.concat(ρ, closeDefs(δ_0, ρ, δ_0)), def.σ).__apply(v)
                }
             })
       return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x.str, f)
@@ -27,8 +27,6 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    }
 }
 
-// Repeatedly reeval_s subexpressions, so probably as slow as the previous implementation.
-// Should be able to significantly speed up by memoisation.
 export function eval_ (ρ: Env, e: Expr): Value {
    if (e instanceof Expr.ConstNum) {
       return num(e.val)
@@ -37,7 +35,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
       return str(e.val)
    } else
    if (e instanceof Expr.Fun) {
-      return eval_Trie(ρ, e.σ)
+      return evalTrie(ρ, e.σ)
    } else
    if (e instanceof Expr.Var) {
       const x: string = e.x
@@ -73,14 +71,14 @@ export function eval_ (ρ: Env, e: Expr): Value {
       return make(ctrFor(e.ctr).C, ...v̅)
    } else 
    if (e instanceof Expr.Let) {
-      return eval_Trie(ρ, e.σ).__apply(eval_(ρ, e.e))
+      return evalTrie(ρ, e.σ).__apply(eval_(ρ, e.e))
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ)
       return eval_(Env.concat(ρ, ρʹ), e.e)
    } else
    if (e instanceof Expr.MatchAs) {
-      return eval_Trie(ρ, e.σ).__apply(eval_(ρ, e.e))
+      return evalTrie(ρ, e.σ).__apply(eval_(ρ, e.e))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
