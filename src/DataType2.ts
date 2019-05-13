@@ -4,7 +4,7 @@ import { ConstrFunc } from "./Match2"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, Rect, RectFill, Scale, Transform, Translate, Transpose } from "./Graphics2"
 import { Constr, State, _, fields } from "./Value2"
 
-// Neither of these are reflective because of non-standard fields.
+// Neither of these are currently reflective because of non-standard fields.
 
 export class DataType {
    name: string
