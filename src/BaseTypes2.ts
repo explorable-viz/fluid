@@ -51,7 +51,7 @@ export class Nil<T> extends List<T> {
 }
 
 export function nil<T> (): List<T> {
-   return make<Nil<T>>(Nil)
+   return make(Nil) as Nil<T>
 }
 
 export class Cons<T> extends List<T> {
@@ -73,7 +73,7 @@ export class Cons<T> extends List<T> {
 }
 
 export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
-   return make<Cons<T>>(Cons, head, tail)
+   return make(Cons, head, tail) as Cons<T>
 }
 
 export class Pair<T, U> extends Constr<Pair<T, U>> {
@@ -105,7 +105,7 @@ export class Empty<T> extends Tree<T> {
 }
 
 export function empty<T extends Persistent> (): Empty<T> {
-   return make<Empty<T>>(Empty)
+   return make(Empty) as Empty<T>
 }
 
 export class NonEmpty<T> extends Tree<T> {

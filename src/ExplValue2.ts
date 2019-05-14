@@ -1,100 +1,88 @@
-import { Env } from "./Env2"
 import { Expr } from "./Expr2"
 import { List } from "./BaseTypes2"
-import { Constr, Str, Value, _, make } from "./Value2"
+import { ExplId } from "./Eval2"
+import { Constr, PrimValue, Str, Value, _, at } from "./Value2"
 
 export namespace Expl {
    export abstract class Expl extends Constr<Expl> {
    }
 
    export class App extends Expl {
-      func: ExplValue = _    // Expl would suffice, but for uneval we need address of function
-      arg: ExplValue = _     // Expl would suffice, but more uniform this way
-      tv: ExplValue = _      // technically Expl would suffice, but for uneval we want environment
+      f: Value<any> = _    // Expl would suffice, but for uneval we need address of function
+      v: Value<any> = _     // Expl would suffice, but more uniform this way
+      // TODO: record match
    }
 
-   export function app (func: ExplValue, arg: ExplValue, tv: ExplValue): App {
-      return make(App, func, arg, tv)
+   export function app (k: ExplId, f: Value<any>, v: Value<any>): App {
+      return at(k, App, f, v)
    }
 
    export class UnaryApp extends Expl {
-      func: ExplValue = _
-      arg: ExplValue = _
+      f: Value<any> = _
+      v: Value<any> = _
    }
 
-   export function unaryApp (func: ExplValue, arg: ExplValue): UnaryApp {
-      return make(UnaryApp, func, arg)
+   export function unaryApp (k: ExplId, f: Value<any>, v: PrimValue): UnaryApp {
+      return at(k, UnaryApp, f, v)
    }
 
    export class Empty extends Expl {
    }
 
-   export function empty (): Empty {
-      return make(Empty)
+   export function empty (k: ExplId): Empty {
+      return at(k, Empty)
    }
 
    export class Let extends Expl {
-      tu: ExplValue = _
-      tv: ExplValue = _ // technically Expl would suffice, but for uneval we want environment
+      u: Value<any> = _
+      // TODO: record match
    }
 
-   export function let_ (tu: ExplValue, tv: ExplValue): Let {
-      return make(Let, tu, tv)
+   export function let_ (k: ExplId, u: Value<any>): Let {
+      return at(k, Let, u)
    }
 
    export class LetRec extends Expl {
       δ: List<Expr.RecDef> = _
-      ρ_defs: Env = _     // from closeDefs, for uneval
-      tv: ExplValue = _
+      // TODO: ρ_defs for uneval?
    }
 
-   export function letRec (δ: List<Expr.RecDef>, ρ_defs: Env, tv: ExplValue): LetRec {
-      return make(LetRec, δ, ρ_defs, tv)
+   export function letRec (k: ExplId, δ: List<Expr.RecDef>): LetRec {
+      return at(k, LetRec, δ)
    }
 
    export class MatchAs extends Expl {
-      tu: ExplValue = _
-      tv: ExplValue = _ // technically Expl would suffice, but for uneval we want environment
+      u: Value<any> = _
+      // TODO: record match
    }
 
-   export function matchAs (tu: ExplValue, tv: ExplValue): MatchAs {
-      return make(MatchAs, tu, tv)
+   export function matchAs (k: ExplId, u: Value<any>): MatchAs {
+      return at(k, MatchAs, u)
    }
 
    export class BinaryApp extends Expl {
-      tv1: ExplValue = _
+      v1: PrimValue = _
       opName: Str = _
-      tv2: ExplValue = _
+      v2: PrimValue = _
    }
 
-   export function binaryApp (tv1: ExplValue, opName: Str, tv2: ExplValue): BinaryApp {
-      return make(BinaryApp, tv1, opName, tv2)
+   export function binaryApp (k: ExplId, v1: PrimValue, opName: Str, v2: PrimValue): BinaryApp {
+      return at(k, BinaryApp, v1, opName, v2)
    }
 
    export class Var extends Expl {
       x: Str = _
    }
 
-   export function var_ (x: Str): Var {
-      return make(Var, x)
+   export function var_ (k: ExplId, x: Str): Var {
+      return at(k, Var, x)
    }
 }
 
 type Expl = Expl.Expl
 
-export class ExplValue<T extends Value = Value> extends Constr<ExplValue> {
-   t: Expl = _
-   v: T = _
-}
-
-export function explValue<T extends Value = Value> (t: Expl, v: T): ExplValue<T> {
-   return make(ExplValue, t, v) as ExplValue<T>
-}
-
-export type Expls<T> = {
-   [expl in keyof T]: Expl
-}
-
-export function expls<T extends Value> (v: Constr<T>): Expls<T> {
-   throw new Error
+// TODO: this should take a versioned, not a value.
+export function explValue<T extends Value<any> = Value<any>> (t: Expl, v: T): T {
+//   v.__expl = t // TOOD: check single-assignment constraint
+   return v
 }

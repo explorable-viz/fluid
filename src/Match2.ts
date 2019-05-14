@@ -50,18 +50,18 @@ function evalArgs<K extends Kont<K>> (Π: Args<K>): ArgsFunc<K> {
 class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
-   __apply (v: Value): [Env, K] {
+   __apply (v: Value<any>): [Env, K] {
       return [singleton(this.σ.x, v), this.σ.κ]         
    }
 }
 
 function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
-   return make<VarFunc<K>>(VarFunc, σ)
+   return make(VarFunc, σ) as VarFunc<K>
 }
 
 // Concrete instances must have a field per constructor, in *lexicographical* order.
 export abstract class ConstrFunc<K extends Kont<K>> extends Func<K> {
-   __apply (v: Value): [Env, K] {
+   __apply (v: Value<any>): [Env, K] {
       if (v instanceof Constr) {
          return as((this as any)[className(v)], ArgsFunc).__apply(fieldValues(v))
       } else {
@@ -70,14 +70,14 @@ export abstract class ConstrFunc<K extends Kont<K>> extends Func<K> {
    }
 }
 
-export abstract class ArgsFunc<K> extends Value {
-   abstract __apply (v̅: Value[]): [Env, K]
+export abstract class ArgsFunc<K> extends Value<"ArgsFunc"> {
+   abstract __apply (v̅: Value<any>[]): [Env, K]
 }
 
 class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
    Π: Args.End<K> = _
    
-   __apply (v̅: Value[]): [Env, K] {
+   __apply (v̅: Value<any>[]): [Env, K] {
       if (v̅.length === 0) {
          return [emptyEnv(), this.Π.κ]
       } else {
@@ -87,13 +87,13 @@ class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
 }
 
 function endFunc<K extends Kont<K>> (Π: Args.End<K>): EndFunc<K> {
-   return make<EndFunc<K>>(EndFunc, Π)
+   return make(EndFunc, Π) as EndFunc<K>
 }
 
 class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
    Π: Args.Next<K> = _
 
-   __apply (v̅: Value[]): [Env, K] {
+   __apply (v̅: Value<any>[]): [Env, K] {
       if (v̅.length === 0) {
          return absurd("Too few arguments to constructor.")
       } else {
@@ -105,5 +105,5 @@ class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
 }
 
 function nextFunc<K extends Kont<K>> (Π: Args.Next<K>): NextFunc<K> {
-   return make<NextFunc<K>>(NextFunc, Π)
+   return make(NextFunc, Π) as NextFunc<K>
 }

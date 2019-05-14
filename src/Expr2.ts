@@ -182,7 +182,7 @@ export namespace Expr {
       }
 
       export function end<K extends Kont<K>> (κ: K): End<K> {
-         return make<End<K>>(End, κ)
+         return make(End, κ) as End<K>
       }
 
       export class Next<K extends Kont<K>> extends Args<K> {
@@ -194,7 +194,7 @@ export namespace Expr {
       }
 
       export function next<K extends Kont<K>> (σ: Trie<Args<K>>): Next<K> {
-         return make<Next<K>>(Next, σ)
+         return make(Next, σ)
       }
    }
 
@@ -236,7 +236,7 @@ export namespace Expr {
       }
 
       export function var_<K extends Kont<K>> (x: Str, κ: K): Var<K> {
-         return make<Var<K>>(Var, x, κ)
+         return make(Var, x, κ) as Var<K>
       }
    }
 }

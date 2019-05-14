@@ -1,37 +1,50 @@
 import { Class, __check, assert } from "./util/Core"
-import { Annotation } from "./Annotated2"
 
-// use to initialise fields for reflection, without requiring constructors
+// Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
 
 // Value in the metalanguage.
-export abstract class Value {
-   __α: Annotation = _ // for some (meta)values this may remain undefined, e.g. tries
+export abstract class Value<Tag extends string> {
+   __tag: Tag
+}
+
+// Address or location of persistent object.
+export class Id extends Value<"Id"> {
 }
 
 // Functions are persistent to support primitives. Primitive data types like Num and Str contain
 // ES6 primitives like number and string, which are (currently) "persistent" for interning purposes
 // but are not "values" because they are not observable to user code.
-export type Persistent = Value | string | number | Function
+export type Persistent = Value<any> | string | number | Function
 
-export class Num extends Value {
+export type PrimValue = Value<"Num"> | Value<"Str">
+
+export class Num extends Value<"Num"> {
    val: number = _
 }
 
-export function num (val: number): Num {
+export function num (k: Id, val: number): Num {
+   return at(k, Num, val)
+}
+
+export function num̴ (val: number): Num {
    return make(Num, val)
 }
 
-export class Str extends Value {
+export class Str extends Value<"Str"> {
    val: string = _
 }
 
-export function str (val: string): Str {
-   return make(Str, __check(val, it => typeof it === "string"))
+export function str (k: Id, val: string): Str {
+   return at(k, Str, val)
+}
+
+export function str̴ (val: string): Str {
+   return make(Str, val)
 }
 
 // Tags a value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
-export abstract class Constr<T = Value> extends Value {
+export abstract class Constr<T = Value<"Constr">> extends Value<"Constr"> {
 }
 
 // Dynamic interface to a value object.
@@ -69,7 +82,7 @@ interface Memoisable<T extends Persistent> {
    call (args: Persistent[]): T
 }
 
-class MemoCtr<T extends Constr<T>> implements Memoisable<T> {
+class MemoCtr<Tag extends string, T extends Value<Tag>> implements Memoisable<T> {
    C: Class<T>
 
    constructor (C: Class<T>) {
@@ -83,7 +96,7 @@ class MemoCtr<T extends Constr<T>> implements Memoisable<T> {
    call (v̅: Persistent[]): T {
       const o: T = new this.C
       construct(o, v̅)
-      Object.freeze(o) // TODO: check if costly?
+      Object.freeze(o) 
       return o
    }
 }
@@ -99,13 +112,17 @@ export function memoCall<T extends Persistent> (memo: MemoTable, f: Memoisable<T
 
 // Experimented with dictionary-based construction pattern; eliminates field order mismatch as a possible
 // source of error, but the benefit is very small and doesn't really suit the memoisation pattern.
-export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
+export function make<Tag extends string, T extends Value<Tag>> (C: Class<T>, ...v̅: Persistent[]): T {
    return memoCall(__ctrMemo, new MemoCtr(C), v̅)
+}
+
+export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): T {
+   throw new Error
 }
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<T extends Value> (tgt: T, v̅: Persistent[]): void {
+export function construct<Tag extends string, T extends Value<Tag>> (tgt: T, v̅: Persistent[]): void {
    const tgtʹ: State = tgt as any as State,
          f̅: string[] = fields(tgt)
    assert(f̅.length === v̅.length)
@@ -120,10 +137,10 @@ export function isField (prop: string): boolean {
    return !prop.startsWith("__")
 }
 
-export function fields (v: Constr): string[] {
+export function fields<Tag extends string> (v: Value<Tag>): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
 }
 
-export function fieldValues (v: Constr): Value[] {
-   return fields(v).map(k => (v as any as State)[k] as Value)
+export function fieldValues (v: Constr): Value<any>[] {
+   return fields(v).map(k => (v as any as State)[k] as Value<any>)
 }
