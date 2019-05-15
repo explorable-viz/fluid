@@ -18,5 +18,5 @@ export function closure (k: Id, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>):
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
 export abstract class Func<K> extends Value<"Func"> {
-   abstract __apply (v: Value<any>): [Env, K]
+   abstract __apply (v: Value): [Env, K]
 }

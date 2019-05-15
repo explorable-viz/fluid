@@ -1,4 +1,4 @@
-import { Class, absurd } from "./util/Core"
+import { Class } from "./util/Core"
 import { Annotation } from "./Annotated2"
 import { Expl } from "./ExplValue2"
 import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
@@ -25,12 +25,12 @@ function extern (id: number): Extern {
 // For versioned objects the map is not curried but takes an (interned) composite key. TODO: treating the constructor
 // as part of the key isn't correct because objects can change class. To match the formalism, we need a notion of 
 // "metatype" or kind, so that traces and values are distinguished, but within those "kinds" the class can change.
-type VersionedValues = Map<Id, Value<any>>
+type VersionedValues = Map<Id, Value>
 const __versioned: VersionedValues = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
 export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): T {
-   let v: Value<any> | undefined = __versioned.get(k)
+   let v: Value | undefined = __versioned.get(k)
    if (v === undefined) {
       const vʹ: T = new C
       // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
@@ -44,7 +44,7 @@ export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>
    if (v instanceof C) {
       return construct(v, v̅)
    } else {
-      return absurd() // for now
+      throw new Error("Not implemented yet")
    }
 }
 

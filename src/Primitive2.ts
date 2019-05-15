@@ -15,7 +15,7 @@ export abstract class PrimOp<Tag extends string> extends Value<Tag> {
 }
 
 export class UnaryOp extends PrimOp<"UnaryOp"> {
-   op: Unary<PrimValue, Value<any>> = _
+   op: Unary<PrimValue, Value> = _
 }
 
 function unary (name: string, op: Unary<PrimValue, PrimValue>): UnaryOp {
@@ -31,14 +31,14 @@ export function unaryʹ (k: Id, name: string, op: Unary<PrimValue, PrimValue>): 
 }
 
 export class BinaryOp extends PrimOp<"BinaryOp"> {
-   op: Binary<PrimValue, PrimValue, Value<any>> = _
+   op: Binary<PrimValue, PrimValue, Value> = _
 }
 
-function binary (name: string, op: Binary<PrimValue, PrimValue, Value<any>>): BinaryOp {
+function binary (name: string, op: Binary<PrimValue, PrimValue, Value>): BinaryOp {
    return make(BinaryOp, name, op)
 }
 
-function binary_<T extends PrimValue, U extends PrimValue, V extends Value<any>> (op: Binary<T, U, V>): BinaryOp {
+function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): BinaryOp {
    return binary(op.name, op)
 }
 
@@ -68,7 +68,7 @@ export function ceiling (x: Num): (k: Id) => Num {
 }
 
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
-export function error (message: Str): (k: Id) => Value<any> {
+export function error (message: Str): (k: Id) => Value {
    return (k: Id) => assert(false, "LambdaCalc error:\n" + message.val)
 }
 

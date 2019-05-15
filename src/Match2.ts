@@ -50,7 +50,7 @@ function evalArgs<K extends Kont<K>> (Π: Args<K>): ArgsFunc<K> {
 class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
-   __apply (v: Value<any>): [Env, K] {
+   __apply (v: Value): [Env, K] {
       return [singleton(this.σ.x, v), this.σ.κ]         
    }
 }
@@ -61,7 +61,7 @@ function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
 
 // Concrete instances must have a field per constructor, in *lexicographical* order.
 export abstract class ConstrFunc<K extends Kont<K>> extends Func<K> {
-   __apply (v: Value<any>): [Env, K] {
+   __apply (v: Value): [Env, K] {
       if (v instanceof Constr) {
          return as((this as any)[className(v)], ArgsFunc).__apply(fieldValues(v))
       } else {
@@ -71,13 +71,13 @@ export abstract class ConstrFunc<K extends Kont<K>> extends Func<K> {
 }
 
 export abstract class ArgsFunc<K> extends Value<"ArgsFunc"> {
-   abstract __apply (v̅: Value<any>[]): [Env, K]
+   abstract __apply (v̅: Value[]): [Env, K]
 }
 
 class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
    Π: Args.End<K> = _
    
-   __apply (v̅: Value<any>[]): [Env, K] {
+   __apply (v̅: Value[]): [Env, K] {
       if (v̅.length === 0) {
          return [emptyEnv(), this.Π.κ]
       } else {
@@ -93,7 +93,7 @@ function endFunc<K extends Kont<K>> (Π: Args.End<K>): EndFunc<K> {
 class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
    Π: Args.Next<K> = _
 
-   __apply (v̅: Value<any>[]): [Env, K] {
+   __apply (v̅: Value[]): [Env, K] {
       if (v̅.length === 0) {
          return absurd("Too few arguments to constructor.")
       } else {

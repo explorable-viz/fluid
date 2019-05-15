@@ -4,18 +4,18 @@ import { Class, __check, assert } from "./util/Core"
 export const _: any = undefined 
 
 // Value in the metalanguage.
-export abstract class Value<Tag extends string> {
+export abstract class Value<Tag extends string = any> {
    readonly __tag: Tag
 }
 
 // Address or location of persistent object.
-export class Id extends Value<"Id"> {
+export abstract class Id extends Value<"Id"> {
 }
 
 // Functions are persistent to support primitives. Primitive data types like Num and Str contain
 // ES6 primitives like number and string, which are (currently) "persistent" for interning purposes
 // but are not "values" because they are not observable to user code.
-export type Persistent = Value<any> | string | number | Function
+export type Persistent = Value | string | number | Function
 
 export type PrimValue = Value<"Num"> | Value<"Str">
 
@@ -130,6 +130,6 @@ export function fields<Tag extends string> (v: Value<Tag>): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
 }
 
-export function fieldValues (v: Constr): Value<any>[] {
-   return fields(v).map(k => (v as any as State)[k] as Value<any>)
+export function fieldValues (v: Constr): Value[] {
+   return fields(v).map(k => (v as any as State)[k] as Value)
 }

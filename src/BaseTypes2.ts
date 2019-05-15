@@ -95,6 +95,8 @@ export function pair<T extends Persistent, U extends Persistent> (fst: T, snd: U
 }
 
 export abstract class Tree<T> extends Constr<"Tree"> {
+   abstract map<U extends Persistent> (f: (t: T) => U): Tree<U>
+
    toArray (): T[] {
       const x̅: T[] = []
       this.toArray_(x̅)
@@ -107,6 +109,10 @@ export abstract class Tree<T> extends Constr<"Tree"> {
 export class Empty<T> extends Tree<T> {
    static is<T extends Persistent> (t: Tree<T>): t is Empty<T> {
       return t instanceof Empty
+   }
+
+   map<U extends Persistent> (f: (t: T) => U): Empty<U> {
+      return empty()
    }
 
    toArray_ (x̅: T[]): void {
@@ -124,6 +130,10 @@ export class NonEmpty<T> extends Tree<T> {
 
    static is<T extends Persistent> (t: Tree<T>): t is NonEmpty<T> {
       return t instanceof NonEmpty
+   }
+
+   map<U extends Persistent> (f: (t: T) => U): NonEmpty<U> {
+      return nonEmpty(this.left.map(f), f(this.t), this.right.map(f))
    }
 
    toArray_ (x̅: T[]): void {

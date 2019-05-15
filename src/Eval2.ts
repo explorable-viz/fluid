@@ -40,7 +40,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    }
 }
 
-export function eval_ (ρ: Env, e: Expr): Value<any> {
+export function eval_ (ρ: Env, e: Expr): Value {
    const kₜ: ExplId = tagged(e, "t"),
          kᵥ: ValId = tagged(e, "v")
    if (e instanceof Expr.ConstNum) {
@@ -56,7 +56,7 @@ export function eval_ (ρ: Env, e: Expr): Value<any> {
       return explValue(Expl.empty(kₜ), unaryʹ(kᵥ, e.op.name, e.op.op))
    } else
    if (e instanceof Expr.Constr) {
-      let v̅: Value<any>[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
+      let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
       return explValue(Expl.empty(kₜ), at(kᵥ, ctrFor(e.ctr).C, ...v̅))
    } else 
    if (e instanceof Expr.Var) {
@@ -67,11 +67,11 @@ export function eval_ (ρ: Env, e: Expr): Value<any> {
       }
    } else
    if (e instanceof Expr.App) {
-      const f: Value<any> = eval_(ρ, e.func),
-            u: Value<any> = eval_(ρ, e.arg)
+      const f: Value = eval_(ρ, e.func),
+            u: Value = eval_(ρ, e.arg)
       if (f instanceof Closure) {
          const [ρʹ, eʹ]: [Env, Expr] = evalTrie(f.σ).__apply(u),
-               v: Value<any> = eval_(concat(f.ρ, concat(closeDefs(f.δ, f.ρ, f.δ), ρʹ)), eʹ)
+               v: Value = eval_(concat(f.ρ, concat(closeDefs(f.δ, f.ρ, f.δ), ρʹ)), eʹ)
          return explValue(Expl.app(kₜ, f, u), v)
       } else 
       if (f instanceof UnaryOp) {
@@ -84,27 +84,27 @@ export function eval_ (ρ: Env, e: Expr): Value<any> {
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.val)) {
          const op: BinaryOp = binaryOps.get(e.opName.val)!, // opName lacks annotations
-               [v1, v2]: [Value<any>, Value<any>] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
+               [v1, v2]: [Value, Value] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
          return explValue(Expl.binaryApp(kₜ, v1, e.opName, v2), op.op(v1, v2)(kᵥ))
       } else {
          return error(`Operator ${e.opName.val} not found.`)
       }
    } else
    if (e instanceof Expr.Let) {
-      const u: Value<any> = eval_(ρ, e.e),
+      const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ]: [Env, Expr] = evalTrie<Expr>(e.σ).__apply(u),
-            v: Value<any> = eval_(concat(ρ, ρʹ), eʹ)
+            v: Value = eval_(concat(ρ, ρʹ), eʹ)
       return explValue(Expl.let_(kₜ, u), v)
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
-            v: Value<any> = eval_(concat(ρ, ρʹ), e.e)
+            v: Value = eval_(concat(ρ, ρʹ), e.e)
       return explValue(Expl.letRec(kₜ, e.δ), v)
    } else
    if (e instanceof Expr.MatchAs) {
-      const u: Value<any> = eval_(ρ, e.e),
+      const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ]: [Env, Expr] = evalTrie(e.σ).__apply(u),
-            v: Value<any> = eval_(concat(ρ, ρʹ), eʹ)
+            v: Value = eval_(concat(ρ, ρʹ), eʹ)
       return explValue(Expl.matchAs(kₜ, u), v)
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)

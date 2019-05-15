@@ -16,15 +16,15 @@ export function emptyEnv (): EmptyEnv {
 export class ExtendEnv extends Env {
    ρ: Env = _
    k: Str = _
-   v: Value<any> = _
+   v: Value = _
 }
 
-export function extendEnv (ρ: Env, k: Str, v: Value<any>): ExtendEnv {
+export function extendEnv (ρ: Env, k: Str, v: Value): ExtendEnv {
    return make(ExtendEnv, ρ, k, v)
 }
 
 // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
-export function entries (ρ: Env): List<Value<any>> {
+export function entries (ρ: Env): List<Value> {
    if (ρ instanceof EmptyEnv) {
       return nil()
    } else
@@ -35,7 +35,7 @@ export function entries (ρ: Env): List<Value<any>> {
    }
 }
 
-export function get (ρ: Env, k: Str): Value<any> | undefined {
+export function get (ρ: Env, k: Str): Value | undefined {
    if (ρ instanceof EmptyEnv) {
       return undefined
    } else
@@ -54,7 +54,7 @@ export function has (ρ: Env, k: Str): boolean {
    return get(ρ, k) !== undefined
 }
 
-export function singleton (k: Str, v: Value<any>): Env {
+export function singleton (k: Str, v: Value): Env {
    return extendEnv(emptyEnv(), k, v)
 }
 
