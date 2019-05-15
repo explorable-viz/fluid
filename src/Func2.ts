@@ -1,7 +1,8 @@
 import { List } from "./BaseTypes2"
 import { Env } from "./Env2"
 import { Expr } from "./Expr2"
-import { Constr, Value, _, make } from "./Value2"
+import { Constr, Id, Value, _ } from "./Value2"
+import { at } from "./Versioned2"
 
 import Trie = Expr.Trie
 
@@ -11,8 +12,8 @@ export class Closure extends Constr {
    σ: Trie<Expr> = _
 }
 
-export function closure (ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
-   return make(Closure, ρ, δ, σ)
+export function closure (k: Id, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
+   return at(k, Closure, ρ, δ, σ)
 }
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.

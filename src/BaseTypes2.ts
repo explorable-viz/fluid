@@ -1,4 +1,5 @@
-import { Constr, Persistent, _, make } from "./Value2"
+import { Constr, Id, Persistent, _, make } from "./Value2"
+import { at } from "./Versioned2"
 
 export abstract class Bool extends Constr<"Bool"> {
 }
@@ -10,11 +11,19 @@ export function true_ (): Bool {
    return make(True)
 }
 
+export function trueʹ (k: Id): Bool {
+   return at(k, True)
+}
+
 export class False extends Bool {
 }
 
 export function false_ (): Bool {
    return make(False)
+}
+
+export function falseʹ (k: Id): Bool {
+   return at(k, False)
 }
 
 export abstract class List<T> extends Constr<"List"> {

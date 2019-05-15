@@ -1,4 +1,5 @@
 import { Class, __check, assert } from "./util/Core"
+import { at } from "./Versioned2"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -23,11 +24,11 @@ export class Num extends Value<"Num"> {
    val: number = _
 }
 
-export function num (k: Id, val: number): Num {
+export function numʹ (k: Id, val: number): Num {
    return at(k, Num, val)
 }
 
-export function num̴ (val: number): Num {
+export function num (val: number): Num {
    return make(Num, val)
 }
 
@@ -35,11 +36,11 @@ export class Str extends Value<"Str"> {
    val: string = _
 }
 
-export function str (k: Id, val: string): Str {
+export function strʹ (k: Id, val: string): Str {
    return at(k, Str, val)
 }
 
-export function str̴ (val: string): Str {
+export function str (val: string): Str {
    return make(Str, val)
 }
 
@@ -116,13 +117,9 @@ export function make<Tag extends string, T extends Value<Tag>> (C: Class<T>, ...
    return memoCall(__ctrMemo, new MemoCtr(C), v̅)
 }
 
-export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): T {
-   throw new Error
-}
-
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<Tag extends string, T extends Value<Tag>> (tgt: T, v̅: Persistent[]): void {
+export function construct<Tag extends string, T extends Value<Tag>> (tgt: T, v̅: Persistent[]): T {
    const tgtʹ: State = tgt as any as State,
          f̅: string[] = fields(tgt)
    assert(f̅.length === v̅.length)
@@ -130,6 +127,7 @@ export function construct<Tag extends string, T extends Value<Tag>> (tgt: T, v̅
    f̅.forEach((f: string): void => {
       tgtʹ[f] = v̅[n++]
    })
+   return tgt
 }
 
 // Exclude metadata according to our convention.

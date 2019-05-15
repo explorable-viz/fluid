@@ -1,7 +1,8 @@
 import { Expr } from "./Expr2"
 import { List } from "./BaseTypes2"
 import { ExplId } from "./Eval2"
-import { Constr, PrimValue, Str, Value, _, at } from "./Value2"
+import { Constr, PrimValue, Str, Value, _ } from "./Value2"
+import { at } from "./Versioned2"
 
 export namespace Expl {
    export abstract class Expl extends Constr<"Expl"> {

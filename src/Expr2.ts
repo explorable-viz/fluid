@@ -3,7 +3,8 @@ import { eq } from "./util/Ord"
 import { List } from "./BaseTypes2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
 import { UnaryOp } from "./Primitive2"
-import { Constr as Constrʹ, Num, Str, _, make } from "./Value2"
+import { Constr as Constrʹ, Id, Num, Str, _, make } from "./Value2"
+import { at } from "./Versioned2"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -52,24 +53,24 @@ export namespace Expr {
       arg: Expr = _
    }
 
-   export function app (func: Expr, arg: Expr): App {
-      return make(App, func, arg)
+   export function app (k: Id, func: Expr, arg: Expr): App {
+      return at(k, App, func, arg)
    }
 
    export class ConstNum extends Expr {
       val: Num = _
    }
    
-   export function constNum (val: Num): ConstNum {
-      return make(ConstNum, val)
+   export function constNum (k: Id, val: Num): ConstNum {
+      return at(k, ConstNum, val)
    }
 
    export class ConstStr extends Expr {
       val: Str = _
    }
 
-   export function constStr (val: Str): ConstStr {
-      return make(ConstStr, val)
+   export function constStr (k: Id, val: Str): ConstStr {
+      return at(k, ConstStr, val)
    }
 
    export class Constr extends Expr {
@@ -77,16 +78,16 @@ export namespace Expr {
       args: List<Expr> = _
    }
 
-   export function constr (ctr: Str, args: List<Expr>): Constr {
-      return make(Constr, ctr, args)
+   export function constr (k: Id, ctr: Str, args: List<Expr>): Constr {
+      return at(k, Constr, ctr, args)
    }
 
    export class Fun extends Expr {
       σ: Trie<Expr> = _
    }
 
-   export function fun (σ: Trie<Expr>): Fun {
-      return make(Fun, σ)
+   export function fun (k: Id, σ: Trie<Expr>): Fun {
+      return at(k, Fun, σ)
    }
 
    // A let is simply a match where the trie is a variable trie.
@@ -95,16 +96,16 @@ export namespace Expr {
       σ: Trie.Var<Expr> = _
    }
 
-   export function let_ (e: Expr, σ: Trie.Var<Expr>): Let {
-      return make(Let, e, σ)
+   export function let_ (k: Id, e: Expr, σ: Trie.Var<Expr>): Let {
+      return at(k, Let, e, σ)
    }
 
    export class PrimOp extends Expr {
       op: UnaryOp = _
    }
 
-   export function primOp (op: UnaryOp): PrimOp {
-      return make(PrimOp, op)
+   export function primOp (k: Id, op: UnaryOp): PrimOp {
+      return at(k, PrimOp, op)
    }
 
    export class RecDef extends Constrʹ<"RecDef"> {
@@ -112,8 +113,8 @@ export namespace Expr {
       σ: Trie<Expr> = _
    }
  
-   export function recDef (x: Str, σ: Trie<Expr>): RecDef {
-      return make(RecDef, x, σ)
+   export function recDef (k: Id, x: Str, σ: Trie<Expr>): RecDef {
+      return at(k, RecDef, x, σ)
    }
 
    export class LetRec extends Expr {
@@ -121,8 +122,8 @@ export namespace Expr {
       e: Expr = _
    }
 
-   export function letRec (δ: List<RecDef>, e: Expr): LetRec {
-      return make(LetRec, δ, e)
+   export function letRec (k: Id, δ: List<RecDef>, e: Expr): LetRec {
+      return at(k, LetRec, δ, e)
    }
 
    export class MatchAs extends Expr {
@@ -130,8 +131,8 @@ export namespace Expr {
       σ: Trie<Expr> = _
    }
 
-   export function matchAs (e: Expr, σ: Trie<Expr>): MatchAs {
-      return make(MatchAs, e, σ)
+   export function matchAs (k: Id, e: Expr, σ: Trie<Expr>): MatchAs {
+      return at(k, MatchAs, e, σ)
    }
 
    export class BinaryApp extends Expr {
@@ -140,16 +141,16 @@ export namespace Expr {
       e2: Expr = _
    }
 
-   export function binaryApp (e1: Expr, opName: Str, e2: Expr): BinaryApp {
-      return make(BinaryApp, e1, opName, e2)
+   export function binaryApp (k: Id, e1: Expr, opName: Str, e2: Expr): BinaryApp {
+      return at(k, BinaryApp, e1, opName, e2)
    }
 
    export class Var extends Expr {
       x: Str = _
    }
 
-   export function var_ (x: Str): Var {
-      return make(Var, x)
+   export function var_ (k: Id, x: Str): Var {
+      return at(k, Var, x)
    }
 
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
