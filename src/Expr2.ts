@@ -2,7 +2,6 @@ import { absurd } from "./util/Core"
 import { eq } from "./util/Ord"
 import { List } from "./BaseTypes2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
-import { UnaryOp } from "./Primitive2"
 import { Constr as Constrʹ, Id, Num, Str, _, make } from "./Value2"
 import { at } from "./Versioned2"
 
@@ -98,14 +97,6 @@ export namespace Expr {
 
    export function let_ (k: Id, e: Expr, σ: Trie.Var<Expr>): Let {
       return at(k, Let, e, σ)
-   }
-
-   export class PrimOp extends Expr {
-      op: UnaryOp = _
-   }
-
-   export function primOp (k: Id, op: UnaryOp): PrimOp {
-      return at(k, PrimOp, op)
    }
 
    export class RecDef extends Constrʹ<"RecDef"> {

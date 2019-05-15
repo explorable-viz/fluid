@@ -2,7 +2,7 @@ import { as, assert } from "./util/Core"
 import { Bool, trueʹ, falseʹ } from "./BaseTypes2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Id, Num, PrimValue, Str, _, Value, make, str } from "./Value2"
-import { at, numʹ, strʹ } from "./Versioned2"
+import { ν, at, numʹ, strʹ } from "./Versioned2"
 
 type Unary<T, V> = (x: T) => (k: Id) => V
 type Binary<T, U, V> = (x: T, y: U) => (k: Id) => V
@@ -18,15 +18,8 @@ export class UnaryOp extends PrimOp<"UnaryOp"> {
    op: Unary<PrimValue, Value> = _
 }
 
-function unary (name: string, op: Unary<PrimValue, PrimValue>): UnaryOp {
-   return make(UnaryOp, name, op)
-}
-
-function unary_<T extends PrimValue, V extends PrimValue> (op: Unary<T, V>): UnaryOp {
-   return unary(op.name, op)
-}
-
-export function unaryʹ (k: Id, name: string, op: Unary<PrimValue, PrimValue>): UnaryOp {
+// Unary operators are first-class and so need addresses, like other values.
+function unary (k: Id, name: string, op: Unary<PrimValue, PrimValue>): UnaryOp {
    return at(k, UnaryOp, name, op)
 }
 
@@ -36,6 +29,11 @@ export class BinaryOp extends PrimOp<"BinaryOp"> {
 
 function binary (name: string, op: Binary<PrimValue, PrimValue, Value>): BinaryOp {
    return make(BinaryOp, name, op)
+}
+
+// Convenience methods for building the maps.
+function unary_<T extends PrimValue, V extends PrimValue> (op: Unary<T, V>): UnaryOp {
+   return unary(ν(), op.name, op)
 }
 
 function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): BinaryOp {
@@ -122,7 +120,7 @@ export function concat (x: Str, y: Str): (k: Id) => Str {
    return (k: Id) => strʹ(k, as(x, Str).val + as(y, Str).val)
 }
 
-// Only primitive with identifiers as names are first-class, and therefore appear in the prelude.
+// Primitive with identifiers as names are first-class, and therefore appear in the prelude (with external ids).
 export function createPrelude (): Env {
    let ρ: Env = emptyEnv()
    unaryOps.forEach((op: UnaryOp, x: string): void => {

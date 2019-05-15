@@ -36,9 +36,6 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    if (e instanceof Expr.Fun) {
       return Expr.fun(j, instantiateTrie(ρ, e.σ))
    } else
-   if (e instanceof Expr.PrimOp) {
-      return Expr.primOp(j, e.op)
-   } else
    if (e instanceof Expr.Var) {
       return Expr.var_(j, e.x)
    } else

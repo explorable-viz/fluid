@@ -7,7 +7,7 @@ import { Expr } from "./Expr2"
 import { Closure, closure } from "./Func2"
 import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
-import { UnaryOp, BinaryOp, binaryOps, unaryʹ } from "./Primitive2"
+import { UnaryOp, BinaryOp, binaryOps } from "./Primitive2"
 import { Id, Value, _, make } from "./Value2"
 import { at, numʹ, strʹ } from "./Versioned2"
 
@@ -52,9 +52,6 @@ export function eval_ (ρ: Env, e: Expr): Value {
    } else
    if (e instanceof Expr.Fun) {
       return explValue(Expl.empty(kₜ), closure(kᵥ, ρ, nil(), e.σ))
-   } else
-   if (e instanceof Expr.PrimOp) {
-      return explValue(Expl.empty(kₜ), unaryʹ(kᵥ, e.op.name, e.op.op))
    } else
    if (e instanceof Expr.Constr) {
       let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
