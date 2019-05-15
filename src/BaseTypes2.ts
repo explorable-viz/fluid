@@ -146,3 +146,25 @@ export class NonEmpty<T> extends Tree<T> {
 export function nonEmpty <T extends Persistent> (left: Tree<T>, t: T, right: Tree<T>): NonEmpty<T> {
    return make(NonEmpty, left, t, right) as NonEmpty<T>
 }
+
+export abstract class Option<T extends Persistent> extends Constr<"Option"> {
+}
+
+export class None<T extends Persistent> extends Option<T> {
+}
+
+export class Some<T extends Persistent> extends Option<T> {
+   t: T = _
+}
+
+export abstract class Ordering extends Constr<"Ordering"> {
+}
+
+export class LT extends Ordering {
+}
+
+export class GT extends Ordering {
+}
+
+export class EQ extends Ordering {
+}
