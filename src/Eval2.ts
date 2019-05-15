@@ -79,7 +79,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
          return error(`Cannot apply ${className(f)}`)
       }
    } else
-   // Operators (currently all binary) are "syntax", rather than names.
+   // Binary operators are (currently) "syntax", rather than first-class.
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.val)) {
          const op: BinaryOp = binaryOps.get(e.opName.val)!, // opName lacks annotations
