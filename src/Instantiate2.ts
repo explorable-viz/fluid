@@ -1,12 +1,12 @@
 import { absurd } from "./util/Core"
-import { List, Pair, map, pair } from "./BaseTypes2"
+import { List, Pair, pair } from "./BaseTypes2"
 import { Env, entries } from "./Env2"
 import { Expr } from "./Expr2"
-import { Id, Value, _, make } from "./Value2"
+import { Id, Str, Value, _, make } from "./Value2"
 
-type RecDef = Expr.RecDef
 import Args = Expr.Args
 import Kont = Expr.Kont
+import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
 // The "runtime identity" of an expression. In the formalism we use a "flat" representation so that e always has an external id;
@@ -23,7 +23,7 @@ export function exprId (j: List<Value>, e: Expr | RecDef): ExprId {
 // F-bounded polymorphism doesn't work well here. I've used it for the smaller helper functions 
 // (but with horrendous casts), but not for the two main top-level functions.
 export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
-   const j: ExprId = exprId(entries(ρ), asVersioned(e))
+   const j: ExprId = exprId(entries(ρ), e)
    if (e instanceof Expr.ConstNum) {
       return Expr.constNum(j, e.val)
    } else
@@ -47,7 +47,7 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    } else
    if (e instanceof Expr.LetRec) {
       const δ: List<RecDef> = e.δ.map(def => {
-         const i: ExprId = exprId(entries(ρ), asVersioned(def))
+         const i: ExprId = exprId(entries(ρ), def)
          return Expr.recDef(i, def.x, instantiateTrie(ρ, def.σ))
       })
       return Expr.letRec(j, δ, instantiate(ρ, e.e))
@@ -71,10 +71,36 @@ function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T):
    } else
    if (Trie.Constr.is(σ)) {
       return Trie.constr<K>(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<string, Args<K>>): Pair<string, Args<K>> => {
+         ({ fst: ctr, snd: Π }: Pair<Str, Args<K>>): Pair<Str, Args<K>> => {
             return pair(ctr, instantiateArgs(ρ, Π))
          })
       ) as Trie<K> as T
+   } else {
+      return absurd()
+   }
+}
+
+// See issue #33.
+function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
+   if (κ instanceof Trie.Trie) {
+      return instantiateTrie<K, Trie<K>>(ρ, κ) as K 
+   } else
+   if (κ instanceof Expr.Expr) {
+      return instantiate(ρ, κ) as Kont<K> as K
+   } else
+   if (κ instanceof Args.Args) {
+      return instantiateArgs(ρ, κ) as K
+   } else {
+      return absurd()
+   }
+}
+
+function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
+   if (Args.End.is(Π)) {
+      return Args.end(instantiateKont(ρ, Π.κ))
+   } else
+   if (Args.Next.is(Π)) {
+      return Args.next(instantiateTrie(ρ, Π.σ))
    } else {
       return absurd()
    }

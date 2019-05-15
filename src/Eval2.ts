@@ -5,6 +5,7 @@ import { Env, concat, emptyEnv, extendEnv, get, has } from "./Env2"
 import { Expl, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { Closure, closure } from "./Func2"
+import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryʹ } from "./Primitive2"
 import { Id, Value, _, make } from "./Value2"
@@ -71,7 +72,8 @@ export function eval_ (ρ: Env, e: Expr): Value {
             u: Value = eval_(ρ, e.arg)
       if (f instanceof Closure) {
          const [ρʹ, eʹ]: [Env, Expr] = evalTrie(f.σ).__apply(u),
-               v: Value = eval_(concat(f.ρ, concat(closeDefs(f.δ, f.ρ, f.δ), ρʹ)), eʹ)
+               ρᶠ: Env = concat(closeDefs(f.δ, f.ρ, f.δ), ρʹ),
+               v: Value = eval_(concat(f.ρ, ρᶠ), instantiate(ρᶠ, eʹ))
          return explValue(Expl.app(kₜ, f, u), v)
       } else 
       if (f instanceof UnaryOp) {
@@ -93,18 +95,18 @@ export function eval_ (ρ: Env, e: Expr): Value {
    if (e instanceof Expr.Let) {
       const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ]: [Env, Expr] = evalTrie<Expr>(e.σ).__apply(u),
-            v: Value = eval_(concat(ρ, ρʹ), eʹ)
+            v: Value = eval_(concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
       return explValue(Expl.let_(kₜ, u), v)
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
-            v: Value = eval_(concat(ρ, ρʹ), e.e)
+            v: Value = eval_(concat(ρ, ρʹ), instantiate(ρʹ, e.e))
       return explValue(Expl.letRec(kₜ, e.δ), v)
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ]: [Env, Expr] = evalTrie(e.σ).__apply(u),
-            v: Value = eval_(concat(ρ, ρʹ), eʹ)
+            v: Value = eval_(concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
       return explValue(Expl.matchAs(kₜ, u), v)
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
