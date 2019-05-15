@@ -9,7 +9,7 @@ import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps } from "./Primitive2"
 import { Id, Value, _, make } from "./Value2"
-import { at, numʹ, strʹ } from "./Versioned2"
+import { at, copyAt, numʹ, strʹ } from "./Versioned2"
 
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
@@ -59,7 +59,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
    } else 
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
-         return explValue(Expl.var_(kₜ, e.x), ρ.get(e.x)!)
+         return explValue(Expl.var_(kₜ, e.x), copyAt(kᵥ, ρ.get(e.x)!))
       } else {
          return error(`Variable '${e.x.val}' not found.`)
       }

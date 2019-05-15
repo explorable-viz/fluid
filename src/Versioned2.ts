@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd, className } from "./util/Core"
+import { Class, __nonNull, absurd, className, notYetImplemented } from "./util/Core"
 import { Annotation } from "./Annotated2"
 import { Expl } from "./ExplValue2"
 import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
@@ -59,6 +59,13 @@ export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>
    } else {
       throw new Error("Not implemented yet")
    }
+}
+
+export function copyAt<Tag extends string, T extends Value<Tag>> (k: Id, v: T): T {
+//   
+//   const C: PersistentClass<T> = classOf(this) as PersistentClass<PersistentObject> as PersistentClass<T>
+//   return at(k, C, ...fieldVals(this).slice(1))
+   return notYetImplemented()
 }
 
 // Fresh keys represent inputs to the system, e.g. addresses of syntax nodes provided by an external structure editor.

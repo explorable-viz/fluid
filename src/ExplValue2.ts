@@ -1,4 +1,4 @@
-// import { assert } from "./util/Core"
+import { assert } from "./util/Core"
 import { Expr } from "./Expr2"
 import { List } from "./BaseTypes2"
 import { ExplId } from "./Eval2"
@@ -86,10 +86,10 @@ type Expl = Expl.Expl
 // TOOD: generalise single-assignment constraint check.
 export function explValue<Tag extends string, T extends Value<Tag>> (t: Expl, v: T): T {
    const vʹ: VersionedValue<Tag, T> = asVersioned(v)
-//   if (vʹ.__expl === undefined) {
+   if (vʹ.__expl === undefined) {
       vʹ.__expl = t
-//   } else {
-//      assert(vʹ.__expl === t)
-//   }
+   } else {
+      assert(vʹ.__expl === t)
+   }
    return v
 }
