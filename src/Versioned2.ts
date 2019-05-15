@@ -1,4 +1,4 @@
-import { Class } from "./util/Core"
+import { Class, __nonNull, absurd, className } from "./util/Core"
 import { Annotation } from "./Annotated2"
 import { Expl } from "./ExplValue2"
 import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
@@ -8,9 +8,22 @@ type Expl = Expl.Expl
 // Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
 // for interned objects to have explanations (or does it?) or annotations.
 // Interface because the same datatype can be interned in some contexts and versioned in others.
-export interface VersionedValue {
+export interface VersionedValue<Tag extends string, T extends Value<Tag>> extends Value<Tag> {
+   __id: Id
    __α?: Annotation  // for some (meta)values this may remain undefined, e.g. tries
    __expl?: Expl     // previously we couldn't put explanations inside values; see GitHub issue #128.
+}
+
+export function versioned<Tag extends string, T extends Value<Tag>> (v: Value<Tag>): v is VersionedValue<Tag, T> {
+   return (__nonNull(v) as any).__id !== undefined
+}
+
+export function asVersioned<Tag extends string, T extends Value<Tag>> (v: T): VersionedValue<Tag, T> {
+   if (versioned(v)) {
+      return v
+   } else {
+      return absurd(`Not a versioned value: ${className(v)}`)
+   }
 }
 
 // A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)

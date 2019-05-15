@@ -2,7 +2,7 @@ import { Expr } from "./Expr2"
 import { List } from "./BaseTypes2"
 import { ExplId } from "./Eval2"
 import { Constr, PrimValue, Str, Value, _ } from "./Value2"
-import { at } from "./Versioned2"
+import { asVersioned, at } from "./Versioned2"
 
 export namespace Expl {
    export abstract class Expl extends Constr<"Expl"> {
@@ -82,8 +82,7 @@ export namespace Expl {
 
 type Expl = Expl.Expl
 
-// TODO: this should take a versioned, not a value.
-export function explValue<T extends Value = Value> (t: Expl, v: T): T {
-//   v.__expl = t // TOOD: check single-assignment constraint
+export function explValue<Tag extends string, T extends Value<Tag>> (t: Expl, v: T): T {
+   asVersioned(v).__expl = t // TOOD: check single-assignment constraint
    return v
 }
