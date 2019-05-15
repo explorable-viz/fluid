@@ -4,7 +4,7 @@ import { ExplId } from "./Eval2"
 import { Constr, PrimValue, Str, Value, _, at } from "./Value2"
 
 export namespace Expl {
-   export abstract class Expl extends Constr<Expl> {
+   export abstract class Expl extends Constr<"Expl"> {
    }
 
    export class App extends Expl {

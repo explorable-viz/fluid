@@ -1,6 +1,6 @@
 import { Constr, Persistent, _, make } from "./Value2"
 
-export abstract class Bool extends Constr<Bool> {
+export abstract class Bool extends Constr<"Bool"> {
 }
 
 export class True extends Bool {
@@ -17,7 +17,7 @@ export function false_ (): Bool {
    return make(False)
 }
 
-export abstract class List<T> extends Constr<List<T>> {
+export abstract class List<T> extends Constr<"List"> {
    abstract map<U extends Persistent> (f: (t: T) => U): List<U>
 
    static fromArray<T extends Persistent> (x̅: T[]): List<T> {
@@ -76,7 +76,7 @@ export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
    return make(Cons, head, tail) as Cons<T>
 }
 
-export class Pair<T, U> extends Constr<Pair<T, U>> {
+export class Pair<T, U> extends Constr<"Pair"> {
    fst: T = _
    snd: U = _
 }
@@ -85,7 +85,7 @@ export function pair<T extends Persistent, U extends Persistent> (fst: T, snd: U
    return make(Pair, fst, snd) as Pair<T, U>
 }
 
-export abstract class Tree<T> extends Constr<Tree<T>> {
+export abstract class Tree<T> extends Constr<"Tree"> {
    toArray (): T[] {
       const x̅: T[] = []
       this.toArray_(x̅)

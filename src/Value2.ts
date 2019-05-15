@@ -5,7 +5,7 @@ export const _: any = undefined
 
 // Value in the metalanguage.
 export abstract class Value<Tag extends string> {
-   __tag: Tag
+   readonly __tag: Tag
 }
 
 // Address or location of persistent object.
@@ -44,7 +44,7 @@ export function str̴ (val: string): Str {
 }
 
 // Tags a value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
-export abstract class Constr<T = Value<"Constr">> extends Value<"Constr"> {
+export abstract class Constr<Tag extends string = any> extends Value<Tag> {
 }
 
 // Dynamic interface to a value object.

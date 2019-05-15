@@ -28,8 +28,7 @@ export type Kont<K> = Expr.Kont<K>
 export namespace Expr {
    // It would be nice if (non-argument) tries only had argument tries as their continuations and vice-
    // versa, but that doesn't quite work because a Constr<K> has an underlying map to Args<K>.
-   export abstract class Kont<K> extends Constrʹ<K> {
-      __subtag: "Kont"
+   export abstract class Kont<K> extends Constrʹ<"Kont"> {
    }
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
@@ -46,7 +45,6 @@ export namespace Expr {
    }
 
    export abstract class Expr extends Kont<Expr> {
-      __subtag: "Kont"
    }
 
    export class App extends Expr {
@@ -109,7 +107,7 @@ export namespace Expr {
       return make(PrimOp, op)
    }
 
-   export class RecDef extends Constrʹ<RecDef> {
+   export class RecDef extends Constrʹ<"RecDef"> {
       x: Str = _
       σ: Trie<Expr> = _
    }
@@ -159,8 +157,6 @@ export namespace Expr {
 
    export namespace Args {
       export abstract class Args<K extends Kont<K>> extends Kont<Args<K>> {
-         __subtag: "Kont"
-
          static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
             if (Π instanceof End && Πʹ instanceof End) {
                return end(join(Π.κ, Πʹ.κ))
@@ -200,8 +196,6 @@ export namespace Expr {
 
    export namespace Trie {
       export abstract class Trie<K extends Kont<K>> extends Kont<Trie<K>> {
-         __subtag: "Kont"
-
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Var.is(σ) && Var.is(τ) && eq(σ.x.val, τ.x.val)) {
                return var_(σ.x, join(σ.κ, τ.κ))
