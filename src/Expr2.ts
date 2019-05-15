@@ -28,23 +28,23 @@ export type Kont<K> = Expr.Kont<K>
 export namespace Expr {
    // It would be nice if (non-argument) tries only had argument tries as their continuations and vice-
    // versa, but that doesn't quite work because a Constr<K> has an underlying map to Args<K>.
-   export abstract class Kont<K> extends Constrʹ<"Kont"> {
+   export abstract class Kont<K, Tag extends String = any> extends Constrʹ<"Kont"> {
    }
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
    // Use the same heinous cast as used in 'instantiateKont'. Note this join is unrelated to the annotation lattice.
    function join<K extends Kont<K>> (κ: K, κʹ: K): K {
       if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
-         return Trie.Trie.join<K>(κ, κʹ) as any as K
+         return Trie.Trie.join<K>(κ, κʹ) as K
       } else
       if (κ instanceof Args.Args && κʹ instanceof Args.Args) {
-         return Args.Args.join<K>(κ, κʹ) as any as K
+         return Args.Args.join<K>(κ, κʹ) as K
       } else {
          return absurd("Undefined join.")
       }
    }
 
-   export abstract class Expr extends Kont<Expr> {
+   export abstract class Expr extends Kont<Expr, "Expr"> {
    }
 
    export class App extends Expr {
@@ -156,12 +156,12 @@ export namespace Expr {
    export type Args<K extends Kont<K>> = Args.Args<K>
 
    export namespace Args {
-      export abstract class Args<K extends Kont<K>> extends Kont<Args<K>> {
+      export abstract class Args<K extends Kont<K>> extends Kont<Args<K>, "Args"> {
          static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
-            if (Π instanceof End && Πʹ instanceof End) {
+            if (End.is(Π) && End.is(Πʹ)) {
                return end(join(Π.κ, Πʹ.κ))
             } else
-            if (Π instanceof Next && Πʹ instanceof Next) {
+            if (Next.is(Π) && Next.is(Πʹ)) {
                return next(join(Π.σ, Πʹ.σ))
             } else {
                return absurd("Undefined join.", Π, Πʹ)
@@ -195,7 +195,7 @@ export namespace Expr {
    }
 
    export namespace Trie {
-      export abstract class Trie<K extends Kont<K>> extends Kont<Trie<K>> {
+      export abstract class Trie<K extends Kont<K>> extends Kont<Trie<K>, "Trie"> {
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Var.is(σ) && Var.is(τ) && eq(σ.x.val, τ.x.val)) {
                return var_(σ.x, join(σ.κ, τ.κ))
