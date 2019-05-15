@@ -5,6 +5,7 @@ import { Env } from "../../src/Env2"
 import { Expr } from "../../src/Expr2"
 import { Parse } from "../../src/Parse2"
 import { createPrelude } from "../../src/Primitive2"
+import { ν } from "../../src/Versioned2"
 
 export function initialise (): void {
    // Fix the toString impl on String to behave sensibly.
@@ -22,8 +23,7 @@ export enum Profile {
 
 // Kindergarten modules: load another file as though it were a letrec block, with body e.
 export function prependModule (src: string, e: Expr): Expr.LetRec {
-   return Expr.letRec(
-      successfulParse(Parse.recDefs1, src), e)
+   return Expr.letRec(ν(), successfulParse(Parse.recDefs1, src), e)
 }
 
 export function parse (src: string): Expr {

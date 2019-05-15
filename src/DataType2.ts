@@ -1,5 +1,5 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
-import { Bool, Cons, Empty, False, List, NonEmpty, Nil, Pair, Tree, True } from "./BaseTypes2"
+import { Bool, Cons, Empty, EQ, False, GT, List, LT, None, NonEmpty, Nil, Option, Ordering, Pair, Some, Tree, True } from "./BaseTypes2"
 import { ConstrFunc } from "./Match2"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, Rect, RectFill, Scale, Transform, Translate, Transpose } from "./Graphics2"
 import { Constr, State, Str, _, fields } from "./Value2"
@@ -72,6 +72,8 @@ export function initDataTypes (): void {
    initDataType(GraphicsElement, [PathStroke, RectFill, Transform, Graphic])
    initDataType(LinearTransform, [Scale, Translate, Transpose])
    initDataType(List, [Nil, Cons])
+   initDataType(Option, [Some, None])
+   initDataType(Ordering, [LT, GT, EQ])
    initDataType(Pair, [Pair])
    initDataType(Point, [Point])
    initDataType(Rect, [Rect])

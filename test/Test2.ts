@@ -58,6 +58,12 @@ describe("example", () => {
 		})
 	})
 
+   describe("lookup", () => {
+		it("ok", () => {
+			console.log(Eval.eval_(prelude, parse(load("lookup"))))
+		})
+	})
+
    describe("map", () => {
 		it("ok", () => {
 			console.log(Eval.eval_(prelude, parse(load("map"))))

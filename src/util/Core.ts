@@ -55,6 +55,10 @@ export function error (msg: string, ...x̅: any[]): any {
    throw new Error("User error: " + msg)
 }
 
+export function notYetImplemented (): any {
+   throw new Error("Not yet implemented")
+}
+
 // Useful when a notionally abstract class needs to be concrete.
 export function abstractMethodError<T> (this_: Object): T {
    return assert(false, "Abstract method in " + this_)

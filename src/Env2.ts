@@ -1,9 +1,56 @@
 import { absurd } from "./util/Core"
 import { List, cons, nil } from "./BaseTypes2"
-import { Str, Value, _, make } from "./Value2"
+import { Str, Constr, Value, _, make } from "./Value2"
+
+// Idiom is to permit instance methods on reflected datatypes, but not have them use polymorphism.
 
 // Environments are snoc lists.
-export abstract class Env extends Value {
+export abstract class Env extends Constr {
+   // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
+   entries (): List<Value> {
+      if (this instanceof EmptyEnv) {
+         return nil()
+      } else
+      if (this instanceof ExtendEnv) {
+         return cons(this.v, this.ρ.entries())
+      } else {
+         return absurd()
+      }
+   }
+
+   get (k: Str): Value | undefined {
+      if (this instanceof EmptyEnv) {
+         return undefined
+      } else
+      if (this instanceof ExtendEnv) {
+         if (this.k.val === k.val) {
+            return this.v
+         } else {
+            return this.ρ.get(k)
+         }
+      } else {
+         return absurd()
+      }
+   }
+   
+   has (k: Str): boolean {
+      return this.get(k) !== undefined
+   }
+
+   static singleton (k: Str, v: Value): Env {
+      return extendEnv(emptyEnv(), k, v)
+   }
+   
+   concat (ρ: Env): Env {
+      if (ρ instanceof EmptyEnv) {
+         return this
+      } else
+      if (ρ instanceof ExtendEnv) {
+         return extendEnv(this.concat(ρ.ρ), ρ.k, ρ.v)
+      } else {
+         return absurd()
+      }
+   }
 }
 
 export class EmptyEnv extends Env {
@@ -21,50 +68,4 @@ export class ExtendEnv extends Env {
 
 export function extendEnv (ρ: Env, k: Str, v: Value): ExtendEnv {
    return make(ExtendEnv, ρ, k, v)
-}
-
-// Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
-export function entries (ρ: Env): List<Value> {
-   if (ρ instanceof EmptyEnv) {
-      return nil()
-   } else
-   if (ρ instanceof ExtendEnv) {
-      return cons(ρ.v, entries(ρ.ρ))
-   } else {
-      return absurd()
-   }
-}
-
-export function get (ρ: Env, k: Str): Value | undefined {
-   if (ρ instanceof EmptyEnv) {
-      return undefined
-   } else
-   if (ρ instanceof ExtendEnv) {
-      if (ρ.k.val === k.val) {
-         return ρ.v
-      } else {
-         return get(ρ.ρ, k)
-      }
-   } else {
-      return absurd()
-   }
-}
-
-export function has (ρ: Env, k: Str): boolean {
-   return get(ρ, k) !== undefined
-}
-
-export function singleton (k: Str, v: Value): Env {
-   return extendEnv(emptyEnv(), k, v)
-}
-
-export function concat (ρ1: Env, ρ2: Env): Env {
-   if (ρ2 instanceof EmptyEnv) {
-      return ρ1
-   } else
-   if (ρ2 instanceof ExtendEnv) {
-      return extendEnv(concat(ρ1, ρ2.ρ), ρ2.k, ρ2.v)
-   } else {
-      return absurd()
-   }
 }

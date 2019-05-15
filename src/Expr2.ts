@@ -2,8 +2,8 @@ import { absurd } from "./util/Core"
 import { eq } from "./util/Ord"
 import { List } from "./BaseTypes2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
-import { UnaryOp } from "./Primitive2"
-import { Constr as Constrʹ, Num, Str, _, make } from "./Value2"
+import { Constr as Constrʹ, Id, Num, Str, _, make } from "./Value2"
+import { at } from "./Versioned2"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -28,25 +28,23 @@ export type Kont<K> = Expr.Kont<K>
 export namespace Expr {
    // It would be nice if (non-argument) tries only had argument tries as their continuations and vice-
    // versa, but that doesn't quite work because a Constr<K> has an underlying map to Args<K>.
-   export abstract class Kont<K> extends Constrʹ<K> {
-      __subtag: "Kont"
+   export abstract class Kont<K, Tag extends String = any> extends Constrʹ<"Kont"> {
    }
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
    // Use the same heinous cast as used in 'instantiateKont'. Note this join is unrelated to the annotation lattice.
    function join<K extends Kont<K>> (κ: K, κʹ: K): K {
       if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
-         return Trie.Trie.join<K>(κ, κʹ) as any as K
+         return Trie.Trie.join<K>(κ, κʹ) as K
       } else
       if (κ instanceof Args.Args && κʹ instanceof Args.Args) {
-         return Args.Args.join<K>(κ, κʹ) as any as K
+         return Args.Args.join<K>(κ, κʹ) as K
       } else {
          return absurd("Undefined join.")
       }
    }
 
-   export abstract class Expr extends Kont<Expr> {
-      __subtag: "Kont"
+   export abstract class Expr extends Kont<Expr, "Expr"> {
    }
 
    export class App extends Expr {
@@ -54,24 +52,24 @@ export namespace Expr {
       arg: Expr = _
    }
 
-   export function app (func: Expr, arg: Expr): App {
-      return make(App, func, arg)
+   export function app (k: Id, func: Expr, arg: Expr): App {
+      return at(k, App, func, arg)
    }
 
    export class ConstNum extends Expr {
       val: Num = _
    }
    
-   export function constNum (val: Num): ConstNum {
-      return make(ConstNum, val)
+   export function constNum (k: Id, val: Num): ConstNum {
+      return at(k, ConstNum, val)
    }
 
    export class ConstStr extends Expr {
       val: Str = _
    }
 
-   export function constStr (val: Str): ConstStr {
-      return make(ConstStr, val)
+   export function constStr (k: Id, val: Str): ConstStr {
+      return at(k, ConstStr, val)
    }
 
    export class Constr extends Expr {
@@ -79,16 +77,16 @@ export namespace Expr {
       args: List<Expr> = _
    }
 
-   export function constr (ctr: Str, args: List<Expr>): Constr {
-      return make(Constr, ctr, args)
+   export function constr (k: Id, ctr: Str, args: List<Expr>): Constr {
+      return at(k, Constr, ctr, args)
    }
 
    export class Fun extends Expr {
       σ: Trie<Expr> = _
    }
 
-   export function fun (σ: Trie<Expr>): Fun {
-      return make(Fun, σ)
+   export function fun (k: Id, σ: Trie<Expr>): Fun {
+      return at(k, Fun, σ)
    }
 
    // A let is simply a match where the trie is a variable trie.
@@ -97,25 +95,17 @@ export namespace Expr {
       σ: Trie.Var<Expr> = _
    }
 
-   export function let_ (e: Expr, σ: Trie.Var<Expr>): Let {
-      return make(Let, e, σ)
+   export function let_ (k: Id, e: Expr, σ: Trie.Var<Expr>): Let {
+      return at(k, Let, e, σ)
    }
 
-   export class PrimOp extends Expr {
-      op: UnaryOp = _
-   }
-
-   export function primOp (op: UnaryOp): PrimOp {
-      return make(PrimOp, op)
-   }
-
-   export class RecDef extends Constrʹ<RecDef> {
+   export class RecDef extends Constrʹ<"RecDef"> {
       x: Str = _
       σ: Trie<Expr> = _
    }
  
-   export function recDef (x: Str, σ: Trie<Expr>): RecDef {
-      return make(RecDef, x, σ)
+   export function recDef (k: Id, x: Str, σ: Trie<Expr>): RecDef {
+      return at(k, RecDef, x, σ)
    }
 
    export class LetRec extends Expr {
@@ -123,8 +113,8 @@ export namespace Expr {
       e: Expr = _
    }
 
-   export function letRec (δ: List<RecDef>, e: Expr): LetRec {
-      return make(LetRec, δ, e)
+   export function letRec (k: Id, δ: List<RecDef>, e: Expr): LetRec {
+      return at(k, LetRec, δ, e)
    }
 
    export class MatchAs extends Expr {
@@ -132,8 +122,8 @@ export namespace Expr {
       σ: Trie<Expr> = _
    }
 
-   export function matchAs (e: Expr, σ: Trie<Expr>): MatchAs {
-      return make(MatchAs, e, σ)
+   export function matchAs (k: Id, e: Expr, σ: Trie<Expr>): MatchAs {
+      return at(k, MatchAs, e, σ)
    }
 
    export class BinaryApp extends Expr {
@@ -142,30 +132,28 @@ export namespace Expr {
       e2: Expr = _
    }
 
-   export function binaryApp (e1: Expr, opName: Str, e2: Expr): BinaryApp {
-      return make(BinaryApp, e1, opName, e2)
+   export function binaryApp (k: Id, e1: Expr, opName: Str, e2: Expr): BinaryApp {
+      return at(k, BinaryApp, e1, opName, e2)
    }
 
    export class Var extends Expr {
       x: Str = _
    }
 
-   export function var_ (x: Str): Var {
-      return make(Var, x)
+   export function var_ (k: Id, x: Str): Var {
+      return at(k, Var, x)
    }
 
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
    export type Args<K extends Kont<K>> = Args.Args<K>
 
    export namespace Args {
-      export abstract class Args<K extends Kont<K>> extends Kont<Args<K>> {
-         __subtag: "Kont"
-
+      export abstract class Args<K extends Kont<K>> extends Kont<Args<K>, "Args"> {
          static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
-            if (Π instanceof End && Πʹ instanceof End) {
+            if (End.is(Π) && End.is(Πʹ)) {
                return end(join(Π.κ, Πʹ.κ))
             } else
-            if (Π instanceof Next && Πʹ instanceof Next) {
+            if (Next.is(Π) && Next.is(Πʹ)) {
                return next(join(Π.σ, Πʹ.σ))
             } else {
                return absurd("Undefined join.", Π, Πʹ)
@@ -182,7 +170,7 @@ export namespace Expr {
       }
 
       export function end<K extends Kont<K>> (κ: K): End<K> {
-         return make<End<K>>(End, κ)
+         return make(End, κ) as End<K>
       }
 
       export class Next<K extends Kont<K>> extends Args<K> {
@@ -194,14 +182,12 @@ export namespace Expr {
       }
 
       export function next<K extends Kont<K>> (σ: Trie<Args<K>>): Next<K> {
-         return make<Next<K>>(Next, σ)
+         return make(Next, σ)
       }
    }
 
    export namespace Trie {
-      export abstract class Trie<K extends Kont<K>> extends Kont<Trie<K>> {
-         __subtag: "Kont"
-
+      export abstract class Trie<K extends Kont<K>> extends Kont<Trie<K>, "Trie"> {
          static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Var.is(σ) && Var.is(τ) && eq(σ.x.val, τ.x.val)) {
                return var_(σ.x, join(σ.κ, τ.κ))
@@ -236,7 +222,7 @@ export namespace Expr {
       }
 
       export function var_<K extends Kont<K>> (x: Str, κ: K): Var<K> {
-         return make<Var<K>>(Var, x, κ)
+         return make(Var, x, κ) as Var<K>
       }
    }
 }

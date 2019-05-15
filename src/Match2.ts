@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Pair } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
-import { Env, concat, emptyEnv, singleton } from "./Env2"
+import { Env, emptyEnv } from "./Env2"
 import { Func } from "./Func2"
 import { Expr } from "./Expr2"
 import { Constr, Str, Value, _, fieldValues, make } from "./Value2"
@@ -51,12 +51,12 @@ class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
    __apply (v: Value): [Env, K] {
-      return [singleton(this.σ.x, v), this.σ.κ]         
+      return [Env.singleton(this.σ.x, v), this.σ.κ]         
    }
 }
 
 function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
-   return make<VarFunc<K>>(VarFunc, σ)
+   return make(VarFunc, σ) as VarFunc<K>
 }
 
 // Concrete instances must have a field per constructor, in *lexicographical* order.
@@ -70,7 +70,7 @@ export abstract class ConstrFunc<K extends Kont<K>> extends Func<K> {
    }
 }
 
-export abstract class ArgsFunc<K> extends Value {
+export abstract class ArgsFunc<K> extends Value<"ArgsFunc"> {
    abstract __apply (v̅: Value[]): [Env, K]
 }
 
@@ -87,7 +87,7 @@ class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
 }
 
 function endFunc<K extends Kont<K>> (Π: Args.End<K>): EndFunc<K> {
-   return make<EndFunc<K>>(EndFunc, Π)
+   return make(EndFunc, Π) as EndFunc<K>
 }
 
 class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
@@ -99,11 +99,11 @@ class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
       } else {
          const [ρ, Π]: [Env, Args<K>] = evalTrie(this.Π.σ).__apply(v̅[0]),
                [ρʹ, κ]: [Env, K] = evalArgs(Π).__apply(v̅.slice(1))
-         return [concat(ρ, ρʹ), κ]
+         return [ρ.concat(ρʹ), κ]
       }
    }
 }
 
 function nextFunc<K extends Kont<K>> (Π: Args.Next<K>): NextFunc<K> {
-   return make<NextFunc<K>>(NextFunc, Π)
+   return make(NextFunc, Π) as NextFunc<K>
 }
