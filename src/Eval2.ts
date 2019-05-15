@@ -7,8 +7,8 @@ import { Expr } from "./Expr2"
 import { Closure, closure } from "./Func2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryʹ } from "./Primitive2"
-import { Id, Value, _, make, numʹ, strʹ } from "./Value2"
-import { at } from "./Versioned2"
+import { Id, Value, _, make } from "./Value2"
+import { at, numʹ, strʹ } from "./Versioned2"
 
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 

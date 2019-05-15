@@ -1,8 +1,8 @@
 import { as, assert } from "./util/Core"
 import { Bool, trueʹ, falseʹ } from "./BaseTypes2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
-import { Id, Num, PrimValue, Str, _, Value, make, numʹ, str, strʹ } from "./Value2"
-import { at } from "./Versioned2"
+import { Id, Num, PrimValue, Str, _, Value, make, str } from "./Value2"
+import { at, numʹ, strʹ } from "./Versioned2"
 
 type Unary<T, V> = (x: T) => (k: Id) => V
 type Binary<T, U, V> = (x: T, y: U) => (k: Id) => V

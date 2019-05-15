@@ -1,5 +1,4 @@
 import { Class, __check, assert } from "./util/Core"
-import { at } from "./Versioned2"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -24,20 +23,12 @@ export class Num extends Value<"Num"> {
    val: number = _
 }
 
-export function numʹ (k: Id, val: number): Num {
-   return at(k, Num, val)
-}
-
 export function num (val: number): Num {
    return make(Num, val)
 }
 
 export class Str extends Value<"Str"> {
    val: string = _
-}
-
-export function strʹ (k: Id, val: string): Str {
-   return at(k, Str, val)
 }
 
 export function str (val: string): Str {

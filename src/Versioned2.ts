@@ -1,7 +1,7 @@
 import { Class, absurd } from "./util/Core"
 import { Annotation } from "./Annotated2"
 import { Expl } from "./ExplValue2"
-import { Id, Persistent, Value, _, construct, make } from "./Value2"
+import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
 
 type Expl = Expl.Expl
 
@@ -56,3 +56,11 @@ export const ν: () => Extern =
          return extern(count++)
       }
    })()
+
+export function numʹ (k: Id, val: number): Num {
+   return at(k, Num, val)
+}
+
+export function strʹ (k: Id, val: string): Str {
+   return at(k, Str, val)
+}
