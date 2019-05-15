@@ -71,7 +71,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
          const [ρʹ, eʹ]: [Env, Expr] = evalTrie(f.σ).__apply(u),
                ρᶠ: Env = closeDefs(f.δ, f.ρ, f.δ).concat(ρʹ),
                v: Value = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return explValue(Expl.app(kₜ, f, u), v)
+         return explValue(Expl.app(kₜ, f, u), copyAt(kᵥ, v))
       } else 
       if (f instanceof UnaryOp) {
          return explValue(Expl.unaryApp(kₜ, f, u), f.op(u)(kᵥ))
@@ -93,18 +93,18 @@ export function eval_ (ρ: Env, e: Expr): Value {
       const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ]: [Env, Expr] = evalTrie<Expr>(e.σ).__apply(u),
             v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return explValue(Expl.let_(kₜ, u), v)
+      return explValue(Expl.let_(kₜ, u), copyAt(kᵥ, v))
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
             v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return explValue(Expl.letRec(kₜ, e.δ), v)
+      return explValue(Expl.letRec(kₜ, e.δ), copyAt(kᵥ, v))
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ]: [Env, Expr] = evalTrie(e.σ).__apply(u),
             v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return explValue(Expl.matchAs(kₜ, u), v)
+      return explValue(Expl.matchAs(kₜ, u), copyAt(kᵥ, v))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
