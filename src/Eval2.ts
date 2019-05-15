@@ -1,7 +1,7 @@
 import { __nonNull, absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
-import { Env, concat, emptyEnv, extendEnv, get, has } from "./Env2"
+import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { Closure, closure } from "./Func2"
@@ -58,8 +58,8 @@ export function eval_ (ρ: Env, e: Expr): Value {
       return explValue(Expl.empty(kₜ), at(kᵥ, ctrFor(e.ctr).C, ...v̅))
    } else 
    if (e instanceof Expr.Var) {
-      if (has(ρ, e.x)) { 
-         return explValue(Expl.var_(kₜ, e.x), get(ρ, e.x)!)
+      if (ρ.has(e.x)) { 
+         return explValue(Expl.var_(kₜ, e.x), ρ.get(e.x)!)
       } else {
          return error(`Variable '${e.x.val}' not found.`)
       }
@@ -69,8 +69,8 @@ export function eval_ (ρ: Env, e: Expr): Value {
             u: Value = eval_(ρ, e.arg)
       if (f instanceof Closure) {
          const [ρʹ, eʹ]: [Env, Expr] = evalTrie(f.σ).__apply(u),
-               ρᶠ: Env = concat(closeDefs(f.δ, f.ρ, f.δ), ρʹ),
-               v: Value = eval_(concat(f.ρ, ρᶠ), instantiate(ρᶠ, eʹ))
+               ρᶠ: Env = closeDefs(f.δ, f.ρ, f.δ).concat(ρʹ),
+               v: Value = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
          return explValue(Expl.app(kₜ, f, u), v)
       } else 
       if (f instanceof UnaryOp) {
@@ -92,18 +92,18 @@ export function eval_ (ρ: Env, e: Expr): Value {
    if (e instanceof Expr.Let) {
       const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ]: [Env, Expr] = evalTrie<Expr>(e.σ).__apply(u),
-            v: Value = eval_(concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+            v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
       return explValue(Expl.let_(kₜ, u), v)
    } else
    if (e instanceof Expr.LetRec) {
       const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
-            v: Value = eval_(concat(ρ, ρʹ), instantiate(ρʹ, e.e))
+            v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
       return explValue(Expl.letRec(kₜ, e.δ), v)
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ]: [Env, Expr] = evalTrie(e.σ).__apply(u),
-            v: Value = eval_(concat(ρ, ρʹ), instantiate(ρʹ, eʹ))
+            v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
       return explValue(Expl.matchAs(kₜ, u), v)
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)

@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Pair } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
-import { Env, concat, emptyEnv, singleton } from "./Env2"
+import { Env, emptyEnv } from "./Env2"
 import { Func } from "./Func2"
 import { Expr } from "./Expr2"
 import { Constr, Str, Value, _, fieldValues, make } from "./Value2"
@@ -51,7 +51,7 @@ class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
    __apply (v: Value): [Env, K] {
-      return [singleton(this.σ.x, v), this.σ.κ]         
+      return [Env.singleton(this.σ.x, v), this.σ.κ]         
    }
 }
 
@@ -99,7 +99,7 @@ class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
       } else {
          const [ρ, Π]: [Env, Args<K>] = evalTrie(this.Π.σ).__apply(v̅[0]),
                [ρʹ, κ]: [Env, K] = evalArgs(Π).__apply(v̅.slice(1))
-         return [concat(ρ, ρʹ), κ]
+         return [ρ.concat(ρʹ), κ]
       }
    }
 }

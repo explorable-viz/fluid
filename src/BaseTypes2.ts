@@ -1,5 +1,8 @@
+import { absurd } from "./util/Core"
 import { Constr, Id, Persistent, _, make } from "./Value2"
 import { at } from "./Versioned2"
+
+// See Env for convention regarding instance members on reflected datatypes.
 
 export abstract class Bool extends Constr<"Bool"> {
 }
@@ -27,7 +30,16 @@ export function falseʹ (k: Id): Bool {
 }
 
 export abstract class List<T> extends Constr<"List"> {
-   abstract map<U extends Persistent> (f: (t: T) => U): List<U>
+   map<U extends Persistent> (f: (t: T) => U): List<U> {
+      if (Cons.is(this)) {
+         return cons(f(this.head), this.tail.map(f))
+      } else
+      if (Nil.is(this)) {
+         return nil()
+      } else {
+         return absurd()
+      }
+   }
 
    static fromArray<T extends Persistent> (x̅: T[]): List<T> {
       let x̅ʹ: List<T> = nil()
@@ -43,19 +55,21 @@ export abstract class List<T> extends Constr<"List"> {
       return x̅
    }
 
-   abstract toArray_ (x̅: T[]): void
+   toArray_ (x̅: T[]): void {
+      if (Cons.is(this)) {
+         x̅.push(this.head)
+         this.tail.toArray_(x̅)
+      } else
+      if (Nil.is(this)) {
+      } else {
+         return absurd()
+      }
+   }
 }
 
 export class Nil<T> extends List<T> {
    static is<T> (xs: List<T>): xs is Nil<T> {
       return xs instanceof Nil
-   }
-
-   map<U extends Persistent> (f: (t: T) => U): Nil<U> {
-      return nil()
-   }
-
-   toArray_ (x̅: T[]): void {
    }
 }
 
@@ -69,15 +83,6 @@ export class Cons<T> extends List<T> {
 
    static is<T> (xs: List<T>): xs is Cons<T> {
       return xs instanceof Cons
-   }
-
-   map<U extends Persistent> (f: (t: T) => U): Cons<U> {
-      return cons(f(this.head), this.tail.map(f))
-   }
-
-   toArray_ (x̅: T[]): void {
-      x̅.push(this.head)
-      this.tail.toArray_(x̅)
    }
 }
 
@@ -94,8 +99,17 @@ export function pair<T extends Persistent, U extends Persistent> (fst: T, snd: U
    return make(Pair, fst, snd) as Pair<T, U>
 }
 
-export abstract class Tree<T> extends Constr<"Tree"> {
-   abstract map<U extends Persistent> (f: (t: T) => U): Tree<U>
+export abstract class Tree<T extends Persistent> extends Constr<"Tree"> {
+   map<U extends Persistent> (f: (t: T) => U): Tree<U> {
+      if (NonEmpty.is(this)) {
+         return nonEmpty(this.left.map(f), f(this.t), this.right.map(f))
+      } else
+      if (Empty.is(this)) {
+         return empty()
+      } else {
+         return absurd()
+      }
+   }
 
    toArray (): T[] {
       const x̅: T[] = []
@@ -103,19 +117,22 @@ export abstract class Tree<T> extends Constr<"Tree"> {
       return x̅
    }
 
-   abstract toArray_ (x̅: T[]): void
+   toArray_ (x̅: T[]): void {
+      if (NonEmpty.is(this)) {
+         this.left.toArray_(x̅)
+         x̅.push(this.t)
+         this.right.toArray_(x̅)
+      } else 
+      if (Empty.is(this)) {
+      } else {
+         return absurd()
+      }
+   }
 }
 
-export class Empty<T> extends Tree<T> {
+export class Empty<T extends Persistent> extends Tree<T> {
    static is<T extends Persistent> (t: Tree<T>): t is Empty<T> {
       return t instanceof Empty
-   }
-
-   map<U extends Persistent> (f: (t: T) => U): Empty<U> {
-      return empty()
-   }
-
-   toArray_ (x̅: T[]): void {
    }
 }
 
@@ -123,23 +140,13 @@ export function empty<T extends Persistent> (): Empty<T> {
    return make(Empty) as Empty<T>
 }
 
-export class NonEmpty<T> extends Tree<T> {
+export class NonEmpty<T extends Persistent> extends Tree<T> {
    left: Tree<T> = _
    t: T = _
    right: Tree<T> = _
 
    static is<T extends Persistent> (t: Tree<T>): t is NonEmpty<T> {
       return t instanceof NonEmpty
-   }
-
-   map<U extends Persistent> (f: (t: T) => U): NonEmpty<U> {
-      return nonEmpty(this.left.map(f), f(this.t), this.right.map(f))
-   }
-
-   toArray_ (x̅: T[]): void {
-      this.left.toArray_(x̅)
-      x̅.push(this.t)
-      this.right.toArray_(x̅)
    }
 }
 

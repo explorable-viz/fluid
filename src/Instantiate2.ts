@@ -1,6 +1,6 @@
 import { absurd } from "./util/Core"
 import { List, Pair, pair } from "./BaseTypes2"
-import { Env, entries } from "./Env2"
+import { Env } from "./Env2"
 import { Expr } from "./Expr2"
 import { Id, Str, Value, _, make } from "./Value2"
 
@@ -23,7 +23,7 @@ export function exprId (j: List<Value>, e: Expr | RecDef): ExprId {
 // F-bounded polymorphism doesn't work well here. I've used it for the smaller helper functions 
 // (but with horrendous casts), but not for the two main top-level functions.
 export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
-   const j: ExprId = exprId(entries(ρ), e)
+   const j: ExprId = exprId(ρ.entries(), e)
    if (e instanceof Expr.ConstNum) {
       return Expr.constNum(j, e.val)
    } else
@@ -44,7 +44,7 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    } else
    if (e instanceof Expr.LetRec) {
       const δ: List<RecDef> = e.δ.map(def => {
-         const i: ExprId = exprId(entries(ρ), def)
+         const i: ExprId = exprId(ρ.entries(), def)
          return Expr.recDef(i, def.x, instantiateTrie(ρ, def.σ))
       })
       return Expr.letRec(j, δ, instantiate(ρ, e.e))
