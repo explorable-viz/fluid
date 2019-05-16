@@ -1,6 +1,5 @@
 import { __nonNull } from "../../src/util/Core"
 import { successfulParse } from "../../src/util/parse/Core2"
-import { initDataTypes } from "../../src/DataType2"
 import { Env } from "../../src/Env2"
 import { Expr } from "../../src/Expr2"
 import { Parse } from "../../src/Parse2"
@@ -12,7 +11,6 @@ export function initialise (): void {
    String.prototype.toString = function (this: String): string {
       return "'" + this + "'"
    }
-   initDataTypes()
 }
 
 export enum Profile {

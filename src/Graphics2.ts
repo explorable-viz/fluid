@@ -1,4 +1,4 @@
-import { Constr } from "./DataType2"
+import { Constr, initDataType } from "./DataType2"
 import { Num, _, make } from "./Value2"
 import { List } from "./BaseTypes2"
 
@@ -63,3 +63,8 @@ export class Translate extends LinearTransform<"Translate"> {
 // Swaps x and y. Could subsume by a more general notion of reflection.
 export class Transpose extends LinearTransform<"Transpose"> {
 }
+
+initDataType(GraphicsElement, [PathStroke, RectFill, Transform, Graphic])
+initDataType(LinearTransform, [Scale, Translate, Transpose])
+initDataType(Point, [Point])
+initDataType(Rect, [Rect])

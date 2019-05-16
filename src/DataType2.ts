@@ -1,8 +1,10 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
-import { Bool, Cons, Empty, EQ, False, GT, List, LT, None, NonEmpty, Nil, Option, Ordering, Pair, Some, Tree, True } from "./BaseTypes2"
 import { ConstrFunc } from "./Match2"
-import { Graphic, GraphicsElement, GraphicsElementTag, LinearTransform, LinearTransformTag, PathStroke, Point, Rect, RectFill, Scale, Transform, Translate, Transpose } from "./Graphics2"
 import { State, Str, Value, _, fields } from "./Value2"
+
+export type ConstrTag = 
+   "Args" | "Bool" | "Closure" | "Env" | "Expl" | "Expr" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
+   "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
 
 // Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
 export abstract class Constr<Tag extends ConstrTag = ConstrTag> extends Value<Tag> {
@@ -11,8 +13,7 @@ export abstract class Constr<Tag extends ConstrTag = ConstrTag> extends Value<Ta
    }
 }
 
-// Neither of these are currently reflective because of non-standard fields.
-
+// Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: string
    elimC: Class<ConstrFunc<any>> // not sure how better to parameterise 
@@ -71,21 +72,4 @@ export function initDataType<T extends Constr> (D: AClass<T>, ctrC̅: Class<T>[]
    ctrC̅.forEach((C: Class<T>): void => {
       ctrToDataType.set(C.name, datatype)
    })
-}
-
-export type ConstrTag = 
-   "Args" | "Bool" | "Closure" | "Env" | "Expl" | "Expr" | GraphicsElementTag | LinearTransformTag | "List" | "Option" | "Ordering" | "Pair" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
-
-// This until we have datatype definitions.
-export function initDataTypes (): void {
-   initDataType(Bool, [True, False])
-   initDataType(GraphicsElement, [PathStroke, RectFill, Transform, Graphic])
-   initDataType(LinearTransform, [Scale, Translate, Transpose])
-   initDataType(List, [Nil, Cons])
-   initDataType(Option, [Some, None])
-   initDataType(Ordering, [LT, GT, EQ])
-   initDataType(Pair, [Pair])
-   initDataType(Point, [Point])
-   initDataType(Rect, [Rect])
-   initDataType(Tree, [Empty, NonEmpty])
 }

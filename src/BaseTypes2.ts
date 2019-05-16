@@ -1,5 +1,5 @@
 import { absurd } from "./util/Core"
-import { Constr } from "./DataType2"
+import { Constr, initDataType } from "./DataType2"
 import { Id, Persistent, _, make } from "./Value2"
 import { at } from "./Versioned2"
 
@@ -176,3 +176,10 @@ export class GT extends Ordering {
 
 export class EQ extends Ordering {
 }
+
+initDataType(Bool, [True, False])
+initDataType(List, [Nil, Cons])
+initDataType(Option, [Some, None])
+initDataType(Ordering, [LT, GT, EQ])
+initDataType(Pair, [Pair])
+initDataType(Tree, [Empty, NonEmpty])
