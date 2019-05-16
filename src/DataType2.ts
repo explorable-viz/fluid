@@ -1,5 +1,5 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
-import { ConstrFunc } from "./Match2"
+import { ConstrFunc } from "./Func2"
 import { State, Str, Value, _, fields } from "./Value2"
 
 export type ConstrTag = 

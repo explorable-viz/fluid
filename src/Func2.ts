@@ -1,23 +1,25 @@
-import { List } from "./BaseTypes2"
+import { as, className, error } from "./util/Core"
 import { Constr } from "./DataType2"
+import { Kont } from "./Expr2"
 import { Env } from "./Env2"
-import { Expr } from "./Expr2"
-import { Id, Value, _ } from "./Value2"
-import { at } from "./Versioned2"
-
-import Trie = Expr.Trie
-
-export class Closure extends Constr<"Closure"> {
-   ρ: Env = _                 // ρ is _not_ closing for σ; need to extend with the bindings in δ
-   δ: List<Expr.RecDef> = _
-   σ: Trie<Expr> = _
-}
-
-export function closure (k: Id, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
-   return at(k, Closure, ρ, δ, σ)
-}
+import { Value, _ } from "./Value2"
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
 export abstract class Func<K> extends Value<"Func"> {
    abstract __apply (v: Value): [Env, K]
+}
+
+// Concrete instances must have a field per constructor, in *lexicographical* order.
+export abstract class ConstrFunc<K extends Kont<K>> extends Func<K> {
+   __apply (v: Value): [Env, K] {
+      if (v instanceof Constr) {
+         return as((this as any)[className(v)], ArgsFunc).__apply(v.fieldValues())
+      } else {
+         return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, this)
+      }
+   }
+}
+
+export abstract class ArgsFunc<K> extends Value<"ArgsFunc"> {
+   abstract __apply (v̅: Value[]): [Env, K]
 }

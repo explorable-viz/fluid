@@ -2,14 +2,16 @@ import { __nonNull, absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
+import { Constr } from "./DataType2"
 import { Expl } from "./ExplValue2"
 import { Expr } from "./Expr2"
-import { Closure, closure } from "./Func2"
 import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps } from "./Primitive2"
 import { Id, Value, _, make } from "./Value2"
 import { at, copyAt, getα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
+
+import Trie = Expr.Trie
 
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
@@ -27,6 +29,16 @@ export type ExplId = Tagged<"t">
 
 export module Eval {
 
+export class Closure extends Constr<"Closure"> {
+   ρ: Env = _                 // ρ is _not_ closing for σ; need to extend with the bindings in δ
+   δ: List<Expr.RecDef> = _
+   σ: Trie<Expr> = _
+}
+
+export function closure (k: Id, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
+   return at(k, Closure, ρ, δ, σ)
+}
+   
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {

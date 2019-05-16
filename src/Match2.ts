@@ -1,8 +1,8 @@
-import { Class, __nonNull, absurd, as, assert, className, error } from "./util/Core"
+import { Class, __nonNull, absurd, assert } from "./util/Core"
 import { Pair } from "./BaseTypes2"
-import { Constr, DataType, ctrToDataType } from "./DataType2"
+import { DataType, ctrToDataType } from "./DataType2"
 import { Env, emptyEnv } from "./Env2"
-import { Func } from "./Func2"
+import { ArgsFunc, ConstrFunc, Func } from "./Func2"
 import { Expr } from "./Expr2"
 import { Str, Value, _, make } from "./Value2"
 
@@ -57,21 +57,6 @@ class VarFunc<K extends Kont<K>> extends Func<K> {
 
 function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
    return make(VarFunc, σ) as VarFunc<K>
-}
-
-// Concrete instances must have a field per constructor, in *lexicographical* order.
-export abstract class ConstrFunc<K extends Kont<K>> extends Func<K> {
-   __apply (v: Value): [Env, K] {
-      if (v instanceof Constr) {
-         return as((this as any)[className(v)], ArgsFunc).__apply(v.fieldValues())
-      } else {
-         return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, this)
-      }
-   }
-}
-
-export abstract class ArgsFunc<K> extends Value<"ArgsFunc"> {
-   abstract __apply (v̅: Value[]): [Env, K]
 }
 
 class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
