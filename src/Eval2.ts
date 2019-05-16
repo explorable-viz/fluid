@@ -9,7 +9,7 @@ import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps } from "./Primitive2"
 import { Id, Value, _, make } from "./Value2"
-import { at, copyAt, getα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
+import { at, copyAt, copyα, numʹ, setExpl, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
@@ -57,7 +57,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
    const kₜ: ExplId = tagged(e, "t"),
          kᵥ: ValId = tagged(e, "v")
    if (e instanceof Expr.ConstNum) {
-      return setExpl(Expl.empty(kₜ), setα(getα(e), numʹ(kᵥ, e.val.val)))
+      return setExpl(Expl.empty(kₜ), copyα(e, numʹ(kᵥ, e.val.val)))
    } else
    if (e instanceof Expr.ConstStr) {
       return setExpl(Expl.empty(kₜ), strʹ(kᵥ, e.val.val))
