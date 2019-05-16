@@ -45,7 +45,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    if (Cons.is(δ)) {
       const def: Expr.RecDef = δ.head,
             kᵥ: ValId = tagged(def, "v")
-      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, closure(kᵥ, ρ, δ_0, def.σ))
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, copyα(def, closure(kᵥ, ρ, δ_0, def.σ)))
    } else
    if (Nil.is(δ)) {
       return emptyEnv()
