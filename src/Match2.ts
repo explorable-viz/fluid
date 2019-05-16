@@ -1,10 +1,10 @@
 import { Class, __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Pair } from "./BaseTypes2"
-import { DataType, ctrToDataType } from "./DataType2"
+import { Constr, DataType, ctrToDataType } from "./DataType2"
 import { Env, emptyEnv } from "./Env2"
 import { Func } from "./Func2"
 import { Expr } from "./Expr2"
-import { Constr, Str, Value, _, fieldValues, make } from "./Value2"
+import { Str, Value, _, make } from "./Value2"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
@@ -63,7 +63,7 @@ function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
 export abstract class ConstrFunc<K extends Kont<K>> extends Func<K> {
    __apply (v: Value): [Env, K] {
       if (v instanceof Constr) {
-         return as((this as any)[className(v)], ArgsFunc).__apply(fieldValues(v))
+         return as((this as any)[className(v)], ArgsFunc).__apply(v.fieldValues())
       } else {
          return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, this)
       }

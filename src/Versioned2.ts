@@ -1,7 +1,7 @@
-import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
+import { Class, __nonNull, absurd, assert, className, classOf, notYetImplemented } from "./util/Core"
 import { Annotation } from "./Annotated2"
 import { Expl } from "./ExplValue2"
-import { Id, Num, Persistent, Str, Value, _, construct, fieldValues, make } from "./Value2"
+import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
 
 type Expl = Expl.Expl
 
@@ -62,7 +62,7 @@ export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>
 }
 
 export function copyAt<Tag extends string, T extends Value<Tag>> (k: Id, v: T): T {
-   return at(k, classOf(v), ...fieldValues(v))
+   return at(k, classOf(v), ...v.fieldValues())
 }
 
 // Fresh keys represent inputs to the system, e.g. addresses of syntax nodes provided by an external structure editor.
@@ -80,4 +80,42 @@ export function numʹ (k: Id, val: number): Num {
 
 export function strʹ (k: Id, val: string): Str {
    return at(k, Str, val)
+}
+
+// Keep these together for now. TOOD: generalise single-assignment constraint check.
+
+export function getα<Tag extends string, T extends Value<Tag>> (v: T): Annotation {
+   return __nonNull(asVersioned(v).__α)
+}
+
+export function setα<Tag extends string, T extends Value<Tag>> (α: Annotation, v: T): T {
+   const vʹ: VersionedValue<Tag, T> = asVersioned(v)
+   if (vʹ.__α === undefined) {
+      vʹ.__α = α
+   } else {
+      assert(vʹ.__α === α)
+   }
+   return v
+}
+
+export function setallα<Tag extends string, T extends Value<Tag>> (v: T, α: Annotation): T {
+   if (versioned(v)) {
+      setα(α, v)
+   }
+   v.fieldValues().forEach((v: Persistent): void => {
+      if (v instanceof Value) {
+         setallα(v, α) 
+      }
+   })
+   return v
+}
+
+export function setExpl<Tag extends string, T extends Value<Tag>> (t: Expl, v: T): T {
+   const vʹ: VersionedValue<Tag, T> = asVersioned(v)
+   if (vʹ.__expl === undefined) {
+      vʹ.__expl = t
+   } else {
+      assert(vʹ.__expl === t)
+   }
+   return v
 }

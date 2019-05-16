@@ -1,8 +1,9 @@
 import { absurd } from "./util/Core"
 import { eq } from "./util/Ord"
 import { List } from "./BaseTypes2"
+import { Constr as Constrʹ } from "./DataType2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
-import { Constr as Constrʹ, Id, Num, Str, _, make } from "./Value2"
+import { Id, Num, Str, _, make } from "./Value2"
 import { at } from "./Versioned2"
 
 // Constants used for parsing, and also for toString() implementations.
@@ -28,7 +29,9 @@ export type Kont<K> = Expr.Kont<K>
 export namespace Expr {
    // It would be nice if (non-argument) tries only had argument tries as their continuations and vice-
    // versa, but that doesn't quite work because a Constr<K> has an underlying map to Args<K>.
-   export abstract class Kont<K, Tag extends String = any> extends Constrʹ<"Kont"> {
+   type KontTag = "Expr" | "Trie" | "Args"
+
+   export abstract class Kont<K, Tag extends KontTag = KontTag> extends Constrʹ<Tag> {
    }
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 

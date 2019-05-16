@@ -1,12 +1,13 @@
 import { List } from "./BaseTypes2"
+import { Constr } from "./DataType2"
 import { Env } from "./Env2"
 import { Expr } from "./Expr2"
-import { Constr, Id, Value, _ } from "./Value2"
+import { Id, Value, _ } from "./Value2"
 import { at } from "./Versioned2"
 
 import Trie = Expr.Trie
 
-export class Closure extends Constr {
+export class Closure extends Constr<"Closure"> {
    ρ: Env = _                 // ρ is _not_ closing for σ; need to extend with the bindings in δ
    δ: List<Expr.RecDef> = _
    σ: Trie<Expr> = _

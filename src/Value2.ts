@@ -3,9 +3,13 @@ import { Class, __check, assert } from "./util/Core"
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
 
-// Value in the metalanguage.
+// Value in the metalanguage. Nominal idiom breaks down here in requiring use of "any".
 export abstract class Value<Tag extends string = any> {
    readonly __tag: Tag
+
+   fieldValues (): Persistent[] {
+      return fields(this).map(k => (this as any as State)[k])
+   }
 }
 
 // Address or location of persistent object.
@@ -33,10 +37,6 @@ export class Str extends Value<"Str"> {
 
 export function str (val: string): Str {
    return make(Str, val)
-}
-
-// Tags a value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
-export abstract class Constr<Tag extends string = any> extends Value<Tag> {
 }
 
 // Dynamic interface to a value object.
@@ -128,8 +128,4 @@ export function isField (prop: string): boolean {
 
 export function fields<Tag extends string> (v: Value<Tag>): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
-}
-
-export function fieldValues (v: Constr): Value[] {
-   return fields(v).map(k => (v as any as State)[k] as Value)
 }

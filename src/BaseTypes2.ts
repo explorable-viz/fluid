@@ -1,5 +1,6 @@
 import { absurd } from "./util/Core"
-import { Constr, Id, Persistent, _, make } from "./Value2"
+import { Constr } from "./DataType2"
+import { Id, Persistent, _, make } from "./Value2"
 import { at } from "./Versioned2"
 
 // See Env for convention regarding instance members on reflected datatypes.

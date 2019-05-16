@@ -1,9 +1,9 @@
-import { assert } from "./util/Core"
 import { Expr } from "./Expr2"
 import { List } from "./BaseTypes2"
+import { Constr } from "./DataType2"
 import { ExplId } from "./Eval2"
-import { Constr, PrimValue, Str, Value, _ } from "./Value2"
-import { VersionedValue, asVersioned, at } from "./Versioned2"
+import { PrimValue, Str, Value, _ } from "./Value2"
+import { at } from "./Versioned2"
 
 export namespace Expl {
    export abstract class Expl extends Constr<"Expl"> {
@@ -79,17 +79,4 @@ export namespace Expl {
    export function var_ (k: ExplId, x: Str): Var {
       return at(k, Var, x)
    }
-}
-
-type Expl = Expl.Expl
-
-// TOOD: generalise single-assignment constraint check.
-export function explValue<Tag extends string, T extends Value<Tag>> (t: Expl, v: T): T {
-   const vʹ: VersionedValue<Tag, T> = asVersioned(v)
-   if (vʹ.__expl === undefined) {
-      vʹ.__expl = t
-   } else {
-      assert(vʹ.__expl === t)
-   }
-   return v
 }

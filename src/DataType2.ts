@@ -1,8 +1,15 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { Bool, Cons, Empty, EQ, False, GT, List, LT, None, NonEmpty, Nil, Option, Ordering, Pair, Some, Tree, True } from "./BaseTypes2"
 import { ConstrFunc } from "./Match2"
-import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, Rect, RectFill, Scale, Transform, Translate, Transpose } from "./Graphics2"
-import { Constr, State, Str, _, fields } from "./Value2"
+import { Graphic, GraphicsElement, GraphicsElementTag, LinearTransform, LinearTransformTag, PathStroke, Point, Rect, RectFill, Scale, Transform, Translate, Transpose } from "./Graphics2"
+import { State, Str, Value, _, fields } from "./Value2"
+
+// Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
+export abstract class Constr<Tag extends ConstrTag = ConstrTag> extends Value<Tag> {
+   fieldValues (): Value[] {
+      return fields(this).map(k => (this as any as State)[k] as Value)
+   }
+}
 
 // Neither of these are currently reflective because of non-standard fields.
 
@@ -65,6 +72,9 @@ export function initDataType<T extends Constr> (D: AClass<T>, ctrC̅: Class<T>[]
       ctrToDataType.set(C.name, datatype)
    })
 }
+
+export type ConstrTag = 
+   "Args" | "Bool" | "Closure" | "Env" | "Expl" | "Expr" | GraphicsElementTag | LinearTransformTag | "List" | "Option" | "Ordering" | "Pair" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
 
 // This until we have datatype definitions.
 export function initDataTypes (): void {
