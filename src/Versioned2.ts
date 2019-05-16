@@ -99,7 +99,7 @@ export function setα<Tag extends string, T extends Value<Tag>> (α: Annotation,
 }
 
 export function copyα<TagU extends string, U extends Value<TagU>, TagT extends string, T extends Value<TagT>> (src: U, v: T): T {
-   setα(getα(src), v)
+   return setα(getα(src), v)
 }
 
 export function setallα<Tag extends string, T extends Value<Tag>> (v: T, α: Annotation): T {
