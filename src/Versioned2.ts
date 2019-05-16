@@ -1,5 +1,5 @@
+import { Annotation } from "./util/Annotated2"
 import { Class, __nonNull, absurd, assert, className, classOf, notYetImplemented } from "./util/Core"
-import { Annotation } from "./Annotated2"
 import { Expl } from "./ExplValue2"
 import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
 

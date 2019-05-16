@@ -1,5 +1,5 @@
-import { __nonNull } from "./util/Core"
-import { Lattice } from "./util/Ord"
+import { __nonNull } from "./Core"
+import { Lattice } from "./Ord"
 
 abstract class LatticeImpl<T> implements Lattice<T> {
    abstract bot: T

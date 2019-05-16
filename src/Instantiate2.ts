@@ -3,6 +3,7 @@ import { List, Pair, pair } from "./BaseTypes2"
 import { Env } from "./Env2"
 import { Expr } from "./Expr2"
 import { Id, Str, Value, _, make } from "./Value2"
+import { getα, setα } from "./Versioned2"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
@@ -25,38 +26,38 @@ export function exprId (j: List<Value>, e: Expr | RecDef): ExprId {
 export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    const j: ExprId = exprId(ρ.entries(), e)
    if (e instanceof Expr.ConstNum) {
-      return Expr.constNum(j, e.val)
+      return setα(getα(e), Expr.constNum(j, e.val))
    } else
    if (e instanceof Expr.ConstStr) {
-      return Expr.constStr(j, e.val)
+      return setα(getα(e), Expr.constStr(j, e.val))
    } else
    if (e instanceof Expr.Constr) {
-      return Expr.constr(j, e.ctr, e.args.map(e => instantiate(ρ, e)))
+      return setα(getα(e), Expr.constr(j, e.ctr, e.args.map(e => instantiate(ρ, e))))
    } else
    if (e instanceof Expr.Fun) {
-      return Expr.fun(j, instantiateTrie(ρ, e.σ))
+      return setα(getα(e), Expr.fun(j, instantiateTrie(ρ, e.σ)))
    } else
    if (e instanceof Expr.Var) {
-      return Expr.var_(j, e.x)
+      return setα(getα(e), Expr.var_(j, e.x))
    } else
    if (e instanceof Expr.Let) {
-      return Expr.let_(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
+      return setα(getα(e), Expr.let_(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
    } else
    if (e instanceof Expr.LetRec) {
-      const δ: List<RecDef> = e.δ.map(def => {
+      const δ: List<RecDef> = e.δ.map((def: RecDef) => {
          const i: ExprId = exprId(ρ.entries(), def)
-         return Expr.recDef(i, def.x, instantiateTrie(ρ, def.σ))
+         return setα(getα(def), Expr.recDef(i, def.x, instantiateTrie(ρ, def.σ)))
       })
-      return Expr.letRec(j, δ, instantiate(ρ, e.e))
+      return setα(getα(e), Expr.letRec(j, δ, instantiate(ρ, e.e)))
    } else
    if (e instanceof Expr.MatchAs) {
-      return Expr.matchAs(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
+      return setα(getα(e), Expr.matchAs(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
    } else
    if (e instanceof Expr.App) {
-      return Expr.app(j, instantiate(ρ, e.func), instantiate(ρ, e.arg))
+      return setα(getα(e), Expr.app(j, instantiate(ρ, e.func), instantiate(ρ, e.arg)))
    } else
    if (e instanceof Expr.BinaryApp) {
-      return Expr.binaryApp(j, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2))
+      return setα(getα(e), Expr.binaryApp(j, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2)))
    } else {
       return absurd()
    }
