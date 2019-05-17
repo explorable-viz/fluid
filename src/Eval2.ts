@@ -54,6 +54,25 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    }
 }
 
+export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
+   if (Cons.is(defs)) {
+      const def: Expr.Def = defs.head
+      if (def instanceof Expr.Let2) {
+         return ρ.concat(Env.singleton(def.x, eval_(ρ, def.e)))
+      } else
+      if (def instanceof Expr.LetRec2) {
+         return ρ.concat(closeDefs(def.δ, ρ, def.δ))
+      } else {
+         return absurd()
+      }
+   } else
+   if (Nil.is(defs)) {
+      return ρ
+   } else {
+      return absurd()
+   }
+}
+
 export function eval_ (ρ: Env, e: Expr): Value {
    const kₜ: ExplId = evalId(e, "t"),
          kᵥ: ValId = evalId(e, "v")
@@ -69,7 +88,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
    if (e instanceof Expr.Constr) {
       let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
       return setExpl(Expl.empty(kₜ), copyα(e, at(kᵥ, ctrFor(e.ctr).C, ...v̅)))
-   } else 
+   } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
          const v: Value = ρ.get(e.x)!
@@ -103,6 +122,10 @@ export function eval_ (ρ: Env, e: Expr): Value {
          return error(`Operator ${e.opName.val} not found.`)
       }
    } else
+   if (e instanceof Expr.Defs) {
+      const v: Value = eval_(defsEnv(ρ, e.defs), e.e)
+      return setExpl(Expl.defs(kₜ), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
+   } else
    if (e instanceof Expr.Let) {
       const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ]: [Env, Expr] = evalTrie<Expr>(e.σ).__apply(u),
@@ -123,5 +146,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
 }
+
+
 
 }

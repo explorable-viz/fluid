@@ -28,6 +28,14 @@ export namespace Expl {
       return at(k, UnaryApp, f, v)
    }
 
+   export class Defs extends Expl {
+      // TODO: record evaluated defs
+   }
+
+   export function defs (k: ExplId): Defs {
+      return at(k, Defs)
+   }
+
    export class Empty extends Expl {
    }
 

@@ -77,7 +77,7 @@ fun max xs →
    foldr1 (fun (n, m) → match n > m as { True → n; False → m }) xs;
 
 // number → a → List(a)
-fun repeat n → 
+fun repeat n →
    iterate n id;
 
 // List(a) → List(a)

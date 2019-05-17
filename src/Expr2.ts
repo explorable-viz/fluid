@@ -1,7 +1,7 @@
-import { absurd } from "./util/Core"
+import { absurd, error } from "./util/Core"
 import { eq } from "./util/Ord"
 import { List } from "./BaseTypes2"
-import { Constr as Constrʹ } from "./DataType2"
+import { Constr as Constrʹ, ctrToDataType } from "./DataType2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
 import { Id, Num, Str, _, make } from "./Value2"
 import { at } from "./Versioned2"
@@ -84,6 +84,18 @@ export namespace Expr {
       return at(k, Constr, ctr, args)
    }
 
+   export abstract class Def extends Constrʹ<"Def"> {
+   }
+
+   export class Defs extends Expr {
+      defs: List<Def> = _
+      e: Expr = _
+   }
+
+   export function defs (k: Id, defs: List<Def>, e: Expr): Defs {
+      return at(k, Defs, defs, e)
+   }
+
    export class Fun extends Expr {
       σ: Trie<Expr> = _
    }
@@ -102,6 +114,15 @@ export namespace Expr {
       return at(k, Let, e, σ)
    }
 
+   export class Let2 extends Def {
+      x: Str = _
+      e: Expr = _
+   }
+
+   export function let2 (k: Id, x: Str, e: Expr): Let2 {
+      return at(k, Let2, x, e)
+   }
+
    export class RecDef extends Constrʹ<"RecDef"> {
       x: Str = _
       σ: Trie<Expr> = _
@@ -118,6 +139,14 @@ export namespace Expr {
 
    export function letRec (k: Id, δ: List<RecDef>, e: Expr): LetRec {
       return at(k, LetRec, δ, e)
+   }
+
+   export class LetRec2 extends Def {
+      δ: List<RecDef> = _
+   }
+
+   export function letRec2 (k: Id, δ: List<RecDef>): LetRec2 {
+      return at(k, LetRec2, δ)
    }
 
    export class MatchAs extends Expr {
@@ -196,6 +225,13 @@ export namespace Expr {
                return var_(σ.x, join(σ.κ, τ.κ))
             } else
             if (Constr.is(σ) && Constr.is(τ)) {
+               // Both maps (which are non-empty) can (inductively) be assumed to have keys taken from the 
+               // same datatype. Ensure that invariant is preserved:
+               const c_σ: string = σ.cases.toArray()[0].fst.val,
+                     c_τ: string = τ.cases.toArray()[0].fst.val
+               if (ctrToDataType.get(c_σ) !== ctrToDataType.get(c_τ)) {
+                  error(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
+               }
                return constr(unionWith(σ.cases, τ.cases, Args.Args.join))
             } else {
                return absurd("Undefined join.", this, τ)
