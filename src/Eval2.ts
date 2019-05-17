@@ -16,22 +16,22 @@ import Trie = Expr.Trie
 
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
-export class Tagged<T extends Tag> extends Id {
+export class EvalId<T extends Tag> extends Id {
    e: Expr | Expr.RecDef = _
    tag: T = _
 }
 
-export function tagged<T extends Tag> (e: Expr | Expr.RecDef, tag: T): Tagged<T> {
-   return make(Tagged, e, tag) as Tagged<T>
+export function evalId<T extends Tag> (e: Expr | Expr.RecDef, tag: T): EvalId<T> {
+   return make(EvalId, e, tag) as EvalId<T>
 }
 
-export type ValId = Tagged<"v">
-export type ExplId = Tagged<"t">
+export type ValId = EvalId<"v">
+export type ExplId = EvalId<"t">
 
 export module Eval {
 
 export class Closure extends Constr<"Closure"> {
-   ρ: Env = _                 // ρ is _not_ closing for σ; need to extend with the bindings in δ
+   ρ: Env = _                 // ρ not closing for σ; need to extend with the bindings in δ
    δ: List<Expr.RecDef> = _
    σ: Trie<Expr> = _
 }
@@ -44,7 +44,7 @@ export function closure (k: Id, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>):
 export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
    if (Cons.is(δ)) {
       const def: Expr.RecDef = δ.head,
-            kᵥ: ValId = tagged(def, "v")
+            kᵥ: ValId = evalId(def, "v")
       return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, copyα(def, closure(kᵥ, ρ, δ_0, def.σ)))
    } else
    if (Nil.is(δ)) {
@@ -55,8 +55,8 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
 }
 
 export function eval_ (ρ: Env, e: Expr): Value {
-   const kₜ: ExplId = tagged(e, "t"),
-         kᵥ: ValId = tagged(e, "v")
+   const kₜ: ExplId = evalId(e, "t"),
+         kᵥ: ValId = evalId(e, "v")
    if (e instanceof Expr.ConstNum) {
       return setExpl(Expl.empty(kₜ), copyα(e, numʹ(kᵥ, e.val.val)))
    } else
