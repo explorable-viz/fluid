@@ -81,8 +81,7 @@ export const ν: () => Extern =
       }
    })()
 
-// Ensure previous value of state is equal to current value at an existing world.
-// Used to implement LVar-style increasing semantics, but that was only relevant to call-by-need.
+// Call-by-need implementation required LVar-style increasing semantics.
 function assertEqualState (tgt: Value, src: Value): void {
    assert(tgt.constructor === src.constructor)
    assert(fields(tgt).length === fields(src).length)
@@ -125,7 +124,7 @@ export function getα<Tag extends string, T extends Value<Tag>> (v: T): Annotati
    return __nonNull(asVersioned(v).__α)
 }
 
-// TODO: integrate the single-assignment check with commit.
+// TODO: integrate the single-assignment checks below with commit.
 export function setα<Tag extends string, T extends Value<Tag>> (α: Annotation, v: T): T {
    const vʹ: VersionedValue<Tag, T> = asVersioned(v)
    if (vʹ.__α === undefined) {

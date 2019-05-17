@@ -9,13 +9,6 @@ import { Parse } from "../../src/Parse2"
 import { World, ν, setallα } from "../../src/Versioned2"
 import { Cursor } from "./Cursor2"
 
-export function initialise (): void {
-   // Fix the toString impl on String to behave sensibly.
-   String.prototype.toString = function (this: String): string {
-      return "'" + this + "'"
-   }
-}
-
 export class FwdSlice {
    expr: Cursor
    val: Cursor
@@ -26,6 +19,8 @@ export class FwdSlice {
       this.expr = new Cursor(e)
       this.setup()
       this.val = new Cursor(Eval.eval_(emptyEnv(), e))
+      console.log(this.expr.v)
+      console.log(this.val.v)
       this.expect()
    }
 
@@ -47,7 +42,7 @@ export enum Profile {
    Visualise
 }
 
-// Kindergarten modules: load another file as though it were a letrec block, with body e.
+// Kindergarten modules: load another file as though it were a defs block, with body e.
 export function prependModule (src: string, e: Expr): Expr.Defs {
    return Expr.defs(ν(), successfulParse(Parse.defList, src), e)
 }

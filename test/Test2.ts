@@ -1,12 +1,11 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { FwdSlice, initialise, load, parse } from "./util/Core2"
+import { FwdSlice, load, parse } from "./util/Core2"
 import { emptyEnv } from "../src/Env2"
 import { Eval } from "../src/Eval2"
 import { Expr } from "../src/Expr2"
 
 before((done: MochaDone) => {
-	initialise()
 	done()
 })
 
