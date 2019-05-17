@@ -127,17 +127,6 @@ export function eval_ (ρ: Env, e: Expr): Value {
       const v: Value = eval_(defsEnv(ρ, e.defs), e.e)
       return setExpl(Expl.defs(kₜ), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
    } else
-   if (e instanceof Expr.Let) {
-      const u: Value = eval_(ρ, e.e),
-            [ρʹ, eʹ]: [Env, Expr] = evalTrie<Expr>(e.σ).__apply(u),
-            v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return setExpl(Expl.let_(kₜ, u), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
-   } else
-   if (e instanceof Expr.LetRec) {
-      const ρʹ: Env = closeDefs(e.δ, ρ, e.δ),
-            v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return setExpl(Expl.letRec(kₜ, e.δ), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
-   } else
    if (e instanceof Expr.MatchAs) {
       const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ]: [Env, Expr] = evalTrie(e.σ).__apply(u),

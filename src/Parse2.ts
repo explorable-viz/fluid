@@ -20,9 +20,7 @@ import Constr = Expr.Constr
 import Def = Expr.Def
 import Defs = Expr.Defs
 import Fun = Expr.Fun
-// import Let = Expr.Let
 import Let2 = Expr.Let2
-// import LetRec = Expr.LetRec
 import LetRec2 = Expr.LetRec2
 import MatchAs = Expr.MatchAs
 import RecDef = Expr.RecDef
@@ -215,18 +213,6 @@ const number_: Parser<ConstNum> =
 const parenthExpr: Parser<Expr> =
    parenthesise(expr)
 
-/*
-const let_: Parser<Let> =
-   withAction(
-      seq(
-         dropFirst(keyword(strings.let_), seq(dropSecond(var_, symbol(strings.equals)), expr)),
-         dropFirst(keyword(strings.in_), expr)
-      ),
-      ([[x, e], eʹ]: [[Str, Expr], Expr]) =>
-         Expr.let_(ν(), e, Trie.var_(x, eʹ))
-   )
-*/
-
 const recDef: Parser<RecDef> =
    withAction(
       seq(dropFirst(keyword(strings.fun), var_), matches),
@@ -234,38 +220,29 @@ const recDef: Parser<RecDef> =
          Expr.recDef(ν(), name, σ)
    )
 
-export const recDefs1 : Parser<List<RecDef>> =
-   withAction(sepBy1(recDef, symbol(";")), (δ: RecDef[]) => List.fromArray(δ))
+const recDefs1 : Parser<List<RecDef>> =
+   withAction(sepBy1(recDef, symbol(";")), List.fromArray)
 
-/*
-const letrec: Parser<LetRec> =
-   withAction(
-      seq(
-         dropFirst(keyword(strings.letRec), recDefs1),
-         dropFirst(keyword(strings.in_), expr)
-      ),
-     ([δ, body]: [List<RecDef>, Expr]) => 
-         Expr.letRec(ν(), δ, body)
-   )
-*/
-
-const let2: Parser<Let2> =
+const let_: Parser<Let2> =
    withAction(
       dropFirst(keyword(strings.let_), seq(dropSecond(var_, symbol(strings.equals)), expr)),
       ([x, e]: [Str, Expr]) => Expr.let2(ν(), x, e)
    )
 
-const letrec2: Parser<LetRec2> =
+const letrec_: Parser<LetRec2> =
    withAction(
       dropFirst(keyword(strings.letRec), recDefs1),
       (δ: List<RecDef>) => 
          Expr.letRec2(ν(), δ)
    )
 
+export const defList: Parser<List<Def>> =
+   withAction(sepBy1(choice<Def>([let_, letrec_]), symbol(";")), List.fromArray)
+
 const defs1 : Parser<Defs> =
    withAction(
-      seq(sepBy1(choice<Def>([let2, letrec2]), symbol(";")), dropFirst(keyword(strings.in_), expr)),
-      ([defs, e]: [Def[], Expr]) => Expr.defs(ν(), List.fromArray(defs), e)
+      seq(defList, dropFirst(keyword(strings.in_), expr)),
+      ([defs, e]: [List<Def>, Expr]) => Expr.defs(ν(), defs, e)
    )
 
 // Enforce consistency with constructor signatures.

@@ -44,16 +44,6 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    if (e instanceof Expr.Defs) {
       return copyα(e, Expr.defs(j, e.defs.map(def => instantiateDef(ρ, def)), instantiate(ρ, e.e)))
    } else
-   if (e instanceof Expr.Let) {
-      return copyα(e, Expr.let_(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
-   } else
-   if (e instanceof Expr.LetRec) {
-      const δ: List<RecDef> = e.δ.map((def: RecDef) => {
-         const i: ExprId = exprId(ρ.entries(), def)
-         return copyα(def, Expr.recDef(i, def.x, instantiateTrie(ρ, def.σ)))
-      })
-      return copyα(e, Expr.letRec(j, δ, instantiate(ρ, e.e)))
-   } else
    if (e instanceof Expr.MatchAs) {
       return copyα(e, Expr.matchAs(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
    } else

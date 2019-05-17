@@ -22,8 +22,8 @@ export enum Profile {
 }
 
 // Kindergarten modules: load another file as though it were a letrec block, with body e.
-export function prependModule (src: string, e: Expr): Expr.LetRec {
-   return Expr.letRec(ν(), successfulParse(Parse.recDefs1, src), e)
+export function prependModule (src: string, e: Expr): Expr.Defs {
+   return Expr.defs(ν(), successfulParse(Parse.defList, src), e)
 }
 
 export function parse (src: string): Expr {

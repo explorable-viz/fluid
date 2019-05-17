@@ -104,16 +104,6 @@ export namespace Expr {
       return at(k, Fun, σ)
    }
 
-   // A let is simply a match where the trie is a variable trie.
-   export class Let extends Expr {
-      e: Expr = _
-      σ: Trie.Var<Expr> = _
-   }
-
-   export function let_ (k: Id, e: Expr, σ: Trie.Var<Expr>): Let {
-      return at(k, Let, e, σ)
-   }
-
    export class Let2 extends Def {
       x: Str = _
       e: Expr = _
@@ -130,15 +120,6 @@ export namespace Expr {
  
    export function recDef (k: Id, x: Str, σ: Trie<Expr>): RecDef {
       return at(k, RecDef, x, σ)
-   }
-
-   export class LetRec extends Expr {
-      δ: List<RecDef> = _
-      e: Expr = _
-   }
-
-   export function letRec (k: Id, δ: List<RecDef>, e: Expr): LetRec {
-      return at(k, LetRec, δ, e)
    }
 
    export class LetRec2 extends Def {
