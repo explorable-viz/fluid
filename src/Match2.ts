@@ -51,7 +51,7 @@ class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
    __apply (v: Value): [Env, K] {
-      return [Env.singleton(this.σ.x, v), this.σ.κ]         
+      return [Env.singleton(this.σ.x, v), this.σ.κ]
    }
 }
 

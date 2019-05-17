@@ -3,7 +3,7 @@ import { ConstrFunc } from "./Func2"
 import { State, Str, Value, _, fields } from "./Value2"
 
 export type ConstrTag = 
-   "Args" | "Bool" | "Closure" | "Env" | "Expl" | "Expr" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
+   "Args" | "Bool" | "Closure" | "Def" | "Env" | "Expl" | "Expr" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
    "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
 
 // Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).

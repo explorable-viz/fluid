@@ -6,8 +6,7 @@ let compare =
             True → GT;
             False → EQ
          }
-      }
-in
+      };
 letrec
    fun lookup k {
       Empty → None;

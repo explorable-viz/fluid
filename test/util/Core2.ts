@@ -1,11 +1,9 @@
 import { __nonNull } from "../../src/util/Core"
 import { successfulParse } from "../../src/util/parse/Core2"
 import { ann } from "../../src/util/Annotated2"
-import { Env } from "../../src/Env2"
 import { Expr } from "../../src/Expr2"
 import "../../src/Graphics2"
 import { Parse } from "../../src/Parse2"
-import { createPrelude } from "../../src/Primitive2"
 import { ν, setallα } from "../../src/Versioned2"
 
 export function initialise (): void {
@@ -22,8 +20,8 @@ export enum Profile {
 }
 
 // Kindergarten modules: load another file as though it were a letrec block, with body e.
-export function prependModule (src: string, e: Expr): Expr.LetRec {
-   return Expr.letRec(ν(), successfulParse(Parse.recDefs1, src), e)
+export function prependModule (src: string, e: Expr): Expr.Defs {
+   return Expr.defs(ν(), successfulParse(Parse.defList, src), e)
 }
 
 export function parse (src: string): Expr {
@@ -32,8 +30,6 @@ export function parse (src: string): Expr {
                    successfulParse(Parse.expr, src)))
    return setallα(e, ann.top)
 }
-
-export let prelude: Env = createPrelude()
 
 // An asychronously loading test file; when loading completes text will be non-null.
 export class TestFile {

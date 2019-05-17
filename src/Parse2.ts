@@ -17,10 +17,13 @@ import BinaryApp = Expr.BinaryApp
 import ConstNum = Expr.ConstNum
 import ConstStr = Expr.ConstStr
 import Constr = Expr.Constr
+import Def = Expr.Def
+import Defs = Expr.Defs
 import Fun = Expr.Fun
 import Let = Expr.Let
 import LetRec = Expr.LetRec
 import MatchAs = Expr.MatchAs
+import Prim = Expr.Prim
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 import Var = Expr.Var
@@ -116,7 +119,7 @@ const singleCharEscape: Parser<string> = choice<string>([
 
 const escapeSeq: Parser<string> =
    dropFirst(ch("\\"), choice<string>([unicodeEscape, singleCharEscape]))
-
+   2
 const stringCh: Parser<string> =
    choice<string>([negate(choice<string>([ch('"'), ch("\\"), ch("\r"), ch("\n")])), escapeSeq])
 
@@ -211,16 +214,6 @@ const number_: Parser<ConstNum> =
 const parenthExpr: Parser<Expr> =
    parenthesise(expr)
 
-const let_: Parser<Let> =
-   withAction(
-      seq(
-         dropFirst(keyword(strings.let_), seq(dropSecond(var_, symbol(strings.equals)), expr)),
-         dropFirst(keyword(strings.in_), expr)
-      ),
-      ([[x, e], eʹ]: [[Str, Expr], Expr]) =>
-         Expr.let_(ν(), e, Trie.var_(x, eʹ))
-   )
-
 const recDef: Parser<RecDef> =
    withAction(
       seq(dropFirst(keyword(strings.fun), var_), matches),
@@ -228,17 +221,35 @@ const recDef: Parser<RecDef> =
          Expr.recDef(ν(), name, σ)
    )
 
-export const recDefs1 : Parser<List<RecDef>> =
-   withAction(sepBy1(recDef, symbol(";")), (δ: RecDef[]) => List.fromArray(δ))
+const recDefs1 : Parser<List<RecDef>> =
+   withAction(sepBy1(recDef, symbol(";")), List.fromArray)
 
-const letrec: Parser<LetRec> =
+const let_: Parser<Let> =
    withAction(
-      seq(
-         dropFirst(keyword(strings.letRec), recDefs1),
-         dropFirst(keyword(strings.in_), expr)
-      ),
-     ([δ, body]: [List<RecDef>, Expr]) => 
-         Expr.letRec(ν(), δ, body)
+      dropFirst(keyword(strings.let_), seq(dropSecond(var_, symbol(strings.equals)), expr)),
+      ([x, e]: [Str, Expr]) => Expr.let_(ν(), x, e)
+   )
+
+const prim: Parser<Prim> =
+withAction(
+   dropFirst(keyword(strings.primitive), var_),
+   (x: Str) => Expr.prim(ν(), x)
+)
+
+const letrec_: Parser<LetRec> =
+   withAction(
+      dropFirst(keyword(strings.letRec), recDefs1),
+      (δ: List<RecDef>) => 
+         Expr.letRec(ν(), δ)
+   )
+
+export const defList: Parser<List<Def>> =
+   withAction(sepBy1(choice<Def>([let_, prim, letrec_]), symbol(";")), List.fromArray)
+
+const defs1 : Parser<Defs> =
+   withAction(
+      seq(defList, dropFirst(keyword(strings.in_), expr)),
+      ([defs, e]: [List<Def>, Expr]) => Expr.defs(ν(), defs, e)
    )
 
 // Enforce consistency with constructor signatures.
@@ -398,7 +409,7 @@ const fun: Parser<Fun> =
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
    choice<Expr>([
-      variable, string_, number_, parenthExpr, pair, let_, letrec, list, constr, matchAs, fun
+      variable, string_, number_, parenthExpr, pair, defs1, list, constr, matchAs, fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.
