@@ -12,7 +12,7 @@ let fst = fun (x, y) →
    x;
 
 // List(a) → a
-let head  = fun [x, ...xs] → 
+let head = fun [x, ...xs] → 
    x;
 
 // a → a
