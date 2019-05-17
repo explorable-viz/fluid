@@ -1,4 +1,4 @@
-import { ann } from "./util/Annotated2"
+import { Annotation, ann } from "./util/Annotated2"
 import { __nonNull, absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
@@ -61,7 +61,7 @@ export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
          return defsEnv(extendEnv(ρ, def.x, eval_(ρ, def.e)), defs.tail)
       } else
       if (def instanceof Expr.Prim) {
-         // all first-class primitives are unary, although it would be easy to make binary ops first-class too now
+         // all first-class primitives happen to be unary
          if (unaryOps.has(def.x.val)) {
             const kᵥ: ValId = evalId(def, "v"),
                   v: UnaryOp = copyAt(kᵥ, unaryOps.get(def.x.val)!)
@@ -111,10 +111,10 @@ export function eval_ (ρ: Env, e: Expr): Value {
       const f: Value = eval_(ρ, e.func),
             u: Value = eval_(ρ, e.arg)
       if (f instanceof Closure) {
-         const [ρʹ, eʹ]: [Env, Expr] = evalTrie(f.σ).__apply(u),
+         const [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(f.σ).__apply(u),
                ρᶠ: Env = closeDefs(f.δ, f.ρ, f.δ).concat(ρʹ),
                v: Value = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return setExpl(Expl.app(kₜ, f, u), setα(ann.meet(getα(f), getα(v), getα(e)), copyAt(kᵥ, v)))
+         return setExpl(Expl.app(kₜ, f, u), setα(ann.meet(getα(f), α, getα(v), getα(e)), copyAt(kᵥ, v)))
       } else 
       if (f instanceof UnaryOp) {
          return setExpl(Expl.unaryApp(kₜ, f, u), setα(ann.meet(getα(f), getα(u), getα(e)), f.op(u)(kᵥ)))
@@ -138,9 +138,9 @@ export function eval_ (ρ: Env, e: Expr): Value {
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Value = eval_(ρ, e.e),
-            [ρʹ, eʹ]: [Env, Expr] = evalTrie(e.σ).__apply(u),
+            [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(e.σ).__apply(u),
             v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return setExpl(Expl.matchAs(kₜ, u), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
+      return setExpl(Expl.matchAs(kₜ, u), setα(ann.meet(α, getα(v), getα(e)), copyAt(kᵥ, v)))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }

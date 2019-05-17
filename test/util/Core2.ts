@@ -1,10 +1,13 @@
 import { __nonNull } from "../../src/util/Core"
 import { successfulParse } from "../../src/util/parse/Core2"
 import { ann } from "../../src/util/Annotated2"
+import { emptyEnv } from "../../src/Env2"
+import { Eval } from "../../src/Eval2"
 import { Expr } from "../../src/Expr2"
 import "../../src/Graphics2"
 import { Parse } from "../../src/Parse2"
 import { ν, setallα } from "../../src/Versioned2"
+import { Cursor } from "./Cursor2"
 
 export function initialise (): void {
    // Fix the toString impl on String to behave sensibly.
@@ -12,6 +15,31 @@ export function initialise (): void {
       return "'" + this + "'"
    }
 }
+
+export class FwdSlice {
+   expr: Cursor
+   val: Cursor
+
+   constructor (e: Expr) {
+      // World.newRevision()
+      setallα(e, ann.top)
+      this.expr = new Cursor(e)
+      this.setup()
+      this.val = new Cursor(Eval.eval_(emptyEnv(), e))
+      this.expect()
+   }
+
+   setup (): void {      
+   }
+
+   expect (): void {
+   }
+
+   get e (): Expr {
+      return this.expr.v as Expr
+   }
+}
+
 
 export enum Profile {
    Parse,
