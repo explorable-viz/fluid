@@ -6,7 +6,7 @@ import { Eval } from "../../src/Eval2"
 import { Expr } from "../../src/Expr2"
 import "../../src/Graphics2"
 import { Parse } from "../../src/Parse2"
-import { ν, setallα } from "../../src/Versioned2"
+import { World, ν, setallα } from "../../src/Versioned2"
 import { Cursor } from "./Cursor2"
 
 export function initialise (): void {
@@ -21,7 +21,7 @@ export class FwdSlice {
    val: Cursor
 
    constructor (e: Expr) {
-      // World.newRevision()
+      World.newRevision()
       setallα(e, ann.top)
       this.expr = new Cursor(e)
       this.setup()

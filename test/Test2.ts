@@ -1,8 +1,9 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { initialise, load, parse } from "./util/Core2"
+import { FwdSlice, initialise, load, parse } from "./util/Core2"
 import { emptyEnv } from "../src/Env2"
 import { Eval } from "../src/Eval2"
+import { Expr } from "../src/Expr2"
 
 before((done: MochaDone) => {
 	initialise()
@@ -13,7 +14,17 @@ before((done: MochaDone) => {
 describe("example", () => {
 	describe("arithmetic", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("arithmetic"))))
+         const e: Expr = parse(load("arithmetic"))
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.skipImports()
+						.to(Expr.BinaryApp, "e1").notNeed()
+				}
+				expect (): void {
+					this.val.notNeeded()
+				} 
+			})(e)
 		})
    })
 
