@@ -16,13 +16,12 @@ describe("example", () => {
 		})
    })
 
-/*
    describe("bar-chart", () => {
 		it("ok", () => {
 			console.log(Eval.eval_(prelude, parse(load("bar-chart"))))
 		})
    })
-*/
+
    describe("compose", () => {
 		it("ok", () => {
 			console.log(Eval.eval_(prelude, parse(load("compose"))))

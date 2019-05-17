@@ -125,8 +125,7 @@ let
             ("Wind", 3.4)
          ])
       ])
-   ]
-in
+   ];
 letrec 
    // Put data into a map instead?
    fun lookupStr k [(k', v), ...kvs] → 
@@ -138,33 +137,32 @@ letrec
       match k == k' as {
          True → v;
          False → lookupNum k kvs
-      }
-in
+      };
 // CountryData → Output
-let countryTotal = compose sum (map snd) in
+let countryTotal = compose sum (map snd);
 // AnnualData → Output
-let annualTotal = compose sum (map (compose countryTotal snd)) in
+let annualTotal = compose sum (map (compose countryTotal snd));
 let rects = map 
    (fun (country, countryData) → Rect(1, countryTotal countryData))
-   (lookupNum 2015 data)
-in
+   (lookupNum 2015 data);
 // Data → Year
-let firstYear = head (map fst data) in
-let ps = map (fun (year, annualData) → Point(year - firstYear, annualTotal annualData)) data in
-let y_scale = 1 / 6 in
-let x_scale = 30 in
-let tickLength = 8 in
-let axis_margin = 5 in
-let x_offset = axis_margin + tickLength in
-let y_offset = x_offset in
+let firstYear = head (map fst data);
+let ps = map (fun (year, annualData) → Point(year - firstYear, annualTotal annualData)) data;
+let y_scale = 1 / 6;
+let x_scale = 30;
+let tickLength = 8;
+let axis_margin = 5;
+let x_offset = axis_margin + tickLength;
+let y_offset = x_offset;
 let barGraph = 
    translate x_offset y_offset Graphic([
       scale x_scale 1 (x_axis axis_margin 5 1.16 tickLength),
       transpose (scale x_scale 1 (x_axis axis_margin (length rects) 1 tickLength)),
       scale x_scale y_scale Graphic(spaceRight 1.16 (map renderRect rects))
-   ]) in
+   ]);
 let lineGraph =
    translate x_offset y_offset Graphic([
       linePlot Scale(x_scale, y_scale) ps
-   ]) in
+   ])
+in
 stackRight [barGraph, lineGraph]
