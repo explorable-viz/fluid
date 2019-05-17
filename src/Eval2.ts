@@ -8,7 +8,7 @@ import { Expl } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
-import { UnaryOp, BinaryOp, binaryOps } from "./Primitive2"
+import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Value, _, make } from "./Value2"
 import { at, copyAt, copyα, getα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
 
@@ -17,11 +17,11 @@ import Trie = Expr.Trie
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
 export class EvalId<T extends Tag> extends Id {
-   e: Expr | Expr.RecDef = _
+   e: Expr | Expr.RecDef | Expr.Prim = _
    tag: T = _
 }
 
-export function evalId<T extends Tag> (e: Expr | Expr.RecDef, tag: T): EvalId<T> {
+export function evalId<T extends Tag> (e: Expr | Expr.RecDef | Expr.Prim, tag: T): EvalId<T> {
    return make(EvalId, e, tag) as EvalId<T>
 }
 
@@ -57,11 +57,20 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
 export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
    if (Cons.is(defs)) {
       const def: Expr.Def = defs.head
-      if (def instanceof Expr.Let2) {
+      if (def instanceof Expr.Let) {
          return defsEnv(extendEnv(ρ, def.x, eval_(ρ, def.e)), defs.tail)
       } else
-      if (def instanceof Expr.LetRec2) {
-         // TODO: concat feels expensive here...
+      if (def instanceof Expr.Prim) {
+         // all first-class primitives are unary, although it would be easy to make binary ops first-class too now
+         if (unaryOps.has(def.x.val)) {
+            const kᵥ: ValId = evalId(def, "v"),
+                  v: UnaryOp = copyAt(kᵥ, unaryOps.get(def.x.val)!)
+            return defsEnv(extendEnv(ρ, def.x, copyα(def, v)), defs.tail)
+         } else {
+            return error(`Primitive "${def.x}" not found.`)
+         }
+      } else
+      if (def instanceof Expr.LetRec) {
          return defsEnv(ρ.concat(closeDefs(def.δ, ρ, def.δ)), defs.tail)
       } else {
          return absurd()
@@ -95,7 +104,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
          const v: Value = ρ.get(e.x)!
          return setExpl(Expl.var_(kₜ, e.x), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
       } else {
-         return error(`Variable '${e.x.val}' not found.`)
+         return error(`Variable "${e.x.val}" not found.`)
       }
    } else
    if (e instanceof Expr.App) {
@@ -120,7 +129,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
                [v1, v2]: [Value, Value] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
          return setExpl(Expl.binaryApp(kₜ, v1, e.opName, v2), setα(ann.meet(getα(v1), getα(v2), getα(e)), op.op(v1, v2)(kᵥ)))
       } else {
-         return error(`Operator ${e.opName.val} not found.`)
+         return error(`Binary primitive "${e.opName.val}" not found.`)
       }
    } else
    if (e instanceof Expr.Defs) {

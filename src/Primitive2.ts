@@ -1,7 +1,6 @@
 import { as, assert } from "./util/Core"
 import { Bool, trueʹ, falseʹ } from "./BaseTypes2"
-import { Env, emptyEnv, extendEnv } from "./Env2"
-import { Id, Num, PrimValue, Str, _, Value, make, str } from "./Value2"
+import { Id, Num, PrimValue, Str, _, Value, make } from "./Value2"
 import { ν, at, numʹ, strʹ } from "./Versioned2"
 
 type Unary<T, V> = (x: T) => (k: Id) => V
@@ -41,7 +40,7 @@ function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op:
 }
 
 // Primitives with identifiers as names are unary and first-class.
-const unaryOps: Map<string, UnaryOp> = new Map([
+export const unaryOps: Map<string, UnaryOp> = new Map([
    [ceiling.name, unary_(ceiling)],
    [error.name, unary_(error)],
    [intToString.name, unary_(intToString)],
@@ -118,13 +117,4 @@ export function div (x: Num, y: Num): (k: Id) => Num {
 
 export function concat (x: Str, y: Str): (k: Id) => Str {
    return (k: Id) => strʹ(k, as(x, Str).val + as(y, Str).val)
-}
-
-// Primitive with identifiers as names are first-class, and therefore appear in the prelude (with external ids).
-export function createPrelude (): Env {
-   let ρ: Env = emptyEnv()
-   unaryOps.forEach((op: UnaryOp, x: string): void => {
-      ρ = extendEnv(ρ, str(x), op)
-   })
-   return ρ
 }

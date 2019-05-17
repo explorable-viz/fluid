@@ -20,9 +20,10 @@ import Constr = Expr.Constr
 import Def = Expr.Def
 import Defs = Expr.Defs
 import Fun = Expr.Fun
-import Let2 = Expr.Let2
-import LetRec2 = Expr.LetRec2
+import Let = Expr.Let
+import LetRec = Expr.LetRec
 import MatchAs = Expr.MatchAs
+import Prim = Expr.Prim
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 import Var = Expr.Var
@@ -118,7 +119,7 @@ const singleCharEscape: Parser<string> = choice<string>([
 
 const escapeSeq: Parser<string> =
    dropFirst(ch("\\"), choice<string>([unicodeEscape, singleCharEscape]))
-
+   2
 const stringCh: Parser<string> =
    choice<string>([negate(choice<string>([ch('"'), ch("\\"), ch("\r"), ch("\n")])), escapeSeq])
 
@@ -223,21 +224,27 @@ const recDef: Parser<RecDef> =
 const recDefs1 : Parser<List<RecDef>> =
    withAction(sepBy1(recDef, symbol(";")), List.fromArray)
 
-const let_: Parser<Let2> =
+const let_: Parser<Let> =
    withAction(
       dropFirst(keyword(strings.let_), seq(dropSecond(var_, symbol(strings.equals)), expr)),
-      ([x, e]: [Str, Expr]) => Expr.let2(ν(), x, e)
+      ([x, e]: [Str, Expr]) => Expr.let_(ν(), x, e)
    )
 
-const letrec_: Parser<LetRec2> =
+const prim: Parser<Prim> =
+withAction(
+   dropFirst(keyword(strings.primitive), var_),
+   (x: Str) => Expr.prim(ν(), x)
+)
+
+const letrec_: Parser<LetRec> =
    withAction(
       dropFirst(keyword(strings.letRec), recDefs1),
       (δ: List<RecDef>) => 
-         Expr.letRec2(ν(), δ)
+         Expr.letRec(ν(), δ)
    )
 
 export const defList: Parser<List<Def>> =
-   withAction(sepBy1(choice<Def>([let_, letrec_]), symbol(";")), List.fromArray)
+   withAction(sepBy1(choice<Def>([let_, prim, letrec_]), symbol(";")), List.fromArray)
 
 const defs1 : Parser<Defs> =
    withAction(

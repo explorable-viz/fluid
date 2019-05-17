@@ -1,11 +1,9 @@
 import { __nonNull } from "../../src/util/Core"
 import { successfulParse } from "../../src/util/parse/Core2"
 import { ann } from "../../src/util/Annotated2"
-import { Env } from "../../src/Env2"
 import { Expr } from "../../src/Expr2"
 import "../../src/Graphics2"
 import { Parse } from "../../src/Parse2"
-import { createPrelude } from "../../src/Primitive2"
 import { ν, setallα } from "../../src/Versioned2"
 
 export function initialise (): void {
@@ -32,8 +30,6 @@ export function parse (src: string): Expr {
                    successfulParse(Parse.expr, src)))
    return setallα(e, ann.top)
 }
-
-export let prelude: Env = createPrelude()
 
 // An asychronously loading test file; when loading completes text will be non-null.
 export class TestFile {

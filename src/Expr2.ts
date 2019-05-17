@@ -18,6 +18,7 @@ export namespace strings {
    export const let_: string = "let"
    export const letRec: string = "letrec"
    export const match: string = "match"
+   export const primitive: string = "primitive"
    export const parenL: string = "("
    export const parenR: string = ")"
    export const quotes: string = '"'
@@ -104,13 +105,21 @@ export namespace Expr {
       return at(k, Fun, σ)
    }
 
-   export class Let2 extends Def {
+   export class Let extends Def {
       x: Str = _
       e: Expr = _
    }
 
-   export function let2 (k: Id, x: Str, e: Expr): Let2 {
-      return at(k, Let2, x, e)
+   export function let_ (k: Id, x: Str, e: Expr): Let {
+      return at(k, Let, x, e)
+   }
+
+   export class Prim extends Def {
+      x: Str = _
+   }
+
+   export function prim (k: Id, x: Str): Prim {
+      return at(k, Prim, x)
    }
 
    export class RecDef extends Constrʹ<"RecDef"> {
@@ -122,12 +131,12 @@ export namespace Expr {
       return at(k, RecDef, x, σ)
    }
 
-   export class LetRec2 extends Def {
+   export class LetRec extends Def {
       δ: List<RecDef> = _
    }
 
-   export function letRec2 (k: Id, δ: List<RecDef>): LetRec2 {
-      return at(k, LetRec2, δ)
+   export function letRec (k: Id, δ: List<RecDef>): LetRec {
+      return at(k, LetRec, δ)
    }
 
    export class MatchAs extends Expr {
