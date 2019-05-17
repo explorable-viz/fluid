@@ -20,9 +20,9 @@ import Constr = Expr.Constr
 import Def = Expr.Def
 import Defs = Expr.Defs
 import Fun = Expr.Fun
-import Let = Expr.Let
+// import Let = Expr.Let
 import Let2 = Expr.Let2
-import LetRec = Expr.LetRec
+// import LetRec = Expr.LetRec
 import LetRec2 = Expr.LetRec2
 import MatchAs = Expr.MatchAs
 import RecDef = Expr.RecDef
@@ -215,6 +215,7 @@ const number_: Parser<ConstNum> =
 const parenthExpr: Parser<Expr> =
    parenthesise(expr)
 
+/*
 const let_: Parser<Let> =
    withAction(
       seq(
@@ -224,6 +225,7 @@ const let_: Parser<Let> =
       ([[x, e], eʹ]: [[Str, Expr], Expr]) =>
          Expr.let_(ν(), e, Trie.var_(x, eʹ))
    )
+*/
 
 const recDef: Parser<RecDef> =
    withAction(
@@ -235,6 +237,7 @@ const recDef: Parser<RecDef> =
 export const recDefs1 : Parser<List<RecDef>> =
    withAction(sepBy1(recDef, symbol(";")), (δ: RecDef[]) => List.fromArray(δ))
 
+/*
 const letrec: Parser<LetRec> =
    withAction(
       seq(
@@ -244,6 +247,7 @@ const letrec: Parser<LetRec> =
      ([δ, body]: [List<RecDef>, Expr]) => 
          Expr.letRec(ν(), δ, body)
    )
+*/
 
 const let2: Parser<Let2> =
    withAction(
@@ -260,7 +264,7 @@ const letrec2: Parser<LetRec2> =
 
 const defs1 : Parser<Defs> =
    withAction(
-      seq(repeat1(choice<Def>([let2, letrec2])), dropFirst(keyword(strings.in_), expr)),
+      seq(sepBy1(choice<Def>([let2, letrec2]), symbol(";")), dropFirst(keyword(strings.in_), expr)),
       ([defs, e]: [Def[], Expr]) => Expr.defs(ν(), List.fromArray(defs), e)
    )
 
@@ -421,7 +425,7 @@ const fun: Parser<Fun> =
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
    choice<Expr>([
-      variable, string_, number_, parenthExpr, pair, let_, letrec, defs1, list, constr, matchAs, fun
+      variable, string_, number_, parenthExpr, pair, defs1, list, constr, matchAs, fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.

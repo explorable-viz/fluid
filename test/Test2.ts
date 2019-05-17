@@ -15,7 +15,8 @@ describe("example", () => {
 			console.log(Eval.eval_(prelude, parse(load("arithmetic"))))
 		})
    })
-   
+
+/*
    describe("bar-chart", () => {
 		it("ok", () => {
 			console.log(Eval.eval_(prelude, parse(load("bar-chart"))))
@@ -99,4 +100,5 @@ describe("example", () => {
 			console.log(Eval.eval_(prelude, parse(load("zipW"))))
 		})
    })
+*/
 })
