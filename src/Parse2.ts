@@ -17,9 +17,13 @@ import BinaryApp = Expr.BinaryApp
 import ConstNum = Expr.ConstNum
 import ConstStr = Expr.ConstStr
 import Constr = Expr.Constr
+import Def = Expr.Def
+import Defs = Expr.Defs
 import Fun = Expr.Fun
 import Let = Expr.Let
+import Let2 = Expr.Let2
 import LetRec = Expr.LetRec
+import LetRec2 = Expr.LetRec2
 import MatchAs = Expr.MatchAs
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
@@ -241,6 +245,25 @@ const letrec: Parser<LetRec> =
          Expr.letRec(ν(), δ, body)
    )
 
+const let2: Parser<Let2> =
+   withAction(
+      dropFirst(keyword(strings.let_), seq(dropSecond(var_, symbol(strings.equals)), expr)),
+      ([x, e]: [Str, Expr]) => Expr.let2(ν(), x, e)
+   )
+
+const letrec2: Parser<LetRec2> =
+   withAction(
+      dropFirst(keyword(strings.letRec), recDefs1),
+      (δ: List<RecDef>) => 
+         Expr.letRec2(ν(), δ)
+   )
+
+const defs1 : Parser<Defs> =
+   withAction(
+      seq(repeat1(choice<Def>([let2, letrec2])), dropFirst(keyword(strings.in_), expr)),
+      ([defs, e]: [Def[], Expr]) => Expr.defs(ν(), List.fromArray(defs), e)
+   )
+
 // Enforce consistency with constructor signatures.
 const constr: Parser<Constr> =
    withAction(
@@ -398,7 +421,7 @@ const fun: Parser<Fun> =
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
    choice<Expr>([
-      variable, string_, number_, parenthExpr, pair, let_, letrec, list, constr, matchAs, fun
+      variable, string_, number_, parenthExpr, pair, let_, letrec, defs1, list, constr, matchAs, fun
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.
