@@ -58,10 +58,11 @@ export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
    if (Cons.is(defs)) {
       const def: Expr.Def = defs.head
       if (def instanceof Expr.Let2) {
-         return ρ.concat(Env.singleton(def.x, eval_(ρ, def.e)))
+         return defsEnv(extendEnv(ρ, def.x, eval_(ρ, def.e)), defs.tail)
       } else
       if (def instanceof Expr.LetRec2) {
-         return ρ.concat(closeDefs(def.δ, ρ, def.δ))
+         // TODO: concat feels expensive here...
+         return defsEnv(ρ.concat(closeDefs(def.δ, ρ, def.δ)), defs.tail)
       } else {
          return absurd()
       }

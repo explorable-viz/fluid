@@ -6,6 +6,7 @@ import { Id, Str, Value, _, make } from "./Value2"
 import { copyα } from "./Versioned2"
 
 import Args = Expr.Args
+import Def = Expr.Def
 import Kont = Expr.Kont
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
@@ -14,10 +15,10 @@ import Trie = Expr.Trie
 // here it is more convenient to use an isomorphic nested format.
 export class ExprId extends Id {
    j: List<Value> = _
-   e: Expr | RecDef = _
+   e: Expr | RecDef | Def = _
 }
 
-export function exprId (j: List<Value>, e: Expr | RecDef): ExprId {
+export function exprId (j: List<Value>, e: Expr | RecDef | Def): ExprId {
    return make(ExprId, j, e)
 }
 
@@ -40,6 +41,9 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    if (e instanceof Expr.Var) {
       return copyα(e, Expr.var_(j, e.x))
    } else
+   if (e instanceof Expr.Defs) {
+      return copyα(e, Expr.defs(j, e.defs.map(def => instantiateDef(ρ, def)), instantiate(ρ, e.e)))
+   } else
    if (e instanceof Expr.Let) {
       return copyα(e, Expr.let_(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
    } else
@@ -58,6 +62,22 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    } else
    if (e instanceof Expr.BinaryApp) {
       return copyα(e, Expr.binaryApp(j, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2)))
+   } else {
+      return absurd()
+   }
+}
+
+function instantiateDef (ρ: Env, def: Def): Def {
+   const j: ExprId = exprId(ρ.entries(), def)
+   if (def instanceof Expr.Let2) {
+      return copyα(def, Expr.let2(j, def.x, instantiate(ρ, def.e)))
+   } else 
+   if (def instanceof Expr.LetRec2) {
+      const δ: List<RecDef> = def.δ.map((def: RecDef) => {
+         const i: ExprId = exprId(ρ.entries(), def)
+         return copyα(def, Expr.recDef(i, def.x, instantiateTrie(ρ, def.σ)))
+      })
+      return copyα(def, Expr.letRec2(j, δ))
    } else {
       return absurd()
    }

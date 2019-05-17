@@ -27,12 +27,9 @@ export function prependModule (src: string, e: Expr): Expr.LetRec {
 }
 
 export function parse (src: string): Expr {
-/*
    const e: Expr = prependModule(loadLib("prelude"), 
                    prependModule(loadLib("graphics"), 
                    successfulParse(Parse.expr, src)))
-*/
-   const e: Expr = successfulParse(Parse.expr, src)
    return setallα(e, ann.top)
 }
 
