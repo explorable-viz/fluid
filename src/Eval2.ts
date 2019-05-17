@@ -67,7 +67,7 @@ export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
                   v: UnaryOp = copyAt(kᵥ, unaryOps.get(def.x.val)!)
             return defsEnv(extendEnv(ρ, def.x, copyα(def, v)), defs.tail)
          } else {
-            return error(`Primitive "${def.x}" not found.`)
+            return error(`Primitive "${def.x.val}" not found.`)
          }
       } else
       if (def instanceof Expr.LetRec) {

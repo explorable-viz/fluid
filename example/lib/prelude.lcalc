@@ -1,3 +1,7 @@
+primitive ceiling;
+primitive error;
+primitive intToString;
+
 // (b → c) → (a → b) → a → c
 // Would like infix operators. 
 let compose = fun f g x → 
