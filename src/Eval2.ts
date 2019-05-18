@@ -133,7 +133,8 @@ export function eval_ (ρ: Env, e: Expr): Value {
       }
    } else
    if (e instanceof Expr.Defs) {
-      const v: Value = eval_(defsEnv(ρ, e.defs), e.e)
+      const ρʹ: Env = defsEnv(ρ, e.defs),
+            v: Value = eval_(ρʹ, instantiate(ρʹ, e.e))
       return setExpl(Expl.defs(kₜ), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
