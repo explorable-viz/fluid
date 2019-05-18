@@ -1,7 +1,7 @@
 import { Annotation } from "./util/Annotated2"
-import { Class, __nonNull, absurd, assert, className, classOf, notYetImplemented } from "./util/Core"
+import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
 import { Expl } from "./ExplValue2"
-import { Id, Num, Persistent, State, Str, Value, _, construct, fields, make } from "./Value2"
+import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
 
 type Expl = Expl.Expl
 
@@ -10,7 +10,6 @@ type Expl = Expl.Expl
 // can be interned in some contexts and versioned in others.
 export interface VersionedValue<Tag extends string, T extends Value<Tag>> extends Value<Tag> {
    __id: Id
-   __lastModified: World
    __α?: Annotation        // for some (meta)values this may remain undefined, e.g. tries
    __expl?: Expl           // previously we couldn't put explanations inside values; see GitHub issue #128.
 }
@@ -42,27 +41,26 @@ export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>
    let vʹ: T
    if (v === undefined) {
       vʹ = new C
-      // This may massively suck, performance-wise. Could move to VersionedObject now we have ubiquitous constructors.
+      // Not sure of performance implications, or whether enumerability of __id matters much.
       Object.defineProperty(vʹ, "__id", {
          value: k,
          enumerable: false
       })
       __versioned.set(k, vʹ)
-      construct(vʹ, v̅)
+      return construct(vʹ, v̅)
    } else
    if (v instanceof C) {
-      vʹ = construct(v, v̅)
+      return construct(v, v̅)
    } else {
-      vʹ = reclassify(v, C)
+      return reclassify(v, C)
    }
-   return commit(vʹ)
 }
 
 export function copyAt<Tag extends string, T extends Value<Tag>> (k: Id, v: T): T {
    return at(k, classOf(v), ...v.fieldValues())
 }
 
-// A memo key which is sourced externally to the system. (The name "External" exists in the global namespace.)
+// A memo key which is sourced externally to the system. (The name "External" is already taken.)
 export class Extern extends Id {
    id: number = _
 }
@@ -80,27 +78,6 @@ export const ν: () => Extern =
       }
    })()
 
-// Call-by-need implementation required LVar-style increasing semantics, but now require equality.
-function assertEqualState (tgt: Value, src: Value): void {
-   assert(tgt.constructor === src.constructor)
-   assert(fields(tgt).length === fields(src).length)
-   const src_: State = src as any as State,
-         tgt_: State = tgt as any as State
-   fields(tgt).forEach((k: string): void => {
-      assert(tgt_[k] === src_[k], `Incompatible values for field "${k}"`, tgt, src)
-   })
-}
-   
-function commit<Tag extends string, T extends Value<Tag>> (v: T): T {
-   const vʹ: VersionedValue<Tag, T> = asVersioned(v)
-   if (vʹ.__lastModified === __w) {
-      assertEqualState(v, v) // TODO: compare with previous state :)
-   } else {
-      vʹ.__lastModified = __w
-   }
-   return v
-}
-      
 export function numʹ (k: Id, val: number): Num {
    return at(k, Num, val)
 }
@@ -109,41 +86,12 @@ export function strʹ (k: Id, val: string): Str {
    return at(k, Str, val)
 }
 
-export class World {
-   static revisions: number = 0
-
-   revision: number
-
-   constructor () {
-      this.revision = World.revisions
-   }
-
-   static newRevision (): void {
-      console.log(`At revision ${World.revisions++}`)
-      __w = new World
-   }
-}
-
-export let __w: World = new World
-
 export function getα<Tag extends string, T extends Value<Tag>> (v: T): Annotation {
    return __nonNull(asVersioned(v).__α)
 }
 
-// TODO: integrate the single-assignment checks below with commit.
 export function setα<Tag extends string, T extends Value<Tag>> (α: Annotation, v: T): T {
-   const vʹ: VersionedValue<Tag, T> = asVersioned(v)
-   if (vʹ.__α === undefined) {
-      vʹ.__lastModified = __w
-      vʹ.__α = α
-   } else {
-      if (vʹ.__lastModified === __w) {
-         assert(vʹ.__α === α, "Incompatible values for field __α")
-      } else {
-         vʹ.__lastModified = __w
-         vʹ.__α = α
-      }
-   }
+   asVersioned(v).__α = α
    return v
 }
 
@@ -163,18 +111,11 @@ export function setallα<Tag extends string, T extends Value<Tag>> (v: T, α: An
    return v
 }
 
+export function getExpl<Tag extends string, T extends Value<Tag>> (v: T): Expl {
+   return __nonNull(asVersioned(v).__expl)
+}
+
 export function setExpl<Tag extends string, T extends Value<Tag>> (t: Expl, v: T): T {
-   const vʹ: VersionedValue<Tag, T> = asVersioned(v)
-   if (vʹ.__expl === undefined) {
-      vʹ.__lastModified = __w
-      vʹ.__expl = t
-   } else {
-      if (vʹ.__lastModified === __w) {
-         assert(vʹ.__expl === t, "Incompatible values for field __expl")
-      } else {
-         vʹ.__lastModified = __w
-         vʹ.__expl = t
-      }
-   }
+   asVersioned(v).__expl = t
    return v
 }

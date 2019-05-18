@@ -10,7 +10,7 @@ import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Value, _, make } from "./Value2"
-import { at, copyAt, copyα, getα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
+import { at, copyAt, copyα, getα, getExpl, numʹ, setα, setExpl, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
@@ -114,7 +114,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
          const [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(f.σ).__apply(u),
                ρᶠ: Env = closeDefs(f.δ, f.ρ, f.δ).concat(ρʹ),
                v: Value = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return setExpl(Expl.app(kₜ, f, u), setα(ann.meet(getα(f), α, getα(v), getα(e)), copyAt(kᵥ, v)))
+         return setExpl(Expl.app(kₜ, f, u, getExpl(v)), setα(ann.meet(getα(f), α, getα(v), getα(e)), copyAt(kᵥ, v)))
       } else 
       if (f instanceof UnaryOp) {
          return setExpl(Expl.unaryApp(kₜ, f, u), setα(ann.meet(getα(f), getα(u), getα(e)), f.op(u)(kᵥ)))
@@ -146,7 +146,5 @@ export function eval_ (ρ: Env, e: Expr): Value {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
 }
-
-
 
 }

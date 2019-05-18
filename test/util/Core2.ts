@@ -6,7 +6,7 @@ import { Eval } from "../../src/Eval2"
 import { Expr } from "../../src/Expr2"
 import "../../src/Graphics2"
 import { Parse } from "../../src/Parse2"
-import { World, ν, setallα } from "../../src/Versioned2"
+import { ν, setallα } from "../../src/Versioned2"
 import { Cursor } from "./Cursor2"
 
 export class FwdSlice {
@@ -17,13 +17,11 @@ export class FwdSlice {
    constructor (e: Expr) {
       setallα(e, ann.top)
       this.expr = new Cursor(e)
-      World.newRevision()
       this.setup()
       this.val = new Cursor(Eval.eval_(emptyEnv(), e))
-      console.log(this.expr.v)
+      console.log(e)
       console.log(this.val.v)
       this.expect()
-      World.newRevision()
    }
 
    setup (): void {      
@@ -57,7 +55,6 @@ export class TestFile {
    }
 }
 
-// Maybe there's a way to use ES6 promises instead.
 export function loadTestFile (folder: string, file: string): string {
    let testFile: TestFile = new TestFile
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest
