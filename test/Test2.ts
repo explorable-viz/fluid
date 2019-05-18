@@ -90,7 +90,30 @@ describe("example", () => {
    describe("length", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("length"))
-         new FwdSlice(e)
+			// erasing the elements doesn't affect the count:
+			let test = new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.skipImports()
+						.to(Expr.App, "arg")
+						.push().constrArg("Cons", 0).notNeed().pop()
+						.push().constrArg("Cons", 0).notNeed().pop()
+				}
+				expect (): void {
+					this.val.needed()
+				}
+			})(e)
+			// deleting the tail of the tail means length can't be computed:
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.goto(test.e)
+						.constrArg("Cons", 1).notNeed()
+				}
+				expect (): void {
+					this.val.notNeeded()
+				}
+			})(e)
 		})
 	})
 

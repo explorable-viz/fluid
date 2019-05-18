@@ -131,7 +131,7 @@ export function setα<Tag extends string, T extends Value<Tag>> (α: Annotation,
       vʹ.__α = α
    } else {
       if (vʹ.__lastModified === __w) {
-         assert(vʹ.__α === α)
+         assert(vʹ.__α === α, "Incompatible values for field __α")
       } else {
          vʹ.__lastModified = __w
          vʹ.__α = α
@@ -162,7 +162,7 @@ export function setExpl<Tag extends string, T extends Value<Tag>> (t: Expl, v: T
       vʹ.__expl = t
    } else {
       if (vʹ.__lastModified === __w) {
-         assert(vʹ.__expl === t)
+         assert(vʹ.__expl === t, "Incompatible values for field __expl")
       } else {
          vʹ.__lastModified = __w
          vʹ.__expl = t
