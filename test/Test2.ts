@@ -1,15 +1,13 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { FwdSlice, load, parse } from "./util/Core2"
-import { emptyEnv } from "../src/Env2"
-import { Eval } from "../src/Eval2"
 import { Expr } from "../src/Expr2"
 
 before((done: MochaDone) => {
 	done()
 })
 
-// putting test name in a variable interacts poorly with asynchronous execution
+// Putting test name in a variable interacts poorly with asynchronous execution.
 describe("example", () => {
 	describe("arithmetic", () => {
 		it("ok", () => {
@@ -29,85 +27,99 @@ describe("example", () => {
 
    describe("bar-chart", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("bar-chart"))))
+			const e: Expr = parse(load("bar-chart"))
+			new FwdSlice(e)
 		})
    })
 
    describe("compose", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("compose"))))
+			const e: Expr = parse(load("compose"))
+			new FwdSlice(e)
 		})
 	})
 
    describe("factorial", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("factorial"))))
+         const e: Expr = parse(load("factorial"))
+         new FwdSlice(e)
 		})
 	})
 
    describe("filter", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("filter"))))
+			const e: Expr = parse(load("filter"))
+         new FwdSlice(e)
 		})
 	})
 
    describe("foldr_sumSquares", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("foldr_sumSquares"))))
+			const e: Expr = parse(load("foldr_sumSquares"))
+         new FwdSlice(e)
 		})
 	})
 
    describe("length", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("length"))))
+			const e: Expr = parse(load("length"))
+         new FwdSlice(e)
 		})
 	})
 
 	describe("lexicalScoping", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("lexicalScoping"))))
+			const e: Expr = parse(load("lexicalScoping"))
+         new FwdSlice(e)
 		})
 	})
 
    describe("lookup", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("lookup"))))
+			const e: Expr = parse(load("lookup"))
+         new FwdSlice(e)
 		})
 	})
 
    describe("map", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("map"))))
+			const e: Expr = parse(load("map"))
+         new FwdSlice(e)
 		})
 	})
 
    describe("mergeSort", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("mergeSort"))))
+			const e: Expr = parse(load("mergeSort"))
+         new FwdSlice(e)
 		})
 	})
 
 	describe("normalise", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("normalise"))))
+			const e: Expr = parse(load("normalise"))
+         new FwdSlice(e)
 		})
    })
 
 	describe("pattern-match", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("pattern-match"))))
+			const e: Expr = parse(load("pattern-match"))
+         new FwdSlice(e)
 		})
    })
 
 	describe("reverse", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("reverse"))))
+			const e: Expr = parse(load("reverse"))
+         new FwdSlice(e)
 		})
    })
 
 	describe("zipW", () => {
 		it("ok", () => {
-			console.log(Eval.eval_(emptyEnv(), parse(load("zipW"))))
+			const e: Expr = parse(load("zipW"))
+         new FwdSlice(e)
 		})
    })
 })

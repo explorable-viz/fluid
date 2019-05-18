@@ -37,13 +37,6 @@ export class FwdSlice {
    }
 }
 
-
-export enum Profile {
-   Parse,
-   Run,
-   Visualise
-}
-
 // Kindergarten modules: load another file as though it were a defs block, with body e.
 export function prependModule (src: string, e: Expr): Expr.Defs {
    return Expr.defs(ν(), successfulParse(Parse.defList, src), e)
