@@ -1,4 +1,4 @@
-import { ann } from "./util/Annotated2"
+import { Annotation, ann } from "./util/Annotated2"
 import { __nonNull, absurd, className, error } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
@@ -10,7 +10,7 @@ import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Value, _, make } from "./Value2"
-import { at, copyAt, copyα, getα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
+import { at, copyAt, copyα, getα, getExpl, numʹ, setα, setExpl, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
@@ -61,13 +61,13 @@ export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
          return defsEnv(extendEnv(ρ, def.x, eval_(ρ, def.e)), defs.tail)
       } else
       if (def instanceof Expr.Prim) {
-         // all first-class primitives are unary, although it would be easy to make binary ops first-class too now
+         // first-class primitives currenly happen to be unary
          if (unaryOps.has(def.x.val)) {
             const kᵥ: ValId = evalId(def, "v"),
                   v: UnaryOp = copyAt(kᵥ, unaryOps.get(def.x.val)!)
             return defsEnv(extendEnv(ρ, def.x, copyα(def, v)), defs.tail)
          } else {
-            return error(`Primitive "${def.x.val}" not found.`)
+            return error(`No implementation found for primitive "${def.x.val}".`)
          }
       } else
       if (def instanceof Expr.LetRec) {
@@ -111,10 +111,10 @@ export function eval_ (ρ: Env, e: Expr): Value {
       const f: Value = eval_(ρ, e.func),
             u: Value = eval_(ρ, e.arg)
       if (f instanceof Closure) {
-         const [ρʹ, eʹ]: [Env, Expr] = evalTrie(f.σ).__apply(u),
+         const [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(f.σ).__apply(u),
                ρᶠ: Env = closeDefs(f.δ, f.ρ, f.δ).concat(ρʹ),
                v: Value = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return setExpl(Expl.app(kₜ, f, u), setα(ann.meet(getα(f), getα(v), getα(e)), copyAt(kᵥ, v)))
+         return setExpl(Expl.app(kₜ, f, u, getExpl(v)), setα(ann.meet(getα(f), α, getα(v), getα(e)), copyAt(kᵥ, v)))
       } else 
       if (f instanceof UnaryOp) {
          return setExpl(Expl.unaryApp(kₜ, f, u), setα(ann.meet(getα(f), getα(u), getα(e)), f.op(u)(kᵥ)))
@@ -133,19 +133,18 @@ export function eval_ (ρ: Env, e: Expr): Value {
       }
    } else
    if (e instanceof Expr.Defs) {
-      const v: Value = eval_(defsEnv(ρ, e.defs), e.e)
-      return setExpl(Expl.defs(kₜ), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
+      const ρʹ: Env = defsEnv(ρ, e.defs),
+            v: Value = eval_(ρʹ, instantiate(ρʹ, e.e))
+      return setExpl(Expl.defs(kₜ, getExpl(v)), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Value = eval_(ρ, e.e),
-            [ρʹ, eʹ]: [Env, Expr] = evalTrie(e.σ).__apply(u),
+            [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(e.σ).__apply(u),
             v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return setExpl(Expl.matchAs(kₜ, u), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
+      return setExpl(Expl.matchAs(kₜ, u, getExpl(v)), setα(ann.meet(α, getα(v), getα(e)), copyAt(kᵥ, v)))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
 }
-
-
 
 }

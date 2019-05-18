@@ -1,3 +1,4 @@
+import { Annotation, ann } from "./util/Annotated2"
 import { Class, __nonNull, absurd, assert } from "./util/Core"
 import { Pair } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
@@ -50,8 +51,8 @@ function evalArgs<K extends Kont<K>> (Π: Args<K>): ArgsFunc<K> {
 class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
-   __apply (v: Value): [Env, K] {
-      return [Env.singleton(this.σ.x, v), this.σ.κ]
+   __apply (v: Value): [Env, K, Annotation] {
+      return [Env.singleton(this.σ.x, v), this.σ.κ, ann.top]
    }
 }
 
@@ -62,9 +63,9 @@ function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
 class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
    Π: Args.End<K> = _
    
-   __apply (v̅: Value[]): [Env, K] {
+   __apply (v̅: Value[]): [Env, K, Annotation] {
       if (v̅.length === 0) {
-         return [emptyEnv(), this.Π.κ]
+         return [emptyEnv(), this.Π.κ, ann.top]
       } else {
          return absurd("Too many arguments to constructor.")
       }
@@ -78,13 +79,14 @@ function endFunc<K extends Kont<K>> (Π: Args.End<K>): EndFunc<K> {
 class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
    Π: Args.Next<K> = _
 
-   __apply (v̅: Value[]): [Env, K] {
+   __apply (v̅: Value[]): [Env, K, Annotation] {
       if (v̅.length === 0) {
          return absurd("Too few arguments to constructor.")
       } else {
-         const [ρ, Π]: [Env, Args<K>] = evalTrie(this.Π.σ).__apply(v̅[0]),
-               [ρʹ, κ]: [Env, K] = evalArgs(Π).__apply(v̅.slice(1))
-         return [ρ.concat(ρʹ), κ]
+         const [v, ...v̅ʹ] = v̅,
+               [ρ, Π, α]: [Env, Args<K>, Annotation] = evalTrie(this.Π.σ).__apply(v),
+               [ρʹ, κ, αʹ]: [Env, K, Annotation] = evalArgs(Π).__apply(v̅ʹ)
+         return [ρ.concat(ρʹ), κ, ann.meet(α, αʹ)]
       }
    }
 }
