@@ -135,13 +135,13 @@ export function eval_ (ρ: Env, e: Expr): Value {
    if (e instanceof Expr.Defs) {
       const ρʹ: Env = defsEnv(ρ, e.defs),
             v: Value = eval_(ρʹ, instantiate(ρʹ, e.e))
-      return setExpl(Expl.defs(kₜ), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
+      return setExpl(Expl.defs(kₜ, getExpl(v)), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Value = eval_(ρ, e.e),
             [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(e.σ).__apply(u),
             v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return setExpl(Expl.matchAs(kₜ, u), setα(ann.meet(α, getα(v), getα(e)), copyAt(kᵥ, v)))
+      return setExpl(Expl.matchAs(kₜ, u, getExpl(v)), setα(ann.meet(α, getα(v), getα(e)), copyAt(kᵥ, v)))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }

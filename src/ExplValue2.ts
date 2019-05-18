@@ -30,10 +30,11 @@ export namespace Expl {
 
    export class Defs extends Expl {
       // TODO: record evaluated defs
+      t: Expl = _
    }
 
-   export function defs (k: ExplId): Defs {
-      return at(k, Defs)
+   export function defs (k: ExplId, t: Expl): Defs {
+      return at(k, Defs, t)
    }
 
    export class Empty extends Expl {
@@ -63,11 +64,11 @@ export namespace Expl {
 
    export class MatchAs extends Expl {
       u: Value = _
-      // TODO: record match
+      t: Expl = _    // TODO: record match
    }
 
-   export function matchAs (k: ExplId, u: Value): MatchAs {
-      return at(k, MatchAs, u)
+   export function matchAs (k: ExplId, u: Value, t: Expl): MatchAs {
+      return at(k, MatchAs, u, t)
    }
 
    export class BinaryApp extends Expl {
