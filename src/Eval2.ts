@@ -61,13 +61,13 @@ export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
          return defsEnv(extendEnv(ρ, def.x, eval_(ρ, def.e)), defs.tail)
       } else
       if (def instanceof Expr.Prim) {
-         // all first-class primitives happen to be unary
+         // first-class primitives currenly happen to be unary
          if (unaryOps.has(def.x.val)) {
             const kᵥ: ValId = evalId(def, "v"),
                   v: UnaryOp = copyAt(kᵥ, unaryOps.get(def.x.val)!)
             return defsEnv(extendEnv(ρ, def.x, copyα(def, v)), defs.tail)
          } else {
-            return error(`Primitive "${def.x.val}" not found.`)
+            return error(`No implementation found for primitive "${def.x.val}".`)
          }
       } else
       if (def instanceof Expr.LetRec) {

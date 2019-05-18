@@ -231,10 +231,10 @@ const let_: Parser<Let> =
    )
 
 const prim: Parser<Prim> =
-withAction(
-   dropFirst(keyword(strings.primitive), var_),
-   (x: Str) => Expr.prim(ν(), x)
-)
+   withAction(
+      dropFirst(keyword(strings.primitive), var_),
+      (x: Str) => Expr.prim(ν(), x)
+   )
 
 const letrec_: Parser<LetRec> =
    withAction(

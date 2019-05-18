@@ -112,6 +112,12 @@ export function strʹ (k: Id, val: string): Str {
 export class World {
    static revisions: number = 0
 
+   revision: number
+
+   constructor () {
+      this.revision = World.revisions
+   }
+
    static newRevision (): void {
       console.log(`At revision ${World.revisions++}`)
       __w = new World
@@ -128,6 +134,7 @@ export function getα<Tag extends string, T extends Value<Tag>> (v: T): Annotati
 export function setα<Tag extends string, T extends Value<Tag>> (α: Annotation, v: T): T {
    const vʹ: VersionedValue<Tag, T> = asVersioned(v)
    if (vʹ.__α === undefined) {
+      vʹ.__lastModified = __w
       vʹ.__α = α
    } else {
       if (vʹ.__lastModified === __w) {
@@ -159,6 +166,7 @@ export function setallα<Tag extends string, T extends Value<Tag>> (v: T, α: An
 export function setExpl<Tag extends string, T extends Value<Tag>> (t: Expl, v: T): T {
    const vʹ: VersionedValue<Tag, T> = asVersioned(v)
    if (vʹ.__expl === undefined) {
+      vʹ.__lastModified = __w
       vʹ.__expl = t
    } else {
       if (vʹ.__lastModified === __w) {
