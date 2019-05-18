@@ -55,7 +55,7 @@ describe("example", () => {
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
-						.toRecDef("filter")
+						.toDef("filter")
 						.to(Expr.RecDef, "σ")
 						.var_("p")
 						.to(Expr.Fun, "σ")

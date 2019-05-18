@@ -1,11 +1,16 @@
 import { ann } from "../../src/util/Annotated2"
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { Persistent, Value } from "../../src/Value2"
-import { Cons, NonEmpty, Pair } from "../../src/BaseTypes2"
+import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes2"
 import { Expr } from "../../src/Expr2"
 import { getα, setα } from "../../src/Versioned2"
 
 import Args = Expr.Args
+import Def = Expr.Def
+import Let = Expr.Let
+import LetRec = Expr.LetRec
+import Prim = Expr.Prim
+import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
 export class Cursor {
@@ -38,17 +43,30 @@ export class Cursor {
       return this
    }
 
-   toRecDef (fun: string): Cursor {
-      this.to(Expr.LetRec, "δ")
-      while (true) {
-         this.push().toElem(0)
-         if (as(this.v, Expr.RecDef).x.val === fun) {
-            break
+   static defs (defs: List<Def>): Map<string, Let | Prim | RecDef> {
+      const defsʹ: Map<string, Let | Prim | RecDef> = new Map
+      for (; Cons.is(defs); defs = defs.tail) {
+         const def: Def = defs.head
+         if (def instanceof Let || def instanceof Prim) {
+            defsʹ.set(def.x.val, def)
+         } else
+         if (def instanceof LetRec) {
+            for (let recDefs: List<RecDef> = def.δ; Cons.is(recDefs); recDefs = recDefs.tail) {
+               const recDef: RecDef = recDefs.head
+               defsʹ.set(recDef.x.val, recDef)
+            }
          } else {
-            this.pop().to(Cons, "tail")
+            absurd()
          }
       }
-      return this.pop().toElem(0) // clear stack
+      return defsʹ
+   }
+
+   toDef (x: string): Cursor {
+      this.to(Expr.Defs, "defs")
+      const defs: Map<string, Let | Prim | RecDef> = Cursor.defs(this.v as List<Def>)
+      assert(defs.has(x))
+      return this.goto(defs.get(x)!)
    }
 
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor {
