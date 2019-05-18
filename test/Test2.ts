@@ -159,7 +159,20 @@ describe("example", () => {
    describe("map", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("map"))
-         new FwdSlice(e)
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.skipImports()
+						.to(Expr.Defs, "e")
+					 	.to(Expr.App, "arg")
+						.constrArg("Cons", 0).notNeed()
+				  }
+				expect (): void {
+					this.val
+						.push().to(Cons, "head").notNeeded().pop()
+						.to(Cons, "tail").needed()
+				}
+			})(e)
 		})
 	})
 
