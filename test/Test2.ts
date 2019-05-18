@@ -200,7 +200,22 @@ describe("example", () => {
 	describe("reverse", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("reverse"))
-         new FwdSlice(e)
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.skipImports()
+ 						.to(Expr.App, "arg")
+ 						.constrArg("Cons", 1)
+ 						.constrArg("Cons", 1).notNeed()
+				}
+				expect (): void {
+					this.val
+						.notNeeded()
+						.push().to(Cons, "head").needed()
+						.pop()
+						.to(Cons, "tail").needed()
+				}
+			})(e)
 		})
    })
 
