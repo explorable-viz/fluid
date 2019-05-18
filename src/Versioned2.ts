@@ -6,8 +6,8 @@ import { Id, Num, Persistent, State, Str, Value, _, construct, fields, make } fr
 type Expl = Expl.Expl
 
 // Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
-// for interned objects to have explanations (or does it?) or annotations.
-// Interface because the same datatype can be interned in some contexts and versioned in others.
+// for interned objects to have explanations (or does it?) or annotations. An interface because the same datatype
+// can be interned in some contexts and versioned in others.
 export interface VersionedValue<Tag extends string, T extends Value<Tag>> extends Value<Tag> {
    __id: Id
    __lastModified: World
@@ -55,8 +55,7 @@ export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>
    } else {
       vʹ = reclassify(v, C)
    }
-   commit(vʹ)
-   return vʹ
+   return commit(vʹ)
 }
 
 export function copyAt<Tag extends string, T extends Value<Tag>> (k: Id, v: T): T {
@@ -81,7 +80,7 @@ export const ν: () => Extern =
       }
    })()
 
-// Call-by-need implementation required LVar-style increasing semantics.
+// Call-by-need implementation required LVar-style increasing semantics, but now require equality.
 function assertEqualState (tgt: Value, src: Value): void {
    assert(tgt.constructor === src.constructor)
    assert(fields(tgt).length === fields(src).length)
@@ -92,13 +91,14 @@ function assertEqualState (tgt: Value, src: Value): void {
    })
 }
    
-function commit<Tag extends string, T extends Value<Tag>> (v: T): void {
+function commit<Tag extends string, T extends Value<Tag>> (v: T): T {
    const vʹ: VersionedValue<Tag, T> = asVersioned(v)
    if (vʹ.__lastModified === __w) {
-      assertEqualState(v, v)
+      assertEqualState(v, v) // TODO: compare with previous state :)
    } else {
       vʹ.__lastModified = __w
    }
+   return v
 }
       
 export function numʹ (k: Id, val: number): Num {
@@ -112,13 +112,13 @@ export function strʹ (k: Id, val: string): Str {
 export class World {
    static revisions: number = 0
 
-   static newRevision (): World {
+   static newRevision (): void {
       console.log(`At revision ${World.revisions++}`)
-      return __w = new World
+      __w = new World
    }
 }
 
-export let __w: World
+export let __w: World = new World
 
 export function getα<Tag extends string, T extends Value<Tag>> (v: T): Annotation {
    return __nonNull(asVersioned(v).__α)
@@ -132,6 +132,9 @@ export function setα<Tag extends string, T extends Value<Tag>> (α: Annotation,
    } else {
       if (vʹ.__lastModified === __w) {
          assert(vʹ.__α === α)
+      } else {
+         vʹ.__lastModified = __w
+         vʹ.__α = α
       }
    }
    return v
@@ -158,7 +161,12 @@ export function setExpl<Tag extends string, T extends Value<Tag>> (t: Expl, v: T
    if (vʹ.__expl === undefined) {
       vʹ.__expl = t
    } else {
-      assert(vʹ.__expl === t)
+      if (vʹ.__lastModified === __w) {
+         assert(vʹ.__expl === t)
+      } else {
+         vʹ.__lastModified = __w
+         vʹ.__expl = t
+      }
    }
    return v
 }

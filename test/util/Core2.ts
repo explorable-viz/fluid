@@ -13,15 +13,17 @@ export class FwdSlice {
    expr: Cursor
    val: Cursor
 
+   // Invariant: at a fresh revision.
    constructor (e: Expr) {
-      World.newRevision()
       setallα(e, ann.top)
       this.expr = new Cursor(e)
+      World.newRevision()
       this.setup()
       this.val = new Cursor(Eval.eval_(emptyEnv(), e))
       console.log(this.expr.v)
       console.log(this.val.v)
       this.expect()
+      World.newRevision()
    }
 
    setup (): void {      
@@ -48,10 +50,9 @@ export function prependModule (src: string, e: Expr): Expr.Defs {
 }
 
 export function parse (src: string): Expr {
-   const e: Expr = prependModule(loadLib("prelude"), 
-                   prependModule(loadLib("graphics"), 
-                   successfulParse(Parse.expr, src)))
-   return setallα(e, ann.top)
+   return prependModule(loadLib("prelude"), 
+          prependModule(loadLib("graphics"), 
+          successfulParse(Parse.expr, src)))
 }
 
 // An asychronously loading test file; when loading completes text will be non-null.
