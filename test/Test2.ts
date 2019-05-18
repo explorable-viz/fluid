@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { FwdSlice, load, parse } from "./util/Core2"
-import { List, Nil, NonEmpty } from "../src/BaseTypes2"
+import { Cons, List, Nil, NonEmpty } from "../src/BaseTypes2"
 import { Expr } from "../src/Expr2"
 
 import Trie = Expr.Trie
@@ -72,8 +72,8 @@ describe("example", () => {
 				expect (): void {
 					this.val
 						.need()
-						.push().val_constrArg("Cons", 0).value().notNeeded().pop()
-						.val_constrArg("Cons", 1).value()
+						.push().to(Cons, "head").notNeeded().pop()
+						.to(Cons, "tail")
 						.assert(List, v => Nil.is(v))
 				}
 			})(e)
