@@ -127,7 +127,32 @@ describe("example", () => {
    describe("lookup", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("lookup"))
-         new FwdSlice(e)
+			const last = new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.skipImports()
+						.to(Expr.Defs, "e")
+						.to(Expr.App, "arg")
+						.push()
+							.constrArg("NonEmpty", 0)
+							.constrArg("NonEmpty", 1)
+							.constrArg("Pair", 0).notNeed().pop()
+				}
+				expect (): void {
+					this.val.needed()
+				}
+			})(e)
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.goto(last.e)
+						.constrArg("NonEmpty", 1)
+						.constrArg("Pair", 0).notNeed()
+				}
+				expect (): void {
+					this.val.notNeeded()
+				}
+			})(e)
 		})
 	})
 
