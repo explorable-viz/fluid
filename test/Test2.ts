@@ -1,7 +1,10 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { FwdSlice, load, parse } from "./util/Core2"
+import { List, Nil, NonEmpty } from "../src/BaseTypes2"
 import { Expr } from "../src/Expr2"
+
+import Trie = Expr.Trie
 
 before((done: MochaDone) => {
 	done()
@@ -49,7 +52,31 @@ describe("example", () => {
    describe("filter", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("filter"))
-         new FwdSlice(e)
+			new (class extends FwdSlice {
+				setup (): void {
+					this.expr
+						.toRecDef("filter")
+						.to(Expr.RecDef, "σ")
+						.var_("p")
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.to(NonEmpty, "left")
+						.nodeValue()
+						.arg_var("x").arg_var("xs")
+						.end()
+						.to(Expr.MatchAs, "σ")
+						.to(Trie.Constr, "cases")
+						.nodeValue().end()
+						.constrArg("Cons", 0).notNeed()
+				}
+				expect (): void {
+					this.val
+						.need()
+						.push().val_constrArg("Cons", 0).value().notNeeded().pop()
+						.val_constrArg("Cons", 1).value()
+						.assert(List, v => Nil.is(v))
+				}
+			})(e)
 		})
 	})
 
