@@ -11,12 +11,14 @@ type Expl = Expl.Expl
 // For idiom and usage see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
 // https://github.com/Microsoft/TypeScript/issues/21710.
 export function VersionedC<T extends Class<Value>> (C: T) {
-   class VersionedC extends C  {
-      __id: Id
-      __α: Annotation
-      __expl: Expl // previously we couldn't put explanations inside values; see GitHub issue #128.
-   }
-   return VersionedC
+   // https://stackoverflow.com/questions/33605775
+   return {
+      [C.name]: class extends C {
+            __id: Id
+            __α: Annotation
+            __expl: Expl // previously we couldn't put explanations inside values; see GitHub issue #128.
+         }
+   }[C.name] // give versioned class same name as C
 }
 
 // Not sure how to avoid duplicating the definitions here.
