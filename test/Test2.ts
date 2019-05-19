@@ -211,8 +211,7 @@ describe("example", () => {
 				expect (): void {
 					this.val
 						.notNeeded()
-						.push().to(Cons, "head").needed()
-						.pop()
+						.push().to(Cons, "head").needed().pop()
 						.to(Cons, "tail").needed()
 				}
 			})(e)

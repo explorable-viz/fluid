@@ -1,10 +1,10 @@
 import { absurd, error } from "./util/Core"
 import { eq } from "./util/Ord"
 import { List } from "./BaseTypes2"
-import { Constr as Constrʹ, ctrToDataType } from "./DataType2"
+import { DataValue, ctrToDataType } from "./DataType2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
 import { Id, Num, Str, _, make } from "./Value2"
-import { at } from "./Versioned2"
+import { VersionedC, at } from "./Versioned2"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -29,10 +29,10 @@ export type Kont<K> = Expr.Kont<K>
 
 export namespace Expr {
    // It would be nice if (non-argument) tries only had argument tries as their continuations and vice-
-   // versa, but that doesn't quite work because a Constr<K> has an underlying map to Args<K>.
+   // versa, but that doesn't quite work because a DataValue<K> has an underlying map to Args<K>.
    type KontTag = "Expr" | "Trie" | "Args"
 
-   export abstract class Kont<K, Tag extends KontTag = KontTag> extends Constrʹ<Tag> {
+   export class Kont<K, Tag extends KontTag = KontTag> extends DataValue<Tag> {
    }
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
@@ -48,9 +48,9 @@ export namespace Expr {
       }
    }
 
-   export abstract class Expr extends Kont<Expr, "Expr"> {
+   export abstract class Expr extends VersionedC(Kont)<Expr, "Expr"> {
    }
-
+   
    export class App extends Expr {
       func: Expr = _
       arg: Expr = _
@@ -85,7 +85,7 @@ export namespace Expr {
       return at(k, Constr, ctr, args)
    }
 
-   export abstract class Def extends Constrʹ<"Def"> {
+   export abstract class Def extends VersionedC(DataValue)<"Def"> {
    }
 
    export class Defs extends Expr {
@@ -122,7 +122,7 @@ export namespace Expr {
       return at(k, Prim, x)
    }
 
-   export class RecDef extends Constrʹ<"RecDef"> {
+   export class RecDef extends VersionedC(DataValue)<"RecDef"> {
       x: Str = _
       σ: Trie<Expr> = _
    }

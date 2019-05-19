@@ -3,7 +3,7 @@ import { List, Pair, pair } from "./BaseTypes2"
 import { Env } from "./Env2"
 import { Expr } from "./Expr2"
 import { Id, Str, Value, _, make } from "./Value2"
-import { copyα } from "./Versioned2"
+import { setα } from "./Versioned2"
 
 import Args = Expr.Args
 import Def = Expr.Def
@@ -27,31 +27,31 @@ export function exprId (j: List<Value>, e: Expr | RecDef | Def): ExprId {
 export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    const j: ExprId = exprId(ρ.entries(), e)
    if (e instanceof Expr.ConstNum) {
-      return copyα(e, Expr.constNum(j, e.val))
+      return setα(e.__α, Expr.constNum(j, e.val))
    } else
    if (e instanceof Expr.ConstStr) {
-      return copyα(e, Expr.constStr(j, e.val))
+      return setα(e.__α, Expr.constStr(j, e.val))
    } else
    if (e instanceof Expr.Constr) {
-      return copyα(e, Expr.constr(j, e.ctr, e.args.map(e => instantiate(ρ, e))))
+      return setα(e.__α, Expr.constr(j, e.ctr, e.args.map(e => instantiate(ρ, e))))
    } else
    if (e instanceof Expr.Fun) {
-      return copyα(e, Expr.fun(j, instantiateTrie(ρ, e.σ)))
+      return setα(e.__α, Expr.fun(j, instantiateTrie(ρ, e.σ)))
    } else
    if (e instanceof Expr.Var) {
-      return copyα(e, Expr.var_(j, e.x))
+      return setα(e.__α, Expr.var_(j, e.x))
    } else
    if (e instanceof Expr.Defs) {
-      return copyα(e, Expr.defs(j, e.defs.map(def => instantiateDef(ρ, def)), instantiate(ρ, e.e)))
+      return setα(e.__α, Expr.defs(j, e.defs.map(def => instantiateDef(ρ, def)), instantiate(ρ, e.e)))
    } else
    if (e instanceof Expr.MatchAs) {
-      return copyα(e, Expr.matchAs(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
+      return setα(e.__α, Expr.matchAs(j, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
    } else
    if (e instanceof Expr.App) {
-      return copyα(e, Expr.app(j, instantiate(ρ, e.func), instantiate(ρ, e.arg)))
+      return setα(e.__α, Expr.app(j, instantiate(ρ, e.func), instantiate(ρ, e.arg)))
    } else
    if (e instanceof Expr.BinaryApp) {
-      return copyα(e, Expr.binaryApp(j, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2)))
+      return setα(e.__α, Expr.binaryApp(j, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2)))
    } else {
       return absurd()
    }
@@ -60,14 +60,14 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
 function instantiateDef (ρ: Env, def: Def): Def {
    const j: ExprId = exprId(ρ.entries(), def)
    if (def instanceof Expr.Let) {
-      return copyα(def, Expr.let_(j, def.x, instantiate(ρ, def.e)))
+      return setα(def.__α, Expr.let_(j, def.x, instantiate(ρ, def.e)))
    } else 
    if (def instanceof Expr.LetRec) {
       const δ: List<RecDef> = def.δ.map((def: RecDef) => {
          const i: ExprId = exprId(ρ.entries(), def)
-         return copyα(def, Expr.recDef(i, def.x, instantiateTrie(ρ, def.σ)))
+         return setα(def.__α, Expr.recDef(i, def.x, instantiateTrie(ρ, def.σ)))
       })
-      return copyα(def, Expr.letRec(j, δ))
+      return setα(def.__α, Expr.letRec(j, δ))
    } else {
       return absurd()
    }

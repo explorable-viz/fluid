@@ -4,7 +4,7 @@ import { Class, __check, assert } from "./util/Core"
 export const _: any = undefined 
 
 // Value in the metalanguage. Nominal idiom breaks down here in requiring use of "any".
-export abstract class Value<Tag extends string = any> {
+export class Value<Tag extends string = any> {
    readonly __tag: Tag
 
    fieldValues (): Persistent[] {

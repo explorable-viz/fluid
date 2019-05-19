@@ -1,16 +1,16 @@
 import { Annotation, ann } from "./util/Annotated2"
-import { __nonNull, absurd, className, error } from "./util/Core"
+import { __nonNull, absurd, className, error, notYetImplemented } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
-import { Constr } from "./DataType2"
+import { DataValue } from "./DataType2"
 import { Expl } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Value, _, make } from "./Value2"
-import { at, copyAt, copyα, getα, getExpl, numʹ, setα, setExpl, strʹ } from "./Versioned2"
+import { Versioned, VersionedC, at, copyAt, getExpl, numʹ, setα, setExpl, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
@@ -30,7 +30,7 @@ export type ExplId = EvalId<"t">
 
 export module Eval {
 
-export class Closure extends Constr<"Closure"> {
+export class Closure extends VersionedC(DataValue)<"Closure"> {
    ρ: Env = _                 // ρ not closing for σ; need to extend with the bindings in δ
    δ: List<Expr.RecDef> = _
    σ: Trie<Expr> = _
@@ -45,7 +45,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    if (Cons.is(δ)) {
       const def: Expr.RecDef = δ.head,
             kᵥ: ValId = evalId(def, "v")
-      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, copyα(def, closure(kᵥ, ρ, δ_0, def.σ)))
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, setα(def.__α, closure(kᵥ, ρ, δ_0, def.σ)))
    } else
    if (Nil.is(δ)) {
       return emptyEnv()
@@ -64,8 +64,8 @@ export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
          // first-class primitives currenly happen to be unary
          if (unaryOps.has(def.x.val)) {
             const kᵥ: ValId = evalId(def, "v"),
-                  v: UnaryOp = copyAt(kᵥ, unaryOps.get(def.x.val)!)
-            return defsEnv(extendEnv(ρ, def.x, copyα(def, v)), defs.tail)
+                  v: Versioned<UnaryOp> = copyAt(kᵥ, unaryOps.get(def.x.val)!)
+            return defsEnv(extendEnv(ρ, def.x, setα(def.__α, v)), defs.tail)
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
@@ -83,41 +83,41 @@ export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
    }
 }
 
-export function eval_ (ρ: Env, e: Expr): Value {
+export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    const kₜ: ExplId = evalId(e, "t"),
          kᵥ: ValId = evalId(e, "v")
    if (e instanceof Expr.ConstNum) {
-      return setExpl(Expl.empty(kₜ), copyα(e, numʹ(kᵥ, e.val.val)))
+      return setExpl(Expl.empty(kₜ), setα(e.__α, numʹ(kᵥ, e.val.val)))
    } else
    if (e instanceof Expr.ConstStr) {
-      return setExpl(Expl.empty(kₜ), copyα(e, strʹ(kᵥ, e.val.val)))
+      return setExpl(Expl.empty(kₜ), setα(e.__α, strʹ(kᵥ, e.val.val)))
    } else
    if (e instanceof Expr.Fun) {
-      return setExpl(Expl.empty(kₜ), copyα(e, closure(kᵥ, ρ, nil(), e.σ)))
+      return setExpl(Expl.empty(kₜ), setα(e.__α, closure(kᵥ, ρ, nil(), e.σ)))
    } else
    if (e instanceof Expr.Constr) {
       let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
-      return setExpl(Expl.empty(kₜ), copyα(e, at(kᵥ, ctrFor(e.ctr).C, ...v̅)))
+      return setExpl(Expl.empty(kₜ), setα(e.__α, at(kᵥ, ctrFor(e.ctr).C, ...v̅)))
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
-         const v: Value = ρ.get(e.x)!
-         return setExpl(Expl.var_(kₜ, e.x), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
+         const v: Versioned<Value> = ρ.get(e.x)!
+         return setExpl(Expl.var_(kₜ, e.x), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
       } else {
          return error(`Variable "${e.x.val}" not found.`)
       }
    } else
    if (e instanceof Expr.App) {
-      const f: Value = eval_(ρ, e.func),
-            u: Value = eval_(ρ, e.arg)
+      const f: Versioned<Value> = eval_(ρ, e.func),
+            u: Versioned<Value> = eval_(ρ, e.arg)
       if (f instanceof Closure) {
          const [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(f.σ).__apply(u),
                ρᶠ: Env = closeDefs(f.δ, f.ρ, f.δ).concat(ρʹ),
-               v: Value = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return setExpl(Expl.app(kₜ, f, u, getExpl(v)), setα(ann.meet(getα(f), α, getα(v), getα(e)), copyAt(kᵥ, v)))
+               v: Versioned<Value> = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
+         return setExpl(Expl.app(kₜ, f, u, getExpl(v)), setα(ann.meet(f.__α, α, v.__α, e.__α), copyAt(kᵥ, v)))
       } else 
       if (f instanceof UnaryOp) {
-         return setExpl(Expl.unaryApp(kₜ, f, u), setα(ann.meet(getα(f), getα(u), getα(e)), f.op(u)(kᵥ)))
+         return setExpl(Expl.unaryApp(kₜ, f, u), setα(ann.meet(f.__α, u.__α, e.__α), f.op(u)(kᵥ)))
       } else {
          return error(`Cannot apply ${className(f)}`)
       }
@@ -126,25 +126,30 @@ export function eval_ (ρ: Env, e: Expr): Value {
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.val)) {
          const op: BinaryOp = binaryOps.get(e.opName.val)!, // opName lacks annotations
-               [v1, v2]: [Value, Value] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
-         return setExpl(Expl.binaryApp(kₜ, v1, e.opName, v2), setα(ann.meet(getα(v1), getα(v2), getα(e)), op.op(v1, v2)(kᵥ)))
+               [v1, v2]: [Versioned<Value>, Versioned<Value>] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
+         return setExpl(Expl.binaryApp(kₜ, v1, e.opName, v2), setα(ann.meet(v1.__α, v2.__α, e.__α), op.op(v1, v2)(kᵥ)))
       } else {
          return error(`Binary primitive "${e.opName.val}" not found.`)
       }
    } else
    if (e instanceof Expr.Defs) {
       const ρʹ: Env = defsEnv(ρ, e.defs),
-            v: Value = eval_(ρʹ, instantiate(ρʹ, e.e))
-      return setExpl(Expl.defs(kₜ, getExpl(v)), setα(ann.meet(getα(v), getα(e)), copyAt(kᵥ, v)))
+            v: Versioned<Value> = eval_(ρʹ, instantiate(ρʹ, e.e))
+      return setExpl(Expl.defs(kₜ, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
-      const u: Value = eval_(ρ, e.e),
+      const u: Versioned<Value> = eval_(ρ, e.e),
             [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(e.σ).__apply(u),
-            v: Value = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return setExpl(Expl.matchAs(kₜ, u, getExpl(v)), setα(ann.meet(α, getα(v), getα(e)), copyAt(kᵥ, v)))
+            v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
+      return setExpl(Expl.matchAs(kₜ, u, getExpl(v)), setα(ann.meet(α, v.__α, e.__α), copyAt(kᵥ, v)))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
+}
+
+// Avoid excessive joins via a merging implementation; assumes no annotations on expression or intermediate values.
+export function uneval (v: Value): Expr {
+   return notYetImplemented()
 }
 
 }
