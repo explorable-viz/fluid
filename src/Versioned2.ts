@@ -19,7 +19,7 @@ export interface VersionedValue<Tag extends string, T extends Value<Tag>> extend
 export function Versioned<T extends Class<Value>> (C : T) {
    class VersionedC extends C {
       __id: Id
-      __α: Annotation        
+      __α: Annotation
       __expl: Expl
    }
    return VersionedC

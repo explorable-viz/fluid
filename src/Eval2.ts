@@ -10,7 +10,7 @@ import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Value, _, make } from "./Value2"
-import { at, copyAt, copyα, getα, getExpl, numʹ, setα, setExpl, strʹ } from "./Versioned2"
+import { at, copyAt, getα, getExpl, numʹ, setα, setExpl, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
@@ -45,7 +45,7 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    if (Cons.is(δ)) {
       const def: Expr.RecDef = δ.head,
             kᵥ: ValId = evalId(def, "v")
-      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, copyα(def, closure(kᵥ, ρ, δ_0, def.σ)))
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, setα(def.__α, closure(kᵥ, ρ, δ_0, def.σ)))
    } else
    if (Nil.is(δ)) {
       return emptyEnv()
@@ -65,7 +65,7 @@ export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
          if (unaryOps.has(def.x.val)) {
             const kᵥ: ValId = evalId(def, "v"),
                   v: UnaryOp = copyAt(kᵥ, unaryOps.get(def.x.val)!)
-            return defsEnv(extendEnv(ρ, def.x, copyα(def, v)), defs.tail)
+            return defsEnv(extendEnv(ρ, def.x, setα(def.__α, v)), defs.tail)
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
@@ -87,17 +87,17 @@ export function eval_ (ρ: Env, e: Expr): Value {
    const kₜ: ExplId = evalId(e, "t"),
          kᵥ: ValId = evalId(e, "v")
    if (e instanceof Expr.ConstNum) {
-      return setExpl(Expl.empty(kₜ), copyα(e, numʹ(kᵥ, e.val.val)))
+      return setExpl(Expl.empty(kₜ), setα(e.__α, numʹ(kᵥ, e.val.val)))
    } else
    if (e instanceof Expr.ConstStr) {
-      return setExpl(Expl.empty(kₜ), copyα(e, strʹ(kᵥ, e.val.val)))
+      return setExpl(Expl.empty(kₜ), setα(e.__α, strʹ(kᵥ, e.val.val)))
    } else
    if (e instanceof Expr.Fun) {
-      return setExpl(Expl.empty(kₜ), copyα(e, closure(kᵥ, ρ, nil(), e.σ)))
+      return setExpl(Expl.empty(kₜ), setα(e.__α, closure(kᵥ, ρ, nil(), e.σ)))
    } else
    if (e instanceof Expr.Constr) {
       let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
-      return setExpl(Expl.empty(kₜ), copyα(e, at(kᵥ, ctrFor(e.ctr).C, ...v̅)))
+      return setExpl(Expl.empty(kₜ), setα(e.__α, at(kᵥ, ctrFor(e.ctr).C, ...v̅)))
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 

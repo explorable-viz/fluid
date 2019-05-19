@@ -7,7 +7,7 @@ export type DataValueTag =
    "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
 
 // Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
-export abstract class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
+export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
    fieldValues (): Value[] {
       return fields(this).map(k => (this as any as State)[k] as Value)
    }

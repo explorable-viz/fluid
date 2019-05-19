@@ -85,7 +85,7 @@ export namespace Expr {
       return at(k, Constr, ctr, args)
    }
 
-   export abstract class Def extends DataValue<"Def"> {
+   export abstract class Def extends Versioned(DataValue)<"Def"> {
    }
 
    export class Defs extends Expr {
@@ -122,7 +122,7 @@ export namespace Expr {
       return at(k, Prim, x)
    }
 
-   export class RecDef extends DataValue<"RecDef"> {
+   export class RecDef extends Versioned(DataValue)<"RecDef"> {
       x: Str = _
       σ: Trie<Expr> = _
    }
