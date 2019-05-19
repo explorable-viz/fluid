@@ -2,13 +2,14 @@ import { absurd } from "./util/Core"
 import { List, cons, nil } from "./BaseTypes2"
 import { DataValue } from "./DataType2"
 import { Str, Value, _, make } from "./Value2"
+import { Versioned } from "./Versioned2"
 
 // Idiom is to permit instance methods on reflected datatypes, but not have them use polymorphism.
 
 // Environments are snoc lists.
 export abstract class Env extends DataValue<"Env"> {
    // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
-   entries (): List<Value> {
+   entries (): List<Versioned<Value>> {
       if (this instanceof EmptyEnv) {
          return nil()
       } else
@@ -19,7 +20,7 @@ export abstract class Env extends DataValue<"Env"> {
       }
    }
 
-   get (k: Str): Value | undefined {
+   get (k: Str): Versioned<Value> | undefined {
       if (this instanceof EmptyEnv) {
          return undefined
       } else
@@ -38,7 +39,7 @@ export abstract class Env extends DataValue<"Env"> {
       return this.get(k) !== undefined
    }
 
-   static singleton (k: Str, v: Value): Env {
+   static singleton (k: Str, v: Versioned<Value>): Env {
       return extendEnv(emptyEnv(), k, v)
    }
    
@@ -64,9 +65,9 @@ export function emptyEnv (): EmptyEnv {
 export class ExtendEnv extends Env {
    ρ: Env = _
    k: Str = _
-   v: Value = _
+   v: Versioned<Value> = _
 }
 
-export function extendEnv (ρ: Env, k: Str, v: Value): ExtendEnv {
+export function extendEnv (ρ: Env, k: Str, v: Versioned<Value>): ExtendEnv {
    return make(ExtendEnv, ρ, k, v)
 }

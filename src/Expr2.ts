@@ -4,7 +4,7 @@ import { List } from "./BaseTypes2"
 import { DataValue, ctrToDataType } from "./DataType2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
 import { Id, Num, Str, _, make } from "./Value2"
-import { Versioned, at } from "./Versioned2"
+import { VersionedC, at } from "./Versioned2"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -48,7 +48,7 @@ export namespace Expr {
       }
    }
 
-   export abstract class Expr extends Versioned(Kont)<Expr, "Expr"> {
+   export abstract class Expr extends VersionedC(Kont)<Expr, "Expr"> {
    }
    
    export class App extends Expr {
@@ -85,7 +85,7 @@ export namespace Expr {
       return at(k, Constr, ctr, args)
    }
 
-   export abstract class Def extends Versioned(DataValue)<"Def"> {
+   export abstract class Def extends VersionedC(DataValue)<"Def"> {
    }
 
    export class Defs extends Expr {
@@ -122,7 +122,7 @@ export namespace Expr {
       return at(k, Prim, x)
    }
 
-   export class RecDef extends Versioned(DataValue)<"RecDef"> {
+   export class RecDef extends VersionedC(DataValue)<"RecDef"> {
       x: Str = _
       σ: Trie<Expr> = _
    }

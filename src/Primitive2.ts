@@ -1,10 +1,10 @@
 import { as, assert } from "./util/Core"
 import { Bool, trueʹ, falseʹ } from "./BaseTypes2"
 import { Id, Num, PrimValue, Str, _, Value, make } from "./Value2"
-import { ν, at, numʹ, strʹ } from "./Versioned2"
+import { Versioned, ν, at, numʹ, strʹ } from "./Versioned2"
 
-type Unary<T, V> = (x: T) => (k: Id) => V
-type Binary<T, U, V> = (x: T, y: U) => (k: Id) => V
+type Unary<T, V> = (x: T) => (k: Id) => Versioned<V>
+type Binary<T, U, V> = (x: T, y: U) => (k: Id) => Versioned<V>
 
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
@@ -29,6 +29,24 @@ export class BinaryOp extends PrimOp<"BinaryOp"> {
 function binary (name: string, op: Binary<PrimValue, PrimValue, Value>): BinaryOp {
    return make(BinaryOp, name, op)
 }
+
+const ceiling = (x: Num) => (k: Id): Versioned<Num> => numʹ(k, Math.ceil(x.val))
+// Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
+const error = (message: Str) => (k: Id): Versioned<Value> => assert(false, "LambdaCalc error:\n" + message.val)
+const intToString = (x: Num) => (k: Id): Versioned<Str> => strʹ(k, x.val.toString())
+// No longer support overloaded functions, since the pattern-matching semantics is non-trivial; might require typecase.
+const equalInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val === as(y, Num).val ? trueʹ : falseʹ
+const equalStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).val === as(y, Str).val ? trueʹ : falseʹ
+const greaterInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val > as(y, Num).val ? trueʹ : falseʹ
+const greaterStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).val > as(y, Str).val ? trueʹ : falseʹ
+const lessInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val < as(y, Num).val ? trueʹ : falseʹ
+const lessStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).val < as(y, Str).val ? trueʹ : falseʹ
+const minus = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val - as(y, Num).val)
+const plus = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val + as(y, Num).val)
+const times = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val * as(y, Num).val)
+// If we want integer division, apparently ~~(x / y) will round in the right direction.
+const div = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val / as(y, Num).val)
+const concat = (x: Str, y: Str) => (k: Id): Versioned<Str> => strʹ(k, as(x, Str).val + as(y, Str).val)
 
 // Convenience methods for building the maps.
 function unary_<T extends PrimValue, V extends PrimValue> (op: Unary<T, V>): UnaryOp {
@@ -59,62 +77,3 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
    ["<<", binary_(lessStr)],
    ["++", binary_(concat)]
 ])
-
-export function ceiling (x: Num): (k: Id) => Num {
-   return (k: Id) => numʹ(k, Math.ceil(x.val))
-}
-
-// Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
-export function error (message: Str): (k: Id) => Value {
-   return (k: Id) => assert(false, "LambdaCalc error:\n" + message.val)
-}
-
-export function intToString (x: Num): (k: Id) => Str {
-   return (k: Id) => strʹ(k, x.val.toString())
-}
-
-// No longer support overloaded functions, since the pattern-matching semantics is non-trivial; might require typecase.
-export function equalInt (x: Num, y: Num): (k: Id) => Bool {
-   return as(x, Num).val === as(y, Num).val ? trueʹ : falseʹ
-}
-
-export function equalStr (x: Str, y: Str): (k: Id) => Bool {
-   return as(x, Str).val === as(y, Str).val ? trueʹ : falseʹ
-}
-
-export function greaterInt (x: Num, y: Num): (k: Id) => Bool {
-   return as(x, Num).val > as(y, Num).val ? trueʹ : falseʹ
-}
-
-export function greaterStr (x: Str, y: Str): (k: Id) => Bool {
-   return as(x, Str).val > as(y, Str).val ? trueʹ : falseʹ
-}
-
-export function lessInt (x: Num, y: Num): (k: Id) => Bool {
-   return as(x, Num).val < as(y, Num).val ? trueʹ : falseʹ
-}
-
-export function lessStr (x: Str, y: Str): (k: Id) => Bool {
-   return as(x, Str).val < as(y, Str).val ? trueʹ : falseʹ
-}
-
-export function minus (x: Num, y: Num): (k: Id) => Num {
-   return (k: Id) => numʹ(k, as(x, Num).val - as(y, Num).val)
-}
-
-export function plus (x: Num, y: Num): (k: Id) => Num {
-   return (k: Id) => numʹ(k, as(x, Num).val + as(y, Num).val)
-}
-
-export function times (x: Num, y: Num): (k: Id) => Num {
-   return (k: Id) => numʹ(k, as(x, Num).val * as(y, Num).val)
-}
-
-// If we want integer division, apparently ~~(x / y) will round in the right direction.
-export function div (x: Num, y: Num): (k: Id) => Num {
-   return (k: Id) => numʹ(k, as(x, Num).val / as(y, Num).val)
-}
-
-export function concat (x: Str, y: Str): (k: Id) => Str {
-   return (k: Id) => strʹ(k, as(x, Str).val + as(y, Str).val)
-}

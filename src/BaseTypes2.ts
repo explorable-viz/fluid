@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
 import { DataValue, initDataType } from "./DataType2"
 import { Id, Persistent, _, make } from "./Value2"
-import { at } from "./Versioned2"
+import { Versioned, at } from "./Versioned2"
 
 // See Env for convention regarding instance members on reflected datatypes.
 
@@ -15,7 +15,7 @@ export function true_ (): Bool {
    return make(True)
 }
 
-export function trueʹ (k: Id): Bool {
+export function trueʹ (k: Id): Versioned<Bool> {
    return at(k, True)
 }
 
@@ -26,7 +26,7 @@ export function false_ (): Bool {
    return make(False)
 }
 
-export function falseʹ (k: Id): Bool {
+export function falseʹ (k: Id): Versioned<Bool> {
    return at(k, False)
 }
 

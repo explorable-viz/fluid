@@ -1,5 +1,5 @@
 import { Annotation } from "./util/Annotated2"
-import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
+import { Class, __nonNull, classOf, notYetImplemented } from "./util/Core"
 import { Expl } from "./ExplValue2"
 import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
 
@@ -8,35 +8,28 @@ type Expl = Expl.Expl
 // Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
 // for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
 // can be interned in some contexts and versioned in others.
-export interface VersionedValue extends Value {
-   __id: Id
-   __α: Annotation        
-   __expl: Expl     // previously we couldn't put explanations inside values; see GitHub issue #128.
-}
-
 // For idiom and usage see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
 // https://github.com/Microsoft/TypeScript/issues/21710.
-export function Versioned<T extends Class<Value>> (C: T) {
-   class VersionedC extends C {
+export function VersionedC<T extends Class<Value>> (C: T) {
+   class VersionedC extends C  {
       __id: Id
       __α: Annotation
-      __expl: Expl
+      __expl: Expl // previously we couldn't put explanations inside values; see GitHub issue #128.
    }
    return VersionedC
 }
 
-export type Versioned<Tag extends string, T extends Value<Tag>> = VersionedValue & Value<Tag>
-
-export function versioned<Tag extends string, T extends Value<Tag>> (v: Value<Tag>): v is VersionedValue {
-   return (__nonNull(v) as any).__id !== undefined
+// Not sure how to avoid duplicating the definitions here.
+export interface Versioned_ {
+   __id: Id
+   __α: Annotation
+   __expl: Expl
 }
 
-export function asVersioned<Tag extends string, T extends Value<Tag>> (v: T): Versioned<Tag, T> {
-   if (versioned(v)) {
-      return v
-   } else {
-      return absurd(`Not a versioned value: ${className(v)}`)
-   }
+export type Versioned<T> = Versioned_ & T
+
+export function versioned<Tag extends string, T extends Value<Tag>> (v: Value<Tag>): v is Versioned<Value> {
+   return (__nonNull(v) as any).__id !== undefined
 }
 
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
@@ -45,15 +38,14 @@ function reclassify<Tag extends string, T extends Value<Tag>> (v: Value, ctr: Cl
 }
 
 // For versioned objects the map is not curried but takes an (interned) composite key.
-type VersionedValues = Map<Id, Value>
+type VersionedValues = Map<Id, Versioned<Value>>
 const __versioned: VersionedValues = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): T {
-   let v: Value | undefined = __versioned.get(k)
-   let vʹ: T
+export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
+   let v: Versioned<Value> | undefined = __versioned.get(k)
    if (v === undefined) {
-      vʹ = new C
+      const vʹ: Versioned<T> = new C
       // Not sure of performance implications, or whether enumerability of __id matters much.
       Object.defineProperty(vʹ, "__id", {
          value: k,
@@ -69,7 +61,7 @@ export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>
    }
 }
 
-export function copyAt<Tag extends string, T extends Value<Tag>> (k: Id, v: T): T {
+export function copyAt<Tag extends string, T extends Value<Tag>> (k: Id, v: T): Versioned<T> {
    return at(k, classOf(v), ...v.fieldValues())
 }
 
@@ -91,20 +83,16 @@ export const ν: () => Extern =
       }
    })()
 
-export function numʹ (k: Id, val: number): Num {
+export function numʹ (k: Id, val: number): Versioned<Num> {
    return at(k, Num, val)
 }
 
-export function strʹ (k: Id, val: string): Str {
+export function strʹ (k: Id, val: string): Versioned<Str> {
    return at(k, Str, val)
 }
 
-export function getα<Tag extends string, T extends Value<Tag>> (v: T): Annotation {
-   return __nonNull(asVersioned(v).__α)
-}
-
-export function setα<Tag extends string, T extends Value<Tag>> (α: Annotation, v: T): T {
-   asVersioned(v).__α = α
+export function setα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
+   v.__α = α
    return v
 }
 
@@ -120,11 +108,11 @@ export function setallα<Tag extends string, T extends Value<Tag>> (v: T, α: An
    return v
 }
 
-export function getExpl<Tag extends string, T extends Value<Tag>> (v: T): Expl {
-   return __nonNull(asVersioned(v).__expl)
+export function getExpl<T, U extends Versioned<T>> (v: U): Expl {
+   return __nonNull(v.__expl)
 }
 
-export function setExpl<Tag extends string, T extends Value<Tag>> (t: Expl, v: T): T {
-   asVersioned(v).__expl = t
+export function setExpl<T, U extends Versioned<T>> (t: Expl, v: U): U {
+   v.__expl = t
    return v
 }
