@@ -8,7 +8,7 @@ type Expl = Expl.Expl
 // Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
 // for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
 // can be interned in some contexts and versioned in others.
-export interface VersionedValue<Tag extends string, T extends Value<Tag>> extends Value<Tag> {
+export interface VersionedValue extends Value {
    __id: Id
    __α: Annotation        
    __expl: Expl     // previously we couldn't put explanations inside values; see GitHub issue #128.
@@ -16,7 +16,7 @@ export interface VersionedValue<Tag extends string, T extends Value<Tag>> extend
 
 // For idiom and usage see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
 // https://github.com/Microsoft/TypeScript/issues/21710.
-export function Versioned<T extends Class<Value>> (C : T) {
+export function Versioned<T extends Class<Value>> (C: T) {
    class VersionedC extends C {
       __id: Id
       __α: Annotation
@@ -25,9 +25,9 @@ export function Versioned<T extends Class<Value>> (C : T) {
    return VersionedC
 }
 
-export type Versioned<Tag extends string, T extends Value<Tag>> = VersionedValue<Tag, T> & Value<Tag>
+export type Versioned<Tag extends string, T extends Value<Tag>> = VersionedValue & Value<Tag>
 
-export function versioned<Tag extends string, T extends Value<Tag>> (v: Value<Tag>): v is VersionedValue<Tag, T> {
+export function versioned<Tag extends string, T extends Value<Tag>> (v: Value<Tag>): v is VersionedValue {
    return (__nonNull(v) as any).__id !== undefined
 }
 
@@ -106,10 +106,6 @@ export function getα<Tag extends string, T extends Value<Tag>> (v: T): Annotati
 export function setα<Tag extends string, T extends Value<Tag>> (α: Annotation, v: T): T {
    asVersioned(v).__α = α
    return v
-}
-
-export function copyα<TagU extends string, U extends Value<TagU>, TagT extends string, T extends Value<TagT>> (src: U, v: T): T {
-   return setα(getα(src), v)
 }
 
 export function setallα<Tag extends string, T extends Value<Tag>> (v: T, α: Annotation): T {
