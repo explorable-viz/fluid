@@ -147,7 +147,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    }
 }
 
-// Avoid excessive joins via a merging implementation; assumes no annotations on expression or intermediate values.
+// Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
 export function uneval (v: Value): Expr {
    return notYetImplemented()
 }
