@@ -1,5 +1,5 @@
 import { Annotation } from "./util/Annotated2"
-import { Class, __nonNull, classOf, notYetImplemented } from "./util/Core"
+import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
 import { Expl } from "./ExplValue2"
 import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
 
@@ -28,8 +28,16 @@ export interface Versioned_ {
 
 export type Versioned<T> = Versioned_ & T
 
-export function versioned<Tag extends string, T extends Value<Tag>> (v: Value<Tag>): v is Versioned<Value> {
-   return (__nonNull(v) as any).__id !== undefined
+export function versioned<T> (v: T): v is Versioned<T> {
+   return (v as any).__id !== undefined
+}
+
+export function asVersioned<T> (v: T): Versioned<T> {
+   if (versioned(v)) {
+      return v
+   } else {
+      return absurd(`Not a versioned value: ${className(v)}`)
+   }
 }
 
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
@@ -44,8 +52,9 @@ const __versioned: VersionedValues = new Map
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
 export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
    let v: Versioned<Value> | undefined = __versioned.get(k)
+   const Cʹ = VersionedC(C)
    if (v === undefined) {
-      const vʹ: Versioned<T> = new C
+      const vʹ: Versioned<T> = new Cʹ
       // Not sure of performance implications, or whether enumerability of __id matters much.
       Object.defineProperty(vʹ, "__id", {
          value: k,
@@ -54,10 +63,10 @@ export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>
       __versioned.set(k, vʹ)
       return construct(vʹ, v̅)
    } else
-   if (v instanceof C) {
-      return construct(v, v̅)
+   if (v instanceof C) { 
+      return construct(v, v̅) // hmm, TS thinks v is versioned here - why?
    } else {
-      return reclassify(v, C)
+      return reclassify(v, Cʹ)
    }
 }
 

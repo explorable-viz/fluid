@@ -138,7 +138,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
       return setExpl(Expl.defs(kₜ, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
-      const u: Value = eval_(ρ, e.e),
+      const u: Versioned<Value> = eval_(ρ, e.e),
             [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(e.σ).__apply(u),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
       return setExpl(Expl.matchAs(kₜ, u, getExpl(v)), setα(ann.meet(α, v.__α, e.__α), copyAt(kᵥ, v)))

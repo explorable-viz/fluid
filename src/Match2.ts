@@ -6,6 +6,7 @@ import { Env, emptyEnv } from "./Env2"
 import { ArgsFunc, DataFunc, Func } from "./Func2"
 import { Expr } from "./Expr2"
 import { Str, Value, _, make } from "./Value2"
+import { Versioned } from "./Versioned2"
 
 import Args = Expr.Args
 import Kont = Expr.Kont
@@ -51,7 +52,7 @@ function evalArgs<K extends Kont<K>> (Π: Args<K>): ArgsFunc<K> {
 class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
-   __apply (v: Value): [Env, K, Annotation] {
+   __apply (v: Versioned<Value>): [Env, K, Annotation] {
       return [Env.singleton(this.σ.x, v), this.σ.κ, ann.top]
    }
 }
@@ -63,7 +64,7 @@ function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
 class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
    Π: Args.End<K> = _
    
-   __apply (v̅: Value[]): [Env, K, Annotation] {
+   __apply (v̅: Versioned<Value>[]): [Env, K, Annotation] {
       if (v̅.length === 0) {
          return [emptyEnv(), this.Π.κ, ann.top]
       } else {
@@ -79,7 +80,7 @@ function endFunc<K extends Kont<K>> (Π: Args.End<K>): EndFunc<K> {
 class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
    Π: Args.Next<K> = _
 
-   __apply (v̅: Value[]): [Env, K, Annotation] {
+   __apply (v̅: Versioned<Value>[]): [Env, K, Annotation] {
       if (v̅.length === 0) {
          return absurd("Too few arguments to constructor.")
       } else {
