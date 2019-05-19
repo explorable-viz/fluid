@@ -49,13 +49,14 @@ export function arity (ctr: Str): number {
 
 // Populated by initDataTypes(). Constructors are not yet first-class. TODO: reinstate projections.
 export let ctrToDataType: Map<string, DataType> = new Map
+export const elimNameSuffix: string = "Func"
 
 export function initDataType<T extends DataValue> (D: AClass<T>, ctrC̅: Class<T>[]) {
    ctrC̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // probably consistent with string <
    const ctrs: [string, Ctr][] = ctrC̅.map(
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
-         elimC_name: string = D.name + "Func",
+         elimC_name: string = D.name + elimNameSuffix,
          elimC: Class<DataFunc<any>> = {
             // https://stackoverflow.com/questions/33605775
             [elimC_name]: class extends DataFunc<any> {
