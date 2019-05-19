@@ -147,4 +147,8 @@ export function eval_ (ρ: Env, e: Expr): Value {
    }
 }
 
+// Avoid excessive joins via a merging implementation; assumes no annotations on expression or intermediate values.
+export function uneval (v: Value): Expr {
+}
+
 }
