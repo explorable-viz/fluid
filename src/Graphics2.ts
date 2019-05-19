@@ -1,10 +1,10 @@
-import { Constr, initDataType } from "./DataType2"
+import { DataValue, initDataType } from "./DataType2"
 import { Num, _, make } from "./Value2"
 import { List } from "./BaseTypes2"
 
 // Basic graphical datatypes.
 
-export class Rect extends Constr<"Rect"> {
+export class Rect extends DataValue<"Rect"> {
    width: Num = _
    height: Num = _
 }
@@ -13,7 +13,7 @@ export function rect (width: Num, height: Num): Rect {
    return make(Rect, width, height)
 }
 
-export class Point extends Constr<"Point"> {
+export class Point extends DataValue<"Point"> {
    x: Num = _
    y: Num = _
 }
@@ -24,7 +24,7 @@ export function point (x: Num, y: Num): Point {
 
 export type GraphicsElementTag = "Graphic" | "PathStroke" | "RectFill" | "Transform"
 
-export abstract class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends Constr<Tag> {
+export abstract class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
 }
 
 export class Graphic extends GraphicsElement<"Graphic"> {
@@ -47,7 +47,7 @@ export class Transform extends GraphicsElement<"Transform"> {
 
 export type LinearTransformTag = "Scale" | "Translate" | "Transpose"
 
-export abstract class LinearTransform<Tag extends LinearTransformTag = LinearTransformTag> extends Constr<Tag> {
+export abstract class LinearTransform<Tag extends LinearTransformTag = LinearTransformTag> extends DataValue<Tag> {
 }
 
 export class Scale extends LinearTransform<"Scale"> {

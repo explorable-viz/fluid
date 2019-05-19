@@ -3,7 +3,7 @@ import { Class, __nonNull, absurd, assert } from "./util/Core"
 import { Pair } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
 import { Env, emptyEnv } from "./Env2"
-import { ArgsFunc, ConstrFunc, Func } from "./Func2"
+import { ArgsFunc, DataFunc, Func } from "./Func2"
 import { Expr } from "./Expr2"
 import { Str, Value, _, make } from "./Value2"
 
@@ -30,7 +30,7 @@ export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
          }
       }
       assert(n === cases.length)
-      return make(d.elimC as Class<ConstrFunc<K>>, ...f̅)
+      return make(d.elimC as Class<DataFunc<K>>, ...f̅)
    } else {
       return absurd()
    }

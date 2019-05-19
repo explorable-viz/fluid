@@ -1,6 +1,6 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { className, error } from "./util/Core"
-import { Constr } from "./DataType2"
+import { DataValue } from "./DataType2"
 import { Kont } from "./Expr2"
 import { Env } from "./Env2"
 import { Value, _ } from "./Value2"
@@ -12,9 +12,9 @@ export abstract class Func<K> extends Value<"Func"> {
 }
 
 // Concrete instances must have a field per constructor, in *lexicographical* order.
-export abstract class ConstrFunc<K extends Kont<K>> extends Func<K> {
+export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
    __apply (v: Value): [Env, K, Annotation] {
-      if (v instanceof Constr) {
+      if (v instanceof DataValue) {
          const [ρ, κ, α]: [Env, K, Annotation] = ((this as any)[className(v)] as ArgsFunc<K>).__apply(v.fieldValues())
          return [ρ, κ, ann.meet(getα(v), α)]
       } else {

@@ -6,19 +6,32 @@ import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
 type Expl = Expl.Expl
 
 // Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
-// for interned objects to have explanations (or does it?) or annotations. An interface because the same datatype
+// for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
 // can be interned in some contexts and versioned in others.
 export interface VersionedValue<Tag extends string, T extends Value<Tag>> extends Value<Tag> {
    __id: Id
-   __α?: Annotation        // for some (meta)values this may remain undefined, e.g. tries
-   __expl?: Expl           // previously we couldn't put explanations inside values; see GitHub issue #128.
+   __α: Annotation        
+   __expl: Expl     // previously we couldn't put explanations inside values; see GitHub issue #128.
 }
+
+// For idiom and usage see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
+// https://github.com/Microsoft/TypeScript/issues/21710.
+export function Versioned<T extends Class<Value>> (C : T) {
+   class VersionedC extends C {
+      __id: Id
+      __α: Annotation        
+      __expl: Expl
+   }
+   return VersionedC
+}
+
+export type Versioned<Tag extends string, T extends Value<Tag>> = VersionedValue<Tag, T> & Value<Tag>
 
 export function versioned<Tag extends string, T extends Value<Tag>> (v: Value<Tag>): v is VersionedValue<Tag, T> {
    return (__nonNull(v) as any).__id !== undefined
 }
 
-export function asVersioned<Tag extends string, T extends Value<Tag>> (v: T): VersionedValue<Tag, T> {
+export function asVersioned<Tag extends string, T extends Value<Tag>> (v: T): Versioned<Tag, T> {
    if (versioned(v)) {
       return v
    } else {

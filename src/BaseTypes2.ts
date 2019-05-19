@@ -1,11 +1,11 @@
 import { absurd } from "./util/Core"
-import { Constr, initDataType } from "./DataType2"
+import { DataValue, initDataType } from "./DataType2"
 import { Id, Persistent, _, make } from "./Value2"
 import { at } from "./Versioned2"
 
 // See Env for convention regarding instance members on reflected datatypes.
 
-export abstract class Bool extends Constr<"Bool"> {
+export abstract class Bool extends DataValue<"Bool"> {
 }
 
 export class True extends Bool {
@@ -30,7 +30,7 @@ export function falseʹ (k: Id): Bool {
    return at(k, False)
 }
 
-export abstract class List<T> extends Constr<"List"> {
+export abstract class List<T> extends DataValue<"List"> {
    map<U extends Persistent> (f: (t: T) => U): List<U> {
       if (Cons.is(this)) {
          return cons(f(this.head), this.tail.map(f))
@@ -91,7 +91,7 @@ export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
    return make(Cons, head, tail) as Cons<T>
 }
 
-export class Pair<T, U> extends Constr<"Pair"> {
+export class Pair<T, U> extends DataValue<"Pair"> {
    fst: T = _
    snd: U = _
 }
@@ -100,7 +100,7 @@ export function pair<T extends Persistent, U extends Persistent> (fst: T, snd: U
    return make(Pair, fst, snd) as Pair<T, U>
 }
 
-export abstract class Tree<T extends Persistent> extends Constr<"Tree"> {
+export abstract class Tree<T extends Persistent> extends DataValue<"Tree"> {
    map<U extends Persistent> (f: (t: T) => U): Tree<U> {
       if (NonEmpty.is(this)) {
          return nonEmpty(this.left.map(f), f(this.t), this.right.map(f))
@@ -155,7 +155,7 @@ export function nonEmpty <T extends Persistent> (left: Tree<T>, t: T, right: Tre
    return make(NonEmpty, left, t, right) as NonEmpty<T>
 }
 
-export abstract class Option<T extends Persistent> extends Constr<"Option"> {
+export abstract class Option<T extends Persistent> extends DataValue<"Option"> {
 }
 
 export class None<T extends Persistent> extends Option<T> {
@@ -165,7 +165,7 @@ export class Some<T extends Persistent> extends Option<T> {
    t: T = _
 }
 
-export abstract class Ordering extends Constr<"Ordering"> {
+export abstract class Ordering extends DataValue<"Ordering"> {
 }
 
 export class LT extends Ordering {

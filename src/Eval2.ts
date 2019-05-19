@@ -1,9 +1,9 @@
 import { Annotation, ann } from "./util/Annotated2"
-import { __nonNull, absurd, className, error } from "./util/Core"
+import { __nonNull, absurd, className, error, notYetImplemented } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
-import { Constr } from "./DataType2"
+import { DataValue } from "./DataType2"
 import { Expl } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { instantiate } from "./Instantiate2"
@@ -30,7 +30,7 @@ export type ExplId = EvalId<"t">
 
 export module Eval {
 
-export class Closure extends Constr<"Closure"> {
+export class Closure extends DataValue<"Closure"> {
    ρ: Env = _                 // ρ not closing for σ; need to extend with the bindings in δ
    δ: List<Expr.RecDef> = _
    σ: Trie<Expr> = _
@@ -149,6 +149,7 @@ export function eval_ (ρ: Env, e: Expr): Value {
 
 // Avoid excessive joins via a merging implementation; assumes no annotations on expression or intermediate values.
 export function uneval (v: Value): Expr {
+   return notYetImplemented()
 }
 
 }

@@ -1,13 +1,13 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
-import { ConstrFunc } from "./Func2"
+import { DataFunc } from "./Func2"
 import { State, Str, Value, _, fields } from "./Value2"
 
-export type ConstrTag = 
+export type DataValueTag = 
    "Args" | "Bool" | "Closure" | "Def" | "Env" | "Expl" | "Expr" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
    "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
 
 // Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
-export abstract class Constr<Tag extends ConstrTag = ConstrTag> extends Value<Tag> {
+export abstract class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
    fieldValues (): Value[] {
       return fields(this).map(k => (this as any as State)[k] as Value)
    }
@@ -16,10 +16,10 @@ export abstract class Constr<Tag extends ConstrTag = ConstrTag> extends Value<Ta
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: string
-   elimC: Class<ConstrFunc<any>> // not sure how better to parameterise 
+   elimC: Class<DataFunc<any>> // not sure how better to parameterise 
    ctrs: Map<string, Ctr>        // fields of my constructors
 
-   constructor (name: string, elimC: Class<ConstrFunc<any>>, ctrs: Map<string, Ctr>) {
+   constructor (name: string, elimC: Class<DataFunc<any>>, ctrs: Map<string, Ctr>) {
       this.name = name
       this.elimC = elimC
       this.ctrs = ctrs
@@ -29,10 +29,10 @@ export class DataType {
 // Constructor of a datatype, not to be confused with an instance of such a thing (Constr) or name of such a thing
 // (Lex.Ctr). Fields have a total ordering given by the order of definition in the corresponding class.
 export class Ctr {
-   C: Class<Constr>
+   C: Class<DataValue>
    f̅: string[]
 
-   constructor (C: Class<Constr>, f̅: string[]) {
+   constructor (C: Class<DataValue>, f̅: string[]) {
       this.C = C
       this.f̅ = f̅
    }
@@ -50,15 +50,15 @@ export function arity (ctr: Str): number {
 // Populated by initDataTypes(). Constructors are not yet first-class. TODO: reinstate projections.
 export let ctrToDataType: Map<string, DataType> = new Map
 
-export function initDataType<T extends Constr> (D: AClass<T>, ctrC̅: Class<T>[]) {
+export function initDataType<T extends DataValue> (D: AClass<T>, ctrC̅: Class<T>[]) {
    ctrC̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // probably consistent with string <
    const ctrs: [string, Ctr][] = ctrC̅.map(
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
          elimC_name: string = D.name + "Func",
-         elimC: Class<ConstrFunc<any>> = {
+         elimC: Class<DataFunc<any>> = {
             // https://stackoverflow.com/questions/33605775
-            [elimC_name]: class extends ConstrFunc<any> {
+            [elimC_name]: class extends DataFunc<any> {
                constructor () {
                   super()
                   // lexicographical order hopefully preserved by getOwnPropertyNames()

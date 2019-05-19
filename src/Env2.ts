@@ -1,12 +1,12 @@
 import { absurd } from "./util/Core"
 import { List, cons, nil } from "./BaseTypes2"
-import { Constr } from "./DataType2"
+import { DataValue } from "./DataType2"
 import { Str, Value, _, make } from "./Value2"
 
 // Idiom is to permit instance methods on reflected datatypes, but not have them use polymorphism.
 
 // Environments are snoc lists.
-export abstract class Env extends Constr<"Env"> {
+export abstract class Env extends DataValue<"Env"> {
    // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
    entries (): List<Value> {
       if (this instanceof EmptyEnv) {
