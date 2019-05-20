@@ -88,23 +88,6 @@ export namespace Expr {
    export abstract class Def extends VersionedC(DataValue)<"Def"> {
    }
 
-   export class Defs extends Expr {
-      defs: List<Def> = _
-      e: Expr = _
-   }
-
-   export function defs (k: Id, defs: List<Def>, e: Expr): Defs {
-      return at(k, Defs, defs, e)
-   }
-
-   export class Fun extends Expr {
-      σ: Trie<Expr> = _
-   }
-
-   export function fun (k: Id, σ: Trie<Expr>): Fun {
-      return at(k, Fun, σ)
-   }
-
    export class Let extends Def {
       x: Str = _
       e: Expr = _
@@ -137,6 +120,23 @@ export namespace Expr {
 
    export function letRec (k: Id, δ: List<RecDef>): LetRec {
       return at(k, LetRec, δ)
+   }
+
+   export class Defs extends Expr {
+      defs: List<Def> = _
+      e: Expr = _
+   }
+
+   export function defs (k: Id, defs: List<Def>, e: Expr): Defs {
+      return at(k, Defs, defs, e)
+   }
+
+   export class Fun extends Expr {
+      σ: Trie<Expr> = _
+   }
+
+   export function fun (k: Id, σ: Trie<Expr>): Fun {
+      return at(k, Fun, σ)
    }
 
    export class MatchAs extends Expr {

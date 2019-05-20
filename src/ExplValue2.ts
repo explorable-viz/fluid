@@ -4,10 +4,10 @@ import { DataValue } from "./DataType2"
 import { ExplId } from "./Eval2"
 import { UnaryOp } from "./Primitive2"
 import { PrimValue, Str, Value, _ } from "./Value2"
-import { Versioned, at } from "./Versioned2"
+import { Versioned, VersionedC, at } from "./Versioned2"
 
 export namespace Expl {
-   export abstract class Expl extends DataValue<"Expl"> {
+   export abstract class Expl extends VersionedC(DataValue)<"Expl"> {
    }
 
    export class App extends Expl {
@@ -39,6 +39,30 @@ export namespace Expl {
       return at(k, BinaryApp, v1, opName, v2)
    }
 
+   export abstract class Def extends VersionedC(DataValue)<"Def"> {
+   }
+
+   export class Let extends Def {
+      u: Value = _
+      // TODO: record match
+   }
+
+   export class Prim extends Def {
+   }
+
+   export class LetRec extends Def {
+      δ: List<Expr.RecDef> = _
+      // TODO: ρ_defs for uneval?
+   }
+
+   export function letRec (k: ExplId, δ: List<Expr.RecDef>): LetRec {
+      return at(k, LetRec, δ)
+   }
+
+   export function let_ (k: ExplId, u: Value): Let {
+      return at(k, Let, u)
+   }
+
    export class Defs extends Expl {
       // TODO: record evaluated defs
       t: Expl = _
@@ -53,24 +77,6 @@ export namespace Expl {
 
    export function empty (k: ExplId): Empty {
       return at(k, Empty)
-   }
-
-   export class Let extends Expl {
-      u: Value = _
-      // TODO: record match
-   }
-
-   export function let_ (k: ExplId, u: Value): Let {
-      return at(k, Let, u)
-   }
-
-   export class LetRec extends Expl {
-      δ: List<Expr.RecDef> = _
-      // TODO: ρ_defs for uneval?
-   }
-
-   export function letRec (k: ExplId, δ: List<Expr.RecDef>): LetRec {
-      return at(k, LetRec, δ)
    }
 
    export class MatchAs extends Expl {
