@@ -55,30 +55,30 @@ export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDe
    }
 }
 
-export function defsEnv (ρ: Env, defs: List<Expr.Def>): Env {
+export function defsEnv (ρ: Env, defs: List<Expr.Def>, ρ_ext: Env): Env {
    if (Cons.is(defs)) {
       const def: Expr.Def = defs.head
       if (def instanceof Expr.Let) {
-         return defsEnv(extendEnv(ρ, def.x, eval_(ρ, def.e)), defs.tail)
+         return defsEnv(ρ, defs.tail, extendEnv(ρ_ext, def.x, eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e))))
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currenly happen to be unary
          if (unaryOps.has(def.x.val)) {
             const kᵥ: ValId = evalId(def, "v"),
                   v: Versioned<UnaryOp> = copyAt(kᵥ, unaryOps.get(def.x.val)!)
-            return defsEnv(extendEnv(ρ, def.x, setα(def.__α, v)), defs.tail)
+            return defsEnv(ρ, defs.tail, extendEnv(ρ_ext, def.x, setα(def.__α, v)))
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
       } else
       if (def instanceof Expr.LetRec) {
-         return defsEnv(ρ.concat(closeDefs(def.δ, ρ, def.δ)), defs.tail)
+         return defsEnv(ρ, defs.tail, ρ_ext.concat(closeDefs(def.δ, ρ.concat(ρ_ext), def.δ)))
       } else {
          return absurd()
       }
    } else
    if (Nil.is(defs)) {
-      return ρ
+      return ρ_ext
    } else {
       return absurd()
    }
@@ -134,8 +134,8 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
       }
    } else
    if (e instanceof Expr.Defs) {
-      const ρʹ: Env = defsEnv(ρ, e.defs),
-            v: Versioned<Value> = eval_(eρʹ, instantiate(ρʹ, e.e))
+      const ρʹ: Env = defsEnv(ρ, e.defs, emptyEnv()),
+            v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
       return setExpl(Expl.defs(kₜ, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
@@ -173,16 +173,23 @@ export function uneval (v: Versioned<Value>): Expr {
       }
    } else
    if (t instanceof Expl.Var) {
+      return notYetImplemented()
+/*      
       const x: string = t.x.val
       assert(ρ.has(x))
       joinα(v.__α, ρ.get(x)!)
       return joinα(v.__α, e)
+*/
    } else
    if (t instanceof Expl.App) {
       return notYetImplemented()
    } else
    if (t instanceof Expl.UnaryApp) {
-      return notYetImplemented()
+      joinα(v.__α, t.f)
+      joinα(v.__α, t.v)
+      uneval(t.f)
+      uneval(t.v)
+      return joinα(v.__α, e)
    } else
    if (t instanceof Expl.BinaryApp) {
       assert(binaryOps.has(t.opName.val))
