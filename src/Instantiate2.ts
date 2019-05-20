@@ -160,7 +160,17 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
 }
 
 function uninstantiateKont<K extends Kont<K>> (κ: K): K {
-   return notYetImplemented()
+   if (κ instanceof Trie.Trie) {
+      return uninstantiateTrie<K, Trie<K>>(κ) as K
+   } else
+   if (κ instanceof Expr.Expr) {
+      return uninstantiate(κ) as any as K
+   } else
+   if (κ instanceof Args.Args) {
+      return uninstantiateArgs(κ) as K
+   } else {
+      return absurd()
+   }
 }
 
 function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
