@@ -3,7 +3,7 @@ import { List } from "./BaseTypes2"
 import { DataValue } from "./DataType2"
 import { ExplId } from "./Eval2"
 import { PrimValue, Str, Value, _ } from "./Value2"
-import { at } from "./Versioned2"
+import { Versioned, at } from "./Versioned2"
 
 export namespace Expl {
    export abstract class Expl extends DataValue<"Expl"> {
@@ -72,12 +72,12 @@ export namespace Expl {
    }
 
    export class BinaryApp extends Expl {
-      v1: PrimValue = _
+      v1: Versioned<PrimValue> = _
       opName: Str = _
-      v2: PrimValue = _
+      v2: Versioned<PrimValue> = _
    }
 
-   export function binaryApp (k: ExplId, v1: PrimValue, opName: Str, v2: PrimValue): BinaryApp {
+   export function binaryApp (k: ExplId, v1: Versioned<PrimValue>, opName: Str, v2: Versioned<PrimValue>): BinaryApp {
       return at(k, BinaryApp, v1, opName, v2)
    }
 

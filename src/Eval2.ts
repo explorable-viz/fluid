@@ -135,7 +135,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    } else
    if (e instanceof Expr.Defs) {
       const ρʹ: Env = defsEnv(ρ, e.defs),
-            v: Versioned<Value> = eval_(ρʹ, instantiate(ρʹ, e.e))
+            v: Versioned<Value> = eval_(eρʹ, instantiate(ρʹ, e.e))
       return setExpl(Expl.defs(kₜ, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
@@ -173,7 +173,10 @@ export function uneval (v: Versioned<Value>): Expr {
       }
    } else
    if (t instanceof Expl.Var) {
-      return notYetImplemented()
+      const x: string = t.x.val
+      assert(ρ.has(x))
+      joinα(v.__α, ρ.get(x)!)
+      return joinα(v.__α, e)
    } else
    if (t instanceof Expl.App) {
       return notYetImplemented()
@@ -182,7 +185,12 @@ export function uneval (v: Versioned<Value>): Expr {
       return notYetImplemented()
    } else
    if (t instanceof Expl.BinaryApp) {
-      return notYetImplemented()
+      assert(binaryOps.has(t.opName.val))
+      joinα(v.__α, t.v1)
+      joinα(v.__α, t.v2)
+      uneval(t.v1)
+      uneval(t.v2)
+      return joinα(v.__α, e)
    } else
    if (t instanceof Expl.Let) {
       return notYetImplemented()
