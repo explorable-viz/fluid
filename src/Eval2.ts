@@ -1,5 +1,5 @@
 import { Annotation, ann } from "./util/Annotated2"
-import { __nonNull, absurd, assert, className, error, notYetImplemented } from "./util/Core"
+import { __nonNull, absurd, as, assert, className, error, notYetImplemented } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
@@ -15,14 +15,15 @@ import { Versioned, VersionedC, at, copyAt, getExpl, joinα, numʹ, setα, setEx
 import Trie = Expr.Trie
 
 type Expl = Expl.Expl
+type RecDef = Expr.RecDef
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
 export class EvalId<T extends Tag> extends Id {
-   e: Expr | Expr.RecDef | Expr.Prim = _
+   e: Expr | RecDef | Expr.Prim = _
    tag: T = _
 }
 
-export function evalId<T extends Tag> (e: Expr | Expr.RecDef | Expr.Prim, tag: T): EvalId<T> {
+export function evalId<T extends Tag> (e: Expr | RecDef | Expr.Prim, tag: T): EvalId<T> {
    return make(EvalId, e, tag) as EvalId<T>
 }
 
@@ -33,23 +34,41 @@ export module Eval {
 
 export class Closure extends VersionedC(DataValue)<"Closure"> {
    ρ: Env = _                 // ρ not closing for σ; need to extend with the bindings in δ
-   δ: List<Expr.RecDef> = _
+   δ: List<RecDef> = _
    σ: Trie<Expr> = _
 }
 
-export function closure (k: Id, ρ: Env, δ: List<Expr.RecDef>, σ: Trie<Expr>): Closure {
+export function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
    return at(k, Closure, ρ, δ, σ)
 }
    
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-export function closeDefs (δ_0: List<Expr.RecDef>, ρ: Env, δ: List<Expr.RecDef>): Env {
+export function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
    if (Cons.is(δ)) {
-      const def: Expr.RecDef = δ.head,
+      const def: RecDef = δ.head,
             kᵥ: ValId = evalId(def, "v")
       return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, setα(def.__α, closure(kᵥ, ρ, δ_0, def.σ)))
    } else
    if (Nil.is(δ)) {
       return emptyEnv()
+   } else {
+      return absurd()
+   }
+}
+
+// ρ is a collection of one or more closures. Most of the required joins have already been computed.
+export function uncloseDefs (ρ: Env): [Env, List<RecDef>] {
+   const f̅: List<Closure> = ρ.entries().map((v: Versioned<Value>) => as(v, Closure))
+   if (Cons.is(f̅)) {
+      let δ: List<RecDef> = f̅.head.δ,
+          f̅ʹ: List<Closure> = f̅
+      for (; Cons.is(f̅ʹ) && Cons.is(δ); f̅ʹ = f̅ʹ.tail, δ = δ.tail) {
+         joinα(f̅ʹ.head.__α, δ.head)
+      }
+      return [f̅.head.ρ, f̅.head.δ]
+   } else
+   if (Nil.is(f̅)) {
+      return [emptyEnv(), nil()]
    } else {
       return absurd()
    }
