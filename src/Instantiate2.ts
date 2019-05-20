@@ -1,5 +1,5 @@
 import { Annotation, ann } from "./util/Annotated2"
-import { absurd, notYetImplemented } from "./util/Core"
+import { absurd, as } from "./util/Core"
 import { List, Pair, pair } from "./BaseTypes2"
 import { Env } from "./Env2"
 import { Expr } from "./Expr2"
@@ -60,9 +60,9 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
 
 // It's enough just to return original expression; reconstructing environment would require rethinking. 
 export function uninstantiate (e: Expr): Expr {
-   const eʹ: Expr = (e.__id as ExprId).e,
+   const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr),
          k: Id = eʹ.__id,
-         α: Annotation = ann.join(eʹ.__α, e.__α) // must merge annotations into the source
+         α: Annotation = ann.join(eʹ.__α, e.__α) // merge annotations into source
    if (e instanceof Expr.ConstNum) {
       return setα(α, Expr.constNum(k, e.val))
    } else
@@ -95,23 +95,44 @@ export function uninstantiate (e: Expr): Expr {
 }
 
 function instantiateDef (ρ: Env, def: Def): Def {
-   const j: ExprId = exprId(ρ.entries(), def)
+   const k: ExprId = exprId(ρ.entries(), def)
    if (def instanceof Expr.Let) {
-      return setα(def.__α, Expr.let_(j, def.x, instantiate(ρ, def.e)))
-   } else 
+      return setα(def.__α, Expr.let_(k, def.x, instantiate(ρ, def.e)))
+   } else
+   if (def instanceof Expr.Prim) {
+      return setα(def.__α, Expr.prim(k, def.x))
+   } else
    if (def instanceof Expr.LetRec) {
       const δ: List<RecDef> = def.δ.map((def: RecDef) => {
          const i: ExprId = exprId(ρ.entries(), def)
          return setα(def.__α, Expr.recDef(i, def.x, instantiateTrie(ρ, def.σ)))
       })
-      return setα(def.__α, Expr.letRec(j, δ))
+      return setα(def.__α, Expr.letRec(k, δ))
    } else {
       return absurd()
    }
 }
 
 function uninstantiateDef (def: Def): Def {
-   return notYetImplemented()
+   const defʹ: Def = as((def.__id as ExprId).e, Def),
+         k: Id = defʹ.__id,
+         α: Annotation = ann.join(defʹ.__α, def.__α)
+   if (def instanceof Expr.Let) {
+      return setα(α, Expr.let_(k, def.x, uninstantiate(def.e)))
+   } else 
+   if (def instanceof Expr.Prim) {
+      return setα(α, Expr.prim(k, def.x))
+   }
+   if (def instanceof Expr.LetRec) {
+      const δ: List<RecDef> = def.δ.map(def => {
+         const defʹ: RecDef = as((def.__id as ExprId).e, RecDef),
+               i: Id = defʹ.__id
+         return setα(ann.join(defʹ.__α, def.__α), Expr.recDef(i, def.x, uninstantiateTrie(def.σ)))
+      })
+      return setα(α, Expr.letRec(k, δ))
+   } else {
+      return absurd()
+   }
 }
 
 function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T): T {
