@@ -37,6 +37,10 @@ export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
    }
 }
 
+// TODO: sync up with evalTrie/__apply pattern.
+export function unmatch<K extends Kont<K>> (κ: K, α: Annotation): void {
+}
+
 // Parser ensures constructor calls are saturated.
 function evalArgs<K extends Kont<K>> (Π: Args<K>): ArgsFunc<K> {
    if (Args.End.is(Π)) {

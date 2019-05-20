@@ -6,8 +6,8 @@ import { Env, emptyEnv, extendEnv } from "./Env2"
 import { DataValue } from "./DataType2"
 import { Expl } from "./ExplValue2"
 import { Expr } from "./Expr2"
-import { instantiate } from "./Instantiate2"
-import { evalTrie } from "./Match2"
+import { instantiate, uninstantiate } from "./Instantiate2"
+import { evalTrie, unmatch } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at, copyAt, getExpl, joinα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
@@ -218,14 +218,14 @@ export function uneval (v: Versioned<Value>): Expr {
       uneval(t.v2)
       return joinα(v.__α, e)
    } else
-   if (t instanceof Expl.Let) {
-      return notYetImplemented()
-   } else
-   if (t instanceof Expl.LetRec) {
+   if (t instanceof Expl.Defs) {
       return notYetImplemented()
    } else
    if (t instanceof Expl.MatchAs) {
-      return notYetImplemented()
+      joinα(v.__α, t.v)
+      unmatch(uninstantiate(uneval(t.v)), v.__α)
+      uneval(t.u)
+      return joinα(v.__α, e)
    } else {
       return absurd()
    }

@@ -80,12 +80,12 @@ export namespace Expl {
    }
 
    export class MatchAs extends Expl {
-      u: Value = _
-      t: Expl = _    // TODO: record match
+      u: Versioned<Value> = _
+      v: Versioned<Value> = _    // TODO: record match
    }
 
-   export function matchAs (k: ExplId, u: Value, t: Expl): MatchAs {
-      return at(k, MatchAs, u, t)
+   export function matchAs (k: ExplId, u: Versioned<Value>, v: Versioned<Value>): MatchAs {
+      return at(k, MatchAs, u, v)
    }
 
    export class Var extends Expl {
