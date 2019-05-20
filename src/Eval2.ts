@@ -9,11 +9,12 @@ import { Expr } from "./Expr2"
 import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
-import { Id, Value, _, make } from "./Value2"
+import { Id, Num, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at, copyAt, getExpl, numʹ, setα, setExpl, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
+type Expl = Expl.Expl
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
 export class EvalId<T extends Tag> extends Id {
@@ -148,8 +149,49 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
 }
 
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
-export function uneval (v: Value): Expr {
-   return notYetImplemented()
+export function uneval (v: Versioned<Value>): Expr {
+   const k: ValId = v.__id as ValId,
+         e: Expr = k.e as Expr,
+         t: Expl = v.__expl
+   if (t instanceof Expl.Empty) {
+      if (v instanceof Num) {
+         return notYetImplemented()
+      } else
+      if (v instanceof Str) {
+         return notYetImplemented()
+      } else
+      if (v instanceof Closure) {
+         return notYetImplemented()
+      } else 
+      if (v instanceof DataValue) {
+         return notYetImplemented()
+      } else {
+         return absurd()
+      }
+   } else
+   if (t instanceof Expl.Var) {
+      return notYetImplemented()
+   } else
+   if (t instanceof Expl.App) {
+      return notYetImplemented()
+   } else
+   if (t instanceof Expl.UnaryApp) {
+      return notYetImplemented()
+   } else
+   if (t instanceof Expl.BinaryApp) {
+      return notYetImplemented()
+   } else
+   if (t instanceof Expl.Let) {
+      return notYetImplemented()
+   } else
+   if (t instanceof Expl.LetRec) {
+      return notYetImplemented()
+   } else
+   if (t instanceof Expl.MatchAs) {
+      return notYetImplemented()
+   } else {
+      return absurd()
+   }
 }
 
 }
