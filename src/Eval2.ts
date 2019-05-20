@@ -1,5 +1,5 @@
 import { Annotation, ann } from "./util/Annotated2"
-import { __nonNull, absurd, className, error, notYetImplemented } from "./util/Core"
+import { __nonNull, absurd, assert, className, error, notYetImplemented } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
@@ -10,7 +10,7 @@ import { instantiate } from "./Instantiate2"
 import { evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
-import { Versioned, VersionedC, at, copyAt, getExpl, numʹ, setα, setExpl, strʹ } from "./Versioned2"
+import { Versioned, VersionedC, at, copyAt, getExpl, joinα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
@@ -155,13 +155,14 @@ export function uneval (v: Versioned<Value>): Expr {
          t: Expl = v.__expl
    if (t instanceof Expl.Empty) {
       if (v instanceof Num) {
-         return notYetImplemented()
+         return joinα(v.__α, e)
       } else
       if (v instanceof Str) {
-         return notYetImplemented()
+         return joinα(v.__α, e)
       } else
       if (v instanceof Closure) {
-         return notYetImplemented()
+         assert(Nil.is(v.δ))
+         return joinα(v.__α, e)
       } else 
       if (v instanceof DataValue) {
          return notYetImplemented()

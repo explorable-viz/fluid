@@ -1,4 +1,4 @@
-import { Annotation } from "./util/Annotated2"
+import { Annotation, ann } from "./util/Annotated2"
 import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
 import { Expl } from "./ExplValue2"
 import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
@@ -116,6 +116,11 @@ export function setallα<Tag extends string, T extends Value<Tag>> (v: T, α: An
          setallα(v, α) 
       }
    })
+   return v
+}
+
+export function joinα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
+   v.__α = ann.join(α, v.__α)
    return v
 }
 
