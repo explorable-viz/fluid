@@ -120,8 +120,8 @@ function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T):
    } else
    if (Trie.Constr.is(σ)) {
       return Trie.constr<K>(σ.cases.map(
-         ({ fst: ctr, snd: Π }: Pair<Str, Args<K>>): Pair<Str, Args<K>> => {
-            return pair(ctr, instantiateArgs(ρ, Π))
+         ({ fst: c, snd: Π }: Pair<Str, Args<K>>): Pair<Str, Args<K>> => {
+            return pair(c, instantiateArgs(ρ, Π))
          })
       ) as Trie<K> as T
    } else {
@@ -130,7 +130,18 @@ function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T):
 }
 
 function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): T {
-   return notYetImplemented()
+   if (Trie.Var.is(σ)) {
+      return Trie.var_(σ.x, uninstantiateKont(σ.κ)) as Trie<K> as T
+   } else
+   if (Trie.Constr.is(σ)) {
+      return Trie.constr(σ.cases.map(
+         ({ fst: c, snd: Π }: Pair<Str, Args<K>>): Pair<Str, Args<K>> => {
+            return pair(c, uninstantiateArgs(Π))
+         })
+      ) as Trie<K> as T
+   } else {
+      return absurd()
+   }
 }
 
 // See issue #33.
@@ -148,12 +159,27 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
    }
 }
 
+function uninstantiateKont<K extends Kont<K>> (κ: K): K {
+   return notYetImplemented()
+}
+
 function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
    if (Args.End.is(Π)) {
       return Args.end(instantiateKont(ρ, Π.κ))
    } else
    if (Args.Next.is(Π)) {
       return Args.next(instantiateTrie(ρ, Π.σ))
+   } else {
+      return absurd()
+   }
+}
+
+function uninstantiateArgs<K extends Kont<K>> (Π: Args<K>): Args<K> {
+   if (Args.End.is(Π)) {
+      return Args.end(uninstantiateKont(Π.κ))
+   } else
+   if (Args.Next.is(Π)) {
+      return Args.next(uninstantiateTrie(Π.σ))
    } else {
       return absurd()
    }
