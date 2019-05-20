@@ -165,7 +165,9 @@ export function uneval (v: Versioned<Value>): Expr {
          return joinα(v.__α, e)
       } else 
       if (v instanceof DataValue) {
-         return notYetImplemented()
+         // reverse order but shouldn't matter in absence of side-effects:
+         v.fieldValues().map(uneval)
+         return joinα(v.__α, e)
       } else {
          return absurd()
       }
