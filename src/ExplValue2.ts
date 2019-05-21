@@ -4,7 +4,7 @@ import { DataValue } from "./DataType2"
 import { Env } from "./Env2"
 import { ExplId } from "./Eval2"
 import { UnaryOp } from "./Primitive2"
-import { PrimValue, Str, Value, _ } from "./Value2"
+import { Id, PrimValue, Str, Value, _ } from "./Value2"
 import { Versioned, VersionedC, at } from "./Versioned2"
 
 export namespace Expl {
@@ -45,8 +45,12 @@ export namespace Expl {
    }
 
    export class Let extends Def {
-      u: Value = _
-      // TODO: record match
+      x: Str = _
+      v: Versioned<Value> = _
+   }
+
+   export function let_ (k: Id, x: Str, v: Versioned<Value>): Let {
+      return at(k, Let, x, v)
    }
 
    export class Prim extends Def {
@@ -61,17 +65,14 @@ export namespace Expl {
       return at(k, LetRec, δ)
    }
 
-   export function let_ (k: ExplId, u: Value): Let {
-      return at(k, Let, u)
-   }
-
    export class Defs extends Expl {
-      ρ_defs: Env = _         // from defsEnv, for uneval
+      def̅: List<Def> = _
+      ρ_def̅: Env = _         // from defsEnv, for uneval
       v: Versioned<Value> = _
    }
 
-   export function defs (k: ExplId, ρ_defs: Env, v: Expl): Defs {
-      return at(k, Defs, ρ_defs, v)
+   export function defs (k: ExplId, def̅: List<Def>, ρ_def̅: Env, v: Expl): Defs {
+      return at(k, Defs, def̅, ρ_def̅, v)
    }
 
    export class Empty extends Expl {

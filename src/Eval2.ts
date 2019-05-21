@@ -1,6 +1,6 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { __nonNull, absurd, as, assert, className, error, notYetImplemented } from "./util/Core"
-import { Cons, List, Nil, nil } from "./BaseTypes2"
+import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
 import { DataValue } from "./DataType2"
@@ -14,6 +14,7 @@ import { Versioned, VersionedC, at, copyAt, getExpl, joinα, numʹ, setα, setEx
 
 import Trie = Expr.Trie
 
+type Def = Expr.Def
 type Expl = Expl.Expl
 type RecDef = Expr.RecDef
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
@@ -72,36 +73,38 @@ function uncloseDefs (ρ: Env): void {
    }
 }
 
-function defsEnv (ρ: Env, def̅: List<Expr.Def>, ρ_ext: Env): Env {
+function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env, def̅ʹ: List<Expl.Def>): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
-      const def: Expr.Def = def̅.head
+      const def: Def = def̅.head,
+            kₜ: ExplId = evalId(def, "t")
       if (def instanceof Expr.Let) {
-         return defsEnv(ρ, def̅.tail, extendEnv(ρ_ext, def.x, eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e))))
+         const v: Versioned<Value> = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e))
+         return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v), cons(Expl.let_(kₜ, def.x, v), def̅ʹ))
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currenly happen to be unary
          if (unaryOps.has(def.x.val)) {
             const kᵥ: ValId = evalId(def, "v"),
                   v: Versioned<UnaryOp> = copyAt(kᵥ, unaryOps.get(def.x.val)!)
-            return defsEnv(ρ, def̅.tail, extendEnv(ρ_ext, def.x, setα(def.__α, v)))
+            return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, setα(def.__α, v)), def̅ʹ)
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
       } else
       if (def instanceof Expr.LetRec) {
-         return defsEnv(ρ, def̅.tail, ρ_ext.concat(closeDefs(def.δ, ρ.concat(ρ_ext), def.δ)))
+         return def̅Env(ρ, def̅.tail, ρ_ext.concat(closeDefs(def.δ, ρ.concat(ρ_ext), def.δ)), def̅ʹ)
       } else {
          return absurd()
       }
    } else
    if (Nil.is(def̅)) {
-      return ρ_ext
+      return [nil(), ρ_ext]
    } else {
       return absurd()
    }
 }
 
-function undefsEnv (ρ: Env): void {
+function undef̅Env (ρ: Env): void {
 }
 
 export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
@@ -155,9 +158,9 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
       }
    } else
    if (e instanceof Expr.Defs) {
-      const ρʹ: Env = defsEnv(ρ, e.def̅, emptyEnv()),
+      const [def̅, ρʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, e.def̅, emptyEnv(), nil()),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return setExpl(Expl.defs(kₜ, ρʹ, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+      return setExpl(Expl.defs(kₜ, def̅, ρʹ, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Versioned<Value> = eval_(ρ, e.e),
@@ -230,7 +233,7 @@ export function uneval (v: Versioned<Value>): Expr {
    if (t instanceof Expl.Defs) {
       joinα(v.__α, t.v)
       uninstantiate(uneval(t.v))
-      undefsEnv(t.ρ_defs)
+      undef̅Env(t.ρ_def̅)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {

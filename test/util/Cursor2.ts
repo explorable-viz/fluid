@@ -63,7 +63,7 @@ export class Cursor {
    }
 
    toDef (x: string): Cursor {
-      this.to(Expr.Defs, "defs")
+      this.to(Expr.Defs, "def̅")
       const defs: Map<string, Let | Prim | RecDef> = Cursor.defs(this.v as List<Def>)
       assert(defs.has(x))
       return this.goto(defs.get(x)!)
