@@ -23,7 +23,7 @@ export class EvalId<T extends Tag> extends Id {
    tag: T = _
 }
 
-export function evalId<T extends Tag> (e: Expr | RecDef | Expr.Prim, tag: T): EvalId<T> {
+function evalId<T extends Tag> (e: Expr | RecDef | Expr.Prim, tag: T): EvalId<T> {
    return make(EvalId, e, tag) as EvalId<T>
 }
 
@@ -38,12 +38,12 @@ export class Closure extends VersionedC(DataValue)<"Closure"> {
    σ: Trie<Expr> = _
 }
 
-export function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
+function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
    return at(k, Closure, ρ, δ, σ)
 }
    
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-export function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
+function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
             kᵥ: ValId = evalId(def, "v")
@@ -57,7 +57,7 @@ export function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
 }
 
 // ρ is a collection of one or more closures. Most of the required joins have already been computed.
-export function uncloseDefs (ρ: Env): void {
+function uncloseDefs (ρ: Env): void {
    const f̅: List<Closure> = ρ.entries().map((v: Versioned<Value>) => as(v, Closure))
    if (Cons.is(f̅)) {
       let δ: List<RecDef> = f̅.head.δ,
@@ -72,7 +72,7 @@ export function uncloseDefs (ρ: Env): void {
    }
 }
 
-export function defsEnv (ρ: Env, def̅: List<Expr.Def>, ρ_ext: Env): Env {
+function defsEnv (ρ: Env, def̅: List<Expr.Def>, ρ_ext: Env): Env {
    if (Cons.is(def̅)) {
       const def: Expr.Def = def̅.head
       if (def instanceof Expr.Let) {
@@ -99,6 +99,9 @@ export function defsEnv (ρ: Env, def̅: List<Expr.Def>, ρ_ext: Env): Env {
    } else {
       return absurd()
    }
+}
+
+function undefsEnv (ρ: Env): void {
 }
 
 export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
@@ -154,7 +157,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    if (e instanceof Expr.Defs) {
       const ρʹ: Env = defsEnv(ρ, e.def̅, emptyEnv()),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return setExpl(Expl.defs(kₜ, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+      return setExpl(Expl.defs(kₜ, ρʹ, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Versioned<Value> = eval_(ρ, e.e),
@@ -225,7 +228,10 @@ export function uneval (v: Versioned<Value>): Expr {
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.Defs) {
-      return notYetImplemented()
+      joinα(v.__α, t.v)
+      uninstantiate(uneval(t.v))
+      undefsEnv(t.ρ_defs)
+      return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
       joinα(v.__α, t.v)

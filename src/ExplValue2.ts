@@ -66,12 +66,12 @@ export namespace Expl {
    }
 
    export class Defs extends Expl {
-      // TODO: record evaluated defs
-      t: Expl = _
+      ρ_defs: Env = _         // from defsEnv, for uneval
+      v: Versioned<Value> = _
    }
 
-   export function defs (k: ExplId, t: Expl): Defs {
-      return at(k, Defs, t)
+   export function defs (k: ExplId, ρ_defs: Env, v: Expl): Defs {
+      return at(k, Defs, ρ_defs, v)
    }
 
    export class Empty extends Expl {
