@@ -134,7 +134,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
          const [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(f.σ).__apply(u),
                ρᶠ: Env = closeDefs(f.δ, f.ρ, f.δ).concat(ρʹ),
                v: Versioned<Value> = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return setExpl(Expl.app(kₜ, f, u, getExpl(v)), setα(ann.meet(f.__α, α, v.__α, e.__α), copyAt(kᵥ, v)))
+         return setExpl(Expl.app(kₜ, f, u, v), setα(ann.meet(f.__α, α, v.__α, e.__α), copyAt(kᵥ, v)))
       } else 
       if (f instanceof UnaryOp) {
          return setExpl(Expl.unaryApp(kₜ, f, u), setα(ann.meet(f.__α, u.__α, e.__α), f.op(u)(kᵥ)))
@@ -201,7 +201,14 @@ export function uneval (v: Versioned<Value>): Expr {
 */
    } else
    if (t instanceof Expl.App) {
-      return notYetImplemented()
+      assert(t.f instanceof Closure)
+      joinα(v.__α, t.v)
+      unmatch(uninstantiate(uneval(t.v)), v.__α)
+      // uncloseDefs(t.ρ_defs)
+      joinα(v.__α, t.f)
+      uneval(t.f)
+      uneval(t.u)
+      return joinα(v.__α, e)
    } else
    if (t instanceof Expl.UnaryApp) {
       joinα(v.__α, t.f)

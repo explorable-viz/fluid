@@ -11,13 +11,13 @@ export namespace Expl {
    }
 
    export class App extends Expl {
-      f: Value = _   // Expl would suffice, but for uneval we need address of function
-      v: Value = _   // Expl would suffice, but more uniform this way
-      t: Expl = _    // TODO: record match
+      f: Versioned<Value> = _   // Expl would suffice, but for uneval we need address of function
+      u: Versioned<Value> = _   // Expl would suffice, but more uniform this way
+      v: Versioned<Value> = _   // TODO: record match
    }
 
-   export function app (k: ExplId, f: Value, v: Value, t: Expl): App {
-      return at(k, App, f, v, t)
+   export function app (k: ExplId, f: Versioned<Value>, u: Versioned<Value>, v: Versioned<Value>): App {
+      return at(k, App, f, u, v)
    }
 
    export class UnaryApp extends Expl {
