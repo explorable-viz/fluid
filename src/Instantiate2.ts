@@ -43,7 +43,7 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
       return setα(e.__α, Expr.var_(k, e.x))
    } else
    if (e instanceof Expr.Defs) {
-      return setα(e.__α, Expr.defs(k, e.defs.map(def => instantiateDef(ρ, def)), instantiate(ρ, e.e)))
+      return setα(e.__α, Expr.defs(k, e.def̅.map(def => instantiateDef(ρ, def)), instantiate(ρ, e.e)))
    } else
    if (e instanceof Expr.MatchAs) {
       return setα(e.__α, Expr.matchAs(k, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
@@ -79,7 +79,7 @@ export function uninstantiate (e: Expr): Expr {
       return setα(α, Expr.var_(k, e.x))
    } else
    if (e instanceof Expr.Defs) {
-      return setα(α, Expr.defs(k, e.defs.map(uninstantiateDef), uninstantiate(e.e)))
+      return setα(α, Expr.defs(k, e.def̅.map(uninstantiateDef), uninstantiate(e.e)))
    } else
    if (e instanceof Expr.MatchAs) {
       return setα(α, Expr.matchAs(k, uninstantiate(e.e), uninstantiateTrie(e.σ)))

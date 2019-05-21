@@ -123,12 +123,12 @@ export namespace Expr {
    }
 
    export class Defs extends Expr {
-      defs: List<Def> = _
+      def̅: List<Def> = _
       e: Expr = _
    }
 
-   export function defs (k: Id, defs: List<Def>, e: Expr): Defs {
-      return at(k, Defs, defs, e)
+   export function defs (k: Id, def̅: List<Def>, e: Expr): Defs {
+      return at(k, Defs, def̅, e)
    }
 
    export class Fun extends Expr {

@@ -57,7 +57,7 @@ export function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
 }
 
 // ρ is a collection of one or more closures. Most of the required joins have already been computed.
-export function uncloseDefs (ρ: Env): [Env, List<RecDef>] {
+export function uncloseDefs (ρ: Env): void {
    const f̅: List<Closure> = ρ.entries().map((v: Versioned<Value>) => as(v, Closure))
    if (Cons.is(f̅)) {
       let δ: List<RecDef> = f̅.head.δ,
@@ -65,38 +65,36 @@ export function uncloseDefs (ρ: Env): [Env, List<RecDef>] {
       for (; Cons.is(f̅ʹ) && Cons.is(δ); f̅ʹ = f̅ʹ.tail, δ = δ.tail) {
          joinα(f̅ʹ.head.__α, δ.head)
       }
-      return [f̅.head.ρ, f̅.head.δ]
    } else
    if (Nil.is(f̅)) {
-      return [emptyEnv(), nil()]
    } else {
       return absurd()
    }
 }
 
-export function defsEnv (ρ: Env, defs: List<Expr.Def>, ρ_ext: Env): Env {
-   if (Cons.is(defs)) {
-      const def: Expr.Def = defs.head
+export function defsEnv (ρ: Env, def̅: List<Expr.Def>, ρ_ext: Env): Env {
+   if (Cons.is(def̅)) {
+      const def: Expr.Def = def̅.head
       if (def instanceof Expr.Let) {
-         return defsEnv(ρ, defs.tail, extendEnv(ρ_ext, def.x, eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e))))
+         return defsEnv(ρ, def̅.tail, extendEnv(ρ_ext, def.x, eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e))))
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currenly happen to be unary
          if (unaryOps.has(def.x.val)) {
             const kᵥ: ValId = evalId(def, "v"),
                   v: Versioned<UnaryOp> = copyAt(kᵥ, unaryOps.get(def.x.val)!)
-            return defsEnv(ρ, defs.tail, extendEnv(ρ_ext, def.x, setα(def.__α, v)))
+            return defsEnv(ρ, def̅.tail, extendEnv(ρ_ext, def.x, setα(def.__α, v)))
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
       } else
       if (def instanceof Expr.LetRec) {
-         return defsEnv(ρ, defs.tail, ρ_ext.concat(closeDefs(def.δ, ρ.concat(ρ_ext), def.δ)))
+         return defsEnv(ρ, def̅.tail, ρ_ext.concat(closeDefs(def.δ, ρ.concat(ρ_ext), def.δ)))
       } else {
          return absurd()
       }
    } else
-   if (Nil.is(defs)) {
+   if (Nil.is(def̅)) {
       return ρ_ext
    } else {
       return absurd()
@@ -132,9 +130,10 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
             u: Versioned<Value> = eval_(ρ, e.arg)
       if (f instanceof Closure) {
          const [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(f.σ).__apply(u),
-               ρᶠ: Env = closeDefs(f.δ, f.ρ, f.δ).concat(ρʹ),
+               ρ_δ: Env = closeDefs(f.δ, f.ρ, f.δ),
+               ρᶠ: Env = ρ_δ.concat(ρʹ),
                v: Versioned<Value> = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return setExpl(Expl.app(kₜ, f, u, v), setα(ann.meet(f.__α, α, v.__α, e.__α), copyAt(kᵥ, v)))
+         return setExpl(Expl.app(kₜ, f, u, ρ_δ, v), setα(ann.meet(f.__α, α, v.__α, e.__α), copyAt(kᵥ, v)))
       } else 
       if (f instanceof UnaryOp) {
          return setExpl(Expl.unaryApp(kₜ, f, u), setα(ann.meet(f.__α, u.__α, e.__α), f.op(u)(kᵥ)))
@@ -153,7 +152,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
       }
    } else
    if (e instanceof Expr.Defs) {
-      const ρʹ: Env = defsEnv(ρ, e.defs, emptyEnv()),
+      const ρʹ: Env = defsEnv(ρ, e.def̅, emptyEnv()),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
       return setExpl(Expl.defs(kₜ, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
@@ -204,7 +203,7 @@ export function uneval (v: Versioned<Value>): Expr {
       assert(t.f instanceof Closure)
       joinα(v.__α, t.v)
       unmatch(uninstantiate(uneval(t.v)), v.__α)
-      // uncloseDefs(t.ρ_defs)
+      uncloseDefs(t.ρ_δ)
       joinα(v.__α, t.f)
       uneval(t.f)
       uneval(t.u)

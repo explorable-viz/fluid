@@ -1,6 +1,7 @@
 import { Expr } from "./Expr2"
 import { List } from "./BaseTypes2"
 import { DataValue } from "./DataType2"
+import { Env } from "./Env2"
 import { ExplId } from "./Eval2"
 import { UnaryOp } from "./Primitive2"
 import { PrimValue, Str, Value, _ } from "./Value2"
@@ -13,11 +14,12 @@ export namespace Expl {
    export class App extends Expl {
       f: Versioned<Value> = _   // Expl would suffice, but for uneval we need address of function
       u: Versioned<Value> = _   // Expl would suffice, but more uniform this way
+      ρ_δ: Env = _              // from closeDefs, for uneval
       v: Versioned<Value> = _   // TODO: record match
    }
 
-   export function app (k: ExplId, f: Versioned<Value>, u: Versioned<Value>, v: Versioned<Value>): App {
-      return at(k, App, f, u, v)
+   export function app (k: ExplId, f: Versioned<Value>, u: Versioned<Value>, ρ_δ: Env, v: Versioned<Value>): App {
+      return at(k, App, f, u, ρ_δ, v)
    }
 
    export class UnaryApp extends Expl {
