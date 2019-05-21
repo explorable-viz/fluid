@@ -67,12 +67,11 @@ export namespace Expl {
 
    export class Defs extends Expl {
       def̅: List<Def> = _
-      ρ_def̅: Env = _         // from defsEnv, for uneval
       v: Versioned<Value> = _
    }
 
-   export function defs (k: ExplId, def̅: List<Def>, ρ_def̅: Env, v: Expl): Defs {
-      return at(k, Defs, def̅, ρ_def̅, v)
+   export function defs (k: ExplId, def̅: List<Def>, v: Expl): Defs {
+      return at(k, Defs, def̅, v)
    }
 
    export class Empty extends Expl {

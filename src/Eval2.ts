@@ -104,7 +104,26 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env, def̅ʹ: List<Expl.De
    }
 }
 
-function undef̅Env (ρ: Env): void {
+function undef̅Env (def̅: List<Expl.Def>): void {
+   if (Cons.is(def̅)) {
+      const def: Def = def̅.head
+      if (def instanceof Expl.Let) {
+         undef̅Env(def̅.tail)
+         return notYetImplemented()
+      } else
+      if (def instanceof Expl.Prim) {
+         return notYetImplemented()
+      } else
+      if (def instanceof Expl.LetRec) {
+         return notYetImplemented()
+      } else {
+         return absurd()
+      }
+   } else
+   if (Nil.is(def̅)) {
+   } else {
+      return absurd()
+   }
 }
 
 export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
@@ -160,7 +179,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    if (e instanceof Expr.Defs) {
       const [def̅, ρʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, e.def̅, emptyEnv(), nil()),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return setExpl(Expl.defs(kₜ, def̅, ρʹ, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+      return setExpl(Expl.defs(kₜ, def̅, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Versioned<Value> = eval_(ρ, e.e),
@@ -203,7 +222,7 @@ export function uneval (v: Versioned<Value>): Expr {
       assert(ρ.has(x))
       joinα(v.__α, ρ.get(x)!)
       return joinα(v.__α, e)
-*/
+*/_
    } else
    if (t instanceof Expl.App) {
       assert(t.f instanceof Closure)
@@ -233,7 +252,7 @@ export function uneval (v: Versioned<Value>): Expr {
    if (t instanceof Expl.Defs) {
       joinα(v.__α, t.v)
       uninstantiate(uneval(t.v))
-      undef̅Env(t.ρ_def̅)
+      undef̅Env(t.def̅)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
