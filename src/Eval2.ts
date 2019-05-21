@@ -1,6 +1,6 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { __nonNull, absurd, as, assert, className, error, notYetImplemented } from "./util/Core"
-import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
+import { Cons, List, Nil, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
 import { DataValue } from "./DataType2"
@@ -75,59 +75,42 @@ function uncloseDefs (ρ: Env): void {
 
 // Could remove the annotations on the defs and make the dependencies on the variables instead.
 // Especially as we're not using the annotations on letrecs.
-function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env, def̅ʹ: List<Expl.Def>): [List<Expl.Def>, Env] {
+function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): Env {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head,
             kₜ: ExplId = evalId(def, "t"),
             kᵥ: ValId = evalId(def, "v")
       if (def instanceof Expr.Let) {
          const v: Versioned<Value> = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
-               defₜ: Expl.Let = Expl.let_(kₜ, def.x, setα(ann.meet(def.__α, v.__α), copyAt(kᵥ, v)))
-         return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, defₜ.v), cons(defₜ, def̅ʹ))
+               vʹ: Versioned<Value> = setExpl(Expl.let_(kₜ, def.x, v), setα(ann.meet(v.__α, def.__α), copyAt(kᵥ, v)))
+         return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, vʹ))
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currenly happen to be unary
          if (unaryOps.has(def.x.val)) {
             const kᵥ: ValId = evalId(def, "v"),
                   op: UnaryOp = unaryOps.get(def.x.val)!,
-                  defʹ: Expl.Prim = Expl.prim(kₜ, def.x, setα(def.__α, copyAt(kᵥ, op)))
-            return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, defʹ.v), cons(defʹ, def̅ʹ))
+                  opʹ: Versioned<Value> = setExpl(Expl.prim(kₜ, def.x, op), setα(def.__α, copyAt(kᵥ, op)))
+            return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
       } else
       if (def instanceof Expr.LetRec) {
-         return def̅Env(ρ, def̅.tail, ρ_ext.concat(closeDefs(def.δ, ρ.concat(ρ_ext), def.δ)), def̅ʹ)
+         return def̅Env(ρ, def̅.tail, ρ_ext.concat(closeDefs(def.δ, ρ.concat(ρ_ext), def.δ)))
       } else {
          return absurd()
       }
    } else
    if (Nil.is(def̅)) {
-      return [nil(), ρ_ext]
+      return ρ_ext
    } else {
       return absurd()
    }
 }
 
-function undef̅Env (def̅: List<Expl.Def>): void {
-   if (Cons.is(def̅)) {
-      const def: Def = def̅.head
-      if (def instanceof Expl.Let) {
-         return notYetImplemented()
-      } else
-      if (def instanceof Expl.Prim) {
-         return notYetImplemented()
-      } else
-      if (def instanceof Expl.LetRec) {
-         return notYetImplemented()
-      } else {
-         return absurd()
-      }
-   } else
-   if (Nil.is(def̅)) {
-   } else {
-      return absurd()
-   }
+function undef̅Env (ρ: Env): void {
+   return notYetImplemented()
 }
 
 export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
@@ -181,9 +164,9 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
       }
    } else
    if (e instanceof Expr.Defs) {
-      const [def̅, ρʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, e.def̅, emptyEnv(), nil()),
+      const ρʹ: Env = def̅Env(ρ, e.def̅, emptyEnv()),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return setExpl(Expl.defs(kₜ, def̅, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+      return setExpl(Expl.defs(kₜ, ρʹ, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Versioned<Value> = eval_(ρ, e.e),
@@ -256,7 +239,7 @@ export function uneval (v: Versioned<Value>): Expr {
    if (t instanceof Expl.Defs) {
       joinα(v.__α, t.v)
       uninstantiate(uneval(t.v))
-      undef̅Env(t.def̅)
+      undef̅Env(t.ρ_def̅)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {

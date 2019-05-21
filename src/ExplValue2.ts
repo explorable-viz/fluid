@@ -55,10 +55,10 @@ export namespace Expl {
 
    export class Prim extends Def {
       x: Str = _
-      v: Versioned<Value> = _
+      v: Value = _ // underlying primitive is no versioned
    }
 
-   export function prim (k: Id, x: Str, v: Versioned<Value>): Prim {
+   export function prim (k: Id, x: Str, v: Value): Prim {
       return at(k, Prim, x, v)
    }
 
@@ -72,12 +72,12 @@ export namespace Expl {
    }
 
    export class Defs extends Expl {
-      def̅: List<Def> = _
+      ρ_def̅: Env = _
       v: Versioned<Value> = _
    }
 
-   export function defs (k: ExplId, def̅: List<Def>, v: Versioned<Value>): Defs {
-      return at(k, Defs, def̅, v)
+   export function defs (k: ExplId, ρ_def̅: Env, v: Versioned<Value>): Defs {
+      return at(k, Defs, ρ_def̅, v)
    }
 
    export class Empty extends Expl {
