@@ -42,11 +42,6 @@ export function asVersioned<T> (v: T): Versioned<T> {
    }
 }
 
-// Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
-function reclassify<Tag extends string, T extends Value<Tag>> (v: Value, ctr: Class<T>): T {
-   return notYetImplemented()
-}
-
 // For versioned objects the map is not curried but takes an (interned) composite key.
 type VersionedValues = Map<Id, Versioned<Value>>
 const __versioned: VersionedValues = new Map
@@ -54,22 +49,27 @@ const __versioned: VersionedValues = new Map
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
 export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
    let v: Versioned<Value> | undefined = __versioned.get(k)
-   const Cʹ = VersionedC(C)
    if (v === undefined) {
-      const vʹ: Versioned<T> = new Cʹ
+      const v: T = new C
       // Not sure of performance implications, or whether enumerability of __id matters much.
-      Object.defineProperty(vʹ, "__id", {
+      Object.defineProperty(v, "__id", {
          value: k,
          enumerable: false
       })
+      const vʹ: Versioned<T> = asVersioned(v)
       __versioned.set(k, vʹ)
       return construct(vʹ, v̅)
    } else
    if (v instanceof C) { 
       return construct(v, v̅) // hmm, TS thinks v is versioned here - why?
    } else {
-      return reclassify(v, Cʹ)
+      return reclassify(v, C)
    }
+}
+
+// Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
+function reclassify<Tag extends string, T extends Value<Tag>> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
+   return notYetImplemented()
 }
 
 export function copyAt<Tag extends string, T extends Value<Tag>> (k: Id, v: T): Versioned<T> {

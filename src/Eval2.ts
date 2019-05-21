@@ -117,7 +117,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    } else
    if (e instanceof Expr.Constr) {
       let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
-      return setExpl(Expl.empty(kₜ), setα(e.__α, atV(kᵥ, ctrFor(e.ctr).C, ...v̅)))
+      return setExpl(Expl.empty(kₜ), setα(e.__α, at(kᵥ, ctrFor(e.ctr).C, ...v̅)))
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
