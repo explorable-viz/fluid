@@ -54,6 +54,12 @@ export namespace Expl {
    }
 
    export class Prim extends Def {
+      x: Str = _
+      v: Versioned<Value> = _
+   }
+
+   export function prim (k: Id, x: Str, v: Versioned<Value>): Prim {
+      return at(k, Prim, x, v)
    }
 
    export class LetRec extends Def {
@@ -70,7 +76,7 @@ export namespace Expl {
       v: Versioned<Value> = _
    }
 
-   export function defs (k: ExplId, def̅: List<Def>, v: Expl): Defs {
+   export function defs (k: ExplId, def̅: List<Def>, v: Versioned<Value>): Defs {
       return at(k, Defs, def̅, v)
    }
 

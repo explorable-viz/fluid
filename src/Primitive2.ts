@@ -1,7 +1,7 @@
 import { as, assert } from "./util/Core"
 import { Bool, trueʹ, falseʹ } from "./BaseTypes2"
 import { Id, Num, PrimValue, Str, _, Value, make } from "./Value2"
-import { Versioned, VersionedC, ν, at, numʹ, strʹ } from "./Versioned2"
+import { Versioned, numʹ, strʹ } from "./Versioned2"
 
 type Unary<T, V> = (x: T) => (k: Id) => Versioned<V>
 type Binary<T, U, V> = (x: T, y: U) => (k: Id) => Versioned<V>
@@ -13,13 +13,14 @@ export class PrimOp<Tag extends string> extends Value<Tag> {
    name: string = _
 }
 
-export class UnaryOp extends VersionedC(PrimOp)<"UnaryOp"> {
+// First-class ops are not statically versioned; the values known statically to the interpreter are not
+// versioned, but the copies manipulated at runtime are.
+export class UnaryOp extends PrimOp<"UnaryOp"> {
    op: Unary<PrimValue, Value> = _
 }
 
-// Unary operators are first-class and so need addresses, like other values.
-function unary (k: Id, name: string, op: Unary<PrimValue, PrimValue>): UnaryOp {
-   return at(k, UnaryOp, name, op)
+function unary (name: string, op: Unary<PrimValue, PrimValue>): UnaryOp {
+   return make(UnaryOp, name, op)
 }
 
 export class BinaryOp extends PrimOp<"BinaryOp"> {
@@ -50,7 +51,7 @@ const concat = (x: Str, y: Str) => (k: Id): Versioned<Str> => strʹ(k, as(x, Str
 
 // Convenience methods for building the maps.
 function unary_<T extends PrimValue, V extends PrimValue> (op: Unary<T, V>): UnaryOp {
-   return unary(ν(), op.name, op)
+   return unary(op.name, op)
 }
 
 function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): BinaryOp {

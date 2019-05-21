@@ -10,7 +10,7 @@ import { instantiate, uninstantiate } from "./Instantiate2"
 import { evalTrie, unmatch } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
-import { Versioned, VersionedC, at, copyAt, getExpl, joinα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
+import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
@@ -73,20 +73,25 @@ function uncloseDefs (ρ: Env): void {
    }
 }
 
+// Could remove the annotations on the defs and make the dependencies on the variables instead.
+// Especially as we're not using the annotations on letrecs.
 function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env, def̅ʹ: List<Expl.Def>): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head,
-            kₜ: ExplId = evalId(def, "t")
+            kₜ: ExplId = evalId(def, "t"),
+            kᵥ: ValId = evalId(def, "v")
       if (def instanceof Expr.Let) {
-         const v: Versioned<Value> = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e))
-         return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v), cons(Expl.let_(kₜ, def.x, v), def̅ʹ))
+         const v: Versioned<Value> = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
+               defₜ: Expl.Let = Expl.let_(kₜ, def.x, setα(ann.meet(def.__α, v.__α), copyAt(kᵥ, v)))
+         return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, defₜ.v), cons(defₜ, def̅ʹ))
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currenly happen to be unary
          if (unaryOps.has(def.x.val)) {
             const kᵥ: ValId = evalId(def, "v"),
-                  v: Versioned<UnaryOp> = copyAt(kᵥ, unaryOps.get(def.x.val)!)
-            return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, setα(def.__α, v)), def̅ʹ)
+                  op: UnaryOp = unaryOps.get(def.x.val)!,
+                  defʹ: Expl.Prim = Expl.prim(kₜ, def.x, setα(def.__α, copyAt(kᵥ, op)))
+            return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, defʹ.v), cons(defʹ, def̅ʹ))
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
@@ -108,7 +113,6 @@ function undef̅Env (def̅: List<Expl.Def>): void {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
       if (def instanceof Expl.Let) {
-         undef̅Env(def̅.tail)
          return notYetImplemented()
       } else
       if (def instanceof Expl.Prim) {
@@ -179,13 +183,13 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    if (e instanceof Expr.Defs) {
       const [def̅, ρʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, e.def̅, emptyEnv(), nil()),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return setExpl(Expl.defs(kₜ, def̅, v.__expl), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+      return setExpl(Expl.defs(kₜ, def̅, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Versioned<Value> = eval_(ρ, e.e),
             [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(e.σ).__apply(u),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return setExpl(Expl.matchAs(kₜ, u, getExpl(v)), setα(ann.meet(α, v.__α, e.__α), copyAt(kᵥ, v)))
+      return setExpl(Expl.matchAs(kₜ, u, v), setα(ann.meet(α, v.__α, e.__α), copyAt(kᵥ, v)))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
