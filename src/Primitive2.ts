@@ -1,7 +1,7 @@
 import { as, assert } from "./util/Core"
 import { Bool, trueʹ, falseʹ } from "./BaseTypes2"
 import { Id, Num, PrimValue, Str, _, Value, make } from "./Value2"
-import { Versioned, ν, at, numʹ, strʹ } from "./Versioned2"
+import { Versioned, VersionedC, ν, at, numʹ, strʹ } from "./Versioned2"
 
 type Unary<T, V> = (x: T) => (k: Id) => Versioned<V>
 type Binary<T, U, V> = (x: T, y: U) => (k: Id) => Versioned<V>
@@ -9,11 +9,11 @@ type Binary<T, U, V> = (x: T, y: U) => (k: Id) => Versioned<V>
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
 
-export abstract class PrimOp<Tag extends string> extends Value<Tag> {
+export class PrimOp<Tag extends string> extends Value<Tag> {
    name: string = _
 }
 
-export class UnaryOp extends PrimOp<"UnaryOp"> {
+export class UnaryOp extends VersionedC(PrimOp)<"UnaryOp"> {
    op: Unary<PrimValue, Value> = _
 }
 
