@@ -5,11 +5,11 @@ export const _: any = undefined
 
 // Somewhat perverse to do this, but need some type safety!
 export type DataValueTag =
-   "Args" | "Bool" | "Closure" | "Env" | "Expl" | "Expl.Def" | "Expr" | "Expr.Def" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
-   "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
+   "Args" | "ArgsPlug" | "Bool" | "Closure" | "Env" | "Expl" | "Expl.Def" | "Expr" | "Expr.Def" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
+   "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
 export type PrimOpTag = "UnaryOp" | "BinaryOp"
-export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "ArgsFunc" | "Func" | "Id" | "Num" | "Str"
+export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "ArgsFunc" | "ArgsMatch" | "Func" | "Id" | "Match" | "Num" | "Str"
 
 // Value in the metalanguage. Nominal idiom breaks down here in requiring use of "any".
 export class Value<Tag extends ValueTag = ValueTag> {
@@ -24,7 +24,7 @@ export class Value<Tag extends ValueTag = ValueTag> {
 export abstract class Id extends Value<"Id"> {
 }
 
-// Functions are persistent to support primitives. Primitive data types like Num and Str contain
+// Functions are persistent to support primitives. Primitive datatypes like Num and Str contain
 // ES6 primitives like number and string, which are (currently) "persistent" for interning purposes
 // but are not "values" because they are not observable to user code.
 export type Persistent = Value | string | number | Function

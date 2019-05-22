@@ -113,7 +113,7 @@ export class Cursor {
       return this
    }
 
-   // Helpers specific to certain data types.
+   // Helpers specific to certain datatypes.
 
    toElem (n: number): Cursor {
       if (n === 0) {

@@ -13,12 +13,12 @@ export namespace Expl {
    export class App extends Expl {
       f: Versioned<Value> = _   // Expl would suffice, but for uneval we need address of function
       u: Versioned<Value> = _   // Expl would suffice, but more uniform this way
-      ρ_δ: Env = _              // from closeDefs, for uneval
+      ρᵟ: Env = _               // from closeDefs, for uneval
       v: Versioned<Value> = _   // TODO: record match
    }
 
-   export function app (k: ExplId, f: Versioned<Value>, u: Versioned<Value>, ρ_δ: Env, v: Versioned<Value>): App {
-      return at(k, App, f, u, ρ_δ, v)
+   export function app (k: ExplId, f: Versioned<Value>, u: Versioned<Value>, ρᵟ: Env, v: Versioned<Value>): App {
+      return at(k, App, f, u, ρᵟ, v)
    }
 
    export class UnaryApp extends Expl {
@@ -66,11 +66,11 @@ export namespace Expl {
    }
 
    export class LetRec extends Def {
-      ρ_δ: Env = _
+      ρᵟ: Env = _
    }
 
-   export function letRec (ρ_δ: Env): LetRec {
-      return make(LetRec, ρ_δ)
+   export function letRec (ρᵟ: Env): LetRec {
+      return make(LetRec, ρᵟ)
    }
 
    export class Defs extends Expl {

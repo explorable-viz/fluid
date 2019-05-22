@@ -6,6 +6,7 @@ import { Env, emptyEnv, extendEnv } from "./Env2"
 import { DataValue } from "./DataType2"
 import { Expl } from "./ExplValue2"
 import { Expr } from "./Expr2"
+import { Match, Plug } from "./Func2"
 import { instantiate, uninstantiate } from "./Instantiate2"
 import { evalTrie, unmatch } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
@@ -98,9 +99,9 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env
          }
       } else
       if (def instanceof Expr.LetRec) {
-         const ρ_δ: Env = closeDefs(def.δ, ρ.concat(ρ_ext), def.δ),
-               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, ρ_ext.concat(ρ_δ))
-         return [cons(Expl.letRec(ρ_δ), def̅ₜ), ρ_extʹ]
+         const ρᵟ: Env = closeDefs(def.δ, ρ.concat(ρ_ext), def.δ),
+               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, ρ_ext.concat(ρᵟ))
+         return [cons(Expl.letRec(ρᵟ), def̅ₜ), ρ_extʹ]
       } else {
          return absurd()
       }
@@ -127,7 +128,7 @@ function undef̅Env (def̅: List<Expl.Def>): void {
       } else
       if (def instanceof Expl.LetRec) {
          undef̅Env(def̅.tail)
-         uncloseDefs(def.ρ_δ)
+         uncloseDefs(def.ρᵟ)
       } else {
          return absurd()
       }
@@ -166,7 +167,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
       const f: Versioned<Value> = eval_(ρ, e.func),
             u: Versioned<Value> = eval_(ρ, e.arg)
       if (f instanceof Closure) {
-         const [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(f.σ).__apply(u),
+         const [ρʹ, {κ: eʹ}, α]: [Env, Plug<Expr, Match<Expr>>, Annotation] = evalTrie(f.σ).__apply(u),
                ρ_δ: Env = closeDefs(f.δ, f.ρ, f.δ),
                ρᶠ: Env = ρ_δ.concat(ρʹ),
                v: Versioned<Value> = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
@@ -203,7 +204,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Versioned<Value> = eval_(ρ, e.e),
-            [ρʹ, eʹ, α]: [Env, Expr, Annotation] = evalTrie(e.σ).__apply(u),
+            [ρʹ, {κ: eʹ}, α]: [Env, Plug<Expr, Match<Expr>>, Annotation] = evalTrie(e.σ).__apply(u),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
       return setExpl(Expl.matchAs(kₜ, u, v), setα(ann.meet(α, v.__α, e.__α), copyAt(kᵥ, v)))
    } else {
@@ -243,7 +244,7 @@ export function uneval (v: Versioned<Value>): Expr {
       assert(t.f instanceof Closure)
       joinα(v.__α, t.v)
       unmatch(uninstantiate(uneval(t.v)), v.__α)
-      uncloseDefs(t.ρ_δ)
+      uncloseDefs(t.ρᵟ)
       joinα(v.__α, t.f)
       uneval(t.f)
       uneval(t.u)
