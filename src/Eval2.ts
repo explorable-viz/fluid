@@ -3,10 +3,10 @@ import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
-import { Expl, Match } from "./ExplValue2"
+import { Expl } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { instantiate, uninstantiate } from "./Instantiate2"
-import { evalTrie, unmatch } from "./Match2"
+import { Match, Plug, evalTrie, unmatch } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { DataValue, Id, Num, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
@@ -15,7 +15,6 @@ import Trie = Expr.Trie
 
 type Def = Expr.Def
 type Expl = Expl.Expl
-type Match<K> = Match.Match<K>
 type RecDef = Expr.RecDef
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
@@ -166,7 +165,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
       const f: Versioned<Value> = eval_(ρ, e.func),
             u: Versioned<Value> = eval_(ρ, e.arg)
       if (f instanceof Closure) {
-         const [ρʹ, {κ: eʹ}, α]: [Env, Match.Plug<Expr, Match<Expr>>, Annotation] = evalTrie(f.σ).__apply(u),
+         const [ρʹ, {κ: eʹ}, α]: [Env, Plug<Expr, Match<Expr>>, Annotation] = evalTrie(f.σ).__apply(u),
                ρ_δ: Env = closeDefs(f.δ, f.ρ, f.δ),
                ρᶠ: Env = ρ_δ.concat(ρʹ),
                v: Versioned<Value> = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
@@ -203,7 +202,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Versioned<Value> = eval_(ρ, e.e),
-            [ρʹ, {κ: eʹ}, α]: [Env, Match.Plug<Expr, Match<Expr>>, Annotation] = evalTrie(e.σ).__apply(u),
+            [ρʹ, {κ: eʹ}, α]: [Env, Plug<Expr, Match<Expr>>, Annotation] = evalTrie(e.σ).__apply(u),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
       return setExpl(Expl.matchAs(kₜ, u, v), setα(ann.meet(α, v.__α, e.__α), copyAt(kᵥ, v)))
    } else {

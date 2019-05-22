@@ -9,7 +9,7 @@ export type DataValueTag =
    "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
 export type PrimOpTag = "UnaryOp" | "BinaryOp"
-export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "ArgsFunc" | "Args.Match" | "Func" | "Id" | "Match" | "Num" | "Str"
+export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Args.Func" | "Args.Match" | "Func" | "Id" | "Match" | "Num" | "Str"
 
 // Value in the metalanguage. Nominal idiom breaks down here in requiring use of "any".
 export class Value<Tag extends ValueTag = ValueTag> {
