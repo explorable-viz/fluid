@@ -73,7 +73,7 @@ function uncloseDefs (ρ: Env): void {
    }
 }
 
-// Could remove the annotations on the defs and make the dependencies on the variables instead.
+// Could remove the annotations on the defs and move them to the variables.
 // Especially as we're not using the annotations on letrecs.
 function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): Env {
    if (Cons.is(def̅)) {
