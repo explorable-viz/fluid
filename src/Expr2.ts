@@ -87,7 +87,7 @@ export namespace Expr {
 
    // Because let/letrec no longer have "bodies", there's no real need for them to be separately versioned;
    // the variables they introduce are.
-   export class Def extends DataValue<"Def"> {
+   export class Def extends DataValue<"Expr.Def"> {
    }
 
    export class Let extends Def {

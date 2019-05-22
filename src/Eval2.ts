@@ -44,6 +44,7 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
 }
    
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
+// TODO: associate explanations to the created closures.
 function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
@@ -73,13 +74,14 @@ function uncloseDefs (ρ: Env): void {
    }
 }
 
+// TODO: associate explanations to the values created in the let and primitive cases.
 function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const k: ValId = evalId(def.x, "v"),
                v: Versioned<Value> = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
-               vʹ: Versioned<Value> = setα(ann.meet(v.__α, def.x.__α), copyAt(k, v)), // TODO: setExpl
+               vʹ: Versioned<Value> = setα(ann.meet(v.__α, def.x.__α), copyAt(k, v)),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, vʹ))
          return [cons(Expl.let_(def.x, vʹ), def̅ₜ), ρ_extʹ]
       } else
@@ -88,7 +90,7 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env
          if (unaryOps.has(def.x.val)) {
             const k: ValId = evalId(def.x, "v"),
                   op: UnaryOp = unaryOps.get(def.x.val)!,
-                  opʹ: Versioned<Value> = setα(def.x.__α, copyAt(k, op)), // TODO: setExpl
+                  opʹ: Versioned<Value> = setα(def.x.__α, copyAt(k, op)),
                   [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
             return [cons(Expl.prim(def.x, op), def̅ₜ), ρ_extʹ]
          } else {
@@ -96,8 +98,9 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env
          }
       } else
       if (def instanceof Expr.LetRec) {
-         const [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, ρ_ext.concat(closeDefs(def.δ, ρ.concat(ρ_ext), def.δ)))
-         return [cons(Expl.letRec(def.δ), def̅ₜ), ρ_extʹ]
+         const ρ_δ: Env = closeDefs(def.δ, ρ.concat(ρ_ext), def.δ),
+               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, ρ_ext.concat(ρ_δ))
+         return [cons(Expl.letRec(ρ_δ), def̅ₜ), ρ_extʹ]
       } else {
          return absurd()
       }
@@ -111,21 +114,21 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env
 
 function undef̅Env (def̅: List<Expl.Def>): void {
    if (Cons.is(def̅)) {
-      const def: Def = def̅.head
-      if (def instanceof Expr.Let) {
-         return notYetImplemented()
+      const def: Expl.Def = def̅.head
+      if (def instanceof Expl.Let) {
+         undef̅Env(def̅.tail)
       } else
-      if (def instanceof Expr.Prim) {
-         return notYetImplemented()
+      if (def instanceof Expl.Prim) {
+         undef̅Env(def̅.tail)
       } else
-      if (def instanceof Expr.LetRec) {
-         return notYetImplemented()
+      if (def instanceof Expl.LetRec) {
+         undef̅Env(def̅.tail)
+         uncloseDefs(def.ρ_δ)
       } else {
          return absurd()
       }
    } else
    if (Nil.is(def̅)) {
-      return notYetImplemented()
    } else {
       return absurd()
    }
@@ -192,7 +195,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    if (e instanceof Expr.Defs) {
       const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, e.def̅, emptyEnv()),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return setExpl(Expl.defs(kₜ, def̅ₜ, ρʹ, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+      return setExpl(Expl.defs(kₜ, def̅ₜ, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Versioned<Value> = eval_(ρ, e.e),

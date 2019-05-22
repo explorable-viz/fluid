@@ -41,7 +41,7 @@ export namespace Expl {
       return at(k, BinaryApp, v1, opName, v2)
    }
 
-   export abstract class Def extends DataValue<"Def"> {
+   export abstract class Def extends DataValue<"Expl.Def"> {
    }
 
    export class Let extends Def {
@@ -63,21 +63,20 @@ export namespace Expl {
    }
 
    export class LetRec extends Def {
-      δ: List<Expr.RecDef> = _
+      ρ_δ: Env = _
    }
 
-   export function letRec (δ: List<Expr.RecDef>): LetRec {
-      return make(LetRec, δ)
+   export function letRec (ρ_δ: Env): LetRec {
+      return make(LetRec, ρ_δ)
    }
 
    export class Defs extends Expl {
       def̅: List<Def> = _
-      ρ_def̅: Env = _
       v: Versioned<Value> = _
    }
 
-   export function defs (k: ExplId, def̅: List<Def>, ρ_def̅: Env, v: Versioned<Value>): Defs {
-      return at(k, Defs, def̅, ρ_def̅, v)
+   export function defs (k: ExplId, def̅: List<Def>, v: Versioned<Value>): Defs {
+      return at(k, Defs, def̅, v)
    }
 
    export class Empty extends Expl {
