@@ -64,7 +64,6 @@ export namespace Expl {
 
    export class LetRec extends Def {
       δ: List<Expr.RecDef> = _
-      // TODO: ρ_defs for uneval?
    }
 
    export function letRec (δ: List<Expr.RecDef>): LetRec {
@@ -72,12 +71,13 @@ export namespace Expl {
    }
 
    export class Defs extends Expl {
+      def̅: List<Def> = _
       ρ_def̅: Env = _
       v: Versioned<Value> = _
    }
 
-   export function defs (k: ExplId, ρ_def̅: Env, v: Versioned<Value>): Defs {
-      return at(k, Defs, ρ_def̅, v)
+   export function defs (k: ExplId, def̅: List<Def>, ρ_def̅: Env, v: Versioned<Value>): Defs {
+      return at(k, Defs, def̅, ρ_def̅, v)
    }
 
    export class Empty extends Expl {

@@ -1,6 +1,6 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { __nonNull, absurd, as, assert, className, error, notYetImplemented } from "./util/Core"
-import { Cons, List, Nil, nil } from "./BaseTypes2"
+import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
 import { DataValue } from "./DataType2"
@@ -73,34 +73,37 @@ function uncloseDefs (ρ: Env): void {
    }
 }
 
-function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): Env {
+function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const k: ValId = evalId(def.x, "v"),
                v: Versioned<Value> = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
-               vʹ: Versioned<Value> = setExpl(Expl.let_(def.x, v), setα(ann.meet(v.__α, def.x.__α), copyAt(k, v)))
-         return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, vʹ))
+               vʹ: Versioned<Value> = setα(ann.meet(v.__α, def.x.__α), copyAt(k, v)), // TODO: setExpl
+               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, vʹ))
+         return [cons(Expl.let_(def.x, vʹ), def̅ₜ), ρ_extʹ]
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currenly happen to be unary
          if (unaryOps.has(def.x.val)) {
             const k: ValId = evalId(def.x, "v"),
                   op: UnaryOp = unaryOps.get(def.x.val)!,
-                  opʹ: Versioned<Value> = setExpl(Expl.prim(def.x, op), setα(def.x.__α, copyAt(k, op)))
-            return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
+                  opʹ: Versioned<Value> = setα(def.x.__α, copyAt(k, op)), // TODO: setExpl
+                  [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
+            return [cons(Expl.prim(def.x, op), def̅ₜ), ρ_extʹ]
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
       } else
       if (def instanceof Expr.LetRec) {
-         return def̅Env(ρ, def̅.tail, ρ_ext.concat(closeDefs(def.δ, ρ.concat(ρ_ext), def.δ)))
+         const [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, ρ_ext.concat(closeDefs(def.δ, ρ.concat(ρ_ext), def.δ)))
+         return [cons(Expl.letRec(def.δ), def̅ₜ), ρ_extʹ]
       } else {
          return absurd()
       }
    } else
    if (Nil.is(def̅)) {
-      return ρ_ext
+      return [nil(), ρ_ext]
    } else {
       return absurd()
    }
@@ -157,7 +160,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    // Binary operators are (currently) "syntax", rather than first-class.
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.val)) {
-         const op: BinaryOp = binaryOps.get(e.opName.val)!, // opName lacks annotations
+         const op: BinaryOp = binaryOps.get(e.opName.val)!, // TODO: add annotations to opName
                [v1, v2]: [Versioned<Value>, Versioned<Value>] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
          if ((v1 instanceof Num || v1 instanceof Str) && (v2 instanceof Num || v2 instanceof Str)) {
                return setExpl(Expl.binaryApp(kₜ, v1, e.opName, v2), setα(ann.meet(v1.__α, v2.__α, e.__α), op.op(v1, v2)(kᵥ)))
@@ -169,9 +172,9 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
       }
    } else
    if (e instanceof Expr.Defs) {
-      const ρʹ: Env = def̅Env(ρ, e.def̅, emptyEnv()),
+      const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, e.def̅, emptyEnv()),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return setExpl(Expl.defs(kₜ, ρʹ, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+      return setExpl(Expl.defs(kₜ, def̅ₜ, ρʹ, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Versioned<Value> = eval_(ρ, e.e),

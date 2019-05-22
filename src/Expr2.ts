@@ -243,6 +243,7 @@ export namespace Expr {
          return make(Constr, cases)
       }
 
+      // TODO: use Versioned<Str> by analogy with other binding forms.
       export class Var<K extends Kont<K>> extends Trie<K> {
          x: Str = _
          κ: K = _
