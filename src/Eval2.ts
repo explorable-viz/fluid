@@ -109,8 +109,26 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env
    }
 }
 
-function undef̅Env (ρ: Env): void {
-   return notYetImplemented()
+function undef̅Env (def̅: List<Expl.Def>): void {
+   if (Cons.is(def̅)) {
+      const def: Def = def̅.head
+      if (def instanceof Expr.Let) {
+         return notYetImplemented()
+      } else
+      if (def instanceof Expr.Prim) {
+         return notYetImplemented()
+      } else
+      if (def instanceof Expr.LetRec) {
+         return notYetImplemented()
+      } else {
+         return absurd()
+      }
+   } else
+   if (Nil.is(def̅)) {
+      return notYetImplemented()
+   } else {
+      return absurd()
+   }
 }
 
 export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
@@ -247,7 +265,7 @@ export function uneval (v: Versioned<Value>): Expr {
    if (t instanceof Expl.Defs) {
       joinα(v.__α, t.v)
       uninstantiate(uneval(t.v))
-      undef̅Env(t.ρ_def̅)
+      undef̅Env(t.def̅)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
