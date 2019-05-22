@@ -1,5 +1,5 @@
 import { Annotation, ann } from "./util/Annotated2"
-import { __nonNull, absurd, as, assert, className, error, notYetImplemented } from "./util/Core"
+import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
@@ -157,7 +157,7 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
          const v: Versioned<Value> = ρ.get(e.x)!
-         return setExpl(Expl.var_(kₜ, e.x), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+         return setExpl(Expl.var_(kₜ, e.x, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
       } else {
          return error(`Variable "${e.x.val}" not found.`)
       }
@@ -236,13 +236,8 @@ export function uneval (v: Versioned<Value>): Expr {
       }
    } else
    if (t instanceof Expl.Var) {
-      return notYetImplemented()
-/*      
-      const x: string = t.x.val
-      assert(ρ.has(x))
-      joinα(v.__α, ρ.get(x)!)
+      joinα(v.__α, t.v)
       return joinα(v.__α, e)
-*/_
    } else
    if (t instanceof Expl.App) {
       assert(t.f instanceof Closure)

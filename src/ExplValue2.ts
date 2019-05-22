@@ -43,7 +43,7 @@ export namespace Expl {
    export abstract class Def extends DataValue<"Expl.Def"> {
    }
 
-   // v is the original explained value, vʹ is the copy bound to x...urgh.
+   // v is the computed value, vʹ is the copy bound to x...urgh.
    export class Let extends Def {
       x: Versioned<Str> = _
       v: Versioned<Value> = _
@@ -98,11 +98,13 @@ export namespace Expl {
       return at(k, MatchAs, u, v)
    }
 
+   // v is the resolved value of x
    export class Var extends Expl {
       x: Str = _
+      v: Versioned<Value> = _
    }
 
-   export function var_ (k: ExplId, x: Str): Var {
-      return at(k, Var, x)
+   export function var_ (k: ExplId, x: Str, v: Versioned<Value>): Var {
+      return at(k, Var, x, v)
    }
 }
