@@ -1,5 +1,5 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
-import { DataFunc } from "./Func2"
+import { DataFunc } from "./Match2"
 import { DataValue, State, Str, _, fields } from "./Value2"
 
 // Neither of these is currently reflective because of non-standard fields.
