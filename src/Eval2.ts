@@ -20,11 +20,11 @@ type RecDef = Expr.RecDef
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
 export class EvalId<T extends Tag> extends Id {
-   e: Expr | RecDef | Expr.Prim = _
+   e: Expr | Versioned<Str> = _ // str case is for binding occurrences of variables
    tag: T = _
 }
 
-function evalId<T extends Tag> (e: Expr | RecDef | Expr.Prim, tag: T): EvalId<T> {
+function evalId<T extends Tag> (e: Expr | Versioned<Str>, tag: T): EvalId<T> {
    return make(EvalId, e, tag) as EvalId<T>
 }
 
@@ -47,8 +47,8 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
 function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
-            kᵥ: ValId = evalId(def, "v")
-      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, setα(def.__α, closure(kᵥ, ρ, δ_0, def.σ)))
+            k: ValId = evalId(def.x, "v")
+      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, setα(def.x.__α, closure(k, ρ, δ_0, def.σ)))
    } else
    if (Nil.is(δ)) {
       return emptyEnv()
@@ -64,7 +64,7 @@ function uncloseDefs (ρ: Env): void {
       let δ: List<RecDef> = f̅.head.δ,
           f̅ʹ: List<Closure> = f̅
       for (; Cons.is(f̅ʹ) && Cons.is(δ); f̅ʹ = f̅ʹ.tail, δ = δ.tail) {
-         joinα(f̅ʹ.head.__α, δ.head)
+         joinα(f̅ʹ.head.__α, δ.head.x)
       }
    } else
    if (Nil.is(f̅)) {
@@ -73,24 +73,21 @@ function uncloseDefs (ρ: Env): void {
    }
 }
 
-// Could remove the annotations on the defs and move them to the variables.
-// Especially as we're not using the annotations on letrecs.
 function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): Env {
    if (Cons.is(def̅)) {
-      const def: Def = def̅.head,
-            kₜ: ExplId = evalId(def, "t"),
-            kᵥ: ValId = evalId(def, "v")
+      const def: Def = def̅.head
       if (def instanceof Expr.Let) {
-         const v: Versioned<Value> = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
-               vʹ: Versioned<Value> = setExpl(Expl.let_(kₜ, def.x, v), setα(ann.meet(v.__α, def.__α), copyAt(kᵥ, v)))
+         const k: ValId = evalId(def.x, "v"),
+               v: Versioned<Value> = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
+               vʹ: Versioned<Value> = setExpl(Expl.let_(def.x, v), setα(ann.meet(v.__α, def.x.__α), copyAt(k, v)))
          return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, vʹ))
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currenly happen to be unary
          if (unaryOps.has(def.x.val)) {
-            const kᵥ: ValId = evalId(def, "v"),
+            const k: ValId = evalId(def.x, "v"),
                   op: UnaryOp = unaryOps.get(def.x.val)!,
-                  opʹ: Versioned<Value> = setExpl(Expl.prim(kₜ, def.x, op), setα(def.__α, copyAt(kᵥ, op)))
+                  opʹ: Versioned<Value> = setExpl(Expl.prim(def.x, op), setα(def.x.__α, copyAt(k, op)))
             return def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)

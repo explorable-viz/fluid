@@ -4,7 +4,7 @@ import { List, Pair, pair } from "./BaseTypes2"
 import { Env } from "./Env2"
 import { Expr } from "./Expr2"
 import { Id, Str, Value, _, make } from "./Value2"
-import { setα } from "./Versioned2"
+import { Versioned, setα, strʹ } from "./Versioned2"
 
 import Args = Expr.Args
 import Def = Expr.Def
@@ -16,10 +16,10 @@ import Trie = Expr.Trie
 // here it is more convenient to use an isomorphic nested format.
 export class ExprId extends Id {
    j: List<Value> = _
-   e: Expr | RecDef | Def = _
+   e: Expr | Versioned<Str> = _ // str case is for binding occurrences of variables
 }
 
-export function exprId (j: List<Value>, e: Expr | RecDef | Def): ExprId {
+export function exprId (j: List<Value>, e: Expr | Versioned<Str>): ExprId {
    return make(ExprId, j, e)
 }
 
@@ -94,42 +94,45 @@ export function uninstantiate (e: Expr): Expr {
    }
 }
 
+function instantiateVar (ρ: Env, x: Versioned<Str>): Versioned<Str> {
+   const k: ExprId = exprId(ρ.entries(), x)
+   return setα(x.__α, strʹ(k, x.val))
+}
+
 function instantiateDef (ρ: Env, def: Def): Def {
-   const k: ExprId = exprId(ρ.entries(), def)
    if (def instanceof Expr.Let) {
-      return setα(def.__α, Expr.let_(k, def.x, instantiate(ρ, def.e)))
+      return Expr.let_(instantiateVar(ρ, def.x), instantiate(ρ, def.e))
    } else
    if (def instanceof Expr.Prim) {
-      return setα(def.__α, Expr.prim(k, def.x))
+      return Expr.prim(instantiateVar(ρ, def.x))
    } else
    if (def instanceof Expr.LetRec) {
       const δ: List<RecDef> = def.δ.map((def: RecDef) => {
-         const i: ExprId = exprId(ρ.entries(), def)
-         return setα(def.__α, Expr.recDef(i, def.x, instantiateTrie(ρ, def.σ)))
+         return Expr.recDef(instantiateVar(ρ, def.x), instantiateTrie(ρ, def.σ))
       })
-      return setα(def.__α, Expr.letRec(k, δ))
+      return Expr.letRec(δ)
    } else {
       return absurd()
    }
 }
 
+function uninstantiateVar (x: Versioned<Str>): Versioned<Str> {
+   const xʹ: Versioned<Str> = (x.__id as ExprId).e as Versioned<Str>
+   return setα(ann.join(xʹ.__α, x.__α), xʹ)
+}
+
 function uninstantiateDef (def: Def): Def {
-   const defʹ: Def = as((def.__id as ExprId).e, Def),
-         k: Id = defʹ.__id,
-         α: Annotation = ann.join(defʹ.__α, def.__α)
    if (def instanceof Expr.Let) {
-      return setα(α, Expr.let_(k, def.x, uninstantiate(def.e)))
+      return Expr.let_(uninstantiateVar(def.x), uninstantiate(def.e))
    } else 
    if (def instanceof Expr.Prim) {
-      return setα(α, Expr.prim(k, def.x))
+      return Expr.prim(uninstantiateVar(def.x))
    }
    if (def instanceof Expr.LetRec) {
       const δ: List<RecDef> = def.δ.map(def => {
-         const defʹ: RecDef = as((def.__id as ExprId).e, RecDef),
-               i: Id = defʹ.__id
-         return setα(ann.join(defʹ.__α, def.__α), Expr.recDef(i, def.x, uninstantiateTrie(def.σ)))
+         return Expr.recDef(uninstantiateVar(def.x), uninstantiateTrie(def.σ))
       })
-      return setα(α, Expr.letRec(k, δ))
+      return Expr.letRec(δ)
    } else {
       return absurd()
    }

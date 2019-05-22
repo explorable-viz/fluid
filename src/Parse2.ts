@@ -9,7 +9,7 @@ import { arity } from "./DataType2"
 import { Expr, Kont, strings } from "./Expr2"
 import { singleton } from "./FiniteMap2"
 import { Str, num, str } from "./Value2"
-import { ν } from "./Versioned2"
+import { ν, strʹ } from "./Versioned2"
 
 import App = Expr.App
 import Args = Expr.Args
@@ -217,8 +217,8 @@ const parenthExpr: Parser<Expr> =
 const recDef: Parser<RecDef> =
    withAction(
       seq(dropFirst(keyword(strings.fun), var_), matches),
-      ([name, σ]: [Str, Trie<Expr>]) =>
-         Expr.recDef(ν(), name, σ)
+      ([f, σ]: [Str, Trie<Expr>]) =>
+         Expr.recDef(strʹ(ν(), f.val), σ)
    )
 
 const recDefs1 : Parser<List<RecDef>> =
@@ -227,20 +227,19 @@ const recDefs1 : Parser<List<RecDef>> =
 const let_: Parser<Let> =
    withAction(
       dropFirst(keyword(strings.let_), seq(dropSecond(var_, symbol(strings.equals)), expr)),
-      ([x, e]: [Str, Expr]) => Expr.let_(ν(), x, e)
+      ([x, e]: [Str, Expr]) => Expr.let_(strʹ(ν(), x.val), e)
    )
 
 const prim: Parser<Prim> =
    withAction(
       dropFirst(keyword(strings.primitive), var_),
-      (x: Str) => Expr.prim(ν(), x)
+      (x: Str) => Expr.prim(strʹ(ν(), x.val))
    )
 
 const letrec_: Parser<LetRec> =
    withAction(
       dropFirst(keyword(strings.letRec), recDefs1),
-      (δ: List<RecDef>) => 
-         Expr.letRec(ν(), δ)
+      (δ: List<RecDef>) => Expr.letRec(δ)
    )
 
 export const defList: Parser<List<Def>> =

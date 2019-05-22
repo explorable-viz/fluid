@@ -4,7 +4,7 @@ import { DataValue } from "./DataType2"
 import { Env } from "./Env2"
 import { ExplId } from "./Eval2"
 import { UnaryOp } from "./Primitive2"
-import { Id, PrimValue, Str, Value, _ } from "./Value2"
+import { PrimValue, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at } from "./Versioned2"
 
 export namespace Expl {
@@ -41,25 +41,25 @@ export namespace Expl {
       return at(k, BinaryApp, v1, opName, v2)
    }
 
-   export abstract class Def extends VersionedC(DataValue)<"Def"> {
+   export abstract class Def extends DataValue<"Def"> {
    }
 
    export class Let extends Def {
-      x: Str = _
+      x: Versioned<Str> = _
       v: Versioned<Value> = _
    }
 
-   export function let_ (k: Id, x: Str, v: Versioned<Value>): Let {
-      return at(k, Let, x, v)
+   export function let_ (x: Versioned<Str>, v: Versioned<Value>): Let {
+      return make(Let, x, v)
    }
 
    export class Prim extends Def {
-      x: Str = _
-      v: Value = _ // underlying primitive is no versioned
+      x: Versioned<Str> = _
+      v: Value = _ // underlying primitive is not versioned
    }
 
-   export function prim (k: Id, x: Str, v: Value): Prim {
-      return at(k, Prim, x, v)
+   export function prim (x: Versioned<Str>, v: Value): Prim {
+      return make(Prim, x, v)
    }
 
    export class LetRec extends Def {
@@ -67,8 +67,8 @@ export namespace Expl {
       // TODO: ρ_defs for uneval?
    }
 
-   export function letRec (k: ExplId, δ: List<Expr.RecDef>): LetRec {
-      return at(k, LetRec, δ)
+   export function letRec (δ: List<Expr.RecDef>): LetRec {
+      return make(LetRec, δ)
    }
 
    export class Defs extends Expl {

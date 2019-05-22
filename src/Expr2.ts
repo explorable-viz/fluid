@@ -4,7 +4,7 @@ import { List } from "./BaseTypes2"
 import { DataValue, ctrToDataType } from "./DataType2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
 import { Id, Num, Str, _, make } from "./Value2"
-import { VersionedC, at } from "./Versioned2"
+import { Versioned, VersionedC, at } from "./Versioned2"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -85,41 +85,43 @@ export namespace Expr {
       return at(k, Constr, ctr, args)
    }
 
-   export abstract class Def extends VersionedC(DataValue)<"Def"> {
+   // Because let/letrec no longer have "bodies", there's no real need for them to be separately versioned;
+   // the variables they introduce are.
+   export abstract class Def extends DataValue<"Def"> {
    }
 
    export class Let extends Def {
-      x: Str = _
+      x: Versioned<Str> = _
       e: Expr = _
    }
 
-   export function let_ (k: Id, x: Str, e: Expr): Let {
-      return at(k, Let, x, e)
+   export function let_ (x: Versioned<Str>, e: Expr): Let {
+      return make(Let, x, e)
    }
 
    export class Prim extends Def {
-      x: Str = _
+      x: Versioned<Str> = _
    }
 
-   export function prim (k: Id, x: Str): Prim {
-      return at(k, Prim, x)
+   export function prim (x: Versioned<Str>): Prim {
+      return make(Prim, x)
    }
 
-   export class RecDef extends VersionedC(DataValue)<"RecDef"> {
-      x: Str = _
+   export class RecDef extends DataValue<"RecDef"> {
+      x: Versioned<Str> = _
       σ: Trie<Expr> = _
    }
  
-   export function recDef (k: Id, x: Str, σ: Trie<Expr>): RecDef {
-      return at(k, RecDef, x, σ)
+   export function recDef (x: Versioned<Str>, σ: Trie<Expr>): RecDef {
+      return make(RecDef, x, σ)
    }
 
    export class LetRec extends Def {
       δ: List<RecDef> = _
    }
 
-   export function letRec (k: Id, δ: List<RecDef>): LetRec {
-      return at(k, LetRec, δ)
+   export function letRec (δ: List<RecDef>): LetRec {
+      return make(LetRec, δ)
    }
 
    export class Defs extends Expr {
