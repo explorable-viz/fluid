@@ -1,18 +1,11 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { DataFunc } from "./Func2"
-import { DataValueTag, State, Str, Value, _, fields } from "./Value2"
-
-// Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
-export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
-   fieldValues (): Value[] {
-      return fields(this).map(k => (this as any as State)[k] as Value)
-   }
-}
+import { DataValue, State, Str, _, fields } from "./Value2"
 
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: string
-   elimC: Class<DataFunc<any>> // not sure how better to parameterise 
+   elimC: Class<DataFunc<any>>   // not sure how better to parameterise 
    ctrs: Map<string, Ctr>        // fields of my constructors
 
    constructor (name: string, elimC: Class<DataFunc<any>>, ctrs: Map<string, Ctr>) {

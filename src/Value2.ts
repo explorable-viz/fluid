@@ -5,11 +5,11 @@ export const _: any = undefined
 
 // Somewhat perverse to do this, but need some type safety!
 export type DataValueTag =
-   "Args" | "ArgsPlug" | "Bool" | "Closure" | "Env" | "Expl" | "Expl.Def" | "Expr" | "Expr.Def" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
+   "Args" | "Args.Plug" | "Bool" | "Closure" | "Env" | "Expl" | "Expl.Def" | "Expr" | "Expr.Def" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
    "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
 export type PrimOpTag = "UnaryOp" | "BinaryOp"
-export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "ArgsFunc" | "ArgsMatch" | "Func" | "Id" | "Match" | "Num" | "Str"
+export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "ArgsFunc" | "Args.Match" | "Func" | "Id" | "Match" | "Num" | "Str"
 
 // Value in the metalanguage. Nominal idiom breaks down here in requiring use of "any".
 export class Value<Tag extends ValueTag = ValueTag> {
@@ -17,6 +17,13 @@ export class Value<Tag extends ValueTag = ValueTag> {
 
    fieldValues (): Persistent[] {
       return fields(this).map(k => (this as any as State)[k])
+   }
+}
+
+// Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
+export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
+   fieldValues (): Value[] {
+      return fields(this).map(k => (this as any as State)[k] as Value)
    }
 }
 

@@ -1,10 +1,40 @@
 import { List } from "./BaseTypes2"
-import { DataValue } from "./DataType2"
 import { Env } from "./Env2"
 import { ExplId } from "./Eval2"
+import { Kont } from "./Expr2"
 import { UnaryOp } from "./Primitive2"
-import { PrimValue, Str, Value, _, make } from "./Value2"
+import { DataValue, PrimValue, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at } from "./Versioned2"
+
+export namespace Match {
+   export class Plug<K extends Kont<K>, M extends Match<K>> extends DataValue<"Plug"> {
+      ξ: M = _
+      κ: K = _ // fills the single hole in ξ
+   }
+
+   export function plug<K extends Kont<K>, M extends Match<K>> (ξ: M, κ: K): Plug<K, M> {
+      return make(Plug, ξ, κ) as Plug<K, M>
+   }
+
+   export namespace Args {
+      export class Plug<K extends Kont<K>, M extends Match<K>> extends DataValue<"Args.Plug"> {
+         Ψ: M = _
+         κ: K = _ // fills the single hole in Ψ
+      }
+
+      export function plug<K extends Kont<K>, M extends Match<K>> (ξ: M, κ: K): Plug<K, M> {
+         return make(Plug, ξ, κ) as Plug<K, M>
+      }
+
+      export abstract class Match<K> extends Value<"Args.Match"> {
+         abstract __unapply (): void
+      }
+   }
+
+   export abstract class Match<K> extends Value<"Match"> {
+      abstract __unapply (): void
+   }
+}
 
 export namespace Expl {
    export abstract class Expl extends VersionedC(DataValue)<"Expl"> {
