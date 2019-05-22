@@ -1,4 +1,3 @@
-import { Expr } from "./Expr2"
 import { List } from "./BaseTypes2"
 import { DataValue } from "./DataType2"
 import { Env } from "./Env2"
@@ -44,22 +43,26 @@ export namespace Expl {
    export abstract class Def extends DataValue<"Expl.Def"> {
    }
 
+   // v is the original explained value, vʹ is the copy bound to x...urgh.
    export class Let extends Def {
       x: Versioned<Str> = _
       v: Versioned<Value> = _
+      vʹ: Versioned<Value> = _
    }
 
-   export function let_ (x: Versioned<Str>, v: Versioned<Value>): Let {
-      return make(Let, x, v)
+   export function let_ (x: Versioned<Str>, v: Versioned<Value>, vʹ: Versioned<Value>): Let {
+      return make(Let, x, v, vʹ)
    }
 
+   // See Let.
    export class Prim extends Def {
       x: Versioned<Str> = _
       v: Value = _ // underlying primitive is not versioned
+      vʹ: Versioned<Value> = _
    }
 
-   export function prim (x: Versioned<Str>, v: Value): Prim {
-      return make(Prim, x, v)
+   export function prim (x: Versioned<Str>, v: Value, vʹ: Versioned<Value>): Prim {
+      return make(Prim, x, v, vʹ)
    }
 
    export class LetRec extends Def {
@@ -88,7 +91,7 @@ export namespace Expl {
 
    export class MatchAs extends Expl {
       u: Versioned<Value> = _
-      v: Versioned<Value> = _    // TODO: record match
+      v: Versioned<Value> = _ // TODO: record match
    }
 
    export function matchAs (k: ExplId, u: Versioned<Value>, v: Versioned<Value>): MatchAs {

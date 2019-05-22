@@ -74,7 +74,7 @@ function uncloseDefs (ρ: Env): void {
    }
 }
 
-// TODO: associate explanations to the values created in the let and primitive cases.
+// TODO: associate explanations to values created in the let and primitive cases.
 function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
@@ -83,16 +83,16 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env
                v: Versioned<Value> = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
                vʹ: Versioned<Value> = setα(ann.meet(v.__α, def.x.__α), copyAt(k, v)),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, vʹ))
-         return [cons(Expl.let_(def.x, vʹ), def̅ₜ), ρ_extʹ]
+         return [cons(Expl.let_(def.x, v, vʹ), def̅ₜ), ρ_extʹ]
       } else
       if (def instanceof Expr.Prim) {
-         // first-class primitives currenly happen to be unary
+         // first-class primitives currently happen to be unary
          if (unaryOps.has(def.x.val)) {
             const k: ValId = evalId(def.x, "v"),
                   op: UnaryOp = unaryOps.get(def.x.val)!,
-                  opʹ: Versioned<Value> = setα(def.x.__α, copyAt(k, op)),
+                  opʹ: Versioned<UnaryOp> = setα(def.x.__α, copyAt(k, op)),
                   [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
-            return [cons(Expl.prim(def.x, op), def̅ₜ), ρ_extʹ]
+            return [cons(Expl.prim(def.x, op, opʹ), def̅ₜ), ρ_extʹ]
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
@@ -117,9 +117,13 @@ function undef̅Env (def̅: List<Expl.Def>): void {
       const def: Expl.Def = def̅.head
       if (def instanceof Expl.Let) {
          undef̅Env(def̅.tail)
+         joinα(def.vʹ.__α, def.v)
+         joinα(def.vʹ.__α, def.x)
+         uninstantiate(uneval(def.v))
       } else
       if (def instanceof Expl.Prim) {
          undef̅Env(def̅.tail)
+         joinα(def.vʹ.__α, def.x)
       } else
       if (def instanceof Expl.LetRec) {
          undef̅Env(def̅.tail)
