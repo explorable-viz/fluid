@@ -1,7 +1,7 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
 import { Expl } from "./ExplValue2"
-import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
+import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make } from "./Value2"
 
 type Expl = Expl.Expl
 
@@ -47,7 +47,7 @@ type VersionedValues = Map<Id, Versioned<Value>>
 const __versioned: VersionedValues = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
+export function at<Tag extends ValueTag, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
    let v: Versioned<Value> | undefined = __versioned.get(k)
    if (v === undefined) {
       const v: T = new C
@@ -68,11 +68,11 @@ export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>
 }
 
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
-function reclassify<Tag extends string, T extends Value<Tag>> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
+function reclassify<Tag extends ValueTag, T extends Value<Tag>> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
    return notYetImplemented()
 }
 
-export function copyAt<Tag extends string, T extends Value<Tag>> (k: Id, v: T): Versioned<T> {
+export function copyAt<Tag extends ValueTag, T extends Value<Tag>> (k: Id, v: T): Versioned<T> {
    return at(k, classOf(v), ...v.fieldValues())
 }
 
@@ -107,7 +107,7 @@ export function setα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
    return v
 }
 
-export function setallα<Tag extends string, T extends Value<Tag>> (v: T, α: Annotation): T {
+export function setallα<Tag extends ValueTag, T extends Value<Tag>> (v: T, α: Annotation): T {
    if (versioned(v)) {
       setα(α, v)
    }

@@ -1,6 +1,6 @@
 import { as, assert } from "./util/Core"
 import { Bool, trueʹ, falseʹ } from "./BaseTypes2"
-import { Id, Num, PrimValue, Str, _, Value, make } from "./Value2"
+import { Id, Num, PrimOpTag, PrimValue, Str, _, Value, make } from "./Value2"
 import { Versioned, numʹ, strʹ } from "./Versioned2"
 
 type Unary<T, V> = (x: T) => (k: Id) => Versioned<V>
@@ -9,7 +9,7 @@ type Binary<T, U, V> = (x: T, y: U) => (k: Id) => Versioned<V>
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.
 
-export class PrimOp<Tag extends string> extends Value<Tag> {
+export class PrimOp<Tag extends PrimOpTag> extends Value<Tag> {
    name: string = _
 }
 
@@ -19,7 +19,7 @@ export class UnaryOp extends PrimOp<"UnaryOp"> {
    op: Unary<PrimValue, Value> = _
 }
 
-function unary (name: string, op: Unary<PrimValue, PrimValue>): UnaryOp {
+function unary (name: string, op: Unary<PrimValue, Value>): UnaryOp {
    return make(UnaryOp, name, op)
 }
 
@@ -50,7 +50,7 @@ const div = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).v
 const concat = (x: Str, y: Str) => (k: Id): Versioned<Str> => strʹ(k, as(x, Str).val + as(y, Str).val)
 
 // Convenience methods for building the maps.
-function unary_<T extends PrimValue, V extends PrimValue> (op: Unary<T, V>): UnaryOp {
+function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): UnaryOp {
    return unary(op.name, op)
 }
 

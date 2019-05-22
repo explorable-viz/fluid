@@ -145,7 +145,11 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
          return setExpl(Expl.app(kₜ, f, u, ρ_δ, v), setα(ann.meet(f.__α, α, v.__α, e.__α), copyAt(kᵥ, v)))
       } else 
       if (f instanceof UnaryOp) {
-         return setExpl(Expl.unaryApp(kₜ, f, u), setα(ann.meet(f.__α, u.__α, e.__α), f.op(u)(kᵥ)))
+         if (u instanceof Num || u instanceof Str) {
+            return setExpl(Expl.unaryApp(kₜ, f, u), setα(ann.meet(f.__α, u.__α, e.__α), f.op(u)(kᵥ)))
+         } else {
+            return error(`Applying "${f.name}" to non-primitive value.`, u)
+         }
       } else {
          return error(`Cannot apply ${className(f)}`)
       }
@@ -155,7 +159,15 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
       if (binaryOps.has(e.opName.val)) {
          const op: BinaryOp = binaryOps.get(e.opName.val)!, // opName lacks annotations
                [v1, v2]: [Versioned<Value>, Versioned<Value>] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
-         return setExpl(Expl.binaryApp(kₜ, v1, e.opName, v2), setα(ann.meet(v1.__α, v2.__α, e.__α), op.op(v1, v2)(kᵥ)))
+         if (v1 instanceof Num || v1 instanceof Str) {
+            if (v2 instanceof Num || v2 instanceof Str) {
+               return setExpl(Expl.binaryApp(kₜ, v1, e.opName, v2), setα(ann.meet(v1.__α, v2.__α, e.__α), op.op(v1, v2)(kᵥ)))
+            } else {
+               return error(`Applying "${e.opName}" to non-primitive value.`, v2)
+            }
+         } else {
+            return error(`Applying "${e.opName}" to non-primitive value.`, v1)
+         }
       } else {
          return error(`Binary primitive "${e.opName.val}" not found.`)
       }
