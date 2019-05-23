@@ -1,6 +1,6 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { FwdSlice, load, parse } from "./util/Core2"
+import { BwdSlice, FwdSlice, load, parse } from "./util/Core2"
 import { Cons, List, Nil, NonEmpty } from "../src/BaseTypes2"
 import { Expr } from "../src/Expr2"
 
@@ -25,6 +25,7 @@ describe("example", () => {
 					this.val.notNeeded()
 				} 
 			})(e)
+			new BwdSlice(e)
 		})
    })
 
