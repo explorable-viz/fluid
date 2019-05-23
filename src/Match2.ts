@@ -163,9 +163,9 @@ export namespace Args {
             return absurd("Too few arguments to constructor.")
          } else {
             const [v, ...v̅ʹ] = v̅,
-                  [ρ, {κ: Π}, α] = evalTrie(this.Π.σ).__apply(v),
-                  [ρʹ, {κ}, αʹ] = evalArgs(Π).__apply(v̅ʹ)
-            return [ρ.concat(ρʹ), Args.plug(nextMatch(), κ), ann.meet(α, αʹ)]
+                  [ρ, {ξ, κ: Π}, α] = evalTrie(this.Π.σ).__apply(v),
+                  [ρʹ, {Ψ, κ}, αʹ] = evalArgs(Π).__apply(v̅ʹ)
+            return [ρ.concat(ρʹ), Args.plug(nextMatch(ξ, Ψ), κ), ann.meet(α, αʹ)]
          }
       }
    }
@@ -182,6 +182,10 @@ export namespace Args {
       __unapply (α: Annotation): void {
          // nothing to do
       }
+
+      static is<K extends Kont<K>> (Ψ: ArgsMatch<K>): Ψ is EndMatch<K> {
+         return Ψ instanceof EndMatch
+      }
    }
    
    function endMatch<K extends Kont<K>> (): EndMatch<K> {
@@ -189,12 +193,15 @@ export namespace Args {
    }
    
    class NextMatch<K extends Kont<K>> extends ArgsMatch<K> {
-      ξ: Match<K>
-      Ψ: ArgsMatch<K>
+      ξ: Match<K> = _
+      Ψ: ArgsMatch<K> = _
    
       __unapply (α: Annotation): void {
          if (NextMatch.is(this.Ψ)) {
             this.Ψ.Ψ.__unapply(α)
+            this.ξ.__unapply(α)
+         } else
+         if (EndMatch.is(this.Ψ)) {
             this.ξ.__unapply(α)
          }
       }
@@ -204,7 +211,7 @@ export namespace Args {
       }
    }
    
-   function nextMatch<K extends Kont<K>> (): NextMatch<K> {
-      return make(NextMatch)
+   function nextMatch<K extends Kont<K>> (ξ: Match<K>, Ψ: ArgsMatch<K>): NextMatch<K> {
+      return make(NextMatch, ξ, Ψ)
    }
 }

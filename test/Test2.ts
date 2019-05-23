@@ -88,6 +88,7 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("foldr_sumSquares"))
          new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -125,6 +126,7 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("lexicalScoping"))
          new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -157,6 +159,7 @@ describe("example", () => {
 					this.val.notNeeded()
 				}
 			})(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -177,6 +180,7 @@ describe("example", () => {
 						.to(Cons, "tail").needed()
 				}
 			})(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -184,6 +188,7 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("mergeSort"))
          new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -197,6 +202,7 @@ describe("example", () => {
 	describe("pattern-match", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("pattern-match"))
+			new BwdSlice(e)
          new FwdSlice(e)
 		})
    })
@@ -219,6 +225,7 @@ describe("example", () => {
 						.to(Cons, "tail").needed()
 				}
 			})(e)
+			new BwdSlice(e)
 		})
    })
 
