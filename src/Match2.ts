@@ -36,7 +36,7 @@ export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
 }
 
 // TODO: sync up with evalTrie/__apply pattern.
-export function unmatch<K extends Kont<K>> (κ: K, α: Annotation): void {
+export function unmatch<K extends Kont<K>> (ξκ: Plug<K>, α: Annotation): void {
 }
 
 // Parser ensures constructor calls are saturated.
@@ -51,18 +51,18 @@ function evalArgs<K extends Kont<K>> (Π: Expr.Args<K>): Args.Func<K> {
    }
 }
 
-export class Plug<K extends Kont<K>, M extends Match<K>> extends DataValue<"Plug"> {
-   ξ: M = _
+export class Plug<K extends Kont<K> | Versioned<Value>> extends DataValue<"Plug"> {
+   ξ: Match<K> = _
    κ: K = _ // fills the single hole in ξ
 }
 
-export function plug<K extends Kont<K>, M extends Match<K>> (ξ: M, κ: K): Plug<K, M> {
-   return make(Plug, ξ, κ) as Plug<K, M>
+export function plug<K extends Kont<K> | Versioned<Value>> (ξ: Match<K>, κ: K): Plug<K> {
+   return make(Plug, ξ, κ) as Plug<K>
 }
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
 export abstract class Func<K extends Kont<K>> extends Value<"Func"> {
-   abstract __apply (v: Versioned<Value>): [Env, Plug<K, Match<K>>, Annotation]
+   abstract __apply (v: Versioned<Value>): [Env, Plug<K>, Annotation]
 }
 
 function datatype (f: DataFunc<any>): string {
@@ -72,7 +72,7 @@ function datatype (f: DataFunc<any>): string {
 
 // Concrete instances must have a field per constructor, in *lexicographical* order.
 export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
-   __apply (v: Versioned<Value>): [Env, Plug<K, Match<K>>, Annotation] {
+   __apply (v: Versioned<Value>): [Env, Plug<K>, Annotation] {
       if (v instanceof DataValue) {
          const args_f: Args.Func<K> = ((this as any)[className(v)] as Args.Func<K>)
          assert(args_f !== undefined, `Pattern mismatch: found ${className(v)}, expected ${datatype(this)}.`)
@@ -88,7 +88,7 @@ export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
 class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
-   __apply (v: Versioned<Value>): [Env, Plug<K, Match<K>>, Annotation] {
+   __apply (v: Versioned<Value>): [Env, Plug<K>, Annotation] {
       return [Env.singleton(this.σ.x, v), plug(varMatch(), this.σ.κ), ann.top]
    }
 }

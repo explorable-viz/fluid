@@ -6,7 +6,7 @@ import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { instantiate, uninstantiate } from "./Instantiate2"
-import { Match, Plug, evalTrie, unmatch } from "./Match2"
+import { Match, Plug, evalTrie, plug, unmatch } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { DataValue, Id, Num, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
@@ -165,11 +165,11 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
       const f: Versioned<Value> = eval_(ρ, e.func),
             u: Versioned<Value> = eval_(ρ, e.arg)
       if (f instanceof Closure) {
-         const [ρʹ, {κ: eʹ}, α]: [Env, Plug<Expr, Match<Expr>>, Annotation] = evalTrie(f.σ).__apply(u),
+         const [ρʹ, {ξ, κ: eʹ}, α]: [Env, Plug<Expr>, Annotation] = evalTrie(f.σ).__apply(u),
                ρ_δ: Env = closeDefs(f.δ, f.ρ, f.δ),
                ρᶠ: Env = ρ_δ.concat(ρʹ),
                v: Versioned<Value> = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return setExpl(Expl.app(kₜ, f, u, ρ_δ, v), setα(ann.meet(f.__α, α, v.__α, e.__α), copyAt(kᵥ, v)))
+         return setExpl(Expl.app(kₜ, f, u, ρ_δ, plug(ξ, v)), setα(ann.meet(f.__α, α, v.__α, e.__α), copyAt(kᵥ, v)))
       } else 
       if (f instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
@@ -202,9 +202,9 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    } else
    if (e instanceof Expr.MatchAs) {
       const u: Versioned<Value> = eval_(ρ, e.e),
-            [ρʹ, {κ: eʹ}, α]: [Env, Plug<Expr, Match<Expr>>, Annotation] = evalTrie(e.σ).__apply(u),
+            [ρʹ, {ξ, κ: eʹ}, α]: [Env, Plug<Expr>, Annotation] = evalTrie(e.σ).__apply(u),
             v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return setExpl(Expl.matchAs(kₜ, u, v), setα(ann.meet(α, v.__α, e.__α), copyAt(kᵥ, v)))
+      return setExpl(Expl.matchAs(kₜ, u, plug(ξ, v)), setα(ann.meet(α, v.__α, e.__α), copyAt(kᵥ, v)))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
@@ -240,8 +240,9 @@ export function uneval (v: Versioned<Value>): Expr {
    } else
    if (t instanceof Expl.App) {
       assert(t.f instanceof Closure)
-      joinα(v.__α, t.v)
-      unmatch(uninstantiate(uneval(t.v)), v.__α)
+      const {ξ, κ: v} = t.ξv
+      joinα(v.__α, v)
+      unmatch(plug(ξ as Match<Expr>, uninstantiate(uneval(v))), v.__α)
       uncloseDefs(t.ρᵟ)
       joinα(v.__α, t.f)
       uneval(t.f)
@@ -270,8 +271,9 @@ export function uneval (v: Versioned<Value>): Expr {
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
-      joinα(v.__α, t.v)
-      unmatch(uninstantiate(uneval(t.v)), v.__α)
+      const {ξ, κ: v} = t.ξv
+      joinα(v.__α, v)
+      unmatch(plug(ξ as Match<Expr>, uninstantiate(uneval(v))), v.__α)
       uneval(t.u)
       return joinα(v.__α, e)
    } else {
