@@ -290,6 +290,48 @@ describe("example", () => {
 						  	.to(Expr.App, "arg").needed().pop()
 				}
 			})(e)
+			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val
+						.to(Cons, "head").need()
+				}
+				expect (): void {
+					this.expr
+						.push()
+							.toDef("zipW")
+							.to(Expr.RecDef, "σ")
+							.var_("op")
+							.to(Expr.Fun, "σ")
+							.to(Trie.Constr, "cases")
+							.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
+							.to(NonEmpty, "left")
+							.nodeValue()			 
+							.arg_var("x").arg_var("xs")
+							.end().notNeeded()
+							.to(Expr.Fun, "σ")
+							.to(Trie.Constr, "cases")
+							.to(NonEmpty, "left")
+							.nodeValue()			 
+							.arg_var("y").arg_var("ys")
+							.end().notNeeded()				 // cons constructor
+							.constrArg("Cons", 0).needed() // application of op
+							.to(Expr.App, "arg").needed()  // pair constructor
+							.push().constrArg("Pair", 0).notNeeded().pop()
+							.push().constrArg("Pair", 1).notNeeded().pop()
+							.pop()
+						.skipImports()
+						.to(Expr.App, "func")
+						.to(Expr.App, "func")
+						.to(Expr.App, "arg")
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.nodeValue()
+						.arg_var("x")
+						.arg_var("y")
+						.end().needed()
+				}
+			})(e)
 		})
    })
 })
