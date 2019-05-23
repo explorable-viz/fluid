@@ -40,6 +40,7 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("compose"))
 			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -47,6 +48,7 @@ describe("example", () => {
 		it("ok", () => {
          const e: Expr = parse(load("factorial"))
          new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
