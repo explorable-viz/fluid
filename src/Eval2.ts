@@ -240,9 +240,9 @@ export function uneval (v: Versioned<Value>): Expr {
    } else
    if (t instanceof Expl.App) {
       assert(t.f instanceof Closure)
-      const {ξ, κ: v} = t.ξv
-      joinα(v.__α, v)
-      uninstantiate(uneval(v))
+      const {ξ, κ: vʹ} = t.ξv
+      joinα(v.__α, vʹ)
+      uninstantiate(uneval(vʹ))
       unmatch(ξ, v.__α)
       uncloseDefs(t.ρᵟ)
       joinα(v.__α, t.f)
