@@ -269,6 +269,27 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("zipW"))
          new FwdSlice(e)
+			// needing first cons cell of output needs same amount of input lists
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr
+						.push()
+                     .toDef("zipW")
+                     .push().to(Expr.RecDef, "x").needed().pop()
+							.to(Expr.RecDef, "σ")
+							.var_("op").needed()
+							.pop()
+						.skipImports()
+						.push()
+							.to(Expr.App, "arg").needed().pop()
+						.push()
+							.to(Expr.App, "func")
+						  	.to(Expr.App, "arg").needed().pop()
+				}
+			})(e)
 		})
    })
 })
