@@ -1,7 +1,7 @@
 import { List } from "./BaseTypes2"
 import { Env } from "./Env2"
 import { ExplId } from "./Eval2"
-import { Plug } from "./Match2"
+import { Match } from "./Match2"
 import { UnaryOp } from "./Primitive2"
 import { DataValue, PrimValue, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at } from "./Versioned2"
@@ -14,11 +14,12 @@ export namespace Expl {
       f: Versioned<Value> = _          // Expl would suffice, but for uneval we need address of function
       u: Versioned<Value> = _          // Expl would suffice, but more uniform this way
       ρᵟ: Env = _                      // from closeDefs, for uneval
-      ξv: Plug<Versioned<Value>> = _
+      ξ: Match<Versioned<Value>> = _
+      v: Versioned<Value> = _
    }
 
-   export function app (k: ExplId, f: Versioned<Value>, u: Versioned<Value>, ρᵟ: Env, ξv: Plug<Versioned<Value>>): App {
-      return at(k, App, f, u, ρᵟ, ξv)
+  export function app (k: ExplId, f: Versioned<Value>, u: Versioned<Value>, ρᵟ: Env, ξ: Match<Versioned<Value>>, v: Versioned<Value>): App {
+      return at(k, App, f, u, ρᵟ, ξ, v)
    }
 
    export class UnaryApp extends Expl {
@@ -91,11 +92,12 @@ export namespace Expl {
 
    export class MatchAs extends Expl {
       u: Versioned<Value> = _
-      ξv: Plug<Versioned<Value>> = _
+      ξ: Match<Versioned<Value>> = _
+      v: Versioned<Value> = _
    }
 
-   export function matchAs (k: ExplId, u: Versioned<Value>, ξv: Plug<Versioned<Value>>): MatchAs {
-      return at(k, MatchAs, u, ξv)
+   export function matchAs (k: ExplId, u: Versioned<Value>, ξ: Match<Versioned<Value>>, v: Versioned<Value>): MatchAs {
+      return at(k, MatchAs, u, ξ, v)
    }
 
    // v is the resolved value of x

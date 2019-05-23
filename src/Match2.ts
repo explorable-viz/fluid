@@ -47,18 +47,9 @@ function evalArgs<K extends Kont<K>> (Π: Expr.Args<K>): Args.ArgsFunc<K> {
    }
 }
 
-export class Plug<K extends Kont<K> | Versioned<Value>> extends DataValue<"Plug"> {
-   ξ: Match<K> = _
-   κ: K = _ // fills the single hole in ξ
-}
-
-export function plug<K extends Kont<K> | Versioned<Value>> (ξ: Match<K>, κ: K): Plug<K> {
-   return make(Plug, ξ, κ) as Plug<K>
-}
-
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
 export abstract class Func<K extends Kont<K>> extends Value<"Func"> {
-   abstract __apply (v: Versioned<Value>): [Env, Plug<K>, Annotation]
+   abstract __apply (v: Versioned<Value>): [Env, Match<K>, K, Annotation]
 }
 
 function datatype (f: DataFunc<any>): string {
@@ -68,15 +59,15 @@ function datatype (f: DataFunc<any>): string {
 
 // Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
-   __apply (v: Versioned<Value>): [Env, Plug<K>, Annotation] {
+   __apply (v: Versioned<Value>): [Env, Match<K>, K, Annotation] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const d: DataType = __nonNull(ctrToDataType.get(c)),
                args_f: Args.ArgsFunc<K> = ((this as any)[c] as Args.ArgsFunc<K>)
          assert(args_f !== undefined, `Pattern mismatch: found ${c}, expected ${datatype(this)}.`)
          const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
-               [ρ, {Ψ, κ}, α] = args_f.__apply(v̅)
-         return [ρ, plug(make(d.matchC̅.get(c)!, v, Ψ), κ), ann.meet(v.__α, α)]
+               [ρ, Ψ, κ, α] = args_f.__apply(v̅)
+         return [ρ, make(d.matchC̅.get(c)!, v, Ψ), κ, ann.meet(v.__α, α)]
       } else {
          return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
       }
@@ -86,8 +77,8 @@ export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
 class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
-   __apply (v: Versioned<Value>): [Env, Plug<K>, Annotation] {
-      return [Env.singleton(this.σ.x, v), plug(varMatch(), this.σ.κ), ann.top]
+   __apply (v: Versioned<Value>): [Env, Match<K>, K, Annotation] {
+      return [Env.singleton(this.σ.x, v), varMatch(), this.σ.κ, ann.top]
    }
 }
 
@@ -121,25 +112,16 @@ function varMatch<K extends Kont<K>> (): VarMatch<K> {
 }
 
 export namespace Args {
-   export class Plug<K extends Kont<K>> extends DataValue<"Args.Plug"> {
-      Ψ: ArgsMatch<K> = _
-      κ: K = _ // fills the single hole in Ψ
-   }
-
-   export function plug<K extends Kont<K>> (ξ: ArgsMatch<K>, κ: K): Plug<K> {
-      return make(Plug, ξ, κ) as Plug<K>
-   }
-
    export abstract class ArgsFunc<K extends Kont<K>> extends Value<"ArgsFunc"> {
-      abstract __apply (v̅: Versioned<Value>[]): [Env, Args.Plug<K>, Annotation]
+      abstract __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K, Annotation]
    }
    
    class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
       Π: Expr.Args.End<K> = _
       
-      __apply (v̅: Versioned<Value>[]): [Env, Args.Plug<K>, Annotation] {
+      __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K, Annotation] {
          if (v̅.length === 0) {
-            return [emptyEnv(), Args.plug(endMatch(), this.Π.κ), ann.top]
+            return [emptyEnv(), endMatch(), this.Π.κ, ann.top]
          } else {
             return absurd("Too many arguments to constructor.")
          }
@@ -153,14 +135,14 @@ export namespace Args {
    class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
       Π: Expr.Args.Next<K> = _
    
-      __apply (v̅: Versioned<Value>[]): [Env, Args.Plug<K>, Annotation] {
+      __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K, Annotation] {
          if (v̅.length === 0) {
             return absurd("Too few arguments to constructor.")
          } else {
             const [v, ...v̅ʹ] = v̅,
-                  [ρ, {ξ, κ: Π}, α] = evalTrie(this.Π.σ).__apply(v),
-                  [ρʹ, {Ψ, κ}, αʹ] = evalArgs(Π).__apply(v̅ʹ)
-            return [ρ.concat(ρʹ), Args.plug(nextMatch(ξ, Ψ), κ), ann.meet(α, αʹ)]
+                  [ρ, ξ, Π, α] = evalTrie(this.Π.σ).__apply(v),
+                  [ρʹ, Ψ, κ, αʹ] = evalArgs(Π).__apply(v̅ʹ)
+            return [ρ.concat(ρʹ), nextMatch(ξ, Ψ), κ, ann.meet(α, αʹ)]
          }
       }
    }
