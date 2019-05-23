@@ -3,8 +3,6 @@ import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from 
 import { Expl } from "./ExplValue2"
 import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make } from "./Value2"
 
-type Expl = Expl.Expl
-
 // Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
 // for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
 // can be interned in some contexts and versioned in others.
@@ -126,9 +124,4 @@ export function joinα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
 
 export function getExpl<T, U extends Versioned<T>> (v: U): Expl {
    return __nonNull(v.__expl)
-}
-
-export function setExpl<T, U extends Versioned<T>> (t: Expl, v: U): U {
-   v.__expl = t
-   return v
 }
