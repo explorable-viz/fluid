@@ -242,7 +242,8 @@ export function uneval (v: Versioned<Value>): Expr {
       assert(t.f instanceof Closure)
       const {ξ, κ: v} = t.ξv
       joinα(v.__α, v)
-      unmatch(plug(ξ as Match<Expr>, uninstantiate(uneval(v))), v.__α)
+      uninstantiate(uneval(v))
+      unmatch(ξ, v.__α)
       uncloseDefs(t.ρᵟ)
       joinα(v.__α, t.f)
       uneval(t.f)
@@ -273,7 +274,8 @@ export function uneval (v: Versioned<Value>): Expr {
    if (t instanceof Expl.MatchAs) {
       const {ξ, κ: v} = t.ξv
       joinα(v.__α, v)
-      unmatch(plug(ξ as Match<Expr>, uninstantiate(uneval(v))), v.__α)
+      uninstantiate(uneval(v))
+      unmatch(ξ, v.__α)
       uneval(t.u)
       return joinα(v.__α, e)
    } else {

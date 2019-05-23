@@ -58,45 +58,58 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    }
 }
 
-// It's enough just to return original expression; reconstructing environment would require rethinking. 
-export function uninstantiate (e: Expr): Expr {
+export function uninstantiate (e: Expr): void {
    const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr),
-         k: Id = eʹ.__id,
          α: Annotation = ann.join(eʹ.__α, e.__α) // merge annotations into source
    if (e instanceof Expr.ConstNum) {
-      return setα(α, Expr.constNum(k, e.val))
+      setα(α, eʹ)
    } else
    if (e instanceof Expr.ConstStr) {
-      return setα(α, Expr.constStr(k, e.val))
+      setα(α, eʹ)
    } else
    if (e instanceof Expr.Constr) {
-      return setα(α, Expr.constr(k, e.ctr, e.args.map(e => uninstantiate(e))))
+      e.args.toArray().map(e => uninstantiate(e))
+      setα(α, eʹ)
    } else
    if (e instanceof Expr.Fun) {
-      return setα(α, Expr.fun(k, uninstantiateTrie(e.σ)))
+      uninstantiateTrie(e.σ)
+      setα(α, eʹ)
    } else
    if (e instanceof Expr.Var) {
-      return setα(α, Expr.var_(k, e.x))
+      setα(α, eʹ)
    } else
    if (e instanceof Expr.Defs) {
-      return setα(α, Expr.defs(k, e.def̅.map(uninstantiateDef), uninstantiate(e.e)))
+      e.def̅.toArray().map(uninstantiateDef)
+      uninstantiate(e.e)
+      setα(α, eʹ)
    } else
    if (e instanceof Expr.MatchAs) {
-      return setα(α, Expr.matchAs(k, uninstantiate(e.e), uninstantiateTrie(e.σ)))
+      uninstantiate(e.e)
+      uninstantiateTrie(e.σ)
+      setα(α, eʹ)
    } else
    if (e instanceof Expr.App) {
-      return setα(α, Expr.app(k, uninstantiate(e.func), uninstantiate(e.arg)))
+      uninstantiate(e.func)
+      uninstantiate(e.arg)
+      setα(α, eʹ)
    } else
    if (e instanceof Expr.BinaryApp) {
-      return setα(α, Expr.binaryApp(k, uninstantiate(e.e1), e.opName, uninstantiate(e.e2)))
+      uninstantiate(e.e1)
+      uninstantiate(e.e2)
+      setα(α, eʹ)
    } else {
-      return absurd()
+      absurd()
    }
 }
 
 function instantiateVar (ρ: Env, x: Versioned<Str>): Versioned<Str> {
    const k: ExprId = exprId(ρ.entries(), x)
    return setα(x.__α, strʹ(k, x.val))
+}
+
+function uninstantiateVar (x: Versioned<Str>): void {
+   const xʹ: Versioned<Str> = (x.__id as ExprId).e as Versioned<Str>
+   setα(ann.join(xʹ.__α, x.__α), xʹ)
 }
 
 function instantiateDef (ρ: Env, def: Def): Def {
@@ -116,25 +129,21 @@ function instantiateDef (ρ: Env, def: Def): Def {
    }
 }
 
-function uninstantiateVar (x: Versioned<Str>): Versioned<Str> {
-   const xʹ: Versioned<Str> = (x.__id as ExprId).e as Versioned<Str>
-   return setα(ann.join(xʹ.__α, x.__α), xʹ)
-}
-
-function uninstantiateDef (def: Def): Def {
+function uninstantiateDef (def: Def): void {
    if (def instanceof Expr.Let) {
-      return Expr.let_(uninstantiateVar(def.x), uninstantiate(def.e))
+      uninstantiateVar(def.x)
+      uninstantiate(def.e)
    } else 
    if (def instanceof Expr.Prim) {
-      return Expr.prim(uninstantiateVar(def.x))
+      uninstantiateVar(def.x)
    }
    if (def instanceof Expr.LetRec) {
-      const δ: List<RecDef> = def.δ.map(def => {
-         return Expr.recDef(uninstantiateVar(def.x), uninstantiateTrie(def.σ))
+      def.δ.toArray().map(def => {
+         uninstantiateVar(def.x)
+         uninstantiateTrie(def.σ)
       })
-      return Expr.letRec(δ)
    } else {
-      return absurd()
+      absurd()
    }
 }
 
@@ -153,18 +162,16 @@ function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T):
    }
 }
 
-function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): T {
+function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): void {
    if (Trie.Var.is(σ)) {
-      return Trie.var_(σ.x, uninstantiateKont(σ.κ)) as Trie<K> as T
+      uninstantiateKont(σ.κ)
    } else
    if (Trie.Constr.is(σ)) {
-      return Trie.constr(σ.cases.map(
-         ({ fst: c, snd: Π }: Pair<Str, Args<K>>): Pair<Str, Args<K>> => {
-            return pair(c, uninstantiateArgs(Π))
-         })
-      ) as Trie<K> as T
+      σ.cases.toArray().map(
+         ({ fst: c, snd: Π }: Pair<Str, Args<K>>): void => uninstantiateArgs(Π)
+      )
    } else {
-      return absurd()
+      absurd()
    }
 }
 
@@ -183,17 +190,17 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
    }
 }
 
-function uninstantiateKont<K extends Kont<K>> (κ: K): K {
+function uninstantiateKont<K extends Kont<K>> (κ: K): void {
    if (κ instanceof Trie.Trie) {
-      return uninstantiateTrie<K, Trie<K>>(κ) as K
+      uninstantiateTrie<K, Trie<K>>(κ)
    } else
    if (κ instanceof Expr.Expr) {
-      return uninstantiate(κ) as any as K
+      uninstantiate(κ)
    } else
    if (κ instanceof Args.Args) {
-      return uninstantiateArgs(κ) as K
+      uninstantiateArgs(κ)
    } else {
-      return absurd()
+      absurd()
    }
 }
 
@@ -208,13 +215,13 @@ function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
    }
 }
 
-function uninstantiateArgs<K extends Kont<K>> (Π: Args<K>): Args<K> {
+function uninstantiateArgs<K extends Kont<K>> (Π: Args<K>): void {
    if (Args.End.is(Π)) {
-      return Args.end(uninstantiateKont(Π.κ))
+      uninstantiateKont(Π.κ)
    } else
    if (Args.Next.is(Π)) {
-      return Args.next(uninstantiateTrie(Π.σ))
+      uninstantiateTrie(Π.σ)
    } else {
-      return absurd()
+      absurd()
    }
 }

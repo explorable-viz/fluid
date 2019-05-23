@@ -36,7 +36,7 @@ export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
 }
 
 // TODO: sync up with evalTrie/__apply pattern.
-export function unmatch<K extends Kont<K>> ({ξ, κ}: Plug<K>, α: Annotation): void {
+export function unmatch<K extends Kont<K>> (ξ: Match<K>, α: Annotation): void {
    ξ.__unapply(α)
 }
 
@@ -203,7 +203,7 @@ export namespace Args {
       static is<K extends Kont<K>> (Ψ: ArgsMatch<K>): Ψ is NextMatch<K> {
          return Ψ instanceof NextMatch
       }
-}
+   }
    
    function nextMatch<K extends Kont<K>> (): NextMatch<K> {
       return make(NextMatch)
