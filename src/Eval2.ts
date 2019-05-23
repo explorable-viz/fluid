@@ -6,7 +6,7 @@ import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { instantiate, uninstantiate } from "./Instantiate2"
-import { Plug, evalTrie, plug, unmatch } from "./Match2"
+import { Plug, evalTrie, plug } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { DataValue, Id, Num, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
@@ -243,7 +243,7 @@ export function uneval (v: Versioned<Value>): Expr {
       const {ξ, κ: vʹ} = t.ξv
       joinα(v.__α, vʹ)
       uninstantiate(uneval(vʹ))
-      unmatch(ξ, v.__α)
+      ξ.__unapply(v.__α)
       uncloseDefs(t.ρᵟ)
       joinα(v.__α, t.f)
       uneval(t.f)
@@ -275,7 +275,7 @@ export function uneval (v: Versioned<Value>): Expr {
       const {ξ, κ: v} = t.ξv
       joinα(v.__α, v)
       uninstantiate(uneval(v))
-      unmatch(ξ, v.__α)
+      ξ.__unapply(v.__α)
       uneval(t.u)
       return joinα(v.__α, e)
    } else {
