@@ -71,17 +71,19 @@ function datatype (f: DataFunc<any>): string {
    return c.substr(0, c.length - elimNameSuffix.length)
 }
 
-// Concrete instances must have a field per constructor, in *lexicographical* order.
+// Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
    __apply (v: Versioned<Value>): [Env, Plug<K>, Annotation] {
+      const c: string = className(v)
       if (v instanceof DataValue) {
-         const args_f: Args.ArgsFunc<K> = ((this as any)[className(v)] as Args.ArgsFunc<K>)
-         assert(args_f !== undefined, `Pattern mismatch: found ${className(v)}, expected ${datatype(this)}.`)
+         const d: DataType = __nonNull(ctrToDataType.get(c)),
+               args_f: Args.ArgsFunc<K> = ((this as any)[c] as Args.ArgsFunc<K>)
+         assert(args_f !== undefined, `Pattern mismatch: found ${c}, expected ${datatype(this)}.`)
          const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
-               [ρ, {κ}, α] = args_f.__apply(v̅)
-         return [ρ, plug(dataMatch(v), κ), ann.meet(v.__α, α)]
+               [ρ, {Ψ, κ}, α] = args_f.__apply(v̅)
+         return [ρ, plug(make(d.matchC̅.get(c)!, v, Ψ), κ), ann.meet(v.__α, α)]
       } else {
-         return error(`Pattern mismatch: ${className(v)} is not a datatype.`, v, this)
+         return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
       }
    }
 }
@@ -102,18 +104,15 @@ export abstract class Match<K> extends Value<"Match"> {
    abstract __unapply (α: Annotation): void
 }
 
+// Concrete instances have an additional "matched args" field for the matched constructor.
 export class DataMatch<K extends Kont<K>> extends Match<K> {
    v: Versioned<DataValue> = _
 
    __unapply (α: Annotation): void {
-      const Ψ: Args.ArgsMatch<K> = (this as any)[className(this.v)] as Args.ArgsMatch<K>
+      const Ψ: Args.ArgsMatch<K> = __nonNull((this as any)[className(this.v)] as Args.ArgsMatch<K>)
       Ψ.__unapply(α)
       setα(α, this.v)
    }
-}
-
-function dataMatch<K extends Kont<K>> (v: Versioned<DataValue>): DataMatch<K> {
-   return make(DataMatch, v)
 }
 
 class VarMatch<K extends Kont<K>> extends Match<K> {

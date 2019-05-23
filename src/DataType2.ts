@@ -1,17 +1,19 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
-import { DataFunc } from "./Match2"
-import { DataValue, State, Str, _, fields } from "./Value2"
+import { DataFunc, DataMatch } from "./Match2"
+import { DataValue, Str, _, fields } from "./Value2"
 
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: string
-   elimC: Class<DataFunc<any>>   // not sure how better to parameterise 
-   ctrs: Map<string, Ctr>        // fields of my constructors
+   elimC: Class<DataFunc<any>>                 // not sure how better to parameterise 
+   ctrs: Map<string, Ctr>                      // fields of my constructors
+   matchC̅: Map<string, Class<DataMatch<any>>>  // "match" class per constructor
 
-   constructor (name: string, elimC: Class<DataFunc<any>>, ctrs: Map<string, Ctr>) {
+   constructor (name: string, elimC: Class<DataFunc<any>>, ctrs: Map<string, Ctr>, matchC̅: Map<string, Class<DataMatch<any>>>) {
       this.name = name
       this.elimC = elimC
       this.ctrs = ctrs
+      this.matchC̅ = matchC̅
    }
 }
 
@@ -53,12 +55,22 @@ export function initDataType<T extends DataValue> (D: AClass<T>, ctrC̅: Class<T
                   super()
                   // lexicographical order hopefully preserved by getOwnPropertyNames()
                   ctrC̅.forEach((C: Class<T>): void => {
-                     (this as any as State)[C.name] = _
+                     (this as any)[C.name] = _
                   })
                }
             }
          }[elimC_name],
-         datatype: DataType = new DataType(D.name, elimC, new Map(ctrs))
+         matchC̅: [string, Class<DataMatch<any>>][] = ctrs.map(([ctr, _]: [string, Ctr]) => {
+            return [ctr, {
+               [elimC_name]: class extends DataMatch<any> {
+                  constructor () {
+                     super()
+                     ;(this as any)[ctr] = _
+                  }
+               }
+            }[elimC_name]]
+         }),
+         datatype: DataType = new DataType(D.name, elimC, new Map(ctrs), new Map(matchC̅))
    ctrC̅.forEach((C: Class<T>): void => {
       ctrToDataType.set(C.name, datatype)
    })

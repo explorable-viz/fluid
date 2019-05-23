@@ -80,6 +80,7 @@ describe("example", () => {
 						.assert(List, v => Nil.is(v))
 				}
 			})(e)
+			new BwdSlice(e)
 		})
 	})
 
