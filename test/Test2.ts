@@ -33,6 +33,14 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("bar-chart"))
 			new FwdSlice(e)
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr.needed()
+				}
+			})(e)
 		})
    })
 
