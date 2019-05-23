@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { BwdSlice, FwdSlice, load, parse } from "./util/Core2"
-import { Cons, List, Nil, NonEmpty } from "../src/BaseTypes2"
+import { Cons, List, Nil, NonEmpty, Pair } from "../src/BaseTypes2"
 import { Expr } from "../src/Expr2"
 
 import Trie = Expr.Trie
@@ -58,7 +58,7 @@ describe("example", () => {
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
-						.toDef("filter")
+                  .toDef("filter")
 						.to(Expr.RecDef, "σ")
 						.var_("p")
 						.to(Expr.Fun, "σ")
@@ -211,6 +211,19 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("normalise"))
          new FwdSlice(e)
+			// retaining either component of pair retains both subcomputations:
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val
+						.to(Pair, "fst").need()
+				}
+				expect (): void {
+					this.expr
+                  .skipImports()
+                  .push().toDef("x").to(Expr.Let, "e").needed().pop()
+						.toDef("y").to(Expr.Let, "e").needed()
+				}
+			})(e)
 		})
    })
 

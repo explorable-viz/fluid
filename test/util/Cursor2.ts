@@ -65,7 +65,7 @@ export class Cursor {
    toDef (x: string): Cursor {
       this.to(Expr.Defs, "def̅")
       const defs: Map<string, Let | Prim | RecDef> = Cursor.defs(this.v as List<Def>)
-      assert(defs.has(x))
+      assert(defs.has(x), `No definition of "${x}" found.`)
       return this.goto(defs.get(x)!)
    }
 
