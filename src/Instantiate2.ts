@@ -136,7 +136,7 @@ function uninstantiateDef (def: Def): void {
    } else 
    if (def instanceof Expr.Prim) {
       uninstantiateVar(def.x)
-   }
+   } else
    if (def instanceof Expr.LetRec) {
       def.δ.toArray().map(def => {
          uninstantiateVar(def.x)
