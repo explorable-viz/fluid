@@ -126,23 +126,23 @@ function varMatch<K extends Kont<K>> (): VarMatch<K> {
 }
 
 export namespace Args {
-   export class Plug<K extends Kont<K>, M extends ArgsMatch<K>> extends DataValue<"Args.Plug"> {
-      Ψ: M = _
+   export class Plug<K extends Kont<K>> extends DataValue<"Args.Plug"> {
+      Ψ: ArgsMatch<K> = _
       κ: K = _ // fills the single hole in Ψ
    }
 
-   export function plug<K extends Kont<K>, M extends ArgsMatch<K>> (ξ: M, κ: K): Plug<K, M> {
-      return make(Plug, ξ, κ) as Plug<K, M>
+   export function plug<K extends Kont<K>> (ξ: ArgsMatch<K>, κ: K): Plug<K> {
+      return make(Plug, ξ, κ) as Plug<K>
    }
 
    export abstract class ArgsFunc<K extends Kont<K>> extends Value<"ArgsFunc"> {
-      abstract __apply (v̅: Versioned<Value>[]): [Env, Args.Plug<K, ArgsMatch<K>>, Annotation]
+      abstract __apply (v̅: Versioned<Value>[]): [Env, Args.Plug<K>, Annotation]
    }
    
    class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
       Π: Expr.Args.End<K> = _
       
-      __apply (v̅: Versioned<Value>[]): [Env, Args.Plug<K, EndMatch<K>>, Annotation] {
+      __apply (v̅: Versioned<Value>[]): [Env, Args.Plug<K>, Annotation] {
          if (v̅.length === 0) {
             return [emptyEnv(), Args.plug(endMatch(), this.Π.κ), ann.top]
          } else {
@@ -158,7 +158,7 @@ export namespace Args {
    class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
       Π: Expr.Args.Next<K> = _
    
-      __apply (v̅: Versioned<Value>[]): [Env, Args.Plug<K, NextMatch<K>>, Annotation] {
+      __apply (v̅: Versioned<Value>[]): [Env, Args.Plug<K>, Annotation] {
          if (v̅.length === 0) {
             return absurd("Too few arguments to constructor.")
          } else {
