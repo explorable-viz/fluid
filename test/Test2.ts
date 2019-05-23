@@ -119,6 +119,21 @@ describe("example", () => {
 					this.val.notNeeded()
 				}
 			})(e)
+			// needing the result only needs the cons cells:
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr
+						.skipImports()
+						.to(Expr.App, "arg").needed()
+						.push().constrArg("Cons", 0).notNeeded().pop()
+						.constrArg("Cons", 1).needed()
+						.push().constrArg("Cons", 0).notNeeded().pop()
+						.constrArg("Cons", 1).needed()
+				}
+			})(e)
 		})
 	})
 
