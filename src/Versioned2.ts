@@ -1,7 +1,7 @@
-import { Annotation } from "./util/Annotated2"
+import { Annotation, ann } from "./util/Annotated2"
 import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
 import { Expl } from "./ExplValue2"
-import { Id, Num, Persistent, Str, Value, _, construct, make } from "./Value2"
+import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make } from "./Value2"
 
 type Expl = Expl.Expl
 
@@ -42,37 +42,37 @@ export function asVersioned<T> (v: T): Versioned<T> {
    }
 }
 
-// Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
-function reclassify<Tag extends string, T extends Value<Tag>> (v: Value, ctr: Class<T>): T {
-   return notYetImplemented()
-}
-
 // For versioned objects the map is not curried but takes an (interned) composite key.
 type VersionedValues = Map<Id, Versioned<Value>>
 const __versioned: VersionedValues = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<Tag extends string, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
+export function at<Tag extends ValueTag, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
    let v: Versioned<Value> | undefined = __versioned.get(k)
-   const Cʹ = VersionedC(C)
    if (v === undefined) {
-      const vʹ: Versioned<T> = new Cʹ
+      const v: T = new C
       // Not sure of performance implications, or whether enumerability of __id matters much.
-      Object.defineProperty(vʹ, "__id", {
+      Object.defineProperty(v, "__id", {
          value: k,
          enumerable: false
       })
+      const vʹ: Versioned<T> = asVersioned(v)
       __versioned.set(k, vʹ)
       return construct(vʹ, v̅)
    } else
    if (v instanceof C) { 
       return construct(v, v̅) // hmm, TS thinks v is versioned here - why?
    } else {
-      return reclassify(v, Cʹ)
+      return reclassify(v, C)
    }
 }
 
-export function copyAt<Tag extends string, T extends Value<Tag>> (k: Id, v: T): Versioned<T> {
+// Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
+function reclassify<Tag extends ValueTag, T extends Value<Tag>> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
+   return notYetImplemented()
+}
+
+export function copyAt<Tag extends ValueTag, T extends Value<Tag>> (k: Id, v: T): Versioned<T> {
    return at(k, classOf(v), ...v.fieldValues())
 }
 
@@ -107,7 +107,7 @@ export function setα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
    return v
 }
 
-export function setallα<Tag extends string, T extends Value<Tag>> (v: T, α: Annotation): T {
+export function setallα<Tag extends ValueTag, T extends Value<Tag>> (v: T, α: Annotation): T {
    if (versioned(v)) {
       setα(α, v)
    }
@@ -116,6 +116,11 @@ export function setallα<Tag extends string, T extends Value<Tag>> (v: T, α: An
          setallα(v, α) 
       }
    })
+   return v
+}
+
+export function joinα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
+   v.__α = ann.join(α, v.__α)
    return v
 }
 

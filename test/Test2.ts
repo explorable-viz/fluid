@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { FwdSlice, load, parse } from "./util/Core2"
-import { Cons, List, Nil, NonEmpty } from "../src/BaseTypes2"
+import { BwdSlice, FwdSlice, load, parse } from "./util/Core2"
+import { Cons, List, Nil, NonEmpty, Pair } from "../src/BaseTypes2"
 import { Expr } from "../src/Expr2"
 
 import Trie = Expr.Trie
@@ -25,6 +25,7 @@ describe("example", () => {
 					this.val.notNeeded()
 				} 
 			})(e)
+			new BwdSlice(e)
 		})
    })
 
@@ -32,6 +33,14 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("bar-chart"))
 			new FwdSlice(e)
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr.needed()
+				}
+			})(e)
 		})
    })
 
@@ -39,6 +48,7 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("compose"))
 			new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -46,6 +56,7 @@ describe("example", () => {
 		it("ok", () => {
          const e: Expr = parse(load("factorial"))
          new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -55,7 +66,7 @@ describe("example", () => {
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
-						.toDef("filter")
+                  .toDef("filter")
 						.to(Expr.RecDef, "σ")
 						.var_("p")
 						.to(Expr.Fun, "σ")
@@ -77,6 +88,7 @@ describe("example", () => {
 						.assert(List, v => Nil.is(v))
 				}
 			})(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -84,6 +96,7 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("foldr_sumSquares"))
          new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -114,6 +127,21 @@ describe("example", () => {
 					this.val.notNeeded()
 				}
 			})(e)
+			// needing the result only needs the cons cells:
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr
+						.skipImports()
+						.to(Expr.App, "arg").needed()
+						.push().constrArg("Cons", 0).notNeeded().pop()
+						.constrArg("Cons", 1).needed()
+						.push().constrArg("Cons", 0).notNeeded().pop()
+						.constrArg("Cons", 1).needed()
+				}
+			})(e)
 		})
 	})
 
@@ -121,6 +149,7 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("lexicalScoping"))
          new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -153,6 +182,7 @@ describe("example", () => {
 					this.val.notNeeded()
 				}
 			})(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -173,6 +203,7 @@ describe("example", () => {
 						.to(Cons, "tail").needed()
 				}
 			})(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -180,6 +211,7 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("mergeSort"))
          new FwdSlice(e)
+			new BwdSlice(e)
 		})
 	})
 
@@ -187,12 +219,26 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("normalise"))
          new FwdSlice(e)
+			// retaining either component of pair retains both subcomputations:
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val
+						.to(Pair, "fst").need()
+				}
+				expect (): void {
+					this.expr
+                  .skipImports()
+                  .push().toDef("x").to(Expr.Let, "e").needed().pop()
+						.toDef("y").to(Expr.Let, "e").needed()
+				}
+			})(e)
 		})
    })
 
 	describe("pattern-match", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("pattern-match"))
+			new BwdSlice(e)
          new FwdSlice(e)
 		})
    })
@@ -215,6 +261,7 @@ describe("example", () => {
 						.to(Cons, "tail").needed()
 				}
 			})(e)
+			new BwdSlice(e)
 		})
    })
 
@@ -222,6 +269,69 @@ describe("example", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("zipW"))
          new FwdSlice(e)
+			// needing first cons cell of output needs same amount of input lists
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val.need()
+				}
+				expect (): void {
+					this.expr
+						.push()
+                     .toDef("zipW")
+                     .push().to(Expr.RecDef, "x").needed().pop()
+							.to(Expr.RecDef, "σ")
+							.var_("op").needed()
+							.pop()
+						.skipImports()
+						.push()
+							.to(Expr.App, "arg").needed().pop()
+						.push()
+							.to(Expr.App, "func")
+						  	.to(Expr.App, "arg").needed().pop()
+				}
+			})(e)
+			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
+			new (class extends BwdSlice {
+				setup (): void {
+					this.val
+						.to(Cons, "head").need()
+				}
+				expect (): void {
+					this.expr
+						.push()
+							.toDef("zipW")
+							.to(Expr.RecDef, "σ")
+							.var_("op")
+							.to(Expr.Fun, "σ")
+							.to(Trie.Constr, "cases")
+							.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
+							.to(NonEmpty, "left")
+							.nodeValue()			 
+							.arg_var("x").arg_var("xs")
+							.end().notNeeded()
+							.to(Expr.Fun, "σ")
+							.to(Trie.Constr, "cases")
+							.to(NonEmpty, "left")
+							.nodeValue()			 
+							.arg_var("y").arg_var("ys")
+							.end().notNeeded()				 // cons constructor
+							.constrArg("Cons", 0).needed() // application of op
+							.to(Expr.App, "arg").needed()  // pair constructor
+							.push().constrArg("Pair", 0).notNeeded().pop()
+							.push().constrArg("Pair", 1).notNeeded().pop()
+							.pop()
+						.skipImports()
+						.to(Expr.App, "func")
+						.to(Expr.App, "func")
+						.to(Expr.App, "arg")
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.nodeValue()
+						.arg_var("x")
+						.arg_var("y")
+						.end().needed()
+				}
+			})(e)
 		})
    })
 })

@@ -1,12 +1,12 @@
 import { Ord, eq } from "../Ord"
 import { __nonNull } from "../Core"
-import { Value, _, make } from "../../Value2" // TODO: fix upwards dependency
+import { LexemeTag, Value, _, make } from "../../Value2" // TODO: fix upwards dependency
 
 export interface SyntaxNode {
 }
 
 // The parser builds a list of these. Currently interned, but will probably need to become versioned.
-export abstract class Lexeme<Tag extends string> extends Value<Tag> implements SyntaxNode, Ord<Lexeme<Tag>> {
+export abstract class Lexeme<Tag extends LexemeTag> extends Value<Tag> implements SyntaxNode, Ord<Lexeme<Tag>> {
    abstract str: string
 
    eq (l: Lexeme<Tag>): boolean {
@@ -136,9 +136,9 @@ export class Operator extends Lexeme<"Operator"> {
    }
 }
 
-export type LexemeClass<Tag extends string> = new () => Lexeme<Tag>
+export type LexemeClass<Tag extends LexemeTag> = new () => Lexeme<Tag>
 
-function token<Tag extends string> (p: Parser<string>, C: LexemeClass<Tag>): Parser<Lexeme<Tag>> {
+function token<Tag extends LexemeTag> (p: Parser<string>, C: LexemeClass<Tag>): Parser<Lexeme<Tag>> {
    function token_ (state: ParseState): ParseResult<Lexeme<Tag>> | null {
       const r: ParseResult<string> | null = p(state)
       if (r !== null) {
@@ -192,7 +192,7 @@ export function withJoin<T> (p: Parser<T[]>): Parser<string> {
    return withAction(p, (ast: T[]) => ast.join(''))
 }
 
-export function lexeme<Tag extends string> (p: Parser<string>, C: LexemeClass<Tag>): Parser<Lexeme<Tag>> {
+export function lexeme<Tag extends LexemeTag> (p: Parser<string>, C: LexemeClass<Tag>): Parser<Lexeme<Tag>> {
    return lexeme_(token(p, C))
 }
 

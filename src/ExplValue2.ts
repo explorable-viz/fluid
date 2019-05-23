@@ -1,40 +1,85 @@
-import { Expr } from "./Expr2"
 import { List } from "./BaseTypes2"
-import { DataValue } from "./DataType2"
+import { Env } from "./Env2"
 import { ExplId } from "./Eval2"
-import { PrimValue, Str, Value, _ } from "./Value2"
-import { at } from "./Versioned2"
+import { Plug } from "./Match2"
+import { UnaryOp } from "./Primitive2"
+import { DataValue, PrimValue, Str, Value, _, make } from "./Value2"
+import { Versioned, VersionedC, at } from "./Versioned2"
 
 export namespace Expl {
-   export abstract class Expl extends DataValue<"Expl"> {
+   export abstract class Expl extends VersionedC(DataValue)<"Expl"> {
    }
 
    export class App extends Expl {
-      f: Value = _   // Expl would suffice, but for uneval we need address of function
-      v: Value = _   // Expl would suffice, but more uniform this way
-      t: Expl = _    // TODO: record match
+      f: Versioned<Value> = _          // Expl would suffice, but for uneval we need address of function
+      u: Versioned<Value> = _          // Expl would suffice, but more uniform this way
+      ρᵟ: Env = _                      // from closeDefs, for uneval
+      ξv: Plug<Versioned<Value>> = _
    }
 
-   export function app (k: ExplId, f: Value, v: Value, t: Expl): App {
-      return at(k, App, f, v, t)
+   export function app (k: ExplId, f: Versioned<Value>, u: Versioned<Value>, ρᵟ: Env, ξv: Plug<Versioned<Value>>): App {
+      return at(k, App, f, u, ρᵟ, ξv)
    }
 
    export class UnaryApp extends Expl {
-      f: Value = _
-      v: Value = _
+      f: Versioned<UnaryOp> = _
+      v: Versioned<PrimValue> = _
    }
 
-   export function unaryApp (k: ExplId, f: Value, v: PrimValue): UnaryApp {
+   export function unaryApp (k: ExplId, f: Versioned<UnaryOp>, v: Versioned<PrimValue>): UnaryApp {
       return at(k, UnaryApp, f, v)
    }
 
-   export class Defs extends Expl {
-      // TODO: record evaluated defs
-      t: Expl = _
+   export class BinaryApp extends Expl {
+      v1: Versioned<PrimValue> = _
+      opName: Str = _
+      v2: Versioned<PrimValue> = _
    }
 
-   export function defs (k: ExplId, t: Expl): Defs {
-      return at(k, Defs, t)
+   export function binaryApp (k: ExplId, v1: Versioned<PrimValue>, opName: Str, v2: Versioned<PrimValue>): BinaryApp {
+      return at(k, BinaryApp, v1, opName, v2)
+   }
+
+   export abstract class Def extends DataValue<"Expl.Def"> {
+   }
+
+   // v is the computed value, vʹ is the copy bound to x...urgh.
+   export class Let extends Def {
+      x: Versioned<Str> = _
+      v: Versioned<Value> = _
+      vʹ: Versioned<Value> = _
+   }
+
+   export function let_ (x: Versioned<Str>, v: Versioned<Value>, vʹ: Versioned<Value>): Let {
+      return make(Let, x, v, vʹ)
+   }
+
+   // See Let.
+   export class Prim extends Def {
+      x: Versioned<Str> = _
+      v: Value = _ // underlying primitive is not versioned
+      vʹ: Versioned<Value> = _
+   }
+
+   export function prim (x: Versioned<Str>, v: Value, vʹ: Versioned<Value>): Prim {
+      return make(Prim, x, v, vʹ)
+   }
+
+   export class LetRec extends Def {
+      ρᵟ: Env = _
+   }
+
+   export function letRec (ρᵟ: Env): LetRec {
+      return make(LetRec, ρᵟ)
+   }
+
+   export class Defs extends Expl {
+      def̅: List<Def> = _
+      v: Versioned<Value> = _
+   }
+
+   export function defs (k: ExplId, def̅: List<Def>, v: Versioned<Value>): Defs {
+      return at(k, Defs, def̅, v)
    }
 
    export class Empty extends Expl {
@@ -44,48 +89,22 @@ export namespace Expl {
       return at(k, Empty)
    }
 
-   export class Let extends Expl {
-      u: Value = _
-      // TODO: record match
-   }
-
-   export function let_ (k: ExplId, u: Value): Let {
-      return at(k, Let, u)
-   }
-
-   export class LetRec extends Expl {
-      δ: List<Expr.RecDef> = _
-      // TODO: ρ_defs for uneval?
-   }
-
-   export function letRec (k: ExplId, δ: List<Expr.RecDef>): LetRec {
-      return at(k, LetRec, δ)
-   }
-
    export class MatchAs extends Expl {
-      u: Value = _
-      t: Expl = _    // TODO: record match
+      u: Versioned<Value> = _
+      ξv: Plug<Versioned<Value>> = _
    }
 
-   export function matchAs (k: ExplId, u: Value, t: Expl): MatchAs {
-      return at(k, MatchAs, u, t)
+   export function matchAs (k: ExplId, u: Versioned<Value>, ξv: Plug<Versioned<Value>>): MatchAs {
+      return at(k, MatchAs, u, ξv)
    }
 
-   export class BinaryApp extends Expl {
-      v1: PrimValue = _
-      opName: Str = _
-      v2: PrimValue = _
-   }
-
-   export function binaryApp (k: ExplId, v1: PrimValue, opName: Str, v2: PrimValue): BinaryApp {
-      return at(k, BinaryApp, v1, opName, v2)
-   }
-
+   // v is the resolved value of x
    export class Var extends Expl {
       x: Str = _
+      v: Versioned<Value> = _
    }
 
-   export function var_ (k: ExplId, x: Str): Var {
-      return at(k, Var, x)
+   export function var_ (k: ExplId, x: Str, v: Versioned<Value>): Var {
+      return at(k, Var, x, v)
    }
 }

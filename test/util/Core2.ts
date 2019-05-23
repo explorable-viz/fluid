@@ -1,4 +1,4 @@
-import { __nonNull } from "../../src/util/Core"
+import { __nonNull, as } from "../../src/util/Core"
 import { successfulParse } from "../../src/util/parse/Core2"
 import { ann } from "../../src/util/Annotated2"
 import { emptyEnv } from "../../src/Env2"
@@ -6,14 +6,14 @@ import { Eval } from "../../src/Eval2"
 import { Expr } from "../../src/Expr2"
 import "../../src/Graphics2"
 import { Parse } from "../../src/Parse2"
-import { ν, setallα } from "../../src/Versioned2"
+import { Value } from "../../src/Value2"
+import { Versioned, ν, setallα } from "../../src/Versioned2"
 import { Cursor } from "./Cursor2"
 
 export class FwdSlice {
    expr: Cursor
    val: Cursor
 
-   // Invariant: at a fresh revision.
    constructor (e: Expr) {
       setallα(e, ann.top)
       this.expr = new Cursor(e)
@@ -31,7 +31,28 @@ export class FwdSlice {
    }
 
    get e (): Expr {
-      return this.expr.v as Expr
+      return as(this.expr.v, Expr.Expr)
+   }
+}
+
+export class BwdSlice {
+   val: Cursor
+   expr: Cursor
+
+   constructor (e: Expr) {
+      setallα(e, ann.bot)
+      const v: Versioned<Value> = Eval.eval_(emptyEnv(), e) // just to obtain tv
+      setallα(v, ann.bot)
+      this.val = new Cursor(v)
+      this.setup()
+      this.expr = new Cursor(Eval.uneval(v))
+      this.expect()
+   }
+
+   setup (): void {
+   }
+
+   expect (): void {      
    }
 }
 

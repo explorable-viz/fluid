@@ -1,10 +1,10 @@
 import { absurd, error } from "./util/Core"
 import { eq } from "./util/Ord"
 import { List } from "./BaseTypes2"
-import { DataValue, ctrToDataType } from "./DataType2"
+import { ctrToDataType } from "./DataType2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
-import { Id, Num, Str, _, make } from "./Value2"
-import { VersionedC, at } from "./Versioned2"
+import { DataValue, Id, Num, Str, _, make } from "./Value2"
+import { Versioned, VersionedC, at } from "./Versioned2"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -85,16 +85,52 @@ export namespace Expr {
       return at(k, Constr, ctr, args)
    }
 
-   export abstract class Def extends VersionedC(DataValue)<"Def"> {
+   // Because let/letrec no longer have "bodies", there's no real need for them to be separately versioned;
+   // the variables they introduce are.
+   export class Def extends DataValue<"Expr.Def"> {
    }
 
-   export class Defs extends Expr {
-      defs: List<Def> = _
+   export class Let extends Def {
+      x: Versioned<Str> = _
       e: Expr = _
    }
 
-   export function defs (k: Id, defs: List<Def>, e: Expr): Defs {
-      return at(k, Defs, defs, e)
+   export function let_ (x: Versioned<Str>, e: Expr): Let {
+      return make(Let, x, e)
+   }
+
+   export class Prim extends Def {
+      x: Versioned<Str> = _
+   }
+
+   export function prim (x: Versioned<Str>): Prim {
+      return make(Prim, x)
+   }
+
+   export class RecDef extends DataValue<"RecDef"> {
+      x: Versioned<Str> = _
+      σ: Trie<Expr> = _
+   }
+ 
+   export function recDef (x: Versioned<Str>, σ: Trie<Expr>): RecDef {
+      return make(RecDef, x, σ)
+   }
+
+   export class LetRec extends Def {
+      δ: List<RecDef> = _
+   }
+
+   export function letRec (δ: List<RecDef>): LetRec {
+      return make(LetRec, δ)
+   }
+
+   export class Defs extends Expr {
+      def̅: List<Def> = _
+      e: Expr = _
+   }
+
+   export function defs (k: Id, def̅: List<Def>, e: Expr): Defs {
+      return at(k, Defs, def̅, e)
    }
 
    export class Fun extends Expr {
@@ -103,40 +139,6 @@ export namespace Expr {
 
    export function fun (k: Id, σ: Trie<Expr>): Fun {
       return at(k, Fun, σ)
-   }
-
-   export class Let extends Def {
-      x: Str = _
-      e: Expr = _
-   }
-
-   export function let_ (k: Id, x: Str, e: Expr): Let {
-      return at(k, Let, x, e)
-   }
-
-   export class Prim extends Def {
-      x: Str = _
-   }
-
-   export function prim (k: Id, x: Str): Prim {
-      return at(k, Prim, x)
-   }
-
-   export class RecDef extends VersionedC(DataValue)<"RecDef"> {
-      x: Str = _
-      σ: Trie<Expr> = _
-   }
- 
-   export function recDef (k: Id, x: Str, σ: Trie<Expr>): RecDef {
-      return at(k, RecDef, x, σ)
-   }
-
-   export class LetRec extends Def {
-      δ: List<RecDef> = _
-   }
-
-   export function letRec (k: Id, δ: List<RecDef>): LetRec {
-      return at(k, LetRec, δ)
    }
 
    export class MatchAs extends Expr {
@@ -241,6 +243,7 @@ export namespace Expr {
          return make(Constr, cases)
       }
 
+      // TODO: use Versioned<Str> by analogy with other binding forms.
       export class Var<K extends Kont<K>> extends Trie<K> {
          x: Str = _
          κ: K = _

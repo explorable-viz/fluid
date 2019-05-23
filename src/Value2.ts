@@ -3,8 +3,16 @@ import { Class, __check, assert } from "./util/Core"
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
 
+// Somewhat perverse to do this, but need some type safety!
+export type DataValueTag =
+   "Args" | "Args.Plug" | "Bool" | "Closure" | "Env" | "Expl" | "Expl.Def" | "Expr" | "Expr.Def" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
+   "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
+export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
+export type PrimOpTag = "UnaryOp" | "BinaryOp"
+export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "ArgsFunc" | "ArgsMatch" | "Func" | "Id" | "Match" | "Num" | "Str"
+
 // Value in the metalanguage. Nominal idiom breaks down here in requiring use of "any".
-export class Value<Tag extends string = any> {
+export class Value<Tag extends ValueTag = ValueTag> {
    readonly __tag: Tag
 
    fieldValues (): Persistent[] {
@@ -12,16 +20,23 @@ export class Value<Tag extends string = any> {
    }
 }
 
+// Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
+export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
+   fieldValues (): Value[] {
+      return fields(this).map(k => (this as any as State)[k] as Value)
+   }
+}
+
 // Address or location of persistent object.
 export abstract class Id extends Value<"Id"> {
 }
 
-// Functions are persistent to support primitives. Primitive data types like Num and Str contain
+// Functions are persistent to support primitives. Primitive datatypes like Num and Str contain
 // ES6 primitives like number and string, which are (currently) "persistent" for interning purposes
 // but are not "values" because they are not observable to user code.
 export type Persistent = Value | string | number | Function
 
-export type PrimValue = Value<"Num"> | Value<"Str">
+export type PrimValue = Num | Str
 
 export class Num extends Value<"Num"> {
    val: number = _
@@ -74,7 +89,7 @@ interface Memoisable<T extends Persistent> {
    call (args: Persistent[]): T
 }
 
-class MemoCtr<Tag extends string, T extends Value<Tag>> implements Memoisable<T> {
+class MemoCtr<Tag extends ValueTag, T extends Value<Tag>> implements Memoisable<T> {
    C: Class<T>
 
    constructor (C: Class<T>) {
@@ -104,13 +119,13 @@ export function memoCall<T extends Persistent> (memo: MemoTable, f: Memoisable<T
 
 // Experimented with dictionary-based construction pattern; eliminates field order mismatch as a possible
 // source of error, but the benefit is very small and doesn't really suit the memoisation pattern.
-export function make<Tag extends string, T extends Value<Tag>> (C: Class<T>, ...v̅: Persistent[]): T {
+export function make<Tag extends ValueTag, T extends Value<Tag>> (C: Class<T>, ...v̅: Persistent[]): T {
    return memoCall(__ctrMemo, new MemoCtr(C), v̅)
 }
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<Tag extends string, T extends Value<Tag>> (tgt: T, v̅: Persistent[]): T {
+export function construct<Tag extends ValueTag, T extends Value<Tag>> (tgt: T, v̅: Persistent[]): T {
    const tgtʹ: State = tgt as any as State,
          f̅: string[] = fields(tgt)
    assert(f̅.length === v̅.length)
@@ -126,6 +141,6 @@ export function isField (prop: string): boolean {
    return !prop.startsWith("__")
 }
 
-export function fields<Tag extends string> (v: Value<Tag>): string[] {
+export function fields<Tag extends ValueTag> (v: Value<Tag>): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
 }
