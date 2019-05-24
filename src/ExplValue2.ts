@@ -1,9 +1,8 @@
 import { List } from "./BaseTypes2"
-import { DataValue } from "./DataType2"
 import { Env } from "./Env2"
 import { ExplId } from "./Eval2"
 import { Match } from "./Match2"
-import { Str, Value, _, make } from "./Value2"
+import { DataValue, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at } from "./Versioned2"
 
 export type Expl = Expl.Expl

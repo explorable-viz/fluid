@@ -1,15 +1,6 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { DataFunc, DataMatch } from "./Match2"
-import { DataValueTag, State, Str, Value, _, fields } from "./Value2"
-
-// Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
-export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
-   __expl: DataExpl
-
-   fieldValues (): Value[] {
-      return fields(this).map(k => (this as any as State)[k] as Value)
-   }
-}
+import { DataValue, Str, _, fields } from "./Value2"
 
 export class DataExpl extends DataValue<"DataExpl"> {
 }
@@ -60,15 +51,15 @@ export function arity (ctr: Str): number {
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
 export let ctrToDataType: Map<string, DataType> = new Map
-export const elimSuffix: string = "Func",
-             explSuffix: string = "Expl"
+export const elimNameSuffix: string = "Func"
+export const explNameSuffix: string = "Expl"
 
 export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]) {
    C̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // probably consistent with string <
    const ctrs: [string, Ctr][] = C̅.map(
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
-         elimC_name: string = D.name + elimSuffix,
+         elimC_name: string = D.name + elimNameSuffix,
          elimC: Class<DataFunc<any>> = {
             // https://stackoverflow.com/questions/33605775
             [elimC_name]: class extends DataFunc<any> {
@@ -91,7 +82,7 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                }
             }[elimC_name]]
          }),
-         explC_name: string = D.name + explSuffix,
+         explC_name: string = D.name + explNameSuffix,
          explC̅: [string, Class<DataExpl>][] = ctrs.map(([cʹ, c]: [string, Ctr]) => {
             return [cʹ, {
                [explC_name]: class extends DataExpl {

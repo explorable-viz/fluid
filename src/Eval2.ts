@@ -2,14 +2,14 @@ import { Annotation, ann } from "./util/Annotated2"
 import { zip } from "./util/Array"
 import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
-import { DataExpl, DataType, DataValue, ctrToDataType } from "./DataType2"
+import { DataExpl, DataType, ctrToDataType } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { instantiate, uninstantiate } from "./Instantiate2"
 import { Match, evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
-import { Id, Num, Str, Value, _, make } from "./Value2"
+import { DataValue, Id, Num, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
@@ -151,7 +151,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
           c: string = e.ctr.val,
           d: DataType = __nonNull(ctrToDataType.get(c)),
-          v: Versioned<DataValue> = at(kᵥ, d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+          v: Versioned<Value> = at(kᵥ, d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
       // TODO: move __expl property to DataValue
       v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t)) as any
       return explValue(Expl.empty(kₜ), setα(e.__α, v))

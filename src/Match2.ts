@@ -1,10 +1,10 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
 import { Pair } from "./BaseTypes2"
-import { DataType, DataValue, ctrToDataType, elimSuffix } from "./DataType2"
+import { DataType, ctrToDataType, elimNameSuffix } from "./DataType2"
 import { Env, emptyEnv } from "./Env2"
 import { Expr } from "./Expr2"
-import { Str, Value, _, make } from "./Value2"
+import { DataValue, Str, Value, _, make } from "./Value2"
 import { Versioned, asVersioned, setα } from "./Versioned2"
 
 import Kont = Expr.Kont
@@ -54,7 +54,7 @@ export abstract class Func<K extends Kont<K>> extends Value<"Func"> {
 
 function datatype (f: DataFunc<any>): string {
    const c: string = className(f)
-   return c.substr(0, c.length - elimSuffix.length)
+   return c.substr(0, c.length - elimNameSuffix.length)
 }
 
 // Concrete instances have a field per constructor, in *lexicographical* order.
