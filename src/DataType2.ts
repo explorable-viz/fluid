@@ -2,7 +2,7 @@ import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { DataFunc, DataMatch } from "./Match2"
 import { DataValue, Str, _, fields } from "./Value2"
 
-class DataExpl extends DataValue<"DataExpl"> {
+export class DataExpl extends DataValue<"DataExpl"> {
 }
 
 // Neither of these is currently reflective because of non-standard fields.
@@ -82,18 +82,21 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                }
             }[elimC_name]]
          }),
-         explC̅: [string, Class<DataExpl>][] = ctrs.map(([c, _]: [string, Ctr]) => {
-            const C = class extends DataExpl {
-               constructor () {
-                  super()
-                  ;(this as any)[c] = _
+         explC_name: string = D.name + explNameSuffix,
+         explC̅: [string, Class<DataExpl>][] = ctrs.map(([cʹ, c]: [string, Ctr]) => {
+            return [cʹ, {
+               [explC_name]: class extends DataExpl {
+                  constructor () {
+                     super()
+                     c.f̅.forEach((f: string): void => {
+                        (this as any)[f] = _
+                     })
+                  }
                }
-            }
-            Object.defineProperty (C, 'name', { value: D.name + explNameSuffix })
-            return [c, C]
+            }[explC_name]]
          }),
-         datatype: DataType = new DataType(D.name, elimC, new Map(ctrs), new Map(matchC̅), new Map(explC̅))
+         d: DataType = new DataType(D.name, elimC, new Map(ctrs), new Map(matchC̅), new Map(explC̅))
    C̅.forEach((C: Class<T>): void => {
-      ctrToDataType.set(C.name, datatype)
+      ctrToDataType.set(C.name, d)
    })
 }

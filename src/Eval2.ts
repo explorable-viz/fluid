@@ -2,7 +2,7 @@ import { Annotation, ann } from "./util/Annotated2"
 import { zip } from "./util/Array"
 import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
-import { ctrFor } from "./DataType2"
+import { DataExpl, DataType, ctrToDataType } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
@@ -149,9 +149,11 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.Constr) {
       let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
-          v: Versioned<Value> = at(kᵥ, ctrFor(e.ctr).C, ...tv̅.map(({v}) => v))
-      // TODO: make less hacky
-      v.__expl = tv̅.map(({t}) => t) as any
+          c: string = e.ctr.val,
+          d: DataType = __nonNull(ctrToDataType.get(c)),
+          v: Versioned<Value> = at(kᵥ, d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+      // TODO: move __expl property to DataValue
+      v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t)) as any
       return explValue(Expl.empty(kₜ), setα(e.__α, v))
    } else
    if (e instanceof Expr.Var) {
@@ -229,9 +231,10 @@ export function uneval ({t, v}: ExplValue): Expr {
       } else 
       if (v instanceof DataValue) {
          // reverse order but shouldn't matter in absence of side-effects:
-         // TODO: make less hacky.
-         const t̅: Expl[] = v.__expl as any
-         zip(t̅, v.fieldValues()).map(([t, v]) => uneval(explValue(t, v as Versioned<Value>)))
+         // TODO: move __expl to DataValue and give appropriate type.
+         const t̅: Expl[] = (v.__expl as any as DataExpl).fieldValues() as Expl[],
+               v̅: Versioned<Value>[] = v.fieldValues() as Versioned<Value>[]
+         zip(t̅, v̅).map(([t, v]) => uneval(explValue(t, v as Versioned<Value>)))
          return joinα(v.__α, e)
       } else {
          return absurd()
