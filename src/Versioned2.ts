@@ -122,3 +122,8 @@ export function joinα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
    v.__α = ann.join(α, v.__α)
    return v
 }
+
+export function meetα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
+   v.__α = ann.meet(α, v.__α)
+   return v
+}
