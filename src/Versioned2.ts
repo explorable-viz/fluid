@@ -1,6 +1,5 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
-import { Expl } from "./ExplValue2"
 import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make } from "./Value2"
 
 // Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
@@ -14,7 +13,6 @@ export function VersionedC<T extends Class<Value>> (C: T) {
       [C.name]: class extends C {
             __id: Id
             __α: Annotation
-            __expl: Expl // previously we couldn't put explanations inside values; see GitHub issue #128.
          }
    }[C.name] // give versioned class same name as C
 }
@@ -23,7 +21,6 @@ export function VersionedC<T extends Class<Value>> (C: T) {
 export interface Versioned_ {
    __id: Id
    __α: Annotation
-   __expl: Expl
 }
 
 export type Versioned<T> = Versioned_ & T
@@ -120,8 +117,4 @@ export function setallα<Tag extends ValueTag, T extends Value<Tag>> (v: T, α: 
 export function joinα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
    v.__α = ann.join(α, v.__α)
    return v
-}
-
-export function getExpl<T, U extends Versioned<T>> (v: U): Expl {
-   return __nonNull(v.__expl)
 }
