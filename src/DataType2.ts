@@ -2,18 +2,29 @@ import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { DataFunc, DataMatch } from "./Match2"
 import { DataValue, Str, _, fields } from "./Value2"
 
+class DataExpl extends DataValue<"DataExpl"> {
+}
+
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: string
    elimC: Class<DataFunc<any>>                 // not sure how better to parameterise 
    ctrs: Map<string, Ctr>                      // fields of my constructors
    matchC̅: Map<string, Class<DataMatch<any>>>  // "match" class per constructor
+   explC̅: Map<string, Class<DataExpl>>         // "explanation" class per constructor
 
-   constructor (name: string, elimC: Class<DataFunc<any>>, ctrs: Map<string, Ctr>, matchC̅: Map<string, Class<DataMatch<any>>>) {
+   constructor (
+      name: string, 
+      elimC: Class<DataFunc<any>>, 
+      ctrs: Map<string, Ctr>, 
+      matchC̅: Map<string, Class<DataMatch<any>>>,
+      explC̅: Map<string, Class<DataExpl>>
+   ) {
       this.name = name
       this.elimC = elimC
       this.ctrs = ctrs
       this.matchC̅ = matchC̅
+      this.explC̅ = explC̅
    }
 }
 
@@ -38,13 +49,14 @@ export function arity (ctr: Str): number {
    return ctrFor(ctr).f̅.length
 }
 
-// Populated by initDataTypes(). Constructors are not yet first-class. TODO: reinstate projections.
+// Populated by initDataTypes(). Constructors are not yet first-class.
 export let ctrToDataType: Map<string, DataType> = new Map
 export const elimNameSuffix: string = "Func"
+export const explNameSuffix: string = "Expl"
 
-export function initDataType<T extends DataValue> (D: AClass<T>, ctrC̅: Class<T>[]) {
-   ctrC̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // probably consistent with string <
-   const ctrs: [string, Ctr][] = ctrC̅.map(
+export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]) {
+   C̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // probably consistent with string <
+   const ctrs: [string, Ctr][] = C̅.map(
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
          elimC_name: string = D.name + elimNameSuffix,
@@ -54,24 +66,34 @@ export function initDataType<T extends DataValue> (D: AClass<T>, ctrC̅: Class<T
                constructor () {
                   super()
                   // lexicographical order hopefully preserved by getOwnPropertyNames()
-                  ctrC̅.forEach((C: Class<T>): void => {
+                  C̅.forEach((C: Class<T>): void => {
                      (this as any)[C.name] = _
                   })
                }
             }
          }[elimC_name],
-         matchC̅: [string, Class<DataMatch<any>>][] = ctrs.map(([ctr, _]: [string, Ctr]) => {
-            return [ctr, {
+         matchC̅: [string, Class<DataMatch<any>>][] = ctrs.map(([c, _]: [string, Ctr]) => {
+            return [c, {
                [elimC_name]: class extends DataMatch<any> {
                   constructor () {
                      super()
-                     ;(this as any)[ctr] = _
+                     ;(this as any)[c] = _
                   }
                }
             }[elimC_name]]
          }),
-         datatype: DataType = new DataType(D.name, elimC, new Map(ctrs), new Map(matchC̅))
-   ctrC̅.forEach((C: Class<T>): void => {
+         explC̅: [string, Class<DataExpl>][] = ctrs.map(([c, _]: [string, Ctr]) => {
+            const C = class extends DataExpl {
+               constructor () {
+                  super()
+                  ;(this as any)[c] = _
+               }
+            }
+            Object.defineProperty (C, 'name', { value: D.name + explNameSuffix })
+            return [c, C]
+         }),
+         datatype: DataType = new DataType(D.name, elimC, new Map(ctrs), new Map(matchC̅), new Map(explC̅))
+   C̅.forEach((C: Class<T>): void => {
       ctrToDataType.set(C.name, datatype)
    })
 }

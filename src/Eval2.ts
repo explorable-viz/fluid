@@ -43,7 +43,6 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
 }
    
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-// TODO: associate explanations to the created closures.
 function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
@@ -73,7 +72,6 @@ function uncloseDefs (ρ: Env): void {
    }
 }
 
-// TODO: associate explanations to values created in the let and primitive cases.
 function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
