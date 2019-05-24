@@ -1,5 +1,5 @@
-import { initDataType } from "./DataType2"
-import { DataValue, Num, _, make } from "./Value2"
+import { DataValue, initDataType } from "./DataType2"
+import { Num, _, make } from "./Value2"
 import { List } from "./BaseTypes2"
 
 // Basic graphical datatypes.
