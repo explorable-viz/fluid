@@ -20,13 +20,6 @@ export class Value<Tag extends ValueTag = ValueTag> {
    }
 }
 
-// Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
-export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
-   fieldValues (): Value[] {
-      return fields(this).map(k => (this as any as State)[k] as Value)
-   }
-}
-
 // Address or location of persistent object.
 export abstract class Id extends Value<"Id"> {
 }

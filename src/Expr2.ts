@@ -2,8 +2,9 @@ import { absurd, error } from "./util/Core"
 import { eq } from "./util/Ord"
 import { List } from "./BaseTypes2"
 import { ctrToDataType } from "./DataType2"
+import { DataValue } from "./DataValue2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
-import { DataValue, Id, Num, Str, _, make } from "./Value2"
+import { Id, Num, Str, _, make } from "./Value2"
 import { Versioned, VersionedC, at } from "./Versioned2"
 
 // Constants used for parsing, and also for toString() implementations.
