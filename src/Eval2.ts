@@ -1,20 +1,20 @@
 import { Annotation, ann } from "./util/Annotated2"
+import { zip } from "./util/Array"
 import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { ctrFor } from "./DataType2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
-import { Expl } from "./ExplValue2"
+import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { instantiate, uninstantiate } from "./Instantiate2"
 import { Match, evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { DataValue, Id, Num, Str, Value, _, make } from "./Value2"
-import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, setExpl, strʹ } from "./Versioned2"
+import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
 type Def = Expr.Def
-type Expl = Expl.Expl
 type RecDef = Expr.RecDef
 type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
@@ -79,10 +79,10 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const k: ValId = evalId(def.x, "v"),
-               v: Versioned<Value> = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
-               vʹ: Versioned<Value> = setα(ann.meet(v.__α, def.x.__α), copyAt(k, v)),
-               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, vʹ))
-         return [cons(Expl.let_(def.x, v, vʹ), def̅ₜ), ρ_extʹ]
+               tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
+               v: Versioned<Value> = setα(ann.meet(tv.v.__α, def.x.__α), copyAt(k, tv.v)),
+               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
+         return [cons(Expl.let_(def.x, tv, v), def̅ₜ), ρ_extʹ]
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currently happen to be unary
@@ -116,9 +116,9 @@ function undef̅Env (def̅: List<Expl.Def>): void {
       const def: Expl.Def = def̅.head
       if (def instanceof Expl.Let) {
          undef̅Env(def̅.tail)
-         joinα(def.vʹ.__α, def.v)
-         joinα(def.vʹ.__α, def.x)
-         uninstantiate(uneval(def.v))
+         joinα(def.v.__α, def.tv.v)
+         joinα(def.v.__α, def.x)
+         uninstantiate(uneval(def.tv))
       } else
       if (def instanceof Expl.Prim) {
          undef̅Env(def̅.tail)
@@ -137,43 +137,46 @@ function undef̅Env (def̅: List<Expl.Def>): void {
    }
 }
 
-export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
+export function eval_ (ρ: Env, e: Expr): ExplValue {
    const kₜ: ExplId = evalId(e, "t"),
          kᵥ: ValId = evalId(e, "v")
    if (e instanceof Expr.ConstNum) {
-      return setExpl(Expl.empty(kₜ), setα(e.__α, numʹ(kᵥ, e.val.val)))
+      return explValue(Expl.empty(kₜ), setα(e.__α, numʹ(kᵥ, e.val.val)))
    } else
    if (e instanceof Expr.ConstStr) {
-      return setExpl(Expl.empty(kₜ), setα(e.__α, strʹ(kᵥ, e.val.val)))
+      return explValue(Expl.empty(kₜ), setα(e.__α, strʹ(kᵥ, e.val.val)))
    } else
    if (e instanceof Expr.Fun) {
-      return setExpl(Expl.empty(kₜ), setα(e.__α, closure(kᵥ, ρ, nil(), e.σ)))
+      return explValue(Expl.empty(kₜ), setα(e.__α, closure(kᵥ, ρ, nil(), e.σ)))
    } else
    if (e instanceof Expr.Constr) {
-      let v̅: Value[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
-      return setExpl(Expl.empty(kₜ), setα(e.__α, at(kᵥ, ctrFor(e.ctr).C, ...v̅)))
+      let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
+          v: Versioned<Value> = at(kᵥ, ctrFor(e.ctr).C, ...tv̅.map(({v}) => v))
+      // TODO: make less hacky
+      v.__expl = tv̅.map(({t}) => t) as any
+      return explValue(Expl.empty(kₜ), setα(e.__α, v))
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
          const v: Versioned<Value> = ρ.get(e.x)!
-         return setExpl(Expl.var_(kₜ, e.x, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+         return explValue(Expl.var_(kₜ, e.x, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
       } else {
          return error(`Variable "${e.x.val}" not found.`)
       }
    } else
    if (e instanceof Expr.App) {
-      const f: Versioned<Value> = eval_(ρ, e.func),
-            u: Versioned<Value> = eval_(ρ, e.arg)
+      const [tf, tu]: [ExplValue, ExplValue] = [eval_(ρ, e.func), eval_(ρ, e.arg)],
+            [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
       if (f instanceof Closure) {
          const [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(f.σ).__apply(u),
                ρ_δ: Env = closeDefs(f.δ, f.ρ, f.δ),
                ρᶠ: Env = ρ_δ.concat(ρʹ),
-               v: Versioned<Value> = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return setExpl(Expl.app(kₜ, f, u, ρ_δ, ξ, v), setα(ann.meet(f.__α, α, v.__α, e.__α), copyAt(kᵥ, v)))
+               tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
+         return explValue(Expl.app(kₜ, tf, tu, ρ_δ, ξ, tv), setα(ann.meet(f.__α, α, tv.v.__α, e.__α), copyAt(kᵥ, tv.v)))
       } else 
       if (f instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
-            return setExpl(Expl.unaryApp(kₜ, f, u), setα(ann.meet(f.__α, u.__α, e.__α), f.op(u)(kᵥ)))
+            return explValue(Expl.unaryApp(kₜ, tf, tu), setα(ann.meet(f.__α, u.__α, e.__α), f.op(u)(kᵥ)))
          } else {
             return error(`Applying "${f.name}" to non-primitive value.`, u)
          }
@@ -185,9 +188,10 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.val)) {
          const op: BinaryOp = binaryOps.get(e.opName.val)!, // TODO: add annotations to opName
-               [v1, v2]: [Versioned<Value>, Versioned<Value>] = [eval_(ρ, e.e1), eval_(ρ, e.e2)]
+               [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
+               [v1, v2]: [Versioned<Value>, Versioned<Value>] = [tv1.v, tv2.v]
          if ((v1 instanceof Num || v1 instanceof Str) && (v2 instanceof Num || v2 instanceof Str)) {
-               return setExpl(Expl.binaryApp(kₜ, v1, e.opName, v2), setα(ann.meet(v1.__α, v2.__α, e.__α), op.op(v1, v2)(kᵥ)))
+               return explValue(Expl.binaryApp(kₜ, tv1, e.opName, tv2), setα(ann.meet(v1.__α, v2.__α, e.__α), op.op(v1, v2)(kᵥ)))
          } else {
             return error(`Applying "${e.opName}" to non-primitive value.`, v1, v2)
          }
@@ -197,24 +201,23 @@ export function eval_ (ρ: Env, e: Expr): Versioned<Value> {
    } else
    if (e instanceof Expr.Defs) {
       const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, e.def̅, emptyEnv()),
-            v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return setExpl(Expl.defs(kₜ, def̅ₜ, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+            tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
+      return explValue(Expl.defs(kₜ, def̅ₜ, tv), setα(ann.meet(tv.v.__α, e.__α), copyAt(kᵥ, tv.v)))
    } else
    if (e instanceof Expr.MatchAs) {
-      const u: Versioned<Value> = eval_(ρ, e.e),
-            [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(e.σ).__apply(u),
-            v: Versioned<Value> = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return setExpl(Expl.matchAs(kₜ, u, ξ, v), setα(ann.meet(α, v.__α, e.__α), copyAt(kᵥ, v)))
+      const tu: ExplValue = eval_(ρ, e.e),
+            [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(e.σ).__apply(tu.v),
+            tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
+      return explValue(Expl.matchAs(kₜ, tu, ξ, tv), setα(ann.meet(α, tv.v.__α, e.__α), copyAt(kᵥ, tv.v)))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
 }
 
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
-export function uneval (v: Versioned<Value>): Expr {
+export function uneval ({t, v}: ExplValue): Expr {
    const k: ValId = v.__id as ValId,
-         e: Expr = k.e as Expr,
-         t: Expl = v.__expl
+         e: Expr = k.e as Expr
    if (t instanceof Expl.Empty) {
       if (v instanceof Num) {
          return joinα(v.__α, e)
@@ -228,7 +231,9 @@ export function uneval (v: Versioned<Value>): Expr {
       } else 
       if (v instanceof DataValue) {
          // reverse order but shouldn't matter in absence of side-effects:
-         v.fieldValues().map(uneval)
+         // TODO: make less hacky.
+         const t̅: Expl[] = v.__expl as any
+         zip(t̅, v.fieldValues()).map(([t, v]) => uneval(explValue(t, v as Versioned<Value>)))
          return joinα(v.__α, e)
       } else {
          return absurd()
@@ -239,42 +244,42 @@ export function uneval (v: Versioned<Value>): Expr {
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.App) {
-      assert(t.f instanceof Closure)
-      joinα(v.__α, t.v)
-      uninstantiate(uneval(t.v))
+      assert(t.tf.v instanceof Closure)
+      joinα(v.__α, t.tv.v)
+      uninstantiate(uneval(t.tv))
       t.ξ.__unapply(v.__α)
       uncloseDefs(t.ρᵟ)
-      joinα(v.__α, t.f)
-      uneval(t.f)
-      uneval(t.u)
+      joinα(v.__α, t.tf.v)
+      uneval(t.tf)
+      uneval(t.tu)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.UnaryApp) {
-      joinα(v.__α, t.f)
-      joinα(v.__α, t.v)
-      uneval(t.f)
-      uneval(t.v)
+      joinα(v.__α, t.tf.v)
+      joinα(v.__α, t.tv.v)
+      uneval(t.tf)
+      uneval(t.tv)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.BinaryApp) {
       assert(binaryOps.has(t.opName.val))
-      joinα(v.__α, t.v1)
-      joinα(v.__α, t.v2)
-      uneval(t.v1)
-      uneval(t.v2)
+      joinα(v.__α, t.tv1.v)
+      joinα(v.__α, t.tv2.v)
+      uneval(t.tv1)
+      uneval(t.tv2)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.Defs) {
-      joinα(v.__α, t.v)
-      uninstantiate(uneval(t.v))
+      joinα(v.__α, t.tv.v)
+      uninstantiate(uneval(t.tv))
       undef̅Env(t.def̅)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
-      joinα(v.__α, t.v)
-      uninstantiate(uneval(t.v))
+      joinα(v.__α, t.tv.v)
+      uninstantiate(uneval(t.tv))
       t.ξ.__unapply(v.__α)
-      uneval(t.u)
+      uneval(t.tu)
       return joinα(v.__α, e)
    } else {
       return absurd()

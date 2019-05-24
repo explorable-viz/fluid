@@ -3,11 +3,11 @@ import { successfulParse } from "../../src/util/parse/Core2"
 import { ann } from "../../src/util/Annotated2"
 import { emptyEnv } from "../../src/Env2"
 import { Eval } from "../../src/Eval2"
+import { ExplValue } from "../../src/ExplValue2"
 import { Expr } from "../../src/Expr2"
 import "../../src/Graphics2"
 import { Parse } from "../../src/Parse2"
-import { Value } from "../../src/Value2"
-import { Versioned, ν, setallα } from "../../src/Versioned2"
+import { ν, setallα } from "../../src/Versioned2"
 import { Cursor } from "./Cursor2"
 
 export class FwdSlice {
@@ -18,13 +18,13 @@ export class FwdSlice {
       setallα(e, ann.top)
       this.expr = new Cursor(e)
       this.setup()
-      this.val = new Cursor(Eval.eval_(emptyEnv(), e))
+      this.val = new Cursor(Eval.eval_(emptyEnv(), e).v)
       console.log(e)
       console.log(this.val.v)
       this.expect()
    }
 
-   setup (): void {      
+   setup (): void {
    }
 
    expect (): void {
@@ -41,11 +41,11 @@ export class BwdSlice {
 
    constructor (e: Expr) {
       setallα(e, ann.bot)
-      const v: Versioned<Value> = Eval.eval_(emptyEnv(), e) // just to obtain tv
-      setallα(v, ann.bot)
-      this.val = new Cursor(v)
+      const tv: ExplValue = Eval.eval_(emptyEnv(), e) // just to obtain tv
+      setallα(tv.v, ann.bot)
+      this.val = new Cursor(tv.v)
       this.setup()
-      this.expr = new Cursor(Eval.uneval(v))
+      this.expr = new Cursor(Eval.uneval(tv))
       this.expect()
    }
 
