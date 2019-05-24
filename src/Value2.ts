@@ -134,6 +134,10 @@ export function isField (prop: string): boolean {
    return !prop.startsWith("__")
 }
 
-export function fields<Tag extends ValueTag> (v: Value<Tag>): string[] {
+export function fields (v: Value): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
+}
+
+export function __fields (v: Value): string[] {
+   return Object.getOwnPropertyNames(v).filter((f: string) => f !== "__id")
 }

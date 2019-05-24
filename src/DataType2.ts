@@ -49,17 +49,17 @@ export function arity (ctr: Str): number {
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
 export let ctrToDataType: Map<string, DataType> = new Map
-export const elimNameSuffix: string = "Func"
-export const explNameSuffix: string = "Expl"
+export const elimSuffix: string = "Func"
+export const explSuffix: string = "Expl"
 
+// See https://stackoverflow.com/questions/33605775 for the dynamic class-naming idiom.
 export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]) {
    C̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // probably consistent with string <
    const ctrs: [string, Ctr][] = C̅.map(
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
-         elimC_name: string = D.name + elimNameSuffix,
+         elimC_name: string = D.name + elimSuffix,
          elimC: Class<DataFunc<any>> = {
-            // https://stackoverflow.com/questions/33605775
             [elimC_name]: class extends DataFunc<any> {
                constructor () {
                   super()
@@ -80,7 +80,7 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                }
             }[elimC_name]]
          }),
-         explC_name: string = D.name + explNameSuffix,
+         explC_name: string = D.name + explSuffix,
          explC̅: [string, Class<DataExpl>][] = ctrs.map(([cʹ, c]: [string, Ctr]) => {
             return [cʹ, {
                [explC_name]: class extends DataExpl {

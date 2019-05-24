@@ -233,7 +233,7 @@ export function uneval ({t, v}: ExplValue): Expr {
          // reverse order but shouldn't matter in absence of side-effects:
          const t̅: Expl[] = v.__expl.fieldValues(),
                v̅: Versioned<Value>[] = v.fieldValues() as Versioned<Value>[]
-         zip(t̅, v̅).map(([t, v]) => uneval(explValue(t, v as Versioned<Value>)))
+         zip(t̅, v̅).map(([t, v]) => uneval(explValue(t, v)))
          return joinα(v.__α, e)
       } else {
          return absurd()
