@@ -42,7 +42,7 @@ type VersionedValues = Map<Id, Versioned<Value>>
 const __versioned: VersionedValues = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<Tag extends ValueTag, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
+export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
    let v: Versioned<Value> | undefined = __versioned.get(k)
    if (v === undefined) {
       const v: T = new C
@@ -63,11 +63,11 @@ export function at<Tag extends ValueTag, T extends Value<Tag>> (k: Id, C: Class<
 }
 
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
-function reclassify<Tag extends ValueTag, T extends Value<Tag>> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
+function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
    return notYetImplemented()
 }
 
-export function copyAt<Tag extends ValueTag, T extends Value<Tag>> (k: Id, v: T): Versioned<T> {
+export function copyAt<T extends Value> (k: Id, v: T): Versioned<T> {
    return at(k, classOf(v), ...v.fieldValues())
 }
 

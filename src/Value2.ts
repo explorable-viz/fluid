@@ -82,7 +82,7 @@ interface Memoisable<T extends Persistent> {
    call (args: Persistent[]): T
 }
 
-class MemoCtr<Tag extends ValueTag, T extends Value<Tag>> implements Memoisable<T> {
+class MemoCtr<T extends Value> implements Memoisable<T> {
    C: Class<T>
 
    constructor (C: Class<T>) {
@@ -112,13 +112,13 @@ export function memoCall<T extends Persistent> (memo: MemoTable, f: Memoisable<T
 
 // Experimented with dictionary-based construction pattern; eliminates field order mismatch as a possible
 // source of error, but the benefit is very small and doesn't really suit the memoisation pattern.
-export function make<Tag extends ValueTag, T extends Value<Tag>> (C: Class<T>, ...v̅: Persistent[]): T {
+export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
    return memoCall(__ctrMemo, new MemoCtr(C), v̅)
 }
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<Tag extends ValueTag, T extends Value<Tag>> (tgt: T, v̅: Persistent[]): T {
+export function construct<T extends Value> (tgt: T, v̅: Persistent[]): T {
    const tgtʹ: State = tgt as any as State,
          f̅: string[] = fields(tgt)
    assert(f̅.length === v̅.length)
