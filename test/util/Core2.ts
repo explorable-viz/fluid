@@ -41,7 +41,7 @@ export class BwdSlice {
 
    constructor (e: Expr) {
       setallα(e, ann.bot)
-      const v: Versioned<Value> = Eval.eval_(emptyEnv(), e).v // just to obtain tv
+      const v: Versioned<Value> = Eval.eval_(emptyEnv(), e) // just to obtain tv
       setallα(v, ann.bot)
       this.val = new Cursor(v)
       this.setup()

@@ -6,17 +6,6 @@ import { UnaryOp } from "./Primitive2"
 import { DataValue, PrimValue, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at } from "./Versioned2"
 
-export type Expl = Expl.Expl
-
-export class ExplValue extends DataValue<"ExplValue"> {
-   t: Expl = _
-   v: Versioned<Value> = _
-}
-
-export function explValue (t: Expl, v: Versioned<Value>): ExplValue {
-   return make(ExplValue, t, v)
-}
-
 export namespace Expl {
    export abstract class Expl extends VersionedC(DataValue)<"Expl"> {
    }
