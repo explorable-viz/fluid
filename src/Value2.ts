@@ -138,6 +138,6 @@ export function fields (v: Value): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
 }
 
-export function __fields (v: Value): string[] {
-   return Object.getOwnPropertyNames(v).filter((f: string) => f !== "__id")
+export function metadataFields (v: Value): string[] {
+   return Object.getOwnPropertyNames(v).filter(f => !isField(f) && f !== "__id")
 }

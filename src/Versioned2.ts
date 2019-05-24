@@ -1,6 +1,6 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
-import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make } from "./Value2"
+import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make, metadataFields } from "./Value2"
 
 // Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
 // for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
@@ -68,7 +68,11 @@ function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): Versi
 }
 
 export function copyAt<T extends Value> (k: Id, v: T): Versioned<T> {
-   return at(k, classOf(v), ...v.fieldValues())
+   const vʹ: Versioned<T> = at(k, classOf(v), ...v.fieldValues())
+   metadataFields(v).forEach((prop: string) => {
+      (vʹ as any)[prop] = (v as any)[prop]
+   })
+   return vʹ
 }
 
 // A memo key which is sourced externally to the system. (The name "External" is already taken.)
