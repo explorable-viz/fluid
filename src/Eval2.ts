@@ -11,7 +11,7 @@ import { instantiate, uninstantiate } from "./Instantiate2"
 import { Match, evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
-import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, strʹ } from "./Versioned2"
+import { Versioned, VersionedC, at, copyAt, joinα, meetα, numʹ, setα, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
@@ -79,7 +79,7 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env
       if (def instanceof Expr.Let) {
          const k: ValId = evalId(def.x, "v"),
                tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
-               v: Versioned<Value> = setα(ann.meet(tv.v.__α, def.x.__α), copyAt(k, tv.v)),
+               v: Versioned<Value> = meetα(def.x.__α, copyAt(k, tv.v)),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
          return [cons(Expl.let_(def.x, tv, v), def̅ₜ), ρ_extʹ]
       } else
@@ -159,7 +159,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
          const v: Versioned<Value> = ρ.get(e.x)!
-         return explValue(Expl.var_(kₜ, e.x, v), setα(ann.meet(v.__α, e.__α), copyAt(kᵥ, v)))
+         return explValue(Expl.var_(kₜ, e.x, v), meetα(e.__α, copyAt(kᵥ, v)))
       } else {
          return error(`Variable "${e.x.val}" not found.`)
       }
@@ -172,7 +172,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
                ρ_δ: Env = closeDefs(f.δ, f.ρ, f.δ),
                ρᶠ: Env = ρ_δ.concat(ρʹ),
                tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return explValue(Expl.app(kₜ, tf, tu, ρ_δ, ξ, tv), setα(ann.meet(f.__α, α, tv.v.__α, e.__α), copyAt(kᵥ, tv.v)))
+         return explValue(Expl.app(kₜ, tf, tu, ρ_δ, ξ, tv), meetα(ann.meet(f.__α, α, e.__α), copyAt(kᵥ, tv.v)))
       } else 
       if (f instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
@@ -202,13 +202,13 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.Defs) {
       const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, e.def̅, emptyEnv()),
             tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
-      return explValue(Expl.defs(kₜ, def̅ₜ, tv), setα(ann.meet(tv.v.__α, e.__α), copyAt(kᵥ, tv.v)))
+      return explValue(Expl.defs(kₜ, def̅ₜ, tv), meetα(e.__α, copyAt(kᵥ, tv.v)))
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
             [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(e.σ).__apply(tu.v),
             tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
-      return explValue(Expl.matchAs(kₜ, tu, ξ, tv), setα(ann.meet(α, tv.v.__α, e.__α), copyAt(kᵥ, tv.v)))
+      return explValue(Expl.matchAs(kₜ, tu, ξ, tv), meetα(ann.meet(α, e.__α), copyAt(kᵥ, tv.v)))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
