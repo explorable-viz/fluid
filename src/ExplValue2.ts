@@ -84,8 +84,8 @@ export namespace Expl {
       f: Closure = _
    }
 
-   export function recDef (): RecDef {
-      return make(RecDef)
+   export function recDef (x: Versioned<Str>, f: Closure): RecDef {
+      return make(RecDef, x, f)
    }
 
    export class LetRec extends Def {

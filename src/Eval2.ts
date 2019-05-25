@@ -56,8 +56,9 @@ function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
             k: ValId = valId(def.x),
-            [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefsEnv(δ_0, ρ, δ.tail)
-      return [δₜ, extendEnv(ρ_ext, def.x, setα(def.x.__α, closure(k, ρ, δ_0, def.σ)))]
+            [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefsEnv(δ_0, ρ, δ.tail),
+            f: Closure = closure(k, ρ, δ_0, def.σ)
+      return [cons(Expl.recDef(def.x, f), δₜ), extendEnv(ρ_ext, def.x, setα(def.x.__α, f))]
    } else
    if (Nil.is(δ)) {
       return [nil(), emptyEnv()]
