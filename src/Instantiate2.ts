@@ -57,12 +57,6 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    }
 }
 
-export function instantiate2<T extends Expr> (ρ: Env, e: T): Expr {
-   const eʹ: Expr = instantiate(ρ, e)
-   instantiate_fwd(eʹ)
-   return eʹ
-}
-
 enum Direction { Fwd, Bwd }
 
 export function instantiate_fwd (e: Expr): void {
@@ -192,7 +186,7 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
       return instantiateTrie<K, Trie<K>>(ρ, κ) as K 
    } else
    if (κ instanceof Expr.Expr) {
-      return instantiate2(ρ, κ) as Kont<K> as K
+      return instantiate(ρ, κ) as Kont<K> as K
    } else
    if (κ instanceof Args.Args) {
       return instantiateArgs(ρ, κ) as K

@@ -17,15 +17,14 @@ import Trie = Expr.Trie
 
 type Def = Expr.Def
 type RecDef = Expr.RecDef
-type Tag = "t" | "v" // TODO: expess in terms of keyof ExplVal?
 
-export class EvalId<T extends Tag> extends Id {
-   e: Expr | Versioned<Str> = _ // str case is for binding occurrences of variables
-   tag: T = _
+export class EvalId<P extends keyof ExplValue> extends Id {
+   e: Expr | Versioned<Str> = _ // str case for binding occurrences of variables
+   f: P = _
 }
 
-function evalId<T extends Tag> (e: Expr | Versioned<Str>, tag: T): EvalId<T> {
-   return make(EvalId, e, tag) as EvalId<T>
+function evalId<P extends keyof ExplValue> (e: Expr | Versioned<Str>, f: P): EvalId<P> {
+   return make(EvalId, e, f) as EvalId<P>
 }
 
 export type ValId = EvalId<"v">
