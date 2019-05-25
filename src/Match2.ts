@@ -50,7 +50,7 @@ function evalArgs<K extends Kont<K>> (Π: Expr.Args<K>): Args.ArgsFunc<K> {
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
 export abstract class Func<K extends Kont<K>> extends Value<"Func"> {
-   abstract __apply (v: Versioned<Value>): [Env, Match<K>, K, Annotation]
+   abstract __apply (v: Versioned<Value>): [Env, Match<K>, K]
 }
 
 function datatype (f: DataFunc<any>): string {
@@ -60,15 +60,15 @@ function datatype (f: DataFunc<any>): string {
 
 // Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
-   __apply (v: Versioned<Value>): [Env, Match<K>, K, Annotation] {
+   __apply (v: Versioned<Value>): [Env, Match<K>, K] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const d: DataType = __nonNull(ctrToDataType.get(c)),
                args_f: Args.ArgsFunc<K> = ((this as any)[c] as Args.ArgsFunc<K>)
          assert(args_f !== undefined, `Pattern mismatch: found ${c}, expected ${datatype(this)}.`)
          const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
-               [ρ, Ψ, κ, α] = args_f.__apply(v̅)
-         return [ρ, make(d.matchC̅.get(c)!, v, Ψ), κ, ann.meet(v.__α, α)]
+               [ρ, Ψ, κ] = args_f.__apply(v̅)
+         return [ρ, make(d.matchC̅.get(c)!, v, Ψ), κ]
       } else {
          return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
       }
@@ -78,8 +78,8 @@ export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
 class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
-   __apply (v: Versioned<Value>): [Env, Match<K>, K, Annotation] {
-      return [Env.singleton(this.σ.x, v), varMatch(), this.σ.κ, ann.top]
+   __apply (v: Versioned<Value>): [Env, Match<K>, K] {
+      return [Env.singleton(this.σ.x, v), varMatch(), this.σ.κ]
    }
 }
 
@@ -124,15 +124,15 @@ function varMatch<K extends Kont<K>> (): VarMatch<K> {
 
 export namespace Args {
    export abstract class ArgsFunc<K extends Kont<K>> extends Value<"ArgsFunc"> {
-      abstract __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K, Annotation]
+      abstract __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K]
    }
    
    class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
       Π: Expr.Args.End<K> = _
       
-      __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K, Annotation] {
+      __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K] {
          if (v̅.length === 0) {
-            return [emptyEnv(), endMatch(), this.Π.κ, ann.top]
+            return [emptyEnv(), endMatch(), this.Π.κ]
          } else {
             return absurd("Too many arguments to constructor.")
          }
@@ -146,14 +146,14 @@ export namespace Args {
    class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
       Π: Expr.Args.Next<K> = _
    
-      __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K, Annotation] {
+      __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K] {
          if (v̅.length === 0) {
             return absurd("Too few arguments to constructor.")
          } else {
             const [v, ...v̅ʹ] = v̅,
-                  [ρ, ξ, Π, α] = evalTrie(this.Π.σ).__apply(v),
-                  [ρʹ, Ψ, κ, αʹ] = evalArgs(Π).__apply(v̅ʹ)
-            return [ρ.concat(ρʹ), nextMatch(ξ, Ψ), κ, ann.meet(α, αʹ)]
+                  [ρ, ξ, Π] = evalTrie(this.Π.σ).__apply(v),
+                  [ρʹ, Ψ, κ] = evalArgs(Π).__apply(v̅ʹ)
+            return [ρ.concat(ρʹ), nextMatch(ξ, Ψ), κ]
          }
       }
    }

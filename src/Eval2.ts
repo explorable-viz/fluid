@@ -1,4 +1,4 @@
-import { Annotation, ann } from "./util/Annotated2"
+import { ann } from "./util/Annotated2"
 import { zip } from "./util/Array"
 import { __nonNull, absurd, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
@@ -11,7 +11,7 @@ import { instantiate2, instantiate_bwd, instantiate_fwd } from "./Instantiate2"
 import { Match, evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
-import { Versioned, VersionedC, at, copyAt, joinα, meetα, numʹ, setα, strʹ } from "./Versioned2"
+import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, strʹ } from "./Versioned2"
 
 import Trie = Expr.Trie
 
@@ -103,7 +103,7 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const k: ValId = valId(def.x),
-               tv: ExplValue = eval2(ρ.concat(ρ_ext), instantiate2(ρ_ext, def.e)),
+               tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate2(ρ_ext, def.e)),
                v: Versioned<Value> = copyAt(k, tv.v),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
          return [cons(Expl.let_(def.x, tv, v), def̅ₜ), ρ_extʹ]
@@ -146,7 +146,7 @@ function defs_fwd (def̅: List<Expl.Def>): void {
       if (def instanceof Expl.Let) {
          instantiate_fwd(toExpr(def.tv.t))
          eval_fwd(def.tv)
-         meetα(def.x.__α, def.v)
+         setα(ann.meet(def.x.__α, def.tv.v.__α), def.v)
       } else
       if (def instanceof Expl.Prim) {
          setα(def.x.__α, def.opʹ)
@@ -181,13 +181,13 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    const kₜ: ExplId = explId(e),
          kᵥ: ValId = valId(e)
    if (e instanceof Expr.ConstNum) {
-      return explValue(Expl.empty(kₜ), setα(e.__α, numʹ(kᵥ, e.val.val)))
+      return explValue(Expl.empty(kₜ), numʹ(kᵥ, e.val.val))
    } else
    if (e instanceof Expr.ConstStr) {
-      return explValue(Expl.empty(kₜ), setα(e.__α, strʹ(kᵥ, e.val.val)))
+      return explValue(Expl.empty(kₜ), strʹ(kᵥ, e.val.val))
    } else
    if (e instanceof Expr.Fun) {
-      return explValue(Expl.empty(kₜ), setα(e.__α, closure(kᵥ, ρ, nil(), e.σ)))
+      return explValue(Expl.empty(kₜ), closure(kᵥ, ρ, nil(), e.σ))
    } else
    if (e instanceof Expr.Constr) {
       let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
@@ -195,12 +195,12 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
           d: DataType = __nonNull(ctrToDataType.get(c)),
           v: Versioned<DataValue> = at(kᵥ, d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
       v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
-      return explValue(Expl.empty(kₜ), setα(e.__α, v))
+      return explValue(Expl.empty(kₜ), v)
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
          const v: Versioned<Value> = ρ.get(e.x)!
-         return explValue(Expl.var_(kₜ, e.x, v), meetα(e.__α, copyAt(kᵥ, v)))
+         return explValue(Expl.var_(kₜ, e.x, v), copyAt(kᵥ, v))
       } else {
          return error(`Variable "${e.x.val}" not found.`)
       }
@@ -210,14 +210,14 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
       if (f instanceof Closure) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(f.δ, f.ρ, f.δ),
-               [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(f.σ).__apply(u),
+               [ρʹ, ξ, eʹ]: [Env, Match<Expr>, Expr] = evalTrie(f.σ).__apply(u),
                ρᶠ: Env = ρᵟ.concat(ρʹ),
                tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate2(ρᶠ, eʹ))
-         return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), meetα(ann.meet(f.__α, α, e.__α), copyAt(kᵥ, tv.v)))
+         return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), copyAt(kᵥ, tv.v))
       } else 
       if (f instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
-            return explValue(Expl.unaryApp(kₜ, tf, tu), setα(ann.meet(f.__α, u.__α, e.__α), f.op(u)(kᵥ)))
+            return explValue(Expl.unaryApp(kₜ, tf, tu), f.op(u)(kᵥ))
          } else {
             return error(`Applying "${f.name}" to non-primitive value.`, u)
          }
@@ -232,7 +232,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
                [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
                [v1, v2]: [Versioned<Value>, Versioned<Value>] = [tv1.v, tv2.v]
          if ((v1 instanceof Num || v1 instanceof Str) && (v2 instanceof Num || v2 instanceof Str)) {
-               return explValue(Expl.binaryApp(kₜ, tv1, e.opName, tv2), setα(ann.meet(v1.__α, v2.__α, e.__α), op.op(v1, v2)(kᵥ)))
+               return explValue(Expl.binaryApp(kₜ, tv1, e.opName, tv2), op.op(v1, v2)(kᵥ))
          } else {
             return error(`Applying "${e.opName}" to non-primitive value.`, v1, v2)
          }
@@ -243,13 +243,13 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.Defs) {
       const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs2(ρ, e.def̅, emptyEnv()),
             tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate2(ρʹ, e.e))
-      return explValue(Expl.defs(kₜ, def̅ₜ, tv), meetα(e.__α, copyAt(kᵥ, tv.v)))
+      return explValue(Expl.defs(kₜ, def̅ₜ, tv), copyAt(kᵥ, tv.v))
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
-            [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(e.σ).__apply(tu.v),
+            [ρʹ, ξ, eʹ]: [Env, Match<Expr>, Expr] = evalTrie(e.σ).__apply(tu.v),
             tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate2(ρʹ, eʹ))
-      return explValue(Expl.matchAs(kₜ, tu, ξ, tv), meetα(ann.meet(α, e.__α), copyAt(kᵥ, tv.v)))
+      return explValue(Expl.matchAs(kₜ, tu, ξ, tv), copyAt(kᵥ, tv.v))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
@@ -268,10 +268,18 @@ function toExpr (t: Expl): Expr {
 export function eval_fwd ({t, v}: ExplValue): void {
    const e: Expr = toExpr(t)
    if (t instanceof Expl.Empty) {
-      setα(e.__α, v)
+      if (v instanceof Num || v instanceof Str || v instanceof Closure) {
+         setα(e.__α, v)
+      } else
+      if (v instanceof DataValue) {
+         const t̅: Expl[] = v.__expl.fieldValues(),
+               v̅: Versioned<Value>[] = v.fieldValues() as Versioned<Value>[]
+         zip(t̅, v̅).map(([t, v]) => eval_fwd(explValue(t, v)))
+         setα(e.__α, v)
+      }
    } else
    if (t instanceof Expl.Var) {
-      meetα(e.__α, v)
+      setα(ann.meet(e.__α, t.v.__α), v)
    } else
    if (t instanceof Expl.App) {
       eval_fwd(t.tf)
@@ -279,7 +287,7 @@ export function eval_fwd ({t, v}: ExplValue): void {
       recDefs_fwd(t.δ)
       instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
-      meetα(ann.meet(t.tf.v.__α, t.ξ.__fwd(), e.__α), v)
+      setα(ann.meet(t.tf.v.__α, t.ξ.__fwd(), e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.UnaryApp) {
       eval_fwd(t.tf)
@@ -294,13 +302,16 @@ export function eval_fwd ({t, v}: ExplValue): void {
    if (t instanceof Expl.Defs) {
       defs_fwd(t.def̅)
       eval_fwd(t.tv)
-      meetα(e.__α, v)
+      setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.MatchAs) {
       eval_fwd(t.tu)
       eval_fwd(t.tv)
-      meetα(ann.meet(t.ξ.__fwd(), e.__α), v)
+      setα(ann.meet(t.ξ.__fwd(), e.__α, t.tv.v.__α), v)
    } else {
+      absurd()
+   }
+   if (v.__α === undefined) {
       absurd()
    }
 }
@@ -309,16 +320,9 @@ export function eval_fwd ({t, v}: ExplValue): void {
 export function eval_bwd ({t, v}: ExplValue): Expr {
    const e: Expr = toExpr(t)
    if (t instanceof Expl.Empty) {
-      if (v instanceof Num) {
+      if (v instanceof Num || v instanceof Str || v instanceof Closure) {
          return joinα(v.__α, e)
       } else
-      if (v instanceof Str) {
-         return joinα(v.__α, e)
-      } else
-      if (v instanceof Closure) {
-         assert(Nil.is(v.δ))
-         return joinα(v.__α, e)
-      } else 
       if (v instanceof DataValue) {
          // reverse order but shouldn't matter in absence of side-effects:
          const t̅: Expl[] = v.__expl.fieldValues(),

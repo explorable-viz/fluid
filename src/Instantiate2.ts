@@ -24,7 +24,7 @@ export function exprId (j: List<Value>, e: Expr | Versioned<Str>): ExprId {
 
 // F-bounded polymorphism doesn't work well here. I've used it for the smaller helper functions 
 // (but with horrendous casts), but not for the two main top-level functions.
-function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
+export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    const k: ExprId = exprId(ρ.entries(), e)
    if (e instanceof Expr.ConstNum) {
       return Expr.constNum(k, e.val)
