@@ -7,7 +7,7 @@ import { DataValue } from "./DataValue2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
-import { instantiate2, instantiate_bwd, instantiate_fwd } from "./Instantiate2"
+import { instantiate, instantiate_bwd, instantiate_fwd } from "./Instantiate2"
 import { Match, evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
@@ -103,7 +103,7 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const k: ValId = valId(def.x),
-               tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate2(ρ_ext, def.e)),
+               tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
                v: Versioned<Value> = copyAt(k, tv.v),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
          return [cons(Expl.let_(def.x, tv, v), def̅ₜ), ρ_extʹ]
@@ -133,12 +133,6 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    } else {
       return absurd()
    }
-}
-
-function defs2 (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
-   const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅, ρ_ext)
-   defs_fwd(def̅ₜ)
-   return [def̅ₜ, ρʹ]
 }
 
 function defs_fwd (def̅: List<Expl.Def>): void {
@@ -212,7 +206,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(f.δ, f.ρ, f.δ),
                [ρʹ, ξ, eʹ]: [Env, Match<Expr>, Expr] = evalTrie(f.σ).__apply(u),
                ρᶠ: Env = ρᵟ.concat(ρʹ),
-               tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate2(ρᶠ, eʹ))
+               tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
          return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), copyAt(kᵥ, tv.v))
       } else 
       if (f instanceof UnaryOp) {
@@ -225,7 +219,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
          return error(`Cannot apply ${className(f)}`)
       }
    } else
-   // Binary operators are (currently) "syntax", ratcopyAt(k, tv.v)her than first-class.
+   // Binary operators are (currently) "syntax", rather than first-class.
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.val)) {
          const op: BinaryOp = binaryOps.get(e.opName.val)!, // TODO: add annotations to opName
@@ -241,14 +235,14 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       }
    } else
    if (e instanceof Expr.Defs) {
-      const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs2(ρ, e.def̅, emptyEnv()),
-            tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate2(ρʹ, e.e))
+      const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, e.def̅, emptyEnv()),
+            tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
       return explValue(Expl.defs(kₜ, def̅ₜ, tv), copyAt(kᵥ, tv.v))
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
             [ρʹ, ξ, eʹ]: [Env, Match<Expr>, Expr] = evalTrie(e.σ).__apply(tu.v),
-            tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate2(ρʹ, eʹ))
+            tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
       return explValue(Expl.matchAs(kₜ, tu, ξ, tv), copyAt(kᵥ, tv.v))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
