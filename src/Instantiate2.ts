@@ -49,7 +49,7 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
       return setα(e.__α, Expr.matchAs(k, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
    } else
    if (e instanceof Expr.App) {
-      return setα(e.__α, Expr.app(k, instantiate(ρ, e.func), instantiate(ρ, e.arg)))
+      return setα(e.__α, Expr.app(k, instantiate(ρ, e.f), instantiate(ρ, e.e)))
    } else
    if (e instanceof Expr.BinaryApp) {
       return setα(e.__α, Expr.binaryApp(k, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2)))
@@ -89,8 +89,8 @@ export function uninstantiate (e: Expr): void {
       setα(α, eʹ)
    } else
    if (e instanceof Expr.App) {
-      uninstantiate(e.func)
-      uninstantiate(e.arg)
+      uninstantiate(e.f)
+      uninstantiate(e.e)
       setα(α, eʹ)
    } else
    if (e instanceof Expr.BinaryApp) {

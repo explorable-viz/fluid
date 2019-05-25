@@ -53,12 +53,12 @@ export namespace Expr {
    }
    
    export class App extends Expr {
-      func: Expr = _
-      arg: Expr = _
+      f: Expr = _
+      e: Expr = _
    }
 
-   export function app (k: Id, func: Expr, arg: Expr): App {
-      return at(k, App, func, arg)
+   export function app (k: Id, f: Expr, e: Expr): App {
+      return at(k, App, f, e)
    }
 
    export class ConstNum extends Expr {

@@ -165,7 +165,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       }
    } else
    if (e instanceof Expr.App) {
-      const [tf, tu]: [ExplValue, ExplValue] = [eval_(ρ, e.func), eval_(ρ, e.arg)],
+      const [tf, tu]: [ExplValue, ExplValue] = [eval_(ρ, e.f), eval_(ρ, e.e)],
             [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
       if (f instanceof Closure) {
          const [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(f.σ).__apply(u),
