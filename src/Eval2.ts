@@ -285,9 +285,6 @@ export function eval_fwd ({t, v}: ExplValue): void {
    } else {
       absurd()
    }
-   if (v.__α === undefined) {
-      absurd()
-   }
 }
 
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
