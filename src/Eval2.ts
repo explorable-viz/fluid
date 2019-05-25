@@ -1,6 +1,6 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { zip } from "./util/Array"
-import { __nonNull, absurd, as, assert, className, error, notYetImplemented } from "./util/Core"
+import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
 import { DataValue } from "./DataValue2"
@@ -117,7 +117,7 @@ function undef̅Env (def̅: List<Expl.Def>): void {
          undef̅Env(def̅.tail)
          joinα(def.v.__α, def.tv.v)
          joinα(def.v.__α, def.x)
-         uninstantiate(uneval(def.tv))
+         uninstantiate(bwdSlice(def.tv))
       } else
       if (def instanceof Expl.Prim) {
          undef̅Env(def̅.tail)
@@ -226,7 +226,7 @@ export function fwdSlice ({t, v}: ExplValue): void {
       fwdSlice(t.tf)
       fwdSlice(t.tu)
       fwdSlice(t.tv)
-      return notYetImplemented()
+      meetα(ann.meet(t.tf.v.__α, t.ξ.__fwdSlice(), e.__α), v)
    } else
    if (t instanceof Expl.UnaryApp) {
       fwdSlice(t.tf)
@@ -245,14 +245,14 @@ export function fwdSlice ({t, v}: ExplValue): void {
    if (t instanceof Expl.MatchAs) {
       fwdSlice(t.tu)
       fwdSlice(t.tv)
-      return notYetImplemented()
+      meetα(ann.meet(t.ξ.__fwdSlice(), e.__α), v)
    } else {
-      return absurd()
+      absurd()
    }
 }
 
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
-export function uneval ({t, v}: ExplValue): Expr {
+export function bwdSlice ({t, v}: ExplValue): Expr {
    const e: Expr = (t.__id as ExplId).e as Expr
    if (t instanceof Expl.Empty) {
       if (v instanceof Num) {
@@ -269,7 +269,7 @@ export function uneval ({t, v}: ExplValue): Expr {
          // reverse order but shouldn't matter in absence of side-effects:
          const t̅: Expl[] = v.__expl.fieldValues(),
                v̅: Versioned<Value>[] = v.fieldValues() as Versioned<Value>[]
-         zip(t̅, v̅).map(([t, v]) => uneval(explValue(t, v)))
+         zip(t̅, v̅).map(([t, v]) => bwdSlice(explValue(t, v)))
          return joinα(v.__α, e)
       } else {
          return absurd()
@@ -282,40 +282,40 @@ export function uneval ({t, v}: ExplValue): Expr {
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
       joinα(v.__α, t.tv.v)
-      uninstantiate(uneval(t.tv))
-      t.ξ.__unapply(v.__α)
+      uninstantiate(bwdSlice(t.tv))
+      t.ξ.__bwdSlice(v.__α)
       uncloseDefs(t.ρᵟ)
       joinα(v.__α, t.tf.v)
-      uneval(t.tf)
-      uneval(t.tu)
+      bwdSlice(t.tf)
+      bwdSlice(t.tu)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.UnaryApp) {
       joinα(v.__α, t.tf.v)
       joinα(v.__α, t.tv.v)
-      uneval(t.tf)
-      uneval(t.tv)
+      bwdSlice(t.tf)
+      bwdSlice(t.tv)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.BinaryApp) {
       assert(binaryOps.has(t.opName.val))
       joinα(v.__α, t.tv1.v)
       joinα(v.__α, t.tv2.v)
-      uneval(t.tv1)
-      uneval(t.tv2)
+      bwdSlice(t.tv1)
+      bwdSlice(t.tv2)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.Defs) {
       joinα(v.__α, t.tv.v)
-      uninstantiate(uneval(t.tv))
+      uninstantiate(bwdSlice(t.tv))
       undef̅Env(t.def̅)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
       joinα(v.__α, t.tv.v)
-      uninstantiate(uneval(t.tv))
-      t.ξ.__unapply(v.__α)
-      uneval(t.tu)
+      uninstantiate(bwdSlice(t.tv))
+      t.ξ.__bwdSlice(v.__α)
+      bwdSlice(t.tu)
       return joinα(v.__α, e)
    } else {
       return absurd()

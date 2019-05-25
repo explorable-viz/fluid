@@ -88,22 +88,32 @@ function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
 }
 
 export abstract class Match<K> extends Value<"Match"> {
-   abstract __unapply (α: Annotation): void
+   abstract __fwdSlice (): Annotation
+   abstract __bwdSlice (α: Annotation): void
 }
 
 // Concrete instances have an additional "matched args" field for the matched constructor.
 export class DataMatch<K extends Kont<K>> extends Match<K> {
    v: Versioned<DataValue> = _
 
-   __unapply (α: Annotation): void {
+   __fwdSlice (): Annotation {
+      const Ψ: Args.ArgsMatch<K> = (this as any)[className(this.v)] as Args.ArgsMatch<K>
+      return ann.meet(this.v.__α, Ψ.__fwdSlice())
+   }
+
+   __bwdSlice (α: Annotation): void {
       const Ψ: Args.ArgsMatch<K> = __nonNull((this as any)[className(this.v)] as Args.ArgsMatch<K>)
-      Ψ.__unapply(α)
+      Ψ.__bwdSlice(α)
       setα(α, this.v)
    }
 }
 
 class VarMatch<K extends Kont<K>> extends Match<K> {
-   __unapply (α: Annotation): void {
+   __fwdSlice (): Annotation {
+      return ann.top
+   }
+
+   __bwdSlice (α: Annotation): void {
       // nothing to do
    }
 }
@@ -153,11 +163,16 @@ export namespace Args {
    }
    
    export abstract class ArgsMatch<K> extends Value<"ArgsMatch"> {
-      abstract __unapply (α: Annotation): void
+      abstract __fwdSlice (): Annotation
+      abstract __bwdSlice (α: Annotation): void
    }
 
    class EndMatch<K extends Kont<K>> extends ArgsMatch<K> {
-      __unapply (α: Annotation): void {
+      __fwdSlice (): Annotation {
+         return ann.top
+      }
+
+      __bwdSlice (α: Annotation): void {
          // nothing to do
       }
 
@@ -173,14 +188,18 @@ export namespace Args {
    class NextMatch<K extends Kont<K>> extends ArgsMatch<K> {
       ξ: Match<K> = _
       Ψ: ArgsMatch<K> = _
-   
-      __unapply (α: Annotation): void {
+
+      __fwdSlice (): Annotation {
+         return ann.meet(this.ξ.__fwdSlice(), this.Ψ.__fwdSlice())
+      }
+
+      __bwdSlice (α: Annotation): void {
          if (NextMatch.is(this.Ψ)) {
-            this.Ψ.Ψ.__unapply(α)
-            this.ξ.__unapply(α)
+            this.Ψ.Ψ.__bwdSlice(α)
+            this.ξ.__bwdSlice(α)
          } else
          if (EndMatch.is(this.Ψ)) {
-            this.ξ.__unapply(α)
+            this.ξ.__bwdSlice(α)
          }
       }
 
