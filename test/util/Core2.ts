@@ -18,10 +18,13 @@ export class FwdSlice {
       setallα(e, ann.top)
       this.expr = new Cursor(e)
       this.setup()
-      this.val = new Cursor(Eval.eval_(emptyEnv(), e).v)
-      console.log(e)
-      console.log(this.val.v)
+      const tv: ExplValue = Eval.eval_(emptyEnv(), e)
+      setallα(tv.v, ann.top)
+      Eval.fwdSlice(tv)
+      this.val = new Cursor(tv.v)
       this.expect()
+      console.log(e)
+      console.log(tv.v)
    }
 
    setup (): void {
