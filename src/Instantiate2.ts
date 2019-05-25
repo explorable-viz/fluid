@@ -16,7 +16,7 @@ import Trie = Expr.Trie
 // here it is more convenient to use an isomorphic nested format.
 export class ExprId extends Id {
    j: List<Value> = _
-   e: Expr | Versioned<Str> = _ // str case is for binding occurrences of variables
+   e: Expr | Versioned<Str> = _ // str for binding occurrences of variables
 }
 
 export function exprId (j: List<Value>, e: Expr | Versioned<Str>): ExprId {

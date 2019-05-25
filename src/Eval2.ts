@@ -44,26 +44,22 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
 }
    
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-function closeDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
-   if (Cons.is(δ)) {
-      const def: RecDef = δ.head,
+function closeDefs (δ: List<RecDef>, ρ: Env): Env {
+   let ρʹ: Env = emptyEnv()
+   for (let δʹ: List<RecDef> = δ; Cons.is(δʹ); δʹ = δʹ.tail) {
+      const def: RecDef = δʹ.head,
             k: ValId = evalId(def.x, "v")
-      return extendEnv(closeDefs(δ_0, ρ, δ.tail), def.x, setα(def.x.__α, closure(k, ρ, δ_0, def.σ)))
-   } else
-   if (Nil.is(δ)) {
-      return emptyEnv()
-   } else {
-      return absurd()
+      ρʹ = extendEnv(ρʹ, def.x, setα(def.x.__α, closure(k, ρ, δ, def.σ)))
    }
+   return ρʹ
 }
 
-// ρ is a collection of one or more closures. Most of the required joins have already been computed.
+// ρ is a collection of n closures, each containing n corresponding recdefs.
 function uncloseDefs (ρ: Env): void {
    const f̅: List<Closure> = ρ.entries().map((v: Versioned<Value>) => as(v, Closure))
    if (Cons.is(f̅)) {
-      let δ: List<RecDef> = f̅.head.δ,
-          f̅ʹ: List<Closure> = f̅
-      for (; Cons.is(f̅ʹ) && Cons.is(δ); f̅ʹ = f̅ʹ.tail, δ = δ.tail) {
+      let δ: List<RecDef> = f̅.head.δ
+      for (let f̅ʹ: List<Closure> = f̅; Cons.is(f̅ʹ) && Cons.is(δ); f̅ʹ = f̅ʹ.tail, δ = δ.tail) {
          joinα(f̅ʹ.head.__α, δ.head.x)
       }
    } else
@@ -96,7 +92,7 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env
          }
       } else
       if (def instanceof Expr.LetRec) {
-         const ρᵟ: Env = closeDefs(def.δ, ρ.concat(ρ_ext), def.δ),
+         const ρᵟ: Env = closeDefs(def.δ, ρ.concat(ρ_ext)),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = def̅Env(ρ, def̅.tail, ρ_ext.concat(ρᵟ))
          return [cons(Expl.letRec(ρᵟ), def̅ₜ), ρ_extʹ]
       } else {
@@ -169,10 +165,10 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
       if (f instanceof Closure) {
          const [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(f.σ).__apply(u),
-               ρ_δ: Env = closeDefs(f.δ, f.ρ, f.δ),
-               ρᶠ: Env = ρ_δ.concat(ρʹ),
+               ρᵟ: Env = closeDefs(f.δ, f.ρ),
+               ρᶠ: Env = ρᵟ.concat(ρʹ),
                tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return explValue(Expl.app(kₜ, tf, tu, ρ_δ, ξ, tv), meetα(ann.meet(f.__α, α, e.__α), copyAt(kᵥ, tv.v)))
+         return explValue(Expl.app(kₜ, tf, tu, ρᵟ, ξ, tv), meetα(ann.meet(f.__α, α, e.__α), copyAt(kᵥ, tv.v)))
       } else 
       if (f instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {

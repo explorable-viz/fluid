@@ -24,7 +24,7 @@ export namespace Expl {
    export class App extends Expl {
       tf: ExplValue = _
       tu: ExplValue = _
-      ρᵟ: Env = _                      // from closeDefs, for uneval
+      ρᵟ: Env = _ // from closeDefs, for uneval
       ξ: Match<Versioned<Value>> = _
       tv: ExplValue = _
    }
