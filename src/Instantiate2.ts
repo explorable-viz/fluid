@@ -4,7 +4,7 @@ import { List, Pair, pair } from "./BaseTypes2"
 import { Env } from "./Env2"
 import { Expr } from "./Expr2"
 import { Id, Str, Value, _, make } from "./Value2"
-import { Versioned, setα, strʹ } from "./Versioned2"
+import { Versioned, joinα, setα, strʹ } from "./Versioned2"
 
 import Args = Expr.Args
 import Def = Expr.Def
@@ -59,44 +59,37 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
 }
 
 export function uninstantiate (e: Expr): void {
-   const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr),
-         α: Annotation = ann.join(eʹ.__α, e.__α) // merge annotations into source
-   if (e instanceof Expr.ConstNum) {
-      setα(α, eʹ)
-   } else
-   if (e instanceof Expr.ConstStr) {
-      setα(α, eʹ)
+   const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr)   
+   if (e instanceof Expr.ConstNum || e instanceof Expr.ConstStr || e instanceof Expr.Var) {
+      joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.Constr) {
       e.args.toArray().map(e => uninstantiate(e))
-      setα(α, eʹ)
+      joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.Fun) {
       uninstantiateTrie(e.σ)
-      setα(α, eʹ)
-   } else
-   if (e instanceof Expr.Var) {
-      setα(α, eʹ)
+      joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.Defs) {
       e.def̅.toArray().map(uninstantiateDef)
       uninstantiate(e.e)
-      setα(α, eʹ)
+      joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.MatchAs) {
       uninstantiate(e.e)
       uninstantiateTrie(e.σ)
-      setα(α, eʹ)
+      joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.App) {
       uninstantiate(e.f)
       uninstantiate(e.e)
-      setα(α, eʹ)
+      joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.BinaryApp) {
       uninstantiate(e.e1)
       uninstantiate(e.e2)
-      setα(α, eʹ)
+      joinα(e.__α, eʹ)
    } else {
       absurd()
    }
