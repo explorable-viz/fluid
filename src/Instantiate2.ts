@@ -1,4 +1,3 @@
-import { Annotation, ann } from "./util/Annotated2"
 import { absurd, as } from "./util/Core"
 import { List, Pair, pair } from "./BaseTypes2"
 import { Env } from "./Env2"
@@ -58,13 +57,13 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    }
 }
 
-export function uninstantiate (e: Expr): void {
+export function instantiate_bwdSlice (e: Expr): void {
    const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr)   
    if (e instanceof Expr.ConstNum || e instanceof Expr.ConstStr || e instanceof Expr.Var) {
       joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.Constr) {
-      e.args.toArray().map(e => uninstantiate(e))
+      e.args.toArray().map(e => instantiate_bwdSlice(e))
       joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.Fun) {
@@ -73,22 +72,22 @@ export function uninstantiate (e: Expr): void {
    } else
    if (e instanceof Expr.Defs) {
       e.def̅.toArray().map(uninstantiateDef)
-      uninstantiate(e.e)
+      instantiate_bwdSlice(e.e)
       joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.MatchAs) {
-      uninstantiate(e.e)
+      instantiate_bwdSlice(e.e)
       uninstantiateTrie(e.σ)
       joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.App) {
-      uninstantiate(e.f)
-      uninstantiate(e.e)
+      instantiate_bwdSlice(e.f)
+      instantiate_bwdSlice(e.e)
       joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.BinaryApp) {
-      uninstantiate(e.e1)
-      uninstantiate(e.e2)
+      instantiate_bwdSlice(e.e1)
+      instantiate_bwdSlice(e.e2)
       joinα(e.__α, eʹ)
    } else {
       absurd()
@@ -125,7 +124,7 @@ function instantiateDef (ρ: Env, def: Def): Def {
 function uninstantiateDef (def: Def): void {
    if (def instanceof Expr.Let) {
       uninstantiateVar(def.x)
-      uninstantiate(def.e)
+      instantiate_bwdSlice(def.e)
    } else 
    if (def instanceof Expr.Prim) {
       uninstantiateVar(def.x)
@@ -188,7 +187,7 @@ function uninstantiateKont<K extends Kont<K>> (κ: K): void {
       uninstantiateTrie<K, Trie<K>>(κ)
    } else
    if (κ instanceof Expr.Expr) {
-      uninstantiate(κ)
+      instantiate_bwdSlice(κ)
    } else
    if (κ instanceof Args.Args) {
       uninstantiateArgs(κ)

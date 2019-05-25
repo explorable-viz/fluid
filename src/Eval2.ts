@@ -7,7 +7,7 @@ import { DataValue } from "./DataValue2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
-import { instantiate, uninstantiate } from "./Instantiate2"
+import { instantiate, instantiate_bwdSlice } from "./Instantiate2"
 import { Match, evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
@@ -158,7 +158,7 @@ function defs_bwdSlice (def̅: List<Expl.Def>): void {
       if (def instanceof Expl.Let) {
          joinα(def.v.__α, def.tv.v)
          joinα(def.v.__α, def.x)
-         uninstantiate(bwdSlice(def.tv))
+         instantiate_bwdSlice(bwdSlice(def.tv))
       } else
       if (def instanceof Expl.Prim) {
          joinα(def.opʹ.__α, def.x)
