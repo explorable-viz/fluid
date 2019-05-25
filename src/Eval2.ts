@@ -67,9 +67,27 @@ function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.
    }
 }
 
+function recDefsEnv2 (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
+   const [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefsEnv(δ_0, ρ, δ)
+   recDefs_fwdSlice(δₜ)
+   return [δₜ, ρ_ext]
+}
+
+function recDefs_fwdSlice (δ: List<Expl.RecDef>): void {
+   if (Cons.is(δ)) {
+      zip(δ.head.f.δ.toArray(), δ.toArray()).map(([def, defₜ]: [RecDef, Expl.RecDef]): void => {
+         setα(def.x.__α, defₜ.f)
+      })
+   } else
+   if (Nil.is(δ)) {
+   } else {
+      return absurd()
+   }
+}
+
 function recDefs_bwdSlice (δ: List<Expl.RecDef>): void {
    if (Cons.is(δ)) {
-      zip(δ.head.f.δ.toArray(), δ.toArray()).map(([def, defₜ]) => {
+      zip(δ.head.f.δ.toArray(), δ.toArray()).map(([def, defₜ]: [RecDef, Expl.RecDef]): void => {
          joinα(defₜ.f.__α, def.x)
       })
    } else
@@ -103,7 +121,7 @@ function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env]
          }
       } else
       if (def instanceof Expr.LetRec) {
-         const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefsEnv(def.δ, ρ.concat(ρ_ext), def.δ),
+         const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefsEnv2(def.δ, ρ.concat(ρ_ext), def.δ),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defsEnv(ρ, def̅.tail, ρ_ext.concat(ρᵟ))
          return [cons(Expl.letRec(δ), def̅ₜ), ρ_extʹ]
       } else {
