@@ -209,8 +209,8 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       const [tf, tu]: [ExplValue, ExplValue] = [eval_(ρ, e.f), eval_(ρ, e.e)],
             [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
       if (f instanceof Closure) {
-         const [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(f.σ).__apply(u),
-               [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(f.δ, f.ρ, f.δ),
+         const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(f.δ, f.ρ, f.δ),
+               [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(f.σ).__apply(u),
                ρᶠ: Env = ρᵟ.concat(ρʹ),
                tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate2(ρᶠ, eʹ))
          return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), meetα(ann.meet(f.__α, α, e.__α), copyAt(kᵥ, tv.v)))
@@ -225,7 +225,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
          return error(`Cannot apply ${className(f)}`)
       }
    } else
-   // Binary operators are (currently) "syntax", rather than first-class.
+   // Binary operators are (currently) "syntax", ratcopyAt(k, tv.v)her than first-class.
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.val)) {
          const op: BinaryOp = binaryOps.get(e.opName.val)!, // TODO: add annotations to opName
@@ -255,6 +255,10 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    }
 }
 
+function toExpr (t: Expl): Expr {
+   return (t.__id as ExplId).e as Expr
+}
+
 export function eval_fwd ({t, v}: ExplValue): void {
    const e: Expr = (t.__id as ExplId).e as Expr
    if (t instanceof Expl.Empty) {
@@ -266,6 +270,8 @@ export function eval_fwd ({t, v}: ExplValue): void {
    if (t instanceof Expl.App) {
       eval_fwd(t.tf)
       eval_fwd(t.tu)
+      recDefs_fwd(t.δ)
+      instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
       meetα(ann.meet(t.tf.v.__α, t.ξ.__fwd(), e.__α), v)
    } else
@@ -291,10 +297,6 @@ export function eval_fwd ({t, v}: ExplValue): void {
    } else {
       absurd()
    }
-}
-
-function toExpr (t: Expl): Expr {
-   return (t.__id as ExplId).e as Expr
 }
 
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
