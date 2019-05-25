@@ -69,6 +69,7 @@ function uncloseDefs (ρ: Env): void {
    }
 }
 
+// Express as recursive function to avoid inverting order of definitions.
 function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
