@@ -223,18 +223,28 @@ export function fwdSlice ({t, v}: ExplValue): void {
       meetα(e.__α, v)
    } else
    if (t instanceof Expl.App) {
+      fwdSlice(t.tf)
+      fwdSlice(t.tu)
+      fwdSlice(t.tv)
       return notYetImplemented()
    } else
    if (t instanceof Expl.UnaryApp) {
+      fwdSlice(t.tf)
+      fwdSlice(t.tv)
       setα(ann.meet(t.tf.v.__α, t.tv.v.__α, e.__α), v)
    } else
    if (t instanceof Expl.BinaryApp) {
+      fwdSlice(t.tv1)
+      fwdSlice(t.tv2)
       setα(ann.meet(t.tv1.v.__α, t.tv2.v.__α, e.__α), v)
    } else
    if (t instanceof Expl.Defs) {
+      fwdSlice(t.tv)
       meetα(e.__α, v)
    } else
    if (t instanceof Expl.MatchAs) {
+      fwdSlice(t.tu)
+      fwdSlice(t.tv)
       return notYetImplemented()
    } else {
       return absurd()
