@@ -8,12 +8,10 @@ import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { instantiate, instantiate_bwd, instantiate_fwd } from "./Instantiate2"
-import { Match, evalTrie } from "./Match2"
+import { Func, Match, evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, strʹ } from "./Versioned2"
-
-import Trie = Expr.Trie
 
 export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
@@ -42,13 +40,13 @@ function valId (e: Expr | Versioned<Str>): ValId {
 export module Eval {
 
 export class Closure extends VersionedC(DataValue)<"Closure"> {
-   ρ: Env = _ // ρ not closing for σ; need to extend with the bindings in δ
+   ρ: Env = _ // ρ not closing for f; need to extend with the bindings in δ
    δ: List<RecDef> = _
-   σ: Trie<Expr> = _
+   f: Func<Expr> = _
 }
 
-function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
-   return at(k, Closure, ρ, δ, σ)
+function closure (k: Id, ρ: Env, δ: List<RecDef>, f: Func<Expr>): Closure {
+   return at(k, Closure, ρ, δ, f)
 }
 
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
@@ -57,7 +55,7 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
       const def: RecDef = δ.head,
             k: ValId = valId(def.x),
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
-            f: Closure = closure(k, ρ, δ_0, def.σ)
+            f: Closure = closure(k, ρ, δ_0, evalTrie(def.σ))
       return [cons(Expl.recDef(def.x, f), δₜ), extendEnv(ρ_ext, def.x, f)]
    } else
    if (Nil.is(δ)) {
@@ -167,7 +165,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.empty(kₜ), strʹ(kᵥ, e.val.val))
    } else
    if (e instanceof Expr.Fun) {
-      return explValue(Expl.empty(kₜ), closure(kᵥ, ρ, nil(), e.σ))
+      return explValue(Expl.empty(kₜ), closure(kᵥ, ρ, nil(), evalTrie(e.σ)))
    } else
    if (e instanceof Expr.Constr) {
       let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
@@ -187,22 +185,22 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.App) {
       const [tf, tu]: [ExplValue, ExplValue] = [eval_(ρ, e.f), eval_(ρ, e.e)],
-            [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
-      if (f instanceof Closure) {
-         const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(f.δ, f.ρ, f.δ),
-               [ρʹ, ξ, eʹ]: [Env, Match, Expr] = evalTrie(f.σ).__apply(u),
+            [v, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
+      if (v instanceof Closure) {
+         const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
+               [ρʹ, ξ, eʹ]: [Env, Match, Expr] = v.f.__apply(u),
                ρᶠ: Env = ρᵟ.concat(ρʹ),
-               tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
+               tv: ExplValue = eval_(v.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
          return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), copyAt(kᵥ, tv.v))
       } else 
-      if (f instanceof UnaryOp) {
+      if (v instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
-            return explValue(Expl.unaryApp(kₜ, tf, tu), f.op(u)(kᵥ))
+            return explValue(Expl.unaryApp(kₜ, tf, tu), v.op(u)(kᵥ))
          } else {
-            return error(`Applying "${f.name}" to non-primitive value.`, u)
+            return error(`Applying "${v.name}" to non-primitive value.`, u)
          }
       } else {
-         return error(`Cannot apply ${className(f)}`)
+         return error(`Cannot apply ${className(v)}`)
       }
    } else
    // Binary operators are (currently) "syntax", rather than first-class.
