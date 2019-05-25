@@ -104,7 +104,7 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
       if (def instanceof Expr.Let) {
          const k: ValId = valId(def.x),
                tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate2(ρ_ext, def.e)),
-               v: Versioned<Value> = meetα(def.x.__α, copyAt(k, tv.v)),
+               v: Versioned<Value> = copyAt(k, tv.v),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
          return [cons(Expl.let_(def.x, tv, v), def̅ₜ), ρ_extʹ]
       } else
@@ -113,7 +113,7 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
          if (unaryOps.has(def.x.val)) {
             const k: ValId = valId(def.x),
                   op: UnaryOp = unaryOps.get(def.x.val)!,
-                  opʹ: Versioned<UnaryOp> = setα(def.x.__α, copyAt(k, op)),
+                  opʹ: Versioned<UnaryOp> = copyAt(k, op),
                   [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
             return [cons(Expl.prim(def.x, op, opʹ), def̅ₜ), ρ_extʹ]
          } else {
