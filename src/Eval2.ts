@@ -67,16 +67,15 @@ function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.
    }
 }
 
-// ρ is a collection of n closures, each containing n corresponding recdefs.
+// ρ is a collection of n closures, each containing the identical n corresponding recdefs.
 function recDefs_bwdSlice (δ: List<Expl.RecDef>): void {
-   const f̅: List<Closure> = δ.map((def: Expl.RecDef) => def.f)
-   if (Cons.is(f̅)) {
-      let δ: List<RecDef> = f̅.head.δ
-      for (let f̅ʹ: List<Closure> = f̅; Cons.is(f̅ʹ) && Cons.is(δ); f̅ʹ = f̅ʹ.tail, δ = δ.tail) {
-         joinα(f̅ʹ.head.__α, δ.head.x)
+   if (Cons.is(δ)) {
+      let δₑ: List<RecDef> = δ.head.f.δ
+      for (let f̅ʹ: List<Expl.RecDef> = δ; Cons.is(f̅ʹ) && Cons.is(δₑ); f̅ʹ = f̅ʹ.tail, δₑ = δₑ.tail) {
+         joinα(f̅ʹ.head.f.__α, δₑ.head.x)
       }
    } else
-   if (Nil.is(f̅)) {
+   if (Nil.is(δ)) {
    } else {
       return absurd()
    }
