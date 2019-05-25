@@ -6,16 +6,16 @@ import { Str, _, fields } from "./Value2"
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: string
-   elimC: Class<DataFunc<any>>                 // not sure how better to parameterise 
-   ctrs: Map<string, Ctr>                      // fields of my constructors
-   matchC̅: Map<string, Class<DataMatch<any>>>  // "match" class per constructor
-   explC̅: Map<string, Class<DataExpl>>         // "explanation" class per constructor
+   elimC: Class<DataFunc<any>>            // not sure how better to parameterise 
+   ctrs: Map<string, Ctr>                 // fields of my constructors
+   matchC̅: Map<string, Class<DataMatch>>  // "match" class per constructor
+   explC̅: Map<string, Class<DataExpl>>    // "explanation" class per constructor
 
    constructor (
       name: string, 
       elimC: Class<DataFunc<any>>, 
       ctrs: Map<string, Ctr>, 
-      matchC̅: Map<string, Class<DataMatch<any>>>,
+      matchC̅: Map<string, Class<DataMatch>>,
       explC̅: Map<string, Class<DataExpl>>
    ) {
       this.name = name
@@ -70,9 +70,9 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                }
             }
          }[elimC_name],
-         matchC̅: [string, Class<DataMatch<any>>][] = ctrs.map(([c, _]: [string, Ctr]) => {
+         matchC̅: [string, Class<DataMatch>][] = ctrs.map(([c, _]: [string, Ctr]) => {
             return [c, {
-               [elimC_name]: class extends DataMatch<any> {
+               [elimC_name]: class extends DataMatch {
                   constructor () {
                      super()
                      ;(this as any)[c] = _

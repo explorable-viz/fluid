@@ -50,7 +50,7 @@ function evalArgs<K extends Kont<K>> (Π: Expr.Args<K>): Args.ArgsFunc<K> {
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
 export abstract class Func<K extends Kont<K>> extends Value<"Func"> {
-   abstract __apply (v: Versioned<Value>): [Env, Match<K>, K]
+   abstract __apply (v: Versioned<Value>): [Env, Match, K]
 }
 
 function datatype (f: DataFunc<any>): string {
@@ -60,7 +60,7 @@ function datatype (f: DataFunc<any>): string {
 
 // Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
-   __apply (v: Versioned<Value>): [Env, Match<K>, K] {
+   __apply (v: Versioned<Value>): [Env, Match, K] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const d: DataType = __nonNull(ctrToDataType.get(c)),
@@ -78,7 +78,7 @@ export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
 class VarFunc<K extends Kont<K>> extends Func<K> {
    σ: Trie.Var<K> = _
 
-   __apply (v: Versioned<Value>): [Env, Match<K>, K] {
+   __apply (v: Versioned<Value>): [Env, Match, K] {
       return [Env.singleton(this.σ.x, v), varMatch(), this.σ.κ]
    }
 }
@@ -87,28 +87,28 @@ function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
    return make(VarFunc, σ) as VarFunc<K>
 }
 
-export abstract class Match<K> extends Value<"Match"> {
+export abstract class Match extends Value<"Match"> {
    abstract __fwd (): Annotation
    abstract __bwd (α: Annotation): void
 }
 
 // Concrete instances have an additional "matched args" field for the matched constructor.
-export class DataMatch<K extends Kont<K>> extends Match<K> {
+export class DataMatch extends Match {
    v: Versioned<DataValue> = _
 
    __fwd (): Annotation {
-      const Ψ: Args.ArgsMatch<K> = (this as any)[className(this.v)] as Args.ArgsMatch<K>
+      const Ψ: Args.ArgsMatch = (this as any)[className(this.v)] as Args.ArgsMatch
       return ann.meet(this.v.__α, Ψ.__fwd())
    }
 
    __bwd (α: Annotation): void {
-      const Ψ: Args.ArgsMatch<K> = __nonNull((this as any)[className(this.v)] as Args.ArgsMatch<K>)
+      const Ψ: Args.ArgsMatch = __nonNull((this as any)[className(this.v)] as Args.ArgsMatch)
       Ψ.__bwd(α)
       setα(α, this.v)
    }
 }
 
-class VarMatch<K extends Kont<K>> extends Match<K> {
+class VarMatch extends Match {
    __fwd (): Annotation {
       return ann.top
    }
@@ -118,19 +118,19 @@ class VarMatch<K extends Kont<K>> extends Match<K> {
    }
 }
 
-function varMatch<K extends Kont<K>> (): VarMatch<K> {
+function varMatch<K extends Kont<K>> (): VarMatch {
    return make(VarMatch)
 }
 
 export namespace Args {
    export abstract class ArgsFunc<K extends Kont<K>> extends Value<"ArgsFunc"> {
-      abstract __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K]
+      abstract __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch, K]
    }
    
    class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
       Π: Expr.Args.End<K> = _
       
-      __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K] {
+      __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch, K] {
          if (v̅.length === 0) {
             return [emptyEnv(), endMatch(), this.Π.κ]
          } else {
@@ -146,7 +146,7 @@ export namespace Args {
    class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
       Π: Expr.Args.Next<K> = _
    
-      __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch<K>, K] {
+      __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch, K] {
          if (v̅.length === 0) {
             return absurd("Too few arguments to constructor.")
          } else {
@@ -162,12 +162,12 @@ export namespace Args {
       return make(NextFunc, Π) as NextFunc<K>
    }
    
-   export abstract class ArgsMatch<K> extends Value<"ArgsMatch"> {
+   export abstract class ArgsMatch extends Value<"ArgsMatch"> {
       abstract __fwd (): Annotation
       abstract __bwd (α: Annotation): void
    }
 
-   class EndMatch<K extends Kont<K>> extends ArgsMatch<K> {
+   class EndMatch extends ArgsMatch {
       __fwd (): Annotation {
          return ann.top
       }
@@ -175,40 +175,32 @@ export namespace Args {
       __bwd (α: Annotation): void {
          // nothing to do
       }
-
-      static is<K extends Kont<K>> (Ψ: ArgsMatch<K>): Ψ is EndMatch<K> {
-         return Ψ instanceof EndMatch
-      }
    }
    
-   function endMatch<K extends Kont<K>> (): EndMatch<K> {
+   function endMatch (): EndMatch {
       return make(EndMatch)
    }
    
-   class NextMatch<K extends Kont<K>> extends ArgsMatch<K> {
-      ξ: Match<K> = _
-      Ψ: ArgsMatch<K> = _
+   class NextMatch extends ArgsMatch {
+      ξ: Match = _
+      Ψ: ArgsMatch = _
 
       __fwd (): Annotation {
          return ann.meet(this.ξ.__fwd(), this.Ψ.__fwd())
       }
 
       __bwd (α: Annotation): void {
-         if (NextMatch.is(this.Ψ)) {
+         if (this.Ψ instanceof NextMatch) {
             this.Ψ.Ψ.__bwd(α)
             this.ξ.__bwd(α)
          } else
-         if (EndMatch.is(this.Ψ)) {
+         if (this.Ψ instanceof EndMatch) {
             this.ξ.__bwd(α)
          }
       }
-
-      static is<K extends Kont<K>> (Ψ: ArgsMatch<K>): Ψ is NextMatch<K> {
-         return Ψ instanceof NextMatch
-      }
    }
    
-   function nextMatch<K extends Kont<K>> (ξ: Match<K>, Ψ: ArgsMatch<K>): NextMatch<K> {
+   function nextMatch (ξ: Match, Ψ: ArgsMatch): NextMatch {
       return make(NextMatch, ξ, Ψ)
    }
 }

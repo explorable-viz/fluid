@@ -26,11 +26,11 @@ export namespace Expl {
       tf: ExplValue = _
       tu: ExplValue = _
       δ: List<RecDef> = _ // additional recursive functions bound at this step
-      ξ: Match<Versioned<Value>> = _
+      ξ: Match = _
       tv: ExplValue = _
    }
 
-  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξ: Match<Versioned<Value>>, tv: ExplValue): App {
+  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξ: Match, tv: ExplValue): App {
       return at(k, App, tf, tu, δ, ξ, tv)
    }
 
@@ -113,11 +113,11 @@ export namespace Expl {
 
    export class MatchAs extends Expl {
       tu: ExplValue = _
-      ξ: Match<Versioned<Value>> = _
+      ξ: Match = _
       tv: ExplValue = _
    }
 
-   export function matchAs (k: ExplId, tu: ExplValue, ξ: Match<Versioned<Value>>, tv: ExplValue): MatchAs {
+   export function matchAs (k: ExplId, tu: ExplValue, ξ: Match, tv: ExplValue): MatchAs {
       return at(k, MatchAs, tu, ξ, tv)
    }
 

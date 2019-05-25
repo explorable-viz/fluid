@@ -1,6 +1,7 @@
 import { absurd, as } from "./util/Core"
 import { List, Pair, pair } from "./BaseTypes2"
 import { Env } from "./Env2"
+import { Direction } from "./Eval2"
 import { Expr } from "./Expr2"
 import { Id, Str, Value, _, make } from "./Value2"
 import { Versioned, joinα, setα, strʹ } from "./Versioned2"
@@ -56,8 +57,6 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
       return absurd()
    }
 }
-
-enum Direction { Fwd, Bwd }
 
 export function instantiate_fwd (e: Expr): void {
    return instantiate_(Direction.Fwd, e)

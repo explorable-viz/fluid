@@ -15,6 +15,7 @@ import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, strʹ } from "
 
 import Trie = Expr.Trie
 
+export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
 type RecDef = Expr.RecDef
 
@@ -66,22 +67,14 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
    }
 }
 
-function recDefs_fwd (δ: List<Expl.RecDef>): void {
+function recDefs_ (dir: Direction, δ: List<Expl.RecDef>): void {
    if (Cons.is(δ)) {
       zip(δ.head.f.δ.toArray(), δ.toArray()).map(([def, defₜ]: [RecDef, Expl.RecDef]): void => {
-         setα(def.x.__α, defₜ.f)
-      })
-   } else
-   if (Nil.is(δ)) {
-   } else {
-      return absurd()
-   }
-}
-
-function recDefs_bwd (δ: List<Expl.RecDef>): void {
-   if (Cons.is(δ)) {
-      zip(δ.head.f.δ.toArray(), δ.toArray()).map(([def, defₜ]: [RecDef, Expl.RecDef]): void => {
-         joinα(defₜ.f.__α, def.x)
+         if (dir === Direction.Fwd) {
+            setα(def.x.__α, defₜ.f)
+         } else {
+            joinα(defₜ.f.__α, def.x)
+         }
       })
    } else
    if (Nil.is(δ)) {
@@ -139,7 +132,7 @@ function defs_fwd (def̅: List<Expl.Def>): void {
          setα(def.x.__α, def.opʹ)
       } else
       if (def instanceof Expl.LetRec) {
-         recDefs_fwd(def.δ)
+         recDefs_(Direction.Fwd, def.δ)
       } else {
          absurd()
       }
@@ -157,7 +150,7 @@ function defs_bwd (def̅: List<Expl.Def>): void {
          joinα(def.opʹ.__α, def.x)
       } else
       if (def instanceof Expl.LetRec) {
-         recDefs_bwd(def.δ)
+         recDefs_(Direction.Bwd, def.δ)
       } else {
          absurd()
       }
@@ -197,7 +190,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
       if (f instanceof Closure) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(f.δ, f.ρ, f.δ),
-               [ρʹ, ξ, eʹ]: [Env, Match<Expr>, Expr] = evalTrie(f.σ).__apply(u),
+               [ρʹ, ξ, eʹ]: [Env, Match, Expr] = evalTrie(f.σ).__apply(u),
                ρᶠ: Env = ρᵟ.concat(ρʹ),
                tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
          return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), copyAt(kᵥ, tv.v))
@@ -234,7 +227,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
-            [ρʹ, ξ, eʹ]: [Env, Match<Expr>, Expr] = evalTrie(e.σ).__apply(tu.v),
+            [ρʹ, ξ, eʹ]: [Env, Match, Expr] = evalTrie(e.σ).__apply(tu.v),
             tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
       return explValue(Expl.matchAs(kₜ, tu, ξ, tv), copyAt(kᵥ, tv.v))
    } else {
@@ -263,7 +256,7 @@ export function eval_fwd ({t, v}: ExplValue): void {
    if (t instanceof Expl.App) {
       eval_fwd(t.tf)
       eval_fwd(t.tu)
-      recDefs_fwd(t.δ)
+      recDefs_(Direction.Fwd, t.δ)
       instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
       setα(ann.meet(t.tf.v.__α, t.ξ.__fwd(), e.__α, t.tv.v.__α), v)
@@ -321,7 +314,7 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
       joinα(v.__α, t.tv.v)
       instantiate_bwd(eval_bwd(t.tv))
       t.ξ.__bwd(v.__α)
-      recDefs_bwd(t.δ)
+      recDefs_(Direction.Bwd, t.δ)
       joinα(v.__α, t.tf.v)
       eval_bwd(t.tf)
       eval_bwd(t.tu)
