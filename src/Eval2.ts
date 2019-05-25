@@ -301,11 +301,13 @@ export function eval_fwd ({t, v}: ExplValue): void {
    } else
    if (t instanceof Expl.Defs) {
       defs_fwd(t.def̅)
+      instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
       setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.MatchAs) {
       eval_fwd(t.tu)
+      instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
       setα(ann.meet(t.ξ.__fwd(), e.__α, t.tv.v.__α), v)
    } else {
