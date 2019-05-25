@@ -1,6 +1,6 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { zip } from "./util/Array"
-import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
+import { __nonNull, absurd, as, assert, className, error, notYetImplemented } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
 import { DataValue } from "./DataValue2"
@@ -214,10 +214,36 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    }
 }
 
+export function fwdSlice ({t, v}: ExplValue): void {
+   const e: Expr = (t.__id as ExplId).e as Expr
+   if (t instanceof Expl.Empty) {
+      setα(e.__α, v)
+   } else
+   if (t instanceof Expl.Var) {
+      meetα(e.__α, v)
+   } else
+   if (t instanceof Expl.App) {
+      return notYetImplemented()
+   } else
+   if (t instanceof Expl.UnaryApp) {
+      setα(ann.meet(t.tf.v.__α, t.tv.v.__α, e.__α), v)
+   } else
+   if (t instanceof Expl.BinaryApp) {
+      setα(ann.meet(t.tv1.v.__α, t.tv2.v.__α, e.__α), v)
+   } else
+   if (t instanceof Expl.Defs) {
+      meetα(e.__α, v)
+   } else
+   if (t instanceof Expl.MatchAs) {
+      return notYetImplemented()
+   } else {
+      return absurd()
+   }
+}
+
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
 export function uneval ({t, v}: ExplValue): Expr {
-   const k: ValId = v.__id as ValId,
-         e: Expr = k.e as Expr
+   const e: Expr = (t.__id as ExplId).e as Expr
    if (t instanceof Expl.Empty) {
       if (v instanceof Num) {
          return joinα(v.__α, e)
