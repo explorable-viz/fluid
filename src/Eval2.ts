@@ -58,7 +58,7 @@ function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.
             k: ValId = valId(def.x),
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefsEnv(δ_0, ρ, δ.tail),
             f: Closure = closure(k, ρ, δ_0, def.σ)
-      return [cons(Expl.recDef(def.x, f), δₜ), extendEnv(ρ_ext, def.x, setα(def.x.__α, f))]
+      return [cons(Expl.recDef(def.x, f), δₜ), extendEnv(ρ_ext, def.x, f)]
    } else
    if (Nil.is(δ)) {
       return [nil(), emptyEnv()]
@@ -146,7 +146,7 @@ function defs_fwdSlice (def̅: List<Expl.Def>): void {
          setα(def.x.__α, def.opʹ)
       } else
       if (def instanceof Expl.LetRec) {
-         // closeDefs
+         recDefs_fwdSlice(def.δ)
       } else {
          absurd()
       }
