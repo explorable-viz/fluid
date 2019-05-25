@@ -135,6 +135,12 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    }
 }
 
+function defs2 (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
+   const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅, ρ_ext)
+   defs_fwd(def̅ₜ)
+   return [def̅ₜ, ρʹ]
+}
+
 function defs_fwd (def̅: List<Expl.Def>): void {
    def̅.toArray().forEach((def: Expl.Def) => {
       if (def instanceof Expl.Let) {
@@ -235,7 +241,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       }
    } else
    if (e instanceof Expr.Defs) {
-      const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, e.def̅, emptyEnv()),
+      const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs2(ρ, e.def̅, emptyEnv()),
             tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate2(ρʹ, e.e))
       return explValue(Expl.defs(kₜ, def̅ₜ, tv), meetα(e.__α, copyAt(kᵥ, tv.v)))
    } else
