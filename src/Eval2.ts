@@ -31,6 +31,14 @@ function evalId<T extends Tag> (e: Expr | Versioned<Str>, tag: T): EvalId<T> {
 export type ValId = EvalId<"v">
 export type ExplId = EvalId<"t">
 
+function explId (e: Expr | Versioned<Str>): ExplId {
+   return evalId(e, "t")
+}
+
+function valId (e: Expr | Versioned<Str>): ValId {
+   return evalId(e, "v")
+}
+
 export module Eval {
 
 export class Closure extends VersionedC(DataValue)<"Closure"> {
@@ -44,18 +52,32 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
 }
    
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-function closeDefs (δ: List<RecDef>, ρ: Env): Env {
-   let ρʹ: Env = emptyEnv()
+export function recDefsEnv2 (δ: List<RecDef>, ρ: Env): [List<Expl.RecDef>, Env] {
+   let [def̅ₜ, ρʹ]: [List<Expl.RecDef>, Env] = [nil(), emptyEnv()]
    for (let δʹ: List<RecDef> = δ; Cons.is(δʹ); δʹ = δʹ.tail) {
       const def: RecDef = δʹ.head,
-            k: ValId = evalId(def.x, "v")
+            k: ValId = valId(def.x)
       ρʹ = extendEnv(ρʹ, def.x, setα(def.x.__α, closure(k, ρ, δ, def.σ)))
+      def̅ₜ
    }
-   return ρʹ
+   return [def̅ₜ, ρʹ]
+}
+
+function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
+   if (Cons.is(δ)) {
+      const def: RecDef = δ.head,
+            k: ValId = valId(def.x)
+      return extendEnv(recDefsEnv(δ_0, ρ, δ.tail), def.x, setα(def.x.__α, closure(k, ρ, δ_0, def.σ)))
+   } else
+   if (Nil.is(δ)) {
+      return emptyEnv()
+   } else {
+      return absurd()
+   }
 }
 
 // ρ is a collection of n closures, each containing n corresponding recdefs.
-function uncloseDefs (ρ: Env): void {
+function recDefs_bwdSlice (ρ: Env): void {
    const f̅: List<Closure> = ρ.entries().map((v: Versioned<Value>) => as(v, Closure))
    if (Cons.is(f̅)) {
       let δ: List<RecDef> = f̅.head.δ
@@ -69,12 +91,12 @@ function uncloseDefs (ρ: Env): void {
    }
 }
 
-// Express as recursive function to avoid inverting order of definitions.
+// Expressing as recursive function make it easier to avoid inverting definition order.
 function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
-         const k: ValId = evalId(def.x, "v"),
+         const k: ValId = valId(def.x),
                tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
                v: Versioned<Value> = meetα(def.x.__α, copyAt(k, tv.v)),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defsEnv(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
@@ -83,7 +105,7 @@ function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env]
       if (def instanceof Expr.Prim) {
          // first-class primitives currently happen to be unary
          if (unaryOps.has(def.x.val)) {
-            const k: ValId = evalId(def.x, "v"),
+            const k: ValId = valId(def.x),
                   op: UnaryOp = unaryOps.get(def.x.val)!,
                   opʹ: Versioned<UnaryOp> = setα(def.x.__α, copyAt(k, op)),
                   [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defsEnv(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
@@ -93,7 +115,7 @@ function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env]
          }
       } else
       if (def instanceof Expr.LetRec) {
-         const ρᵟ: Env = closeDefs(def.δ, ρ.concat(ρ_ext)),
+         const ρᵟ: Env = recDefsEnv(def.δ, ρ.concat(ρ_ext), def.δ),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defsEnv(ρ, def̅.tail, ρ_ext.concat(ρᵟ))
          return [cons(Expl.letRec(ρᵟ), def̅ₜ), ρ_extʹ]
       } else {
@@ -115,7 +137,7 @@ function defs_fwdSlice (def̅: List<Expl.Def>): void {
          meetα(def.x.__α, def.v)
       } else
       if (def instanceof Expl.Prim) {
-         setα(def.x.__α, def.vʹ)
+         setα(def.x.__α, def.opʹ)
       } else
       if (def instanceof Expl.LetRec) {
          // closeDefs
@@ -133,10 +155,10 @@ function defs_bwdSlice (def̅: List<Expl.Def>): void {
          uninstantiate(bwdSlice(def.tv))
       } else
       if (def instanceof Expl.Prim) {
-         joinα(def.vʹ.__α, def.x)
+         joinα(def.opʹ.__α, def.x)
       } else
       if (def instanceof Expl.LetRec) {
-         uncloseDefs(def.ρᵟ)
+         recDefs_bwdSlice(def.ρᵟ)
       } else {
          absurd()
       }
@@ -144,8 +166,8 @@ function defs_bwdSlice (def̅: List<Expl.Def>): void {
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
-   const kₜ: ExplId = evalId(e, "t"),
-         kᵥ: ValId = evalId(e, "v")
+   const kₜ: ExplId = explId(e),
+         kᵥ: ValId = valId(e)
    if (e instanceof Expr.ConstNum) {
       return explValue(Expl.empty(kₜ), setα(e.__α, numʹ(kᵥ, e.val.val)))
    } else
@@ -176,7 +198,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
       if (f instanceof Closure) {
          const [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(f.σ).__apply(u),
-               ρᵟ: Env = closeDefs(f.δ, f.ρ),
+               ρᵟ: Env = recDefsEnv(f.δ, f.ρ, f.δ),
                ρᶠ: Env = ρᵟ.concat(ρʹ),
                tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
          return explValue(Expl.app(kₜ, tf, tu, ρᵟ, ξ, tv), meetα(ann.meet(f.__α, α, e.__α), copyAt(kᵥ, tv.v)))
@@ -292,7 +314,7 @@ export function bwdSlice ({t, v}: ExplValue): Expr {
       joinα(v.__α, t.tv.v)
       uninstantiate(bwdSlice(t.tv))
       t.ξ.__bwdSlice(v.__α)
-      uncloseDefs(t.ρᵟ)
+      recDefs_bwdSlice(t.ρᵟ)
       joinα(v.__α, t.tf.v)
       bwdSlice(t.tf)
       bwdSlice(t.tu)

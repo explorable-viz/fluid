@@ -1,11 +1,13 @@
 import { List } from "./BaseTypes2"
 import { DataValue } from "./DataValue2"
 import { Env } from "./Env2"
-import { ExplId } from "./Eval2"
+import { Eval, ExplId } from "./Eval2"
 import { Match } from "./Match2"
+import { UnaryOp } from "./Primitive2"
 import { Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at } from "./Versioned2"
 
+export type Closure = Eval.Closure
 export type Expl = Expl.Expl
 
 export class ExplValue extends DataValue<"ExplValue"> {
@@ -55,7 +57,7 @@ export namespace Expl {
    export abstract class Def extends DataValue<"Expl.Def"> {
    }
 
-   // tv is the computed value, v is the copy of tv.v bound to x.
+   // tv is the computed value, v is the copy bound to x.
    export class Let extends Def {
       x: Versioned<Str> = _
       tv: ExplValue = _
@@ -66,15 +68,24 @@ export namespace Expl {
       return make(Let, x, tv, v)
    }
 
-   // See Let.
+   // op is the underlying (unversioned) primitive, op' is the copy bound to x.
    export class Prim extends Def {
       x: Versioned<Str> = _
-      v: Value = _ // underlying primitive is not versioned
-      vʹ: Versioned<Value> = _
+      op: UnaryOp = _ 
+      opʹ: Versioned<UnaryOp> = _
    }
 
-   export function prim (x: Versioned<Str>, v: Value, vʹ: Versioned<Value>): Prim {
-      return make(Prim, x, v, vʹ)
+   export function prim (x: Versioned<Str>, op: UnaryOp, opʹ: Versioned<UnaryOp>): Prim {
+      return make(Prim, x, op, opʹ)
+   }
+
+   export class RecDef extends DataValue<"Expl.RecDef"> {
+      x: Versioned<Str> = _
+      f: Closure = _
+   }
+
+   export function recDef (): RecDef {
+      return make(RecDef)
    }
 
    export class LetRec extends Def {
