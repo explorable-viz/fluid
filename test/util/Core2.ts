@@ -18,7 +18,7 @@ export class FwdSlice {
       setallα(e, ann.top)
       this.expr = new Cursor(e)
       this.setup()
-      const tv: ExplValue = Eval.eval_(emptyEnv(), e)
+      const tv: ExplValue = Eval.eval2(emptyEnv(), e)
 //      setallα(tv.v, ann.top)
 //      Eval.fwdSlice(tv)
       this.val = new Cursor(tv.v)
@@ -44,7 +44,7 @@ export class BwdSlice {
 
    constructor (e: Expr) {
       setallα(e, ann.bot)
-      const tv: ExplValue = Eval.eval_(emptyEnv(), e) // just to obtain tv
+      const tv: ExplValue = Eval.eval2(emptyEnv(), e) // just to obtain tv
       setallα(tv.v, ann.bot)
       this.val = new Cursor(tv.v)
       this.setup()

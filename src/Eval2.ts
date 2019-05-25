@@ -103,7 +103,7 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const k: ValId = valId(def.x),
-               tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate2(ρ_ext, def.e)),
+               tv: ExplValue = eval2(ρ.concat(ρ_ext), instantiate2(ρ_ext, def.e)),
                v: Versioned<Value> = copyAt(k, tv.v),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
          return [cons(Expl.let_(def.x, tv, v), def̅ₜ), ρ_extʹ]
@@ -255,12 +255,18 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    }
 }
 
+export function eval2 (ρ: Env, e: Expr): ExplValue {
+   const tv: ExplValue = eval_(ρ, e)
+   eval_fwd(tv)
+   return tv
+}
+
 function toExpr (t: Expl): Expr {
    return (t.__id as ExplId).e as Expr
 }
 
 export function eval_fwd ({t, v}: ExplValue): void {
-   const e: Expr = (t.__id as ExplId).e as Expr
+   const e: Expr = toExpr(t)
    if (t instanceof Expl.Empty) {
       setα(e.__α, v)
    } else
