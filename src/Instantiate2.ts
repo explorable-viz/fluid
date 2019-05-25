@@ -114,12 +114,6 @@ function instantiateVar (ρ: Env, x: Versioned<Str>): Versioned<Str> {
    return strʹ(k, x.val)
 }
 
-function instantiateVar2 (ρ: Env, x: Versioned<Str>): Versioned<Str> {
-   const xʹ: Versioned<Str> = instantiateVar(ρ, x)
-   instantiateVar_(Direction.Fwd, xʹ)
-   return xʹ
-}
-
 function instantiateVar_ (dir: Direction, x: Versioned<Str>): void {
    const xʹ: Versioned<Str> = (x.__id as ExprId).e as Versioned<Str>
    if (dir === Direction.Fwd) {
@@ -131,14 +125,14 @@ function instantiateVar_ (dir: Direction, x: Versioned<Str>): void {
 
 function instantiateDef (ρ: Env, def: Def): Def {
    if (def instanceof Expr.Let) {
-      return Expr.let_(instantiateVar2(ρ, def.x), instantiate2(ρ, def.e))
+      return Expr.let_(instantiateVar(ρ, def.x), instantiate(ρ, def.e))
    } else
    if (def instanceof Expr.Prim) {
-      return Expr.prim(instantiateVar2(ρ, def.x))
+      return Expr.prim(instantiateVar(ρ, def.x))
    } else
    if (def instanceof Expr.LetRec) {
       const δ: List<RecDef> = def.δ.map((def: RecDef) => {
-         return Expr.recDef(instantiateVar2(ρ, def.x), instantiateTrie(ρ, def.σ))
+         return Expr.recDef(instantiateVar(ρ, def.x), instantiateTrie(ρ, def.σ))
       })
       return Expr.letRec(δ)
    } else {
