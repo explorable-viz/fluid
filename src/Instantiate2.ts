@@ -123,7 +123,7 @@ export function instantiate_bwd (e: Expr): void {
 
 function instantiateVar (ρ: Env, x: Versioned<Str>): Versioned<Str> {
    const k: ExprId = exprId(ρ.entries(), x)
-   return setα(x.__α, strʹ(k, x.val))
+   return strʹ(k, x.val)
 }
 
 function instantiateVar2 (ρ: Env, x: Versioned<Str>): Versioned<Str> {
