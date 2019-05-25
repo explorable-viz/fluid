@@ -242,12 +242,6 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    }
 }
 
-export function eval2 (ρ: Env, e: Expr): ExplValue {
-   const tv: ExplValue = eval_(ρ, e)
-   eval_fwd(tv)
-   return tv
-}
-
 function toExpr (t: Expl): Expr {
    return (t.__id as ExplId).e as Expr
 }
@@ -259,9 +253,7 @@ export function eval_fwd ({t, v}: ExplValue): void {
          setα(e.__α, v)
       } else
       if (v instanceof DataValue) {
-         const t̅: Expl[] = v.__expl.fieldValues(),
-               v̅: Versioned<Value>[] = v.fieldValues() as Versioned<Value>[]
-         zip(t̅, v̅).map(([t, v]) => eval_fwd(explValue(t, v)))
+         v.fieldExplValues().map(([t, v]) => eval_fwd(explValue(t, v)))
          setα(e.__α, v)
       }
    } else
@@ -314,9 +306,7 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
       } else
       if (v instanceof DataValue) {
          // reverse order but shouldn't matter in absence of side-effects:
-         const t̅: Expl[] = v.__expl.fieldValues(),
-               v̅: Versioned<Value>[] = v.fieldValues() as Versioned<Value>[]
-         zip(t̅, v̅).map(([t, v]) => eval_bwd(explValue(t, v)))
+         v.fieldExplValues().map(([t, v]) => eval_bwd(explValue(t, v)))
          return joinα(v.__α, e)
       } else {
          return absurd()
