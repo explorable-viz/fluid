@@ -7,7 +7,7 @@ import { DataValue } from "./DataValue2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
-import { instantiate, instantiate_bwdSlice } from "./Instantiate2"
+import { instantiate, instantiate_bwd } from "./Instantiate2"
 import { Match, evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
@@ -69,11 +69,11 @@ function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.
 
 function recDefsEnv2 (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
    const [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefsEnv(δ_0, ρ, δ)
-   recDefs_fwdSlice(δₜ)
+   recDefs_fwd(δₜ)
    return [δₜ, ρ_ext]
 }
 
-function recDefs_fwdSlice (δ: List<Expl.RecDef>): void {
+function recDefs_fwd (δ: List<Expl.RecDef>): void {
    if (Cons.is(δ)) {
       zip(δ.head.f.δ.toArray(), δ.toArray()).map(([def, defₜ]: [RecDef, Expl.RecDef]): void => {
          setα(def.x.__α, defₜ.f)
@@ -85,7 +85,7 @@ function recDefs_fwdSlice (δ: List<Expl.RecDef>): void {
    }
 }
 
-function recDefs_bwdSlice (δ: List<Expl.RecDef>): void {
+function recDefs_bwd (δ: List<Expl.RecDef>): void {
    if (Cons.is(δ)) {
       zip(δ.head.f.δ.toArray(), δ.toArray()).map(([def, defₜ]: [RecDef, Expl.RecDef]): void => {
          joinα(defₜ.f.__α, def.x)
@@ -135,36 +135,36 @@ function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env]
    }
 }
 
-function defs_fwdSlice (def̅: List<Expl.Def>): void {
+function defs_fwd (def̅: List<Expl.Def>): void {
    def̅.toArray().forEach((def: Expl.Def) => {
       if (def instanceof Expl.Let) {
          // instantiate
-         fwdSlice(def.tv)
+         eval_fwd(def.tv)
          meetα(def.x.__α, def.v)
       } else
       if (def instanceof Expl.Prim) {
          setα(def.x.__α, def.opʹ)
       } else
       if (def instanceof Expl.LetRec) {
-         recDefs_fwdSlice(def.δ)
+         recDefs_fwd(def.δ)
       } else {
          absurd()
       }
    })
 }
 
-function defs_bwdSlice (def̅: List<Expl.Def>): void {
+function defs_bwd (def̅: List<Expl.Def>): void {
    def̅.toArray().reverse().forEach((def: Expl.Def) => {
       if (def instanceof Expl.Let) {
          joinα(def.v.__α, def.tv.v)
          joinα(def.v.__α, def.x)
-         instantiate_bwdSlice(bwdSlice(def.tv))
+         instantiate_bwd(eval_bwd(def.tv))
       } else
       if (def instanceof Expl.Prim) {
          joinα(def.opʹ.__α, def.x)
       } else
       if (def instanceof Expl.LetRec) {
-         recDefs_bwdSlice(def.δ)
+         recDefs_bwd(def.δ)
       } else {
          absurd()
       }
@@ -249,7 +249,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    }
 }
 
-export function fwdSlice ({t, v}: ExplValue): void {
+export function eval_fwd ({t, v}: ExplValue): void {
    const e: Expr = (t.__id as ExplId).e as Expr
    if (t instanceof Expl.Empty) {
       setα(e.__α, v)
@@ -258,37 +258,37 @@ export function fwdSlice ({t, v}: ExplValue): void {
       meetα(e.__α, v)
    } else
    if (t instanceof Expl.App) {
-      fwdSlice(t.tf)
-      fwdSlice(t.tu)
-      fwdSlice(t.tv)
-      meetα(ann.meet(t.tf.v.__α, t.ξ.__fwdSlice(), e.__α), v)
+      eval_fwd(t.tf)
+      eval_fwd(t.tu)
+      eval_fwd(t.tv)
+      meetα(ann.meet(t.tf.v.__α, t.ξ.__fwd(), e.__α), v)
    } else
    if (t instanceof Expl.UnaryApp) {
-      fwdSlice(t.tf)
-      fwdSlice(t.tv)
+      eval_fwd(t.tf)
+      eval_fwd(t.tv)
       setα(ann.meet(t.tf.v.__α, t.tv.v.__α, e.__α), v)
    } else
    if (t instanceof Expl.BinaryApp) {
-      fwdSlice(t.tv1)
-      fwdSlice(t.tv2)
+      eval_fwd(t.tv1)
+      eval_fwd(t.tv2)
       setα(ann.meet(t.tv1.v.__α, t.tv2.v.__α, e.__α), v)
    } else
    if (t instanceof Expl.Defs) {
-      defs_fwdSlice(t.def̅)
-      fwdSlice(t.tv)
+      defs_fwd(t.def̅)
+      eval_fwd(t.tv)
       meetα(e.__α, v)
    } else
    if (t instanceof Expl.MatchAs) {
-      fwdSlice(t.tu)
-      fwdSlice(t.tv)
-      meetα(ann.meet(t.ξ.__fwdSlice(), e.__α), v)
+      eval_fwd(t.tu)
+      eval_fwd(t.tv)
+      meetα(ann.meet(t.ξ.__fwd(), e.__α), v)
    } else {
       absurd()
    }
 }
 
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
-export function bwdSlice ({t, v}: ExplValue): Expr {
+export function eval_bwd ({t, v}: ExplValue): Expr {
    const e: Expr = (t.__id as ExplId).e as Expr
    if (t instanceof Expl.Empty) {
       if (v instanceof Num) {
@@ -305,7 +305,7 @@ export function bwdSlice ({t, v}: ExplValue): Expr {
          // reverse order but shouldn't matter in absence of side-effects:
          const t̅: Expl[] = v.__expl.fieldValues(),
                v̅: Versioned<Value>[] = v.fieldValues() as Versioned<Value>[]
-         zip(t̅, v̅).map(([t, v]) => bwdSlice(explValue(t, v)))
+         zip(t̅, v̅).map(([t, v]) => eval_bwd(explValue(t, v)))
          return joinα(v.__α, e)
       } else {
          return absurd()
@@ -318,40 +318,40 @@ export function bwdSlice ({t, v}: ExplValue): Expr {
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
       joinα(v.__α, t.tv.v)
-      uninstantiate(bwdSlice(t.tv))
-      t.ξ.__bwdSlice(v.__α)
-      recDefs_bwdSlice(t.δ)
+      instantiate_bwd(eval_bwd(t.tv))
+      t.ξ.__bwd(v.__α)
+      recDefs_bwd(t.δ)
       joinα(v.__α, t.tf.v)
-      bwdSlice(t.tf)
-      bwdSlice(t.tu)
+      eval_bwd(t.tf)
+      eval_bwd(t.tu)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.UnaryApp) {
       joinα(v.__α, t.tf.v)
       joinα(v.__α, t.tv.v)
-      bwdSlice(t.tf)
-      bwdSlice(t.tv)
+      eval_bwd(t.tf)
+      eval_bwd(t.tv)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.BinaryApp) {
       assert(binaryOps.has(t.opName.val))
       joinα(v.__α, t.tv1.v)
       joinα(v.__α, t.tv2.v)
-      bwdSlice(t.tv1)
-      bwdSlice(t.tv2)
+      eval_bwd(t.tv1)
+      eval_bwd(t.tv2)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.Defs) {
       joinα(v.__α, t.tv.v)
-      uninstantiate(bwdSlice(t.tv))
-      defs_bwdSlice(t.def̅)
+      instantiate_bwd(eval_bwd(t.tv))
+      defs_bwd(t.def̅)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
       joinα(v.__α, t.tv.v)
-      uninstantiate(bwdSlice(t.tv))
-      t.ξ.__bwdSlice(v.__α)
-      bwdSlice(t.tu)
+      instantiate_bwd(eval_bwd(t.tv))
+      t.ξ.__bwd(v.__α)
+      eval_bwd(t.tu)
       return joinα(v.__α, e)
    } else {
       return absurd()

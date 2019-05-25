@@ -48,7 +48,7 @@ export class BwdSlice {
       setallα(tv.v, ann.bot)
       this.val = new Cursor(tv.v)
       this.setup()
-      this.expr = new Cursor(Eval.bwdSlice(tv))
+      this.expr = new Cursor(Eval.eval_bwd(tv))
       this.expect()
    }
 

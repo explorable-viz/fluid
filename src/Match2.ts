@@ -88,32 +88,32 @@ function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
 }
 
 export abstract class Match<K> extends Value<"Match"> {
-   abstract __fwdSlice (): Annotation
-   abstract __bwdSlice (α: Annotation): void
+   abstract __fwd (): Annotation
+   abstract __bwd (α: Annotation): void
 }
 
 // Concrete instances have an additional "matched args" field for the matched constructor.
 export class DataMatch<K extends Kont<K>> extends Match<K> {
    v: Versioned<DataValue> = _
 
-   __fwdSlice (): Annotation {
+   __fwd (): Annotation {
       const Ψ: Args.ArgsMatch<K> = (this as any)[className(this.v)] as Args.ArgsMatch<K>
-      return ann.meet(this.v.__α, Ψ.__fwdSlice())
+      return ann.meet(this.v.__α, Ψ.__fwd())
    }
 
-   __bwdSlice (α: Annotation): void {
+   __bwd (α: Annotation): void {
       const Ψ: Args.ArgsMatch<K> = __nonNull((this as any)[className(this.v)] as Args.ArgsMatch<K>)
-      Ψ.__bwdSlice(α)
+      Ψ.__bwd(α)
       setα(α, this.v)
    }
 }
 
 class VarMatch<K extends Kont<K>> extends Match<K> {
-   __fwdSlice (): Annotation {
+   __fwd (): Annotation {
       return ann.top
    }
 
-   __bwdSlice (α: Annotation): void {
+   __bwd (α: Annotation): void {
       // nothing to do
    }
 }
@@ -163,16 +163,16 @@ export namespace Args {
    }
    
    export abstract class ArgsMatch<K> extends Value<"ArgsMatch"> {
-      abstract __fwdSlice (): Annotation
-      abstract __bwdSlice (α: Annotation): void
+      abstract __fwd (): Annotation
+      abstract __bwd (α: Annotation): void
    }
 
    class EndMatch<K extends Kont<K>> extends ArgsMatch<K> {
-      __fwdSlice (): Annotation {
+      __fwd (): Annotation {
          return ann.top
       }
 
-      __bwdSlice (α: Annotation): void {
+      __bwd (α: Annotation): void {
          // nothing to do
       }
 
@@ -189,17 +189,17 @@ export namespace Args {
       ξ: Match<K> = _
       Ψ: ArgsMatch<K> = _
 
-      __fwdSlice (): Annotation {
-         return ann.meet(this.ξ.__fwdSlice(), this.Ψ.__fwdSlice())
+      __fwd (): Annotation {
+         return ann.meet(this.ξ.__fwd(), this.Ψ.__fwd())
       }
 
-      __bwdSlice (α: Annotation): void {
+      __bwd (α: Annotation): void {
          if (NextMatch.is(this.Ψ)) {
-            this.Ψ.Ψ.__bwdSlice(α)
-            this.ξ.__bwdSlice(α)
+            this.Ψ.Ψ.__bwd(α)
+            this.ξ.__bwd(α)
          } else
          if (EndMatch.is(this.Ψ)) {
-            this.ξ.__bwdSlice(α)
+            this.ξ.__bwd(α)
          }
       }
 
