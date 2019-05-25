@@ -7,7 +7,7 @@ import { DataValue } from "./DataValue2"
 import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
-import { instantiate, instantiate_bwd } from "./Instantiate2"
+import { instantiate, instantiate_bwd, instantiate_fwd } from "./Instantiate2"
 import { Match, evalTrie } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
@@ -52,11 +52,11 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
 }
 
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
+function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
             k: ValId = valId(def.x),
-            [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefsEnv(δ_0, ρ, δ.tail),
+            [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
             f: Closure = closure(k, ρ, δ_0, def.σ)
       return [cons(Expl.recDef(def.x, f), δₜ), extendEnv(ρ_ext, def.x, f)]
    } else
@@ -67,8 +67,8 @@ function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.
    }
 }
 
-function recDefsEnv2 (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
-   const [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefsEnv(δ_0, ρ, δ)
+function recDefs2 (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
+   const [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ)
    recDefs_fwd(δₜ)
    return [δₜ, ρ_ext]
 }
@@ -98,14 +98,14 @@ function recDefs_bwd (δ: List<Expl.RecDef>): void {
 }
 
 // Here we mustn't invert definition order.
-function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
+function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const k: ValId = valId(def.x),
                tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
                v: Versioned<Value> = meetα(def.x.__α, copyAt(k, tv.v)),
-               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defsEnv(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
+               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
          return [cons(Expl.let_(def.x, tv, v), def̅ₜ), ρ_extʹ]
       } else
       if (def instanceof Expr.Prim) {
@@ -114,15 +114,15 @@ function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env]
             const k: ValId = valId(def.x),
                   op: UnaryOp = unaryOps.get(def.x.val)!,
                   opʹ: Versioned<UnaryOp> = setα(def.x.__α, copyAt(k, op)),
-                  [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defsEnv(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
+                  [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
             return [cons(Expl.prim(def.x, op, opʹ), def̅ₜ), ρ_extʹ]
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
       } else
       if (def instanceof Expr.LetRec) {
-         const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefsEnv2(def.δ, ρ.concat(ρ_ext), def.δ),
-               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defsEnv(ρ, def̅.tail, ρ_ext.concat(ρᵟ))
+         const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs2(def.δ, ρ.concat(ρ_ext), def.δ),
+               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, ρ_ext.concat(ρᵟ))
          return [cons(Expl.letRec(δ), def̅ₜ), ρ_extʹ]
       } else {
          return absurd()
@@ -138,7 +138,7 @@ function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env]
 function defs_fwd (def̅: List<Expl.Def>): void {
    def̅.toArray().forEach((def: Expl.Def) => {
       if (def instanceof Expl.Let) {
-         // instantiate
+         instantiate_fwd(toExpr(def.tv.t))
          eval_fwd(def.tv)
          meetα(def.x.__α, def.v)
       } else
@@ -204,7 +204,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
       if (f instanceof Closure) {
          const [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(f.σ).__apply(u),
-               [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefsEnv(f.δ, f.ρ, f.δ),
+               [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(f.δ, f.ρ, f.δ),
                ρᶠ: Env = ρᵟ.concat(ρʹ),
                tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
          return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), meetα(ann.meet(f.__α, α, e.__α), copyAt(kᵥ, tv.v)))
@@ -235,7 +235,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       }
    } else
    if (e instanceof Expr.Defs) {
-      const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defsEnv(ρ, e.def̅, emptyEnv()),
+      const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, e.def̅, emptyEnv()),
             tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
       return explValue(Expl.defs(kₜ, def̅ₜ, tv), meetα(e.__α, copyAt(kᵥ, tv.v)))
    } else
@@ -287,9 +287,13 @@ export function eval_fwd ({t, v}: ExplValue): void {
    }
 }
 
+function toExpr (t: Expl): Expr {
+   return (t.__id as ExplId).e as Expr
+}
+
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
 export function eval_bwd ({t, v}: ExplValue): Expr {
-   const e: Expr = (t.__id as ExplId).e as Expr
+   const e: Expr = toExpr(t)
    if (t instanceof Expl.Empty) {
       if (v instanceof Num) {
          return joinα(v.__α, e)

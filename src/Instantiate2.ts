@@ -1,4 +1,3 @@
-import { ann } from "./util/Annotated2"
 import { absurd, as } from "./util/Core"
 import { List, Pair, pair } from "./BaseTypes2"
 import { Env } from "./Env2"
@@ -58,41 +57,65 @@ export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    }
 }
 
-export function instantiate_fwd (): void {
+export function instantiate_fwd (e: Expr): void {
+   const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr)
+   setα(e.__α, eʹ)
+   if (e instanceof Expr.ConstNum || e instanceof Expr.ConstStr || e instanceof Expr.Var) {
+      // nothing else to do
+   } else
+   if (e instanceof Expr.Constr) {
+      e.args.toArray().map(e => instantiate_fwd(e))
+   } else
+   if (e instanceof Expr.Fun) {
+      instantiateTrie_fwd(e.σ)
+   } else
+   if (e instanceof Expr.Defs) {
+      e.def̅.toArray().map(instantiateDef_fwd)
+      instantiate_fwd(e.e)
+   } else
+   if (e instanceof Expr.MatchAs) {
+      instantiate_fwd(e.e)
+      instantiateTrie_fwd(e.σ)
+   } else
+   if (e instanceof Expr.App) {
+      instantiate_fwd(e.f)
+      instantiate_fwd(e.e)
+   } else
+   if (e instanceof Expr.BinaryApp) {
+      instantiate_fwd(e.e1)
+      instantiate_fwd(e.e2)
+   } else {
+      absurd()
+   }
 }
 
 export function instantiate_bwd (e: Expr): void {
-   const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr)   
+   const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr)
+   joinα(e.__α, eʹ)
    if (e instanceof Expr.ConstNum || e instanceof Expr.ConstStr || e instanceof Expr.Var) {
-      joinα(e.__α, eʹ)
+      // nothing else to do
    } else
    if (e instanceof Expr.Constr) {
       e.args.toArray().map(e => instantiate_bwd(e))
-      joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.Fun) {
-      uninstantiateTrie(e.σ)
-      joinα(e.__α, eʹ)
+      instantiateTrie_bwd(e.σ)
    } else
    if (e instanceof Expr.Defs) {
-      e.def̅.toArray().map(uninstantiateDef)
+      e.def̅.toArray().map(instantiateDef_bwd)
       instantiate_bwd(e.e)
-      joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.MatchAs) {
       instantiate_bwd(e.e)
-      uninstantiateTrie(e.σ)
-      joinα(e.__α, eʹ)
+      instantiateTrie_bwd(e.σ)
    } else
    if (e instanceof Expr.App) {
       instantiate_bwd(e.f)
       instantiate_bwd(e.e)
-      joinα(e.__α, eʹ)
    } else
    if (e instanceof Expr.BinaryApp) {
       instantiate_bwd(e.e1)
       instantiate_bwd(e.e2)
-      joinα(e.__α, eʹ)
    } else {
       absurd()
    }
@@ -103,21 +126,32 @@ function instantiateVar (ρ: Env, x: Versioned<Str>): Versioned<Str> {
    return setα(x.__α, strʹ(k, x.val))
 }
 
-function uninstantiateVar (x: Versioned<Str>): void {
+function instantiateVar2 (ρ: Env, x: Versioned<Str>): Versioned<Str> {
+   const xʹ: Versioned<Str> = instantiateVar(ρ, x)
+   instantiateVar_fwd(xʹ)
+   return xʹ
+}
+
+function instantiateVar_fwd (x: Versioned<Str>): void {
    const xʹ: Versioned<Str> = (x.__id as ExprId).e as Versioned<Str>
-   setα(ann.join(xʹ.__α, x.__α), xʹ)
+   setα(xʹ.__α, x)
+}
+
+function instantiateVar_bwd (x: Versioned<Str>): void {
+   const xʹ: Versioned<Str> = (x.__id as ExprId).e as Versioned<Str>
+   joinα(x.__α, xʹ)
 }
 
 function instantiateDef (ρ: Env, def: Def): Def {
    if (def instanceof Expr.Let) {
-      return Expr.let_(instantiateVar(ρ, def.x), instantiate(ρ, def.e))
+      return Expr.let_(instantiateVar2(ρ, def.x), instantiate(ρ, def.e))
    } else
    if (def instanceof Expr.Prim) {
-      return Expr.prim(instantiateVar(ρ, def.x))
+      return Expr.prim(instantiateVar2(ρ, def.x))
    } else
    if (def instanceof Expr.LetRec) {
       const δ: List<RecDef> = def.δ.map((def: RecDef) => {
-         return Expr.recDef(instantiateVar(ρ, def.x), instantiateTrie(ρ, def.σ))
+         return Expr.recDef(instantiateVar2(ρ, def.x), instantiateTrie(ρ, def.σ))
       })
       return Expr.letRec(δ)
    } else {
@@ -125,18 +159,21 @@ function instantiateDef (ρ: Env, def: Def): Def {
    }
 }
 
-function uninstantiateDef (def: Def): void {
+function instantiateDef_fwd (def: Def): void {
+}
+
+function instantiateDef_bwd (def: Def): void {
    if (def instanceof Expr.Let) {
-      uninstantiateVar(def.x)
+      instantiateVar_bwd(def.x)
       instantiate_bwd(def.e)
    } else 
    if (def instanceof Expr.Prim) {
-      uninstantiateVar(def.x)
+      instantiateVar_bwd(def.x)
    } else
    if (def instanceof Expr.LetRec) {
       def.δ.toArray().map(def => {
-         uninstantiateVar(def.x)
-         uninstantiateTrie(def.σ)
+         instantiateVar_bwd(def.x)
+         instantiateTrie_bwd(def.σ)
       })
    } else {
       absurd()
@@ -158,13 +195,16 @@ function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T):
    }
 }
 
-function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): void {
+function instantiateTrie_fwd<K extends Kont<K>, T extends Trie<K>> (σ: T): void {
+}
+
+function instantiateTrie_bwd<K extends Kont<K>, T extends Trie<K>> (σ: T): void {
    if (Trie.Var.is(σ)) {
-      uninstantiateKont(σ.κ)
+      instantiateKont_bwd(σ.κ)
    } else
    if (Trie.Constr.is(σ)) {
       σ.cases.toArray().map(
-         ({ fst: c, snd: Π }: Pair<Str, Args<K>>): void => uninstantiateArgs(Π)
+         ({ fst: c, snd: Π }: Pair<Str, Args<K>>): void => instantiateArgs_bwd(Π)
       )
    } else {
       absurd()
@@ -186,15 +226,18 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
    }
 }
 
-function uninstantiateKont<K extends Kont<K>> (κ: K): void {
+export function instantiateKont_fwd<K extends Kont<K>> (κ: K): void {
+}
+
+function instantiateKont_bwd<K extends Kont<K>> (κ: K): void {
    if (κ instanceof Trie.Trie) {
-      uninstantiateTrie<K, Trie<K>>(κ)
+      instantiateTrie_bwd<K, Trie<K>>(κ)
    } else
    if (κ instanceof Expr.Expr) {
       instantiate_bwd(κ)
    } else
    if (κ instanceof Args.Args) {
-      uninstantiateArgs(κ)
+      instantiateArgs_bwd(κ)
    } else {
       absurd()
    }
@@ -211,12 +254,12 @@ function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
    }
 }
 
-function uninstantiateArgs<K extends Kont<K>> (Π: Args<K>): void {
+function instantiateArgs_bwd<K extends Kont<K>> (Π: Args<K>): void {
    if (Args.End.is(Π)) {
-      uninstantiateKont(Π.κ)
+      instantiateKont_bwd(Π.κ)
    } else
    if (Args.Next.is(Π)) {
-      uninstantiateTrie(Π.σ)
+      instantiateTrie_bwd(Π.σ)
    } else {
       absurd()
    }
