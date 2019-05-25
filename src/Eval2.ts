@@ -107,29 +107,21 @@ function def̅Env (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env
 }
 
 function undef̅Env (def̅: List<Expl.Def>): void {
-   if (Cons.is(def̅)) {
-      const def: Expl.Def = def̅.head
+   def̅.toArray().reverse().forEach((def: Expl.Def) => {
       if (def instanceof Expl.Let) {
-         undef̅Env(def̅.tail)
          joinα(def.v.__α, def.tv.v)
          joinα(def.v.__α, def.x)
          uninstantiate(bwdSlice(def.tv))
       } else
       if (def instanceof Expl.Prim) {
-         undef̅Env(def̅.tail)
          joinα(def.vʹ.__α, def.x)
       } else
       if (def instanceof Expl.LetRec) {
-         undef̅Env(def̅.tail)
          uncloseDefs(def.ρᵟ)
       } else {
-         return absurd()
+         absurd()
       }
-   } else
-   if (Nil.is(def̅)) {
-   } else {
-      return absurd()
-   }
+   })
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
