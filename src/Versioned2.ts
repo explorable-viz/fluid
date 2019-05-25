@@ -1,9 +1,6 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
-import { Expl } from "./ExplValue2"
-import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make } from "./Value2"
-
-type Expl = Expl.Expl
+import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make, metadataFields } from "./Value2"
 
 // Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
 // for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
@@ -16,7 +13,6 @@ export function VersionedC<T extends Class<Value>> (C: T) {
       [C.name]: class extends C {
             __id: Id
             __α: Annotation
-            __expl: Expl // previously we couldn't put explanations inside values; see GitHub issue #128.
          }
    }[C.name] // give versioned class same name as C
 }
@@ -25,7 +21,6 @@ export function VersionedC<T extends Class<Value>> (C: T) {
 export interface Versioned_ {
    __id: Id
    __α: Annotation
-   __expl: Expl
 }
 
 export type Versioned<T> = Versioned_ & T
@@ -47,7 +42,7 @@ type VersionedValues = Map<Id, Versioned<Value>>
 const __versioned: VersionedValues = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<Tag extends ValueTag, T extends Value<Tag>> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
+export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
    let v: Versioned<Value> | undefined = __versioned.get(k)
    if (v === undefined) {
       const v: T = new C
@@ -68,12 +63,16 @@ export function at<Tag extends ValueTag, T extends Value<Tag>> (k: Id, C: Class<
 }
 
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
-function reclassify<Tag extends ValueTag, T extends Value<Tag>> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
+function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
    return notYetImplemented()
 }
 
-export function copyAt<Tag extends ValueTag, T extends Value<Tag>> (k: Id, v: T): Versioned<T> {
-   return at(k, classOf(v), ...v.fieldValues())
+export function copyAt<T extends Value> (k: Id, v: T): Versioned<T> {
+   const vʹ: Versioned<T> = at(k, classOf(v), ...v.fieldValues())
+   metadataFields(v).forEach((prop: string) => {
+      (vʹ as any)[prop] = (v as any)[prop]
+   })
+   return vʹ
 }
 
 // A memo key which is sourced externally to the system. (The name "External" is already taken.)
@@ -124,11 +123,7 @@ export function joinα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
    return v
 }
 
-export function getExpl<T, U extends Versioned<T>> (v: U): Expl {
-   return __nonNull(v.__expl)
-}
-
-export function setExpl<T, U extends Versioned<T>> (t: Expl, v: U): U {
-   v.__expl = t
+export function meetα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
+   v.__α = ann.meet(α, v.__α)
    return v
 }

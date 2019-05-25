@@ -2,8 +2,9 @@ import { absurd, error } from "./util/Core"
 import { eq } from "./util/Ord"
 import { List } from "./BaseTypes2"
 import { ctrToDataType } from "./DataType2"
+import { DataValue } from "./DataValue2"
 import { FiniteMap, unionWith } from "./FiniteMap2"
-import { DataValue, Id, Num, Str, _, make } from "./Value2"
+import { Id, Num, Str, _, make } from "./Value2"
 import { Versioned, VersionedC, at } from "./Versioned2"
 
 // Constants used for parsing, and also for toString() implementations.
@@ -52,12 +53,12 @@ export namespace Expr {
    }
    
    export class App extends Expr {
-      func: Expr = _
-      arg: Expr = _
+      f: Expr = _
+      e: Expr = _
    }
 
-   export function app (k: Id, func: Expr, arg: Expr): App {
-      return at(k, App, func, arg)
+   export function app (k: Id, f: Expr, e: Expr): App {
+      return at(k, App, f, e)
    }
 
    export class ConstNum extends Expr {

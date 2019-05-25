@@ -1,10 +1,10 @@
-import { Annotation, ann } from "./util/Annotated2"
 import { absurd, as } from "./util/Core"
 import { List, Pair, pair } from "./BaseTypes2"
 import { Env } from "./Env2"
+import { Direction } from "./Eval2"
 import { Expr } from "./Expr2"
 import { Id, Str, Value, _, make } from "./Value2"
-import { Versioned, setα, strʹ } from "./Versioned2"
+import { Versioned, joinα, setα, strʹ } from "./Versioned2"
 
 import Args = Expr.Args
 import Def = Expr.Def
@@ -16,7 +16,7 @@ import Trie = Expr.Trie
 // here it is more convenient to use an isomorphic nested format.
 export class ExprId extends Id {
    j: List<Value> = _
-   e: Expr | Versioned<Str> = _ // str case is for binding occurrences of variables
+   e: Expr | Versioned<Str> = _ // str for binding occurrences of variables
 }
 
 export function exprId (j: List<Value>, e: Expr | Versioned<Str>): ExprId {
@@ -28,75 +28,75 @@ export function exprId (j: List<Value>, e: Expr | Versioned<Str>): ExprId {
 export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    const k: ExprId = exprId(ρ.entries(), e)
    if (e instanceof Expr.ConstNum) {
-      return setα(e.__α, Expr.constNum(k, e.val))
+      return Expr.constNum(k, e.val)
    } else
    if (e instanceof Expr.ConstStr) {
-      return setα(e.__α, Expr.constStr(k, e.val))
+      return Expr.constStr(k, e.val)
    } else
    if (e instanceof Expr.Constr) {
-      return setα(e.__α, Expr.constr(k, e.ctr, e.args.map(e => instantiate(ρ, e))))
+      return Expr.constr(k, e.ctr, e.args.map(e => instantiate(ρ, e)))
    } else
    if (e instanceof Expr.Fun) {
-      return setα(e.__α, Expr.fun(k, instantiateTrie(ρ, e.σ)))
+      return Expr.fun(k, instantiateTrie(ρ, e.σ))
    } else
    if (e instanceof Expr.Var) {
-      return setα(e.__α, Expr.var_(k, e.x))
+      return Expr.var_(k, e.x)
    } else
    if (e instanceof Expr.Defs) {
-      return setα(e.__α, Expr.defs(k, e.def̅.map(def => instantiateDef(ρ, def)), instantiate(ρ, e.e)))
+      return Expr.defs(k, e.def̅.map(def => instantiateDef(ρ, def)), instantiate(ρ, e.e))
    } else
    if (e instanceof Expr.MatchAs) {
-      return setα(e.__α, Expr.matchAs(k, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
+      return Expr.matchAs(k, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
    } else
    if (e instanceof Expr.App) {
-      return setα(e.__α, Expr.app(k, instantiate(ρ, e.func), instantiate(ρ, e.arg)))
+      return Expr.app(k, instantiate(ρ, e.f), instantiate(ρ, e.e))
    } else
    if (e instanceof Expr.BinaryApp) {
-      return setα(e.__α, Expr.binaryApp(k, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2)))
+      return Expr.binaryApp(k, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2))
    } else {
       return absurd()
    }
 }
 
-export function uninstantiate (e: Expr): void {
-   const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr),
-         α: Annotation = ann.join(eʹ.__α, e.__α) // merge annotations into source
-   if (e instanceof Expr.ConstNum) {
-      setα(α, eʹ)
-   } else
-   if (e instanceof Expr.ConstStr) {
-      setα(α, eʹ)
+export function instantiate_fwd (e: Expr): void {
+   return instantiate_(Direction.Fwd, e)
+}
+
+export function instantiate_bwd (e: Expr): void {
+   return instantiate_(Direction.Bwd, e)
+}
+
+function instantiate_ (dir: Direction, e: Expr): void {
+   const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr)
+   if (dir === Direction.Fwd) {
+      setα(eʹ.__α, e)
+   } else {
+      joinα(e.__α, eʹ)
+   }
+   if (e instanceof Expr.ConstNum || e instanceof Expr.ConstStr || e instanceof Expr.Var) {
+      // nothing else to do
    } else
    if (e instanceof Expr.Constr) {
-      e.args.toArray().map(e => uninstantiate(e))
-      setα(α, eʹ)
+      e.args.toArray().map(e => instantiate_(dir,e))
    } else
    if (e instanceof Expr.Fun) {
-      uninstantiateTrie(e.σ)
-      setα(α, eʹ)
-   } else
-   if (e instanceof Expr.Var) {
-      setα(α, eʹ)
+      instantiateTrie_(dir, e.σ)
    } else
    if (e instanceof Expr.Defs) {
-      e.def̅.toArray().map(uninstantiateDef)
-      uninstantiate(e.e)
-      setα(α, eʹ)
+      e.def̅.toArray().map(def => instantiateDef_(dir, def))
+      instantiate_(dir, e.e)
    } else
    if (e instanceof Expr.MatchAs) {
-      uninstantiate(e.e)
-      uninstantiateTrie(e.σ)
-      setα(α, eʹ)
+      instantiate_(dir, e.e)
+      instantiateTrie_(dir, e.σ)
    } else
    if (e instanceof Expr.App) {
-      uninstantiate(e.func)
-      uninstantiate(e.arg)
-      setα(α, eʹ)
+      instantiate_(dir, e.f)
+      instantiate_(dir, e.e)
    } else
    if (e instanceof Expr.BinaryApp) {
-      uninstantiate(e.e1)
-      uninstantiate(e.e2)
-      setα(α, eʹ)
+      instantiate_(dir, e.e1)
+      instantiate_(dir, e.e2)
    } else {
       absurd()
    }
@@ -104,12 +104,16 @@ export function uninstantiate (e: Expr): void {
 
 function instantiateVar (ρ: Env, x: Versioned<Str>): Versioned<Str> {
    const k: ExprId = exprId(ρ.entries(), x)
-   return setα(x.__α, strʹ(k, x.val))
+   return strʹ(k, x.val)
 }
 
-function uninstantiateVar (x: Versioned<Str>): void {
+function instantiateVar_ (dir: Direction, x: Versioned<Str>): void {
    const xʹ: Versioned<Str> = (x.__id as ExprId).e as Versioned<Str>
-   setα(ann.join(xʹ.__α, x.__α), xʹ)
+   if (dir === Direction.Fwd) {
+      setα(xʹ.__α, x)
+   } else {
+      joinα(x.__α, xʹ)
+   }
 }
 
 function instantiateDef (ρ: Env, def: Def): Def {
@@ -129,18 +133,18 @@ function instantiateDef (ρ: Env, def: Def): Def {
    }
 }
 
-function uninstantiateDef (def: Def): void {
+function instantiateDef_ (dir: Direction, def: Def): void {
    if (def instanceof Expr.Let) {
-      uninstantiateVar(def.x)
-      uninstantiate(def.e)
+      instantiateVar_(dir, def.x)
+      instantiate_(dir, def.e)
    } else 
    if (def instanceof Expr.Prim) {
-      uninstantiateVar(def.x)
+      instantiateVar_(dir, def.x)
    } else
    if (def instanceof Expr.LetRec) {
       def.δ.toArray().map(def => {
-         uninstantiateVar(def.x)
-         uninstantiateTrie(def.σ)
+         instantiateVar_(dir, def.x)
+         instantiateTrie_(dir, def.σ)
       })
    } else {
       absurd()
@@ -162,13 +166,13 @@ function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T):
    }
 }
 
-function uninstantiateTrie<K extends Kont<K>, T extends Trie<K>> (σ: T): void {
+function instantiateTrie_<K extends Kont<K>, T extends Trie<K>> (dir: Direction, σ: T): void {
    if (Trie.Var.is(σ)) {
-      uninstantiateKont(σ.κ)
+      instantiateKont_(dir, σ.κ)
    } else
    if (Trie.Constr.is(σ)) {
       σ.cases.toArray().map(
-         ({ fst: c, snd: Π }: Pair<Str, Args<K>>): void => uninstantiateArgs(Π)
+         ({ fst: c, snd: Π }: Pair<Str, Args<K>>): void => instantiateArgs_(dir, Π)
       )
    } else {
       absurd()
@@ -190,15 +194,15 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
    }
 }
 
-function uninstantiateKont<K extends Kont<K>> (κ: K): void {
+function instantiateKont_<K extends Kont<K>> (dir: Direction, κ: K): void {
    if (κ instanceof Trie.Trie) {
-      uninstantiateTrie<K, Trie<K>>(κ)
+      instantiateTrie_<K, Trie<K>>(dir, κ)
    } else
    if (κ instanceof Expr.Expr) {
-      uninstantiate(κ)
+      instantiate_(dir, κ)
    } else
    if (κ instanceof Args.Args) {
-      uninstantiateArgs(κ)
+      instantiateArgs_(dir, κ)
    } else {
       absurd()
    }
@@ -215,12 +219,12 @@ function instantiateArgs<K extends Kont<K>> (ρ: Env, Π: Args<K>): Args<K> {
    }
 }
 
-function uninstantiateArgs<K extends Kont<K>> (Π: Args<K>): void {
+function instantiateArgs_<K extends Kont<K>> (dir: Direction, Π: Args<K>): void {
    if (Args.End.is(Π)) {
-      uninstantiateKont(Π.κ)
+      instantiateKont_(dir, Π.κ)
    } else
    if (Args.Next.is(Π)) {
-      uninstantiateTrie(Π.σ)
+      instantiateTrie_(dir, Π.σ)
    } else {
       absurd()
    }

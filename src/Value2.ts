@@ -5,7 +5,7 @@ export const _: any = undefined
 
 // Somewhat perverse to do this, but need some type safety!
 export type DataValueTag =
-   "Args" | "Args.Plug" | "Bool" | "Closure" | "Env" | "Expl" | "Expl.Def" | "Expr" | "Expr.Def" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
+   "Args" | "Args.Plug" | "Bool" | "Closure" | "DataExpl" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
    "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Trie"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
 export type PrimOpTag = "UnaryOp" | "BinaryOp"
@@ -17,13 +17,6 @@ export class Value<Tag extends ValueTag = ValueTag> {
 
    fieldValues (): Persistent[] {
       return fields(this).map(k => (this as any as State)[k])
-   }
-}
-
-// Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
-export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
-   fieldValues (): Value[] {
-      return fields(this).map(k => (this as any as State)[k] as Value)
    }
 }
 
@@ -89,7 +82,7 @@ interface Memoisable<T extends Persistent> {
    call (args: Persistent[]): T
 }
 
-class MemoCtr<Tag extends ValueTag, T extends Value<Tag>> implements Memoisable<T> {
+class MemoCtr<T extends Value> implements Memoisable<T> {
    C: Class<T>
 
    constructor (C: Class<T>) {
@@ -119,13 +112,13 @@ export function memoCall<T extends Persistent> (memo: MemoTable, f: Memoisable<T
 
 // Experimented with dictionary-based construction pattern; eliminates field order mismatch as a possible
 // source of error, but the benefit is very small and doesn't really suit the memoisation pattern.
-export function make<Tag extends ValueTag, T extends Value<Tag>> (C: Class<T>, ...v̅: Persistent[]): T {
+export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
    return memoCall(__ctrMemo, new MemoCtr(C), v̅)
 }
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<Tag extends ValueTag, T extends Value<Tag>> (tgt: T, v̅: Persistent[]): T {
+export function construct<T extends Value> (tgt: T, v̅: Persistent[]): T {
    const tgtʹ: State = tgt as any as State,
          f̅: string[] = fields(tgt)
    assert(f̅.length === v̅.length)
@@ -141,6 +134,10 @@ export function isField (prop: string): boolean {
    return !prop.startsWith("__")
 }
 
-export function fields<Tag extends ValueTag> (v: Value<Tag>): string[] {
+export function fields (v: Value): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
+}
+
+export function metadataFields (v: Value): string[] {
+   return Object.getOwnPropertyNames(v).filter(f => !isField(f) && f !== "__id")
 }

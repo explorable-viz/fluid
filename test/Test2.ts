@@ -108,7 +108,7 @@ describe("example", () => {
 				setup (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.App, "arg")
+						.to(Expr.App, "e")
 						.push().constrArg("Cons", 0).notNeed().pop()
 						.push().constrArg("Cons", 0).notNeed().pop()
 				}
@@ -135,7 +135,7 @@ describe("example", () => {
 				expect (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.App, "arg").needed()
+						.to(Expr.App, "e").needed()
 						.push().constrArg("Cons", 0).notNeeded().pop()
 						.constrArg("Cons", 1).needed()
 						.push().constrArg("Cons", 0).notNeeded().pop()
@@ -161,7 +161,7 @@ describe("example", () => {
 					this.expr
 						.skipImports()
 						.to(Expr.Defs, "e")
-						.to(Expr.App, "arg")
+						.to(Expr.App, "e")
 						.push()
 							.constrArg("NonEmpty", 0)
 							.constrArg("NonEmpty", 1)
@@ -194,7 +194,7 @@ describe("example", () => {
 					this.expr
 						.skipImports()
 						.to(Expr.Defs, "e")
-					 	.to(Expr.App, "arg")
+					 	.to(Expr.App, "e")
 						.constrArg("Cons", 0).notNeed()
 				  }
 				expect (): void {
@@ -250,7 +250,7 @@ describe("example", () => {
 				setup (): void {
 					this.expr
 						.skipImports()
- 						.to(Expr.App, "arg")
+ 						.to(Expr.App, "e")
  						.constrArg("Cons", 1)
  						.constrArg("Cons", 1).notNeed()
 				}
@@ -284,10 +284,10 @@ describe("example", () => {
 							.pop()
 						.skipImports()
 						.push()
-							.to(Expr.App, "arg").needed().pop()
+							.to(Expr.App, "e").needed().pop()
 						.push()
-							.to(Expr.App, "func")
-						  	.to(Expr.App, "arg").needed().pop()
+							.to(Expr.App, "f")
+						  	.to(Expr.App, "e").needed().pop()
 				}
 			})(e)
 			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
@@ -316,14 +316,14 @@ describe("example", () => {
 							.arg_var("y").arg_var("ys")
 							.end().notNeeded()				 // cons constructor
 							.constrArg("Cons", 0).needed() // application of op
-							.to(Expr.App, "arg").needed()  // pair constructor
+							.to(Expr.App, "e").needed()  // pair constructor
 							.push().constrArg("Pair", 0).notNeeded().pop()
 							.push().constrArg("Pair", 1).notNeeded().pop()
 							.pop()
 						.skipImports()
-						.to(Expr.App, "func")
-						.to(Expr.App, "func")
-						.to(Expr.App, "arg")
+						.to(Expr.App, "f")
+						.to(Expr.App, "f")
+						.to(Expr.App, "e")
 						.to(Expr.Fun, "σ")
 						.to(Trie.Constr, "cases")
 						.nodeValue()
