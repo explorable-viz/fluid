@@ -24,37 +24,43 @@ export function exprId (j: List<Value>, e: Expr | Versioned<Str>): ExprId {
 
 // F-bounded polymorphism doesn't work well here. I've used it for the smaller helper functions 
 // (but with horrendous casts), but not for the two main top-level functions.
-export function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
+function instantiate<T extends Expr> (ρ: Env, e: T): Expr {
    const k: ExprId = exprId(ρ.entries(), e)
    if (e instanceof Expr.ConstNum) {
-      return setα(e.__α, Expr.constNum(k, e.val))
+      return Expr.constNum(k, e.val)
    } else
    if (e instanceof Expr.ConstStr) {
-      return setα(e.__α, Expr.constStr(k, e.val))
+      return Expr.constStr(k, e.val)
    } else
    if (e instanceof Expr.Constr) {
-      return setα(e.__α, Expr.constr(k, e.ctr, e.args.map(e => instantiate(ρ, e))))
+      return Expr.constr(k, e.ctr, e.args.map(e => instantiate(ρ, e)))
    } else
    if (e instanceof Expr.Fun) {
-      return setα(e.__α, Expr.fun(k, instantiateTrie(ρ, e.σ)))
+      return Expr.fun(k, instantiateTrie(ρ, e.σ))
    } else
    if (e instanceof Expr.Var) {
-      return setα(e.__α, Expr.var_(k, e.x))
+      return Expr.var_(k, e.x)
    } else
    if (e instanceof Expr.Defs) {
-      return setα(e.__α, Expr.defs(k, e.def̅.map(def => instantiateDef(ρ, def)), instantiate(ρ, e.e)))
+      return Expr.defs(k, e.def̅.map(def => instantiateDef(ρ, def)), instantiate(ρ, e.e))
    } else
    if (e instanceof Expr.MatchAs) {
-      return setα(e.__α, Expr.matchAs(k, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ)))
+      return Expr.matchAs(k, instantiate(ρ, e.e), instantiateTrie(ρ, e.σ))
    } else
    if (e instanceof Expr.App) {
-      return setα(e.__α, Expr.app(k, instantiate(ρ, e.f), instantiate(ρ, e.e)))
+      return Expr.app(k, instantiate(ρ, e.f), instantiate(ρ, e.e))
    } else
    if (e instanceof Expr.BinaryApp) {
-      return setα(e.__α, Expr.binaryApp(k, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2)))
+      return Expr.binaryApp(k, instantiate(ρ, e.e1), e.opName, instantiate(ρ, e.e2))
    } else {
       return absurd()
    }
+}
+
+export function instantiate2<T extends Expr> (ρ: Env, e: T): Expr {
+   const eʹ: Expr = instantiate(ρ, e)
+   instantiate_fwd(eʹ)
+   return eʹ
 }
 
 enum Direction { Fwd, Bwd }
@@ -70,7 +76,7 @@ export function instantiate_bwd (e: Expr): void {
 function instantiate_ (dir: Direction, e: Expr): void {
    const eʹ: Expr = as((e.__id as ExprId).e, Expr.Expr)
    if (dir === Direction.Fwd) {
-      setα(e.__α, eʹ)
+      setα(eʹ.__α, e)
    } else {
       joinα(e.__α, eʹ)
    }
@@ -125,7 +131,7 @@ function instantiateVar_ (dir: Direction, x: Versioned<Str>): void {
 
 function instantiateDef (ρ: Env, def: Def): Def {
    if (def instanceof Expr.Let) {
-      return Expr.let_(instantiateVar2(ρ, def.x), instantiate(ρ, def.e))
+      return Expr.let_(instantiateVar2(ρ, def.x), instantiate2(ρ, def.e))
    } else
    if (def instanceof Expr.Prim) {
       return Expr.prim(instantiateVar2(ρ, def.x))
@@ -192,7 +198,7 @@ function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
       return instantiateTrie<K, Trie<K>>(ρ, κ) as K 
    } else
    if (κ instanceof Expr.Expr) {
-      return instantiate(ρ, κ) as Kont<K> as K
+      return instantiate2(ρ, κ) as Kont<K> as K
    } else
    if (κ instanceof Args.Args) {
       return instantiateArgs(ρ, κ) as K
