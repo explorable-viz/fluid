@@ -1,6 +1,6 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { zip } from "./util/Array"
-import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
+import { __nonNull, absurd, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes2"
 import { DataType, ctrToDataType } from "./DataType2"
 import { DataValue } from "./DataValue2"
@@ -42,7 +42,7 @@ function valId (e: Expr | Versioned<Str>): ValId {
 export module Eval {
 
 export class Closure extends VersionedC(DataValue)<"Closure"> {
-   ρ: Env = _                 // ρ not closing for σ; need to extend with the bindings in δ
+   ρ: Env = _ // ρ not closing for σ; need to extend with the bindings in δ
    δ: List<RecDef> = _
    σ: Trie<Expr> = _
 }
@@ -50,7 +50,7 @@ export class Closure extends VersionedC(DataValue)<"Closure"> {
 function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
    return at(k, Closure, ρ, δ, σ)
 }
-   
+
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
    if (Cons.is(δ)) {
@@ -68,8 +68,8 @@ function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.
 }
 
 // ρ is a collection of n closures, each containing n corresponding recdefs.
-function recDefs_bwdSlice (ρ: Env): void {
-   const f̅: List<Closure> = ρ.entries().map((v: Versioned<Value>) => as(v, Closure))
+function recDefs_bwdSlice (δ: List<Expl.RecDef>): void {
+   const f̅: List<Closure> = δ.map((def: Expl.RecDef) => def.f)
    if (Cons.is(f̅)) {
       let δ: List<RecDef> = f̅.head.δ
       for (let f̅ʹ: List<Closure> = f̅; Cons.is(f̅ʹ) && Cons.is(δ); f̅ʹ = f̅ʹ.tail, δ = δ.tail) {
@@ -82,7 +82,7 @@ function recDefs_bwdSlice (ρ: Env): void {
    }
 }
 
-// Expressing as recursive function make it easier to avoid inverting definition order.
+// Here we mustn't invert definition order.
 function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
@@ -106,9 +106,9 @@ function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env]
          }
       } else
       if (def instanceof Expr.LetRec) {
-         const [, ρᵟ]: [List<Expl.RecDef>, Env] = recDefsEnv(def.δ, ρ.concat(ρ_ext), def.δ),
+         const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefsEnv(def.δ, ρ.concat(ρ_ext), def.δ),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defsEnv(ρ, def̅.tail, ρ_ext.concat(ρᵟ))
-         return [cons(Expl.letRec(ρᵟ), def̅ₜ), ρ_extʹ]
+         return [cons(Expl.letRec(δ), def̅ₜ), ρ_extʹ]
       } else {
          return absurd()
       }
@@ -149,7 +149,7 @@ function defs_bwdSlice (def̅: List<Expl.Def>): void {
          joinα(def.opʹ.__α, def.x)
       } else
       if (def instanceof Expl.LetRec) {
-         recDefs_bwdSlice(def.ρᵟ)
+         recDefs_bwdSlice(def.δ)
       } else {
          absurd()
       }
@@ -189,10 +189,10 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
       if (f instanceof Closure) {
          const [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(f.σ).__apply(u),
-               [, ρᵟ]: [List<Expl.RecDef>, Env] = recDefsEnv(f.δ, f.ρ, f.δ),
+               [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefsEnv(f.δ, f.ρ, f.δ),
                ρᶠ: Env = ρᵟ.concat(ρʹ),
                tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
-         return explValue(Expl.app(kₜ, tf, tu, ρᵟ, ξ, tv), meetα(ann.meet(f.__α, α, e.__α), copyAt(kᵥ, tv.v)))
+         return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), meetα(ann.meet(f.__α, α, e.__α), copyAt(kᵥ, tv.v)))
       } else 
       if (f instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
@@ -305,7 +305,7 @@ export function bwdSlice ({t, v}: ExplValue): Expr {
       joinα(v.__α, t.tv.v)
       uninstantiate(bwdSlice(t.tv))
       t.ξ.__bwdSlice(v.__α)
-      recDefs_bwdSlice(t.ρᵟ)
+      recDefs_bwdSlice(t.δ)
       joinα(v.__α, t.tf.v)
       bwdSlice(t.tf)
       bwdSlice(t.tu)

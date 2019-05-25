@@ -1,6 +1,5 @@
 import { List } from "./BaseTypes2"
 import { DataValue } from "./DataValue2"
-import { Env } from "./Env2"
 import { Eval, ExplId } from "./Eval2"
 import { Match } from "./Match2"
 import { UnaryOp } from "./Primitive2"
@@ -26,13 +25,13 @@ export namespace Expl {
    export class App extends Expl {
       tf: ExplValue = _
       tu: ExplValue = _
-      ρᵟ: Env = _ // from closeDefs, for uneval
+      δ: List<RecDef> = _ // additional recursive functions bound at this step
       ξ: Match<Versioned<Value>> = _
       tv: ExplValue = _
    }
 
-  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, ρᵟ: Env, ξ: Match<Versioned<Value>>, tv: ExplValue): App {
-      return at(k, App, tf, tu, ρᵟ, ξ, tv)
+  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξ: Match<Versioned<Value>>, tv: ExplValue): App {
+      return at(k, App, tf, tu, δ, ξ, tv)
    }
 
    export class UnaryApp extends Expl {
@@ -89,11 +88,11 @@ export namespace Expl {
    }
 
    export class LetRec extends Def {
-      ρᵟ: Env = _
+      δ: List<RecDef> = _
    }
 
-   export function letRec (ρᵟ: Env): LetRec {
-      return make(LetRec, ρᵟ)
+   export function letRec (δ: List<RecDef>): LetRec {
+      return make(LetRec, δ)
    }
 
    export class Defs extends Expl {
