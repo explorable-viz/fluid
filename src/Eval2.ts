@@ -52,25 +52,15 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, σ: Trie<Expr>): Closure {
 }
    
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-export function recDefsEnv2 (δ: List<RecDef>, ρ: Env): [List<Expl.RecDef>, Env] {
-   let [def̅ₜ, ρʹ]: [List<Expl.RecDef>, Env] = [nil(), emptyEnv()]
-   for (let δʹ: List<RecDef> = δ; Cons.is(δʹ); δʹ = δʹ.tail) {
-      const def: RecDef = δʹ.head,
-            k: ValId = valId(def.x)
-      ρʹ = extendEnv(ρʹ, def.x, setα(def.x.__α, closure(k, ρ, δ, def.σ)))
-      def̅ₜ
-   }
-   return [def̅ₜ, ρʹ]
-}
-
-function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): Env {
+function recDefsEnv (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
-            k: ValId = valId(def.x)
-      return extendEnv(recDefsEnv(δ_0, ρ, δ.tail), def.x, setα(def.x.__α, closure(k, ρ, δ_0, def.σ)))
+            k: ValId = valId(def.x),
+            [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefsEnv(δ_0, ρ, δ.tail)
+      return [δₜ, extendEnv(ρ_ext, def.x, setα(def.x.__α, closure(k, ρ, δ_0, def.σ)))]
    } else
    if (Nil.is(δ)) {
-      return emptyEnv()
+      return [nil(), emptyEnv()]
    } else {
       return absurd()
    }
@@ -115,7 +105,7 @@ function defsEnv (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env]
          }
       } else
       if (def instanceof Expr.LetRec) {
-         const ρᵟ: Env = recDefsEnv(def.δ, ρ.concat(ρ_ext), def.δ),
+         const [, ρᵟ]: [List<Expl.RecDef>, Env] = recDefsEnv(def.δ, ρ.concat(ρ_ext), def.δ),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defsEnv(ρ, def̅.tail, ρ_ext.concat(ρᵟ))
          return [cons(Expl.letRec(ρᵟ), def̅ₜ), ρ_extʹ]
       } else {
@@ -198,7 +188,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [f, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
       if (f instanceof Closure) {
          const [ρʹ, ξ, eʹ, α]: [Env, Match<Expr>, Expr, Annotation] = evalTrie(f.σ).__apply(u),
-               ρᵟ: Env = recDefsEnv(f.δ, f.ρ, f.δ),
+               [, ρᵟ]: [List<Expl.RecDef>, Env] = recDefsEnv(f.δ, f.ρ, f.δ),
                ρᶠ: Env = ρᵟ.concat(ρʹ),
                tv: ExplValue = eval_(f.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
          return explValue(Expl.app(kₜ, tf, tu, ρᵟ, ξ, tv), meetα(ann.meet(f.__α, α, e.__α), copyAt(kᵥ, tv.v)))
