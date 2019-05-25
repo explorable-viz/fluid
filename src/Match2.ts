@@ -13,7 +13,7 @@ import Trie = Expr.Trie
 
 export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
    if (Trie.Var.is(σ)) {
-      return varFunc(σ)
+      return varFunc(σ.x, σ.κ)
    } else
    if (Trie.Constr.is(σ)) {
       const cases: Pair<Str, Expr.Args<K>>[] = σ.cases.toArray(),
@@ -39,10 +39,10 @@ export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
 // Parser ensures constructor calls are saturated.
 function evalArgs<K extends Kont<K>> (Π: Expr.Args<K>): Args.ArgsFunc<K> {
    if (Expr.Args.End.is(Π)) {
-      return Args.endFunc(Π)
+      return Args.endFunc(Π.κ)
    } else
    if (Expr.Args.Next.is(Π)) {
-      return Args.nextFunc(Π)
+      return Args.nextFunc(evalTrie(Π.σ))
    } else {
       return absurd()
    }
@@ -76,15 +76,16 @@ export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
 }
 
 class VarFunc<K extends Kont<K>> extends Func<K> {
-   σ: Trie.Var<K> = _
+   x: Str = _
+   κ: K = _
 
    __apply (v: Versioned<Value>): [Env, Match, K] {
-      return [Env.singleton(this.σ.x, v), varMatch(), this.σ.κ]
+      return [Env.singleton(this.x, v), varMatch(), this.κ]
    }
 }
 
-function varFunc<K extends Kont<K>> (σ: Trie.Var<K>): VarFunc<K> {
-   return make(VarFunc, σ) as VarFunc<K>
+function varFunc<K extends Kont<K>> (x: Str, κ: K): VarFunc<K> {
+   return make(VarFunc, x, κ) as VarFunc<K>
 }
 
 export abstract class Match extends Value<"Match"> {
@@ -128,37 +129,37 @@ export namespace Args {
    }
    
    class EndFunc<K extends Kont<K>> extends ArgsFunc<K> {
-      Π: Expr.Args.End<K> = _
+      κ: K = _
       
       __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch, K] {
          if (v̅.length === 0) {
-            return [emptyEnv(), endMatch(), this.Π.κ]
+            return [emptyEnv(), endMatch(), this.κ]
          } else {
             return absurd("Too many arguments to constructor.")
          }
       }
    }
    
-   export function endFunc<K extends Kont<K>> (Π: Expr.Args.End<K>): EndFunc<K> {
-      return make(EndFunc, Π) as EndFunc<K>
+   export function endFunc<K extends Kont<K>> (κ: K): EndFunc<K> {
+      return make(EndFunc, κ) as EndFunc<K>
    }
    
    class NextFunc<K extends Kont<K>> extends ArgsFunc<K> {
-      Π: Expr.Args.Next<K> = _
+      Π: Func<Expr.Args.Args<K>> = _
    
       __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch, K] {
          if (v̅.length === 0) {
             return absurd("Too few arguments to constructor.")
          } else {
             const [v, ...v̅ʹ] = v̅,
-                  [ρ, ξ, Π] = evalTrie(this.Π.σ).__apply(v),
-                  [ρʹ, Ψ, κ] = evalArgs(Π).__apply(v̅ʹ)
+                  [ρ, ξ, Πʹ] = this.Π.__apply(v),
+                  [ρʹ, Ψ, κ] = evalArgs(Πʹ).__apply(v̅ʹ)
             return [ρ.concat(ρʹ), nextMatch(ξ, Ψ), κ]
          }
       }
    }
    
-   export function nextFunc<K extends Kont<K>> (Π: Expr.Args.Next<K>): NextFunc<K> {
+   export function nextFunc<K extends Kont<K>> (Π: Func<Expr.Args.Args<K>>): NextFunc<K> {
       return make(NextFunc, Π) as NextFunc<K>
    }
    
