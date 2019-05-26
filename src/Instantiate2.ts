@@ -150,7 +150,7 @@ function instantiateDef_ (dir: Direction, def: Def): void {
    }
 }
 
-function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T): T {
+function instantiateTrie<K extends Kont, T extends Trie<K>> (ρ: Env, σ: T): T {
    if (Trie.Var.is(σ)) {
       return Trie.var_(σ.x, instantiateKont(ρ, σ.κ) as K) as Trie<K> as T
    } else
@@ -165,7 +165,7 @@ function instantiateTrie<K extends Kont<K>, T extends Trie<K>> (ρ: Env, σ: T):
    }
 }
 
-function instantiateTrie_<K extends Kont<K>, T extends Trie<K>> (dir: Direction, σ: T): void {
+function instantiateTrie_<K extends Kont, T extends Trie<K>> (dir: Direction, σ: T): void {
    if (Trie.Var.is(σ)) {
       instantiateKont_(dir, σ.κ)
    } else
@@ -179,18 +179,18 @@ function instantiateTrie_<K extends Kont<K>, T extends Trie<K>> (dir: Direction,
 }
 
 // See issue #33.
-function instantiateKont<K extends Kont<K>> (ρ: Env, κ: K): K {
+function instantiateKont<K extends Kont> (ρ: Env, κ: K): K {
    if (κ instanceof Trie.Trie) {
       return instantiateTrie<K, Trie<K>>(ρ, κ) as K 
    } else
    if (κ instanceof Expr.Expr) {
-      return instantiate(ρ, κ) as Kont<K> as K
+      return instantiate(ρ, κ) as Kont as K
    } else {
       return absurd()
    }
 }
 
-function instantiateKont_<K extends Kont<K>> (dir: Direction, κ: K): void {
+function instantiateKont_<K extends Kont> (dir: Direction, κ: K): void {
    if (κ instanceof Trie.Trie) {
       instantiateTrie_<K, Trie<K>>(dir, κ)
    } else

@@ -288,7 +288,7 @@ const pair: Parser<Constr> =
          Expr.constr(ν(), str(Pair.name), List.fromArray([fst, snd]))
    )
 
-function args_pattern<K extends Kont<K>> (n: number, p: Parser<K>): Parser<K> {
+function args_pattern<K extends Kont> (n: number, p: Parser<K>): Parser<K> {
    if (n === 0) {
       return p
    } else {
@@ -301,7 +301,7 @@ function args_pattern<K extends Kont<K>> (n: number, p: Parser<K>): Parser<K> {
 }
 
 // Continuation-passing style means "parenthesise" idiom doesn't work here.
-function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+function constr_pattern<K extends Kont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       seqDep(
          ctr, 
@@ -320,7 +320,7 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
 }
 
 // This was very hard to figure out; the types aren't helping as much as they should.
-function listRest_pattern <K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {
+function listRest_pattern <K extends Kont> (p: Parser<K>): Parser<Trie<K>> {
    return (state: ParseState) => 
       choice([
          dropFirst(symbol(","), dropFirst(symbol("..."), pattern(p))),
@@ -329,39 +329,39 @@ function listRest_pattern <K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {
       ])(state)
 }
 
-function list1_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+function list1_pattern<K extends Kont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       pattern(listRest_pattern(p)),
       (σ: Trie<K>) => Trie.constr(singleton(str("Cons"), σ as K)) // cast legitimate?
    )
 }
 
-function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+function list_patternʹ<K extends Kont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return choice([
       list1_pattern(p),
       withAction(p, (κ: K) => Trie.constr(singleton(str("Nil"), κ)))
    ])
 }
 
-function list_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+function list_pattern<K extends Kont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return dropFirst(symbol(strings.bracketL), list_patternʹ(dropFirst(symbol(strings.bracketR), p)))
 }
 
-function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
+function pair_pattern<K extends Kont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       dropFirst(symbol(strings.parenL), args_pattern(2, dropFirst(symbol(strings.parenR), p))),
       (κ: K): Trie.Constr<K> => Trie.constr(singleton(str("Pair"), κ))
    )
 }
 
-function variable_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Var<K>> {
+function variable_pattern<K extends Kont> (p: Parser<K>): Parser<Trie.Var<K>> {
    return withAction(
       seq(var_, p), 
       ([x, κ]: [Str, K]): Trie.Var<K> => Trie.var_(x, κ)
    )
 }
 
-function pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {
+function pattern<K extends Kont> (p: Parser<K>): Parser<Trie<K>> {
    return (state: ParseState) => 
       choice<Trie<K>>([variable_pattern(p), list_pattern(p), pair_pattern(p), constr_pattern(p)])(state)
 }

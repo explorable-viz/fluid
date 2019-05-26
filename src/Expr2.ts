@@ -26,20 +26,16 @@ export namespace strings {
 }
 
 export type Expr = Expr.Expr
-export type Kont<K> = Expr.Kont<K>
+export type Kont = Expr.Kont
 
 export namespace Expr {
-   // It would be nice if (non-argument) tries only had argument tries as their continuations and vice-
-   // versa, but that doesn't quite work because a DataValue<K> has an underlying map to Args<K>.
-   type KontTag = "Expr" | "Trie" | "Func"
-
-   export class Kont<K, Tag extends KontTag = KontTag> extends DataValue<Tag> {
-   }
+   // Use to be a parameterised class but we can simplify using our nominal type idiom.
+   export type Kont = DataValue<"Expr" | "Trie" | "Func"> // TODO: drop "Func"
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
    // Use the same heinous cast as used in 'instantiateKont'. This join is unrelated to the annotation lattice;
    // the Expr case is intentionally undefined.
-   function join<K extends Kont<K>> (κ: K, κʹ: K): K {
+   function join<K extends Kont> (κ: K, κʹ: K): K {
       if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
          return Trie.Trie.join<K>(κ, κʹ) as K
       } else {
@@ -47,7 +43,7 @@ export namespace Expr {
       }
    }
 
-   export abstract class Expr extends VersionedC(Kont)<Expr, "Expr"> {
+   export abstract class Expr extends VersionedC(DataValue)<"Expr"> {
    }
    
    export class App extends Expr {
@@ -167,11 +163,11 @@ export namespace Expr {
       return at(k, Var, x)
    }
 
-   export type Trie<K extends Kont<K>> = Trie.Trie<K>
+   export type Trie<K extends Kont> = Trie.Trie<K>
 
    export namespace Trie {
-      export abstract class Trie<K extends Kont<K>> extends Kont<Trie<K>, "Trie"> {
-         static join<K extends Kont<K>> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
+      export abstract class Trie<K extends Kont> extends DataValue<"Trie"> {
+         static join<K extends Kont> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
             if (Var.is(σ) && Var.is(τ) && eq(σ.x.val, τ.x.val)) {
                return var_(σ.x, join(σ.κ, τ.κ))
             } else
@@ -190,29 +186,29 @@ export namespace Expr {
          }
       }
 
-      export class Constr<K extends Kont<K>> extends Trie<K> {
+      export class Constr<K extends Kont> extends Trie<K> {
          cases: FiniteMap<K> = _
 
-         static is<K extends Kont<K>> (σ: Trie<K>): σ is Constr<K> {
+         static is<K extends Kont> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
       }
 
-      export function constr<K extends Kont<K>> (cases: FiniteMap<K>): Constr<K> {
+      export function constr<K extends Kont> (cases: FiniteMap<K>): Constr<K> {
          return make(Constr, cases) as Constr<K>
       }
 
       // TODO: use Versioned<Str> by analogy with other binding forms.
-      export class Var<K extends Kont<K>> extends Trie<K> {
+      export class Var<K extends Kont> extends Trie<K> {
          x: Str = _
          κ: K = _
 
-         static is<K extends Kont<K>> (σ: Trie<K>): σ is Var<K> {
+         static is<K extends Kont> (σ: Trie<K>): σ is Var<K> {
             return σ instanceof Var
          }
       }
 
-      export function var_<K extends Kont<K>> (x: Str, κ: K): Var<K> {
+      export function var_<K extends Kont> (x: Str, κ: K): Var<K> {
          return make(Var, x, κ) as Var<K>
       }
    }

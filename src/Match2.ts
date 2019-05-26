@@ -11,7 +11,7 @@ import { Versioned, asVersioned/*, setα*/ } from "./Versioned2"
 import Kont = Expr.Kont
 import Trie = Expr.Trie
 
-export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
+export function evalTrie<K extends Kont> (σ: Trie<K>): Func<K> {
    if (Trie.Var.is(σ)) {
       return varFunc(σ.x, evalArgs(σ.κ))
    } else
@@ -37,27 +37,24 @@ export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
 }
 
 // Parser ensures constructor calls are saturated.
-function evalArgs<K extends Kont<K>> (κ: K): K {
+function evalArgs<K extends Kont> (κ: K): K {
    if (κ instanceof Trie.Trie) {
       const σ: Trie<K> = κ
-      return evalTrie(σ) as Kont<K> as K // TS confused
+      return evalTrie(σ) as RuntimeKont as K // TS confused
    } else {
       return κ
    }
 }
 
-type RuntimeKontTag = "Func" | "Expr"
-
-class RuntimeKont<K, Tag extends RuntimeKontTag = RuntimeKontTag> extends DataValue<Tag> {
-}
+type RuntimeKont = DataValue<"Func" | "Expr">
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
-export abstract class Func<K extends Kont<K>> extends RuntimeKont<Func<K>, "Func"> {
+export abstract class Func<K extends Kont> extends DataValue<"Func"> {
    abstract __apply (v: Versioned<Value>): [Env, Match, K]
 
    __applyArgs (v̅: Versioned<Value>[]): [Env, Match, K] {
       if (v̅.length === 0) {
-         return [emptyEnv(), dummyMatch(), this as Kont<K> as K] // TS confused
+         return [emptyEnv(), dummyMatch(), this as Kont as K] // TS confused
       } else {
          const [v, ...v̅ʹ] = v̅,
          [ρ, ξ, κ] = this.__apply(v)
@@ -79,7 +76,7 @@ function datatype (f: DataFunc<any>): string {
 }
 
 // Concrete instances have a field per constructor, in *lexicographical* order.
-export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
+export abstract class DataFunc<K extends Kont> extends Func<K> {
    __apply (v: Versioned<Value>): [Env, Match, K] {
       const c: string = className(v)
       if (v instanceof DataValue) {
@@ -100,7 +97,7 @@ export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
    }
 }
 
-class VarFunc<K extends Kont<K>> extends Func<K> {
+class VarFunc<K extends Kont> extends Func<K> {
    x: Str = _
    κ: K = _
 
@@ -109,7 +106,7 @@ class VarFunc<K extends Kont<K>> extends Func<K> {
    }
 }
 
-function varFunc<K extends Kont<K>> (x: Str, κ: K): VarFunc<K> {
+function varFunc<K extends Kont> (x: Str, κ: K): VarFunc<K> {
    return make(VarFunc, x, κ) as VarFunc<K>
 }
 
