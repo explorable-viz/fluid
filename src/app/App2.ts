@@ -6,12 +6,13 @@ import { Eval } from "../Eval2"
 import { Expl, ExplValue, explValue } from "../ExplValue2"
 import { Expr } from "../Expr2"
 import { GraphicsElement } from "../Graphics2"
+import { Value } from "../Value2"
 import { asVersioned, setallα } from "../Versioned2"
 import { load, parse } from "../../test/util/Core2"
 import { Cursor } from "../../test/util/Cursor2"
 import { Data, DataView, DataRenderer } from "./DataRenderer2"
 import { GraphicsPane3D } from "./GraphicsPane3D"
-import { GraphicsRenderer } from "./GraphicsRenderer"
+import { GraphicsRenderer } from "./GraphicsRenderer2"
 
 class App {
    e: Expr                          // body of outermost let
@@ -56,14 +57,14 @@ class App {
    fwdSlice (): void {
       const { t, v: data }: ExplValue = Eval.eval_(emptyEnv(), this.data_e)
       this.data_t = t
-      this.data = asVersioned(as(data, List))
-      this.graphics = as(Eval.eval_(emptyEnv(), this.e).v, GraphicsElement)
+      this.data = as(data as Value, List)
+      this.graphics = as(Eval.eval_(emptyEnv(), this.e).v as Value, GraphicsElement)
    }
 
    // Push changes from data back to source code, then forward slice.
    redo_fwdSlice (): void {
       setallα(this.data_e, ann.bot)
-      Eval.eval_bwd(explValue(this.data_t, this.data))
+      Eval.eval_bwd(explValue(this.data_t, asVersioned(this.data)))
       this.fwdSlice()
       this.draw()
    }
