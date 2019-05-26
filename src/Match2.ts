@@ -89,8 +89,7 @@ export abstract class DataFunc<K extends RuntimeKont> extends Func<K> {
    __apply (v: Versioned<Value>, ξ: Match): [Env, Match, K] {
       const c: string = className(v)
       if (v instanceof DataValue) {
-         const // d: DataType = __nonNull(ctrToDataType.get(c)),
-               κ: K = (this as any)[c] as K
+         const κ: K = (this as any)[c] as K
          assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${datatype(this)}.`)
          const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
                [ρ, ξʹ, κʹ]: [Env, Match, K] = __applyArgs(κ, v̅, ξ)
