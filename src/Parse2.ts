@@ -12,7 +12,6 @@ import { Str, num, str } from "./Value2"
 import { ν, strʹ } from "./Versioned2"
 
 import App = Expr.App
-import Args = Expr.Args
 import BinaryApp = Expr.BinaryApp
 import ConstNum = Expr.ConstNum
 import ConstStr = Expr.ConstStr
@@ -289,15 +288,15 @@ const pair: Parser<Constr> =
          Expr.constr(ν(), str(Pair.name), List.fromArray([fst, snd]))
    )
 
-function args_pattern<K extends Kont<K>> (n: number, p: Parser<K>): Parser<Args<K>> {
+function args_pattern<K extends Kont<K>> (n: number, p: Parser<K>): Parser<K> {
    if (n === 0) {
-      return withAction(p, Args.end)
+      return p
    } else {
       let pʹ = args_pattern(n - 1, p)
       if (n > 1) {
          pʹ = dropFirst(symbol(","), pʹ)
       }
-      return withAction(pattern(pʹ), Args.next)
+      return withAction(pattern(pʹ), (σ: Trie<K>) => σ as K) // cast legitimate?
    }
 }
 
@@ -306,41 +305,41 @@ function constr_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>
    return withAction(
       seqDep(
          ctr, 
-         (c: Str): Parser<Args<K>> => {
+         (c: Str): Parser<K> => {
             const n: number = arity(c)
             if (n === 0) {
-               return withAction(p, Args.end)
+               return p
             } else {
                return dropFirst(symbol(strings.parenL), args_pattern(n, dropFirst(symbol(strings.parenR), p)))
             }
          }
       ),
-      ([c, Π]: [Str, Args<K>]): Trie.Constr<K> =>
-         Trie.constr(singleton(c, Π))
+      ([c, κ]: [Str, K]): Trie.Constr<K> =>
+         Trie.constr(singleton(c, κ))
    )
 }
 
 // This was very hard to figure out; the types aren't helping as much as they should.
-function listRest_pattern <K extends Kont<K>> (p: Parser<Args.End<K>>): Parser<Trie<Args.End<K>>> {
+function listRest_pattern <K extends Kont<K>> (p: Parser<K>): Parser<Trie<K>> {
    return (state: ParseState) => 
       choice([
          dropFirst(symbol(","), dropFirst(symbol("..."), pattern(p))),
          dropFirst(symbol(","), list1_pattern(p)),
-         withAction(p, (κ: Args.End<K>) => Trie.constr(singleton(str("Nil"), Args.end(κ))))
+         withAction(p, (κ: K) => Trie.constr(singleton(str("Nil"), κ)))
       ])(state)
 }
 
 function list1_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
-      pattern(withAction(listRest_pattern(withAction(p, Args.end)), Args.next)),
-      (σ: Trie<Args.Next<K>>) => Trie.constr(singleton(str("Cons"), Args.next(σ))) 
+      pattern(listRest_pattern(p)),
+      (σ: Trie<K>) => Trie.constr(singleton(str("Cons"), σ as K)) // cast legitimate?
    )
 }
 
 function list_patternʹ<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return choice([
       list1_pattern(p),
-      withAction(p, (κ: K) => Trie.constr(singleton(str("Nil"), Args.end(κ))))
+      withAction(p, (κ: K) => Trie.constr(singleton(str("Nil"), κ)))
    ])
 }
 
@@ -351,7 +350,7 @@ function list_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> 
 function pair_pattern<K extends Kont<K>> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       dropFirst(symbol(strings.parenL), args_pattern(2, dropFirst(symbol(strings.parenR), p))),
-      (Π: Args<K>): Trie.Constr<K> => Trie.constr(singleton(str("Pair"), Π))
+      (κ: K): Trie.Constr<K> => Trie.constr(singleton(str("Pair"), κ))
    )
 }
 

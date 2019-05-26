@@ -37,13 +37,11 @@ export namespace Expr {
    }
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
-   // Use the same heinous cast as used in 'instantiateKont'. Note this join is unrelated to the annotation lattice.
+   // Use the same heinous cast as used in 'instantiateKont'. This join is unrelated to the annotation lattice;
+   // the Expr case is intentionally undefined.
    function join<K extends Kont<K>> (κ: K, κʹ: K): K {
       if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
          return Trie.Trie.join<K>(κ, κʹ) as K
-      } else
-      if (κ instanceof Args.Args && κʹ instanceof Args.Args) {
-         return Args.Args.join<K>(κ, κʹ) as K
       } else {
          return absurd("Undefined join.")
       }
@@ -170,46 +168,6 @@ export namespace Expr {
    }
 
    export type Trie<K extends Kont<K>> = Trie.Trie<K>
-   export type Args<K extends Kont<K>> = Args.Args<K>
-
-   export namespace Args {
-      export abstract class Args<K extends Kont<K>> extends Kont<Args<K>, "Args"> {
-         static join<K extends Kont<K>> (Π: Args<K>, Πʹ: Args<K>): Args<K> {
-            if (End.is(Π) && End.is(Πʹ)) {
-               return end(join(Π.κ, Πʹ.κ))
-            } else
-            if (Next.is(Π) && Next.is(Πʹ)) {
-               return next(join(Π.σ, Πʹ.σ))
-            } else {
-               return absurd("Undefined join.", Π, Πʹ)
-            }
-         }
-      }
-
-      export class End<K extends Kont<K>> extends Args<K> {
-         κ: K = _
-
-         static is<K extends Kont<K>> (Π: Args<K>): Π is End<K> {
-            return Π instanceof End
-         }
-      }
-
-      export function end<K extends Kont<K>> (κ: K): End<K> {
-         return make(End, κ) as End<K>
-      }
-
-      export class Next<K extends Kont<K>> extends Args<K> {
-         σ: Trie<Args<K>> = _
-
-         static is<K extends Kont<K>> (Π: Args<K>): Π is Next<K> {
-            return Π instanceof Next
-         }
-      }
-
-      export function next<K extends Kont<K>> (σ: Trie<Args<K>>): Next<K> {
-         return make(Next, σ)
-      }
-   }
 
    export namespace Trie {
       export abstract class Trie<K extends Kont<K>> extends Kont<Trie<K>, "Trie"> {
@@ -225,7 +183,7 @@ export namespace Expr {
                if (ctrToDataType.get(c_σ) !== ctrToDataType.get(c_τ)) {
                   error(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
                }
-               return constr(unionWith(σ.cases, τ.cases, Args.Args.join))
+               return constr(unionWith(σ.cases, τ.cases, join))
             } else {
                return absurd("Undefined join.", this, τ)
             }
@@ -233,15 +191,15 @@ export namespace Expr {
       }
 
       export class Constr<K extends Kont<K>> extends Trie<K> {
-         cases: FiniteMap<Args<K>> = _
+         cases: FiniteMap<K> = _
 
          static is<K extends Kont<K>> (σ: Trie<K>): σ is Constr<K> {
             return σ instanceof Constr
          }
       }
 
-      export function constr<K extends Kont<K>> (cases: FiniteMap<Args<K>>): Constr<K> {
-         return make(Constr, cases)
+      export function constr<K extends Kont<K>> (cases: FiniteMap<K>): Constr<K> {
+         return make(Constr, cases) as Constr<K>
       }
 
       // TODO: use Versioned<Str> by analogy with other binding forms.
