@@ -56,20 +56,20 @@ function evalKont<K extends Kont> (κ: K): RuntimeKont {
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
 export abstract class Func<K extends RuntimeKont> extends DataValue<"Func"> {
-   abstract __apply (v: Versioned<Value>): [Env, Match2, K]
+   abstract __apply (v: Versioned<Value>, ξ: Match2): [Env, Match2, K]
 }
 
 // Parser ensures constructor calls are saturated.
-function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[]): [Env, Match2, K] {
+function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[], ξ: Match2): [Env, Match2, K] {
    if (v̅.length === 0) {
-      return [emptyEnv(), nil(), κ]
+      return [emptyEnv(), ξ, κ]
    } else {
       const [v, ...v̅ʹ] = v̅
       if (κ instanceof Func) {
          const f: Func<K> = κ, // "unfold" K into Func<K>
-               [ρ, ξ, κʹ]: [Env, Match2, K] = f.__apply(v), 
-               [ρʹ, ξ̅, κ2]: [Env, Match2, K] = __applyArgs(κʹ, v̅ʹ)
-         return [ρ.concat(ρʹ), concat(ξ, ξ̅), κ2]
+               [ρ, ξʹ, κʹ]: [Env, Match2, K] = f.__apply(v, ξ),
+               [ρʹ, ξ2, κ2]: [Env, Match2, K] = __applyArgs(κʹ, v̅ʹ, ξʹ)
+         return [ρ.concat(ρʹ), ξ2, κ2]
       } else {
          return absurd("Too many arguments to constructor.")
       }
@@ -83,14 +83,15 @@ function datatype (f: DataFunc<any>): string {
 
 // Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataFunc<K extends RuntimeKont> extends Func<K> {
-   __apply (v: Versioned<Value>): [Env, Match2, K] {
+   __apply (v: Versioned<Value>, ξ: Match2): [Env, Match2, K] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const // d: DataType = __nonNull(ctrToDataType.get(c)),
                κ: K = (this as any)[c] as K
          assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${datatype(this)}.`)
-         const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v))
-         return __applyArgs(κ, v̅)
+         const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
+               [ρ, ξʹ, κʹ]: [Env, Match2, K] = __applyArgs(κ, v̅, ξ)
+         return [ρ, cons(v, ξʹ), κʹ]
       } else {
          return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
       }
