@@ -42,7 +42,6 @@ function evalTrie_<K extends Kont> (σ: Trie<K>): Func<RuntimeKont> {
    }
 }
 
-// Parser ensures constructor calls are saturated. TODO: rename to evalKont?
 function evalKont<K extends Kont> (κ: K): RuntimeKont {
    if (κ instanceof Trie.Trie) {
       const σ: Trie<K> = κ
@@ -60,6 +59,7 @@ export abstract class Func<K extends RuntimeKont> extends DataValue<"Func"> {
    abstract __apply (v: Versioned<Value>): [Env, Match, K]
 }
 
+// Parser ensures constructor calls are saturated.
 function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[]): [Env, Match, K] {
    if (v̅.length === 0) {
       return [emptyEnv(), dummyMatch(), κ]
