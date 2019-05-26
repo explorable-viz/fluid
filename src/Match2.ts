@@ -46,8 +46,13 @@ function evalArgs<K extends Kont<K>> (κ: K): K {
    }
 }
 
+type RuntimeKontTag = "Func" | "Expr"
+
+class RuntimeKont<K, Tag extends RuntimeKontTag = RuntimeKontTag> extends DataValue<Tag> {
+}
+
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
-export abstract class Func<K extends Kont<K>> extends Kont<Func<K>, "Func"> {
+export abstract class Func<K extends Kont<K>> extends RuntimeKont<Func<K>, "Func"> {
    abstract __apply (v: Versioned<Value>): [Env, Match, K]
 
    __applyArgs (v̅: Versioned<Value>[]): [Env, Match, K] {
