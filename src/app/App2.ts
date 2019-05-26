@@ -9,7 +9,7 @@ import { GraphicsElement } from "../Graphics2"
 import { Value } from "../Value2"
 import { setallα } from "../Versioned2"
 import { load, parse } from "../../test/util/Core2"
-import { Cursor } from "../../test/util/Cursor"
+import { Cursor } from "../../test/util/Cursor2"
 import { Data, DataView, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer } from "./GraphicsRenderer"
@@ -65,9 +65,7 @@ class App {
    // Push changes from data back to source code, then forward slice.
    redo_fwdSlice (): void {
       setallα(this.data_e, ann.bot)
-      World.newRevision()
       Eval.uneval(explValue(emptyEnv(), this.data_t, reify(this.data)))
-      World.newRevision()
       this.fwdSlice()
       this.draw()
    }
