@@ -12,7 +12,7 @@ before((done: MochaDone) => {
 
 // Putting test name in a variable interacts poorly with asynchronous execution.
 describe("example", () => {
-	xdescribe("arithmetic", () => {
+	describe("arithmetic", () => {
 		it("ok", () => {
          const e: Expr = parse(load("arithmetic"))
 			new (class extends FwdSlice {
@@ -29,7 +29,7 @@ describe("example", () => {
 		})
    })
 
-   xdescribe("bar-chart", () => {
+   describe("bar-chart", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("bar-chart"))
 			new FwdSlice(e)
@@ -44,7 +44,7 @@ describe("example", () => {
 		})
    })
 
-   xdescribe("compose", () => {
+   describe("compose", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("compose"))
 			new FwdSlice(e)
@@ -52,7 +52,7 @@ describe("example", () => {
 		})
 	})
 
-   xdescribe("factorial", () => {
+   describe("factorial", () => {
 		it("ok", () => {
          const e: Expr = parse(load("factorial"))
          new FwdSlice(e)
@@ -60,7 +60,7 @@ describe("example", () => {
 		})
 	})
 
-   xdescribe("filter", () => {
+   describe("filter", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("filter"))
 			new (class extends FwdSlice {
@@ -91,7 +91,7 @@ describe("example", () => {
 		})
 	})
 
-   xdescribe("foldr_sumSquares", () => {
+   describe("foldr_sumSquares", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("foldr_sumSquares"))
          new FwdSlice(e)
@@ -144,7 +144,7 @@ describe("example", () => {
 		})
 	})
 
-	xdescribe("lexicalScoping", () => {
+	describe("lexicalScoping", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("lexicalScoping"))
          new FwdSlice(e)
@@ -152,7 +152,7 @@ describe("example", () => {
 		})
 	})
 
-   xdescribe("lookup", () => {
+   describe("lookup", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("lookup"))
 			const last = new (class extends FwdSlice {
@@ -185,7 +185,7 @@ describe("example", () => {
 		})
 	})
 
-   xdescribe("map", () => {
+   describe("map", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("map"))
 			new (class extends FwdSlice {
@@ -206,7 +206,7 @@ describe("example", () => {
 		})
 	})
 
-   xdescribe("mergeSort", () => {
+   describe("mergeSort", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("mergeSort"))
          new FwdSlice(e)
@@ -214,7 +214,7 @@ describe("example", () => {
 		})
 	})
 
-	xdescribe("normalise", () => {
+	describe("normalise", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("normalise"))
          new FwdSlice(e)
@@ -234,7 +234,7 @@ describe("example", () => {
 		})
    })
 
-	xdescribe("pattern-match", () => {
+	describe("pattern-match", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("pattern-match"))
 			new BwdSlice(e)
@@ -242,7 +242,7 @@ describe("example", () => {
 		})
    })
 
-	xdescribe("reverse", () => {
+	describe("reverse", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("reverse"))
 			new (class extends FwdSlice {
@@ -264,7 +264,7 @@ describe("example", () => {
 		})
    })
 
-	xdescribe("zipW", () => {
+	describe("zipW", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("zipW"))
          new FwdSlice(e)
