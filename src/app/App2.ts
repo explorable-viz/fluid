@@ -48,7 +48,7 @@ class App {
       this.e = parse(load("bar-chart"))
       let here: Cursor = new Cursor(this.e)
       here.skipImports().to(Expr.Let, "e")
-      this.data_e = as(here.o, Expr.Constr)
+      this.data_e = as(here.v, Expr.Constr)
       this.fwdSlice()
       this.renderData(this.data)
       this.draw()
@@ -56,7 +56,7 @@ class App {
 
    // On passes other than the first, the assignments here are redundant.
    fwdSlice (): void {
-      const { t, v: data }: ExplValue = Eval.eval_(prelude, this.data_e)
+      const { t, v: data }: ExplValue = Eval.eval_(emptyEnv(), this.data_e)
       this.data_t = t
       this.data = as(reflect(as(data, Value.Constr)), List)
       this.graphics = as(reflect(Eval.eval_(emptyEnv(), this.e).v), GraphicsElement)
