@@ -1,7 +1,7 @@
 import { List } from "./BaseTypes2"
 import { DataValue } from "./DataValue2"
 import { Eval, ExplId } from "./Eval2"
-import { Match2 } from "./Match2"
+import { Match } from "./Match2"
 import { UnaryOp } from "./Primitive2"
 import { Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at } from "./Versioned2"
@@ -26,11 +26,11 @@ export namespace Expl {
       tf: ExplValue = _
       tu: ExplValue = _
       δ: List<RecDef> = _ // additional recursive functions bound at this step
-      ξ: Match2 = _
+      ξ: Match = _
       tv: ExplValue = _
    }
 
-  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξ: Match2, tv: ExplValue): App {
+  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξ: Match, tv: ExplValue): App {
       return at(k, App, tf, tu, δ, ξ, tv)
    }
 
@@ -113,11 +113,11 @@ export namespace Expl {
 
    export class MatchAs extends Expl {
       tu: ExplValue = _
-      ξ: Match2 = _
+      ξ: Match = _
       tv: ExplValue = _
    }
 
-   export function matchAs (k: ExplId, tu: ExplValue, ξ: Match2, tv: ExplValue): MatchAs {
+   export function matchAs (k: ExplId, tu: ExplValue, ξ: Match, tv: ExplValue): MatchAs {
       return at(k, MatchAs, tu, ξ, tv)
    }
 
