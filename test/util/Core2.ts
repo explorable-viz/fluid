@@ -19,9 +19,11 @@ export class FwdSlice {
       this.expr = new Cursor(e)
       this.setup()
       const tv: ExplValue = Eval.eval_(emptyEnv(), e)
-      Eval.eval_fwd(tv)
-      this.val = new Cursor(tv.v)
-      this.expect()
+      if (flags.get(Flags.Fwd)) {
+         Eval.eval_fwd(tv)
+         this.val = new Cursor(tv.v)
+         this.expect()
+      }
       console.log(e)
       console.log(tv.v)
    }
@@ -42,13 +44,15 @@ export class BwdSlice {
    expr: Cursor
 
    constructor (e: Expr) {
-      setallα(e, ann.bot)
-      const tv: ExplValue = Eval.eval_(emptyEnv(), e) // just to obtain tv
-      Eval.eval_fwd(tv) // clear annotations on all values
-      this.val = new Cursor(tv.v)
-      this.setup()
-      this.expr = new Cursor(Eval.eval_bwd(tv))
-      this.expect()
+      if (flags.get(Flags.Bwd)) {
+         setallα(e, ann.bot)
+         const tv: ExplValue = Eval.eval_(emptyEnv(), e) // just to obtain tv
+         Eval.eval_fwd(tv) // clear annotations on all values
+         this.val = new Cursor(tv.v)
+         this.setup()
+         this.expr = new Cursor(Eval.eval_bwd(tv))
+         this.expect()
+      }
    }
 
    setup (): void {
@@ -57,6 +61,12 @@ export class BwdSlice {
    expect (): void {      
    }
 }
+
+enum Flags { Bwd, Fwd }
+const flags: Map<Flags, boolean> = new Map([
+   [Flags.Fwd, true],
+   [Flags.Bwd, true]
+])
 
 // Kindergarten modules: load another file as though it were a defs block, with body e.
 export function prependModule (src: string, e: Expr): Expr.Defs {

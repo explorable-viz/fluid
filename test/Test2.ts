@@ -73,11 +73,10 @@ describe("example", () => {
 						.to(Trie.Constr, "cases")
 						.to(NonEmpty, "left")
 						.nodeValue()
-						.arg_var("x").arg_var("xs")
-						.end()
+						.var_("x").var_("xs")
 						.to(Expr.MatchAs, "σ")
 						.to(Trie.Constr, "cases")
-						.nodeValue().end()
+						.nodeValue()
 						.constrArg("Cons", 0).notNeed()
 				}
 				expect (): void {
@@ -304,17 +303,15 @@ describe("example", () => {
 							.var_("op")
 							.to(Expr.Fun, "σ")
 							.to(Trie.Constr, "cases")
-							.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
+							.push().nodeValue().notNeeded().pop() // body of outer Nil clause
 							.to(NonEmpty, "left")
 							.nodeValue()			 
-							.arg_var("x").arg_var("xs")
-							.end().notNeeded()
+							.var_("x").var_("xs").notNeeded()
 							.to(Expr.Fun, "σ")
 							.to(Trie.Constr, "cases")
 							.to(NonEmpty, "left")
 							.nodeValue()			 
-							.arg_var("y").arg_var("ys")
-							.end().notNeeded()				 // cons constructor
+							.var_("y").var_("ys").notNeeded() // cons constructor
 							.constrArg("Cons", 0).needed() // application of op
 							.to(Expr.App, "e").needed()  // pair constructor
 							.push().constrArg("Pair", 0).notNeeded().pop()
@@ -327,9 +324,7 @@ describe("example", () => {
 						.to(Expr.Fun, "σ")
 						.to(Trie.Constr, "cases")
 						.nodeValue()
-						.arg_var("x")
-						.arg_var("y")
-						.end().needed()
+						.var_("x").var_("y").needed()
 				}
 			})(e)
 		})

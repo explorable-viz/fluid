@@ -5,7 +5,6 @@ import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes2"
 import { Expr } from "../../src/Expr2"
 import { asVersioned } from "../../src/Versioned2"
 
-import Args = Expr.Args
 import Def = Expr.Def
 import Let = Expr.Let
 import LetRec = Expr.LetRec
@@ -134,20 +133,6 @@ export class Cursor {
    nodeValue (): Cursor {
       return this.to(NonEmpty, "t")
                  .to(Pair, "snd")
-   }
-
-   arg<T extends Value> (C: Class<T>, prop: keyof T): Cursor {
-      return this.to(Args.Next, "σ")
-                 .to(C, prop)
-   }
-
-   arg_var<T extends Value> (x: string): Cursor {
-      return this.to(Args.Next, "σ")
-                 .var_(x)
-   }
-
-   end (): Cursor {
-      return this.to(Args.End, "κ")
    }
 
    var_ (x: string): Cursor {
