@@ -1,12 +1,12 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { Class, __nonNull, absurd, assert, className, error, notYetImplemented } from "./util/Core"
-import { Pair } from "./BaseTypes2"
+import { List, Pair } from "./BaseTypes2"
 import { DataValue } from "./DataValue2"
 import { DataType, ctrToDataType, elimSuffix } from "./DataType2"
 import { Env, emptyEnv } from "./Env2"
 import { Expr } from "./Expr2"
 import { Str, Value, _, make } from "./Value2"
-import { Versioned, asVersioned/*, setα*/ } from "./Versioned2"
+import { Versioned, asVersioned, setα } from "./Versioned2"
 
 import Kont = Expr.Kont
 import Trie = Expr.Trie
@@ -107,6 +107,17 @@ class VarFunc<K extends RuntimeKont> extends Func<RuntimeKont> {
 
 function varFunc<K extends RuntimeKont> (x: Str, κ: K): VarFunc<K> {
    return make(VarFunc, x, κ) as VarFunc<K>
+}
+
+// Spine of matched prefix.
+export type Match2 = List<Versioned<Value>>
+
+export function match__fwd (v̅: Match2): Annotation {
+   return v̅.toArray().reduce((α: Annotation, v: Versioned<Value>): Annotation => ann.meet(α, v.__α), ann.top)
+}
+
+export function match__bwd (v̅: Match2, α: Annotation) : void {
+   v̅.toArray().map(v => setα(α, v))
 }
 
 export abstract class Match extends Value<"Match"> {
