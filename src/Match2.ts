@@ -19,7 +19,7 @@ export function evalTrie (σ: Trie<Expr>): Func<Expr> {
 
 function evalTrie_<K extends Kont> (σ: Trie<K>): Func<RuntimeKont> {
    if (Trie.Var.is(σ)) {
-      return varFunc(σ.x, evalArgs(σ.κ))
+      return varFunc(σ.x, evalKont(σ.κ))
    } else
    if (Trie.Constr.is(σ)) {
       const cases: Pair<Str, K>[] = σ.cases.toArray(),
@@ -30,7 +30,7 @@ function evalTrie_<K extends Kont> (σ: Trie<K>): Func<RuntimeKont> {
       let n: number = 0
       for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
          if (c̅.includes(c̅ʹ[nʹ])) {
-            f̅.push(evalArgs(cases[n++].snd))
+            f̅.push(evalKont(cases[n++].snd))
          } else {
             f̅.push(undefined as any)
          }
@@ -43,11 +43,11 @@ function evalTrie_<K extends Kont> (σ: Trie<K>): Func<RuntimeKont> {
 }
 
 // Parser ensures constructor calls are saturated. TODO: rename to evalKont?
-function evalArgs<K extends Kont> (κ: K): RuntimeKont {
+function evalKont<K extends Kont> (κ: K): RuntimeKont {
    if (κ instanceof Trie.Trie) {
       const σ: Trie<K> = κ
       return evalTrie(σ)
-   }
+   } else
    if (κ instanceof Expr.Expr) {
       return κ
    } else {
@@ -58,26 +58,6 @@ function evalArgs<K extends Kont> (κ: K): RuntimeKont {
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
 export abstract class Func<K extends RuntimeKont> extends DataValue<"Func"> {
    abstract __apply (v: Versioned<Value>): [Env, Match, K]
-
-   __applyArgs (v̅: Versioned<Value>[]): [Env, Match, K] {
-      return __applyArgs(this as RuntimeKont as K, v̅) // ouchy cast
-/*
-      if (v̅.length === 0) {
-         return [emptyEnv(), dummyMatch(), this as RuntimeKont as K] // TS confused
-      } else {
-         const [v, ...v̅ʹ] = v̅,
-         [ρ, ξ, κ] = this.__apply(v)
-         if (κ instanceof Func) {
-            const f: Func<K> = κ,
-                  [ρʹ, Ψ, κʹ] = f.__applyArgs(v̅ʹ)
-            return [ρ.concat(ρʹ), nextMatch(ξ, Ψ), κʹ]
-         } else {
-            assert(v̅ʹ.length === 0, `Too many arguments to constructor.`)
-            return [ρ, ξ, κ]
-         }
-      }
-*/
-   }
 }
 
 function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[]): [Env, Match, K] {
@@ -109,13 +89,7 @@ export abstract class DataFunc<K extends RuntimeKont> extends Func<K> {
                κ: K = (this as any)[c] as K
          assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${datatype(this)}.`)
          const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v))
-         if (κ instanceof Func) {
-            const f: Func<K> = κ
-            return f.__applyArgs(v̅)
-         } else {
-            assert(v̅.length === 0, `Too many arguments to constructor ${c}.`)
-            return [emptyEnv(), dummyMatch(), κ]
-         }
+         return __applyArgs(κ, v̅)
       } else {
          return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
       }
