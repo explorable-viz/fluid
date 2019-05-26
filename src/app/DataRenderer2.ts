@@ -1,7 +1,7 @@
 import { as } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes2"
 import { DataValue } from "../DataValue2"
-import { Num, Str, Value, make } from "../Value2"
+import { Num, Str, Value, _, make } from "../Value2"
 import { Versioned, asVersioned } from "../Versioned2"
 
 type Row = Pair<Num | Str, Value> // approximate recursive type
@@ -68,11 +68,7 @@ function strToken (str: Versioned<Str>): StrToken {
 }
 
 class StringToken extends Token {
-   str: string
-
-   constructor_ (str: string) {
-      this.str = str
-   }
+   str: string = _
 
    get text (): string {
       return this.str
