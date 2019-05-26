@@ -22,7 +22,8 @@ class App {
    dataView: DataView
    dataCanvas: HTMLCanvasElement
    dataCtx: CanvasRenderingContext2D
-   graphics: GraphicsElement        // chart computed by from data
+   graphics: GraphicsElement        // chart computed by program
+   graphics_t: Expl
    graphicsCanvas: HTMLCanvasElement
    graphicsPane3D: GraphicsPane3D
    
@@ -48,6 +49,13 @@ class App {
       let here: Cursor = new Cursor(this.e)
       here.skipImports().toDef("data").to(Expr.Let, "e")
       this.data_e = as(here.v, Expr.Constr)
+      const { t, v: data }: ExplValue = Eval.eval_(emptyEnv(), this.data_e)
+      this.data_t = t
+      this.data = as(data as Value, List)
+      const { t: tʹ, v }: ExplValue = Eval.eval_(emptyEnv(), this.e)
+      this.graphics = as(v as Value, GraphicsElement)
+      this.graphics_t = tʹ
+      setallα(this.e, ann.top)
       this.fwdSlice()
       this.renderData(this.data)
       this.draw()
@@ -55,10 +63,7 @@ class App {
 
    // On passes other than the first, the assignments here are redundant.
    fwdSlice (): void {
-      const { t, v: data }: ExplValue = Eval.eval_(emptyEnv(), this.data_e)
-      this.data_t = t
-      this.data = as(data as Value, List)
-      this.graphics = as(Eval.eval_(emptyEnv(), this.e).v as Value, GraphicsElement)
+      Eval.eval_fwd(explValue(this.graphics_t, asVersioned(this.graphics)))
    }
 
    // Push changes from data back to source code, then forward slice.

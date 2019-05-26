@@ -122,7 +122,7 @@ export class GraphicsRenderer {
       for (; Cons.is(points); points = points.tail) {
          const point: Point = points.head,
                [x, y]: [number, number] = this.transform([point.x.val, point.y.val])
-         if (!asVersioned(point.x).__α || !asVersioned(point.y).__α) {
+         if (!__nonNull(asVersioned(point.x).__α) || !__nonNull(asVersioned(point.y).__α)) {
             this.circle(x, y, 3)
          }
       }
