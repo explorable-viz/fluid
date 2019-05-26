@@ -1,12 +1,12 @@
 import { Annotation, ann } from "./util/Annotated2"
-import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
+import { Class, __nonNull, absurd, assert, className, error, notYetImplemented } from "./util/Core"
 import { Pair } from "./BaseTypes2"
 import { DataValue } from "./DataValue2"
 import { DataType, ctrToDataType, elimSuffix } from "./DataType2"
 import { Env, emptyEnv } from "./Env2"
 import { Expr } from "./Expr2"
 import { Str, Value, _, make } from "./Value2"
-import { Versioned, asVersioned, setα } from "./Versioned2"
+import { Versioned, asVersioned/*, setα*/ } from "./Versioned2"
 
 import Kont = Expr.Kont
 import Trie = Expr.Trie
@@ -16,11 +16,11 @@ export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
       return varFunc(σ.x, σ.κ)
    } else
    if (Trie.Constr.is(σ)) {
-      const cases: Pair<Str, Expr.Args<K>>[] = σ.cases.toArray(),
+      const cases: Pair<Str, K>[] = σ.cases.toArray(),
             c̅: string[] = cases.map(({ fst: c }) => c.val),
             d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
             c̅ʹ: string[] = [...d.ctrs.keys()], // also sorted
-            f̅: Args.ArgsFunc<K>[] = []
+            f̅: K[] = []
       let n: number = 0
       for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
          if (c̅.includes(c̅ʹ[nʹ])) {
@@ -37,20 +37,40 @@ export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
 }
 
 // Parser ensures constructor calls are saturated.
-function evalArgs<K extends Kont<K>> (Π: Expr.Args<K>): Args.ArgsFunc<K> {
-   if (Expr.Args.End.is(Π)) {
-      return Args.endFunc(Π.κ)
-   } else
-   if (Expr.Args.Next.is(Π)) {
-      return Args.nextFunc(evalTrie(Π.σ))
+function evalArgs<K extends Kont<K>> (κ: K): K {
+   if (κ instanceof Trie.Trie) {
+      const σ: Trie<K> = κ
+      return evalTrie(σ) as any as K // "any" shouldn't be needed here
    } else {
-      return absurd()
+      return κ
    }
 }
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
-export abstract class Func<K extends Kont<K>> extends Value<"Func"> {
+export abstract class Func<K extends Kont<K>> extends Kont<Func<K>, "Func"> {
    abstract __apply (v: Versioned<Value>): [Env, Match, K]
+
+   __applyArgs (v̅: Versioned<Value>[]): [Env, Match, K] {
+      if (v̅.length === 0) {
+         return [emptyEnv(), dummyMatch(), this as any as K] // "any" shouldn't be needed here
+      } else {
+         const [v, ...v̅ʹ] = v̅,
+         [ρ, ξ, κ] = this.__apply(v)
+         if (κ instanceof Func) {
+            const f: Func<K> = κ,
+                  [ρʹ, /*Ψ*/, κʹ] = f.__applyArgs(v̅ʹ)
+            return [ρ.concat(ρʹ), dummyMatch()/*nextMatch(ξ, Ψ)*/, κʹ]
+         } else
+         if (κ instanceof Trie.Trie) {
+            const f: Func<K> = evalTrie(κ),
+                  [ρʹ, /*Ψ*/, κʹ] = f.__applyArgs(v̅ʹ)
+            return [ρ.concat(ρʹ), dummyMatch()/*nextMatch(ξ, Ψ)*/, κʹ]
+         } else {
+            assert(v̅ʹ.length === 0, `Too many arguments to constructor.`)
+            return [ρ, ξ, κ]
+         }
+      }
+   }
 }
 
 function datatype (f: DataFunc<any>): string {
@@ -63,12 +83,21 @@ export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
    __apply (v: Versioned<Value>): [Env, Match, K] {
       const c: string = className(v)
       if (v instanceof DataValue) {
-         const d: DataType = __nonNull(ctrToDataType.get(c)),
-               args_f: Args.ArgsFunc<K> = ((this as any)[c] as Args.ArgsFunc<K>)
-         assert(args_f !== undefined, `Pattern mismatch: found ${c}, expected ${datatype(this)}.`)
-         const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
-               [ρ, Ψ, κ] = args_f.__apply(v̅)
-         return [ρ, make(d.matchC̅.get(c)!, v, Ψ), κ]
+         const // d: DataType = __nonNull(ctrToDataType.get(c)),
+               κ: K = (this as any)[c] as K
+         assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${datatype(this)}.`)
+         const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v))
+         if (κ instanceof Func) {
+            const f: Func<K> = κ
+            return f.__applyArgs(v̅)
+         } else
+         if (κ instanceof Trie.Trie) {
+            const f: Func<K> = evalTrie(κ)
+            return f.__applyArgs(v̅)
+         } else {
+            assert(v̅.length === 0, `Too many arguments to constructor ${c}.`)
+            return [emptyEnv(), dummyMatch(), κ]
+         }
       } else {
          return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
       }
@@ -80,7 +109,7 @@ class VarFunc<K extends Kont<K>> extends Func<K> {
    κ: K = _
 
    __apply (v: Versioned<Value>): [Env, Match, K] {
-      return [Env.singleton(this.x, v), varMatch(), this.κ]
+      return [Env.singleton(this.x, v), dummyMatch()/*varMatch()*/, this.κ]
    }
 }
 
@@ -93,22 +122,41 @@ export abstract class Match extends Value<"Match"> {
    abstract __bwd (α: Annotation): void
 }
 
+class DummyMatch extends Match {
+   __fwd (): Annotation {
+      return ann.top
+   }
+   __bwd (α: Annotation): void {
+   }
+}
+
+function dummyMatch (): DummyMatch {
+   return make(DummyMatch)
+}
+
 // Concrete instances have an additional "matched args" field for the matched constructor.
 export class DataMatch extends Match {
    v: Versioned<DataValue> = _
 
    __fwd (): Annotation {
+      return notYetImplemented()
+/*
       const Ψ: Args.ArgsMatch = (this as any)[className(this.v)] as Args.ArgsMatch
       return ann.meet(this.v.__α, Ψ.__fwd())
+*/
    }
 
    __bwd (α: Annotation): void {
+      return notYetImplemented()
+/*
       const Ψ: Args.ArgsMatch = __nonNull((this as any)[className(this.v)] as Args.ArgsMatch)
       Ψ.__bwd(α)
       setα(α, this.v)
+*/
    }
 }
 
+/*
 class VarMatch extends Match {
    __fwd (): Annotation {
       return ann.top
@@ -123,7 +171,7 @@ function varMatch<K extends Kont<K>> (): VarMatch {
    return make(VarMatch)
 }
 
-export namespace Args {
+namespace Args {
    export abstract class ArgsFunc<K extends Kont<K>> extends Value<"ArgsFunc"> {
       abstract __apply (v̅: Versioned<Value>[]): [Env, ArgsMatch, K]
    }
@@ -193,11 +241,8 @@ export namespace Args {
       __bwd (α: Annotation): void {
          if (this.Ψ instanceof NextMatch) {
             this.Ψ.Ψ.__bwd(α)
-            this.ξ.__bwd(α)
-         } else
-         if (this.Ψ instanceof EndMatch) {
-            this.ξ.__bwd(α)
          }
+         this.ξ.__bwd(α)
       }
    }
    
@@ -205,3 +250,4 @@ export namespace Args {
       return make(NextMatch, ξ, Ψ)
    }
 }
+*/

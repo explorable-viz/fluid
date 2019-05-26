@@ -31,7 +31,7 @@ export type Kont<K> = Expr.Kont<K>
 export namespace Expr {
    // It would be nice if (non-argument) tries only had argument tries as their continuations and vice-
    // versa, but that doesn't quite work because a DataValue<K> has an underlying map to Args<K>.
-   type KontTag = "Expr" | "Trie" | "Args"
+   type KontTag = "Expr" | "Trie" | "Func"
 
    export class Kont<K, Tag extends KontTag = KontTag> extends DataValue<Tag> {
    }
