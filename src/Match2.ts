@@ -13,7 +13,7 @@ import Trie = Expr.Trie
 
 export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
    if (Trie.Var.is(σ)) {
-      return varFunc(σ.x, σ.κ)
+      return varFunc(σ.x, evalArgs(σ.κ))
    } else
    if (Trie.Constr.is(σ)) {
       const cases: Pair<Str, K>[] = σ.cases.toArray(),
@@ -40,7 +40,7 @@ export function evalTrie<K extends Kont<K>> (σ: Trie<K>): Func<K> {
 function evalArgs<K extends Kont<K>> (κ: K): K {
    if (κ instanceof Trie.Trie) {
       const σ: Trie<K> = κ
-      return evalTrie(σ) as any as K // "any" shouldn't be needed here
+      return evalTrie(σ) as Kont<K> as K // TS confused
    } else {
       return κ
    }
@@ -52,17 +52,12 @@ export abstract class Func<K extends Kont<K>> extends Kont<Func<K>, "Func"> {
 
    __applyArgs (v̅: Versioned<Value>[]): [Env, Match, K] {
       if (v̅.length === 0) {
-         return [emptyEnv(), dummyMatch(), this as any as K] // "any" shouldn't be needed here
+         return [emptyEnv(), dummyMatch(), this as Kont<K> as K] // TS confused
       } else {
          const [v, ...v̅ʹ] = v̅,
          [ρ, ξ, κ] = this.__apply(v)
          if (κ instanceof Func) {
             const f: Func<K> = κ,
-                  [ρʹ, /*Ψ*/, κʹ] = f.__applyArgs(v̅ʹ)
-            return [ρ.concat(ρʹ), dummyMatch()/*nextMatch(ξ, Ψ)*/, κʹ]
-         } else
-         if (κ instanceof Trie.Trie) {
-            const f: Func<K> = evalTrie(κ),
                   [ρʹ, /*Ψ*/, κʹ] = f.__applyArgs(v̅ʹ)
             return [ρ.concat(ρʹ), dummyMatch()/*nextMatch(ξ, Ψ)*/, κʹ]
          } else {
@@ -89,10 +84,6 @@ export abstract class DataFunc<K extends Kont<K>> extends Func<K> {
          const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v))
          if (κ instanceof Func) {
             const f: Func<K> = κ
-            return f.__applyArgs(v̅)
-         } else
-         if (κ instanceof Trie.Trie) {
-            const f: Func<K> = evalTrie(κ)
             return f.__applyArgs(v̅)
          } else {
             assert(v̅.length === 0, `Too many arguments to constructor ${c}.`)
