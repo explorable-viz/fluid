@@ -11,7 +11,13 @@ import { Versioned, asVersioned/*, setα*/ } from "./Versioned2"
 import Kont = Expr.Kont
 import Trie = Expr.Trie
 
-export function evalTrie<K extends Kont> (σ: Trie<K>): Func<K> {
+type RuntimeKont = DataValue<"Func" | "Expr">
+
+export function evalTrie (σ: Trie<Expr>): Func<Expr> {
+   return evalTrie_(σ) as Func<Expr>
+}
+
+function evalTrie_<K extends Kont> (σ: Trie<K>): Func<RuntimeKont> {
    if (Trie.Var.is(σ)) {
       return varFunc(σ.x, evalArgs(σ.κ))
    } else
@@ -20,7 +26,7 @@ export function evalTrie<K extends Kont> (σ: Trie<K>): Func<K> {
             c̅: string[] = cases.map(({ fst: c }) => c.val),
             d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
             c̅ʹ: string[] = [...d.ctrs.keys()], // also sorted
-            f̅: K[] = []
+            f̅: RuntimeKont[] = []
       let n: number = 0
       for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
          if (c̅.includes(c̅ʹ[nʹ])) {
@@ -30,42 +36,61 @@ export function evalTrie<K extends Kont> (σ: Trie<K>): Func<K> {
          }
       }
       assert(n === cases.length)
-      return make(d.elimC as Class<DataFunc<K>>, ...f̅)
+      return make(d.elimC as Class<DataFunc<RuntimeKont>>, ...f̅)
    } else {
       return absurd()
    }
 }
 
-// Parser ensures constructor calls are saturated.
-function evalArgs<K extends Kont> (κ: K): K {
+// Parser ensures constructor calls are saturated. TODO: rename to evalKont?
+function evalArgs<K extends Kont> (κ: K): RuntimeKont {
    if (κ instanceof Trie.Trie) {
       const σ: Trie<K> = κ
-      return evalTrie(σ) as RuntimeKont as K // TS confused
-   } else {
+      return evalTrie(σ)
+   }
+   if (κ instanceof Expr.Expr) {
       return κ
+   } else {
+      return absurd()
    }
 }
 
-type RuntimeKont = DataValue<"Func" | "Expr">
-
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
-export abstract class Func<K extends Kont> extends DataValue<"Func"> {
+export abstract class Func<K extends RuntimeKont> extends DataValue<"Func"> {
    abstract __apply (v: Versioned<Value>): [Env, Match, K]
 
    __applyArgs (v̅: Versioned<Value>[]): [Env, Match, K] {
+      return __applyArgs(this as RuntimeKont as K, v̅) // ouchy cast
+/*
       if (v̅.length === 0) {
-         return [emptyEnv(), dummyMatch(), this as Kont as K] // TS confused
+         return [emptyEnv(), dummyMatch(), this as RuntimeKont as K] // TS confused
       } else {
          const [v, ...v̅ʹ] = v̅,
          [ρ, ξ, κ] = this.__apply(v)
          if (κ instanceof Func) {
             const f: Func<K> = κ,
-                  [ρʹ, /*Ψ*/, κʹ] = f.__applyArgs(v̅ʹ)
-            return [ρ.concat(ρʹ), dummyMatch()/*nextMatch(ξ, Ψ)*/, κʹ]
+                  [ρʹ, Ψ, κʹ] = f.__applyArgs(v̅ʹ)
+            return [ρ.concat(ρʹ), nextMatch(ξ, Ψ), κʹ]
          } else {
             assert(v̅ʹ.length === 0, `Too many arguments to constructor.`)
             return [ρ, ξ, κ]
          }
+      }
+*/
+   }
+}
+
+function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[]): [Env, Match, K] {
+   if (v̅.length === 0) {
+      return [emptyEnv(), dummyMatch(), κ]
+   } else {
+      const [v, ...v̅ʹ] = v̅
+      if (κ instanceof Func) {
+         const [ρ, /*ξ*/, κʹ] = κ.__apply(v),
+               [ρʹ, /*Ψ*/, κ2] = __applyArgs(κʹ, v̅ʹ)
+         return [ρ.concat(ρʹ), dummyMatch()/*nextMatch(ξ, Ψ)*/, κ2]
+      } else {
+         return absurd("Too many arguments to constructor.")
       }
    }
 }
@@ -76,7 +101,7 @@ function datatype (f: DataFunc<any>): string {
 }
 
 // Concrete instances have a field per constructor, in *lexicographical* order.
-export abstract class DataFunc<K extends Kont> extends Func<K> {
+export abstract class DataFunc<K extends RuntimeKont> extends Func<K> {
    __apply (v: Versioned<Value>): [Env, Match, K] {
       const c: string = className(v)
       if (v instanceof DataValue) {
@@ -97,7 +122,7 @@ export abstract class DataFunc<K extends Kont> extends Func<K> {
    }
 }
 
-class VarFunc<K extends Kont> extends Func<K> {
+class VarFunc<K extends RuntimeKont> extends Func<RuntimeKont> {
    x: Str = _
    κ: K = _
 
@@ -106,7 +131,7 @@ class VarFunc<K extends Kont> extends Func<K> {
    }
 }
 
-function varFunc<K extends Kont> (x: Str, κ: K): VarFunc<K> {
+function varFunc<K extends RuntimeKont> (x: Str, κ: K): VarFunc<K> {
    return make(VarFunc, x, κ) as VarFunc<K>
 }
 
