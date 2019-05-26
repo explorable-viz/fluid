@@ -1,25 +1,23 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
-import { List} from "../BaseTypes2"
+import { List } from "../BaseTypes2"
 import { emptyEnv } from "../Env2"
 import { Eval } from "../Eval2"
 import { Expl, ExplValue, explValue } from "../ExplValue2"
 import { Expr } from "../Expr2"
 import { GraphicsElement } from "../Graphics2"
-import { Value } from "../Value2"
-import { setallα } from "../Versioned2"
+import { asVersioned, setallα } from "../Versioned2"
 import { load, parse } from "../../test/util/Core2"
 import { Cursor } from "../../test/util/Cursor2"
-import { Data, DataView, DataRenderer } from "./DataRenderer"
+import { Data, DataView, DataRenderer } from "./DataRenderer2"
 import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer } from "./GraphicsRenderer"
-import { reflect, reify } from "./Reflect"
 
 class App {
    e: Expr                          // body of outermost let
    data_e: Expr                     // expression for data (value bound by let)
    data_t: Expl                     // trace for data
-   data: Data                       // data reflected up to meta-level
+   data: Data
    dataView: DataView
    dataCanvas: HTMLCanvasElement
    dataCtx: CanvasRenderingContext2D
@@ -58,14 +56,14 @@ class App {
    fwdSlice (): void {
       const { t, v: data }: ExplValue = Eval.eval_(emptyEnv(), this.data_e)
       this.data_t = t
-      this.data = as(reflect(as(data, Value.Constr)), List)
-      this.graphics = as(reflect(Eval.eval_(emptyEnv(), this.e).v), GraphicsElement)
+      this.data = asVersioned(as(data, List))
+      this.graphics = as(Eval.eval_(emptyEnv(), this.e).v, GraphicsElement)
    }
 
    // Push changes from data back to source code, then forward slice.
    redo_fwdSlice (): void {
       setallα(this.data_e, ann.bot)
-      Eval.uneval(explValue(emptyEnv(), this.data_t, reify(this.data)))
+      Eval.eval_bwd(explValue(this.data_t, this.data))
       this.fwdSlice()
       this.draw()
    }
