@@ -1,6 +1,6 @@
 import { Annotation, ann } from "./util/Annotated2"
 import { Class, __nonNull, absurd, assert, className, error, notYetImplemented } from "./util/Core"
-import { List, Pair } from "./BaseTypes2"
+import { List, Pair, cons, nil } from "./BaseTypes2"
 import { DataValue } from "./DataValue2"
 import { DataType, ctrToDataType, elimSuffix } from "./DataType2"
 import { Env, emptyEnv } from "./Env2"
@@ -56,19 +56,20 @@ function evalKont<K extends Kont> (κ: K): RuntimeKont {
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.
 export abstract class Func<K extends RuntimeKont> extends DataValue<"Func"> {
-   abstract __apply (v: Versioned<Value>): [Env, Match, K]
+   abstract __apply (v: Versioned<Value>): [Env, Match2, K]
 }
 
 // Parser ensures constructor calls are saturated.
-function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[]): [Env, Match, K] {
+function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[]): [Env, Match2, K] {
    if (v̅.length === 0) {
-      return [emptyEnv(), dummyMatch(), κ]
+      return [emptyEnv(), nil(), κ]
    } else {
       const [v, ...v̅ʹ] = v̅
       if (κ instanceof Func) {
-         const [ρ, /*ξ*/, κʹ] = κ.__apply(v),
-               [ρʹ, /*Ψ*/, κ2] = __applyArgs(κʹ, v̅ʹ)
-         return [ρ.concat(ρʹ), dummyMatch()/*nextMatch(ξ, Ψ)*/, κ2]
+         const f: Func<K> = κ, // "unfold" K into Func<K>
+               [ρ, ξ, κʹ]: [Env, Match2, K] = f.__apply(v), 
+               [ρʹ, ξ̅, κ2]: [Env, Match2, K] = __applyArgs(κʹ, v̅ʹ)
+         return [ρ.concat(ρʹ), concat(ξ, ξ̅), κ2]
       } else {
          return absurd("Too many arguments to constructor.")
       }
@@ -82,7 +83,7 @@ function datatype (f: DataFunc<any>): string {
 
 // Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataFunc<K extends RuntimeKont> extends Func<K> {
-   __apply (v: Versioned<Value>): [Env, Match, K] {
+   __apply (v: Versioned<Value>): [Env, Match2, K] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const // d: DataType = __nonNull(ctrToDataType.get(c)),
@@ -100,8 +101,8 @@ class VarFunc<K extends RuntimeKont> extends Func<RuntimeKont> {
    x: Str = _
    κ: K = _
 
-   __apply (v: Versioned<Value>): [Env, Match, K] {
-      return [Env.singleton(this.x, v), dummyMatch()/*varMatch()*/, this.κ]
+   __apply (v: Versioned<Value>): [Env, Match2, K] {
+      return [Env.singleton(this.x, v), nil(), this.κ]
    }
 }
 
@@ -112,29 +113,17 @@ function varFunc<K extends RuntimeKont> (x: Str, κ: K): VarFunc<K> {
 // Spine of matched prefix.
 export type Match2 = List<Versioned<Value>>
 
-export function match__fwd (v̅: Match2): Annotation {
+export function match_fwd (v̅: Match2): Annotation {
    return v̅.toArray().reduce((α: Annotation, v: Versioned<Value>): Annotation => ann.meet(α, v.__α), ann.top)
 }
 
-export function match__bwd (v̅: Match2, α: Annotation) : void {
+export function match_bwd (v̅: Match2, α: Annotation) : void {
    v̅.toArray().map(v => setα(α, v))
 }
 
 export abstract class Match extends Value<"Match"> {
    abstract __fwd (): Annotation
    abstract __bwd (α: Annotation): void
-}
-
-class DummyMatch extends Match {
-   __fwd (): Annotation {
-      return ann.top
-   }
-   __bwd (α: Annotation): void {
-   }
-}
-
-function dummyMatch (): DummyMatch {
-   return make(DummyMatch)
 }
 
 // Concrete instances have an additional "matched args" field for the matched constructor.
