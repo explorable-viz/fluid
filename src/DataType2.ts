@@ -1,6 +1,6 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { DataExpl, DataValue } from "./DataValue2"
-import { DataFunc, DataMatch } from "./Match2"
+import { DataFunc } from "./Match2"
 import { Str, _, fields } from "./Value2"
 
 // Neither of these is currently reflective because of non-standard fields.
@@ -8,20 +8,17 @@ export class DataType {
    name: string
    elimC: Class<DataFunc<any>>            // not sure how better to parameterise 
    ctrs: Map<string, Ctr>                 // fields of my constructors
-   matchC̅: Map<string, Class<DataMatch>>  // "match" class per constructor
    explC̅: Map<string, Class<DataExpl>>    // "explanation" class per constructor
 
    constructor (
       name: string, 
       elimC: Class<DataFunc<any>>, 
       ctrs: Map<string, Ctr>, 
-      matchC̅: Map<string, Class<DataMatch>>,
       explC̅: Map<string, Class<DataExpl>>
    ) {
       this.name = name
       this.elimC = elimC
       this.ctrs = ctrs
-      this.matchC̅ = matchC̅
       this.explC̅ = explC̅
    }
 }
@@ -70,16 +67,6 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                }
             }
          }[elimC_name],
-         matchC̅: [string, Class<DataMatch>][] = ctrs.map(([c, _]: [string, Ctr]) => {
-            return [c, {
-               [elimC_name]: class extends DataMatch {
-                  constructor () {
-                     super()
-                     ;(this as any)[c] = _
-                  }
-               }
-            }[elimC_name]]
-         }),
          explC_name: string = D.name + explSuffix,
          explC̅: [string, Class<DataExpl>][] = ctrs.map(([cʹ, c]: [string, Ctr]) => {
             return [cʹ, {
@@ -93,7 +80,7 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                }
             }[explC_name]]
          }),
-         d: DataType = new DataType(D.name, elimC, new Map(ctrs), new Map(matchC̅), new Map(explC̅))
+         d: DataType = new DataType(D.name, elimC, new Map(ctrs), new Map(explC̅))
    C̅.forEach((C: Class<T>): void => {
       ctrToDataType.set(C.name, d)
    })
