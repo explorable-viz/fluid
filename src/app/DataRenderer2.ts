@@ -18,11 +18,7 @@ abstract class AnnotatedToken extends Token {
 }
 
 class NumToken extends AnnotatedToken {
-   n: Versioned<Num>
-
-   constructor_ (n: Versioned<Num>) {
-      this.n = n
-   }
+   n: Versioned<Num> = _
 
    get text (): string {
       return this.n.val.toString()
@@ -47,11 +43,7 @@ function numToken (n: Versioned<Num>): NumToken {
 }
 
 class StrToken extends AnnotatedToken {
-   str: Versioned<Str>
-
-   constructor_ (str: Versioned<Str>) {
-      this.str = str
-   }
+   str: Versioned<Str> = _
 
    get text (): string {
       return this.str.val

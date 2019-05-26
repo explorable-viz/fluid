@@ -46,7 +46,7 @@ class App {
    loadExample (): void {
       this.e = parse(load("bar-chart"))
       let here: Cursor = new Cursor(this.e)
-      here.skipImports().to(Expr.Let, "e")
+      here.skipImports().toDef("data").to(Expr.Let, "e")
       this.data_e = as(here.v, Expr.Constr)
       this.fwdSlice()
       this.renderData(this.data)
