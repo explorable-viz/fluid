@@ -1,9 +1,9 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
-import { List } from "../BaseTypes2"
+import { Cons, List } from "../BaseTypes2"
 import { emptyEnv } from "../Env2"
 import { Eval } from "../Eval2"
-import { ExplValue } from "../ExplValue2"
+import { Expl, ExplValue } from "../ExplValue2"
 import { Expr } from "../Expr2"
 import { GraphicsElement } from "../Graphics2"
 import { Value } from "../Value2"
@@ -43,8 +43,17 @@ class App {
    }
 
    initData (): void {
-      // let here: Cursor = new Cursor(this.tv)
-      // TODO: navigate to ExplValue for "data"
+      let here: Cursor = new Cursor(this.tv)
+      here
+         .to(ExplValue, "t")
+         .to(Expl.Defs, "tv")
+         .to(ExplValue, "t")
+         .to(Expl.Defs, "tv")
+         .to(ExplValue, "t")
+         .to(Expl.Defs, "def̅")
+         .to(Cons, "head")
+         .to(Expl.Let, "tv")
+      this.data_tv = as(here.v, ExplValue)
    }
 
    get data (): Data {
@@ -63,6 +72,7 @@ class App {
          this.data_e = as(here.v, Expr.Constr)
       }
       this.tv = Eval.eval_(emptyEnv(), this.e)
+      this.initData()
       setallα(this.e, ann.top)
       Eval.eval_fwd(this.tv)
       this.renderData(this.data)
