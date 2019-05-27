@@ -3,11 +3,11 @@ import { __nonNull, as } from "../util/Core"
 import { List } from "../BaseTypes2"
 import { emptyEnv } from "../Env2"
 import { Eval } from "../Eval2"
-import { Expl, ExplValue, explValue } from "../ExplValue2"
+import { ExplValue } from "../ExplValue2"
 import { Expr } from "../Expr2"
 import { GraphicsElement } from "../Graphics2"
 import { Value } from "../Value2"
-import { asVersioned, setallα } from "../Versioned2"
+import { setallα } from "../Versioned2"
 import { load, parse } from "../../test/util/Core2"
 import { Cursor } from "../../test/util/Cursor2"
 import { Data, DataView, DataRenderer } from "./DataRenderer2"
@@ -15,15 +15,13 @@ import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer } from "./GraphicsRenderer2"
 
 class App {
-   e: Expr                          // body of outermost let
-   data_e: Expr                     // expression for data (value bound by let)
-   data_t: Expl                     // trace for data
-   data: Data
+   e: Expr                        // entire closed program
+   tv: ExplValue                  // chart computed by program
+   data_e: Expr                   // expression for data (value bound by first let in user code)
+   data_tv: ExplValue             // value of data
    dataView: DataView
    dataCanvas: HTMLCanvasElement
    dataCtx: CanvasRenderingContext2D
-   graphics: GraphicsElement        // chart computed by program
-   graphics_t: Expl
    graphicsCanvas: HTMLCanvasElement
    graphicsPane3D: GraphicsPane3D
    
@@ -43,34 +41,39 @@ class App {
       this.graphicsCanvas.width = this.graphicsCanvas.height = 400
       this.loadExample()
    }
+
+   initData (): void {
+      // let here: Cursor = new Cursor(this.tv)
+      // TODO: navigate to ExplValue for "data"
+   }
+
+   get data (): Data {
+      return as(this.data_tv.v as Value, List)
+   }
+
+   get graphics (): GraphicsElement {
+      return as(this.tv.v as Value, GraphicsElement)
+   }
    
    loadExample (): void {
       this.e = parse(load("bar-chart"))
-      let here: Cursor = new Cursor(this.e)
-      here.skipImports().toDef("data").to(Expr.Let, "e")
-      this.data_e = as(here.v, Expr.Constr)
-      const { t, v: data }: ExplValue = Eval.eval_(emptyEnv(), this.data_e)
-      this.data_t = t
-      this.data = as(data as Value, List)
-      const { t: tʹ, v }: ExplValue = Eval.eval_(emptyEnv(), this.e)
-      this.graphics = as(v as Value, GraphicsElement)
-      this.graphics_t = tʹ
+      {
+         let here: Cursor = new Cursor(this.e)
+         here.skipImports().toDef("data").to(Expr.Let, "e")
+         this.data_e = as(here.v, Expr.Constr)
+      }
+      this.tv = Eval.eval_(emptyEnv(), this.e)
       setallα(this.e, ann.top)
-      this.fwdSlice()
+      Eval.eval_fwd(this.tv)
       this.renderData(this.data)
       this.draw()
    }
 
-   // On passes other than the first, the assignments here are redundant.
-   fwdSlice (): void {
-      Eval.eval_fwd(explValue(this.graphics_t, asVersioned(this.graphics)))
-   }
-
-   // Push changes from data back to source code, then forward slice.
-   redo_fwdSlice (): void {
+   // Push annotations back from data to source, then redo the forward slice.
+   redoFwdSlice (): void {
       setallα(this.data_e, ann.bot)
-      Eval.eval_bwd(explValue(this.data_t, asVersioned(this.data)))
-      this.fwdSlice()
+      Eval.eval_bwd(this.data_tv)
+      Eval.eval_fwd(this.tv)
       this.draw()
    }
 
@@ -88,7 +91,7 @@ class App {
       this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
          if (this.dataView.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)) {
-            this.redo_fwdSlice()
+            this.redoFwdSlice()
          }
       })
       this.dataCanvas.height = this.dataView.height + 1 // not sure why extra pixel is essential

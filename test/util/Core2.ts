@@ -25,7 +25,7 @@ export class FwdSlice {
          this.expect()
       }
       console.log(e)
-      console.log(tv.v)
+      console.log(tv)
    }
 
    setup (): void {
