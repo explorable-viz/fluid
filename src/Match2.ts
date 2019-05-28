@@ -8,41 +8,43 @@ import { Expr } from "./Expr2"
 import { Str, Value, _, make } from "./Value2"
 import { Versioned, asVersioned, setα } from "./Versioned2"
 
-import Kont = Expr.Kont
+import Cont = Expr.Cont
 import Trie = Expr.Trie
 
-type RuntimeKont = DataValue<"Func" | "Expr">
+type RuntimeCont = Expr | DataValue<"Elim">
 
-export function evalTrie (σ: Trie<Expr>): Func<Expr> {
-   return evalTrie_(σ) as Func<Expr>
+// Conceptually (syntactic) tries map to (semantic) elim forms, and exprs map to exprs; no easy way to 
+// express this in the type system.
+export function evalTrie (σ: Trie<Expr>): Elim<Expr> {
+   return evalTrie_(σ) as Elim<Expr>
 }
 
-function evalTrie_<K extends Kont> (σ: Trie<K>): Func<RuntimeKont> {
+function evalTrie_<K extends Cont> (σ: Trie<K>): Elim {
    if (Trie.Var.is(σ)) {
-      return varFunc(σ.x, evalKont(σ.κ))
+      return varElim(σ.x, evalCont(σ.κ))
    } else
    if (Trie.Constr.is(σ)) {
       const cases: Pair<Str, K>[] = σ.cases.toArray(),
             c̅: string[] = cases.map(({ fst: c }) => c.val),
             d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
             c̅ʹ: string[] = [...d.ctrs.keys()], // also sorted
-            f̅: RuntimeKont[] = []
+            f̅: RuntimeCont[] = []
       let n: number = 0
       for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
          if (c̅.includes(c̅ʹ[nʹ])) {
-            f̅.push(evalKont(cases[n++].snd))
+            f̅.push(evalCont(cases[n++].snd))
          } else {
             f̅.push(undefined as any)
          }
       }
       assert(n === cases.length)
-      return make(d.elimC as Class<DataFunc<RuntimeKont>>, ...f̅)
+      return make(d.elimC as Class<DataElim>, ...f̅)
    } else {
       return absurd()
    }
 }
 
-function evalKont<K extends Kont> (κ: K): RuntimeKont {
+function evalCont<K extends Cont> (κ: K): RuntimeCont {
    if (κ instanceof Trie.Trie) {
       const σ: Trie<K> = κ
       return evalTrie(σ)
@@ -54,24 +56,24 @@ function evalKont<K extends Kont> (κ: K): RuntimeKont {
    }
 }
 
-// Spine of matched prefix.
+// Preorder traversal of all nodes in the matched prefix.
 export type Match = List<Versioned<Value>>
 
-// Func to distinguish from expression-level Fun. See GitHub issue #128.
-export abstract class Func<K extends RuntimeKont> extends DataValue<"Func"> {
-   abstract __apply (v: Versioned<Value>, ξ: Match): [Env, Match, K]
+// See GitHub issue #128.
+export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
+   abstract match (v: Versioned<Value>, ξ: Match): [Env, Match, K]
 }
 
 // Parser ensures constructor calls are saturated.
-function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[], ξ: Match): [Env, Match, K] {
+function matchArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, Match, RuntimeCont] {
    if (v̅.length === 0) {
       return [emptyEnv(), ξ, κ]
    } else {
       const [v, ...v̅ʹ] = v̅
-      if (κ instanceof Func) {
-         const f: Func<K> = κ, // "unfold" K into Func<K>
-               [ρ, ξʹ, κʹ]: [Env, Match, K] = f.__apply(v, ξ),
-               [ρʹ, ξ2, κ2]: [Env, Match, K] = __applyArgs(κʹ, v̅ʹ, ξʹ)
+      if (κ instanceof Elim) {
+         const f: Elim = κ, // "unfold" K into Elim<K>
+               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = f.match(v, ξ),
+               [ρʹ, ξ2, κ2]: [Env, Match, RuntimeCont] = matchArgs(κʹ, v̅ʹ, ξʹ)
          return [ρ.concat(ρʹ), ξ2, κ2]
       } else {
          return absurd("Too many arguments to constructor.")
@@ -79,20 +81,21 @@ function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[], ξ:
    }
 }
 
-function datatype (f: DataFunc<any>): string {
-   const c: string = className(f)
-   return c.substr(0, c.length - elimSuffix.length)
-}
-
-// Concrete instances have a field per constructor, in *lexicographical* order.
-export abstract class DataFunc<K extends RuntimeKont> extends Func<K> {
-   __apply (v: Versioned<Value>, ξ: Match): [Env, Match, K] {
+// No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
+// itself. Concrete instances have a field per constructor, in *lexicographical* order.
+export abstract class DataElim extends Elim {
+   typename (): string {
+      const c: string = className(this)
+      return c.substr(0, c.length - elimSuffix.length)
+   }
+   
+   match (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
       const c: string = className(v)
       if (v instanceof DataValue) {
-         const κ: K = (this as any)[c] as K
-         assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${datatype(this)}.`)
+         const κ: RuntimeCont = (this as any)[c] as RuntimeCont
+         assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${this.typename()}.`)
          const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
-               [ρ, ξʹ, κʹ]: [Env, Match, K] = __applyArgs(κ, v̅, ξ)
+               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = matchArgs(κ, v̅, ξ)
          return [ρ, cons(v, ξʹ), κʹ]
       } else {
          return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
@@ -100,17 +103,17 @@ export abstract class DataFunc<K extends RuntimeKont> extends Func<K> {
    }
 }
 
-class VarFunc<K extends RuntimeKont> extends Func<RuntimeKont> {
+class VarElim extends Elim {
    x: Str = _
-   κ: K = _
+   κ: RuntimeCont = _
 
-   __apply (v: Versioned<Value>): [Env, Match, K] {
+   match (v: Versioned<Value>): [Env, Match, RuntimeCont] {
       return [Env.singleton(this.x, v), nil(), this.κ]
    }
 }
 
-function varFunc<K extends RuntimeKont> (x: Str, κ: K): VarFunc<K> {
-   return make(VarFunc, x, κ) as VarFunc<K>
+function varElim<K extends RuntimeCont> (x: Str, κ: RuntimeCont): VarElim {
+   return make(VarElim, x, κ) as VarElim
 }
 
 export function match_fwd (v̅: Match): Annotation {
