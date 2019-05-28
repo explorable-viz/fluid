@@ -5,7 +5,7 @@ export const _: any = undefined
 
 // Somewhat perverse to do this, but need some type safety!
 export type DataValueTag =
-   "Bool" | "Closure" | "DataExpl" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" | "Func" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
+   "Bool" | "Closure" | "DataExpl" | "Elim" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
    "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Token" | "Trie"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
 export type PrimOpTag = "UnaryOp" | "BinaryOp"

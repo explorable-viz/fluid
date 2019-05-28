@@ -11,15 +11,15 @@ import { Versioned, asVersioned, setα } from "./Versioned2"
 import Kont = Expr.Kont
 import Trie = Expr.Trie
 
-type RuntimeKont = DataValue<"Func" | "Expr">
+type RuntimeKont = DataValue<"Elim" | "Expr">
 
-export function evalTrie (σ: Trie<Expr>): Func<Expr> {
-   return evalTrie_(σ) as Func<Expr>
+export function evalTrie (σ: Trie<Expr>): Elim<Expr> {
+   return evalTrie_(σ) as Elim<Expr>
 }
 
-function evalTrie_<K extends Kont> (σ: Trie<K>): Func<RuntimeKont> {
+function evalTrie_<K extends Kont> (σ: Trie<K>): Elim<RuntimeKont> {
    if (Trie.Var.is(σ)) {
-      return varFunc(σ.x, evalKont(σ.κ))
+      return varElim(σ.x, evalKont(σ.κ))
    } else
    if (Trie.Constr.is(σ)) {
       const cases: Pair<Str, K>[] = σ.cases.toArray(),
@@ -36,7 +36,7 @@ function evalTrie_<K extends Kont> (σ: Trie<K>): Func<RuntimeKont> {
          }
       }
       assert(n === cases.length)
-      return make(d.elimC as Class<DataFunc<RuntimeKont>>, ...f̅)
+      return make(d.elimC as Class<DataElim<RuntimeKont>>, ...f̅)
    } else {
       return absurd()
    }
@@ -57,8 +57,8 @@ function evalKont<K extends Kont> (κ: K): RuntimeKont {
 // Preorder traversal of all nodes in the matched prefix, 
 export type Match = List<Versioned<Value>>
 
-// Func to distinguish from expression-level Fun. See GitHub issue #128.
-export abstract class Func<K extends RuntimeKont> extends DataValue<"Func"> {
+// Elim to distinguish from expression-level Fun. See GitHub issue #128.
+export abstract class Elim<K extends RuntimeKont> extends DataValue<"Elim"> {
    abstract __apply (v: Versioned<Value>, ξ: Match): [Env, Match, K]
 }
 
@@ -68,8 +68,8 @@ function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[], ξ:
       return [emptyEnv(), ξ, κ]
    } else {
       const [v, ...v̅ʹ] = v̅
-      if (κ instanceof Func) {
-         const f: Func<K> = κ, // "unfold" K into Func<K>
+      if (κ instanceof Elim) {
+         const f: Elim<K> = κ, // "unfold" K into Elim<K>
                [ρ, ξʹ, κʹ]: [Env, Match, K] = f.__apply(v, ξ),
                [ρʹ, ξ2, κ2]: [Env, Match, K] = __applyArgs(κʹ, v̅ʹ, ξʹ)
          return [ρ.concat(ρʹ), ξ2, κ2]
@@ -79,13 +79,13 @@ function __applyArgs<K extends RuntimeKont> (κ: K, v̅: Versioned<Value>[], ξ:
    }
 }
 
-function datatype (f: DataFunc<any>): string {
+function datatype (f: DataElim<any>): string {
    const c: string = className(f)
    return c.substr(0, c.length - elimSuffix.length)
 }
 
 // Concrete instances have a field per constructor, in *lexicographical* order.
-export abstract class DataFunc<K extends RuntimeKont> extends Func<K> {
+export abstract class DataElim<K extends RuntimeKont> extends Elim<K> {
    __apply (v: Versioned<Value>, ξ: Match): [Env, Match, K] {
       const c: string = className(v)
       if (v instanceof DataValue) {
@@ -100,7 +100,7 @@ export abstract class DataFunc<K extends RuntimeKont> extends Func<K> {
    }
 }
 
-class VarFunc<K extends RuntimeKont> extends Func<RuntimeKont> {
+class VarElim<K extends RuntimeKont> extends Elim<RuntimeKont> {
    x: Str = _
    κ: K = _
 
@@ -109,8 +109,8 @@ class VarFunc<K extends RuntimeKont> extends Func<RuntimeKont> {
    }
 }
 
-function varFunc<K extends RuntimeKont> (x: Str, κ: K): VarFunc<K> {
-   return make(VarFunc, x, κ) as VarFunc<K>
+function varElim<K extends RuntimeKont> (x: Str, κ: K): VarElim<K> {
+   return make(VarElim, x, κ) as VarElim<K>
 }
 
 export function match_fwd (v̅: Match): Annotation {

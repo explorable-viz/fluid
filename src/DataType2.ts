@@ -1,18 +1,18 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { DataExpl, DataValue } from "./DataValue2"
-import { DataFunc } from "./Match2"
+import { DataElim } from "./Match2"
 import { Str, _, fields } from "./Value2"
 
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: string
-   elimC: Class<DataFunc<any>>            // not sure how better to parameterise 
+   elimC: Class<DataElim<any>>            // not sure how better to parameterise 
    ctrs: Map<string, Ctr>                 // fields of my constructors
    explC̅: Map<string, Class<DataExpl>>    // "explanation" class per constructor
 
    constructor (
       name: string, 
-      elimC: Class<DataFunc<any>>, 
+      elimC: Class<DataElim<any>>, 
       ctrs: Map<string, Ctr>, 
       explC̅: Map<string, Class<DataExpl>>
    ) {
@@ -46,7 +46,7 @@ export function arity (ctr: Str): number {
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
 export let ctrToDataType: Map<string, DataType> = new Map
-export const elimSuffix: string = "Func"
+export const elimSuffix: string = "Elim"
 export const explSuffix: string = "Expl"
 
 // See https://stackoverflow.com/questions/33605775 for the dynamic class-naming idiom.
@@ -56,8 +56,8 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
          elimC_name: string = D.name + elimSuffix,
-         elimC: Class<DataFunc<any>> = {
-            [elimC_name]: class extends DataFunc<any> {
+         elimC: Class<DataElim<any>> = {
+            [elimC_name]: class extends DataElim<any> {
                constructor () {
                   super()
                   // lexicographical order hopefully preserved by getOwnPropertyNames()

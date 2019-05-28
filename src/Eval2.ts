@@ -8,7 +8,7 @@ import { Env, emptyEnv, extendEnv } from "./Env2"
 import { Expl, ExplValue, explValue } from "./ExplValue2"
 import { Expr } from "./Expr2"
 import { instantiate, instantiate_bwd, instantiate_fwd } from "./Instantiate2"
-import { Func, Match, evalTrie, match_bwd, match_fwd } from "./Match2"
+import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match2"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive2"
 import { Id, Num, Str, Value, _, make } from "./Value2"
 import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, strʹ } from "./Versioned2"
@@ -42,10 +42,10 @@ export module Eval {
 export class Closure extends VersionedC(DataValue)<"Closure"> {
    ρ: Env = _ // ρ not closing for f; need to extend with the bindings in δ
    δ: List<RecDef> = _
-   f: Func<Expr> = _
+   f: Elim<Expr> = _
 }
 
-function closure (k: Id, ρ: Env, δ: List<RecDef>, f: Func<Expr>): Closure {
+function closure (k: Id, ρ: Env, δ: List<RecDef>, f: Elim<Expr>): Closure {
    return at(k, Closure, ρ, δ, f)
 }
 
