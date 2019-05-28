@@ -61,19 +61,19 @@ export type Match = List<Versioned<Value>>
 
 // See GitHub issue #128.
 export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
-   abstract apply (v: Versioned<Value>, ξ: Match): [Env, Match, K]
+   abstract match (v: Versioned<Value>, ξ: Match): [Env, Match, K]
 }
 
 // Parser ensures constructor calls are saturated.
-function applyArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, Match, RuntimeCont] {
+function matchArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, Match, RuntimeCont] {
    if (v̅.length === 0) {
       return [emptyEnv(), ξ, κ]
    } else {
       const [v, ...v̅ʹ] = v̅
       if (κ instanceof Elim) {
          const f: Elim = κ, // "unfold" K into Elim<K>
-               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = f.apply(v, ξ),
-               [ρʹ, ξ2, κ2]: [Env, Match, RuntimeCont] = applyArgs(κʹ, v̅ʹ, ξʹ)
+               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = f.match(v, ξ),
+               [ρʹ, ξ2, κ2]: [Env, Match, RuntimeCont] = matchArgs(κʹ, v̅ʹ, ξʹ)
          return [ρ.concat(ρʹ), ξ2, κ2]
       } else {
          return absurd("Too many arguments to constructor.")
@@ -89,13 +89,13 @@ export abstract class DataElim extends Elim {
       return c.substr(0, c.length - elimSuffix.length)
    }
    
-   apply (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
+   match (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
          assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${this.typename()}.`)
          const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
-               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = applyArgs(κ, v̅, ξ)
+               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = matchArgs(κ, v̅, ξ)
          return [ρ, cons(v, ξʹ), κʹ]
       } else {
          return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
@@ -107,7 +107,7 @@ class VarElim extends Elim {
    x: Str = _
    κ: RuntimeCont = _
 
-   apply (v: Versioned<Value>): [Env, Match, RuntimeCont] {
+   match (v: Versioned<Value>): [Env, Match, RuntimeCont] {
       return [Env.singleton(this.x, v), nil(), this.κ]
    }
 }
