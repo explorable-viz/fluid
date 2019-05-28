@@ -1,7 +1,7 @@
 import { __nonNull, absurd, assert } from "../util/Core"
-import { Cons, List } from "../BaseTypes2"
-import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics2"
-import { asVersioned } from "../Versioned2"
+import { Cons, List } from "../BaseTypes"
+import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
+import { asVersioned } from "../Versioned"
 
 type TransformFun = (p: [number, number]) => [number, number]
 

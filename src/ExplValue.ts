@@ -1,10 +1,10 @@
-import { List } from "./BaseTypes2"
-import { DataValue } from "./DataValue2"
-import { Eval, ExplId } from "./Eval2"
-import { Match } from "./Match2"
-import { UnaryOp } from "./Primitive2"
-import { Str, Value, _, make } from "./Value2"
-import { Versioned, VersionedC, at } from "./Versioned2"
+import { List } from "./BaseTypes"
+import { DataValue } from "./DataValue"
+import { Eval, ExplId } from "./Eval"
+import { Match } from "./Match"
+import { UnaryOp } from "./Primitive"
+import { Str, Value, _, make } from "./Value"
+import { Versioned, VersionedC, at } from "./Versioned"
 
 export type Closure = Eval.Closure
 export type Expl = Expl.Expl

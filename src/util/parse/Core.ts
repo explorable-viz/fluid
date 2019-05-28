@@ -1,6 +1,6 @@
 import { Ord, eq } from "../Ord"
 import { __nonNull } from "../Core"
-import { LexemeTag, Value, _, make } from "../../Value2" // TODO: fix upwards dependency
+import { LexemeTag, Value, _, make } from "../../Value" // TODO: fix upwards dependency
 
 export interface SyntaxNode {
 }

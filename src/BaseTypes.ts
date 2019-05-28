@@ -1,8 +1,8 @@
 import { absurd } from "./util/Core"
-import { initDataType } from "./DataType2"
-import { DataValue } from "./DataValue2"
-import { Id, Persistent, _, make } from "./Value2"
-import { Versioned, at } from "./Versioned2"
+import { initDataType } from "./DataType"
+import { DataValue } from "./DataValue"
+import { Id, Persistent, _, make } from "./Value"
+import { Versioned, at } from "./Versioned"
 
 // See Env for convention regarding instance members on reflected datatypes.
 

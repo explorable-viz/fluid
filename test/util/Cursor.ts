@@ -1,9 +1,9 @@
-import { ann } from "../../src/util/Annotated2"
+import { ann } from "../../src/util/Annotated"
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
-import { Persistent, Value } from "../../src/Value2"
-import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes2"
-import { Expr } from "../../src/Expr2"
-import { asVersioned } from "../../src/Versioned2"
+import { Persistent, Value } from "../../src/Value"
+import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
+import { Expr } from "../../src/Expr"
+import { asVersioned } from "../../src/Versioned"
 
 import Def = Expr.Def
 import Let = Expr.Let

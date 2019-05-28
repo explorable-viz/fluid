@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
-import { Expl } from "./ExplValue2"
-import { DataValueTag, State, Value, fields } from "./Value2"
-import { Versioned } from "./Versioned2"
+import { Expl } from "./ExplValue"
+import { DataValueTag, State, Value, fields } from "./Value"
+import { Versioned } from "./Versioned"
 
 // Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
 export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {

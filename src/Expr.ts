@@ -1,11 +1,11 @@
 import { absurd, error } from "./util/Core"
 import { eq } from "./util/Ord"
-import { List } from "./BaseTypes2"
-import { ctrToDataType } from "./DataType2"
-import { DataValue } from "./DataValue2"
-import { FiniteMap, unionWith } from "./FiniteMap2"
-import { Id, Num, Str, _, make } from "./Value2"
-import { Versioned, VersionedC, at } from "./Versioned2"
+import { List } from "./BaseTypes"
+import { ctrToDataType } from "./DataType"
+import { DataValue } from "./DataValue"
+import { FiniteMap, unionWith } from "./FiniteMap"
+import { Id, Num, Str, _, make } from "./Value"
+import { Versioned, VersionedC, at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {

@@ -1,7 +1,7 @@
 import { as, assert } from "./util/Core"
-import { Bool, trueʹ, falseʹ } from "./BaseTypes2"
-import { Id, Num, PrimOpTag, PrimValue, Str, _, Value, make } from "./Value2"
-import { Versioned, numʹ, strʹ } from "./Versioned2"
+import { Bool, trueʹ, falseʹ } from "./BaseTypes"
+import { Id, Num, PrimOpTag, PrimValue, Str, _, Value, make } from "./Value"
+import { Versioned, numʹ, strʹ } from "./Versioned"
 
 type Unary<T, V> = (x: T) => (k: Id) => Versioned<V>
 type Binary<T, U, V> = (x: T, y: U) => (k: Id) => Versioned<V>

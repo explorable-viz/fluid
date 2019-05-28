@@ -3,13 +3,13 @@ import {
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
    dropSecond, seqDep, lexeme_, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
-} from "./util/parse/Core2"
-import { Cons, List, Nil, Pair, nil } from "./BaseTypes2"
-import { arity } from "./DataType2"
-import { Expr, Cont, strings } from "./Expr2"
-import { singleton } from "./FiniteMap2"
-import { Str, num, str } from "./Value2"
-import { ν, strʹ } from "./Versioned2"
+} from "./util/parse/Core"
+import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
+import { arity } from "./DataType"
+import { Expr, Cont, strings } from "./Expr"
+import { singleton } from "./FiniteMap"
+import { Str, num, str } from "./Value"
+import { ν, strʹ } from "./Versioned"
 
 import App = Expr.App
 import BinaryApp = Expr.BinaryApp

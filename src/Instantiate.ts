@@ -1,10 +1,10 @@
 import { absurd, as } from "./util/Core"
-import { List, Pair, pair } from "./BaseTypes2"
-import { Env } from "./Env2"
-import { Direction } from "./Eval2"
-import { Expr } from "./Expr2"
-import { Id, Str, Value, _, make } from "./Value2"
-import { Extern, Versioned, joinα, setα, strʹ } from "./Versioned2"
+import { List, Pair, pair } from "./BaseTypes"
+import { Env } from "./Env"
+import { Direction } from "./Eval"
+import { Expr } from "./Expr"
+import { Id, Str, Value, _, make } from "./Value"
+import { Extern, Versioned, joinα, setα, strʹ } from "./Versioned"
 
 import Def = Expr.Def
 import Cont = Expr.Cont

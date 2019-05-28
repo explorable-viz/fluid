@@ -1,8 +1,8 @@
 import { __nonNull, as } from "../util/Core"
-import { Cons, List, Nil, Pair } from "../BaseTypes2"
-import { DataValue } from "../DataValue2"
-import { Num, Str, Value, _, make } from "../Value2"
-import { Versioned, asVersioned } from "../Versioned2"
+import { Cons, List, Nil, Pair } from "../BaseTypes"
+import { DataValue } from "../DataValue"
+import { Num, Str, Value, _, make } from "../Value"
+import { Versioned, asVersioned } from "../Versioned"
 
 type Row = Pair<Num | Str, Value> // approximate recursive type
 export type Data = List<Row> 

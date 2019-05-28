@@ -1,7 +1,7 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
-import { DataExpl, DataValue } from "./DataValue2"
-import { DataElim } from "./Match2"
-import { Str, _, fields } from "./Value2"
+import { DataExpl, DataValue } from "./DataValue"
+import { DataElim } from "./Match"
+import { Str, _, fields } from "./Value"
 
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {

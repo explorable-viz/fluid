@@ -1,6 +1,6 @@
 import { absurd } from "./util/Core"
-import { Empty, NonEmpty, Pair, Tree, empty, nonEmpty, pair } from "./BaseTypes2"
-import { Persistent, Str } from "./Value2"
+import { Empty, NonEmpty, Pair, Tree, empty, nonEmpty, pair } from "./BaseTypes"
+import { Persistent, Str } from "./Value"
 
 // Simplify to keys of type Str until we have something like type classes.
 export type FiniteMap<V> = Tree<Pair<Str, V>>
