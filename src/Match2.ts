@@ -13,6 +13,8 @@ import Trie = Expr.Trie
 
 type RuntimeKont = Expr | DataValue<"Elim">
 
+// Conceptually (syntactic) tries map to (semantic) elim forms, and exprs map to exprs; no easy way to 
+// express this in the type system.
 export function evalTrie (σ: Trie<Expr>): Elim<Expr> {
    return evalTrie_(σ) as Elim<Expr>
 }
@@ -84,7 +86,8 @@ function datatype (f: DataElim): string {
    return c.substr(0, c.length - elimSuffix.length)
 }
 
-// Concrete instances have a field per constructor, in *lexicographical* order.
+// No need to parameterise these two claseses over subtypes of RuntimeKont because only ever use them at RuntimeKont 
+// itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
    __apply (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeKont] {
       const c: string = className(v)
@@ -100,17 +103,17 @@ export abstract class DataElim extends Elim {
    }
 }
 
-class VarElim<K extends RuntimeKont> extends Elim<RuntimeKont> {
+class VarElim extends Elim {
    x: Str = _
-   κ: K = _
+   κ: RuntimeKont = _
 
-   __apply (v: Versioned<Value>): [Env, Match, K] {
+   __apply (v: Versioned<Value>): [Env, Match, RuntimeKont] {
       return [Env.singleton(this.x, v), nil(), this.κ]
    }
 }
 
-function varElim<K extends RuntimeKont> (x: Str, κ: K): VarElim<K> {
-   return make(VarElim, x, κ) as VarElim<K>
+function varElim<K extends RuntimeKont> (x: Str, κ: RuntimeKont): VarElim {
+   return make(VarElim, x, κ) as VarElim
 }
 
 export function match_fwd (v̅: Match): Annotation {
