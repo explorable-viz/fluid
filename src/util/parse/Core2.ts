@@ -6,7 +6,7 @@ export interface SyntaxNode {
 }
 
 // The parser builds a list of these. Currently interned, but will probably need to become versioned.
-export abstract class Lexeme<Tag extends LexemeTag> extends Value<Tag> implements SyntaxNode, Ord<Lexeme<Tag>> {
+export abstract class Lexeme<Tag extends LexemeTag = LexemeTag> extends Value<Tag> implements SyntaxNode, Ord<Lexeme<Tag>> {
    abstract str: string
 
    eq (l: Lexeme<Tag>): boolean {

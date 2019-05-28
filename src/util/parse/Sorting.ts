@@ -1,5 +1,5 @@
 import { Comparator } from "../Ord"
-import { Lexeme, Buffer } from "./Core"
+import { Lexeme, Buffer } from "./Core2"
 
 export function occursBefore(buffer: Buffer): Comparator<Lexeme> {
    return (l1: Lexeme, l2: Lexeme): number => {
