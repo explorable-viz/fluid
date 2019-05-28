@@ -54,7 +54,7 @@ function evalKont<K extends Kont> (κ: K): RuntimeKont {
    }
 }
 
-// Spine of matched prefix.
+// Preorder traversal of all nodes in the matched prefix, 
 export type Match = List<Versioned<Value>>
 
 // Func to distinguish from expression-level Fun. See GitHub issue #128.

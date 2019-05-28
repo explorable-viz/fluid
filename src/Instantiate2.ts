@@ -11,7 +11,8 @@ import Kont = Expr.Kont
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
-// The "runtime identity" of an expression. 
+// The "runtime identity" of an expression. The obvious optimisation that j always be non-empty (i.e. that 
+// instantiation in empty ρ is the identity) would require slicing to have access to ρ.
 export class ExprId extends Id {
    j: List<Value> = _
    e: Expr | Versioned<Str> = _ // str for binding occurrences of variables
