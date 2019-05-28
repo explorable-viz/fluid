@@ -84,12 +84,12 @@ function applyArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, 
 // No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
 // itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
-      typename (): string {
-         const c: string = className(this)
-         return c.substr(0, c.length - elimSuffix.length)
-      }
-      
-      apply (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
+   typename (): string {
+      const c: string = className(this)
+      return c.substr(0, c.length - elimSuffix.length)
+   }
+   
+   apply (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
