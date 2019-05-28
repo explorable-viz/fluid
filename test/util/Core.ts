@@ -1,68 +1,58 @@
-import { ann } from "../../src/util/Annotated"
-import { __nonNull, assert } from "../../src/util/Core"
-import { World, setall, ν } from "../../src/util/Versioned"
+import { __nonNull, as } from "../../src/util/Core"
 import { successfulParse } from "../../src/util/parse/Core"
-import { initDataTypes } from "../../src/DataType"
-import { Env } from "../../src/Env"
+import { ann } from "../../src/util/Annotated"
+import { emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
-import { ExplVal } from "../../src/ExplVal"
-import { Expr, Kont } from "../../src/Expr"
-import { unionWith } from "../../src/FiniteMap"
-import { instantiate } from "../../src/Instantiate"
+import { ExplValue } from "../../src/ExplValue"
+import { Expr } from "../../src/Expr"
+import "../../src/Graphics"
 import { Parse } from "../../src/Parse"
-import { createPrelude } from "../../src/Primitive"
+import { ν, setallα } from "../../src/Versioned"
 import { Cursor } from "./Cursor"
-
-import Args = Expr.Args
-import Trie = Expr.Trie
-
-export function initialise (): void {
-   // Fix the toString impl on String to behave sensibly.
-   String.prototype.toString = function (this: String): string {
-      return "'" + this + "'"
-   }
-   initDataTypes()
-}
 
 export class FwdSlice {
    expr: Cursor
    val: Cursor
 
    constructor (e: Expr) {
-      World.newRevision()
-      setall(e, ann.top) // parser should no longer need to do this
+      setallα(e, ann.top)
       this.expr = new Cursor(e)
       this.setup()
-      this.val = new Cursor(Eval.eval_(prelude, e).v)
-      this.expect()
+      const tv: ExplValue = Eval.eval_(emptyEnv(), e)
+      if (flags.get(Flags.Fwd)) {
+         Eval.eval_fwd(tv)
+         this.val = new Cursor(tv.v)
+         this.expect()
+      }
+      console.log(e)
+      console.log(tv)
    }
 
-   setup (): void {      
+   setup (): void {
    }
 
    expect (): void {
    }
 
    get e (): Expr {
-      return this.expr.o as Expr
+      return as(this.expr.v, Expr.Expr)
    }
 }
 
-// Precondition: must be safe to reexecute e in the current revision, to obtain a trace.
 export class BwdSlice {
    val: Cursor
    expr: Cursor
 
    constructor (e: Expr) {
-      World.newRevision()
-      setall(e, ann.bot)
-      const tv: ExplVal = Eval.eval_(prelude, e) // just to obtain tv
-      setall(tv, ann.bot) // TODO: contrive a test that reveals why this matters :-/
-      World.newRevision()
-      this.val = new Cursor(tv.v)
-      this.setup()
-      this.expr = new Cursor(Eval.uneval(tv))
-      this.expect()
+      if (flags.get(Flags.Bwd)) {
+         setallα(e, ann.bot)
+         const tv: ExplValue = Eval.eval_(emptyEnv(), e) // just to obtain tv
+         Eval.eval_fwd(tv) // clear annotations on all values
+         this.val = new Cursor(tv.v)
+         this.setup()
+         this.expr = new Cursor(Eval.eval_bwd(tv))
+         this.expect()
+      }
    }
 
    setup (): void {
@@ -72,31 +62,22 @@ export class BwdSlice {
    }
 }
 
-export enum Profile {
-   Parse,
-   Run,
-   Visualise
-}
+enum Flags { Bwd, Fwd }
+const flags: Map<Flags, boolean> = new Map([
+   [Flags.Fwd, true],
+   [Flags.Bwd, true]
+])
 
-// Could have used join, but only defined for syntactic tries.
-export function merge<K extends Kont<K>> (σ1: Trie.Constr<K>, σ2: Trie.Constr<K>): Trie.Constr<K> {
-   return Trie.constr(unionWith(σ1.cases, σ2.cases, (v: Args<K>, vʹ: Args<K>) => assert(false)))
-}
-
-// Kindergarten modules: load another file as though it were a letrec block, with body e.
-export function prependModule (src: string, e: Expr): Expr.LetRec {
-   return Expr.letRec(ν(), ann.top, successfulParse(Parse.recDefs1, src), e)
+// Kindergarten modules: load another file as though it were a defs block, with body e.
+export function prependModule (src: string, e: Expr): Expr.Defs {
+   return Expr.defs(ν(), successfulParse(Parse.defList, src), e)
 }
 
 export function parse (src: string): Expr {
-   return instantiate(prelude, 
-      prependModule(loadLib("prelude"), 
-      prependModule(loadLib("graphics"), 
-      successfulParse(Parse.expr, src)))
-   )
+   return prependModule(loadLib("prelude"), 
+          prependModule(loadLib("graphics"), 
+          successfulParse(Parse.expr, src)))
 }
-
-export let prelude: Env = createPrelude()
 
 // An asychronously loading test file; when loading completes text will be non-null.
 export class TestFile {
@@ -107,7 +88,6 @@ export class TestFile {
    }
 }
 
-// Maybe there's a way to use ES6 promises instead.
 export function loadTestFile (folder: string, file: string): string {
    let testFile: TestFile = new TestFile
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest

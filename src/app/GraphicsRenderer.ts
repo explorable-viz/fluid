@@ -1,6 +1,7 @@
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
+import { asVersioned } from "../Versioned"
 
 type TransformFun = (p: [number, number]) => [number, number]
 
@@ -71,10 +72,10 @@ export class GraphicsRenderer {
       if (g instanceof Transform) {
          const t: LinearTransform = g.t
          if (t instanceof Scale) {
-            this.renderWith(g.g, scale(t.x.n, t.y.n))
+            this.renderWith(g.g, scale(t.x.val, t.y.val))
          } else
          if (t instanceof Translate) {
-            this.renderWith(g.g, translate(t.x.n, t.y.n))
+            this.renderWith(g.g, translate(t.x.val, t.y.val))
          } else
          if (t instanceof Transpose) {
             this.renderWith(g.g, transpose)
@@ -97,11 +98,11 @@ export class GraphicsRenderer {
    path2D (points: List<Point>): Path2D {
       const region: Path2D = new Path2D
       if (Cons.is(points)) {
-         const [x, y]: [number, number] = this.transform([points.head.x.n, points.head.y.n])
+         const [x, y]: [number, number] = this.transform([points.head.x.val, points.head.y.val])
          region.moveTo(x, y)
          points = points.tail
          for (; Cons.is(points); points = points.tail) {
-            const [x, y]: [number, number] = this.transform([points.head.x.n, points.head.y.n])
+            const [x, y]: [number, number] = this.transform([points.head.x.val, points.head.y.val])
             region.lineTo(x, y)
          }
       } else {
@@ -120,8 +121,8 @@ export class GraphicsRenderer {
    pointHighlights (points: List<Point>): void {
       for (; Cons.is(points); points = points.tail) {
          const point: Point = points.head,
-               [x, y]: [number, number] = this.transform([point.x.n, point.y.n])
-         if (!point.x.α || !point.y.α) {
+               [x, y]: [number, number] = this.transform([point.x.val, point.y.val])
+         if (!__nonNull(asVersioned(point.x).__α) || !__nonNull(asVersioned(point.y).__α)) {
             this.circle(x, y, 3)
          }
       }

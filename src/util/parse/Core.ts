@@ -1,20 +1,19 @@
 import { Ord, eq } from "../Ord"
 import { __nonNull } from "../Core"
-import { PersistentObject, make } from "../Persistent"
+import { LexemeTag, Value, _, make } from "../../Value" // TODO: fix upwards dependency
 
 export interface SyntaxNode {
 }
 
 // The parser builds a list of these. Currently interned, but will probably need to become versioned.
-export abstract class Lexeme implements PersistentObject, SyntaxNode, Ord<Lexeme> {
+export abstract class Lexeme<Tag extends LexemeTag = LexemeTag> extends Value<Tag> implements SyntaxNode, Ord<Lexeme<Tag>> {
    abstract str: string
-   abstract constructor_ (str: string): void
 
-   eq (l: Lexeme): boolean {
+   eq (l: Lexeme<Tag>): boolean {
       return eq(this, l)
    }
 
-   leq (l: Lexeme): boolean {
+   leq (l: Lexeme<Tag>): boolean {
       return this.str <= l.str
    }
 
@@ -45,7 +44,7 @@ export class Pos {
    }
 
    toString (): string {
-      return '(' + this.line + ', ' + this.ch + ')'
+      return "(" + this.line + ", " + this.ch + ")"
    }
 
    equals (that: Pos): boolean {
@@ -54,7 +53,7 @@ export class Pos {
 }
 
 export type Span = [Pos, Pos]
-export type Buffer = [Lexeme, Span][] // intuitively speaking
+export type Buffer = [Lexeme<any>, Span][] // intuitively speaking
 
 export function equals([from1, to1]: Span, [from2, to2]: Span): boolean {
    return from1.equals(from2) && to1.equals(to2)
@@ -85,7 +84,7 @@ export class ParseState {
    }
 
    // TODO: assert that lexemes have contiguous spans, i.e. represent a linear consumption of the input.
-   append ([l, [from, to]]: [Lexeme, Span]): ParseState {
+   append ([l, [from, to]]: [Lexeme<any>, Span]): ParseState {
       return new ParseState(this.input, this.pos, this.index, this.buffer.concat([[l, [from, to]]]))
    }
 
@@ -112,26 +111,16 @@ export function regExp (r: RegExp): Parser<string> {
    return regExp_
 }
 
-export class Whitespace extends Lexeme {
-   __tag: "Whitespace"
-   str: string
-
-   constructor_ (str: string): void {
-      this.str = str
-   }
+export class Whitespace extends Lexeme<"Whitespace"> {
+   str: string = _
 
    static make (str: string): Whitespace {
       return make(Whitespace, str)
    }
 }
 
-export class SingleLineComment extends Lexeme {
-   __tag: "SingleLineComment"
-   str: string
-
-   constructor_ (str: string): void {
-      this.str = str
-   }
+export class SingleLineComment extends Lexeme<"SingleLineComment"> {
+   str: string = _
 
    static make (str: string): SingleLineComment {
       return make(SingleLineComment, str)
@@ -139,26 +128,21 @@ export class SingleLineComment extends Lexeme {
 }
 
 // Does this serve any purpose?
-export class Operator extends Lexeme {
-   __tag: "Operator"
-   str: string
-
-   constructor_ (str: string): void {
-      this.str = str
-   }
+export class Operator extends Lexeme<"Operator"> {
+   str: string = _
 
    static make (str: string): Operator {
       return make(Operator, str)
    }
 }
 
-export type LexemeClass<L extends Lexeme> = new () => L
+export type LexemeClass<Tag extends LexemeTag> = new () => Lexeme<Tag>
 
-function token<L extends Lexeme> (p: Parser<string>, C: LexemeClass<L>): Parser<L> {
-   function token_ (state: ParseState): ParseResult<L> | null {
+function token<Tag extends LexemeTag> (p: Parser<string>, C: LexemeClass<Tag>): Parser<Lexeme<Tag>> {
+   function token_ (state: ParseState): ParseResult<Lexeme<Tag>> | null {
       const r: ParseResult<string> | null = p(state)
       if (r !== null) {
-         const l: L = make(C, r.ast)
+         const l: Lexeme<Tag> = make(C, r.ast )
          return {
             state: r.state.append([l, [state.pos, r.state.pos]]),
             matched: r.matched,
@@ -176,7 +160,7 @@ const newLine: Parser<string> = regExp(/^\n/)
 const newLines: Parser<string> = withAction(repeat1(newLine), strs => strs.join())
 const whitespace: Parser<Whitespace> = token(choice([horizWhitespace, newLines]), Whitespace)
 const singleLineComment: Parser<SingleLineComment> = token(regExp(/^\/\/.*/), SingleLineComment)
-const ignore: Parser<Lexeme[]> = repeat(choice<Lexeme>([whitespace, singleLineComment]))
+const ignore: Parser<(Whitespace | SingleLineComment)[]> = repeat(choice<Whitespace | SingleLineComment>([whitespace, singleLineComment]))
 
 export function successfulParse<T extends SyntaxNode> (p: Parser<T>, str: string): T {
    return __nonNull(parse(p, str)).ast
@@ -186,7 +170,7 @@ export function successfulParse<T extends SyntaxNode> (p: Parser<T>, str: string
 function parse<T extends SyntaxNode> (p: Parser<T>, str: string): ParseResult<T> | null {
    const p_: Parser<T> = withAction(
       seq(seq(ignore, p), eof),
-      ([[_, t], eof]: [[Lexeme[], T], null]) => t
+      ([[_, t], eof]: [[(Whitespace | SingleLineComment)[], T], null]) => t
    )
    return p_(new ParseState(str, new Pos(0, 0), 0, []))
 }
@@ -208,8 +192,12 @@ export function withJoin<T> (p: Parser<T[]>): Parser<string> {
    return withAction(p, (ast: T[]) => ast.join(''))
 }
 
-export function lexeme<L extends Lexeme> (p: Parser<string>, C: LexemeClass<L>): Parser<L> {
-   return dropSecond(token(p, C), ignore)
+export function lexeme<Tag extends LexemeTag> (p: Parser<string>, C: LexemeClass<Tag>): Parser<Lexeme<Tag>> {
+   return lexeme_(token(p, C))
+}
+
+export function lexeme_<T> (p: Parser<T>): Parser<T> {
+   return dropSecond(p, ignore)
 }
 
 // Parse a particular symbol.

@@ -1,52 +1,87 @@
-import { assert } from "./util/Core"
+import { AClass, Class, __nonNull, assert } from "./util/Core"
+import { DataExpl, DataValue } from "./DataValue"
+import { DataElim } from "./Match"
+import { Str, _, fields } from "./Value"
 
-// The fields of a constructor have a total ordering independent of their lexicographical ordering.
-// This is the order in which they are defined in the class definition (TODO: check). Not interned.
+// Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: string
-   ctrs: Map<string, string[]>  // fields of my constructors
+   elimC: Class<DataElim>            
+   ctrs: Map<string, Ctr>                 // fields of my constructors
+   explC̅: Map<string, Class<DataExpl>>    // "explanation" class per constructor
 
-   constructor (name: string, ctrs: Map<string, string[]>) {
+   constructor (
+      name: string, 
+      elimC: Class<DataElim>, 
+      ctrs: Map<string, Ctr>, 
+      explC̅: Map<string, Class<DataExpl>>
+   ) {
       this.name = name
+      this.elimC = elimC
       this.ctrs = ctrs
+      this.explC̅ = explC̅
    }
 }
 
-// Populated by initDataTypes(). Constructors are not yet first-class. TODO: reinstate projections.
+// Constructor of a datatype, not to be confused with an instance of such a thing (Constr) or name of such a thing
+// (Lex.Ctr). Fields have a total ordering given by the order of definition in the corresponding class.
+export class Ctr {
+   C: Class<DataValue>
+   f̅: string[]
+
+   constructor (C: Class<DataValue>, f̅: string[]) {
+      this.C = C
+      this.f̅ = f̅
+   }
+}
+
+export function ctrFor (ctr: Str): Ctr {
+   return ctrToDataType.get(ctr.val)!.ctrs.get(ctr.val)!
+}
+
+export function arity (ctr: Str): number {
+   assert(ctrToDataType.has(ctr.val), `No such constructor: "${ctr.val}".`,)
+   return ctrFor(ctr).f̅.length
+}
+
+// Populated by initDataTypes(). Constructors are not yet first-class.
 export let ctrToDataType: Map<string, DataType> = new Map
+export const elimSuffix: string = "Elim"
+export const explSuffix: string = "Expl"
 
-export function arity (ctr: string): number {
-   assert(ctrToDataType.has(ctr), "No such constructor.", ctr)
-   return ctrToDataType.get(ctr)!.ctrs.get(ctr)!.length
-}
-
-function initDataType <T> (d: DataType): void {
-   d.ctrs.forEach((_, ctr: string): void => {
-      ctrToDataType.set(ctr, d)
+// See https://stackoverflow.com/questions/33605775 for the dynamic class-naming idiom.
+export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]) {
+   C̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // probably consistent with string <
+   const ctrs: [string, Ctr][] = C̅.map(
+            (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
+         ),
+         elimC_name: string = D.name + elimSuffix,
+         elimC: Class<DataElim> = {
+            [elimC_name]: class extends DataElim {
+               constructor () {
+                  super()
+                  // lexicographical order hopefully preserved by getOwnPropertyNames()
+                  C̅.forEach((C: Class<T>): void => {
+                     (this as any)[C.name] = _
+                  })
+               }
+            }
+         }[elimC_name],
+         explC_name: string = D.name + explSuffix,
+         explC̅: [string, Class<DataExpl>][] = ctrs.map(([cʹ, c]: [string, Ctr]) => {
+            return [cʹ, {
+               [explC_name]: class extends DataExpl {
+                  constructor () {
+                     super()
+                     c.f̅.forEach((f: string): void => {
+                        (this as any)[f] = _
+                     })
+                  }
+               }
+            }[explC_name]]
+         }),
+         d: DataType = new DataType(D.name, elimC, new Map(ctrs), new Map(explC̅))
+   C̅.forEach((C: Class<T>): void => {
+      ctrToDataType.set(C.name, d)
    })
-}
-
-export function initDataTypes (): void {
-   assert(ctrToDataType.size === 0)
-   initDataType(new DataType("Bool", new Map([["True", []], ["False", []]])))
-   initDataType(new DataType("Box", new Map([["Box", ["unbox"]]])))
-   initDataType(new DataType("List", new Map([["Nil", []], ["Cons", ["head", "tail"]]])))
-   initDataType(new DataType("Ordering", new Map([["LT", []], ["GT", []], ["EQ", []]])))
-   initDataType(new DataType("Pair", new Map([["Pair", ["fst", "snd"]]])))
-   initDataType(new DataType("Point", new Map([["Point", ["x", "y"]]])))
-   initDataType(new DataType("Rect", new Map([["Rect", ["width", "height"]]])))
-   initDataType(new DataType("Option", new Map([["None", []], ["Some", ["valOf"]]])))
-   initDataType(new DataType("Tree", new Map([["Empty", []], ["NonEmpty", ["left", "t", "right"]]])))
-   initDataType(new DataType("Unit", new Map([["Unit", []]])))
-   initDataType(new DataType("GraphicsElement", new Map([
-      ["PathStroke", ["points"]], 
-      ["RectFill", ["points"]], 
-      ["Transform", ["t", "g"]],
-      ["Graphic", ["elems"]]
-   ])))
-   initDataType(new DataType("LinearTransform", new Map([
-      ["Scale", ["x", "y"]],
-      ["Translate", ["x", "y"]],
-      ["Transpose", []]
-   ])))
 }

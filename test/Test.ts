@@ -1,21 +1,20 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { NonEmpty } from "../src/BaseTypes"
+import { BwdSlice, FwdSlice, load, parse } from "./util/Core"
+import { Cons, List, Nil, NonEmpty, Pair } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
-import { Value } from "../src/ExplVal"
-import { BwdSlice, FwdSlice, initialise, load, parse } from "./util/Core"
 
 import Trie = Expr.Trie
 
 before((done: MochaDone) => {
-	initialise()
 	done()
 })
 
+// Putting test name in a variable interacts poorly with asynchronous execution.
 describe("example", () => {
 	describe("arithmetic", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("arithmetic"))
+         const e: Expr = parse(load("arithmetic"))
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -26,12 +25,14 @@ describe("example", () => {
 					this.val.notNeeded()
 				} 
 			})(e)
+			new BwdSlice(e)
 		})
-	})
+   })
 
-	describe("bar-chart", () => {
+   describe("bar-chart", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("bar-chart"))
+			new FwdSlice(e)
 			new (class extends BwdSlice {
 				setup (): void {
 					this.val.need()
@@ -41,9 +42,9 @@ describe("example", () => {
 				}
 			})(e)
 		})
-	})
+   })
 
-	describe("compose", () => {
+   describe("compose", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("compose"))
 			new FwdSlice(e)
@@ -51,54 +52,54 @@ describe("example", () => {
 		})
 	})
 
-	describe("factorial", () => {
+   describe("factorial", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("factorial"))
-			new FwdSlice(e)
+         const e: Expr = parse(load("factorial"))
+         new FwdSlice(e)
 			new BwdSlice(e)
 		})
 	})
 
-	describe("filter", () => {
+   describe("filter", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("filter"))
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
-						.toRecDef("filter")
+                  .toDef("filter")
 						.to(Expr.RecDef, "σ")
 						.var_("p")
 						.to(Expr.Fun, "σ")
 						.to(Trie.Constr, "cases")
 						.to(NonEmpty, "left")
 						.nodeValue()
-						.arg_var("x").arg_var("xs")
-						.end()
+						.var_("x").var_("xs")
 						.to(Expr.MatchAs, "σ")
 						.to(Trie.Constr, "cases")
-						.nodeValue().end()
+						.nodeValue()
 						.constrArg("Cons", 0).notNeed()
 				}
 				expect (): void {
 					this.val
 						.need()
-						.push().val_constrArg("Cons", 0).value().notNeeded().pop()
-						.val_constrArg("Cons", 1).value()
-						.assert(Value.Constr, v => v.ctr.str === "Nil")
+						.push().to(Cons, "head").notNeeded().pop()
+						.to(Cons, "tail")
+						.assert(List, v => Nil.is(v))
 				}
 			})(e)
-		})
-	})
-
-	describe("foldr_sumSquares", () => {
-		it("ok", () => {
-			const e: Expr = parse(load("foldr_sumSquares"))
-			new FwdSlice(e)
 			new BwdSlice(e)
 		})
 	})
 
-	describe("length", () => {
+   describe("foldr_sumSquares", () => {
+		it("ok", () => {
+			const e: Expr = parse(load("foldr_sumSquares"))
+         new FwdSlice(e)
+			new BwdSlice(e)
+		})
+	})
+
+   describe("length", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("length"))
 			// erasing the elements doesn't affect the count:
@@ -106,7 +107,7 @@ describe("example", () => {
 				setup (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.App, "arg")
+						.to(Expr.App, "e")
 						.push().constrArg("Cons", 0).notNeed().pop()
 						.push().constrArg("Cons", 0).notNeed().pop()
 				}
@@ -133,7 +134,7 @@ describe("example", () => {
 				expect (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.App, "arg").needed()
+						.to(Expr.App, "e").needed()
 						.push().constrArg("Cons", 0).notNeeded().pop()
 						.constrArg("Cons", 1).needed()
 						.push().constrArg("Cons", 0).notNeeded().pop()
@@ -146,22 +147,20 @@ describe("example", () => {
 	describe("lexicalScoping", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("lexicalScoping"))
-			new FwdSlice(e)
+         new FwdSlice(e)
 			new BwdSlice(e)
 		})
 	})
 
-	describe("lookup", () => {
+   describe("lookup", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("lookup"))
 			const last = new (class extends FwdSlice {
 				setup (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.Let, "σ")
-						.var_("compare")
-						.to(Expr.LetRec, "e")
-						.to(Expr.App, "arg")
+						.to(Expr.Defs, "e")
+						.to(Expr.App, "e")
 						.push()
 							.constrArg("NonEmpty", 0)
 							.constrArg("NonEmpty", 1)
@@ -182,34 +181,35 @@ describe("example", () => {
 					this.val.notNeeded()
 				}
 			})(e)
+			new BwdSlice(e)
 		})
 	})
 
-	describe("map", () => {
+   describe("map", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("map"))
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.Let, "σ")
- 						.var_("incr")
-					 	.to(Expr.App, "arg")
+						.to(Expr.Defs, "e")
+					 	.to(Expr.App, "e")
 						.constrArg("Cons", 0).notNeed()
 				  }
 				expect (): void {
 					this.val
-						.push().val_constrArg("Cons", 0).value().notNeeded().pop()
-						.val_constrArg("Cons", 1).value().needed()
+						.push().to(Cons, "head").notNeeded().pop()
+						.to(Cons, "tail").needed()
 				}
 			})(e)
+			new BwdSlice(e)
 		})
 	})
 
-	describe("mergeSort", () => {
+   describe("mergeSort", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("mergeSort"))
-			new FwdSlice(e)
+         new FwdSlice(e)
 			new BwdSlice(e)
 		})
 	})
@@ -217,45 +217,30 @@ describe("example", () => {
 	describe("normalise", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("normalise"))
-			// retaining only pair constructor discards both subcomputations:
-			new (class extends BwdSlice {
-				setup (): void {
-					this.val.need()
-				}
-				expect (): void {
-					this.expr
-						.skipImports()
-						.push().to(Expr.Let, "e").notNeeded().pop()
-						.to(Expr.Let, "σ")
-						.var_("x")
-						.to(Expr.Let, "e").notNeeded()
-				}
-			})(e)
+         new FwdSlice(e)
 			// retaining either component of pair retains both subcomputations:
 			new (class extends BwdSlice {
 				setup (): void {
 					this.val
-						.val_constrArg("Pair", 0).value().need()
+						.to(Pair, "fst").need()
 				}
 				expect (): void {
 					this.expr
-						.skipImports()
-						.push().to(Expr.Let, "e").needed().pop()
-						.to(Expr.Let, "σ")
-						.var_("x")
-						.to(Expr.Let, "e").needed()
+                  .skipImports()
+                  .push().toDef("x").to(Expr.Let, "e").needed().pop()
+						.toDef("y").to(Expr.Let, "e").needed()
 				}
 			})(e)
 		})
-	})
+   })
 
 	describe("pattern-match", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("pattern-match"))
-			new FwdSlice(e)
 			new BwdSlice(e)
+         new FwdSlice(e)
 		})
-	})
+   })
 
 	describe("reverse", () => {
 		it("ok", () => {
@@ -264,24 +249,25 @@ describe("example", () => {
 				setup (): void {
 					this.expr
 						.skipImports()
- 						.to(Expr.App, "arg")
+ 						.to(Expr.App, "e")
  						.constrArg("Cons", 1)
  						.constrArg("Cons", 1).notNeed()
 				}
 				expect (): void {
 					this.val
 						.notNeeded()
-						.push().val_constrArg("Cons", 0).value().needed()
-						.pop()
-						.val_constrArg("Cons", 1).value().needed()
+						.push().to(Cons, "head").needed().pop()
+						.to(Cons, "tail").needed()
 				}
 			})(e)
+			new BwdSlice(e)
 		})
-	})
+   })
 
 	describe("zipW", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("zipW"))
+         new FwdSlice(e)
 			// needing first cons cell of output needs same amount of input lists
 			new (class extends BwdSlice {
 				setup (): void {
@@ -290,60 +276,57 @@ describe("example", () => {
 				expect (): void {
 					this.expr
 						.push()
-							.toRecDef("zipW").needed()
+                     .toDef("zipW")
+                     .push().to(Expr.RecDef, "x").needed().pop()
 							.to(Expr.RecDef, "σ")
 							.var_("op").needed()
 							.pop()
 						.skipImports()
 						.push()
-							.to(Expr.App, "arg").needed().pop()
+							.to(Expr.App, "e").needed().pop()
 						.push()
-							.to(Expr.App, "func")
-						  	.to(Expr.App, "arg").needed().pop()
+							.to(Expr.App, "f")
+						  	.to(Expr.App, "e").needed().pop()
 				}
 			})(e)
 			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
 			new (class extends BwdSlice {
 				setup (): void {
 					this.val
-						.val_constrArg("Cons", 0).value().need()
+						.to(Cons, "head").need()
 				}
 				expect (): void {
 					this.expr
 						.push()
-							.toRecDef("zipW")
+							.toDef("zipW")
 							.to(Expr.RecDef, "σ")
 							.var_("op")
 							.to(Expr.Fun, "σ")
 							.to(Trie.Constr, "cases")
-							.push().nodeValue().end().notNeeded().pop() // body of outer Nil clause
+							.push().nodeValue().notNeeded().pop() // body of outer Nil clause
 							.to(NonEmpty, "left")
 							.nodeValue()			 
-							.arg_var("x").arg_var("xs")
-							.end().notNeeded()
+							.var_("x").var_("xs").notNeeded()
 							.to(Expr.Fun, "σ")
 							.to(Trie.Constr, "cases")
 							.to(NonEmpty, "left")
 							.nodeValue()			 
-							.arg_var("y").arg_var("ys")
-							.end().notNeeded()				 // cons constructor
+							.var_("y").var_("ys").notNeeded() // cons constructor
 							.constrArg("Cons", 0).needed() // application of op
-							.to(Expr.App, "arg").needed()  // pair constructor
+							.to(Expr.App, "e").needed()  // pair constructor
 							.push().constrArg("Pair", 0).notNeeded().pop()
 							.push().constrArg("Pair", 1).notNeeded().pop()
 							.pop()
 						.skipImports()
-						.to(Expr.App, "func")
-						.to(Expr.App, "func")
-						.to(Expr.App, "arg")
+						.to(Expr.App, "f")
+						.to(Expr.App, "f")
+						.to(Expr.App, "e")
 						.to(Expr.Fun, "σ")
 						.to(Trie.Constr, "cases")
 						.nodeValue()
-						.arg_var("x")
-						.arg_var("y")
-						.end().needed()
+						.var_("x").var_("y").needed()
 				}
 			})(e)
 		})
-	})
+   })
 })

@@ -1,89 +1,75 @@
-import { as } from "../util/Core"
-import { MemoArgs, PersistentObject, make } from "../util/Persistent"
-import { World } from "../util/Versioned"
+import { __nonNull, as } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
-import { AnnNumber, AnnString } from "../Graphics"
+import { DataValue } from "../DataValue"
+import { Num, Str, Value, _, make } from "../Value"
+import { Versioned, asVersioned } from "../Versioned"
 
-export type Data = List<Pair<AnnNumber | AnnString, PersistentObject>> // approximate recursive type
+type Row = Pair<Num | Str, Value> // approximate recursive type
+export type Data = List<Row> 
 
-abstract class Token implements PersistentObject {
+abstract class Token extends DataValue<"Token"> {
    abstract text: string
    abstract fillStyle: string
-
-   abstract constructor_ (...v̅: MemoArgs): void
 }
 
 abstract class AnnotatedToken extends Token {
-   abstract constructor_ (...v̅: MemoArgs): void
-
    abstract clearAnnotation (): void
    abstract setAnnotation (): void
 }
 
-class AnnNumberToken extends AnnotatedToken {
-   n: AnnNumber
-
-   constructor_ (n: AnnNumber) {
-      this.n = n
-   }
+class NumToken extends AnnotatedToken {
+   n: Versioned<Num> = _
 
    get text (): string {
-      return this.n.n.toString()
+      return this.n.val.toString()
    }
 
    get fillStyle (): string {
-      return this.n.α ? "black" : "red"
+      return __nonNull(this.n.__α) ? "black" : "red"
    }
 
    clearAnnotation (): void {
       console.log(`Clearing annotation on ${this.text}`)
-      this.n.setα(false)
+      this.n.__α = false
    }
 
    setAnnotation (): void {
-      this.n.setα(true)
+      console.log(`Setting annotation on ${this.text}`)
+      this.n.__α = true
    }
 }
 
-function annNumberToken (n: AnnNumber): AnnNumberToken {
-   return make(AnnNumberToken, n)
+function numToken (n: Versioned<Num>): NumToken {
+   return make(NumToken, n)
 }
 
-class AnnStringToken extends AnnotatedToken {
-   str: AnnString
-
-   constructor_ (str: AnnString) {
-      this.str = str
-   }
+class StrToken extends AnnotatedToken {
+   str: Versioned<Str> = _
 
    get text (): string {
-      return this.str.str
+      return this.str.val
    }
 
    get fillStyle (): string {
-      return this.str.α ? "black" : "red"
+      return __nonNull(this.str.__α) ? "black" : "red"
    }
 
    clearAnnotation (): void {
       console.log(`Clearing annotation on ${this.text}`)
-      this.str.setα(false)
+      this.str.__α = false
    }
 
    setAnnotation (): void {
-      this.str.setα(true)
+      this.str.__α = true
    }
 }
 
-function annStringToken (str: AnnString): AnnStringToken {
-   return make(AnnStringToken, str)
+function strToken (str: Versioned<Str>): StrToken {
+   return make(StrToken, str)
 }
 
 class StringToken extends Token {
-   str: string
-
-   constructor_ (str: string) {
-      this.str = str
-   }
+   str: string = _
 
    get text (): string {
       return this.str
@@ -133,6 +119,8 @@ export class DataView {
       this.width = Math.max(this.width, this.indentx)
    }
 
+   blah: boolean = false
+
    draw (): void {
       this.lines.forEach((line: Line, n: number): void => {
          line.tokens.forEach(([x, token]) => {
@@ -146,6 +134,7 @@ export class DataView {
       return this.lines.length * this.lineHeight
    }
 
+   // Maintain invariant that the /only/ token annotated with false is the one with mouse focus.
    // Return whether any annotations changed.
    onMouseMove (x: number, y: number): boolean {
       const line: Line = this.lines[Math.floor(y / this.lineHeight)]
@@ -157,7 +146,6 @@ export class DataView {
          token = tokenʹ
       }
       if (token !== this.lastMouseToken && token instanceof AnnotatedToken) {
-         World.newRevision() // ouch
          token.clearAnnotation()
          if (this.lastMouseToken !== null) {
             this.lastMouseToken.setAnnotation()
@@ -185,21 +173,21 @@ export class DataRenderer {
    renderData (indentx: number, data: Data): void {
       if (Cons.is(data)) {
          this.view.newLine(indentx)
-         const { fst: key, snd: val }: Pair<AnnNumber | AnnString, PersistentObject> = as(data.head, Pair)
-         if (key instanceof AnnNumber) {
-            this.view.push(annNumberToken(key))
+         const { fst: key, snd: val }: Row = as(data.head, Pair)
+         if (key instanceof Num) {
+            this.view.push(numToken(asVersioned(key)))
          } else {
-            this.view.push(annStringToken(key))
+            this.view.push(strToken(asVersioned(key)))
          }
          this.view.push(stringToken(": "))
          if (val instanceof List) {
             this.renderData(this.view.indentx, val as Data)
          } else 
-         if (val instanceof AnnNumber || val instanceof AnnString) {
-            if (val instanceof AnnNumber) {
-               this.view.push(annNumberToken(val))
+         if (val instanceof Num || val instanceof Str) {
+            if (val instanceof Num) {
+               this.view.push(numToken(asVersioned(val)))
             } else {
-               this.view.push(annStringToken(val))
+               this.view.push(strToken(asVersioned(val)))
             }
          }
          this.renderData(indentx, data.tail)

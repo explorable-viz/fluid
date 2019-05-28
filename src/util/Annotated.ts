@@ -1,6 +1,5 @@
 import { __nonNull } from "./Core"
 import { Lattice } from "./Ord"
-import { MemoArgs, PersistentObject } from "./Persistent"
 
 abstract class LatticeImpl<T> implements Lattice<T> {
    abstract bot: T
@@ -35,8 +34,3 @@ export class BoolLattice extends LatticeImpl<boolean> {
 
 export const ann: Lattice<Annotation> = new BoolLattice()
 export type Annotation = boolean // for now
-
-export abstract class Annotated implements PersistentObject {
-   α: Annotation
-   abstract constructor_ (...v̅: MemoArgs): void
-}

@@ -1,134 +1,71 @@
-import { Annotated, Annotation, ann } from "./util/Annotated"
-import { as } from "./util/Core"
-import { Persistent, make } from "./util/Persistent"
-import { AnnotatedVersioned } from "./util/Versioned"
+import { initDataType } from "./DataType"
+import { DataValue } from "./DataValue"
+import { Num, _, make } from "./Value"
 import { List } from "./BaseTypes"
-
-// Reflected versions of primitive constants; should be able to switch to a compiler and use these directly.
-// Can't extend built-in classes because they require initialisation at construction-time.
-
-export class AnnNumber extends AnnotatedVersioned {
-   n: number
-
-   constructor_ (α: Annotation, n: number) {
-      this.α = α
-      this.n = n
-   }
-}
-
-export class AnnString extends AnnotatedVersioned {
-   str: string
-
-   constructor_ (α: Annotation, str: string) {
-      this.α = α
-      this.str = str
-   }
-}
 
 // Basic graphical datatypes.
 
-export class Rect extends Annotated {
-   width: AnnNumber
-   height: AnnNumber
-
-   constructor_ (α: Annotation, width: AnnNumber, height: AnnNumber): void {
-      this.α = α
-      this.width = as(width, AnnNumber)
-      this.height = as(height, AnnNumber)
-   }
+export class Rect extends DataValue<"Rect"> {
+   width: Num = _
+   height: Num = _
 }
 
-export function rect (width: AnnNumber, height: AnnNumber): Rect {
-   return make(Rect, ann.bot, width, height)
+export function rect (width: Num, height: Num): Rect {
+   return make(Rect, width, height)
 }
 
-export class Point extends Annotated {
-   x: AnnNumber
-   y: AnnNumber
-
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber): void {
-      this.α = α
-      this.x = as(x, AnnNumber)
-      this.y = as(y, AnnNumber)
-   }
+export class Point extends DataValue<"Point"> {
+   x: Num = _
+   y: Num = _
 }
 
-export function point (x: AnnNumber, y: AnnNumber): Point {
-   return make(Point, ann.bot, x, y)
+export function point (x: Num, y: Num): Point {
+   return make(Point, x, y)
 }
 
-export abstract class GraphicsElement extends Annotated {
-   abstract constructor_ (...v̅: Persistent[]): void
+export type GraphicsElementTag = "Graphic" | "PathStroke" | "RectFill" | "Transform"
+
+export abstract class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
 }
 
-export class Graphic extends GraphicsElement {
-   gs: List<GraphicsElement>
-
-   constructor_ (α: Annotation, gs: List<GraphicsElement>): void {
-      this.α = α
-      this.gs = as(gs, List)
-   }
+export class Graphic extends GraphicsElement<"Graphic"> {
+   gs: List<GraphicsElement> = _
 }
 
-export class PathStroke extends GraphicsElement {
-   points: List<Point>
-
-   constructor_ (α: Annotation, points: List<Point>): void {
-      this.α = α
-      this.points = as(points, List)
-   }
+export class PathStroke extends GraphicsElement<"PathStroke"> {
+   points: List<Point> = _
 }
 
 // TODO: generalise to any (closed) path.
-export class RectFill extends GraphicsElement {
-   points: List<Point>
-
-   constructor_ (α: Annotation, points: List<Point>): void {
-      this.α = α
-      this.points = as(points, List)
-   }
+export class RectFill extends GraphicsElement<"RectFill"> {
+   points: List<Point> = _
 }
 
-export abstract class LinearTransform extends Annotated {
-   abstract constructor_ (...v̅: Persistent[]): void
+export class Transform extends GraphicsElement<"Transform"> {
+   t: LinearTransform = _
+   g: GraphicsElement = _
 }
 
-export class Scale extends LinearTransform {
-   x: AnnNumber
-   y: AnnNumber
+export type LinearTransformTag = "Scale" | "Translate" | "Transpose"
 
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber): void {
-      this.α = α
-      this.x = as(x, AnnNumber)
-      this.y = as(y, AnnNumber)
-   }
+export abstract class LinearTransform<Tag extends LinearTransformTag = LinearTransformTag> extends DataValue<Tag> {
 }
 
-export class Translate extends LinearTransform {
-   x: AnnNumber
-   y: AnnNumber
+export class Scale extends LinearTransform<"Scale"> {
+   x: Num = _
+   y: Num = _
+}
 
-   constructor_ (α: Annotation, x: AnnNumber, y: AnnNumber): void {
-      this.α = α
-      this.x = as(x, AnnNumber)
-      this.y = as(y, AnnNumber)
-   }
+export class Translate extends LinearTransform<"Translate"> {
+   x: Num = _
+   y: Num = _
 }
 
 // Swaps x and y. Could subsume by a more general notion of reflection.
-export class Transpose extends LinearTransform {
-   constructor_ (α: Annotation): void {
-      this.α = α
-   }
+export class Transpose extends LinearTransform<"Transpose"> {
 }
 
-export class Transform extends GraphicsElement {
-   t: LinearTransform
-   g: GraphicsElement
-
-   constructor_ (α: Annotation, t: LinearTransform, g: GraphicsElement): void {
-      this.α = α
-      this.t = as(t, LinearTransform)
-      this.g = as(g, GraphicsElement)
-   }
-}
+initDataType(GraphicsElement, [PathStroke, RectFill, Transform, Graphic])
+initDataType(LinearTransform, [Scale, Translate, Transpose])
+initDataType(Point, [Point])
+initDataType(Rect, [Rect])

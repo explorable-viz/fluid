@@ -1,29 +1,32 @@
 import { ann } from "../../src/util/Annotated"
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
-import { Persistent, PersistentObject } from "../../src/util/Persistent"
-import { AnnotatedVersioned } from "../../src/util/Versioned"
-import { Cons, NonEmpty, Pair } from "../../src/BaseTypes"
-import { ExplVal, Value } from "../../src/ExplVal"
+import { Persistent, Value } from "../../src/Value"
+import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { Expr } from "../../src/Expr"
+import { asVersioned } from "../../src/Versioned"
 
-import Args = Expr.Args
+import Def = Expr.Def
+import Let = Expr.Let
+import LetRec = Expr.LetRec
+import Prim = Expr.Prim
+import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
 export class Cursor {
-   prev: PersistentObject[] = []
-   o: PersistentObject
+   prev: Value[] = []
+   v: Value
 
-   constructor (o: PersistentObject) {
-      this.goto(o)
+   constructor (v: Value) {
+      this.goto(v)
    }
 
-   goto (o: PersistentObject): Cursor {
-      this.o = o
+   goto (v: Value): Cursor {
+      this.v = v
       return this
    }
 
    skipImport (): Cursor {
-      return this.to(Expr.LetRec, "e") // all "modules" have this form
+      return this.to(Expr.Defs, "e") // all "modules" have this form
    }
 
    skipImports (): Cursor {
@@ -32,66 +35,84 @@ export class Cursor {
          .skipImport() // graphics
    }
 
-   to<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
-      const oʹ: T[keyof T] = as<Persistent, T>(this.o, cls)[prop] // TypeScript nonsense
-      this.o = oʹ as any as PersistentObject
+   // No way to specify only "own" properties statically.
+   to<T extends Value> (C: Class<T>, prop: keyof T): Cursor {
+      const vʹ: T[keyof T] = as<Persistent, T>(this.v, C)[prop] // TypeScript nonsense
+      this.v = vʹ as any as Value
       return this
    }
 
-   toRecDef (fun: string): Cursor {
-      this.to(Expr.LetRec, "δ")
-      while (true) {
-         this.push().toElem(0)
-         if (as(this.o, Expr.RecDef).x.str === fun) {
-            break
+   static defs (defs: List<Def>): Map<string, Let | Prim | RecDef> {
+      const defsʹ: Map<string, Let | Prim | RecDef> = new Map
+      for (; Cons.is(defs); defs = defs.tail) {
+         const def: Def = defs.head
+         if (def instanceof Let || def instanceof Prim) {
+            defsʹ.set(def.x.val, def)
+         } else
+         if (def instanceof LetRec) {
+            for (let recDefs: List<RecDef> = def.δ; Cons.is(recDefs); recDefs = recDefs.tail) {
+               const recDef: RecDef = recDefs.head
+               defsʹ.set(recDef.x.val, recDef)
+            }
          } else {
-            this.pop().to(Cons, "tail")
+            absurd()
          }
       }
-      return this.pop().toElem(0) // clear stack
+      return defsʹ
    }
 
-   at<T extends PersistentObject> (cls: AClass<T>, f: (o: T) => void): Cursor {
-      f(as<PersistentObject, T>(this.o, cls))
+   toDef (x: string): Cursor {
+      this.to(Expr.Defs, "def̅")
+      const defs: Map<string, Let | Prim | RecDef> = Cursor.defs(this.v as List<Def>)
+      assert(defs.has(x), `No definition of "${x}" found.`)
+      return this.goto(defs.get(x)!)
+   }
+
+   at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor {
+      f(as<Value, T>(this.v, C))
       return this
    }
 
-   assert<T extends PersistentObject> (cls: AClass<T>, pred: (o: T) => boolean): Cursor {
-      return this.at(cls, o => assert(pred(o)))
+   assert<T extends Value> (C: AClass<T>, pred: (v: T) => boolean): Cursor {
+      return this.at(C, v => assert(pred(v)))
    }
 
    needed (): Cursor {
-      return this.assert(AnnotatedVersioned, o => o.α === ann.top)
+      assert(asVersioned(this.v).__α === ann.top)
+      return this
    }
 
    notNeeded (): Cursor {
-      return this.assert(AnnotatedVersioned, o => o.α === ann.bot)
+      assert(asVersioned(this.v).__α === ann.bot)
+      return this
    }
 
    need (): Cursor {
-      return this.at(AnnotatedVersioned, o => o.setα(ann.top))
+      asVersioned(this.v).__α = ann.top
+      return this
    }
 
    notNeed (): Cursor {
-      return this.at(AnnotatedVersioned, o => o.setα(ann.bot))
+      asVersioned(this.v).__α = ann.bot
+      return this
    }
 
    push (): Cursor {
-      this.prev.push(this.o)
+      this.prev.push(this.v)
       return this
    }
 
    pop (): Cursor {
-      const o: PersistentObject | undefined = this.prev.pop()
-      if (o === undefined) {
+      const v: Value | undefined = this.prev.pop()
+      if (v === undefined) {
          return absurd()
       } else {
-         this.o = o
+         this.v = v
       }
       return this
    }
 
-   // Helpers specific to certain data types.
+   // Helpers specific to certain datatypes.
 
    toElem (n: number): Cursor {
       if (n === 0) {
@@ -102,20 +123,11 @@ export class Cursor {
       }
    }
 
-   constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
-      return this.at(Expr.Constr, e => assert(e.ctr.str === ctr, `${e.ctr.str} !== ${ctr}`))
+   // Not sure what the T parameters are for here...
+   constrArg<T extends Value> (ctr: string, n: number): Cursor {
+      return this.at(Expr.Constr, e => assert(e.ctr.val === ctr, `${e.ctr.val} !== ${ctr}`))
                  .to(Expr.Constr, "args")
                  .toElem(n)
-   }
-
-   val_constrArg<T extends PersistentObject> (ctr: string, n: number): Cursor {
-      return this.at(Value.Constr, e => assert(e.ctr.str === ctr, `${e.ctr.str} !== ${ctr}`))
-                 .to(Value.Constr, "args")
-                 .toElem(n)
-   }
-
-   value (): Cursor {
-      return this.to(ExplVal, "v")
    }
 
    nodeValue (): Cursor {
@@ -123,22 +135,8 @@ export class Cursor {
                  .to(Pair, "snd")
    }
 
-   arg<T extends PersistentObject> (cls: Class<T>, prop: keyof T): Cursor {
-      return this.to(Args.Next, "σ")
-                 .to(cls, prop)
-   }
-
-   arg_var<T extends PersistentObject> (x: string): Cursor {
-      return this.to(Args.Next, "σ")
-                 .var_(x)
-   }
-
-   end (): Cursor {
-      return this.to(Args.End, "κ")
-   }
-
    var_ (x: string): Cursor {
-      return this.assert(Trie.Var, σ => σ.x.str === x)
+      return this.assert(Trie.Var, σ => σ.x.val === x)
                  .to(Trie.Var, "κ")      
    }
 }

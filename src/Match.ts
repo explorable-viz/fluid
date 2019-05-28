@@ -1,115 +1,125 @@
 import { Annotation, ann } from "./util/Annotated"
-import { __nonNull, absurd, className, error } from "./util/Core"
-import { asVersioned } from "./util/Versioned"
-import { Cons, List, Nil, NonEmpty, Pair, cons, nil, pair } from "./BaseTypes"
-import { DataType, ctrToDataType } from "./DataType"
-import { Env } from "./Env"
-import { ExplVal, Match, Value, explMatch, explVal } from "./ExplVal"
-import { ValId } from "./Eval"
-import { Expr, Kont } from "./Expr"
-import { FiniteMap } from "./FiniteMap"
+import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
+import { List, Pair, cons, nil } from "./BaseTypes"
+import { DataValue } from "./DataValue"
+import { DataType, ctrToDataType, elimSuffix } from "./DataType"
+import { Env, emptyEnv } from "./Env"
+import { Expr } from "./Expr"
+import { Str, Value, _, make } from "./Value"
+import { Versioned, asVersioned, setα } from "./Versioned"
 
-import Args = Expr.Args
+import Cont = Expr.Cont
 import Trie = Expr.Trie
 
-// Expose as a separate method for use by 'let'.
-export function matchVar<K extends Kont<K>> (v: Value, σ: Trie.Var<K>): [Match.Plug<K, Match.Var<K>>, Annotation] {
-   return [Match.plug(Match.var_(Env.singleton(σ.x.str, v), σ.x, v), σ.κ), ann.top]
+type RuntimeCont = Expr | DataValue<"Elim">
+
+// Conceptually (syntactic) tries map to (semantic) elim forms, and exprs map to exprs; no easy way to 
+// express this in the type system.
+export function evalTrie (σ: Trie<Expr>): Elim<Expr> {
+   return evalTrie_(σ) as Elim<Expr>
 }
 
-export function match<K extends Kont<K>> (v: Value, σ: Trie<K>): [Match.Plug<K, Match<K>>, Annotation] {
+function evalTrie_<K extends Cont> (σ: Trie<K>): Elim {
    if (Trie.Var.is(σ)) {
-      return matchVar(v, σ)
+      return varElim(σ.x, evalCont(σ.κ))
    } else
    if (Trie.Constr.is(σ)) {
-      if (v instanceof Value.Constr) {
-         let Ψκ_α: [Match.Args.Plug<K, Match.Args<K>>, Annotation] // actually may be null, but TypeScript confused
-         const cases: FiniteMap<string, Args<K> | Match.Args<K>> = 
-            σ.cases.map(({ fst: ctr, snd: Π }): Pair<string, Args<K> | Match.Args<K>> => {
-               if (v.ctr.str === ctr) {
-                  const [Ψκ, α] = matchArgs(v.args, Π)
-                  Ψκ_α = [Ψκ, α]
-                  return pair(ctr, Ψκ.Ψ)
-               } else {
-                  return pair(ctr, Π)
-               }
-            })
-         if (Ψκ_α! === undefined) {
-            const d: DataType = __nonNull(ctrToDataType.get((σ.cases as NonEmpty<Pair<string, Args<K>>>).t.fst))
-            return error(`Pattern mismatch: found ${v.ctr}, expected ${d.name}.`, v, σ)
+      const cases: Pair<Str, K>[] = σ.cases.toArray(),
+            c̅: string[] = cases.map(({ fst: c }) => c.val),
+            d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
+            c̅ʹ: string[] = [...d.ctrs.keys()], // also sorted
+            f̅: RuntimeCont[] = []
+      let n: number = 0
+      for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
+         if (c̅.includes(c̅ʹ[nʹ])) {
+            f̅.push(evalCont(cases[n++].snd))
          } else {
-            const [{Ψ, κ}, α] = Ψκ_α!
-            // store v as well to provide location for unmatch
-            return [Match.plug(Match.constr(Ψ.ρ, cases, v), κ), ann.meet(α, v.α)]
+            f̅.push(undefined as any)
          }
-      } else {
-         return error(`Pattern mismatch: ${className(v)} is not a data type.`, v, σ)
       }
+      assert(n === cases.length)
+      return make(d.elimC as Class<DataElim>, ...f̅)
    } else {
       return absurd()
    }
 }
 
-export function unmatch<K extends Kont<K>> ({ξ, κ}: Match.Plug<K, Match<K>>, α: Annotation): [Value, Trie<K>] {
-   if (Match.Var.is(ξ)) {
-      if (ξ.ρ.has(ξ.x.str)) {
-         return [ξ.ρ.get(ξ.x.str)!, Trie.var_(ξ.x, κ)]
-      } else {
-         return absurd()
-      }
-   } else 
-   if (Match.Constr.is(ξ)) {
-      let tus: List<ExplVal> // actually may be null, but TypeScript assigns type "never"
-      const σ: Trie<K> = Trie.constr(ξ.cases.map(({ fst: ctr, snd: Π_or_Ψ }): Pair<string, Args<K>> => {
-         if (Π_or_Ψ instanceof Match.Args.Args) {
-            const [tusʹ, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Match.Args.plug(Π_or_Ψ, κ), α)
-            tus = tusʹ
-            return pair(ctr, Π)
-         } else
-         if (Π_or_Ψ instanceof Args.Args) {
-            const Π_or_Ψʹ: Args.Args<K> = Π_or_Ψ  // recover type lost by instanceof
-            return pair(ctr, Π_or_Ψʹ)
-         } else {
-            return absurd()
-         }
-      }))
-      if (tus! === undefined) {
-         return absurd()
-      } else {
-         // use the cached matched value to extract target address, and also to avoid recreating the constructor
-         const k: ValId = asVersioned(ξ.v).__id as ValId
-         return [Value.constr(k, α, ξ.v.ctr, tus!), σ]
-      }
-   } else {
-      return absurd()
-   }
-}
-
-function matchArgs<K extends Kont<K>> (tv̅: List<ExplVal>, Π: Args<K>): [Match.Args.Plug<K, Match.Args<K>>, Annotation] {
-   if (Cons.is(tv̅) && Args.Next.is(Π)) {
-      const {ρ, t, v} = tv̅.head
-      // codomain of ξ is Args; promote to Args | Match.Args:
-      const [{ξ, κ: Πʹ}, α] = match(v, Π.σ),
-            [{Ψ, κ}, αʹ] = matchArgs(tv̅.tail, Πʹ)
-      return [Match.Args.plug(Match.Args.next(Env.concat(ξ.ρ, Ψ.ρ), explMatch(ρ, t, ξ), Ψ), κ), ann.meet(α, αʹ)]
+function evalCont<K extends Cont> (κ: K): RuntimeCont {
+   if (κ instanceof Trie.Trie) {
+      const σ: Trie<K> = κ
+      return evalTrie(σ)
    } else
-   if (Nil.is(tv̅) && Args.End.is(Π)) {
-      return [Match.Args.plug(Match.Args.end<K>(Env.empty()), Π.κ), ann.top]
+   if (κ instanceof Expr.Expr) {
+      return κ
    } else {
       return absurd()
    }
 }
 
-function unmatchArgs<K extends Kont<K>> ({Ψ, κ}: Match.Args.Plug<K, Match.Args<K>>, α: Annotation): [List<ExplVal>, Args<K>] {
-   if (Match.Args.Next.is(Ψ)) {
-      const [tu̅, Π]: [List<ExplVal>, Args<K>] = unmatchArgs(Match.Args.plug(Ψ.Ψ, κ), α),
-            {ρ, t, ξ} = Ψ.tξ,
-            [u, σ] = unmatch(Match.plug(ξ, Π), α)
-      return [cons(explVal(ρ, t, u), tu̅), Args.next(σ)]
-   } else
-   if (Match.Args.End.is(Ψ)) {
-      return [nil(), Args.end(κ)]
+// Preorder traversal of all nodes in the matched prefix.
+export type Match = List<Versioned<Value>>
+
+// See GitHub issue #128.
+export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
+   abstract match (v: Versioned<Value>, ξ: Match): [Env, Match, K]
+}
+
+// Parser ensures constructor calls are saturated.
+function matchArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, Match, RuntimeCont] {
+   if (v̅.length === 0) {
+      return [emptyEnv(), ξ, κ]
    } else {
-      return absurd()
+      const [v, ...v̅ʹ] = v̅
+      if (κ instanceof Elim) {
+         const f: Elim = κ, // "unfold" K into Elim<K>
+               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = f.match(v, ξ),
+               [ρʹ, ξ2, κ2]: [Env, Match, RuntimeCont] = matchArgs(κʹ, v̅ʹ, ξʹ)
+         return [ρ.concat(ρʹ), ξ2, κ2]
+      } else {
+         return absurd("Too many arguments to constructor.")
+      }
    }
+}
+
+// No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
+// itself. Concrete instances have a field per constructor, in *lexicographical* order.
+export abstract class DataElim extends Elim {
+   typename (): string {
+      const c: string = className(this)
+      return c.substr(0, c.length - elimSuffix.length)
+   }
+   
+   match (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
+      const c: string = className(v)
+      if (v instanceof DataValue) {
+         const κ: RuntimeCont = (this as any)[c] as RuntimeCont
+         assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${this.typename()}.`)
+         const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
+               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = matchArgs(κ, v̅, ξ)
+         return [ρ, cons(v, ξʹ), κʹ]
+      } else {
+         return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
+      }
+   }
+}
+
+class VarElim extends Elim {
+   x: Str = _
+   κ: RuntimeCont = _
+
+   match (v: Versioned<Value>): [Env, Match, RuntimeCont] {
+      return [Env.singleton(this.x, v), nil(), this.κ]
+   }
+}
+
+function varElim<K extends RuntimeCont> (x: Str, κ: RuntimeCont): VarElim {
+   return make(VarElim, x, κ) as VarElim
+}
+
+export function match_fwd (v̅: Match): Annotation {
+   return v̅.toArray().reduce((α: Annotation, v: Versioned<Value>): Annotation => ann.meet(α, v.__α), ann.top)
+}
+
+export function match_bwd (v̅: Match, α: Annotation) : void {
+   v̅.toArray().map(v => setα(α, v))
 }

@@ -1,6 +1,6 @@
-import { Annotation, ann } from "./util/Annotated2"
+import { Annotation, ann } from "./util/Annotated"
 import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
-import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make, metadataFields } from "./Value2"
+import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make, metadataFields } from "./Value"
 
 // Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
 // for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
