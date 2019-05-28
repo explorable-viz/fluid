@@ -1,4 +1,4 @@
-import { Class, __check, assert } from "./util/Core"
+import { Class, assert } from "./util/Core"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 

@@ -72,11 +72,11 @@ export function __nonNull<T> (x: T | null | undefined): T {
    }
 }
 
-export function __debug (o: Object): string {
+export function debug (o: Object): string {
    return className(o) + "#" + (<any>o).__id
 }
 
-export function __log<T> (
+export function log<T> (
    x: T,
    msg?: (it: T) => string,
    transform: (it: T) => T = (it: T) => it
