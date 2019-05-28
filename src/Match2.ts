@@ -56,24 +56,24 @@ function evalCont<K extends Cont> (κ: K): RuntimeCont {
    }
 }
 
-// Preorder traversal of all nodes in the matched prefix, 
+// Preorder traversal of all nodes in the matched prefix.
 export type Match = List<Versioned<Value>>
 
 // See GitHub issue #128.
 export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
-   abstract __apply (v: Versioned<Value>, ξ: Match): [Env, Match, K]
+   abstract apply (v: Versioned<Value>, ξ: Match): [Env, Match, K]
 }
 
 // Parser ensures constructor calls are saturated.
-function __applyArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, Match, RuntimeCont] {
+function applyArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, Match, RuntimeCont] {
    if (v̅.length === 0) {
       return [emptyEnv(), ξ, κ]
    } else {
       const [v, ...v̅ʹ] = v̅
       if (κ instanceof Elim) {
          const f: Elim = κ, // "unfold" K into Elim<K>
-               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = f.__apply(v, ξ),
-               [ρʹ, ξ2, κ2]: [Env, Match, RuntimeCont] = __applyArgs(κʹ, v̅ʹ, ξʹ)
+               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = f.apply(v, ξ),
+               [ρʹ, ξ2, κ2]: [Env, Match, RuntimeCont] = applyArgs(κʹ, v̅ʹ, ξʹ)
          return [ρ.concat(ρʹ), ξ2, κ2]
       } else {
          return absurd("Too many arguments to constructor.")
@@ -81,21 +81,21 @@ function __applyArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env
    }
 }
 
-function datatype (f: DataElim): string {
-   const c: string = className(f)
-   return c.substr(0, c.length - elimSuffix.length)
-}
-
 // No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
 // itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
-   __apply (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
+      typename (): string {
+         const c: string = className(this)
+         return c.substr(0, c.length - elimSuffix.length)
+      }
+      
+      apply (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
-         assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${datatype(this)}.`)
+         assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${this.typename()}.`)
          const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
-               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = __applyArgs(κ, v̅, ξ)
+               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = applyArgs(κ, v̅, ξ)
          return [ρ, cons(v, ξʹ), κʹ]
       } else {
          return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
@@ -107,7 +107,7 @@ class VarElim extends Elim {
    x: Str = _
    κ: RuntimeCont = _
 
-   __apply (v: Versioned<Value>): [Env, Match, RuntimeCont] {
+   apply (v: Versioned<Value>): [Env, Match, RuntimeCont] {
       return [Env.singleton(this.x, v), nil(), this.κ]
    }
 }
