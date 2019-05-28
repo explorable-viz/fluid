@@ -6,13 +6,13 @@ import { Str, _, fields } from "./Value2"
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: string
-   elimC: Class<DataElim<any>>            // not sure how better to parameterise 
+   elimC: Class<DataElim>            
    ctrs: Map<string, Ctr>                 // fields of my constructors
    explC̅: Map<string, Class<DataExpl>>    // "explanation" class per constructor
 
    constructor (
       name: string, 
-      elimC: Class<DataElim<any>>, 
+      elimC: Class<DataElim>, 
       ctrs: Map<string, Ctr>, 
       explC̅: Map<string, Class<DataExpl>>
    ) {
@@ -56,8 +56,8 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
          elimC_name: string = D.name + elimSuffix,
-         elimC: Class<DataElim<any>> = {
-            [elimC_name]: class extends DataElim<any> {
+         elimC: Class<DataElim> = {
+            [elimC_name]: class extends DataElim {
                constructor () {
                   super()
                   // lexicographical order hopefully preserved by getOwnPropertyNames()

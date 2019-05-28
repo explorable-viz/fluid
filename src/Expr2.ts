@@ -30,7 +30,7 @@ export type Kont = Expr.Kont
 
 export namespace Expr {
    // Use to be a parameterised class but we can simplify using our nominal type idiom.
-   export type Kont = DataValue<"Expr" | "Trie">
+   export type Kont = Expr | DataValue<"Trie">
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
    // Use the same heinous cast as used in 'instantiateKont'. This join is unrelated to the annotation lattice;
