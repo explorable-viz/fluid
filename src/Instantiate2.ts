@@ -7,7 +7,7 @@ import { Id, Str, Value, _, make } from "./Value2"
 import { Extern, Versioned, joinα, setα, strʹ } from "./Versioned2"
 
 import Def = Expr.Def
-import Kont = Expr.Kont
+import Cont = Expr.Cont
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
@@ -163,14 +163,14 @@ function instantiateDef_ (dir: Direction, def: Def): void {
    }
 }
 
-function instantiateTrie<K extends Kont, T extends Trie<K>> (ρ: Env, σ: T): T {
+function instantiateTrie<K extends Cont, T extends Trie<K>> (ρ: Env, σ: T): T {
    if (Trie.Var.is(σ)) {
-      return Trie.var_(σ.x, instantiateKont(ρ, σ.κ) as K) as Trie<K> as T
+      return Trie.var_(σ.x, instantiateCont(ρ, σ.κ) as K) as Trie<K> as T
    } else
    if (Trie.Constr.is(σ)) {
       return Trie.constr<K>(σ.cases.map(
          ({ fst: c, snd: κ }: Pair<Str, K>): Pair<Str, K> => {
-            return pair(c, instantiateKont(ρ, κ))
+            return pair(c, instantiateCont(ρ, κ))
          })
       ) as Trie<K> as T
    } else {
@@ -178,13 +178,13 @@ function instantiateTrie<K extends Kont, T extends Trie<K>> (ρ: Env, σ: T): T 
    }
 }
 
-function instantiateTrie_<K extends Kont, T extends Trie<K>> (dir: Direction, σ: T): void {
+function instantiateTrie_<K extends Cont, T extends Trie<K>> (dir: Direction, σ: T): void {
    if (Trie.Var.is(σ)) {
-      instantiateKont_(dir, σ.κ)
+      instantiateCont_(dir, σ.κ)
    } else
    if (Trie.Constr.is(σ)) {
       σ.cases.toArray().map(
-         ({ fst: c, snd: κ }: Pair<Str, K>): void => instantiateKont_(dir, κ)
+         ({ fst: c, snd: κ }: Pair<Str, K>): void => instantiateCont_(dir, κ)
       )
    } else {
       absurd()
@@ -192,18 +192,18 @@ function instantiateTrie_<K extends Kont, T extends Trie<K>> (dir: Direction, σ
 }
 
 // See issue #33.
-function instantiateKont<K extends Kont> (ρ: Env, κ: K): K {
+function instantiateCont<K extends Cont> (ρ: Env, κ: K): K {
    if (κ instanceof Trie.Trie) {
       return instantiateTrie<K, Trie<K>>(ρ, κ) as K 
    } else
    if (κ instanceof Expr.Expr) {
-      return instantiate(ρ, κ) as Kont as K
+      return instantiate(ρ, κ) as Cont as K
    } else {
       return absurd()
    }
 }
 
-function instantiateKont_<K extends Kont> (dir: Direction, κ: K): void {
+function instantiateCont_<K extends Cont> (dir: Direction, κ: K): void {
    if (κ instanceof Trie.Trie) {
       instantiateTrie_<K, Trie<K>>(dir, κ)
    } else
