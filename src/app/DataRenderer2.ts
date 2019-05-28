@@ -1,4 +1,4 @@
-import { as } from "../util/Core"
+import { __nonNull, as } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes2"
 import { DataValue } from "../DataValue2"
 import { Num, Str, Value, _, make } from "../Value2"
@@ -25,7 +25,7 @@ class NumToken extends AnnotatedToken {
    }
 
    get fillStyle (): string {
-      return this.n.__α ? "black" : "red"
+      return __nonNull(this.n.__α) ? "black" : "red"
    }
 
    clearAnnotation (): void {
@@ -34,6 +34,7 @@ class NumToken extends AnnotatedToken {
    }
 
    setAnnotation (): void {
+      console.log(`Setting annotation on ${this.text}`)
       this.n.__α = true
    }
 }
@@ -50,7 +51,7 @@ class StrToken extends AnnotatedToken {
    }
 
    get fillStyle (): string {
-      return this.str.__α ? "black" : "red"
+      return __nonNull(this.str.__α) ? "black" : "red"
    }
 
    clearAnnotation (): void {
@@ -118,6 +119,8 @@ export class DataView {
       this.width = Math.max(this.width, this.indentx)
    }
 
+   blah: boolean = false
+
    draw (): void {
       this.lines.forEach((line: Line, n: number): void => {
          line.tokens.forEach(([x, token]) => {
@@ -131,6 +134,7 @@ export class DataView {
       return this.lines.length * this.lineHeight
    }
 
+   // Maintain invariant that the /only/ token annotated with false is the one with mouse focus.
    // Return whether any annotations changed.
    onMouseMove (x: number, y: number): boolean {
       const line: Line = this.lines[Math.floor(y / this.lineHeight)]

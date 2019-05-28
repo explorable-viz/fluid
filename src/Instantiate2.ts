@@ -4,15 +4,15 @@ import { Env } from "./Env2"
 import { Direction } from "./Eval2"
 import { Expr } from "./Expr2"
 import { Id, Str, Value, _, make } from "./Value2"
-import { Versioned, joinα, setα, strʹ } from "./Versioned2"
+import { Extern, Versioned, joinα, setα, strʹ } from "./Versioned2"
 
 import Def = Expr.Def
 import Kont = Expr.Kont
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
-// The "runtime identity" of an expression. In the formalism we use a "flat" representation so that e always has an external id;
-// here it is more convenient to use an isomorphic nested format.
+// The "runtime identity" of an expression. The obvious optimisation that j always be non-empty (i.e. that 
+// instantiation in empty ρ is the identity) would require slicing to have access to ρ.
 export class ExprId extends Id {
    j: List<Value> = _
    e: Expr | Versioned<Str> = _ // str for binding occurrences of variables
@@ -20,6 +20,19 @@ export class ExprId extends Id {
 
 export function exprId (j: List<Value>, e: Expr | Versioned<Str>): ExprId {
    return make(ExprId, j, e)
+}
+
+// In the formalism we use a "flat" representation so that e always has an extern id; here it is more 
+// convenient to use an isomorphic nested format. This recovers the original "source" with an extern id.
+export function src (k: ExprId): Expr | Versioned<Str> {
+   if (k.e.__id instanceof Extern) {
+      return k.e
+   } else
+   if (k.e.__id instanceof ExprId) {
+      return src(k.e.__id)
+   } else {
+      return absurd()
+   }
 }
 
 // F-bounded polymorphism doesn't work well here. I've used it for the smaller helper functions 

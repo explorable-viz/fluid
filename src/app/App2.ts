@@ -1,9 +1,9 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
-import { Cons, List } from "../BaseTypes2"
+import { List } from "../BaseTypes2"
 import { emptyEnv } from "../Env2"
 import { Eval } from "../Eval2"
-import { Expl, ExplValue } from "../ExplValue2"
+import { ExplValue } from "../ExplValue2"
 import { Expr } from "../Expr2"
 import { GraphicsElement } from "../Graphics2"
 import { Value } from "../Value2"
@@ -42,18 +42,16 @@ class App {
       this.loadExample()
    }
 
+   // "Data" is defined to be the value of the first let statement in user code, which must be a /closed/
+   // expression. This allows us to run it "out of context" and evaluate/slice it independently of the rest
+   // of the program.
    initData (): void {
-      let here: Cursor = new Cursor(this.tv)
-      here
-         .to(ExplValue, "t")
-         .to(Expl.Defs, "tv")
-         .to(ExplValue, "t")
-         .to(Expl.Defs, "tv")
-         .to(ExplValue, "t")
-         .to(Expl.Defs, "def̅")
-         .to(Cons, "head")
-         .to(Expl.Let, "tv")
-      this.data_tv = as(here.v, ExplValue)
+      let here: Cursor = new Cursor(this.e)
+      here.skipImports().toDef("data").to(Expr.Let, "e")
+      this.data_e = as(here.v, Expr.Constr)
+      this.data_tv = Eval.eval_(emptyEnv(), this.data_e)
+      setallα(this.data_e, ann.top)
+      Eval.eval_fwd(this.data_tv)
    }
 
    get data (): Data {
@@ -66,11 +64,6 @@ class App {
    
    loadExample (): void {
       this.e = parse(load("bar-chart"))
-      {
-         let here: Cursor = new Cursor(this.e)
-         here.skipImports().toDef("data").to(Expr.Let, "e")
-         this.data_e = as(here.v, Expr.Constr)
-      }
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
       setallα(this.e, ann.top)
@@ -82,6 +75,7 @@ class App {
    // Push annotations back from data to source, then redo the forward slice.
    redoFwdSlice (): void {
       setallα(this.data_e, ann.bot)
+      // TODO: clear annotations on intermediate values somehow
       Eval.eval_bwd(this.data_tv)
       Eval.eval_fwd(this.tv)
       this.draw()
@@ -104,7 +98,7 @@ class App {
             this.redoFwdSlice()
          }
       })
-      this.dataCanvas.height = this.dataView.height + 1 // not sure why extra pixel is essential
+      this.dataCanvas.height = this.dataView.height + 1 // why extra pixel needed?
       this.dataCanvas.width = this.dataView.width
    }
 
