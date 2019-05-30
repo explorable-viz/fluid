@@ -7,7 +7,7 @@ import { DataValue } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl, ExplValue, explValue } from "./ExplValue"
 import { Expr } from "./Expr"
-import { instantiate, instantiate_bwd, instantiate_fwd } from "./Instantiate"
+import { instantiate_bwd, instantiate_fwd } from "./Instantiate"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, Num, Str, Value, _, make } from "./Value"
@@ -89,7 +89,7 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const k: ValId = valId(ρ, def.x),
-               tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
+               tv: ExplValue = eval_(ρ.concat(ρ_ext), def.e),
                v: Versioned<Value> = copyAt(k, tv.v),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
          return [cons(Expl.let_(def.x, tv, v), def̅ₜ), ρ_extʹ]
@@ -191,8 +191,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       if (v instanceof Closure) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
                [ρʹ, ξ, eʹ]: [Env, Match, Expr] = v.f.match(u, nil()),
-               ρᶠ: Env = ρᵟ.concat(ρʹ),
-               tv: ExplValue = eval_(v.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
+               tv: ExplValue = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), eʹ)
          return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), copyAt(kᵥ, tv.v))
       } else 
       if (v instanceof UnaryOp) {
@@ -222,13 +221,13 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.Defs) {
       const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, e.def̅, emptyEnv()),
-            tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
+            tv: ExplValue = eval_(ρ.concat(ρʹ), e.e)
       return explValue(Expl.defs(kₜ, def̅ₜ, tv), copyAt(kᵥ, tv.v))
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
             [ρʹ, ξ, eʹ]: [Env, Match, Expr] = evalTrie(e.σ).match(tu.v, nil()),
-            tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
+            tv: ExplValue = eval_(ρ.concat(ρʹ), eʹ)
       return explValue(Expl.matchAs(kₜ, tu, ξ, tv), copyAt(kᵥ, tv.v))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
