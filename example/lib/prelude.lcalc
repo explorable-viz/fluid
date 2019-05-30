@@ -4,24 +4,19 @@ primitive intToString;
 
 // (b → c) → (a → b) → a → c
 // Would like infix operators. 
-let compose = fun f g x → 
-   f (g x);
+let compose = fun f g x → f (g x);
 
 // (a → b) → Pair(a, c) → Pair(b, c)
-let first = fun f (a, c) → 
-   (f a, c);
+let first = fun f (a, c) → (f a, c);
 
 // Pair(a, b) → a
-let fst = fun (x, y) → 
-   x;
+let fst = fun (x, y) → x;
 
 // List(a) → a
-let head = fun [x, ...xs] → 
-   x;
+let head = fun [x, ...xs] → x;
 
 // a → a
-let id = fun x → 
-   x;
+let id = fun x → x;
 
 // List(a) → List(a) → List(a)
 letrec fun concat {
@@ -99,8 +94,7 @@ letrec fun zipW op {
 };
 
 // number → a → List(a)
-let repeat = fun n →
-   iterate n id;
+let repeat = fun n → iterate n id;
 
 // List(number) → number
 let max = fun xs →
@@ -111,21 +105,17 @@ let roundTo = fun n m →
    ceiling (n / m) * m;
 
 // (a → b) → Pair(c, a) → Pair(c, b)
-let second = fun f (c, a) → 
-   (c, f a);
+let second = fun f (c, a) → (c, f a);
 
 // Pair(a, b) → b
-let snd = fun (x, y) → 
-   y;
+let snd = fun (x, y) → y;
 
 // List(number) → number
 let sum = fun xs → 
    foldr (fun (x, y) → x + y) 0 xs;
 
 // Pair(a, b) → Pair(b, a)
-let swap = fun (a, b) →
-   (b, a);
+let swap = fun (a, b) → (b, a);
 
 // List(a) → List(a)
-let tail = fun [x, ...xs] → 
-   xs
+let tail = fun [x, ...xs] → xs

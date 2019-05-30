@@ -30,8 +30,7 @@ letrec
          match dimensions g as (w, h) → (w + x, h + y);
       Transform(Transpose, g) → 
          swap (dimensions g)
-   }
-;
+   };
 
 // GraphicsElement → number
 let width = fun g → 
