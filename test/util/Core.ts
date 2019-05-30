@@ -65,7 +65,7 @@ export class BwdSlice {
 enum Flags { Bwd, Fwd }
 const flags: Map<Flags, boolean> = new Map([
    [Flags.Fwd, true],
-   [Flags.Bwd, false]
+   [Flags.Bwd, true]
 ])
 
 // Kindergarten modules: load another file as though it were a defs block, with body e.
