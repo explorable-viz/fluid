@@ -120,9 +120,9 @@ export class GraphicsRenderer {
    pathStroke (p̅: List<Point>): void {
       const path = document.createElementNS("http://www.w3.org/2000/svg", "polyline"),
             p̅_str: string = this.svgPath(p̅).map((xy: [number, number]) => xy.join()).join(" ")
-      path.setAttributeNS(null, "points", p̅_str)
-      path.setAttributeNS(null, "fill", "none")
-      path.setAttributeNS(null, "stroke", "green")
+      path.setAttribute("points", p̅_str)
+      path.setAttribute("fill", "none")
+      path.setAttribute("stroke", "black")
       this.svg.appendChild(path)
 
       const region: Path2D = this.path2D(p̅)
