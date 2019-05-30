@@ -38,10 +38,12 @@ export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
    canvas: HTMLCanvasElement
    ctx: CanvasRenderingContext2D
+   svg: SVGSVGElement
 
-   constructor (canvas: HTMLCanvasElement) {
+   constructor (canvas: HTMLCanvasElement, svg: SVGSVGElement) {
       this.canvas = canvas
       this.ctx = __nonNull(canvas.getContext("2d"))
+      this.svg = svg
       // convert to a bottom-left frame of reference
       this.transforms = [postcompose(translate(0, canvas.height), reflect_y)]
    }
@@ -139,5 +141,13 @@ export class GraphicsRenderer {
       const region: Path2D = this.path2D(rect_path)
       this.ctx.fillStyle = "#f6831e"
       this.ctx.fill(region)
+
+      const rect: SVGRectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+      rect.setAttribute("x", "80")
+      rect.setAttribute("y", "80")
+      rect.setAttribute("width", "30")
+      rect.setAttribute("height", "30")
+      rect.setAttribute("fill", "red")
+      this.svg.appendChild(rect)
    }
 }

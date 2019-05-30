@@ -52,6 +52,5 @@ module.exports = {
          });
       }
    ],
-   devtool: "inline-source-map",
-   // https://github.com/webpack-contrib/css-loader/issues/447:
+   devtool: "inline-source-map"
 }

@@ -24,8 +24,14 @@ class App {
    dataCtx: CanvasRenderingContext2D
    graphicsCanvas: HTMLCanvasElement
    graphicsPane3D: GraphicsPane3D
+   svg: SVGSVGElement
    
    constructor () {
+      this.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+      this.svg.setAttribute("width", "100")
+      this.svg.setAttribute("height", "100")
+      document.body.appendChild(this.svg)
+
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
       this.graphicsCanvas = document.createElement("canvas")
@@ -46,7 +52,7 @@ class App {
    // expression. This allows us to run it "out of context" and evaluate/slice it independently of the rest
    // of the program.
    initData (): void {
-      let here: Cursor = new Cursor(this.e)
+      const here: Cursor = new Cursor(this.e)
       here.skipImports().toDef("data").to(Expr.Let, "e")
       this.data_e = as(here.v, Expr.Constr)
       this.data_tv = Eval.eval_(emptyEnv(), this.data_e)
@@ -103,7 +109,7 @@ class App {
    }
 
    renderGraphics (g: GraphicsElement): void {
-      new GraphicsRenderer(this.graphicsCanvas).render(g)
+      new GraphicsRenderer(this.graphicsCanvas, this.svg).render(g)
    }
 }
 
