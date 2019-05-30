@@ -7,7 +7,6 @@ import { DataValue } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl, ExplValue, explValue } from "./ExplValue"
 import { Expr } from "./Expr"
-import { instantiate, instantiate_bwd, instantiate_fwd } from "./Instantiate"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, Num, Str, Value, _, make } from "./Value"
@@ -17,24 +16,26 @@ export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
 type RecDef = Expr.RecDef
 
+// The "runtime identity" of an expression.
 export class EvalId<P extends keyof ExplValue> extends Id {
-   e: Expr | Versioned<Str> = _ // str case for binding occurrences of variables
-   f: P = _
+   v̅: List<Value> = _           // environment values used to close e
+   e: Expr | Versioned<Str> = _ // str for binding occurrences of variables
+   f: P = _                     // tag to distinguish field slot
 }
 
-function evalId<P extends keyof ExplValue> (e: Expr | Versioned<Str>, f: P): EvalId<P> {
-   return make(EvalId, e, f) as EvalId<P>
+function evalId<P extends keyof ExplValue> (v̅: List<Value>, e: Expr | Versioned<Str>, f: P): EvalId<P> {
+   return make(EvalId, v̅, e, f) as EvalId<P>
 }
 
 export type ValId = EvalId<"v">
 export type ExplId = EvalId<"t">
 
-function explId (e: Expr | Versioned<Str>): ExplId {
-   return evalId(e, "t")
+function explId (ρ: Env, e: Expr | Versioned<Str>): ExplId {
+   return evalId(ρ.entries(), e, "t")
 }
 
-function valId (e: Expr | Versioned<Str>): ValId {
-   return evalId(e, "v")
+function valId (ρ: Env, e: Expr | Versioned<Str>): ValId {
+   return evalId(ρ.entries(), e, "v")
 }
 
 export module Eval {
@@ -53,7 +54,7 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, f: Elim<Expr>): Closure {
 function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
-            k: ValId = valId(def.x),
+            k: ValId = valId(ρ, def.x),
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
             f: Closure = closure(k, ρ, δ_0, evalTrie(def.σ))
       return [cons(Expl.recDef(def.x, f), δₜ), extendEnv(ρ_ext, def.x, f)]
@@ -86,8 +87,8 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
-         const k: ValId = valId(def.x),
-               tv: ExplValue = eval_(ρ.concat(ρ_ext), instantiate(ρ_ext, def.e)),
+         const k: ValId = valId(ρ, def.x),
+               tv: ExplValue = eval_(ρ.concat(ρ_ext), def.e),
                v: Versioned<Value> = copyAt(k, tv.v),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
          return [cons(Expl.let_(def.x, tv, v), def̅ₜ), ρ_extʹ]
@@ -95,7 +96,7 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
       if (def instanceof Expr.Prim) {
          // first-class primitives currently happen to be unary
          if (unaryOps.has(def.x.val)) {
-            const k: ValId = valId(def.x),
+            const k: ValId = valId(ρ, def.x),
                   op: UnaryOp = unaryOps.get(def.x.val)!,
                   opʹ: Versioned<UnaryOp> = copyAt(k, op),
                   [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
@@ -122,7 +123,6 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
 function defs_fwd (def̅: List<Expl.Def>): void {
    def̅.toArray().forEach((def: Expl.Def) => {
       if (def instanceof Expl.Let) {
-         instantiate_fwd(toExpr(def.tv.t))
          eval_fwd(def.tv)
          setα(ann.meet(def.x.__α, def.tv.v.__α), def.v)
       } else
@@ -142,7 +142,7 @@ function defs_bwd (def̅: List<Expl.Def>): void {
       if (def instanceof Expl.Let) {
          joinα(def.v.__α, def.tv.v)
          joinα(def.v.__α, def.x)
-         instantiate_bwd(eval_bwd(def.tv))
+         eval_bwd(def.tv)
       } else
       if (def instanceof Expl.Prim) {
          joinα(def.opʹ.__α, def.x)
@@ -156,8 +156,8 @@ function defs_bwd (def̅: List<Expl.Def>): void {
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
-   const kₜ: ExplId = explId(e),
-         kᵥ: ValId = valId(e)
+   const kₜ: ExplId = explId(ρ, e),
+         kᵥ: ValId = valId(ρ, e)
    if (e instanceof Expr.ConstNum) {
       return explValue(Expl.empty(kₜ), numʹ(kᵥ, e.val.val))
    } else
@@ -189,8 +189,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       if (v instanceof Closure) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
                [ρʹ, ξ, eʹ]: [Env, Match, Expr] = v.f.match(u, nil()),
-               ρᶠ: Env = ρᵟ.concat(ρʹ),
-               tv: ExplValue = eval_(v.ρ.concat(ρᶠ), instantiate(ρᶠ, eʹ))
+               tv: ExplValue = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), eʹ)
          return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), copyAt(kᵥ, tv.v))
       } else 
       if (v instanceof UnaryOp) {
@@ -220,13 +219,13 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.Defs) {
       const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, e.def̅, emptyEnv()),
-            tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, e.e))
+            tv: ExplValue = eval_(ρ.concat(ρʹ), e.e)
       return explValue(Expl.defs(kₜ, def̅ₜ, tv), copyAt(kᵥ, tv.v))
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
             [ρʹ, ξ, eʹ]: [Env, Match, Expr] = evalTrie(e.σ).match(tu.v, nil()),
-            tv: ExplValue = eval_(ρ.concat(ρʹ), instantiate(ρʹ, eʹ))
+            tv: ExplValue = eval_(ρ.concat(ρʹ), eʹ)
       return explValue(Expl.matchAs(kₜ, tu, ξ, tv), copyAt(kᵥ, tv.v))
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
@@ -255,7 +254,6 @@ export function eval_fwd ({t, v}: ExplValue): void {
       eval_fwd(t.tf)
       eval_fwd(t.tu)
       recDefs_(Direction.Fwd, t.δ)
-      instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
       setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
    } else
@@ -271,13 +269,11 @@ export function eval_fwd ({t, v}: ExplValue): void {
    } else
    if (t instanceof Expl.Defs) {
       defs_fwd(t.def̅)
-      instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
       setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.MatchAs) {
       eval_fwd(t.tu)
-      instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
       setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
    } else {
@@ -307,7 +303,7 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
       joinα(v.__α, t.tv.v)
-      instantiate_bwd(eval_bwd(t.tv))
+      eval_bwd(t.tv)
       match_bwd(t.ξ, v.__α)
       recDefs_(Direction.Bwd, t.δ)
       joinα(v.__α, t.tf.v)
@@ -332,13 +328,13 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
    } else
    if (t instanceof Expl.Defs) {
       joinα(v.__α, t.tv.v)
-      instantiate_bwd(eval_bwd(t.tv))
+      eval_bwd(t.tv)
       defs_bwd(t.def̅)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
       joinα(v.__α, t.tv.v)
-      instantiate_bwd(eval_bwd(t.tv))
+      eval_bwd(t.tv)
       match_bwd(t.ξ, v.__α)
       eval_bwd(t.tu)
       return joinα(v.__α, e)
