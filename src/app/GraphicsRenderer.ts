@@ -6,7 +6,7 @@ import { asVersioned } from "../Versioned"
 type TransformFun = (p: [number, number]) => [number, number]
 
 // No counterpart of this in the graphics DSL yet.
-const reflect_y: TransformFun =
+export const reflect_y: TransformFun =
    ([x, y]): [number, number] => {
       return [x, -y]
    }
@@ -45,7 +45,7 @@ export class GraphicsRenderer {
       this.ctx = __nonNull(canvas.getContext("2d"))
       this.svg = svg
       // convert to a bottom-left frame of reference
-      this.transforms = [postcompose(translate(0, canvas.height), reflect_y)]
+      this.transforms = [x => x] // [postcompose(translate(0, canvas.height), reflect_y)]
    }
 
    get transform (): TransformFun {
@@ -113,6 +113,10 @@ export class GraphicsRenderer {
       return region
    }
 
+   svgPath2D (p̅: List<Point>): [number, number][] {
+      return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
+   }
+
    pathStroke (points: List<Point>): void {
       const region: Path2D = this.path2D(points)
       this.ctx.strokeStyle = "black"
@@ -143,11 +147,12 @@ export class GraphicsRenderer {
       this.ctx.fill(region)
 
       const rect: SVGRectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect"),
-            p̅: Point[] = rect_path.toArray() 
-      rect.setAttribute("x", p̅[0].x.val.toString())
-      rect.setAttribute("y", p̅[0].y.val.toString())
-      rect.setAttribute("width", (p̅[1].x.val - p̅[0].x.val).toString())
-      rect.setAttribute("height", (p̅[2].y.val - p̅[0].y.val).toString())
+            p̅: [number, number][] = this.svgPath2D(rect_path)
+
+      rect.setAttribute("x", p̅[0][0].toString())
+      rect.setAttribute("y", (200 - p̅[2][1]).toString()) // TODO: hardcoded to height of viewport
+      rect.setAttribute("width", (p̅[1][0] - p̅[0][0]).toString())
+      rect.setAttribute("height", (p̅[2][1] - p̅[0][1]).toString())
       rect.setAttribute("fill", "#f6831e")
       this.svg.appendChild(rect)
    }

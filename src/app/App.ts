@@ -28,8 +28,8 @@ class App {
    
    constructor () {
       this.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
-      this.svg.setAttribute("width", "100")
-      this.svg.setAttribute("height", "100")
+      this.svg.setAttribute("width", "200")
+      this.svg.setAttribute("height", "200")
       document.body.appendChild(this.svg)
 
       this.dataCanvas = document.createElement("canvas")
