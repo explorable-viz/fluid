@@ -6,7 +6,7 @@ import { DataType, ctrToDataType, elimSuffix } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expr } from "./Expr"
 import { Str, Value, _, make } from "./Value"
-import { Versioned, asVersioned, joinα } from "./Versioned"
+import { Versioned, asVersioned, setα } from "./Versioned"
 
 import Cont = Expr.Cont
 import Trie = Expr.Trie
@@ -121,5 +121,5 @@ export function match_fwd (v̅: Match): Annotation {
 }
 
 export function match_bwd (v̅: Match, α: Annotation) : void {
-   v̅.toArray().map(v => joinα(α, v))
+   v̅.toArray().map(v => setα(α, v))
 }
