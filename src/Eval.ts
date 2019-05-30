@@ -7,7 +7,6 @@ import { DataValue } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl, ExplValue, explValue } from "./ExplValue"
 import { Expr } from "./Expr"
-import { instantiate_bwd } from "./Instantiate"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, Num, Str, Value, _, make } from "./Value"
@@ -143,7 +142,7 @@ function defs_bwd (def̅: List<Expl.Def>): void {
       if (def instanceof Expl.Let) {
          joinα(def.v.__α, def.tv.v)
          joinα(def.v.__α, def.x)
-         instantiate_bwd(eval_bwd(def.tv))
+         eval_bwd(def.tv)
       } else
       if (def instanceof Expl.Prim) {
          joinα(def.opʹ.__α, def.x)
@@ -304,7 +303,7 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
       joinα(v.__α, t.tv.v)
-      instantiate_bwd(eval_bwd(t.tv))
+      eval_bwd(t.tv)
       match_bwd(t.ξ, v.__α)
       recDefs_(Direction.Bwd, t.δ)
       joinα(v.__α, t.tf.v)
@@ -329,13 +328,13 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
    } else
    if (t instanceof Expl.Defs) {
       joinα(v.__α, t.tv.v)
-      instantiate_bwd(eval_bwd(t.tv))
+      eval_bwd(t.tv)
       defs_bwd(t.def̅)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
       joinα(v.__α, t.tv.v)
-      instantiate_bwd(eval_bwd(t.tv))
+      eval_bwd(t.tv)
       match_bwd(t.ξ, v.__α)
       eval_bwd(t.tu)
       return joinα(v.__α, e)
