@@ -113,11 +113,17 @@ export class GraphicsRenderer {
       return region
    }
 
-   svgPath2D (p̅: List<Point>): [number, number][] {
+   svgPath (p̅: List<Point>): [number, number][] {
       return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
 
    pathStroke (points: List<Point>): void {
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "polyline")
+      path.setAttributeNS(null, "points", "5,5 45,45 5,45 45,5")
+      path.setAttributeNS(null, "fill", "none")
+      path.setAttributeNS(null, "stroke", "green")
+      this.svg.appendChild(path)
+
       const region: Path2D = this.path2D(points)
       this.ctx.strokeStyle = "black"
       this.ctx.stroke(region)
@@ -147,7 +153,7 @@ export class GraphicsRenderer {
       this.ctx.fill(region)
 
       const rect: SVGRectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect"),
-            p̅: [number, number][] = this.svgPath2D(rect_path)
+            p̅: [number, number][] = this.svgPath(rect_path)
 
       rect.setAttribute("x", p̅[0][0].toString())
       rect.setAttribute("y", (200 - p̅[2][1]).toString()) // TODO: hardcoded to height of viewport
