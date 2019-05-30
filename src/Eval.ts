@@ -7,7 +7,7 @@ import { DataValue } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl, ExplValue, explValue } from "./ExplValue"
 import { Expr } from "./Expr"
-import { instantiate_bwd, instantiate_fwd } from "./Instantiate"
+import { instantiate_bwd } from "./Instantiate"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, Num, Str, Value, _, make } from "./Value"
@@ -124,7 +124,6 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
 function defs_fwd (def̅: List<Expl.Def>): void {
    def̅.toArray().forEach((def: Expl.Def) => {
       if (def instanceof Expl.Let) {
-         instantiate_fwd(toExpr(def.tv.t))
          eval_fwd(def.tv)
          setα(ann.meet(def.x.__α, def.tv.v.__α), def.v)
       } else
@@ -256,7 +255,6 @@ export function eval_fwd ({t, v}: ExplValue): void {
       eval_fwd(t.tf)
       eval_fwd(t.tu)
       recDefs_(Direction.Fwd, t.δ)
-      instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
       setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
    } else
@@ -272,13 +270,11 @@ export function eval_fwd ({t, v}: ExplValue): void {
    } else
    if (t instanceof Expl.Defs) {
       defs_fwd(t.def̅)
-      instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
       setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.MatchAs) {
       eval_fwd(t.tu)
-      instantiate_fwd(toExpr(t.tv.t))
       eval_fwd(t.tv)
       setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
    } else {

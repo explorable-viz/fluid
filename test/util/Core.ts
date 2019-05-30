@@ -64,7 +64,7 @@ export class BwdSlice {
 
 enum Flags { Bwd, Fwd }
 const flags: Map<Flags, boolean> = new Map([
-   [Flags.Fwd, false],
+   [Flags.Fwd, true],
    [Flags.Bwd, false]
 ])
 
