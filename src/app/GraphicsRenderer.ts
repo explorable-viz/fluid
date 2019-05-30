@@ -142,12 +142,13 @@ export class GraphicsRenderer {
       this.ctx.fillStyle = "#f6831e"
       this.ctx.fill(region)
 
-      const rect: SVGRectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect")
-      rect.setAttribute("x", "80")
-      rect.setAttribute("y", "80")
-      rect.setAttribute("width", "30")
-      rect.setAttribute("height", "30")
-      rect.setAttribute("fill", "red")
+      const rect: SVGRectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect"),
+            p̅: Point[] = rect_path.toArray() 
+      rect.setAttribute("x", p̅[0].x.val.toString())
+      rect.setAttribute("y", p̅[0].y.val.toString())
+      rect.setAttribute("width", (p̅[1].x.val - p̅[0].x.val).toString())
+      rect.setAttribute("height", (p̅[2].y.val - p̅[0].y.val).toString())
+      rect.setAttribute("fill", "#f6831e")
       this.svg.appendChild(rect)
    }
 }
