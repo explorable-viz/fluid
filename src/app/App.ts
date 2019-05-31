@@ -12,7 +12,7 @@ import { load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { Data, DataView, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D } from "./GraphicsPane3D"
-import { GraphicsRenderer } from "./GraphicsRenderer"
+import { GraphicsRenderer, svgNS } from "./GraphicsRenderer"
 
 class App {
    e: Expr                        // entire closed program
@@ -27,7 +27,7 @@ class App {
    svg: SVGSVGElement
    
    constructor () {
-      this.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+      this.svg = document.createElementNS(svgNS, "svg")
       this.svg.setAttribute("width", "300")
       this.svg.setAttribute("height", "200")
       // TODO: understand how last two numbers here relate to width and height attributes
@@ -36,7 +36,8 @@ class App {
       // We don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
       // pixel attributes). But to invert the y-axis we use an SVG transform:
       this.svg.setAttribute("transform", "scale(1,-1)")
-      document.body.appendChild(this.svg)
+      this.svg.style.verticalAlign = "top"
+      this.svg.style.display = "inline-block"
 
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
@@ -47,7 +48,8 @@ class App {
       this.graphicsPane3D.renderer.domElement.style.verticalAlign = "top"
       this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
-      document.body.appendChild(this.graphicsCanvas)
+      document.body.appendChild(this.svg)
+//      document.body.appendChild(this.graphicsCanvas)
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       this.graphicsPane3D.setCanvas(this.graphicsCanvas)
       this.graphicsCanvas.width = this.graphicsCanvas.height = 400

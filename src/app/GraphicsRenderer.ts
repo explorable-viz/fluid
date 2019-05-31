@@ -3,6 +3,7 @@ import { Cons, List } from "../BaseTypes"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
 import { asVersioned } from "../Versioned"
 
+export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
 
 // No counterpart of this in the graphics DSL yet.
@@ -59,7 +60,12 @@ export class GraphicsRenderer {
 
    render (g: GraphicsElement): void {
       this.ctx.fillStyle = "white"
-		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+      
+      while (this.svg.firstChild !== null) {
+         this.svg.removeChild(this.svg.firstChild)
+      }
+
       this.renderElement(g)
    }
 
@@ -122,7 +128,7 @@ export class GraphicsRenderer {
    }
 
    pathStroke (p̅: List<Point>): void {
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "polyline"),
+      const path = document.createElementNS(svgNS, "polyline"),
             p̅_str: string = this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
       path.setAttribute("points", p̅_str)
       path.setAttribute("fill", "none")
@@ -147,11 +153,12 @@ export class GraphicsRenderer {
    }
 
    circle (x: number, y: number, radius: number): void {
-      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle")
+      const circle = document.createElementNS(svgNS, "circle")
       circle.setAttribute("cx", x.toString())
       circle.setAttribute("cy", y.toString())
       circle.setAttribute("r", radius.toString())
       circle.setAttribute("stroke", "#0000ff")
+      circle.setAttribute("fill", "none")
       this.svg.appendChild(circle)
 
       this.ctx.beginPath()
@@ -165,7 +172,7 @@ export class GraphicsRenderer {
       this.ctx.fillStyle = "#f6831e"
       this.ctx.fill(region)
 
-      const rect: SVGRectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect"),
+      const rect: SVGRectElement = document.createElementNS(svgNS, "rect"),
             p̅: [number, number][] = this.svgPath(rect_path)
 
       rect.setAttribute("x", p̅[0][0].toString())
