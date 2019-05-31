@@ -3,10 +3,11 @@ import { Cons, List } from "../BaseTypes"
 import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
 import { asVersioned } from "../Versioned"
 
+export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
 
 // No counterpart of this in the graphics DSL yet.
-const reflect_y: TransformFun =
+export const reflect_y: TransformFun =
    ([x, y]): [number, number] => {
       return [x, -y]
    }
@@ -36,24 +37,27 @@ const transpose: TransformFun =
 
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
-   canvas: HTMLCanvasElement
-   ctx: CanvasRenderingContext2D
+   svg: SVGSVGElement
 
-   constructor (canvas: HTMLCanvasElement) {
-      this.canvas = canvas
-      this.ctx = __nonNull(canvas.getContext("2d"))
-      // convert to a bottom-left frame of reference
-      this.transforms = [postcompose(translate(0, canvas.height), reflect_y)]
+   constructor (svg: SVGSVGElement) {
+      this.svg = svg
+      this.transforms = [x => x]
    }
 
    get transform (): TransformFun {
       assert(this.transforms.length > 0)
-      return this.transforms[this.transforms.length - 1]
+      // query the current transform rather than returing a closure that accesses it...
+      const transform: TransformFun = this.transforms[this.transforms.length - 1]
+      return ([x, y]) => {
+         const [xʹ, yʹ] = transform([x, y])
+         return [Math.round(xʹ), Math.round(yʹ)]
+      } 
    }
 
    render (g: GraphicsElement): void {
-      this.ctx.fillStyle = "white"
-		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+      while (this.svg.firstChild !== null) {
+         this.svg.removeChild(this.svg.firstChild)
+      }
       this.renderElement(g)
    }
 
@@ -111,33 +115,48 @@ export class GraphicsRenderer {
       return region
    }
 
-   pathStroke (points: List<Point>): void {
-      const region: Path2D = this.path2D(points)
-      this.ctx.strokeStyle = "black"
-      this.ctx.stroke(region)
-      this.pointHighlights(points)
+   svgPath (p̅: List<Point>): [number, number][] {
+      return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
 
-   pointHighlights (points: List<Point>): void {
-      for (; Cons.is(points); points = points.tail) {
-         const point: Point = points.head,
-               [x, y]: [number, number] = this.transform([point.x.val, point.y.val])
-         if (!__nonNull(asVersioned(point.x).__α) || !__nonNull(asVersioned(point.y).__α)) {
+   pathStroke (p̅: List<Point>): void {
+      const path = document.createElementNS(svgNS, "polyline"),
+            p̅_str: string = this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
+      path.setAttribute("points", p̅_str)
+      path.setAttribute("fill", "none")
+      path.setAttribute("stroke", "black")
+      this.svg.appendChild(path)
+      this.pointHighlights(p̅)
+   }
+
+   pointHighlights (p̅: List<Point>): void {
+      for (; Cons.is(p̅); p̅ = p̅.tail) {
+         const p: Point = p̅.head,
+               [x, y]: [number, number] = this.transform([p.x.val, p.y.val])
+         if (!__nonNull(asVersioned(p.x).__α) || !__nonNull(asVersioned(p.y).__α)) {
             this.circle(x, y, 3)
          }
       }
    }
 
    circle (x: number, y: number, radius: number): void {
-      this.ctx.beginPath()
-      this.ctx.arc(x, y, radius, 0, 2 * Math.PI)
-      this.ctx.strokeStyle = "#0000ff"
-      this.ctx.stroke()
+      const circle = document.createElementNS(svgNS, "circle")
+      circle.setAttribute("cx", x.toString())
+      circle.setAttribute("cy", y.toString())
+      circle.setAttribute("r", radius.toString())
+      circle.setAttribute("stroke", "#0000ff")
+      circle.setAttribute("fill", "none")
+      this.svg.appendChild(circle)
    }
 
    rectFill (rect_path: List<Point>): void {
-      const region: Path2D = this.path2D(rect_path)
-      this.ctx.fillStyle = "#f6831e"
-      this.ctx.fill(region)
+      const rect: SVGRectElement = document.createElementNS(svgNS, "rect"),
+            p̅: [number, number][] = this.svgPath(rect_path)
+      rect.setAttribute("x", p̅[0][0].toString())
+      rect.setAttribute("y", p̅[0][1].toString())
+      rect.setAttribute("width", (p̅[1][0] - p̅[0][0]).toString())
+      rect.setAttribute("height", (p̅[2][1] - p̅[0][1]).toString())
+      rect.setAttribute("fill", "#f6831e")
+      this.svg.appendChild(rect)
    }
 }

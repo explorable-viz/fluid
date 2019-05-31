@@ -12,7 +12,7 @@ import { load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { Data, DataView, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D } from "./GraphicsPane3D"
-import { GraphicsRenderer } from "./GraphicsRenderer"
+import { GraphicsRenderer, svgNS } from "./GraphicsRenderer"
 
 class App {
    e: Expr                        // entire closed program
@@ -22,23 +22,33 @@ class App {
    dataView: DataView
    dataCanvas: HTMLCanvasElement
    dataCtx: CanvasRenderingContext2D
-   graphicsCanvas: HTMLCanvasElement
    graphicsPane3D: GraphicsPane3D
+   svg: SVGSVGElement
    
    constructor () {
+      this.svg = document.createElementNS(svgNS, "svg")
+      this.svg.setAttribute("width", "400")
+      this.svg.setAttribute("height", "400")
+      // TODO: understand how last two numbers here relate to width and height attributes
+      // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
+      this.svg.setAttribute("viewBox", "-0.5 -0.5 400 400")
+      // We don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
+      // pixel attributes). But to invert the y-axis we use an SVG transform:
+      this.svg.setAttribute("transform", "scale(1,-1)")
+      this.svg.style.verticalAlign = "top"
+      this.svg.style.display = "inline-block"
+
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
-      this.graphicsCanvas = document.createElement("canvas")
       this.graphicsPane3D = new GraphicsPane3D(600, 600)
       this.dataCanvas.style.verticalAlign = "top"
       this.dataCanvas.style.display = "inline-block"
       this.graphicsPane3D.renderer.domElement.style.verticalAlign = "top"
       this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
-      document.body.appendChild(this.graphicsCanvas)
+      document.body.appendChild(this.svg)
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
-      this.graphicsPane3D.setCanvas(this.graphicsCanvas)
-      this.graphicsCanvas.width = this.graphicsCanvas.height = 400
+      // this.graphicsPane3D.setCanvas(this.graphicsCanvas)
       this.loadExample()
    }
 
@@ -46,7 +56,7 @@ class App {
    // expression. This allows us to run it "out of context" and evaluate/slice it independently of the rest
    // of the program.
    initData (): void {
-      let here: Cursor = new Cursor(this.e)
+      const here: Cursor = new Cursor(this.e)
       here.skipImports().toDef("data").to(Expr.Let, "e")
       this.data_e = as(here.v, Expr.Constr)
       this.data_tv = Eval.eval_(emptyEnv(), this.data_e)
@@ -103,7 +113,7 @@ class App {
    }
 
    renderGraphics (g: GraphicsElement): void {
-      new GraphicsRenderer(this.graphicsCanvas).render(g)
+      new GraphicsRenderer(this.svg).render(g)
    }
 }
 
