@@ -30,6 +30,9 @@ class App {
       this.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
       this.svg.setAttribute("width", "300")
       this.svg.setAttribute("height", "200")
+      // TODO: understand how last two numbers here relate to width and height attributes
+      // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
+      this.svg.setAttribute("viewBox", "-0.5 -0.5 300 200") 
       document.body.appendChild(this.svg)
 
       this.dataCanvas = document.createElement("canvas")

@@ -114,12 +114,15 @@ export class GraphicsRenderer {
    }
 
    svgPath (p̅: List<Point>): [number, number][] {
-      return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
+      return p̅.toArray().map(({ x, y }): [number, number] => {
+         const [xʹ, yʹ] = this.transform([x.val, y.val])
+         return [Math.round(xʹ), Math.round(yʹ)]
+      })
    }
 
    pathStroke (p̅: List<Point>): void {
       const path = document.createElementNS("http://www.w3.org/2000/svg", "polyline"),
-            p̅_str: string = this.svgPath(p̅).map((xy: [number, number]) => xy.join()).join(" ")
+            p̅_str: string = this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
       path.setAttribute("points", p̅_str)
       path.setAttribute("fill", "none")
       path.setAttribute("stroke", "black")
@@ -157,7 +160,7 @@ export class GraphicsRenderer {
             p̅: [number, number][] = this.svgPath(rect_path)
 
       rect.setAttribute("x", p̅[0][0].toString())
-      rect.setAttribute("y", (200 - p̅[2][1]).toString()) // TODO: hardcoded to height of viewport
+      rect.setAttribute("y", p̅[0][1].toString())
       rect.setAttribute("width", (p̅[1][0] - p̅[0][0]).toString())
       rect.setAttribute("height", (p̅[2][1] - p̅[0][1]).toString())
       rect.setAttribute("fill", "#f6831e")
