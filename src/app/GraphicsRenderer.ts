@@ -1,6 +1,6 @@
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
-import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
+import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Transform, Translate, Transpose } from "../Graphics"
 import { asVersioned } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
@@ -35,12 +35,19 @@ const transpose: TransformFun =
       return [y, x]
    }
 
+export interface Slicer {
+   bwdSlice (): void
+   bwdSlice (): void
+}
+
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
    svg: SVGSVGElement
+   slicer: Slicer
 
-   constructor (svg: SVGSVGElement) {
+   constructor (svg: SVGSVGElement, slicer: Slicer) {
       this.svg = svg
+      this.slicer = slicer
       this.transforms = [x => x]
    }
 
@@ -67,11 +74,11 @@ export class GraphicsRenderer {
             this.renderElement(gs.head)
          }
       } else 
-      if (g instanceof PathStroke) {
-         this.pathStroke(g.points)
+      if (g instanceof Polyline) {
+         this.polyline(g.points)
       } else
-      if (g instanceof RectFill) {
-         this.rectFill(g.points)
+      if (g instanceof Polygon) {
+         this.polygon(g.points)
       } else
       if (g instanceof Transform) {
          const t: LinearTransform = g.t
@@ -119,7 +126,7 @@ export class GraphicsRenderer {
       return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
 
-   pathStroke (p̅: List<Point>): void {
+   polyline (p̅: List<Point>): void {
       const path = document.createElementNS(svgNS, "polyline"),
             p̅_str: string = this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
       path.setAttribute("points", p̅_str)
@@ -149,14 +156,24 @@ export class GraphicsRenderer {
       this.svg.appendChild(circle)
    }
 
-   rectFill (rect_path: List<Point>): void {
+   // TODO: generalise from rect to polygon
+   polygon (path: List<Point>): void {
       const rect: SVGRectElement = document.createElementNS(svgNS, "rect"),
-            p̅: [number, number][] = this.svgPath(rect_path)
+            p̅: [number, number][] = this.svgPath(path)
       rect.setAttribute("x", p̅[0][0].toString())
       rect.setAttribute("y", p̅[0][1].toString())
       rect.setAttribute("width", (p̅[1][0] - p̅[0][0]).toString())
       rect.setAttribute("height", (p̅[2][1] - p̅[0][1]).toString())
+      rect.setAttribute("stroke", "black")
       rect.setAttribute("fill", "#f6831e")
+      rect.addEventListener("click", (e: MouseEvent): void => {
+         path.toArray().map((p: Point): void => {
+            console.log(`Clearing annotation on ${p}`)
+            asVersioned(p.x).__α = false
+            asVersioned(p.y).__α = false
+            this.slicer.bwdSlice()
+         })
+      })
       this.svg.appendChild(rect)
    }
 }

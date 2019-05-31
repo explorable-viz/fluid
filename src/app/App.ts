@@ -12,9 +12,9 @@ import { load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { Data, DataView, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D } from "./GraphicsPane3D"
-import { GraphicsRenderer, svgNS } from "./GraphicsRenderer"
+import { GraphicsRenderer, Slicer, svgNS } from "./GraphicsRenderer"
 
-class App {
+class App implements Slicer {
    e: Expr                        // entire closed program
    tv: ExplValue                  // chart computed by program
    data_e: Expr                   // expression for data (value bound by first let in user code)
@@ -83,11 +83,17 @@ class App {
    }
 
    // Push annotations back from data to source, then redo the forward slice.
-   redoFwdSlice (): void {
+   fwdSlice (): void {
       setallα(this.data_e, ann.bot)
       // TODO: clear annotations on intermediate values somehow
       Eval.eval_bwd(this.data_tv)
       Eval.eval_fwd(this.tv)
+      this.draw()
+   }
+
+   bwdSlice (): void {
+      Eval.eval_bwd(this.tv)
+      Eval.eval_fwd(this.data_tv) 
       this.draw()
    }
 
@@ -105,7 +111,7 @@ class App {
       this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
          if (this.dataView.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)) {
-            this.redoFwdSlice()
+            this.fwdSlice()
          }
       })
       this.dataCanvas.height = this.dataView.height + 1 // why extra pixel needed?
@@ -113,7 +119,7 @@ class App {
    }
 
    renderGraphics (g: GraphicsElement): void {
-      new GraphicsRenderer(this.svg).render(g)
+      new GraphicsRenderer(this.svg, this).render(g)
    }
 }
 

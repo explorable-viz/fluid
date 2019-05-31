@@ -18,9 +18,9 @@ let transpose = fun g →
 letrec
    // GraphicElement → Pair(number, number)
    fun dimensions {
-      PathStroke(ps) → 
+      Polyline(ps) → 
          pathDimensions (map (fun Point(x, y) → (x, y)) ps);
-      RectFill(ps) →
+      Polygon(ps) →
          pathDimensions (map (fun Point(x, y) → (x, y)) ps);
       Graphic(gs) → 
          pathDimensions (map dimensions gs);
@@ -48,9 +48,9 @@ let stackRight = fun gs →
 // Negatively offset from (0, 0) by margin; client code responsible for translating into positive space (if desired).
 // number → number → number → GraphicElement
 let x_axis = fun margin n width tickHeight →
-   let tick = PathStroke([Point(0, 0), Point(0, 0 - tickHeight)]) in
+   let tick = Polyline([Point(0, 0), Point(0, 0 - tickHeight)]) in
    let ticks = fun n → spaceRight width (repeat n tick) in
-   let line = PathStroke([Point(0, 0), Point(n * width, 0)]) in
+   let line = Polyline([Point(0, 0), Point(n * width, 0)]) in
    translate 0 (0 - margin) Graphic([line, ...ticks n]);
 
 // GraphicsElement → number
@@ -67,19 +67,19 @@ let invert = fun {
 // number → Graphic
 let plotPoint = fun radius → 
    Graphic([
-      PathStroke([Point(0 - radius, 0 - radius), Point(radius, radius)]),
-      PathStroke([Point(0 - radius, radius), Point(radius, 0 - radius)])
+      Polyline([Point(0 - radius, 0 - radius), Point(radius, radius)]),
+      Polyline([Point(0 - radius, radius), Point(radius, 0 - radius)])
    ]);
 
 // List(Point) → LinearTransform → Graphic
 let linePlot = fun t ps →
    let points = map (fun Point(x, y) → translate x y (Transform(invert t, plotPoint 2.5))) ps in 
-   Transform(t, Graphic([PathStroke(ps), ...points]));
+   Transform(t, Graphic([Polyline(ps), ...points]));
 
 // Rect → List(Point)
 let rectPath = fun Rect(w, h) →
    [Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)];
 
-// Rect → Graphic
+// Rect → Polygon
 let renderRect = fun r → 
-   let ps = rectPath r in Graphic([RectFill(ps), PathStroke(close(ps))])
+   let ps = rectPath r in Polygon(close(ps))
