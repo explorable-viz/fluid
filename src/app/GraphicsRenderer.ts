@@ -37,13 +37,9 @@ const transpose: TransformFun =
 
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
-   canvas: HTMLCanvasElement
-   ctx: CanvasRenderingContext2D
    svg: SVGSVGElement
 
-   constructor (canvas: HTMLCanvasElement, svg: SVGSVGElement) {
-      this.canvas = canvas
-      this.ctx = __nonNull(canvas.getContext("2d"))
+   constructor (svg: SVGSVGElement) {
       this.svg = svg
       this.transforms = [x => x]
    }
@@ -59,13 +55,9 @@ export class GraphicsRenderer {
    }
 
    render (g: GraphicsElement): void {
-      this.ctx.fillStyle = "white"
-      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
-      
       while (this.svg.firstChild !== null) {
          this.svg.removeChild(this.svg.firstChild)
       }
-
       this.renderElement(g)
    }
 
@@ -134,11 +126,6 @@ export class GraphicsRenderer {
       path.setAttribute("fill", "none")
       path.setAttribute("stroke", "black")
       this.svg.appendChild(path)
-
-      const region: Path2D = this.path2D(p̅)
-      this.ctx.strokeStyle = "black"
-      this.ctx.stroke(region)
-
       this.pointHighlights(p̅)
    }
 
@@ -160,21 +147,11 @@ export class GraphicsRenderer {
       circle.setAttribute("stroke", "#0000ff")
       circle.setAttribute("fill", "none")
       this.svg.appendChild(circle)
-
-      this.ctx.beginPath()
-      this.ctx.arc(x, y, radius, 0, 2 * Math.PI)
-      this.ctx.strokeStyle = "#0000ff"
-      this.ctx.stroke()
    }
 
    rectFill (rect_path: List<Point>): void {
-      const region: Path2D = this.path2D(rect_path)
-      this.ctx.fillStyle = "#f6831e"
-      this.ctx.fill(region)
-
       const rect: SVGRectElement = document.createElementNS(svgNS, "rect"),
             p̅: [number, number][] = this.svgPath(rect_path)
-
       rect.setAttribute("x", p̅[0][0].toString())
       rect.setAttribute("y", p̅[0][1].toString())
       rect.setAttribute("width", (p̅[1][0] - p̅[0][0]).toString())
