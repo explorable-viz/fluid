@@ -32,7 +32,10 @@ class App {
       this.svg.setAttribute("height", "200")
       // TODO: understand how last two numbers here relate to width and height attributes
       // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
-      this.svg.setAttribute("viewBox", "-0.5 -0.5 300 200") 
+      this.svg.setAttribute("viewBox", "-0.5 -0.5 300 200")
+      // We don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
+      // pixel attributes). But to invert the y-axis we use an SVG transform:
+      this.svg.setAttribute("transform", "scale(1,-1)")
       document.body.appendChild(this.svg)
 
       this.dataCanvas = document.createElement("canvas")

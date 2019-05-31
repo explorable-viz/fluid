@@ -44,13 +44,17 @@ export class GraphicsRenderer {
       this.canvas = canvas
       this.ctx = __nonNull(canvas.getContext("2d"))
       this.svg = svg
-      // convert to a bottom-left frame of reference
-      this.transforms = [x => x] // [postcompose(translate(0, canvas.height), reflect_y)]
+      this.transforms = [x => x]
    }
 
    get transform (): TransformFun {
       assert(this.transforms.length > 0)
-      return this.transforms[this.transforms.length - 1]
+      // query the current transform rather than returing a closure that accesses it...
+      const transform: TransformFun = this.transforms[this.transforms.length - 1]
+      return ([x, y]) => {
+         const [xʹ, yʹ] = transform([x, y])
+         return [Math.round(xʹ), Math.round(yʹ)]
+      } 
    }
 
    render (g: GraphicsElement): void {
@@ -114,10 +118,7 @@ export class GraphicsRenderer {
    }
 
    svgPath (p̅: List<Point>): [number, number][] {
-      return p̅.toArray().map(({ x, y }): [number, number] => {
-         const [xʹ, yʹ] = this.transform([x.val, y.val])
-         return [Math.round(xʹ), Math.round(yʹ)]
-      })
+      return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
 
    pathStroke (p̅: List<Point>): void {
@@ -131,14 +132,15 @@ export class GraphicsRenderer {
       const region: Path2D = this.path2D(p̅)
       this.ctx.strokeStyle = "black"
       this.ctx.stroke(region)
+
       this.pointHighlights(p̅)
    }
 
-   pointHighlights (points: List<Point>): void {
-      for (; Cons.is(points); points = points.tail) {
-         const point: Point = points.head,
-               [x, y]: [number, number] = this.transform([point.x.val, point.y.val])
-         if (!__nonNull(asVersioned(point.x).__α) || !__nonNull(asVersioned(point.y).__α)) {
+   pointHighlights (p̅: List<Point>): void {
+      for (; Cons.is(p̅); p̅ = p̅.tail) {
+         const p: Point = p̅.head,
+               [x, y]: [number, number] = this.transform([p.x.val, p.y.val])
+         if (!__nonNull(asVersioned(p.x).__α) || !__nonNull(asVersioned(p.y).__α)) {
             this.circle(x, y, 3)
          }
       }
