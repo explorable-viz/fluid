@@ -147,6 +147,13 @@ export class GraphicsRenderer {
    }
 
    circle (x: number, y: number, radius: number): void {
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle")
+      circle.setAttribute("cx", x.toString())
+      circle.setAttribute("cy", y.toString())
+      circle.setAttribute("r", radius.toString())
+      circle.setAttribute("stroke", "#0000ff")
+      this.svg.appendChild(circle)
+
       this.ctx.beginPath()
       this.ctx.arc(x, y, radius, 0, 2 * Math.PI)
       this.ctx.strokeStyle = "#0000ff"
