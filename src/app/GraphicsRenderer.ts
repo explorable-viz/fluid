@@ -143,9 +143,6 @@ export class GraphicsRenderer {
       this.svg.appendChild(circle)
    }
 
-   // DELETE ME
-   p̅: Point[]
-
    polygon (p̅: List<Point>): void {
       const polygon = document.createElementNS(svgNS, "polygon")
       polygon.setAttribute("points", this.points(p̅))
@@ -153,12 +150,10 @@ export class GraphicsRenderer {
       polygon.setAttribute("fill", "#f6831e")
       polygon.addEventListener("click", (e: MouseEvent): void => {
          this.slicer.resetForBwd()
-         this.p̅ = []
          p̅.toArray().map((p: Point): void => {
-            this.p̅.push(p)
-            console.log(`Clearing annotation on ${p}`)
-            asVersioned(p.x).__α = false
-            asVersioned(p.y).__α = false
+            console.log(`Setting annotation on ${p}`)
+            asVersioned(p.x).__α = true
+            asVersioned(p.y).__α = true
          })
          this.slicer.bwdSlice()
       })
