@@ -106,22 +106,6 @@ export class GraphicsRenderer {
       this.transforms.pop()
    }
 
-   path2D (points: List<Point>): Path2D {
-      const region: Path2D = new Path2D
-      if (Cons.is(points)) {
-         const [x, y]: [number, number] = this.transform([points.head.x.val, points.head.y.val])
-         region.moveTo(x, y)
-         points = points.tail
-         for (; Cons.is(points); points = points.tail) {
-            const [x, y]: [number, number] = this.transform([points.head.x.val, points.head.y.val])
-            region.lineTo(x, y)
-         }
-      } else {
-         return absurd()
-      }
-      return region
-   }
-
    svgPath (p̅: List<Point>): [number, number][] {
       return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
