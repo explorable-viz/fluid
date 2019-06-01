@@ -1,7 +1,3 @@
-// List(Point) → List(Point)
-let close = fun [x, ...xs] → 
-   concat [x, ...xs] [x];
-
 // List(Pair(number, number)) → Pair(number, number)
 let pathDimensions = fun ps → 
    match unzip ps as (xs, ys) → (max xs, max ys);
@@ -82,4 +78,4 @@ let rectPath = fun Rect(w, h) →
 
 // Rect → Polygon
 let renderRect = fun r → 
-   let ps = rectPath r in Polygon(close(ps))
+   let ps = rectPath r in Polygon(ps)
