@@ -38,6 +38,7 @@ const transpose: TransformFun =
 export interface Slicer {
    bwdSlice (): void
    bwdSlice (): void
+   resetForBwd (): void // set all top-level outputs to true, all other annotations to false
 }
 
 export class GraphicsRenderer {
@@ -151,6 +152,7 @@ export class GraphicsRenderer {
       polygon.setAttribute("stroke", "black")
       polygon.setAttribute("fill", "#f6831e")
       polygon.addEventListener("click", (e: MouseEvent): void => {
+         this.slicer.resetForBwd()
          this.p̅ = []
          p̅.toArray().map((p: Point): void => {
             this.p̅.push(p)

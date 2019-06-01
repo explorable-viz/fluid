@@ -93,6 +93,12 @@ class App implements Slicer {
       this.draw()
    }
 
+   resetForBwd (): void {
+      setallα(this.e, ann.bot)
+      Eval.eval_fwd(this.tv)
+      setallα(this.tv.v, ann.top)
+   }
+
    bwdSlice (): void {
       Eval.eval_bwd(this.tv)
       Eval.eval_fwd(this.data_tv) 
