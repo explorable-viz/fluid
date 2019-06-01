@@ -148,7 +148,9 @@ export class GraphicsRenderer {
       polygon.setAttribute("stroke", "black")
       polygon.setAttribute("fill", "#f6831e")
       polygon.addEventListener("click", (e: MouseEvent): void => {
-         p̅.toArray().map((p: Point): void => {
+         const p̅ʹ: Point[] = p̅.toArray()
+         p̅ʹ.pop() // path is closed, so no need to visit last point
+         p̅ʹ.map((p: Point): void => {
             console.log(`Clearing annotation on ${p}`)
             asVersioned(p.x).__α = false
             asVersioned(p.y).__α = false
