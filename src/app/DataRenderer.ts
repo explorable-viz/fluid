@@ -3,6 +3,7 @@ import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { DataValue } from "../DataValue"
 import { Num, Str, Value, _, make } from "../Value"
 import { Versioned, asVersioned } from "../Versioned"
+import { Slicer } from "./GraphicsRenderer"
 
 type Row = Pair<Num | Str, Value> // approximate recursive type
 export type Data = List<Row> 
@@ -98,7 +99,8 @@ export class DataView {
    indentx: number
    lines: Line[]
    width: number
-   lastMouseToken: AnnotatedToken | null 
+   lastMouseToken: AnnotatedToken | null
+   slicer: Slicer
 
    constructor (ctx: CanvasRenderingContext2D, lineHeight: number) {
       this.ctx = ctx

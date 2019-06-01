@@ -1,5 +1,7 @@
+import { Annotation, ann } from "../util/Annotated"
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
+import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Transform, Translate, Transpose } from "../Graphics"
 import { asVersioned } from "../Versioned"
 
@@ -39,6 +41,7 @@ export interface Slicer {
    bwdSlice (): void
    bwdSlice (): void
    resetForBwd (): void // set all top-level outputs to true, all other annotations to false
+   direction: Direction
 }
 
 export class GraphicsRenderer {
@@ -126,8 +129,10 @@ export class GraphicsRenderer {
    pointHighlights (p̅: List<Point>): void {
       for (; Cons.is(p̅); p̅ = p̅.tail) {
          const p: Point = p̅.head,
-               [x, y]: [number, number] = this.transform([p.x.val, p.y.val])
-         if (!__nonNull(asVersioned(p.x).__α) || !__nonNull(asVersioned(p.y).__α)) {
+               [x, y]: [number, number] = this.transform([p.x.val, p.y.val]),
+               [x_α, y_α]: [Annotation, Annotation] = [__nonNull(asVersioned(p.x).__α), __nonNull(asVersioned(p.y).__α)],
+               α: Annotation = this.slicer.direction === Direction.Fwd ? !ann.meet(x_α, y_α) : ann.meet(x_α, y_α)
+         if (α) {
             this.circle(x, y, 3)
          }
       }

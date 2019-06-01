@@ -2,7 +2,7 @@ import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
 import { List } from "../BaseTypes"
 import { emptyEnv } from "../Env"
-import { Eval } from "../Eval"
+import { Direction, Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
@@ -25,6 +25,7 @@ class App implements Slicer {
    graphicsView: GraphicsRenderer
    graphicsPane3D: GraphicsPane3D
    svg: SVGSVGElement
+   direction: Direction
    
    constructor () {
       this.svg = document.createElementNS(svgNS, "svg")
@@ -90,6 +91,7 @@ class App implements Slicer {
       // TODO: clear annotations on intermediate values somehow
       Eval.eval_bwd(this.data_tv)
       Eval.eval_fwd(this.tv)
+      this.direction = Direction.Fwd
       this.draw()
    }
 
@@ -101,6 +103,7 @@ class App implements Slicer {
    bwdSlice (): void {
       Eval.eval_bwd(this.tv)
       Eval.eval_fwd(this.data_tv) 
+      this.direction = Direction.Bwd
       this.draw()
    }
 
