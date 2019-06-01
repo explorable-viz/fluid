@@ -152,8 +152,8 @@ export class GraphicsRenderer {
             console.log(`Clearing annotation on ${p}`)
             asVersioned(p.x).__α = false
             asVersioned(p.y).__α = false
-            this.slicer.bwdSlice()
          })
+         this.slicer.bwdSlice()
       })
       this.svg.appendChild(polygon)
       this.pointHighlights(p̅)
