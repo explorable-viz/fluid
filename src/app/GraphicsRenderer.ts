@@ -174,24 +174,4 @@ export class GraphicsRenderer {
       this.svg.appendChild(polygon)
       this.pointHighlights(p̅)
    }
-   /*
-      const rect: SVGRectElement = document.createElementNS(svgNS, "rect"),
-            p̅: [number, number][] = this.svgPath(path)
-      rect.setAttribute("x", p̅[0][0].toString())
-      rect.setAttribute("y", p̅[0][1].toString())
-      rect.setAttribute("width", (p̅[1][0] - p̅[0][0]).toString())
-      rect.setAttribute("height", (p̅[2][1] - p̅[0][1]).toString())
-      rect.setAttribute("stroke", "black")
-      rect.setAttribute("fill", "#f6831e")
-      rect.addEventListener("click", (e: MouseEvent): void => {
-         path.toArray().map((p: Point): void => {
-            console.log(`Clearing annotation on ${p}`)
-            asVersioned(p.x).__α = false
-            asVersioned(p.y).__α = false
-            this.slicer.bwdSlice()
-         })
-      })
-      this.svg.appendChild(rect)
-      this.pointHighlights(path)
-*/
 }
