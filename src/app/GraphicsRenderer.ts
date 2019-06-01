@@ -158,8 +158,23 @@ export class GraphicsRenderer {
       this.svg.appendChild(circle)
    }
 
-   // TODO: generalise from rect to polygon
-   polygon (path: List<Point>): void {
+   polygon (p̅: List<Point>): void {
+      const polygon = document.createElementNS(svgNS, "polygon")
+      polygon.setAttribute("points", this.points(p̅))
+      polygon.setAttribute("stroke", "black")
+      polygon.setAttribute("fill", "#f6831e")
+      polygon.addEventListener("click", (e: MouseEvent): void => {
+         p̅.toArray().map((p: Point): void => {
+            console.log(`Clearing annotation on ${p}`)
+            asVersioned(p.x).__α = false
+            asVersioned(p.y).__α = false
+            this.slicer.bwdSlice()
+         })
+      })
+      this.svg.appendChild(polygon)
+      this.pointHighlights(p̅)
+   }
+   /*
       const rect: SVGRectElement = document.createElementNS(svgNS, "rect"),
             p̅: [number, number][] = this.svgPath(path)
       rect.setAttribute("x", p̅[0][0].toString())
@@ -178,5 +193,5 @@ export class GraphicsRenderer {
       })
       this.svg.appendChild(rect)
       this.pointHighlights(path)
-   }
+*/
 }
