@@ -126,11 +126,13 @@ export class GraphicsRenderer {
       return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
 
+   points (p̅: List<Point>): string {
+      return this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
+   }
+
    polyline (p̅: List<Point>): void {
-      const path = document.createElementNS(svgNS, "polyline"),
-            p̅_str: string = this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
-      path.setAttribute("points", p̅_str)
-      path.setAttribute("fill", "none")
+      const path = document.createElementNS(svgNS, "polyline")
+      path.setAttribute("points", this.points(p̅))
       path.setAttribute("stroke", "black")
       this.svg.appendChild(path)
       this.pointHighlights(p̅)
@@ -175,5 +177,6 @@ export class GraphicsRenderer {
          })
       })
       this.svg.appendChild(rect)
+      this.pointHighlights(path)
    }
 }
