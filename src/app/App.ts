@@ -117,7 +117,7 @@ class App implements Slicer {
    renderData (data: Data): void {
       this.dataCanvas.height = 400
       this.dataCanvas.width = 400
-      this.dataView = new DataRenderer(this.dataCtx, data).view
+      this.dataView = new DataRenderer(this.dataCtx, data, this).view
       this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
          if (this.dataView.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)) {
