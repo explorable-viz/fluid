@@ -22,6 +22,7 @@ class App implements Slicer {
    dataView: DataView
    dataCanvas: HTMLCanvasElement
    dataCtx: CanvasRenderingContext2D
+   graphicsView: GraphicsRenderer
    graphicsPane3D: GraphicsPane3D
    svg: SVGSVGElement
    
@@ -79,6 +80,7 @@ class App implements Slicer {
       setallα(this.e, ann.top)
       Eval.eval_fwd(this.tv)
       this.renderData(this.data)
+      this.graphicsView = new GraphicsRenderer(this.svg, this)
       this.draw()
    }
 
@@ -100,7 +102,7 @@ class App implements Slicer {
    draw (): void {
       this.dataCtx.clearRect(0, 0, this.dataCanvas.width, this.dataCanvas.height)
       this.dataView.draw()
-      this.renderGraphics(this.graphics) // TODO: adopt same "view" pattern?
+      this.graphicsView.render(this.graphics)
       // this.graphicsPane3D.render()
    }
 
@@ -116,10 +118,6 @@ class App implements Slicer {
       })
       this.dataCanvas.height = this.dataView.height + 1 // why extra pixel needed?
       this.dataCanvas.width = this.dataView.width
-   }
-
-   renderGraphics (g: GraphicsElement): void {
-      new GraphicsRenderer(this.svg, this).render(g)
    }
 }
 
