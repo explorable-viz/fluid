@@ -1,4 +1,4 @@
-import { Annotation, ann } from "../util/Annotated"
+import { ann } from "../util/Annotated"
 import { __nonNull, absurd, assert, className } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
@@ -153,10 +153,10 @@ export class GraphicsRenderer {
       for (; Cons.is(p̅); p̅ = p̅.tail) {
          const p: Point = p̅.head,
                [x, y]: [number, number] = this.transform([p.x.val, p.y.val]),
-               [x_α, y_α] = [__nonNull(asVersioned(p.x).__α), __nonNull(asVersioned(p.y).__α)],
-               α: Annotation = ann.meet(x_α, y_α)
-         // TODO: not sure if this is correct:
-         if (this.slicer.direction === Direction.Fwd ? !α : α) {
+               [x_α, y_α] = [__nonNull(asVersioned(p.x).__α), __nonNull(asVersioned(p.y).__α)]
+         // In the fwd direction, a point appears "erased" (false) if either of its components is erased.
+         // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
+         if (this.slicer.direction === Direction.Fwd ? ann.join(!x_α, !y_α) : ann.join(x_α, y_α)) {
             this.circle(x, y, 3)
          }
       }
