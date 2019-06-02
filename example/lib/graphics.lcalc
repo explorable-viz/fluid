@@ -41,7 +41,8 @@ let spaceRight = fun sep gs →
 let stackRight = fun gs →
    foldr (fun (g, g') → Graphic([g, translate (width g) 0 g'])) Graphic([]) gs;
 
-// Negatively offset from (0, 0) by margin; client code responsible for translating into positive space (if desired).
+// Negatively offset from the x-axis by margin + tickHeight; client code responsible for translating into positive 
+// space (if desired).
 // number → number → number → GraphicElement
 let x_axis = fun margin n width tickHeight →
    let tick = Polyline([Point(0, 0), Point(0, 0 - tickHeight)]) in
