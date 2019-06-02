@@ -181,7 +181,7 @@ export class GraphicsRenderer {
          e.stopPropagation()
          this.slicer.resetForBwd()
          p̅.toArray().map((p: Point): void => {
-            console.log(`Setting annotation on ${p}`)
+            console.log(`Setting all annotations on ${p}`)
             setallα(ann.top, p)
          })
          this.slicer.bwdSlice()

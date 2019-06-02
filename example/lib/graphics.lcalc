@@ -46,7 +46,7 @@ let stackRight = fun gs →
 let x_axis = fun margin n width tickHeight →
    let tick = Polyline([Point(0, 0), Point(0, 0 - tickHeight)]) in
    let ticks = fun n → spaceRight width (repeat n tick) in
-   let line = Polyline([Point(0, 0), Point(n * width, 0)]) in
+   let line = Polyline([Point(0, 0), Point((n - 1) * width, 0)]) in
    translate 0 (0 - margin) Graphic([line, ...ticks n]);
 
 // GraphicsElement → number
