@@ -1,14 +1,11 @@
 import { __nonNull, absurd, error } from "../util/Core"
-import { Cons, List, Nil, Pair } from "../BaseTypes"
+import { Cons, Nil, Pair } from "../BaseTypes"
 import { DataValue } from "../DataValue"
 import { Direction } from "../Eval"
 import { Expr } from "../Expr"
-import { Num, Str, Value, _, make } from "../Value"
+import { _, make } from "../Value"
 import { asVersioned } from "../Versioned"
 import { Slicer } from "./GraphicsRenderer"
-
-type Row = Pair<Num | Str, Value> // approximate recursive type
-export type Data = List<Row> 
 
 abstract class Token extends DataValue<"Token"> {
    abstract text: string
@@ -50,7 +47,7 @@ class StrToken extends AnnotatedToken {
    str: Expr.ConstStr = _
 
    get text (): string {
-      return this.str.val.toString()
+      return this.str.val.val
    }
 
    get fillStyles (): [string, string] {
@@ -164,16 +161,19 @@ export class DataView {
 export class DataRenderer {
    view: DataView
 
-   constructor (ctx: CanvasRenderingContext2D, data: Data, dataʹ: Expr, slicer: Slicer) {
+   constructor (ctx: CanvasRenderingContext2D, data: Expr, slicer: Slicer) {
       // for some reason setting font doesn't change font size but only affects spacing :-/
       ctx.textAlign = "left"
       // No easy way to access text height, but this will do for now.
       // https://stackoverflow.com/questions/1134586
       this.view = new DataView(ctx, ctx.measureText("M").width * 1.4, slicer)
-      this.renderDataʹ(0, dataʹ)
+      this.renderData(0, data)
    }
 
-   renderDataʹ (indentx: number, data: Expr): void {
+   // Data must have recursive format:
+   // Row = Pair<Num | Str, Data>
+   // Data = List<Row> 
+   renderData (indentx: number, data: Expr): void {
       if (data instanceof Expr.Constr && data.ctr.val === Cons.name) {
          this.view.newLine(indentx)
          const row: Expr = data.args.toArray()[0] // head
@@ -189,7 +189,7 @@ export class DataRenderer {
             }
             this.view.push(stringToken(": "))
             if (val instanceof Expr.Constr && (data.ctr.val === Cons.name || data.ctr.val === Nil.name)) {
-               this.renderDataʹ(this.view.indentx, val)
+               this.renderData(this.view.indentx, val)
             } else 
             if (val instanceof Expr.ConstNum) {
                this.view.push(numToken(asVersioned(val)))
@@ -199,7 +199,7 @@ export class DataRenderer {
             } else {
                error("Data format error: expected List, Num or Str expression.")
             }
-            this.renderDataʹ(indentx, data.args.toArray()[1]) // tail
+            this.renderData(indentx, data.args.toArray()[1]) // tail
          } else {
             error("Data format error: expected Pair expression.")
          }

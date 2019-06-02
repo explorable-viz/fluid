@@ -1,6 +1,5 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
-import { List } from "../BaseTypes"
 import { emptyEnv } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
@@ -10,7 +9,7 @@ import { Value } from "../Value"
 import { setallα } from "../Versioned"
 import { load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
-import { Data, DataView, DataRenderer } from "./DataRenderer"
+import { DataView, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer, Slicer, svgNS } from "./GraphicsRenderer"
 
@@ -18,7 +17,6 @@ class App implements Slicer {
    e: Expr                        // entire closed program
    tv: ExplValue                  // chart computed by program
    data_e: Expr                   // expression for data (value bound by first let in user code)
-   data_tv: ExplValue             // value of data
    dataView: DataView
    dataCanvas: HTMLCanvasElement
    dataCtx: CanvasRenderingContext2D
@@ -54,20 +52,13 @@ class App implements Slicer {
       this.loadExample()
    }
 
-   // "Data" is defined to be the value of the first let statement in user code, which must be a /closed/
-   // expression. This allows us to run it "out of context" and evaluate/slice it independently of the rest
-   // of the program.
+   // "Data" is defined to be the value of the first let statement in user code, which must be an expression which
+   // is already in normal form.
    initData (): void {
       const here: Cursor = new Cursor(this.e)
       here.skipImports().toDef("data").to(Expr.Let, "e")
       this.data_e = as(here.v, Expr.Constr)
-      this.data_tv = Eval.eval_(emptyEnv(), this.data_e)
       setallα(this.data_e, ann.top)
-      Eval.eval_fwd(this.data_tv)
-   }
-
-   get data (): Data {
-      return as(this.data_tv.v as Value, List)
    }
 
    get graphics (): GraphicsElement {
@@ -80,7 +71,7 @@ class App implements Slicer {
       this.initData()
       this.resetForFwd()
       Eval.eval_fwd(this.tv)
-      this.renderData(this.data, this.data_e)
+      this.renderData(this.data_e)
       this.graphicsView = new GraphicsRenderer(this.svg, this)
       this.draw()
    }
@@ -89,11 +80,7 @@ class App implements Slicer {
       setallα(this.e, ann.top)
    }
 
-   // Push annotations back from data to source, then redo the forward slice.
    fwdSlice (): void {
-      setallα(this.data_e, ann.bot)
-      // TODO: clear annotations on intermediate values somehow
-      Eval.eval_bwd(this.data_tv)
       Eval.eval_fwd(this.tv)
       this.direction = Direction.Fwd
       this.draw()
@@ -106,8 +93,6 @@ class App implements Slicer {
 
    bwdSlice (): void {
       Eval.eval_bwd(this.tv)
-      Eval.eval_fwd(this.data_tv) 
-      Eval.eval_fwd(this.tv)
       this.direction = Direction.Bwd
       this.draw()
    }
@@ -119,10 +104,10 @@ class App implements Slicer {
       // this.graphicsPane3D.render()
    }
 
-   renderData (data: Data, dataʹ: Expr): void {
+   renderData (data: Expr): void {
       this.dataCanvas.height = 400
       this.dataCanvas.width = 400
-      this.dataView = new DataRenderer(this.dataCtx, data, dataʹ, this).view
+      this.dataView = new DataRenderer(this.dataCtx, data, this).view
       this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
          this.resetForFwd()
