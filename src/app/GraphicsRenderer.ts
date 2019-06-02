@@ -154,8 +154,9 @@ export class GraphicsRenderer {
          const p: Point = p̅.head,
                [x, y]: [number, number] = this.transform([p.x.val, p.y.val]),
                [x_α, y_α] = [__nonNull(asVersioned(p.x).__α), __nonNull(asVersioned(p.y).__α)],
-               α: Annotation = this.slicer.direction === Direction.Fwd ? !ann.meet(x_α, y_α) : ann.meet(x_α, y_α)
-         if (α) {
+               α: Annotation = ann.meet(x_α, y_α)
+         // TODO: not sure if this is correct:
+         if (this.slicer.direction === Direction.Fwd ? !α : α) {
             this.circle(x, y, 3)
          }
       }
@@ -181,8 +182,7 @@ export class GraphicsRenderer {
          this.slicer.resetForBwd()
          p̅.toArray().map((p: Point): void => {
             console.log(`Setting annotation on ${p}`)
-            asVersioned(p.x).__α = ann.top
-            asVersioned(p.y).__α = ann.top
+            setallα(ann.top, p)
          })
          this.slicer.bwdSlice()
       })
