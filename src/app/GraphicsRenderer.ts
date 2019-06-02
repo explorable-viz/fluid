@@ -47,7 +47,7 @@ export interface Slicer {
 
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
-   ancestors: SVGSVGElement[] // stack of enclosing SVG elements
+   ancestors: SVGGraphicsElement[] // stack of enclosing SVG elements
    slicer: Slicer
 
    constructor (root: SVGSVGElement, slicer: Slicer) {
@@ -56,7 +56,7 @@ export class GraphicsRenderer {
       this.transforms = [x => x]
    }
 
-   get current (): SVGSVGElement {
+   get current (): SVGGraphicsElement {
       return this.ancestors[this.ancestors.length - 1]
    }
 
@@ -81,7 +81,11 @@ export class GraphicsRenderer {
    renderElement (g: GraphicsElement): void {
       if (g instanceof Graphic) {   
          for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
+            const group: SVGGElement = document.createElementNS(svgNS, "g")
+            this.current.appendChild(group)
+            this.ancestors.push(group)
             this.renderElement(gs.head)
+            this.ancestors.pop()
          }
       } else 
       if (g instanceof Polyline) {
@@ -125,7 +129,7 @@ export class GraphicsRenderer {
    }
 
    polyline (p̅: List<Point>): void {
-      const path = document.createElementNS(svgNS, "polyline")
+      const path: SVGPolylineElement = document.createElementNS(svgNS, "polyline")
       path.setAttribute("points", this.points(p̅))
       path.setAttribute("stroke", "black")
       this.current.appendChild(path)
@@ -136,7 +140,7 @@ export class GraphicsRenderer {
       for (; Cons.is(p̅); p̅ = p̅.tail) {
          const p: Point = p̅.head,
                [x, y]: [number, number] = this.transform([p.x.val, p.y.val]),
-               [x_α, y_α]: [Annotation, Annotation] = [__nonNull(asVersioned(p.x).__α), __nonNull(asVersioned(p.y).__α)],
+               [x_α, y_α] = [__nonNull(asVersioned(p.x).__α), __nonNull(asVersioned(p.y).__α)],
                α: Annotation = this.slicer.direction === Direction.Fwd ? !ann.meet(x_α, y_α) : ann.meet(x_α, y_α)
          if (α) {
             this.circle(x, y, 3)
@@ -145,7 +149,7 @@ export class GraphicsRenderer {
    }
 
    circle (x: number, y: number, radius: number): void {
-      const circle = document.createElementNS(svgNS, "circle")
+      const circle: SVGCircleElement = document.createElementNS(svgNS, "circle")
       circle.setAttribute("cx", x.toString())
       circle.setAttribute("cy", y.toString())
       circle.setAttribute("r", radius.toString())
@@ -155,7 +159,7 @@ export class GraphicsRenderer {
    }
 
    polygon (p̅: List<Point>): void {
-      const polygon = document.createElementNS(svgNS, "polygon")
+      const polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon")
       polygon.setAttribute("points", this.points(p̅))
       polygon.setAttribute("stroke", "black")
       polygon.setAttribute("fill", "#f6831e")
