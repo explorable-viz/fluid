@@ -52,28 +52,25 @@ class App implements Slicer {
       this.loadExample()
    }
 
-   // "Data" is defined to be the value of the first let statement in user code, which must be an expression which
-   // is already in normal form.
-   initData (): void {
-      const here: Cursor = new Cursor(this.e)
-      here.skipImports().toDef("data").to(Expr.Let, "e")
-      this.data_e = as(here.v, Expr.Constr)
-      setallα(this.data_e, ann.top)
-   }
-
    get graphics (): GraphicsElement {
       return as(this.tv.v as Value, GraphicsElement)
    }
    
+   // "Data" is defined to be the expression bound by the first "let" in user code; must be already in normal form.
+   initData (): void {
+      const here: Cursor = new Cursor(this.e)
+      here.skipImports().toDef("data").to(Expr.Let, "e")
+      this.data_e = as(here.v, Expr.Constr)
+   }
+
    loadExample (): void {
       this.e = parse(load("bar-chart"))
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
-      this.resetForFwd()
-      Eval.eval_fwd(this.tv)
       this.renderData(this.data_e)
       this.graphicsView = new GraphicsRenderer(this.svg, this)
-      this.draw()
+      this.resetForFwd()
+      this.fwdSlice()
    }
 
    resetForFwd (): void {
@@ -88,7 +85,7 @@ class App implements Slicer {
 
    resetForBwd (): void {
       setallα(this.e, ann.bot)
-      Eval.eval_fwd(this.tv)
+      Eval.eval_fwd(this.tv) // to clear all annotations
    }
 
    bwdSlice (): void {
