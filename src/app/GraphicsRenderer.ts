@@ -38,9 +38,10 @@ const transpose: TransformFun =
    }
 
 export interface Slicer {
-   bwdSlice (): void
-   bwdSlice (): void
-   resetForBwd (): void // set all top-level outputs to true, all other annotations to false
+   resetForFwd (): void // set all annotations to true
+   fwdSlice (): void
+   resetForBwd (): void // set all annotations to false
+   bwdSlice (): void    // bwd slice and set polarity to bwd
    direction: Direction
 }
 

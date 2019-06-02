@@ -1,9 +1,10 @@
-import { __nonNull, as } from "../util/Core"
+import { __nonNull, absurd, error } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { DataValue } from "../DataValue"
 import { Direction } from "../Eval"
+import { Expr } from "../Expr"
 import { Num, Str, Value, _, make } from "../Value"
-import { Versioned, asVersioned } from "../Versioned"
+import { asVersioned } from "../Versioned"
 import { Slicer } from "./GraphicsRenderer"
 
 type Row = Pair<Num | Str, Value> // approximate recursive type
@@ -20,7 +21,7 @@ abstract class AnnotatedToken extends Token {
 }
 
 class NumToken extends AnnotatedToken {
-   n: Versioned<Num> = _
+   n: Expr.ConstNum = _
 
    get text (): string {
       return this.n.val.toString()
@@ -41,15 +42,15 @@ class NumToken extends AnnotatedToken {
    }
 }
 
-function numToken (n: Versioned<Num>): NumToken {
+function numToken (n: Expr.ConstNum): NumToken {
    return make(NumToken, n)
 }
 
 class StrToken extends AnnotatedToken {
-   str: Versioned<Str> = _
+   str: Expr.ConstStr = _
 
    get text (): string {
-      return this.str.val
+      return this.str.val.toString()
    }
 
    get fillStyles (): [string, string] {
@@ -66,7 +67,7 @@ class StrToken extends AnnotatedToken {
    }
 }
 
-function strToken (str: Versioned<Str>): StrToken {
+function strToken (str: Expr.ConstStr): StrToken {
    return make(StrToken, str)
 }
 
@@ -163,15 +164,54 @@ export class DataView {
 export class DataRenderer {
    view: DataView
 
-   constructor (ctx: CanvasRenderingContext2D, data: Data, slicer: Slicer) {
+   constructor (ctx: CanvasRenderingContext2D, data: Data, dataʹ: Expr, slicer: Slicer) {
       // for some reason setting font doesn't change font size but only affects spacing :-/
       ctx.textAlign = "left"
       // No easy way to access text height, but this will do for now.
       // https://stackoverflow.com/questions/1134586
       this.view = new DataView(ctx, ctx.measureText("M").width * 1.4, slicer)
-      this.renderData(0, data)
+      this.renderDataʹ(0, dataʹ)
    }
 
+   renderDataʹ (indentx: number, data: Expr): void {
+      if (data instanceof Expr.Constr && data.ctr.val === Cons.name) {
+         this.view.newLine(indentx)
+         const row: Expr = data.args.toArray()[0] // head
+         if (row instanceof Expr.Constr && row.ctr.val === Pair.name) {
+            const [key, val]: Expr[] = row.args.toArray()
+            if (key instanceof Expr.ConstNum) {
+               this.view.push(numToken(key))
+            } else
+            if (key instanceof Expr.ConstStr) {
+               this.view.push(strToken(key))
+            } else {
+               error("Data format error: expected Num or Str expression.")
+            }
+            this.view.push(stringToken(": "))
+            if (val instanceof Expr.Constr && (data.ctr.val === Cons.name || data.ctr.val === Nil.name)) {
+               this.renderDataʹ(this.view.indentx, val)
+            } else 
+            if (val instanceof Expr.ConstNum) {
+               this.view.push(numToken(asVersioned(val)))
+            } else
+            if (val instanceof Expr.ConstStr) {
+               this.view.push(strToken(asVersioned(val)))
+            } else {
+               error("Data format error: expected List, Num or Str expression.")
+            }
+            this.renderDataʹ(indentx, data.args.toArray()[1]) // tail
+         } else {
+            error("Data format error: expected Pair expression.")
+         }
+      } else
+      if (data instanceof Expr.Constr && data.ctr.val === Nil.name) {
+         return
+      } else {
+         absurd()
+      }
+   }
+
+/*
    renderData (indentx: number, data: Data): void {
       if (Cons.is(data)) {
          this.view.newLine(indentx)
@@ -196,6 +236,9 @@ export class DataRenderer {
       } else
       if (Nil.is(data)) {
          return
+      } else {
+         absurd()
       }
    }
+*/
 }

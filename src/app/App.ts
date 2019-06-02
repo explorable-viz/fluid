@@ -78,11 +78,15 @@ class App implements Slicer {
       this.e = parse(load("bar-chart"))
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
-      setallα(this.e, ann.top)
+      this.resetForFwd()
       Eval.eval_fwd(this.tv)
-      this.renderData(this.data)
+      this.renderData(this.data, this.data_e)
       this.graphicsView = new GraphicsRenderer(this.svg, this)
       this.draw()
+   }
+
+   resetForFwd (): void {
+      setallα(this.e, ann.top)
    }
 
    // Push annotations back from data to source, then redo the forward slice.
@@ -103,6 +107,7 @@ class App implements Slicer {
    bwdSlice (): void {
       Eval.eval_bwd(this.tv)
       Eval.eval_fwd(this.data_tv) 
+      Eval.eval_fwd(this.tv)
       this.direction = Direction.Bwd
       this.draw()
    }
@@ -114,12 +119,13 @@ class App implements Slicer {
       // this.graphicsPane3D.render()
    }
 
-   renderData (data: Data): void {
+   renderData (data: Data, dataʹ: Expr): void {
       this.dataCanvas.height = 400
       this.dataCanvas.width = 400
-      this.dataView = new DataRenderer(this.dataCtx, data, this).view
+      this.dataView = new DataRenderer(this.dataCtx, data, dataʹ, this).view
       this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
+         this.resetForFwd()
          if (this.dataView.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)) {
             this.fwdSlice()
          }
