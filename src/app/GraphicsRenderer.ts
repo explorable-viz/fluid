@@ -47,13 +47,17 @@ export interface Slicer {
 
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
-   svg: SVGSVGElement
+   ancestors: SVGSVGElement[] // stack of enclosing SVG elements
    slicer: Slicer
 
-   constructor (svg: SVGSVGElement, slicer: Slicer) {
-      this.svg = svg
+   constructor (root: SVGSVGElement, slicer: Slicer) {
+      this.ancestors = [root]
       this.slicer = slicer
       this.transforms = [x => x]
+   }
+
+   get current (): SVGSVGElement {
+      return this.ancestors[this.ancestors.length - 1]
    }
 
    get transform (): TransformFun {
@@ -67,8 +71,9 @@ export class GraphicsRenderer {
    }
 
    render (g: GraphicsElement): void {
-      while (this.svg.firstChild !== null) {
-         this.svg.removeChild(this.svg.firstChild)
+      assert(this.ancestors.length === 1)
+      while (this.current.firstChild !== null) {
+         this.current.removeChild(this.current.firstChild)
       }
       this.renderElement(g)
    }
@@ -123,7 +128,7 @@ export class GraphicsRenderer {
       const path = document.createElementNS(svgNS, "polyline")
       path.setAttribute("points", this.points(p̅))
       path.setAttribute("stroke", "black")
-      this.svg.appendChild(path)
+      this.current.appendChild(path)
       this.pointHighlights(p̅)
    }
 
@@ -146,7 +151,7 @@ export class GraphicsRenderer {
       circle.setAttribute("r", radius.toString())
       circle.setAttribute("stroke", "#0000ff")
       circle.setAttribute("fill", "none")
-      this.svg.appendChild(circle)
+      this.current.appendChild(circle)
    }
 
    polygon (p̅: List<Point>): void {
@@ -163,7 +168,7 @@ export class GraphicsRenderer {
          })
          this.slicer.bwdSlice()
       })
-      this.svg.appendChild(polygon)
+      this.current.appendChild(polygon)
       this.pointHighlights(p̅)
    }
 }
