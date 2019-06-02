@@ -15,7 +15,7 @@ export class FwdSlice {
    val: Cursor
 
    constructor (e: Expr) {
-      setallα(e, ann.top)
+      setallα(ann.top, e)
       this.expr = new Cursor(e)
       this.setup()
       const tv: ExplValue = Eval.eval_(emptyEnv(), e)
@@ -45,7 +45,7 @@ export class BwdSlice {
 
    constructor (e: Expr) {
       if (flags.get(Flags.Bwd)) {
-         setallα(e, ann.bot)
+         setallα(ann.bot, e)
          const tv: ExplValue = Eval.eval_(emptyEnv(), e) // just to obtain tv
          Eval.eval_fwd(tv) // clear annotations on all values
          this.val = new Cursor(tv.v)

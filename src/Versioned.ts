@@ -106,13 +106,13 @@ export function setα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
    return v
 }
 
-export function setallα<Tag extends ValueTag, T extends Value<Tag>> (v: T, α: Annotation): T {
+export function setallα<Tag extends ValueTag, T extends Value<Tag>> (α: Annotation, v: T): T {
    if (versioned(v)) {
       setα(α, v)
    }
    v.fieldValues().forEach((v: Persistent): void => {
       if (v instanceof Value) {
-         setallα(v, α) 
+         setallα(α, v)
       }
    })
    return v

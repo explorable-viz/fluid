@@ -1,9 +1,9 @@
 import { Annotation, ann } from "../util/Annotated"
-import { __nonNull, absurd, assert } from "../util/Core"
+import { __nonNull, absurd, assert, className } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Transform, Translate, Transpose } from "../Graphics"
-import { asVersioned } from "../Versioned"
+import { asVersioned, setallα } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
@@ -38,9 +38,9 @@ const transpose: TransformFun =
    }
 
 export interface Slicer {
-   resetForFwd (): void // set all annotations to true
+   resetForFwd (): void // set all annotations to top
    fwdSlice (): void
-   resetForBwd (): void // set all annotations to false
+   resetForBwd (): void // set all annotations to bot
    bwdSlice (): void    // bwd slice and set polarity to bwd
    direction: Direction
 }
@@ -109,6 +109,8 @@ export class GraphicsRenderer {
 
    group (g: Graphic): void {
       const group: SVGGElement = document.createElementNS(svgNS, "g")
+      // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
+      group.setAttribute("pointer-events", "bounding-box")
       this.current.appendChild(group)
       this.ancestors.push(group)
       for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
@@ -116,7 +118,10 @@ export class GraphicsRenderer {
       }
       group.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
-         console.log(`Here`)
+         this.slicer.resetForBwd()
+         console.log(`Setting all annotations on ${className(g)}`)
+         setallα(ann.top, g)
+         this.slicer.bwdSlice()
       })
       this.ancestors.pop()
    }
@@ -176,8 +181,8 @@ export class GraphicsRenderer {
          this.slicer.resetForBwd()
          p̅.toArray().map((p: Point): void => {
             console.log(`Setting annotation on ${p}`)
-            asVersioned(p.x).__α = true
-            asVersioned(p.y).__α = true
+            asVersioned(p.x).__α = ann.top
+            asVersioned(p.y).__α = ann.top
          })
          this.slicer.bwdSlice()
       })
