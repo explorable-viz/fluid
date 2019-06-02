@@ -152,7 +152,7 @@ let tickLength = 8;
 let axis_margin = 5;
 let x_offset = axis_margin + tickLength;
 let y_offset = x_offset;
-let barGraph = fun catData →
+let barGraph = fun (x_scale, y_scale) catData →
    translate x_offset y_offset Graphic([
       scale x_scale 1 (x_axis axis_margin (length catData + 1) 1.16 tickLength),
       transpose (scale x_scale 1 (x_axis axis_margin 4 1 tickLength)),
@@ -161,4 +161,4 @@ let barGraph = fun catData →
 let lineGraph =
    translate x_offset y_offset (linePlot Scale(x_scale, y_scale) ps)
 in
-stackRight [barGraph countryData, lineGraph]
+stackRight [barGraph (x_scale, y_scale) countryData, lineGraph]
