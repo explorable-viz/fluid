@@ -1,9 +1,9 @@
-import { Annotation, ann } from "../util/Annotated"
-import { __nonNull, absurd, assert } from "../util/Core"
+import { ann } from "../util/Annotated"
+import { __nonNull, absurd, assert, className } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Transform, Translate, Transpose } from "../Graphics"
-import { asVersioned } from "../Versioned"
+import { asVersioned, setallα } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
@@ -38,22 +38,26 @@ const transpose: TransformFun =
    }
 
 export interface Slicer {
-   resetForFwd (): void // set all annotations to true
+   resetForFwd (): void // set all annotations to top
    fwdSlice (): void
-   resetForBwd (): void // set all annotations to false
+   resetForBwd (): void // set all annotations to bot
    bwdSlice (): void    // bwd slice and set polarity to bwd
    direction: Direction
 }
 
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
-   svg: SVGSVGElement
+   ancestors: SVGGraphicsElement[] // stack of enclosing SVG elements
    slicer: Slicer
 
-   constructor (svg: SVGSVGElement, slicer: Slicer) {
-      this.svg = svg
+   constructor (root: SVGSVGElement, slicer: Slicer) {
+      this.ancestors = [root]
       this.slicer = slicer
       this.transforms = [x => x]
+   }
+
+   get current (): SVGGraphicsElement {
+      return this.ancestors[this.ancestors.length - 1]
    }
 
    get transform (): TransformFun {
@@ -67,17 +71,16 @@ export class GraphicsRenderer {
    }
 
    render (g: GraphicsElement): void {
-      while (this.svg.firstChild !== null) {
-         this.svg.removeChild(this.svg.firstChild)
+      assert(this.ancestors.length === 1)
+      while (this.current.firstChild !== null) {
+         this.current.removeChild(this.current.firstChild)
       }
       this.renderElement(g)
    }
 
    renderElement (g: GraphicsElement): void {
-      if (g instanceof Graphic) {   
-         for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
-            this.renderElement(gs.head)
-         }
+      if (g instanceof Graphic) {
+         this.group(g)
       } else 
       if (g instanceof Polyline) {
          this.polyline(g.points)
@@ -104,6 +107,25 @@ export class GraphicsRenderer {
       }
    }
 
+   group (g: Graphic): void {
+      const group: SVGGElement = document.createElementNS(svgNS, "g")
+      // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
+      group.setAttribute("pointer-events", "bounding-box")
+      this.current.appendChild(group)
+      this.ancestors.push(group)
+      for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
+         this.renderElement(gs.head)
+      }
+      group.addEventListener("click", (e: MouseEvent): void => {
+         e.stopPropagation()
+         this.slicer.resetForBwd()
+         console.log(`Setting all annotations on ${className(g)}`)
+         setallα(ann.top, g)
+         this.slicer.bwdSlice()
+      })
+      this.ancestors.pop()
+   }
+
    renderWith (g: GraphicsElement, f: TransformFun): void {
       const transform: TransformFun = this.transform
       this.transforms.push(postcompose(transform, f))
@@ -120,10 +142,10 @@ export class GraphicsRenderer {
    }
 
    polyline (p̅: List<Point>): void {
-      const path = document.createElementNS(svgNS, "polyline")
+      const path: SVGPolylineElement = document.createElementNS(svgNS, "polyline")
       path.setAttribute("points", this.points(p̅))
       path.setAttribute("stroke", "black")
-      this.svg.appendChild(path)
+      this.current.appendChild(path)
       this.pointHighlights(p̅)
    }
 
@@ -131,39 +153,40 @@ export class GraphicsRenderer {
       for (; Cons.is(p̅); p̅ = p̅.tail) {
          const p: Point = p̅.head,
                [x, y]: [number, number] = this.transform([p.x.val, p.y.val]),
-               [x_α, y_α]: [Annotation, Annotation] = [__nonNull(asVersioned(p.x).__α), __nonNull(asVersioned(p.y).__α)],
-               α: Annotation = this.slicer.direction === Direction.Fwd ? !ann.meet(x_α, y_α) : ann.meet(x_α, y_α)
-         if (α) {
+               [x_α, y_α] = [__nonNull(asVersioned(p.x).__α), __nonNull(asVersioned(p.y).__α)]
+         // In the fwd direction, a point appears "erased" (false) if either of its components is erased.
+         // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
+         if (this.slicer.direction === Direction.Fwd ? ann.join(!x_α, !y_α) : ann.join(x_α, y_α)) {
             this.circle(x, y, 3)
          }
       }
    }
 
    circle (x: number, y: number, radius: number): void {
-      const circle = document.createElementNS(svgNS, "circle")
+      const circle: SVGCircleElement = document.createElementNS(svgNS, "circle")
       circle.setAttribute("cx", x.toString())
       circle.setAttribute("cy", y.toString())
       circle.setAttribute("r", radius.toString())
       circle.setAttribute("stroke", "#0000ff")
       circle.setAttribute("fill", "none")
-      this.svg.appendChild(circle)
+      this.current.appendChild(circle)
    }
 
    polygon (p̅: List<Point>): void {
-      const polygon = document.createElementNS(svgNS, "polygon")
+      const polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon")
       polygon.setAttribute("points", this.points(p̅))
       polygon.setAttribute("stroke", "black")
       polygon.setAttribute("fill", "#f6831e")
       polygon.addEventListener("click", (e: MouseEvent): void => {
+         e.stopPropagation()
          this.slicer.resetForBwd()
          p̅.toArray().map((p: Point): void => {
             console.log(`Setting annotation on ${p}`)
-            asVersioned(p.x).__α = true
-            asVersioned(p.y).__α = true
+            setallα(ann.top, p)
          })
          this.slicer.bwdSlice()
       })
-      this.svg.appendChild(polygon)
+      this.current.appendChild(polygon)
       this.pointHighlights(p̅)
    }
 }

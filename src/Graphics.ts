@@ -43,7 +43,6 @@ export class Polyline extends GraphicsElement<"Polyline"> {
 // List of points must be closed.
 export class Polygon extends GraphicsElement<"Polygon"> {
    points: List<Point> = _
-   // TODO: add fill
 }
 
 export class Transform extends GraphicsElement<"Transform"> {

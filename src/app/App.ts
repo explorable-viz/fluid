@@ -74,7 +74,7 @@ class App implements Slicer {
    }
 
    resetForFwd (): void {
-      setallα(this.e, ann.top)
+      setallα(ann.top, this.e)
    }
 
    fwdSlice (): void {
@@ -84,7 +84,7 @@ class App implements Slicer {
    }
 
    resetForBwd (): void {
-      setallα(this.e, ann.bot)
+      setallα(ann.bot, this.e)
       Eval.eval_fwd(this.tv) // to clear all annotations
    }
 
