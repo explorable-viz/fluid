@@ -79,14 +79,8 @@ export class GraphicsRenderer {
    }
 
    renderElement (g: GraphicsElement): void {
-      if (g instanceof Graphic) {   
-         const group: SVGGElement = document.createElementNS(svgNS, "g")
-         this.current.appendChild(group)
-         this.ancestors.push(group)
-         for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
-            this.renderElement(gs.head)
-         }
-         this.ancestors.pop()
+      if (g instanceof Graphic) {
+         this.group(g)
       } else 
       if (g instanceof Polyline) {
          this.polyline(g.points)
@@ -111,6 +105,20 @@ export class GraphicsRenderer {
       else {
          return absurd()
       }
+   }
+
+   group (g: Graphic): void {
+      const group: SVGGElement = document.createElementNS(svgNS, "g")
+      this.current.appendChild(group)
+      this.ancestors.push(group)
+      for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
+         this.renderElement(gs.head)
+      }
+      group.addEventListener("click", (e: MouseEvent): void => {
+         e.stopPropagation()
+         console.log(`Here`)
+      })
+      this.ancestors.pop()
    }
 
    renderWith (g: GraphicsElement, f: TransformFun): void {
@@ -164,6 +172,7 @@ export class GraphicsRenderer {
       polygon.setAttribute("stroke", "black")
       polygon.setAttribute("fill", "#f6831e")
       polygon.addEventListener("click", (e: MouseEvent): void => {
+         e.stopPropagation()
          this.slicer.resetForBwd()
          p̅.toArray().map((p: Point): void => {
             console.log(`Setting annotation on ${p}`)
