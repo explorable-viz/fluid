@@ -1,6 +1,8 @@
+import { Annotation, ann } from "../util/Annotated"
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
-import { Graphic, GraphicsElement, LinearTransform, PathStroke, Point, RectFill, Scale, Transform, Translate, Transpose } from "../Graphics"
+import { Direction } from "../Eval"
+import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Transform, Translate, Transpose } from "../Graphics"
 import { asVersioned } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
@@ -35,12 +37,22 @@ const transpose: TransformFun =
       return [y, x]
    }
 
+export interface Slicer {
+   resetForFwd (): void // set all annotations to true
+   fwdSlice (): void
+   resetForBwd (): void // set all annotations to false
+   bwdSlice (): void    // bwd slice and set polarity to bwd
+   direction: Direction
+}
+
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
    svg: SVGSVGElement
+   slicer: Slicer
 
-   constructor (svg: SVGSVGElement) {
+   constructor (svg: SVGSVGElement, slicer: Slicer) {
       this.svg = svg
+      this.slicer = slicer
       this.transforms = [x => x]
    }
 
@@ -67,11 +79,11 @@ export class GraphicsRenderer {
             this.renderElement(gs.head)
          }
       } else 
-      if (g instanceof PathStroke) {
-         this.pathStroke(g.points)
+      if (g instanceof Polyline) {
+         this.polyline(g.points)
       } else
-      if (g instanceof RectFill) {
-         this.rectFill(g.points)
+      if (g instanceof Polygon) {
+         this.polygon(g.points)
       } else
       if (g instanceof Transform) {
          const t: LinearTransform = g.t
@@ -99,31 +111,17 @@ export class GraphicsRenderer {
       this.transforms.pop()
    }
 
-   path2D (points: List<Point>): Path2D {
-      const region: Path2D = new Path2D
-      if (Cons.is(points)) {
-         const [x, y]: [number, number] = this.transform([points.head.x.val, points.head.y.val])
-         region.moveTo(x, y)
-         points = points.tail
-         for (; Cons.is(points); points = points.tail) {
-            const [x, y]: [number, number] = this.transform([points.head.x.val, points.head.y.val])
-            region.lineTo(x, y)
-         }
-      } else {
-         return absurd()
-      }
-      return region
-   }
-
    svgPath (p̅: List<Point>): [number, number][] {
       return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
 
-   pathStroke (p̅: List<Point>): void {
-      const path = document.createElementNS(svgNS, "polyline"),
-            p̅_str: string = this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
-      path.setAttribute("points", p̅_str)
-      path.setAttribute("fill", "none")
+   points (p̅: List<Point>): string {
+      return this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
+   }
+
+   polyline (p̅: List<Point>): void {
+      const path = document.createElementNS(svgNS, "polyline")
+      path.setAttribute("points", this.points(p̅))
       path.setAttribute("stroke", "black")
       this.svg.appendChild(path)
       this.pointHighlights(p̅)
@@ -132,8 +130,10 @@ export class GraphicsRenderer {
    pointHighlights (p̅: List<Point>): void {
       for (; Cons.is(p̅); p̅ = p̅.tail) {
          const p: Point = p̅.head,
-               [x, y]: [number, number] = this.transform([p.x.val, p.y.val])
-         if (!__nonNull(asVersioned(p.x).__α) || !__nonNull(asVersioned(p.y).__α)) {
+               [x, y]: [number, number] = this.transform([p.x.val, p.y.val]),
+               [x_α, y_α]: [Annotation, Annotation] = [__nonNull(asVersioned(p.x).__α), __nonNull(asVersioned(p.y).__α)],
+               α: Annotation = this.slicer.direction === Direction.Fwd ? !ann.meet(x_α, y_α) : ann.meet(x_α, y_α)
+         if (α) {
             this.circle(x, y, 3)
          }
       }
@@ -149,14 +149,21 @@ export class GraphicsRenderer {
       this.svg.appendChild(circle)
    }
 
-   rectFill (rect_path: List<Point>): void {
-      const rect: SVGRectElement = document.createElementNS(svgNS, "rect"),
-            p̅: [number, number][] = this.svgPath(rect_path)
-      rect.setAttribute("x", p̅[0][0].toString())
-      rect.setAttribute("y", p̅[0][1].toString())
-      rect.setAttribute("width", (p̅[1][0] - p̅[0][0]).toString())
-      rect.setAttribute("height", (p̅[2][1] - p̅[0][1]).toString())
-      rect.setAttribute("fill", "#f6831e")
-      this.svg.appendChild(rect)
+   polygon (p̅: List<Point>): void {
+      const polygon = document.createElementNS(svgNS, "polygon")
+      polygon.setAttribute("points", this.points(p̅))
+      polygon.setAttribute("stroke", "black")
+      polygon.setAttribute("fill", "#f6831e")
+      polygon.addEventListener("click", (e: MouseEvent): void => {
+         this.slicer.resetForBwd()
+         p̅.toArray().map((p: Point): void => {
+            console.log(`Setting annotation on ${p}`)
+            asVersioned(p.x).__α = true
+            asVersioned(p.y).__α = true
+         })
+         this.slicer.bwdSlice()
+      })
+      this.svg.appendChild(polygon)
+      this.pointHighlights(p̅)
    }
 }

@@ -1,8 +1,7 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
-import { List } from "../BaseTypes"
 import { emptyEnv } from "../Env"
-import { Eval } from "../Eval"
+import { Direction, Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
@@ -10,20 +9,21 @@ import { Value } from "../Value"
 import { setallα } from "../Versioned"
 import { load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
-import { Data, DataView, DataRenderer } from "./DataRenderer"
+import { DataView, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D } from "./GraphicsPane3D"
-import { GraphicsRenderer, svgNS } from "./GraphicsRenderer"
+import { GraphicsRenderer, Slicer, svgNS } from "./GraphicsRenderer"
 
-class App {
+class App implements Slicer {
    e: Expr                        // entire closed program
    tv: ExplValue                  // chart computed by program
    data_e: Expr                   // expression for data (value bound by first let in user code)
-   data_tv: ExplValue             // value of data
    dataView: DataView
    dataCanvas: HTMLCanvasElement
    dataCtx: CanvasRenderingContext2D
+   graphicsView: GraphicsRenderer
    graphicsPane3D: GraphicsPane3D
    svg: SVGSVGElement
+   direction: Direction
    
    constructor () {
       this.svg = document.createElementNS(svgNS, "svg")
@@ -52,68 +52,68 @@ class App {
       this.loadExample()
    }
 
-   // "Data" is defined to be the value of the first let statement in user code, which must be a /closed/
-   // expression. This allows us to run it "out of context" and evaluate/slice it independently of the rest
-   // of the program.
-   initData (): void {
-      const here: Cursor = new Cursor(this.e)
-      here.skipImports().toDef("data").to(Expr.Let, "e")
-      this.data_e = as(here.v, Expr.Constr)
-      this.data_tv = Eval.eval_(emptyEnv(), this.data_e)
-      setallα(this.data_e, ann.top)
-      Eval.eval_fwd(this.data_tv)
-   }
-
-   get data (): Data {
-      return as(this.data_tv.v as Value, List)
-   }
-
    get graphics (): GraphicsElement {
       return as(this.tv.v as Value, GraphicsElement)
    }
    
+   // "Data" is defined to be the expression bound by the first "let" in user code; must be already in normal form.
+   initData (): void {
+      const here: Cursor = new Cursor(this.e)
+      here.skipImports().toDef("data").to(Expr.Let, "e")
+      this.data_e = as(here.v, Expr.Constr)
+   }
+
    loadExample (): void {
       this.e = parse(load("bar-chart"))
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
+      this.renderData(this.data_e)
+      this.graphicsView = new GraphicsRenderer(this.svg, this)
+      this.resetForFwd()
+      this.fwdSlice()
+   }
+
+   resetForFwd (): void {
       setallα(this.e, ann.top)
+   }
+
+   fwdSlice (): void {
       Eval.eval_fwd(this.tv)
-      this.renderData(this.data)
+      this.direction = Direction.Fwd
       this.draw()
    }
 
-   // Push annotations back from data to source, then redo the forward slice.
-   redoFwdSlice (): void {
-      setallα(this.data_e, ann.bot)
-      // TODO: clear annotations on intermediate values somehow
-      Eval.eval_bwd(this.data_tv)
-      Eval.eval_fwd(this.tv)
+   resetForBwd (): void {
+      setallα(this.e, ann.bot)
+      Eval.eval_fwd(this.tv) // to clear all annotations
+   }
+
+   bwdSlice (): void {
+      Eval.eval_bwd(this.tv)
+      this.direction = Direction.Bwd
       this.draw()
    }
 
    draw (): void {
       this.dataCtx.clearRect(0, 0, this.dataCanvas.width, this.dataCanvas.height)
       this.dataView.draw()
-      this.renderGraphics(this.graphics) // TODO: adopt same "view" pattern?
+      this.graphicsView.render(this.graphics)
       // this.graphicsPane3D.render()
    }
 
-   renderData (data: Data): void {
+   renderData (data: Expr): void {
       this.dataCanvas.height = 400
       this.dataCanvas.width = 400
-      this.dataView = new DataRenderer(this.dataCtx, data).view
+      this.dataView = new DataRenderer(this.dataCtx, data, this).view
       this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
          const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
+         this.resetForFwd()
          if (this.dataView.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)) {
-            this.redoFwdSlice()
+            this.fwdSlice()
          }
       })
       this.dataCanvas.height = this.dataView.height + 1 // why extra pixel needed?
       this.dataCanvas.width = this.dataView.width
-   }
-
-   renderGraphics (g: GraphicsElement): void {
-      new GraphicsRenderer(this.svg).render(g)
    }
 }
 

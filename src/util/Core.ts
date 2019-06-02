@@ -9,7 +9,7 @@ export type Class<T> = new (...args: any[]) => T
 export type AClass<T> = Function & { prototype: T }
 
 export function classOf<T> (x: T): Class<T> {
-   return __nonNull(x).constructor as Class<T>
+   return (__nonNull(x) as Object).constructor as Class<T> // weirdly failing on CircleCI without cast
 }
 
 export function className(o: Object): string {

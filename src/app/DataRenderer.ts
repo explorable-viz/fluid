@@ -1,15 +1,15 @@
-import { __nonNull, as } from "../util/Core"
-import { Cons, List, Nil, Pair } from "../BaseTypes"
+import { __nonNull, absurd, error } from "../util/Core"
+import { Cons, Nil, Pair } from "../BaseTypes"
 import { DataValue } from "../DataValue"
-import { Num, Str, Value, _, make } from "../Value"
-import { Versioned, asVersioned } from "../Versioned"
-
-type Row = Pair<Num | Str, Value> // approximate recursive type
-export type Data = List<Row> 
+import { Direction } from "../Eval"
+import { Expr } from "../Expr"
+import { _, make } from "../Value"
+import { asVersioned } from "../Versioned"
+import { Slicer } from "./GraphicsRenderer"
 
 abstract class Token extends DataValue<"Token"> {
    abstract text: string
-   abstract fillStyle: string
+   abstract fillStyles: [string, string]
 }
 
 abstract class AnnotatedToken extends Token {
@@ -18,14 +18,14 @@ abstract class AnnotatedToken extends Token {
 }
 
 class NumToken extends AnnotatedToken {
-   n: Versioned<Num> = _
+   n: Expr.ConstNum = _
 
    get text (): string {
       return this.n.val.toString()
    }
 
-   get fillStyle (): string {
-      return __nonNull(this.n.__α) ? "black" : "red"
+   get fillStyles (): [string, string] {
+      return __nonNull(this.n.__α) ? ["black", "red"] : ["red", "black"]
    }
 
    clearAnnotation (): void {
@@ -39,19 +39,19 @@ class NumToken extends AnnotatedToken {
    }
 }
 
-function numToken (n: Versioned<Num>): NumToken {
+function numToken (n: Expr.ConstNum): NumToken {
    return make(NumToken, n)
 }
 
 class StrToken extends AnnotatedToken {
-   str: Versioned<Str> = _
+   str: Expr.ConstStr = _
 
    get text (): string {
-      return this.str.val
+      return this.str.val.val
    }
 
-   get fillStyle (): string {
-      return __nonNull(this.str.__α) ? "black" : "red"
+   get fillStyles (): [string, string] {
+      return __nonNull(this.str.__α) ? ["black", "red"] : ["red", "black"]
    }
 
    clearAnnotation (): void {
@@ -64,7 +64,7 @@ class StrToken extends AnnotatedToken {
    }
 }
 
-function strToken (str: Versioned<Str>): StrToken {
+function strToken (str: Expr.ConstStr): StrToken {
    return make(StrToken, str)
 }
 
@@ -75,8 +75,8 @@ class StringToken extends Token {
       return this.str
    }
 
-   get fillStyle (): string {
-      return "black"
+   get fillStyles (): [string, string] {
+      return ["black", "black"]
    }
 }
 
@@ -98,14 +98,16 @@ export class DataView {
    indentx: number
    lines: Line[]
    width: number
-   lastMouseToken: AnnotatedToken | null 
+   lastMouseToken: AnnotatedToken | null
+   slicer: Slicer
 
-   constructor (ctx: CanvasRenderingContext2D, lineHeight: number) {
+   constructor (ctx: CanvasRenderingContext2D, lineHeight: number, slicer: Slicer) {
       this.ctx = ctx
       this.lineHeight = lineHeight
       this.indentx = this.width = 0
       this.lines = []
       this.lastMouseToken = null
+      this.slicer = slicer
    }
 
    newLine (indentx: number): void {
@@ -119,12 +121,10 @@ export class DataView {
       this.width = Math.max(this.width, this.indentx)
    }
 
-   blah: boolean = false
-
    draw (): void {
       this.lines.forEach((line: Line, n: number): void => {
          line.tokens.forEach(([x, token]) => {
-            this.ctx.fillStyle = token.fillStyle
+            this.ctx.fillStyle = this.slicer.direction === Direction.Fwd ? token.fillStyles[0] : token.fillStyles[1]
             this.ctx.fillText(token.text, x, (n + 1) * this.lineHeight)
          })
       })
@@ -161,15 +161,57 @@ export class DataView {
 export class DataRenderer {
    view: DataView
 
-   constructor (ctx: CanvasRenderingContext2D, data: Data) {
+   constructor (ctx: CanvasRenderingContext2D, data: Expr, slicer: Slicer) {
       // for some reason setting font doesn't change font size but only affects spacing :-/
       ctx.textAlign = "left"
       // No easy way to access text height, but this will do for now.
       // https://stackoverflow.com/questions/1134586
-      this.view = new DataView(ctx, ctx.measureText("M").width * 1.4)
+      this.view = new DataView(ctx, ctx.measureText("M").width * 1.4, slicer)
       this.renderData(0, data)
    }
 
+   // Data must have recursive format:
+   // Row = Pair<Num | Str, Data>
+   // Data = List<Row> 
+   renderData (indentx: number, data: Expr): void {
+      if (data instanceof Expr.Constr && data.ctr.val === Cons.name) {
+         this.view.newLine(indentx)
+         const row: Expr = data.args.toArray()[0] // head
+         if (row instanceof Expr.Constr && row.ctr.val === Pair.name) {
+            const [key, val]: Expr[] = row.args.toArray()
+            if (key instanceof Expr.ConstNum) {
+               this.view.push(numToken(key))
+            } else
+            if (key instanceof Expr.ConstStr) {
+               this.view.push(strToken(key))
+            } else {
+               error("Data format error: expected Num or Str expression.")
+            }
+            this.view.push(stringToken(": "))
+            if (val instanceof Expr.Constr && (data.ctr.val === Cons.name || data.ctr.val === Nil.name)) {
+               this.renderData(this.view.indentx, val)
+            } else 
+            if (val instanceof Expr.ConstNum) {
+               this.view.push(numToken(asVersioned(val)))
+            } else
+            if (val instanceof Expr.ConstStr) {
+               this.view.push(strToken(asVersioned(val)))
+            } else {
+               error("Data format error: expected List, Num or Str expression.")
+            }
+            this.renderData(indentx, data.args.toArray()[1]) // tail
+         } else {
+            error("Data format error: expected Pair expression.")
+         }
+      } else
+      if (data instanceof Expr.Constr && data.ctr.val === Nil.name) {
+         return
+      } else {
+         absurd()
+      }
+   }
+
+/*
    renderData (indentx: number, data: Data): void {
       if (Cons.is(data)) {
          this.view.newLine(indentx)
@@ -194,6 +236,9 @@ export class DataRenderer {
       } else
       if (Nil.is(data)) {
          return
+      } else {
+         absurd()
       }
    }
+*/
 }

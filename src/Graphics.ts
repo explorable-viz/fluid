@@ -17,13 +17,17 @@ export function rect (width: Num, height: Num): Rect {
 export class Point extends DataValue<"Point"> {
    x: Num = _
    y: Num = _
+
+   toString(): string {
+      return `Point(${this.x},${this.y})`
+   }
 }
 
 export function point (x: Num, y: Num): Point {
    return make(Point, x, y)
 }
 
-export type GraphicsElementTag = "Graphic" | "PathStroke" | "RectFill" | "Transform"
+export type GraphicsElementTag = "Graphic" | "Polyline" | "Polygon" | "Transform"
 
 export abstract class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
 }
@@ -32,13 +36,14 @@ export class Graphic extends GraphicsElement<"Graphic"> {
    gs: List<GraphicsElement> = _
 }
 
-export class PathStroke extends GraphicsElement<"PathStroke"> {
+export class Polyline extends GraphicsElement<"Polyline"> {
    points: List<Point> = _
 }
 
-// TODO: generalise to any (closed) path.
-export class RectFill extends GraphicsElement<"RectFill"> {
+// List of points must be closed.
+export class Polygon extends GraphicsElement<"Polygon"> {
    points: List<Point> = _
+   // TODO: add fill
 }
 
 export class Transform extends GraphicsElement<"Transform"> {
@@ -65,7 +70,7 @@ export class Translate extends LinearTransform<"Translate"> {
 export class Transpose extends LinearTransform<"Transpose"> {
 }
 
-initDataType(GraphicsElement, [PathStroke, RectFill, Transform, Graphic])
+initDataType(GraphicsElement, [Polygon, Polyline, Transform, Graphic])
 initDataType(LinearTransform, [Scale, Translate, Transpose])
 initDataType(Point, [Point])
 initDataType(Rect, [Rect])

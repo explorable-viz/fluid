@@ -5,7 +5,8 @@ export const _: any = undefined
 
 // Somewhat perverse to do this, but need some type safety!
 export type DataValueTag =
-   "Bool" | "Closure" | "DataExpl" | "Elim" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" | "Graphic" | "PathStroke" | "RectFill" | "Transform" | 
+   "Graphic" | "Polyline" | "Polygon" | "Transform" |
+   "Bool" | "Closure" | "DataExpl" | "Elim" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" |  
    "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Token" | "Trie"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
 export type PrimOpTag = "UnaryOp" | "BinaryOp"
@@ -33,6 +34,10 @@ export type PrimValue = Num | Str
 
 export class Num extends Value<"Num"> {
    val: number = _
+
+   toString (): string {
+      return this.val.toString()
+   }
 }
 
 export function num (val: number): Num {
@@ -41,6 +46,10 @@ export function num (val: number): Num {
 
 export class Str extends Value<"Str"> {
    val: string = _
+
+   toString (): string {
+      return `"${this.val}"`
+   }
 }
 
 export function str (val: string): Str {
