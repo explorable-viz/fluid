@@ -80,13 +80,13 @@ export class GraphicsRenderer {
 
    renderElement (g: GraphicsElement): void {
       if (g instanceof Graphic) {   
+         const group: SVGGElement = document.createElementNS(svgNS, "g")
+         this.current.appendChild(group)
+         this.ancestors.push(group)
          for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
-            const group: SVGGElement = document.createElementNS(svgNS, "g")
-            this.current.appendChild(group)
-            this.ancestors.push(group)
             this.renderElement(gs.head)
-            this.ancestors.pop()
          }
+         this.ancestors.pop()
       } else 
       if (g instanceof Polyline) {
          this.polyline(g.points)
