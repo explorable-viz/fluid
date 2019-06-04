@@ -144,7 +144,7 @@ let countryTotal = compose sum (map snd);
 let annualTotal = compose sum (map (compose countryTotal snd));
 let countryData = map (second countryTotal) (lookupNum 2015 data);
 // Data → Year
-let ps = map (fun (year, annualData) → (year, annualTotal annualData)) data;
+let yearlyTotals = map (fun (year, annualData) → (year, annualTotal annualData)) data;
 let y_scale = 1 / 6;
 let x_scale = 30;
 let tickLength = 4;
@@ -163,5 +163,5 @@ let lineGraph = fun (x_scale, y_scale) x_start numData →
 in
 stackRight [
    barGraph (x_scale, y_scale) countryData, 
-   lineGraph (x_scale, y_scale) (head (map fst data)) ps
+   lineGraph (x_scale, y_scale) (head (map fst data)) yearlyTotals
 ]
