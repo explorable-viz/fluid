@@ -8,7 +8,7 @@ primitive error;
 primitive floor;
 
 // Num → Str
-primitive intToString;
+primitive numToStr;
 
 // Natural logarithm.
 // Num → Num

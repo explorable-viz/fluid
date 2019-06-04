@@ -84,10 +84,10 @@ let tickEvery = fun n →
 // space (if desired).
 // Num → Num → Num → GraphicsElement
 let x_axis = fun margin x_start x_max tickSp tickLength →
-   let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]) in
-   let ticks = fun n → spaceRight tickSp (repeat n tick) in
+   let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]);
+   let ticks = spaceRight tickSp (repeat (ceiling (x_max / tickSp)) tick);
    let line = Polyline([Point(x_start, 0), Point(x_max, 0)]) in
-   translate (0 - x_start) (0 - margin) Graphic([line, ...ticks (floor (x_max / tickSp) + 1)]);
+   translate (0 - x_start) (0 - margin) Graphic([line, translate tickSp 0 Graphic(ticks)]);
 
 // Some numerical constants for charts; should parameterise by these instead.
 let tickLength = 4;

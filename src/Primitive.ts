@@ -36,7 +36,7 @@ const ceiling = (x: Num) => (k: Id): Versioned<Num> => numʹ(k, Math.ceil(x.val)
 const error = (message: Str) => (k: Id): Versioned<Value> => assert(false, "LambdaCalc error:\n" + message.val)
 const floor = (x: Num) => (k: Id): Versioned<Num> => numʹ(k, Math.floor(x.val))
 const log = (x: Num) => (k: Id): Versioned<Num> => numʹ(k, Math.log(as(x, Num).val))
-const intToString = (x: Num) => (k: Id): Versioned<Str> => strʹ(k, x.val.toString())
+const numToStr = (x: Num) => (k: Id): Versioned<Str> => strʹ(k, x.val.toString())
 // No longer support overloaded functions, since the pattern-matching semantics is non-trivial; might require typecase.
 // If we want integer division, apparently ~~(x / y) will round in the right direction.
 const div = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val / as(y, Num).val)
@@ -69,7 +69,7 @@ export const unaryOps: Map<string, UnaryOp> = new Map([
    [error.name, unary_(error)],
    [floor.name, unary_(floor)],
    [log.name, unary_(log)],
-   [intToString.name, unary_(intToString)],
+   [numToStr.name, unary_(numToStr)],
 ])
    
 export const binaryOps: Map<string, BinaryOp> = new Map([
