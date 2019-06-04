@@ -142,13 +142,13 @@ letrec
 let countryTotal = compose sum (map snd);
 // AnnualData → Output
 let annualTotal = compose sum (map (compose countryTotal snd));
-let countryData = map (second countryTotal) (lookupNum 2015 data);
+let countryTotals = fun year → map (second countryTotal) (lookupNum year data);
 // Data → Year
 let yearlyTotals = map (fun (year, annualData) → (year, annualTotal annualData)) data;
 let y_scale = 1 / 6;
 let x_scale = 30
 in
 stackRight [
-   barGraph (x_scale, y_scale) countryData, 
+   barGraph (x_scale, y_scale) (countryTotals 2015),
    lineGraph (x_scale, y_scale) (head (map fst data)) yearlyTotals
 ]
