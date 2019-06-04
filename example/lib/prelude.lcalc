@@ -10,6 +10,10 @@ primitive floor;
 // Num → Str
 primitive intToString;
 
+// Natural logarithm.
+// Num → Num
+primitive log;
+
 // (b → c) → (a → b) → a → c
 // Would like infix operators. 
 let compose = fun f g x → f (g x);
@@ -61,6 +65,10 @@ letrec fun intersperse {
    [x, y, ...ys] sep → [x, sep, ...intersperse [y, ...ys]]
 };
 
+// Log of x in base y.
+// Num → Num → Num
+let logBase = fun n m → log y / log x;
+
 // (a → b) → List(a) → List(b)
 letrec fun map f {
    [] → [];
@@ -109,7 +117,7 @@ let max = fun xs →
    foldr1 (fun (n, m) → match n > m as { True → n; False → m }) xs;
 
 // Num → Num → Num
-let roundTo = fun n m → 
+let ceilingTo = fun n m → 
    ceiling (n / m) * m;
 
 // (a → b) → Pair(c, a) → Pair(c, b)

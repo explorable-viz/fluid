@@ -99,7 +99,7 @@ let y_offset = x_offset;
 // List(Pair(Str, Num)) → Num
 let maxVal = compose max (map snd);
 
-// Bar graph with categorical x-axis; bars have unit spacing by default but are scaled as specified.
+// Bar graph with categorical x-axis; before scaling, bars have unit spacing but are narrower.
 // Pair(Num, Num) → List(Pair(Str, Num)) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
    let x_ax = x_axis axis_margin (length catData + 1) 1 tickLength;
