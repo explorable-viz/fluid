@@ -84,15 +84,15 @@ let tickEvery = fun n →
       False → 10 ** m
    };
 
-// Negatively offset from the x-axis by margin + tickHeight; client code responsible for translating into positive 
+// Negatively offset from x-axis by margin + tickHeight; caller responsible for translating into positive 
 // space (if desired).
 // Num → Num → Num → GraphicsElement
-let x_axis = fun margin max tickLength →
-   let tickSp = tickEvery max in
+let x_axis = fun margin x_max tickLength →
+   let tickSp = tickEvery x_max in
    let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]) in
    let ticks = fun n → spaceRight tickSp (repeat n tick) in
-   let line = Polyline([Point(0, 0), Point(max, 0)]) in
-   translate 0 (0 - margin) Graphic([line, ...ticks (ceiling (max / tickSp))]);
+   let line = Polyline([Point(0, 0), Point(x_max, 0)]) in
+   translate 0 (0 - margin) Graphic([line, ...ticks (floor (x_max / tickSp) + 1)]);
 
 // Some numerical constants for charts; need to think about how to parameterise.
 let tickLength = 4;
