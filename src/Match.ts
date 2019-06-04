@@ -2,7 +2,7 @@ import { Annotation, ann } from "./util/Annotated"
 import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
 import { List, Pair, cons, nil } from "./BaseTypes"
 import { DataValue } from "./DataValue"
-import { DataType, ctrToDataType, elimSuffix } from "./DataType"
+import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expr } from "./Expr"
 import { Str, Value, _, make } from "./Value"
@@ -84,19 +84,22 @@ function matchArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, 
 // No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
 // itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
-   typename (): string {
-      const c: string = className(this)
-      return c.substr(0, c.length - elimSuffix.length)
-   }
-   
    match (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
-         assert(κ !== undefined, `Pattern mismatch: found ${c}, expected ${this.typename()}.`)
-         const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
-               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = matchArgs(κ, v̅, ξ)
-         return [ρ, cons(v, ξʹ), κʹ]
+         if (κ !== undefined) {
+            const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
+            [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = matchArgs(κ, v̅, ξ)
+            return [ρ, cons(v, ξʹ), κʹ]
+         } else {
+            const d: DataType = elimToDataType.get(className(this))!
+            if (d.ctrs.has(c)) {
+               return error(`Pattern mismatch: ${c} case is undefined for ${d.name} eliminator.`)
+            } else {
+               return error(`Pattern mismatch: found ${c}, expected ${d.name}.`)
+            }
+         }
       } else {
          return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
       }

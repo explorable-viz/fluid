@@ -46,6 +46,7 @@ export function arity (ctr: Str): number {
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
 export let ctrToDataType: Map<string, DataType> = new Map
+export let elimToDataType: Map<string, DataType> = new Map
 export const elimSuffix: string = "Elim"
 export const explSuffix: string = "Expl"
 
@@ -84,4 +85,5 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
    C̅.forEach((C: Class<T>): void => {
       ctrToDataType.set(C.name, d)
    })
+   elimToDataType.set(elimC_name, d)
 }
