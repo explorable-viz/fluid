@@ -14,22 +14,22 @@ let translate = fun x y g →
 let transpose = fun g →
    Transform(Transpose, g);
 
-letrec
-   // GraphicsElement → Pair(Num, Num)
-   fun dimensions {
-      Polyline(ps) → 
-         pathDimensions (map (fun Point(x, y) → (x, y)) ps);
-      Polygon(ps) →
-         pathDimensions (map (fun Point(x, y) → (x, y)) ps);
-      Graphic(gs) → 
-         pathDimensions (map dimensions gs);
-      Transform(Scale(x, y), g) → 
-         match dimensions g as (w, h) → (w * x, h * y);
-      Transform(Translate(x, y), g) → 
-         match dimensions g as (w, h) → (w + x, h + y);
-      Transform(Transpose, g) → 
-         swap (dimensions g)
-   };
+// GraphicsElement → Pair(Num, Num)
+letrec fun dimensions {
+   Polyline(ps) → 
+      pathDimensions (map (fun Point(x, y) → (x, y)) ps);
+   Polygon(ps) →
+      pathDimensions (map (fun Point(x, y) → (x, y)) ps);
+   Graphic(gs) → 
+      pathDimensions (map dimensions gs);
+   Text(x, y, str) → (x + 20, y); // TODO: how?
+   Transform(Scale(x, y), g) → 
+      match dimensions g as (w, h) → (w * x, h * y);
+   Transform(Translate(x, y), g) → 
+      match dimensions g as (w, h) → (w + x, h + y);
+   Transform(Transpose, g) → 
+      swap (dimensions g)
+};
 
 // GraphicsElement → Num
 let width = fun g → 
@@ -87,7 +87,7 @@ let x_axis = fun margin x_start x_max tickSp tickLength →
    let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]);
    let n = ceiling ((x_max - x_start) / tickSp);
    let ticks = spaceRight tickSp (repeat n tick);
-   let labels = spaceRight tickSp (map (fun x → Text(0, 0, numToStr x)) (iterate n (fun x → x + tickSp) 0));
+   let labels = spaceRight tickSp (map (fun x → Text(0, 110, numToStr x)) (iterate n (fun x → x + tickSp) 0));
    let line = Polyline([Point(0, 0), Point(x_max - x_start, 0)]) in
    translate 0 (0 - margin) Graphic([line, translate 0 0 Graphic(ticks), ...labels]);
 

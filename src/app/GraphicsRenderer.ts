@@ -194,9 +194,11 @@ export class GraphicsRenderer {
    }
 
    text (g: Text): void {
-      const text: SVGTextElement = document.createElementNS(svgNS, "text")
-      text.setAttribute("x", g.x.toString())
-      text.setAttribute("y", g.y.toString())
+      const text: SVGTextElement = document.createElementNS(svgNS, "text"),
+            [x, y]: [number, number] = this.transform([g.x.val, g.y.val])
+      text.setAttribute("x", x.toString())
+      text.setAttribute("y", y.toString())
+      text.setAttribute("stroke", "black")
       text.appendChild(document.createTextNode(g.str.val))
       this.current.appendChild(text)
    }
