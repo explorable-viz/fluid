@@ -4,6 +4,9 @@ primitive ceiling;
 // Str → a
 primitive error;
 
+// Num → Num
+primitive floor;
+
 // Num → Str
 primitive intToString;
 

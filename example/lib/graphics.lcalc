@@ -78,11 +78,17 @@ let renderRect = fun r →
 // Negatively offset from the x-axis by margin + tickHeight; client code responsible for translating into positive 
 // space (if desired).
 // Num → Num → Num → GraphicsElement
-let x_axis = fun margin n width tickHeight →
-   let tick = Polyline([Point(0, 0), Point(0, 0 - tickHeight)]) in
+let x_axis = fun margin n width tickLength →
+   let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]) in
    let ticks = fun n → spaceRight width (repeat n tick) in
    let line = Polyline([Point(0, 0), Point((n - 1) * width, 0)]) in
    translate 0 (0 - margin) Graphic([line, ...ticks n]);
+
+let x_axis2 = fun margin max tickEvery tickLength →
+   let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]) in
+   let ticks = fun n → spaceRight tickEvery (repeat n tick) in
+   let line = Polyline([Point(0, 0), Point(max, 0)]) in
+   translate 0 (0 - margin) Graphic([line, ...ticks (ceiling (max / tickEvery))]);
 
 // Some numerical constants for charts; need to think about how to parameterise.
 let tickLength = 4;
@@ -90,10 +96,11 @@ let axis_margin = 5;
 let x_offset = axis_margin + tickLength;
 let y_offset = x_offset;
 
+// A bar graph with categorical x-axis; bars have unit width by default but are scaled as specified.
 // Pair(Num, Num) → List(Pair(Str, Num)) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
    let x_ax = scale x_scale 1 (x_axis axis_margin (length catData + 1) 1.16 tickLength);
-   let y_ax = transpose (scale x_scale 1 (x_axis axis_margin 4 1 tickLength));
+   let y_ax = transpose (scale y_scale 1 (x_axis2 axis_margin 550 100 tickLength));
    let bars = scale x_scale y_scale Graphic(spaceRight 1.16 (map (fun (k, v) → renderRect Rect(1, v)) catData))
    in
    translate x_offset y_offset Graphic([x_ax, y_ax, bars]);
