@@ -75,15 +75,6 @@ let rectPath = fun Rect(w, h) →
 let renderRect = fun r → 
    let ps = rectPath r in Polygon(ps);
 
-// Negatively offset from the x-axis by margin + tickHeight; client code responsible for translating into positive 
-// space (if desired).
-// Num → Num → Num → GraphicsElement
-let x_axis = fun margin n width tickLength →
-   let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]) in
-   let ticks = fun n → spaceRight width (repeat n tick) in
-   let line = Polyline([Point(0, 0), Point((n - 1) * width, 0)]) in
-   translate 0 (0 - margin) Graphic([line, ...ticks n]);
-
 // Heuristic saying how often to place a tick on an axis of length n.
 // Num → Num
 let tickEvery = fun n →
@@ -93,7 +84,10 @@ let tickEvery = fun n →
       False → 10 ** m
    };
 
-let x_axis2 = fun margin max tickLength →
+// Negatively offset from the x-axis by margin + tickHeight; client code responsible for translating into positive 
+// space (if desired).
+// Num → Num → Num → GraphicsElement
+let x_axis = fun margin max tickLength →
    let tickSp = tickEvery max in
    let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]) in
    let ticks = fun n → spaceRight tickSp (repeat n tick) in
@@ -112,8 +106,8 @@ let maxVal = compose max (map snd);
 // Bar graph with categorical x-axis; before scaling, bars have unit spacing but are narrower.
 // Pair(Num, Num) → List(Pair(Str, Num)) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
-   let x_ax = x_axis axis_margin (length catData + 1) 1 tickLength;
-   let y_ax = x_axis2 axis_margin (maxVal catData) tickLength;
+   let x_ax = x_axis axis_margin (length catData) tickLength;
+   let y_ax = x_axis axis_margin (maxVal catData) tickLength;
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
    let bars = translate ((1 - shrinkBy) / 2) 0 // centre bars
       Graphic(spaceRight 1 (map (fun (k, v) → renderRect Rect(shrinkBy, v)) catData))
