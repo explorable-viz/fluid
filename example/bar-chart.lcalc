@@ -153,12 +153,15 @@ let axis_margin = 5;
 let x_offset = axis_margin + tickLength;
 let y_offset = x_offset;
 let barGraph = fun (x_scale, y_scale) catData →
-   translate x_offset y_offset Graphic([
-      scale x_scale 1 (x_axis axis_margin (length catData + 1) 1.16 tickLength),
-      transpose (scale x_scale 1 (x_axis axis_margin 4 1 tickLength)),
-      scale x_scale y_scale Graphic(spaceRight 1.16 (map (fun (k, v) → renderRect Rect(1, v)) catData))
-   ]);
-let lineGraph =
-   translate x_offset y_offset (linePlot Scale(x_scale, y_scale) ps)
+   let x_ax = scale x_scale 1 (x_axis axis_margin (length catData + 1) 1.16 tickLength);
+   let y_ax = transpose (scale x_scale 1 (x_axis axis_margin 4 1 tickLength));
+   let bars = scale x_scale y_scale Graphic(spaceRight 1.16 (map (fun (k, v) → renderRect Rect(1, v)) catData))
+   in
+   translate x_offset y_offset Graphic([x_ax, y_ax, bars]);
+let lineGraph = fun (x_scale, y_scale) numData →
+   translate x_offset y_offset (linePlot Scale(x_scale, y_scale) numData)
 in
-stackRight [barGraph (x_scale, y_scale) countryData, lineGraph]
+stackRight [
+   barGraph (x_scale, y_scale) countryData, 
+   lineGraph (x_scale, y_scale) ps
+]
