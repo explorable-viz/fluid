@@ -90,7 +90,7 @@ let axis_margin = 5;
 let x_offset = axis_margin + tickLength;
 let y_offset = x_offset;
 
-// Pair(Num, Num) →  → GraphicsElement
+// Pair(Num, Num) → List(Pair(Str, Num)) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
    let x_ax = scale x_scale 1 (x_axis axis_margin (length catData + 1) 1.16 tickLength);
    let y_ax = transpose (scale x_scale 1 (x_axis axis_margin 4 1 tickLength));
@@ -98,6 +98,7 @@ let barGraph = fun (x_scale, y_scale) catData →
    in
    translate x_offset y_offset Graphic([x_ax, y_ax, bars]);
 
+// Pair(Num, Num) → List(Pair(Num, Num)) → Num → GraphicsElement
 let lineGraph = fun (x_scale, y_scale) x_start numData →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
    translate x_offset y_offset (linePlot Scale(x_scale, y_scale) ps)

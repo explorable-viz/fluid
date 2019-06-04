@@ -142,8 +142,9 @@ letrec
 let countryTotal = compose sum (map snd);
 // AnnualData → Output
 let annualTotal = compose sum (map (compose countryTotal snd));
+// Year → List(Pair(Country, Output))
 let countryTotals = fun year → map (second countryTotal) (lookupNum year data);
-// Data → Year
+// List(Pair(Year, Output))
 let yearlyTotals = map (fun (year, annualData) → (year, annualTotal annualData)) data;
 let y_scale = 1 / 6;
 let x_scale = 30
