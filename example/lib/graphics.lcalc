@@ -107,14 +107,14 @@ let maxVal = compose max (map snd);
 // Pair(Num, Num) → List(Pair(Str, Num)) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
    let x_ax = x_axis axis_margin (length catData) tickLength;
-   let y_ax = x_axis axis_margin (maxVal catData) tickLength;
+   let y_ax = transpose (x_axis axis_margin (maxVal catData) tickLength);
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
    let bars = translate ((1 - shrinkBy) / 2) 0 // centre bars
       Graphic(spaceRight 1 (map (fun (k, v) → renderRect Rect(shrinkBy, v)) catData))
    in
    translate x_offset y_offset Graphic([
       scale x_scale 1 x_ax, 
-      scale 1 y_scale (transpose y_ax),
+      scale 1 y_scale y_ax,
       scale x_scale y_scale bars
    ]);
 
