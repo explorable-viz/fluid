@@ -94,7 +94,7 @@ let x_axis = fun margin x_max tickLength →
    let line = Polyline([Point(0, 0), Point(x_max, 0)]) in
    translate 0 (0 - margin) Graphic([line, ...ticks (floor (x_max / tickSp) + 1)]);
 
-// Some numerical constants for charts; need to think about how to parameterise.
+// Some numerical constants for charts; should parameterise by these instead.
 let tickLength = 4;
 let axis_margin = 0;
 let x_offset = axis_margin + tickLength;
