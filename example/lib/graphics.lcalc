@@ -114,7 +114,7 @@ let barGraph = fun (x_scale, y_scale) catData →
    in
    translate x_offset y_offset Graphic([
       scale x_scale 1 x_ax, 
-      transpose (scale y_scale 1 y_ax),
+      scale 1 y_scale (transpose y_ax),
       scale x_scale y_scale bars
    ]);
 
