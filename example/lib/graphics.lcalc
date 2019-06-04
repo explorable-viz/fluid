@@ -87,8 +87,7 @@ let tickEvery = fun n →
 // Negatively offset from x-axis by margin + tickHeight; caller responsible for translating into positive 
 // space (if desired).
 // Num → Num → Num → GraphicsElement
-let x_axis = fun margin x_max tickLength →
-   let tickSp = tickEvery x_max in
+let x_axis = fun margin x_max tickSp tickLength →
    let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]) in
    let ticks = fun n → spaceRight tickSp (repeat n tick) in
    let line = Polyline([Point(0, 0), Point(x_max, 0)]) in
@@ -106,8 +105,8 @@ let maxVal = compose max (map snd);
 // Bar graph with categorical x-axis; before scaling, bars have unit spacing but are narrower.
 // Pair(Num, Num) → List(Pair(Str, Num)) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
-   let x_ax = x_axis axis_margin (length catData) tickLength;
-   let y_ax = transpose (x_axis axis_margin (maxVal catData) tickLength);
+   let x_ax = x_axis axis_margin (length catData) 1 tickLength;
+   let y_ax = let y_max = maxVal catData in transpose (x_axis axis_margin y_max (tickEvery y_max) tickLength);
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
    let bars = translate ((1 - shrinkBy) / 2) 0 // centre bars
       Graphic(spaceRight 1 (map (fun (k, v) → renderRect Rect(shrinkBy, v)) catData))
