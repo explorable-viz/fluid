@@ -87,8 +87,9 @@ let x_axis = fun margin x_start x_max tickSp tickLength →
    let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]);
    let n = ceiling ((x_max - x_start) / tickSp);
    let ticks = spaceRight tickSp (repeat n tick);
+   let labels = spaceRight tickSp (map (fun x → Text(0, 0, numToStr x)) (iterate n (fun x → x + tickSp) 0));
    let line = Polyline([Point(0, 0), Point(x_max - x_start, 0)]) in
-   translate 0 (0 - margin) Graphic([line, translate 0 0 Graphic(ticks)]);
+   translate 0 (0 - margin) Graphic([line, translate 0 0 Graphic(ticks), ...labels]);
 
 // Some numerical constants for charts; should parameterise by these instead.
 let tickLength = 4;

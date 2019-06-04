@@ -5,7 +5,7 @@ export const _: any = undefined
 
 // Somewhat perverse to do this, but need some type safety!
 export type DataValueTag =
-   "Graphic" | "Polyline" | "Polygon" | "Transform" |
+   "Graphic" | "Polyline" | "Polygon" | "Text" | "Transform" |
    "Bool" | "Closure" | "DataExpl" | "Elim" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" |  
    "Scale" | "Translate" | "Transpose" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Token" | "Trie"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"

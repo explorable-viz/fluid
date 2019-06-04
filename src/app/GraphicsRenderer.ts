@@ -2,7 +2,7 @@ import { ann } from "../util/Annotated"
 import { __nonNull, absurd, assert, className } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
-import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Transform, Translate, Transpose } from "../Graphics"
+import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Text, Transform, Translate, Transpose } from "../Graphics"
 import { asVersioned, setallα } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
@@ -87,6 +87,9 @@ export class GraphicsRenderer {
       } else
       if (g instanceof Polygon) {
          this.polygon(g.points)
+      } else
+      if (g instanceof Text) {
+         this.text(g)
       } else
       if (g instanceof Transform) {
          const t: LinearTransform = g.t
@@ -188,5 +191,13 @@ export class GraphicsRenderer {
       })
       this.current.appendChild(polygon)
       this.pointHighlights(p̅)
+   }
+
+   text (g: Text): void {
+      const text: SVGTextElement = document.createElementNS(svgNS, "text")
+      text.setAttribute("x", g.x.toString())
+      text.setAttribute("y", g.y.toString())
+      text.appendChild(document.createTextNode(g.str.val))
+      this.current.appendChild(text)
    }
 }
