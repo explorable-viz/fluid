@@ -145,7 +145,7 @@ let annualTotal = compose sum (map (compose countryTotal snd));
 let countryData = map (second countryTotal) (lookupNum 2015 data);
 // Data → Year
 let firstYear = head (map fst data);
-let ps = map (fun (year, annualData) → (year - firstYear, annualTotal annualData)) data;
+let ps = map (fun (year, annualData) → (year, annualTotal annualData)) data;
 let y_scale = 1 / 6;
 let x_scale = 30;
 let tickLength = 4;
@@ -158,10 +158,10 @@ let barGraph = fun (x_scale, y_scale) catData →
    let bars = scale x_scale y_scale Graphic(spaceRight 1.16 (map (fun (k, v) → renderRect Rect(1, v)) catData))
    in
    translate x_offset y_offset Graphic([x_ax, y_ax, bars]);
-let lineGraph = fun (x_scale, y_scale) numData →
-   translate x_offset y_offset (linePlot Scale(x_scale, y_scale) (map (fun (x, y) → Point(x, y)) numData))
+let lineGraph = fun (x_scale, y_scale) x_start numData →
+   translate x_offset y_offset (linePlot Scale(x_scale, y_scale) (map (fun (x, y) → Point(x - x_start, y)) numData))
 in
 stackRight [
    barGraph (x_scale, y_scale) countryData, 
-   lineGraph (x_scale, y_scale) ps
+   lineGraph (x_scale, y_scale) firstYear ps
 ]
