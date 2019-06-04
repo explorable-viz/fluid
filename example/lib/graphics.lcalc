@@ -100,7 +100,10 @@ let y_offset = x_offset;
 // Num → Num
 let tickEvery = fun n →
    let m = floor (logBase 10 n) in
-   10 ** m;
+   match n <= 2 * 10 ** m as {
+      True → 2 ** 10 (m - 1);
+      False → 10 ** m
+   };
 
 // List(Pair(Str, Num)) → Num
 let maxVal = compose max (map snd);
@@ -109,7 +112,7 @@ let maxVal = compose max (map snd);
 // Pair(Num, Num) → List(Pair(Str, Num)) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
    let x_ax = x_axis axis_margin (length catData + 1) 1 tickLength;
-   let y_ax = x_axis2 axis_margin (maxVal catData) 100 tickLength;
+   let y_ax = x_axis2 axis_margin (maxVal catData) (tickEvery (maxVal catData)) tickLength;
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
    let bars = translate ((1 - shrinkBy) / 2) 0 // centre bars
       Graphic(spaceRight 1 (map (fun (k, v) → renderRect Rect(shrinkBy, v)) catData))

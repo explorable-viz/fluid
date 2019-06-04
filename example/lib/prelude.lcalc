@@ -67,7 +67,7 @@ letrec fun intersperse {
 
 // Log of x in base y.
 // Num → Num → Num
-let logBase = fun n m → log y / log x;
+let logBase = fun x y → log y / log x;
 
 // (a → b) → List(a) → List(b)
 letrec fun map f {
