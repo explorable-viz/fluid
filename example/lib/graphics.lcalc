@@ -96,6 +96,12 @@ let axis_margin = 0;
 let x_offset = axis_margin + tickLength;
 let y_offset = x_offset;
 
+// Heuristic saying how often to place a tick on an axis of length n.
+// Num → Num
+let tickEvery = fun n →
+   let m = floor (logBase 10 n) in
+   n <= m;
+
 // List(Pair(Str, Num)) → Num
 let maxVal = compose max (map snd);
 

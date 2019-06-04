@@ -142,8 +142,8 @@ function isSumOp (opName: string): boolean {
 }
 
 function isCompareOp (opName: string): boolean {
-   return opName === "==" || opName === "===" || 
-          opName === "<" || opName === "<<" || opName === ">" || opName === ">>"
+   return opName === "==" || opName === "===" || opName === "<=" || 
+          opName === "<" || opName === "<<" || opName === ">=" || opName === ">" || opName === ">>"
 }
 
 const productOp: Parser<Str> =
