@@ -1,4 +1,4 @@
-// List(Pair(number, number)) → Pair(number, number)
+// List(Pair(Num, Num)) → Pair(Num, Num)
 let pathDimensions = fun ps → 
    match unzip ps as (xs, ys) → (max xs, max ys);
 
@@ -12,7 +12,7 @@ let transpose = fun g →
    Transform(Transpose, g);
 
 letrec
-   // GraphicElement → Pair(number, number)
+   // GraphicElement → Pair(Num, Num)
    fun dimensions {
       Polyline(ps) → 
          pathDimensions (map (fun Point(x, y) → (x, y)) ps);
@@ -28,11 +28,11 @@ letrec
          swap (dimensions g)
    };
 
-// GraphicsElement → number
+// GraphicsElement → Num
 let width = fun g → 
    fst (dimensions g);
 
-// number → List(GraphicsElement) → List(GraphicsElement)
+// Num → List(GraphicsElement) → List(GraphicsElement)
 let spaceRight = fun sep gs →
    zipW (fun (x, g) → translate x 0 g) (iterate (length gs) (fun x → x + sep) 0) gs;
 
@@ -43,14 +43,14 @@ let stackRight = fun gs →
 
 // Negatively offset from the x-axis by margin + tickHeight; client code responsible for translating into positive 
 // space (if desired).
-// number → number → number → GraphicElement
+// Num → Num → Num → GraphicElement
 let x_axis = fun margin n width tickHeight →
    let tick = Polyline([Point(0, 0), Point(0, 0 - tickHeight)]) in
    let ticks = fun n → spaceRight width (repeat n tick) in
    let line = Polyline([Point(0, 0), Point((n - 1) * width, 0)]) in
    translate 0 (0 - margin) Graphic([line, ...ticks n]);
 
-// GraphicsElement → number
+// GraphicsElement → Num
 let height = fun g → snd (dimensions g);
 
 // LinearTransform → LinearTransform
@@ -61,7 +61,7 @@ let invert = fun {
 };
 
 // (0,0)-based cross used to render points of a line plot.
-// number → Graphic
+// Num → Graphic
 let plotPoint = fun radius → 
    Graphic([
       Polyline([Point(0 - radius, 0 - radius), Point(radius, radius)]),
@@ -79,4 +79,19 @@ let rectPath = fun Rect(w, h) →
 
 // Rect → Polygon
 let renderRect = fun r → 
-   let ps = rectPath r in Polygon(ps)
+   let ps = rectPath r in Polygon(ps);
+
+// Num
+let tickLength = 4;
+let axis_margin = 5;
+let x_offset = axis_margin + tickLength;
+let y_offset = x_offset;
+let barGraph = fun (x_scale, y_scale) catData →
+   let x_ax = scale x_scale 1 (x_axis axis_margin (length catData + 1) 1.16 tickLength);
+   let y_ax = transpose (scale x_scale 1 (x_axis axis_margin 4 1 tickLength));
+   let bars = scale x_scale y_scale Graphic(spaceRight 1.16 (map (fun (k, v) → renderRect Rect(1, v)) catData))
+   in
+   translate x_offset y_offset Graphic([x_ax, y_ax, bars]);
+let lineGraph = fun (x_scale, y_scale) x_start numData →
+   let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
+   translate x_offset y_offset (linePlot Scale(x_scale, y_scale) ps)
