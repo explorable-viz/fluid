@@ -94,8 +94,6 @@ let x_axis = fun margin x_start x_max tickSp tickLength →
 // Some numerical constants for charts; should parameterise by these instead.
 let tickLength = 4;
 let axis_margin = 0;
-let x_offset = axis_margin + tickLength;
-let y_offset = x_offset;
 
 // List(Pair(Str, Num)) → Num
 let maxVal = compose max (map snd);
@@ -109,11 +107,15 @@ let barGraph = fun (x_scale, y_scale) catData →
    let bars = translate ((1 - shrinkBy) / 2) 0 // centre bars
       Graphic(spaceRight 1 (map (fun (k, v) → renderRect Rect(shrinkBy, v)) catData))
    in
-   translate x_offset y_offset Graphic([
+   translate (snd x_ax) (snd y_ax) Graphic([
       scale x_scale 1 (fst x_ax),
       scale 1 y_scale (fst y_ax),
       scale x_scale y_scale bars
    ]);
+
+// TODO: delete these once we add axes to line graphs.
+let x_offset = axis_margin + tickLength;
+let y_offset = x_offset;
 
 // Pair(Num, Num) → List(Pair(Num, Num)) → Num → GraphicsElement
 let lineGraph = fun (x_scale, y_scale) x_start numData →
