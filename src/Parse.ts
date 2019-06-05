@@ -379,15 +379,6 @@ const match: Parser<Trie<Expr>> =
       pattern(withAction(matches, (σ: Trie<Expr>): Expr => Expr.fun(ν(), σ)))
    ])
 
-// Singleton match specific to "let".
-/*
-const letMatch: Parser<Trie<Expr>> =
-choice<Trie<Expr>>([
-   pattern(dropFirst(symbol(strings.equals), expr)),
-   pattern(withAction(match, (σ: Trie<Expr>): Expr => Expr.fun(ν(), σ)))
-])
-*/
-
 // Assume at least one match clause.
 function matches (state: ParseState): ParseResult<Trie<Expr>> | null {
    return withAction(
