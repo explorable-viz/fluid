@@ -3,7 +3,9 @@ import { __nonNull, absurd, assert, className } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Text, Transform, Translate, Transpose } from "../Graphics"
-import { asVersioned, setallα } from "../Versioned"
+import { unary_, unaryOps } from "../Primitive"
+import { Id, Num, Str } from "../Value"
+import { Versioned, asVersioned, numʹ, setallα } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
@@ -202,7 +204,7 @@ export class GraphicsRenderer {
 }
 
 // The SVG text element for the supplied text; centralised so can be used to compute text metrics.
-export function textElement (x: number, y: number, str: string): SVGTextElement {
+function textElement (x: number, y: number, str: string): SVGTextElement {
    const text: SVGTextElement = document.createElementNS(svgNS, "text")
    text.setAttribute("stroke", "none")
    text.setAttribute("fill", "black")
@@ -210,4 +212,35 @@ export function textElement (x: number, y: number, str: string): SVGTextElement 
    text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
    text.appendChild(document.createTextNode(str))
    return text
+}
+
+let svgMetrics: SVGSVGElement
+
+{
+   svgMetrics = document.createElementNS(svgNS, "svg")
+   svgMetrics.setAttribute("width", "0")
+   svgMetrics.setAttribute("height", "0")
+   svgMetrics.style.visibility = "hidden"
+   document.body.appendChild(svgMetrics)
+
+   // Additional primitives that rely on offline rendering to compute text metrics. Combine these would 
+   // require more general primitives that can return tuples.
+   const textWidth = (str: Str) => (k: Id): Versioned<Num> => {
+      const text: SVGTextElement = textElement(0, 0, str.val)
+      svgMetrics.appendChild(text)
+      const width: number = text.getBBox().width
+      text.remove()
+      return numʹ(k, width)
+   }
+   
+   const textHeight = (str: Str) => (k: Id): Versioned<Num> => {
+      const text: SVGTextElement = textElement(0, 0, str.val)
+      svgMetrics.appendChild(text)
+      const height: number = text.getBBox().height
+      text.remove()
+      return numʹ(k, height)
+   }
+   
+   unaryOps.set(textHeight.name, unary_(textHeight))
+   unaryOps.set(textWidth.name, unary_(textWidth))
 }
