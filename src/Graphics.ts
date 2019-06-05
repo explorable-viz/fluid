@@ -1,6 +1,6 @@
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
-import { Num, _, make } from "./Value"
+import { Num, Str, _, make } from "./Value"
 import { List } from "./BaseTypes"
 
 // Basic graphical datatypes.
@@ -27,7 +27,7 @@ export function point (x: Num, y: Num): Point {
    return make(Point, x, y)
 }
 
-export type GraphicsElementTag = "Graphic" | "Polyline" | "Polygon" | "Transform"
+export type GraphicsElementTag = "Graphic" | "Polyline" | "Polygon" | "Text" | "Transform"
 
 export abstract class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
 }
@@ -43,6 +43,12 @@ export class Polyline extends GraphicsElement<"Polyline"> {
 // List of points must be closed.
 export class Polygon extends GraphicsElement<"Polygon"> {
    points: List<Point> = _
+}
+
+export class Text extends GraphicsElement<"Text"> {
+   x: Num = _
+   y: Num = _
+   str: Str = _
 }
 
 export class Transform extends GraphicsElement<"Transform"> {
@@ -69,7 +75,7 @@ export class Translate extends LinearTransform<"Translate"> {
 export class Transpose extends LinearTransform<"Transpose"> {
 }
 
-initDataType(GraphicsElement, [Polygon, Polyline, Transform, Graphic])
+initDataType(GraphicsElement, [Polygon, Polyline, Text, Transform, Graphic])
 initDataType(LinearTransform, [Scale, Translate, Transpose])
 initDataType(Point, [Point])
 initDataType(Rect, [Rect])

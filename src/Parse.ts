@@ -133,6 +133,10 @@ const opCandidate: Parser<string> =
    )
 
 // TODO: consolidate with Primitive.ts
+function isExponentOp (opName: string): boolean {
+   return opName === "**"
+}
+
 function isProductOp (opName: string): boolean {
    return opName === "*" || opName === "/"
 }
@@ -142,9 +146,12 @@ function isSumOp (opName: string): boolean {
 }
 
 function isCompareOp (opName: string): boolean {
-   return opName === "==" || opName === "===" || 
-          opName === "<" || opName === "<<" || opName === ">" || opName === ">>"
+   return opName === "==" || opName === "===" || opName === "<=" || 
+          opName === "<" || opName === "<<" || opName === ">=" || opName === ">" || opName === ">>"
 }
+
+const exponentOp: Parser<Str> =
+   withAction(satisfying(opCandidate, isExponentOp), str)
 
 const productOp: Parser<Str> =
    withAction(satisfying(opCandidate, isProductOp), str)
@@ -415,7 +422,8 @@ const appChain: Parser<Expr> = chainl1(simpleExpr, app_)
 
 // An expression is an operator tree. An operator tree is a tree whose branches are infix
 // binary primitives and whose leaves are application chains. "Sections" currently not supported.
-const productExpr: Parser<Expr> = chainl1(appChain, appOp(productOp))
+const exponentExpr: Parser<Expr> = chainl1(appChain, appOp(exponentOp))
+const productExpr: Parser<Expr> = chainl1(exponentExpr, appOp(productOp))
 const sumExpr: Parser<Expr> = chainl1(productExpr, appOp(sumOp))
 const compareExpr: Parser<Expr> = chainl1(sumExpr, appOp(compareOp))
 

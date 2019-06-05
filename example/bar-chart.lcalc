@@ -1,7 +1,7 @@
-// typedef Year = number
-// typedef Country = string
-// typedef EnergyType = string
-// typedef Output = number
+// typedef Year = Num
+// typedef Country = Str
+// typedef EnergyType = Str
+// typedef Output = Num
 // typedef Data = List(Pair(Year, AnnualData))
 // typedef AnnualData = List(Pair(Country, CountryData))
 // typedef CountryData = List(Pair(EnergyType, Output)) 
@@ -142,24 +142,13 @@ letrec
 let countryTotal = compose sum (map snd);
 // AnnualData → Output
 let annualTotal = compose sum (map (compose countryTotal snd));
-let countryData = map (second countryTotal) (lookupNum 2015 data);
-let rects = map (fun (k, v) → Rect(1, v)) countryData;
-// Data → Year
-let firstYear = head (map fst data);
-let ps = map (fun (year, annualData) → Point(year - firstYear, annualTotal annualData)) data;
-let y_scale = 1 / 6;
-let x_scale = 30;
-let tickLength = 8;
-let axis_margin = 5;
-let x_offset = axis_margin + tickLength;
-let y_offset = x_offset;
-let barGraph = 
-   translate x_offset y_offset Graphic([
-      scale x_scale 1 (x_axis axis_margin (length rects + 1) 1.16 tickLength),
-      transpose (scale x_scale 1 (x_axis axis_margin 4 1 tickLength)),
-      scale x_scale y_scale Graphic(spaceRight 1.16 (map renderRect rects))
-   ]);
-let lineGraph =
-   translate x_offset y_offset (linePlot Scale(x_scale, y_scale) ps)
+// Year → List(Pair(Country, Output))
+let countryTotals = fun year → map (second countryTotal) (lookupNum year data);
+// List(Pair(Year, Output))
+let yearlyTotals = map (fun (year, annualData) → (year, annualTotal annualData)) data;
+let sc = (30, 1 / 6)
 in
-stackRight [barGraph, lineGraph]
+stackRight [
+   barGraph sc (countryTotals 2015),
+   lineGraph sc (head (map fst data)) yearlyTotals
+]

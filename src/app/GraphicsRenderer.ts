@@ -2,7 +2,7 @@ import { ann } from "../util/Annotated"
 import { __nonNull, absurd, assert, className } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
-import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Transform, Translate, Transpose } from "../Graphics"
+import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Text, Transform, Translate, Transpose } from "../Graphics"
 import { asVersioned, setallα } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
@@ -87,6 +87,9 @@ export class GraphicsRenderer {
       } else
       if (g instanceof Polygon) {
          this.polygon(g.points)
+      } else
+      if (g instanceof Text) {
+         this.text(g)
       } else
       if (g instanceof Transform) {
          const t: LinearTransform = g.t
@@ -188,5 +191,17 @@ export class GraphicsRenderer {
       })
       this.current.appendChild(polygon)
       this.pointHighlights(p̅)
+   }
+
+   // Flip text vertically to cancel out the global vertical flip. Don't set x and y but express
+   // position through a translation so that the scaling doesn't affect the position.
+   text (g: Text): void {
+      const text: SVGTextElement = document.createElementNS(svgNS, "text"),
+            [x, y]: [number, number] = this.transform([g.x.val, g.y.val])
+      text.setAttribute("stroke", "none")
+      text.setAttribute("fill", "black")
+      text.setAttribute("transform", `translate(${x.toString()},${y.toString()})scale(1,-1)`)
+      text.appendChild(document.createTextNode(g.str.val))
+      this.current.appendChild(text)
    }
 }

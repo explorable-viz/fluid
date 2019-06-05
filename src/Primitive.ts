@@ -34,20 +34,25 @@ function binary (name: string, op: Binary<PrimValue, PrimValue, Value>): BinaryO
 const ceiling = (x: Num) => (k: Id): Versioned<Num> => numʹ(k, Math.ceil(x.val))
 // Used to take arbitrary value as additional argument, but now primitives have primitive arguments.
 const error = (message: Str) => (k: Id): Versioned<Value> => assert(false, "LambdaCalc error:\n" + message.val)
-const intToString = (x: Num) => (k: Id): Versioned<Str> => strʹ(k, x.val.toString())
+const floor = (x: Num) => (k: Id): Versioned<Num> => numʹ(k, Math.floor(x.val))
+const log = (x: Num) => (k: Id): Versioned<Num> => numʹ(k, Math.log(as(x, Num).val))
+const numToStr = (x: Num) => (k: Id): Versioned<Str> => strʹ(k, x.val.toString())
 // No longer support overloaded functions, since the pattern-matching semantics is non-trivial; might require typecase.
+// If we want integer division, apparently ~~(x / y) will round in the right direction.
+const div = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val / as(y, Num).val)
+const concat = (x: Str, y: Str) => (k: Id): Versioned<Str> => strʹ(k, as(x, Str).val + as(y, Str).val)
 const equalInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val === as(y, Num).val ? trueʹ : falseʹ
 const equalStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).val === as(y, Str).val ? trueʹ : falseʹ
+const greaterEqInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val >= as(y, Num).val ? trueʹ : falseʹ
 const greaterInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val > as(y, Num).val ? trueʹ : falseʹ
 const greaterStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).val > as(y, Str).val ? trueʹ : falseʹ
+const lessEqInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val <= as(y, Num).val ? trueʹ : falseʹ
 const lessInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val < as(y, Num).val ? trueʹ : falseʹ
 const lessStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).val < as(y, Str).val ? trueʹ : falseʹ
 const minus = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val - as(y, Num).val)
 const plus = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val + as(y, Num).val)
+const pow = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val ** as(y, Num).val)
 const times = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val * as(y, Num).val)
-// If we want integer division, apparently ~~(x / y) will round in the right direction.
-const div = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val / as(y, Num).val)
-const concat = (x: Str, y: Str) => (k: Id): Versioned<Str> => strʹ(k, as(x, Str).val + as(y, Str).val)
 
 // Convenience methods for building the maps.
 function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): UnaryOp {
@@ -62,19 +67,24 @@ function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op:
 export const unaryOps: Map<string, UnaryOp> = new Map([
    [ceiling.name, unary_(ceiling)],
    [error.name, unary_(error)],
-   [intToString.name, unary_(intToString)],
+   [floor.name, unary_(floor)],
+   [log.name, unary_(log)],
+   [numToStr.name, unary_(numToStr)],
 ])
    
 export const binaryOps: Map<string, BinaryOp> = new Map([
    ["-", binary_(minus)],
    ["+", binary_(plus)],
    ["*", binary_(times)],
+   ["**", binary_(pow)],
    ["/", binary_(div)],
    ["==", binary_(equalInt)],
    ["===", binary_(equalStr)],
    [">", binary_(greaterInt)],
+   [">=", binary_(greaterEqInt)],
    [">>", binary_(greaterStr)],
    ["<", binary_(lessInt)],
+   ["<=", binary_(lessEqInt)],
    ["<<", binary_(lessStr)],
    ["++", binary_(concat)]
 ])

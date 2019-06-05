@@ -1,6 +1,18 @@
+// Num → Num
 primitive ceiling;
+
+// Str → a
 primitive error;
-primitive intToString;
+
+// Num → Num
+primitive floor;
+
+// Num → Str
+primitive numToStr;
+
+// Natural logarithm.
+// Num → Num
+primitive log;
 
 // (b → c) → (a → b) → a → c
 // Would like infix operators. 
@@ -53,19 +65,23 @@ letrec fun intersperse {
    [x, y, ...ys] sep → [x, sep, ...intersperse [y, ...ys]]
 };
 
+// Log of x in base y.
+// Num → Num → Num
+let logBase = fun x y → log y / log x;
+
 // (a → b) → List(a) → List(b)
 letrec fun map f {
    [] → [];
    [x, ...xs] → [f x, ...map f xs]
 };
 
-// number → (a → a) → a → List(a)
+// Num → (a → a) → a → List(a)
 letrec fun iterate n f x → match n == 0 as {
    True → [];
    False → [x, ...map f (iterate (n - 1) f x)]
 };
 
-// List(a) → number
+// List(a) → Num
 letrec fun length {
    [] → 0;
    [x, ...xs] → 1 + length xs
@@ -93,15 +109,15 @@ letrec fun zipW op {
    }
 };
 
-// number → a → List(a)
+// Num → a → List(a)
 let repeat = fun n → iterate n id;
 
-// List(number) → number
+// List(Num) → Num
 let max = fun xs →
    foldr1 (fun (n, m) → match n > m as { True → n; False → m }) xs;
 
-// number → number → number
-let roundTo = fun n m → 
+// Num → Num → Num
+let ceilingTo = fun n m → 
    ceiling (n / m) * m;
 
 // (a → b) → Pair(c, a) → Pair(c, b)
@@ -110,7 +126,7 @@ let second = fun f (c, a) → (c, f a);
 // Pair(a, b) → b
 let snd = fun (x, y) → y;
 
-// List(number) → number
+// List(Num) → Num
 let sum = fun xs → 
    foldr (fun (x, y) → x + y) 0 xs;
 
