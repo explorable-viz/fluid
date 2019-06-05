@@ -5,8 +5,9 @@ import { Direction, Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
-import { Value } from "../Value"
-import { setallα } from "../Versioned"
+import { unary_, unaryOps } from "../Primitive"
+import { Id, Num, Str, Value } from "../Value"
+import { Versioned, setallα, numʹ } from "../Versioned"
 import { load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { DataView, DataRenderer } from "./DataRenderer"
@@ -47,6 +48,16 @@ class App implements Slicer {
       this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
       document.body.appendChild(this.svg)
+
+      // Additional primitives that rely on offline rendering to compute text metrics.
+      const textWidth = (txt: Str) => (k: Id): Versioned<Num> => {
+         const text: SVGTextElement = document.createElementNS(svgNS, "text")
+         svg.add(text)
+         return numʹ(k, text.getBBox().width)
+      }
+      
+      unaryOps.set(textWidth.name, unary_(textWidth))
+
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       // this.graphicsPane3D.setCanvas(this.graphicsCanvas)
       this.loadExample()

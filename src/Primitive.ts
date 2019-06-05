@@ -54,12 +54,12 @@ const plus = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).
 const pow = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val ** as(y, Num).val)
 const times = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val * as(y, Num).val)
 
-// Convenience methods for building the maps.
-function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): UnaryOp {
+// Convenience methods for building the maps. Export to allow other modules to provide operations.
+export function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): UnaryOp {
    return unary(op.name, op)
 }
 
-function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): BinaryOp {
+export function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): BinaryOp {
    return binary(op.name, op)
 }
 
