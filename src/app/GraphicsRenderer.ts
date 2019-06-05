@@ -200,6 +200,7 @@ export class GraphicsRenderer {
             [x, y]: [number, number] = this.transform([g.x.val, g.y.val])
       text.setAttribute("stroke", "none")
       text.setAttribute("fill", "black")
+      text.setAttribute("font-size", "10")
       text.setAttribute("transform", `translate(${x.toString()},${y.toString()})scale(1,-1)`)
       text.appendChild(document.createTextNode(g.str.val))
       this.current.appendChild(text)
