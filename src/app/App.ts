@@ -34,7 +34,7 @@ class App implements Slicer {
       this.svg.setAttribute("viewBox", "-0.5 -0.5 400 400")
       // We don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
       // pixel attributes). But to invert the y-axis we use an SVG transform:
-      this.svg.setAttribute("transform", "scale(1,-1)")
+//      this.svg.setAttribute("transform", "scale(1,-1)")
       this.svg.style.verticalAlign = "top"
       this.svg.style.display = "inline-block"
 

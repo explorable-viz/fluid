@@ -198,7 +198,8 @@ export class GraphicsRenderer {
             [x, y]: [number, number] = this.transform([g.x.val, g.y.val])
       text.setAttribute("x", x.toString())
       text.setAttribute("y", y.toString())
-      text.setAttribute("stroke", "black")
+      text.setAttribute("stroke", "none")
+      text.setAttribute("fill", "black")
       text.appendChild(document.createTextNode(g.str.val))
       this.current.appendChild(text)
    }
