@@ -87,9 +87,9 @@ let x_axis = fun margin x_start x_max tickSp tickLength →
    let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]);
    let n = ceiling ((x_max - x_start) / tickSp);
    let ticks = spaceRight tickSp (repeat n tick);
-   let labels = spaceRight tickSp (map (fun x → Text(0, 110, numToStr x)) (iterate n (fun x → x + tickSp) 0));
+   let labels = spaceRight tickSp (map (fun x → Text(0, 0, numToStr x)) (iterate n (fun x → x + tickSp) 0));
    let line = Polyline([Point(0, 0), Point(x_max - x_start, 0)]) in
-   translate 0 (0 - margin) Graphic([line, translate x_start 0 Graphic(ticks), ...labels]);
+   translate 0 (0 - margin) Graphic([line, translate x_start 0 Graphic(ticks)]);
 
 // Some numerical constants for charts; should parameterise by these instead.
 let tickLength = 4;
@@ -110,7 +110,7 @@ let barGraph = fun (x_scale, y_scale) catData →
       Graphic(spaceRight 1 (map (fun (k, v) → renderRect Rect(shrinkBy, v)) catData))
    in
    translate x_offset y_offset Graphic([
-      scale x_scale 1 x_ax, 
+      scale x_scale 1 x_ax,
       scale 1 y_scale y_ax,
       scale x_scale y_scale bars
    ]);
