@@ -196,13 +196,18 @@ export class GraphicsRenderer {
    // Flip text vertically to cancel out the global vertical flip. Don't set x and y but express
    // position through a translation so that the scaling doesn't affect the position.
    text (g: Text): void {
-      const text: SVGTextElement = document.createElementNS(svgNS, "text"),
-            [x, y]: [number, number] = this.transform([g.x.val, g.y.val])
-      text.setAttribute("stroke", "none")
-      text.setAttribute("fill", "black")
-      text.setAttribute("font-size", "10")
-      text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
-      text.appendChild(document.createTextNode(g.str.val))
-      this.current.appendChild(text)
+      const [x, y]: [number, number] = this.transform([g.x.val, g.y.val])
+      this.current.appendChild(textElement(x, y, g.str.val))
    }
+}
+
+// The SVG text element for the supplied text; centralised so can be used to compute text metrics.
+export function textElement (x: number, y: number, str: string): SVGTextElement {
+   const text: SVGTextElement = document.createElementNS(svgNS, "text")
+   text.setAttribute("stroke", "none")
+   text.setAttribute("fill", "black")
+   text.setAttribute("font-size", "10")
+   text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
+   text.appendChild(document.createTextNode(str))
+   return text
 }

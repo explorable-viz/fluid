@@ -12,7 +12,7 @@ import { load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { DataView, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D } from "./GraphicsPane3D"
-import { GraphicsRenderer, Slicer, svgNS } from "./GraphicsRenderer"
+import { GraphicsRenderer, Slicer, svgNS, textElement } from "./GraphicsRenderer"
 
 class App implements Slicer {
    e: Expr                        // entire closed program
@@ -50,12 +50,15 @@ class App implements Slicer {
       document.body.appendChild(this.svg)
 
       // Additional primitives that rely on offline rendering to compute text metrics.
-      const textWidth = (txt: Str) => (k: Id): Versioned<Num> => {
-         const text: SVGTextElement = document.createElementNS(svgNS, "text")
-         svg.add(text)
-         return numʹ(k, text.getBBox().width)
+      const textWidth = (str: Str) => (k: Id): Versioned<Num> => {
+         return numʹ(k, textElement(0, 0, str.val).getBBox().width)
       }
       
+      const textHeight = (str: Str) => (k: Id): Versioned<Num> => {
+         return numʹ(k, textElement(0, 0, str.val).getBBox().height)
+      }
+      
+      unaryOps.set(textHeight.name, unary_(textHeight))
       unaryOps.set(textWidth.name, unary_(textWidth))
 
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)

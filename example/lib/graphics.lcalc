@@ -1,3 +1,10 @@
+// Simplistic but something more general may require primitives which take data values as inputs.
+// Str → Num
+primitive textWidth;
+
+// Str → Num
+primitive textHeight;
+
 // List(Pair(Num, Num)) → Pair(Num, Num)
 let pathDimensions = fun ps → 
    match unzip ps as (xs, ys) → (max xs, max ys);
@@ -22,7 +29,7 @@ letrec fun dimensions {
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
    Graphic(gs) → 
       pathDimensions (map dimensions gs);
-   Text(x, y, str) → (0, 0); // TODO: how?
+   Text(x, y, str) → (textWidth str, textHeight str);
    Transform(Scale(x, y), g) → 
       match dimensions g as (w, h) → (w * x, h * y);
    Transform(Translate(x, y), g) → 
@@ -32,8 +39,10 @@ letrec fun dimensions {
 };
 
 // GraphicsElement → Num
-let width = fun g → 
-   fst (dimensions g);
+let width = compose fst dimensions;
+
+// GraphicsElement → Num
+let height = compose snd dimensions;
 
 // Num → List(GraphicsElement) → List(GraphicsElement)
 let spaceRight = fun sep gs →
@@ -43,9 +52,6 @@ let spaceRight = fun sep gs →
 // List(GraphicsElement) → Graphic
 let stackRight = fun gs →
    foldr (fun (g, g') → Graphic([g, translate (width g) 0 g'])) Graphic([]) gs;
-
-// GraphicsElement → Num
-let height = fun g → snd (dimensions g);
 
 // LinearTransform → LinearTransform
 let invert = fun {
