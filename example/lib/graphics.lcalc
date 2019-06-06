@@ -109,16 +109,17 @@ let maxVal = compose max (map snd);
 // Bar graph with categorical x-axis; before scaling, bars have unit spacing but are narrower.
 // Pair(Num, Num) → List(Pair(Str, Num)) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
-   let x_ax = x_axis axisMargin 0.5 (length catData + 0.5) 1 tickLength;
-   let y_ax = let y_max = maxVal catData in first transpose (x_axis axisMargin 0 y_max (tickEvery y_max) tickLength);
+   match x_axis axisMargin 0.5 (length catData + 0.5) 1 tickLength as (x_ax, x_offset) →
+   let y_max = maxVal catData in 
+   match first transpose (x_axis axisMargin 0 y_max (tickEvery y_max) tickLength) as (y_ax, y_offset) →
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
    let bars = translate ((1 - shrinkBy) / 2) 0 // centre bars
       Graphic(spaceRight 1 (map (fun (k, v) → renderRect Rect(shrinkBy, v)) catData))
    in
-   translate (snd x_ax) (snd y_ax) Graphic([
+   translate x_offset y_offset Graphic([
       scale x_scale y_scale bars,
-      scale x_scale 1 (fst x_ax),
-      scale 1 y_scale (fst y_ax)
+      scale x_scale 1 x_ax,
+      scale 1 y_scale y_ax
    ]);
 
 // TODO: delete these once we add axes to line graphs.
