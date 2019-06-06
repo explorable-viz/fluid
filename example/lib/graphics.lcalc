@@ -1,4 +1,5 @@
 // Simplistic but something more general may require primitives which take data values as inputs.
+// Application module GraphicsRenderer must be loaded for these definitions to work.
 // Str → Num
 primitive textWidth;
 

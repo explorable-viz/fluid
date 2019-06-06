@@ -5,7 +5,8 @@ import { emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { ExplValue } from "../../src/ExplValue"
 import { Expr } from "../../src/Expr"
-import "../../src/Graphics"
+import "../../src/Graphics" // for graphical datatypes
+import "../../src/app/GraphicsRenderer" // for graphics primitives
 import { Parse } from "../../src/Parse"
 import { ν, setallα } from "../../src/Versioned"
 import { Cursor } from "./Cursor"
