@@ -84,11 +84,11 @@ let renderRect = fun Rect(w, h) →
 let tickEvery = fun n →
    let m = floor (logBase 10 n) in
    match n <= 2 * 10 ** m as {
-      True → 2 ** 10 (m - 1);
+      True → 2 * 10 ** (m - 1);
       False → 10 ** m
    };
 
-// Return negative offset from x-axis; caller responsible for translating into positive  space (if desired).
+// Return negative offset from x-axis; caller responsible for translating into positive space (if desired).
 // Num → Num → Num → Pair(GraphicsElement, Num)
 let x_axis = fun margin x_start x_max tickSp tickLength →
    let tick = Polyline([Point(0, 0), Point(0, 0 - tickLength)]);
