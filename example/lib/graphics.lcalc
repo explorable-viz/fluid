@@ -21,6 +21,7 @@ let translate = fun x y g →
 let transpose = fun g →
    Transform(Transpose, g);
 
+// TODO: borked.
 // GraphicsElement → Pair(Num, Num)
 letrec fun dimensions {
    Polyline(ps) → 
@@ -29,7 +30,7 @@ letrec fun dimensions {
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
    Graphic(gs) → 
       pathDimensions (map dimensions gs);
-   Text(x, y, str) → (0, 0); // (textWidth str, textHeight str);
+   Text(x, y, str) → (textWidth str, textHeight str);
    Transform(Scale(x, y), g) → 
       match dimensions g as (w, h) → (w * x, h * y);
    Transform(Translate(x, y), g) → 
