@@ -79,6 +79,12 @@ let linePlot = fun t ps →
 let renderRect = fun Rect(w, h) → 
    Polygon([Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)]);
 
+let horizLine = fun x x' →
+   Polyline([Point(x, 0), Point(x', 0)]);
+
+let vertLine = fun y y' →
+   Polyline([Point(0, y), Point(0, y')]);
+
 // Heuristic saying how often to place a tick on an axis of length n.
 // Num → Num
 let tickEvery = fun n →
@@ -87,12 +93,6 @@ let tickEvery = fun n →
       True → 2 * 10 ** (m - 1);
       False → 10 ** m
    };
-
-let horizLine = fun x x' →
-   Polyline([Point(x, 0), Point(x', 0)]);
-
-let vertLine = fun y y' →
-   Polyline([Point(0, y), Point(0, y')]);
 
 // Return negative offset from x-axis; caller responsible for translating into positive space (if desired).
 // Num → Num → Num → Pair(GraphicsElement, Num)
