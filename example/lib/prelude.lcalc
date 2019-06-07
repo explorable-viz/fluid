@@ -68,6 +68,12 @@ letrec fun intersperse {
    [x, y, ...ys] sep → [x, sep, ...intersperse [y, ...ys]]
 };
 
+// List(a) → a
+letrec fun last {
+   [x] → x;
+   [x, y, ...xs] → last [y, ...xs]
+};
+
 // Log of x in base y.
 // Num → Num → Num
 let logBase = fun x y → log y / log x;

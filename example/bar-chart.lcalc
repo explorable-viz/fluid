@@ -150,5 +150,5 @@ let sc = (30, 1 / 6)
 in
 stackRight [
    barGraph sc (countryTotals 2015),
-   lineGraph sc (head (map fst data)) yearlyTotals
+   lineGraph sc (fst (head data)) yearlyTotals
 ]
