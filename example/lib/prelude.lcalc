@@ -46,6 +46,9 @@ letrec fun filter p {
       }
 };
 
+// (a → b → c) → b → a → c
+let flip = fun f x y → f y x;
+
 // (Pair(a, b) → b) → b → List(a) → b
 letrec fun foldr op z {
    [] → z;
@@ -108,9 +111,6 @@ letrec fun zipW op {
       [y, ...ys] → [op (x, y), ...zipW op xs ys]
    }
 };
-
-// (a → b → c) → b → a → c
-let flip = fun f x y → f y x;
 
 // Num → a → List(a)
 let repeat = flip iterate id;

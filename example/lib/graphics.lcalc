@@ -118,7 +118,7 @@ let barGraph = fun (x_scale, y_scale) catData →
 
 // (0,0)-based cross used to render points of a line plot.
 // Num → GraphicsElement
-let plotPoint = fun radius → 
+let plotPoint = fun radius →
    Graphic([
       Polyline([Point(0 - radius, 0 - radius), Point(radius, radius)]),
       Polyline([Point(0 - radius, radius), Point(radius, 0 - radius)])
