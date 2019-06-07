@@ -27,7 +27,7 @@ export function point (x: Num, y: Num): Point {
    return make(Point, x, y)
 }
 
-export type GraphicsElementTag = "Graphic" | "Polyline" | "Polygon" | "Text" | "Transform"
+export type GraphicsElementTag = "Graphic" | "Polyline" | "Polygon" | "Text" | "Translate"
 
 export abstract class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
 }
@@ -51,27 +51,13 @@ export class Text extends GraphicsElement<"Text"> {
    str: Str = _
 }
 
-export class Transform extends GraphicsElement<"Transform"> {
-   t: LinearTransform = _
+// Omit scaling, rotation, etc for now; would require externalisation to SVG to handle text properly.
+export class Translate extends GraphicsElement<"Translate"> {
+   x: Num = _
+   y: Num = _
    g: GraphicsElement = _
 }
 
-// Omit scaling for now; would require externalisation to SVG to handle text properly.
-export type LinearTransformTag = "Translate" | "Transpose"
-
-export abstract class LinearTransform<Tag extends LinearTransformTag = LinearTransformTag> extends DataValue<Tag> {
-}
-
-export class Translate extends LinearTransform<"Translate"> {
-   x: Num = _
-   y: Num = _
-}
-
-// Swaps x and y. Could subsume by a more general notion of reflection.
-export class Transpose extends LinearTransform<"Transpose"> {
-}
-
-initDataType(GraphicsElement, [Polygon, Polyline, Text, Transform, Graphic])
-initDataType(LinearTransform, [Translate, Transpose])
+initDataType(GraphicsElement, [Polygon, Polyline, Text, Translate, Graphic])
 initDataType(Point, [Point])
 initDataType(Rect, [Rect])
