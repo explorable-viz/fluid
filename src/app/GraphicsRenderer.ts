@@ -2,7 +2,7 @@ import { ann } from "../util/Annotated"
 import { __nonNull, absurd, assert, className } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
-import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Scale, Text, Transform, Translate, Transpose } from "../Graphics"
+import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Text, Transform, Translate, Transpose } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { Versioned, asVersioned, numʹ, setallα } from "../Versioned"
@@ -15,12 +15,6 @@ export const reflect_y: TransformFun =
    ([x, y]): [number, number] => {
       return [x, -y]
    }
-
-function scale (x_scale: number, y_scale: number): TransformFun {
-   return ([x, y]): [number, number] => {
-      return [x * x_scale, y * y_scale]
-   }
-}
 
 function translate (x_inc: number, y_inc: number): TransformFun {
    return ([x, y]): [number, number] => {
@@ -95,9 +89,6 @@ export class GraphicsRenderer {
       } else
       if (g instanceof Transform) {
          const t: LinearTransform = g.t
-         if (t instanceof Scale) {
-            this.renderWith(g.g, scale(t.x.val, t.y.val))
-         } else
          if (t instanceof Translate) {
             this.renderWith(g.g, translate(t.x.val, t.y.val))
          } else

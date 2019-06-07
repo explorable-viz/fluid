@@ -11,10 +11,6 @@ let pathDimensions = fun ps →
    match unzip ps as (xs, ys) → (max xs, max ys);
 
 // Num → Num → GraphicsElement → GraphicsElement
-let scale = fun x y g →
-   Transform(Scale(x, y), g);
-
-// Num → Num → GraphicsElement → GraphicsElement
 let translate = fun x y g →
    Transform(Translate(x, y), g);
 
@@ -28,7 +24,7 @@ let y_translate = translate 0;
 let transpose = fun g →
    Transform(Transpose, g);
 
-// TODO: borked.
+// See GitHub issue #167.
 // GraphicsElement → Pair(Num, Num)
 letrec fun dimensions {
    Polyline(ps) → 
@@ -38,8 +34,6 @@ letrec fun dimensions {
    Graphic(gs) → 
       pathDimensions (map dimensions gs);
    Text(x, y, str) → (textWidth str, textHeight str);
-   Transform(Scale(x, y), g) → 
-      match dimensions g as (w, h) → (w * x, h * y);
    Transform(Translate(x, y), g) → 
       match dimensions g as (w, h) → (w + x, h + y);
    Transform(Transpose, g) → 
@@ -63,7 +57,6 @@ let stackRight = fun gs →
 
 // LinearTransform → LinearTransform
 let invert = fun {
-   Scale(x, y) → Scale(1 / x, 1 / y);           // unfortunately not a true inverse..
    Translate(x, y) → Translate(0 - x, 0 - y);   // no unary negation yet
    Transpose → Transpose                        // self-involutive
 };
@@ -88,7 +81,7 @@ let tickEvery = fun n →
    };
 
 // Return negative offset from x-axis; caller responsible for translating into positive space (if desired).
-// Num → Num → Num → Pair(GraphicsElement, Num)
+// Num → Num → Num → Num → Num → Num → Pair(GraphicsElement, Num)
 let x_axis = fun x_scale margin x_start x_max tickSp tickLength →
    let x_start' = x_start * x_scale;
    let x_max' = x_max * x_scale;
@@ -129,10 +122,12 @@ let plotPoint = fun radius →
       Polyline([Point(0 - radius, radius), Point(radius, 0 - radius)])
    ]);
 
-// List(Point) → LinearTransform → GraphicsElement
-let linePlot = fun t ps →
-   let points = map (fun Point(x, y) → translate x y (Transform(invert t, plotPoint 2.5))) ps in 
-   Transform(t, Graphic([Polyline(ps), ...points]));
+// List(Point) → Pair(Num, Num) → GraphicsElement
+let linePlot = fun (x_scale, y_scale) ps →
+   let ps' = map (fun Point(x, y) → Point(x * x_scale, y * y_scale)) ps;
+   let points = map (fun Point(x, y) → translate x y (plotPoint 2.5)) ps'
+   in
+   Graphic([Polyline(ps'), ...points]);
 
 // TODO: delete these once we add axes to line graphs.
 let x_offset = axisMargin + tickLength;
@@ -141,4 +136,4 @@ let y_offset = x_offset;
 // Pair(Num, Num) → List(Pair(Num, Num)) → Num → GraphicsElement
 let lineGraph = fun (x_scale, y_scale) x_start numData →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
-   translate x_offset y_offset (linePlot Scale(x_scale, y_scale) ps)
+   translate x_offset y_offset (linePlot (x_scale, y_scale) ps)
