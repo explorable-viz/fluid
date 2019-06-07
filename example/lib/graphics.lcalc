@@ -19,6 +19,12 @@ let translate = fun x y g →
    Transform(Translate(x, y), g);
 
 // Num → GraphicsElement → GraphicsElement
+let x_translate = flip translate 0;
+
+// Num → GraphicsElement → GraphicsElement
+let y_translate = translate 0;
+
+// Num → GraphicsElement → GraphicsElement
 let transpose = fun g →
    Transform(Transpose, g);
 
@@ -48,12 +54,12 @@ let height = compose snd dimensions;
 
 // Num → List(GraphicsElement) → List(GraphicsElement)
 let spaceRight = fun sep gs →
-   zipW (fun (x, g) → translate x 0 g) (iterate (length gs) (fun x → x + sep) 0) gs;
+   zipW (fun (x, g) → x_translate x g) (iterate (length gs) (fun x → x + sep) 0) gs;
 
 // Unlike spaceRight, produces a nested structure.
 // List(GraphicsElement) → Graphic
 let stackRight = fun gs →
-   foldr (fun (g, g') → Graphic([g, translate (width g) 0 g'])) Graphic([]) gs;
+   foldr (fun (g, g') → Graphic([g, x_translate (width g) g'])) Graphic([]) gs;
 
 // LinearTransform → LinearTransform
 let invert = fun {
@@ -86,12 +92,13 @@ let tickEvery = fun n →
 let x_axis = fun x_scale margin x_start x_max tickSp tickLength →
    let x_start' = x_start * x_scale;
    let x_max' = x_max * x_scale;
+   let tickSp' = tickSp * x_scale;
    let tick = vertLine 0 (0 - tickLength);
-   let n = ceiling ((x_max' - x_start') / tickSp);
-   let ticks = spaceRight tickSp (repeat n tick);
-   let labels = spaceRight tickSp (map (fun x → Text(0, 0, numToStr x)) (iterate n (fun x → x + tickSp) 0));
+   let n = ceiling ((x_max' - x_start') / tickSp');
+   let ticks = spaceRight tickSp' (repeat n tick);
+   let labels = spaceRight tickSp' (map (fun x → Text(0, 0, numToStr x)) (iterate n (fun x → x + tickSp) 0));
    let line = horizLine 0 (x_max' - x_start');
-   let axis = translate 0 (0 - margin) Graphic([line, translate x_start' 0 Graphic(concat ticks labels)]) 
+   let axis = y_translate (0 - margin) Graphic([line, x_translate x_start' Graphic(concat ticks labels)]) 
    in
    (axis, margin + tickLength);
 
@@ -109,14 +116,10 @@ let barGraph = fun (x_scale, y_scale) catData →
    let y_max = maxVal catData in 
    match first transpose (x_axis y_scale axisMargin 0 y_max (tickEvery y_max) tickLength) as (y_ax, y_offset) →
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
-   let bars = translate ((1 - shrinkBy) / 2) 0 // centre bars
-      Graphic(spaceRight 1 (map (fun (k, v) → renderRect Rect(shrinkBy, v)) catData))
+   let bars = x_translate (((1 - shrinkBy) / 2) * x_scale) // centre bars
+      Graphic(spaceRight x_scale (map (fun (k, v) → renderRect Rect(shrinkBy * x_scale, v * y_scale)) catData))
    in
-   translate x_offset y_offset Graphic([
-      scale x_scale y_scale bars,
-      scale x_scale 1 x_ax,
-      scale 1 y_scale y_ax
-   ]);
+   translate x_offset y_offset Graphic([bars, x_ax, y_ax]);
 
 // (0,0)-based cross used to render points of a line plot.
 // Num → GraphicsElement
