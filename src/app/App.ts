@@ -29,7 +29,7 @@ class App implements Slicer {
       this.svg = document.createElementNS(svgNS, "svg")
       this.svg.setAttribute("width", "400")
       this.svg.setAttribute("height", "400")
-      // TODO: understand how last two numbers here relate to width and height attributes
+      // TODO: understand how last two numbers below relate to width and height attributes above.
       // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
       this.svg.setAttribute("viewBox", "-0.5 -0.5 400 400")
       // We don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
@@ -47,6 +47,7 @@ class App implements Slicer {
       this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
       document.body.appendChild(this.svg)
+
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       // this.graphicsPane3D.setCanvas(this.graphicsCanvas)
       this.loadExample()

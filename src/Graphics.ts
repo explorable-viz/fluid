@@ -56,14 +56,10 @@ export class Transform extends GraphicsElement<"Transform"> {
    g: GraphicsElement = _
 }
 
-export type LinearTransformTag = "Scale" | "Translate" | "Transpose"
+// Omit scaling for now; would require externalisation to SVG to handle text properly.
+export type LinearTransformTag = "Translate" | "Transpose"
 
 export abstract class LinearTransform<Tag extends LinearTransformTag = LinearTransformTag> extends DataValue<Tag> {
-}
-
-export class Scale extends LinearTransform<"Scale"> {
-   x: Num = _
-   y: Num = _
 }
 
 export class Translate extends LinearTransform<"Translate"> {
@@ -76,6 +72,6 @@ export class Transpose extends LinearTransform<"Transpose"> {
 }
 
 initDataType(GraphicsElement, [Polygon, Polyline, Text, Transform, Graphic])
-initDataType(LinearTransform, [Scale, Translate, Transpose])
+initDataType(LinearTransform, [Translate, Transpose])
 initDataType(Point, [Point])
 initDataType(Rect, [Rect])
