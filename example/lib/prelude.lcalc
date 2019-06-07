@@ -109,8 +109,11 @@ letrec fun zipW op {
    }
 };
 
+// (a → b → c) → b → a → c
+let flip = fun f x y → f y x;
+
 // Num → a → List(a)
-let repeat = fun n → iterate n id;
+let repeat = flip iterate id;
 
 // List(Num) → Num
 let max = fun xs →
