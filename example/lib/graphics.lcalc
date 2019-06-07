@@ -30,7 +30,7 @@ letrec fun transpose {
    Polygon(ps) → Polygon(map transposePoint ps);
    Graphic(gs) → Graphic(map transpose gs);
    Text(x, y, str) → Text(y, x, str);
-   Transform(Translate(x, y), g) → Transform(Translate(y, x), g)
+   Transform(Translate(x, y), g) → Transform(Translate(y, x), transpose g)
 };
 
 let transpose2 = fun g →
