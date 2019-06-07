@@ -20,8 +20,20 @@ let x_translate = flip translate 0;
 // Num → GraphicsElement → GraphicsElement
 let y_translate = translate 0;
 
-// Num → GraphicsElement → GraphicsElement
-let transpose = fun g →
+// Point → Point
+let transposePoint = fun Point(x, y) → Point(y, x);
+
+// Not a true linear transformation, because text isn't reflected; positions only.
+// GraphicsElement → GraphicsElement
+letrec fun transpose {
+   Polyline(ps) → Polyline(map transposePoint ps);
+   Polygon(ps) → Polygon(map transposePoint ps);
+   Graphic(gs) → Graphic(map transpose gs);
+   Text(x, y, str) → Text(y, x, str);
+   Transform(Translate(x, y), g) → Transform(Translate(y, x), g)
+};
+
+let transpose2 = fun g →
    Transform(Transpose, g);
 
 // See GitHub issue #167.
@@ -34,7 +46,7 @@ letrec fun dimensions {
    Graphic(gs) → 
       pathDimensions (map dimensions gs);
    Text(x, y, str) → (textWidth str, textHeight str);
-   Transform(Translate(x, y), g) → 
+   Transform(Translate(x, y), g) →
       match dimensions g as (w, h) → (w + x, h + y);
    Transform(Transpose, g) → 
       swap (dimensions g)
@@ -97,7 +109,7 @@ let x_axis = fun x_scale margin x_start x_max tickSp tickLength →
 
 // Some numerical constants for charts; should parameterise by these instead.
 let tickLength = 4;
-let axisMargin = 0;
+let axisMargin = 2;
 
 // List(Pair(Str, Num)) → Num
 let maxVal = compose max (map snd);
@@ -112,7 +124,7 @@ let barGraph = fun (x_scale, y_scale) catData →
    let bars = x_translate (((1 - shrinkBy) / 2) * x_scale) // centre bars
       Graphic(spaceRight x_scale (map (fun (k, v) → renderRect Rect(shrinkBy * x_scale, v * y_scale)) catData))
    in
-   translate x_offset y_offset Graphic([bars, x_ax, y_ax]);
+   translate x_offset y_offset Graphic([bars, y_ax]);
 
 // (0,0)-based cross used to render points of a line plot.
 // Num → GraphicsElement
