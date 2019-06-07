@@ -133,4 +133,4 @@ let y_offset = axisMargin + tickLength;
 let lineGraph = fun (x_scale, y_scale) x_start numData →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
    match x_axis x_scale axisMargin x_start (fst (last numData)) 1 tickLength as (x_ax, x_offset) →
-   Translate(x_offset, y_offset, linePlot (x_scale, y_scale) ps)
+   Translate(x_offset, y_offset, Graphic([linePlot (x_scale, y_scale) ps, x_ax]))
