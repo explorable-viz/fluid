@@ -82,7 +82,11 @@ let tickEvery = fun n →
 let x_axis = fun x_scale margin x_start x_max tickSp tickLength →
    let tickSp' = tickSp * x_scale;
    let tick = vertLine 0 (0 - tickLength);
-   let n = ceiling ((trace(x_max - x_start)) / tickSp) + 1;
+   let n = ceiling ((x_max - x_start) / tickSp) + 1;
+   let n = match trace ((n - 1) * tickSp) > trace(x_max - x_start) as {
+      True → n - 1;
+      False → n
+   };
    let ticks = spaceRight tickSp' (repeat n tick);
    let labels = spaceRight tickSp' (map (fun x → Text(0, 0, numToStr x)) (iterate n (fun x → x + tickSp) x_start));
    let line = horizLine 0 ((x_max - x_start) * x_scale);
