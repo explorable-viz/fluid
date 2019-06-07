@@ -51,7 +51,7 @@ let height = compose snd dimensions;
 
 // Num → List(GraphicsElement) → List(GraphicsElement)
 let spaceRight = fun sep gs →
-   zipW (fun (x, g) → x_translate x g) (iterate (length gs) (fun x → x + sep) 0) gs;
+   zipW (uncurry x_translate) (iterate (length gs) (fun x → x + sep) 0) gs;
 
 // Unlike spaceRight, produces a nested structure.
 // List(GraphicsElement) → Graphic

@@ -147,4 +147,10 @@ let sum = fun xs →
 let swap = fun (a, b) → (b, a);
 
 // List(a) → List(a)
-let tail = fun [x, ...xs] → xs
+let tail = fun [x, ...xs] → xs;
+
+// Pair(a, b) → c) → a → b → c
+let curry = fun f x y → f Pair(x, y);
+
+// (a → b → c) → Pair(a, b) → c
+let uncurry = fun f Pair(x, y) → f x y
