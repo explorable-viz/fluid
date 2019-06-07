@@ -2,7 +2,7 @@ import { ann } from "../util/Annotated"
 import { __nonNull, absurd, assert, className } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
-import { Graphic, GraphicsElement, LinearTransform, Polygon, Polyline, Point, Text, Transform, Translate, Transpose } from "../Graphics"
+import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { Versioned, asVersioned, numʹ, setallα } from "../Versioned"
@@ -27,11 +27,6 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
       return f1(f2([x, y]))
    }
 }
-
-const transpose: TransformFun =
-   ([x, y]): [number, number] => {
-      return [y, x]
-   }
 
 export interface Slicer {
    resetForFwd (): void // set all annotations to top
@@ -87,16 +82,8 @@ export class GraphicsRenderer {
       if (g instanceof Text) {
          this.text(g)
       } else
-      if (g instanceof Transform) {
-         const t: LinearTransform = g.t
-         if (t instanceof Translate) {
-            this.renderWith(g.g, translate(t.x.val, t.y.val))
-         } else
-         if (t instanceof Transpose) {
-            this.renderWith(g.g, transpose)
-         } else {
-            return absurd()
-         }
+      if (g instanceof Translate) {
+         this.renderWith(g.g, translate(g.x.val, g.y.val))
       }
       else {
          return absurd()
