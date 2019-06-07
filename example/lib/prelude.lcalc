@@ -7,12 +7,16 @@ primitive error;
 // Num → Num
 primitive floor;
 
-// Num → Str
-primitive numToStr;
-
 // Natural logarithm.
 // Num → Num
 primitive log;
+
+// Num → Str
+primitive numToStr;
+
+// Print argument to the console and return it.
+// a → a
+primitive trace;
 
 // (b → c) → (a → b) → a → c
 // Would like infix operators. 

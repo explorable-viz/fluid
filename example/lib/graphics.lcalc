@@ -80,15 +80,13 @@ let tickEvery = fun n →
 // Return negative offset from x-axis; caller responsible for translating into positive space (if desired).
 // Num → Num → Num → Num → Num → Num → Pair(GraphicsElement, Num)
 let x_axis = fun x_scale margin x_start x_max tickSp tickLength →
-   let x_start' = x_start * x_scale;
-   let x_max' = x_max * x_scale;
    let tickSp' = tickSp * x_scale;
    let tick = vertLine 0 (0 - tickLength);
-   let n = ceiling ((x_max' - x_start') / tickSp');
+   let n = ceiling ((trace(x_max - x_start)) / tickSp) + 1;
    let ticks = spaceRight tickSp' (repeat n tick);
-   let labels = spaceRight tickSp' (map (fun x → Text(0, 0, numToStr x)) (iterate n (fun x → x + tickSp) 0));
-   let line = horizLine 0 (x_max' - x_start');
-   let axis = y_translate (0 - margin) Graphic([line, x_translate x_start' Graphic(concat ticks labels)]) 
+   let labels = spaceRight tickSp' (map (fun x → Text(0, 0, numToStr x)) (iterate n (fun x → x + tickSp) x_start));
+   let line = horizLine 0 ((x_max - x_start) * x_scale);
+   let axis = y_translate (0 - margin) Graphic([line, Graphic(concat ticks labels)])
    in
    (axis, margin + tickLength);
 
