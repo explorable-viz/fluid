@@ -127,10 +127,10 @@ let linePlot = fun (x_scale, y_scale) ps →
    Graphic([Polyline(ps'), ...points]);
 
 // TODO: delete these once we add axes to line graphs.
-let x_offset = axisMargin + tickLength;
-let y_offset = x_offset;
+let y_offset = axisMargin + tickLength;
 
 // Pair(Num, Num) → List(Pair(Num, Num)) → Num → GraphicsElement
 let lineGraph = fun (x_scale, y_scale) x_start numData →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
+   match x_axis x_scale axisMargin 0 (length numData) 1 tickLength as (x_ax, x_offset) →
    Translate(x_offset, y_offset, linePlot (x_scale, y_scale) ps)
