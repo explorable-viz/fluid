@@ -29,12 +29,10 @@ class NumToken extends AnnotatedToken {
    }
 
    clearAnnotation (): void {
-      console.log(`Clearing annotation on ${this.text}`)
       this.n.__α = false
    }
 
    setAnnotation (): void {
-      console.log(`Setting annotation on ${this.text}`)
       this.n.__α = true
    }
 }
@@ -55,7 +53,6 @@ class StrToken extends AnnotatedToken {
    }
 
    clearAnnotation (): void {
-      console.log(`Clearing annotation on ${this.text}`)
       this.str.__α = false
    }
 

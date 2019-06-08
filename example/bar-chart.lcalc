@@ -145,10 +145,9 @@ let annualTotal = compose sum (map (compose countryTotal snd));
 // Year → List (Country, Output)
 let countryTotals = fun year → map (second countryTotal) (lookupNum year data);
 // List (Year, Output)
-let yearlyTotals = map (fun (year, annualData) → (year, annualTotal annualData)) data;
-let sc = (30, 1 / 6)
+let yearlyTotals = map (fun (year, annualData) → (year, annualTotal annualData)) data
 in
 stackRight [
-   barGraph sc (countryTotals 2015),
-   lineGraph sc (fst (head data)) yearlyTotals
+   (barGraph (30, 0.3) (countryTotals 2015)),
+   lineGraph (40, 0.15) (fst (head data)) yearlyTotals
 ]
