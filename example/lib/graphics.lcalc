@@ -85,7 +85,8 @@ let x_axis = fun scale margin (start, end) tickSp tickLength →
    let firstTick = ceilingTo start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
    let ticks = spaceRight tickSp' (repeat n tick);
-   let labels = map (fun x → let str = numToStr x in Text(0, 0 - tickLength - textHeight str, str))
+   let labels = map 
+      (fun x → let str = numToStr x in Text((0 - textWidth str) / 2, 0 - tickLength - textHeight str, str))
       (iterate n (fun x → x + tickSp) firstTick);
    let labelHeight = 0 - max (map (fun Text(x, y, str) → y) labels);
    let labels' = spaceRight tickSp' labels;
