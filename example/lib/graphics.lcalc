@@ -79,7 +79,7 @@ let tickEvery = fun n →
 
 // Return negative offset from x-axis; caller responsible for translating into positive space (if desired).
 // Bool → Num → Num → (Num, Num) → Num → Num → (GraphicsElement, Num)
-let x_axis = fun transp scale margin (start, end) tickSp tickLength →
+let x_axis = fun vert scale margin (start, end) tickSp tickLength →
    let tickSp' = tickSp * scale;
    let tick = vertLine 0 (0 - tickLength);
    let firstTick = ceilingTo start tickSp;
@@ -94,7 +94,7 @@ let x_axis = fun transp scale margin (start, end) tickSp tickLength →
    let axis = y_translate (0 - margin)
       Graphic([line, x_translate ((firstTick - start) * scale) Graphic(concat ticks labels')])
    in
-   (axis, margin + tickLength + labelHeight);
+   (match vert as { True → transpose axis; False → axis }, margin + tickLength + labelHeight);
 
 // Some numerical constants for charts; should parameterise by these instead.
 let tickLength = 4;
@@ -108,7 +108,7 @@ let maxVal = compose max (map snd);
 let barGraph = fun (x_scale, y_scale) catData →
    match x_axis False x_scale axisMargin (0.5, length catData + 0.5) 1 tickLength as (x_ax, x_offset) →
    let y_max = maxVal catData in 
-   match first transpose (x_axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) as (y_ax, y_offset) →
+   match (x_axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) as (y_ax, y_offset) →
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
    let bars = x_translate (((1 - shrinkBy) / 2) * x_scale) // centre bars
       Graphic(spaceRight x_scale (map (fun (k, v) → renderRect Rect(shrinkBy * x_scale, v * y_scale)) catData))
@@ -134,6 +134,6 @@ let linePlot = fun (x_scale, y_scale) ps →
 let lineGraph = fun (x_scale, y_scale) x_start numData →
    match x_axis False x_scale axisMargin (x_start, fst (last numData)) 1 tickLength as (x_ax, x_offset) →
    let y_max = maxVal numData in 
-   match first transpose (x_axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) as (y_ax, y_offset) →
+   match (x_axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) as (y_ax, y_offset) →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
    Translate(x_offset, y_offset, Graphic([linePlot (x_scale, y_scale) ps, x_ax, y_ax]))
