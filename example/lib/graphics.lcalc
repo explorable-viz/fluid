@@ -6,7 +6,7 @@ primitive textWidth;
 // Str → Num
 primitive textHeight;
 
-// List(Pair(Num, Num)) → Pair(Num, Num)
+// List (Num, Num) → (Num, Num)
 let pathDimensions = fun ps → 
    match unzip ps as (xs, ys) → (max xs, max ys);
 
@@ -30,7 +30,7 @@ letrec fun transpose {
 };
 
 // See GitHub issue #167.
-// GraphicsElement → Pair(Num, Num)
+// GraphicsElement → (Num, Num)
 letrec fun dimensions {
    Polyline(ps) → 
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
@@ -49,12 +49,12 @@ let width = compose fst dimensions;
 // GraphicsElement → Num
 let height = compose snd dimensions;
 
-// Num → List(GraphicsElement) → List(GraphicsElement)
+// Num → List GraphicsElement → List GraphicsElement
 let spaceRight = fun sep gs →
    zipW (uncurry x_translate) (iterate (length gs) (fun x → x + sep) 0) gs;
 
 // Unlike spaceRight, produces a nested structure.
-// List(GraphicsElement) → Graphic
+// List GraphicsElement → Graphic
 let stackRight = fun gs →
    foldr (fun (g, g') → Graphic([g, x_translate (width g) g'])) Graphic([]) gs;
 
@@ -78,19 +78,19 @@ let tickEvery = fun n →
    };
 
 // Return negative offset from x-axis; caller responsible for translating into positive space (if desired).
-// Num → Num → Num → Num → Num → Num → Pair(GraphicsElement, Num)
-let x_axis = fun x_scale margin x_start x_max tickSp tickLength →
-   let tickSp' = tickSp * x_scale;
+// Num → Num → (Num, Num) → Num → Num → (GraphicsElement, Num)
+let x_axis = fun scale margin (start, end) tickSp tickLength →
+   let tickSp' = tickSp * scale;
    let tick = vertLine 0 (0 - tickLength);
-   let n = floor ((x_max - x_start) / tickSp) + 1;
+   let n = trace(floor ((x_max - x_start) / tickSp) + 1);
    let ticks = spaceRight tickSp' (repeat n tick);
    let firstTick = ceilingTo x_start tickSp;
    let labels = spaceRight tickSp' 
       (map (fun x → Text(0, 0, numToStr x)) 
            (iterate n (fun x → x + tickSp) firstTick));
-   let line = horizLine 0 ((x_max - x_start) * x_scale);
+   let line = horizLine 0 ((x_max - x_start) * scale);
    let axis = y_translate (0 - margin) 
-      Graphic([line, x_translate ((firstTick - x_start) * x_scale) Graphic(concat ticks labels)])
+      Graphic([line, x_translate ((firstTick - x_start) * scale) Graphic(concat ticks labels)])
    in
    (axis, margin + tickLength);
 
@@ -98,11 +98,11 @@ let x_axis = fun x_scale margin x_start x_max tickSp tickLength →
 let tickLength = 4;
 let axisMargin = 0;
 
-// List(Pair(Str, Num)) → Num
+// List (Str, Num) → Num
 let maxVal = compose max (map snd);
 
 // Bar graph with categorical x-axis; before scaling, bars have unit spacing but are narrower.
-// Pair(Num, Num) → List(Pair(Str, Num)) → GraphicsElement
+// (Num, Num) → List (Str, Num) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
    match x_axis x_scale axisMargin 0.5 (length catData + 0.5) 1 tickLength as (x_ax, x_offset) →
    let y_max = maxVal catData in 
@@ -121,14 +121,14 @@ let plotPoint = fun radius →
       Polyline([Point(0 - radius, radius), Point(radius, 0 - radius)])
    ]);
 
-// List(Point) → Pair(Num, Num) → GraphicsElement
+// List Point → (Num, Num) → GraphicsElement
 let linePlot = fun (x_scale, y_scale) ps →
    let ps' = map (fun Point(x, y) → Point(x * x_scale, y * y_scale)) ps;
    let points = map (fun Point(x, y) → Translate(x, y, plotPoint 2.5)) ps'
    in
    Graphic([Polyline(ps'), ...points]);
 
-// Pair(Num, Num) → List(Pair(Num, Num)) → Num → GraphicsElement
+// (Num, Num) → List (Num, Num) → Num → GraphicsElement
 let lineGraph = fun (x_scale, y_scale) x_start numData →
    match x_axis x_scale axisMargin x_start (fst (last numData)) 1 tickLength as (x_ax, x_offset) →
    let y_max = maxVal numData in 
