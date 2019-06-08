@@ -130,7 +130,14 @@ let max2 = fun (n, m) →
    match n > m as { True → n; False → m };
 
 // List Num → Num
+let min2 = fun (n, m) →
+   match n < m as { True → n; False → m };
+
+// List Num → Num
 let max = foldr1 max2;
+
+// List Num → Num
+let min = foldr1 min2;
 
 // Num → Num → Num
 let ceilingTo = fun n m → 
