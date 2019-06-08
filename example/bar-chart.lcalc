@@ -19,7 +19,7 @@ let
             ("CSP", 0),
             ("Wind", 145)
          ]),
-         ("United States", [
+         ("USA", [
             ("Bio", 16.7),
             ("Geothermal", 3.6),
             ("Hydro", 80),
@@ -58,7 +58,7 @@ let
             ("CSP", 0),
             ("Wind", 169)
          ]),
-         ("United States", [
+         ("USA", [
             ("Bio", 16.8),
             ("Geothermal", 3.6),
             ("Hydro", 80),
@@ -97,7 +97,7 @@ let
             ("CSP", 0),
             ("Wind", 188)
          ]),
-         ("United States", [
+         ("USA", [
             ("Bio", 16.7),
             ("Geothermal", 2.5),
             ("Hydro", 80),

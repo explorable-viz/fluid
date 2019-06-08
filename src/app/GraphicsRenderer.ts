@@ -1,5 +1,5 @@
 import { ann } from "../util/Annotated"
-import { __nonNull, absurd, assert, className } from "../util/Core"
+import { __nonNull, absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
@@ -102,7 +102,6 @@ export class GraphicsRenderer {
       group.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.resetForBwd()
-         console.log(`Setting all annotations on ${className(g)}`)
          setallα(ann.top, g)
          this.slicer.bwdSlice()
       })
@@ -164,7 +163,6 @@ export class GraphicsRenderer {
          e.stopPropagation()
          this.slicer.resetForBwd()
          p̅.toArray().map((p: Point): void => {
-            console.log(`Setting all annotations on ${p}`)
             setallα(ann.top, p)
          })
          this.slicer.bwdSlice()
@@ -182,13 +180,14 @@ export class GraphicsRenderer {
 }
 
 // The SVG text element for the supplied text; centralised so can be used to compute text metrics.
-// There's a reason for doing the translation rather than setting x and y coordinates that I've forgotten.
 function textElement (x: number, y: number, str: string): SVGTextElement {
    const text: SVGTextElement = document.createElementNS(svgNS, "text")
+   text.setAttribute("x", x.toString())
+   text.setAttribute("y", y.toString())
    text.setAttribute("stroke", "none")
    text.setAttribute("fill", "black")
    text.setAttribute("font-size", "10")
-   text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
+   text.setAttribute("transform", `scale(1,-1)`)
    text.appendChild(document.createTextNode(str))
    return text
 }
