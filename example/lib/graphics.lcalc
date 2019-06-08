@@ -86,8 +86,9 @@ let x_axis = fun scale margin (start, end) tickSp tickLength →
    let n = floor ((end - firstTick) / tickSp) + 1;
    let ticks = spaceRight tickSp' (repeat n tick);
    let labels = spaceRight tickSp' 
-      (map (fun x → Text(0, 0, numToStr x))
+      (map (fun x → let str = numToStr x in Text(0, 0 - 9, str))
            (iterate n (fun x → x + tickSp) firstTick));
+//   let labelHeight = foldr1 (fun (Text(x1, y1, str1), Text(x2, y2, str2)) → max2 (y1, y2)) labels;
    let line = horizLine 0 ((end - start) * scale);
    let axis = Graphic([line, x_translate ((firstTick - start) * scale) Graphic(concat ticks labels)])
    in
