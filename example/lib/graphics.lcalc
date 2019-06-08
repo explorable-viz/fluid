@@ -91,7 +91,7 @@ let axis = fun vert scale margin (start, end) tickSp tickLength →
       True → fun str → Text((0 - textHeight str) / 2, 0 - tickLength - textWidth str, str);
       False → fun str → Text((0 - textWidth str) / 2, 0 - tickLength - textHeight str, str)
    };
-   let labels = map (compose labelFun (fun x → numToStr x)) (iterate n (fun x → x + tickSp) firstTick);
+   let labels = map (compose labelFun numToStr) (iterate n (fun x → x + tickSp) firstTick);
    let labelStart = 0 - min (map (fun Text(x, y, str) → y) labels);
    let labels' = spaceRight tickSp' labels;
    let line = horizLine 0 ((end - start) * scale);
