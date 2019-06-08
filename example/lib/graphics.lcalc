@@ -110,8 +110,8 @@ let maxVal = compose max (map snd);
 
 // (Num, Num) → List (Str, Num) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
-   let labelFun = fun n → fst (nth (trace n) catData) in
-   match axis False x_scale axisMargin (0.5, length catData + 0.5) 1 tickLength labelFun as (x_axis, y_offset) →
+   let labelFun = fun n → fst (nth n catData) in
+   match axis False x_scale axisMargin (-0.5, length catData - 0.5) 1 tickLength labelFun as (x_axis, y_offset) →
    let y_max = maxVal catData in 
    match (axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
