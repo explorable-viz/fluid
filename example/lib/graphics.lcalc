@@ -84,13 +84,13 @@ let x_axis = fun x_scale margin x_start x_max tickSp tickLength →
    let tick = vertLine 0 (0 - tickLength);
    let n = floor ((x_max - x_start) / tickSp) + 1;
    let ticks = spaceRight tickSp' (repeat n tick);
-   let tickStart = ceilingTo x_start tickSp;
+   let firstTick = ceilingTo x_start tickSp;
    let labels = spaceRight tickSp' 
       (map (fun x → Text(0, 0, numToStr x)) 
-           (iterate n (fun x → x + tickSp) tickStart));
+           (iterate n (fun x → x + tickSp) firstTick));
    let line = horizLine 0 ((x_max - x_start) * x_scale);
    let axis = y_translate (0 - margin) 
-      Graphic([line, x_translate ((tickStart - x_start) * x_scale) Graphic(concat ticks labels)])
+      Graphic([line, x_translate ((firstTick - x_start) * x_scale) Graphic(concat ticks labels)])
    in
    (axis, margin + tickLength);
 
