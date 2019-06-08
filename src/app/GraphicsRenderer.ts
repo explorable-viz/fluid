@@ -1,5 +1,5 @@
 import { ann } from "../util/Annotated"
-import { __nonNull, absurd, assert, className } from "../util/Core"
+import { __nonNull, absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
@@ -102,7 +102,6 @@ export class GraphicsRenderer {
       group.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.resetForBwd()
-         console.log(`Setting all annotations on ${className(g)}`)
          setallα(ann.top, g)
          this.slicer.bwdSlice()
       })
@@ -164,7 +163,6 @@ export class GraphicsRenderer {
          e.stopPropagation()
          this.slicer.resetForBwd()
          p̅.toArray().map((p: Point): void => {
-            console.log(`Setting all annotations on ${p}`)
             setallα(ann.top, p)
          })
          this.slicer.bwdSlice()
