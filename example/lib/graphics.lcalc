@@ -32,7 +32,7 @@ letrec fun transpose {
    Translate(x, y, g) → Translate(y, x, transpose g)
 };
 
-// See GitHub issue #167.
+// See GitHub issue #167. The dimensions (width + height) are measured from the origin.
 // GraphicsElement → (Num, Num)
 letrec fun dimensions {
    Polyline(ps) → 
@@ -150,6 +150,15 @@ let lineGraph = fun (x_scale, y_scale) x_start numData →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
    Translate(x_offset, y_offset, Graphic([linePlot (x_scale, y_scale) ps, x_axis, y_axis]));
 
+// Margin sounds the dimensions, i.e. treats the element as located at (0, 0).
+// Num → GraphicsElement → GraphicsElement
+let margin = fun width g →
+   match dimensions g as (w, h) →
+   Graphic([
+      renderRect Rect(w + width * 2, h + width * 2),
+      Translate(width, width, g)
+   ]);
+
 // Str → GraphicsElement → GraphicsElement
 let caption = fun text g →
-   stackUp [Text(0, 0, text), g]
+   stackUp [margin 2 Text(0, 0, text), g]
