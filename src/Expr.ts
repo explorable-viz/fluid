@@ -55,6 +55,16 @@ export namespace Expr {
       return at(k, App, f, e)
    }
 
+   export class BinaryApp extends Expr {
+      e1: Expr = _
+      opName: Str = _
+      e2: Expr = _
+   }
+
+   export function binaryApp (k: Id, e1: Expr, opName: Str, e2: Expr): BinaryApp {
+      return at(k, BinaryApp, e1, opName, e2)
+   }
+
    export class ConstNum extends Expr {
       val: Num = _
    }
@@ -145,14 +155,12 @@ export namespace Expr {
       return at(k, MatchAs, e, σ)
    }
 
-   export class BinaryApp extends Expr {
-      e1: Expr = _
-      opName: Str = _
-      e2: Expr = _
+   export class Quote extends Expr {
+      e: Expr = _
    }
 
-   export function binaryApp (k: Id, e1: Expr, opName: Str, e2: Expr): BinaryApp {
-      return at(k, BinaryApp, e1, opName, e2)
+   export function quote (k: Id, e: Expr): Quote {
+      return at(k, Quote, e)
    }
 
    export class Var extends Expr {

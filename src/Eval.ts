@@ -175,6 +175,9 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
       return explValue(Expl.empty(kₜ), v)
    } else
+   if (e instanceof Expr.Quote) {
+      return explValue(Expl.quote(kₜ), copyAt(kᵥ, e))
+   } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
          const v: Versioned<Value> = ρ.get(e.x)!
@@ -247,6 +250,9 @@ export function eval_fwd ({t, v}: ExplValue): void {
          setα(e.__α, v)
       }
    } else
+   if (t instanceof Expl.Quote) {
+      setα(e.__α, v)
+   } else
    if (t instanceof Expl.Var) {
       setα(ann.meet(e.__α, t.v.__α), v)
    } else
@@ -295,6 +301,9 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
       } else {
          return absurd()
       }
+   } else
+   if (t instanceof Expl.Quote) {
+      return joinα(v.__α, e)
    } else
    if (t instanceof Expl.Var) {
       joinα(v.__α, t.v)

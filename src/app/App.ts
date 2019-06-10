@@ -7,7 +7,7 @@ import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { Value } from "../Value"
 import { setallα } from "../Versioned"
-import { load, parse } from "../../test/util/Core"
+import { load, parse, visualise } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { DataView, DataRenderer } from "./DataRenderer"
 import { GraphicsPane3D } from "./GraphicsPane3D"
@@ -18,26 +18,19 @@ class App implements Slicer {
    tv: ExplValue                  // chart computed by program
    data_e: Expr                   // expression for data (value bound by first let in user code)
    dataView: DataView
+   dataView2: GraphicsRenderer
+   dataView_tv: ExplValue
    dataCanvas: HTMLCanvasElement
+   dataSvg: SVGSVGElement
    dataCtx: CanvasRenderingContext2D
    graphicsView: GraphicsRenderer
    graphicsPane3D: GraphicsPane3D
-   svg: SVGSVGElement
+   graphicsSvg: SVGSVGElement
    direction: Direction
-   
+
    constructor () {
-      this.svg = document.createElementNS(svgNS, "svg")
-      this.svg.setAttribute("width", "400")
-      this.svg.setAttribute("height", "400")
-      // TODO: understand how last two numbers below relate to width and height attributes above.
-      // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
-      this.svg.setAttribute("viewBox", "-0.5 -0.5 400 400")
-      // We don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
-      // pixel attributes). But to invert the y-axis we use an SVG transform:
-      this.svg.setAttribute("transform", "scale(1,-1)")
-      this.svg.style.verticalAlign = "top"
-      this.svg.style.display = "inline-block"
-      
+      this.graphicsSvg = this.createSvg(400, 400)
+      this.dataSvg = this.createSvg(400, 400)
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
       this.graphicsPane3D = new GraphicsPane3D(600, 600)
@@ -46,15 +39,34 @@ class App implements Slicer {
       this.graphicsPane3D.renderer.domElement.style.verticalAlign = "top"
       this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
-      document.body.appendChild(this.svg)
-
+      document.body.appendChild(this.dataSvg)
+      document.body.appendChild(this.graphicsSvg)
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
-      // this.graphicsPane3D.setCanvas(this.graphicsCanvas)
+      // this.graphicsPane3D.setCanvas(this.graph      return as(this.tv.v as Value, GraphicsElement)
       this.loadExample()
+   }
+
+   createSvg (h: number, w: number): SVGSVGElement {
+      const svg: SVGSVGElement = document.createElementNS(svgNS, "svg")
+      svg.setAttribute("width", w.toString())
+      svg.setAttribute("height", h.toString())
+      // TODO: understand how last two numbers below relate to width and height attributes above.
+      // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
+      svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
+      // We don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
+      // pixel attributes). But to invert the y-axis we use an SVG transform:
+      svg.setAttribute("transform", "scale(1,-1)")
+      svg.style.verticalAlign = "top"
+      svg.style.display = "inline-block"
+      return svg
    }
 
    get graphics (): GraphicsElement {
       return as(this.tv.v as Value, GraphicsElement)
+   }
+
+   get dataGraphics(): GraphicsElement {
+      return as(this.dataView_tv.v as Value, GraphicsElement)
    }
    
    // "Data" is defined to be the expression bound by the first "let" in user code; must be already in normal form.
@@ -69,7 +81,9 @@ class App implements Slicer {
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
       this.renderData(this.data_e)
-      this.graphicsView = new GraphicsRenderer(this.svg, this)
+      this.dataView_tv = visualise(this.data_e)
+      this.dataView2 = new GraphicsRenderer(this.dataSvg, this)
+      this.graphicsView = new GraphicsRenderer(this.graphicsSvg, this)
       this.resetForFwd()
       this.fwdSlice()
    }
@@ -98,6 +112,7 @@ class App implements Slicer {
    draw (): void {
       this.dataCtx.clearRect(0, 0, this.dataCanvas.width, this.dataCanvas.height)
       this.dataView.draw()
+      this.dataView2.render(this.dataGraphics)
       this.graphicsView.render(this.graphics)
       // this.graphicsPane3D.render()
    }

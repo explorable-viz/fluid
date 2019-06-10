@@ -121,6 +121,13 @@ export namespace Expl {
       return at(k, MatchAs, tu, ξ, tv)
    }
 
+   export class Quote extends Expl {
+   }
+
+   export function quote (k: ExplId): Quote {
+      return at(k, Quote)
+   }
+
    // v is the resolved value of x
    export class Var extends Expl {
       x: Str = _
