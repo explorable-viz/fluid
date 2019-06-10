@@ -98,7 +98,7 @@ let axis = fun vert scale margin (start, end) tickSp tickLength labelFun →
    let axis = y_translate (0 - margin)
       Graphic([line, x_translate ((firstTick - start) * scale) Graphic(concat ticks labels')])
    in
-   (match vert as { True → transpose axis; False → axis }, margin + labelStart);
+   (match vert as { True → transpose axis; False → axis }, trace(margin + labelStart));
 
 // Some numerical constants for charts; should parameterise by these instead.
 let tickLength = 4;
