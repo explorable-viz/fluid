@@ -1,3 +1,4 @@
 // Expr → GraphicsElement
-letrec fun renderData data → 
-   Text(0, 0, "HERE")
+letrec fun renderData {
+   Constr(c,es) → Text(0, 0, "UNDEFINED")
+}

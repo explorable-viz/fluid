@@ -2,7 +2,7 @@ import { ann } from "./util/Annotated"
 import { zip } from "./util/Array"
 import { __nonNull, absurd, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
-import { DataType, ctrToDataType } from "./DataType"
+import { DataType, ctrToDataType, initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl, ExplValue, explValue } from "./ExplValue"
@@ -176,7 +176,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.empty(kₜ), v)
    } else
    if (e instanceof Expr.Quote) {
-      return explValue(Expl.quote(kₜ), copyAt(kᵥ, e))
+      return explValue(Expl.quote(kₜ), copyAt(kᵥ, e.e))
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
@@ -351,5 +351,10 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
       return absurd()
    }
 }
+
+initDataType(
+   Expr.Expr,
+   [Expr.App, Expr.BinaryApp, Expr.ConstNum, Expr.ConstStr, Expr.Constr, Expr.Defs, Expr.Fun, Expr.MatchAs, Expr.Quote, Expr.Var]
+)
 
 }
