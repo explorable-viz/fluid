@@ -68,8 +68,8 @@ let stackUp = fun gs →
    foldr (fun (g, g') → Graphic([g, y_translate (height g) g'])) Graphic([]) gs;
 
 // Rect → Polygon
-let renderRect = fun Rect(w, h) → 
-   Polygon([Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)], "black", "#f6831e");
+let renderRect = fun Rect(w, h) stroke fill → 
+   Polygon([Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)], stroke, fill);
 
 let horizLine = fun x x' →
    Polyline([Point(x, 0), Point(x', 0)]);
@@ -122,7 +122,7 @@ let barGraph = fun (x_scale, y_scale) catData →
    let y_max = maxVal catData in 
    match (axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
    let shrinkBy = 0.75; // ratio of bar width to bar spacing;
-   let mkBar = fun (k, v) → renderRect Rect(shrinkBy * x_scale, v * y_scale);
+   let mkBar = fun (k, v) → renderRect Rect(shrinkBy * x_scale, v * y_scale) "black" "#f6831e";
    let bars = x_translate (((1 - shrinkBy) / 2) * x_scale) // centre bars
       Graphic(spaceRight x_scale (map mkBar catData))
    in
@@ -156,7 +156,7 @@ let lineGraph = fun (x_scale, y_scale) x_start numData →
 let bottomMargin = fun dh g →
    match dimensions g as (w, h) →
    Graphic([
-      renderRect Rect(w, h + dh),
+      renderRect Rect(w, h + dh) "none" "none",
       y_translate dh g
    ]);
 
