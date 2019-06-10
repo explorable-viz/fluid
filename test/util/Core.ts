@@ -8,7 +8,6 @@ import { Expr } from "../../src/Expr"
 import "../../src/Graphics" // for graphical datatypes
 import "../../src/app/GraphicsRenderer" // for graphics primitives
 import { Parse } from "../../src/Parse"
-import { str } from "../../src/Value"
 import { ν, setallα } from "../../src/Versioned"
 import { Cursor } from "./Cursor"
 
@@ -75,19 +74,14 @@ export function prependModule (src: string, e: Expr): Expr.Defs {
    return Expr.defs(ν(), successfulParse(Parse.defList, src), e)
 }
 
-export function defaultImports (e: Expr): Expr {
+export function importDefaults (e: Expr): Expr {
    return prependModule(loadLib("prelude"), 
           prependModule(loadLib("graphics"), 
           prependModule(loadLib("renderData"),e)))
 }
 
 export function parse (src: string): Expr {
-   return defaultImports(successfulParse(Parse.expr, src))
-}
-
-export function visualise (e: Expr): ExplValue {
-   const eʹ: Expr = Expr.app(ν(), Expr.var_(ν(), str("renderData")), Expr.quote(ν(), e))
-   return Eval.eval_(emptyEnv(), defaultImports(eʹ))
+   return importDefaults(successfulParse(Parse.expr, src))
 }
 
 // An asychronously loading test file; when loading completes text will be non-null.
