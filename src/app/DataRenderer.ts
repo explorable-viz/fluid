@@ -25,7 +25,7 @@ class NumToken extends AnnotatedToken {
    }
 
    get fillStyles (): [string, string] {
-      return __nonNull(this.n.__α) ? ["black", "red"] : ["red", "black"]
+      return __nonNull(this.n.__α) ? ["black", "blue"] : ["blue", "black"]
    }
 
    clearAnnotation (): void {
@@ -49,7 +49,7 @@ class StrToken extends AnnotatedToken {
    }
 
    get fillStyles (): [string, string] {
-      return __nonNull(this.str.__α) ? ["black", "red"] : ["red", "black"]
+      return __nonNull(this.str.__α) ? ["black", "blue"] : ["blue", "black"]
    }
 
    clearAnnotation (): void {

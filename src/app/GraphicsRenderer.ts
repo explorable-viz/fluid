@@ -133,14 +133,18 @@ export class GraphicsRenderer {
 
    pointHighlights (p̅: List<Point>): void {
       for (; Cons.is(p̅); p̅ = p̅.tail) {
-         const p: Point = p̅.head,
-               [x, y]: [number, number] = this.transform([p.x.val, p.y.val]),
-               [x_α, y_α] = [__nonNull(asVersioned(p.x).__α), __nonNull(asVersioned(p.y).__α)]
-         // In the fwd direction, a point appears "erased" (false) if either of its components is erased.
-         // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
-         if (this.slicer.direction === Direction.Fwd ? ann.join(!x_α, !y_α) : ann.join(x_α, y_α)) {
-            this.circle(x, y, 3)
-         }
+         // TODO: annotation on point itself is not considered yet
+         this.xyHighlight(p̅.head.x, p̅.head.y)
+      }
+   }
+
+   xyHighlight (x: Num, y: Num): void {
+      const [x_α, y_α] = [__nonNull(asVersioned(x).__α), __nonNull(asVersioned(y).__α)]
+      // In the fwd direction, a point appears "erased" (false) if either of its components is erased.
+      // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
+      if (this.slicer.direction === Direction.Fwd ? ann.join(!x_α, !y_α) : ann.join(x_α, y_α)) {
+         const [xʹ, yʹ]: [number, number] = this.transform([x.val, y.val])
+         this.circle(xʹ, yʹ, 3)
       }
    }
 
@@ -174,8 +178,16 @@ export class GraphicsRenderer {
    // Flip text vertically to cancel out the global vertical flip. Don't set x and y but express
    // position through a translation so that the scaling doesn't affect the position.
    text (g: Text): void {
-      const [x, y]: [number, number] = this.transform([g.x.val, g.y.val])
-      this.current.appendChild(textElement(x, y, g.str.val))
+      const [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
+            text: SVGTextElement = textElement(x, y, g.str.val)
+      this.current.appendChild(text)
+      this.xyHighlight(g.x, g.y)
+      // TODO: annotation on text element itself is not considered yet
+      if (!__nonNull(asVersioned(g.str).__α)) {
+         text.setAttribute("fill", "blue")
+      } else {
+         text.setAttribute("fill", "black")
+      }
    }
 }
 
@@ -184,7 +196,6 @@ export class GraphicsRenderer {
 function textElement (x: number, y: number, str: string): SVGTextElement {
    const text: SVGTextElement = document.createElementNS(svgNS, "text")
    text.setAttribute("stroke", "none")
-   text.setAttribute("fill", "black")
    text.setAttribute("font-size", "12")
    text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
    text.appendChild(document.createTextNode(str))
