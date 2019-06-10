@@ -148,6 +148,6 @@ let countryTotals = fun year → map (second countryTotal) (lookupNum year data)
 let yearlyTotals = map (fun (year, annualData) → (year, annualTotal annualData)) data
 in
 stackRight [
-   (barGraph (30, 0.3) (countryTotals 2015)),
+   caption "Total renewables by country (2015)" (barGraph (30, 0.3) (countryTotals 2015)),
    lineGraph (40, 0.15) (fst (head data)) yearlyTotals
 ]

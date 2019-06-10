@@ -180,14 +180,13 @@ export class GraphicsRenderer {
 }
 
 // The SVG text element for the supplied text; centralised so can be used to compute text metrics.
+// Use "translate" to locate the element, so that we can apply it after scaling.
 function textElement (x: number, y: number, str: string): SVGTextElement {
    const text: SVGTextElement = document.createElementNS(svgNS, "text")
-   text.setAttribute("x", x.toString())
-   text.setAttribute("y", y.toString())
    text.setAttribute("stroke", "none")
    text.setAttribute("fill", "black")
    text.setAttribute("font-size", "10")
-   text.setAttribute("transform", `scale(1,-1)`)
+   text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
    text.appendChild(document.createTextNode(str))
    return text
 }

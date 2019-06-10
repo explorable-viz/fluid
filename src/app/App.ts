@@ -37,7 +37,7 @@ class App implements Slicer {
       this.svg.setAttribute("transform", "scale(1,-1)")
       this.svg.style.verticalAlign = "top"
       this.svg.style.display = "inline-block"
-
+      
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
       this.graphicsPane3D = new GraphicsPane3D(600, 600)
