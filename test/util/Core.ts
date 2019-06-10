@@ -106,5 +106,5 @@ export function load (file: string): string {
 }
 
 export function loadLib (file: string): string {
-	return loadTestFile("example/lib", file)
+	return loadTestFile("lcalc/lib", file)
 }
