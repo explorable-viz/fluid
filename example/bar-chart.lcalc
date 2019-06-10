@@ -152,5 +152,5 @@ let renewablesByCountry = fun year →
 in
 stackRight False 20 [
    renewablesByCountry 2015,
-   caption "Total renewables globally by year" (lineGraph (40, 0.15) (fst (head data)) yearlyTotals)
+   caption "Global renewables by year" (lineGraph (40, 0.15) (fst (head data)) yearlyTotals)
 ]

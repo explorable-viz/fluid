@@ -207,35 +207,4 @@ export class DataRenderer {
          absurd()
       }
    }
-
-/*
-   renderData (indentx: number, data: Data): void {
-      if (Cons.is(data)) {
-         this.view.newLine(indentx)
-         const { fst: key, snd: val }: Row = as(data.head, Pair)
-         if (key instanceof Num) {
-            this.view.push(numToken(asVersioned(key)))
-         } else {
-            this.view.push(strToken(asVersioned(key)))
-         }
-         this.view.push(stringToken(": "))
-         if (val instanceof List) {
-            this.renderData(this.view.indentx, val as Data)
-         } else 
-         if (val instanceof Num || val instanceof Str) {
-            if (val instanceof Num) {
-               this.view.push(numToken(asVersioned(val)))
-            } else {
-               this.view.push(strToken(asVersioned(val)))
-            }
-         }
-         this.renderData(indentx, data.tail)
-      } else
-      if (Nil.is(data)) {
-         return
-      } else {
-         absurd()
-      }
-   }
-*/
 }
