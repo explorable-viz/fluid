@@ -77,7 +77,7 @@ export class GraphicsRenderer {
          this.polyline(g.points)
       } else
       if (g instanceof Polygon) {
-         this.polygon(g.points)
+         this.polygon(g)
       } else
       if (g instanceof Text) {
          this.text(g)
@@ -154,21 +154,21 @@ export class GraphicsRenderer {
       this.current.appendChild(circle)
    }
 
-   polygon (p̅: List<Point>): void {
+   polygon (g: Polygon): void {
       const polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon")
-      polygon.setAttribute("points", this.points(p̅))
-      polygon.setAttribute("stroke", "black")
-      polygon.setAttribute("fill", "#f6831e")
+      polygon.setAttribute("points", this.points(g.points))
+      polygon.setAttribute("stroke", g.stroke.val)
+      polygon.setAttribute("fill", g.fill.val)
       polygon.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.resetForBwd()
-         p̅.toArray().map((p: Point): void => {
+         g.points.toArray().map((p: Point): void => {
             setallα(ann.top, p)
          })
          this.slicer.bwdSlice()
       })
       this.current.appendChild(polygon)
-      this.pointHighlights(p̅)
+      this.pointHighlights(g.points)
    }
 
    // Flip text vertically to cancel out the global vertical flip. Don't set x and y but express

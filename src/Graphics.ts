@@ -40,9 +40,10 @@ export class Polyline extends GraphicsElement<"Polyline"> {
    points: List<Point> = _
 }
 
-// List of points must be closed.
 export class Polygon extends GraphicsElement<"Polygon"> {
    points: List<Point> = _
+   stroke: Str = _
+   fill: Str = _
 }
 
 export class Text extends GraphicsElement<"Text"> {
