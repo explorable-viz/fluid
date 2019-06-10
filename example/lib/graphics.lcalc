@@ -60,14 +60,14 @@ let spaceRight = fun sep gs →
 
 // Unlike spaceRight, produces a nested structure.
 // List GraphicsElement → GraphicsElement
-let stackRight = fun vcentre gs →
+let stackRight = fun vcentre sep gs →
    let gs' = match vcentre as {
       False → gs;
       True → 
          let max_w = max (map height gs) in
          map (fun g → x_translate ((max_w - height g) / 2) g) gs
    } in
-   foldr (fun (g, g') → Graphic([g, x_translate (width g) g'])) Graphic([]) gs';
+   foldr (fun (g, g') → Graphic([g, x_translate (width g + sep) g'])) Graphic([]) gs';
 
 // List GraphicsElement → Bool → GraphicsElement
 let stackUp = fun hcentre gs →
