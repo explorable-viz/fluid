@@ -185,7 +185,7 @@ function textElement (x: number, y: number, str: string): SVGTextElement {
    const text: SVGTextElement = document.createElementNS(svgNS, "text")
    text.setAttribute("stroke", "none")
    text.setAttribute("fill", "black")
-   text.setAttribute("font-size", "10")
+   text.setAttribute("font-size", "12")
    text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
    text.appendChild(document.createTextNode(str))
    return text
