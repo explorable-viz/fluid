@@ -12,13 +12,6 @@ module.exports = function (config) {
       files: [
          './test/**/Test.ts',
          {
-            pattern: './example/**/*.lcalc',
-            watched: true,
-            included: false,
-            served: true,
-            nocache: false
-         },
-         {
             pattern: './lcalc/**/*.lcalc',
             watched: true,
             included: false,
@@ -49,7 +42,6 @@ module.exports = function (config) {
          'text/x-typescript': ['ts', 'tsx']
       },
       proxies: {
-         '/example/': '/base/example/',
          '/lcalc/': '/base/lcalc/'
       },
       reporters: ['mocha', 'junit'],
