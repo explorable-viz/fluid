@@ -5,7 +5,7 @@ module.exports = function (config) {
       basePath: '',
       client: {
          mocha: {
-           timeout: 40000 // default 2000; runs much slower in CircleCI environment
+           timeout: 60000 // default 2000; runs much slower in CircleCI environment
          }
       },
       frameworks: ['mocha', 'chai'],
