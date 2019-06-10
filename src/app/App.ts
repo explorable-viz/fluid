@@ -37,9 +37,6 @@ class App implements Slicer {
       this.svg.setAttribute("transform", "scale(1,-1)")
       this.svg.style.verticalAlign = "top"
       this.svg.style.display = "inline-block"
-
-      this.experiment()
-
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
       this.graphicsPane3D = new GraphicsPane3D(600, 600)
@@ -53,27 +50,6 @@ class App implements Slicer {
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       // this.graphicsPane3D.setCanvas(this.graphicsCanvas)
       this.loadExample()
-   }
-
-   experiment (): void {
-      const svg: SVGSVGElement = document.createElementNS(svgNS, "svg")
-      svg.setAttribute("width", "200")
-      svg.setAttribute("height", "200")
-//      svg.setAttribute("transform", "scale(1,-1)")
-      svg.style.verticalAlign = "top"
-      svg.style.display = "inline-block"
-
-      const [x, y]: [number, number] = [0, 0],
-            str: string = "Mystery text",
-            text: SVGTextElement = document.createElementNS(svgNS, "text")
-      text.setAttribute("stroke", "none")
-      text.setAttribute("fill", "black")
-      text.setAttribute("font-size", "15")
-      text.setAttribute("transform", `translate(${x.toString()},${y.toString()})`) // scale(1,-1)`)
-      text.appendChild(document.createTextNode(str))
-      svg.appendChild(text)
-   
-      document.body.appendChild(svg)
    }
 
    get graphics (): GraphicsElement {
