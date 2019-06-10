@@ -7,8 +7,11 @@ primitive textWidth;
 primitive textHeight;
 
 // List (Num, Num) → (Num, Num)
-let pathDimensions = fun ps → 
-   match unzip ps as (xs, ys) → (max xs, max ys);
+let pathDimensions = fun ps →
+   match length ps == 0 as {
+      True → (0, 0);
+      False → match unzip ps as (xs, ys) → (max xs, max ys)
+   };
 
 // Num → GraphicsElement → GraphicsElement
 let x_translate = fun x g → Translate(x, 0, g);
@@ -56,9 +59,13 @@ let spaceRight = fun sep gs →
    zipW (uncurry x_translate) (iterate (length gs) (fun x → x + sep) 0) gs;
 
 // Unlike spaceRight, produces a nested structure.
-// List GraphicsElement → Graphic
+// List GraphicsElement → GraphicsElement
 let stackRight = fun gs →
    foldr (fun (g, g') → Graphic([g, x_translate (width g) g'])) Graphic([]) gs;
+
+// List GraphicsElement → GraphicsElement
+let stackUp = fun gs →
+   foldr (fun (g, g') → Graphic([g, y_translate (height g) g'])) Graphic([]) gs;
 
 // Rect → Polygon
 let renderRect = fun Rect(w, h) → 
@@ -98,7 +105,7 @@ let axis = fun vert scale margin (start, end) tickSp tickLength labelFun →
    let axis = y_translate (0 - margin)
       Graphic([line, x_translate ((firstTick - start) * scale) Graphic(concat ticks labels')])
    in
-   (match vert as { True → transpose axis; False → axis }, trace(margin + labelStart));
+   (match vert as { True → transpose axis; False → axis }, margin + labelStart);
 
 // Some numerical constants for charts; should parameterise by these instead.
 let tickLength = 4;
@@ -141,4 +148,8 @@ let lineGraph = fun (x_scale, y_scale) x_start numData →
    let y_max = maxVal numData in 
    match (axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
-   Translate(x_offset, y_offset, Graphic([linePlot (x_scale, y_scale) ps, x_axis, y_axis]))
+   Translate(x_offset, y_offset, Graphic([linePlot (x_scale, y_scale) ps, x_axis, y_axis]));
+
+// Str → GraphicsElement → GraphicsElement
+let caption = fun text g →
+   stackUp [Text(0, 0, text), g]
