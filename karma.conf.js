@@ -47,7 +47,7 @@ module.exports = function (config) {
       port: 8081,
       captureTimeout: 30000,
       browserDisconnectTimeout : 30000,
-      browserNoActivityTimeout : 40000,
+      browserNoActivityTimeout : 60000,
       colors: true,
       logLevel: config.LOG_ERROR,
       autoWatch: true,
