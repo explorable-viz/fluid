@@ -77,7 +77,8 @@ export function prependModule (src: string, e: Expr): Expr.Defs {
 export function parse (src: string): Expr {
    return prependModule(loadLib("prelude"), 
           prependModule(loadLib("graphics"), 
-          successfulParse(Parse.expr, src)))
+          prependModule(loadLib("renderData"),
+          successfulParse(Parse.expr, src))))
 }
 
 // An asychronously loading test file; when loading completes text will be non-null.

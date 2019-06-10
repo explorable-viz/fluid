@@ -33,6 +33,7 @@ export class Cursor {
       return this
          .skipImport() // prelude
          .skipImport() // graphics
+         .skipImport() // renderData
    }
 
    // No way to specify only "own" properties statically.
