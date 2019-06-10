@@ -145,9 +145,12 @@ let annualTotal = compose sum (map (compose countryTotal snd));
 // Year → List (Country, Output)
 let countryTotals = fun year → map (second countryTotal) (lookupNum year data);
 // List (Year, Output)
-let yearlyTotals = map (fun (year, annualData) → (year, annualTotal annualData)) data
+let yearlyTotals = map (fun (year, annualData) → (year, annualTotal annualData)) data;
+let renewablesByCountry = fun year →
+   caption ("Renewables by country (" ++ numToStr year ++ ")")
+           (barGraph (40, 0.3) (countryTotals year))
 in
-stackRight [
-   caption "Total renewables by country (2015)" (barGraph (30, 0.3) (countryTotals 2015)),
-   lineGraph (40, 0.15) (fst (head data)) yearlyTotals
+stackRight False 20 [
+   renewablesByCountry 2015,
+   caption "Global renewables by year" (lineGraph (40, 0.15) (fst (head data)) yearlyTotals)
 ]

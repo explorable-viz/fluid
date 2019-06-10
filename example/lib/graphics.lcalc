@@ -26,18 +26,18 @@ let transposePoint = fun Point(x, y) → Point(y, x);
 // GraphicsElement → GraphicsElement
 letrec fun transpose {
    Polyline(ps) → Polyline(map transposePoint ps);
-   Polygon(ps) → Polygon(map transposePoint ps);
+   Polygon(ps, stroke, fill) → Polygon(map transposePoint ps, stroke, fill);
    Graphic(gs) → Graphic(map transpose gs);
    Text(x, y, str) → Text(y, x, str);
    Translate(x, y, g) → Translate(y, x, transpose g)
 };
 
-// See GitHub issue #167.
+// See GitHub issue #167. The dimensions (width + height) are measured from the origin.
 // GraphicsElement → (Num, Num)
 letrec fun dimensions {
    Polyline(ps) → 
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
-   Polygon(ps) →
+   Polygon(ps, _, _) →
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
    Graphic(gs) → 
       pathDimensions (map dimensions gs);
@@ -60,16 +60,28 @@ let spaceRight = fun sep gs →
 
 // Unlike spaceRight, produces a nested structure.
 // List GraphicsElement → GraphicsElement
-let stackRight = fun gs →
-   foldr (fun (g, g') → Graphic([g, x_translate (width g) g'])) Graphic([]) gs;
+let stackRight = fun vcentre sep gs →
+   let gs' = match vcentre as {
+      False → gs;
+      True → 
+         let max_w = max (map height gs) in
+         map (fun g → x_translate ((max_w - height g) / 2) g) gs
+   } in
+   foldr (fun (g, g') → Graphic([g, x_translate (width g + sep) g'])) Graphic([]) gs';
 
-// List GraphicsElement → GraphicsElement
-let stackUp = fun gs →
-   foldr (fun (g, g') → Graphic([g, y_translate (height g) g'])) Graphic([]) gs;
+// List GraphicsElement → Bool → GraphicsElement
+let stackUp = fun hcentre sep gs →
+   let gs' = match hcentre as {
+      False → gs;
+      True → 
+         let max_w = max (map width gs) in
+         map (fun g → x_translate ((max_w - width g) / 2) g) gs
+   } in
+   foldr (fun (g, g') → Graphic([g, y_translate (height g + sep) g'])) Graphic([]) gs';
 
 // Rect → Polygon
-let renderRect = fun Rect(w, h) → 
-   Polygon([Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)]);
+let renderRect = fun Rect(w, h) stroke fill → 
+   Polygon([Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)], stroke, fill);
 
 let horizLine = fun x x' →
    Polyline([Point(x, 0), Point(x', 0)]);
@@ -121,9 +133,10 @@ let barGraph = fun (x_scale, y_scale) catData →
    match axis False x_scale axisMargin (-0.5, length catData - 0.5) 1 tickLength labelFun as (x_axis, y_offset) →
    let y_max = maxVal catData in 
    match (axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
-   let shrinkBy = 0.75; // ratio of bar width to bar spacing
+   let shrinkBy = 0.75; // ratio of bar width to bar spacing;
+   let mkBar = fun (k, v) → renderRect Rect(shrinkBy * x_scale, v * y_scale) "black" "#f6831e";
    let bars = x_translate (((1 - shrinkBy) / 2) * x_scale) // centre bars
-      Graphic(spaceRight x_scale (map (fun (k, v) → renderRect Rect(shrinkBy * x_scale, v * y_scale)) catData))
+      Graphic(spaceRight x_scale (map mkBar catData))
    in
    Translate(x_offset, y_offset, Graphic([bars, x_axis, y_axis]));
 
@@ -150,6 +163,16 @@ let lineGraph = fun (x_scale, y_scale) x_start numData →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
    Translate(x_offset, y_offset, Graphic([linePlot (x_scale, y_scale) ps, x_axis, y_axis]));
 
+// Margin sounds the dimensions, i.e. treats the element as located at (0, 0).
+// Num → GraphicsElement → GraphicsElement
+let bottomMargin = fun dh g →
+   match dimensions g as (w, h) →
+   Graphic([
+      renderRect Rect(w, h + dh) "none" "none",
+      y_translate dh g
+   ]);
+
 // Str → GraphicsElement → GraphicsElement
 let caption = fun text g →
-   stackUp [Text(0, 0, text), g]
+   // TODO: compute bottom margin and sep from font-size.
+   stackUp True 8 [bottomMargin 6 Text(0, 0, text), g]
