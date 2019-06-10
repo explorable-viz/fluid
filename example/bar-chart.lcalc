@@ -150,7 +150,7 @@ let renewablesByCountry = fun year →
    caption ("Renewables by country (" ++ numToStr year ++ ")")
            (barGraph (30, 0.3) (countryTotals year))
 in
-stackRight [
+stackRight False [
    renewablesByCountry 2015,
    lineGraph (40, 0.15) (fst (head data)) yearlyTotals
 ]
