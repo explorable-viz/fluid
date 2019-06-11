@@ -5,7 +5,11 @@ letrec fun renderData {
          match head es as {
             Constr(c', es') →
                match c' === "Pair" as {
-                  True → match es' as Cons(k, Cons(v, Nil)) → Text(0, 0, "TODO");
+                  True → match es' as [k, v] →
+                     match k as {
+                        ConstNum(n) → Text(0, 0, "TODO");
+                        ConstStr(str) → Text(0, 0, "TODO")
+                     };
                   False → error "Data format error: expected Pair expression."
                }
          };

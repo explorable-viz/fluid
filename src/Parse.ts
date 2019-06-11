@@ -8,8 +8,8 @@ import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { arity } from "./DataType"
 import { Expr, Cont, strings } from "./Expr"
 import { singleton } from "./FiniteMap"
-import { Str, num, str } from "./Value"
-import { Versioned, ν, strʹ } from "./Versioned"
+import { Str, str } from "./Value"
+import { Versioned, ν, numʹ, strʹ } from "./Versioned"
 
 import App = Expr.App
 import BinaryApp = Expr.BinaryApp
@@ -186,7 +186,7 @@ function appOp (opP: Parser<Str>): Parser<(e1: Expr, e2: Expr) => BinaryApp> {
 const string_: Parser<ConstStr> =
    withAction(
       lexeme_(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),)),
-      lit => Expr.constStr(ν(), str(lit))
+      lit => Expr.constStr(ν(), strʹ(ν(), lit))
    )
 
 // JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
@@ -215,7 +215,7 @@ const numberʹ: Parser<string> =
    withJoin(sequence([optional(minus, () => ""), int, optional(frac, () => ""), optional(exp, () => "")]))
 
 const number_: Parser<ConstNum> =
-   withAction(lexeme_(numberʹ), lit => Expr.constNum(ν(), num(new Number(lit).valueOf())))
+   withAction(lexeme_(numberʹ), lit => Expr.constNum(ν(), numʹ(ν(), new Number(lit).valueOf())))
 
 const parenthExpr: Parser<Expr> =
    parenthesise(expr)

@@ -66,18 +66,18 @@ export namespace Expr {
    }
 
    export class ConstNum extends Expr {
-      val: Num = _
+      val: Versioned<Num> = _
    }
    
-   export function constNum (k: Id, val: Num): ConstNum {
+   export function constNum (k: Id, val: Versioned<Num>): ConstNum {
       return at(k, ConstNum, val)
    }
 
    export class ConstStr extends Expr {
-      val: Str = _
+      val: Versioned<Str> = _
    }
 
-   export function constStr (k: Id, val: Str): ConstStr {
+   export function constStr (k: Id, val: Versioned<Str>): ConstStr {
       return at(k, ConstStr, val)
    }
 
