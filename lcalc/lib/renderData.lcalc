@@ -1,4 +1,14 @@
 // Expr → GraphicsElement
 letrec fun renderData {
-   Constr(c,es) → Text(0, 0, "UNDEFINED")
+   Constr(c,es) → match c === "Cons" as {
+      True → 
+         match head es as {
+            Constr(c', es') →
+               match c' === "Pair" as {
+                  True → match es' as Cons(k, Cons(v, Nil)) → Text(0, 0, "TODO");
+                  False → error "Data format error: expected Pair expression."
+               }
+         };
+      False → Text(0, 0, "TODO")
+   }
 }
