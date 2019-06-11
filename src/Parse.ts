@@ -270,7 +270,7 @@ const constr: Parser<Constr> =
    )
 
 const listRestOpt: Parser<Expr> = 
-   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(ν(), strʹ(ν(), Nil.name), nil()))
+   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(ν(), strʹ(ν(), Nil.name), nil(ν())))
 
 const listʹ: Parser<Constr> =
    optional(
@@ -282,7 +282,7 @@ const listʹ: Parser<Constr> =
             }) as Expr.Constr
          }
       ),
-      () => Expr.constr(ν(), strʹ(ν(), Nil.name), nil())
+      () => Expr.constr(ν(), strʹ(ν(), Nil.name), nil(ν()))
    )
 
 const list: Parser<Constr> =

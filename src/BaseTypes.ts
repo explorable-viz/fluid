@@ -33,7 +33,7 @@ export function falseʹ (k: Id): Versioned<Bool> {
 
 export abstract class List<T> extends DataValue<"List"> {
    static fromArray<T extends Persistent> (x̅: T[]): List<T> {
-      let x̅ʹ: List<T> = nil()
+      let x̅ʹ: List<T> = nil(ν())
       for (let n: number = x̅.length - 1; n >= 0; --n) {
          x̅ʹ = cons(ν(), x̅[n], x̅ʹ)
       }
@@ -64,8 +64,8 @@ export class Nil<T> extends List<T> {
    }
 }
 
-export function nil<T> (): List<T> {
-   return make(Nil) as Nil<T>
+export function nil<T> (k: Id): List<T> {
+   return at(k, Nil) as Versioned<Nil<T>>
 }
 
 export class Cons<T> extends List<T> {

@@ -9,16 +9,16 @@ import { Expl, ExplValue, explValue } from "./ExplValue"
 import { Expr } from "./Expr"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
-import { Id, Num, Str, TaggedId, Value, _, make, memoId, taggedId } from "./Value"
+import { Id, MemoId, Num, Str, TaggedId, Value, _, make, memoId, taggedId } from "./Value"
 import { Versioned, VersionedC, at, copyAt, joinα, meetα, numʹ, setα, strʹ } from "./Versioned"
 
 export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
 type RecDef = Expr.RecDef
 
-export type ValId = TaggedId<"v">
-export type ExplId = TaggedId<"t">
-export type ListId = TaggedId<"l">
+export type ValId = TaggedId<MemoId, "v">
+export type ExplId = TaggedId<MemoId, "t">
+export type ListId = TaggedId<MemoId, "l">
 
 export module Eval {
 
@@ -35,16 +35,16 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, f: Elim<Expr>): Closure {
 
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
+   const kₗ: ListId = taggedId(memoId(recDefs, arguments), "l")
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
             kᵥ: ValId = taggedId(memoId(recDefs, arguments), "v"),
-            kₗ: ListId = taggedId(memoId(recDefs, arguments), "l"),
             f: Closure = closure(kᵥ, ρ, δ_0, evalTrie(def.σ))
       return [cons(kₗ, Expl.recDef(def.x, f), δₜ), extendEnv(ρ_ext, def.x, f)]
    } else
    if (Nil.is(δ)) {
-      return [nil(), emptyEnv()]
+      return [nil(kₗ), emptyEnv()]
    } else {
       return absurd()
    }
@@ -95,7 +95,7 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
       }
    } else
    if (Nil.is(def̅)) {
-      return [nil(), ρ_ext]
+      return [nil(kₗ), ρ_ext]
    } else {
       return absurd()
    }
@@ -145,7 +145,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.empty(kₜ), strʹ(kᵥ, e.val.val))
    } else
    if (e instanceof Expr.Fun) {
-      return explValue(Expl.empty(kₜ), closure(kᵥ, ρ, nil(), evalTrie(e.σ)))
+      return explValue(Expl.empty(kₜ), closure(kᵥ, ρ, nil(taggedId(kᵥ, "δ")), evalTrie(e.σ)))
    } else
    if (e instanceof Expr.Constr) {
       let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
@@ -171,7 +171,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [v, u]: [Value, Versioned<Value>] = [tf.v, tu.v]
       if (v instanceof Closure) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
-               [ρʹ, ξ, eʹ]: [Env, Match, Expr] = v.f.match(u, nil()),
+               [ρʹ, ξ, eʹ]: [Env, Match, Expr] = v.f.match(u),
                tv: ExplValue = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), eʹ)
          return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), copyAt(kᵥ, tv.v))
       } else 
@@ -207,7 +207,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
-            [ρʹ, ξ, eʹ]: [Env, Match, Expr] = evalTrie(e.σ).match(tu.v, nil()),
+            [ρʹ, ξ, eʹ]: [Env, Match, Expr] = evalTrie(e.σ).match(tu.v),
             tv: ExplValue = eval_(ρ.concat(ρʹ), eʹ)
       return explValue(Expl.matchAs(kₜ, tu, ξ, tv), copyAt(kᵥ, tv.v))
    } else {

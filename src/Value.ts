@@ -48,19 +48,19 @@ class ApplicationId extends Id {
    }
 }
 
-type MemoId = FunctionId | ApplicationId
+export type MemoId = FunctionId | ApplicationId
 
 function applicationId (k: MemoId, v: Persistent): ApplicationId {
    return make(ApplicationId, k, v)
 }
 
-export class TaggedId<Tag extends string> extends Id {
-   k: ApplicationId = _
+export class TaggedId<T extends Id, Tag extends string> extends Id {
+   k: T = _
    tag: Tag = _
 }
 
-export function taggedId<Tag extends string> (k: MemoId, tag: Tag): TaggedId<Tag> {
-   return make(TaggedId, k, tag) as TaggedId<Tag>
+export function taggedId<T extends Id, Tag extends string> (k: T, tag: Tag): TaggedId<T, Tag> {
+   return make(TaggedId, k, tag) as TaggedId<T, Tag>
 }
 
 export function memoId (f: Function, v̅: IArguments): MemoId {
