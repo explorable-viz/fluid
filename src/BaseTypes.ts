@@ -81,6 +81,10 @@ export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
    return make(Cons, head, tail) as Cons<T>
 }
 
+export function consʹ<T extends Persistent> (k: Id, head: T, tail: List<T>): Cons<T> {
+   return at(k, Cons, head, tail) as Versioned<Cons<T>>
+}
+
 export class Pair<T, U> extends DataValue<"Pair"> {
    fst: T = _
    snd: U = _

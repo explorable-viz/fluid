@@ -25,6 +25,32 @@ export class Value<Tag extends ValueTag = ValueTag> {
 export abstract class Id extends Value<"Id"> {
 }
 
+class FunctionId extends Id {
+   f: Function = _
+}
+
+function functionId (f: Function): FunctionId {
+   return make(FunctionId, f)
+}
+
+class ApplicationId extends Id {
+   f: FunctionId | ApplicationId = _
+   v: Persistent = _
+}
+
+function applicationId (f: FunctionId | ApplicationId, v: Persistent): ApplicationId {
+   return make(ApplicationId, f, v)
+}
+
+export function memoId (f: Function, v̅: IArguments): FunctionId | ApplicationId {
+   const fʹ: FunctionId = functionId(f)
+   let k: FunctionId | ApplicationId = fʹ
+   for (let v of v̅) {
+      k = applicationId(k, v)
+   }
+   return k
+}
+
 // Functions are persistent to support primitives. Primitive datatypes like Num and Str contain
 // ES6 primitives like number and string, which are (currently) "persistent" for interning purposes
 // but are not "values" because they are not observable to user code.
