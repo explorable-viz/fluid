@@ -2,7 +2,7 @@ import { absurd } from "./util/Core"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Id, Persistent, _, make } from "./Value"
-import { Versioned, at } from "./Versioned"
+import { Versioned, ν, at } from "./Versioned"
 
 // See Env for convention regarding instance members on reflected datatypes.
 
@@ -35,7 +35,7 @@ export abstract class List<T> extends DataValue<"List"> {
    static fromArray<T extends Persistent> (x̅: T[]): List<T> {
       let x̅ʹ: List<T> = nil()
       for (let n: number = x̅.length - 1; n >= 0; --n) {
-         x̅ʹ = cons(x̅[n], x̅ʹ)
+         x̅ʹ = consʹ(ν(), x̅[n], x̅ʹ)
       }
       return x̅ʹ
    }
