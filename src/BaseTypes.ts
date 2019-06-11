@@ -12,22 +12,14 @@ export abstract class Bool extends DataValue<"Bool"> {
 export class True extends Bool {
 }
 
-export function true_ (): Bool {
-   return make(True)
-}
-
-export function trueʹ (k: Id): Versioned<Bool> {
+export function true_ (k: Id): Versioned<Bool> {
    return at(k, True)
 }
 
 export class False extends Bool {
 }
 
-export function false_ (): Bool {
-   return make(False)
-}
-
-export function falseʹ (k: Id): Versioned<Bool> {
+export function false_ (k: Id): Versioned<Bool> {
    return at(k, False)
 }
 
