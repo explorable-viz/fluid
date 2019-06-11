@@ -82,11 +82,11 @@ export namespace Expr {
    }
 
    export class Constr extends Expr {
-      ctr: Str = _
+      ctr: Versioned<Str> = _
       args: List<Expr> = _
    }
 
-   export function constr (k: Id, ctr: Str, args: List<Expr>): Constr {
+   export function constr (k: Id, ctr: Versioned<Str>, args: List<Expr>): Constr {
       return at(k, Constr, ctr, args)
    }
 

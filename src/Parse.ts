@@ -9,7 +9,7 @@ import { arity } from "./DataType"
 import { Expr, Cont, strings } from "./Expr"
 import { singleton } from "./FiniteMap"
 import { Str, num, str } from "./Value"
-import { ν, strʹ } from "./Versioned"
+import { Versioned, ν, strʹ } from "./Versioned"
 
 import App = Expr.App
 import BinaryApp = Expr.BinaryApp
@@ -79,8 +79,8 @@ function reserved (str: string): Parser<string> {
    }
 }
 
-const ctr: Parser<Str> =
-   withAction(lexeme_(satisfying(identCandidate, isCtr)), str)
+const ctr: Parser<Versioned<Str>> =
+   withAction(lexeme_(satisfying(identCandidate, isCtr)), c => strʹ(ν(), c))
 
 // Note that primitive operations that have names (e.g. intToString) are /exactly/ like regular
 // identifiers. They can be shadowed, for example.
@@ -118,7 +118,7 @@ const singleCharEscape: Parser<string> = choice<string>([
 
 const escapeSeq: Parser<string> =
    dropFirst(ch("\\"), choice<string>([unicodeEscape, singleCharEscape]))
-   2
+   
 const stringCh: Parser<string> =
    choice<string>([negate(choice<string>([ch('"'), ch("\\"), ch("\r"), ch("\n")])), escapeSeq])
 
@@ -261,7 +261,7 @@ const defs1 : Parser<Defs> =
 const constr: Parser<Constr> =
    withAction(
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), () => [])),
-      ([c, e̅]: [Str, Expr[]]) => {
+      ([c, e̅]: [Versioned<Str>, Expr[]]) => {
          const n: number = arity(c)
          assert(n <= e̅.length,`Too few arguments to constructor ${c.val}.`)
          assert(n >= e̅.length, `Too many arguments to constructor ${c.val}.`)
@@ -270,7 +270,7 @@ const constr: Parser<Constr> =
    )
 
 const listRestOpt: Parser<Expr> = 
-   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(ν(), str(Nil.name), nil()))
+   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(ν(), strʹ(ν(), Nil.name), nil()))
 
 const listʹ: Parser<Constr> =
    optional(
@@ -278,11 +278,11 @@ const listʹ: Parser<Constr> =
          seq(sepBy1(expr, symbol(",")), listRestOpt),
          ([e̅, e]): Expr.Constr => {
             return [...e̅, e].reverse().reduce((e̅ʹ, eʹ) => {
-               return Expr.constr(ν(), str(Cons.name), List.fromArray([eʹ, e̅ʹ]))
+               return Expr.constr(ν(), strʹ(ν(), Cons.name), List.fromArray([eʹ, e̅ʹ]))
             }) as Expr.Constr
          }
       ),
-      () => Expr.constr(ν(), str(Nil.name), nil())
+      () => Expr.constr(ν(), strʹ(ν(), Nil.name), nil())
    )
 
 const list: Parser<Constr> =
@@ -292,7 +292,7 @@ const pair: Parser<Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Expr, Expr]) =>
-         Expr.constr(ν(), str(Pair.name), List.fromArray([fst, snd]))
+         Expr.constr(ν(), strʹ(ν(), Pair.name), List.fromArray([fst, snd]))
    )
 
 function args_pattern<K extends Cont> (n: number, p: Parser<K>): Parser<K> {
@@ -390,6 +390,7 @@ function matches (state: ParseState): ParseResult<Trie<Expr>> | null {
          let σ: Trie<Expr> = σ̅[0]
          for (let i = 1; i < σ̅.length; ++i) {
             σ = Trie.Trie.join(σ, σ̅[i])
+
          } 
          return σ
       }
