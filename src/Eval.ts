@@ -18,24 +18,24 @@ type RecDef = Expr.RecDef
 
 // The "runtime identity" of an expression.
 export class EvalId<P extends keyof ExplValue> extends Id {
-   v̅: List<Value> = _           // environment values used to close e
+   ρ: Env = _                   // environment values used to close e
    e: Expr | Versioned<Str> = _ // str for binding occurrences of variables
    f: P = _                     // tag to distinguish field slot
 }
 
-function evalId<P extends keyof ExplValue> (v̅: List<Value>, e: Expr | Versioned<Str>, f: P): EvalId<P> {
-   return make(EvalId, v̅, e, f) as EvalId<P>
+function evalId<P extends keyof ExplValue> (ρ: Env, e: Expr | Versioned<Str>, f: P): EvalId<P> {
+   return make(EvalId, ρ, e, f) as EvalId<P>
 }
 
 export type ValId = EvalId<"v">
 export type ExplId = EvalId<"t">
 
 function explId (ρ: Env, e: Expr | Versioned<Str>): ExplId {
-   return evalId(ρ.entries(), e, "t")
+   return evalId(ρ, e, "t")
 }
 
 function valId (ρ: Env, e: Expr | Versioned<Str>): ValId {
-   return evalId(ρ.entries(), e, "v")
+   return evalId(ρ, e, "v")
 }
 
 export module Eval {

@@ -1,5 +1,4 @@
 import { absurd } from "./util/Core"
-import { List, cons, nil } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { Str, Value, _, make } from "./Value"
 import { Versioned } from "./Versioned"
@@ -8,18 +7,6 @@ import { Versioned } from "./Versioned"
 
 // Environments are snoc lists.
 export abstract class Env extends DataValue<"Env"> {
-   // Environment whose names have been projected away, leaving only list of values; cons rather than snoc, but doesn't matter.
-   entries (): List<Versioned<Value>> {
-      if (this instanceof EmptyEnv) {
-         return nil()
-      } else
-      if (this instanceof ExtendEnv) {
-         return cons(this.v, this.ρ.entries())
-      } else {
-         return absurd()
-      }
-   }
-
    get (k: Str): Versioned<Value> | undefined {
       if (this instanceof EmptyEnv) {
          return undefined
