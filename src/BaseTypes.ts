@@ -32,17 +32,6 @@ export function falseʹ (k: Id): Versioned<Bool> {
 }
 
 export abstract class List<T> extends DataValue<"List"> {
-   map<U extends Persistent> (f: (t: T) => U): List<U> {
-      if (Cons.is(this)) {
-         return cons(f(this.head), this.tail.map(f))
-      } else
-      if (Nil.is(this)) {
-         return nil()
-      } else {
-         return absurd()
-      }
-   }
-
    static fromArray<T extends Persistent> (x̅: T[]): List<T> {
       let x̅ʹ: List<T> = nil()
       for (let n: number = x̅.length - 1; n >= 0; --n) {
@@ -102,17 +91,6 @@ export function pair<T extends Persistent, U extends Persistent> (fst: T, snd: U
 }
 
 export abstract class Tree<T extends Persistent> extends DataValue<"Tree"> {
-   map<U extends Persistent> (f: (t: T) => U): Tree<U> {
-      if (NonEmpty.is(this)) {
-         return nonEmpty(this.left.map(f), f(this.t), this.right.map(f))
-      } else
-      if (Empty.is(this)) {
-         return empty()
-      } else {
-         return absurd()
-      }
-   }
-
    toArray (): T[] {
       const x̅: T[] = []
       this.toArray_(x̅)

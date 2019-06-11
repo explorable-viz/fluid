@@ -188,7 +188,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.App) {
       const [tf, tu]: [ExplValue, ExplValue] = [eval_(ρ, e.f), eval_(ρ, e.e)],
-            [v, u]: [Versioned<Value>, Versioned<Value>] = [tf.v, tu.v]
+            [v, u]: [Value, Versioned<Value>] = [tf.v, tu.v]
       if (v instanceof Closure) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
                [ρʹ, ξ, eʹ]: [Env, Match, Expr] = v.f.match(u, nil()),
