@@ -5,7 +5,7 @@ import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
-import { Versioned, asVersioned, numʹ, setallα } from "../Versioned"
+import { Versioned, asVersioned, num, setallα } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
@@ -218,7 +218,7 @@ let svgMetrics: SVGSVGElement
       svgMetrics.appendChild(text)
       const width: number = text.getBBox().width
       text.remove()
-      return numʹ(k, width)
+      return num(k, width)
    }
    
    const textHeight = (str: Str) => (k: Id): Versioned<Num> => {
@@ -226,7 +226,7 @@ let svgMetrics: SVGSVGElement
       svgMetrics.appendChild(text)
       const height: number = text.getBBox().height
       text.remove()
-      return numʹ(k, height)
+      return num(k, height)
    }
    
    unaryOps.set(textHeight.name, unary_(textHeight))
