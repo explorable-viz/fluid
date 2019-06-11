@@ -10,7 +10,7 @@ import { Expr } from "./Expr"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, Num, Str, TaggedId, Value, _, make, memoId, taggedId } from "./Value"
-import { Versioned, VersionedC, at, copyAt, joinα, meetα, numʹ, setα, strʹ } from "./Versioned"
+import { Versioned, VersionedC, at, copyAt, joinα, meetα, num, setα, strʹ } from "./Versioned"
 
 export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
@@ -139,7 +139,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    const kₜ: ExplId = taggedId(memoId(eval_, arguments), "t"),
          kᵥ: ValId = taggedId(memoId(eval_, arguments), "v")
    if (e instanceof Expr.ConstNum) {
-      return explValue(Expl.empty(kₜ), numʹ(kᵥ, e.val.val))
+      return explValue(Expl.empty(kₜ), num(kᵥ, e.val.val))
    } else
    if (e instanceof Expr.ConstStr) {
       return explValue(Expl.empty(kₜ), strʹ(kᵥ, e.val.val))

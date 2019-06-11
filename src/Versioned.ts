@@ -93,7 +93,7 @@ export const ν: () => Extern =
       }
    })()
 
-export function numʹ (k: Id, val: number): Versioned<Num> {
+export function num (k: Id, val: number): Versioned<Num> {
    return at(k, Num, val)
 }
 

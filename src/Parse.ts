@@ -9,7 +9,7 @@ import { arity } from "./DataType"
 import { Expr, Cont, strings } from "./Expr"
 import { singleton } from "./FiniteMap"
 import { Str, str } from "./Value"
-import { Versioned, ν, numʹ, strʹ } from "./Versioned"
+import { Versioned, ν, num, strʹ } from "./Versioned"
 
 import App = Expr.App
 import BinaryApp = Expr.BinaryApp
@@ -215,7 +215,7 @@ const numberʹ: Parser<string> =
    withJoin(sequence([optional(minus, () => ""), int, optional(frac, () => ""), optional(exp, () => "")]))
 
 const number_: Parser<ConstNum> =
-   withAction(lexeme_(numberʹ), lit => Expr.constNum(ν(), numʹ(ν(), new Number(lit).valueOf())))
+   withAction(lexeme_(numberʹ), lit => Expr.constNum(ν(), num(ν(), new Number(lit).valueOf())))
 
 const parenthExpr: Parser<Expr> =
    parenthesise(expr)

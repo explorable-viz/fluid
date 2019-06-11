@@ -87,10 +87,6 @@ export class Num extends Value<"Num"> {
    }
 }
 
-export function num (val: number): Num {
-   return make(Num, val)
-}
-
 export class Str extends Value<"Str"> {
    val: string = _
 
