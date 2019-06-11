@@ -27,6 +27,10 @@ export abstract class Id extends Value<"Id"> {
 
 class FunctionId extends Id {
    f: Function = _
+
+   get args (): Persistent[] {
+      return []
+   }
 }
 
 function functionId (f: Function): FunctionId {
@@ -34,21 +38,38 @@ function functionId (f: Function): FunctionId {
 }
 
 class ApplicationId extends Id {
-   f: FunctionId | ApplicationId = _
+   k: MemoId = _
    v: Persistent = _
+
+   get args (): Persistent[] {
+      const v̅: Persistent[] = this.k.args
+      v̅.push(this.v)
+      return v̅
+   }
 }
 
-function applicationId (f: FunctionId | ApplicationId, v: Persistent): ApplicationId {
-   return make(ApplicationId, f, v)
+type MemoId = FunctionId | ApplicationId
+
+function applicationId (k: MemoId, v: Persistent): ApplicationId {
+   return make(ApplicationId, k, v)
 }
 
-export function memoId (f: Function, v̅: IArguments): FunctionId | ApplicationId {
+export function memoId (f: Function, v̅: IArguments): MemoId {
    const fʹ: FunctionId = functionId(f)
-   let k: FunctionId | ApplicationId = fʹ
+   let k: MemoId = fʹ
    for (let v of v̅) {
       k = applicationId(k, v)
    }
    return k
+}
+
+export class TaggedId<Tag extends string> extends Id {
+   k: ApplicationId = _
+   tag: Tag = _
+}
+
+export function taggedId<Tag extends string> (k: MemoId, tag: Tag): TaggedId<Tag> {
+   return make(TaggedId, k, tag) as TaggedId<Tag>
 }
 
 // Functions are persistent to support primitives. Primitive datatypes like Num and Str contain

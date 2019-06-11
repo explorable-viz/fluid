@@ -1,7 +1,7 @@
 import { as, assert } from "./util/Core"
 import { Bool, trueʹ, falseʹ } from "./BaseTypes"
 import { Id, Num, PrimOpTag, PrimValue, Str, _, Value, make } from "./Value"
-import { Versioned, asVersioned, numʹ, strʹ } from "./Versioned"
+import { Versioned, asVersioned, at, ν, numʹ, strʹ } from "./Versioned"
 
 type Unary<T, V> = (x: T) => (k: Id) => Versioned<V>
 type Binary<T, U, V> = (x: T, y: U) => (k: Id) => Versioned<V>
@@ -19,8 +19,8 @@ export class UnaryOp extends PrimOp<"UnaryOp"> {
    op: Unary<PrimValue, Value> = _
 }
 
-function unary (name: string, op: Unary<PrimValue, Value>): UnaryOp {
-   return make(UnaryOp, name, op)
+function unary (name: string, op: Unary<PrimValue, Value>): Versioned<UnaryOp> {
+   return at(ν(), UnaryOp, name, op)
 }
 
 export class BinaryOp extends PrimOp<"BinaryOp"> {
@@ -56,7 +56,7 @@ const pow = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).v
 const times = (x: Num, y: Num) => (k: Id): Versioned<Num> => numʹ(k, as(x, Num).val * as(y, Num).val)
 
 // Convenience methods for building the maps. Export to allow other modules to provide operations.
-export function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): UnaryOp {
+export function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): Versioned<UnaryOp> {
    return unary(op.name, op)
 }
 
@@ -65,7 +65,7 @@ export function binary_<T extends PrimValue, U extends PrimValue, V extends Valu
 }
 
 // Primitives with identifiers as names are unary and first-class.
-export const unaryOps: Map<string, UnaryOp> = new Map([
+export const unaryOps: Map<string, Versioned<UnaryOp>> = new Map([
    [ceiling.name, unary_(ceiling)],
    [error.name, unary_(error)],
    [floor.name, unary_(floor)],

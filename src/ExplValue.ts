@@ -56,26 +56,22 @@ export namespace Expl {
    export abstract class Def extends DataValue<"Expl.Def"> {
    }
 
-   // tv is the computed value, v is the copy bound to x.
    export class Let extends Def {
       x: Versioned<Str> = _
       tv: ExplValue = _
-      v: Versioned<Value> = _
    }
 
-   export function let_ (x: Versioned<Str>, tv: ExplValue, v: Versioned<Value>): Let {
-      return make(Let, x, tv, v)
+   export function let_ (x: Versioned<Str>, tv: ExplValue): Let {
+      return make(Let, x, tv)
    }
 
-   // op is the underlying (unversioned) primitive, op' is the copy bound to x.
    export class Prim extends Def {
       x: Versioned<Str> = _
-      op: UnaryOp = _ 
-      opʹ: Versioned<UnaryOp> = _
+      op: Versioned<UnaryOp> = _
    }
 
-   export function prim (x: Versioned<Str>, op: UnaryOp, opʹ: Versioned<UnaryOp>): Prim {
-      return make(Prim, x, op, opʹ)
+   export function prim (x: Versioned<Str>, op: Versioned<UnaryOp>): Prim {
+      return make(Prim, x, op)
    }
 
    export class RecDef extends DataValue<"Expl.RecDef"> {

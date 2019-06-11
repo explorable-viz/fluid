@@ -9,39 +9,21 @@ import { Expl, ExplValue, explValue } from "./ExplValue"
 import { Expr } from "./Expr"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
-import { Id, Num, Str, Value, _, make } from "./Value"
-import { Versioned, VersionedC, at, copyAt, joinα, numʹ, setα, strʹ } from "./Versioned"
+import { Id, Num, Str, TaggedId, Value, _, make, memoId, taggedId } from "./Value"
+import { Versioned, VersionedC, at, copyAt, joinα, meetα, numʹ, setα, strʹ } from "./Versioned"
 
 export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
 type RecDef = Expr.RecDef
 
-// The "runtime identity" of an expression.
-export class EvalId<P extends keyof ExplValue> extends Id {
-   ρ: Env = _                   // environment values used to close e
-   e: Expr | Versioned<Str> = _ // str for binding occurrences of variables
-   f: P = _                     // tag to distinguish field slot
-}
-
-function evalId<P extends keyof ExplValue> (ρ: Env, e: Expr | Versioned<Str>, f: P): EvalId<P> {
-   return make(EvalId, ρ, e, f) as EvalId<P>
-}
-
-export type ValId = EvalId<"v">
-export type ExplId = EvalId<"t">
-
-function explId (ρ: Env, e: Expr | Versioned<Str>): ExplId {
-   return evalId(ρ, e, "t")
-}
-
-function valId (ρ: Env, e: Expr | Versioned<Str>): ValId {
-   return evalId(ρ, e, "v")
-}
+export type ValId = TaggedId<"v">
+export type ExplId = TaggedId<"t"> // EvalId<"t">
 
 export module Eval {
 
+// ρ plus bindings in δ are closing for f.
 export class Closure extends VersionedC(DataValue)<"Closure"> {
-   ρ: Env = _ // ρ not closing for f; need to extend with the bindings in δ
+   ρ: Env = _ 
    δ: List<RecDef> = _
    f: Elim<Expr> = _
 }
@@ -54,9 +36,8 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, f: Elim<Expr>): Closure {
 function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
-            k: ValId = valId(ρ, def.x),
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
-            f: Closure = closure(k, ρ, δ_0, evalTrie(def.σ))
+            f: Closure = closure(memoId(recDefs, arguments), ρ, δ_0, evalTrie(def.σ))
       return [cons(Expl.recDef(def.x, f), δₜ), extendEnv(ρ_ext, def.x, f)]
    } else
    if (Nil.is(δ)) {
@@ -87,20 +68,16 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
-         const k: ValId = valId(ρ, def.x),
-               tv: ExplValue = eval_(ρ.concat(ρ_ext), def.e),
-               v: Versioned<Value> = copyAt(k, tv.v),
-               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, v))
-         return [cons(Expl.let_(def.x, tv, v), def̅ₜ), ρ_extʹ]
+         const tv: ExplValue = eval_(ρ.concat(ρ_ext), def.e),
+               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, tv.v))
+         return [cons(Expl.let_(def.x, tv), def̅ₜ), ρ_extʹ]
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currently happen to be unary
          if (unaryOps.has(def.x.val)) {
-            const k: ValId = valId(ρ, def.x),
-                  op: UnaryOp = unaryOps.get(def.x.val)!,
-                  opʹ: Versioned<UnaryOp> = copyAt(k, op),
-                  [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, opʹ))
-            return [cons(Expl.prim(def.x, op, opʹ), def̅ₜ), ρ_extʹ]
+            const op: Versioned<UnaryOp> = unaryOps.get(def.x.val)!,
+                  [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, op))
+            return [cons(Expl.prim(def.x, op), def̅ₜ), ρ_extʹ]
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
@@ -124,10 +101,10 @@ function defs_fwd (def̅: List<Expl.Def>): void {
    def̅.toArray().forEach((def: Expl.Def) => {
       if (def instanceof Expl.Let) {
          eval_fwd(def.tv)
-         setα(ann.meet(def.x.__α, def.tv.v.__α), def.v)
+         meetα(def.x.__α, def.tv.v)
       } else
       if (def instanceof Expl.Prim) {
-         setα(def.x.__α, def.opʹ)
+         setα(def.x.__α, def.op)
       } else
       if (def instanceof Expl.LetRec) {
          recDefs_(Direction.Fwd, def.δ)
@@ -140,12 +117,11 @@ function defs_fwd (def̅: List<Expl.Def>): void {
 function defs_bwd (def̅: List<Expl.Def>): void {
    def̅.toArray().reverse().forEach((def: Expl.Def) => {
       if (def instanceof Expl.Let) {
-         joinα(def.v.__α, def.tv.v)
-         joinα(def.v.__α, def.x)
+         joinα(def.tv.v.__α, def.x)
          eval_bwd(def.tv)
       } else
       if (def instanceof Expl.Prim) {
-         joinα(def.opʹ.__α, def.x)
+         joinα(def.op.__α, def.x)
       } else
       if (def instanceof Expl.LetRec) {
          recDefs_(Direction.Bwd, def.δ)
@@ -156,8 +132,8 @@ function defs_bwd (def̅: List<Expl.Def>): void {
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
-   const kₜ: ExplId = explId(ρ, e),
-         kᵥ: ValId = valId(ρ, e)
+   const kₜ: ExplId = taggedId(memoId(eval_, arguments), "t"),
+         kᵥ: ValId = taggedId(memoId(eval_, arguments), "v")
    if (e instanceof Expr.ConstNum) {
       return explValue(Expl.empty(kₜ), numʹ(kᵥ, e.val.val))
    } else
@@ -236,7 +212,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
 }
 
 function toExpr (t: Expl): Expr {
-   return (t.__id as ExplId).e as Expr
+   return (t.__id as ExplId).k.args[1] as Expr
 }
 
 export function eval_fwd ({t, v}: ExplValue): void {
@@ -352,9 +328,9 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
    }
 }
 
+}
+
 initDataType(
    Expr.Expr,
    [Expr.App, Expr.BinaryApp, Expr.ConstNum, Expr.ConstStr, Expr.Constr, Expr.Defs, Expr.Fun, Expr.MatchAs, Expr.Quote, Expr.Var]
 )
-
-}
