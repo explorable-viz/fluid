@@ -54,15 +54,6 @@ function applicationId (k: MemoId, v: Persistent): ApplicationId {
    return make(ApplicationId, k, v)
 }
 
-export function memoId (f: Function, v̅: IArguments): MemoId {
-   const fʹ: FunctionId = functionId(f)
-   let k: MemoId = fʹ
-   for (let v of v̅) {
-      k = applicationId(k, v)
-   }
-   return k
-}
-
 export class TaggedId<Tag extends string> extends Id {
    k: ApplicationId = _
    tag: Tag = _
@@ -70,6 +61,15 @@ export class TaggedId<Tag extends string> extends Id {
 
 export function taggedId<Tag extends string> (k: MemoId, tag: Tag): TaggedId<Tag> {
    return make(TaggedId, k, tag) as TaggedId<Tag>
+}
+
+export function memoId (f: Function, v̅: IArguments): MemoId {
+   const fʹ: FunctionId = functionId(f)
+   let k: MemoId = fʹ
+   for (let v of v̅) {
+      k = applicationId(k, v)
+   }
+   return k
 }
 
 // Functions are persistent to support primitives. Primitive datatypes like Num and Str contain

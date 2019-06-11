@@ -1,6 +1,6 @@
 import { Annotation, ann } from "./util/Annotated"
 import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
-import { List, Pair, consʹ, nil } from "./BaseTypes"
+import { List, Pair, cons, nil } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
@@ -91,7 +91,7 @@ export abstract class DataElim extends Elim {
          if (κ !== undefined) {
             const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
             [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = matchArgs(κ, v̅, ξ)
-            return [ρ, consʹ(memoId(this.match, arguments), v, ξʹ), κʹ]
+            return [ρ, cons(memoId(this.match, arguments), v, ξʹ), κʹ]
          } else {
             const d: DataType = elimToDataType.get(className(this))!
             if (d.ctrs.has(c)) {

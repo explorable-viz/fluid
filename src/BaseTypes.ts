@@ -35,7 +35,7 @@ export abstract class List<T> extends DataValue<"List"> {
    static fromArray<T extends Persistent> (x̅: T[]): List<T> {
       let x̅ʹ: List<T> = nil()
       for (let n: number = x̅.length - 1; n >= 0; --n) {
-         x̅ʹ = consʹ(ν(), x̅[n], x̅ʹ)
+         x̅ʹ = cons(ν(), x̅[n], x̅ʹ)
       }
       return x̅ʹ
    }
@@ -77,11 +77,7 @@ export class Cons<T> extends List<T> {
    }
 }
 
-export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
-   return make(Cons, head, tail) as Cons<T>
-}
-
-export function consʹ<T extends Persistent> (k: Id, head: T, tail: List<T>): Cons<T> {
+export function cons<T extends Persistent> (k: Id, head: T, tail: List<T>): Cons<T> {
    return at(k, Cons, head, tail) as Versioned<Cons<T>>
 }
 
