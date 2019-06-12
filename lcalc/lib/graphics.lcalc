@@ -73,12 +73,8 @@ let stackRight = fun sep gs →
    foldr (fun (g, g') → Graphic([g, x_translate (width g + sep) g'])) Graphic([]) gs;
 
 // List GraphicsElement → Bool → GraphicsElement
-let stackUp = fun h sep gs →
-   let gs' = match h as {
-      False → gs;
-      True → hcentre gs
-   } in
-   foldr (fun (g, g') → Graphic([g, y_translate (height g + sep) g'])) Graphic([]) gs';
+let stackUp = fun sep gs →
+   foldr (fun (g, g') → Graphic([g, y_translate (height g + sep) g'])) Graphic([]) gs;
 
 // Rect → Polygon
 let renderRect = fun Rect(w, h) stroke fill → 
@@ -176,4 +172,4 @@ let bottomMargin = fun dh g →
 // Str → GraphicsElement → GraphicsElement
 let caption = fun text g →
    // TODO: compute bottom margin and sep from font-size.
-   stackUp False 8 (hcentre [bottomMargin 6 Text(0, 0, text), g])
+   stackUp 8 (hcentre [bottomMargin 6 Text(0, 0, text), g])
