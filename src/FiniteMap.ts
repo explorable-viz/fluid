@@ -7,8 +7,8 @@ export type FiniteMap<V> = Tree<Pair<Str, V>>
 
 export function get <V extends Persistent> (m: FiniteMap<V>, k: Str): V | undefined {
    if (NonEmpty.is(m)) {
-      if (k.val.leq(m.t.fst.val)) {
-         if (m.t.fst.val.leq(k.val)) {
+      if (k.leq(m.t.fst)) {
+         if (m.t.fst.leq(k)) {
             return m.t.snd
          } else {
             return get(m.left, k)
@@ -26,8 +26,8 @@ export function get <V extends Persistent> (m: FiniteMap<V>, k: Str): V | undefi
 
 export function insert <V extends Persistent> (m: FiniteMap<V>, k: Str, v: V): FiniteMap<V> {
    if (NonEmpty.is(m)) {
-      if (k.val.leq(m.t.fst.val)) {
-         if (m.t.fst.val.leq(k.val)) {
+      if (k.leq(m.t.fst)) {
+         if (m.t.fst.leq(k)) {
             return nonEmpty(m.left, pair(k, v), m.right)
          } else {
             return nonEmpty(insert(m.left, k, v), m.t, m.right)

@@ -1,4 +1,5 @@
 import { Class, assert } from "./util/Core"
+import { Ord } from "./util/Ord"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -25,6 +26,53 @@ export class Value<Tag extends ValueTag = ValueTag> {
 export abstract class Id extends Value<"Id"> {
 }
 
+class FunctionId extends Id {
+   f: Function = _
+
+   get args (): Persistent[] {
+      return []
+   }
+}
+
+function functionId (f: Function): FunctionId {
+   return make(FunctionId, f)
+}
+
+class ApplicationId extends Id {
+   k: MemoId = _
+   v: Persistent = _
+
+   get args (): Persistent[] {
+      const v̅: Persistent[] = this.k.args
+      v̅.push(this.v)
+      return v̅
+   }
+}
+
+export type MemoId = FunctionId | ApplicationId
+
+function applicationId (k: MemoId, v: Persistent): ApplicationId {
+   return make(ApplicationId, k, v)
+}
+
+export class TaggedId<T extends Id, Tag extends string> extends Id {
+   k: T = _
+   tag: Tag = _
+}
+
+export function taggedId<T extends Id, Tag extends string> (k: T, tag: Tag): TaggedId<T, Tag> {
+   return make(TaggedId, k, tag) as TaggedId<T, Tag>
+}
+
+export function memoId (f: Function, v̅: IArguments): MemoId {
+   const fʹ: FunctionId = functionId(f)
+   let k: MemoId = fʹ
+   for (let v of v̅) {
+      k = applicationId(k, v)
+   }
+   return k
+}
+
 // Functions are persistent to support primitives. Primitive datatypes like Num and Str contain
 // ES6 primitives like number and string, which are (currently) "persistent" for interning purposes
 // but are not "values" because they are not observable to user code.
@@ -40,20 +88,24 @@ export class Num extends Value<"Num"> {
    }
 }
 
-export function num (val: number): Num {
-   return make(Num, val)
-}
-
-export class Str extends Value<"Str"> {
+export class Str extends Value<"Str"> implements Ord<Str> {
    val: string = _
 
    toString (): string {
       return `"${this.val}"`
    }
-}
 
-export function str (val: string): Str {
-   return make(Str, val)
+   leq (str: Str): boolean {
+      return this.val.localeCompare(str.val) <= 0
+   }
+
+   eq (str: Str): boolean {
+      return this.val.localeCompare(str.val) === 0
+   }
+
+   geq (str: Str): boolean {
+      return this.val.localeCompare(str.val) >= 0
+   }
 }
 
 // Dynamic interface to a value object.

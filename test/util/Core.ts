@@ -74,11 +74,14 @@ export function prependModule (src: string, e: Expr): Expr.Defs {
    return Expr.defs(ν(), successfulParse(Parse.defList, src), e)
 }
 
-export function parse (src: string): Expr {
+export function importDefaults (e: Expr): Expr {
    return prependModule(loadLib("prelude"), 
           prependModule(loadLib("graphics"), 
-          prependModule(loadLib("renderData"),
-          successfulParse(Parse.expr, src))))
+          prependModule(loadLib("renderData"),e)))
+}
+
+export function parse (src: string): Expr {
+   return importDefaults(successfulParse(Parse.expr, src))
 }
 
 // An asychronously loading test file; when loading completes text will be non-null.
@@ -102,9 +105,9 @@ export function loadTestFile (folder: string, file: string): string {
 }
 
 export function load (file: string): string {
-	return loadTestFile("example", file)
+	return loadTestFile("lcalc/example", file)
 }
 
 export function loadLib (file: string): string {
-	return loadTestFile("example/lib", file)
+	return loadTestFile("lcalc/lib", file)
 }

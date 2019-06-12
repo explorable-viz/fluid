@@ -4,7 +4,7 @@ import { List } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
-import { Id, Num, Str, _, make } from "./Value"
+import { Id, Num, Str, _, make, memoId } from "./Value"
 import { Versioned, VersionedC, at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
@@ -34,12 +34,15 @@ export namespace Expr {
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
    // Use the same heinous cast as used in 'instantiateCont'. This join is unrelated to the annotation lattice;
-   // the Expr case is intentionally undefined.
+   // the Expr case is intentionally only defined for the higher-order (function) case.
    function join<K extends Cont> (κ: K, κʹ: K): K {
       if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
          return Trie.Trie.join<K>(κ, κʹ) as K
+      } else
+      if (κ instanceof Fun && κʹ instanceof Fun) {
+         return fun(memoId(join, arguments), join(κ.σ, κʹ.σ)) as Expr as K
       } else {
-         return absurd("Undefined join.")
+         return absurd("Undefined join.", κ, κʹ)
       }
    }
 
@@ -55,28 +58,38 @@ export namespace Expr {
       return at(k, App, f, e)
    }
 
+   export class BinaryApp extends Expr {
+      e1: Expr = _
+      opName: Versioned<Str> = _
+      e2: Expr = _
+   }
+
+   export function binaryApp (k: Id, e1: Expr, opName: Versioned<Str>, e2: Expr): BinaryApp {
+      return at(k, BinaryApp, e1, opName, e2)
+   }
+
    export class ConstNum extends Expr {
-      val: Num = _
+      val: Versioned<Num> = _
    }
    
-   export function constNum (k: Id, val: Num): ConstNum {
+   export function constNum (k: Id, val: Versioned<Num>): ConstNum {
       return at(k, ConstNum, val)
    }
 
    export class ConstStr extends Expr {
-      val: Str = _
+      val: Versioned<Str> = _
    }
 
-   export function constStr (k: Id, val: Str): ConstStr {
+   export function constStr (k: Id, val: Versioned<Str>): ConstStr {
       return at(k, ConstStr, val)
    }
 
    export class Constr extends Expr {
-      ctr: Str = _
+      ctr: Versioned<Str> = _
       args: List<Expr> = _
    }
 
-   export function constr (k: Id, ctr: Str, args: List<Expr>): Constr {
+   export function constr (k: Id, ctr: Versioned<Str>, args: List<Expr>): Constr {
       return at(k, Constr, ctr, args)
    }
 
@@ -145,21 +158,19 @@ export namespace Expr {
       return at(k, MatchAs, e, σ)
    }
 
-   export class BinaryApp extends Expr {
-      e1: Expr = _
-      opName: Str = _
-      e2: Expr = _
+   export class Quote extends Expr {
+      e: Expr = _
    }
 
-   export function binaryApp (k: Id, e1: Expr, opName: Str, e2: Expr): BinaryApp {
-      return at(k, BinaryApp, e1, opName, e2)
+   export function quote (k: Id, e: Expr): Quote {
+      return at(k, Quote, e)
    }
 
    export class Var extends Expr {
-      x: Str = _
+      x: Versioned<Str> = _
    }
 
-   export function var_ (k: Id, x: Str): Var {
+   export function var_ (k: Id, x: Versioned<Str>): Var {
       return at(k, Var, x)
    }
 
@@ -168,7 +179,7 @@ export namespace Expr {
    export namespace Trie {
       export abstract class Trie<K extends Cont> extends DataValue<"Trie"> {
          static join<K extends Cont> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
-            if (Var.is(σ) && Var.is(τ) && eq(σ.x.val, τ.x.val)) {
+            if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
                return var_(σ.x, join(σ.κ, τ.κ))
             } else
             if (Constr.is(σ) && Constr.is(τ)) {
@@ -198,9 +209,9 @@ export namespace Expr {
          return make(Constr, cases) as Constr<K>
       }
 
-      // TODO: use Versioned<Str> by analogy with other binding forms.
+      // TODO: use annotations on x.
       export class Var<K extends Cont> extends Trie<K> {
-         x: Str = _
+         x: Versioned<Str> = _
          κ: K = _
 
          static is<K extends Cont> (σ: Trie<K>): σ is Var<K> {
@@ -208,7 +219,7 @@ export namespace Expr {
          }
       }
 
-      export function var_<K extends Cont> (x: Str, κ: K): Var<K> {
+      export function var_<K extends Cont> (x: Versioned<Str>, κ: K): Var<K> {
          return make(Var, x, κ) as Var<K>
       }
    }

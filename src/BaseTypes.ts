@@ -2,7 +2,7 @@ import { absurd } from "./util/Core"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Id, Persistent, _, make } from "./Value"
-import { Versioned, at } from "./Versioned"
+import { Versioned, ν, at } from "./Versioned"
 
 // See Env for convention regarding instance members on reflected datatypes.
 
@@ -12,41 +12,22 @@ export abstract class Bool extends DataValue<"Bool"> {
 export class True extends Bool {
 }
 
-export function true_ (): Bool {
-   return make(True)
-}
-
-export function trueʹ (k: Id): Versioned<Bool> {
+export function true_ (k: Id): Versioned<Bool> {
    return at(k, True)
 }
 
 export class False extends Bool {
 }
 
-export function false_ (): Bool {
-   return make(False)
-}
-
-export function falseʹ (k: Id): Versioned<Bool> {
+export function false_ (k: Id): Versioned<Bool> {
    return at(k, False)
 }
 
 export abstract class List<T> extends DataValue<"List"> {
-   map<U extends Persistent> (f: (t: T) => U): List<U> {
-      if (Cons.is(this)) {
-         return cons(f(this.head), this.tail.map(f))
-      } else
-      if (Nil.is(this)) {
-         return nil()
-      } else {
-         return absurd()
-      }
-   }
-
    static fromArray<T extends Persistent> (x̅: T[]): List<T> {
-      let x̅ʹ: List<T> = nil()
+      let x̅ʹ: List<T> = nil(ν())
       for (let n: number = x̅.length - 1; n >= 0; --n) {
-         x̅ʹ = cons(x̅[n], x̅ʹ)
+         x̅ʹ = cons(ν(), x̅[n], x̅ʹ)
       }
       return x̅ʹ
    }
@@ -75,8 +56,8 @@ export class Nil<T> extends List<T> {
    }
 }
 
-export function nil<T> (): List<T> {
-   return make(Nil) as Nil<T>
+export function nil<T> (k: Id): List<T> {
+   return at(k, Nil) as Versioned<Nil<T>>
 }
 
 export class Cons<T> extends List<T> {
@@ -88,8 +69,8 @@ export class Cons<T> extends List<T> {
    }
 }
 
-export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
-   return make(Cons, head, tail) as Cons<T>
+export function cons<T extends Persistent> (k: Id, head: T, tail: List<T>): Cons<T> {
+   return at(k, Cons, head, tail) as Versioned<Cons<T>>
 }
 
 export class Pair<T, U> extends DataValue<"Pair"> {
@@ -102,17 +83,6 @@ export function pair<T extends Persistent, U extends Persistent> (fst: T, snd: U
 }
 
 export abstract class Tree<T extends Persistent> extends DataValue<"Tree"> {
-   map<U extends Persistent> (f: (t: T) => U): Tree<U> {
-      if (NonEmpty.is(this)) {
-         return nonEmpty(this.left.map(f), f(this.t), this.right.map(f))
-      } else
-      if (Empty.is(this)) {
-         return empty()
-      } else {
-         return absurd()
-      }
-   }
-
    toArray (): T[] {
       const x̅: T[] = []
       this.toArray_(x̅)

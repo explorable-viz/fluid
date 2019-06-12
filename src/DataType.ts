@@ -52,7 +52,7 @@ export const explSuffix: string = "Expl"
 
 // See https://stackoverflow.com/questions/33605775 for the dynamic class-naming idiom.
 export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]) {
-   C̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // probably consistent with string <
+   C̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // consistent with Str.leq
    const ctrs: [string, Ctr][] = C̅.map(
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),

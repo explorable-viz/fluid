@@ -5,7 +5,7 @@ import { DataValue } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expr } from "./Expr"
-import { Str, Value, _, make } from "./Value"
+import { Str, Value, _, make, memoId } from "./Value"
 import { Versioned, asVersioned, setα } from "./Versioned"
 
 import Cont = Expr.Cont
@@ -61,7 +61,11 @@ export type Match = List<Versioned<Value>>
 
 // See GitHub issue #128.
 export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
-   abstract match (v: Versioned<Value>, ξ: Match): [Env, Match, K]
+   match (v: Versioned<Value>): [Env, Match, K] {
+      return this.matchʹ(v, nil(memoId(this.match, arguments)))
+   }
+
+   abstract matchʹ (v: Versioned<Value>, ξ: Match): [Env, Match, K]
 }
 
 // Parser ensures constructor calls are saturated.
@@ -72,7 +76,7 @@ function matchArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, 
       const [v, ...v̅ʹ] = v̅
       if (κ instanceof Elim) {
          const f: Elim = κ, // "unfold" K into Elim<K>
-               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = f.match(v, ξ),
+               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = f.matchʹ(v, ξ),
                [ρʹ, ξ2, κ2]: [Env, Match, RuntimeCont] = matchArgs(κʹ, v̅ʹ, ξʹ)
          return [ρ.concat(ρʹ), ξ2, κ2]
       } else {
@@ -84,14 +88,14 @@ function matchArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, 
 // No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
 // itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
-   match (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
+   matchʹ (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
          if (κ !== undefined) {
             const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
             [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = matchArgs(κ, v̅, ξ)
-            return [ρ, cons(v, ξʹ), κʹ]
+            return [ρ, cons(memoId(this.matchʹ, arguments), v, ξʹ), κʹ]
          } else {
             const d: DataType = elimToDataType.get(className(this))!
             if (d.ctrs.has(c)) {
@@ -110,8 +114,8 @@ class VarElim extends Elim {
    x: Str = _
    κ: RuntimeCont = _
 
-   match (v: Versioned<Value>): [Env, Match, RuntimeCont] {
-      return [Env.singleton(this.x, v), nil(), this.κ]
+   matchʹ (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
+      return [Env.singleton(this.x, v), ξ, this.κ]
    }
 }
 
