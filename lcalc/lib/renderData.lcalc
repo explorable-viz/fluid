@@ -13,7 +13,10 @@ letrec fun renderData' indentx {
                         },
                         Text(0, 0, ": "),
                         match v as {
-                           Constr(c'', es'') → error "Here";
+                           Constr(c'', es'') → match or (c'' === "Cons") (c'' === "Nil") as {
+                              True → Text(0, 0, "TODO");
+                              False → Text(0, 0, "TODO")
+                           };
                            ConstNum(n) → Text(0, 0, numToStr n);
                            ConstStr(str) → Text(0, 0, str)
                         }
@@ -26,4 +29,3 @@ letrec fun renderData' indentx {
 };
 // Expr → GraphicsElement
 let renderData = renderData' 0
-// match or (c'' === "Cons") (c'' === "Nil") as {
