@@ -4,28 +4,26 @@ letrec fun renderData' indentx {
       True → 
          match head es as {
             Constr(c', es') →
-               stackRight 0 [
-                  match c' === "Pair" as {
-                     True → match es' as [k, v] →
+               match c' === "Pair" as {
+                  True → match es' as [k, v] →
+                     stackRight 0 [
                         match k as {
                            ConstNum(n) → Text(0, 0, numToStr n);
                            ConstStr(str) → Text(0, 0, str)
-                        };
-                     False → error "Data format error: expected Pair expression."
-                  },
-                  Text(0, 0, ": "),
-                  match k as {
-                     Constr(c'', es'') → match or (c'' === "Cons") (c'' === "Nil") as {
-                        True → Text(0, 0, "TODO");
-                        False → Text(0, 0, "TODO")
-                     };
-                     ConstNum(n) → Text(0, 0, numToStr n);
-                     ConstStr(str) → Text(0, 0, str)
-                  }
-               ]
+                        },
+                        Text(0, 0, ": "),
+                        match v as {
+                           Constr(c'', es'') → error "Here";
+                           ConstNum(n) → Text(0, 0, numToStr n);
+                           ConstStr(str) → Text(0, 0, str)
+                        }
+                     ];
+                  False → error "Data format error: expected Pair expression."
+               }
          };
       False → Text(0, 0, "TODO")
    }
 };
 // Expr → GraphicsElement
 let renderData = renderData' 0
+// match or (c'' === "Cons") (c'' === "Nil") as {

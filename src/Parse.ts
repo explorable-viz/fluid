@@ -132,7 +132,7 @@ const opCandidate: Parser<string> =
       )
    )
 
-// TODO: consolidate with Primitive.ts
+// TODO: consolidate with keys of unaryOps map.
 function isExponentOp (opName: string): boolean {
    return opName === "**"
 }
@@ -147,7 +147,7 @@ function isSumOp (opName: string): boolean {
 
 function isCompareOp (opName: string): boolean {
    return opName === "==" || opName === "===" || opName === "<=" || 
-          opName === "<" || opName === "<<" || opName === ">=" || opName === ">" || opName === ">>"
+          opName === "<==" || opName === "<" || opName === ">=" || opName === ">==" || opName === ">"
 }
 
 const exponentOp: Parser<string> = satisfying(opCandidate, isExponentOp),

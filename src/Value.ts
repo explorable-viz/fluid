@@ -1,4 +1,5 @@
 import { Class, assert } from "./util/Core"
+import { Ord } from "./util/Ord"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -87,11 +88,23 @@ export class Num extends Value<"Num"> {
    }
 }
 
-export class Str extends Value<"Str"> {
+export class Str extends Value<"Str"> implements Ord<Str> {
    val: string = _
 
    toString (): string {
       return `"${this.val}"`
+   }
+
+   leq (str: Str): boolean {
+      return this.val.localeCompare(str.val) <= 0
+   }
+
+   eq (str: Str): boolean {
+      return this.val.localeCompare(str.val) === 0
+   }
+
+   geq (str: Str): boolean {
+      return this.val.localeCompare(str.val) >= 0
    }
 }
 

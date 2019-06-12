@@ -45,11 +45,12 @@ const concat = (x: Str, y: Str) => (k: Id): Versioned<Str> => str(k, as(x, Str).
 const equalInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val === as(y, Num).val ? true_ : false_
 const equalStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).val === as(y, Str).val ? true_ : false_
 const greaterEqInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val >= as(y, Num).val ? true_ : false_
+// String comparison delegates to central implementation for consistency.
+const greaterEqStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).geq(as(y, Str)) ? true_ : false_
 const greaterInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val > as(y, Num).val ? true_ : false_
-const greaterStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).val > as(y, Str).val ? true_ : false_
 const lessEqInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val <= as(y, Num).val ? true_ : false_
+const lessEqStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).leq(as(y, Str)) ? true_ : false_
 const lessInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val < as(y, Num).val ? true_ : false_
-const lessStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).val < as(y, Str).val ? true_ : false_
 const minus = (x: Num, y: Num) => (k: Id): Versioned<Num> => num(k, as(x, Num).val - as(y, Num).val)
 const plus = (x: Num, y: Num) => (k: Id): Versioned<Num> => num(k, as(x, Num).val + as(y, Num).val)
 const pow = (x: Num, y: Num) => (k: Id): Versioned<Num> => num(k, as(x, Num).val ** as(y, Num).val)
@@ -84,9 +85,9 @@ export const binaryOps: Map<string, BinaryOp> = new Map([
    ["===", binary_(equalStr)],
    [">", binary_(greaterInt)],
    [">=", binary_(greaterEqInt)],
-   [">>", binary_(greaterStr)],
+   [">==", binary_(greaterEqStr)],
    ["<", binary_(lessInt)],
    ["<=", binary_(lessEqInt)],
-   ["<<", binary_(lessStr)],
+   ["<==", binary_(lessEqStr)],
    ["++", binary_(concat)]
 ])

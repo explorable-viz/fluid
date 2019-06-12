@@ -179,7 +179,7 @@ export namespace Expr {
    export namespace Trie {
       export abstract class Trie<K extends Cont> extends DataValue<"Trie"> {
          static join<K extends Cont> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
-            if (Var.is(σ) && Var.is(τ) && eq(σ.x.val, τ.x.val)) {
+            if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
                return var_(σ.x, join(σ.κ, τ.κ))
             } else
             if (Constr.is(σ) && Constr.is(τ)) {
