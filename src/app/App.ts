@@ -5,8 +5,8 @@ import { Direction, Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
-import { Value, str } from "../Value"
-import { setallα, ν } from "../Versioned"
+import { Value } from "../Value"
+import { ν, setallα, strʹ } from "../Versioned"
 import { importDefaults, load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { DataView, DataRenderer } from "./DataRenderer"
@@ -78,7 +78,7 @@ class App implements Slicer {
 
    // TODO: sharing of data_e is not nice, and probably problematic w.r.t. set/clearing annotations.
    visualise (data_e: Expr): ExplValue {
-      const e: Expr = importDefaults(Expr.app(ν(), Expr.var_(ν(), str("renderData")), Expr.quote(ν(), data_e))),
+      const e: Expr = importDefaults(Expr.app(ν(), Expr.var_(ν(), strʹ(ν(), "renderData")), Expr.quote(ν(), data_e))),
             tv: ExplValue = Eval.eval_(emptyEnv(), e)
       setallα(ann.top, e)
       Eval.eval_fwd(tv)

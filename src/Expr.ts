@@ -57,11 +57,11 @@ export namespace Expr {
 
    export class BinaryApp extends Expr {
       e1: Expr = _
-      opName: Str = _
+      opName: Versioned<Str> = _
       e2: Expr = _
    }
 
-   export function binaryApp (k: Id, e1: Expr, opName: Str, e2: Expr): BinaryApp {
+   export function binaryApp (k: Id, e1: Expr, opName: Versioned<Str>, e2: Expr): BinaryApp {
       return at(k, BinaryApp, e1, opName, e2)
    }
 
@@ -164,10 +164,10 @@ export namespace Expr {
    }
 
    export class Var extends Expr {
-      x: Str = _
+      x: Versioned<Str> = _
    }
 
-   export function var_ (k: Id, x: Str): Var {
+   export function var_ (k: Id, x: Versioned<Str>): Var {
       return at(k, Var, x)
    }
 
@@ -206,9 +206,9 @@ export namespace Expr {
          return make(Constr, cases) as Constr<K>
       }
 
-      // TODO: use Versioned<Str> by analogy with other binding forms.
+      // TODO: use annotations on x.
       export class Var<K extends Cont> extends Trie<K> {
-         x: Str = _
+         x: Versioned<Str> = _
          κ: K = _
 
          static is<K extends Cont> (σ: Trie<K>): σ is Var<K> {
@@ -216,7 +216,7 @@ export namespace Expr {
          }
       }
 
-      export function var_<K extends Cont> (x: Str, κ: K): Var<K> {
+      export function var_<K extends Cont> (x: Versioned<Str>, κ: K): Var<K> {
          return make(Var, x, κ) as Var<K>
       }
    }
