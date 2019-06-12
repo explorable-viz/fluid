@@ -57,23 +57,26 @@ let height = compose snd dimensions;
 let spaceRight = fun sep gs →
    zipW (uncurry x_translate) (iterate (length gs) (fun x → x + sep) 0) gs;
 
-// Unlike spaceRight, produces a nested structure.
-// List GraphicsElement → GraphicsElement
-let stackRight = fun sep gs →
-   foldr (fun (g, g') → Graphic([g, x_translate (width g + sep) g'])) Graphic([]) gs;
-
 // List GraphicsElement → List GraphicsElement
 let vcentre = fun gs →
    let max_w = max (map height gs) in
    map (fun g → x_translate ((max_w - height g) / 2) g) gs;
 
+// List GraphicsElement → List GraphicsElement
+let hcentre = fun gs → 
+   let max_w = max (map width gs) in
+   map (fun g → x_translate ((max_w - width g) / 2) g) gs;
+
+// Unlike spaceRight, produces a nested structure.
+// List GraphicsElement → GraphicsElement
+let stackRight = fun sep gs →
+   foldr (fun (g, g') → Graphic([g, x_translate (width g + sep) g'])) Graphic([]) gs;
+
 // List GraphicsElement → Bool → GraphicsElement
-let stackUp = fun hcentre sep gs →
-   let gs' = match hcentre as {
+let stackUp = fun h sep gs →
+   let gs' = match h as {
       False → gs;
-      True → 
-         let max_w = max (map width gs) in
-         map (fun g → x_translate ((max_w - width g) / 2) g) gs
+      True → hcentre gs
    } in
    foldr (fun (g, g') → Graphic([g, y_translate (height g + sep) g'])) Graphic([]) gs';
 
