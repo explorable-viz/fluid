@@ -42,7 +42,6 @@ letrec fun dimensions {
    Graphic(gs) → 
       pathDimensions (map dimensions gs);
    Text(x, y, str) → 
-      // will this take alignment-baseline into account?
       (x + textWidth str, y + textHeight str);
    Translate(x, y, g) →
       match dimensions g as (w, h) → (w + x, h + y)
@@ -60,14 +59,13 @@ let spaceRight = fun sep gs →
 
 // Unlike spaceRight, produces a nested structure.
 // List GraphicsElement → GraphicsElement
-let stackRight = fun vcentre sep gs →
-   let gs' = match vcentre as {
-      False → gs;
-      True → 
-         let max_w = max (map height gs) in
-         map (fun g → x_translate ((max_w - height g) / 2) g) gs
-   } in
-   foldr (fun (g, g') → Graphic([g, x_translate (width g + sep) g'])) Graphic([]) gs';
+let stackRight = fun sep gs →
+   foldr (fun (g, g') → Graphic([g, x_translate (width g + sep) g'])) Graphic([]) gs;
+
+// List GraphicsElement → List GraphicsElement
+let vcentre = fun gs →
+   let max_w = max (map height gs) in
+   map (fun g → x_translate ((max_w - height g) / 2) g) gs;
 
 // List GraphicsElement → Bool → GraphicsElement
 let stackUp = fun hcentre sep gs →

@@ -1,4 +1,4 @@
-// Expr → GraphicsElement
+// Num → Expr → GraphicsElement
 letrec fun renderData' indentx {
    Constr(c,es) → match c === "Cons" as {
       True → 
@@ -7,13 +7,15 @@ letrec fun renderData' indentx {
                match c' === "Pair" as {
                   True → match es' as [k, v] →
                      match k as {
-                        ConstNum(n) → Text(0, 0, "TODO");
-                        ConstStr(str) → Text(0, 0, "TODO")
+                        ConstNum(n) → Text(0, 0, numToStr n);
+                        ConstStr(str) → Text(0, 0, str)
                      };
+                     // this.view.push(stringToken(": "))
                   False → error "Data format error: expected Pair expression."
                }
          };
       False → Text(0, 0, "TODO")
    }
 };
+// Expr → GraphicsElement
 let renderData = renderData' 0
