@@ -4,15 +4,17 @@ letrec fun renderData' indentx {
       True → 
          match head es as {
             Constr(c', es') →
-               match c' === "Pair" as {
-                  True → match es' as [k, v] →
-                     match k as {
-                        ConstNum(n) → Text(0, 0, numToStr n);
-                        ConstStr(str) → Text(0, 0, str)
-                     };
-                     // this.view.push(stringToken(": "))
-                  False → error "Data format error: expected Pair expression."
-               }
+               stackRight 0 [
+                  match c' === "Pair" as {
+                     True → match es' as [k, v] →
+                        match k as {
+                           ConstNum(n) → Text(0, 0, numToStr n);
+                           ConstStr(str) → Text(0, 0, str)
+                        };
+                     False → error "Data format error: expected Pair expression."
+                  },
+                  Text(0, 0, ": ")
+               ]
          };
       False → Text(0, 0, "TODO")
    }
