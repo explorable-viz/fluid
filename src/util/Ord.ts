@@ -2,7 +2,7 @@ import { Eq } from "./Eq"
 
 export interface Ord<K extends Ord<K>> extends Eq<K> {
    // The argument is always of the type implementing Ord.
-   leq(a: K): boolean
+   leq (a: K): boolean
 }
 
 export function eq<K extends Ord<K>>(a: K, b: K): boolean {
