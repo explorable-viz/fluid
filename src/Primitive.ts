@@ -1,7 +1,7 @@
 import { as, assert } from "./util/Core"
 import { Bool, true_, false_ } from "./BaseTypes"
 import { Id, Num, PrimOpTag, PrimValue, Str, _, Value, make } from "./Value"
-import { Versioned, asVersioned, at, ν, num, strʹ } from "./Versioned"
+import { Versioned, asVersioned, at, ν, num, str } from "./Versioned"
 
 type Unary<T, V> = (x: T) => (k: Id) => Versioned<V>
 type Binary<T, U, V> = (x: T, y: U) => (k: Id) => Versioned<V>
@@ -36,12 +36,12 @@ const ceiling = (x: Num) => (k: Id): Versioned<Num> => num(k, Math.ceil(x.val))
 const error = (message: Str) => (k: Id): Versioned<Value> => assert(false, "LambdaCalc error:\n" + message.val)
 const floor = (x: Num) => (k: Id): Versioned<Num> => num(k, Math.floor(x.val))
 const log = (x: Num) => (k: Id): Versioned<Num> => num(k, Math.log(as(x, Num).val))
-const numToStr = (x: Num) => (k: Id): Versioned<Str> => strʹ(k, x.val.toString())
+const numToStr = (x: Num) => (k: Id): Versioned<Str> => str(k, x.val.toString())
 const trace = (v: Num | Str) => (k: Id): Versioned<Value> => { console.log(v); return asVersioned(v) }
 // No longer support overloaded functions, since the pattern-matching semantics is non-trivial; might require typecase.
 // If we want integer division, apparently ~~(x / y) will round in the right direction.
 const div = (x: Num, y: Num) => (k: Id): Versioned<Num> => num(k, as(x, Num).val / as(y, Num).val)
-const concat = (x: Str, y: Str) => (k: Id): Versioned<Str> => strʹ(k, as(x, Str).val + as(y, Str).val)
+const concat = (x: Str, y: Str) => (k: Id): Versioned<Str> => str(k, as(x, Str).val + as(y, Str).val)
 const equalInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val === as(y, Num).val ? true_ : false_
 const equalStr = (x: Str, y: Str): (k: Id) => Versioned<Bool> => as(x, Str).val === as(y, Str).val ? true_ : false_
 const greaterEqInt = (x: Num, y: Num): (k: Id) => Versioned<Bool> => as(x, Num).val >= as(y, Num).val ? true_ : false_

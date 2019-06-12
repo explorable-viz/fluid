@@ -97,7 +97,7 @@ export function num (k: Id, val: number): Versioned<Num> {
    return at(k, Num, val)
 }
 
-export function strʹ (k: Id, val: string): Versioned<Str> {
+export function str (k: Id, val: string): Versioned<Str> {
    return at(k, Str, val)
 }
 

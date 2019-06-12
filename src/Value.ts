@@ -95,10 +95,6 @@ export class Str extends Value<"Str"> {
    }
 }
 
-export function str (val: string): Str {
-   return make(Str, val)
-}
-
 // Dynamic interface to a value object.
 export interface State {
    [prop: string]: Persistent

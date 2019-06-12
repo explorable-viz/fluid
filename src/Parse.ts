@@ -9,7 +9,7 @@ import { arity } from "./DataType"
 import { Expr, Cont, strings } from "./Expr"
 import { singleton } from "./FiniteMap"
 import { Str } from "./Value"
-import { Versioned, ν, num, strʹ } from "./Versioned"
+import { Versioned, ν, num, str } from "./Versioned"
 
 import App = Expr.App
 import BinaryApp = Expr.BinaryApp
@@ -80,14 +80,14 @@ function reserved (str: string): Parser<string> {
 }
 
 const ctr: Parser<Versioned<Str>> =
-   withAction(lexeme_(satisfying(identCandidate, isCtr)), c => strʹ(ν(), c))
+   withAction(lexeme_(satisfying(identCandidate, isCtr)), c => str(ν(), c))
 
 // Note that primitive operations that have names (e.g. intToString) are /exactly/ like regular
 // identifiers. They can be shadowed, for example.
 const var_: Parser<Versioned<Str>> =
    withAction(
       lexeme_(butnot(satisfying(identCandidate, c => !isCtr(c)), reservedWord)),
-      (x: string) => strʹ(ν(), x)
+      (x: string) => str(ν(), x)
    )
 
 const variable: Parser<Var> =
@@ -172,14 +172,14 @@ function appOp (opP: Parser<string>): Parser<(e1: Expr, e2: Expr) => BinaryApp> 
       opP,
       (op: string) =>
          (e1: Expr, e2: Expr): BinaryApp =>
-            Expr.binaryApp(ν(), e1, strʹ(ν(), op), e2)
+            Expr.binaryApp(ν(), e1, str(ν(), op), e2)
    )
 }
 
 const string_: Parser<ConstStr> =
    withAction(
       lexeme_(between(ch('"'), withJoin(repeat(stringCh)), ch('"'),)),
-      (lit: string) => Expr.constStr(ν(), strʹ(ν(), lit))
+      (lit: string) => Expr.constStr(ν(), str(ν(), lit))
    )
 
 // JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
@@ -262,7 +262,7 @@ const constr: Parser<Constr> =
    )
 
 const listRestOpt: Parser<Expr> = 
-   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(ν(), strʹ(ν(), Nil.name), nil(ν())))
+   optional(dropFirst(seq(symbol(","), symbol("...")), expr), () => Expr.constr(ν(), str(ν(), Nil.name), nil(ν())))
 
 const listʹ: Parser<Constr> =
    optional(
@@ -270,11 +270,11 @@ const listʹ: Parser<Constr> =
          seq(sepBy1(expr, symbol(",")), listRestOpt),
          ([e̅, e]): Expr.Constr => {
             return [...e̅, e].reverse().reduce((e̅ʹ, eʹ) => {
-               return Expr.constr(ν(), strʹ(ν(), Cons.name), List.fromArray([eʹ, e̅ʹ]))
+               return Expr.constr(ν(), str(ν(), Cons.name), List.fromArray([eʹ, e̅ʹ]))
             }) as Expr.Constr
          }
       ),
-      () => Expr.constr(ν(), strʹ(ν(), Nil.name), nil(ν()))
+      () => Expr.constr(ν(), str(ν(), Nil.name), nil(ν()))
    )
 
 const list: Parser<Constr> =
@@ -284,7 +284,7 @@ const pair: Parser<Constr> =
    withAction(
       parenthesise(seq(dropSecond(expr, symbol(",")), expr)),
       ([fst, snd]: [Expr, Expr]) =>
-         Expr.constr(ν(), strʹ(ν(), Pair.name), List.fromArray([fst, snd]))
+         Expr.constr(ν(), str(ν(), Pair.name), List.fromArray([fst, snd]))
    )
 
 function args_pattern<K extends Cont> (n: number, p: Parser<K>): Parser<K> {
@@ -324,21 +324,21 @@ function listRest_pattern <K extends Cont> (p: Parser<K>): Parser<Trie<K>> {
       choice([
          dropFirst(symbol(","), dropFirst(symbol("..."), pattern(p))),
          dropFirst(symbol(","), list1_pattern(p)),
-         withAction(p, (κ: K) => Trie.constr(singleton(strʹ(ν(), "Nil"), κ)))
+         withAction(p, (κ: K) => Trie.constr(singleton(str(ν(), "Nil"), κ)))
       ])(state)
 }
 
 function list1_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       pattern(listRest_pattern(p)),
-      (σ: Trie<K>) => Trie.constr(singleton(strʹ(ν(), "Cons"), σ as K)) // cast legitimate?
+      (σ: Trie<K>) => Trie.constr(singleton(str(ν(), "Cons"), σ as K)) // cast legitimate?
    )
 }
 
 function list_patternʹ<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return choice([
       list1_pattern(p),
-      withAction(p, (κ: K) => Trie.constr(singleton(strʹ(ν(), "Nil"), κ)))
+      withAction(p, (κ: K) => Trie.constr(singleton(str(ν(), "Nil"), κ)))
    ])
 }
 
@@ -349,7 +349,7 @@ function list_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
 function pair_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       dropFirst(symbol(strings.parenL), args_pattern(2, dropFirst(symbol(strings.parenR), p))),
-      (κ: K): Trie.Constr<K> => Trie.constr(singleton(strʹ(ν(), "Pair"), κ))
+      (κ: K): Trie.Constr<K> => Trie.constr(singleton(str(ν(), "Pair"), κ))
    )
 }
 
