@@ -13,7 +13,15 @@ letrec fun renderData' indentx {
                         };
                      False → error "Data format error: expected Pair expression."
                   },
-                  Text(0, 0, ": ")
+                  Text(0, 0, ": "),
+                  match k as {
+                     Constr(c'', es'') → match or (c'' === "Cons") (c'' === "Nil") as {
+                        True → Text(0, 0, "TODO");
+                        False → Text(0, 0, "TODO")
+                     };
+                     ConstNum(n) → Text(0, 0, numToStr n);
+                     ConstStr(str) → Text(0, 0, str)
+                  }
                ]
          };
       False → Text(0, 0, "TODO")

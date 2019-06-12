@@ -41,7 +41,7 @@ letrec fun dimensions {
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
    Graphic(gs) → 
       pathDimensions (map dimensions gs);
-   Text(x, y, str) → 
+   Text(x, y, str) →
       (x + textWidth str, y + textHeight str);
    Translate(x, y, g) →
       match dimensions g as (w, h) → (w + x, h + y)

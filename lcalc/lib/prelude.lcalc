@@ -170,4 +170,11 @@ let tail = fun [x, ...xs] → xs;
 let curry = fun f x y → f (x, y);
 
 // (a → b → c) → (a, b) → c
-let uncurry = fun f (x, y) → f x y
+let uncurry = fun f (x, y) → f x y;
+
+// Bool → Bool
+let or = fun {
+   True x → True;
+   False True → True;
+   False False → False
+}

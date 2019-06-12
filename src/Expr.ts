@@ -4,7 +4,7 @@ import { List } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
-import { Id, Num, Str, _, make } from "./Value"
+import { Id, Num, Str, _, make, memoId } from "./Value"
 import { Versioned, VersionedC, at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
@@ -34,12 +34,15 @@ export namespace Expr {
 
    // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
    // Use the same heinous cast as used in 'instantiateCont'. This join is unrelated to the annotation lattice;
-   // the Expr case is intentionally undefined.
+   // the Expr case is intentionally only defined for the higher-order (function) case.
    function join<K extends Cont> (κ: K, κʹ: K): K {
       if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
          return Trie.Trie.join<K>(κ, κʹ) as K
+      } else
+      if (κ instanceof Fun && κʹ instanceof Fun) {
+         return fun(memoId(join, arguments), join(κ.σ, κʹ.σ)) as Expr as K
       } else {
-         return absurd("Undefined join.")
+         return absurd("Undefined join.", κ, κʹ)
       }
    }
 
