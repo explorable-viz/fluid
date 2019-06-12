@@ -1,5 +1,5 @@
 // Expr → GraphicsElement
-letrec fun renderData {
+letrec fun renderData' indentx {
    Constr(c,es) → match c === "Cons" as {
       True → 
          match head es as {
@@ -15,4 +15,5 @@ letrec fun renderData {
          };
       False → Text(0, 0, "TODO")
    }
-}
+};
+let renderData = renderData' 0
