@@ -176,4 +176,4 @@ let bottomMargin = fun dh g →
 // Str → GraphicsElement → GraphicsElement
 let caption = fun text g →
    // TODO: compute bottom margin and sep from font-size.
-   stackUp True 8 [bottomMargin 6 Text(0, 0, text), g]
+   stackUp False 8 (hcentre [bottomMargin 6 Text(0, 0, text), g])
