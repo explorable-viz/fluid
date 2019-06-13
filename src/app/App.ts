@@ -61,11 +61,11 @@ class App implements Slicer {
       return svg
    }
 
-   get graphics (): GraphicsElement {
+   getGraphics (): GraphicsElement {
       return as(this.tv.v as Value, GraphicsElement)
    }
 
-   get dataGraphics(): GraphicsElement {
+   getDataGraphics(): GraphicsElement {
       return as(this.dataView_tv.v as Value, GraphicsElement)
    }
    
@@ -136,8 +136,8 @@ class App implements Slicer {
    draw (): void {
       this.dataCtx.clearRect(0, 0, this.dataCanvas.width, this.dataCanvas.height)
       this.dataView.draw()
-      this.dataView2.render(this.dataGraphics)
-      this.graphicsView.render(this.graphics)
+      this.dataView2.render(this.getDataGraphics())
+      this.graphicsView.render(this.getGraphics())
       // this.graphicsPane3D.render()
    }
 
