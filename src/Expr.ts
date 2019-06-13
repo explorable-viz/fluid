@@ -23,6 +23,7 @@ export namespace strings {
    export const parenL: string = "("
    export const parenR: string = ")"
    export const quotes: string = '"'
+   export const typecase: string = "typecase"
 }
 
 export type Expr = Expr.Expr
@@ -164,6 +165,22 @@ export namespace Expr {
 
    export function quote (k: Id, e: Expr): Quote {
       return at(k, Quote, e)
+   }
+
+   export class Typecase extends Expr {
+      cases: FiniteMap<Expr> = _
+
+      // Parser ensures keys name types.
+      static join (t: Typecase, tʹ: Typecase): Typecase {
+         return typecase(
+            memoId(Typecase.join, arguments), 
+            unionWith(t.cases, tʹ.cases, (e: Expr, eʹ: Expr): Expr => error("Overlapping typecase branches."))
+         )
+      }
+   }
+
+   export function typecase (k: Id, cases: FiniteMap<Expr>): Typecase {
+      return at(k, Typecase, cases)
    }
 
    export class Var extends Expr {

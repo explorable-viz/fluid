@@ -1,11 +1,11 @@
-import { assert } from "./util/Core"
+import { error } from "./util/Core"
 import { 
    Parser, ParseResult, ParseState, between, butnot, ch, chainl1, choice, constant, dropFirst,
    dropSecond, seqDep, lexeme_, negate, optional, range, repeat, repeat1, satisfying, sepBy1, seq, 
    sequence, symbol, withAction, withJoin
 } from "./util/parse/Core"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
-import { arity } from "./DataType"
+import { arity, types } from "./DataType"
 import { Expr, Cont, strings } from "./Expr"
 import { singleton } from "./FiniteMap"
 import { Str } from "./Value"
@@ -25,6 +25,7 @@ import MatchAs = Expr.MatchAs
 import Prim = Expr.Prim
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
+import Typecase = Expr.Typecase
 import Var = Expr.Var
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
@@ -255,8 +256,12 @@ const constr: Parser<Constr> =
       seq(ctr, optional(parenthesise(sepBy1(expr, symbol(","))), () => [])),
       ([c, e̅]: [Versioned<Str>, Expr[]]) => {
          const n: number = arity(c)
-         assert(n <= e̅.length,`Too few arguments to constructor ${c.val}.`)
-         assert(n >= e̅.length, `Too many arguments to constructor ${c.val}.`)
+         if (n > e̅.length) {
+            error(`Too few arguments to constructor ${c.val}.`)
+         }
+         if (n < e̅.length) {
+            error(`Too many arguments to constructor ${c.val}.`)
+         }
          return Expr.constr(ν(), c, List.fromArray(e̅))
       }
    )
@@ -295,7 +300,7 @@ function args_pattern<K extends Cont> (n: number, p: Parser<K>): Parser<K> {
       if (n > 1) {
          pʹ = dropFirst(symbol(","), pʹ)
       }
-      return withAction(pattern(pʹ), (σ: Trie<K>) => σ as K) // cast legitimate?
+      return withAction(pattern(pʹ), (σ: Trie<K>) => σ as K)
    }
 }
 
@@ -304,7 +309,7 @@ function constr_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       seqDep(
          ctr, 
-         (c: Str): Parser<K> => {
+         (c: Versioned<Str>): Parser<K> => {
             const n: number = arity(c)
             if (n === 0) {
                return p
@@ -313,7 +318,7 @@ function constr_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
             }
          }
       ),
-      ([c, κ]: [Str, K]): Trie.Constr<K> =>
+      ([c, κ]: [Versioned<Str>, K]): Trie.Constr<K> =>
          Trie.constr(singleton(c, κ))
    )
 }
@@ -331,7 +336,7 @@ function listRest_pattern <K extends Cont> (p: Parser<K>): Parser<Trie<K>> {
 function list1_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
       pattern(listRest_pattern(p)),
-      (σ: Trie<K>) => Trie.constr(singleton(str(ν(), "Cons"), σ as K)) // cast legitimate?
+      (σ: Trie<K>) => Trie.constr(singleton(str(ν(), "Cons"), σ as K))
    )
 }
 
@@ -404,10 +409,44 @@ const fun: Parser<Fun> =
       (σ: Trie<Expr>): Fun => Expr.fun(ν(), σ)
    )
 
+const typename: Parser<Versioned<Str>> =
+   withAction(lexeme_(identCandidate), c => str(ν(), c))
+
+const typeMatch: Parser<Typecase> =
+   withAction(
+      seq(typename, dropFirst(symbol(strings.arrow), expr)),
+      ([t, e]: [Versioned<Str>, Expr]) => {
+         if (!types.has(t.val)) {
+            error(`Type name ${t.val} not found.`)
+         }
+         return Expr.typecase(ν(), singleton(t, e))
+      }
+   )
+
+// Assume at least one clause.
+function typeMatches (state: ParseState): ParseResult<Typecase> | null {
+   return withAction(
+      choice<Typecase[]>([
+         withAction(typeMatch, m => [m]),
+         between(symbol("{"), sepBy1(typeMatch, symbol(";")), symbol("}"))
+      ]),
+      (m̅: Typecase[]) => {
+         let m: Typecase = m̅[0]
+         for (let i = 1; i < m̅.length; ++i) {
+            m = Typecase.join(m, m̅[i])
+         } 
+         return m
+      }
+   )(state)
+}
+
+const typecase: Parser<Typecase> =
+   dropFirst(keyword(strings.typecase), typeMatches)
+
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
    choice<Expr>([
-      variable, string_, number_, parenthExpr, pair, defs1, list, constr, matchAs, fun
+      variable, string_, number_, parenthExpr, pair, defs1, list, constr, matchAs, fun, typecase
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.

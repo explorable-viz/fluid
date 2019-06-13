@@ -1,7 +1,7 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { DataExpl, DataValue } from "./DataValue"
 import { DataElim } from "./Match"
-import { Str, _, fields } from "./Value"
+import { Num, Str, _, fields } from "./Value"
 
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
@@ -45,8 +45,9 @@ export function arity (ctr: Str): number {
 }
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
-export let ctrToDataType: Map<string, DataType> = new Map
-export let elimToDataType: Map<string, DataType> = new Map
+export const types: Map<string, DataType | typeof Num | typeof Str> = new Map
+export const ctrToDataType: Map<string, DataType> = new Map
+export const elimToDataType: Map<string, DataType> = new Map
 export const elimSuffix: string = "Elim"
 export const explSuffix: string = "Expl"
 
@@ -86,4 +87,7 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
       ctrToDataType.set(C.name, d)
    })
    elimToDataType.set(elimC_name, d)
+   types.set(d.name, d)
+   types.set(Num.name, Num)
+   types.set(Str.name, Str)
 }
