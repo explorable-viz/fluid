@@ -10,7 +10,6 @@ import { ν, setallα, str } from "../Versioned"
 import { importDefaults, load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { DataView, DataRenderer } from "./DataRenderer"
-import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer, Slicer, svgNS } from "./GraphicsRenderer"
 
 class App implements Slicer {
@@ -19,12 +18,11 @@ class App implements Slicer {
    data_e: Expr                   // expression for data (value bound by first let in user code)
    dataView: DataView
    dataView2: GraphicsRenderer
-   dataView_tv: ExplValue
+   dataView2_tv: ExplValue
    dataCanvas: HTMLCanvasElement
    dataSvg: SVGSVGElement
    dataCtx: CanvasRenderingContext2D
    graphicsView: GraphicsRenderer
-   graphicsPane3D: GraphicsPane3D
    graphicsSvg: SVGSVGElement
    direction: Direction
 
@@ -33,16 +31,11 @@ class App implements Slicer {
       this.dataSvg = this.createSvg(400, 400)
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
-      this.graphicsPane3D = new GraphicsPane3D(600, 600)
       this.dataCanvas.style.verticalAlign = "top"
       this.dataCanvas.style.display = "inline-block"
-      this.graphicsPane3D.renderer.domElement.style.verticalAlign = "top"
-      this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
       document.body.appendChild(this.dataSvg)
       document.body.appendChild(this.graphicsSvg)
-      // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
-      // this.graphicsPane3D.setCanvas(this.graph      return as(this.tv.v as Value, GraphicsElement)
       this.loadExample()
    }
 
@@ -66,7 +59,7 @@ class App implements Slicer {
    }
 
    getDataGraphics(): GraphicsElement {
-      return as(this.dataView_tv.v as Value, GraphicsElement)
+      return as(this.dataView2_tv.v as Value, GraphicsElement)
    }
    
    // "Data" is defined to be the expression bound by the first "let" in user code; must be already in normal form.
@@ -105,7 +98,7 @@ class App implements Slicer {
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
       this.renderData(this.data_e)
-      this.dataView_tv = this.visualise(this.data_e)
+      this.dataView2_tv = this.visualise(this.data_e)
       this.dataView2 = new GraphicsRenderer(this.dataSvg, this)
       this.graphicsView = new GraphicsRenderer(this.graphicsSvg, this)
       this.resetForFwd()
@@ -138,7 +131,6 @@ class App implements Slicer {
       this.dataView.draw()
       this.dataView2.render(this.getDataGraphics())
       this.graphicsView.render(this.getGraphics())
-      // this.graphicsPane3D.render()
    }
 
    renderData (data: Expr): void {
