@@ -159,17 +159,6 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote(kₜ), copyAt(kᵥ, e.e))
    } else
-   if (e instanceof Expr.Typecase) {
-      const tu: ExplValue = eval_(ρ, e.e),
-            d: DataType | PrimType = __nonNull(types.get(className(tu.v))),
-            eʹ: Expr | undefined = get(e.cases, d.name)
-      if (eʹ === undefined) {
-         return error(`Typecase mismatch: no clause for ${className(e)}.`)
-      } else {
-         const tv: ExplValue = eval_(ρ, eʹ)
-         return explValue(Expl.typecase(kₜ, tu, tv), copyAt(kᵥ, tv.v))
-      }
-   } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 
          const v: Versioned<Value> = ρ.get(e.x)!
@@ -222,6 +211,17 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [ρʹ, ξ, eʹ]: [Env, Match, Expr] = evalTrie(e.σ).match(tu.v),
             tv: ExplValue = eval_(ρ.concat(ρʹ), eʹ)
       return explValue(Expl.matchAs(kₜ, tu, ξ, tv), copyAt(kᵥ, tv.v))
+   } else
+   if (e instanceof Expr.Typecase) {
+      const tu: ExplValue = eval_(ρ, e.e),
+            d: DataType | PrimType = __nonNull(types.get(className(tu.v))),
+            eʹ: Expr | undefined = get(e.cases, d.name)
+      if (eʹ === undefined) {
+         return error(`Typecase mismatch: no clause for ${className(tu.v)}.`)
+      } else {
+         const tv: ExplValue = eval_(ρ, eʹ)
+         return explValue(Expl.typecase(kₜ, tu, tv), copyAt(kᵥ, tv.v))
+      }
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
@@ -274,6 +274,11 @@ export function eval_fwd ({t, v}: ExplValue): void {
       eval_fwd(t.tu)
       eval_fwd(t.tv)
       setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
+   } else
+   if (t instanceof Expl.Typecase) {
+      eval_fwd(t.tu)
+      eval_fwd(t.tv)
+      setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else {
       absurd()
    }
@@ -337,6 +342,12 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
       joinα(v.__α, t.tv.v)
       eval_bwd(t.tv)
       match_bwd(t.ξ, v.__α)
+      eval_bwd(t.tu)
+      return joinα(v.__α, e)
+   } else
+   if (t instanceof Expl.Typecase) {
+      joinα(v.__α, t.tv.v)
+      eval_bwd(t.tv)
       eval_bwd(t.tu)
       return joinα(v.__α, e)
    } else {
