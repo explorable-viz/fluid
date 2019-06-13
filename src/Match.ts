@@ -111,7 +111,7 @@ export abstract class DataElim extends Elim {
 }
 
 class VarElim extends Elim {
-   x: Str = _
+   x: Versioned<Str> = _
    κ: RuntimeCont = _
 
    matchʹ (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
@@ -119,7 +119,7 @@ class VarElim extends Elim {
    }
 }
 
-function varElim<K extends RuntimeCont> (x: Str, κ: RuntimeCont): VarElim {
+function varElim<K extends RuntimeCont> (x: Versioned<Str>, κ: RuntimeCont): VarElim {
    return make(VarElim, x, κ) as VarElim
 }
 

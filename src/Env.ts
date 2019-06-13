@@ -7,7 +7,7 @@ import { Versioned } from "./Versioned"
 
 // Environments are snoc lists.
 export abstract class Env extends DataValue<"Env"> {
-   get (k: Str): Versioned<Value> | undefined {
+   get (k: Versioned<Str>): Versioned<Value> | undefined {
       if (this instanceof EmptyEnv) {
          return undefined
       } else
@@ -22,11 +22,11 @@ export abstract class Env extends DataValue<"Env"> {
       }
    }
    
-   has (k: Str): boolean {
+   has (k: Versioned<Str>): boolean {
       return this.get(k) !== undefined
    }
 
-   static singleton (k: Str, v: Versioned<Value>): Env {
+   static singleton (k: Versioned<Str>, v: Versioned<Value>): Env {
       return extendEnv(emptyEnv(), k, v)
    }
    
@@ -51,10 +51,10 @@ export function emptyEnv (): EmptyEnv {
 
 export class ExtendEnv extends Env {
    ρ: Env = _
-   k: Str = _
+   k: Versioned<Str> = _
    v: Versioned<Value> = _
 }
 
-export function extendEnv (ρ: Env, k: Str, v: Versioned<Value>): ExtendEnv {
+export function extendEnv (ρ: Env, k: Versioned<Str>, v: Versioned<Value>): ExtendEnv {
    return make(ExtendEnv, ρ, k, v)
 }

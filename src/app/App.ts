@@ -1,6 +1,6 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
-import { emptyEnv } from "../Env"
+import { emptyEnv, extendEnv } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { Expl, ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
@@ -17,9 +17,11 @@ class App implements Slicer {
    e: Expr                        // entire closed program
    tv: ExplValue                  // chart computed by program
    data_e: Expr                   // expression for data (value bound by first let in user code)
+   data_tv: ExplValue
+   dataView_e: Expr
+   dataView_tv: ExplValue
    dataView: DataView
    dataView2: GraphicsRenderer
-   dataView_tv: ExplValue
    dataCanvas: HTMLCanvasElement
    dataSvg: SVGSVGElement
    dataCtx: CanvasRenderingContext2D
@@ -88,16 +90,18 @@ class App implements Slicer {
          .toElem(0)
          .assert(Expl.Let, tv => tv.x.val === "data")
          .to(Expl.Let, "tv")
-         .to(ExplValue, "v")
+      this.data_tv = as(here.v, ExplValue)
    }
 
-   // TODO: sharing of data_e is not nice, and probably problematic w.r.t. set/clearing annotations.
+   initViz (): void {
+      this.dataView_e = importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.var_(ν(), str(ν(), "data"))))
+      this.dataView_tv = Eval.eval_(extendEnv(emptyEnv(), str(ν(), "data"), this.data_tv.v), this.dataView_e)
+   }
+
    visualise (data_e: Expr): ExplValue {
-      const e: Expr = importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.quote(ν(), data_e))),
-            tv: ExplValue = Eval.eval_(emptyEnv(), e)
-      setallα(ann.top, e)
-      Eval.eval_fwd(tv)
-      return tv
+      setallα(ann.top, this.viz_e)
+      Eval.eval_fwd(this.viz_tv)
+      return this.viz_tv
    }
 
    loadExample (): void {
@@ -105,7 +109,8 @@ class App implements Slicer {
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
       this.renderData(this.data_e)
-      this.dataView_tv = this.visualise(this.data_e)
+      this.initViz()
+      this.visualise(this.data_e)
       this.dataView2 = new GraphicsRenderer(this.dataSvg, this)
       this.graphicsView = new GraphicsRenderer(this.graphicsSvg, this)
       this.resetForFwd()
