@@ -23,6 +23,7 @@ export namespace strings {
    export const parenL: string = "("
    export const parenR: string = ")"
    export const quotes: string = '"'
+   export const typematch: string = "typematch"
 }
 
 export type Expr = Expr.Expr
@@ -164,6 +165,15 @@ export namespace Expr {
 
    export function quote (k: Id, e: Expr): Quote {
       return at(k, Quote, e)
+   }
+
+   export class Typecase extends Expr {
+      e: Expr = _
+      cases: FiniteMap<Expr> = _
+   }
+
+   export function typecase (k: Id, e: Expr, cases: FiniteMap<Expr>): Typecase {
+      return at(k, Typecase, e, cases)
    }
 
    export class Var extends Expr {

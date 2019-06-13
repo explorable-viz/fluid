@@ -2,7 +2,7 @@ import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
 import { emptyEnv } from "../Env"
 import { Direction, Eval } from "../Eval"
-import { ExplValue } from "../ExplValue"
+import { Expl, ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { Value } from "../Value"
@@ -71,9 +71,24 @@ class App implements Slicer {
    
    // "Data" is defined to be the expression bound by the first "let" in user code; must be already in normal form.
    initData (): void {
-      const here: Cursor = new Cursor(this.e)
+      let here: Cursor = new Cursor(this.e)
       here.skipImports().toDef("data").to(Expr.Let, "e")
       this.data_e = as(here.v, Expr.Constr)
+
+      here = new Cursor(this.tv)
+      here
+         .to(ExplValue, "t")
+         .to(Expl.Defs, "tv")
+         .to(ExplValue, "t")
+         .to(Expl.Defs, "tv")
+         .to(ExplValue, "t")
+         .to(Expl.Defs, "tv")
+         .to(ExplValue, "t")
+         .to(Expl.Defs, "def̅")
+         .toElem(0)
+         .assert(Expl.Let, tv => tv.x.val === "data")
+         .to(Expl.Let, "tv")
+         .to(ExplValue, "v")
    }
 
    // TODO: sharing of data_e is not nice, and probably problematic w.r.t. set/clearing annotations.

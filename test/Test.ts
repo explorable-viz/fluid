@@ -264,6 +264,14 @@ describe("example", () => {
 		})
    })
 
+   describe("typematch", () => {
+		it("ok", () => {
+			const e: Expr = parse(load("typematch"))
+			new FwdSlice(e)
+			new BwdSlice(e)
+		})
+	})
+
 	describe("zipW", () => {
 		it("ok", () => {
 			const e: Expr = parse(load("zipW"))
