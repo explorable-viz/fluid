@@ -47,7 +47,7 @@ function isCtr (str: string): boolean {
 const reservedWord: Parser<string> =
    choice<string>([
       reserved(strings.as), reserved(strings.match), reserved(strings.fun), reserved(strings.in_),
-      reserved(strings.let_), reserved(strings.letRec)
+      reserved(strings.let_), reserved(strings.letRec), reserved(strings.primitive), reserved(strings.typecase)
    ])
 
 function keyword (str: string): Parser<string> {
