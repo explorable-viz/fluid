@@ -2,9 +2,9 @@
 letrec fun renderData' indentx {
    Cons(Pair(k, v), vs) → 
       stackRight 0 [
-         match k as {
-            ConstNum(n) → Text(0, 0, numToStr n);
-            ConstStr(str) → Text(0, 0, str)
+         typematch k as {
+            Num → Text(0, 0, numToStr k);
+            Str → Text(0, 0, k)
          },
          Text(0, 0, ": "),
          match v as {
