@@ -1,23 +1,31 @@
-// Data must have recursive format:
-// Row = Pair (Num | Str) Data
-// Data = List Row
-
-// Num → Data → GraphicsElement
+// Num → Expr → GraphicsElement
 letrec fun renderData' indentx {
-   Cons(Pair(k, v), vs) → 
-      stackRight 0 [
-         typematch k as {
-            Num → Text(0, 0, numToStr k);
-            Str → Text(0, 0, k)
-         },
-         Text(0, 0, ": "),
-         typematch v as {
-            List → renderData' indentx v;
-            Num → Text(0, 0, numToStr v);
-            Str → Text(0, 0, str)
-         }
-      ];
-   Nil → Text(0, 0, "TODO")
+   Constr(c,es) → match c === "Cons" as {
+      True → 
+         match head es as {
+            Constr(c', es') →
+               match c' === "Pair" as {
+                  True → match es' as [k, v] →
+                     stackRight 0 [
+                        match k as {
+                           ConstNum(n) → Text(0, 0, numToStr n);
+                           ConstStr(str) → Text(0, 0, str)
+                        },
+                        Text(0, 0, ": "),
+                        match v as {
+                           Constr(c'', es'') → match or (c'' === "Cons") (c'' === "Nil") as {
+                              True → renderData' indentx v;
+                              False → error "Data format error: expected List, Num or Str expression."
+                           };
+                           ConstNum(n) → Text(0, 0, numToStr n);
+                           ConstStr(str) → Text(0, 0, str)
+                        }
+                     ];
+                  False → error "Data format error: expected Pair expression."
+               }
+         };
+      False → Text(0, 0, "TODO")
+   }
 };
-// Data → GraphicsElement
+// Expr → GraphicsElement
 let renderData = renderData' 0

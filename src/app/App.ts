@@ -1,8 +1,8 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
-import { emptyEnv, extendEnv } from "../Env"
+import { emptyEnv } from "../Env"
 import { Direction, Eval } from "../Eval"
-import { Expl, ExplValue } from "../ExplValue"
+import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { Value } from "../Value"
@@ -10,20 +10,21 @@ import { ν, setallα, str } from "../Versioned"
 import { importDefaults, load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { DataView, DataRenderer } from "./DataRenderer"
+import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer, Slicer, svgNS } from "./GraphicsRenderer"
 
 class App implements Slicer {
    e: Expr                        // entire closed program
    tv: ExplValue                  // chart computed by program
    data_e: Expr                   // expression for data (value bound by first let in user code)
-   data_tv: ExplValue
    dataView: DataView
    dataView2: GraphicsRenderer
-   dataView2_tv: ExplValue
+   dataView_tv: ExplValue
    dataCanvas: HTMLCanvasElement
    dataSvg: SVGSVGElement
    dataCtx: CanvasRenderingContext2D
    graphicsView: GraphicsRenderer
+   graphicsPane3D: GraphicsPane3D
    graphicsSvg: SVGSVGElement
    direction: Direction
 
@@ -32,11 +33,16 @@ class App implements Slicer {
       this.dataSvg = this.createSvg(400, 400)
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
+      this.graphicsPane3D = new GraphicsPane3D(600, 600)
       this.dataCanvas.style.verticalAlign = "top"
       this.dataCanvas.style.display = "inline-block"
+      this.graphicsPane3D.renderer.domElement.style.verticalAlign = "top"
+      this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
-      document.body.appendChild(this.dataSvg)
+//      document.body.appendChild(this.dataSvg)
       document.body.appendChild(this.graphicsSvg)
+      // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
+      // this.graphicsPane3D.setCanvas(this.graph      return as(this.tv.v as Value, GraphicsElement)
       this.loadExample()
    }
 
@@ -55,12 +61,12 @@ class App implements Slicer {
       return svg
    }
 
-   getGraphics (): GraphicsElement {
+   get graphics (): GraphicsElement {
       return as(this.tv.v as Value, GraphicsElement)
    }
 
-   getDataGraphics(): GraphicsElement {
-      return as(this.dataView2_tv.v as Value, GraphicsElement)
+   get dataGraphics(): GraphicsElement {
+      return as(this.dataView_tv.v as Value, GraphicsElement)
    }
    
    // "Data" is defined to be the expression bound by the first "let" in user code; must be already in normal form.
@@ -68,29 +74,15 @@ class App implements Slicer {
       let here: Cursor = new Cursor(this.e)
       here.skipImports().toDef("data").to(Expr.Let, "e")
       this.data_e = as(here.v, Expr.Constr)
-
-      here = new Cursor(this.tv)
-      here
-         .to(ExplValue, "t")
-         .to(Expl.Defs, "tv")
-         .to(ExplValue, "t")
-         .to(Expl.Defs, "tv")
-         .to(ExplValue, "t")
-         .to(Expl.Defs, "tv")
-         .to(ExplValue, "t")
-         .to(Expl.Defs, "def̅")
-         .toElem(0)
-         .assert(Expl.Let, tv => tv.x.val === "data")
-         .to(Expl.Let, "tv")
-      this.data_tv = as(here.v, ExplValue)
    }
 
    // TODO: sharing of data_e is not nice, and probably problematic w.r.t. set/clearing annotations.
-   initDataView (data_e: Expr): void {
-      const e: Expr = importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.var_(ν(), str(ν(), "data"))))
-      this.dataView2_tv = Eval.eval_(extendEnv(emptyEnv(), str(ν(), "data"), this.data_tv.v), e)
+   visualise (data_e: Expr): ExplValue {
+      const e: Expr = importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.quote(ν(), data_e))),
+            tv: ExplValue = Eval.eval_(emptyEnv(), e)
       setallα(ann.top, e)
-      Eval.eval_fwd(this.dataView2_tv)
+      Eval.eval_fwd(tv)
+      return tv
    }
 
    loadExample (): void {
@@ -98,7 +90,7 @@ class App implements Slicer {
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
       this.renderData(this.data_e)
-      this.initDataView(this.data_e)
+      this.dataView_tv = this.visualise(this.data_e)
       this.dataView2 = new GraphicsRenderer(this.dataSvg, this)
       this.graphicsView = new GraphicsRenderer(this.graphicsSvg, this)
       this.resetForFwd()
@@ -129,8 +121,9 @@ class App implements Slicer {
    draw (): void {
       this.dataCtx.clearRect(0, 0, this.dataCanvas.width, this.dataCanvas.height)
       this.dataView.draw()
-      this.dataView2.render(this.getDataGraphics())
-      this.graphicsView.render(this.getGraphics())
+      this.dataView2.render(this.dataGraphics)
+      this.graphicsView.render(this.graphics)
+      // this.graphicsPane3D.render()
    }
 
    renderData (data: Expr): void {
