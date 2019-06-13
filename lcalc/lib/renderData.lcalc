@@ -1,4 +1,8 @@
-// Num → Expr → GraphicsElement
+// Data must have recursive format:
+// Row = Pair (Num | Str) Data
+// Data = List Row
+
+// Num → Data → GraphicsElement
 letrec fun renderData' indentx {
    Cons(Pair(k, v), vs) → 
       stackRight 0 [
@@ -15,5 +19,5 @@ letrec fun renderData' indentx {
       ];
    Nil → Text(0, 0, "TODO")
 };
-// Expr → GraphicsElement
+// Data → GraphicsElement
 let renderData = renderData' 0
