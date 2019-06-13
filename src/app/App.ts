@@ -85,12 +85,12 @@ class App implements Slicer {
    }
 
    // TODO: sharing of data_e is not nice, and probably problematic w.r.t. set/clearing annotations.
-   visualise (data_e: Expr): ExplValue {
+   initDataView (data_e: Expr): void {
       const e: Expr = importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.quote(ν(), data_e))),
             tv: ExplValue = Eval.eval_(emptyEnv(), e)
       setallα(ann.top, e)
       Eval.eval_fwd(tv)
-      return tv
+      this.dataView2_tv = tv
    }
 
    loadExample (): void {
@@ -98,7 +98,7 @@ class App implements Slicer {
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
       this.renderData(this.data_e)
-      this.dataView2_tv = this.visualise(this.data_e)
+      this.initDataView(this.data_e)
       this.dataView2 = new GraphicsRenderer(this.dataSvg, this)
       this.graphicsView = new GraphicsRenderer(this.graphicsSvg, this)
       this.resetForFwd()
