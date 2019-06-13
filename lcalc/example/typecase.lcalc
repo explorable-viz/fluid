@@ -3,7 +3,8 @@ let f = fun x y → match y == 0 as {
    False → x / y
 };
 let g = fun x → typecase x as {
-   Num → "Answer: " ++ numToStr x
+   Num → "Answer: " ++ numToStr x;
+   Str → "Message: " ++ x
 }
 in 
 (g (f 5 6), g (f 5 0))
