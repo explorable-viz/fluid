@@ -99,9 +99,9 @@ export abstract class DataElim extends Elim {
          } else {
             const d: DataType = elimToDataType.get(className(this))!
             if (d.ctrs.has(c)) {
-               return error(`Pattern mismatch: ${c} case is undefined for ${d.name} eliminator.`)
+               return error(`Pattern mismatch: ${c} case is undefined for ${d.name.val} eliminator.`)
             } else {
-               return error(`Pattern mismatch: found ${c}, expected ${d.name}.`)
+               return error(`Pattern mismatch: found ${c}, expected ${d.name.val}.`)
             }
          }
       } else {

@@ -1,6 +1,6 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
-import { emptyEnv } from "../Env"
+import { emptyEnv, extendEnv } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { Expl, ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
@@ -16,6 +16,7 @@ class App implements Slicer {
    e: Expr                        // entire closed program
    tv: ExplValue                  // chart computed by program
    data_e: Expr                   // expression for data (value bound by first let in user code)
+   data_tv: ExplValue
    dataView: DataView
    dataView2: GraphicsRenderer
    dataView2_tv: ExplValue
@@ -81,16 +82,15 @@ class App implements Slicer {
          .toElem(0)
          .assert(Expl.Let, tv => tv.x.val === "data")
          .to(Expl.Let, "tv")
-         .to(ExplValue, "v")
+      this.data_tv = as(here.v, ExplValue)
    }
 
    // TODO: sharing of data_e is not nice, and probably problematic w.r.t. set/clearing annotations.
    initDataView (data_e: Expr): void {
-      const e: Expr = importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.quote(ν(), data_e))),
-            tv: ExplValue = Eval.eval_(emptyEnv(), e)
+      const e: Expr = importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.var_(ν(), str(ν(), "data"))))
+      this.dataView2_tv = Eval.eval_(extendEnv(emptyEnv(), str(ν(), "data"), this.data_tv.v), e)
       setallα(ann.top, e)
-      Eval.eval_fwd(tv)
-      this.dataView2_tv = tv
+      Eval.eval_fwd(this.dataView2_tv)
    }
 
    loadExample (): void {
