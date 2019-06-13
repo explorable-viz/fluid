@@ -168,19 +168,12 @@ export namespace Expr {
    }
 
    export class Typecase extends Expr {
+      e: Expr = _
       cases: FiniteMap<Expr> = _
-
-      // Parser ensures keys name types.
-      static join (t: Typecase, tʹ: Typecase): Typecase {
-         return typecase(
-            memoId(Typecase.join, arguments), 
-            unionWith(t.cases, tʹ.cases, (e: Expr, eʹ: Expr): Expr => error("Overlapping typecase branches."))
-         )
-      }
    }
 
-   export function typecase (k: Id, cases: FiniteMap<Expr>): Typecase {
-      return at(k, Typecase, cases)
+   export function typecase (k: Id, e: Expr, cases: FiniteMap<Expr>): Typecase {
+      return at(k, Typecase, e, cases)
    }
 
    export class Var extends Expr {

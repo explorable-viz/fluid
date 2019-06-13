@@ -7,7 +7,7 @@ import {
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr, Cont, strings } from "./Expr"
-import { singleton } from "./FiniteMap"
+import { FiniteMap, singleton, unionWith } from "./FiniteMap"
 import { Str } from "./Value"
 import { Versioned, ν, num, str } from "./Versioned"
 
@@ -410,30 +410,30 @@ const fun: Parser<Fun> =
    )
 
 const typename: Parser<Versioned<Str>> =
-   withAction(lexeme_(identCandidate), c => str(ν(), c))
+   withAction(lexeme_(identCandidate), t => str(ν(), t))
 
-const typeMatch: Parser<Typecase> =
+const typeMatch: Parser<FiniteMap<Expr>> =
    withAction(
       seq(typename, dropFirst(symbol(strings.arrow), expr)),
       ([t, e]: [Versioned<Str>, Expr]) => {
          if (!types.has(t.val)) {
             error(`Type name ${t.val} not found.`)
          }
-         return Expr.typecase(ν(), singleton(t, e))
+         return singleton(t, e)
       }
    )
 
 // Assume at least one clause.
-function typeMatches (state: ParseState): ParseResult<Typecase> | null {
+function typeMatches (state: ParseState): ParseResult<FiniteMap<Expr>> | null {
    return withAction(
-      choice<Typecase[]>([
+      choice<FiniteMap<Expr>[]>([
          withAction(typeMatch, m => [m]),
          between(symbol("{"), sepBy1(typeMatch, symbol(";")), symbol("}"))
       ]),
-      (m̅: Typecase[]) => {
-         let m: Typecase = m̅[0]
+      (m̅: FiniteMap<Expr>[]) => {
+         let m: FiniteMap<Expr> = m̅[0]
          for (let i = 1; i < m̅.length; ++i) {
-            m = Typecase.join(m, m̅[i])
+            m = unionWith(m, m̅[i], (e: Expr, eʹ: Expr): Expr => error("Overlapping typecase branches."))
          } 
          return m
       }
@@ -441,7 +441,10 @@ function typeMatches (state: ParseState): ParseResult<Typecase> | null {
 }
 
 const typecase: Parser<Typecase> =
-   dropFirst(keyword(strings.typecase), typeMatches)
+   withAction(
+      dropFirst(keyword(strings.typecase), seq(expr, typeMatches)),
+      ([e, m]: [Expr, FiniteMap<Expr>]) => Expr.typecase(ν(), e, m)
+   )
 
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
