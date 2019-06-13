@@ -2,7 +2,7 @@ let f = fun x y → match y == 0 as {
    True → "division by zero";
    False → x / y
 };
-let g = fun x → typecase x as {
+let g = fun x → typematch x as {
    Num → "Answer: " ++ numToStr x;
    Str → "Message: " ++ x
 }

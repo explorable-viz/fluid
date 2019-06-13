@@ -23,7 +23,7 @@ export namespace strings {
    export const parenL: string = "("
    export const parenR: string = ")"
    export const quotes: string = '"'
-   export const typecase: string = "typecase"
+   export const typematch: string = "typematch"
 }
 
 export type Expr = Expr.Expr

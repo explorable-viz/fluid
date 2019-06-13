@@ -47,7 +47,7 @@ function isCtr (str: string): boolean {
 const reservedWord: Parser<string> =
    choice<string>([
       reserved(strings.as), reserved(strings.match), reserved(strings.fun), reserved(strings.in_),
-      reserved(strings.let_), reserved(strings.letRec), reserved(strings.primitive), reserved(strings.typecase)
+      reserved(strings.let_), reserved(strings.letRec), reserved(strings.primitive), reserved(strings.typematch)
    ])
 
 function keyword (str: string): Parser<string> {
@@ -440,16 +440,16 @@ function typeMatches (state: ParseState): ParseResult<FiniteMap<Expr>> | null {
    )(state)
 }
 
-const typecase: Parser<Typecase> =
+const typematch: Parser<Typecase> =
    withAction(
-      dropFirst(keyword(strings.typecase), seq(expr, dropFirst(keyword(strings.as), typeMatches))),
+      dropFirst(keyword(strings.typematch), seq(expr, dropFirst(keyword(strings.as), typeMatches))),
       ([e, m]: [Expr, FiniteMap<Expr>]) => Expr.typecase(ν(), e, m)
    )
 
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
    choice<Expr>([
-      variable, string_, number_, parenthExpr, pair, defs1, list, constr, matchAs, fun, typecase
+      variable, string_, number_, parenthExpr, pair, defs1, list, constr, matchAs, fun, typematch
    ])
 
 // A left-associative tree, with applications at the branches, and simple terms at the leaves.
