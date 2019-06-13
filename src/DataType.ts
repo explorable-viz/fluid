@@ -102,4 +102,4 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
 }
 
 types.set(Num.name, new PrimType(str(ν(), Num.name), Num))
-types.set(Str.name, new PrimType(str(ν(), Num.name), Str))
+types.set(Str.name, new PrimType(str(ν(), Str.name), Str))
