@@ -424,7 +424,7 @@ const typeMatch: Parser<FiniteMap<Expr>> =
    )
 
 // Assume at least one clause.
-function typeMatches (state: ParseState): ParseResult<FiniteMap<Expr>> | null {
+export /*TEMP*/ function typeMatches (state: ParseState): ParseResult<FiniteMap<Expr>> | null {
    return withAction(
       choice<FiniteMap<Expr>[]>([
          withAction(typeMatch, m => [m]),
@@ -442,9 +442,17 @@ function typeMatches (state: ParseState): ParseResult<FiniteMap<Expr>> | null {
 
 const typecase: Parser<Typecase> =
    withAction(
+      dropFirst(keyword(strings.typecase), expr),
+      (e: Expr) => Expr.typecase(ν(), e, null as any)
+   )
+
+/*
+const typecase: Parser<Typecase> =
+   withAction(
       dropFirst(keyword(strings.typecase), seq(expr, typeMatches)),
       ([e, m]: [Expr, FiniteMap<Expr>]) => Expr.typecase(ν(), e, m)
    )
+*/
 
 // Any expression other than an operator tree or application chain.
 const simpleExpr: Parser<Expr> =
