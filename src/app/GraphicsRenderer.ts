@@ -1,4 +1,4 @@
-import { ann } from "../util/Annotated"
+import { Annotation, ann } from "../util/Annotated"
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
@@ -183,7 +183,8 @@ export class GraphicsRenderer {
       this.current.appendChild(text)
       this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
-      if (!__nonNull(asVersioned(g.str).__α)) {
+      const α: Annotation = __nonNull(asVersioned(g.str).__α)
+      if (this.slicer.direction === Direction.Fwd ? !α : α) {
          text.setAttribute("fill", "blue")
       } else {
          text.setAttribute("fill", "black")
