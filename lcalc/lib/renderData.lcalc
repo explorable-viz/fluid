@@ -7,13 +7,10 @@ letrec fun renderData' indentx {
             Str → Text(0, 0, k)
          },
          Text(0, 0, ": "),
-         match v as {
-            Constr(c'', es'') → match or (c'' === "Cons") (c'' === "Nil") as {
-               True → renderData' indentx v;
-               False → error "Data format error: expected List, Num or Str expression."
-            };
-            ConstNum(n) → Text(0, 0, numToStr n);
-            ConstStr(str) → Text(0, 0, str)
+         typematch v as {
+            List → renderData' indentx v;
+            Num → Text(0, 0, numToStr v);
+            Str → Text(0, 0, str)
          }
       ];
    Nil → Text(0, 0, "TODO")

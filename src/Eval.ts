@@ -214,7 +214,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.Typecase) {
       const tu: ExplValue = eval_(ρ, e.e),
-            d: DataType | PrimType = __nonNull(types.get(className(tu.v))),
+            d: DataType | PrimType = ctrToDataType.get(className(tu.v)) || types.get(className(tu.v))!,
             eʹ: Expr | undefined = get(e.cases, d.name)
       if (eʹ === undefined) {
          return error(`Typecase mismatch: no clause for ${className(tu.v)}.`)
