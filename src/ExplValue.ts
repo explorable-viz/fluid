@@ -124,6 +124,15 @@ export namespace Expl {
       return at(k, Quote)
    }
 
+   export class Typecase extends Expl {
+      tu: ExplValue = _
+      tv: ExplValue = _
+   }
+
+   export function typecase (k: ExplId, tu: ExplValue, tv: ExplValue): Typecase {
+      return at(k, Typecase, tu, tv)
+   }
+
    // v is the resolved value of x
    export class Var extends Expl {
       x: Str = _

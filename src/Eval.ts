@@ -2,11 +2,12 @@ import { ann } from "./util/Annotated"
 import { zip } from "./util/Array"
 import { __nonNull, absurd, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
-import { DataType, ctrToDataType, initDataType } from "./DataType"
+import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl, ExplValue, explValue } from "./ExplValue"
 import { Expr } from "./Expr"
+import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, Num, Str, TaggedId, Value, _, make, memoId, taggedId } from "./Value"
@@ -157,6 +158,17 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote(kₜ), copyAt(kᵥ, e.e))
+   } else
+   if (e instanceof Expr.Typecase) {
+      const tu: ExplValue = eval_(ρ, e.e),
+            d: DataType | PrimType = __nonNull(types.get(className(tu.v))),
+            eʹ: Expr | undefined = get(e.cases, d.name)
+      if (eʹ === undefined) {
+         return error(`Typecase mismatch: no clause for ${className(e)}.`)
+      } else {
+         const tv: ExplValue = eval_(ρ, eʹ)
+         return explValue(Expl.typecase(kₜ, tu, tv), copyAt(kᵥ, tv.v))
+      }
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) { 

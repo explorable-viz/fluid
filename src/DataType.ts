@@ -1,17 +1,28 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { DataExpl, DataValue } from "./DataValue"
 import { DataElim } from "./Match"
-import { Num, Str, _, fields } from "./Value"
+import { Num, PrimValue, Str, _, fields } from "./Value"
+import { ν, str } from "./Versioned"
+
+export class PrimType {
+   name: Str
+   C: Class<PrimValue>
+
+   constructor (name: Str, C: Class<PrimValue>) {
+      this.name = name
+      this.C = C
+   }
+}
 
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
-   name: string
+   name: Str
    elimC: Class<DataElim>            
    ctrs: Map<string, Ctr>                 // fields of my constructors
    explC̅: Map<string, Class<DataExpl>>    // "explanation" class per constructor
 
    constructor (
-      name: string, 
+      name: Str,
       elimC: Class<DataElim>, 
       ctrs: Map<string, Ctr>, 
       explC̅: Map<string, Class<DataExpl>>
@@ -45,7 +56,7 @@ export function arity (ctr: Str): number {
 }
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
-export const types: Map<string, DataType | typeof Num | typeof Str> = new Map
+export const types: Map<string, DataType | PrimType> = new Map
 export const ctrToDataType: Map<string, DataType> = new Map
 export const elimToDataType: Map<string, DataType> = new Map
 export const elimSuffix: string = "Elim"
@@ -82,12 +93,13 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                }
             }[explC_name]]
          }),
-         d: DataType = new DataType(D.name, elimC, new Map(ctrs), new Map(explC̅))
+         d: DataType = new DataType(str(ν(), D.name), elimC, new Map(ctrs), new Map(explC̅))
    C̅.forEach((C: Class<T>): void => {
       ctrToDataType.set(C.name, d)
    })
    elimToDataType.set(elimC_name, d)
-   types.set(d.name, d)
-   types.set(Num.name, Num)
-   types.set(Str.name, Str)
+   types.set(d.name.val, d)
 }
+
+types.set(Num.name, new PrimType(str(ν(), Num.name), Num))
+types.set(Str.name, new PrimType(str(ν(), Num.name), Str))
