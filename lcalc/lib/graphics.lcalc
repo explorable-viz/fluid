@@ -68,6 +68,11 @@ let hcentre = fun gs →
    let max_w = max (map width gs) in
    map (fun g → x_translate ((max_w - width g) / 2) g) gs;
 
+// List GraphicsElement → List GraphicsElement
+let vtop = fun gs →
+   let max_h = max (map height gs) in
+   map (fun g → y_translate (max_h - height g) g) gs;
+
 // Unlike spaceRight, produces a nested structure.
 // Num → List GraphicsElement → GraphicsElement
 let stackRight = fun sep gs →

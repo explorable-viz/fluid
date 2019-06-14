@@ -11,7 +11,7 @@ letrec fun renderData {
                Constr(c', es') →
                   match c' === "Pair" as {
                      True → match es' as [k, v] →
-                        stackRight 0 [
+                        stackRight 0 (vtop [
                            match k as {
                               ConstNum(n) → Text(0, 0, numToStr n);
                               ConstStr(str) → Text(0, 0, str)
@@ -25,7 +25,7 @@ letrec fun renderData {
                               ConstNum(n) → Text(0, 0, numToStr n);
                               ConstStr(str) → Text(0, 0, str)
                            }
-                        ];
+                        ]);
                      False → error "Data format error: expected Pair expression."
                   }
             },
