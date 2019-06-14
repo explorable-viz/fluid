@@ -161,7 +161,7 @@ export class GraphicsRenderer {
       polygon.setAttribute("fill", g.fill.val)
       polygon.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
-         this.slicer.resetForBwd()
+         this.slicer.coordinator.resetForBwd()
          g.points.toArray().map((p: Point): void => {
             setallα(ann.top, p)
          })
@@ -178,7 +178,7 @@ export class GraphicsRenderer {
             text: SVGTextElement = textElement(x, y, g.str.val)
       text.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
-         this.slicer.resetForBwd()
+         this.slicer.coordinator.resetForBwd()
          setallα(ann.top, g)
          this.slicer.bwdSlice()
       })
