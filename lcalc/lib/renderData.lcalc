@@ -1,30 +1,38 @@
+// Visualises source code (expression), not intermediate values; slicing in the "middle" of a 
+// computation is something we want to support but for now it's a complication we don't need.
 // Num → Expr → GraphicsElement
 letrec fun renderData' indentx {
    Constr(c,es) → match c === "Cons" as {
       True → 
-         match head es as {
-            Constr(c', es') →
-               match c' === "Pair" as {
-                  True → match es' as [k, v] →
-                     stackRight 0 [
-                        match k as {
-                           ConstNum(n) → Text(0, 0, numToStr n);
-                           ConstStr(str) → Text(0, 0, str)
-                        },
-                        Text(0, 0, ": "),
-                        match v as {
-                           Constr(c'', es'') → match or (c'' === "Cons") (c'' === "Nil") as {
-                              True → renderData' indentx v;
-                              False → error "Data format error: expected List, Num or Str expression."
-                           };
-                           ConstNum(n) → Text(0, 0, numToStr n);
-                           ConstStr(str) → Text(0, 0, str)
-                        }
-                     ];
-                  False → error "Data format error: expected Pair expression."
-               }
-         };
-      False → Text(0, 0, "TODO")
+         stackDown 0 [
+            match head es as {
+               Constr(c', es') →
+                  match c' === "Pair" as {
+                     True → match es' as [k, v] →
+                        stackRight 0 [
+                           match k as {
+                              ConstNum(n) → Text(0, 0, numToStr n);
+                              ConstStr(str) → Text(0, 0, str)
+                           },
+                           Text(0, 0, ": "),
+                           match v as {
+                              Constr(c'', es'') → match or (c'' === "Cons") (c'' === "Nil") as {
+                                 True → renderData' indentx v;
+                                 False → error "Data format error: expected List, Num or Str expression."
+                              };
+                              ConstNum(n) → Text(0, 0, numToStr n);
+                              ConstStr(str) → Text(0, 0, str)
+                           }
+                        ];
+                     False → error "Data format error: expected Pair expression."
+                  }
+            },
+            renderData' indentx (head (tail es))
+         ];
+      False → match c === "Nil" as {
+         True → Graphic([]);
+         False → error "Data format error: expected List expression."
+      }
    }
 };
 // Expr → GraphicsElement

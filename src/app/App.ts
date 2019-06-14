@@ -39,7 +39,7 @@ class App implements Slicer {
       this.graphicsPane3D.renderer.domElement.style.verticalAlign = "top"
       this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
       document.body.appendChild(this.dataCanvas)
-//      document.body.appendChild(this.dataSvg)
+      document.body.appendChild(this.dataSvg)
       document.body.appendChild(this.graphicsSvg)
       // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
       // this.graphicsPane3D.setCanvas(this.graph      return as(this.tv.v as Value, GraphicsElement)

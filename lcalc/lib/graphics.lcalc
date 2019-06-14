@@ -72,9 +72,17 @@ let hcentre = fun gs →
 let stackRight = fun sep gs →
    foldr (fun (g, g') → Graphic([g, x_translate (width g + sep) g'])) Graphic([]) gs;
 
+// List GraphicsElement → GraphicsElement
+let stackLeft = fun sep gs →
+   foldr (fun (g, g') → Graphic([g, x_translate (negate (width g + sep)) g'])) Graphic([]) gs;
+
 // List GraphicsElement → Bool → GraphicsElement
 let stackUp = fun sep gs →
    foldr (fun (g, g') → Graphic([g, y_translate (height g + sep) g'])) Graphic([]) gs;
+
+// List GraphicsElement → Bool → GraphicsElement
+let stackDown = fun sep gs →
+   foldr (fun (g, g') → Graphic([g, y_translate (negate (height g + sep)) g'])) Graphic([]) gs;
 
 // Rect → Polygon
 let renderRect = fun Rect(w, h) stroke fill → 
@@ -99,19 +107,19 @@ let tickEvery = fun n →
 // Bool → Num → Num → (Num, Num) → Num → Num → (Num → Str) → (GraphicsElement, Num)
 let axis = fun vert scale margin (start, end) tickSp tickLength labelFun →
    let tickSp' = tickSp * scale;
-   let tick = vertLine 0 (0 - tickLength);
+   let tick = vertLine 0 (negate tickLength);
    let firstTick = ceilingTo start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
    let ticks = spaceRight tickSp' (repeat n tick);
    let mkLabel = match vert as {
-      True → fun str → Text((0 - textHeight str) / 2, 0 - tickLength - textWidth str, str);
-      False → fun str → Text((0 - textWidth str) / 2, 0 - tickLength - textHeight str, str)
+      True → fun str → Text((negate (textHeight str)) / 2, negate (tickLength + textWidth str), str);
+      False → fun str → Text((negate (textWidth str)) / 2, negate (tickLength + textHeight str), str)
    };
    let labels = map (compose mkLabel labelFun) (iterate n (fun x → x + tickSp) firstTick);
-   let labelStart = 0 - min (map (fun Text(x, y, str) → y) labels);
+   let labelStart = negate (min (map (fun Text(x, y, str) → y) labels));
    let labels' = spaceRight tickSp' labels;
    let line = horizLine 0 ((end - start) * scale);
-   let axis = y_translate (0 - margin)
+   let axis = y_translate (negate margin)
       Graphic([line, x_translate ((firstTick - start) * scale) Graphic(concat ticks labels')])
    in
    (match vert as { True → transpose axis; False → axis }, margin + labelStart);
@@ -141,8 +149,8 @@ let barGraph = fun (x_scale, y_scale) catData →
 // Num → GraphicsElement
 let plotPoint = fun radius →
    Graphic([
-      Polyline([Point(0 - radius, 0 - radius), Point(radius, radius)]),
-      Polyline([Point(0 - radius, radius), Point(radius, 0 - radius)])
+      Polyline([Point(negate radius, negate radius), Point(radius, radius)]),
+      Polyline([Point(negate radius, radius), Point(radius, negate radius)])
    ]);
 
 // List Point → (Num, Num) → GraphicsElement
