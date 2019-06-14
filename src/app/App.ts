@@ -9,40 +9,24 @@ import { Value } from "../Value"
 import { ν, setallα, str } from "../Versioned"
 import { importDefaults, load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
-import { DataView, DataRenderer } from "./DataRenderer"
-import { GraphicsPane3D } from "./GraphicsPane3D"
 import { GraphicsRenderer, Slicer, svgNS } from "./GraphicsRenderer"
 
 class App implements Slicer {
    e: Expr                        // entire closed program
    tv: ExplValue                  // chart computed by program
    data_e: Expr                   // expression for data (value bound by first let in user code)
-   dataView: DataView
    dataView2: GraphicsRenderer
    dataView_tv: ExplValue
-   dataCanvas: HTMLCanvasElement
    dataSvg: SVGSVGElement
-   dataCtx: CanvasRenderingContext2D
    graphicsView: GraphicsRenderer
-   graphicsPane3D: GraphicsPane3D
    graphicsSvg: SVGSVGElement
    direction: Direction
 
    constructor () {
       this.graphicsSvg = this.createSvg(400, 400, false)
       this.dataSvg = this.createSvg(400, 1200, false)
-      this.dataCanvas = document.createElement("canvas")
-      this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
-      this.graphicsPane3D = new GraphicsPane3D(600, 600)
-      this.dataCanvas.style.verticalAlign = "top"
-      this.dataCanvas.style.display = "inline-block"
-      this.graphicsPane3D.renderer.domElement.style.verticalAlign = "top"
-      this.graphicsPane3D.renderer.domElement.style.display = "inline-block"
-      document.body.appendChild(this.dataCanvas)
       document.body.appendChild(this.dataSvg)
       document.body.appendChild(this.graphicsSvg)
-      // document.body.appendChild(this.graphicsPane3D.renderer.domElement)
-      // this.graphicsPane3D.setCanvas(this.graph      return as(this.tv.v as Value, GraphicsElement)
       this.loadExample()
    }
 
@@ -89,7 +73,6 @@ class App implements Slicer {
       this.e = parse(load("bar-chart"))
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
-      this.renderData(this.data_e)
       this.dataView_tv = this.visualise(this.data_e)
       this.dataView2 = new GraphicsRenderer(this.dataSvg, this)
       this.graphicsView = new GraphicsRenderer(this.graphicsSvg, this)
@@ -110,6 +93,7 @@ class App implements Slicer {
    resetForBwd (): void {
       setallα(ann.bot, this.e)
       Eval.eval_fwd(this.tv) // to clear all annotations
+      Eval.eval_fwd(this.dataView_tv)
    }
 
    bwdSlice (): void {
@@ -119,26 +103,8 @@ class App implements Slicer {
    }
 
    draw (): void {
-      this.dataCtx.clearRect(0, 0, this.dataCanvas.width, this.dataCanvas.height)
-      this.dataView.draw()
       this.dataView2.render(this.dataGraphics)
       this.graphicsView.render(this.graphics)
-      // this.graphicsPane3D.render()
-   }
-
-   renderData (data: Expr): void {
-      this.dataCanvas.height = 400
-      this.dataCanvas.width = 400
-      this.dataView = new DataRenderer(this.dataCtx, data, this).view
-      this.dataCanvas.addEventListener("mousemove", (e: MouseEvent): void => {
-         const rect: ClientRect = this.dataCanvas.getBoundingClientRect()
-         this.resetForFwd()
-         if (this.dataView.onMouseMove(e.clientX - rect.left, e.clientY - rect.top)) {
-            this.fwdSlice()
-         }
-      })
-      this.dataCanvas.height = this.dataView.height + 1 // why extra pixel needed?
-      this.dataCanvas.width = this.dataView.width
    }
 }
 
