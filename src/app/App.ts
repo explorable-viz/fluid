@@ -11,71 +11,16 @@ import { importDefaults, load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
 import { GraphicsRenderer, Slicer, svgNS } from "./GraphicsRenderer"
 
-class App implements Slicer {
-   e: Expr                        // entire closed program
-   tv: ExplValue                  // chart computed by program
-   data_e: Expr                   // expression for data (value bound by first let in user code)
-   dataView: GraphicsRenderer
-   dataSvg: SVGSVGElement
-   dataView_tv: ExplValue
-   graphicsView: GraphicsRenderer
-   graphicsSvg: SVGSVGElement
+class View implements Slicer {
+   e: Expr
+   tv: ExplValue
+   view: GraphicsRenderer
    direction: Direction
 
-   constructor () {
-      this.graphicsSvg = this.createSvg(400, 400, false)
-      this.dataSvg = this.createSvg(400, 1200, false)
-      document.body.appendChild(this.dataSvg)
-      document.body.appendChild(this.graphicsSvg)
-      this.loadExample()
-   }
-
-   createSvg (w: number, h: number, stackDown: boolean): SVGSVGElement {
-      const svg: SVGSVGElement = document.createElementNS(svgNS, "svg")
-      svg.setAttribute("width", w.toString())
-      svg.setAttribute("height", h.toString())
-      // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
-      svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
-      svg.setAttribute("viewBox", `-0.5 ${(stackDown ? -0.5 - h : -0.5).toString()} ${w.toString()} ${h.toString()}`)
-      // We don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
-      // pixel attributes). But to invert the y-axis we use an SVG transform:
-      svg.setAttribute("transform", "scale(1,-1)")
-      svg.style.verticalAlign = "top"
-      svg.style.display = "inline-block"
-      return svg
-   }
-
-   get graphics (): GraphicsElement {
-      return as(this.tv.v as Value, GraphicsElement)
-   }
-
-   get dataGraphics(): GraphicsElement {
-      return as(this.dataView_tv.v as Value, GraphicsElement)
-   }
-   
-   // "Data" is defined to be the expression bound by the first "let" in user code; must be already in normal form.
-   initData (): void {
-      let here: Cursor = new Cursor(this.e)
-      here.skipImports().toDef("data").to(Expr.Let, "e")
-      this.data_e = as(here.v, Expr.Constr)
-   }
-
-   // TODO: sharing of data_e is not nice, and probably problematic w.r.t. set/clearing annotations.
-   visualise (data_e: Expr): ExplValue {
-      const e: Expr = importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.quote(ν(), data_e))),
-            tv: ExplValue = Eval.eval_(emptyEnv(), e)
-      setallα(ann.top, e)
-      Eval.eval_fwd(tv)
-      return tv
-   }
-
-   loadExample (): void {
-      this.e = parse(load("bar-chart"))
-      this.tv = Eval.eval_(emptyEnv(), this.e)
-      this.initData()
-      this.dataView_tv = this.visualise(this.data_e)
-      this.dataView = new GraphicsRenderer(this.dataSvg, this)
-      this.graphicsView = new GraphicsRenderer(this.graphicsSvg, this)
+   constructor (e: Expr, svg: SVGSVGElement) {
+      this.e = e
+      this.tv = Eval.eval_(emptyEnv(), e)
+      this.view = new GraphicsRenderer(svg, this)
       this.resetForFwd()
       this.fwdSlice()
    }
@@ -93,7 +38,6 @@ class App implements Slicer {
    resetForBwd (): void {
       setallα(ann.bot, this.e)
       Eval.eval_fwd(this.tv) // to clear all annotations
-      Eval.eval_fwd(this.dataView_tv)
    }
 
    bwdSlice (): void {
@@ -102,9 +46,51 @@ class App implements Slicer {
       this.draw()
    }
 
+   get svg (): SVGSVGElement {
+      return this.view.ancestors[0] as SVGSVGElement
+   }
+
+   getGraphics (): GraphicsElement {
+      return as(this.tv.v as Value, GraphicsElement)
+   }
+
    draw (): void {
-      this.dataView.render(this.dataGraphics)
-      this.graphicsView.render(this.graphics)
+      this.view.render(this.getGraphics())
+   }
+}
+
+// "Data" defined to be expression bound by first "let" in user code; must be already in normal form.
+class App {
+   dataView: View
+   graphicsView: View
+
+   constructor () {
+      // Two programs share the expression data_e. May be problematic for setting/clearing annotations?
+      this.graphicsView = new View(parse(load("bar-chart")), this.createSvg(400, 400, false))
+      let here: Cursor = new Cursor(this.graphicsView.e)
+      here.skipImports().toDef("data").to(Expr.Let, "e")
+      const data_e: Expr = as(here.v, Expr.Constr)
+      this.dataView = new View(
+         importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.quote(ν(), data_e))),
+         this.createSvg(400, 1200, false)
+      )
+      document.body.appendChild(this.graphicsView.svg)
+      document.body.appendChild(this.dataView.svg)
+   }
+
+   createSvg (w: number, h: number, stackDown: boolean): SVGSVGElement {
+      const svg: SVGSVGElement = document.createElementNS(svgNS, "svg")
+      svg.setAttribute("width", w.toString())
+      svg.setAttribute("height", h.toString())
+      // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
+      svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
+      svg.setAttribute("viewBox", `-0.5 ${(stackDown ? -0.5 - h : -0.5).toString()} ${w.toString()} ${h.toString()}`)
+      // Don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
+      // pixel attributes). But to invert y-axis use an SVG transform:
+      svg.setAttribute("transform", "scale(1,-1)")
+      svg.style.verticalAlign = "top"
+      svg.style.display = "inline-block"
+      return svg
    }
 }
 
