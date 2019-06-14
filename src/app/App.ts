@@ -30,7 +30,7 @@ class App implements Slicer {
 
    constructor () {
       this.graphicsSvg = this.createSvg(400, 400, false)
-      this.dataSvg = this.createSvg(400, 400, true)
+      this.dataSvg = this.createSvg(400, 400, false)
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
       this.graphicsPane3D = new GraphicsPane3D(600, 600)

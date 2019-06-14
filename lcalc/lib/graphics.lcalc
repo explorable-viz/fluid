@@ -32,7 +32,7 @@ letrec fun transpose {
    Translate(x, y, g) → Translate(y, x, transpose g)
 };
 
-// See GitHub issue #167. The dimensions (width + height) are measured from the origin.
+// See GitHub issue #167. The dimensions (width, height) are measured from the origin.
 // GraphicsElement → (Num, Num)
 letrec fun dimensions {
    Polyline(ps) → 
@@ -42,9 +42,10 @@ letrec fun dimensions {
    Graphic(gs) → 
       pathDimensions (map dimensions gs);
    Text(x, y, str) →
+      // equivalent to pathDimensions [(x, y), (x + textWidth str, y + textHeight str)]
       (x + textWidth str, y + textHeight str);
-   Translate(x, y, g) →
-      match dimensions g as (w, h) → (w + x, h + y)
+   Translate(dx, dy, g) →
+      match dimensions g as (w, h) → (w + dx, h + dy)
 };
 
 // GraphicsElement → Num

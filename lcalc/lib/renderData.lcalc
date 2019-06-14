@@ -4,15 +4,15 @@
 //    Data = List (Num | Str, Data)
 // Expr → GraphicsElement
 letrec fun renderData g →
-   let x = stackDown 0 [
+   let x = stackUp 0 (reverse [
       stackRight 0 [Text(0, 0, "quick"), Text(0, 0, "lazy"),  Text(0, 0, "fox")],
       stackRight 0 [Text(0, 0, "quick"), Text(0, 0, "lazy"),  Text(0, 0, "fox")]
-   ];
+   ]);
    let y = trace (height x)
    in
-   stackDown 0 [
+   stackUp 0 (reverse [
       Text(0, 0, "ibberish"), // non-whitespace line, with no descent - yuk
       stackRight 0 [Text(0, 0, "hello"), Text(0, 0, "cruel"),  Text(0, 0, "world")],
       x,
       stackRight 0 [Text(0, 0, "hello"), Text(0, 0, "cruel"),  Text(0, 0, "world")]
-   ]
+   ])
