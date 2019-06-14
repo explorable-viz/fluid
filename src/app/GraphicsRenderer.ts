@@ -180,6 +180,12 @@ export class GraphicsRenderer {
    text (g: Text): void {
       const [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
             text: SVGTextElement = textElement(x, y, g.str.val)
+      text.addEventListener("click", (e: MouseEvent): void => {
+         e.stopPropagation()
+         this.slicer.resetForBwd()
+         setallα(ann.top, g)
+         this.slicer.bwdSlice()
+      })
       this.current.appendChild(text)
       this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
