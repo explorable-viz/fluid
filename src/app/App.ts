@@ -29,8 +29,8 @@ class App implements Slicer {
    direction: Direction
 
    constructor () {
-      this.graphicsSvg = this.createSvg(400, 400)
-      this.dataSvg = this.createSvg(400, 400)
+      this.graphicsSvg = this.createSvg(400, 400, false)
+      this.dataSvg = this.createSvg(400, 400, true)
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
       this.graphicsPane3D = new GraphicsPane3D(600, 600)
@@ -46,13 +46,13 @@ class App implements Slicer {
       this.loadExample()
    }
 
-   createSvg (h: number, w: number): SVGSVGElement {
+   createSvg (h: number, w: number, stackDown: boolean): SVGSVGElement {
       const svg: SVGSVGElement = document.createElementNS(svgNS, "svg")
       svg.setAttribute("width", w.toString())
       svg.setAttribute("height", h.toString())
-      // TODO: understand how last two numbers below relate to width and height attributes above.
       // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
       svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
+      svg.setAttribute("viewBox", `-0.5 ${(stackDown ? -0.5 - h : -0.5).toString()} ${w.toString()} ${h.toString()}`)
       // We don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
       // pixel attributes). But to invert the y-axis we use an SVG transform:
       svg.setAttribute("transform", "scale(1,-1)")
