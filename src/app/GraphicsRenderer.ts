@@ -10,12 +10,6 @@ import { Versioned, asVersioned, num, setallα } from "../Versioned"
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
 
-// No counterpart of this in the graphics DSL yet.
-export const reflect_y: TransformFun =
-   ([x, y]): [number, number] => {
-      return [x, -y]
-   }
-
 function translate (x_inc: number, y_inc: number): TransformFun {
    return ([x, y]): [number, number] => {
       return [x + x_inc, y + y_inc]

@@ -15,9 +15,9 @@ class App implements Slicer {
    e: Expr                        // entire closed program
    tv: ExplValue                  // chart computed by program
    data_e: Expr                   // expression for data (value bound by first let in user code)
-   dataView2: GraphicsRenderer
-   dataView_tv: ExplValue
+   dataView: GraphicsRenderer
    dataSvg: SVGSVGElement
+   dataView_tv: ExplValue
    graphicsView: GraphicsRenderer
    graphicsSvg: SVGSVGElement
    direction: Direction
@@ -74,7 +74,7 @@ class App implements Slicer {
       this.tv = Eval.eval_(emptyEnv(), this.e)
       this.initData()
       this.dataView_tv = this.visualise(this.data_e)
-      this.dataView2 = new GraphicsRenderer(this.dataSvg, this)
+      this.dataView = new GraphicsRenderer(this.dataSvg, this)
       this.graphicsView = new GraphicsRenderer(this.graphicsSvg, this)
       this.resetForFwd()
       this.fwdSlice()
@@ -103,7 +103,7 @@ class App implements Slicer {
    }
 
    draw (): void {
-      this.dataView2.render(this.dataGraphics)
+      this.dataView.render(this.dataGraphics)
       this.graphicsView.render(this.graphics)
    }
 }
