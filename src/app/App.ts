@@ -9,19 +9,23 @@ import { Value } from "../Value"
 import { ν, setallα, str } from "../Versioned"
 import { importDefaults, load, parse } from "../../test/util/Core"
 import { Cursor } from "../../test/util/Cursor"
-import { GraphicsRenderer, Slicer, svgNS } from "./GraphicsRenderer"
+import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 class View implements Slicer {
+   name: string
+   coordinator: ViewCoordinator
    e: Expr
    tv: ExplValue
    view: GraphicsRenderer
    direction: Direction
 
-   constructor (e: Expr, svg: SVGSVGElement) {
+   constructor (name: string, e: Expr, svg: SVGSVGElement) {
+      this.name = name
       this.e = e
       this.tv = Eval.eval_(emptyEnv(), e)
       this.view = new GraphicsRenderer(svg, this)
       this.resetForFwd()
+      this.direction = Direction.Fwd
       this.fwdSlice()
    }
 
@@ -31,18 +35,18 @@ class View implements Slicer {
 
    fwdSlice (): void {
       Eval.eval_fwd(this.tv)
-      this.direction = Direction.Fwd
       this.draw()
    }
 
    resetForBwd (): void {
       setallα(ann.bot, this.e)
-      Eval.eval_fwd(this.tv) // to clear all annotations
+      Eval.eval_fwd(this.tv) // clear all annotations
    }
 
    bwdSlice (): void {
       Eval.eval_bwd(this.tv)
       this.direction = Direction.Bwd
+      this.coordinator.onBwd()
       this.draw()
    }
 
@@ -66,16 +70,43 @@ class App {
 
    constructor () {
       // Two programs share the expression data_e. May be problematic for setting/clearing annotations?
-      this.graphicsView = new View(parse(load("bar-chart")), this.createSvg(400, 400, false))
+      this.graphicsView = new View(
+         "graphicsView",
+         parse(load("bar-chart")), 
+         this.createSvg(400, 400, false)
+      )
       let here: Cursor = new Cursor(this.graphicsView.e)
       here.skipImports().toDef("data").to(Expr.Let, "e")
       const data_e: Expr = as(here.v, Expr.Constr)
       this.dataView = new View(
+         "dataView",
          importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.quote(ν(), data_e))),
          this.createSvg(400, 1200, false)
       )
-      document.body.appendChild(this.graphicsView.svg)
+      const dataView: View = this.dataView
+      this.graphicsView.coordinator = new class ViewCoordinator {
+         onBwd (): void {
+            dataView.fwdSlice()
+         }
+
+         resetForBwd (): void {
+            dataView.resetForBwd()
+            graphicsView.resetForBwd()
+         }
+      }()
+      const graphicsView: View = this.graphicsView
+      this.dataView.coordinator = new class ViewCoordinator {
+         onBwd (): void {
+            graphicsView.fwdSlice()
+         }
+
+         resetForBwd (): void {
+            dataView.resetForBwd()
+            graphicsView.resetForBwd()
+         }
+      }
       document.body.appendChild(this.dataView.svg)
+      document.body.appendChild(this.graphicsView.svg)
    }
 
    createSvg (w: number, h: number, stackDown: boolean): SVGSVGElement {

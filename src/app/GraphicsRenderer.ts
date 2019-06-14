@@ -28,6 +28,12 @@ export interface Slicer {
    resetForBwd (): void // set all annotations to bot
    bwdSlice (): void    // bwd slice and set polarity to bwd
    direction: Direction
+   coordinator: ViewCoordinator
+}
+
+export interface ViewCoordinator {
+   onBwd (): void
+   resetForBwd (): void
 }
 
 export class GraphicsRenderer {
@@ -95,7 +101,7 @@ export class GraphicsRenderer {
       }
       group.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
-         this.slicer.resetForBwd()
+         this.slicer.coordinator.resetForBwd()
          setallα(ann.top, g)
          this.slicer.bwdSlice()
       })
