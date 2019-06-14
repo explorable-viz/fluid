@@ -1,7 +1,7 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
 import { emptyEnv } from "../Env"
-import { Direction, Eval } from "../Eval"
+import { Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
@@ -17,20 +17,14 @@ class View implements Slicer {
    e: Expr
    tv: ExplValue
    view: GraphicsRenderer
-   direction: Direction
 
    constructor (name: string, e: Expr, svg: SVGSVGElement) {
       this.name = name
       this.e = e
       this.tv = Eval.eval_(emptyEnv(), e)
       this.view = new GraphicsRenderer(svg, this)
-      this.resetForFwd()
-      this.direction = Direction.Fwd
-      this.fwdSlice()
-   }
-
-   resetForFwd (): void {
-      setallα(ann.top, this.e)
+      this.resetForBwd()
+      this.draw()
    }
 
    fwdSlice (): void {
@@ -45,7 +39,6 @@ class View implements Slicer {
 
    bwdSlice (): void {
       Eval.eval_bwd(this.tv)
-      this.direction = Direction.Bwd
       this.coordinator.onBwd()
       this.draw()
    }

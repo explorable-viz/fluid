@@ -1,7 +1,6 @@
 import { Annotation, ann } from "../util/Annotated"
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
-import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
@@ -23,11 +22,9 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
 }
 
 export interface Slicer {
-   resetForFwd (): void // set all annotations to top
    fwdSlice (): void
    resetForBwd (): void // set all annotations to bot
    bwdSlice (): void    // bwd slice and set polarity to bwd
-   direction: Direction
    coordinator: ViewCoordinator
 }
 
@@ -140,9 +137,8 @@ export class GraphicsRenderer {
 
    xyHighlight (x: Num, y: Num): void {
       const [x_α, y_α] = [__nonNull(asVersioned(x).__α), __nonNull(asVersioned(y).__α)]
-      // In the fwd direction, a point appears "erased" (false) if either of its components is erased.
       // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
-      if (this.slicer.direction === Direction.Fwd ? ann.join(!x_α, !y_α) : ann.join(x_α, y_α)) {
+      if (ann.join(x_α, y_α)) {
          const [xʹ, yʹ]: [number, number] = this.transform([x.val, y.val])
          this.circle(xʹ, yʹ, 3)
       }
@@ -190,7 +186,7 @@ export class GraphicsRenderer {
       this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
       const α: Annotation = __nonNull(asVersioned(g.str).__α)
-      if (this.slicer.direction === Direction.Fwd ? !α : α) {
+      if (α) {
          text.setAttribute("fill", "blue")
       } else {
          text.setAttribute("fill", "black")
