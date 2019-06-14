@@ -30,7 +30,7 @@ class App implements Slicer {
 
    constructor () {
       this.graphicsSvg = this.createSvg(400, 400, false)
-      this.dataSvg = this.createSvg(400, 400, false)
+      this.dataSvg = this.createSvg(400, 1200, false)
       this.dataCanvas = document.createElement("canvas")
       this.dataCtx = __nonNull(this.dataCanvas.getContext("2d"))
       this.graphicsPane3D = new GraphicsPane3D(600, 600)
@@ -46,7 +46,7 @@ class App implements Slicer {
       this.loadExample()
    }
 
-   createSvg (h: number, w: number, stackDown: boolean): SVGSVGElement {
+   createSvg (w: number, h: number, stackDown: boolean): SVGSVGElement {
       const svg: SVGSVGElement = document.createElementNS(svgNS, "svg")
       svg.setAttribute("width", w.toString())
       svg.setAttribute("height", h.toString())

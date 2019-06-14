@@ -60,8 +60,8 @@ let spaceRight = fun sep gs →
 
 // List GraphicsElement → List GraphicsElement
 let vcentre = fun gs →
-   let max_w = max (map height gs) in
-   map (fun g → x_translate ((max_w - height g) / 2) g) gs;
+   let max_h = max (map height gs) in
+   map (fun g → y_translate ((max_h - height g) / 2) g) gs;
 
 // List GraphicsElement → List GraphicsElement
 let hcentre = fun gs → 
@@ -69,21 +69,19 @@ let hcentre = fun gs →
    map (fun g → x_translate ((max_w - width g) / 2) g) gs;
 
 // Unlike spaceRight, produces a nested structure.
-// List GraphicsElement → GraphicsElement
+// Num → List GraphicsElement → GraphicsElement
 let stackRight = fun sep gs →
    foldr (fun (g, g') → Graphic([g, x_translate (width g + sep) g'])) Graphic([]) gs;
 
-// List GraphicsElement → GraphicsElement
-let stackLeft = fun sep gs →
-   foldr (fun (g, g') → Graphic([g, x_translate (negate (width g + sep)) g'])) Graphic([]) gs;
+// Num → List GraphicsElement → GraphicsElement
+let stackLeft = fun sep → compose (stackRight sep) reverse;
 
-// List GraphicsElement → Bool → GraphicsElement
+// Num → List GraphicsElement → GraphicsElement
 let stackUp = fun sep gs →
    foldr (fun (g, g') → Graphic([g, y_translate (height g + sep) g'])) Graphic([]) gs;
 
-// List GraphicsElement → Bool → GraphicsElement
-let stackDown = fun sep gs →
-   foldr (fun (g, g') → Graphic([g, y_translate (negate (height g + sep)) g'])) Graphic([]) gs;
+// Num → List GraphicsElement → GraphicsElement
+let stackDown = fun sep → compose (stackUp sep) reverse;
 
 // Rect → Polygon
 let renderRect = fun Rect(w, h) stroke fill → 
