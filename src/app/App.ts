@@ -28,19 +28,16 @@ class View implements Slicer {
    }
 
    fwdSlice (): void {
-      console.log(`${this.name}: forward-slicing based on availability annotations.`)
       Eval.eval_fwd(this.tv)
       this.draw()
    }
 
    resetForBwd (): void {
-      console.log(`${this.name}: clearing program annotations and forward-slicing.`)
       setallα(ann.bot, this.e)
       Eval.eval_fwd(this.tv) // clear all annotations
    }
 
    bwdSlice (): void {
-      console.log(`${this.name}: setting neededness annotations and backward-slicing.`)
       Eval.eval_bwd(this.tv)
       this.coordinator.onBwd()
       this.draw()
