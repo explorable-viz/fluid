@@ -8,7 +8,7 @@ import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { Num, Str, Value } from "../Value"
 import { Versioned, ν, setallα, str } from "../Versioned"
-import { importDefaults, load, loadData, parse } from "../../test/util/Core"
+import { load, loadData, parse } from "../../test/util/Core"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 class View implements Slicer {
@@ -29,13 +29,15 @@ class View implements Slicer {
    }
 
    fwdSlice (): void {
+      setallα(ann.top, this.e)
       Eval.eval_fwd(this.tv)
       this.draw()
    }
 
+   // Clear annotations on program and forward slice, to erase all annotations prior to backward slicing.
    resetForBwd (): void {
       setallα(ann.bot, this.e)
-      Eval.eval_fwd(this.tv) // clear all annotations
+      Eval.eval_fwd(this.tv)
    }
 
    bwdSlice (): void {
@@ -66,6 +68,7 @@ class App {
    constructor () {
       const data: Data = Eval.eval_(emptyEnv(), parse(loadData("renewables"))).v as Data,
             ρ: Env = extendEnv(emptyEnv(), str(ν(), "data"), data)
+      setallα(ann.bot, data)
       this.graphicsView = new View(
          "graphicsView",
          ρ,
@@ -75,7 +78,7 @@ class App {
       this.dataView = new View(
          "dataView",
          ρ,
-         importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.var_(ν(), str(ν(), "data")))),
+         parse("renderData data"),
          this.createSvg(400, 1200, false)
       )
       const dataView: View = this.dataView
@@ -85,6 +88,7 @@ class App {
          }
 
          resetForBwd (): void {
+            setallα(ann.bot, data)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
          }
@@ -96,6 +100,7 @@ class App {
          }
 
          resetForBwd (): void {
+            setallα(ann.bot, data)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
          }
