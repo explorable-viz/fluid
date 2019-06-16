@@ -108,6 +108,10 @@ export function load (file: string): string {
 	return loadTestFile("lcalc/example", file)
 }
 
+export function loadData (file: string): string {
+	return loadTestFile("lcalc/dataset", file)
+}
+
 export function loadLib (file: string): string {
 	return loadTestFile("lcalc/lib", file)
 }

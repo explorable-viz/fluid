@@ -1,27 +1,28 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
-import { emptyEnv } from "../Env"
+import { List, Pair } from "../BaseTypes"
+import { Env, emptyEnv, extendEnv } from "../Env"
 import { Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
-import { Value } from "../Value"
-import { ν, setallα, str } from "../Versioned"
-import { importDefaults, load, parse } from "../../test/util/Core"
-import { Cursor } from "../../test/util/Cursor"
+import { Num, Str, Value } from "../Value"
+import { Versioned, ν, setallα, str } from "../Versioned"
+import { importDefaults, load, loadData, parse } from "../../test/util/Core"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 class View implements Slicer {
    name: string
    coordinator: ViewCoordinator
+   ρ: Env
    e: Expr
    tv: ExplValue
    view: GraphicsRenderer
 
-   constructor (name: string, e: Expr, svg: SVGSVGElement) {
+   constructor (name: string, ρ: Env, e: Expr, svg: SVGSVGElement) {
       this.name = name
       this.e = e
-      this.tv = Eval.eval_(emptyEnv(), e)
+      this.tv = Eval.eval_(ρ, e)
       this.view = new GraphicsRenderer(svg, this)
       this.resetForBwd()
       this.draw()
@@ -56,24 +57,25 @@ class View implements Slicer {
    }
 }
 
-// "Data" defined to be expression bound by first "let" in user code; must be already in normal form.
+type Data = Versioned<List<Pair<Num | Str, any>>> // approximate recursive type
+
 class App {
    dataView: View
    graphicsView: View
 
    constructor () {
-      // Two programs share the expression data_e. May be problematic for setting/clearing annotations?
+      const data: Data = Eval.eval_(emptyEnv(), parse(loadData("renewables"))).v as Data,
+            ρ: Env = extendEnv(emptyEnv(), str(ν(), "data"), data)
       this.graphicsView = new View(
          "graphicsView",
-         parse(load("bar-chart")), 
+         ρ,
+         parse(load("bar-chart")),
          this.createSvg(400, 400, false)
       )
-      let here: Cursor = new Cursor(this.graphicsView.e)
-      here.skipImports().toDef("data").to(Expr.Let, "e")
-      const data_e: Expr = as(here.v, Expr.Constr)
       this.dataView = new View(
          "dataView",
-         importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.quote(ν(), data_e))),
+         ρ,
+         importDefaults(Expr.app(ν(), Expr.var_(ν(), str(ν(), "renderData")), Expr.var_(ν(), str(ν(), "data")))),
          this.createSvg(400, 1200, false)
       )
       const dataView: View = this.dataView
