@@ -5,18 +5,15 @@ letrec fun renderData {
    Cons(Pair(k, v), rows) → 
       stackDown 0 [
          stackRight 0 (vtop [
-            match k as {
-               ConstNum(n) → Text(0, 0, numToStr n);
-               ConstStr(str) → Text(0, 0, str)
+            typematch k as {
+               Num → Text(0, 0, numToStr k);
+               Str → Text(0, 0, k)
             },
             Text(0, 0, ": "),
-            match v as {
-               Constr(c'', es'') → match or (c'' === "Cons") (c'' === "Nil") as {
-                  True → renderData v;
-                  False → error "Data format error: expected List, Num or Str expression."
-               };
-               ConstNum(n) → Text(0, 0, numToStr n);
-               ConstStr(str) → Text(0, 0, str)
+            typematch v as {
+               List → renderData v;
+               Num → Text(0, 0, numToStr v);
+               Str → Text(0, 0, v)
             }
          ]),
          renderData rows
