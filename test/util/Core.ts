@@ -1,14 +1,11 @@
 import { __nonNull, as } from "../../src/util/Core"
-import { successfulParse } from "../../src/util/parse/Core"
 import { ann } from "../../src/util/Annotated"
 import { emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { ExplValue } from "../../src/ExplValue"
 import { Expr } from "../../src/Expr"
 import "../../src/Graphics" // for graphical datatypes
-import { importDefaults } from "../../src/Module"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
-import { Parse } from "../../src/Parse"
 import { setallα } from "../../src/Versioned"
 import { Cursor } from "./Cursor"
 
@@ -69,7 +66,3 @@ const flags: Map<Flags, boolean> = new Map([
    [Flags.Fwd, true],
    [Flags.Bwd, true]
 ])
-
-export function parse (src: string): Expr {
-   return importDefaults(successfulParse(Parse.expr, src))
-}

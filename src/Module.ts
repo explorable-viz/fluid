@@ -44,3 +44,7 @@ export function loadData (file: string): string {
 export function loadLib (file: string): string {
 	return loadTestFile("lcalc/lib", file)
 }
+
+export function parse (src: string): Expr {
+   return importDefaults(successfulParse(Parse.expr, src))
+}
