@@ -8,10 +8,6 @@ import { ν } from "./Versioned"
 // Kindergarten modules.
 type Module = List<Expr.Def>
 
-export function loadModule (file: string): Module {
-   return successfulParse(Parse.defList, loadLib(file))
-}
-
 const module_prelude: Module = loadModule("prelude"),
       module_graphics: Module = loadModule("graphics"),
       module_renderData: Module = loadModule("renderData")
@@ -45,8 +41,8 @@ export function loadData (file: string): string {
 	return loadTestFile("lcalc/dataset", file)
 }
 
-function loadLib (file: string): string {
-	return loadTestFile("lcalc/lib", file)
+export function loadModule (file: string): Module {
+   return successfulParse(Parse.defList, loadTestFile("lcalc/lib", file))
 }
 
 export function parse (src: string): Expr {
