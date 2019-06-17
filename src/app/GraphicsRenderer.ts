@@ -59,7 +59,8 @@ export class GraphicsRenderer {
    }
 
    render (g: GraphicsElement): void {
-      assert(this.ancestors.length === 1)
+      assert(this.ancestors.length === 1      // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
+   )
       while (this.current.firstChild !== null) {
          this.current.removeChild(this.current.firstChild)
       }
@@ -137,8 +138,7 @@ export class GraphicsRenderer {
 
    xyHighlight (x: Num, y: Num): void {
       const [x_α, y_α] = [__nonNull(asVersioned(x).__α), __nonNull(asVersioned(y).__α)]
-      // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
-      if (ann.join(x_α, y_α)) {
+      if (ann.meet(x_α, y_α)) {
          const [xʹ, yʹ]: [number, number] = this.transform([x.val, y.val])
          this.circle(xʹ, yʹ, 3)
       }
@@ -149,7 +149,7 @@ export class GraphicsRenderer {
       circle.setAttribute("cx", x.toString())
       circle.setAttribute("cy", y.toString())
       circle.setAttribute("r", radius.toString())
-      circle.setAttribute("stroke", "#0000ff")
+      circle.setAttribute("stroke", "blue")
       circle.setAttribute("fill", "none")
       this.current.appendChild(circle)
    }
@@ -183,7 +183,7 @@ export class GraphicsRenderer {
          this.slicer.bwdSlice()
       })
       this.current.appendChild(text)
-      this.xyHighlight(g.x, g.y)
+      // this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
       const α: Annotation = __nonNull(asVersioned(g.str).__α)
       if (α) {
