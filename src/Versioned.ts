@@ -118,6 +118,18 @@ export function setallα<Tag extends ValueTag, T extends Value<Tag>> (α: Annota
    return v
 }
 
+export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
+   if (versioned(v)) {
+      setα(ann.negate(v.__α), v)
+   }
+   v.fieldValues().forEach((v: Persistent): void => {
+      if (v instanceof Value) {
+         negateallα(v)
+      }
+   })
+   return v
+}
+
 export function joinα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
    v.__α = ann.join(α, v.__α)
    return v

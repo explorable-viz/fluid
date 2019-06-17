@@ -23,3 +23,7 @@ export interface MeetSemilattice<T> {
 
 export interface Lattice<T> extends JoinSemilattice<T>, MeetSemilattice<T> {
 }
+
+export interface BooleanLattice<T> extends Lattice<T> {
+   negate (t: T): T
+}
