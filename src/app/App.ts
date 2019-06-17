@@ -8,7 +8,7 @@ import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
 import { Num, Str, Value } from "../Value"
-import { Versioned, setallα } from "../Versioned"
+import { Versioned, negateallα, setallα } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 class View implements Slicer {
@@ -84,6 +84,7 @@ class App {
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {
          onBwd (): void {
+            negateallα(data)
             dataView.fwdSlice()
          }
 
@@ -96,6 +97,7 @@ class App {
       const graphicsView: View = this.graphicsView
       this.dataView.coordinator = new class ViewCoordinator {
          onBwd (): void {
+            negateallα(data)
             graphicsView.fwdSlice()
          }
 
