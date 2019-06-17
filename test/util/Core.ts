@@ -1,6 +1,6 @@
 import { __nonNull, as } from "../../src/util/Core"
 import { ann } from "../../src/util/Annotated"
-import { emptyEnv } from "../../src/Env"
+import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { ExplValue } from "../../src/ExplValue"
 import { Expr } from "../../src/Expr"
@@ -13,11 +13,12 @@ export class FwdSlice {
    expr: Cursor
    val: Cursor
 
-   constructor (e: Expr) {
+   constructor (e: Expr, ρ: Env = emptyEnv()) {
       setallα(ann.top, e)
+      setallα(ann.top, ρ)
       this.expr = new Cursor(e)
       this.setup()
-      const tv: ExplValue = Eval.eval_(emptyEnv(), e)
+      const tv: ExplValue = Eval.eval_(ρ, e)
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(tv)
          this.val = new Cursor(tv.v)
@@ -42,10 +43,11 @@ export class BwdSlice {
    val: Cursor
    expr: Cursor
 
-   constructor (e: Expr) {
+   constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Bwd)) {
          setallα(ann.bot, e)
-         const tv: ExplValue = Eval.eval_(emptyEnv(), e) // just to obtain tv
+         setallα(ann.bot, ρ)
+         const tv: ExplValue = Eval.eval_(ρ, e) // just to obtain tv
          Eval.eval_fwd(tv) // clear annotations on all values
          this.val = new Cursor(tv.v)
          this.setup()

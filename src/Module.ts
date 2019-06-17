@@ -1,7 +1,7 @@
 import { __nonNull } from "./util/Core"
 import { successfulParse } from "./util/parse/Core"
 import { List } from "./BaseTypes"
-import { Env, emptyEnv } from "./Env"
+import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Parse } from "./Parse"
@@ -47,7 +47,7 @@ export function openWithImports (file: string, modules: string[]): Expr {
    return parseWithImports(loadTestFile("lcalc/example", file), modules)
 }
 
-export function openDatasetAs (file: string, x: string): Env {
+export function openDatasetAs (file: string, x: string): ExtendEnv {
    const e: Expr = parse(loadTestFile("lcalc/dataset", file))
    return Env.singleton(str(ν(), x), Eval.eval_(emptyEnv(), e).v)
 }

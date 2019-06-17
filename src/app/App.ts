@@ -1,14 +1,14 @@
 import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
 import { List, Pair } from "../BaseTypes"
-import { Env, emptyEnv, extendEnv } from "../Env"
+import { Env, ExtendEnv } from "../Env"
 import { Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { open, openDatasetAs, parseWithImports } from "../Module"
 import { Num, Str, Value } from "../Value"
-import { Versioned, ν, setallα, str } from "../Versioned"
+import { Versioned, setallα } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 class View implements Slicer {
@@ -33,7 +33,7 @@ class View implements Slicer {
       Eval.eval_fwd(this.tv)
       this.draw()
    }
-
+   
    // Clear annotations on program and forward slice, to erase all annotations prior to backward slicing.
    resetForBwd (): void {
       setallα(ann.bot, this.e)
@@ -66,8 +66,8 @@ class App {
    graphicsView: View
 
    constructor () {
-      const ρ: Env = openDatasetAs("renewables"),
-            data: Data = Eval.eval_(emptyEnv(), ).v as Data
+      const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
+            data: Data = ρ.v as Data
       setallα(ann.bot, data)
       this.graphicsView = new View("graphicsView", ρ, open("bar-chart"), this.createSvg(400, 400, false))
       this.dataView = new View("dataView", ρ, parseWithImports("renderData data", ["renderData"]), this.createSvg(400, 1200, false))

@@ -26,7 +26,7 @@ export abstract class Env extends DataValue<"Env"> {
       return this.get(k) !== undefined
    }
 
-   static singleton (k: Versioned<Str>, v: Versioned<Value>): Env {
+   static singleton (k: Versioned<Str>, v: Versioned<Value>): ExtendEnv {
       return extendEnv(emptyEnv(), k, v)
    }
    
