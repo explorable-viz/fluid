@@ -8,18 +8,22 @@ import { ν } from "./Versioned"
 // Kindergarten modules.
 type Module = List<Expr.Def>
 
-const module_prelude: Module = successfulParse(Parse.defList, loadLib("prelude")),
-      module_graphics: Module = successfulParse(Parse.defList, loadLib("graphics")),
-      module_renderData: Module = successfulParse(Parse.defList, loadLib("renderData"))
+export function loadModule (file: string): Module {
+   return successfulParse(Parse.defList, loadLib(file))
+}
 
-export function prependModule (module: Module, e: Expr): Expr.Defs {
+const module_prelude: Module = loadModule("prelude"),
+      module_graphics: Module = loadModule("graphics"),
+      module_renderData: Module = loadModule("renderData")
+
+function import_ (module: Module, e: Expr): Expr.Defs {
    return Expr.defs(ν(), module, e)
 }
 
-export function importDefaults (e: Expr): Expr {
-   return prependModule(module_prelude, 
-          prependModule(module_graphics,
-          prependModule(module_renderData,e)))
+function importDefaults (e: Expr): Expr {
+   return import_(module_prelude, 
+          import_(module_graphics,
+          import_(module_renderData, e)))
 }
 
 export function loadTestFile (folder: string, file: string): string {
@@ -41,7 +45,7 @@ export function loadData (file: string): string {
 	return loadTestFile("lcalc/dataset", file)
 }
 
-export function loadLib (file: string): string {
+function loadLib (file: string): string {
 	return loadTestFile("lcalc/lib", file)
 }
 
