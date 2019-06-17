@@ -138,7 +138,7 @@ export class GraphicsRenderer {
 
    xyHighlight (x: Num, y: Num): void {
       const [x_α, y_α] = [__nonNull(asVersioned(x).__α), __nonNull(asVersioned(y).__α)]
-      if (!ann.join(x_α, y_α)) {
+      if (!ann.meet(x_α, y_α)) {
          const [xʹ, yʹ]: [number, number] = this.transform([x.val, y.val])
          this.circle(xʹ, yʹ, 3)
       }
