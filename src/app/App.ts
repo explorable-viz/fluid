@@ -6,7 +6,7 @@ import { Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
-import { open, openDatasetAs, parseWithImports } from "../Module"
+import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
 import { Num, Str, Value } from "../Value"
 import { Versioned, setallα } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
@@ -69,8 +69,18 @@ class App {
       const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
             data: Data = ρ.v as Data
       setallα(ann.bot, data)
-      this.graphicsView = new View("graphicsView", ρ, open("bar-chart"), this.createSvg(400, 400, false))
-      this.dataView = new View("dataView", ρ, parseWithImports("renderData data", ["renderData"]), this.createSvg(400, 1200, false))
+      this.graphicsView = new View(
+         "graphicsView", 
+         ρ, 
+         openWithImports("bar-chart", [module_graphics]), 
+         this.createSvg(400, 400, false)
+      )
+      this.dataView = new View(
+         "dataView", 
+         ρ, 
+         parseWithImports("renderData data", [module_graphics, module_renderData]), 
+         this.createSvg(400, 1200, false)
+      )
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {
          onBwd (): void {

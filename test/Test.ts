@@ -4,7 +4,7 @@ import { BwdSlice, FwdSlice } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair } from "../src/BaseTypes"
 import { Env } from "../src/Env"
 import { Expr } from "../src/Expr"
-import { open, openDatasetAs, openWithImports } from "../src/Module"
+import { module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
 
 import Trie = Expr.Trie
 
@@ -34,7 +34,7 @@ describe("example", () => {
    describe("bar-chart", () => {
 		it("ok", () => {
          const ρ: Env = openDatasetAs("renewables", "data"),
-			      e: Expr = openWithImports("bar-chart", ["graphics"])
+			      e: Expr = openWithImports("bar-chart", [module_graphics])
 			new FwdSlice(e, ρ)
 			new (class extends BwdSlice {
 				setup (): void {

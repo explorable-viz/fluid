@@ -10,7 +10,10 @@ import { ν, str } from "./Versioned"
 // Kindergarten modules.
 type Module = List<Expr.Def>
 
-const module_prelude: Module = loadModule("prelude")
+// Define as constants to enforce sharing; could use memoisation.
+export const module_prelude: Module = loadModule("prelude"),
+             module_graphics: Module = loadModule("graphics"),
+             module_renderData: Module = loadModule("renderData")
 
 function import_ (modules: Module[], e: Expr): Expr {
    if (modules.length === 0) {
@@ -43,7 +46,7 @@ export function open (file: string): Expr {
    return openWithImports(file, [])
 }
 
-export function openWithImports (file: string, modules: string[]): Expr {
+export function openWithImports (file: string, modules: Module[]): Expr {
    return parseWithImports(loadTestFile("lcalc/example", file), modules)
 }
 
@@ -56,6 +59,6 @@ export function parse (src: string): Expr {
    return importDefaults(successfulParse(Parse.expr, src))
 }
 
-export function parseWithImports (src: string, modules: string[]): Expr {
-   return importDefaults(import_(modules.map(loadModule), successfulParse(Parse.expr, src)))
+export function parseWithImports (src: string, modules: Module[]): Expr {
+   return importDefaults(import_(modules, successfulParse(Parse.expr, src)))
 }
