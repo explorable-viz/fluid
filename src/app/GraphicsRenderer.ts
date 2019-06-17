@@ -138,7 +138,7 @@ export class GraphicsRenderer {
 
    xyHighlight (x: Num, y: Num): void {
       const [x_α, y_α] = [__nonNull(asVersioned(x).__α), __nonNull(asVersioned(y).__α)]
-      if (ann.meet(x_α, y_α)) {
+      if (!ann.join(x_α, y_α)) {
          const [xʹ, yʹ]: [number, number] = this.transform([x.val, y.val])
          this.circle(xʹ, yʹ, 3)
       }
@@ -186,7 +186,7 @@ export class GraphicsRenderer {
       // this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
       const α: Annotation = __nonNull(asVersioned(g.str).__α)
-      if (α) {
+      if (!α) {
          text.setAttribute("fill", "blue")
       } else {
          text.setAttribute("fill", "black")

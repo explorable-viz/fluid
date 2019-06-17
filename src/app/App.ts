@@ -24,7 +24,7 @@ class View implements Slicer {
       this.e = e
       this.tv = Eval.eval_(ρ, e)
       this.view = new GraphicsRenderer(svg, this)
-      this.resetForBwd()
+      this.fwdSlice()
       this.draw()
    }
 
@@ -68,7 +68,7 @@ class App {
    constructor () {
       const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
             data: Data = ρ.v as Data
-      setallα(ann.bot, data)
+      setallα(ann.top, data)
       this.graphicsView = new View(
          "graphicsView", 
          ρ, 
