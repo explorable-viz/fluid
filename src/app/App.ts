@@ -6,10 +6,9 @@ import { Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
-import { load, loadData } from "../Module"
+import { load, loadData, parse } from "../Module"
 import { Num, Str, Value } from "../Value"
 import { Versioned, ν, setallα, str } from "../Versioned"
-import { parse } from "../../test/util/Core"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 class View implements Slicer {
