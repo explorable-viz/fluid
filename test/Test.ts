@@ -32,7 +32,7 @@ describe("example", () => {
 
    describe("bar-chart", () => {
 		it("ok", () => {
-			const e: Expr = openWithImports("bar-chart", ["renderData"])
+			const e: Expr = openWithImports("bar-chart", ["graphics"])
 			new FwdSlice(e)
 			new (class extends BwdSlice {
 				setup (): void {

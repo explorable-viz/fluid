@@ -8,8 +8,7 @@ import { ν } from "./Versioned"
 // Kindergarten modules.
 type Module = List<Expr.Def>
 
-const module_prelude: Module = loadModule("prelude"),
-      module_graphics: Module = loadModule("graphics")
+const module_prelude: Module = loadModule("prelude")
 
 function import_ (modules: Module[], e: Expr): Expr {
    if (modules.length === 0) {
@@ -20,7 +19,7 @@ function import_ (modules: Module[], e: Expr): Expr {
 }
 
 function importDefaults (e: Expr): Expr {
-   return import_([module_prelude, module_graphics], e)
+   return import_([module_prelude], e)
 }
 
 export function loadTestFile (folder: string, file: string): string {
