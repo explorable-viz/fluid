@@ -9,17 +9,18 @@ import { ν } from "./Versioned"
 type Module = List<Expr.Def>
 
 const module_prelude: Module = loadModule("prelude"),
-      module_graphics: Module = loadModule("graphics"),
-      module_renderData: Module = loadModule("renderData")
+      module_graphics: Module = loadModule("graphics")
 
-function import_ (module: Module, e: Expr): Expr.Defs {
-   return Expr.defs(ν(), module, e)
+function import_ (modules: Module[], e: Expr): Expr {
+   if (modules.length === 0) {
+      return e
+   } else {
+      return Expr.defs(ν(), modules[0], import_(modules.slice(1), e))
+   }
 }
 
 function importDefaults (e: Expr): Expr {
-   return import_(module_prelude, 
-          import_(module_graphics,
-          import_(module_renderData, e)))
+   return import_([module_prelude, module_graphics], e)
 }
 
 export function loadTestFile (folder: string, file: string): string {
@@ -33,18 +34,26 @@ export function loadTestFile (folder: string, file: string): string {
    return __nonNull(text!)
 }
 
-export function loadData (file: string): string {
-	return loadTestFile("lcalc/dataset", file)
-}
-
 export function loadModule (file: string): Module {
    return successfulParse(Parse.defList, loadTestFile("lcalc/lib", file))
 }
 
 export function open (file: string): Expr {
-   return parse(loadTestFile("lcalc/example", file))
+   return openWithImports(file, [])
+}
+
+export function openWithImports (file: string, modules: string[]): Expr {
+   return parseWithImports(loadTestFile("lcalc/example", file), modules)
+}
+
+export function openDataset (file: string): Expr {
+   return parse(loadTestFile("lcalc/dataset", file))
 }
 
 export function parse (src: string): Expr {
    return importDefaults(successfulParse(Parse.expr, src))
+}
+
+export function parseWithImports (src: string, modules: string[]): Expr {
+   return importDefaults(import_(modules.map(loadModule), successfulParse(Parse.expr, src)))
 }

@@ -3,7 +3,7 @@
 import { BwdSlice, FwdSlice } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
-import { open } from "../src/Module"
+import { open, openWithImports } from "../src/Module"
 
 import Trie = Expr.Trie
 
@@ -32,7 +32,7 @@ describe("example", () => {
 
    describe("bar-chart", () => {
 		it("ok", () => {
-			const e: Expr = open("bar-chart")
+			const e: Expr = openWithImports("bar-chart", ["renderData"])
 			new FwdSlice(e)
 			new (class extends BwdSlice {
 				setup (): void {
