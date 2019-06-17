@@ -6,7 +6,7 @@ import { Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
-import { load, loadData, parse } from "../Module"
+import { loadData, open, parse } from "../Module"
 import { Num, Str, Value } from "../Value"
 import { Versioned, ν, setallα, str } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
@@ -69,7 +69,7 @@ class App {
       const data: Data = Eval.eval_(emptyEnv(), parse(loadData("renewables"))).v as Data,
             ρ: Env = extendEnv(emptyEnv(), str(ν(), "data"), data)
       setallα(ann.bot, data)
-      this.graphicsView = new View("graphicsView", ρ, parse(load("bar-chart")), this.createSvg(400, 400, false))
+      this.graphicsView = new View("graphicsView", ρ, open("bar-chart"), this.createSvg(400, 400, false))
       this.dataView = new View("dataView", ρ, parse("renderData data"), this.createSvg(400, 1200, false))
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {

@@ -33,16 +33,16 @@ export function loadTestFile (folder: string, file: string): string {
    return __nonNull(text!)
 }
 
-export function load (file: string): string {
-	return loadTestFile("lcalc/example", file)
-}
-
 export function loadData (file: string): string {
 	return loadTestFile("lcalc/dataset", file)
 }
 
 export function loadModule (file: string): Module {
    return successfulParse(Parse.defList, loadTestFile("lcalc/lib", file))
+}
+
+export function open (file: string): Expr {
+   return parse(loadTestFile("lcalc/example", file))
 }
 
 export function parse (src: string): Expr {

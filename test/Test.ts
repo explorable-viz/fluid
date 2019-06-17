@@ -3,7 +3,7 @@
 import { BwdSlice, FwdSlice } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
-import { load, parse } from "../src/Module"
+import { open } from "../src/Module"
 
 import Trie = Expr.Trie
 
@@ -15,7 +15,7 @@ before((done: MochaDone) => {
 describe("example", () => {
 	describe("arithmetic", () => {
 		it("ok", () => {
-         const e: Expr = parse(load("arithmetic"))
+         const e: Expr = open("arithmetic")
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -32,7 +32,7 @@ describe("example", () => {
 
    describe("bar-chart", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("bar-chart"))
+			const e: Expr = open("bar-chart")
 			new FwdSlice(e)
 			new (class extends BwdSlice {
 				setup (): void {
@@ -47,7 +47,7 @@ describe("example", () => {
 
    describe("compose", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("compose"))
+			const e: Expr = open("compose")
 			new FwdSlice(e)
 			new BwdSlice(e)
 		})
@@ -55,7 +55,7 @@ describe("example", () => {
 
    describe("factorial", () => {
 		it("ok", () => {
-         const e: Expr = parse(load("factorial"))
+         const e: Expr = open("factorial")
          new FwdSlice(e)
 			new BwdSlice(e)
 		})
@@ -63,7 +63,7 @@ describe("example", () => {
 
    describe("filter", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("filter"))
+			const e: Expr = open("filter")
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -94,7 +94,7 @@ describe("example", () => {
 
    describe("foldr_sumSquares", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("foldr_sumSquares"))
+			const e: Expr = open("foldr_sumSquares")
          new FwdSlice(e)
 			new BwdSlice(e)
 		})
@@ -102,7 +102,7 @@ describe("example", () => {
 
    describe("length", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("length"))
+			const e: Expr = open("length")
 			// erasing the elements doesn't affect the count:
 			let test = new (class extends FwdSlice {
 				setup (): void {
@@ -147,7 +147,7 @@ describe("example", () => {
 
 	describe("lexicalScoping", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("lexicalScoping"))
+			const e: Expr = open("lexicalScoping")
          new FwdSlice(e)
 			new BwdSlice(e)
 		})
@@ -155,7 +155,7 @@ describe("example", () => {
 
    describe("lookup", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("lookup"))
+			const e: Expr = open("lookup")
 			const last = new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -188,7 +188,7 @@ describe("example", () => {
 
    describe("map", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("map"))
+			const e: Expr = open("map")
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -209,7 +209,7 @@ describe("example", () => {
 
    describe("mergeSort", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("mergeSort"))
+			const e: Expr = open("mergeSort")
          new FwdSlice(e)
 			new BwdSlice(e)
 		})
@@ -217,7 +217,7 @@ describe("example", () => {
 
 	describe("normalise", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("normalise"))
+			const e: Expr = open("normalise")
          new FwdSlice(e)
 			// retaining either component of pair retains both subcomputations:
 			new (class extends BwdSlice {
@@ -237,7 +237,7 @@ describe("example", () => {
 
 	describe("pattern-match", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("pattern-match"))
+			const e: Expr = open("pattern-match")
 			new BwdSlice(e)
          new FwdSlice(e)
 		})
@@ -245,7 +245,7 @@ describe("example", () => {
 
 	describe("reverse", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("reverse"))
+			const e: Expr = open("reverse")
 			new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -267,7 +267,7 @@ describe("example", () => {
 
    describe("typematch", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("typematch"))
+			const e: Expr = open("typematch")
 			new FwdSlice(e)
 			new BwdSlice(e)
 		})
@@ -275,7 +275,7 @@ describe("example", () => {
 
 	describe("zipW", () => {
 		it("ok", () => {
-			const e: Expr = parse(load("zipW"))
+			const e: Expr = open("zipW")
          new FwdSlice(e)
 			// needing first cons cell of output needs same amount of input lists
 			new (class extends BwdSlice {
