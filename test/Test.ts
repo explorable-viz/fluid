@@ -1,8 +1,9 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { BwdSlice, FwdSlice, load, parse } from "./util/Core"
+import { BwdSlice, FwdSlice, parse } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
+import { load } from "../src/Module"
 
 import Trie = Expr.Trie
 
