@@ -10,12 +10,6 @@ import { Versioned, asVersioned, num, setallα } from "../Versioned"
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
 
-// No counterpart of this in the graphics DSL yet.
-export const reflect_y: TransformFun =
-   ([x, y]): [number, number] => {
-      return [x, -y]
-   }
-
 function translate (x_inc: number, y_inc: number): TransformFun {
    return ([x, y]): [number, number] => {
       return [x + x_inc, y + y_inc]
@@ -29,11 +23,16 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
 }
 
 export interface Slicer {
-   resetForFwd (): void // set all annotations to top
-   fwdSlice (): void
+   fwdSlice (): void    // fwd slice and set direction to fwd
    resetForBwd (): void // set all annotations to bot
-   bwdSlice (): void    // bwd slice and set polarity to bwd
+   bwdSlice (): void    // bwd slice and set direction to bwd
    direction: Direction
+   coordinator: ViewCoordinator
+}
+
+export interface ViewCoordinator {
+   onBwd (): void
+   resetForBwd (): void
 }
 
 export class GraphicsRenderer {
@@ -62,7 +61,8 @@ export class GraphicsRenderer {
    }
 
    render (g: GraphicsElement): void {
-      assert(this.ancestors.length === 1)
+      assert(this.ancestors.length === 1      // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
+   )
       while (this.current.firstChild !== null) {
          this.current.removeChild(this.current.firstChild)
       }
@@ -101,7 +101,7 @@ export class GraphicsRenderer {
       }
       group.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
-         this.slicer.resetForBwd()
+         this.slicer.coordinator.resetForBwd()
          setallα(ann.top, g)
          this.slicer.bwdSlice()
       })
@@ -140,9 +140,11 @@ export class GraphicsRenderer {
 
    xyHighlight (x: Num, y: Num): void {
       const [x_α, y_α] = [__nonNull(asVersioned(x).__α), __nonNull(asVersioned(y).__α)]
-      // In the fwd direction, a point appears "erased" (false) if either of its components is erased.
-      // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
-      if (this.slicer.direction === Direction.Fwd ? ann.join(!x_α, !y_α) : ann.join(x_α, y_α)) {
+      let α: Annotation = ann.meet(x_α, y_α)
+      if (this.slicer.direction === Direction.Fwd) {
+         α = ann.negate(α)
+      }
+      if (α) {
          const [xʹ, yʹ]: [number, number] = this.transform([x.val, y.val])
          this.circle(xʹ, yʹ, 3)
       }
@@ -153,7 +155,7 @@ export class GraphicsRenderer {
       circle.setAttribute("cx", x.toString())
       circle.setAttribute("cy", y.toString())
       circle.setAttribute("r", radius.toString())
-      circle.setAttribute("stroke", "#0000ff")
+      circle.setAttribute("stroke", "blue")
       circle.setAttribute("fill", "none")
       this.current.appendChild(circle)
    }
@@ -165,7 +167,7 @@ export class GraphicsRenderer {
       polygon.setAttribute("fill", g.fill.val)
       polygon.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
-         this.slicer.resetForBwd()
+         this.slicer.coordinator.resetForBwd()
          g.points.toArray().map((p: Point): void => {
             setallα(ann.top, p)
          })
@@ -180,11 +182,20 @@ export class GraphicsRenderer {
    text (g: Text): void {
       const [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
             text: SVGTextElement = textElement(x, y, g.str.val)
+      text.addEventListener("click", (e: MouseEvent): void => {
+         e.stopPropagation()
+         this.slicer.coordinator.resetForBwd()
+         setallα(ann.top, g)
+         this.slicer.bwdSlice()
+      })
       this.current.appendChild(text)
-      this.xyHighlight(g.x, g.y)
+      // this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
-      const α: Annotation = __nonNull(asVersioned(g.str).__α)
-      if (this.slicer.direction === Direction.Fwd ? !α : α) {
+      let α: Annotation = __nonNull(asVersioned(g.str).__α)
+      if (this.slicer.direction === Direction.Fwd) {
+         α = ann.negate(α)
+      }
+      if (α) {
          text.setAttribute("fill", "blue")
       } else {
          text.setAttribute("fill", "black")

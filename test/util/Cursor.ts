@@ -30,10 +30,7 @@ export class Cursor {
    }
 
    skipImports (): Cursor {
-      return this
-         .skipImport() // prelude
-         .skipImport() // graphics
-         .skipImport() // renderData
+      return this.skipImport() // prelude
    }
 
    // No way to specify only "own" properties statically.
