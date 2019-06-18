@@ -2,7 +2,7 @@ import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
 import { List, Pair } from "../BaseTypes"
 import { Env, ExtendEnv } from "../Env"
-import { Eval } from "../Eval"
+import { Direction, Eval } from "../Eval"
 import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
@@ -11,13 +11,14 @@ import { Num, Str, Value } from "../Value"
 import { Versioned, negateallα, setallα } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
-class View implements Slicer {
+export class View implements Slicer {
    name: string
    coordinator: ViewCoordinator
    ρ: Env
    e: Expr
    tv: ExplValue
    view: GraphicsRenderer
+   direction: Direction
 
    constructor (name: string, ρ: Env, e: Expr, svg: SVGSVGElement) {
       this.name = name
@@ -31,6 +32,7 @@ class View implements Slicer {
    fwdSlice (): void {
       setallα(ann.top, this.e)
       Eval.eval_fwd(this.tv)
+      this.direction = Direction.Fwd
       this.draw()
    }
    
@@ -42,6 +44,7 @@ class View implements Slicer {
 
    bwdSlice (): void {
       Eval.eval_bwd(this.tv)
+      this.direction = Direction.Bwd
       this.coordinator.onBwd()
       this.draw()
    }

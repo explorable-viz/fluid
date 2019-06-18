@@ -1,6 +1,7 @@
 import { Annotation, ann } from "../util/Annotated"
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
+import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
@@ -22,9 +23,10 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
 }
 
 export interface Slicer {
-   fwdSlice (): void
+   fwdSlice (): void    // fwd slice and set direction to fwd
    resetForBwd (): void // set all annotations to bot
-   bwdSlice (): void    // bwd slice and set polarity to bwd
+   bwdSlice (): void    // bwd slice and set direction to bwd
+   direction: Direction
    coordinator: ViewCoordinator
 }
 
@@ -138,7 +140,11 @@ export class GraphicsRenderer {
 
    xyHighlight (x: Num, y: Num): void {
       const [x_α, y_α] = [__nonNull(asVersioned(x).__α), __nonNull(asVersioned(y).__α)]
-      if (!ann.meet(x_α, y_α)) {
+      let α: Annotation = ann.meet(x_α, y_α)
+      if (this.slicer.direction === Direction.Fwd) {
+         α = ann.negate(α)
+      }
+      if (α) {
          const [xʹ, yʹ]: [number, number] = this.transform([x.val, y.val])
          this.circle(xʹ, yʹ, 3)
       }
@@ -185,8 +191,11 @@ export class GraphicsRenderer {
       this.current.appendChild(text)
       // this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
-      const α: Annotation = __nonNull(asVersioned(g.str).__α)
-      if (!α) {
+      let α: Annotation = __nonNull(asVersioned(g.str).__α)
+      if (this.slicer.direction === Direction.Fwd) {
+         α = ann.negate(α)
+      }
+      if (α) {
          text.setAttribute("fill", "blue")
       } else {
          text.setAttribute("fill", "black")
