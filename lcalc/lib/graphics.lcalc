@@ -177,7 +177,7 @@ let lineGraph = fun (x_scale, y_scale) x_start numData →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
    Translate(x_offset, y_offset, Graphic([linePlot (x_scale, y_scale) ps, x_axis, y_axis]));
 
-// Margin sounds the dimensions, i.e. treats the element as located at (0, 0).
+// Treats the element as located at (0, 0).
 // Num → GraphicsElement → GraphicsElement
 let bottomMargin = fun dh g →
    match dimensions g as (w, h) →
@@ -186,7 +186,7 @@ let bottomMargin = fun dh g →
       y_translate dh g
    ]);
 
+// TODO: compute bottom margin and sep from font-size.
 // Str → GraphicsElement → GraphicsElement
 let caption = fun text g →
-   // TODO: compute bottom margin and sep from font-size.
    stackUp 8 (hcentre [bottomMargin 6 Text(0, 0, text), g])
