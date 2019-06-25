@@ -13,7 +13,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.lcalc",
-				"match": "\\b(as|fun|in|let|letrec|match)\\b"
+				"match": "\\b(as|fun|in|let|letrec|match|primitive|typematch)\\b"
 			}]
 		},
 		"strings": {

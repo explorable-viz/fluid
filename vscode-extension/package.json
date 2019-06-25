@@ -10,16 +10,25 @@
         "Programming Languages"
     ],
     "contributes": {
-        "languages": [{
-            "id": "lcalc",
-            "aliases": ["LambdaCalc", "lcalc"],
-            "extensions": [".lcalc"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "lcalc",
-            "scopeName": "source.lcalc",
-            "path": "./syntaxes/lcalc.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "lcalc",
+                "aliases": [
+                    "LambdaCalc",
+                    "lcalc"
+                ],
+                "extensions": [
+                    ".lcalc"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "lcalc",
+                "scopeName": "source.lcalc",
+                "path": "./syntaxes/lcalc.tmLanguage.json"
+            }
+        ]
     }
 }

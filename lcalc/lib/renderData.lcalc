@@ -2,7 +2,7 @@
 //    Data = List (Num | Str, Data)
 // Data → GraphicsElement
 letrec fun renderData {
-   Cons(Pair(k, v), rows) → 
+   [(k, v), ...rows] → 
       stackDown 0 [
          stackRight 0 (vtop [
             typematch k as {
@@ -18,5 +18,5 @@ letrec fun renderData {
          ]),
          renderData rows
       ];
-   Nil → Graphic([])
+   [] → Graphic([])
 }

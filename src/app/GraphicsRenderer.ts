@@ -196,6 +196,15 @@ export class GraphicsRenderer {
          α = ann.negate(α)
       }
       if (α) {
+         const bbox: SVGRect = text.getBBox(),
+               rect = document.createElementNS(svgNS, "rect")
+             rect.setAttribute("x", bbox.x.toString())
+             rect.setAttribute("y", bbox.y.toString())
+             rect.setAttribute("width", bbox.width.toString())
+             rect.setAttribute("height", bbox.height.toString())
+             rect.setAttribute("fill", "#D3D3D3")
+             rect.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
+             this.current.insertBefore(rect, text)
          text.setAttribute("fill", "blue")
       } else {
          text.setAttribute("fill", "black")
