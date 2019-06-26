@@ -1,5 +1,5 @@
 import { Grammar, Parser } from "nearley"
-import { __nonNull } from "./util/Core"
+import { __nonNull, error } from "./util/Core"
 import { SyntaxNode, successfulParse } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "./Env"
@@ -65,5 +65,8 @@ export function parseWithImports (src: string, modules: Module[]): Expr {
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
 export function successfulParse2<T extends SyntaxNode> (str: string): T {
    const results: any[] = new Parser(Grammar.fromCompiled(grammar)).feed(str).results
+   if (results.length > 0) {
+      error("Ambiguous parse.", results)
+   }
    return results[0]
 }

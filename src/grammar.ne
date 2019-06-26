@@ -49,6 +49,7 @@ simpleExpr ->
    parenthExpr |
    pair |
    defs1 |
+   list |
    matchAs |
    fun
 
@@ -57,6 +58,7 @@ number -> lexeme[number_]
 parenthExpr -> lexeme["("] expr lexeme[")"]
 pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
 defs1 -> defList keyword["in"] expr
+list -> lexeme["["] list_ lexeme["]"] # ouch: "
 
 defList -> def (lexeme[";"] def):*
 def -> let | letrec # | prim
@@ -74,6 +76,8 @@ matches ->
 match -> 
    pattern lexeme["→"] expr |
    pattern matches
+
+list_ -> null | expr (lexeme[","] expr):*
 
 pattern -> var_pattern | pair_pattern
 
