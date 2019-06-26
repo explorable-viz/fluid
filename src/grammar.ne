@@ -1,5 +1,10 @@
 @preprocessor typescript
 
+# Match expr with leading whitespace/comments.
+rootExpr -> _ expr
+
+lexeme[X] -> $X _ 
+
 expr -> compareExpr
 compareExpr -> compareExpr _ compareOp _ sumExpr | sumExpr
 sumExpr -> sumExpr _ sumOp _ productExpr | productExpr
@@ -29,4 +34,6 @@ digit1to9 -> [1-9]
 # I'm assuming (but haven't checked that) DIGIT is defined as
 DIGIT -> [0-9]
 
-_ -> [\s]:* {% d => null %}
+_ -> (whitespace | singleLineComment):* 
+whitespace -> [\s]:+ {% d => null %}
+singleLineComment -> "//" [^\n]:* {% d => null %}

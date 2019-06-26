@@ -25,6 +25,7 @@ export type NearleySymbol = string | { literal: any } | { test: (token: any) => 
 export var Lexer: Lexer | undefined = undefined;
 
 export var ParserRules: NearleyRule[] = [
+    {"name": "rootExpr", "symbols": ["_", "expr"]},
     {"name": "expr", "symbols": ["compareExpr"]},
     {"name": "compareExpr", "symbols": ["compareExpr", "_", "compareOp", "_", "sumExpr"]},
     {"name": "compareExpr", "symbols": ["sumExpr"]},
@@ -72,8 +73,17 @@ export var ParserRules: NearleyRule[] = [
     {"name": "digit1to9", "symbols": [/[1-9]/]},
     {"name": "DIGIT", "symbols": [/[0-9]/]},
     {"name": "_$ebnf$1", "symbols": []},
-    {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", /[\s]/], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "_", "symbols": ["_$ebnf$1"], "postprocess": d => null}
+    {"name": "_$ebnf$1$subexpression$1", "symbols": ["whitespace"]},
+    {"name": "_$ebnf$1$subexpression$1", "symbols": ["singleLineComment"]},
+    {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", "_$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "_", "symbols": ["_$ebnf$1"]},
+    {"name": "whitespace$ebnf$1", "symbols": [/[\s]/]},
+    {"name": "whitespace$ebnf$1", "symbols": ["whitespace$ebnf$1", /[\s]/], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "whitespace", "symbols": ["whitespace$ebnf$1"], "postprocess": d => null},
+    {"name": "singleLineComment$string$1", "symbols": [{"literal":"/"}, {"literal":"/"}], "postprocess": (d) => d.join('')},
+    {"name": "singleLineComment$ebnf$1", "symbols": []},
+    {"name": "singleLineComment$ebnf$1", "symbols": ["singleLineComment$ebnf$1", /[^\n]/], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "singleLineComment", "symbols": ["singleLineComment$string$1", "singleLineComment$ebnf$1"], "postprocess": d => null}
 ];
 
-export var ParserStart: string = "expr";
+export var ParserStart: string = "rootExpr";
