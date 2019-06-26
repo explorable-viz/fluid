@@ -12,15 +12,21 @@ declare var sumOp: any;
 
 const moo = require('moo')
 const lexer = moo.compile({
-   // TODO: this approach doesn't work - see Moo "keywords" transform.
-   keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
    symbol: ["(", ")", "=", "→", ";"],
-   ident: /[a-zA-Z_][0-9a-zA-Z_]*/, // greedy
+   ident: {
+      match: /[a-zA-Z_][0-9a-zA-Z_]*/, // greedy
+      type: moo.keywords({
+        keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
+      })
+   },
    WS: /[ \t]+/,
    comment: /\/\/.*?$/,
    number: /0|[1-9][0-9]*/,
    string: /"(?:\\["\\]|[^\n"\\])*"/,
-   NL: { match: /\n/, lineBreaks: true },
+   NL: { 
+      match: /\n/, 
+      lineBreaks: true 
+   },
    // not quite sure why I can't use literals here:
    sumOp: /\+|\-|\+\+/,
    productOp: /\*|\//,
