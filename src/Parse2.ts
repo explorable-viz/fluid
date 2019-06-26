@@ -3,6 +3,21 @@
 // Bypasses TS6133. Allow declared but unused functions.
 // @ts-ignore
 function id(d: any[]): any { return d[0]; }
+declare var sumOp: any;
+declare var WS: any;
+
+const moo = require('moo')
+const lexer = moo.compile({
+   WS: /[ \t]+/,
+   comment: /\/\/.*?$/,
+   number: /0|[1-9][0-9]*/,
+   string: /"(?:\\["\\]|[^\n"\\])*"/,
+   lparen: '(',
+   rparen: ')',
+   keyword: ['while', 'if', 'else', 'moo', 'cows'],
+   NL: { match: /\n/, lineBreaks: true },
+   sumOp: /\+|\-|\++/
+})
 
 export interface Token { value: any; [key: string]: any };
 
@@ -22,7 +37,7 @@ export interface NearleyRule {
 
 export type NearleySymbol = string | { literal: any } | { test: (token: any) => boolean };
 
-export var Lexer: Lexer | undefined = undefined;
+export var Lexer: Lexer | undefined = lexer;
 
 export var ParserRules: NearleyRule[] = [
     {"name": "rootExpr", "symbols": ["_", "expr"]},
@@ -54,8 +69,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "parenthExpr$macrocall$4", "symbols": [{"literal":")"}]},
     {"name": "parenthExpr$macrocall$3", "symbols": ["parenthExpr$macrocall$4", "_"]},
     {"name": "parenthExpr", "symbols": ["parenthExpr$macrocall$1", "expr", "parenthExpr$macrocall$3"]},
-    {"name": "defs1$macrocall$2$string$1", "symbols": [{"literal":"i"}, {"literal":"n"}], "postprocess": (d) => d.join('')},
-    {"name": "defs1$macrocall$2", "symbols": ["defs1$macrocall$2$string$1"]},
+    {"name": "defs1$macrocall$2", "symbols": [{"literal":"in"}]},
     {"name": "defs1$macrocall$1$macrocall$2", "symbols": ["defs1$macrocall$2"]},
     {"name": "defs1$macrocall$1$macrocall$1", "symbols": ["defs1$macrocall$1$macrocall$2", "_"]},
     {"name": "defs1$macrocall$1", "symbols": ["defs1$macrocall$1$macrocall$1"]},
@@ -67,16 +81,14 @@ export var ParserRules: NearleyRule[] = [
     {"name": "defList$ebnf$1", "symbols": ["defList$ebnf$1", "defList$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "defList", "symbols": ["def", "defList$ebnf$1"]},
     {"name": "def", "symbols": ["let"]},
-    {"name": "let$macrocall$2$string$1", "symbols": [{"literal":"l"}, {"literal":"e"}, {"literal":"t"}], "postprocess": (d) => d.join('')},
-    {"name": "let$macrocall$2", "symbols": ["let$macrocall$2$string$1"]},
+    {"name": "let$macrocall$2", "symbols": [{"literal":"let"}]},
     {"name": "let$macrocall$1$macrocall$2", "symbols": ["let$macrocall$2"]},
     {"name": "let$macrocall$1$macrocall$1", "symbols": ["let$macrocall$1$macrocall$2", "_"]},
     {"name": "let$macrocall$1", "symbols": ["let$macrocall$1$macrocall$1"]},
     {"name": "let$macrocall$4", "symbols": [{"literal":"="}]},
     {"name": "let$macrocall$3", "symbols": ["let$macrocall$4", "_"]},
     {"name": "let", "symbols": ["let$macrocall$1", "var", "let$macrocall$3", "expr"]},
-    {"name": "fun$macrocall$2$string$1", "symbols": [{"literal":"f"}, {"literal":"u"}, {"literal":"n"}], "postprocess": (d) => d.join('')},
-    {"name": "fun$macrocall$2", "symbols": ["fun$macrocall$2$string$1"]},
+    {"name": "fun$macrocall$2", "symbols": [{"literal":"fun"}]},
     {"name": "fun$macrocall$1$macrocall$2", "symbols": ["fun$macrocall$2"]},
     {"name": "fun$macrocall$1$macrocall$1", "symbols": ["fun$macrocall$1$macrocall$2", "_"]},
     {"name": "fun$macrocall$1", "symbols": ["fun$macrocall$1$macrocall$1"]},
@@ -98,38 +110,31 @@ export var ParserRules: NearleyRule[] = [
     {"name": "match", "symbols": ["pattern", "matches"]},
     {"name": "pattern", "symbols": ["var_pattern"]},
     {"name": "var_pattern", "symbols": ["var"]},
-    {"name": "compareOp$macrocall$2$string$1", "symbols": [{"literal":"="}, {"literal":"="}], "postprocess": (d) => d.join('')},
-    {"name": "compareOp$macrocall$2", "symbols": ["compareOp$macrocall$2$string$1"]},
+    {"name": "compareOp$macrocall$2", "symbols": [{"literal":"=="}]},
     {"name": "compareOp$macrocall$1", "symbols": ["compareOp$macrocall$2", "_"]},
     {"name": "compareOp", "symbols": ["compareOp$macrocall$1"]},
-    {"name": "compareOp$macrocall$4$string$1", "symbols": [{"literal":"="}, {"literal":"="}, {"literal":"="}], "postprocess": (d) => d.join('')},
-    {"name": "compareOp$macrocall$4", "symbols": ["compareOp$macrocall$4$string$1"]},
+    {"name": "compareOp$macrocall$4", "symbols": [{"literal":"==="}]},
     {"name": "compareOp$macrocall$3", "symbols": ["compareOp$macrocall$4", "_"]},
     {"name": "compareOp", "symbols": ["compareOp$macrocall$3"]},
-    {"name": "compareOp$macrocall$6$string$1", "symbols": [{"literal":"<"}, {"literal":"="}], "postprocess": (d) => d.join('')},
-    {"name": "compareOp$macrocall$6", "symbols": ["compareOp$macrocall$6$string$1"]},
+    {"name": "compareOp$macrocall$6", "symbols": [{"literal":"<="}]},
     {"name": "compareOp$macrocall$5", "symbols": ["compareOp$macrocall$6", "_"]},
     {"name": "compareOp", "symbols": ["compareOp$macrocall$5"]},
-    {"name": "compareOp$macrocall$8$string$1", "symbols": [{"literal":"<"}, {"literal":"="}, {"literal":"="}], "postprocess": (d) => d.join('')},
-    {"name": "compareOp$macrocall$8", "symbols": ["compareOp$macrocall$8$string$1"]},
+    {"name": "compareOp$macrocall$8", "symbols": [{"literal":"<=="}]},
     {"name": "compareOp$macrocall$7", "symbols": ["compareOp$macrocall$8", "_"]},
     {"name": "compareOp", "symbols": ["compareOp$macrocall$7"]},
     {"name": "compareOp$macrocall$10", "symbols": [{"literal":"<"}]},
     {"name": "compareOp$macrocall$9", "symbols": ["compareOp$macrocall$10", "_"]},
     {"name": "compareOp", "symbols": ["compareOp$macrocall$9"]},
-    {"name": "compareOp$macrocall$12$string$1", "symbols": [{"literal":">"}, {"literal":"="}], "postprocess": (d) => d.join('')},
-    {"name": "compareOp$macrocall$12", "symbols": ["compareOp$macrocall$12$string$1"]},
+    {"name": "compareOp$macrocall$12", "symbols": [{"literal":">="}]},
     {"name": "compareOp$macrocall$11", "symbols": ["compareOp$macrocall$12", "_"]},
     {"name": "compareOp", "symbols": ["compareOp$macrocall$11"]},
-    {"name": "compareOp$macrocall$14$string$1", "symbols": [{"literal":">"}, {"literal":"="}, {"literal":"="}], "postprocess": (d) => d.join('')},
-    {"name": "compareOp$macrocall$14", "symbols": ["compareOp$macrocall$14$string$1"]},
+    {"name": "compareOp$macrocall$14", "symbols": [{"literal":">=="}]},
     {"name": "compareOp$macrocall$13", "symbols": ["compareOp$macrocall$14", "_"]},
     {"name": "compareOp", "symbols": ["compareOp$macrocall$13"]},
     {"name": "compareOp$macrocall$16", "symbols": [{"literal":">"}]},
     {"name": "compareOp$macrocall$15", "symbols": ["compareOp$macrocall$16", "_"]},
     {"name": "compareOp", "symbols": ["compareOp$macrocall$15"]},
-    {"name": "exponentOp$macrocall$2$string$1", "symbols": [{"literal":"*"}, {"literal":"*"}], "postprocess": (d) => d.join('')},
-    {"name": "exponentOp$macrocall$2", "symbols": ["exponentOp$macrocall$2$string$1"]},
+    {"name": "exponentOp$macrocall$2", "symbols": [{"literal":"**"}]},
     {"name": "exponentOp$macrocall$1", "symbols": ["exponentOp$macrocall$2", "_"]},
     {"name": "exponentOp", "symbols": ["exponentOp$macrocall$1"]},
     {"name": "productOp$macrocall$2", "symbols": [{"literal":"*"}]},
@@ -138,16 +143,10 @@ export var ParserRules: NearleyRule[] = [
     {"name": "productOp$macrocall$4", "symbols": [{"literal":"/"}]},
     {"name": "productOp$macrocall$3", "symbols": ["productOp$macrocall$4", "_"]},
     {"name": "productOp", "symbols": ["productOp$macrocall$3"]},
-    {"name": "sumOp$macrocall$2", "symbols": [{"literal":"+"}]},
-    {"name": "sumOp$macrocall$1", "symbols": ["sumOp$macrocall$2", "_"]},
+    {"name": "sumOp$macrocall$2", "symbols": [(lexer.has("sumOp") ? {type: "sumOp"} : sumOp)]},
+    {"name": "sumOp$macrocall$1", "symbols": ["sumOp$macrocall$2"]},
+    {"name": "sumOp$macrocall$1", "symbols": ["sumOp$macrocall$2", (lexer.has("WS") ? {type: "WS"} : WS)]},
     {"name": "sumOp", "symbols": ["sumOp$macrocall$1"]},
-    {"name": "sumOp$macrocall$4", "symbols": [{"literal":"-"}]},
-    {"name": "sumOp$macrocall$3", "symbols": ["sumOp$macrocall$4", "_"]},
-    {"name": "sumOp", "symbols": ["sumOp$macrocall$3"]},
-    {"name": "sumOp$macrocall$6$string$1", "symbols": [{"literal":"+"}, {"literal":"+"}], "postprocess": (d) => d.join('')},
-    {"name": "sumOp$macrocall$6", "symbols": ["sumOp$macrocall$6$string$1"]},
-    {"name": "sumOp$macrocall$5", "symbols": ["sumOp$macrocall$6", "_"]},
-    {"name": "sumOp", "symbols": ["sumOp$macrocall$5"]},
     {"name": "number_", "symbols": ["int"]},
     {"name": "int", "symbols": [/[0]/]},
     {"name": "int$ebnf$1", "symbols": []},
@@ -163,10 +162,9 @@ export var ParserRules: NearleyRule[] = [
     {"name": "whitespace$ebnf$1", "symbols": [/[\s]/]},
     {"name": "whitespace$ebnf$1", "symbols": ["whitespace$ebnf$1", /[\s]/], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "whitespace", "symbols": ["whitespace$ebnf$1"], "postprocess": d => null},
-    {"name": "singleLineComment$string$1", "symbols": [{"literal":"/"}, {"literal":"/"}], "postprocess": (d) => d.join('')},
     {"name": "singleLineComment$ebnf$1", "symbols": []},
     {"name": "singleLineComment$ebnf$1", "symbols": ["singleLineComment$ebnf$1", /[^\n]/], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "singleLineComment", "symbols": ["singleLineComment$string$1", "singleLineComment$ebnf$1"], "postprocess": d => null}
+    {"name": "singleLineComment", "symbols": [{"literal":"//"}, "singleLineComment$ebnf$1"], "postprocess": d => null}
 ];
 
 export var ParserStart: string = "rootExpr";
