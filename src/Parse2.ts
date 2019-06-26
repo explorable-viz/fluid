@@ -26,13 +26,13 @@ export var Lexer: Lexer | undefined = undefined;
 
 export var ParserRules: NearleyRule[] = [
     {"name": "expr", "symbols": ["compareExpr"]},
-    {"name": "compareExpr", "symbols": ["compareExpr", "compareOp", "sumExpr"]},
+    {"name": "compareExpr", "symbols": ["compareExpr", "_", "compareOp", "_", "sumExpr"]},
     {"name": "compareExpr", "symbols": ["sumExpr"]},
-    {"name": "sumExpr", "symbols": ["sumExpr", "sumOp", "productExpr"]},
+    {"name": "sumExpr", "symbols": ["sumExpr", "_", "sumOp", "_", "productExpr"]},
     {"name": "sumExpr", "symbols": ["productExpr"]},
-    {"name": "productExpr", "symbols": ["productExpr", "productOp", "exponentExpr"]},
+    {"name": "productExpr", "symbols": ["productExpr", "_", "productOp", "_", "exponentExpr"]},
     {"name": "productExpr", "symbols": ["exponentExpr"]},
-    {"name": "exponentExpr", "symbols": ["exponentExpr", "exponentOp", "appChain"]},
+    {"name": "exponentExpr", "symbols": ["exponentExpr", "_", "exponentOp", "_", "appChain"]},
     {"name": "exponentExpr", "symbols": ["appChain"]},
     {"name": "appChain", "symbols": ["simpleExpr"]},
     {"name": "simpleExpr", "symbols": ["variable"]},

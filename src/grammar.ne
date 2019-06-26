@@ -1,10 +1,10 @@
 @preprocessor typescript
 
 expr -> compareExpr
-compareExpr -> compareExpr compareOp sumExpr | sumExpr
-sumExpr -> sumExpr sumOp productExpr | productExpr
-productExpr -> productExpr productOp exponentExpr | exponentExpr
-exponentExpr -> exponentExpr exponentOp appChain | appChain
+compareExpr -> compareExpr _ compareOp _ sumExpr | sumExpr
+sumExpr -> sumExpr _ sumOp _ productExpr | productExpr
+productExpr -> productExpr _ productOp _ exponentExpr | exponentExpr
+exponentExpr -> exponentExpr _ exponentOp _ appChain | appChain
 
 appChain -> simpleExpr
 
