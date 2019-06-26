@@ -1,4 +1,4 @@
-import { } from "nearley"
+import { Grammar, Parser } from "nearley"
 import { __nonNull } from "./util/Core"
 import { SyntaxNode, successfulParse } from "./util/parse/Core"
 import { List } from "./BaseTypes"
@@ -6,7 +6,7 @@ import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Parse } from "./Parse"
-import { } from "./Parse2"
+import * as grammar from "./Parse2"
 import { ν, str } from "./Versioned"
 
 // Kindergarten modules.
@@ -65,6 +65,8 @@ export function parseWithImports (src: string, modules: Module[]): Expr {
    return importDefaults(import_(modules, successfulParse(Parse.expr, src)))
 }
 
+// https://github.com/kach/nearley/issues/276#issuecomment-324162234
 export function successfulParse2<T extends SyntaxNode> (str: string): T {
-   return __nonNull(parse(p, str)).ast
+   const results: any[] = new Parser(Grammar.fromCompiled(grammar)).feed(str).results
+   return results[0]
 }

@@ -25,7 +25,9 @@ export type NearleySymbol = string | { literal: any } | { test: (token: any) => 
 export var Lexer: Lexer | undefined = undefined;
 
 export var ParserRules: NearleyRule[] = [
+    {"name": "compareExpr$string$1", "symbols": [{"literal":"T"}, {"literal":"O"}, {"literal":"D"}, {"literal":"O"}], "postprocess": (d) => d.join('')},
+    {"name": "compareExpr", "symbols": ["compareExpr$string$1"]},
     {"name": "expr", "symbols": ["compareExpr"]}
 ];
 
-export var ParserStart: string = "expr";
+export var ParserStart: string = "compareExpr";
