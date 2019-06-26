@@ -3,7 +3,8 @@
 # Match expr with leading whitespace/comments.
 rootExpr -> _ expr
 
-lexeme[X] -> $X _ 
+lexeme[X] -> $X _
+keyword[X] -> lexeme[$X] # currently no reserved words 
 
 expr -> compareExpr
 compareExpr -> compareExpr compareOp sumExpr | sumExpr
@@ -14,13 +15,26 @@ exponentExpr -> exponentExpr exponentOp appChain | appChain
 appChain -> simpleExpr
 
 simpleExpr -> 
-   variable |
+   var |
    number |
-   parenthExpr
+   parenthExpr |
+   defs1
 
-variable -> [a-zA-Z_] [0-9a-zA-Z_]:*
+var -> lexeme[[a-zA-Z_] [0-9a-zA-Z_]:*]
 number -> lexeme[number_]
-parenthExpr -> lexeme["("] _ expr _ lexeme[")"]
+parenthExpr -> lexeme["("] expr lexeme[")"]
+
+defs1 ->
+   defList keyword["in"] expr
+
+defList ->
+   def (lexeme[";"] def):*
+
+def ->
+   let # | prim | letrec
+
+let ->
+   keyword["let"] var lexeme["="] expr
 
 compareOp -> 
    lexeme["=="] | 
