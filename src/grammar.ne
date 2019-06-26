@@ -75,10 +75,10 @@ match ->
    pattern lexeme["→"] expr |
    pattern matches
 
-pattern -> 
-   var_pattern
+pattern -> var_pattern | pair_pattern
 
 var_pattern -> var
+pair_pattern -> lexeme["("] pattern lexeme[","] pattern lexeme[")"]
 
 compareOp -> lexeme_[%compareOp]
 exponentOp -> lexeme_[%exponentOp]
