@@ -1,10 +1,12 @@
+import { } from "nearley"
 import { __nonNull } from "./util/Core"
-import { successfulParse } from "./util/parse/Core"
+import { SyntaxNode, successfulParse } from "./util/parse/Core"
 import { List } from "./BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Parse } from "./Parse"
+import { } from "./Parse2"
 import { ν, str } from "./Versioned"
 
 // Kindergarten modules.
@@ -61,4 +63,8 @@ export function parse (src: string): Expr {
 
 export function parseWithImports (src: string, modules: Module[]): Expr {
    return importDefaults(import_(modules, successfulParse(Parse.expr, src)))
+}
+
+export function successfulParse2<T extends SyntaxNode> (str: string): T {
+   return __nonNull(parse(p, str)).ast
 }
