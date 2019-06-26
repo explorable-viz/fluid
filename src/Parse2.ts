@@ -25,9 +25,37 @@ export type NearleySymbol = string | { literal: any } | { test: (token: any) => 
 export var Lexer: Lexer | undefined = undefined;
 
 export var ParserRules: NearleyRule[] = [
-    {"name": "compareExpr$string$1", "symbols": [{"literal":"T"}, {"literal":"O"}, {"literal":"D"}, {"literal":"O"}], "postprocess": (d) => d.join('')},
-    {"name": "compareExpr", "symbols": ["compareExpr$string$1"]},
-    {"name": "expr", "symbols": ["compareExpr"]}
+    {"name": "expr", "symbols": ["compareExpr"]},
+    {"name": "compareExpr", "symbols": ["compareExpr", "compareOp", "sumExpr"]},
+    {"name": "compareExpr", "symbols": ["sumExpr"]},
+    {"name": "sumExpr", "symbols": ["sumExpr", "sumOp", "productExpr"]},
+    {"name": "sumExpr", "symbols": ["productExpr"]},
+    {"name": "productExpr", "symbols": ["productExpr", "productOp", "exponentExpr"]},
+    {"name": "productExpr", "symbols": ["exponentExpr"]},
+    {"name": "exponentExpr", "symbols": ["exponentExpr", "exponentOp", "appChain"]},
+    {"name": "exponentExpr", "symbols": ["appChain"]},
+    {"name": "compareOp$string$1", "symbols": [{"literal":"="}, {"literal":"="}], "postprocess": (d) => d.join('')},
+    {"name": "compareOp", "symbols": ["compareOp$string$1"]},
+    {"name": "compareOp$string$2", "symbols": [{"literal":"="}, {"literal":"="}, {"literal":"="}], "postprocess": (d) => d.join('')},
+    {"name": "compareOp", "symbols": ["compareOp$string$2"]},
+    {"name": "compareOp$string$3", "symbols": [{"literal":"<"}, {"literal":"="}], "postprocess": (d) => d.join('')},
+    {"name": "compareOp", "symbols": ["compareOp$string$3"]},
+    {"name": "compareOp$string$4", "symbols": [{"literal":"<"}, {"literal":"="}, {"literal":"="}], "postprocess": (d) => d.join('')},
+    {"name": "compareOp", "symbols": ["compareOp$string$4"]},
+    {"name": "compareOp", "symbols": [{"literal":"<"}]},
+    {"name": "compareOp$string$5", "symbols": [{"literal":">"}, {"literal":"="}], "postprocess": (d) => d.join('')},
+    {"name": "compareOp", "symbols": ["compareOp$string$5"]},
+    {"name": "compareOp$string$6", "symbols": [{"literal":">"}, {"literal":"="}, {"literal":"="}], "postprocess": (d) => d.join('')},
+    {"name": "compareOp", "symbols": ["compareOp$string$6"]},
+    {"name": "compareOp", "symbols": [{"literal":">"}]},
+    {"name": "exponentOp$string$1", "symbols": [{"literal":"*"}, {"literal":"*"}], "postprocess": (d) => d.join('')},
+    {"name": "exponentOp", "symbols": ["exponentOp$string$1"]},
+    {"name": "productOp", "symbols": [{"literal":"*"}]},
+    {"name": "productOp", "symbols": [{"literal":"/"}]},
+    {"name": "sumOp", "symbols": [{"literal":"+"}]},
+    {"name": "sumOp", "symbols": [{"literal":"-"}]},
+    {"name": "sumOp$string$1", "symbols": [{"literal":"+"}, {"literal":"+"}], "postprocess": (d) => d.join('')},
+    {"name": "sumOp", "symbols": ["sumOp$string$1"]}
 ];
 
-export var ParserStart: string = "compareExpr";
+export var ParserStart: string = "expr";
