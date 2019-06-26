@@ -3,6 +3,7 @@
 // Bypasses TS6133. Allow declared but unused functions.
 // @ts-ignore
 function id(d: any[]): any { return d[0]; }
+declare var ident: any;
 declare var compareOp: any;
 declare var WS: any;
 declare var exponentOp: any;
@@ -11,13 +12,15 @@ declare var sumOp: any;
 
 const moo = require('moo')
 const lexer = moo.compile({
+   // define before identifiers
+   keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
+   ident: /[a-zA-Z_][0-9a-zA-Z_]*/, // greedy
    WS: /[ \t]+/,
    comment: /\/\/.*?$/,
    number: /0|[1-9][0-9]*/,
    string: /"(?:\\["\\]|[^\n"\\])*"/,
    lparen: '(',
    rparen: ')',
-   keyword: ['while', 'if', 'else', 'moo', 'cows'],
    NL: { match: /\n/, lineBreaks: true },
    sumOp: /\+|\-|\+\+/,
    productOp: /\*|\//,
@@ -62,9 +65,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "simpleExpr", "symbols": ["parenthExpr"]},
     {"name": "simpleExpr", "symbols": ["defs1"]},
     {"name": "simpleExpr", "symbols": ["fun"]},
-    {"name": "var$macrocall$2$ebnf$1", "symbols": []},
-    {"name": "var$macrocall$2$ebnf$1", "symbols": ["var$macrocall$2$ebnf$1", /[0-9a-zA-Z_]/], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "var$macrocall$2", "symbols": [/[a-zA-Z_]/, "var$macrocall$2$ebnf$1"]},
+    {"name": "var$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
     {"name": "var$macrocall$1", "symbols": ["var$macrocall$2", "_"]},
     {"name": "var", "symbols": ["var$macrocall$1"]},
     {"name": "number$macrocall$2", "symbols": ["number_"]},

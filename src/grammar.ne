@@ -5,6 +5,7 @@ const moo = require('moo')
 const lexer = moo.compile({
    // define before identifiers
    keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
+   ident: /[a-zA-Z_][0-9a-zA-Z_]*/, // greedy
    WS: /[ \t]+/,
    comment: /\/\/.*?$/,
    number: /0|[1-9][0-9]*/,
@@ -43,7 +44,7 @@ simpleExpr ->
    defs1 |
    fun
 
-var -> lexeme[[a-zA-Z_] [0-9a-zA-Z_]:*]
+var -> lexeme[%ident]
 number -> lexeme[number_]
 parenthExpr -> lexeme["("] expr lexeme[")"]
 defs1 -> defList keyword["in"] expr
