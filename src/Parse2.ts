@@ -3,8 +3,9 @@
 // Bypasses TS6133. Allow declared but unused functions.
 // @ts-ignore
 function id(d: any[]): any { return d[0]; }
-declare var sumOp: any;
+declare var productOp: any;
 declare var WS: any;
+declare var sumOp: any;
 
 const moo = require('moo')
 const lexer = moo.compile({
@@ -16,7 +17,8 @@ const lexer = moo.compile({
    rparen: ')',
    keyword: ['while', 'if', 'else', 'moo', 'cows'],
    NL: { match: /\n/, lineBreaks: true },
-   sumOp: /\+|\-|\++/
+   sumOp: /\+|\-|\++/,
+   productOp: /\*|\//,
 })
 
 export interface Token { value: any; [key: string]: any };
@@ -137,12 +139,10 @@ export var ParserRules: NearleyRule[] = [
     {"name": "exponentOp$macrocall$2", "symbols": [{"literal":"**"}]},
     {"name": "exponentOp$macrocall$1", "symbols": ["exponentOp$macrocall$2", "_"]},
     {"name": "exponentOp", "symbols": ["exponentOp$macrocall$1"]},
-    {"name": "productOp$macrocall$2", "symbols": [{"literal":"*"}]},
-    {"name": "productOp$macrocall$1", "symbols": ["productOp$macrocall$2", "_"]},
+    {"name": "productOp$macrocall$2", "symbols": [(lexer.has("productOp") ? {type: "productOp"} : productOp)]},
+    {"name": "productOp$macrocall$1", "symbols": ["productOp$macrocall$2"]},
+    {"name": "productOp$macrocall$1", "symbols": ["productOp$macrocall$2", (lexer.has("WS") ? {type: "WS"} : WS)]},
     {"name": "productOp", "symbols": ["productOp$macrocall$1"]},
-    {"name": "productOp$macrocall$4", "symbols": [{"literal":"/"}]},
-    {"name": "productOp$macrocall$3", "symbols": ["productOp$macrocall$4", "_"]},
-    {"name": "productOp", "symbols": ["productOp$macrocall$3"]},
     {"name": "sumOp$macrocall$2", "symbols": [(lexer.has("sumOp") ? {type: "sumOp"} : sumOp)]},
     {"name": "sumOp$macrocall$1", "symbols": ["sumOp$macrocall$2"]},
     {"name": "sumOp$macrocall$1", "symbols": ["sumOp$macrocall$2", (lexer.has("WS") ? {type: "WS"} : WS)]},
