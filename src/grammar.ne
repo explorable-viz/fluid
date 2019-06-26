@@ -41,7 +41,7 @@ sumExpr -> sumExpr sumOp productExpr | productExpr
 productExpr -> productExpr productOp exponentExpr | exponentExpr
 exponentExpr -> exponentExpr exponentOp appChain | appChain
 
-appChain -> simpleExpr:+
+appChain -> simpleExpr | appChain simpleExpr
 
 simpleExpr -> 
    var |
