@@ -14,6 +14,7 @@ const lexer = moo.compile({
    sumOp: /\+|\-|\+\+/,
    productOp: /\*|\//,
    exponentOp: /\*\*/,
+   compareOp: /==|===|<=|<==|<|>=|>==|>/,
 })
 %}
 
@@ -65,15 +66,7 @@ pattern ->
 
 var_pattern -> var
 
-compareOp -> 
-   lexeme["=="] | 
-   lexeme["==="] | 
-   lexeme["<="] | 
-   lexeme["<=="] | 
-   lexeme["<"] | 
-   lexeme[">="] | 
-   lexeme[">=="] | 
-   lexeme[">"]
+compareOp -> lexeme_[%compareOp]
 exponentOp -> lexeme_[%exponentOp]
 productOp -> lexeme_[%productOp]
 sumOp -> lexeme_[%sumOp]  

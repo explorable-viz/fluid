@@ -3,8 +3,9 @@
 // Bypasses TS6133. Allow declared but unused functions.
 // @ts-ignore
 function id(d: any[]): any { return d[0]; }
-declare var exponentOp: any;
+declare var compareOp: any;
 declare var WS: any;
+declare var exponentOp: any;
 declare var productOp: any;
 declare var sumOp: any;
 
@@ -21,6 +22,7 @@ const lexer = moo.compile({
    sumOp: /\+|\-|\+\+/,
    productOp: /\*|\//,
    exponentOp: /\*\*/,
+   compareOp: /==|===|<=|<==|<|>=|>==|>/,
 })
 
 export interface Token { value: any; [key: string]: any };
@@ -114,30 +116,10 @@ export var ParserRules: NearleyRule[] = [
     {"name": "match", "symbols": ["pattern", "matches"]},
     {"name": "pattern", "symbols": ["var_pattern"]},
     {"name": "var_pattern", "symbols": ["var"]},
-    {"name": "compareOp$macrocall$2", "symbols": [{"literal":"=="}]},
-    {"name": "compareOp$macrocall$1", "symbols": ["compareOp$macrocall$2", "_"]},
+    {"name": "compareOp$macrocall$2", "symbols": [(lexer.has("compareOp") ? {type: "compareOp"} : compareOp)]},
+    {"name": "compareOp$macrocall$1", "symbols": ["compareOp$macrocall$2"]},
+    {"name": "compareOp$macrocall$1", "symbols": ["compareOp$macrocall$2", (lexer.has("WS") ? {type: "WS"} : WS)]},
     {"name": "compareOp", "symbols": ["compareOp$macrocall$1"]},
-    {"name": "compareOp$macrocall$4", "symbols": [{"literal":"==="}]},
-    {"name": "compareOp$macrocall$3", "symbols": ["compareOp$macrocall$4", "_"]},
-    {"name": "compareOp", "symbols": ["compareOp$macrocall$3"]},
-    {"name": "compareOp$macrocall$6", "symbols": [{"literal":"<="}]},
-    {"name": "compareOp$macrocall$5", "symbols": ["compareOp$macrocall$6", "_"]},
-    {"name": "compareOp", "symbols": ["compareOp$macrocall$5"]},
-    {"name": "compareOp$macrocall$8", "symbols": [{"literal":"<=="}]},
-    {"name": "compareOp$macrocall$7", "symbols": ["compareOp$macrocall$8", "_"]},
-    {"name": "compareOp", "symbols": ["compareOp$macrocall$7"]},
-    {"name": "compareOp$macrocall$10", "symbols": [{"literal":"<"}]},
-    {"name": "compareOp$macrocall$9", "symbols": ["compareOp$macrocall$10", "_"]},
-    {"name": "compareOp", "symbols": ["compareOp$macrocall$9"]},
-    {"name": "compareOp$macrocall$12", "symbols": [{"literal":">="}]},
-    {"name": "compareOp$macrocall$11", "symbols": ["compareOp$macrocall$12", "_"]},
-    {"name": "compareOp", "symbols": ["compareOp$macrocall$11"]},
-    {"name": "compareOp$macrocall$14", "symbols": [{"literal":">=="}]},
-    {"name": "compareOp$macrocall$13", "symbols": ["compareOp$macrocall$14", "_"]},
-    {"name": "compareOp", "symbols": ["compareOp$macrocall$13"]},
-    {"name": "compareOp$macrocall$16", "symbols": [{"literal":">"}]},
-    {"name": "compareOp$macrocall$15", "symbols": ["compareOp$macrocall$16", "_"]},
-    {"name": "compareOp", "symbols": ["compareOp$macrocall$15"]},
     {"name": "exponentOp$macrocall$2", "symbols": [(lexer.has("exponentOp") ? {type: "exponentOp"} : exponentOp)]},
     {"name": "exponentOp$macrocall$1", "symbols": ["exponentOp$macrocall$2"]},
     {"name": "exponentOp$macrocall$1", "symbols": ["exponentOp$macrocall$2", (lexer.has("WS") ? {type: "WS"} : WS)]},
