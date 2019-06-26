@@ -25,7 +25,7 @@ function import_ (modules: Module[], e: Expr): Expr {
    }
 }
 
-function importDefaults (e: Expr): Expr {
+export function importDefaults (e: Expr): Expr {
    return import_([module_prelude], e)
 }
 
@@ -53,16 +53,13 @@ export function openWithImports (file: string, modules: Module[]): Expr {
 }
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
-   const e: Expr = parse(loadTestFile("lcalc/dataset", file))
+   const e: Expr = parseWithImports(loadTestFile("lcalc/dataset", file), [])
    return Env.singleton(str(ν(), x), Eval.eval_(emptyEnv(), e).v)
 }
 
-export function parse (src: string): Expr {
-   return importDefaults(successfulParse(Parse.expr, src))
-}
-
 export function parseWithImports (src: string, modules: Module[]): Expr {
-   return importDefaults(import_(modules, successfulParse(Parse.expr, src)))
+   // return importDefaults(import_(modules, successfulParse(Parse.expr, src)))
+   return successfulParse2(src)
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
