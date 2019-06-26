@@ -33,7 +33,7 @@ rootExpr -> _ expr
 
 lexeme[X] -> $X _
 lexeme_[X] -> $X | $X %WS
-keyword[X] -> lexeme[$X] # currently no reserved words 
+keyword[X] -> lexeme[$X] # currently no reserved words
 
 expr -> compareExpr
 compareExpr -> compareExpr compareOp sumExpr | sumExpr
@@ -41,7 +41,7 @@ sumExpr -> sumExpr sumOp productExpr | productExpr
 productExpr -> productExpr productOp exponentExpr | exponentExpr
 exponentExpr -> exponentExpr exponentOp appChain | appChain
 
-appChain -> simpleExpr
+appChain -> simpleExpr:+
 
 simpleExpr -> 
    var |
