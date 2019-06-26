@@ -14,7 +14,7 @@ const moo = require('moo')
 const lexer = moo.compile({
    // TODO: this approach doesn't work - see Moo "keywords" transform.
    keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
-   symbol: ["(", ")", "=", "→"],
+   symbol: ["(", ")", "=", "→", ";"],
    ident: /[a-zA-Z_][0-9a-zA-Z_]*/, // greedy
    WS: /[ \t]+/,
    comment: /\/\/.*?$/,
@@ -24,7 +24,7 @@ const lexer = moo.compile({
    // not quite sure why I can't use literals here:
    sumOp: /\+|\-|\+\+/,
    productOp: /\*|\//,
-   exponentOp: /"**"/,
+   exponentOp: /\*\*/,
    compareOp: /==|===|<=|<==|<|>=|>==|>/,
 })
 
