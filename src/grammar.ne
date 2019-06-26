@@ -24,19 +24,12 @@ simpleExpr ->
 var -> lexeme[[a-zA-Z_] [0-9a-zA-Z_]:*]
 number -> lexeme[number_]
 parenthExpr -> lexeme["("] expr lexeme[")"]
+defs1 -> defList keyword["in"] expr
 
-defs1 ->
-   defList keyword["in"] expr
+defList -> def (lexeme[";"] def):*
+def -> let # | prim | letrec
 
-defList ->
-   def (lexeme[";"] def):*
-
-def ->
-   let # | prim | letrec
-
-let ->
-   keyword["let"] var lexeme["="] expr
-
+let -> keyword["let"] var lexeme["="] expr
 fun -> keyword["fun"] matches
 
 matches ->
@@ -50,8 +43,7 @@ match ->
 pattern -> 
    var_pattern
 
-var_pattern ->
-   var
+var_pattern -> var
 
 compareOp -> 
    lexeme["=="] | 
@@ -68,7 +60,7 @@ productOp ->
    lexeme["*"] | 
    lexeme["/"]
 sumOp -> 
-   lexeme["+"] | 
+   lexeme["+"] |
    lexeme["-"] |
    lexeme["++"]
 
@@ -76,7 +68,7 @@ sumOp ->
 number_ -> int
 int -> [0] | digit1to9 DIGIT:*
 digit1to9 -> [1-9]
-# I'm assuming (but haven't checked that) DIGIT is defined as
+# I'm assuming (but haven't checked) that DIGIT is defined as
 DIGIT -> [0-9]
 
 _ -> (whitespace | singleLineComment):* 
