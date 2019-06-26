@@ -12,26 +12,26 @@ declare var sumOp: any;
 
 const moo = require('moo')
 const lexer = moo.compile({
-   symbol: ["(", ")", "=", "→", ";"],
    ident: {
       match: /[a-zA-Z_][0-9a-zA-Z_]*/, // greedy
       type: moo.keywords({
         keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
       })
    },
-   WS: /[ \t]+/,
+   WS: /[ \t]+/, // include \s?
    comment: /\/\/.*?$/,
    number: /0|[1-9][0-9]*/,
    string: /"(?:\\["\\]|[^\n"\\])*"/,
-   NL: { 
+   NL: { // needed?
       match: /\n/, 
-      lineBreaks: true 
+      lineBreaks: true
    },
    // not quite sure why I can't use literals here:
    sumOp: /\+|\-|\+\+/,
    productOp: /\*|\//,
    exponentOp: /\*\*/,
    compareOp: /==|===|<=|<==|<|>=|>==|>/,
+   symbol: ["(", ")", "=", "→", ";", "{", "}"], // needs to come after compareOp
 })
 
 export interface Token { value: any; [key: string]: any };
