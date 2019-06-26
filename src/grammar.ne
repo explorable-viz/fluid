@@ -18,7 +18,8 @@ simpleExpr ->
    var |
    number |
    parenthExpr |
-   defs1
+   defs1 |
+   fun
 
 var -> lexeme[[a-zA-Z_] [0-9a-zA-Z_]:*]
 number -> lexeme[number_]
@@ -35,6 +36,22 @@ def ->
 
 let ->
    keyword["let"] var lexeme["="] expr
+
+fun -> keyword["fun"] matches
+
+matches ->
+   match |
+   lexeme["{"] match (lexeme[";"] match):* lexeme["}"]
+
+match -> 
+   pattern lexeme["→"] expr |
+   pattern matches
+
+pattern -> 
+   var_pattern
+
+var_pattern ->
+   var
 
 compareOp -> 
    lexeme["=="] | 
