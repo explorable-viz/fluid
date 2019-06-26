@@ -11,7 +11,8 @@ const lexer = moo.compile({
    rparen: ')',
    keyword: ['while', 'if', 'else', 'moo', 'cows'],
    NL: { match: /\n/, lineBreaks: true },
-   sumOp: /\+|\-|\++/
+   sumOp: /\+|\-|\++/,
+   productOp: /\*|\//,
 })
 %}
 
@@ -74,9 +75,7 @@ compareOp ->
    lexeme[">"]
 exponentOp -> 
    lexeme["**"]
-productOp -> 
-   lexeme["*"] | 
-   lexeme["/"]
+productOp -> lexeme_[%productOp]
 sumOp -> lexeme_[%sumOp]  
 
 # JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
