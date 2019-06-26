@@ -11,8 +11,9 @@ const lexer = moo.compile({
    rparen: ')',
    keyword: ['while', 'if', 'else', 'moo', 'cows'],
    NL: { match: /\n/, lineBreaks: true },
-   sumOp: /\+|\-|\++/,
+   sumOp: /\+|\-|\+\+/,
    productOp: /\*|\//,
+   exponentOp: /\*\*/,
 })
 %}
 
@@ -73,8 +74,7 @@ compareOp ->
    lexeme[">="] | 
    lexeme[">=="] | 
    lexeme[">"]
-exponentOp -> 
-   lexeme["**"]
+exponentOp -> lexeme_[%exponentOp]
 productOp -> lexeme_[%productOp]
 sumOp -> lexeme_[%sumOp]  
 
