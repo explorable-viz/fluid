@@ -48,6 +48,7 @@ simpleExpr ->
    number |
    parenthExpr |
    defs1 |
+   matchAs |
    fun
 
 var -> lexeme[%ident]
@@ -56,10 +57,13 @@ parenthExpr -> lexeme["("] expr lexeme[")"]
 defs1 -> defList keyword["in"] expr
 
 defList -> def (lexeme[";"] def):*
-def -> let # | prim | letrec
+def -> let | letrec # | prim
 
 let -> keyword["let"] var lexeme["="] expr
+letrec -> keyword["letrec"] recDef (lexeme[";"] recDef):*
+recDef -> keyword["fun"] var matches
 fun -> keyword["fun"] matches
+matchAs -> keyword["match"] expr keyword["as"] matches
 
 matches ->
    match |
