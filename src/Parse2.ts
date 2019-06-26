@@ -31,7 +31,7 @@ const lexer = moo.compile({
    productOp: /\*|\//,
    exponentOp: /\*\*/,
    compareOp: /==|===|<=|<==|<|>=|>==|>/,
-   symbol: ["(", ")", "=", "→", ";", "{", "}"], // needs to come after compareOp
+   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]"], // needs to come after compareOp
 })
 
 export interface Token { value: any; [key: string]: any };
@@ -70,6 +70,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "simpleExpr", "symbols": ["var"]},
     {"name": "simpleExpr", "symbols": ["number"]},
     {"name": "simpleExpr", "symbols": ["parenthExpr"]},
+    {"name": "simpleExpr", "symbols": ["pair"]},
     {"name": "simpleExpr", "symbols": ["defs1"]},
     {"name": "simpleExpr", "symbols": ["matchAs"]},
     {"name": "simpleExpr", "symbols": ["fun"]},
@@ -84,6 +85,13 @@ export var ParserRules: NearleyRule[] = [
     {"name": "parenthExpr$macrocall$4", "symbols": [{"literal":")"}]},
     {"name": "parenthExpr$macrocall$3", "symbols": ["parenthExpr$macrocall$4", "_"]},
     {"name": "parenthExpr", "symbols": ["parenthExpr$macrocall$1", "expr", "parenthExpr$macrocall$3"]},
+    {"name": "pair$macrocall$2", "symbols": [{"literal":"("}]},
+    {"name": "pair$macrocall$1", "symbols": ["pair$macrocall$2", "_"]},
+    {"name": "pair$macrocall$4", "symbols": [{"literal":","}]},
+    {"name": "pair$macrocall$3", "symbols": ["pair$macrocall$4", "_"]},
+    {"name": "pair$macrocall$6", "symbols": [{"literal":")"}]},
+    {"name": "pair$macrocall$5", "symbols": ["pair$macrocall$6", "_"]},
+    {"name": "pair", "symbols": ["pair$macrocall$1", "expr", "pair$macrocall$3", "expr", "pair$macrocall$5"]},
     {"name": "defs1$macrocall$2", "symbols": [{"literal":"in"}]},
     {"name": "defs1$macrocall$1$macrocall$2", "symbols": ["defs1$macrocall$2"]},
     {"name": "defs1$macrocall$1$macrocall$1", "symbols": ["defs1$macrocall$1$macrocall$2", "_"]},

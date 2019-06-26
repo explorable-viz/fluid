@@ -22,7 +22,7 @@ const lexer = moo.compile({
    productOp: /\*|\//,
    exponentOp: /\*\*/,
    compareOp: /==|===|<=|<==|<|>=|>==|>/,
-   symbol: ["(", ")", "=", "→", ";", "{", "}"], // needs to come after compareOp
+   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]"], // needs to come after compareOp
 })
 %}
 
@@ -47,6 +47,7 @@ simpleExpr ->
    var |
    number |
    parenthExpr |
+   pair |
    defs1 |
    matchAs |
    fun
@@ -54,6 +55,7 @@ simpleExpr ->
 var -> lexeme[%ident]
 number -> lexeme[number_]
 parenthExpr -> lexeme["("] expr lexeme[")"]
+pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
 defs1 -> defList keyword["in"] expr
 
 defList -> def (lexeme[";"] def):*
