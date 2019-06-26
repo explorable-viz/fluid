@@ -6,10 +6,10 @@ rootExpr -> _ expr
 lexeme[X] -> $X _ 
 
 expr -> compareExpr
-compareExpr -> compareExpr _ compareOp _ sumExpr | sumExpr
+compareExpr -> compareExpr compareOp sumExpr | sumExpr
 sumExpr -> sumExpr sumOp productExpr | productExpr
-productExpr -> productExpr _ productOp _ exponentExpr | exponentExpr
-exponentExpr -> exponentExpr _ exponentOp _ appChain | appChain
+productExpr -> productExpr productOp exponentExpr | exponentExpr
+exponentExpr -> exponentExpr exponentOp appChain | appChain
 
 appChain -> simpleExpr
 
@@ -20,11 +20,22 @@ simpleExpr ->
 
 variable -> [a-zA-Z_] [0-9a-zA-Z_]:*
 number -> lexeme[number_]
-parenthExpr -> "(" _ expr _ ")"
+parenthExpr -> lexeme["("] _ expr _ lexeme[")"]
 
-compareOp -> "==" | "===" | "<=" | "<==" | "<" | ">=" | ">==" | ">"
-exponentOp -> "**"
-productOp -> "*" | "/"
+compareOp -> 
+   lexeme["=="] | 
+   lexeme["==="] | 
+   lexeme["<="] | 
+   lexeme["<=="] | 
+   lexeme["<"] | 
+   lexeme[">="] | 
+   lexeme[">=="] | 
+   lexeme[">"]
+exponentOp -> 
+   lexeme["**"]
+productOp -> 
+   lexeme["*"] | 
+   lexeme["/"]
 sumOp -> 
    lexeme["+"] | 
    lexeme["-"] |
