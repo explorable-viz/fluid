@@ -35,8 +35,7 @@ import { ν, num, str } from "./Versioned"
 # Match expr with leading whitespace/comments.
 rootExpr -> _ expr {% (d: any[]) => d[1] %}
 
-lexeme[X] -> $X _ {% (d: any[]) => d[0] %}
-lexeme_[X] -> 
+lexeme[X] -> 
    $X | 
    $X %WS {% (d: any[]) => d[0] %}
 keyword[X] -> lexeme[$X] # currently no reserved words
@@ -115,10 +114,10 @@ listRestOpt_pattern ->
    null |
    lexeme[","] lexeme["..."] pattern
 
-compareOp -> lexeme_[%compareOp]
-exponentOp -> lexeme_[%exponentOp]
-productOp -> lexeme_[%productOp]
-sumOp -> lexeme_[%sumOp]  
+compareOp -> lexeme[%compareOp]
+exponentOp -> lexeme[%exponentOp]
+productOp -> lexeme[%productOp]
+sumOp -> lexeme[%sumOp]  
 
 # JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
 number_ -> int
