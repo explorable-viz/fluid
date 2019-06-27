@@ -20,7 +20,7 @@ const lexer = moo.compile({
    sumOp: /\-|\+\+|\+/,
    productOp: /\*|\//,
    exponentOp: /\*\*/,
-   compareOp: /==|===|<=|<==|<|>=|>==|>/,
+   compareOp: /===|==|<==|<=|<|>==|>=|>/,
    symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]"], // needs to come after compareOp
 })
 %}
