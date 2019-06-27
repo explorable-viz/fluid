@@ -21,7 +21,7 @@ const lexer = moo.compile({
    productOp: /\*|\//,
    exponentOp: /\*\*/,
    compareOp: /===|==|<==|<=|<|>==|>=|>/,
-   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]"], // needs to come after compareOp
+   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "..."], // needs to come after compareOp
 })
 %}
 
@@ -86,12 +86,21 @@ typeMatches ->
 
 typeMatch -> lexeme[%ident] lexeme["→"] expr
 
-list_ -> null | expr (lexeme[","] expr):*
+list_ -> 
+   null | 
+   expr (lexeme[","] expr):* listRestOpt
 
-pattern -> var_pattern | pair_pattern
+listRestOpt ->
+   null |
+   lexeme[","] lexeme["..."] expr
+
+pattern -> var_pattern | pair_pattern | list_pattern
 
 var_pattern -> var
 pair_pattern -> lexeme["("] pattern lexeme[","] pattern lexeme[")"]
+list_pattern -> lexeme["["] list_pattern_ lexeme["]"] # ouch: "
+
+list_pattern_ -> null | pattern (lexeme[","] pattern):*
 
 compareOp -> lexeme_[%compareOp]
 exponentOp -> lexeme_[%exponentOp]
