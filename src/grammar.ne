@@ -17,7 +17,7 @@ const lexer = moo.compile({
    number: /0|[1-9][0-9]*/,
    string: /"(?:\\["\\]|[^\n"\\])*"/,
    // not quite sure why I can't use literals here:
-   sumOp: /\+|\-|\+\+/,
+   sumOp: /\-|\+\+|\+/,
    productOp: /\*|\//,
    exponentOp: /\*\*/,
    compareOp: /==|===|<=|<==|<|>=|>==|>/,
@@ -51,7 +51,8 @@ simpleExpr ->
    defs1 |
    list |
    matchAs |
-   fun
+   fun |
+   typematch
 
 var -> lexeme[%ident]
 string -> lexeme[%string]
@@ -60,6 +61,7 @@ parenthExpr -> lexeme["("] expr lexeme[")"]
 pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
 defs1 -> defList keyword["in"] expr
 list -> lexeme["["] list_ lexeme["]"] # ouch: "
+typematch -> keyword["typematch"] expr keyword["as"] typeMatches
 
 defList -> def (lexeme[";"] def):*
 def -> let | letrec # | prim
@@ -77,6 +79,12 @@ matches ->
 match -> 
    pattern lexeme["→"] expr |
    pattern matches
+
+typeMatches ->
+   typeMatch |
+   lexeme["{"] typeMatch (lexeme[";"] typeMatch):* lexeme["}"]
+
+typeMatch -> lexeme[%ident] lexeme["→"] expr
 
 list_ -> null | expr (lexeme[","] expr):*
 
