@@ -14,6 +14,7 @@ const lexer = moo.compile({
       lineBreaks: true
    },
    comment: /\/\/.*?$/,
+   // WIP: JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
    number: /0|[1-9][0-9]*/,
    string: /"(?:\\["\\]|[^\n"\\])*"/,
    // not quite sure why I can't use literals here:
@@ -33,22 +34,32 @@ import { ν, num, str } from "./Versioned"
 %}
 
 # Match expr with leading whitespace/comments.
-rootExpr -> _ expr {% (d: any[]) => d[1] %}
+rootExpr -> 
+   %WS expr {% ([, e]) => e %} |
+   expr {% id %}
 
-lexeme[X] -> 
-   $X | 
-   $X %WS {% (d: any[]) => d[0] %}
+lexeme[X] -> $X | $X %WS {% ([x]) => x %}
 keyword[X] -> lexeme[$X] # currently no reserved words
 
-expr -> compareExpr
-compareExpr -> compareExpr compareOp sumExpr | sumExpr
-sumExpr -> sumExpr sumOp productExpr | productExpr
-productExpr -> productExpr productOp exponentExpr | exponentExpr
-exponentExpr -> exponentExpr exponentOp appChain | appChain
+expr -> compareExpr {% id %}
+compareExpr -> 
+   compareExpr compareOp sumExpr {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} | 
+   sumExpr {% id %}
+sumExpr -> 
+   sumExpr sumOp productExpr {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} | 
+   productExpr {% id %}
+productExpr -> 
+   productExpr productOp exponentExpr {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} |
+   exponentExpr {% id %}
+exponentExpr -> 
+   exponentExpr exponentOp appChain {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} |
+   appChain {% id %}
 
-appChain -> simpleExpr | appChain simpleExpr
+appChain -> 
+   simpleExpr {% id %} |
+   appChain simpleExpr {% ([e1, e2]) => Expr.app(ν(), e1, e2) %}
 
-simpleExpr -> 
+simpleExpr -> (
    var |
    string |
    number |
@@ -59,22 +70,25 @@ simpleExpr ->
    matchAs |
    fun |
    typematch
+) {% id %}
 
-var -> lexeme[%ident] {% (d: any[]) => str(ν(), d[0] as string) %}
-string -> lexeme[%string] {% (d: any[]) => Expr.constStr(ν(), str(ν(), d[0] as string)) %}
-number -> lexeme[number_] {% (d: any[]) => Expr.constNum(ν(), num(ν(), new Number(d[0] as string).valueOf())) %}
-parenthExpr -> lexeme["("] expr lexeme[")"] {% (d: any[]) => d[1] %}
+var -> lexeme[%ident] {% ([x]) => str(ν(), x as string) %}
+string -> lexeme[%string] {% ([lit]) => Expr.constStr(ν(), str(ν(), lit as string)) %}
+number -> lexeme[%number] {% ([lit]) => Expr.constNum(ν(), num(ν(), new Number(lit as string).valueOf())) %}
+parenthExpr -> lexeme["("] expr lexeme[")"] {% ([, e,]) => e %}
 pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
-defs1 -> defList keyword["in"] expr
+defs1 -> defList keyword["in"] expr {% ([defs, , e]) => Expr.defs(ν(), defs, e) %}
 list -> lexeme["["] listOpt lexeme["]"] # ouch: "
 typematch -> keyword["typematch"] expr keyword["as"] typeMatches
 
 defList -> def (lexeme[";"] def):*
-def -> let | letrec # | prim
+def -> let | letrec | prim {% id %}
 
-let -> keyword["let"] var lexeme["="] expr
+let -> keyword["let"] var lexeme["="] expr {% ([, x, , e]) => Expr.let_(x, e) %}
 letrec -> keyword["letrec"] recDef (lexeme[";"] recDef):*
 recDef -> keyword["fun"] var matches
+prim -> keyword["primitive"] var
+
 fun -> keyword["fun"] matches
 matchAs -> keyword["match"] expr keyword["as"] matches
 
@@ -114,18 +128,7 @@ listRestOpt_pattern ->
    null |
    lexeme[","] lexeme["..."] pattern
 
-compareOp -> lexeme[%compareOp]
-exponentOp -> lexeme[%exponentOp]
-productOp -> lexeme[%productOp]
-sumOp -> lexeme[%sumOp]  
-
-# JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
-number_ -> int
-int -> [0] | digit1to9 DIGIT:*
-digit1to9 -> [1-9]
-# I'm assuming (but haven't checked) that DIGIT is defined as
-DIGIT -> [0-9]
-
-_ -> (whitespace | singleLineComment):*
-whitespace -> [\s]:+
-singleLineComment -> "//" [^\n]:*
+compareOp -> lexeme[%compareOp] {% id %}
+exponentOp -> lexeme[%exponentOp] {% id %}
+productOp -> lexeme[%productOp] {% id %}
+sumOp -> lexeme[%sumOp] {% id %}
