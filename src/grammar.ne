@@ -33,9 +33,9 @@ import { ν, num, str } from "./Versioned"
 %}
 
 # Match expr with leading whitespace/comments.
-rootExpr -> _ expr
+rootExpr -> _ expr {% (d: any[]) => d[1] %}
 
-lexeme[X] -> $X _
+lexeme[X] -> $X _ {% (d: any[]) => d[0] %}
 lexeme_[X] -> $X | $X %WS
 keyword[X] -> lexeme[$X] # currently no reserved words
 
@@ -60,9 +60,9 @@ simpleExpr ->
    typematch
 
 var -> lexeme[%ident] {% (d: any[]) => str(ν(), d[0] as string) %}
-string -> lexeme[%string]
+string -> lexeme[%string] {% (d: any[]) => Expr.constStr(ν(), str(ν(), d[0] as string)) %}
 number -> lexeme[number_] {% (d: any[]) => Expr.constNum(ν(), num(ν(), new Number(d[0] as string).valueOf())) %}
-parenthExpr -> lexeme["("] expr lexeme[")"]
+parenthExpr -> lexeme["("] expr lexeme[")"] {% (d: any[]) => d[1] %}
 pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
 defs1 -> defList keyword["in"] expr
 list -> lexeme["["] listOpt lexeme["]"] # ouch: "
@@ -126,5 +126,5 @@ digit1to9 -> [1-9]
 DIGIT -> [0-9]
 
 _ -> (whitespace | singleLineComment):*
-whitespace -> [\s]:+ {% d => null %}
-singleLineComment -> "//" [^\n]:* {% d => null %}
+whitespace -> [\s]:+
+singleLineComment -> "//" [^\n]:*
