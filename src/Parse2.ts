@@ -4,6 +4,7 @@
 // @ts-ignore
 function id(d: any[]): any { return d[0]; }
 declare var ident: any;
+declare var string: any;
 declare var compareOp: any;
 declare var WS: any;
 declare var exponentOp: any;
@@ -18,14 +19,13 @@ const lexer = moo.compile({
         keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
       })
    },
-   WS: /[ \t]+/, // include \s?
+   WS: {
+      match: /[ \t\n]+/, // include \s?
+      lineBreaks: true
+   },
    comment: /\/\/.*?$/,
    number: /0|[1-9][0-9]*/,
    string: /"(?:\\["\\]|[^\n"\\])*"/,
-   NL: { // needed?
-      match: /\n/, 
-      lineBreaks: true
-   },
    // not quite sure why I can't use literals here:
    sumOp: /\+|\-|\+\+/,
    productOp: /\*|\//,
@@ -68,15 +68,20 @@ export var ParserRules: NearleyRule[] = [
     {"name": "appChain", "symbols": ["simpleExpr"]},
     {"name": "appChain", "symbols": ["appChain", "simpleExpr"]},
     {"name": "simpleExpr", "symbols": ["var"]},
+    {"name": "simpleExpr", "symbols": ["string"]},
     {"name": "simpleExpr", "symbols": ["number"]},
     {"name": "simpleExpr", "symbols": ["parenthExpr"]},
     {"name": "simpleExpr", "symbols": ["pair"]},
     {"name": "simpleExpr", "symbols": ["defs1"]},
+    {"name": "simpleExpr", "symbols": ["list"]},
     {"name": "simpleExpr", "symbols": ["matchAs"]},
     {"name": "simpleExpr", "symbols": ["fun"]},
     {"name": "var$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
     {"name": "var$macrocall$1", "symbols": ["var$macrocall$2", "_"]},
     {"name": "var", "symbols": ["var$macrocall$1"]},
+    {"name": "string$macrocall$2", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
+    {"name": "string$macrocall$1", "symbols": ["string$macrocall$2", "_"]},
+    {"name": "string", "symbols": ["string$macrocall$1"]},
     {"name": "number$macrocall$2", "symbols": ["number_"]},
     {"name": "number$macrocall$1", "symbols": ["number$macrocall$2", "_"]},
     {"name": "number", "symbols": ["number$macrocall$1"]},
@@ -97,6 +102,11 @@ export var ParserRules: NearleyRule[] = [
     {"name": "defs1$macrocall$1$macrocall$1", "symbols": ["defs1$macrocall$1$macrocall$2", "_"]},
     {"name": "defs1$macrocall$1", "symbols": ["defs1$macrocall$1$macrocall$1"]},
     {"name": "defs1", "symbols": ["defList", "defs1$macrocall$1", "expr"]},
+    {"name": "list$macrocall$2", "symbols": [{"literal":"["}]},
+    {"name": "list$macrocall$1", "symbols": ["list$macrocall$2", "_"]},
+    {"name": "list$macrocall$4", "symbols": [{"literal":"]"}]},
+    {"name": "list$macrocall$3", "symbols": ["list$macrocall$4", "_"]},
+    {"name": "list", "symbols": ["list$macrocall$1", "list_", "list$macrocall$3"]},
     {"name": "defList$ebnf$1", "symbols": []},
     {"name": "defList$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":";"}]},
     {"name": "defList$ebnf$1$subexpression$1$macrocall$1", "symbols": ["defList$ebnf$1$subexpression$1$macrocall$2", "_"]},
@@ -156,6 +166,13 @@ export var ParserRules: NearleyRule[] = [
     {"name": "match$macrocall$1", "symbols": ["match$macrocall$2", "_"]},
     {"name": "match", "symbols": ["pattern", "match$macrocall$1", "expr"]},
     {"name": "match", "symbols": ["pattern", "matches"]},
+    {"name": "list_", "symbols": []},
+    {"name": "list_$ebnf$1", "symbols": []},
+    {"name": "list_$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},
+    {"name": "list_$ebnf$1$subexpression$1$macrocall$1", "symbols": ["list_$ebnf$1$subexpression$1$macrocall$2", "_"]},
+    {"name": "list_$ebnf$1$subexpression$1", "symbols": ["list_$ebnf$1$subexpression$1$macrocall$1", "expr"]},
+    {"name": "list_$ebnf$1", "symbols": ["list_$ebnf$1", "list_$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "list_", "symbols": ["expr", "list_$ebnf$1"]},
     {"name": "pattern", "symbols": ["var_pattern"]},
     {"name": "pattern", "symbols": ["pair_pattern"]},
     {"name": "var_pattern", "symbols": ["var"]},

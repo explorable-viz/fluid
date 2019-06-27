@@ -9,14 +9,13 @@ const lexer = moo.compile({
         keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
       })
    },
-   WS: /[ \t]+/, // include \s?
+   WS: {
+      match: /[ \t\n]+/, // include \s?
+      lineBreaks: true
+   },
    comment: /\/\/.*?$/,
    number: /0|[1-9][0-9]*/,
    string: /"(?:\\["\\]|[^\n"\\])*"/,
-   NL: { // needed?
-      match: /\n/, 
-      lineBreaks: true
-   },
    // not quite sure why I can't use literals here:
    sumOp: /\+|\-|\+\+/,
    productOp: /\*|\//,
@@ -45,6 +44,7 @@ appChain -> simpleExpr | appChain simpleExpr
 
 simpleExpr -> 
    var |
+   string |
    number |
    parenthExpr |
    pair |
@@ -54,6 +54,7 @@ simpleExpr ->
    fun
 
 var -> lexeme[%ident]
+string -> lexeme[%string]
 number -> lexeme[number_]
 parenthExpr -> lexeme["("] expr lexeme[")"]
 pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
