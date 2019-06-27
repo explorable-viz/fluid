@@ -34,6 +34,10 @@ const lexer = moo.compile({
    symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "..."], // needs to come after compareOp
 })
 
+
+import { Expr } from "./Expr"
+import { ν, num, str } from "./Versioned"
+
 export interface Token { value: any; [key: string]: any };
 
 export interface Lexer {
@@ -79,13 +83,13 @@ export var ParserRules: NearleyRule[] = [
     {"name": "simpleExpr", "symbols": ["typematch"]},
     {"name": "var$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
     {"name": "var$macrocall$1", "symbols": ["var$macrocall$2", "_"]},
-    {"name": "var", "symbols": ["var$macrocall$1"]},
+    {"name": "var", "symbols": ["var$macrocall$1"], "postprocess": (d: any[]) => str(ν(), d[0] as string)},
     {"name": "string$macrocall$2", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
     {"name": "string$macrocall$1", "symbols": ["string$macrocall$2", "_"]},
     {"name": "string", "symbols": ["string$macrocall$1"]},
     {"name": "number$macrocall$2", "symbols": ["number_"]},
     {"name": "number$macrocall$1", "symbols": ["number$macrocall$2", "_"]},
-    {"name": "number", "symbols": ["number$macrocall$1"]},
+    {"name": "number", "symbols": ["number$macrocall$1"], "postprocess": (d: any[]) => Expr.constNum(ν(), num(ν(), new Number(d[0] as string).valueOf()))},
     {"name": "parenthExpr$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "parenthExpr$macrocall$1", "symbols": ["parenthExpr$macrocall$2", "_"]},
     {"name": "parenthExpr$macrocall$4", "symbols": [{"literal":")"}]},

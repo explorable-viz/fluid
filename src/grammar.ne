@@ -27,6 +27,11 @@ const lexer = moo.compile({
 
 @lexer lexer
 
+@{%
+import { Expr } from "./Expr"
+import { ν, num, str } from "./Versioned"
+%}
+
 # Match expr with leading whitespace/comments.
 rootExpr -> _ expr
 
@@ -54,9 +59,9 @@ simpleExpr ->
    fun |
    typematch
 
-var -> lexeme[%ident]
+var -> lexeme[%ident] {% (d: any[]) => str(ν(), d[0] as string) %}
 string -> lexeme[%string]
-number -> lexeme[number_]
+number -> lexeme[number_] {% (d: any[]) => Expr.constNum(ν(), num(ν(), new Number(d[0] as string).valueOf())) %}
 parenthExpr -> lexeme["("] expr lexeme[")"]
 pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
 defs1 -> defList keyword["in"] expr
@@ -87,7 +92,7 @@ typeMatches ->
 typeMatch -> lexeme[%ident] lexeme["→"] expr
 
 listOpt -> 
-   null | 
+   null |
    expr (lexeme[","] expr):* listRestOpt
 
 listRestOpt ->
