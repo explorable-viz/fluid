@@ -31,7 +31,7 @@ describe("example", () => {
 		})
    })
 
-   describe("bar-chart", () => {
+   xdescribe("bar-chart", () => {
 		it("ok", () => {
          const ρ: Env = openDatasetAs("renewables", "data"),
 			      e: Expr = openWithImports("bar-chart", [module_graphics])
@@ -47,7 +47,7 @@ describe("example", () => {
 		})
    })
 
-   describe("compose", () => {
+   xdescribe("compose", () => {
 		it("ok", () => {
 			const e: Expr = open("compose")
 			new FwdSlice(e)
@@ -55,7 +55,7 @@ describe("example", () => {
 		})
 	})
 
-   describe("factorial", () => {
+   xdescribe("factorial", () => {
 		it("ok", () => {
          const e: Expr = open("factorial")
          new FwdSlice(e)
@@ -63,7 +63,7 @@ describe("example", () => {
 		})
 	})
 
-   describe("filter", () => {
+   xdescribe("filter", () => {
 		it("ok", () => {
 			const e: Expr = open("filter")
 			new (class extends FwdSlice {
@@ -94,7 +94,7 @@ describe("example", () => {
 		})
 	})
 
-   describe("foldr_sumSquares", () => {
+   xdescribe("foldr_sumSquares", () => {
 		it("ok", () => {
 			const e: Expr = open("foldr_sumSquares")
          new FwdSlice(e)
@@ -102,7 +102,7 @@ describe("example", () => {
 		})
 	})
 
-   describe("length", () => {
+   xdescribe("length", () => {
 		it("ok", () => {
 			const e: Expr = open("length")
 			// erasing the elements doesn't affect the count:
@@ -147,7 +147,7 @@ describe("example", () => {
 		})
 	})
 
-	describe("lexicalScoping", () => {
+	xdescribe("lexicalScoping", () => {
 		it("ok", () => {
 			const e: Expr = open("lexicalScoping")
          new FwdSlice(e)
@@ -155,7 +155,7 @@ describe("example", () => {
 		})
 	})
 
-   describe("lookup", () => {
+   xdescribe("lookup", () => {
 		it("ok", () => {
 			const e: Expr = open("lookup")
 			const last = new (class extends FwdSlice {
@@ -188,7 +188,7 @@ describe("example", () => {
 		})
 	})
 
-   describe("map", () => {
+   xdescribe("map", () => {
 		it("ok", () => {
 			const e: Expr = open("map")
 			new (class extends FwdSlice {
@@ -209,7 +209,7 @@ describe("example", () => {
 		})
 	})
 
-   describe("mergeSort", () => {
+   xdescribe("mergeSort", () => {
 		it("ok", () => {
 			const e: Expr = open("mergeSort")
          new FwdSlice(e)
@@ -217,7 +217,7 @@ describe("example", () => {
 		})
 	})
 
-	describe("normalise", () => {
+	xdescribe("normalise", () => {
 		it("ok", () => {
 			const e: Expr = open("normalise")
          new FwdSlice(e)
@@ -237,7 +237,7 @@ describe("example", () => {
 		})
    })
 
-	describe("pattern-match", () => {
+	xdescribe("pattern-match", () => {
 		it("ok", () => {
 			const e: Expr = open("pattern-match")
 			new BwdSlice(e)
@@ -245,7 +245,7 @@ describe("example", () => {
 		})
    })
 
-	describe("reverse", () => {
+	xdescribe("reverse", () => {
 		it("ok", () => {
 			const e: Expr = open("reverse")
 			new (class extends FwdSlice {
@@ -267,7 +267,7 @@ describe("example", () => {
 		})
    })
 
-   describe("typematch", () => {
+   xdescribe("typematch", () => {
 		it("ok", () => {
 			const e: Expr = open("typematch")
 			new FwdSlice(e)
@@ -275,7 +275,7 @@ describe("example", () => {
 		})
 	})
 
-	describe("zipW", () => {
+	xdescribe("zipW", () => {
 		it("ok", () => {
 			const e: Expr = open("zipW")
          new FwdSlice(e)

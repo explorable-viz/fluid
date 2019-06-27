@@ -60,7 +60,7 @@ number -> lexeme[number_]
 parenthExpr -> lexeme["("] expr lexeme[")"]
 pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
 defs1 -> defList keyword["in"] expr
-list -> lexeme["["] list_ lexeme["]"] # ouch: "
+list -> lexeme["["] listOpt lexeme["]"] # ouch: "
 typematch -> keyword["typematch"] expr keyword["as"] typeMatches
 
 defList -> def (lexeme[";"] def):*
@@ -86,7 +86,7 @@ typeMatches ->
 
 typeMatch -> lexeme[%ident] lexeme["→"] expr
 
-list_ -> 
+listOpt -> 
    null | 
    expr (lexeme[","] expr):* listRestOpt
 
@@ -98,9 +98,15 @@ pattern -> var_pattern | pair_pattern | list_pattern
 
 var_pattern -> var
 pair_pattern -> lexeme["("] pattern lexeme[","] pattern lexeme[")"]
-list_pattern -> lexeme["["] list_pattern_ lexeme["]"] # ouch: "
+list_pattern -> lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
 
-list_pattern_ -> null | pattern (lexeme[","] pattern):*
+listOpt_pattern -> 
+   null | 
+   pattern (lexeme[","] pattern):* listRestOpt_pattern
+
+listRestOpt_pattern ->
+   null |
+   lexeme[","] lexeme["..."] pattern
 
 compareOp -> lexeme_[%compareOp]
 exponentOp -> lexeme_[%exponentOp]
