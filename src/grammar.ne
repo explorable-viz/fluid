@@ -36,7 +36,9 @@ import { ν, num, str } from "./Versioned"
 rootExpr -> _ expr {% (d: any[]) => d[1] %}
 
 lexeme[X] -> $X _ {% (d: any[]) => d[0] %}
-lexeme_[X] -> $X | $X %WS
+lexeme_[X] -> 
+   $X | 
+   $X %WS {% (d: any[]) => d[0] %}
 keyword[X] -> lexeme[$X] # currently no reserved words
 
 expr -> compareExpr
