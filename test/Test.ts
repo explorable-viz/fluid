@@ -237,7 +237,7 @@ describe("example", () => {
 		})
    })
 
-	xdescribe("pattern-match", () => {
+	describe("pattern-match", () => {
 		it("ok", () => {
 			const e: Expr = open("pattern-match")
 			new BwdSlice(e)

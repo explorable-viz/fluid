@@ -10,7 +10,7 @@ const lexer = moo.compile({
       })
    },
    WS: {
-      match: /[ \t\n]+/, // include \s?
+      match: /[ \t\r\n]+/, // include \s?
       lineBreaks: true
    },
    comment: /\/\/.*?$/,
@@ -38,7 +38,9 @@ rootExpr ->
    %WS expr {% ([, e]) => e %} |
    expr {% id %}
 
-lexeme[X] -> $X | $X %WS {% ([x]) => x %}
+lexeme[X] ->
+   $X {% id %} | 
+   $X %WS {% ([x, ]) => x %}
 keyword[X] -> lexeme[$X] # currently no reserved words
 
 expr -> 
@@ -66,7 +68,7 @@ appChain ->
    appChain simpleExpr {% ([e1, e2]) => Expr.app(ν(), e1, e2) %}
 
 simpleExpr ->
-   var {% id %} |
+   variable {% id %} |
    string {% id %} |
    number {% id %} |
    parenthExpr {% id %} |
@@ -76,6 +78,7 @@ simpleExpr ->
    fun {% id %} |
    typematch {% id %}
 
+variable -> var {% ([x]) => Expr.var_(ν(), x) %}
 var -> lexeme[%ident] {% ([x]) => str(ν(), x as string) %}
 string -> lexeme[%string] {% ([lit]) => Expr.constStr(ν(), str(ν(), lit as string)) %}
 number -> lexeme[%number] {% ([lit]) => Expr.constNum(ν(), num(ν(), new Number(lit as string).valueOf())) %}
