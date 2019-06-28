@@ -16,7 +16,7 @@ declare var sumOp: any;
 const moo = require('moo')
 const lexer = moo.compile({
    ident: {
-      match: /[a-zA-Z_][0-9a-zA-Z_]*/, // greedy
+      match: /[a-zA-Z_][0-9a-zA-Z_]*'*/, // greedy
       type: moo.keywords({
         keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
       })
