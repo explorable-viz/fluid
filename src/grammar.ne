@@ -31,7 +31,7 @@ const lexer = moo.compile({
 @{%
 import { assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
-import { types } from "./DataType"
+import { arity, ctrToDataType, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton } from "./FiniteMap"
 import { Str } from "./Value"
@@ -82,6 +82,7 @@ simpleExpr ->
    parenthExpr {% id %} |
    pair {% id %} |
    list {% id %} |
+   constr {% id %} |
    matchAs {% id %} |
    typematch {% id %}
 
@@ -89,7 +90,7 @@ variable ->
    var 
    {% ([x]) => Expr.var_(ν(), x) %}
 
-var -> 
+var ->
    lexeme[%ident] 
    {% ([[x]]) => str(ν(), x.value) %}
 
@@ -112,6 +113,37 @@ pair ->
 list -> 
    lexeme["["] listOpt lexeme["]"] # ouch: "
    {% ([, e, ]) => e %}
+
+constr ->
+   ctr args
+   {% ([c, e̅]) => {
+      assert(c instanceof Str)
+      // Enforce consistency with constructor signatures.
+      const n: number = arity(c)
+      if (n > e̅.length) {
+         error(`Too few arguments to constructor ${c.val}.`)
+      }
+      if (n < e̅.length) {
+         error(`Too many arguments to constructor ${c.val}.`)
+      }
+      return Expr.constr(ν(), c, List.fromArray(e̅))
+   } %}
+
+# Not context-free; will fix this as part of issue #49.
+ctr ->
+   lexeme[%ident] 
+   {% ([[x]], _, reject) => {
+      if (!ctrToDataType.has(x.value)) {
+         return reject
+      }
+      return str(ν(), x.value)
+   } %}
+
+args ->
+   null 
+   {% () => [] %} |
+   lexeme["("] expr (lexeme[","] expr {% ([, e]) => e %}):* lexeme[")"]
+   {% ([e, es]) => [e, ...es] %}
 
 typematch ->
    keyword["typematch"] expr keyword["as"] typeMatches
@@ -168,7 +200,8 @@ typeMatch ->
    } %}
 
 typename ->
-   lexeme[%ident] {% ([[x]]) => str(ν(), x.value) %} # deconstruct twice because macro doesn't seem to do it
+   lexeme[%ident] 
+   {% ([[x]]) => str(ν(), x.value) %} # deconstruct twice because macro doesn't seem to do it
 
 listOpt -> 
    null 

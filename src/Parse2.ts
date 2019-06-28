@@ -40,7 +40,7 @@ const lexer = moo.compile({
 
 import { assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
-import { types } from "./DataType"
+import { arity, ctrToDataType, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton } from "./FiniteMap"
 import { Str } from "./Value"
@@ -101,6 +101,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "simpleExpr", "symbols": ["parenthExpr"], "postprocess": id},
     {"name": "simpleExpr", "symbols": ["pair"], "postprocess": id},
     {"name": "simpleExpr", "symbols": ["list"], "postprocess": id},
+    {"name": "simpleExpr", "symbols": ["constr"], "postprocess": id},
     {"name": "simpleExpr", "symbols": ["matchAs"], "postprocess": id},
     {"name": "simpleExpr", "symbols": ["typematch"], "postprocess": id},
     {"name": "variable", "symbols": ["var"], "postprocess": ([x]) => Expr.var_(ν(), x)},
@@ -140,6 +141,41 @@ export var ParserRules: NearleyRule[] = [
     {"name": "list$macrocall$3", "symbols": ["list$macrocall$4"], "postprocess": id},
     {"name": "list$macrocall$3", "symbols": ["list$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "list", "symbols": ["list$macrocall$1", "listOpt", "list$macrocall$3"], "postprocess": ([, e, ]) => e},
+    {"name": "constr", "symbols": ["ctr", "args"], "postprocess":  ([c, e̅]) => {
+           assert(c instanceof Str)
+           // Enforce consistency with constructor signatures.
+           const n: number = arity(c)
+           if (n > e̅.length) {
+              error(`Too few arguments to constructor ${c.val}.`)
+           }
+           if (n < e̅.length) {
+              error(`Too many arguments to constructor ${c.val}.`)
+           }
+           return Expr.constr(ν(), c, List.fromArray(e̅))
+        } },
+    {"name": "ctr$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
+    {"name": "ctr$macrocall$1", "symbols": ["ctr$macrocall$2"], "postprocess": id},
+    {"name": "ctr$macrocall$1", "symbols": ["ctr$macrocall$2", "_"], "postprocess": ([x, ]) => x},
+    {"name": "ctr", "symbols": ["ctr$macrocall$1"], "postprocess":  ([[x]], _, reject) => {
+           if (!ctrToDataType.has(x.value)) {
+              return reject
+           }
+           return str(ν(), x.value)
+        } },
+    {"name": "args", "symbols": [], "postprocess": () => []},
+    {"name": "args$macrocall$2", "symbols": [{"literal":"("}]},
+    {"name": "args$macrocall$1", "symbols": ["args$macrocall$2"], "postprocess": id},
+    {"name": "args$macrocall$1", "symbols": ["args$macrocall$2", "_"], "postprocess": ([x, ]) => x},
+    {"name": "args$ebnf$1", "symbols": []},
+    {"name": "args$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},
+    {"name": "args$ebnf$1$subexpression$1$macrocall$1", "symbols": ["args$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
+    {"name": "args$ebnf$1$subexpression$1$macrocall$1", "symbols": ["args$ebnf$1$subexpression$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
+    {"name": "args$ebnf$1$subexpression$1", "symbols": ["args$ebnf$1$subexpression$1$macrocall$1", "expr"], "postprocess": ([, e]) => e},
+    {"name": "args$ebnf$1", "symbols": ["args$ebnf$1", "args$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "args$macrocall$4", "symbols": [{"literal":")"}]},
+    {"name": "args$macrocall$3", "symbols": ["args$macrocall$4"], "postprocess": id},
+    {"name": "args$macrocall$3", "symbols": ["args$macrocall$4", "_"], "postprocess": ([x, ]) => x},
+    {"name": "args", "symbols": ["args$macrocall$1", "expr", "args$ebnf$1", "args$macrocall$3"], "postprocess": ([e, es]) => [e, ...es]},
     {"name": "typematch$macrocall$2", "symbols": [{"literal":"typematch"}]},
     {"name": "typematch$macrocall$1$macrocall$2", "symbols": ["typematch$macrocall$2"]},
     {"name": "typematch$macrocall$1$macrocall$1", "symbols": ["typematch$macrocall$1$macrocall$2"], "postprocess": id},
@@ -274,9 +310,9 @@ export var ParserRules: NearleyRule[] = [
     {"name": "listRestOpt$macrocall$3", "symbols": ["listRestOpt$macrocall$4"], "postprocess": id},
     {"name": "listRestOpt$macrocall$3", "symbols": ["listRestOpt$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "listRestOpt", "symbols": ["listRestOpt$macrocall$1", "listRestOpt$macrocall$3", "expr"], "postprocess": ([, , e]) => e},
-    {"name": "pattern", "symbols": ["var_pattern"]},
-    {"name": "pattern", "symbols": ["pair_pattern"]},
-    {"name": "pattern", "symbols": ["list_pattern"]},
+    {"name": "pattern", "symbols": ["var_pattern"], "postprocess": id},
+    {"name": "pattern", "symbols": ["pair_pattern"], "postprocess": id},
+    {"name": "pattern", "symbols": ["list_pattern"], "postprocess": id},
     {"name": "var_pattern", "symbols": ["var"]},
     {"name": "pair_pattern$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2"], "postprocess": id},
