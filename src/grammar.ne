@@ -31,11 +31,17 @@ const lexer = moo.compile({
 @{%
 import { assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
-import { arity, ctrToDataType, types } from "./DataType"
+import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton } from "./FiniteMap"
 import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
+
+// Constructors must start with an uppercase letter, a la Haskell. Will fix this as part of issue #49.
+function isCtr (str: string): boolean {
+   const ch: string = str.charAt(0)
+   return ch === ch.toUpperCase() && ch !== ch.toLowerCase()
+}
 %}
 
 # Allow leading whitespace/comments.
@@ -92,7 +98,12 @@ variable ->
 
 var ->
    lexeme[%ident] 
-   {% ([[x]]) => str(ν(), x.value) %}
+   {% ([[x]], _, reject) => {
+      if (isCtr(x.value)) {
+         return reject
+      }
+      return str(ν(), x.value) 
+   } %}
 
 string -> 
    lexeme[%string] 
@@ -126,11 +137,10 @@ constr ->
       return Expr.constr(ν(), c, List.fromArray(e̅))
    } %}
 
-# Not context-free; will fix this as part of issue #49.
 ctr ->
    lexeme[%ident] 
    {% ([[x]], _, reject) => {
-      if (!ctrToDataType.has(x.value)) {
+      if (!isCtr(x.value)) {
          return reject
       }
       return str(ν(), x.value)
@@ -213,11 +223,11 @@ listRestOpt ->
    {% ([, , e]) => e %}
 
 pattern ->
-   var_pattern {% id %} |
+   variable_pattern {% id %} |
    pair_pattern {% id %} | 
    list_pattern {% id %}
 
-var_pattern -> 
+variable_pattern -> 
    var
 
 pair_pattern -> 

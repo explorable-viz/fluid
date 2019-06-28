@@ -40,11 +40,17 @@ const lexer = moo.compile({
 
 import { assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
-import { arity, ctrToDataType, types } from "./DataType"
+import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton } from "./FiniteMap"
 import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
+
+// Constructors must start with an uppercase letter, a la Haskell. Will fix this as part of issue #49.
+function isCtr (str: string): boolean {
+   const ch: string = str.charAt(0)
+   return ch === ch.toUpperCase() && ch !== ch.toLowerCase()
+}
 
 export interface Token { value: any; [key: string]: any };
 
@@ -108,7 +114,12 @@ export var ParserRules: NearleyRule[] = [
     {"name": "var$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
     {"name": "var$macrocall$1", "symbols": ["var$macrocall$2"], "postprocess": id},
     {"name": "var$macrocall$1", "symbols": ["var$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "var", "symbols": ["var$macrocall$1"], "postprocess": ([[x]]) => str(ν(), x.value)},
+    {"name": "var", "symbols": ["var$macrocall$1"], "postprocess":  ([[x]], _, reject) => {
+           if (isCtr(x.value)) {
+              return reject
+           }
+           return str(ν(), x.value) 
+        } },
     {"name": "string$macrocall$2", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
     {"name": "string$macrocall$1", "symbols": ["string$macrocall$2"], "postprocess": id},
     {"name": "string$macrocall$1", "symbols": ["string$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -152,7 +163,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "ctr$macrocall$1", "symbols": ["ctr$macrocall$2"], "postprocess": id},
     {"name": "ctr$macrocall$1", "symbols": ["ctr$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "ctr", "symbols": ["ctr$macrocall$1"], "postprocess":  ([[x]], _, reject) => {
-           if (!ctrToDataType.has(x.value)) {
+           if (!isCtr(x.value)) {
               return reject
            }
            return str(ν(), x.value)
@@ -305,10 +316,10 @@ export var ParserRules: NearleyRule[] = [
     {"name": "listRestOpt$macrocall$3", "symbols": ["listRestOpt$macrocall$4"], "postprocess": id},
     {"name": "listRestOpt$macrocall$3", "symbols": ["listRestOpt$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "listRestOpt", "symbols": ["listRestOpt$macrocall$1", "listRestOpt$macrocall$3", "expr"], "postprocess": ([, , e]) => e},
-    {"name": "pattern", "symbols": ["var_pattern"], "postprocess": id},
+    {"name": "pattern", "symbols": ["variable_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["pair_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["list_pattern"], "postprocess": id},
-    {"name": "var_pattern", "symbols": ["var"]},
+    {"name": "variable_pattern", "symbols": ["var"]},
     {"name": "pair_pattern$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2"], "postprocess": id},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
