@@ -29,6 +29,7 @@ const lexer = moo.compile({
 @lexer lexer
 
 @{%
+import { List } from "./BaseTypes"
 import { Expr } from "./Expr"
 import { ν, num, str } from "./Versioned"
 %}
@@ -99,13 +100,19 @@ let ->
    {% ([, x, , e]) => Expr.let_(x, e) %}
 letrec -> 
    keyword["letrec"] recDef (lexeme[";"] recDef {% ([, recDef]) => recDef %}):* 
-   {% ([, recDef, δ]) => { δ.unshift(recDef); return Expr.letRec(δ) } %}
+   {% ([, recDef, δ]) => Expr.letRec(List.fromArray([recDef, ...δ])) %}
 prim -> keyword["primitive"] var
 
-recDef -> keyword["fun"] var matches
+recDef -> 
+   keyword["fun"] var matches
+   {% ([, f, σ]) => Expr.recDef(f, σ) %}
 
-fun -> keyword["fun"] matches
-matchAs -> keyword["match"] expr keyword["as"] matches
+fun -> 
+   keyword["fun"] matches
+   {% ([, σ]) => Expr.fun(ν(), σ) %}
+matchAs -> 
+   keyword["match"] expr keyword["as"] matches
+   {% ([, e, , σ]) => Expr.matchAs(ν(), e, σ) %}
 
 matches ->
    match |

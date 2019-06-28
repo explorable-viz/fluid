@@ -38,6 +38,7 @@ const lexer = moo.compile({
 })
 
 
+import { List } from "./BaseTypes"
 import { Expr } from "./Expr"
 import { ν, num, str } from "./Versioned"
 
@@ -176,7 +177,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "letrec$ebnf$1$subexpression$1$macrocall$1", "symbols": ["letrec$ebnf$1$subexpression$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "letrec$ebnf$1$subexpression$1", "symbols": ["letrec$ebnf$1$subexpression$1$macrocall$1", "recDef"], "postprocess": ([, recDef]) => recDef},
     {"name": "letrec$ebnf$1", "symbols": ["letrec$ebnf$1", "letrec$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "letrec", "symbols": ["letrec$macrocall$1", "recDef", "letrec$ebnf$1"], "postprocess": ([, recDef, δ]) => { δ.unshift(recDef); return Expr.letRec(δ) }},
+    {"name": "letrec", "symbols": ["letrec$macrocall$1", "recDef", "letrec$ebnf$1"], "postprocess": ([, recDef, δ]) => Expr.letRec(List.fromArray([recDef, ...δ]))},
     {"name": "prim$macrocall$2", "symbols": [{"literal":"primitive"}]},
     {"name": "prim$macrocall$1$macrocall$2", "symbols": ["prim$macrocall$2"]},
     {"name": "prim$macrocall$1$macrocall$1", "symbols": ["prim$macrocall$1$macrocall$2"], "postprocess": id},
@@ -188,13 +189,13 @@ export var ParserRules: NearleyRule[] = [
     {"name": "recDef$macrocall$1$macrocall$1", "symbols": ["recDef$macrocall$1$macrocall$2"], "postprocess": id},
     {"name": "recDef$macrocall$1$macrocall$1", "symbols": ["recDef$macrocall$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "recDef$macrocall$1", "symbols": ["recDef$macrocall$1$macrocall$1"]},
-    {"name": "recDef", "symbols": ["recDef$macrocall$1", "var", "matches"]},
+    {"name": "recDef", "symbols": ["recDef$macrocall$1", "var", "matches"], "postprocess": ([, f, σ]) => Expr.recDef(f, σ)},
     {"name": "fun$macrocall$2", "symbols": [{"literal":"fun"}]},
     {"name": "fun$macrocall$1$macrocall$2", "symbols": ["fun$macrocall$2"]},
     {"name": "fun$macrocall$1$macrocall$1", "symbols": ["fun$macrocall$1$macrocall$2"], "postprocess": id},
     {"name": "fun$macrocall$1$macrocall$1", "symbols": ["fun$macrocall$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "fun$macrocall$1", "symbols": ["fun$macrocall$1$macrocall$1"]},
-    {"name": "fun", "symbols": ["fun$macrocall$1", "matches"]},
+    {"name": "fun", "symbols": ["fun$macrocall$1", "matches"], "postprocess": ([, σ]) => Expr.fun(ν(), σ)},
     {"name": "matchAs$macrocall$2", "symbols": [{"literal":"match"}]},
     {"name": "matchAs$macrocall$1$macrocall$2", "symbols": ["matchAs$macrocall$2"]},
     {"name": "matchAs$macrocall$1$macrocall$1", "symbols": ["matchAs$macrocall$1$macrocall$2"], "postprocess": id},
@@ -205,7 +206,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "matchAs$macrocall$3$macrocall$1", "symbols": ["matchAs$macrocall$3$macrocall$2"], "postprocess": id},
     {"name": "matchAs$macrocall$3$macrocall$1", "symbols": ["matchAs$macrocall$3$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "matchAs$macrocall$3", "symbols": ["matchAs$macrocall$3$macrocall$1"]},
-    {"name": "matchAs", "symbols": ["matchAs$macrocall$1", "expr", "matchAs$macrocall$3", "matches"]},
+    {"name": "matchAs", "symbols": ["matchAs$macrocall$1", "expr", "matchAs$macrocall$3", "matches"], "postprocess": ([, e, , σ]) => Expr.matchAs(ν(), e, σ)},
     {"name": "matches", "symbols": ["match"]},
     {"name": "matches$macrocall$2", "symbols": [{"literal":"{"}]},
     {"name": "matches$macrocall$1", "symbols": ["matches$macrocall$2"], "postprocess": id},
