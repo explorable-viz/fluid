@@ -92,7 +92,7 @@ typematch -> keyword["typematch"] expr keyword["as"] typeMatches
 
 defList -> 
    def (lexeme[";"] def {% ([, def]) => def %}):* 
-   {% ([def, defs]) => [def, ...defs] %}
+   {% ([def, defs]) => List.fromArray([def, ...defs]) %}
 def -> let {% id %} | letrec {% id %} | prim {% id %}
 
 let -> 

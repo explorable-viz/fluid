@@ -153,7 +153,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "defList$ebnf$1$subexpression$1$macrocall$1", "symbols": ["defList$ebnf$1$subexpression$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "defList$ebnf$1$subexpression$1", "symbols": ["defList$ebnf$1$subexpression$1$macrocall$1", "def"], "postprocess": ([, def]) => def},
     {"name": "defList$ebnf$1", "symbols": ["defList$ebnf$1", "defList$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "defList", "symbols": ["def", "defList$ebnf$1"], "postprocess": ([def, defs]) => [def, ...defs]},
+    {"name": "defList", "symbols": ["def", "defList$ebnf$1"], "postprocess": ([def, defs]) => List.fromArray([def, ...defs])},
     {"name": "def", "symbols": ["let"], "postprocess": id},
     {"name": "def", "symbols": ["letrec"], "postprocess": id},
     {"name": "def", "symbols": ["prim"], "postprocess": id},
