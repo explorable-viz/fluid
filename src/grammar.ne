@@ -86,7 +86,7 @@ simpleExpr ->
    typematch {% id %}
 
 variable -> var {% ([x]) => Expr.var_(ν(), x) %}
-var -> lexeme[%ident] {% ([x]) => str(ν(), x as string) %}
+var -> lexeme[%ident] {% ([[x]]) => str(ν(), x.value) %}
 string -> lexeme[%string] {% ([lit]) => Expr.constStr(ν(), str(ν(), lit as string)) %}
 number -> lexeme[%number] {% ([lit]) => Expr.constNum(ν(), num(ν(), new Number(lit as string).valueOf())) %}
 parenthExpr -> lexeme["("] expr lexeme[")"] {% ([, e,]) => e %}

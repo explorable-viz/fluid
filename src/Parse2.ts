@@ -107,7 +107,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "var$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
     {"name": "var$macrocall$1", "symbols": ["var$macrocall$2"], "postprocess": id},
     {"name": "var$macrocall$1", "symbols": ["var$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "var", "symbols": ["var$macrocall$1"], "postprocess": ([x]) => str(ν(), x as string)},
+    {"name": "var", "symbols": ["var$macrocall$1"], "postprocess": ([[x]]) => str(ν(), x.value)},
     {"name": "string$macrocall$2", "symbols": [(lexer.has("string") ? {type: "string"} : string)]},
     {"name": "string$macrocall$1", "symbols": ["string$macrocall$2"], "postprocess": id},
     {"name": "string$macrocall$1", "symbols": ["string$macrocall$2", "_"], "postprocess": ([x, ]) => x},
