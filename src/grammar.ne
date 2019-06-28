@@ -41,7 +41,13 @@ rootExpr ->
 lexeme[X] -> $X | $X %WS {% ([x]) => x %}
 keyword[X] -> lexeme[$X] # currently no reserved words
 
-expr -> compareExpr {% id %}
+expr -> 
+   compareExpr {% id %} |
+   defs1 {% id %}
+
+defs1 ->
+   defList keyword["in"] expr {% ([defs, , e]) => Expr.defs(ν(), defs, e) %}
+
 compareExpr -> 
    compareExpr compareOp sumExpr {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} | 
    sumExpr {% id %}
@@ -65,7 +71,6 @@ simpleExpr ->
    number {% id %} |
    parenthExpr {% id %} |
    pair {% id %} |
-   defs1 {% id %} |
    list {% id %} |
    matchAs {% id %} |
    fun {% id %} |
@@ -76,7 +81,6 @@ string -> lexeme[%string] {% ([lit]) => Expr.constStr(ν(), str(ν(), lit as str
 number -> lexeme[%number] {% ([lit]) => Expr.constNum(ν(), num(ν(), new Number(lit as string).valueOf())) %}
 parenthExpr -> lexeme["("] expr lexeme[")"] {% ([, e,]) => e %}
 pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
-defs1 -> defList keyword["in"] expr {% ([defs, , e]) => Expr.defs(ν(), defs, e) %}
 list -> lexeme["["] listOpt lexeme["]"] # ouch: "
 typematch -> keyword["typematch"] expr keyword["as"] typeMatches
 
