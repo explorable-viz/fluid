@@ -113,8 +113,9 @@ list ->
    lexeme["["] listOpt lexeme["]"] # ouch: "
    {% ([, e, ]) => e %}
 
-typematch -> 
+typematch ->
    keyword["typematch"] expr keyword["as"] typeMatches
+   {% ([, e, m]) => Expr.typecase(ν(), e, m) %}
 
 defList -> 
    def (lexeme[";"] def {% ([, def]) => def %}):* 

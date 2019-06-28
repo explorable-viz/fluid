@@ -150,7 +150,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "typematch$macrocall$3$macrocall$1", "symbols": ["typematch$macrocall$3$macrocall$2"], "postprocess": id},
     {"name": "typematch$macrocall$3$macrocall$1", "symbols": ["typematch$macrocall$3$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "typematch$macrocall$3", "symbols": ["typematch$macrocall$3$macrocall$1"]},
-    {"name": "typematch", "symbols": ["typematch$macrocall$1", "expr", "typematch$macrocall$3", "typeMatches"]},
+    {"name": "typematch", "symbols": ["typematch$macrocall$1", "expr", "typematch$macrocall$3", "typeMatches"], "postprocess": ([, e, m]) => Expr.typecase(ν(), e, m)},
     {"name": "defList$ebnf$1", "symbols": []},
     {"name": "defList$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":";"}]},
     {"name": "defList$ebnf$1$subexpression$1$macrocall$1", "symbols": ["defList$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
