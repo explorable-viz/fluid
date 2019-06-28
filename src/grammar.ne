@@ -263,13 +263,13 @@ constr_pattern ->
 
 args_pattern ->
    null 
-   {% () => (κ: Cont) => κ %} |
+   {% () => [(κ: Cont) => κ] %} |
    lexeme["("] pattern (lexeme[","] pattern {% ([, mk_κ]) => mk_κ %}):* lexeme[")"]
    {% ([, mk_κ, mk_κs,]) => [mk_κ, ...mk_κs] %}
 
 listOpt_pattern -> 
    null
-   {% () => (κ: Cont) => κ %} | 
+   {% () => [(κ: Cont) => κ] %} | 
    pattern (lexeme[","] pattern {% ([, mk_κ]) => mk_κ %}):* listRestOpt_pattern
    {% ([mk_κ1, mk_κs, mk_κ2]) => [mk_κ1, ...mk_κs, mk_κ2] %}
 

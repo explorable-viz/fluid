@@ -354,7 +354,7 @@ export var ParserRules: NearleyRule[] = [
            }
            return (κ: Cont) => Trie.constr(singleton(c, mk_κs.reduce(compose)(κ)))
         } },
-    {"name": "args_pattern", "symbols": [], "postprocess": () => (κ: Cont) => κ},
+    {"name": "args_pattern", "symbols": [], "postprocess": () => [(κ: Cont) => κ]},
     {"name": "args_pattern$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "args_pattern$macrocall$1", "symbols": ["args_pattern$macrocall$2"], "postprocess": id},
     {"name": "args_pattern$macrocall$1", "symbols": ["args_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -368,7 +368,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "args_pattern$macrocall$3", "symbols": ["args_pattern$macrocall$4"], "postprocess": id},
     {"name": "args_pattern$macrocall$3", "symbols": ["args_pattern$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "args_pattern", "symbols": ["args_pattern$macrocall$1", "pattern", "args_pattern$ebnf$1", "args_pattern$macrocall$3"], "postprocess": ([, mk_κ, mk_κs,]) => [mk_κ, ...mk_κs]},
-    {"name": "listOpt_pattern", "symbols": [], "postprocess": () => (κ: Cont) => κ},
+    {"name": "listOpt_pattern", "symbols": [], "postprocess": () => [(κ: Cont) => κ]},
     {"name": "listOpt_pattern$ebnf$1", "symbols": []},
     {"name": "listOpt_pattern$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listOpt_pattern$ebnf$1$subexpression$1$macrocall$1", "symbols": ["listOpt_pattern$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
