@@ -319,6 +319,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "pattern", "symbols": ["variable_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["pair_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["list_pattern"], "postprocess": id},
+    {"name": "pattern", "symbols": ["constr_pattern"], "postprocess": id},
     {"name": "variable_pattern", "symbols": ["var"]},
     {"name": "pair_pattern$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2"], "postprocess": id},
@@ -337,6 +338,27 @@ export var ParserRules: NearleyRule[] = [
     {"name": "list_pattern$macrocall$3", "symbols": ["list_pattern$macrocall$4"], "postprocess": id},
     {"name": "list_pattern$macrocall$3", "symbols": ["list_pattern$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "list_pattern", "symbols": ["list_pattern$macrocall$1", "listOpt_pattern", "list_pattern$macrocall$3"]},
+    {"name": "constr_pattern", "symbols": ["ctr", "args_pattern"], "postprocess":  ([c, p̅], _, reject) => {
+           assert(c instanceof Str)
+           if (arity(c) !== p̅.length) {
+              return reject
+           }
+           return [c, p̅]
+        } },
+    {"name": "args_pattern", "symbols": [], "postprocess": () => []},
+    {"name": "args_pattern$macrocall$2", "symbols": [{"literal":"("}]},
+    {"name": "args_pattern$macrocall$1", "symbols": ["args_pattern$macrocall$2"], "postprocess": id},
+    {"name": "args_pattern$macrocall$1", "symbols": ["args_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
+    {"name": "args_pattern$ebnf$1", "symbols": []},
+    {"name": "args_pattern$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},
+    {"name": "args_pattern$ebnf$1$subexpression$1$macrocall$1", "symbols": ["args_pattern$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
+    {"name": "args_pattern$ebnf$1$subexpression$1$macrocall$1", "symbols": ["args_pattern$ebnf$1$subexpression$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
+    {"name": "args_pattern$ebnf$1$subexpression$1", "symbols": ["args_pattern$ebnf$1$subexpression$1$macrocall$1", "expr"], "postprocess": ([, p]) => p},
+    {"name": "args_pattern$ebnf$1", "symbols": ["args_pattern$ebnf$1", "args_pattern$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
+    {"name": "args_pattern$macrocall$4", "symbols": [{"literal":")"}]},
+    {"name": "args_pattern$macrocall$3", "symbols": ["args_pattern$macrocall$4"], "postprocess": id},
+    {"name": "args_pattern$macrocall$3", "symbols": ["args_pattern$macrocall$4", "_"], "postprocess": ([x, ]) => x},
+    {"name": "args_pattern", "symbols": ["args_pattern$macrocall$1", "pattern", "args_pattern$ebnf$1", "args_pattern$macrocall$3"], "postprocess": ([, p, ps,]) => [p, ...ps]},
     {"name": "listOpt_pattern", "symbols": []},
     {"name": "listOpt_pattern$ebnf$1", "symbols": []},
     {"name": "listOpt_pattern$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},

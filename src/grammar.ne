@@ -207,7 +207,7 @@ typeMatch ->
    } %}
 
 typename ->
-   lexeme[%ident] 
+   lexeme[%ident]
    {% ([[x]]) => str(ν(), x.value) %} # deconstruct twice because macro doesn't seem to do it
 
 listOpt -> 
@@ -225,7 +225,8 @@ listRestOpt ->
 pattern ->
    variable_pattern {% id %} |
    pair_pattern {% id %} | 
-   list_pattern {% id %}
+   list_pattern {% id %} |
+   constr_pattern {% id %}
 
 variable_pattern -> 
    var
@@ -235,6 +236,23 @@ pair_pattern ->
 
 list_pattern -> 
    lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
+
+# Don't know how to build tries yet.
+constr_pattern ->
+   ctr args_pattern
+   {% ([c, p̅], _, reject) => {
+      assert(c instanceof Str)
+      if (arity(c) !== p̅.length) {
+         return reject
+      }
+      return [c, p̅]
+   } %}
+
+args_pattern ->
+   null 
+   {% () => [] %} |
+   lexeme["("] pattern (lexeme[","] expr {% ([, p]) => p %}):* lexeme[")"]
+   {% ([, p, ps,]) => [p, ...ps] %}
 
 listOpt_pattern -> 
    null | 
