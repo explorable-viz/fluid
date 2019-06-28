@@ -46,6 +46,9 @@ import { singleton } from "./FiniteMap"
 import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
 
+import Cont = Expr.Cont
+import Trie = Expr.Trie
+
 // Constructors must start with an uppercase letter, a la Haskell. Will fix this as part of issue #49.
 function isCtr (str: string): boolean {
    const ch: string = str.charAt(0)
@@ -270,7 +273,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "match$macrocall$2", "symbols": [{"literal":"→"}]},
     {"name": "match$macrocall$1", "symbols": ["match$macrocall$2"], "postprocess": id},
     {"name": "match$macrocall$1", "symbols": ["match$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "match", "symbols": ["pattern", "match$macrocall$1", "expr"]},
+    {"name": "match", "symbols": ["pattern", "match$macrocall$1", "expr"], "postprocess": ([mk_σ, , e]) => mk_σ(e)},
     {"name": "match", "symbols": ["pattern", "matches"]},
     {"name": "typeMatches", "symbols": ["typeMatch"]},
     {"name": "typeMatches$macrocall$2", "symbols": [{"literal":"{"}]},
@@ -320,7 +323,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "pattern", "symbols": ["pair_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["list_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["constr_pattern"], "postprocess": id},
-    {"name": "variable_pattern", "symbols": ["var"]},
+    {"name": "variable_pattern", "symbols": ["var"], "postprocess": ([x]) => (κ: Cont) => Trie.var_(x, κ)},
     {"name": "pair_pattern$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2"], "postprocess": id},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},

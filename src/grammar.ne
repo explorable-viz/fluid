@@ -37,6 +37,9 @@ import { singleton } from "./FiniteMap"
 import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
 
+import Cont = Expr.Cont
+import Trie = Expr.Trie
+
 // Constructors must start with an uppercase letter, a la Haskell. Will fix this as part of issue #49.
 function isCtr (str: string): boolean {
    const ch: string = str.charAt(0)
@@ -180,6 +183,7 @@ recDef ->
 fun -> 
    keyword["fun"] matches
    {% ([, σ]) => Expr.fun(ν(), σ) %}
+
 matchAs -> 
    keyword["match"] expr keyword["as"] matches
    {% ([, e, , σ]) => Expr.matchAs(ν(), e, σ) %}
@@ -188,8 +192,8 @@ matches ->
    match |
    lexeme["{"] match (lexeme[";"] match):* lexeme["}"]
 
-match -> 
-   pattern lexeme["→"] expr |
+match ->
+   pattern lexeme["→"] expr {% ([mk_σ, , e]) => mk_σ(e) %} |
    pattern matches
 
 typeMatches ->
@@ -230,6 +234,7 @@ pattern ->
 
 variable_pattern -> 
    var
+   {% ([x]) => (κ: Cont) => Trie.var_(x, κ) %}
 
 pair_pattern -> 
    lexeme["("] pattern lexeme[","] pattern lexeme[")"]
