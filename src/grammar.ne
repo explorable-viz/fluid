@@ -236,8 +236,9 @@ variable_pattern ->
    var
    {% ([x]) => (κ: Cont) => Trie.var_(x, κ) %}
 
-pair_pattern -> 
+pair_pattern ->
    lexeme["("] pattern lexeme[","] pattern lexeme[")"]
+   {% ([, mk_σ1, , mk_σ2, ,]) => (κ: Cont) => mk_σ1(mk_σ2(κ)) %}
 
 list_pattern -> 
    lexeme["["] listOpt_pattern lexeme["]"] # ouch: "

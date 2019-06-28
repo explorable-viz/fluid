@@ -333,7 +333,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "pair_pattern$macrocall$6", "symbols": [{"literal":")"}]},
     {"name": "pair_pattern$macrocall$5", "symbols": ["pair_pattern$macrocall$6"], "postprocess": id},
     {"name": "pair_pattern$macrocall$5", "symbols": ["pair_pattern$macrocall$6", "_"], "postprocess": ([x, ]) => x},
-    {"name": "pair_pattern", "symbols": ["pair_pattern$macrocall$1", "pattern", "pair_pattern$macrocall$3", "pattern", "pair_pattern$macrocall$5"]},
+    {"name": "pair_pattern", "symbols": ["pair_pattern$macrocall$1", "pattern", "pair_pattern$macrocall$3", "pattern", "pair_pattern$macrocall$5"], "postprocess": ([, mk_σ1, , mk_σ2, ,]) => (κ: Cont) => mk_σ1(mk_σ2(κ))},
     {"name": "list_pattern$macrocall$2", "symbols": [{"literal":"["}]},
     {"name": "list_pattern$macrocall$1", "symbols": ["list_pattern$macrocall$2"], "postprocess": id},
     {"name": "list_pattern$macrocall$1", "symbols": ["list_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
