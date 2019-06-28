@@ -38,7 +38,7 @@ const lexer = moo.compile({
 })
 
 
-import { List } from "./BaseTypes"
+import { Cons, List, Nil, nil } from "./BaseTypes"
 import { Expr } from "./Expr"
 import { ν, num, str } from "./Versioned"
 
@@ -135,7 +135,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "list$macrocall$4", "symbols": [{"literal":"]"}]},
     {"name": "list$macrocall$3", "symbols": ["list$macrocall$4"], "postprocess": id},
     {"name": "list$macrocall$3", "symbols": ["list$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "list", "symbols": ["list$macrocall$1", "listOpt", "list$macrocall$3"]},
+    {"name": "list", "symbols": ["list$macrocall$1", "listOpt", "list$macrocall$3"], "postprocess": ([, e, ]) => e},
     {"name": "typematch$macrocall$2", "symbols": [{"literal":"typematch"}]},
     {"name": "typematch$macrocall$1$macrocall$2", "symbols": ["typematch$macrocall$2"]},
     {"name": "typematch$macrocall$1$macrocall$1", "symbols": ["typematch$macrocall$1$macrocall$2"], "postprocess": id},
@@ -247,22 +247,22 @@ export var ParserRules: NearleyRule[] = [
     {"name": "typeMatch$macrocall$3", "symbols": ["typeMatch$macrocall$4"], "postprocess": id},
     {"name": "typeMatch$macrocall$3", "symbols": ["typeMatch$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "typeMatch", "symbols": ["typeMatch$macrocall$1", "typeMatch$macrocall$3", "expr"]},
-    {"name": "listOpt", "symbols": []},
+    {"name": "listOpt", "symbols": [], "postprocess": () => Expr.constr(ν(), str(ν(), Nil.name), nil(ν()))},
     {"name": "listOpt$ebnf$1", "symbols": []},
     {"name": "listOpt$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listOpt$ebnf$1$subexpression$1$macrocall$1", "symbols": ["listOpt$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
     {"name": "listOpt$ebnf$1$subexpression$1$macrocall$1", "symbols": ["listOpt$ebnf$1$subexpression$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "listOpt$ebnf$1$subexpression$1", "symbols": ["listOpt$ebnf$1$subexpression$1$macrocall$1", "expr"]},
+    {"name": "listOpt$ebnf$1$subexpression$1", "symbols": ["listOpt$ebnf$1$subexpression$1$macrocall$1", "expr"], "postprocess": ([, e]) => e},
     {"name": "listOpt$ebnf$1", "symbols": ["listOpt$ebnf$1", "listOpt$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "listOpt", "symbols": ["expr", "listOpt$ebnf$1", "listRestOpt"]},
-    {"name": "listRestOpt", "symbols": []},
+    {"name": "listOpt", "symbols": ["expr", "listOpt$ebnf$1", "listRestOpt"], "postprocess": ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => Expr.constr(ν(), str(ν(), Cons.name), List.fromArray([e, e̅])))},
+    {"name": "listRestOpt", "symbols": [], "postprocess": () => Expr.constr(ν(), str(ν(), Nil.name), nil(ν()))},
     {"name": "listRestOpt$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listRestOpt$macrocall$1", "symbols": ["listRestOpt$macrocall$2"], "postprocess": id},
     {"name": "listRestOpt$macrocall$1", "symbols": ["listRestOpt$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "listRestOpt$macrocall$4", "symbols": [{"literal":"..."}]},
     {"name": "listRestOpt$macrocall$3", "symbols": ["listRestOpt$macrocall$4"], "postprocess": id},
     {"name": "listRestOpt$macrocall$3", "symbols": ["listRestOpt$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "listRestOpt", "symbols": ["listRestOpt$macrocall$1", "listRestOpt$macrocall$3", "expr"]},
+    {"name": "listRestOpt", "symbols": ["listRestOpt$macrocall$1", "listRestOpt$macrocall$3", "expr"], "postprocess": ([, , e]) => e},
     {"name": "pattern", "symbols": ["var_pattern"]},
     {"name": "pattern", "symbols": ["pair_pattern"]},
     {"name": "pattern", "symbols": ["list_pattern"]},

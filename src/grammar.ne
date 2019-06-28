@@ -29,7 +29,7 @@ const lexer = moo.compile({
 @lexer lexer
 
 @{%
-import { List } from "./BaseTypes"
+import { Cons, List, Nil, nil } from "./BaseTypes"
 import { Expr } from "./Expr"
 import { ν, num, str } from "./Versioned"
 %}
@@ -87,7 +87,9 @@ string -> lexeme[%string] {% ([lit]) => Expr.constStr(ν(), str(ν(), lit as str
 number -> lexeme[%number] {% ([lit]) => Expr.constNum(ν(), num(ν(), new Number(lit as string).valueOf())) %}
 parenthExpr -> lexeme["("] expr lexeme[")"] {% ([, e,]) => e %}
 pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
-list -> lexeme["["] listOpt lexeme["]"] # ouch: "
+list -> 
+   lexeme["["] listOpt lexeme["]"] # ouch: "
+   {% ([, e, ]) => e %}
 typematch -> keyword["typematch"] expr keyword["as"] typeMatches
 
 defList -> 
@@ -129,12 +131,16 @@ typeMatches ->
 typeMatch -> lexeme[%ident] lexeme["→"] expr
 
 listOpt -> 
-   null |
-   expr (lexeme[","] expr):* listRestOpt
+   null 
+   {% () => Expr.constr(ν(), str(ν(), Nil.name), nil(ν())) %} |
+   expr (lexeme[","] expr {% ([, e]) => e %}):* listRestOpt
+   {% ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => Expr.constr(ν(), str(ν(), Cons.name), List.fromArray([e, e̅]))) %}
 
 listRestOpt ->
-   null |
-   lexeme[","] lexeme["..."] expr
+   null 
+   {% () => Expr.constr(ν(), str(ν(), Nil.name), nil(ν())) %} |
+   lexeme[","] lexeme["..."] expr 
+   {% ([, , e]) => e %}
 
 pattern -> 
    var_pattern | 
