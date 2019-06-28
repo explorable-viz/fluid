@@ -59,18 +59,17 @@ appChain ->
    simpleExpr {% id %} |
    appChain simpleExpr {% ([e1, e2]) => Expr.app(ν(), e1, e2) %}
 
-simpleExpr -> (
-   var |
-   string |
-   number |
-   parenthExpr |
-   pair |
-   defs1 |
-   list |
-   matchAs |
-   fun |
-   typematch
-) {% id %}
+simpleExpr ->
+   var {% id %} |
+   string {% id %} |
+   number {% id %} |
+   parenthExpr {% id %} |
+   pair {% id %} |
+   defs1 {% id %} |
+   list {% id %} |
+   matchAs {% id %} |
+   fun {% id %} |
+   typematch {% id %}
 
 var -> lexeme[%ident] {% ([x]) => str(ν(), x as string) %}
 string -> lexeme[%string] {% ([lit]) => Expr.constStr(ν(), str(ν(), lit as string)) %}
@@ -82,7 +81,7 @@ list -> lexeme["["] listOpt lexeme["]"] # ouch: "
 typematch -> keyword["typematch"] expr keyword["as"] typeMatches
 
 defList -> def (lexeme[";"] def):*
-def -> let | letrec | prim {% id %}
+def -> let {% id %} | letrec {% id %} | prim {% id %}
 
 let -> keyword["let"] var lexeme["="] expr {% ([, x, , e]) => Expr.let_(x, e) %}
 letrec -> keyword["letrec"] recDef (lexeme[";"] recDef):*
@@ -114,7 +113,10 @@ listRestOpt ->
    null |
    lexeme[","] lexeme["..."] expr
 
-pattern -> var_pattern | pair_pattern | list_pattern
+pattern -> 
+   var_pattern | 
+   pair_pattern | 
+   list_pattern
 
 var_pattern -> var
 pair_pattern -> lexeme["("] pattern lexeme[","] pattern lexeme[")"]
