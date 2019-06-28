@@ -45,6 +45,12 @@ function isCtr (str: string): boolean {
    const ch: string = str.charAt(0)
    return ch === ch.toUpperCase() && ch !== ch.toLowerCase()
 }
+
+type MkCont = (κ: Cont) => Cont
+
+function compose (mk_κ1: MkCont, mk_κ2: MkCont): MkCont {
+   return (κ: Cont) => mk_κ1(mk_κ2(κ))
+}
 %}
 
 # Allow leading whitespace/comments.
@@ -193,8 +199,8 @@ matches ->
    lexeme["{"] match (lexeme[";"] match):* lexeme["}"]
 
 match ->
-   pattern lexeme["→"] expr {% ([mk_σ, , e]) => mk_σ(e) %} |
-   pattern matches
+   pattern lexeme["→"] expr {% ([mk_κ, , e]) => mk_κ(e) %} |
+   pattern matches {% ([mk_κ1, mk_κ2]) => compose(mk_κ1, mk_κ2) %}
 
 typeMatches ->
    typeMatch |
@@ -238,35 +244,40 @@ variable_pattern ->
 
 pair_pattern ->
    lexeme["("] pattern lexeme[","] pattern lexeme[")"]
-   {% ([, mk_σ1, , mk_σ2, ,]) => (κ: Cont) => mk_σ1(mk_σ2(κ)) %}
+   {% ([, mk_κ1, , mk_κ2, ,]) => compose(mk_κ1, mk_κ2) %}
 
 list_pattern -> 
    lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
+   {% ([, mk_κs,]) => mk_κs.reduce(compose) %}
 
 # Don't know how to build tries yet.
 constr_pattern ->
    ctr args_pattern
-   {% ([c, p̅], _, reject) => {
+   {% ([c, mk_κs], _, reject) => {
       assert(c instanceof Str)
-      if (arity(c) !== p̅.length) {
+      if (arity(c) !== mk_κs.length) {
          return reject
       }
-      return [c, p̅]
+      return (κ: Cont) => Trie.constr(singleton(c, mk_κs.reduce(compose)(κ)))
    } %}
 
 args_pattern ->
    null 
-   {% () => [] %} |
-   lexeme["("] pattern (lexeme[","] expr {% ([, p]) => p %}):* lexeme[")"]
-   {% ([, p, ps,]) => [p, ...ps] %}
+   {% () => (κ: Cont) => κ %} |
+   lexeme["("] pattern (lexeme[","] pattern {% ([, mk_κ]) => mk_κ %}):* lexeme[")"]
+   {% ([, mk_κ, mk_κs,]) => [mk_κ, ...mk_κs] %}
 
 listOpt_pattern -> 
-   null | 
-   pattern (lexeme[","] pattern):* listRestOpt_pattern
+   null
+   {% () => (κ: Cont) => κ %} | 
+   pattern (lexeme[","] pattern {% ([, mk_κ]) => mk_κ %}):* listRestOpt_pattern
+   {% ([mk_κ1, mk_κs, mk_κ2]) => [mk_κ1, ...mk_κs, mk_κ2] %}
 
 listRestOpt_pattern ->
-   null |
+   null 
+   {% () => (κ: Cont) => κ %} |
    lexeme[","] lexeme["..."] pattern
+   {% ([, , mk_κ]) => mk_κ %}
 
 compareOp -> 
    lexeme[%compareOp] 

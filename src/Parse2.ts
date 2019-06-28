@@ -55,6 +55,12 @@ function isCtr (str: string): boolean {
    return ch === ch.toUpperCase() && ch !== ch.toLowerCase()
 }
 
+type MkCont = (κ: Cont) => Cont
+
+function compose (mk_κ1: MkCont, mk_κ2: MkCont): MkCont {
+   return (κ: Cont) => mk_κ1(mk_κ2(κ))
+}
+
 export interface Token { value: any; [key: string]: any };
 
 export interface Lexer {
@@ -273,8 +279,8 @@ export var ParserRules: NearleyRule[] = [
     {"name": "match$macrocall$2", "symbols": [{"literal":"→"}]},
     {"name": "match$macrocall$1", "symbols": ["match$macrocall$2"], "postprocess": id},
     {"name": "match$macrocall$1", "symbols": ["match$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "match", "symbols": ["pattern", "match$macrocall$1", "expr"], "postprocess": ([mk_σ, , e]) => mk_σ(e)},
-    {"name": "match", "symbols": ["pattern", "matches"]},
+    {"name": "match", "symbols": ["pattern", "match$macrocall$1", "expr"], "postprocess": ([mk_κ, , e]) => mk_κ(e)},
+    {"name": "match", "symbols": ["pattern", "matches"], "postprocess": ([mk_κ1, mk_κ2]) => compose(mk_κ1, mk_κ2)},
     {"name": "typeMatches", "symbols": ["typeMatch"]},
     {"name": "typeMatches$macrocall$2", "symbols": [{"literal":"{"}]},
     {"name": "typeMatches$macrocall$1", "symbols": ["typeMatches$macrocall$2"], "postprocess": id},
@@ -333,22 +339,22 @@ export var ParserRules: NearleyRule[] = [
     {"name": "pair_pattern$macrocall$6", "symbols": [{"literal":")"}]},
     {"name": "pair_pattern$macrocall$5", "symbols": ["pair_pattern$macrocall$6"], "postprocess": id},
     {"name": "pair_pattern$macrocall$5", "symbols": ["pair_pattern$macrocall$6", "_"], "postprocess": ([x, ]) => x},
-    {"name": "pair_pattern", "symbols": ["pair_pattern$macrocall$1", "pattern", "pair_pattern$macrocall$3", "pattern", "pair_pattern$macrocall$5"], "postprocess": ([, mk_σ1, , mk_σ2, ,]) => (κ: Cont) => mk_σ1(mk_σ2(κ))},
+    {"name": "pair_pattern", "symbols": ["pair_pattern$macrocall$1", "pattern", "pair_pattern$macrocall$3", "pattern", "pair_pattern$macrocall$5"], "postprocess": ([, mk_κ1, , mk_κ2, ,]) => compose(mk_κ1, mk_κ2)},
     {"name": "list_pattern$macrocall$2", "symbols": [{"literal":"["}]},
     {"name": "list_pattern$macrocall$1", "symbols": ["list_pattern$macrocall$2"], "postprocess": id},
     {"name": "list_pattern$macrocall$1", "symbols": ["list_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "list_pattern$macrocall$4", "symbols": [{"literal":"]"}]},
     {"name": "list_pattern$macrocall$3", "symbols": ["list_pattern$macrocall$4"], "postprocess": id},
     {"name": "list_pattern$macrocall$3", "symbols": ["list_pattern$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "list_pattern", "symbols": ["list_pattern$macrocall$1", "listOpt_pattern", "list_pattern$macrocall$3"]},
-    {"name": "constr_pattern", "symbols": ["ctr", "args_pattern"], "postprocess":  ([c, p̅], _, reject) => {
+    {"name": "list_pattern", "symbols": ["list_pattern$macrocall$1", "listOpt_pattern", "list_pattern$macrocall$3"], "postprocess": ([, mk_κs,]) => mk_κs.reduce(compose)},
+    {"name": "constr_pattern", "symbols": ["ctr", "args_pattern"], "postprocess":  ([c, mk_κs], _, reject) => {
            assert(c instanceof Str)
-           if (arity(c) !== p̅.length) {
+           if (arity(c) !== mk_κs.length) {
               return reject
            }
-           return [c, p̅]
+           return (κ: Cont) => Trie.constr(singleton(c, mk_κs.reduce(compose)(κ)))
         } },
-    {"name": "args_pattern", "symbols": [], "postprocess": () => []},
+    {"name": "args_pattern", "symbols": [], "postprocess": () => (κ: Cont) => κ},
     {"name": "args_pattern$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "args_pattern$macrocall$1", "symbols": ["args_pattern$macrocall$2"], "postprocess": id},
     {"name": "args_pattern$macrocall$1", "symbols": ["args_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -356,28 +362,28 @@ export var ParserRules: NearleyRule[] = [
     {"name": "args_pattern$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "args_pattern$ebnf$1$subexpression$1$macrocall$1", "symbols": ["args_pattern$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
     {"name": "args_pattern$ebnf$1$subexpression$1$macrocall$1", "symbols": ["args_pattern$ebnf$1$subexpression$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "args_pattern$ebnf$1$subexpression$1", "symbols": ["args_pattern$ebnf$1$subexpression$1$macrocall$1", "expr"], "postprocess": ([, p]) => p},
+    {"name": "args_pattern$ebnf$1$subexpression$1", "symbols": ["args_pattern$ebnf$1$subexpression$1$macrocall$1", "pattern"], "postprocess": ([, mk_κ]) => mk_κ},
     {"name": "args_pattern$ebnf$1", "symbols": ["args_pattern$ebnf$1", "args_pattern$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "args_pattern$macrocall$4", "symbols": [{"literal":")"}]},
     {"name": "args_pattern$macrocall$3", "symbols": ["args_pattern$macrocall$4"], "postprocess": id},
     {"name": "args_pattern$macrocall$3", "symbols": ["args_pattern$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "args_pattern", "symbols": ["args_pattern$macrocall$1", "pattern", "args_pattern$ebnf$1", "args_pattern$macrocall$3"], "postprocess": ([, p, ps,]) => [p, ...ps]},
-    {"name": "listOpt_pattern", "symbols": []},
+    {"name": "args_pattern", "symbols": ["args_pattern$macrocall$1", "pattern", "args_pattern$ebnf$1", "args_pattern$macrocall$3"], "postprocess": ([, mk_κ, mk_κs,]) => [mk_κ, ...mk_κs]},
+    {"name": "listOpt_pattern", "symbols": [], "postprocess": () => (κ: Cont) => κ},
     {"name": "listOpt_pattern$ebnf$1", "symbols": []},
     {"name": "listOpt_pattern$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listOpt_pattern$ebnf$1$subexpression$1$macrocall$1", "symbols": ["listOpt_pattern$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
     {"name": "listOpt_pattern$ebnf$1$subexpression$1$macrocall$1", "symbols": ["listOpt_pattern$ebnf$1$subexpression$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "listOpt_pattern$ebnf$1$subexpression$1", "symbols": ["listOpt_pattern$ebnf$1$subexpression$1$macrocall$1", "pattern"]},
+    {"name": "listOpt_pattern$ebnf$1$subexpression$1", "symbols": ["listOpt_pattern$ebnf$1$subexpression$1$macrocall$1", "pattern"], "postprocess": ([, mk_κ]) => mk_κ},
     {"name": "listOpt_pattern$ebnf$1", "symbols": ["listOpt_pattern$ebnf$1", "listOpt_pattern$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "listOpt_pattern", "symbols": ["pattern", "listOpt_pattern$ebnf$1", "listRestOpt_pattern"]},
-    {"name": "listRestOpt_pattern", "symbols": []},
+    {"name": "listOpt_pattern", "symbols": ["pattern", "listOpt_pattern$ebnf$1", "listRestOpt_pattern"], "postprocess": ([mk_κ1, mk_κs, mk_κ2]) => [mk_κ1, ...mk_κs, mk_κ2]},
+    {"name": "listRestOpt_pattern", "symbols": [], "postprocess": () => (κ: Cont) => κ},
     {"name": "listRestOpt_pattern$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listRestOpt_pattern$macrocall$1", "symbols": ["listRestOpt_pattern$macrocall$2"], "postprocess": id},
     {"name": "listRestOpt_pattern$macrocall$1", "symbols": ["listRestOpt_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "listRestOpt_pattern$macrocall$4", "symbols": [{"literal":"..."}]},
     {"name": "listRestOpt_pattern$macrocall$3", "symbols": ["listRestOpt_pattern$macrocall$4"], "postprocess": id},
     {"name": "listRestOpt_pattern$macrocall$3", "symbols": ["listRestOpt_pattern$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "listRestOpt_pattern", "symbols": ["listRestOpt_pattern$macrocall$1", "listRestOpt_pattern$macrocall$3", "pattern"]},
+    {"name": "listRestOpt_pattern", "symbols": ["listRestOpt_pattern$macrocall$1", "listRestOpt_pattern$macrocall$3", "pattern"], "postprocess": ([, , mk_κ]) => mk_κ},
     {"name": "compareOp$macrocall$2", "symbols": [(lexer.has("compareOp") ? {type: "compareOp"} : compareOp)]},
     {"name": "compareOp$macrocall$1", "symbols": ["compareOp$macrocall$2"], "postprocess": id},
     {"name": "compareOp$macrocall$1", "symbols": ["compareOp$macrocall$2", "_"], "postprocess": ([x, ]) => x},
