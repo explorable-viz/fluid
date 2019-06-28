@@ -349,7 +349,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "list_pattern", "symbols": ["list_pattern$macrocall$1", "listOpt_pattern", "list_pattern$macrocall$3"], "postprocess": ([, mk_κs,]) => mk_κs.reduce(compose)},
     {"name": "constr_pattern", "symbols": ["ctr", "args_pattern"], "postprocess":  ([c, mk_κs], _, reject) => {
            assert(c instanceof Str)
-           if (arity(c) !== mk_κs.length) {
+           if (arity(c) !== mk_κs.length - 1) { // because of terminal identity continuation
               return reject
            }
            return (κ: Cont) => Trie.constr(singleton(c, mk_κs.reduce(compose)(κ)))

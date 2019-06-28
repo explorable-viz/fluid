@@ -255,7 +255,7 @@ constr_pattern ->
    ctr args_pattern
    {% ([c, mk_κs], _, reject) => {
       assert(c instanceof Str)
-      if (arity(c) !== mk_κs.length) {
+      if (arity(c) !== mk_κs.length - 1) { // because of terminal identity continuation
          return reject
       }
       return (κ: Cont) => Trie.constr(singleton(c, mk_κs.reduce(compose)(κ)))
