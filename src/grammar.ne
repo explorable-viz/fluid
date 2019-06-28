@@ -80,7 +80,7 @@ defs1 -> defList keyword["in"] expr {% ([defs, , e]) => Expr.defs(ν(), defs, e)
 list -> lexeme["["] listOpt lexeme["]"] # ouch: "
 typematch -> keyword["typematch"] expr keyword["as"] typeMatches
 
-defList -> def (lexeme[";"] def):*
+defList -> def (lexeme[";"] def {% ([, def]) => def %}):* {% ([def, defs]) => { defs.unshift(def); return defs } %}
 def -> let {% id %} | letrec {% id %} | prim {% id %}
 
 let -> keyword["let"] var lexeme["="] expr {% ([, x, , e]) => Expr.let_(x, e) %}
