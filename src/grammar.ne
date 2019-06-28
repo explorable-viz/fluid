@@ -89,13 +89,20 @@ pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
 list -> lexeme["["] listOpt lexeme["]"] # ouch: "
 typematch -> keyword["typematch"] expr keyword["as"] typeMatches
 
-defList -> def (lexeme[";"] def {% ([, def]) => def %}):* {% ([def, defs]) => { defs.unshift(def); return defs } %}
+defList -> 
+   def (lexeme[";"] def {% ([, def]) => def %}):* 
+   {% ([def, defs]) => [def, ...defs] %}
 def -> let {% id %} | letrec {% id %} | prim {% id %}
 
-let -> keyword["let"] var lexeme["="] expr {% ([, x, , e]) => Expr.let_(x, e) %}
-letrec -> keyword["letrec"] recDef (lexeme[";"] recDef):*
-recDef -> keyword["fun"] var matches
+let -> 
+   keyword["let"] var lexeme["="] expr 
+   {% ([, x, , e]) => Expr.let_(x, e) %}
+letrec -> 
+   keyword["letrec"] recDef (lexeme[";"] recDef {% ([, recDef]) => recDef %}):* 
+   {% ([, recDef, δ]) => { δ.unshift(recDef); return Expr.letRec(δ) } %}
 prim -> keyword["primitive"] var
+
+recDef -> keyword["fun"] var matches
 
 fun -> keyword["fun"] matches
 matchAs -> keyword["match"] expr keyword["as"] matches
