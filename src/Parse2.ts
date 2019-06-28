@@ -38,8 +38,12 @@ const lexer = moo.compile({
 })
 
 
+import { assert, error } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes"
+import { types } from "./DataType"
 import { Expr } from "./Expr"
+import { singleton } from "./FiniteMap"
+import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
 
 export interface Token { value: any; [key: string]: any };
@@ -183,7 +187,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "prim$macrocall$1$macrocall$1", "symbols": ["prim$macrocall$1$macrocall$2"], "postprocess": id},
     {"name": "prim$macrocall$1$macrocall$1", "symbols": ["prim$macrocall$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "prim$macrocall$1", "symbols": ["prim$macrocall$1$macrocall$1"]},
-    {"name": "prim", "symbols": ["prim$macrocall$1", "var"]},
+    {"name": "prim", "symbols": ["prim$macrocall$1", "var"], "postprocess": ([, x]) => Expr.prim(x)},
     {"name": "recDef$macrocall$2", "symbols": [{"literal":"fun"}]},
     {"name": "recDef$macrocall$1$macrocall$2", "symbols": ["recDef$macrocall$2"]},
     {"name": "recDef$macrocall$1$macrocall$1", "symbols": ["recDef$macrocall$1$macrocall$2"], "postprocess": id},
@@ -240,13 +244,20 @@ export var ParserRules: NearleyRule[] = [
     {"name": "typeMatches$macrocall$3", "symbols": ["typeMatches$macrocall$4"], "postprocess": id},
     {"name": "typeMatches$macrocall$3", "symbols": ["typeMatches$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "typeMatches", "symbols": ["typeMatches$macrocall$1", "typeMatch", "typeMatches$ebnf$1", "typeMatches$macrocall$3"]},
-    {"name": "typeMatch$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
+    {"name": "typeMatch$macrocall$2", "symbols": [{"literal":"→"}]},
     {"name": "typeMatch$macrocall$1", "symbols": ["typeMatch$macrocall$2"], "postprocess": id},
     {"name": "typeMatch$macrocall$1", "symbols": ["typeMatch$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "typeMatch$macrocall$4", "symbols": [{"literal":"→"}]},
-    {"name": "typeMatch$macrocall$3", "symbols": ["typeMatch$macrocall$4"], "postprocess": id},
-    {"name": "typeMatch$macrocall$3", "symbols": ["typeMatch$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "typeMatch", "symbols": ["typeMatch$macrocall$1", "typeMatch$macrocall$3", "expr"]},
+    {"name": "typeMatch", "symbols": ["typename", "typeMatch$macrocall$1", "expr"], "postprocess":  ([x, , e]) => {
+           assert(x instanceof Str)
+           if (!types.has(x.val)) {
+              error(`Type name ${x.val} not found.`)
+           }
+           return singleton(x, e)
+        } },
+    {"name": "typename$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
+    {"name": "typename$macrocall$1", "symbols": ["typename$macrocall$2"], "postprocess": id},
+    {"name": "typename$macrocall$1", "symbols": ["typename$macrocall$2", "_"], "postprocess": ([x, ]) => x},
+    {"name": "typename", "symbols": ["typename$macrocall$1"], "postprocess": ([[x]]) => str(ν(), x.value)},
     {"name": "listOpt", "symbols": [], "postprocess": () => Expr.constr(ν(), str(ν(), Nil.name), nil(ν()))},
     {"name": "listOpt$ebnf$1", "symbols": []},
     {"name": "listOpt$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},
@@ -303,19 +314,19 @@ export var ParserRules: NearleyRule[] = [
     {"name": "compareOp$macrocall$2", "symbols": [(lexer.has("compareOp") ? {type: "compareOp"} : compareOp)]},
     {"name": "compareOp$macrocall$1", "symbols": ["compareOp$macrocall$2"], "postprocess": id},
     {"name": "compareOp$macrocall$1", "symbols": ["compareOp$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "compareOp", "symbols": ["compareOp$macrocall$1"], "postprocess": id},
+    {"name": "compareOp", "symbols": ["compareOp$macrocall$1"], "postprocess": ([[x]]) => x.value},
     {"name": "exponentOp$macrocall$2", "symbols": [(lexer.has("exponentOp") ? {type: "exponentOp"} : exponentOp)]},
     {"name": "exponentOp$macrocall$1", "symbols": ["exponentOp$macrocall$2"], "postprocess": id},
     {"name": "exponentOp$macrocall$1", "symbols": ["exponentOp$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "exponentOp", "symbols": ["exponentOp$macrocall$1"], "postprocess": id},
+    {"name": "exponentOp", "symbols": ["exponentOp$macrocall$1"], "postprocess": ([[x]]) => x.value},
     {"name": "productOp$macrocall$2", "symbols": [(lexer.has("productOp") ? {type: "productOp"} : productOp)]},
     {"name": "productOp$macrocall$1", "symbols": ["productOp$macrocall$2"], "postprocess": id},
     {"name": "productOp$macrocall$1", "symbols": ["productOp$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "productOp", "symbols": ["productOp$macrocall$1"], "postprocess": id},
+    {"name": "productOp", "symbols": ["productOp$macrocall$1"], "postprocess": ([[x]]) => x.value},
     {"name": "sumOp$macrocall$2", "symbols": [(lexer.has("sumOp") ? {type: "sumOp"} : sumOp)]},
     {"name": "sumOp$macrocall$1", "symbols": ["sumOp$macrocall$2"], "postprocess": id},
     {"name": "sumOp$macrocall$1", "symbols": ["sumOp$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "sumOp", "symbols": ["sumOp$macrocall$1"], "postprocess": id}
+    {"name": "sumOp", "symbols": ["sumOp$macrocall$1"], "postprocess": ([[x]]) => x.value}
 ];
 
 export var ParserStart: string = "rootExpr";

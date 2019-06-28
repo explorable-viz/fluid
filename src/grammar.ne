@@ -29,8 +29,12 @@ const lexer = moo.compile({
 @lexer lexer
 
 @{%
+import { assert, error } from "./util/Core"
 import { Cons, List, Nil, nil } from "./BaseTypes"
+import { types } from "./DataType"
 import { Expr } from "./Expr"
+import { singleton } from "./FiniteMap"
+import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
 %}
 
@@ -95,6 +99,7 @@ typematch -> keyword["typematch"] expr keyword["as"] typeMatches
 defList -> 
    def (lexeme[";"] def {% ([, def]) => def %}):* 
    {% ([def, defs]) => List.fromArray([def, ...defs]) %}
+
 def -> let {% id %} | letrec {% id %} | prim {% id %}
 
 let -> 
@@ -103,7 +108,9 @@ let ->
 letrec -> 
    keyword["letrec"] recDef (lexeme[";"] recDef {% ([, recDef]) => recDef %}):* 
    {% ([, recDef, δ]) => Expr.letRec(List.fromArray([recDef, ...δ])) %}
-prim -> keyword["primitive"] var
+prim -> 
+   keyword["primitive"] var
+   {% ([, x]) => Expr.prim(x) %}
 
 recDef -> 
    keyword["fun"] var matches
@@ -128,7 +135,18 @@ typeMatches ->
    typeMatch |
    lexeme["{"] typeMatch (lexeme[";"] typeMatch):* lexeme["}"]
 
-typeMatch -> lexeme[%ident] lexeme["→"] expr
+typeMatch -> 
+   typename lexeme["→"] expr
+   {% ([x, , e]) => {
+      assert(x instanceof Str)
+      if (!types.has(x.val)) {
+         error(`Type name ${x.val} not found.`)
+      }
+      return singleton(x, e)
+   } %}
+
+typename ->
+   lexeme[%ident] {% ([[x]]) => str(ν(), x.value) %} # deconstruct twice because macro doesn't seem to do it
 
 listOpt -> 
    null 
@@ -143,7 +161,7 @@ listRestOpt ->
    {% ([, , e]) => e %}
 
 pattern -> 
-   var_pattern | 
+   var_pattern |
    pair_pattern | 
    list_pattern
 
@@ -159,7 +177,7 @@ listRestOpt_pattern ->
    null |
    lexeme[","] lexeme["..."] pattern
 
-compareOp -> lexeme[%compareOp] {% id %}
-exponentOp -> lexeme[%exponentOp] {% id %}
-productOp -> lexeme[%productOp] {% id %}
-sumOp -> lexeme[%sumOp] {% id %}
+compareOp -> lexeme[%compareOp] {% ([[x]]) => x.value %}
+exponentOp -> lexeme[%exponentOp] {% ([[x]]) => x.value %}
+productOp -> lexeme[%productOp] {% ([[x]]) => x.value %}
+sumOp -> lexeme[%sumOp] {% ([[x]]) => x.value %}
