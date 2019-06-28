@@ -121,7 +121,8 @@ defList ->
    def (lexeme[";"] def {% ([, def]) => def %}):* 
    {% ([def, defs]) => List.fromArray([def, ...defs]) %}
 
-def -> let {% id %} | letrec {% id %} | prim {% id %}
+def -> 
+   let {% id %} | letrec {% id %} | prim {% id %}
 
 let -> 
    keyword["let"] var lexeme["="] expr 
@@ -181,14 +182,19 @@ listRestOpt ->
    lexeme[","] lexeme["..."] expr 
    {% ([, , e]) => e %}
 
-pattern -> 
-   var_pattern |
-   pair_pattern | 
-   list_pattern
+pattern ->
+   var_pattern {% id %} |
+   pair_pattern {% id %} | 
+   list_pattern {% id %}
 
-var_pattern -> var
-pair_pattern -> lexeme["("] pattern lexeme[","] pattern lexeme[")"]
-list_pattern -> lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
+var_pattern -> 
+   var
+
+pair_pattern -> 
+   lexeme["("] pattern lexeme[","] pattern lexeme[")"]
+
+list_pattern -> 
+   lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
 
 listOpt_pattern -> 
    null | 
@@ -198,7 +204,18 @@ listRestOpt_pattern ->
    null |
    lexeme[","] lexeme["..."] pattern
 
-compareOp -> lexeme[%compareOp] {% ([[x]]) => x.value %}
-exponentOp -> lexeme[%exponentOp] {% ([[x]]) => x.value %}
-productOp -> lexeme[%productOp] {% ([[x]]) => x.value %}
-sumOp -> lexeme[%sumOp] {% ([[x]]) => x.value %}
+compareOp -> 
+   lexeme[%compareOp] 
+   {% ([[x]]) => x.value %}
+
+exponentOp -> 
+   lexeme[%exponentOp]
+   {% ([[x]]) => x.value %}
+
+productOp -> 
+   lexeme[%productOp] 
+   {% ([[x]]) => x.value %}
+
+sumOp ->
+   lexeme[%sumOp] 
+   {% ([[x]]) => x.value %}
