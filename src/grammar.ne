@@ -30,7 +30,7 @@ const lexer = moo.compile({
 
 @{%
 import { assert, error } from "./util/Core"
-import { Cons, List, Nil, nil } from "./BaseTypes"
+import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton } from "./FiniteMap"
@@ -58,7 +58,7 @@ expr ->
 defs1 ->
    defList keyword["in"] expr {% ([defs, , e]) => Expr.defs(ν(), defs, e) %}
 
-compareExpr -> 
+compareExpr ->
    compareExpr compareOp sumExpr {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} | 
    sumExpr {% id %}
 sumExpr -> 
@@ -85,16 +85,36 @@ simpleExpr ->
    matchAs {% id %} |
    typematch {% id %}
 
-variable -> var {% ([x]) => Expr.var_(ν(), x) %}
-var -> lexeme[%ident] {% ([[x]]) => str(ν(), x.value) %}
-string -> lexeme[%string] {% ([lit]) => Expr.constStr(ν(), str(ν(), lit as string)) %}
-number -> lexeme[%number] {% ([lit]) => Expr.constNum(ν(), num(ν(), new Number(lit as string).valueOf())) %}
-parenthExpr -> lexeme["("] expr lexeme[")"] {% ([, e,]) => e %}
-pair -> lexeme["("] expr lexeme[","] expr lexeme[")"]
+variable -> 
+   var 
+   {% ([x]) => Expr.var_(ν(), x) %}
+
+var -> 
+   lexeme[%ident] 
+   {% ([[x]]) => str(ν(), x.value) %}
+
+string -> 
+   lexeme[%string] 
+   {% ([lit]) => Expr.constStr(ν(), str(ν(), lit as string)) %}
+
+number ->
+   lexeme[%number] 
+   {% ([lit]) => Expr.constNum(ν(), num(ν(), new Number(lit as string).valueOf())) %}
+
+parenthExpr -> 
+   lexeme["("] expr lexeme[")"] 
+   {% ([, e,]) => e %}
+
+pair -> 
+   lexeme["("] expr lexeme[","] expr lexeme[")"]
+   {% ([, e1, , e2,]) => Expr.constr(ν(), str(ν(), Pair.name), List.fromArray([e1, e2])) %}
+
 list -> 
    lexeme["["] listOpt lexeme["]"] # ouch: "
    {% ([, e, ]) => e %}
-typematch -> keyword["typematch"] expr keyword["as"] typeMatches
+
+typematch -> 
+   keyword["typematch"] expr keyword["as"] typeMatches
 
 defList -> 
    def (lexeme[";"] def {% ([, def]) => def %}):* 

@@ -39,7 +39,7 @@ const lexer = moo.compile({
 
 
 import { assert, error } from "./util/Core"
-import { Cons, List, Nil, nil } from "./BaseTypes"
+import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton } from "./FiniteMap"
@@ -132,7 +132,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "pair$macrocall$6", "symbols": [{"literal":")"}]},
     {"name": "pair$macrocall$5", "symbols": ["pair$macrocall$6"], "postprocess": id},
     {"name": "pair$macrocall$5", "symbols": ["pair$macrocall$6", "_"], "postprocess": ([x, ]) => x},
-    {"name": "pair", "symbols": ["pair$macrocall$1", "expr", "pair$macrocall$3", "expr", "pair$macrocall$5"]},
+    {"name": "pair", "symbols": ["pair$macrocall$1", "expr", "pair$macrocall$3", "expr", "pair$macrocall$5"], "postprocess": ([, e1, , e2,]) => Expr.constr(ν(), str(ν(), Pair.name), List.fromArray([e1, e2]))},
     {"name": "list$macrocall$2", "symbols": [{"literal":"["}]},
     {"name": "list$macrocall$1", "symbols": ["list$macrocall$2"], "postprocess": id},
     {"name": "list$macrocall$1", "symbols": ["list$macrocall$2", "_"], "postprocess": ([x, ]) => x},
