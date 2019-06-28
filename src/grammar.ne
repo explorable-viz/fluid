@@ -9,11 +9,11 @@ const lexer = moo.compile({
         keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
       })
    },
-   WS: {
+   whitespace: {
       match: /[ \t\r\n]+/, // include \s?
       lineBreaks: true
    },
-   comment: /\/\/.*?$/,
+   singleLineComment: /\/\/.*?$/,
    // WIP: JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
    number: /0|[1-9][0-9]*/,
    string: /"(?:\\["\\]|[^\n"\\])*"/,
@@ -33,15 +33,17 @@ import { Expr } from "./Expr"
 import { ν, num, str } from "./Versioned"
 %}
 
-# Match expr with leading whitespace/comments.
+# Allow leading whitespace/comments.
 rootExpr -> 
-   %WS expr {% ([, e]) => e %} |
+   _ expr {% ([, e]) => e %} |
    expr {% id %}
 
 lexeme[X] ->
    $X {% id %} | 
-   $X %WS {% ([x, ]) => x %}
-keyword[X] -> lexeme[$X] # currently no reserved words
+   $X _ {% ([x, ]) => x %}
+keyword[X] -> lexeme[$X]
+
+_ -> %whitespace | %singleLineComment
 
 expr -> 
    compareExpr {% id %} |
