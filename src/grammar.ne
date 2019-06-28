@@ -10,10 +10,10 @@ const lexer = moo.compile({
       })
    },
    whitespace: {
-      match: /[ \t\r\n]+/, // include \s?
+      match: /[ \f\t\r\n]+/,
       lineBreaks: true
    },
-   singleLineComment: /\/\/.*?$/,
+   singleLineComment: /\/\/.*$/,
    // WIP: JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
    number: /0|[1-9][0-9]*/,
    string: /"(?:\\["\\]|[^\n"\\])*"/,
@@ -43,7 +43,7 @@ lexeme[X] ->
    $X _ {% ([x, ]) => x %}
 keyword[X] -> lexeme[$X]
 
-_ -> %whitespace | %singleLineComment
+_ -> (%whitespace | %singleLineComment):+
 
 expr -> 
    compareExpr {% id %} |
