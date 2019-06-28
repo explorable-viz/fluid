@@ -141,15 +141,10 @@ export var ParserRules: NearleyRule[] = [
     {"name": "list$macrocall$3", "symbols": ["list$macrocall$4"], "postprocess": id},
     {"name": "list$macrocall$3", "symbols": ["list$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "list", "symbols": ["list$macrocall$1", "listOpt", "list$macrocall$3"], "postprocess": ([, e, ]) => e},
-    {"name": "constr", "symbols": ["ctr", "args"], "postprocess":  ([c, e̅]) => {
+    {"name": "constr", "symbols": ["ctr", "args"], "postprocess":  ([c, e̅], _, reject) => {
            assert(c instanceof Str)
-           // Enforce consistency with constructor signatures.
-           const n: number = arity(c)
-           if (n > e̅.length) {
-              error(`Too few arguments to constructor ${c.val}.`)
-           }
-           if (n < e̅.length) {
-              error(`Too many arguments to constructor ${c.val}.`)
+           if (arity(c) !== e̅.length) {
+              return reject
            }
            return Expr.constr(ν(), c, List.fromArray(e̅))
         } },
@@ -175,7 +170,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "args$macrocall$4", "symbols": [{"literal":")"}]},
     {"name": "args$macrocall$3", "symbols": ["args$macrocall$4"], "postprocess": id},
     {"name": "args$macrocall$3", "symbols": ["args$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "args", "symbols": ["args$macrocall$1", "expr", "args$ebnf$1", "args$macrocall$3"], "postprocess": ([e, es]) => [e, ...es]},
+    {"name": "args", "symbols": ["args$macrocall$1", "expr", "args$ebnf$1", "args$macrocall$3"], "postprocess": ([, e, es,]) => [e, ...es]},
     {"name": "typematch$macrocall$2", "symbols": [{"literal":"typematch"}]},
     {"name": "typematch$macrocall$1$macrocall$2", "symbols": ["typematch$macrocall$2"]},
     {"name": "typematch$macrocall$1$macrocall$1", "symbols": ["typematch$macrocall$1$macrocall$2"], "postprocess": id},

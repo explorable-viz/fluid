@@ -114,17 +114,14 @@ list ->
    lexeme["["] listOpt lexeme["]"] # ouch: "
    {% ([, e, ]) => e %}
 
+# inconsistency with constructor signatures must now be an unsuccessful parse, rather than an
+# error per se.
 constr ->
    ctr args
-   {% ([c, e̅]) => {
+   {% ([c, e̅], _, reject) => {
       assert(c instanceof Str)
-      // Enforce consistency with constructor signatures.
-      const n: number = arity(c)
-      if (n > e̅.length) {
-         error(`Too few arguments to constructor ${c.val}.`)
-      }
-      if (n < e̅.length) {
-         error(`Too many arguments to constructor ${c.val}.`)
+      if (arity(c) !== e̅.length) {
+         return reject
       }
       return Expr.constr(ν(), c, List.fromArray(e̅))
    } %}
@@ -143,7 +140,7 @@ args ->
    null 
    {% () => [] %} |
    lexeme["("] expr (lexeme[","] expr {% ([, e]) => e %}):* lexeme[")"]
-   {% ([e, es]) => [e, ...es] %}
+   {% ([, e, es,]) => [e, ...es] %}
 
 typematch ->
    keyword["typematch"] expr keyword["as"] typeMatches
