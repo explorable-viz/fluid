@@ -269,7 +269,9 @@ listRestOpt_pattern ->
    null 
    {% () => (κ: Cont) => Trie.constr(singleton(str(ν(), Nil.name), κ)) %} |
    lexeme[","] lexeme["..."] pattern
-   {% ([, , mk_κ]) => mk_κ %}
+   {% ([, , mk_κ]) => mk_κ %} |
+   lexeme[","] list1_pattern
+   {% ([, mk_κ]) => mk_κ %}
 
 constr_pattern ->
    ctr args_pattern

@@ -358,6 +358,10 @@ export var ParserRules: NearleyRule[] = [
     {"name": "listRestOpt_pattern$macrocall$3", "symbols": ["listRestOpt_pattern$macrocall$4"], "postprocess": id},
     {"name": "listRestOpt_pattern$macrocall$3", "symbols": ["listRestOpt_pattern$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "listRestOpt_pattern", "symbols": ["listRestOpt_pattern$macrocall$1", "listRestOpt_pattern$macrocall$3", "pattern"], "postprocess": ([, , mk_κ]) => mk_κ},
+    {"name": "listRestOpt_pattern$macrocall$6", "symbols": [{"literal":","}]},
+    {"name": "listRestOpt_pattern$macrocall$5", "symbols": ["listRestOpt_pattern$macrocall$6"], "postprocess": id},
+    {"name": "listRestOpt_pattern$macrocall$5", "symbols": ["listRestOpt_pattern$macrocall$6", "_"], "postprocess": ([x, ]) => x},
+    {"name": "listRestOpt_pattern", "symbols": ["listRestOpt_pattern$macrocall$5", "list1_pattern"], "postprocess": ([, mk_κ]) => mk_κ},
     {"name": "constr_pattern", "symbols": ["ctr", "args_pattern"], "postprocess":  ([c, mk_κs], _, reject) => {
            assert(c instanceof Str)
            if (arity(c) !== mk_κs.length - 1) { // adjust for terminal identity continuation
