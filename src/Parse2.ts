@@ -38,7 +38,7 @@ const lexer = moo.compile({
 })
 
 
-import { assert, error } from "./util/Core"
+import { __check, assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
@@ -279,7 +279,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "match$macrocall$2", "symbols": [{"literal":"→"}]},
     {"name": "match$macrocall$1", "symbols": ["match$macrocall$2"], "postprocess": id},
     {"name": "match$macrocall$1", "symbols": ["match$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "match", "symbols": ["pattern", "match$macrocall$1", "expr"], "postprocess": ([mk_κ, , e]) => mk_κ(e)},
+    {"name": "match", "symbols": ["pattern", "match$macrocall$1", "expr"], "postprocess": ([mk_κ, , e]) => __check(mk_κ, it => typeof it === "function")(e)},
     {"name": "match", "symbols": ["pattern", "matches"], "postprocess": ([mk_κ1, κ]) => mk_κ1(κ)},
     {"name": "typeMatches", "symbols": ["typeMatch"]},
     {"name": "typeMatches$macrocall$2", "symbols": [{"literal":"{"}]},
@@ -346,14 +346,10 @@ export var ParserRules: NearleyRule[] = [
     {"name": "list_pattern$macrocall$4", "symbols": [{"literal":"]"}]},
     {"name": "list_pattern$macrocall$3", "symbols": ["list_pattern$macrocall$4"], "postprocess": id},
     {"name": "list_pattern$macrocall$3", "symbols": ["list_pattern$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "list_pattern", "symbols": ["list_pattern$macrocall$1", "listOpt_pattern", "list_pattern$macrocall$3"], "postprocess": id},
-    {"name": "listOpt_pattern", "symbols": [], "postprocess": () => [(κ: Cont) => Trie.constr(singleton(str(ν(), Nil.name), κ))]},
+    {"name": "list_pattern", "symbols": ["list_pattern$macrocall$1", "listOpt_pattern", "list_pattern$macrocall$3"], "postprocess": ([, mk_κ, ]) => mk_κ},
+    {"name": "listOpt_pattern", "symbols": [], "postprocess": () => (κ: Cont) => Trie.constr(singleton(str(ν(), Nil.name), κ))},
     {"name": "listOpt_pattern", "symbols": ["list1_pattern"], "postprocess": id},
     {"name": "list1_pattern", "symbols": ["pattern", "listRestOpt_pattern"], "postprocess": ([mk_κ1, mk_κ2]) => (κ: Cont) => Trie.constr(singleton(str(ν(), Cons.name), compose(mk_κ1, mk_κ2)(κ)))},
-    {"name": "listRest_pattern$macrocall$2", "symbols": [{"literal":","}]},
-    {"name": "listRest_pattern$macrocall$1", "symbols": ["listRest_pattern$macrocall$2"], "postprocess": id},
-    {"name": "listRest_pattern$macrocall$1", "symbols": ["listRest_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "listRest_pattern", "symbols": ["listRest_pattern$macrocall$1", "list1_pattern"], "postprocess": ([, mk_κ]) => mk_κ},
     {"name": "listRestOpt_pattern", "symbols": [], "postprocess": () => (κ: Cont) => Trie.constr(singleton(str(ν(), Nil.name), κ))},
     {"name": "listRestOpt_pattern$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listRestOpt_pattern$macrocall$1", "symbols": ["listRestOpt_pattern$macrocall$2"], "postprocess": id},

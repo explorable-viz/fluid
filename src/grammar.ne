@@ -29,7 +29,7 @@ const lexer = moo.compile({
 @lexer lexer
 
 @{%
-import { assert, error } from "./util/Core"
+import { __check, assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
@@ -203,8 +203,8 @@ matches ->
 
 match ->
    pattern lexeme["→"] expr 
-   {% ([mk_κ, , e]) => mk_κ(e) %} |
-   pattern matches 
+   {% ([mk_κ, , e]) => __check(mk_κ, it => typeof it === "function")(e) %} |
+   pattern matches
    {% ([mk_κ1, κ]) => mk_κ1(κ) %}
 
 typeMatches ->
@@ -253,11 +253,11 @@ pair_pattern ->
 
 list_pattern -> 
    lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
-   {% id %}
+   {% ([, mk_κ, ]) => mk_κ %}
 
 listOpt_pattern -> 
    null
-   {% () => [(κ: Cont) => Trie.constr(singleton(str(ν(), Nil.name), κ))] %} | 
+   {% () => (κ: Cont) => Trie.constr(singleton(str(ν(), Nil.name), κ)) %} | 
    list1_pattern
    {% id %}
 
