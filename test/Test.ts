@@ -31,7 +31,7 @@ describe("example", () => {
 		})
    })
 
-   xdescribe("bar-chart", () => {
+   describe("bar-chart", () => {
 		it("ok", () => {
          const ρ: Env = openDatasetAs("renewables", "data"),
 			      e: Expr = openWithImports("bar-chart", [module_graphics])
