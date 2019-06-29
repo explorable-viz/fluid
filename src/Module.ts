@@ -1,10 +1,10 @@
-import { __nonNull } from "./util/Core"
-import { successfulParse } from "./util/parse/Core"
+import { Grammar, Parser } from "nearley"
+import { __nonNull, as, error } from "./util/Core"
 import { List } from "./BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
-import { Parse } from "./Parse"
+import * as grammar from "./Parse"
 import { ν, str } from "./Versioned"
 
 // Kindergarten modules.
@@ -23,7 +23,7 @@ function import_ (modules: Module[], e: Expr): Expr {
    }
 }
 
-function importDefaults (e: Expr): Expr {
+export function importDefaults (e: Expr): Expr {
    return import_([module_prelude], e)
 }
 
@@ -38,8 +38,11 @@ export function loadTestFile (folder: string, file: string): string {
    return __nonNull(text!)
 }
 
+// Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
 export function loadModule (file: string): Module {
-   return successfulParse(Parse.defList, loadTestFile("lcalc/lib", file))
+   const fileʹ: string = loadTestFile("lcalc/lib", file) + " in 0",
+         e: Expr.Defs = as(successfulParse2(fileʹ), Expr.Defs)
+   return e.def̅
 }
 
 export function open (file: string): Expr {
@@ -51,14 +54,20 @@ export function openWithImports (file: string, modules: Module[]): Expr {
 }
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
-   const e: Expr = parse(loadTestFile("lcalc/dataset", file))
+   const e: Expr = parseWithImports(loadTestFile("lcalc/dataset", file), [])
    return Env.singleton(str(ν(), x), Eval.eval_(emptyEnv(), e).v)
 }
 
-export function parse (src: string): Expr {
-   return importDefaults(successfulParse(Parse.expr, src))
+export function parseWithImports (src: string, modules: Module[]): Expr {
+   return importDefaults(import_(modules, successfulParse2(src)))
 }
 
-export function parseWithImports (src: string, modules: Module[]): Expr {
-   return importDefaults(import_(modules, successfulParse(Parse.expr, src)))
+// https://github.com/kach/nearley/issues/276#issuecomment-324162234
+export function successfulParse2 (str: string): Expr {
+   const results: any[] = new Parser(Grammar.fromCompiled(grammar)).feed(str).results
+   console.log(results)
+   if (results.length > 1) {
+      error("Ambiguous parse.")
+   }
+   return results[0]
 }

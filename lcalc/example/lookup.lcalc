@@ -10,7 +10,7 @@ let compare =
 letrec
    fun lookup k {
       Empty → None;
-      NonEmpty(t1, (key, val), t2) →
+      NonEmpty(t1, (key, val), t2) → 
          match compare (k, key) as {
             LT → lookup k t2;
             EQ → Some(val);
