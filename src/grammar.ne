@@ -33,7 +33,7 @@ import { __check, assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
-import { singleton } from "./FiniteMap"
+import { singleton, unionWith } from "./FiniteMap"
 import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
 
@@ -163,7 +163,7 @@ args ->
 
 typematch ->
    keyword["typematch"] expr keyword["as"] typeMatches
-   {% ([, e, ,m]) => Expr.typematch(ν(), e, m) %}
+   {% ([, e, , m]) => Expr.typematch(ν(), e, m) %}
 
 defList -> 
    def (lexeme[";"] def {% ([, def]) => def %}):* 
@@ -208,8 +208,10 @@ match ->
    {% ([mk_κ1, σ]) => mk_κ1(Expr.fun(ν(), σ)) %}
 
 typeMatches ->
-   typeMatch |
-   lexeme["{"] typeMatch (lexeme[";"] typeMatch):* lexeme["}"]
+   typeMatch
+   {% id %} |
+   lexeme["{"] typeMatch (lexeme[";"] typeMatch {% ([, m]) => m %}):* lexeme["}"]
+   {% ([, m, ms,]) => [m, ...ms].reduce((m1, m2) => unionWith(m1, m2, (e: Expr, eʹ: Expr): Expr => error("Overlapping typecase branches."))) %}
 
 typeMatch -> 
    typename lexeme["→"] expr

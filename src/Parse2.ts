@@ -42,7 +42,7 @@ import { __check, assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
-import { singleton } from "./FiniteMap"
+import { singleton, unionWith } from "./FiniteMap"
 import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
 
@@ -201,7 +201,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "typematch$macrocall$3$macrocall$1", "symbols": ["typematch$macrocall$3$macrocall$2"], "postprocess": id},
     {"name": "typematch$macrocall$3$macrocall$1", "symbols": ["typematch$macrocall$3$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "typematch$macrocall$3", "symbols": ["typematch$macrocall$3$macrocall$1"]},
-    {"name": "typematch", "symbols": ["typematch$macrocall$1", "expr", "typematch$macrocall$3", "typeMatches"], "postprocess": ([, e, m]) => Expr.typematch(ν(), e, m)},
+    {"name": "typematch", "symbols": ["typematch$macrocall$1", "expr", "typematch$macrocall$3", "typeMatches"], "postprocess": ([, e, , m]) => Expr.typematch(ν(), e, m)},
     {"name": "defList$ebnf$1", "symbols": []},
     {"name": "defList$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":";"}]},
     {"name": "defList$ebnf$1$subexpression$1$macrocall$1", "symbols": ["defList$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
@@ -281,7 +281,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "match$macrocall$1", "symbols": ["match$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "match", "symbols": ["pattern", "match$macrocall$1", "expr"], "postprocess": ([mk_κ, , e]) => mk_κ(e)},
     {"name": "match", "symbols": ["pattern", "matches"], "postprocess": ([mk_κ1, σ]) => mk_κ1(Expr.fun(ν(), σ))},
-    {"name": "typeMatches", "symbols": ["typeMatch"]},
+    {"name": "typeMatches", "symbols": ["typeMatch"], "postprocess": id},
     {"name": "typeMatches$macrocall$2", "symbols": [{"literal":"{"}]},
     {"name": "typeMatches$macrocall$1", "symbols": ["typeMatches$macrocall$2"], "postprocess": id},
     {"name": "typeMatches$macrocall$1", "symbols": ["typeMatches$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -289,12 +289,12 @@ export var ParserRules: NearleyRule[] = [
     {"name": "typeMatches$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":";"}]},
     {"name": "typeMatches$ebnf$1$subexpression$1$macrocall$1", "symbols": ["typeMatches$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
     {"name": "typeMatches$ebnf$1$subexpression$1$macrocall$1", "symbols": ["typeMatches$ebnf$1$subexpression$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "typeMatches$ebnf$1$subexpression$1", "symbols": ["typeMatches$ebnf$1$subexpression$1$macrocall$1", "typeMatch"]},
+    {"name": "typeMatches$ebnf$1$subexpression$1", "symbols": ["typeMatches$ebnf$1$subexpression$1$macrocall$1", "typeMatch"], "postprocess": ([, m]) => m},
     {"name": "typeMatches$ebnf$1", "symbols": ["typeMatches$ebnf$1", "typeMatches$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "typeMatches$macrocall$4", "symbols": [{"literal":"}"}]},
     {"name": "typeMatches$macrocall$3", "symbols": ["typeMatches$macrocall$4"], "postprocess": id},
     {"name": "typeMatches$macrocall$3", "symbols": ["typeMatches$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "typeMatches", "symbols": ["typeMatches$macrocall$1", "typeMatch", "typeMatches$ebnf$1", "typeMatches$macrocall$3"]},
+    {"name": "typeMatches", "symbols": ["typeMatches$macrocall$1", "typeMatch", "typeMatches$ebnf$1", "typeMatches$macrocall$3"], "postprocess": ([, m, ms,]) => [m, ...ms].reduce((m1, m2) => unionWith(m1, m2, (e: Expr, eʹ: Expr): Expr => error("Overlapping typecase branches.")))},
     {"name": "typeMatch$macrocall$2", "symbols": [{"literal":"→"}]},
     {"name": "typeMatch$macrocall$1", "symbols": ["typeMatch$macrocall$2"], "postprocess": id},
     {"name": "typeMatch$macrocall$1", "symbols": ["typeMatch$macrocall$2", "_"], "postprocess": ([x, ]) => x},
