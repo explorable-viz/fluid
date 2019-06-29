@@ -175,9 +175,11 @@ def ->
 let -> 
    keyword["let"] var lexeme["="] expr 
    {% ([, x, , e]) => Expr.let_(x, e) %}
+
 letrec -> 
    keyword["letrec"] recDef (lexeme[";"] recDef {% ([, recDef]) => recDef %}):* 
    {% ([, recDef, δ]) => Expr.letRec(List.fromArray([recDef, ...δ])) %}
+
 prim -> 
    keyword["primitive"] var
    {% ([, x]) => Expr.prim(x) %}
@@ -195,12 +197,15 @@ matchAs ->
    {% ([, e, , σ]) => Expr.matchAs(ν(), e, σ) %}
 
 matches ->
-   match |
-   lexeme["{"] match (lexeme[";"] match):* lexeme["}"]
+   match {% id %} |
+   lexeme["{"] match (lexeme[";"] match {% ([, m]) => m %}):* lexeme["}"]
+   {% ([, m, ms,]) => [m, ...ms].reduce(Trie.Trie.join) %}
 
 match ->
-   pattern lexeme["→"] expr {% ([mk_κ, , e]) => mk_κ(e) %} |
-   pattern matches {% ([mk_κ1, mk_κ2]) => compose(mk_κ1, mk_κ2) %}
+   pattern lexeme["→"] expr 
+   {% ([mk_κ, , e]) => mk_κ(e) %} |
+   pattern matches 
+   {% ([mk_κ1, κ]) => mk_κ1(κ) %}
 
 typeMatches ->
    typeMatch |
@@ -244,7 +249,7 @@ variable_pattern ->
 
 pair_pattern ->
    lexeme["("] pattern lexeme[","] pattern lexeme[")"]
-   {% ([, mk_κ1, , mk_κ2, ,]) => compose(mk_κ1, mk_κ2) %}
+   {% ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => Trie.constr(singleton(str(ν(), "Pair"), compose(mk_κ1, mk_κ2)(κ))) %}
 
 list_pattern -> 
    lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
