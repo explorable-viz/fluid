@@ -279,15 +279,15 @@ constr_pattern ->
    ctr args_pattern
    {% ([c, mk_κs], _, reject) => {
       assert(c instanceof Str)
-      if (arity(c) !== mk_κs.length - 1) { // adjust for terminal identity continuation
+      if (arity(c) !== mk_κs.length) {
          return reject
       }
-      return (κ: Cont) => Trie.constr(singleton(c, mk_κs.reduce(compose)(κ)))
+      return (κ: Cont) => Trie.constr(singleton(c, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)))
    } %}
 
 args_pattern ->
    null 
-   {% () => [(κ: Cont) => κ] %} |
+   {% () => [] %} |
    lexeme["("] pattern (lexeme[","] pattern {% ([, mk_κ]) => mk_κ %}):* lexeme[")"]
    {% ([, mk_κ, mk_κs,]) => [mk_κ, ...mk_κs] %}
 
