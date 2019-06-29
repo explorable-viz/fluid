@@ -240,7 +240,7 @@ typeMatch ->
 
 typename ->
    lexeme[%ident]
-   {% ([[x]]) => str(ν(), x.value) %} # deconstruct twice because macro doesn't seem to do it
+   {% ([[x]]) => str(ν(), x.value) %}
 
 listOpt -> 
    null 
@@ -306,18 +306,7 @@ args_pattern ->
    lexeme["("] pattern (lexeme[","] pattern {% ([, mk_κ]) => mk_κ %}):* lexeme[")"]
    {% ([, mk_κ, mk_κs,]) => [mk_κ, ...mk_κs] %}
 
-compareOp -> 
-   lexeme[%compareOp] 
-   {% ([[x]]) => x.value %}
-
-exponentOp -> 
-   lexeme[%exponentOp]
-   {% ([[x]]) => x.value %}
-
-productOp -> 
-   lexeme[%productOp] 
-   {% ([[x]]) => x.value %}
-
-sumOp ->
-   lexeme[%sumOp] 
-   {% ([[x]]) => x.value %}
+compareOp -> lexeme[%compareOp] {% ([[x]]) => x.value %}
+exponentOp -> lexeme[%exponentOp] {% ([[x]]) => x.value %}
+productOp -> lexeme[%productOp] {% ([[x]]) => x.value %}
+sumOp -> lexeme[%sumOp] {% ([[x]]) => x.value %}
