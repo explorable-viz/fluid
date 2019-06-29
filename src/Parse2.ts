@@ -32,10 +32,10 @@ const lexer = moo.compile({
    string: /"(?:\\["\\]|[^\n"\\])*"/,
    // not quite sure why I can't use literals here:
    sumOp: /\-|\+\+|\+/,
-   productOp: /\*|\//,
    exponentOp: /\*\*/,
+   productOp: /\*|\//, // must come after exponentOp
    compareOp: /===|==|<==|<=|<|>==|>=|>/,
-   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "..."], // needs to come after compareOp
+   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "..."], // must come after compareOp
 })
 
 
