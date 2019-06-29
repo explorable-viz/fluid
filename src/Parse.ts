@@ -324,7 +324,7 @@ function constr_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
 }
 
 // This was very hard to figure out; the types aren't helping as much as they should.
-function listRest_pattern <K extends Cont> (p: Parser<K>): Parser<Trie<K>> {
+function listRestOpt_pattern <K extends Cont> (p: Parser<K>): Parser<Trie<K>> {
    return (state: ParseState) => 
       choice([
          dropFirst(symbol(","), dropFirst(symbol("..."), pattern(p))),
@@ -335,12 +335,12 @@ function listRest_pattern <K extends Cont> (p: Parser<K>): Parser<Trie<K>> {
 
 function list1_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return withAction(
-      pattern(listRest_pattern(p)),
+      pattern(listRestOpt_pattern(p)),
       (σ: Trie<K>) => Trie.constr(singleton(str(ν(), "Cons"), σ as K))
    )
 }
 
-function list_patternʹ<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
+function listOpt_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
    return choice([
       list1_pattern(p),
       withAction(p, (κ: K) => Trie.constr(singleton(str(ν(), "Nil"), κ)))
@@ -348,7 +348,7 @@ function list_patternʹ<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
 }
 
 function list_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {
-   return dropFirst(symbol(strings.bracketL), list_patternʹ(dropFirst(symbol(strings.bracketR), p)))
+   return dropFirst(symbol(strings.bracketL), listOpt_pattern(dropFirst(symbol(strings.bracketR), p)))
 }
 
 function pair_pattern<K extends Cont> (p: Parser<K>): Parser<Trie.Constr<K>> {

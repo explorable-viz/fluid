@@ -249,11 +249,27 @@ variable_pattern ->
 
 pair_pattern ->
    lexeme["("] pattern lexeme[","] pattern lexeme[")"]
-   {% ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => Trie.constr(singleton(str(ν(), "Pair"), compose(mk_κ1, mk_κ2)(κ))) %}
+   {% ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => Trie.constr(singleton(str(ν(), Pair.name), compose(mk_κ1, mk_κ2)(κ))) %}
 
 list_pattern -> 
    lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
-   {% ([, mk_κs,]) => mk_κs.reduce(compose) %}
+   {% id %}
+
+listOpt_pattern -> 
+   null
+   {% () => [(κ: Cont) => Trie.constr(singleton(str(ν(), Nil.name), κ))] %} | 
+   list1_pattern
+   {% id %}
+
+list1_pattern ->
+   pattern listRestOpt_pattern
+   {% ([mk_κ1, mk_κ2]) => (κ: Cont) => Trie.constr(singleton(str(ν(), Cons.name), compose(mk_κ1, mk_κ2)(κ))) %}
+
+listRestOpt_pattern ->
+   null 
+   {% () => (κ: Cont) => Trie.constr(singleton(str(ν(), Nil.name), κ)) %} |
+   lexeme[","] lexeme["..."] pattern
+   {% ([, , mk_κ]) => mk_κ %}
 
 constr_pattern ->
    ctr args_pattern
@@ -270,18 +286,6 @@ args_pattern ->
    {% () => [(κ: Cont) => κ] %} |
    lexeme["("] pattern (lexeme[","] pattern {% ([, mk_κ]) => mk_κ %}):* lexeme[")"]
    {% ([, mk_κ, mk_κs,]) => [mk_κ, ...mk_κs] %}
-
-listOpt_pattern -> 
-   null
-   {% () => [(κ: Cont) => κ] %} | 
-   pattern (lexeme[","] pattern {% ([, mk_κ]) => mk_κ %}):* listRestOpt_pattern
-   {% ([mk_κ1, mk_κs, mk_κ2]) => [mk_κ1, ...mk_κs, mk_κ2] %}
-
-listRestOpt_pattern ->
-   null 
-   {% () => (κ: Cont) => κ %} |
-   lexeme[","] lexeme["..."] pattern
-   {% ([, , mk_κ]) => mk_κ %}
 
 compareOp -> 
    lexeme[%compareOp] 
