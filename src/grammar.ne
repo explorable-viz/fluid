@@ -255,12 +255,11 @@ list_pattern ->
    lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
    {% ([, mk_κs,]) => mk_κs.reduce(compose) %}
 
-# Don't know how to build tries yet.
 constr_pattern ->
    ctr args_pattern
    {% ([c, mk_κs], _, reject) => {
       assert(c instanceof Str)
-      if (arity(c) !== mk_κs.length - 1) { // because of terminal identity continuation
+      if (arity(c) !== mk_κs.length - 1) { // adjust for terminal identity continuation
          return reject
       }
       return (κ: Cont) => Trie.constr(singleton(c, mk_κs.reduce(compose)(κ)))
