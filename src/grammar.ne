@@ -68,7 +68,9 @@ _ -> (%whitespace | %singleLineComment):+
 expr -> 
    compareExpr {% id %} |
    defs1 {% id %} |
-   fun {% id %}
+   fun {% id %} |
+   matchAs {% id %} |
+   typematch {% id %}
 
 defs1 ->
    defList keyword["in"] expr {% ([defs, , e]) => Expr.defs(ν(), defs, e) %}
@@ -97,9 +99,7 @@ simpleExpr ->
    parenthExpr {% id %} |
    pair {% id %} |
    list {% id %} |
-   constr {% id %} |
-   matchAs {% id %} |
-   typematch {% id %}
+   constr {% id %}
 
 variable -> 
    var 
