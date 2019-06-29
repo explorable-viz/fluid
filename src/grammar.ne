@@ -20,10 +20,10 @@ const lexer = moo.compile({
    string: /"(?:\\["\\]|[^\n"\\])*"/,
    // not quite sure why I can't use literals here:
    sumOp: /\-|\+\+|\+/,
-   productOp: /\*|\//,
    exponentOp: /\*\*/,
+   productOp: /\*|\//, // must come after exponentOp
    compareOp: /===|==|<==|<=|<|>==|>=|>/,
-   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "..."], // needs to come after compareOp
+   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "..."], // must come after compareOp
 })
 %}
 
@@ -74,24 +74,38 @@ expr ->
    typematch {% id %}
 
 defs1 ->
-   defList keyword["in"] expr {% ([defs, , e]) => Expr.defs(ν(), defs, e) %}
+   defList keyword["in"] expr 
+   {% ([defs, , e]) => Expr.defs(ν(), defs, e) %}
 
 compareExpr ->
-   compareExpr compareOp sumExpr {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} | 
-   sumExpr {% id %}
+   compareExpr compareOp sumExpr 
+   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} | 
+   sumExpr 
+   {% id %}
+
 sumExpr -> 
-   sumExpr sumOp productExpr {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} | 
-   productExpr {% id %}
+   sumExpr sumOp productExpr 
+   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} | 
+   productExpr 
+   {% id %}
+   
 productExpr -> 
-   productExpr productOp exponentExpr {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} |
-   exponentExpr {% id %}
+   productExpr productOp exponentExpr 
+   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} |
+   exponentExpr 
+   {% id %}
+
 exponentExpr -> 
-   exponentExpr exponentOp appChain {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} |
-   appChain {% id %}
+   exponentExpr exponentOp appChain 
+   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(ν(), op), e2) %} |
+   appChain 
+   {% id %}
 
 appChain -> 
-   simpleExpr {% id %} |
-   appChain simpleExpr {% ([e1, e2]) => Expr.app(ν(), e1, e2) %}
+   simpleExpr 
+   {% id %} |
+   appChain simpleExpr 
+   {% ([e1, e2]) => Expr.app(ν(), e1, e2) %}
 
 simpleExpr ->
    variable {% id %} |

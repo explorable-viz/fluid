@@ -1,11 +1,9 @@
 import { Grammar, Parser } from "nearley"
-import { __nonNull, error } from "./util/Core"
-import { SyntaxNode, successfulParse } from "./util/parse/Core"
+import { __nonNull, as, error } from "./util/Core"
 import { List } from "./BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
-import { Parse } from "./Parse"
 import * as grammar from "./Parse2"
 import { ν, str } from "./Versioned"
 
@@ -40,8 +38,11 @@ export function loadTestFile (folder: string, file: string): string {
    return __nonNull(text!)
 }
 
+// Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
 export function loadModule (file: string): Module {
-   return successfulParse(Parse.defList, loadTestFile("lcalc/lib", file))
+   const fileʹ: string = loadTestFile("lcalc/lib", file) + " in 0",
+         e: Expr.Defs = as(successfulParse2(fileʹ), Expr.Defs)
+   return e.def̅
 }
 
 export function open (file: string): Expr {
@@ -63,7 +64,7 @@ export function parseWithImports (src: string, modules: Module[]): Expr {
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
-export function successfulParse2<T extends SyntaxNode> (str: string): T {
+export function successfulParse2 (str: string): Expr {
    const results: any[] = new Parser(Grammar.fromCompiled(grammar)).feed(str).results
    console.log(results)
    if (results.length > 1) {
