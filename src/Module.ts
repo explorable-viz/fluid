@@ -4,7 +4,7 @@ import { List } from "./BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
-import * as grammar from "./Parse2"
+import * as grammar from "./Parse"
 import { ν, str } from "./Versioned"
 
 // Kindergarten modules.
