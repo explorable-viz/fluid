@@ -202,7 +202,7 @@ export namespace Expr {
                }
                return constr(unionWith(σ.cases, τ.cases, join))
             } else {
-               return absurd("Undefined join.", this, τ)
+               return absurd("Undefined join.", σ, τ)
             }
          }
       }
