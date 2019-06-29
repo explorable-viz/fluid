@@ -14,8 +14,9 @@ const lexer = moo.compile({
       lineBreaks: true
    },
    singleLineComment: /\/\/.*$/,
-   // WIP: JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
-   number: /0|[1-9][0-9]*/,
+   // JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
+   // Seems Moo requires us to use non-capturing groups (?:)
+   number: /\-?0|[1-9][0-9]*(?:\.[0-9]+)?(?:[e|E][-|+]?[0-9]+)?/,
    string: /"(?:\\["\\]|[^\n"\\])*"/,
    // not quite sure why I can't use literals here:
    sumOp: /\-|\+\+|\+/,
