@@ -163,7 +163,7 @@ args ->
 
 typematch ->
    keyword["typematch"] expr keyword["as"] typeMatches
-   {% ([, e, m]) => Expr.typematch(ν(), e, m) %}
+   {% ([, e, ,m]) => Expr.typematch(ν(), e, m) %}
 
 defList -> 
    def (lexeme[";"] def {% ([, def]) => def %}):* 
