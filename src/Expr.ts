@@ -167,13 +167,13 @@ export namespace Expr {
       return at(k, Quote, e)
    }
 
-   export class Typecase extends Expr {
+   export class Typematch extends Expr {
       e: Expr = _
       cases: FiniteMap<Expr> = _
    }
 
-   export function typecase (k: Id, e: Expr, cases: FiniteMap<Expr>): Typecase {
-      return at(k, Typecase, e, cases)
+   export function typematch (k: Id, e: Expr, cases: FiniteMap<Expr>): Typematch {
+      return at(k, Typematch, e, cases)
    }
 
    export class Var extends Expr {

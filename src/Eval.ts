@@ -212,7 +212,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             tv: ExplValue = eval_(ρ.concat(ρʹ), eʹ)
       return explValue(Expl.matchAs(kₜ, tu, ξ, tv), copyAt(kᵥ, tv.v))
    } else
-   if (e instanceof Expr.Typecase) {
+   if (e instanceof Expr.Typematch) {
       const tu: ExplValue = eval_(ρ, e.e),
             d: DataType | PrimType = ctrToDataType.get(className(tu.v)) || types.get(className(tu.v))!,
             eʹ: Expr | undefined = get(e.cases, d.name)

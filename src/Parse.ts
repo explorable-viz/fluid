@@ -25,7 +25,7 @@ import MatchAs = Expr.MatchAs
 import Prim = Expr.Prim
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
-import Typecase = Expr.Typecase
+import Typecase = Expr.Typematch
 import Var = Expr.Var
 
 // General convention: define parsers 'pointfully' (as functions), rather than as combinator expressions,
@@ -443,7 +443,7 @@ function typeMatches (state: ParseState): ParseResult<FiniteMap<Expr>> | null {
 const typematch: Parser<Typecase> =
    withAction(
       dropFirst(keyword(strings.typematch), seq(expr, dropFirst(keyword(strings.as), typeMatches))),
-      ([e, m]: [Expr, FiniteMap<Expr>]) => Expr.typecase(ν(), e, m)
+      ([e, m]: [Expr, FiniteMap<Expr>]) => Expr.typematch(ν(), e, m)
    )
 
 // Any expression other than an operator tree or application chain.

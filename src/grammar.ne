@@ -163,7 +163,7 @@ args ->
 
 typematch ->
    keyword["typematch"] expr keyword["as"] typeMatches
-   {% ([, e, m]) => Expr.typecase(ν(), e, m) %}
+   {% ([, e, m]) => Expr.typematch(ν(), e, m) %}
 
 defList -> 
    def (lexeme[";"] def {% ([, def]) => def %}):* 
@@ -203,9 +203,9 @@ matches ->
 
 match ->
    pattern lexeme["→"] expr 
-   {% ([mk_κ, , e]) => __check(mk_κ, it => typeof it === "function")(e) %} |
+   {% ([mk_κ, , e]) => mk_κ(e) %} |
    pattern matches
-   {% ([mk_κ1, κ]) => mk_κ1(κ) %}
+   {% ([mk_κ1, σ]) => mk_κ1(Expr.fun(ν(), σ)) %}
 
 typeMatches ->
    typeMatch |
