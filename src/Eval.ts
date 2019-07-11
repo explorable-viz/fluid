@@ -189,7 +189,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    // Binary operators are (currently) "syntax", rather than first-class.
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.val)) {
-         const op: BinaryOp = binaryOps.get(e.opName.val)!, // TODO: add annotations to opName
+         const op: BinaryOp = binaryOps.get(e.opName.val)!,
                [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
                [v1, v2]: [Versioned<Value>, Versioned<Value>] = [tv1.v, tv2.v]
          if ((v1 instanceof Num || v1 instanceof Str) && (v2 instanceof Num || v2 instanceof Str)) {

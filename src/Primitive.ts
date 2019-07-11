@@ -1,6 +1,6 @@
 import { as, assert } from "./util/Core"
 import { Bool, true_, false_ } from "./BaseTypes"
-import { Id, Num, PrimOpTag, PrimValue, Str, _, Value, make } from "./Value"
+import { Id, Num, PrimOpTag, PrimValue, Str, _, Value } from "./Value"
 import { Versioned, asVersioned, at, ν, num, str } from "./Versioned"
 
 type Unary<T, V> = (x: T) => (k: Id) => Versioned<V>
@@ -13,22 +13,12 @@ export class PrimOp<Tag extends PrimOpTag> extends Value<Tag> {
    name: string = _
 }
 
-// First-class ops are not statically versioned; the values known statically to the interpreter are not
-// versioned, but the copies manipulated at runtime are.
 export class UnaryOp extends PrimOp<"UnaryOp"> {
    op: Unary<PrimValue, Value> = _
 }
 
-function unary (name: string, op: Unary<PrimValue, Value>): Versioned<UnaryOp> {
-   return at(ν(), UnaryOp, name, op)
-}
-
 export class BinaryOp extends PrimOp<"BinaryOp"> {
    op: Binary<PrimValue, PrimValue, Value> = _
-}
-
-function binary (name: string, op: Binary<PrimValue, PrimValue, Value>): BinaryOp {
-   return make(BinaryOp, name, op)
 }
 
 const ceiling = (x: Num) => (k: Id): Versioned<Num> => num(k, Math.ceil(x.val))
@@ -58,11 +48,11 @@ const times = (x: Num, y: Num) => (k: Id): Versioned<Num> => num(k, as(x, Num).v
 
 // Convenience methods for building the maps. Export to allow other modules to provide operations.
 export function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): Versioned<UnaryOp> {
-   return unary(op.name, op)
+   return at(ν(), UnaryOp, op.name, op)
 }
 
-export function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): BinaryOp {
-   return binary(op.name, op)
+export function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): Versioned<BinaryOp> {
+   return at(ν(), BinaryOp, op.name, op)
 }
 
 // Primitives with identifiers as names are unary and first-class.
@@ -75,7 +65,7 @@ export const unaryOps: Map<string, Versioned<UnaryOp>> = new Map([
    [trace.name, unary_(trace)]
 ])
    
-export const binaryOps: Map<string, BinaryOp> = new Map([
+export const binaryOps: Map<string, Versioned<BinaryOp>> = new Map([
    ["-", binary_(minus)],
    ["+", binary_(plus)],
    ["*", binary_(times)],

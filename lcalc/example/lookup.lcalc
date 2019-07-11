@@ -1,18 +1,9 @@
-let compare =
-   fun (x, y) →
-      match x < y as {
-         True → LT;
-         False → match x > y as {
-            True → GT;
-            False → EQ
-         }
-      };
 letrec
    fun lookup k {
       Empty → None;
       NonEmpty(t1, (key, val), t2) → 
          match compare (k, key) as {
-            LT → lookup k t2;
+            LT → lookup k t1;
             EQ → Some(val);
             GT → lookup k t2
          }

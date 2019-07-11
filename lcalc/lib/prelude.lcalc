@@ -34,6 +34,17 @@ let head = fun [x, ...xs] → x;
 // a → a
 let id = fun x → x;
 
+// Num → Num → Ordering
+let compare =
+   fun (x, y) →
+      match x < y as {
+         True → LT;
+         False → match x > y as {
+            True → GT;
+            False → EQ
+         }
+      };
+
 // List a → List a → List a
 letrec fun concat {
    [] ys → ys;
