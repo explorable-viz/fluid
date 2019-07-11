@@ -3,7 +3,7 @@ letrec
       Empty → None;
       NonEmpty(t1, (key, val), t2) → 
          match compare (k, key) as {
-            LT → lookup k t2;
+            LT → lookup k t1;
             EQ → Some(val);
             GT → lookup k t2
          }
