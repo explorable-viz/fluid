@@ -10,10 +10,6 @@ export class Rect extends DataValue<"Rect"> {
    height: Num = _
 }
 
-export function rect (width: Num, height: Num): Rect {
-   return make(Rect, width, height)
-}
-
 export class Point extends DataValue<"Point"> {
    x: Num = _
    y: Num = _
@@ -21,10 +17,6 @@ export class Point extends DataValue<"Point"> {
    toString(): string {
       return `Point(${this.x},${this.y})`
    }
-}
-
-export function point (x: Num, y: Num): Point {
-   return make(Point, x, y)
 }
 
 export type GraphicsElementTag = "Graphic" | "Polyline" | "Polygon" | "Text" | "Translate"
