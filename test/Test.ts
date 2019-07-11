@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { BwdSlice, FwdSlice } from "./util/Core"
-import { Cons, List, Nil, NonEmpty, Pair } from "../src/BaseTypes"
+import { Cons, List, Nil, NonEmpty, Pair, Some } from "../src/BaseTypes"
 import { Env } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
@@ -172,7 +172,9 @@ describe("example", () => {
 				}
 				expect (): void {
                this.val
-                  .assert(Str, str => str.toString() === "sarah")
+                  .push()
+                     .to(Some, "t")
+                     .assert(Str, str => str.toString() === `"sarah"`).pop()
                   .needed()
 				}
 			})(e)
