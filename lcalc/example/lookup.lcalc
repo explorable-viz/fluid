@@ -1,12 +1,3 @@
-let compare =
-   fun (x, y) →
-      match x < y as {
-         True → LT;
-         False → match x > y as {
-            True → GT;
-            False → EQ
-         }
-      };
 letrec
    fun lookup k {
       Empty → None;

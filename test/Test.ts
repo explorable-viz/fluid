@@ -5,6 +5,7 @@ import { Cons, List, Nil, NonEmpty, Pair } from "../src/BaseTypes"
 import { Env } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
+import { Str } from "../src/Value"
 
 import Trie = Expr.Trie
 
@@ -157,7 +158,7 @@ describe("example", () => {
 
    describe("lookup", () => {
 		it("ok", () => {
-			const e: Expr = open("lookup")
+         const e: Expr = open("lookup")
 			const last = new (class extends FwdSlice {
 				setup (): void {
 					this.expr
@@ -170,7 +171,9 @@ describe("example", () => {
 							.constrArg("Pair", 0).notNeed().pop()
 				}
 				expect (): void {
-					this.val.needed()
+               this.val
+                  .assert(Str, str => str.toString() === "sarah")
+                  .needed()
 				}
 			})(e)
 			new (class extends FwdSlice {
