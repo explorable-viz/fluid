@@ -1,6 +1,6 @@
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
-import { Num, Str, _, make } from "./Value"
+import { Num, Str, _ } from "./Value"
 import { List } from "./BaseTypes"
 
 // Basic graphical datatypes.
