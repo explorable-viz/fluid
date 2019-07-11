@@ -1,6 +1,6 @@
 import { ann } from "./util/Annotated"
 import { zip } from "./util/Array"
-import { __nonNull, absurd, assert, className, error } from "./util/Core"
+import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
 import { DataValue } from "./DataValue"
@@ -220,7 +220,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
          return error(`Typecase mismatch: no clause for ${className(tu.v)}.`)
       } else {
          const tv: ExplValue = eval_(ρ, eʹ)
-         return explValue(Expl.typecase(kₜ, tu, tv), copyAt(kᵥ, tv.v))
+         return explValue(Expl.typematch(kₜ, tu, tv), copyAt(kᵥ, tv.v))
       }
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
@@ -231,14 +231,14 @@ function toExpr (t: Expl): Expr {
    return (t.__id as ExplId).k.args[1] as Expr
 }
 
-export function eval_fwd ({t, v}: ExplValue): void {
-   const e: Expr = toExpr(t)
+export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    if (t instanceof Expl.Empty) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
          setα(e.__α, v)
       } else
       if (v instanceof DataValue) {
-         v.fieldExplValues().map(([t, v]) => eval_fwd(explValue(t, v)))
+         const eʹ: Expr.Constr = as(e, Expr.Constr)
+         zip(v.fieldExplValues(), eʹ.args.toArray()).map(([[t, v], e]) => eval_fwd(e, explValue(t, v)))
          setα(e.__α, v)
       }
    } else
@@ -249,34 +249,40 @@ export function eval_fwd ({t, v}: ExplValue): void {
       setα(ann.meet(e.__α, t.v.__α), v)
    } else
    if (t instanceof Expl.App) {
-      eval_fwd(t.tf)
-      eval_fwd(t.tu)
+      const eʹ: Expr.App = as(e, Expr.App)
+      eval_fwd(eʹ.f, t.tf)
+      eval_fwd(eʹ.e, t.tu)
       recDefs_(Direction.Fwd, t.δ)
       eval_fwd(t.tv)
       setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.UnaryApp) {
-      eval_fwd(t.tf)
-      eval_fwd(t.tv)
+      const eʹ: Expr.App = as(e, Expr.App)
+      eval_fwd(eʹ.f, t.tf)
+      eval_fwd(eʹ.f, t.tv)
       setα(ann.meet(t.tf.v.__α, t.tv.v.__α, e.__α), v)
    } else
    if (t instanceof Expl.BinaryApp) {
-      eval_fwd(t.tv1)
-      eval_fwd(t.tv2)
+      const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
+      eval_fwd(eʹ.e1, t.tv1)
+      eval_fwd(eʹ.e2, t.tv2)
       setα(ann.meet(t.tv1.v.__α, t.tv2.v.__α, e.__α), v)
    } else
    if (t instanceof Expl.Defs) {
+      const eʹ: Expr.Defs = as(e, Expr.Defs)
       defs_fwd(t.def̅)
-      eval_fwd(t.tv)
+      eval_fwd(eʹ.e, t.tv)
       setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.MatchAs) {
-      eval_fwd(t.tu)
+      const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
+      eval_fwd(eʹ.e, t.tu)
       eval_fwd(t.tv)
       setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
    } else
-   if (t instanceof Expl.Typecase) {
-      eval_fwd(t.tu)
+   if (t instanceof Expl.Typematch) {
+      const eʹ: Expr.Typematch = as(e, Expr.Typematch)
+      eval_fwd(eʹ.e, t.tu)
       eval_fwd(t.tv)
       setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else {
@@ -345,7 +351,7 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
       eval_bwd(t.tu)
       return joinα(v.__α, e)
    } else
-   if (t instanceof Expl.Typecase) {
+   if (t instanceof Expl.Typematch) {
       joinα(v.__α, t.tv.v)
       eval_bwd(t.tv)
       eval_bwd(t.tu)

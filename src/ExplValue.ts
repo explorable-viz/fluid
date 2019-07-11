@@ -124,13 +124,13 @@ export namespace Expl {
       return at(k, Quote)
    }
 
-   export class Typecase extends Expl {
+   export class Typematch extends Expl {
       tu: ExplValue = _
       tv: ExplValue = _
    }
 
-   export function typecase (k: ExplId, tu: ExplValue, tv: ExplValue): Typecase {
-      return at(k, Typecase, tu, tv)
+   export function typematch (k: ExplId, tu: ExplValue, tv: ExplValue): Typematch {
+      return at(k, Typematch, tu, tv)
    }
 
    // v is the resolved value of x
