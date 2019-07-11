@@ -131,11 +131,11 @@ var ->
 
 string -> 
    lexeme[%string] 
-   {% ([lit]) => Expr.constStr(ν(), str(ν(), lit as string)) %}
+   {% ([[lit]]) => Expr.constStr(ν(), str(ν(), (lit.value as string).slice(1, -1))) %}
 
 number ->
    lexeme[%number] 
-   {% ([lit]) => Expr.constNum(ν(), num(ν(), new Number(lit as string).valueOf())) %}
+   {% ([[lit]]) => Expr.constNum(ν(), num(ν(), new Number(lit.value as string).valueOf())) %}
 
 parenthExpr -> 
    lexeme["("] expr lexeme[")"] 
