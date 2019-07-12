@@ -20,7 +20,7 @@ export class FwdSlice {
       this.setup()
       const tv: ExplValue = Eval.eval_(ρ, e)
       if (flags.get(Flags.Fwd)) {
-         Eval.eval_fwd(tv)
+         Eval.eval_fwd(e, tv)
          this.val = new Cursor(tv.v)
          this.expect()
       }
@@ -48,7 +48,7 @@ export class BwdSlice {
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e) // just to obtain tv
-         Eval.eval_fwd(tv) // clear annotations on all values
+         Eval.eval_fwd(e, tv) // clear annotations on all values
          this.val = new Cursor(tv.v)
          this.setup()
          this.expr = new Cursor(Eval.eval_bwd(tv))
