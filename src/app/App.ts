@@ -31,7 +31,7 @@ export class View implements Slicer {
 
    fwdSlice (): void {
       setallα(ann.top, this.e)
-      Eval.eval_fwd(this.tv)
+      Eval.eval_fwd(this.e, this.tv)
       this.direction = Direction.Fwd
       this.draw()
    }
@@ -39,7 +39,7 @@ export class View implements Slicer {
    // Clear annotations on program and forward slice, to erase all annotations prior to backward slicing.
    resetForBwd (): void {
       setallα(ann.bot, this.e)
-      Eval.eval_fwd(this.tv)
+      Eval.eval_fwd(this.e, this.tv)
    }
 
    bwdSlice (): void {
