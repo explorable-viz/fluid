@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
-import { Persistent, _, make } from "./Value"
+import { Id, Persistent, _, make } from "./Value"
 import { Versioned, ν, at } from "./Versioned"
 
 // See Env for convention regarding instance members on reflected datatypes.
@@ -12,22 +12,22 @@ export abstract class Bool extends DataValue<"Bool"> {
 export class True extends Bool {
 }
 
-export function true_ (): Versioned<Bool> {
-   return at(ν(), True)
+export function true_ (k: Id): Versioned<Bool> {
+   return at(k, True)
 }
 
 export class False extends Bool {
 }
 
-export function false_ (): Versioned<Bool> {
-   return at(ν(), False)
+export function false_ (k: Id): Versioned<Bool> {
+   return at(k, False)
 }
 
 export abstract class List<T> extends DataValue<"List"> {
    static fromArray<T extends Persistent> (x̅: T[]): List<T> {
-      let x̅ʹ: List<T> = nil()
+      let x̅ʹ: List<T> = nil(ν())
       for (let n: number = x̅.length - 1; n >= 0; --n) {
-         x̅ʹ = cons(x̅[n], x̅ʹ)
+         x̅ʹ = cons(ν(), x̅[n], x̅ʹ)
       }
       return x̅ʹ
    }
@@ -56,8 +56,8 @@ export class Nil<T> extends List<T> {
    }
 }
 
-export function nil<T> (): List<T> {
-   return make(Nil) as Nil<T>
+export function nil<T> (k: Id): List<T> {
+   return at(k, Nil) as Versioned<Nil<T>>
 }
 
 export class Cons<T> extends List<T> {
@@ -69,8 +69,8 @@ export class Cons<T> extends List<T> {
    }
 }
 
-export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
-   return make(Cons, head, tail) as Cons<T>
+export function cons<T extends Persistent> (k: Id, head: T, tail: List<T>): Cons<T> {
+   return at(k, Cons, head, tail) as Versioned<Cons<T>>
 }
 
 export class Pair<T, U> extends DataValue<"Pair"> {

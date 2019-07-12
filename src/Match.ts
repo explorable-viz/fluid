@@ -5,7 +5,7 @@ import { DataValue } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expr } from "./Expr"
-import { Str, Value, _, make } from "./Value"
+import { Str, Value, _, make, memoId } from "./Value"
 import { Versioned, asVersioned, setα } from "./Versioned"
 
 import Cont = Expr.Cont
@@ -73,7 +73,7 @@ export function match<K extends RuntimeCont> (ξ: MatchPrefix, κ: K): Match<K> 
 export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
    // could have called this "match", but conflicts with the factory method of the same name
    apply (v: Versioned<Value>): [Env, Match<K>] {
-      return this.apply_(v, nil())
+      return this.apply_(v, nil(memoId(this.apply, arguments)))
    }
 
    abstract apply_ (v: Versioned<Value>, ξ: MatchPrefix): [Env, Match<K>]
@@ -106,7 +106,7 @@ export abstract class DataElim extends Elim {
          if (κ !== undefined) {
             const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
             [ρ, ξ]: [Env, Match<RuntimeCont>] = matchArgs(κ, v̅, u̅)
-            return [ρ, match(cons(v, ξ.v̅), ξ.κ)]
+            return [ρ, match(cons(memoId(this.apply_, arguments), v, ξ.v̅), ξ.κ)]
          } else {
             const d: DataType = elimToDataType.get(className(this))!
             if (d.ctrs.has(c)) {

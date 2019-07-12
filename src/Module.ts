@@ -55,7 +55,7 @@ export function openWithImports (file: string, modules: Module[]): Expr {
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
    const e: Expr = parseWithImports(loadTestFile("lcalc/dataset", file), [])
-   return Env.singleton(str(x), Eval.eval_(emptyEnv(), e).v)
+   return Env.singleton(str(ν(), x), Eval.eval_(emptyEnv(), e).v)
 }
 
 export function parseWithImports (src: string, modules: Module[]): Expr {
