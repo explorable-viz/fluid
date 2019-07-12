@@ -172,9 +172,9 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [v, u]: [Value, Versioned<Value>] = [tf.v, tu.v]
       if (v instanceof Closure) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
-               [ρʹ, ξ, eʹ]: [Env, Match, Expr] = v.f.match(u),
-               tv: ExplValue = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), eʹ)
-         return explValue(Expl.app(kₜ, tf, tu, δ, ξ, tv), copyAt(kᵥ, tv.v))
+               [ρʹ, ξκ]: [Env, Match<Expr>] = v.f.match(u),
+               tv: ExplValue = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), ξκ.κ)
+         return explValue(Expl.app(kₜ, tf, tu, δ, ξκ, tv), copyAt(kᵥ, tv.v))
       } else 
       if (v instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
@@ -208,9 +208,9 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
-            [ρʹ, ξ, eʹ]: [Env, Match, Expr] = evalTrie(e.σ).match(tu.v),
-            tv: ExplValue = eval_(ρ.concat(ρʹ), eʹ)
-      return explValue(Expl.matchAs(kₜ, tu, ξ, tv), copyAt(kᵥ, tv.v))
+            [ρʹ, ξκ]: [Env, Match<Expr>] = evalTrie(e.σ).match(tu.v),
+            tv: ExplValue = eval_(ρ.concat(ρʹ), ξκ.κ)
+      return explValue(Expl.matchAs(kₜ, tu, ξκ, tv), copyAt(kᵥ, tv.v))
    } else
    if (e instanceof Expr.Typematch) {
       const tu: ExplValue = eval_(ρ, e.e),
@@ -253,8 +253,8 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
       eval_fwd(eʹ.f, t.tf)
       eval_fwd(eʹ.e, t.tu)
       recDefs_(Direction.Fwd, t.δ)
-      eval_fwd(t.tv)
-      setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
+      eval_fwd(t.ξκ.κ, t.tv)
+      setα(ann.meet(t.tf.v.__α, match_fwd(t.ξκ), e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
@@ -277,8 +277,8 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    if (t instanceof Expl.MatchAs) {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_fwd(eʹ.e, t.tu)
-      eval_fwd(t.tv)
-      setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
+      eval_fwd(t.ξκ.κ, t.tv)
+      setα(ann.meet(match_fwd(t.ξκ), e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
@@ -316,7 +316,7 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
       assert(t.tf.v instanceof Closure)
       joinα(v.__α, t.tv.v)
       eval_bwd(t.tv)
-      match_bwd(t.ξ, v.__α)
+      match_bwd(t.ξκ, v.__α)
       recDefs_(Direction.Bwd, t.δ)
       joinα(v.__α, t.tf.v)
       eval_bwd(t.tf)
@@ -347,7 +347,7 @@ export function eval_bwd ({t, v}: ExplValue): Expr {
    if (t instanceof Expl.MatchAs) {
       joinα(v.__α, t.tv.v)
       eval_bwd(t.tv)
-      match_bwd(t.ξ, v.__α)
+      match_bwd(t.ξκ, v.__α)
       eval_bwd(t.tu)
       return joinα(v.__α, e)
    } else

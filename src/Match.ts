@@ -57,28 +57,38 @@ function evalCont<K extends Cont> (κ: K): RuntimeCont {
 }
 
 // Preorder traversal of all nodes in the matched prefix.
-export type Match = List<Versioned<Value>>
+type MatchPrefix = List<Versioned<Value>>
+
+export class Match<K> extends DataValue<"Match"> {
+   ξ: MatchPrefix = _
+   κ: K = _
+}
+
+// TODO: better name for this class that doesn't conflict with method 'match'.
+export function match_<K extends RuntimeCont> (ξ: MatchPrefix, κ: K): Match<K> {
+   return make(Match, ξ, κ) as Match<K>
+}
 
 // See GitHub issue #128.
 export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
-   match (v: Versioned<Value>): [Env, Match, K] {
+   match (v: Versioned<Value>): [Env, Match<K>] {
       return this.matchʹ(v, nil(memoId(this.match, arguments)))
    }
 
-   abstract matchʹ (v: Versioned<Value>, ξ: Match): [Env, Match, K]
+   abstract matchʹ (v: Versioned<Value>, ξ: MatchPrefix): [Env, Match<K>]
 }
 
 // Parser ensures constructor calls are saturated.
-function matchArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, Match, RuntimeCont] {
+function matchArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
    if (v̅.length === 0) {
-      return [emptyEnv(), ξ, κ]
+      return [emptyEnv(), match_(ξ, κ)]
    } else {
       const [v, ...v̅ʹ] = v̅
       if (κ instanceof Elim) {
          const f: Elim = κ, // "unfold" K into Elim<K>
-               [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = f.matchʹ(v, ξ),
-               [ρʹ, ξ2, κ2]: [Env, Match, RuntimeCont] = matchArgs(κʹ, v̅ʹ, ξʹ)
-         return [ρ.concat(ρʹ), ξ2, κ2]
+               [ρ, ξκ]: [Env, Match<RuntimeCont>] = f.matchʹ(v, ξ),
+               [ρʹ, ξκʹ]: [Env, Match<RuntimeCont>] = matchArgs(ξκ.κ, v̅ʹ, ξκ.ξ)
+         return [ρ.concat(ρʹ), ξκʹ]
       } else {
          return absurd("Too many arguments to constructor.")
       }
@@ -88,14 +98,14 @@ function matchArgs (κ: RuntimeCont, v̅: Versioned<Value>[], ξ: Match): [Env, 
 // No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
 // itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
-   matchʹ (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
+   matchʹ (v: Versioned<Value>, ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
          if (κ !== undefined) {
             const v̅: Versioned<Value>[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
-            [ρ, ξʹ, κʹ]: [Env, Match, RuntimeCont] = matchArgs(κ, v̅, ξ)
-            return [ρ, cons(memoId(this.matchʹ, arguments), v, ξʹ), κʹ]
+            [ρ, ξκ]: [Env, Match<RuntimeCont>] = matchArgs(κ, v̅, ξ)
+            return [ρ, match_(cons(memoId(this.matchʹ, arguments), v, ξκ.ξ), ξκ.κ)]
          } else {
             const d: DataType = elimToDataType.get(className(this))!
             if (d.ctrs.has(c)) {
@@ -114,8 +124,8 @@ class VarElim extends Elim {
    x: Versioned<Str> = _
    κ: RuntimeCont = _
 
-   matchʹ (v: Versioned<Value>, ξ: Match): [Env, Match, RuntimeCont] {
-      return [Env.singleton(this.x, v), ξ, this.κ]
+   matchʹ (v: Versioned<Value>, ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
+      return [Env.singleton(this.x, v), match_(ξ, this.κ)]
    }
 }
 
@@ -123,10 +133,10 @@ function varElim<K extends RuntimeCont> (x: Versioned<Str>, κ: RuntimeCont): Va
    return make(VarElim, x, κ) as VarElim
 }
 
-export function match_fwd (v̅: Match): Annotation {
-   return v̅.toArray().reduce((α: Annotation, v: Versioned<Value>): Annotation => ann.meet(α, v.__α), ann.top)
+export function match_fwd (ξκ: Match<Expr>): Annotation {
+   return ξκ.ξ.toArray().reduce((α: Annotation, v: Versioned<Value>): Annotation => ann.meet(α, v.__α), ann.top)
 }
 
-export function match_bwd (v̅: Match, α: Annotation) : void {
-   v̅.toArray().map(v => setα(α, v))
+export function match_bwd (ξκ: Match<Expr>, α: Annotation) : void {
+   ξκ.ξ.toArray().map(v => setα(α, v))
 }

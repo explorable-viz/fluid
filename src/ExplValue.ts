@@ -1,6 +1,7 @@
 import { List } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { Eval, ExplId } from "./Eval"
+import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
 import { Str, Value, _, make } from "./Value"
@@ -26,12 +27,12 @@ export namespace Expl {
       tf: ExplValue = _
       tu: ExplValue = _
       δ: List<RecDef> = _ // additional recursive functions bound at this step
-      ξ: Match = _
+      ξκ: Match<Expr> = _
       tv: ExplValue = _
    }
 
-  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξ: Match, tv: ExplValue): App {
-      return at(k, App, tf, tu, δ, ξ, tv)
+  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξκ: Match<Expr>, tv: ExplValue): App {
+      return at(k, App, tf, tu, δ, ξκ, tv)
    }
 
    export class UnaryApp extends Expl {
@@ -109,12 +110,12 @@ export namespace Expl {
 
    export class MatchAs extends Expl {
       tu: ExplValue = _
-      ξ: Match = _
+      ξκ: Match<Expr> = _
       tv: ExplValue = _
    }
 
-   export function matchAs (k: ExplId, tu: ExplValue, ξ: Match, tv: ExplValue): MatchAs {
-      return at(k, MatchAs, tu, ξ, tv)
+   export function matchAs (k: ExplId, tu: ExplValue, ξκ: Match<Expr>, tv: ExplValue): MatchAs {
+      return at(k, MatchAs, tu, ξκ, tv)
    }
 
    export class Quote extends Expl {
