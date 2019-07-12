@@ -102,17 +102,17 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    }
 }
 
-function defs_fwd (def̅: List<Expl.Def>): void {
-   def̅.toArray().forEach((def: Expl.Def) => {
-      if (def instanceof Expl.Let) {
-         eval_fwd(def.tv)
-         meetα(def.x.__α, def.tv.v)
+function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
+   zip(def̅.toArray(), def̅ₜ.toArray()).forEach(([def, defₜ]: [Def, Expl.Def]) => {
+      if (defₜ instanceof Expl.Let) {         
+         eval_fwd(as(def, Expr.Let).e, defₜ.tv)
+         meetα(defₜ.x.__α, defₜ.tv.v)
       } else
-      if (def instanceof Expl.Prim) {
-         setα(def.x.__α, def.op)
+      if (defₜ instanceof Expl.Prim) {
+         setα(defₜ.x.__α, defₜ.op)
       } else
-      if (def instanceof Expl.LetRec) {
-         recDefs_(Direction.Fwd, def.δ)
+      if (defₜ instanceof Expl.LetRec) {
+         recDefs_(Direction.Fwd, defₜ.δ)
       } else {
          absurd()
       }
@@ -220,7 +220,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
          return error(`Typecase mismatch: no clause for ${className(tu.v)}.`)
       } else {
          const tv: ExplValue = eval_(ρ, eʹ)
-         return explValue(Expl.typematch(kₜ, tu, tv), copyAt(kᵥ, tv.v))
+         return explValue(Expl.typematch(kₜ, tu, d.name, tv), copyAt(kᵥ, tv.v))
       }
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
@@ -259,7 +259,7 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
       eval_fwd(eʹ.f, t.tf)
-      eval_fwd(eʹ.f, t.tv)
+      eval_fwd(eʹ.e, t.tv)
       setα(ann.meet(t.tf.v.__α, t.tv.v.__α, e.__α), v)
    } else
    if (t instanceof Expl.BinaryApp) {
@@ -270,7 +270,7 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    } else
    if (t instanceof Expl.Defs) {
       const eʹ: Expr.Defs = as(e, Expr.Defs)
-      defs_fwd(t.def̅)
+      defs_fwd(eʹ.def̅, t.def̅)
       eval_fwd(eʹ.e, t.tv)
       setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else
@@ -283,7 +283,7 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_fwd(eʹ.e, t.tu)
-      eval_fwd(t.tv)
+      eval_fwd(get(eʹ.cases, t.d)!, t.tv)
       setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else {
       absurd()

@@ -127,11 +127,12 @@ export namespace Expl {
 
    export class Typematch extends Expl {
       tu: ExplValue = _
+      d: Str = _
       tv: ExplValue = _
    }
 
-   export function typematch (k: ExplId, tu: ExplValue, tv: ExplValue): Typematch {
-      return at(k, Typematch, tu, tv)
+   export function typematch (k: ExplId, tu: ExplValue, d: Str, tv: ExplValue): Typematch {
+      return at(k, Typematch, tu, d, tv)
    }
 
    // v is the resolved value of x
