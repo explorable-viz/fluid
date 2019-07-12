@@ -1,11 +1,11 @@
 import { List } from "./BaseTypes"
 import { DataValue } from "./DataValue"
-import { Eval, ExplId } from "./Eval"
+import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
 import { Str, Value, _, make } from "./Value"
-import { Versioned, VersionedC, at } from "./Versioned"
+import { Versioned, VersionedC, ν, at } from "./Versioned"
 
 export type Closure = Eval.Closure
 export type Expl = Expl.Expl
@@ -31,8 +31,8 @@ export namespace Expl {
       tv: ExplValue = _
    }
 
-  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξ: Match<Expr>, tv: ExplValue): App {
-      return at(k, App, tf, tu, δ, ξ, tv)
+  export function app (tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξ: Match<Expr>, tv: ExplValue): App {
+      return at(ν(), App, tf, tu, δ, ξ, tv)
    }
 
    export class UnaryApp extends Expl {
@@ -40,8 +40,8 @@ export namespace Expl {
       tv: ExplValue = _
    }
 
-   export function unaryApp (k: ExplId, tf: ExplValue, tv: ExplValue): UnaryApp {
-      return at(k, UnaryApp, tf, tv)
+   export function unaryApp (tf: ExplValue, tv: ExplValue): UnaryApp {
+      return at(ν(), UnaryApp, tf, tv)
    }
 
    export class BinaryApp extends Expl {
@@ -50,8 +50,8 @@ export namespace Expl {
       tv2: ExplValue = _
    }
 
-   export function binaryApp (k: ExplId, tv1: ExplValue, opName: Str, tv2: ExplValue): BinaryApp {
-      return at(k, BinaryApp, tv1, opName, tv2)
+   export function binaryApp (tv1: ExplValue, opName: Str, tv2: ExplValue): BinaryApp {
+      return at(ν(), BinaryApp, tv1, opName, tv2)
    }
 
    export abstract class Def extends DataValue<"Expl.Def"> {
@@ -63,7 +63,7 @@ export namespace Expl {
    }
 
    export function let_ (x: Versioned<Str>, tv: ExplValue): Let {
-      return make(Let, x, tv)
+      return at(ν(), Let, x, tv)
    }
 
    export class Prim extends Def {
@@ -72,7 +72,7 @@ export namespace Expl {
    }
 
    export function prim (x: Versioned<Str>, op: Versioned<UnaryOp>): Prim {
-      return make(Prim, x, op)
+      return at(ν(), Prim, x, op)
    }
 
    export class RecDef extends DataValue<"Expl.RecDef"> {
@@ -81,7 +81,7 @@ export namespace Expl {
    }
 
    export function recDef (x: Versioned<Str>, f: Closure): RecDef {
-      return make(RecDef, x, f)
+      return at(ν(), RecDef, x, f)
    }
 
    export class LetRec extends Def {
@@ -89,7 +89,7 @@ export namespace Expl {
    }
 
    export function letRec (δ: List<RecDef>): LetRec {
-      return make(LetRec, δ)
+      return at(ν(), LetRec, δ)
    }
 
    export class Defs extends Expl {
@@ -97,15 +97,15 @@ export namespace Expl {
       tv: ExplValue = _
    }
 
-   export function defs (k: ExplId, def̅: List<Def>, tv: ExplValue): Defs {
-      return at(k, Defs, def̅, tv)
+   export function defs (def̅: List<Def>, tv: ExplValue): Defs {
+      return at(ν(), Defs, def̅, tv)
    }
 
    export class Empty extends Expl {
    }
 
-   export function empty (k: ExplId): Empty {
-      return at(k, Empty)
+   export function empty (): Empty {
+      return at(ν(), Empty)
    }
 
    export class MatchAs extends Expl {
@@ -114,15 +114,15 @@ export namespace Expl {
       tv: ExplValue = _
    }
 
-   export function matchAs (k: ExplId, tu: ExplValue, ξ: Match<Expr>, tv: ExplValue): MatchAs {
-      return at(k, MatchAs, tu, ξ, tv)
+   export function matchAs (tu: ExplValue, ξ: Match<Expr>, tv: ExplValue): MatchAs {
+      return at(ν(), MatchAs, tu, ξ, tv)
    }
 
    export class Quote extends Expl {
    }
 
-   export function quote (k: ExplId): Quote {
-      return at(k, Quote)
+   export function quote (): Quote {
+      return at(ν(), Quote)
    }
 
    export class Typematch extends Expl {
@@ -131,8 +131,8 @@ export namespace Expl {
       tv: ExplValue = _
    }
 
-   export function typematch (k: ExplId, tu: ExplValue, d: Str, tv: ExplValue): Typematch {
-      return at(k, Typematch, tu, d, tv)
+   export function typematch (tu: ExplValue, d: Str, tv: ExplValue): Typematch {
+      return at(ν(), Typematch, tu, d, tv)
    }
 
    // v is the resolved value of x
@@ -141,7 +141,7 @@ export namespace Expl {
       v: Versioned<Value> = _
    }
 
-   export function var_ (k: ExplId, x: Str, v: Versioned<Value>): Var {
-      return at(k, Var, x, v)
+   export function var_ (x: Str, v: Versioned<Value>): Var {
+      return at(ν(), Var, x, v)
    }
 }
