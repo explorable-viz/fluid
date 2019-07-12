@@ -93,12 +93,12 @@ export const ν: () => Extern =
       }
    })()
 
-export function num (k: Id, val: number): Versioned<Num> {
-   return at(k, Num, val)
+export function num (val: number): Versioned<Num> {
+   return at(ν(), Num, val)
 }
 
-export function str (k: Id, val: string): Versioned<Str> {
-   return at(k, Str, val)
+export function str (val: string): Versioned<Str> {
+   return at(ν(), Str, val)
 }
 
 export function setα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
