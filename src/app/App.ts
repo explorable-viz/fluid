@@ -43,7 +43,7 @@ export class View implements Slicer {
    }
 
    bwdSlice (): void {
-      Eval.eval_bwd(this.tv)
+      Eval.eval_bwd(this.e, this.tv)
       this.direction = Direction.Bwd
       this.coordinator.onBwd()
       this.draw()
