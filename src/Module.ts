@@ -41,7 +41,7 @@ export function loadTestFile (folder: string, file: string): string {
 // Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
 export function loadModule (file: string): Module {
    const fileʹ: string = loadTestFile("lcalc/lib", file) + " in 0",
-         e: Expr.Defs = as(successfulParse2(fileʹ), Expr.Defs)
+         e: Expr.Defs = as(successfulParse(fileʹ), Expr.Defs)
    return e.def̅
 }
 
@@ -59,13 +59,12 @@ export function openDatasetAs (file: string, x: string): ExtendEnv {
 }
 
 export function parseWithImports (src: string, modules: Module[]): Expr {
-   return importDefaults(import_(modules, successfulParse2(src)))
+   return importDefaults(import_(modules, successfulParse(src)))
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
-export function successfulParse2 (str: string): Expr {
+export function successfulParse (str: string): Expr {
    const results: any[] = new Parser(Grammar.fromCompiled(grammar)).feed(str).results
-   console.log(results)
    if (results.length > 1) {
       error("Ambiguous parse.")
    }

@@ -18,7 +18,6 @@ type Def = Expr.Def
 type RecDef = Expr.RecDef
 
 export type ValId = TaggedId<MemoId, "v">
-export type ListId = TaggedId<MemoId, "l">
 
 export module Eval {
 
@@ -35,16 +34,15 @@ function closure (k: Id, ρ: Env, δ: List<RecDef>, f: Elim<Expr>): Closure {
 
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.RecDef>, Env] {
-   const kₗ: ListId = taggedId(memoId(recDefs, arguments), "l")
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
             kᵥ: ValId = taggedId(memoId(recDefs, arguments), "v"),
             f: Closure = closure(kᵥ, ρ, δ_0, evalTrie(def.σ))
-      return [cons(kₗ, Expl.recDef(def.x, f), δₜ), extendEnv(ρ_ext, def.x, f)]
+      return [cons(Expl.recDef(def.x, f), δₜ), extendEnv(ρ_ext, def.x, f)]
    } else
    if (Nil.is(δ)) {
-      return [nil(kₗ), emptyEnv()]
+      return [nil(), emptyEnv()]
    } else {
       return absurd()
    }
@@ -68,20 +66,19 @@ function recDefs_ (dir: Direction, δ: List<Expl.RecDef>): void {
 
 // Here we mustn't invert definition order.
 function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
-   const kₗ: ListId = taggedId(memoId(defs, arguments), "l")
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const tv: ExplValue = eval_(ρ.concat(ρ_ext), def.e),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, tv.v))
-         return [cons(kₗ, Expl.let_(def.x, tv), def̅ₜ), ρ_extʹ]
+         return [cons(Expl.let_(def.x, tv), def̅ₜ), ρ_extʹ]
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currently happen to be unary
          if (unaryOps.has(def.x.val)) {
             const op: Versioned<UnaryOp> = unaryOps.get(def.x.val)!,
                   [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, op))
-            return [cons(kₗ, Expl.prim(def.x, op), def̅ₜ), ρ_extʹ]
+            return [cons(Expl.prim(def.x, op), def̅ₜ), ρ_extʹ]
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
@@ -89,13 +86,13 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
       if (def instanceof Expr.LetRec) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(def.δ, ρ.concat(ρ_ext), def.δ),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, ρ_ext.concat(ρᵟ))
-         return [cons(kₗ, Expl.letRec(δ), def̅ₜ), ρ_extʹ]
+         return [cons(Expl.letRec(δ), def̅ₜ), ρ_extʹ]
       } else {
          return absurd()
       }
    } else
    if (Nil.is(def̅)) {
-      return [nil(kₗ), ρ_ext]
+      return [nil(), ρ_ext]
    } else {
       return absurd()
    }
@@ -144,7 +141,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.empty(), str(kᵥ, e.val.val))
    } else
    if (e instanceof Expr.Fun) {
-      return explValue(Expl.empty(), closure(kᵥ, ρ, nil(taggedId(kᵥ, "δ")), evalTrie(e.σ)))
+      return explValue(Expl.empty(), closure(kᵥ, ρ, nil(), evalTrie(e.σ)))
    } else
    if (e instanceof Expr.Constr) {
       let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
