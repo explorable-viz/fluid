@@ -119,17 +119,17 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    })
 }
 
-function defs_bwd (def̅: List<Expl.Def>): void {
-   def̅.toArray().reverse().forEach((def: Expl.Def) => {
-      if (def instanceof Expl.Let) {
-         joinα(def.tv.v.__α, def.x)
-         eval_bwd(def.tv)
+function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
+   zip(def̅.toArray(), def̅ₜ.toArray()).reverse().forEach(([def, defₜ]: [Def, Expl.Def]) => {
+      if (defₜ instanceof Expl.Let) {
+         joinα(defₜ.tv.v.__α, defₜ.x)
+         eval_bwd(as(def, Expr.Let).e, defₜ.tv)
       } else
-      if (def instanceof Expl.Prim) {
-         joinα(def.op.__α, def.x)
+      if (defₜ instanceof Expl.Prim) {
+         joinα(defₜ.op.__α, defₜ.x)
       } else
-      if (def instanceof Expl.LetRec) {
-         recDefs_(Direction.Bwd, def.δ)
+      if (defₜ instanceof Expl.LetRec) {
+         recDefs_(Direction.Bwd, defₜ.δ)
       } else {
          absurd()
       }
@@ -172,7 +172,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [v, u]: [Value, Versioned<Value>] = [tf.v, tu.v]
       if (v instanceof Closure) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
-               [ρʹ, ξκ]: [Env, Match<Expr>] = v.f.match(u),
+               [ρʹ, ξκ]: [Env, Match<Expr>] = v.f.apply(u),
                tv: ExplValue = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), ξκ.κ)
          return explValue(Expl.app(kₜ, tf, tu, δ, ξκ, tv), copyAt(kᵥ, tv.v))
       } else 
@@ -208,7 +208,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
-            [ρʹ, ξκ]: [Env, Match<Expr>] = evalTrie(e.σ).match(tu.v),
+            [ρʹ, ξκ]: [Env, Match<Expr>] = evalTrie(e.σ).apply(tu.v),
             tv: ExplValue = eval_(ρ.concat(ρʹ), ξκ.κ)
       return explValue(Expl.matchAs(kₜ, tu, ξκ, tv), copyAt(kᵥ, tv.v))
    } else
@@ -249,8 +249,8 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
       eval_fwd(eʹ.f, t.tf)
       eval_fwd(eʹ.e, t.tu)
       recDefs_(Direction.Fwd, t.δ)
-      eval_fwd(t.ξκ.κ, t.tv)
-      setα(ann.meet(t.tf.v.__α, match_fwd(t.ξκ), e.__α, t.tv.v.__α), v)
+      eval_fwd(t.ξ.κ, t.tv)
+      setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
@@ -273,8 +273,8 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    if (t instanceof Expl.MatchAs) {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_fwd(eʹ.e, t.tu)
-      eval_fwd(t.ξκ.κ, t.tv)
-      setα(ann.meet(match_fwd(t.ξκ), e.__α, t.tv.v.__α), v)
+      eval_fwd(t.ξ.κ, t.tv)
+      setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
@@ -311,8 +311,8 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): Expr {
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
       joinα(v.__α, t.tv.v)
-      eval_bwd(t.ξκ.κ, t.tv)
-      match_bwd(t.ξκ, v.__α)
+      eval_bwd(t.ξ.κ, t.tv)
+      match_bwd(t.ξ, v.__α)
       recDefs_(Direction.Bwd, t.δ)
       joinα(v.__α, t.tf.v)
       const eʹ: Expr.App = as(e, Expr.App)
@@ -347,8 +347,8 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): Expr {
    if (t instanceof Expl.MatchAs) {
       joinα(v.__α, t.tv.v)
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
-      eval_bwd(t.ξκ.κ, t.tv)
-      match_bwd(t.ξκ, v.__α)
+      eval_bwd(t.ξ.κ, t.tv)
+      match_bwd(t.ξ, v.__α)
       eval_bwd(eʹ.e, t.tu)
       return joinα(v.__α, e)
    } else

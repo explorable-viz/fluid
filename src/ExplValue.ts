@@ -27,12 +27,12 @@ export namespace Expl {
       tf: ExplValue = _
       tu: ExplValue = _
       δ: List<RecDef> = _ // additional recursive functions bound at this step
-      ξκ: Match<Expr> = _
+      ξ: Match<Expr> = _
       tv: ExplValue = _
    }
 
-  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξκ: Match<Expr>, tv: ExplValue): App {
-      return at(k, App, tf, tu, δ, ξκ, tv)
+  export function app (k: ExplId, tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξ: Match<Expr>, tv: ExplValue): App {
+      return at(k, App, tf, tu, δ, ξ, tv)
    }
 
    export class UnaryApp extends Expl {
@@ -110,12 +110,12 @@ export namespace Expl {
 
    export class MatchAs extends Expl {
       tu: ExplValue = _
-      ξκ: Match<Expr> = _
+      ξ: Match<Expr> = _
       tv: ExplValue = _
    }
 
-   export function matchAs (k: ExplId, tu: ExplValue, ξκ: Match<Expr>, tv: ExplValue): MatchAs {
-      return at(k, MatchAs, tu, ξκ, tv)
+   export function matchAs (k: ExplId, tu: ExplValue, ξ: Match<Expr>, tv: ExplValue): MatchAs {
+      return at(k, MatchAs, tu, ξ, tv)
    }
 
    export class Quote extends Expl {
