@@ -64,14 +64,13 @@ export class Match<K> extends DataValue<"Match"> {
    κ: K = _
 }
 
-// TODO: better name for this class that doesn't conflict with method 'match'.
 export function match<K extends RuntimeCont> (ξ: MatchPrefix, κ: K): Match<K> {
    return make(Match, ξ, κ) as Match<K>
 }
 
 // See GitHub issue #128.
 export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
-   // could have called this "match", but conflicts with the factory method of the same name
+   // could have called this "match", but conflicts with factory method of same name
    apply (v: Versioned<Value>): [Env, Match<K>] {
       return this.apply_(v, nil())
    }

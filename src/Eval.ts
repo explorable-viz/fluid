@@ -155,7 +155,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.quote(), copyAt(kᵥ, e.e))
    } else
    if (e instanceof Expr.Var) {
-      if (ρ.has(e.x)) { 
+      if (ρ.has(e.x)) {
          const v: Versioned<Value> = ρ.get(e.x)!
          return explValue(Expl.var_(e.x, v), copyAt(kᵥ, v))
       } else {
