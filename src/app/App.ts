@@ -1,5 +1,5 @@
-import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
+import { ann } from "../util/Lattice"
 import { List, Pair } from "../BaseTypes"
 import { Env, ExtendEnv } from "../Env"
 import { Direction, Eval } from "../Eval"

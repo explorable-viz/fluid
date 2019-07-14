@@ -1,5 +1,5 @@
-import { Annotation, ann } from "./util/Annotated"
 import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
+import { Annotation, ann } from "./util/Lattice"
 import { List, Pair, cons, nil } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"

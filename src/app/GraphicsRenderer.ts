@@ -1,5 +1,5 @@
-import { Annotation, ann } from "../util/Annotated"
 import { __nonNull, absurd, assert } from "../util/Core"
+import { Annotation, ann } from "../util/Lattice"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"

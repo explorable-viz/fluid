@@ -1,5 +1,5 @@
-import { ann } from "../../src/util/Annotated"
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
+import { ann } from "../../src/util/Lattice"
 import { Persistent, Value } from "../../src/Value"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { Expr } from "../../src/Expr"

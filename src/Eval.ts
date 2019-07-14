@@ -1,6 +1,6 @@
-import { ann } from "./util/Annotated"
 import { zip } from "./util/Array"
 import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
+import { ann } from "./util/Lattice"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
 import { DataValue } from "./DataValue"

@@ -1,5 +1,5 @@
 import { __nonNull, as } from "../../src/util/Core"
-import { ann } from "../../src/util/Annotated"
+import { ann } from "../../src/util/Lattice"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { ExplValue } from "../../src/ExplValue"
