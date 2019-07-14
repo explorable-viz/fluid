@@ -21,7 +21,7 @@ export interface Annotated_ {
 
 export type Annotated<T> = Annotated_ & T
 
-export function annotated<T> (v: T): v is Annotated<T> {
+export function annotated<T extends Object> (v: T): v is Annotated<T> {
    return v.hasOwnProperty("__α")
 }
 
