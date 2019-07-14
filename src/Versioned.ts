@@ -1,40 +1,12 @@
-import { Annotation, ann } from "./util/Annotated"
-import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
-import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make, metadataFields } from "./Value"
+import { Class, __nonNull, classOf, notYetImplemented } from "./util/Core"
+import { Id, Persistent, Value, _, construct, make, metadataFields } from "./Value"
 
-// Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
-// for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
-// can be interned in some contexts and versioned in others.
-// For idiom and usage see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
-// https://github.com/Microsoft/TypeScript/issues/21710.
-export function VersionedC<T extends Class<Value>> (C: T) {
-   // https://stackoverflow.com/questions/33605775
-   return {
-      [C.name]: class extends C {
-            __id: Id
-            __α: Annotation
-         }
-   }[C.name] // give versioned class same name as C
-}
-
-// Not sure how to avoid duplicating the definitions here.
-export interface Versioned_ {
-   __id: Id
-   __α: Annotation
-}
-
+// Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
+// same datatype can be interned in some contexts and versioned in others.
 export type Versioned<T> = Versioned_ & T
 
-export function versioned<T> (v: T): v is Versioned<T> {
-   return (v as any).__id !== undefined
-}
-
-export function asVersioned<T> (v: T): Versioned<T> {
-   if (versioned(v)) {
-      return v
-   } else {
-      return absurd(`Not a versioned value: ${className(v)}`)
-   }
+export interface Versioned_ {
+   __id: Id
 }
 
 // For versioned objects the map is not curried but takes an (interned) composite key.
@@ -46,12 +18,11 @@ export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): 
    let v: Versioned<Value> | undefined = __versioned.get(k)
    if (v === undefined) {
       const v: T = new C
-      // Not sure of performance implications, or whether enumerability of __id matters much.
       Object.defineProperty(v, "__id", {
          value: k,
          enumerable: false
       })
-      const vʹ: Versioned<T> = asVersioned(v)
+      const vʹ: Versioned<T> = v as Versioned<T>
       __versioned.set(k, vʹ)
       return construct(vʹ, v̅)
    } else
@@ -92,50 +63,3 @@ export const ν: () => Extern =
          return extern(count++)
       }
    })()
-
-export function num (k: Id, val: number): Versioned<Num> {
-   return at(k, Num, val)
-}
-
-export function str (k: Id, val: string): Versioned<Str> {
-   return at(k, Str, val)
-}
-
-export function setα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
-   v.__α = α
-   return v
-}
-
-export function setallα<Tag extends ValueTag, T extends Value<Tag>> (α: Annotation, v: T): T {
-   if (versioned(v)) {
-      setα(α, v)
-   }
-   v.fieldValues().forEach((v: Persistent): void => {
-      if (v instanceof Value) {
-         setallα(α, v)
-      }
-   })
-   return v
-}
-
-export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
-   if (versioned(v)) {
-      setα(ann.negate(v.__α), v)
-   }
-   v.fieldValues().forEach((v: Persistent): void => {
-      if (v instanceof Value) {
-         negateallα(v)
-      }
-   })
-   return v
-}
-
-export function joinα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
-   v.__α = ann.join(α, v.__α)
-   return v
-}
-
-export function meetα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
-   v.__α = ann.meet(α, v.__α)
-   return v
-}

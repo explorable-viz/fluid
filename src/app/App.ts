@@ -1,5 +1,6 @@
-import { ann } from "../util/Annotated"
 import { __nonNull, as } from "../util/Core"
+import { ann } from "../util/Lattice"
+import { negateallα, setallα } from "../Annotated"
 import { List, Pair } from "../BaseTypes"
 import { Env, ExtendEnv } from "../Env"
 import { Direction, Eval } from "../Eval"
@@ -8,7 +9,7 @@ import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
 import { Num, Str, Value } from "../Value"
-import { Versioned, negateallα, setallα } from "../Versioned"
+import { Versioned } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 export class View implements Slicer {
@@ -31,7 +32,7 @@ export class View implements Slicer {
 
    fwdSlice (): void {
       setallα(ann.top, this.e)
-      Eval.eval_fwd(this.tv)
+      Eval.eval_fwd(this.e, this.tv)
       this.direction = Direction.Fwd
       this.draw()
    }
@@ -39,11 +40,11 @@ export class View implements Slicer {
    // Clear annotations on program and forward slice, to erase all annotations prior to backward slicing.
    resetForBwd (): void {
       setallα(ann.bot, this.e)
-      Eval.eval_fwd(this.tv)
+      Eval.eval_fwd(this.e, this.tv)
    }
 
    bwdSlice (): void {
-      Eval.eval_bwd(this.tv)
+      Eval.eval_bwd(this.e, this.tv)
       this.direction = Direction.Bwd
       this.coordinator.onBwd()
       this.draw()
@@ -70,7 +71,7 @@ class App {
 
    constructor () {
       const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
-            data: Data = ρ.v as Data
+            data: Data = ρ.v as Value as Data
       setallα(ann.top, data)
       this.graphicsView = new View(
          "graphicsView", 

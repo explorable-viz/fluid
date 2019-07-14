@@ -7,11 +7,11 @@ export const _: any = undefined
 // Somewhat perverse to do this, but need some type safety!
 export type DataValueTag =
    "Graphic" | "Polyline" | "Polygon" | "Text" | 
-   "Bool" | "Closure" | "DataExpl" | "Elim" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" |  
+   "Bool" | "Closure" | "DataExpl" | "Elim" | "Match" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" |  
    "Translate" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Token" | "Trie"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
 export type PrimOpTag = "UnaryOp" | "BinaryOp"
-export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Id" | "Match" | "Num" | "Str"
+export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Id" | "Num" | "Str"
 
 // Value in the metalanguage. Nominal idiom breaks down here in requiring use of "any".
 export class Value<Tag extends ValueTag = ValueTag> {

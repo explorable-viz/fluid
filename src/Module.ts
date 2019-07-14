@@ -1,11 +1,12 @@
 import { Grammar, Parser } from "nearley"
 import { __nonNull, as, error } from "./util/Core"
+import { str } from "./Annotated"
 import { List } from "./BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import * as grammar from "./Parse"
-import { ν, str } from "./Versioned"
+import { ν } from "./Versioned"
 
 // Kindergarten modules.
 type Module = List<Expr.Def>
@@ -41,7 +42,7 @@ export function loadTestFile (folder: string, file: string): string {
 // Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
 export function loadModule (file: string): Module {
    const fileʹ: string = loadTestFile("lcalc/lib", file) + " in 0",
-         e: Expr.Defs = as(successfulParse2(fileʹ), Expr.Defs)
+         e: Expr.Defs = as(successfulParse(fileʹ), Expr.Defs)
    return e.def̅
 }
 
@@ -55,17 +56,16 @@ export function openWithImports (file: string, modules: Module[]): Expr {
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
    const e: Expr = parseWithImports(loadTestFile("lcalc/dataset", file), [])
-   return Env.singleton(str(ν(), x), Eval.eval_(emptyEnv(), e).v)
+   return Env.singleton(str(x), Eval.eval_(emptyEnv(), e).v)
 }
 
 export function parseWithImports (src: string, modules: Module[]): Expr {
-   return importDefaults(import_(modules, successfulParse2(src)))
+   return importDefaults(import_(modules, successfulParse(src)))
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
-export function successfulParse2 (str: string): Expr {
+export function successfulParse (str: string): Expr {
    const results: any[] = new Parser(Grammar.fromCompiled(grammar)).feed(str).results
-   console.log(results)
    if (results.length > 1) {
       error("Ambiguous parse.")
    }

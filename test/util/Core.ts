@@ -1,12 +1,12 @@
 import { __nonNull, as } from "../../src/util/Core"
-import { ann } from "../../src/util/Annotated"
+import { ann } from "../../src/util/Lattice"
+import { setallα } from "../../src/Annotated"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { ExplValue } from "../../src/ExplValue"
 import { Expr } from "../../src/Expr"
 import "../../src/Graphics" // for graphical datatypes
 import "../../src/app/GraphicsRenderer" // for graphics primitives
-import { setallα } from "../../src/Versioned"
 import { Cursor } from "./Cursor"
 
 export class FwdSlice {
@@ -20,7 +20,7 @@ export class FwdSlice {
       this.setup()
       const tv: ExplValue = Eval.eval_(ρ, e)
       if (flags.get(Flags.Fwd)) {
-         Eval.eval_fwd(tv)
+         Eval.eval_fwd(e, tv)
          this.val = new Cursor(tv.v)
          this.expect()
       }
@@ -48,10 +48,10 @@ export class BwdSlice {
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e) // just to obtain tv
-         Eval.eval_fwd(tv) // clear annotations on all values
+         Eval.eval_fwd(e, tv) // clear annotations on all values
          this.val = new Cursor(tv.v)
          this.setup()
-         this.expr = new Cursor(Eval.eval_bwd(tv))
+         this.expr = new Cursor(Eval.eval_bwd(e, tv))
          this.expect()
       }
    }
