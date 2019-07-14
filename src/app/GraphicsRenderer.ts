@@ -5,7 +5,7 @@ import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Num, Str } from "../Value"
-import { Versioned, asVersioned, num, setallα } from "../Versioned"
+import { Annotated, asVersioned, num, setallα } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
@@ -234,7 +234,7 @@ let svgMetrics: SVGSVGElement
 
    // Additional primitives that rely on offline rendering to compute text metrics. Combine these would 
    // require more general primitives that can return tuples.
-   const textWidth = (str: Str): Versioned<Num> => {
+   const textWidth = (str: Str): Annotated<Num> => {
       const text: SVGTextElement = textElement(0, 0, str.val)
       svgMetrics.appendChild(text)
       const width: number = text.getBBox().width
@@ -242,7 +242,7 @@ let svgMetrics: SVGSVGElement
       return num(width)
    }
    
-   const textHeight = (str: Str): Versioned<Num> => {
+   const textHeight = (str: Str): Annotated<Num> => {
       const text: SVGTextElement = textElement(0, 0, str.val)
       svgMetrics.appendChild(text)
       const height: number = text.getBBox().height

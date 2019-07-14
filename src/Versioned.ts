@@ -20,11 +20,11 @@ export interface Annotated_ {
 export type Annotated<T> = Annotated_ & T
 
 export function annotated<T> (v: T): v is Annotated<T> {
-   return (v as any).__α !== undefined
+   return v.hasOwnProperty("__α")
 }
 
 export function asAnnotated<T> (v: T): Annotated<T> {
-   if (versioned(v)) {
+   if (annotated(v)) {
       return v
    } else {
       return absurd(`Not an annotated value: ${className(v)}`)
@@ -63,7 +63,6 @@ export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): 
    let v: Versioned<Value> | undefined = __versioned.get(k)
    if (v === undefined) {
       const v: T = new C
-      // Not sure of performance implications, or whether enumerability of __id matters much.
       Object.defineProperty(v, "__id", {
          value: k,
          enumerable: false
@@ -77,6 +76,13 @@ export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): 
    } else {
       return reclassify(v, C)
    }
+}
+
+// Make an annotated node, for a class that doesn't already specify statically that its instances are annotated.
+export function annotatedAt<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): Annotated<T> {
+   const v: T = at(k, C, ...v̅);
+   (v as any).__α = _
+   return v as Annotated<T>
 }
 
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
@@ -110,12 +116,12 @@ export const ν: () => Extern =
       }
    })()
 
-export function num (val: number): Versioned<Num> {
-   return at(ν(), Num, val)
+export function num (val: number): Annotated<Num> {
+   return annotatedAt(ν(), Num, val)
 }
 
-export function str (val: string): Versioned<Str> {
-   return at(ν(), Str, val)
+export function str (val: string): Annotated<Str> {
+   return annotatedAt(ν(), Str, val)
 }
 
 export function setα<T, U extends Annotated<T>> (α: Annotation, v: U): U {

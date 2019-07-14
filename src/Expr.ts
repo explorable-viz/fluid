@@ -33,9 +33,8 @@ export namespace Expr {
    // Use to be a parameterised class but we can simplify using our nominal type idiom.
    export type Cont = Expr | DataValue<"Trie">
 
-   // Don't understand how polymorphism interacts with subtyping, so brute-force this instead. 
-   // Use the same heinous cast as used in 'instantiateCont'. This join is unrelated to the annotation lattice;
-   // the Expr case is intentionally only defined for the higher-order (function) case.
+   // Use memoisation to keep this pure. Unrelated to the annotation lattice; Expr case intentionally only
+   // defined for higher-order (function) case.
    function join<K extends Cont> (κ: K, κʹ: K): K {
       if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
          return Trie.Trie.join<K>(κ, κʹ) as K

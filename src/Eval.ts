@@ -11,7 +11,7 @@ import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, Num, Str, Value, _, make } from "./Value"
-import { Annotated, AnnotatedC, ν, at, copyAt, joinα, meetα, num, setα, str } from "./Versioned"
+import { Annotated, AnnotatedC, ν, annotatedAt, at, copyAt, joinα, meetα, num, setα, str } from "./Versioned"
 
 export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
@@ -143,7 +143,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
           c: string = e.ctr.val,
           d: DataType = __nonNull(ctrToDataType.get(c)),
-          v: DataValue = at(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+          v: DataValue = annotatedAt(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
       v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
       return explValue(Expl.empty(), v as Annotated<DataValue>)
    } else
