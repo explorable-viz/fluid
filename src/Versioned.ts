@@ -13,6 +13,7 @@ export function AnnotatedC<T extends Class<Value>> (C: T) {
    }[C.name] // give versioned class same name as C
 }
 
+// Not sure how to avoid duplicating the body with those of the classes returned by AnnotatedC.
 export interface Annotated_ {
    __α: Annotation
 }
@@ -36,19 +37,6 @@ export function asAnnotated<T> (v: T): Annotated<T> {
 // can be interned in some contexts and versioned in others.
 export type Versioned<T> = Versioned_ & T
 
-export function versioned<T> (v: T): v is Versioned<T> {
-   return (v as any).__id !== undefined
-}
-
-export function asVersioned<T> (v: T): Versioned<T> {
-   if (versioned(v)) {
-      return v
-   } else {
-      return absurd(`Not a versioned value: ${className(v)}`)
-   }
-}
-
-// Not sure how to avoid duplicating the definitions here.
 export interface Versioned_ {
    __id: Id
 }
@@ -66,7 +54,7 @@ export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): 
          value: k,
          enumerable: false
       })
-      const vʹ: Versioned<T> = asVersioned(v)
+      const vʹ: Versioned<T> = v as Versioned<T>
       __versioned.set(k, vʹ)
       return construct(vʹ, v̅)
    } else
