@@ -11,7 +11,7 @@ import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, Num, Str, Value, _, make } from "./Value"
-import { Annotated, VersionedC, ν, asAnnotated, at, copyAt, joinα, meetα, num, setα, str } from "./Versioned"
+import { Annotated, AnnotatedC, ν, asAnnotated, at, copyAt, joinα, meetα, num, setα, str } from "./Versioned"
 
 export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
@@ -20,7 +20,7 @@ type RecDef = Expr.RecDef
 export module Eval {
 
 // ρ plus bindings in δ are closing for f.
-export class Closure extends VersionedC(DataValue)<"Closure"> {
+export class Closure extends AnnotatedC(DataValue)<"Closure"> {
    ρ: Env = _ 
    δ: List<RecDef> = _
    f: Elim<Expr> = _

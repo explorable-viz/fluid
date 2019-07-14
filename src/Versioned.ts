@@ -2,35 +2,8 @@ import { Annotation, ann } from "./util/Annotated"
 import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
 import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make, metadataFields } from "./Value"
 
-// Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
-// for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
-// can be interned in some contexts and versioned in others.
-// For idiom and usage see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
+// For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
 // https://github.com/Microsoft/TypeScript/issues/21710.
-export function VersionedC<T extends Class<Value>> (C: T) {
-   // https://stackoverflow.com/questions/33605775
-   return {
-      [C.name]: class extends C {
-            __id: Id
-            __α: Annotation
-         }
-   }[C.name] // give versioned class same name as C
-}
-
-export type Versioned<T> = Versioned_ & T
-
-export function versioned<T> (v: T): v is Versioned<T> {
-   return (v as any).__id !== undefined
-}
-
-export function asVersioned<T> (v: T): Versioned<T> {
-   if (versioned(v)) {
-      return v
-   } else {
-      return absurd(`Not a versioned value: ${className(v)}`)
-   }
-}
-
 export function AnnotatedC<T extends Class<Value>> (C: T) {
    // https://stackoverflow.com/questions/33605775
    return {
@@ -41,12 +14,6 @@ export function AnnotatedC<T extends Class<Value>> (C: T) {
 }
 
 export interface Annotated_ {
-   __α: Annotation
-}
-
-// Not sure how to avoid duplicating the definitions here.
-export interface Versioned_ {
-   __id: Id
    __α: Annotation
 }
 
@@ -62,6 +29,29 @@ export function asAnnotated<T> (v: T): Annotated<T> {
    } else {
       return absurd(`Not an annotated value: ${className(v)}`)
    }
+}
+
+// Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
+// for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
+// can be interned in some contexts and versioned in others.
+export type Versioned<T> = Versioned_ & T
+
+export function versioned<T> (v: T): v is Versioned<T> {
+   return (v as any).__id !== undefined
+}
+
+export function asVersioned<T> (v: T): Versioned<T> {
+   if (versioned(v)) {
+      return v
+   } else {
+      return absurd(`Not a versioned value: ${className(v)}`)
+   }
+}
+
+// Not sure how to avoid duplicating the definitions here.
+export interface Versioned_ {
+   __id: Id
+   __α: Annotation
 }
 
 // For versioned objects the map is not curried but takes an (interned) composite key.
