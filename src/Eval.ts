@@ -11,7 +11,7 @@ import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, Num, Str, Value, _, make } from "./Value"
-import { Annotated, AnnotatedC, ν, asAnnotated, at, copyAt, joinα, meetα, num, setα, str } from "./Versioned"
+import { Annotated, AnnotatedC, ν, at, copyAt, joinα, meetα, num, setα, str } from "./Versioned"
 
 export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
@@ -99,10 +99,10 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).forEach(([def, defₜ]: [Def, Expl.Def]) => {
       if (defₜ instanceof Expl.Let) {         
          eval_fwd(as(def, Expr.Let).e, defₜ.tv)
-         meetα(asAnnotated(defₜ.x).__α, asAnnotated(defₜ.tv.v))
+         meetα(defₜ.x.__α, defₜ.tv.v)
       } else
       if (defₜ instanceof Expl.Prim) {
-         setα(asAnnotated(defₜ.x).__α, asAnnotated(defₜ.op))
+         setα(defₜ.x.__α, defₜ.op)
       } else
       if (defₜ instanceof Expl.LetRec) {
          recDefs_(Direction.Fwd, defₜ.δ)
@@ -115,11 +115,11 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).reverse().forEach(([def, defₜ]: [Def, Expl.Def]) => {
       if (defₜ instanceof Expl.Let) {
-         joinα(asAnnotated(defₜ.tv.v).__α, asAnnotated(defₜ.x))
+         joinα(defₜ.tv.v.__α, defₜ.x)
          eval_bwd(as(def, Expr.Let).e, defₜ.tv)
       } else
       if (defₜ instanceof Expl.Prim) {
-         joinα(asAnnotated(defₜ.op).__α, asAnnotated(defₜ.x))
+         joinα(defₜ.op.__α, defₜ.x)
       } else
       if (defₜ instanceof Expl.LetRec) {
          recDefs_(Direction.Bwd, defₜ.δ)
@@ -145,14 +145,14 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
           d: DataType = __nonNull(ctrToDataType.get(c)),
           v: DataValue = at(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
       v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
-      return explValue(Expl.empty(), v)
+      return explValue(Expl.empty(), v as Annotated<DataValue>)
    } else
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote(), copyAt(ν(), e.e))
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) {
-         const v: Value = ρ.get(e.x)!
+         const v: Annotated<Value> = ρ.get(e.x)!
          return explValue(Expl.var_(e.x, v), copyAt(ν(), v))
       } else {
          return error(`Variable "${e.x.val}" not found.`)
@@ -218,8 +218,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    }
 }
 
-export function eval_fwd (e: Expr, {t, v: vʹ}: ExplValue): void {
-   const v: Annotated<Value> = asAnnotated(vʹ)
+export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    if (t instanceof Expl.Empty) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
          setα(e.__α, v)
@@ -234,7 +233,7 @@ export function eval_fwd (e: Expr, {t, v: vʹ}: ExplValue): void {
       setα(e.__α, v)
    } else
    if (t instanceof Expl.Var) {
-      setα(ann.meet(e.__α, asAnnotated(t.v).__α), v)
+      setα(ann.meet(e.__α, t.v.__α), v)
    } else
    if (t instanceof Expl.App) {
       const eʹ: Expr.App = as(e, Expr.App)
@@ -242,45 +241,44 @@ export function eval_fwd (e: Expr, {t, v: vʹ}: ExplValue): void {
       eval_fwd(eʹ.e, t.tu)
       recDefs_(Direction.Fwd, t.δ)
       eval_fwd(t.ξ.κ, t.tv)
-      setα(ann.meet(asAnnotated(t.tf.v).__α, match_fwd(t.ξ), e.__α, asAnnotated(t.tv.v).__α), v)
+      setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
       eval_fwd(eʹ.f, t.tf)
       eval_fwd(eʹ.e, t.tv)
-      setα(ann.meet(asAnnotated(t.tf.v).__α, asAnnotated(t.tv.v).__α, e.__α), v)
+      setα(ann.meet(t.tf.v.__α, t.tv.v.__α, e.__α), v)
    } else
    if (t instanceof Expl.BinaryApp) {
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_fwd(eʹ.e1, t.tv1)
       eval_fwd(eʹ.e2, t.tv2)
-      setα(ann.meet(asAnnotated(t.tv1.v).__α, asAnnotated(t.tv2.v).__α, e.__α), v)
+      setα(ann.meet(t.tv1.v.__α, t.tv2.v.__α, e.__α), v)
    } else
    if (t instanceof Expl.Defs) {
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       defs_fwd(eʹ.def̅, t.def̅)
       eval_fwd(eʹ.e, t.tv)
-      setα(ann.meet(e.__α, asAnnotated(t.tv.v).__α), v)
+      setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.MatchAs) {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(t.ξ.κ, t.tv)
-      setα(ann.meet(match_fwd(t.ξ), e.__α, asAnnotated(t.tv.v).__α), v)
+      setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(get(eʹ.cases, t.d)!, t.tv)
-      setα(ann.meet(e.__α, asAnnotated(t.tv.v).__α), v)
+      setα(ann.meet(e.__α, t.tv.v.__α), v)
    } else {
       absurd()
    }
 }
 
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
-export function eval_bwd (e: Expr, {t, v: vʹ}: ExplValue): Expr {
-   const v: Annotated<Value> = asAnnotated(vʹ)
+export function eval_bwd (e: Expr, {t, v}: ExplValue): Expr {
    if (t instanceof Expl.Empty) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
          return joinα(v.__α, e)
@@ -298,24 +296,24 @@ export function eval_bwd (e: Expr, {t, v: vʹ}: ExplValue): Expr {
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.Var) {
-      joinα(v.__α, asAnnotated(t.v))
+      joinα(v.__α, t.v)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
-      joinα(v.__α, asAnnotated(t.tv.v))
+      joinα(v.__α, t.tv.v)
       eval_bwd(t.ξ.κ, t.tv)
       match_bwd(t.ξ, v.__α)
       recDefs_(Direction.Bwd, t.δ)
-      joinα(v.__α, asAnnotated(t.tf.v))
+      joinα(v.__α, t.tf.v)
       const eʹ: Expr.App = as(e, Expr.App)
       eval_bwd(eʹ.f, t.tf)
       eval_bwd(eʹ.e, t.tu)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.UnaryApp) {
-      joinα(v.__α, asAnnotated(t.tf.v))
-      joinα(v.__α, asAnnotated(t.tv.v))
+      joinα(v.__α, t.tf.v)
+      joinα(v.__α, t.tv.v)
       const eʹ: Expr.App = as(e, Expr.App)
       eval_bwd(eʹ.f, t.tf)
       eval_bwd(eʹ.e, t.tv)
@@ -323,22 +321,22 @@ export function eval_bwd (e: Expr, {t, v: vʹ}: ExplValue): Expr {
    } else
    if (t instanceof Expl.BinaryApp) {
       assert(binaryOps.has(t.opName.val))
-      joinα(v.__α, asAnnotated(t.tv1.v))
-      joinα(v.__α, asAnnotated(t.tv2.v))
+      joinα(v.__α, t.tv1.v)
+      joinα(v.__α, t.tv2.v)
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_bwd(eʹ.e1, t.tv1)
       eval_bwd(eʹ.e2, t.tv2)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.Defs) {
-      joinα(v.__α, asAnnotated(t.tv.v))
+      joinα(v.__α, t.tv.v)
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       eval_bwd(eʹ.e, t.tv)
       defs_bwd(eʹ.def̅, t.def̅)
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
-      joinα(v.__α, asAnnotated(t.tv.v))
+      joinα(v.__α, t.tv.v)
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_bwd(t.ξ.κ, t.tv)
       match_bwd(t.ξ, v.__α)
@@ -346,7 +344,7 @@ export function eval_bwd (e: Expr, {t, v: vʹ}: ExplValue): Expr {
       return joinα(v.__α, e)
    } else
    if (t instanceof Expl.Typematch) {
-      joinα(v.__α, asAnnotated(t.tv.v))
+      joinα(v.__α, t.tv.v)
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_bwd(get(eʹ.cases, t.d)!, t.tv)
       eval_bwd(eʹ.e, t.tu)

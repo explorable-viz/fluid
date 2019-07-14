@@ -5,17 +5,17 @@ import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
 import { Str, Value, _, make } from "./Value"
-import { ν, at } from "./Versioned"
+import { Annotated, ν, at } from "./Versioned"
 
 export type Closure = Eval.Closure
 export type Expl = Expl.Expl
 
 export class ExplValue extends DataValue<"ExplValue"> {
    t: Expl = _
-   v: Value = _
+   v: Annotated<Value> = _
 }
 
-export function explValue (t: Expl, v: Value): ExplValue {
+export function explValue (t: Expl, v: Annotated<Value>): ExplValue {
    return make(ExplValue, t, v)
 }
 
@@ -58,29 +58,29 @@ export namespace Expl {
    }
 
    export class Let extends Def {
-      x: Str = _
+      x: Annotated<Str> = _
       tv: ExplValue = _
    }
 
-   export function let_ (x: Str, tv: ExplValue): Let {
+   export function let_ (x: Annotated<Str>, tv: ExplValue): Let {
       return at(ν(), Let, x, tv)
    }
 
    export class Prim extends Def {
-      x: Str = _
-      op: UnaryOp = _
+      x: Annotated<Str> = _
+      op: Annotated<UnaryOp> = _
    }
 
-   export function prim (x: Str, op: UnaryOp): Prim {
+   export function prim (x: Annotated<Str>, op: Annotated<UnaryOp>): Prim {
       return at(ν(), Prim, x, op)
    }
 
    export class RecDef extends DataValue<"Expl.RecDef"> {
-      x: Str = _
+      x: Annotated<Str> = _
       f: Closure = _
    }
 
-   export function recDef (x: Str, f: Closure): RecDef {
+   export function recDef (x: Annotated<Str>, f: Closure): RecDef {
       return at(ν(), RecDef, x, f)
    }
 
@@ -138,10 +138,10 @@ export namespace Expl {
    // v is the resolved value of x
    export class Var extends Expl {
       x: Str = _
-      v: Value = _
+      v: Annotated<Value> = _
    }
 
-   export function var_ (x: Str, v: Value): Var {
+   export function var_ (x: Str, v: Annotated<Value>): Var {
       return at(ν(), Var, x, v)
    }
 }

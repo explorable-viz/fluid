@@ -5,7 +5,7 @@ import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { Id, Num, Str, _, make, memoId } from "./Value"
-import { AnnotatedC, Versioned, at } from "./Versioned"
+import { Annotated, AnnotatedC, at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -61,36 +61,36 @@ export namespace Expr {
 
    export class BinaryApp extends Expr {
       e1: Expr = _
-      opName: Versioned<Str> = _
+      opName: Annotated<Str> = _
       e2: Expr = _
    }
 
-   export function binaryApp (k: Id, e1: Expr, opName: Versioned<Str>, e2: Expr): BinaryApp {
+   export function binaryApp (k: Id, e1: Expr, opName: Annotated<Str>, e2: Expr): BinaryApp {
       return at(k, BinaryApp, e1, opName, e2)
    }
 
    export class ConstNum extends Expr {
-      val: Versioned<Num> = _
+      val: Annotated<Num> = _
    }
    
-   export function constNum (k: Id, val: Versioned<Num>): ConstNum {
+   export function constNum (k: Id, val: Annotated<Num>): ConstNum {
       return at(k, ConstNum, val)
    }
 
    export class ConstStr extends Expr {
-      val: Versioned<Str> = _
+      val: Annotated<Str> = _
    }
 
-   export function constStr (k: Id, val: Versioned<Str>): ConstStr {
+   export function constStr (k: Id, val: Annotated<Str>): ConstStr {
       return at(k, ConstStr, val)
    }
 
    export class Constr extends Expr {
-      ctr: Versioned<Str> = _
+      ctr: Annotated<Str> = _
       args: List<Expr> = _
    }
 
-   export function constr (k: Id, ctr: Versioned<Str>, args: List<Expr>): Constr {
+   export function constr (k: Id, ctr: Annotated<Str>, args: List<Expr>): Constr {
       return at(k, Constr, ctr, args)
    }
 
@@ -100,28 +100,28 @@ export namespace Expr {
    }
 
    export class Let extends Def {
-      x: Versioned<Str> = _
+      x: Annotated<Str> = _
       e: Expr = _
    }
 
-   export function let_ (x: Versioned<Str>, e: Expr): Let {
+   export function let_ (x: Annotated<Str>, e: Expr): Let {
       return make(Let, x, e)
    }
 
    export class Prim extends Def {
-      x: Versioned<Str> = _
+      x: Annotated<Str> = _
    }
 
-   export function prim (x: Versioned<Str>): Prim {
+   export function prim (x: Annotated<Str>): Prim {
       return make(Prim, x)
    }
 
    export class RecDef extends DataValue<"RecDef"> {
-      x: Versioned<Str> = _
+      x: Annotated<Str> = _
       σ: Trie<Expr> = _
    }
  
-   export function recDef (x: Versioned<Str>, σ: Trie<Expr>): RecDef {
+   export function recDef (x: Annotated<Str>, σ: Trie<Expr>): RecDef {
       return make(RecDef, x, σ)
    }
 
@@ -177,10 +177,10 @@ export namespace Expr {
    }
 
    export class Var extends Expr {
-      x: Versioned<Str> = _
+      x: Annotated<Str> = _
    }
 
-   export function var_ (k: Id, x: Versioned<Str>): Var {
+   export function var_ (k: Id, x: Annotated<Str>): Var {
       return at(k, Var, x)
    }
 
@@ -221,7 +221,7 @@ export namespace Expr {
 
       // TODO: use annotations on x.
       export class Var<K extends Cont> extends Trie<K> {
-         x: Versioned<Str> = _
+         x: Annotated<Str> = _
          κ: K = _
 
          static is<K extends Cont> (σ: Trie<K>): σ is Var<K> {
@@ -229,7 +229,7 @@ export namespace Expr {
          }
       }
 
-      export function var_<K extends Cont> (x: Versioned<Str>, κ: K): Var<K> {
+      export function var_<K extends Cont> (x: Annotated<Str>, κ: K): Var<K> {
          return make(Var, x, κ) as Var<K>
       }
    }

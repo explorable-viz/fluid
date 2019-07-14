@@ -6,7 +6,7 @@ import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expr } from "./Expr"
 import { Str, Value, _, make } from "./Value"
-import { asAnnotated, asVersioned, setα } from "./Versioned"
+import { Annotated, asAnnotated, setα } from "./Versioned"
 
 import Cont = Expr.Cont
 import Trie = Expr.Trie
@@ -57,7 +57,7 @@ function evalCont<K extends Cont> (κ: K): RuntimeCont {
 }
 
 // Preorder traversal of all nodes in the matched prefix.
-type MatchPrefix = List<Value>
+type MatchPrefix = List<Annotated<Value>>
 
 export class Match<K> extends DataValue<"Match"> {
    v̅: MatchPrefix = _
@@ -98,14 +98,14 @@ function matchArgs (κ: RuntimeCont, v̅: Value[], u̅: MatchPrefix): [Env, Matc
 // No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
 // itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
-   apply_ (v: Value, u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
+   apply_ (v: Annotated<Value>, u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
       const c: string = className(v)
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
          if (κ !== undefined) {
-            const v̅: Value[] = (v as DataValue).fieldValues().map(v => asVersioned(v)),
-                  [ρ, ξ]: [Env, Match<RuntimeCont>] = matchArgs(κ, v̅, u̅)
-            return [ρ, match(cons<Value>(v, ξ.v̅), ξ.κ)]
+            const v̅: Annotated<Value>[] = (v as DataValue).fieldValues().map(v => asAnnotated(v)),
+            [ρ, ξ]: [Env, Match<RuntimeCont>] = matchArgs(κ, v̅, u̅)
+            return [ρ, match(cons(v, ξ.v̅), ξ.κ)]
          } else {
             const d: DataType = elimToDataType.get(className(this))!
             if (d.ctrs.has(c)) {
@@ -121,22 +121,22 @@ export abstract class DataElim extends Elim {
 }
 
 class VarElim extends Elim {
-   x: Str = _
+   x: Annotated<Str> = _
    κ: RuntimeCont = _
 
-   apply_ (v: Value, ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
+   apply_ (v: Annotated<Value>, ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
       return [Env.singleton(this.x, v), match(ξ, this.κ)]
    }
 }
 
-function varElim<K extends RuntimeCont> (x: Str, κ: RuntimeCont): VarElim {
+function varElim<K extends RuntimeCont> (x: Annotated<Str>, κ: RuntimeCont): VarElim {
    return make(VarElim, x, κ) as VarElim
 }
 
 export function match_fwd (ξ: Match<Expr>): Annotation {
-   return ξ.v̅.toArray().reduce((α: Annotation, v: Value): Annotation => ann.meet(α, asAnnotated(v).__α), ann.top)
+   return ξ.v̅.toArray().reduce((α: Annotation, v: Annotated<Value>): Annotation => ann.meet(α, v.__α), ann.top)
 }
 
 export function match_bwd (ξ: Match<Expr>, α: Annotation) : void {
-   ξ.v̅.toArray().map(v => setα(α, asAnnotated(v)))
+   ξ.v̅.toArray().map(v => setα(α, v))
 }
