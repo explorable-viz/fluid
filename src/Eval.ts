@@ -130,31 +130,30 @@ function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
-   const k: Id = ν()
    if (e instanceof Expr.ConstNum) {
-      return explValue(Expl.empty(), num(k, e.val.val))
+      return explValue(Expl.empty(), num(e.val.val))
    } else
    if (e instanceof Expr.ConstStr) {
-      return explValue(Expl.empty(), str(k, e.val.val))
+      return explValue(Expl.empty(), str(e.val.val))
    } else
    if (e instanceof Expr.Fun) {
-      return explValue(Expl.empty(), closure(k, ρ, nil(), evalTrie(e.σ)))
+      return explValue(Expl.empty(), closure(ν(), ρ, nil(), evalTrie(e.σ)))
    } else
    if (e instanceof Expr.Constr) {
       let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
           c: string = e.ctr.val,
           d: DataType = __nonNull(ctrToDataType.get(c)),
-          v: Versioned<DataValue> = at(k, d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+          v: Versioned<DataValue> = at(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
       v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
       return explValue(Expl.empty(), v)
    } else
    if (e instanceof Expr.Quote) {
-      return explValue(Expl.quote(), copyAt(k, e.e))
+      return explValue(Expl.quote(), copyAt(ν(), e.e))
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) {
          const v: Versioned<Value> = ρ.get(e.x)!
-         return explValue(Expl.var_(e.x, v), copyAt(k, v))
+         return explValue(Expl.var_(e.x, v), copyAt(ν(), v))
       } else {
          return error(`Variable "${e.x.val}" not found.`)
       }
@@ -170,7 +169,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       } else 
       if (v instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
-            return explValue(Expl.unaryApp(tf, tu), v.op(u)(k))
+            return explValue(Expl.unaryApp(tf, tu), v.op(u))
          } else {
             return error(`Applying "${v.name}" to non-primitive value.`, u)
          }
@@ -185,7 +184,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
                [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
                [v1, v2]: [Versioned<Value>, Versioned<Value>] = [tv1.v, tv2.v]
          if ((v1 instanceof Num || v1 instanceof Str) && (v2 instanceof Num || v2 instanceof Str)) {
-               return explValue(Expl.binaryApp(tv1, e.opName, tv2), op.op(v1, v2)(k))
+               return explValue(Expl.binaryApp(tv1, e.opName, tv2), op.op(v1, v2))
          } else {
             return error(`Applying "${e.opName}" to non-primitive value.`, v1, v2)
          }
@@ -196,13 +195,13 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.Defs) {
       const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, e.def̅, emptyEnv()),
             tv: ExplValue = eval_(ρ.concat(ρʹ), e.e)
-      return explValue(Expl.defs(def̅ₜ, tv), copyAt(k, tv.v))
+      return explValue(Expl.defs(def̅ₜ, tv), copyAt(ν(), tv.v))
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
             [ρʹ, ξκ]: [Env, Match<Expr>] = evalTrie(e.σ).apply(tu.v),
             tv: ExplValue = eval_(ρ.concat(ρʹ), ξκ.κ)
-      return explValue(Expl.matchAs(tu, ξκ, tv), copyAt(k, tv.v))
+      return explValue(Expl.matchAs(tu, ξκ, tv), copyAt(ν(), tv.v))
    } else
    if (e instanceof Expr.Typematch) {
       const tu: ExplValue = eval_(ρ, e.e),
@@ -212,7 +211,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
          return error(`Typecase mismatch: no clause for ${className(tu.v)}.`)
       } else {
          const tv: ExplValue = eval_(ρ, eʹ)
-         return explValue(Expl.typematch(tu, d.name, tv), copyAt(k, tv.v))
+         return explValue(Expl.typematch(tu, d.name, tv), copyAt(ν(), tv.v))
       }
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)

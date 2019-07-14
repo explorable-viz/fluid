@@ -1,8 +1,8 @@
 import { absurd } from "./util/Core"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
-import { Id, Persistent, _, make } from "./Value"
-import { Versioned, at } from "./Versioned"
+import { Persistent, _, make } from "./Value"
+import { Versioned, ν, at } from "./Versioned"
 
 // See Env for convention regarding instance members on reflected datatypes.
 
@@ -12,15 +12,15 @@ export abstract class Bool extends DataValue<"Bool"> {
 export class True extends Bool {
 }
 
-export function true_ (k: Id): Versioned<Bool> {
-   return at(k, True)
+export function true_ (): Versioned<Bool> {
+   return at(ν(), True)
 }
 
 export class False extends Bool {
 }
 
-export function false_ (k: Id): Versioned<Bool> {
-   return at(k, False)
+export function false_ (): Versioned<Bool> {
+   return at(ν(), False)
 }
 
 export abstract class List<T> extends DataValue<"List"> {
