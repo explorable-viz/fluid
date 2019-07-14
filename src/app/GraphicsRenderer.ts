@@ -5,7 +5,7 @@ import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Num, Str } from "../Value"
-import { Annotated, asVersioned, num, setallα } from "../Versioned"
+import { Annotated, asAnnotated, num, setallα } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
@@ -134,12 +134,12 @@ export class GraphicsRenderer {
    pointHighlights (p̅: List<Point>): void {
       for (; Cons.is(p̅); p̅ = p̅.tail) {
          // TODO: annotation on point itself is not considered yet
-         this.xyHighlight(p̅.head.x, p̅.head.y)
+         this.xyHighlight(asAnnotated(p̅.head.x), asAnnotated(p̅.head.y))
       }
    }
 
-   xyHighlight (x: Num, y: Num): void {
-      const [x_α, y_α] = [__nonNull(asVersioned(x).__α), __nonNull(asVersioned(y).__α)]
+   xyHighlight (x: Annotated<Num>, y: Annotated<Num>): void {
+      const [x_α, y_α] = [__nonNull(x.__α), __nonNull(x.__α)]
       let α: Annotation = ann.meet(x_α, y_α)
       if (this.slicer.direction === Direction.Fwd) {
          α = ann.negate(α)
@@ -191,7 +191,7 @@ export class GraphicsRenderer {
       this.current.appendChild(text)
       // this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
-      let α: Annotation = __nonNull(asVersioned(g.str).__α)
+      let α: Annotation = __nonNull(asAnnotated(g.str).__α)
       if (this.slicer.direction === Direction.Fwd) {
          α = ann.negate(α)
       }

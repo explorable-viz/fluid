@@ -3,7 +3,7 @@ import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { Persistent, Value } from "../../src/Value"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { Expr } from "../../src/Expr"
-import { asVersioned } from "../../src/Versioned"
+import { asAnnotated } from "../../src/Versioned"
 
 import Def = Expr.Def
 import Let = Expr.Let
@@ -76,22 +76,22 @@ export class Cursor {
    }
 
    needed (): Cursor {
-      assert(asVersioned(this.v).__α === ann.top)
+      assert(asAnnotated(this.v).__α === ann.top)
       return this
    }
 
    notNeeded (): Cursor {
-      assert(asVersioned(this.v).__α === ann.bot)
+      assert(asAnnotated(this.v).__α === ann.bot)
       return this
    }
 
    need (): Cursor {
-      asVersioned(this.v).__α = ann.top
+      asAnnotated(this.v).__α = ann.top
       return this
    }
 
    notNeed (): Cursor {
-      asVersioned(this.v).__α = ann.bot
+      asAnnotated(this.v).__α = ann.bot
       return this
    }
 

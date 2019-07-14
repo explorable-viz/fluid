@@ -51,7 +51,6 @@ export function asVersioned<T> (v: T): Versioned<T> {
 // Not sure how to avoid duplicating the definitions here.
 export interface Versioned_ {
    __id: Id
-   __α: Annotation
 }
 
 // For versioned objects the map is not curried but takes an (interned) composite key.

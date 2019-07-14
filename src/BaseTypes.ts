@@ -2,7 +2,7 @@ import { absurd } from "./util/Core"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Persistent, _, make } from "./Value"
-import { Versioned, ν, at } from "./Versioned"
+import { Annotated, ν, annotatedAt } from "./Versioned"
 
 // See Env for convention regarding instance members on reflected datatypes.
 
@@ -12,15 +12,15 @@ export abstract class Bool extends DataValue<"Bool"> {
 export class True extends Bool {
 }
 
-export function true_ (): Versioned<Bool> {
-   return at(ν(), True)
+export function true_ (): Annotated<Bool> {
+   return annotatedAt(ν(), True)
 }
 
 export class False extends Bool {
 }
 
-export function false_ (): Versioned<Bool> {
-   return at(ν(), False)
+export function false_ (): Annotated<Bool> {
+   return annotatedAt(ν(), False)
 }
 
 export abstract class List<T> extends DataValue<"List"> {
@@ -70,7 +70,7 @@ export class Cons<T> extends List<T> {
 }
 
 export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
-   return make(Cons, head, tail) as Versioned<Cons<T>>
+   return make(Cons, head, tail) as Cons<T>
 }
 
 export class Pair<T, U> extends DataValue<"Pair"> {
