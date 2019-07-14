@@ -8,7 +8,7 @@ export function AnnotatedC<T extends Class<Value>> (C: T) {
    // https://stackoverflow.com/questions/33605775
    return {
       [C.name]: class extends C {
-            __α: Annotation
+            __α: Annotation = _
          }
    }[C.name] // give versioned class same name as C
 }
@@ -130,7 +130,7 @@ export function setα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
 }
 
 export function setallα<Tag extends ValueTag, T extends Value<Tag>> (α: Annotation, v: T): T {
-   if (versioned(v)) {
+   if (annotated(v)) {
       setα(α, v)
    }
    v.fieldValues().forEach((v: Persistent): void => {
@@ -142,7 +142,7 @@ export function setallα<Tag extends ValueTag, T extends Value<Tag>> (α: Annota
 }
 
 export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
-   if (versioned(v)) {
+   if (annotated(v)) {
       setα(ann.negate(v.__α), v)
    }
    v.fieldValues().forEach((v: Persistent): void => {
