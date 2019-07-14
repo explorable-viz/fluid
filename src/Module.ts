@@ -1,11 +1,12 @@
 import { Grammar, Parser } from "nearley"
 import { __nonNull, as, error } from "./util/Core"
+import { str } from "./Annotated"
 import { List } from "./BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import * as grammar from "./Parse"
-import { ν, str } from "./Versioned"
+import { ν } from "./Versioned"
 
 // Kindergarten modules.
 type Module = List<Expr.Def>

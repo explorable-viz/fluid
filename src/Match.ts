@@ -1,12 +1,12 @@
 import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
+import { Annotated, asAnnotated, setα } from "./Annotated"
 import { List, Pair, cons, nil } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expr } from "./Expr"
 import { Str, Value, _, make } from "./Value"
-import { Annotated, asAnnotated, setα } from "./Versioned"
 
 import Cont = Expr.Cont
 import Trie = Expr.Trie

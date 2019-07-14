@@ -1,8 +1,8 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
+import { str } from "./Annotated"
 import { DataExpl, DataValue } from "./DataValue"
 import { DataElim } from "./Match"
 import { Num, PrimValue, Str, _, fields } from "./Value"
-import { str } from "./Versioned"
 
 export class PrimType {
    name: Str

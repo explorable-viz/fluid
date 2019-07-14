@@ -1,12 +1,12 @@
 import { __nonNull, as } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
+import { setallα } from "../../src/Annotated"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { ExplValue } from "../../src/ExplValue"
 import { Expr } from "../../src/Expr"
 import "../../src/Graphics" // for graphical datatypes
 import "../../src/app/GraphicsRenderer" // for graphics primitives
-import { setallα } from "../../src/Versioned"
 import { Cursor } from "./Cursor"
 
 export class FwdSlice {

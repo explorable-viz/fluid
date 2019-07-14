@@ -1,5 +1,6 @@
 import { __nonNull, as } from "../util/Core"
 import { ann } from "../util/Lattice"
+import { negateallα, setallα } from "../Annotated"
 import { List, Pair } from "../BaseTypes"
 import { Env, ExtendEnv } from "../Env"
 import { Direction, Eval } from "../Eval"
@@ -8,7 +9,7 @@ import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
 import { Num, Str, Value } from "../Value"
-import { Versioned, negateallα, setallα } from "../Versioned"
+import { Versioned } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 export class View implements Slicer {

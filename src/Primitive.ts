@@ -1,7 +1,8 @@
 import { as, assert } from "./util/Core"
+import { Annotated, asAnnotated, annotatedAt, num, str } from "./Annotated"
 import { Bool, true_, false_ } from "./BaseTypes"
 import { Num, PrimOpTag, PrimValue, Str, _, Value } from "./Value"
-import { Annotated, asAnnotated, annotatedAt, ν, num, str } from "./Versioned"
+import { ν } from "./Versioned"
 
 type Unary<T, V> = (x: T) => Annotated<V>
 type Binary<T, U, V> = (x: T, y: U) => Annotated<V>

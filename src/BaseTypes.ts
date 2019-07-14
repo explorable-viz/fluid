@@ -1,8 +1,9 @@
 import { absurd } from "./util/Core"
+import { Annotated, annotatedAt } from "./Annotated"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Persistent, _, make } from "./Value"
-import { Annotated, ν, annotatedAt } from "./Versioned"
+import { ν } from "./Versioned"
 
 // See Env for convention regarding instance members on reflected datatypes.
 

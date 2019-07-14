@@ -1,9 +1,9 @@
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
+import { asAnnotated } from "../../src/Annotated"
 import { Persistent, Value } from "../../src/Value"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { Expr } from "../../src/Expr"
-import { asAnnotated } from "../../src/Versioned"
 
 import Def = Expr.Def
 import Let = Expr.Let

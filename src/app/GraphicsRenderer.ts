@@ -1,11 +1,11 @@
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Annotation, ann } from "../util/Lattice"
+import { Annotated, asAnnotated, num, setallα } from "../Annotated"
 import { Cons, List } from "../BaseTypes"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Num, Str } from "../Value"
-import { Annotated, asAnnotated, num, setallα } from "../Versioned"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]

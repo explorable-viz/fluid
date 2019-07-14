@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
+import { Annotated } from "./Annotated"
 import { DataValue } from "./DataValue"
 import { Str, Value, _, make } from "./Value"
-import { Annotated } from "./Versioned"
 
 // Idiom is to permit instance methods on reflected datatypes, but not have them use polymorphism.
 

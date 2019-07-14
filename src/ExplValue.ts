@@ -1,3 +1,4 @@
+import { Annotated } from "./Annotated"
 import { List } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { Eval } from "./Eval"
@@ -5,7 +6,7 @@ import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
 import { Str, Value, _, make } from "./Value"
-import { Annotated, ν, at } from "./Versioned"
+import { ν, at } from "./Versioned"
 
 export type Closure = Eval.Closure
 export type Expl = Expl.Expl

@@ -1,6 +1,7 @@
 import { zip } from "./util/Array"
 import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { ann } from "./util/Lattice"
+import { Annotated, AnnotatedC, annotatedAt, joinα, meetα, num, setα, str } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
 import { DataValue } from "./DataValue"
@@ -11,7 +12,7 @@ import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, Num, Str, Value, _, make } from "./Value"
-import { Annotated, AnnotatedC, ν, annotatedAt, at, copyAt, joinα, meetα, num, setα, str } from "./Versioned"
+import { ν, at, copyAt } from "./Versioned"
 
 export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
