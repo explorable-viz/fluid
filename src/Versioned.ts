@@ -1,9 +1,8 @@
 import { Class, __nonNull, classOf, notYetImplemented } from "./util/Core"
 import { Id, Persistent, Value, _, construct, make, metadataFields } from "./Value"
 
-// Versioned objects are persistent objects that have state that varies across worlds. It doesn't make sense 
-// for interned objects to have explanations (or does it?) or annotations. Interface because the same datatype
-// can be interned in some contexts and versioned in others.
+// Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
+// same datatype can be interned in some contexts and versioned in others.
 export type Versioned<T> = Versioned_ & T
 
 export interface Versioned_ {
