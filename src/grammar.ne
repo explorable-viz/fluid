@@ -31,12 +31,13 @@ const lexer = moo.compile({
 
 @{%
 import { __check, assert, error } from "./util/Core"
+import { num, str } from "./Annotated"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { Str } from "./Value"
-import { ν, num, str } from "./Versioned"
+import { ν } from "./Versioned"
 
 import Cont = Expr.Cont
 import Trie = Expr.Trie
