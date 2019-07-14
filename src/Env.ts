@@ -1,13 +1,12 @@
 import { absurd } from "./util/Core"
 import { DataValue } from "./DataValue"
 import { Str, Value, _, make } from "./Value"
-import { Versioned } from "./Versioned"
 
 // Idiom is to permit instance methods on reflected datatypes, but not have them use polymorphism.
 
 // Environments are snoc lists.
 export abstract class Env extends DataValue<"Env"> {
-   get (k: Versioned<Str>): Versioned<Value> | undefined {
+   get (k: Str): Value | undefined {
       if (this instanceof EmptyEnv) {
          return undefined
       } else
@@ -22,11 +21,11 @@ export abstract class Env extends DataValue<"Env"> {
       }
    }
    
-   has (k: Versioned<Str>): boolean {
+   has (k: Str): boolean {
       return this.get(k) !== undefined
    }
 
-   static singleton (k: Versioned<Str>, v: Versioned<Value>): ExtendEnv {
+   static singleton (k: Str, v: Value): ExtendEnv {
       return extendEnv(emptyEnv(), k, v)
    }
    
@@ -51,10 +50,10 @@ export function emptyEnv (): EmptyEnv {
 
 export class ExtendEnv extends Env {
    ρ: Env = _
-   k: Versioned<Str> = _
-   v: Versioned<Value> = _
+   k: Str = _
+   v: Value = _
 }
 
-export function extendEnv (ρ: Env, k: Versioned<Str>, v: Versioned<Value>): ExtendEnv {
+export function extendEnv (ρ: Env, k: Str, v: Value): ExtendEnv {
    return make(ExtendEnv, ρ, k, v)
 }

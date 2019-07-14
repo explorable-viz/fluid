@@ -17,12 +17,6 @@ export function VersionedC<T extends Class<Value>> (C: T) {
    }[C.name] // give versioned class same name as C
 }
 
-// Not sure how to avoid duplicating the definitions here.
-export interface Versioned_ {
-   __id: Id
-   __α: Annotation
-}
-
 export type Versioned<T> = Versioned_ & T
 
 export function versioned<T> (v: T): v is Versioned<T> {
@@ -34,6 +28,39 @@ export function asVersioned<T> (v: T): Versioned<T> {
       return v
    } else {
       return absurd(`Not a versioned value: ${className(v)}`)
+   }
+}
+
+export function AnnotatedC<T extends Class<Value>> (C: T) {
+   // https://stackoverflow.com/questions/33605775
+   return {
+      [C.name]: class extends C {
+            __α: Annotation
+         }
+   }[C.name] // give versioned class same name as C
+}
+
+export interface Annotated_ {
+   __α: Annotation
+}
+
+// Not sure how to avoid duplicating the definitions here.
+export interface Versioned_ {
+   __id: Id
+   __α: Annotation
+}
+
+export type Annotated<T> = Annotated_ & T
+
+export function annotated<T> (v: T): v is Annotated<T> {
+   return (v as any).__α !== undefined
+}
+
+export function asAnnotated<T> (v: T): Annotated<T> {
+   if (versioned(v)) {
+      return v
+   } else {
+      return absurd(`Not an annotated value: ${className(v)}`)
    }
 }
 
@@ -101,7 +128,7 @@ export function str (val: string): Versioned<Str> {
    return at(ν(), Str, val)
 }
 
-export function setα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
+export function setα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
    v.__α = α
    return v
 }
@@ -130,12 +157,12 @@ export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): 
    return v
 }
 
-export function joinα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
+export function joinα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
    v.__α = ann.join(α, v.__α)
    return v
 }
 
-export function meetα<T, U extends Versioned<T>> (α: Annotation, v: U): U {
+export function meetα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
    v.__α = ann.meet(α, v.__α)
    return v
 }

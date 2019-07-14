@@ -5,7 +5,7 @@ import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { Id, Num, Str, _, make, memoId } from "./Value"
-import { Versioned, VersionedC, at } from "./Versioned"
+import { AnnotatedC, Versioned, at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -47,7 +47,7 @@ export namespace Expr {
       }
    }
 
-   export abstract class Expr extends VersionedC(DataValue)<"Expr"> {
+   export abstract class Expr extends AnnotatedC(DataValue)<"Expr"> {
    }
    
    export class App extends Expr {
