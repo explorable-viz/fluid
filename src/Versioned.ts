@@ -1,5 +1,5 @@
-import { Annotation, ann } from "./util/Annotated"
 import { Class, __nonNull, absurd, className, classOf, notYetImplemented } from "./util/Core"
+import { Annotation, ann } from "./util/Lattice"
 import { Id, Num, Persistent, Str, Value, ValueTag, _, construct, make, metadataFields } from "./Value"
 
 // For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
