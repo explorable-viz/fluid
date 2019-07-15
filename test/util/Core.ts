@@ -51,7 +51,8 @@ export class BwdSlice {
          Eval.eval_fwd(e, tv) // clear annotations on all values
          this.val = new Cursor(tv.v)
          this.setup()
-         this.expr = new Cursor(Eval.eval_bwd(e, tv))
+         Eval.eval_bwd(e, tv)
+         this.expr = new Cursor(e)
          this.expect()
       }
    }

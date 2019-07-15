@@ -279,26 +279,26 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
 }
 
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
-export function eval_bwd (e: Expr, {t, v}: ExplValue): Expr {
+export function eval_bwd (e: Expr, {t, v}: ExplValue): void {
    if (t instanceof Expl.Empty) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
-         return joinα(v.__α, e)
+         joinα(v.__α, e)
       } else
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
          // reverse order but shouldn't matter in absence of side-effects:
          zip(v.fieldExplValues(), eʹ.args.toArray()).map(([[t, v], e]) => eval_bwd(e, explValue(t, v)))
-         return joinα(v.__α, e)
+         joinα(v.__α, e)
       } else {
-         return absurd()
+         absurd()
       }
    } else
    if (t instanceof Expl.Quote) {
-      return joinα(v.__α, e)
+      joinα(v.__α, e)
    } else
    if (t instanceof Expl.Var) {
       joinα(v.__α, t.v)
-      return joinα(v.__α, e)
+      joinα(v.__α, e)
    } else
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
@@ -310,7 +310,7 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): Expr {
       const eʹ: Expr.App = as(e, Expr.App)
       eval_bwd(eʹ.f, t.tf)
       eval_bwd(eʹ.e, t.tu)
-      return joinα(v.__α, e)
+      joinα(v.__α, e)
    } else
    if (t instanceof Expl.UnaryApp) {
       joinα(v.__α, t.tf.v)
@@ -318,7 +318,7 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): Expr {
       const eʹ: Expr.App = as(e, Expr.App)
       eval_bwd(eʹ.f, t.tf)
       eval_bwd(eʹ.e, t.tv)
-      return joinα(v.__α, e)
+      joinα(v.__α, e)
    } else
    if (t instanceof Expl.BinaryApp) {
       assert(binaryOps.has(t.opName.val))
@@ -327,14 +327,14 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): Expr {
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_bwd(eʹ.e1, t.tv1)
       eval_bwd(eʹ.e2, t.tv2)
-      return joinα(v.__α, e)
+      joinα(v.__α, e)
    } else
    if (t instanceof Expl.Defs) {
       joinα(v.__α, t.tv.v)
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       eval_bwd(eʹ.e, t.tv)
       defs_bwd(eʹ.def̅, t.def̅)
-      return joinα(v.__α, e)
+      joinα(v.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
       joinα(v.__α, t.tv.v)
@@ -342,16 +342,16 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): Expr {
       eval_bwd(t.ξ.κ, t.tv)
       match_bwd(t.ξ, v.__α)
       eval_bwd(eʹ.e, t.tu)
-      return joinα(v.__α, e)
+      joinα(v.__α, e)
    } else
    if (t instanceof Expl.Typematch) {
       joinα(v.__α, t.tv.v)
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_bwd(get(eʹ.cases, t.d)!, t.tv)
       eval_bwd(eʹ.e, t.tu)
-      return joinα(v.__α, e)
+      joinα(v.__α, e)
    } else {
-      return absurd()
+      absurd()
    }
 }
 
