@@ -5,8 +5,8 @@ import { List } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
-import { Id, Num, Str, _, make, memoId } from "./Value"
-import { at } from "./Versioned"
+import { Id, Num, Str, _, make } from "./Value"
+import { ν, at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -34,14 +34,13 @@ export namespace Expr {
    // Use to be a parameterised class but we can simplify using our nominal type idiom.
    export type Cont = Expr | DataValue<"Trie">
 
-   // Use memoisation to keep this pure. Unrelated to the annotation lattice; Expr case intentionally only
-   // defined for higher-order (function) case.
+   // Unrelated to the annotation lattice. Expr case intentionally only defined for higher-order (function) case.
    function join<K extends Cont> (κ: K, κʹ: K): K {
       if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
          return Trie.Trie.join<K>(κ, κʹ) as K
       } else
       if (κ instanceof Fun && κʹ instanceof Fun) {
-         return fun(memoId(join, arguments), join(κ.σ, κʹ.σ)) as Expr as K
+         return fun(ν(), join(κ.σ, κʹ.σ)) as Expr as K
       } else {
          return absurd("Undefined join.", κ, κʹ)
       }
