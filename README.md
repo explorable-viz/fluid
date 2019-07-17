@@ -6,7 +6,8 @@
 
 ### Forthcoming
 
-- **higher-level graphics primitives** to eliminate spurious layout-related dependencies and improve performance (#183, #121, #180, #112)
+- **higher-level graphics primitives** to eliminate spurious layout-related dependencies and improve performance (see issues [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112))
+- **Wrattler integration** (see issues [193](https://github.com/rolyp/lambdacalc/issues/193), [192](https://github.com/rolyp/lambdacalc/issues/192), [55](https://github.com/rolyp/lambdacalc/issues/55))
 
 ### Recently completed
 
