@@ -11,6 +11,12 @@
 
 ### Recently completed
 
+| Feature/change | Issue(s) | When |
+| --- | --- | --- |
+| Migrate to Nearley parser | [190](https://github.com/rolyp/lambdacalc/issues/190) | 29 June 2019 | 
+| Preliminary design for linking charts via slicing | [164](https://github.com/rolyp/lambdacalc/issues/164), [188](https://github.com/rolyp/lambdacalc/issues/188) | 18 June 2019 |
+| Library code for axes | [53](https://github.com/rolyp/lambdacalc/issues/53), [111](https://github.com/rolyp/lambdacalc/issues/111) | 10 June 2019 |
+
 ## Possible submissions
 
 | Venue            | Deadline    |
