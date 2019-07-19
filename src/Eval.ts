@@ -49,6 +49,7 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
 function recDefs_ (dir: Direction, δ: List<Expl.RecDef>): void {
    if (Cons.is(δ)) {
       zip(δ.head.f.δ.toArray(), δ.toArray()).map(([def, defₜ]: [RecDef, Expl.RecDef]): void => {
+         assert(def.x.eq(defₜ.x))
          if (dir === Direction.Fwd) {
             setα(def.x.__α, defₜ.f)
          } else {
@@ -144,9 +145,9 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
           c: string = e.ctr.val,
           d: DataType = __nonNull(ctrToDataType.get(c)),
-          v: DataValue = annotatedAt(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+          v: Annotated<DataValue> = annotatedAt(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
       v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
-      return explValue(Expl.empty(), v as Annotated<DataValue>)
+      return explValue(Expl.empty(), v)
    } else
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote(), copyAt(ν(), e.e))
