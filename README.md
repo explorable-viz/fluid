@@ -1,25 +1,26 @@
-# Explorable visualisations for data science
+## Explorable visualisations for data science
 
 [![CircleCI](https://circleci.com/gh/rolyp/lambdacalc.svg?style=svg&circle-token=c86993fd6b2339b45286ddfc5a4c0c0d2401ffd7)](https://circleci.com/gh/rolyp/lambdacalc)
 
-## Current status
+### Recent activity
+
+| When | Activity | Issue(s) |
+| --- | --- | --- |
+| 18 July 2019 | Demo for REG interview panel ||
+| 17 July 2019 | Demo for <a href="https://prodo.ai">Prodo</a> ||
+| 29 June 2019 | **Migrate to Nearley parser** for improved error-reporting | [190](https://github.com/rolyp/lambdacalc/issues/190) | 
+| 25 June 2019 | Demo for HPI [Software Architecture Group](https://www.hpi.uni-potsdam.de/hirschfeld/index.html)||
+| 18 June 2019 | **Preliminary design for linking visualisations** | [164](https://github.com/rolyp/lambdacalc/issues/164), [188](https://github.com/rolyp/lambdacalc/issues/188) |
+| 10 June 2019 | **Library code for axes** | [53](https://github.com/rolyp/lambdacalc/issues/53), [111](https://github.com/rolyp/lambdacalc/issues/111) |
 
 ### Forthcoming
 
 | Feature/change | Issue(s) | When |
 | --- | --- | --- |
-| **Higher-level graphics primitives**<br>Eliminate spurious layout-related dependencies and improve performance | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) | August |
+| **Higher-level graphics primitives** to eliminate spurious layout-related dependencies and improve performance | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) | August |
 | **Wrattler integration** | [193](https://github.com/rolyp/lambdacalc/issues/193), [192](https://github.com/rolyp/lambdacalc/issues/192), [55](https://github.com/rolyp/lambdacalc/issues/55) | September |
 
-### Recently completed
-
-| Feature/change | Issue(s) | When |
-| --- | --- | --- |
-| **Migrate to Nearley parser**<br>Improved error-reporting | [190](https://github.com/rolyp/lambdacalc/issues/190) | 29 June 2019 | 
-| **Preliminary design for linking visualisations** | [164](https://github.com/rolyp/lambdacalc/issues/164), [188](https://github.com/rolyp/lambdacalc/issues/188) | 18 June 2019 |
-| **Library code for axes** | [53](https://github.com/rolyp/lambdacalc/issues/53), [111](https://github.com/rolyp/lambdacalc/issues/111) | 10 June 2019 |
-
-## Possible submissions
+### Possible submissions
 
 | Venue            | Deadline    |
 | ---------------- |:-----------:|
@@ -27,7 +28,7 @@
 | Eurovis 2020     | 5 Dec 2019  |
 | <s>LIVE 2019</s> | 2 Aug 2019  |
 
-## Installation
+### Installation
 
 - Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/). Then run `npm install`.
 
