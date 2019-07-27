@@ -23,8 +23,8 @@
 ### Possible submissions
 
 | Deadline    | Venue            |
-| --- |: --- :|
-| ~1 Mar 2020 | ICFP 2020        |
+| --- | --- |
+| 1 Mar 2020 (TBC) | ICFP 2020        |
 | 5 Dec 2019  | Eurovis 2020     |
 | 2 Aug 2019  | <s>LIVE 2019</s> |
 
