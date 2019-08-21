@@ -6,8 +6,9 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
-| 18 July 2019 | Demo for REG interview panel ||
-| 17 July 2019 | Demo for <a href="https://prodo.ai">Prodo</a> ||
+| 20 August 2019 | Demo to Luke Marsden of [Dotscience](https://dotscience.com/) ||
+| 18 July 2019 | Demo to REG interview panel ||
+| 17 July 2019 | Demo to [Prodo](https://prodo.ai) ||
 | 29 June 2019 | **Migrate to Nearley parser** for improved error-reporting | [190](https://github.com/rolyp/lambdacalc/issues/190) | 
 | 25 June 2019 | Demo for HPI [Software Architecture Group](https://www.hpi.uni-potsdam.de/hirschfeld/index.html)||
 | 18 June 2019 | **Preliminary design for linking visualisations** | [164](https://github.com/rolyp/lambdacalc/issues/164), [188](https://github.com/rolyp/lambdacalc/issues/188) |
