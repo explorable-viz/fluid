@@ -1,7 +1,7 @@
 {
-  "name": "lambdacalc",
-  "version": "0.0.1",
-  "description": "LambdaCalc",
+  "name": "fluid",
+  "version": "0.0.0",
+  "description": "Fluid",
   "main": "make",
   "dependencies": {
     "@types/three": "0.93.28",
@@ -43,8 +43,7 @@
     "start": "webpack-dev-server",
     "bundle": "webpack",
     "test": "karma start",
-    "ci-test": "karma start --singleRun=true --reporters junit,mocha",
-    "chrome": "karma start --browsers=Chrome"
+    "ci-test": "karma start --singleRun=true --reporters junit,mocha"
   },
   "repository": {
     "type": "git",

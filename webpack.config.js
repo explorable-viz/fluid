@@ -26,6 +26,9 @@ module.exports = {
          }
       ]
    },
+   devServer: {
+      port: 8000
+   },
    plugins: [
       new HtmlWebpackPlugin(),
       // Plugin to show any webpack warnings and prevent tests from running.
