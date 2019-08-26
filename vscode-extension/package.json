@@ -7,7 +7,7 @@
         "vscode": "^1.33.0"
     },
     "categories": [
-        "Programming Languages"
+        "Languages"
     ],
     "contributes": {
         "languages": [

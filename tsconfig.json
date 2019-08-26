@@ -1,6 +1,7 @@
 {
    "compilerOptions": {
-      "target": "es6", // es6 will require change to lookupArg for constructors
+      "declaration": true,
+      "target": "es6",
       "lib": ["es2017", "dom"],
       "module": "commonjs",
       "noImplicitAny": true,
@@ -19,5 +20,4 @@
       "node_modules"
    ],
    "types": [],
-   "declaration": true
 }
