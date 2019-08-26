@@ -1,8 +1,7 @@
 {
   "name": "@rolyp/fluid",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Fluid",
-  "main": "make",
   "dependencies": {
     "@types/three": "0.93.28",
     "html-webpack-plugin": "^3.2.0",
@@ -58,5 +57,7 @@
     "url": "https://github.com/rolyp/lambdacalc/issues"
   },
   "homepage": "https://github.com/rolyp/lambdacalc",
-  "prepare": "tsc"
+  "prepare": "tsc",
+  "main": "./src/Lib.js",
+  "types": "./src/Lib.d.ts"
 }
