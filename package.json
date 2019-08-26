@@ -1,13 +1,14 @@
 {
   "name": "@rolyp/fluid",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Fluid",
   "dependencies": {
     "@types/three": "0.93.28",
     "html-webpack-plugin": "^3.2.0",
     "jquery": "^3.3.1",
     "mocha-headless-chrome": "^1.8.3",
-    "puppeteer": "^1.13.0",
+    "moo": "^0.5.0",
+    "nearley": "^2.16.0",
     "three": "^0.93",
     "three-orbitcontrols-ts": "^0.1.2",
     "three.meshline": "^1.2.0",
