@@ -137,6 +137,6 @@ export function match_fwd (ξ: Match<Expr>): Annotation {
    return ξ.v̅.toArray().reduce((α: Annotation, v: Annotated<Value>): Annotation => ann.meet(α, v.__α), ann.top)
 }
 
-export function match_bwd (ξ: Match<Expr>, α: Annotation) : void {
+export function match_bwd (ξ: Match<Expr>, α: Annotation): void {
    ξ.v̅.toArray().map(v => setα(α, v))
 }

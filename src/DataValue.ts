@@ -12,9 +12,7 @@ export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Ta
    }
 
    fieldExplValues(): [Expl, Annotated<Value>][] {
-      const t̅: Expl[] = this.__expl.fieldValues(),
-            v̅: Annotated<Value>[] = this.fieldValues() as Annotated<Value>[]
-      return zip(t̅, v̅)
+      return zip(this.__expl.fieldValues(), this.fieldValues() as Annotated<Value>[])
    }
 }
 

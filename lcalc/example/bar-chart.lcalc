@@ -1,21 +1,14 @@
-letrec 
-   // Put data into a map instead?
-   fun lookupStr k [(k', v), ...kvs] → 
-      match k === k' as {
-         True → v;
-         False → lookupStr k kvs
-      };
-   fun lookupNum k [(k', v), ...kvs] → 
-      match k == k' as {
-         True → v;
-         False → lookupNum k kvs
-      };
+letrec fun lookup k [(k', v), ...kvs] → 
+   match k == k' as {
+      True → v;
+      False → lookup k kvs
+   };
 // CountryData → Output
 let countryTotal = compose sum (map snd);
 // AnnualData → Output
 let annualTotal = compose sum (map (compose countryTotal snd));
 // Year → List (Country, Output)
-let countryTotals = fun year → map (second countryTotal) (lookupNum year data);
+let countryTotals = fun year → map (second countryTotal) (lookup year data);
 // List (Year, Output)
 let yearlyTotals = map (fun (year, annualData) → (year, annualTotal annualData)) data;
 let renewablesByCountry = fun year →
