@@ -2,11 +2,15 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 var path = require('path');
 
 module.exports = {
-   entry: ["./src/app/App.ts"],
+   entry: {
+      main: "./src/app/App.ts",
+      lib: "./src/Lib.ts"
+   },
    output: {
-      filename: "bundle.js",
-      library: "LambdaCalc",
-      libraryTarget: "var"
+      filename: "[name].bundle.js",
+      library: "Fluid",
+      libraryTarget: "var",
+      path: path.resolve(__dirname, 'dist/assets')
    },
    resolve: {
       // Add '.ts' as a resolvable extension.
