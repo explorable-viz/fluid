@@ -47,17 +47,18 @@ export function singleton <V extends Persistent> (k: Str, v: V): FiniteMap<V> {
    return insert(empty(), k, v)
 }
 
-// Union with a combining function.
-export function unionWith <V extends Persistent, T extends FiniteMap<V>> (m: T, mʹ: T, f: (v: V, vʹ: V) => V): T {
-   if (NonEmpty.is(mʹ)) {
-      const k: Str = mʹ.t.fst,
-            v: V = mʹ.t.snd,
-            vʹ: V | undefined = get(m, k),
+// Union with a combining function. Avoid primes in signature; seems to be incompatible with version 
+// of ts-loader used by Wrattler.
+export function unionWith <V extends Persistent, T extends FiniteMap<V>> (m1: T, m2: T, f: (v1: V, v2: V) => V): T {
+   if (NonEmpty.is(m2)) {
+      const k: Str = m2.t.fst,
+            v: V = m2.t.snd,
+            vʹ: V | undefined = get(m1, k),
             u: V = vʹ === undefined ? v : f(v, vʹ)
-      return unionWith(insert(unionWith(m, mʹ.left, f), k, u), mʹ.right, f) as T
+      return unionWith(insert(unionWith(m1, m2.left, f), k, u), m2.right, f) as T
    } else
-   if (Empty.is(mʹ)) {
-      return m
+   if (Empty.is(m2)) {
+      return m1
    } else {
       return absurd()
    }
