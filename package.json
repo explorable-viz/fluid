@@ -57,6 +57,6 @@
     "url": "https://github.com/rolyp/lambdacalc/issues"
   },
   "homepage": "https://github.com/rolyp/lambdacalc",
-  "main": "./js/src/Lib.js",
-  "types": "./js/src/Lib.d.ts"
+  "main": "bundle.js",
+  "types": "bundle.d.ts"
 }
