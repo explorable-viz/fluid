@@ -35,6 +35,6 @@
 
 - To run the tests in debug mode with Chrome, run `karma start --browsers=Chrome --singleRun=false`.
 
-- To start the UI, run `npm start` and open a browser at http://localhost:8000/webpack-dev-server/.
+- To start the UI, run `npm start` and open a browser at http://localhost:8080/webpack-dev-server/.
 
 ![LambdaCalc](http://i.imgur.com/ERSxpE0.png "LambdaCalc")
