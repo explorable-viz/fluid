@@ -1,6 +1,6 @@
 {
   "name": "@rolyp/fluid",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Fluid",
   "dependencies": {
     "@types/three": "0.93.28",
@@ -62,5 +62,5 @@
      "lcalc/**/*"
    ],
   "main": "dist/lib.bundle.js",
-  "typings": "dist/ts"
+  "typings": "dist/ts/Lib.d.ts"
 }
