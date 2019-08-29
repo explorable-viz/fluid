@@ -10,7 +10,6 @@
       "noImplicitThis": true,
       "noUnusedLocals": true,
       "outDir": "ts",
-      "rootDir": "./",
       "sourceMap": true,
       "strictNullChecks": true
    },
