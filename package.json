@@ -1,6 +1,6 @@
 {
   "name": "@rolyp/fluid",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "Fluid",
   "dependencies": {
     "@types/three": "0.93.28",
@@ -21,6 +21,7 @@
     "@types/nearley": "^2.11.0",
     "@types/node": "^10.14.4",
     "chai": "^3.5.0",
+    "file-loader": "^4.2.0",
     "karma": "^1.7.1",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^2.0.0",

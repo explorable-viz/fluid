@@ -31,6 +31,9 @@ module.exports = {
          {
             test: /\.lcalc$/,
             loader: "file-loader",
+            options: {
+               name: '[path][name].[ext]',
+             }
          }
       ]
    },
