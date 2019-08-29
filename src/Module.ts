@@ -5,6 +5,7 @@ import { List } from "./BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
+import {} from "./Graphics" // for datatypes
 import * as grammar from "./Parse"
 import { ν } from "./Versioned"
 
