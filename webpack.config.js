@@ -31,7 +31,7 @@ module.exports = {
          {
             test: /\.lcalc$/,
             // couldn't get this working using "options" object
-            loader: "file-loader?context=./&name=[path][name].[ext]",
+            loader: "file-loader?context=./&name=[path][name].[ext]&publicPath=./dist",
          }
       ]
    },
