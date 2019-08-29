@@ -1,6 +1,7 @@
 {
    "compilerOptions": {
       "declaration": true,
+      "declarationDir": "ts",
       "target": "es6",
       "lib": ["es2017", "dom"],
       "module": "commonjs",
@@ -8,7 +9,7 @@
       "noImplicitReturns": true,
       "noImplicitThis": true,
       "noUnusedLocals": true,
-      "outDir": "js/",
+      "outDir": "ts",
       "rootDir": "./",
       "sourceMap": true,
       "strictNullChecks": true

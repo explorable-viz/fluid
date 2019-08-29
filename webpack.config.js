@@ -10,7 +10,7 @@ module.exports = {
       filename: "[name].bundle.js",
       library: "Fluid",
       libraryTarget: "var",
-      path: path.resolve(__dirname, 'dist/assets')
+      path: path.resolve(__dirname, "dist")
    },
    resolve: {
       // Add '.ts' as a resolvable extension.
