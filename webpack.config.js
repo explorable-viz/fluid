@@ -30,10 +30,8 @@ module.exports = {
          },
          {
             test: /\.lcalc$/,
-            loader: "file-loader",
-            options: {
-               name: '[path][name].[ext]',
-             }
+            // couldn't get this working using "options" object
+            loader: "file-loader?context=./&name=[path][name].[ext]",
          }
       ]
    },
