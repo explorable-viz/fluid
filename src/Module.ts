@@ -36,7 +36,7 @@ export function importDefaults (e: Expr): Expr {
 export function loadTestFile (folder: string, file: string): string {
    let text: string
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest
-   xmlhttp.open("GET", folder + "/" + file + ".lcalc", false)
+   xmlhttp.open("GET", "./" + folder + "/" + file + ".lcalc", false)
    xmlhttp.send()
    if (xmlhttp.status === 200) {
       text = xmlhttp.responseText
