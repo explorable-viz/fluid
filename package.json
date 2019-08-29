@@ -1,6 +1,6 @@
 {
   "name": "@rolyp/fluid",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Fluid",
   "dependencies": {
     "@types/three": "0.93.28",
@@ -42,7 +42,7 @@
   "scripts": {
     "start": "webpack-dev-server",
     "bundle": "webpack",
-    "test": "karma start",
+    "test": "karma start --browsers=Chrome --singleRun=false",
     "ci-test": "karma start --singleRun=true --reporters junit,mocha"
   },
   "repository": {

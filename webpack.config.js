@@ -27,15 +27,6 @@ module.exports = {
          {
              test: /\.css$/,
              loaders: ["style-loader", "css-loader"]
-         },
-         // Embed all .lcalc files as URLs inside the final JS bundle
-         // https://github.com/webpack/webpack/issues/7353
-         {
-            test: /\.lcalc$/,
-            loader: "url-loader",
-            options: {
-              limit: Infinity
-            }
          }
       ]
    },
