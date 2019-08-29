@@ -8,11 +8,6 @@ import { Expr } from "./Expr"
 import * as grammar from "./Parse"
 import { ν } from "./Versioned"
 
-// Export static assets. Should be able to use url-loader to avoid this?
-require("../lcalc/lib/prelude.lcalc")
-require("../lcalc/lib/graphics.lcalc")
-require("../lcalc/lib/renderData.lcalc")
-
 // Kindergarten modules.
 type Module = List<Expr.Def>
 
