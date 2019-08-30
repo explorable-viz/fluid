@@ -4,14 +4,13 @@ var path = require('path');
 module.exports = {
    mode: "development",
    entry: {
-      main: "./src/app/App.ts",
-      lib: "./src/Lib.ts"
+      main: "./src/Lib.ts"
    },
    output: {
-      filename: "[name].bundle.js",
-      library: "Flooid", // how is this used?
-      libraryExport: "Lib2FFFqaad", // not sure what the notion of "module" is here
-      libraryTarget: "var", // also tried "commonjs"
+      filename: "bundle.js",
+      library: "Fluid", // used as name of variable or field of "exports" object
+      libraryExport: "./src/Lib.ts", // not sure what the notion of "module" is here
+      libraryTarget: "commonjs", // previously "var"; "commonjs2" leaves fluid_1 unresolved on client
       path: path.resolve(__dirname, "dist")
    },
    resolve: {
