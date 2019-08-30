@@ -10,7 +10,7 @@ module.exports = {
    output: {
       filename: "[name].bundle.js",
       library: "Fluid", // how is this used?
-//      libraryExport: "Lib", // not sure what the notion of "module" is here
+      libraryExport: "Lib", // not sure what the notion of "module" is here
       libraryTarget: "commonjs", // previously "var"
       path: path.resolve(__dirname, "dist")
    },
