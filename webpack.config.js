@@ -9,7 +9,7 @@ module.exports = {
    output: {
       filename: "bundle.js",
       library: "Fluid", // used as name of variable or field of "exports" object
-      libraryExport: "./src/Lib.ts", // not sure what the notion of "module" is here
+//      libraryExport: "./src/Lib.ts", // not sure what the notion of "module" is here
       libraryTarget: "commonjs", // previously "var"; "commonjs2" leaves fluid_1 unresolved on client
       path: path.resolve(__dirname, "dist")
    },
