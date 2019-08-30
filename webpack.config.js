@@ -6,11 +6,14 @@ module.exports = {
    entry: {
       main: "./src/Lib.ts"
    },
+   // This took a lot of painful trial-and-error to figure out. Some notes:
+   // - "commonjs2" causes module not to resolve on the client (silently, of course)
+   // - specifying "libraryExport" (silently) overrides the exports of the module; avoid
+   // - specifying "library" adds an extra level of indirection (fluid_1.Fluid) which breaks client
    output: {
       filename: "bundle.js",
-      library: "Fluid", // used as name of variable or field of "exports" object
-//      libraryExport: "./src/Lib.ts", // not sure what the notion of "module" is here
-      libraryTarget: "commonjs", // previously "var"; "commonjs2" leaves fluid_1 unresolved on client
+      library: "", // avoids extra indirection; can I drop entirely?
+      libraryTarget: "commonjs",
       path: path.resolve(__dirname, "dist")
    },
    resolve: {
