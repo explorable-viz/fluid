@@ -2,14 +2,16 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 var path = require('path');
 
 module.exports = {
+   mode: "development",
    entry: {
       main: "./src/app/App.ts",
       lib: "./src/Lib.ts"
    },
    output: {
       filename: "[name].bundle.js",
-      library: "Fluid",
-      libraryTarget: "var",
+      library: "Fluid", // how is this used?
+      libraryExport: "Lib", // not sure what the notion of "module" is here
+      libraryTarget: "commonjs", // previously "var"
       path: path.resolve(__dirname, "dist")
    },
    resolve: {
