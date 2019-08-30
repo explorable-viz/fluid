@@ -1,4 +1,4 @@
-exports["Flooid"] =
+var Flooid =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
