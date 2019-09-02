@@ -39,30 +39,19 @@ module.exports = {
       port: 8000
    },
    plugins: [
-      new HtmlWebpackPlugin(),
-      // Plugin to show any webpack warnings and prevent tests from running.
-      // Based on https://gist.github.com/Stuk/6b574049435df532e905.
-      function () {
-         var errors = []
-         this.plugin("done", function (stats) {
-             if (stats.compilation.errors.length ||
-                 stats.compilation.warnings.length) {
-                 // Log each of the warnings
-                 stats.compilation.errors.forEach(function (error) {
-                     errors.push(error.message || error)
-                 })
-
-                 // Pretend no assets were generated. This prevents the tests
-                 // from running making it clear that there were warnings.
-                 stats.stats = [{
-                     toJson: function () {
-                         return this;
-                     },
-                     assets: []
-                 }];
-             }
-         });
+      // cobbled together from https://github.com/webpack-contrib/karma-webpack/issues/66
+      function()
+      {
+          this.plugin("done", function(stats)
+          {
+               if (stats && stats.hasErrors()) {
+                  stats.toJson().errors.forEach(err => {
+                    console.error(err)
+                  })
+                  throw new Error()
+               }
+          });
       }
-   ],
-   devtool: "inline-source-map"
+  ],
+  devtool: "inline-source-map"
 }

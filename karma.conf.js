@@ -44,7 +44,7 @@ module.exports = function (config) {
       proxies: {
          '/lcalc/': '/base/lcalc/'
       },
-      reporters: ['mocha', 'junit'],
+      reporters: ['mocha'],
       port: 8081,
       captureTimeout: 30000,
       browserDisconnectTimeout : 30000,
@@ -60,15 +60,6 @@ module.exports = function (config) {
             base: 'Chrome',
             flags: ['--remote-debugging-port=9222']
          }
-      },
-      junitReporter: {
-         outputDir: 'node_modules/junit-test-results',
-         outputFile: undefined,
-         suite: '',
-         useBrowserName: true,
-         nameFormatter: undefined,
-         classNameFormatter: undefined,
-         properties: {}
       },
    })
 }
