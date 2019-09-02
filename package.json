@@ -31,7 +31,7 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-phantomjs-launcher": "^1.0.4",
     "karma-sourcemap-loader": "^0.3.7",
-    "karma-webpack": "^1.8.0",
+    "karma-webpack": "^2.0.10",
     "mocha": "^3.5.3",
     "mocha-webpack": "^0.7.0",
     "ts-node": "^3.3.0",
