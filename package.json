@@ -43,7 +43,7 @@
   "scripts": {
     "start": "webpack-dev-server",
     "bundle": "webpack",
-    "test": "karma start --browsers=Chrome --singleRun=false",
+    "test": "karma start",
     "ci-test": "karma start --singleRun=true --reporters junit,mocha"
   },
   "repository": {
