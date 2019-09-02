@@ -26,7 +26,6 @@
     "karma": "^1.7.1",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^2.0.0",
-    "karma-junit-reporter": "^1.2.0",
     "karma-mocha": "^1.2.0",
     "karma-mocha-reporter": "^2.2.5",
     "karma-phantomjs-launcher": "^1.0.4",
@@ -44,7 +43,7 @@
     "start": "webpack-dev-server",
     "bundle": "webpack",
     "test": "karma start",
-    "ci-test": "karma start --singleRun=true --reporters junit,mocha"
+    "ci-test": "karma start --singleRun=true --reporters mocha"
   },
   "repository": {
     "type": "git",
