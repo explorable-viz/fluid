@@ -51,30 +51,6 @@ describe("example", () => {
                    .to(Pair, "snd").notNeed()
             }
             expect (): void {
-               this.val
-                  .to(Graphic, "gs")
-                  .to(Cons, "head")
-                  .to(Graphic, "gs")
-                  .to(Cons, "tail")
-                  .to(Cons, "head")
-                  .to(Translate, "g")
-                  .to(Graphic, "gs")
-                  .to(Cons, "head")
-                  .to(Translate, "g")
-                  .to(Translate, "g")
-                  .to(Graphic, "gs")
-                  .to(Cons, "head")
-                  .to(Translate, "g")
-                  .to(Graphic, "gs")
-                  .to(Cons, "head")
-                  .to(Translate, "g")
-                  .to(Polygon, "points")
-                  .to(Cons, "tail")
-                  .to(Cons, "tail")
-                  .push().to(Cons, "head").to(Point, "y").notNeeded().pop()
-                  .to(Cons, "tail")
-                  .push().to(Cons, "head").to(Point, "y").notNeeded().pop()
-
                this.tv
                   .to(Expl_, "v").to(Graphic, "gs")
                   .to(Cons, "head")
@@ -147,12 +123,6 @@ describe("example", () => {
 						.constrArg("Cons", 0).notNeed()
 				}
 				expect (): void {
-					this.val
-						.needed()
-						.push().to(Cons, "head").notNeeded().pop()
-						.to(Cons, "tail")
-                  .assert(List, v => Nil.is(v))
-                  
                this.tv
                   .push().to(Expl_, "t").needed().pop()
                   .to(Expl_, "v")
@@ -186,7 +156,6 @@ describe("example", () => {
 						.push().constrArg("Cons", 0).notNeed().pop()
 				}
 				expect (): void {
-               this.val.needed()
                this.tv.to(Expl_, "t").needed()
 				}
 			})(e)
@@ -198,14 +167,14 @@ describe("example", () => {
 						.constrArg("Cons", 1).notNeed()
 				}
 				expect (): void {
-               this.val.notNeeded()
                this.tv.to(Expl_, "t").notNeeded()
 				}
 			})(e)
 			// needing the result only needs the cons cells:
 			new (class extends BwdSlice {
 				setup (): void {
-					this.val.need()
+               this.val.need()
+               this.tv.to(Expl_, "t").need()
 				}
 				expect (): void {
 					this.expr
@@ -243,12 +212,6 @@ describe("example", () => {
 							.constrArg("Pair", 0).notNeed().pop()
 				}
 				expect (): void {
-               this.val
-                  .push()
-                     .to(Some, "t")
-                     .assert(Str, str => str.toString() === `"sarah"`).pop()
-                  .needed()
-
                this.tv
                   .push()
                      .to(Expl_, "v")
@@ -285,10 +248,6 @@ describe("example", () => {
 						.constrArg("Cons", 0).notNeed()
 				  }
 				expect (): void {
-					this.val
-						.push().to(Cons, "head").notNeeded().pop()
-                  .to(Cons, "tail").needed()
-
                this.tv
                   .push()
                      .to(Expl_, "v")
@@ -349,11 +308,6 @@ describe("example", () => {
  						.constrArg("Cons", 1).notNeed()
 				}
 				expect (): void {
-					this.val
-						.notNeeded()
-						.push().to(Cons, "head").needed().pop()
-                  .to(Cons, "tail").needed()
-                  
                this.tv
                   .push().to(Expl_, "t").notNeeded().pop()
                   .push().to(Expl_, "v").toExpl(Cons, "head").needed().pop()
