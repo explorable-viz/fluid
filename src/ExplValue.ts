@@ -13,7 +13,7 @@ export type Expl = Expl.Expl
 
 export class ExplValue extends DataValue<"ExplValue"> {
    t: Expl = _
-   v: Annotated<Value> = _
+   v: Value = _
 }
 
 export function explValue (t: Expl, v: Annotated<Value>): ExplValue {
