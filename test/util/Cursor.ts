@@ -1,6 +1,7 @@
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { asAnnotated } from "../../src/Annotated"
+import { DataExpl, DataValue } from "../../src/DataValue"
 import { Persistent, Value } from "../../src/Value"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { Expr } from "../../src/Expr"
@@ -37,6 +38,12 @@ export class Cursor {
    to<T extends Value> (C: Class<T>, prop: keyof T): Cursor {
       const vʹ: T[keyof T] = as<Persistent, T>(this.v, C)[prop] // TypeScript nonsense
       this.v = vʹ as any as Value
+      return this
+   }
+
+   toExpl<T extends DataValue> (C: Class<T>, prop: keyof T): Cursor {
+      this.to(C, "__expl")
+      this.to(DataExpl as any, prop)
       return this
    }
 

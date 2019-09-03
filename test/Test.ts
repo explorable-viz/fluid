@@ -29,7 +29,7 @@ describe("example", () => {
 				}
 				expect (): void {
                this.tv
-                  .to(Expl_, "t").needed()
+                  .to(Expl_, "t").notNeeded()
 				} 
 			})(e)
 			new BwdSlice(e)
@@ -79,7 +79,7 @@ describe("example", () => {
          })(e, ρ)
 			new (class extends BwdSlice {
 				setup (): void {
-					this.val.need()
+               this.val.need()
 				}
 				expect (): void {
 					this.expr.needed()
@@ -128,7 +128,14 @@ describe("example", () => {
 						.needed()
 						.push().to(Cons, "head").notNeeded().pop()
 						.to(Cons, "tail")
-						.assert(List, v => Nil.is(v))
+                  .assert(List, v => Nil.is(v))
+                  
+               this.tv
+                  .push().to(Expl_, "t").needed().pop()
+                  .to(Expl_, "v")
+                  .push().toExpl(Cons, "head").notNeeded().pop()
+                  .to(Cons, "tail")
+                  .assert(List, v => Nil.is(v))
 				}
 			})(e)
 			new BwdSlice(e)

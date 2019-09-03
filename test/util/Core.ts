@@ -11,7 +11,7 @@ import { Cursor } from "./Cursor"
 
 export class FwdSlice {
    expr: Cursor
-   val: Cursor
+   val: Cursor // DELETE ME
    tv: Cursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
@@ -42,7 +42,8 @@ export class FwdSlice {
 }
 
 export class BwdSlice {
-   val: Cursor
+   val: Cursor // DELETE ME
+   tv: Cursor
    expr: Cursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
@@ -52,6 +53,7 @@ export class BwdSlice {
          const tv: Expl_ = Eval.eval_(ρ, e) // just to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
          this.val = new Cursor(tv.v)
+         this.tv = new Cursor(tv)
          this.setup()
          Eval.eval_bwd(e, tv)
          this.expr = new Cursor(e)
