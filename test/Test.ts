@@ -85,7 +85,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.val
-						.need()
+						.needed()
 						.push().to(Cons, "head").notNeeded().pop()
 						.to(Cons, "tail")
 						.assert(List, v => Nil.is(v))
