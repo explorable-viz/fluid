@@ -27,7 +27,9 @@ describe("example", () => {
 						.to(Expr.BinaryApp, "e1").notNeed()
 				}
 				expect (): void {
-					this.val.notNeeded()
+               this.val.notNeeded()
+               
+               this.tv.notNeeded()
 				} 
 			})(e)
 			new BwdSlice(e)

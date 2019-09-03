@@ -1,6 +1,6 @@
 import { zip } from "./util/Array"
 import { Annotated } from "./Annotated"
-import { Expl } from "./ExplValue"
+import { Expl } from "./Expl"
 import { DataValueTag, State, Value, fields } from "./Value"
 
 // Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).

@@ -6,7 +6,7 @@ import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
-import { Expl, Expl_, explValue } from "./ExplValue"
+import { Expl, Expl_, explValue } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
@@ -55,6 +55,7 @@ function recDefs_ (dir: Direction, δ: List<Expl.RecDef>): void {
             setα(def.x.__α, defₜ.tf.t)
          } else {
             joinα(defₜ.tf.v.__α, def.x)
+            joinα(defₜ.tf.t.__α, def.x)
          }
       })
    } else
@@ -121,10 +122,12 @@ function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).reverse().forEach(([def, defₜ]: [Def, Expl.Def]) => {
       if (def instanceof Expr.Let && defₜ instanceof Expl.Let) {
          joinα(defₜ.tv.v.__α, def.x)
+         joinα(defₜ.tv.t.__α, def.x)
          eval_bwd(def.e, defₜ.tv)
       } else
       if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
          joinα(defₜ.t_op.v.__α, def.x)
+         joinα(defₜ.t_op.t.__α, def.x)
       } else
       if (def instanceof Expr.LetRec && defₜ instanceof Expl.LetRec) {
          recDefs_(Direction.Bwd, defₜ.δ)
@@ -297,73 +300,93 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
    if (t instanceof Expl.Empty) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
          joinα(v.__α, e)
+         joinα(t.__α, e)
       } else
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
          // reverse order but shouldn't matter in absence of side-effects:
          zip(v.fieldExplValues(), eʹ.args.toArray()).map(([[t, v], e]) => eval_bwd(e, explValue(t, v)))
          joinα(v.__α, e)
+         joinα(t.__α, e)
       } else {
          absurd()
       }
    } else
    if (t instanceof Expl.Quote) {
       joinα(v.__α, e)
+      joinα(t.__α, e)
    } else
    if (t instanceof Expl.Var) {
       joinα(v.__α, t.v)
+      joinα(t.__α, t.v)
       joinα(v.__α, e)
+      joinα(t.__α, e)
    } else
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
       joinα(v.__α, t.tv.v)
+      joinα(t.__α, t.tv.t)
       eval_bwd(t.ξ.κ, t.tv)
       match_bwd(t.ξ, v.__α)
       recDefs_(Direction.Bwd, t.δ)
       joinα(v.__α, t.tf.v)
+      joinα(t.__α, t.tf.t)
       const eʹ: Expr.App = as(e, Expr.App)
       eval_bwd(eʹ.f, t.tf)
       eval_bwd(eʹ.e, t.tu)
       joinα(v.__α, e)
+      joinα(t.__α, e)
    } else
    if (t instanceof Expl.UnaryApp) {
       joinα(v.__α, t.tf.v)
+      joinα(t.__α, t.tf.t)
       joinα(v.__α, t.tv.v)
+      joinα(t.__α, t.tv.t)
       const eʹ: Expr.App = as(e, Expr.App)
       eval_bwd(eʹ.f, t.tf)
       eval_bwd(eʹ.e, t.tv)
       joinα(v.__α, e)
+      joinα(t.__α, e)
    } else
    if (t instanceof Expl.BinaryApp) {
       assert(binaryOps.has(t.opName.val))
       joinα(v.__α, t.tv1.v)
+      joinα(t.__α, t.tv1.t)
       joinα(v.__α, t.tv2.v)
+      joinα(t.__α, t.tv2.t)
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_bwd(eʹ.e1, t.tv1)
       eval_bwd(eʹ.e2, t.tv2)
       joinα(v.__α, e)
+      joinα(t.__α, e)
    } else
    if (t instanceof Expl.Defs) {
       joinα(v.__α, t.tv.v)
+      joinα(t.__α, t.tv.t)
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       eval_bwd(eʹ.e, t.tv)
       defs_bwd(eʹ.def̅, t.def̅)
       joinα(v.__α, e)
+      joinα(t.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
       joinα(v.__α, t.tv.v)
+      joinα(t.__α, t.tv.t)
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_bwd(t.ξ.κ, t.tv)
       match_bwd(t.ξ, v.__α)
       eval_bwd(eʹ.e, t.tu)
       joinα(v.__α, e)
+      joinα(t.__α, e)
    } else
    if (t instanceof Expl.Typematch) {
       joinα(v.__α, t.tv.v)
+      joinα(t.__α, t.tv.t)
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_bwd(get(eʹ.cases, t.d)!, t.tv)
       eval_bwd(eʹ.e, t.tu)
       joinα(v.__α, e)
+      joinα(t.__α, e)
    } else {
       absurd()
    }

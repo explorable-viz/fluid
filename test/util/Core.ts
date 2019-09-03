@@ -3,7 +3,7 @@ import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
-import { Expl_ } from "../../src/ExplValue"
+import { Expl_ } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
 import "../../src/Graphics" // for graphical datatypes
 import "../../src/app/GraphicsRenderer" // for graphics primitives
@@ -12,6 +12,7 @@ import { Cursor } from "./Cursor"
 export class FwdSlice {
    expr: Cursor
    val: Cursor
+   tv: Cursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       setallα(ann.top, e)
@@ -22,6 +23,7 @@ export class FwdSlice {
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
          this.val = new Cursor(tv.v)
+         this.tv = new Cursor(tv)
          this.expect()
       }
       console.log(e)
