@@ -139,7 +139,7 @@ export class GraphicsRenderer {
    }
 
    xyHighlight (x: Annotated<Num>, y: Annotated<Num>): void {
-      const [x_α, y_α] = [__nonNull(x.__α), __nonNull(x.__α)]
+      const [x_α, y_α] = [__nonNull(x.__α), __nonNull(y.__α)]
       let α: Annotation = ann.meet(x_α, y_α)
       if (this.slicer.direction === Direction.Fwd) {
          α = ann.negate(α)

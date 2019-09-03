@@ -142,10 +142,10 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.empty(), closure(ν(), ρ, nil(), evalTrie(e.σ)))
    } else
    if (e instanceof Expr.Constr) {
-      let tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
-          c: string = e.ctr.val,
-          d: DataType = __nonNull(ctrToDataType.get(c)),
-          v: Annotated<DataValue> = annotatedAt(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+      const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
+            c: string = e.ctr.val,
+            d: DataType = __nonNull(ctrToDataType.get(c)),
+            v: Annotated<DataValue> = annotatedAt(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
       v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
       return explValue(Expl.empty(), v)
    } else

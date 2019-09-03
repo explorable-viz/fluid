@@ -1,6 +1,6 @@
 {
   "name": "@rolyp/fluid",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Fluid",
   "dependencies": {
     "@types/three": "0.93.28",

@@ -2,10 +2,12 @@
 
 import { BwdSlice, FwdSlice } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some } from "../src/BaseTypes"
-import { Env } from "../src/Env"
+import { Env, ExtendEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
+import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
 import { module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
+import { Cursor } from "./util/Cursor"
 
 import Trie = Expr.Trie
 
@@ -36,7 +38,43 @@ describe("example", () => {
 		it("ok", () => {
          const ρ: Env = openDatasetAs("renewables", "data"),
 			      e: Expr = openWithImports("bar-chart", [module_graphics])
-			new FwdSlice(e, ρ)
+			new (class extends FwdSlice {
+            setup (): void {
+               const data: Cursor = new Cursor(ρ)
+               data.to(ExtendEnv, "v")
+                   .to(Cons, "head")
+                   .to(Pair, "snd")
+                   .to(Cons, "head")
+                   .to(Pair, "snd")
+                   .to(Cons, "head")
+                   .to(Pair, "snd").notNeed()
+            }
+            expect (): void {
+               this.val
+                  .to(Graphic, "gs")
+                  .to(Cons, "head")
+                  .to(Graphic, "gs")
+                  .to(Cons, "tail")
+                  .to(Cons, "head")
+                  .to(Translate, "g")
+                  .to(Graphic, "gs")
+                  .to(Cons, "head")
+                  .to(Translate, "g")
+                  .to(Translate, "g")
+                  .to(Graphic, "gs")
+                  .to(Cons, "head")
+                  .to(Translate, "g")
+                  .to(Graphic, "gs")
+                  .to(Cons, "head")
+                  .to(Translate, "g")
+                  .to(Polygon, "points")
+                  .to(Cons, "tail")
+                  .to(Cons, "tail")
+                  .push().to(Cons, "head").to(Point, "y").notNeeded().pop()
+                  .to(Cons, "tail")
+                  .push().to(Cons, "head").to(Point, "y").notNeeded().pop()
+            }
+         })(e, ρ)
 			new (class extends BwdSlice {
 				setup (): void {
 					this.val.need()
@@ -85,7 +123,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.val
-						.need()
+						.needed()
 						.push().to(Cons, "head").notNeeded().pop()
 						.to(Cons, "tail")
 						.assert(List, v => Nil.is(v))
