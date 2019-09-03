@@ -18,14 +18,13 @@ module.exports = function (config) {
             served: true,
             nocache: false
          }
-
       ],
       exclude: [
          // otherwise these will also appear as entry points
          './test/util/*',
       ],
       preprocessors: {
-         './bundle.js': ['webpack'],
+         './src/**/*.ts': ['webpack'],
          'test/**/*.ts': ['webpack']
       },
       webpack: {
