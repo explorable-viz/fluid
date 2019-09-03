@@ -28,8 +28,7 @@ describe("example", () => {
 						.to(Expr.BinaryApp, "e1").notNeed()
 				}
 				expect (): void {
-               this.tv
-                  .to(Expl_, "t").notNeeded()
+               this.tv.to(Expl_, "t").notNeeded()
 				} 
 			})(e)
 			new BwdSlice(e)
@@ -163,7 +162,8 @@ describe("example", () => {
 						.push().constrArg("Cons", 0).notNeed().pop()
 				}
 				expect (): void {
-					this.val.needed()
+               this.val.needed()
+               this.tv.to(Expl_, "t").needed()
 				}
 			})(e)
 			// deleting the tail of the tail means length can't be computed:
@@ -174,7 +174,8 @@ describe("example", () => {
 						.constrArg("Cons", 1).notNeed()
 				}
 				expect (): void {
-					this.val.notNeeded()
+               this.val.notNeeded()
+               this.tv.to(Expl_, "t").notNeeded()
 				}
 			})(e)
 			// needing the result only needs the cons cells:
@@ -223,6 +224,13 @@ describe("example", () => {
                      .to(Some, "t")
                      .assert(Str, str => str.toString() === `"sarah"`).pop()
                   .needed()
+
+               this.tv
+                  .push()
+                     .to(Expl_, "v")
+                     .to(Some, "t")
+                     .assert(Str, str => str.toString() === `"sarah"`).pop()
+                  .to(Expl_, "t").needed()
 				}
 			})(e)
 			new (class extends FwdSlice {
@@ -233,7 +241,8 @@ describe("example", () => {
 						.constrArg("Pair", 0).notNeed()
 				}
 				expect (): void {
-					this.val.notNeeded()
+               this.val.notNeeded()
+               this.tv.to(Expl_, "t").notNeeded()
 				}
 			})(e)
 			new BwdSlice(e)
@@ -254,7 +263,12 @@ describe("example", () => {
 				expect (): void {
 					this.val
 						.push().to(Cons, "head").notNeeded().pop()
-						.to(Cons, "tail").needed()
+                  .to(Cons, "tail").needed()
+
+               this.tv
+                  .push().pop()
+                  .to(Expl_, "v")
+                  .toExpl(Cons, "tail").needed()
 				}
 			})(e)
 			new BwdSlice(e)
