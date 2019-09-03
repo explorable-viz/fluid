@@ -1,4 +1,4 @@
-var webpackConfig = require('./webpack.config');
+var webpackConfig = require('./webpack.config')[0] // ouch - pick out first configuration!
 
 module.exports = function (config) {
    config.set({
