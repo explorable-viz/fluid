@@ -68,9 +68,11 @@ describe("example", () => {
                   .to(Cons, "head")
                   .to(Translate, "g")
                   .to(Polygon, "points")
-                  .to(Cons, "head")
-                  .push().to(Point, "x").notNeeded().pop()
-                  .push().to(Point, "y").notNeeded().pop()
+                  .to(Cons, "tail")
+                  .to(Cons, "tail")
+                  .push().to(Cons, "head").to(Point, "y").notNeeded().pop()
+                  .to(Cons, "tail")
+                  .push().to(Cons, "head").to(Point, "y").notNeeded().pop()
             }
          })(e, ρ)
 			new (class extends BwdSlice {
