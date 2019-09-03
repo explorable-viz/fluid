@@ -5,7 +5,7 @@ var path = require('path');
 module.exports = [{
    entry: ["./src/app/App.ts"],
    output: {
-      filename: "bundle.js"
+      filename: "[name].bundle.js"
    },
    resolve: {
       // Add '.ts' as a resolvable extension.
