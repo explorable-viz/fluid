@@ -7,7 +7,7 @@ import { Str, Value, _, make } from "./Value"
 
 // Environments are snoc lists.
 export abstract class Env extends DataValue<"Env"> {
-   get (k: Annotated<Str>): Annotated<Value> | undefined {
+   get (k: Str): Annotated<Value> | undefined {
       if (this instanceof EmptyEnv) {
          return undefined
       } else
@@ -22,11 +22,11 @@ export abstract class Env extends DataValue<"Env"> {
       }
    }
    
-   has (k: Annotated<Str>): boolean {
+   has (k: Str): boolean {
       return this.get(k) !== undefined
    }
 
-   static singleton (k: Annotated<Str>, v: Annotated<Value>): ExtendEnv {
+   static singleton (k: Str, v: Annotated<Value>): ExtendEnv {
       return extendEnv(emptyEnv(), k, v)
    }
    
@@ -51,10 +51,10 @@ export function emptyEnv (): EmptyEnv {
 
 export class ExtendEnv extends Env {
    ρ: Env = _
-   k: Annotated<Str> = _
+   k: Str = _
    v: Annotated<Value> = _
 }
 
-export function extendEnv (ρ: Env, k: Annotated<Str>, v: Annotated<Value>): ExtendEnv {
+export function extendEnv (ρ: Env, k: Str, v: Annotated<Value>): ExtendEnv {
    return make(ExtendEnv, ρ, k, v)
 }

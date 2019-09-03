@@ -99,14 +99,14 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
 
 function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).forEach(([def, defₜ]: [Def, Expl.Def]) => {
-      if (defₜ instanceof Expl.Let) {         
-         eval_fwd(as(def, Expr.Let).e, defₜ.tv)
-         meetα(defₜ.x.__α, defₜ.tv.v)
+      if (def instanceof Expr.Let && defₜ instanceof Expl.Let) {
+         eval_fwd(def.e, defₜ.tv)
+         meetα(def.x.__α, defₜ.tv.v)
       } else
-      if (defₜ instanceof Expl.Prim) {
-         setα(defₜ.x.__α, defₜ.op)
+      if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
+         setα(def.x.__α, defₜ.op)
       } else
-      if (defₜ instanceof Expl.LetRec) {
+      if (def instanceof Expr.LetRec && defₜ instanceof Expl.LetRec) {
          recDefs_(Direction.Fwd, defₜ.δ)
       } else {
          absurd()
@@ -116,14 +116,14 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 
 function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).reverse().forEach(([def, defₜ]: [Def, Expl.Def]) => {
-      if (defₜ instanceof Expl.Let) {
-         joinα(defₜ.tv.v.__α, defₜ.x)
-         eval_bwd(as(def, Expr.Let).e, defₜ.tv)
+      if (def instanceof Expr.Let && defₜ instanceof Expl.Let) {
+         joinα(defₜ.tv.v.__α, def.x)
+         eval_bwd(def.e, defₜ.tv)
       } else
-      if (defₜ instanceof Expl.Prim) {
-         joinα(defₜ.op.__α, defₜ.x)
+      if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
+         joinα(defₜ.op.__α, def.x)
       } else
-      if (defₜ instanceof Expl.LetRec) {
+      if (def instanceof Expr.LetRec && defₜ instanceof Expl.LetRec) {
          recDefs_(Direction.Bwd, defₜ.δ)
       } else {
          absurd()

@@ -1,4 +1,4 @@
-import { Annotated } from "./Annotated"
+import { Annotated, AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { Eval } from "./Eval"
@@ -21,7 +21,7 @@ export function explValue (t: Expl, v: Annotated<Value>): ExplValue {
 }
 
 export namespace Expl {
-   export abstract class Expl extends DataValue<"Expl"> {
+   export abstract class Expl extends AnnotatedC(DataValue)<"Expl"> {
    }
 
    export class App extends Expl {
@@ -59,29 +59,29 @@ export namespace Expl {
    }
 
    export class Let extends Def {
-      x: Annotated<Str> = _
+      x: Str = _
       tv: ExplValue = _
    }
 
-   export function let_ (x: Annotated<Str>, tv: ExplValue): Let {
+   export function let_ (x: Str, tv: ExplValue): Let {
       return at(ν(), Let, x, tv)
    }
 
    export class Prim extends Def {
-      x: Annotated<Str> = _
+      x: Str = _
       op: Annotated<UnaryOp> = _
    }
 
-   export function prim (x: Annotated<Str>, op: Annotated<UnaryOp>): Prim {
+   export function prim (x: Str, op: Annotated<UnaryOp>): Prim {
       return at(ν(), Prim, x, op)
    }
 
    export class RecDef extends DataValue<"Expl.RecDef"> {
-      x: Annotated<Str> = _
+      x: Str = _
       f: Closure = _
    }
 
-   export function recDef (x: Annotated<Str>, f: Closure): RecDef {
+   export function recDef (x: Str, f: Closure): RecDef {
       return at(ν(), RecDef, x, f)
    }
 
