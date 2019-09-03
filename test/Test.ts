@@ -266,7 +266,9 @@ describe("example", () => {
                   .to(Cons, "tail").needed()
 
                this.tv
-                  .push().pop()
+                  .push()
+                     .to(Expl_, "v")
+                     .toExpl(Cons, "head").notNeeded().pop()
                   .to(Expl_, "v")
                   .toExpl(Cons, "tail").needed()
 				}
@@ -326,7 +328,12 @@ describe("example", () => {
 					this.val
 						.notNeeded()
 						.push().to(Cons, "head").needed().pop()
-						.to(Cons, "tail").needed()
+                  .to(Cons, "tail").needed()
+                  
+               this.tv
+                  .push().to(Expl_, "t").notNeeded().pop()
+                  .push().to(Expl_, "v").toExpl(Cons, "head").needed().pop()
+                  .to(Expl_, "v").toExpl(Cons, "tail").needed()
 				}
 			})(e)
 			new BwdSlice(e)
