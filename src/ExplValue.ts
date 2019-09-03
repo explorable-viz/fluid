@@ -5,19 +5,19 @@ import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
-import { Str, Value, _, make } from "./Value"
+import { PrimValue, Str, Value, _, make } from "./Value"
 import { ν, at } from "./Versioned"
 
 export type Closure = Eval.Closure
 export type Expl = Expl.Expl
 
-export class ExplValue extends DataValue<"ExplValue"> {
+export class Expl_<T extends Value = Value> extends DataValue<"ExplValue"> {
    t: Expl = _
-   v: Value = _
+   v: Annotated<T> = _
 }
 
-export function explValue (t: Expl, v: Annotated<Value>): ExplValue {
-   return make(ExplValue, t, v)
+export function explValue<T extends Value = Value> (t: Expl, v: Annotated<T>): Expl_<T> {
+   return make(Expl_, t, v) as Expl_<T>
 }
 
 export namespace Expl {
@@ -25,33 +25,33 @@ export namespace Expl {
    }
 
    export class App extends Expl {
-      tf: ExplValue = _
-      tu: ExplValue = _
+      tf: Expl_<Closure> = _
+      tu: Expl_ = _
       δ: List<RecDef> = _ // additional recursive functions bound at this step
       ξ: Match<Expr> = _
-      tv: ExplValue = _
+      tv: Expl_ = _
    }
 
-  export function app (tf: ExplValue, tu: ExplValue, δ: List<RecDef>, ξ: Match<Expr>, tv: ExplValue): App {
+  export function app (tf: Expl_<Closure>, tu: Expl_, δ: List<RecDef>, ξ: Match<Expr>, tv: Expl_): App {
       return at(ν(), App, tf, tu, δ, ξ, tv)
    }
 
    export class UnaryApp extends Expl {
-      tf: ExplValue = _
-      tv: ExplValue = _
+      tf: Expl_<UnaryOp> = _
+      tv: Expl_<PrimValue> = _
    }
 
-   export function unaryApp (tf: ExplValue, tv: ExplValue): UnaryApp {
+   export function unaryApp (tf: Expl_<UnaryOp>, tv: Expl_<PrimValue>): UnaryApp {
       return at(ν(), UnaryApp, tf, tv)
    }
 
    export class BinaryApp extends Expl {
-      tv1: ExplValue = _
+      tv1: Expl_<PrimValue> = _
       opName: Str = _
-      tv2: ExplValue = _
+      tv2: Expl_<PrimValue> = _
    }
 
-   export function binaryApp (tv1: ExplValue, opName: Str, tv2: ExplValue): BinaryApp {
+   export function binaryApp (tv1: Expl_<PrimValue>, opName: Str, tv2: Expl_<PrimValue>): BinaryApp {
       return at(ν(), BinaryApp, tv1, opName, tv2)
    }
 
@@ -60,29 +60,29 @@ export namespace Expl {
 
    export class Let extends Def {
       x: Str = _
-      tv: ExplValue = _
+      tv: Expl_ = _
    }
 
-   export function let_ (x: Str, tv: ExplValue): Let {
+   export function let_ (x: Str, tv: Expl_): Let {
       return at(ν(), Let, x, tv)
    }
 
    export class Prim extends Def {
       x: Str = _
-      op: Annotated<UnaryOp> = _
+      t_op: Expl_<UnaryOp> = _
    }
 
-   export function prim (x: Str, op: Annotated<UnaryOp>): Prim {
-      return at(ν(), Prim, x, op)
+   export function prim (x: Str, t_op: Expl_<UnaryOp>): Prim {
+      return at(ν(), Prim, x, t_op)
    }
 
    export class RecDef extends DataValue<"Expl.RecDef"> {
       x: Str = _
-      f: Closure = _
+      tf: Expl_<Closure> = _
    }
 
-   export function recDef (x: Str, f: Closure): RecDef {
-      return at(ν(), RecDef, x, f)
+   export function recDef (x: Str, tf: Expl_<Closure>): RecDef {
+      return at(ν(), RecDef, x, tf)
    }
 
    export class LetRec extends Def {
@@ -95,10 +95,10 @@ export namespace Expl {
 
    export class Defs extends Expl {
       def̅: List<Def> = _
-      tv: ExplValue = _
+      tv: Expl_ = _
    }
 
-   export function defs (def̅: List<Def>, tv: ExplValue): Defs {
+   export function defs (def̅: List<Def>, tv: Expl_): Defs {
       return at(ν(), Defs, def̅, tv)
    }
 
@@ -110,12 +110,12 @@ export namespace Expl {
    }
 
    export class MatchAs extends Expl {
-      tu: ExplValue = _
+      tu: Expl_ = _
       ξ: Match<Expr> = _
-      tv: ExplValue = _
+      tv: Expl_ = _
    }
 
-   export function matchAs (tu: ExplValue, ξ: Match<Expr>, tv: ExplValue): MatchAs {
+   export function matchAs (tu: Expl_, ξ: Match<Expr>, tv: Expl_): MatchAs {
       return at(ν(), MatchAs, tu, ξ, tv)
    }
 
@@ -127,12 +127,12 @@ export namespace Expl {
    }
 
    export class Typematch extends Expl {
-      tu: ExplValue = _
+      tu: Expl_ = _
       d: Str = _
-      tv: ExplValue = _
+      tv: Expl_ = _
    }
 
-   export function typematch (tu: ExplValue, d: Str, tv: ExplValue): Typematch {
+   export function typematch (tu: Expl_, d: Str, tv: Expl_): Typematch {
       return at(ν(), Typematch, tu, d, tv)
    }
 

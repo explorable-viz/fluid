@@ -1,6 +1,7 @@
 import { as, assert } from "./util/Core"
-import { Annotated, asAnnotated, annotatedAt, num, str } from "./Annotated"
+import { Annotated, annotatedAt, asAnnotated, num, str } from "./Annotated"
 import { Bool, true_, false_ } from "./BaseTypes"
+import { Expl_, Expl, explValue } from "./ExplValue"
 import { Num, PrimOpTag, PrimValue, Str, _, Value } from "./Value"
 import { ν } from "./Versioned"
 
@@ -48,16 +49,16 @@ const pow = (x: Num, y: Num): Annotated<Num> => num(as(x, Num).val ** as(y, Num)
 const times = (x: Num, y: Num): Annotated<Num> => num(as(x, Num).val * as(y, Num).val)
 
 // Convenience methods for building the maps. Export to allow other modules to provide operations.
-export function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): Annotated<UnaryOp> {
-   return annotatedAt(ν(), UnaryOp, op.name, op)
+export function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): Expl_<UnaryOp> {
+   return explValue(Expl.empty(), annotatedAt(ν(), UnaryOp, op.name, op))
 }
 
-export function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): Annotated<BinaryOp> {
-   return annotatedAt(ν(), BinaryOp, op.name, op)
+export function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): Expl_<BinaryOp> {
+   return explValue(Expl.empty(), annotatedAt(ν(), BinaryOp, op.name, op))
 }
 
 // Primitives with identifiers as names are unary and first-class.
-export const unaryOps: Map<string, Annotated<UnaryOp>> = new Map([
+export const unaryOps: Map<string, Expl_<UnaryOp>> = new Map([
    [ceiling.name, unary_(ceiling)],
    [error.name, unary_(error)],
    [floor.name, unary_(floor)],
@@ -66,7 +67,7 @@ export const unaryOps: Map<string, Annotated<UnaryOp>> = new Map([
    [trace.name, unary_(trace)]
 ])
    
-export const binaryOps: Map<string, Annotated<BinaryOp>> = new Map([
+export const binaryOps: Map<string, Expl_<BinaryOp>> = new Map([
    ["-", binary_(minus)],
    ["+", binary_(plus)],
    ["*", binary_(times)],

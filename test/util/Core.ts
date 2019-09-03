@@ -3,7 +3,7 @@ import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
-import { ExplValue } from "../../src/ExplValue"
+import { Expl_ } from "../../src/ExplValue"
 import { Expr } from "../../src/Expr"
 import "../../src/Graphics" // for graphical datatypes
 import "../../src/app/GraphicsRenderer" // for graphics primitives
@@ -18,7 +18,7 @@ export class FwdSlice {
       setallα(ann.top, ρ)
       this.expr = new Cursor(e)
       this.setup()
-      const tv: ExplValue = Eval.eval_(ρ, e)
+      const tv: Expl_ = Eval.eval_(ρ, e)
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
          this.val = new Cursor(tv.v)
@@ -47,7 +47,7 @@ export class BwdSlice {
       if (flags.get(Flags.Bwd)) {
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
-         const tv: ExplValue = Eval.eval_(ρ, e) // just to obtain tv
+         const tv: Expl_ = Eval.eval_(ρ, e) // just to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
          this.val = new Cursor(tv.v)
          this.setup()

@@ -4,7 +4,7 @@ import { negateallα, setallα } from "../Annotated"
 import { List, Pair } from "../BaseTypes"
 import { Env, ExtendEnv } from "../Env"
 import { Direction, Eval } from "../Eval"
-import { ExplValue } from "../ExplValue"
+import { Expl_ } from "../ExplValue"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
@@ -17,7 +17,7 @@ export class View implements Slicer {
    coordinator: ViewCoordinator
    ρ: Env
    e: Expr
-   tv: ExplValue
+   tv: Expl_
    view: GraphicsRenderer
    direction: Direction
 
