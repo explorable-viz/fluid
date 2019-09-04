@@ -11,7 +11,7 @@ import { ν, at } from "./Versioned"
 export type Closure = Eval.Closure
 export type Expl = Expl.Expl
 
-export class Expl_<T extends Value = Value> extends DataValue<"ExplValue"> {
+export class Expl_<T extends Value = Value> extends DataValue<"Expl_"> {
    t: Expl = _
    v: Annotated<T> = _
 }
