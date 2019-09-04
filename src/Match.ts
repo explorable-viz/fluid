@@ -80,15 +80,15 @@ export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValu
 }
 
 // Parser ensures constructor calls are saturated.
-function matchArgs (κ: RuntimeCont, v̅: Value[], u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
-   if (v̅.length === 0) {
+function matchArgs (κ: RuntimeCont, tv̅: Expl_[], u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
+   if (tv̅.length === 0) {
       return [emptyEnv(), match(u̅, κ)]
    } else {
-      const [v, ...v̅ʹ] = v̅
+      const [tv, ...tv̅ʹ] = tv̅
       if (κ instanceof Elim) {
          const f: Elim = κ, // "unfold" K into Elim<K>
-               [ρ, ξ]: [Env, Match<RuntimeCont>] = f.apply_(v, u̅),
-               [ρʹ, ξʹ]: [Env, Match<RuntimeCont>] = matchArgs(ξ.κ, v̅ʹ, ξ.v̅)
+               [ρ, ξ]: [Env, Match<RuntimeCont>] = f.apply_(tv, u̅),
+               [ρʹ, ξʹ]: [Env, Match<RuntimeCont>] = matchArgs(ξ.κ, tv̅ʹ, ξ.v̅)
          return [ρ.concat(ρʹ), ξʹ]
       } else {
          return absurd("Too many arguments to constructor.")
@@ -105,8 +105,8 @@ export abstract class DataElim extends Elim {
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
          if (κ !== undefined) {
-            const v̅: Annotated<Value>[] = (v as DataValue).fieldValues().map(v => asAnnotated(v)),
-            [ρ, ξ]: [Env, Match<RuntimeCont>] = matchArgs(κ, v̅, u̅)
+            const tv̅: Expl_[] = (v as DataValue).fieldExplValues().map(v => asAnnotated(v)),
+            [ρ, ξ]: [Env, Match<RuntimeCont>] = matchArgs(κ, tv̅, u̅)
             return [ρ, match(cons(v, ξ.v̅), ξ.κ)]
          } else {
             const d: DataType = elimToDataType.get(className(this))!
