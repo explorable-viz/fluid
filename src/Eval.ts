@@ -171,7 +171,7 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
             [v, u]: [Value, Value] = [tf.v, tu.v]
       if (v instanceof Closure) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
-               [ρʹ, ξκ]: [Env, Match<Expr>] = v.f.apply(u),
+               [ρʹ, ξκ]: [Env, Match<Expr>] = v.f.apply(tu),
                tv: Expl_ = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), ξκ.κ)
          return expl(Expl.app(tf as Expl_<Closure>, tu, δ, ξκ, tv), copyAt(ν(), tv.v))
       } else 
@@ -207,7 +207,7 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: Expl_ = eval_(ρ, e.e),
-            [ρʹ, ξκ]: [Env, Match<Expr>] = evalTrie(e.σ).apply(tu.v),
+            [ρʹ, ξκ]: [Env, Match<Expr>] = evalTrie(e.σ).apply(tu),
             tv: Expl_ = eval_(ρ.concat(ρʹ), ξκ.κ)
       return expl(Expl.matchAs(tu, ξκ, tv), copyAt(ν(), tv.v))
    } else

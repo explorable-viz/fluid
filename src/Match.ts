@@ -5,6 +5,7 @@ import { List, Pair, cons, nil } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
+import { Expl_ } from "./Expl"
 import { Expr } from "./Expr"
 import { Str, Value, _, make } from "./Value"
 
@@ -71,8 +72,8 @@ export function match<K extends RuntimeCont> (ξ: MatchPrefix, κ: K): Match<K> 
 // See GitHub issue #128.
 export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
    // could have called this "match", but conflicts with factory method of same name
-   apply (v: Value): [Env, Match<K>] {
-      return this.apply_(v, nil())
+   apply (tv: Expl_): [Env, Match<K>] {
+      return this.apply_(tv.v, nil())
    }
 
    abstract apply_ (v: Value, ξ: MatchPrefix): [Env, Match<K>]
