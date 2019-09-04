@@ -73,10 +73,10 @@ export function match<K extends RuntimeCont> (ξ: MatchPrefix, κ: K): Match<K> 
 export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
    // could have called this "match", but conflicts with factory method of same name
    apply (tv: Expl_): [Env, Match<K>] {
-      return this.apply_(tv.v, nil())
+      return this.apply_(tv, nil())
    }
 
-   abstract apply_ (v: Value, ξ: MatchPrefix): [Env, Match<K>]
+   abstract apply_ (tv: Expl_, ξ: MatchPrefix): [Env, Match<K>]
 }
 
 // Parser ensures constructor calls are saturated.
@@ -99,8 +99,9 @@ function matchArgs (κ: RuntimeCont, v̅: Value[], u̅: MatchPrefix): [Env, Matc
 // No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
 // itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
-   apply_ (v: Annotated<Value>, u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
-      const c: string = className(v)
+   apply_ (tv: Expl_, u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
+      const v: Value = tv.v,
+            c: string = className(v)
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
          if (κ !== undefined) {
@@ -125,8 +126,8 @@ class VarElim extends Elim {
    x: Annotated<Str> = _
    κ: RuntimeCont = _
 
-   apply_ (v: Annotated<Value>, ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
-      return [Env.singleton(this.x, v), match(ξ, this.κ)]
+   apply_ (tv: Expl_, ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
+      return [Env.singleton(this.x, tv.v), match(ξ, this.κ)]
    }
 }
 

@@ -234,7 +234,7 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       } else
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
-         zip(v.fieldExplValues(), eʹ.args.toArray()).map(([[t, v], e]) => eval_fwd(e, expl(t, v)))
+         zip(v.fieldExplValues(), eʹ.args.toArray()).map(([tv, e]) => eval_fwd(e, tv))
          setα(e.__α, v)
          setα(e.__α, t)
       }
@@ -305,7 +305,7 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
          // reverse order but shouldn't matter in absence of side-effects:
-         zip(v.fieldExplValues(), eʹ.args.toArray()).map(([[t, v], e]) => eval_bwd(e, expl(t, v)))
+         zip(v.fieldExplValues(), eʹ.args.toArray()).map(([tv, e]) => eval_bwd(e, tv))
          joinα(v.__α, e)
          joinα(t.__α, e)
       } else {
