@@ -6,7 +6,7 @@ import { DataValueTag, State, Value, _, fields, make } from "./Value"
 
 // Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
 export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
-   // set when we evaluate a constructor expression which creates a data value; otherwise undefined?
+   // what ensures that this is always defined?
    __expl: DataExpl
 
    children (): Value[] {

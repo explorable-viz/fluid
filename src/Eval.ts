@@ -14,6 +14,14 @@ import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, PrimValue, Num, Str, Value, _, make } from "./Value"
 import { ν, at, copyAt } from "./Versioned"
 
+// Move to more sensible location
+export function dataValue (c: string, tv̅: Expl_[]): Annotated<DataValue> {
+   const d: DataType = __nonNull(ctrToDataType.get(c)),
+         v: Annotated<DataValue> = annotatedAt(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+   v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
+   return v
+}
+
 export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
 type RecDef = Expr.RecDef
@@ -148,12 +156,8 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
       return expl(Expl.empty(), closure(ν(), ρ, nil(), evalTrie(e.σ)))
    } else
    if (e instanceof Expr.Constr) {
-      const tv̅: Expl_[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
-            c: string = e.ctr.val,
-            d: DataType = __nonNull(ctrToDataType.get(c)),
-            v: Annotated<DataValue> = annotatedAt(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
-      v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
-      return expl(Expl.empty(), v)
+      const tv̅: Expl_[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
+      return expl(Expl.empty(), dataValue(e.ctr.val, tv̅))
    } else
    if (e instanceof Expr.Quote) {
       return expl(Expl.quote(), copyAt(ν(), e.e))
