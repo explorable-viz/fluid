@@ -126,7 +126,7 @@ class VarElim extends Elim {
    κ: RuntimeCont = _
 
    apply_ (tv: Expl_, ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
-      return [Env.singleton(this.x, tv.v), match(ξ, this.κ)]
+      return [Env.singleton(this.x, tv), match(ξ, this.κ)]
    }
 }
 

@@ -45,7 +45,7 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
       const def: RecDef = δ.head,
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
             tf: Expl_<Closure> = expl(Expl.empty(), closure(ν(), ρ, δ_0, evalTrie(def.σ)))
-      return [cons(Expl.recDef(def.x, tf), δₜ), extendEnv(ρ_ext, def.x, tf.v)]
+      return [cons(Expl.recDef(def.x, tf), δₜ), extendEnv(ρ_ext, def.x, tf)]
    } else
    if (Nil.is(δ)) {
       return [nil(), emptyEnv()]
@@ -79,14 +79,14 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const tv: Expl_ = eval_(ρ.concat(ρ_ext), def.e),
-               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, tv.v))
+               [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, tv))
          return [cons(Expl.let_(def.x, tv), def̅ₜ), ρ_extʹ]
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currently happen to be unary
          if (unaryOps.has(def.x.val)) {
             const t_op: Expl_<UnaryOp> = unaryOps.get(def.x.val)!,
-                  [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, t_op.v))
+                  [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, t_op))
             return [cons(Expl.prim(def.x, t_op), def̅ₜ), ρ_extʹ]
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
