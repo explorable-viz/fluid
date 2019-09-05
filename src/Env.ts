@@ -8,13 +8,13 @@ import { Str, Value, _, make } from "./Value"
 
 // Environments are snoc lists.
 export abstract class Env extends DataValue<"Env"> {
-   get (k: Str): Annotated<Value> | undefined {
+   get (k: Str): Expl_ | undefined {
       if (this instanceof EmptyEnv) {
          return undefined
       } else
       if (this instanceof ExtendEnv) {
          if (this.k.val === k.val) {
-            return this.tv
+            return expl(Expl.empty(), this.tv)
          } else {
             return this.ρ.get(k)
          }

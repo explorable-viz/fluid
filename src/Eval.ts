@@ -164,7 +164,7 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) {
-         const v: Annotated<Value> = ρ.get(e.x)!
+         const v: Annotated<Value> = ρ.get(e.x)!.v
          return expl(Expl.var_(e.x, v), copyAt(ν(), v))
       } else {
          return error(`Variable "${e.x.val}" not found.`)
