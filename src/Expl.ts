@@ -1,24 +1,15 @@
 import { Annotated, AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
-import { DataValue } from "./DataValue"
+import { DataValue, Expl_ } from "./DataValue"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
-import { PrimValue, Str, Value, _, make } from "./Value"
+import { PrimValue, Str, Value, _ } from "./Value"
 import { ν, at } from "./Versioned"
 
 export type Closure = Eval.Closure
 export type Expl = Expl.Expl
-
-export class Expl_<T extends Value = Value> extends DataValue<"Expl_"> {
-   t: Expl = _
-   v: Annotated<T> = _
-}
-
-export function expl<T extends Value = Value> (t: Expl, v: Annotated<T>): Expl_<T> {
-   return make(Expl_, t, v) as Expl_<T>
-}
 
 export namespace Expl {
    export abstract class Expl extends AnnotatedC(DataValue)<"Expl"> {

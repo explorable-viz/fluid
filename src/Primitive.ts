@@ -1,7 +1,8 @@
 import { as, assert } from "./util/Core"
 import { Annotated, annotatedAt, asAnnotated, num, str } from "./Annotated"
 import { Bool, true_, false_ } from "./BaseTypes"
-import { Expl_, Expl, expl } from "./Expl"
+import { Expl_, expl } from "./DataValue"
+import { Expl } from "./Expl"
 import { Num, PrimOpTag, PrimValue, Str, _, Value } from "./Value"
 import { ν } from "./Versioned"
 

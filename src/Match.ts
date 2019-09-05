@@ -1,11 +1,10 @@
 import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
-import { Annotated, asAnnotated, setα } from "./Annotated"
+import { Annotated, setα } from "./Annotated"
 import { List, Pair, cons, nil } from "./BaseTypes"
-import { DataValue } from "./DataValue"
+import { DataValue, Expl_ } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
-import { Expl_ } from "./Expl"
 import { Expr } from "./Expr"
 import { Str, Value, _, make } from "./Value"
 
@@ -105,7 +104,7 @@ export abstract class DataElim extends Elim {
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
          if (κ !== undefined) {
-            const tv̅: Expl_[] = (v as DataValue).fieldExplValues().map(v => asAnnotated(v)),
+            const tv̅: Expl_[] = (v as DataValue).explChildren(),
             [ρ, ξ]: [Env, Match<RuntimeCont>] = matchArgs(κ, tv̅, u̅)
             return [ρ, match(cons(v, ξ.v̅), ξ.κ)]
          } else {

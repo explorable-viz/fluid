@@ -42,7 +42,7 @@ export function setallα<Tag extends ValueTag, T extends Value<Tag>> (α: Annota
    if (annotated(v)) {
       setα(α, v)
    }
-   v.fieldValues().forEach((v: Persistent): void => {
+   v.children().forEach((v: Persistent): void => {
       if (v instanceof Value) {
          setallα(α, v)
       }
@@ -54,7 +54,7 @@ export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): 
    if (annotated(v)) {
       setα(ann.negate(v.__α), v)
    }
-   v.fieldValues().forEach((v: Persistent): void => {
+   v.children().forEach((v: Persistent): void => {
       if (v instanceof Value) {
          negateallα(v)
       }

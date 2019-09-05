@@ -1,9 +1,9 @@
 import { __nonNull, as } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
+import { Expl_ } from "../../src/DataValue"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
-import { Expl_ } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
 import "../../src/Graphics" // for graphical datatypes
 import "../../src/app/GraphicsRenderer" // for graphics primitives

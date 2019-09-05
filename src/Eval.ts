@@ -4,9 +4,9 @@ import { ann } from "./util/Lattice"
 import { Annotated, AnnotatedC, annotatedAt, joinα, meetα, num, setα, str } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
-import { DataValue } from "./DataValue"
+import { DataValue, Expl_, expl } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
-import { Expl, Expl_, expl } from "./Expl"
+import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
@@ -234,7 +234,7 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       } else
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
-         zip(v.fieldExplValues(), eʹ.args.toArray()).map(([tv, e]) => eval_fwd(e, tv))
+         zip(v.explChildren(), eʹ.args.toArray()).map(([tv, e]) => eval_fwd(e, tv))
          setα(e.__α, v)
          setα(e.__α, t)
       }
@@ -305,7 +305,7 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
          // reverse order but shouldn't matter in absence of side-effects:
-         zip(v.fieldExplValues(), eʹ.args.toArray()).map(([tv, e]) => eval_bwd(e, tv))
+         zip(v.explChildren(), eʹ.args.toArray()).map(([tv, e]) => eval_bwd(e, tv))
          joinα(v.__α, e)
          joinα(t.__α, e)
       } else {

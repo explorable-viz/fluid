@@ -39,7 +39,7 @@ function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): Versi
 }
 
 export function copyAt<T extends Value> (k: Id, v: T): Versioned<T> {
-   const vʹ: Versioned<T> = at(k, classOf(v), ...v.fieldValues())
+   const vʹ: Versioned<T> = at(k, classOf(v), ...v.children())
    metadataFields(v).forEach((prop: string) => {
       (vʹ as any)[prop] = (v as any)[prop]
    })

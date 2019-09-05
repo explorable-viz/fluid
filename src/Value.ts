@@ -17,7 +17,7 @@ export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Id" | "Num" | "St
 export class Value<Tag extends ValueTag = ValueTag> {
    readonly __tag: Tag
 
-   fieldValues (): Persistent[] {
+   children (): Persistent[] {
       return fields(this).map(k => (this as any as State)[k])
    }
 }

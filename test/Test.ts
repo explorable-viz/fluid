@@ -2,8 +2,8 @@
 
 import { BwdSlice, FwdSlice } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some } from "../src/BaseTypes"
+import { Expl_ } from "../src/DataValue"
 import { Env, ExtendEnv } from "../src/Env"
-import { Expl_ } from "../src/Expl"
 import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
 import { module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
