@@ -42,7 +42,7 @@ describe("example", () => {
 			new (class extends FwdSlice {
             setup (): void {
                const data: Cursor = new Cursor(ρ)
-               data.to(ExtendEnv, "v")
+               data.to(ExtendEnv, "tv")
                    .to(Cons, "head")
                    .to(Pair, "snd")
                    .to(Cons, "head")

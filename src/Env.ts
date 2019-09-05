@@ -14,7 +14,7 @@ export abstract class Env extends DataValue<"Env"> {
       } else
       if (this instanceof ExtendEnv) {
          if (this.k.val === k.val) {
-            return this.v
+            return this.tv
          } else {
             return this.ρ.get(k)
          }
@@ -36,7 +36,7 @@ export abstract class Env extends DataValue<"Env"> {
          return this
       } else
       if (ρ instanceof ExtendEnv) {
-         return extendEnv(this.concat(ρ.ρ), ρ.k, expl(Expl.empty(), ρ.v))
+         return extendEnv(this.concat(ρ.ρ), ρ.k, expl(Expl.empty(), ρ.tv))
       } else {
          return absurd()
       }
@@ -53,7 +53,7 @@ export function emptyEnv (): EmptyEnv {
 export class ExtendEnv extends Env {
    ρ: Env = _
    k: Str = _
-   v: Annotated<Value> = _
+   tv: Annotated<Value> = _
 }
 
 export function extendEnv (ρ: Env, k: Str, tv: Expl_): ExtendEnv {
