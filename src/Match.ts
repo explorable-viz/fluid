@@ -57,10 +57,10 @@ function evalCont<K extends Cont> (κ: K): RuntimeCont {
 }
 
 // Preorder traversal of all nodes in the matched prefix.
-type MatchPrefix = List<Annotated<Value>>
+type MatchPrefix = List<Expl_>
 
 export class Match<K> extends DataValue<"Match"> {
-   v̅: MatchPrefix = _
+   tv̅: MatchPrefix = _
    κ: K = _
 }
 
@@ -87,7 +87,7 @@ function matchArgs (κ: RuntimeCont, tv̅: Expl_[], u̅: MatchPrefix): [Env, Mat
       if (κ instanceof Elim) {
          const f: Elim = κ, // "unfold" K into Elim<K>
                [ρ, ξ]: [Env, Match<RuntimeCont>] = f.apply_(tv, u̅),
-               [ρʹ, ξʹ]: [Env, Match<RuntimeCont>] = matchArgs(ξ.κ, tv̅ʹ, ξ.v̅)
+               [ρʹ, ξʹ]: [Env, Match<RuntimeCont>] = matchArgs(ξ.κ, tv̅ʹ, ξ.tv̅)
          return [ρ.concat(ρʹ), ξʹ]
       } else {
          return absurd("Too many arguments to constructor.")
@@ -104,9 +104,9 @@ export abstract class DataElim extends Elim {
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
          if (κ !== undefined) {
-            const tv̅: Expl_[] = (v as DataValue).explChildren(),
+            const tv̅: Expl_[] = v.explChildren(),
             [ρ, ξ]: [Env, Match<RuntimeCont>] = matchArgs(κ, tv̅, u̅)
-            return [ρ, match(cons(v, ξ.v̅), ξ.κ)]
+            return [ρ, match(cons(tv, ξ.tv̅), ξ.κ)]
          } else {
             const d: DataType = elimToDataType.get(className(this))!
             if (d.ctrs.has(c)) {
@@ -135,9 +135,9 @@ function varElim<K extends RuntimeCont> (x: Annotated<Str>, κ: RuntimeCont): Va
 }
 
 export function match_fwd (ξ: Match<Expr>): Annotation {
-   return ξ.v̅.toArray().reduce((α: Annotation, v: Annotated<Value>): Annotation => ann.meet(α, v.__α), ann.top)
+   return ξ.tv̅.toArray().reduce((α: Annotation, tv: Expl_): Annotation => ann.meet(α, tv.v.__α), ann.top)
 }
 
 export function match_bwd (ξ: Match<Expr>, α: Annotation): void {
-   ξ.v̅.toArray().map(v => setα(α, v))
+   ξ.tv̅.toArray().map((tv: Expl_): Value => setα(α, tv.v))
 }
