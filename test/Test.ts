@@ -43,6 +43,7 @@ describe("example", () => {
             setup (): void {
                const data: Cursor = new Cursor(ρ)
                data.to(ExtendEnv, "tv")
+                   .to(Expl_, "v")
                    .to(Cons, "head")
                    .to(Pair, "snd")
                    .to(Cons, "head")

@@ -1,8 +1,6 @@
 import { absurd } from "./util/Core"
-import { Annotated } from "./Annotated"
-import { DataValue, Expl_, expl } from "./DataValue"
-import { Expl } from "./Expl"
-import { Str, Value, _, make } from "./Value"
+import { DataValue, Expl_ } from "./DataValue"
+import { Str, _, make } from "./Value"
 
 // Idiom is to permit instance methods on reflected datatypes, but not have them use polymorphism.
 
@@ -14,7 +12,7 @@ export abstract class Env extends DataValue<"Env"> {
       } else
       if (this instanceof ExtendEnv) {
          if (this.k.val === k.val) {
-            return expl(Expl.empty(), this.tv)
+            return this.tv
          } else {
             return this.ρ.get(k)
          }
@@ -36,7 +34,7 @@ export abstract class Env extends DataValue<"Env"> {
          return this
       } else
       if (ρ instanceof ExtendEnv) {
-         return extendEnv(this.concat(ρ.ρ), ρ.k, expl(Expl.empty(), ρ.tv))
+         return extendEnv(this.concat(ρ.ρ), ρ.k, ρ.tv)
       } else {
          return absurd()
       }
@@ -53,9 +51,9 @@ export function emptyEnv (): EmptyEnv {
 export class ExtendEnv extends Env {
    ρ: Env = _
    k: Str = _
-   tv: Annotated<Value> = _
+   tv: Expl_ = _
 }
 
 export function extendEnv (ρ: Env, k: Str, tv: Expl_): ExtendEnv {
-   return make(ExtendEnv, ρ, k, tv.v)
+   return make(ExtendEnv, ρ, k, tv)
 }
