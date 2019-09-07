@@ -1,6 +1,6 @@
 import { Class, absurd, className } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
-import { Id, Num, Persistent, Str, Value, ValueTag, _ } from "./Value"
+import { Id, MemoFunType, Num, Persistent, Str, Value, ValueTag, _, memo } from "./Value"
 import { ν, at } from "./Versioned"
 
 // For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
@@ -38,7 +38,13 @@ export function setα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
    return v
 }
 
-export function setallα<Tag extends ValueTag, T extends Value<Tag>> (α: Annotation, v: T): T {
+// Memoising an imperative function makes any side effects idempotent. Not clear yet how to "partially" 
+// memoise LVar-like functions like joinα, but setall isn't one of those.	
+export function setallα<T extends Persistent> (α: Annotation, v: T): T {	
+   return memo<T>(setallα_ as MemoFunType<T>, α, v)
+}	
+
+export function setallα_<Tag extends ValueTag, T extends Value<Tag>> (α: Annotation, v: T): T {
    if (annotated(v)) {
       setα(α, v)
    }
