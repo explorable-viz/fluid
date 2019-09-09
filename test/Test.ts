@@ -79,7 +79,8 @@ describe("example", () => {
          })(e, ρ)
 			new (class extends BwdSlice {
 				setup (): void {
-               this.val.need()
+					this.tv
+						.to(Expl_, "t").need()
 				}
 				expect (): void {
 					this.expr.needed()

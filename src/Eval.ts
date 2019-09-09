@@ -258,42 +258,42 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       recDefs_(Direction.Fwd, t.δ)
       eval_fwd(t.ξ.κ, t.tv)
       setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
-      setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.v.__α), t)
+      setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
       eval_fwd(eʹ.f, t.tf)
       eval_fwd(eʹ.e, t.tv)
       setα(ann.meet(t.tf.v.__α, t.tv.v.__α, e.__α), v)
-      setα(ann.meet(t.tf.v.__α, t.tv.v.__α, e.__α), t)
+      setα(ann.meet(t.tf.v.__α, t.tv.t.__α, e.__α), t)
    } else
    if (t instanceof Expl.BinaryApp) {
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_fwd(eʹ.e1, t.tv1)
       eval_fwd(eʹ.e2, t.tv2)
       setα(ann.meet(t.tv1.v.__α, t.tv2.v.__α, e.__α), v)
-      setα(ann.meet(t.tv1.v.__α, t.tv2.v.__α, e.__α), t)
+      setα(ann.meet(t.tv1.v.__α, t.tv2.t.__α, e.__α), t)
    } else
    if (t instanceof Expl.Defs) {
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       defs_fwd(eʹ.def̅, t.def̅)
       eval_fwd(eʹ.e, t.tv)
       setα(ann.meet(e.__α, t.tv.v.__α), v)
-      setα(ann.meet(e.__α, t.tv.v.__α), t)
+      setα(ann.meet(e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.MatchAs) {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(t.ξ.κ, t.tv)
       setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
-      setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.v.__α), t)
+      setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(get(eʹ.cases, t.d)!, t.tv)
       setα(ann.meet(e.__α, t.tv.v.__α), v)
-      setα(ann.meet(e.__α, t.tv.v.__α), t)
+      setα(ann.meet(e.__α, t.tv.t.__α), t)
    } else {
       absurd()
    }

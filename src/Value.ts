@@ -13,10 +13,12 @@ export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
 export type PrimOpTag = "UnaryOp" | "BinaryOp"
 export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Id" | "Num" | "Str"
 
-// Value in the metalanguage. Nominal idiom breaks down here in requiring use of "any".
+// Value in the metalanguage.
 export class Value<Tag extends ValueTag = ValueTag> {
    readonly __tag: Tag
 
+   // Probably confusingly, "children" isn't a user-level notion; specifically, wrappers
+   // like Num and Str have children which are not observable through pattern-matching.
    children (): Persistent[] {
       return fields(this).map(k => (this as any as State)[k])
    }
