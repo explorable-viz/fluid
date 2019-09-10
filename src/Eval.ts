@@ -109,7 +109,7 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).forEach(([def, defₜ]: [Def, Expl.Def]) => {
       if (def instanceof Expr.Let && defₜ instanceof Expl.Let) {
          eval_fwd(def.e, defₜ.tv)
-         meetα(def.x.__α, defₜ.tv.t)
+         meetα(def.__α, defₜ.tv.t)
       } else
       if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
          setα(def.x.__α, defₜ.t_op.t)
@@ -125,7 +125,7 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).reverse().forEach(([def, defₜ]: [Def, Expl.Def]) => {
       if (def instanceof Expr.Let && defₜ instanceof Expl.Let) {
-         joinα(defₜ.tv.t.__α, def.x)
+         joinα(defₜ.tv.t.__α, def)
          eval_bwd(def.e, defₜ.tv)
       } else
       if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
