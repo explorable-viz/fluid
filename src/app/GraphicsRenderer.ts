@@ -72,19 +72,19 @@ export class GraphicsRenderer {
    renderElement (tg: Expl_<GraphicsElement>): void {
       const g: GraphicsElement = tg.v
       if (g instanceof Graphic) {
-         this.group(g)
+         this.group(tg as Expl_<Graphic>)
       } else 
       if (g instanceof Polyline) {
          this.polyline(g.points)
       } else
       if (g instanceof Polygon) {
-         this.polygon(g)
+         this.polygon(tg as Expl_<Polygon>)
       } else
       if (g instanceof Text) {
-         this.text(g)
+         this.text(tg as Expl_<Text>)
       } else
       if (g instanceof Translate) {
-         this.renderWith(g.explChild("g", GraphicsElement), translate(g.x.val, g.y.val))
+         this.translate(tg as Expl_<Translate>)
       }
       else {
          return absurd()
@@ -110,11 +110,14 @@ export class GraphicsRenderer {
       this.ancestors.pop()
    }
 
-   renderWith (tg: Expl_<GraphicsElement>, f: TransformFun): void {
-      const transform: TransformFun = this.transform
-      this.transforms.push(postcompose(transform, f))
-      this.renderElement(tg)
-      this.transforms.pop()
+   translate (tg: Expl_<Translate>): void {
+      const g: Translate = tg.v,
+            tgʹ: Expl_<GraphicsElement> = g.explChild("g", GraphicsElement), 
+            f: TransformFun = translate(g.x.val, g.y.val)
+            const transform: TransformFun = this.transform
+            this.transforms.push(postcompose(transform, f))
+            this.renderElement(tgʹ)
+            this.transforms.pop()
    }
 
    svgPath (p̅: List<Point>): [number, number][] {
@@ -162,17 +165,20 @@ export class GraphicsRenderer {
       this.current.appendChild(circle)
    }
 
-   polygon (g: Polygon): void {
-      const polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon")
+   polygon (tg: Expl_<Polygon>): void {
+      const polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon"),
+            g: Polygon = tg.v
       polygon.setAttribute("points", this.points(g.points))
       polygon.setAttribute("stroke", g.stroke.val)
       polygon.setAttribute("fill", g.fill.val)
       polygon.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
-         g.points.toArray().map((p: Point): void => {
-            setallα(ann.top, p)
-         })
+         // set annotations only on _points_, not list containing them or polygon itself
+         for (let ps: List<Point> = g.points; Cons.is(ps);) {
+            setallα(ann.top, ps.explChild("head", Point))
+            ps = ps.tail
+         }
          this.slicer.bwdSlice()
       })
       this.current.appendChild(polygon)
@@ -181,13 +187,14 @@ export class GraphicsRenderer {
 
    // Flip text vertically to cancel out the global vertical flip. Don't set x and y but express
    // position through a translation so that the scaling doesn't affect the position.
-   text (g: Text): void {
-      const [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
+   text (tg: Expl_<Text>): void {
+      const g: Text = tg.v,
+            [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
             text: SVGTextElement = textElement(x, y, g.str.val)
       text.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
-         setallα(ann.top, g)
+         setallα(ann.top, tg)
          this.slicer.bwdSlice()
       })
       this.current.appendChild(text)
