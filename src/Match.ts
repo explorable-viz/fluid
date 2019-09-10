@@ -134,10 +134,10 @@ function varElim<K extends RuntimeCont> (x: Annotated<Str>, κ: RuntimeCont): Va
    return make(VarElim, x, κ) as VarElim
 }
 
-export function match_fwd (ξ: Match<Expr>): Annotation {
+export function apply_fwd (ξ: Match<Expr>): Annotation {
    return ξ.tv̅.toArray().reduce((α: Annotation, tv: Expl_): Annotation => ann.meet(α, tv.v.__α), ann.top)
 }
 
-export function match_bwd (ξ: Match<Expr>, α: Annotation): void {
+export function apply_bwd (ξ: Match<Expr>, α: Annotation): void {
    ξ.tv̅.toArray().map((tv: Expl_): Value => setα(α, tv.v))
 }

@@ -9,7 +9,7 @@ import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
-import { Elim, Match, evalTrie, match_bwd, match_fwd } from "./Match"
+import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, PrimValue, Num, Str, Value, _, make } from "./Value"
 import { ν, at, copyAt } from "./Versioned"
@@ -164,8 +164,8 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) {
-         const v: Annotated<Value> = ρ.get(e.x)!.v
-         return expl(Expl.var_(e.x, v), copyAt(ν(), v))
+         const tv: Expl_ = ρ.get(e.x)!
+         return expl(Expl.var_(e.x, tv), copyAt(ν(), tv.v))
       } else {
          return error(`Variable "${e.x.val}" not found.`)
       }
@@ -248,8 +248,8 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       setα(e.__α, t)
    } else
    if (t instanceof Expl.Var) {
-      setα(ann.meet(e.__α, t.v.__α), v)
-      setα(ann.meet(e.__α, t.v.__α), t)
+      setα(ann.meet(e.__α, t.tv.v.__α), v)
+      setα(ann.meet(e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.App) {
       const eʹ: Expr.App = as(e, Expr.App)
@@ -257,8 +257,8 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       eval_fwd(eʹ.e, t.tu)
       recDefs_(Direction.Fwd, t.δ)
       eval_fwd(t.ξ.κ, t.tv)
-      setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
-      setα(ann.meet(t.tf.v.__α, match_fwd(t.ξ), e.__α, t.tv.t.__α), t)
+      setα(ann.meet(t.tf.v.__α, apply_fwd(t.ξ), e.__α, t.tv.v.__α), v)
+      setα(ann.meet(t.tf.v.__α, apply_fwd(t.ξ), e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
@@ -285,8 +285,8 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(t.ξ.κ, t.tv)
-      setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.v.__α), v)
-      setα(ann.meet(match_fwd(t.ξ), e.__α, t.tv.t.__α), t)
+      setα(ann.meet(apply_fwd(t.ξ), e.__α, t.tv.v.__α), v)
+      setα(ann.meet(apply_fwd(t.ξ), e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
@@ -321,8 +321,8 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.Var) {
-      joinα(v.__α, t.v)
-      joinα(t.__α, t.v)
+      joinα(v.__α, t.tv.v)
+      joinα(t.__α, t.tv.t)
       joinα(v.__α, e)
       joinα(t.__α, e)
    } else
@@ -331,7 +331,7 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       joinα(v.__α, t.tv.v)
       joinα(t.__α, t.tv.t)
       eval_bwd(t.ξ.κ, t.tv)
-      match_bwd(t.ξ, v.__α)
+      apply_bwd(t.ξ, v.__α)
       recDefs_(Direction.Bwd, t.δ)
       joinα(v.__α, t.tf.v)
       joinα(t.__α, t.tf.t)
@@ -378,7 +378,7 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       joinα(t.__α, t.tv.t)
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_bwd(t.ξ.κ, t.tv)
-      match_bwd(t.ξ, v.__α)
+      apply_bwd(t.ξ, v.__α)
       eval_bwd(eʹ.e, t.tu)
       joinα(v.__α, e)
       joinα(t.__α, e)

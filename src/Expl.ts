@@ -1,11 +1,11 @@
-import { Annotated, AnnotatedC } from "./Annotated"
+import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
 import { DataValue, Expl_ } from "./DataValue"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
-import { PrimValue, Str, Value, _ } from "./Value"
+import { PrimValue, Str, _ } from "./Value"
 import { ν, at } from "./Versioned"
 
 export type Closure = Eval.Closure
@@ -127,13 +127,12 @@ export namespace Expl {
       return at(ν(), Typematch, tu, d, tv)
    }
 
-   // v is the resolved value of x
    export class Var extends Expl {
       x: Str = _
-      v: Annotated<Value> = _
+      tv: Expl_ = _
    }
 
-   export function var_ (x: Str, v: Annotated<Value>): Var {
-      return at(ν(), Var, x, v)
+   export function var_ (x: Str, tv: Expl_): Var {
+      return at(ν(), Var, x, tv)
    }
 }
