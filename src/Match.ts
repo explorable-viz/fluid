@@ -130,7 +130,7 @@ class VarElim extends Elim {
    }
 }
 
-function varElim<K extends RuntimeCont> (x: Annotated<Str>, κ: RuntimeCont): VarElim {
+function varElim (x: Annotated<Str>, κ: RuntimeCont): VarElim {
    return make(VarElim, x, κ) as VarElim
 }
 
