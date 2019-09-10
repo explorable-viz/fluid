@@ -9,7 +9,7 @@ import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
-import { Elim, Match, evalTrie, apply_bwd_NEW, apply_fwd, apply_fwd_NEW } from "./Match"
+import { Elim, Match, evalTrie, apply_bwd_NEW, apply_fwd_NEW } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, PrimValue, Num, Str, Value, _, make } from "./Value"
 import { ν, at, copyAt } from "./Versioned"
@@ -59,7 +59,6 @@ function recDefs_ (dir: Direction, δ: List<Expl.RecDef>): void {
       zip(δ.head.tf.v.δ.toArray(), δ.toArray()).map(([def, defₜ]: [RecDef, Expl.RecDef]): void => {
          assert(def.x.eq(defₜ.x))
          if (dir === Direction.Fwd) {
-            setα(def.x.__α, defₜ.tf.v)
             setα(def.x.__α, defₜ.tf.t)
          } else {
             joinα(defₜ.tf.t.__α, def.x)
@@ -110,11 +109,9 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).forEach(([def, defₜ]: [Def, Expl.Def]) => {
       if (def instanceof Expr.Let && defₜ instanceof Expl.Let) {
          eval_fwd(def.e, defₜ.tv)
-         meetα(def.x.__α, defₜ.tv.v)
          meetα(def.x.__α, defₜ.tv.t)
       } else
       if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
-         setα(def.x.__α, defₜ.t_op.v)
          setα(def.x.__α, defₜ.t_op.t)
       } else
       if (def instanceof Expr.LetRec && defₜ instanceof Expl.LetRec) {
@@ -230,22 +227,18 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
 export function eval_fwd (e: Expr, {t, v}: Expl_): void {
    if (t instanceof Expl.Empty) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
-         setα(e.__α, v)
          setα(e.__α, t)
       } else
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
          zip(v.explChildren(), eʹ.args.toArray()).map(([tv, e]) => eval_fwd(e, tv))
-         setα(e.__α, v)
          setα(e.__α, t)
       }
    } else
    if (t instanceof Expl.Quote) {
-      setα(e.__α, v)
       setα(e.__α, t)
    } else
    if (t instanceof Expl.Var) {
-      setα(ann.meet(e.__α, t.tv.v.__α), v)
       setα(ann.meet(e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.App) {
@@ -254,42 +247,36 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       eval_fwd(eʹ.e, t.tu)
       recDefs_(Direction.Fwd, t.δ)
       eval_fwd(t.ξ.κ, t.tv)
-      setα(ann.meet(t.tf.v.__α, apply_fwd(t.ξ), e.__α, t.tv.v.__α), v)
       setα(ann.meet(t.tf.t.__α, apply_fwd_NEW(t.ξ), e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
       eval_fwd(eʹ.f, t.tf)
       eval_fwd(eʹ.e, t.tv)
-      setα(ann.meet(t.tf.v.__α, t.tv.v.__α, e.__α), v)
       setα(ann.meet(t.tf.t.__α, t.tv.t.__α, e.__α), t)
    } else
    if (t instanceof Expl.BinaryApp) {
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_fwd(eʹ.e1, t.tv1)
       eval_fwd(eʹ.e2, t.tv2)
-      setα(ann.meet(t.tv1.v.__α, t.tv2.v.__α, e.__α), v)
       setα(ann.meet(t.tv1.t.__α, t.tv2.t.__α, e.__α), t)
    } else
    if (t instanceof Expl.Defs) {
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       defs_fwd(eʹ.def̅, t.def̅)
       eval_fwd(eʹ.e, t.tv)
-      setα(ann.meet(e.__α, t.tv.v.__α), v)
       setα(ann.meet(e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.MatchAs) {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(t.ξ.κ, t.tv)
-      setα(ann.meet(apply_fwd(t.ξ), e.__α, t.tv.v.__α), v)
       setα(ann.meet(apply_fwd_NEW(t.ξ), e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(get(eʹ.cases, t.d)!, t.tv)
-      setα(ann.meet(e.__α, t.tv.v.__α), v)
       setα(ann.meet(e.__α, t.tv.t.__α), t)
    } else {
       absurd()
