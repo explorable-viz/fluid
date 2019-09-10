@@ -1,7 +1,8 @@
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Annotation, ann } from "../util/Lattice"
-import { Annotated, asAnnotated, num, setallα } from "../Annotated"
+import { asAnnotated, num, setallα } from "../Annotated"
 import { Cons, List } from "../BaseTypes"
+import { Expl_ } from "../DataValue"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
@@ -134,18 +135,18 @@ export class GraphicsRenderer {
    pointHighlights (p̅: List<Point>): void {
       for (; Cons.is(p̅); p̅ = p̅.tail) {
          // TODO: annotation on point itself is not considered yet
-         this.xyHighlight(asAnnotated(p̅.head.x), asAnnotated(p̅.head.y))
+         this.xyHighlight(p̅.head.explChild("x", Num), p̅.head.explChild("y", Num))
       }
    }
 
-   xyHighlight (x: Annotated<Num>, y: Annotated<Num>): void {
-      const [x_α, y_α] = [__nonNull(x.__α), __nonNull(y.__α)]
+   xyHighlight (tx: Expl_<Num>, ty: Expl_<Num>): void {
+      const [x_α, y_α] = [__nonNull(tx.t.__α), __nonNull(ty.t.__α)]
       let α: Annotation = ann.meet(x_α, y_α)
       if (this.slicer.direction === Direction.Fwd) {
          α = ann.negate(α)
       }
       if (α) {
-         const [xʹ, yʹ]: [number, number] = this.transform([x.val, y.val])
+         const [xʹ, yʹ]: [number, number] = this.transform([tx.v.val, ty.v.val])
          this.circle(xʹ, yʹ, 3)
       }
    }

@@ -1,5 +1,5 @@
 import { zipWith } from "./util/Array"
-import { __nonNull } from "./util/Core"
+import { Class, __nonNull, as } from "./util/Core"
 import { Expl } from "./Expl"
 import { DataValueTag, State, Value, _, fields, make } from "./Value"
 
@@ -12,8 +12,13 @@ export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Ta
       return super.children() as Value[]
    }
 
-   explChildren(): Expl_[] {
+   explChildren (): Expl_[] {
       return zipWith(expl)(__nonNull(this.__expl).children(), this.children())
+   }
+
+   // Could tighten this up from a typing point of view.
+   explChild<T extends Value> (prop: keyof this, C: Class<T>): Expl_<T> {
+      return expl((this.__expl as any)[prop], as(this[prop], C))
    }
 }
 
