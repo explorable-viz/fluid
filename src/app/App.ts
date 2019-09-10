@@ -6,9 +6,9 @@ import { Expl_ } from "../DataValue"
 import { Env, ExtendEnv } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
-import { GraphicsElement } from "../Graphics"
+import   { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
-import { Num, Str, Value } from "../Value"
+import { Num, Str, Value, newRevision } from "../Value"
 import { Versioned } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
@@ -74,6 +74,7 @@ class App {
    constructor () {
       const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
             data: Expl_<Data> = ρ.tv as Expl_<Data>
+      newRevision()
       setallα(ann.top, data)
       this.graphicsView = new View(
          "graphicsView", 
@@ -95,6 +96,7 @@ class App {
          }
 
          resetForBwd (): void {
+            newRevision()
             setallα(ann.bot, data)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
@@ -108,6 +110,7 @@ class App {
          }
 
          resetForBwd (): void {
+            newRevision()
             setallα(ann.bot, data)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
