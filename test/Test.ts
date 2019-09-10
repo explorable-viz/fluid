@@ -229,7 +229,6 @@ describe("example", () => {
 						.constrArg("Pair", 0).notNeed()
 				}
 				expect (): void {
-               this.val.notNeeded()
                this.tv.to(Expl_, "t").notNeeded()
 				}
 			})(e)
