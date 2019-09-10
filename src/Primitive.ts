@@ -1,10 +1,10 @@
 import { as, assert } from "./util/Core"
-import { annotatedAt, asAnnotated, num, str } from "./Annotated"
+import { asAnnotated, num, str } from "./Annotated"
 import { Bool, true_, false_ } from "./BaseTypes"
 import { Expl_, expl } from "./DataValue"
 import { Expl } from "./Expl"
 import { Num, PrimOpTag, PrimValue, Str, _, Value } from "./Value"
-import { ν } from "./Versioned"
+import { ν, at } from "./Versioned"
 
 type Unary<T, V> = (x: T) => V
 type Binary<T, U, V> = (x: T, y: U) => V
@@ -51,11 +51,11 @@ const times = (x: Num, y: Num): Num => num(as(x, Num).val * as(y, Num).val)
 
 // Convenience methods for building the maps. Export to allow other modules to provide operations.
 export function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): Expl_<UnaryOp> {
-   return expl(Expl.empty(), annotatedAt(ν(), UnaryOp, op.name, op))
+   return expl(Expl.empty(), at(ν(), UnaryOp, op.name, op))
 }
 
 export function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): Expl_<BinaryOp> {
-   return expl(Expl.empty(), annotatedAt(ν(), BinaryOp, op.name, op))
+   return expl(Expl.empty(), at(ν(), BinaryOp, op.name, op))
 }
 
 // Primitives with identifiers as names are unary and first-class.
