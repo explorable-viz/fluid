@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, className } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
 import { DataValue } from "./DataValue"
-import { Id, MemoFunType, Num, Persistent, Str, Value, ValueTag, _, memo } from "./Value"
+import { MemoFunType, Num, Persistent, Str, Value, ValueTag, _, memo } from "./Value"
 import { ν, at } from "./Versioned"
 
 // For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
@@ -84,17 +84,10 @@ export function meetα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
    return v
 }
 
-// Make an annotated node, for a class that doesn't already specify statically that its instances are annotated.
-export function annotatedAt<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): Annotated<T> {
-   const v: T = at(k, C, ...v̅);
-   (v as any).__α = _
-   return v as Annotated<T>
-}
-
 export function num (val: number): Num {
-   return annotatedAt(ν(), Num, val)
+   return at(ν(), Num, val)
 }
 
 export function str (val: string): Str {
-   return annotatedAt(ν(), Str, val)
+   return at(ν(), Str, val)
 }
