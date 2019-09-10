@@ -59,9 +59,9 @@ function recDefs_ (dir: Direction, δ: List<Expl.RecDef>): void {
       zip(δ.head.tf.v.δ.toArray(), δ.toArray()).map(([def, defₜ]: [RecDef, Expl.RecDef]): void => {
          assert(def.x.eq(defₜ.x))
          if (dir === Direction.Fwd) {
-            setα(def.x.__α, defₜ.tf.t)
+            setα(def.__α, defₜ.tf.t)
          } else {
-            joinα(defₜ.tf.t.__α, def.x)
+            joinα(defₜ.tf.t.__α, def)
          }
       })
    } else

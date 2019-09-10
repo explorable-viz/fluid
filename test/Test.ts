@@ -339,8 +339,7 @@ describe("example", () => {
 				expect (): void {
 					this.expr
 						.push()
-                     .toDef("zipW")
-                     .push().to(Expr.RecDef, "x").needed().pop()
+                     .toDef("zipW").needed()
 							.to(Expr.RecDef, "σ")
 							.var_("op").needed()
 							.pop()
