@@ -275,8 +275,9 @@ describe("example", () => {
 			// retaining either component of pair retains both subcomputations:
 			new (class extends BwdSlice {
 				setup (): void {
-					this.val
-						.to(Pair, "fst").need()
+					this.tv
+						.to(Expl_, "v")
+						.toExpl(Pair, "fst").need()
 				}
 				expect (): void {
 					this.expr
