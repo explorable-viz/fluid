@@ -234,7 +234,7 @@ let svgMetrics: SVGSVGElement
 
    // Additional primitives that rely on offline rendering to compute text metrics. Combine these would 
    // require more general primitives that can return tuples.
-   const textWidth = (str: Str): Annotated<Num> => {
+   const textWidth = (str: Str): Num => {
       const text: SVGTextElement = textElement(0, 0, str.val)
       svgMetrics.appendChild(text)
       const width: number = text.getBBox().width
@@ -242,7 +242,7 @@ let svgMetrics: SVGSVGElement
       return num(width)
    }
    
-   const textHeight = (str: Str): Annotated<Num> => {
+   const textHeight = (str: Str): Num => {
       const text: SVGTextElement = textElement(0, 0, str.val)
       svgMetrics.appendChild(text)
       const height: number = text.getBBox().height

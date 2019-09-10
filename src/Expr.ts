@@ -60,36 +60,36 @@ export namespace Expr {
 
    export class BinaryApp extends Expr {
       e1: Expr = _
-      opName: Annotated<Str> = _
+      opName: Str = _
       e2: Expr = _
    }
 
-   export function binaryApp (k: Id, e1: Expr, opName: Annotated<Str>, e2: Expr): BinaryApp {
+   export function binaryApp (k: Id, e1: Expr, opName: Str, e2: Expr): BinaryApp {
       return at(k, BinaryApp, e1, opName, e2)
    }
 
    export class ConstNum extends Expr {
-      val: Annotated<Num> = _
+      val: Num = _
    }
    
-   export function constNum (k: Id, val: Annotated<Num>): ConstNum {
+   export function constNum (k: Id, val: Num): ConstNum {
       return at(k, ConstNum, val)
    }
 
    export class ConstStr extends Expr {
-      val: Annotated<Str> = _
+      val: Str = _
    }
 
-   export function constStr (k: Id, val: Annotated<Str>): ConstStr {
+   export function constStr (k: Id, val: Str): ConstStr {
       return at(k, ConstStr, val)
    }
 
    export class Constr extends Expr {
-      ctr: Annotated<Str> = _
+      ctr: Str = _
       args: List<Expr> = _
    }
 
-   export function constr (k: Id, ctr: Annotated<Str>, args: List<Expr>): Constr {
+   export function constr (k: Id, ctr: Str, args: List<Expr>): Constr {
       return at(k, Constr, ctr, args)
    }
 

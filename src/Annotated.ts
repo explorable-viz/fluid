@@ -91,10 +91,10 @@ export function annotatedAt<T extends Value> (k: Id, C: Class<T>, ...v̅: Persis
    return v as Annotated<T>
 }
 
-export function num (val: number): Annotated<Num> {
+export function num (val: number): Num {
    return annotatedAt(ν(), Num, val)
 }
 
-export function str (val: string): Annotated<Str> {
+export function str (val: string): Str {
    return annotatedAt(ν(), Str, val)
 }
