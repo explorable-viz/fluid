@@ -23,6 +23,7 @@ export class View implements Slicer {
 
    constructor (name: string, ρ: Env, e: Expr, svg: SVGSVGElement) {
       this.name = name
+      this.ρ = ρ
       this.e = e
       this.tv = Eval.eval_(ρ, e)
       this.view = new GraphicsRenderer(svg, this)
@@ -32,6 +33,7 @@ export class View implements Slicer {
 
    fwdSlice (): void {
       setallα(ann.top, this.e)
+      setallα(ann.top, this.ρ)
       Eval.eval_fwd(this.e, this.tv)
       this.direction = Direction.Fwd
       this.draw()
