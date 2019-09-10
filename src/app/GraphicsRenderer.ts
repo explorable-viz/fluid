@@ -1,6 +1,6 @@
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Annotation, ann } from "../util/Lattice"
-import { num, setallα } from "../Annotated"
+import { num, setα } from "../Annotated"
 import { Cons, List } from "../BaseTypes"
 import { Expl_ } from "../DataValue"
 import { Direction } from "../Eval"
@@ -101,12 +101,6 @@ export class GraphicsRenderer {
          this.renderElement(gs.explChild("head", GraphicsElement))
          gs = gs.tail // ignoring annotations on cons cells
       }
-      group.addEventListener("click", (e: MouseEvent): void => {
-         e.stopPropagation()
-         this.slicer.coordinator.resetForBwd()
-         setallα(ann.top, tg)
-         this.slicer.bwdSlice()
-      })
       this.ancestors.pop()
    }
 
@@ -133,6 +127,10 @@ export class GraphicsRenderer {
             path: SVGPolylineElement = document.createElementNS(svgNS, "polyline")
       path.setAttribute("points", this.points(p̅))
       path.setAttribute("stroke", "black")
+      path.addEventListener("click", (e: MouseEvent): void => {
+         e.stopPropagation()
+         assert(false, "Not implemented yet")
+      })
       this.current.appendChild(path)
       this.pointHighlights(p̅)
    }
@@ -177,7 +175,10 @@ export class GraphicsRenderer {
          this.slicer.coordinator.resetForBwd()
          // set annotations only on _points_, not list containing them or polygon itself
          for (let ps: List<Point> = g.points; Cons.is(ps);) {
-            setallα(ann.top, ps.explChild("head", Point))
+            const tp: Expl_<Point> = ps.explChild("head", Point)
+            setα(ann.top, tp.t)
+            setα(ann.top, tp.v.explChild("x", Num).t)
+            setα(ann.top, tp.v.explChild("y", Num).t)
             ps = ps.tail
          }
          this.slicer.bwdSlice()
@@ -195,7 +196,8 @@ export class GraphicsRenderer {
       text.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
-         setallα(ann.top, tg)
+         setα(ann.top, tg.t)
+         setα(ann.top, tg.v.explChild("str", Str).t)
          this.slicer.bwdSlice()
       })
       this.current.appendChild(text)

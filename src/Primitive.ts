@@ -1,5 +1,5 @@
 import { as, assert } from "./util/Core"
-import { asAnnotated, num, str } from "./Annotated"
+import { num, str } from "./Annotated"
 import { Bool, true_, false_ } from "./BaseTypes"
 import { Expl_, expl } from "./DataValue"
 import { Expl } from "./Expl"
@@ -30,7 +30,7 @@ const error = (message: Str): Value => assert(false, "LambdaCalc error:\n" + mes
 const floor = (x: Num): Num => num(Math.floor(x.val))
 const log = (x: Num): Num => num(Math.log(as(x, Num).val))
 const numToStr = (x: Num): Str => str(x.val.toString())
-const trace = (v: Num | Str): Value => { console.log(v); return asAnnotated(v) }
+const trace = (v: Num | Str): Value => { console.log(v); return v }
 // No longer support overloaded functions, since the pattern-matching semantics is non-trivial; might require typecase.
 // If we want integer division, apparently ~~(x / y) will round in the right direction.
 const div = (x: Num, y: Num): Num => num(as(x, Num).val / as(y, Num).val)
