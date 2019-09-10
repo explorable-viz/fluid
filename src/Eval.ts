@@ -9,7 +9,7 @@ import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
-import { Elim, Match, evalTrie, apply_bwd_NEW, apply_fwd_NEW } from "./Match"
+import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, PrimValue, Num, Str, Value, _, make } from "./Value"
 import { ν, at, copyAt } from "./Versioned"
@@ -247,7 +247,7 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       eval_fwd(eʹ.e, t.tu)
       recDefs_(Direction.Fwd, t.δ)
       eval_fwd(t.ξ.κ, t.tv)
-      setα(ann.meet(t.tf.t.__α, apply_fwd_NEW(t.ξ), e.__α, t.tv.t.__α), t)
+      setα(ann.meet(t.tf.t.__α, apply_fwd(t.ξ), e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
@@ -271,7 +271,7 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(t.ξ.κ, t.tv)
-      setα(ann.meet(apply_fwd_NEW(t.ξ), e.__α, t.tv.t.__α), t)
+      setα(ann.meet(apply_fwd(t.ξ), e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
@@ -309,7 +309,7 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       assert(t.tf.v instanceof Closure)
       joinα(t.__α, t.tv.t)
       eval_bwd(t.ξ.κ, t.tv)
-      apply_bwd_NEW(t.ξ, t.__α)
+      apply_bwd(t.ξ, t.__α)
       recDefs_(Direction.Bwd, t.δ)
       joinα(t.__α, t.tf.t)
       const eʹ: Expr.App = as(e, Expr.App)
@@ -345,7 +345,7 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       joinα(t.__α, t.tv.t)
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_bwd(t.ξ.κ, t.tv)
-      apply_bwd_NEW(t.ξ, t.__α)
+      apply_bwd(t.ξ, t.__α)
       eval_bwd(eʹ.e, t.tu)
       joinα(t.__α, e)
    } else

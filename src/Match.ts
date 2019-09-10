@@ -135,17 +135,9 @@ function varElim (x: Annotated<Str>, κ: RuntimeCont): VarElim {
 }
 
 export function apply_fwd (ξ: Match<Expr>): Annotation {
-   return ξ.tv̅.toArray().reduce((α: Annotation, tv: Expl_): Annotation => ann.meet(α, tv.v.__α), ann.top)
-}
-
-export function apply_fwd_NEW (ξ: Match<Expr>): Annotation {
    return ξ.tv̅.toArray().reduce((α: Annotation, tv: Expl_): Annotation => ann.meet(α, tv.t.__α), ann.top)
 }
 
 export function apply_bwd (ξ: Match<Expr>, α: Annotation): void {
-   ξ.tv̅.toArray().map((tv: Expl_): Value => joinα(α, tv.v))
-}
-
-export function apply_bwd_NEW (ξ: Match<Expr>, α: Annotation): void {
    ξ.tv̅.toArray().map((tv: Expl_): Value => joinα(α, tv.t))
 }
