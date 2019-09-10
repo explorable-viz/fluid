@@ -355,8 +355,9 @@ describe("example", () => {
 			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
 			new (class extends BwdSlice {
 				setup (): void {
-					this.val
-						.to(Cons, "head").need()
+					this.tv
+						.to(Expl_, "v")
+						.toExpl(Cons, "head").need()
 				}
 				expect (): void {
 					this.expr
