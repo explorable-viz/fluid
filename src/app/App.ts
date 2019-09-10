@@ -73,7 +73,7 @@ class App {
 
    constructor () {
       const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
-            data: Data = ρ.tv.v as Value as Data
+            data: Expl_<Data> = ρ.tv as Expl_<Data>
       setallα(ann.top, data)
       this.graphicsView = new View(
          "graphicsView", 

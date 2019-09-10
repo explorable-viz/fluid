@@ -1,6 +1,6 @@
 import { __nonNull, absurd, assert } from "../util/Core"
 import { Annotation, ann } from "../util/Lattice"
-import { asAnnotated, num, setallα } from "../Annotated"
+import { num, setallα } from "../Annotated"
 import { Cons, List } from "../BaseTypes"
 import { Expl_ } from "../DataValue"
 import { Direction } from "../Eval"
@@ -192,7 +192,7 @@ export class GraphicsRenderer {
       this.current.appendChild(text)
       // this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
-      let α: Annotation = __nonNull(asAnnotated(g.str).__α)
+      let α: Annotation = __nonNull(g.explChild("str", Str).t.__α)
       if (this.slicer.direction === Direction.Fwd) {
          α = ann.negate(α)
       }

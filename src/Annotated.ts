@@ -62,7 +62,11 @@ export function setallα_<Tag extends ValueTag, T extends Value<Tag>> (α: Annot
    return v
 }
 
-export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
+export function negateallα<T extends Persistent> (v: T): T {	
+   return memo<T>(negateallα_ as MemoFunType<T>, v)
+}	
+
+export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
    if (annotated(v)) {
       setα(ann.negate(v.__α), v)
    }
@@ -71,6 +75,10 @@ export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): 
          negateallα(v)
       }
    })
+   // Similar hack to setallα.
+   if (v instanceof DataValue && v.__expl !== undefined) {
+      negateallα(__nonNull(v.__expl)) 
+   }
    return v
 }
 
