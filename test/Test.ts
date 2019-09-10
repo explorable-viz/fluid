@@ -49,7 +49,7 @@ describe("example", () => {
                    .to(Cons, "head")
                    .to(Pair, "snd")
                    .to(Cons, "head")
-                   .to(Pair, "snd").notNeed()
+                   .toExpl(Pair, "snd").notNeed()
             }
             expect (): void {
                this.tv
