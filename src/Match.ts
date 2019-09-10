@@ -99,7 +99,7 @@ function matchArgs (κ: RuntimeCont, tv̅: Expl_[], u̅: MatchPrefix): [Env, Mat
 // itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
    apply_ (tv: Expl_, u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
-      const v: Annotated<Value> = tv.v,
+      const v: Value = tv.v,
             c: string = className(v)
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont

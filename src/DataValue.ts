@@ -1,6 +1,5 @@
 import { zipWith } from "./util/Array"
 import { __nonNull } from "./util/Core"
-import { Annotated } from "./Annotated"
 import { Expl } from "./Expl"
 import { DataValueTag, State, Value, _, fields, make } from "./Value"
 
@@ -14,7 +13,7 @@ export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Ta
    }
 
    explChildren(): Expl_[] {
-      return zipWith(expl)(__nonNull(this.__expl).children(), this.children() as Annotated<Value>[])
+      return zipWith(expl)(__nonNull(this.__expl).children(), this.children())
    }
 }
 
@@ -27,9 +26,9 @@ export class DataExpl extends DataValue<"DataExpl"> {
 // Here to break cyclic dependency.
 export class Expl_<T extends Value = Value> extends DataValue<"Expl_"> {
    t: Expl = _
-   v: Annotated<T> = _
+   v: T = _
 }
 
-export function expl<T extends Value = Value> (t: Expl, v: Annotated<T>): Expl_<T> {
+export function expl<T extends Value = Value> (t: Expl, v: T): Expl_<T> {
    return make(Expl_, t, v) as Expl_<T>
 }
