@@ -125,8 +125,7 @@ type MemoTable = Map<Persistent, Persistent | Map<Persistent, Object>> // approx
 const __ctrMemo: MemoTable = new Map
 const __funMemo: MemoTable = new Map
 
-// This name for historical reasons.
-export function newRevision (): void {
+export function clearMemo (): void {
    __funMemo.clear()
 }
 

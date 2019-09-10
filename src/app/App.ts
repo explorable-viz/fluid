@@ -8,7 +8,7 @@ import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
 import   { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
-import { Num, Str, Value, newRevision } from "../Value"
+import { Num, Str, Value, clearMemo } from "../Value"
 import { Versioned } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
@@ -74,7 +74,7 @@ class App {
    constructor () {
       const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
             data: Expl_<Data> = ρ.tv as Expl_<Data>
-      newRevision()
+      clearMemo()
       setallα(ann.top, data)
       this.graphicsView = new View(
          "graphicsView", 
@@ -91,12 +91,13 @@ class App {
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {
          onBwd (): void {
+            clearMemo()
             negateallα(data)
             dataView.fwdSlice()
          }
 
          resetForBwd (): void {
-            newRevision()
+            clearMemo()
             setallα(ann.bot, data)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
@@ -105,12 +106,13 @@ class App {
       const graphicsView: View = this.graphicsView
       this.dataView.coordinator = new class ViewCoordinator {
          onBwd (): void {
+            clearMemo()
             negateallα(data)
             graphicsView.fwdSlice()
          }
 
          resetForBwd (): void {
-            newRevision()
+            clearMemo()
             setallα(ann.bot, data)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
