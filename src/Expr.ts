@@ -97,19 +97,19 @@ export namespace Expr {
    }
 
    export class Let extends Def {
-      x: Annotated<Str> = _
+      x: Str = _
       e: Expr = _
    }
 
-   export function let_ (k: Id, x: Annotated<Str>, e: Expr): Let {
+   export function let_ (k: Id, x: Str, e: Expr): Let {
       return at(k, Let, x, e)
    }
 
    export class Prim extends Def {
-      x: Annotated<Str> = _
+      x: Str = _
    }
 
-   export function prim (k: Id, x: Annotated<Str>): Prim {
+   export function prim (k: Id, x: Str): Prim {
       return at(k, Prim, x)
    }
 

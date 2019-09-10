@@ -112,7 +112,7 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
          meetα(def.__α, defₜ.tv.t)
       } else
       if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
-         setα(def.x.__α, defₜ.t_op.t)
+         setα(def.__α, defₜ.t_op.t)
       } else
       if (def instanceof Expr.LetRec && defₜ instanceof Expl.LetRec) {
          recDefs_(Direction.Fwd, defₜ.δ)
@@ -129,7 +129,7 @@ function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
          eval_bwd(def.e, defₜ.tv)
       } else
       if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
-         joinα(defₜ.t_op.t.__α, def.x)
+         joinα(defₜ.t_op.t.__α, def)
       } else
       if (def instanceof Expr.LetRec && defₜ instanceof Expl.LetRec) {
          recDefs_(Direction.Bwd, defₜ.δ)
