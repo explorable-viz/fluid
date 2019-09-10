@@ -9,7 +9,7 @@ import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
-import { Elim, Match, evalTrie, apply_bwd, apply_fwd, apply_fwd_NEW } from "./Match"
+import { Elim, Match, evalTrie, apply_bwd, apply_bwd_NEW, apply_fwd, apply_fwd_NEW } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, PrimValue, Num, Str, Value, _, make } from "./Value"
 import { ν, at, copyAt } from "./Versioned"
@@ -332,6 +332,7 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       joinα(t.__α, t.tv.t)
       eval_bwd(t.ξ.κ, t.tv)
       apply_bwd(t.ξ, v.__α)
+      apply_bwd_NEW(t.ξ, t.__α)
       recDefs_(Direction.Bwd, t.δ)
       joinα(v.__α, t.tf.v)
       joinα(t.__α, t.tf.t)
@@ -379,6 +380,7 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_bwd(t.ξ.κ, t.tv)
       apply_bwd(t.ξ, v.__α)
+      apply_bwd_NEW(t.ξ, t.__α)
       eval_bwd(eʹ.e, t.tu)
       joinα(v.__α, e)
       joinα(t.__α, e)

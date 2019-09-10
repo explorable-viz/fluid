@@ -175,7 +175,6 @@ describe("example", () => {
 			// needing the result only needs the cons cells:
 			new (class extends BwdSlice {
 				setup (): void {
-               this.val.need()
                this.tv.to(Expl_, "t").need()
 				}
 				expect (): void {
