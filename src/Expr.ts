@@ -93,9 +93,7 @@ export namespace Expr {
       return at(k, Constr, ctr, args)
    }
 
-   // Because let/letrec no longer have "bodies", there's no real need for them to be separately versioned;
-   // the variables they introduce are.
-   export class Def extends DataValue<"Expr.Def"> {
+   export class Def extends AnnotatedC(DataValue)<"Expr.Def"> {
    }
 
    export class Let extends Def {
@@ -103,16 +101,16 @@ export namespace Expr {
       e: Expr = _
    }
 
-   export function let_ (x: Annotated<Str>, e: Expr): Let {
-      return make(Let, x, e)
+   export function let_ (k: Id, x: Annotated<Str>, e: Expr): Let {
+      return at(k, Let, x, e)
    }
 
    export class Prim extends Def {
       x: Annotated<Str> = _
    }
 
-   export function prim (x: Annotated<Str>): Prim {
-      return make(Prim, x)
+   export function prim (k: Id, x: Annotated<Str>): Prim {
+      return at(k, Prim, x)
    }
 
    export class RecDef extends DataValue<"RecDef"> {
@@ -128,8 +126,8 @@ export namespace Expr {
       δ: List<RecDef> = _
    }
 
-   export function letRec (δ: List<RecDef>): LetRec {
-      return make(LetRec, δ)
+   export function letRec (k: Id, δ: List<RecDef>): LetRec {
+      return at(k, LetRec, δ)
    }
 
    export class Defs extends Expr {
