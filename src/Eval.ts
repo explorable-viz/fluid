@@ -62,7 +62,6 @@ function recDefs_ (dir: Direction, δ: List<Expl.RecDef>): void {
             setα(def.x.__α, defₜ.tf.v)
             setα(def.x.__α, defₜ.tf.t)
          } else {
-            joinα(defₜ.tf.v.__α, def.x)
             joinα(defₜ.tf.t.__α, def.x)
          }
       })
@@ -129,12 +128,10 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).reverse().forEach(([def, defₜ]: [Def, Expl.Def]) => {
       if (def instanceof Expr.Let && defₜ instanceof Expl.Let) {
-         joinα(defₜ.tv.v.__α, def.x)
          joinα(defₜ.tv.t.__α, def.x)
          eval_bwd(def.e, defₜ.tv)
       } else
       if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
-         joinα(defₜ.t_op.v.__α, def.x)
          joinα(defₜ.t_op.t.__α, def.x)
       } else
       if (def instanceof Expr.LetRec && defₜ instanceof Expl.LetRec) {
