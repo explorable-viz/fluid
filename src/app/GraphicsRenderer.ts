@@ -61,16 +61,16 @@ export class GraphicsRenderer {
       } 
    }
 
-   render (g: GraphicsElement): void {
-      assert(this.ancestors.length === 1      // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
-   )
+   render (tg: Expl_<GraphicsElement>): void {
+      assert(this.ancestors.length === 1)
       while (this.current.firstChild !== null) {
          this.current.removeChild(this.current.firstChild)
       }
-      this.renderElement(g)
+      this.renderElement(tg)
    }
 
-   renderElement (g: GraphicsElement): void {
+   renderElement (tg: Expl_<GraphicsElement>): void {
+      const g: GraphicsElement = tg.v
       if (g instanceof Graphic) {
          this.group(g)
       } else 
@@ -84,35 +84,36 @@ export class GraphicsRenderer {
          this.text(g)
       } else
       if (g instanceof Translate) {
-         this.renderWith(g.g, translate(g.x.val, g.y.val))
+         this.renderWith(g.explChild("g", GraphicsElement), translate(g.x.val, g.y.val))
       }
       else {
          return absurd()
       }
    }
 
-   group (g: Graphic): void {
+   group (tg: Expl_<Graphic>): void {
       const group: SVGGElement = document.createElementNS(svgNS, "g")
       // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
       group.setAttribute("pointer-events", "bounding-box")
       this.current.appendChild(group)
       this.ancestors.push(group)
-      for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
-         this.renderElement(gs.head)
+      for (let gs: List<GraphicsElement> = tg.v.gs; Cons.is(gs);) {
+         this.renderElement(gs.explChild("head", GraphicsElement))
+         gs = gs.tail // ignoring annotations on cons cells
       }
       group.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
-         setallα(ann.top, g)
+         setallα(ann.top, tg)
          this.slicer.bwdSlice()
       })
       this.ancestors.pop()
    }
 
-   renderWith (g: GraphicsElement, f: TransformFun): void {
+   renderWith (tg: Expl_<GraphicsElement>, f: TransformFun): void {
       const transform: TransformFun = this.transform
       this.transforms.push(postcompose(transform, f))
-      this.renderElement(g)
+      this.renderElement(tg)
       this.transforms.pop()
    }
 
