@@ -114,11 +114,11 @@ export namespace Expr {
    }
 
    export class RecDef extends AnnotatedC(DataValue)<"RecDef"> {
-      x: Annotated<Str> = _
+      x: Str = _
       σ: Trie<Expr> = _
    }
  
-   export function recDef (k: Id, x: Annotated<Str>, σ: Trie<Expr>): RecDef {
+   export function recDef (k: Id, x: Str, σ: Trie<Expr>): RecDef {
       return at(k, RecDef, x, σ)
    }
 
