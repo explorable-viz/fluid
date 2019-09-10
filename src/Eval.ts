@@ -366,32 +366,25 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.Defs) {
-      joinα(v.__α, t.tv.v)
       joinα(t.__α, t.tv.t)
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       eval_bwd(eʹ.e, t.tv)
       defs_bwd(eʹ.def̅, t.def̅)
-      joinα(v.__α, e)
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
-      joinα(v.__α, t.tv.v)
       joinα(t.__α, t.tv.t)
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_bwd(t.ξ.κ, t.tv)
-      apply_bwd(t.ξ, v.__α)
       apply_bwd_NEW(t.ξ, t.__α)
       eval_bwd(eʹ.e, t.tu)
-      joinα(v.__α, e)
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.Typematch) {
-      joinα(v.__α, t.tv.v)
       joinα(t.__α, t.tv.t)
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_bwd(get(eʹ.cases, t.d)!, t.tv)
       eval_bwd(eʹ.e, t.tu)
-      joinα(v.__α, e)
       joinα(t.__α, e)
    } else {
       absurd()
