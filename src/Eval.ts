@@ -9,7 +9,7 @@ import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
-import { Elim, Match, evalTrie, apply_bwd, apply_bwd_NEW, apply_fwd, apply_fwd_NEW } from "./Match"
+import { Elim, Match, evalTrie, apply_bwd_NEW, apply_fwd, apply_fwd_NEW } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, PrimValue, Num, Str, Value, _, make } from "./Value"
 import { ν, at, copyAt } from "./Versioned"
@@ -303,66 +303,51 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
 export function eval_bwd (e: Expr, {t, v}: Expl_): void {
    if (t instanceof Expl.Empty) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
-         joinα(v.__α, e)
          joinα(t.__α, e)
       } else
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
          // reverse order but shouldn't matter in absence of side-effects:
          zip(v.explChildren(), eʹ.args.toArray()).map(([tv, e]) => eval_bwd(e, tv))
-         joinα(v.__α, e)
          joinα(t.__α, e)
       } else {
          absurd()
       }
    } else
    if (t instanceof Expl.Quote) {
-      joinα(v.__α, e)
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.Var) {
-      joinα(v.__α, t.tv.v)
       joinα(t.__α, t.tv.t)
-      joinα(v.__α, e)
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
-      joinα(v.__α, t.tv.v)
       joinα(t.__α, t.tv.t)
       eval_bwd(t.ξ.κ, t.tv)
-      apply_bwd(t.ξ, v.__α)
       apply_bwd_NEW(t.ξ, t.__α)
       recDefs_(Direction.Bwd, t.δ)
-      joinα(v.__α, t.tf.v)
       joinα(t.__α, t.tf.t)
       const eʹ: Expr.App = as(e, Expr.App)
       eval_bwd(eʹ.f, t.tf)
       eval_bwd(eʹ.e, t.tu)
-      joinα(v.__α, e)
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.UnaryApp) {
-      joinα(v.__α, t.tf.v)
       joinα(t.__α, t.tf.t)
-      joinα(v.__α, t.tv.v)
       joinα(t.__α, t.tv.t)
       const eʹ: Expr.App = as(e, Expr.App)
       eval_bwd(eʹ.f, t.tf)
       eval_bwd(eʹ.e, t.tv)
-      joinα(v.__α, e)
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.BinaryApp) {
       assert(binaryOps.has(t.opName.val))
-      joinα(v.__α, t.tv1.v)
       joinα(t.__α, t.tv1.t)
-      joinα(v.__α, t.tv2.v)
       joinα(t.__α, t.tv2.t)
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_bwd(eʹ.e1, t.tv1)
       eval_bwd(eʹ.e2, t.tv2)
-      joinα(v.__α, e)
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.Defs) {
