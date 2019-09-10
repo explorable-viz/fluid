@@ -176,10 +176,10 @@ export namespace Expr {
    }
 
    export class Var extends Expr {
-      x: Annotated<Str> = _
+      x: Str = _
    }
 
-   export function var_ (k: Id, x: Annotated<Str>): Var {
+   export function var_ (k: Id, x: Str): Var {
       return at(k, Var, x)
    }
 
