@@ -138,6 +138,13 @@ export function apply_fwd (ξ: Match<Expr>): Annotation {
    return ξ.tv̅.toArray().reduce((α: Annotation, tv: Expl_): Annotation => ann.meet(α, tv.v.__α), ann.top)
 }
 
+export function apply_fwd_NEW (ξ: Match<Expr>): Annotation {
+   return ξ.tv̅.toArray().reduce((α: Annotation, tv: Expl_): Annotation => ann.meet(α, tv.t.__α), ann.top)
+}
+
 export function apply_bwd (ξ: Match<Expr>, α: Annotation): void {
-   ξ.tv̅.toArray().map((tv: Expl_): Value => setα(α, tv.v))
+   ξ.tv̅.toArray().map((tv: Expl_): void => {
+      setα(α, tv.v)
+      setα(α, tv.t)
+   })
 }

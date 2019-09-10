@@ -9,7 +9,7 @@ import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
-import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
+import { Elim, Match, evalTrie, apply_bwd, apply_fwd, apply_fwd_NEW } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, PrimValue, Num, Str, Value, _, make } from "./Value"
 import { ν, at, copyAt } from "./Versioned"
@@ -258,21 +258,21 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       recDefs_(Direction.Fwd, t.δ)
       eval_fwd(t.ξ.κ, t.tv)
       setα(ann.meet(t.tf.v.__α, apply_fwd(t.ξ), e.__α, t.tv.v.__α), v)
-      setα(ann.meet(t.tf.v.__α, apply_fwd(t.ξ), e.__α, t.tv.t.__α), t)
+      setα(ann.meet(t.tf.t.__α, apply_fwd_NEW(t.ξ), e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
       eval_fwd(eʹ.f, t.tf)
       eval_fwd(eʹ.e, t.tv)
       setα(ann.meet(t.tf.v.__α, t.tv.v.__α, e.__α), v)
-      setα(ann.meet(t.tf.v.__α, t.tv.t.__α, e.__α), t)
+      setα(ann.meet(t.tf.t.__α, t.tv.t.__α, e.__α), t)
    } else
    if (t instanceof Expl.BinaryApp) {
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_fwd(eʹ.e1, t.tv1)
       eval_fwd(eʹ.e2, t.tv2)
       setα(ann.meet(t.tv1.v.__α, t.tv2.v.__α, e.__α), v)
-      setα(ann.meet(t.tv1.v.__α, t.tv2.t.__α, e.__α), t)
+      setα(ann.meet(t.tv1.t.__α, t.tv2.t.__α, e.__α), t)
    } else
    if (t instanceof Expl.Defs) {
       const eʹ: Expr.Defs = as(e, Expr.Defs)
@@ -286,7 +286,7 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(t.ξ.κ, t.tv)
       setα(ann.meet(apply_fwd(t.ξ), e.__α, t.tv.v.__α), v)
-      setα(ann.meet(apply_fwd(t.ξ), e.__α, t.tv.t.__α), t)
+      setα(ann.meet(apply_fwd_NEW(t.ξ), e.__α, t.tv.t.__α), t)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
