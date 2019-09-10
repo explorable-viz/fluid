@@ -5,7 +5,7 @@ import { Expl_ } from "../../src/DataValue"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
-import { newRevision } from "../../src/Value"
+import { clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
 import "../../src/app/GraphicsRenderer" // for graphics primitives
 import { Cursor } from "./Cursor"
@@ -15,7 +15,7 @@ export class FwdSlice {
    tv: Cursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
-      newRevision()
+      clearMemo()
       setallα(ann.top, e)
       setallα(ann.top, ρ)
       this.expr = new Cursor(e)
@@ -47,7 +47,7 @@ export class BwdSlice {
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Bwd)) {
-         newRevision()
+         clearMemo()
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
          const tv: Expl_ = Eval.eval_(ρ, e) // just to obtain tv

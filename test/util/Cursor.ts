@@ -1,9 +1,9 @@
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
-import { asAnnotated } from "../../src/Annotated"
 import { DataExpl, DataValue } from "../../src/DataValue"
 import { Persistent, Value } from "../../src/Value"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
+import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
 
 import Def = Expr.Def
@@ -12,6 +12,13 @@ import LetRec = Expr.LetRec
 import Prim = Expr.Prim
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
+
+// TODO: common base class for syntactic forms?
+type Annotated = Expr.Expr | Expr.Def | Expr.RecDef | Expl.Expl
+
+function isAnnotated (v: Value): v is Annotated {
+   return v instanceof Expr.Expr || v instanceof Expr.Def || v instanceof Expr.RecDef || v instanceof Expl.Expl
+}
 
 export class Cursor {
    prev: Value[] = []
@@ -83,22 +90,30 @@ export class Cursor {
    }
 
    needed (): Cursor {
-      assert(asAnnotated(this.v).__α === ann.top)
+      assert(isAnnotated(this.v) && this.v.__α === ann.top)
       return this
    }
 
    notNeeded (): Cursor {
-      assert(asAnnotated(this.v).__α === ann.bot)
+      assert(isAnnotated(this.v) && this.v.__α === ann.bot)
       return this
    }
 
    need (): Cursor {
-      asAnnotated(this.v).__α = ann.top
+      if (isAnnotated(this.v)) {
+         this.v.__α = ann.top
+      } else {
+         assert(false)
+      }
       return this
    }
 
    notNeed (): Cursor {
-      asAnnotated(this.v).__α = ann.bot
+      if (isAnnotated(this.v)) {
+         this.v.__α = ann.bot
+      } else {
+         assert(false)
+      }
       return this
    }
 
