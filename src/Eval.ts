@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
 import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { ann } from "./util/Lattice"
-import { Annotated, AnnotatedC, annotatedAt, joinα, meetα, num, setα, str } from "./Annotated"
+import { AnnotatedC, joinα, meetα, num, setα, str } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
 import { DataValue, Expl_, expl } from "./DataValue"
@@ -15,9 +15,9 @@ import { Id, PrimValue, Num, Str, Value, _, make } from "./Value"
 import { ν, at, copyAt } from "./Versioned"
 
 // Move to more sensible location
-export function dataValue (c: string, tv̅: Expl_[]): Annotated<DataValue> {
+export function dataValue (c: string, tv̅: Expl_[]): DataValue {
    const d: DataType = __nonNull(ctrToDataType.get(c)),
-         v: Annotated<DataValue> = annotatedAt(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+         v: DataValue = at(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
    v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
    return v
 }
