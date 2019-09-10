@@ -246,7 +246,7 @@ export var ParserRules: NearleyRule[] = [
     {"name": "recDef$macrocall$1$macrocall$1", "symbols": ["recDef$macrocall$1$macrocall$2"], "postprocess": id},
     {"name": "recDef$macrocall$1$macrocall$1", "symbols": ["recDef$macrocall$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "recDef$macrocall$1", "symbols": ["recDef$macrocall$1$macrocall$1"]},
-    {"name": "recDef", "symbols": ["recDef$macrocall$1", "var", "matches"], "postprocess": ([, f, σ]) => Expr.recDef(f, σ)},
+    {"name": "recDef", "symbols": ["recDef$macrocall$1", "var", "matches"], "postprocess": ([, f, σ]) => Expr.recDef(ν(), f, σ)},
     {"name": "fun$macrocall$2", "symbols": [{"literal":"fun"}]},
     {"name": "fun$macrocall$1$macrocall$2", "symbols": ["fun$macrocall$2"]},
     {"name": "fun$macrocall$1$macrocall$1", "symbols": ["fun$macrocall$1$macrocall$2"], "postprocess": id},
