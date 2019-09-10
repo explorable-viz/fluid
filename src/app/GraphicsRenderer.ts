@@ -75,7 +75,7 @@ export class GraphicsRenderer {
          this.group(tg as Expl_<Graphic>)
       } else 
       if (g instanceof Polyline) {
-         this.polyline(g.points)
+         this.polyline(tg as Expl_<Polyline>)
       } else
       if (g instanceof Polygon) {
          this.polygon(tg as Expl_<Polygon>)
@@ -128,8 +128,9 @@ export class GraphicsRenderer {
       return this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
    }
 
-   polyline (p̅: List<Point>): void {
-      const path: SVGPolylineElement = document.createElementNS(svgNS, "polyline")
+   polyline (tg: Expl_<Polyline>): void {
+      const p̅: List<Point> = tg.v.points,
+            path: SVGPolylineElement = document.createElementNS(svgNS, "polyline")
       path.setAttribute("points", this.points(p̅))
       path.setAttribute("stroke", "black")
       this.current.appendChild(path)

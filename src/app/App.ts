@@ -1,4 +1,4 @@
-import { __nonNull, as } from "../util/Core"
+import { __nonNull } from "../util/Core"
 import { ann } from "../util/Lattice"
 import { negateallα, setallα } from "../Annotated"
 import { List, Pair } from "../BaseTypes"
@@ -8,7 +8,7 @@ import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
 import   { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
-import { Num, Str, Value, clearMemo } from "../Value"
+import { Num, Str, clearMemo } from "../Value"
 import { Versioned } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
@@ -56,8 +56,8 @@ export class View implements Slicer {
       return this.view.ancestors[0] as SVGSVGElement
    }
 
-   getGraphics (): GraphicsElement {
-      return as(this.tv.v as Value, GraphicsElement)
+   getGraphics (): Expl_<GraphicsElement> {
+      return this.tv as Expl_<GraphicsElement>
    }
 
    draw (): void {
