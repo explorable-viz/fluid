@@ -62,7 +62,7 @@ export function parseWithImports (src: string, modules: Module[]): Expr {
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
 export function successfulParse (str: string): Expr {
-   const results: any[] = new Parser(Grammar.fromCompiled(grammar)).feed(str).results
+   const { results }: Parser = new Parser(Grammar.fromCompiled(grammar)).feed(str)
    if (results.length > 1) {
       error("Ambiguous parse.")
    }
