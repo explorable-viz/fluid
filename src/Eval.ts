@@ -12,7 +12,7 @@ import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, PrimValue, Num, Str, Value, _, make } from "./Value"
-import { ν, at, copyAt } from "./Versioned"
+import { ν, at } from "./Versioned"
 
 // Move to more sensible location
 export function dataValue (c: string, tv̅: Expl_[]): DataValue {
@@ -154,12 +154,12 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
       return expl(Expl.empty(), dataValue(e.ctr.val, tv̅))
    } else
    if (e instanceof Expr.Quote) {
-      return expl(Expl.quote(), copyAt(ν(), e.e))
+      return expl(Expl.quote(), e.e)
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) {
          const tv: Expl_ = ρ.get(e.x)!
-         return expl(Expl.var_(e.x, tv), copyAt(ν(), tv.v))
+         return expl(Expl.var_(e.x, tv), tv.v)
       } else {
          return error(`Variable "${e.x.val}" not found.`)
       }
@@ -171,7 +171,7 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
                [ρʹ, ξκ]: [Env, Match<Expr>] = v.f.apply(tu),
                tv: Expl_ = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), ξκ.κ)
-         return expl(Expl.app(tf as Expl_<Closure>, tu, δ, ξκ, tv), copyAt(ν(), tv.v))
+         return expl(Expl.app(tf as Expl_<Closure>, tu, δ, ξκ, tv), tv.v)
       } else 
       if (v instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
@@ -201,13 +201,13 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
    if (e instanceof Expr.Defs) {
       const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, e.def̅, emptyEnv()),
             tv: Expl_ = eval_(ρ.concat(ρʹ), e.e)
-      return expl(Expl.defs(def̅ₜ, tv), copyAt(ν(), tv.v))
+      return expl(Expl.defs(def̅ₜ, tv), tv.v)
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: Expl_ = eval_(ρ, e.e),
             [ρʹ, ξκ]: [Env, Match<Expr>] = evalTrie(e.σ).apply(tu),
             tv: Expl_ = eval_(ρ.concat(ρʹ), ξκ.κ)
-      return expl(Expl.matchAs(tu, ξκ, tv), copyAt(ν(), tv.v))
+      return expl(Expl.matchAs(tu, ξκ, tv), tv.v)
    } else
    if (e instanceof Expr.Typematch) {
       const tu: Expl_ = eval_(ρ, e.e),
@@ -217,7 +217,7 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
          return error(`Typecase mismatch: no clause for ${className(tu.v)}.`)
       } else {
          const tv: Expl_ = eval_(ρ, eʹ)
-         return expl(Expl.typematch(tu, d.name, tv), copyAt(ν(), tv.v))
+         return expl(Expl.typematch(tu, d.name, tv), tv.v)
       }
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
