@@ -46,7 +46,7 @@ export function setallα_<Tag extends ValueTag, T extends Value<Tag>> (α: Annot
    // Hack to recurse into traces; revisit idea of integrating traces into values.
    // Can't assume every data value has a trace, since traces are also data values.
    if (v instanceof DataValue && v.__expl !== undefined) {
-      setallα(α, __nonNull(v.__expl)) 
+      setallα(α, v.__expl) 
    }
    return v
 }
@@ -66,7 +66,7 @@ export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T):
    })
    // Similar hack to setallα.
    if (v instanceof DataValue && v.__expl !== undefined) {
-      negateallα(__nonNull(v.__expl)) 
+      negateallα(v.__expl) 
    }
    return v
 }

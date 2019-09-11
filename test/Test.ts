@@ -3,10 +3,10 @@
 import { BwdSlice, FwdSlice } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some } from "../src/BaseTypes"
 import { Expl_ } from "../src/DataValue"
-import { Env, ExtendEnv } from "../src/Env"
+import { ExtendEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
-import { module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
+import { Dataset, module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
 import { Cursor } from "./util/Cursor"
 
@@ -37,11 +37,11 @@ describe("example", () => {
 
    describe("bar-chart", () => {
 		it("ok", () => {
-         const ρ: Env = openDatasetAs("renewables", "data"),
+         const dataset: Dataset = openDatasetAs("renewables", "data"),
 			      e: Expr = openWithImports("bar-chart", [module_graphics])
 			new (class extends FwdSlice {
             setup (): void {
-               const data: Cursor = new Cursor(ρ)
+               const data: Cursor = new Cursor(dataset.ρ)
                data.to(ExtendEnv, "tv")
                    .to(Expl_, "v")
                    .to(Cons, "head")
@@ -76,7 +76,7 @@ describe("example", () => {
                   .to(Cons, "tail")
                   .push().to(Cons, "head").toExpl(Point, "y").notNeeded().pop()
             }
-         })(e, ρ)
+         })(e, dataset)
 			new (class extends BwdSlice {
 				setup (): void {
 					this.tv
@@ -85,7 +85,7 @@ describe("example", () => {
 				expect (): void {
 					this.expr.needed()
 				}
-			})(e, ρ)
+			})(e, dataset)
 		})
    })
 

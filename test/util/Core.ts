@@ -2,9 +2,10 @@ import { __nonNull, as } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { Expl_ } from "../../src/DataValue"
-import { Env, emptyEnv } from "../../src/Env"
+import { emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
+import { Dataset } from "../../src/Module"
 import { clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
 import "../../src/app/GraphicsRenderer" // for graphics primitives
@@ -14,12 +15,14 @@ export class FwdSlice {
    expr: Cursor
    tv: Cursor
 
-   constructor (e: Expr, ρ: Env = emptyEnv()) {
+   constructor (e: Expr, dataset: Dataset | null = null) {
       clearMemo()
       setallα(ann.top, e)
-      setallα(ann.top, ρ)
+      if (dataset !== null) {
+         dataset.setallα(ann.top)
+      }
       this.expr = new Cursor(e)
-      const tv: Expl_ = Eval.eval_(ρ, e)
+      const tv: Expl_ = Eval.eval_(dataset === null ? emptyEnv() : dataset.ρ, e)
       this.setup()
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
@@ -45,12 +48,14 @@ export class BwdSlice {
    tv: Cursor
    expr: Cursor
 
-   constructor (e: Expr, ρ: Env = emptyEnv()) {
+   constructor (e: Expr, dataset: Dataset | null = null) {
       if (flags.get(Flags.Bwd)) {
          clearMemo()
          setallα(ann.bot, e)
-         setallα(ann.bot, ρ)
-         const tv: Expl_ = Eval.eval_(ρ, e) // just to obtain tv
+         if (dataset !== null) {
+            dataset.setallα(ann.bot)
+         }
+         const tv: Expl_ = Eval.eval_(dataset === null ? emptyEnv() : dataset.ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
          this.tv = new Cursor(tv)
          this.setup()

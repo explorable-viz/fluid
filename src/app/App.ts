@@ -1,39 +1,36 @@
 import { __nonNull } from "../util/Core"
 import { ann } from "../util/Lattice"
-import { negateallα, setallα } from "../Annotated"
-import { List, Pair } from "../BaseTypes"
+import { setallα } from "../Annotated"
 import { Expl_ } from "../DataValue"
-import { Env, ExtendEnv } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
 import   { GraphicsElement } from "../Graphics"
-import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
-import { Num, Str, clearMemo } from "../Value"
-import { Versioned } from "../Versioned"
+import { Dataset, module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
+import {clearMemo } from "../Value"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 export class View implements Slicer {
    name: string
    coordinator: ViewCoordinator
-   ρ: Env
+   dataset: Dataset
    e: Expr
    tv: Expl_
    view: GraphicsRenderer
    direction: Direction
 
-   constructor (name: string, ρ: Env, e: Expr, svg: SVGSVGElement) {
+   constructor (name: string, dataset: Dataset, e: Expr, svg: SVGSVGElement) {
       this.name = name
-      this.ρ = ρ
+      this.dataset = dataset
       this.e = e
-      this.tv = Eval.eval_(ρ, e)
+      this.tv = Eval.eval_(dataset.ρ, e)
       this.view = new GraphicsRenderer(svg, this)
       this.fwdSlice()
       this.draw()
    }
 
+   // Consider (un)availability of dataset only; treat e as an unlimited resource.
    fwdSlice (): void {
       setallα(ann.top, this.e)
-      setallα(ann.top, this.ρ)
       Eval.eval_fwd(this.e, this.tv)
       this.direction = Direction.Fwd
       this.draw()
@@ -41,6 +38,7 @@ export class View implements Slicer {
    
    // Clear annotations on program and forward slice, to erase all annotations prior to backward slicing.
    resetForBwd (): void {
+      this.dataset.setallα(ann.bot)
       setallα(ann.bot, this.e)
       Eval.eval_fwd(this.e, this.tv)
    }
@@ -65,26 +63,24 @@ export class View implements Slicer {
    }
 }
 
-type Data = Versioned<List<Pair<Num | Str, any>>> // approximate recursive type
-
 class App {
    dataView: View
    graphicsView: View
 
    constructor () {
-      const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
-            data: Expl_<Data> = ρ.tv as Expl_<Data>
+      // data has recursive type Data = Versioned<List<Pair<Num | Str, Data>>>
+      const dataset: Dataset = openDatasetAs("renewables", "data")
       clearMemo()
-      setallα(ann.top, data)
+      dataset.setallα(ann.top)
       this.graphicsView = new View(
          "graphicsView", 
-         ρ, 
+         dataset,
          openWithImports("bar-chart", [module_graphics]), 
          this.createSvg(400, 400, false)
       )
       this.dataView = new View(
          "dataView", 
-         ρ, 
+         dataset,
          parseWithImports("renderData data", [module_graphics, module_renderData]), 
          this.createSvg(400, 1200, false)
       )
@@ -92,13 +88,13 @@ class App {
       this.graphicsView.coordinator = new class ViewCoordinator {
          onBwd (): void {
             clearMemo()
-            negateallα(data)
+            dataset.negateallα()
             dataView.fwdSlice()
          }
 
          resetForBwd (): void {
             clearMemo()
-            setallα(ann.bot, data)
+            dataset.setallα(ann.bot)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
          }
@@ -107,13 +103,13 @@ class App {
       this.dataView.coordinator = new class ViewCoordinator {
          onBwd (): void {
             clearMemo()
-            negateallα(data)
+            dataset.negateallα()
             graphicsView.fwdSlice()
          }
 
          resetForBwd (): void {
             clearMemo()
-            setallα(ann.bot, data)
+            dataset.setallα(ann.bot)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
          }
