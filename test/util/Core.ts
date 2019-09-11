@@ -19,8 +19,8 @@ export class FwdSlice {
       setallα(ann.top, e)
       setallα(ann.top, ρ)
       this.expr = new Cursor(e)
-      this.setup()
       const tv: Expl_ = Eval.eval_(ρ, e)
+      this.setup()
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
          this.tv = new Cursor(tv)
