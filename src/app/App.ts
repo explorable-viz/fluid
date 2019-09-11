@@ -1,14 +1,17 @@
 import { __nonNull } from "../util/Core"
 import { ann } from "../util/Lattice"
-import { setallα } from "../Annotated"
+import { setallα, negateallα } from "../Annotated"
 import { Expl_ } from "../DataValue"
+import { Env } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
-import   { GraphicsElement } from "../Graphics"
-import { Dataset, module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
-import {clearMemo } from "../Value"
+import  { GraphicsElement } from "../Graphics"
+import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
+import { clearMemo } from "../Value"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
+// As with the test cases, we treat the dataset ρ as "external" data, meaning we push slicing
+// information back only as far as ρ.
 export class View implements Slicer {
    name: string
    coordinator: ViewCoordinator
@@ -17,10 +20,10 @@ export class View implements Slicer {
    view: GraphicsRenderer
    direction: Direction
 
-   constructor (name: string, dataset: Dataset, e: Expr, svg: SVGSVGElement) {
+   constructor (name: string, ρ: Env, e: Expr, svg: SVGSVGElement) {
       this.name = name
       this.e = e
-      this.tv = Eval.eval_(dataset.ρ, e)
+      this.tv = Eval.eval_(ρ, e)
       this.view = new GraphicsRenderer(svg, this)
       this.fwdSlice()
       this.draw()
@@ -60,24 +63,26 @@ export class View implements Slicer {
    }
 }
 
+// Data has approximate recursive type
+// Data = Versioned<List<Pair<Num | Str, Data>>>
+
 class App {
    dataView: View
    graphicsView: View
 
    constructor () {
-      // data has recursive type Data = Versioned<List<Pair<Num | Str, Data>>>
-      const dataset: Dataset = openDatasetAs("renewables", "data")
+      const ρ: Env = openDatasetAs("renewables", "data")
       clearMemo()
-      dataset.setallα(ann.top)
+      setallα(ann.top, ρ)
       this.graphicsView = new View(
          "graphicsView", 
-         dataset,
+         ρ,
          openWithImports("bar-chart", [module_graphics]), 
          this.createSvg(400, 400, false)
       )
       this.dataView = new View(
          "dataView", 
-         dataset,
+         ρ,
          parseWithImports("renderData data", [module_graphics, module_renderData]), 
          this.createSvg(400, 1200, false)
       )
@@ -85,13 +90,13 @@ class App {
       this.graphicsView.coordinator = new class ViewCoordinator {
          onBwd (): void {
             clearMemo()
-            dataset.negateallα()
+            negateallα(ρ)
             dataView.fwdSlice()
          }
 
          resetForBwd (): void {
             clearMemo()
-            dataset.setallα(ann.bot)
+            setallα(ann.bot, ρ)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
          }
@@ -100,13 +105,13 @@ class App {
       this.dataView.coordinator = new class ViewCoordinator {
          onBwd (): void {
             clearMemo()
-            dataset.negateallα()
+            negateallα(ρ)
             graphicsView.fwdSlice()
          }
 
          resetForBwd (): void {
             clearMemo()
-            dataset.setallα(ann.bot)
+            setallα(ann.bot, ρ)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
          }

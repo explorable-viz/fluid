@@ -2,27 +2,28 @@ import { __nonNull, as } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { Expl_ } from "../../src/DataValue"
-import { emptyEnv } from "../../src/Env"
+import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
-import { Dataset } from "../../src/Module"
 import { clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
 import "../../src/app/GraphicsRenderer" // for graphics primitives
 import { Cursor } from "./Cursor"
 
+// Key idea here is that we never push slicing further back than ρ (since ρ could potentially
+// be supplied by a library function, dataframe in another language, or other resource which
+// lacks source code).
+
 export class FwdSlice {
    expr: Cursor
    tv: Cursor
 
-   constructor (e: Expr, dataset: Dataset | null = null) {
+   constructor (e: Expr, ρ: Env = emptyEnv()) {
       clearMemo()
       setallα(ann.top, e)
-      if (dataset !== null) {
-         dataset.setallα(ann.top)
-      }
+      setallα(ann.top, ρ)
       this.expr = new Cursor(e)
-      const tv: Expl_ = Eval.eval_(dataset === null ? emptyEnv() : dataset.ρ, e)
+      const tv: Expl_ = Eval.eval_(ρ, e)
       this.setup()
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
@@ -48,14 +49,12 @@ export class BwdSlice {
    tv: Cursor
    expr: Cursor
 
-   constructor (e: Expr, dataset: Dataset | null = null) {
+   constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Bwd)) {
          clearMemo()
          setallα(ann.bot, e)
-         if (dataset !== null) {
-            dataset.setallα(ann.bot)
-         }
-         const tv: Expl_ = Eval.eval_(dataset === null ? emptyEnv() : dataset.ρ, e) // to obtain tv
+         setallα(ann.bot, ρ)
+         const tv: Expl_ = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
          this.tv = new Cursor(tv)
          this.setup()
