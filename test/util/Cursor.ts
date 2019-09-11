@@ -1,7 +1,7 @@
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { annotated } from "../../src/Annotated"
-import { DataValue } from "../../src/DataValue"
+import { DataValue, Expl_ } from "../../src/DataValue"
 import { Persistent, Value } from "../../src/Value"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { Expl } from "../../src/Expl"
@@ -115,6 +115,22 @@ export class Cursor {
          assert(false)
       }
       return this
+   }
+
+   expl_needed (): Cursor {
+      return this.to(Expl_, "t").needed()
+   }
+
+   expl_notNeeded(): Cursor {
+      return this.to(Expl_, "t").notNeeded()
+   }
+
+   expl_need (): Cursor {
+      return this.to(Expl_, "t").need()
+   }
+
+   expl_notNeed(): Cursor {
+      return this.to(Expl_, "t").notNeed()
    }
 
    push (): Cursor {
