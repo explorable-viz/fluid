@@ -12,7 +12,6 @@ import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRend
 export class View implements Slicer {
    name: string
    coordinator: ViewCoordinator
-   dataset: Dataset
    e: Expr
    tv: Expl_
    view: GraphicsRenderer
@@ -20,7 +19,6 @@ export class View implements Slicer {
 
    constructor (name: string, dataset: Dataset, e: Expr, svg: SVGSVGElement) {
       this.name = name
-      this.dataset = dataset
       this.e = e
       this.tv = Eval.eval_(dataset.ρ, e)
       this.view = new GraphicsRenderer(svg, this)
@@ -38,7 +36,6 @@ export class View implements Slicer {
    
    // Clear annotations on program and forward slice, to erase all annotations prior to backward slicing.
    resetForBwd (): void {
-      this.dataset.setallα(ann.bot)
       setallα(ann.bot, this.e)
       Eval.eval_fwd(this.e, this.tv)
    }
