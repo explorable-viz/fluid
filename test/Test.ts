@@ -49,11 +49,12 @@ describe("example", () => {
                    .to(Cons, "head")
                    .to(Pair, "snd")
                    .to(Cons, "head")
-                   .toExpl(Pair, "snd").notNeed()
+                   .toExplChild(Pair, "snd").to(Expl_, "t").notNeed()
             }
             expect (): void {
                this.tv
-                  .to(Expl_, "v").to(Graphic, "gs")
+						.to(Expl_, "v")
+						.to(Graphic, "gs")
                   .to(Cons, "head")
                   .to(Graphic, "gs")
                   .to(Cons, "tail")
@@ -72,9 +73,9 @@ describe("example", () => {
                   .to(Polygon, "points")
                   .to(Cons, "tail")
                   .to(Cons, "tail")
-                  .push().to(Cons, "head").toExpl(Point, "y").notNeeded().pop()
+                  .push().to(Cons, "head").toExplChild(Point, "y").to(Expl_, "t").notNeeded().pop()
                   .to(Cons, "tail")
-                  .push().to(Cons, "head").toExpl(Point, "y").notNeeded().pop()
+                  .push().to(Cons, "head").toExplChild(Point, "y").to(Expl_, "t").notNeeded().pop()
             }
          })(e, ρ)
 			new (class extends BwdSlice {
@@ -128,7 +129,7 @@ describe("example", () => {
                this.tv
                   .push().to(Expl_, "t").needed().pop()
                   .to(Expl_, "v")
-                  .push().toExpl(Cons, "head").notNeeded().pop()
+                  .push().toExplChild(Cons, "head").to(Expl_, "t").notNeeded().pop()
                   .to(Cons, "tail")
                   .assert(List, v => Nil.is(v))
 				}
@@ -251,9 +252,9 @@ describe("example", () => {
                this.tv
                   .push()
                      .to(Expl_, "v")
-                     .toExpl(Cons, "head").notNeeded().pop()
+                     .toExplChild(Cons, "head").to(Expl_, "t").notNeeded().pop()
                   .to(Expl_, "v")
-                  .toExpl(Cons, "tail").needed()
+                  .toExplChild(Cons, "tail").to(Expl_, "t").needed()
 				}
 			})(e)
 			new BwdSlice(e)
@@ -277,7 +278,7 @@ describe("example", () => {
 				setup (): void {
 					this.tv
 						.to(Expl_, "v")
-						.toExpl(Pair, "fst").need()
+						.toExplChild(Pair, "fst").to(Expl_, "t").need()
 				}
 				expect (): void {
 					this.expr
@@ -311,8 +312,8 @@ describe("example", () => {
 				expect (): void {
                this.tv
                   .push().to(Expl_, "t").notNeeded().pop()
-                  .push().to(Expl_, "v").toExpl(Cons, "head").needed().pop()
-                  .to(Expl_, "v").toExpl(Cons, "tail").needed()
+                  .push().to(Expl_, "v").toExplChild(Cons, "head").to(Expl_, "t").needed().pop()
+                  .to(Expl_, "v").toExplChild(Cons, "tail").to(Expl_, "t").needed()
 				}
 			})(e)
 			new BwdSlice(e)
@@ -356,7 +357,7 @@ describe("example", () => {
 				setup (): void {
 					this.tv
 						.to(Expl_, "v")
-						.toExpl(Cons, "head").need()
+						.toExplChild(Cons, "head").to(Expl_, "t").need()
 				}
 				expect (): void {
 					this.expr

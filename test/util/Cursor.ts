@@ -1,7 +1,7 @@
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { annotated } from "../../src/Annotated"
-import { DataExpl, DataValue } from "../../src/DataValue"
+import { DataValue } from "../../src/DataValue"
 import { Persistent, Value } from "../../src/Value"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { Expl } from "../../src/Expl"
@@ -49,9 +49,8 @@ export class Cursor {
       return this
    }
 
-   toExpl<T extends DataValue> (C: Class<T>, prop: keyof T): Cursor {
-      this.to(C, "__expl")
-      this.to(DataExpl as any, prop)
+   toExplChild<T extends DataValue> (C: Class<T>, prop: keyof T): Cursor {
+      this.v = as(this.v, DataValue).explChild(prop as any, Value)
       return this
    }
 
