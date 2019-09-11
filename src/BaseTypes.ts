@@ -1,5 +1,4 @@
 import { absurd } from "./util/Core"
-import { Annotated } from "./Annotated"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { dataValue } from "./Eval"
@@ -13,15 +12,15 @@ export abstract class Bool extends DataValue<"Bool"> {
 export class True extends Bool {
 }
 
-export function true_ (): Annotated<Bool> {
-   return dataValue(True.name, []) as Annotated<Bool>
+export function true_ (): Bool {
+   return dataValue(True.name, []) as Bool
 }
 
 export class False extends Bool {
 }
 
-export function false_ (): Annotated<Bool> {
-   return dataValue(False.name, []) as Annotated<Bool>
+export function false_ (): Bool {
+   return dataValue(False.name, []) as Bool
 }
 
 export abstract class List<T> extends DataValue<"List"> {

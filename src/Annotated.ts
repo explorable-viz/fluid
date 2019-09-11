@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd, className } from "./util/Core"
+import { Class, __nonNull } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
 import { DataValue } from "./DataValue"
 import { MemoFunType, Num, Persistent, Str, Value, ValueTag, _, memo } from "./Value"
@@ -15,23 +15,12 @@ export function AnnotatedC<T extends Class<Value>> (C: T) {
    }[C.name] // give versioned class same name as C
 }
 
-// Not sure how to avoid duplicating the body with those of the classes returned by AnnotatedC.
-export interface Annotated_ {
+export type Annotated<T> = T & {
    __α: Annotation
 }
 
-export type Annotated<T> = Annotated_ & T
-
 export function annotated<T extends Object> (v: T): v is Annotated<T> {
    return v.hasOwnProperty("__α")
-}
-
-export function asAnnotated<T> (v: T): Annotated<T> {
-   if (annotated(v)) {
-      return v
-   } else {
-      return absurd(`Not an annotated value: ${className(v)}`)
-   }
 }
 
 export function setα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
@@ -55,7 +44,7 @@ export function setallα_<Tag extends ValueTag, T extends Value<Tag>> (α: Annot
       }
    })
    // Hack to recurse into traces; revisit idea of integrating traces into values.
-   // Can't assume every data value has a trace, since traces are also data values...
+   // Can't assume every data value has a trace, since traces are also data values.
    if (v instanceof DataValue && v.__expl !== undefined) {
       setallα(α, __nonNull(v.__expl)) 
    }

@@ -1,5 +1,6 @@
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
+import { annotated } from "../../src/Annotated"
 import { DataExpl, DataValue } from "../../src/DataValue"
 import { Persistent, Value } from "../../src/Value"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
@@ -90,7 +91,7 @@ export class Cursor {
    }
 
    needed (): Cursor {
-      assert(isAnnotated(this.v) && this.v.__α === ann.top)
+      assert(annotated(this.v) && this.v.__α === ann.top)
       return this
    }
 

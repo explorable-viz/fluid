@@ -1,6 +1,6 @@
 import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
-import { Annotated, joinα } from "./Annotated"
+import { joinα } from "./Annotated"
 import { List, Pair, cons, nil } from "./BaseTypes"
 import { DataValue, Expl_ } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
@@ -122,7 +122,7 @@ export abstract class DataElim extends Elim {
 }
 
 class VarElim extends Elim {
-   x: Annotated<Str> = _
+   x: Str = _
    κ: RuntimeCont = _
 
    apply_ (tv: Expl_, ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
@@ -130,7 +130,7 @@ class VarElim extends Elim {
    }
 }
 
-function varElim (x: Annotated<Str>, κ: RuntimeCont): VarElim {
+function varElim (x: Str, κ: RuntimeCont): VarElim {
    return make(VarElim, x, κ) as VarElim
 }
 

@@ -1,6 +1,6 @@
 import { absurd, error } from "./util/Core"
 import { eq } from "./util/Ord"
-import { Annotated, AnnotatedC } from "./Annotated"
+import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
@@ -218,7 +218,7 @@ export namespace Expr {
 
       // TODO: use annotations on x.
       export class Var<K extends Cont> extends Trie<K> {
-         x: Annotated<Str> = _
+         x: Str = _
          κ: K = _
 
          static is<K extends Cont> (σ: Trie<K>): σ is Var<K> {
@@ -226,7 +226,7 @@ export namespace Expr {
          }
       }
 
-      export function var_<K extends Cont> (x: Annotated<Str>, κ: K): Var<K> {
+      export function var_<K extends Cont> (x: Str, κ: K): Var<K> {
          return make(Var, x, κ) as Var<K>
       }
    }
