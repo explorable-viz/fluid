@@ -23,7 +23,7 @@ export namespace Expl {
       tv: Expl_ = _
    }
 
-  export function app (tf: Expl_<Closure>, tu: Expl_, δ: List<RecDef>, ξ: Match<Expr>, tv: Expl_): App {
+   export function app (tf: Expl_<Closure>, tu: Expl_, δ: List<RecDef>, ξ: Match<Expr>, tv: Expl_): App {
       return at(ν(), App, tf, tu, δ, ξ, tv)
    }
 
@@ -45,6 +45,13 @@ export namespace Expl {
    export function binaryApp (tv1: Expl_<PrimValue>, opName: Str, tv2: Expl_<PrimValue>): BinaryApp {
       return at(ν(), BinaryApp, tv1, opName, tv2)
    }
+
+   // Has a concrete subclass for each datatype.
+   export class DataExpl extends Expl {
+      children (): Expl[] {
+         return super.children() as Expl[]
+      }
+   }   
 
    export abstract class Def extends DataValue<"Expl.Def"> {
    }

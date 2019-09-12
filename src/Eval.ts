@@ -4,7 +4,7 @@ import { ann } from "./util/Lattice"
 import { AnnotatedC, joinα, meetα, num, setα, str } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
-import { DataValue, Expl_, expl } from "./DataValue"
+import { DataValue, Expl_, expl, explChildren } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
@@ -16,10 +16,8 @@ import { ν, at } from "./Versioned"
 
 // Move to more sensible location
 export function dataValue (c: string, tv̅: Expl_[]): DataValue {
-   const d: DataType = __nonNull(ctrToDataType.get(c)),
-         v: DataValue = at(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
-   v.__expl = make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))
-   return v
+   const d: DataType = __nonNull(ctrToDataType.get(c))
+   return at(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
 }
 
 export enum Direction { Fwd, Bwd }
@@ -150,8 +148,10 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
       return expl(Expl.empty(), closure(ν(), ρ, nil(), evalTrie(e.σ)))
    } else
    if (e instanceof Expr.Constr) {
-      const tv̅: Expl_[] = e.args.toArray().map((e: Expr) => eval_(ρ, e))
-      return expl(Expl.empty(), dataValue(e.ctr.val, tv̅))
+      const tv̅: Expl_[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
+            c: string = e.ctr.val,
+            d: DataType = __nonNull(ctrToDataType.get(c))
+      return expl(make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t)), dataValue(c, tv̅))
    } else
    if (e instanceof Expr.Quote) {
       return expl(Expl.quote(), e.e)
@@ -228,11 +228,8 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
    if (t instanceof Expl.Empty) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
          setα(e.__α, t)
-      } else
-      if (v instanceof DataValue) {
-         const eʹ: Expr.Constr = as(e, Expr.Constr)
-         zip(v.explChildren(), eʹ.args.toArray()).map(([tv, e]) => eval_fwd(e, tv))
-         setα(e.__α, t)
+      } else {
+         absurd()
       }
    } else
    if (t instanceof Expl.Quote) {
@@ -240,6 +237,15 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
    } else
    if (t instanceof Expl.Var) {
       setα(ann.meet(e.__α, t.tv.t.__α), t)
+   } else
+   if (t instanceof Expl.DataExpl) {
+      if (v instanceof DataValue) {
+         const eʹ: Expr.Constr = as(e, Expr.Constr)
+         zip(explChildren(t, v), eʹ.args.toArray()).map(([tv, e]) => eval_fwd(e, tv))
+         setα(e.__α, t)
+      } else {
+         absurd()
+      }
    } else
    if (t instanceof Expl.App) {
       const eʹ: Expr.App = as(e, Expr.App)
@@ -288,11 +294,15 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
    if (t instanceof Expl.Empty) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
          joinα(t.__α, e)
-      } else
+      } else {
+         absurd()
+      }
+   } else
+   if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
          // reverse order but shouldn't matter in absence of side-effects:
-         zip(v.explChildren(), eʹ.args.toArray()).map(([tv, e]) => eval_bwd(e, tv))
+         zip(explChildren(t, v), eʹ.args.toArray()).map(([tv, e]) => eval_bwd(e, tv))
          joinα(t.__α, e)
       } else {
          absurd()

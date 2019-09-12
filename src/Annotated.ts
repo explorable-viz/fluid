@@ -1,6 +1,5 @@
 import { Class, __nonNull } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
-import { DataValue } from "./DataValue"
 import { MemoFunType, Num, Persistent, Str, Value, ValueTag, _, memo } from "./Value"
 import { ν, at } from "./Versioned"
 
@@ -43,11 +42,6 @@ export function setallα_<Tag extends ValueTag, T extends Value<Tag>> (α: Annot
          setallα(α, v)
       }
    })
-   // Hack to recurse into traces; revisit idea of integrating traces into values.
-   // Can't assume every data value has a trace, since traces are also data values.
-   if (v instanceof DataValue && v.__expl !== undefined) {
-      setallα(α, v.__expl) 
-   }
    return v
 }
 
@@ -64,10 +58,6 @@ export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T):
          negateallα(v)
       }
    })
-   // Similar hack to setallα.
-   if (v instanceof DataValue && v.__expl !== undefined) {
-      negateallα(v.__expl) 
-   }
    return v
 }
 

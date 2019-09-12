@@ -1,6 +1,7 @@
 import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { str } from "./Annotated"
-import { DataExpl, DataValue } from "./DataValue"
+import { DataValue } from "./DataValue"
+import { Expl } from "./Expl"
 import { DataElim } from "./Match"
 import { Num, PrimValue, Str, _, fields } from "./Value"
 
@@ -18,14 +19,14 @@ export class PrimType {
 export class DataType {
    name: Str
    elimC: Class<DataElim>            
-   ctrs: Map<string, Ctr>                 // fields of my constructors
-   explC̅: Map<string, Class<DataExpl>>    // "explanation" class per constructor
+   ctrs: Map<string, Ctr>                    // fields of my constructors
+   explC̅: Map<string, Class<Expl.DataExpl>>  // "explanation" class per constructor
 
    constructor (
       name: Str,
       elimC: Class<DataElim>, 
       ctrs: Map<string, Ctr>, 
-      explC̅: Map<string, Class<DataExpl>>
+      explC̅: Map<string, Class<Expl.DataExpl>>
    ) {
       this.name = name
       this.elimC = elimC
@@ -81,9 +82,9 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
             }
          }[elimC_name],
          explC_name: string = D.name + explSuffix,
-         explC̅: [string, Class<DataExpl>][] = ctrs.map(([cʹ, c]: [string, Ctr]) => {
+         explC̅: [string, Class<Expl.DataExpl>][] = ctrs.map(([cʹ, c]: [string, Ctr]) => {
             return [cʹ, {
-               [explC_name]: class extends DataExpl {
+               [explC_name]: class extends Expl.DataExpl {
                   constructor () {
                      super()
                      c.f̅.forEach((f: string): void => {
