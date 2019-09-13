@@ -15,7 +15,7 @@ export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Ta
 }
 
 // Here to break cyclic dependency.
-export class Expl_<T = Value> extends DataValue<"Expl_"> {
+export class Expl_<T extends Value = Value> extends DataValue<"Expl_"> {
    t: Expl = _
    v: T = _
 }
@@ -28,8 +28,7 @@ export function expl<T extends Value = Value> (t: Expl, v: T): Expl_<T> {
 export function explChild<T extends DataValue> (t: Expl, v: DataValue, k: keyof T): Expl_ {
    if (t instanceof Expl.DataExpl) {
       return expl(t.child(k as string) as Expl, v.child(k as string))
-   } else 
-   // Perhaps syntactically unify all these "tail-call" forms?
+   } else
    if (t instanceof Expl.Defs) {
       assert(v === t.tv.v)
       return explChild(t.tv.t, v, k)
