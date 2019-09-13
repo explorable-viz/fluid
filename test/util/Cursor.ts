@@ -1,7 +1,7 @@
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { annotated } from "../../src/Annotated"
-import { DataValue, Expl_ } from "../../src/DataValue"
+import { DataValue, Expl_, explChild } from "../../src/DataValue"
 import { Persistent, Value } from "../../src/Value"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { Expl } from "../../src/Expl"
@@ -19,6 +19,77 @@ type Annotated = Expr.Expr | Expr.Def | Expr.RecDef | Expl.Expl
 
 function isAnnotated (v: Value): v is Annotated {
    return v instanceof Expr.Expr || v instanceof Expr.Def || v instanceof Expr.RecDef || v instanceof Expl.Expl
+}
+
+export class ExplCursor {
+   prev: Expl_[] = []
+   tv: Expl_
+
+   constructor (tv: Expl_) {
+      this.goto(tv)
+   }
+
+   goto (tv: Expl_): ExplCursor {
+      this.tv = tv
+      return this
+   }
+
+   to<T extends DataValue> (C: Class<T>, k: keyof T): ExplCursor {
+      this.tv = explChild(this.tv.t, as(this.tv.v, DataValue), k)
+      return this
+   }
+
+   at<T extends Value> (C: AClass<T>, f: (o: T) => void): this {
+      f(as<Value, T>(this.tv.v, C))
+      return this
+   }
+
+   assert<T extends Value> (C: AClass<T>, pred: (v: T) => boolean): this {
+      return this.at(C, v => assert(pred(v)))
+   }
+
+   needed (): this {
+      assert(annotated(this.tv.t) && this.tv.t.__α === ann.top)
+      return this
+   }
+
+   notNeeded(): this {
+      assert(isAnnotated(this.tv.t) && this.tv.t.__α === ann.bot)
+      return this
+   }
+
+   need (): this {
+      if (isAnnotated(this.tv.t)) {
+         this.tv.t.__α = ann.top
+      } else {
+         assert(false)
+      }
+      return this
+   }
+
+   notNeed(): this {
+      if (isAnnotated(this.tv.t)) {
+         this.tv.t.__α = ann.top
+      } else {
+         assert(false)
+      }
+      return this
+   }
+
+   push (): this {
+      this.prev.push(this.tv)
+      return this
+   }
+
+   pop (): this {
+      const tv: Expl_ | undefined = this.prev.pop()
+      if (tv === undefined) {
+         return absurd()
+      } else {
+         this.tv = tv
+      }
+      return this
+   }
 }
 
 export class Cursor {
@@ -46,11 +117,6 @@ export class Cursor {
    to<T extends Value> (C: Class<T>, prop: keyof T): Cursor {
       const vʹ: T[keyof T] = as<Persistent, T>(this.v, C)[prop] // TypeScript nonsense
       this.v = vʹ as any as Value
-      return this
-   }
-
-   toExplChild<T extends DataValue> (C: Class<T>, prop: keyof T): Cursor {
-      this.v = as(this.v, DataValue).explChild(prop as any, Value)
       return this
    }
 
@@ -115,22 +181,6 @@ export class Cursor {
          assert(false)
       }
       return this
-   }
-
-   expl_needed (): Cursor {
-      return this.to(Expl_, "t").needed()
-   }
-
-   expl_notNeeded(): Cursor {
-      return this.to(Expl_, "t").notNeeded()
-   }
-
-   expl_need (): Cursor {
-      return this.to(Expl_, "t").need()
-   }
-
-   expl_notNeed(): Cursor {
-      return this.to(Expl_, "t").notNeed()
    }
 
    push (): Cursor {

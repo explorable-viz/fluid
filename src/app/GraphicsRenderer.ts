@@ -2,7 +2,7 @@ import { __nonNull, absurd, assert } from "../util/Core"
 import { Annotation, ann } from "../util/Lattice"
 import { num, setα } from "../Annotated"
 import { Cons, List } from "../BaseTypes"
-import { Expl_ } from "../DataValue"
+import { Expl_, explChild } from "../DataValue"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
@@ -97,9 +97,9 @@ export class GraphicsRenderer {
       group.setAttribute("pointer-events", "bounding-box")
       this.current.appendChild(group)
       this.ancestors.push(group)
-      for (let gs: List<GraphicsElement> = tg.v.gs; Cons.is(gs);) {
-         this.renderElement(gs.explChild("head", GraphicsElement))
-         gs = gs.tail // ignoring annotations on cons cells
+      for (let t_gs: Expl_<List<GraphicsElement>> = explChild(tg.t, tg.v, "gs" as any) as any; ;) {
+         this.renderElement(explChild(t_gs.t, t_gs.v, "head" as any) as any)
+         t_gs = explChild(t_gs.t, t_gs.v, "tail" as any) as any // ignoring annotations on cons cells
       }
       this.ancestors.pop()
    }
@@ -197,7 +197,7 @@ export class GraphicsRenderer {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
          setα(ann.top, tg.t)
-         setα(ann.top, tg.v.explChild("str", Str).t)
+         setα(ann.top, explChild(tg, "str", Str).t)
          this.slicer.bwdSlice()
       })
       this.current.appendChild(text)

@@ -8,7 +8,7 @@ import { Expr } from "../../src/Expr"
 import { clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
 import "../../src/app/GraphicsRenderer" // for graphics primitives
-import { Cursor } from "./Cursor"
+import { Cursor, ExplCursor } from "./Cursor"
 
 // Key idea here is that we never push slicing further back than ρ (since ρ could potentially
 // be supplied by a library function, dataframe in another language, or other resource which
@@ -16,7 +16,7 @@ import { Cursor } from "./Cursor"
 
 export class FwdSlice {
    expr: Cursor
-   tv: Cursor
+   tv: ExplCursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       clearMemo()
@@ -27,7 +27,7 @@ export class FwdSlice {
       this.setup()
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
-         this.tv = new Cursor(tv)
+         this.tv = new ExplCursor(tv)
          this.expect()
       }
       console.log(e)
