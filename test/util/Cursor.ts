@@ -1,11 +1,11 @@
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { annotated } from "../../src/Annotated"
-import { DataValue, Expl_, explChild } from "../../src/DataValue"
-import { Persistent, Value } from "../../src/Value"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
+import { DataValue, Expl_ } from "../../src/DataValue"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
+import { Persistent, Value } from "../../src/Value"
 
 import Def = Expr.Def
 import Let = Expr.Let
@@ -35,7 +35,7 @@ export class ExplCursor {
    }
 
    to<T extends DataValue> (C: Class<T>, k: keyof T): ExplCursor {
-      this.tv = explChild(this.tv.t, as(this.tv.v, DataValue), k)
+      this.tv = Expl.explChild(this.tv.t, as(this.tv.v, DataValue), k)
       return this
    }
 

@@ -6,8 +6,8 @@ import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
 import { clearMemo } from "../../src/Value"
-import "../../src/Graphics" // for graphical datatypes
-import "../../src/app/GraphicsRenderer" // for graphics primitives
+// import "../../src/Graphics" // for graphical datatypes
+// import "../../src/app/GraphicsRenderer" // for graphics primitives
 import { Cursor, ExplCursor } from "./Cursor"
 
 // Key idea here is that we never push slicing further back than ρ (since ρ could potentially
@@ -46,7 +46,7 @@ export class FwdSlice {
 }
 
 export class BwdSlice {
-   tv: Cursor
+   tv: ExplCursor
    expr: Cursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
@@ -56,7 +56,7 @@ export class BwdSlice {
          setallα(ann.bot, ρ)
          const tv: Expl_ = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
-         this.tv = new Cursor(tv)
+         this.tv = new ExplCursor(tv)
          this.setup()
          Eval.eval_bwd(e, tv)
          this.expr = new Cursor(e)

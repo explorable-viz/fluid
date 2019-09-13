@@ -4,14 +4,14 @@ import { ann } from "./util/Lattice"
 import { AnnotatedC, joinα, meetα, num, setα, str } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
-import { DataValue, Expl_, expl, explChildren } from "./DataValue"
+import { DataValue, Expl_, expl } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
-import { Id, PrimValue, Num, Str, Value, _, make } from "./Value"
+import { Id, PrimValue, Num, Str, Value, _ } from "./Value"
 import { ν, at } from "./Versioned"
 
 // Move to more sensible location
@@ -151,7 +151,7 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
       const tv̅: Expl_[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
             c: string = e.ctr.val,
             d: DataType = __nonNull(ctrToDataType.get(c))
-      return expl(make(d.explC̅.get(c)!, ...tv̅.map(({t}) => t)), dataValue(c, tv̅))
+      return expl(at(ν(), d.explC̅.get(c)!, ...tv̅.map(({t}) => t)), dataValue(c, tv̅))
    } else
    if (e instanceof Expr.Quote) {
       return expl(Expl.quote(), e.e)
@@ -241,7 +241,7 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
-         zip(explChildren(t, v), eʹ.args.toArray()).map(([tv, e]) => eval_fwd(e, tv))
+         zip(Expl.explChildren(t, v), eʹ.args.toArray()).map(([tv, e]) => eval_fwd(e, tv))
          setα(e.__α, t)
       } else {
          absurd()
@@ -302,7 +302,7 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       if (v instanceof DataValue) {
          const eʹ: Expr.Constr = as(e, Expr.Constr)
          // reverse order but shouldn't matter in absence of side-effects:
-         zip(explChildren(t, v), eʹ.args.toArray()).map(([tv, e]) => eval_bwd(e, tv))
+         zip(Expl.explChildren(t, v), eʹ.args.toArray()).map(([tv, e]) => eval_bwd(e, tv))
          joinα(t.__α, e)
       } else {
          absurd()

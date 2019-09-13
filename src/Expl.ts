@@ -1,6 +1,8 @@
+import { zipWith } from "./util/Array"
+import { absurd, assert } from "./util/Core"
 import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
-import { DataValue, Expl_ } from "./DataValue"
+import { DataValue, Expl_, expl } from "./DataValue"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Match } from "./Match"
@@ -141,5 +143,78 @@ export namespace Expl {
 
    export function var_ (x: Str, tv: Expl_): Var {
       return at(ν(), Var, x, tv)
+   }
+
+   // Consolidate; perhaps syntactically unify all these "tail-call" forms?
+   export function explChild<T extends DataValue> (t: Expl, v: DataValue, k: keyof T): Expl_ {
+      if (t instanceof DataExpl) {
+         return expl(t.child(k as string) as Expl, v.child(k as string))
+      } else
+      if (t instanceof Defs) {
+         assert(v === t.tv.v)
+         return explChild(t.tv.t, v, k)
+      } else
+      if (t instanceof MatchAs) {
+         assert(v === t.tv.v)
+         return explChild(t.tv.t, v, k)
+      } else
+      if (t instanceof Typematch) {
+         assert(v === t.tv.v)
+         return explChild(t.tv.t, v, k)
+      } else
+      if (t instanceof Var) {
+         assert(v === t.tv.v)
+         return explChild(t.tv.t, v, k)
+      } else
+      if (t instanceof App) {
+         assert(v === t.tv.v)
+         return explChild(t.tv.t, v, k)
+      } else
+      // Should probably require primitives to returned explained values.
+      if (t instanceof UnaryApp) {
+         return absurd()
+      } else
+      if (t instanceof BinaryApp) {
+         return absurd()
+      } else {
+         return absurd()
+      }
+   }
+
+   export function explChildren (t: Expl, v: DataValue): Expl_[] {
+      if (t instanceof DataExpl) {
+         return zipWith(expl)(t.children(), v.children())
+      } else 
+      if (t instanceof Defs) {
+         assert(v === t.tv.v)
+         return explChildren(t.tv.t, v)
+      } else
+      if (t instanceof MatchAs) {
+         assert(v === t.tv.v)
+         return explChildren(t.tv.t, v)
+      } else
+      if (t instanceof Typematch) {
+         assert(v === t.tv.v)
+         return explChildren(t.tv.t, v)
+      } else
+      if (t instanceof Var) {
+         assert(v === t.tv.v)
+         return explChildren(t.tv.t, v)
+      } else
+      if (t instanceof App) {
+         assert(v === t.tv.v)
+         return explChildren(t.tv.t, v)
+      } else
+      // Should probably require primitives to returned explained values.
+      if (t instanceof UnaryApp) {
+         assert(v.children().length === 0)
+         return []
+      } else
+      if (t instanceof BinaryApp) {
+         assert(v.children().length === 0)
+         return []
+      } else {
+         return absurd()
+      }
    }
 }

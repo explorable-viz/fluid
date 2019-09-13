@@ -2,7 +2,6 @@
 
 import { BwdSlice, FwdSlice } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some } from "../src/BaseTypes"
-import { Expl_ } from "../src/DataValue"
 import { ExtendEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
@@ -51,7 +50,6 @@ describe("example", () => {
             }
             expect (): void {
                this.tv
-						.to(Expl_, "v")
 						.to(Graphic, "gs")
                   .to(Cons, "head")
                   .to(Graphic, "gs")
@@ -245,9 +243,7 @@ describe("example", () => {
 				  }
 				expect (): void {
                this.tv
-						.to(Expl_, "v")
-						.push()
-                     .to(Cons, "head").notNeeded().pop()
+						.push().to(Cons, "head").notNeeded().pop()
                   .to(Cons, "tail").needed()
 				}
 			})(e)
