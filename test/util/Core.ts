@@ -6,9 +6,9 @@ import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
 import { clearMemo } from "../../src/Value"
-// import "../../src/Graphics" // for graphical datatypes
-// import "../../src/app/GraphicsRenderer" // for graphics primitives
-import { Cursor, ExplCursor } from "./Cursor"
+import "../../src/Graphics" // for graphical datatypes
+import { Cursor, ExplCursor } from "../../src/app/Cursor"
+import "../../src/app/GraphicsRenderer" // for graphics primitives
 
 // Key idea here is that we never push slicing further back than ρ (since ρ could potentially
 // be supplied by a library function, dataframe in another language, or other resource which

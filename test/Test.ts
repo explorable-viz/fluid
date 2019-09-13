@@ -7,7 +7,7 @@ import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
 import { module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
-import { ExplCursor } from "./util/Cursor"
+import { ExplCursor } from "..//src/app/Cursor"
 
 import Trie = Expr.Trie
 
