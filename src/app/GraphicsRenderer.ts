@@ -106,7 +106,7 @@ export class GraphicsRenderer {
 
    translate (tg: Expl_<Translate>): void {
       const g: Translate = tg.v,
-            tgʹ: Expl_<GraphicsElement> = g.explChild("g", GraphicsElement), 
+            tgʹ: Expl_<GraphicsElement> = explChild(tg.t, tg.v, "g" as any) as any, 
             f: TransformFun = translate(g.x.val, g.y.val)
             const transform: TransformFun = this.transform
             this.transforms.push(postcompose(transform, f))
