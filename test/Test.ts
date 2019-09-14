@@ -49,7 +49,7 @@ describe("example", () => {
                    .to(Pair, "snd").notNeed()
             }
             expect (): void {
-               this.tv
+					const p̅: ExplCursor/*<List<Point>>*/ = this.tv
 						.to(Graphic, "gs")
                   .to(Cons, "head")
                   .to(Graphic, "gs")
@@ -68,10 +68,9 @@ describe("example", () => {
                   .to(Translate, "g")
                   .to(Polygon, "points")
                   .to(Cons, "tail")
-                  .to(Cons, "tail")
-                  .push().to(Cons, "head").to(Point, "y").notNeeded().pop()
-                  .to(Cons, "tail")
-                  .push().to(Cons, "head").to(Point, "y").notNeeded().pop()
+						.to(Cons, "tail")
+					p̅.to(Cons, "head").to(Point, "y").notNeeded()
+					p̅.to(Cons, "tail").to(Cons, "head").to(Point, "y").notNeeded()
             }
          })(e, ρ)
 			new (class extends BwdSlice {
@@ -121,11 +120,9 @@ describe("example", () => {
 						.constrArg("Cons", 0).notNeed()
 				}
 				expect (): void {
-               this.tv
-                  .push().needed().pop()
-                  .push().to(Cons, "head").notNeeded().pop()
-                  .to(Cons, "tail")
-                  .assert(List, v => Nil.is(v))
+					this.tv.needed()
+					this.tv.to(Cons, "head").notNeeded()
+					this.tv.to(Cons, "tail").assert(List, v => Nil.is(v))
 				}
 			})(e)
 			new BwdSlice(e)
@@ -208,11 +205,8 @@ describe("example", () => {
 							.constrArg("Pair", 0).notNeed().pop()
 				}
 				expect (): void {
-               this.tv
-                  .push()
-                     .to(Some, "t")
-                     .assert(Str, str => str.toString() === `"sarah"`).pop()
-                  .needed()
+					this.tv.to(Some, "t").assert(Str, str => str.toString() === `"sarah"`)
+					this.tv.needed()
 				}
 			})(e)
 			new (class extends FwdSlice {
@@ -242,9 +236,8 @@ describe("example", () => {
 						.constrArg("Cons", 0).notNeed()
 				  }
 				expect (): void {
-               this.tv
-						.push().to(Cons, "head").notNeeded().pop()
-                  .to(Cons, "tail").needed()
+					this.tv.to(Cons, "head").notNeeded()
+					this.tv.to(Cons, "tail").needed()
 				}
 			})(e)
 			new BwdSlice(e)
@@ -298,10 +291,9 @@ describe("example", () => {
  						.constrArg("Cons", 1).notNeed()
 				}
 				expect (): void {
-               this.tv
-                  .notNeeded()
-                  .push().to(Cons, "head").needed().pop()
-                  .to(Cons, "tail").needed()
+					this.tv.notNeeded()
+					this.tv.to(Cons, "head").needed()
+					this.tv.to(Cons, "tail").needed()
 				}
 			})(e)
 			new BwdSlice(e)

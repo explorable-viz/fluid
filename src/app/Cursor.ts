@@ -1,6 +1,6 @@
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
-import { ann } from "../../src/util/Lattice"
-import { annotated } from "../../src/Annotated"
+import { Annotation, ann } from "../../src/util/Lattice"
+import { Annotated, annotated } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { DataValue, Expl_ } from "../../src/DataValue"
 import { Expl } from "../../src/Expl"
@@ -14,29 +14,15 @@ import Prim = Expr.Prim
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
-// TODO: common base class for syntactic forms?
-type Annotated = Expr.Expr | Expr.Def | Expr.RecDef | Expl.Expl
-
-function isAnnotated (v: Value): v is Annotated {
-   return v instanceof Expr.Expr || v instanceof Expr.Def || v instanceof Expr.RecDef || v instanceof Expl.Expl
-}
-
-export class ExplCursor {
-   prev: Expl_[] = []
-   tv: Expl_
+export class ExplCursor implements Annotated<ExplCursor> {
+   readonly tv: Expl_
 
    constructor (tv: Expl_) {
-      this.goto(tv)
-   }
-
-   goto (tv: Expl_): ExplCursor {
       this.tv = tv
-      return this
    }
 
    to<T extends DataValue> (C: Class<T>, k: keyof T): ExplCursor {
-      this.tv = Expl.explChild(this.tv.t, as(this.tv.v, DataValue), k)
-      return this
+      return new ExplCursor(Expl.explChild(this.tv.t, as(this.tv.v, DataValue), k))
    }
 
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): this {
@@ -48,18 +34,23 @@ export class ExplCursor {
       return this.at(C, v => assert(pred(v)))
    }
 
+   get __α (): Annotation {
+      assert(annotated(this.tv.t))
+      return this.tv.t.__α
+   }
+
    needed (): this {
       assert(annotated(this.tv.t) && this.tv.t.__α === ann.top)
       return this
    }
 
    notNeeded(): this {
-      assert(isAnnotated(this.tv.t) && this.tv.t.__α === ann.bot)
+      assert(annotated(this.tv.t) && this.tv.t.__α === ann.bot)
       return this
    }
 
    need (): this {
-      if (isAnnotated(this.tv.t)) {
+      if (annotated(this.tv.t)) {
          this.tv.t.__α = ann.top
       } else {
          assert(false)
@@ -68,25 +59,10 @@ export class ExplCursor {
    }
 
    notNeed(): this {
-      if (isAnnotated(this.tv.t)) {
+      if (annotated(this.tv.t)) {
          this.tv.t.__α = ann.top
       } else {
          assert(false)
-      }
-      return this
-   }
-
-   push (): this {
-      this.prev.push(this.tv)
-      return this
-   }
-
-   pop (): this {
-      const tv: Expl_ | undefined = this.prev.pop()
-      if (tv === undefined) {
-         return absurd()
-      } else {
-         this.tv = tv
       }
       return this
    }
@@ -161,12 +137,12 @@ export class Cursor {
    }
 
    notNeeded (): Cursor {
-      assert(isAnnotated(this.v) && this.v.__α === ann.bot)
+      assert(annotated(this.v) && this.v.__α === ann.bot)
       return this
    }
 
    need (): Cursor {
-      if (isAnnotated(this.v)) {
+      if (annotated(this.v)) {
          this.v.__α = ann.top
       } else {
          assert(false)
@@ -175,7 +151,7 @@ export class Cursor {
    }
 
    notNeed (): Cursor {
-      if (isAnnotated(this.v)) {
+      if (annotated(this.v)) {
          this.v.__α = ann.bot
       } else {
          assert(false)
