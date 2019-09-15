@@ -27,7 +27,7 @@ describe("example", () => {
 						.to(Expr.BinaryApp, "e1").notNeed()
 				}
 				expect (): void {
-               this.tv.notNeeded()
+               this.tv.αclear()
 				} 
 			})(e)
 			new BwdSlice(e)
@@ -46,7 +46,7 @@ describe("example", () => {
                    .to(Cons, "head")
                    .to(Pair, "snd")
                    .to(Cons, "head")
-                   .to(Pair, "snd").notNeed()
+                   .to(Pair, "snd").clearα()
             }
             expect (): void {
 					const p̅: ExplCursor = this.tv
@@ -69,13 +69,13 @@ describe("example", () => {
                   .to(Polygon, "points")
                   .to(Cons, "tail")
 						.to(Cons, "tail")
-					p̅.to(Cons, "head").to(Point, "y").notNeeded()
-					p̅.to(Cons, "tail").to(Cons, "head").to(Point, "y").notNeeded()
+					p̅.to(Cons, "head").to(Point, "y").αclear()
+					p̅.to(Cons, "tail").to(Cons, "head").to(Point, "y").αclear()
             }
          })(e, ρ)
 			new (class extends BwdSlice {
 				setup (): void {
-					this.tv.need()
+					this.tv.setα()
 				}
 				expect (): void {
 					this.expr.needed()
@@ -120,8 +120,8 @@ describe("example", () => {
 						.constrArg("Cons", 0).notNeed()
 				}
 				expect (): void {
-					this.tv.needed()
-					this.tv.to(Cons, "head").notNeeded()
+					this.tv.αset()
+					this.tv.to(Cons, "head").αclear()
 					this.tv.to(Cons, "tail").assert(List, v => Nil.is(v))
 				}
 			})(e)
@@ -150,7 +150,7 @@ describe("example", () => {
 						.push().constrArg("Cons", 0).notNeed().pop()
 				}
 				expect (): void {
-               this.tv.needed()
+               this.tv.αset()
 				}
 			})(e)
 			// deleting the tail of the tail means length can't be computed:
@@ -161,13 +161,13 @@ describe("example", () => {
 						.constrArg("Cons", 1).notNeed()
 				}
 				expect (): void {
-               this.tv.notNeeded()
+               this.tv.αclear()
 				}
 			})(e)
 			// needing the result only needs the cons cells:
 			new (class extends BwdSlice {
 				setup (): void {
-               this.tv.need()
+               this.tv.setα()
 				}
 				expect (): void {
 					this.expr
@@ -206,7 +206,7 @@ describe("example", () => {
 				}
 				expect (): void {
 					this.tv.to(Some, "t").assert(Str, str => str.toString() === `"sarah"`)
-					this.tv.needed()
+					this.tv.αset()
 				}
 			})(e)
 			new (class extends FwdSlice {
@@ -217,7 +217,7 @@ describe("example", () => {
 						.constrArg("Pair", 0).notNeed()
 				}
 				expect (): void {
-               this.tv.notNeeded()
+               this.tv.αclear()
 				}
 			})(e)
 			new BwdSlice(e)
@@ -236,8 +236,8 @@ describe("example", () => {
 						.constrArg("Cons", 0).notNeed()
 				  }
 				expect (): void {
-					this.tv.to(Cons, "head").notNeeded()
-					this.tv.to(Cons, "tail").needed()
+					this.tv.to(Cons, "head").αclear()
+					this.tv.to(Cons, "tail").αset()
 				}
 			})(e)
 			new BwdSlice(e)
@@ -259,7 +259,7 @@ describe("example", () => {
 			// retaining either component of pair retains both subcomputations:
 			new (class extends BwdSlice {
 				setup (): void {
-					this.tv.to(Pair, "fst").need()
+					this.tv.to(Pair, "fst").setα()
 				}
 				expect (): void {
 					this.expr
@@ -291,9 +291,9 @@ describe("example", () => {
  						.constrArg("Cons", 1).notNeed()
 				}
 				expect (): void {
-					this.tv.notNeeded()
-					this.tv.to(Cons, "head").needed()
-					this.tv.to(Cons, "tail").needed()
+					this.tv.αclear()
+					this.tv.to(Cons, "head").αset()
+					this.tv.to(Cons, "tail").αset()
 				}
 			})(e)
 			new BwdSlice(e)
@@ -315,7 +315,7 @@ describe("example", () => {
 			// needing first cons cell of output needs same amount of input lists
 			new (class extends BwdSlice {
 				setup (): void {
-					this.tv.need()
+					this.tv.setα()
 				}
 				expect (): void {
 					this.expr
@@ -335,7 +335,7 @@ describe("example", () => {
 			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
 			new (class extends BwdSlice {
 				setup (): void {
-					this.tv.to(Cons, "head").need()
+					this.tv.to(Cons, "head").setα()
 				}
 				expect (): void {
 					this.expr

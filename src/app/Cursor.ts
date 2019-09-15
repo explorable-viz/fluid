@@ -34,17 +34,17 @@ export class ExplCursor {
       return this.at(C, v => assert(pred(v)))
    }
 
-   needed (): this {
+   αset (): this {
       assert(annotated(this.tv.t) && this.tv.t.__α === ann.top)
       return this
    }
 
-   notNeeded(): this {
+   αclear (): this {
       assert(annotated(this.tv.t) && this.tv.t.__α === ann.bot)
       return this
    }
 
-   need (): this {
+   setα (): this {
       if (annotated(this.tv.t)) {
          setα(ann.top, this.tv.t)
       } else {
@@ -53,7 +53,7 @@ export class ExplCursor {
       return this
    }
 
-   notNeed(): this {
+   clearα (): this {
       if (annotated(this.tv.t)) {
          setα(ann.bot, this.tv.t)
       } else {
