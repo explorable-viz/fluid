@@ -148,21 +148,17 @@ export namespace Expl {
       return at(ν(), Var, x, t)
    }
 
-   // Consolidate; perhaps syntactically unify all these "tail-call" forms?
+   // Should probably do a better job of restricting k to be a bona fide field name.
    export function explChild<T extends DataValue> (t: Expl, v: DataValue, k: keyof T): ExplValue {
       if (t instanceof DataExpl) {
          return explValue(t.child(k as string) as Expl, v.child(k as string))
       } else
       if (t instanceof NonTerminal) {
          return explChild(t.t, v, k)
-      } else
-      // Should probably require primitives to returned explained values.
-      if (t instanceof UnaryApp) {
-         return absurd()
-      } else
-      if (t instanceof BinaryApp) {
-         return absurd()
       } else {
+         // Primitive applcations are currently "terminal" forms, which is technically inconsistent with the fact 
+         // that they can return data values; in practice this doesn't matter because they only return values like
+         // True and False, which have no children. Probably primitives should be non-terminal.
          return absurd()
       }
    }
