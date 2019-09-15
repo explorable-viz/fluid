@@ -55,7 +55,7 @@ export class ExplCursor {
 
    notNeed(): this {
       if (annotated(this.tv.t)) {
-         setα(ann.top, this.tv.t)
+         setα(ann.bot, this.tv.t)
       } else {
          assert(false)
       }
