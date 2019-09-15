@@ -14,9 +14,11 @@ export function AnnotatedC<T extends Class<Value>> (C: T) {
    }[C.name] // give versioned class same name as C
 }
 
-export type Annotated<T> = T & {
+export interface Ann {
    __α: Annotation
 }
+
+export type Annotated<T> = T & Ann
 
 export function annotated<T extends Object> (v: T): v is Annotated<T> {
    return v.hasOwnProperty("__α")
@@ -61,11 +63,11 @@ export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T):
    return v
 }
 
-export function joinα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
+export function setjoinα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
    return setα(ann.join(α, v.__α), v)
 }
 
-export function meetα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
+export function setmeetα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
    return setα(ann.meet(α, v.__α), v)
 }
 

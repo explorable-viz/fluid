@@ -1,6 +1,6 @@
 import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
-import { joinα } from "./Annotated"
+import { setjoinα } from "./Annotated"
 import { List, Pair, cons, nil } from "./BaseTypes"
 import { DataValue, ExplValue } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
@@ -140,5 +140,5 @@ export function apply_fwd (ξ: Match<Expr>): Annotation {
 }
 
 export function apply_bwd (ξ: Match<Expr>, α: Annotation): void {
-   ξ.tv̅.toArray().map((tv: ExplValue): Value => joinα(α, tv.t))
+   ξ.tv̅.toArray().map((tv: ExplValue): Value => setjoinα(α, tv.t))
 }
