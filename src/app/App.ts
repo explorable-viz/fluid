@@ -7,7 +7,7 @@ import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
 import  { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
-import { clearMemo } from "../Value"
+import { __delta, clearDelta, clearMemo } from "../Value"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 // As with the test cases, we treat the dataset ρ as "external" data, meaning we push slicing
@@ -45,6 +45,8 @@ export class View implements Slicer {
 
    bwdSlice (): void {
       Eval.eval_bwd(this.e, this.tv)
+      clearDelta()
+      console.log(__delta.size)
       this.direction = Direction.Bwd
       this.coordinator.onBwd()
       this.draw()

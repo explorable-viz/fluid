@@ -139,7 +139,8 @@ export class GraphicsRenderer {
    pointHighlights (tp̅: ExplValueCursor/*<List<Point>>*/): void {
       for (; Cons.is(as(tp̅.tv.v, List)); tp̅ = tp̅.to(Cons, "tail")) {
          // TODO: annotation on point itself is not considered yet
-         this.xyHighlight(tp̅.to(Point, "x"), tp̅.to(Point, "y"))
+         const p: ExplValueCursor/*<Point>*/ = tp̅.to(Cons, "head")
+         this.xyHighlight(p.to(Point, "x"), p.to(Point, "y"))
       }
    }
 
