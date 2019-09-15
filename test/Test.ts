@@ -191,12 +191,12 @@ describe("example", () => {
             .skipImports()
             .to(Expr.Defs, "e")
             .to(Expr.App, "e")
-            .constrArg("NonEmpty", 0)
-            .constrArg("NonEmpty", 1)
-            .constrArg("Pair", 0)
       new (class extends FwdSlice {
             setup (): void {
-               here.clearα()
+					here
+						.constrArg("NonEmpty", 0)
+						.constrArg("NonEmpty", 1)
+						.constrArg("Pair", 0).clearα()
             }
             expect (): void {
                this.tv.to(Some, "t").assert(Str, str => str.toString() === `"sarah"`)

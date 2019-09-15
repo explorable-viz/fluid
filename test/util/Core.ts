@@ -5,7 +5,7 @@ import { ExplValue } from "../../src/DataValue"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
-import { __delta, clearDelta, clearMemo } from "../../src/Value"
+import { clearDelta, clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
 import { Cursor, ExplCursor } from "../../src/app/Cursor"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
@@ -30,7 +30,6 @@ export class FwdSlice {
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
          this.tv = new ExplCursor(tv)
-         console.log(__delta)
          this.expect()
       }
       console.log(e)
