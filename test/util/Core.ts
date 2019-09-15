@@ -15,17 +15,14 @@ import "../../src/app/GraphicsRenderer" // for graphics primitives
 // lacks source code).
 
 export class FwdSlice {
-   expr: Cursor
-
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       clearMemo()
       setallα(ann.top, e)
       setallα(ann.top, ρ)
-      this.expr = new Cursor(e)
       const tv: ExplValue = Eval.eval_(ρ, e)
       Eval.eval_fwd(e, tv) // slice with full availability first to compute delta
       clearDelta()
-      this.setup()
+      this.setup(new Cursor(e))
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
          this.expect(new ExplCursor(tv))
@@ -34,7 +31,7 @@ export class FwdSlice {
       console.log(tv)
    }
 
-   setup (): void {
+   setup (here: Cursor): void {
    }
 
    expect (here: ExplCursor): void {

@@ -21,13 +21,13 @@ describe("example", () => {
       it("ok", () => {
          const e: Expr = open("arithmetic")
          new (class extends FwdSlice {
-            setup (): void {
-               this.expr
+            setup (here: Cursor): void {
+               here
                   .skipImports()
                   .to(Expr.BinaryApp, "e1").clearα()
             }
-            expect (tv: ExplCursor): void {
-               tv.αclear()
+            expect (here: ExplCursor): void {
+               here.αclear()
             } 
          })(e)
          new BwdSlice(e)
@@ -39,7 +39,7 @@ describe("example", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
                e: Expr = openWithImports("bar-chart", [module_graphics])
          new (class extends FwdSlice {
-            setup (): void {
+            setup (_: Cursor): void {
                const here: ExplCursor = new ExplCursor(ρ.tv)
                here.to(Cons, "head")
                    .to(Pair, "snd")
@@ -104,8 +104,8 @@ describe("example", () => {
       it("ok", () => {
          const e: Expr = open("filter")
          new (class extends FwdSlice {
-            setup (): void {
-               this.expr
+            setup (here: Cursor): void {
+               here
                   .toDef("filter")
                   .to(Expr.RecDef, "σ")
                   .var_("p")
@@ -143,7 +143,7 @@ describe("example", () => {
                here: Cursor = new Cursor(e).skipImports().to(Expr.App, "e")
          // erasing the elements doesn't affect the count:
          new (class extends FwdSlice {
-            setup (): void {
+            setup (_: Cursor): void {
                here.constrArg("Cons", 0).clearα()
                here.constrArg("Cons", 1).constrArg("Cons", 0).clearα()
             }
@@ -153,7 +153,7 @@ describe("example", () => {
          })(e)
          // deleting the tail of the tail means length can't be computed:
          new (class extends FwdSlice {
-            setup (): void {
+            setup (_: Cursor): void {
                here.constrArg("Cons", 1).clearα()
             }
             expect (here: ExplCursor): void {
@@ -192,7 +192,7 @@ describe("example", () => {
             .to(Expr.Defs, "e")
             .to(Expr.App, "e")
 	      new (class extends FwdSlice {
-            setup (): void {
+            setup (_: Cursor): void {
 					here
 						.constrArg("NonEmpty", 0)
 						.constrArg("NonEmpty", 1)
@@ -204,7 +204,7 @@ describe("example", () => {
             }
          })(e)
          new (class extends FwdSlice {
-            setup (): void {
+            setup (_: Cursor): void {
                here
                   .constrArg("NonEmpty", 1)
                   .constrArg("Pair", 0).clearα()
@@ -221,8 +221,8 @@ describe("example", () => {
       it("ok", () => {
          const e: Expr = open("map")
          new (class extends FwdSlice {
-            setup (): void {
-               this.expr
+            setup (here: Cursor): void {
+               here
                   .skipImports()
                   .to(Expr.Defs, "e")
                   .to(Expr.App, "e")
@@ -275,12 +275,12 @@ describe("example", () => {
       it("ok", () => {
          const e: Expr = open("reverse")
          new (class extends FwdSlice {
-            setup (): void {
-               this.expr
+            setup (here: Cursor): void {
+               here
                   .skipImports()
-                   .to(Expr.App, "e")
-                   .constrArg("Cons", 1)
-                   .constrArg("Cons", 1).clearα()
+                  .to(Expr.App, "e")
+                  .constrArg("Cons", 1)
+                  .constrArg("Cons", 1).clearα()
             }
             expect (here: ExplCursor): void {
                here.αclear()
