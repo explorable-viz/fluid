@@ -21,7 +21,7 @@
 
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
-| October | **Wrattler integration** | [193](https://github.com/rolyp/lambdacalc/issues/193), [55](https://github.com/rolyp/lambdacalc/issues/55) |
+| October | **Read data from another Wrattler cell** | [193](https://github.com/rolyp/lambdacalc/issues/193), [55](https://github.com/rolyp/lambdacalc/issues/55) |
 | November | **Higher-level graphics primitives** to eliminate spurious layout-related dependencies and improve performance | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) |
 
 ### Possible submissions
