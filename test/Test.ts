@@ -7,7 +7,7 @@ import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
 import { module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
-import { ExplCursor } from "..//src/app/Cursor"
+import { Cursor, ExplCursor } from "..//src/app/Cursor"
 
 import Trie = Expr.Trie
 
@@ -24,7 +24,7 @@ describe("example", () => {
 				setup (): void {
 					this.expr
 						.skipImports()
-						.to(Expr.BinaryApp, "e1").notNeed()
+						.to(Expr.BinaryApp, "e1").clearα()
 				}
 				expect (): void {
                this.tv.αclear()
@@ -40,8 +40,8 @@ describe("example", () => {
 			      e: Expr = openWithImports("bar-chart", [module_graphics])
 			new (class extends FwdSlice {
             setup (): void {
-               const data: ExplCursor = new ExplCursor(ρ.tv)
-               data.to(Cons, "head")
+               const here: ExplCursor = new ExplCursor(ρ.tv)
+               here.to(Cons, "head")
                    .to(Pair, "snd")
                    .to(Cons, "head")
                    .to(Pair, "snd")
@@ -49,7 +49,7 @@ describe("example", () => {
                    .to(Pair, "snd").clearα()
             }
             expect (): void {
-					const p̅: ExplCursor = this.tv
+					const here: ExplCursor = this.tv
 						.to(Graphic, "gs")
                   .to(Cons, "head")
                   .to(Graphic, "gs")
@@ -69,8 +69,8 @@ describe("example", () => {
                   .to(Polygon, "points")
                   .to(Cons, "tail")
 						.to(Cons, "tail")
-					p̅.to(Cons, "head").to(Point, "y").αclear()
-					p̅.to(Cons, "tail").to(Cons, "head").to(Point, "y").αclear()
+					here.to(Cons, "head").to(Point, "y").αclear()
+					here.to(Cons, "tail").to(Cons, "head").to(Point, "y").αclear()
             }
          })(e, ρ)
 			new (class extends BwdSlice {
@@ -78,7 +78,7 @@ describe("example", () => {
 					this.tv.setα()
 				}
 				expect (): void {
-					this.expr.needed()
+					this.expr.αset()
 				}
 			})(e, ρ)
 		})
@@ -117,7 +117,7 @@ describe("example", () => {
 						.to(Expr.MatchAs, "σ")
 						.to(Trie.Constr, "cases")
 						.nodeValue()
-						.constrArg("Cons", 0).notNeed()
+						.constrArg("Cons", 0).clearα()
 				}
 				expect (): void {
 					this.tv.αset()
@@ -143,11 +143,9 @@ describe("example", () => {
 			// erasing the elements doesn't affect the count:
 			let test = new (class extends FwdSlice {
 				setup (): void {
-					this.expr
-						.skipImports()
-						.to(Expr.App, "e")
-						.push().constrArg("Cons", 0).notNeed().pop()
-						.push().constrArg("Cons", 0).notNeed().pop()
+					const here: Cursor = this.expr.skipImports().to(Expr.App, "e")
+					here.constrArg("Cons", 0).clearα()
+					here.constrArg("Cons", 1).constrArg("Cons", 0).clearα()
 				}
 				expect (): void {
                this.tv.αset()
@@ -156,9 +154,7 @@ describe("example", () => {
 			// deleting the tail of the tail means length can't be computed:
 			new (class extends FwdSlice {
 				setup (): void {
-					this.expr
-						.goto(test.e)
-						.constrArg("Cons", 1).notNeed()
+					new Cursor(test.e).constrArg("Cons", 1).clearα()
 				}
 				expect (): void {
                this.tv.αclear()
@@ -170,13 +166,11 @@ describe("example", () => {
                this.tv.setα()
 				}
 				expect (): void {
-					this.expr
-						.skipImports()
-						.to(Expr.App, "e").needed()
-						.push().constrArg("Cons", 0).notNeeded().pop()
-						.constrArg("Cons", 1).needed()
-						.push().constrArg("Cons", 0).notNeeded().pop()
-						.constrArg("Cons", 1).needed()
+					let here: Cursor = this.expr.skipImports().to(Expr.App, "e").αset()
+					here.constrArg("Cons", 0).αclear()
+					here = here.constrArg("Cons", 1).αset()
+					here.constrArg("Cons", 0).αclear()
+					here.constrArg("Cons", 1).αset()
 				}
 			})(e)
 		})
@@ -199,10 +193,9 @@ describe("example", () => {
 						.skipImports()
 						.to(Expr.Defs, "e")
 						.to(Expr.App, "e")
-						.push()
-							.constrArg("NonEmpty", 0)
-							.constrArg("NonEmpty", 1)
-							.constrArg("Pair", 0).notNeed().pop()
+						.constrArg("NonEmpty", 0)
+						.constrArg("NonEmpty", 1)
+						.constrArg("Pair", 0).clearα()
 				}
 				expect (): void {
 					this.tv.to(Some, "t").assert(Str, str => str.toString() === `"sarah"`)
@@ -211,10 +204,9 @@ describe("example", () => {
 			})(e)
 			new (class extends FwdSlice {
 				setup (): void {
-					this.expr
-						.goto(last.e)
+					new Cursor(last.e)
 						.constrArg("NonEmpty", 1)
-						.constrArg("Pair", 0).notNeed()
+						.constrArg("Pair", 0).clearα()
 				}
 				expect (): void {
                this.tv.αclear()
@@ -233,7 +225,7 @@ describe("example", () => {
 						.skipImports()
 						.to(Expr.Defs, "e")
 					 	.to(Expr.App, "e")
-						.constrArg("Cons", 0).notNeed()
+						.constrArg("Cons", 0).clearα()
 				  }
 				expect (): void {
 					this.tv.to(Cons, "head").αclear()
@@ -262,10 +254,9 @@ describe("example", () => {
 					this.tv.to(Pair, "fst").setα()
 				}
 				expect (): void {
-					this.expr
-                  .skipImports()
-                  .push().toDef("x").to(Expr.Let, "e").needed().pop()
-						.toDef("y").to(Expr.Let, "e").needed()
+					const here: Cursor = this.expr.skipImports()
+               here.toDef("x").to(Expr.Let, "e").αset()
+					here.toDef("y").to(Expr.Let, "e").αset()
 				}
 			})(e)
 		})
@@ -288,7 +279,7 @@ describe("example", () => {
 						.skipImports()
  						.to(Expr.App, "e")
  						.constrArg("Cons", 1)
- 						.constrArg("Cons", 1).notNeed()
+ 						.constrArg("Cons", 1).clearα()
 				}
 				expect (): void {
 					this.tv.αclear()
@@ -318,18 +309,11 @@ describe("example", () => {
 					this.tv.setα()
 				}
 				expect (): void {
-					this.expr
-						.push()
-                     .toDef("zipW").needed()
-							.to(Expr.RecDef, "σ")
-							.var_("op").needed()
-							.pop()
-						.skipImports()
-						.push()
-							.to(Expr.App, "e").needed().pop()
-						.push()
-							.to(Expr.App, "f")
-						  	.to(Expr.App, "e").needed().pop()
+					let here: Cursor = this.expr
+					here.toDef("zipW").αset().to(Expr.RecDef, "σ").var_("op").αset()
+					here = here.skipImports()
+					here.to(Expr.App, "e").αset()
+					here.to(Expr.App, "f").to(Expr.App, "e").αset()
 				}
 			})(e)
 			// needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
@@ -338,27 +322,28 @@ describe("example", () => {
 					this.tv.to(Cons, "head").setα()
 				}
 				expect (): void {
-					this.expr
-						.push()
-							.toDef("zipW")
-							.to(Expr.RecDef, "σ")
-							.var_("op")
-							.to(Expr.Fun, "σ")
-							.to(Trie.Constr, "cases")
-							.push().nodeValue().notNeeded().pop() // body of outer Nil clause
-							.to(NonEmpty, "left")
-							.nodeValue()			 
-							.var_("x").var_("xs").notNeeded()
-							.to(Expr.Fun, "σ")
-							.to(Trie.Constr, "cases")
-							.to(NonEmpty, "left")
-							.nodeValue()			 
-							.var_("y").var_("ys").notNeeded() // cons constructor
-							.constrArg("Cons", 0).needed() // application of op
-							.to(Expr.App, "e").needed()  // pair constructor
-							.push().constrArg("Pair", 0).notNeeded().pop()
-							.push().constrArg("Pair", 1).notNeeded().pop()
-							.pop()
+					const here: Cursor = this.expr
+					let hereʹ: Cursor = here
+						.toDef("zipW")
+						.to(Expr.RecDef, "σ")
+						.var_("op")
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+					hereʹ.nodeValue().αclear() // body of outer Nil clause
+					hereʹ = hereʹ
+						.to(NonEmpty, "left")
+						.nodeValue()			 
+						.var_("x").var_("xs").αclear()
+						.to(Expr.Fun, "σ")
+						.to(Trie.Constr, "cases")
+						.to(NonEmpty, "left")
+						.nodeValue()			 
+						.var_("y").var_("ys").αclear() // cons constructor
+						.constrArg("Cons", 0).αset() // application of op
+						.to(Expr.App, "e").αset()  // pair constructor
+					hereʹ.constrArg("Pair", 0).αclear()
+					hereʹ.constrArg("Pair", 1).αclear()
+					here
 						.skipImports()
 						.to(Expr.App, "f")
 						.to(Expr.App, "f")
@@ -366,7 +351,7 @@ describe("example", () => {
 						.to(Expr.Fun, "σ")
 						.to(Trie.Constr, "cases")
 						.nodeValue()
-						.var_("x").var_("y").needed()
+						.var_("x").var_("y").αset()
 				}
 			})(e)
 		})

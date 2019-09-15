@@ -64,16 +64,10 @@ export class ExplCursor {
 }
 
 export class Cursor {
-   prev: Value[] = []
-   v: Value
+   readonly v: Value
 
    constructor (v: Value) {
-      this.goto(v)
-   }
-
-   goto (v: Value): Cursor {
       this.v = v
-      return this
    }
 
    skipImport (): Cursor {
@@ -87,8 +81,7 @@ export class Cursor {
    // No way to specify only "own" properties statically.
    to<T extends Value> (C: Class<T>, prop: keyof T): Cursor {
       const vʹ: T[keyof T] = as<Persistent, T>(this.v, C)[prop] // TypeScript nonsense
-      this.v = vʹ as any as Value
-      return this
+      return new Cursor(vʹ as any)
    }
 
    static defs (defs: List<Def>): Map<string, Let | Prim | RecDef> {
@@ -111,10 +104,10 @@ export class Cursor {
    }
 
    toDef (x: string): Cursor {
-      this.to(Expr.Defs, "def̅")
-      const defs: Map<string, Let | Prim | RecDef> = Cursor.defs(this.v as List<Def>)
+      const here: Cursor = this.to(Expr.Defs, "def̅"),
+            defs: Map<string, Let | Prim | RecDef> = Cursor.defs(here.v as List<Def>)
       assert(defs.has(x), `No definition of "${x}" found.`)
-      return this.goto(defs.get(x)!)
+      return new Cursor(defs.get(x)!)
    }
 
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor {
@@ -126,17 +119,17 @@ export class Cursor {
       return this.at(C, v => assert(pred(v)))
    }
 
-   needed (): Cursor {
+   αset (): Cursor {
       assert(annotated(this.v) && this.v.__α === ann.top)
       return this
    }
 
-   notNeeded (): Cursor {
+   αclear (): Cursor {
       assert(annotated(this.v) && this.v.__α === ann.bot)
       return this
    }
 
-   need (): Cursor {
+   setα (): Cursor {
       if (annotated(this.v)) {
          setα(ann.top, this.v)
       } else {
@@ -145,26 +138,11 @@ export class Cursor {
       return this
    }
 
-   notNeed (): Cursor {
+   clearα (): Cursor {
       if (annotated(this.v)) {
          setα(ann.bot, this.v)
       } else {
          assert(false)
-      }
-      return this
-   }
-
-   push (): Cursor {
-      this.prev.push(this.v)
-      return this
-   }
-
-   pop (): Cursor {
-      const v: Value | undefined = this.prev.pop()
-      if (v === undefined) {
-         return absurd()
-      } else {
-         this.v = v
       }
       return this
    }
