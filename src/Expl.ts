@@ -156,9 +156,9 @@ export namespace Expl {
       if (t instanceof NonTerminal) {
          return explChild(t.t, v, k)
       } else {
-         // Primitive applcations are currently "terminal" forms, which is technically inconsistent with the fact 
-         // that they can return data values; in practice this doesn't matter because they only return values like
-         // True and False, which have no children. Probably primitives should be non-terminal.
+         // Primitive applications are currently "terminal" forms, which is technically inconsistent with the fact 
+         // that they can return structured data. In practice this doesn't matter because they only return values 
+         // like True and False, which have no children. Probably primitives should be non-terminal.
          return absurd()
       }
    }

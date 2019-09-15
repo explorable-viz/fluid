@@ -71,7 +71,7 @@ export class GraphicsRenderer {
    }
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
-      const g: GraphicsElement = as(tg.tv.v, Graphic)
+      const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
       if (g instanceof Graphic) {
          this.group(tg)
       } else 
@@ -144,7 +144,7 @@ export class GraphicsRenderer {
    }
 
    xyHighlight (tx: ExplValueCursor/*<Num>*/, ty: ExplValueCursor/*<Num>*/): void {
-      const [x_α, y_α] = [__nonNull(tx.tv.t.__α), __nonNull(ty.tv.t.__α)]
+      const [x_α, y_α] = [__nonNull(tx.tv.t).__α, __nonNull(ty.tv.t).__α]
       let α: Annotation = ann.meet(x_α, y_α)
       if (this.slicer.direction === Direction.Fwd) {
          α = ann.negate(α)
