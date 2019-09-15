@@ -44,7 +44,7 @@ export abstract class Cursor {
    }
 }
 
-export class ExplCursor extends Cursor {
+export class ExplValueCursor extends Cursor {
    readonly tv: ExplValue
 
    constructor (tv: ExplValue) {
@@ -56,8 +56,8 @@ export class ExplCursor extends Cursor {
       return this.tv.t
    }
 
-   to<T extends DataValue> (C: Class<T>, k: keyof T): ExplCursor {
-      return new ExplCursor(Expl.explChild(this.tv.t, as(this.tv.v, DataValue), k))
+   to<T extends DataValue> (C: Class<T>, k: keyof T): ExplValueCursor {
+      return new ExplValueCursor(Expl.explChild(this.tv.t, as(this.tv.v, DataValue), k))
    }
 
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): this {

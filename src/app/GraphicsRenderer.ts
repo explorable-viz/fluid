@@ -7,7 +7,7 @@ import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Num, Str } from "../Value"
-import { ExplCursor } from "../app/Cursor"
+import { ExplValueCursor } from "../app/Cursor"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
@@ -67,10 +67,10 @@ export class GraphicsRenderer {
       while (this.current.firstChild !== null) {
          this.current.removeChild(this.current.firstChild)
       }
-      this.renderElement(new ExplCursor(tg))
+      this.renderElement(new ExplValueCursor(tg))
    }
 
-   renderElement (tg: ExplCursor/*<GraphicsElement>*/): void {
+   renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
       const g: GraphicsElement = as(tg.tv.v, Graphic)
       if (g instanceof Graphic) {
          this.group(tg)
@@ -92,23 +92,23 @@ export class GraphicsRenderer {
       }
    }
 
-   group (tg: ExplCursor/*<Graphic>*/): void {
+   group (tg: ExplValueCursor/*<Graphic>*/): void {
       const group: SVGGElement = document.createElementNS(svgNS, "g")
       // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
       group.setAttribute("pointer-events", "bounding-box")
       this.current.appendChild(group)
       this.ancestors.push(group)
       // ignoring annotations on cons cells
-      for (let tg̅: ExplCursor/*<List<GraphicsElement>>*/ = tg.to(Graphic, "gs"); 
+      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Graphic, "gs"); 
            Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
          this.renderElement(tg̅.to(Cons, "head"))
       }
       this.ancestors.pop()
    }
 
-   translate (tg: ExplCursor/*<Translate>*/): void {
+   translate (tg: ExplValueCursor/*<Translate>*/): void {
       const g: Translate = as(tg.tv.v, Translate),
-            tgʹ: ExplCursor/*<GraphicsElement>*/ = tg.to(Translate, "g"), 
+            tgʹ: ExplValueCursor/*<GraphicsElement>*/ = tg.to(Translate, "g"), 
             f: TransformFun = translate(g.x.val, g.y.val)
       const transform: TransformFun = this.transform
       this.transforms.push(postcompose(transform, f))
@@ -124,7 +124,7 @@ export class GraphicsRenderer {
       return this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
    }
 
-   polyline (tg: ExplCursor/*<Polyline>*/): void {
+   polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const path: SVGPolylineElement = document.createElementNS(svgNS, "polyline")
       path.setAttribute("points", this.points(as(tg.tv.v, Polyline).points))
       path.setAttribute("stroke", "black")
@@ -136,14 +136,14 @@ export class GraphicsRenderer {
       this.pointHighlights(tg.to(Polyline, "points"))
    }
 
-   pointHighlights (tp̅: ExplCursor/*<List<Point>>*/): void {
+   pointHighlights (tp̅: ExplValueCursor/*<List<Point>>*/): void {
       for (; Cons.is(as(tp̅.tv.v, List)); tp̅ = tp̅.to(Cons, "tail")) {
          // TODO: annotation on point itself is not considered yet
          this.xyHighlight(tp̅.to(Point, "x"), tp̅.to(Point, "y"))
       }
    }
 
-   xyHighlight (tx: ExplCursor/*<Num>*/, ty: ExplCursor/*<Num>*/): void {
+   xyHighlight (tx: ExplValueCursor/*<Num>*/, ty: ExplValueCursor/*<Num>*/): void {
       const [x_α, y_α] = [__nonNull(tx.tv.t.__α), __nonNull(ty.tv.t.__α)]
       let α: Annotation = ann.meet(x_α, y_α)
       if (this.slicer.direction === Direction.Fwd) {
@@ -165,7 +165,7 @@ export class GraphicsRenderer {
       this.current.appendChild(circle)
    }
 
-   polygon (tg: ExplCursor/*<Polygon>*/): void {
+   polygon (tg: ExplValueCursor/*<Polygon>*/): void {
       const polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon"),
             g: Polygon = as(tg.tv.v, Polygon)
       polygon.setAttribute("points", this.points(g.points))
@@ -175,9 +175,9 @@ export class GraphicsRenderer {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
          // set annotations only on _points_, not list containing them or polygon itself
-         for (let tp̅: ExplCursor/*<List<Point>>*/ = tg.to(Polygon, "points"); 
+         for (let tp̅: ExplValueCursor/*<List<Point>>*/ = tg.to(Polygon, "points"); 
               Cons.is(as(tp̅.tv.v, List)); tp̅ = tp̅.to(Cons, "tail")) {
-            const tp: ExplCursor/*<Point>*/ = tp̅.to(Cons, "head")
+            const tp: ExplValueCursor/*<Point>*/ = tp̅.to(Cons, "head")
             setα(ann.top, tp.tv.t)
             setα(ann.top, tp.to(Point, "x").tv.t)
             setα(ann.top, tp.to(Point, "y").tv.t)
@@ -190,7 +190,7 @@ export class GraphicsRenderer {
 
    // Flip text vertically to cancel out the global vertical flip. Don't set x and y but express
    // position through a translation so that the scaling doesn't affect the position.
-   text (tg: ExplCursor/*<Text>*/): void {
+   text (tg: ExplValueCursor/*<Text>*/): void {
       const g: Text = as(tg.tv.v, Text),
             [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
             text: SVGTextElement = textElement(x, y, g.str.val)

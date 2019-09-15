@@ -7,7 +7,7 @@ import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
 import { clearDelta, clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
-import { ExprCursor, ExplCursor } from "../../src/app/Cursor"
+import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
 
 // Key idea here is that we never push slicing further back than ρ (since ρ could potentially
@@ -25,7 +25,7 @@ export class FwdSlice {
       this.setup(new ExprCursor(e))
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
-         this.expect(new ExplCursor(tv))
+         this.expect(new ExplValueCursor(tv))
       }
       console.log(e)
       console.log(tv)
@@ -34,7 +34,7 @@ export class FwdSlice {
    setup (here: ExprCursor): void {
    }
 
-   expect (here: ExplCursor): void {
+   expect (here: ExplValueCursor): void {
    }
 }
 
@@ -49,14 +49,14 @@ export class BwdSlice {
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
          clearDelta()
-         this.setup(new ExplCursor(tv))
+         this.setup(new ExplValueCursor(tv))
          Eval.eval_bwd(e, tv)
          this.expr = new ExprCursor(e)
          this.expect()
       }
    }
 
-   setup (here: ExplCursor): void {
+   setup (here: ExplValueCursor): void {
    }
 
    expect (): void {      

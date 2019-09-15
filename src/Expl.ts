@@ -17,7 +17,11 @@ export namespace Expl {
    export abstract class Expl extends AnnotatedC(DataValue)<"Expl"> {
    }
 
-   export class App extends Expl {
+   export abstract class NonTerminal extends Expl {
+      abstract t: Expl
+   }
+
+   export class App extends NonTerminal {
       tf: ExplValue<Closure> = _
       tu: ExplValue = _
       δ: List<RecDef> = _ // additional recursive functions bound at this step
@@ -93,7 +97,7 @@ export namespace Expl {
       return at(ν(), LetRec, δ)
    }
 
-   export class Defs extends Expl {
+   export class Defs extends NonTerminal {
       def̅: List<Def> = _
       t: Expl = _
    }
@@ -109,7 +113,7 @@ export namespace Expl {
       return at(ν(), Const)
    }
 
-   export class MatchAs extends Expl {
+   export class MatchAs extends NonTerminal {
       tu: ExplValue = _
       ξ: Match<Expr> = _
       t: Expl = _
@@ -126,7 +130,7 @@ export namespace Expl {
       return at(ν(), Quote)
    }
 
-   export class Typematch extends Expl {
+   export class Typematch extends NonTerminal {
       tu: ExplValue = _
       d: Str = _
       t: Expl = _
@@ -136,7 +140,7 @@ export namespace Expl {
       return at(ν(), Typematch, tu, d, t)
    }
 
-   export class Var extends Expl {
+   export class Var extends NonTerminal {
       x: Str = _
       t: Expl = _
    }
@@ -150,20 +154,7 @@ export namespace Expl {
       if (t instanceof DataExpl) {
          return explValue(t.child(k as string) as Expl, v.child(k as string))
       } else
-      if (t instanceof Defs) {
-         return explChild(t.t, v, k)
-      } else
-      if (t instanceof MatchAs) {
-         return explChild(t.t, v, k)
-      } else
-      if (t instanceof Typematch) {
-         assert(v === t.t)
-         return explChild(t.t, v, k)
-      } else
-      if (t instanceof Var) {
-         return explChild(t.t, v, k)
-      } else
-      if (t instanceof App) {
+      if (t instanceof NonTerminal) {
          return explChild(t.t, v, k)
       } else
       // Should probably require primitives to returned explained values.
@@ -181,19 +172,7 @@ export namespace Expl {
       if (t instanceof DataExpl) {
          return zipWith(explValue)(t.children(), v.children())
       } else 
-      if (t instanceof Defs) {
-         return explChildren(t.t, v)
-      } else
-      if (t instanceof MatchAs) {
-         return explChildren(t.t, v)
-      } else
-      if (t instanceof Typematch) {
-         return explChildren(t.t, v)
-      } else
-      if (t instanceof Var) {
-         return explChildren(t.t, v)
-      } else
-      if (t instanceof App) {
+      if (t instanceof NonTerminal) {
          return explChildren(t.t, v)
       } else
       // Should probably require primitives to returned explained values.

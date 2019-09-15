@@ -7,7 +7,7 @@ import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
 import { module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
-import { ExprCursor, ExplCursor } from "..//src/app/Cursor"
+import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
 
 import Trie = Expr.Trie
 
@@ -26,7 +26,7 @@ describe("example", () => {
                   .skipImports()
                   .to(Expr.BinaryApp, "e1").clearα()
             }
-            expect (here: ExplCursor): void {
+            expect (here: ExplValueCursor): void {
                here.αclear()
             } 
          })(e)
@@ -40,7 +40,7 @@ describe("example", () => {
                e: Expr = openWithImports("bar-chart", [module_graphics])
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
-               const here: ExplCursor = new ExplCursor(ρ.tv)
+               const here: ExplValueCursor = new ExplValueCursor(ρ.tv)
                here.to(Cons, "head")
                    .to(Pair, "snd")
                    .to(Cons, "head")
@@ -48,7 +48,7 @@ describe("example", () => {
                    .to(Cons, "head")
                    .to(Pair, "snd").clearα()
             }
-            expect (here: ExplCursor): void {
+            expect (here: ExplValueCursor): void {
 					const hereʹ = here
                   .to(Graphic, "gs")
                   .to(Cons, "head")
@@ -74,7 +74,7 @@ describe("example", () => {
             }
          })(e, ρ)
          new (class extends BwdSlice {
-            setup (here: ExplCursor): void {
+            setup (here: ExplValueCursor): void {
                here.setα()
             }
             expect (): void {
@@ -119,7 +119,7 @@ describe("example", () => {
                   .nodeValue()
                   .constrArg("Cons", 0).clearα()
             }
-            expect (here: ExplCursor): void {
+            expect (here: ExplValueCursor): void {
                here.αset()
                here.to(Cons, "head").αclear()
                here.to(Cons, "tail").assert(List, v => Nil.is(v))
@@ -147,7 +147,7 @@ describe("example", () => {
                here.constrArg("Cons", 0).clearα()
                here.constrArg("Cons", 1).constrArg("Cons", 0).clearα()
             }
-            expect (here: ExplCursor): void {
+            expect (here: ExplValueCursor): void {
                here.αset()
             }
          })(e)
@@ -156,13 +156,13 @@ describe("example", () => {
             setup (_: ExprCursor): void {
                here.constrArg("Cons", 1).clearα()
             }
-            expect (here: ExplCursor): void {
+            expect (here: ExplValueCursor): void {
                here.αclear()
             }
          })(e)
          // needing the result only needs the cons cells:
          new (class extends BwdSlice {
-            setup (here: ExplCursor): void {
+            setup (here: ExplValueCursor): void {
                here.setα()
             }
             expect (): void {
@@ -198,7 +198,7 @@ describe("example", () => {
 						.constrArg("NonEmpty", 1)
 						.constrArg("Pair", 0).clearα()
             }
-            expect (here: ExplCursor): void {
+            expect (here: ExplValueCursor): void {
                here.to(Some, "t").assert(Str, str => str.toString() === `"sarah"`)
                here.αset()
             }
@@ -209,7 +209,7 @@ describe("example", () => {
                   .constrArg("NonEmpty", 1)
                   .constrArg("Pair", 0).clearα()
             }
-            expect (here: ExplCursor): void {
+            expect (here: ExplValueCursor): void {
                here.αclear()
             }
          })(e)
@@ -228,7 +228,7 @@ describe("example", () => {
                   .to(Expr.App, "e")
                   .constrArg("Cons", 0).clearα()
               }
-            expect (here: ExplCursor): void {
+            expect (here: ExplValueCursor): void {
                here.to(Cons, "head").αclear()
                here.to(Cons, "tail").αset()
             }
@@ -251,7 +251,7 @@ describe("example", () => {
          new FwdSlice(e)
          // retaining either component of pair retains both subcomputations:
          new (class extends BwdSlice {
-            setup (here: ExplCursor): void {
+            setup (here: ExplValueCursor): void {
                here.to(Pair, "fst").setα()
             }
             expect (): void {
@@ -282,7 +282,7 @@ describe("example", () => {
                   .constrArg("Cons", 1)
                   .constrArg("Cons", 1).clearα()
             }
-            expect (here: ExplCursor): void {
+            expect (here: ExplValueCursor): void {
                here.αclear()
                here.to(Cons, "head").αset()
                here.to(Cons, "tail").αset()
@@ -306,7 +306,7 @@ describe("example", () => {
          new FwdSlice(e)
          // needing first cons cell of output needs same amount of input lists
          new (class extends BwdSlice {
-            setup (here: ExplCursor): void {
+            setup (here: ExplValueCursor): void {
                here.setα()
             }
             expect (): void {
@@ -319,7 +319,7 @@ describe("example", () => {
          })(e)
          // needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
          new (class extends BwdSlice {
-            setup (here: ExplCursor): void {
+            setup (here: ExplValueCursor): void {
                here.to(Cons, "head").setα()
             }
             expect (): void {
