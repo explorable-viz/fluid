@@ -2,7 +2,7 @@ import { __nonNull, absurd, as, assert } from "../util/Core"
 import { Annotation, ann } from "../util/Lattice"
 import { num, setα } from "../Annotated"
 import { Cons, List } from "../BaseTypes"
-import { Expl_ } from "../DataValue"
+import { ExplValue } from "../DataValue"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
@@ -62,7 +62,7 @@ export class GraphicsRenderer {
       } 
    }
 
-   render (tg: Expl_<GraphicsElement>): void {
+   render (tg: ExplValue<GraphicsElement>): void {
       assert(this.ancestors.length === 1)
       while (this.current.firstChild !== null) {
          this.current.removeChild(this.current.firstChild)

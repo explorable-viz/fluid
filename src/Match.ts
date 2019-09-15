@@ -2,7 +2,7 @@ import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
 import { joinα } from "./Annotated"
 import { List, Pair, cons, nil } from "./BaseTypes"
-import { DataValue, Expl_ } from "./DataValue"
+import { DataValue, ExplValue } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expl } from "./Expl"
@@ -58,7 +58,7 @@ function evalCont<K extends Cont> (κ: K): RuntimeCont {
 }
 
 // Preorder traversal of all nodes in the matched prefix.
-type MatchPrefix = List<Expl_>
+type MatchPrefix = List<ExplValue>
 
 export class Match<K> extends DataValue<"Match"> {
    tv̅: MatchPrefix = _
@@ -72,15 +72,15 @@ export function match<K extends RuntimeCont> (ξ: MatchPrefix, κ: K): Match<K> 
 // See GitHub issue #128.
 export abstract class Elim<K extends RuntimeCont = RuntimeCont> extends DataValue<"Elim"> {
    // could have called this "match", but conflicts with factory method of same name
-   apply (tv: Expl_): [Env, Match<K>] {
+   apply (tv: ExplValue): [Env, Match<K>] {
       return this.apply_(tv, nil())
    }
 
-   abstract apply_ (tv: Expl_, ξ: MatchPrefix): [Env, Match<K>]
+   abstract apply_ (tv: ExplValue, ξ: MatchPrefix): [Env, Match<K>]
 }
 
 // Parser ensures constructor calls are saturated.
-function matchArgs (κ: RuntimeCont, tv̅: Expl_[], u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
+function matchArgs (κ: RuntimeCont, tv̅: ExplValue[], u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
    if (tv̅.length === 0) {
       return [emptyEnv(), match(u̅, κ)]
    } else {
@@ -99,13 +99,13 @@ function matchArgs (κ: RuntimeCont, tv̅: Expl_[], u̅: MatchPrefix): [Env, Mat
 // No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
 // itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
-   apply_ (tv: Expl_, u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
+   apply_ (tv: ExplValue, u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
       const v: Value = tv.v,
             c: string = className(v)
       if (v instanceof DataValue) {
          const κ: RuntimeCont = (this as any)[c] as RuntimeCont
          if (κ !== undefined) {
-            const tv̅: Expl_[] = Expl.explChildren(tv.t, v),
+            const tv̅: ExplValue[] = Expl.explChildren(tv.t, v),
             [ρ, ξ]: [Env, Match<RuntimeCont>] = matchArgs(κ, tv̅, u̅)
             return [ρ, match(cons(tv, ξ.tv̅), ξ.κ)]
          } else {
@@ -126,7 +126,7 @@ class VarElim extends Elim {
    x: Str = _
    κ: RuntimeCont = _
 
-   apply_ (tv: Expl_, ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
+   apply_ (tv: ExplValue, ξ: MatchPrefix): [Env, Match<RuntimeCont>] {
       return [Env.singleton(this.x, tv), match(ξ, this.κ)]
    }
 }
@@ -136,9 +136,9 @@ function varElim (x: Str, κ: RuntimeCont): VarElim {
 }
 
 export function apply_fwd (ξ: Match<Expr>): Annotation {
-   return ξ.tv̅.toArray().reduce((α: Annotation, tv: Expl_): Annotation => ann.meet(α, tv.t.__α), ann.top)
+   return ξ.tv̅.toArray().reduce((α: Annotation, tv: ExplValue): Annotation => ann.meet(α, tv.t.__α), ann.top)
 }
 
 export function apply_bwd (ξ: Match<Expr>, α: Annotation): void {
-   ξ.tv̅.toArray().map((tv: Expl_): Value => joinα(α, tv.t))
+   ξ.tv̅.toArray().map((tv: ExplValue): Value => joinα(α, tv.t))
 }

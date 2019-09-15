@@ -2,7 +2,7 @@ import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
 import { Annotation, ann } from "../../src/util/Lattice"
 import { Annotated, annotated } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
-import { DataValue, Expl_ } from "../../src/DataValue"
+import { DataValue, ExplValue } from "../../src/DataValue"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
 import { Persistent, Value } from "../../src/Value"
@@ -15,9 +15,9 @@ import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
 export class ExplCursor implements Annotated<ExplCursor> {
-   readonly tv: Expl_
+   readonly tv: ExplValue
 
-   constructor (tv: Expl_) {
+   constructor (tv: ExplValue) {
       this.tv = tv
    }
 

@@ -1,7 +1,7 @@
 import { __nonNull } from "../util/Core"
 import { ann } from "../util/Lattice"
 import { setallα, negateallα } from "../Annotated"
-import { Expl_ } from "../DataValue"
+import { ExplValue } from "../DataValue"
 import { Env } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
@@ -16,7 +16,7 @@ export class View implements Slicer {
    name: string
    coordinator: ViewCoordinator
    e: Expr
-   tv: Expl_
+   tv: ExplValue
    view: GraphicsRenderer
    direction: Direction
 
@@ -54,8 +54,8 @@ export class View implements Slicer {
       return this.view.ancestors[0] as SVGSVGElement
    }
 
-   getGraphics (): Expl_<GraphicsElement> {
-      return this.tv as Expl_<GraphicsElement>
+   getGraphics (): ExplValue<GraphicsElement> {
+      return this.tv as ExplValue<GraphicsElement>
    }
 
    draw (): void {

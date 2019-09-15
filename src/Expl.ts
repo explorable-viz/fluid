@@ -2,7 +2,7 @@ import { zipWith } from "./util/Array"
 import { absurd, assert } from "./util/Core"
 import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
-import { DataValue, Expl_, expl } from "./DataValue"
+import { DataValue, ExplValue, explValue } from "./DataValue"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Match } from "./Match"
@@ -18,33 +18,33 @@ export namespace Expl {
    }
 
    export class App extends Expl {
-      tf: Expl_<Closure> = _
-      tu: Expl_ = _
+      tf: ExplValue<Closure> = _
+      tu: ExplValue = _
       δ: List<RecDef> = _ // additional recursive functions bound at this step
       ξ: Match<Expr> = _
-      tv: Expl_ = _
+      t: Expl = _
    }
 
-   export function app (tf: Expl_<Closure>, tu: Expl_, δ: List<RecDef>, ξ: Match<Expr>, tv: Expl_): App {
-      return at(ν(), App, tf, tu, δ, ξ, tv)
+   export function app (tf: ExplValue<Closure>, tu: ExplValue, δ: List<RecDef>, ξ: Match<Expr>, t: Expl): App {
+      return at(ν(), App, tf, tu, δ, ξ, t)
    }
 
    export class UnaryApp extends Expl {
-      tf: Expl_<UnaryOp> = _
-      tv: Expl_<PrimValue> = _
+      tf: ExplValue<UnaryOp> = _
+      tv: ExplValue<PrimValue> = _
    }
 
-   export function unaryApp (tf: Expl_<UnaryOp>, tv: Expl_<PrimValue>): UnaryApp {
+   export function unaryApp (tf: ExplValue<UnaryOp>, tv: ExplValue<PrimValue>): UnaryApp {
       return at(ν(), UnaryApp, tf, tv)
    }
 
    export class BinaryApp extends Expl {
-      tv1: Expl_<PrimValue> = _
+      tv1: ExplValue<PrimValue> = _
       opName: Str = _
-      tv2: Expl_<PrimValue> = _
+      tv2: ExplValue<PrimValue> = _
    }
 
-   export function binaryApp (tv1: Expl_<PrimValue>, opName: Str, tv2: Expl_<PrimValue>): BinaryApp {
+   export function binaryApp (tv1: ExplValue<PrimValue>, opName: Str, tv2: ExplValue<PrimValue>): BinaryApp {
       return at(ν(), BinaryApp, tv1, opName, tv2)
    }
 
@@ -60,28 +60,28 @@ export namespace Expl {
 
    export class Let extends Def {
       x: Str = _
-      tv: Expl_ = _
+      tv: ExplValue = _
    }
 
-   export function let_ (x: Str, tv: Expl_): Let {
+   export function let_ (x: Str, tv: ExplValue): Let {
       return at(ν(), Let, x, tv)
    }
 
    export class Prim extends Def {
       x: Str = _
-      t_op: Expl_<UnaryOp> = _
+      t_op: ExplValue<UnaryOp> = _
    }
 
-   export function prim (x: Str, t_op: Expl_<UnaryOp>): Prim {
+   export function prim (x: Str, t_op: ExplValue<UnaryOp>): Prim {
       return at(ν(), Prim, x, t_op)
    }
 
    export class RecDef extends DataValue<"Expl.RecDef"> {
       x: Str = _
-      tf: Expl_<Closure> = _
+      tf: ExplValue<Closure> = _
    }
 
-   export function recDef (x: Str, tf: Expl_<Closure>): RecDef {
+   export function recDef (x: Str, tf: ExplValue<Closure>): RecDef {
       return at(ν(), RecDef, x, tf)
    }
 
@@ -95,28 +95,28 @@ export namespace Expl {
 
    export class Defs extends Expl {
       def̅: List<Def> = _
-      tv: Expl_ = _
+      t: Expl = _
    }
 
-   export function defs (def̅: List<Def>, tv: Expl_): Defs {
-      return at(ν(), Defs, def̅, tv)
+   export function defs (def̅: List<Def>, t: Expl): Defs {
+      return at(ν(), Defs, def̅, t)
    }
 
-   export class Empty extends Expl {
+   export class Const extends Expl {
    }
 
-   export function empty (): Empty {
-      return at(ν(), Empty)
+   export function const_ (): Const {
+      return at(ν(), Const)
    }
 
    export class MatchAs extends Expl {
-      tu: Expl_ = _
+      tu: ExplValue = _
       ξ: Match<Expr> = _
-      tv: Expl_ = _
+      t: Expl = _
    }
 
-   export function matchAs (tu: Expl_, ξ: Match<Expr>, tv: Expl_): MatchAs {
-      return at(ν(), MatchAs, tu, ξ, tv)
+   export function matchAs (tu: ExplValue, ξ: Match<Expr>, t: Expl): MatchAs {
+      return at(ν(), MatchAs, tu, ξ, t)
    }
 
    export class Quote extends Expl {
@@ -127,48 +127,44 @@ export namespace Expl {
    }
 
    export class Typematch extends Expl {
-      tu: Expl_ = _
+      tu: ExplValue = _
       d: Str = _
-      tv: Expl_ = _
+      t: Expl = _
    }
 
-   export function typematch (tu: Expl_, d: Str, tv: Expl_): Typematch {
-      return at(ν(), Typematch, tu, d, tv)
+   export function typematch (tu: ExplValue, d: Str, t: Expl): Typematch {
+      return at(ν(), Typematch, tu, d, t)
    }
 
    export class Var extends Expl {
       x: Str = _
-      tv: Expl_ = _
+      t: Expl = _
    }
 
-   export function var_ (x: Str, tv: Expl_): Var {
-      return at(ν(), Var, x, tv)
+   export function var_ (x: Str, t: Expl): Var {
+      return at(ν(), Var, x, t)
    }
 
    // Consolidate; perhaps syntactically unify all these "tail-call" forms?
-   export function explChild<T extends DataValue> (t: Expl, v: DataValue, k: keyof T): Expl_ {
+   export function explChild<T extends DataValue> (t: Expl, v: DataValue, k: keyof T): ExplValue {
       if (t instanceof DataExpl) {
-         return expl(t.child(k as string) as Expl, v.child(k as string))
+         return explValue(t.child(k as string) as Expl, v.child(k as string))
       } else
       if (t instanceof Defs) {
-         assert(v === t.tv.v)
-         return explChild(t.tv.t, v, k)
+         return explChild(t.t, v, k)
       } else
       if (t instanceof MatchAs) {
-         assert(v === t.tv.v)
-         return explChild(t.tv.t, v, k)
+         return explChild(t.t, v, k)
       } else
       if (t instanceof Typematch) {
-         assert(v === t.tv.v)
-         return explChild(t.tv.t, v, k)
+         assert(v === t.t)
+         return explChild(t.t, v, k)
       } else
       if (t instanceof Var) {
-         assert(v === t.tv.v)
-         return explChild(t.tv.t, v, k)
+         return explChild(t.t, v, k)
       } else
       if (t instanceof App) {
-         assert(v === t.tv.v)
-         return explChild(t.tv.t, v, k)
+         return explChild(t.t, v, k)
       } else
       // Should probably require primitives to returned explained values.
       if (t instanceof UnaryApp) {
@@ -181,29 +177,24 @@ export namespace Expl {
       }
    }
 
-   export function explChildren (t: Expl, v: DataValue): Expl_[] {
+   export function explChildren (t: Expl, v: DataValue): ExplValue[] {
       if (t instanceof DataExpl) {
-         return zipWith(expl)(t.children(), v.children())
+         return zipWith(explValue)(t.children(), v.children())
       } else 
       if (t instanceof Defs) {
-         assert(v === t.tv.v)
-         return explChildren(t.tv.t, v)
+         return explChildren(t.t, v)
       } else
       if (t instanceof MatchAs) {
-         assert(v === t.tv.v)
-         return explChildren(t.tv.t, v)
+         return explChildren(t.t, v)
       } else
       if (t instanceof Typematch) {
-         assert(v === t.tv.v)
-         return explChildren(t.tv.t, v)
+         return explChildren(t.t, v)
       } else
       if (t instanceof Var) {
-         assert(v === t.tv.v)
-         return explChildren(t.tv.t, v)
+         return explChildren(t.t, v)
       } else
       if (t instanceof App) {
-         assert(v === t.tv.v)
-         return explChildren(t.tv.t, v)
+         return explChildren(t.t, v)
       } else
       // Should probably require primitives to returned explained values.
       if (t instanceof UnaryApp) {

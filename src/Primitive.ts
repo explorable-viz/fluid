@@ -1,7 +1,7 @@
 import { as, assert } from "./util/Core"
 import { num, str } from "./Annotated"
 import { Bool, true_, false_ } from "./BaseTypes"
-import { Expl_, expl } from "./DataValue"
+import { ExplValue, explValue } from "./DataValue"
 import { Expl } from "./Expl"
 import { Num, PrimOpTag, PrimValue, Str, _, Value } from "./Value"
 import { ν, at } from "./Versioned"
@@ -50,16 +50,16 @@ const pow = (x: Num, y: Num): Num => num(as(x, Num).val ** as(y, Num).val)
 const times = (x: Num, y: Num): Num => num(as(x, Num).val * as(y, Num).val)
 
 // Convenience methods for building the maps. Export to allow other modules to provide operations.
-export function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): Expl_<UnaryOp> {
-   return expl(Expl.empty(), at(ν(), UnaryOp, op.name, op))
+export function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): ExplValue<UnaryOp> {
+   return explValue(Expl.const_(), at(ν(), UnaryOp, op.name, op))
 }
 
-export function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): Expl_<BinaryOp> {
-   return expl(Expl.empty(), at(ν(), BinaryOp, op.name, op))
+export function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): ExplValue<BinaryOp> {
+   return explValue(Expl.const_(), at(ν(), BinaryOp, op.name, op))
 }
 
 // Primitives with identifiers as names are unary and first-class.
-export const unaryOps: Map<string, Expl_<UnaryOp>> = new Map([
+export const unaryOps: Map<string, ExplValue<UnaryOp>> = new Map([
    [ceiling.name, unary_(ceiling)],
    [error.name, unary_(error)],
    [floor.name, unary_(floor)],
@@ -68,7 +68,7 @@ export const unaryOps: Map<string, Expl_<UnaryOp>> = new Map([
    [trace.name, unary_(trace)]
 ])
    
-export const binaryOps: Map<string, Expl_<BinaryOp>> = new Map([
+export const binaryOps: Map<string, ExplValue<BinaryOp>> = new Map([
    ["-", binary_(minus)],
    ["+", binary_(plus)],
    ["*", binary_(times)],

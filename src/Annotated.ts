@@ -62,13 +62,11 @@ export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T):
 }
 
 export function joinα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
-   v.__α = ann.join(α, v.__α)
-   return v
+   return setα(ann.join(α, v.__α), v)
 }
 
 export function meetα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
-   v.__α = ann.meet(α, v.__α)
-   return v
+   return setα(ann.meet(α, v.__α), v)
 }
 
 export function num (val: number): Num {

@@ -49,7 +49,7 @@ describe("example", () => {
                    .to(Pair, "snd").notNeed()
             }
             expect (): void {
-					const p̅: ExplCursor/*<List<Point>>*/ = this.tv
+					const p̅: ExplCursor = this.tv
 						.to(Graphic, "gs")
                   .to(Cons, "head")
                   .to(Graphic, "gs")

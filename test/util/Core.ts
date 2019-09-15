@@ -1,7 +1,7 @@
 import { __nonNull, as } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
-import { Expl_ } from "../../src/DataValue"
+import { ExplValue } from "../../src/DataValue"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
@@ -23,7 +23,7 @@ export class FwdSlice {
       setallα(ann.top, e)
       setallα(ann.top, ρ)
       this.expr = new Cursor(e)
-      const tv: Expl_ = Eval.eval_(ρ, e)
+      const tv: ExplValue = Eval.eval_(ρ, e)
       this.setup()
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
@@ -54,7 +54,7 @@ export class BwdSlice {
          clearMemo()
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
-         const tv: Expl_ = Eval.eval_(ρ, e) // to obtain tv
+         const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
          this.tv = new ExplCursor(tv)
          this.setup()

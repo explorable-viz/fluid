@@ -14,11 +14,11 @@ export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Ta
 }
 
 // Here to break cyclic dependency.
-export class Expl_<T extends Value = Value> extends DataValue<"Expl_"> {
+export class ExplValue<T extends Value = Value> extends DataValue<"ExplValue"> {
    t: Expl = _
    v: T = _
 }
 
-export function expl<T extends Value = Value> (t: Expl, v: T): Expl_<T> {
-   return make(Expl_, t, v) as Expl_<T>
+export function explValue<T extends Value = Value> (t: Expl, v: T): ExplValue<T> {
+   return make(ExplValue, t, v) as ExplValue<T>
 }

@@ -4,7 +4,7 @@ import { ann } from "./util/Lattice"
 import { AnnotatedC, joinα, meetα, num, setα, str } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
-import { DataValue, Expl_, expl } from "./DataValue"
+import { DataValue, ExplValue, explValue } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
@@ -15,7 +15,7 @@ import { Id, PrimValue, Num, Str, Value, _ } from "./Value"
 import { ν, at } from "./Versioned"
 
 // Move to more sensible location
-export function dataValue (c: string, tv̅: Expl_[]): DataValue {
+export function dataValue (c: string, tv̅: ExplValue[]): DataValue {
    const d: DataType = __nonNull(ctrToDataType.get(c))
    return at(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
 }
@@ -42,7 +42,7 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
-            tf: Expl_<Closure> = expl(Expl.empty(), closure(ν(), ρ, δ_0, evalTrie(def.σ)))
+            tf: ExplValue<Closure> = explValue(Expl.const_(), closure(ν(), ρ, δ_0, evalTrie(def.σ)))
       return [cons(Expl.recDef(def.x, tf), δₜ), extendEnv(ρ_ext, def.x, tf)]
    } else
    if (Nil.is(δ)) {
@@ -74,14 +74,14 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
-         const tv: Expl_ = eval_(ρ.concat(ρ_ext), def.e),
+         const tv: ExplValue = eval_(ρ.concat(ρ_ext), def.e),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, tv))
          return [cons(Expl.let_(def.x, tv), def̅ₜ), ρ_extʹ]
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currently happen to be unary
          if (unaryOps.has(def.x.val)) {
-            const t_op: Expl_<UnaryOp> = unaryOps.get(def.x.val)!,
+            const t_op: ExplValue<UnaryOp> = unaryOps.get(def.x.val)!,
                   [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, t_op))
             return [cons(Expl.prim(def.x, t_op), def̅ₜ), ρ_extʹ]
          } else {
@@ -137,45 +137,45 @@ function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    })
 }
 
-export function eval_ (ρ: Env, e: Expr): Expl_ {
+export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.ConstNum) {
-      return expl(Expl.empty(), num(e.val.val))
+      return explValue(Expl.const_(), num(e.val.val))
    } else
    if (e instanceof Expr.ConstStr) {
-      return expl(Expl.empty(), str(e.val.val))
+      return explValue(Expl.const_(), str(e.val.val))
    } else
    if (e instanceof Expr.Fun) {
-      return expl(Expl.empty(), closure(ν(), ρ, nil(), evalTrie(e.σ)))
+      return explValue(Expl.const_(), closure(ν(), ρ, nil(), evalTrie(e.σ)))
    } else
    if (e instanceof Expr.Constr) {
-      const tv̅: Expl_[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
+      const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
             c: string = e.ctr.val,
             d: DataType = __nonNull(ctrToDataType.get(c))
-      return expl(at(ν(), d.explC̅.get(c)!, ...tv̅.map(({t}) => t)), dataValue(c, tv̅))
+      return explValue(at(ν(), d.explC̅.get(c)!, ...tv̅.map(({t}) => t)), dataValue(c, tv̅))
    } else
    if (e instanceof Expr.Quote) {
-      return expl(Expl.quote(), e.e)
+      return explValue(Expl.quote(), e.e)
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) {
-         const tv: Expl_ = ρ.get(e.x)!
-         return expl(Expl.var_(e.x, tv), tv.v)
+         const {t, v}: ExplValue = ρ.get(e.x)!
+         return explValue(Expl.var_(e.x, t), v)
       } else {
          return error(`Variable "${e.x.val}" not found.`)
       }
    } else
    if (e instanceof Expr.App) {
-      const [tf, tu]: [Expl_, Expl_] = [eval_(ρ, e.f), eval_(ρ, e.e)],
+      const [tf, tu]: [ExplValue, ExplValue] = [eval_(ρ, e.f), eval_(ρ, e.e)],
             [v, u]: [Value, Value] = [tf.v, tu.v]
       if (v instanceof Closure) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
                [ρʹ, ξκ]: [Env, Match<Expr>] = v.f.apply(tu),
-               tv: Expl_ = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), ξκ.κ)
-         return expl(Expl.app(tf as Expl_<Closure>, tu, δ, ξκ, tv), tv.v)
+               {t, v: vʹ}: ExplValue = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), ξκ.κ)
+         return explValue(Expl.app(tf as ExplValue<Closure>, tu, δ, ξκ, t), vʹ)
       } else 
       if (v instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
-            return expl(Expl.unaryApp(tf as Expl_<UnaryOp>, tu as Expl_<PrimValue>), v.op(u))
+            return explValue(Expl.unaryApp(tf as ExplValue<UnaryOp>, tu as ExplValue<PrimValue>), v.op(u))
          } else {
             return error(`Applying "${v.name}" to non-primitive value.`, u)
          }
@@ -187,10 +187,10 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
    if (e instanceof Expr.BinaryApp) {
       if (binaryOps.has(e.opName.val)) {
          const op: BinaryOp = binaryOps.get(e.opName.val)!.v,
-               [tv1, tv2]: [Expl_, Expl_] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
+               [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
                [v1, v2]: [Value, Value] = [tv1.v, tv2.v]
          if ((v1 instanceof Num || v1 instanceof Str) && (v2 instanceof Num || v2 instanceof Str)) {
-               return expl(Expl.binaryApp(tv1 as Expl_<PrimValue>, e.opName, tv2 as Expl_<PrimValue>), op.op(v1, v2))
+               return explValue(Expl.binaryApp(tv1 as ExplValue<PrimValue>, e.opName, tv2 as ExplValue<PrimValue>), op.op(v1, v2))
          } else {
             return error(`Applying "${e.opName}" to non-primitive value.`, v1, v2)
          }
@@ -200,32 +200,32 @@ export function eval_ (ρ: Env, e: Expr): Expl_ {
    } else
    if (e instanceof Expr.Defs) {
       const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, e.def̅, emptyEnv()),
-            tv: Expl_ = eval_(ρ.concat(ρʹ), e.e)
-      return expl(Expl.defs(def̅ₜ, tv), tv.v)
+            {t, v}: ExplValue = eval_(ρ.concat(ρʹ), e.e)
+      return explValue(Expl.defs(def̅ₜ, t), v)
    } else
    if (e instanceof Expr.MatchAs) {
-      const tu: Expl_ = eval_(ρ, e.e),
+      const tu: ExplValue = eval_(ρ, e.e),
             [ρʹ, ξκ]: [Env, Match<Expr>] = evalTrie(e.σ).apply(tu),
-            tv: Expl_ = eval_(ρ.concat(ρʹ), ξκ.κ)
-      return expl(Expl.matchAs(tu, ξκ, tv), tv.v)
+            {t, v}: ExplValue = eval_(ρ.concat(ρʹ), ξκ.κ)
+      return explValue(Expl.matchAs(tu, ξκ, t), v)
    } else
    if (e instanceof Expr.Typematch) {
-      const tu: Expl_ = eval_(ρ, e.e),
+      const tu: ExplValue = eval_(ρ, e.e),
             d: DataType | PrimType = ctrToDataType.get(className(tu.v)) || types.get(className(tu.v))!,
             eʹ: Expr | undefined = get(e.cases, d.name)
       if (eʹ === undefined) {
          return error(`Typecase mismatch: no clause for ${className(tu.v)}.`)
       } else {
-         const tv: Expl_ = eval_(ρ, eʹ)
-         return expl(Expl.typematch(tu, d.name, tv), tv.v)
+         const {t, v}: ExplValue = eval_(ρ, eʹ)
+         return explValue(Expl.typematch(tu, d.name, t), v)
       }
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
 }
 
-export function eval_fwd (e: Expr, {t, v}: Expl_): void {
-   if (t instanceof Expl.Empty) {
+export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
+   if (t instanceof Expl.Const) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
          setα(e.__α, t)
       } else {
@@ -236,7 +236,7 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       setα(e.__α, t)
    } else
    if (t instanceof Expl.Var) {
-      setα(ann.meet(e.__α, t.tv.t.__α), t)
+      setα(ann.meet(e.__α, t.t.__α), t)
    } else
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
@@ -252,8 +252,8 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
       eval_fwd(eʹ.f, t.tf)
       eval_fwd(eʹ.e, t.tu)
       recDefs_(Direction.Fwd, t.δ)
-      eval_fwd(t.ξ.κ, t.tv)
-      setα(ann.meet(t.tf.t.__α, apply_fwd(t.ξ), e.__α, t.tv.t.__α), t)
+      eval_fwd(t.ξ.κ, explValue(t.t, v))
+      setα(ann.meet(t.tf.t.__α, apply_fwd(t.ξ), e.__α, t.t.__α), t)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
@@ -270,28 +270,28 @@ export function eval_fwd (e: Expr, {t, v}: Expl_): void {
    if (t instanceof Expl.Defs) {
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       defs_fwd(eʹ.def̅, t.def̅)
-      eval_fwd(eʹ.e, t.tv)
-      setα(ann.meet(e.__α, t.tv.t.__α), t)
+      eval_fwd(eʹ.e, explValue(t.t, v))
+      setα(ann.meet(e.__α, t.t.__α), t)
    } else
    if (t instanceof Expl.MatchAs) {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_fwd(eʹ.e, t.tu)
-      eval_fwd(t.ξ.κ, t.tv)
-      setα(ann.meet(apply_fwd(t.ξ), e.__α, t.tv.t.__α), t)
+      eval_fwd(t.ξ.κ, explValue(t.t, v))
+      setα(ann.meet(apply_fwd(t.ξ), e.__α, t.t.__α), t)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_fwd(eʹ.e, t.tu)
-      eval_fwd(get(eʹ.cases, t.d)!, t.tv)
-      setα(ann.meet(e.__α, t.tv.t.__α), t)
+      eval_fwd(get(eʹ.cases, t.d)!, explValue(t.t, v))
+      setα(ann.meet(e.__α, t.t.__α), t)
    } else {
       absurd()
    }
 }
 
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
-export function eval_bwd (e: Expr, {t, v}: Expl_): void {
-   if (t instanceof Expl.Empty) {
+export function eval_bwd (e: Expr, {t, v}: ExplValue): void {
+   if (t instanceof Expl.Const) {
       if (v instanceof Num || v instanceof Str || v instanceof Closure) {
          joinα(t.__α, e)
       } else {
@@ -312,13 +312,13 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.Var) {
-      joinα(t.__α, t.tv.t)
+      joinα(t.__α, t.t)
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
-      joinα(t.__α, t.tv.t)
-      eval_bwd(t.ξ.κ, t.tv)
+      joinα(t.__α, t.t)
+      eval_bwd(t.ξ.κ, explValue(t.t, v))
       apply_bwd(t.ξ, t.__α)
       recDefs_(Direction.Bwd, t.δ)
       joinα(t.__α, t.tf.t)
@@ -345,24 +345,24 @@ export function eval_bwd (e: Expr, {t, v}: Expl_): void {
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.Defs) {
-      joinα(t.__α, t.tv.t)
+      joinα(t.__α, t.t)
       const eʹ: Expr.Defs = as(e, Expr.Defs)
-      eval_bwd(eʹ.e, t.tv)
+      eval_bwd(eʹ.e, explValue(t.t, v))
       defs_bwd(eʹ.def̅, t.def̅)
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.MatchAs) {
-      joinα(t.__α, t.tv.t)
+      joinα(t.__α, t.t)
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
-      eval_bwd(t.ξ.κ, t.tv)
+      eval_bwd(t.ξ.κ, explValue(t.t, v))
       apply_bwd(t.ξ, t.__α)
       eval_bwd(eʹ.e, t.tu)
       joinα(t.__α, e)
    } else
    if (t instanceof Expl.Typematch) {
-      joinα(t.__α, t.tv.t)
+      joinα(t.__α, t.t)
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
-      eval_bwd(get(eʹ.cases, t.d)!, t.tv)
+      eval_bwd(get(eʹ.cases, t.d)!, explValue(t.t, v))
       eval_bwd(eʹ.e, t.tu)
       joinα(t.__α, e)
    } else {
