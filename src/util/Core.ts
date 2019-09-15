@@ -12,7 +12,7 @@ export function classOf<T> (x: T): Class<T> {
    return (__nonNull(x) as Object).constructor as Class<T> // weirdly failing on CircleCI without cast
 }
 
-export function className(o: Object): string {
+export function className (o: Object): string {
    return classOf(o).name
 }
 

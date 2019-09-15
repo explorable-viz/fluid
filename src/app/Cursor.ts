@@ -1,6 +1,6 @@
-import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
+import { AClass, Class, absurd, as, assert, className, error } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
-import { annotated, setα } from "../../src/Annotated"
+import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { DataValue, ExplValue } from "../../src/DataValue"
 import { Expl } from "../../src/Expl"
@@ -14,11 +14,46 @@ import Prim = Expr.Prim
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
-export class ExplCursor {
+export abstract class Cursor {
+   abstract annotated: Annotated & Value
+   abstract to<T extends DataValue> (C: Class<T>, k: keyof T): Cursor
+   abstract at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor
+
+   assert<T extends Value> (C: AClass<T>, pred: (v: T) => boolean): Cursor {
+      return this.at(C, v => assert(pred(v)))
+   }
+
+   αset (): this {
+      assert(this.annotated.__α === ann.top)
+      return this
+   }
+
+   αclear (): this {
+      assert(this.annotated.__α === ann.bot)
+      return this
+   }
+
+   setα (): this {
+      setα(ann.top, this.annotated)
+      return this
+   }
+
+   clearα (): this {
+      setα(ann.bot, this.annotated)
+      return this
+   }
+}
+
+export class ExplCursor extends Cursor {
    readonly tv: ExplValue
 
    constructor (tv: ExplValue) {
+      super()
       this.tv = tv
+   }
+
+   get annotated (): Annotated & Value {
+      return this.tv.t
    }
 
    to<T extends DataValue> (C: Class<T>, k: keyof T): ExplCursor {
@@ -29,59 +64,36 @@ export class ExplCursor {
       f(as<Value, T>(this.tv.v, C))
       return this
    }
-
-   assert<T extends Value> (C: AClass<T>, pred: (v: T) => boolean): this {
-      return this.at(C, v => assert(pred(v)))
-   }
-
-   αset (): this {
-      assert(annotated(this.tv.t) && this.tv.t.__α === ann.top)
-      return this
-   }
-
-   αclear (): this {
-      assert(annotated(this.tv.t) && this.tv.t.__α === ann.bot)
-      return this
-   }
-
-   setα (): this {
-      if (annotated(this.tv.t)) {
-         setα(ann.top, this.tv.t)
-      } else {
-         assert(false)
-      }
-      return this
-   }
-
-   clearα (): this {
-      if (annotated(this.tv.t)) {
-         setα(ann.bot, this.tv.t)
-      } else {
-         assert(false)
-      }
-      return this
-   }
 }
 
-export class Cursor {
+export class ExprCursor extends Cursor {
    readonly v: Value
 
    constructor (v: Value) {
+      super()
       this.v = v
    }
 
-   skipImport (): Cursor {
+   get annotated (): Annotated & Value {
+      if (annotated(this.v)) {
+         return this.v
+      } else {
+         return error(className(this.v) + " is not an annotated value.")
+      }
+   }
+
+   skipImport (): ExprCursor {
       return this.to(Expr.Defs, "e") // all "modules" have this form
    }
 
-   skipImports (): Cursor {
+   skipImports (): ExprCursor {
       return this.skipImport() // prelude
    }
 
    // No way to specify only "own" properties statically.
-   to<T extends Value> (C: Class<T>, prop: keyof T): Cursor {
+   to<T extends Value> (C: Class<T>, prop: keyof T): ExprCursor {
       const vʹ: T[keyof T] = as<Persistent, T>(this.v, C)[prop] // TypeScript nonsense
-      return new Cursor(vʹ as any)
+      return new ExprCursor(vʹ as any)
    }
 
    static defs (defs: List<Def>): Map<string, Let | Prim | RecDef> {
@@ -103,53 +115,21 @@ export class Cursor {
       return defsʹ
    }
 
-   toDef (x: string): Cursor {
-      const here: Cursor = this.to(Expr.Defs, "def̅"),
-            defs: Map<string, Let | Prim | RecDef> = Cursor.defs(here.v as List<Def>)
+   toDef (x: string): ExprCursor {
+      const here: ExprCursor = this.to(Expr.Defs, "def̅"),
+            defs: Map<string, Let | Prim | RecDef> = ExprCursor.defs(here.v as List<Def>)
       assert(defs.has(x), `No definition of "${x}" found.`)
-      return new Cursor(defs.get(x)!)
+      return new ExprCursor(defs.get(x)!)
    }
 
-   at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor {
+   at<T extends Value> (C: AClass<T>, f: (o: T) => void): ExprCursor {
       f(as<Value, T>(this.v, C))
-      return this
-   }
-
-   assert<T extends Value> (C: AClass<T>, pred: (v: T) => boolean): Cursor {
-      return this.at(C, v => assert(pred(v)))
-   }
-
-   αset (): Cursor {
-      assert(annotated(this.v) && this.v.__α === ann.top)
-      return this
-   }
-
-   αclear (): Cursor {
-      assert(annotated(this.v) && this.v.__α === ann.bot)
-      return this
-   }
-
-   setα (): Cursor {
-      if (annotated(this.v)) {
-         setα(ann.top, this.v)
-      } else {
-         assert(false)
-      }
-      return this
-   }
-
-   clearα (): Cursor {
-      if (annotated(this.v)) {
-         setα(ann.bot, this.v)
-      } else {
-         assert(false)
-      }
       return this
    }
 
    // Helpers specific to certain datatypes.
 
-   toElem (n: number): Cursor {
+   toElem (n: number): ExprCursor {
       if (n === 0) {
          return this.to(Cons, "head")
       } else {
@@ -158,19 +138,19 @@ export class Cursor {
    }
 
    // Not sure what the T parameters are for here...
-   constrArg<T extends Value> (ctr: string, n: number): Cursor {
+   constrArg<T extends Value> (ctr: string, n: number): ExprCursor {
       return this.at(Expr.Constr, e => assert(e.ctr.val === ctr, `${e.ctr.val} !== ${ctr}`))
                  .to(Expr.Constr, "args")
                  .toElem(n)
    }
 
-   nodeValue (): Cursor {
+   nodeValue (): ExprCursor {
       return this.to(NonEmpty, "t")
                  .to(Pair, "snd")
    }
 
-   var_ (x: string): Cursor {
-      return this.assert(Trie.Var, σ => σ.x.val === x)
-                 .to(Trie.Var, "κ")      
+   var_ (x: string): ExprCursor {
+      this.assert(Trie.Var, σ => σ.x.val === x)
+      return this.to(Trie.Var, "κ")      
    }
 }
