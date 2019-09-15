@@ -139,11 +139,11 @@ describe("example", () => {
 
    describe("length", () => {
 		it("ok", () => {
-			const e: Expr = open("length")
+			const e: Expr = open("length"),
+					here: Cursor = new Cursor(e).skipImports().to(Expr.App, "e")
 			// erasing the elements doesn't affect the count:
-			let test = new (class extends FwdSlice {
+			new (class extends FwdSlice {
 				setup (): void {
-					const here: Cursor = this.expr.skipImports().to(Expr.App, "e")
 					here.constrArg("Cons", 0).clearα()
 					here.constrArg("Cons", 1).constrArg("Cons", 0).clearα()
 				}
@@ -154,7 +154,7 @@ describe("example", () => {
 			// deleting the tail of the tail means length can't be computed:
 			new (class extends FwdSlice {
 				setup (): void {
-					new Cursor(test.e).constrArg("Cons", 1).clearα()
+					here.constrArg("Cons", 1).clearα()
 				}
 				expect (): void {
                this.tv.αclear()
@@ -166,11 +166,11 @@ describe("example", () => {
                this.tv.setα()
 				}
 				expect (): void {
-					let here: Cursor = this.expr.skipImports().to(Expr.App, "e").αset()
+					here.αset()
 					here.constrArg("Cons", 0).αclear()
-					here = here.constrArg("Cons", 1).αset()
-					here.constrArg("Cons", 0).αclear()
-					here.constrArg("Cons", 1).αset()
+					let hereʹ = here.constrArg("Cons", 1).αset()
+					hereʹ.constrArg("Cons", 0).αclear()
+					hereʹ.constrArg("Cons", 1).αset()
 				}
 			})(e)
 		})

@@ -153,8 +153,7 @@ export class Cursor {
       if (n === 0) {
          return this.to(Cons, "head")
       } else {
-         this.to(Cons, "tail")
-         return this.toElem(n - 1)
+         return this.to(Cons, "tail").toElem(n - 1)
       }
    }
 
