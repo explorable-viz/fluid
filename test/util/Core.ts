@@ -1,4 +1,4 @@
-import { __nonNull, as } from "../../src/util/Core"
+import { __nonNull } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { ExplValue } from "../../src/DataValue"
@@ -41,10 +41,6 @@ export class FwdSlice {
    }
 
    expect (): void {
-   }
-
-   get e (): Expr {
-      return as(this.expr.v, Expr.Expr)
    }
 }
 
