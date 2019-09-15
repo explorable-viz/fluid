@@ -1,5 +1,4 @@
-import { zipWith } from "./util/Array"
-import { absurd, assert } from "./util/Core"
+import { absurd } from "./util/Core"
 import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
 import { DataValue, ExplValue, explValue } from "./DataValue"
@@ -7,7 +6,7 @@ import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
-import { PrimValue, Str, _ } from "./Value"
+import { PrimValue, Str, _, fields } from "./Value"
 import { ν, at } from "./Versioned"
 
 export type Closure = Eval.Closure
@@ -169,22 +168,6 @@ export namespace Expl {
    }
 
    export function explChildren (t: Expl, v: DataValue): ExplValue[] {
-      if (t instanceof DataExpl) {
-         return zipWith(explValue)(t.children(), v.children())
-      } else 
-      if (t instanceof NonTerminal) {
-         return explChildren(t.t, v)
-      } else
-      // Should probably require primitives to returned explained values.
-      if (t instanceof UnaryApp) {
-         assert(v.children().length === 0)
-         return []
-      } else
-      if (t instanceof BinaryApp) {
-         assert(v.children().length === 0)
-         return []
-      } else {
-         return absurd()
-      }
+      return fields(v).map(k => explChild(t, v, k as any))
    }
 }
