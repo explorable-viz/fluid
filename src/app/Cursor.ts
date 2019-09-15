@@ -14,7 +14,7 @@ import Prim = Expr.Prim
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
-export class ExplCursor implements Annotated<ExplCursor> {
+export class ExplCursor implements Annotated {
    readonly tv: ExplValue
 
    constructor (tv: ExplValue) {
