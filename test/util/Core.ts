@@ -16,7 +16,6 @@ import "../../src/app/GraphicsRenderer" // for graphics primitives
 
 export class FwdSlice {
    expr: Cursor
-   tv: ExplCursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       clearMemo()
@@ -29,8 +28,7 @@ export class FwdSlice {
       this.setup()
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
-         this.tv = new ExplCursor(tv)
-         this.expect()
+         this.expect(new ExplCursor(tv))
       }
       console.log(e)
       console.log(tv)
@@ -39,12 +37,11 @@ export class FwdSlice {
    setup (): void {
    }
 
-   expect (): void {
+   expect (here: ExplCursor): void {
    }
 }
 
 export class BwdSlice {
-   tv: ExplCursor
    expr: Cursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
@@ -54,16 +51,15 @@ export class BwdSlice {
          setallα(ann.bot, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
-         this.tv = new ExplCursor(tv)
          clearDelta()
-         this.setup()
+         this.setup(new ExplCursor(tv))
          Eval.eval_bwd(e, tv)
          this.expr = new Cursor(e)
          this.expect()
       }
    }
 
-   setup (): void {
+   setup (here: ExplCursor): void {
    }
 
    expect (): void {      

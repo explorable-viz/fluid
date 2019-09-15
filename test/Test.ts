@@ -26,8 +26,8 @@ describe("example", () => {
                   .skipImports()
                   .to(Expr.BinaryApp, "e1").clearα()
             }
-            expect (): void {
-               this.tv.αclear()
+            expect (tv: ExplCursor): void {
+               tv.αclear()
             } 
          })(e)
          new BwdSlice(e)
@@ -48,8 +48,8 @@ describe("example", () => {
                    .to(Cons, "head")
                    .to(Pair, "snd").clearα()
             }
-            expect (): void {
-               const here: ExplCursor = this.tv
+            expect (here: ExplCursor): void {
+					const hereʹ = here
                   .to(Graphic, "gs")
                   .to(Cons, "head")
                   .to(Graphic, "gs")
@@ -69,13 +69,13 @@ describe("example", () => {
                   .to(Polygon, "points")
                   .to(Cons, "tail")
                   .to(Cons, "tail")
-               here.to(Cons, "head").to(Point, "y").αclear()
-               here.to(Cons, "tail").to(Cons, "head").to(Point, "y").αclear()
+               hereʹ.to(Cons, "head").to(Point, "y").αclear()
+               hereʹ.to(Cons, "tail").to(Cons, "head").to(Point, "y").αclear()
             }
          })(e, ρ)
          new (class extends BwdSlice {
-            setup (): void {
-               this.tv.setα()
+            setup (here: ExplCursor): void {
+               here.setα()
             }
             expect (): void {
                this.expr.αset()
@@ -119,10 +119,10 @@ describe("example", () => {
                   .nodeValue()
                   .constrArg("Cons", 0).clearα()
             }
-            expect (): void {
-               this.tv.αset()
-               this.tv.to(Cons, "head").αclear()
-               this.tv.to(Cons, "tail").assert(List, v => Nil.is(v))
+            expect (here: ExplCursor): void {
+               here.αset()
+               here.to(Cons, "head").αclear()
+               here.to(Cons, "tail").assert(List, v => Nil.is(v))
             }
          })(e)
          new BwdSlice(e)
@@ -147,8 +147,8 @@ describe("example", () => {
                here.constrArg("Cons", 0).clearα()
                here.constrArg("Cons", 1).constrArg("Cons", 0).clearα()
             }
-            expect (): void {
-               this.tv.αset()
+            expect (here: ExplCursor): void {
+               here.αset()
             }
          })(e)
          // deleting the tail of the tail means length can't be computed:
@@ -156,14 +156,14 @@ describe("example", () => {
             setup (): void {
                here.constrArg("Cons", 1).clearα()
             }
-            expect (): void {
-               this.tv.αclear()
+            expect (here: ExplCursor): void {
+               here.αclear()
             }
          })(e)
          // needing the result only needs the cons cells:
          new (class extends BwdSlice {
-            setup (): void {
-               this.tv.setα()
+            setup (here: ExplCursor): void {
+               here.setα()
             }
             expect (): void {
                here.αset()
@@ -191,16 +191,16 @@ describe("example", () => {
             .skipImports()
             .to(Expr.Defs, "e")
             .to(Expr.App, "e")
-      new (class extends FwdSlice {
+	      new (class extends FwdSlice {
             setup (): void {
 					here
 						.constrArg("NonEmpty", 0)
 						.constrArg("NonEmpty", 1)
 						.constrArg("Pair", 0).clearα()
             }
-            expect (): void {
-               this.tv.to(Some, "t").assert(Str, str => str.toString() === `"sarah"`)
-               this.tv.αset()
+            expect (here: ExplCursor): void {
+               here.to(Some, "t").assert(Str, str => str.toString() === `"sarah"`)
+               here.αset()
             }
          })(e)
          new (class extends FwdSlice {
@@ -209,8 +209,8 @@ describe("example", () => {
                   .constrArg("NonEmpty", 1)
                   .constrArg("Pair", 0).clearα()
             }
-            expect (): void {
-               this.tv.αclear()
+            expect (here: ExplCursor): void {
+               here.αclear()
             }
          })(e)
          new BwdSlice(e)
@@ -225,12 +225,12 @@ describe("example", () => {
                this.expr
                   .skipImports()
                   .to(Expr.Defs, "e")
-                   .to(Expr.App, "e")
+                  .to(Expr.App, "e")
                   .constrArg("Cons", 0).clearα()
               }
-            expect (): void {
-               this.tv.to(Cons, "head").αclear()
-               this.tv.to(Cons, "tail").αset()
+            expect (here: ExplCursor): void {
+               here.to(Cons, "head").αclear()
+               here.to(Cons, "tail").αset()
             }
          })(e)
          new BwdSlice(e)
@@ -251,8 +251,8 @@ describe("example", () => {
          new FwdSlice(e)
          // retaining either component of pair retains both subcomputations:
          new (class extends BwdSlice {
-            setup (): void {
-               this.tv.to(Pair, "fst").setα()
+            setup (here: ExplCursor): void {
+               here.to(Pair, "fst").setα()
             }
             expect (): void {
                const here: Cursor = this.expr.skipImports()
@@ -282,10 +282,10 @@ describe("example", () => {
                    .constrArg("Cons", 1)
                    .constrArg("Cons", 1).clearα()
             }
-            expect (): void {
-               this.tv.αclear()
-               this.tv.to(Cons, "head").αset()
-               this.tv.to(Cons, "tail").αset()
+            expect (here: ExplCursor): void {
+               here.αclear()
+               here.to(Cons, "head").αset()
+               here.to(Cons, "tail").αset()
             }
          })(e)
          new BwdSlice(e)
@@ -306,8 +306,8 @@ describe("example", () => {
          new FwdSlice(e)
          // needing first cons cell of output needs same amount of input lists
          new (class extends BwdSlice {
-            setup (): void {
-               this.tv.setα()
+            setup (here: ExplCursor): void {
+               here.setα()
             }
             expect (): void {
                let here: Cursor = this.expr
@@ -319,8 +319,8 @@ describe("example", () => {
          })(e)
          // needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
          new (class extends BwdSlice {
-            setup (): void {
-               this.tv.to(Cons, "head").setα()
+            setup (here: ExplCursor): void {
+               here.to(Cons, "head").setα()
             }
             expect (): void {
                const here: Cursor = this.expr
