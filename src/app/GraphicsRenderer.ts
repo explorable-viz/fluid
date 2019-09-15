@@ -1,11 +1,13 @@
-import { __nonNull, absurd, assert } from "../util/Core"
+import { __nonNull, absurd, as, assert } from "../util/Core"
 import { Annotation, ann } from "../util/Lattice"
-import { Annotated, asAnnotated, num, setallα } from "../Annotated"
+import { num, setα } from "../Annotated"
 import { Cons, List } from "../BaseTypes"
+import { ExplValue } from "../DataValue"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Num, Str } from "../Value"
+import { ExplValueCursor } from "../app/Cursor"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
@@ -60,58 +62,57 @@ export class GraphicsRenderer {
       } 
    }
 
-   render (g: GraphicsElement): void {
-      assert(this.ancestors.length === 1      // In the bwd direction, a point appears "needed" (true) if either of its components is needed.
-   )
+   render (tg: ExplValue<GraphicsElement>): void {
+      assert(this.ancestors.length === 1)
       while (this.current.firstChild !== null) {
          this.current.removeChild(this.current.firstChild)
       }
-      this.renderElement(g)
+      this.renderElement(new ExplValueCursor(tg))
    }
 
-   renderElement (g: GraphicsElement): void {
+   renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
+      const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
       if (g instanceof Graphic) {
-         this.group(g)
+         this.group(tg)
       } else 
       if (g instanceof Polyline) {
-         this.polyline(g.points)
+         this.polyline(tg)
       } else
       if (g instanceof Polygon) {
-         this.polygon(g)
+         this.polygon(tg)
       } else
       if (g instanceof Text) {
-         this.text(g)
+         this.text(tg)
       } else
       if (g instanceof Translate) {
-         this.renderWith(g.g, translate(g.x.val, g.y.val))
+         this.translate(tg)
       }
       else {
          return absurd()
       }
    }
 
-   group (g: Graphic): void {
+   group (tg: ExplValueCursor/*<Graphic>*/): void {
       const group: SVGGElement = document.createElementNS(svgNS, "g")
       // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
       group.setAttribute("pointer-events", "bounding-box")
       this.current.appendChild(group)
       this.ancestors.push(group)
-      for (let gs: List<GraphicsElement> = g.gs; Cons.is(gs); gs = gs.tail) {
-         this.renderElement(gs.head)
+      // ignoring annotations on cons cells
+      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Graphic, "gs"); 
+           Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
+         this.renderElement(tg̅.to(Cons, "head"))
       }
-      group.addEventListener("click", (e: MouseEvent): void => {
-         e.stopPropagation()
-         this.slicer.coordinator.resetForBwd()
-         setallα(ann.top, g)
-         this.slicer.bwdSlice()
-      })
       this.ancestors.pop()
    }
 
-   renderWith (g: GraphicsElement, f: TransformFun): void {
+   translate (tg: ExplValueCursor/*<Translate>*/): void {
+      const g: Translate = as(tg.tv.v, Translate),
+            tgʹ: ExplValueCursor/*<GraphicsElement>*/ = tg.to(Translate, "g"), 
+            f: TransformFun = translate(g.x.val, g.y.val)
       const transform: TransformFun = this.transform
       this.transforms.push(postcompose(transform, f))
-      this.renderElement(g)
+      this.renderElement(tgʹ)
       this.transforms.pop()
    }
 
@@ -123,29 +124,34 @@ export class GraphicsRenderer {
       return this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
    }
 
-   polyline (p̅: List<Point>): void {
+   polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const path: SVGPolylineElement = document.createElementNS(svgNS, "polyline")
-      path.setAttribute("points", this.points(p̅))
+      path.setAttribute("points", this.points(as(tg.tv.v, Polyline).points))
       path.setAttribute("stroke", "black")
+      path.addEventListener("click", (e: MouseEvent): void => {
+         e.stopPropagation()
+         assert(false, "Not implemented yet")
+      })
       this.current.appendChild(path)
-      this.pointHighlights(p̅)
+      this.pointHighlights(tg.to(Polyline, "points"))
    }
 
-   pointHighlights (p̅: List<Point>): void {
-      for (; Cons.is(p̅); p̅ = p̅.tail) {
+   pointHighlights (tp̅: ExplValueCursor/*<List<Point>>*/): void {
+      for (; Cons.is(as(tp̅.tv.v, List)); tp̅ = tp̅.to(Cons, "tail")) {
          // TODO: annotation on point itself is not considered yet
-         this.xyHighlight(asAnnotated(p̅.head.x), asAnnotated(p̅.head.y))
+         const p: ExplValueCursor/*<Point>*/ = tp̅.to(Cons, "head")
+         this.xyHighlight(p.to(Point, "x"), p.to(Point, "y"))
       }
    }
 
-   xyHighlight (x: Annotated<Num>, y: Annotated<Num>): void {
-      const [x_α, y_α] = [__nonNull(x.__α), __nonNull(y.__α)]
+   xyHighlight (tx: ExplValueCursor/*<Num>*/, ty: ExplValueCursor/*<Num>*/): void {
+      const [x_α, y_α] = [__nonNull(tx.tv.t).__α, __nonNull(ty.tv.t).__α]
       let α: Annotation = ann.meet(x_α, y_α)
       if (this.slicer.direction === Direction.Fwd) {
          α = ann.negate(α)
       }
       if (α) {
-         const [xʹ, yʹ]: [number, number] = this.transform([x.val, y.val])
+         const [xʹ, yʹ]: [number, number] = this.transform([as(tx.tv.v, Num).val, as(ty.tv.v, Num).val])
          this.circle(xʹ, yʹ, 3)
       }
    }
@@ -160,38 +166,46 @@ export class GraphicsRenderer {
       this.current.appendChild(circle)
    }
 
-   polygon (g: Polygon): void {
-      const polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon")
+   polygon (tg: ExplValueCursor/*<Polygon>*/): void {
+      const polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon"),
+            g: Polygon = as(tg.tv.v, Polygon)
       polygon.setAttribute("points", this.points(g.points))
       polygon.setAttribute("stroke", g.stroke.val)
       polygon.setAttribute("fill", g.fill.val)
       polygon.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
-         g.points.toArray().map((p: Point): void => {
-            setallα(ann.top, p)
-         })
+         // set annotations only on _points_, not list containing them or polygon itself
+         for (let tp̅: ExplValueCursor/*<List<Point>>*/ = tg.to(Polygon, "points"); 
+              Cons.is(as(tp̅.tv.v, List)); tp̅ = tp̅.to(Cons, "tail")) {
+            const tp: ExplValueCursor/*<Point>*/ = tp̅.to(Cons, "head")
+            setα(ann.top, tp.tv.t)
+            setα(ann.top, tp.to(Point, "x").tv.t)
+            setα(ann.top, tp.to(Point, "y").tv.t)
+         }
          this.slicer.bwdSlice()
       })
       this.current.appendChild(polygon)
-      this.pointHighlights(g.points)
+      this.pointHighlights(tg.to(Polygon, "points"))
    }
 
    // Flip text vertically to cancel out the global vertical flip. Don't set x and y but express
    // position through a translation so that the scaling doesn't affect the position.
-   text (g: Text): void {
-      const [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
+   text (tg: ExplValueCursor/*<Text>*/): void {
+      const g: Text = as(tg.tv.v, Text),
+            [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
             text: SVGTextElement = textElement(x, y, g.str.val)
       text.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
-         setallα(ann.top, g)
+         setα(ann.top, tg.tv.t)
+         setα(ann.top, tg.to(Text, "str").tv.t)
          this.slicer.bwdSlice()
       })
       this.current.appendChild(text)
       // this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
-      let α: Annotation = __nonNull(asAnnotated(g.str).__α)
+      let α: Annotation = __nonNull(tg.to(Text, "str").tv.t.__α)
       if (this.slicer.direction === Direction.Fwd) {
          α = ann.negate(α)
       }
@@ -234,7 +248,7 @@ let svgMetrics: SVGSVGElement
 
    // Additional primitives that rely on offline rendering to compute text metrics. Combine these would 
    // require more general primitives that can return tuples.
-   const textWidth = (str: Str): Annotated<Num> => {
+   const textWidth = (str: Str): Num => {
       const text: SVGTextElement = textElement(0, 0, str.val)
       svgMetrics.appendChild(text)
       const width: number = text.getBBox().width
@@ -242,7 +256,7 @@ let svgMetrics: SVGSVGElement
       return num(width)
    }
    
-   const textHeight = (str: Str): Annotated<Num> => {
+   const textHeight = (str: Str): Num => {
       const text: SVGTextElement = textElement(0, 0, str.val)
       svgMetrics.appendChild(text)
       const height: number = text.getBBox().height

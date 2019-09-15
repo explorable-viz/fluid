@@ -32,6 +32,19 @@ module.exports = [{
    },
    plugins: [
       new HtmlWebpackPlugin(),
+      // cobbled together from https://github.com/webpack-contrib/karma-webpack/issues/66
+      function()
+      {
+          this.plugin("done", function(stats)
+          {
+               if (stats && stats.hasErrors()) {
+                  stats.toJson().errors.forEach(err => {
+                    console.error(err)
+                  })
+                  throw new Error()
+               }
+          });
+      }
    ],
    devtool: "inline-source-map"
 },{
@@ -67,20 +80,5 @@ module.exports = [{
          }
       ]
    },
-   plugins: [
-      // cobbled together from https://github.com/webpack-contrib/karma-webpack/issues/66
-      function()
-      {
-          this.plugin("done", function(stats)
-          {
-               if (stats && stats.hasErrors()) {
-                  stats.toJson().errors.forEach(err => {
-                    console.error(err)
-                  })
-                  throw new Error()
-               }
-          });
-      }
-  ],
   devtool: "inline-source-map"
 }]

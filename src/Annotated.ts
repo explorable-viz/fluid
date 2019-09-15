@@ -1,6 +1,6 @@
-import { Class, absurd, className } from "./util/Core"
+import { Class, __nonNull } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
-import { Id, Num, Persistent, Str, Value, ValueTag, _ } from "./Value"
+import { MemoFunType, Num, Persistent, Str, Value, ValueTag, _, __delta, memo } from "./Value"
 import { ν, at } from "./Versioned"
 
 // For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
@@ -14,35 +14,33 @@ export function AnnotatedC<T extends Class<Value>> (C: T) {
    }[C.name] // give versioned class same name as C
 }
 
-// Not sure how to avoid duplicating the body with those of the classes returned by AnnotatedC.
-export interface Annotated_ {
+export interface Annotated {
    __α: Annotation
 }
 
-export type Annotated<T> = Annotated_ & T
-
-export function annotated<T extends Object> (v: T): v is Annotated<T> {
+export function annotated<T extends Object> (v: T): v is T & Annotated {
    return v.hasOwnProperty("__α")
 }
 
-export function asAnnotated<T> (v: T): Annotated<T> {
-   if (annotated(v)) {
-      return v
-   } else {
-      return absurd(`Not an annotated value: ${className(v)}`)
+export function setα<T extends Annotated & Value> (α: Annotation, v: T): T {
+   if (v.__α !== α) {
+      __delta.add([v, "__α", α])
    }
-}
-
-export function setα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
    v.__α = α
    return v
 }
 
-export function setallα<Tag extends ValueTag, T extends Value<Tag>> (α: Annotation, v: T): T {
+// Memoising an imperative function makes any side effects idempotent. Not clear yet how to "partially" 
+// memoise LVar-like functions like joinα, but setall isn't one of those.
+export function setallα<T extends Persistent> (α: Annotation, v: T): T {	
+   return memo<T>(setallα_ as MemoFunType<T>, α, v)
+}	
+
+export function setallα_<Tag extends ValueTag, T extends Value<Tag>> (α: Annotation, v: T): T {
    if (annotated(v)) {
       setα(α, v)
    }
-   v.fieldValues().forEach((v: Persistent): void => {
+   v.children().forEach((v: Persistent): void => {
       if (v instanceof Value) {
          setallα(α, v)
       }
@@ -50,11 +48,15 @@ export function setallα<Tag extends ValueTag, T extends Value<Tag>> (α: Annota
    return v
 }
 
-export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
+export function negateallα<T extends Persistent> (v: T): T {	
+   return memo<T>(negateallα_ as MemoFunType<T>, v)
+}	
+
+export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
    if (annotated(v)) {
       setα(ann.negate(v.__α), v)
    }
-   v.fieldValues().forEach((v: Persistent): void => {
+   v.children().forEach((v: Persistent): void => {
       if (v instanceof Value) {
          negateallα(v)
       }
@@ -62,27 +64,18 @@ export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): 
    return v
 }
 
-export function joinα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
-   v.__α = ann.join(α, v.__α)
-   return v
+export function setjoinα<T extends Annotated & Value> (α: Annotation, v: T): T {
+   return setα(ann.join(α, v.__α), v)
 }
 
-export function meetα<T, U extends Annotated<T>> (α: Annotation, v: U): U {
-   v.__α = ann.meet(α, v.__α)
-   return v
+export function setmeetα<T extends Annotated & Value> (α: Annotation, v: T): T {
+   return setα(ann.meet(α, v.__α), v)
 }
 
-// Make an annotated node, for a class that doesn't already specify statically that its instances are annotated.
-export function annotatedAt<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): Annotated<T> {
-   const v: T = at(k, C, ...v̅);
-   (v as any).__α = _
-   return v as Annotated<T>
+export function num (val: number): Num {
+   return at(ν(), Num, val)
 }
 
-export function num (val: number): Annotated<Num> {
-   return annotatedAt(ν(), Num, val)
-}
-
-export function str (val: string): Annotated<Str> {
-   return annotatedAt(ν(), Str, val)
+export function str (val: string): Str {
+   return at(ν(), Str, val)
 }

@@ -25,10 +25,6 @@ function import_ (modules: Module[], e: Expr): Expr {
    }
 }
 
-export function importDefaults (e: Expr): Expr {
-   return import_([module_prelude], e)
-}
-
 export function loadTestFile (folder: string, file: string): string {
    let text: string
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest
@@ -56,17 +52,16 @@ export function openWithImports (file: string, modules: Module[]): Expr {
 }
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
-   const e: Expr = parseWithImports(loadTestFile("lcalc/dataset", file), [])
-   return Env.singleton(str(x), Eval.eval_(emptyEnv(), e).v)
+   return Env.singleton(str(x), Eval.eval_(emptyEnv(), parseWithImports(loadTestFile("lcalc/dataset", file), [])))
 }
 
 export function parseWithImports (src: string, modules: Module[]): Expr {
-   return importDefaults(import_(modules, successfulParse(src)))
+   return import_([module_prelude], import_(modules, successfulParse(src)))
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
 export function successfulParse (str: string): Expr {
-   const results: any[] = new Parser(Grammar.fromCompiled(grammar)).feed(str).results
+   const { results }: Parser = new Parser(Grammar.fromCompiled(grammar)).feed(str)
    if (results.length > 1) {
       error("Ambiguous parse.")
    }

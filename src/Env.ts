@@ -1,19 +1,18 @@
 import { absurd } from "./util/Core"
-import { Annotated } from "./Annotated"
-import { DataValue } from "./DataValue"
-import { Str, Value, _, make } from "./Value"
+import { DataValue, ExplValue } from "./DataValue"
+import { Str, _, make } from "./Value"
 
 // Idiom is to permit instance methods on reflected datatypes, but not have them use polymorphism.
 
 // Environments are snoc lists.
 export abstract class Env extends DataValue<"Env"> {
-   get (k: Annotated<Str>): Annotated<Value> | undefined {
+   get (k: Str): ExplValue | undefined {
       if (this instanceof EmptyEnv) {
          return undefined
       } else
       if (this instanceof ExtendEnv) {
          if (this.k.val === k.val) {
-            return this.v
+            return this.tv
          } else {
             return this.ρ.get(k)
          }
@@ -22,12 +21,12 @@ export abstract class Env extends DataValue<"Env"> {
       }
    }
    
-   has (k: Annotated<Str>): boolean {
+   has (k: Str): boolean {
       return this.get(k) !== undefined
    }
 
-   static singleton (k: Annotated<Str>, v: Annotated<Value>): ExtendEnv {
-      return extendEnv(emptyEnv(), k, v)
+   static singleton (k: Str, tv: ExplValue): ExtendEnv {
+      return extendEnv(emptyEnv(), k, tv)
    }
    
    concat (ρ: Env): Env {
@@ -35,7 +34,7 @@ export abstract class Env extends DataValue<"Env"> {
          return this
       } else
       if (ρ instanceof ExtendEnv) {
-         return extendEnv(this.concat(ρ.ρ), ρ.k, ρ.v)
+         return extendEnv(this.concat(ρ.ρ), ρ.k, ρ.tv)
       } else {
          return absurd()
       }
@@ -51,10 +50,10 @@ export function emptyEnv (): EmptyEnv {
 
 export class ExtendEnv extends Env {
    ρ: Env = _
-   k: Annotated<Str> = _
-   v: Annotated<Value> = _
+   k: Str = _
+   tv: ExplValue = _
 }
 
-export function extendEnv (ρ: Env, k: Annotated<Str>, v: Annotated<Value>): ExtendEnv {
-   return make(ExtendEnv, ρ, k, v)
+export function extendEnv (ρ: Env, k: Str, tv: ExplValue): ExtendEnv {
+   return make(ExtendEnv, ρ, k, tv)
 }

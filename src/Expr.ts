@@ -1,6 +1,6 @@
 import { absurd, error } from "./util/Core"
 import { eq } from "./util/Ord"
-import { Annotated, AnnotatedC } from "./Annotated"
+import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
@@ -60,76 +60,74 @@ export namespace Expr {
 
    export class BinaryApp extends Expr {
       e1: Expr = _
-      opName: Annotated<Str> = _
+      opName: Str = _
       e2: Expr = _
    }
 
-   export function binaryApp (k: Id, e1: Expr, opName: Annotated<Str>, e2: Expr): BinaryApp {
+   export function binaryApp (k: Id, e1: Expr, opName: Str, e2: Expr): BinaryApp {
       return at(k, BinaryApp, e1, opName, e2)
    }
 
    export class ConstNum extends Expr {
-      val: Annotated<Num> = _
+      val: Num = _
    }
    
-   export function constNum (k: Id, val: Annotated<Num>): ConstNum {
+   export function constNum (k: Id, val: Num): ConstNum {
       return at(k, ConstNum, val)
    }
 
    export class ConstStr extends Expr {
-      val: Annotated<Str> = _
+      val: Str = _
    }
 
-   export function constStr (k: Id, val: Annotated<Str>): ConstStr {
+   export function constStr (k: Id, val: Str): ConstStr {
       return at(k, ConstStr, val)
    }
 
    export class Constr extends Expr {
-      ctr: Annotated<Str> = _
+      ctr: Str = _
       args: List<Expr> = _
    }
 
-   export function constr (k: Id, ctr: Annotated<Str>, args: List<Expr>): Constr {
+   export function constr (k: Id, ctr: Str, args: List<Expr>): Constr {
       return at(k, Constr, ctr, args)
    }
 
-   // Because let/letrec no longer have "bodies", there's no real need for them to be separately versioned;
-   // the variables they introduce are.
-   export class Def extends DataValue<"Expr.Def"> {
+   export class Def extends AnnotatedC(DataValue)<"Expr.Def"> {
    }
 
    export class Let extends Def {
-      x: Annotated<Str> = _
+      x: Str = _
       e: Expr = _
    }
 
-   export function let_ (x: Annotated<Str>, e: Expr): Let {
-      return make(Let, x, e)
+   export function let_ (k: Id, x: Str, e: Expr): Let {
+      return at(k, Let, x, e)
    }
 
    export class Prim extends Def {
-      x: Annotated<Str> = _
+      x: Str = _
    }
 
-   export function prim (x: Annotated<Str>): Prim {
-      return make(Prim, x)
+   export function prim (k: Id, x: Str): Prim {
+      return at(k, Prim, x)
    }
 
-   export class RecDef extends DataValue<"RecDef"> {
-      x: Annotated<Str> = _
+   export class RecDef extends AnnotatedC(DataValue)<"RecDef"> {
+      x: Str = _
       σ: Trie<Expr> = _
    }
  
-   export function recDef (x: Annotated<Str>, σ: Trie<Expr>): RecDef {
-      return make(RecDef, x, σ)
+   export function recDef (k: Id, x: Str, σ: Trie<Expr>): RecDef {
+      return at(k, RecDef, x, σ)
    }
 
    export class LetRec extends Def {
       δ: List<RecDef> = _
    }
 
-   export function letRec (δ: List<RecDef>): LetRec {
-      return make(LetRec, δ)
+   export function letRec (k: Id, δ: List<RecDef>): LetRec {
+      return at(k, LetRec, δ)
    }
 
    export class Defs extends Expr {
@@ -176,10 +174,10 @@ export namespace Expr {
    }
 
    export class Var extends Expr {
-      x: Annotated<Str> = _
+      x: Str = _
    }
 
-   export function var_ (k: Id, x: Annotated<Str>): Var {
+   export function var_ (k: Id, x: Str): Var {
       return at(k, Var, x)
    }
 
@@ -220,7 +218,7 @@ export namespace Expr {
 
       // TODO: use annotations on x.
       export class Var<K extends Cont> extends Trie<K> {
-         x: Annotated<Str> = _
+         x: Str = _
          κ: K = _
 
          static is<K extends Cont> (σ: Trie<K>): σ is Var<K> {
@@ -228,7 +226,7 @@ export namespace Expr {
          }
       }
 
-      export function var_<K extends Cont> (x: Annotated<Str>, κ: K): Var<K> {
+      export function var_<K extends Cont> (x: Str, κ: K): Var<K> {
          return make(Var, x, κ) as Var<K>
       }
    }

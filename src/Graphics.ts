@@ -21,7 +21,7 @@ export class Point extends DataValue<"Point"> {
 
 export type GraphicsElementTag = "Graphic" | "Polyline" | "Polygon" | "Text" | "Translate"
 
-export abstract class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
+export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
 }
 
 export class Graphic extends GraphicsElement<"Graphic"> {

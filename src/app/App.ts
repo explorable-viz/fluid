@@ -1,21 +1,20 @@
-import { __nonNull, as } from "../util/Core"
+import { __nonNull } from "../util/Core"
 import { ann } from "../util/Lattice"
-import { negateallα, setallα } from "../Annotated"
-import { List, Pair } from "../BaseTypes"
-import { Env, ExtendEnv } from "../Env"
+import { setallα, negateallα } from "../Annotated"
+import { ExplValue } from "../DataValue"
+import { Env } from "../Env"
 import { Direction, Eval } from "../Eval"
-import { ExplValue } from "../ExplValue"
 import { Expr } from "../Expr"
-import { GraphicsElement } from "../Graphics"
+import  { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
-import { Num, Str, Value } from "../Value"
-import { Versioned } from "../Versioned"
+import { __delta, clearDelta, clearMemo } from "../Value"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
+// As with the test cases, we treat the dataset ρ as "external" data, meaning we push slicing
+// information back only as far as ρ.
 export class View implements Slicer {
    name: string
    coordinator: ViewCoordinator
-   ρ: Env
    e: Expr
    tv: ExplValue
    view: GraphicsRenderer
@@ -30,6 +29,7 @@ export class View implements Slicer {
       this.draw()
    }
 
+   // Consider (un)availability of dataset only; treat e as an unlimited resource.
    fwdSlice (): void {
       setallα(ann.top, this.e)
       Eval.eval_fwd(this.e, this.tv)
@@ -45,6 +45,8 @@ export class View implements Slicer {
 
    bwdSlice (): void {
       Eval.eval_bwd(this.e, this.tv)
+      clearDelta()
+      console.log(__delta.size)
       this.direction = Direction.Bwd
       this.coordinator.onBwd()
       this.draw()
@@ -54,8 +56,8 @@ export class View implements Slicer {
       return this.view.ancestors[0] as SVGSVGElement
    }
 
-   getGraphics (): GraphicsElement {
-      return as(this.tv.v as Value, GraphicsElement)
+   getGraphics (): ExplValue<GraphicsElement> {
+      return this.tv as ExplValue<GraphicsElement>
    }
 
    draw (): void {
@@ -63,37 +65,40 @@ export class View implements Slicer {
    }
 }
 
-type Data = Versioned<List<Pair<Num | Str, any>>> // approximate recursive type
+// Data has approximate recursive type
+// Data = Versioned<List<Pair<Num | Str, Data>>>
 
 class App {
    dataView: View
    graphicsView: View
 
    constructor () {
-      const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
-            data: Data = ρ.v as Value as Data
-      setallα(ann.top, data)
+      const ρ: Env = openDatasetAs("renewables", "data")
+      clearMemo()
+      setallα(ann.top, ρ)
       this.graphicsView = new View(
          "graphicsView", 
-         ρ, 
+         ρ,
          openWithImports("bar-chart", [module_graphics]), 
          this.createSvg(400, 400, false)
       )
       this.dataView = new View(
          "dataView", 
-         ρ, 
+         ρ,
          parseWithImports("renderData data", [module_graphics, module_renderData]), 
          this.createSvg(400, 1200, false)
       )
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {
          onBwd (): void {
-            negateallα(data)
+            clearMemo()
+            negateallα(ρ)
             dataView.fwdSlice()
          }
 
          resetForBwd (): void {
-            setallα(ann.bot, data)
+            clearMemo()
+            setallα(ann.bot, ρ)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
          }
@@ -101,12 +106,14 @@ class App {
       const graphicsView: View = this.graphicsView
       this.dataView.coordinator = new class ViewCoordinator {
          onBwd (): void {
-            negateallα(data)
+            clearMemo()
+            negateallα(ρ)
             graphicsView.fwdSlice()
          }
 
          resetForBwd (): void {
-            setallα(ann.bot, data)
+            clearMemo()
+            setallα(ann.bot, ρ)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
          }

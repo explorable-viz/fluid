@@ -1,9 +1,8 @@
 import { absurd } from "./util/Core"
-import { Annotated, annotatedAt } from "./Annotated"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
+import { dataValue } from "./Eval"
 import { Persistent, _, make } from "./Value"
-import { ν } from "./Versioned"
 
 // See Env for convention regarding instance members on reflected datatypes.
 
@@ -13,15 +12,15 @@ export abstract class Bool extends DataValue<"Bool"> {
 export class True extends Bool {
 }
 
-export function true_ (): Annotated<Bool> {
-   return annotatedAt(ν(), True)
+export function true_ (): Bool {
+   return dataValue(True.name, []) as Bool
 }
 
 export class False extends Bool {
 }
 
-export function false_ (): Annotated<Bool> {
-   return annotatedAt(ν(), False)
+export function false_ (): Bool {
+   return dataValue(False.name, []) as Bool
 }
 
 export abstract class List<T> extends DataValue<"List"> {

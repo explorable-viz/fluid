@@ -1,23 +1,24 @@
-import { zip } from "./util/Array"
-import { Annotated } from "./Annotated"
-import { Expl } from "./ExplValue"
-import { DataValueTag, State, Value, fields } from "./Value"
+import { __nonNull } from "./util/Core"
+import { Expl } from "./Expl"
+import { DataValueTag, Value, _, make } from "./Value"
 
-// Value of a datatype constructor; fields are always user-level values (i.e. not ES6 primitives).
+// Value of a datatype constructor; children are always user-level values (i.e. not ES6 primitives).
 export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
-   __expl: DataExpl
-
-   fieldValues (): Value[] {
-      return fields(this).map(k => (this as any as State)[k] as Value)
+   child (k: string): Value {
+      return super.child(k) as Value
    }
 
-   fieldExplValues(): [Expl, Annotated<Value>][] {
-      return zip(this.__expl.fieldValues(), this.fieldValues() as Annotated<Value>[])
+   children (): Value[] {
+      return super.children() as Value[]
    }
 }
 
-export class DataExpl extends DataValue<"DataExpl"> {
-   fieldValues (): Expl[] {
-      return fields(this).map(k => (this as any as State)[k] as Expl)
-   }
+// Here to break cyclic dependency.
+export class ExplValue<T extends Value = Value> extends DataValue<"ExplValue"> {
+   t: Expl = _
+   v: T = _
+}
+
+export function explValue<T extends Value = Value> (t: Expl, v: T): ExplValue<T> {
+   return make(ExplValue, t, v) as ExplValue<T>
 }

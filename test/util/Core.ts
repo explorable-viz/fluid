@@ -1,63 +1,62 @@
-import { __nonNull, as } from "../../src/util/Core"
+import { __nonNull } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
+import { ExplValue } from "../../src/DataValue"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
-import { ExplValue } from "../../src/ExplValue"
 import { Expr } from "../../src/Expr"
+import { clearDelta, clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
+import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
-import { Cursor } from "./Cursor"
+
+// Key idea here is that we never push slicing further back than ρ (since ρ could potentially
+// be supplied by a library function, dataframe in another language, or other resource which
+// lacks source code).
 
 export class FwdSlice {
-   expr: Cursor
-   val: Cursor
-
    constructor (e: Expr, ρ: Env = emptyEnv()) {
+      clearMemo()
       setallα(ann.top, e)
       setallα(ann.top, ρ)
-      this.expr = new Cursor(e)
-      this.setup()
       const tv: ExplValue = Eval.eval_(ρ, e)
+      Eval.eval_fwd(e, tv) // slice with full availability first to compute delta
+      clearDelta()
+      this.setup(new ExprCursor(e))
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
-         this.val = new Cursor(tv.v)
-         this.expect()
+         this.expect(new ExplValueCursor(tv))
       }
       console.log(e)
       console.log(tv)
    }
 
-   setup (): void {
+   setup (here: ExprCursor): void {
    }
 
-   expect (): void {
-   }
-
-   get e (): Expr {
-      return as(this.expr.v, Expr.Expr)
+   expect (here: ExplValueCursor): void {
    }
 }
 
 export class BwdSlice {
-   val: Cursor
-   expr: Cursor
+   expr: ExprCursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Bwd)) {
+         clearMemo()
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
-         const tv: ExplValue = Eval.eval_(ρ, e) // just to obtain tv
+         const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
-         this.val = new Cursor(tv.v)
-         this.setup()
+         clearDelta()
+         this.setup(new ExplValueCursor(tv))
          Eval.eval_bwd(e, tv)
-         this.expr = new Cursor(e)
+         this.expr = new ExprCursor(e)
          this.expect()
       }
    }
 
-   setup (): void {
+   setup (here: ExplValueCursor): void {
    }
 
    expect (): void {      
