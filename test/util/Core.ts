@@ -5,7 +5,7 @@ import { ExplValue } from "../../src/DataValue"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
-import { clearMemo } from "../../src/Value"
+import { __delta, clearDelta, clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
 import { Cursor, ExplCursor } from "../../src/app/Cursor"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
@@ -24,10 +24,13 @@ export class FwdSlice {
       setallα(ann.top, ρ)
       this.expr = new Cursor(e)
       const tv: ExplValue = Eval.eval_(ρ, e)
+      Eval.eval_fwd(e, tv) // slice with full availability first to compute delta
+      clearDelta()
       this.setup()
       if (flags.get(Flags.Fwd)) {
          Eval.eval_fwd(e, tv)
          this.tv = new ExplCursor(tv)
+         console.log(__delta)
          this.expect()
       }
       console.log(e)
@@ -57,6 +60,7 @@ export class BwdSlice {
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
          this.tv = new ExplCursor(tv)
+         clearDelta()
          this.setup()
          Eval.eval_bwd(e, tv)
          this.expr = new Cursor(e)

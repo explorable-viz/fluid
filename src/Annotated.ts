@@ -1,6 +1,6 @@
 import { Class, __nonNull } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
-import { MemoFunType, Num, Persistent, Str, Value, ValueTag, _, memo } from "./Value"
+import { MemoFunType, Num, Persistent, Str, Value, ValueTag, _, __delta, memo } from "./Value"
 import { ν, at } from "./Versioned"
 
 // For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
@@ -22,7 +22,10 @@ export function annotated<T extends Object> (v: T): v is T & Annotated {
    return v.hasOwnProperty("__α")
 }
 
-export function setα<T extends Annotated> (α: Annotation, v: T): T {
+export function setα<T extends Annotated & Value> (α: Annotation, v: T): T {
+   if (v.__α !== α) {
+      __delta.add([v, "__α", α])
+   }
    v.__α = α
    return v
 }
@@ -61,11 +64,11 @@ export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T):
    return v
 }
 
-export function setjoinα<T extends Annotated> (α: Annotation, v: T): T {
+export function setjoinα<T extends Annotated & Value> (α: Annotation, v: T): T {
    return setα(ann.join(α, v.__α), v)
 }
 
-export function setmeetα<T extends Annotated> (α: Annotation, v: T): T {
+export function setmeetα<T extends Annotated & Value> (α: Annotation, v: T): T {
    return setα(ann.meet(α, v.__α), v)
 }
 

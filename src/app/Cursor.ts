@@ -1,6 +1,6 @@
 import { AClass, Class, absurd, as, assert } from "../../src/util/Core"
-import { Annotation, ann } from "../../src/util/Lattice"
-import { Annotated, annotated } from "../../src/Annotated"
+import { ann } from "../../src/util/Lattice"
+import { annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { DataValue, ExplValue } from "../../src/DataValue"
 import { Expl } from "../../src/Expl"
@@ -14,7 +14,7 @@ import Prim = Expr.Prim
 import RecDef = Expr.RecDef
 import Trie = Expr.Trie
 
-export class ExplCursor implements Annotated {
+export class ExplCursor {
    readonly tv: ExplValue
 
    constructor (tv: ExplValue) {
@@ -34,11 +34,6 @@ export class ExplCursor implements Annotated {
       return this.at(C, v => assert(pred(v)))
    }
 
-   get __α (): Annotation {
-      assert(annotated(this.tv.t))
-      return this.tv.t.__α
-   }
-
    needed (): this {
       assert(annotated(this.tv.t) && this.tv.t.__α === ann.top)
       return this
@@ -51,7 +46,7 @@ export class ExplCursor implements Annotated {
 
    need (): this {
       if (annotated(this.tv.t)) {
-         this.tv.t.__α = ann.top
+         setα(ann.top, this.tv.t)
       } else {
          assert(false)
       }
@@ -60,7 +55,7 @@ export class ExplCursor implements Annotated {
 
    notNeed(): this {
       if (annotated(this.tv.t)) {
-         this.tv.t.__α = ann.top
+         setα(ann.top, this.tv.t)
       } else {
          assert(false)
       }
@@ -143,7 +138,7 @@ export class Cursor {
 
    need (): Cursor {
       if (annotated(this.v)) {
-         this.v.__α = ann.top
+         setα(ann.top, this.v)
       } else {
          assert(false)
       }
@@ -152,7 +147,7 @@ export class Cursor {
 
    notNeed (): Cursor {
       if (annotated(this.v)) {
-         this.v.__α = ann.bot
+         setα(ann.bot, this.v)
       } else {
          assert(false)
       }

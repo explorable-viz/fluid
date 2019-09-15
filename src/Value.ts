@@ -133,6 +133,12 @@ export function clearMemo (): void {
    __funMemo.clear()
 }
 
+export const __delta: Set<[Value, string, Persistent]> = new Set()
+
+export function clearDelta (): void {
+   __delta.clear()
+}
+
 function lookupArg<T extends Persistent> (f: Memoisable<T>, m: MemoTable, v̅: Persistent[], n: number): Persistent | Map<Persistent, Object> {
    // for memoisation purposes, treat f's key as argument -1
    const k: Persistent = n === -1 ? f.key : v̅[n]

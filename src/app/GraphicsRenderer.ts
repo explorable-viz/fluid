@@ -144,7 +144,7 @@ export class GraphicsRenderer {
    }
 
    xyHighlight (tx: ExplCursor/*<Num>*/, ty: ExplCursor/*<Num>*/): void {
-      const [x_α, y_α] = [__nonNull(tx.__α), __nonNull(ty.__α)]
+      const [x_α, y_α] = [__nonNull(tx.tv.t.__α), __nonNull(ty.tv.t.__α)]
       let α: Annotation = ann.meet(x_α, y_α)
       if (this.slicer.direction === Direction.Fwd) {
          α = ann.negate(α)
@@ -178,9 +178,9 @@ export class GraphicsRenderer {
          for (let tp̅: ExplCursor/*<List<Point>>*/ = tg.to(Polygon, "points"); 
               Cons.is(as(tp̅.tv.v, List)); tp̅ = tp̅.to(Cons, "tail")) {
             const tp: ExplCursor/*<Point>*/ = tp̅.to(Cons, "head")
-            setα(ann.top, tp)
-            setα(ann.top, tp.to(Point, "x"))
-            setα(ann.top, tp.to(Point, "y"))
+            setα(ann.top, tp.tv.t)
+            setα(ann.top, tp.to(Point, "x").tv.t)
+            setα(ann.top, tp.to(Point, "y").tv.t)
          }
          this.slicer.bwdSlice()
       })
@@ -197,14 +197,14 @@ export class GraphicsRenderer {
       text.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
-         setα(ann.top, tg)
-         setα(ann.top, tg.to(Text, "str"))
+         setα(ann.top, tg.tv.t)
+         setα(ann.top, tg.to(Text, "str").tv.t)
          this.slicer.bwdSlice()
       })
       this.current.appendChild(text)
       // this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
-      let α: Annotation = __nonNull(tg.to(Text, "str").__α)
+      let α: Annotation = __nonNull(tg.to(Text, "str").tv.t.__α)
       if (this.slicer.direction === Direction.Fwd) {
          α = ann.negate(α)
       }
