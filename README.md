@@ -8,7 +8,6 @@
 | --- | --- | --- |
 | 15 September 2019 | **Moved slicing annotations** from values to traces | [204](https://github.com/rolyp/lambdacalc/issues/204) |
 | 31 August 2019 | Preliminary **Wrattler integration** | []([192](https://github.com/rolyp/lambdacalc/issues/192)) |
-| 31 August 2019 | Preliminary **Wrattler integration** |  |
 | 20 August 2019 | Demo to Luke Marsden of [Dotscience](https://dotscience.com/) ||
 | 30 August 2019 | Publish as [npm library](https://www.npmjs.com/package/@rolyp/fluid) | [192](https://github.com/rolyp/lambdacalc/issues/192) || 20 August 2019 | Demo to Luke Marsden of [Dotscience](https://dotscience.com/) ||
 | 18 July 2019 | Demo to REG interview panel ||
