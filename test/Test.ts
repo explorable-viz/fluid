@@ -300,7 +300,8 @@ describe("example", () => {
       })
    })
 
-   describe("bar-chart-2", () => {
+   // merge with bar-chart test case once we implement loading from JSON or similar
+   describe("create-dataset", () => {
       it("ok", () => {
          const data: Object[] = [
             // some subset of the renewables dataset
@@ -309,7 +310,7 @@ describe("example", () => {
             { year: 2015, country: "China", energyType: "Hydro", value: 296 }
          ]
          const ρ: ExtendEnv = createDatasetAs(data, "data"),
-         e: Expr = openWithImports("bar-chart", [module_graphics])
+         e: Expr = openWithImports("create-dataset", [module_graphics])
          new FwdSlice(e, ρ)
       })
    })
