@@ -300,7 +300,7 @@ describe("example", () => {
       })
    })
 
-   describe("bar-chart-2", () => {
+   xdescribe("bar-chart-2", () => {
       it("ok", () => {
          const data: Object[] = [
             // some subset of the renewables dataset
