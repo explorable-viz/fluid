@@ -1,10 +1,9 @@
 import { as, assert } from "./util/Core"
-import { num, str } from "./Annotated"
 import { Bool, true_, false_ } from "./BaseTypes"
 import { ExplValue, explValue } from "./DataValue"
 import { Expl } from "./Expl"
 import { Num, PrimOpTag, PrimValue, Str, _, Value } from "./Value"
-import { ν, at } from "./Versioned"
+import { ν, at, num, str } from "./Versioned"
 
 type Unary<T, V> = (x: T) => V
 type Binary<T, U, V> = (x: T, y: U) => V

@@ -5,7 +5,7 @@ import { Cons, List, Nil, NonEmpty, Pair, Some } from "../src/BaseTypes"
 import { ExtendEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
-import { module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
+import { createDatasetAs, module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
 
@@ -297,6 +297,20 @@ describe("example", () => {
          const e: Expr = open("typematch")
          new FwdSlice(e)
          new BwdSlice(e)
+      })
+   })
+
+   describe("bar-chart-2", () => {
+      it("ok", () => {
+         const data: Object[] = [
+            // some subset of the renewables dataset
+            { year: 2015, country: "China", energyType: "Bio", value: 10.3 },
+            { year: 2015, country: "China", energyType: "Geothermal", value: 0 },
+            { year: 2015, country: "China", energyType: "Hydro", value: 296 }
+         ]
+         const ρ: ExtendEnv = createDatasetAs(data, "data"),
+         e: Expr = openWithImports("bar-chart", [module_graphics])
+         new FwdSlice(e, ρ)
       })
    })
 

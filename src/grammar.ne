@@ -31,13 +31,12 @@ const lexer = moo.compile({
 
 @{%
 import { __check, assert, error } from "./util/Core"
-import { num, str } from "./Annotated"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { Str } from "./Value"
-import { ν } from "./Versioned"
+import { ν, num, str } from "./Versioned"
 
 import Cont = Expr.Cont
 import Trie = Expr.Trie
@@ -190,19 +189,19 @@ def ->
 
 let -> 
    keyword["let"] var lexeme["="] expr 
-   {% ([, x, , e]) => Expr.let_(x, e) %}
+   {% ([, x, , e]) => Expr.let_(ν(), x, e) %}
 
 letrec -> 
    keyword["letrec"] recDef (lexeme[";"] recDef {% ([, recDef]) => recDef %}):* 
-   {% ([, recDef, δ]) => Expr.letRec(List.fromArray([recDef, ...δ])) %}
+   {% ([, recDef, δ]) => Expr.letRec(ν(), List.fromArray([recDef, ...δ])) %}
 
-prim -> 
+prim ->
    keyword["primitive"] var
-   {% ([, x]) => Expr.prim(x) %}
+   {% ([, x]) => Expr.prim(ν(), x) %}
 
 recDef -> 
    keyword["fun"] var matches
-   {% ([, f, σ]) => Expr.recDef(f, σ) %}
+   {% ([, f, σ]) => Expr.recDef(ν(), f, σ) %}
 
 fun -> 
    keyword["fun"] matches

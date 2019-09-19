@@ -1,7 +1,6 @@
 import { Class, __nonNull } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
-import { MemoFunType, Num, Persistent, Str, Value, ValueTag, _, __delta, memo } from "./Value"
-import { ν, at } from "./Versioned"
+import { MemoFunType, Persistent, Value, ValueTag, _, __delta, memo } from "./Value"
 
 // For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
 // https://github.com/Microsoft/TypeScript/issues/21710.
@@ -70,12 +69,4 @@ export function setjoinα<T extends Annotated & Value> (α: Annotation, v: T): T
 
 export function setmeetα<T extends Annotated & Value> (α: Annotation, v: T): T {
    return setα(ann.meet(α, v.__α), v)
-}
-
-export function num (val: number): Num {
-   return at(ν(), Num, val)
-}
-
-export function str (val: string): Str {
-   return at(ν(), Str, val)
 }

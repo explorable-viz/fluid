@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
 import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { ann } from "./util/Lattice"
-import { AnnotatedC, setjoinα, setmeetα, num, setα, str } from "./Annotated"
+import { AnnotatedC, setjoinα, setmeetα, setα } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
 import { DataValue, ExplValue, explValue } from "./DataValue"
@@ -12,7 +12,7 @@ import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, PrimValue, Num, Str, Value, _ } from "./Value"
-import { ν, at } from "./Versioned"
+import { ν, at, num, str } from "./Versioned"
 
 // Move to more sensible location
 export function dataValue (c: string, tv̅: ExplValue[]): DataValue {

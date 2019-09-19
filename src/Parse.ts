@@ -1,4 +1,4 @@
-// Generated automatically by nearley, version 2.16.0
+// Generated automatically by nearley, version 2.19.0
 // http://github.com/Hardmath123/nearley
 // Bypasses TS6133. Allow declared but unused functions.
 // @ts-ignore
@@ -40,13 +40,12 @@ const lexer = moo.compile({
 
 
 import { __check, assert, error } from "./util/Core"
-import { num, str } from "./Annotated"
 import { Cons, List, Nil, Pair, nil } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { Str } from "./Value"
-import { ν } from "./Versioned"
+import { ν, num, str } from "./Versioned"
 
 import Cont = Expr.Cont
 import Trie = Expr.Trie
@@ -63,27 +62,35 @@ function compose (mk_κ1: MkCont, mk_κ2: MkCont): MkCont {
    return (κ: Cont) => mk_κ1(mk_κ2(κ))
 }
 
-export interface Token { value: any; [key: string]: any };
-
-export interface Lexer {
-  reset: (chunk: string, info: any) => void;
-  next: () => Token | undefined;
-  save: () => any;
-  formatError: (token: Token) => string;
-  has: (tokenType: string) => boolean
+interface NearleyToken {  value: any;
+  [key: string]: any;
 };
 
-export interface NearleyRule {
+interface NearleyLexer {
+  reset: (chunk: string, info: any) => void;
+  next: () => NearleyToken | undefined;
+  save: () => any;
+  formatError: (token: NearleyToken) => string;
+  has: (tokenType: string) => boolean;
+};
+
+interface NearleyRule {
   name: string;
   symbols: NearleySymbol[];
-  postprocess?: (d: any[], loc?: number, reject?: {}) => any
+  postprocess?: (d: any[], loc?: number, reject?: {}) => any;
 };
 
-export type NearleySymbol = string | { literal: any } | { test: (token: any) => boolean };
+type NearleySymbol = string | { literal: any } | { test: (token: any) => boolean };
 
-export var Lexer: Lexer | undefined = lexer;
+interface Grammar {
+  Lexer: NearleyLexer | undefined;
+  ParserRules: NearleyRule[];
+  ParserStart: string;
+};
 
-export var ParserRules: NearleyRule[] = [
+const grammar: Grammar = {
+  Lexer: lexer,
+  ParserRules: [
     {"name": "rootExpr", "symbols": ["_", "expr"], "postprocess": ([, e]) => e},
     {"name": "rootExpr", "symbols": ["expr"], "postprocess": id},
     {"name": "_$ebnf$1$subexpression$1", "symbols": [(lexer.has("whitespace") ? {type: "whitespace"} : whitespace)]},
@@ -401,6 +408,8 @@ export var ParserRules: NearleyRule[] = [
     {"name": "sumOp$macrocall$1", "symbols": ["sumOp$macrocall$2"], "postprocess": id},
     {"name": "sumOp$macrocall$1", "symbols": ["sumOp$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "sumOp", "symbols": ["sumOp$macrocall$1"], "postprocess": ([[x]]) => x.value}
-];
+  ],
+  ParserStart: "rootExpr",
+};
 
-export var ParserStart: string = "rootExpr";
+export default grammar;

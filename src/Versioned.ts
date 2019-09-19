@@ -1,5 +1,5 @@
 import { Class, __nonNull, notYetImplemented } from "./util/Core"
-import { Id, Persistent, Value, _, construct, make } from "./Value"
+import { Id, Persistent, Num, Str, Value, _, construct, make } from "./Value"
 
 // Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
 // same datatype can be interned in some contexts and versioned in others.
@@ -55,3 +55,11 @@ export const ν: () => Extern =
          return extern(count++)
       }
    })()
+
+export function num (val: number): Num {
+   return at(ν(), Num, val)
+}
+
+export function str (val: string): Str {
+   return at(ν(), Str, val)
+}

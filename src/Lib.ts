@@ -2,6 +2,6 @@
 import { Env, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
-import { parseWithImports } from "./Module"
+import { createDatasetAs, parseWithImports } from "./Module"
 
-export { Env, Eval, Expr, emptyEnv, parseWithImports }
+export { Env, Eval, Expr, createDatasetAs, emptyEnv, parseWithImports }

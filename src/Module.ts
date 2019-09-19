@@ -1,13 +1,14 @@
 import { Grammar, Parser } from "nearley"
 import { __nonNull, as, error } from "./util/Core"
-import { str } from "./Annotated"
-import { List } from "./BaseTypes"
+import { List, Pair, pair } from "./BaseTypes"
+import { ExplValue } from "./DataValue"
 import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import "./Graphics" // for datatypes
-import * as grammar from "./Parse"
-import { ν } from "./Versioned"
+import grammar from "./Parse"
+import { PrimValue, Str } from "./Value"
+import { ν, num, str } from "./Versioned"
 
 // Kindergarten modules.
 type Module = List<Expr.Def>
@@ -66,4 +67,26 @@ export function successfulParse (str: string): Expr {
       error("Ambiguous parse.")
    }
    return results[0]
+}
+
+export type Record = List<Pair<Str, PrimValue>>
+
+export function createDatasetAs (vs: Object[], x: string): ExtendEnv {
+   // This will totally fail, just want something that compiles :-/
+   return Env.singleton(str(x), as(List.fromArray(vs.map(asRecord)) as any, ExplValue))
+}
+
+function asRecord (v: Object): Record {
+   return List.fromArray(Object.getOwnPropertyNames(v).map(k => pair(str(k), asPrimValue((v as any)[k].value))))
+}
+
+function asPrimValue (v: Object): PrimValue {
+   if (typeof v === "number") {
+      return num(v)
+   } else
+   if (typeof v === "string") {
+      return str(v)
+   } else {
+      return error("Ill-formed data: expected string or number.")
+   }
 }
