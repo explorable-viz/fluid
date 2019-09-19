@@ -1,7 +1,7 @@
 import { Grammar, Parser } from "nearley"
 import { __nonNull, as, error } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
-import { Env, ExtendEnv, emptyEnv } from "./Env"
+import { Env, ExtendEnv, emptyEnv, extendEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import "./Graphics" // for datatypes
@@ -71,8 +71,8 @@ export function successfulParse (str: string): Expr {
 export type Record = List<Pair<Str, PrimValue>> // entry in dataset
 
 // create an expression and evaluate it, so we have an explained value
-export function createDatasetAs (vs: Object[], x: string): ExtendEnv {
-   return Env.singleton(str(x), Eval.eval_(emptyEnv(), asList(vs.map(asRecord))))
+export function bindDataset (ρ: Env, vs: Object[], x: string): ExtendEnv {
+   return extendEnv(ρ, str(x), Eval.eval_(ρ, asList(vs.map(asRecord))))
 }
 
 function asRecord (v: Object): Expr {

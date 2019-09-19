@@ -1,4 +1,5 @@
-import { absurd, error } from "./util/Core"
+import { absurd, className, error } from "./util/Core"
+import { union } from "./util/Set"
 import { eq } from "./util/Ord"
 import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
@@ -229,5 +230,52 @@ export namespace Expr {
       export function var_<K extends Cont> (x: Str, κ: K): Var<K> {
          return make(Var, x, κ) as Var<K>
       }
+   }
+
+   // used by Wrattler
+   export function freeVars (e: Expr): Set<Var> {
+      if (e instanceof ConstNum) {
+         return new Set()
+      } else
+      if (e instanceof ConstStr) {
+         return new Set()
+      } else
+      if (e instanceof Fun) {
+         return freeVarsTrie(e.σ)
+      } else
+      if (e instanceof Constr) {
+         return union(...e.args.toArray().map(freeVars))
+      } else
+      if (e instanceof Quote) {
+         return freeVars(e.e)
+      } else
+      if (e instanceof Var) {
+         return new Set([e])
+      } else
+      if (e instanceof App) {
+         return union(freeVars(e.f), freeVars(e.e))
+      } else
+      if (e instanceof BinaryApp) {
+         return union(freeVars(e.e1), freeVars(e.e2))
+      } else
+      if (e instanceof Defs) {
+         return union(...e.def̅.toArray().map(freeVarsDef))
+      } else
+      if (e instanceof MatchAs) {
+         return union(freeVars(e.e), freeVarsTrie(e.σ))
+      } else
+      if (e instanceof Typematch) {
+         return union(freeVars(e.e), ...e.cases.toArray().map(({ snd }) => freeVars(snd)))
+      } else {
+         return absurd()
+      }
+   }
+
+   function freeVarsTrie<K extends Cont> (σ: Trie.Trie<K>): Set<Var> {
+      throw new Error("Not implemented yet")
+   }
+
+   function freeVarsDef (): Set<Var> {
+      throw new Error("Not implemented yet")
    }
 }

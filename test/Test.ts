@@ -2,10 +2,10 @@
 
 import { BwdSlice, FwdSlice } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some } from "../src/BaseTypes"
-import { ExtendEnv } from "../src/Env"
+import { ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
-import { createDatasetAs, module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
+import { bindDataset, module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
 
@@ -309,7 +309,7 @@ describe("example", () => {
             { year: 2015, country: "China", energyType: "Geothermal", value: 0 },
             { year: 2015, country: "China", energyType: "Hydro", value: 296 }
          ]
-         const ρ: ExtendEnv = createDatasetAs(data, "data"),
+         const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data"),
          e: Expr = openWithImports("create-dataset", [module_graphics])
          new FwdSlice(e, ρ)
       })
