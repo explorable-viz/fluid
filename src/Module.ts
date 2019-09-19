@@ -77,7 +77,7 @@ export function createDatasetAs (vs: Object[], x: string): ExtendEnv {
 }
 
 function asRecord (v: Object): Record {
-   return List.fromArray(Object.getOwnPropertyNames(v).map(k => pair(str(k), asPrimValue((v as any)[k].value))))
+   return List.fromArray(Object.getOwnPropertyNames(v).map(k => pair(str(k), asPrimValue((v as any)[k]))))
 }
 
 function asPrimValue (v: Object): PrimValue {
@@ -87,6 +87,6 @@ function asPrimValue (v: Object): PrimValue {
    if (typeof v === "string") {
       return str(v)
    } else {
-      return error("Ill-formed data: expected string or number.")
+      return error(`Ill-formed data: expected string or number, found ${typeof v}.`)
    }
 }
