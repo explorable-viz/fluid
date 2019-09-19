@@ -1,5 +1,5 @@
-import { absurd, className, error } from "./util/Core"
-import { union } from "./util/Set"
+import { absurd, error } from "./util/Core"
+import { diff, union } from "./util/Set"
 import { eq } from "./util/Ord"
 import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
@@ -233,7 +233,7 @@ export namespace Expr {
    }
 
    // used by Wrattler
-   export function freeVars (e: Expr): Set<Var> {
+   export function freeVars (e: Expr): Set<string> {
       if (e instanceof ConstNum) {
          return new Set()
       } else
@@ -250,7 +250,7 @@ export namespace Expr {
          return freeVars(e.e)
       } else
       if (e instanceof Var) {
-         return new Set([e])
+         return new Set([e.x.val])
       } else
       if (e instanceof App) {
          return union(freeVars(e.f), freeVars(e.e))
@@ -271,11 +271,43 @@ export namespace Expr {
       }
    }
 
-   function freeVarsTrie<K extends Cont> (σ: Trie.Trie<K>): Set<Var> {
-      throw new Error("Not implemented yet")
+   function freeVarsCont (κ: Cont): Set<string> {
+      if (κ instanceof Expr) {
+         return freeVars(κ)
+      } else 
+      if (κ instanceof Trie.Trie) {
+         return freeVarsTrie(κ)
+      } else {
+         return absurd()
+      }
    }
 
-   function freeVarsDef (): Set<Var> {
-      throw new Error("Not implemented yet")
+   function freeVarsTrie<K extends Cont> (σ: Trie.Trie<K>): Set<string> {
+      if (Trie.Var.is(σ)) {
+         return diff(freeVarsCont(σ.κ), new Set([σ.x.val]))
+      } else
+      if (Trie.Constr.is(σ)) {
+         return union(...σ.cases.toArray().map(({ snd }) => freeVarsCont(snd)))
+      } else {
+         return absurd()
+      }
+   }
+
+   function freeVarsDef (def: Def): Set<string> {
+      if (def instanceof Prim) {
+         return new Set()
+      } else
+      if (def instanceof Let) {
+         return diff(freeVars(def.e), new Set([def.x.val]))
+      } else
+      if (def instanceof LetRec) {
+         const f̅: RecDef[] = def.δ.toArray()
+         return diff(
+            union(...f̅.map(f => freeVarsTrie(f.σ))),
+            new Set(f̅.map(f => f.x.val))
+         )
+      } else {
+         return absurd()
+      }
    }
 }
