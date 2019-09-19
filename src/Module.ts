@@ -1,7 +1,6 @@
 import { Grammar, Parser } from "nearley"
 import { __nonNull, as, error } from "./util/Core"
-import { List, Pair, pair } from "./BaseTypes"
-import { ExplValue } from "./DataValue"
+import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
@@ -69,23 +68,35 @@ export function successfulParse (str: string): Expr {
    return results[0]
 }
 
-export type Record = List<Pair<Str, PrimValue>>
+export type Record = List<Pair<Str, PrimValue>> // entry in dataset
 
+// create an expression and evaluate it, so we have an explained value
 export function createDatasetAs (vs: Object[], x: string): ExtendEnv {
-   // This will totally fail, just want something that compiles :-/
-   return Env.singleton(str(x), as(List.fromArray(vs.map(asRecord)) as any, ExplValue))
+   return Env.singleton(str(x), Eval.eval_(emptyEnv(), asList(vs.map(asRecord))))
 }
 
-function asRecord (v: Object): Record {
-   return List.fromArray(Object.getOwnPropertyNames(v).map(k => pair(str(k), asPrimValue((v as any)[k]))))
+function asRecord (v: Object): Expr {
+   return asList(Object.getOwnPropertyNames(v).map(k => asPair(k, (v as any)[k])))
 }
 
-function asPrimValue (v: Object): PrimValue {
+function asPair (k: string, v: any): Expr {
+   return Expr.constr(ν(), str(Pair.name), List.fromArray([asPrimValue(k), asPrimValue(v)]))
+}
+
+function asList (e̅: Expr[]): Expr {
+   let e̅ʹ: Expr = Expr.constr(ν(), str(Nil.name), List.fromArray([]))
+   for (let e of [...e̅].reverse()) {
+      e̅ʹ = Expr.constr(ν(), str(Cons.name), List.fromArray([e, e̅ʹ]))
+   }
+   return e̅ʹ
+}
+
+function asPrimValue (v: any): Expr {
    if (typeof v === "number") {
-      return num(v)
+      return Expr.constNum(ν(), num(v))
    } else
    if (typeof v === "string") {
-      return str(v)
+      return Expr.constStr(ν(), str(v))
    } else {
       return error(`Ill-formed data: expected string or number, found ${typeof v}.`)
    }
