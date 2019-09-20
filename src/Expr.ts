@@ -259,7 +259,7 @@ export namespace Expr {
          return union(freeVars(e.e1), freeVars(e.e2))
       } else
       if (e instanceof Defs) {
-         return union(...e.def̅.toArray().map(freeVarsDef))
+         return union(freeVars(e.e), ...e.def̅.toArray().map(freeVarsDef))
       } else
       if (e instanceof MatchAs) {
          return union(freeVars(e.e), freeVarsTrie(e.σ))
