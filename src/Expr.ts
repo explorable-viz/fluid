@@ -2,7 +2,7 @@ import { absurd, error } from "./util/Core"
 import { diff, union } from "./util/Set"
 import { eq } from "./util/Ord"
 import { AnnotatedC } from "./Annotated"
-import { List } from "./BaseTypes"
+import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -259,7 +259,8 @@ export namespace Expr {
          return union(freeVars(e.e1), freeVars(e.e2))
       } else
       if (e instanceof Defs) {
-         return union(freeVars(e.e), ...e.def̅.toArray().map(freeVarsDef))
+         const [bound, free]: [Set<string>, Set<string>] = freeVarsDefs(e.def̅, new Set())
+         return union(diff(freeVars(e.e), bound), free)
       } else
       if (e instanceof MatchAs) {
          return union(freeVars(e.e), freeVarsTrie(e.σ))
@@ -293,19 +294,31 @@ export namespace Expr {
       }
    }
 
-   function freeVarsDef (def: Def): Set<string> {
-      if (def instanceof Prim) {
-         return new Set()
+   // (bound, free) vars
+   function freeVarsDefs (def̅: List<Def>, bound: Set<string>): [Set<string>, Set<string>] {
+      if (Cons.is(def̅)) {
+         const def: Def = def̅.head
+         if (def instanceof Prim) {
+            const x̅: Set<string> = new Set(def.x.val),
+                  [boundʹ, free] = freeVarsDefs(def̅.tail, union(bound, x̅))
+            return [boundʹ, diff(free, x̅)]
+         } else
+         if (def instanceof Let) {
+            const x̅: Set<string> = new Set(def.x.val),
+                  [boundʹ, free] = freeVarsDefs(def̅.tail, union(bound, x̅))
+            return [boundʹ, diff(union(free, freeVars(def.e)), x̅)]
+         } else
+         if (def instanceof LetRec) {
+            const f̅: RecDef[] = def.δ.toArray(),
+                  x̅: Set<string> = new Set(f̅.map(f => f.x.val)),
+                  [boundʹ, free] = freeVarsDefs(def̅.tail, union(bound, x̅))
+            return [boundʹ, diff(union(free, ...f̅.map(f => freeVarsTrie(f.σ))), x̅)]
+         } else {
+            return absurd()
+         }
       } else
-      if (def instanceof Let) {
-         return diff(freeVars(def.e), new Set([def.x.val]))
-      } else
-      if (def instanceof LetRec) {
-         const f̅: RecDef[] = def.δ.toArray()
-         return diff(
-            union(...f̅.map(f => freeVarsTrie(f.σ))),
-            new Set(f̅.map(f => f.x.val))
-         )
+      if (Nil.is(def̅)) {
+         return [bound, new Set()]
       } else {
          return absurd()
       }
