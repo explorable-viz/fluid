@@ -299,12 +299,12 @@ export namespace Expr {
       if (Cons.is(def̅)) {
          const def: Def = def̅.head
          if (def instanceof Prim) {
-            const x̅: Set<string> = new Set(def.x.val),
-                  [boundʹ, free] = freeVarsDefs(def̅.tail, union(bound, x̅))
+            const x̅: Set<string> = new Set([def.x.val]),
+                  [boundʹ, free] = freeVarsDefs(def̅.tail, bound)
             return [boundʹ, diff(free, x̅)]
          } else
          if (def instanceof Let) {
-            const x̅: Set<string> = new Set(def.x.val),
+            const x̅: Set<string> = new Set([def.x.val]),
                   [boundʹ, free] = freeVarsDefs(def̅.tail, union(bound, x̅))
             return [boundʹ, union(diff(free, x̅), freeVars(def.e))]
          } else
