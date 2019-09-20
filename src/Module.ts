@@ -64,6 +64,9 @@ export function successfulParse (str: string): Expr {
    const { results }: Parser = new Parser(Grammar.fromCompiled(grammar)).feed(str)
    if (results.length > 1) {
       error("Ambiguous parse.")
+   } else
+   if (results.length === 0) {
+      error("Unsuccessful parse.")
    }
    return results[0]
 }
