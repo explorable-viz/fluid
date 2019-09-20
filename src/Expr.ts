@@ -294,7 +294,7 @@ export namespace Expr {
       }
    }
 
-   // (bound, free) vars
+   // (bound, free) vars - not necessarily disjoint, because the defs nest
    function freeVarsDefs (def̅: List<Def>, bound: Set<string>): [Set<string>, Set<string>] {
       if (Cons.is(def̅)) {
          const def: Def = def̅.head
@@ -306,7 +306,7 @@ export namespace Expr {
          if (def instanceof Let) {
             const x̅: Set<string> = new Set(def.x.val),
                   [boundʹ, free] = freeVarsDefs(def̅.tail, union(bound, x̅))
-            return [boundʹ, diff(union(free, freeVars(def.e)), x̅)]
+            return [boundʹ, union(diff(free, x̅), freeVars(def.e))]
          } else
          if (def instanceof LetRec) {
             const f̅: RecDef[] = def.δ.toArray(),
