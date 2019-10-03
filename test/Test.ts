@@ -2,10 +2,10 @@
 
 import { BwdSlice, FwdSlice } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some } from "../src/BaseTypes"
-import { ExtendEnv } from "../src/Env"
+import { ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
-import { createDatasetAs, module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
+import { bindDataset, module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
 
@@ -300,7 +300,8 @@ describe("example", () => {
       })
    })
 
-   describe("bar-chart-2", () => {
+   // merge with bar-chart test case once we implement loading from JSON or similar
+   describe("create-dataset", () => {
       it("ok", () => {
          const data: Object[] = [
             // some subset of the renewables dataset
@@ -308,8 +309,8 @@ describe("example", () => {
             { year: 2015, country: "China", energyType: "Geothermal", value: 0 },
             { year: 2015, country: "China", energyType: "Hydro", value: 296 }
          ]
-         const ρ: ExtendEnv = createDatasetAs(data, "data"),
-         e: Expr = openWithImports("bar-chart", [module_graphics])
+         const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data"),
+         e: Expr = openWithImports("create-dataset", [module_graphics])
          new FwdSlice(e, ρ)
       })
    })

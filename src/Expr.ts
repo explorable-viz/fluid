@@ -1,7 +1,8 @@
 import { absurd, error } from "./util/Core"
+import { diff, union } from "./util/Set"
 import { eq } from "./util/Ord"
 import { AnnotatedC } from "./Annotated"
-import { List } from "./BaseTypes"
+import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
@@ -228,6 +229,98 @@ export namespace Expr {
 
       export function var_<K extends Cont> (x: Str, κ: K): Var<K> {
          return make(Var, x, κ) as Var<K>
+      }
+   }
+
+   // used by Wrattler
+   export function freeVars (e: Expr): Set<string> {
+      if (e instanceof ConstNum) {
+         return new Set()
+      } else
+      if (e instanceof ConstStr) {
+         return new Set()
+      } else
+      if (e instanceof Fun) {
+         return freeVarsTrie(e.σ)
+      } else
+      if (e instanceof Constr) {
+         return union(...e.args.toArray().map(freeVars))
+      } else
+      if (e instanceof Quote) {
+         return freeVars(e.e)
+      } else
+      if (e instanceof Var) {
+         return new Set([e.x.val])
+      } else
+      if (e instanceof App) {
+         return union(freeVars(e.f), freeVars(e.e))
+      } else
+      if (e instanceof BinaryApp) {
+         return union(freeVars(e.e1), freeVars(e.e2))
+      } else
+      if (e instanceof Defs) {
+         const [bound, free]: [Set<string>, Set<string>] = freeVarsDefs(e.def̅, new Set())
+         return union(diff(freeVars(e.e), bound), free)
+      } else
+      if (e instanceof MatchAs) {
+         return union(freeVars(e.e), freeVarsTrie(e.σ))
+      } else
+      if (e instanceof Typematch) {
+         return union(freeVars(e.e), ...e.cases.toArray().map(({ snd }) => freeVars(snd)))
+      } else {
+         return absurd()
+      }
+   }
+
+   function freeVarsCont (κ: Cont): Set<string> {
+      if (κ instanceof Expr) {
+         return freeVars(κ)
+      } else 
+      if (κ instanceof Trie.Trie) {
+         return freeVarsTrie(κ)
+      } else {
+         return absurd()
+      }
+   }
+
+   function freeVarsTrie<K extends Cont> (σ: Trie.Trie<K>): Set<string> {
+      if (Trie.Var.is(σ)) {
+         return diff(freeVarsCont(σ.κ), new Set([σ.x.val]))
+      } else
+      if (Trie.Constr.is(σ)) {
+         return union(...σ.cases.toArray().map(({ snd }) => freeVarsCont(snd)))
+      } else {
+         return absurd()
+      }
+   }
+
+   // (bound, free) vars - not necessarily disjoint, because the defs nest
+   function freeVarsDefs (def̅: List<Def>, bound: Set<string>): [Set<string>, Set<string>] {
+      if (Cons.is(def̅)) {
+         const def: Def = def̅.head
+         if (def instanceof Prim) {
+            const x̅: Set<string> = new Set([def.x.val]),
+                  [boundʹ, free] = freeVarsDefs(def̅.tail, bound)
+            return [boundʹ, diff(free, x̅)]
+         } else
+         if (def instanceof Let) {
+            const x̅: Set<string> = new Set([def.x.val]),
+                  [boundʹ, free] = freeVarsDefs(def̅.tail, union(bound, x̅))
+            return [boundʹ, union(diff(free, x̅), freeVars(def.e))]
+         } else
+         if (def instanceof LetRec) {
+            const f̅: RecDef[] = def.δ.toArray(),
+                  x̅: Set<string> = new Set(f̅.map(f => f.x.val)),
+                  [boundʹ, free] = freeVarsDefs(def̅.tail, union(bound, x̅))
+            return [boundʹ, diff(union(free, ...f̅.map(f => freeVarsTrie(f.σ))), x̅)]
+         } else {
+            return absurd()
+         }
+      } else
+      if (Nil.is(def̅)) {
+         return [bound, new Set()]
+      } else {
+         return absurd()
       }
    }
 }
