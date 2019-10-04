@@ -35,8 +35,8 @@ export class Closure extends AnnotatedC(DataValue)<"Closure"> {
    f: Elim<Expr> = _
 }
 
-function closure (k: Id, ρ: Env, δ: List<RecDef>, f: Elim<Expr>): Closure {
-   return at(k, Closure, ρ, δ, f)
+function closure (ρ: Env, δ: List<RecDef>, f: Elim<Expr>): (k: Id) => Closure {
+   return at_(Closure, ρ, δ, f)
 }
 
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
@@ -44,7 +44,7 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
-            tf: ExplValue<Closure> = explValue(Expl.const_(), closure(ν(), ρ, δ_0, evalTrie(def.σ)))
+            tf: ExplValue<Closure> = explValue(Expl.const_(), closure(ρ, δ_0, evalTrie(def.σ))(ν()))
       return [cons(Expl.recDef(def.x, tf), δₜ), extendEnv(ρ_ext, def.x, tf)]
    } else
    if (Nil.is(δ)) {
@@ -148,7 +148,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.const_(), str(e.val.val)(kᵥ))
    } else
    if (e instanceof Expr.Fun) {
-      return explValue(Expl.const_(), closure(ν(), ρ, nil(), evalTrie(e.σ)))
+      return explValue(Expl.const_(), closure(ρ, nil(), evalTrie(e.σ))(ν()))
    } else
    if (e instanceof Expr.Constr) {
       const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
