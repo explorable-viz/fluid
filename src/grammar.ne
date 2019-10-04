@@ -36,7 +36,7 @@ import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { Str } from "./Value"
-import { ν, num, str } from "./Versioned"
+import { ν, num_, str } from "./Versioned"
 
 import Cont = Expr.Cont
 import Trie = Expr.Trie
@@ -135,7 +135,7 @@ string ->
 
 number ->
    lexeme[%number] 
-   {% ([[lit]]) => Expr.constNum(ν(), num(new Number(lit.value as string).valueOf())) %}
+   {% ([[lit]]) => Expr.constNum(ν(), num_(ν(), new Number(lit.value as string).valueOf())) %}
 
 parenthExpr -> 
    lexeme["("] expr lexeme[")"] 
