@@ -63,3 +63,11 @@ export function num (val: number): Num {
 export function str (val: string): Str {
    return at(ν(), Str, val)
 }
+
+export function num_ (k: Id, val: number): Versioned<Num> {
+   return at(k, Num, val)
+}
+
+export function str_ (k: Id, val: string): Versioned<Str> {
+   return at(k, Str, val)
+}

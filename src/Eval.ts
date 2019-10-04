@@ -11,8 +11,8 @@ import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
-import { Id, PrimValue, Num, Str, Value, _ } from "./Value"
-import { ν, at, num, str } from "./Versioned"
+import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId, taggedId } from "./Value"
+import { ν, at, num_, str } from "./Versioned"
 
 // Move to more sensible location
 export function dataValue (c: string, tv̅: ExplValue[]): DataValue {
@@ -23,6 +23,8 @@ export function dataValue (c: string, tv̅: ExplValue[]): DataValue {
 export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
 type RecDef = Expr.RecDef
+
+export type ValId = TaggedId<MemoId, "v">
 
 export module Eval {
 
@@ -138,8 +140,9 @@ function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
+   const kᵥ: ValId = taggedId(memoId(eval_, arguments), "v")
    if (e instanceof Expr.ConstNum) {
-      return explValue(Expl.const_(), num(e.val.val))
+      return explValue(Expl.const_(), num_(kᵥ, e.val.val))
    } else
    if (e instanceof Expr.ConstStr) {
       return explValue(Expl.const_(), str(e.val.val))
