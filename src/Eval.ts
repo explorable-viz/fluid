@@ -44,7 +44,8 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
-            tf: ExplValue<Closure> = explValue(Expl.const_(), closure(ρ, δ_0, evalTrie(def.σ))(ν()))
+            kᵥ: ValId = taggedId(memoId(recDefs, arguments), "v"),
+            tf: ExplValue<Closure> = explValue(Expl.const_(), closure(ρ, δ_0, evalTrie(def.σ))(kᵥ))
       return [cons(Expl.recDef(def.x, tf), δₜ), extendEnv(ρ_ext, def.x, tf)]
    } else
    if (Nil.is(δ)) {
@@ -148,7 +149,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.const_(), str(e.val.val)(kᵥ))
    } else
    if (e instanceof Expr.Fun) {
-      return explValue(Expl.const_(), closure(ρ, nil(), evalTrie(e.σ))(ν()))
+      return explValue(Expl.const_(), closure(ρ, nil(), evalTrie(e.σ))(kᵥ))
    } else
    if (e instanceof Expr.Constr) {
       const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
