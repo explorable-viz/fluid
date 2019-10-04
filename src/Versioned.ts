@@ -33,6 +33,10 @@ export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): 
    }
 }
 
+export function at_<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id) => Versioned<T> {
+   return (k: Id) => at(k, C, ...v̅)
+}
+
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
 function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
    return notYetImplemented()
@@ -64,10 +68,10 @@ export function str (val: string): Str {
    return at(ν(), Str, val)
 }
 
-export function num_ (k: Id, val: number): Versioned<Num> {
-   return at(k, Num, val)
+export function num_ (val: number): (k: Id) => Versioned<Num> {
+   return at_(Num, val)
 }
 
-export function str_ (k: Id, val: string): Versioned<Str> {
-   return at(k, Str, val)
+export function str_ (val: string): (k: Id) => Versioned<Str> {
+   return at_(Str, val)
 }

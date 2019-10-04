@@ -145,7 +145,7 @@ const grammar: Grammar = {
     {"name": "number$macrocall$2", "symbols": [(lexer.has("number") ? {type: "number"} : number)]},
     {"name": "number$macrocall$1", "symbols": ["number$macrocall$2"], "postprocess": id},
     {"name": "number$macrocall$1", "symbols": ["number$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "number", "symbols": ["number$macrocall$1"], "postprocess": ([[lit]]) => Expr.constNum(ν(), num_(ν(), new Number(lit.value as string).valueOf()))},
+    {"name": "number", "symbols": ["number$macrocall$1"], "postprocess": ([[lit]]) => Expr.constNum(ν(), num_(new Number(lit.value as string).valueOf())(ν()))},
     {"name": "parenthExpr$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "parenthExpr$macrocall$1", "symbols": ["parenthExpr$macrocall$2"], "postprocess": id},
     {"name": "parenthExpr$macrocall$1", "symbols": ["parenthExpr$macrocall$2", "_"], "postprocess": ([x, ]) => x},

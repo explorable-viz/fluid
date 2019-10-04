@@ -12,12 +12,12 @@ import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId, taggedId } from "./Value"
-import { ν, at, num_, str } from "./Versioned"
+import { ν, at, at_, num_, str } from "./Versioned"
 
 // Move to more sensible location
-export function dataValue (c: string, tv̅: ExplValue[]): DataValue {
+export function dataValue (c: string, tv̅: ExplValue[]): (k: Id) => DataValue {
    const d: DataType = __nonNull(ctrToDataType.get(c))
-   return at(ν(), d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+   return at_(d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
 }
 
 export enum Direction { Fwd, Bwd }
@@ -142,7 +142,7 @@ function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 export function eval_ (ρ: Env, e: Expr): ExplValue {
    const kᵥ: ValId = taggedId(memoId(eval_, arguments), "v")
    if (e instanceof Expr.ConstNum) {
-      return explValue(Expl.const_(), num_(kᵥ, e.val.val))
+      return explValue(Expl.const_(), num_(e.val.val)(kᵥ))
    } else
    if (e instanceof Expr.ConstStr) {
       return explValue(Expl.const_(), str(e.val.val))
@@ -154,7 +154,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
             c: string = e.ctr.val,
             d: DataType = __nonNull(ctrToDataType.get(c))
-      return explValue(at(ν(), d.explC̅.get(c)!, ...tv̅.map(({t}) => t)), dataValue(c, tv̅))
+      return explValue(at(ν(), d.explC̅.get(c)!, ...tv̅.map(({t}) => t)), dataValue(c, tv̅)(kᵥ))
    } else
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote(), e.e)
@@ -178,7 +178,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       } else 
       if (v instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
-            return explValue(Expl.unaryApp(tf as ExplValue<UnaryOp>, tu as ExplValue<PrimValue>), v.op(u))
+            return explValue(Expl.unaryApp(tf as ExplValue<UnaryOp>, tu as ExplValue<PrimValue>), v.op(u)(kᵥ))
          } else {
             return error(`Applying "${v.name}" to non-primitive value.`, u)
          }
@@ -193,7 +193,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
                [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
                [v1, v2]: [Value, Value] = [tv1.v, tv2.v]
          if ((v1 instanceof Num || v1 instanceof Str) && (v2 instanceof Num || v2 instanceof Str)) {
-               return explValue(Expl.binaryApp(tv1 as ExplValue<PrimValue>, e.opName, tv2 as ExplValue<PrimValue>), op.op(v1, v2))
+               return explValue(Expl.binaryApp(tv1 as ExplValue<PrimValue>, e.opName, tv2 as ExplValue<PrimValue>), op.op(v1, v2)(kᵥ))
          } else {
             return error(`Applying "${e.opName}" to non-primitive value.`, v1, v2)
          }
