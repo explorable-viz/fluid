@@ -3,7 +3,7 @@ import { Bool, true_, false_ } from "./BaseTypes"
 import { ExplValue, explValue } from "./DataValue"
 import { Expl } from "./Expl"
 import { Id, Num, PrimOpTag, PrimValue, Str, _, Value } from "./Value"
-import { ν, at, num, str_ } from "./Versioned"
+import { ν, at, num, str } from "./Versioned"
 
 type Unary<T, V> = (x: T) => (k: Id) => V
 type Binary<T, U, V> = (x: T, y: U) => (k: Id) => V
@@ -28,12 +28,12 @@ const ceiling: Unary<Num, Num> = x => num(Math.ceil(x.val))
 const error: Unary<Str, Value> = message => assert(false, "LambdaCalc error:\n" + message.val)
 const floor: Unary<Num, Num> = x => num(Math.floor(x.val))
 const log: Unary<Num, Num> = x => num(Math.log(as(x, Num).val))
-const numToStr: Unary<Num, Str> = x => str_(x.val.toString())
+const numToStr: Unary<Num, Str> = x => str(x.val.toString())
 const trace: Unary<Num | Str, Value> = v => (k: Id) => { console.log(v); return v }
 // No longer support overloaded functions, since the pattern-matching semantics is non-trivial; might require typecase.
 // If we want integer division, apparently ~~(x / y) will round in the right direction.
 const div: Binary<Num, Num, Num> = (x, y) => num(as(x, Num).val / as(y, Num).val)
-const concat: Binary<Str, Str, Str> = (x, y) => str_(as(x, Str).val + as(y, Str).val)
+const concat: Binary<Str, Str, Str> = (x, y) => str(as(x, Str).val + as(y, Str).val)
 const equalInt: Binary<Num, Num, Bool> = (x, y) => as(x, Num).val === as(y, Num).val ? true_() : false_()
 const equalStr: Binary<Str, Str, Bool> = (x, y) => as(x, Str).val === as(y, Str).val ? true_() : false_()
 const greaterEqInt: Binary<Num, Num, Bool> = (x, y) => as(x, Num).val >= as(y, Num).val ? true_() : false_()

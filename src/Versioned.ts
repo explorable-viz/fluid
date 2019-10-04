@@ -60,14 +60,10 @@ export const ν: () => Extern =
       }
    })()
 
-export function str (val: string): Str {
-   return at(ν(), Str, val)
-}
-
 export function num (val: number): (k: Id) => Versioned<Num> {
    return at_(Num, val)
 }
 
-export function str_ (val: string): (k: Id) => Versioned<Str> {
+export function str (val: string): (k: Id) => Versioned<Str> {
    return at_(Str, val)
 }
