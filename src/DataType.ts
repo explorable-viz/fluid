@@ -3,7 +3,7 @@ import { DataValue } from "./DataValue"
 import { Expl } from "./Expl"
 import { DataElim } from "./Match"
 import { Num, PrimValue, Str, _, fields } from "./Value"
-import { str } from "./Versioned"
+import { ν, str_ } from "./Versioned"
 
 export class PrimType {
    name: Str
@@ -94,7 +94,7 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                }
             }[explC_name]]
          }),
-         d: DataType = new DataType(str(D.name), elimC, new Map(ctrs), new Map(explC̅))
+         d: DataType = new DataType(str_(D.name)(ν()), elimC, new Map(ctrs), new Map(explC̅))
    C̅.forEach((C: Class<T>): void => {
       ctrToDataType.set(C.name, d)
    })
@@ -102,5 +102,5 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
    types.set(d.name.val, d)
 }
 
-types.set(Num.name, new PrimType(str(Num.name), Num))
-types.set(Str.name, new PrimType(str(Str.name), Str))
+types.set(Num.name, new PrimType(str_(Num.name)(ν()), Num))
+types.set(Str.name, new PrimType(str_(Str.name)(ν()), Str))
