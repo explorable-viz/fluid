@@ -7,7 +7,7 @@ import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
-import { num_ } from "../Versioned"
+import { num } from "../Versioned"
 import { ExplValueCursor } from "../app/Cursor"
 
 export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
@@ -254,7 +254,7 @@ let svgMetrics: SVGSVGElement
       svgMetrics.appendChild(text)
       const width: number = text.getBBox().width
       text.remove()
-      return num_(width)
+      return num(width)
    }
    
    const textHeight = (str: Str): (k: Id) => Num => {
@@ -262,7 +262,7 @@ let svgMetrics: SVGSVGElement
       svgMetrics.appendChild(text)
       const height: number = text.getBBox().height
       text.remove()
-      return num_(height)
+      return num(height)
    }
    
    unaryOps.set(textWidth.name, unary_(textWidth))

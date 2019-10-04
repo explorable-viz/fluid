@@ -12,7 +12,7 @@ import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId, taggedId } from "./Value"
-import { ν, at, at_, num_, str } from "./Versioned"
+import { ν, at, at_, num, str } from "./Versioned"
 
 // Move to more sensible location
 export function dataValue (c: string, tv̅: ExplValue[]): (k: Id) => DataValue {
@@ -142,7 +142,7 @@ function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 export function eval_ (ρ: Env, e: Expr): ExplValue {
    const kᵥ: ValId = taggedId(memoId(eval_, arguments), "v")
    if (e instanceof Expr.ConstNum) {
-      return explValue(Expl.const_(), num_(e.val.val)(kᵥ))
+      return explValue(Expl.const_(), num(e.val.val)(kᵥ))
    } else
    if (e instanceof Expr.ConstStr) {
       return explValue(Expl.const_(), str(e.val.val))

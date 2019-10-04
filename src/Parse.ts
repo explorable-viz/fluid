@@ -45,7 +45,7 @@ import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { Str } from "./Value"
-import { ν, num_, str } from "./Versioned"
+import { ν, num, str } from "./Versioned"
 
 import Cont = Expr.Cont
 import Trie = Expr.Trie
@@ -145,7 +145,7 @@ const grammar: Grammar = {
     {"name": "number$macrocall$2", "symbols": [(lexer.has("number") ? {type: "number"} : number)]},
     {"name": "number$macrocall$1", "symbols": ["number$macrocall$2"], "postprocess": id},
     {"name": "number$macrocall$1", "symbols": ["number$macrocall$2", "_"], "postprocess": ([x, ]) => x},
-    {"name": "number", "symbols": ["number$macrocall$1"], "postprocess": ([[lit]]) => Expr.constNum(ν(), num_(new Number(lit.value as string).valueOf())(ν()))},
+    {"name": "number", "symbols": ["number$macrocall$1"], "postprocess": ([[lit]]) => Expr.constNum(ν(), num(new Number(lit.value as string).valueOf())(ν()))},
     {"name": "parenthExpr$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "parenthExpr$macrocall$1", "symbols": ["parenthExpr$macrocall$2"], "postprocess": id},
     {"name": "parenthExpr$macrocall$1", "symbols": ["parenthExpr$macrocall$2", "_"], "postprocess": ([x, ]) => x},

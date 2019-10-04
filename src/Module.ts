@@ -7,7 +7,7 @@ import { Expr } from "./Expr"
 import "./Graphics" // for datatypes
 import grammar from "./Parse"
 import { PrimValue, Str } from "./Value"
-import { ν, num_, str } from "./Versioned"
+import { ν, num, str } from "./Versioned"
 
 // Kindergarten modules.
 type Module = List<Expr.Def>
@@ -96,7 +96,7 @@ function asList (e̅: Expr[]): Expr {
 
 function asPrimValue (v: any): Expr {
    if (typeof v === "number") {
-      return Expr.constNum(ν(), num_(v)(ν()))
+      return Expr.constNum(ν(), num(v)(ν()))
    } else
    if (typeof v === "string") {
       return Expr.constStr(ν(), str(v))
