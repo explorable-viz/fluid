@@ -17,17 +17,6 @@ before((done: MochaDone) => {
 
 // Putting test name in a variable interacts poorly with asynchronous execution.
 describe("slice", () => {
-   describe("arithmetic-edit", () => {
-      it("ok", () => {
-         const e: Expr = open("arithmetic"),
-               here: ExprCursor = new ExprCursor(e)
-         here.skipImports()
-             .to(Expr.BinaryApp, "e1")
-             .to(Expr.BinaryApp, "e2")
-             .to(Expr.ConstNum, "val")
-         })
-   })
-
    describe("arithmetic", () => {
       it("ok", () => {
          const e: Expr = open("arithmetic")
