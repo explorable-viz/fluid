@@ -68,12 +68,12 @@ export class Edit {
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Edit)) {
-         const tv: ExplValue = Eval.eval_(ρ, e)
+         Eval.eval_(ρ, e)
          clearDelta()
-         this.setup(new ExprCursor(tv))
-         const tvʹ: ExplValue = Eval.eval_(ρ, e)
+         this.setup(new ExprCursor(e))
+         const tv: ExplValue = Eval.eval_(ρ, e)
          // actually think we want to be notified of changes here
-         this.expect(new ExplValueCursor(tvʹ))
+         this.expect(new ExplValueCursor(tv))
       }
    }
 
