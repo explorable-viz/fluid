@@ -84,8 +84,8 @@ export namespace Expl {
       tf: ExplValue<Closure> = _
    }
 
-   export function recDef (x: Str, tf: ExplValue<Closure>): RecDef {
-      return at_(RecDef, x, tf)(ν())
+   export function recDef (x: Str, tf: ExplValue<Closure>): (k: Id) => RecDef {
+      return at_(RecDef, x, tf)
    }
 
    export class LetRec extends Def {

@@ -47,7 +47,7 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
             k: MemoId = memoId(recDefs, arguments),
             tf: ExplValue<Closure> = explValue(Expl.const_()(k.tag("t")), closure(ρ, δ_0, evalTrie(def.σ))(k.tag("v")))
-      return [cons(Expl.recDef(def.x, tf), δₜ), extendEnv(ρ_ext, def.x, tf)]
+      return [cons(Expl.recDef(def.x, tf)(k), δₜ), extendEnv(ρ_ext, def.x, tf)]
    } else
    if (Nil.is(δ)) {
       return [nil(), emptyEnv()]
