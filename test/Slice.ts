@@ -16,7 +16,18 @@ before((done: MochaDone) => {
 })
 
 // Putting test name in a variable interacts poorly with asynchronous execution.
-describe("example", () => {
+describe("slice", () => {
+   describe("arithmetic-edit", () => {
+      it("ok", () => {
+         const e: Expr = open("arithmetic"),
+               here: ExprCursor = new ExprCursor(e)
+         here.skipImports()
+             .to(Expr.BinaryApp, "e1")
+             .to(Expr.BinaryApp, "e2")
+             .to(Expr.ConstNum, "val")
+         })
+   })
+
    describe("arithmetic", () => {
       it("ok", () => {
          const e: Expr = open("arithmetic")
@@ -112,11 +123,11 @@ describe("example", () => {
                   .to(Expr.Fun, "σ")
                   .to(Trie.Constr, "cases")
                   .to(NonEmpty, "left")
-                  .nodeValue()
+                  .treeNodeValue()
                   .var_("x").var_("xs")
                   .to(Expr.MatchAs, "σ")
                   .to(Trie.Constr, "cases")
-                  .nodeValue()
+                  .treeNodeValue()
                   .constrArg("Cons", 0).clearα()
             }
             expect (here: ExplValueCursor): void {
@@ -345,15 +356,15 @@ describe("example", () => {
                   .var_("op")
                   .to(Expr.Fun, "σ")
                   .to(Trie.Constr, "cases")
-               hereʹ.nodeValue().αclear() // body of outer Nil clause
+               hereʹ.treeNodeValue().αclear() // body of outer Nil clause
                hereʹ = hereʹ
                   .to(NonEmpty, "left")
-                  .nodeValue()          
+                  .treeNodeValue()          
                   .var_("x").var_("xs").αclear()
                   .to(Expr.Fun, "σ")
                   .to(Trie.Constr, "cases")
                   .to(NonEmpty, "left")
-                  .nodeValue()          
+                  .treeNodeValue()          
                   .var_("y").var_("ys").αclear() // cons constructor
                   .constrArg("Cons", 0).αset() // application of op
                   .to(Expr.App, "e").αset()  // pair constructor
@@ -366,7 +377,7 @@ describe("example", () => {
                   .to(Expr.App, "e")
                   .to(Expr.Fun, "σ")
                   .to(Trie.Constr, "cases")
-                  .nodeValue()
+                  .treeNodeValue()
                   .var_("x").var_("y").αset()
             }
          })(e)

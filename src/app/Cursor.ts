@@ -144,7 +144,7 @@ export class ExprCursor extends Cursor {
                  .toElem(n)
    }
 
-   nodeValue (): ExprCursor {
+   treeNodeValue (): ExprCursor {
       return this.to(NonEmpty, "t")
                  .to(Pair, "snd")
    }

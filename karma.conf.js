@@ -10,7 +10,7 @@ module.exports = function (config) {
       },
       frameworks: ['mocha', 'chai'],
       files: [
-         './test/**/Test.ts',
+         './test/**/*.ts',
          {
             pattern: './lcalc/**/*.lcalc',
             watched: true,
