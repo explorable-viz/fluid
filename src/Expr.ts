@@ -6,7 +6,7 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
-import { Id, Num, Str, _, make } from "./Value"
+import { DataValueTag, Id, Num, Str, _, make } from "./Value"
 import { ν, at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
@@ -47,7 +47,10 @@ export namespace Expr {
       }
    }
 
-   export abstract class Expr extends AnnotatedC(DataValue)<"Expr"> {
+   export abstract class SyntaxNode<Tag extends DataValueTag> extends AnnotatedC(DataValue)<Tag> {
+   }
+
+   export abstract class Expr extends SyntaxNode<"Expr"> {
    }
    
    export class App extends Expr {
@@ -94,7 +97,7 @@ export namespace Expr {
       return at(k, Constr, ctr, args)
    }
 
-   export class Def extends AnnotatedC(DataValue)<"Expr.Def"> {
+   export class Def extends SyntaxNode<"Expr.Def"> {
    }
 
    export class Let extends Def {
@@ -114,7 +117,7 @@ export namespace Expr {
       return at(k, Prim, x)
    }
 
-   export class RecDef extends AnnotatedC(DataValue)<"RecDef"> {
+   export class RecDef extends SyntaxNode<"RecDef"> {
       x: Str = _
       σ: Trie<Expr> = _
    }
