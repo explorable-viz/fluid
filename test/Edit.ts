@@ -7,6 +7,8 @@ import { open } from "../src/Module"
 import { Delta } from "../src/Value"
 import { ExprCursor } from "..//src/app/Cursor"
 
+import Trie = Expr.Trie
+
 before((done: MochaDone) => {
    done()
 })
@@ -30,6 +32,28 @@ describe("edit", () => {
                assert(prop1 === "val" && typeof v1 === "number" && v1 === 6)
                assert(prop2 === "val" && typeof v2 === "number" && v2 === 7)
                assert(prop3 === "val" && typeof v3 === "number" && v3 === 49)
+            }
+         })(e)
+      })
+   })
+
+   describe("filter-edit", () => {
+      it("ok", () => {
+         const e: Expr = open("filter")
+         new (class extends Edit {
+            setup (here: ExprCursor) {
+               here.skipImports()
+                   .to(Expr.App, "f")
+                   .to(Expr.App, "e")
+                   .to(Expr.Fun, "σ")
+                   .to(Trie.Var, "κ")
+                   .to(Expr.BinaryApp, "e1")
+                   .to(Expr.ConstNum, "val")
+                   .setNum(5)
+            }
+
+            expect (delta: Delta) {
+               assert(delta.size === 0)
             }
          })(e)
       })
