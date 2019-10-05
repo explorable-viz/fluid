@@ -75,19 +75,20 @@ function recDefs_ (dir: Direction, δ: List<Expl.RecDef>): void {
 
 // Here we mustn't invert definition order.
 function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
+   const k: MemoId = memoId(defs, arguments)
    if (Cons.is(def̅)) {
       const def: Def = def̅.head
       if (def instanceof Expr.Let) {
          const tv: ExplValue = eval_(ρ.concat(ρ_ext), def.e),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, tv))
-         return [cons(Expl.let_(def.x, tv), def̅ₜ), ρ_extʹ]
+         return [cons(Expl.let_(def.x, tv)(k), def̅ₜ), ρ_extʹ]
       } else
       if (def instanceof Expr.Prim) {
          // first-class primitives currently happen to be unary
          if (unaryOps.has(def.x.val)) {
             const t_op: ExplValue<UnaryOp> = unaryOps.get(def.x.val)!,
                   [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, t_op))
-            return [cons(Expl.prim(def.x, t_op), def̅ₜ), ρ_extʹ]
+            return [cons(Expl.prim(def.x, t_op)(k), def̅ₜ), ρ_extʹ]
          } else {
             return error(`No implementation found for primitive "${def.x.val}".`)
          }
@@ -95,7 +96,7 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
       if (def instanceof Expr.LetRec) {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(def.δ, ρ.concat(ρ_ext), def.δ),
                [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, ρ_ext.concat(ρᵟ))
-         return [cons(Expl.letRec(δ), def̅ₜ), ρ_extʹ]
+         return [cons(Expl.letRec(δ)(k), def̅ₜ), ρ_extʹ]
       } else {
          return absurd()
       }

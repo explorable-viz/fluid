@@ -7,7 +7,7 @@ import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
 import { Id, PrimValue, Str, _, fields } from "./Value"
-import { ν, at_ } from "./Versioned"
+import { at_ } from "./Versioned"
 
 export type Closure = Eval.Closure
 export type Expl = Expl.Expl
@@ -66,8 +66,8 @@ export namespace Expl {
       tv: ExplValue = _
    }
 
-   export function let_ (x: Str, tv: ExplValue): Let {
-      return at_(Let, x, tv)(ν())
+   export function let_ (x: Str, tv: ExplValue): (k: Id) => Let {
+      return at_(Let, x, tv)
    }
 
    export class Prim extends Def {
@@ -75,8 +75,8 @@ export namespace Expl {
       t_op: ExplValue<UnaryOp> = _
    }
 
-   export function prim (x: Str, t_op: ExplValue<UnaryOp>): Prim {
-      return at_(Prim, x, t_op)(ν())
+   export function prim (x: Str, t_op: ExplValue<UnaryOp>): (k: Id) => Prim {
+      return at_(Prim, x, t_op)
    }
 
    export class RecDef extends DataValue<"Expl.RecDef"> {
@@ -92,8 +92,8 @@ export namespace Expl {
       δ: List<RecDef> = _
    }
 
-   export function letRec (δ: List<RecDef>): LetRec {
-      return at_(LetRec, δ)(ν())
+   export function letRec (δ: List<RecDef>): (k: Id) => LetRec {
+      return at_(LetRec, δ)
    }
 
    export class Defs extends NonTerminal {
