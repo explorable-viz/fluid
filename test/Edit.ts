@@ -3,7 +3,7 @@
 import { BwdSlice } from "./util/Core"
 import { Expr } from "../src/Expr"
 import { open } from "../src/Module"
-import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
+import { ExprCursor } from "..//src/app/Cursor"
 
 before((done: MochaDone) => {
    done()
@@ -26,12 +26,7 @@ describe("edit", () => {
       it("ok", () => {
          const e: Expr = open("zipW")
          // needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
-         new (class extends BwdSlice {
-            setup (here: ExplValueCursor): void {
-            }
-            expect (): void {
-            }
-         })(e)
+         new BwdSlice(e)
       })
    })
 })
