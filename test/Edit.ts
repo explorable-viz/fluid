@@ -49,7 +49,7 @@ describe("edit", () => {
                    .to(Trie.Var, "κ")
                    .to(Expr.BinaryApp, "e1")
                    .to(Expr.ConstNum, "val")
-                   .setNum(5)
+                   .setNum(3)
             }
 
             expect (delta: Delta) {

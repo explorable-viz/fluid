@@ -1,5 +1,5 @@
-import { Class, __nonNull, notYetImplemented } from "./util/Core"
-import { Id, Persistent, Num, Str, Value, _, construct, make } from "./Value"
+import { Class, __nonNull, assert } from "./util/Core"
+import { Id, Persistent, Num, Str, Value, _, construct, fields, make } from "./Value"
 
 // Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
 // same datatype can be interned in some contexts and versioned in others.
@@ -39,7 +39,14 @@ export function at_<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id
 
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
 function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
-   return notYetImplemented()
+   const proto: Object = Object.getPrototypeOf(new ctr)
+   if (Object.getPrototypeOf(v) !== proto) {
+      for (const k of fields(v)) {
+         assert(delete v[k as keyof Object])
+      }
+      Object.setPrototypeOf(v, proto)
+   }
+   return v as Versioned<T>
 }
 
 // A memo key which is sourced externally to the system. (The name "External" is already taken.)
