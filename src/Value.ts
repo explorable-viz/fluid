@@ -37,10 +37,6 @@ export abstract class Id extends Value<"Id"> {
 
 class FunctionId extends Id {
    f: Function = _
-
-   get args (): Persistent[] {
-      return []
-   }
 }
 
 function functionId (f: Function): FunctionId {
@@ -50,12 +46,6 @@ function functionId (f: Function): FunctionId {
 class ApplicationId extends Id {
    k: MemoId = _
    v: Persistent = _
-
-   get args (): Persistent[] {
-      const v̅: Persistent[] = this.k.args
-      v̅.push(this.v)
-      return v̅
-   }
 }
 
 export type MemoId = FunctionId | ApplicationId
