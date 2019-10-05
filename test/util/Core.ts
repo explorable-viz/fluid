@@ -73,7 +73,7 @@ export class Edit {
          this.setup(new ExprCursor(e))
          Eval.eval_(ρ, e)
          this.expect(__delta)
-         console.log(__delta)
+         console.log(__delta.size)
       }
    }
 
