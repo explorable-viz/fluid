@@ -28,10 +28,10 @@ describe("edit", () => {
 
             expect (delta: Delta) {
                assert(delta.size === 3)
-               const [[, prop1, v1], [, prop2, v2], [, prop3, v3]] = delta
-               assert(prop1 === "val" && typeof v1 === "number" && v1 === 6)
-               assert(prop2 === "val" && typeof v2 === "number" && v2 === 7)
-               assert(prop3 === "val" && typeof v3 === "number" && v3 === 49)
+               const [[, { val: v1 }], [, { val: v2 }], [, { val: v3 }]] = delta
+               assert(typeof v1 === "number" && v1 === 6)
+               assert(typeof v2 === "number" && v2 === 7)
+               assert(typeof v3 === "number" && v3 === 49)
             }
          })(e)
       })

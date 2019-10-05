@@ -1,6 +1,6 @@
 import { Class, __nonNull } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
-import { MemoFunType, Persistent, Value, ValueTag, _, __delta, memo } from "./Value"
+import { MemoFunType, Persistent, Value, ValueTag, _, setDelta, memo } from "./Value"
 
 // For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
 // https://github.com/Microsoft/TypeScript/issues/21710.
@@ -23,7 +23,7 @@ export function annotated<T extends Object> (v: T): v is T & Annotated {
 
 export function setα<T extends Annotated & Value> (α: Annotation, v: T): T {
    if (v.__α !== α) {
-      __delta.add([v, "__α", α])
+      setDelta(v, "__α", α)
    }
    v.__α = α
    return v
