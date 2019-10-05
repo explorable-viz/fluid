@@ -153,4 +153,10 @@ export class ExprCursor extends Cursor {
       this.assert(Trie.Var, σ => σ.x.val === x)
       return this.to(Trie.Var, "κ")      
    }
+
+   // Editing API
+
+   setNum (n: number): ExprCursor {
+      return this
+   }
 }

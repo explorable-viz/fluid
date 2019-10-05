@@ -1,6 +1,6 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { BwdSlice } from "./util/Core"
+import "./util/Core" // otherwise things mysteriously go wrong
 import { Expr } from "../src/Expr"
 import { open } from "../src/Module"
 import { ExprCursor } from "..//src/app/Cursor"
@@ -19,14 +19,7 @@ describe("edit", () => {
              .to(Expr.BinaryApp, "e1")
              .to(Expr.BinaryApp, "e2")
              .to(Expr.ConstNum, "val")
+             .setNum(5)
          })
-   })
-
-   describe("zipW", () => {
-      it("ok", () => {
-         const e: Expr = open("zipW")
-         // needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
-         new BwdSlice(e)
-      })
    })
 })
