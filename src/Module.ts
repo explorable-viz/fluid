@@ -52,7 +52,7 @@ export function openWithImports (file: string, modules: Module[]): Expr {
 }
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
-   return Env.singleton(str(x), Eval.eval_(emptyEnv(), parseWithImports(loadTestFile("lcalc/dataset", file), [])))
+   return Env.singleton(str(x)(ν()), Eval.eval_(emptyEnv(), parseWithImports(loadTestFile("lcalc/dataset", file), [])))
 }
 
 export function parseWithImports (src: string, modules: Module[]): Expr {
@@ -75,7 +75,7 @@ export type Record = List<Pair<Str, PrimValue>> // entry in dataset
 
 // create an expression and evaluate it, so we have an explained value
 export function bindDataset (ρ: Env, vs: Object[], x: string): ExtendEnv {
-   return extendEnv(ρ, str(x), Eval.eval_(ρ, asList(vs.map(asRecord))))
+   return extendEnv(ρ, str(x)(ν()), Eval.eval_(ρ, asList(vs.map(asRecord))))
 }
 
 function asRecord (v: Object): Expr {
@@ -83,23 +83,23 @@ function asRecord (v: Object): Expr {
 }
 
 function asPair (k: string, v: any): Expr {
-   return Expr.constr(ν(), str(Pair.name), List.fromArray([asPrimValue(k), asPrimValue(v)]))
+   return Expr.constr(ν(), str(Pair.name)(ν()), List.fromArray([asPrimValue(k), asPrimValue(v)]))
 }
 
 function asList (e̅: Expr[]): Expr {
-   let e̅ʹ: Expr = Expr.constr(ν(), str(Nil.name), List.fromArray([]))
+   let e̅ʹ: Expr = Expr.constr(ν(), str(Nil.name)(ν()), List.fromArray([]))
    for (let e of [...e̅].reverse()) {
-      e̅ʹ = Expr.constr(ν(), str(Cons.name), List.fromArray([e, e̅ʹ]))
+      e̅ʹ = Expr.constr(ν(), str(Cons.name)(ν()), List.fromArray([e, e̅ʹ]))
    }
    return e̅ʹ
 }
 
 function asPrimValue (v: any): Expr {
    if (typeof v === "number") {
-      return Expr.constNum(ν(), num(v))
+      return Expr.constNum(ν(), num(v)(ν()))
    } else
    if (typeof v === "string") {
-      return Expr.constStr(ν(), str(v))
+      return Expr.constStr(ν(), str(v)(ν()))
    } else {
       return error(`Ill-formed data: expected string or number, found ${typeof v}.`)
    }

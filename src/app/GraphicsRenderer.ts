@@ -6,7 +6,7 @@ import { ExplValue } from "../DataValue"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
 import { unary_, unaryOps } from "../Primitive"
-import { Num, Str } from "../Value"
+import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { ExplValueCursor } from "../app/Cursor"
 
@@ -249,7 +249,7 @@ let svgMetrics: SVGSVGElement
 
    // Additional primitives that rely on offline rendering to compute text metrics. Combine these would 
    // require more general primitives that can return tuples.
-   const textWidth = (str: Str): Num => {
+   const textWidth = (str: Str): (k: Id) => Num => {
       const text: SVGTextElement = textElement(0, 0, str.val)
       svgMetrics.appendChild(text)
       const width: number = text.getBBox().width
@@ -257,7 +257,7 @@ let svgMetrics: SVGSVGElement
       return num(width)
    }
    
-   const textHeight = (str: Str): Num => {
+   const textHeight = (str: Str): (k: Id) => Num => {
       const text: SVGTextElement = textElement(0, 0, str.val)
       svgMetrics.appendChild(text)
       const height: number = text.getBBox().height
@@ -265,6 +265,6 @@ let svgMetrics: SVGSVGElement
       return num(height)
    }
    
-   unaryOps.set(textHeight.name, unary_(textHeight))
    unaryOps.set(textWidth.name, unary_(textWidth))
+   unaryOps.set(textHeight.name, unary_(textHeight))
 }

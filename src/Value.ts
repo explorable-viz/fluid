@@ -30,6 +30,9 @@ export class Value<Tag extends ValueTag = ValueTag> {
 
 // Address or location of persistent object.
 export abstract class Id extends Value<"Id"> {
+   tag<Tag extends string> (tag: Tag): TaggedId<Tag> {
+      return taggedId(this, tag)
+   }
 }
 
 class FunctionId extends Id {
@@ -61,13 +64,13 @@ function applicationId (k: MemoId, v: Persistent): ApplicationId {
    return make(ApplicationId, k, v)
 }
 
-export class TaggedId<T extends Id, Tag extends string> extends Id {
-   k: T = _
-   tag: Tag = _
+export class TaggedId<Tag extends string> extends Id {
+   k: Id = _
+   prop: Tag = _
 }
 
-export function taggedId<T extends Id, Tag extends string> (k: T, tag: Tag): TaggedId<T, Tag> {
-   return make(TaggedId, k, tag) as TaggedId<T, Tag>
+function taggedId<Tag extends string> (k: Id, prop: Tag): TaggedId<Tag> {
+   return make(TaggedId, k, prop) as TaggedId<Tag>
 }
 
 export function memoId (f: Function, v̅: IArguments): MemoId {

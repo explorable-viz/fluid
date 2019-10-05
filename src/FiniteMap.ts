@@ -47,8 +47,8 @@ export function singleton <V extends Persistent> (k: Str, v: V): FiniteMap<V> {
    return insert(empty(), k, v)
 }
 
-// Union with a combining function. Avoid primes in signature; seems to be incompatible with version 
-// of ts-loader used by Wrattler.
+// Union with a combining function. If keys are equal, right-hand key will be used in the output.
+// Avoid primes in signature; seems to be incompatible with version of ts-loader used by Wrattler.
 export function unionWith <V extends Persistent, T extends FiniteMap<V>> (m1: T, m2: T, f: (v1: V, v2: V) => V): T {
    if (NonEmpty.is(m2)) {
       const k: Str = m2.t.fst,

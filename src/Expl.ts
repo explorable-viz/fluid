@@ -6,8 +6,8 @@ import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
-import { PrimValue, Str, _, fields } from "./Value"
-import { ν, at } from "./Versioned"
+import { Id, PrimValue, Str, _, fields } from "./Value"
+import { at_ } from "./Versioned"
 
 export type Closure = Eval.Closure
 export type Expl = Expl.Expl
@@ -28,8 +28,8 @@ export namespace Expl {
       t: Expl = _
    }
 
-   export function app (tf: ExplValue<Closure>, tu: ExplValue, δ: List<RecDef>, ξ: Match<Expr>, t: Expl): App {
-      return at(ν(), App, tf, tu, δ, ξ, t)
+   export function app (tf: ExplValue<Closure>, tu: ExplValue, δ: List<RecDef>, ξ: Match<Expr>, t: Expl): (k: Id) => App {
+      return at_(App, tf, tu, δ, ξ, t)
    }
 
    export class UnaryApp extends Expl {
@@ -37,8 +37,8 @@ export namespace Expl {
       tv: ExplValue<PrimValue> = _
    }
 
-   export function unaryApp (tf: ExplValue<UnaryOp>, tv: ExplValue<PrimValue>): UnaryApp {
-      return at(ν(), UnaryApp, tf, tv)
+   export function unaryApp (tf: ExplValue<UnaryOp>, tv: ExplValue<PrimValue>): (k: Id) => UnaryApp {
+      return at_(UnaryApp, tf, tv)
    }
 
    export class BinaryApp extends Expl {
@@ -47,8 +47,8 @@ export namespace Expl {
       tv2: ExplValue<PrimValue> = _
    }
 
-   export function binaryApp (tv1: ExplValue<PrimValue>, opName: Str, tv2: ExplValue<PrimValue>): BinaryApp {
-      return at(ν(), BinaryApp, tv1, opName, tv2)
+   export function binaryApp (tv1: ExplValue<PrimValue>, opName: Str, tv2: ExplValue<PrimValue>): (k: Id) => BinaryApp {
+      return at_(BinaryApp, tv1, opName, tv2)
    }
 
    // Has a concrete subclass for each datatype.
@@ -66,8 +66,8 @@ export namespace Expl {
       tv: ExplValue = _
    }
 
-   export function let_ (x: Str, tv: ExplValue): Let {
-      return at(ν(), Let, x, tv)
+   export function let_ (x: Str, tv: ExplValue): (k: Id) => Let {
+      return at_(Let, x, tv)
    }
 
    export class Prim extends Def {
@@ -75,8 +75,8 @@ export namespace Expl {
       t_op: ExplValue<UnaryOp> = _
    }
 
-   export function prim (x: Str, t_op: ExplValue<UnaryOp>): Prim {
-      return at(ν(), Prim, x, t_op)
+   export function prim (x: Str, t_op: ExplValue<UnaryOp>): (k: Id) => Prim {
+      return at_(Prim, x, t_op)
    }
 
    export class RecDef extends DataValue<"Expl.RecDef"> {
@@ -84,16 +84,16 @@ export namespace Expl {
       tf: ExplValue<Closure> = _
    }
 
-   export function recDef (x: Str, tf: ExplValue<Closure>): RecDef {
-      return at(ν(), RecDef, x, tf)
+   export function recDef (x: Str, tf: ExplValue<Closure>): (k: Id) => RecDef {
+      return at_(RecDef, x, tf)
    }
 
    export class LetRec extends Def {
       δ: List<RecDef> = _
    }
 
-   export function letRec (δ: List<RecDef>): LetRec {
-      return at(ν(), LetRec, δ)
+   export function letRec (δ: List<RecDef>): (k: Id) => LetRec {
+      return at_(LetRec, δ)
    }
 
    export class Defs extends NonTerminal {
@@ -101,15 +101,15 @@ export namespace Expl {
       t: Expl = _
    }
 
-   export function defs (def̅: List<Def>, t: Expl): Defs {
-      return at(ν(), Defs, def̅, t)
+   export function defs (def̅: List<Def>, t: Expl): (k: Id) => Defs {
+      return at_(Defs, def̅, t)
    }
 
    export class Const extends Expl {
    }
 
-   export function const_ (): Const {
-      return at(ν(), Const)
+   export function const_ (): (k: Id) => Const {
+      return at_(Const)
    }
 
    export class MatchAs extends NonTerminal {
@@ -118,15 +118,15 @@ export namespace Expl {
       t: Expl = _
    }
 
-   export function matchAs (tu: ExplValue, ξ: Match<Expr>, t: Expl): MatchAs {
-      return at(ν(), MatchAs, tu, ξ, t)
+   export function matchAs (tu: ExplValue, ξ: Match<Expr>, t: Expl): (k: Id) => MatchAs {
+      return at_(MatchAs, tu, ξ, t)
    }
 
    export class Quote extends Expl {
    }
 
-   export function quote (): Quote {
-      return at(ν(), Quote)
+   export function quote (): (k: Id) => Quote {
+      return at_(Quote)
    }
 
    export class Typematch extends NonTerminal {
@@ -135,8 +135,8 @@ export namespace Expl {
       t: Expl = _
    }
 
-   export function typematch (tu: ExplValue, d: Str, t: Expl): Typematch {
-      return at(ν(), Typematch, tu, d, t)
+   export function typematch (tu: ExplValue, d: Str, t: Expl): (k: Id) => Typematch {
+      return at_(Typematch, tu, d, t)
    }
 
    export class Var extends NonTerminal {
@@ -144,8 +144,8 @@ export namespace Expl {
       t: Expl = _
    }
 
-   export function var_ (x: Str, t: Expl): Var {
-      return at(ν(), Var, x, t)
+   export function var_ (x: Str, t: Expl): (k: Id) => Var {
+      return at_(Var, x, t)
    }
 
    // Should probably do a better job of restricting k to be a bona fide field name.
