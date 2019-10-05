@@ -5,7 +5,7 @@ import { ExplValue } from "../../src/DataValue"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
-import { clearDelta, clearMemo } from "../../src/Value"
+import { Delta, __delta, clearDelta, clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
 import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
@@ -71,16 +71,16 @@ export class Edit {
          Eval.eval_(ρ, e)
          clearDelta()
          this.setup(new ExprCursor(e))
-         const tv: ExplValue = Eval.eval_(ρ, e)
-         // actually think we want to be notified of changes here
-         this.expect(new ExplValueCursor(tv))
+         Eval.eval_(ρ, e)
+         this.expect(__delta)
+         console.log(__delta)
       }
    }
 
    setup (here: ExprCursor): void {
    }
 
-   expect (here: ExplValueCursor): void {      
+   expect (delta: Delta): void {
    }
 }
 

@@ -136,7 +136,10 @@ export function clearMemo (): void {
    __funMemo.clear()
 }
 
-export const __delta: Set<[Value, string, Persistent]> = new Set()
+// Crude first approximation.
+export type Delta = Set<[Value, string, Persistent]> 
+
+export const __delta: Delta = new Set()
 
 export function clearDelta (): void {
    __delta.clear()
@@ -231,7 +234,11 @@ export function construct<T extends Value> (tgt: T, v̅: Persistent[]): T {
    assert(f̅.length === v̅.length)
    let n: number = 0
    f̅.forEach((f: string): void => {
-      tgtʹ[f] = v̅[n++]
+      const src: Persistent = v̅[n++]
+      if (tgtʹ[f] !== src) {
+         __delta.add([tgt, f, src])
+      }
+      tgtʹ[f] = src
    })
    return tgt
 }
