@@ -55,9 +55,10 @@ letrec fun concat {
 letrec fun filter p {
    [] → [];
    [x, ...xs] →
+      let ys = filter p xs in
       match p x as {
-         True → [x, ...filter p xs];
-         False → filter p xs
+         True → [x, ...ys];
+         False → ys
       }
 };
 
