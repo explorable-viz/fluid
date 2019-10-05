@@ -179,10 +179,10 @@ class MemoCtr<T extends Value> implements Memoisable<T> {
    } 
 
    call (v̅: Persistent[]): T {
-      const o: T = new this.C
-      construct(o, v̅)
-      Object.freeze(o) 
-      return o
+      const v: T = new this.C
+      construct(v, v̅)
+      Object.freeze(v)
+      return v
    }
 }
 
