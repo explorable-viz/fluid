@@ -3,7 +3,7 @@ import { Bool, true_, false_ } from "./BaseTypes"
 import { ExplValue, explValue } from "./DataValue"
 import { Expl } from "./Expl"
 import { Id, Num, PrimOpTag, PrimValue, Str, _, Value } from "./Value"
-import { ν, at, num, str } from "./Versioned"
+import { ν, at_, num, str } from "./Versioned"
 
 type Unary<T, V> = (x: T) => (k: Id) => V
 type Binary<T, U, V> = (x: T, y: U) => (k: Id) => V
@@ -50,11 +50,11 @@ const times: Binary<Num, Num, Num> = (x, y) => num(as(x, Num).val * as(y, Num).v
 
 // Convenience methods for building the maps. Export to allow other modules to provide operations.
 export function unary_<T extends PrimValue, V extends Value> (op: Unary<T, V>): ExplValue<UnaryOp> {
-   return explValue(Expl.const_(), at(ν(), UnaryOp, op.name, op))
+   return explValue(Expl.const_()(ν()), at_(UnaryOp, op.name, op)(ν()))
 }
 
 export function binary_<T extends PrimValue, U extends PrimValue, V extends Value> (op: Binary<T, U, V>): ExplValue<BinaryOp> {
-   return explValue(Expl.const_(), at(ν(), BinaryOp, op.name, op))
+   return explValue(Expl.const_()(ν()), at_(BinaryOp, op.name, op)(ν()))
 }
 
 // Primitives with identifiers as names are unary and first-class.

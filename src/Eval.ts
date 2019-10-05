@@ -12,7 +12,7 @@ import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId, taggedId } from "./Value"
-import { ν, at, at_, num, str } from "./Versioned"
+import { at_, num, str } from "./Versioned"
 
 // Move to more sensible location
 export function dataValue (c: string, tv̅: ExplValue[]): (k: Id) => DataValue {
@@ -24,6 +24,7 @@ export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
 type RecDef = Expr.RecDef
 
+export type ExplId = TaggedId<MemoId, "t">
 export type ValId = TaggedId<MemoId, "v">
 
 export module Eval {
@@ -44,8 +45,9 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
+            kₜ: ExplId = taggedId(memoId(recDefs, arguments), "t"),
             kᵥ: ValId = taggedId(memoId(recDefs, arguments), "v"),
-            tf: ExplValue<Closure> = explValue(Expl.const_(), closure(ρ, δ_0, evalTrie(def.σ))(kᵥ))
+            tf: ExplValue<Closure> = explValue(Expl.const_()(kₜ), closure(ρ, δ_0, evalTrie(def.σ))(kᵥ))
       return [cons(Expl.recDef(def.x, tf), δₜ), extendEnv(ρ_ext, def.x, tf)]
    } else
    if (Nil.is(δ)) {
@@ -141,29 +143,30 @@ function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
-   const kᵥ: ValId = taggedId(memoId(eval_, arguments), "v")
+   const kₜ: ExplId = taggedId(memoId(eval_, arguments), "t"),
+         kᵥ: ValId = taggedId(memoId(eval_, arguments), "v")
    if (e instanceof Expr.ConstNum) {
-      return explValue(Expl.const_(), num(e.val.val)(kᵥ))
+      return explValue(Expl.const_()(kₜ), num(e.val.val)(kᵥ))
    } else
    if (e instanceof Expr.ConstStr) {
-      return explValue(Expl.const_(), str(e.val.val)(kᵥ))
+      return explValue(Expl.const_()(kₜ), str(e.val.val)(kᵥ))
    } else
    if (e instanceof Expr.Fun) {
-      return explValue(Expl.const_(), closure(ρ, nil(), evalTrie(e.σ))(kᵥ))
+      return explValue(Expl.const_()(kₜ), closure(ρ, nil(), evalTrie(e.σ))(kᵥ))
    } else
    if (e instanceof Expr.Constr) {
       const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
             c: string = e.ctr.val,
             d: DataType = __nonNull(ctrToDataType.get(c))
-      return explValue(at(ν(), d.explC̅.get(c)!, ...tv̅.map(({t}) => t)), dataValue(c, tv̅)(kᵥ))
+      return explValue(at_(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))(kₜ), dataValue(c, tv̅)(kᵥ))
    } else
    if (e instanceof Expr.Quote) {
-      return explValue(Expl.quote(), e.e)
+      return explValue(Expl.quote()(kₜ), e.e)
    } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) {
          const {t, v}: ExplValue = ρ.get(e.x)!
-         return explValue(Expl.var_(e.x, t), v)
+         return explValue(Expl.var_(e.x, t)(kₜ), v)
       } else {
          return error(`Variable "${e.x.val}" not found.`)
       }
@@ -175,11 +178,11 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
          const [δ, ρᵟ]: [List<Expl.RecDef>, Env] = recDefs(v.δ, v.ρ, v.δ),
                [ρʹ, ξκ]: [Env, Match<Expr>] = v.f.apply(tu),
                {t, v: vʹ}: ExplValue = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), ξκ.κ)
-         return explValue(Expl.app(tf as ExplValue<Closure>, tu, δ, ξκ, t), vʹ)
+         return explValue(Expl.app(tf as ExplValue<Closure>, tu, δ, ξκ, t)(kₜ), vʹ)
       } else 
       if (v instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
-            return explValue(Expl.unaryApp(tf as ExplValue<UnaryOp>, tu as ExplValue<PrimValue>), v.op(u)(kᵥ))
+            return explValue(Expl.unaryApp(tf as ExplValue<UnaryOp>, tu as ExplValue<PrimValue>)(kₜ), v.op(u)(kᵥ))
          } else {
             return error(`Applying "${v.name}" to non-primitive value.`, u)
          }
@@ -194,7 +197,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
                [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
                [v1, v2]: [Value, Value] = [tv1.v, tv2.v]
          if ((v1 instanceof Num || v1 instanceof Str) && (v2 instanceof Num || v2 instanceof Str)) {
-               return explValue(Expl.binaryApp(tv1 as ExplValue<PrimValue>, e.opName, tv2 as ExplValue<PrimValue>), op.op(v1, v2)(kᵥ))
+               return explValue(Expl.binaryApp(tv1 as ExplValue<PrimValue>, e.opName, tv2 as ExplValue<PrimValue>)(kₜ), op.op(v1, v2)(kᵥ))
          } else {
             return error(`Applying "${e.opName}" to non-primitive value.`, v1, v2)
          }
@@ -205,13 +208,13 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.Defs) {
       const [def̅ₜ, ρʹ]: [List<Expl.Def>, Env] = defs(ρ, e.def̅, emptyEnv()),
             {t, v}: ExplValue = eval_(ρ.concat(ρʹ), e.e)
-      return explValue(Expl.defs(def̅ₜ, t), v)
+      return explValue(Expl.defs(def̅ₜ, t)(kₜ), v)
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
             [ρʹ, ξκ]: [Env, Match<Expr>] = evalTrie(e.σ).apply(tu),
             {t, v}: ExplValue = eval_(ρ.concat(ρʹ), ξκ.κ)
-      return explValue(Expl.matchAs(tu, ξκ, t), v)
+      return explValue(Expl.matchAs(tu, ξκ, t)(kₜ), v)
    } else
    if (e instanceof Expr.Typematch) {
       const tu: ExplValue = eval_(ρ, e.e),
@@ -221,7 +224,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
          return error(`Typecase mismatch: no clause for ${className(tu.v)}.`)
       } else {
          const {t, v}: ExplValue = eval_(ρ, eʹ)
-         return explValue(Expl.typematch(tu, d.name, t), v)
+         return explValue(Expl.typematch(tu, d.name, t)(kₜ), v)
       }
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
