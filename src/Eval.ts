@@ -11,7 +11,7 @@ import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
-import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId, taggedId } from "./Value"
+import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId } from "./Value"
 import { at_, num, str } from "./Versioned"
 
 // Move to more sensible location
@@ -24,8 +24,8 @@ export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
 type RecDef = Expr.RecDef
 
-export type ExplId = TaggedId<MemoId, "t">
-export type ValId = TaggedId<MemoId, "v">
+export type ExplId = TaggedId<"t">
+export type ValId = TaggedId<"v">
 
 export module Eval {
 
@@ -45,9 +45,8 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
    if (Cons.is(δ)) {
       const def: RecDef = δ.head,
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
-            kₜ: ExplId = taggedId(memoId(recDefs, arguments), "t"),
-            kᵥ: ValId = taggedId(memoId(recDefs, arguments), "v"),
-            tf: ExplValue<Closure> = explValue(Expl.const_()(kₜ), closure(ρ, δ_0, evalTrie(def.σ))(kᵥ))
+            k: MemoId = memoId(recDefs, arguments),
+            tf: ExplValue<Closure> = explValue(Expl.const_()(k.tag("t")), closure(ρ, δ_0, evalTrie(def.σ))(k.tag("v")))
       return [cons(Expl.recDef(def.x, tf), δₜ), extendEnv(ρ_ext, def.x, tf)]
    } else
    if (Nil.is(δ)) {
@@ -143,8 +142,8 @@ function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
-   const kₜ: ExplId = taggedId(memoId(eval_, arguments), "t"),
-         kᵥ: ValId = taggedId(memoId(eval_, arguments), "v")
+   const k: MemoId = memoId(eval_, arguments), 
+         [kₜ, kᵥ]: [ExplId, ValId] = [k.tag("t"), k.tag("v")]
    if (e instanceof Expr.ConstNum) {
       return explValue(Expl.const_()(kₜ), num(e.val.val)(kᵥ))
    } else
