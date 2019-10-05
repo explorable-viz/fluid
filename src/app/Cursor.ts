@@ -5,7 +5,7 @@ import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { DataValue, ExplValue } from "../../src/DataValue"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
-import { Persistent, Value } from "../../src/Value"
+import { Num, Persistent, Value } from "../../src/Value"
 
 import Def = Expr.Def
 import Let = Expr.Let
@@ -67,7 +67,7 @@ export class ExplValueCursor extends Cursor {
 }
 
 export class ExprCursor extends Cursor {
-   readonly v: Value
+   readonly v: Value // would prefer SyntaxNode, but we also traverse "adminstrative" nodes like cons cells.
 
    constructor (v: Value) {
       super()
@@ -157,6 +157,7 @@ export class ExprCursor extends Cursor {
    // Editing API
 
    setNum (n: number): ExprCursor {
+      as(this.v, Num).val = n
       return this
    }
 }

@@ -47,7 +47,7 @@ export namespace Expr {
       }
    }
 
-   export abstract class SyntaxNode<Tag extends DataValueTag> extends AnnotatedC(DataValue)<Tag> {
+   export abstract class SyntaxNode<Tag extends DataValueTag = DataValueTag> extends AnnotatedC(DataValue)<Tag> {
    }
 
    export abstract class Expr extends SyntaxNode<"Expr"> {

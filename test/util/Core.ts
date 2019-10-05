@@ -63,8 +63,30 @@ export class BwdSlice {
    }
 }
 
-enum Flags { Bwd, Fwd }
+export class Edit {
+   expr: ExprCursor
+
+   constructor (e: Expr, ρ: Env = emptyEnv()) {
+      if (flags.get(Flags.Edit)) {
+         const tv: ExplValue = Eval.eval_(ρ, e)
+         clearDelta()
+         this.setup(new ExprCursor(tv))
+         const tvʹ: ExplValue = Eval.eval_(ρ, e)
+         // actually think we want to be notified of changes here
+         this.expect(new ExplValueCursor(tvʹ))
+      }
+   }
+
+   setup (here: ExprCursor): void {
+   }
+
+   expect (here: ExplValueCursor): void {      
+   }
+}
+
+enum Flags { Bwd, Fwd, Edit }
 const flags: Map<Flags, boolean> = new Map([
    [Flags.Fwd, true],
-   [Flags.Bwd, true]
+   [Flags.Bwd, true],
+   [Flags.Edit, true]
 ])
