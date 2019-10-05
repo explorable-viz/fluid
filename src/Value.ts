@@ -180,7 +180,7 @@ class MemoCtr<T extends Value> implements Memoisable<T> {
 
    call (v̅: Persistent[]): T {
       const v: T = new this.C
-      construct(v, v̅)
+      construct(false, v, v̅)
       Object.freeze(v)
       return v
    }
@@ -228,14 +228,14 @@ export function memo<T extends Persistent> (f: MemoFunType<T>, ...v̅: Persisten
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<T extends Value> (tgt: T, v̅: Persistent[]): T {
+export function construct<T extends Value> (versioned: boolean, tgt: T, v̅: Persistent[]): T {
    const tgtʹ: State = tgt as any as State,
          f̅: string[] = fields(tgt)
    assert(f̅.length === v̅.length)
    let n: number = 0
    f̅.forEach((f: string): void => {
       const src: Persistent = v̅[n++]
-      if (tgtʹ[f] !== src) {
+      if (versioned && tgtʹ[f] !== src) {
          __delta.add([tgt, f, src])
       }
       tgtʹ[f] = src

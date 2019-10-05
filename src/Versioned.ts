@@ -24,10 +24,10 @@ export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): 
       })
       const vʹ: Versioned<T> = v as Versioned<T>
       __versioned.set(k, vʹ)
-      return construct(vʹ, v̅)
+      return construct(true, vʹ, v̅)
    } else
    if (v instanceof C) { 
-      return construct(v, v̅) // hmm, TS thinks v is versioned here - why?
+      return construct(true, v, v̅) // hmm, TS thinks v is versioned here - why?
    } else {
       return reclassify(v, C)
    }
