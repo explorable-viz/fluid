@@ -17,6 +17,7 @@ import "../../src/app/GraphicsRenderer" // for graphics primitives
 export class FwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       clearMemo()
+      clearDelta()
       setallα(ann.top, e)
       setallα(ann.top, ρ)
       const tv: ExplValue = Eval.eval_(ρ, e)
@@ -44,6 +45,7 @@ export class BwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Bwd)) {
          clearMemo()
+         clearDelta()
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv

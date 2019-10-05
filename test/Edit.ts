@@ -14,7 +14,7 @@ before((done: MochaDone) => {
 })
 
 describe("edit", () => {
-   describe("arithmetic-edit", () => {
+   describe("arithmetic", () => {
       it("ok", () => {
          const e: Expr = open("arithmetic")
          new (class extends Edit {
@@ -37,7 +37,7 @@ describe("edit", () => {
       })
    })
 
-   describe("filter-edit", () => {
+   describe("filter", () => {
       it("ok", () => {
          const e: Expr = open("filter")
          new (class extends Edit {
