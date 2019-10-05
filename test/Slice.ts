@@ -114,6 +114,7 @@ describe("slice", () => {
                   .to(NonEmpty, "left")
                   .treeNodeValue()
                   .var_("x").var_("xs")
+                  .to(Expr.Defs, "e")
                   .to(Expr.MatchAs, "σ")
                   .to(Trie.Constr, "cases")
                   .treeNodeValue()

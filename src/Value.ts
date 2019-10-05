@@ -126,7 +126,7 @@ export function clearMemo (): void {
    __funMemo.clear()
 }
 
-export type Delta = Map<Value, State> 
+export type Delta = Map<Value, State>
 
 export const __delta: Delta = new Map()
 

@@ -40,12 +40,11 @@ export function at_<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
 function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
    const proto: Object = Object.getPrototypeOf(new ctr)
-   if (Object.getPrototypeOf(v) !== proto) {
-      for (const k of fields(v)) {
-         assert(delete v[k as keyof Object])
-      }
-      Object.setPrototypeOf(v, proto)
+   assert (Object.getPrototypeOf(v) !== proto)
+   for (const k of fields(v)) {
+      assert(delete v[k as keyof Object])
    }
+   Object.setPrototypeOf(v, proto)
    return v as Versioned<T>
 }
 
