@@ -92,6 +92,21 @@ describe("slice", () => {
       })
    })
 
+   // merge with bar-chart test case once we implement loading from JSON or similar
+   describe("create-dataset", () => {
+      it("ok", () => {
+         const data: Object[] = [
+            // some subset of the renewables dataset
+            { year: 2015, country: "China", energyType: "Bio", value: 10.3 },
+            { year: 2015, country: "China", energyType: "Geothermal", value: 0 },
+            { year: 2015, country: "China", energyType: "Hydro", value: 296 }
+         ]
+         const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data"),
+         e: Expr = openWithImports("create-dataset", [module_graphics])
+         new FwdSlice(e, ρ)
+      })
+   })
+
    describe("factorial", () => {
       it("ok", () => {
          const e: Expr = open("factorial")
@@ -256,7 +271,7 @@ describe("slice", () => {
                here.to(Pair, "fst").setα()
             }
             expect (here: ExprCursor): void {
-               here.skipImports()
+               here = here.skipImports()
                here.toDef("x").to(Expr.Let, "e").αset()
                here.toDef("y").to(Expr.Let, "e").αset()
             }
@@ -298,21 +313,6 @@ describe("slice", () => {
          const e: Expr = open("typematch")
          new FwdSlice(e)
          new BwdSlice(e)
-      })
-   })
-
-   // merge with bar-chart test case once we implement loading from JSON or similar
-   describe("create-dataset", () => {
-      it("ok", () => {
-         const data: Object[] = [
-            // some subset of the renewables dataset
-            { year: 2015, country: "China", energyType: "Bio", value: 10.3 },
-            { year: 2015, country: "China", energyType: "Geothermal", value: 0 },
-            { year: 2015, country: "China", energyType: "Hydro", value: 296 }
-         ]
-         const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data"),
-         e: Expr = openWithImports("create-dataset", [module_graphics])
-         new FwdSlice(e, ρ)
       })
    })
 
