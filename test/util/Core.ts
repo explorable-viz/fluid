@@ -16,20 +16,20 @@ import "../../src/app/GraphicsRenderer" // for graphics primitives
 
 export class FwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
-      clearMemo()
-      clearDelta()
-      setallα(ann.top, e)
-      setallα(ann.top, ρ)
-      const tv: ExplValue = Eval.eval_(ρ, e)
-      Eval.eval_fwd(e, tv) // slice with full availability first to compute delta
-      clearDelta()
-      this.setup(new ExprCursor(e))
       if (flags.get(Flags.Fwd)) {
+         clearMemo()
+         clearDelta()
+         setallα(ann.top, e)
+         setallα(ann.top, ρ)
+         const tv: ExplValue = Eval.eval_(ρ, e)
+         Eval.eval_fwd(e, tv) // slice with full availability first to compute delta
+         clearDelta()
+         this.setup(new ExprCursor(e))
          Eval.eval_fwd(e, tv)
          this.expect(new ExplValueCursor(tv))
+         console.log(e)
+         console.log(tv)
       }
-      console.log(e)
-      console.log(tv)
    }
 
    setup (here: ExprCursor): void {
@@ -40,8 +40,6 @@ export class FwdSlice {
 }
 
 export class BwdSlice {
-   expr: ExprCursor
-
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Bwd)) {
          clearMemo()
@@ -53,21 +51,18 @@ export class BwdSlice {
          clearDelta()
          this.setup(new ExplValueCursor(tv))
          Eval.eval_bwd(e, tv)
-         this.expr = new ExprCursor(e)
-         this.expect()
+         this.expect(new ExprCursor(e))
       }
    }
 
    setup (here: ExplValueCursor): void {
    }
 
-   expect (): void {      
+   expect (here: ExprCursor): void {      
    }
 }
 
 export class Edit {
-   expr: ExprCursor
-
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)

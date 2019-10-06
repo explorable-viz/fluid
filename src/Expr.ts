@@ -201,7 +201,7 @@ export namespace Expr {
                if (ctrToDataType.get(c_σ) !== ctrToDataType.get(c_τ)) {
                   error(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
                }
-               return constr(unionWith(σ.cases, τ.cases, join))
+               return constr(unionWith<K, FiniteMap<K>>(σ.cases, τ.cases, join))
             } else {
                return absurd("Undefined join.", σ, τ)
             }

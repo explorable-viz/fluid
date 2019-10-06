@@ -77,8 +77,8 @@ describe("slice", () => {
             setup (here: ExplValueCursor): void {
                here.setα()
             }
-            expect (): void {
-               this.expr.αset()
+            expect (here: ExprCursor): void {
+               here.αset()
             }
          })(e, ρ)
       })
@@ -255,8 +255,8 @@ describe("slice", () => {
             setup (here: ExplValueCursor): void {
                here.to(Pair, "fst").setα()
             }
-            expect (): void {
-               const here: ExprCursor = this.expr.skipImports()
+            expect (here: ExprCursor): void {
+               here.skipImports()
                here.toDef("x").to(Expr.Let, "e").αset()
                here.toDef("y").to(Expr.Let, "e").αset()
             }
@@ -325,8 +325,7 @@ describe("slice", () => {
             setup (here: ExplValueCursor): void {
                here.setα()
             }
-            expect (): void {
-               let here: ExprCursor = this.expr
+            expect (here: ExprCursor): void {
                here.toDef("zipW").αset().to(Expr.RecDef, "σ").var_("op").αset()
                here = here.skipImports()
                here.to(Expr.App, "e").αset()
@@ -338,8 +337,7 @@ describe("slice", () => {
             setup (here: ExplValueCursor): void {
                here.to(Cons, "head").setα()
             }
-            expect (): void {
-               const here: ExprCursor = this.expr
+            expect (here: ExprCursor): void {
                let hereʹ: ExprCursor = here
                   .toDef("zipW")
                   .to(Expr.RecDef, "σ")

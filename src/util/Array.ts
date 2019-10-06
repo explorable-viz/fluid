@@ -1,7 +1,8 @@
 import { __nonNull } from "./Core"
 
 export function flatten<T> (x̅̅: T[][]): T[] {
-   return [].concat.apply([], x̅̅)
+   const x̅: T[] = [] // otherwise TS is confused
+   return x̅.concat.apply([], x̅̅)
 }
 
 export function counts<T> (x̅: T[]): Map<T, number> {

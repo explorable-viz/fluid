@@ -15,7 +15,7 @@ export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Id" | "Num" | "St
 
 // Value in the metalanguage.
 export class Value<Tag extends ValueTag = ValueTag> {
-   readonly __tag: Tag
+   readonly __tag!: Tag
 
    child (k: string): Persistent {
       return (this as any as State)[k]

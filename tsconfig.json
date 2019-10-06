@@ -5,13 +5,13 @@
       "target": "es6",
       "lib": ["es2017", "dom"],
       "module": "commonjs",
-      "noImplicitAny": true,
+//      "noImplicitAny": true,
       "noImplicitReturns": true,
-      "noImplicitThis": true,
+//      "noImplicitThis": true,
       "noUnusedLocals": true,
       "outDir": "ts",
       "sourceMap": true,
-      "strictNullChecks": true
+      "strict": true
    },
    "include": [
       "src"

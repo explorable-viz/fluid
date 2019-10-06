@@ -14,11 +14,11 @@ import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRend
 // information back only as far as ρ.
 export class View implements Slicer {
    name: string
-   coordinator: ViewCoordinator
+   coordinator!: ViewCoordinator
    e: Expr
    tv: ExplValue
    view: GraphicsRenderer
-   direction: Direction
+   direction!: Direction
 
    constructor (name: string, ρ: Env, e: Expr, svg: SVGSVGElement) {
       this.name = name
