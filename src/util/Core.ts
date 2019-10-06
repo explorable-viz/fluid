@@ -32,7 +32,7 @@ export function asOpt<U, T extends U> (x: U, cls: AClass<T>): T {
    }
 }
 
-export function assert (b: boolean, msg?: string, ...x̅: any[]): any {
+export function assert (b: boolean, msg?: string, ...x̅: unknown[]): any {
    if (!b) {
       if (x̅.length > 0) {
          console.warn("Assertion data:\n")
@@ -42,12 +42,12 @@ export function assert (b: boolean, msg?: string, ...x̅: any[]): any {
    }
 }
 
-export function absurd (msg?: string, ...x̅: any[]): any {
+export function absurd (msg?: string, ...x̅: unknown[]): any {
    assert(false, msg, ...x̅)
 }
 
 // User-level error.
-export function error (msg: string, ...x̅: any[]): any {
+export function error (msg: string, ...x̅: unknown[]): any {
    if (x̅.length > 0) {
       console.warn("Error data:\n")
       x̅.forEach(x => console.warn(x))

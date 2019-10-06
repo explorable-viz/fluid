@@ -82,7 +82,7 @@ function asRecord (v: Object): Expr {
    return asList(Object.getOwnPropertyNames(v).map(k => asPair(k, (v as any)[k])))
 }
 
-function asPair (k: string, v: any): Expr {
+function asPair (k: string, v: unknown): Expr {
    return Expr.constr(ν(), str(Pair.name)(ν()), List.fromArray([asPrimValue(k), asPrimValue(v)]))
 }
 
@@ -94,7 +94,7 @@ function asList (e̅: Expr[]): Expr {
    return e̅ʹ
 }
 
-function asPrimValue (v: any): Expr {
+function asPrimValue (v: unknown): Expr {
    if (typeof v === "number") {
       return Expr.constNum(ν(), num(v)(ν()))
    } else
