@@ -1,6 +1,6 @@
 import { Class, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
-import { setDelta } from "./Delta"
+import { __deltas } from "./Delta"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -114,6 +114,14 @@ export interface State {
    [prop: string]: Persistent
 }
 
+export function shallowEq (s1: State, s2: State): boolean {
+   return Object.keys(s1).length === Object.keys(s2).length &&
+          Object.keys(s1).every((key: string): boolean => {
+             assert(s1[key] !== undefined && s2[key] !== undefined)
+             return s1[key] === s2[key]
+          })
+}
+
 // Curried map from constructors and arguments to cached values; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
@@ -218,7 +226,7 @@ export function construct<T extends Value> (versioned: boolean, tgt: T, v̅: Per
    f̅.forEach((f: string): void => {
       const src: Persistent = v̅[n++]
       if (versioned && tgtʹ[f] !== src) {
-         setDelta(tgt, f, src)
+         __deltas.changed(tgt, f, src)
       }
       tgtʹ[f] = src
    })

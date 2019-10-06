@@ -2,7 +2,7 @@ import { __nonNull } from "../util/Core"
 import { ann } from "../util/Lattice"
 import { setallα, negateallα } from "../Annotated"
 import { ExplValue } from "../DataValue"
-import { __delta, clearDelta } from "../Delta"
+import { __deltas } from "../Delta"
 import { Env } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
@@ -46,8 +46,8 @@ export class View implements Slicer {
 
    bwdSlice (): void {
       Eval.eval_bwd(this.e, this.tv)
-      clearDelta()
-      console.log(__delta.size)
+      __deltas.clear()
+      console.log(__deltas.size)
       this.direction = Direction.Bwd
       this.coordinator.onBwd()
       this.draw()

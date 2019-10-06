@@ -1,4 +1,5 @@
 import { Class, __nonNull, assert } from "./util/Core"
+import { __deltas } from "./Delta"
 import { Id, Persistent, Num, Str, Value, _, construct, fields, make } from "./Value"
 
 // Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
@@ -45,6 +46,7 @@ function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): Versi
       assert(delete v[k as keyof Object])
    }
    Object.setPrototypeOf(v, proto)
+   __deltas.reclassified(v)
    return v as Versioned<T>
 }
 

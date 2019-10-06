@@ -2,7 +2,7 @@
 
 import { Edit } from "./util/Core"
 import { assert } from "../src/util/Core"
-import { Delta } from "../src/Delta"
+import { Change, Delta } from "../src/Delta"
 import { Expr } from "../src/Expr"
 import { open } from "../src/Module"
 import { ExprCursor } from "..//src/app/Cursor"
@@ -26,12 +26,11 @@ describe("edit", () => {
                    .setNum(6)
             }
 
-            expect (delta: Delta) {
-               assert(delta.size === 3)
-               const [[, { val: v1 }], [, { val: v2 }], [, { val: v3 }]] = delta
-               assert(typeof v1 === "number" && v1 === 6)
-               assert(typeof v2 === "number" && v2 === 7)
-               assert(typeof v3 === "number" && v3 === 49)
+            expect (ẟ̅ : Delta[]) {
+               assert(ẟ̅.length === 3)
+               assert(ẟ̅[0].eq(new Change( { val: 6 })))
+               assert(ẟ̅[1].eq(new Change( { val: 7 })))
+               assert(ẟ̅[2].eq(new Change( { val: 49 })))
             }
          })(e)
       })
@@ -52,8 +51,8 @@ describe("edit", () => {
                    .setNum(3)
             }
 
-            expect (delta: Delta) {
-               assert(delta.size === 0)
+            expect (ẟ̅ : Delta[]) {
+               assert(ẟ̅.length === 0)
             }
          })(e)
       })

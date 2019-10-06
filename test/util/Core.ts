@@ -2,7 +2,7 @@ import { __nonNull } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { ExplValue } from "../../src/DataValue"
-import { Delta, __delta, clearDelta } from "../../src/Delta"
+import { Delta, __deltas } from "../../src/Delta"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
@@ -19,12 +19,12 @@ export class FwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Fwd)) {
          clearMemo()
-         clearDelta()
+         __deltas.clear()
          setallα(ann.top, e)
          setallα(ann.top, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e)
          Eval.eval_fwd(e, tv) // slice with full availability first to compute delta
-         clearDelta()
+         __deltas.clear()
          this.setup(new ExprCursor(e))
          Eval.eval_fwd(e, tv)
          this.expect(new ExplValueCursor(tv))
@@ -44,12 +44,12 @@ export class BwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Bwd)) {
          clearMemo()
-         clearDelta()
+         __deltas.clear()
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
-         clearDelta()
+         __deltas.clear()
          this.setup(new ExplValueCursor(tv))
          Eval.eval_bwd(e, tv)
          this.expect(new ExprCursor(e))
@@ -67,18 +67,18 @@ export class Edit {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
-         clearDelta()
+         __deltas.clear()
          this.setup(new ExprCursor(e))
          Eval.eval_(ρ, e)
-         this.expect(__delta)
-         console.log(__delta.size)
+         this.expect([...__deltas.ẟ̅.entries()].map(([, ẟ]) => ẟ))
+         console.log(__deltas.size)
       }
    }
 
    setup (here: ExprCursor): void {
    }
 
-   expect (delta: Delta): void {
+   expect (ẟ̅ : Delta[]): void {
    }
 }
 
