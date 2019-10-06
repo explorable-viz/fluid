@@ -2,10 +2,11 @@ import { __nonNull } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { ExplValue } from "../../src/DataValue"
+import { Delta, __delta, clearDelta } from "../../src/Delta"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
-import { Delta, __delta, clearDelta, clearMemo } from "../../src/Value"
+import { clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
 import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
 import "../../src/app/GraphicsRenderer" // for graphics primitives

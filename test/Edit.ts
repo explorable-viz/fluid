@@ -2,9 +2,9 @@
 
 import { Edit } from "./util/Core"
 import { assert } from "../src/util/Core"
+import { Delta } from "../src/Delta"
 import { Expr } from "../src/Expr"
 import { open } from "../src/Module"
-import { Delta } from "../src/Value"
 import { ExprCursor } from "..//src/app/Cursor"
 
 import Trie = Expr.Trie
