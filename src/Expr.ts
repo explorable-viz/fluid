@@ -7,7 +7,7 @@ import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { DataValueTag, Id, Num, Str, _, make } from "./Value"
-import { ν, at, at_ } from "./Versioned"
+import { ν, at_ } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -173,16 +173,16 @@ export namespace Expr {
       cases: FiniteMap<Expr> = _
    }
 
-   export function typematch (k: Id, e: Expr, cases: FiniteMap<Expr>): Typematch {
-      return at(k, Typematch, e, cases)
+   export function typematch (e: Expr, cases: FiniteMap<Expr>): (k: Id) => Typematch {
+      return at_(Typematch, e, cases)
    }
 
    export class Var extends Expr {
       x: Str = _
    }
 
-   export function var_ (k: Id, x: Str): Var {
-      return at(k, Var, x)
+   export function var_ (x: Str): (k: Id) => Var {
+      return at_(Var, x)
    }
 
    export type Trie<K extends Cont> = Trie.Trie<K>

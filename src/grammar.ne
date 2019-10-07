@@ -118,7 +118,7 @@ simpleExpr ->
 
 variable -> 
    var 
-   {% ([x]) => Expr.var_(ν(), x) %}
+   {% ([x]) => Expr.var_(x)(ν()) %}
 
 var ->
    lexeme[%ident] 
@@ -178,7 +178,7 @@ args ->
 
 typematch ->
    keyword["typematch"] expr keyword["as"] typeMatches
-   {% ([, e, , m]) => Expr.typematch(ν(), e, m) %}
+   {% ([, e, , m]) => Expr.typematch(e, m)(ν()) %}
 
 defList -> 
    def (lexeme[";"] def {% ([, def]) => def %}):* 
