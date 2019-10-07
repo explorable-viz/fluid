@@ -103,6 +103,7 @@ describe("edit", () => {
                    .to(NonEmpty, "left") // Cons
                    .treeNodeValue()
                    .var_("x").var_("xs")
+                   .constrArg(Cons.name, 0)
                     // TODO: finish...
             }
 
