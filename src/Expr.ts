@@ -113,8 +113,8 @@ export namespace Expr {
       x: Str = _
    }
 
-   export function prim (k: Id, x: Str): Prim {
-      return at(k, Prim, x)
+   export function prim (x: Str): (k: Id) => Prim {
+      return at_(Prim, x)
    }
 
    export class RecDef extends SyntaxNode<"RecDef"> {
@@ -122,8 +122,8 @@ export namespace Expr {
       σ: Trie<Expr> = _
    }
  
-   export function recDef (k: Id, x: Str, σ: Trie<Expr>): RecDef {
-      return at(k, RecDef, x, σ)
+   export function recDef (x: Str, σ: Trie<Expr>): (k: Id) => RecDef {
+      return at_(RecDef, x, σ)
    }
 
    export class LetRec extends Def {

@@ -197,11 +197,11 @@ letrec ->
 
 prim ->
    keyword["primitive"] var
-   {% ([, x]) => Expr.prim(ν(), x) %}
+   {% ([, x]) => Expr.prim(x)(ν()) %}
 
 recDef -> 
    keyword["fun"] var matches
-   {% ([, f, σ]) => Expr.recDef(ν(), f, σ) %}
+   {% ([, f, σ]) => Expr.recDef(f, σ)(ν()) %}
 
 fun -> 
    keyword["fun"] matches
