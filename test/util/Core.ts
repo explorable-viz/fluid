@@ -2,7 +2,7 @@ import { __nonNull } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { ExplValue } from "../../src/DataValue"
-import { Delta, __deltas } from "../../src/Delta"
+import { __deltas } from "../../src/Delta"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
@@ -69,8 +69,8 @@ export class Edit {
          Eval.eval_(ρ, e)
          __deltas.clear()
          this.setup(new ExprCursor(e))
-         Eval.eval_(ρ, e)
-         this.expect([...__deltas.ẟ̅.entries()].map(([, ẟ]) => ẟ))
+         const tv: ExplValue =  Eval.eval_(ρ, e)
+         this.expect(new ExplValueCursor(tv))
          console.log(__deltas.size)
       }
    }
@@ -78,7 +78,7 @@ export class Edit {
    setup (here: ExprCursor): void {
    }
 
-   expect (ẟ̅ : Delta[]): void {
+   expect (here: ExplValueCursor): void {
    }
 }
 

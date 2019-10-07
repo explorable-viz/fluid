@@ -2,7 +2,8 @@ import { AClass, Class, absurd, as, assert, className, error } from "../../src/u
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
-import { DataValue, ExplValue } from "../../src/DataValue"
+import { DataValue, ExplValue, explValue } from "../../src/DataValue"
+import { Delta } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
 import { Num, Persistent, Value } from "../../src/Value"
@@ -60,10 +61,27 @@ export class ExplValueCursor extends Cursor {
       return new ExplValueCursor(Expl.explChild(this.tv.t, as(this.tv.v, C), k))
    }
 
+   toBinaryArg1 (): ExplValueCursor {
+      return new ExplValueCursor(as(this.tv.t, Expl.BinaryApp).tv1)
+   }
+
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): this {
       f(as<Value, T>(this.tv.v, C))
       return this
    }
+
+   valueChanged (ẟ: Delta): ExplValueCursor {
+      assert(this.tv.v.__ẟ.eq(ẟ))
+      return this
+   }
+
+   toTerminal (): ExplValueCursor {
+      let t: Expl = this.tv.t
+      while (t instanceof Expl.NonTerminal) {
+         t = t.t
+      }
+      return new ExplValueCursor(explValue(t, this.tv.v))      
+   }   
 }
 
 export class ExprCursor extends Cursor {

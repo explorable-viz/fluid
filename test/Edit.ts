@@ -1,11 +1,10 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { Edit } from "./util/Core"
-import { assert } from "../src/util/Core"
-import { Change, Delta } from "../src/Delta"
+import { Change } from "../src/Delta"
 import { Expr } from "../src/Expr"
 import { open } from "../src/Module"
-import { ExprCursor } from "..//src/app/Cursor"
+import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
 
 import Trie = Expr.Trie
 
@@ -26,11 +25,12 @@ describe("edit", () => {
                    .setNum(6)
             }
 
-            expect (ẟ̅ : Delta[]) {
-               assert(ẟ̅.length === 3)
-               assert(ẟ̅[0].eq(new Change( { val: 6 })))
-               assert(ẟ̅[1].eq(new Change( { val: 7 })))
-               assert(ẟ̅[2].eq(new Change( { val: 49 })))
+            expect (here: ExplValueCursor) {
+               here.valueChanged(new Change( { val: 49 }))
+                   .toTerminal()
+                   .toBinaryArg1()
+                   .valueChanged(new Change({ val: 7 }))
+//               assert(ẟ̅[2].eq(new Change( { val: 49 })))
             }
          })(e)
       })
@@ -51,8 +51,7 @@ describe("edit", () => {
                    .setNum(3)
             }
 
-            expect (ẟ̅ : Delta[]) {
-               assert(ẟ̅.length === 0)
+            expect (here: ExplValueCursor) {
             }
          })(e)
       })

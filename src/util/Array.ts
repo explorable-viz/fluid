@@ -25,6 +25,10 @@ export function zipWith<T, U, V> (f: (t: T, u: U) => V): (x̅: T[], y̅: U[]) =>
    return (x̅, y̅) => x̅.map((x: T, n: number): V => f(x, y̅[n]))
 }
 
+export function includes<T> (x̅: T[], y̅: T[]): boolean {
+   return y̅.every(y => x̅.includes(y))
+}
+
 export function eq<T> (x̅: T[], y̅: T[]): boolean {
    let n: number = x̅.length
    if (n != y̅.length) {

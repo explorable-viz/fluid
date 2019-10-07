@@ -119,15 +119,20 @@ export interface State {
 }
 
 export function leq (s1: State, s2: State): boolean {
-   return Object.keys(s1).length <= Object.keys(s2).length &&
-          Object.keys(s1).every((key: string): boolean => {
-             assert(s1[key] !== undefined && s2[key] !== undefined)
-             return s1[key] === s2[key]
-          })
+   return Object.keys(s1).every((prop: string): boolean => {
+      return s2.hasOwnProperty(prop) && s1[prop] === s2[prop]
+   })
 }
 
-export function eq (s1: State, s2: State): boolean {
-   return Object.keys(s1).length === Object.keys(s2).length && leq(s1, s2)
+// Imperative join that merges s2 into s1, failing if they are incompatible.
+export function mergeInto (tgt: State, src: State): void {
+   Object.keys(src).forEach((prop: string): void => {
+      if (!tgt.hasOwnProperty(prop)) {
+         tgt[prop] = src[prop]
+      } else {
+         assert(tgt[prop] === src[prop])
+      }
+   })
 }
 
 // Curried map from constructors and arguments to cached values; curried because composite keys would 
