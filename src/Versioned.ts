@@ -21,30 +21,28 @@ const __versioned: VersionedValues = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key. As an idempotent side-effect,
 // record how the object differs from its previous version.
-export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
-   let v: Versioned<Value> | undefined = __versioned.get(k)
-   if (v === undefined) {
-      const v: Versioned<T> = new C as Versioned<T>
-      Object.defineProperty(v, "__id", {
-         value: k,
-         enumerable: false
-      })
-      __versioned.set(k, v)
-      __deltas.created(v, construct(true, v, v̅)!)
-      return v
-   } else
-   if (v instanceof C) {
-      __deltas.changed(v, construct(true, v, v̅)!)
-      return v
-   } else {
-      reclassify(v, C)
-      __deltas.reclassified(v, construct(true, v, v̅)!)
-      return v as Versioned<T>
-   }
-}
-
 export function at_<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id) => Versioned<T> {
-   return (k: Id) => at(k, C, ...v̅)
+   return (k: Id) => {
+      let v: Versioned<Value> | undefined = __versioned.get(k)
+      if (v === undefined) {
+         const v: Versioned<T> = new C as Versioned<T>
+         Object.defineProperty(v, "__id", {
+            value: k,
+            enumerable: false
+         })
+         __versioned.set(k, v)
+         __deltas.created(v, construct(true, v, v̅)!)
+         return v
+      } else
+      if (v instanceof C) {
+         __deltas.changed(v, construct(true, v, v̅)!)
+         return v
+      } else {
+         reclassify(v, C)
+         __deltas.reclassified(v, construct(true, v, v̅)!)
+         return v as Versioned<T>
+      }
+   }
 }
 
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
