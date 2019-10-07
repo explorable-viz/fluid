@@ -76,16 +76,16 @@ export namespace Expr {
       val: Num = _
    }
    
-   export function constNum (k: Id, val: Num): ConstNum {
-      return at(k, ConstNum, val)
+   export function constNum (val: Num): (k: Id) => ConstNum {
+      return at_(ConstNum, val)
    }
 
    export class ConstStr extends Expr {
       val: Str = _
    }
 
-   export function constStr (k: Id, val: Str): ConstStr {
-      return at(k, ConstStr, val)
+   export function constStr (val: Str): (k: Id) => ConstStr {
+      return at_(ConstStr, val)
    }
 
    export class Constr extends Expr {

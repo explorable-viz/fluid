@@ -96,10 +96,10 @@ function asList (e̅: Expr[]): Expr {
 
 function asPrimValue (v: unknown): Expr {
    if (typeof v === "number") {
-      return Expr.constNum(ν(), num(v)(ν()))
+      return Expr.constNum(num(v)(ν()))(ν())
    } else
    if (typeof v === "string") {
-      return Expr.constStr(ν(), str(v)(ν()))
+      return Expr.constStr(str(v)(ν()))(ν())
    } else {
       return error(`Ill-formed data: expected string or number, found ${typeof v}.`)
    }
