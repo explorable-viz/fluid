@@ -74,12 +74,17 @@ export class ExplValueCursor extends Cursor {
       return this
    }
 
-   valueChanged (s: State): ExplValueCursor {
+   isChanged (s: State): ExplValueCursor {
       assert(this.tv.v.__ẟ.eq(new Change(s)))
       return this
    }
 
-   valueNew (): ExplValueCursor {
+   isUnchanged (): ExplValueCursor {
+      assert(this.tv.v.__ẟ.eq(new Change({})))
+      return this
+   }
+
+   isNew (): ExplValueCursor {
       assert(this.tv.v.__ẟ instanceof New)
       return this
    }
