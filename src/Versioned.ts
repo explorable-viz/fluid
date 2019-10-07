@@ -21,7 +21,7 @@ const __versioned: VersionedValues = new Map
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key. As an idempotent side-effect,
 // record how the object differs from its previous version.
-export function at_<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id) => Versioned<T> {
+export function at<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id) => Versioned<T> {
    return (k: Id) => {
       let v: Versioned<Value> | undefined = __versioned.get(k)
       if (v === undefined) {
@@ -74,9 +74,9 @@ export const ν: () => Extern =
    })()
 
 export function num (val: number): (k: Id) => Versioned<Num> {
-   return at_(Num, val)
+   return at(Num, val)
 }
 
 export function str (val: string): (k: Id) => Versioned<Str> {
-   return at_(Str, val)
+   return at(Str, val)
 }
