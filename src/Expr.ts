@@ -105,8 +105,8 @@ export namespace Expr {
       e: Expr = _
    }
 
-   export function let_ (k: Id, x: Str, e: Expr): Let {
-      return at(k, Let, x, e)
+   export function let_ (x: Str, e: Expr): (k: Id) => Let {
+      return at_(Let, x, e)
    }
 
    export class Prim extends Def {

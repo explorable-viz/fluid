@@ -229,7 +229,7 @@ const grammar: Grammar = {
     {"name": "let$macrocall$4", "symbols": [{"literal":"="}]},
     {"name": "let$macrocall$3", "symbols": ["let$macrocall$4"], "postprocess": id},
     {"name": "let$macrocall$3", "symbols": ["let$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "let", "symbols": ["let$macrocall$1", "var", "let$macrocall$3", "expr"], "postprocess": ([, x, , e]) => Expr.let_(ν(), x, e)},
+    {"name": "let", "symbols": ["let$macrocall$1", "var", "let$macrocall$3", "expr"], "postprocess": ([, x, , e]) => Expr.let_(x, e)(ν())},
     {"name": "letrec$macrocall$2", "symbols": [{"literal":"letrec"}]},
     {"name": "letrec$macrocall$1$macrocall$2", "symbols": ["letrec$macrocall$2"]},
     {"name": "letrec$macrocall$1$macrocall$1", "symbols": ["letrec$macrocall$1$macrocall$2"], "postprocess": id},

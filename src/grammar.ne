@@ -189,7 +189,7 @@ def ->
 
 let -> 
    keyword["let"] var lexeme["="] expr 
-   {% ([, x, , e]) => Expr.let_(ν(), x, e) %}
+   {% ([, x, , e]) => Expr.let_(x, e)(ν()) %}
 
 letrec -> 
    keyword["letrec"] recDef (lexeme[";"] recDef {% ([, recDef]) => recDef %}):* 
