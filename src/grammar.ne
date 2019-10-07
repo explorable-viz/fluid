@@ -143,7 +143,7 @@ parenthExpr ->
 
 pair -> 
    lexeme["("] expr lexeme[","] expr lexeme[")"]
-   {% ([, e1, , e2,]) => Expr.constr_(str(Pair.name)(ν()), List.fromArray([e1, e2]))(ν()) %}
+   {% ([, e1, , e2,]) => Expr.constr(str(Pair.name)(ν()), List.fromArray([e1, e2]))(ν()) %}
 
 list -> 
    lexeme["["] listOpt lexeme["]"] # ouch: "
@@ -158,7 +158,7 @@ constr ->
       if (arity(c) !== e̅.length) {
          return reject
       }
-      return Expr.constr_(c, List.fromArray(e̅))(ν())
+      return Expr.constr(c, List.fromArray(e̅))(ν())
    } %}
 
 ctr ->
@@ -244,13 +244,13 @@ typename ->
 
 listOpt -> 
    null 
-   {% () => Expr.constr_(str(Nil.name)(ν()), nil())(ν()) %} |
+   {% () => Expr.constr(str(Nil.name)(ν()), nil())(ν()) %} |
    expr (lexeme[","] expr {% ([, e]) => e %}):* listRestOpt
-   {% ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => Expr.constr_(str(Cons.name)(ν()), List.fromArray([e, e̅]))(ν())) %}
+   {% ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => Expr.constr(str(Cons.name)(ν()), List.fromArray([e, e̅]))(ν())) %}
 
 listRestOpt ->
    null 
-   {% () => Expr.constr_(str(Nil.name)(ν()), nil())(ν()) %} |
+   {% () => Expr.constr(str(Nil.name)(ν()), nil())(ν()) %} |
    lexeme[","] lexeme["..."] expr 
    {% ([, , e]) => e %}
 
