@@ -71,7 +71,6 @@ export class Edit {
          this.setup(new ExprCursor(e))
          const tv: ExplValue =  Eval.eval_(ρ, e)
          this.expect(new ExplValueCursor(tv))
-         console.log(__deltas.size)
       }
    }
 

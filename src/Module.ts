@@ -28,7 +28,7 @@ function import_ (modules: Module[], e: Expr): Expr {
 export function loadTestFile (folder: string, file: string): string {
    let text: string
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest
-   xmlhttp.open("GET", "./" + folder + "/" + file + ".lcalc", false)
+   xmlhttp.open("GET", "./" + folder + "/" + file + ".fld", false)
    xmlhttp.send()
    if (xmlhttp.status === 200) {
       text = xmlhttp.responseText
@@ -38,7 +38,7 @@ export function loadTestFile (folder: string, file: string): string {
 
 // Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
 export function loadModule (file: string): Module {
-   const fileʹ: string = loadTestFile("lcalc/lib", file) + " in 0",
+   const fileʹ: string = loadTestFile("fluid/lib", file) + " in 0",
          e: Expr.Defs = as(successfulParse(fileʹ), Expr.Defs)
    return e.def̅
 }
@@ -48,11 +48,11 @@ export function open (file: string): Expr {
 }
 
 export function openWithImports (file: string, modules: Module[]): Expr {
-   return parseWithImports(loadTestFile("lcalc/example", file), modules)
+   return parseWithImports(loadTestFile("fluid/example", file), modules)
 }
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
-   return Env.singleton(str(x)(ν()), Eval.eval_(emptyEnv(), parseWithImports(loadTestFile("lcalc/dataset", file), [])))
+   return Env.singleton(str(x)(ν()), Eval.eval_(emptyEnv(), parseWithImports(loadTestFile("fluid/dataset", file), [])))
 }
 
 export function parseWithImports (src: string, modules: Module[]): Expr {

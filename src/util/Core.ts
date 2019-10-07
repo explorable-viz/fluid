@@ -3,7 +3,7 @@ export interface Tag<T extends string> {
    typename: T
 }
 
-export type Class<T> = new (...args: any[]) => T
+export type Class<T = Object> = new (...args: any[]) => T
 
 // Possibly abstract class; see https://stackoverflow.com/questions/36886082.
 export type AClass<T> = Function & { prototype: T }

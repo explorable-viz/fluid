@@ -1,3 +1,4 @@
+import { nth } from "../../src/util/Array"
 import { AClass, Class, absurd, as, assert, className, error } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
@@ -6,7 +7,8 @@ import { DataValue, ExplValue, explValue } from "../../src/DataValue"
 import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
-import { Num, Persistent, State, Value } from "../../src/Value"
+import { Num, Persistent, State, Str, Value } from "../../src/Value"
+import { Versioned, num, str } from "../../src/Versioned"
 
 import Def = Expr.Def
 import Let = Expr.Let
@@ -159,21 +161,28 @@ export class ExprCursor extends Cursor {
       return this
    }
 
+   atConstr (C: Class): ExprCursor {
+      this.at(Expr.Constr, e => assert(e.ctr.val === C.name, `${e.ctr.val} !== ${C.name}`))
+      return this
+   }
+
    // Helpers specific to certain datatypes.
 
-   toElem (n: number): ExprCursor {
+   toCons (n: number): ExprCursor {
       if (n === 0) {
-         return this.to(Cons, "head")
+         as(this.v, Cons)
+         return this
       } else {
-         return this.to(Cons, "tail").toElem(n - 1)
+         return this.to(Cons, "tail").toCons(n - 1)
       }
    }
 
    // Not sure what the T parameters are for here...
-   constrArg<T extends Value> (ctr: string, n: number): ExprCursor {
-      return this.at(Expr.Constr, e => assert(e.ctr.val === ctr, `${e.ctr.val} !== ${ctr}`))
+   constrArg (C: Class, n: number): ExprCursor {
+      return this.atConstr(C)
                  .to(Expr.Constr, "args")
-                 .toElem(n)
+                 .toCons(n)
+                 .to(Cons, "head")
    }
 
    treeNodeValue (): ExprCursor {
@@ -186,10 +195,24 @@ export class ExprCursor extends Cursor {
       return this.to(Trie.Var, "κ")      
    }
 
-   // Editing API
+   // Editing API. Use a slightly clunky idiom to factor all edits through "at".
 
    setNum (n: number): ExprCursor {
-      as(this.v, Num).val = n
+      num(n)((as(this.v, Num) as Versioned<Num>).__id)
       return this
    }
+
+   setStr (str_: string): ExprCursor {
+      str(str_)((as(this.v, Str) as Versioned<Str>).__id)
+      return this
+   }
+
+   spliceConstrArg (C: Class, n: number, makeNode: (e: Expr) => Expr): ExprCursor {
+      this.atConstr(C)
+      const e: Expr.Constr = as(this.v, Expr.Constr), 
+            e̅: Expr[] = e.args.toArray()
+      e̅[n] = makeNode(nth(e̅, n))
+      Expr.constr(e.ctr, List.fromArray(e̅))((e as Versioned<Expr.Constr>).__id)
+      return this
+   } 
 }

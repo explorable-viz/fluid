@@ -12,7 +12,7 @@ module.exports = function (config) {
       files: [
          './test/**/*.ts',
          {
-            pattern: './lcalc/**/*.lcalc',
+            pattern: './fluid/**/*.fld',
             watched: true,
             included: false,
             served: true,
@@ -41,7 +41,7 @@ module.exports = function (config) {
          'text/x-typescript': ['ts', 'tsx']
       },
       proxies: {
-         '/lcalc/': '/base/lcalc/'
+         '/fluid/': '/base/fluid/'
       },
       reporters: ['mocha'],
       port: 8081,
