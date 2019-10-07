@@ -68,8 +68,8 @@ export namespace Expr {
       e2: Expr = _
    }
 
-   export function binaryApp (k: Id, e1: Expr, opName: Str, e2: Expr): BinaryApp {
-      return at(k, BinaryApp, e1, opName, e2)
+   export function binaryApp (e1: Expr, opName: Str, e2: Expr): (k: Id) => BinaryApp {
+      return at_(BinaryApp, e1, opName, e2)
    }
 
    export class ConstNum extends Expr {

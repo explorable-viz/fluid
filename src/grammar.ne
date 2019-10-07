@@ -79,25 +79,25 @@ defs1 ->
 
 compareExpr ->
    compareExpr compareOp sumExpr 
-   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(op)(ν()), e2) %} | 
+   {% ([e1, op, e2]) => Expr.binaryApp(e1, str(op)(ν()), e2)(ν()) %} | 
    sumExpr 
    {% id %}
 
 sumExpr -> 
    sumExpr sumOp productExpr 
-   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(op)(ν()), e2) %} | 
+   {% ([e1, op, e2]) => Expr.binaryApp(e1, str(op)(ν()), e2)(ν()) %} | 
    productExpr 
    {% id %}
    
 productExpr -> 
    productExpr productOp exponentExpr 
-   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(op)(ν()), e2) %} |
+   {% ([e1, op, e2]) => Expr.binaryApp(e1, str(op)(ν()), e2)(ν()) %} |
    exponentExpr 
    {% id %}
 
 exponentExpr -> 
    exponentExpr exponentOp appChain 
-   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(op)(ν()), e2) %} |
+   {% ([e1, op, e2]) => Expr.binaryApp(e1, str(op)(ν()), e2)(ν()) %} |
    appChain 
    {% id %}
 
