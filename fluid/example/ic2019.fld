@@ -1,3 +1,5 @@
+let sq = 
+   fun x → x * x;
 letrec
    fun f {
       [] → [];

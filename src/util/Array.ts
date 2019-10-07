@@ -1,4 +1,4 @@
-import { __nonNull } from "./Core"
+import { __nonNull, assert } from "./Core"
 
 export function flatten<T> (x̅̅: T[][]): T[] {
    const x̅: T[] = [] // otherwise TS is confused
@@ -39,4 +39,9 @@ export function eq<T> (x̅: T[], y̅: T[]): boolean {
       }
       return true
    }
+}
+
+export function nth<T> (x̅: T[], n: number): T {
+   assert(n < x̅.length)
+   return x̅[n]
 }

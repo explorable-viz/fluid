@@ -133,7 +133,7 @@ describe("slice", () => {
                   .to(Expr.MatchAs, "σ")
                   .to(Trie.Constr, "cases")
                   .treeNodeValue()
-                  .constrArg("Cons", 0).clearα()
+                  .constrArg(Cons, 0).clearα()
             }
             expect (here: ExplValueCursor): void {
                here.αset()
@@ -160,8 +160,8 @@ describe("slice", () => {
          // erasing the elements doesn't affect the count:
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
-               here.constrArg("Cons", 0).clearα()
-               here.constrArg("Cons", 1).constrArg("Cons", 0).clearα()
+               here.constrArg(Cons, 0).clearα()
+               here.constrArg(Cons, 1).constrArg(Cons, 0).clearα()
             }
             expect (here: ExplValueCursor): void {
                here.αset()
@@ -170,7 +170,7 @@ describe("slice", () => {
          // deleting the tail of the tail means length can't be computed:
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
-               here.constrArg("Cons", 1).clearα()
+               here.constrArg(Cons, 1).clearα()
             }
             expect (here: ExplValueCursor): void {
                here.αclear()
@@ -183,10 +183,10 @@ describe("slice", () => {
             }
             expect (): void {
                here.αset()
-               here.constrArg("Cons", 0).αclear()
-               let hereʹ = here.constrArg("Cons", 1).αset()
-               hereʹ.constrArg("Cons", 0).αclear()
-               hereʹ.constrArg("Cons", 1).αset()
+               here.constrArg(Cons, 0).αclear()
+               let hereʹ = here.constrArg(Cons, 1).αset()
+               hereʹ.constrArg(Cons, 0).αclear()
+               hereʹ.constrArg(Cons, 1).αset()
             }
          })(e)
       })
@@ -210,9 +210,9 @@ describe("slice", () => {
 	      new (class extends FwdSlice {
             setup (_: ExprCursor): void {
 					here
-						.constrArg("NonEmpty", 0)
-						.constrArg("NonEmpty", 1)
-						.constrArg("Pair", 0).clearα()
+						.constrArg(NonEmpty, 0)
+						.constrArg(NonEmpty, 1)
+						.constrArg(Pair, 0).clearα()
             }
             expect (here: ExplValueCursor): void {
                here.to(Some, "t").assert(Str, str => str.toString() === `"sarah"`)
@@ -222,8 +222,8 @@ describe("slice", () => {
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
                here
-                  .constrArg("NonEmpty", 1)
-                  .constrArg("Pair", 0).clearα()
+                  .constrArg(NonEmpty, 1)
+                  .constrArg(Pair, 0).clearα()
             }
             expect (here: ExplValueCursor): void {
                here.αclear()
@@ -242,7 +242,7 @@ describe("slice", () => {
                   .skipImports()
                   .to(Expr.Defs, "e")
                   .to(Expr.App, "e")
-                  .constrArg("Cons", 0).clearα()
+                  .constrArg(Cons, 0).clearα()
               }
             expect (here: ExplValueCursor): void {
                here.to(Cons, "head").αclear()
@@ -295,8 +295,8 @@ describe("slice", () => {
                here
                   .skipImports()
                   .to(Expr.App, "e")
-                  .constrArg("Cons", 1)
-                  .constrArg("Cons", 1).clearα()
+                  .constrArg(Cons, 1)
+                  .constrArg(Cons, 1).clearα()
             }
             expect (here: ExplValueCursor): void {
                here.αclear()
@@ -354,10 +354,10 @@ describe("slice", () => {
                   .to(NonEmpty, "left")
                   .treeNodeValue()          
                   .var_("y").var_("ys").αclear() // cons constructor
-                  .constrArg("Cons", 0).αset() // application of op
+                  .constrArg(Cons, 0).αset() // application of op
                   .to(Expr.App, "e").αset()  // pair constructor
-               hereʹ.constrArg("Pair", 0).αclear()
-               hereʹ.constrArg("Pair", 1).αclear()
+               hereʹ.constrArg(Pair, 0).αclear()
+               hereʹ.constrArg(Pair, 1).αclear()
                here
                   .skipImports()
                   .to(Expr.App, "f")

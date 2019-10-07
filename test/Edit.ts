@@ -1,12 +1,16 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { Edit } from "./util/Core"
-import { Cons, NonEmpty } from "../src/BaseTypes"
+import { Cons, List, Pair, NonEmpty } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { open } from "../src/Module"
+import { ν, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
 
 import Trie = Expr.Trie
+import app = Expr.app
+import constr = Expr.constr
+import var_ = Expr.var_
 
 before((done: MochaDone) => {
    done()
@@ -103,7 +107,9 @@ describe("edit", () => {
                    .to(NonEmpty, "left") // Cons
                    .treeNodeValue()
                    .var_("x").var_("xs")
-                   .constrArg(Cons.name, 0)
+                   .spliceConstrArg(Cons, 0, (e: Expr): Expr => 
+                      constr(str(Pair.name)(ν()), List.fromArray([e, app(var_(str("sq")(ν()))(ν()), var_(str("x")(ν()))(ν()))(ν())]))(ν())
+                   )
                     // TODO: finish...
             }
 
