@@ -126,7 +126,7 @@ describe("slice", () => {
                   .var_("p")
                   .to(Expr.Fun, "σ")
                   .to(Trie.Constr, "cases")
-                  .to(NonEmpty, "left")
+                  .to(NonEmpty, "left") // Cons
                   .treeNodeValue()
                   .var_("x").var_("xs")
                   .to(Expr.Defs, "e")

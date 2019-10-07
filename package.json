@@ -60,7 +60,7 @@
   "homepage": "https://github.com/rolyp/lambdacalc",
   "files": [
     "dist/**/*",
-    "lcalc/**/*"
+    "fluid/**/*"
   ],
   "main": "dist/lib.bundle.js",
   "typings": "dist/ts/Lib.d.ts"

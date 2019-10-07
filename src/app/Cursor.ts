@@ -6,7 +6,7 @@ import { DataValue, ExplValue, explValue } from "../../src/DataValue"
 import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
-import { Num, Persistent, State, Value } from "../../src/Value"
+import { Num, Persistent, State, Str, Value } from "../../src/Value"
 
 import Def = Expr.Def
 import Let = Expr.Let
@@ -190,6 +190,11 @@ export class ExprCursor extends Cursor {
 
    setNum (n: number): ExprCursor {
       as(this.v, Num).val = n
+      return this
+   }
+
+   setStr (str: string): ExprCursor {
+      as(this.v, Str).val = str
       return this
    }
 }
