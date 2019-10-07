@@ -6,7 +6,7 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
-import { Id, Num, Str, _, make } from "./Value"
+import { DataValueTag, Id, Num, Str, _, make } from "./Value"
 import { ν, at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
@@ -41,13 +41,16 @@ export namespace Expr {
          return Trie.Trie.join<K>(κ, κʹ) as K
       } else
       if (κ instanceof Fun && κʹ instanceof Fun) {
-         return fun(ν(), join(κ.σ, κʹ.σ)) as Expr as K
+         return fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K
       } else {
          return absurd("Undefined join.", κ, κʹ)
       }
    }
 
-   export abstract class Expr extends AnnotatedC(DataValue)<"Expr"> {
+   export abstract class SyntaxNode<Tag extends DataValueTag = DataValueTag> extends AnnotatedC(DataValue)<Tag> {
+   }
+
+   export abstract class Expr extends SyntaxNode<"Expr"> {
    }
    
    export class App extends Expr {
@@ -55,8 +58,8 @@ export namespace Expr {
       e: Expr = _
    }
 
-   export function app (k: Id, f: Expr, e: Expr): App {
-      return at(k, App, f, e)
+   export function app (f: Expr, e: Expr): (k: Id) => App {
+      return at(App, f, e)
    }
 
    export class BinaryApp extends Expr {
@@ -65,24 +68,24 @@ export namespace Expr {
       e2: Expr = _
    }
 
-   export function binaryApp (k: Id, e1: Expr, opName: Str, e2: Expr): BinaryApp {
-      return at(k, BinaryApp, e1, opName, e2)
+   export function binaryApp (e1: Expr, opName: Str, e2: Expr): (k: Id) => BinaryApp {
+      return at(BinaryApp, e1, opName, e2)
    }
 
    export class ConstNum extends Expr {
       val: Num = _
    }
    
-   export function constNum (k: Id, val: Num): ConstNum {
-      return at(k, ConstNum, val)
+   export function constNum (val: Num): (k: Id) => ConstNum {
+      return at(ConstNum, val)
    }
 
    export class ConstStr extends Expr {
       val: Str = _
    }
 
-   export function constStr (k: Id, val: Str): ConstStr {
-      return at(k, ConstStr, val)
+   export function constStr (val: Str): (k: Id) => ConstStr {
+      return at(ConstStr, val)
    }
 
    export class Constr extends Expr {
@@ -90,11 +93,11 @@ export namespace Expr {
       args: List<Expr> = _
    }
 
-   export function constr (k: Id, ctr: Str, args: List<Expr>): Constr {
-      return at(k, Constr, ctr, args)
+   export function constr (ctr: Str, args: List<Expr>): (k: Id) => Constr {
+      return at(Constr, ctr, args)
    }
 
-   export class Def extends AnnotatedC(DataValue)<"Expr.Def"> {
+   export class Def extends SyntaxNode<"Expr.Def"> {
    }
 
    export class Let extends Def {
@@ -102,33 +105,33 @@ export namespace Expr {
       e: Expr = _
    }
 
-   export function let_ (k: Id, x: Str, e: Expr): Let {
-      return at(k, Let, x, e)
+   export function let_ (x: Str, e: Expr): (k: Id) => Let {
+      return at(Let, x, e)
    }
 
    export class Prim extends Def {
       x: Str = _
    }
 
-   export function prim (k: Id, x: Str): Prim {
-      return at(k, Prim, x)
+   export function prim (x: Str): (k: Id) => Prim {
+      return at(Prim, x)
    }
 
-   export class RecDef extends AnnotatedC(DataValue)<"RecDef"> {
+   export class RecDef extends SyntaxNode<"RecDef"> {
       x: Str = _
       σ: Trie<Expr> = _
    }
  
-   export function recDef (k: Id, x: Str, σ: Trie<Expr>): RecDef {
-      return at(k, RecDef, x, σ)
+   export function recDef (x: Str, σ: Trie<Expr>): (k: Id) => RecDef {
+      return at(RecDef, x, σ)
    }
 
    export class LetRec extends Def {
       δ: List<RecDef> = _
    }
 
-   export function letRec (k: Id, δ: List<RecDef>): LetRec {
-      return at(k, LetRec, δ)
+   export function letRec (δ: List<RecDef>): (k: Id) => LetRec {
+      return at(LetRec, δ)
    }
 
    export class Defs extends Expr {
@@ -136,16 +139,16 @@ export namespace Expr {
       e: Expr = _
    }
 
-   export function defs (k: Id, def̅: List<Def>, e: Expr): Defs {
-      return at(k, Defs, def̅, e)
+   export function defs (def̅: List<Def>, e: Expr): (k: Id) => Defs {
+      return at(Defs, def̅, e)
    }
 
    export class Fun extends Expr {
       σ: Trie<Expr> = _
    }
 
-   export function fun (k: Id, σ: Trie<Expr>): Fun {
-      return at(k, Fun, σ)
+   export function fun (σ: Trie<Expr>): (k: Id) => Fun {
+      return at(Fun, σ)
    }
 
    export class MatchAs extends Expr {
@@ -153,16 +156,16 @@ export namespace Expr {
       σ: Trie<Expr> = _
    }
 
-   export function matchAs (k: Id, e: Expr, σ: Trie<Expr>): MatchAs {
-      return at(k, MatchAs, e, σ)
+   export function matchAs (e: Expr, σ: Trie<Expr>): (k: Id) => MatchAs {
+      return at(MatchAs, e, σ)
    }
 
    export class Quote extends Expr {
       e: Expr = _
    }
 
-   export function quote (k: Id, e: Expr): Quote {
-      return at(k, Quote, e)
+   export function quote (e: Expr): (k: Id) => Quote {
+      return at(Quote, e)
    }
 
    export class Typematch extends Expr {
@@ -170,16 +173,16 @@ export namespace Expr {
       cases: FiniteMap<Expr> = _
    }
 
-   export function typematch (k: Id, e: Expr, cases: FiniteMap<Expr>): Typematch {
-      return at(k, Typematch, e, cases)
+   export function typematch (e: Expr, cases: FiniteMap<Expr>): (k: Id) => Typematch {
+      return at(Typematch, e, cases)
    }
 
    export class Var extends Expr {
       x: Str = _
    }
 
-   export function var_ (k: Id, x: Str): Var {
-      return at(k, Var, x)
+   export function var_ (x: Str): (k: Id) => Var {
+      return at(Var, x)
    }
 
    export type Trie<K extends Cont> = Trie.Trie<K>
@@ -198,7 +201,7 @@ export namespace Expr {
                if (ctrToDataType.get(c_σ) !== ctrToDataType.get(c_τ)) {
                   error(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
                }
-               return constr(unionWith(σ.cases, τ.cases, join))
+               return constr(unionWith<K, FiniteMap<K>>(σ.cases, τ.cases, join))
             } else {
                return absurd("Undefined join.", σ, τ)
             }

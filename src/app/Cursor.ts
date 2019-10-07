@@ -2,10 +2,11 @@ import { AClass, Class, absurd, as, assert, className, error } from "../../src/u
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
-import { DataValue, ExplValue } from "../../src/DataValue"
+import { DataValue, ExplValue, explValue } from "../../src/DataValue"
+import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
-import { Persistent, Value } from "../../src/Value"
+import { Num, Persistent, State, Value } from "../../src/Value"
 
 import Def = Expr.Def
 import Let = Expr.Let
@@ -60,14 +61,45 @@ export class ExplValueCursor extends Cursor {
       return new ExplValueCursor(Expl.explChild(this.tv.t, as(this.tv.v, C), k))
    }
 
+   toBinaryArg1 (): ExplValueCursor {
+      return new ExplValueCursor(as(this.tv.t, Expl.BinaryApp).tv1)
+   }
+
+   toBinaryArg2 (): ExplValueCursor {
+      return new ExplValueCursor(as(this.tv.t, Expl.BinaryApp).tv2)
+   }
+
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): this {
       f(as<Value, T>(this.tv.v, C))
       return this
    }
+
+   isChanged (s: State): ExplValueCursor {
+      assert(this.tv.v.__ẟ.eq(new Change(s)))
+      return this
+   }
+
+   isUnchanged (): ExplValueCursor {
+      assert(this.tv.v.__ẟ.eq(new Change({})))
+      return this
+   }
+
+   isNew (): ExplValueCursor {
+      assert(this.tv.v.__ẟ instanceof New)
+      return this
+   }
+
+   toTerminal (): ExplValueCursor {
+      let t: Expl = this.tv.t
+      while (t instanceof Expl.NonTerminal) {
+         t = t.t
+      }
+      return new ExplValueCursor(explValue(t, this.tv.v))      
+   }   
 }
 
 export class ExprCursor extends Cursor {
-   readonly v: Value
+   readonly v: Value // would prefer SyntaxNode, but we also traverse "adminstrative" nodes like cons cells.
 
    constructor (v: Value) {
       super()
@@ -144,7 +176,7 @@ export class ExprCursor extends Cursor {
                  .toElem(n)
    }
 
-   nodeValue (): ExprCursor {
+   treeNodeValue (): ExprCursor {
       return this.to(NonEmpty, "t")
                  .to(Pair, "snd")
    }
@@ -152,5 +184,12 @@ export class ExprCursor extends Cursor {
    var_ (x: string): ExprCursor {
       this.assert(Trie.Var, σ => σ.x.val === x)
       return this.to(Trie.Var, "κ")      
+   }
+
+   // Editing API
+
+   setNum (n: number): ExprCursor {
+      as(this.v, Num).val = n
+      return this
    }
 }

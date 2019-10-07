@@ -1,45 +1,58 @@
-import { Class, __nonNull, notYetImplemented } from "./util/Core"
-import { Id, Persistent, Num, Str, Value, _, construct, make } from "./Value"
+import { Class, __nonNull, assert } from "./util/Core"
+import { __deltas } from "./Delta"
+import { Id, Persistent, Num, Str, Value, _, construct, fields, make } from "./Value"
 
 // Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
 // same datatype can be interned in some contexts and versioned in others.
 export type Versioned<T> = Versioned_ & T
 
+// Why do versioned objects need to store their id?
 export interface Versioned_ {
    __id: Id
+}
+
+export function versioned <T extends Value> (v: T): boolean {
+   return (v as Versioned<T>).__id !== undefined
 }
 
 // For versioned objects the map is not curried but takes an (interned) composite key.
 type VersionedValues = Map<Id, Versioned<Value>>
 const __versioned: VersionedValues = new Map
 
-// The (possibly already extant) versioned object uniquely identified by a memo-key.
-export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
-   let v: Versioned<Value> | undefined = __versioned.get(k)
-   if (v === undefined) {
-      const v: T = new C
-      Object.defineProperty(v, "__id", {
-         value: k,
-         enumerable: false
-      })
-      const vʹ: Versioned<T> = v as Versioned<T>
-      __versioned.set(k, vʹ)
-      return construct(vʹ, v̅)
-   } else
-   if (v instanceof C) { 
-      return construct(v, v̅) // hmm, TS thinks v is versioned here - why?
-   } else {
-      return reclassify(v, C)
+// The (possibly already extant) versioned object uniquely identified by a memo-key. As an idempotent side-effect,
+// record how the object differs from its previous version.
+export function at<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id) => Versioned<T> {
+   return (k: Id) => {
+      let v: Versioned<Value> | undefined = __versioned.get(k)
+      if (v === undefined) {
+         const v: Versioned<T> = new C as Versioned<T>
+         Object.defineProperty(v, "__id", {
+            value: k,
+            enumerable: false
+         })
+         __versioned.set(k, v)
+         __deltas.created(v, construct(true, v, v̅)!)
+         return v
+      } else
+      if (v instanceof C) {
+         __deltas.changed(v, construct(true, v, v̅)!)
+         return v
+      } else {
+         reclassify(v, C)
+         __deltas.reclassified(v, construct(true, v, v̅)!)
+         return v as Versioned<T>
+      }
    }
 }
 
-export function at_<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id) => Versioned<T> {
-   return (k: Id) => at(k, C, ...v̅)
-}
-
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
-function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): Versioned<T> {
-   return notYetImplemented()
+function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): void {
+   const proto: Object = Object.getPrototypeOf(new ctr)
+   assert (Object.getPrototypeOf(v) !== proto)
+   for (const k of fields(v)) {
+      assert(delete v[k as keyof Object])
+   }
+   Object.setPrototypeOf(v, proto)
 }
 
 // A memo key which is sourced externally to the system. (The name "External" is already taken.)
@@ -61,9 +74,9 @@ export const ν: () => Extern =
    })()
 
 export function num (val: number): (k: Id) => Versioned<Num> {
-   return at_(Num, val)
+   return at(Num, val)
 }
 
 export function str (val: string): (k: Id) => Versioned<Str> {
-   return at_(Str, val)
+   return at(Str, val)
 }

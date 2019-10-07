@@ -2,23 +2,24 @@ import { __nonNull } from "../util/Core"
 import { ann } from "../util/Lattice"
 import { setallα, negateallα } from "../Annotated"
 import { ExplValue } from "../DataValue"
+import { __deltas } from "../Delta"
 import { Env } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
 import  { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
-import { __delta, clearDelta, clearMemo } from "../Value"
+import { clearMemo } from "../Value"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
 
 // As with the test cases, we treat the dataset ρ as "external" data, meaning we push slicing
 // information back only as far as ρ.
 export class View implements Slicer {
    name: string
-   coordinator: ViewCoordinator
+   coordinator!: ViewCoordinator
    e: Expr
    tv: ExplValue
    view: GraphicsRenderer
-   direction: Direction
+   direction!: Direction
 
    constructor (name: string, ρ: Env, e: Expr, svg: SVGSVGElement) {
       this.name = name
@@ -45,8 +46,8 @@ export class View implements Slicer {
 
    bwdSlice (): void {
       Eval.eval_bwd(this.e, this.tv)
-      clearDelta()
-      console.log(__delta.size)
+      __deltas.clear()
+      console.log(__deltas.size)
       this.direction = Direction.Bwd
       this.coordinator.onBwd()
       this.draw()

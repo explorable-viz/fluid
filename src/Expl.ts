@@ -7,7 +7,7 @@ import { Expr } from "./Expr"
 import { Match } from "./Match"
 import { UnaryOp } from "./Primitive"
 import { Id, PrimValue, Str, _, fields } from "./Value"
-import { at_ } from "./Versioned"
+import { at } from "./Versioned"
 
 export type Closure = Eval.Closure
 export type Expl = Expl.Expl
@@ -29,7 +29,7 @@ export namespace Expl {
    }
 
    export function app (tf: ExplValue<Closure>, tu: ExplValue, δ: List<RecDef>, ξ: Match<Expr>, t: Expl): (k: Id) => App {
-      return at_(App, tf, tu, δ, ξ, t)
+      return at(App, tf, tu, δ, ξ, t)
    }
 
    export class UnaryApp extends Expl {
@@ -38,7 +38,7 @@ export namespace Expl {
    }
 
    export function unaryApp (tf: ExplValue<UnaryOp>, tv: ExplValue<PrimValue>): (k: Id) => UnaryApp {
-      return at_(UnaryApp, tf, tv)
+      return at(UnaryApp, tf, tv)
    }
 
    export class BinaryApp extends Expl {
@@ -48,7 +48,7 @@ export namespace Expl {
    }
 
    export function binaryApp (tv1: ExplValue<PrimValue>, opName: Str, tv2: ExplValue<PrimValue>): (k: Id) => BinaryApp {
-      return at_(BinaryApp, tv1, opName, tv2)
+      return at(BinaryApp, tv1, opName, tv2)
    }
 
    // Has a concrete subclass for each datatype.
@@ -67,7 +67,7 @@ export namespace Expl {
    }
 
    export function let_ (x: Str, tv: ExplValue): (k: Id) => Let {
-      return at_(Let, x, tv)
+      return at(Let, x, tv)
    }
 
    export class Prim extends Def {
@@ -76,7 +76,7 @@ export namespace Expl {
    }
 
    export function prim (x: Str, t_op: ExplValue<UnaryOp>): (k: Id) => Prim {
-      return at_(Prim, x, t_op)
+      return at(Prim, x, t_op)
    }
 
    export class RecDef extends DataValue<"Expl.RecDef"> {
@@ -85,7 +85,7 @@ export namespace Expl {
    }
 
    export function recDef (x: Str, tf: ExplValue<Closure>): (k: Id) => RecDef {
-      return at_(RecDef, x, tf)
+      return at(RecDef, x, tf)
    }
 
    export class LetRec extends Def {
@@ -93,7 +93,7 @@ export namespace Expl {
    }
 
    export function letRec (δ: List<RecDef>): (k: Id) => LetRec {
-      return at_(LetRec, δ)
+      return at(LetRec, δ)
    }
 
    export class Defs extends NonTerminal {
@@ -102,14 +102,14 @@ export namespace Expl {
    }
 
    export function defs (def̅: List<Def>, t: Expl): (k: Id) => Defs {
-      return at_(Defs, def̅, t)
+      return at(Defs, def̅, t)
    }
 
    export class Const extends Expl {
    }
 
    export function const_ (): (k: Id) => Const {
-      return at_(Const)
+      return at(Const)
    }
 
    export class MatchAs extends NonTerminal {
@@ -119,14 +119,14 @@ export namespace Expl {
    }
 
    export function matchAs (tu: ExplValue, ξ: Match<Expr>, t: Expl): (k: Id) => MatchAs {
-      return at_(MatchAs, tu, ξ, t)
+      return at(MatchAs, tu, ξ, t)
    }
 
    export class Quote extends Expl {
    }
 
    export function quote (): (k: Id) => Quote {
-      return at_(Quote)
+      return at(Quote)
    }
 
    export class Typematch extends NonTerminal {
@@ -136,7 +136,7 @@ export namespace Expl {
    }
 
    export function typematch (tu: ExplValue, d: Str, t: Expl): (k: Id) => Typematch {
-      return at_(Typematch, tu, d, t)
+      return at(Typematch, tu, d, t)
    }
 
    export class Var extends NonTerminal {
@@ -145,7 +145,7 @@ export namespace Expl {
    }
 
    export function var_ (x: Str, t: Expl): (k: Id) => Var {
-      return at_(Var, x, t)
+      return at(Var, x, t)
    }
 
    // Should probably do a better job of restricting k to be a bona fide field name.

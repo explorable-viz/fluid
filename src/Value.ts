@@ -1,5 +1,6 @@
-import { Class, assert } from "./util/Core"
+import { Class, __nonNull, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
+import { Delta, __deltas } from "./Delta"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -15,7 +16,7 @@ export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Id" | "Num" | "St
 
 // Value in the metalanguage.
 export class Value<Tag extends ValueTag = ValueTag> {
-   readonly __tag: Tag
+   readonly __tag!: Tag
 
    child (k: string): Persistent {
       return (this as any as State)[k]
@@ -25,6 +26,10 @@ export class Value<Tag extends ValueTag = ValueTag> {
    // like Num and Str have children which are not observable through pattern-matching.
    children (): Persistent[] {
       return fields(this).map(k => this.child(k))
+   }
+
+   get __ẟ (): Delta {
+      return __nonNull(__deltas.ẟ̅.get(this))
    }
 }
 
@@ -37,10 +42,6 @@ export abstract class Id extends Value<"Id"> {
 
 class FunctionId extends Id {
    f: Function = _
-
-   get args (): Persistent[] {
-      return []
-   }
 }
 
 function functionId (f: Function): FunctionId {
@@ -50,12 +51,6 @@ function functionId (f: Function): FunctionId {
 class ApplicationId extends Id {
    k: MemoId = _
    v: Persistent = _
-
-   get args (): Persistent[] {
-      const v̅: Persistent[] = this.k.args
-      v̅.push(this.v)
-      return v̅
-   }
 }
 
 export type MemoId = FunctionId | ApplicationId
@@ -123,6 +118,23 @@ export interface State {
    [prop: string]: Persistent
 }
 
+export function leq (s1: State, s2: State): boolean {
+   return Object.keys(s1).every((prop: string): boolean => {
+      return s2.hasOwnProperty(prop) && s1[prop] === s2[prop]
+   })
+}
+
+// Imperative join that merges s2 into s1, failing if they are incompatible.
+export function mergeInto (tgt: State, src: State): void {
+   Object.keys(src).forEach((prop: string): void => {
+      if (!tgt.hasOwnProperty(prop)) {
+         tgt[prop] = src[prop]
+      } else {
+         assert(tgt[prop] === src[prop])
+      }
+   })
+}
+
 // Curried map from constructors and arguments to cached values; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
@@ -134,12 +146,6 @@ const __funMemo: MemoTable = new Map
 
 export function clearMemo (): void {
    __funMemo.clear()
-}
-
-export const __delta: Set<[Value, string, Persistent]> = new Set()
-
-export function clearDelta (): void {
-   __delta.clear()
 }
 
 function lookupArg<T extends Persistent> (f: Memoisable<T>, m: MemoTable, v̅: Persistent[], n: number): Persistent | Map<Persistent, Object> {
@@ -176,10 +182,10 @@ class MemoCtr<T extends Value> implements Memoisable<T> {
    } 
 
    call (v̅: Persistent[]): T {
-      const o: T = new this.C
-      construct(o, v̅)
-      Object.freeze(o) 
-      return o
+      const v: T = new this.C
+      construct(false, v, v̅)
+      Object.freeze(v)
+      return v
    }
 }
 
@@ -225,15 +231,20 @@ export function memo<T extends Persistent> (f: MemoFunType<T>, ...v̅: Persisten
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<T extends Value> (tgt: T, v̅: Persistent[]): T {
+export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): State | null {
    const tgtʹ: State = tgt as any as State,
-         f̅: string[] = fields(tgt)
+         f̅: string[] = fields(tgt),
+         ẟ: State | null = compare ? {} : null
    assert(f̅.length === v̅.length)
    let n: number = 0
    f̅.forEach((f: string): void => {
-      tgtʹ[f] = v̅[n++]
+      const src: Persistent = v̅[n++]
+      if (compare && tgtʹ[f] !== src) {
+         ẟ![f] = src
+      }
+      tgtʹ[f] = src
    })
-   return tgt
+   return ẟ
 }
 
 // Exclude metadata according to our convention.

@@ -21,7 +21,7 @@ function import_ (modules: Module[], e: Expr): Expr {
    if (modules.length === 0) {
       return e
    } else {
-      return Expr.defs(ν(), modules[0], import_(modules.slice(1), e))
+      return Expr.defs(modules[0], import_(modules.slice(1), e))(ν())
    }
 }
 
@@ -82,24 +82,24 @@ function asRecord (v: Object): Expr {
    return asList(Object.getOwnPropertyNames(v).map(k => asPair(k, (v as any)[k])))
 }
 
-function asPair (k: string, v: any): Expr {
-   return Expr.constr(ν(), str(Pair.name)(ν()), List.fromArray([asPrimValue(k), asPrimValue(v)]))
+function asPair (k: string, v: unknown): Expr {
+   return Expr.constr(str(Pair.name)(ν()), List.fromArray([asPrimValue(k), asPrimValue(v)]))(ν())
 }
 
 function asList (e̅: Expr[]): Expr {
-   let e̅ʹ: Expr = Expr.constr(ν(), str(Nil.name)(ν()), List.fromArray([]))
+   let e̅ʹ: Expr = Expr.constr(str(Nil.name)(ν()), List.fromArray([]))(ν())
    for (let e of [...e̅].reverse()) {
-      e̅ʹ = Expr.constr(ν(), str(Cons.name)(ν()), List.fromArray([e, e̅ʹ]))
+      e̅ʹ = Expr.constr(str(Cons.name)(ν()), List.fromArray([e, e̅ʹ]))(ν())
    }
    return e̅ʹ
 }
 
-function asPrimValue (v: any): Expr {
+function asPrimValue (v: unknown): Expr {
    if (typeof v === "number") {
-      return Expr.constNum(ν(), num(v)(ν()))
+      return Expr.constNum(num(v)(ν()))(ν())
    } else
    if (typeof v === "string") {
-      return Expr.constStr(ν(), str(v)(ν()))
+      return Expr.constStr(str(v)(ν()))(ν())
    } else {
       return error(`Ill-formed data: expected string or number, found ${typeof v}.`)
    }

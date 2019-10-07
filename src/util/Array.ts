@@ -1,7 +1,8 @@
 import { __nonNull } from "./Core"
 
 export function flatten<T> (x̅̅: T[][]): T[] {
-   return [].concat.apply([], x̅̅)
+   const x̅: T[] = [] // otherwise TS is confused
+   return x̅.concat.apply([], x̅̅)
 }
 
 export function counts<T> (x̅: T[]): Map<T, number> {
@@ -22,6 +23,10 @@ export function zip<T, U> (x̅: T[], y̅: U[]): [T, U][] {
 
 export function zipWith<T, U, V> (f: (t: T, u: U) => V): (x̅: T[], y̅: U[]) => V[] {
    return (x̅, y̅) => x̅.map((x: T, n: number): V => f(x, y̅[n]))
+}
+
+export function includes<T> (x̅: T[], y̅: T[]): boolean {
+   return y̅.every(y => x̅.includes(y))
 }
 
 export function eq<T> (x̅: T[], y̅: T[]): boolean {

@@ -12,12 +12,12 @@ import { get } from "./FiniteMap"
 import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId } from "./Value"
-import { at_, num, str } from "./Versioned"
+import { at, num, str } from "./Versioned"
 
 // Move to more sensible location
 export function dataValue (c: string, tv̅: ExplValue[]): (k: Id) => DataValue {
    const d: DataType = __nonNull(ctrToDataType.get(c))
-   return at_(d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+   return at(d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
 }
 
 export enum Direction { Fwd, Bwd }
@@ -37,7 +37,7 @@ export class Closure extends AnnotatedC(DataValue)<"Closure"> {
 }
 
 function closure (ρ: Env, δ: List<RecDef>, f: Elim<Expr>): (k: Id) => Closure {
-   return at_(Closure, ρ, δ, f)
+   return at(Closure, ρ, δ, f)
 }
 
 // Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
@@ -158,7 +158,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
             c: string = e.ctr.val,
             d: DataType = __nonNull(ctrToDataType.get(c))
-      return explValue(at_(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))(kₜ), dataValue(c, tv̅)(kᵥ))
+      return explValue(at(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))(kₜ), dataValue(c, tv̅)(kᵥ))
    } else
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote()(kₜ), e.e)

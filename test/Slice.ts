@@ -16,7 +16,7 @@ before((done: MochaDone) => {
 })
 
 // Putting test name in a variable interacts poorly with asynchronous execution.
-describe("example", () => {
+describe("slice", () => {
    describe("arithmetic", () => {
       it("ok", () => {
          const e: Expr = open("arithmetic")
@@ -77,8 +77,8 @@ describe("example", () => {
             setup (here: ExplValueCursor): void {
                here.setα()
             }
-            expect (): void {
-               this.expr.αset()
+            expect (here: ExprCursor): void {
+               here.αset()
             }
          })(e, ρ)
       })
@@ -89,6 +89,21 @@ describe("example", () => {
          const e: Expr = open("compose")
          new FwdSlice(e)
          new BwdSlice(e)
+      })
+   })
+
+   // merge with bar-chart test case once we implement loading from JSON or similar
+   describe("create-dataset", () => {
+      it("ok", () => {
+         const data: Object[] = [
+            // some subset of the renewables dataset
+            { year: 2015, country: "China", energyType: "Bio", value: 10.3 },
+            { year: 2015, country: "China", energyType: "Geothermal", value: 0 },
+            { year: 2015, country: "China", energyType: "Hydro", value: 296 }
+         ]
+         const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data"),
+         e: Expr = openWithImports("create-dataset", [module_graphics])
+         new FwdSlice(e, ρ)
       })
    })
 
@@ -112,11 +127,12 @@ describe("example", () => {
                   .to(Expr.Fun, "σ")
                   .to(Trie.Constr, "cases")
                   .to(NonEmpty, "left")
-                  .nodeValue()
+                  .treeNodeValue()
                   .var_("x").var_("xs")
+                  .to(Expr.Defs, "e")
                   .to(Expr.MatchAs, "σ")
                   .to(Trie.Constr, "cases")
-                  .nodeValue()
+                  .treeNodeValue()
                   .constrArg("Cons", 0).clearα()
             }
             expect (here: ExplValueCursor): void {
@@ -254,8 +270,8 @@ describe("example", () => {
             setup (here: ExplValueCursor): void {
                here.to(Pair, "fst").setα()
             }
-            expect (): void {
-               const here: ExprCursor = this.expr.skipImports()
+            expect (here: ExprCursor): void {
+               here = here.skipImports()
                here.toDef("x").to(Expr.Let, "e").αset()
                here.toDef("y").to(Expr.Let, "e").αset()
             }
@@ -300,21 +316,6 @@ describe("example", () => {
       })
    })
 
-   // merge with bar-chart test case once we implement loading from JSON or similar
-   describe("create-dataset", () => {
-      it("ok", () => {
-         const data: Object[] = [
-            // some subset of the renewables dataset
-            { year: 2015, country: "China", energyType: "Bio", value: 10.3 },
-            { year: 2015, country: "China", energyType: "Geothermal", value: 0 },
-            { year: 2015, country: "China", energyType: "Hydro", value: 296 }
-         ]
-         const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data"),
-         e: Expr = openWithImports("create-dataset", [module_graphics])
-         new FwdSlice(e, ρ)
-      })
-   })
-
    describe("zipW", () => {
       it("ok", () => {
          const e: Expr = open("zipW")
@@ -324,8 +325,7 @@ describe("example", () => {
             setup (here: ExplValueCursor): void {
                here.setα()
             }
-            expect (): void {
-               let here: ExprCursor = this.expr
+            expect (here: ExprCursor): void {
                here.toDef("zipW").αset().to(Expr.RecDef, "σ").var_("op").αset()
                here = here.skipImports()
                here.to(Expr.App, "e").αset()
@@ -337,23 +337,22 @@ describe("example", () => {
             setup (here: ExplValueCursor): void {
                here.to(Cons, "head").setα()
             }
-            expect (): void {
-               const here: ExprCursor = this.expr
+            expect (here: ExprCursor): void {
                let hereʹ: ExprCursor = here
                   .toDef("zipW")
                   .to(Expr.RecDef, "σ")
                   .var_("op")
                   .to(Expr.Fun, "σ")
                   .to(Trie.Constr, "cases")
-               hereʹ.nodeValue().αclear() // body of outer Nil clause
+               hereʹ.treeNodeValue().αclear() // body of outer Nil clause
                hereʹ = hereʹ
                   .to(NonEmpty, "left")
-                  .nodeValue()          
+                  .treeNodeValue()          
                   .var_("x").var_("xs").αclear()
                   .to(Expr.Fun, "σ")
                   .to(Trie.Constr, "cases")
                   .to(NonEmpty, "left")
-                  .nodeValue()          
+                  .treeNodeValue()          
                   .var_("y").var_("ys").αclear() // cons constructor
                   .constrArg("Cons", 0).αset() // application of op
                   .to(Expr.App, "e").αset()  // pair constructor
@@ -366,7 +365,7 @@ describe("example", () => {
                   .to(Expr.App, "e")
                   .to(Expr.Fun, "σ")
                   .to(Trie.Constr, "cases")
-                  .nodeValue()
+                  .treeNodeValue()
                   .var_("x").var_("y").αset()
             }
          })(e)

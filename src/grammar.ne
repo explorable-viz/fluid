@@ -36,7 +36,7 @@ import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { Str } from "./Value"
-import { ν, num, str_ } from "./Versioned"
+import { ν, num, str } from "./Versioned"
 
 import Cont = Expr.Cont
 import Trie = Expr.Trie
@@ -75,29 +75,29 @@ expr ->
 
 defs1 ->
    defList keyword["in"] expr 
-   {% ([defs, , e]) => Expr.defs(ν(), defs, e) %}
+   {% ([defs, , e]) => Expr.defs(defs, e)(ν()) %}
 
 compareExpr ->
    compareExpr compareOp sumExpr 
-   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str_(op)(ν()), e2) %} | 
+   {% ([e1, op, e2]) => Expr.binaryApp(e1, str(op)(ν()), e2)(ν()) %} | 
    sumExpr 
    {% id %}
 
 sumExpr -> 
    sumExpr sumOp productExpr 
-   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str_(op)(ν()), e2) %} | 
+   {% ([e1, op, e2]) => Expr.binaryApp(e1, str(op)(ν()), e2)(ν()) %} | 
    productExpr 
    {% id %}
    
 productExpr -> 
    productExpr productOp exponentExpr 
-   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str_(op)(ν()), e2) %} |
+   {% ([e1, op, e2]) => Expr.binaryApp(e1, str(op)(ν()), e2)(ν()) %} |
    exponentExpr 
    {% id %}
 
 exponentExpr -> 
    exponentExpr exponentOp appChain 
-   {% ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str_(op)(ν()), e2) %} |
+   {% ([e1, op, e2]) => Expr.binaryApp(e1, str(op)(ν()), e2)(ν()) %} |
    appChain 
    {% id %}
 
@@ -105,7 +105,7 @@ appChain ->
    simpleExpr 
    {% id %} |
    appChain simpleExpr 
-   {% ([e1, e2]) => Expr.app(ν(), e1, e2) %}
+   {% ([e1, e2]) => Expr.app(e1, e2)(ν()) %}
 
 simpleExpr ->
    variable {% id %} |
@@ -118,7 +118,7 @@ simpleExpr ->
 
 variable -> 
    var 
-   {% ([x]) => Expr.var_(ν(), x) %}
+   {% ([x]) => Expr.var_(x)(ν()) %}
 
 var ->
    lexeme[%ident] 
@@ -126,16 +126,16 @@ var ->
       if (isCtr(x.value)) {
          return reject
       }
-      return str_(x.value)(ν()) 
+      return str(x.value)(ν()) 
    } %}
 
 string -> 
    lexeme[%string] 
-   {% ([[lit]]) => Expr.constStr(ν(), str_((lit.value as string).slice(1, -1))(ν())) %}
+   {% ([[lit]]) => Expr.constStr(str((lit.value as string).slice(1, -1))(ν()))(ν()) %}
 
 number ->
    lexeme[%number] 
-   {% ([[lit]]) => Expr.constNum(ν(), num(new Number(lit.value as string).valueOf())(ν())) %}
+   {% ([[lit]]) => Expr.constNum(num(new Number(lit.value as string).valueOf())(ν()))(ν()) %}
 
 parenthExpr -> 
    lexeme["("] expr lexeme[")"] 
@@ -143,7 +143,7 @@ parenthExpr ->
 
 pair -> 
    lexeme["("] expr lexeme[","] expr lexeme[")"]
-   {% ([, e1, , e2,]) => Expr.constr(ν(), str_(Pair.name)(ν()), List.fromArray([e1, e2])) %}
+   {% ([, e1, , e2,]) => Expr.constr(str(Pair.name)(ν()), List.fromArray([e1, e2]))(ν()) %}
 
 list -> 
    lexeme["["] listOpt lexeme["]"] # ouch: "
@@ -158,7 +158,7 @@ constr ->
       if (arity(c) !== e̅.length) {
          return reject
       }
-      return Expr.constr(ν(), c, List.fromArray(e̅))
+      return Expr.constr(c, List.fromArray(e̅))(ν())
    } %}
 
 ctr ->
@@ -167,7 +167,7 @@ ctr ->
       if (!isCtr(x.value)) {
          return reject
       }
-      return str_(x.value)(ν())
+      return str(x.value)(ν())
    } %}
 
 args ->
@@ -178,7 +178,7 @@ args ->
 
 typematch ->
    keyword["typematch"] expr keyword["as"] typeMatches
-   {% ([, e, , m]) => Expr.typematch(ν(), e, m) %}
+   {% ([, e, , m]) => Expr.typematch(e, m)(ν()) %}
 
 defList -> 
    def (lexeme[";"] def {% ([, def]) => def %}):* 
@@ -189,27 +189,27 @@ def ->
 
 let -> 
    keyword["let"] var lexeme["="] expr 
-   {% ([, x, , e]) => Expr.let_(ν(), x, e) %}
+   {% ([, x, , e]) => Expr.let_(x, e)(ν()) %}
 
 letrec -> 
    keyword["letrec"] recDef (lexeme[";"] recDef {% ([, recDef]) => recDef %}):* 
-   {% ([, recDef, δ]) => Expr.letRec(ν(), List.fromArray([recDef, ...δ])) %}
+   {% ([, recDef, δ]) => Expr.letRec(List.fromArray([recDef, ...δ]))(ν()) %}
 
 prim ->
    keyword["primitive"] var
-   {% ([, x]) => Expr.prim(ν(), x) %}
+   {% ([, x]) => Expr.prim(x)(ν()) %}
 
 recDef -> 
    keyword["fun"] var matches
-   {% ([, f, σ]) => Expr.recDef(ν(), f, σ) %}
+   {% ([, f, σ]) => Expr.recDef(f, σ)(ν()) %}
 
 fun -> 
    keyword["fun"] matches
-   {% ([, σ]) => Expr.fun(ν(), σ) %}
+   {% ([, σ]) => Expr.fun(σ)(ν()) %}
 
 matchAs -> 
    keyword["match"] expr keyword["as"] matches
-   {% ([, e, , σ]) => Expr.matchAs(ν(), e, σ) %}
+   {% ([, e, , σ]) => Expr.matchAs(e, σ)(ν()) %}
 
 matches ->
    match {% id %} |
@@ -220,7 +220,7 @@ match ->
    pattern lexeme["→"] expr 
    {% ([mk_κ, , e]) => mk_κ(e) %} |
    pattern matches
-   {% ([mk_κ1, σ]) => mk_κ1(Expr.fun(ν(), σ)) %}
+   {% ([mk_κ1, σ]) => mk_κ1(Expr.fun(σ)(ν())) %}
 
 typeMatches ->
    typeMatch
@@ -240,17 +240,17 @@ typeMatch ->
 
 typename ->
    lexeme[%ident]
-   {% ([[x]]) => str_(x.value)(ν()) %}
+   {% ([[x]]) => str(x.value)(ν()) %}
 
 listOpt -> 
    null 
-   {% () => Expr.constr(ν(), str_(Nil.name)(ν()), nil()) %} |
+   {% () => Expr.constr(str(Nil.name)(ν()), nil())(ν()) %} |
    expr (lexeme[","] expr {% ([, e]) => e %}):* listRestOpt
-   {% ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => Expr.constr(ν(), str_(Cons.name)(ν()), List.fromArray([e, e̅]))) %}
+   {% ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => Expr.constr(str(Cons.name)(ν()), List.fromArray([e, e̅]))(ν())) %}
 
 listRestOpt ->
    null 
-   {% () => Expr.constr(ν(), str_(Nil.name)(ν()), nil()) %} |
+   {% () => Expr.constr(str(Nil.name)(ν()), nil())(ν()) %} |
    lexeme[","] lexeme["..."] expr 
    {% ([, , e]) => e %}
 
@@ -266,7 +266,7 @@ variable_pattern ->
 
 pair_pattern ->
    lexeme["("] pattern lexeme[","] pattern lexeme[")"]
-   {% ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => Trie.constr(singleton(str_(Pair.name)(ν()), compose(mk_κ1, mk_κ2)(κ))) %}
+   {% ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => Trie.constr(singleton(str(Pair.name)(ν()), compose(mk_κ1, mk_κ2)(κ))) %}
 
 list_pattern -> 
    lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
@@ -274,17 +274,17 @@ list_pattern ->
 
 listOpt_pattern -> 
    null
-   {% () => (κ: Cont) => Trie.constr(singleton(str_(Nil.name)(ν()), κ)) %} | 
+   {% () => (κ: Cont) => Trie.constr(singleton(str(Nil.name)(ν()), κ)) %} | 
    list1_pattern
    {% id %}
 
 list1_pattern ->
    pattern listRestOpt_pattern
-   {% ([mk_κ1, mk_κ2]) => (κ: Cont) => Trie.constr(singleton(str_(Cons.name)(ν()), compose(mk_κ1, mk_κ2)(κ))) %}
+   {% ([mk_κ1, mk_κ2]) => (κ: Cont) => Trie.constr(singleton(str(Cons.name)(ν()), compose(mk_κ1, mk_κ2)(κ))) %}
 
 listRestOpt_pattern ->
    null 
-   {% () => (κ: Cont) => Trie.constr(singleton(str_(Nil.name)(ν()), κ)) %} |
+   {% () => (κ: Cont) => Trie.constr(singleton(str(Nil.name)(ν()), κ)) %} |
    lexeme[","] lexeme["..."] pattern
    {% ([, , mk_κ]) => mk_κ %} |
    lexeme[","] list1_pattern
