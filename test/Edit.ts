@@ -107,13 +107,22 @@ describe("edit", () => {
                    .to(NonEmpty, "left") // Cons
                    .treeNodeValue()
                    .var_("x").var_("xs")
-                   .spliceConstrArg(Cons, 0, (e: Expr): Expr => 
-                      constr(str(Pair.name)(ν()), List.fromArray([e, app(var_(str("sq")(ν()))(ν()), var_(str("x")(ν()))(ν()))(ν())]))(ν())
-                   )
-                    // TODO: finish...
+                   .spliceConstrArg(Cons, 0, (e: Expr): Expr => {
+                      const eʹ: Expr = app(var_(str("sq")(ν()))(ν()), var_(str("x")(ν()))(ν()))(ν())
+                      return constr(str(Pair.name)(ν()), List.fromArray([e, eʹ]))(ν())
+                   })
             }
 
             expect (here: ExplValueCursor) {
+               here.to(Cons, "head")
+                   .isNew()
+                   .to(Pair, "fst")
+                   .isUnchanged()
+               here.to(Cons, "tail")
+                   .to(Cons, "head")
+                   .isNew()
+                   .to(Pair, "fst")
+                   .isUnchanged()
             }
          })(e)
       })
