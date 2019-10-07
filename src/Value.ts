@@ -1,6 +1,6 @@
-import { Class, assert } from "./util/Core"
+import { Class, __nonNull, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
-import { __deltas } from "./Delta"
+import { Change, Delta, __deltas } from "./Delta"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -26,6 +26,10 @@ export class Value<Tag extends ValueTag = ValueTag> {
    // like Num and Str have children which are not observable through pattern-matching.
    children (): Persistent[] {
       return fields(this).map(k => this.child(k))
+   }
+
+   get __ẟ (): Delta {
+      return __nonNull(__deltas.ẟ̅.get(this))
    }
 }
 
@@ -114,12 +118,16 @@ export interface State {
    [prop: string]: Persistent
 }
 
-export function shallowEq (s1: State, s2: State): boolean {
-   return Object.keys(s1).length === Object.keys(s2).length &&
+export function leq (s1: State, s2: State): boolean {
+   return Object.keys(s1).length <= Object.keys(s2).length &&
           Object.keys(s1).every((key: string): boolean => {
              assert(s1[key] !== undefined && s2[key] !== undefined)
              return s1[key] === s2[key]
           })
+}
+
+export function eq (s1: State, s2: State): boolean {
+   return Object.keys(s1).length === Object.keys(s2).length && leq(s1, s2)
 }
 
 // Curried map from constructors and arguments to cached values; curried because composite keys would 
@@ -218,19 +226,20 @@ export function memo<T extends Persistent> (f: MemoFunType<T>, ...v̅: Persisten
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<T extends Value> (versioned: boolean, tgt: T, v̅: Persistent[]): T {
+export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): Change | null {
    const tgtʹ: State = tgt as any as State,
-         f̅: string[] = fields(tgt)
+         f̅: string[] = fields(tgt),
+         ẟ: Change | null = compare ? new Change({}) : null
    assert(f̅.length === v̅.length)
    let n: number = 0
    f̅.forEach((f: string): void => {
       const src: Persistent = v̅[n++]
-      if (versioned && tgtʹ[f] !== src) {
-         __deltas.changed(tgt, f, src)
+      if (compare && tgtʹ[f] !== src) {
+         ẟ!.changed[f] = src
       }
       tgtʹ[f] = src
    })
-   return tgt
+   return ẟ
 }
 
 // Exclude metadata according to our convention.

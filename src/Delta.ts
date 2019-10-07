@@ -1,6 +1,6 @@
 import { absurd, assert } from "./util/Core"
 import { Eq } from "./util/Eq"
-import { Persistent, State, Value, shallowEq } from "./Value"
+import { State, Value, eq, leq } from "./Value"
 
 export class Deltas {
    ẟ̅: Map<Value, Delta> = new Map()
@@ -9,18 +9,15 @@ export class Deltas {
       return this.ẟ̅.size
    }
 
-   changed (v: Value, prop: string, u: Persistent): void {
+   // Updates to a change set must be increasing (at a given revision).
+   changed (v: Value, ẟ: Change): void {
       let v_ẟ: Delta | undefined = this.ẟ̅.get(v)
       if (v_ẟ === undefined) {
-         this.ẟ̅.set(v, new Change({ [prop]: u }))
+         this.ẟ̅.set(v, ẟ)
       } else
       if (v_ẟ instanceof Change) {
-         const v_change: State = v_ẟ.changed
-         if (v_change[prop] !== undefined) {
-            assert(v_change[prop] === u)
-         } else {
-            v_change[prop] = u
-         }
+         assert(v_ẟ.leq(ẟ))
+         this.ẟ̅.set(v, ẟ)
       } else {
          absurd()
       }
@@ -75,8 +72,12 @@ export class Change extends Delta {
       this.changed = changed
    }
 
+   leq (ẟ: Delta): boolean {
+      return ẟ instanceof Change && leq(this.changed, ẟ.changed)
+   }
+
    eq (ẟ: Delta): boolean {
-      return ẟ instanceof Change && shallowEq(this.changed, ẟ.changed)
+      return ẟ instanceof Change && eq(this.changed, ẟ.changed)
    }
 }
 
