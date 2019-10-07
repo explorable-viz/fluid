@@ -3,10 +3,10 @@ import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"
-import { Delta } from "../../src/Delta"
+import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
-import { Num, Persistent, Value } from "../../src/Value"
+import { Num, Persistent, State, Value } from "../../src/Value"
 
 import Def = Expr.Def
 import Let = Expr.Let
@@ -74,8 +74,13 @@ export class ExplValueCursor extends Cursor {
       return this
    }
 
-   valueChanged (ẟ: Delta): ExplValueCursor {
-      assert(this.tv.v.__ẟ.eq(ẟ))
+   valueChanged (s: State): ExplValueCursor {
+      assert(this.tv.v.__ẟ.eq(new Change(s)))
+      return this
+   }
+
+   valueNew (): ExplValueCursor {
+      assert(this.tv.v.__ẟ instanceof New)
       return this
    }
 

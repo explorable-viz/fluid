@@ -1,7 +1,6 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { Edit } from "./util/Core"
-import { Change } from "../src/Delta"
 import { Expr } from "../src/Expr"
 import { open } from "../src/Module"
 import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
@@ -26,13 +25,13 @@ describe("edit", () => {
             }
 
             expect (here: ExplValueCursor) {
-               here.valueChanged(new Change( { val: 49 }))
+               here.valueChanged({ val: 49 })
                    .toTerminal()
                    .toBinaryArg1()
-                   .valueChanged(new Change({ val: 7 }))
+                   .valueChanged({ val: 7 })
                    .toTerminal()
                    .toBinaryArg2()
-                   .valueChanged(new Change({ val: 6 }))
+                   .valueChanged({ val: 6 })
             }
          })(e)
       })
@@ -54,6 +53,7 @@ describe("edit", () => {
             }
 
             expect (here: ExplValueCursor) {
+               here.valueNew()
             }
          })(e)
       })
