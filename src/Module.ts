@@ -83,7 +83,7 @@ function asRecord (v: Object): Expr {
 }
 
 function asPair (k: string, v: unknown): Expr {
-   return Expr.constr(ν(), str(Pair.name)(ν()), List.fromArray([asPrimValue(k), asPrimValue(v)]))
+   return Expr.constr_(str(Pair.name)(ν()), List.fromArray([asPrimValue(k), asPrimValue(v)]))(ν())
 }
 
 function asList (e̅: Expr[]): Expr {
