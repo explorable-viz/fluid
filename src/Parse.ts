@@ -120,7 +120,7 @@ const grammar: Grammar = {
     {"name": "exponentExpr", "symbols": ["exponentExpr", "exponentOp", "appChain"], "postprocess": ([e1, op, e2]) => Expr.binaryApp(ν(), e1, str(op)(ν()), e2)},
     {"name": "exponentExpr", "symbols": ["appChain"], "postprocess": id},
     {"name": "appChain", "symbols": ["simpleExpr"], "postprocess": id},
-    {"name": "appChain", "symbols": ["appChain", "simpleExpr"], "postprocess": ([e1, e2]) => Expr.app(ν(), e1, e2)},
+    {"name": "appChain", "symbols": ["appChain", "simpleExpr"], "postprocess": ([e1, e2]) => Expr.app(e1, e2)(ν())},
     {"name": "simpleExpr", "symbols": ["variable"], "postprocess": id},
     {"name": "simpleExpr", "symbols": ["string"], "postprocess": id},
     {"name": "simpleExpr", "symbols": ["number"], "postprocess": id},

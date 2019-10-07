@@ -7,7 +7,7 @@ import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { DataValueTag, Id, Num, Str, _, make } from "./Value"
-import { ν, at } from "./Versioned"
+import { ν, at, at_ } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -58,8 +58,8 @@ export namespace Expr {
       e: Expr = _
    }
 
-   export function app (k: Id, f: Expr, e: Expr): App {
-      return at(k, App, f, e)
+   export function app (f: Expr, e: Expr): (k: Id) => App {
+      return at_(App, f, e)
    }
 
    export class BinaryApp extends Expr {
