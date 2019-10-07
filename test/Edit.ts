@@ -114,15 +114,11 @@ describe("edit", () => {
             }
 
             expect (here: ExplValueCursor) {
-               here.to(Cons, "head")
-                   .isNew()
-                   .to(Pair, "fst")
-                   .isUnchanged()
-               here.to(Cons, "tail")
-                   .to(Cons, "head")
-                   .isNew()
-                   .to(Pair, "fst")
-                   .isUnchanged()
+               here.to(Cons, "head").isNew().to(Pair, "fst").isUnchanged()
+               here.to(Cons, "head").to(Pair, "snd").isNew()
+               here = here.to(Cons, "tail")
+               here.to(Cons, "head").isNew().to(Pair, "fst").isUnchanged()
+               here.to(Cons, "head").to(Pair, "snd").isNew()
             }
          })(e)
       })
