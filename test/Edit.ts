@@ -30,7 +30,9 @@ describe("edit", () => {
                    .toTerminal()
                    .toBinaryArg1()
                    .valueChanged(new Change({ val: 7 }))
-//               assert(ẟ̅[2].eq(new Change( { val: 49 })))
+                   .toTerminal()
+                   .toBinaryArg2()
+                   .valueChanged(new Change({ val: 6 }))
             }
          })(e)
       })

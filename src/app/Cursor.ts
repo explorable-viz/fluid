@@ -65,6 +65,10 @@ export class ExplValueCursor extends Cursor {
       return new ExplValueCursor(as(this.tv.t, Expl.BinaryApp).tv1)
    }
 
+   toBinaryArg2 (): ExplValueCursor {
+      return new ExplValueCursor(as(this.tv.t, Expl.BinaryApp).tv2)
+   }
+
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): this {
       f(as<Value, T>(this.tv.v, C))
       return this
