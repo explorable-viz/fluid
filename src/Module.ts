@@ -87,9 +87,9 @@ function asPair (k: string, v: unknown): Expr {
 }
 
 function asList (e̅: Expr[]): Expr {
-   let e̅ʹ: Expr = Expr.constr(ν(), str(Nil.name)(ν()), List.fromArray([]))
+   let e̅ʹ: Expr = Expr.constr_(str(Nil.name)(ν()), List.fromArray([]))(ν())
    for (let e of [...e̅].reverse()) {
-      e̅ʹ = Expr.constr(ν(), str(Cons.name)(ν()), List.fromArray([e, e̅ʹ]))
+      e̅ʹ = Expr.constr_(str(Cons.name)(ν()), List.fromArray([e, e̅ʹ]))(ν())
    }
    return e̅ʹ
 }
