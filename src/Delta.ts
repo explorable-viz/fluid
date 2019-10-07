@@ -9,36 +9,41 @@ export class Deltas {
       return this.ẟ̅.size
    }
 
-   // Updates to a change set must be increasing (at a given revision).
-   changed (v: Value, ẟ: Change): void {
+   // Updates to a change set must be increasing (at a given revision). Because of sharing within
+   // a revision, a node may first appear "new" and then appear "changed"; same condition applies.
+   changed (v: Value, s: State): void {
       let v_ẟ: Delta | undefined = this.ẟ̅.get(v)
       if (v_ẟ === undefined) {
-         this.ẟ̅.set(v, ẟ)
+         this.ẟ̅.set(v, new Change(s))
       } else
       if (v_ẟ instanceof Change) {
-         assert(v_ẟ.leq(ẟ))
-         this.ẟ̅.set(v, ẟ)
+         assert(leq(v_ẟ.changed, s))
+         v_ẟ.changed = s
+      } else
+      if (v_ẟ instanceof New) {
+         assert(leq(v_ẟ.state, s))
+         v_ẟ.state = s
       } else {
          absurd()
       }
    }
 
-   reclassified (v: Value): void {
+   reclassified (v: Value, s: State): void {
       let v_ẟ: Delta | undefined = this.ẟ̅.get(v)
       if (v_ẟ === undefined) {
-         this.ẟ̅.set(v, new Reclassify())
+         this.ẟ̅.set(v, new Reclassify(s))
       } else
       if (v_ẟ instanceof Reclassify) {
-         // ok
+         absurd()
       } else {
          absurd()
       }
    }
 
-   created (v: Value): void {
+   created (v: Value, s: State): void {
       let v_ẟ: Delta | undefined = this.ẟ̅.get(v)
       if (v_ẟ === undefined) {
-         this.ẟ̅.set(v, new New())
+         this.ẟ̅.set(v, new New(s))
       } else
       if (v_ẟ instanceof New) {
          // ok
@@ -59,6 +64,13 @@ export abstract class Delta implements Eq<Delta> {
 }
 
 export class New extends Delta {
+   state: State
+
+   constructor (state: State) {
+      super()
+      this.state = state
+   }
+
    eq (ẟ: Delta): boolean {
       return ẟ instanceof New
    }
@@ -81,9 +93,16 @@ export class Change extends Delta {
    }
 }
 
-// Constructor has changed, and therefore fields may not align. A more sophisticated reclassification
+// Constructor has changed, and therefore fields may not align. More sophisticated reclassification
 // delta could allow for fields to be shared when an object changes class.
 export class Reclassify extends Delta {
+   state: State
+
+   constructor (state: State) {
+      super()
+      this.state = state
+   }
+
    eq (ẟ: Delta): boolean {
       return ẟ instanceof Reclassify
    }

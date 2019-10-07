@@ -1,5 +1,5 @@
 import { Class, __nonNull, assert } from "./util/Core"
-import { Change, __deltas } from "./Delta"
+import { __deltas } from "./Delta"
 import { Id, Persistent, Num, Str, Value, _, construct, fields, make } from "./Value"
 
 // Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
@@ -24,25 +24,21 @@ const __versioned: VersionedValues = new Map
 export function at<T extends Value> (k: Id, C: Class<T>, ...v̅: Persistent[]): Versioned<T> {
    let v: Versioned<Value> | undefined = __versioned.get(k)
    if (v === undefined) {
-      const v: T = new C
+      const v: Versioned<T> = new C as Versioned<T>
       Object.defineProperty(v, "__id", {
          value: k,
          enumerable: false
       })
-      const vʹ: Versioned<T> = v as Versioned<T>
-      __versioned.set(k, vʹ)
-      construct(false, vʹ, v̅)
-      __deltas.created(vʹ)
-      // TODO: register as 'new'
-      return vʹ
+      __versioned.set(k, v)
+      __deltas.created(v, construct(true, v, v̅)!)
+      return v
    } else
    if (v instanceof C) {
-      const ẟ: Change = construct(true, v, v̅)! // hmm, TS thinks v is versioned here - why?
-      __deltas.changed2(v, ẟ)
+      __deltas.changed(v, construct(true, v, v̅)!)
       return v
    } else {
       reclassify(v, C)
-      __deltas.reclassified(v)
+      __deltas.reclassified(v, construct(true, v, v̅)!)
       return v as Versioned<T>
    }
 }

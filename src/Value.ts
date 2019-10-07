@@ -1,6 +1,6 @@
 import { Class, __nonNull, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
-import { Change, Delta, __deltas } from "./Delta"
+import { Delta, __deltas } from "./Delta"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -226,16 +226,16 @@ export function memo<T extends Persistent> (f: MemoFunType<T>, ...v̅: Persisten
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): Change | null {
+export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): State | null {
    const tgtʹ: State = tgt as any as State,
          f̅: string[] = fields(tgt),
-         ẟ: Change | null = compare ? new Change({}) : null
+         ẟ: State | null = compare ? {} : null
    assert(f̅.length === v̅.length)
    let n: number = 0
    f̅.forEach((f: string): void => {
       const src: Persistent = v̅[n++]
       if (compare && tgtʹ[f] !== src) {
-         ẟ!.changed[f] = src
+         ẟ![f] = src
       }
       tgtʹ[f] = src
    })
