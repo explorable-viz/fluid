@@ -162,7 +162,7 @@ const grammar: Grammar = {
     {"name": "pair$macrocall$6", "symbols": [{"literal":")"}]},
     {"name": "pair$macrocall$5", "symbols": ["pair$macrocall$6"], "postprocess": id},
     {"name": "pair$macrocall$5", "symbols": ["pair$macrocall$6", "_"], "postprocess": ([x, ]) => x},
-    {"name": "pair", "symbols": ["pair$macrocall$1", "expr", "pair$macrocall$3", "expr", "pair$macrocall$5"], "postprocess": ([, e1, , e2,]) => Expr.constr(ν(), str(Pair.name)(ν()), List.fromArray([e1, e2]))},
+    {"name": "pair", "symbols": ["pair$macrocall$1", "expr", "pair$macrocall$3", "expr", "pair$macrocall$5"], "postprocess": ([, e1, , e2,]) => Expr.constr_(str(Pair.name)(ν()), List.fromArray([e1, e2]))(ν())},
     {"name": "list$macrocall$2", "symbols": [{"literal":"["}]},
     {"name": "list$macrocall$1", "symbols": ["list$macrocall$2"], "postprocess": id},
     {"name": "list$macrocall$1", "symbols": ["list$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -175,7 +175,7 @@ const grammar: Grammar = {
            if (arity(c) !== e̅.length) {
               return reject
            }
-           return Expr.constr(ν(), c, List.fromArray(e̅))
+           return Expr.constr_(c, List.fromArray(e̅))(ν())
         } },
     {"name": "ctr$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
     {"name": "ctr$macrocall$1", "symbols": ["ctr$macrocall$2"], "postprocess": id},

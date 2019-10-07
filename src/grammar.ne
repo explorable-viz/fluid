@@ -143,7 +143,7 @@ parenthExpr ->
 
 pair -> 
    lexeme["("] expr lexeme[","] expr lexeme[")"]
-   {% ([, e1, , e2,]) => Expr.constr(ν(), str(Pair.name)(ν()), List.fromArray([e1, e2])) %}
+   {% ([, e1, , e2,]) => Expr.constr_(str(Pair.name)(ν()), List.fromArray([e1, e2]))(ν()) %}
 
 list -> 
    lexeme["["] listOpt lexeme["]"] # ouch: "
@@ -158,7 +158,7 @@ constr ->
       if (arity(c) !== e̅.length) {
          return reject
       }
-      return Expr.constr(ν(), c, List.fromArray(e̅))
+      return Expr.constr_(c, List.fromArray(e̅))(ν())
    } %}
 
 ctr ->
