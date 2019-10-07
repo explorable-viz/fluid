@@ -7,7 +7,7 @@ import { ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { DataValueTag, Id, Num, Str, _, make } from "./Value"
-import { ν, at_ } from "./Versioned"
+import { ν, at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -59,7 +59,7 @@ export namespace Expr {
    }
 
    export function app (f: Expr, e: Expr): (k: Id) => App {
-      return at_(App, f, e)
+      return at(App, f, e)
    }
 
    export class BinaryApp extends Expr {
@@ -69,7 +69,7 @@ export namespace Expr {
    }
 
    export function binaryApp (e1: Expr, opName: Str, e2: Expr): (k: Id) => BinaryApp {
-      return at_(BinaryApp, e1, opName, e2)
+      return at(BinaryApp, e1, opName, e2)
    }
 
    export class ConstNum extends Expr {
@@ -77,7 +77,7 @@ export namespace Expr {
    }
    
    export function constNum (val: Num): (k: Id) => ConstNum {
-      return at_(ConstNum, val)
+      return at(ConstNum, val)
    }
 
    export class ConstStr extends Expr {
@@ -85,7 +85,7 @@ export namespace Expr {
    }
 
    export function constStr (val: Str): (k: Id) => ConstStr {
-      return at_(ConstStr, val)
+      return at(ConstStr, val)
    }
 
    export class Constr extends Expr {
@@ -94,7 +94,7 @@ export namespace Expr {
    }
 
    export function constr (ctr: Str, args: List<Expr>): (k: Id) => Constr {
-      return at_(Constr, ctr, args)
+      return at(Constr, ctr, args)
    }
 
    export class Def extends SyntaxNode<"Expr.Def"> {
@@ -106,7 +106,7 @@ export namespace Expr {
    }
 
    export function let_ (x: Str, e: Expr): (k: Id) => Let {
-      return at_(Let, x, e)
+      return at(Let, x, e)
    }
 
    export class Prim extends Def {
@@ -114,7 +114,7 @@ export namespace Expr {
    }
 
    export function prim (x: Str): (k: Id) => Prim {
-      return at_(Prim, x)
+      return at(Prim, x)
    }
 
    export class RecDef extends SyntaxNode<"RecDef"> {
@@ -123,7 +123,7 @@ export namespace Expr {
    }
  
    export function recDef (x: Str, σ: Trie<Expr>): (k: Id) => RecDef {
-      return at_(RecDef, x, σ)
+      return at(RecDef, x, σ)
    }
 
    export class LetRec extends Def {
@@ -131,7 +131,7 @@ export namespace Expr {
    }
 
    export function letRec (δ: List<RecDef>): (k: Id) => LetRec {
-      return at_(LetRec, δ)
+      return at(LetRec, δ)
    }
 
    export class Defs extends Expr {
@@ -140,7 +140,7 @@ export namespace Expr {
    }
 
    export function defs (def̅: List<Def>, e: Expr): (k: Id) => Defs {
-      return at_(Defs, def̅, e)
+      return at(Defs, def̅, e)
    }
 
    export class Fun extends Expr {
@@ -148,7 +148,7 @@ export namespace Expr {
    }
 
    export function fun (σ: Trie<Expr>): (k: Id) => Fun {
-      return at_(Fun, σ)
+      return at(Fun, σ)
    }
 
    export class MatchAs extends Expr {
@@ -157,7 +157,7 @@ export namespace Expr {
    }
 
    export function matchAs (e: Expr, σ: Trie<Expr>): (k: Id) => MatchAs {
-      return at_(MatchAs, e, σ)
+      return at(MatchAs, e, σ)
    }
 
    export class Quote extends Expr {
@@ -165,7 +165,7 @@ export namespace Expr {
    }
 
    export function quote (e: Expr): (k: Id) => Quote {
-      return at_(Quote, e)
+      return at(Quote, e)
    }
 
    export class Typematch extends Expr {
@@ -174,7 +174,7 @@ export namespace Expr {
    }
 
    export function typematch (e: Expr, cases: FiniteMap<Expr>): (k: Id) => Typematch {
-      return at_(Typematch, e, cases)
+      return at(Typematch, e, cases)
    }
 
    export class Var extends Expr {
@@ -182,7 +182,7 @@ export namespace Expr {
    }
 
    export function var_ (x: Str): (k: Id) => Var {
-      return at_(Var, x)
+      return at(Var, x)
    }
 
    export type Trie<K extends Cont> = Trie.Trie<K>
