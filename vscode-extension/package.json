@@ -12,22 +12,22 @@
     "contributes": {
         "languages": [
             {
-                "id": "lcalc",
+                "id": "fluid",
                 "aliases": [
-                    "LambdaCalc",
-                    "lcalc"
+                    "Fluid",
+                    "fluid"
                 ],
                 "extensions": [
-                    ".lcalc"
+                    ".fld"
                 ],
                 "configuration": "./language-configuration.json"
             }
         ],
         "grammars": [
             {
-                "language": "lcalc",
-                "scopeName": "source.lcalc",
-                "path": "./syntaxes/lcalc.tmLanguage.json"
+                "language": "fluid",
+                "scopeName": "source.fluid",
+                "path": "./syntaxes/fluid.tmLanguage.json"
             }
         ]
     }
