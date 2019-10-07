@@ -93,6 +93,10 @@ export namespace Expr {
       args: List<Expr> = _
    }
 
+   export function constr_ (ctr: Str, args: List<Expr>): (k: Id) => Constr {
+      return at_(Constr, ctr, args)
+   }
+
    export function constr (k: Id, ctr: Str, args: List<Expr>): Constr {
       return at(k, Constr, ctr, args)
    }

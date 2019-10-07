@@ -244,13 +244,13 @@ typename ->
 
 listOpt -> 
    null 
-   {% () => Expr.constr(ν(), str(Nil.name)(ν()), nil()) %} |
+   {% () => Expr.constr_(str(Nil.name)(ν()), nil())(ν()) %} |
    expr (lexeme[","] expr {% ([, e]) => e %}):* listRestOpt
-   {% ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => Expr.constr(ν(), str(Cons.name)(ν()), List.fromArray([e, e̅]))) %}
+   {% ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => Expr.constr_(str(Cons.name)(ν()), List.fromArray([e, e̅]))(ν())) %}
 
 listRestOpt ->
    null 
-   {% () => Expr.constr(ν(), str(Nil.name)(ν()), nil()) %} |
+   {% () => Expr.constr_(str(Nil.name)(ν()), nil())(ν()) %} |
    lexeme[","] lexeme["..."] expr 
    {% ([, , e]) => e %}
 
