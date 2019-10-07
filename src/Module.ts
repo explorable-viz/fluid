@@ -21,7 +21,7 @@ function import_ (modules: Module[], e: Expr): Expr {
    if (modules.length === 0) {
       return e
    } else {
-      return Expr.defs(ν(), modules[0], import_(modules.slice(1), e))
+      return Expr.defs(modules[0], import_(modules.slice(1), e))(ν())
    }
 }
 

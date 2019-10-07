@@ -75,7 +75,7 @@ expr ->
 
 defs1 ->
    defList keyword["in"] expr 
-   {% ([defs, , e]) => Expr.defs(ν(), defs, e) %}
+   {% ([defs, , e]) => Expr.defs(defs, e)(ν()) %}
 
 compareExpr ->
    compareExpr compareOp sumExpr 
@@ -193,7 +193,7 @@ let ->
 
 letrec -> 
    keyword["letrec"] recDef (lexeme[";"] recDef {% ([, recDef]) => recDef %}):* 
-   {% ([, recDef, δ]) => Expr.letRec(ν(), List.fromArray([recDef, ...δ])) %}
+   {% ([, recDef, δ]) => Expr.letRec(List.fromArray([recDef, ...δ]))(ν()) %}
 
 prim ->
    keyword["primitive"] var
@@ -205,11 +205,11 @@ recDef ->
 
 fun -> 
    keyword["fun"] matches
-   {% ([, σ]) => Expr.fun(ν(), σ) %}
+   {% ([, σ]) => Expr.fun(σ)(ν()) %}
 
 matchAs -> 
    keyword["match"] expr keyword["as"] matches
-   {% ([, e, , σ]) => Expr.matchAs(ν(), e, σ) %}
+   {% ([, e, , σ]) => Expr.matchAs(e, σ)(ν()) %}
 
 matches ->
    match {% id %} |
@@ -220,7 +220,7 @@ match ->
    pattern lexeme["→"] expr 
    {% ([mk_κ, , e]) => mk_κ(e) %} |
    pattern matches
-   {% ([mk_κ1, σ]) => mk_κ1(Expr.fun(ν(), σ)) %}
+   {% ([mk_κ1, σ]) => mk_κ1(Expr.fun(σ)(ν())) %}
 
 typeMatches ->
    typeMatch

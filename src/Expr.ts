@@ -41,7 +41,7 @@ export namespace Expr {
          return Trie.Trie.join<K>(κ, κʹ) as K
       } else
       if (κ instanceof Fun && κʹ instanceof Fun) {
-         return fun(ν(), join(κ.σ, κʹ.σ)) as Expr as K
+         return fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K
       } else {
          return absurd("Undefined join.", κ, κʹ)
       }
@@ -130,8 +130,8 @@ export namespace Expr {
       δ: List<RecDef> = _
    }
 
-   export function letRec (k: Id, δ: List<RecDef>): LetRec {
-      return at(k, LetRec, δ)
+   export function letRec (δ: List<RecDef>): (k: Id) => LetRec {
+      return at_(LetRec, δ)
    }
 
    export class Defs extends Expr {
@@ -139,16 +139,16 @@ export namespace Expr {
       e: Expr = _
    }
 
-   export function defs (k: Id, def̅: List<Def>, e: Expr): Defs {
-      return at(k, Defs, def̅, e)
+   export function defs (def̅: List<Def>, e: Expr): (k: Id) => Defs {
+      return at_(Defs, def̅, e)
    }
 
    export class Fun extends Expr {
       σ: Trie<Expr> = _
    }
 
-   export function fun (k: Id, σ: Trie<Expr>): Fun {
-      return at(k, Fun, σ)
+   export function fun (σ: Trie<Expr>): (k: Id) => Fun {
+      return at_(Fun, σ)
    }
 
    export class MatchAs extends Expr {
@@ -156,16 +156,16 @@ export namespace Expr {
       σ: Trie<Expr> = _
    }
 
-   export function matchAs (k: Id, e: Expr, σ: Trie<Expr>): MatchAs {
-      return at(k, MatchAs, e, σ)
+   export function matchAs (e: Expr, σ: Trie<Expr>): (k: Id) => MatchAs {
+      return at_(MatchAs, e, σ)
    }
 
    export class Quote extends Expr {
       e: Expr = _
    }
 
-   export function quote (k: Id, e: Expr): Quote {
-      return at(k, Quote, e)
+   export function quote (e: Expr): (k: Id) => Quote {
+      return at_(Quote, e)
    }
 
    export class Typematch extends Expr {
