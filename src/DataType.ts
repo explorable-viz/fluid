@@ -39,7 +39,7 @@ export class DataType {
    }
 }
 
-// Constructor of a datatype, not to be confused with an instance of such a thing (Constr) or name of such a thing
+// Constructor of a datatype, not to be confused with an instance of such a thing (DataValue) or name of such a thing
 // (Lex.Ctr). Fields have a total ordering given by the order of definition in the corresponding class.
 export class Ctr {
    C: Class<DataValue>
@@ -64,9 +64,9 @@ export function arity (ctr: Str): number {
 export const types: Map<string, DataType | PrimType> = new Map
 export const ctrToDataType: Map<string, DataType> = new Map
 export const elimToDataType: Map<string, DataType> = new Map
-export const elimSuffix: string = "Elim"
-export const explSuffix: string = "Expl"
-export const exprSuffix: string = "Expr"
+const elimSuffix: string = "Elim"
+const explSuffix: string = "Expl"
+const exprSuffix: string = "Expr"
 
 // See https://stackoverflow.com/questions/33605775 for the dynamic class-naming idiom.
 export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]) {
@@ -96,6 +96,10 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                         (this as any)[f] = _
                      })
                   }
+
+                  get ctr (): string {
+                     return cʹ
+                  }
                }
             }[exprC_name]]
          }),
@@ -108,6 +112,10 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                      c.f̅.forEach((f: string): void => {
                         (this as any)[f] = _
                      })
+                  }
+
+                  get ctr (): string {
+                     return cʹ
                   }
                }
             }[explC_name]]

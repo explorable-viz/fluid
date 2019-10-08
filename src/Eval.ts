@@ -154,10 +154,9 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.Fun) {
       return explValue(Expl.const_()(kₜ), closure(ρ, nil(), evalTrie(e.σ))(kᵥ))
    } else
-   if (e instanceof Expr.Constr) {
-      const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
-            c: string = e.ctr.val
-      return explValue(Expl.dataExpl(c, tv̅.map(({t}) => t))(kₜ), dataValue(c, tv̅.map(({v}) => v))(kᵥ))
+   if (e instanceof Expr.DataExpr) {
+      const tv̅: ExplValue[] = e.children().map((e: Expr) => eval_(ρ, e))
+      return explValue(Expl.dataExpl(e.ctr, tv̅.map(({t}) => t))(kₜ), dataValue(e.ctr, tv̅.map(({v}) => v))(kᵥ))
    } else
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote()(kₜ), e.e)

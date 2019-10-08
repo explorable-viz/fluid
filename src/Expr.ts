@@ -99,7 +99,9 @@ export namespace Expr {
    }
 
    // Has a concrete subclass for each datatype.
-   export class DataExpr extends Expr {
+   export abstract class DataExpr extends Expr {
+      abstract ctr: string
+
       children (): Expr[] {
          return super.children() as Expr[]
       }
