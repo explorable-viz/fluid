@@ -200,7 +200,7 @@ export class ExprCursor extends Cursor {
    spliceConstrArg (C: Class, n: number, makeNode: (e: Expr) => Expr): ExprCursor {
       this.constr_at(C)
       const e: Expr.DataExpr = as(this.v, Expr.DataExpr), 
-            e̅: Expr[] = e.__children()
+            e̅: Expr[] = e.__children
       e̅[n] = makeNode(nth(e̅, n))
       Expr.dataExpr(e.ctr, e̅)((e as Versioned<Expr.DataExpr>).__id)
       return this

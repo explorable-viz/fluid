@@ -58,8 +58,8 @@ export namespace Expl {
          return abstractMethodError(this) // currently reflection requires concrete type here
       }
 
-      __children (): Expl[] {
-         return super.__children() as Expl[]
+      get __children (): Expl[] {
+         return super.__children as Expl[]
       }
    }
 

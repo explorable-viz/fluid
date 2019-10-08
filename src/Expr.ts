@@ -94,8 +94,8 @@ export namespace Expr {
          return abstractMethodError(this) // currently reflection requires concrete type here
       }
 
-      __children (): Expr[] {
-         return super.__children() as Expr[]
+      get __children (): Expr[] {
+         return super.__children as Expr[]
       }
    }
    
@@ -254,7 +254,7 @@ export namespace Expr {
          return freeVarsTrie(e.σ)
       } else
       if (e instanceof DataExpr) {
-         return union(...e.__children().map(freeVars))
+         return union(...e.__children.map(freeVars))
       } else
       if (e instanceof Quote) {
          return freeVars(e.e)

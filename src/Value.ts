@@ -24,7 +24,7 @@ export class Value<Tag extends ValueTag = ValueTag> {
 
    // Probably confusingly, "children" isn't a user-level notion; specifically, wrappers
    // like Num and Str have children which are not observable through pattern-matching.
-   __children (): Persistent[] {
+   get __children (): Persistent[] {
       return fields(this).map(k => this.__child(k))
    }
 

@@ -8,8 +8,8 @@ export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Ta
       return super.__child(k) as Value
    }
 
-   __children (): Value[] {
-      return super.__children() as Value[]
+   get __children (): Value[] {
+      return super.__children as Value[]
    }
 }
 
