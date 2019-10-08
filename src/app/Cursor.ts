@@ -191,8 +191,12 @@ export class ExprCursor extends Cursor {
       return this
    }
 
-   constr_splice1<T extends DataValue> (C: Class<T>, prop: keyof T, makeNode: (e: Expr) => Expr): ExprCursor {
-      return this.splice<DataValue>(exprClass(C), [prop as keyof DataValue], ([e]: Persistent[]): Expr[] => [makeNode(as(e, Expr.Expr))])
+   constr_splice<T extends DataValue> (C: Class<T>, props: (keyof T)[], makeNode: (e̅: Expr[]) => Expr[]): ExprCursor {
+      return this.splice<DataValue>(
+         exprClass(C), 
+         props as (keyof DataValue)[], 
+         (e̅: Persistent[]): Expr[] => makeNode(e̅.map(e => as(e, Expr.Expr)))
+      )
    } 
 
    splice<T extends Value> (C: Class<T>, props: (keyof T)[], makeNode: (v̅: Persistent[]) => Persistent[]): ExprCursor {
