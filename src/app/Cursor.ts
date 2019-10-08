@@ -1,5 +1,4 @@
-import { nth } from "../../src/util/Array"
-import { AClass, Class, __nonNull, absurd, as, assert, className, error } from "../../src/util/Core"
+import { AClass, Class, __check, __nonNull, absurd, as, assert, className, error } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
@@ -193,27 +192,17 @@ export class ExprCursor extends Cursor {
    }
 
    constr_splice1<T extends DataValue> (C: Class<T>, prop: keyof T, makeNode: (e: Expr) => Expr): ExprCursor {
-      return this.splice1<DataValue>(exprClass(C), prop as keyof DataValue, (e: Persistent): Expr => makeNode(as(e, Expr.Expr)))
+      return this.splice<DataValue>(exprClass(C), [prop as keyof DataValue], ([e]: Persistent[]): Expr[] => [makeNode(as(e, Expr.Expr))])
    } 
 
-   splice1<T extends Value> (C: Class<T>, prop: keyof T, makeNode: (v: Persistent) => Persistent): ExprCursor {
+   splice<T extends Value> (C: Class<T>, props: (keyof T)[], makeNode: (v̅: Persistent[]) => Persistent[]): ExprCursor {
       const v: T = as<Persistent, T>(this.v, C), 
             v̅: Persistent[] = v.__children,
-            n: number = fields(v).indexOf(prop as string),
-            vʹ: Persistent = makeNode(nth(v̅, n))
-      v̅[n] = vʹ
-      at(C, ...v̅)((v as Versioned<T>).__id)
-      return this
-   } 
-
-   splice2<T extends Value> (C: Class<T>, prop1: keyof T, prop2: keyof T, makeNode: (v1: Persistent, v2: Persistent) => [Persistent, Persistent]): ExprCursor {
-      const v: T = as<Persistent, T>(this.v, C), 
-            v̅: Persistent[] = v.__children,
-            n1: number = fields(v).indexOf(prop1 as string),
-            n2: number = fields(v).indexOf(prop2 as string),
-            [v1, v2]: [Persistent, Persistent] = makeNode(nth(v̅, n1), nth(v̅, n2))
-      v̅[n1] = v1
-      v̅[n2] = v2
+            n̅: number[] = props.map(prop => __check(fields(v).indexOf(prop as string), n => n != -1)),
+            v̅ʹ: Persistent[] = makeNode(n̅.map((n: number): Persistent => v̅[n]))
+      n̅.forEach((n: number, m: number): void => {
+         v̅[n] = v̅ʹ[m]
+      })
       at(C, ...v̅)((v as Versioned<T>).__id)
       return this
    } 

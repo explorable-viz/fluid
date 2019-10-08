@@ -85,7 +85,7 @@ describe("edit", () => {
                    .var_("y") // body of clause 
                here.to(Expr.BinaryApp, "opName")
                    .setStr("/")
-               here.splice2(Expr.BinaryApp, "e1", "e2", (e1: Persistent, e2: Persistent): [Expr, Expr] => {
+               here.splice(Expr.BinaryApp, ["e1", "e2"], ([e1, e2]: Persistent[]): [Expr, Expr] => {
                       const e1ʹ: Expr = Expr.binaryApp(as(e1, Expr.Expr), str("+")(ν()), as(e2, Expr.Expr))(ν()),
                             e2ʹ: Expr = Expr.constNum(num(2)(ν()))(ν())
                       return [e1ʹ, e2ʹ]
