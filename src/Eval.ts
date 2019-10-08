@@ -156,9 +156,8 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.Constr) {
       const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
-            c: string = e.ctr.val,
-            d: DataType = __nonNull(ctrToDataType.get(c))
-      return explValue(at(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))(kₜ), dataValue(c, tv̅.map(({v}) => v))(kᵥ))
+            c: string = e.ctr.val
+      return explValue(Expl.dataExpl(c, tv̅.map(({t}) => t))(kₜ), dataValue(c, tv̅.map(({v}) => v))(kᵥ))
    } else
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote()(kₜ), e.e)

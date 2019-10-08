@@ -1,9 +1,9 @@
-import { absurd, error } from "./util/Core"
+import { __nonNull, absurd, error } from "./util/Core"
 import { diff, union } from "./util/Set"
 import { eq } from "./util/Ord"
 import { AnnotatedC } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
-import { ctrToDataType } from "./DataType"
+import { DataType, ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { DataValueTag, Id, Num, Str, _, make } from "./Value"
@@ -88,6 +88,7 @@ export namespace Expr {
       return at(ConstStr, val)
    }
 
+   // TODO: delete me.
    export class Constr extends Expr {
       ctr: Str = _
       args: List<Expr> = _
@@ -95,6 +96,18 @@ export namespace Expr {
 
    export function constr (ctr: Str, args: List<Expr>): (k: Id) => Constr {
       return at(Constr, ctr, args)
+   }
+
+   // Has a concrete subclass for each datatype.
+   export class DataExpr extends Expr {
+      children (): Expr[] {
+         return super.children() as Expr[]
+      }
+   }
+   
+   export function dataExpr (c: string, e̅: Expr[]): (k: Id) => DataExpr {
+      const d: DataType = __nonNull(ctrToDataType.get(c))
+      return at(d.exprC̅.get(c)!, ...e̅)
    }
 
    export class Def extends SyntaxNode<"Expr.Def"> {

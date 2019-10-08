@@ -1,6 +1,7 @@
-import { absurd } from "./util/Core"
+import { __nonNull, absurd } from "./util/Core"
 import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
+import { DataType, ctrToDataType } from "./DataType"
 import { DataValue, ExplValue, explValue } from "./DataValue"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
@@ -56,7 +57,12 @@ export namespace Expl {
       children (): Expl[] {
          return super.children() as Expl[]
       }
-   }   
+   }
+
+   export function dataExpl (c: string, t̅: Expl[]): (k: Id) => DataExpl {
+      const d: DataType = __nonNull(ctrToDataType.get(c))
+      return at(d.explC̅.get(c)!, ...t̅)
+   }
 
    export abstract class Def extends DataValue<"Expl.Def"> {
    }
