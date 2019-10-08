@@ -9,7 +9,7 @@ import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
 import { Num, Persistent, State, Str, Value, fields } from "../../src/Value"
-import { Versioned, num, str } from "../../src/Versioned"
+import { Versioned, at, num, str } from "../../src/Versioned"
 
 import Def = Expr.Def
 import Let = Expr.Let
@@ -197,12 +197,25 @@ export class ExprCursor extends Cursor {
       return this
    }
 
+   // TODO: rewrite like splice2?
    constr_splice<T extends DataValue> (C: Class<T>, prop: keyof T, makeNode: (e: Expr) => Expr): ExprCursor {
       const e: Expr.DataExpr = as(this.v, Expr.DataExpr), 
             e̅: Expr[] = e.__children,
             n: number = fields(e).indexOf(prop as string)
       e̅[n] = makeNode(nth(e̅, n))
       Expr.dataExpr(e.ctr, e̅)((e as Versioned<Expr.DataExpr>).__id)
+      return this
+   } 
+
+   splice2<T extends Value> (C: Class<T>, prop1: keyof T, prop2: keyof T, makeNode: (e1: Persistent, e2: Persistent) => [Persistent, Persistent]): ExprCursor {
+      const e: T = as<Persistent, T>(this.v, C), 
+            e̅: Persistent[] = e.__children,
+            n1: number = fields(e).indexOf(prop1 as string),
+            n2: number = fields(e).indexOf(prop2 as string),
+            [e1, e2]: [Persistent, Persistent] = makeNode(nth(e̅, n1), nth(e̅, n2))
+      e̅[n1] = e1
+      e̅[n2] = e2
+      at(C, ...e̅)((e as Versioned<T>).__id)
       return this
    } 
 }

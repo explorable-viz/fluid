@@ -1,16 +1,15 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { Edit } from "./util/Core"
+import { as } from "../src/util/Core"
 import { Cons, Pair, NonEmpty } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { open } from "../src/Module"
-import { ν, str } from "../src/Versioned"
+import { Persistent } from "../src/Value"
+import { ν, num, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
 
 import Trie = Expr.Trie
-import app = Expr.app
-import dataExpr = Expr.dataExpr
-import var_ = Expr.var_
 
 before((done: MochaDone) => {
    done()
@@ -75,7 +74,7 @@ describe("edit", () => {
          const e: Expr = open("foldr_sumSquares")
          new (class extends Edit {
             setup (here: ExprCursor) {
-               here.skipImports()
+               here = here.skipImports()
                    .to(Expr.App, "f")
                    .to(Expr.App, "f")
                    .to(Expr.App, "e")
@@ -84,9 +83,11 @@ describe("edit", () => {
                    .treeNodeValue()
                    .var_("x")
                    .var_("y") // body of clause 
-                   .to(Expr.BinaryApp, "opName")
+               here.to(Expr.BinaryApp, "opName")
                    .setStr("/")
-                   // TODO: finish...
+               here.splice2(Expr.BinaryApp, "e1", "e2", (e1: Persistent, e2: Persistent): [Expr, Expr] => {
+                      return [Expr.binaryApp(as(e1, Expr.Expr), str("+")(ν()), as(e2, Expr.Expr))(ν()), Expr.constNum(num(2)(ν()))(ν())]
+                   })
             }
 
             expect (here: ExplValueCursor) {
@@ -108,8 +109,8 @@ describe("edit", () => {
                    .treeNodeValue()
                    .var_("x").var_("xs")
                    .constr_splice(Cons, "head", (e: Expr): Expr => {
-                      const eʹ: Expr = app(var_(str("sq")(ν()))(ν()), var_(str("x")(ν()))(ν()))(ν())
-                      return dataExpr(Pair.name, [e, eʹ])(ν())
+                      const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+                      return Expr.dataExpr(Pair.name, [e, eʹ])(ν())
                    })
             }
 
