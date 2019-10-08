@@ -379,5 +379,5 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): void {
 
 initDataType(
    Expr.Expr,
-   [Expr.App, Expr.BinaryApp, Expr.ConstNum, Expr.ConstStr, Expr.Constr, Expr.Defs, Expr.Fun, Expr.MatchAs, Expr.Quote, Expr.Var]
+   [Expr.App, Expr.BinaryApp, Expr.ConstNum, Expr.ConstStr, Expr.DataExpr, Expr.Defs, Expr.Fun, Expr.MatchAs, Expr.Quote, Expr.Var]
 )

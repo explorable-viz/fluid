@@ -1,4 +1,4 @@
-import { __nonNull, absurd, error } from "./util/Core"
+import { __nonNull, abstractMethodError, absurd, error } from "./util/Core"
 import { diff, union } from "./util/Set"
 import { eq } from "./util/Ord"
 import { AnnotatedC } from "./Annotated"
@@ -94,13 +94,11 @@ export namespace Expr {
       args: List<Expr> = _
    }
 
-   export function constr (ctr: Str, args: List<Expr>): (k: Id) => Constr {
-      return at(Constr, ctr, args)
-   }
-
    // Has a concrete subclass for each datatype.
-   export abstract class DataExpr extends Expr {
-      abstract ctr: string
+   export class DataExpr extends Expr {
+      get ctr (): string {
+         return abstractMethodError(this) // currently reflection requires concrete type here
+      }
 
       children (): Expr[] {
          return super.children() as Expr[]
@@ -261,8 +259,8 @@ export namespace Expr {
       if (e instanceof Fun) {
          return freeVarsTrie(e.σ)
       } else
-      if (e instanceof Constr) {
-         return union(...e.args.toArray().map(freeVars))
+      if (e instanceof DataExpr) {
+         return union(...e.children().map(freeVars))
       } else
       if (e instanceof Quote) {
          return freeVars(e.e)
