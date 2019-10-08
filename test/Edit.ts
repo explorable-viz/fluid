@@ -93,6 +93,13 @@ describe("edit", () => {
             }
 
             expect (here: ExplValueCursor) {
+               here = here.isChanged({ val: 39.125 })
+                   .toTerminal()
+               here.toBinaryArg2().isNew()
+               here = here.toBinaryArg1().isNew()
+                   .toTerminal()
+               here.toBinaryArg1().isUnchanged()
+               here.toBinaryArg2().isChanged({ val: 42.25 })
             }
          })(e)
       })
