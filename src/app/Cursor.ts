@@ -168,10 +168,6 @@ export class ExprCursor extends Cursor {
       return this
    }
 
-   constr_at<T extends DataValue> (C: Class<T>): ExprCursor {
-      return this.at<T>(exprClass(C), x => x)
-   }
-
    // Helpers specific to certain datatypes.
 
    treeNodeValue (): ExprCursor {
