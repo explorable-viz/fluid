@@ -8,7 +8,7 @@ import { DataValue, ExplValue, explValue } from "../../src/DataValue"
 import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
-import { Num, Persistent, State, Str, Value } from "../../src/Value"
+import { Num, Persistent, State, Str, Value, fields } from "../../src/Value"
 import { Versioned, num, str } from "../../src/Versioned"
 
 import Def = Expr.Def
@@ -132,7 +132,7 @@ export class ExprCursor extends Cursor {
    }
 
    // Allow the data value class to be used to navigate the data expression form.
-   constr_to<T extends Value> (C: Class<T>, prop: keyof T): ExprCursor {
+   constr_to<T extends DataValue> (C: Class<T>, prop: keyof T): ExprCursor {
       this.constr_at(C)
       return new ExprCursor((this.v as any)[prop])
    }
@@ -197,10 +197,10 @@ export class ExprCursor extends Cursor {
       return this
    }
 
-   spliceConstrArg (C: Class, n: number, makeNode: (e: Expr) => Expr): ExprCursor {
-      this.constr_at(C)
+   constr_splice<T extends DataValue> (C: Class<T>, prop: keyof T, makeNode: (e: Expr) => Expr): ExprCursor {
       const e: Expr.DataExpr = as(this.v, Expr.DataExpr), 
-            e̅: Expr[] = e.__children
+            e̅: Expr[] = e.__children,
+            n: number = fields(e).indexOf(prop as string)
       e̅[n] = makeNode(nth(e̅, n))
       Expr.dataExpr(e.ctr, e̅)((e as Versioned<Expr.DataExpr>).__id)
       return this
