@@ -110,7 +110,7 @@ describe("edit", () => {
                    .to(NonEmpty, "left") // Cons
                    .treeNodeValue()
                    .var_("x").var_("xs")
-                   .constr_splice(Cons, "head", (e: Expr): Expr => {
+                   .constr_splice1(Cons, "head", (e: Expr): Expr => {
                       const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
                       return Expr.dataExpr(Pair.name, [e, eʹ])(ν())
                    })
