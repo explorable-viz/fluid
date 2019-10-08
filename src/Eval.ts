@@ -245,8 +245,8 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    } else
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
-         const eʹ: Expr.Constr = as(e, Expr.Constr)
-         zip(Expl.explChildren(t, v), eʹ.args.toArray()).map(([tv, e]) => eval_fwd(e, tv))
+         const eʹ: Expr.DataExpr = as(e, Expr.DataExpr)
+         zip(Expl.explChildren(t, v), eʹ.children()).map(([tv, e]) => eval_fwd(e, tv))
          setα(e.__α, t)
       } else {
          absurd()
@@ -305,9 +305,9 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): void {
    } else
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
-         const eʹ: Expr.Constr = as(e, Expr.Constr)
+         const eʹ: Expr.DataExpr = as(e, Expr.DataExpr)
          // reverse order but shouldn't matter in absence of side-effects:
-         zip(Expl.explChildren(t, v), eʹ.args.toArray()).map(([tv, e]) => eval_bwd(e, tv))
+         zip(Expl.explChildren(t, v), eʹ.children()).map(([tv, e]) => eval_bwd(e, tv))
          setjoinα(t.__α, e)
       } else {
          absurd()
