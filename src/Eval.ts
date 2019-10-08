@@ -15,9 +15,9 @@ import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId } from "./V
 import { at, num, str } from "./Versioned"
 
 // Move to more sensible location
-export function dataValue (c: string, tv̅: ExplValue[]): (k: Id) => DataValue {
+export function dataValue (c: string, v̅: Value[]): (k: Id) => DataValue {
    const d: DataType = __nonNull(ctrToDataType.get(c))
-   return at(d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+   return at(d.ctrs.get(c)!.C, ...v̅)
 }
 
 export enum Direction { Fwd, Bwd }
@@ -158,7 +158,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
             c: string = e.ctr.val,
             d: DataType = __nonNull(ctrToDataType.get(c))
-      return explValue(at(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))(kₜ), dataValue(c, tv̅)(kᵥ))
+      return explValue(at(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))(kₜ), dataValue(c, tv̅.map(({v}) => v))(kᵥ))
    } else
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote()(kₜ), e.e)

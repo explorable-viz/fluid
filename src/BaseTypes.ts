@@ -3,6 +3,7 @@ import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { dataValue } from "./Eval"
 import { Id, Persistent, _, make } from "./Value"
+import { ν, at } from "./Versioned"
 
 // See Env for convention regarding instance members on reflected datatypes.
 
@@ -80,6 +81,10 @@ export class Pair<T, U> extends DataValue<"Pair"> {
 
 export function pair<T extends Persistent, U extends Persistent> (fst: T, snd: U): Pair<T, U> {
    return make(Pair, fst, snd) as Pair<T, U>
+}
+
+export function pair_ν <T extends Persistent, U extends Persistent> (fst: T, snd: U): Pair<T, U> {
+   return at(Pair, fst, snd)(ν()) as Pair<T, U>
 }
 
 export abstract class Tree<T extends Persistent> extends DataValue<"Tree"> {
