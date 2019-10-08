@@ -8,7 +8,7 @@ import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
 import { Num, Persistent, State, Str, Value, fields } from "../../src/Value"
-import { Versioned, at, num, str } from "../../src/Versioned"
+import { Versioned, asVersioned, at, num, str } from "../../src/Versioned"
 
 import DataExpr = Expr.DataExpr
 import Def = Expr.Def
@@ -82,17 +82,17 @@ export class ExplValueCursor extends Cursor {
    }
 
    isChanged (s: State): ExplValueCursor {
-      assert(this.tv.v.__ẟ.eq(new Change(s)))
+      assert(asVersioned(this.tv.v).__ẟ.eq(new Change(s)))
       return this
    }
 
    isUnchanged (): ExplValueCursor {
-      assert(this.tv.v.__ẟ.eq(new Change({})))
+      assert(asVersioned(this.tv.v).__ẟ.eq(new Change({})))
       return this
    }
 
    isNew (): ExplValueCursor {
-      assert(this.tv.v.__ẟ instanceof New)
+      assert(asVersioned(this.tv.v).__ẟ instanceof New)
       return this
    }
 

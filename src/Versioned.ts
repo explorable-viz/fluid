@@ -1,5 +1,5 @@
 import { Class, __nonNull, assert } from "./util/Core"
-import { __deltas } from "./Delta"
+import { Delta, __deltas } from "./Delta"
 import { Id, Persistent, Num, Str, Value, _, construct, fields, make } from "./Value"
 
 // Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
@@ -9,10 +9,19 @@ export type Versioned<T> = Versioned_ & T
 // Why do versioned objects need to store their id?
 export interface Versioned_ {
    __id: Id
+   __ẟ: Delta
 }
 
-export function versioned <T extends Value> (v: T): boolean {
+export function versioned<T extends Value> (v: T): v is Versioned<T> {
    return (v as Versioned<T>).__id !== undefined
+}
+
+export function asVersioned<T extends Value> (v: T): Versioned<T> {
+   if (versioned(v)) {
+      return v
+   } else {
+      return assert(false, `${v} is not versioned.`)
+   }
 }
 
 // For versioned objects the map is not curried but takes an (interned) composite key.
@@ -28,6 +37,12 @@ export function at<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id)
          const v: Versioned<T> = new C as Versioned<T>
          Object.defineProperty(v, "__id", {
             value: k,
+            enumerable: false
+         })
+         Object.defineProperty(v, "__ẟ", {
+            get: function (): Delta {
+               return __nonNull(__deltas.ẟ̅.get(this))
+            },
             enumerable: false
          })
          __versioned.set(k, v)
