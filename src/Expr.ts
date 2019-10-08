@@ -88,12 +88,6 @@ export namespace Expr {
       return at(ConstStr, val)
    }
 
-   // TODO: delete me.
-   export class Constr extends Expr {
-      ctr: Str = _
-      args: List<Expr> = _
-   }
-
    // Has a concrete subclass for each datatype.
    export class DataExpr extends Expr {
       get ctr (): string {

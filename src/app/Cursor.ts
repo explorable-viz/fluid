@@ -1,8 +1,9 @@
 import { nth } from "../../src/util/Array"
-import { AClass, Class, absurd, as, assert, className, error } from "../../src/util/Core"
+import { AClass, Class, __nonNull, absurd, as, assert, className, error } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
+import { ctrToDataType } from "../../src/DataType"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"
 import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
@@ -130,6 +131,12 @@ export class ExprCursor extends Cursor {
       return new ExprCursor(vʹ as any)
    }
 
+   // Allow the data value class to be used to navigate the data expression form.
+   constr_to<T extends Value> (C: Class<T>, prop: keyof T): ExprCursor {
+      this.constr_at(C)
+      return new ExprCursor((this.v as any)[prop])
+   }
+
    static defs (defs: List<Def>): Map<string, Let | Prim | RecDef> {
       const defsʹ: Map<string, Let | Prim | RecDef> = new Map
       for (; Cons.is(defs); defs = defs.tail) {
@@ -161,29 +168,12 @@ export class ExprCursor extends Cursor {
       return this
    }
 
-   atConstr (C: Class): ExprCursor {
-      this.at(Expr.Constr, e => assert(e.ctr.val === C.name, `${e.ctr.val} !== ${C.name}`))
+   constr_at (C: Class): ExprCursor {
+      as(this.v, __nonNull(ctrToDataType.get(C.name)).exprC̅.get(C.name)!)
       return this
    }
 
    // Helpers specific to certain datatypes.
-
-   toCons (n: number): ExprCursor {
-      if (n === 0) {
-         as(this.v, Cons)
-         return this
-      } else {
-         return this.to(Cons, "tail").toCons(n - 1)
-      }
-   }
-
-   // Not sure what the T parameters are for here...
-   constrArg (C: Class, n: number): ExprCursor {
-      return this.atConstr(C)
-                 .to(Expr.Constr, "args")
-                 .toCons(n)
-                 .to(Cons, "head")
-   }
 
    treeNodeValue (): ExprCursor {
       return this.to(NonEmpty, "t")
@@ -208,7 +198,7 @@ export class ExprCursor extends Cursor {
    }
 
    spliceConstrArg (C: Class, n: number, makeNode: (e: Expr) => Expr): ExprCursor {
-      this.atConstr(C)
+      this.constr_at(C)
       const e: Expr.DataExpr = as(this.v, Expr.DataExpr), 
             e̅: Expr[] = e.children()
       e̅[n] = makeNode(nth(e̅, n))
