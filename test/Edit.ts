@@ -99,7 +99,10 @@ describe("edit", () => {
                here = here.toBinaryArg1("/").isNew()
                    .toTerminal()
                here.toBinaryArg1("+").isUnchanged()
-               here.toBinaryArg2("+").isChanged({ val: 42.25 })
+               here = here.toBinaryArg2("+").isChanged({ val: 42.25 })
+                   .toTerminal()
+               here.toBinaryArg1("*").isChanged({ val: 6.5 })
+               here.toBinaryArg2("*").isChanged({ val: 6.5 })
             }
          })(e)
       })
