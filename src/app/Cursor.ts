@@ -3,7 +3,7 @@ import { AClass, Class, __nonNull, absurd, as, assert, className, error } from "
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
-import { ctrToDataType } from "../../src/DataType"
+import { exprClass } from "../../src/DataType"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"
 import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
@@ -11,6 +11,7 @@ import { Expr } from "../../src/Expr"
 import { Num, Persistent, State, Str, Value, fields } from "../../src/Value"
 import { Versioned, at, num, str } from "../../src/Versioned"
 
+import DataExpr = Expr.DataExpr
 import Def = Expr.Def
 import Let = Expr.Let
 import LetRec = Expr.LetRec
@@ -133,8 +134,7 @@ export class ExprCursor extends Cursor {
 
    // Allow the data value class to be used to navigate the data expression form.
    constr_to<T extends DataValue> (C: Class<T>, prop: keyof T): ExprCursor {
-      this.constr_at(C)
-      return new ExprCursor((this.v as any)[prop])
+      return this.to<DataExpr>(exprClass(C), prop as keyof DataExpr)
    }
 
    static defs (defs: List<Def>): Map<string, Let | Prim | RecDef> {
@@ -168,9 +168,8 @@ export class ExprCursor extends Cursor {
       return this
    }
 
-   constr_at (C: Class): ExprCursor {
-      as(this.v, __nonNull(ctrToDataType.get(C.name)).exprC̅.get(C.name)!)
-      return this
+   constr_at<T extends DataValue> (C: Class<T>): ExprCursor {
+      return this.at<T>(exprClass(C), x => x)
    }
 
    // Helpers specific to certain datatypes.
