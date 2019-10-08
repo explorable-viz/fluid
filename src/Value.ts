@@ -1,6 +1,6 @@
 import { Class, __nonNull, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
-import { Delta, __deltas } from "./Delta"
+import { __deltas } from "./Delta"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -26,10 +26,6 @@ export class Value<Tag extends ValueTag = ValueTag> {
    // like Num and Str have children which are not observable through pattern-matching.
    get __children (): Persistent[] {
       return fields(this).map(k => this.__child(k))
-   }
-
-   get __ẟ (): Delta {
-      return __nonNull(__deltas.ẟ̅.get(this))
    }
 }
 

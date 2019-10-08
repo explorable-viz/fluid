@@ -128,5 +128,9 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
    types.set(d.name.val, d)
 }
 
+export function exprClass<T extends DataValue> (C: Class<T>): Class<Expr.DataExpr> {
+   return __nonNull(ctrToDataType.get(C.name)).exprC̅.get(C.name)!
+}
+
 types.set(Num.name, new PrimType(str(Num.name)(ν()), Num))
 types.set(Str.name, new PrimType(str(Str.name)(ν()), Str))

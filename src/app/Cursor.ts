@@ -1,16 +1,16 @@
-import { nth } from "../../src/util/Array"
-import { AClass, Class, __nonNull, absurd, as, assert, className, error } from "../../src/util/Core"
+import { AClass, Class, __check, __nonNull, absurd, as, assert, className, error } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
-import { ctrToDataType } from "../../src/DataType"
+import { exprClass } from "../../src/DataType"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"
 import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
-import { Num, Persistent, State, Str, Value } from "../../src/Value"
-import { Versioned, num, str } from "../../src/Versioned"
+import { Num, Persistent, State, Str, Value, fields } from "../../src/Value"
+import { Versioned, asVersioned, at, num, str } from "../../src/Versioned"
 
+import DataExpr = Expr.DataExpr
 import Def = Expr.Def
 import Let = Expr.Let
 import LetRec = Expr.LetRec
@@ -64,12 +64,16 @@ export class ExplValueCursor extends Cursor {
       return new ExplValueCursor(Expl.explChild(this.tv.t, as(this.tv.v, C), k))
    }
 
-   toBinaryArg1 (): ExplValueCursor {
-      return new ExplValueCursor(as(this.tv.t, Expl.BinaryApp).tv1)
+   toBinaryArg1 (opName: string): ExplValueCursor {
+      const t: Expl.BinaryApp = as(this.tv.t, Expl.BinaryApp)
+      assert(t.opName.val === opName)
+      return new ExplValueCursor(t.tv1)
    }
 
-   toBinaryArg2 (): ExplValueCursor {
-      return new ExplValueCursor(as(this.tv.t, Expl.BinaryApp).tv2)
+   toBinaryArg2 (opName: string): ExplValueCursor {
+      const t: Expl.BinaryApp = as(this.tv.t, Expl.BinaryApp)
+      assert(t.opName.val === opName)
+      return new ExplValueCursor(t.tv2)
    }
 
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): this {
@@ -78,17 +82,17 @@ export class ExplValueCursor extends Cursor {
    }
 
    isChanged (s: State): ExplValueCursor {
-      assert(this.tv.v.__ẟ.eq(new Change(s)))
+      assert(asVersioned(this.tv.v).__ẟ.eq(new Change(s)))
       return this
    }
 
    isUnchanged (): ExplValueCursor {
-      assert(this.tv.v.__ẟ.eq(new Change({})))
+      assert(asVersioned(this.tv.v).__ẟ.eq(new Change({})))
       return this
    }
 
    isNew (): ExplValueCursor {
-      assert(this.tv.v.__ẟ instanceof New)
+      assert(asVersioned(this.tv.v).__ẟ instanceof New)
       return this
    }
 
@@ -132,9 +136,8 @@ export class ExprCursor extends Cursor {
    }
 
    // Allow the data value class to be used to navigate the data expression form.
-   constr_to<T extends Value> (C: Class<T>, prop: keyof T): ExprCursor {
-      this.constr_at(C)
-      return new ExprCursor((this.v as any)[prop])
+   constr_to<T extends DataValue> (C: Class<T>, prop: keyof T): ExprCursor {
+      return this.to<DataExpr>(exprClass(C), prop as keyof DataExpr)
    }
 
    static defs (defs: List<Def>): Map<string, Let | Prim | RecDef> {
@@ -168,11 +171,6 @@ export class ExprCursor extends Cursor {
       return this
    }
 
-   constr_at (C: Class): ExprCursor {
-      as(this.v, __nonNull(ctrToDataType.get(C.name)).exprC̅.get(C.name)!)
-      return this
-   }
-
    // Helpers specific to certain datatypes.
 
    treeNodeValue (): ExprCursor {
@@ -197,12 +195,23 @@ export class ExprCursor extends Cursor {
       return this
    }
 
-   spliceConstrArg (C: Class, n: number, makeNode: (e: Expr) => Expr): ExprCursor {
-      this.constr_at(C)
-      const e: Expr.DataExpr = as(this.v, Expr.DataExpr), 
-            e̅: Expr[] = e.__children
-      e̅[n] = makeNode(nth(e̅, n))
-      Expr.dataExpr(e.ctr, e̅)((e as Versioned<Expr.DataExpr>).__id)
+   constr_splice<T extends DataValue> (C: Class<T>, props: (keyof T)[], makeNode: (e̅: Expr[]) => Expr[]): ExprCursor {
+      return this.splice<DataValue>(
+         exprClass(C), 
+         props as (keyof DataValue)[], 
+         (e̅: Persistent[]): Expr[] => makeNode(e̅.map(e => as(e, Expr.Expr)))
+      )
+   } 
+
+   splice<T extends Value> (C: Class<T>, props: (keyof T)[], makeNode: (v̅: Persistent[]) => Persistent[]): ExprCursor {
+      const v: T = as<Persistent, T>(this.v, C), 
+            v̅: Persistent[] = v.__children,
+            n̅: number[] = props.map(prop => __check(fields(v).indexOf(prop as string), n => n != -1)),
+            v̅ʹ: Persistent[] = makeNode(n̅.map((n: number): Persistent => v̅[n]))
+      n̅.forEach((n: number, m: number): void => {
+         v̅[n] = v̅ʹ[m]
+      })
+      at(C, ...v̅)((v as Versioned<T>).__id)
       return this
    } 
 }
