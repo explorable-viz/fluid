@@ -4,12 +4,12 @@ import { DataValueTag, Value, _, make } from "./Value"
 
 // Value of a datatype constructor; children are always user-level values (i.e. not ES6 primitives).
 export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
-   child (k: string): Value {
-      return super.child(k) as Value
+   __child (k: string): Value {
+      return super.__child(k) as Value
    }
 
-   children (): Value[] {
-      return super.children() as Value[]
+   __children (): Value[] {
+      return super.__children() as Value[]
    }
 }
 

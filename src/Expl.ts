@@ -58,8 +58,8 @@ export namespace Expl {
          return abstractMethodError(this) // currently reflection requires concrete type here
       }
 
-      children (): Expl[] {
-         return super.children() as Expl[]
+      __children (): Expl[] {
+         return super.__children() as Expl[]
       }
    }
 
@@ -161,7 +161,7 @@ export namespace Expl {
    // Should probably do a better job of restricting k to be a bona fide field name.
    export function explChild<T extends DataValue> (t: Expl, v: DataValue, k: keyof T): ExplValue {
       if (t instanceof DataExpl) {
-         return explValue(t.child(k as string) as Expl, v.child(k as string))
+         return explValue(t.__child(k as string) as Expl, v.__child(k as string))
       } else
       if (t instanceof NonTerminal) {
          return explChild(t.t, v, k)

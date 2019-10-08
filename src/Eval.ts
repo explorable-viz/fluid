@@ -155,7 +155,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.const_()(kₜ), closure(ρ, nil(), evalTrie(e.σ))(kᵥ))
    } else
    if (e instanceof Expr.DataExpr) {
-      const tv̅: ExplValue[] = e.children().map((e: Expr) => eval_(ρ, e))
+      const tv̅: ExplValue[] = e.__children().map((e: Expr) => eval_(ρ, e))
       return explValue(Expl.dataExpl(e.ctr, tv̅.map(({t}) => t))(kₜ), dataValue(e.ctr, tv̅.map(({v}) => v))(kᵥ))
    } else
    if (e instanceof Expr.Quote) {
@@ -246,7 +246,7 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
          const eʹ: Expr.DataExpr = as(e, Expr.DataExpr)
-         zip(Expl.explChildren(t, v), eʹ.children()).map(([tv, e]) => eval_fwd(e, tv))
+         zip(Expl.explChildren(t, v), eʹ.__children()).map(([tv, e]) => eval_fwd(e, tv))
          setα(e.__α, t)
       } else {
          absurd()
@@ -307,7 +307,7 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): void {
       if (v instanceof DataValue) {
          const eʹ: Expr.DataExpr = as(e, Expr.DataExpr)
          // reverse order but shouldn't matter in absence of side-effects:
-         zip(Expl.explChildren(t, v), eʹ.children()).map(([tv, e]) => eval_bwd(e, tv))
+         zip(Expl.explChildren(t, v), eʹ.__children()).map(([tv, e]) => eval_bwd(e, tv))
          setjoinα(t.__α, e)
       } else {
          absurd()

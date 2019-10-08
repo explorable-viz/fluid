@@ -18,14 +18,14 @@ export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Id" | "Num" | "St
 export class Value<Tag extends ValueTag = ValueTag> {
    readonly __tag!: Tag
 
-   child (k: string): Persistent {
+   __child (k: string): Persistent {
       return (this as any as State)[k]
    } 
 
    // Probably confusingly, "children" isn't a user-level notion; specifically, wrappers
    // like Num and Str have children which are not observable through pattern-matching.
-   children (): Persistent[] {
-      return fields(this).map(k => this.child(k))
+   __children (): Persistent[] {
+      return fields(this).map(k => this.__child(k))
    }
 
    get __ẟ (): Delta {
