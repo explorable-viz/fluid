@@ -83,13 +83,13 @@ function asRecord (v: Object): Expr {
 }
 
 function asPair (k: string, v: unknown): Expr {
-   return Expr.constr(str(Pair.name)(ν()), List.fromArray([asPrimValue(k), asPrimValue(v)]))(ν())
+   return Expr.dataExpr(Pair.name, [asPrimValue(k), asPrimValue(v)])(ν())
 }
 
 function asList (e̅: Expr[]): Expr {
-   let e̅ʹ: Expr = Expr.constr(str(Nil.name)(ν()), List.fromArray([]))(ν())
+   let e̅ʹ: Expr = Expr.dataExpr(Nil.name, [])(ν())
    for (let e of [...e̅].reverse()) {
-      e̅ʹ = Expr.constr(str(Cons.name)(ν()), List.fromArray([e, e̅ʹ]))(ν())
+      e̅ʹ = Expr.dataExpr(Cons.name, [e, e̅ʹ])(ν())
    }
    return e̅ʹ
 }

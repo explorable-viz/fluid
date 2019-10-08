@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { Edit } from "./util/Core"
-import { Cons, List, Pair, NonEmpty } from "../src/BaseTypes"
+import { Cons, Pair, NonEmpty } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
 import { open } from "../src/Module"
 import { ν, str } from "../src/Versioned"
@@ -9,7 +9,7 @@ import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
 
 import Trie = Expr.Trie
 import app = Expr.app
-import constr = Expr.constr
+import dataExpr = Expr.dataExpr
 import var_ = Expr.var_
 
 before((done: MochaDone) => {
@@ -109,7 +109,7 @@ describe("edit", () => {
                    .var_("x").var_("xs")
                    .spliceConstrArg(Cons, 0, (e: Expr): Expr => {
                       const eʹ: Expr = app(var_(str("sq")(ν()))(ν()), var_(str("x")(ν()))(ν()))(ν())
-                      return constr(str(Pair.name)(ν()), List.fromArray([e, eʹ]))(ν())
+                      return dataExpr(Pair.name, [e, eʹ])(ν())
                    })
             }
 

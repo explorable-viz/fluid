@@ -1,9 +1,9 @@
-import { absurd, error } from "./util/Core"
+import { __nonNull, abstractMethodError, absurd, error } from "./util/Core"
 import { diff, union } from "./util/Set"
 import { eq } from "./util/Ord"
 import { AnnotatedC } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
-import { ctrToDataType } from "./DataType"
+import { DataType, ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap, unionWith } from "./FiniteMap"
 import { DataValueTag, Id, Num, Str, _, make } from "./Value"
@@ -88,13 +88,20 @@ export namespace Expr {
       return at(ConstStr, val)
    }
 
-   export class Constr extends Expr {
-      ctr: Str = _
-      args: List<Expr> = _
-   }
+   // Has a concrete subclass for each datatype.
+   export class DataExpr extends Expr {
+      get ctr (): string {
+         return abstractMethodError(this) // currently reflection requires concrete type here
+      }
 
-   export function constr (ctr: Str, args: List<Expr>): (k: Id) => Constr {
-      return at(Constr, ctr, args)
+      get __children (): Expr[] {
+         return super.__children as Expr[]
+      }
+   }
+   
+   export function dataExpr (c: string, e̅: Expr[]): (k: Id) => DataExpr {
+      const d: DataType = __nonNull(ctrToDataType.get(c))
+      return at(d.exprC̅.get(c)!, ...e̅)
    }
 
    export class Def extends SyntaxNode<"Expr.Def"> {
@@ -246,8 +253,8 @@ export namespace Expr {
       if (e instanceof Fun) {
          return freeVarsTrie(e.σ)
       } else
-      if (e instanceof Constr) {
-         return union(...e.args.toArray().map(freeVars))
+      if (e instanceof DataExpr) {
+         return union(...e.__children.map(freeVars))
       } else
       if (e instanceof Quote) {
          return freeVars(e.e)

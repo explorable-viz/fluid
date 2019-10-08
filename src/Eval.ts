@@ -15,9 +15,9 @@ import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId } from "./V
 import { at, num, str } from "./Versioned"
 
 // Move to more sensible location
-export function dataValue (c: string, tv̅: ExplValue[]): (k: Id) => DataValue {
+export function dataValue (c: string, v̅: Value[]): (k: Id) => DataValue {
    const d: DataType = __nonNull(ctrToDataType.get(c))
-   return at(d.ctrs.get(c)!.C, ...tv̅.map(({v}) => v))
+   return at(d.ctrs.get(c)!.C, ...v̅)
 }
 
 export enum Direction { Fwd, Bwd }
@@ -154,11 +154,9 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.Fun) {
       return explValue(Expl.const_()(kₜ), closure(ρ, nil(), evalTrie(e.σ))(kᵥ))
    } else
-   if (e instanceof Expr.Constr) {
-      const tv̅: ExplValue[] = e.args.toArray().map((e: Expr) => eval_(ρ, e)),
-            c: string = e.ctr.val,
-            d: DataType = __nonNull(ctrToDataType.get(c))
-      return explValue(at(d.explC̅.get(c)!, ...tv̅.map(({t}) => t))(kₜ), dataValue(c, tv̅)(kᵥ))
+   if (e instanceof Expr.DataExpr) {
+      const tv̅: ExplValue[] = e.__children.map((e: Expr) => eval_(ρ, e))
+      return explValue(Expl.dataExpl(e.ctr, tv̅.map(({t}) => t))(kₜ), dataValue(e.ctr, tv̅.map(({v}) => v))(kᵥ))
    } else
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote()(kₜ), e.e)
@@ -247,8 +245,8 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    } else
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
-         const eʹ: Expr.Constr = as(e, Expr.Constr)
-         zip(Expl.explChildren(t, v), eʹ.args.toArray()).map(([tv, e]) => eval_fwd(e, tv))
+         const eʹ: Expr.DataExpr = as(e, Expr.DataExpr)
+         zip(Expl.explChildren(t, v), eʹ.__children).map(([tv, e]) => eval_fwd(e, tv))
          setα(e.__α, t)
       } else {
          absurd()
@@ -307,9 +305,9 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): void {
    } else
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
-         const eʹ: Expr.Constr = as(e, Expr.Constr)
+         const eʹ: Expr.DataExpr = as(e, Expr.DataExpr)
          // reverse order but shouldn't matter in absence of side-effects:
-         zip(Expl.explChildren(t, v), eʹ.args.toArray()).map(([tv, e]) => eval_bwd(e, tv))
+         zip(Expl.explChildren(t, v), eʹ.__children).map(([tv, e]) => eval_bwd(e, tv))
          setjoinα(t.__α, e)
       } else {
          absurd()
@@ -381,5 +379,5 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): void {
 
 initDataType(
    Expr.Expr,
-   [Expr.App, Expr.BinaryApp, Expr.ConstNum, Expr.ConstStr, Expr.Constr, Expr.Defs, Expr.Fun, Expr.MatchAs, Expr.Quote, Expr.Var]
+   [Expr.App, Expr.BinaryApp, Expr.ConstNum, Expr.ConstStr, Expr.DataExpr, Expr.Defs, Expr.Fun, Expr.MatchAs, Expr.Quote, Expr.Var]
 )
