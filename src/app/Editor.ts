@@ -39,7 +39,8 @@ function renderHoriz (x: number, line: number, ...es: Expr[]): SVGElement {
 
 function renderText (x: number, line: number, str: string): SVGTextElement {
    const text: SVGTextElement = textElement(x, line * lineHeight, fontSize, str)
-   text.setAttribute("class", "code")
+//   text.setAttribute("class", "code")
+   text.setAttribute("font-family", "Inconsolata")
    svgMetrics.appendChild(text)
    dimensions.set(text, { width: text.getBBox().width, height: lineHeight })
    text.remove()
@@ -61,7 +62,7 @@ class Editor {
       root.appendChild(polygon)
       document.body.appendChild(root)
       const e: Expr = as(openWithImports("foldr_sumSquares"), Expr.Defs).e
-      root.appendChild(render(50, 4, e))
+      root.appendChild(render(0, 0, e))
    }
 }
 

@@ -1,6 +1,13 @@
-@import url('https://fonts.googleapis.com/css?family=Inconsolata&display=swap');
+/* @import url('https://fonts.googleapis.com/css?family=Inconsolata&display=swap'); */
+
+@font-face {
+   font-family: "inconsolata";
+   font-style: normal;
+   font-weight: 400;
+   src: url(./inconsolata-webfont.woff) format('woff');
+}
 
 .code {
    fill: blue;
-   font-family: "Inconsolata";
+   font-family: "inconsolata";
 }
