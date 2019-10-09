@@ -8,9 +8,9 @@ import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } f
 import { unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
-import { ExplValueCursor } from "../app/Cursor"
+import { svgNS } from "./Core"
+import { ExplValueCursor } from "./Cursor"
 
-export const svgNS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
 type TransformFun = (p: [number, number]) => [number, number]
 
 function translate (x_inc: number, y_inc: number): TransformFun {
