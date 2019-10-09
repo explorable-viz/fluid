@@ -37,7 +37,7 @@ describe("slice", () => {
    describe("bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
-               e: Expr = openWithImports("bar-chart", [module_graphics])
+               e: Expr = openWithImports("bar-chart", module_graphics)
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
                const here: ExplValueCursor = new ExplValueCursor(ρ.tv)
@@ -102,7 +102,7 @@ describe("slice", () => {
             { year: 2015, country: "China", energyType: "Hydro", value: 296 }
          ]
          const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data"),
-         e: Expr = openWithImports("create-dataset", [module_graphics])
+         e: Expr = openWithImports("create-dataset", module_graphics)
          new FwdSlice(e, ρ)
       })
    })
