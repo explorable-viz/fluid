@@ -1,18 +1,49 @@
 import "../../src/BaseTypes" // otherwise mysterious cyclic initialisation error
+import { as } from "../util/Core"
 import { Expr } from "../Expr"
 import { openWithImports } from "../Module"
-import { createSvg, svgNS, textElement } from "./Core"
+import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
 import "./styles.css"
 
-function render (e: Expr): SVGElement {
+const fontSize: number = 18
+const lineHeight: number = textHeight(fontSize, "m") // representative character 
+
+// Post-condition: returned element has an entry in "dimensions" map. 
+function render (x: number, line: number, e: Expr): SVGElement {
+   if (e instanceof Expr.Var) {
+      return renderText(x, line, e.x.val)
+   } else
    if (e instanceof Expr.App) {
-
+      return renderHoriz(x, line, e.f, e.e)
+   } else {
+      return renderText(x, line, "TODO")
    }
+}
 
-   const text: SVGTextElement = textElement(50, 50, 18, "An expression")
+function renderHoriz (x: number, line: number, ...es: Expr[]): SVGElement {
+   const g: SVGGElement = document.createElementNS(svgNS, "g")
+   // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
+   g.setAttribute("pointer-events", "bounding-box")
+   for (const e of es) {
+      const v: SVGElement = render(x, line, e)
+      x += dimensions.get(v)!.width
+      g.appendChild(v)
+   }
+   return g
+}
+
+function renderText (x: number, line: number, str: string): SVGTextElement {
+   const text: SVGTextElement = textElement(x, line * lineHeight, fontSize, str)
    text.setAttribute("class", "code")
+   svgMetrics.appendChild(text)
+   dimensions.set(text, { width: text.getBBox().width, height: lineHeight })
    return text
 }
+
+type Dimensions = { width: number, height: number }
+
+// Populate this explicity, rather than using a memoised function.
+const dimensions: Map<SVGElement, Dimensions> = new Map()
 
 class Editor {
    constructor () {
@@ -23,8 +54,8 @@ class Editor {
       polygon.setAttribute("fill", "gray")
       root.appendChild(polygon)
       document.body.appendChild(root)
-      const e: Expr = openWithImports("foldr_sumSquares")
-      root.appendChild(render(e))
+      const e: Expr = as(openWithImports("foldr_sumSquares"), Expr.Defs).e
+      root.appendChild(render(50, 50, e))
    }
 }
 

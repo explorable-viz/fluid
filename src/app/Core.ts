@@ -38,11 +38,10 @@ export function textHeight (fontSize: number, str: string): number {
    const text: SVGTextElement = textElement(0, 0, fontSize, str)
    svgMetrics.appendChild(text)
    const height: number = text.getBBox().height
-   text.remove()
    return height
 }
 
-let svgMetrics: SVGSVGElement
+export let svgMetrics: SVGSVGElement
 
 {
    svgMetrics = document.createElementNS(svgNS, "svg")
