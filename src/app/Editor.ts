@@ -66,4 +66,24 @@ class Editor {
    }
 }
 
-new Editor()
+declare class FontLoader {
+   constructor (blah1: string[], blah2: any, blah3: any)
+}
+
+new FontLoader(["inconsolata"], {
+   "fontLoaded": function(font: any) {
+      // One of the fonts was loaded
+      console.log("font loaded: " + font.family);
+   },
+   "complete": function(error: any) {
+      if (error !== null) {
+         // Reached the timeout but not all fonts were loaded
+         console.log(error.message)
+         console.log(error.notLoadedFonts)
+      } else {
+         // All fonts were loaded
+         console.log("all fonts were loaded")
+         new Editor()
+      }
+   }
+}, 3000)
