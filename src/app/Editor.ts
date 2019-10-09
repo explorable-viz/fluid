@@ -1,21 +1,12 @@
 import { Expr } from "../Expr"
 import { openWithImports } from "../Module"
-import { createSvg, svgNS } from "./Core"
+import { createSvg, svgNS, textElement } from "./Core"
 import "./styles.css"
 
-function textElement (x: number, y: number, str: string): SVGTextElement {
-   const text: SVGTextElement = document.createElementNS(svgNS, "text")
-   text.setAttribute("stroke", "none")
-   text.setAttribute("font-size", "12")
-   text.setAttribute("font-family", "courier")
-   text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
-   text.setAttribute("class", "code")
-   text.appendChild(document.createTextNode(str))
-   return text
-}
-
 function render (e: Expr): SVGElement {
-   return textElement(50, 50, "An expression")
+   const text: SVGTextElement = textElement(50, 50, 18, "An expression")
+   text.setAttribute("class", "code")
+   return text
 }
 
 class Editor {

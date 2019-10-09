@@ -5,8 +5,8 @@ import { Expl } from "./Expl"
 import { Id, Num, PrimOpTag, PrimValue, Str, _, Value } from "./Value"
 import { ν, at, num, str } from "./Versioned"
 
-type Unary<T, V> = (x: T) => (k: Id) => V
-type Binary<T, U, V> = (x: T, y: U) => (k: Id) => V
+export type Unary<T, V> = (x: T) => (k: Id) => V
+export type Binary<T, U, V> = (x: T, y: U) => (k: Id) => V
 
 // In the following two classes, we store the operation without generic type parameters, as fields can't
 // have polymorphic type. Then access the operation via a method and reinstate the polymorphism via a cast.

@@ -5,11 +5,13 @@ import { Cons, List } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
-import { unary_, unaryOps } from "../Primitive"
+import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
-import { svgNS } from "./Core"
+import { svgNS, textElement, textHeight, textWidth } from "./Core"
 import { ExplValueCursor } from "./Cursor"
+
+const fontSize: number = 12
 
 type TransformFun = (p: [number, number]) => [number, number]
 
@@ -195,7 +197,7 @@ export class GraphicsRenderer {
    text (tg: ExplValueCursor/*<Text>*/): void {
       const g: Text = as(tg.tv.v, Text),
             [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
-            text: SVGTextElement = textElement(x, y, g.str.val)
+            text: SVGTextElement = textElement(x, y, fontSize, g.str.val)
       text.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
@@ -227,44 +229,17 @@ export class GraphicsRenderer {
    }
 }
 
-// The SVG text element for the supplied text; centralised so can be used to compute text metrics.
-// Use "translate" to locate the element, so that we can apply it after scaling.
-function textElement (x: number, y: number, str: string): SVGTextElement {
-   const text: SVGTextElement = document.createElementNS(svgNS, "text")
-   text.setAttribute("stroke", "none")
-   text.setAttribute("font-size", "12")
-   text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
-   text.appendChild(document.createTextNode(str))
-   return text
-}
-
-let svgMetrics: SVGSVGElement
-
 {
-   svgMetrics = document.createElementNS(svgNS, "svg")
-   svgMetrics.setAttribute("width", "0")
-   svgMetrics.setAttribute("height", "0")
-   svgMetrics.style.visibility = "hidden"
-   document.body.appendChild(svgMetrics)
-
-   // Additional primitives that rely on offline rendering to compute text metrics. Combine these would 
+   // Additional primitives that rely on offline rendering to compute text metrics. Combining these would 
    // require more general primitives that can return tuples.
-   const textWidth = (str: Str): (k: Id) => Num => {
-      const text: SVGTextElement = textElement(0, 0, str.val)
-      svgMetrics.appendChild(text)
-      const width: number = text.getBBox().width
-      text.remove()
-      return num(width)
+   const textWidth_: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
+      return num(textWidth(fontSize, str.val))
    }
    
-   const textHeight = (str: Str): (k: Id) => Num => {
-      const text: SVGTextElement = textElement(0, 0, str.val)
-      svgMetrics.appendChild(text)
-      const height: number = text.getBBox().height
-      text.remove()
-      return num(height)
+   const textHeight_: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
+      return num(textHeight(fontSize, str.val))
    }
    
-   unaryOps.set(textWidth.name, unary_(textWidth))
-   unaryOps.set(textHeight.name, unary_(textHeight))
+   unaryOps.set(textWidth.name, unary_(textWidth_))
+   unaryOps.set(textHeight.name, unary_(textHeight_))
 }
