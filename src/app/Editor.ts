@@ -6,7 +6,7 @@ import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
 import "./styles.css"
 
 const fontSize: number = 18
-const lineHeight: number = textHeight(fontSize, "m") // representative character 
+const lineHeight: number = Math.ceil(textHeight(fontSize, "m")) // representative character 
 
 // Post-condition: returned element has an entry in "dimensions" map. 
 function render (x: number, line: number, e: Expr): SVGElement {
@@ -21,14 +21,19 @@ function render (x: number, line: number, e: Expr): SVGElement {
 }
 
 function renderHoriz (x: number, line: number, ...es: Expr[]): SVGElement {
-   const g: SVGGElement = document.createElementNS(svgNS, "g")
+   const x0: number = x,
+         g: SVGGElement = document.createElementNS(svgNS, "g")
+   let height_max: number = 0
    // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
    g.setAttribute("pointer-events", "bounding-box")
    for (const e of es) {
-      const v: SVGElement = render(x, line, e)
-      x += dimensions.get(v)!.width
+      const v: SVGElement = render(x, line, e),
+            { width, height } = dimensions.get(v)!
+      x += width
+      height_max = Math.max(height_max, height)
       g.appendChild(v)
    }
+   dimensions.set(g, { width: x - x0, height: height_max })
    return g
 }
 
@@ -37,6 +42,7 @@ function renderText (x: number, line: number, str: string): SVGTextElement {
    text.setAttribute("class", "code")
    svgMetrics.appendChild(text)
    dimensions.set(text, { width: text.getBBox().width, height: lineHeight })
+   text.remove()
    return text
 }
 
@@ -55,7 +61,7 @@ class Editor {
       root.appendChild(polygon)
       document.body.appendChild(root)
       const e: Expr = as(openWithImports("foldr_sumSquares"), Expr.Defs).e
-      root.appendChild(render(50, 50, e))
+      root.appendChild(render(50, 4, e))
    }
 }
 
