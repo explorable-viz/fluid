@@ -9,7 +9,7 @@ function textElement (x: number, y: number, str: string): SVGTextElement {
    text.setAttribute("font-size", "12")
    text.setAttribute("font-family", "courier")
    text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
-   text.setAttribute("fill", "black")
+   text.setAttribute("class", "code")
    text.appendChild(document.createTextNode(str))
    return text
 }
