@@ -67,7 +67,7 @@ export function elimJoin<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
       assert(cκ̅1.length === cκ̅2.length)
       const cκ̅: [string, K][] = zipWith(([c1, κ1]: [string, K], [c2, κ2]: [string, K]): [string, K] => {
          assert(c1 === c2)
-         return [c1, join(κ1, κ2)]
+         return [c1, κ1 === undefined ? κ2 : (κ2 === undefined ? κ1 : join(κ1, κ2))]
       }
       )(cκ̅1, cκ̅2)
       return constrElim(...cκ̅)
