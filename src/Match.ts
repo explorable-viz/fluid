@@ -68,10 +68,37 @@ export function match<K extends Cont> (ξ: MatchPrefix, κ: K): Match<K> {
 export abstract class Elim<K extends Cont = Cont> extends DataValue<"Elim"> {
    // could have called this "match", but conflicts with factory method of same name
    apply (tv: ExplValue): [Env, Match<K>] {
-      return this.apply_(tv, nil())
+      return apply_(this, tv, nil())
    }
+}
 
-   abstract apply_ (tv: ExplValue, ξ: MatchPrefix): [Env, Match<K>]
+function apply_<K extends Cont> (σ: Elim<K>, tv: ExplValue, u̅: MatchPrefix): [Env, Match<K>] {
+   if (VarElim.is(σ)) {
+      return [Env.singleton(σ.x, tv), match(u̅, σ.κ)]
+   } else
+   if (DataElim.is(σ)) {
+      const v: Value = tv.v,
+            c: string = className(v)
+      if (v instanceof DataValue) {
+         const κ: K = (σ as any)[c] as K
+         if (κ !== undefined) {
+            const tv̅: ExplValue[] = Expl.explChildren(tv.t, v),
+            [ρ, ξ]: [Env, Match<K>] = matchArgs(κ, tv̅, u̅)
+            return [ρ, match(cons(tv, ξ.tv̅), ξ.κ)]
+         } else {
+            const d: DataType = elimToDataType.get(className(σ))!
+            if (d.ctrs.has(c)) {
+               return error(`Pattern mismatch: ${c} case is undefined for ${d.name.val} eliminator.`)
+            } else {
+               return error(`Pattern mismatch: found ${c}, expected ${d.name.val}.`)
+            }
+         }
+      } else {
+         return error(`Pattern mismatch: ${c} is not a datatype.`, v, σ)
+      }
+   } else {
+      return absurd()
+   }
 }
 
 // Parser ensures constructor calls are saturated.
@@ -81,8 +108,8 @@ function matchArgs<K extends Cont> (κ: K, tv̅: ExplValue[], u̅: MatchPrefix):
    } else {
       const [tv, ...tv̅ʹ] = tv̅
       if (κ instanceof Elim) {
-         const f: Elim<K> = κ, // "unfold" K into Elim<K>
-               [ρ, ξ]: [Env, Match<K>] = f.apply_(tv, u̅),
+         const σ: Elim<K> = κ, // "unfold" K into Elim<K>
+               [ρ, ξ]: [Env, Match<K>] = apply_(σ, tv, u̅),
                [ρʹ, ξʹ]: [Env, Match<K>] = matchArgs(ξ.κ, tv̅ʹ, ξ.tv̅)
          return [ρ.concat(ρʹ), ξʹ]
       } else {
@@ -95,28 +122,6 @@ function matchArgs<K extends Cont> (κ: K, tv̅: ExplValue[], u̅: MatchPrefix):
 export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
    static is<K extends Cont> (σ: Elim<K>): σ is DataElim<K> {
       return σ instanceof DataElim
-   }
-
-   apply_ (tv: ExplValue, u̅: MatchPrefix): [Env, Match<K>] {
-      const v: Value = tv.v,
-            c: string = className(v)
-      if (v instanceof DataValue) {
-         const κ: K = (this as any)[c] as K
-         if (κ !== undefined) {
-            const tv̅: ExplValue[] = Expl.explChildren(tv.t, v),
-            [ρ, ξ]: [Env, Match<K>] = matchArgs(κ, tv̅, u̅)
-            return [ρ, match(cons(tv, ξ.tv̅), ξ.κ)]
-         } else {
-            const d: DataType = elimToDataType.get(className(this))!
-            if (d.ctrs.has(c)) {
-               return error(`Pattern mismatch: ${c} case is undefined for ${d.name.val} eliminator.`)
-            } else {
-               return error(`Pattern mismatch: found ${c}, expected ${d.name.val}.`)
-            }
-         }
-      } else {
-         return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
-      }
    }
 }
 
@@ -143,10 +148,6 @@ export class VarElim<K extends Cont> extends Elim<K> {
 
    static is<K extends Cont> (σ: Elim<K>): σ is VarElim<K> {
       return σ instanceof VarElim
-   }
-
-   apply_ (tv: ExplValue, ξ: MatchPrefix): [Env, Match<K>] {
-      return [Env.singleton(this.x, tv), match(ξ, this.κ)]
    }
 }
 
