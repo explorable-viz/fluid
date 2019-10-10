@@ -1,6 +1,6 @@
 import { absurd, as, className, error, log } from "../util/Core"
 import { Cons, Nil } from "../BaseTypes"
-import { Expr } from "../Expr"
+import { Expr, strings } from "../Expr"
 import { openWithImports } from "../Module"
 import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
 import "./styles.css"
@@ -51,26 +51,8 @@ class Renderer {
       }
    }
 
-   // Expressions for the elements, plus expression for tail (or null if list terminates with nil).
-   listElements (e: Expr): [Expr[], Expr | null] {
-      if (e instanceof Expr.DataExpr) {
-         if (e.ctr === Nil.name) {
-            return [[], null]
-         } else
-         if (e.ctr === Cons.name) {
-            // use cursor interface instead?
-            const [es, eʹ]: [Expr[], Expr | null] = this.listElements(as(e.__child("tail"), Expr.Expr))
-            return [[as(e.__child("head"), Expr.Expr), ...es], eʹ]
-         } else {
-            return error(`Found ${e.ctr}, expected list.`)
-         }
-      } else {
-         return [[], e]
-      }
-   }
-
    renderElements (e: Expr): SVGElement[] {
-      const [es, eʹ]: [Expr[], Expr | null] = this.listElements(e),
+      const [es, eʹ]: [Expr[], Expr | null] = listElements(e),
             vs: SVGElement[] = []
       es.forEach((e: Expr, n: number): void => {
          vs.push(this.render(e))
@@ -86,7 +68,7 @@ class Renderer {
 
    renderTrie (σ: Trie<Expr>): SVGElement {
       if (Trie.Var.is(σ)) {
-         return this.renderText(σ.x.val)
+         return Renderer.group(this.renderText(σ.x.val), this.renderText(strings.arrow), this.render(σ.κ))
       } else
       if (Trie.Constr.is(σ)) {
          return this.renderText(`<${className(σ)}>`)
@@ -130,6 +112,24 @@ class Renderer {
       text.remove()
       this.x += width
       return text
+   }
+}
+
+// Expressions for the elements, plus expression for tail (or null if list terminates with nil).
+function listElements (e: Expr): [Expr[], Expr | null] {
+   if (e instanceof Expr.DataExpr) {
+      if (e.ctr === Nil.name) {
+         return [[], null]
+      } else
+      if (e.ctr === Cons.name) {
+         // use cursor interface instead?
+         const [es, eʹ]: [Expr[], Expr | null] = listElements(as(e.__child("tail"), Expr.Expr))
+         return [[as(e.__child("head"), Expr.Expr), ...es], eʹ]
+      } else {
+         return error(`Found ${e.ctr}, expected list.`)
+      }
+   } else {
+      return [[], e]
    }
 }
 
