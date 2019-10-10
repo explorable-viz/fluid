@@ -39,6 +39,7 @@ export function textHeight (fontSize: number, class_: string, str: string): numb
    const text: SVGTextElement = textElement(0, 0, fontSize, class_, str)
    svgMetrics.appendChild(text)
    const height: number = text.getBBox().height
+   text.remove()
    return height
 }
 

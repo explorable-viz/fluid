@@ -1,23 +1,39 @@
 import "../../src/BaseTypes" // otherwise mysterious cyclic initialisation error
-import { as } from "../util/Core"
+import { absurd, as, className, log } from "../util/Core"
 import { Expr } from "../Expr"
 import { openWithImports } from "../Module"
 import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
 import "./styles.css"
 
+import Trie = Expr.Trie
+
 const fontSize: number = 18,
       class_: string = "code",
-      lineHeight: number = Math.ceil(textHeight(fontSize, class_, "m")) // representative character 
+      lineHeight: number = log(Math.ceil(textHeight(fontSize, class_, "m")) * 2) // representative character 
 
 // Post-condition: returned element has an entry in "dimensions" map. 
 function render (x: number, line: number, e: Expr): SVGElement {
    if (e instanceof Expr.Var) {
       return renderText(x, line, e.x.val)
    } else
+   if (e instanceof Expr.Fun) {
+      return renderTrie(x, line, e.σ)
+   } else
    if (e instanceof Expr.App) {
       return renderHoriz(x, line, e.f, e.e)
    } else {
-      return renderText(x, line, "TODO")
+      return renderText(x, line, `<${className(e)}>`)
+   }
+}
+
+function renderTrie (x: number, line: number, σ: Trie<Expr>): SVGElement {
+   if (Trie.Var.is(σ)) {
+      return renderText(x, line, σ.x.val)
+   } else
+   if (Trie.Constr.is(σ)) {
+      return renderText(x, line, `<${className(σ)}>`)
+   } else {
+      return absurd()
    }
 }
 
@@ -29,7 +45,7 @@ function renderHoriz (x: number, line: number, ...es: Expr[]): SVGElement {
    g.setAttribute("pointer-events", "bounding-box")
    for (const e of es) {
       const v: SVGElement = render(x, line, e),
-            { width, height } = dimensions.get(v)!
+            { width, height }: Dimensions = dimensions.get(v)!
       x += width
       height_max = Math.max(height_max, height)
       g.appendChild(v)
