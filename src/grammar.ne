@@ -35,7 +35,7 @@ import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
-import { DataElim, dataElim, varElim } from "./Match"
+import { DataTrie, dataTrie, varTrie } from "./Match"
 import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
 

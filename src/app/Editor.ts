@@ -1,7 +1,7 @@
 import { absurd, as, className, error, log } from "../util/Core"
 import { Cons, Nil } from "../BaseTypes"
 import { Expr, strings } from "../Expr"
-import { DataElim, Elim, VarElim } from "../Match"
+import { DataTrie, Trie, VarTrie } from "../Match"
 import { openWithImports } from "../Module"
 import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
 import "./styles.css"
@@ -65,11 +65,11 @@ class Renderer {
       return vs
    }
 
-   renderTrie (σ: Elim<Expr>): SVGElement {
-      if (VarElim.is(σ)) {
+   renderTrie (σ: Trie<Expr>): SVGElement {
+      if (VarTrie.is(σ)) {
          return Renderer.group(this.renderText(σ.x.val), this.renderText(strings.arrow), this.render(σ.κ))
       } else
-      if (DataElim.is(σ)) {
+      if (DataTrie.is(σ)) {
          return this.renderText(`<${className(σ)}>`)
       } else {
          return absurd()

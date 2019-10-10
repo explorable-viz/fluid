@@ -5,7 +5,7 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { DataType, ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap } from "./FiniteMap"
-import { Elim, DataElim, VarElim } from "./Match"
+import { Trie, DataTrie, VarTrie } from "./Match"
 import { DataValueTag, Id, Num, Str, _ } from "./Value"
 import { at } from "./Versioned"
 
@@ -114,10 +114,10 @@ export namespace Expr {
 
    export class RecDef extends SyntaxNode<"RecDef"> {
       x: Str = _
-      σ: Elim<Expr> = _
+      σ: Trie<Expr> = _
    }
  
-   export function recDef (x: Str, σ: Elim<Expr>): (k: Id) => RecDef {
+   export function recDef (x: Str, σ: Trie<Expr>): (k: Id) => RecDef {
       return at(RecDef, x, σ)
    }
 
@@ -139,19 +139,19 @@ export namespace Expr {
    }
 
    export class Fun extends Expr {
-      σ: Elim<Expr> = _
+      σ: Trie<Expr> = _
    }
 
-   export function fun (σ: Elim<Expr>): (k: Id) => Fun {
+   export function fun (σ: Trie<Expr>): (k: Id) => Fun {
       return at(Fun, σ)
    }
 
    export class MatchAs extends Expr {
       e: Expr = _
-      σ: Elim<Expr> = _
+      σ: Trie<Expr> = _
    }
 
-   export function matchAs (e: Expr, σ: Elim<Expr>): (k: Id) => MatchAs {
+   export function matchAs (e: Expr, σ: Trie<Expr>): (k: Id) => MatchAs {
       return at(MatchAs, e, σ)
    }
 
@@ -224,18 +224,18 @@ export namespace Expr {
       if (κ instanceof Expr) {
          return freeVars(κ)
       } else 
-      if (κ instanceof Elim) {
+      if (κ instanceof Trie) {
          return freeVarsTrie(κ)
       } else {
          return absurd()
       }
    }
 
-   function freeVarsTrie<K extends Cont> (σ: Elim<K>): Set<string> {
-      if (VarElim.is(σ)) {
+   function freeVarsTrie<K extends Cont> (σ: Trie<K>): Set<string> {
+      if (VarTrie.is(σ)) {
          return diff(freeVarsCont(σ.κ), new Set([σ.x.val]))
       } else
-      if (DataElim.is(σ)) {
+      if (DataTrie.is(σ)) {
          return union(...(σ.__children as K[]).map(freeVarsCont))
       } else {
          return absurd()

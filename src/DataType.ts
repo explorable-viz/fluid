@@ -2,7 +2,7 @@ import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { DataValue } from "./DataValue"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
-import { DataElim } from "./Match"
+import { DataTrie } from "./Match"
 import { Num, PrimValue, Str, _, fields } from "./Value"
 import { ν, str } from "./Versioned"
 
@@ -19,14 +19,14 @@ export class PrimType {
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: Str
-   elimC: Class<DataElim>            
+   elimC: Class<DataTrie>            
    ctrs: Map<string, Ctr>                    // fields of my constructors
    exprC̅: Map<string, Class<Expr.DataExpr>>  // "expression" class per constructor
    explC̅: Map<string, Class<Expl.DataExpl>>  // "explanation" class per constructor
 
    constructor (
       name: Str,
-      elimC: Class<DataElim>, 
+      elimC: Class<DataTrie>, 
       ctrs: Map<string, Ctr>, 
       exprC̅: Map<string, Class<Expr.DataExpr>>,
       explC̅: Map<string, Class<Expl.DataExpl>>
@@ -75,8 +75,8 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
          elimC_name: string = D.name + elimSuffix,
-         elimC: Class<DataElim> = {
-            [elimC_name]: class extends DataElim {
+         elimC: Class<DataTrie> = {
+            [elimC_name]: class extends DataTrie {
                constructor () {
                   super()
                   // lexicographical order hopefully preserved by getOwnPropertyNames()
