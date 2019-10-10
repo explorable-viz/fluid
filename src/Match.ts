@@ -12,12 +12,26 @@ import { Str, Value, _, make } from "./Value"
 import Cont = Expr.Cont
 import Trie = Expr.Trie
 
-type RuntimeCont = Expr | DataValue<"Elim">
+type RuntimeCont = Expr | DataValue<"Elim"> | DataValue<"Trie">
 
 // Conceptually (syntactic) tries map to (semantic) elim forms, and exprs map to exprs; no easy way to 
 // express this in the type system.
 export function evalTrie (σ: Trie<Expr>): Elim<Expr> {
    return evalTrie_(σ) as Elim<Expr>
+}
+
+export function constrElim<K extends Cont> (c: string, κ: K): Elim {
+   const d: DataType = __nonNull(ctrToDataType.get(c)),
+         c̅ʹ: string[] = [...d.ctrs.keys()], // sorted
+         f̅: RuntimeCont[] = []
+   for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
+      if (c === (c̅ʹ[nʹ])) {
+         f̅.push(κ)
+      } else {
+         f̅.push(undefined as any)
+      }
+   }
+   return make(d.elimC as Class<DataElim>, ...f̅)
 }
 
 function evalTrie_<K extends Cont> (σ: Trie<K>): Elim {
@@ -96,7 +110,7 @@ function matchArgs (κ: RuntimeCont, tv̅: ExplValue[], u̅: MatchPrefix): [Env,
    }
 }
 
-// No need to parameterise these two claseses over subtypes of RuntimeCont because only ever use them at RuntimeCont 
+// No need to parameterise these two classes over subtypes of RuntimeCont because only ever use them at RuntimeCont 
 // itself. Concrete instances have a field per constructor, in *lexicographical* order.
 export abstract class DataElim extends Elim {
    apply_ (tv: ExplValue, u̅: MatchPrefix): [Env, Match<RuntimeCont>] {
@@ -122,7 +136,7 @@ export abstract class DataElim extends Elim {
    }
 }
 
-class VarElim extends Elim {
+export class VarElim extends Elim {
    x: Str = _
    κ: RuntimeCont = _
 
@@ -131,7 +145,7 @@ class VarElim extends Elim {
    }
 }
 
-function varElim (x: Str, κ: RuntimeCont): VarElim {
+export function varElim (x: Str, κ: RuntimeCont): VarElim {
    return make(VarElim, x, κ) as VarElim
 }
 
