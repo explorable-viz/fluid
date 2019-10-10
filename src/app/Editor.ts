@@ -6,8 +6,8 @@ import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
 import "./styles.css"
 
 const fontSize: number = 18,
-      class_: string = "code"
-const lineHeight: number = Math.ceil(textHeight(fontSize, class_, "m")) // representative character 
+      class_: string = "code",
+      lineHeight: number = Math.ceil(textHeight(fontSize, class_, "m")) // representative character 
 
 // Post-condition: returned element has an entry in "dimensions" map. 
 function render (x: number, line: number, e: Expr): SVGElement {
@@ -53,6 +53,7 @@ const dimensions: Map<SVGElement, Dimensions> = new Map()
 
 class Editor {
    constructor () {
+      // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
          const root: SVGSVGElement = createSvg(400, 400, false),
          polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon")
