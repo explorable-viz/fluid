@@ -1,6 +1,5 @@
-import { absurd, as, className, log } from "../util/Core"
-import { Cons, List, Nil } from "../BaseTypes"
-import { DataType, ctrToDataType } from "../DataType"
+import { absurd, as, className, error, log } from "../util/Core"
+import { Cons, Nil } from "../BaseTypes"
 import { Expr } from "../Expr"
 import { openWithImports } from "../Module"
 import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
@@ -31,23 +30,11 @@ class Renderer {
          return this.renderText(e.val.toString())
       } else
       if (e instanceof Expr.DataExpr) {
-         const d: DataType = ctrToDataType.get(e.ctr)!
-         if (d.name.val === List.name) {
-            if (e.ctr === Nil.name) {
-               return this.renderText("[]")
-            } else
-            if (e.ctr === Cons.name) {
-               return Renderer.group(
-                  this.renderText("["),
-                  // use cursor interface instead?
-                  this.render(as(e.__child("head"), Expr.Expr)),
-                  this.renderText(", ..."),
-                  this.render(as(e.__child("tail"), Expr.Expr)),
-                  this.renderText("]")
-               )
-            } else {
-               return absurd()
-            }
+         if (e.ctr === Nil.name) {
+            return this.renderText("[]")
+         } else
+         if (e.ctr === Cons.name) {
+            return Renderer.group(this.renderText("["), ...this.renderElements(e), this.renderText("]"))
          } else {
             return this.renderText(`<${className(e)}>`)
          }
@@ -62,6 +49,26 @@ class Renderer {
          return Renderer.group(...this.renderHoriz(e.f, e.e))
       } else {
          return this.renderText(`<${className(e)}>`)
+      }
+   }
+
+   renderElements (e: Expr): SVGElement[] {
+      if (e instanceof Expr.DataExpr) {
+         if (e.ctr === Nil.name) {
+            return []
+         } else
+         if (e.ctr === Cons.name) {
+               return [
+                  // use cursor interface instead?
+                  this.render(as(e.__child("head"), Expr.Expr)), 
+                  this.renderText(", "),
+                  ...this.renderElements(as(e.__child("tail"), Expr.Expr))
+               ]
+         } else {
+            return error(`Found ${e.ctr}, expected list.`)
+         }
+      } else {
+         return [this.renderText(", ..."), this.render(e)]
       }
    }
 
