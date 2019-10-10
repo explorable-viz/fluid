@@ -30,10 +30,7 @@ class Renderer {
          return this.renderText(e.val.toString())
       } else
       if (e instanceof Expr.DataExpr) {
-         if (e.ctr === Nil.name) {
-            return this.renderText("[]")
-         } else
-         if (e.ctr === Cons.name) {
+         if (e.ctr === Nil.name || e.ctr === Cons.name) {
             return Renderer.group(this.renderText("["), ...this.renderElements(e), this.renderText("]"))
          } else {
             return this.renderText(`<${className(e)}>`)
@@ -58,12 +55,12 @@ class Renderer {
             return []
          } else
          if (e.ctr === Cons.name) {
-               return [
-                  // use cursor interface instead?
-                  this.render(as(e.__child("head"), Expr.Expr)), 
-                  this.renderText(", "),
-                  ...this.renderElements(as(e.__child("tail"), Expr.Expr))
-               ]
+            return [
+               // use cursor interface instead?
+               this.render(as(e.__child("head"), Expr.Expr)), 
+               this.renderText(", "),
+               ...this.renderElements(as(e.__child("tail"), Expr.Expr))
+            ]
          } else {
             return error(`Found ${e.ctr}, expected list.`)
          }
