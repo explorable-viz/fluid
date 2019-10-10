@@ -13,88 +13,94 @@ const fontSize: number = 18,
       // bizarrely, if I do this later, font metrics are borked:
       lineHeight = log(Math.ceil(textHeight(fontSize, class_, "m")) * 2) // representative character 
 
-// Post-condition: returned element has an entry in "dimensions" map. 
-function render (x: number, line: number, e: Expr): SVGElement {
-   if (e instanceof Expr.ConstNum) {
-      return renderText(x, line, e.val.toString())
-   } else
-   if (e instanceof Expr.ConstStr) {
-      return renderText(x, line, e.val.toString())
-   } else
-   if (e instanceof Expr.DataExpr) {
-      const d: DataType = ctrToDataType.get(e.ctr)!
-      if (d.name.val === List.name) {
-         if (e.ctr === Nil.name) {
-            return renderText(x, line, "[]")
-         } else
-         if (e.ctr === Cons.name) {
-            return renderText(x, line, `<${className(e)}>`)
+class Renderer {
+   x: number
+   line: number
+
+   constructor () {
+      this.x = 0
+      this.line = 0
+   }
+
+   // Post-condition: returned element has an entry in "dimensions" map. 
+   render (e: Expr): SVGElement {
+      if (e instanceof Expr.ConstNum) {
+         return this.renderText(e.val.toString())
+      } else
+      if (e instanceof Expr.ConstStr) {
+         return this.renderText(e.val.toString())
+      } else
+      if (e instanceof Expr.DataExpr) {
+         const d: DataType = ctrToDataType.get(e.ctr)!
+         if (d.name.val === List.name) {
+            if (e.ctr === Nil.name) {
+               return this.renderText("[]")
+            } else
+            if (e.ctr === Cons.name) {
+               return this.renderText(`<${className(e)}>`)
+            } else {
+               return absurd()
+            }
          } else {
-            return absurd()
+            return this.renderText(`<${className(e)}>`)
          }
+      } else
+      if (e instanceof Expr.Var) {
+         return this.renderText(e.x.val)
+      } else
+      if (e instanceof Expr.Fun) {
+         return this.renderTrie(e.σ)
+      } else
+      if (e instanceof Expr.App) {
+         return this.renderHoriz(e.f, e.e)
       } else {
-         return renderText(x, line, `<${className(e)}>`)
+         return this.renderText(`<${className(e)}>`)
       }
-   } else
-   if (e instanceof Expr.Var) {
-      return renderText(x, line, e.x.val)
-   } else
-   if (e instanceof Expr.Fun) {
-      return renderTrie(x, line, e.σ)
-   } else
-   if (e instanceof Expr.App) {
-      return renderHoriz(x, line, e.f, e.e)
-   } else {
-      return renderText(x, line, `<${className(e)}>`)
+   }
+
+   renderTrie (σ: Trie<Expr>): SVGElement {
+      if (Trie.Var.is(σ)) {
+         return this.renderText(σ.x.val)
+      } else
+      if (Trie.Constr.is(σ)) {
+         return this.renderText(`<${className(σ)}>`)
+      } else {
+         return absurd()
+      }
+   }
+
+   renderHoriz (...es: Expr[]): SVGElement {
+      const x0: number = this.x,
+            g: SVGGElement = document.createElementNS(svgNS, "g")
+      let height_max: number = 0
+      g.setAttribute("pointer-events", "bounding-box")
+      es.forEach((e: Expr, n: number): void => {
+         const v: SVGElement = this.render(e),
+               { height }: Dimensions = dimensions.get(v)!
+         height_max = Math.max(height_max, height)
+         g.appendChild(v)
+         if (n < es.length - 1) {
+            // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
+            g.appendChild(this.renderText("\u00a0"))
+         }
+      })
+      dimensions.set(g, { width: this.x - x0, height: height_max })
+      return g
+   }
+   
+   renderText (str: string): SVGTextElement {
+      const text: SVGTextElement = textElement(this.x, this.line * lineHeight, fontSize, class_, str)
+      svgMetrics!.appendChild(text)
+      const { width } = text.getBBox()
+      dimensions.set(text, { width, height: lineHeight })
+      text.remove()
+      this.x += width
+      return text
    }
 }
 
-function renderTrie (x: number, line: number, σ: Trie<Expr>): SVGElement {
-   if (Trie.Var.is(σ)) {
-      return renderText(x, line, σ.x.val)
-   } else
-   if (Trie.Constr.is(σ)) {
-      return renderText(x, line, `<${className(σ)}>`)
-   } else {
-      return absurd()
-   }
-}
-
-function renderHoriz (x: number, line: number, ...es: Expr[]): SVGElement {
-   const x0: number = x,
-         g: SVGGElement = document.createElementNS(svgNS, "g")
-   let height_max: number = 0
-   // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
-   g.setAttribute("pointer-events", "bounding-box")
-   es.forEach((e: Expr, n: number): void => {
-      const v: SVGElement = render(x, line, e),
-            { width, height }: Dimensions = dimensions.get(v)!
-      x += width
-      height_max = Math.max(height_max, height)
-      g.appendChild(v)
-      if (n < es.length - 1) {
-         // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
-         const sep: SVGTextElement = renderText(x, line, "\u00a0"),
-               { width } = dimensions.get(sep)!
-         x += width
-         g.appendChild(sep)
-      }
-   })
-   dimensions.set(g, { width: x - x0, height: height_max })
-   return g
-}
-
-function renderText (x: number, line: number, str: string): SVGTextElement {
-   const text: SVGTextElement = textElement(x, line * lineHeight, fontSize, class_, str)
-   svgMetrics!.appendChild(text)
-   dimensions.set(text, { width: text.getBBox().width, height: lineHeight })
-   text.remove()
-   return text
-}
-
+// Populate explicity, rather than using a memoised function.
 type Dimensions = { width: number, height: number }
-
-// Populate this explicity, rather than using a memoised function.
 const dimensions: Map<SVGElement, Dimensions> = new Map()
 
 class Editor {
@@ -104,7 +110,7 @@ class Editor {
          const root: SVGSVGElement = createSvg(400, 400, false)
          document.body.appendChild(root)
          const e: Expr = as(openWithImports("foldr_sumSquares"), Expr.Defs).e
-         root.appendChild(render(0, 0, e))
+         root.appendChild(new Renderer().render(e))
       }
    }
 }
