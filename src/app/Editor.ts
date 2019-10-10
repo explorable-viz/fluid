@@ -52,7 +52,7 @@ class Renderer {
          return this.renderTrie(e.σ)
       } else
       if (e instanceof Expr.App) {
-         return this.renderHoriz(e.f, e.e)
+         return Renderer.group(this.renderHoriz(e.f, e.e))
       } else {
          return this.renderText(`<${className(e)}>`)
       }
@@ -69,22 +69,30 @@ class Renderer {
       }
    }
 
-   renderHoriz (...es: Expr[]): SVGElement {
-      const x0: number = this.x,
-            g: SVGGElement = document.createElementNS(svgNS, "g")
-      let height_max: number = 0
-      g.setAttribute("pointer-events", "bounding-box")
+   renderHoriz (...es: Expr[]): SVGElement[] {
+      const vs: SVGElement[] = []
       es.forEach((e: Expr, n: number): void => {
-         const v: SVGElement = this.render(e),
-               { height }: Dimensions = dimensions.get(v)!
-         height_max = Math.max(height_max, height)
-         g.appendChild(v)
+         vs.push(this.render(e))
          if (n < es.length - 1) {
             // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
-            g.appendChild(this.renderText("\u00a0"))
+            vs.push(this.renderText("\u00a0"))
          }
       })
-      dimensions.set(g, { width: this.x - x0, height: height_max })
+      return vs
+   }
+
+   static group (vs: SVGElement[]): SVGElement {
+      const g: SVGGElement = document.createElementNS(svgNS, "g")
+      let width_sum: number = 0,
+          height_max: number = 0
+      g.setAttribute("pointer-events", "bounding-box")
+      vs.forEach((v: SVGElement): void => {
+         const { width, height }: Dimensions = dimensions.get(v)!
+         width_sum += width
+         height_max = Math.max(height_max, height)
+         g.appendChild(v)
+      })
+      dimensions.set(g, { width: width_sum, height: height_max })
       return g
    }
    
