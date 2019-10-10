@@ -1,5 +1,5 @@
 import { absurd, as, className, log } from "../util/Core"
-import { List } from "../BaseTypes"
+import { Cons, List, Nil } from "../BaseTypes"
 import { DataType, ctrToDataType } from "../DataType"
 import { Expr } from "../Expr"
 import { openWithImports } from "../Module"
@@ -24,9 +24,17 @@ function render (x: number, line: number, e: Expr): SVGElement {
    if (e instanceof Expr.DataExpr) {
       const d: DataType = ctrToDataType.get(e.ctr)!
       if (d.name.val === List.name) {
-         
+         if (e.ctr === Nil.name) {
+            return renderText(x, line, "[]")
+         } else
+         if (e.ctr === Cons.name) {
+            return renderText(x, line, `<${className(e)}>`)
+         } else {
+            return absurd()
+         }
+      } else {
+         return renderText(x, line, `<${className(e)}>`)
       }
-      return renderText(x, line, `<${className(e)}>`)
    } else
    if (e instanceof Expr.Var) {
       return renderText(x, line, e.x.val)
