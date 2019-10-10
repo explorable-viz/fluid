@@ -3,7 +3,7 @@ import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
 import { eq } from "./util/Ord"
 import { Annotation, ann } from "./util/Lattice"
 import { setjoinα } from "./Annotated"
-import { List, Pair, cons, nil } from "./BaseTypes"
+import { List, cons, nil } from "./BaseTypes"
 import { DataValue, ExplValue } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
@@ -13,13 +13,6 @@ import { Str, Value, _, fields, make } from "./Value"
 import { ν } from "./Versioned"
 
 import Cont = Expr.Cont
-import Trie = Expr.Trie
-
-// Conceptually (syntactic) tries map to (semantic) elim forms, and exprs map to exprs; no easy way to 
-// express this in the type system.
-export function evalTrie (σ: Trie<Expr>): Elim<Expr> {
-   return evalTrie_(σ) as Elim<Expr>
-}
 
 // cκ̅ non-empty and constructors all of the same datatype.
 export function constrElim<K extends Cont> (...cκ̅: [string, K][]): Elim<K> {
@@ -40,8 +33,8 @@ export function constrElim<K extends Cont> (...cκ̅: [string, K][]): Elim<K> {
 
 // Unrelated to the annotation lattice. Expr case intentionally only defined for higher-order (function) case.
 function join<K extends Cont> (κ: K, κʹ: K): K {
-   if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
-      return Trie.Trie.join<K>(κ, κʹ) as K
+   if (κ instanceof Elim && κʹ instanceof Elim) {
+      return elimJoin<K>(κ, κʹ) as Cont as K
    } else
    if (κ instanceof Expr.Fun && κʹ instanceof Expr.Fun) {
       return Expr.fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K
@@ -73,43 +66,6 @@ export function elimJoin<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
       return constrElim(...cκ̅)
    } else {
       return absurd("Undefined join.", σ, τ)
-   }
-}
-
-function evalTrie_<K extends Cont> (σ: Trie<K>): Elim {
-   if (Trie.Var.is(σ)) {
-      return varElim(σ.x, evalCont(σ.κ))
-   } else
-   if (Trie.Constr.is(σ)) {
-      const cases: Pair<Str, K>[] = σ.cases.toArray(),
-            c̅: string[] = cases.map(({ fst: c }) => c.val),
-            d: DataType = __nonNull(ctrToDataType.get(c̅[0])),
-            c̅ʹ: string[] = [...d.ctrs.keys()], // also sorted
-            f̅: Cont[] = []
-      let n: number = 0
-      for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
-         if (c̅.includes(c̅ʹ[nʹ])) {
-            f̅.push(evalCont(cases[n++].snd))
-         } else {
-            f̅.push(undefined as any)
-         }
-      }
-      assert(n === cases.length)
-      return make(d.elimC as Class<DataElim<K>>, ...f̅)
-   } else {
-      return absurd()
-   }
-}
-
-function evalCont<K extends Cont> (κ: K): Cont {
-   if (κ instanceof Trie.Trie) {
-      const σ: Trie<K> = κ
-      return evalTrie(σ) as any // hack for now; delete soon
-   } else
-   if (κ instanceof Expr.Expr) {
-      return κ
-   } else {
-      return absurd()
    }
 }
 
