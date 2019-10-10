@@ -1,5 +1,6 @@
-import "../../src/BaseTypes" // otherwise mysterious cyclic initialisation error
 import { absurd, as, className, log } from "../util/Core"
+import { List } from "../BaseTypes"
+import { DataType, ctrToDataType } from "../DataType"
 import { Expr } from "../Expr"
 import { openWithImports } from "../Module"
 import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
@@ -14,6 +15,19 @@ const fontSize: number = 18,
 
 // Post-condition: returned element has an entry in "dimensions" map. 
 function render (x: number, line: number, e: Expr): SVGElement {
+   if (e instanceof Expr.ConstNum) {
+      return renderText(x, line, e.val.toString())
+   } else
+   if (e instanceof Expr.ConstStr) {
+      return renderText(x, line, e.val.toString())
+   } else
+   if (e instanceof Expr.DataExpr) {
+      const d: DataType = ctrToDataType.get(e.ctr)!
+      if (d.name.val === List.name) {
+         
+      }
+      return renderText(x, line, `<${className(e)}>`)
+   } else
    if (e instanceof Expr.Var) {
       return renderText(x, line, e.x.val)
    } else
@@ -79,12 +93,7 @@ class Editor {
    constructor () {
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
-         const root: SVGSVGElement = createSvg(400, 400, false),
-         polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon")
-         polygon.setAttribute("points", "0, 0 0, 100 100, 0, 100, 100")
-         polygon.setAttribute("stroke", "black")
-         polygon.setAttribute("fill", "gray")
-         root.appendChild(polygon)
+         const root: SVGSVGElement = createSvg(400, 400, false)
          document.body.appendChild(root)
          const e: Expr = as(openWithImports("foldr_sumSquares"), Expr.Defs).e
          root.appendChild(render(0, 0, e))

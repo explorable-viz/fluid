@@ -86,9 +86,9 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                }
             }
          }[elimC_name],
-         exprC_name: string = D.name + exprSuffix,
-         exprC̅: [string, Class<Expr.DataExpr>][] = ctrs.map(([cʹ, c]: [string, Ctr]) => {
-            return [cʹ, {
+         exprC̅: [string, Class<Expr.DataExpr>][] = ctrs.map(([c_str, c]: [string, Ctr]) => {
+            const exprC_name: string = c_str + exprSuffix
+            return [c_str, {
                [exprC_name]: class extends Expr.DataExpr {
                   constructor () {
                      super()
@@ -98,14 +98,14 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                   }
 
                   get ctr (): string {
-                     return cʹ
+                     return c_str
                   }
                }
             }[exprC_name]]
          }),
-         explC_name: string = D.name + explSuffix,
-         explC̅: [string, Class<Expl.DataExpl>][] = ctrs.map(([cʹ, c]: [string, Ctr]) => {
-            return [cʹ, {
+         explC̅: [string, Class<Expl.DataExpl>][] = ctrs.map(([c_str, c]: [string, Ctr]) => {
+            const explC_name: string = c_str + explSuffix
+            return [c_str, {
                [explC_name]: class extends Expl.DataExpl {
                   constructor () {
                      super()
@@ -115,7 +115,7 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                   }
 
                   get ctr (): string {
-                     return cʹ
+                     return c_str
                   }
                }
             }[explC_name]]
