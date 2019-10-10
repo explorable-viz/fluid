@@ -49,6 +49,6 @@ export let svgMetrics: SVGSVGElement
    svgMetrics = document.createElementNS(svgNS, "svg")
    svgMetrics.setAttribute("width", "0")
    svgMetrics.setAttribute("height", "0")
-//   svgMetrics.style.visibility = "hidden"
+   svgMetrics.style.visibility = "hidden"
    document.body.appendChild(svgMetrics)
 }
