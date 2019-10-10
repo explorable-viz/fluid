@@ -35,7 +35,7 @@ import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
-import { constrElim, elimJoin, varElim } from "./Match"
+import { dataElim, elimJoin, varElim } from "./Match"
 import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
 
@@ -266,7 +266,7 @@ variable_pattern ->
 
 pair_pattern ->
    lexeme["("] pattern lexeme[","] pattern lexeme[")"]
-   {% ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => constrElim([Pair.name, compose(mk_κ1, mk_κ2)(κ)]) %}
+   {% ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => dataElim([Pair.name, compose(mk_κ1, mk_κ2)(κ)]) %}
 
 list_pattern -> 
    lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
@@ -274,17 +274,17 @@ list_pattern ->
 
 listOpt_pattern -> 
    null
-   {% () => (κ: Cont) => constrElim([Nil.name, κ]) %} | 
+   {% () => (κ: Cont) => dataElim([Nil.name, κ]) %} | 
    list1_pattern
    {% id %}
 
 list1_pattern ->
    pattern listRestOpt_pattern
-   {% ([mk_κ1, mk_κ2]) => (κ: Cont) => constrElim([Cons.name, compose(mk_κ1, mk_κ2)(κ)]) %}
+   {% ([mk_κ1, mk_κ2]) => (κ: Cont) => dataElim([Cons.name, compose(mk_κ1, mk_κ2)(κ)]) %}
 
 listRestOpt_pattern ->
    null 
-   {% () => (κ: Cont) => constrElim([Nil.name, κ]) %} |
+   {% () => (κ: Cont) => dataElim([Nil.name, κ]) %} |
    lexeme[","] lexeme["..."] pattern
    {% ([, , mk_κ]) => mk_κ %} |
    lexeme[","] list1_pattern
@@ -297,7 +297,7 @@ constr_pattern ->
       if (arity(c) !== mk_κs.length) {
          return reject
       }
-      return (κ: Cont) => constrElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])
+      return (κ: Cont) => dataElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])
    } %}
 
 args_pattern ->

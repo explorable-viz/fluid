@@ -14,23 +14,6 @@ import { ν } from "./Versioned"
 
 import Cont = Expr.Cont
 
-// cκ̅ non-empty and constructors all of the same datatype.
-export function constrElim<K extends Cont> (...cκ̅: [string, K][]): Elim<K> {
-   const d: DataType = __nonNull(ctrToDataType.get(cκ̅[0][0])),
-         c̅: string[] = cκ̅.map((([c, _]) => c)),
-         c̅ʹ: string[] = [...d.ctrs.keys()], // sorted
-         f̅: Cont[] = []
-   let n: number = 0
-   for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
-      if (c̅.includes(c̅ʹ[nʹ])) {
-         f̅.push(cκ̅[n++][1])
-      } else {
-         f̅.push(undefined as any)
-      }
-   }
-   return make(d.elimC as Class<DataElim<K>>, ...f̅)
-}
-
 // Unrelated to the annotation lattice. Expr case intentionally only defined for higher-order (function) case.
 function join<K extends Cont> (κ: K, κʹ: K): K {
    if (κ instanceof Elim && κʹ instanceof Elim) {
@@ -63,7 +46,7 @@ export function elimJoin<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
          return [c1, κ1 === undefined ? κ2 : (κ2 === undefined ? κ1 : join(κ1, κ2))]
       }
       )(cκ̅1, cκ̅2)
-      return constrElim(...cκ̅)
+      return dataElim(...cκ̅)
    } else {
       return absurd("Undefined join.", σ, τ)
    }
@@ -135,6 +118,23 @@ export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
          return error(`Pattern mismatch: ${c} is not a datatype.`, v, this)
       }
    }
+}
+
+// cκ̅ non-empty and constructors all of the same datatype.
+export function dataElim<K extends Cont> (...cκ̅: [string, K][]): Elim<K> {
+   const d: DataType = __nonNull(ctrToDataType.get(cκ̅[0][0])),
+         c̅: string[] = cκ̅.map((([c, _]) => c)),
+         c̅ʹ: string[] = [...d.ctrs.keys()], // sorted
+         f̅: Cont[] = []
+   let n: number = 0
+   for (let nʹ: number = 0; nʹ < c̅ʹ.length; ++nʹ) {
+      if (c̅.includes(c̅ʹ[nʹ])) {
+         f̅.push(cκ̅[n++][1])
+      } else {
+         f̅.push(undefined as any)
+      }
+   }
+   return make(d.elimC as Class<DataElim<K>>, ...f̅)
 }
 
 export class VarElim<K extends Cont> extends Elim<K> {
