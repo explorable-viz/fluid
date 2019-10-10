@@ -1,15 +1,13 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { BwdSlice, FwdSlice } from "./util/Core"
-import { Cons, List, Nil, NonEmpty, Pair, Some } from "../src/BaseTypes"
+import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
 import { bindDataset, module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
-
-import Trie = Expr.Trie
 
 before((done: MochaDone) => {
    done()
@@ -125,14 +123,11 @@ describe("slice", () => {
                   .to(Expr.RecDef, "σ")
                   .var_("p")
                   .to(Expr.Fun, "σ")
-                  .to(Trie.Constr, "cases")
-                  .to(NonEmpty, "left") // Cons
-                  .treeNodeValue()
+                  .toCase(Cons)
                   .var_("x").var_("xs")
                   .to(Expr.Defs, "e")
                   .to(Expr.MatchAs, "σ")
-                  .to(Trie.Constr, "cases")
-                  .treeNodeValue()
+                  .toCase(True)
                   .constr_to(Cons, "head").clearα()
             }
             expect (here: ExplValueCursor): void {
@@ -343,16 +338,12 @@ describe("slice", () => {
                   .to(Expr.RecDef, "σ")
                   .var_("op")
                   .to(Expr.Fun, "σ")
-                  .to(Trie.Constr, "cases")
-               hereʹ.treeNodeValue().αclear() // body of outer Nil clause
+               hereʹ.toCase(Nil).αclear() // body of outer Nil clause
                hereʹ = hereʹ
-                  .to(NonEmpty, "left")
-                  .treeNodeValue()          
+                  .toCase(Cons)
                   .var_("x").var_("xs").αclear()
                   .to(Expr.Fun, "σ")
-                  .to(Trie.Constr, "cases")
-                  .to(NonEmpty, "left")
-                  .treeNodeValue()          
+                  .toCase(Cons)
                   .var_("y").var_("ys").αclear() // cons constructor
                   .constr_to(Cons, "head").αset() // application of op
                   .to(Expr.App, "e").αset()  // pair constructor
@@ -364,8 +355,7 @@ describe("slice", () => {
                   .to(Expr.App, "f")
                   .to(Expr.App, "e")
                   .to(Expr.Fun, "σ")
-                  .to(Trie.Constr, "cases")
-                  .treeNodeValue()
+                  .toCase(Pair)
                   .var_("x").var_("y").αset()
             }
          })(e)

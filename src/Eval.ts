@@ -9,7 +9,7 @@ import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
-import { Elim, Match, evalTrie, apply_bwd, apply_fwd } from "./Match"
+import { Elim, Match, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId } from "./Value"
 import { at, num, str } from "./Versioned"
@@ -46,7 +46,7 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
       const def: RecDef = δ.head,
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
             k: MemoId = memoId(recDefs, arguments),
-            tf: ExplValue<Closure> = explValue(Expl.const_()(k.tag("t")), closure(ρ, δ_0, evalTrie(def.σ))(k.tag("v")))
+            tf: ExplValue<Closure> = explValue(Expl.const_()(k.tag("t")), closure(ρ, δ_0, def.σ)(k.tag("v")))
       return [cons(Expl.recDef(def.x, tf)(k), δₜ), extendEnv(ρ_ext, def.x, tf)]
    } else
    if (Nil.is(δ)) {
@@ -152,7 +152,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.const_()(kₜ), str(e.val.val)(kᵥ))
    } else
    if (e instanceof Expr.Fun) {
-      return explValue(Expl.const_()(kₜ), closure(ρ, nil(), evalTrie(e.σ))(kᵥ))
+      return explValue(Expl.const_()(kₜ), closure(ρ, nil(), e.σ)(kᵥ))
    } else
    if (e instanceof Expr.DataExpr) {
       const tv̅: ExplValue[] = e.__children.map((e: Expr) => eval_(ρ, e))
@@ -210,7 +210,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.MatchAs) {
       const tu: ExplValue = eval_(ρ, e.e),
-            [ρʹ, ξκ]: [Env, Match<Expr>] = evalTrie(e.σ).apply(tu),
+            [ρʹ, ξκ]: [Env, Match<Expr>] = e.σ.apply(tu),
             {t, v}: ExplValue = eval_(ρ.concat(ρʹ), ξκ.κ)
       return explValue(Expl.matchAs(tu, ξκ, t)(kₜ), v)
    } else

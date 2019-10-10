@@ -1,11 +1,10 @@
 import { absurd, as, className, error, log } from "../util/Core"
 import { Cons, Nil } from "../BaseTypes"
 import { Expr, strings } from "../Expr"
+import { DataElim, Elim, VarElim } from "../Match"
 import { openWithImports } from "../Module"
 import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
 import "./styles.css"
-
-import Trie = Expr.Trie
 
 const fontSize: number = 18,
       class_: string = "code",
@@ -42,7 +41,7 @@ class Renderer {
          return this.renderText(e.x.val)
       } else
       if (e instanceof Expr.Fun) {
-         return this.renderTrie(e.σ)
+         return this.renderElim(e.σ)
       } else
       if (e instanceof Expr.App) {
          return Renderer.group(...this.renderHoriz(e.f, e.e))
@@ -66,11 +65,11 @@ class Renderer {
       return vs
    }
 
-   renderTrie (σ: Trie<Expr>): SVGElement {
-      if (Trie.Var.is(σ)) {
+   renderElim (σ: Elim<Expr>): SVGElement {
+      if (VarElim.is(σ)) {
          return Renderer.group(this.renderText(σ.x.val), this.renderText(strings.arrow), this.render(σ.κ))
       } else
-      if (Trie.Constr.is(σ)) {
+      if (DataElim.is(σ)) {
          return this.renderText(`<${className(σ)}>`)
       } else {
          return absurd()

@@ -1,13 +1,13 @@
-import { __nonNull, abstractMethodError, absurd, error } from "./util/Core"
+import { __nonNull, abstractMethodError, absurd } from "./util/Core"
 import { diff, union } from "./util/Set"
-import { eq } from "./util/Ord"
 import { AnnotatedC } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
 import { DataType, ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
-import { FiniteMap, unionWith } from "./FiniteMap"
-import { DataValueTag, Id, Num, Str, _, make } from "./Value"
-import { ν, at } from "./Versioned"
+import { FiniteMap } from "./FiniteMap"
+import { Elim, DataElim, VarElim } from "./Match"
+import { DataValueTag, Id, Num, Str, _ } from "./Value"
+import { at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -33,19 +33,7 @@ export type Cont = Expr.Cont
 
 export namespace Expr {
    // Use to be a parameterised class but we can simplify using our nominal type idiom.
-   export type Cont = Expr | DataValue<"Trie">
-
-   // Unrelated to the annotation lattice. Expr case intentionally only defined for higher-order (function) case.
-   function join<K extends Cont> (κ: K, κʹ: K): K {
-      if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
-         return Trie.Trie.join<K>(κ, κʹ) as K
-      } else
-      if (κ instanceof Fun && κʹ instanceof Fun) {
-         return fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K
-      } else {
-         return absurd("Undefined join.", κ, κʹ)
-      }
-   }
+   export type Cont = Expr | DataValue<"Elim">
 
    export abstract class SyntaxNode<Tag extends DataValueTag = DataValueTag> extends AnnotatedC(DataValue)<Tag> {
    }
@@ -126,10 +114,10 @@ export namespace Expr {
 
    export class RecDef extends SyntaxNode<"RecDef"> {
       x: Str = _
-      σ: Trie<Expr> = _
+      σ: Elim<Expr> = _
    }
  
-   export function recDef (x: Str, σ: Trie<Expr>): (k: Id) => RecDef {
+   export function recDef (x: Str, σ: Elim<Expr>): (k: Id) => RecDef {
       return at(RecDef, x, σ)
    }
 
@@ -151,19 +139,19 @@ export namespace Expr {
    }
 
    export class Fun extends Expr {
-      σ: Trie<Expr> = _
+      σ: Elim<Expr> = _
    }
 
-   export function fun (σ: Trie<Expr>): (k: Id) => Fun {
+   export function fun (σ: Elim<Expr>): (k: Id) => Fun {
       return at(Fun, σ)
    }
 
    export class MatchAs extends Expr {
       e: Expr = _
-      σ: Trie<Expr> = _
+      σ: Elim<Expr> = _
    }
 
-   export function matchAs (e: Expr, σ: Trie<Expr>): (k: Id) => MatchAs {
+   export function matchAs (e: Expr, σ: Elim<Expr>): (k: Id) => MatchAs {
       return at(MatchAs, e, σ)
    }
 
@@ -192,56 +180,6 @@ export namespace Expr {
       return at(Var, x)
    }
 
-   export type Trie<K extends Cont> = Trie.Trie<K>
-
-   export namespace Trie {
-      export abstract class Trie<K extends Cont> extends DataValue<"Trie"> {
-         static join<K extends Cont> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
-            if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-               return var_(σ.x, join(σ.κ, τ.κ))
-            } else
-            if (Constr.is(σ) && Constr.is(τ)) {
-               // Both maps (which are non-empty) can (inductively) be assumed to have keys taken from the 
-               // same datatype. Ensure that invariant is preserved:
-               const c_σ: string = σ.cases.toArray()[0].fst.val,
-                     c_τ: string = τ.cases.toArray()[0].fst.val
-               if (ctrToDataType.get(c_σ) !== ctrToDataType.get(c_τ)) {
-                  error(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
-               }
-               return constr(unionWith<K, FiniteMap<K>>(σ.cases, τ.cases, join))
-            } else {
-               return absurd("Undefined join.", σ, τ)
-            }
-         }
-      }
-
-      export class Constr<K extends Cont> extends Trie<K> {
-         cases: FiniteMap<K> = _
-
-         static is<K extends Cont> (σ: Trie<K>): σ is Constr<K> {
-            return σ instanceof Constr
-         }
-      }
-
-      export function constr<K extends Cont> (cases: FiniteMap<K>): Constr<K> {
-         return make(Constr, cases) as Constr<K>
-      }
-
-      // TODO: use annotations on x.
-      export class Var<K extends Cont> extends Trie<K> {
-         x: Str = _
-         κ: K = _
-
-         static is<K extends Cont> (σ: Trie<K>): σ is Var<K> {
-            return σ instanceof Var
-         }
-      }
-
-      export function var_<K extends Cont> (x: Str, κ: K): Var<K> {
-         return make(Var, x, κ) as Var<K>
-      }
-   }
-
    // used by Wrattler
    export function freeVars (e: Expr): Set<string> {
       if (e instanceof ConstNum) {
@@ -251,7 +189,7 @@ export namespace Expr {
          return new Set()
       } else
       if (e instanceof Fun) {
-         return freeVarsTrie(e.σ)
+         return freeVarsElim(e.σ)
       } else
       if (e instanceof DataExpr) {
          return union(...e.__children.map(freeVars))
@@ -273,7 +211,7 @@ export namespace Expr {
          return union(diff(freeVars(e.e), bound), free)
       } else
       if (e instanceof MatchAs) {
-         return union(freeVars(e.e), freeVarsTrie(e.σ))
+         return union(freeVars(e.e), freeVarsElim(e.σ))
       } else
       if (e instanceof Typematch) {
          return union(freeVars(e.e), ...e.cases.toArray().map(({ snd }) => freeVars(snd)))
@@ -286,19 +224,19 @@ export namespace Expr {
       if (κ instanceof Expr) {
          return freeVars(κ)
       } else 
-      if (κ instanceof Trie.Trie) {
-         return freeVarsTrie(κ)
+      if (κ instanceof Elim) {
+         return freeVarsElim(κ)
       } else {
          return absurd()
       }
    }
 
-   function freeVarsTrie<K extends Cont> (σ: Trie.Trie<K>): Set<string> {
-      if (Trie.Var.is(σ)) {
+   function freeVarsElim<K extends Cont> (σ: Elim<K>): Set<string> {
+      if (VarElim.is(σ)) {
          return diff(freeVarsCont(σ.κ), new Set([σ.x.val]))
       } else
-      if (Trie.Constr.is(σ)) {
-         return union(...σ.cases.toArray().map(({ snd }) => freeVarsCont(snd)))
+      if (DataElim.is(σ)) {
+         return union(...(σ.__children as K[]).map(freeVarsCont))
       } else {
          return absurd()
       }
@@ -322,7 +260,7 @@ export namespace Expr {
             const f̅: RecDef[] = def.δ.toArray(),
                   x̅: Set<string> = new Set(f̅.map(f => f.x.val)),
                   [boundʹ, free] = freeVarsDefs(def̅.tail, union(bound, x̅))
-            return [boundʹ, diff(union(free, ...f̅.map(f => freeVarsTrie(f.σ))), x̅)]
+            return [boundʹ, diff(union(free, ...f̅.map(f => freeVarsElim(f.σ))), x̅)]
          } else {
             return absurd()
          }

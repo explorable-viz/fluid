@@ -2,14 +2,13 @@
 
 import { Edit } from "./util/Core"
 import { as } from "../src/util/Core"
-import { Cons, Pair, NonEmpty } from "../src/BaseTypes"
+import { Cons, Pair } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
+import { VarElim } from "../src/Match"
 import { open } from "../src/Module"
 import { Persistent } from "../src/Value"
 import { ν, num, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
-
-import Trie = Expr.Trie
 
 before((done: MochaDone) => {
    done()
@@ -50,7 +49,7 @@ describe("edit", () => {
                    .to(Expr.App, "f")
                    .to(Expr.App, "e")
                    .to(Expr.Fun, "σ")
-                   .to(Trie.Var, "κ")
+                   .to(VarElim, "κ")
                    .to(Expr.BinaryApp, "e1")
                    .to(Expr.ConstNum, "val")
                    .setNum(3)
@@ -79,8 +78,7 @@ describe("edit", () => {
                    .to(Expr.App, "f")
                    .to(Expr.App, "e")
                    .to(Expr.Fun, "σ")
-                   .to(Trie.Constr, "cases")
-                   .treeNodeValue()
+                   .toCase(Pair)
                    .var_("x")
                    .var_("y") // body of clause 
                here.to(Expr.BinaryApp, "opName")
@@ -116,9 +114,7 @@ describe("edit", () => {
                here.skipImports()
                    .toDef("f")
                    .to(Expr.RecDef, "σ")
-                   .to(Trie.Constr, "cases")
-                   .to(NonEmpty, "left") // Cons
-                   .treeNodeValue()
+                   .toCase(Cons)
                    .var_("x").var_("xs")
                    .constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
                       const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
