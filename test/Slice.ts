@@ -9,8 +9,6 @@ import { bindDataset, module_graphics, open, openDatasetAs, openWithImports } fr
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
 
-import Trie = Expr.Trie
-
 before((done: MochaDone) => {
    done()
 })
@@ -340,16 +338,12 @@ describe("slice", () => {
                   .to(Expr.RecDef, "σ")
                   .var_("op")
                   .to(Expr.Fun, "σ")
-                  .to(Trie.Constr, "cases")
-               hereʹ.treeNodeValue().αclear() // body of outer Nil clause
+               hereʹ.toCase(Nil).αclear() // body of outer Nil clause
                hereʹ = hereʹ
-                  .to(NonEmpty, "left")
-                  .treeNodeValue()          
+                  .toCase(Cons)
                   .var_("x").var_("xs").αclear()
                   .to(Expr.Fun, "σ")
-                  .to(Trie.Constr, "cases")
-                  .to(NonEmpty, "left")
-                  .treeNodeValue()          
+                  .toCase(Cons)
                   .var_("y").var_("ys").αclear() // cons constructor
                   .constr_to(Cons, "head").αset() // application of op
                   .to(Expr.App, "e").αset()  // pair constructor
@@ -361,8 +355,7 @@ describe("slice", () => {
                   .to(Expr.App, "f")
                   .to(Expr.App, "e")
                   .to(Expr.Fun, "σ")
-                  .to(Trie.Constr, "cases")
-                  .treeNodeValue()
+                  .toCase(Pair)
                   .var_("x").var_("y").αset()
             }
          })(e)
