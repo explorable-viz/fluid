@@ -9,7 +9,8 @@ import { Expr } from "../Expr"
 import  { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
 import { clearMemo } from "../Value"
-import { GraphicsRenderer, Slicer, ViewCoordinator, svgNS } from "./GraphicsRenderer"
+import { createSvg } from "./Core"
+import { GraphicsRenderer, Slicer, ViewCoordinator } from "./GraphicsRenderer"
 
 // As with the test cases, we treat the dataset ρ as "external" data, meaning we push slicing
 // information back only as far as ρ.
@@ -80,14 +81,14 @@ class App {
       this.graphicsView = new View(
          "graphicsView", 
          ρ,
-         openWithImports("bar-chart", [module_graphics]), 
-         this.createSvg(400, 400, false)
+         openWithImports("bar-chart", module_graphics), 
+         createSvg(400, 400, false)
       )
       this.dataView = new View(
          "dataView", 
          ρ,
-         parseWithImports("renderData data", [module_graphics, module_renderData]), 
-         this.createSvg(400, 1200, false)
+         parseWithImports("renderData data", module_graphics, module_renderData), 
+         createSvg(400, 1200, false)
       )
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {
@@ -121,21 +122,6 @@ class App {
       }
       document.body.appendChild(this.dataView.svg)
       document.body.appendChild(this.graphicsView.svg)
-   }
-
-   createSvg (w: number, h: number, stackDown: boolean): SVGSVGElement {
-      const svg: SVGSVGElement = document.createElementNS(svgNS, "svg")
-      svg.setAttribute("width", w.toString())
-      svg.setAttribute("height", h.toString())
-      // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
-      svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
-      svg.setAttribute("viewBox", `-0.5 ${(stackDown ? -0.5 - h : -0.5).toString()} ${w.toString()} ${h.toString()}`)
-      // Don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
-      // pixel attributes). But to invert y-axis use an SVG transform:
-      svg.setAttribute("transform", "scale(1,-1)")
-      svg.style.verticalAlign = "top"
-      svg.style.display = "inline-block"
-      return svg
    }
 }
 

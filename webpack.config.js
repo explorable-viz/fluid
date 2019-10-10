@@ -4,7 +4,7 @@ var path = require('path');
 // Specify two configs; first one (app) picked up automatically by webpack-dev-server. Second is lib.
 module.exports = [{
    entry: {
-      main: "./src/app/App.ts"
+      main: "./src/app/Editor.ts"
    },
    output: {
       filename: "[name].bundle.js"
@@ -17,13 +17,23 @@ module.exports = [{
       rules: [
          // all files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'
          {
-             test: /\.ts$/,
-             loader: "ts-loader"
+            test: /\.ts$/,
+            loader: "ts-loader"
          },
          // css files; import css files in .ts using 'import' or 'require'
          {
-             test: /\.css$/,
-             loaders: ["style-loader", "css-loader"]
+            test: /\.css$/,
+            loaders: ["style-loader", "css-loader"]
+         },
+         // woff files; base64 encode
+         {
+            test: /\.woff$/, 
+            use: {
+               loader: "url-loader",
+               options: {
+                 limit: 100000,
+               },
+            }
          }
       ]
    },
