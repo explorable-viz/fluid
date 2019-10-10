@@ -40,7 +40,6 @@ import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
 
 import Cont = Expr.Cont
-import Trie = Expr.Trie
 
 // Constructors must start with an uppercase letter, a la Haskell. Will fix this as part of issue #49.
 function isCtr (str: string): boolean {

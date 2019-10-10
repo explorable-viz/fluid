@@ -1,4 +1,4 @@
-import { zip } from "./util/Array"
+import { zip, zipWith } from "./util/Array"
 import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
 import { eq } from "./util/Ord"
 import { Annotation, ann } from "./util/Lattice"
@@ -50,10 +50,6 @@ function join<K extends Cont> (κ: K, κʹ: K): K {
    }
 }
 
-function unionWith<V> (x̅: [string, V][], y̅: [string, V][], f: (v1: V, v2: V) => V): [string, V][] {
-   throw new Error()
-}
-
 export function elimJoin<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
    if (VarElim.is(σ) && VarElim.is(τ) && eq(σ.x, τ.x)) {
       return varElim(σ.x, join(σ.κ, τ.κ))
@@ -66,7 +62,14 @@ export function elimJoin<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
       if (ctrToDataType.get(c_σ) !== ctrToDataType.get(c_τ)) {
          error(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
       }
-      const cκ̅: [string, K][] = unionWith(zip(fields(σ), σ.__children as K[]), zip(fields(τ), τ.__children as K[]), join)
+      const cκ̅1: [string, K][] = zip(fields(σ), σ.__children as K[]),
+            cκ̅2: [string, K][] = zip(fields(τ), τ.__children as K[])
+      assert(cκ̅1.length === cκ̅2.length)
+      const cκ̅: [string, K][] = zipWith(([c1, κ1]: [string, K], [c2, κ2]: [string, K]): [string, K] => {
+         assert(c1 === c2)
+         return [c1, join(κ1, κ2)]
+      }
+      )(cκ̅1, cκ̅2)
       return constrElim(...cκ̅)
    } else {
       return absurd("Undefined join.", σ, τ)
