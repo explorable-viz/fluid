@@ -1,14 +1,13 @@
-import { __nonNull, abstractMethodError, absurd, error } from "./util/Core"
+import { __nonNull, abstractMethodError, absurd } from "./util/Core"
 import { diff, union } from "./util/Set"
-import { eq } from "./util/Ord"
 import { AnnotatedC } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
 import { DataType, ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
-import { FiniteMap, unionWith } from "./FiniteMap"
+import { FiniteMap } from "./FiniteMap"
 import { Elim, DataElim, VarElim } from "./Match"
-import { DataValueTag, Id, Num, Str, _, make } from "./Value"
-import { ν, at } from "./Versioned"
+import { DataValueTag, Id, Num, Str, _ } from "./Value"
+import { at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
 export namespace strings {
@@ -34,19 +33,7 @@ export type Cont = Expr.Cont
 
 export namespace Expr {
    // Use to be a parameterised class but we can simplify using our nominal type idiom.
-   export type Cont = Expr | DataValue<"Elim"> | DataValue<"Trie">
-
-   // Unrelated to the annotation lattice. Expr case intentionally only defined for higher-order (function) case.
-   function join<K extends Cont> (κ: K, κʹ: K): K {
-      if (κ instanceof Trie.Trie && κʹ instanceof Trie.Trie) {
-         return Trie.Trie.join<K>(κ, κʹ) as K
-      } else
-      if (κ instanceof Fun && κʹ instanceof Fun) {
-         return fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K
-      } else {
-         return absurd("Undefined join.", κ, κʹ)
-      }
-   }
+   export type Cont = Expr | DataValue<"Elim">
 
    export abstract class SyntaxNode<Tag extends DataValueTag = DataValueTag> extends AnnotatedC(DataValue)<Tag> {
    }
@@ -191,56 +178,6 @@ export namespace Expr {
 
    export function var_ (x: Str): (k: Id) => Var {
       return at(Var, x)
-   }
-
-   export type Trie<K extends Cont> = Trie.Trie<K>
-
-   export namespace Trie {
-      export abstract class Trie<K extends Cont> extends DataValue<"Trie"> {
-         static join<K extends Cont> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
-            if (Var.is(σ) && Var.is(τ) && eq(σ.x, τ.x)) {
-               return var_(σ.x, join(σ.κ, τ.κ))
-            } else
-            if (Constr.is(σ) && Constr.is(τ)) {
-               // Both maps (which are non-empty) can (inductively) be assumed to have keys taken from the 
-               // same datatype. Ensure that invariant is preserved:
-               const c_σ: string = σ.cases.toArray()[0].fst.val,
-                     c_τ: string = τ.cases.toArray()[0].fst.val
-               if (ctrToDataType.get(c_σ) !== ctrToDataType.get(c_τ)) {
-                  error(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
-               }
-               return constr(unionWith<K, FiniteMap<K>>(σ.cases, τ.cases, join))
-            } else {
-               return absurd("Undefined join.", σ, τ)
-            }
-         }
-      }
-
-      export class Constr<K extends Cont> extends Trie<K> {
-         cases: FiniteMap<K> = _
-
-         static is<K extends Cont> (σ: Trie<K>): σ is Constr<K> {
-            return σ instanceof Constr
-         }
-      }
-
-      export function constr<K extends Cont> (cases: FiniteMap<K>): Constr<K> {
-         return make(Constr, cases) as Constr<K>
-      }
-
-      // TODO: use annotations on x.
-      export class Var<K extends Cont> extends Trie<K> {
-         x: Str = _
-         κ: K = _
-
-         static is<K extends Cont> (σ: Trie<K>): σ is Var<K> {
-            return σ instanceof Var
-         }
-      }
-
-      export function var_<K extends Cont> (x: Str, κ: K): Var<K> {
-         return make(Var, x, κ) as Var<K>
-      }
    }
 
    // used by Wrattler
