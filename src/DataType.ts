@@ -2,7 +2,7 @@ import { AClass, Class, __nonNull, assert } from "./util/Core"
 import { DataValue } from "./DataValue"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
-import { DataTrie } from "./Match"
+import { DataElim } from "./Match"
 import { Num, PrimValue, Str, _, fields } from "./Value"
 import { ν, str } from "./Versioned"
 
@@ -19,14 +19,14 @@ export class PrimType {
 // Neither of these is currently reflective because of non-standard fields.
 export class DataType {
    name: Str
-   elimC: Class<DataTrie>            
+   elimC: Class<DataElim>            
    ctrs: Map<string, Ctr>                    // fields of my constructors
    exprC̅: Map<string, Class<Expr.DataExpr>>  // "expression" class per constructor
    explC̅: Map<string, Class<Expl.DataExpl>>  // "explanation" class per constructor
 
    constructor (
       name: Str,
-      elimC: Class<DataTrie>, 
+      elimC: Class<DataElim>, 
       ctrs: Map<string, Ctr>, 
       exprC̅: Map<string, Class<Expr.DataExpr>>,
       explC̅: Map<string, Class<Expl.DataExpl>>
@@ -63,8 +63,8 @@ export function arity (ctr: Str): number {
 // Populated by initDataTypes(). Constructors are not yet first-class.
 export const types: Map<string, DataType | PrimType> = new Map
 export const ctrToDataType: Map<string, DataType> = new Map
-export const trieToDataType: Map<string, DataType> = new Map
-const trieSuffix: string = "Trie"
+export const elimToDataType: Map<string, DataType> = new Map
+const elimSuffix: string = "Elim"
 const explSuffix: string = "Expl"
 const exprSuffix: string = "Expr"
 
@@ -74,9 +74,9 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
    const ctrs: [string, Ctr][] = C̅.map(
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
-         elimC_name: string = D.name + trieSuffix,
-         elimC: Class<DataTrie> = {
-            [elimC_name]: class extends DataTrie {
+         elimC_name: string = D.name + elimSuffix,
+         elimC: Class<DataElim> = {
+            [elimC_name]: class extends DataElim {
                constructor () {
                   super()
                   // lexicographical order hopefully preserved by getOwnPropertyNames()
@@ -124,7 +124,7 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
    C̅.forEach((C: Class<T>): void => {
       ctrToDataType.set(C.name, d)
    })
-   trieToDataType.set(elimC_name, d)
+   elimToDataType.set(elimC_name, d)
    types.set(d.name.val, d)
 }
 

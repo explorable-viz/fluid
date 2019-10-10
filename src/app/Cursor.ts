@@ -7,7 +7,7 @@ import { DataValue, ExplValue, explValue } from "../../src/DataValue"
 import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
-import { DataTrie, VarTrie } from "../../src/Match"
+import { DataElim, VarElim } from "../../src/Match"
 import { Num, Persistent, State, Str, Value, fields } from "../../src/Value"
 import { Versioned, asVersioned, at, num, str } from "../../src/Versioned"
 
@@ -141,7 +141,7 @@ export class ExprCursor extends Cursor {
    }
 
    toCase<T extends DataValue> (C: Class<T>): ExprCursor {
-      const vʹ: Value = __nonNull((as(this.v, DataTrie) as any)[C.name])
+      const vʹ: Value = __nonNull((as(this.v, DataElim) as any)[C.name])
       return new ExprCursor(vʹ)
    }
 
@@ -184,8 +184,8 @@ export class ExprCursor extends Cursor {
    }
 
    var_ (x: string): ExprCursor {
-      this.assert(VarTrie, σ => σ.x.val === x)
-      return this.to(VarTrie, "κ")      
+      this.assert(VarElim, σ => σ.x.val === x)
+      return this.to(VarElim, "κ")      
    }
 
    // Editing API. Use a slightly clunky idiom to factor all edits through "at".

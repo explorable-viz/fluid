@@ -9,7 +9,7 @@ import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { get } from "./FiniteMap"
-import { Trie, Match, apply_bwd, apply_fwd } from "./Match"
+import { Elim, Match, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId } from "./Value"
 import { at, num, str } from "./Versioned"
@@ -33,10 +33,10 @@ export module Eval {
 export class Closure extends AnnotatedC(DataValue)<"Closure"> {
    ρ: Env = _ 
    δ: List<RecDef> = _
-   f: Trie<Expr> = _
+   f: Elim<Expr> = _
 }
 
-function closure (ρ: Env, δ: List<RecDef>, f: Trie<Expr>): (k: Id) => Closure {
+function closure (ρ: Env, δ: List<RecDef>, f: Elim<Expr>): (k: Id) => Closure {
    return at(Closure, ρ, δ, f)
 }
 

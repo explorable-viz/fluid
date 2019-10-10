@@ -5,7 +5,7 @@ import { Annotation, ann } from "./util/Lattice"
 import { setjoinα } from "./Annotated"
 import { List, cons, nil } from "./BaseTypes"
 import { DataValue, ExplValue } from "./DataValue"
-import { DataType, ctrToDataType, trieToDataType } from "./DataType"
+import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
@@ -16,8 +16,8 @@ import Cont = Expr.Cont
 
 // Unrelated to the annotation lattice. Expr case intentionally only defined for higher-order (function) case.
 function join<K extends Cont> (κ: K, κʹ: K): K {
-   if (κ instanceof Trie && κʹ instanceof Trie) {
-      return DataTrie.elimJoin<K>(κ, κʹ) as Cont as K
+   if (κ instanceof Elim && κʹ instanceof Elim) {
+      return DataElim.elimJoin<K>(κ, κʹ) as Cont as K
    } else
    if (κ instanceof Expr.Fun && κʹ instanceof Expr.Fun) {
       return Expr.fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K
@@ -39,18 +39,18 @@ export function match<K extends Cont> (ξ: MatchPrefix, κ: K): Match<K> {
 }
 
 // See GitHub issue #128.
-export abstract class Trie<K extends Cont = Cont> extends DataValue<"Trie"> {
+export abstract class Elim<K extends Cont = Cont> extends DataValue<"Elim"> {
    // could have called this "match", but conflicts with factory method of same name
    apply (tv: ExplValue): [Env, Match<K>] {
       return apply_(this, tv, nil())
    }
 }
 
-function apply_<K extends Cont> (σ: Trie<K>, tv: ExplValue, u̅: MatchPrefix): [Env, Match<K>] {
-   if (VarTrie.is(σ)) {
+function apply_<K extends Cont> (σ: Elim<K>, tv: ExplValue, u̅: MatchPrefix): [Env, Match<K>] {
+   if (VarElim.is(σ)) {
       return [Env.singleton(σ.x, tv), match(u̅, σ.κ)]
    } else
-   if (DataTrie.is(σ)) {
+   if (DataElim.is(σ)) {
       const v: Value = tv.v,
             c: string = className(v)
       if (v instanceof DataValue) {
@@ -60,7 +60,7 @@ function apply_<K extends Cont> (σ: Trie<K>, tv: ExplValue, u̅: MatchPrefix): 
             [ρ, ξ]: [Env, Match<K>] = matchArgs(κ, tv̅, u̅)
             return [ρ, match(cons(tv, ξ.tv̅), ξ.κ)]
          } else {
-            const d: DataType = trieToDataType.get(className(σ))!
+            const d: DataType = elimToDataType.get(className(σ))!
             if (d.ctrs.has(c)) {
                return error(`Pattern mismatch: ${c} case is undefined for ${d.name.val} eliminator.`)
             } else {
@@ -81,8 +81,8 @@ function matchArgs<K extends Cont> (κ: K, tv̅: ExplValue[], u̅: MatchPrefix):
       return [emptyEnv(), match(u̅, κ)]
    } else {
       const [tv, ...tv̅ʹ] = tv̅
-      if (κ instanceof Trie) {
-         const σ: Trie<K> = κ, // "unfold" K into Trie<K>
+      if (κ instanceof Elim) {
+         const σ: Elim<K> = κ, // "unfold" K into Elim<K>
                [ρ, ξ]: [Env, Match<K>] = apply_(σ, tv, u̅),
                [ρʹ, ξʹ]: [Env, Match<K>] = matchArgs(ξ.κ, tv̅ʹ, ξ.tv̅)
          return [ρ.concat(ρʹ), ξʹ]
@@ -93,16 +93,16 @@ function matchArgs<K extends Cont> (κ: K, tv̅: ExplValue[], u̅: MatchPrefix):
 }
 
 // Concrete instances have a field per constructor, in *lexicographical* order.
-export abstract class DataTrie<K extends Cont = Cont> extends Trie<K> {
-   static is<K extends Cont> (σ: Trie<K>): σ is DataTrie<K> {
-      return σ instanceof DataTrie
+export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
+   static is<K extends Cont> (σ: Elim<K>): σ is DataElim<K> {
+      return σ instanceof DataElim
    }
 
-   static elimJoin<K extends Cont> (σ: Trie<K>, τ: Trie<K>): Trie<K> {
-      if (VarTrie.is(σ) && VarTrie.is(τ) && eq(σ.x, τ.x)) {
-         return varTrie(σ.x, join(σ.κ, τ.κ))
+   static elimJoin<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
+      if (VarElim.is(σ) && VarElim.is(τ) && eq(σ.x, τ.x)) {
+         return varElim(σ.x, join(σ.κ, τ.κ))
       } else
-      if (DataTrie.is(σ) && DataTrie.is(τ)) {
+      if (DataElim.is(σ) && DataElim.is(τ)) {
          // Both maps (which are non-empty) can (inductively) be assumed to have keys taken from the 
          // same datatype. Ensure that invariant is preserved:
          const c_σ: string = fields(σ)[0],
@@ -118,7 +118,7 @@ export abstract class DataTrie<K extends Cont = Cont> extends Trie<K> {
             return [c1, κ1 === undefined ? κ2 : (κ2 === undefined ? κ1 : join(κ1, κ2))]
          }
          )(cκ̅1, cκ̅2)
-         return dataTrie(...cκ̅)
+         return dataElim(...cκ̅)
       } else {
          return absurd("Undefined join.", σ, τ)
       }
@@ -126,7 +126,7 @@ export abstract class DataTrie<K extends Cont = Cont> extends Trie<K> {
 }
 
 // cκ̅ non-empty and constructors all of the same datatype.
-export function dataTrie<K extends Cont> (...cκ̅: [string, K][]): Trie<K> {
+export function dataElim<K extends Cont> (...cκ̅: [string, K][]): Elim<K> {
    const d: DataType = __nonNull(ctrToDataType.get(cκ̅[0][0])),
          c̅: string[] = cκ̅.map((([c, _]) => c)),
          c̅ʹ: string[] = [...d.ctrs.keys()], // sorted
@@ -139,20 +139,20 @@ export function dataTrie<K extends Cont> (...cκ̅: [string, K][]): Trie<K> {
          f̅.push(undefined as any)
       }
    }
-   return make(d.elimC as Class<DataTrie<K>>, ...f̅)
+   return make(d.elimC as Class<DataElim<K>>, ...f̅)
 }
 
-export class VarTrie<K extends Cont> extends Trie<K> {
+export class VarElim<K extends Cont> extends Elim<K> {
    x: Str = _
    κ: K = _
 
-   static is<K extends Cont> (σ: Trie<K>): σ is VarTrie<K> {
-      return σ instanceof VarTrie
+   static is<K extends Cont> (σ: Elim<K>): σ is VarElim<K> {
+      return σ instanceof VarElim
    }
 }
 
-export function varTrie<K extends Cont> (x: Str, κ: K): VarTrie<K> {
-   return make(VarTrie, x, κ) as VarTrie<K>
+export function varElim<K extends Cont> (x: Str, κ: K): VarElim<K> {
+   return make(VarElim, x, κ) as VarElim<K>
 }
 
 export function apply_fwd (ξ: Match<Expr>): Annotation {
