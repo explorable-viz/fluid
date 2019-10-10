@@ -35,7 +35,7 @@ import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { arity, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
-import { dataElim, elimJoin, varElim } from "./Match"
+import { DataElim, dataElim, varElim } from "./Match"
 import { Str } from "./Value"
 import { ν, num, str } from "./Versioned"
 
@@ -214,7 +214,7 @@ matchAs ->
 matches ->
    match {% id %} |
    lexeme["{"] match (lexeme[";"] match {% ([, m]) => m %}):* lexeme["}"]
-   {% ([, m, ms,]) => [m, ...ms].reduce(elimJoin) %}
+   {% ([, m, ms,]) => [m, ...ms].reduce(DataElim.elimJoin) %}
 
 match ->
    pattern lexeme["→"] expr 

@@ -17,38 +17,12 @@ import Cont = Expr.Cont
 // Unrelated to the annotation lattice. Expr case intentionally only defined for higher-order (function) case.
 function join<K extends Cont> (κ: K, κʹ: K): K {
    if (κ instanceof Elim && κʹ instanceof Elim) {
-      return elimJoin<K>(κ, κʹ) as Cont as K
+      return DataElim.elimJoin<K>(κ, κʹ) as Cont as K
    } else
    if (κ instanceof Expr.Fun && κʹ instanceof Expr.Fun) {
       return Expr.fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K
    } else {
       return absurd("Undefined join.", κ, κʹ)
-   }
-}
-
-export function elimJoin<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
-   if (VarElim.is(σ) && VarElim.is(τ) && eq(σ.x, τ.x)) {
-      return varElim(σ.x, join(σ.κ, τ.κ))
-   } else
-   if (DataElim.is(σ) && DataElim.is(τ)) {
-      // Both maps (which are non-empty) can (inductively) be assumed to have keys taken from the 
-      // same datatype. Ensure that invariant is preserved:
-      const c_σ: string = fields(σ)[0],
-            c_τ: string = fields(τ)[0]
-      if (ctrToDataType.get(c_σ) !== ctrToDataType.get(c_τ)) {
-         error(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
-      }
-      const cκ̅1: [string, K][] = zip(fields(σ), σ.__children as K[]),
-            cκ̅2: [string, K][] = zip(fields(τ), τ.__children as K[])
-      assert(cκ̅1.length === cκ̅2.length)
-      const cκ̅: [string, K][] = zipWith(([c1, κ1]: [string, K], [c2, κ2]: [string, K]): [string, K] => {
-         assert(c1 === c2)
-         return [c1, κ1 === undefined ? κ2 : (κ2 === undefined ? κ1 : join(κ1, κ2))]
-      }
-      )(cκ̅1, cκ̅2)
-      return dataElim(...cκ̅)
-   } else {
-      return absurd("Undefined join.", σ, τ)
    }
 }
 
@@ -122,6 +96,32 @@ function matchArgs<K extends Cont> (κ: K, tv̅: ExplValue[], u̅: MatchPrefix):
 export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
    static is<K extends Cont> (σ: Elim<K>): σ is DataElim<K> {
       return σ instanceof DataElim
+   }
+
+   static elimJoin<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
+      if (VarElim.is(σ) && VarElim.is(τ) && eq(σ.x, τ.x)) {
+         return varElim(σ.x, join(σ.κ, τ.κ))
+      } else
+      if (DataElim.is(σ) && DataElim.is(τ)) {
+         // Both maps (which are non-empty) can (inductively) be assumed to have keys taken from the 
+         // same datatype. Ensure that invariant is preserved:
+         const c_σ: string = fields(σ)[0],
+               c_τ: string = fields(τ)[0]
+         if (ctrToDataType.get(c_σ) !== ctrToDataType.get(c_τ)) {
+            error(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
+         }
+         const cκ̅1: [string, K][] = zip(fields(σ), σ.__children as K[]),
+               cκ̅2: [string, K][] = zip(fields(τ), τ.__children as K[])
+         assert(cκ̅1.length === cκ̅2.length)
+         const cκ̅: [string, K][] = zipWith(([c1, κ1]: [string, K], [c2, κ2]: [string, K]): [string, K] => {
+            assert(c1 === c2)
+            return [c1, κ1 === undefined ? κ2 : (κ2 === undefined ? κ1 : join(κ1, κ2))]
+         }
+         )(cκ̅1, cκ̅2)
+         return dataElim(...cκ̅)
+      } else {
+         return absurd("Undefined join.", σ, τ)
+      }
    }
 }
 
