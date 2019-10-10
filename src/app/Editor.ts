@@ -9,7 +9,8 @@ import Trie = Expr.Trie
 
 const fontSize: number = 18,
       class_: string = "code",
-      lineHeight: number = log(Math.ceil(textHeight(fontSize, class_, "m")) * 2) // representative character 
+      // bizarrely, if I do this later, font metrics are borked:
+      lineHeight = log(Math.ceil(textHeight(fontSize, class_, "m")) * 2) // representative character 
 
 // Post-condition: returned element has an entry in "dimensions" map. 
 function render (x: number, line: number, e: Expr): SVGElement {
@@ -43,20 +44,27 @@ function renderHoriz (x: number, line: number, ...es: Expr[]): SVGElement {
    let height_max: number = 0
    // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
    g.setAttribute("pointer-events", "bounding-box")
-   for (const e of es) {
+   es.forEach((e: Expr, n: number): void => {
       const v: SVGElement = render(x, line, e),
             { width, height }: Dimensions = dimensions.get(v)!
       x += width
       height_max = Math.max(height_max, height)
       g.appendChild(v)
-   }
+      if (n < es.length - 1) {
+         // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
+         const sep: SVGTextElement = renderText(x, line, "\u00a0"),
+               { width } = dimensions.get(sep)!
+         x += width
+         g.appendChild(sep)
+      }
+   })
    dimensions.set(g, { width: x - x0, height: height_max })
    return g
 }
 
 function renderText (x: number, line: number, str: string): SVGTextElement {
    const text: SVGTextElement = textElement(x, line * lineHeight, fontSize, class_, str)
-   svgMetrics.appendChild(text)
+   svgMetrics!.appendChild(text)
    dimensions.set(text, { width: text.getBBox().width, height: lineHeight })
    text.remove()
    return text
