@@ -17,7 +17,7 @@ import Cont = Expr.Cont
 // Unrelated to the annotation lattice. Expr case intentionally only defined for higher-order (function) case.
 function join<K extends Cont> (κ: K, κʹ: K): K {
    if (κ instanceof Elim && κʹ instanceof Elim) {
-      return DataElim.elimJoin<K>(κ, κʹ) as Cont as K
+      return DataElim.join<K>(κ, κʹ) as Cont as K
    } else
    if (κ instanceof Expr.Fun && κʹ instanceof Expr.Fun) {
       return Expr.fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K
@@ -98,7 +98,7 @@ export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
       return σ instanceof DataElim
    }
 
-   static elimJoin<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
+   static join<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
       if (VarElim.is(σ) && VarElim.is(τ) && eq(σ.x, τ.x)) {
          return varElim(σ.x, join(σ.κ, τ.κ))
       } else

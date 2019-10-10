@@ -214,7 +214,7 @@ matchAs ->
 matches ->
    match {% id %} |
    lexeme["{"] match (lexeme[";"] match {% ([, m]) => m %}):* lexeme["}"]
-   {% ([, m, ms,]) => [m, ...ms].reduce(DataElim.elimJoin) %}
+   {% ([, m, ms,]) => [m, ...ms].reduce(DataElim.join) %}
 
 match ->
    pattern lexeme["→"] expr 
