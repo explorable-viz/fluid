@@ -33,7 +33,7 @@ export type Cont = Expr.Cont
 
 export namespace Expr {
    // Use to be a parameterised class but we can simplify using our nominal type idiom.
-   export type Cont = Expr | DataValue<"Elim">
+   export type Cont = Expr | DataValue<"Trie">
 
    export abstract class SyntaxNode<Tag extends DataValueTag = DataValueTag> extends AnnotatedC(DataValue)<Tag> {
    }

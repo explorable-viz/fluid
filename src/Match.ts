@@ -39,7 +39,7 @@ export function match<K extends Cont> (ξ: MatchPrefix, κ: K): Match<K> {
 }
 
 // See GitHub issue #128.
-export abstract class Trie<K extends Cont = Cont> extends DataValue<"Elim"> {
+export abstract class Trie<K extends Cont = Cont> extends DataValue<"Trie"> {
    // could have called this "match", but conflicts with factory method of same name
    apply (tv: ExplValue): [Env, Match<K>] {
       return apply_(this, tv, nil())
