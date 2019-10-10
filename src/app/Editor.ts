@@ -37,7 +37,14 @@ class Renderer {
                return this.renderText("[]")
             } else
             if (e.ctr === Cons.name) {
-               return this.renderText(`<${className(e)}>`)
+               return Renderer.group(
+                  this.renderText("["),
+                  // use cursor interface instead?
+                  this.render(as(e.__child("head"), Expr.Expr)),
+                  this.renderText(", ..."),
+                  this.render(as(e.__child("tail"), Expr.Expr)),
+                  this.renderText("]")
+               )
             } else {
                return absurd()
             }
@@ -52,7 +59,7 @@ class Renderer {
          return this.renderTrie(e.σ)
       } else
       if (e instanceof Expr.App) {
-         return Renderer.group(this.renderHoriz(e.f, e.e))
+         return Renderer.group(...this.renderHoriz(e.f, e.e))
       } else {
          return this.renderText(`<${className(e)}>`)
       }
@@ -81,7 +88,7 @@ class Renderer {
       return vs
    }
 
-   static group (vs: SVGElement[]): SVGElement {
+   static group (...vs: SVGElement[]): SVGElement {
       const g: SVGGElement = document.createElementNS(svgNS, "g")
       let width_sum: number = 0,
           height_max: number = 0
