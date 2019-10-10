@@ -54,18 +54,23 @@ const dimensions: Map<SVGElement, Dimensions> = new Map()
 
 class Editor {
    constructor () {
-      const root: SVGSVGElement = createSvg(400, 400, false),
-            polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon")
-      polygon.setAttribute("points", "0, 0 0, 100 100, 0, 100, 100")
-      polygon.setAttribute("stroke", "black")
-      polygon.setAttribute("fill", "gray")
-      root.appendChild(polygon)
-      document.body.appendChild(root)
-      const e: Expr = as(openWithImports("foldr_sumSquares"), Expr.Defs).e
-      root.appendChild(render(0, 0, e))
+      window.onload = (ev: Event): void => {
+         const root: SVGSVGElement = createSvg(400, 400, false),
+         polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon")
+         polygon.setAttribute("points", "0, 0 0, 100 100, 0, 100, 100")
+         polygon.setAttribute("stroke", "black")
+         polygon.setAttribute("fill", "gray")
+         root.appendChild(polygon)
+         document.body.appendChild(root)
+         const e: Expr = as(openWithImports("foldr_sumSquares"), Expr.Defs).e
+         root.appendChild(render(0, 0, e))
+      }
    }
 }
 
+new Editor()
+
+/*
 declare class FontLoader {
    constructor (blah1: string[], blah2: any, blah3: any)
 }
@@ -87,3 +92,4 @@ new FontLoader(["inconsolata"], {
       }
    }
 }, 3000)
+*/

@@ -22,6 +22,7 @@ export function textElement (x: number, y: number, fontSize: number, str: string
    text.setAttribute("stroke", "none")
    text.setAttribute("font-size", fontSize.toString())
    text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
+   text.setAttribute("font-family", "Inconsolata")
    text.appendChild(document.createTextNode(str))
    return text
 }
