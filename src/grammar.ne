@@ -214,7 +214,7 @@ matchAs ->
 matches ->
    match {% id %} |
    lexeme["{"] match (lexeme[";"] match {% ([, m]) => m %}):* lexeme["}"]
-   {% ([, m, ms,]) => [m, ...ms].reduce(DataElim.elimJoin) %}
+   {% ([, m, ms,]) => [m, ...ms].reduce(DataTrie.elimJoin) %}
 
 match ->
    pattern lexeme["→"] expr 
@@ -262,11 +262,11 @@ pattern ->
 
 variable_pattern -> 
    var
-   {% ([x]) => (κ: Cont) => varElim(x, κ) %}
+   {% ([x]) => (κ: Cont) => varTrie(x, κ) %}
 
 pair_pattern ->
    lexeme["("] pattern lexeme[","] pattern lexeme[")"]
-   {% ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => dataElim([Pair.name, compose(mk_κ1, mk_κ2)(κ)]) %}
+   {% ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => dataTrie([Pair.name, compose(mk_κ1, mk_κ2)(κ)]) %}
 
 list_pattern -> 
    lexeme["["] listOpt_pattern lexeme["]"] # ouch: "
@@ -274,17 +274,17 @@ list_pattern ->
 
 listOpt_pattern -> 
    null
-   {% () => (κ: Cont) => dataElim([Nil.name, κ]) %} | 
+   {% () => (κ: Cont) => dataTrie([Nil.name, κ]) %} | 
    list1_pattern
    {% id %}
 
 list1_pattern ->
    pattern listRestOpt_pattern
-   {% ([mk_κ1, mk_κ2]) => (κ: Cont) => dataElim([Cons.name, compose(mk_κ1, mk_κ2)(κ)]) %}
+   {% ([mk_κ1, mk_κ2]) => (κ: Cont) => dataTrie([Cons.name, compose(mk_κ1, mk_κ2)(κ)]) %}
 
 listRestOpt_pattern ->
    null 
-   {% () => (κ: Cont) => dataElim([Nil.name, κ]) %} |
+   {% () => (κ: Cont) => dataTrie([Nil.name, κ]) %} |
    lexeme[","] lexeme["..."] pattern
    {% ([, , mk_κ]) => mk_κ %} |
    lexeme[","] list1_pattern
@@ -297,7 +297,7 @@ constr_pattern ->
       if (arity(c) !== mk_κs.length) {
          return reject
       }
-      return (κ: Cont) => dataElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])
+      return (κ: Cont) => dataTrie([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])
    } %}
 
 args_pattern ->

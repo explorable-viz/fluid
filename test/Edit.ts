@@ -4,7 +4,7 @@ import { Edit } from "./util/Core"
 import { as } from "../src/util/Core"
 import { Cons, Pair } from "../src/BaseTypes"
 import { Expr } from "../src/Expr"
-import { VarElim } from "../src/Match"
+import { VarTrie } from "../src/Match"
 import { open } from "../src/Module"
 import { Persistent } from "../src/Value"
 import { ν, num, str } from "../src/Versioned"
@@ -49,7 +49,7 @@ describe("edit", () => {
                    .to(Expr.App, "f")
                    .to(Expr.App, "e")
                    .to(Expr.Fun, "σ")
-                   .to(VarElim, "κ")
+                   .to(VarTrie, "κ")
                    .to(Expr.BinaryApp, "e1")
                    .to(Expr.ConstNum, "val")
                    .setNum(3)
