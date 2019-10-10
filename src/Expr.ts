@@ -189,7 +189,7 @@ export namespace Expr {
          return new Set()
       } else
       if (e instanceof Fun) {
-         return freeVarsTrie(e.σ)
+         return freeVarsElim(e.σ)
       } else
       if (e instanceof DataExpr) {
          return union(...e.__children.map(freeVars))
@@ -211,7 +211,7 @@ export namespace Expr {
          return union(diff(freeVars(e.e), bound), free)
       } else
       if (e instanceof MatchAs) {
-         return union(freeVars(e.e), freeVarsTrie(e.σ))
+         return union(freeVars(e.e), freeVarsElim(e.σ))
       } else
       if (e instanceof Typematch) {
          return union(freeVars(e.e), ...e.cases.toArray().map(({ snd }) => freeVars(snd)))
@@ -225,13 +225,13 @@ export namespace Expr {
          return freeVars(κ)
       } else 
       if (κ instanceof Elim) {
-         return freeVarsTrie(κ)
+         return freeVarsElim(κ)
       } else {
          return absurd()
       }
    }
 
-   function freeVarsTrie<K extends Cont> (σ: Elim<K>): Set<string> {
+   function freeVarsElim<K extends Cont> (σ: Elim<K>): Set<string> {
       if (VarElim.is(σ)) {
          return diff(freeVarsCont(σ.κ), new Set([σ.x.val]))
       } else
@@ -260,7 +260,7 @@ export namespace Expr {
             const f̅: RecDef[] = def.δ.toArray(),
                   x̅: Set<string> = new Set(f̅.map(f => f.x.val)),
                   [boundʹ, free] = freeVarsDefs(def̅.tail, union(bound, x̅))
-            return [boundʹ, diff(union(free, ...f̅.map(f => freeVarsTrie(f.σ))), x̅)]
+            return [boundʹ, diff(union(free, ...f̅.map(f => freeVarsElim(f.σ))), x̅)]
          } else {
             return absurd()
          }

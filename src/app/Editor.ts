@@ -41,7 +41,7 @@ class Renderer {
          return this.renderText(e.x.val)
       } else
       if (e instanceof Expr.Fun) {
-         return this.renderTrie(e.σ)
+         return this.renderElim(e.σ)
       } else
       if (e instanceof Expr.App) {
          return Renderer.group(...this.renderHoriz(e.f, e.e))
@@ -65,7 +65,7 @@ class Renderer {
       return vs
    }
 
-   renderTrie (σ: Elim<Expr>): SVGElement {
+   renderElim (σ: Elim<Expr>): SVGElement {
       if (VarElim.is(σ)) {
          return Renderer.group(this.renderText(σ.x.val), this.renderText(strings.arrow), this.render(σ.κ))
       } else
