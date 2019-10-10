@@ -7,6 +7,7 @@ import { DataValue, ExplValue, explValue } from "../../src/DataValue"
 import { Change, New } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
+import { DataElim, VarElim } from "../../src/Match"
 import { Num, Persistent, State, Str, Value, fields } from "../../src/Value"
 import { Versioned, asVersioned, at, num, str } from "../../src/Versioned"
 
@@ -16,7 +17,6 @@ import Let = Expr.Let
 import LetRec = Expr.LetRec
 import Prim = Expr.Prim
 import RecDef = Expr.RecDef
-import Trie = Expr.Trie
 
 export abstract class Cursor {
    abstract annotated: Annotated & Value
@@ -140,6 +140,11 @@ export class ExprCursor extends Cursor {
       return this.to<DataExpr>(exprClass(C), prop as keyof DataExpr)
    }
 
+   toCase<T extends DataValue> (C: Class<T>): ExprCursor {
+      const vʹ: Value = __nonNull((as(this.v, DataElim) as any)[C.name])
+      return new ExprCursor(vʹ)
+   }
+
    static defs (defs: List<Def>): Map<string, Let | Prim | RecDef> {
       const defsʹ: Map<string, Let | Prim | RecDef> = new Map
       for (; Cons.is(defs); defs = defs.tail) {
@@ -179,8 +184,8 @@ export class ExprCursor extends Cursor {
    }
 
    var_ (x: string): ExprCursor {
-      this.assert(Trie.Var, σ => σ.x.val === x)
-      return this.to(Trie.Var, "κ")      
+      this.assert(VarElim, σ => σ.x.val === x)
+      return this.to(VarElim, "κ")      
    }
 
    // Editing API. Use a slightly clunky idiom to factor all edits through "at".
