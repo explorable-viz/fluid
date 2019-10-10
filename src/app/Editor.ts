@@ -10,7 +10,9 @@ import Trie = Expr.Trie
 const fontSize: number = 18,
       class_: string = "code",
       // bizarrely, if I do this later, font metrics are borked:
-      lineHeight = log(Math.ceil(textHeight(fontSize, class_, "m")) * 2) // representative character 
+      lineHeight = log(Math.ceil(textHeight(fontSize, class_, "m")) * 2), // representative character 
+      // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
+      space: string = "\u00a0"
 
 class Renderer {
    x: number
@@ -49,24 +51,37 @@ class Renderer {
       }
    }
 
-   renderElements (e: Expr): SVGElement[] {
+   // Expressions for the elements, plus expression for tail (or null if list terminates with nil).
+   listElements (e: Expr): [Expr[], Expr | null] {
       if (e instanceof Expr.DataExpr) {
          if (e.ctr === Nil.name) {
-            return []
+            return [[], null]
          } else
          if (e.ctr === Cons.name) {
-            const vs: SVGElement[] = this.renderElements(as(e.__child("tail"), Expr.Expr))
-            return [
-               // use cursor interface instead?
-               this.render(as(e.__child("head"), Expr.Expr)),
-               ...(vs.length === 0 ? vs : [this.renderText(", "), ...vs])
-            ]
+            // use cursor interface instead?
+            const [es, eʹ]: [Expr[], Expr | null] = this.listElements(as(e.__child("tail"), Expr.Expr))
+            return [[as(e.__child("head"), Expr.Expr), ...es], eʹ]
          } else {
             return error(`Found ${e.ctr}, expected list.`)
          }
       } else {
-         return [this.renderText(", ..."), this.render(e)]
+         return [[], e]
       }
+   }
+
+   renderElements (e: Expr): SVGElement[] {
+      const [es, eʹ]: [Expr[], Expr | null] = this.listElements(e),
+            vs: SVGElement[] = []
+      es.forEach((e: Expr, n: number): void => {
+         vs.push(this.render(e))
+         if (n < es.length - 1) {
+            vs.push(this.renderText(`,${space}`))
+         }
+      })
+      if (eʹ !== null) {
+         vs.push(this.renderText(", ..."), this.render(eʹ))
+      }
+      return vs
    }
 
    renderTrie (σ: Trie<Expr>): SVGElement {
@@ -86,7 +101,7 @@ class Renderer {
          vs.push(this.render(e))
          if (n < es.length - 1) {
             // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
-            vs.push(this.renderText("\u00a0"))
+            vs.push(this.renderText(`${space}`))
          }
       })
       return vs
