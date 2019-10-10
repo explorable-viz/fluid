@@ -55,11 +55,11 @@ class Renderer {
             return []
          } else
          if (e.ctr === Cons.name) {
+            const vs: SVGElement[] = this.renderElements(as(e.__child("tail"), Expr.Expr))
             return [
                // use cursor interface instead?
-               this.render(as(e.__child("head"), Expr.Expr)), 
-               this.renderText(", "),
-               ...this.renderElements(as(e.__child("tail"), Expr.Expr))
+               this.render(as(e.__child("head"), Expr.Expr)),
+               ...(vs.length === 0 ? vs : [this.renderText(", "), ...vs])
             ]
          } else {
             return error(`Found ${e.ctr}, expected list.`)
