@@ -17,26 +17,26 @@ export function createSvg (w: number, h: number, stackDown: boolean): SVGSVGElem
 
 // The SVG text element for the supplied text; centralised so can be used to compute text metrics.
 // Use "translate" to locate the element, so that we can apply it after scaling.
-export function textElement (x: number, y: number, fontSize: number, str: string): SVGTextElement {
+export function textElement (x: number, y: number, fontSize: number, class_: string, str: string): SVGTextElement {
    const text: SVGTextElement = document.createElementNS(svgNS, "text")
    text.setAttribute("stroke", "none")
-   text.setAttribute("font-size", fontSize.toString())
+   text.setAttribute("font-size", fontSize.toString()) // wasn't able to set this through CSS for some reason
    text.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
-   text.setAttribute("font-family", "Inconsolata")
+   text.setAttribute("class", class_) // set styling before creating text node, for font metrics to be correct
    text.appendChild(document.createTextNode(str))
    return text
 }
 
-export function textWidth (fontSize: number, str: string): number {
-   const text: SVGTextElement = textElement(0, 0, fontSize, str)
+export function textWidth (fontSize: number, class_: string, str: string): number {
+   const text: SVGTextElement = textElement(0, 0, fontSize, class_, str)
    svgMetrics.appendChild(text)
    const width: number = text.getBBox().width
    text.remove()
    return width
 }
 
-export function textHeight (fontSize: number, str: string): number {
-   const text: SVGTextElement = textElement(0, 0, fontSize, str)
+export function textHeight (fontSize: number, class_: string, str: string): number {
+   const text: SVGTextElement = textElement(0, 0, fontSize, class_, str)
    svgMetrics.appendChild(text)
    const height: number = text.getBBox().height
    return height

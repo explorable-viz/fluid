@@ -11,7 +11,8 @@ import { num } from "../Versioned"
 import { svgNS, textElement, textHeight, textWidth } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 
-const fontSize: number = 12
+const fontSize: number = 12,
+      class_: string = ""
 
 type TransformFun = (p: [number, number]) => [number, number]
 
@@ -197,7 +198,7 @@ export class GraphicsRenderer {
    text (tg: ExplValueCursor/*<Text>*/): void {
       const g: Text = as(tg.tv.v, Text),
             [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
-            text: SVGTextElement = textElement(x, y, fontSize, g.str.val)
+            text: SVGTextElement = textElement(x, y, fontSize, class_, g.str.val)
       text.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
@@ -233,11 +234,11 @@ export class GraphicsRenderer {
    // Additional primitives that rely on offline rendering to compute text metrics. Combining these would 
    // require more general primitives that can return tuples.
    const textWidth_: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(textWidth(fontSize, str.val))
+      return num(textWidth(fontSize, class_, str.val))
    }
    
    const textHeight_: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(textHeight(fontSize, str.val))
+      return num(textHeight(fontSize, class_, str.val))
    }
    
    unaryOps.set(textWidth.name, unary_(textWidth_))
