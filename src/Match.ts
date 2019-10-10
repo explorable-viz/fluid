@@ -5,7 +5,7 @@ import { Annotation, ann } from "./util/Lattice"
 import { setjoinα } from "./Annotated"
 import { List, cons, nil } from "./BaseTypes"
 import { DataValue, ExplValue } from "./DataValue"
-import { DataType, ctrToDataType, elimToDataType } from "./DataType"
+import { DataType, ctrToDataType, trieToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
@@ -60,7 +60,7 @@ function apply_<K extends Cont> (σ: Trie<K>, tv: ExplValue, u̅: MatchPrefix): 
             [ρ, ξ]: [Env, Match<K>] = matchArgs(κ, tv̅, u̅)
             return [ρ, match(cons(tv, ξ.tv̅), ξ.κ)]
          } else {
-            const d: DataType = elimToDataType.get(className(σ))!
+            const d: DataType = trieToDataType.get(className(σ))!
             if (d.ctrs.has(c)) {
                return error(`Pattern mismatch: ${c} case is undefined for ${d.name.val} eliminator.`)
             } else {
@@ -82,7 +82,7 @@ function matchArgs<K extends Cont> (κ: K, tv̅: ExplValue[], u̅: MatchPrefix):
    } else {
       const [tv, ...tv̅ʹ] = tv̅
       if (κ instanceof Trie) {
-         const σ: Trie<K> = κ, // "unfold" K into Elim<K>
+         const σ: Trie<K> = κ, // "unfold" K into Trie<K>
                [ρ, ξ]: [Env, Match<K>] = apply_(σ, tv, u̅),
                [ρʹ, ξʹ]: [Env, Match<K>] = matchArgs(ξ.κ, tv̅ʹ, ξ.tv̅)
          return [ρ.concat(ρʹ), ξʹ]
