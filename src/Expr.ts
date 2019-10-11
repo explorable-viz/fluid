@@ -1,4 +1,4 @@
-import { __nonNull, abstractMethodError, absurd } from "./util/Core"
+import { __nonNull, absurd, className } from "./util/Core"
 import { diff, union } from "./util/Set"
 import { AnnotatedC } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
@@ -79,7 +79,7 @@ export namespace Expr {
    // Has a concrete subclass for each datatype.
    export class DataExpr extends Expr {
       get ctr (): string {
-         return abstractMethodError(this) // currently reflection requires concrete type here
+         return className(this)
       }
 
       get __children (): Expr[] {

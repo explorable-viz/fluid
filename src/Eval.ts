@@ -3,7 +3,7 @@ import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
 import { ann } from "./util/Lattice"
 import { AnnotatedC, setjoinα, setmeetα, setα } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
-import { DataType, PrimType, ctrToDataType, initDataType, types } from "./DataType"
+import { DataType, PrimType, ctrToDataType, exprSuffix, initDataType, types } from "./DataType"
 import { DataValue, ExplValue, explValue } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
@@ -155,8 +155,9 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.const_()(kₜ), closure(ρ, nil(), e.σ)(kᵥ))
    } else
    if (e instanceof Expr.DataExpr) {
-      const tv̅: ExplValue[] = e.__children.map((e: Expr) => eval_(ρ, e))
-      return explValue(Expl.dataExpl(e.ctr, tv̅.map(({t}) => t))(kₜ), dataValue(e.ctr, tv̅.map(({v}) => v))(kᵥ))
+      const tv̅: ExplValue[] = e.__children.map((e: Expr) => eval_(ρ, e)),
+            c: string = e.ctr.slice(0, -exprSuffix.length) // relate expr type to value type; could improve
+      return explValue(Expl.dataExpl(c, tv̅.map(({t}) => t))(kₜ), dataValue(c, tv̅.map(({v}) => v))(kᵥ))
    } else
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote()(kₜ), e.e)

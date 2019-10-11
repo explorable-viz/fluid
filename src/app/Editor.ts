@@ -9,16 +9,17 @@ import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
 import { openWithImports } from "../Module"
 import { Num, Str, Value, fields } from "../Value"
-import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
+import { SVG } from "./Core"
 import { ExprCursor } from "./Cursor"
 import "./styles.css"
 
 import Cont = Expr.Cont
 
-const fontSize: number = 18,
+const svg: SVG = new SVG(false),
+      fontSize: number = 18,
       class_: string = "code",
       // bizarrely, if I do this later, font metrics are borked:
-      lineHeight = log(Math.ceil(textHeight(fontSize, class_, "m")) * 2), // representative character 
+      lineHeight = log(Math.ceil(svg.textHeight(fontSize, class_, "m")) * 2), // representative character 
       // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
       space: string = "\u00a0"
 
@@ -162,7 +163,7 @@ class Renderer {
 
    // TODO: completely broken; ignores the fact that elements have x, y coordinates :-/
    static group (...vs: SVGElement[]): SVGElement {
-      const g: SVGGElement = document.createElementNS(svgNS, "g")
+      const g: SVGGElement = document.createElementNS(SVG.NS, "g")
       let width_sum: number = 0,
           height_max: number = 0
       g.setAttribute("pointer-events", "bounding-box")
@@ -177,8 +178,8 @@ class Renderer {
    }
    
    renderText (str: string): SVGTextElement {
-      const text: SVGTextElement = textElement(this.x, this.line * lineHeight, fontSize, class_, str)
-      svgMetrics!.appendChild(text)
+      const text: SVGTextElement = svg.textElement(this.x, this.line * lineHeight, fontSize, class_, str)
+      svg.metrics!.appendChild(text)
       const { width } = text.getBBox()
       dimensions.set(text, { width, height: lineHeight })
       text.remove()
@@ -213,9 +214,9 @@ class Editor {
    constructor () {
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
-         const root: SVGSVGElement = createSvg(800, 400)
+         const root: SVGSVGElement = svg.createSvg(800, 400)
          document.body.appendChild(root)
-         const e0: Expr = openWithImports("map"), // openWithImports("foldr_sumSquares"),
+         const e0: Expr = openWithImports("foldr_sumSquares"),
                e: Expr = as(e0, Expr.Defs).e,
                tv: ExplValue = Eval.eval_(emptyEnv(), e0)
          __deltas.clear()         
