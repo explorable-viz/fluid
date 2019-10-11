@@ -82,13 +82,13 @@ class App {
          "graphicsView", 
          ρ,
          openWithImports("bar-chart", module_graphics), 
-         createSvg(400, 400, false)
+         createSvg(400, 400)
       )
       this.dataView = new View(
          "dataView", 
          ρ,
          parseWithImports("renderData data", module_graphics, module_renderData), 
-         createSvg(400, 1200, false)
+         createSvg(400, 1200)
       )
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {

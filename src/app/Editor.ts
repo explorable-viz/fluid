@@ -213,9 +213,9 @@ class Editor {
    constructor () {
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
-         const root: SVGSVGElement = createSvg(800, 400, false)
+         const root: SVGSVGElement = createSvg(800, 400)
          document.body.appendChild(root)
-         const e0: Expr = openWithImports("foldr_sumSquares"),
+         const e0: Expr = openWithImports("map"), // openWithImports("foldr_sumSquares"),
                e: Expr = as(e0, Expr.Defs).e,
                tv: ExplValue = Eval.eval_(emptyEnv(), e0)
          __deltas.clear()         
