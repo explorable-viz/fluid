@@ -36,6 +36,7 @@ class Renderer {
    renderPrompt(e: Expr, v: Value): SVGElement {
       const e_g: SVGElement = this.render(e)
       this.line++
+      this.x = 0
       return Renderer.group(
          e_g,
          Renderer.group(
