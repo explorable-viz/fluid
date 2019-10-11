@@ -30,7 +30,7 @@ class Renderer {
 
    constructor () {
       this.x = 0
-      this.line = 5
+      this.line = 1
    }
 
    renderPrompt(e: Expr, v: Value): SVGElement {
@@ -76,6 +76,9 @@ class Renderer {
       } else
       if (e instanceof Expr.Fun) {
          return this.renderElim(e.σ)
+      } else
+      if (e instanceof Expr.BinaryApp) {
+         return Renderer.group(this.render(e.e1), this.space(), this.renderText(e.opName.val), this.space(), this.render(e.e2))
       } else
       if (e instanceof Expr.App) {
          return Renderer.group(...this.renderHoriz(e.f, e.e))
@@ -155,7 +158,6 @@ class Renderer {
       es.forEach((e: Expr, n: number): void => {
          vs.push(this.render(e))
          if (n < es.length - 1) {
-            // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
             vs.push(this.renderText(`${space}`))
          }
       })
@@ -177,7 +179,7 @@ class Renderer {
       dimensions.set(g, { width: width_sum, height: height_max })
       return g
    }
-   
+
    renderText (str: string): SVGTextElement {
       const text: SVGTextElement = svg.textElement(this.x, this.line * lineHeight, fontSize, class_, str)
       svg.metrics!.appendChild(text)
