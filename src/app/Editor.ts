@@ -105,6 +105,7 @@ class Renderer {
          v.addEventListener("click", (ev: MouseEvent): void => {
             new ExprCursor(n).setNum(n.val + 1)
             ev.stopPropagation()
+            editor.onEdit()
          })
       }
       return v
@@ -226,18 +227,36 @@ type Dimensions = { width: number, height: number }
 const dimensions: Map<SVGElement, Dimensions> = new Map()
 
 class Editor {
+   root: SVGSVGElement
+   e0: Expr
+   e: Expr
+   tv: ExplValue
+
    constructor () {
-      // Wait for fonts to load before rendering, otherwise metrics will be wrong.
+      this.root = svg.createSvg(800, 400)
+      document.body.appendChild(this.root)
+      this.e0 = openWithImports("foldr_sumSquares"),
+      this.e = as(this.e0, Expr.Defs).e
+      this.tv = Eval.eval_(emptyEnv(), this.e0)
+      __deltas.clear()         
+   // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
-         const root: SVGSVGElement = svg.createSvg(800, 400)
-         document.body.appendChild(root)
-         const e0: Expr = openWithImports("foldr_sumSquares"),
-               e: Expr = as(e0, Expr.Defs).e,
-               tv: ExplValue = Eval.eval_(emptyEnv(), e0)
-         __deltas.clear()         
-         root.appendChild(new Renderer().renderPrompt(e, tv.v))
+         this.root.appendChild(new Renderer().renderPrompt(this.e, this.tv.v))
       }
+   }
+
+   render (): void {
+      // not sure why this shenanigan to clear view
+      while (this.root.firstChild !== null) {
+         this.root.removeChild(this.root.firstChild)
+      }
+      this.root.appendChild(new Renderer().renderPrompt(this.e, this.tv.v))
+   }
+
+   onEdit (): void {
+      this.tv = Eval.eval_(emptyEnv(), this.e0)
+      this.render()
    }
 }
 
-new Editor()
+const editor: Editor =  new Editor()
