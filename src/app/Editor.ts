@@ -1,6 +1,6 @@
 import { zip } from "../util/Array"
 import { absurd, as, className, error } from "../util/Core"
-import { Cons, Nil } from "../BaseTypes"
+import { Cons, List, Nil } from "../BaseTypes"
 import { exprClass } from "../DataType"
 import { ExplValue } from "../DataValue"
 import { Change, New, Reclassify, __deltas } from "../Delta"
@@ -35,7 +35,7 @@ class Renderer {
    }
 
    renderPrompt(e: Expr, v: Value): SVGElement {
-      const e_g: SVGElement = this.render(e)
+      const e_g: SVGElement = this.renderExpr(e)
       this.line++
       this.x = 0
       return Renderer.group(
@@ -53,13 +53,24 @@ class Renderer {
       } else
       if (v instanceof Str) {
          return this.renderText(v.val.toString(), deltaStyle(v))
+      } else 
+      if (v instanceof List) {
+         return Renderer.group(this.renderText("["), ...this.renderElements_(elements(v)), this.renderText("]"))
       } else {
          return this.renderText(`<${className(v)}>`)
       }
    }
 
+   render (v: Value): SVGElement {
+      if (v instanceof Expr.Expr) {
+         return this.renderExpr(v)
+      } else {
+         return this.renderValue(v)
+      }
+   }
+
    // Post-condition: returned element has an entry in "dimensions" map. 
-   render (e: Expr): SVGElement {
+   renderExpr (e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
          return this.renderNum(e.val, true)
       } else
@@ -68,7 +79,7 @@ class Renderer {
       } else
       if (e instanceof Expr.DataExpr) {
          if (className(e) === exprClass(Nil.name).name || className(e) === exprClass(Cons.name).name) {
-            return Renderer.group(this.renderText("["), ...this.renderElements(e), this.renderText("]"))
+            return Renderer.group(this.renderText("["), ...this.renderElements_(elements_expr(e)), this.renderText("]"))
          } else {
             return this.renderText(`<${className(e)}>`)
          }
@@ -80,19 +91,19 @@ class Renderer {
          return this.renderElim(e.σ)
       } else
       if (e instanceof Expr.BinaryApp) {
-         return Renderer.group(this.render(e.e1), this.space(), this.renderText(e.opName.val), this.space(), this.render(e.e2))
+         return Renderer.group(this.renderExpr(e.e1), this.space(), this.renderText(e.opName.val), this.space(), this.renderExpr(e.e2))
       } else
       if (e instanceof Expr.App) {
-         const g_f: SVGElement = e.f instanceof Expr.Fun ? this.renderParens(e.f) : this.render(e.f),
+         const g_f: SVGElement = e.f instanceof Expr.Fun ? this.renderParens(e.f) : this.renderExpr(e.f),
                sp: SVGElement = this.space(),
-               g_e: SVGElement = e.e instanceof Expr.Fun ? this.renderParens(e.e) : this.render(e.e)
+               g_e: SVGElement = e.e instanceof Expr.Fun ? this.renderParens(e.e) : this.renderExpr(e.e)
          return Renderer.group(g_f, sp, g_e)
       } else
       if (e instanceof Expr.Defs) {
          const defs_g: SVGElement = this.renderText(`<${className(e)}>`)
          this.line++
          this.x = 0
-         return Renderer.group(defs_g, this.render(e.e))
+         return Renderer.group(defs_g, this.renderExpr(e.e))
       } else {
          return absurd()
       }
@@ -101,7 +112,7 @@ class Renderer {
    renderParens (e: Expr): SVGElement {
       return Renderer.group(
          this.renderText("("),
-         this.render(e),
+         this.renderExpr(e),
          this.renderText(")")
       )
    }
@@ -123,9 +134,23 @@ class Renderer {
    }
 
    renderElements (e: Expr): SVGElement[] {
-      const [es, eʹ]: [Expr[], Expr | null] = listElements(e),
+      const [es, eʹ]: [Expr[], Expr | null] = elements_expr(e),
             vs: SVGElement[] = []
       es.forEach((e: Expr, n: number): void => {
+         vs.push(this.renderExpr(e))
+         if (n < es.length - 1) {
+            vs.push(this.renderText(","), this.space())
+         }
+      })
+      if (eʹ !== null) {
+         vs.push(this.renderText(", ..."), this.renderExpr(eʹ))
+      }
+      return vs
+   }
+
+   renderElements_ ([es, eʹ]: [Value[], Value | null]): SVGElement[] {
+      const vs: SVGElement[] = []
+      es.forEach((e: Value, n: number): void => {
          vs.push(this.render(e))
          if (n < es.length - 1) {
             vs.push(this.renderText(","), this.space())
@@ -164,24 +189,13 @@ class Renderer {
 
    renderCont (κ: Cont): SVGElement {
       if (κ instanceof Expr.Expr) {
-         return this.render(κ)
+         return this.renderExpr(κ)
       } else
       if (κ instanceof Elim) {
          return this.renderElim(κ)
       } else {
          return absurd()
       }
-   }
-
-   renderHoriz (...es: Expr[]): SVGElement[] {
-      const vs: SVGElement[] = []
-      es.forEach((e: Expr, n: number): void => {
-         vs.push(this.render(e))
-         if (n < es.length - 1) {
-            vs.push(this.renderText(`${space}`))
-         }
-      })
-      return vs
    }
 
    // TODO: completely broken; ignores the fact that elements have x, y coordinates :-/
@@ -234,15 +248,19 @@ function deltaStyle (v: Value): string{
    }
 } 
 
+function elements (vs: List<Value>): [Value[], null] {
+   return [vs.toArray(), null]
+}
+
 // Expressions for the elements, plus expression for tail (or null if list terminates with nil).
-function listElements (e: Expr): [Expr[], Expr | null] {
+function elements_expr (e: Expr): [Expr[], Expr | null] {
    if (e instanceof Expr.DataExpr) {
       if (className(e) === exprClass(Nil.name).name) {
          return [[], null]
       } else
       if (className(e) === exprClass(Cons.name).name) {
          // use cursor interface instead?
-         const [es, eʹ]: [Expr[], Expr | null] = listElements(as(e.__child("tail"), Expr.Expr))
+         const [es, eʹ]: [Expr[], Expr | null] = elements_expr(as(e.__child("tail"), Expr.Expr))
          return [[as(e.__child("head"), Expr.Expr), ...es], eʹ]
       } else {
          return error(`Found ${e.ctr}, expected list.`)
