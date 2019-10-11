@@ -41,12 +41,12 @@ const lexer = moo.compile({
 
 import { __check, assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
-import { arity, types } from "./DataType"
+import { arity, exprClass, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { DataElim, dataElim, varElim } from "./Match"
 import { Str } from "./Value"
-import { ν, num, str } from "./Versioned"
+import { ν, at, num, str } from "./Versioned"
 
 import Cont = Expr.Cont
 
@@ -162,7 +162,7 @@ const grammar: Grammar = {
     {"name": "pair$macrocall$6", "symbols": [{"literal":")"}]},
     {"name": "pair$macrocall$5", "symbols": ["pair$macrocall$6"], "postprocess": id},
     {"name": "pair$macrocall$5", "symbols": ["pair$macrocall$6", "_"], "postprocess": ([x, ]) => x},
-    {"name": "pair", "symbols": ["pair$macrocall$1", "expr", "pair$macrocall$3", "expr", "pair$macrocall$5"], "postprocess": ([, e1, , e2,]) => Expr.dataExpr(Pair.name, [e1, e2])(ν())},
+    {"name": "pair", "symbols": ["pair$macrocall$1", "expr", "pair$macrocall$3", "expr", "pair$macrocall$5"], "postprocess": ([, e1, , e2,]) => at(exprClass(Pair.name), e1, e2)(ν())},
     {"name": "list$macrocall$2", "symbols": [{"literal":"["}]},
     {"name": "list$macrocall$1", "symbols": ["list$macrocall$2"], "postprocess": id},
     {"name": "list$macrocall$1", "symbols": ["list$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -172,10 +172,10 @@ const grammar: Grammar = {
     {"name": "list", "symbols": ["list$macrocall$1", "listOpt", "list$macrocall$3"], "postprocess": ([, e, ]) => e},
     {"name": "constr", "symbols": ["ctr", "args"], "postprocess":  ([c, e̅], _, reject) => {
            assert(c instanceof Str)
-           if (arity(c) !== e̅.length) {
+           if (arity(c.val) !== e̅.length) {
               return reject
            }
-           return Expr.dataExpr(c.val, e̅)(ν())
+           return at(exprClass(c.val), ...e̅)(ν())
         } },
     {"name": "ctr$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
     {"name": "ctr$macrocall$1", "symbols": ["ctr$macrocall$2"], "postprocess": id},
@@ -318,15 +318,15 @@ const grammar: Grammar = {
     {"name": "typename$macrocall$1", "symbols": ["typename$macrocall$2"], "postprocess": id},
     {"name": "typename$macrocall$1", "symbols": ["typename$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "typename", "symbols": ["typename$macrocall$1"], "postprocess": ([[x]]) => str(x.value)(ν())},
-    {"name": "listOpt", "symbols": [], "postprocess": () => Expr.dataExpr(Nil.name, [])(ν())},
+    {"name": "listOpt", "symbols": [], "postprocess": () => at(exprClass(Nil.name))(ν())},
     {"name": "listOpt$ebnf$1", "symbols": []},
     {"name": "listOpt$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listOpt$ebnf$1$subexpression$1$macrocall$1", "symbols": ["listOpt$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
     {"name": "listOpt$ebnf$1$subexpression$1$macrocall$1", "symbols": ["listOpt$ebnf$1$subexpression$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "listOpt$ebnf$1$subexpression$1", "symbols": ["listOpt$ebnf$1$subexpression$1$macrocall$1", "expr"], "postprocess": ([, e]) => e},
     {"name": "listOpt$ebnf$1", "symbols": ["listOpt$ebnf$1", "listOpt$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "listOpt", "symbols": ["expr", "listOpt$ebnf$1", "listRestOpt"], "postprocess": ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => Expr.dataExpr(Cons.name, [e, e̅])(ν()))},
-    {"name": "listRestOpt", "symbols": [], "postprocess": () => Expr.dataExpr(Nil.name, [])(ν())},
+    {"name": "listOpt", "symbols": ["expr", "listOpt$ebnf$1", "listRestOpt"], "postprocess": ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => at(exprClass(Cons.name), e, e̅)(ν()))},
+    {"name": "listRestOpt", "symbols": [], "postprocess": () => at(exprClass(Nil.name))(ν())},
     {"name": "listRestOpt$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listRestOpt$macrocall$1", "symbols": ["listRestOpt$macrocall$2"], "postprocess": id},
     {"name": "listRestOpt$macrocall$1", "symbols": ["listRestOpt$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -373,7 +373,7 @@ const grammar: Grammar = {
     {"name": "listRestOpt_pattern", "symbols": ["listRestOpt_pattern$macrocall$5", "list1_pattern"], "postprocess": ([, mk_κ]) => mk_κ},
     {"name": "constr_pattern", "symbols": ["ctr", "args_pattern"], "postprocess":  ([c, mk_κs], _, reject) => {
            assert(c instanceof Str)
-           if (arity(c) !== mk_κs.length) {
+           if (arity(c.val) !== mk_κs.length) {
               return reject
            }
            return (κ: Cont) => dataElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])

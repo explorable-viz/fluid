@@ -9,8 +9,7 @@ import { Expr } from "../Expr"
 import  { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
 import { clearMemo } from "../Value"
-import { createSvg } from "./Core"
-import { GraphicsRenderer, Slicer, ViewCoordinator } from "./GraphicsRenderer"
+import { GraphicsRenderer, Slicer, ViewCoordinator, svg } from "./GraphicsRenderer"
 
 // As with the test cases, we treat the dataset ρ as "external" data, meaning we push slicing
 // information back only as far as ρ.
@@ -82,13 +81,13 @@ class App {
          "graphicsView", 
          ρ,
          openWithImports("bar-chart", module_graphics), 
-         createSvg(400, 400, false)
+         svg.createSvg(400, 400)
       )
       this.dataView = new View(
          "dataView", 
          ρ,
          parseWithImports("renderData data", module_graphics, module_renderData), 
-         createSvg(400, 1200, false)
+         svg.createSvg(400, 1200)
       )
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {

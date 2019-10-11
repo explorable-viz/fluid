@@ -51,13 +51,21 @@ export class Ctr {
    }
 }
 
-export function ctrFor (ctr: Str): Ctr {
-   return ctrToDataType.get(ctr.val)!.ctrs.get(ctr.val)!
+export function ctrFor (c: string): Ctr {
+   return ctrToDataType.get(c)!.ctrs.get(c)!
 }
 
-export function arity (ctr: Str): number {
-   assert(ctrToDataType.has(ctr.val), `No such constructor: "${ctr.val}".`,)
-   return ctrFor(ctr).f̅.length
+export function arity (c: string): number {
+   assert(ctrToDataType.has(c), `No such constructor: "${c}".`,)
+   return ctrFor(c).f̅.length
+}
+
+export function explClass (c: string): Class<Expl.DataExpl> {
+   return __nonNull(ctrToDataType.get(c)).explC̅.get(c)!
+}
+
+export function exprClass (c: string): Class<Expr.DataExpr> {
+   return __nonNull(ctrToDataType.get(c)).exprC̅.get(c)!
 }
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
@@ -66,7 +74,7 @@ export const ctrToDataType: Map<string, DataType> = new Map
 export const elimToDataType: Map<string, DataType> = new Map
 const elimSuffix: string = "Elim"
 const explSuffix: string = "Expl"
-const exprSuffix: string = "Expr"
+export const exprSuffix: string = "Expr"
 
 // See https://stackoverflow.com/questions/33605775 for the dynamic class-naming idiom.
 export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]) {
@@ -96,10 +104,6 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                         (this as any)[f] = _
                      })
                   }
-
-                  get ctr (): string {
-                     return c_str
-                  }
                }
             }[exprC_name]]
          }),
@@ -113,10 +117,6 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                         (this as any)[f] = _
                      })
                   }
-
-                  get ctr (): string {
-                     return c_str
-                  }
                }
             }[explC_name]]
          }),
@@ -126,10 +126,6 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
    })
    elimToDataType.set(elimC_name, d)
    types.set(d.name.val, d)
-}
-
-export function exprClass<T extends DataValue> (C: Class<T>): Class<Expr.DataExpr> {
-   return __nonNull(ctrToDataType.get(C.name)).exprC̅.get(C.name)!
 }
 
 types.set(Num.name, new PrimType(str(Num.name)(ν()), Num))

@@ -1,5 +1,5 @@
 import { Class, __nonNull, assert } from "./util/Core"
-import { Delta, __deltas } from "./Delta"
+import { Delta, Change, __deltas } from "./Delta"
 import { Id, Persistent, Num, Str, Value, _, construct, fields, make } from "./Value"
 
 // Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
@@ -40,8 +40,17 @@ export function at<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id)
             enumerable: false
          })
          Object.defineProperty(v, "__ẟ", {
+            // The delta map is partial; the absence of an entry is equivalent to an empty delta. This allows
+            // deltas to be cleared simply by removing all entries from the map.
             get: function (): Delta {
-               return __nonNull(__deltas.ẟ̅.get(this))
+               let ẟ: Delta | undefined = __deltas.ẟ̅.get(this)
+               if (ẟ === undefined) {
+                  ẟ = new Change({})
+                  __deltas.ẟ̅.set(this, ẟ)
+                  return ẟ
+               } else {
+                  return ẟ
+               }
             },
             enumerable: false
          })

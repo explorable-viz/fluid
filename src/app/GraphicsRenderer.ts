@@ -8,8 +8,10 @@ import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } f
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
-import { svgNS, textElement, textHeight, textWidth } from "./Core"
+import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
+
+export const svg: SVG = new SVG(true)
 
 const fontSize: number = 12,
       class_: string = ""
@@ -97,7 +99,7 @@ export class GraphicsRenderer {
    }
 
    group (tg: ExplValueCursor/*<Graphic>*/): void {
-      const group: SVGGElement = document.createElementNS(svgNS, "g")
+      const group: SVGGElement = document.createElementNS(SVG.NS, "g")
       // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
       group.setAttribute("pointer-events", "bounding-box")
       this.current.appendChild(group)
@@ -129,7 +131,7 @@ export class GraphicsRenderer {
    }
 
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
-      const path: SVGPolylineElement = document.createElementNS(svgNS, "polyline")
+      const path: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
       path.setAttribute("points", this.points(as(tg.tv.v, Polyline).points))
       path.setAttribute("stroke", "black")
       path.addEventListener("click", (e: MouseEvent): void => {
@@ -161,7 +163,7 @@ export class GraphicsRenderer {
    }
 
    circle (x: number, y: number, radius: number): void {
-      const circle: SVGCircleElement = document.createElementNS(svgNS, "circle")
+      const circle: SVGCircleElement = document.createElementNS(SVG.NS, "circle")
       circle.setAttribute("cx", x.toString())
       circle.setAttribute("cy", y.toString())
       circle.setAttribute("r", radius.toString())
@@ -171,7 +173,7 @@ export class GraphicsRenderer {
    }
 
    polygon (tg: ExplValueCursor/*<Polygon>*/): void {
-      const polygon: SVGPolygonElement = document.createElementNS(svgNS, "polygon"),
+      const polygon: SVGPolygonElement = document.createElementNS(SVG.NS, "polygon"),
             g: Polygon = as(tg.tv.v, Polygon)
       polygon.setAttribute("points", this.points(g.points))
       polygon.setAttribute("stroke", g.stroke.val)
@@ -198,7 +200,7 @@ export class GraphicsRenderer {
    text (tg: ExplValueCursor/*<Text>*/): void {
       const g: Text = as(tg.tv.v, Text),
             [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
-            text: SVGTextElement = textElement(x, y, fontSize, class_, g.str.val)
+            text: SVGTextElement = svg.textElement(x, y, fontSize, class_, g.str.val)
       text.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
@@ -215,7 +217,7 @@ export class GraphicsRenderer {
       }
       if (α) {
          const bbox: SVGRect = text.getBBox(),
-               rect = document.createElementNS(svgNS, "rect")
+               rect = document.createElementNS(SVG.NS, "rect")
              rect.setAttribute("x", bbox.x.toString())
              rect.setAttribute("y", bbox.y.toString())
              rect.setAttribute("width", bbox.width.toString())
@@ -233,14 +235,14 @@ export class GraphicsRenderer {
 {
    // Additional primitives that rely on offline rendering to compute text metrics. Combining these would 
    // require more general primitives that can return tuples.
-   const textWidth_: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(textWidth(fontSize, class_, str.val))
+   const textWidth: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
+      return num(svg.textWidth(fontSize, class_, str.val))
    }
    
-   const textHeight_: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(textHeight(fontSize, class_, str.val))
+   const textHeight: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
+      return num(svg.textHeight(fontSize, class_, str.val))
    }
    
-   unaryOps.set(textWidth.name, unary_(textWidth_))
-   unaryOps.set(textHeight.name, unary_(textHeight_))
+   unaryOps.set(textWidth.name, unary_(textWidth))
+   unaryOps.set(textHeight.name, unary_(textHeight))
 }

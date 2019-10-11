@@ -137,7 +137,7 @@ export class ExprCursor extends Cursor {
 
    // Allow the data value class to be used to navigate the data expression form.
    constr_to<T extends DataValue> (C: Class<T>, prop: keyof T): ExprCursor {
-      return this.to<DataExpr>(exprClass(C), prop as keyof DataExpr)
+      return this.to<DataExpr>(exprClass(C.name), prop as keyof DataExpr)
    }
 
    toCase<T extends DataValue> (C: Class<T>): ExprCursor {
@@ -202,7 +202,7 @@ export class ExprCursor extends Cursor {
 
    constr_splice<T extends DataValue> (C: Class<T>, props: (keyof T)[], makeNode: (e̅: Expr[]) => Expr[]): ExprCursor {
       return this.splice<DataValue>(
-         exprClass(C), 
+         exprClass(C.name), 
          props as (keyof DataValue)[], 
          (e̅: Persistent[]): Expr[] => makeNode(e̅.map(e => as(e, Expr.Expr)))
       )
