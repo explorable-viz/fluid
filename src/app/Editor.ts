@@ -195,8 +195,8 @@ class Renderer {
    }
 
    renderText (str: string, ẟ_style?: string): SVGTextElement {
-      const classesʹ: string = ẟ_style ? [classes, ẟ_style].join() : classes,
-            text: SVGTextElement = svg.textElement(this.x, this.line * lineHeight, fontSize, classesʹ, str)
+      ẟ_style = ẟ_style || "unchanged" // default
+      const text: SVGTextElement = svg.textElement(this.x, this.line * lineHeight, fontSize, [classes, ẟ_style].join(" "), str)
       svg.metrics!.appendChild(text)
       const { width } = text.getBBox()
       dimensions.set(text, { width, height: lineHeight })
@@ -206,14 +206,14 @@ class Renderer {
    }
 }
 
-function deltaStyle (v: Value): string | undefined {
+function deltaStyle (v: Value): string{
    if (versioned(v)) {
       if (v.__ẟ instanceof New) {
          return "new"
       } else
       if (v.__ẟ instanceof Change) {
          if (Object.keys(v.__ẟ.changed).length === 0) {
-            return undefined
+            return "unchanged"
          } else {
             return "changed"
          }

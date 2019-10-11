@@ -8,6 +8,13 @@
 }
 
 .code {
-   fill: black;
    font-family: "inconsolata";
+}
+
+.changed {
+   fill: blue;
+}
+
+.unchanged {
+   fill: black;
 }
