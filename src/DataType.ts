@@ -51,13 +51,17 @@ export class Ctr {
    }
 }
 
-export function ctrFor (ctr: Str): Ctr {
-   return ctrToDataType.get(ctr.val)!.ctrs.get(ctr.val)!
+export function ctrFor (c: string): Ctr {
+   return ctrToDataType.get(c)!.ctrs.get(c)!
 }
 
-export function arity (ctr: Str): number {
-   assert(ctrToDataType.has(ctr.val), `No such constructor: "${ctr.val}".`,)
-   return ctrFor(ctr).f̅.length
+export function arity (c: string): number {
+   assert(ctrToDataType.has(c), `No such constructor: "${c}".`,)
+   return ctrFor(c).f̅.length
+}
+
+export function exprClass<T extends DataValue> (C: Class<T>): Class<Expr.DataExpr> {
+   return __nonNull(ctrToDataType.get(C.name)).exprC̅.get(C.name)!
 }
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
@@ -118,10 +122,6 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
    })
    elimToDataType.set(elimC_name, d)
    types.set(d.name.val, d)
-}
-
-export function exprClass<T extends DataValue> (C: Class<T>): Class<Expr.DataExpr> {
-   return __nonNull(ctrToDataType.get(C.name)).exprC̅.get(C.name)!
 }
 
 types.set(Num.name, new PrimType(str(Num.name)(ν()), Num))

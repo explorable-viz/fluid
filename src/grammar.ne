@@ -155,7 +155,7 @@ constr ->
    ctr args
    {% ([c, e̅], _, reject) => {
       assert(c instanceof Str)
-      if (arity(c) !== e̅.length) {
+      if (arity(c.val) !== e̅.length) {
          return reject
       }
       return Expr.dataExpr(c.val, e̅)(ν())
@@ -294,7 +294,7 @@ constr_pattern ->
    ctr args_pattern
    {% ([c, mk_κs], _, reject) => {
       assert(c instanceof Str)
-      if (arity(c) !== mk_κs.length) {
+      if (arity(c.val) !== mk_κs.length) {
          return reject
       }
       return (κ: Cont) => dataElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])

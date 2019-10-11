@@ -172,7 +172,7 @@ const grammar: Grammar = {
     {"name": "list", "symbols": ["list$macrocall$1", "listOpt", "list$macrocall$3"], "postprocess": ([, e, ]) => e},
     {"name": "constr", "symbols": ["ctr", "args"], "postprocess":  ([c, e̅], _, reject) => {
            assert(c instanceof Str)
-           if (arity(c) !== e̅.length) {
+           if (arity(c.val) !== e̅.length) {
               return reject
            }
            return Expr.dataExpr(c.val, e̅)(ν())
@@ -373,7 +373,7 @@ const grammar: Grammar = {
     {"name": "listRestOpt_pattern", "symbols": ["listRestOpt_pattern$macrocall$5", "list1_pattern"], "postprocess": ([, mk_κ]) => mk_κ},
     {"name": "constr_pattern", "symbols": ["ctr", "args_pattern"], "postprocess":  ([c, mk_κs], _, reject) => {
            assert(c instanceof Str)
-           if (arity(c) !== mk_κs.length) {
+           if (arity(c.val) !== mk_κs.length) {
               return reject
            }
            return (κ: Cont) => dataElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])
