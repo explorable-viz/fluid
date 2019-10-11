@@ -60,8 +60,12 @@ export function arity (c: string): number {
    return ctrFor(c).f̅.length
 }
 
-export function exprClass<T extends DataValue> (C: Class<T>): Class<Expr.DataExpr> {
-   return __nonNull(ctrToDataType.get(C.name)).exprC̅.get(C.name)!
+export function explClass (c: string): Class<Expl.DataExpl> {
+   return __nonNull(ctrToDataType.get(c)).explC̅.get(c)!
+}
+
+export function exprClass (c: string): Class<Expr.DataExpr> {
+   return __nonNull(ctrToDataType.get(c)).exprC̅.get(c)!
 }
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
