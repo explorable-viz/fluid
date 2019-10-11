@@ -1,11 +1,14 @@
 import { zip } from "../util/Array"
 import { absurd, as, className, error, log } from "../util/Core"
 import { Cons, Nil } from "../BaseTypes"
+import { ExplValue } from "../DataValue"
 import { __deltas } from "../Delta"
+import { emptyEnv } from "../Env"
+import { Eval } from "../Eval"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
 import { openWithImports } from "../Module"
-import { fields } from "../Value"
+import { Num, Str, Value, fields } from "../Value"
 import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
 import { ExprCursor } from "./Cursor"
 import "./styles.css"
@@ -28,10 +31,33 @@ class Renderer {
       this.line = 5
    }
 
+   renderPrompt(e: Expr, v: Value): SVGElement {
+      const e_g: SVGElement = this.render(e)
+      this.line++
+      return Renderer.group(
+         e_g,
+         Renderer.group(
+            this.renderText(">"),
+            this.space(), this.renderValue(v)
+         )
+      )
+   }
+
+   renderValue (v: Value): SVGElement {
+      if (v instanceof Num) {
+         return this.renderNum(v, false)
+      } else
+      if (v instanceof Str) {
+         return this.renderText(v.val.toString())
+      } else {
+         return this.renderText(`<${className(v)}>`)
+      }
+   }
+
    // Post-condition: returned element has an entry in "dimensions" map. 
    render (e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
-         return this.renderNum(e)
+         return this.renderNum(e.val, true)
       } else
       if (e instanceof Expr.ConstStr) {
          return this.renderText(e.val.toString())
@@ -56,12 +82,11 @@ class Renderer {
       }
    }
 
-   renderNum (e: Expr.ConstNum): SVGElement {
-      const v: SVGElement = this.renderText(e.val.toString()),
-            n: number = e.val.val
-      if (Number.isInteger(n)) {
+   renderNum (n: Num, editable: boolean): SVGElement {
+      const v: SVGElement = this.renderText(n.toString())
+      if (editable && Number.isInteger(n.val)) {
          v.addEventListener("click", (ev: MouseEvent): void => {
-            new ExprCursor(e.val).setNum(n + 1)
+            new ExprCursor(n).setNum(n.val + 1)
             ev.stopPropagation()
          })
       }
@@ -190,9 +215,11 @@ class Editor {
       window.onload = (ev: Event): void => {
          const root: SVGSVGElement = createSvg(800, 400, false)
          document.body.appendChild(root)
-         const e: Expr = as(openWithImports("foldr_sumSquares"), Expr.Defs).e
+         const e0: Expr = openWithImports("foldr_sumSquares"),
+               e: Expr = as(e0, Expr.Defs).e,
+               tv: ExplValue = Eval.eval_(emptyEnv(), e0)
          __deltas.clear()         
-         root.appendChild(new Renderer().render(e))
+         root.appendChild(new Renderer().renderPrompt(e, tv.v))
       }
    }
 }
