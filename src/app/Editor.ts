@@ -1,5 +1,5 @@
 import { zip } from "../util/Array"
-import { absurd, as, className, error, log } from "../util/Core"
+import { absurd, as, className, error } from "../util/Core"
 import { Cons, Nil } from "../BaseTypes"
 import { exprClass } from "../DataType"
 import { ExplValue } from "../DataValue"
@@ -20,7 +20,7 @@ const svg: SVG = new SVG(false),
       fontSize: number = 18,
       class_: string = "code",
       // bizarrely, if I do this later, font metrics are borked:
-      lineHeight = log(Math.ceil(svg.textHeight(fontSize, class_, "m")) * 2), // representative character 
+      lineHeight = svg.textHeight(fontSize, class_, "m"), // representative character 
       // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
       space: string = "\u00a0"
 
