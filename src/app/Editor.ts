@@ -87,6 +87,12 @@ class Renderer {
                sp: SVGElement = this.space(),
                g_e: SVGElement = e.e instanceof Expr.Fun ? this.renderParens(e.e) : this.render(e.e)
          return Renderer.group(g_f, sp, g_e)
+      } else
+      if (e instanceof Expr.Defs) {
+         const defs_g: SVGElement = this.renderText(`<${className(e)}>`)
+         this.line++
+         this.x = 0
+         return Renderer.group(defs_g, this.render(e.e))
       } else {
          return absurd()
       }
@@ -259,7 +265,7 @@ class Editor {
    constructor () {
       this.root = svg.createSvg(800, 400)
       document.body.appendChild(this.root)
-      this.e0 = openWithImports("foldr_sumSquares"),
+      this.e0 = openWithImports("ic2019"),
       this.e = as(this.e0, Expr.Defs).e
       this.tv = Eval.eval_(emptyEnv(), this.e0) 
       __deltas.clear()         
