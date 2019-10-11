@@ -17,13 +17,13 @@ import "./styles.css"
 
 import Cont = Expr.Cont
 
-const svg: SVG = new SVG(false),
-      fontSize: number = 18,
-      classes: string = "code",
-      // bizarrely, if I do this later, font metrics are borked:
-      lineHeight = svg.textHeight(fontSize, classes, "m"), // representative character 
-      // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
-      space: string = "\u00a0"
+const svg: SVG = new SVG(false)
+const fontSize: number = 18
+const classes: string = "code"
+// bizarrely, if I do this later, font metrics are borked:
+const lineHeight = svg.textHeight(fontSize, classes, "m") // representative character 
+// ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
+const space: string = "\u00a0"
 
 class Renderer {
    x: number
