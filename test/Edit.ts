@@ -3,11 +3,12 @@
 import { Edit } from "./util/Core"
 import { as } from "../src/util/Core"
 import { Cons, Pair } from "../src/BaseTypes"
+import { exprClass } from "../src/DataType"
 import { Expr } from "../src/Expr"
 import { VarElim } from "../src/Match"
 import { open } from "../src/Module"
 import { Persistent } from "../src/Value"
-import { ν, num, str } from "../src/Versioned"
+import { ν, at, num, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
 
 before((done: MochaDone) => {
@@ -118,7 +119,7 @@ describe("edit", () => {
                    .var_("x").var_("xs")
                    .constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
                       const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-                      return [Expr.dataExpr(Pair.name, [e, eʹ])(ν())]
+                      return [at(exprClass(Pair.name), e, eʹ)(ν())]
                    })
             }
 

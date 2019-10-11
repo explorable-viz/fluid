@@ -2,7 +2,6 @@ import { __nonNull, absurd, className } from "./util/Core"
 import { diff, union } from "./util/Set"
 import { AnnotatedC } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
-import { DataType, ctrToDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { FiniteMap } from "./FiniteMap"
 import { Elim, DataElim, VarElim } from "./Match"
@@ -87,11 +86,6 @@ export namespace Expr {
       }
    }
    
-   export function dataExpr (c: string, e̅: Expr[]): (k: Id) => DataExpr {
-      const d: DataType = __nonNull(ctrToDataType.get(c))
-      return at(d.exprC̅.get(c)!, ...e̅)
-   }
-
    export class Def extends SyntaxNode<"Expr.Def"> {
    }
 
