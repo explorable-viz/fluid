@@ -1,6 +1,7 @@
 import { zip } from "../util/Array"
 import { absurd, as, className, error, log } from "../util/Core"
 import { Cons, Nil } from "../BaseTypes"
+import { exprClass } from "../DataType"
 import { ExplValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { emptyEnv } from "../Env"
@@ -64,7 +65,7 @@ class Renderer {
          return this.renderText(e.val.toString())
       } else
       if (e instanceof Expr.DataExpr) {
-         if (e.ctr === Nil.name || e.ctr === Cons.name) {
+         if (className(e) === exprClass(Nil.name).name || className(e) === exprClass(Cons.name).name) {
             return Renderer.group(this.renderText("["), ...this.renderElements(e), this.renderText("]"))
          } else {
             return this.renderText(`<${className(e)}>`)
@@ -191,10 +192,10 @@ class Renderer {
 // Expressions for the elements, plus expression for tail (or null if list terminates with nil).
 function listElements (e: Expr): [Expr[], Expr | null] {
    if (e instanceof Expr.DataExpr) {
-      if (e.ctr === Nil.name) {
+      if (className(e) === exprClass(Nil.name).name) {
          return [[], null]
       } else
-      if (e.ctr === Cons.name) {
+      if (className(e) === exprClass(Cons.name).name) {
          // use cursor interface instead?
          const [es, eʹ]: [Expr[], Expr | null] = listElements(as(e.__child("tail"), Expr.Expr))
          return [[as(e.__child("head"), Expr.Expr), ...es], eʹ]
