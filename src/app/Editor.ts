@@ -18,9 +18,9 @@ import Cont = Expr.Cont
 
 const svg: SVG = new SVG(false),
       fontSize: number = 18,
-      class_: string = "code",
+      classes: string = "code",
       // bizarrely, if I do this later, font metrics are borked:
-      lineHeight = svg.textHeight(fontSize, class_, "m"), // representative character 
+      lineHeight = svg.textHeight(fontSize, classes, "m"), // representative character 
       // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
       space: string = "\u00a0"
 
@@ -193,14 +193,28 @@ class Renderer {
       return g
    }
 
-   renderText (str: string): SVGTextElement {
-      const text: SVGTextElement = svg.textElement(this.x, this.line * lineHeight, fontSize, class_, str)
+   renderText (str: string, delta?: Delta): SVGTextElement {
+      const classesʹ: string = [classes, ...deltaClassOpt(delta)].join(),
+            text: SVGTextElement = svg.textElement(this.x, this.line * lineHeight, fontSize, classesʹ, str)
       svg.metrics!.appendChild(text)
       const { width } = text.getBBox()
       dimensions.set(text, { width, height: lineHeight })
       text.remove()
       this.x += width
       return text
+   }
+}
+
+enum Delta { New, Changed }
+
+function deltaClassOpt (delta?: Delta): string[] {
+   switch (delta) {
+      case Delta.New:
+         return ["new"]
+      case Delta.Changed:
+         return ["changed"]
+      case undefined:
+         return []
    }
 }
 
