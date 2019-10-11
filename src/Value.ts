@@ -126,7 +126,11 @@ export function mergeInto (tgt: State, src: State): void {
       if (!tgt.hasOwnProperty(prop)) {
          tgt[prop] = src[prop]
       } else {
-         assert(tgt[prop] === src[prop])
+         assert(
+            tgt[prop] === src[prop],
+            `Incompatible update of field "${prop}" at revision.`,
+            tgt, src
+         )
       }
    })
 }

@@ -1,10 +1,16 @@
+import { zip } from "../util/Array"
 import { absurd, as, className, error, log } from "../util/Core"
 import { Cons, Nil } from "../BaseTypes"
+import { __deltas } from "../Delta"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
 import { openWithImports } from "../Module"
+import { fields } from "../Value"
 import { createSvg, svgMetrics, svgNS, textElement, textHeight } from "./Core"
+import { ExprCursor } from "./Cursor"
 import "./styles.css"
+
+import Cont = Expr.Cont
 
 const fontSize: number = 18,
       class_: string = "code",
@@ -19,13 +25,13 @@ class Renderer {
 
    constructor () {
       this.x = 0
-      this.line = 0
+      this.line = 5
    }
 
    // Post-condition: returned element has an entry in "dimensions" map. 
    render (e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
-         return this.renderText(e.val.toString())
+         return this.renderNum(e)
       } else
       if (e instanceof Expr.ConstStr) {
          return this.renderText(e.val.toString())
@@ -50,13 +56,29 @@ class Renderer {
       }
    }
 
+   renderNum (e: Expr.ConstNum): SVGElement {
+      const v: SVGElement = this.renderText(e.val.toString()),
+            n: number = e.val.val
+      if (Number.isInteger(n)) {
+         v.addEventListener("click", (ev: MouseEvent): void => {
+            new ExprCursor(e.val).setNum(n + 1)
+            ev.stopPropagation()
+         })
+      }
+      return v
+   }
+
+   space (): SVGElement {
+      return this.renderText(`${space}`)
+   }
+
    renderElements (e: Expr): SVGElement[] {
       const [es, eʹ]: [Expr[], Expr | null] = listElements(e),
             vs: SVGElement[] = []
       es.forEach((e: Expr, n: number): void => {
          vs.push(this.render(e))
          if (n < es.length - 1) {
-            vs.push(this.renderText(`,${space}`))
+            vs.push(this.renderText(","), this.space())
          }
       })
       if (eʹ !== null) {
@@ -65,12 +87,37 @@ class Renderer {
       return vs
    }
 
-   renderElim (σ: Elim<Expr>): SVGElement {
+   renderElim<K extends Cont> (σ: Elim<K>): SVGElement {
       if (VarElim.is(σ)) {
-         return Renderer.group(this.renderText(σ.x.val), this.renderText(strings.arrow), this.render(σ.κ))
+         return Renderer.group(
+            this.renderText(σ.x.val),
+            this.space(), this.renderText(strings.arrow), 
+            this.space(), this.renderCont(σ.κ)
+         )
       } else
       if (DataElim.is(σ)) {
-         return this.renderText(`<${className(σ)}>`)
+         return Renderer.group(
+            ...zip(fields(σ), σ.__children as Cont[]).map(([ctr, κ]) => {
+               return Renderer.group(
+                  this.renderText(ctr),
+                  this.space(),
+                  this.renderText(strings.arrow),
+                  this.space(),
+                  this.renderCont(κ)
+               )
+            })
+         )
+      } else {
+         return absurd()
+      }
+   }
+
+   renderCont (κ: Cont): SVGElement {
+      if (κ instanceof Expr.Expr) {
+         return this.render(κ)
+      } else
+      if (κ instanceof Elim) {
+         return this.renderElim(κ)
       } else {
          return absurd()
       }
@@ -88,6 +135,7 @@ class Renderer {
       return vs
    }
 
+   // TODO: completely broken; ignores the fact that elements have x, y coordinates :-/
    static group (...vs: SVGElement[]): SVGElement {
       const g: SVGGElement = document.createElementNS(svgNS, "g")
       let width_sum: number = 0,
@@ -140,9 +188,10 @@ class Editor {
    constructor () {
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
-         const root: SVGSVGElement = createSvg(400, 400, false)
+         const root: SVGSVGElement = createSvg(800, 400, false)
          document.body.appendChild(root)
          const e: Expr = as(openWithImports("foldr_sumSquares"), Expr.Defs).e
+         __deltas.clear()         
          root.appendChild(new Renderer().render(e))
       }
    }
