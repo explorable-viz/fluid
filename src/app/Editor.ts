@@ -81,10 +81,20 @@ class Renderer {
          return Renderer.group(this.render(e.e1), this.space(), this.renderText(e.opName.val), this.space(), this.render(e.e2))
       } else
       if (e instanceof Expr.App) {
-         return Renderer.group(...this.renderHoriz(e.f, e.e))
+         const g_f: SVGElement = e.f instanceof Expr.Fun ? this.renderParens(e.f) : this.render(e.f),
+               g_e: SVGElement = e.e instanceof Expr.Fun ? this.renderParens(e.e) : this.render(e.e)
+         return Renderer.group(g_f, this.space(), g_e)
       } else {
-         return this.renderText(`<${className(e)}>`)
+         return absurd()
       }
+   }
+
+   renderParens (e: Expr): SVGElement {
+      return Renderer.group(
+         this.renderText("("),
+         this.render(e),
+         this.renderText(")")
+      )
    }
 
    renderNum (n: Num, editable: boolean): SVGElement {
