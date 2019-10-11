@@ -82,8 +82,9 @@ class Renderer {
       } else
       if (e instanceof Expr.App) {
          const g_f: SVGElement = e.f instanceof Expr.Fun ? this.renderParens(e.f) : this.render(e.f),
+               sp: SVGElement = this.space(),
                g_e: SVGElement = e.e instanceof Expr.Fun ? this.renderParens(e.e) : this.render(e.e)
-         return Renderer.group(g_f, this.space(), g_e)
+         return Renderer.group(g_f, sp, g_e)
       } else {
          return absurd()
       }
