@@ -3,13 +3,14 @@ import { absurd, as, className, error } from "../util/Core"
 import { Cons, Nil } from "../BaseTypes"
 import { exprClass } from "../DataType"
 import { ExplValue } from "../DataValue"
-import { __deltas } from "../Delta"
+import { Change, New, Reclassify, __deltas } from "../Delta"
 import { emptyEnv } from "../Env"
 import { Eval } from "../Eval"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
 import { openWithImports } from "../Module"
 import { Num, Str, Value, fields } from "../Value"
+import { versioned } from "../Versioned"
 import { SVG } from "./Core"
 import { ExprCursor } from "./Cursor"
 import "./styles.css"
@@ -51,7 +52,7 @@ class Renderer {
          return this.renderNum(v, false)
       } else
       if (v instanceof Str) {
-         return this.renderText(v.val.toString())
+         return this.renderText(v.val.toString(), deltaStyle(v))
       } else {
          return this.renderText(`<${className(v)}>`)
       }
@@ -100,7 +101,7 @@ class Renderer {
    }
 
    renderNum (n: Num, editable: boolean): SVGElement {
-      const v: SVGElement = this.renderText(n.toString())
+      const v: SVGElement = this.renderText(n.toString(), deltaStyle(n))
       if (editable && Number.isInteger(n.val)) {
          v.addEventListener("click", (ev: MouseEvent): void => {
             new ExprCursor(n).setNum(n.val + 1)
@@ -193,8 +194,8 @@ class Renderer {
       return g
    }
 
-   renderText (str: string, delta?: Delta): SVGTextElement {
-      const classesʹ: string = [classes, ...deltaClassOpt(delta)].join(),
+   renderText (str: string, ẟ_style?: string): SVGTextElement {
+      const classesʹ: string = ẟ_style ? [classes, ẟ_style].join() : classes,
             text: SVGTextElement = svg.textElement(this.x, this.line * lineHeight, fontSize, classesʹ, str)
       svg.metrics!.appendChild(text)
       const { width } = text.getBBox()
@@ -205,18 +206,27 @@ class Renderer {
    }
 }
 
-enum Delta { New, Changed }
-
-function deltaClassOpt (delta?: Delta): string[] {
-   switch (delta) {
-      case Delta.New:
-         return ["new"]
-      case Delta.Changed:
-         return ["changed"]
-      case undefined:
-         return []
+function deltaStyle (v: Value): string | undefined {
+   if (versioned(v)) {
+      if (v.__ẟ instanceof New) {
+         return "new"
+      } else
+      if (v.__ẟ instanceof Change) {
+         if (Object.keys(v.__ẟ.changed).length === 0) {
+            return undefined
+         } else {
+            return "changed"
+         }
+      } else
+      if (v.__ẟ instanceof Reclassify) {
+         return "changed"
+      } else {
+         return absurd()
+      }
+   } else {
+      return absurd()
    }
-}
+} 
 
 // Expressions for the elements, plus expression for tail (or null if list terminates with nil).
 function listElements (e: Expr): [Expr[], Expr | null] {
