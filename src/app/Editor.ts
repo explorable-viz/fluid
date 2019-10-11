@@ -261,9 +261,9 @@ class Editor {
       document.body.appendChild(this.root)
       this.e0 = openWithImports("foldr_sumSquares"),
       this.e = as(this.e0, Expr.Defs).e
-      this.tv = Eval.eval_(emptyEnv(), this.e0)
+      this.tv = Eval.eval_(emptyEnv(), this.e0) 
       __deltas.clear()         
-   // Wait for fonts to load before rendering, otherwise metrics will be wrong.
+      // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
          this.root.appendChild(new Renderer().renderPrompt(this.e, this.tv.v))
       }
