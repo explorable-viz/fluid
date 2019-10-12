@@ -59,7 +59,7 @@ class Renderer {
          return this.renderText(v.val.toString(), deltaStyle(v))
       } else 
       if (v instanceof List) {
-         return Renderer.group(this.renderText("["), ...this.renderElements_(elements(v)), this.renderText("]"))
+         return Renderer.group(this.renderText("["), ...this.renderElements_([v.toArray(), null]), this.renderText("]"))
       } else {
          return this.renderText(`<${className(v)}>`)
       }
@@ -250,10 +250,6 @@ function deltaStyle (v: Value): string{
       return absurd()
    }
 } 
-
-function elements (vs: List<Value>): [Value[], null] {
-   return [vs.toArray(), null]
-}
 
 // Expressions for the elements, plus expression for tail (or null if list terminates with nil).
 function elements_expr (e: Expr): [Expr[], Expr | null] {
