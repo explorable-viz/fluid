@@ -236,11 +236,11 @@ export class GraphicsRenderer {
    // Additional primitives that rely on offline rendering to compute text metrics. Combining these would 
    // require more general primitives that can return tuples.
    const textWidth: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(svg.textWidth(fontSize, class_, str.val))
+      return num(svg.textWidth(svg.textElement(0, 0, fontSize, class_, str.val)))
    }
    
    const textHeight: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(svg.textHeight(fontSize, class_, str.val))
+      return num(svg.textHeight(svg.textElement(0, 0, fontSize, class_, str.val)))
    }
    
    unaryOps.set(textWidth.name, unary_(textWidth))

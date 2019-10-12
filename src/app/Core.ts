@@ -2,7 +2,7 @@
 export class SVG {
    static NS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
    invert_y: boolean
-   metrics: SVGSVGElement
+   private metrics: SVGSVGElement
 
    constructor (invert_y: boolean) {
       this.invert_y = invert_y
@@ -45,16 +45,14 @@ export class SVG {
       return text
    }
 
-   textWidth (fontSize: number, class_: string, str: string): number {
-      const text: SVGTextElement = this.textElement(0, 0, fontSize, class_, str)
+   textWidth (text: SVGTextElement): number {
       this.metrics.appendChild(text)
       const width: number = text.getBBox().width
       text.remove()
       return width
    }
-   
-   textHeight (fontSize: number, class_: string, str: string): number {
-      const text: SVGTextElement = this.textElement(0, 0, fontSize, class_, str)
+
+   textHeight (text: SVGTextElement): number {
       this.metrics.appendChild(text)
       const height: number = text.getBBox().height
       text.remove()

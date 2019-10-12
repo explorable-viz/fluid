@@ -21,9 +21,13 @@ const svg: SVG = new SVG(false)
 const fontSize: number = 18
 const classes: string = "code"
 // bizarrely, if I do this later, font metrics are borked:
-const lineHeight = svg.textHeight(fontSize, classes, "m") // representative character 
+const lineHeight = svg.textHeight(svg.textElement(0, 0, fontSize, classes, "m")) // representative character 
 // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
 const space: string = "\u00a0"
+
+// Populate explicity, rather than using a memoised function.
+type Dimensions = { width: number, height: number }
+const dimensions: Map<SVGElement, Dimensions> = new Map()
 
 class Renderer {
    x: number
@@ -217,8 +221,7 @@ class Renderer {
    renderText (str: string, ẟ_style?: string): SVGTextElement {
       ẟ_style = ẟ_style || "unchanged" // default
       const text: SVGTextElement = svg.textElement(this.x, this.line * lineHeight, fontSize, [classes, ẟ_style].join(" "), str)
-      svg.metrics!.appendChild(text)
-      const { width } = text.getBBox()
+      const width: number = svg.textWidth(text)
       dimensions.set(text, { width, height: lineHeight })
       text.remove()
       this.x += width
@@ -269,10 +272,6 @@ function elements_expr (e: Expr): [Expr[], Expr | null] {
       return [[], e]
    }
 }
-
-// Populate explicity, rather than using a memoised function.
-type Dimensions = { width: number, height: number }
-const dimensions: Map<SVGElement, Dimensions> = new Map()
 
 class Editor {
    root: SVGSVGElement
