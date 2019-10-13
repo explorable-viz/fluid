@@ -40,91 +40,91 @@ export class Renderer {
       this.line = 1
    }
 
-   renderPrompt (e: Expr, v: Value): SVGElement {
-      const e_g: SVGElement = this.renderExpr(e)
+   prompt (e: Expr, v: Value): SVGElement {
+      const e_g: SVGElement = this.expr(e)
       this.line++
       this.x = 0
       return Renderer.group(
          e_g,
          Renderer.group(
-            this.renderText(">"),
-            this.space(), this.renderValue(v)
+            this.text(">"),
+            this.space(), this.value(v)
          )
       )
    }
 
-   renderValue (v: Value): SVGElement {
+   value (v: Value): SVGElement {
       if (v instanceof Num) {
-         return this.renderNum(v, false)
+         return this.num(v, false)
       } else
       if (v instanceof Str) {
-         return this.renderText(v.val.toString(), deltaStyle(v))
+         return this.text(v.val.toString(), deltaStyle(v))
       } else 
       if (v instanceof List) {
-         return Renderer.group(this.renderText("["), ...this.renderElements_([v.toArray(), null]), this.renderText("]"))
+         return Renderer.group(this.text("["), ...this.elements([v.toArray(), null]), this.text("]"))
       } else {
-         return this.renderText(`<${className(v)}>`)
+         return this.text(`<${className(v)}>`)
       }
    }
 
    render (v: Value): SVGElement {
       if (v instanceof Expr.Expr) {
-         return this.renderExpr(v)
+         return this.expr(v)
       } else {
-         return this.renderValue(v)
+         return this.value(v)
       }
    }
 
    // Post-condition: returned element has an entry in "dimensions" map. 
-   renderExpr (e: Expr): SVGElement {
+   expr (e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
-         return this.renderNum(e.val, true)
+         return this.num(e.val, true)
       } else
       if (e instanceof Expr.ConstStr) {
-         return this.renderText(e.val.toString())
+         return this.text(e.val.toString())
       } else
       if (e instanceof Expr.DataExpr) {
          if (className(e) === exprClass(Nil.name).name || className(e) === exprClass(Cons.name).name) {
-            return Renderer.group(this.renderText("["), ...this.renderElements_(elements_expr(e)), this.renderText("]"))
+            return Renderer.group(this.text("["), ...this.elements(elements_expr(e)), this.text("]"))
          } else {
-            return this.renderText(`<${className(e)}>`)
+            return this.text(`<${className(e)}>`)
          }
       } else
       if (e instanceof Expr.Var) {
-         return this.renderText(e.x.val)
+         return this.text(e.x.val)
       } else
       if (e instanceof Expr.Fun) {
-         return this.renderElim(e.σ)
+         return this.elim(e.σ)
       } else
       if (e instanceof Expr.BinaryApp) {
-         return Renderer.group(this.renderExpr(e.e1), this.space(), this.renderText(e.opName.val), this.space(), this.renderExpr(e.e2))
+         return Renderer.group(this.expr(e.e1), this.space(), this.text(e.opName.val), this.space(), this.expr(e.e2))
       } else
       if (e instanceof Expr.App) {
-         const g_f: SVGElement = e.f instanceof Expr.Fun ? this.renderParens(e.f) : this.renderExpr(e.f),
+         const g_f: SVGElement = e.f instanceof Expr.Fun ? this.parenthesise(e.f) : this.expr(e.f),
                sp: SVGElement = this.space(),
-               g_e: SVGElement = e.e instanceof Expr.Fun ? this.renderParens(e.e) : this.renderExpr(e.e)
+               g_e: SVGElement = e.e instanceof Expr.Fun ? this.parenthesise(e.e) : this.expr(e.e)
          return Renderer.group(g_f, sp, g_e)
       } else
       if (e instanceof Expr.Defs) {
-         const defs_g: SVGElement = this.renderText(`<${className(e)}>`)
+         const defs_g: SVGElement = this.text(`<${className(e)}>`)
          this.line++
          this.x = 0
-         return Renderer.group(defs_g, this.renderExpr(e.e))
+         return Renderer.group(defs_g, this.expr(e.e))
       } else {
          return absurd()
       }
    }
 
-   renderParens (e: Expr): SVGElement {
+   parenthesise (e: Expr): SVGElement {
       return Renderer.group(
-         this.renderText("("),
-         this.renderExpr(e),
-         this.renderText(")")
+         this.text("("),
+         this.expr(e),
+         this.text(")")
       )
    }
 
-   renderNum (n: Num, editable: boolean): SVGElement {
-      const v: SVGElement = this.renderText(n.toString(), deltaStyle(n))
+   num (n: Num, editable: boolean): SVGElement {
+      const v: SVGElement = this.text(n.toString(), deltaStyle(n))
       if (editable && Number.isInteger(n.val)) {
          v.addEventListener("click", (ev: MouseEvent): void => {
             new ExprCursor(n).setNum(n.val + 1)
@@ -136,55 +136,40 @@ export class Renderer {
    }
 
    space (): SVGElement {
-      return this.renderText(`${space}`)
+      return this.text(`${space}`)
    }
 
-   renderElements (e: Expr): SVGElement[] {
-      const [es, eʹ]: [Expr[], Expr | null] = elements_expr(e),
-            vs: SVGElement[] = []
-      es.forEach((e: Expr, n: number): void => {
-         vs.push(this.renderExpr(e))
-         if (n < es.length - 1) {
-            vs.push(this.renderText(","), this.space())
-         }
-      })
-      if (eʹ !== null) {
-         vs.push(this.renderText(", ..."), this.renderExpr(eʹ))
-      }
-      return vs
-   }
-
-   renderElements_ ([es, eʹ]: [Value[], Value | null]): SVGElement[] {
+   elements ([es, eʹ]: [Value[], Value | null]): SVGElement[] {
       const vs: SVGElement[] = []
       es.forEach((e: Value, n: number): void => {
          vs.push(this.render(e))
          if (n < es.length - 1) {
-            vs.push(this.renderText(","), this.space())
+            vs.push(this.text(","), this.space())
          }
       })
       if (eʹ !== null) {
-         vs.push(this.renderText(", ..."), this.render(eʹ))
+         vs.push(this.text(", ..."), this.render(eʹ))
       }
       return vs
    }
 
-   renderElim<K extends Cont> (σ: Elim<K>): SVGElement {
+   elim<K extends Cont> (σ: Elim<K>): SVGElement {
       if (VarElim.is(σ)) {
          return Renderer.group(
-            this.renderText(σ.x.val),
-            this.space(), this.renderText(strings.arrow), 
-            this.space(), this.renderCont(σ.κ)
+            this.text(σ.x.val),
+            this.space(), this.text(strings.arrow), 
+            this.space(), this.cont(σ.κ)
          )
       } else
       if (DataElim.is(σ)) {
          return Renderer.group(
             ...zip(fields(σ), σ.__children as Cont[]).map(([ctr, κ]) => {
                return Renderer.group(
-                  this.renderText(ctr),
+                  this.text(ctr),
                   this.space(),
-                  this.renderText(strings.arrow),
+                  this.text(strings.arrow),
                   this.space(),
-                  this.renderCont(κ)
+                  this.cont(κ)
                )
             })
          )
@@ -193,12 +178,12 @@ export class Renderer {
       }
    }
 
-   renderCont (κ: Cont): SVGElement {
+   cont (κ: Cont): SVGElement {
       if (κ instanceof Expr.Expr) {
-         return this.renderExpr(κ)
+         return this.expr(κ)
       } else
       if (κ instanceof Elim) {
-         return this.renderElim(κ)
+         return this.elim(κ)
       } else {
          return absurd()
       }
@@ -220,7 +205,7 @@ export class Renderer {
       return g
    }
 
-   renderText (str: string, ẟ_style?: string): SVGTextElement {
+   text (str: string, ẟ_style?: string): SVGTextElement {
       ẟ_style = ẟ_style || "unchanged" // default
       const text: SVGTextElement = svg.textElement(this.x, this.line * lineHeight, fontSize, [classes, ẟ_style].join(" "), str)
       const width: number = svg.textWidth(text)
