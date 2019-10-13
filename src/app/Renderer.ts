@@ -1,12 +1,12 @@
 import { zip } from "../util/Array"
 import { absurd, as, className, error } from "../util/Core"
-import { Cons, List, Nil } from "../BaseTypes"
+import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { exprClass } from "../DataType"
 import { Change, New, Reclassify, __deltas } from "../Delta"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
 import { Num, Str, Value, fields } from "../Value"
-import { versioned } from "../Versioned"
+import { ν, at, str, versioned } from "../Versioned"
 import { SVG } from "./Core"
 import { ExprCursor } from "./Cursor"
 import "./styles.css"
@@ -109,14 +109,25 @@ export class Renderer {
    // Post-condition: returned element has an entry in "dimensions" map. 
    expr (e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
-         return this.num(e.val, true)
+         return this.num_(e.val, true)
       } else
       if (e instanceof Expr.ConstStr) {
          return this.text(e.val.toString())
       } else
       if (e instanceof Expr.DataExpr) {
          if (className(e) === exprClass(Nil.name).name || className(e) === exprClass(Cons.name).name) {
-            return this.horiz(this.keyword("bracketL"), ...this.elements(elements_expr(e)), this.keyword("bracketR"))
+            const bracketL: SVGElement = this.keyword("bracketL")
+            // temporary experiment
+            bracketL.addEventListener("click", (ev: MouseEvent): void => {
+               new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
+                  const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+                  return [at(exprClass(Pair.name), e, eʹ)(ν())]
+               })
+               ev.stopPropagation()
+               this.editor.onEdit()
+            })
+   
+            return this.horiz(bracketL, ...this.elements(elements_expr(e)), this.keyword("bracketR"))
          } else {
             return this.unimplemented(e)
          }
@@ -170,16 +181,16 @@ export class Renderer {
       return g
    }
 
-   num (n: Num, editable: boolean): SVGElement {
-      const v: SVGElement = this.text(n.toString(), deltaStyle(n))
+   num_ (n: Num, editable: boolean): SVGElement {
+      const g: SVGElement = this.text(n.toString(), deltaStyle(n))
       if (editable && Number.isInteger(n.val)) {
-         v.addEventListener("click", (ev: MouseEvent): void => {
+         g.addEventListener("click", (ev: MouseEvent): void => {
             new ExprCursor(n).setNum(n.val + 1)
             ev.stopPropagation()
             this.editor.onEdit()
          })
       }
-      return v
+      return g
    }
 
    parenthesise (e: Expr): SVGElement {
@@ -231,7 +242,7 @@ export class Renderer {
 
    value (v: Value): SVGElement {
       if (v instanceof Num) {
-         return this.num(v, false)
+         return this.num_(v, false)
       } else
       if (v instanceof Str) {
          return this.text(v.val.toString(), deltaStyle(v))
