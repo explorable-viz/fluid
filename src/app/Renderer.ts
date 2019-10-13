@@ -1,5 +1,5 @@
 import { zip } from "../util/Array"
-import { absurd, as, className, error } from "../util/Core"
+import { Class, absurd, as, className, error } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { exprClass } from "../DataType"
 import { Change, New, Reclassify, __deltas } from "../Delta"
@@ -31,6 +31,10 @@ function textElement (x: number, y: number, fontSize: number, class_: string, st
    text.setAttribute("class", class_) // set styling before creating text node, for font metrics to be correct
    text.appendChild(document.createTextNode(str))
    return text
+}
+
+function hasExprClass (e: Expr, C: Class): boolean {
+   return className(e) === exprClass(C.name).name
 }
 
 export interface EditListener {
@@ -73,18 +77,18 @@ export class Renderer {
       }
    }
 
-   elements ([es, eʹ]: [Value[], Value | null]): SVGElement[] {
-      const vs: SVGElement[] = []
+   list ([es, eʹ]: [Value[], Value | null]): SVGElement {
+      const gs: SVGElement[] = []
       es.forEach((e: Value, n: number): void => {
-         vs.push(this.exprOrValue(e))
+         gs.push(this.exprOrValue(e))
          if (n < es.length - 1) {
-            vs.push(this.keyword("comma"), this.space())
+            gs.push(this.keyword("comma"), this.space())
          }
       })
       if (eʹ !== null) {
-         vs.push(this.keyword("comma"), this.space(), this.keyword("ellipsis"), this.exprOrValue(eʹ))
+         gs.push(this.keyword("comma"), this.space(), this.keyword("ellipsis"), this.exprOrValue(eʹ))
       }
-      return vs
+      return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
    }
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
@@ -115,10 +119,20 @@ export class Renderer {
          return this.text(e.val.toString())
       } else
       if (e instanceof Expr.DataExpr) {
-         if (className(e) === exprClass(Nil.name).name || className(e) === exprClass(Cons.name).name) {
-            const bracketL: SVGElement = this.keyword("bracketL")
-            // temporary experiment
-            bracketL.addEventListener("click", (ev: MouseEvent): void => {
+         if (hasExprClass(e, Pair)) {
+            return this.horiz(
+               this.keyword("parenL"), 
+               this.expr(as(e.__child("fst"), Expr.Expr)),
+               this.keyword("comma"),
+               this.space(), 
+               this.expr(as(e.__child("snd"), Expr.Expr)),
+               this.keyword("parenR")
+            )
+         } else
+         if (hasExprClass(e, Nil) || hasExprClass(e, Cons)) {
+            const g: SVGElement = this.list(exprElements(e))
+            // TEMPORARY EXPERIMENT
+            as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
                new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
                   const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
                   return [at(exprClass(Pair.name), e, eʹ)(ν())]
@@ -126,8 +140,8 @@ export class Renderer {
                ev.stopPropagation()
                this.editor.onEdit()
             })
-   
-            return this.horiz(bracketL, ...this.elements(elements_expr(e)), this.keyword("bracketR"))
+            // END TEMPORARY EXPERIMENT
+            return g
          } else {
             return this.unimplemented(e)
          }
@@ -248,7 +262,7 @@ export class Renderer {
          return this.text(v.val.toString(), deltaStyle(v))
       } else 
       if (v instanceof List) {
-         return this.horiz(this.keyword("bracketL"), ...this.elements([v.toArray(), null]), this.keyword("bracketR"))
+         return this.list([v.toArray(), null])
       } else {
          return this.unimplemented(v)
       }
@@ -293,15 +307,15 @@ function deltaStyle (v: Value): string{
    }
 } 
 
-// Expressions for the elements, plus expression for tail (or null if list terminates with nil).
-function elements_expr (e: Expr): [Expr[], Expr | null] {
+// Expressions for (initial) elements of a list, plus expression for tail (or null if list terminates with nil).
+function exprElements (e: Expr): [Expr[], Expr | null] {
    if (e instanceof Expr.DataExpr) {
-      if (className(e) === exprClass(Nil.name).name) {
+      if (hasExprClass(e, Nil)) {
          return [[], null]
       } else
-      if (className(e) === exprClass(Cons.name).name) {
+      if (hasExprClass(e, Cons)) {
          // use cursor interface instead?
-         const [es, eʹ]: [Expr[], Expr | null] = elements_expr(as(e.__child("tail"), Expr.Expr))
+         const [es, eʹ]: [Expr[], Expr | null] = exprElements(as(e.__child("tail"), Expr.Expr))
          return [[as(e.__child("head"), Expr.Expr), ...es], eʹ]
       } else {
          return error(`Found ${e.ctr}, expected list.`)
