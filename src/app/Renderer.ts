@@ -57,7 +57,8 @@ export class Renderer {
          return flatten(zip(fields(σ), σ.__children as Cont[]).map(([c, κ]): [SVGElement[], SVGElement][] => {
             return this.cont(κ).map(([gs, g]: [SVGElement[], SVGElement]) => {
                assert(gs.length >= arity(c))
-               return [[this.horizSpace(this.text(c), ...gs.slice(0, arity(c))), ...gs.slice(arity(c))], g]
+               const ctr_g: SVGElement = this.horizSpace(this.text(c), ...gs.slice(0, arity(c)))
+               return [[arity(c) === 0 ? ctr_g : this.parenthesise(ctr_g), ...gs.slice(arity(c))], g]
             })
          }))
       } else {
