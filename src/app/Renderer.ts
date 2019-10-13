@@ -44,9 +44,9 @@ export class Renderer {
       const e_g: SVGElement = this.expr(e)
       this.line++
       this.x = 0
-      return Renderer.group(
+      return Renderer.vert(
          e_g,
-         Renderer.group(
+         Renderer.horiz(
             this.text(">"),
             this.space(), this.value(v)
          )
@@ -61,7 +61,7 @@ export class Renderer {
          return this.text(v.val.toString(), deltaStyle(v))
       } else 
       if (v instanceof List) {
-         return Renderer.group(this.text("["), ...this.elements([v.toArray(), null]), this.text("]"))
+         return Renderer.horiz(this.text("["), ...this.elements([v.toArray(), null]), this.text("]"))
       } else {
          return this.text(`<${className(v)}>`)
       }
@@ -85,7 +85,7 @@ export class Renderer {
       } else
       if (e instanceof Expr.DataExpr) {
          if (className(e) === exprClass(Nil.name).name || className(e) === exprClass(Cons.name).name) {
-            return Renderer.group(this.text("["), ...this.elements(elements_expr(e)), this.text("]"))
+            return Renderer.horiz(this.text("["), ...this.elements(elements_expr(e)), this.text("]"))
          } else {
             return this.text(`<${className(e)}>`)
          }
@@ -97,26 +97,26 @@ export class Renderer {
          return this.elim(e.σ)
       } else
       if (e instanceof Expr.BinaryApp) {
-         return Renderer.group(this.expr(e.e1), this.space(), this.text(e.opName.val), this.space(), this.expr(e.e2))
+         return Renderer.horiz(this.expr(e.e1), this.space(), this.text(e.opName.val), this.space(), this.expr(e.e2))
       } else
       if (e instanceof Expr.App) {
          const g_f: SVGElement = e.f instanceof Expr.Fun ? this.parenthesise(e.f) : this.expr(e.f),
                sp: SVGElement = this.space(),
                g_e: SVGElement = e.e instanceof Expr.Fun ? this.parenthesise(e.e) : this.expr(e.e)
-         return Renderer.group(g_f, sp, g_e)
+         return Renderer.horiz(g_f, sp, g_e)
       } else
       if (e instanceof Expr.Defs) {
          const defs_g: SVGElement = this.text(`<${className(e)}>`)
          this.line++
          this.x = 0
-         return Renderer.group(defs_g, this.expr(e.e))
+         return Renderer.vert(defs_g, this.expr(e.e))
       } else {
          return absurd()
       }
    }
 
    parenthesise (e: Expr): SVGElement {
-      return Renderer.group(
+      return Renderer.horiz(
          this.text("("),
          this.expr(e),
          this.text(")")
@@ -155,16 +155,16 @@ export class Renderer {
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       if (VarElim.is(σ)) {
-         return Renderer.group(
+         return Renderer.horiz(
             this.text(σ.x.val),
             this.space(), this.text(strings.arrow), 
             this.space(), this.cont(σ.κ)
          )
       } else
       if (DataElim.is(σ)) {
-         return Renderer.group(
+         return Renderer.vert(
             ...zip(fields(σ), σ.__children as Cont[]).map(([ctr, κ]) => {
-               return Renderer.group(
+               return Renderer.horiz(
                   this.text(ctr),
                   this.space(),
                   this.text(strings.arrow),
@@ -190,7 +190,7 @@ export class Renderer {
    }
 
    // TODO: completely broken; ignores the fact that elements have x, y coordinates :-/
-   static group (...vs: SVGElement[]): SVGElement {
+   static old_group (...vs: SVGElement[]): SVGElement {
       const g: SVGGElement = document.createElementNS(SVG.NS, "g")
       let width_sum: number = 0,
           height_max: number = 0
@@ -205,14 +205,14 @@ export class Renderer {
       return g
    }
 
-   horiz (...gs: SVGElement[]): SVGElement {
+   static horiz (...gs: SVGElement[]): SVGElement {
       const g: SVGGElement = document.createElementNS(SVG.NS, "svg")
       let width_sum: number = 0,
           height_max: number = 0
       g.setAttribute("pointer-events", "bounding-box")
       gs.forEach((gʹ: SVGElement): void => {
          gʹ.setAttribute("x", width_sum.toString())
-         gʹ.setAttribute("y", "0")
+         gʹ.setAttribute("y", lineHeight.toString())
          gʹ.removeAttribute("transform") // don't use transform any more
          const { width, height }: Dimensions = dimensions.get(gʹ)!
          width_sum += width
@@ -220,6 +220,24 @@ export class Renderer {
          g.appendChild(gʹ)
       })
       dimensions.set(g, { width: width_sum, height: height_max })
+      return g
+   }
+
+   static vert (...gs: SVGElement[]): SVGElement {
+      const g: SVGGElement = document.createElementNS(SVG.NS, "svg")
+      let height_sum: number = 0,
+          width_max: number = 0
+      g.setAttribute("pointer-events", "bounding-box")
+      gs.forEach((gʹ: SVGElement): void => {
+         gʹ.setAttribute("y", height_sum.toString())
+         gʹ.setAttribute("x", "0")
+         gʹ.removeAttribute("transform") // don't use transform any more
+         const { width, height }: Dimensions = dimensions.get(gʹ)!
+         height_sum += height
+         width_max = Math.max(width_max, width)
+         g.appendChild(gʹ)
+      })
+      dimensions.set(g, { width: width_max, height: height_sum })
       return g
    }
 
