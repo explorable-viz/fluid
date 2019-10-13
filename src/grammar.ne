@@ -33,7 +33,7 @@ const lexer = moo.compile({
 import { __check, assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { arity, exprClass, types } from "./DataType"
-import { Expr } from "./Expr"
+import { Expr, strings } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { DataElim, dataElim, varElim } from "./Match"
 import { Str } from "./Value"
