@@ -14,6 +14,10 @@ export namespace strings {
    export const as: string = "as"
    export const bracketL: string = "["
    export const bracketR: string = "]"
+   export const comma: string = ","
+   export const curlyL: string = "{"
+   export const curlyR: string = "}"
+   export const ellipsis: string = "..."
    export const equals: string = "="
    export const fun: string = "fun"
    export const in_: string = "in"
@@ -24,6 +28,7 @@ export namespace strings {
    export const parenL: string = "("
    export const parenR: string = ")"
    export const quotes: string = '"'
+   export const semicolon: string = ";"
    export const typematch: string = "typematch"
 }
 

@@ -85,11 +85,11 @@ export class Renderer {
       es.forEach((e: Value, n: number): void => {
          vs.push(this.exprOrValue(e))
          if (n < es.length - 1) {
-            vs.push(this.text(","), this.space())
+            vs.push(this.text(strings.comma), this.space())
          }
       })
       if (eʹ !== null) {
-         vs.push(this.text(", ..."), this.exprOrValue(eʹ))
+         vs.push(this.text(strings.comma), this.space(), this.text(strings.ellipsis), this.exprOrValue(eʹ))
       }
       return vs
    }
@@ -129,7 +129,7 @@ export class Renderer {
       } else
       if (e instanceof Expr.DataExpr) {
          if (className(e) === exprClass(Nil.name).name || className(e) === exprClass(Cons.name).name) {
-            return Renderer.horiz(this.text("["), ...this.elements(elements_expr(e)), this.text("]"))
+            return Renderer.horiz(this.text(strings.bracketL), ...this.elements(elements_expr(e)), this.text(strings.bracketR))
          } else {
             return this.unimplemented(e)
          }
