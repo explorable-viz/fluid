@@ -101,13 +101,17 @@ export class Renderer {
          return Renderer.horiz(this.expr(e.e1), this.space(), this.text(e.opName.val), this.space(), this.expr(e.e2))
       } else
       if (e instanceof Expr.App) {
-         const g_f: SVGElement = e.f instanceof Expr.Fun ? this.parenthesise(e.f) : this.expr(e.f),
-               g_e: SVGElement = e.e instanceof Expr.Fun ? this.parenthesise(e.e) : this.expr(e.e)
-         return Renderer.horiz(g_f, this.space(), g_e)
+         return Renderer.horiz(
+            e.f instanceof Expr.Fun ? this.parenthesise(e.f) : this.expr(e.f), 
+            this.space(), 
+            e.e instanceof Expr.Fun ? this.parenthesise(e.e) : this.expr(e.e)
+         )
       } else
       if (e instanceof Expr.Defs) {
-         const defs_g: SVGElement = this.text(`<${className(e)}>`)
-         return Renderer.vert(defs_g, this.expr(e.e))
+         return Renderer.vert(
+            this.text(`<${className(e)}>`), 
+            this.expr(e.e)
+         )
       } else {
          return absurd()
       }
