@@ -61,7 +61,7 @@ export class Renderer {
       } else
       if (def instanceof Expr.Let) {
          if (def.e instanceof Expr.Fun) {
-            return this.spaceDelimit(this.text(strings.let_), this.elim(def.e.σ))
+            return this.spaceDelimit(this.text(strings.let_), this.text(def.x.val), this.elim(def.e.σ))
          } else {
             return this.spaceDelimit(this.text(strings.let_), this.text(strings.equals), this.expr(def.e))
          }
