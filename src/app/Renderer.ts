@@ -211,8 +211,8 @@ export class Renderer {
           height_max: number = 0
       g.setAttribute("pointer-events", "bounding-box")
       gs.forEach((gʹ: SVGElement): void => {
-         gʹ.setAttribute("x", width_sum.toString())
-         gʹ.setAttribute("y", lineHeight.toString())
+         gʹ.setAttribute("x", `${width_sum}`)
+         gʹ.setAttribute("y", `${lineHeight}`)
          gʹ.removeAttribute("transform") // don't use transform any more
          const { width, height }: Dimensions = dimensions.get(gʹ)!
          width_sum += width
@@ -229,8 +229,8 @@ export class Renderer {
           width_max: number = 0
       g.setAttribute("pointer-events", "bounding-box")
       gs.forEach((gʹ: SVGElement): void => {
-         gʹ.setAttribute("y", height_sum.toString())
-         gʹ.setAttribute("x", "0")
+         gʹ.setAttribute("y", `${height_sum}`)
+         gʹ.setAttribute("x", `0`)
          gʹ.removeAttribute("transform") // don't use transform any more
          const { width, height }: Dimensions = dimensions.get(gʹ)!
          height_sum += height
