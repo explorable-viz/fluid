@@ -40,17 +40,14 @@ export interface EditListener {
 export class Renderer {
    editor: EditListener
    x: number
-   line: number
 
    constructor (editor: EditListener) {
       this.editor = editor
       this.x = 0
-      this.line = 1
    }
 
    prompt (e: Expr, v: Value): SVGElement {
       const e_g: SVGElement = this.expr(e)
-      this.line++
       this.x = 0
       return Renderer.vert(
          e_g,
@@ -115,7 +112,6 @@ export class Renderer {
       } else
       if (e instanceof Expr.Defs) {
          const defs_g: SVGElement = this.text(`<${className(e)}>`)
-         this.line++
          this.x = 0
          return Renderer.vert(defs_g, this.expr(e.e))
       } else {
@@ -248,7 +244,7 @@ export class Renderer {
 
    text (str: string, ẟ_style?: string): SVGTextElement {
       ẟ_style = ẟ_style || "unchanged" // default
-      const text: SVGTextElement = textElement(this.x, this.line * lineHeight, fontSize, [classes, ẟ_style].join(" "), str)
+      const text: SVGTextElement = textElement(0, 0, fontSize, [classes, ẟ_style].join(" "), str)
       text.setAttribute("transform", `translate(${0},${lineHeight})`)
       const width: number = svg.textWidth(text)
       dimensions.set(text, { width, height: lineHeight })
