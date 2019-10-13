@@ -50,7 +50,7 @@ export class Renderer {
 
    cont (κ: Cont): SVGElement {
       if (κ instanceof Expr.Expr) {
-         return this.expr(κ)
+         return this.spaceDelimit(this.keyword("arrow"), this.expr(κ))
       } else
       if (κ instanceof Elim) {
          return this.elim(κ)
@@ -79,12 +79,12 @@ export class Renderer {
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       if (VarElim.is(σ)) {
-         return this.spaceDelimit(this.text(σ.x.val), this.keyword("arrow"), this.cont(σ.κ))
+         return this.spaceDelimit(this.text(σ.x.val), this.cont(σ.κ))
       } else
       if (DataElim.is(σ)) {
          return this.vert(
             ...zip(fields(σ), σ.__children as Cont[]).map(([ctr, κ]) => {
-               return this.spaceDelimit(this.text(ctr), this.keyword("arrow"), this.cont(κ))
+               return this.spaceDelimit(this.text(ctr), this.cont(κ))
             })
          )
       } else {
