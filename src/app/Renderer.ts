@@ -89,7 +89,7 @@ export class Renderer {
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       if (VarElim.is(σ)) {
-         return this.spaceDelimit(this.text(σ.x.val), this.text(strings.arrow), this.cont(σ.κ))
+         return this.spaceDelimit(this.text(σ.x.val), this.keyword("arrow"), this.cont(σ.κ))
       } else
       if (DataElim.is(σ)) {
          return this.vert(
@@ -197,7 +197,7 @@ export class Renderer {
    }
 
    recDef (def: Expr.RecDef): SVGElement {
-      return this.unimplemented(def)
+      return this.spaceDelimit(this.text(def.x.val), this.elim(def.σ))
    }
 
    space (): SVGElement {
