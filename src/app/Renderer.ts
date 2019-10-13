@@ -17,7 +17,7 @@ export const svg: SVG = new SVG(false)
 const fontSize: number = 18
 const classes: string = "code"
 // bizarrely, if I do this later, font metrics are borked:
-const lineHeight = svg.textHeight(textElement_raw(0, 0, fontSize, classes, "m")) // representative character 
+const lineHeight = svg.textHeight(textElement(0, 0, fontSize, classes, "m")) // representative character 
 // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
 const space: string = "\u00a0"
 
@@ -25,7 +25,7 @@ const space: string = "\u00a0"
 type Dimensions = { width: number, height: number }
 const dimensions: Map<SVGElement, Dimensions> = new Map()
 
-function textElement_raw (x: number, y: number, fontSize: number, class_: string, str: string): SVGTextElement {
+function textElement (x: number, y: number, fontSize: number, class_: string, str: string): SVGTextElement {
    const text: SVGTextElement = document.createElementNS(SVG.NS, "text")
    text.setAttribute("font-size", fontSize.toString()) // wasn't able to set this through CSS for some reason
    text.setAttribute("class", class_) // set styling before creating text node, for font metrics to be correct
@@ -248,7 +248,7 @@ export class Renderer {
 
    text (str: string, ẟ_style?: string): SVGTextElement {
       ẟ_style = ẟ_style || "unchanged" // default
-      const text: SVGTextElement = textElement_raw(this.x, this.line * lineHeight, fontSize, [classes, ẟ_style].join(" "), str)
+      const text: SVGTextElement = textElement(this.x, this.line * lineHeight, fontSize, [classes, ẟ_style].join(" "), str)
       text.setAttribute("transform", `translate(${0},${lineHeight})`)
       const width: number = svg.textWidth(text)
       dimensions.set(text, { width, height: lineHeight })

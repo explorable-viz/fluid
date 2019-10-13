@@ -12,9 +12,19 @@ import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 
 export const svg: SVG = new SVG(true)
+const fontSize: number = 12
 
-const fontSize: number = 12,
-      class_: string = ""
+// The SVG text element for the supplied text; centralised so can be used to compute text metrics.
+// Use "translate" to locate the element, so that we can apply it after scaling.
+function textElement (x: number, y: number, fontSize: number, str: string): SVGTextElement {
+   const text: SVGTextElement = document.createElementNS(SVG.NS, "text")
+   text.setAttribute("stroke", "none")
+   text.setAttribute("font-size", fontSize.toString())
+   let transform: string = `translate(${x.toString()},${y.toString()})`
+   text.setAttribute("transform", transform + " scale(1,-1)")
+   text.appendChild(document.createTextNode(str))
+   return text
+}
 
 type TransformFun = (p: [number, number]) => [number, number]
 
@@ -200,7 +210,7 @@ export class GraphicsRenderer {
    text (tg: ExplValueCursor/*<Text>*/): void {
       const g: Text = as(tg.tv.v, Text),
             [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
-            text: SVGTextElement = svg.textElement(x, y, fontSize, class_, g.str.val)
+            text: SVGTextElement = textElement(x, y, fontSize, g.str.val)
       text.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
          this.slicer.coordinator.resetForBwd()
@@ -236,11 +246,11 @@ export class GraphicsRenderer {
    // Additional primitives that rely on offline rendering to compute text metrics. Combining these would 
    // require more general primitives that can return tuples.
    const textWidth: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(svg.textWidth(svg.textElement(0, 0, fontSize, class_, str.val)))
+      return num(svg.textWidth(textElement(0, 0, fontSize, str.val)))
    }
    
    const textHeight: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(svg.textHeight(svg.textElement(0, 0, fontSize, class_, str.val)))
+      return num(svg.textHeight(textElement(0, 0, fontSize, str.val)))
    }
    
    unaryOps.set(textWidth.name, unary_(textWidth))
