@@ -57,17 +57,17 @@ export class Renderer {
 
    def (def: Expr.Def): SVGElement {
       if (def instanceof Expr.Prim) {
-         return this.spaceDelimit(this.text(strings.primitive), this.text(def.x.val))
+         return this.spaceDelimit(this.keyword("primitive"), this.text(def.x.val))
       } else
       if (def instanceof Expr.Let) {
          if (def.e instanceof Expr.Fun) {
-            return this.spaceDelimit(this.text(strings.let_), this.text(def.x.val), this.elim(def.e.σ))
+            return this.spaceDelimit(this.keyword("let_"), this.text(def.x.val), this.elim(def.e.σ))
          } else {
-            return this.spaceDelimit(this.text(strings.let_), this.text(strings.equals), this.expr(def.e))
+            return this.spaceDelimit(this.keyword("let_"), this.keyword("equals"), this.expr(def.e))
          }
       } else
       if (def instanceof Expr.LetRec) {
-         return this.unimplemented(def)
+         return this.spaceDelimit(this.keyword("letRec"), this.vert(...def.δ.toArray().map(def => this.recDef(def))))
       } else {
          return absurd()
       }
@@ -78,11 +78,11 @@ export class Renderer {
       es.forEach((e: Value, n: number): void => {
          vs.push(this.exprOrValue(e))
          if (n < es.length - 1) {
-            vs.push(this.text(strings.comma), this.space())
+            vs.push(this.keyword("comma"), this.space())
          }
       })
       if (eʹ !== null) {
-         vs.push(this.text(strings.comma), this.space(), this.text(strings.ellipsis), this.exprOrValue(eʹ))
+         vs.push(this.keyword("comma"), this.space(), this.keyword("ellipsis"), this.exprOrValue(eʹ))
       }
       return vs
    }
@@ -92,14 +92,18 @@ export class Renderer {
          return this.spaceDelimit(this.text(σ.x.val), this.text(strings.arrow), this.cont(σ.κ))
       } else
       if (DataElim.is(σ)) {
-         return Renderer.vert(
+         return this.vert(
             ...zip(fields(σ), σ.__children as Cont[]).map(([ctr, κ]) => {
-               return this.spaceDelimit(this.text(ctr), this.text(strings.arrow), this.cont(κ))
+               return this.spaceDelimit(this.text(ctr), this.keyword("arrow"), this.cont(κ))
             })
          )
       } else {
          return absurd()
       }
+   }
+
+   keyword (str: keyof typeof strings): SVGElement {
+      return this.text(strings[str])
    }
 
    // Post-condition: returned element has an entry in "dimensions" map. 
@@ -112,7 +116,7 @@ export class Renderer {
       } else
       if (e instanceof Expr.DataExpr) {
          if (className(e) === exprClass(Nil.name).name || className(e) === exprClass(Cons.name).name) {
-            return Renderer.horiz(this.text(strings.bracketL), ...this.elements(elements_expr(e)), this.text(strings.bracketR))
+            return this.horiz(this.keyword("bracketL"), ...this.elements(elements_expr(e)), this.keyword("bracketR"))
          } else {
             return this.unimplemented(e)
          }
@@ -121,7 +125,7 @@ export class Renderer {
          return this.text(e.x.val)
       } else
       if (e instanceof Expr.Fun) {
-         return this.spaceDelimit(this.text(strings.fun), this.text(strings.arrow), this.elim(e.σ))
+         return this.spaceDelimit(this.keyword("fun"), this.keyword("arrow"), this.elim(e.σ))
       } else
       if (e instanceof Expr.BinaryApp) {
          return this.spaceDelimit(this.expr(e.e1), this.text(e.opName.val), this.expr(e.e2))
@@ -133,8 +137,8 @@ export class Renderer {
          )
       } else
       if (e instanceof Expr.Defs) {
-         return Renderer.vert(
-            Renderer.vert(...e.def̅.toArray().map(def => this.def(def))),
+         return this.vert(
+            this.vert(...e.def̅.toArray().map(def => this.def(def))),
             this.expr(e.e)
          )
       } else {
@@ -150,7 +154,7 @@ export class Renderer {
       }
    }
 
-   static horiz (...gs: SVGElement[]): SVGElement {
+   horiz (...gs: SVGElement[]): SVGElement {
       const g: SVGGElement = document.createElementNS(SVG.NS, "svg")
       let width_sum: number = 0,
           height_max: number = 0
@@ -179,21 +183,21 @@ export class Renderer {
    }
 
    parenthesise (e: Expr): SVGElement {
-      return Renderer.horiz(
-         this.text(strings.parenL),
-         this.expr(e),
-         this.text(strings.parenR)
-      )
+      return this.horiz(this.keyword("parenL"), this.expr(e), this.keyword("parenR"))
    }
 
    prompt (e: Expr, v: Value): SVGElement {
-      const g: SVGElement = Renderer.vert(
+      const g: SVGElement = this.vert(
          this.expr(e),
          this.spaceDelimit(this.text(">"), this.value(v))
       )
       g.setAttribute("x", `0`)
       g.setAttribute("y", `0`)
       return g
+   }
+
+   recDef (def: Expr.RecDef): SVGElement {
+      return this.unimplemented(def)
    }
 
    space (): SVGElement {
@@ -208,7 +212,7 @@ export class Renderer {
             gsʹ.push(this.space())
          }
       })
-      return Renderer.horiz(...gsʹ)
+      return this.horiz(...gsʹ)
    }
 
    text (str: string, ẟ_style?: string): SVGTextElement {
@@ -233,13 +237,13 @@ export class Renderer {
          return this.text(v.val.toString(), deltaStyle(v))
       } else 
       if (v instanceof List) {
-         return Renderer.horiz(this.text(strings.bracketL), ...this.elements([v.toArray(), null]), this.text(strings.bracketR))
+         return this.horiz(this.keyword("bracketL"), ...this.elements([v.toArray(), null]), this.keyword("bracketR"))
       } else {
          return this.unimplemented(v)
       }
    }
 
-   static vert (...gs: SVGElement[]): SVGElement {
+   vert (...gs: SVGElement[]): SVGElement {
       const g: SVGGElement = document.createElementNS(SVG.NS, "svg")
       let height_sum: number = 0,
           width_max: number = 0
