@@ -77,20 +77,6 @@ export class Renderer {
       }
    }
 
-   list ([es, eʹ]: [Value[], Value | null]): SVGElement {
-      const gs: SVGElement[] = []
-      es.forEach((e: Value, n: number): void => {
-         gs.push(this.exprOrValue(e))
-         if (n < es.length - 1) {
-            gs.push(this.keyword("comma"), this.space())
-         }
-      })
-      if (eʹ !== null) {
-         gs.push(this.keyword("comma"), this.space(), this.keyword("ellipsis"), this.exprOrValue(eʹ))
-      }
-      return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
-   }
-
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       if (VarElim.is(σ)) {
          return this.spaceDelimit(this.text(σ.x.val), this.keyword("arrow"), this.cont(σ.κ))
@@ -106,10 +92,6 @@ export class Renderer {
       }
    }
 
-   keyword (str: keyof typeof strings): SVGElement {
-      return this.text(strings[str])
-   }
-
    // Post-condition: returned element has an entry in "dimensions" map. 
    expr (e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
@@ -120,14 +102,7 @@ export class Renderer {
       } else
       if (e instanceof Expr.DataExpr) {
          if (hasExprClass(e, Pair)) {
-            return this.horiz(
-               this.keyword("parenL"), 
-               this.expr(as(e.__child("fst"), Expr.Expr)),
-               this.keyword("comma"),
-               this.space(), 
-               this.expr(as(e.__child("snd"), Expr.Expr)),
-               this.keyword("parenR")
-            )
+            return this.pair(as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
          } else
          if (hasExprClass(e, Nil) || hasExprClass(e, Cons)) {
             const g: SVGElement = this.list(exprElements(e))
@@ -195,6 +170,24 @@ export class Renderer {
       return g
    }
 
+   keyword (str: keyof typeof strings): SVGElement {
+      return this.text(strings[str])
+   }
+
+   list ([es, eʹ]: [Value[], Value | null]): SVGElement {
+      const gs: SVGElement[] = []
+      es.forEach((e: Value, n: number): void => {
+         gs.push(this.exprOrValue(e))
+         if (n < es.length - 1) {
+            gs.push(this.keyword("comma"), this.space())
+         }
+      })
+      if (eʹ !== null) {
+         gs.push(this.keyword("comma"), this.space(), this.keyword("ellipsis"), this.exprOrValue(eʹ))
+      }
+      return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
+   }
+
    num_ (n: Num, editable: boolean): SVGElement {
       const g: SVGElement = this.text(n.toString(), deltaStyle(n))
       if (editable && Number.isInteger(n.val)) {
@@ -205,6 +198,17 @@ export class Renderer {
          })
       }
       return g
+   }
+
+   pair (e1: Value, e2: Value): SVGElement {
+      return this.horiz(
+         this.keyword("parenL"), 
+         this.exprOrValue(e1),
+         this.keyword("comma"),
+         this.space(), 
+         this.exprOrValue(e2),
+         this.keyword("parenR")
+      )
    }
 
    parenthesise (e: Expr): SVGElement {
@@ -263,6 +267,9 @@ export class Renderer {
       } else 
       if (v instanceof List) {
          return this.list([v.toArray(), null])
+      } else
+      if (v instanceof Pair) {
+         return this.pair(v.fst, v.snd)
       } else {
          return this.unimplemented(v)
       }
