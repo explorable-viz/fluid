@@ -112,9 +112,31 @@ export class Renderer {
       } else
       if (e instanceof Expr.Defs) {
          return Renderer.vert(
-            this.text(`<${className(e)}>`), 
+            Renderer.vert(...e.def̅.toArray().map(def => this.def(def))),
             this.expr(e.e)
          )
+      } else {
+         return absurd()
+      }
+   }
+
+   def (def: Expr.Def): SVGElement {
+      if (def instanceof Expr.Prim) {
+         Renderer.horiz(this.text(strings.primitive), this.space(), this.text(def.x.val))
+      } else
+      if (def instanceof Expr.Let) {
+         if (def.e instanceof Expr.Fun) {
+
+         } else {
+            return Renderer.horiz(
+               this.text(strings.let_), 
+               this.space(), this.text(strings.equals), 
+               this.space(), this.expr(def)
+            )
+         }
+      } else
+      if (def instanceof Expr.LetRec) {
+
       } else {
          return absurd()
       }
