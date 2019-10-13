@@ -3,8 +3,7 @@ let sq =
 letrec
    fun f {
       [] → [];
-      [x] → [x];
-      [x, y, ...ys] → [x, y, ...f ys]
+      [x, ...xs] → [x, ...f xs]
    }
 in
 f [1, 3]

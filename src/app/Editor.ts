@@ -19,7 +19,7 @@ class Editor {
    constructor () {
       this.root = svg.createSvg(800, 400)
       document.body.appendChild(this.root)
-      this.e0 = openWithImports("ic2019"),
+      this.e0 = openWithImports("pattern-match"),
       this.e = as(this.e0, Expr.Defs).e
       this.e_cursor = new ExprCursor(this.e)
       this.tv = Eval.eval_(emptyEnv(), this.e0) 
