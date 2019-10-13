@@ -39,16 +39,13 @@ export interface EditListener {
 
 export class Renderer {
    editor: EditListener
-   x: number
 
    constructor (editor: EditListener) {
       this.editor = editor
-      this.x = 0
    }
 
    prompt (e: Expr, v: Value): SVGElement {
       const e_g: SVGElement = this.expr(e)
-      this.x = 0
       return Renderer.vert(
          e_g,
          Renderer.horiz(
@@ -112,7 +109,6 @@ export class Renderer {
       } else
       if (e instanceof Expr.Defs) {
          const defs_g: SVGElement = this.text(`<${className(e)}>`)
-         this.x = 0
          return Renderer.vert(defs_g, this.expr(e.e))
       } else {
          return absurd()
@@ -249,7 +245,6 @@ export class Renderer {
       const width: number = svg.textWidth(text)
       dimensions.set(text, { width, height: lineHeight })
       text.remove()
-      this.x += width
       return text
    }
 }
