@@ -67,7 +67,7 @@ export class Renderer {
       }
    }
 
-   render (v: Value): SVGElement {
+   exprOrValue (v: Value): SVGElement {
       if (v instanceof Expr.Expr) {
          return this.expr(v)
       } else {
@@ -142,13 +142,13 @@ export class Renderer {
    elements ([es, eʹ]: [Value[], Value | null]): SVGElement[] {
       const vs: SVGElement[] = []
       es.forEach((e: Value, n: number): void => {
-         vs.push(this.render(e))
+         vs.push(this.exprOrValue(e))
          if (n < es.length - 1) {
             vs.push(this.text(","), this.space())
          }
       })
       if (eʹ !== null) {
-         vs.push(this.text(", ..."), this.render(eʹ))
+         vs.push(this.text(", ..."), this.exprOrValue(eʹ))
       }
       return vs
    }
@@ -200,6 +200,24 @@ export class Renderer {
          width_sum += width
          height_max = Math.max(height_max, height)
          g.appendChild(v)
+      })
+      dimensions.set(g, { width: width_sum, height: height_max })
+      return g
+   }
+
+   horiz (...gs: SVGElement[]): SVGElement {
+      const g: SVGGElement = document.createElementNS(SVG.NS, "svg")
+      let width_sum: number = 0,
+          height_max: number = 0
+      g.setAttribute("pointer-events", "bounding-box")
+      gs.forEach((gʹ: SVGElement): void => {
+         gʹ.setAttribute("x", width_sum.toString())
+         gʹ.setAttribute("y", "0")
+         gʹ.removeAttribute("transform") // don't use transform any more
+         const { width, height }: Dimensions = dimensions.get(gʹ)!
+         width_sum += width
+         height_max = Math.max(height_max, height)
+         g.appendChild(gʹ)
       })
       dimensions.set(g, { width: width_sum, height: height_max })
       return g
