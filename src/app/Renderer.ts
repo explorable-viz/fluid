@@ -106,11 +106,11 @@ export class Renderer {
       }
    }
 
-   elim2<K extends Cont> (σ: Elim<K>): SVGElement {
+   elim<K extends Cont> (σ: Elim<K>): SVGElement {
       return this.vert(...this.clauses(σ).map(([gs, g]) => this.horiz(...gs, g)))
    }
 
-   elim<K extends Cont> (σ: Elim<K>): SVGElement {
+   elim2<K extends Cont> (σ: Elim<K>): SVGElement {
       if (VarElim.is(σ)) {
          return this.horizSpace(this.text(σ.x.val), this.cont(σ.κ))
       } else
