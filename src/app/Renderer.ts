@@ -45,9 +45,8 @@ export class Renderer {
    }
 
    prompt (e: Expr, v: Value): SVGElement {
-      const e_g: SVGElement = this.expr(e)
       return Renderer.vert(
-         e_g,
+         this.expr(e),
          Renderer.horiz(
             this.text(">"),
             this.space(), this.value(v)
@@ -103,9 +102,8 @@ export class Renderer {
       } else
       if (e instanceof Expr.App) {
          const g_f: SVGElement = e.f instanceof Expr.Fun ? this.parenthesise(e.f) : this.expr(e.f),
-               sp: SVGElement = this.space(),
                g_e: SVGElement = e.e instanceof Expr.Fun ? this.parenthesise(e.e) : this.expr(e.e)
-         return Renderer.horiz(g_f, sp, g_e)
+         return Renderer.horiz(g_f, this.space(), g_e)
       } else
       if (e instanceof Expr.Defs) {
          const defs_g: SVGElement = this.text(`<${className(e)}>`)
