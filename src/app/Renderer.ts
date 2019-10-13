@@ -50,7 +50,7 @@ export class Renderer {
 
    cont (κ: Cont): SVGElement {
       if (κ instanceof Expr.Expr) {
-         return this.spaceDelimit(this.keyword("arrow"), this.expr(κ))
+         return this.horizSpace(this.keyword("arrow"), this.expr(κ))
       } else
       if (κ instanceof Elim) {
          return this.elim(κ)
@@ -61,17 +61,17 @@ export class Renderer {
 
    def (def: Expr.Def): SVGElement {
       if (def instanceof Expr.Prim) {
-         return this.spaceDelimit(this.keyword("primitive"), this.text(def.x.val))
+         return this.horizSpace(this.keyword("primitive"), this.text(def.x.val))
       } else
       if (def instanceof Expr.Let) {
          if (def.e instanceof Expr.Fun) {
-            return this.spaceDelimit(this.keyword("let_"), this.text(def.x.val), this.elim(def.e.σ))
+            return this.horizSpace(this.keyword("let_"), this.text(def.x.val), this.elim(def.e.σ))
          } else {
-            return this.spaceDelimit(this.keyword("let_"), this.keyword("equals"), this.expr(def.e))
+            return this.horizSpace(this.keyword("let_"), this.keyword("equals"), this.expr(def.e))
          }
       } else
       if (def instanceof Expr.LetRec) {
-         return this.spaceDelimit(this.keyword("letRec"), this.vert(...def.δ.toArray().map(def => this.recDef(def))))
+         return this.horizSpace(this.keyword("letRec"), this.vert(...def.δ.toArray().map(def => this.recDef(def))))
       } else {
          return absurd()
       }
@@ -79,12 +79,12 @@ export class Renderer {
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       if (VarElim.is(σ)) {
-         return this.spaceDelimit(this.text(σ.x.val), this.cont(σ.κ))
+         return this.horizSpace(this.text(σ.x.val), this.cont(σ.κ))
       } else
       if (DataElim.is(σ)) {
          return this.vert(
             ...zip(fields(σ), σ.__children as Cont[]).map(([ctr, κ]) => {
-               return this.spaceDelimit(this.text(ctr), this.cont(κ))
+               return this.horizSpace(this.text(ctr), this.cont(κ))
             })
          )
       } else {
@@ -126,15 +126,15 @@ export class Renderer {
          return this.text(e.x.val)
       } else
       if (e instanceof Expr.Fun) {
-         return this.spaceDelimit(this.keyword("fun"), this.keyword("arrow"), this.elim(e.σ))
+         return this.horizSpace(this.keyword("fun"), this.keyword("arrow"), this.elim(e.σ))
       } else
       if (e instanceof Expr.BinaryApp) {
-         return this.spaceDelimit(this.expr(e.e1), this.text(e.opName.val), this.expr(e.e2))
+         return this.horizSpace(this.expr(e.e1), this.text(e.opName.val), this.expr(e.e2))
       } else
       if (e instanceof Expr.App) {
-         return this.spaceDelimit(
-            e.f instanceof Expr.Fun ? this.parenthesise(e.f) : this.expr(e.f), 
-            e.e instanceof Expr.Fun ? this.parenthesise(e.e) : this.expr(e.e)
+         return this.horizSpace(
+            e.f instanceof Expr.Fun ? this.parenthesise(this.expr(e.f)) : this.expr(e.f), 
+            e.e instanceof Expr.Fun ? this.parenthesise(this.expr(e.e)) : this.expr(e.e)
          )
       } else
       if (e instanceof Expr.Defs) {
@@ -169,6 +169,17 @@ export class Renderer {
       })
       dimensions.set(g, { width: width_sum, height: height_max })
       return g
+   }
+
+   horizSpace (...gs: SVGElement[]): SVGElement {
+      const gsʹ: SVGElement[] = []
+      gs.forEach((g: SVGElement, n: number): void => {
+         gsʹ.push(g)
+         if (n < gs.length - 1) {
+            gsʹ.push(this.space())
+         }
+      })
+      return this.horiz(...gsʹ)
    }
 
    keyword (str: keyof typeof strings, ẟ_style?: string): SVGElement {
@@ -213,14 +224,14 @@ export class Renderer {
       )
    }
 
-   parenthesise (e: Expr): SVGElement {
-      return this.horiz(this.keyword("parenL"), this.expr(e), this.keyword("parenR"))
+   parenthesise (g: SVGElement): SVGElement {
+      return this.horiz(this.keyword("parenL"), g, this.keyword("parenR"))
    }
 
    prompt (e: Expr, v: Value): SVGElement {
       const g: SVGElement = this.vert(
          this.expr(e),
-         this.spaceDelimit(this.text(">"), this.value(v))
+         this.horizSpace(this.text(">"), this.value(v))
       )
       g.setAttribute("x", `0`)
       g.setAttribute("y", `0`)
@@ -228,22 +239,11 @@ export class Renderer {
    }
 
    recDef (def: Expr.RecDef): SVGElement {
-      return this.spaceDelimit(this.text(def.x.val), this.elim(def.σ))
+      return this.horizSpace(this.text(def.x.val), this.elim(def.σ))
    }
 
    space (): SVGElement {
       return this.text(`${space}`)
-   }
-
-   spaceDelimit (...gs: SVGElement[]): SVGElement {
-      const gsʹ: SVGElement[] = []
-      gs.forEach((g: SVGElement, n: number): void => {
-         gsʹ.push(g)
-         if (n < gs.length - 1) {
-            gsʹ.push(this.space())
-         }
-      })
-      return this.horiz(...gsʹ)
    }
 
    text (str: string, ẟ_style?: string): SVGTextElement {
