@@ -69,7 +69,11 @@ export class Renderer {
 
    cont (κ: Cont): [SVGElement[], SVGElement][] {
       if (κ instanceof Expr.Expr) {
-         return [[[], this.horizSpace(this.keyword("arrow"), this.expr(κ))]]
+         const g: SVGElement = 
+            κ instanceof Expr.Fun ?
+            this.elim(κ.σ) :
+            this.horizSpace(this.keyword("arrow"), this.expr(κ))
+         return [[[], g]]
       } else
       if (κ instanceof Elim) {
          return this.clauses(κ)
