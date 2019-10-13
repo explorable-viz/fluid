@@ -191,22 +191,6 @@ export class Renderer {
       }
    }
 
-   // TODO: completely broken; ignores the fact that elements have x, y coordinates :-/
-   static old_group (...vs: SVGElement[]): SVGElement {
-      const g: SVGGElement = document.createElementNS(SVG.NS, "g")
-      let width_sum: number = 0,
-          height_max: number = 0
-      g.setAttribute("pointer-events", "bounding-box")
-      vs.forEach((v: SVGElement): void => {
-         const { width, height }: Dimensions = dimensions.get(v)!
-         width_sum += width
-         height_max = Math.max(height_max, height)
-         g.appendChild(v)
-      })
-      dimensions.set(g, { width: width_sum, height: height_max })
-      return g
-   }
-
    static horiz (...gs: SVGElement[]): SVGElement {
       const g: SVGGElement = document.createElementNS(SVG.NS, "svg")
       let width_sum: number = 0,
