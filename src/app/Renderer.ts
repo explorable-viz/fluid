@@ -48,17 +48,35 @@ export class Renderer {
       this.editor = editor
    }
 
-   cont (κ: Cont): SVGElement {
-      if (κ instanceof Expr.Expr) {
-         return this.horizSpace(this.keyword("arrow"), this.expr(κ))
+   clauses<K extends Cont> (σ: Elim<K>): [SVGElement[], SVGElement][] {
+      if (VarElim.is(σ)) {
+         const cs: [SVGElement[], SVGElement][] = this.cont(σ.κ)
+         return cs.map(([gs, g]) => [[this.text(σ.x.val), ...gs], g])
       } else
-      if (κ instanceof Elim) {
-         return this.elim(κ)
+      if (DataElim.is(σ)) {
+         return flatten(zip(fields(σ), σ.__children as Cont[]).map(([c, κ]): [SVGElement[], SVGElement][] => {
+            return this.cont(κ).map(([gs, g]: [SVGElement[], SVGElement]) => {
+               assert(gs.length >= arity(c))
+               const gsʹ: SVGElement[] = [this.horizSpace(this.text(c), ...gs.slice(0, arity(c))), ...gs.slice(arity(c))]
+               return [gsʹ, g]
+            })
+         }))
       } else {
          return absurd()
       }
    }
 
+   cont (κ: Cont): [SVGElement[], SVGElement][] {
+      if (κ instanceof Expr.Expr) {
+         return [[[], this.horizSpace(this.keyword("arrow"), this.expr(κ))]]
+      } else
+      if (κ instanceof Elim) {
+         return this.clauses(κ)
+      } else {
+         return absurd()
+      }
+   }
+   
    def (def: Expr.Def): SVGElement {
       if (def instanceof Expr.Prim) {
          return this.horizSpace(this.keyword("primitive"), this.text(def.x.val))
@@ -77,52 +95,8 @@ export class Renderer {
       }
    }
 
-   cont2 (κ: Cont): [SVGElement[], SVGElement][] {
-      if (κ instanceof Expr.Expr) {
-         return [[[], this.horizSpace(this.keyword("arrow"), this.expr(κ))]]
-      } else
-      if (κ instanceof Elim) {
-         return this.clauses(κ)
-      } else {
-         return absurd()
-      }
-   }
-   
-   clauses<K extends Cont> (σ: Elim<K>): [SVGElement[], SVGElement][] {
-      if (VarElim.is(σ)) {
-         const cs: [SVGElement[], SVGElement][] = this.cont2(σ.κ)
-         return cs.map(([gs, g]) => [[this.text(σ.x.val), ...gs], g])
-      } else
-      if (DataElim.is(σ)) {
-         return flatten(zip(fields(σ), σ.__children as Cont[]).map(([c, κ]): [SVGElement[], SVGElement][] => {
-            return this.cont2(κ).map(([gs, g]: [SVGElement[], SVGElement]) => {
-               assert(gs.length >= arity(c))
-               const gsʹ: SVGElement[] = [this.horizSpace(this.text(c), ...gs.slice(0, arity(c))), ...gs.slice(arity(c))]
-               return [gsʹ, g]
-            })
-         }))
-      } else {
-         return absurd()
-      }
-   }
-
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       return this.vert(...this.clauses(σ).map(([gs, g]) => this.horiz(...gs, g)))
-   }
-
-   elim2<K extends Cont> (σ: Elim<K>): SVGElement {
-      if (VarElim.is(σ)) {
-         return this.horizSpace(this.text(σ.x.val), this.cont(σ.κ))
-      } else
-      if (DataElim.is(σ)) {
-         return this.vert(
-            ...zip(fields(σ), σ.__children as Cont[]).map(([ctr, κ]) => {
-               return this.horizSpace(this.text(ctr), this.cont(κ))
-            })
-         )
-      } else {
-         return absurd()
-      }
    }
 
    // Post-condition: returned element has an entry in "dimensions" map. 
