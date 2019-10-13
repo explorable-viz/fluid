@@ -1,7 +1,7 @@
-import { zip } from "../util/Array"
-import { Class, absurd, as, className, error } from "../util/Core"
+import { flatten, zip } from "../util/Array"
+import { Class, absurd, as, assert, className, error } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
-import { exprClass } from "../DataType"
+import { arity, exprClass } from "../DataType"
 import { Change, New, Reclassify, __deltas } from "../Delta"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
@@ -75,6 +75,39 @@ export class Renderer {
       } else {
          return absurd()
       }
+   }
+
+   cont2 (κ: Cont): [SVGElement[], SVGElement][] {
+      if (κ instanceof Expr.Expr) {
+         return [[[], this.horizSpace(this.keyword("arrow"), this.expr(κ))]]
+      } else
+      if (κ instanceof Elim) {
+         return this.clauses(κ)
+      } else {
+         return absurd()
+      }
+   }
+   
+   clauses<K extends Cont> (σ: Elim<K>): [SVGElement[], SVGElement][] {
+      if (VarElim.is(σ)) {
+         const cs: [SVGElement[], SVGElement][] = this.cont2(σ.κ)
+         return cs.map(([gs, g]) => [[this.text(σ.x.val), ...gs], g])
+      } else
+      if (DataElim.is(σ)) {
+         return flatten(zip(fields(σ), σ.__children as Cont[]).map(([c, κ]): [SVGElement[], SVGElement][] => {
+            return this.cont2(κ).map(([gs, g]: [SVGElement[], SVGElement]) => {
+               assert(gs.length >= arity(c))
+               const gsʹ: SVGElement[] = [this.horizSpace(this.text(c), ...gs.slice(0, arity(c))), ...gs.slice(arity(c))]
+               return [gsʹ, g]
+            })
+         }))
+      } else {
+         return absurd()
+      }
+   }
+
+   elim2<K extends Cont> (σ: Elim<K>): SVGElement {
+      return this.vert(...this.clauses(σ).map(([gs, g]) => this.horiz(...gs, g)))
    }
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {

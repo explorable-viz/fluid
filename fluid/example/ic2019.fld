@@ -4,7 +4,7 @@ letrec
    fun f {
       [] → [];
       [x] → [x];
-      [x, y, ...xs] → [x, y, ...f xs]
+      [x, y, ...ys] → [x, y, ...f ys]
    }
 in
 f [1, 3]
