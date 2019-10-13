@@ -57,8 +57,7 @@ export class Renderer {
          return flatten(zip(fields(σ), σ.__children as Cont[]).map(([c, κ]): [SVGElement[], SVGElement][] => {
             return this.cont(κ).map(([gs, g]: [SVGElement[], SVGElement]) => {
                assert(gs.length >= arity(c))
-               const gsʹ: SVGElement[] = [this.horizSpace(this.text(c), ...gs.slice(0, arity(c))), ...gs.slice(arity(c))]
-               return [gsʹ, g]
+               return [[this.horizSpace(this.text(c), ...gs.slice(0, arity(c))), ...gs.slice(arity(c))], g]
             })
          }))
       } else {
@@ -96,7 +95,7 @@ export class Renderer {
    }
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
-      return this.vert(...this.clauses(σ).map(([gs, g]) => this.horiz(...gs, g)))
+      return this.vert(...this.clauses(σ).map(([gs, g]) => this.horizSpace(...gs, g)))
    }
 
    // Post-condition: returned element has an entry in "dimensions" map. 
