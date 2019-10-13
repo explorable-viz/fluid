@@ -1,5 +1,5 @@
 import { flatten, zip } from "../util/Array"
-import { Class, absurd, as, assert, className, error } from "../util/Core"
+import { Class, __nonNull, absurd, as, assert, className, error } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { arity, exprClass } from "../DataType"
 import { Change, New, Reclassify, __deltas } from "../Delta"
@@ -54,8 +54,9 @@ export class Renderer {
          return cs.map(([gs, g]) => [[this.text(σ.x.val), ...gs], g])
       } else
       if (DataElim.is(σ)) {
-         return flatten(zip(fields(σ), σ.__children as Cont[]).map(([c, κ]): [SVGElement[], SVGElement][] => {
-            return this.cont(κ).map(([gs, g]: [SVGElement[], SVGElement]) => {
+         const cκs: [string, Cont][] = zip(fields(σ), σ.__children as Cont[])
+         return flatten(cκs.filter(([c, κ]) => κ !== undefined).map(([c, κ]): [SVGElement[], SVGElement][] => {
+            return this.cont(__nonNull(κ)).map(([gs, g]: [SVGElement[], SVGElement]) => {
                assert(gs.length >= arity(c))
                const ctr_g: SVGElement = this.horizSpace(this.text(c), ...gs.slice(0, arity(c)))
                return [[arity(c) === 0 ? ctr_g : this.parenthesise(ctr_g), ...gs.slice(arity(c))], g]
