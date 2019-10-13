@@ -5,7 +5,7 @@ import { exprClass } from "../DataType"
 import { Change, New, Reclassify, __deltas } from "../Delta"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
-import { IncompatibleUpdate, Num, Str, Value, fields } from "../Value"
+import { Num, Str, Value, fields } from "../Value"
 import { ν, at, str, versioned } from "../Versioned"
 import { SVG } from "./Core"
 import { ExprCursor } from "./Cursor"
@@ -109,16 +109,11 @@ export class Renderer {
             // TEMPORARY EXPERIMENT
             as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
                ev.stopPropagation()
-               try {
-                  new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
-                     const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-                     return [at(exprClass(Pair.name), e, eʹ)(ν())]
-                  })
-               } catch (ex) {
-                  if (ex instanceof IncompatibleUpdate) {
-                     __deltas.clear()
-                  }
-               }
+               __deltas.clear()
+               new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
+                  const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+                  return [at(exprClass(Pair.name), e, eʹ)(ν())]
+               })
                this.editor.onEdit()
             })
             // END TEMPORARY EXPERIMENT
@@ -198,6 +193,7 @@ export class Renderer {
       const g: SVGElement = this.text(n.toString(), deltaStyle(n))
       if (editable && Number.isInteger(n.val)) {
          g.addEventListener("click", (ev: MouseEvent): void => {
+            __deltas.clear()
             new ExprCursor(n).setNum(n.val + 1)
             ev.stopPropagation()
             this.editor.onEdit()
