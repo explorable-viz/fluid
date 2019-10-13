@@ -45,13 +45,16 @@ export class Renderer {
    }
 
    prompt (e: Expr, v: Value): SVGElement {
-      return Renderer.vert(
+      const g: SVGElement = Renderer.vert(
          this.expr(e),
          Renderer.horiz(
             this.text(">"),
             this.space(), this.value(v)
          )
       )
+      g.setAttribute("x", `0`)
+      g.setAttribute("y", `0`)
+      return g
    }
 
    value (v: Value): SVGElement {
@@ -197,8 +200,7 @@ export class Renderer {
           height_max: number = 0
       gs.forEach((gʹ: SVGElement): void => {
          gʹ.setAttribute("x", `${width_sum}`)
-         gʹ.setAttribute("y", `${lineHeight}`)
-         gʹ.removeAttribute("transform") // don't use transform any more
+         gʹ.setAttribute("y", `0`)
          const { width, height }: Dimensions = dimensions.get(gʹ)!
          width_sum += width
          height_max = Math.max(height_max, height)
