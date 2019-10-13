@@ -5,7 +5,7 @@ import { exprClass } from "../DataType"
 import { Change, New, Reclassify, __deltas } from "../Delta"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
-import { Num, Str, Value, fields } from "../Value"
+import { IncompatibleUpdate, Num, Str, Value, fields } from "../Value"
 import { ν, at, str, versioned } from "../Versioned"
 import { SVG } from "./Core"
 import { ExprCursor } from "./Cursor"
@@ -102,17 +102,23 @@ export class Renderer {
       } else
       if (e instanceof Expr.DataExpr) {
          if (hasExprClass(e, Pair)) {
-            return this.pair(as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
+            return this.pair(e, as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
          } else
          if (hasExprClass(e, Nil) || hasExprClass(e, Cons)) {
             const g: SVGElement = this.list(exprElements(e))
             // TEMPORARY EXPERIMENT
             as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
-               new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
-                  const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-                  return [at(exprClass(Pair.name), e, eʹ)(ν())]
-               })
                ev.stopPropagation()
+               try {
+                  new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
+                     const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+                     return [at(exprClass(Pair.name), e, eʹ)(ν())]
+                  })
+               } catch (ex) {
+                  if (ex instanceof IncompatibleUpdate) {
+                     __deltas.clear()
+                  }
+               }
                this.editor.onEdit()
             })
             // END TEMPORARY EXPERIMENT
@@ -170,8 +176,8 @@ export class Renderer {
       return g
    }
 
-   keyword (str: keyof typeof strings): SVGElement {
-      return this.text(strings[str])
+   keyword (str: keyof typeof strings, ẟ_style?: string): SVGElement {
+      return this.text(strings[str], ẟ_style)
    }
 
    list ([es, eʹ]: [Value[], Value | null]): SVGElement {
@@ -200,14 +206,14 @@ export class Renderer {
       return g
    }
 
-   pair (e1: Value, e2: Value): SVGElement {
+   pair (e: Value, e1: Value, e2: Value): SVGElement {
       return this.horiz(
-         this.keyword("parenL"), 
+         this.keyword("parenL", deltaStyle(e)), 
          this.exprOrValue(e1),
-         this.keyword("comma"),
+         this.keyword("comma", deltaStyle(e)),
          this.space(), 
          this.exprOrValue(e2),
-         this.keyword("parenR")
+         this.keyword("parenR", deltaStyle(e))
       )
    }
 
@@ -269,7 +275,7 @@ export class Renderer {
          return this.list([v.toArray(), null])
       } else
       if (v instanceof Pair) {
-         return this.pair(v.fst, v.snd)
+         return this.pair(v, v.fst, v.snd)
       } else {
          return this.unimplemented(v)
       }

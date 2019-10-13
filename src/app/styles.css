@@ -12,10 +12,14 @@
    stroke: none;
 }
 
+.unchanged {
+   fill: black;
+}
+
 .changed {
    fill: blue;
 }
 
-.unchanged {
-   fill: black;
+.new {
+   fill: limegreen;
 }
