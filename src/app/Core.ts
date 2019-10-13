@@ -29,22 +29,6 @@ export class SVG {
       return svg
    }
 
-   // The SVG text element for the supplied text; centralised so can be used to compute text metrics.
-   // Use "translate" to locate the element, so that we can apply it after scaling.
-   textElement (x: number, y: number, fontSize: number, class_: string, str: string): SVGTextElement {
-      const text: SVGTextElement = document.createElementNS(SVG.NS, "text")
-      text.setAttribute("stroke", "none")
-      text.setAttribute("font-size", fontSize.toString()) // wasn't able to set this through CSS for some reason
-      let transform: string = `translate(${x.toString()},${y.toString()})`
-      if (this.invert_y) {
-         transform += " scale(1,-1)"
-      }
-      text.setAttribute("transform", transform)
-      text.setAttribute("class", class_) // set styling before creating text node, for font metrics to be correct
-      text.appendChild(document.createTextNode(str))
-      return text
-   }
-
    textWidth (text: SVGTextElement): number {
       this.metrics.appendChild(text)
       const width: number = text.getBBox().width

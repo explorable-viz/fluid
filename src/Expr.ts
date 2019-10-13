@@ -9,22 +9,27 @@ import { DataValueTag, Id, Num, Str, _ } from "./Value"
 import { at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
-export namespace strings {
-   export const arrow: string = "→"
-   export const as: string = "as"
-   export const bracketL: string = "["
-   export const bracketR: string = "]"
-   export const equals: string = "="
-   export const fun: string = "fun"
-   export const in_: string = "in"
-   export const let_: string = "let"
-   export const letRec: string = "letrec"
-   export const match: string = "match"
-   export const primitive: string = "primitive"
-   export const parenL: string = "("
-   export const parenR: string = ")"
-   export const quotes: string = '"'
-   export const typematch: string = "typematch"
+export const strings = {
+   arrow: "→",
+   as: "as",
+   bracketL: "[",
+   bracketR: "]",
+   comma: ",",
+   curlyL: "{",
+   curlyR: "}",
+   ellipsis: "...",
+   equals: "=",
+   fun: "fun",
+   in_: "in",
+   let_: "let",
+   letRec: "letrec",
+   match: "match",
+   primitive: "primitive",
+   parenL: "(",
+   parenR: ")",
+   quotes: '"',
+   semicolon: ";",
+   typematch: "typematch"
 }
 
 export type Expr = Expr.Expr
