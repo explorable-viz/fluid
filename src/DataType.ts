@@ -72,16 +72,13 @@ export function exprClass (C: Class<DataValue>): Class<Expr.DataExpr> {
 }
 
 export function valueClass (C: Class<Expr.DataExpr>): Class<DataValue> {
-   return ctrFor(C.name.slice(0, -exprSuffix.length)).C
+   return ctrFor(C.name).C
 }
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
 export const types: Map<string, DataType | PrimType> = new Map
 export const ctrToDataType: Map<string, DataType> = new Map
 export const elimToDataType: Map<string, DataType> = new Map
-const elimSuffix: string = "Elim"
-const explSuffix: string = "Expl"
-const exprSuffix: string = "Expr"
 
 // See https://stackoverflow.com/questions/33605775 for the dynamic class-naming idiom.
 export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]) {
@@ -89,9 +86,8 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
    const ctrs: [string, Ctr][] = C̅.map(
             (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
          ),
-         elimC_name: string = D.name + elimSuffix,
          elimC: Class<DataElim> = {
-            [elimC_name]: class extends DataElim {
+            [D.name]: class extends DataElim {
                constructor () {
                   super()
                   // lexicographical order hopefully preserved by getOwnPropertyNames()
@@ -100,11 +96,10 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                   })
                }
             }
-         }[elimC_name],
+         }[D.name],
          exprC̅: [string, Class<Expr.DataExpr>][] = ctrs.map(([c_str, c]: [string, Ctr]) => {
-            const exprC_name: string = c_str + exprSuffix
             return [c_str, {
-               [exprC_name]: class extends Expr.DataExpr {
+               [c_str]: class extends Expr.DataExpr {
                   constructor () {
                      super()
                      c.f̅.forEach((f: string): void => {
@@ -112,12 +107,11 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                      })
                   }
                }
-            }[exprC_name]]
+            }[c_str]]
          }),
          explC̅: [string, Class<Expl.DataExpl>][] = ctrs.map(([c_str, c]: [string, Ctr]) => {
-            const explC_name: string = c_str + explSuffix
             return [c_str, {
-               [explC_name]: class extends Expl.DataExpl {
+               [c_str]: class extends Expl.DataExpl {
                   constructor () {
                      super()
                      c.f̅.forEach((f: string): void => {
@@ -125,13 +119,13 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
                      })
                   }
                }
-            }[explC_name]]
+            }[c_str]]
          }),
          d: DataType = new DataType(str(D.name)(ν()), elimC, new Map(ctrs), new Map(exprC̅), new Map(explC̅))
    C̅.forEach((C: Class<T>): void => {
       ctrToDataType.set(C.name, d)
    })
-   elimToDataType.set(elimC_name, d)
+   elimToDataType.set(D.name, d)
    types.set(d.name.val, d)
 }
 
