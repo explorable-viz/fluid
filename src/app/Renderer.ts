@@ -4,6 +4,7 @@ import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, exprClass } from "../DataType"
 import { DataValue } from "../DataValue"
 import { Change, New, Reclassify, __deltas } from "../Delta"
+import { Eval } from "../Eval"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
 import { Num, Str, Value, fields } from "../Value"
@@ -368,6 +369,9 @@ export class Renderer {
       } else
       if (v instanceof Str) {
          return this.text(v.val.toString(), deltaStyle(v))
+      } else
+      if (v instanceof Eval.Closure) {
+         return this.unimplemented(v)
       } else
       if (v instanceof DataValue) {
          if (v instanceof List) {
