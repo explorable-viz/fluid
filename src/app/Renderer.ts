@@ -101,9 +101,9 @@ export class Renderer {
       } else
       if (def instanceof Expr.Let) {
          if (def.e instanceof Expr.Fun) {
-            return this.horizSpace(this.keyword("let_"), this.text(def.x.val), this.elim(def.e.σ))
+            return this.horizSpace(this.keyword("let_"), this.patternVar(def.x), this.elim(def.e.σ))
          } else {
-            return this.horizSpace(this.keyword("let_"), this.keyword("equals"), this.expr(def.e))
+            return this.horizSpace(this.keyword("let_"), this.patternVar(def.x), this.keyword("equals"), this.expr(def.e))
          }
       } else
       if (def instanceof Expr.LetRec) {
