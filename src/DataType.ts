@@ -1,4 +1,4 @@
-import { AClass, Class, __nonNull, assert } from "./util/Core"
+import { AClass, Class, __nonNull } from "./util/Core"
 import { DataValue } from "./DataValue"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
@@ -49,15 +49,18 @@ export class Ctr {
       this.C = C
       this.f̅ = f̅
    }
+
+   get arity (): number {
+      return this.f̅.length
+   }
+
+   get c (): string {
+      return this.C.name
+   }
 }
 
 export function ctrFor (c: string): Ctr {
-   return ctrToDataType.get(c)!.ctrs.get(c)!
-}
-
-export function arity (c: string): number {
-   assert(ctrToDataType.has(c), `No such constructor: "${c}".`,)
-   return ctrFor(c).f̅.length
+   return __nonNull(ctrToDataType.get(c)!.ctrs.get(c))
 }
 
 export function explClass (c: string): Class<Expl.DataExpl> {

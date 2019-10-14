@@ -76,7 +76,7 @@ export function __nonNull<T> (x: T | null | undefined): T {
    }
 }
 
-export function log<T> (
+export function __log<T> (
    x: T,
    msg?: (it: T) => string,
    transform: (it: T) => T = (it: T) => it

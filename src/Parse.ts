@@ -41,7 +41,7 @@ const lexer = moo.compile({
 
 import { __check, assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
-import { arity, exprClass, types } from "./DataType"
+import { ctrFor, exprClass, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { DataElim, dataElim, varElim } from "./Match"
@@ -172,7 +172,7 @@ const grammar: Grammar = {
     {"name": "list", "symbols": ["list$macrocall$1", "listOpt", "list$macrocall$3"], "postprocess": ([, e, ]) => e},
     {"name": "constr", "symbols": ["ctr", "args"], "postprocess":  ([c, e̅], _, reject) => {
            assert(c instanceof Str)
-           if (arity(c.val) !== e̅.length) {
+           if (ctrFor(c.val).arity !== e̅.length) {
               return reject
            }
            return at(exprClass(c.val), ...e̅)(ν())
@@ -373,7 +373,7 @@ const grammar: Grammar = {
     {"name": "listRestOpt_pattern", "symbols": ["listRestOpt_pattern$macrocall$5", "list1_pattern"], "postprocess": ([, mk_κ]) => mk_κ},
     {"name": "constr_pattern", "symbols": ["ctr", "args_pattern"], "postprocess":  ([c, mk_κs], _, reject) => {
            assert(c instanceof Str)
-           if (arity(c.val) !== mk_κs.length) {
+           if (ctrFor(c.val).arity !== mk_κs.length) {
               return reject
            }
            return (κ: Cont) => dataElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])

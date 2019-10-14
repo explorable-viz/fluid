@@ -32,7 +32,7 @@ const lexer = moo.compile({
 @{%
 import { __check, assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
-import { arity, exprClass, types } from "./DataType"
+import { ctrFor, exprClass, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { DataElim, dataElim, varElim } from "./Match"
@@ -155,7 +155,7 @@ constr ->
    ctr args
    {% ([c, e̅], _, reject) => {
       assert(c instanceof Str)
-      if (arity(c.val) !== e̅.length) {
+      if (ctrFor(c.val).arity !== e̅.length) {
          return reject
       }
       return at(exprClass(c.val), ...e̅)(ν())
@@ -294,7 +294,7 @@ constr_pattern ->
    ctr args_pattern
    {% ([c, mk_κs], _, reject) => {
       assert(c instanceof Str)
-      if (arity(c.val) !== mk_κs.length) {
+      if (ctrFor(c.val).arity !== mk_κs.length) {
          return reject
       }
       return (κ: Cont) => dataElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])
