@@ -59,6 +59,10 @@ export class Renderer {
       this.editor = editor
    }
 
+   arrow (): SVGElement {
+      return this.keyword("arrow")
+   }
+
    bracket (...gs: SVGElement[]): SVGElement {
       return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
    }
@@ -138,7 +142,7 @@ export class Renderer {
          const g: SVGElement = 
             e instanceof Expr.Fun ?
             this.elim(e.σ) : // curried function resugaring
-            this.horizSpace(this.keyword("arrow"), this.expr(e))
+            this.horizSpace(this.arrow(), this.expr(e))
          const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(1, cxs)
          assert(gs.length === 1 && cxsʹ.length === 0)
          return this.horizSpace(gs[0], g)
@@ -158,7 +162,7 @@ export class Renderer {
          return this.text(e.val.toString())
       } else
       if (e instanceof Expr.Fun) {
-         return this.horizSpace(this.keyword("fun"), this.keyword("arrow"), this.elim(e.σ))
+         return this.horizSpace(this.keyword("fun"), this.arrow(), this.elim(e.σ))
       } else
       if (e instanceof Expr.DataExpr) {
          if (isExprFor(e, Pair)) {
@@ -210,7 +214,12 @@ export class Renderer {
          )
       } else
       if (e instanceof Expr.Typematch) {
-         return this.unimplemented(e)
+         return this.vert(
+            this.horizSpace(this.keyword("typematch"), this.expr(e.e), this.keyword("as")),
+            ...e.cases.toArray().map(({fst: x, snd: e}: Pair<Str, Expr>) => 
+               this.horizSpace(this.text(x.val), this.arrow(), this.expr(e))
+            )
+         )
       } else {
          return absurd(`Unimplemented expression form: ${className(e)}.`)
       }
