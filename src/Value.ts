@@ -1,4 +1,4 @@
-import { Class, __nonNull, assert, assertWith } from "./util/Core"
+import { Class, __nonNull, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { __deltas } from "./Delta"
 
@@ -120,17 +120,13 @@ export function leq (s1: State, s2: State): boolean {
    })
 }
 
-export class IncompatibleUpdate extends Error {
-}
-
 // Imperative join that merges s2 into s1, failing if they are incompatible.
 export function mergeInto (tgt: State, src: State): void {
    Object.keys(src).forEach((prop: string): void => {
       if (!tgt.hasOwnProperty(prop)) {
          tgt[prop] = src[prop]
       } else {
-         assertWith(
-            IncompatibleUpdate,
+         assert(
             tgt[prop] === src[prop],
             `Incompatible update of field "${prop}" at revision.`,
             tgt, src

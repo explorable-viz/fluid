@@ -146,7 +146,7 @@ export class Renderer {
       } else
       if (cxs[0] instanceof Str) {
          const g: SVGElement = this.text(cxs[0].val)
-         const [gsʹ, cxsʹ]: [SVGElement[], Pattern[]] = this.pattern(n - 1, cxs)
+         const [gsʹ, cxsʹ]: [SVGElement[], Pattern[]] = this.pattern(n - 1, cxs.slice(1))
          return [[g, ...gsʹ], cxsʹ]
       } else {
          return absurd()
@@ -156,7 +156,7 @@ export class Renderer {
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       return this.vert(...this.clauses2(σ).map(([cxs, e]) => {
          const [gs, cxsʹ]: [SVGElement[], Pattern[]] = this.pattern(1, cxs)
-         assert(cxsʹ.length === 0 && gs.length === 1)
+         assert(gs.length === 1 && cxsʹ.length === 0)
          return this.horiz(gs[0], this.keyword("arrow"), this.expr(e))
       }))
    }
