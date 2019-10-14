@@ -195,7 +195,10 @@ export class Renderer {
          )
       } else
       if (e instanceof Expr.MatchAs) {
-         return this.unimplemented(e)
+         return this.vert(
+            this.horizSpace(this.keyword("match"), this.expr(e.e), this.keyword("as")),
+            this.elim(e.σ)
+         )
       } else
       if (e instanceof Expr.Typematch) {
          return this.unimplemented(e)
@@ -344,7 +347,7 @@ export class Renderer {
    }
 
    unimplemented (v: Value): SVGElement {
-      throw new Error("TODO")
+      throw new Error(`TODO: ${className(v)}`)
    }
 
    value (v: Value): SVGElement {
