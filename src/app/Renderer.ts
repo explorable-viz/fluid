@@ -37,7 +37,7 @@ function hasExprClass (e: Expr, C: Class): boolean {
    return className(e) === exprClass(C.name).name
 }
 
-type Wurble = Ctr | Str // a pattern is essentially a sequence of these
+type Pattern = Ctr | Str // a pattern is essentially a sequence of these
 
 export interface EditListener {
    onEdit (): void
@@ -50,26 +50,22 @@ export class Renderer {
       this.editor = editor
    }
 
-   clauses2<K extends Cont> (σ: Elim<K>): [Wurble[], Expr][] {
+   clauses2<K extends Cont> (σ: Elim<K>): [Pattern[], Expr][] {
       if (VarElim.is(σ)) {
-         const cs: [Wurble[], Expr][] = this.cont2(σ.κ)
+         const cs: [Pattern[], Expr][] = this.cont2(σ.κ)
          return cs.map(([cxs, e]) => [[σ.x, ...cxs], e])
       } else
       if (DataElim.is(σ)) {
          const cκs: [string, Cont][] = zip(fields(σ), σ.__children as Cont[])
-         return __log(flatten(cκs.filter(([c, κ]) => κ !== undefined).map(([c, κ]): [Wurble[], Expr][] => {
-            const ctr: Ctr = ctrFor(c)
-            return this.cont2(__nonNull(κ)).map(([cxs, e]: [Wurble[], Expr]) => {
-               assert(cxs.length >= ctr.arity)
-               return [[ctr, ...cxs.slice(ctr.arity)], e]
-            })
-         })))
+         return __log(flatten(cκs.filter(([c, κ]) => κ !== undefined).map(([c, κ]): [Pattern[], Expr][] =>
+            this.cont2(__nonNull(κ)).map(([cxs, e]: [Pattern[], Expr]) => [[ctrFor(c), ...cxs], e])
+         )))
       } else {
          return absurd()
       }
    }
 
-   cont2 (κ: Cont): [Wurble[], Expr][] {
+   cont2 (κ: Cont): [Pattern[], Expr][] {
       if (κ instanceof Expr.Expr) {
          return [[[], κ]]
       } else
@@ -137,20 +133,20 @@ export class Renderer {
       return this.vert(...this.clauses(σ).map(([gs, g]) => this.horizSpace(...gs, g)))
    }
 
-   pattern (n: number, cxs: Wurble[]): [SVGElement[], Wurble[]] {
+   pattern (n: number, cxs: Pattern[]): [SVGElement[], Pattern[]] {
       if (n === 0) {
          return [[], cxs]
       } else
       if (cxs[0] instanceof Ctr) {
          const ctr: Ctr = cxs[0]
-         const [gs, cxsʹ]: [SVGElement[], Wurble[]] = this.pattern(ctr.arity, cxs.slice(1))
+         const [gs, cxsʹ]: [SVGElement[], Pattern[]] = this.pattern(ctr.arity, cxs.slice(1))
          const g: SVGElement = this.horizSpace(this.text(ctr.c), ...gs)
-         const [gsʹ, cxsʹʹ]: [SVGElement[], Wurble[]] = this.pattern(n - 1, cxsʹ)
+         const [gsʹ, cxsʹʹ]: [SVGElement[], Pattern[]] = this.pattern(n - 1, cxsʹ)
          return [[g, ...gsʹ], cxsʹʹ]
       } else
       if (cxs[0] instanceof Str) {
          const g: SVGElement = this.text(cxs[0].val)
-         const [gsʹ, cxsʹ]: [SVGElement[], Wurble[]] = this.pattern(n - 1, cxs)
+         const [gsʹ, cxsʹ]: [SVGElement[], Pattern[]] = this.pattern(n - 1, cxs)
          return [[g, ...gsʹ], cxsʹ]
       } else {
          return absurd()
@@ -159,7 +155,7 @@ export class Renderer {
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       return this.vert(...this.clauses2(σ).map(([cxs, e]) => {
-         const [gs, cxsʹ]: [SVGElement[], Wurble[]] = this.pattern(1, cxs)
+         const [gs, cxsʹ]: [SVGElement[], Pattern[]] = this.pattern(1, cxs)
          assert(cxsʹ.length === 0 && gs.length === 1)
          return this.horiz(gs[0], this.keyword("arrow"), this.expr(e))
       }))
