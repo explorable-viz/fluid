@@ -45,6 +45,11 @@ export interface EditListener {
    onEdit (): void
 }
 
+function compareCtr (c1: string, c2: string): number {
+   const n: number = ctrFor(c1).arity - ctrFor(c2).arity
+   return n === 0 ? c1.localeCompare(c2) : n
+}
+
 export class Renderer {
    editor: EditListener
 
@@ -62,7 +67,7 @@ export class Renderer {
          return cs.map(([cxs, e]) => [[σ.x, ...cxs], e])
       } else
       if (DataElim.is(σ)) {
-         const cκs: [string, Cont][] = zip(fields(σ), σ.__children as Cont[])
+         const cκs: [string, Cont][] = zip(fields(σ), σ.__children as Cont[]).sort(([c1, ], [c2, ]): number => compareCtr(c1, c2))
          return flatten(cκs.filter(([c, κ]) => κ !== undefined).map(([c, κ]): [PatternElement[], Expr][] =>
             this.cont(__nonNull(κ)).map(([cxs, e]: [PatternElement[], Expr]) => [[ctrFor(c), ...cxs], e])
          ))
@@ -229,14 +234,13 @@ export class Renderer {
          cx = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
          cxs = cxsʹ.splice(1)
       }
-      if (cx instanceof Str) {
-         return [this.bracket(...this.commaDelimit(...gs), this.comma(), this.space(), this.ellipsis(), this.text(cx.val)), cxs]
-      } else
-      if (cx.C === Nil) {
-         return [this.bracket(...this.commaDelimit(...gs)), cxs]
-      } else {
-         return absurd()
-      }
+      const gsʹ: SVGElement[] =
+         cx instanceof Str ? 
+            [this.comma(), this.space(), this.ellipsis(), this.patternVar(cx)] :
+            cx.C === Nil ? 
+               [] : 
+               absurd()
+      return [this.bracket(...this.commaDelimit(...gs), ...gsʹ), cxs]
    }
 
    comma (ẟ_style?: string): SVGElement {
@@ -292,10 +296,14 @@ export class Renderer {
       } else
       if (cxs[0] instanceof Str) {
          const [gsʹ, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxs.slice(1))
-         return [[this.text(cxs[0].val), ...gsʹ], cxsʹ]
+         return [[this.patternVar(cxs[0]), ...gsʹ], cxsʹ]
       } else {
          return absurd()
       }
+   }
+
+   patternVar (x: Str): SVGElement {
+      return this.text(x.val)
    }
 
    prompt (e: Expr, v: Value): SVGElement {
