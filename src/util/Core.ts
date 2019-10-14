@@ -33,16 +33,12 @@ export function asOpt<U, T extends U> (x: U, cls: AClass<T>): T {
 }
 
 export function assert (b: boolean, msg?: string, ...x̅: unknown[]): any {
-   return assertWith(Error, b, msg, ...x̅)
-}
-
-export function assertWith (C: Class, b: boolean, msg?: string, ...x̅: unknown[]): any {
    if (!b) {
       if (x̅.length > 0) {
          console.warn("Assertion data:\n")
          x̅.forEach(x => console.warn(x))
       }
-      throw new C(msg || "Assertion failure")
+      throw new Error(msg || "Assertion failure")
    }
 }
 
@@ -76,7 +72,7 @@ export function __nonNull<T> (x: T | null | undefined): T {
    }
 }
 
-export function log<T> (
+export function __log<T> (
    x: T,
    msg?: (it: T) => string,
    transform: (it: T) => T = (it: T) => it

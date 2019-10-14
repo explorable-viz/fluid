@@ -1,28 +1,27 @@
 import { as } from "../util/Core"
 import { ExplValue } from "../DataValue"
 import { __deltas } from "../Delta"
-import { emptyEnv } from "../Env"
+import { Env, emptyEnv } from "../Env"
 import { Eval } from "../Eval"
 import { Expr } from "../Expr"
-import { openWithImports } from "../Module"
 import { ExprCursor } from "./Cursor"
 import { Renderer, svg } from "./Renderer"
 import "./styles.css"
 
-class Editor {
+export class Editor {
    root: SVGSVGElement
    e0: Expr
    e: Expr
    e_cursor: ExprCursor
    tv: ExplValue
 
-   constructor () {
-      this.root = svg.createSvg(800, 400)
+   constructor (e: Expr, ρ: Env = emptyEnv()) {
+      this.root = svg.createSvg(1400, 600)
       document.body.appendChild(this.root)
-      this.e0 = openWithImports("pattern-match"),
+      this.e0 = e,
       this.e = as(this.e0, Expr.Defs).e
       this.e_cursor = new ExprCursor(this.e)
-      this.tv = Eval.eval_(emptyEnv(), this.e0) 
+      this.tv = Eval.eval_(ρ, this.e0) 
       __deltas.clear()         
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
@@ -45,8 +44,7 @@ class Editor {
 
    onEdit (): void {
       this.tv = Eval.eval_(emptyEnv(), this.e0)
+      console.log(this.tv)
       this.render()
    }
 }
-
-new Editor()

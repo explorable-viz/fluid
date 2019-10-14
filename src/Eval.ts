@@ -1,9 +1,9 @@
 import { zip } from "./util/Array"
-import { __nonNull, absurd, as, assert, className, error } from "./util/Core"
+import { Class, __nonNull, absurd, as, assert, className, classOf, error } from "./util/Core"
 import { ann } from "./util/Lattice"
 import { AnnotatedC, setjoinα, setmeetα, setα } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
-import { DataType, PrimType, ctrFor, ctrToDataType, explClass, exprSuffix, initDataType, types } from "./DataType"
+import { DataType, PrimType, ctrToDataType, explClass, initDataType, types, valueClass } from "./DataType"
 import { DataValue, ExplValue, explValue } from "./DataValue"
 import { Env, emptyEnv, extendEnv } from "./Env"
 import { Expl } from "./Expl"
@@ -150,9 +150,9 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.DataExpr) {
       const tv̅: ExplValue[] = e.__children.map((e: Expr) => eval_(ρ, e)),
-            c: string = e.ctr.slice(0, -exprSuffix.length), // relate expr type to value type; could improve
-            t: Expl = at(explClass(c), ...tv̅.map(({t}) => t))(kₜ),
-            v: Value = at(ctrFor(c).C, ...tv̅.map(({v}) => v))(kᵥ)
+            C: Class<DataValue> = valueClass(classOf(e)),
+            t: Expl = at(explClass(C), ...tv̅.map(({t}) => t))(kₜ),
+            v: Value = at(C, ...tv̅.map(({v}) => v))(kᵥ)
       return explValue(t, v)
    } else
    if (e instanceof Expr.Quote) {

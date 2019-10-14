@@ -1,11 +1,13 @@
-import { flatten, zip } from "../util/Array"
-import { Class, absurd, as, assert, className, error } from "../util/Core"
+import { flatten, nth, zip } from "../util/Array"
+import { Class, __nonNull, absurd, as, assert, className, error } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
-import { arity, exprClass } from "../DataType"
+import { Ctr, ctrFor, exprClass } from "../DataType"
+import { DataValue } from "../DataValue"
 import { Change, New, Reclassify, __deltas } from "../Delta"
+import { Eval } from "../Eval"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
-import { Num, Str, Value, fields } from "../Value"
+import { Num, Str, Value, fields, isPrim } from "../Value"
 import { ν, at, str, versioned } from "../Versioned"
 import { SVG } from "./Core"
 import { ExprCursor } from "./Cursor"
@@ -33,12 +35,21 @@ function textElement (x: number, y: number, fontSize: number, class_: string, st
    return text
 }
 
-function hasExprClass (e: Expr, C: Class): boolean {
-   return className(e) === exprClass(C.name).name
+function isExprFor (e: Expr, C: Class<DataValue>): boolean {
+   return className(e) === exprClass(C).name
 }
+
+// To visualise an eliminator, we reconstruct the patterns from the trie. List syntax in particular doesn't have
+// an analogous "case tree" form.
+type PatternElement = Ctr | Str
 
 export interface EditListener {
    onEdit (): void
+}
+
+function compareCtr (c1: string, c2: string): number {
+   const n: number = ctrFor(c1).arity - ctrFor(c2).arity
+   return n === 0 ? c1.localeCompare(c2) : n
 }
 
 export class Renderer {
@@ -48,27 +59,40 @@ export class Renderer {
       this.editor = editor
    }
 
-   clauses<K extends Cont> (σ: Elim<K>): [SVGElement[], SVGElement][] {
+   arrow (): SVGElement {
+      return this.keyword("arrow")
+   }
+
+   bracket (...gs: SVGElement[]): SVGElement {
+      return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
+   }
+
+   clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
       if (VarElim.is(σ)) {
-         const cs: [SVGElement[], SVGElement][] = this.cont(σ.κ)
-         return cs.map(([gs, g]) => [[this.text(σ.x.val), ...gs], g])
+         const cs: [PatternElement[], Expr][] = this.cont(σ.κ)
+         return cs.map(([cxs, e]) => [[σ.x, ...cxs], e])
       } else
       if (DataElim.is(σ)) {
-         return flatten(zip(fields(σ), σ.__children as Cont[]).map(([c, κ]): [SVGElement[], SVGElement][] => {
-            return this.cont(κ).map(([gs, g]: [SVGElement[], SVGElement]) => {
-               assert(gs.length >= arity(c))
-               const ctr_g: SVGElement = this.horizSpace(this.text(c), ...gs.slice(0, arity(c)))
-               return [[arity(c) === 0 ? ctr_g : this.parenthesise(ctr_g), ...gs.slice(arity(c))], g]
-            })
-         }))
+         const cκs: [string, Cont][] = zip(fields(σ), σ.__children as Cont[]).sort(([c1, ], [c2, ]): number => compareCtr(c1, c2))
+         return flatten(cκs.filter(([c, κ]) => κ !== undefined).map(([c, κ]): [PatternElement[], Expr][] =>
+            this.cont(__nonNull(κ)).map(([cxs, e]: [PatternElement[], Expr]) => [[ctrFor(c), ...cxs], e])
+         ))
       } else {
          return absurd()
       }
    }
 
-   cont (κ: Cont): [SVGElement[], SVGElement][] {
+   comma (ẟ_style?: string): SVGElement {
+      return this.keyword("comma", ẟ_style)
+   }
+
+   commaDelimit (...gs: SVGElement[]): SVGElement[] {
+      return this.delimit(() => this.horiz(this.comma(), this.space()), ...gs)
+   }
+
+   cont (κ: Cont): [PatternElement[], Expr][] {
       if (κ instanceof Expr.Expr) {
-         return [[[], this.horizSpace(this.keyword("arrow"), this.expr(κ))]]
+         return [[[], κ]]
       } else
       if (κ instanceof Elim) {
          return this.clauses(κ)
@@ -76,16 +100,23 @@ export class Renderer {
          return absurd()
       }
    }
-   
+
+   // Generic over whether we have a data value or a data expression.
+   dataConstr (e: DataValue | Expr.DataExpr): SVGElement {
+      const es: Value[] = e.__children
+      const g: SVGElement = this.horizSpace(this.text(e.ctr, deltaStyle(e)), ...es.map(eʹ => this.exprOrValue(eʹ)))
+      return es.length === 0 ? g : this.parenthesise([g], deltaStyle(e))
+   }
+
    def (def: Expr.Def): SVGElement {
       if (def instanceof Expr.Prim) {
          return this.horizSpace(this.keyword("primitive"), this.text(def.x.val))
       } else
       if (def instanceof Expr.Let) {
          if (def.e instanceof Expr.Fun) {
-            return this.horizSpace(this.keyword("let_"), this.text(def.x.val), this.elim(def.e.σ))
+            return this.horizSpace(this.keyword("let_"), this.patternVar(def.x), this.elim(def.e.σ))
          } else {
-            return this.horizSpace(this.keyword("let_"), this.keyword("equals"), this.expr(def.e))
+            return this.horizSpace(this.keyword("let_"), this.patternVar(def.x), this.keyword("equals"), this.expr(def.e))
          }
       } else
       if (def instanceof Expr.LetRec) {
@@ -95,23 +126,49 @@ export class Renderer {
       }
    }
 
+   delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGElement[] {
+      const gsʹ: SVGElement[] = []
+      gs.forEach((g: SVGElement, n: number): void => {
+         gsʹ.push(g)
+         if (n < gs.length - 1) {
+            gsʹ.push(delimiter())
+         }
+      })
+      return gsʹ
+   }
+
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
-      return this.vert(...this.clauses(σ).map(([gs, g]) => this.horizSpace(...gs, g)))
+      return this.vert(...this.clauses(σ).map(([cxs, e]) => {
+         const g: SVGElement = 
+            e instanceof Expr.Fun ?
+            this.elim(e.σ) : // curried function resugaring
+            this.horizSpace(this.arrow(), this.expr(e))
+         const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(1, cxs)
+         assert(gs.length === 1 && cxsʹ.length === 0)
+         return this.horizSpace(gs[0], g)
+      }))
+   }
+
+   ellipsis (ẟ_style?: string): SVGElement {
+      return this.keyword("ellipsis", ẟ_style)
    }
 
    // Post-condition: returned element has an entry in "dimensions" map. 
    expr (e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
-         return this.num_(e.val, true)
+         return this.num(e.val, true)
       } else
       if (e instanceof Expr.ConstStr) {
          return this.text(e.val.toString())
       } else
+      if (e instanceof Expr.Fun) {
+         return this.horizSpace(this.keyword("fun"), this.elim(e.σ))
+      } else
       if (e instanceof Expr.DataExpr) {
-         if (hasExprClass(e, Pair)) {
+         if (isExprFor(e, Pair)) {
             return this.pair(e, as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
          } else
-         if (hasExprClass(e, Nil) || hasExprClass(e, Cons)) {
+         if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
             const g: SVGElement = this.list(exprElements(e))
             // TEMPORARY EXPERIMENT
             as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
@@ -119,38 +176,52 @@ export class Renderer {
                __deltas.clear()
                new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
                   const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-                  return [at(exprClass(Pair.name), e, eʹ)(ν())]
+                  return [at(exprClass(Pair), e, eʹ)(ν())]
                })
                this.editor.onEdit()
             })
             // END TEMPORARY EXPERIMENT
             return g
          } else {
-            return this.unimplemented(e)
+            return this.dataConstr(e)
          }
+      } else
+      if (e instanceof Expr.Quote) {
+         return this.unimplemented(e)
       } else
       if (e instanceof Expr.Var) {
          return this.text(e.x.val)
       } else
-      if (e instanceof Expr.Fun) {
-         return this.horizSpace(this.keyword("fun"), this.keyword("arrow"), this.elim(e.σ))
+      if (e instanceof Expr.App) {
+         return this.horizSpace(
+            e.f instanceof Expr.Fun ? this.parenthesise([this.expr(e.f)]) : this.expr(e.f), 
+            e.e instanceof Expr.Fun ? this.parenthesise([this.expr(e.e)]) : this.expr(e.e)
+         )
       } else
       if (e instanceof Expr.BinaryApp) {
          return this.horizSpace(this.expr(e.e1), this.text(e.opName.val), this.expr(e.e2))
-      } else
-      if (e instanceof Expr.App) {
-         return this.horizSpace(
-            e.f instanceof Expr.Fun ? this.parenthesise(this.expr(e.f)) : this.expr(e.f), 
-            e.e instanceof Expr.Fun ? this.parenthesise(this.expr(e.e)) : this.expr(e.e)
-         )
       } else
       if (e instanceof Expr.Defs) {
          return this.vert(
             this.vert(...e.def̅.toArray().map(def => this.def(def))),
             this.expr(e.e)
          )
+      } else
+      if (e instanceof Expr.MatchAs) {
+         return this.vert(
+            this.horizSpace(this.keyword("match"), this.expr(e.e), this.keyword("as")),
+            this.elim(e.σ)
+         )
+      } else
+      if (e instanceof Expr.Typematch) {
+         return this.vert(
+            this.horizSpace(this.keyword("typematch"), this.expr(e.e), this.keyword("as")),
+            ...e.cases.toArray().map(({fst: x, snd: e}: Pair<Str, Expr>) => 
+               this.horizSpace(this.text(x.val), this.arrow(), this.expr(e))
+            )
+         )
       } else {
-         return absurd()
+         return absurd(`Unimplemented expression form: ${className(e)}.`)
       }
    }
 
@@ -179,35 +250,39 @@ export class Renderer {
    }
 
    horizSpace (...gs: SVGElement[]): SVGElement {
-      const gsʹ: SVGElement[] = []
-      gs.forEach((g: SVGElement, n: number): void => {
-         gsʹ.push(g)
-         if (n < gs.length - 1) {
-            gsʹ.push(this.space())
-         }
-      })
-      return this.horiz(...gsʹ)
+      return this.horiz(...this.delimit(() => this.space(), ...gs))
    }
 
    keyword (str: keyof typeof strings, ẟ_style?: string): SVGElement {
       return this.text(strings[str], ẟ_style)
    }
 
+   // Generic over whether we have a list or a list expression.
    list ([es, eʹ]: [Value[], Value | null]): SVGElement {
-      const gs: SVGElement[] = []
-      es.forEach((e: Value, n: number): void => {
-         gs.push(this.exprOrValue(e))
-         if (n < es.length - 1) {
-            gs.push(this.keyword("comma"), this.space())
-         }
-      })
-      if (eʹ !== null) {
-         gs.push(this.keyword("comma"), this.space(), this.keyword("ellipsis"), this.exprOrValue(eʹ))
-      }
-      return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
+      return this.bracket(
+         ...this.commaDelimit(...es.map(e => this.exprOrValue(e))),
+         ...(eʹ === null ? [] : [this.comma(), this.space(), this.ellipsis(), this.exprOrValue(eʹ)])
+      )
    }
 
-   num_ (n: Num, editable: boolean): SVGElement {
+   listPattern (cx: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
+      const gs: SVGElement[] = []
+      while (cx instanceof Ctr && cx.C === Cons) {
+         const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(1, cxs)
+         gs.push(g)
+         cx = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
+         cxs = cxsʹ.splice(1)
+      }
+      const gsʹ: SVGElement[] =
+         cx instanceof Str ? 
+            [this.comma(), this.space(), this.ellipsis(), this.patternVar(cx)] :
+            cx.C === Nil ? 
+               [] : 
+               absurd()
+      return [this.bracket(...this.commaDelimit(...gs), ...gsʹ), cxs]
+   }
+
+   num (n: Num, editable: boolean): SVGElement {
       const g: SVGElement = this.text(n.toString(), deltaStyle(n))
       if (editable && Number.isInteger(n.val)) {
          g.addEventListener("click", (ev: MouseEvent): void => {
@@ -221,18 +296,50 @@ export class Renderer {
    }
 
    pair (e: Value, e1: Value, e2: Value): SVGElement {
-      return this.horiz(
-         this.keyword("parenL", deltaStyle(e)), 
+      return this.parenthesise([
          this.exprOrValue(e1),
-         this.keyword("comma", deltaStyle(e)),
+         this.comma(deltaStyle(e)),
          this.space(), 
-         this.exprOrValue(e2),
-         this.keyword("parenR", deltaStyle(e))
-      )
+         this.exprOrValue(e2)
+      ], deltaStyle(e))
    }
 
-   parenthesise (g: SVGElement): SVGElement {
-      return this.horiz(this.keyword("parenL"), g, this.keyword("parenR"))
+   parenthesise (gs: SVGElement[], ẟ_style?: string): SVGElement {
+      return this.horiz(this.keyword("parenL", ẟ_style), ...gs, this.keyword("parenR", ẟ_style))
+   }
+
+   patterns (n: number, cxs: PatternElement[]): [SVGElement[], PatternElement[]] {
+      if (n === 0) {
+         return [[], cxs]
+      } else
+      if (cxs[0] instanceof Ctr) {
+         const ctr: Ctr = cxs[0]
+         if (ctr.C === Pair) {
+            const [[g1, g2], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(2, cxs.slice(1))
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ)
+            return [[this.parenthesise([g1, this.comma(), this.space(), g2]), ...gsʹ], cxsʹʹ]
+         } else
+         if (ctr.C === Nil || ctr.C === Cons) {
+            const [g, cxsʹ]: [SVGElement, PatternElement[]] = this.listPattern(ctr, cxs.slice(1))
+            const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ)
+            return [[g, ...gs], cxsʹʹ]
+         } else {
+            const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(ctr.arity, cxs.slice(1))
+            const g: SVGElement = this.horizSpace(this.text(ctr.c), ...gs)
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ)
+            return [[ctr.arity === 0 ? g : this.parenthesise([g]), ...gsʹ], cxsʹʹ]
+         }
+      } else
+      if (cxs[0] instanceof Str) {
+         const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxs.slice(1))
+         return [[this.patternVar(cxs[0]), ...gs], cxsʹ]
+      } else {
+         return absurd()
+      }
+   }
+
+   patternVar (x: Str): SVGElement {
+      return this.text(x.val)
    }
 
    prompt (e: Expr, v: Value): SVGElement {
@@ -264,23 +371,30 @@ export class Renderer {
    }
 
    unimplemented (v: Value): SVGElement {
-      return this.text(`<${className(v)}>`)
+      throw new Error(`TODO: ${className(v)}`)
    }
 
    value (v: Value): SVGElement {
       if (v instanceof Num) {
-         return this.num_(v, false)
+         return this.num(v, false)
       } else
       if (v instanceof Str) {
-         return this.text(v.val.toString(), deltaStyle(v))
-      } else 
-      if (v instanceof List) {
-         return this.list([v.toArray(), null])
+         return this.text(v.toString(), deltaStyle(v))
       } else
-      if (v instanceof Pair) {
-         return this.pair(v, v.fst, v.snd)
-      } else {
+      if (v instanceof Eval.Closure) {
          return this.unimplemented(v)
+      } else
+      if (v instanceof DataValue) {
+         if (v instanceof List) {
+            return this.list([v.toArray(), null])
+         } else
+         if (v instanceof Pair) {
+            return this.pair(v, v.fst, v.snd)
+         } else {
+            return this.dataConstr(v)
+         }
+      } else {
+         return absurd()
       }
    }
 
@@ -301,13 +415,16 @@ export class Renderer {
    }
 }
 
-function deltaStyle (v: Value): string{
+// Delta-styling for the constructor component of a value (not its child pointers). In particular, primitives appear changed
+// iff their value has changed, whereas non-primitives appear changed iff reclassified. Changes to child pointers must be
+// visualised separately.
+function deltaStyle (v: Value): string {
    if (versioned(v)) {
       if (v.__ẟ instanceof New) {
          return "new"
       } else
       if (v.__ẟ instanceof Change) {
-         if (Object.keys(v.__ẟ.changed).length === 0) {
+         if (Object.keys(v.__ẟ.changed).length === 0 || !isPrim(v)) {
             return "unchanged"
          } else {
             return "changed"
@@ -326,10 +443,10 @@ function deltaStyle (v: Value): string{
 // Expressions for (initial) elements of a list, plus expression for tail (or null if list terminates with nil).
 function exprElements (e: Expr): [Expr[], Expr | null] {
    if (e instanceof Expr.DataExpr) {
-      if (hasExprClass(e, Nil)) {
+      if (isExprFor(e, Nil)) {
          return [[], null]
       } else
-      if (hasExprClass(e, Cons)) {
+      if (isExprFor(e, Cons)) {
          // use cursor interface instead?
          const [es, eʹ]: [Expr[], Expr | null] = exprElements(as(e.__child("tail"), Expr.Expr))
          return [[as(e.__child("head"), Expr.Expr), ...es], eʹ]

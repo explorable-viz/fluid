@@ -32,7 +32,7 @@ const lexer = moo.compile({
 @{%
 import { __check, assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
-import { arity, exprClass, types } from "./DataType"
+import { Ctr, ctrFor, exprClass, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { DataElim, dataElim, varElim } from "./Match"
@@ -143,7 +143,7 @@ parenthExpr ->
 
 pair -> 
    lexeme["("] expr lexeme[","] expr lexeme[")"]
-   {% ([, e1, , e2,]) => at(exprClass(Pair.name), e1, e2)(ν()) %}
+   {% ([, e1, , e2,]) => at(exprClass(Pair), e1, e2)(ν()) %}
 
 list -> 
    lexeme["["] listOpt lexeme["]"] # ouch: "
@@ -155,10 +155,11 @@ constr ->
    ctr args
    {% ([c, e̅], _, reject) => {
       assert(c instanceof Str)
-      if (arity(c.val) !== e̅.length) {
+      const ctr: Ctr = ctrFor(c.val)
+      if (ctr.arity !== e̅.length) {
          return reject
       }
-      return at(exprClass(c.val), ...e̅)(ν())
+      return at(exprClass(ctr.C), ...e̅)(ν())
    } %}
 
 ctr ->
@@ -244,13 +245,13 @@ typename ->
 
 listOpt -> 
    null 
-   {% () => at(exprClass(Nil.name))(ν()) %} |
+   {% () => at(exprClass(Nil))(ν()) %} |
    expr (lexeme[","] expr {% ([, e]) => e %}):* listRestOpt
-   {% ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => at(exprClass(Cons.name), e, e̅)(ν())) %}
+   {% ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => at(exprClass(Cons), e, e̅)(ν())) %}
 
 listRestOpt ->
    null 
-   {% () => at(exprClass(Nil.name))(ν()) %} |
+   {% () => at(exprClass(Nil))(ν()) %} |
    lexeme[","] lexeme["..."] expr 
    {% ([, , e]) => e %}
 
@@ -294,7 +295,7 @@ constr_pattern ->
    ctr args_pattern
    {% ([c, mk_κs], _, reject) => {
       assert(c instanceof Str)
-      if (arity(c.val) !== mk_κs.length) {
+      if (ctrFor(c.val).arity !== mk_κs.length) {
          return reject
       }
       return (κ: Cont) => dataElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])

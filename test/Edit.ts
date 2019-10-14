@@ -119,7 +119,7 @@ describe("edit", () => {
                    .var_("x").var_("xs")
                    .constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
                       const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-                      return [at(exprClass(Pair.name), e, eʹ)(ν())]
+                      return [at(exprClass(Pair), e, eʹ)(ν())]
                    })
             }
 
