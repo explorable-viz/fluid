@@ -1,9 +1,13 @@
-import { __nonNull } from "./util/Core"
+import { __nonNull, className } from "./util/Core"
 import { Expl } from "./Expl"
 import { DataValueTag, Value, _, make } from "./Value"
 
 // Value of a datatype constructor; children are always user-level values (i.e. not ES6 primitives).
 export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Tag> {
+   get ctr (): string {
+      return className(this)
+   }
+
    __child (k: string): Value {
       return super.__child(k) as Value
    }

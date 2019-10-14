@@ -2,6 +2,7 @@ import { flatten, nth, zip } from "../util/Array"
 import { Class, __nonNull, absurd, as, assert, className, error } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, exprClass } from "../DataType"
+import { DataValue } from "../DataValue"
 import { Change, New, Reclassify, __deltas } from "../Delta"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
@@ -95,6 +96,16 @@ export class Renderer {
       }
    }
 
+   // Generic over whether we have a data value or a data expression.
+   dataConstr (e: DataValue | Expr.DataExpr): SVGElement {
+      const es: Value[] = e.__children
+      if (es.length === 0) {
+         return this.text(e.ctr)
+      } else {
+         return this.horiz(this.text(e.ctr), this.parenthesise(es.map(eʹ => this.exprOrValue(eʹ))))
+      }
+   }
+
    def (def: Expr.Def): SVGElement {
       if (def instanceof Expr.Prim) {
          return this.horizSpace(this.keyword("primitive"), this.text(def.x.val))
@@ -170,12 +181,7 @@ export class Renderer {
             // END TEMPORARY EXPERIMENT
             return g
          } else {
-            const es: Expr[] = e.__children as Expr[]
-            if (es.length === 0) {
-               return this.text(e.ctr)
-            } else {
-               return this.horiz(this.text(e.ctr), this.parenthesise(es.map(eʹ => this.expr(eʹ))))
-            }
+            return this.dataConstr(e)
          }
       } else
       if (e instanceof Expr.Quote) {
@@ -244,6 +250,7 @@ export class Renderer {
       return this.text(strings[str], ẟ_style)
    }
 
+   // Generic over whether we have a list or a list expression.
    list ([es, eʹ]: [Value[], Value | null]): SVGElement {
       return this.bracket(
          ...this.commaDelimit(...es.map(e => this.exprOrValue(e))),
@@ -361,14 +368,18 @@ export class Renderer {
       } else
       if (v instanceof Str) {
          return this.text(v.val.toString(), deltaStyle(v))
-      } else 
-      if (v instanceof List) {
-         return this.list([v.toArray(), null])
       } else
-      if (v instanceof Pair) {
-         return this.pair(v, v.fst, v.snd)
+      if (v instanceof DataValue) {
+         if (v instanceof List) {
+            return this.list([v.toArray(), null])
+         } else
+         if (v instanceof Pair) {
+            return this.pair(v, v.fst, v.snd)
+         } else {
+            return this.dataConstr(v)
+         }
       } else {
-         return this.unimplemented(v)
+         return absurd()
       }
    }
 
