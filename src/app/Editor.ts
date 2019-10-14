@@ -9,7 +9,7 @@ import { ExprCursor } from "./Cursor"
 import { Renderer, svg } from "./Renderer"
 import "./styles.css"
 
-class Editor {
+export class Editor {
    root: SVGSVGElement
    e0: Expr
    e: Expr
@@ -48,5 +48,3 @@ class Editor {
       this.render()
    }
 }
-
-new Editor()
