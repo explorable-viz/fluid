@@ -365,7 +365,7 @@ export class Renderer {
          return this.num(v, false)
       } else
       if (v instanceof Str) {
-         return this.text(v.val.toString(), deltaStyle(v))
+         return this.text(v.toString(), deltaStyle(v))
       } else
       if (v instanceof Eval.Closure) {
          return this.unimplemented(v)
