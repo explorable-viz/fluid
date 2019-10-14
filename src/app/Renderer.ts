@@ -155,9 +155,13 @@ export class Renderer {
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       return this.vert(...this.clauses2(σ).map(([cxs, e]) => {
+         const g: SVGElement = 
+            e instanceof Expr.Fun ?
+            this.elim(e.σ) : // curried function resugaring
+            this.horizSpace(this.keyword("arrow"), this.expr(e))
          const [gs, cxsʹ]: [SVGElement[], Pattern[]] = this.pattern(1, cxs)
          assert(gs.length === 1 && cxsʹ.length === 0)
-         return this.horizSpace(gs[0], this.keyword("arrow"), this.expr(e))
+         return this.horizSpace(gs[0], g)
       }))
    }
 
