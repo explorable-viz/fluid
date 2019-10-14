@@ -162,7 +162,7 @@ export class Renderer {
          return this.text(e.val.toString())
       } else
       if (e instanceof Expr.Fun) {
-         return this.horizSpace(this.keyword("fun"), this.arrow(), this.elim(e.σ))
+         return this.horizSpace(this.keyword("fun"), this.elim(e.σ))
       } else
       if (e instanceof Expr.DataExpr) {
          if (isExprFor(e, Pair)) {
