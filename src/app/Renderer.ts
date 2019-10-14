@@ -157,7 +157,7 @@ export class Renderer {
       return this.vert(...this.clauses2(σ).map(([cxs, e]) => {
          const [gs, cxsʹ]: [SVGElement[], Pattern[]] = this.pattern(1, cxs)
          assert(gs.length === 1 && cxsʹ.length === 0)
-         return this.horiz(gs[0], this.keyword("arrow"), this.expr(e))
+         return this.horizSpace(gs[0], this.keyword("arrow"), this.expr(e))
       }))
    }
 
