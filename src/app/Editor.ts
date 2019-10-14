@@ -16,7 +16,7 @@ export class Editor {
    tv: ExplValue
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
-      this.root = svg.createSvg(800, 400)
+      this.root = svg.createSvg(1400, 600)
       document.body.appendChild(this.root)
       this.e0 = e,
       this.e = as(this.e0, Expr.Defs).e
@@ -44,6 +44,7 @@ export class Editor {
 
    onEdit (): void {
       this.tv = Eval.eval_(emptyEnv(), this.e0)
+      console.log(this.tv)
       this.render()
    }
 }

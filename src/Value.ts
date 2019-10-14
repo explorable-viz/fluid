@@ -81,6 +81,10 @@ export type Persistent = Value | boolean | string | number | Function
 
 export type PrimValue = Num | Str
 
+export function isPrim (v: Value): boolean {
+   return v instanceof Num || v instanceof Str
+}
+
 export class Num extends Value<"Num"> {
    val: number = _
 

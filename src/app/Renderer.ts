@@ -7,7 +7,7 @@ import { Change, New, Reclassify, __deltas } from "../Delta"
 import { Eval } from "../Eval"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
-import { Num, Str, Value, fields } from "../Value"
+import { Num, Str, Value, fields, isPrim } from "../Value"
 import { ν, at, str, versioned } from "../Versioned"
 import { SVG } from "./Core"
 import { ExprCursor } from "./Cursor"
@@ -104,8 +104,8 @@ export class Renderer {
    // Generic over whether we have a data value or a data expression.
    dataConstr (e: DataValue | Expr.DataExpr): SVGElement {
       const es: Value[] = e.__children
-      const g: SVGElement = this.horizSpace(this.text(e.ctr), ...es.map(eʹ => this.exprOrValue(eʹ)))
-      return es.length === 0 ? g : this.parenthesise([g])
+      const g: SVGElement = this.horizSpace(this.text(e.ctr, deltaStyle(e)), ...es.map(eʹ => this.exprOrValue(eʹ)))
+      return es.length === 0 ? g : this.parenthesise([g], deltaStyle(e))
    }
 
    def (def: Expr.Def): SVGElement {
@@ -314,10 +314,15 @@ export class Renderer {
       } else
       if (cxs[0] instanceof Ctr) {
          const ctr: Ctr = cxs[0]
+         if (ctr.C === Pair) {
+            const [[g1, g2], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(2, cxs.slice(1))
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ)
+            return [[this.parenthesise([g1, this.comma(), this.space(), g2]), ...gsʹ], cxsʹʹ]
+         } else
          if (ctr.C === Nil || ctr.C === Cons) {
             const [g, cxsʹ]: [SVGElement, PatternElement[]] = this.listPattern(ctr, cxs.slice(1))
-            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ)
-            return [[g, ...gsʹ], cxsʹʹ]
+            const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ)
+            return [[g, ...gs], cxsʹʹ]
          } else {
             const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(ctr.arity, cxs.slice(1))
             const g: SVGElement = this.horizSpace(this.text(ctr.c), ...gs)
@@ -326,8 +331,8 @@ export class Renderer {
          }
       } else
       if (cxs[0] instanceof Str) {
-         const [gsʹ, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxs.slice(1))
-         return [[this.patternVar(cxs[0]), ...gsʹ], cxsʹ]
+         const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxs.slice(1))
+         return [[this.patternVar(cxs[0]), ...gs], cxsʹ]
       } else {
          return absurd()
       }
@@ -410,13 +415,16 @@ export class Renderer {
    }
 }
 
+// Delta-styling for the constructor component of a value (not its child pointers). In particular, primitives appear changed
+// iff their value has changed, whereas non-primitives appear changed iff reclassified. Changes to child pointers must be
+// visualised separately.
 function deltaStyle (v: Value): string {
    if (versioned(v)) {
       if (v.__ẟ instanceof New) {
          return "new"
       } else
       if (v.__ẟ instanceof Change) {
-         if (Object.keys(v.__ẟ.changed).length === 0) {
+         if (Object.keys(v.__ẟ.changed).length === 0 || !isPrim(v)) {
             return "unchanged"
          } else {
             return "changed"
