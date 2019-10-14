@@ -35,7 +35,7 @@ function textElement (x: number, y: number, fontSize: number, class_: string, st
    return text
 }
 
-function hasExprClass (e: Expr, C: Class): boolean {
+function isExprFor (e: Expr, C: Class): boolean {
    return className(e) === exprClass(C.name).name
 }
 
@@ -161,10 +161,10 @@ export class Renderer {
          return this.horizSpace(this.keyword("fun"), this.keyword("arrow"), this.elim(e.σ))
       } else
       if (e instanceof Expr.DataExpr) {
-         if (hasExprClass(e, Pair)) {
+         if (isExprFor(e, Pair)) {
             return this.pair(e, as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
          } else
-         if (hasExprClass(e, Nil) || hasExprClass(e, Cons)) {
+         if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
             const g: SVGElement = this.list(exprElements(e))
             // TEMPORARY EXPERIMENT
             as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
@@ -426,10 +426,10 @@ function deltaStyle (v: Value): string {
 // Expressions for (initial) elements of a list, plus expression for tail (or null if list terminates with nil).
 function exprElements (e: Expr): [Expr[], Expr | null] {
    if (e instanceof Expr.DataExpr) {
-      if (hasExprClass(e, Nil)) {
+      if (isExprFor(e, Nil)) {
          return [[], null]
       } else
-      if (hasExprClass(e, Cons)) {
+      if (isExprFor(e, Cons)) {
          // use cursor interface instead?
          const [es, eʹ]: [Expr[], Expr | null] = exprElements(as(e.__child("tail"), Expr.Expr))
          return [[as(e.__child("head"), Expr.Expr), ...es], eʹ]
