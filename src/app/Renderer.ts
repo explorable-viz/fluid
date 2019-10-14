@@ -170,7 +170,12 @@ export class Renderer {
             // END TEMPORARY EXPERIMENT
             return g
          } else {
-            return this.unimplemented(e)
+            const es: Expr[] = e.__children as Expr[]
+            if (es.length === 0) {
+               return this.text(e.ctr)
+            } else {
+               return this.horiz(this.text(e.ctr), this.parenthesise(es.map(eʹ => this.expr(eʹ))))
+            }
          }
       } else
       if (e instanceof Expr.Quote) {
