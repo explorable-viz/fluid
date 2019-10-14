@@ -142,7 +142,7 @@ export class Renderer {
          const [gs, cxsʹ]: [SVGElement[], Pattern[]] = this.pattern(ctr.arity, cxs.slice(1))
          const g: SVGElement = this.horizSpace(this.text(ctr.c), ...gs)
          const [gsʹ, cxsʹʹ]: [SVGElement[], Pattern[]] = this.pattern(n - 1, cxsʹ)
-         return [[g, ...gsʹ], cxsʹʹ]
+         return [[ctr.arity === 0 ? g : this.parenthesise(g), ...gsʹ], cxsʹʹ]
       } else
       if (cxs[0] instanceof Str) {
          const g: SVGElement = this.text(cxs[0].val)
