@@ -1,5 +1,5 @@
 import { zip } from "./util/Array"
-import { Class, __nonNull, absurd, as, assert, className, error } from "./util/Core"
+import { Class, __nonNull, absurd, as, assert, className, classOf, error } from "./util/Core"
 import { ann } from "./util/Lattice"
 import { AnnotatedC, setjoinα, setmeetα, setα } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
@@ -150,8 +150,8 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    } else
    if (e instanceof Expr.DataExpr) {
       const tv̅: ExplValue[] = e.__children.map((e: Expr) => eval_(ρ, e)),
-            C: Class<DataValue> = valueClass(e.ctr),
-            t: Expl = at(explClass(C.name), ...tv̅.map(({t}) => t))(kₜ),
+            C: Class<DataValue> = valueClass(classOf(e)),
+            t: Expl = at(explClass(C), ...tv̅.map(({t}) => t))(kₜ),
             v: Value = at(C, ...tv̅.map(({v}) => v))(kᵥ)
       return explValue(t, v)
    } else

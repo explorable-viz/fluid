@@ -63,16 +63,16 @@ export function ctrFor (c: string): Ctr {
    return __nonNull(ctrToDataType.get(c)!.ctrs.get(c))
 }
 
-export function explClass (c: string): Class<Expl.DataExpl> {
-   return __nonNull(ctrToDataType.get(c)).explC̅.get(c)!
+export function explClass (C: Class<DataValue>): Class<Expl.DataExpl> {
+   return __nonNull(ctrToDataType.get(C.name)).explC̅.get(C.name)!
 }
 
 export function exprClass (C: Class<DataValue>): Class<Expr.DataExpr> {
    return __nonNull(ctrToDataType.get(C.name)).exprC̅.get(C.name)!
 }
 
-export function valueClass (c_expr: string): Class<DataValue> {
-   return ctrFor(c_expr.slice(0, -exprSuffix.length)).C
+export function valueClass (C: Class<Expr.DataExpr>): Class<DataValue> {
+   return ctrFor(C.name.slice(0, -exprSuffix.length)).C
 }
 
 // Populated by initDataTypes(). Constructors are not yet first-class.
