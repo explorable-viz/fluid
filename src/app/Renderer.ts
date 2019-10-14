@@ -76,6 +76,14 @@ export class Renderer {
       }
    }
 
+   comma (ẟ_style?: string): SVGElement {
+      return this.keyword("comma", ẟ_style)
+   }
+
+   commaDelimit (...gs: SVGElement[]): SVGElement[] {
+      return this.delimit(() => this.horiz(this.comma(), this.space()), ...gs)
+   }
+
    cont (κ: Cont): [PatternElement[], Expr][] {
       if (κ instanceof Expr.Expr) {
          return [[[], κ]]
@@ -105,6 +113,17 @@ export class Renderer {
       }
    }
 
+   delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGElement[] {
+      const gsʹ: SVGElement[] = []
+      gs.forEach((g: SVGElement, n: number): void => {
+         gsʹ.push(g)
+         if (n < gs.length - 1) {
+            gsʹ.push(delimiter())
+         }
+      })
+      return gsʹ
+   }
+
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       return this.vert(...this.clauses(σ).map(([cxs, e]) => {
          const g: SVGElement = 
@@ -117,6 +136,10 @@ export class Renderer {
       }))
    }
 
+   ellipsis (ẟ_style?: string): SVGElement {
+      return this.keyword("ellipsis", ẟ_style)
+   }
+
    // Post-condition: returned element has an entry in "dimensions" map. 
    expr (e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
@@ -124,6 +147,9 @@ export class Renderer {
       } else
       if (e instanceof Expr.ConstStr) {
          return this.text(e.val.toString())
+      } else
+      if (e instanceof Expr.Fun) {
+         return this.horizSpace(this.keyword("fun"), this.keyword("arrow"), this.elim(e.σ))
       } else
       if (e instanceof Expr.DataExpr) {
          if (hasExprClass(e, Pair)) {
@@ -147,14 +173,11 @@ export class Renderer {
             return this.unimplemented(e)
          }
       } else
+      if (e instanceof Expr.Quote) {
+         return this.unimplemented(e)
+      } else
       if (e instanceof Expr.Var) {
          return this.text(e.x.val)
-      } else
-      if (e instanceof Expr.Fun) {
-         return this.horizSpace(this.keyword("fun"), this.keyword("arrow"), this.elim(e.σ))
-      } else
-      if (e instanceof Expr.BinaryApp) {
-         return this.horizSpace(this.expr(e.e1), this.text(e.opName.val), this.expr(e.e2))
       } else
       if (e instanceof Expr.App) {
          return this.horizSpace(
@@ -162,13 +185,22 @@ export class Renderer {
             e.e instanceof Expr.Fun ? this.parenthesise([this.expr(e.e)]) : this.expr(e.e)
          )
       } else
+      if (e instanceof Expr.BinaryApp) {
+         return this.horizSpace(this.expr(e.e1), this.text(e.opName.val), this.expr(e.e2))
+      } else
       if (e instanceof Expr.Defs) {
          return this.vert(
             this.vert(...e.def̅.toArray().map(def => this.def(def))),
             this.expr(e.e)
          )
+      } else
+      if (e instanceof Expr.MatchAs) {
+         return this.unimplemented(e)
+      } else
+      if (e instanceof Expr.Typematch) {
+         return this.unimplemented(e)
       } else {
-         return absurd()
+         return absurd(`Unimplemented expression form: ${className(e)}.`)
       }
    }
 
@@ -194,21 +226,6 @@ export class Renderer {
       })
       dimensions.set(g, { width: width_sum, height: height_max })
       return g
-   }
-
-   delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGElement[] {
-      const gsʹ: SVGElement[] = []
-      gs.forEach((g: SVGElement, n: number): void => {
-         gsʹ.push(g)
-         if (n < gs.length - 1) {
-            gsʹ.push(delimiter())
-         }
-      })
-      return gsʹ
-   }
-
-   commaDelimit (...gs: SVGElement[]): SVGElement[] {
-      return this.delimit(() => this.horiz(this.comma(), this.space()), ...gs)
    }
 
    horizSpace (...gs: SVGElement[]): SVGElement {
@@ -241,14 +258,6 @@ export class Renderer {
                [] : 
                absurd()
       return [this.bracket(...this.commaDelimit(...gs), ...gsʹ), cxs]
-   }
-
-   comma (ẟ_style?: string): SVGElement {
-      return this.keyword("comma", ẟ_style)
-   }
-
-   ellipsis (ẟ_style?: string): SVGElement {
-      return this.keyword("ellipsis", ẟ_style)
    }
 
    num (n: Num, editable: boolean): SVGElement {
@@ -335,7 +344,7 @@ export class Renderer {
    }
 
    unimplemented (v: Value): SVGElement {
-      return this.text(`<${className(v)}>`)
+      throw new Error("TODO")
    }
 
    value (v: Value): SVGElement {

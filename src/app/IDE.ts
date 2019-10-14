@@ -1,3 +1,4 @@
+import { openWithImports } from "../Module"
 import { Editor } from "./Editor"
 
-new Editor()
+new Editor(openWithImports("arithmetic"))

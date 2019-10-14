@@ -9,6 +9,7 @@ import { Expr } from "../../src/Expr"
 import { clearMemo } from "../../src/Value"
 import "../../src/Graphics" // for graphical datatypes
 import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
+import { Editor } from "../../src/app/Editor"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
 
 // Key idea here is that we never push slicing further back than ρ (since ρ could potentially
@@ -17,7 +18,7 @@ import "../../src/app/GraphicsRenderer" // for graphics primitives
 
 export class FwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
-      if (flags.get(Flags.Fwd)) {
+      if (flags.get(Flags.FwdSlice)) {
          clearMemo()
          __deltas.clear()
          setallα(ann.top, e)
@@ -28,8 +29,9 @@ export class FwdSlice {
          this.setup(new ExprCursor(e))
          Eval.eval_fwd(e, tv)
          this.expect(new ExplValueCursor(tv))
-         console.log(e)
-         console.log(tv)
+      }
+      if (flags.get(Flags.Visualise)) {
+         new Editor(e, ρ).render()
       }
    }
 
@@ -42,7 +44,7 @@ export class FwdSlice {
 
 export class BwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
-      if (flags.get(Flags.Bwd)) {
+      if (flags.get(Flags.BwdSlice)) {
          clearMemo()
          __deltas.clear()
          setallα(ann.bot, e)
@@ -53,6 +55,9 @@ export class BwdSlice {
          this.setup(new ExplValueCursor(tv))
          Eval.eval_bwd(e, tv)
          this.expect(new ExprCursor(e))
+      }
+      if (flags.get(Flags.Visualise)) {
+         new Editor(e, ρ).render()
       }
    }
 
@@ -81,9 +86,11 @@ export class Edit {
    }
 }
 
-enum Flags { Bwd, Fwd, Edit }
+enum Flags { BwdSlice, FwdSlice, Edit, Visualise }
+
 const flags: Map<Flags, boolean> = new Map([
-   [Flags.Fwd, true],
-   [Flags.Bwd, true],
-   [Flags.Edit, true]
+   [Flags.FwdSlice, true],
+   [Flags.BwdSlice, true],
+   [Flags.Edit, true],
+   [Flags.Visualise, true]
 ])
