@@ -71,13 +71,17 @@ export function exprClass (c: string): Class<Expr.DataExpr> {
    return __nonNull(ctrToDataType.get(c)).exprC̅.get(c)!
 }
 
+export function valueClass (c_expr: string): Class<DataValue> {
+   return ctrFor(c_expr.slice(0, -exprSuffix.length)).C
+}
+
 // Populated by initDataTypes(). Constructors are not yet first-class.
 export const types: Map<string, DataType | PrimType> = new Map
 export const ctrToDataType: Map<string, DataType> = new Map
 export const elimToDataType: Map<string, DataType> = new Map
 const elimSuffix: string = "Elim"
 const explSuffix: string = "Expl"
-export const exprSuffix: string = "Expr"
+const exprSuffix: string = "Expr"
 
 // See https://stackoverflow.com/questions/33605775 for the dynamic class-naming idiom.
 export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]) {

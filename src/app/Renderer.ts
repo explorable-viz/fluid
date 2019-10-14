@@ -100,11 +100,8 @@ export class Renderer {
    // Generic over whether we have a data value or a data expression.
    dataConstr (e: DataValue | Expr.DataExpr): SVGElement {
       const es: Value[] = e.__children
-      if (es.length === 0) {
-         return this.text(e.ctr)
-      } else {
-         return this.horiz(this.text(e.ctr), this.parenthesise(es.map(eʹ => this.exprOrValue(eʹ))))
-      }
+      const g: SVGElement = this.horizSpace(this.text(e.ctr), ...es.map(eʹ => this.exprOrValue(eʹ)))
+      return es.length === 0 ? g : this.parenthesise([g])
    }
 
    def (def: Expr.Def): SVGElement {
