@@ -52,6 +52,10 @@ export class Renderer {
       this.editor = editor
    }
 
+   bracket (...gs: SVGElement[]): SVGElement {
+      return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
+   }
+
    clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
       if (VarElim.is(σ)) {
          const cs: [PatternElement[], Expr][] = this.cont(σ.κ)
@@ -213,17 +217,17 @@ export class Renderer {
       if (eʹ !== null) {
          gs.push(this.keyword("comma"), this.space(), this.keyword("ellipsis"), this.exprOrValue(eʹ))
       }
-      return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
+      return this.bracket(...gs)
    }
 
    listPattern (ctr: Ctr, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
       if (ctr.C === Nil) {
-         return [this.horiz(this.keyword("bracketL"), this.keyword("bracketR")), cxs]
+         return [this.bracket(), cxs]
       } else
       if (ctr.C === Cons) {
          // start with naive list pattern notation (nested not "inlined"):
          const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.pattern(2, cxs)
-         return [this.horiz(this.keyword("bracketL"), gs[0], this.keyword("comma"), this.space(), this.keyword("ellipsis"), gs[1], this.keyword("bracketR")), cxsʹ]
+         return [this.bracket(gs[0], this.keyword("comma"), this.space(), this.keyword("ellipsis"), gs[1]), cxsʹ]
       } else {
          return absurd()
       }
