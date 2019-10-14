@@ -67,8 +67,8 @@ export function explClass (c: string): Class<Expl.DataExpl> {
    return __nonNull(ctrToDataType.get(c)).explC̅.get(c)!
 }
 
-export function exprClass (c: string): Class<Expr.DataExpr> {
-   return __nonNull(ctrToDataType.get(c)).exprC̅.get(c)!
+export function exprClass (C: Class<DataValue>): Class<Expr.DataExpr> {
+   return __nonNull(ctrToDataType.get(C.name)).exprC̅.get(C.name)!
 }
 
 export function valueClass (c_expr: string): Class<DataValue> {

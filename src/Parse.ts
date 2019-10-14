@@ -41,7 +41,7 @@ const lexer = moo.compile({
 
 import { __check, assert, error } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
-import { ctrFor, exprClass, types } from "./DataType"
+import { Ctr, ctrFor, exprClass, types } from "./DataType"
 import { Expr } from "./Expr"
 import { singleton, unionWith } from "./FiniteMap"
 import { DataElim, dataElim, varElim } from "./Match"
@@ -162,7 +162,7 @@ const grammar: Grammar = {
     {"name": "pair$macrocall$6", "symbols": [{"literal":")"}]},
     {"name": "pair$macrocall$5", "symbols": ["pair$macrocall$6"], "postprocess": id},
     {"name": "pair$macrocall$5", "symbols": ["pair$macrocall$6", "_"], "postprocess": ([x, ]) => x},
-    {"name": "pair", "symbols": ["pair$macrocall$1", "expr", "pair$macrocall$3", "expr", "pair$macrocall$5"], "postprocess": ([, e1, , e2,]) => at(exprClass(Pair.name), e1, e2)(ν())},
+    {"name": "pair", "symbols": ["pair$macrocall$1", "expr", "pair$macrocall$3", "expr", "pair$macrocall$5"], "postprocess": ([, e1, , e2,]) => at(exprClass(Pair), e1, e2)(ν())},
     {"name": "list$macrocall$2", "symbols": [{"literal":"["}]},
     {"name": "list$macrocall$1", "symbols": ["list$macrocall$2"], "postprocess": id},
     {"name": "list$macrocall$1", "symbols": ["list$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -172,10 +172,11 @@ const grammar: Grammar = {
     {"name": "list", "symbols": ["list$macrocall$1", "listOpt", "list$macrocall$3"], "postprocess": ([, e, ]) => e},
     {"name": "constr", "symbols": ["ctr", "args"], "postprocess":  ([c, e̅], _, reject) => {
            assert(c instanceof Str)
-           if (ctrFor(c.val).arity !== e̅.length) {
+           const ctr: Ctr = ctrFor(c.val)
+           if (ctr.arity !== e̅.length) {
               return reject
            }
-           return at(exprClass(c.val), ...e̅)(ν())
+           return at(exprClass(ctr.C), ...e̅)(ν())
         } },
     {"name": "ctr$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
     {"name": "ctr$macrocall$1", "symbols": ["ctr$macrocall$2"], "postprocess": id},
@@ -318,15 +319,15 @@ const grammar: Grammar = {
     {"name": "typename$macrocall$1", "symbols": ["typename$macrocall$2"], "postprocess": id},
     {"name": "typename$macrocall$1", "symbols": ["typename$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "typename", "symbols": ["typename$macrocall$1"], "postprocess": ([[x]]) => str(x.value)(ν())},
-    {"name": "listOpt", "symbols": [], "postprocess": () => at(exprClass(Nil.name))(ν())},
+    {"name": "listOpt", "symbols": [], "postprocess": () => at(exprClass(Nil))(ν())},
     {"name": "listOpt$ebnf$1", "symbols": []},
     {"name": "listOpt$ebnf$1$subexpression$1$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listOpt$ebnf$1$subexpression$1$macrocall$1", "symbols": ["listOpt$ebnf$1$subexpression$1$macrocall$2"], "postprocess": id},
     {"name": "listOpt$ebnf$1$subexpression$1$macrocall$1", "symbols": ["listOpt$ebnf$1$subexpression$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "listOpt$ebnf$1$subexpression$1", "symbols": ["listOpt$ebnf$1$subexpression$1$macrocall$1", "expr"], "postprocess": ([, e]) => e},
     {"name": "listOpt$ebnf$1", "symbols": ["listOpt$ebnf$1", "listOpt$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "listOpt", "symbols": ["expr", "listOpt$ebnf$1", "listRestOpt"], "postprocess": ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => at(exprClass(Cons.name), e, e̅)(ν()))},
-    {"name": "listRestOpt", "symbols": [], "postprocess": () => at(exprClass(Nil.name))(ν())},
+    {"name": "listOpt", "symbols": ["expr", "listOpt$ebnf$1", "listRestOpt"], "postprocess": ([e, es, eʹ]) => [e, ...es, eʹ].reverse().reduce((e̅, e) => at(exprClass(Cons), e, e̅)(ν()))},
+    {"name": "listRestOpt", "symbols": [], "postprocess": () => at(exprClass(Nil))(ν())},
     {"name": "listRestOpt$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listRestOpt$macrocall$1", "symbols": ["listRestOpt$macrocall$2"], "postprocess": id},
     {"name": "listRestOpt$macrocall$1", "symbols": ["listRestOpt$macrocall$2", "_"], "postprocess": ([x, ]) => x},

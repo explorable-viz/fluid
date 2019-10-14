@@ -84,13 +84,13 @@ function asRecord (v: Object): Expr {
 }
 
 function asPair (k: string, v: unknown): Expr {
-   return at(exprClass(Pair.name), asPrimValue(k), asPrimValue(v))(ν())
+   return at(exprClass(Pair), asPrimValue(k), asPrimValue(v))(ν())
 }
 
 function asList (e̅: Expr[]): Expr {
-   let e̅ʹ: Expr = at(exprClass(Nil.name))(ν())
+   let e̅ʹ: Expr = at(exprClass(Nil))(ν())
    for (let e of [...e̅].reverse()) {
-      e̅ʹ = at(exprClass(Cons.name), e, e̅ʹ)(ν())
+      e̅ʹ = at(exprClass(Cons), e, e̅ʹ)(ν())
    }
    return e̅ʹ
 }

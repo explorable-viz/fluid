@@ -35,8 +35,8 @@ function textElement (x: number, y: number, fontSize: number, class_: string, st
    return text
 }
 
-function isExprFor (e: Expr, C: Class): boolean {
-   return className(e) === exprClass(C.name).name
+function isExprFor (e: Expr, C: Class<DataValue>): boolean {
+   return className(e) === exprClass(C).name
 }
 
 // To visualise an eliminator, we reconstruct the patterns from the trie. List syntax in particular doesn't have
@@ -172,7 +172,7 @@ export class Renderer {
                __deltas.clear()
                new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
                   const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-                  return [at(exprClass(Pair.name), e, eʹ)(ν())]
+                  return [at(exprClass(Pair), e, eʹ)(ν())]
                })
                this.editor.onEdit()
             })
