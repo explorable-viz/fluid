@@ -1,7 +1,7 @@
 import { flatten, nth, zip } from "../util/Array"
 import { Class, __nonNull, absurd, as, assert, className, classOf } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
-import { Ctr, ctrFor, exprClass } from "../DataType"
+import { Ctr, ctrFor, explClass, exprClass } from "../DataType"
 import { DataValue, ExplValue } from "../DataValue"
 import { Change, New, Reclassify } from "../Delta"
 import { Eval } from "../Eval"
@@ -36,8 +36,16 @@ function textElement (x: number, y: number, fontSize: number, class_: string, st
    return text
 }
 
+function isExplFor (t: Expl, C: Class<DataValue>): boolean {
+   return classOf(t) === explClass(C)
+}
+
 function isExprFor (e: Expr, C: Class<DataValue>): boolean {
    return classOf(e) === exprClass(C)
+}
+
+function isExprOrExplFor (e: Expr | Expl, C: Class<DataValue>): boolean {
+   return e instanceof Expr.Expr && isExprFor(e, C) || e instanceof Expl.Expl && isExplFor(e, C)
 }
 
 // To visualise an eliminator, we reconstruct the patterns from the trie. List syntax in particular doesn't have
@@ -72,10 +80,10 @@ export class Renderer {
       return this.keyword("comma", ẟ_style)
    }
 
-   // Generic over whether we have a data value or a data expression.
-   dataConstr (parens: boolean, e: DataValue | Expr.DataExpr): SVGElement {
+   // Generic over whether we have a data value, data expression or data explanation.
+   dataConstr (parens: boolean, e: DataValue): SVGElement {
       const es: Value[] = e.__children
-      const g: SVGElement = this.horizSpace(this.text(e.ctr, deltaStyle(e)), ...es.map(eʹ => this.exprOrValue(true, eʹ)))
+      const g: SVGElement = this.horizSpace(this.text(e.ctr, deltaStyle(e)), ...es.map(eʹ => this.exprOrExplOrValue(true, eʹ)))
       return this.parenthesiseIf(es.length > 0 && parens, g, deltaStyle(e))
    }
 
@@ -153,6 +161,20 @@ export class Renderer {
    }
 
    expl (parens: boolean, t: Expl): SVGElement {
+      if (t instanceof Expl.DataExpl) {
+         if (isExplFor(t, Pair)) {
+            return this.pair(t, as(t.__child("fst"), Expl.Expl), as(t.__child("snd"), Expl.Expl))
+         } else
+         if (isExplFor(t, Nil) || isExplFor(t, Cons)) {
+            return this.listExpr(t)
+         } else {
+            return this.dataConstr(parens, t)
+         }
+      } else
+      if (t instanceof Expl.Var) {
+         // ouch: disregard delta-info on trace itself
+         return this.text(t.x.val, deltaStyle(t.x))
+      } else
       if (t instanceof Expl.App) {
          return this.parenthesiseIf(
             parens, 
@@ -177,11 +199,11 @@ export class Renderer {
    // Post-condition: returned element has an entry in "dimensions" map. 
    expr (parens: boolean, e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
-         // conspicuously disregard delta-info on expression itself
+         // ouch: disregard delta-info on expression itself
          return this.num(e.val, true)
       } else
       if (e instanceof Expr.ConstStr) {
-         // conspicuously disregard delta-info on expression itself
+         // ouch: disregard delta-info on expression itself
          return this.text(e.val.toString(), deltaStyle(e.val))
       } else
       if (e instanceof Expr.Fun) {
@@ -214,6 +236,7 @@ export class Renderer {
          return this.unimplemented(e)
       } else
       if (e instanceof Expr.Var) {
+         // ouch: disregard delta-info on expression itself
          return this.text(e.x.val, deltaStyle(e.x))
       } else
       if (e instanceof Expr.App) {
@@ -263,9 +286,12 @@ export class Renderer {
       }
    }
 
-   exprOrValue (parens: boolean, v: Value): SVGElement {
+   exprOrExplOrValue (parens: boolean, v: Value): SVGElement {
       if (v instanceof Expr.Expr) {
          return this.expr(parens, v)
+      } else
+      if (v instanceof Expl.Expl) {
+         return this.expl(parens, v)
       } else {
          return this.value(parens, v)
       }
@@ -309,23 +335,23 @@ export class Renderer {
    }
 
    // Difficult to make this generic enough to use for list values too.
-   listExpr (e: Expr): SVGElement {
+   listExpr (e: Expr | Expl): SVGElement {
       const gs: SVGElement[] = []
-      while (isExprFor(e, Cons)) {
-         gs.push(this.exprOrValue(false, as(e.__child("head"), Expr.Expr)))
+      while (isExprOrExplFor(e, Cons)) {
+         gs.push(this.exprOrExplOrValue(false, e.__child("head") as Expr | Expl))
          // use cursor interface instead?
-         const eʹ: Expr = as(e.__child("tail"), Expr.Expr)
-         if (!(isExprFor(eʹ, Nil))) {
+         const eʹ: Expr | Expl = e.__child("tail") as Expr | Expl
+         if (!(isExprOrExplFor(eʹ, Nil))) {
             // associate every Cons, apart from the last one, with a comma
             gs.push(this.comma(deltaStyle(e)), this.space())
          }
          e = eʹ
       }
-      if (isExprFor(e, Nil)) {
+      if (isExprOrExplFor(e, Nil)) {
          return this.bracket(gs, deltaStyle(e))
       } else {
          // if non-list expression in tail position, it determines delta-highlighting for brackets and ellipsis as well
-         return this.bracket([...gs, this.space(), this.ellipsis(deltaStyle(e)), this.exprOrValue(false, e)], deltaStyle(e))
+         return this.bracket([...gs, this.space(), this.ellipsis(deltaStyle(e)), this.exprOrExplOrValue(false, e)], deltaStyle(e))
       }
    }
 
@@ -371,10 +397,10 @@ export class Renderer {
    pair (e: Value, e1: Value, e2: Value): SVGElement {
       return this.parenthesise(
          this.horiz(
-            this.exprOrValue(false, e1),
+            this.exprOrExplOrValue(false, e1),
             this.comma(deltaStyle(e)),
             this.space(), 
-            this.exprOrValue(false, e2)
+            this.exprOrExplOrValue(false, e2)
          ), 
          deltaStyle(e)
       )
