@@ -6,7 +6,7 @@ import { __deltas } from "../../src/Delta"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
-import { clearMemo } from "../../src/Value"
+import { newRevision } from "../../src/Versioned"
 import "../../src/Graphics" // for graphical datatypes
 import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
 import { Editor } from "../../src/app/Editor"
@@ -19,13 +19,12 @@ import "../../src/app/GraphicsRenderer" // for graphics primitives
 export class FwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.FwdSlice)) {
-         clearMemo()
-         __deltas.clear()
+         newRevision()
          setallα(ann.top, e)
          setallα(ann.top, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e)
          Eval.eval_fwd(e, tv) // slice with full availability first to compute delta
-         __deltas.clear()
+         newRevision()
          this.setup(new ExprCursor(e))
          Eval.eval_fwd(e, tv)
          this.expect(new ExplValueCursor(tv))
@@ -45,13 +44,12 @@ export class FwdSlice {
 export class BwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.BwdSlice)) {
-         clearMemo()
-         __deltas.clear()
+         newRevision()
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
-         __deltas.clear()
+         newRevision()
          this.setup(new ExplValueCursor(tv))
          Eval.eval_bwd(e, tv)
          this.expect(new ExprCursor(e))
@@ -72,7 +70,7 @@ export class Edit {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
-         __deltas.clear()
+         newRevision()
          this.setup(new ExprCursor(e))
          const tv: ExplValue =  Eval.eval_(ρ, e)
          this.expect(new ExplValueCursor(tv))

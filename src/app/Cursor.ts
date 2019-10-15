@@ -9,7 +9,7 @@ import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
 import { DataElim, VarElim } from "../../src/Match"
 import { Num, Persistent, State, Str, Value, fields } from "../../src/Value"
-import { Versioned, asVersioned, at, num, str } from "../../src/Versioned"
+import { asVersioned, reset } from "../../src/Versioned"
 
 import DataExpr = Expr.DataExpr
 import Def = Expr.Def
@@ -188,15 +188,15 @@ export class ExprCursor extends Cursor {
       return this.to(VarElim, "κ")      
    }
 
-   // Editing API. Use a slightly clunky idiom to factor all edits through "at".
+   // Editing API.
 
    setNum (n: number): ExprCursor {
-      num(n)((as(this.v, Num) as Versioned<Num>).__id)
+      reset(this.v, Num, n)
       return this
    }
 
    setStr (str_: string): ExprCursor {
-      str(str_)((as(this.v, Str) as Versioned<Str>).__id)
+      reset(this.v, Str, str_)
       return this
    }
 
@@ -216,7 +216,7 @@ export class ExprCursor extends Cursor {
       n̅.forEach((n: number, m: number): void => {
          v̅[n] = v̅ʹ[m]
       })
-      at(C, ...v̅)((v as Versioned<T>).__id)
+      reset(v, C, ...v̅)
       return this
    } 
 }

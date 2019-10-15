@@ -9,18 +9,19 @@ import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
-import { Str, Value, _, fields, make } from "./Value"
-import { ν } from "./Versioned"
+import { Id, MemoId, Str, Value, _, fields, make, memoId } from "./Value"
+import { at } from "./Versioned"
 
 import Cont = Expr.Cont
 
 // Unrelated to the annotation lattice. Expr case intentionally only defined for higher-order (function) case.
 function join<K extends Cont> (κ: K, κʹ: K): K {
+   const k: MemoId = memoId(join, arguments)
    if (κ instanceof Elim && κʹ instanceof Elim) {
       return DataElim.join<K>(κ, κʹ) as Cont as K
    } else
    if (κ instanceof Expr.Fun && κʹ instanceof Expr.Fun) {
-      return Expr.fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K
+      return Expr.fun(join(κ.σ, κʹ.σ))(k) as Expr as K
    } else {
       return absurd("Undefined join.", κ, κʹ)
    }
@@ -99,8 +100,9 @@ export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
    }
 
    static join<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
+      const k: MemoId = memoId(DataElim.join, arguments)
       if (VarElim.is(σ) && VarElim.is(τ) && eq(σ.x, τ.x)) {
-         return varElim(σ.x, join(σ.κ, τ.κ))
+         return varElim(σ.x, join(σ.κ, τ.κ))(k)
       } else
       if (DataElim.is(σ) && DataElim.is(τ)) {
          // Both maps (which are non-empty) can (inductively) be assumed to have keys taken from the 
@@ -118,7 +120,7 @@ export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
             return [c1, κ1 === undefined ? κ2 : (κ2 === undefined ? κ1 : join(κ1, κ2))]
          }
          )(cκ̅1, cκ̅2)
-         return dataElim(...cκ̅)
+         return dataElim(...cκ̅)(k)
       } else {
          return absurd("Undefined join.", σ, τ)
       }
@@ -126,7 +128,7 @@ export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
 }
 
 // cκ̅ non-empty and constructors all of the same datatype.
-export function dataElim<K extends Cont> (...cκ̅: [string, K][]): Elim<K> {
+export function dataElim<K extends Cont> (...cκ̅: [string, K][]): (k: Id) => Elim<K> {
    const d: DataType = __nonNull(ctrToDataType.get(cκ̅[0][0])),
          c̅: string[] = cκ̅.map((([c, _]) => c)),
          c̅ʹ: string[] = [...d.ctrs.keys()], // sorted
@@ -139,7 +141,7 @@ export function dataElim<K extends Cont> (...cκ̅: [string, K][]): Elim<K> {
          f̅.push(undefined as any)
       }
    }
-   return make(d.elimC as Class<DataElim<K>>, ...f̅)
+   return at(d.elimC as Class<DataElim<K>>, ...f̅)
 }
 
 export class VarElim<K extends Cont> extends Elim<K> {
@@ -151,8 +153,8 @@ export class VarElim<K extends Cont> extends Elim<K> {
    }
 }
 
-export function varElim<K extends Cont> (x: Str, κ: K): VarElim<K> {
-   return make(VarElim, x, κ) as VarElim<K>
+export function varElim<K extends Cont> (x: Str, κ: K): (k: Id) => VarElim<K> {
+   return at<VarElim<K>>(VarElim, x, κ)
 }
 
 export function apply_fwd (ξ: Match<Expr>): Annotation {

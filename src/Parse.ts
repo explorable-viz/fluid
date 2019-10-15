@@ -339,7 +339,7 @@ const grammar: Grammar = {
     {"name": "pattern", "symbols": ["pair_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["list_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["constr_pattern"], "postprocess": id},
-    {"name": "variable_pattern", "symbols": ["var"], "postprocess": ([x]) => (κ: Cont) => varElim(x, κ)},
+    {"name": "variable_pattern", "symbols": ["var"], "postprocess": ([x]) => (κ: Cont) => varElim(x, κ)(ν())},
     {"name": "pair_pattern$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2"], "postprocess": id},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -349,7 +349,7 @@ const grammar: Grammar = {
     {"name": "pair_pattern$macrocall$6", "symbols": [{"literal":")"}]},
     {"name": "pair_pattern$macrocall$5", "symbols": ["pair_pattern$macrocall$6"], "postprocess": id},
     {"name": "pair_pattern$macrocall$5", "symbols": ["pair_pattern$macrocall$6", "_"], "postprocess": ([x, ]) => x},
-    {"name": "pair_pattern", "symbols": ["pair_pattern$macrocall$1", "pattern", "pair_pattern$macrocall$3", "pattern", "pair_pattern$macrocall$5"], "postprocess": ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => dataElim([Pair.name, compose(mk_κ1, mk_κ2)(κ)])},
+    {"name": "pair_pattern", "symbols": ["pair_pattern$macrocall$1", "pattern", "pair_pattern$macrocall$3", "pattern", "pair_pattern$macrocall$5"], "postprocess": ([, mk_κ1, , mk_κ2, ,]) => (κ: Cont) => dataElim([Pair.name, compose(mk_κ1, mk_κ2)(κ)])(ν())},
     {"name": "list_pattern$macrocall$2", "symbols": [{"literal":"["}]},
     {"name": "list_pattern$macrocall$1", "symbols": ["list_pattern$macrocall$2"], "postprocess": id},
     {"name": "list_pattern$macrocall$1", "symbols": ["list_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -357,10 +357,10 @@ const grammar: Grammar = {
     {"name": "list_pattern$macrocall$3", "symbols": ["list_pattern$macrocall$4"], "postprocess": id},
     {"name": "list_pattern$macrocall$3", "symbols": ["list_pattern$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "list_pattern", "symbols": ["list_pattern$macrocall$1", "listOpt_pattern", "list_pattern$macrocall$3"], "postprocess": ([, mk_κ, ]) => mk_κ},
-    {"name": "listOpt_pattern", "symbols": [], "postprocess": () => (κ: Cont) => dataElim([Nil.name, κ])},
+    {"name": "listOpt_pattern", "symbols": [], "postprocess": () => (κ: Cont) => dataElim([Nil.name, κ])(ν())},
     {"name": "listOpt_pattern", "symbols": ["list1_pattern"], "postprocess": id},
-    {"name": "list1_pattern", "symbols": ["pattern", "listRestOpt_pattern"], "postprocess": ([mk_κ1, mk_κ2]) => (κ: Cont) => dataElim([Cons.name, compose(mk_κ1, mk_κ2)(κ)])},
-    {"name": "listRestOpt_pattern", "symbols": [], "postprocess": () => (κ: Cont) => dataElim([Nil.name, κ])},
+    {"name": "list1_pattern", "symbols": ["pattern", "listRestOpt_pattern"], "postprocess": ([mk_κ1, mk_κ2]) => (κ: Cont) => dataElim([Cons.name, compose(mk_κ1, mk_κ2)(κ)])(ν())},
+    {"name": "listRestOpt_pattern", "symbols": [], "postprocess": () => (κ: Cont) => dataElim([Nil.name, κ])(ν())},
     {"name": "listRestOpt_pattern$macrocall$2", "symbols": [{"literal":","}]},
     {"name": "listRestOpt_pattern$macrocall$1", "symbols": ["listRestOpt_pattern$macrocall$2"], "postprocess": id},
     {"name": "listRestOpt_pattern$macrocall$1", "symbols": ["listRestOpt_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},
@@ -377,7 +377,7 @@ const grammar: Grammar = {
            if (ctrFor(c.val).arity !== mk_κs.length) {
               return reject
            }
-           return (κ: Cont) => dataElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])
+           return (κ: Cont) => dataElim([c.val, mk_κs.reduce(compose, (κ: Cont) => κ)(κ)])(ν())
         } },
     {"name": "args_pattern", "symbols": [], "postprocess": () => []},
     {"name": "args_pattern$macrocall$2", "symbols": [{"literal":"("}]},

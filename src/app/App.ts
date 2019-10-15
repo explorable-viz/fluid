@@ -8,7 +8,7 @@ import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
 import  { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
-import { clearMemo } from "../Value"
+import { newRevision } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svg } from "./GraphicsRenderer"
 
 // As with the test cases, we treat the dataset ρ as "external" data, meaning we push slicing
@@ -30,8 +30,11 @@ export class View implements Slicer {
       this.draw()
    }
 
+   // See #234 for repeated use of newRevision.
+
    // Consider (un)availability of dataset only; treat e as an unlimited resource.
    fwdSlice (): void {
+      newRevision()
       setallα(ann.top, this.e)
       Eval.eval_fwd(this.e, this.tv)
       this.direction = Direction.Fwd
@@ -40,14 +43,14 @@ export class View implements Slicer {
    
    // Clear annotations on program and forward slice, to erase all annotations prior to backward slicing.
    resetForBwd (): void {
+      newRevision()
       setallα(ann.bot, this.e)
       Eval.eval_fwd(this.e, this.tv)
+      newRevision()
    }
 
    bwdSlice (): void {
       Eval.eval_bwd(this.e, this.tv)
-      __deltas.clear()
-      console.log(__deltas.size)
       this.direction = Direction.Bwd
       this.coordinator.onBwd()
       this.draw()
@@ -75,7 +78,7 @@ class App {
 
    constructor () {
       const ρ: Env = openDatasetAs("renewables", "data")
-      clearMemo()
+      newRevision()
       setallα(ann.top, ρ)
       this.graphicsView = new View(
          "graphicsView", 
@@ -92,13 +95,13 @@ class App {
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {
          onBwd (): void {
-            clearMemo()
+            newRevision()
             negateallα(ρ)
             dataView.fwdSlice()
          }
 
          resetForBwd (): void {
-            clearMemo()
+            newRevision()
             setallα(ann.bot, ρ)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
@@ -107,13 +110,13 @@ class App {
       const graphicsView: View = this.graphicsView
       this.dataView.coordinator = new class ViewCoordinator {
          onBwd (): void {
-            clearMemo()
+            newRevision()
             negateallα(ρ)
             graphicsView.fwdSlice()
          }
 
          resetForBwd (): void {
-            clearMemo()
+            newRevision()
             setallα(ann.bot, ρ)
             dataView.resetForBwd()
             graphicsView.resetForBwd()

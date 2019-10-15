@@ -142,15 +142,10 @@ export function mergeInto (tgt: State, src: State): void {
 // Curried map from constructors and arguments to cached values; curried because composite keys would 
 // require either custom equality, which isn't possible with ES6 maps, or interning, which would essentially
 // involve the same memoisation logic.
-type MemoTable = Map<Persistent, Persistent | Map<Persistent, Object>> // approximate recursive type
+export type MemoTable = Map<Persistent, Persistent | Map<Persistent, Object>> // approximate recursive type
 
-// Hash-consed constructors are invariant across worlds, whereas functions are not.
+// Hash-consed constructors are invariant across worlds.
 const __ctrMemo: MemoTable = new Map
-const __funMemo: MemoTable = new Map
-
-export function clearMemo (): void {
-   __funMemo.clear()
-}
 
 function lookupArg<T extends Persistent> (f: Memoisable<T>, m: MemoTable, v̅: Persistent[], n: number): Persistent | Map<Persistent, Object> {
    // for memoisation purposes, treat f's key as argument -1
@@ -169,7 +164,7 @@ function lookupArg<T extends Persistent> (f: Memoisable<T>, m: MemoTable, v̅: P
 }
 
 // Unify memo-functions and interned classes.
-interface Memoisable<T extends Persistent> {
+export interface Memoisable<T extends Persistent> {
    key: Persistent
    call (args: Persistent[]): T
 }
@@ -193,26 +188,6 @@ class MemoCtr<T extends Value> implements Memoisable<T> {
    }
 }
 
-export type MemoFunType<T extends Persistent> = (...v̅: Persistent[]) => T
-
-class MemoFun<T extends Persistent> implements Memoisable<T> {
-   f: MemoFunType<T>
-
-   constructor (f: MemoFunType<T>) {
-      this.f = f
-   }
-
-   get key (): Persistent {
-      return this.f
-   }
-
-   call (v̅: Persistent[]): T {
-      return this.f.apply(null, v̅)
-      // for an "instance" version where v̅[0] is "this" use:
-      // return this.f.apply(v̅[0], v̅.slice(1))
-   }
-}
-
 export function memoCall<T extends Persistent> (memo: MemoTable, f: Memoisable<T>, v̅: Persistent[]): T {
    let v: Persistent | Map<Persistent, Object> = lookupArg(f, memo, v̅, -1)
    for (let n: number = 0; n < v̅.length; ++n) {
@@ -226,11 +201,6 @@ export function memoCall<T extends Persistent> (memo: MemoTable, f: Memoisable<T
 // source of error, but the benefit is very small and doesn't really suit the memoisation pattern.
 export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
    return memoCall(__ctrMemo, new MemoCtr(C), v̅)
-}
-
-// Memoisation.
-export function memo<T extends Persistent> (f: MemoFunType<T>, ...v̅: Persistent[]): T {
-   return memoCall(__funMemo, new MemoFun(f), v̅)
 }
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)

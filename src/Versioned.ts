@@ -1,6 +1,6 @@
 import { Class, __nonNull, assert } from "./util/Core"
 import { Delta, Change, __deltas } from "./Delta"
-import { Id, Persistent, Num, Str, Value, _, construct, fields, make } from "./Value"
+import { Id, Memoisable, MemoTable, Persistent, Num, Str, Value, _, construct, fields, make, memoCall } from "./Value"
 
 // Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
 // same datatype can be interned in some contexts and versioned in others.
@@ -24,53 +24,71 @@ export function asVersioned<T extends Value> (v: T): Versioned<T> {
    }
 }
 
-// For versioned objects the map is not curried but takes an (interned) composite key.
+// For versioned objects the map is not curried but takes an (interned) composite key. This stores only "derived"
+// (internal) versioned nodes, not external.
 type VersionedValues = Map<Id, Versioned<Value>>
-const __versioned: VersionedValues = new Map
+const __versioned: VersionedValues = new Map()
+const __reachable: Set<Versioned<Value>> = new Set() // subset of __versioned reachable at current revision
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key. As an idempotent side-effect,
-// record how the object differs from its previous version.
+// record how the object differs from its previous version. External nodes are always created fresh.
 export function at<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id) => Versioned<T> {
    return (k: Id) => {
       let v: Versioned<Value> | undefined = __versioned.get(k)
       if (v === undefined) {
-         const v: Versioned<T> = new C as Versioned<T>
-         Object.defineProperty(v, "__id", {
-            value: k,
-            enumerable: false
-         })
-         Object.defineProperty(v, "__ẟ", {
-            // The delta map is partial; the absence of an entry is equivalent to an empty delta. This allows
-            // deltas to be cleared simply by removing all entries from the map.
-            get: function (): Delta {
-               let ẟ: Delta | undefined = __deltas.ẟ̅.get(this)
-               if (ẟ === undefined) {
-                  ẟ = new Change({})
-                  __deltas.ẟ̅.set(this, ẟ)
-                  return ẟ
-               } else {
-                  return ẟ
-               }
-            },
-            enumerable: false
-         })
-         __versioned.set(k, v)
-         __deltas.created(v, construct(true, v, v̅)!)
-         return v
-      } else
-      if (v instanceof C) {
-         __deltas.changed(v, construct(true, v, v̅)!)
+         const v: Versioned<T> = create(C, ...v̅)(k)
+         if (!(k instanceof Extern)) {
+            __versioned.set(k, v)
+            __reachable.add(v)
+         }
          return v
       } else {
-         reclassify(v, C)
-         __deltas.reclassified(v, construct(true, v, v̅)!)
+         assert(!(k instanceof Extern))
+         __reachable.add(v)
+         reset(v, C, ...v̅)
          return v as Versioned<T>
       }
    }
 }
 
+export function create<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id) => Versioned<T> {
+   return (k: Id) => {
+      const v: Versioned<T> = new C as Versioned<T>
+      Object.defineProperty(v, "__id", {
+         value: k,
+         enumerable: false
+      })
+      Object.defineProperty(v, "__ẟ", {
+         // The delta map is partial; the absence of an entry is equivalent to an empty delta. This allows
+         // deltas to be cleared simply by removing all entries from the map.
+         get: function (): Delta {
+            let ẟ: Delta | undefined = __deltas.ẟ̅.get(this)
+            if (ẟ === undefined) {
+               ẟ = new Change({})
+               __deltas.ẟ̅.set(this, ẟ)
+               return ẟ
+            } else {
+               return ẟ
+            }
+         },
+         enumerable: false
+      })
+      __deltas.created(v, construct(true, v, v̅)!)
+      return v
+   }
+}
+
+export function reset<T extends Value> (v: Value, C: Class<T>, ...v̅: Persistent[]): void {
+   if (v instanceof C) {
+      __deltas.changed(v, construct(true, v, v̅)!)
+   } else {
+      reclassify(v, C)
+      __deltas.reclassified(v, construct(true, v, v̅)!)
+   }
+}
+
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
-function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): void {
+function reclassify<T extends Value> (v: Value, ctr: Class<T>): void {
    const proto: Object = Object.getPrototypeOf(new ctr)
    assert (Object.getPrototypeOf(v) !== proto)
    for (const k of fields(v)) {
@@ -103,4 +121,43 @@ export function num (val: number): (k: Id) => Versioned<Num> {
 
 export function str (val: string): (k: Id) => Versioned<Str> {
    return at(Str, val)
+}
+
+// Memo-entries for functions are not invariant across revisions, so clear memo table at each revision.
+const __funMemo: MemoTable = new Map
+
+export function newRevision (): void {
+   __funMemo.clear()
+   __deltas.clear()
+   __versioned.forEach((v: Versioned<Value>, k: Id): void => {
+      if (!__reachable.has(v)) {
+         __versioned.delete(k)
+      }
+   })
+   __reachable.clear()
+}
+
+export type MemoFunType<T extends Persistent> = (...v̅: Persistent[]) => T
+
+class MemoFun<T extends Persistent> implements Memoisable<T> {
+   f: MemoFunType<T>
+
+   constructor (f: MemoFunType<T>) {
+      this.f = f
+   }
+
+   get key (): Persistent {
+      return this.f
+   }
+
+   call (v̅: Persistent[]): T {
+      return this.f.apply(null, v̅)
+      // for an "instance" version where v̅[0] is "this" use:
+      // return this.f.apply(v̅[0], v̅.slice(1))
+   }
+}
+
+// Memoisation.
+export function memo<T extends Persistent> (f: MemoFunType<T>, ...v̅: Persistent[]): T {
+   return memoCall(__funMemo, new MemoFun(f), v̅)
 }

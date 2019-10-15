@@ -162,6 +162,7 @@ export namespace Expr {
       return at(Quote, e)
    }
 
+   // Bring in line with the current eliminator design, i.e. optimise into an object?
    export class Typematch extends Expr {
       e: Expr = _
       cases: FiniteMap<Expr> = _
