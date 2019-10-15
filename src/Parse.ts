@@ -339,7 +339,7 @@ const grammar: Grammar = {
     {"name": "pattern", "symbols": ["pair_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["list_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["constr_pattern"], "postprocess": id},
-    {"name": "variable_pattern", "symbols": ["var"], "postprocess": ([x]) => (κ: Cont) => varElim(x, κ)},
+    {"name": "variable_pattern", "symbols": ["var"], "postprocess": ([x]) => (κ: Cont) => varElim(x, κ)(ν())},
     {"name": "pair_pattern$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2"], "postprocess": id},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2", "_"], "postprocess": ([x, ]) => x},

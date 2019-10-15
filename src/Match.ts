@@ -9,8 +9,8 @@ import { DataType, ctrToDataType, elimToDataType } from "./DataType"
 import { Env, emptyEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
-import { Str, Value, _, fields, make } from "./Value"
-import { ν } from "./Versioned"
+import { Id, MemoId, Str, Value, _, fields, make, memoId } from "./Value"
+import { ν, at } from "./Versioned"
 
 import Cont = Expr.Cont
 
@@ -99,8 +99,9 @@ export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
    }
 
    static join<K extends Cont> (σ: Elim<K>, τ: Elim<K>): Elim<K> {
+      const k: MemoId = memoId(DataElim.join, arguments)
       if (VarElim.is(σ) && VarElim.is(τ) && eq(σ.x, τ.x)) {
-         return varElim(σ.x, join(σ.κ, τ.κ))
+         return varElim(σ.x, join(σ.κ, τ.κ))(k)
       } else
       if (DataElim.is(σ) && DataElim.is(τ)) {
          // Both maps (which are non-empty) can (inductively) be assumed to have keys taken from the 
@@ -151,8 +152,8 @@ export class VarElim<K extends Cont> extends Elim<K> {
    }
 }
 
-export function varElim<K extends Cont> (x: Str, κ: K): VarElim<K> {
-   return make(VarElim, x, κ) as VarElim<K>
+export function varElim<K extends Cont> (x: Str, κ: K): (k: Id) => VarElim<K> {
+   return at<VarElim<K>>(VarElim, x, κ)
 }
 
 export function apply_fwd (ξ: Match<Expr>): Annotation {

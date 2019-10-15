@@ -263,7 +263,7 @@ pattern ->
 
 variable_pattern -> 
    var
-   {% ([x]) => (κ: Cont) => varElim(x, κ) %}
+   {% ([x]) => (κ: Cont) => varElim(x, κ)(ν()) %}
 
 pair_pattern ->
    lexeme["("] pattern lexeme[","] pattern lexeme[")"]
