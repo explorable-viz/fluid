@@ -36,7 +36,7 @@ export class Editor {
       while (this.root.firstChild !== null) {
          this.root.removeChild(this.root.firstChild)
       }
-      this.root.appendChild(new Renderer(this).prompt(this.e, this.tv.v))
+      this.root.appendChild(new Renderer(this).prompt(this.e, this.tv))
       document.onkeydown = function(ev: KeyboardEvent) {
          if (ev.keyCode == 40) {
            console.log("Down!")

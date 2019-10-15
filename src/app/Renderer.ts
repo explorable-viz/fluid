@@ -2,9 +2,10 @@ import { flatten, nth, zip } from "../util/Array"
 import { Class, __nonNull, absurd, as, assert, className, classOf } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, exprClass } from "../DataType"
-import { DataValue } from "../DataValue"
+import { DataValue, ExplValue } from "../DataValue"
 import { Change, New, Reclassify } from "../Delta"
 import { Eval } from "../Eval"
+import { Expl } from "../Expl"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
 import { Num, Str, Value, fields, isPrim } from "../Value"
@@ -86,11 +87,39 @@ export class Renderer {
          if (def.e instanceof Expr.Fun) {
             return this.horizSpace(this.keyword("let_", deltaStyle(def)), this.patternVar(def.x), this.elim(def.e.σ))
          } else {
-            return this.horizSpace(this.keyword("let_", deltaStyle(def)), this.patternVar(def.x), this.keyword("equals", deltaStyle(def)), this.expr(false, def.e))
+            return this.horizSpace(
+               this.keyword("let_", deltaStyle(def)), 
+               this.patternVar(def.x), 
+               this.keyword("equals", deltaStyle(def)), 
+               this.expr(false, def.e)
+            )
          }
       } else
       if (def instanceof Expr.LetRec) {
          return this.horizSpace(this.keyword("letRec", deltaStyle(def)), this.vert(...def.δ.toArray().map(def => this.recDef(def))))
+      } else {
+         return absurd()
+      }
+   }
+
+   defₜ (def: Expl.Def): SVGElement {
+      if (def instanceof Expl.Prim) {
+         return this.horizSpace(this.keyword("primitive", deltaStyle(def)), this.patternVar(def.x))
+      } else
+      if (def instanceof Expl.Let) {
+         if (def.tv.t instanceof Expl.Const && def.tv.v instanceof Eval.Closure) {
+            return this.horizSpace(this.keyword("let_", deltaStyle(def)), this.patternVar(def.x), this.elim(def.tv.v.f))
+         } else {
+            return this.horizSpace(
+               this.keyword("let_", deltaStyle(def)), 
+               this.patternVar(def.x), 
+               this.keyword("equals", deltaStyle(def)), 
+               this.expl(false, def.tv.t)
+            )
+         }
+      } else
+      if (def instanceof Expl.LetRec) {
+         return this.horizSpace(this.keyword("letRec", deltaStyle(def)), this.vert(...def.δ.toArray().map(def => this.recDefₜ(def))))
       } else {
          return absurd()
       }
@@ -121,6 +150,28 @@ export class Renderer {
 
    ellipsis (ẟ_style: DeltaStyle): SVGElement {
       return this.keyword("ellipsis", ẟ_style)
+   }
+
+   expl (parens: boolean, t: Expl): SVGElement {
+      if (t instanceof Expl.App) {
+         return this.parenthesiseIf(
+            parens, 
+            this.horizSpace(this.expl(!(t.tf.t instanceof Expl.App), t.tf.t), this.expl(true, t.tu.t)),
+            deltaStyle(t)
+         )
+      } else 
+      if (t instanceof Expl.Defs) {
+         return this.parenthesiseIf(
+            parens,
+            this.vert(
+               this.vert(...t.def̅.toArray().map(def => this.defₜ(def))),
+               this.expl(false, t.t)
+            ),
+            deltaStyle(t)
+         )
+      } else {
+         return this.unimplemented(t)
+      }
    }
 
    // Post-condition: returned element has an entry in "dimensions" map. 
@@ -373,10 +424,11 @@ export class Renderer {
       return this.text(x.val, deltaStyle(x))
    }
 
-   prompt (e: Expr, v: Value): SVGElement {
+   prompt (e: Expr, tv: ExplValue): SVGElement {
       const g: SVGElement = this.vert(
-         this.expr(false, e),
-         this.horizSpace(this.text(">", DeltaStyle.Unchanged), this.value(false, v))
+//       this.expr(false, e),
+         this.expl(false, tv.t),
+         this.horizSpace(this.text(">", DeltaStyle.Unchanged), this.value(false, tv.v))
       )
       g.setAttribute("x", `0`)
       g.setAttribute("y", `0`)
@@ -385,6 +437,10 @@ export class Renderer {
 
    recDef (def: Expr.RecDef): SVGElement {
       return this.horizSpace(this.patternVar(def.x), this.elim(def.σ))
+   }
+
+   recDefₜ (def: Expl.RecDef): SVGElement {
+      return this.horizSpace(this.patternVar(def.x), this.elim(def.tf.v.f))
    }
 
    space (): SVGElement {
@@ -401,7 +457,8 @@ export class Renderer {
    }
 
    unimplemented (v: Value): SVGElement {
-      throw new Error(`TODO: ${className(v)}`)
+      // throw new Error(`TODO: ${className(v)}`)
+      return this.text(`TODO: ${className(v)}`, DeltaStyle.Unchanged)
    }
 
    value (parens: boolean, v: Value): SVGElement {
