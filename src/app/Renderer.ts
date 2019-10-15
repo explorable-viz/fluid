@@ -261,19 +261,23 @@ export class Renderer {
          gs.push(g)
          let ẟ_styleʹ: DeltaStyle
          ;[ctr_x, ẟ_styleʹ] = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
+         // associate every Cons, apart from the last one, with a comma
          if (!(ctr_x instanceof Ctr && ctr_x.C === Nil)) {
             gs.push(this.comma(ẟ_style), this.space())
          }
          cxs = cxsʹ.splice(1)
          ẟ_style = ẟ_styleʹ
       }
-      const gsʹ: SVGElement[] =
-         ctr_x instanceof Str ?
-            [this.ellipsis(), this.patternVar(ctr_x)] :
-            ctr_x.C === Nil ? 
-               [] : 
-               absurd()
-      return [this.bracket([...gs, ...gsʹ]), cxs]
+      if (ctr_x instanceof Str) {
+         // pattern variable in tail position determines delta-highlighting for brackets and ellipsis as well
+         return [this.bracket([...gs, this.ellipsis(deltaStyle(ctr_x)), this.patternVar(ctr_x)], deltaStyle(ctr_x)), cxs]
+      } else
+      if (ctr_x.C === Nil) {
+         // otherwise brackets correspond to the nil
+         return [this.bracket([...gs], ẟ_style), cxs]
+      } else {
+         return absurd()
+      }
    }
 
    num (n: Num, editable: boolean): SVGElement {
