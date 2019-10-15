@@ -110,17 +110,17 @@ export class Renderer {
 
    def (def: Expr.Def): SVGElement {
       if (def instanceof Expr.Prim) {
-         return this.horizSpace(this.keyword("primitive"), this.text(def.x.val))
+         return this.horizSpace(this.keyword("primitive", deltaStyle(def)), this.patternVar(def.x))
       } else
       if (def instanceof Expr.Let) {
          if (def.e instanceof Expr.Fun) {
-            return this.horizSpace(this.keyword("let_"), this.patternVar(def.x), this.elim(def.e.σ))
+            return this.horizSpace(this.keyword("let_", deltaStyle(def)), this.patternVar(def.x), this.elim(def.e.σ))
          } else {
-            return this.horizSpace(this.keyword("let_"), this.patternVar(def.x), this.keyword("equals"), this.expr(false, def.e))
+            return this.horizSpace(this.keyword("let_", deltaStyle(def)), this.patternVar(def.x), this.keyword("equals", deltaStyle(def)), this.expr(false, def.e))
          }
       } else
       if (def instanceof Expr.LetRec) {
-         return this.horizSpace(this.keyword("letRec"), this.vert(...def.δ.toArray().map(def => this.recDef(def))))
+         return this.horizSpace(this.keyword("letRec", deltaStyle(def)), this.vert(...def.δ.toArray().map(def => this.recDef(def))))
       } else {
          return absurd()
       }
@@ -352,7 +352,7 @@ export class Renderer {
    }
 
    patternVar (x: Str): SVGElement {
-      return this.text(x.val)
+      return this.text(x.val, deltaStyle(x))
    }
 
    prompt (e: Expr, v: Value): SVGElement {
@@ -366,7 +366,7 @@ export class Renderer {
    }
 
    recDef (def: Expr.RecDef): SVGElement {
-      return this.horizSpace(this.text(def.x.val), this.elim(def.σ))
+      return this.horizSpace(this.patternVar(def.x), this.elim(def.σ))
    }
 
    space (): SVGElement {
