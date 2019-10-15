@@ -2,7 +2,7 @@ import { flatten, nth, zip } from "../util/Array"
 import { Class, __nonNull, absurd, as, assert, className, classOf } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, explClass, exprClass } from "../DataType"
-import { DataValue, ExplValue } from "../DataValue"
+import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Change, New, Reclassify } from "../Delta"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
@@ -122,7 +122,7 @@ export class Renderer {
                this.keyword("let_", deltaStyle(def)), 
                this.patternVar(def.x), 
                this.keyword("equals", deltaStyle(def)), 
-               this.expl(false, def.tv.t)
+               this.explValue(false, def.tv)
             )
          }
       } else
@@ -160,7 +160,17 @@ export class Renderer {
       return this.keyword("ellipsis", ẟ_style)
    }
 
-   expl (parens: boolean, t: Expl): SVGElement {
+   explValue (parens: boolean, {t, v}: ExplValue): SVGElement {
+      if (t instanceof Expl.Const) {
+         if (v instanceof Num) {
+            return this.num(v, true)
+         } else
+         if (v instanceof Str) {
+            return this.str(v)
+         } else {
+            return this.unimplemented(v)
+         }
+      } else
       if (t instanceof Expl.DataExpl) {
          if (isExplFor(t, Pair)) {
             return this.pair(t, as(t.__child("fst"), Expl.Expl), as(t.__child("snd"), Expl.Expl))
@@ -178,7 +188,7 @@ export class Renderer {
       if (t instanceof Expl.App) {
          return this.parenthesiseIf(
             parens, 
-            this.horizSpace(this.expl(!(t.tf.t instanceof Expl.App), t.tf.t), this.expl(true, t.tu.t)),
+            this.horizSpace(this.explValue(!(t.tf.t instanceof Expl.App), t.tf), this.explValue(true, t.tu)),
             deltaStyle(t)
          )
       } else 
@@ -187,7 +197,7 @@ export class Renderer {
             parens,
             this.vert(
                this.vert(...t.def̅.toArray().map(def => this.defₜ(def))),
-               this.expl(false, t.t)
+               this.explValue(false, explValue(t.t, v))
             ),
             deltaStyle(t)
          )
@@ -204,7 +214,7 @@ export class Renderer {
       } else
       if (e instanceof Expr.ConstStr) {
          // ouch: disregard delta-info on expression itself
-         return this.text(e.val.toString(), deltaStyle(e.val))
+         return this.str(e.val)
       } else
       if (e instanceof Expr.Fun) {
          const g: SVGElement = this.horizSpace(this.keyword("fun", deltaStyle(e)), this.elim(e.σ))
@@ -291,7 +301,7 @@ export class Renderer {
          return this.expr(parens, v)
       } else
       if (v instanceof Expl.Expl) {
-         return this.expl(parens, v)
+         return this.unimplemented(v)
       } else {
          return this.value(parens, v)
       }
@@ -339,7 +349,6 @@ export class Renderer {
       const gs: SVGElement[] = []
       while (isExprOrExplFor(e, Cons)) {
          gs.push(this.exprOrExplOrValue(false, e.__child("head") as Expr | Expl))
-         // use cursor interface instead?
          const eʹ: Expr | Expl = e.__child("tail") as Expr | Expl
          if (!(isExprOrExplFor(eʹ, Nil))) {
             // associate every Cons, apart from the last one, with a comma
@@ -453,7 +462,7 @@ export class Renderer {
    prompt (e: Expr, tv: ExplValue): SVGElement {
       const g: SVGElement = this.vert(
 //       this.expr(false, e),
-         this.expl(false, tv.t),
+         this.explValue(false, tv),
          this.horizSpace(this.text(">", DeltaStyle.Unchanged), this.value(false, tv.v))
       )
       g.setAttribute("x", `0`)
@@ -471,6 +480,10 @@ export class Renderer {
 
    space (): SVGElement {
       return this.text(`${space}`, DeltaStyle.Unchanged)
+   }
+
+   str (str: Str): SVGElement {
+      return this.text(str.toString(), deltaStyle(str))
    }
 
    text (str: string, ẟ_style: DeltaStyle): SVGTextElement {
