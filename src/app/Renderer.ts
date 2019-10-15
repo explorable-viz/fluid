@@ -63,16 +63,12 @@ export class Renderer {
       return this.keyword("arrow", ẟ_style)
    }
 
-   bracket (gs: SVGElement[], ẟ_style?: DeltaStyle): SVGElement {
+   bracket (gs: SVGElement[], ẟ_style: DeltaStyle): SVGElement {
       return this.horiz(this.keyword("bracketL", ẟ_style), ...gs, this.keyword("bracketR", ẟ_style))
    }
 
-   comma (ẟ_style?: DeltaStyle): SVGElement {
+   comma (ẟ_style: DeltaStyle): SVGElement {
       return this.keyword("comma", ẟ_style)
-   }
-
-   commaDelimit (...gs: SVGElement[]): SVGElement[] {
-      return this.delimit(() => this.horiz(this.comma(), this.space()), ...gs)
    }
 
    // Generic over whether we have a data value or a data expression.
