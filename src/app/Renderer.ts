@@ -59,12 +59,12 @@ export class Renderer {
       this.editor = editor
    }
 
-   arrow (): SVGElement {
-      return this.keyword("arrow")
+   arrow (ẟ_style: DeltaStyle): SVGElement {
+      return this.keyword("arrow", ẟ_style)
    }
 
-   bracket (...gs: SVGElement[]): SVGElement {
-      return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
+   bracket (gs: SVGElement[], ẟ_style?: DeltaStyle): SVGElement {
+      return this.horiz(this.keyword("bracketL", ẟ_style), ...gs, this.keyword("bracketR", ẟ_style))
    }
 
    comma (ẟ_style?: DeltaStyle): SVGElement {
@@ -118,7 +118,7 @@ export class Renderer {
          const gʹ: SVGElement = 
             e instanceof Expr.Fun ?
             this.elim(e.σ) : // curried function resugaring
-            this.horizSpace(this.arrow(), this.expr(false, e))
+            this.horizSpace(this.arrow(deltaStyle(e)), this.expr(false, e))
          return this.horizSpace(g, gʹ)
       }))
    }
@@ -204,7 +204,7 @@ export class Renderer {
          return this.vert(
             this.horizSpace(this.keyword("typematch", deltaStyle(e)), this.expr(false, e.e), this.keyword("as", deltaStyle(e))),
             ...e.cases.toArray().map(({fst: x, snd: e}: Pair<Str, Expr>) => 
-               this.horizSpace(this.text(x.val), this.arrow(), this.expr(false, e))
+               this.horizSpace(this.text(x.val, deltaStyle(x)), this.arrow(deltaStyle(e)), this.expr(false, e))
             )
          )
       } else {
@@ -246,10 +246,10 @@ export class Renderer {
 
    // Generic over whether we have a list or a list expression.
    list ([es, eʹ]: [Value[], Value | null]): SVGElement {
-      return this.bracket(
+      return this.bracket([
          ...this.commaDelimit(...es.map(e => this.exprOrValue(false, e))),
          ...(eʹ === null ? [] : [this.comma(), this.space(), this.ellipsis(), this.exprOrValue(false, eʹ)])
-      )
+      ])
    }
 
    listPattern (cx: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
@@ -266,7 +266,7 @@ export class Renderer {
             cx[0].C === Nil ? 
                [] : 
                absurd()
-      return [this.bracket(...this.commaDelimit(...gs), ...gsʹ), cxs]
+      return [this.bracket([...this.commaDelimit(...gs), ...gsʹ]), cxs]
    }
 
    num (n: Num, editable: boolean): SVGElement {
