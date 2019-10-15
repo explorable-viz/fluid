@@ -119,17 +119,19 @@ export class Renderer {
       }))
    }
 
-   ellipsis (ẟ_style?: DeltaStyle): SVGElement {
+   ellipsis (ẟ_style: DeltaStyle): SVGElement {
       return this.keyword("ellipsis", ẟ_style)
    }
 
    // Post-condition: returned element has an entry in "dimensions" map. 
    expr (parens: boolean, e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
+         // conspicuously disregard delta-info on expression itself
          return this.num(e.val, true)
       } else
       if (e instanceof Expr.ConstStr) {
-         return this.text(e.val.toString())
+         // conspicuously disregard delta-info on expression itself
+         return this.text(e.val.toString(), deltaStyle(e.val))
       } else
       if (e instanceof Expr.Fun) {
          const g: SVGElement = this.horizSpace(this.keyword("fun", deltaStyle(e)), this.elim(e.σ))
@@ -238,7 +240,7 @@ export class Renderer {
       return this.horiz(...this.delimit(() => this.space(), ...gs))
    }
 
-   keyword (str: keyof typeof strings, ẟ_style?: DeltaStyle): SVGElement {
+   keyword (str: keyof typeof strings, ẟ_style: DeltaStyle): SVGElement {
       return this.text(strings[str], ẟ_style)
    }
 
@@ -374,7 +376,7 @@ export class Renderer {
    prompt (e: Expr, v: Value): SVGElement {
       const g: SVGElement = this.vert(
          this.expr(false, e),
-         this.horizSpace(this.text(">"), this.value(false, v))
+         this.horizSpace(this.text(">", DeltaStyle.Unchanged), this.value(false, v))
       )
       g.setAttribute("x", `0`)
       g.setAttribute("y", `0`)
@@ -386,11 +388,10 @@ export class Renderer {
    }
 
    space (): SVGElement {
-      return this.text(`${space}`)
+      return this.text(`${space}`, DeltaStyle.Unchanged)
    }
 
-   text (str: string, ẟ_style?: DeltaStyle): SVGTextElement {
-      ẟ_style = ẟ_style || DeltaStyle.Unchanged // default
+   text (str: string, ẟ_style: DeltaStyle): SVGTextElement {
       const text: SVGTextElement = textElement(0, 0, fontSize, [classes, ẟ_style].join(" "), str)
       text.setAttribute("transform", `translate(${0},${lineHeight})`)
       const width: number = svg.textWidth(text)
