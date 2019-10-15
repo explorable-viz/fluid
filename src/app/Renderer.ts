@@ -305,31 +305,32 @@ export class Renderer {
    patterns (parens: boolean, n: number, cxs: PatternElement[]): [SVGElement[], PatternElement[]] {
       if (n === 0) {
          return [[], cxs]
-      } else
-      if (cxs[0][0] instanceof Ctr) {
-         const ctr: Ctr = cxs[0][0]
-         if (ctr.C === Pair) {
-            const [[g1, g2], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(false, 2, cxs.slice(1))
-            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
-            return [[this.parenthesise(this.horiz(g1, this.comma(), this.space(), g2)), ...gsʹ], cxsʹʹ]
-         } else
-         if (ctr.C === Nil || ctr.C === Cons) {
-            const [g, cxsʹ]: [SVGElement, PatternElement[]] = this.listPattern(cxs[0], cxs.slice(1))
-            const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
-            return [[g, ...gs], cxsʹʹ]
-         } else {
-            const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(true, ctr.arity, cxs.slice(1))
-            const g: SVGElement = this.horizSpace(this.text(ctr.c), ...gs)
-            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
-            return [[this.parenthesiseIf(ctr.arity > 0 && parens, g), ...gsʹ], cxsʹʹ]
-         }
-      } else
-      if (cxs[0][0] instanceof Str) {
-         const x: Str = cxs[0][0]
-         const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxs.slice(1))
-         return [[this.patternVar(x), ...gs], cxsʹ]
       } else {
-         return absurd()
+         const [ctr_x, ẟ_style] = cxs[0]
+         if (ctr_x instanceof Ctr) {
+            if (ctr_x.C === Pair) {
+               const [[g1, g2], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(false, 2, cxs.slice(1))
+               const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
+               return [[this.parenthesise(this.horiz(g1, this.comma(ẟ_style), this.space(), g2), ẟ_style), ...gsʹ], cxsʹʹ]
+            } else
+            if (ctr_x.C === Nil || ctr_x.C === Cons) {
+               const [g, cxsʹ]: [SVGElement, PatternElement[]] = this.listPattern(cxs[0], cxs.slice(1))
+               const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
+               return [[g, ...gs], cxsʹʹ]
+            } else {
+               const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(true, ctr_x.arity, cxs.slice(1))
+               const g: SVGElement = this.horizSpace(this.text(ctr_x.c), ...gs)
+               const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
+               return [[this.parenthesiseIf(ctr_x.arity > 0 && parens, g), ...gsʹ], cxsʹʹ]
+            }
+         } else
+         if (ctr_x instanceof Str) {
+            const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxs.slice(1))
+            // ouch, ignore ẟ_style coming from trie and use variable instead :-/
+            return [[this.patternVar(ctr_x), ...gs], cxsʹ]
+         } else {
+            return absurd()
+         }
       }
    }
 
