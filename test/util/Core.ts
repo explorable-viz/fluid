@@ -24,7 +24,7 @@ export class FwdSlice {
          setallα(ann.top, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e)
          Eval.eval_fwd(e, tv) // slice with full availability first to compute delta
-         __deltas.clear()
+         newRevision()
          this.setup(new ExprCursor(e))
          Eval.eval_fwd(e, tv)
          this.expect(new ExplValueCursor(tv))
@@ -49,7 +49,7 @@ export class BwdSlice {
          setallα(ann.bot, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
-         __deltas.clear()
+         newRevision()
          this.setup(new ExplValueCursor(tv))
          Eval.eval_bwd(e, tv)
          this.expect(new ExprCursor(e))
@@ -70,7 +70,7 @@ export class Edit {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
-         __deltas.clear()
+         newRevision()
          this.setup(new ExprCursor(e))
          const tv: ExplValue =  Eval.eval_(ρ, e)
          this.expect(new ExplValueCursor(tv))

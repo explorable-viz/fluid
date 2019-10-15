@@ -24,6 +24,7 @@ export class Editor {
       this.e_cursor = new ExprCursor(this.e)
       this.tv = Eval.eval_(ρ, this.e0)
       newRevision()
+      Eval.eval_(ρ, this.e0) // reestablish reachable nodes
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
          this.render()

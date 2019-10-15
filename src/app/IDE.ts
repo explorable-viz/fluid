@@ -1,4 +1,4 @@
 import { openWithImports } from "../Module"
 import { Editor } from "./Editor"
 
-new Editor(openWithImports("lookup"))
+new Editor(openWithImports("factorial"))
