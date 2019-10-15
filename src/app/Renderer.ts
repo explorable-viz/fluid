@@ -139,12 +139,12 @@ export class Renderer {
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       return this.vert(...this.clauses(σ).map(([cxs, e]) => {
+         const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(1, cxs, false)
+         assert(cxsʹ.length === 0)
          const gʹ: SVGElement = 
             e instanceof Expr.Fun ?
             this.elim(e.σ) : // curried function resugaring
             this.horizSpace(this.arrow(), this.expr(e))
-         const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(1, cxs)
-         assert(cxsʹ.length === 0)
          return this.horizSpace(g, gʹ)
       }))
    }
@@ -268,7 +268,7 @@ export class Renderer {
    listPattern (cx: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
       const gs: SVGElement[] = []
       while (cx instanceof Ctr && cx.C === Cons) {
-         const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(1, cxs)
+         const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(1, cxs, false)
          gs.push(g)
          cx = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
          cxs = cxsʹ.splice(1)
@@ -308,30 +308,30 @@ export class Renderer {
       return this.horiz(this.keyword("parenL", ẟ_style), ...gs, this.keyword("parenR", ẟ_style))
    }
 
-   patterns (n: number, cxs: PatternElement[]): [SVGElement[], PatternElement[]] {
+   patterns (n: number, cxs: PatternElement[], parens: boolean): [SVGElement[], PatternElement[]] {
       if (n === 0) {
          return [[], cxs]
       } else
       if (cxs[0] instanceof Ctr) {
          const ctr: Ctr = cxs[0]
          if (ctr.C === Pair) {
-            const [[g1, g2], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(2, cxs.slice(1))
-            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ)
+            const [[g1, g2], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(2, cxs.slice(1), false)
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ, parens)
             return [[this.parenthesise([g1, this.comma(), this.space(), g2]), ...gsʹ], cxsʹʹ]
          } else
          if (ctr.C === Nil || ctr.C === Cons) {
             const [g, cxsʹ]: [SVGElement, PatternElement[]] = this.listPattern(ctr, cxs.slice(1))
-            const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ)
+            const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ, parens)
             return [[g, ...gs], cxsʹʹ]
          } else {
-            const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(ctr.arity, cxs.slice(1))
+            const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(ctr.arity, cxs.slice(1), true)
             const g: SVGElement = this.horizSpace(this.text(ctr.c), ...gs)
-            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ)
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ, parens)
             return [[ctr.arity === 0 ? g : this.parenthesise([g]), ...gsʹ], cxsʹʹ]
          }
       } else
       if (cxs[0] instanceof Str) {
-         const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxs.slice(1))
+         const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxs.slice(1), parens)
          return [[this.patternVar(cxs[0]), ...gs], cxsʹ]
       } else {
          return absurd()
