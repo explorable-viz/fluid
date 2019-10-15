@@ -319,9 +319,9 @@ export class Renderer {
                return [[g, ...gs], cxsʹʹ]
             } else {
                const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(true, ctr_x.arity, cxs.slice(1))
-               const g: SVGElement = this.horizSpace(this.text(ctr_x.c), ...gs)
+               const g: SVGElement = this.horizSpace(this.text(ctr_x.c, ẟ_style), ...gs)
                const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
-               return [[this.parenthesiseIf(ctr_x.arity > 0 && parens, g), ...gsʹ], cxsʹʹ]
+               return [[this.parenthesiseIf(ctr_x.arity > 0 && parens, g, ẟ_style), ...gsʹ], cxsʹʹ]
             }
          } else
          if (ctr_x instanceof Str) {
