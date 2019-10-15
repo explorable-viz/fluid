@@ -41,7 +41,7 @@ function isExprFor (e: Expr, C: Class<DataValue>): boolean {
 
 // To visualise an eliminator, we reconstruct the patterns from the trie. List syntax in particular doesn't have
 // an analogous "case tree" form.
-type PatternElement = Ctr | Str
+type PatternElement = [Ctr | Str, DeltaStyle]
 
 export interface EditListener {
    onEdit (): void
@@ -67,7 +67,7 @@ export class Renderer {
       return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
    }
 
-   comma (ẟ_style?: string): SVGElement {
+   comma (ẟ_style?: DeltaStyle): SVGElement {
       return this.keyword("comma", ẟ_style)
    }
 
@@ -123,7 +123,7 @@ export class Renderer {
       }))
    }
 
-   ellipsis (ẟ_style?: string): SVGElement {
+   ellipsis (ẟ_style?: DeltaStyle): SVGElement {
       return this.keyword("ellipsis", ẟ_style)
    }
 
@@ -240,7 +240,7 @@ export class Renderer {
       return this.horiz(...this.delimit(() => this.space(), ...gs))
    }
 
-   keyword (str: keyof typeof strings, ẟ_style?: string): SVGElement {
+   keyword (str: keyof typeof strings, ẟ_style?: DeltaStyle): SVGElement {
       return this.text(strings[str], ẟ_style)
    }
 
@@ -254,16 +254,16 @@ export class Renderer {
 
    listPattern (cx: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
       const gs: SVGElement[] = []
-      while (cx instanceof Ctr && cx.C === Cons) {
+      while (cx[0] instanceof Ctr && cx[0].C === Cons) {
          const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(false, 1, cxs)
          gs.push(g)
          cx = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
          cxs = cxsʹ.splice(1)
       }
       const gsʹ: SVGElement[] =
-         cx instanceof Str ? 
-            [this.comma(), this.space(), this.ellipsis(), this.patternVar(cx)] :
-            cx.C === Nil ? 
+         cx[0] instanceof Str ?
+            [this.comma(), this.space(), this.ellipsis(), this.patternVar(cx[0])] :
+            cx[0].C === Nil ? 
                [] : 
                absurd()
       return [this.bracket(...this.commaDelimit(...gs), ...gsʹ), cxs]
@@ -294,11 +294,11 @@ export class Renderer {
       )
    }
 
-   parenthesise (g: SVGElement, ẟ_style?: string): SVGElement {
+   parenthesise (g: SVGElement, ẟ_style?: DeltaStyle): SVGElement {
       return this.horiz(this.keyword("parenL", ẟ_style), g, this.keyword("parenR", ẟ_style))
    }
 
-   parenthesiseIf (parens: boolean, g: SVGElement, ẟ_style?: string): SVGElement {
+   parenthesiseIf (parens: boolean, g: SVGElement, ẟ_style?: DeltaStyle): SVGElement {
       return parens ? this.parenthesise(g, ẟ_style) : g
    }
 
@@ -306,15 +306,15 @@ export class Renderer {
       if (n === 0) {
          return [[], cxs]
       } else
-      if (cxs[0] instanceof Ctr) {
-         const ctr: Ctr = cxs[0]
+      if (cxs[0][0] instanceof Ctr) {
+         const ctr: Ctr = cxs[0][0]
          if (ctr.C === Pair) {
             const [[g1, g2], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(false, 2, cxs.slice(1))
             const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
             return [[this.parenthesise(this.horiz(g1, this.comma(), this.space(), g2)), ...gsʹ], cxsʹʹ]
          } else
          if (ctr.C === Nil || ctr.C === Cons) {
-            const [g, cxsʹ]: [SVGElement, PatternElement[]] = this.listPattern(ctr, cxs.slice(1))
+            const [g, cxsʹ]: [SVGElement, PatternElement[]] = this.listPattern(cxs[0], cxs.slice(1))
             const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
             return [[g, ...gs], cxsʹʹ]
          } else {
@@ -324,8 +324,8 @@ export class Renderer {
             return [[this.parenthesiseIf(ctr.arity > 0 && parens, g), ...gsʹ], cxsʹʹ]
          }
       } else
-      if (cxs[0] instanceof Str) {
-         const x: Str = cxs[0]
+      if (cxs[0][0] instanceof Str) {
+         const x: Str = cxs[0][0]
          const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxs.slice(1))
          return [[this.patternVar(x), ...gs], cxsʹ]
       } else {
@@ -355,8 +355,8 @@ export class Renderer {
       return this.text(`${space}`)
    }
 
-   text (str: string, ẟ_style?: string): SVGTextElement {
-      ẟ_style = ẟ_style || "unchanged" // default
+   text (str: string, ẟ_style?: DeltaStyle): SVGTextElement {
+      ẟ_style = ẟ_style || DeltaStyle.Unchanged // default
       const text: SVGTextElement = textElement(0, 0, fontSize, [classes, ẟ_style].join(" "), str)
       text.setAttribute("transform", `translate(${0},${lineHeight})`)
       const width: number = svg.textWidth(text)
@@ -424,35 +424,42 @@ function cont (κ: Cont): [PatternElement[], Expr][] {
 function clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
    if (VarElim.is(σ)) {
       const cs: [PatternElement[], Expr][] = cont(σ.κ)
-      return cs.map(([cxs, e]) => [[σ.x, ...cxs], e])
+      // disregard any delta information on x :-/
+      return cs.map(([cxs, e]) => [[[σ.x, deltaStyle(σ)], ...cxs], e])
    } else
    if (DataElim.is(σ)) {
       const cκs: [string, Cont][] = zip(fields(σ), σ.__children as Cont[]).sort(([c1, ], [c2, ]): number => compareCtr(c1, c2))
       return flatten(cκs.filter(([c, κ]) => κ !== undefined).map(([c, κ]): [PatternElement[], Expr][] =>
-         cont(__nonNull(κ)).map(([cxs, e]: [PatternElement[], Expr]) => [[ctrFor(c), ...cxs], e])
+         cont(__nonNull(κ)).map(([cxs, e]: [PatternElement[], Expr]) => [[[ctrFor(c), deltaStyle(σ)], ...cxs], e])
       ))
    } else {
       return absurd()
    }
 }
 
+enum DeltaStyle {
+   New = "new",
+   Changed = "changed",
+   Unchanged = "unchanged"
+}
+
 // Delta-styling for the constructor component of a value (not its child pointers). In particular, primitives appear changed
 // iff their value has changed, whereas non-primitives appear changed iff reclassified. Changes to child pointers must be
 // visualised separately.
-function deltaStyle (v: Value): string {
+function deltaStyle (v: Value): DeltaStyle {
    if (versioned(v)) {
       if (v.__ẟ instanceof New) {
-         return "new"
+         return DeltaStyle.New
       } else
       if (v.__ẟ instanceof Change) {
-         if (Object.keys(v.__ẟ.changed).length === 0 || !isPrim(v)) {
-            return "unchanged"
+         if (Object.keys(v.__ẟ.changed).length > 0 && isPrim(v)) {
+            return DeltaStyle.Changed
          } else {
-            return "changed"
+            return DeltaStyle.Unchanged
          }
       } else
       if (v.__ẟ instanceof Reclassify) {
-         return "changed"
+         return DeltaStyle.Changed
       } else {
          return absurd()
       }
