@@ -67,38 +67,12 @@ export class Renderer {
       return this.horiz(this.keyword("bracketL"), ...gs, this.keyword("bracketR"))
    }
 
-   clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
-      if (VarElim.is(σ)) {
-         const cs: [PatternElement[], Expr][] = this.cont(σ.κ)
-         return cs.map(([cxs, e]) => [[σ.x, ...cxs], e])
-      } else
-      if (DataElim.is(σ)) {
-         const cκs: [string, Cont][] = zip(fields(σ), σ.__children as Cont[]).sort(([c1, ], [c2, ]): number => compareCtr(c1, c2))
-         return flatten(cκs.filter(([c, κ]) => κ !== undefined).map(([c, κ]): [PatternElement[], Expr][] =>
-            this.cont(__nonNull(κ)).map(([cxs, e]: [PatternElement[], Expr]) => [[ctrFor(c), ...cxs], e])
-         ))
-      } else {
-         return absurd()
-      }
-   }
-
    comma (ẟ_style?: string): SVGElement {
       return this.keyword("comma", ẟ_style)
    }
 
    commaDelimit (...gs: SVGElement[]): SVGElement[] {
       return this.delimit(() => this.horiz(this.comma(), this.space()), ...gs)
-   }
-
-   cont (κ: Cont): [PatternElement[], Expr][] {
-      if (κ instanceof Expr.Expr) {
-         return [[[], κ]]
-      } else
-      if (κ instanceof Elim) {
-         return this.clauses(κ)
-      } else {
-         return absurd()
-      }
    }
 
    // Generic over whether we have a data value or a data expression.
@@ -138,7 +112,7 @@ export class Renderer {
    }
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
-      return this.vert(...this.clauses(σ).map(([cxs, e]) => {
+      return this.vert(...clauses(σ).map(([cxs, e]) => {
          const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(false, 1, cxs)
          assert(cxsʹ.length === 0)
          const gʹ: SVGElement = 
@@ -162,8 +136,8 @@ export class Renderer {
          return this.text(e.val.toString())
       } else
       if (e instanceof Expr.Fun) {
-         const g: SVGElement = this.horizSpace(this.keyword("fun"), this.elim(e.σ))
-         return this.parenthesiseIf(parens, g)
+         const g: SVGElement = this.horizSpace(this.keyword("fun", deltaStyle(e)), this.elim(e.σ))
+         return this.parenthesiseIf(parens, g, deltaStyle(e))
       } else
       if (e instanceof Expr.DataExpr) {
          if (isExprFor(e, Pair)) {
@@ -191,10 +165,14 @@ export class Renderer {
          return this.unimplemented(e)
       } else
       if (e instanceof Expr.Var) {
-         return this.text(e.x.val)
+         return this.text(e.x.val, deltaStyle(e.x))
       } else
       if (e instanceof Expr.App) {
-         return this.parenthesiseIf(parens, this.horizSpace(this.expr(!(e.f instanceof Expr.App), e.f), this.expr(true, e.e)))
+         return this.parenthesiseIf(
+            parens, 
+            this.horizSpace(this.expr(!(e.f instanceof Expr.App), e.f), this.expr(true, e.e)),
+            deltaStyle(e)
+         )
       } else
       if (e instanceof Expr.BinaryApp) {
          // ignore operator precedence, but allow function application to take priority over any binary operation
@@ -202,9 +180,10 @@ export class Renderer {
             parens, 
             this.horizSpace(
                this.expr(!(e.e1 instanceof Expr.App), e.e1), 
-               this.text(e.opName.val), 
+               this.text(e.opName.val, deltaStyle(e.opName)), 
                this.expr(!(e.e2 instanceof Expr.App), e.e2)
-            )
+            ),
+            deltaStyle(e)
          )
       } else
       if (e instanceof Expr.Defs) {
@@ -217,13 +196,13 @@ export class Renderer {
       } else
       if (e instanceof Expr.MatchAs) {
          return this.vert(
-            this.horizSpace(this.keyword("match"), this.expr(false, e.e), this.keyword("as")),
+            this.horizSpace(this.keyword("match", deltaStyle(e)), this.expr(false, e.e), this.keyword("as", deltaStyle(e))),
             this.elim(e.σ)
          )
       } else
       if (e instanceof Expr.Typematch) {
          return this.vert(
-            this.horizSpace(this.keyword("typematch"), this.expr(false, e.e), this.keyword("as")),
+            this.horizSpace(this.keyword("typematch", deltaStyle(e)), this.expr(false, e.e), this.keyword("as", deltaStyle(e))),
             ...e.cases.toArray().map(({fst: x, snd: e}: Pair<Str, Expr>) => 
                this.horizSpace(this.text(x.val), this.arrow(), this.expr(false, e))
             )
@@ -310,7 +289,9 @@ export class Renderer {
             this.comma(deltaStyle(e)),
             this.space(), 
             this.exprOrValue(false, e2)
-         ), deltaStyle(e))
+         ), 
+         deltaStyle(e)
+      )
    }
 
    parenthesise (g: SVGElement, ẟ_style?: string): SVGElement {
@@ -344,8 +325,9 @@ export class Renderer {
          }
       } else
       if (cxs[0] instanceof Str) {
+         const x: Str = cxs[0]
          const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxs.slice(1))
-         return [[this.patternVar(cxs[0]), ...gs], cxsʹ]
+         return [[this.patternVar(x), ...gs], cxsʹ]
       } else {
          return absurd()
       }
@@ -425,6 +407,32 @@ export class Renderer {
       })
       dimensions.set(g, { width: width_max, height: height_sum })
       return g
+   }
+}
+
+function cont (κ: Cont): [PatternElement[], Expr][] {
+   if (κ instanceof Expr.Expr) {
+      return [[[], κ]]
+   } else
+   if (κ instanceof Elim) {
+      return clauses(κ)
+   } else {
+      return absurd()
+   }
+}
+
+function clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
+   if (VarElim.is(σ)) {
+      const cs: [PatternElement[], Expr][] = cont(σ.κ)
+      return cs.map(([cxs, e]) => [[σ.x, ...cxs], e])
+   } else
+   if (DataElim.is(σ)) {
+      const cκs: [string, Cont][] = zip(fields(σ), σ.__children as Cont[]).sort(([c1, ], [c2, ]): number => compareCtr(c1, c2))
+      return flatten(cκs.filter(([c, κ]) => κ !== undefined).map(([c, κ]): [PatternElement[], Expr][] =>
+         cont(__nonNull(κ)).map(([cxs, e]: [PatternElement[], Expr]) => [[ctrFor(c), ...cxs], e])
+      ))
+   } else {
+      return absurd()
    }
 }
 

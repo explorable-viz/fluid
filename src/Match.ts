@@ -20,7 +20,7 @@ function join<K extends Cont> (κ: K, κʹ: K): K {
       return DataElim.join<K>(κ, κʹ) as Cont as K
    } else
    if (κ instanceof Expr.Fun && κʹ instanceof Expr.Fun) {
-      return Expr.fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K
+      return Expr.fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K // TODO: use memo-key to determinise
    } else {
       return absurd("Undefined join.", κ, κʹ)
    }
