@@ -1,5 +1,5 @@
 import { flatten, nth, zip } from "../util/Array"
-import { Class, __nonNull, absurd, as, assert, className, error } from "../util/Core"
+import { Class, __nonNull, absurd, as, assert, className, classOf } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, exprClass } from "../DataType"
 import { DataValue } from "../DataValue"
@@ -36,7 +36,7 @@ function textElement (x: number, y: number, fontSize: number, class_: string, st
 }
 
 function isExprFor (e: Expr, C: Class<DataValue>): boolean {
-   return className(e) === exprClass(C).name
+   return classOf(e) === exprClass(C)
 }
 
 // To visualise an eliminator, we reconstruct the patterns from the trie. List syntax in particular doesn't have
@@ -144,7 +144,7 @@ export class Renderer {
             return this.pair(e, as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
          } else
          if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
-            const g: SVGElement = this.listExpr(exprElements(e))
+            const g: SVGElement = this.listExpr(e)
             // TEMPORARY EXPERIMENT
             as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
                ev.stopPropagation()
@@ -259,12 +259,25 @@ export class Renderer {
       return this.bracket(gs, deltaStyle(vs))
    }
 
-   // Generic over whether we have a list or a list expression.
-   listExpr ([es, eʹ]: [Value[], Value | null]): SVGElement {
-      return this.bracket([
-         ...this.commaDelimit(...es.map(e => this.exprOrValue(false, e))),
-         ...(eʹ === null ? [] : [this.comma(), this.space(), this.ellipsis(), this.exprOrValue(false, eʹ)])
-      ])
+   // Difficult to make this generic enough to use for list values too.
+   listExpr (e: Expr): SVGElement {
+      const gs: SVGElement[] = []
+      while (isExprFor(e, Cons)) {
+         gs.push(this.exprOrValue(false, as(e.__child("head"), Expr.Expr)))
+         // use cursor interface instead?
+         const eʹ: Expr = as(e.__child("tail"), Expr.Expr)
+         if (!(isExprFor(eʹ, Nil))) {
+            // associate every Cons, apart from the last one, with a comma
+            gs.push(this.comma(deltaStyle(e)), this.space())
+         }
+         e = eʹ
+      }
+      if (isExprFor(e, Nil)) {
+         return this.bracket(gs, deltaStyle(e))
+      } else {
+         // if non-list expression in tail position, it determines delta-highlighting for brackets and ellipsis as well
+         return this.bracket([...gs, this.space(), this.ellipsis(deltaStyle(e)), this.exprOrValue(false, e)], deltaStyle(e))
+      }
    }
 
    listPattern ([ctr_x, ẟ_style]: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
@@ -492,21 +505,3 @@ function deltaStyle (v: Value): DeltaStyle {
       return absurd()
    }
 } 
-
-// Expressions for (initial) elements of a list, plus expression for tail (or null if list terminates with nil).
-function exprElements (e: Expr): [Expr[], Expr | null] {
-   if (e instanceof Expr.DataExpr) {
-      if (isExprFor(e, Nil)) {
-         return [[], null]
-      } else
-      if (isExprFor(e, Cons)) {
-         // use cursor interface instead?
-         const [es, eʹ]: [Expr[], Expr | null] = exprElements(as(e.__child("tail"), Expr.Expr))
-         return [[as(e.__child("head"), Expr.Expr), ...es], eʹ]
-      } else {
-         return error(`Found ${e.ctr}, expected list.`)
-      }
-   } else {
-      return [[], e]
-   }
-}
