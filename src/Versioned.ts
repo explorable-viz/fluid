@@ -27,10 +27,11 @@ export function asVersioned<T extends Value> (v: T): Versioned<T> {
 // For versioned objects the map is not curried but takes an (interned) composite key. This stores only "derived"
 // (internal) versioned nodes, not external.
 type VersionedValues = Map<Id, Versioned<Value>>
-const __versioned: VersionedValues = new Map
+const __versioned: VersionedValues = new Map()
+const __reachable: Set<Versioned<Value>> = new Set() // subset of __versioned reachable at current revision
 
 // The (possibly already extant) versioned object uniquely identified by a memo-key. As an idempotent side-effect,
-// record how the object differs from its previous version.
+// record how the object differs from its previous version. External nodes are always created fresh.
 export function at<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id) => Versioned<T> {
    return (k: Id) => {
       let v: Versioned<Value> | undefined = __versioned.get(k)
@@ -38,10 +39,12 @@ export function at<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id)
          const v: Versioned<T> = create(C, ...v̅)(k)
          if (!(k instanceof Extern)) {
             __versioned.set(k, v)
+            __reachable.add(v)
          }
          return v
       } else {
-         assert(!(k instanceof Extern)) // "external" nodes are always created fresh
+         assert(!(k instanceof Extern))
+         __reachable.add(v)
          reset(v, C, ...v̅)
          return v as Versioned<T>
       }
@@ -126,6 +129,12 @@ const __funMemo: MemoTable = new Map
 export function newRevision (): void {
    __funMemo.clear()
    __deltas.clear()
+   __versioned.forEach((v: Versioned<Value>, k: Id): void => {
+      if (!__reachable.has(v)) {
+         __versioned.delete(k)
+      }
+   })
+   __reachable.clear()
 }
 
 export type MemoFunType<T extends Persistent> = (...v̅: Persistent[]) => T
