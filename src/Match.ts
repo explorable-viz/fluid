@@ -10,17 +10,18 @@ import { Env, emptyEnv } from "./Env"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { Id, MemoId, Str, Value, _, fields, make, memoId } from "./Value"
-import { ν, at } from "./Versioned"
+import { at } from "./Versioned"
 
 import Cont = Expr.Cont
 
 // Unrelated to the annotation lattice. Expr case intentionally only defined for higher-order (function) case.
 function join<K extends Cont> (κ: K, κʹ: K): K {
+   const k: MemoId = memoId(join, arguments)
    if (κ instanceof Elim && κʹ instanceof Elim) {
       return DataElim.join<K>(κ, κʹ) as Cont as K
    } else
    if (κ instanceof Expr.Fun && κʹ instanceof Expr.Fun) {
-      return Expr.fun(join(κ.σ, κʹ.σ))(ν()) as Expr as K // TODO: use memo-key to determinise
+      return Expr.fun(join(κ.σ, κʹ.σ))(k) as Expr as K
    } else {
       return absurd("Undefined join.", κ, κʹ)
    }
