@@ -144,7 +144,7 @@ export class Renderer {
             return this.pair(e, as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
          } else
          if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
-            const g: SVGElement = this.list(exprElements(e))
+            const g: SVGElement = this.listExpr(exprElements(e))
             // TEMPORARY EXPERIMENT
             as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
                ev.stopPropagation()
@@ -246,8 +246,21 @@ export class Renderer {
       return this.text(strings[str], ẟ_style)
    }
 
+   list (vs: List<Value>): SVGElement {
+      const gs: SVGElement[] = []
+      for (; Cons.is(vs); vs = vs.tail) {
+         gs.push(this.value(false, vs.head))
+         // associate every Cons, apart from the last one, with a comma
+         if (Cons.is(vs.tail)) {
+            gs.push(this.comma(deltaStyle(vs)), this.space())
+         }
+      }
+      // brackets correspond to the nil
+      return this.bracket(gs, deltaStyle(vs))
+   }
+
    // Generic over whether we have a list or a list expression.
-   list ([es, eʹ]: [Value[], Value | null]): SVGElement {
+   listExpr ([es, eʹ]: [Value[], Value | null]): SVGElement {
       return this.bracket([
          ...this.commaDelimit(...es.map(e => this.exprOrValue(false, e))),
          ...(eʹ === null ? [] : [this.comma(), this.space(), this.ellipsis(), this.exprOrValue(false, eʹ)])
@@ -274,7 +287,7 @@ export class Renderer {
       } else
       if (ctr_x.C === Nil) {
          // otherwise brackets correspond to the nil
-         return [this.bracket([...gs], ẟ_style), cxs]
+         return [this.bracket(gs, ẟ_style), cxs]
       } else {
          return absurd()
       }
@@ -393,7 +406,7 @@ export class Renderer {
       } else
       if (v instanceof DataValue) {
          if (v instanceof List) {
-            return this.list([v.toArray(), null])
+            return this.list(v)
          } else
          if (v instanceof Pair) {
             return this.pair(v, v.fst, v.snd)
