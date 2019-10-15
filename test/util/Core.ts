@@ -20,7 +20,6 @@ export class FwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.FwdSlice)) {
          newRevision()
-         __deltas.clear()
          setallα(ann.top, e)
          setallα(ann.top, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e)
@@ -46,7 +45,6 @@ export class BwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.BwdSlice)) {
          newRevision()
-         __deltas.clear()
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv

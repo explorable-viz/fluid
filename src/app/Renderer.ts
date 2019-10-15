@@ -3,12 +3,12 @@ import { Class, __nonNull, absurd, as, assert, className, error } from "../util/
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, exprClass } from "../DataType"
 import { DataValue } from "../DataValue"
-import { Change, New, Reclassify, __deltas } from "../Delta"
+import { Change, New, Reclassify } from "../Delta"
 import { Eval } from "../Eval"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
 import { Num, Str, Value, fields, isPrim } from "../Value"
-import { ν, at, str, versioned } from "../Versioned"
+import { ν, at, newRevision, str, versioned } from "../Versioned"
 import { SVG } from "./Core"
 import { ExprCursor } from "./Cursor"
 import "./styles.css"
@@ -174,7 +174,7 @@ export class Renderer {
             // TEMPORARY EXPERIMENT
             as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
                ev.stopPropagation()
-               __deltas.clear()
+               newRevision()
                new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
                   const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
                   return [at(exprClass(Pair), e, eʹ)(ν())]
@@ -294,7 +294,7 @@ export class Renderer {
       const g: SVGElement = this.text(n.toString(), deltaStyle(n))
       if (editable && Number.isInteger(n.val)) {
          g.addEventListener("click", (ev: MouseEvent): void => {
-            __deltas.clear()
+            newRevision()
             new ExprCursor(n).setNum(n.val + 1)
             ev.stopPropagation()
             this.editor.onEdit()

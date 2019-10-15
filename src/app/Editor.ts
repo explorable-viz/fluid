@@ -6,6 +6,7 @@ import { Eval } from "../Eval"
 import { Expr } from "../Expr"
 import { ExprCursor } from "./Cursor"
 import { Renderer, svg } from "./Renderer"
+import { newRevision } from "../Versioned"
 import "./styles.css"
 
 export class Editor {
@@ -21,8 +22,8 @@ export class Editor {
       this.e0 = e,
       this.e = as(this.e0, Expr.Defs).e
       this.e_cursor = new ExprCursor(this.e)
-      this.tv = Eval.eval_(ρ, this.e0) 
-      __deltas.clear()         
+      this.tv = Eval.eval_(ρ, this.e0)
+      newRevision()
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
          this.render()

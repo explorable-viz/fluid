@@ -57,20 +57,24 @@ export function at<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id)
          __versioned.set(k, v)
          __deltas.created(v, construct(true, v, v̅)!)
          return v
-      } else
-      if (v instanceof C) {
-         __deltas.changed(v, construct(true, v, v̅)!)
-         return v
       } else {
-         reclassify(v, C)
-         __deltas.reclassified(v, construct(true, v, v̅)!)
+         reset(v, C, ...v̅)
          return v as Versioned<T>
       }
    }
 }
 
+export function reset<T extends Value> (v: Value, C: Class<T>, ...v̅: Persistent[]): void {
+   if (v instanceof C) {
+      __deltas.changed(v, construct(true, v, v̅)!)
+   } else {
+      reclassify(v, C)
+      __deltas.reclassified(v, construct(true, v, v̅)!)
+   }
+}
+
 // Should emulate the post-state of "new C". Probably need to worry about how this works with inherited properties.
-function reclassify<T extends Value> (v: Versioned<Value>, ctr: Class<T>): void {
+function reclassify<T extends Value> (v: Value, ctr: Class<T>): void {
    const proto: Object = Object.getPrototypeOf(new ctr)
    assert (Object.getPrototypeOf(v) !== proto)
    for (const k of fields(v)) {
@@ -110,6 +114,7 @@ const __funMemo: MemoTable = new Map
 
 export function newRevision (): void {
    __funMemo.clear()
+   __deltas.clear()
 }
 
 export type MemoFunType<T extends Persistent> = (...v̅: Persistent[]) => T

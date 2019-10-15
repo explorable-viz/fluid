@@ -30,8 +30,11 @@ export class View implements Slicer {
       this.draw()
    }
 
+   // See #234 for repeated use of newRevision.
+
    // Consider (un)availability of dataset only; treat e as an unlimited resource.
    fwdSlice (): void {
+      newRevision()
       setallα(ann.top, this.e)
       Eval.eval_fwd(this.e, this.tv)
       this.direction = Direction.Fwd
@@ -40,14 +43,14 @@ export class View implements Slicer {
    
    // Clear annotations on program and forward slice, to erase all annotations prior to backward slicing.
    resetForBwd (): void {
+      newRevision()
       setallα(ann.bot, this.e)
       Eval.eval_fwd(this.e, this.tv)
+      newRevision()
    }
 
    bwdSlice (): void {
       Eval.eval_bwd(this.e, this.tv)
-      __deltas.clear()
-      console.log(__deltas.size)
       this.direction = Direction.Bwd
       this.coordinator.onBwd()
       this.draw()
