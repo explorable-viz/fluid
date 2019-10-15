@@ -24,7 +24,8 @@ export function asVersioned<T extends Value> (v: T): Versioned<T> {
    }
 }
 
-// For versioned objects the map is not curried but takes an (interned) composite key.
+// For versioned objects the map is not curried but takes an (interned) composite key. This stores only "derived"
+// (internal) versioned nodes, not external.
 type VersionedValues = Map<Id, Versioned<Value>>
 const __versioned: VersionedValues = new Map
 
@@ -34,33 +35,43 @@ export function at<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id)
    return (k: Id) => {
       let v: Versioned<Value> | undefined = __versioned.get(k)
       if (v === undefined) {
-         const v: Versioned<T> = new C as Versioned<T>
-         Object.defineProperty(v, "__id", {
-            value: k,
-            enumerable: false
-         })
-         Object.defineProperty(v, "__ẟ", {
-            // The delta map is partial; the absence of an entry is equivalent to an empty delta. This allows
-            // deltas to be cleared simply by removing all entries from the map.
-            get: function (): Delta {
-               let ẟ: Delta | undefined = __deltas.ẟ̅.get(this)
-               if (ẟ === undefined) {
-                  ẟ = new Change({})
-                  __deltas.ẟ̅.set(this, ẟ)
-                  return ẟ
-               } else {
-                  return ẟ
-               }
-            },
-            enumerable: false
-         })
-         __versioned.set(k, v)
-         __deltas.created(v, construct(true, v, v̅)!)
+         const v: Versioned<T> = create(C, ...v̅)(k)
+         if (!(k instanceof Extern)) {
+            __versioned.set(k, v)
+         }
          return v
       } else {
+         assert(!(k instanceof Extern)) // "external" nodes are always created fresh
          reset(v, C, ...v̅)
          return v as Versioned<T>
       }
+   }
+}
+
+export function create<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k: Id) => Versioned<T> {
+   return (k: Id) => {
+      const v: Versioned<T> = new C as Versioned<T>
+      Object.defineProperty(v, "__id", {
+         value: k,
+         enumerable: false
+      })
+      Object.defineProperty(v, "__ẟ", {
+         // The delta map is partial; the absence of an entry is equivalent to an empty delta. This allows
+         // deltas to be cleared simply by removing all entries from the map.
+         get: function (): Delta {
+            let ẟ: Delta | undefined = __deltas.ẟ̅.get(this)
+            if (ẟ === undefined) {
+               ẟ = new Change({})
+               __deltas.ẟ̅.set(this, ẟ)
+               return ẟ
+            } else {
+               return ẟ
+            }
+         },
+         enumerable: false
+      })
+      __deltas.created(v, construct(true, v, v̅)!)
+      return v
    }
 }
 
