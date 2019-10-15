@@ -194,15 +194,25 @@ export class Renderer {
          return this.text(e.x.val)
       } else
       if (e instanceof Expr.App) {
-         return this.parenthesiseIf(parens, this.horizSpace(this.expr(true, e.f), this.expr(true, e.e)))
+         return this.parenthesiseIf(parens, this.horizSpace(this.expr(!(e.f instanceof Expr.App), e.f), this.expr(true, e.e)))
       } else
       if (e instanceof Expr.BinaryApp) {
-         return this.horizSpace(this.expr(true, e.e1), this.text(e.opName.val), this.expr(true, e.e2))
+         // ignore operator precedence, but allow function application to take priority over any binary operation
+         return this.parenthesiseIf(
+            parens, 
+            this.horizSpace(
+               this.expr(!(e.e1 instanceof Expr.App), e.e1), 
+               this.text(e.opName.val), 
+               this.expr(!(e.e2 instanceof Expr.App), e.e2)
+            )
+         )
       } else
       if (e instanceof Expr.Defs) {
-         return this.vert(
-            this.vert(...e.def̅.toArray().map(def => this.def(def))),
-            this.expr(false, e.e)
+         return this.parenthesiseIf(parens,
+            this.vert(
+               this.vert(...e.def̅.toArray().map(def => this.def(def))),
+               this.expr(false, e.e)
+            )
          )
       } else
       if (e instanceof Expr.MatchAs) {
