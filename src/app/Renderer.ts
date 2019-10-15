@@ -102,10 +102,10 @@ export class Renderer {
    }
 
    // Generic over whether we have a data value or a data expression.
-   dataConstr (e: DataValue | Expr.DataExpr): SVGElement {
+   dataConstr (parens: boolean, e: DataValue | Expr.DataExpr): SVGElement {
       const es: Value[] = e.__children
-      const g: SVGElement = this.horizSpace(this.text(e.ctr, deltaStyle(e)), ...es.map(eʹ => this.exprOrValue(eʹ)))
-      return es.length === 0 ? g : this.parenthesise([g], deltaStyle(e))
+      const g: SVGElement = this.horizSpace(this.text(e.ctr, deltaStyle(e)), ...es.map(eʹ => this.exprOrValue(true, eʹ)))
+      return this.parenthesiseIf(es.length > 0 && parens, g, deltaStyle(e))
    }
 
    def (def: Expr.Def): SVGElement {
@@ -116,7 +116,7 @@ export class Renderer {
          if (def.e instanceof Expr.Fun) {
             return this.horizSpace(this.keyword("let_"), this.patternVar(def.x), this.elim(def.e.σ))
          } else {
-            return this.horizSpace(this.keyword("let_"), this.patternVar(def.x), this.keyword("equals"), this.expr(def.e))
+            return this.horizSpace(this.keyword("let_"), this.patternVar(def.x), this.keyword("equals"), this.expr(false, def.e))
          }
       } else
       if (def instanceof Expr.LetRec) {
@@ -139,12 +139,12 @@ export class Renderer {
 
    elim<K extends Cont> (σ: Elim<K>): SVGElement {
       return this.vert(...this.clauses(σ).map(([cxs, e]) => {
-         const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(1, cxs, false)
+         const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(false, 1, cxs)
          assert(cxsʹ.length === 0)
          const gʹ: SVGElement = 
             e instanceof Expr.Fun ?
             this.elim(e.σ) : // curried function resugaring
-            this.horizSpace(this.arrow(), this.expr(e))
+            this.horizSpace(this.arrow(), this.expr(false, e))
          return this.horizSpace(g, gʹ)
       }))
    }
@@ -154,7 +154,7 @@ export class Renderer {
    }
 
    // Post-condition: returned element has an entry in "dimensions" map. 
-   expr (e: Expr): SVGElement {
+   expr (parens: boolean, e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
          return this.num(e.val, true)
       } else
@@ -162,7 +162,8 @@ export class Renderer {
          return this.text(e.val.toString())
       } else
       if (e instanceof Expr.Fun) {
-         return this.horizSpace(this.keyword("fun"), this.elim(e.σ))
+         const g: SVGElement = this.horizSpace(this.keyword("fun"), this.elim(e.σ))
+         return this.parenthesiseIf(parens, g)
       } else
       if (e instanceof Expr.DataExpr) {
          if (isExprFor(e, Pair)) {
@@ -183,7 +184,7 @@ export class Renderer {
             // END TEMPORARY EXPERIMENT
             return g
          } else {
-            return this.dataConstr(e)
+            return this.dataConstr(parens, e)
          }
       } else
       if (e instanceof Expr.Quote) {
@@ -193,31 +194,28 @@ export class Renderer {
          return this.text(e.x.val)
       } else
       if (e instanceof Expr.App) {
-         return this.horizSpace(
-            e.f instanceof Expr.Fun ? this.parenthesise([this.expr(e.f)]) : this.expr(e.f), 
-            e.e instanceof Expr.Fun ? this.parenthesise([this.expr(e.e)]) : this.expr(e.e)
-         )
+         return this.parenthesiseIf(parens, this.horizSpace(this.expr(true, e.f), this.expr(true, e.e)))
       } else
       if (e instanceof Expr.BinaryApp) {
-         return this.horizSpace(this.expr(e.e1), this.text(e.opName.val), this.expr(e.e2))
+         return this.horizSpace(this.expr(true, e.e1), this.text(e.opName.val), this.expr(true, e.e2))
       } else
       if (e instanceof Expr.Defs) {
          return this.vert(
             this.vert(...e.def̅.toArray().map(def => this.def(def))),
-            this.expr(e.e)
+            this.expr(false, e.e)
          )
       } else
       if (e instanceof Expr.MatchAs) {
          return this.vert(
-            this.horizSpace(this.keyword("match"), this.expr(e.e), this.keyword("as")),
+            this.horizSpace(this.keyword("match"), this.expr(false, e.e), this.keyword("as")),
             this.elim(e.σ)
          )
       } else
       if (e instanceof Expr.Typematch) {
          return this.vert(
-            this.horizSpace(this.keyword("typematch"), this.expr(e.e), this.keyword("as")),
+            this.horizSpace(this.keyword("typematch"), this.expr(false, e.e), this.keyword("as")),
             ...e.cases.toArray().map(({fst: x, snd: e}: Pair<Str, Expr>) => 
-               this.horizSpace(this.text(x.val), this.arrow(), this.expr(e))
+               this.horizSpace(this.text(x.val), this.arrow(), this.expr(false, e))
             )
          )
       } else {
@@ -225,11 +223,11 @@ export class Renderer {
       }
    }
 
-   exprOrValue (v: Value): SVGElement {
+   exprOrValue (parens: boolean, v: Value): SVGElement {
       if (v instanceof Expr.Expr) {
-         return this.expr(v)
+         return this.expr(parens, v)
       } else {
-         return this.value(v)
+         return this.value(parens, v)
       }
    }
 
@@ -260,15 +258,15 @@ export class Renderer {
    // Generic over whether we have a list or a list expression.
    list ([es, eʹ]: [Value[], Value | null]): SVGElement {
       return this.bracket(
-         ...this.commaDelimit(...es.map(e => this.exprOrValue(e))),
-         ...(eʹ === null ? [] : [this.comma(), this.space(), this.ellipsis(), this.exprOrValue(eʹ)])
+         ...this.commaDelimit(...es.map(e => this.exprOrValue(false, e))),
+         ...(eʹ === null ? [] : [this.comma(), this.space(), this.ellipsis(), this.exprOrValue(false, eʹ)])
       )
    }
 
    listPattern (cx: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
       const gs: SVGElement[] = []
       while (cx instanceof Ctr && cx.C === Cons) {
-         const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(1, cxs, false)
+         const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(false, 1, cxs)
          gs.push(g)
          cx = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
          cxs = cxsʹ.splice(1)
@@ -296,42 +294,47 @@ export class Renderer {
    }
 
    pair (e: Value, e1: Value, e2: Value): SVGElement {
-      return this.parenthesise([
-         this.exprOrValue(e1),
-         this.comma(deltaStyle(e)),
-         this.space(), 
-         this.exprOrValue(e2)
-      ], deltaStyle(e))
+      return this.parenthesise(
+         this.horiz(
+            this.exprOrValue(false, e1),
+            this.comma(deltaStyle(e)),
+            this.space(), 
+            this.exprOrValue(false, e2)
+         ), deltaStyle(e))
    }
 
-   parenthesise (gs: SVGElement[], ẟ_style?: string): SVGElement {
-      return this.horiz(this.keyword("parenL", ẟ_style), ...gs, this.keyword("parenR", ẟ_style))
+   parenthesise (g: SVGElement, ẟ_style?: string): SVGElement {
+      return this.horiz(this.keyword("parenL", ẟ_style), g, this.keyword("parenR", ẟ_style))
    }
 
-   patterns (n: number, cxs: PatternElement[], parens: boolean): [SVGElement[], PatternElement[]] {
+   parenthesiseIf (parens: boolean, g: SVGElement, ẟ_style?: string): SVGElement {
+      return parens ? this.parenthesise(g, ẟ_style) : g
+   }
+
+   patterns (parens: boolean, n: number, cxs: PatternElement[]): [SVGElement[], PatternElement[]] {
       if (n === 0) {
          return [[], cxs]
       } else
       if (cxs[0] instanceof Ctr) {
          const ctr: Ctr = cxs[0]
          if (ctr.C === Pair) {
-            const [[g1, g2], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(2, cxs.slice(1), false)
-            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ, parens)
-            return [[this.parenthesise([g1, this.comma(), this.space(), g2]), ...gsʹ], cxsʹʹ]
+            const [[g1, g2], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(false, 2, cxs.slice(1))
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
+            return [[this.parenthesise(this.horiz(g1, this.comma(), this.space(), g2)), ...gsʹ], cxsʹʹ]
          } else
          if (ctr.C === Nil || ctr.C === Cons) {
             const [g, cxsʹ]: [SVGElement, PatternElement[]] = this.listPattern(ctr, cxs.slice(1))
-            const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ, parens)
+            const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
             return [[g, ...gs], cxsʹʹ]
          } else {
-            const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(ctr.arity, cxs.slice(1), true)
+            const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(true, ctr.arity, cxs.slice(1))
             const g: SVGElement = this.horizSpace(this.text(ctr.c), ...gs)
-            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxsʹ, parens)
-            return [[ctr.arity === 0 ? g : this.parenthesise([g]), ...gsʹ], cxsʹʹ]
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxsʹ)
+            return [[this.parenthesiseIf(ctr.arity > 0 && parens, g), ...gsʹ], cxsʹʹ]
          }
       } else
       if (cxs[0] instanceof Str) {
-         const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(n - 1, cxs.slice(1), parens)
+         const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(parens, n - 1, cxs.slice(1))
          return [[this.patternVar(cxs[0]), ...gs], cxsʹ]
       } else {
          return absurd()
@@ -344,8 +347,8 @@ export class Renderer {
 
    prompt (e: Expr, v: Value): SVGElement {
       const g: SVGElement = this.vert(
-         this.expr(e),
-         this.horizSpace(this.text(">"), this.value(v))
+         this.expr(false, e),
+         this.horizSpace(this.text(">"), this.value(false, v))
       )
       g.setAttribute("x", `0`)
       g.setAttribute("y", `0`)
@@ -374,7 +377,7 @@ export class Renderer {
       throw new Error(`TODO: ${className(v)}`)
    }
 
-   value (v: Value): SVGElement {
+   value (parens: boolean, v: Value): SVGElement {
       if (v instanceof Num) {
          return this.num(v, false)
       } else
@@ -391,7 +394,7 @@ export class Renderer {
          if (v instanceof Pair) {
             return this.pair(v, v.fst, v.snd)
          } else {
-            return this.dataConstr(v)
+            return this.dataConstr(parens, v)
          }
       } else {
          return absurd()
