@@ -1,6 +1,6 @@
 import { Class, __nonNull, assert } from "./util/Core"
 import { Delta, Change, __deltas } from "./Delta"
-import { Id, Persistent, Num, Str, Value, _, construct, fields, make } from "./Value"
+import { Id, Memoisable, MemoTable, Persistent, Num, Str, Value, _, construct, fields, make, memoCall } from "./Value"
 
 // Versioned objects are persistent objects that have state that varies across worlds. Interface because the 
 // same datatype can be interned in some contexts and versioned in others.
@@ -103,4 +103,36 @@ export function num (val: number): (k: Id) => Versioned<Num> {
 
 export function str (val: string): (k: Id) => Versioned<Str> {
    return at(Str, val)
+}
+
+// Memo-entries for functions are not invariant across revisions, so clear memo table at each revision.
+const __funMemo: MemoTable = new Map
+
+export function newRevision (): void {
+   __funMemo.clear()
+}
+
+export type MemoFunType<T extends Persistent> = (...v̅: Persistent[]) => T
+
+class MemoFun<T extends Persistent> implements Memoisable<T> {
+   f: MemoFunType<T>
+
+   constructor (f: MemoFunType<T>) {
+      this.f = f
+   }
+
+   get key (): Persistent {
+      return this.f
+   }
+
+   call (v̅: Persistent[]): T {
+      return this.f.apply(null, v̅)
+      // for an "instance" version where v̅[0] is "this" use:
+      // return this.f.apply(v̅[0], v̅.slice(1))
+   }
+}
+
+// Memoisation.
+export function memo<T extends Persistent> (f: MemoFunType<T>, ...v̅: Persistent[]): T {
+   return memoCall(__funMemo, new MemoFun(f), v̅)
 }

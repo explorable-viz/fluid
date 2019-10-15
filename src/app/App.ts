@@ -8,7 +8,7 @@ import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
 import  { GraphicsElement } from "../Graphics"
 import { module_graphics, module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
-import { clearMemo } from "../Value"
+import { newRevision } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svg } from "./GraphicsRenderer"
 
 // As with the test cases, we treat the dataset ρ as "external" data, meaning we push slicing
@@ -75,7 +75,7 @@ class App {
 
    constructor () {
       const ρ: Env = openDatasetAs("renewables", "data")
-      clearMemo()
+      newRevision()
       setallα(ann.top, ρ)
       this.graphicsView = new View(
          "graphicsView", 
@@ -92,13 +92,13 @@ class App {
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {
          onBwd (): void {
-            clearMemo()
+            newRevision()
             negateallα(ρ)
             dataView.fwdSlice()
          }
 
          resetForBwd (): void {
-            clearMemo()
+            newRevision()
             setallα(ann.bot, ρ)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
@@ -107,13 +107,13 @@ class App {
       const graphicsView: View = this.graphicsView
       this.dataView.coordinator = new class ViewCoordinator {
          onBwd (): void {
-            clearMemo()
+            newRevision()
             negateallα(ρ)
             graphicsView.fwdSlice()
          }
 
          resetForBwd (): void {
-            clearMemo()
+            newRevision()
             setallα(ann.bot, ρ)
             dataView.resetForBwd()
             graphicsView.resetForBwd()

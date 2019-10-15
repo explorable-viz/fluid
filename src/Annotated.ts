@@ -1,7 +1,8 @@
 import { Class, __nonNull } from "./util/Core"
 import { Annotation, ann } from "./util/Lattice"
 import { __deltas } from "./Delta" 
-import { MemoFunType, Persistent, Value, ValueTag, _, memo } from "./Value"
+import { Persistent, Value, ValueTag, _ } from "./Value"
+import { MemoFunType, memo } from "./Versioned"
 
 // For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
 // https://github.com/Microsoft/TypeScript/issues/21710.

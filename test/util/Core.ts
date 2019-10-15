@@ -6,7 +6,7 @@ import { __deltas } from "../../src/Delta"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
-import { clearMemo } from "../../src/Value"
+import { newRevision } from "../../src/Versioned"
 import "../../src/Graphics" // for graphical datatypes
 import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
 import { Editor } from "../../src/app/Editor"
@@ -19,7 +19,7 @@ import "../../src/app/GraphicsRenderer" // for graphics primitives
 export class FwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.FwdSlice)) {
-         clearMemo()
+         newRevision()
          __deltas.clear()
          setallα(ann.top, e)
          setallα(ann.top, ρ)
@@ -45,7 +45,7 @@ export class FwdSlice {
 export class BwdSlice {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.BwdSlice)) {
-         clearMemo()
+         newRevision()
          __deltas.clear()
          setallα(ann.bot, e)
          setallα(ann.bot, ρ)
