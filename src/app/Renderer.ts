@@ -254,21 +254,26 @@ export class Renderer {
       ])
    }
 
-   listPattern (cx: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
+   listPattern ([ctr_x, ẟ_style]: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
       const gs: SVGElement[] = []
-      while (cx[0] instanceof Ctr && cx[0].C === Cons) {
+      while (ctr_x instanceof Ctr && ctr_x.C === Cons) {
          const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = this.patterns(false, 1, cxs)
          gs.push(g)
-         cx = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
+         let ẟ_styleʹ: DeltaStyle
+         ;[ctr_x, ẟ_styleʹ] = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
+         if (!(ctr_x instanceof Ctr && ctr_x.C === Nil)) {
+            gs.push(this.comma(ẟ_style), this.space())
+         }
          cxs = cxsʹ.splice(1)
+         ẟ_style = ẟ_styleʹ
       }
       const gsʹ: SVGElement[] =
-         cx[0] instanceof Str ?
-            [this.comma(), this.space(), this.ellipsis(), this.patternVar(cx[0])] :
-            cx[0].C === Nil ? 
+         ctr_x instanceof Str ?
+            [this.ellipsis(), this.patternVar(ctr_x)] :
+            ctr_x.C === Nil ? 
                [] : 
                absurd()
-      return [this.bracket([...this.commaDelimit(...gs), ...gsʹ]), cxs]
+      return [this.bracket([...gs, ...gsʹ]), cxs]
    }
 
    num (n: Num, editable: boolean): SVGElement {
