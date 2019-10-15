@@ -119,7 +119,7 @@ export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
             return [c1, κ1 === undefined ? κ2 : (κ2 === undefined ? κ1 : join(κ1, κ2))]
          }
          )(cκ̅1, cκ̅2)
-         return dataElim(...cκ̅)
+         return dataElim(...cκ̅)(k)
       } else {
          return absurd("Undefined join.", σ, τ)
       }
@@ -127,7 +127,7 @@ export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
 }
 
 // cκ̅ non-empty and constructors all of the same datatype.
-export function dataElim<K extends Cont> (...cκ̅: [string, K][]): Elim<K> {
+export function dataElim<K extends Cont> (...cκ̅: [string, K][]): (k: Id) => Elim<K> {
    const d: DataType = __nonNull(ctrToDataType.get(cκ̅[0][0])),
          c̅: string[] = cκ̅.map((([c, _]) => c)),
          c̅ʹ: string[] = [...d.ctrs.keys()], // sorted
@@ -140,7 +140,7 @@ export function dataElim<K extends Cont> (...cκ̅: [string, K][]): Elim<K> {
          f̅.push(undefined as any)
       }
    }
-   return make(d.elimC as Class<DataElim<K>>, ...f̅)
+   return at(d.elimC as Class<DataElim<K>>, ...f̅)
 }
 
 export class VarElim<K extends Cont> extends Elim<K> {
