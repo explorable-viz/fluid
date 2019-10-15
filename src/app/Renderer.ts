@@ -187,11 +187,13 @@ export class Renderer {
          )
       } else
       if (e instanceof Expr.Defs) {
-         return this.parenthesiseIf(parens,
+         return this.parenthesiseIf(
+            parens,
             this.vert(
                this.vert(...e.def̅.toArray().map(def => this.def(def))),
                this.expr(false, e.e)
-            )
+            ),
+            deltaStyle(e)
          )
       } else
       if (e instanceof Expr.MatchAs) {
@@ -294,11 +296,11 @@ export class Renderer {
       )
    }
 
-   parenthesise (g: SVGElement, ẟ_style?: DeltaStyle): SVGElement {
+   parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGElement {
       return this.horiz(this.keyword("parenL", ẟ_style), g, this.keyword("parenR", ẟ_style))
    }
 
-   parenthesiseIf (parens: boolean, g: SVGElement, ẟ_style?: DeltaStyle): SVGElement {
+   parenthesiseIf (parens: boolean, g: SVGElement, ẟ_style: DeltaStyle): SVGElement {
       return parens ? this.parenthesise(g, ẟ_style) : g
    }
 
