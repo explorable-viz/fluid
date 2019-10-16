@@ -223,8 +223,16 @@ export class Renderer {
             v instanceof Eval.Closure ? null : this.explValue_aux(parens, explValue(t.t, v))[1] 
          return [[this.text(t.x.val, deltaStyle(t))], g_opt]
       } else
+      if (t instanceof Expl.UnaryApp) {
+         const g: SVGElement = this.parenthesiseIf(
+            parens, 
+            this.explValue(!(t.tf.t instanceof Expl.App), t.tf),
+            deltaStyle(t)
+         )
+         return [[g], this.value(parens, v)]
+      } else
       if (t instanceof Expl.BinaryApp) {
-         return [[this.parenthesiseIf(
+         const g: SVGElement = this.parenthesiseIf(
             parens, 
             this.horizSpace(
                this.explValue(!(t.tv1.t instanceof Expl.App), t.tv1), 
@@ -232,7 +240,8 @@ export class Renderer {
                this.explValue(!(t.tv2.t instanceof Expl.App), t.tv2)
             ),
             deltaStyle(t)
-         )], this.value(parens, v)]
+         )
+         return [[g], this.value(parens, v)]
       } else
       if (t instanceof Expl.App) {
          const [gs, g] = this.explValue_aux(parens, explValue(t.t, v))
