@@ -44,10 +44,6 @@ function isExprFor (e: Expr, C: Class<DataValue>): boolean {
    return classOf(e) === exprClass(C)
 }
 
-function isExprOrExplFor (e: Expr | Expl, C: Class<DataValue>): boolean {
-   return e instanceof Expr.Expr && isExprFor(e, C) || e instanceof Expl.Expl && isExplFor(e, C)
-}
-
 // To visualise an eliminator, we reconstruct the patterns from the trie. List syntax in particular doesn't have
 // an analogous "case tree" form.
 type PatternElement = [Ctr | Str, DeltaStyle]
@@ -80,11 +76,18 @@ export class Renderer {
       return this.keyword("comma", ẟ_style)
    }
 
-   // Generic over whether we have a data value, data expression or data explanation.
+   // Generic over whether we have a data value or data expression.
    dataConstr (parens: boolean, e: DataValue): SVGElement {
       const es: Value[] = e.__children
-      const g: SVGElement = this.horizSpace(this.text(e.ctr, deltaStyle(e)), ...es.map(eʹ => this.exprOrExplOrValue(true, eʹ)))
+      const g: SVGElement = this.horizSpace(this.text(e.ctr, deltaStyle(e)), ...es.map(eʹ => this.exprOrExplValueOrValue(true, eʹ)))
       return this.parenthesiseIf(es.length > 0 && parens, g, deltaStyle(e))
+   }
+
+   dataConstrExpl (parens: boolean, {t, v}: ExplValue<DataValue>): SVGElement {
+      const tvs: ExplValue[] = Expl.explChildren(t, v)
+      // a constructor expression makes its value, so their root delta highlighting must agree
+      const g: SVGElement = this.horizSpace(this.text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => this.explValue(true, tvʹ)))
+      return this.parenthesiseIf(tvs.length > 0 && parens, g, deltaStyle(v))
    }
 
    def (def: Expr.Def): SVGElement {
@@ -173,12 +176,13 @@ export class Renderer {
       } else
       if (t instanceof Expl.DataExpl) {
          if (isExplFor(t, Pair)) {
-            return this.pair(t, as(t.__child("fst"), Expl.Expl), as(t.__child("snd"), Expl.Expl))
+            const vʹ: Pair = v as Pair
+            return this.pair(t, Expl.explChild(t, vʹ, "fst"), Expl.explChild(t, vʹ, "snd"))
          } else
          if (isExplFor(t, Nil) || isExplFor(t, Cons)) {
-            return this.listExpr(t)
+            return this.listExpl(explValue(t, v as List))
          } else {
-            return this.dataConstr(parens, t)
+            return this.dataConstrExpl(parens, explValue(t, v as DataValue))
          }
       } else
       if (t instanceof Expl.Var) {
@@ -188,7 +192,10 @@ export class Renderer {
       if (t instanceof Expl.App) {
          return this.parenthesiseIf(
             parens, 
-            this.horizSpace(this.explValue(!(t.tf.t instanceof Expl.App), t.tf), this.explValue(true, t.tu)),
+            this.vert(
+               this.horizSpace(this.explValue(!(t.tf.t instanceof Expl.App), t.tf), this.explValue(true, t.tu)),
+               this.explValue(false, explValue(t.t, v))
+            ),
             deltaStyle(t)
          )
       } else 
@@ -296,12 +303,12 @@ export class Renderer {
       }
    }
 
-   exprOrExplOrValue (parens: boolean, v: Value): SVGElement {
+   exprOrExplValueOrValue (parens: boolean, v: Value): SVGElement {
       if (v instanceof Expr.Expr) {
          return this.expr(parens, v)
       } else
-      if (v instanceof Expl.Expl) {
-         return this.unimplemented(v)
+      if (v instanceof ExplValue) {
+         return this.explValue(parens, v)
       } else {
          return this.value(parens, v)
       }
@@ -345,22 +352,50 @@ export class Renderer {
    }
 
    // Difficult to make this generic enough to use for list values too.
-   listExpr (e: Expr | Expl): SVGElement {
+   listExpr (e: Expr): SVGElement {
       const gs: SVGElement[] = []
-      while (isExprOrExplFor(e, Cons)) {
-         gs.push(this.exprOrExplOrValue(false, e.__child("head") as Expr | Expl))
-         const eʹ: Expr | Expl = e.__child("tail") as Expr | Expl
-         if (!(isExprOrExplFor(eʹ, Nil))) {
+      while (isExprFor(e, Cons)) {
+         gs.push(this.exprOrExplValueOrValue(false, e.__child("head") as Expr | Expl))
+         const eʹ: Expr = e.__child("tail") as Expr
+         if (!(isExprFor(eʹ, Nil))) {
             // associate every Cons, apart from the last one, with a comma
             gs.push(this.comma(deltaStyle(e)), this.space())
          }
          e = eʹ
       }
-      if (isExprOrExplFor(e, Nil)) {
+      if (isExprFor(e, Nil)) {
          return this.bracket(gs, deltaStyle(e))
       } else {
-         // if non-list expression in tail position, it determines delta-highlighting for brackets and ellipsis as well
-         return this.bracket([...gs, this.space(), this.ellipsis(deltaStyle(e)), this.exprOrExplOrValue(false, e)], deltaStyle(e))
+         // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
+         return this.bracket(
+            [...gs, this.space(), this.ellipsis(deltaStyle(e)), this.exprOrExplValueOrValue(false, e)], 
+            deltaStyle(e)
+         )
+      }
+   }
+
+   // Ouch, highly redundant with listExpr
+   listExpl ({t, v}: ExplValue<List>): SVGElement {
+      const gs: SVGElement[] = []
+      while (isExplFor(t, Cons)) {
+         const vʹ: Cons = v as Cons
+         gs.push(this.exprOrExplValueOrValue(false, Expl.explChild(t, vʹ, "head")))
+         const {t: tʹ, v: vʹʹ}: ExplValue = Expl.explChild(t, vʹ, "tail")
+         if (!(isExplFor(tʹ, Nil))) {
+            // associate every Cons, apart from the last one, with a comma
+            gs.push(this.comma(deltaStyle(t)), this.space())
+         }
+         t = tʹ
+         v = as(vʹʹ, List)
+      }
+      if (isExplFor(t, Nil)) {
+         return this.bracket(gs, deltaStyle(t))
+      } else {
+         // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
+         return this.bracket(
+            [...gs, this.space(), this.ellipsis(deltaStyle(t)), this.exprOrExplValueOrValue(false, explValue(t, v))], 
+            deltaStyle(t)
+         )
       }
    }
 
@@ -406,10 +441,10 @@ export class Renderer {
    pair (e: Value, e1: Value, e2: Value): SVGElement {
       return this.parenthesise(
          this.horiz(
-            this.exprOrExplOrValue(false, e1),
+            this.exprOrExplValueOrValue(false, e1),
             this.comma(deltaStyle(e)),
             this.space(), 
-            this.exprOrExplOrValue(false, e2)
+            this.exprOrExplValueOrValue(false, e2)
          ), 
          deltaStyle(e)
       )

@@ -153,7 +153,7 @@ export namespace Expl {
    }
 
    // Should probably do a better job of restricting k to be a bona fide field name.
-   export function explChild<T extends DataValue> (t: Expl, v: DataValue, k: keyof T): ExplValue {
+   export function explChild<T extends DataValue> (t: Expl, v: T, k: keyof T): ExplValue {
       if (t instanceof DataExpl) {
          return explValue(t.__child(k as string) as Expl, v.__child(k as string))
       } else
