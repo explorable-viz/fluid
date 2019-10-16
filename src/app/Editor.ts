@@ -33,7 +33,7 @@ export class Editor {
          this.root.removeChild(this.root.firstChild)
       }
       const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
-      this.root.appendChild(new Renderer(this).prompt(tv))
+      this.root.appendChild(new Renderer(this).explValue(false, tv))
       document.onkeydown = function(ev: KeyboardEvent) {
          if (ev.keyCode == 40) {
            console.log("Down!")

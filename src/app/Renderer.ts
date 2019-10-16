@@ -203,7 +203,7 @@ export class Renderer {
             parens, 
             this.vert(
                this.horizSpace(this.explValue(!(t.tf.t instanceof Expl.App), t.tf), this.explValue(true, t.tu)),
-               this.explValue(false, explValue(t.t, v))
+               t.t instanceof Expl.NonTerminal ? this.explValue(false, explValue(t.t, v)) : this.prompt(explValue(t.t, v))
             ),
             deltaStyle(t)
          )
