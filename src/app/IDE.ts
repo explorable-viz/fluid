@@ -4,4 +4,4 @@ import { openWithImports } from "../Module"
 import "../app/GraphicsRenderer"
 import { Editor } from "./Editor"
 
-new Editor(openWithImports("ic2019"))
+new Editor(openWithImports("compose"))

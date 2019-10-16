@@ -7,7 +7,7 @@ import { Change, New, Reclassify } from "../Delta"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr, strings } from "../Expr"
-import { DataElim, Elim, VarElim } from "../Match"
+import { DataElim, Elim, Match, VarElim } from "../Match"
 import { ApplicationId, Num, Str, TaggedId, Value, fields, isPrim } from "../Value"
 import { ν, at, newRevision, str, versioned } from "../Versioned"
 import { SVG } from "./Core"
@@ -168,6 +168,10 @@ export class Renderer {
       }))
    }
 
+   elimMatch<K extends Cont> (ξ: Match<K>): SVGElement {
+      return this.unimplemented(ξ)
+   }
+
    ellipsis (ẟ_style: DeltaStyle): SVGElement {
       return this.keyword("ellipsis", ẟ_style)
    }
@@ -245,6 +249,14 @@ export class Renderer {
             parens,
             this.vert(...t.def̅.toArray().map(def => this.defₜ(def))),
             deltaStyle(t)
+         )
+         return [[gʹ, ...gs], g]
+      } else
+      if (t instanceof Expl.MatchAs) {
+         const [gs, g] = this.explValue_aux(parens, explValue(t.t, v))
+         const gʹ: SVGElement = this.vert(
+            this.horizSpace(this.keyword("match", deltaStyle(t)), this.explValue(false, t.tu), this.keyword("as", deltaStyle(t))),
+            this.elimMatch(t.ξ)
          )
          return [[gʹ, ...gs], g]
       } else {
