@@ -8,7 +8,7 @@ import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr, strings } from "../Expr"
 import { DataElim, Elim, VarElim } from "../Match"
-import { Num, Str, Value, fields, isPrim } from "../Value"
+import { ApplicationId, Num, Str, TaggedId, Value, fields, isPrim } from "../Value"
 import { ν, at, newRevision, str, versioned } from "../Versioned"
 import { SVG } from "./Core"
 import { ExprCursor } from "./Cursor"
@@ -42,6 +42,15 @@ function isExplFor (t: Expl, C: Class<DataValue>): boolean {
 
 function isExprFor (e: Expr, C: Class<DataValue>): boolean {
    return classOf(e) === exprClass(C)
+}
+
+// Unpack evaluation memo-key to recover original expression.
+function exprFor (t: Expl): Expr {
+   if (versioned(t)) {
+      return as(as(as(t.__id, TaggedId).k, ApplicationId).v, Expr.Expr)
+   } else {
+      return absurd()
+   }
 }
 
 // To visualise an eliminator, we reconstruct the patterns from the trie. List syntax in particular doesn't have
@@ -166,7 +175,7 @@ export class Renderer {
    explValue (parens: boolean, {t, v}: ExplValue): SVGElement {
       if (t instanceof Expl.Const) {
          if (v instanceof Num) {
-            return this.num(v, true)
+            return this.num(v, as(exprFor(t), Expr.ConstNum).val)
          } else
          if (v instanceof Str) {
             return this.str(v)
@@ -217,7 +226,7 @@ export class Renderer {
    expr (parens: boolean, e: Expr): SVGElement {
       if (e instanceof Expr.ConstNum) {
          // ouch: disregard delta-info on expression itself
-         return this.num(e.val, true)
+         return this.num(e.val, e.val)
       } else
       if (e instanceof Expr.ConstStr) {
          // ouch: disregard delta-info on expression itself
@@ -425,12 +434,12 @@ export class Renderer {
       }
    }
 
-   num (n: Num, editable: boolean): SVGElement {
+   num (n: Num, src?: Num): SVGElement {
       const g: SVGElement = this.text(n.toString(), deltaStyle(n))
-      if (editable && Number.isInteger(n.val)) {
+      if (src && Number.isInteger(src.val)) {
          g.addEventListener("click", (ev: MouseEvent): void => {
             newRevision()
-            new ExprCursor(n).setNum(n.val + 1)
+            new ExprCursor(src).setNum(src.val + 1)
             ev.stopPropagation()
             this.editor.onEdit()
          })
@@ -537,7 +546,7 @@ export class Renderer {
 
    value (parens: boolean, v: Value): SVGElement {
       if (v instanceof Num) {
-         return this.num(v, false)
+         return this.num(v)
       } else
       if (v instanceof Str) {
          return this.text(v.toString(), deltaStyle(v))

@@ -44,7 +44,7 @@ function functionId (f: Function): FunctionId {
    return make(FunctionId, f)
 }
 
-class ApplicationId extends Id {
+export class ApplicationId extends Id {
    k: MemoId = _
    v: Persistent = _
 }
