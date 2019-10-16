@@ -1,5 +1,5 @@
 import { flatten, nth, zip } from "../util/Array"
-import { Class, __nonNull, absurd, as, assert, className, classOf } from "../util/Core"
+import { Class, __nonNull, absurd, as, assert, className, classOf, error } from "../util/Core"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, explClass, exprClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
@@ -172,53 +172,83 @@ export class Renderer {
       return this.keyword("ellipsis", ẟ_style)
    }
 
-   explValue (parens: boolean, {t, v}: ExplValue): SVGElement {
+   explValue (parens: boolean, tv: ExplValue): SVGElement {
+      const [gs, g] = this.explValue_aux(parens, tv)
+      if (gs.length === 0) {
+         if (g !== null) {
+            return g
+         } else {
+            return error("Must visualise either trace or value.")
+         }
+      } else {
+         if (g === null) {
+            return this.vert(...gs)
+         } else {
+            return this.horizSpace(this.vert(...gs), this.text("▸", DeltaStyle.Unchanged), g)
+         }
+      }
+   }
+
+   // Returns a list of trace views and a value view.
+   explValue_aux (parens: boolean, {t, v}: ExplValue): [SVGElement[], SVGElement | null] {
       if (t instanceof Expl.Const) {
          if (v instanceof Num) {
-            return this.num(v, as(exprFor(t), Expr.ConstNum).val)
+            return [[], this.num(v, as(exprFor(t), Expr.ConstNum).val)]
          } else
          if (v instanceof Str) {
-            return this.str(v)
+            return [[], this.str(v)]
          } else {
-            return this.unimplemented(v)
+            return [[], this.unimplemented(v)]
          }
       } else
       if (t instanceof Expl.DataExpl) {
          if (isExplFor(t, Pair)) {
             const vʹ: Pair = v as Pair
-            return this.pair(t, Expl.explChild(t, vʹ, "fst"), Expl.explChild(t, vʹ, "snd"))
+            return [[], this.pair(t, Expl.explChild(t, vʹ, "fst"), Expl.explChild(t, vʹ, "snd"))]
          } else
          if (isExplFor(t, Nil) || isExplFor(t, Cons)) {
-            return this.listExpl(explValue(t, v as List))
+            return [[], this.listExpl(explValue(t, v as List))]
          } else {
-            return this.dataConstrExpl(parens, explValue(t, v as DataValue))
+            return [[], this.dataConstrExpl(parens, explValue(t, v as DataValue))]
          }
       } else
       if (t instanceof Expl.Var) {
          // ouch: disregard delta-info on trace itself
-         return this.text(t.x.val, deltaStyle(t.x))
+         // values of variables themselves have explanations, but ignore those for now
+         const g_opt: SVGElement | null = 
+            v instanceof Eval.Closure ? null : this.explValue_aux(parens, explValue(t.t, v))[1] 
+         return [[this.text(t.x.val, deltaStyle(t))], g_opt]
+      } else
+      if (t instanceof Expl.BinaryApp) {
+         return [[this.parenthesiseIf(
+            parens, 
+            this.horizSpace(
+               this.explValue(!(t.tv1.t instanceof Expl.App), t.tv1), 
+               this.text(t.opName.val, deltaStyle(t)), // what about changes associated with t.opName? 
+               this.explValue(!(t.tv2.t instanceof Expl.App), t.tv2)
+            ),
+            deltaStyle(t)
+         )], this.value(parens, v)]
       } else
       if (t instanceof Expl.App) {
-         return this.parenthesiseIf(
+         const [gs, g] = this.explValue_aux(parens, explValue(t.t, v))
+         const gʹ: SVGElement = this.parenthesiseIf(
             parens, 
-            this.vert(
-               this.horizSpace(this.explValue(!(t.tf.t instanceof Expl.App), t.tf), this.explValue(true, t.tu)),
-               t.t instanceof Expl.NonTerminal ? this.explValue(false, explValue(t.t, v)) : this.prompt(explValue(t.t, v))
-            ),
+            this.horizSpace(this.explValue(!(t.tf.t instanceof Expl.App), t.tf), this.explValue(true, t.tu)),
             deltaStyle(t)
          )
+         return [[gʹ, ...gs], g]
       } else 
       if (t instanceof Expl.Defs) {
-         return this.parenthesiseIf(
+         const [gs, g] = this.explValue_aux(parens, explValue(t.t, v))
+         const gʹ: SVGElement = this.parenthesiseIf(
             parens,
-            this.vert(
-               this.vert(...t.def̅.toArray().map(def => this.defₜ(def))),
-               this.explValue(false, explValue(t.t, v))
-            ),
+            this.vert(...t.def̅.toArray().map(def => this.defₜ(def))),
             deltaStyle(t)
          )
+         return [[gʹ, ...gs], g]
       } else {
-         return this.unimplemented(t)
+         return [[this.unimplemented(t)], this.unimplemented(v)]
       }
    }
 
@@ -262,8 +292,8 @@ export class Renderer {
          return this.unimplemented(e)
       } else
       if (e instanceof Expr.Var) {
-         // ouch: disregard delta-info on expression itself
-         return this.text(e.x.val, deltaStyle(e.x))
+         // ouch: disregard delta-info on Var.x
+         return this.text(e.x.val, deltaStyle(e))
       } else
       if (e instanceof Expr.App) {
          return this.parenthesiseIf(
@@ -278,7 +308,7 @@ export class Renderer {
             parens, 
             this.horizSpace(
                this.expr(!(e.e1 instanceof Expr.App), e.e1), 
-               this.text(e.opName.val, deltaStyle(e.opName)), 
+               this.text(e.opName.val, deltaStyle(e)), // what about changes associated with e.opName 
                this.expr(!(e.e2 instanceof Expr.App), e.e2)
             ),
             deltaStyle(e)
@@ -501,17 +531,6 @@ export class Renderer {
 
    patternVar (x: Str): SVGElement {
       return this.text(x.val, deltaStyle(x))
-   }
-
-   prompt (tv: ExplValue): SVGElement {
-      const g: SVGElement = this.horizSpace(
-         this.explValue(false, tv), 
-         this.text(">", DeltaStyle.Unchanged), 
-         this.value(false, tv.v)
-      )
-      g.setAttribute("x", `0`)
-      g.setAttribute("y", `0`)
-      return g
    }
 
    recDef (def: Expr.RecDef): SVGElement {

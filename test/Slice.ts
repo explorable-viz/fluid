@@ -32,7 +32,7 @@ describe("slice", () => {
       })
    })
 
-   describe("bar-chart", () => {
+   xdescribe("bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
                e: Expr = openWithImports("bar-chart", module_graphics)
