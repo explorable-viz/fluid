@@ -5,27 +5,22 @@ import { Env, emptyEnv } from "../Env"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
-import { ExprCursor } from "./Cursor"
 import { Renderer, svg } from "./Renderer"
 import { newRevision } from "../Versioned"
 import "./styles.css"
 
 export class Editor {
    root: SVGSVGElement
-   e0: Expr
    e: Expr
-   e_cursor: ExprCursor
    tv: ExplValue
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       this.root = svg.createSvg(1400, 600)
       document.body.appendChild(this.root)
-      this.e0 = e,
-      this.e = as(this.e0, Expr.Defs).e // skip prelude
-      this.e_cursor = new ExprCursor(this.e)
-      this.tv = Eval.eval_(ρ, this.e0)
+      this.e = e,
+      this.tv = Eval.eval_(ρ, this.e)
       newRevision()
-      Eval.eval_(ρ, this.e0) // reestablish reachable nodes
+      Eval.eval_(ρ, this.e) // reestablish reachable nodes
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event): void => {
          this.render()
@@ -38,7 +33,7 @@ export class Editor {
          this.root.removeChild(this.root.firstChild)
       }
       const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
-      this.root.appendChild(new Renderer(this).prompt(this.e, tv))
+      this.root.appendChild(new Renderer(this).prompt(tv))
       document.onkeydown = function(ev: KeyboardEvent) {
          if (ev.keyCode == 40) {
            console.log("Down!")
@@ -47,7 +42,7 @@ export class Editor {
    }
 
    onEdit (): void {
-      this.tv = Eval.eval_(emptyEnv(), this.e0)
+      this.tv = Eval.eval_(emptyEnv(), this.e)
       this.render()
    }
 }

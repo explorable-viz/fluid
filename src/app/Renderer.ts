@@ -503,11 +503,11 @@ export class Renderer {
       return this.text(x.val, deltaStyle(x))
    }
 
-   prompt (e: Expr, tv: ExplValue): SVGElement {
-      const g: SVGElement = this.vert(
-//       this.expr(false, e),
-         this.explValue(false, tv),
-         this.horizSpace(this.text(">", DeltaStyle.Unchanged), this.value(false, tv.v))
+   prompt (tv: ExplValue): SVGElement {
+      const g: SVGElement = this.horizSpace(
+         this.explValue(false, tv), 
+         this.text(">", DeltaStyle.Unchanged), 
+         this.value(false, tv.v)
       )
       g.setAttribute("x", `0`)
       g.setAttribute("y", `0`)
