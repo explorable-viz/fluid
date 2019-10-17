@@ -25,7 +25,7 @@ let __editor: Editor | null = null
 export class Renderer2 {
    render (tv: ExplValue, editor: Editor): [SVGElement, number] {
       __editor = editor
-      const w: ExplValueView = view(tv) as ExplValueView
+      const w: ExplValueView = view(tv, false) as ExplValueView
       w.showValue()
       const g: SVGElement = w.render()
       return [g, __nonNull(dimensions.get(g)).height]
@@ -75,7 +75,7 @@ class ExplValueView extends View {
 
    initialise (): [Expl[], ExplValue | null] {
       const [ts, tv]: [Expl[], ExplValue | null] = split(this.tv)
-      if (ts.length === 0 || ts[0] instanceof Expl.Var && tv !== null) { // hack for vars
+      if (ts.length === 0) {
          this.showValue()
          this.hideExpl()
       }
@@ -139,24 +139,24 @@ export class ExplView extends View {
       }
       else
       if (this.t instanceof Expl.UnaryApp) {
-         return view(this.t.tf).render()
+         return view(this.t.tf, false).render()
       } else
       if (this.t instanceof Expl.BinaryApp) {
          return horizSpace(
-            view(this.t.tv1).render(), 
+            view(this.t.tv1, false).render(), 
             text(this.t.opName.val, deltaStyle(this.t)), // what about changes associated with t.opName? 
-            view(this.t.tv2).render()
+            view(this.t.tv2, false).render()
          )
       } else
       if (this.t instanceof Expl.App) {
-         return horizSpace(view(this.t.tf).render(), view(this.t.tu).render())
+         return horizSpace(view(this.t.tf, false).render(), view(this.t.tu, false).render())
       } else
       if (this.t instanceof Expl.Defs) {
          return vert(...this.t.def̅.toArray().map(defₜ))
       } else
       if (this.t instanceof Expl.MatchAs) {
          return vert(
-            horizSpace(keyword("match", deltaStyle(this.t)), view(this.t.tu).render(), keyword("as", deltaStyle(this.t))),
+            horizSpace(keyword("match", deltaStyle(this.t)), view(this.t.tu, false).render(), keyword("as", deltaStyle(this.t))),
             elimMatch(this.t.ξ)
          )
       } else {
@@ -215,10 +215,14 @@ export function valueView (tv: ExplValue): ValueView {
    }
 }
 
-export function view (v: ExplValue): ExplValueView {
+export function view (v: ExplValue, valueOnly: boolean): ExplValueView {
    let w: ExplValueView | undefined = views.get(v) as ExplValueView
    if (w === undefined) {
       w = new ExplValueView(v)
+      if (valueOnly) {
+         w.showValue()
+         w.hideExpl()
+      }
       views.set(v, w)
       return w
    } else {
@@ -301,7 +305,7 @@ function clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
 function dataConstr (parens: boolean, {t, v}: ExplValue<DataValue>): SVGElement {
    const tvs: ExplValue[] = Expl.explChildren(t, v)
    // a constructor expression makes its value, so their root delta highlighting must agree
-   const g: SVGElement = horizSpace(text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => view(tvʹ).render()))
+   const g: SVGElement = horizSpace(text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => view(tvʹ, true).render()))
    return parenthesiseIf(tvs.length > 0 && parens, g, deltaStyle(t))
 }
 
@@ -346,7 +350,7 @@ function defₜ (def: Expl.Def): SVGElement {
             keyword("let_", deltaStyle(def)), 
             patternVar(def.x), 
             keyword("equals", deltaStyle(def)),
-            view(def.tv).render()
+            view(def.tv, false).render()
          )
       }
    } else
@@ -466,7 +470,7 @@ function list ({t, v}: ExplValue<List>): SVGElement {
    const gs: SVGElement[] = []
    while (Cons.is(v)) {
       const vʹ: Cons = v as Cons
-      gs.push(view(Expl.explChild(t, vʹ, "head")).render())
+      gs.push(view(Expl.explChild(t, vʹ, "head"), true).render())
       const tvʹ: ExplValue = Expl.explChild(t, vʹ, "tail")
       const {t: tʹ, v: vʹʹ}: ExplValue<List> = tvʹ as ExplValue<List>
       if (!(Nil.is(vʹʹ))) {
@@ -481,7 +485,7 @@ function list ({t, v}: ExplValue<List>): SVGElement {
    } else {
       // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
       return bracket(
-         [...gs, space(), ellipsis(deltaStyle(t)), view(explValue(t, v)).render()], 
+         [...gs, space(), ellipsis(deltaStyle(t)), view(explValue(t, v), true).render()], 
          deltaStyle(t)
       )
    }
@@ -551,10 +555,10 @@ function num_ (n: Num, src?: Num): SVGElement {
 function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGElement {
    return parenthesise(
       horiz(
-         view(tv1).render(),
+         view(tv1, true).render(),
          comma(deltaStyle(t)),
          space(),
-         view(tv2).render()
+         view(tv2, true).render()
       ), 
       deltaStyle(t)
    )
