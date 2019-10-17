@@ -20,7 +20,7 @@ export const svg: SVG = new SVG(false)
 const fontSize: number = 18
 const classes: string = "code"
 // bizarrely, if I do this later, font metrics are borked:
-const lineHeight = svg.textHeight(textElement(0, 0, fontSize, classes, "m")) // representative character 
+const lineHeight = svg.textHeight(textElement(fontSize, classes, "m")) // representative character 
 // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
 const space: string = "\u00a0"
 
@@ -28,7 +28,7 @@ const space: string = "\u00a0"
 type Dimensions = { width: number, height: number }
 const dimensions: Map<SVGElement, Dimensions> = new Map()
 
-function textElement (x: number, y: number, fontSize: number, class_: string, str: string): SVGTextElement {
+function textElement (fontSize: number, class_: string, str: string): SVGTextElement {
    const text: SVGTextElement = document.createElementNS(SVG.NS, "text")
    text.setAttribute("font-size", fontSize.toString()) // wasn't able to set this through CSS for some reason
    text.setAttribute("class", class_) // set styling before creating text node, for font metrics to be correct
@@ -193,13 +193,13 @@ export class Renderer {
          }
       }
       if (gʹ instanceof SVGSVGElement) {
-         return this.selectionHighlight(gʹ)
+         return this.border(gʹ)
       } else {
          return gʹ
       }
    }
 
-   selectionHighlight (g: SVGSVGElement): SVGElement {
+   border (g: SVGSVGElement): SVGElement {
       const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
       border.setAttribute("x", g.x.baseVal.valueAsString) // is there an easier way?
       border.setAttribute("y", g.y.baseVal.valueAsString)
@@ -590,7 +590,7 @@ export class Renderer {
    }
 
    text (str: string, ẟ_style: DeltaStyle): SVGTextElement {
-      const text: SVGTextElement = textElement(0, 0, fontSize, [classes, ẟ_style].join(" "), str)
+      const text: SVGTextElement = textElement(fontSize, [classes, ẟ_style].join(" "), str)
       text.setAttribute("transform", `translate(${0},${lineHeight / 2})`)
       text.setAttribute("alignment-baseline", "central")
       const width: number = svg.textWidth(text)
