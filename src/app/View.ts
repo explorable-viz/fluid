@@ -41,16 +41,16 @@ class ExplValueView extends View {
 
    render (): SVGElement {
       this.assertValid()
-      const [ts, v]: [Expl[], Value | null] = wurble(this.tv)
+      const [ts, tv]: [Expl[], ExplValue | null] = wurble(this.tv)
       const ts_g: SVGElement = vert(...ts.slice(0, this.ts_count).map(t => view(t).render()))
       let g: SVGElement 
       if (!this.v_visible) {
          g = ts_g
       } else
       if (this.ts_count === 0) {
-         g = view(v!).render()
+         g = view(tv!).render()
       } else {
-         g = horizSpace(ts_g, text("▸", DeltaStyle.Unchanged), view(v!).render())
+         g = horizSpace(ts_g, text("▸", DeltaStyle.Unchanged), view(tv!).render())
       }
       if (g instanceof SVGSVGElement) {
          return border(g)
@@ -146,19 +146,22 @@ export function view (v: Value): View {
    }
 }
 
-function wurble ({t, v}: ExplValue): [Expl[], Value | null] {
+// The value part must be an ExplValue, because in the data value case we need the explanation as well to
+// render the value.
+function wurble (tv: ExplValue): [Expl[], ExplValue | null] {
+   const {t, v}: ExplValue = tv
    if (t instanceof Expl.Const) {
-      return [[], v]
+      return [[], tv]
    } else
    if (t instanceof Expl.DataExpl) {
-      return [[], v]
+      return [[], tv]
    } else
    if (t instanceof Expl.Var) {
       // values of variables themselves have explanations, but ignore those for now
-      return [[t], v instanceof Closure ? null : v]
+      return [[t], v instanceof Closure ? null : tv]
    } else
    if (t instanceof Expl.UnaryApp || t instanceof Expl.BinaryApp) {
-      return [[t], v]
+      return [[t], tv]
    } else
    if (t instanceof Expl.NonTerminal) {
       const [ts, vʹ] = wurble(explValue(t.t, v))
