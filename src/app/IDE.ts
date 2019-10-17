@@ -4,4 +4,4 @@ import { openWithImports } from "../Module"
 import "../app/GraphicsRenderer"
 import { Editor } from "./Editor"
 
-new Editor(openWithImports("compose"))
+new Editor(openWithImports("filter"))

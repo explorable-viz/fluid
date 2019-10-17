@@ -177,6 +177,9 @@ export class ValueView extends View {
       if (this.tv.v instanceof Str) {
          return str_(this.tv.v)
       } else
+      if (this.tv.v instanceof Closure) {
+         return unimplemented(this.tv.v)
+      } else
       if (this.tv.v instanceof DataValue) {
          if (isExplFor(this.tv.t, Pair)) {
             const vʹ: Pair = this.tv.v as Pair
