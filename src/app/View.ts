@@ -241,7 +241,7 @@ function split (tv: ExplValue): [Expl[], ExplValue | null] {
    } else
    if (t instanceof Expl.Var) {
       // values of variables themselves have explanations, but ignore those for now
-      return [[t], v instanceof Closure ? null : tv]
+      return [[t], v instanceof Closure ? null : split(explValue(t.t, v))[1]]
    } else
    if (t instanceof Expl.UnaryApp || t instanceof Expl.BinaryApp) {
       return [[t], tv]
