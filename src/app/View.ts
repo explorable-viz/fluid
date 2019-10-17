@@ -24,7 +24,7 @@ export class Renderer2 {
    render (tv: ExplValue, editor: Editor): [SVGElement, number] {
       __editor = editor
       const w: ExplValueView = view(tv) as ExplValueView
-      w.toggleValue()
+      w.showValue()
       const g: SVGElement = w.render()
       __editor = null
       return [g, __nonNull(dimensions.get(g)).height]
@@ -70,6 +70,10 @@ class ExplValueView extends View {
    render (): SVGElement {
       this.assertValid()
       const [ts, tv]: [Expl[], ExplValue | null] = split(this.tv)
+      if (ts.length === 0) {
+         this.showValue()
+         this.hideExpl()
+      }
       const ts_g: SVGElement = vert(...ts.slice(0, this.ts_count).map(t => view(t).render()))
       let g: SVGElement 
       if (!this.v_visible) {
@@ -88,19 +92,25 @@ class ExplValueView extends View {
    }
 
    // Probably want toggle _and_ count, but this will do for now.
-   toggleExpl (): void {
-      if (this.ts_count === 0) {
-         this.ts_count = 1
-      } else
+   showExpl (): void {
+      assert(this.ts_count === 0)
+      this.ts_count = 1
+   }
+
+   hideExpl (): void {
+      assert(this.ts_count > 0)
       if (this.v_visible) {
          this.ts_count = 0
       }
    }
 
-   toggleValue (): void {
-      if (!this.v_visible) {
-         this.v_visible = true
-      } else 
+   showValue (): void {
+      assert(!this.v_visible)
+      this.v_visible = true
+   }
+
+   hideValue (): void {
+      assert(this.v_visible)
       if (this.ts_count > 0) {
          this.v_visible = false
       }
