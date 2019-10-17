@@ -591,8 +591,8 @@ export class Renderer {
 
    text (str: string, ẟ_style: DeltaStyle): SVGTextElement {
       const text: SVGTextElement = textElement(0, 0, fontSize, [classes, ẟ_style].join(" "), str)
-//      text.setAttribute("transform", `translate(${0},${lineHeight})`)
-      text.setAttribute("dominant-baseline", "hanging")
+      text.setAttribute("transform", `translate(${0},${lineHeight / 2})`)
+      text.setAttribute("alignment-baseline", "central")
       const width: number = svg.textWidth(text)
       dimensions.set(text, { width, height: lineHeight })
       text.remove()
