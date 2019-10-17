@@ -27,6 +27,10 @@ class ExplValueView extends View {
    ts_count: number // number of trace views to show (counting forward)
    v_visible: boolean
 
+   assertValid (): void {
+      assert(this.ts_count > 0 || this.v_visible)
+   }
+
    constructor (tv: ExplValue) {
       super()
       this.tv = tv
@@ -55,7 +59,7 @@ class ExplValueView extends View {
       }
    }
 
-   // I think we want toggle _and_ count, but this will do for now.
+   // Probably want toggle _and_ count, but this will do for now.
    toggleExpl (): void {
       if (this.ts_count === 0) {
          this.ts_count = 1
@@ -63,10 +67,6 @@ class ExplValueView extends View {
       if (this.v_visible) {
          this.ts_count = 0
       }
-   }
-
-   assertValid (): void {
-      assert(this.ts_count > 0 || this.v_visible)
    }
 }
 
@@ -112,6 +112,13 @@ export class ExplView extends View {
 }
 
 export class ValueView extends View {
+   v: Value
+
+   constructor (v: Value) {
+      super()
+      this.v = v
+   }
+
    render (): SVGElement {
       return notYetImplemented()
    }
@@ -124,8 +131,15 @@ export function view (v: Value): View {
          w = new ExplValueView(v)
          views.set(v, w)
          return w
+      } else
+      if (v instanceof Expl.Expl) {
+         w = new ExplView(v)
+         views.set(v, w)
+         return w
       } else {
-         return notYetImplemented()
+         w = new ValueView(v)
+         views.set(v, w)
+         return w
       }
    } else {
       return w
