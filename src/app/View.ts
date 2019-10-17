@@ -1,8 +1,11 @@
-import { assert, notYetImplemented } from "../util/Core"
-import { ExplValue } from "../DataValue"
+import { absurd, assert, notYetImplemented } from "../util/Core"
+import { ExplValue, explValue } from "../DataValue"
+import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Value } from "../Value"
 import { DeltaStyle, border, horizSpace, text, vert } from "./Renderer2"
+
+import Closure = Eval.Closure
 
 const views: Map<Value, View> = new Map()
 
@@ -11,15 +14,16 @@ abstract class View {
 }
 
 class ExplValueView extends View {
-   t: Expl
-   v: Value
-   tw: ExplView | null = null
-   vw: ValueView | null = null
+   tv: ExplValue
+   tw: ExplView | null
+   vw: ValueView | null
 
-   constructor ({ t, v }: ExplValue) {
+   constructor (tv: ExplValue) {
       super()
-      this.t = t
-      this.v = v
+      this.tv = tv
+      // initial view state:
+      this.tw = view(this.t)
+      this.vw = null
    }
 
    render (): SVGElement {
@@ -59,8 +63,31 @@ class ExplValueView extends View {
 }
 
 export class ExplView extends View {
+   t: Expl
+
+   constructor (t: Expl) {
+      super()
+      this.t = t
+   }
+
    render (): SVGElement {
-      return vert(...gs)
+
+   }
+}
+
+export class ExplsView extends View {
+   ts: Expl[]
+   tws: ExplView[] // not every expl need have a view
+
+   constructor (ts: Expl[]) {
+      super()
+      this.ts = ts
+      // initial view state:
+      this.tws = [view(ts[0]) as ExplView]
+   }
+
+   render (): SVGElement {
+      return vert(...this.tws.map(tw => tw.render()))
    }
 }
 
@@ -82,5 +109,27 @@ export function view (v: Value): View {
       }
    } else {
       return w
+   }
+}
+
+function wurble ({t, v}: ExplValue): [Expl[], Value | null] {
+   if (t instanceof Expl.Const) {
+      return [[], v]
+   } else
+   if (t instanceof Expl.DataExpl) {
+      return [[], v]
+   } else
+   if (t instanceof Expl.Var) {
+      // values of variables themselves have explanations, but ignore those for now
+      return [[t], v instanceof Closure ? null : v]
+   } else
+   if (t instanceof Expl.UnaryApp || t instanceof Expl.BinaryApp) {
+      return [[t], v]
+   } else
+   if (t instanceof Expl.NonTerminal) {
+      const [ts, vʹ] = wurble(explValue(t.t, v))
+      return [[t, ...ts], vʹ]
+   } else {
+      return absurd()
    }
 }
