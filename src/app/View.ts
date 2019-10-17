@@ -1,7 +1,9 @@
-import { DataValue, ExplValue } from "../DataValue"
+import { DataValue } from "../DataValue"
 import { Expl } from "../Expl"
-import { Id, MemoId, Value, _, memoId } from "../Value"
+import { Id, Value, _ } from "../Value"
 import { at } from "../Versioned"
+
+const views: Map<Value, View> = new Map()
 
 class View extends DataValue<"View"> {
 }
@@ -21,7 +23,13 @@ export class ExplView extends View {
 export class ValueView extends View {
 }
 
-export function view ({ t, v }: ExplValue): ExplValueView {
-   const k: MemoId = memoId(view, arguments)
-   return explValueView(t, v)(k)
+export function view (v: Value): View {
+   let w: View | undefined = views.get(v)
+   if (w === undefined) {
+      w = new View()
+      views.set(v, w)
+      return w
+   } else {
+      return w
+   }
 }
