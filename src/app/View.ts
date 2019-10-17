@@ -80,9 +80,21 @@ export class ExplView extends View {
       this.t = t
    }
 
+   // TODO: reinstate parenthesisation
    render (): SVGElement {
       if (this.t instanceof Expl.Var) {
          return text(this.t.x.val, deltaStyle(this.t))
+      }
+      else
+      if (this.t instanceof Expl.UnaryApp) {
+         return view(this.t.tf).render()
+      } else
+      if (this.t instanceof Expl.BinaryApp) {
+         return horizSpace(
+            view(this.t.tv1).render(), 
+            text(this.t.opName.val, deltaStyle(this.t)), // what about changes associated with t.opName? 
+            view(this.t.tv2).render()
+         )
       } else {
          return absurd()
       }
