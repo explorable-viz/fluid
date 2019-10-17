@@ -178,19 +178,38 @@ export class Renderer {
 
    explValue (parens: boolean, tv: ExplValue): SVGElement {
       const [gs, g] = this.explValue_aux(parens, tv)
+      let gʹ: SVGElement
       if (gs.length === 0) {
          if (g !== null) {
-            return g
+            gʹ = g
          } else {
             return error("Must visualise either trace or value.")
          }
       } else {
          if (g === null) {
-            return this.vert(...gs)
+            gʹ = this.vert(...gs)
          } else {
-            return this.horizSpace(this.vert(...gs), this.text("▸", DeltaStyle.Unchanged), g)
+            gʹ = this.horizSpace(this.vert(...gs), this.text("▸", DeltaStyle.Unchanged), g)
          }
       }
+      if (gʹ instanceof SVGSVGElement) {
+         return this.selectionHighlight(gʹ)
+      } else {
+         return gʹ
+      }
+   }
+
+   selectionHighlight (g: SVGSVGElement): SVGElement {
+      const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
+      border.setAttribute("x", g.x.baseVal.valueAsString) // is there an easier way?
+      border.setAttribute("y", g.y.baseVal.valueAsString)
+      const { width, height }: Dimensions = dimensions.get(g)!
+      border.setAttribute("height", height.toString())
+      border.setAttribute("width", width.toString())
+      border.setAttribute("stroke", "gray")
+      border.setAttribute("fill", "none")
+      g.appendChild(border)
+      return g
    }
 
    // Returns a list of trace views and a value view.
@@ -374,8 +393,8 @@ export class Renderer {
       }
    }
 
-   horiz (...gs: SVGElement[]): SVGElement {
-      const g: SVGGElement = document.createElementNS(SVG.NS, "svg")
+   horiz (...gs: SVGElement[]): SVGSVGElement {
+      const g: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
       let width_sum: number = 0,
           height_max: number = 0
       gs.forEach((gʹ: SVGElement): void => {
@@ -390,7 +409,7 @@ export class Renderer {
       return g
    }
 
-   horizSpace (...gs: SVGElement[]): SVGElement {
+   horizSpace (...gs: SVGElement[]): SVGSVGElement {
       return this.horiz(...this.delimit(() => this.space(), ...gs))
    }
 
@@ -572,7 +591,8 @@ export class Renderer {
 
    text (str: string, ẟ_style: DeltaStyle): SVGTextElement {
       const text: SVGTextElement = textElement(0, 0, fontSize, [classes, ẟ_style].join(" "), str)
-      text.setAttribute("transform", `translate(${0},${lineHeight})`)
+//      text.setAttribute("transform", `translate(${0},${lineHeight})`)
+      text.setAttribute("dominant-baseline", "hanging")
       const width: number = svg.textWidth(text)
       dimensions.set(text, { width, height: lineHeight })
       text.remove()
@@ -608,8 +628,8 @@ export class Renderer {
       }
    }
 
-   vert (...gs: SVGElement[]): SVGElement {
-      const g: SVGGElement = document.createElementNS(SVG.NS, "svg")
+   vert (...gs: SVGElement[]): SVGSVGElement {
+      const g: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
       let height_sum: number = 0,
           width_max: number = 0
       gs.forEach((gʹ: SVGElement): void => {
