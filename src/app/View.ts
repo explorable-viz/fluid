@@ -1,21 +1,47 @@
-import { Class, absurd, assert, classOf, notYetImplemented } from "../util/Core"
-import { Pair } from "../BaseTypes"
+import { Class, __nonNull, absurd, as, assert, classOf } from "../util/Core"
+import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { explClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { Elim, Match } from "../Match"
-import { Str, Value } from "../Value"
-import { DeltaStyle, border, deltaStyle, horizSpace, keyword, text, unimplemented, vert } from "./Renderer2"
+import { ApplicationId, Num, Str, TaggedId, Value } from "../Value"
+import { newRevision, versioned } from "../Versioned"
+import { ExprCursor } from "./Cursor"
+import { Editor } from "./Editor"
+import { 
+   DeltaStyle, border, bracket, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, parenthesise, space, text, unimplemented, vert 
+} from "./Renderer2"
 
 import Closure = Eval.Closure
 import Cont = Expr.Cont
+
+// Rather horrible idiom, but better than passing editors around everywhere.
+let __editor: Editor | null = null
+
+export class Renderer2 {
+   render (tv: ExplValue, editor: Editor): [SVGElement, number] {
+      __editor = editor
+      const g: SVGElement = view(tv).render()
+      __editor = null
+      return [g, __nonNull(dimensions.get(g)).height]
+   }
+}
 
 const views: Map<Value, View> = new Map()
 
 function isExplFor (t: Expl, C: Class<DataValue>): boolean {
    return classOf(t) === explClass(C)
+}
+
+// Unpack evaluation memo-key to recover original expression.
+function exprFor (t: Expl): Expr {
+   if (versioned(t)) {
+      return as(as(as(t.__id, TaggedId).k, ApplicationId).v, Expr.Expr)
+   } else {
+      return absurd()
+   }
 }
 
 abstract class View {
@@ -41,16 +67,16 @@ class ExplValueView extends View {
 
    render (): SVGElement {
       this.assertValid()
-      const [ts, tv]: [Expl[], ExplValue | null] = wurble(this.tv)
+      const [ts, tv]: [Expl[], ExplValue | null] = split(this.tv)
       const ts_g: SVGElement = vert(...ts.slice(0, this.ts_count).map(t => view(t).render()))
       let g: SVGElement 
       if (!this.v_visible) {
          g = ts_g
       } else
       if (this.ts_count === 0) {
-         g = view(tv!).render()
+         g = valueView(tv!).render()
       } else {
-         g = horizSpace(ts_g, text("▸", DeltaStyle.Unchanged), view(tv!).render())
+         g = horizSpace(ts_g, text("▸", DeltaStyle.Unchanged), valueView(tv!).render())
       }
       if (g instanceof SVGSVGElement) {
          return border(g)
@@ -112,19 +138,52 @@ export class ExplView extends View {
 }
 
 export class ValueView extends View {
-   v: Value
+   // We need the "leaf" explanation to render a value, for two reasons: so we can retrieve the original expression for 
+   // editing purposes, and to render component explanations of data values.
+   tv: ExplValue
 
-   constructor (v: Value) {
+   constructor (tv: ExplValue) {
       super()
-      this.v = v
+      this.tv = tv
    }
 
    render (): SVGElement {
-      return notYetImplemented()
+      if (this.tv.v instanceof Num) {
+         return num(this.tv.v, as(exprFor(this.tv.t), Expr.ConstNum).val)
+      } else
+      if (this.tv.v instanceof Str) {
+         return str(this.tv.v)
+      } else
+      if (this.tv.v instanceof DataValue) {
+         if (isExplFor(this.tv.t, Pair)) {
+            const vʹ: Pair = this.tv.v as Pair
+            return pair(this.tv.t, Expl.explChild(this.tv.t, vʹ, "fst"), Expl.explChild(this.tv.t, vʹ, "snd"))
+         } else
+         if (isExplFor(this.tv.t, Nil) || isExplFor(this.tv.t, Cons)) {
+            return list(this.tv)
+         } else {
+            return dataConstr(this.tv as ExplValue<DataValue>)
+         }
+      } else {
+         return unimplemented(this.tv.v)
+      }
    }
 }
 
-export function view (v: Value): View {
+// Values are treated slightly differently because the "key" of a value view is the value (to distinguish
+// it from the view of the ExplValue), but the Expl is also required to render the value.
+export function valueView (tv: ExplValue): View {
+   let w: View | undefined = views.get(tv.v)
+   if (w === undefined) {
+      w = new ValueView(tv)
+      views.set(tv.v, w)
+      return w
+   } else {
+      return w
+   }
+}
+
+export function view (v: ExplValue | Expl.Expl): View {
    let w: View | undefined = views.get(v)
    if (w === undefined) {
       if (v instanceof ExplValue) {
@@ -137,9 +196,7 @@ export function view (v: Value): View {
          views.set(v, w)
          return w
       } else {
-         w = new ValueView(v)
-         views.set(v, w)
-         return w
+         return absurd()
       }
    } else {
       return w
@@ -148,7 +205,7 @@ export function view (v: Value): View {
 
 // The value part must be an ExplValue, because in the data value case we need the explanation as well to
 // render the value.
-function wurble (tv: ExplValue): [Expl[], ExplValue | null] {
+function split (tv: ExplValue): [Expl[], ExplValue | null] {
    const {t, v}: ExplValue = tv
    if (t instanceof Expl.Const) {
       return [[], tv]
@@ -164,11 +221,17 @@ function wurble (tv: ExplValue): [Expl[], ExplValue | null] {
       return [[t], tv]
    } else
    if (t instanceof Expl.NonTerminal) {
-      const [ts, vʹ] = wurble(explValue(t.t, v))
+      const [ts, vʹ] = split(explValue(t.t, v))
       return [[t, ...ts], vʹ]
    } else {
       return absurd()
    }
+}
+
+function dataConstr ({t, v}: ExplValue<DataValue>): SVGElement {
+   const tvs: ExplValue[] = Expl.explChildren(t, v)
+   // a constructor expression makes its value, so their root delta highlighting must agree
+   return horizSpace(text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => view(tvʹ).render()))
 }
 
 function defₜ (def: Expl.Def): SVGElement {
@@ -202,10 +265,65 @@ function elimMatch<K extends Cont> (ξ: Match<K>): SVGElement {
    return unimplemented(ξ)
 }
 
+// Generalise to work with expressions?
+function list ({t, v}: ExplValue): SVGElement {
+   const gs: SVGElement[] = []
+   while (isExplFor(t, Cons)) {
+      const vʹ: Cons = v as Cons
+      gs.push(view(Expl.explChild(t, vʹ, "head")).render())
+      const {t: tʹ, v: vʹʹ}: ExplValue = Expl.explChild(t, vʹ, "tail")
+      if (!(isExplFor(tʹ, Nil))) {
+         // associate every Cons, apart from the last one, with a comma
+         gs.push(comma(deltaStyle(t)), space())
+      }
+      t = tʹ
+      v = as(vʹʹ, List)
+   }
+   if (isExplFor(t, Nil)) {
+      return bracket(gs, deltaStyle(t))
+   } else {
+      // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
+      return bracket(
+         [...gs, space(), ellipsis(deltaStyle(t)), view(explValue(t, v)).render()], 
+         deltaStyle(t)
+      )
+   }
+}
+
+function num (n: Num, src?: Num): SVGElement {
+   const g: SVGElement = text(n.toString(), deltaStyle(n))
+   if (src && Number.isInteger(src.val)) {
+      g.addEventListener("click", (ev: MouseEvent): void => {
+         newRevision()
+         new ExprCursor(src).setNum(src.val + 1)
+         ev.stopPropagation()
+         __editor!.onEdit()
+      })
+   }
+   return g
+}
+
+// Will want to generalise this to deal with expressions.
+function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGElement {
+   return parenthesise(
+      horiz(
+         view(tv1).render(),
+         comma(deltaStyle(t)),
+         space(),
+         view(tv2).render()
+      ), 
+      deltaStyle(t)
+   )
+}
+
 function patternVar (x: Str): SVGElement {
    return text(x.val, deltaStyle(x))
 }
 
 function recDefₜ (def: Expl.RecDef): SVGElement {
    return horizSpace(patternVar(def.x), elim(def.tf.v.f))
+}
+
+function str (str: Str): SVGElement {
+   return text(str.toString(), deltaStyle(str))
 }

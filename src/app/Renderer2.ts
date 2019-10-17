@@ -16,7 +16,7 @@ const space_char: string = "\u00a0"
 
 // Populate explicity, rather than using a memoised function.
 type Dimensions = { width: number, height: number }
-const dimensions: Map<SVGElement, Dimensions> = new Map()
+export const dimensions: Map<SVGElement, Dimensions> = new Map()
 
 export function border (g: SVGSVGElement): SVGElement {
    const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
@@ -32,6 +32,14 @@ export function border (g: SVGSVGElement): SVGElement {
    return g
 }
 
+export function bracket (gs: SVGElement[], ẟ_style: DeltaStyle): SVGElement {
+   return horiz(keyword("bracketL", ẟ_style), ...gs, keyword("bracketR", ẟ_style))
+}
+
+export function comma (ẟ_style: DeltaStyle): SVGElement {
+   return keyword("comma", ẟ_style)
+}
+
 export function delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGElement[] {
    const gsʹ: SVGElement[] = []
    gs.forEach((g: SVGElement, n: number): void => {
@@ -41,6 +49,10 @@ export function delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGE
       }
    })
    return gsʹ
+}
+
+export function ellipsis (ẟ_style: DeltaStyle): SVGElement {
+   return keyword("ellipsis", ẟ_style)
 }
 
 export function horiz (...gs: SVGElement[]): SVGSVGElement {
@@ -65,6 +77,10 @@ export function horizSpace (...gs: SVGElement[]): SVGSVGElement {
 
 export function keyword (str: keyof typeof strings, ẟ_style: DeltaStyle): SVGElement {
    return text(strings[str], ẟ_style)
+}
+
+export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGElement {
+   return horiz(keyword("parenL", ẟ_style), g, keyword("parenR", ẟ_style))
 }
 
 export function space (): SVGElement {
