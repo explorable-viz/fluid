@@ -70,16 +70,22 @@ class ExplValueView extends View {
       // initial view state:
       this.ts_count = 1
       this.v_visible = false
+      this.initialise()
+   }
+
+   initialise (): [Expl[], ExplValue | null] {
+      const [ts, tv]: [Expl[], ExplValue | null] = split(this.tv)
+      if (ts.length === 0 || ts[0] instanceof Expl.Var && tv !== null) { // hack for vars
+         this.showValue()
+         this.hideExpl()
+      }
+      return [ts, tv]
    }
 
    render (): SVGElement {
       this.assertValid()
-      const [ts, tv]: [Expl[], ExplValue | null] = split(this.tv)
-      if (ts.length === 0) {
-         this.showValue()
-         this.hideExpl()
-      }
-      const ts_g: SVGElement = vert(...ts.slice(0, this.ts_count).map(t => view(t).render()))
+      const [ts, tv]: [Expl[], ExplValue | null] = this.initialise()
+      const ts_g: SVGElement = vert(...ts.slice(0, this.ts_count).map(t => explView(t).render()))
       let g: SVGElement 
       if (!this.v_visible) {
          g = ts_g
@@ -199,7 +205,7 @@ export class ValueView extends View {
 // Values are treated slightly differently because the "key" of a value view is the value (to distinguish
 // it from the view of the ExplValue), but the Expl is also required to render the value.
 export function valueView (tv: ExplValue): ValueView {
-   let w: ValueView | undefined = views.get(tv.v) as ValueView
+   let w: ValueView | undefined = views.get(__nonNull(tv).v) as ValueView
    if (w === undefined) {
       w = new ValueView(tv)
       views.set(tv.v, w)
@@ -209,21 +215,23 @@ export function valueView (tv: ExplValue): ValueView {
    }
 }
 
-export function view (v: ExplValue | Expl.Expl): View {
-   let w: View | undefined = views.get(v)
+export function view (v: ExplValue): ExplValueView {
+   let w: ExplValueView | undefined = views.get(v) as ExplValueView
    if (w === undefined) {
-      if (v instanceof ExplValue) {
-         w = new ExplValueView(v)
-         views.set(v, w)
-         return w
-      } else
-      if (v instanceof Expl.Expl) {
-         w = new ExplView(v)
-         views.set(v, w)
-         return w
-      } else {
-         return absurd()
-      }
+      w = new ExplValueView(v)
+      views.set(v, w)
+      return w
+   } else {
+      return w
+   }
+}
+
+export function explView (v: Expl.Expl): View {
+   let w: ExplView | undefined = views.get(v) as ExplView
+   if (w === undefined) {
+      w = new ExplView(v)
+      views.set(v, w)
+      return w
    } else {
       return w
    }
@@ -454,14 +462,14 @@ function expr (parens: boolean, e: Expr): SVGElement {
    }
 }
 
-// Generalise to work with expressions?
 function list ({t, v}: ExplValue): SVGElement {
    const gs: SVGElement[] = []
    while (isExplFor(t, Cons)) {
       const vʹ: Cons = v as Cons
       gs.push(view(Expl.explChild(t, vʹ, "head")).render())
-      const {t: tʹ, v: vʹʹ}: ExplValue = Expl.explChild(t, vʹ, "tail")
-      if (!(isExplFor(tʹ, Nil))) {
+      const tvʹ: ExplValue = Expl.explChild(t, vʹ, "tail")
+      const {t: tʹ, v: vʹʹ}: ExplValue = tvʹ
+      if (!isExplFor(tʹ, Nil)) {
          // associate every Cons, apart from the last one, with a comma
          gs.push(comma(deltaStyle(t)), space())
       }
