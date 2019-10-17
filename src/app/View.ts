@@ -13,12 +13,27 @@ class ExplValueView extends View {
    vw: ValueView | null = null
 
    render (): SVGElement {
-      assert(this.tw !== null || this.vw !== null)
+      this.assertValid()
       return horizSpace(vert(...gs), text("▸", DeltaStyle.Unchanged), g)
+   }
+
+   hideExpl (): void {
+      this.tw = null
+      this.assertValid()
+   }
+
+   hideValue (): void {
+      this.vw = null
+      this.assertValid()
+   }
+
+   assertValid (): void {
+      assert(this.tw !== null || this.vw !== null)
    }
 }
 
 export class ExplView extends View {
+
 }
 
 export class ValueView extends View {
