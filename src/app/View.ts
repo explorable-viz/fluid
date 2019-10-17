@@ -23,7 +23,9 @@ let __editor: Editor | null = null
 export class Renderer2 {
    render (tv: ExplValue, editor: Editor): [SVGElement, number] {
       __editor = editor
-      const g: SVGElement = view(tv).render()
+      const w: ExplValueView = view(tv) as ExplValueView
+      w.toggleValue()
+      const g: SVGElement = w.render()
       __editor = null
       return [g, __nonNull(dimensions.get(g)).height]
    }
@@ -92,6 +94,15 @@ class ExplValueView extends View {
       } else
       if (this.v_visible) {
          this.ts_count = 0
+      }
+   }
+
+   toggleValue (): void {
+      if (!this.v_visible) {
+         this.v_visible = true
+      } else 
+      if (this.ts_count > 0) {
+         this.v_visible = false
       }
    }
 }
