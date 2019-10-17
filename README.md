@@ -23,15 +23,17 @@
 
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
-| October | Display image in Wrattler output pane | [211](https://github.com/rolyp/lambdacalc/issues/211), [55](https://github.com/rolyp/lambdacalc/issues/55) |
-| November | Higher-level graphics primitives to eliminate spurious layout-related dependencies and improve performance | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) |
+| October | Delta visualisation | |
+| November | Display image in Wrattler output pane | [211](https://github.com/rolyp/lambdacalc/issues/211), [55](https://github.com/rolyp/lambdacalc/issues/55) |
+| December | Higher-level graphics primitives to eliminate spurious layout-related dependencies and improve performance | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) |
 
 ### Possible submissions
 
 | Deadline    | Venue            |
 | --- | --- |
 | <s>2 Aug 2019</s> | <s>LIVE 2019</s> |
-| 5 Dec 2019 | Eurovis 2020 |
+| 2 Aug 2019 | IC 2019 :heavy_check_mark: | 
+| <s>5 Dec 2019</s> | <s>Eurovis 2020</s> |
 | 3 Mar 2020 | ICFP 2020 |
 
 ### Installation
