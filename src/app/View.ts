@@ -1,17 +1,19 @@
 import { Class, __nonNull, absurd, as, assert, classOf } from "../util/Core"
+import { flatten, nth, zip } from "../util/Array"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
-import { explClass } from "../DataType"
+import { Ctr, ctrFor, explClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
-import { Elim, Match } from "../Match"
-import { ApplicationId, Num, Str, TaggedId, Value } from "../Value"
+import { DataElim, Elim, Match, VarElim } from "../Match"
+import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { newRevision, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { 
-   DeltaStyle, border, bracket, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, parenthesise, space, text, unimplemented, vert 
+   DeltaStyle, arrow, border, bracket, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, parenthesise, 
+   parenthesiseIf, space, text, unimplemented, vert 
 } from "./Renderer2"
 
 import Closure = Eval.Closure
@@ -245,6 +247,42 @@ function split (tv: ExplValue): [Expl[], ExplValue | null] {
    }
 }
 
+// To visualise an eliminator, we reconstruct the patterns from the trie. List syntax in particular doesn't have
+// an analogous "case tree" form.
+type PatternElement = [Ctr | Str, DeltaStyle]
+
+function compareCtr (c1: string, c2: string): number {
+   const n: number = ctrFor(c1).arity - ctrFor(c2).arity
+   return n === 0 ? c1.localeCompare(c2) : n
+}
+
+function cont (κ: Cont): [PatternElement[], Expr][] {
+   if (κ instanceof Expr.Expr) {
+      return [[[], κ]]
+   } else
+   if (κ instanceof Elim) {
+      return clauses(κ)
+   } else {
+      return absurd()
+   }
+}
+
+function clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
+   if (VarElim.is(σ)) {
+      const cs: [PatternElement[], Expr][] = cont(σ.κ)
+      // disregard any delta information on x :-/
+      return cs.map(([cxs, e]) => [[[σ.x, deltaStyle(σ)], ...cxs], e])
+   } else
+   if (DataElim.is(σ)) {
+      const cκs: [string, Cont][] = zip(fields(σ), σ.__children as Cont[]).sort(([c1, ], [c2, ]): number => compareCtr(c1, c2))
+      return flatten(cκs.filter(([c, κ]) => κ !== undefined).map(([c, κ]): [PatternElement[], Expr][] =>
+         cont(__nonNull(κ)).map(([cxs, e]: [PatternElement[], Expr]) => [[[ctrFor(c), deltaStyle(σ)], ...cxs], e])
+      ))
+   } else {
+      return absurd()
+   }
+}
+
 function dataConstr ({t, v}: ExplValue<DataValue>): SVGElement {
    const tvs: ExplValue[] = Expl.explChildren(t, v)
    // a constructor expression makes its value, so their root delta highlighting must agree
@@ -275,11 +313,23 @@ function defₜ (def: Expl.Def): SVGElement {
 }
 
 function elim<K extends Cont> (σ: Elim<K>): SVGElement {
-   return unimplemented(σ)
+   return vert(...clauses(σ).map(([cxs, e]) => {
+      const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, 1, cxs)
+      assert(cxsʹ.length === 0)
+      const gʹ: SVGElement = 
+         e instanceof Expr.Fun ?
+         elim(e.σ) : // curried function resugaring
+         horizSpace(arrow(deltaStyle(e)), expr(e))
+      return horizSpace(g, gʹ)
+   }))
 }
 
 function elimMatch<K extends Cont> (ξ: Match<K>): SVGElement {
    return unimplemented(ξ)
+}
+
+function expr (e: Expr): SVGElement {
+   return unimplemented(e)
 }
 
 // Generalise to work with expressions?
@@ -307,6 +357,32 @@ function list ({t, v}: ExplValue): SVGElement {
    }
 }
 
+function listPattern ([ctr_x, ẟ_style]: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
+   const gs: SVGElement[] = []
+   while (ctr_x instanceof Ctr && ctr_x.C === Cons) {
+      const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, 1, cxs)
+      gs.push(g)
+      let ẟ_styleʹ: DeltaStyle
+      ;[ctr_x, ẟ_styleʹ] = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
+      // associate every Cons, apart from the last one, with a comma
+      if (!(ctr_x instanceof Ctr && ctr_x.C === Nil)) {
+         gs.push(comma(ẟ_style), space())
+      }
+      cxs = cxsʹ.splice(1)
+      ẟ_style = ẟ_styleʹ
+   }
+   if (ctr_x instanceof Str) {
+      // pattern variable in tail position determines delta-highlighting for brackets and ellipsis as well
+      return [bracket([...gs, ellipsis(deltaStyle(ctr_x)), patternVar(ctr_x)], deltaStyle(ctr_x)), cxs]
+   } else
+   if (ctr_x.C === Nil) {
+      // otherwise brackets correspond to the nil
+      return [bracket(gs, ẟ_style), cxs]
+   } else {
+      return absurd()
+   }
+}
+
 function num (n: Num, src?: Num): SVGElement {
    const g: SVGElement = text(n.toString(), deltaStyle(n))
    if (src && Number.isInteger(src.val)) {
@@ -331,6 +407,38 @@ function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGElement {
       ), 
       deltaStyle(t)
    )
+}
+
+function patterns (parens: boolean, n: number, cxs: PatternElement[]): [SVGElement[], PatternElement[]] {
+   if (n === 0) {
+      return [[], cxs]
+   } else {
+      const [ctr_x, ẟ_style] = cxs[0]
+      if (ctr_x instanceof Ctr) {
+         if (ctr_x.C === Pair) {
+            const [[g1, g2], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, 2, cxs.slice(1))
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
+            return [[parenthesise(horiz(g1, comma(ẟ_style), space(), g2), ẟ_style), ...gsʹ], cxsʹʹ]
+         } else
+         if (ctr_x.C === Nil || ctr_x.C === Cons) {
+            const [g, cxsʹ]: [SVGElement, PatternElement[]] = listPattern(cxs[0], cxs.slice(1))
+            const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
+            return [[g, ...gs], cxsʹʹ]
+         } else {
+            const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = patterns(true, ctr_x.arity, cxs.slice(1))
+            const g: SVGElement = horizSpace(text(ctr_x.c, ẟ_style), ...gs)
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
+            return [[parenthesiseIf(ctr_x.arity > 0 && parens, g, ẟ_style), ...gsʹ], cxsʹʹ]
+         }
+      } else
+      if (ctr_x instanceof Str) {
+         const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxs.slice(1))
+         // ouch, ignore ẟ_style coming from trie and use variable instead :-/
+         return [[patternVar(ctr_x), ...gs], cxsʹ]
+      } else {
+         return absurd()
+      }
+   }
 }
 
 function patternVar (x: Str): SVGElement {

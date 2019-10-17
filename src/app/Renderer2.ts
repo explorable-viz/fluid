@@ -32,6 +32,10 @@ export function border (g: SVGSVGElement): SVGElement {
    return g
 }
 
+export function arrow (ẟ_style: DeltaStyle): SVGElement {
+   return keyword("arrow", ẟ_style)
+}
+
 export function bracket (gs: SVGElement[], ẟ_style: DeltaStyle): SVGElement {
    return horiz(keyword("bracketL", ẟ_style), ...gs, keyword("bracketR", ẟ_style))
 }
@@ -81,6 +85,10 @@ export function keyword (str: keyof typeof strings, ẟ_style: DeltaStyle): SVGE
 
 export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGElement {
    return horiz(keyword("parenL", ẟ_style), g, keyword("parenR", ẟ_style))
+}
+
+export function parenthesiseIf (parens: boolean, g: SVGElement, ẟ_style: DeltaStyle): SVGElement {
+   return parens ? parenthesise(g, ẟ_style) : g
 }
 
 export function space (): SVGElement {
