@@ -95,6 +95,9 @@ export class ExplView extends View {
             text(this.t.opName.val, deltaStyle(this.t)), // what about changes associated with t.opName? 
             view(this.t.tv2).render()
          )
+      } else
+      if (this.t instanceof Expl.App) {
+         return horizSpace(view(this.t.tf).render(), view(this.t.tu).render())
       } else {
          return absurd()
       }
