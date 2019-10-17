@@ -9,7 +9,7 @@ export const _: any = undefined
 export type DataValueTag =
    "Graphic" | "Polyline" | "Polygon" | "Text" | 
    "Bool" | "Closure" | "DataExpl" | "Elim" | "Match" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" |  
-   "Translate" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Token"
+   "Translate" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Token" | "View"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
 export type PrimOpTag = "UnaryOp" | "BinaryOp"
 export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Id" | "Num" | "Str"
