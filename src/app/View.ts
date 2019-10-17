@@ -160,7 +160,8 @@ export class ValueView extends View {
 
    render (): SVGElement {
       if (this.tv.v instanceof Num) {
-         return num(this.tv.v, as(exprFor(this.tv.t), Expr.ConstNum).val)
+         const e: Expr = exprFor(this.tv.t)
+         return num(this.tv.v, e instanceof Expr.ConstNum ? e.val : undefined)
       } else
       if (this.tv.v instanceof Str) {
          return str(this.tv.v)
@@ -183,8 +184,8 @@ export class ValueView extends View {
 
 // Values are treated slightly differently because the "key" of a value view is the value (to distinguish
 // it from the view of the ExplValue), but the Expl is also required to render the value.
-export function valueView (tv: ExplValue): View {
-   let w: View | undefined = views.get(tv.v)
+export function valueView (tv: ExplValue): ValueView {
+   let w: ValueView | undefined = views.get(tv.v) as ValueView
    if (w === undefined) {
       w = new ValueView(tv)
       views.set(tv.v, w)
