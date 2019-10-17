@@ -15,14 +15,14 @@ abstract class View {
 
 class ExplValueView extends View {
    tv: ExplValue
-   tw: ExplView | null
+   tws: ExplView[] | null
    vw: ValueView | null
 
    constructor (tv: ExplValue) {
       super()
       this.tv = tv
       // initial view state:
-      this.tw = view(this.t)
+      this.tws = this.explViews()
       this.vw = null
    }
 
@@ -30,13 +30,13 @@ class ExplValueView extends View {
       this.assertValid()
       let g: SVGElement 
       if (this.vw === null) {
-         g = this.tw!.render()
+         g = vert(...this.tws!.map(tw => tw.render()))
       } else
-      if (this.tw === null) {
+      if (this.tws === null) {
          g = this.vw!.render()
       } else {
          g = horizSpace(
-            this.tw.render(), 
+            vert(...this.tws!.map(tw => tw.render())),
             text("▸", DeltaStyle.Unchanged), 
             this.vw.render()
          )
@@ -48,17 +48,21 @@ class ExplValueView extends View {
       }
    }
 
+   explViews (): ExplView[] {
+      return wurble(this.tv)[0].map(t => view(t) as ExplView)
+   }
+
    toggleExpl (): void {
-      if (this.tw === null) {
-         this.tw = view(this.t)
+      if (this.tws === null) {
+         this.tws = this.explViews()
       } else
       if (this.vw != null) {
-         this.tw = null
+         this.tws = null
       }
    }
 
    assertValid (): void {
-      assert(this.tw !== null || this.vw !== null)
+      assert(this.tws !== null || this.vw !== null)
    }
 }
 
@@ -71,23 +75,7 @@ export class ExplView extends View {
    }
 
    render (): SVGElement {
-
-   }
-}
-
-export class ExplsView extends View {
-   ts: Expl[]
-   tws: ExplView[] // not every expl need have a view
-
-   constructor (ts: Expl[]) {
-      super()
-      this.ts = ts
-      // initial view state:
-      this.tws = [view(ts[0]) as ExplView]
-   }
-
-   render (): SVGElement {
-      return vert(...this.tws.map(tw => tw.render()))
+      return notYetImplemented()
    }
 }
 
