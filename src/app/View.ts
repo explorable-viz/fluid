@@ -1,17 +1,18 @@
 import { DataValue, ExplValue } from "../DataValue"
-import { Id, MemoId, _, memoId } from "../Value"
+import { Expl } from "../Expl"
+import { Id, MemoId, Value, _, memoId } from "../Value"
 import { at } from "../Versioned"
 
 class View extends DataValue<"View"> {
 }
 
 class ExplValueView extends View {
-   tw: ExplView = _
-   vw: ValueView = _
+   t: Expl = _
+   v: Value = _
 }
 
-function explValueView (tw: ExplView, vw: ValueView): (k: Id) => ExplValueView {
-   return at(ExplValueView, tw, vw)
+function explValueView (t: Expl, v: Value): (k: Id) => ExplValueView {
+   return at(ExplValueView, t, v)
 }
 
 export class ExplView extends View {
@@ -20,8 +21,7 @@ export class ExplView extends View {
 export class ValueView extends View {
 }
 
-export function view (tv: ExplValue): ExplValueView {
+export function view ({ t, v }: ExplValue): ExplValueView {
    const k: MemoId = memoId(view, arguments)
-   // make tw, vw
-   return explValueView(tw, vw)(k)
+   return explValueView(t, v)(k)
 }
