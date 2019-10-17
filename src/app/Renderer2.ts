@@ -1,5 +1,6 @@
-import { absurd } from "../util/Core"
+import { absurd, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
+import { strings } from "../Expr"
 import { Value, isPrim } from "../Value"
 import { versioned } from "../Versioned"
 import { SVG } from "./Core"
@@ -62,6 +63,10 @@ export function horizSpace (...gs: SVGElement[]): SVGSVGElement {
    return horiz(...delimit(space, ...gs))
 }
 
+export function keyword (str: keyof typeof strings, ẟ_style: DeltaStyle): SVGElement {
+   return text(strings[str], ẟ_style)
+}
+
 export function space (): SVGElement {
    return text(`${space_char}`, DeltaStyle.Unchanged)
 }
@@ -82,6 +87,10 @@ function textElement (fontSize: number, class_: string, str: string): SVGTextEle
    text.setAttribute("class", class_) // set styling before creating text node, for font metrics to be correct
    text.appendChild(document.createTextNode(str))
    return text
+}
+
+export function unimplemented (v: Value): SVGElement {
+   return text(`TODO: ${className(v)}`, DeltaStyle.Unchanged)
 }
 
 export function vert (...gs: SVGElement[]): SVGSVGElement {

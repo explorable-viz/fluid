@@ -4,10 +4,13 @@ import { explClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
-import { Value } from "../Value"
-import { DeltaStyle, border, deltaStyle, horizSpace, text, vert } from "./Renderer2"
+import { Expr } from "../Expr"
+import { Elim, Match } from "../Match"
+import { Str, Value } from "../Value"
+import { DeltaStyle, border, deltaStyle, horizSpace, keyword, text, unimplemented, vert } from "./Renderer2"
 
 import Closure = Eval.Closure
+import Cont = Expr.Cont
 
 const views: Map<Value, View> = new Map()
 
@@ -98,6 +101,15 @@ export class ExplView extends View {
       } else
       if (this.t instanceof Expl.App) {
          return horizSpace(view(this.t.tf).render(), view(this.t.tu).render())
+      } else
+      if (this.t instanceof Expl.Defs) {
+         return vert(...this.t.def̅.toArray().map(defₜ))
+      } else
+      if (this.t instanceof Expl.MatchAs) {
+         return vert(
+            horizSpace(keyword("match", deltaStyle(this.t)), view(this.t.tu).render(), keyword("as", deltaStyle(this.t))),
+            elimMatch(this.t.ξ)
+         )
       } else {
          return absurd()
       }
@@ -145,4 +157,43 @@ function wurble ({t, v}: ExplValue): [Expl[], Value | null] {
    } else {
       return absurd()
    }
+}
+
+function defₜ (def: Expl.Def): SVGElement {
+   if (def instanceof Expl.Prim) {
+      return horizSpace(keyword("primitive", deltaStyle(def)), patternVar(def.x))
+   } else
+   if (def instanceof Expl.Let) {
+      if (def.tv.t instanceof Expl.Const && def.tv.v instanceof Eval.Closure) {
+         return horizSpace(keyword("let_", deltaStyle(def)), patternVar(def.x), elim(def.tv.v.f))
+      } else {
+         return horizSpace(
+            keyword("let_", deltaStyle(def)), 
+            patternVar(def.x), 
+            keyword("equals", deltaStyle(def)),
+            view(def.tv).render()
+         )
+      }
+   } else
+   if (def instanceof Expl.LetRec) {
+      return horizSpace(keyword("letRec", deltaStyle(def)), vert(...def.δ.toArray().map(def => recDefₜ(def))))
+   } else {
+      return absurd()
+   }
+}
+
+function elim<K extends Cont> (σ: Elim<K>): SVGElement {
+   return unimplemented(σ)
+}
+
+function elimMatch<K extends Cont> (ξ: Match<K>): SVGElement {
+   return unimplemented(ξ)
+}
+
+function patternVar (x: Str): SVGElement {
+   return text(x.val, deltaStyle(x))
+}
+
+function recDefₜ (def: Expl.RecDef): SVGElement {
+   return horizSpace(patternVar(def.x), elim(def.tf.v.f))
 }
