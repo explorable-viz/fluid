@@ -1,14 +1,14 @@
-import { Class, __nonNull, absurd, as, assert, classOf } from "../util/Core"
+import { Class, __nonNull, absurd, as, assert, className, classOf } from "../util/Core"
 import { flatten, nth, zip } from "../util/Array"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
-import { Ctr, ctrFor, explClass } from "../DataType"
+import { Ctr, ctrFor, explClass, exprClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { DataElim, Elim, Match, VarElim } from "../Match"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
-import { newRevision, versioned } from "../Versioned"
+import { ν, at, newRevision, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { 
@@ -36,6 +36,10 @@ const views: Map<Value, View> = new Map()
 
 function isExplFor (t: Expl, C: Class<DataValue>): boolean {
    return classOf(t) === explClass(C)
+}
+
+function isExprFor (e: Expr, C: Class<DataValue>): boolean {
+   return classOf(e) === exprClass(C)
 }
 
 // Unpack evaluation memo-key to recover original expression.
@@ -168,10 +172,10 @@ export class ValueView extends View {
    render (): SVGElement {
       if (this.tv.v instanceof Num) {
          const e: Expr = exprFor(this.tv.t)
-         return num(this.tv.v, e instanceof Expr.ConstNum ? e.val : undefined)
+         return num_(this.tv.v, e instanceof Expr.ConstNum ? e.val : undefined)
       } else
       if (this.tv.v instanceof Str) {
-         return str(this.tv.v)
+         return str_(this.tv.v)
       } else
       if (this.tv.v instanceof DataValue) {
          if (isExplFor(this.tv.t, Pair)) {
@@ -181,7 +185,7 @@ export class ValueView extends View {
          if (isExplFor(this.tv.t, Nil) || isExplFor(this.tv.t, Cons)) {
             return list(this.tv)
          } else {
-            return dataConstr(this.tv as ExplValue<DataValue>)
+            return dataConstr(false, this.tv as ExplValue<DataValue>)
          }
       } else {
          return unimplemented(this.tv.v)
@@ -283,10 +287,40 @@ function clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
    }
 }
 
-function dataConstr ({t, v}: ExplValue<DataValue>): SVGElement {
+function dataConstr (parens: boolean, {t, v}: ExplValue<DataValue>): SVGElement {
    const tvs: ExplValue[] = Expl.explChildren(t, v)
    // a constructor expression makes its value, so their root delta highlighting must agree
-   return horizSpace(text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => view(tvʹ).render()))
+   const g: SVGElement = horizSpace(text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => view(tvʹ).render()))
+   return parenthesiseIf(tvs.length > 0 && parens, g, deltaStyle(t))
+}
+
+function dataConstr_expr (parens: boolean, e: Expr.DataExpr): SVGElement {
+   const es: Expr[] = e.__children
+   const g: SVGElement = horizSpace(text(e.ctr, deltaStyle(e)), ...es.map(eʹ => expr(true, eʹ)))
+   return parenthesiseIf(es.length > 0 && parens, g, deltaStyle(e))
+}
+
+function def (def: Expr.Def): SVGElement {
+   if (def instanceof Expr.Prim) {
+      return horizSpace(keyword("primitive", deltaStyle(def)), patternVar(def.x))
+   } else
+   if (def instanceof Expr.Let) {
+      if (def.e instanceof Expr.Fun) {
+         return horizSpace(keyword("let_", deltaStyle(def)), patternVar(def.x), elim(def.e.σ))
+      } else {
+         return horizSpace(
+            keyword("let_", deltaStyle(def)), 
+            patternVar(def.x), 
+            keyword("equals", deltaStyle(def)), 
+            expr(false, def.e)
+         )
+      }
+   } else
+   if (def instanceof Expr.LetRec) {
+      return horizSpace(keyword("letRec", deltaStyle(def)), vert(...def.δ.toArray().map(def => recDef(def))))
+   } else {
+      return absurd()
+   }
 }
 
 function defₜ (def: Expl.Def): SVGElement {
@@ -319,7 +353,7 @@ function elim<K extends Cont> (σ: Elim<K>): SVGElement {
       const gʹ: SVGElement = 
          e instanceof Expr.Fun ?
          elim(e.σ) : // curried function resugaring
-         horizSpace(arrow(deltaStyle(e)), expr(e))
+         horizSpace(arrow(deltaStyle(e)), expr(false, e))
       return horizSpace(g, gʹ)
    }))
 }
@@ -328,8 +362,93 @@ function elimMatch<K extends Cont> (ξ: Match<K>): SVGElement {
    return unimplemented(ξ)
 }
 
-function expr (e: Expr): SVGElement {
-   return unimplemented(e)
+function expr (parens: boolean, e: Expr): SVGElement {
+   if (e instanceof Expr.ConstNum) {
+      // ouch: disregard delta-info on expression itself
+      return num_(e.val, e.val)
+   } else
+   if (e instanceof Expr.ConstStr) {
+      // ouch: disregard delta-info on expression itself
+      return str_(e.val)
+   } else
+   if (e instanceof Expr.Fun) {
+      const g: SVGElement = horizSpace(keyword("fun", deltaStyle(e)), elim(e.σ))
+      return parenthesiseIf(parens, g, deltaStyle(e))
+   } else
+   if (e instanceof Expr.DataExpr) {
+      if (isExprFor(e, Pair)) {
+         return pair_expr(e, as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
+      } else
+      if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
+         const g: SVGElement = list_expr(e)
+         // TEMPORARY EXPERIMENT
+         as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
+            ev.stopPropagation()
+            newRevision()
+            new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
+               const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+               return [at(exprClass(Pair), e, eʹ)(ν())]
+            })
+            __editor!.onEdit()
+         })
+         // END TEMPORARY EXPERIMENT
+         return g
+      } else {
+         return dataConstr_expr(parens, e)
+      }
+   } else
+   if (e instanceof Expr.Quote) {
+      return unimplemented(e)
+   } else
+   if (e instanceof Expr.Var) {
+      // ouch: disregard delta-info on Var.x
+      return text(e.x.val, deltaStyle(e))
+   } else
+   if (e instanceof Expr.App) {
+      return parenthesiseIf(
+         parens, 
+         horizSpace(expr(!(e.f instanceof Expr.App), e.f), expr(true, e.e)),
+         deltaStyle(e)
+      )
+   } else
+   if (e instanceof Expr.BinaryApp) {
+      // ignore operator precedence, but allow function application to take priority over any binary operation
+      return parenthesiseIf(
+         parens, 
+         horizSpace(
+            expr(!(e.e1 instanceof Expr.App), e.e1), 
+            text(e.opName.val, deltaStyle(e)), // what about changes associated with e.opName 
+            expr(!(e.e2 instanceof Expr.App), e.e2)
+         ),
+         deltaStyle(e)
+      )
+   } else
+   if (e instanceof Expr.Defs) {
+      return parenthesiseIf(
+         parens,
+         vert(
+            vert(...e.def̅.toArray().map(def_ => def(def_))),
+            expr(false, e.e)
+         ),
+         deltaStyle(e)
+      )
+   } else
+   if (e instanceof Expr.MatchAs) {
+      return vert(
+         horizSpace(keyword("match", deltaStyle(e)), expr(false, e.e), keyword("as", deltaStyle(e))),
+         elim(e.σ)
+      )
+   } else
+   if (e instanceof Expr.Typematch) {
+      return vert(
+         horizSpace(keyword("typematch", deltaStyle(e)), expr(false, e.e), keyword("as", deltaStyle(e))),
+         ...e.cases.toArray().map(({fst: x, snd: e}: Pair<Str, Expr>) => 
+            horizSpace(text(x.val, deltaStyle(x)), arrow(deltaStyle(e)), expr(false, e))
+         )
+      )
+   } else {
+      return absurd(`Unimplemented expression form: ${className(e)}.`)
+   }
 }
 
 // Generalise to work with expressions?
@@ -353,6 +472,28 @@ function list ({t, v}: ExplValue): SVGElement {
       return bracket(
          [...gs, space(), ellipsis(deltaStyle(t)), view(explValue(t, v)).render()], 
          deltaStyle(t)
+      )
+   }
+}
+
+function list_expr (e: Expr): SVGElement {
+   const gs: SVGElement[] = []
+   while (isExprFor(e, Cons)) {
+      gs.push(expr(false, e.__child("head") as Expr))
+      const eʹ: Expr = e.__child("tail") as Expr
+      if (!(isExprFor(eʹ, Nil))) {
+         // associate every Cons, apart from the last one, with a comma
+         gs.push(comma(deltaStyle(e)), space())
+      }
+      e = eʹ
+   }
+   if (isExprFor(e, Nil)) {
+      return bracket(gs, deltaStyle(e))
+   } else {
+      // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
+      return bracket(
+         [...gs, space(), ellipsis(deltaStyle(e)), expr(false, e)], 
+         deltaStyle(e)
       )
    }
 }
@@ -383,7 +524,7 @@ function listPattern ([ctr_x, ẟ_style]: PatternElement, cxs: PatternElement[])
    }
 }
 
-function num (n: Num, src?: Num): SVGElement {
+function num_ (n: Num, src?: Num): SVGElement {
    const g: SVGElement = text(n.toString(), deltaStyle(n))
    if (src && Number.isInteger(src.val)) {
       g.addEventListener("click", (ev: MouseEvent): void => {
@@ -396,7 +537,6 @@ function num (n: Num, src?: Num): SVGElement {
    return g
 }
 
-// Will want to generalise this to deal with expressions.
 function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGElement {
    return parenthesise(
       horiz(
@@ -409,6 +549,17 @@ function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGElement {
    )
 }
 
+function pair_expr (e: Expr, e1: Expr, e2: Expr): SVGElement {
+   return parenthesise(
+      horiz(
+         expr(false, e1),
+         comma(deltaStyle(e)),
+         space(),
+         expr(false, e2)
+      ), 
+      deltaStyle(e)
+   )
+}
 function patterns (parens: boolean, n: number, cxs: PatternElement[]): [SVGElement[], PatternElement[]] {
    if (n === 0) {
       return [[], cxs]
@@ -445,10 +596,14 @@ function patternVar (x: Str): SVGElement {
    return text(x.val, deltaStyle(x))
 }
 
+function recDef (def: Expr.RecDef): SVGElement {
+   return horizSpace(patternVar(def.x), elim(def.σ))
+}
+
 function recDefₜ (def: Expl.RecDef): SVGElement {
    return horizSpace(patternVar(def.x), elim(def.tf.v.f))
 }
 
-function str (str: Str): SVGElement {
+function str_ (str: Str): SVGElement {
    return text(str.toString(), deltaStyle(str))
 }
