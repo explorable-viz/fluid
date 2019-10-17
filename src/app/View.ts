@@ -92,24 +92,20 @@ class ExplValueView extends View {
 
    // Probably want toggle _and_ count, but this will do for now.
    showExpl (): void {
-      assert(this.ts_count === 0)
       this.ts_count = 1
    }
 
    hideExpl (): void {
-      assert(this.ts_count > 0)
       if (this.v_visible) {
          this.ts_count = 0
       }
    }
 
    showValue (): void {
-      assert(!this.v_visible)
       this.v_visible = true
    }
 
    hideValue (): void {
-      assert(this.v_visible)
       if (this.ts_count > 0) {
          this.v_visible = false
       }
