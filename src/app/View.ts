@@ -5,7 +5,7 @@ import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Value } from "../Value"
-import { DeltaStyle, border, horizSpace, text, vert } from "./Renderer2"
+import { DeltaStyle, border, deltaStyle, horizSpace, text, vert } from "./Renderer2"
 
 import Closure = Eval.Closure
 
@@ -81,7 +81,11 @@ export class ExplView extends View {
    }
 
    render (): SVGElement {
-      return notYetImplemented()
+      if (this.t instanceof Expl.Var) {
+         return text(this.t.x.val, deltaStyle(this.t))
+      } else {
+         return absurd()
+      }
    }
 }
 

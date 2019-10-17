@@ -1,3 +1,7 @@
+import { absurd } from "../util/Core"
+import { Change, New, Reclassify } from "../Delta"
+import { Value, isPrim } from "../Value"
+import { versioned } from "../Versioned"
 import { SVG } from "./Core"
 import "./styles.css"
 
@@ -12,12 +16,6 @@ const space_char: string = "\u00a0"
 // Populate explicity, rather than using a memoised function.
 type Dimensions = { width: number, height: number }
 const dimensions: Map<SVGElement, Dimensions> = new Map()
-
-export enum DeltaStyle {
-   New = "new",
-   Changed = "changed",
-   Unchanged = "unchanged"
-}
 
 export function border (g: SVGSVGElement): SVGElement {
    const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
@@ -101,3 +99,34 @@ export function vert (...gs: SVGElement[]): SVGSVGElement {
    dimensions.set(g, { width: width_max, height: height_sum })
    return g
 }
+
+export enum DeltaStyle {
+   New = "new",
+   Changed = "changed",
+   Unchanged = "unchanged"
+}
+
+// Delta-styling for the constructor component of a value (not its child pointers). In particular, primitives appear changed
+// iff their value has changed, whereas non-primitives appear changed iff reclassified. Changes to child pointers must be
+// visualised separately.
+export function deltaStyle (v: Value): DeltaStyle {
+   if (versioned(v)) {
+      if (v.__ẟ instanceof New) {
+         return DeltaStyle.New
+      } else
+      if (v.__ẟ instanceof Change) {
+         if (Object.keys(v.__ẟ.changed).length > 0 && isPrim(v)) {
+            return DeltaStyle.Changed
+         } else {
+            return DeltaStyle.Unchanged
+         }
+      } else
+      if (v.__ẟ instanceof Reclassify) {
+         return DeltaStyle.Changed
+      } else {
+         return absurd()
+      }
+   } else {
+      return absurd()
+   }
+} 
