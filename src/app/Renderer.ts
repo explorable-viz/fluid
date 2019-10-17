@@ -77,6 +77,20 @@ export class Renderer {
       return this.keyword("arrow", ẟ_style)
    }
 
+   border (g: SVGSVGElement): SVGElement {
+      const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
+      border.setAttribute("x", g.x.baseVal.valueAsString)
+      border.setAttribute("y", g.y.baseVal.valueAsString)
+      const { width, height }: Dimensions = dimensions.get(g)!
+      border.setAttribute("height", height.toString())
+      border.setAttribute("width", width.toString())
+      border.setAttribute("stroke", "gray")
+      border.setAttribute("stroke-dasharray", "1,1")
+      border.setAttribute("fill", "none")
+      g.appendChild(border)
+      return g
+   }
+
    bracket (gs: SVGElement[], ẟ_style: DeltaStyle): SVGElement {
       return this.horiz(this.keyword("bracketL", ẟ_style), ...gs, this.keyword("bracketR", ẟ_style))
    }
@@ -197,19 +211,6 @@ export class Renderer {
       } else {
          return gʹ
       }
-   }
-
-   border (g: SVGSVGElement): SVGElement {
-      const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
-      border.setAttribute("x", g.x.baseVal.valueAsString) // is there an easier way?
-      border.setAttribute("y", g.y.baseVal.valueAsString)
-      const { width, height }: Dimensions = dimensions.get(g)!
-      border.setAttribute("height", height.toString())
-      border.setAttribute("width", width.toString())
-      border.setAttribute("stroke", "gray")
-      border.setAttribute("fill", "none")
-      g.appendChild(border)
-      return g
    }
 
    // Returns a list of trace views and a value view.
@@ -600,7 +601,6 @@ export class Renderer {
    }
 
    unimplemented (v: Value): SVGElement {
-      // throw new Error(`TODO: ${className(v)}`)
       return this.text(`TODO: ${className(v)}`, DeltaStyle.Unchanged)
    }
 
