@@ -192,7 +192,7 @@ export class ValueView extends View {
             return pair(this.tv.t, Expl.explChild(this.tv.t, vʹ, "fst"), Expl.explChild(this.tv.t, vʹ, "snd"))
          } else
          if (isExplFor(this.tv.t, Nil) || isExplFor(this.tv.t, Cons)) {
-            return list(this.tv)
+            return list(this.tv as ExplValue<List>)
          } else {
             return dataConstr(false, this.tv as ExplValue<DataValue>)
          }
@@ -462,21 +462,21 @@ function expr (parens: boolean, e: Expr): SVGElement {
    }
 }
 
-function list ({t, v}: ExplValue): SVGElement {
+function list ({t, v}: ExplValue<List>): SVGElement {
    const gs: SVGElement[] = []
-   while (isExplFor(t, Cons)) {
+   while (Cons.is(v)) {
       const vʹ: Cons = v as Cons
       gs.push(view(Expl.explChild(t, vʹ, "head")).render())
       const tvʹ: ExplValue = Expl.explChild(t, vʹ, "tail")
-      const {t: tʹ, v: vʹʹ}: ExplValue = tvʹ
-      if (!isExplFor(tʹ, Nil)) {
+      const {t: tʹ, v: vʹʹ}: ExplValue<List> = tvʹ as ExplValue<List>
+      if (!(Nil.is(vʹʹ))) {
          // associate every Cons, apart from the last one, with a comma
          gs.push(comma(deltaStyle(t)), space())
       }
       t = tʹ
       v = as(vʹʹ, List)
    }
-   if (isExplFor(t, Nil)) {
+   if (Nil.is(v)) {
       return bracket(gs, deltaStyle(t))
    } else {
       // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
