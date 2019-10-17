@@ -26,7 +26,6 @@ export class Renderer2 {
       const w: ExplValueView = view(tv) as ExplValueView
       w.showValue()
       const g: SVGElement = w.render()
-      __editor = null
       return [g, __nonNull(dimensions.get(g)).height]
    }
 }
