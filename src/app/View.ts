@@ -24,31 +24,29 @@ abstract class View {
 
 class ExplValueView extends View {
    tv: ExplValue
-   tws: ExplView[] | null
-   vw: ValueView | null
+   ts_count: number // number of trace views to show (counting forward)
+   v_visible: boolean
 
    constructor (tv: ExplValue) {
       super()
       this.tv = tv
       // initial view state:
-      this.tws = this.explViews()
-      this.vw = null
+      this.ts_count = 1
+      this.v_visible = false
    }
 
    render (): SVGElement {
       this.assertValid()
+      const [ts, v]: [Expl[], Value | null] = wurble(this.tv)
+      const ts_g: SVGElement = vert(...ts.slice(0, this.ts_count).map(t => view(t).render()))
       let g: SVGElement 
-      if (this.vw === null) {
-         g = vert(...this.tws!.map(tw => tw.render()))
+      if (!this.v_visible) {
+         g = ts_g
       } else
-      if (this.tws === null) {
-         g = this.vw!.render()
+      if (this.ts_count === 0) {
+         g = view(v!).render()
       } else {
-         g = horizSpace(
-            vert(...this.tws!.map(tw => tw.render())),
-            text("▸", DeltaStyle.Unchanged), 
-            this.vw.render()
-         )
+         g = horizSpace(ts_g, text("▸", DeltaStyle.Unchanged), view(v!).render())
       }
       if (g instanceof SVGSVGElement) {
          return border(g)
@@ -57,21 +55,18 @@ class ExplValueView extends View {
       }
    }
 
-   explViews (): ExplView[] {
-      return wurble(this.tv)[0].map(t => view(t) as ExplView)
-   }
-
+   // I think we want toggle _and_ count, but this will do for now.
    toggleExpl (): void {
-      if (this.tws === null) {
-         this.tws = this.explViews()
+      if (this.ts_count === 0) {
+         this.ts_count = 1
       } else
-      if (this.vw != null) {
-         this.tws = null
+      if (this.v_visible) {
+         this.ts_count = 0
       }
    }
 
    assertValid (): void {
-      assert(this.tws !== null || this.vw !== null)
+      assert(this.ts_count > 0 || this.v_visible)
    }
 }
 
