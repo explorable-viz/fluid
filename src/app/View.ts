@@ -1,20 +1,21 @@
-import { DataValue } from "../DataValue"
-import { Expl } from "../Expl"
-import { Id, Value, _ } from "../Value"
-import { at } from "../Versioned"
+import { assert, notYetImplemented } from "../util/Core"
+import { DataValue, ExplValue } from "../DataValue"
+import { Value } from "../Value"
+import { DeltaStyle, horizSpace, text, vert } from "./Renderer2"
 
 const views: Map<Value, View> = new Map()
 
-class View extends DataValue<"View"> {
+abstract class View extends DataValue<"View"> {
 }
 
 class ExplValueView extends View {
-   t: Expl = _
-   v: Value = _
-}
+   tw: ExplView | null = null
+   vw: ValueView | null = null
 
-function explValueView (t: Expl, v: Value): (k: Id) => ExplValueView {
-   return at(ExplValueView, t, v)
+   render (): SVGElement {
+      assert(this.tw !== null || this.vw !== null)
+      return horizSpace(vert(...gs), text("▸", DeltaStyle.Unchanged), g)
+   }
 }
 
 export class ExplView extends View {
@@ -26,9 +27,13 @@ export class ValueView extends View {
 export function view (v: Value): View {
    let w: View | undefined = views.get(v)
    if (w === undefined) {
-      w = new View()
-      views.set(v, w)
-      return w
+      if (v instanceof ExplValue) {
+         w = new ExplValueView()
+         views.set(v, w)
+         return w
+      } else {
+         return notYetImplemented()
+      }
    } else {
       return w
    }
