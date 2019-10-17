@@ -2,7 +2,7 @@ import { assert, notYetImplemented } from "../util/Core"
 import { ExplValue } from "../DataValue"
 import { Expl } from "../Expl"
 import { Value } from "../Value"
-import { DeltaStyle, horizSpace, text, vert } from "./Renderer2"
+import { DeltaStyle, border, horizSpace, text, vert } from "./Renderer2"
 
 const views: Map<Value, View> = new Map()
 
@@ -24,17 +24,23 @@ class ExplValueView extends View {
 
    render (): SVGElement {
       this.assertValid()
+      let g: SVGElement 
       if (this.vw === null) {
-         return this.tw!.render()
+         g = this.tw!.render()
       } else
       if (this.tw === null) {
-         return this.vw!.render()
+         g = this.vw!.render()
       } else {
-         return horizSpace(
+         g = horizSpace(
             this.tw.render(), 
             text("▸", DeltaStyle.Unchanged), 
             this.vw.render()
          )
+      }
+      if (g instanceof SVGSVGElement) {
+         return border(g)
+      } else {
+         return g
       }
    }
 

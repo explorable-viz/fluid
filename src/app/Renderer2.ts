@@ -19,6 +19,20 @@ export enum DeltaStyle {
    Unchanged = "unchanged"
 }
 
+export function border (g: SVGSVGElement): SVGElement {
+   const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
+   border.setAttribute("x", g.x.baseVal.valueAsString)
+   border.setAttribute("y", g.y.baseVal.valueAsString)
+   const { width, height }: Dimensions = dimensions.get(g)!
+   border.setAttribute("height", height.toString())
+   border.setAttribute("width", width.toString())
+   border.setAttribute("stroke", "gray")
+   border.setAttribute("stroke-dasharray", "1,1")
+   border.setAttribute("fill", "none")
+   g.appendChild(border)
+   return g
+}
+
 export function delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGElement[] {
    const gsʹ: SVGElement[] = []
    gs.forEach((g: SVGElement, n: number): void => {
