@@ -1,5 +1,7 @@
-import { absurd, assert, notYetImplemented } from "../util/Core"
-import { ExplValue, explValue } from "../DataValue"
+import { Class, absurd, assert, classOf, notYetImplemented } from "../util/Core"
+import { Pair } from "../BaseTypes"
+import { explClass } from "../DataType"
+import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Value } from "../Value"
@@ -8,6 +10,10 @@ import { DeltaStyle, border, horizSpace, text, vert } from "./Renderer2"
 import Closure = Eval.Closure
 
 const views: Map<Value, View> = new Map()
+
+function isExplFor (t: Expl, C: Class<DataValue>): boolean {
+   return classOf(t) === explClass(C)
+}
 
 abstract class View {
    abstract render (): SVGElement
