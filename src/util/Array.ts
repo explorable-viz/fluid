@@ -42,7 +42,7 @@ export function eq<T> (x̅: T[], y̅: T[]): boolean {
 }
 
 export function nth<T> (x̅: T[], n: number): T {
-   assert(n < x̅.length)
+   assert(0 <= n && n < x̅.length)
    return x̅[n]
 }
 
