@@ -12,8 +12,8 @@ import { ν, at, newRevision, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { 
-   DeltaStyle, arrow, border, bracket, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, parenthesise, 
-   parenthesiseIf, space, text, unimplemented, vert 
+   DeltaStyle, arrow, border, bracket, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, edge_bottom, edge_left, 
+   parenthesise, parenthesiseIf, space, text, unimplemented, vert 
 } from "./Renderer"
 
 import Closure = Eval.Closure
@@ -92,7 +92,13 @@ class ExplValueView extends View {
 
    renderTraces (ts: Expl[]): SVGElement {
       if (this.t_visibleUntil !== null) {
-         return vert(...ts.slice(0, ts.findIndex(t => t === this.t_visibleUntil) + 1).map(t => explView(t).render()))
+         const n: number = ts.findIndex(t => t === this.t_visibleUntil) + 1
+         const g: SVGSVGElement = vert(...ts.slice(0, n).map(t => explView(t).render()))
+         if (n === ts.length) {
+            return g
+         } else {
+            return edge_bottom(g)
+         }
       } else {
          return absurd()
       }
@@ -107,6 +113,9 @@ class ExplValueView extends View {
       } else
       if (this.t_visibleUntil === null) {
          g = valueView(tv!).render()
+         if (g instanceof SVGSVGElement && ts.length > 0) {
+            g = edge_left(g)
+         }
       } else {
          g = horizSpace(this.renderTraces(ts), text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render())
       }

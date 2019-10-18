@@ -18,7 +18,7 @@ const space_char: string = "\u00a0"
 type Dimensions = { width: number, height: number }
 export const dimensions: Map<SVGElement, Dimensions> = new Map()
 
-export function border (g: SVGSVGElement): SVGElement {
+export function border (g: SVGSVGElement): SVGSVGElement {
    const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
    border.setAttribute("x", g.x.baseVal.valueAsString)
    border.setAttribute("y", g.y.baseVal.valueAsString)
@@ -53,6 +53,32 @@ export function delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGE
       }
    })
    return gsʹ
+}
+
+export function edge_left (g: SVGSVGElement): SVGSVGElement {
+   const edge: SVGLineElement = document.createElementNS(SVG.NS, "line")
+   edge.setAttribute("x1", g.x.baseVal.valueAsString)
+   edge.setAttribute("y1", g.y.baseVal.valueAsString)
+   const { height }: Dimensions = dimensions.get(g)!
+   edge.setAttribute("x2", g.x.baseVal.valueAsString)
+   edge.setAttribute("y2", `${g.y.baseVal.value + height}`)
+   edge.setAttribute("stroke", "red")
+   edge.setAttribute("stroke-width", "2")
+   g.appendChild(edge)
+   return g
+}
+
+export function edge_bottom (g: SVGSVGElement): SVGSVGElement {
+   const edge: SVGLineElement = document.createElementNS(SVG.NS, "line")
+   const { width, height }: Dimensions = dimensions.get(g)!
+   edge.setAttribute("x1", g.x.baseVal.valueAsString)
+   edge.setAttribute("y1", `${g.y.baseVal.value + height}`)
+   edge.setAttribute("x2", `${g.y.baseVal.value + width}`)
+   edge.setAttribute("y2", `${g.y.baseVal.value + height}`)
+   edge.setAttribute("stroke", "red")
+   edge.setAttribute("stroke-width", "2")
+   g.appendChild(edge)
+   return g
 }
 
 export function ellipsis (ẟ_style: DeltaStyle): SVGElement {

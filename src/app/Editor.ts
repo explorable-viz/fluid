@@ -44,9 +44,15 @@ export class Editor {
          if (ev.keyCode == 40) {
            console.log("Down!")
          } else
-         if (ev.shiftKey && ev.key === "V") {
-            existingView(this_.here.tv).toggleValue()
-            this_.render()
+         if (ev.shiftKey) {
+            if (ev.key === "V") {
+               existingView(this_.here.tv).toggleValue()
+               this_.render()
+            } else
+            if (ev.key === "E") {
+               existingView(this_.here.tv).toggleExpl()
+               this_.render()
+            }
          }
       }
    }
