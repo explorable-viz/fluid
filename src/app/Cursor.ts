@@ -49,10 +49,12 @@ export abstract class Cursor {
 }
 
 export class ExplValueCursor extends Cursor {
+   ancestors: ExplValue[]
    readonly tv: ExplValue
 
-   constructor (tv: ExplValue) {
+   constructor (prev: ExplValueCursor | null, tv: ExplValue) {
       super()
+      this.ancestors = prev === null ? [] : [...prev.ancestors, prev.tv]
       this.tv = tv
    }
 
@@ -61,19 +63,19 @@ export class ExplValueCursor extends Cursor {
    }
 
    to<T extends DataValue> (C: Class<T>, k: keyof T): ExplValueCursor {
-      return new ExplValueCursor(Expl.explChild(this.tv.t, as(this.tv.v, C), k))
+      return new ExplValueCursor(this, Expl.explChild(this.tv.t, as(this.tv.v, C), k))
    }
 
    toBinaryArg1 (opName: string): ExplValueCursor {
       const t: Expl.BinaryApp = as(this.tv.t, Expl.BinaryApp)
       assert(t.opName.val === opName)
-      return new ExplValueCursor(t.tv1)
+      return this.to(Expl.BinaryApp, "tv1")
    }
 
    toBinaryArg2 (opName: string): ExplValueCursor {
       const t: Expl.BinaryApp = as(this.tv.t, Expl.BinaryApp)
       assert(t.opName.val === opName)
-      return new ExplValueCursor(t.tv2)
+      return this.to(Expl.BinaryApp, "tv2")
    }
 
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): this {
@@ -101,7 +103,7 @@ export class ExplValueCursor extends Cursor {
       while (t instanceof Expl.NonTerminal) {
          t = t.t
       }
-      return new ExplValueCursor(explValue(t, this.tv.v))      
+      return new ExplValueCursor(this, explValue(t, this.tv.v))      
    }   
 }
 

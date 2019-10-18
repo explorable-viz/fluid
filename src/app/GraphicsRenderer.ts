@@ -83,7 +83,7 @@ export class GraphicsRenderer {
       while (this.current.firstChild !== null) {
          this.current.removeChild(this.current.firstChild)
       }
-      this.renderElement(new ExplValueCursor(tg))
+      this.renderElement(new ExplValueCursor(null, tg))
    }
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {

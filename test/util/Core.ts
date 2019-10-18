@@ -27,7 +27,7 @@ export class FwdSlice {
          newRevision()
          this.setup(new ExprCursor(e))
          Eval.eval_fwd(e, tv)
-         this.expect(new ExplValueCursor(tv))
+         this.expect(new ExplValueCursor(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
          new Editor(e, ρ).render()
@@ -50,7 +50,7 @@ export class BwdSlice {
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
          newRevision()
-         this.setup(new ExplValueCursor(tv))
+         this.setup(new ExplValueCursor(null, tv))
          Eval.eval_bwd(e, tv)
          this.expect(new ExprCursor(e))
       }
@@ -73,7 +73,7 @@ export class Edit {
          newRevision()
          this.setup(new ExprCursor(e))
          const tv: ExplValue =  Eval.eval_(ρ, e)
-         this.expect(new ExplValueCursor(tv))
+         this.expect(new ExplValueCursor(null, tv))
       }
    }
 

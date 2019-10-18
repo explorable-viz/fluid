@@ -38,7 +38,7 @@ describe("slice", () => {
                e: Expr = openWithImports("bar-chart", module_graphics)
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
-               const here: ExplValueCursor = new ExplValueCursor(ρ.tv)
+               const here: ExplValueCursor = new ExplValueCursor(null, ρ.tv)
                here.to(Cons, "head")
                    .to(Pair, "snd")
                    .to(Cons, "head")
