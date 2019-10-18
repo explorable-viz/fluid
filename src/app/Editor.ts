@@ -1,4 +1,5 @@
 import { as } from "../util/Core"
+import { Cons } from "../BaseTypes"
 import { ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env, emptyEnv } from "../Env"
@@ -22,6 +23,7 @@ export class Editor {
       document.body.appendChild(this.root)
       this.e = e,
       this.tv = Eval.eval_(ρ, this.e)
+      this.here = new ExplValueCursor(null, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) // skip prelude
       newRevision()
       Eval.eval_(ρ, this.e) // reestablish reachable nodes
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
@@ -36,14 +38,17 @@ export class Editor {
          this.root.removeChild(this.root.firstChild)
       }
       const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
-      this.here = new ExplValueCursor(null, tv)
       const [g,]: [SVGElement, number] = new Renderer().render(tv, this)
       this.root.appendChild(g)
       const this_: this = this
+      // https://stackoverflow.com/questions/5597060
+      document.onkeydown = function (ev: KeyboardEvent) {
+         if (ev.keyCode == 39) {
+            this_.here = this_.here.to(Cons, "head") // TEMPORARY
+            this_.render()
+         }
+      }
       document.onkeypress = function (ev: KeyboardEvent) {
-         if (ev.keyCode == 40) {
-           console.log("Down!")
-         } else
          if (ev.shiftKey) {
             if (ev.key === "V") {
                existingView(this_.here.tv).toggleValue()
@@ -52,6 +57,10 @@ export class Editor {
             if (ev.key === "E") {
                existingView(this_.here.tv).toggleExpl()
                this_.render()
+            } else
+            if (ev.key === "D") {
+               this_.here = this_.here.to(Cons, "head") // TEMPORARY
+               this_.render()
             }
          }
       }
@@ -59,6 +68,7 @@ export class Editor {
 
    onEdit (): void {
       this.tv = Eval.eval_(emptyEnv(), this.e)
+      // cursor may no longer be valid, how to deal with that?
       this.render()
    }
 }

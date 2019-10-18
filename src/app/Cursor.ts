@@ -49,7 +49,7 @@ export abstract class Cursor {
 }
 
 export class ExplValueCursor extends Cursor {
-   ancestors: ExplValue[]
+   ancestors: Value[]
    readonly tv: ExplValue
 
    constructor (prev: ExplValueCursor | null, tv: ExplValue) {

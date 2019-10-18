@@ -195,13 +195,13 @@ export class ValueView extends View {
       this.tv = tv
    }
 
-   render (): SVGElement {
+   render (): SVGSVGElement {
       if (this.tv.v instanceof Num) {
          const e: Expr = exprFor(this.tv.t)
-         return num_(this.tv.v, e instanceof Expr.ConstNum ? e.val : undefined)
+         return horiz(num_(this.tv.v, e instanceof Expr.ConstNum ? e.val : undefined))
       } else
       if (this.tv.v instanceof Str) {
-         return str_(this.tv.v)
+         return horiz(str_(this.tv.v))
       } else
       if (this.tv.v instanceof Closure) {
          // treat closures as their function literals, for now
@@ -264,7 +264,7 @@ export function explView (t: Expl.Expl): View {
 
 // The value part must be an ExplValue, because in the data value case we need the explanation as well to
 // render the value.
-function split (tv: ExplValue): [Expl[], ExplValue] {
+export function split (tv: ExplValue): [Expl[], ExplValue] {
    const {t, v}: ExplValue = tv
    if (t instanceof Expl.Const) {
       return [[], tv]
@@ -323,16 +323,16 @@ function clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
    }
 }
 
-function dataConstr (parens: boolean, {t, v}: ExplValue<DataValue>): SVGElement {
+function dataConstr (parens: boolean, {t, v}: ExplValue<DataValue>): SVGSVGElement {
    const tvs: ExplValue[] = Expl.explChildren(t, v)
    // a constructor expression makes its value, so their root delta highlighting must agree
-   const g: SVGElement = horizSpace(text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => view(tvʹ, true, false).render()))
+   const g: SVGSVGElement = horizSpace(text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => view(tvʹ, true, false).render()))
    return parenthesiseIf(tvs.length > 0 && parens, g, deltaStyle(t))
 }
 
 function dataConstr_expr (parens: boolean, e: Expr.DataExpr): SVGElement {
    const es: Expr[] = e.__children
-   const g: SVGElement = horizSpace(text(e.ctr, deltaStyle(e)), ...es.map(eʹ => expr(true, eʹ)))
+   const g: SVGSVGElement = horizSpace(text(e.ctr, deltaStyle(e)), ...es.map(eʹ => expr(true, eʹ)))
    return parenthesiseIf(es.length > 0 && parens, g, deltaStyle(e))
 }
 
@@ -408,7 +408,7 @@ function expr (parens: boolean, e: Expr): SVGElement {
       return str_(e.val)
    } else
    if (e instanceof Expr.Fun) {
-      const g: SVGElement = horizSpace(keyword("fun", deltaStyle(e)), elim(e.σ))
+      const g: SVGSVGElement = horizSpace(keyword("fun", deltaStyle(e)), elim(e.σ))
       return parenthesiseIf(parens, g, deltaStyle(e))
    } else
    if (e instanceof Expr.DataExpr) {
@@ -487,7 +487,7 @@ function expr (parens: boolean, e: Expr): SVGElement {
    }
 }
 
-function list ({t, v}: ExplValue<List>): SVGElement {
+function list ({t, v}: ExplValue<List>): SVGSVGElement {
    const gs: SVGElement[] = []
    while (Cons.is(v)) {
       const vʹ: Cons = v as Cons
@@ -573,7 +573,7 @@ function num_ (n: Num, src?: Num): SVGElement {
    return g
 }
 
-function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGElement {
+function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGSVGElement {
    return parenthesise(
       horiz(
          view(tv1, true, false).render(),
@@ -613,7 +613,7 @@ function patterns (parens: boolean, n: number, cxs: PatternElement[]): [SVGEleme
             return [[g, ...gs], cxsʹʹ]
          } else {
             const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = patterns(true, ctr_x.arity, cxs.slice(1))
-            const g: SVGElement = horizSpace(text(ctr_x.c, ẟ_style), ...gs)
+            const g: SVGSVGElement = horizSpace(text(ctr_x.c, ẟ_style), ...gs)
             const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
             return [[parenthesiseIf(ctr_x.arity > 0 && parens, g, ẟ_style), ...gsʹ], cxsʹʹ]
          }

@@ -36,7 +36,7 @@ export function arrow (ẟ_style: DeltaStyle): SVGElement {
    return keyword("arrow", ẟ_style)
 }
 
-export function bracket (gs: SVGElement[], ẟ_style: DeltaStyle): SVGElement {
+export function bracket (gs: SVGElement[], ẟ_style: DeltaStyle): SVGSVGElement {
    return horiz(keyword("bracketL", ẟ_style), ...gs, keyword("bracketR", ẟ_style))
 }
 
@@ -109,11 +109,11 @@ export function keyword (str: keyof typeof strings, ẟ_style: DeltaStyle): SVGE
    return text(strings[str], ẟ_style)
 }
 
-export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGElement {
+export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGSVGElement {
    return horiz(keyword("parenL", ẟ_style), g, keyword("parenR", ẟ_style))
 }
 
-export function parenthesiseIf (parens: boolean, g: SVGElement, ẟ_style: DeltaStyle): SVGElement {
+export function parenthesiseIf (parens: boolean, g: SVGSVGElement, ẟ_style: DeltaStyle): SVGSVGElement {
    return parens ? parenthesise(g, ẟ_style) : g
 }
 
@@ -139,8 +139,8 @@ function textElement (fontSize: number, class_: string, str: string): SVGTextEle
    return text
 }
 
-export function unimplemented (v: Value): SVGElement {
-   return text(`TODO: ${className(v)}`, DeltaStyle.Unchanged)
+export function unimplemented (v: Value): SVGSVGElement {
+   return horiz(text(`TODO: ${className(v)}`, DeltaStyle.Unchanged))
 }
 
 export function vert (...gs: SVGElement[]): SVGSVGElement {
