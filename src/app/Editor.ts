@@ -5,15 +5,17 @@ import { Env, emptyEnv } from "../Env"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
+import { newRevision } from "../Versioned"
+import { ExplValueCursor } from "./Cursor"
 import { svg } from "./Renderer"
 import { Renderer } from "./View"
-import { newRevision } from "../Versioned"
 import "./styles.css"
 
 export class Editor {
    root: SVGSVGElement
    e: Expr
    tv: ExplValue
+   here!: ExplValueCursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       this.root = svg.createSvg(1400, 600)
@@ -34,8 +36,9 @@ export class Editor {
          this.root.removeChild(this.root.firstChild)
       }
       const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
-      const [g1,]: [SVGElement, number] = new Renderer().render(tv, this)
-      this.root.appendChild(g1)
+      this.here = new ExplValueCursor(null, tv)
+      const [g,]: [SVGElement, number] = new Renderer().render(tv, this)
+      this.root.appendChild(g)
       document.onkeydown = function(ev: KeyboardEvent) {
          if (ev.keyCode == 40) {
            console.log("Down!")
