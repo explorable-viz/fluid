@@ -57,8 +57,8 @@ abstract class View {
 
 class ExplValueView extends View {
    tv: ExplValue
-   ts_count: number // number of trace views to show (counting forward)
-   v_visible: boolean
+   ts_count!: number // number of trace views to show (counting forward)
+   v_visible!: boolean
 
    assertValid (): void {
       assert(this.ts_count > 0 || this.v_visible)
@@ -67,17 +67,22 @@ class ExplValueView extends View {
    constructor (tv: ExplValue) {
       super()
       this.tv = tv
-      // initial view state:
-      this.ts_count = 1
-      this.v_visible = false
       this.initialise()
    }
 
    initialise (): [Expl[], ExplValue | null] {
       const [ts, tv]: [Expl[], ExplValue | null] = split(this.tv)
+      this.ts_count = 0
       if (ts.length === 0) {
-         this.showValue()
-         this.hideExpl()
+         this.v_visible = true
+      } else {
+         this.ts_count = 0
+         let t: Expl = ts[this.ts_count]
+         while (t instanceof Expl.NonTerminal && !(t instanceof Expl.Var || t instanceof Expl.App)) {
+            t = ts[++this.ts_count]
+         }
+         this.ts_count++ // display up to the trace we stopped at
+         this.v_visible = false
       }
       return [ts, tv]
    }
