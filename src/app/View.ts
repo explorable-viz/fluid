@@ -98,7 +98,7 @@ class ExplValueView extends View {
       if (this.ts_count === 0) {
          g = valueView(tv!).render()
       } else {
-         g = horizSpace(ts_g, text("▸", DeltaStyle.Unchanged), valueView(tv!).render())
+         g = horizSpace(ts_g, text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render())
       }
       if (g instanceof SVGSVGElement) {
          return border(g)
