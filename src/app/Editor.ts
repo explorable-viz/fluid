@@ -1,6 +1,6 @@
 import { as } from "../util/Core"
 import { Cons } from "../BaseTypes"
-import { ExplValue, explValue } from "../DataValue"
+import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env, emptyEnv } from "../Env"
 import { Eval } from "../Eval"
@@ -59,8 +59,10 @@ export class Editor {
                this_.render()
             } else
             if (ev.key === "D") {
-               this_.here = this_.here.to(Cons, "head") // TEMPORARY
-               this_.render()
+               if (this_.here.tv.v instanceof DataValue) {
+                  this_.here = this_.here.toChild(0)
+                  this_.render()
+               }
             }
          }
       }

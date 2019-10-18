@@ -66,6 +66,14 @@ export class ExplValueCursor extends Cursor {
       return new ExplValueCursor(this, Expl.explChild(this.tv.t, as(this.tv.v, C), k))
    }
 
+   toChild (n: number): ExplValueCursor {
+      if (this.tv.v instanceof DataValue) {
+         return new ExplValueCursor(this, Expl.explChildren(this.tv.t, this.tv.v)[n])
+      } else {
+         return error("Not a data value")
+      }
+   }
+
    toBinaryArg1 (opName: string): ExplValueCursor {
       const t: Expl.BinaryApp = as(this.tv.t, Expl.BinaryApp)
       assert(t.opName.val === opName)
