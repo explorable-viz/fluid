@@ -79,7 +79,7 @@ class ExplValueView extends View {
 
    initialise (): [Expl[], ExplValue | null] {
       const [ts, tv]: [Expl[], ExplValue] = split(this.tv)
-      if (ts.length === 0) {
+      if (ts.length === 0 || this.default_ === Default.SuppressExpl) {
          this.v_visible = true
       } else {
          if (this.t_visibleUntil === null || !ts.includes(this.t_visibleUntil)) { // persist if possible
@@ -88,7 +88,9 @@ class ExplValueView extends View {
             )
             this.t_visibleUntil = t || last(ts)
          }
-         this.v_visible = true
+         if (this.default_ !== Default.SuppressValue) {
+            this.v_visible = true
+         }
       }
       return [ts, tv]
    }
@@ -180,7 +182,8 @@ export class ValueView extends View {
          return str_(this.tv.v)
       } else
       if (this.tv.v instanceof Closure) {
-         return unimplemented(this.tv.v)
+         // treat closures as their function literals, for now
+         return horizSpace(keyword("fun", deltaStyle(this.tv.v)), elim(this.tv.v.f))
       } else
       if (this.tv.v instanceof DataValue) {
          if (isExplFor(this.tv.t, Pair)) {
@@ -335,7 +338,7 @@ function defₜ (def: Expl.Def): SVGElement {
       return horizSpace(keyword("primitive", deltaStyle(def)), patternVar(def.x))
    } else
    if (def instanceof Expl.Let) {
-      if (def.tv.t instanceof Expl.Const && def.tv.v instanceof Eval.Closure) {
+      if (def.tv.t instanceof Expl.Const && def.tv.v instanceof Closure) {
          return horizSpace(keyword("let_", deltaStyle(def)), patternVar(def.x), elim(def.tv.v.f))
       } else {
          return horizSpace(
