@@ -71,7 +71,7 @@ class ExplValueView extends View {
    }
 
    initialise (): [Expl[], ExplValue | null] {
-      const [ts, tv]: [Expl[], ExplValue | null] = split(this.tv)
+      const [ts, tv]: [Expl[], ExplValue] = split(this.tv)
       this.ts_count = 0
       if (ts.length === 0) {
          this.v_visible = true
@@ -82,7 +82,7 @@ class ExplValueView extends View {
             t = ts[++this.ts_count]
          }
          this.ts_count++ // display up to the trace we stopped at
-         this.v_visible = false
+         this.v_visible = true
       }
       return [ts, tv]
    }
@@ -248,7 +248,7 @@ export function explView (v: Expl.Expl): View {
 
 // The value part must be an ExplValue, because in the data value case we need the explanation as well to
 // render the value.
-function split (tv: ExplValue): [Expl[], ExplValue | null] {
+function split (tv: ExplValue): [Expl[], ExplValue] {
    const {t, v}: ExplValue = tv
    if (t instanceof Expl.Const) {
       return [[], tv]
@@ -258,7 +258,7 @@ function split (tv: ExplValue): [Expl[], ExplValue | null] {
    } else
    if (t instanceof Expl.Var) {
       // values of variables themselves have explanations, but ignore those for now
-      return [[t], v instanceof Closure ? null : split(explValue(t.t, v))[1]]
+      return [[t], split(explValue(t.t, v))[1]]
    } else
    if (t instanceof Expl.UnaryApp || t instanceof Expl.BinaryApp) {
       return [[t], tv]
@@ -480,7 +480,7 @@ function list ({t, v}: ExplValue<List>): SVGElement {
       const {t: tʹ, v: vʹʹ}: ExplValue<List> = tvʹ as ExplValue<List>
       if (!(Nil.is(vʹʹ))) {
          // associate every Cons, apart from the last one, with a comma
-         gs.push(comma(deltaStyle(t)), space())
+         gs.push(comma(deltaStyle(tʹ)), space())
       }
       t = tʹ
       v = as(vʹʹ, List)
