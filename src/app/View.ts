@@ -14,7 +14,7 @@ import { Editor } from "./Editor"
 import { 
    DeltaStyle, arrow, border, bracket, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, parenthesise, 
    parenthesiseIf, space, text, unimplemented, vert 
-} from "./Renderer2"
+} from "./Renderer"
 
 import Closure = Eval.Closure
 import Cont = Expr.Cont
@@ -22,7 +22,7 @@ import Cont = Expr.Cont
 // Rather horrible idiom, but better than passing editors around everywhere.
 let __editor: Editor | null = null
 
-export class Renderer2 {
+export class Renderer {
    render (tv: ExplValue, editor: Editor): [SVGElement, number] {
       __editor = editor
       const w: ExplValueView = view(tv, false) as ExplValueView
@@ -137,7 +137,6 @@ export class ExplView extends View {
       this.t = t
    }
 
-   // TODO: reinstate parenthesisation
    render (): SVGElement {
       if (this.t instanceof Expl.Var) {
          return text(this.t.x.val, deltaStyle(this.t))
@@ -227,6 +226,9 @@ export function view (v: ExplValue, valueOnly: boolean): ExplValueView {
       if (valueOnly) {
          w.showValue()
          w.hideExpl()
+      } else {
+         w.showExpl()
+         w.hideValue()
       }
       views.set(v, w)
       return w
