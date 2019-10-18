@@ -69,13 +69,13 @@ export class ExplValueCursor extends Cursor {
    toBinaryArg1 (opName: string): ExplValueCursor {
       const t: Expl.BinaryApp = as(this.tv.t, Expl.BinaryApp)
       assert(t.opName.val === opName)
-      return this.to(Expl.BinaryApp, "tv1")
+      return new ExplValueCursor(this, t.tv1)
    }
 
    toBinaryArg2 (opName: string): ExplValueCursor {
       const t: Expl.BinaryApp = as(this.tv.t, Expl.BinaryApp)
       assert(t.opName.val === opName)
-      return this.to(Expl.BinaryApp, "tv2")
+      return new ExplValueCursor(this, t.tv2)
    }
 
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): this {

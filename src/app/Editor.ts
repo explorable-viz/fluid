@@ -8,7 +8,7 @@ import { Expr } from "../Expr"
 import { newRevision } from "../Versioned"
 import { ExplValueCursor } from "./Cursor"
 import { svg } from "./Renderer"
-import { Renderer } from "./View"
+import { Renderer, existingView } from "./View"
 import "./styles.css"
 
 export class Editor {
@@ -39,9 +39,14 @@ export class Editor {
       this.here = new ExplValueCursor(null, tv)
       const [g,]: [SVGElement, number] = new Renderer().render(tv, this)
       this.root.appendChild(g)
-      document.onkeydown = function(ev: KeyboardEvent) {
+      const this_: this = this
+      document.onkeypress = function (ev: KeyboardEvent) {
          if (ev.keyCode == 40) {
            console.log("Down!")
+         } else
+         if (ev.shiftKey && ev.key === "V") {
+            existingView(this_.here.tv).toggleValue()
+            this_.render()
          }
       }
    }

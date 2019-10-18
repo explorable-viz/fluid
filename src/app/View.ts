@@ -121,6 +121,10 @@ class ExplValueView extends View {
          return g
       }
    }
+
+   toggleValue (): void {
+      this.default_ = Default.SuppressValue
+   }
 }
 
 export class ExplView extends View {
@@ -214,22 +218,26 @@ export function valueView (tv: ExplValue): ValueView {
    }
 }
 
-export function view (v: ExplValue, defaultMode: Default): ExplValueView {
-   let w: ExplValueView | undefined = views.get(v) as ExplValueView
+export function existingView (tv: ExplValue): ExplValueView {
+   return __nonNull(views.get(tv)) as ExplValueView
+}
+
+export function view (tv: ExplValue, defaultMode: Default): ExplValueView {
+   let w: ExplValueView | undefined = views.get(tv) as ExplValueView
    if (w === undefined) {
-      w = new ExplValueView(v, defaultMode)
-      views.set(v, w)
+      w = new ExplValueView(tv, defaultMode)
+      views.set(tv, w)
       return w
    } else {
       return w
    }
 }
 
-export function explView (v: Expl.Expl): View {
-   let w: ExplView | undefined = views.get(v) as ExplView
+export function explView (t: Expl.Expl): View {
+   let w: ExplView | undefined = views.get(t) as ExplView
    if (w === undefined) {
-      w = new ExplView(v)
-      views.set(v, w)
+      w = new ExplView(t)
+      views.set(t, w)
       return w
    } else {
       return w
