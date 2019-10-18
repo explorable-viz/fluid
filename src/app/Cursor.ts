@@ -1,4 +1,4 @@
-import { last } from "../../src/util/Array"
+import { last, nth } from "../../src/util/Array"
 import { AClass, Class, __check, __nonNull, absurd, as, assert, className, error } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
@@ -65,7 +65,7 @@ export class ExplValueCursor extends Cursor {
 
    static parent (child: ExplValueCursor): ExplValueCursor {
       assert(child.ancestors.length > 0)
-      return new ExplValueCursor(child.ancestors.slice(0, child.ancestors.length - 1), child.tv)
+      return new ExplValueCursor(child.ancestors.slice(0, child.ancestors.length - 1), last(child.ancestors))
    }
 
    get annotated (): Annotated & Value {
@@ -78,21 +78,28 @@ export class ExplValueCursor extends Cursor {
 
    toChild (n: number): ExplValueCursor {
       if (this.tv.v instanceof DataValue) {
-         return ExplValueCursor.descendant(this, Expl.explChildren(this.tv.t, this.tv.v)[n])
+         return ExplValueCursor.descendant(this, nth(Expl.explChildren(this.tv.t, this.tv.v), n))
+      } else {
+         return error("Not a data value")
+      }
+   }
+
+   toChildFollowing (tv: ExplValue): ExplValueCursor {
+      if (this.tv.v instanceof DataValue) {
+         const tvs: ExplValue[] = Expl.explChildren(this.tv.t, this.tv.v)
+         const n: number = tvs.findIndex(tv_ => tv_ === tv)
+         if (n === -1) {
+            return error("Not a child")
+         } else {
+            return this.toChild(n + 1)
+         }
       } else {
          return error("Not a data value")
       }
    }
 
    nextSibling (): ExplValueCursor {
-      assert(this.ancestors.length > 0 && this.ancestors[0].v instanceof DataValue)
-      const parent: ExplValue<DataValue> = last(this.ancestors) as ExplValue<DataValue>
-      const n: number = Expl.explChildren(parent.t, parent.v).findIndex(tv => tv === this.tv)
-      if (n === -1) {
-         return error("No next sibling")
-      } else {
-         return ExplValueCursor.parent(this).toChild(n)
-      }
+      return ExplValueCursor.parent(this).toChildFollowing(this.tv)
    }
 
    toBinaryArg1 (opName: string): ExplValueCursor {

@@ -42,14 +42,17 @@ export class Editor {
       const this_: this = this
       // https://stackoverflow.com/questions/5597060
       document.onkeydown = function (ev: KeyboardEvent) {
-         if (ev.keyCode == 39) { // right
-            // need a defensive guard here
-            this_.here.nextSibling()
-         } else
-         if (ev.keyCode == 40) { // down
-            if (this_.here.tv.v instanceof DataValue) {
-               this_.here = this_.here.toChild(0)
+         if (ev.shiftKey) {
+            if (ev.keyCode == 39) { // right
+               // need a defensive guard here
+               this_.here.nextSibling()
                this_.render()
+            } else
+            if (ev.keyCode == 40) { // down
+               if (this_.here.tv.v instanceof DataValue) {
+                  this_.here = this_.here.toChild(0)
+                  this_.render()
+               }
             }
          }
       }
