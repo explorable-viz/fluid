@@ -1,3 +1,4 @@
+import { last } from "../../src/util/Array"
 import { AClass, Class, __check, __nonNull, absurd, as, assert, className, error } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
@@ -49,13 +50,22 @@ export abstract class Cursor {
 }
 
 export class ExplValueCursor extends Cursor {
-   ancestors: Value[]
+   ancestors: ExplValue[]
    readonly tv: ExplValue
 
-   constructor (prev: ExplValueCursor | null, tv: ExplValue) {
+   constructor (ancestors: ExplValue[], tv: ExplValue) {
       super()
-      this.ancestors = prev === null ? [] : [...prev.ancestors, prev.tv]
+      this.ancestors = ancestors
       this.tv = tv
+   }
+
+   static descendant (prev: ExplValueCursor | null, tv: ExplValue): ExplValueCursor {
+      return new ExplValueCursor(prev === null ? [] : [...prev.ancestors, prev.tv], tv)
+   }
+
+   static parent (child: ExplValueCursor): ExplValueCursor {
+      assert(child.ancestors.length > 0)
+      return new ExplValueCursor(child.ancestors.slice(0, child.ancestors.length - 1), child.tv)
    }
 
    get annotated (): Annotated & Value {
@@ -63,27 +73,38 @@ export class ExplValueCursor extends Cursor {
    }
 
    to<T extends DataValue> (C: Class<T>, k: keyof T): ExplValueCursor {
-      return new ExplValueCursor(this, Expl.explChild(this.tv.t, as(this.tv.v, C), k))
+      return ExplValueCursor.descendant(this, Expl.explChild(this.tv.t, as(this.tv.v, C), k))
    }
 
    toChild (n: number): ExplValueCursor {
       if (this.tv.v instanceof DataValue) {
-         return new ExplValueCursor(this, Expl.explChildren(this.tv.t, this.tv.v)[n])
+         return ExplValueCursor.descendant(this, Expl.explChildren(this.tv.t, this.tv.v)[n])
       } else {
          return error("Not a data value")
+      }
+   }
+
+   nextSibling (): ExplValueCursor {
+      assert(this.ancestors.length > 0 && this.ancestors[0].v instanceof DataValue)
+      const parent: ExplValue<DataValue> = last(this.ancestors) as ExplValue<DataValue>
+      const n: number = Expl.explChildren(parent.t, parent.v).findIndex(tv => tv === this.tv)
+      if (n === -1) {
+         return error("No next sibling")
+      } else {
+         return ExplValueCursor.parent(this).toChild(n)
       }
    }
 
    toBinaryArg1 (opName: string): ExplValueCursor {
       const t: Expl.BinaryApp = as(this.tv.t, Expl.BinaryApp)
       assert(t.opName.val === opName)
-      return new ExplValueCursor(this, t.tv1)
+      return ExplValueCursor.descendant(this, t.tv1)
    }
 
    toBinaryArg2 (opName: string): ExplValueCursor {
       const t: Expl.BinaryApp = as(this.tv.t, Expl.BinaryApp)
       assert(t.opName.val === opName)
-      return new ExplValueCursor(this, t.tv2)
+      return ExplValueCursor.descendant(this, t.tv2)
    }
 
    at<T extends Value> (C: AClass<T>, f: (o: T) => void): this {
@@ -111,7 +132,7 @@ export class ExplValueCursor extends Cursor {
       while (t instanceof Expl.NonTerminal) {
          t = t.t
       }
-      return new ExplValueCursor(this, explValue(t, this.tv.v))      
+      return ExplValueCursor.descendant(this, explValue(t, this.tv.v))      
    }   
 }
 

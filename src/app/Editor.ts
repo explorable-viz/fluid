@@ -1,5 +1,4 @@
 import { as } from "../util/Core"
-import { Cons } from "../BaseTypes"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env, emptyEnv } from "../Env"
@@ -23,7 +22,7 @@ export class Editor {
       document.body.appendChild(this.root)
       this.e = e,
       this.tv = Eval.eval_(ρ, this.e)
-      this.here = new ExplValueCursor(null, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) // skip prelude
+      this.here = ExplValueCursor.descendant(null, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) // skip prelude
       newRevision()
       Eval.eval_(ρ, this.e) // reestablish reachable nodes
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
@@ -43,9 +42,15 @@ export class Editor {
       const this_: this = this
       // https://stackoverflow.com/questions/5597060
       document.onkeydown = function (ev: KeyboardEvent) {
-         if (ev.keyCode == 39) {
-            this_.here = this_.here.to(Cons, "head") // TEMPORARY
-            this_.render()
+         if (ev.keyCode == 39) { // right
+            // need a defensive guard here
+            this_.here.nextSibling()
+         } else
+         if (ev.keyCode == 40) { // down
+            if (this_.here.tv.v instanceof DataValue) {
+               this_.here = this_.here.toChild(0)
+               this_.render()
+            }
          }
       }
       document.onkeypress = function (ev: KeyboardEvent) {
@@ -57,12 +62,6 @@ export class Editor {
             if (ev.key === "E") {
                existingView(this_.here.tv).toggleExpl()
                this_.render()
-            } else
-            if (ev.key === "D") {
-               if (this_.here.tv.v instanceof DataValue) {
-                  this_.here = this_.here.toChild(0)
-                  this_.render()
-               }
             }
          }
       }
