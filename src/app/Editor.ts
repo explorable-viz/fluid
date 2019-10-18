@@ -45,7 +45,7 @@ export class Editor {
          if (ev.shiftKey) {
             if (ev.keyCode == 39) { // right
                // need a defensive guard here
-               this_.here.nextSibling()
+               this_.here = this_.here.nextSibling()
                this_.render()
             } else
             if (ev.keyCode == 40) { // down
