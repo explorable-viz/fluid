@@ -80,7 +80,7 @@ class ExplValueView extends View {
    initialise (): [Expl[], ExplValue | null] {
       const [ts, tv]: [Expl[], ExplValue] = split(this.tv)
       if (ts.length === 0 || this.default_ === Default.SuppressExpl) {
-         ts.length = 0 // want to toggle the trace view off, not set its length to zero
+         this.t_visibleUntil = null // want to toggle the trace view off, not set its length to zero
          this.v_visible = true
       } else {
          if (this.t_visibleUntil === null || !ts.includes(this.t_visibleUntil)) { // persist if possible
