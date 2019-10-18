@@ -1,7 +1,7 @@
 import { absurd } from "./util/Core"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
-import { Id, Persistent, _, make } from "./Value"
+import { Id, Persistent, Value, _, make } from "./Value"
 import { at } from "./Versioned"
 
 // See Env for convention regarding instance members on reflected datatypes.
@@ -23,7 +23,7 @@ export function false_ (): (k: Id) => Bool {
    return at(False)
 }
 
-export abstract class List<T> extends DataValue<"List"> {
+export abstract class List<T = Value> extends DataValue<"List"> {
    static fromArray<T extends Persistent> (x̅: T[]): List<T> {
       let x̅ʹ: List<T> = nil()
       for (let n: number = x̅.length - 1; n >= 0; --n) {
@@ -50,7 +50,7 @@ export abstract class List<T> extends DataValue<"List"> {
    }
 }
 
-export class Nil<T> extends List<T> {
+export class Nil<T = Value> extends List<T> {
    static is<T> (xs: List<T>): xs is Nil<T> {
       return xs instanceof Nil
    }
@@ -60,7 +60,7 @@ export function nil<T> (): List<T> {
    return make(Nil) as Nil<T>
 }
 
-export class Cons<T> extends List<T> {
+export class Cons<T = Value> extends List<T> {
    head: T = _
    tail: List<T> = _
 
@@ -73,7 +73,7 @@ export function cons<T extends Persistent> (head: T, tail: List<T>): Cons<T> {
    return make(Cons, head, tail) as Cons<T>
 }
 
-export class Pair<T, U> extends DataValue<"Pair"> {
+export class Pair<T = Value, U = Value> extends DataValue<"Pair"> {
    fst: T = _
    snd: U = _
 }

@@ -5,11 +5,10 @@
       "target": "es6",
       "lib": ["es2017", "dom"],
       "module": "commonjs",
-//      "noImplicitAny": true,
       "noImplicitReturns": true,
-//      "noImplicitThis": true,
       "noUnusedLocals": true,
       "outDir": "ts",
+      "preserveConstEnums": true,
       "sourceMap": true,
       "strict": true
    },

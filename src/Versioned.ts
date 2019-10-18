@@ -152,7 +152,7 @@ class MemoFun<T extends Persistent> implements Memoisable<T> {
 
    call (v̅: Persistent[]): T {
       return this.f.apply(null, v̅)
-      // for an "instance" version where v̅[0] is "this" use:
+      // for an "instance" version where v̅[0] is "this", use:
       // return this.f.apply(v̅[0], v̅.slice(1))
    }
 }

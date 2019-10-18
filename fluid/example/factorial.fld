@@ -4,4 +4,4 @@ letrec
          True → 1;
          False → x * fact (x - 1)
      }
-in fact 20
+in fact 8

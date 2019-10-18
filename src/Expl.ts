@@ -1,4 +1,4 @@
-import { __nonNull, abstractMethodError, absurd } from "./util/Core"
+import { __nonNull, absurd, className } from "./util/Core"
 import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
 import { DataValue, ExplValue, explValue } from "./DataValue"
@@ -54,7 +54,7 @@ export namespace Expl {
    // Has a concrete subclass for each datatype.
    export class DataExpl extends Expl {
       get ctr (): string {
-         return abstractMethodError(this) // currently reflection requires concrete type here
+         return className(this)
       }
 
       get __children (): Expl[] {
@@ -153,7 +153,7 @@ export namespace Expl {
    }
 
    // Should probably do a better job of restricting k to be a bona fide field name.
-   export function explChild<T extends DataValue> (t: Expl, v: DataValue, k: keyof T): ExplValue {
+   export function explChild<T extends DataValue> (t: Expl, v: T, k: keyof T): ExplValue {
       if (t instanceof DataExpl) {
          return explValue(t.__child(k as string) as Expl, v.__child(k as string))
       } else
