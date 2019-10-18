@@ -1,5 +1,5 @@
 import { Class, __nonNull, absurd, as, assert, className, classOf } from "../util/Core"
-import { flatten, nth, zip } from "../util/Array"
+import { flatten, last, nth, zip } from "../util/Array"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, explClass, exprClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
@@ -25,8 +25,8 @@ let __editor: Editor | null = null
 export class Renderer {
    render (tv: ExplValue, editor: Editor): [SVGElement, number] {
       __editor = editor
-      const w: ExplValueView = view(tv, false) as ExplValueView
-      w.showValue()
+      const w: ExplValueView = view(tv, Default.SuppressValue) as ExplValueView
+      w.v_visible = true
       const g: SVGElement = w.render()
       return [g, __nonNull(dimensions.get(g)).height]
    }
@@ -55,76 +55,68 @@ abstract class View {
    abstract render (): SVGElement
 }
 
+enum Default {
+   SuppressValue,
+   SuppressExpl
+}
+
 class ExplValueView extends View {
    tv: ExplValue
-   ts_count!: number // number of trace views to show (counting forward)
+   default_: Default
+   t_visibleUntil: Expl | null = null // final element of the sequence of visible traces
    v_visible!: boolean
 
    assertValid (): void {
-      assert(this.ts_count > 0 || this.v_visible)
+      assert(this.t_visibleUntil !== null || this.v_visible)
    }
 
-   constructor (tv: ExplValue) {
+   constructor (tv: ExplValue, default_: Default) {
       super()
       this.tv = tv
+      this.default_ = default_
       this.initialise()
    }
 
    initialise (): [Expl[], ExplValue | null] {
       const [ts, tv]: [Expl[], ExplValue] = split(this.tv)
-      this.ts_count = 0
       if (ts.length === 0) {
          this.v_visible = true
       } else {
-         this.ts_count = 0
-         let t: Expl = ts[this.ts_count]
-         while (t instanceof Expl.NonTerminal && !(t instanceof Expl.Var || t instanceof Expl.App)) {
-            t = ts[++this.ts_count]
+         if (this.t_visibleUntil === null || !ts.includes(this.t_visibleUntil)) { // persist if possible
+            const t: Expl | undefined = ts.find(
+               t => !(t instanceof Expl.NonTerminal) || t instanceof Expl.Var || t instanceof Expl.App
+            )
+            this.t_visibleUntil = t || last(ts)
          }
-         this.ts_count++ // display up to the trace we stopped at
          this.v_visible = true
       }
       return [ts, tv]
    }
 
+   renderTraces (ts: Expl[]): SVGElement {
+      if (this.t_visibleUntil !== null) {
+         return vert(...ts.slice(0, ts.findIndex(t => t === this.t_visibleUntil) + 1).map(t => explView(t).render()))
+      } else {
+         return absurd()
+      }
+   }
+
    render (): SVGElement {
       this.assertValid()
       const [ts, tv]: [Expl[], ExplValue | null] = this.initialise()
-      const ts_g: SVGElement = vert(...ts.slice(0, this.ts_count).map(t => explView(t).render()))
       let g: SVGElement 
       if (!this.v_visible) {
-         g = ts_g
+         g = this.renderTraces(ts)
       } else
-      if (this.ts_count === 0) {
+      if (this.t_visibleUntil === null) {
          g = valueView(tv!).render()
       } else {
-         g = horizSpace(ts_g, text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render())
+         g = horizSpace(this.renderTraces(ts), text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render())
       }
       if (g instanceof SVGSVGElement) {
          return border(g)
       } else {
          return g
-      }
-   }
-
-   // Probably want toggle _and_ count, but this will do for now.
-   showExpl (): void {
-      this.ts_count = 1
-   }
-
-   hideExpl (): void {
-      if (this.v_visible) {
-         this.ts_count = 0
-      }
-   }
-
-   showValue (): void {
-      this.v_visible = true
-   }
-
-   hideValue (): void {
-      if (this.ts_count > 0) {
-         this.v_visible = false
       }
    }
 }
@@ -143,24 +135,24 @@ export class ExplView extends View {
       }
       else
       if (this.t instanceof Expl.UnaryApp) {
-         return view(this.t.tf, false).render()
+         return view(this.t.tf, Default.SuppressValue).render()
       } else
       if (this.t instanceof Expl.BinaryApp) {
          return horizSpace(
-            view(this.t.tv1, false).render(), 
+            view(this.t.tv1, Default.SuppressValue).render(), 
             text(this.t.opName.val, deltaStyle(this.t)), // what about changes associated with t.opName? 
-            view(this.t.tv2, false).render()
+            view(this.t.tv2, Default.SuppressValue).render()
          )
       } else
       if (this.t instanceof Expl.App) {
-         return horizSpace(view(this.t.tf, false).render(), view(this.t.tu, false).render())
+         return horizSpace(view(this.t.tf, Default.SuppressValue).render(), view(this.t.tu, Default.SuppressValue).render())
       } else
       if (this.t instanceof Expl.Defs) {
          return vert(...this.t.def̅.toArray().map(defₜ))
       } else
       if (this.t instanceof Expl.MatchAs) {
          return vert(
-            horizSpace(keyword("match", deltaStyle(this.t)), view(this.t.tu, false).render(), keyword("as", deltaStyle(this.t))),
+            horizSpace(keyword("match", deltaStyle(this.t)), view(this.t.tu, Default.SuppressValue).render(), keyword("as", deltaStyle(this.t))),
             elimMatch(this.t.ξ)
          )
       } else {
@@ -219,17 +211,10 @@ export function valueView (tv: ExplValue): ValueView {
    }
 }
 
-export function view (v: ExplValue, valueOnly: boolean): ExplValueView {
+export function view (v: ExplValue, defaultMode: Default): ExplValueView {
    let w: ExplValueView | undefined = views.get(v) as ExplValueView
    if (w === undefined) {
-      w = new ExplValueView(v)
-      if (valueOnly) {
-         w.showValue()
-         w.hideExpl()
-      } else {
-         w.showExpl()
-         w.hideValue()
-      }
+      w = new ExplValueView(v, defaultMode)
       views.set(v, w)
       return w
    } else {
@@ -312,7 +297,7 @@ function clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
 function dataConstr (parens: boolean, {t, v}: ExplValue<DataValue>): SVGElement {
    const tvs: ExplValue[] = Expl.explChildren(t, v)
    // a constructor expression makes its value, so their root delta highlighting must agree
-   const g: SVGElement = horizSpace(text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => view(tvʹ, true).render()))
+   const g: SVGElement = horizSpace(text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => view(tvʹ, Default.SuppressExpl).render()))
    return parenthesiseIf(tvs.length > 0 && parens, g, deltaStyle(t))
 }
 
@@ -357,7 +342,7 @@ function defₜ (def: Expl.Def): SVGElement {
             keyword("let_", deltaStyle(def)), 
             patternVar(def.x), 
             keyword("equals", deltaStyle(def)),
-            view(def.tv, false).render()
+            view(def.tv, Default.SuppressValue).render()
          )
       }
    } else
@@ -477,7 +462,7 @@ function list ({t, v}: ExplValue<List>): SVGElement {
    const gs: SVGElement[] = []
    while (Cons.is(v)) {
       const vʹ: Cons = v as Cons
-      gs.push(view(Expl.explChild(t, vʹ, "head"), true).render())
+      gs.push(view(Expl.explChild(t, vʹ, "head"), Default.SuppressExpl).render())
       const tvʹ: ExplValue = Expl.explChild(t, vʹ, "tail")
       const {t: tʹ, v: vʹʹ}: ExplValue<List> = tvʹ as ExplValue<List>
       if (!(Nil.is(vʹʹ))) {
@@ -492,7 +477,7 @@ function list ({t, v}: ExplValue<List>): SVGElement {
    } else {
       // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
       return bracket(
-         [...gs, space(), ellipsis(deltaStyle(t)), view(explValue(t, v), true).render()], 
+         [...gs, space(), ellipsis(deltaStyle(t)), view(explValue(t, v), Default.SuppressExpl).render()], 
          deltaStyle(t)
       )
    }
@@ -562,10 +547,10 @@ function num_ (n: Num, src?: Num): SVGElement {
 function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGElement {
    return parenthesise(
       horiz(
-         view(tv1, true).render(),
+         view(tv1, Default.SuppressExpl).render(),
          comma(deltaStyle(t)),
          space(),
-         view(tv2, true).render()
+         view(tv2, Default.SuppressExpl).render()
       ), 
       deltaStyle(t)
    )

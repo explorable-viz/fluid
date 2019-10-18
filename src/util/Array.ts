@@ -45,3 +45,8 @@ export function nth<T> (x̅: T[], n: number): T {
    assert(n < x̅.length)
    return x̅[n]
 }
+
+export function last<T> (x̅: T[]): T {
+   assert(x̅.length > 0)
+   return x̅.slice(-1)[0]
+}
