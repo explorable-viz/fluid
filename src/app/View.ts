@@ -418,15 +418,17 @@ function expr (parens: boolean, e: Expr): SVGElement {
       if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
          const g: SVGElement = list_expr(e)
          // TEMPORARY EXPERIMENT
-         as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
-            ev.stopPropagation()
-            newRevision()
-            new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
-               const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-               return [at(exprClass(Pair), e, eʹ)(ν())]
+         if (isExprFor(e, Cons)) {
+            as(g.childNodes[1], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
+               ev.stopPropagation()
+               newRevision()
+               new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
+                  const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+                  return [at(exprClass(Pair), e, eʹ)(ν())]
+               })
+               __editor!.onEdit()
             })
-            __editor!.onEdit()
-         })
+         }
          // END TEMPORARY EXPERIMENT
          return g
       } else {
@@ -513,24 +515,19 @@ function list ({t, v}: ExplValue<List>): SVGSVGElement {
 }
 
 function list_expr (e: Expr): SVGElement {
-   const gs: SVGElement[] = []
-   while (isExprFor(e, Cons)) {
-      gs.push(expr(false, e.__child("head") as Expr))
-      const eʹ: Expr = e.__child("tail") as Expr
-      if (!(isExprFor(eʹ, Nil))) {
-         // associate every Cons, apart from the last one, with a comma
-         gs.push(comma(deltaStyle(e)), space())
-      }
-      e = eʹ
-   }
+   if (isExprFor(e, Cons)) {
+      return horiz(
+         expr(false, e.__child("head") as Expr),
+         comma(deltaStyle(e)), 
+         space(), 
+         list_expr(e.__child("tail") as Expr)
+      )
+   } else
    if (isExprFor(e, Nil)) {
-      return bracket(gs, deltaStyle(e))
+      return text("·", deltaStyle(e))
    } else {
       // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
-      return bracket(
-         [...gs, space(), ellipsis(deltaStyle(e)), expr(false, e)], 
-         deltaStyle(e)
-      )
+      return expr(false, e)
    }
 }
 
@@ -607,7 +604,12 @@ function patterns (parens: boolean, n: number, cxs: PatternElement[]): [SVGEleme
             const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
             return [[parenthesise(horiz(g1, comma(ẟ_style), space(), g2), ẟ_style), ...gsʹ], cxsʹʹ]
          } else
-         if (ctr_x.C === Nil || ctr_x.C === Cons) {
+         if (ctr_x.C === Nil) {
+            const [g, cxsʹ]: [SVGElement, PatternElement[]] = listPattern(cxs[0], cxs.slice(1))
+            const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
+            return [[g, ...gs], cxsʹʹ]
+         } else
+         if (ctr_x.C === Cons) {
             const [g, cxsʹ]: [SVGElement, PatternElement[]] = listPattern(cxs[0], cxs.slice(1))
             const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
             return [[g, ...gs], cxsʹʹ]
