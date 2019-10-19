@@ -605,7 +605,7 @@ function patterns (parens: boolean, n: number, cxs: PatternElement[]): [SVGEleme
             return [[parenthesise(horiz(g1, comma(ẟ_style), space(), g2), ẟ_style), ...gsʹ], cxsʹʹ]
          } else
          if (ctr_x.C === Nil) {
-            const [g, cxsʹ]: [SVGElement, PatternElement[]] = listPattern(cxs[0], cxs.slice(1))
+            const [g, cxsʹ]: [SVGElement, PatternElement[]] = [text("·", ẟ_style), cxs.slice(1)]
             const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
             return [[g, ...gs], cxsʹʹ]
          } else
