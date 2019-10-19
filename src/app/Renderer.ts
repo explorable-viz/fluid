@@ -40,6 +40,10 @@ export function bracket (gs: SVGElement[], ẟ_style: DeltaStyle): SVGSVGElement
    return horiz(keyword("bracketL", ẟ_style), ...gs, keyword("bracketR", ẟ_style))
 }
 
+export function centreDot (ẟ_style: DeltaStyle): SVGElement {
+   return text("·", ẟ_style)
+}
+
 export function comma (ẟ_style: DeltaStyle): SVGElement {
    return keyword("comma", ẟ_style)
 }

@@ -12,7 +12,7 @@ import { ν, at, newRevision, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { 
-   DeltaStyle, arrow, border, bracket, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, edge_bottom, edge_left, 
+   DeltaStyle, arrow, border, centreDot, comma, deltaStyle, dimensions, horiz, horizSpace, keyword, edge_bottom, edge_left, 
    parenthesise, parenthesiseIf, space, text, unimplemented, vert 
 } from "./Renderer"
 
@@ -384,7 +384,7 @@ function defₜ (def: Expl.Def): SVGElement {
 
 function elim<K extends Cont> (σ: Elim<K>): SVGElement {
    return vert(...clauses(σ).map(([cxs, e]) => {
-      const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, 1, cxs)
+      const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(true, 1, cxs)
       assert(cxsʹ.length === 0)
       const gʹ: SVGElement = 
          e instanceof Expr.Fun ?
@@ -416,7 +416,7 @@ function expr (parens: boolean, e: Expr): SVGElement {
          return pair_expr(e, as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
       } else
       if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
-         const g: SVGElement = list_expr(e)
+         const g: SVGElement = list_expr(parens, e)
          // TEMPORARY EXPERIMENT
          if (isExprFor(e, Cons)) {
             as(g.childNodes[1], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
@@ -490,70 +490,38 @@ function expr (parens: boolean, e: Expr): SVGElement {
 }
 
 function list ({t, v}: ExplValue<List>): SVGSVGElement {
-   const gs: SVGElement[] = []
-   while (Cons.is(v)) {
+   if (Cons.is(v)) {
       const vʹ: Cons = v as Cons
-      gs.push(view(Expl.explChild(t, vʹ, "head"), true, false).render())
-      const tvʹ: ExplValue = Expl.explChild(t, vʹ, "tail")
-      const {t: tʹ, v: vʹʹ}: ExplValue<List> = tvʹ as ExplValue<List>
-      if (!(Nil.is(vʹʹ))) {
-         // associate every Cons, apart from the last one, with a comma
-         gs.push(comma(deltaStyle(tʹ)), space())
-      }
-      t = tʹ
-      v = as(vʹʹ, List)
-   }
-   if (Nil.is(v)) {
-      return bracket(gs, deltaStyle(t))
-   } else {
-      // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
-      return bracket(
-         [...gs, space(), ellipsis(deltaStyle(t)), view(explValue(t, v), true, false).render()], 
-         deltaStyle(t)
+      return horiz(
+         view(Expl.explChild(t, vʹ, "head"), true, false).render(),
+         comma(deltaStyle(t)),
+         space(),
+         list(Expl.explChild(t, vʹ, "tail") as ExplValue<List>)
       )
+   } else
+   if (Nil.is(v)) {
+      return horiz(centreDot(deltaStyle(t)))
+   } else {
+      return as(view(explValue(t, v), true, false).render(), SVGSVGElement) // dubious cast
    }
 }
 
-function list_expr (e: Expr): SVGElement {
+function list_expr (parens: boolean, e: Expr): SVGElement {
    if (isExprFor(e, Cons)) {
-      return horiz(
-         expr(false, e.__child("head") as Expr),
-         comma(deltaStyle(e)), 
-         space(), 
-         list_expr(e.__child("tail") as Expr)
+      return parenthesiseIf(parens, 
+         horiz(
+            expr(false, e.__child("head") as Expr),
+            comma(deltaStyle(e)), 
+            space(), 
+            list_expr(false, e.__child("tail") as Expr)
+         ),
+         deltaStyle(e)
       )
    } else
    if (isExprFor(e, Nil)) {
-      return text("·", deltaStyle(e))
+      return centreDot(deltaStyle(e))
    } else {
-      // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
       return expr(false, e)
-   }
-}
-
-function listPattern ([ctr_x, ẟ_style]: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
-   const gs: SVGElement[] = []
-   while (ctr_x instanceof Ctr && ctr_x.C === Cons) {
-      const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, 1, cxs)
-      gs.push(g)
-      let ẟ_styleʹ: DeltaStyle
-      ;[ctr_x, ẟ_styleʹ] = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
-      // associate every Cons, apart from the last one, with a comma
-      if (!(ctr_x instanceof Ctr && ctr_x.C === Nil)) {
-         gs.push(comma(ẟ_style), space())
-      }
-      cxs = cxsʹ.splice(1)
-      ẟ_style = ẟ_styleʹ
-   }
-   if (ctr_x instanceof Str) {
-      // pattern variable in tail position determines delta-highlighting for brackets and ellipsis as well
-      return [bracket([...gs, ellipsis(deltaStyle(ctr_x)), patternVar(ctr_x)], deltaStyle(ctr_x)), cxs]
-   } else
-   if (ctr_x.C === Nil) {
-      // otherwise brackets correspond to the nil
-      return [bracket(gs, ẟ_style), cxs]
-   } else {
-      return absurd()
    }
 }
 
@@ -605,14 +573,15 @@ function patterns (parens: boolean, n: number, cxs: PatternElement[]): [SVGEleme
             return [[parenthesise(horiz(g1, comma(ẟ_style), space(), g2), ẟ_style), ...gsʹ], cxsʹʹ]
          } else
          if (ctr_x.C === Nil) {
-            const [g, cxsʹ]: [SVGElement, PatternElement[]] = [text("·", ẟ_style), cxs.slice(1)]
+            const [g, cxsʹ]: [SVGElement, PatternElement[]] = [centreDot(ẟ_style), cxs.slice(1)]
             const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
             return [[g, ...gs], cxsʹʹ]
          } else
          if (ctr_x.C === Cons) {
-            const [g, cxsʹ]: [SVGElement, PatternElement[]] = listPattern(cxs[0], cxs.slice(1))
-            const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
-            return [[g, ...gs], cxsʹʹ]
+            const [[g_head, g_tail], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, ctr_x.arity, cxs.slice(1))
+            const g: SVGSVGElement = horiz(g_head, comma(ẟ_style), space(), g_tail)
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
+            return [[parenthesiseIf(ctr_x.arity > 0 && parens, g, ẟ_style), ...gsʹ], cxsʹʹ]
          } else {
             const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = patterns(true, ctr_x.arity, cxs.slice(1))
             const g: SVGSVGElement = horizSpace(text(ctr_x.c, ẟ_style), ...gs)
