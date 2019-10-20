@@ -46,10 +46,8 @@ export class Editor {
       document.onkeydown = function (ev: KeyboardEvent) {
          if (ev.shiftKey) {
             if (ev.keyCode == 37) { // left
-               if (this_.here.hasParent()) {
-                  this_.here = this_.here.prevSibling()
-                  this_.render()
-               }
+               this_.here = this_.here.prevSibling()
+               this_.render()
             } else
             if (ev.keyCode == 38) { // up
                if (this_.here.hasParent()) {
@@ -58,10 +56,8 @@ export class Editor {
                }
             } else
             if (ev.keyCode == 39) { // right
-               if (this_.here.hasParent()) {
-                  this_.here = this_.here.nextSibling()
-                  this_.render()
-               }
+               this_.here = this_.here.nextSibling()
+               this_.render()
             } else
             if (ev.keyCode == 40) { // down
                if (this_.here.tv.v instanceof DataValue) {

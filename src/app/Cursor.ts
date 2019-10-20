@@ -78,7 +78,12 @@ export class ExplValueCursor extends Cursor {
 
    toChild (n: number): ExplValueCursor {
       if (this.tv.v instanceof DataValue) {
-         return ExplValueCursor.descendant(this, nth(Expl.explChildren(this.tv.t, this.tv.v), n))
+         const tvs: ExplValue[] = Expl.explChildren(this.tv.t, this.tv.v)
+         if (0 <= n && n < tvs.length) {
+            return ExplValueCursor.descendant(this, nth(tvs, n))
+         } else {
+            return this
+         }
       } else {
          return error("Not a data value")
       }
@@ -91,11 +96,7 @@ export class ExplValueCursor extends Cursor {
          if (n === -1) {
             return error("Not a child")
          } else {
-            if (0 <= n + offset && n + offset < tvs.length) {
-               return this.toChild(n + offset)
-            } else {
-               return this
-            }
+            return this.toChild(n + offset)
          }
       } else {
          return error("Not a data value")
@@ -103,11 +104,19 @@ export class ExplValueCursor extends Cursor {
    }
 
    nextSibling (): ExplValueCursor {
-      return this.up().toChildOffset(this.tv, 1)
+      if (this.hasParent()) {
+         return this.up().toChildOffset(this.tv, 1)
+      } else {
+         return this
+      }
    }
 
    prevSibling (): ExplValueCursor {
-      return this.up().toChildOffset(this.tv, -1)
+      if (this.hasParent()) {
+         return this.up().toChildOffset(this.tv, -1)
+      } else {
+         return this
+      }
    }
 
    hasParent (): boolean {

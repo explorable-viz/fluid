@@ -8,7 +8,7 @@ import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { DataElim, Elim, Match, VarElim } from "../Match"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
-import { ν, at, newRevision, str, versioned } from "../Versioned"
+import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { 
@@ -459,10 +459,17 @@ function expr (parens: boolean, e: Expr): SVGElement {
             as(g.childNodes[1], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
                ev.stopPropagation()
                newRevision()
-               new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
-                  const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-                  return [at(exprClass(Pair), e, eʹ)(ν())]
-               })
+               if (ev.metaKey) {
+                  new ExprCursor(e).constr_splice(Cons, ["tail"], ([e]: Expr[]): [Expr] => {
+                     const eʹ: Expr = Expr.constNum(num(0)(ν()))(ν())
+                     return [at(exprClass(Cons), eʹ, e)(ν())]
+                  })
+               } else {
+                  new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
+                     const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+                     return [at(exprClass(Pair), e, eʹ)(ν())]
+                  })
+               }
                __editor!.onEdit()
             })
          }
@@ -568,7 +575,7 @@ function num_ (n: Num, src?: Num): SVGElement {
    if (src && Number.isInteger(src.val)) {
       g.addEventListener("click", (ev: MouseEvent): void => {
          newRevision()
-         new ExprCursor(src).setNum(src.val + 1)
+         new ExprCursor(src).setNum(ev.metaKey ? src.val - 1 : src.val + 1)
          ev.stopPropagation()
          __editor!.onEdit()
       })
