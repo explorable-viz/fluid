@@ -431,8 +431,11 @@ function elim<K extends Cont> (σ: Elim<K>): SVGElement {
    }))
 }
 
+// Hack just to support Bool, Ordering, etc.
 function elimMatch<K extends Cont> (ξ: Match<K>): SVGElement {
-   return unimplemented(ξ)
+   const tv: ExplValue<DataValue> = nth(ξ.tv̅.toArray(), 0)
+   // don't think the contination is needed; already stored in the trace
+   return horizSpace(text(tv.v.ctr, deltaStyle(tv.v)), arrow(deltaStyle(tv.v)))
 }
 
 function expr (parens: boolean, e: Expr): SVGElement {

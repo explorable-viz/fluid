@@ -76,11 +76,6 @@ export class Editor {
             if (ev.key === "E") {
                existingView(this_.here.tv).toggleExpl()
                this_.render()
-            } else
-            if (ev.key === "X") {
-//             TODO
-//             existingView(this_.here.tv).extendExpl()
-//             this_.render()
             }
          }
       }
