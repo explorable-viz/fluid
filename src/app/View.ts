@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, as, assert, className, classOf } from "../util/Core"
 import { flatten, nth, zip } from "../util/Array"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
-import { Ctr, ctrFor, explClass, exprClass } from "../DataType"
+import { Ctr, ctrFor, exprClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
@@ -536,7 +536,7 @@ function list ({t, v}: ExplValue<List>): SVGSVGElement {
          view(Expl.explChild(t, vʹ, "head"), true, false).render(),
          comma(deltaStyle(v)),
          space(),
-         list(Expl.explChild(t, vʹ, "tail") as ExplValue<List>)
+         view(Expl.explChild(t, vʹ, "tail"), true, false).render()
       )
    } else
    if (Nil.is(v)) {
