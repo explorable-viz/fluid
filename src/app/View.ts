@@ -90,14 +90,11 @@ class ExplValueView extends View {
       } else
       if (!this.t_visible) {
          g = valueView(tv!).render()
-         if (g instanceof SVGSVGElement && ts.length > 0) {
-            g = edge_left(g)
-         }
       } else {
          g = vert(expls(ts), horizSpace(text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render()))
       }
       if (g instanceof SVGSVGElement && this.tv === __editor!.here.tv) {
-         return border(g)
+         return border(!this.t_visible && ts.length > 0  ? edge_left(g) : g)
       } else {
          return g
       }
@@ -542,7 +539,8 @@ function list ({t, v}: ExplValue<List>): SVGSVGElement {
    if (Nil.is(v)) {
       return horiz(centreDot(deltaStyle(v)))
    } else {
-      return as(view(explValue(t, v), true, false).render(), SVGSVGElement) // dubious cast
+      return absurd()
+      // return as(view(explValue(t, v), true, false).render(), SVGSVGElement) // dubious cast
    }
 }
 
