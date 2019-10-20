@@ -33,10 +33,6 @@ export class Renderer {
 
 const views: Map<Value, View> = new Map()
 
-function isExplFor (t: Expl, C: Class<DataValue>): boolean {
-   return classOf(t) === explClass(C)
-}
-
 function isExprFor (e: Expr, C: Class<DataValue>): boolean {
    return classOf(e) === exprClass(C)
 }
@@ -211,11 +207,11 @@ export class ValueView extends View {
          g = horizSpace(keyword("fun", deltaStyle(this.tv.v)), elim(this.tv.v.f))
       } else
       if (this.tv.v instanceof DataValue) {
-         if (isExplFor(this.tv.t, Pair)) {
+         if (this.tv.v instanceof Pair) {
             const vʹ: Pair = this.tv.v as Pair
             g = pair(this.tv.t, Expl.explChild(this.tv.t, vʹ, "fst"), Expl.explChild(this.tv.t, vʹ, "snd"))
          } else
-         if (isExplFor(this.tv.t, Nil) || isExplFor(this.tv.t, Cons)) {
+         if (this.tv.v instanceof List) {
             g = list(this.tv as ExplValue<List>)
          } else {
             g = dataConstr(false, this.tv as ExplValue<DataValue>)
