@@ -1,1 +1,1 @@
-filter (fun x → 5 < x) [8, 4, 7, 3]
+filter (fun n → 5 < n) [8, 4, 7, 3]

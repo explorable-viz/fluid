@@ -154,7 +154,7 @@ export class ExplView extends View {
       if (this.t instanceof Expl.App) {
          return vert(
             horizSpace(view(this.t.tf, false, true).render(), view(this.t.tu, false, true).render()),
-            this.bodyVisible ? expls(splitExpls(this.t)) : ellipsis(deltaStyle(this.t.t))
+            this.appBody()
          )
       } else
       if (this.t instanceof Expl.Defs) {
@@ -167,6 +167,22 @@ export class ExplView extends View {
          )
       } else {
          return absurd()
+      }
+   }
+
+   appBody (): SVGElement {
+      const app: Expl.App = as(this.t, Expl.App)
+      const ts: Expl[] = splitExpls(app.t)
+      if (ts.length === 0 || this.bodyVisible) {
+         return expls(ts)
+      } else {
+         const g: SVGElement = ellipsis(deltaStyle(app.t))
+         g.addEventListener("click", (ev: MouseEvent): void => {
+            ev.stopPropagation()
+            this.bodyVisible = true
+            __editor!.onViewChange()
+         })
+         return g
       }
    }
 }

@@ -90,4 +90,8 @@ export class Editor {
       // cursor may no longer be valid, how to deal with that?
       this.render()
    }
+
+   onViewChange (): void {
+      this.render()
+   }
 }
