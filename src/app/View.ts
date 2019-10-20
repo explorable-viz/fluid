@@ -453,28 +453,7 @@ function expr (parens: boolean, e: Expr): SVGElement {
          return pair_expr(e, as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
       } else
       if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
-         const g: SVGElement = list_expr(parens, e)
-         // TEMPORARY EXPERIMENT
-         if (isExprFor(e, Cons)) {
-            as(g.childNodes[1], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
-               ev.stopPropagation()
-               newRevision()
-               if (ev.metaKey) {
-                  new ExprCursor(e).constr_splice(Cons, ["tail"], ([e]: Expr[]): [Expr] => {
-                     const eʹ: Expr = Expr.constNum(num(0)(ν()))(ν())
-                     return [at(exprClass(Cons), eʹ, e)(ν())]
-                  })
-               } else {
-                  new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
-                     const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-                     return [at(exprClass(Pair), e, eʹ)(ν())]
-                  })
-               }
-               __editor!.onEdit()
-            })
-         }
-         // END TEMPORARY EXPERIMENT
-         return g
+         return list_expr(parens, e)
       } else {
          return dataConstr_expr(parens, e)
       }
@@ -536,9 +515,10 @@ function expr (parens: boolean, e: Expr): SVGElement {
 function list ({t, v}: ExplValue<List>): SVGSVGElement {
    if (Cons.is(v)) {
       const vʹ: Cons = v as Cons
+      const e: Expr = exprFor(t)
       return horiz(
          view(Expl.explChild(t, vʹ, "head"), true, false).render(),
-         comma(deltaStyle(v)),
+         consComma(deltaStyle(v), isExprFor(e, Cons) ? e as Expr.DataExpr : undefined),
          space(),
          view(Expl.explChild(t, vʹ, "tail"), true, false).render()
       )
@@ -547,8 +527,30 @@ function list ({t, v}: ExplValue<List>): SVGSVGElement {
       return horiz(centreDot(deltaStyle(v)))
    } else {
       return absurd()
-      // return as(view(explValue(t, v), true, false).render(), SVGSVGElement) // dubious cast
    }
+}
+
+function consComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
+   const g: SVGElement = comma(ẟ_style)
+   g.addEventListener("click", (ev: MouseEvent): void => {
+      ev.stopPropagation()
+      if (src !== undefined) {
+         newRevision()
+         if (ev.metaKey) {
+            new ExprCursor(src).constr_splice(Cons, ["tail"], ([e]: Expr[]): [Expr] => {
+               const eʹ: Expr = Expr.constNum(num(0)(ν()))(ν())
+               return [at(exprClass(Cons), eʹ, e)(ν())]
+            })
+         } else {
+            new ExprCursor(src).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
+               const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+               return [at(exprClass(Pair), e, eʹ)(ν())]
+            })
+         }
+         __editor!.onEdit()
+      }
+   })
+   return g
 }
 
 function list_expr (parens: boolean, e: Expr): SVGElement {
@@ -556,7 +558,7 @@ function list_expr (parens: boolean, e: Expr): SVGElement {
       return parenthesiseIf(parens, 
          horiz(
             expr(false, e.__child("head") as Expr),
-            comma(deltaStyle(e)), 
+            consComma(deltaStyle(e), e as Expr.DataExpr),
             space(), 
             list_expr(false, e.__child("tail") as Expr)
          ),
