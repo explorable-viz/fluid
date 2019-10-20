@@ -4,7 +4,7 @@ import { List } from "./BaseTypes"
 import { DataValue, ExplValue, explValue } from "./DataValue"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
-import { Match } from "./Match"
+import { Elim, Match } from "./Match"
 import { UnaryOp } from "./Primitive"
 import { Id, PrimValue, Str, _, fields } from "./Value"
 import { at } from "./Versioned"
@@ -114,6 +114,14 @@ export namespace Expl {
 
    export function const_ (): (k: Id) => Const {
       return at(Const)
+   }
+
+   export class Fun extends Expl {
+      σ: Elim<Expr> = _
+   }
+
+   export function fun (σ: Elim<Expr>): (k: Id) => Fun {
+      return at(Fun, σ)
    }
 
    export class MatchAs extends NonTerminal {

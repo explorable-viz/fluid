@@ -133,7 +133,7 @@ describe("slice", () => {
             expect (here: ExplValueCursor): void {
                here.αset()
                here.to(Cons, "head").αclear()
-               here.to(Cons, "tail").assert(List, v => Nil.is(v))
+               here.to(Cons, "tail").to(Cons, "tail").assert(List, v => Nil.is(v))
             }
          })(e)
          new BwdSlice(e)

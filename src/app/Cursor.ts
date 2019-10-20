@@ -78,20 +78,25 @@ export class ExplValueCursor extends Cursor {
 
    toChild (n: number): ExplValueCursor {
       if (this.tv.v instanceof DataValue) {
-         return ExplValueCursor.descendant(this, nth(Expl.explChildren(this.tv.t, this.tv.v), n))
+         const tvs: ExplValue[] = Expl.explChildren(this.tv.t, this.tv.v)
+         if (0 <= n && n < tvs.length) {
+            return ExplValueCursor.descendant(this, nth(tvs, n))
+         } else {
+            return this
+         }
       } else {
          return error("Not a data value")
       }
    }
 
-   toChildFollowing (tv: ExplValue): ExplValueCursor {
+   toChildOffset (tv: ExplValue, offset: number): ExplValueCursor {
       if (this.tv.v instanceof DataValue) {
          const tvs: ExplValue[] = Expl.explChildren(this.tv.t, this.tv.v)
          const n: number = tvs.findIndex(tv_ => tv_ === tv)
          if (n === -1) {
             return error("Not a child")
          } else {
-            return this.toChild(n + 1)
+            return this.toChild(n + offset)
          }
       } else {
          return error("Not a data value")
@@ -99,7 +104,27 @@ export class ExplValueCursor extends Cursor {
    }
 
    nextSibling (): ExplValueCursor {
-      return ExplValueCursor.parent(this).toChildFollowing(this.tv)
+      if (this.hasParent()) {
+         return this.up().toChildOffset(this.tv, 1)
+      } else {
+         return this
+      }
+   }
+
+   prevSibling (): ExplValueCursor {
+      if (this.hasParent()) {
+         return this.up().toChildOffset(this.tv, -1)
+      } else {
+         return this
+      }
+   }
+
+   hasParent (): boolean {
+      return this.ancestors.length > 0
+   }
+
+   up (): ExplValueCursor {
+      return ExplValueCursor.parent(this)
    }
 
    toBinaryArg1 (opName: string): ExplValueCursor {

@@ -1,18 +1,18 @@
 import { Class, __nonNull, absurd, as, assert, className, classOf } from "../util/Core"
-import { flatten, last, nth, zip } from "../util/Array"
+import { flatten, nth, zip } from "../util/Array"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
-import { Ctr, ctrFor, explClass, exprClass } from "../DataType"
+import { Ctr, ctrFor, exprClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { DataElim, Elim, Match, VarElim } from "../Match"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
-import { ν, at, newRevision, str, versioned } from "../Versioned"
+import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { 
-   DeltaStyle, arrow, border, bracket, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, edge_bottom, edge_left, 
+   DeltaStyle, arrow, border, centreDot, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, edge_left, 
    parenthesise, parenthesiseIf, space, text, unimplemented, vert 
 } from "./Renderer"
 
@@ -32,10 +32,6 @@ export class Renderer {
 }
 
 const views: Map<Value, View> = new Map()
-
-function isExplFor (t: Expl, C: Class<DataValue>): boolean {
-   return classOf(t) === explClass(C)
-}
 
 function isExprFor (e: Expr, C: Class<DataValue>): boolean {
    return classOf(e) === exprClass(C)
@@ -58,7 +54,7 @@ class ExplValueView extends View {
    tv: ExplValue
    show_v: boolean
    show_ts: boolean
-   t_visibleUntil: Expl | null = null // final element of the sequence of visible traces
+   t_visible!: boolean
    v_visible!: boolean
 
    assertValid (): void {
@@ -74,34 +70,15 @@ class ExplValueView extends View {
    }
 
    initialise (): [Expl[], ExplValue | null] {
-      const [ts, tv]: [Expl[], ExplValue] = split(this.tv)
+      const ts: Expl[] = splitExpls(this.tv.t)
       if (ts.length === 0 || !this.show_ts) {
-         this.t_visibleUntil = null
+         this.t_visible = false
          this.v_visible = true
       } else {
-         if (this.t_visibleUntil === null || !ts.includes(this.t_visibleUntil)) { // persist if possible
-            const t: Expl | undefined = ts.find(
-               t => !(t instanceof Expl.NonTerminal) || t instanceof Expl.Var || t instanceof Expl.App
-            )
-            this.t_visibleUntil = t || last(ts)
-         }
+         this.t_visible = true
          this.v_visible = this.show_v
       }
-      return [ts, tv]
-   }
-
-   renderTraces (ts: Expl[]): SVGElement {
-      if (this.t_visibleUntil !== null) {
-         const n: number = ts.findIndex(t => t === this.t_visibleUntil) + 1
-         const g: SVGSVGElement = vert(...ts.slice(0, n).map(t => explView(t).render()))
-         if (n === ts.length) {
-            return g
-         } else {
-            return edge_bottom(g)
-         }
-      } else {
-         return absurd()
-      }
+      return [ts, splitValue(this.tv)]
    }
 
    render (): SVGElement {
@@ -109,18 +86,15 @@ class ExplValueView extends View {
       const [ts, tv]: [Expl[], ExplValue | null] = this.initialise()
       let g: SVGElement 
       if (!this.v_visible) {
-         g = this.renderTraces(ts)
+         g = expls(ts)
       } else
-      if (this.t_visibleUntil === null) {
+      if (!this.t_visible) {
          g = valueView(tv!).render()
-         if (g instanceof SVGSVGElement && ts.length > 0) {
-            g = edge_left(g)
-         }
       } else {
-         g = horizSpace(this.renderTraces(ts), text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render())
+         g = vert(expls(ts), horizSpace(text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render()))
       }
       if (g instanceof SVGSVGElement && this.tv === __editor!.here.tv) {
-         return border(g)
+         return border(!this.t_visible && ts.length > 0  ? edge_left(g) : g)
       } else {
          return g
       }
@@ -147,10 +121,12 @@ class ExplValueView extends View {
 
 export class ExplView extends View {
    t: Expl
+   bodyVisible: boolean // if I am an application view, whether the function body is visible
 
    constructor (t: Expl) {
       super()
       this.t = t
+      this.bodyVisible = false
    }
 
    render (): SVGElement {
@@ -169,7 +145,10 @@ export class ExplView extends View {
          )
       } else
       if (this.t instanceof Expl.App) {
-         return horizSpace(view(this.t.tf, false, true).render(), view(this.t.tu, false, true).render())
+         return vert(
+            horizSpace(view(this.t.tf, false, true).render(), view(this.t.tu, false, true).render()),
+            this.appBody()
+         )
       } else
       if (this.t instanceof Expl.Defs) {
          return vert(...this.t.def̅.toArray().map(defₜ))
@@ -181,6 +160,22 @@ export class ExplView extends View {
          )
       } else {
          return absurd()
+      }
+   }
+
+   appBody (): SVGElement {
+      const app: Expl.App = as(this.t, Expl.App)
+      const ts: Expl[] = splitExpls(app.t)
+      if (ts.length === 0 || this.bodyVisible) {
+         return expls(ts)
+      } else {
+         const g: SVGElement = ellipsis(deltaStyle(app.t))
+         g.addEventListener("click", (ev: MouseEvent): void => {
+            ev.stopPropagation()
+            this.bodyVisible = true
+            __editor!.onViewChange()
+         })
+         return g
       }
    }
 }
@@ -196,30 +191,32 @@ export class ValueView extends View {
    }
 
    render (): SVGSVGElement {
+      let g: SVGSVGElement
       if (this.tv.v instanceof Num) {
          const e: Expr = exprFor(this.tv.t)
-         return horiz(num_(this.tv.v, e instanceof Expr.ConstNum ? e.val : undefined))
+         g = horiz(num_(this.tv.v, e instanceof Expr.ConstNum ? e.val : undefined))
       } else
       if (this.tv.v instanceof Str) {
-         return horiz(str_(this.tv.v))
+         g = horiz(str_(this.tv.v))
       } else
       if (this.tv.v instanceof Closure) {
          // treat closures as their function literals, for now
-         return horizSpace(keyword("fun", deltaStyle(this.tv.v)), elim(this.tv.v.f))
+         g = horizSpace(keyword("fun", deltaStyle(this.tv.v)), elim(this.tv.v.f))
       } else
       if (this.tv.v instanceof DataValue) {
-         if (isExplFor(this.tv.t, Pair)) {
+         if (this.tv.v instanceof Pair) {
             const vʹ: Pair = this.tv.v as Pair
-            return pair(this.tv.t, Expl.explChild(this.tv.t, vʹ, "fst"), Expl.explChild(this.tv.t, vʹ, "snd"))
+            g = pair(this.tv.t, Expl.explChild(this.tv.t, vʹ, "fst"), Expl.explChild(this.tv.t, vʹ, "snd"))
          } else
-         if (isExplFor(this.tv.t, Nil) || isExplFor(this.tv.t, Cons)) {
-            return list(this.tv as ExplValue<List>)
+         if (this.tv.v instanceof List) {
+            g = list(this.tv as ExplValue<List>)
          } else {
-            return dataConstr(false, this.tv as ExplValue<DataValue>)
+            g = dataConstr(false, this.tv as ExplValue<DataValue>)
          }
       } else {
-         return unimplemented(this.tv.v)
+         g = unimplemented(this.tv.v)
       }
+      return g
    }
 }
 
@@ -262,29 +259,67 @@ export function explView (t: Expl.Expl): View {
    }
 }
 
-// The value part must be an ExplValue, because in the data value case we need the explanation as well to
-// render the value.
-export function split (tv: ExplValue): [Expl[], ExplValue] {
-   const {t, v}: ExplValue = tv
+export function splitExpls (t: Expl): Expl[] {
    if (t instanceof Expl.Const) {
-      return [[], tv]
+      return []
+   } else
+   if (t instanceof Expl.Fun) {
+      return []
    } else
    if (t instanceof Expl.DataExpl) {
-      return [[], tv]
+      return []
    } else
    if (t instanceof Expl.Var) {
       // values of variables themselves have explanations, but ignore those for now
-      return [[t], split(explValue(t.t, v))[1]]
+      return [t]
    } else
+      // don't recurse into App as it has its own expansion state
    if (t instanceof Expl.UnaryApp || t instanceof Expl.BinaryApp) {
-      return [[t], tv]
+      return [t]
+   } else
+   if (t instanceof Expl.App) {
+      return [t]
    } else
    if (t instanceof Expl.NonTerminal) {
-      const [ts, vʹ] = split(explValue(t.t, v))
-      return [[t, ...ts], vʹ]
+      return [t, ...splitExpls(t.t)]
    } else {
       return absurd()
    }
+}
+
+// The value part must be an ExplValue, because in the data value case we need the explanation as well to
+// render the value.
+export function splitValue (tv: ExplValue): ExplValue {
+   const {t, v}: ExplValue = tv
+   if (t instanceof Expl.Const) {
+      return tv
+   } else
+   if (t instanceof Expl.Fun) {
+      return tv
+   } else
+   if (t instanceof Expl.DataExpl) {
+      return tv
+   } else
+   if (t instanceof Expl.Var) {
+      // values of variables themselves have explanations, but ignore those for now
+      return splitValue(explValue(t.t, v))
+   } else
+      // don't recurse into App as it has its own expansion state
+   if (t instanceof Expl.UnaryApp || t instanceof Expl.BinaryApp) {
+      return tv
+   } else
+   if (t instanceof Expl.App) {
+      return tv
+   } else
+   if (t instanceof Expl.NonTerminal) {
+      return splitValue(explValue(t.t, v))
+   } else {
+      return absurd()
+   }
+}
+
+function expls (ts: Expl[]): SVGElement {
+   return vert(...ts.map(t => explView(t).render()))
 }
 
 // To visualise an eliminator, we reconstruct the patterns from the trie. List syntax in particular doesn't have
@@ -326,13 +361,15 @@ function clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
 function dataConstr (parens: boolean, {t, v}: ExplValue<DataValue>): SVGSVGElement {
    const tvs: ExplValue[] = Expl.explChildren(t, v)
    // a constructor expression makes its value, so their root delta highlighting must agree
-   const g: SVGSVGElement = horizSpace(text(v.ctr, deltaStyle(v)), ...tvs.map(tvʹ => view(tvʹ, true, false).render()))
+   const gs: SVGElement[] = tvs.map(tvʹ => view(tvʹ, true, false).render())
+   const g: SVGSVGElement = horizSpace(text(v.ctr, deltaStyle(v)), ...(tvs.length > 2 ? [vert(...gs)] : gs))
    return parenthesiseIf(tvs.length > 0 && parens, g, deltaStyle(t))
 }
 
 function dataConstr_expr (parens: boolean, e: Expr.DataExpr): SVGElement {
    const es: Expr[] = e.__children
-   const g: SVGSVGElement = horizSpace(text(e.ctr, deltaStyle(e)), ...es.map(eʹ => expr(true, eʹ)))
+   const gs: SVGElement[] = es.map(eʹ => expr(true, eʹ))
+   const g: SVGSVGElement = horizSpace(text(e.ctr, deltaStyle(e)), ...(es.length > 2 ? [vert(...gs)] : gs))
    return parenthesiseIf(es.length > 0 && parens, g, deltaStyle(e))
 }
 
@@ -364,7 +401,7 @@ function defₜ (def: Expl.Def): SVGElement {
       return horizSpace(keyword("primitive", deltaStyle(def)), patternVar(def.x))
    } else
    if (def instanceof Expl.Let) {
-      if (def.tv.t instanceof Expl.Const && def.tv.v instanceof Closure) {
+      if (def.tv.t instanceof Expl.Fun && def.tv.v instanceof Closure) {
          return horizSpace(keyword("let_", deltaStyle(def)), patternVar(def.x), elim(def.tv.v.f))
       } else {
          return horizSpace(
@@ -416,19 +453,7 @@ function expr (parens: boolean, e: Expr): SVGElement {
          return pair_expr(e, as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
       } else
       if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
-         const g: SVGElement = list_expr(e)
-         // TEMPORARY EXPERIMENT
-         as(g.childNodes[0], SVGElement).addEventListener("click", (ev: MouseEvent): void => {
-            ev.stopPropagation()
-            newRevision()
-            new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
-               const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-               return [at(exprClass(Pair), e, eʹ)(ν())]
-            })
-            __editor!.onEdit()
-         })
-         // END TEMPORARY EXPERIMENT
-         return g
+         return list_expr(parens, e)
       } else {
          return dataConstr_expr(parens, e)
       }
@@ -488,75 +513,62 @@ function expr (parens: boolean, e: Expr): SVGElement {
 }
 
 function list ({t, v}: ExplValue<List>): SVGSVGElement {
-   const gs: SVGElement[] = []
-   while (Cons.is(v)) {
+   if (Cons.is(v)) {
       const vʹ: Cons = v as Cons
-      gs.push(view(Expl.explChild(t, vʹ, "head"), true, false).render())
-      const tvʹ: ExplValue = Expl.explChild(t, vʹ, "tail")
-      const {t: tʹ, v: vʹʹ}: ExplValue<List> = tvʹ as ExplValue<List>
-      if (!(Nil.is(vʹʹ))) {
-         // associate every Cons, apart from the last one, with a comma
-         gs.push(comma(deltaStyle(tʹ)), space())
-      }
-      t = tʹ
-      v = as(vʹʹ, List)
-   }
-   if (Nil.is(v)) {
-      return bracket(gs, deltaStyle(t))
-   } else {
-      // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
-      return bracket(
-         [...gs, space(), ellipsis(deltaStyle(t)), view(explValue(t, v), true, false).render()], 
-         deltaStyle(t)
+      const e: Expr = exprFor(t)
+      return horiz(
+         view(Expl.explChild(t, vʹ, "head"), true, false).render(),
+         consComma(deltaStyle(v), isExprFor(e, Cons) ? e as Expr.DataExpr : undefined),
+         space(),
+         view(Expl.explChild(t, vʹ, "tail"), true, false).render()
       )
-   }
-}
-
-function list_expr (e: Expr): SVGElement {
-   const gs: SVGElement[] = []
-   while (isExprFor(e, Cons)) {
-      gs.push(expr(false, e.__child("head") as Expr))
-      const eʹ: Expr = e.__child("tail") as Expr
-      if (!(isExprFor(eʹ, Nil))) {
-         // associate every Cons, apart from the last one, with a comma
-         gs.push(comma(deltaStyle(e)), space())
-      }
-      e = eʹ
-   }
-   if (isExprFor(e, Nil)) {
-      return bracket(gs, deltaStyle(e))
-   } else {
-      // non-list expression in tail position determines delta-highlighting for brackets and ellipsis as well
-      return bracket(
-         [...gs, space(), ellipsis(deltaStyle(e)), expr(false, e)], 
-         deltaStyle(e)
-      )
-   }
-}
-
-function listPattern ([ctr_x, ẟ_style]: PatternElement, cxs: PatternElement[]): [SVGElement, PatternElement[]] {
-   const gs: SVGElement[] = []
-   while (ctr_x instanceof Ctr && ctr_x.C === Cons) {
-      const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, 1, cxs)
-      gs.push(g)
-      let ẟ_styleʹ: DeltaStyle
-      ;[ctr_x, ẟ_styleʹ] = nth(cxsʹ, 0) // tail must be another Cons/Nil pattern element, or a variable
-      // associate every Cons, apart from the last one, with a comma
-      if (!(ctr_x instanceof Ctr && ctr_x.C === Nil)) {
-         gs.push(comma(ẟ_style), space())
-      }
-      cxs = cxsʹ.splice(1)
-      ẟ_style = ẟ_styleʹ
-   }
-   if (ctr_x instanceof Str) {
-      // pattern variable in tail position determines delta-highlighting for brackets and ellipsis as well
-      return [bracket([...gs, ellipsis(deltaStyle(ctr_x)), patternVar(ctr_x)], deltaStyle(ctr_x)), cxs]
    } else
-   if (ctr_x.C === Nil) {
-      // otherwise brackets correspond to the nil
-      return [bracket(gs, ẟ_style), cxs]
+   if (Nil.is(v)) {
+      return horiz(centreDot(deltaStyle(v)))
    } else {
       return absurd()
+   }
+}
+
+function consComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
+   const g: SVGElement = comma(ẟ_style)
+   g.addEventListener("click", (ev: MouseEvent): void => {
+      ev.stopPropagation()
+      if (src !== undefined) {
+         newRevision()
+         if (ev.metaKey) {
+            new ExprCursor(src).constr_splice(Cons, ["tail"], ([e]: Expr[]): [Expr] => {
+               const eʹ: Expr = Expr.constNum(num(0)(ν()))(ν())
+               return [at(exprClass(Cons), eʹ, e)(ν())]
+            })
+         } else {
+            new ExprCursor(src).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
+               const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+               return [at(exprClass(Pair), e, eʹ)(ν())]
+            })
+         }
+         __editor!.onEdit()
+      }
+   })
+   return g
+}
+
+function list_expr (parens: boolean, e: Expr): SVGElement {
+   if (isExprFor(e, Cons)) {
+      return parenthesiseIf(parens, 
+         horiz(
+            expr(false, e.__child("head") as Expr),
+            consComma(deltaStyle(e), e as Expr.DataExpr),
+            space(), 
+            list_expr(false, e.__child("tail") as Expr)
+         ),
+         deltaStyle(e)
+      )
+   } else
+   if (isExprFor(e, Nil)) {
+      return centreDot(deltaStyle(e))
+   } else {
+      return expr(false, e)
    }
 }
 
@@ -565,7 +577,7 @@ function num_ (n: Num, src?: Num): SVGElement {
    if (src && Number.isInteger(src.val)) {
       g.addEventListener("click", (ev: MouseEvent): void => {
          newRevision()
-         new ExprCursor(src).setNum(src.val + 1)
+         new ExprCursor(src).setNum(ev.metaKey ? src.val - 1 : src.val + 1)
          ev.stopPropagation()
          __editor!.onEdit()
       })
@@ -607,10 +619,16 @@ function patterns (parens: boolean, n: number, cxs: PatternElement[]): [SVGEleme
             const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
             return [[parenthesise(horiz(g1, comma(ẟ_style), space(), g2), ẟ_style), ...gsʹ], cxsʹʹ]
          } else
-         if (ctr_x.C === Nil || ctr_x.C === Cons) {
-            const [g, cxsʹ]: [SVGElement, PatternElement[]] = listPattern(cxs[0], cxs.slice(1))
+         if (ctr_x.C === Nil) {
+            const [g, cxsʹ]: [SVGElement, PatternElement[]] = [centreDot(ẟ_style), cxs.slice(1)]
             const [gs, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
             return [[g, ...gs], cxsʹʹ]
+         } else
+         if (ctr_x.C === Cons) {
+            const [[g_head, g_tail], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, ctr_x.arity, cxs.slice(1))
+            const g: SVGSVGElement = horiz(g_head, comma(ẟ_style), space(), g_tail)
+            const [gsʹ, cxsʹʹ]: [SVGElement[], PatternElement[]] = patterns(parens, n - 1, cxsʹ)
+            return [[parenthesiseIf(ctr_x.arity > 0 && parens, g, ẟ_style), ...gsʹ], cxsʹʹ]
          } else {
             const [gs, cxsʹ]: [SVGElement[], PatternElement[]] = patterns(true, ctr_x.arity, cxs.slice(1))
             const g: SVGSVGElement = horizSpace(text(ctr_x.c, ẟ_style), ...gs)
