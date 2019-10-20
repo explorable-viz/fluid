@@ -18,6 +18,21 @@ const space_char: string = "\u00a0"
 type Dimensions = { width: number, height: number }
 export const dimensions: Map<SVGElement, Dimensions> = new Map()
 
+// Doesn't really work as opacity means it builds up. Need it to be at the bottom in the z-order, and opaque.
+export function shading (g: SVGSVGElement): SVGSVGElement {
+   const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
+   border.setAttribute("x", g.x.baseVal.valueAsString)
+   border.setAttribute("y", g.y.baseVal.valueAsString)
+   const { width, height }: Dimensions = dimensions.get(g)!
+   border.setAttribute("height", height.toString())
+   border.setAttribute("width", width.toString())
+   border.setAttribute("stroke", "none")
+   border.setAttribute("opacity", "0.2")
+   border.setAttribute("pointer-events", "none")
+   g.appendChild(border)
+   return g
+}
+
 export function border (g: SVGSVGElement): SVGSVGElement {
    const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
    border.setAttribute("x", g.x.baseVal.valueAsString)
@@ -41,7 +56,7 @@ export function bracket (gs: SVGElement[], ẟ_style: DeltaStyle): SVGSVGElement
 }
 
 export function centreDot (ẟ_style: DeltaStyle): SVGElement {
-   return text("·", ẟ_style)
+   return text("•", ẟ_style)
 }
 
 export function comma (ẟ_style: DeltaStyle): SVGElement {
@@ -66,8 +81,9 @@ export function edge_left (g: SVGSVGElement): SVGSVGElement {
    const { height }: Dimensions = dimensions.get(g)!
    edge.setAttribute("x2", g.x.baseVal.valueAsString)
    edge.setAttribute("y2", `${g.y.baseVal.value + height}`)
-   edge.setAttribute("stroke", "red")
-   edge.setAttribute("stroke-width", "2")
+   edge.setAttribute("stroke", "gray")
+   edge.setAttribute("stroke-width", "4")
+//   edge.setAttribute("stroke-dasharray", "2,2")
    g.appendChild(edge)
    return g
 }
@@ -79,14 +95,15 @@ export function edge_bottom (g: SVGSVGElement): SVGSVGElement {
    edge.setAttribute("y1", `${g.y.baseVal.value + height}`)
    edge.setAttribute("x2", `${g.y.baseVal.value + width}`)
    edge.setAttribute("y2", `${g.y.baseVal.value + height}`)
-   edge.setAttribute("stroke", "red")
+   edge.setAttribute("stroke", "gray")
    edge.setAttribute("stroke-width", "2")
+//   edge.setAttribute("stroke-dasharray", "2,2")
    g.appendChild(edge)
    return g
 }
 
 export function ellipsis (ẟ_style: DeltaStyle): SVGElement {
-   return keyword("ellipsis", ẟ_style)
+   return text("…", ẟ_style)
 }
 
 export function horiz (...gs: SVGElement[]): SVGSVGElement {

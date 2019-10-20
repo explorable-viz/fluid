@@ -40,7 +40,7 @@ function recDefs (δ_0: List<RecDef>, ρ: Env, δ: List<RecDef>): [List<Expl.Rec
       const def: RecDef = δ.head,
             [δₜ, ρ_ext]: [List<Expl.RecDef>, Env] = recDefs(δ_0, ρ, δ.tail),
             k: MemoId = memoId(recDefs, arguments),
-            tf: ExplValue<Closure> = explValue(Expl.const_()(k.tag("t")), closure(ρ, δ_0, def.σ)(k.tag("v")))
+            tf: ExplValue<Closure> = explValue(Expl.fun(def.σ)(k.tag("t")), closure(ρ, δ_0, def.σ)(k.tag("v")))
       return [cons(Expl.recDef(def.x, tf)(k), δₜ), extendEnv(ρ_ext, def.x, tf)]
    } else
    if (Nil.is(δ)) {
@@ -146,7 +146,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       return explValue(Expl.const_()(kₜ), str(e.val.val)(kᵥ))
    } else
    if (e instanceof Expr.Fun) {
-      return explValue(Expl.const_()(kₜ), closure(ρ, nil(), e.σ)(kᵥ))
+      return explValue(Expl.fun(e.σ)(kₜ), closure(ρ, nil(), e.σ)(kᵥ))
    } else
    if (e instanceof Expr.DataExpr) {
       const tv̅: ExplValue[] = e.__children.map((e: Expr) => eval_(ρ, e)),
@@ -227,12 +227,11 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
 }
 
 export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
-   if (t instanceof Expl.Const) {
-      if (v instanceof Num || v instanceof Str || v instanceof Closure) {
-         setα(e.__α, t)
-      } else {
-         absurd()
-      }
+   if (t instanceof Expl.Const && (v instanceof Num || v instanceof Str)) {
+      setα(e.__α, t)
+   } else
+   if (t instanceof Expl.Fun && v instanceof Closure) {
+      setα(e.__α, t)
    } else
    if (t instanceof Expl.Quote) {
       setα(e.__α, t)
@@ -293,12 +292,11 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
 
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
 export function eval_bwd (e: Expr, {t, v}: ExplValue): void {
-   if (t instanceof Expl.Const) {
-      if (v instanceof Num || v instanceof Str || v instanceof Closure) {
-         setjoinα(t.__α, e)
-      } else {
-         absurd()
-      }
+   if (t instanceof Expl.Const && (v instanceof Num || v instanceof Str)) {
+      setjoinα(t.__α, e)
+   } else
+   if (t instanceof Expl.Fun && v instanceof Closure) {
+      setjoinα(t.__α, e)
    } else
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {

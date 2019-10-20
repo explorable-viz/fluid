@@ -91,7 +91,11 @@ export class ExplValueCursor extends Cursor {
          if (n === -1) {
             return error("Not a child")
          } else {
-            return this.toChild(n + 1)
+            if (n + 1 < tvs.length) {
+               return this.toChild(n + 1)
+            } else {
+               return this
+            }
          }
       } else {
          return error("Not a data value")
@@ -99,7 +103,15 @@ export class ExplValueCursor extends Cursor {
    }
 
    nextSibling (): ExplValueCursor {
-      return ExplValueCursor.parent(this).toChildFollowing(this.tv)
+      return this.up().toChildFollowing(this.tv)
+   }
+
+   hasParent (): boolean {
+      return this.ancestors.length > 0
+   }
+
+   up (): ExplValueCursor {
+      return ExplValueCursor.parent(this)
    }
 
    toBinaryArg1 (opName: string): ExplValueCursor {

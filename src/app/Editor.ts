@@ -13,6 +13,7 @@ import "./styles.css"
 
 export class Editor {
    root: SVGSVGElement
+   ρ: Env
    e: Expr
    tv: ExplValue
    here!: ExplValueCursor
@@ -20,6 +21,7 @@ export class Editor {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       this.root = svg.createSvg(1400, 600)
       document.body.appendChild(this.root)
+      this.ρ = ρ
       this.e = e,
       this.tv = Eval.eval_(ρ, this.e)
       this.here = ExplValueCursor.descendant(null, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) // skip prelude
@@ -43,10 +45,17 @@ export class Editor {
       // https://stackoverflow.com/questions/5597060
       document.onkeydown = function (ev: KeyboardEvent) {
          if (ev.shiftKey) {
+            if (ev.keyCode == 38) { // up
+               if (this_.here.hasParent()) {
+                  this_.here = this_.here.up()
+                  this_.render()
+               }
+            } else
             if (ev.keyCode == 39) { // right
-               // need a defensive guard here
-               this_.here = this_.here.nextSibling()
-               this_.render()
+               if (this_.here.hasParent()) {
+                  this_.here = this_.here.nextSibling()
+                  this_.render()
+               }
             } else
             if (ev.keyCode == 40) { // down
                if (this_.here.tv.v instanceof DataValue) {
@@ -65,13 +74,19 @@ export class Editor {
             if (ev.key === "E") {
                existingView(this_.here.tv).toggleExpl()
                this_.render()
+            } else
+            if (ev.key === "X") {
+//             TODO
+//             existingView(this_.here.tv).extendExpl()
+//             this_.render()
             }
          }
       }
    }
 
    onEdit (): void {
-      this.tv = Eval.eval_(emptyEnv(), this.e)
+      this.tv = Eval.eval_(this.ρ, this.e)
+      this.here = ExplValueCursor.descendant(null, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) // skip prelude
       // cursor may no longer be valid, how to deal with that?
       this.render()
    }

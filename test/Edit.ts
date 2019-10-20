@@ -58,9 +58,11 @@ describe("edit", () => {
 
             expect (here: ExplValueCursor) {
                here.isNew()
-                   .to(Cons, "head")
+                   .to(Cons, "head") // because we had to reconstruct the head
                    .isUnchanged()
                here.to(Cons, "tail")
+                   .isNew() // because a new element passed the filter
+                   .to(Cons, "tail")
                    .isUnchanged()
                    .to(Cons, "tail")
                    .isUnchanged()
