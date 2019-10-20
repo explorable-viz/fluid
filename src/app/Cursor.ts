@@ -84,15 +84,15 @@ export class ExplValueCursor extends Cursor {
       }
    }
 
-   toChildFollowing (tv: ExplValue): ExplValueCursor {
+   toChildOffset (tv: ExplValue, offset: number): ExplValueCursor {
       if (this.tv.v instanceof DataValue) {
          const tvs: ExplValue[] = Expl.explChildren(this.tv.t, this.tv.v)
          const n: number = tvs.findIndex(tv_ => tv_ === tv)
          if (n === -1) {
             return error("Not a child")
          } else {
-            if (n + 1 < tvs.length) {
-               return this.toChild(n + 1)
+            if (0 <= n + offset && n + offset < tvs.length) {
+               return this.toChild(n + offset)
             } else {
                return this
             }
@@ -103,7 +103,11 @@ export class ExplValueCursor extends Cursor {
    }
 
    nextSibling (): ExplValueCursor {
-      return this.up().toChildFollowing(this.tv)
+      return this.up().toChildOffset(this.tv, 1)
+   }
+
+   prevSibling (): ExplValueCursor {
+      return this.up().toChildOffset(this.tv, -1)
    }
 
    hasParent (): boolean {

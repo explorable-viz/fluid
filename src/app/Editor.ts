@@ -45,6 +45,12 @@ export class Editor {
       // https://stackoverflow.com/questions/5597060
       document.onkeydown = function (ev: KeyboardEvent) {
          if (ev.shiftKey) {
+            if (ev.keyCode == 37) { // left
+               if (this_.here.hasParent()) {
+                  this_.here = this_.here.prevSibling()
+                  this_.render()
+               }
+            } else
             if (ev.keyCode == 38) { // up
                if (this_.here.hasParent()) {
                   this_.here = this_.here.up()
