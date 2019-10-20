@@ -421,7 +421,7 @@ function defₜ (def: Expl.Def): SVGElement {
 
 function elim<K extends Cont> (σ: Elim<K>): SVGElement {
    return vert(...clauses(σ).map(([cxs, e]) => {
-      const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(true, 1, cxs)
+      const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, 1, cxs)
       assert(cxsʹ.length === 0)
       const gʹ: SVGElement = 
          e instanceof Expr.Fun ?
