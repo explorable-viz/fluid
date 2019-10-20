@@ -537,14 +537,14 @@ function consComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
       if (src !== undefined) {
          newRevision()
          if (ev.metaKey) {
-            new ExprCursor(src).constr_splice(Cons, ["tail"], ([e]: Expr[]): [Expr] => {
-               const eʹ: Expr = Expr.constNum(num(0)(ν()))(ν())
-               return [at(exprClass(Cons), eʹ, e)(ν())]
-            })
-         } else {
             new ExprCursor(src).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
                const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
                return [at(exprClass(Pair), e, eʹ)(ν())]
+            })
+         } else {
+            new ExprCursor(src).constr_splice(Cons, ["tail"], ([e]: Expr[]): [Expr] => {
+               const eʹ: Expr = Expr.constNum(num(0)(ν()))(ν())
+               return [at(exprClass(Cons), eʹ, e)(ν())]
             })
          }
          __editor!.onEdit()
