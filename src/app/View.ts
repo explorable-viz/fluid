@@ -13,7 +13,7 @@ import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { 
    DeltaStyle, arrow, border, centreDot, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, edge_left, 
-   parenthesise, parenthesiseIf, space, text, unimplemented, vert 
+   parenthesise, parenthesiseIf, shading, space, text, unimplemented, vert 
 } from "./Renderer"
 
 import Closure = Eval.Closure
@@ -216,7 +216,7 @@ export class ValueView extends View {
       } else {
          g = unimplemented(this.tv.v)
       }
-      return g
+      return shading(g)
    }
 }
 
@@ -358,6 +358,29 @@ function clauses<K extends Cont> (σ: Elim<K>): [PatternElement[], Expr][] {
    }
 }
 
+function consComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
+   const g: SVGElement = comma(ẟ_style)
+   g.addEventListener("click", (ev: MouseEvent): void => {
+      ev.stopPropagation()
+      if (src !== undefined) {
+         newRevision()
+         if (ev.metaKey) {
+            new ExprCursor(src).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
+               const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+               return [at(exprClass(Pair), e, eʹ)(ν())]
+            })
+         } else {
+            new ExprCursor(src).constr_splice(Cons, ["tail"], ([e]: Expr[]): [Expr] => {
+               const eʹ: Expr = Expr.constNum(num(0)(ν()))(ν())
+               return [at(exprClass(Cons), eʹ, e)(ν())]
+            })
+         }
+         __editor!.onEdit()
+      }
+   })
+   return g
+}
+
 function dataConstr (parens: boolean, {t, v}: ExplValue<DataValue>): SVGSVGElement {
    const tvs: ExplValue[] = Expl.explChildren(t, v)
    // a constructor expression makes its value, so their root delta highlighting must agree
@@ -431,8 +454,11 @@ function elim<K extends Cont> (σ: Elim<K>): SVGElement {
    }))
 }
 
+// Hack just to support Bool, Ordering, etc.
 function elimMatch<K extends Cont> (ξ: Match<K>): SVGElement {
-   return unimplemented(ξ)
+   const tv: ExplValue<DataValue> = nth(ξ.tv̅.toArray(), 0)
+   // don't think the contination is needed; already stored in the trace
+   return horizSpace(text(tv.v.ctr, deltaStyle(tv.v)), arrow(deltaStyle(tv.v)))
 }
 
 function expr (parens: boolean, e: Expr): SVGElement {
@@ -528,29 +554,6 @@ function list ({t, v}: ExplValue<List>): SVGSVGElement {
    } else {
       return absurd()
    }
-}
-
-function consComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
-   const g: SVGElement = comma(ẟ_style)
-   g.addEventListener("click", (ev: MouseEvent): void => {
-      ev.stopPropagation()
-      if (src !== undefined) {
-         newRevision()
-         if (ev.metaKey) {
-            new ExprCursor(src).constr_splice(Cons, ["tail"], ([e]: Expr[]): [Expr] => {
-               const eʹ: Expr = Expr.constNum(num(0)(ν()))(ν())
-               return [at(exprClass(Cons), eʹ, e)(ν())]
-            })
-         } else {
-            new ExprCursor(src).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
-               const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-               return [at(exprClass(Pair), e, eʹ)(ν())]
-            })
-         }
-         __editor!.onEdit()
-      }
-   })
-   return g
 }
 
 function list_expr (parens: boolean, e: Expr): SVGElement {

@@ -28,7 +28,7 @@ function join<K extends Cont> (κ: K, κʹ: K): K {
 }
 
 // Preorder traversal of all nodes in the matched prefix.
-type MatchPrefix = List<ExplValue>
+type MatchPrefix = List<ExplValue<DataValue>>
 
 export class Match<K> extends DataValue<"Match"> {
    tv̅: MatchPrefix = _
@@ -59,7 +59,7 @@ function apply_<K extends Cont> (σ: Elim<K>, tv: ExplValue, u̅: MatchPrefix): 
          if (κ !== undefined) {
             const tv̅: ExplValue[] = Expl.explChildren(tv.t, v),
             [ρ, ξ]: [Env, Match<K>] = matchArgs(κ, tv̅, u̅)
-            return [ρ, match(cons(tv, ξ.tv̅), ξ.κ)]
+            return [ρ, match(cons(tv as ExplValue<DataValue>, ξ.tv̅), ξ.κ)]
          } else {
             const d: DataType = elimToDataType.get(className(σ))!
             if (d.ctrs.has(c)) {
