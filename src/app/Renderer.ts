@@ -44,13 +44,13 @@ export function border (g: SVGSVGElement, stroke: string): SVGRectElement {
    border.setAttribute("height", height.toString())
    border.setAttribute("width", width.toString())
    border.setAttribute("stroke", stroke)
-//   border.setAttribute("stroke-dasharray", "1,1")
    border.setAttribute("fill", "none")
    return border
 }
 
 export function border_changed (g: SVGSVGElement): SVGSVGElement {
    const border_: SVGRectElement = border(g, "blue")
+   border_.setAttribute("stroke-dasharray", "1,1")
    g.appendChild(border_)
    return g
 }

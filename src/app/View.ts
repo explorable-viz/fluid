@@ -82,10 +82,10 @@ class ExplValueView extends View {
       return [ts, splitValue(this.tv)]
    }
 
-   render (): SVGElement {
+   render (): SVGSVGElement {
       this.assertValid()
       const [ts, tv]: [Expl[], ExplValue | null] = this.initialise()
-      let g: SVGElement 
+      let g: SVGSVGElement 
       if (!this.v_visible) {
          g = expls(ts)
       } else
@@ -94,7 +94,7 @@ class ExplValueView extends View {
       } else {
          g = vert(expls(ts), horizSpace(text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render()))
       }
-      if (g instanceof SVGSVGElement && this.tv === __editor!.here.tv) {
+      if (this.tv === __editor!.here.tv) {
          return border_focus(!this.t_visible && ts.length > 0  ? edge_left(g) : g)
       } else {
          return g
@@ -206,8 +206,7 @@ export class ValueView extends View {
       } else
       if (this.tv.v instanceof DataValue) {
          if (this.tv.v instanceof Pair) {
-            const vʹ: Pair = this.tv.v as Pair
-            g = pair(this.tv.t, Expl.explChild(this.tv.t, vʹ, "fst"), Expl.explChild(this.tv.t, vʹ, "snd"))
+            g = pair(this.tv as ExplValue<Pair>)
          } else
          if (this.tv.v instanceof List) {
             g = list(this.tv as ExplValue<List>)
@@ -319,7 +318,7 @@ export function splitValue (tv: ExplValue): ExplValue {
    }
 }
 
-function expls (ts: Expl[]): SVGElement {
+function expls (ts: Expl[]): SVGSVGElement {
    return vert(...ts.map(t => explView(t).render()))
 }
 
@@ -553,6 +552,19 @@ function expr_child<T extends DataValue> (C: Class<T>, parens: boolean, e: Expr.
    }   
 }
 
+function view_child<T extends DataValue> (C: Class<T>, tv: ExplValue<T>, prop: keyof T, show_v: boolean, show_ts: boolean): SVGSVGElement {
+   if (versioned(tv.v)) {
+      const g: SVGSVGElement = view(Expl.explChild(tv.t, tv.v, prop), show_v, show_ts).render()
+      if (tv.v.__ẟ instanceof Change && tv.v.__ẟ.changed.hasOwnProperty(prop)) {
+         return border_changed(g)
+      } else {
+         return g
+      }
+   } else {
+      return absurd()
+   }
+}
+
 function list ({t, v}: ExplValue<List>): SVGSVGElement {
    if (Cons.is(v)) {
       const vʹ: Cons = v as Cons
@@ -603,15 +615,15 @@ function num_ (n: Num, src?: Num): SVGElement {
    return g
 }
 
-function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGSVGElement {
+function pair (tv: ExplValue<Pair>): SVGSVGElement {
    return parenthesise(
       horiz(
-         view(tv1, true, false).render(),
-         pairComma(deltaStyle(t), exprFor(t) as Expr.DataExpr),
+         view_child(Pair, tv, "fst", true, false),
+         pairComma(deltaStyle(tv.t), exprFor(tv.t) as Expr.DataExpr),
          space(),
-         view(tv2, true, false).render()
+         view_child(Pair, tv, "snd", true, false)
       ), 
-      deltaStyle(t)
+      deltaStyle(tv.t)
    )
 }
 
