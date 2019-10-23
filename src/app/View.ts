@@ -556,14 +556,14 @@ function list ({t, v}: ExplValue<List>): SVGSVGElement {
    }
 }
 
-function list_expr (parens: boolean, e: Expr): SVGElement {
+function list_expr (parens: boolean, e: Expr.DataExpr): SVGElement {
    if (isExprFor(e, Cons)) {
       return parenthesiseIf(parens, 
          horiz(
             expr(false, e.__child("head") as Expr),
-            consComma(deltaStyle(e), e as Expr.DataExpr),
+            consComma(deltaStyle(e), e),
             space(), 
-            list_expr(false, e.__child("tail") as Expr)
+            list_expr(false, e.__child("tail") as Expr.DataExpr)
          ),
          deltaStyle(e)
       )
@@ -592,7 +592,7 @@ function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGSVGElement {
    return parenthesise(
       horiz(
          view(tv1, true, false).render(),
-         comma(deltaStyle(t)),
+         pairComma(deltaStyle(t), exprFor(t) as Expr.DataExpr),
          space(),
          view(tv2, true, false).render()
       ), 
@@ -600,11 +600,15 @@ function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGSVGElement {
    )
 }
 
-function pair_expr (e: Expr, e1: Expr, e2: Expr): SVGElement {
+function pairComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
+   return comma(ẟ_style)
+}
+
+function pair_expr (e: Expr.DataExpr, e1: Expr, e2: Expr): SVGElement {
    return parenthesise(
       horiz(
          expr(false, e1),
-         comma(deltaStyle(e)),
+         pairComma(deltaStyle(e), e),
          space(),
          expr(false, e2)
       ), 
