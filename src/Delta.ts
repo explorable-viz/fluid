@@ -24,9 +24,9 @@ export class Deltas {
       return this.ẟ̅.size
    }
 
-   // Updates to a change set must be increasing at a given revision. Because of sharing within
-   // a revision, a node may first appear new (or reclassified) and then later appear changed; again,
-   // the later changes must be compatible with the initial state of the object at that revision.
+   // Change sets must be disjoint at a given revision. Because of sharing within a revision, 
+   // a node may first appear new (or reclassified) and then later appear changed, but the 
+   // subsequent change sets must be empty.
    changed (v: Value, s_ẟ: StateDelta): void {
       let v_ẟ: Delta | undefined = this.ẟ̅.get(v)
       if (v_ẟ === undefined) {
