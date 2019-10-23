@@ -36,17 +36,28 @@ export function shading (g: SVGSVGElement): SVGSVGElement {
    return svg
 }
 
-export function border (g: SVGSVGElement): SVGSVGElement {
+export function border (g: SVGSVGElement, stroke: string): SVGRectElement {
    const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
    border.setAttribute("x", g.x.baseVal.valueAsString)
    border.setAttribute("y", g.y.baseVal.valueAsString)
    const { width, height }: Dimensions = dimensions.get(g)!
    border.setAttribute("height", height.toString())
    border.setAttribute("width", width.toString())
-   border.setAttribute("stroke", "gray")
-   border.setAttribute("stroke-dasharray", "1,1")
+   border.setAttribute("stroke", stroke)
+//   border.setAttribute("stroke-dasharray", "1,1")
    border.setAttribute("fill", "none")
-   g.appendChild(border)
+   return border
+}
+
+export function border_changed (g: SVGSVGElement): SVGSVGElement {
+   const border_: SVGRectElement = border(g, "blue")
+   g.appendChild(border_)
+   return g   
+}
+
+export function border_focus (g: SVGSVGElement): SVGSVGElement {
+   const border_: SVGRectElement = border(g, "gray")
+   g.appendChild(border_)
    return g
 }
 

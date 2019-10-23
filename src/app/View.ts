@@ -12,7 +12,7 @@ import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { 
-   DeltaStyle, arrow, border, centreDot, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, edge_left, 
+   DeltaStyle, arrow, border_focus, centreDot, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, edge_left, 
    parenthesise, parenthesiseIf, shading, space, text, unimplemented, vert 
 } from "./Renderer"
 
@@ -94,7 +94,7 @@ class ExplValueView extends View {
          g = vert(expls(ts), horizSpace(text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render()))
       }
       if (g instanceof SVGSVGElement && this.tv === __editor!.here.tv) {
-         return border(!this.t_visible && ts.length > 0  ? edge_left(g) : g)
+         return border_focus(!this.t_visible && ts.length > 0  ? edge_left(g) : g)
       } else {
          return g
       }
@@ -389,7 +389,7 @@ function dataConstr (parens: boolean, {t, v}: ExplValue<DataValue>): SVGSVGEleme
    return parenthesiseIf(tvs.length > 0 && parens, g, deltaStyle(t))
 }
 
-function dataConstr_expr (parens: boolean, e: Expr.DataExpr): SVGElement {
+function dataConstr_expr (parens: boolean, e: Expr.DataExpr): SVGSVGElement {
    const es: Expr[] = e.__children
    const gs: SVGElement[] = es.map(eʹ => expr(true, eʹ))
    const g: SVGSVGElement = horizSpace(text(e.ctr, deltaStyle(e)), ...(es.length > 2 ? [vert(...gs)] : gs))
@@ -556,7 +556,7 @@ function list ({t, v}: ExplValue<List>): SVGSVGElement {
    }
 }
 
-function list_expr (parens: boolean, e: Expr.DataExpr): SVGElement {
+function list_expr (parens: boolean, e: Expr.DataExpr): SVGSVGElement {
    if (isExprFor(e, Cons)) {
       return parenthesiseIf(parens, 
          horiz(
@@ -569,9 +569,9 @@ function list_expr (parens: boolean, e: Expr.DataExpr): SVGElement {
       )
    } else
    if (isExprFor(e, Nil)) {
-      return centreDot(deltaStyle(e))
+      return horiz(centreDot(deltaStyle(e)))
    } else {
-      return expr(false, e)
+      return horiz(expr(false, e)) // promote to nested SVG; need to rethink
    }
 }
 
@@ -617,7 +617,7 @@ function pairComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
    return g
 }
 
-function pair_expr (e: Expr.DataExpr, e1: Expr, e2: Expr): SVGElement {
+function pair_expr (e: Expr.DataExpr, e1: Expr, e2: Expr): SVGSVGElement {
    return parenthesise(
       horiz(
          expr(false, e1),
