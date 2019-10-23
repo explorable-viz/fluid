@@ -6,7 +6,8 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
-| 5 October 2019 | Reinstate execution indexing | [213](https://github.com/rolyp/lambdacalc/issues/213) |
+| 21 October 2019 | IC 2019 presentation | [220](https://github.com/rolyp/lambdacalc/issues/220), [225](https://github.com/rolyp/lambdacalc/issues/225), [230](https://github.com/rolyp/lambdacalc/issues/230), [232](https://github.com/rolyp/lambdacalc/issues/232), [235](https://github.com/rolyp/lambdacalc/issues/235), [238](https://github.com/rolyp/lambdacalc/issues/238) |
+| 5 October 2019 | Reinstate execution indexing | [213](https://github.com/rolyp/lambdacalc/issues/213), [214](https://github.com/rolyp/lambdacalc/issues/214) |
 | 20 September 2019 | Import data from another Wrattler cell | [193](https://github.com/rolyp/lambdacalc/issues/193) |
 | 15 September 2019 | Moved slicing annotations from values to traces | [204](https://github.com/rolyp/lambdacalc/issues/204) |
 | 31 August 2019 | Preliminary Wrattler integration | [192](https://github.com/rolyp/lambdacalc/issues/192) |

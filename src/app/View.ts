@@ -365,12 +365,12 @@ function consComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
       if (src !== undefined) {
          newRevision()
          if (ev.metaKey) {
-            new ExprCursor(src).constr_splice(Cons, ["head"], ([e]: Expr[]): [Expr] => {
+            new ExprCursor(src).constr_splice(Cons, ["head"], ([e]: Expr[]): Expr[] => {
                const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
                return [at(exprClass(Pair), e, eʹ)(ν())]
             })
          } else {
-            new ExprCursor(src).constr_splice(Cons, ["tail"], ([e]: Expr[]): [Expr] => {
+            new ExprCursor(src).constr_splice(Cons, ["tail"], ([e]: Expr[]): Expr[] => {
                const eʹ: Expr = Expr.constNum(num(0)(ν()))(ν())
                return [at(exprClass(Cons), eʹ, e)(ν())]
             })
@@ -601,7 +601,20 @@ function pair (t: Expl, tv1: ExplValue, tv2: ExplValue): SVGSVGElement {
 }
 
 function pairComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
-   return comma(ẟ_style)
+   const g: SVGElement = comma(ẟ_style)
+   g.addEventListener("click", (ev: MouseEvent): void => {
+      ev.stopPropagation()
+      if (src !== undefined) {
+         newRevision()
+         if (ev.metaKey) {
+            new ExprCursor(src).constr_splice(Pair, ["fst", "snd"], ([e1, e2]: Expr[]): Expr[] => {
+               return [e2, e1]
+            })
+         }
+         __editor!.onEdit()
+      }
+   })
+   return g
 }
 
 function pair_expr (e: Expr.DataExpr, e1: Expr, e2: Expr): SVGElement {
