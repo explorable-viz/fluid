@@ -73,7 +73,8 @@ export function create<T extends Value> (C: Class<T>, ...v̅: Persistent[]): (k:
          },
          enumerable: false
       })
-      __deltas.created(v, construct(true, v, v̅)!)
+      construct(false, v, v̅)
+      __deltas.created(v)
       return v
    }
 }
@@ -83,7 +84,8 @@ export function reset<T extends Value> (v: Value, C: Class<T>, ...v̅: Persisten
       __deltas.changed(v, construct(true, v, v̅)!)
    } else {
       reclassify(v, C)
-      __deltas.reclassified(v, construct(true, v, v̅)!)
+      construct(false, v, v̅)
+      __deltas.reclassified(v)
    }
 }
 

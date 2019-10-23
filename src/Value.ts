@@ -1,6 +1,6 @@
-import { Class, __nonNull, assert } from "./util/Core"
+import { Class, __nonNull, absurd, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
-import { __deltas } from "./Delta"
+import { StateDelta, __deltas } from "./Delta"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -118,22 +118,16 @@ export interface State {
    [prop: string]: Persistent
 }
 
-export function leq (s1: State, s2: State): boolean {
-   return Object.keys(s1).every((prop: string): boolean => {
-      return s2.hasOwnProperty(prop) && s1[prop] === s2[prop]
-   })
-}
-
-// Imperative join that merges s2 into s1, failing if they are incompatible.
-export function mergeInto (tgt: State, src: State): void {
+// Mergeable state deltas are disjoint.
+export function mergeInto (tgt: StateDelta, src: StateDelta): void {
    Object.keys(src).forEach((prop: string): void => {
       if (!tgt.hasOwnProperty(prop)) {
          tgt[prop] = src[prop]
       } else {
-         assert(
-            tgt[prop] === src[prop],
+         absurd(
             `Incompatible update of field "${prop}" at revision.`,
-            tgt, src
+            tgt[prop], 
+            src[prop]
          )
       }
    })
@@ -205,18 +199,18 @@ export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): State | null {
+export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): StateDelta | null {
    const tgtʹ: State = tgt as any as State,
          f̅: string[] = fields(tgt),
-         ẟ: State | null = compare ? {} : null
+         ẟ: StateDelta | null = compare ? {} : null
    assert(f̅.length === v̅.length)
    let n: number = 0
-   f̅.forEach((f: string): void => {
+   f̅.forEach((prop: string): void => {
       const src: Persistent = v̅[n++]
-      if (compare && tgtʹ[f] !== src) {
-         ẟ![f] = src
+      if (compare && tgtʹ[prop] !== src) {
+         ẟ![prop] = [tgtʹ[prop], src]
       }
-      tgtʹ[f] = src
+      tgtʹ[prop] = src
    })
    return ẟ
 }
@@ -226,7 +220,7 @@ export function isField (prop: string): boolean {
    return !prop.startsWith("__")
 }
 
-export function fields (v: Value): string[] {
+export function fields (v: Object): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
 }
 

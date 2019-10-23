@@ -25,7 +25,7 @@ export function annotated<T extends Object> (v: T): v is T & Annotated {
 
 export function setα<T extends Annotated & Value> (α: Annotation, v: T): T {
    if (v.__α !== α) {
-      __deltas.changed(v, { __α: α })
+      __deltas.changed(v, { __α: [v.__α, α] })
    }
    v.__α = α
    return v

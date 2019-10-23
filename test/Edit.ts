@@ -29,13 +29,13 @@ describe("edit", () => {
             }
 
             expect (here: ExplValueCursor) {
-               here.isChanged({ val: 49 })
+               here.isChanged({ val: [42, 49] })
                    .toTerminal()
                    .toBinaryArg1("*")
-                   .isChanged({ val: 7 })
+                   .isChanged({ val: [6, 7] })
                    .toTerminal()
                    .toBinaryArg2("+")
-                   .isChanged({ val: 6 })
+                   .isChanged({ val: [5, 6] })
             }
          })(e)
       })
@@ -94,16 +94,16 @@ describe("edit", () => {
             }
 
             expect (here: ExplValueCursor) {
-               here = here.isChanged({ val: 39.125 })
+               here = here.isChanged({ val: [661, 39.125]})
                    .toTerminal()
                here.toBinaryArg2("/").isNew()
                here = here.toBinaryArg1("/").isNew()
                    .toTerminal()
                here.toBinaryArg1("+").isUnchanged()
-               here = here.toBinaryArg2("+").isChanged({ val: 42.25 })
+               here = here.toBinaryArg2("+").isChanged({ val: [625, 42.25] })
                    .toTerminal()
-               here.toBinaryArg1("*").isChanged({ val: 6.5 })
-               here.toBinaryArg2("*").isChanged({ val: 6.5 })
+               here.toBinaryArg1("*").isChanged({ val: [25, 6.5] })
+               here.toBinaryArg2("*").isChanged({ val: [25, 6.5] })
             }
          })(e)
       })
