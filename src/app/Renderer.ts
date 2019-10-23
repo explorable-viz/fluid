@@ -52,7 +52,7 @@ export function border (g: SVGSVGElement, stroke: string): SVGRectElement {
 export function border_changed (g: SVGSVGElement): SVGSVGElement {
    const border_: SVGRectElement = border(g, "blue")
    g.appendChild(border_)
-   return g   
+   return g
 }
 
 export function border_focus (g: SVGSVGElement): SVGSVGElement {

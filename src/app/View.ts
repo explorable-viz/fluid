@@ -3,6 +3,7 @@ import { flatten, nth, zip } from "../util/Array"
 import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, exprClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
+import { Change } from "../Delta"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
@@ -12,7 +13,7 @@ import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { 
-   DeltaStyle, arrow, border_focus, centreDot, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, edge_left, 
+   DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, edge_left, 
    parenthesise, parenthesiseIf, shading, space, text, unimplemented, vert 
 } from "./Renderer"
 
@@ -461,14 +462,14 @@ function elimMatch<K extends Cont> (ξ: Match<K>): SVGElement {
    return horizSpace(text(tv.v.ctr, deltaStyle(tv.v)), arrow(deltaStyle(tv.v)))
 }
 
-function expr (parens: boolean, e: Expr): SVGElement {
+function expr (parens: boolean, e: Expr): SVGSVGElement {
    if (e instanceof Expr.ConstNum) {
       // ouch: disregard delta-info on expression itself
-      return num_(e.val, e.val)
+      return horiz(num_(e.val, e.val))
    } else
    if (e instanceof Expr.ConstStr) {
       // ouch: disregard delta-info on expression itself
-      return str_(e.val)
+      return horiz(str_(e.val))
    } else
    if (e instanceof Expr.Fun) {
       const g: SVGSVGElement = horizSpace(keyword("fun", deltaStyle(e)), elim(e.σ))
@@ -476,7 +477,7 @@ function expr (parens: boolean, e: Expr): SVGElement {
    } else
    if (e instanceof Expr.DataExpr) {
       if (isExprFor(e, Pair)) {
-         return pair_expr(e, as(e.__child("fst"), Expr.Expr), as(e.__child("snd"), Expr.Expr))
+         return pair_expr(e)
       } else
       if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
          return list_expr(parens, e)
@@ -489,7 +490,7 @@ function expr (parens: boolean, e: Expr): SVGElement {
    } else
    if (e instanceof Expr.Var) {
       // ouch: disregard delta-info on Var.x
-      return text(e.x.val, deltaStyle(e))
+      return horiz(text(e.x.val, deltaStyle(e)))
    } else
    if (e instanceof Expr.App) {
       return parenthesiseIf(
@@ -536,6 +537,20 @@ function expr (parens: boolean, e: Expr): SVGElement {
    } else {
       return absurd(`Unimplemented expression form: ${className(e)}.`)
    }
+}
+
+// Really want some kind of view typeclass, so this isn't specific to expression. Also: consolidate with ExprCursor.
+function expr_child<T extends DataValue> (C: Class<T>, parens: boolean, e: Expr.DataExpr, prop: keyof T): SVGElement {
+   if (versioned(e)) {
+      const g: SVGSVGElement = expr(parens, e.__child(prop as string))
+      if (e.__ẟ instanceof Change && e.__ẟ.changed.hasOwnProperty(prop)) {
+         return border_changed(g)
+      } else {
+         return g
+      }
+   } else {
+      return absurd()
+   }   
 }
 
 function list ({t, v}: ExplValue<List>): SVGSVGElement {
@@ -617,13 +632,13 @@ function pairComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
    return g
 }
 
-function pair_expr (e: Expr.DataExpr, e1: Expr, e2: Expr): SVGSVGElement {
+function pair_expr (e: Expr.DataExpr): SVGSVGElement {
    return parenthesise(
       horiz(
-         expr(false, e1),
+         expr_child(Pair, false, e, "fst"),
          pairComma(deltaStyle(e), e),
          space(),
-         expr(false, e2)
+         expr_child(Pair, false, e, "snd")
       ), 
       deltaStyle(e)
    )

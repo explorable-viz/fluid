@@ -86,6 +86,10 @@ export namespace Expr {
          return className(this)
       }
 
+      __child (prop: string): Expr {
+         return super.__child(prop) as Expr
+      }
+
       get __children (): Expr[] {
          return super.__children as Expr[]
       }
