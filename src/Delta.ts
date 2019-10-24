@@ -2,18 +2,18 @@ import { absurd, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { Persistent, Value, fields, mergeInto } from "./Value"
 
-// Difference between two states (of the same class).
-export interface StateDelta {
+// Difference between two states (of the same value class). Should probably make this more like Value.
+export interface ValueDelta {
    [prop: string]: { before: Persistent, after: Persistent } // [before, after]
 }
 
-export function leq (s1: StateDelta, s2: StateDelta): boolean {
+export function leq (s1: ValueDelta, s2: ValueDelta): boolean {
    return Object.keys(s1).every((prop: string): boolean => {
       return s2.hasOwnProperty(prop) && s1[prop].before === s2[prop].before && s1[prop].after === s2[prop].after
    })
 }
 
-function empty (ẟ: StateDelta): boolean {
+function empty (ẟ: ValueDelta): boolean {
    return fields(ẟ).length === 0
 }
 
@@ -27,7 +27,7 @@ export class Deltas {
    // Change sets must be disjoint at a given revision. Because of sharing within a revision, 
    // a node may first appear new (or reclassified) and then later appear changed, but the 
    // subsequent change sets must be empty.
-   changed (v: Value, s_ẟ: StateDelta): void {
+   changed (v: Value, s_ẟ: ValueDelta): void {
       let v_ẟ: Delta | undefined = this.ẟ̅.get(v)
       if (v_ẟ === undefined) {
          this.ẟ̅.set(v, new Change(s_ẟ))
@@ -88,9 +88,9 @@ export class New extends Delta {
 }
 
 export class Change extends Delta {
-   changed: StateDelta
+   changed: ValueDelta
 
-   constructor (changed: StateDelta) {
+   constructor (changed: ValueDelta) {
       super()
       this.changed = changed
    }
