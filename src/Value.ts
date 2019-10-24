@@ -207,7 +207,7 @@ export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persi
    let n: number = 0
    f̅.forEach((prop: string): void => {
       const src: Persistent = v̅[n++]
-      if (compare && tgtʹ[prop] !== src) {
+      if (compare && tgt.__child(prop) !== src) {
          ẟ![prop] = { before: tgtʹ[prop], after: src }
       }
       tgtʹ[prop] = src
