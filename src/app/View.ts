@@ -37,6 +37,9 @@ export class Viewer {
       __links.clear()
       __editor = editor
       const g: SVGElement = view(tv, true, true).render()
+      renderLinks(__links).forEach((link: SVGElement): void => {
+         g.appendChild(link)
+      })
       return [g, __nonNull(dimensions.get(g)).height]
    }
 }
@@ -59,6 +62,10 @@ function exprFor (t: Expl): Expr {
    } else {
       return absurd()
    }
+}
+
+function renderLinks (links: Set<Link>): SVGElement[] {
+   return []
 }
 
 abstract class View {

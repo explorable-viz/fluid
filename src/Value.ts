@@ -19,7 +19,7 @@ export class Value<Tag extends ValueTag = ValueTag> {
    readonly __tag!: Tag
 
    __child (k: string): Persistent {
-      return (this as any as State)[k]
+      return (this as any)[k]
    } 
 
    // Probably confusingly, "children" isn't a user-level notion; specifically, wrappers
