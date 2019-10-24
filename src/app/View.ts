@@ -20,7 +20,7 @@ import {
 import Closure = Eval.Closure
 import Cont = Expr.Cont
 
-// Rather horrible idiom, but better than passing editors around everywhere.
+// Horrible idiom, but better than passing editors around everywhere.
 let __editor: Editor | null = null
 
 export class Viewer {
@@ -31,7 +31,11 @@ export class Viewer {
    }
 }
 
-const views: Map<Value, View> = new Map()
+const views: Map<Value, View> = new Map() // persists across edits
+
+export function existingView (tv: ExplValue): ExplValueView {
+   return __nonNull(views.get(tv)) as ExplValueView
+}
 
 function isExprFor (e: Expr, C: Class<DataValue>): boolean {
    return classOf(e) === exprClass(C)
@@ -233,10 +237,6 @@ export function valueView (tv: ExplValue): ValueView {
    }
 }
 
-export function existingView (tv: ExplValue): ExplValueView {
-   return __nonNull(views.get(tv)) as ExplValueView
-}
-
 export function view (tv: ExplValue, show_v: boolean, show_ts: boolean): ExplValueView {
    let w: ExplValueView | undefined = views.get(tv) as ExplValueView
    if (w === undefined) {
@@ -245,6 +245,19 @@ export function view (tv: ExplValue, show_v: boolean, show_ts: boolean): ExplVal
       return w
    } else {
       return w
+   }
+}
+
+function view_child<T extends DataValue> (C: Class<T>, tv: ExplValue<T>, prop: keyof T, show_v: boolean, show_ts: boolean): SVGSVGElement {
+   if (versioned(tv.v)) {
+      const g: SVGSVGElement = view(Expl.explChild(tv.t, tv.v, prop), show_v, show_ts).render()
+      if (tv.v.__ẟ instanceof Change && tv.v.__ẟ.changed.hasOwnProperty(prop)) {
+         return border_changed(g)
+      } else {
+         return g
+      }
+   } else {
+      return absurd()
    }
 }
 
@@ -550,19 +563,6 @@ function expr_child<T extends DataValue> (C: Class<T>, parens: boolean, e: Expr.
    } else {
       return absurd()
    }   
-}
-
-function view_child<T extends DataValue> (C: Class<T>, tv: ExplValue<T>, prop: keyof T, show_v: boolean, show_ts: boolean): SVGSVGElement {
-   if (versioned(tv.v)) {
-      const g: SVGSVGElement = view(Expl.explChild(tv.t, tv.v, prop), show_v, show_ts).render()
-      if (tv.v.__ẟ instanceof Change && tv.v.__ẟ.changed.hasOwnProperty(prop)) {
-         return border_changed(g)
-      } else {
-         return g
-      }
-   } else {
-      return absurd()
-   }
 }
 
 function list ({t, v}: ExplValue<List>): SVGSVGElement {
