@@ -113,11 +113,6 @@ export class Str extends Value<"Str"> implements Ord<Str> {
    }
 }
 
-// Dynamic interface to a value object.
-export interface State {
-   [prop: string]: Persistent
-}
-
 // Mergeable state deltas are disjoint.
 export function mergeInto (tgt: StateDelta, src: StateDelta): void {
    Object.keys(src).forEach((prop: string): void => {
@@ -200,17 +195,16 @@ export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
 export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): StateDelta | null {
-   const tgtʹ: State = tgt as any as State,
-         f̅: string[] = fields(tgt),
+   const f̅: string[] = fields(tgt),
          ẟ: StateDelta | null = compare ? {} : null
    assert(f̅.length === v̅.length)
    let n: number = 0
    f̅.forEach((prop: string): void => {
       const src: Persistent = v̅[n++]
       if (compare && tgt.__child(prop) !== src) {
-         ẟ![prop] = { before: tgtʹ[prop], after: src }
+         ẟ![prop] = { before: tgt.__child(prop), after: src }
       }
-      tgtʹ[prop] = src
+      (tgt as any)[prop] = src
    })
    return ẟ
 }
