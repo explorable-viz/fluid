@@ -20,11 +20,15 @@ import {
 import Closure = Eval.Closure
 import Cont = Expr.Cont
 
-// Horrible idiom, but better than passing editors around everywhere.
+// Prefer globals to threading parameters everywhere :-o
 let __editor: Editor | null = null
+
+type Link = [View, View]
+const __links: Set<Link> = new Set() 
 
 export class Viewer {
    render (tv: ExplValue, editor: Editor): [SVGElement, number] {
+      __links.clear()
       __editor = editor
       const g: SVGElement = view(tv, true, true).render()
       return [g, __nonNull(dimensions.get(g)).height]
@@ -252,6 +256,10 @@ function view_child<T extends DataValue> (C: Class<T>, tv: ExplValue<T>, prop: k
    if (versioned(tv.v)) {
       const g: SVGSVGElement = view(Expl.explChild(tv.t, tv.v, prop), show_v, show_ts).render()
       if (tv.v.__ẟ instanceof Change && tv.v.__ẟ.changed.hasOwnProperty(prop)) {
+         const w_existing: View | undefined = views.get(as(tv.v.__ẟ.changed[prop as string][0], ExplValue))
+         if (w_existing) {
+            __links.add([w_existing, null])
+         }
          return border_changed(g)
       } else {
          return g
