@@ -13,8 +13,8 @@ import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { 
-   DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, deltaStyle, dimensions, ellipsis, horiz, horizSpace, keyword, edge_left, 
-   parenthesise, parenthesiseIf, shading, space, text, unimplemented, vert 
+   DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, connector, deltaStyle, ellipsis, horiz, horizSpace, keyword, 
+   edge_left, parenthesise, parenthesiseIf, shading, space, text, unimplemented, vert 
 } from "./Renderer"
 
 import Closure = Eval.Closure
@@ -32,15 +32,15 @@ const __links: Set<Link> = new Set()
 const __svgs: Map<View, SVGSVGElement> = new Map() // memoised render within a single update 
 
 export class Viewer {
-   render (tv: ExplValue, editor: Editor): [SVGElement, number] {
+   render (root: SVGSVGElement, tv: ExplValue, editor: Editor): void {
       __svgs.clear()
       __links.clear()
       __editor = editor
       const g: SVGElement = view(tv, true, true).render()
+      root.appendChild(g) // need to render the main view so links can make use of getBoundingClientRect
       renderLinks(__links).forEach((link: SVGElement): void => {
-         g.appendChild(link)
+         root.appendChild(link)
       })
-      return [g, __nonNull(dimensions.get(g)).height]
    }
 }
 
@@ -65,7 +65,9 @@ function exprFor (t: Expl): Expr {
 }
 
 function renderLinks (links: Set<Link>): SVGElement[] {
-   return []
+   return [...links].map(((link: Link): SVGElement => {
+      return connector(__nonNull(__svgs.get(link.from)), __nonNull(__svgs.get(link.to)))
+   }))
 }
 
 abstract class View {
@@ -270,12 +272,18 @@ export function view (tv: ExplValue, show_v: boolean, show_ts: boolean): ExplVal
    }
 }
 
-function view_child<T extends DataValue> (C: Class<T>, tv: ExplValue<T>, prop: keyof T, show_v: boolean, show_ts: boolean): SVGSVGElement {
-   if (versioned(tv.v)) {
-      const w: View = view(Expl.explChild(tv.t, tv.v, prop), show_v, show_ts)
+function view_child<T extends DataValue> (C: Class<T>, tv: ExplValue<T>, prop_: keyof T, show_v: boolean, show_ts: boolean): SVGSVGElement {
+   if (versioned(tv.v) && versioned(tv.t)) {
+      const prop: string = prop_ as string
+      const w: View = view(Expl.explChild(tv.t, tv.v, prop_), show_v, show_ts)
       const g: SVGSVGElement = w.render()
-      if (tv.v.__ẟ instanceof Change && tv.v.__ẟ.changed.hasOwnProperty(prop)) {
-         const w_existing: View | undefined = views.get(as(tv.v.__ẟ.changed[prop as string].before, ExplValue))
+      if (tv.v.__ẟ instanceof Change && tv.v.__ẟ.hasChanged(prop as string)) {
+         // All a bit hacky, need to rethink:
+         const t_prev: Expl = 
+            tv.t.__ẟ instanceof Change && tv.t.__ẟ.hasChanged(prop as string) ? 
+            as(tv.t.__ẟ.changed[prop].before, Expl.Expl) :
+            tv.t
+         const w_existing: View | undefined = views.get(explValue(t_prev, as(tv.v.__ẟ.changed[prop].before, Value)))
          if (w_existing) {
             __links.add({ from: w, to: w_existing })
          }

@@ -1,10 +1,13 @@
-import { absurd, className } from "../util/Core"
+import { __nonNull, absurd, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
 import { strings } from "../Expr"
 import { Value, isPrim } from "../Value"
 import { versioned } from "../Versioned"
 import { SVG } from "./Core"
 import "./styles.css"
+
+// Maybe there's some built-in type for this, but don't care yet
+type Rect = { x: number, y: number, width: number, height: number }
 
 export const svg: SVG = new SVG(false)
 const fontSize: number = 18
@@ -76,6 +79,36 @@ export function centreDot (ẟ_style: DeltaStyle): SVGElement {
 export function comma (ẟ_style: DeltaStyle): SVGElement {
    return keyword("comma", ẟ_style)
 }
+
+export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
+   const connector: SVGLineElement = document.createElementNS(SVG.NS, "line")
+   const g1_rect: Rect = rect(g1)
+   const g2_rect: Rect = rect(g2)
+   connector.setAttribute("x1", g1_rect.x.toString())
+   connector.setAttribute("y1", g1_rect.y.toString())
+   connector.setAttribute("x2", g2_rect.x.toString())
+   connector.setAttribute("y2", g2_rect.y.toString())
+   connector.setAttribute("stroke", "orange") // hardcoded
+   connector.setAttribute("stroke-width", "4")
+   return connector
+}
+
+function rect (g: SVGSVGElement): Rect {
+   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
+   const { x, y } = coordinates(g)
+   return { x, y, width, height }
+}
+
+// Couldn't get getScreenCTM or getBoundingClientRect to work properly (perhaps because of nested SVGs?) so just use this to compute 
+// coordinates of g relative to root SVG.
+function coordinates (g: SVGSVGElement): { x: number, y: number } {
+   if (g instanceof SVGSVGElement) {
+      const { x, y } = g.parentElement instanceof SVGSVGElement ? coordinates(g.parentElement): { x: 0, y: 0}
+      return { x: x + g.x.baseVal.value, y: y + g.y.baseVal.value }
+   } else {
+      return { x: 0, y: 0}
+   }
+} 
 
 export function delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGElement[] {
    const gsʹ: SVGElement[] = []

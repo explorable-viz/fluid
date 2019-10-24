@@ -39,8 +39,7 @@ export class Editor {
          this.root.removeChild(this.root.firstChild)
       }
       const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
-      const [g,]: [SVGElement, number] = new Viewer().render(tv, this)
-      this.root.appendChild(g)
+      new Viewer().render(this.root, tv, this)
       const this_: this = this
       // https://stackoverflow.com/questions/5597060
       document.onkeydown = function (ev: KeyboardEvent) {

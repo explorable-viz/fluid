@@ -98,6 +98,10 @@ export class Change extends Delta {
    leq (ẟ: Delta): boolean {
       return ẟ instanceof Change && leq(this.changed, ẟ.changed)
    }
+
+   hasChanged (prop: string): boolean {
+      return fields(this.changed).includes(prop)
+   }
 }
 
 // Constructor has changed, and therefore fields may not align. More sophisticated reclassification
