@@ -1,6 +1,6 @@
 import { Class, __nonNull, absurd, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
-import { StateDelta, __deltas } from "./Delta"
+import { ValueDelta, __deltas } from "./Delta"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -114,7 +114,7 @@ export class Str extends Value<"Str"> implements Ord<Str> {
 }
 
 // Mergeable state deltas are disjoint.
-export function mergeInto (tgt: StateDelta, src: StateDelta): void {
+export function mergeInto (tgt: ValueDelta, src: ValueDelta): void {
    Object.keys(src).forEach((prop: string): void => {
       if (!tgt.hasOwnProperty(prop)) {
          tgt[prop] = src[prop]
@@ -194,9 +194,9 @@ export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): StateDelta | null {
+export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): ValueDelta | null {
    const f̅: string[] = fields(tgt),
-         ẟ: StateDelta | null = compare ? {} : null
+         ẟ: ValueDelta | null = compare ? {} : null
    assert(f̅.length === v̅.length)
    let n: number = 0
    f̅.forEach((prop: string): void => {
