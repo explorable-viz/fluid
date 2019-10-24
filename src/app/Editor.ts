@@ -8,7 +8,7 @@ import { Expr } from "../Expr"
 import { newRevision } from "../Versioned"
 import { ExplValueCursor } from "./Cursor"
 import { svg } from "./Renderer"
-import { Renderer, existingView } from "./View"
+import { Viewer, existingView } from "./View"
 import "./styles.css"
 
 export class Editor {
@@ -39,7 +39,7 @@ export class Editor {
          this.root.removeChild(this.root.firstChild)
       }
       const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
-      const [g,]: [SVGElement, number] = new Renderer().render(tv, this)
+      const [g,]: [SVGElement, number] = new Viewer().render(tv, this)
       this.root.appendChild(g)
       const this_: this = this
       // https://stackoverflow.com/questions/5597060

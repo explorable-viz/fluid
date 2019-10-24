@@ -23,11 +23,10 @@ import Cont = Expr.Cont
 // Rather horrible idiom, but better than passing editors around everywhere.
 let __editor: Editor | null = null
 
-export class Renderer {
+export class Viewer {
    render (tv: ExplValue, editor: Editor): [SVGElement, number] {
       __editor = editor
-      const w: ExplValueView = view(tv, true, true) as ExplValueView
-      const g: SVGElement = w.render()
+      const g: SVGElement = view(tv, true, true).render()
       return [g, __nonNull(dimensions.get(g)).height]
    }
 }
@@ -38,7 +37,8 @@ function isExprFor (e: Expr, C: Class<DataValue>): boolean {
    return classOf(e) === exprClass(C)
 }
 
-// Unpack evaluation memo-key to recover original expression.
+// Unpack evaluation memo-key to recover original expression. TODO: make generic
+// and move near to memo code.
 function exprFor (t: Expl): Expr {
    if (versioned(t)) {
       return as(as(as(t.__id, TaggedId).k, ApplicationId).v, Expr.Expr)
