@@ -29,13 +29,13 @@ describe("edit", () => {
             }
 
             expect (here: ExplValueCursor) {
-               here.isChanged({ val: [42, 49] })
+               here.isChanged({ val: { before: 42, after: 49 } })
                    .toTerminal()
                    .toBinaryArg1("*")
-                   .isChanged({ val: [6, 7] })
+                   .isChanged({ val: { before: 6, after: 7 } })
                    .toTerminal()
                    .toBinaryArg2("+")
-                   .isChanged({ val: [5, 6] })
+                   .isChanged({ val: { before: 5, after: 6 } })
             }
          })(e)
       })
@@ -94,16 +94,16 @@ describe("edit", () => {
             }
 
             expect (here: ExplValueCursor) {
-               here = here.isChanged({ val: [661, 39.125]})
+               here = here.isChanged({ val: { before: 661, after: 39.125 } })
                    .toTerminal()
                here.toBinaryArg2("/").isNew()
                here = here.toBinaryArg1("/").isNew()
                    .toTerminal()
                here.toBinaryArg1("+").isUnchanged()
-               here = here.toBinaryArg2("+").isChanged({ val: [625, 42.25] })
+               here = here.toBinaryArg2("+").isChanged({ val: { before: 625, after: 42.25 } })
                    .toTerminal()
-               here.toBinaryArg1("*").isChanged({ val: [25, 6.5] })
-               here.toBinaryArg2("*").isChanged({ val: [25, 6.5] })
+               here.toBinaryArg1("*").isChanged({ val: { before: 25, after: 6.5 } })
+               here.toBinaryArg2("*").isChanged({ val: { before: 25, after: 6.5 } })
             }
          })(e)
       })

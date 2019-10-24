@@ -4,12 +4,12 @@ import { Persistent, Value, fields, mergeInto } from "./Value"
 
 // Difference between two states (of the same class).
 export interface StateDelta {
-   [prop: string]: [Persistent, Persistent] // [before, after]
+   [prop: string]: { before: Persistent, after: Persistent } // [before, after]
 }
 
 export function leq (s1: StateDelta, s2: StateDelta): boolean {
    return Object.keys(s1).every((prop: string): boolean => {
-      return s2.hasOwnProperty(prop) && s1[prop][0] === s2[prop][0] && s1[prop][1] === s2[prop][1]
+      return s2.hasOwnProperty(prop) && s1[prop].before === s2[prop].before && s1[prop].after === s2[prop].after
    })
 }
 

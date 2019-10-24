@@ -23,11 +23,17 @@ import Cont = Expr.Cont
 // Prefer globals to threading parameters everywhere :-o
 let __editor: Editor | null = null
 
-type Link = [View, View]
-const __links: Set<Link> = new Set() 
+type Link = {
+   from: View, 
+   to: View
+}
+
+const __links: Set<Link> = new Set()
+const __svgs: Map<View, SVGSVGElement> = new Map() // memoised render within a single update 
 
 export class Viewer {
    render (tv: ExplValue, editor: Editor): [SVGElement, number] {
+      __svgs.clear()
       __links.clear()
       __editor = editor
       const g: SVGElement = view(tv, true, true).render()
@@ -56,7 +62,12 @@ function exprFor (t: Expl): Expr {
 }
 
 abstract class View {
-   abstract render (): SVGElement
+   render (): SVGSVGElement {
+      const g: SVGSVGElement = this.render_()
+      __svgs.set(this, g)
+      return g
+   }
+   abstract render_ (): SVGSVGElement
 }
 
 class ExplValueView extends View {
@@ -90,7 +101,7 @@ class ExplValueView extends View {
       return [ts, splitValue(this.tv)]
    }
 
-   render (): SVGSVGElement {
+   render_ (): SVGSVGElement {
       this.assertValid()
       const [ts, tv]: [Expl[], ExplValue | null] = this.initialise()
       let g: SVGSVGElement 
@@ -138,9 +149,9 @@ export class ExplView extends View {
       this.bodyVisible = false
    }
 
-   render (): SVGElement {
+   render_ (): SVGSVGElement {
       if (this.t instanceof Expl.Var) {
-         return text(this.t.x.val, deltaStyle(this.t))
+         return horiz(text(this.t.x.val, deltaStyle(this.t)))
       }
       else
       if (this.t instanceof Expl.UnaryApp) {
@@ -199,7 +210,7 @@ export class ValueView extends View {
       this.tv = tv
    }
 
-   render (): SVGSVGElement {
+   render_ (): SVGSVGElement {
       let g: SVGSVGElement
       if (this.tv.v instanceof Num) {
          const e: Expr = exprFor(this.tv.t)
@@ -254,11 +265,12 @@ export function view (tv: ExplValue, show_v: boolean, show_ts: boolean): ExplVal
 
 function view_child<T extends DataValue> (C: Class<T>, tv: ExplValue<T>, prop: keyof T, show_v: boolean, show_ts: boolean): SVGSVGElement {
    if (versioned(tv.v)) {
-      const g: SVGSVGElement = view(Expl.explChild(tv.t, tv.v, prop), show_v, show_ts).render()
+      const w: View = view(Expl.explChild(tv.t, tv.v, prop), show_v, show_ts)
+      const g: SVGSVGElement = w.render()
       if (tv.v.__ẟ instanceof Change && tv.v.__ẟ.changed.hasOwnProperty(prop)) {
-         const w_existing: View | undefined = views.get(as(tv.v.__ẟ.changed[prop as string][0], ExplValue))
+         const w_existing: View | undefined = views.get(as(tv.v.__ẟ.changed[prop as string].before, ExplValue))
          if (w_existing) {
-            __links.add([w_existing, null])
+            __links.add({ from: w, to: w_existing })
          }
          return border_changed(g)
       } else {
