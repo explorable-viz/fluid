@@ -49,7 +49,8 @@ export abstract class Elim<K extends Cont = Cont> extends DataValue<"Elim"> {
 
 function apply_<K extends Cont> (σ: Elim<K>, tv: ExplValue, u̅: MatchPrefix): [Env, Match<K>] {
    if (VarElim.is(σ)) {
-      return [Env.singleton(σ.x, tv), match(u̅, σ.κ)]
+      const ρ: Env = σ.x.val === "_" ? emptyEnv() : Env.singleton(σ.x, tv)
+      return [ρ, match(u̅, σ.κ)]
    } else
    if (DataElim.is(σ)) {
       const v: Value = tv.v,
