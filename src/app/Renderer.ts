@@ -6,8 +6,9 @@ import { versioned } from "../Versioned"
 import { SVG } from "./Core"
 import "./styles.css"
 
-// Maybe there's some built-in type for this, but don't care yet
-type Rect = { x: number, y: number, width: number, height: number }
+// Maybe there are some built-in types for this, but don't care yet
+type Point = { x: number, y: number }
+type Rect = Point & { width: number, height: number }
 
 export const svg: SVG = new SVG(false)
 const fontSize: number = 18
@@ -90,21 +91,30 @@ function blah (x: number, length: number, proportion: number):  number {
    return x + proportion * length
 }
 
+// Path segment corrresponding to a line.
+function line (p1: Point, p2: Point): string {
+   return `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`
+}
+
 export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    const g1_: Rect = rect(g1)
    const g2_: Rect = rect(g2)
    const [fromBottom, fromTop]: [number, number] = [0.1, 0.9]
    const connector_: SVGPathElement = document.createElementNS(SVG.NS, "path")
    if (leftOf(g1_, g2_)) {
-      connector_.setAttribute("d", `
-         M ${g1_.x + g1_.width} ${blah(g1_.y, g1_.height, fromBottom)}
-         L ${g2_.x} ${blah(g2_.y, g2_.height, fromBottom)}
-      `)
+      connector_.setAttribute("d", 
+         line(
+            { x: g1_.x + g1_.width, y: blah(g1_.y, g1_.height, fromBottom) },
+            { x: g2_.x, y: blah(g2_.y, g2_.height, fromBottom) }
+         )
+      )
    } else {
-      connector_.setAttribute("d", `
-         M ${g1_.x} ${blah(g1_.y, g1_.height, fromTop)}
-         L ${g2_.x + g2_.width} ${blah(g2_.y, g2_.height, fromTop)}
-      `)
+      connector_.setAttribute("d", 
+         line(
+            { x: g1_.x, y: blah(g1_.y, g1_.height, fromTop) },
+            { x: g2_.x + g2_.width, y: blah(g2_.y, g2_.height, fromTop) }
+         )
+      )
    }
    connector_.setAttribute("stroke", "blue") // hardcoded
    connector_.setAttribute("stroke-width", "1")
