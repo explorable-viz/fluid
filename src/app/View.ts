@@ -636,8 +636,13 @@ function expr (parens: boolean, e: Expr): SVGSVGElement {
 // Really want some kind of view typeclass, so this isn't specific to expression. Also: consolidate with ExprCursor.
 function expr_child<T extends DataValue> (C: Class<T>, parens: boolean, e: Expr.DataExpr, prop: keyof T): SVGElement {
    if (versioned(e)) {
-      const g: SVGSVGElement = expr(parens, e.__child(prop as string))
-      if (e.__ẟ instanceof Change && e.__ẟ.changed.hasOwnProperty(prop)) {
+      const w: ExprView = expr_(parens, e.__child(prop as string))
+      const g: SVGSVGElement = w.render()
+      if (e.__ẟ instanceof Change && e.__ẟ.hasChanged(prop as string)) {
+         const w_existing: View | undefined = views.get(as(e.__ẟ.changed[prop as string].before, Expr.Expr))
+         if (w_existing) {
+            __links.add({ from: w, to: w_existing })
+         }
          return border_changed(g)
       } else {
          return g
