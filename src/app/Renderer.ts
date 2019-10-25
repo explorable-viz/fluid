@@ -80,14 +80,26 @@ export function comma (ẟ_style: DeltaStyle): SVGElement {
    return keyword("comma", ẟ_style)
 }
 
+// Whether the centre of r1 is to the left of the centre of r2.
+function leftOf (r1: Rect, r2: Rect): boolean {
+   return r1.x + r1.width / 2 <= r2.x + r2.width
+}
+
 export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    const connector: SVGLineElement = document.createElementNS(SVG.NS, "line")
    const g1_: Rect = rect(g1)
    const g2_: Rect = rect(g2)
-   connector.setAttribute("x1", `${g1_.x}`)
-   connector.setAttribute("y1", `${g1_.y}`)
-   connector.setAttribute("x2", `${g2_.x + g2_.width}`)
-   connector.setAttribute("y2", `${g2_.y}`)
+   if (leftOf(g1_, g2_)) {
+      connector.setAttribute("x1", `${g1_.x + g1_.width}`)
+      connector.setAttribute("y1", `${g1_.y}`)
+      connector.setAttribute("x2", `${g2_.x}`)
+      connector.setAttribute("y2", `${g2_.y}`)
+   } else {
+      connector.setAttribute("x1", `${g1_.x}`)
+      connector.setAttribute("y1", `${g1_.y + g1_.height}`)
+      connector.setAttribute("x2", `${g2_.x + g2_.width}`)
+      connector.setAttribute("y2", `${g2_.y + g2_.height}`)   
+   }
    connector.setAttribute("stroke", "blue") // hardcoded
    connector.setAttribute("stroke-width", "1")
    connector.setAttribute("marker-end", "url(#arrowhead)")

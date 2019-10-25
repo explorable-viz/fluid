@@ -1,4 +1,4 @@
-import { as } from "../util/Core"
+import { __nonNull, as } from "../util/Core"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env, emptyEnv } from "../Env"
@@ -34,11 +34,20 @@ export class Editor {
    }
 
    render (): void {
-      this.root.childNodes.forEach((child: ChildNode): void => {
-         if (!(child instanceof SVGDefsElement)) {
-            this.root.removeChild(child)
+      let defs: SVGDefsElement | null = null
+      while (this.root.firstChild !== null) {
+         if (this.root.firstChild instanceof SVGDefsElement) {
+            defs = this.root.firstChild
+         } else {
+            this.root.removeChild(this.root.firstChild)
          }
-      })
+      }
+      this.root.appendChild(__nonNull(defs))
+      // this.root.childNodes.forEach((child: ChildNode): void => {
+      //    if (!(child instanceof SVGDefsElement)) {
+      //       this.root.removeChild(child)
+      //    }
+      // })
       const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
       new Viewer().render(this.root, tv, this)
       const this_: this = this
