@@ -31,9 +31,9 @@ export function arrowhead (): SVGMarkerElement {
    marker.setAttribute("id", "arrowhead")
 //   marker.setAttribute("viewBox", "0 0 10 10")
    const length: number = 6,
-         width: number = 3
+         width: number = 4
    marker.setAttribute("refX", `${length}`)
-   marker.setAttribute("refY", `${width}`)
+   marker.setAttribute("refY", `${width / 2}`)
    marker.setAttribute("markerUnits", "strokeWidth")
    marker.setAttribute("markerWidth", "16")
    marker.setAttribute("markerHeight", "16")
@@ -41,7 +41,7 @@ export function arrowhead (): SVGMarkerElement {
    marker.setAttribute("fill", "blue") // will want to change this
    const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
    marker.appendChild(path)
-   path.setAttribute("d", `M 0 0 L ${length} ${width} L 0 ${width} Z`) // half arrowhead
+   path.setAttribute("d", `M ${length} ${width / 2} L 0 ${width} L 0 0 Z`)
    return marker
 }
 
