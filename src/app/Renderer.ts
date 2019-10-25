@@ -91,26 +91,9 @@ function blah (x: number, length: number, proportion: number):  number {
 }
 
 export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
-   const connector: SVGLineElement = document.createElementNS(SVG.NS, "line")
    const g1_: Rect = rect(g1)
    const g2_: Rect = rect(g2)
    const [fromBottom, fromTop]: [number, number] = [0.1, 0.9]
-   if (leftOf(g1_, g2_)) {
-      connector.setAttribute("x1", `${g1_.x + g1_.width}`)
-      connector.setAttribute("y1", `${blah(g1_.y, g1_.height, fromBottom)}`)
-      connector.setAttribute("x2", `${g2_.x}`)
-      connector.setAttribute("y2", `${blah(g2_.y, g2_.height, fromBottom)}`)
-   } else {
-      connector.setAttribute("x1", `${g1_.x}`)
-      connector.setAttribute("y1", `${blah(g1_.y, g1_.height, fromTop)}`)
-      connector.setAttribute("x2", `${g2_.x + g2_.width}`)
-      connector.setAttribute("y2", `${blah(g2_.y, g2_.height, fromTop)}`)
-   }
-   connector.setAttribute("stroke", "blue") // hardcoded
-   connector.setAttribute("stroke-width", "1")
-   connector.setAttribute("stroke-dasharray", "1,1")
-   connector.setAttribute("marker-end", "url(#arrowhead)")
-
    const connector_: SVGPathElement = document.createElementNS(SVG.NS, "path")
    if (leftOf(g1_, g2_)) {
       connector_.setAttribute("d", `
@@ -127,7 +110,6 @@ export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    connector_.setAttribute("stroke-width", "1")
    connector_.setAttribute("stroke-dasharray", "1,1")
    connector_.setAttribute("marker-end", "url(#arrowhead)")
-
    return connector_
 }
 
