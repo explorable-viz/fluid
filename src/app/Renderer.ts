@@ -22,7 +22,7 @@ type Dimensions = { width: number, height: number }
 export const dimensions: Map<SVGElement, Dimensions> = new Map()
 
 // Doesn't really work as opacity means it builds up. Need it to be at the bottom in the z-order, and opaque.
-export function shading (g: SVGSVGElement): SVGSVGElement {
+export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
    const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
    const background: SVGRectElement = document.createElementNS(SVG.NS, "rect")
    background.setAttribute("x", g.x.baseVal.valueAsString)
@@ -31,7 +31,7 @@ export function shading (g: SVGSVGElement): SVGSVGElement {
    background.setAttribute("height", height.toString())
    background.setAttribute("width", width.toString())
    background.setAttribute("stroke", "none")
-   background.setAttribute("fill", "lavender")
+   background.setAttribute("fill", fill)
    background.setAttribute("pointer-events", "none")
    svg.appendChild(background)
    svg.appendChild(g)

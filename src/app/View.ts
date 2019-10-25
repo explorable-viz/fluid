@@ -159,37 +159,39 @@ export class ExplView extends View {
    }
 
    render_ (): SVGSVGElement {
+      let g: SVGSVGElement
       if (this.t instanceof Expl.Var) {
-         return horiz(text(this.t.x.val, deltaStyle(this.t)))
+         g = horiz(text(this.t.x.val, deltaStyle(this.t)))
       }
       else
       if (this.t instanceof Expl.UnaryApp) {
-         return view(this.t.tf, false, true).render()
+         g = view(this.t.tf, false, true).render()
       } else
       if (this.t instanceof Expl.BinaryApp) {
-         return horizSpace(
+         g = horizSpace(
             view(this.t.tv1, false, true).render(), 
             text(this.t.opName.val, deltaStyle(this.t)), // what about changes associated with t.opName? 
             view(this.t.tv2, false, true).render()
          )
       } else
       if (this.t instanceof Expl.App) {
-         return vert(
+         g = vert(
             horizSpace(view(this.t.tf, false, true).render(), view(this.t.tu, false, true).render()),
             this.appBody()
          )
       } else
       if (this.t instanceof Expl.Defs) {
-         return vert(...this.t.def̅.toArray().map(defₜ))
+         g = vert(...this.t.def̅.toArray().map(defₜ))
       } else
       if (this.t instanceof Expl.MatchAs) {
-         return vert(
+         g = vert(
             horizSpace(keyword("match", deltaStyle(this.t)), view(this.t.tu, false, true).render(), keyword("as", deltaStyle(this.t))),
             elimMatch(this.t.ξ)
          )
       } else {
          return absurd()
       }
+      return shading(g, "white")
    }
 
    appBody (): SVGElement {
@@ -244,7 +246,7 @@ export class ValueView extends View {
       } else {
          g = unimplemented(this.tv.v)
       }
-      return shading(g)
+      return shading(g, "lavender")
    }
 }
 
