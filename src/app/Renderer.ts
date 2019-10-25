@@ -96,6 +96,15 @@ function line (p1: Point, p2: Point): string {
    return `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`
 }
 
+// Offset might be better computed as a function of distance between p1 and p2.
+function curvedLine (p1: Point, p2: Point, offset: number): string {
+   const mp: Point = { x: (p2.x + p1.x) * 0.5, y: (p2.y + p1.y) * 0.5 }
+   // angle of perpendicular to line
+   const theta = Math.atan2(p2.y - p1.y, p2.x - p1.x) - Math.PI / 2
+   const control: Point = { x: mp.x + offset * Math.cos(theta), y: mp.y + offset * Math.sin(theta) }
+   return `M ${p1.x} ${p1.y} Q ${control.x} ${control.y} ${p2.x} ${p2.y}`
+}
+
 export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    const g1_: Rect = rect(g1)
    const g2_: Rect = rect(g2)
@@ -110,9 +119,10 @@ export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
       )
    } else {
       connector_.setAttribute("d", 
-         line(
+         curvedLine(
             { x: g1_.x, y: blah(g1_.y, g1_.height, fromTop) },
-            { x: g2_.x + g2_.width, y: blah(g2_.y, g2_.height, fromTop) }
+            { x: g2_.x + g2_.width, y: blah(g2_.y, g2_.height, fromTop) },
+            5
          )
       )
    }
