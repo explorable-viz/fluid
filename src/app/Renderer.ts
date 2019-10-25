@@ -25,24 +25,20 @@ export function arrow (ẟ_style: DeltaStyle): SVGElement {
    return keyword("arrow", ẟ_style)
 }
 
-// Assume root has a unique defs element called "defs".
-export function defineMarker (root: SVGSVGElement, marker: SVGMarkerElement): void {
-   const defs: SVGDefsElement = as(root.getElementById("defs"), SVGDefsElement)
-   defs.appendChild(marker)
-}
-
 export function arrowhead (): SVGMarkerElement {
    const marker: SVGMarkerElement = document.createElementNS(SVG.NS, "marker")
    marker.setAttribute("id", "arrowhead")
-   marker.setAttribute("refX", "0")
-   marker.setAttribute("refY", "5")
+//   marker.setAttribute("viewBox", "0 0 10 10")
+   marker.setAttribute("refX", "left")
+   marker.setAttribute("refY", "2") // vertical midpoint of arrowhead
    marker.setAttribute("markerUnits", "strokeWidth")
-   marker.setAttribute("markerWidth", "4")
-   marker.setAttribute("markerHeight", "3")
+   marker.setAttribute("markerWidth", "16")
+   marker.setAttribute("markerHeight", "16")
    marker.setAttribute("orient", "auto")
+   marker.setAttribute("fill", "blue") // will want to change this
    const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
    marker.appendChild(path)
-   path.setAttribute("d", "M 0 0 L 10 5 L 0 10 z")
+   path.setAttribute("d", "M 0 0 L 6 4 L 0 4 Z") // half arrowhead
    return marker
 }
 
@@ -110,10 +106,10 @@ export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    return connector
 }
 
-function rect (g: SVGSVGElement): Rect {
-   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
-   const { x, y } = coordinates(g)
-   return { x, y, width, height }
+// Assume root has a unique defs element called "defs".
+export function defineMarker (root: SVGSVGElement, marker: SVGMarkerElement): void {
+   const defs: SVGDefsElement = as(root.getElementById("defs"), SVGDefsElement)
+   defs.appendChild(marker)
 }
 
 // Couldn't get getScreenCTM or getBoundingClientRect to work properly (perhaps because of nested SVGs?) so just use this to compute 
@@ -200,6 +196,12 @@ export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGSVGEleme
 
 export function parenthesiseIf (parens: boolean, g: SVGSVGElement, ẟ_style: DeltaStyle): SVGSVGElement {
    return parens ? parenthesise(g, ẟ_style) : g
+}
+
+function rect (g: SVGSVGElement): Rect {
+   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
+   const { x, y } = coordinates(g)
+   return { x, y, width, height }
 }
 
 // Needs to be at the bottom in the z-order, and opaque.
