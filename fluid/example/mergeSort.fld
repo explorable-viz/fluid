@@ -8,8 +8,8 @@ letrec
 
    fun merge xs ys →
       match (xs, ys) as {
-         ([], _) → ys;
-         ([x, ...xs'], []) → xs;
+         ([], _) → ys;                               
+         ([x, ...xs'], []) → xs;                   
          ([x, ...xs'], [y, ...ys']) →
             match x < y as {
                True → [x, ...merge xs' ys];
