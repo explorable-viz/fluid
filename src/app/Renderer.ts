@@ -29,8 +29,8 @@ export function arrowhead (): SVGMarkerElement {
    const marker: SVGMarkerElement = document.createElementNS(SVG.NS, "marker")
    marker.setAttribute("id", "arrowhead")
 //   marker.setAttribute("viewBox", "0 0 10 10")
-   marker.setAttribute("refX", "left")
-   marker.setAttribute("refY", "2") // vertical midpoint of arrowhead
+   marker.setAttribute("refX", "6")
+   marker.setAttribute("refY", "4")
    marker.setAttribute("markerUnits", "strokeWidth")
    marker.setAttribute("markerWidth", "16")
    marker.setAttribute("markerHeight", "16")
