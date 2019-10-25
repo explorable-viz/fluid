@@ -34,10 +34,11 @@ export class Editor {
    }
 
    render (): void {
-      // not sure why this shenanigan to clear view
-      while (this.root.firstChild !== null) {
-         this.root.removeChild(this.root.firstChild)
-      }
+      this.root.childNodes.forEach((child: ChildNode): void => {
+         if (!(child instanceof SVGDefsElement)) {
+            this.root.removeChild(child)
+         }
+      })
       const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
       new Viewer().render(this.root, tv, this)
       const this_: this = this

@@ -26,6 +26,20 @@ export class SVG {
       }
       svg.style.verticalAlign = "top"
       svg.style.display = "inline-block"
+      const defs: SVGDefsElement = document.createElementNS(SVG.NS, "defs")
+      const marker: SVGMarkerElement = document.createElementNS(SVG.NS, "marker")
+      marker.setAttribute("id", "arrowhead")
+      marker.setAttribute("refX", "0")
+      marker.setAttribute("refY", "5")
+      marker.setAttribute("markerUnits", "strokeWidth")
+      marker.setAttribute("markerWidth", "4")
+      marker.setAttribute("markerHeight", "3")
+      marker.setAttribute("orient", "auto")
+      const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
+      marker.appendChild(path)
+      path.setAttribute("d", "M 0 0 L 10 5 L 0 10 z")
+      defs.appendChild(marker)
+      svg.appendChild(defs)
       return svg
    }
 

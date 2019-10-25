@@ -82,14 +82,15 @@ export function comma (ẟ_style: DeltaStyle): SVGElement {
 
 export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    const connector: SVGLineElement = document.createElementNS(SVG.NS, "line")
-   const g1_rect: Rect = rect(g1)
-   const g2_rect: Rect = rect(g2)
-   connector.setAttribute("x1", g1_rect.x.toString())
-   connector.setAttribute("y1", g1_rect.y.toString())
-   connector.setAttribute("x2", g2_rect.x.toString())
-   connector.setAttribute("y2", g2_rect.y.toString())
-   connector.setAttribute("stroke", "orange") // hardcoded
-   connector.setAttribute("stroke-width", "4")
+   const g1_: Rect = rect(g1)
+   const g2_: Rect = rect(g2)
+   connector.setAttribute("x1", `${g1_.x}`)
+   connector.setAttribute("y1", `${g1_.y}`)
+   connector.setAttribute("x2", `${g2_.x + g2_.width}`)
+   connector.setAttribute("y2", `${g2_.y}`)
+   connector.setAttribute("stroke", "blue") // hardcoded
+   connector.setAttribute("stroke-width", "1")
+   connector.setAttribute("marker-end", "url(#arrowhead)")
    return connector
 }
 
@@ -106,7 +107,7 @@ function coordinates (g: SVGSVGElement): { x: number, y: number } {
       const { x, y } = g.parentElement instanceof SVGSVGElement ? coordinates(g.parentElement): { x: 0, y: 0}
       return { x: x + g.x.baseVal.value, y: y + g.y.baseVal.value }
    } else {
-      return { x: 0, y: 0}
+      return { x: 0, y: 0 }
    }
 } 
 
