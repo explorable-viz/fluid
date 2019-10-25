@@ -29,8 +29,10 @@ export function arrowhead (): SVGMarkerElement {
    const marker: SVGMarkerElement = document.createElementNS(SVG.NS, "marker")
    marker.setAttribute("id", "arrowhead")
 //   marker.setAttribute("viewBox", "0 0 10 10")
-   marker.setAttribute("refX", "6")
-   marker.setAttribute("refY", "4")
+   const length: number = 6,
+         width: number = 3
+   marker.setAttribute("refX", `${length}`)
+   marker.setAttribute("refY", `${width}`)
    marker.setAttribute("markerUnits", "strokeWidth")
    marker.setAttribute("markerWidth", "16")
    marker.setAttribute("markerHeight", "16")
@@ -38,7 +40,7 @@ export function arrowhead (): SVGMarkerElement {
    marker.setAttribute("fill", "blue") // will want to change this
    const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
    marker.appendChild(path)
-   path.setAttribute("d", "M 0 0 L 6 4 L 0 4 Z") // half arrowhead
+   path.setAttribute("d", `M 0 0 L ${length} ${width} L 0 ${width} Z`) // half arrowhead
    return marker
 }
 
@@ -84,26 +86,49 @@ function leftOf (r1: Rect, r2: Rect): boolean {
    return r1.x + r1.width / 2 <= r2.x + r2.width
 }
 
+function blah (x: number, length: number, proportion: number):  number {
+   return x + proportion * length
+}
+
 export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    const connector: SVGLineElement = document.createElementNS(SVG.NS, "line")
    const g1_: Rect = rect(g1)
    const g2_: Rect = rect(g2)
+   const [fromBottom, fromTop]: [number, number] = [0.1, 0.9]
    if (leftOf(g1_, g2_)) {
       connector.setAttribute("x1", `${g1_.x + g1_.width}`)
-      connector.setAttribute("y1", `${g1_.y}`)
+      connector.setAttribute("y1", `${blah(g1_.y, g1_.height, fromBottom)}`)
       connector.setAttribute("x2", `${g2_.x}`)
-      connector.setAttribute("y2", `${g2_.y}`)
+      connector.setAttribute("y2", `${blah(g2_.y, g2_.height, fromBottom)}`)
    } else {
       connector.setAttribute("x1", `${g1_.x}`)
-      connector.setAttribute("y1", `${g1_.y + g1_.height}`)
+      connector.setAttribute("y1", `${blah(g1_.y, g1_.height, fromTop)}`)
       connector.setAttribute("x2", `${g2_.x + g2_.width}`)
-      connector.setAttribute("y2", `${g2_.y + g2_.height}`)   
+      connector.setAttribute("y2", `${blah(g2_.y, g2_.height, fromTop)}`)
    }
    connector.setAttribute("stroke", "blue") // hardcoded
    connector.setAttribute("stroke-width", "1")
    connector.setAttribute("stroke-dasharray", "1,1")
    connector.setAttribute("marker-end", "url(#arrowhead)")
-   return connector
+
+   const connector_: SVGPathElement = document.createElementNS(SVG.NS, "path")
+   if (leftOf(g1_, g2_)) {
+      connector_.setAttribute("d", `
+         M ${g1_.x + g1_.width} ${blah(g1_.y, g1_.height, fromBottom)}
+         L ${g2_.x} ${blah(g2_.y, g2_.height, fromBottom)}
+      `)
+   } else {
+      connector_.setAttribute("d", `
+         M ${g1_.x} ${blah(g1_.y, g1_.height, fromTop)}
+         L ${g2_.x + g2_.width} ${blah(g2_.y, g2_.height, fromTop)}
+      `)
+   }
+   connector_.setAttribute("stroke", "blue") // hardcoded
+   connector_.setAttribute("stroke-width", "1")
+   connector_.setAttribute("stroke-dasharray", "1,1")
+   connector_.setAttribute("marker-end", "url(#arrowhead)")
+
+   return connector_
 }
 
 // Assume root has a unique defs element called "defs".
