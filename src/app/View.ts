@@ -79,6 +79,96 @@ abstract class View {
    abstract render_ (): SVGSVGElement
 }
 
+class ExprView extends View {
+   parens: boolean
+   e: Expr
+
+   constructor (parens: boolean, e: Expr) {
+      super()
+      this.parens = parens
+      this.e = e
+   }
+
+   render_ (): SVGSVGElement {
+      const parens: boolean = this.parens
+      const e: Expr = this.e
+      if (e instanceof Expr.ConstNum) {
+         // ouch: disregard delta-info on expression itself
+         return horiz(num_(e.val, e.val))
+      } else
+      if (e instanceof Expr.ConstStr) {
+         // ouch: disregard delta-info on expression itself
+         return horiz(str_(e.val))
+      } else
+      if (e instanceof Expr.Fun) {
+         const g: SVGSVGElement = horizSpace(keyword("fun", deltaStyle(e)), elim(e.σ))
+         return parenthesiseIf(parens, g, deltaStyle(e))
+      } else
+      if (e instanceof Expr.DataExpr) {
+         if (isExprFor(e, Pair)) {
+            return pair_expr(e)
+         } else
+         if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
+            return list_expr(parens, e)
+         } else {
+            return dataConstr_expr(parens, e)
+         }
+      } else
+      if (e instanceof Expr.Quote) {
+         return unimplemented(e)
+      } else
+      if (e instanceof Expr.Var) {
+         // ouch: disregard delta-info on Var.x
+         return horiz(text(e.x.val, deltaStyle(e)))
+      } else
+      if (e instanceof Expr.App) {
+         return parenthesiseIf(
+            parens, 
+            horizSpace(expr(!(e.f instanceof Expr.App), e.f), expr(true, e.e)),
+            deltaStyle(e)
+         )
+      } else
+      if (e instanceof Expr.BinaryApp) {
+         // ignore operator precedence, but allow function application to take priority over any binary operation
+         return parenthesiseIf(
+            parens, 
+            horizSpace(
+               expr(!(e.e1 instanceof Expr.App), e.e1), 
+               text(e.opName.val, deltaStyle(e)), // what about changes associated with e.opName 
+               expr(!(e.e2 instanceof Expr.App), e.e2)
+            ),
+            deltaStyle(e)
+         )
+      } else
+      if (e instanceof Expr.Defs) {
+         return parenthesiseIf(
+            parens,
+            vert(
+               vert(...e.def̅.toArray().map(def_ => def(def_))),
+               expr(false, e.e)
+            ),
+            deltaStyle(e)
+         )
+      } else
+      if (e instanceof Expr.MatchAs) {
+         return vert(
+            horizSpace(keyword("match", deltaStyle(e)), expr(false, e.e), keyword("as", deltaStyle(e))),
+            elim(e.σ)
+         )
+      } else
+      if (e instanceof Expr.Typematch) {
+         return vert(
+            horizSpace(keyword("typematch", deltaStyle(e)), expr(false, e.e), keyword("as", deltaStyle(e))),
+            ...e.cases.toArray().map(({fst: x, snd: e}: Pair<Str, Expr>) => 
+               horizSpace(text(x.val, deltaStyle(x)), arrow(deltaStyle(e)), expr(false, e))
+            )
+         )
+      } else {
+         return absurd(`Unimplemented expression form: ${className(e)}.`)
+      }
+   }
+}
+
 class ExplValueView extends View {
    tv: ExplValue
    show_v: boolean
@@ -528,81 +618,19 @@ function elimMatch<K extends Cont> (ξ: Match<K>): SVGElement {
    return horizSpace(text(tv.v.ctr, deltaStyle(tv.v)), arrow(deltaStyle(tv.v)))
 }
 
-function expr (parens: boolean, e: Expr): SVGSVGElement {
-   if (e instanceof Expr.ConstNum) {
-      // ouch: disregard delta-info on expression itself
-      return horiz(num_(e.val, e.val))
-   } else
-   if (e instanceof Expr.ConstStr) {
-      // ouch: disregard delta-info on expression itself
-      return horiz(str_(e.val))
-   } else
-   if (e instanceof Expr.Fun) {
-      const g: SVGSVGElement = horizSpace(keyword("fun", deltaStyle(e)), elim(e.σ))
-      return parenthesiseIf(parens, g, deltaStyle(e))
-   } else
-   if (e instanceof Expr.DataExpr) {
-      if (isExprFor(e, Pair)) {
-         return pair_expr(e)
-      } else
-      if (isExprFor(e, Nil) || isExprFor(e, Cons)) {
-         return list_expr(parens, e)
-      } else {
-         return dataConstr_expr(parens, e)
-      }
-   } else
-   if (e instanceof Expr.Quote) {
-      return unimplemented(e)
-   } else
-   if (e instanceof Expr.Var) {
-      // ouch: disregard delta-info on Var.x
-      return horiz(text(e.x.val, deltaStyle(e)))
-   } else
-   if (e instanceof Expr.App) {
-      return parenthesiseIf(
-         parens, 
-         horizSpace(expr(!(e.f instanceof Expr.App), e.f), expr(true, e.e)),
-         deltaStyle(e)
-      )
-   } else
-   if (e instanceof Expr.BinaryApp) {
-      // ignore operator precedence, but allow function application to take priority over any binary operation
-      return parenthesiseIf(
-         parens, 
-         horizSpace(
-            expr(!(e.e1 instanceof Expr.App), e.e1), 
-            text(e.opName.val, deltaStyle(e)), // what about changes associated with e.opName 
-            expr(!(e.e2 instanceof Expr.App), e.e2)
-         ),
-         deltaStyle(e)
-      )
-   } else
-   if (e instanceof Expr.Defs) {
-      return parenthesiseIf(
-         parens,
-         vert(
-            vert(...e.def̅.toArray().map(def_ => def(def_))),
-            expr(false, e.e)
-         ),
-         deltaStyle(e)
-      )
-   } else
-   if (e instanceof Expr.MatchAs) {
-      return vert(
-         horizSpace(keyword("match", deltaStyle(e)), expr(false, e.e), keyword("as", deltaStyle(e))),
-         elim(e.σ)
-      )
-   } else
-   if (e instanceof Expr.Typematch) {
-      return vert(
-         horizSpace(keyword("typematch", deltaStyle(e)), expr(false, e.e), keyword("as", deltaStyle(e))),
-         ...e.cases.toArray().map(({fst: x, snd: e}: Pair<Str, Expr>) => 
-            horizSpace(text(x.val, deltaStyle(x)), arrow(deltaStyle(e)), expr(false, e))
-         )
-      )
+function expr_ (parens: boolean, e: Expr): ExprView {
+   let w: ExprView | undefined = views.get(e) as ExprView
+   if (w === undefined) {
+      w = new ExprView(parens, e)
+      views.set(e, w)
+      return w
    } else {
-      return absurd(`Unimplemented expression form: ${className(e)}.`)
+      return w
    }
+}
+
+function expr (parens: boolean, e: Expr): SVGSVGElement {
+   return expr_(parens, e).render()
 }
 
 // Really want some kind of view typeclass, so this isn't specific to expression. Also: consolidate with ExprCursor.
