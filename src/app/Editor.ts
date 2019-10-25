@@ -34,20 +34,13 @@ export class Editor {
    }
 
    render (): void {
-      let defs: SVGDefsElement | null = null
-      while (this.root.firstChild !== null) {
-         if (this.root.firstChild instanceof SVGDefsElement) {
-            defs = this.root.firstChild
-         } else {
-            this.root.removeChild(this.root.firstChild)
+      // https://stackoverflow.com/questions/48310643
+      const children: ChildNode[] = Array.from(this.root.childNodes)
+      children.forEach((child: ChildNode): void => {
+         if (!(child instanceof SVGDefsElement)) {
+            this.root.removeChild(child)
          }
-      }
-      this.root.appendChild(__nonNull(defs))
-      // this.root.childNodes.forEach((child: ChildNode): void => {
-      //    if (!(child instanceof SVGDefsElement)) {
-      //       this.root.removeChild(child)
-      //    }
-      // })
+      })
       const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
       new Viewer().render(this.root, tv, this)
       const this_: this = this
