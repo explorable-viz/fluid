@@ -1,4 +1,4 @@
-import { __nonNull, absurd, className } from "../util/Core"
+import { __nonNull, absurd, as, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
 import { strings } from "../Expr"
 import { Value, isPrim } from "../Value"
@@ -21,22 +21,29 @@ const space_char: string = "\u00a0"
 type Dimensions = { width: number, height: number }
 export const dimensions: Map<SVGElement, Dimensions> = new Map()
 
-// Doesn't really work as opacity means it builds up. Need it to be at the bottom in the z-order, and opaque.
-export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
-   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
-   const background: SVGRectElement = document.createElementNS(SVG.NS, "rect")
-   background.setAttribute("x", g.x.baseVal.valueAsString)
-   background.setAttribute("y", g.y.baseVal.valueAsString)
-   const { width, height }: Dimensions = dimensions.get(g)!
-   background.setAttribute("height", height.toString())
-   background.setAttribute("width", width.toString())
-   background.setAttribute("stroke", "none")
-   background.setAttribute("fill", fill)
-   background.setAttribute("pointer-events", "none")
-   svg.appendChild(background)
-   svg.appendChild(g)
-   dimensions.set(svg, { width, height })
-   return svg
+export function arrow (ẟ_style: DeltaStyle): SVGElement {
+   return keyword("arrow", ẟ_style)
+}
+
+// Assume root has a unique defs element called "defs".
+export function defineMarker (root: SVGSVGElement, marker: SVGMarkerElement): void {
+   const defs: SVGDefsElement = as(root.getElementById("defs"), SVGDefsElement)
+   defs.appendChild(marker)
+}
+
+export function arrowhead (): SVGMarkerElement {
+   const marker: SVGMarkerElement = document.createElementNS(SVG.NS, "marker")
+   marker.setAttribute("id", "arrowhead")
+   marker.setAttribute("refX", "0")
+   marker.setAttribute("refY", "5")
+   marker.setAttribute("markerUnits", "strokeWidth")
+   marker.setAttribute("markerWidth", "4")
+   marker.setAttribute("markerHeight", "3")
+   marker.setAttribute("orient", "auto")
+   const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
+   marker.appendChild(path)
+   path.setAttribute("d", "M 0 0 L 10 5 L 0 10 z")
+   return marker
 }
 
 export function border (g: SVGSVGElement, stroke: string): SVGRectElement {
@@ -62,10 +69,6 @@ export function border_focus (g: SVGSVGElement): SVGSVGElement {
    const border_: SVGRectElement = border(g, "gray")
    g.appendChild(border_)
    return g
-}
-
-export function arrow (ẟ_style: DeltaStyle): SVGElement {
-   return keyword("arrow", ẟ_style)
 }
 
 export function bracket (gs: SVGElement[], ẟ_style: DeltaStyle): SVGSVGElement {
@@ -102,6 +105,7 @@ export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    }
    connector.setAttribute("stroke", "blue") // hardcoded
    connector.setAttribute("stroke-width", "1")
+   connector.setAttribute("stroke-dasharray", "1,1")
    connector.setAttribute("marker-end", "url(#arrowhead)")
    return connector
 }
@@ -196,6 +200,24 @@ export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGSVGEleme
 
 export function parenthesiseIf (parens: boolean, g: SVGSVGElement, ẟ_style: DeltaStyle): SVGSVGElement {
    return parens ? parenthesise(g, ẟ_style) : g
+}
+
+// Needs to be at the bottom in the z-order, and opaque.
+export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
+   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   const background: SVGRectElement = document.createElementNS(SVG.NS, "rect")
+   background.setAttribute("x", g.x.baseVal.valueAsString)
+   background.setAttribute("y", g.y.baseVal.valueAsString)
+   const { width, height }: Dimensions = dimensions.get(g)!
+   background.setAttribute("height", height.toString())
+   background.setAttribute("width", width.toString())
+   background.setAttribute("stroke", "none")
+   background.setAttribute("fill", fill)
+   background.setAttribute("pointer-events", "none")
+   svg.appendChild(background)
+   svg.appendChild(g)
+   dimensions.set(svg, { width, height })
+   return svg
 }
 
 export function space (): SVGElement {
