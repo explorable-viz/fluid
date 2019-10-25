@@ -92,7 +92,7 @@ function blah (x: number, length: number, proportion: number):  number {
 }
 
 // Path segment corrresponding to a line.
-function line (p1: Point, p2: Point): string {
+export function line (p1: Point, p2: Point): string {
    return `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`
 }
 
@@ -110,11 +110,13 @@ export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    const g2_: Rect = rect(g2)
    const [fromBottom, fromTop]: [number, number] = [0.1, 0.9]
    const connector_: SVGPathElement = document.createElementNS(SVG.NS, "path")
+   const curveOffset: number = 5 // somewhat arbitrary
    if (leftOf(g1_, g2_)) {
       connector_.setAttribute("d", 
-         line(
+         curvedLine(
             { x: g1_.x + g1_.width, y: blah(g1_.y, g1_.height, fromBottom) },
-            { x: g2_.x, y: blah(g2_.y, g2_.height, fromBottom) }
+            { x: g2_.x, y: blah(g2_.y, g2_.height, fromBottom) },
+            curveOffset
          )
       )
    } else {
@@ -122,10 +124,11 @@ export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
          curvedLine(
             { x: g1_.x, y: blah(g1_.y, g1_.height, fromTop) },
             { x: g2_.x + g2_.width, y: blah(g2_.y, g2_.height, fromTop) },
-            5
+            curveOffset
          )
       )
    }
+   connector_.setAttribute("fill", "none")
    connector_.setAttribute("stroke", "blue") // hardcoded
    connector_.setAttribute("stroke-width", "1")
    connector_.setAttribute("stroke-dasharray", "1,1")
