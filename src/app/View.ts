@@ -415,10 +415,27 @@ function consComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
       if (src !== undefined) {
          newRevision()
          if (ev.metaKey) {
-            new ExprCursor(src).constr_splice(Cons, ["head"], ([e]: Expr[]): Expr[] => {
-               const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
-               return [at(exprClass(Pair), e, eʹ)(ν())]
-            })
+            if (ev.altKey) {
+               // if my tail is another cons, swap the two head elements
+               const e: Expr = as(new ExprCursor(src).constr_to(Cons, "tail").v, Expr.Expr)
+               if (isExprFor(e, Cons)) {
+                  const e1: Expr = as(new ExprCursor(src).constr_to(Cons, "head").v, Expr.Expr)
+                  const e2: Expr = as(new ExprCursor(e).constr_to(Cons, "head").v, Expr.Expr)
+                  // constr_splice on src, replacing head with head of src.tail
+                  // constr_splice on src.tail, replacing head with head of src
+                  new ExprCursor(src).constr_splice(Cons, ["head"], ([e]: Expr[]): Expr[] => {
+                     return [e2]
+                  })
+                  new ExprCursor(e).constr_splice(Cons, ["head"], ([e]: Expr[]): Expr[] => {
+                     return [e1]
+                  })
+               }
+            } else {
+               new ExprCursor(src).constr_splice(Cons, ["head"], ([e]: Expr[]): Expr[] => {
+                  const eʹ: Expr = Expr.app(Expr.var_(str("sq")(ν()))(ν()), Expr.var_(str("x")(ν()))(ν()))(ν())
+                  return [at(exprClass(Pair), e, eʹ)(ν())]
+               })
+         }
          } else {
             new ExprCursor(src).constr_splice(Cons, ["tail"], ([e]: Expr[]): Expr[] => {
                const eʹ: Expr = Expr.constNum(num(0)(ν()))(ν())
