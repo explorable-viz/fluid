@@ -192,7 +192,8 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
                [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
                [v1, v2]: [Value, Value] = [tv1.v, tv2.v]
          if ((v1 instanceof Num || v1 instanceof Str) && (v2 instanceof Num || v2 instanceof Str)) {
-               return explValue(Expl.binaryApp(tv1 as ExplValue<PrimValue>, e.opName, tv2 as ExplValue<PrimValue>)(kₜ), op.op(v1, v2)(kᵥ))
+            const k: MemoId = memoId(op.op, [v1, v2])
+            return explValue(Expl.binaryApp(tv1 as ExplValue<PrimValue>, e.opName, tv2 as ExplValue<PrimValue>)(kₜ), op.op(v1, v2)(k))
          } else {
             return error(`Applying "${e.opName}" to non-primitive value.`, v1, v2)
          }

@@ -64,7 +64,7 @@ function taggedId<Tag extends string> (k: Id, prop: Tag): TaggedId<Tag> {
    return make(TaggedId, k, prop) as TaggedId<Tag>
 }
 
-export function memoId (f: Function, v̅: IArguments): MemoId {
+export function memoId (f: Function, v̅: Iterable<any>): MemoId {
    const fʹ: FunctionId = functionId(f)
    let k: MemoId = fʹ
    for (let v of v̅) {
