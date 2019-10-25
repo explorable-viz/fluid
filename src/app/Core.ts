@@ -1,4 +1,4 @@
-// First-class moodule.
+// First-class module.
 export class SVG {
    static NS: "http://www.w3.org/2000/svg" = "http://www.w3.org/2000/svg"
    invert_y: boolean
@@ -13,6 +13,7 @@ export class SVG {
       document.body.appendChild(this.metrics)
    }
 
+   // Returns a top-level SVG node with a "defs" element with id "defs".
    createSvg (w: number, h: number): SVGSVGElement {
       const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
       svg.setAttribute("width", w.toString())
@@ -26,6 +27,9 @@ export class SVG {
       }
       svg.style.verticalAlign = "top"
       svg.style.display = "inline-block"
+      const defs: SVGDefsElement = document.createElementNS(SVG.NS, "defs")
+      defs.setAttribute("id", "defs")
+      svg.appendChild(defs)
       return svg
    }
 

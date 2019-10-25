@@ -1,4 +1,4 @@
-import { as } from "../util/Core"
+import { __nonNull, as } from "../util/Core"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env, emptyEnv } from "../Env"
@@ -7,8 +7,8 @@ import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { newRevision } from "../Versioned"
 import { ExplValueCursor } from "./Cursor"
-import { svg } from "./Renderer"
-import { Renderer, existingView } from "./View"
+import { arrowhead, defineMarker, svg } from "./Renderer"
+import { Viewer, existingView } from "./View"
 import "./styles.css"
 
 export class Editor {
@@ -20,6 +20,7 @@ export class Editor {
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       this.root = svg.createSvg(1400, 600)
+      defineMarker(this.root, arrowhead())
       document.body.appendChild(this.root)
       this.ρ = ρ
       this.e = e,
@@ -34,13 +35,15 @@ export class Editor {
    }
 
    render (): void {
-      // not sure why this shenanigan to clear view
-      while (this.root.firstChild !== null) {
-         this.root.removeChild(this.root.firstChild)
-      }
+      // https://stackoverflow.com/questions/48310643
+      const children: ChildNode[] = Array.from(this.root.childNodes)
+      children.forEach((child: ChildNode): void => {
+         if (!(child instanceof SVGDefsElement)) {
+            this.root.removeChild(child)
+         }
+      })
       const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
-      const [g,]: [SVGElement, number] = new Renderer().render(tv, this)
-      this.root.appendChild(g)
+      new Viewer().render(this.root, tv, this)
       const this_: this = this
       // https://stackoverflow.com/questions/5597060
       document.onkeydown = function (ev: KeyboardEvent) {

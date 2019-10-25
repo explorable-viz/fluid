@@ -1,6 +1,6 @@
-import { Class, __nonNull, assert } from "./util/Core"
+import { Class, __nonNull, absurd, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
-import { __deltas } from "./Delta"
+import { ValueDelta, __deltas } from "./Delta"
 
 // Use to initialise fields for reflection, without requiring constructors.
 export const _: any = undefined 
@@ -19,7 +19,7 @@ export class Value<Tag extends ValueTag = ValueTag> {
    readonly __tag!: Tag
 
    __child (k: string): Persistent {
-      return (this as any as State)[k]
+      return (this as any)[k]
    } 
 
    // Probably confusingly, "children" isn't a user-level notion; specifically, wrappers
@@ -113,27 +113,16 @@ export class Str extends Value<"Str"> implements Ord<Str> {
    }
 }
 
-// Dynamic interface to a value object.
-export interface State {
-   [prop: string]: Persistent
-}
-
-export function leq (s1: State, s2: State): boolean {
-   return Object.keys(s1).every((prop: string): boolean => {
-      return s2.hasOwnProperty(prop) && s1[prop] === s2[prop]
-   })
-}
-
-// Imperative join that merges s2 into s1, failing if they are incompatible.
-export function mergeInto (tgt: State, src: State): void {
+// Mergeable state deltas are disjoint.
+export function mergeInto (tgt: ValueDelta, src: ValueDelta): void {
    Object.keys(src).forEach((prop: string): void => {
       if (!tgt.hasOwnProperty(prop)) {
          tgt[prop] = src[prop]
       } else {
-         assert(
-            tgt[prop] === src[prop],
+         absurd(
             `Incompatible update of field "${prop}" at revision.`,
-            tgt, src
+            tgt[prop], 
+            src[prop]
          )
       }
    })
@@ -205,18 +194,17 @@ export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
 
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
-export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): State | null {
-   const tgtʹ: State = tgt as any as State,
-         f̅: string[] = fields(tgt),
-         ẟ: State | null = compare ? {} : null
+export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): ValueDelta | null {
+   const f̅: string[] = fields(tgt),
+         ẟ: ValueDelta | null = compare ? {} : null
    assert(f̅.length === v̅.length)
    let n: number = 0
-   f̅.forEach((f: string): void => {
+   f̅.forEach((prop: string): void => {
       const src: Persistent = v̅[n++]
-      if (compare && tgtʹ[f] !== src) {
-         ẟ![f] = src
+      if (compare && tgt.__child(prop) !== src) {
+         ẟ![prop] = { before: tgt.__child(prop), after: src }
       }
-      tgtʹ[f] = src
+      (tgt as any)[prop] = src
    })
    return ẟ
 }
@@ -226,7 +214,7 @@ export function isField (prop: string): boolean {
    return !prop.startsWith("__")
 }
 
-export function fields (v: Value): string[] {
+export function fields (v: Object): string[] {
    return Object.getOwnPropertyNames(v).filter(isField)
 }
 

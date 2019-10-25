@@ -1,10 +1,14 @@
-import { absurd, className } from "../util/Core"
+import { __nonNull, absurd, as, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
 import { strings } from "../Expr"
 import { Value, isPrim } from "../Value"
 import { versioned } from "../Versioned"
 import { SVG } from "./Core"
 import "./styles.css"
+
+// Maybe there are some built-in types for this, but don't care yet
+type Point = { x: number, y: number }
+type Rect = Point & { width: number, height: number }
 
 export const svg: SVG = new SVG(false)
 const fontSize: number = 18
@@ -18,40 +22,52 @@ const space_char: string = "\u00a0"
 type Dimensions = { width: number, height: number }
 export const dimensions: Map<SVGElement, Dimensions> = new Map()
 
-// Doesn't really work as opacity means it builds up. Need it to be at the bottom in the z-order, and opaque.
-export function shading (g: SVGSVGElement): SVGSVGElement {
-   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
-   const background: SVGRectElement = document.createElementNS(SVG.NS, "rect")
-   background.setAttribute("x", g.x.baseVal.valueAsString)
-   background.setAttribute("y", g.y.baseVal.valueAsString)
-   const { width, height }: Dimensions = dimensions.get(g)!
-   background.setAttribute("height", height.toString())
-   background.setAttribute("width", width.toString())
-   background.setAttribute("stroke", "none")
-   background.setAttribute("fill", "lavender")
-   background.setAttribute("pointer-events", "none")
-   svg.appendChild(background)
-   svg.appendChild(g)
-   dimensions.set(svg, { width, height })
-   return svg
+export function arrow (ẟ_style: DeltaStyle): SVGElement {
+   return keyword("arrow", ẟ_style)
 }
 
-export function border (g: SVGSVGElement): SVGSVGElement {
+export function arrowhead (): SVGMarkerElement {
+   const marker: SVGMarkerElement = document.createElementNS(SVG.NS, "marker")
+   marker.setAttribute("id", "arrowhead")
+//   marker.setAttribute("viewBox", "0 0 10 10")
+   const length: number = 6,
+         width: number = 4
+   marker.setAttribute("refX", `${length}`)
+   marker.setAttribute("refY", `${width / 2}`)
+   marker.setAttribute("markerUnits", "strokeWidth")
+   marker.setAttribute("markerWidth", "16")
+   marker.setAttribute("markerHeight", "16")
+   marker.setAttribute("orient", "auto")
+   marker.setAttribute("fill", "blue") // will want to change this
+   const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
+   marker.appendChild(path)
+   path.setAttribute("d", `M ${length} ${width / 2} L 0 ${width} L 0 0 Z`)
+   return marker
+}
+
+export function border (g: SVGSVGElement, stroke: string): SVGRectElement {
    const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
    border.setAttribute("x", g.x.baseVal.valueAsString)
    border.setAttribute("y", g.y.baseVal.valueAsString)
    const { width, height }: Dimensions = dimensions.get(g)!
    border.setAttribute("height", height.toString())
    border.setAttribute("width", width.toString())
-   border.setAttribute("stroke", "gray")
-   border.setAttribute("stroke-dasharray", "1,1")
+   border.setAttribute("stroke", stroke)
    border.setAttribute("fill", "none")
-   g.appendChild(border)
+   return border
+}
+
+export function border_changed (g: SVGSVGElement): SVGSVGElement {
+   const border_: SVGRectElement = border(g, "blue")
+   border_.setAttribute("stroke-dasharray", "1,1")
+   g.appendChild(border_)
    return g
 }
 
-export function arrow (ẟ_style: DeltaStyle): SVGElement {
-   return keyword("arrow", ẟ_style)
+export function border_focus (g: SVGSVGElement): SVGSVGElement {
+   const border_: SVGRectElement = border(g, "gray")
+   g.appendChild(border_)
+   return g
 }
 
 export function bracket (gs: SVGElement[], ẟ_style: DeltaStyle): SVGSVGElement {
@@ -65,6 +81,77 @@ export function centreDot (ẟ_style: DeltaStyle): SVGElement {
 export function comma (ẟ_style: DeltaStyle): SVGElement {
    return keyword("comma", ẟ_style)
 }
+
+// Whether the centre of r1 is to the left of the centre of r2.
+function leftOf (r1: Rect, r2: Rect): boolean {
+   return r1.x + r1.width / 2 <= r2.x + r2.width
+}
+
+function blah (x: number, length: number, proportion: number):  number {
+   return x + proportion * length
+}
+
+// Path segment corrresponding to a line.
+export function line (p1: Point, p2: Point): string {
+   return `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`
+}
+
+// Offset might be better computed as a function of distance between p1 and p2.
+function curvedLine (p1: Point, p2: Point, offset: number): string {
+   const mp: Point = { x: (p2.x + p1.x) * 0.5, y: (p2.y + p1.y) * 0.5 }
+   // angle of perpendicular to line
+   const theta = Math.atan2(p2.y - p1.y, p2.x - p1.x) - Math.PI / 2
+   const control: Point = { x: mp.x + offset * Math.cos(theta), y: mp.y + offset * Math.sin(theta) }
+   return `M ${p1.x} ${p1.y} Q ${control.x} ${control.y} ${p2.x} ${p2.y}`
+}
+
+export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
+   const g1_: Rect = rect(g1)
+   const g2_: Rect = rect(g2)
+   const [fromBottom, fromTop]: [number, number] = [0.1, 0.9]
+   const connector_: SVGPathElement = document.createElementNS(SVG.NS, "path")
+   const curveOffset: number = 5 // somewhat arbitrary
+   if (leftOf(g1_, g2_)) {
+      connector_.setAttribute("d", 
+         curvedLine(
+            { x: g1_.x + g1_.width, y: blah(g1_.y, g1_.height, fromBottom) },
+            { x: g2_.x, y: blah(g2_.y, g2_.height, fromBottom) },
+            curveOffset
+         )
+      )
+   } else {
+      connector_.setAttribute("d", 
+         curvedLine(
+            { x: g1_.x, y: blah(g1_.y, g1_.height, fromTop) },
+            { x: g2_.x + g2_.width, y: blah(g2_.y, g2_.height, fromTop) },
+            curveOffset
+         )
+      )
+   }
+   connector_.setAttribute("fill", "none")
+   connector_.setAttribute("stroke", "blue") // hardcoded
+   connector_.setAttribute("stroke-width", "1")
+   connector_.setAttribute("stroke-dasharray", "1,1")
+   connector_.setAttribute("marker-end", "url(#arrowhead)")
+   return connector_
+}
+
+// Assume root has a unique defs element called "defs".
+export function defineMarker (root: SVGSVGElement, marker: SVGMarkerElement): void {
+   const defs: SVGDefsElement = as(root.getElementById("defs"), SVGDefsElement)
+   defs.appendChild(marker)
+}
+
+// Couldn't get getScreenCTM or getBoundingClientRect to work properly (perhaps because of nested SVGs?) so just use this to compute 
+// coordinates of g relative to root SVG.
+function coordinates (g: SVGSVGElement): { x: number, y: number } {
+   if (g instanceof SVGSVGElement) {
+      const { x, y } = g.parentElement instanceof SVGSVGElement ? coordinates(g.parentElement): { x: 0, y: 0}
+      return { x: x + g.x.baseVal.value, y: y + g.y.baseVal.value }
+   } else {
+      return { x: 0, y: 0 }
+   }
+} 
 
 export function delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGElement[] {
    const gsʹ: SVGElement[] = []
@@ -139,6 +226,30 @@ export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGSVGEleme
 
 export function parenthesiseIf (parens: boolean, g: SVGSVGElement, ẟ_style: DeltaStyle): SVGSVGElement {
    return parens ? parenthesise(g, ẟ_style) : g
+}
+
+function rect (g: SVGSVGElement): Rect {
+   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
+   const { x, y } = coordinates(g)
+   return { x, y, width, height }
+}
+
+// Needs to be at the bottom in the z-order, and opaque.
+export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
+   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   const background: SVGRectElement = document.createElementNS(SVG.NS, "rect")
+   background.setAttribute("x", g.x.baseVal.valueAsString)
+   background.setAttribute("y", g.y.baseVal.valueAsString)
+   const { width, height }: Dimensions = dimensions.get(g)!
+   background.setAttribute("height", height.toString())
+   background.setAttribute("width", width.toString())
+   background.setAttribute("stroke", "none")
+   background.setAttribute("fill", fill)
+   background.setAttribute("pointer-events", "none")
+   svg.appendChild(background)
+   svg.appendChild(g)
+   dimensions.set(svg, { width, height })
+   return svg
 }
 
 export function space (): SVGElement {

@@ -80,10 +80,14 @@ export namespace Expr {
       return at(ConstStr, val)
    }
 
-   // Has a concrete subclass for each datatype.
+   // Has a concrete subclass for each datatype. Should this be parameterised by T extends DataValue?
    export class DataExpr extends Expr {
       get ctr (): string {
          return className(this)
+      }
+
+      __child (prop: string): Expr {
+         return super.__child(prop) as Expr
       }
 
       get __children (): Expr[] {

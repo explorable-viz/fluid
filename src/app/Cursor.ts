@@ -5,11 +5,11 @@ import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { exprClass } from "../../src/DataType"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"
-import { Change, New } from "../../src/Delta"
+import { Change, New, ValueDelta } from "../../src/Delta"
 import { Expl } from "../../src/Expl"
 import { Expr } from "../../src/Expr"
 import { DataElim, VarElim } from "../../src/Match"
-import { Num, Persistent, State, Str, Value, fields } from "../../src/Value"
+import { Num, Persistent, Str, Value, fields } from "../../src/Value"
 import { asVersioned, reset } from "../../src/Versioned"
 
 import DataExpr = Expr.DataExpr
@@ -144,8 +144,8 @@ export class ExplValueCursor extends Cursor {
       return this
    }
 
-   isChanged (s: State): ExplValueCursor {
-      assert(asVersioned(this.tv.v).__ẟ.eq(new Change(s)))
+   isChanged (s_ẟ: ValueDelta): ExplValueCursor {
+      assert(asVersioned(this.tv.v).__ẟ.eq(new Change(s_ẟ)))
       return this
    }
 
