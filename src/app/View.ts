@@ -624,7 +624,7 @@ function list ({t, v}: ExplValue<List>): SVGSVGElement {
       const vʹ: Cons = v as Cons
       const e: Expr = exprFor(t)
       return horiz(
-         view(Expl.explChild(t, vʹ, "head"), true, false).render(),
+         view_child(Cons, explValue(t, vʹ), "head", true, false),
          consComma(deltaStyle(v), isExprFor(e, Cons) ? e as Expr.DataExpr : undefined),
          space(),
          view(Expl.explChild(t, vʹ, "tail"), true, false).render()
@@ -641,7 +641,7 @@ function list_expr (parens: boolean, e: Expr.DataExpr): SVGSVGElement {
    if (isExprFor(e, Cons)) {
       return parenthesiseIf(parens, 
          horiz(
-            expr(false, e.__child("head") as Expr),
+            expr_child(Cons, false, e, "head"),
             consComma(deltaStyle(e), e),
             space(), 
             list_expr(false, e.__child("tail") as Expr.DataExpr)
