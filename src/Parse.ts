@@ -18,7 +18,7 @@ const lexer = moo.compile({
    ident: {
       match: /[a-zA-Z_][0-9a-zA-Z_]*'*/, // greedy
       type: moo.keywords({
-        keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
+        keyword: ["_", "as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
       })
    },
    whitespace: {
@@ -339,6 +339,12 @@ const grammar: Grammar = {
     {"name": "pattern", "symbols": ["pair_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["list_pattern"], "postprocess": id},
     {"name": "pattern", "symbols": ["constr_pattern"], "postprocess": id},
+    {"name": "variable_pattern$macrocall$2", "symbols": [{"literal":"_"}]},
+    {"name": "variable_pattern$macrocall$1$macrocall$2", "symbols": ["variable_pattern$macrocall$2"]},
+    {"name": "variable_pattern$macrocall$1$macrocall$1", "symbols": ["variable_pattern$macrocall$1$macrocall$2"], "postprocess": id},
+    {"name": "variable_pattern$macrocall$1$macrocall$1", "symbols": ["variable_pattern$macrocall$1$macrocall$2", "_"], "postprocess": ([x, ]) => x},
+    {"name": "variable_pattern$macrocall$1", "symbols": ["variable_pattern$macrocall$1$macrocall$1"]},
+    {"name": "variable_pattern", "symbols": ["variable_pattern$macrocall$1"], "postprocess": () => (κ: Cont) => varElim(str("_")(ν()), κ)(ν())},
     {"name": "variable_pattern", "symbols": ["var"], "postprocess": ([x]) => (κ: Cont) => varElim(x, κ)(ν())},
     {"name": "pair_pattern$macrocall$2", "symbols": [{"literal":"("}]},
     {"name": "pair_pattern$macrocall$1", "symbols": ["pair_pattern$macrocall$2"], "postprocess": id},

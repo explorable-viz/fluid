@@ -6,7 +6,7 @@ const lexer = moo.compile({
    ident: {
       match: /[a-zA-Z_][0-9a-zA-Z_]*'*/, // greedy
       type: moo.keywords({
-        keyword: ["as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
+        keyword: ["_", "as", "match", "fun", "in", "let", "letrec", "primitive", "typematch"],
       })
    },
    whitespace: {
@@ -62,6 +62,7 @@ rootExpr ->
 lexeme[X] ->
    $X {% id %} | 
    $X _ {% ([x, ]) => x %}
+   
 keyword[X] -> lexeme[$X]
 
 _ -> (%whitespace | %singleLineComment):+
@@ -261,8 +262,10 @@ pattern ->
    list_pattern {% id %} |
    constr_pattern {% id %}
 
-variable_pattern -> 
-   var
+variable_pattern ->
+   keyword["_"]
+   {% () => (κ: Cont) => varElim(str("_")(ν()), κ)(ν()) %} |
+   var 
    {% ([x]) => (κ: Cont) => varElim(x, κ)(ν()) %}
 
 pair_pattern ->

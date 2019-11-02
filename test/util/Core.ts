@@ -68,12 +68,18 @@ export class BwdSlice {
 
 export class Edit {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
+      if (flags.get(Flags.Visualise)) {
+         new Editor(e, ρ).render()
+      }
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
          newRevision()
          this.setup(new ExprCursor(e))
          const tv: ExplValue =  Eval.eval_(ρ, e)
          this.expect(ExplValueCursor.descendant(null, tv))
+      }
+      if (flags.get(Flags.Visualise)) {
+         new Editor(e, ρ).render()
       }
    }
 

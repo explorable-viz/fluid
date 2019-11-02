@@ -94,16 +94,16 @@ describe("edit", () => {
             }
 
             expect (here: ExplValueCursor) {
-               here = here.isChanged({ val: { before: 661, after: 39.125 } })
+               here = here.isNew()
                    .toTerminal()
                here.toBinaryArg2("/").isNew()
                here = here.toBinaryArg1("/").isNew()
                    .toTerminal()
                here.toBinaryArg1("+").isUnchanged()
-               here = here.toBinaryArg2("+").isChanged({ val: { before: 625, after: 42.25 } })
+               here = here.toBinaryArg2("+").isNew()
                    .toTerminal()
-               here.toBinaryArg1("*").isChanged({ val: { before: 25, after: 6.5 } })
-               here.toBinaryArg2("*").isChanged({ val: { before: 25, after: 6.5 } })
+               here.toBinaryArg1("*").isNew()
+               here.toBinaryArg2("*").isNew()
             }
          })(e)
       })
