@@ -1,4 +1,4 @@
-import { __nonNull, absurd, className } from "./util/Core"
+import { __nonNull, absurd, assert, className } from "./util/Core"
 import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
 import { DataValue, ExplValue, explValue } from "./DataValue"
@@ -20,6 +20,9 @@ export namespace Expl {
       abstract t: Expl
    }
 
+   export abstract class Terminal extends Expl {
+   }
+
    export class App extends NonTerminal {
       tf: ExplValue<Closure> = _
       tu: ExplValue = _
@@ -32,7 +35,7 @@ export namespace Expl {
       return at(App, tf, tu, δ, ξ, t)
    }
 
-   export class UnaryApp extends Expl {
+   export class UnaryApp extends Terminal {
       tf: ExplValue<UnaryOp> = _
       tv: ExplValue<PrimValue> = _
    }
@@ -41,7 +44,7 @@ export namespace Expl {
       return at(UnaryApp, tf, tv)
    }
 
-   export class BinaryApp extends Expl {
+   export class BinaryApp extends Terminal {
       tv1: ExplValue<PrimValue> = _
       opName: Str = _
       tv2: ExplValue<PrimValue> = _
@@ -52,7 +55,7 @@ export namespace Expl {
    }
 
    // Has a concrete subclass for each datatype.
-   export class DataExpl extends Expl {
+   export class DataExpl extends Terminal {
       get ctr (): string {
          return className(this)
       }
@@ -109,14 +112,14 @@ export namespace Expl {
       return at(Defs, def̅, t)
    }
 
-   export class Const extends Expl {
+   export class Const extends Terminal {
    }
 
    export function const_ (): (k: Id) => Const {
       return at(Const)
    }
 
-   export class Fun extends Expl {
+   export class Fun extends Terminal {
       σ: Elim<Expr> = _
    }
 
@@ -134,7 +137,7 @@ export namespace Expl {
       return at(MatchAs, tu, ξ, t)
    }
 
-   export class Quote extends Expl {
+   export class Quote extends Terminal {
    }
 
    export function quote (): (k: Id) => Quote {
@@ -162,7 +165,8 @@ export namespace Expl {
 
    // Should probably do a better job of restricting k to be a bona fide field name.
    export function explChild<T extends DataValue> (t: Expl, v: T, k: keyof T): ExplValue {
-      if (t instanceof DataExpl) {
+      if (t instanceof Terminal) {
+         assert(t instanceof DataExpl)
          return explValue(t.__child(k as string) as Expl, v.__child(k as string))
       } else
       if (t instanceof NonTerminal) {

@@ -423,7 +423,7 @@ export function splitExpls (t: Expl): Expl[] {
    if (t instanceof Expl.NonTerminal) {
       return [t, ...splitExpls(t.t)]
    } else {
-      return absurd()
+      return absurd("Unknown explanation form", t)
    }
 }
 
