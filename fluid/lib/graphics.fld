@@ -116,7 +116,7 @@ let tickEvery = fun n →
 // Bool → Num → (Num, Num) → Num → Num → (Num → Str) → (GraphicsElement, Num)
 let axis = fun vert scale (start, end) tickSp tickLength labelFun →
    let tickSp' = tickSp * scale;
-   let tick = vertLine 0 (negate (tickLength / 40)); // hardcoded to invert scaling
+   let tick = vertLine 0 (negate (tickLength * scale)); // hardcoded to invert scaling for y-axis only
    let firstTick = ceilingTo start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
    let ticks = spaceRight tickSp' (repeat n tick);
@@ -133,7 +133,7 @@ let axis = fun vert scale (start, end) tickSp tickLength labelFun →
    (match vert as { True → transpose axis; False → axis }, labelStart);
 
 // Some numerical constants for charts; should parameterise by these instead.
-let tickLength = 4;
+let tickLength = 1;
 
 // List (Str, Num) → Num
 let maxVal = compose max (map snd);
