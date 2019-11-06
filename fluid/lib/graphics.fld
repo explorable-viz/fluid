@@ -154,20 +154,11 @@ let barGraph = fun (x_scale, y_scale) catData →
    in
    Translate(x_offset, y_offset, Graphic([bars, x_axis, y_axis]));
 
-// Cross used to render points of a line plot.
-// Num → Point → GraphicsElement
-let plotPoint = fun radius Point(x, y) →
-   Graphic([
-      Polyline([Point(x - radius, y - radius), Point(x + radius, y + radius)], None),
-      Polyline([Point(x - radius, y + radius), Point(x + radius, y - radius)], None)
-   ]);
-
 // List Point → (Num, Num) → GraphicsElement
 let linePlot = fun (x_scale, y_scale) ps →
-   let ps' = map (fun Point(x, y) → Point(x * x_scale, y * y_scale)) ps;
-   let points = map (plotPoint 2.5) ps'
+   let ps' = map (fun Point(x, y) → Point(x * x_scale, y * y_scale)) ps
    in
-   Graphic([Polyline(ps', Some(Marker)), ...points]);
+   Polyline(ps', Some(Marker));
 
 // (Num, Num) → List (Num, Num) → Num → GraphicsElement
 let lineGraph = fun (x_scale, y_scale) x_start numData →
