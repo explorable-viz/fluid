@@ -25,7 +25,7 @@ let transposePoint = fun Point(x, y) → Point(y, x);
 // Not a true linear transformation, because text isn't reflected; positions only.
 // GraphicsElement → GraphicsElement
 letrec fun transpose {
-   Polyline(ps) → Polyline(map transposePoint ps);
+   Polyline(ps, marker) → Polyline(map transposePoint ps, marker);
    Polygon(ps, stroke, fill) → Polygon(map transposePoint ps, stroke, fill);
    Graphic(gs) → Graphic(map transpose gs);
    Text(x, y, str) → Text(y, x, str);
@@ -35,7 +35,7 @@ letrec fun transpose {
 // See GitHub issue #167. The dimensions (width, height) are measured from the origin.
 // GraphicsElement → (Num, Num)
 letrec fun dimensions {
-   Polyline(ps) → 
+   Polyline(ps, _) → 
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
    Polygon(ps, _, _) →
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
@@ -98,10 +98,10 @@ let renderRect = fun Rect(w, h) stroke fill →
    Polygon([Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)], stroke, fill);
 
 let horizLine = fun x x' →
-   Polyline([Point(x, 0), Point(x', 0)]);
+   Polyline([Point(x, 0), Point(x', 0)], None);
 
 let vertLine = fun y y' →
-   Polyline([Point(0, y), Point(0, y')]);
+   Polyline([Point(0, y), Point(0, y')], None);
 
 // Heuristic saying how often to place a tick on an axis of length n.
 // Num → Num
@@ -158,8 +158,8 @@ let barGraph = fun (x_scale, y_scale) catData →
 // Num → Point → GraphicsElement
 let plotPoint = fun radius Point(x, y) →
    Graphic([
-      Polyline([Point(x - radius, y - radius), Point(x + radius, y + radius)]),
-      Polyline([Point(x - radius, y + radius), Point(x + radius, y - radius)])
+      Polyline([Point(x - radius, y - radius), Point(x + radius, y + radius)], None),
+      Polyline([Point(x - radius, y + radius), Point(x + radius, y - radius)], None)
    ]);
 
 // List Point → (Num, Num) → GraphicsElement
@@ -167,12 +167,12 @@ let linePlot = fun (x_scale, y_scale) ps →
    let ps' = map (fun Point(x, y) → Point(x * x_scale, y * y_scale)) ps;
    let points = map (plotPoint 2.5) ps'
    in
-   Graphic([Polyline(ps'), ...points]);
+   Graphic([Polyline(ps', None), ...points]);
 
 // (Num, Num) → List (Num, Num) → Num → GraphicsElement
 let lineGraph = fun (x_scale, y_scale) x_start numData →
    match axis False x_scale axisMargin (x_start, fst (last numData)) 1 tickLength numToStr as (x_axis, y_offset) →
-   let y_max = maxVal numData in 
+   let y_max = maxVal numData in
    match (axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
    Translate(x_offset, y_offset, Graphic([linePlot (x_scale, y_scale) ps, x_axis, y_axis]));
