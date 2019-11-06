@@ -167,7 +167,7 @@ let linePlot = fun (x_scale, y_scale) ps →
    let ps' = map (fun Point(x, y) → Point(x * x_scale, y * y_scale)) ps;
    let points = map (plotPoint 2.5) ps'
    in
-   Graphic([Polyline(ps', None), ...points]);
+   Graphic([Polyline(ps', Some(Marker)), ...points]);
 
 // (Num, Num) → List (Num, Num) → Num → GraphicsElement
 let lineGraph = fun (x_scale, y_scale) x_start numData →
