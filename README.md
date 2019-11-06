@@ -6,6 +6,8 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 4 November 2019 | Merge with Wrattler `develop` | [247](https://github.com/rolyp/lambdacalc/issues/247) |
+| 25 October 2019 | “Swap node” proof-of-concept | [237](https://github.com/rolyp/lambdacalc/issues/237) |
 | 21 October 2019 | Basic delta-visualisation for IC 2019 presentation | [220](https://github.com/rolyp/lambdacalc/issues/220), [225](https://github.com/rolyp/lambdacalc/issues/225), [230](https://github.com/rolyp/lambdacalc/issues/230), [232](https://github.com/rolyp/lambdacalc/issues/232), [235](https://github.com/rolyp/lambdacalc/issues/235), [238](https://github.com/rolyp/lambdacalc/issues/238) |
 | 5 October 2019 | Reinstate execution indexing | [213](https://github.com/rolyp/lambdacalc/issues/213), [214](https://github.com/rolyp/lambdacalc/issues/214) |
 | 20 September 2019 | Import data from another Wrattler cell | [193](https://github.com/rolyp/lambdacalc/issues/193) |
