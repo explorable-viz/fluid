@@ -144,7 +144,7 @@ export class GraphicsRenderer {
       const path: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
       const g: Polyline = as(tg.tv.v, Polyline)
       if (Some.is(g.marker)) {
-         g.points.toArray().map(p => this.plotPoint(2.5, p))
+         this.svgPath(g.points).map(([x, y]) => this.plotPoint(2.5, x, y))
       }
       path.setAttribute("points", this.points(g.points))
       path.setAttribute("stroke", "black")
@@ -156,18 +156,18 @@ export class GraphicsRenderer {
       this.pointHighlights(tg.to(Polyline, "points"))
    }
 
-   plotPoint (radius: number, { x, y }: Point): void {
+   plotPoint (radius: number, x: number, y: number): void {
       const line1: SVGLineElement = document.createElementNS(SVG.NS, "line")
-      line1.setAttribute("x1", `${x.val - radius}`)
-      line1.setAttribute("y1", `${y.val - radius}`)
-      line1.setAttribute("x2", `${x.val + radius}`)
-      line1.setAttribute("y2", `${y.val + radius}`)
+      line1.setAttribute("x1", `${x - radius}`)
+      line1.setAttribute("y1", `${y - radius}`)
+      line1.setAttribute("x2", `${x + radius}`)
+      line1.setAttribute("y2", `${y + radius}`)
       line1.setAttribute("stroke", "black")
       const line2: SVGLineElement = document.createElementNS(SVG.NS, "line")
-      line2.setAttribute("x1", `${x.val - radius}`)
-      line2.setAttribute("y1", `${y.val + radius}`)
-      line2.setAttribute("x2", `${x.val + radius}`)
-      line2.setAttribute("y2", `${y.val - radius}`)
+      line2.setAttribute("x1", `${x - radius}`)
+      line2.setAttribute("y1", `${y + radius}`)
+      line2.setAttribute("x2", `${x + radius}`)
+      line2.setAttribute("y2", `${y - radius}`)
       line2.setAttribute("stroke", "black")
       this.current.appendChild(line1)
       this.current.appendChild(line2)
