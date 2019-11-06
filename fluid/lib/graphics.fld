@@ -113,8 +113,8 @@ let tickEvery = fun n →
    };
 
 // Return negative offset from x-axis; caller responsible for translating into positive space (if desired).
-// Bool → Num → Num → (Num, Num) → Num → Num → (Num → Str) → (GraphicsElement, Num)
-let axis = fun vert scale margin (start, end) tickSp tickLength labelFun →
+// Bool → Num → (Num, Num) → Num → Num → (Num → Str) → (GraphicsElement, Num)
+let axis = fun vert scale (start, end) tickSp tickLength labelFun →
    let tickSp' = tickSp * scale;
    let tick = vertLine 0 (negate (tickLength / 40)); // hardcoded to invert scaling
    let firstTick = ceilingTo start tickSp;
@@ -127,15 +127,13 @@ let axis = fun vert scale margin (start, end) tickSp tickLength labelFun →
    let labels = map (compose mkLabel labelFun) (iterate n (fun x → x + tickSp) firstTick);
    let labelStart = negate (min (map (fun Text(x, y, str) → y) labels));
    let labels' = spaceRight tickSp' labels;
-   let line = horizLine 0 ((end - start));
-   let axis = y_translate (negate margin)
-      Graphic([line, x_translate ((firstTick - start) * scale) Graphic(concat ticks labels')])
+   let line = horizLine 0 (end - start);
+   let axis = Graphic([line, x_translate ((firstTick - start) * scale) Graphic(concat ticks labels')])
    in
-   (match vert as { True → transpose axis; False → axis }, margin + labelStart);
+   (match vert as { True → transpose axis; False → axis }, labelStart);
 
 // Some numerical constants for charts; should parameterise by these instead.
 let tickLength = 4;
-let axisMargin = 0;
 
 // List (Str, Num) → Num
 let maxVal = compose max (map snd);
@@ -144,9 +142,9 @@ let maxVal = compose max (map snd);
 // (Num, Num) → List (Str, Num) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
    let labelFun = fun n → fst (nth n catData) in
-   match axis False x_scale axisMargin (-0.5, length catData - 0.5) 1 tickLength labelFun as (x_axis, y_offset) →
+   match axis False x_scale (-0.5, length catData - 0.5) 1 tickLength labelFun as (x_axis, y_offset) →
    let y_max = maxVal catData in 
-   match (axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
+   match (axis True y_scale (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
    let mkBar = fun (k, v) → renderRect Rect(shrinkBy * x_scale, v * y_scale) "black" "#f6831e";
    let bars = x_translate ((1 - shrinkBy) / 2 * x_scale) // centre bars
@@ -162,9 +160,9 @@ let linePlot = fun (x_scale, y_scale) ps →
 
 // (Num, Num) → List (Num, Num) → Num → GraphicsElement
 let lineGraph = fun (x_scale, y_scale) x_start numData →
-   match axis False x_scale axisMargin (x_start, fst (last numData)) 1 tickLength numToStr as (x_axis, y_offset) →
+   match axis False x_scale (x_start, fst (last numData)) 1 tickLength numToStr as (x_axis, y_offset) →
    let y_max = maxVal numData in
-   match (axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
+   match (axis True y_scale (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
    Translate(x_offset, y_offset, Graphic([linePlot (1, 1) ps, x_axis, y_axis]));
 
