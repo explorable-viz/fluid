@@ -136,6 +136,10 @@ export class GraphicsRenderer {
       return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
 
+   transformedScaledPath (p̅: List<Point>): [number, number][] {
+      return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val * 40, y.val * 0.15]))
+   }
+
    asString (p̅: [number, number][]): string {
       return p̅.map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
    }
@@ -143,7 +147,7 @@ export class GraphicsRenderer {
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const path: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
       const g: Polyline = as(tg.tv.v, Polyline)
-      const ps: [number, number][] = this.transformedPath(g.points)
+      const ps: [number, number][] = this.transformedScaledPath(g.points)
       if (Some.is(g.marker)) {
          ps.map(([x, y]) => this.plotPoint(2.5, x, y)) // hardcoded radius for now
       }

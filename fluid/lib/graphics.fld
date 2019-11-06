@@ -166,7 +166,7 @@ let lineGraph = fun (x_scale, y_scale) x_start numData →
    let y_max = maxVal numData in
    match (axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
-   Translate(x_offset, y_offset, Graphic([linePlot (x_scale, y_scale) ps, x_axis, y_axis]));
+   Translate(x_offset, y_offset, Graphic([linePlot (1, 1) ps, x_axis, y_axis]));
 
 // Treats the element as located at (0, 0).
 // Num → GraphicsElement → GraphicsElement
