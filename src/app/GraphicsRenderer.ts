@@ -132,7 +132,7 @@ export class GraphicsRenderer {
       this.transforms.pop()
    }
 
-   svgPath (p̅: List<Point>): [number, number][] {
+   transformedPath (p̅: List<Point>): [number, number][] {
       return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
 
@@ -143,10 +143,11 @@ export class GraphicsRenderer {
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const path: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
       const g: Polyline = as(tg.tv.v, Polyline)
+      const ps: [number, number][] = this.transformedPath(g.points)
       if (Some.is(g.marker)) {
-         this.svgPath(g.points).map(([x, y]) => this.plotPoint(2.5, x, y)) // hardcoded radius for now
+         ps.map(([x, y]) => this.plotPoint(2.5, x, y)) // hardcoded radius for now
       }
-      path.setAttribute("points", this.asString(this.svgPath(g.points)))
+      path.setAttribute("points", this.asString(ps))
       path.setAttribute("stroke", "black")
       path.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
@@ -204,7 +205,7 @@ export class GraphicsRenderer {
    polygon (tg: ExplValueCursor/*<Polygon>*/): void {
       const polygon: SVGPolygonElement = document.createElementNS(SVG.NS, "polygon"),
             g: Polygon = as(tg.tv.v, Polygon)
-      polygon.setAttribute("points", this.asString(this.svgPath(g.points)))
+      polygon.setAttribute("points", this.asString(this.transformedPath(g.points)))
       polygon.setAttribute("stroke", g.stroke.val)
       polygon.setAttribute("fill", g.fill.val)
       polygon.addEventListener("click", (e: MouseEvent): void => {
