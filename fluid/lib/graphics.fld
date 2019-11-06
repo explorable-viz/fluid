@@ -116,7 +116,7 @@ let tickEvery = fun n →
 // Bool → Num → Num → (Num, Num) → Num → Num → (Num → Str) → (GraphicsElement, Num)
 let axis = fun vert scale margin (start, end) tickSp tickLength labelFun →
    let tickSp' = tickSp * scale;
-   let tick = vertLine 0 (negate tickLength);
+   let tick = vertLine 0 (negate (tickLength / 40)); // hardcoded to invert scaling
    let firstTick = ceilingTo start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
    let ticks = spaceRight tickSp' (repeat n tick);
@@ -127,7 +127,7 @@ let axis = fun vert scale margin (start, end) tickSp tickLength labelFun →
    let labels = map (compose mkLabel labelFun) (iterate n (fun x → x + tickSp) firstTick);
    let labelStart = negate (min (map (fun Text(x, y, str) → y) labels));
    let labels' = spaceRight tickSp' labels;
-   let line = horizLine 0 ((end - start) * scale);
+   let line = horizLine 0 ((end - start));
    let axis = y_translate (negate margin)
       Graphic([line, x_translate ((firstTick - start) * scale) Graphic(concat ticks labels')])
    in
