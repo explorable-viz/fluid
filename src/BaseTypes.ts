@@ -130,10 +130,17 @@ export abstract class Option<T extends Persistent> extends DataValue<"Option"> {
 }
 
 export class None<T extends Persistent> extends Option<T> {
+   static is<T extends Persistent> (o: Option<T>): o is None<T> {
+      return o instanceof None
+   }
 }
 
 export class Some<T extends Persistent> extends Option<T> {
    t: T = _
+
+   static is<T extends Persistent> (o: Option<T>): o is Some<T> {
+      return o instanceof Some
+   }
 }
 
 export abstract class Ordering extends DataValue<"Ordering"> {

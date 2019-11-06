@@ -1,7 +1,7 @@
 import { __nonNull, absurd, as, assert } from "../util/Core"
 import { Annotation, ann } from "../util/Lattice"
 import { setα } from "../Annotated"
-import { Cons, List } from "../BaseTypes"
+import { Cons, List, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
@@ -142,7 +142,10 @@ export class GraphicsRenderer {
 
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const path: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
-      path.setAttribute("points", this.points(as(tg.tv.v, Polyline).points))
+      const g: Polyline = as(tg.tv.v, Polyline)
+      if (Some.is(g.marker)) {
+      }
+      path.setAttribute("points", this.points(g.points))
       path.setAttribute("stroke", "black")
       path.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
