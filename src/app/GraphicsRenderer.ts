@@ -156,21 +156,19 @@ export class GraphicsRenderer {
       this.pointHighlights(tg.to(Polyline, "points"))
    }
 
+   line (x1: number, y1: number, x2: number, y2: number): void {
+      const line: SVGLineElement = document.createElementNS(SVG.NS, "line")
+      line.setAttribute("x1", `${x1}`)
+      line.setAttribute("y1", `${y1}`)
+      line.setAttribute("x2", `${x2}`)
+      line.setAttribute("y2", `${y2}`)
+      line.setAttribute("stroke", "black")
+      this.current.appendChild(line)
+   }
+
    plotPoint (radius: number, x: number, y: number): void {
-      const line1: SVGLineElement = document.createElementNS(SVG.NS, "line")
-      line1.setAttribute("x1", `${x - radius}`)
-      line1.setAttribute("y1", `${y - radius}`)
-      line1.setAttribute("x2", `${x + radius}`)
-      line1.setAttribute("y2", `${y + radius}`)
-      line1.setAttribute("stroke", "black")
-      const line2: SVGLineElement = document.createElementNS(SVG.NS, "line")
-      line2.setAttribute("x1", `${x - radius}`)
-      line2.setAttribute("y1", `${y + radius}`)
-      line2.setAttribute("x2", `${x + radius}`)
-      line2.setAttribute("y2", `${y - radius}`)
-      line2.setAttribute("stroke", "black")
-      this.current.appendChild(line1)
-      this.current.appendChild(line2)
+      this.line(x - radius, y - radius, x + radius, y + radius)
+      this.line(x - radius, y + radius, x + radius, y - radius)
    }
 
    pointHighlights (tp̅: ExplValueCursor/*<List<Point>>*/): void {
