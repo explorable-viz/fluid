@@ -209,7 +209,7 @@ export class GraphicsRenderer {
    polygon (tg: ExplValueCursor/*<Polygon>*/): void {
       const polygon: SVGPolygonElement = document.createElementNS(SVG.NS, "polygon"),
             g: Polygon = as(tg.tv.v, Polygon)
-      polygon.setAttribute("points", this.asString(this.transformedPath(g.points)))
+      polygon.setAttribute("points", this.asString(this.transformedScaledPath(g.points)))
       polygon.setAttribute("stroke", g.stroke.val)
       polygon.setAttribute("fill", g.fill.val)
       polygon.addEventListener("click", (e: MouseEvent): void => {

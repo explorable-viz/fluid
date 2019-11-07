@@ -146,7 +146,7 @@ let barGraph = fun (x_scale, y_scale) catData →
    let y_max = maxVal catData in 
    match (axis True y_scale (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
-   let mkBar = fun (k, v) → renderRect Rect(shrinkBy * x_scale, v * y_scale) "black" "#f6831e";
+   let mkBar = fun (k, v) → renderRect Rect(shrinkBy, v) "black" "#f6831e";
    let bars = x_translate ((1 - shrinkBy) / 2 * x_scale) // centre bars
       Graphic(spaceRight x_scale (map mkBar catData))
    in
