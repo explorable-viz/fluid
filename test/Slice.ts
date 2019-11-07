@@ -256,6 +256,14 @@ describe("slice", () => {
       })
    })
 
+   describe("nested-rectangles", () => {
+      it("ok", () => {
+         const e: Expr = open("nested-rectangles")
+         new FwdSlice(e)
+         new BwdSlice(e)
+      })
+   })
+
    describe("normalise", () => {
       it("ok", () => {
          const e: Expr = open("normalise")
