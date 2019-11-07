@@ -7,7 +7,7 @@ import { Env } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
 import  { GraphicsElement } from "../Graphics"
-import { module_renderData, openWithImports, openDatasetAs, parseWithImports } from "../Module"
+import { openWithImports, openDatasetAs, parseWithImports } from "../Module"
 import { newRevision } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator, svg } from "./GraphicsRenderer"
 
@@ -89,7 +89,7 @@ class App {
       this.dataView = new View(
          "dataView", 
          ρ,
-         parseWithImports("renderData data", module_renderData), // module_graphics
+         parseWithImports("renderData data"), // module_renderData, module_graphics
          svg.createSvg(400, 1200)
       )
       const dataView: View = this.dataView

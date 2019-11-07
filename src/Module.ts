@@ -14,9 +14,9 @@ import { ν, at, num, str } from "./Versioned"
 type Module = List<Expr.Def>
 
 // Define as constants to enforce sharing; could use memoisation.
-export const module_prelude: Module = loadModule("prelude"),
+export const module_prelude: Module = loadModule("prelude")
              // module_graphics: Module = loadModule("graphics"),
-             module_renderData: Module = loadModule("renderData")
+             // module_renderData: Module = loadModule("renderData")
 
 function import_ (modules: Module[], e: Expr): Expr {
    if (modules.length === 0) {
