@@ -328,7 +328,7 @@ export class ValueView extends View {
       } else
       if (this.tv.v instanceof DataValue) {
          if (this.tv.v instanceof GraphicsElement) {
-            const dim = { width: 300, height: 400 }
+            const dim = { width: 30, height: 40 }
             g = svg.createSvg(dim.width, dim.height)
             new GraphicsRenderer(g).render(this.tv as ExplValue<GraphicsElement>)
             dimensions.set(g, dim)

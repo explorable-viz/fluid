@@ -1,7 +1,7 @@
 import { __nonNull, absurd, as, assert } from "../util/Core"
 import { Cons, List } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Graphic, GraphicsElement, Point, Rect } from "../Graphics2"
+import { Graphic, GraphicsElement, Rect } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -24,41 +24,33 @@ function textElement (x: number, y: number, fontSize: number, str: string): SVGT
 
 export const svg: SVG = new SVG(true)
 
-type TransformFun = (p: [number, number]) => [number, number]
+type ScaleFactor = [number, number]
 
-function scale (x_scale: number, y_scale: number): TransformFun {
-   return ([x, y]): [number, number] => {
-      return [x * x_scale, y * y_scale]
-   }
+function scale (x_scale: number, y_scale: number): ScaleFactor {
+   return [x_scale, y_scale]
 }
 
-function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
-   return ([x, y]): [number, number] => {
-      return f1(f2([x, y]))
-   }
+function postcompose ([x1, y1]: ScaleFactor, [x2, y2]: ScaleFactor): ScaleFactor {
+   return [x1 * x2, y1 * y2]
 }
 
 export class GraphicsRenderer {
-   scalings: TransformFun[] // stack of successive compositions of scaling transformations
+   scalings: ScaleFactor[] // stack of successive compositions of scaling transformations
    ancestors: SVGSVGElement[] // stack of enclosing SVG elements
 
    constructor (root: SVGSVGElement) {
       this.ancestors = [root]
-      this.scalings = [x => x]
+      this.scalings = [[1, 1]]
    }
 
    get current (): SVGSVGElement {
       return this.ancestors[this.ancestors.length - 1]
    }
 
-   get transform (): TransformFun {
+   get scale (): ScaleFactor {
       assert(this.scalings.length > 0)
       // query the current transform rather than returing a closure that accesses it...
-      const transform: TransformFun = this.scalings[this.scalings.length - 1]
-      return ([x, y]) => {
-         const [xʹ, yʹ] = transform([x, y])
-         return [Math.round(xʹ), Math.round(yʹ)]
-      } 
+      return this.scalings[this.scalings.length - 1]
    }
 
    render (tg: ExplValue<GraphicsElement>): void {
@@ -69,16 +61,14 @@ export class GraphicsRenderer {
       }
       const width: number = parseFloat(root.getAttribute("width")!)
       const height: number = parseFloat(root.getAttribute("height")!)
-      const transform: TransformFun = this.transform
-      this.scalings.push(postcompose(transform, scale(width / tg.v.width.val, height / tg.v.height.val)))
+      this.scalings.push(postcompose(this.scale, scale(width / tg.v.width.val, height / tg.v.height.val)))
       this.renderElement(ExplValueCursor.descendant(null, tg))
       this.scalings.pop()
    }
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
       const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
-      const transform: TransformFun = this.transform
-      this.scalings.push(postcompose(transform, scale(g.scale.x.val, g.scale.y.val)))
+      this.scalings.push(postcompose(this.scale, scale(g.scale.x.val, g.scale.y.val)))
       if (g instanceof Graphic) {
          this.graphic(tg)
       } else 
@@ -94,16 +84,11 @@ export class GraphicsRenderer {
       const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
       this.current.appendChild(svg)
       this.ancestors.push(svg)
-      // ignoring annotations on cons cells
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Graphic, "gs"); 
            Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
          this.renderElement(tg̅.to(Cons, "head"))
       }
       this.ancestors.pop()
-   }
-
-   transformedPath (p̅: List<Point>): [number, number][] {
-      return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
 
    asString (p̅: [number, number][]): string {
@@ -113,10 +98,11 @@ export class GraphicsRenderer {
    rect (tg: ExplValueCursor/*<Rect>*/): void {
       const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect"),
             g: Rect = as(tg.tv.v, Rect)
+      const [width, height] = [g.width.val * this.scale[0], g.height.val * this.scale[1]]
       rect.setAttribute("x", `${g.x.val}`)
       rect.setAttribute("y", `${g.y.val}`)
-      rect.setAttribute("width", `${g.width.val}`)
-      rect.setAttribute("height", `${g.height.val}`)
+      rect.setAttribute("width", `${width}`)
+      rect.setAttribute("height", `${height}`)
       rect.setAttribute("fill", g.fill.val)
       this.current.appendChild(rect)
    }
