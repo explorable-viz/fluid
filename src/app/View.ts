@@ -7,11 +7,13 @@ import { Change } from "../Delta"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
+import { GraphicsElement } from "../Graphics2"
 import { DataElim, Elim, Match, VarElim } from "../Match"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
+import { GraphicsRenderer, svg } from "./GraphicsRenderer2"
 import { 
    DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, connector, deltaStyle, ellipsis, horiz, horizSpace, keyword, 
    edge_left, parenthesise, parenthesiseIf, shading, space, text, unimplemented, vert 
@@ -325,6 +327,9 @@ export class ValueView extends View {
          g = horizSpace(keyword("fun", deltaStyle(this.tv.v)), elim(this.tv.v.f))
       } else
       if (this.tv.v instanceof DataValue) {
+         if (this.tv.v instanceof GraphicsElement) {
+            new GraphicsRenderer(svg.createSvg(300, 300)).render(this.tv as ExplValue<GraphicsElement>)
+         } else
          if (this.tv.v instanceof Pair) {
             g = pair(this.tv as ExplValue<Pair>)
          } else
