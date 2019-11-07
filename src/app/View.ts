@@ -15,8 +15,8 @@ import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { GraphicsRenderer, svg } from "./GraphicsRenderer2"
 import { 
-   DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, connector, deltaStyle, ellipsis, horiz, horizSpace, keyword, 
-   edge_left, parenthesise, parenthesiseIf, shading, space, text, unimplemented, vert 
+   DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, connector, deltaStyle, dimensions, ellipsis, horiz, 
+   horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, text, unimplemented, vert 
 } from "./Renderer"
 
 import Closure = Eval.Closure
@@ -328,8 +328,10 @@ export class ValueView extends View {
       } else
       if (this.tv.v instanceof DataValue) {
          if (this.tv.v instanceof GraphicsElement) {
-            g = svg.createSvg(300, 300)
+            const dim = { width: 300, height: 400 }
+            g = svg.createSvg(dim.width, dim.height)
             new GraphicsRenderer(g).render(this.tv as ExplValue<GraphicsElement>)
+            dimensions.set(g, dim)
          } else
          if (this.tv.v instanceof Pair) {
             g = pair(this.tv as ExplValue<Pair>)
