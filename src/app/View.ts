@@ -328,7 +328,8 @@ export class ValueView extends View {
       } else
       if (this.tv.v instanceof DataValue) {
          if (this.tv.v instanceof GraphicsElement) {
-            new GraphicsRenderer(svg.createSvg(300, 300)).render(this.tv as ExplValue<GraphicsElement>)
+            g = svg.createSvg(300, 300)
+            new GraphicsRenderer(g).render(this.tv as ExplValue<GraphicsElement>)
          } else
          if (this.tv.v instanceof Pair) {
             g = pair(this.tv as ExplValue<Pair>)

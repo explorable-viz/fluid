@@ -5,7 +5,7 @@ import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { Graphic, Polygon, Point, Translate } from "../src/Graphics"
-import { bindDataset, module_graphics, open, openDatasetAs, openWithImports } from "../src/Module"
+import { bindDataset, open, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
 
@@ -32,10 +32,10 @@ describe("slice", () => {
       })
    })
 
-   describe("bar-chart", () => {
+   xdescribe("bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
-               e: Expr = openWithImports("bar-chart", module_graphics)
+               e: Expr = openWithImports("bar-chart") // module_graphics
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
                const here: ExplValueCursor = ExplValueCursor.descendant(null, ρ.tv)
@@ -100,7 +100,7 @@ describe("slice", () => {
             { year: 2015, country: "China", energyType: "Hydro", value: 296 }
          ]
          const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data"),
-         e: Expr = openWithImports("create-dataset", module_graphics)
+         e: Expr = openWithImports("create-dataset")
          new FwdSlice(e, ρ)
       })
    })

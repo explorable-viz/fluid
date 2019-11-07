@@ -32,7 +32,6 @@ export class Graphic extends GraphicsElement<"Graphic"> {
 }
 
 export class Rect extends GraphicsElement<"Rect"> {
-   stroke: Str = _
    fill: Str = _
 }
 

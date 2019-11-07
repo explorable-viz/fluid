@@ -117,7 +117,6 @@ export class GraphicsRenderer {
       rect.setAttribute("y", `${g.y.val}`)
       rect.setAttribute("width", `${g.width.val}`)
       rect.setAttribute("height", `${g.height.val}`)
-      rect.setAttribute("stroke", g.stroke.val)
       rect.setAttribute("fill", g.fill.val)
       this.current.appendChild(rect)
    }
