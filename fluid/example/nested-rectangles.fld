@@ -8,7 +8,7 @@ letrec fun lookupNum k [(k', v), ...kvs] →
       True → v;
       False → lookupNum k kvs
    };
-let width = 1;
+let w = 1;
 let colours = [
    "RosyBrown",
    "HotPink",
@@ -18,8 +18,13 @@ let colours = [
    "Lime",
    "Navy"
 ];
-let china2015 = lookupStr "China" (lookupNum 2015 data);
+let data2015 = lookupNum 2015 data;
 let makeBar = fun ((_, n), col) → 
-   Rect(0, 0, width, n, col);
-let rects = zipW makeBar china2015 colours in
-Graphic(0, 0, length rects * width, max (map height rects), spaceRight width rects)
+   Rect(0, 0, w, n, col);
+let subChart = fun countryData →
+   let rects = zipW makeBar countryData colours in
+   Graphic(0, 0, length rects * w, max (map height rects), spaceRight w rects);
+let bar1 = subChart (lookupStr "China" data2015);
+let bar2 = subChart (lookupStr "Germany" data2015)
+in
+Graphic(0, 0, width bar1, height bar1, [bar1])
