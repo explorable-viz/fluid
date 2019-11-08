@@ -23,6 +23,7 @@ export abstract class Cursor {
    abstract annotated: Annotated & Value
    abstract to<T extends DataValue> (C: Class<T>, k: keyof T): Cursor
    abstract at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor
+   abstract skipImport (): this
 
    assert<T extends Value> (C: AClass<T>, pred: (v: T) => boolean): Cursor {
       return this.at(C, v => assert(pred(v)))
@@ -47,6 +48,11 @@ export abstract class Cursor {
       setα(ann.bot, this.annotated)
       return this
    }
+
+   skipImports (): this {
+      return this.skipImport()  // prelude
+                 .skipImport()  // graphics
+   }
 }
 
 export class ExplValueCursor extends Cursor {
@@ -70,6 +76,10 @@ export class ExplValueCursor extends Cursor {
 
    get annotated (): Annotated & Value {
       return this.tv.t
+   }
+
+   skipImport (): this {
+      return ExplValueCursor.descendant(this, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) as this
    }
 
    to<T extends DataValue> (C: Class<T>, k: keyof T): ExplValueCursor {
@@ -184,13 +194,8 @@ export class ExprCursor extends Cursor {
       }
    }
 
-   skipImport (): ExprCursor {
-      return this.to(Expr.Defs, "e") // all "modules" have this form
-   }
-
-   skipImports (): ExprCursor {
-      return this.skipImport()  // prelude
-                 .skipImport() // graphics
+   skipImport (): this {
+      return this.to(Expr.Defs, "e") as this // all "modules" have this form
    }
 
    // No way to specify only "own" properties statically.
