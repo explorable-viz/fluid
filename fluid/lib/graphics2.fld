@@ -1,4 +1,4 @@
-// Want some kind of typeclass mechanism.
+// Want some kind of typeclass mechanism plus record accessors/updaters.
 // GraphicsElement → (Num, Num)
 let dimensions = fun {
    Rect(x, y, w, h, fill) → (w, h);
@@ -11,11 +11,15 @@ let coords = fun {
 };
 
 // Num → GraphicsElement → GraphicsElement
-let x_translate = fun dx {
-   Rect(x, y, w, h, fill) → Rect(x + dx, y, w, h, fill);
-   Graphic(x, y, w, h, gs) → Graphic(x + dx, y, w, h, gs)
+let x_translate = fun dx g → 
+   match coords g as (x, y) → set_x g (x + dx);
+
+// Num → GraphicsElement → GraphicsElement
+let set_x = fun x {
+   Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
+   Graphic(_, y, w, h, gs) → Graphic(x, y, w, h, gs)
 };
 
 // Num → List GraphicsElement → List GraphicsElement
 let spaceRight = fun sep gs →
-   zipW (uncurry x_translate) (iterate (length gs) (fun x → x + sep) 0) gs
+   zipW (uncurry set_x) (iterate (length gs) (fun x → x + sep) 0) gs
