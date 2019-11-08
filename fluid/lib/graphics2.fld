@@ -1,13 +1,13 @@
 // Want some kind of typeclass mechanism.
 // GraphicsElement → (Num, Num)
-let fun dimensions {
+let dimensions = fun {
    Rect(x, y, w, h, fill) → (w, h);
    Graphic(x, y, w, h, gs) → (w, h)
 };
 
-let fun coords {
+let coords = fun {
    Rect(x, y, w, h, fill) → (x, y);
-   Graphic(x, y, w, h, gs) → (x, y))
+   Graphic(x, y, w, h, gs) → (x, y)
 };
 
 // Num → GraphicsElement → GraphicsElement
