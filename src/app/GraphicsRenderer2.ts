@@ -49,7 +49,6 @@ export class GraphicsRenderer {
 
    get scale (): ScaleFactor {
       assert(this.scalings.length > 0)
-      // query the current transform rather than returing a closure that accesses it...
       return this.scalings[this.scalings.length - 1]
    }
 

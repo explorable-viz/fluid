@@ -330,7 +330,7 @@ export class ValueView extends View {
          if (this.tv.v instanceof GraphicsElement) {
             const dim = { width: 30, height: 40 }
             let g1: SVGGElement
-            ;[g, g1] = svgElement(dim.width, dim.height)
+            [g, g1] = svgElement(dim.width, dim.height)
             new GraphicsRenderer(g1).render(this.tv as ExplValue<GraphicsElement>)
             dimensions.set(g, dim)
          } else
