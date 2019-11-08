@@ -1,5 +1,4 @@
 import { List, Option } from "./BaseTypes"
-import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Num, Str, _ } from "./Value"
 
@@ -55,7 +54,3 @@ export class Translate extends GraphicsElement<"Translate"> {
    y: Num = _
    g: GraphicsElement = _
 }
-
-initDataType(GraphicsElement, [Graphic, Marker, Polygon, Polyline, Text, Translate])
-initDataType(Point, [Point])
-initDataType(Rect, [Rect])
