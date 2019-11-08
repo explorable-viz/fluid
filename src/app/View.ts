@@ -13,10 +13,10 @@ import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
-import { GraphicsRenderer, svg } from "./GraphicsRenderer2"
+import { GraphicsRenderer } from "./GraphicsRenderer2"
 import { 
    DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, connector, deltaStyle, dimensions, ellipsis, horiz, 
-   horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, text, unimplemented, vert 
+   horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement, text, unimplemented, vert 
 } from "./Renderer"
 
 import Closure = Eval.Closure
@@ -329,7 +329,7 @@ export class ValueView extends View {
       if (this.tv.v instanceof DataValue) {
          if (this.tv.v instanceof GraphicsElement) {
             const dim = { width: 30, height: 40 }
-            g = svg.createSvg(dim.width, dim.height)
+            g = svgElement(dim.width, dim.height, true)
             new GraphicsRenderer(g).render(this.tv as ExplValue<GraphicsElement>)
             dimensions.set(g, dim)
          } else

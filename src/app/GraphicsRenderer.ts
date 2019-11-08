@@ -11,7 +11,7 @@ import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 
-export const svg: SVG = new SVG(true)
+export const svg: SVG = new SVG()
 const fontSize: number = 12
 
 // The SVG text element for the supplied text; centralised so can be used to compute text metrics.
@@ -55,16 +55,16 @@ export interface ViewCoordinator {
 
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
-   ancestors: SVGGraphicsElement[] // stack of enclosing SVG elements
+   ancestors: SVGElement[] // stack of enclosing SVG elements
    slicer: Slicer
 
-   constructor (root: SVGSVGElement, slicer: Slicer) {
+   constructor (root: SVGElement, slicer: Slicer) {
       this.ancestors = [root]
       this.slicer = slicer
       this.transforms = [x => x]
    }
 
-   get current (): SVGGraphicsElement {
+   get current (): SVGElement {
       return this.ancestors[this.ancestors.length - 1]
    }
 

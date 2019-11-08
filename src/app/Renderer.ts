@@ -10,7 +10,7 @@ import "./styles.css"
 type Point = { x: number, y: number }
 type Rect = Point & { width: number, height: number }
 
-export const svg: SVG = new SVG(false)
+export const svg: SVG = new SVG()
 const fontSize: number = 18
 const classes: string = "code"
 // bizarrely, if I do this later, font metrics are borked:
@@ -254,6 +254,31 @@ export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
 
 export function space (): SVGElement {
    return text(`${space_char}`, DeltaStyle.Unchanged)
+}
+
+export function svgElement (w: number, h: number, invert_y: boolean): SVGSVGElement {
+   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   svg.setAttribute("width", `${w}`)
+   svg.setAttribute("height", `${h}`)
+   // Don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
+   // pixel attributes). But to invert y-axis use an SVG transform:
+   if (invert_y) {
+      svg.setAttribute("transform", "scale(1,-1)")
+   }
+   return svg
+}
+
+// Top-level SVG node with a "defs" element with id "defs".
+export function svgRootElement (w: number, h: number, invert_y: boolean): SVGSVGElement {
+   const svg: SVGSVGElement = svgElement(w, h, invert_y)
+   // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
+   svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
+   svg.style.verticalAlign = "top"
+   svg.style.display = "inline-block"
+   const defs: SVGDefsElement = document.createElementNS(SVG.NS, "defs")
+   defs.setAttribute("id", "defs")
+   svg.appendChild(defs)
+   return svg
 }
 
 export function text (str: string, ẟ_style: DeltaStyle): SVGTextElement {

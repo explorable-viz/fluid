@@ -9,7 +9,8 @@ import { Expr } from "../Expr"
 import  { GraphicsElement } from "../Graphics"
 import { openWithImports, openDatasetAs, parseWithImports } from "../Module"
 import { newRevision } from "../Versioned"
-import { GraphicsRenderer, Slicer, ViewCoordinator, svg } from "./GraphicsRenderer"
+import { GraphicsRenderer, Slicer, ViewCoordinator } from "./GraphicsRenderer"
+import { svgRootElement } from "./Renderer"
 
 // As with the test cases, we treat the dataset ρ as "external" data, meaning we push slicing
 // information back only as far as ρ.
@@ -21,7 +22,7 @@ export class View implements Slicer {
    view: GraphicsRenderer
    direction!: Direction
 
-   constructor (name: string, ρ: Env, e: Expr, svg: SVGSVGElement) {
+   constructor (name: string, ρ: Env, e: Expr, svg: SVGElement) {
       this.name = name
       this.e = e
       this.tv = Eval.eval_(ρ, e)
@@ -84,13 +85,13 @@ class App {
          "graphicsView", 
          ρ,
          openWithImports("bar-chart"), // module_graphics
-         svg.createSvg(400, 400)
+         svgRootElement(400, 400, true)
       )
       this.dataView = new View(
          "dataView", 
          ρ,
          parseWithImports("renderData data"), // module_renderData, module_graphics
-         svg.createSvg(400, 1200)
+         svgRootElement(400, 1200, true)
       )
       const dataView: View = this.dataView
       this.graphicsView.coordinator = new class ViewCoordinator {

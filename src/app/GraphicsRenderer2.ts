@@ -22,7 +22,7 @@ function textElement (x: number, y: number, fontSize: number, str: string): SVGT
    return text
 }
 
-export const svg: SVG = new SVG(true)
+export const svg: SVG = new SVG()
 
 type ScaleFactor = [number, number]
 
@@ -36,14 +36,14 @@ function postcompose ([x1, y1]: ScaleFactor, [x2, y2]: ScaleFactor): ScaleFactor
 
 export class GraphicsRenderer {
    scalings: ScaleFactor[] // stack of successive compositions of scaling transformations
-   ancestors: SVGSVGElement[] // stack of enclosing SVG elements
+   ancestors: SVGElement[] // stack of enclosing SVG elements
 
    constructor (root: SVGSVGElement) {
       this.ancestors = [root]
       this.scalings = [[1, 1]]
    }
 
-   get current (): SVGSVGElement {
+   get current (): SVGElement {
       return this.ancestors[this.ancestors.length - 1]
    }
 
@@ -55,20 +55,24 @@ export class GraphicsRenderer {
 
    render (tg: ExplValue<GraphicsElement>): void {
       assert(this.ancestors.length === 1)
-      const root: SVGSVGElement = this.current
+      const root: SVGElement = this.current
       while (root.firstChild !== null) {
          root.removeChild(root.firstChild)
       }
       const width: number = parseFloat(root.getAttribute("width")!)
       const height: number = parseFloat(root.getAttribute("height")!)
-      this.scalings.push(postcompose(this.scale, scale(width / tg.v.width.val, height / tg.v.height.val)))
+      this.scalings.push(
+         postcompose(
+            this.scale, 
+            scale(width / (tg.v.x.val + tg.v.width.val), height / (tg.v.y.val + tg.v.height.val))
+         )
+      )
       this.renderElement(ExplValueCursor.descendant(null, tg))
       this.scalings.pop()
    }
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
       const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
-//      this.scalings.push(postcompose(this.scale, scale(g.scale.x.val, g.scale.y.val)))
       if (g instanceof Graphic) {
          this.graphic(tg)
       } else 
@@ -77,7 +81,6 @@ export class GraphicsRenderer {
       } else {
          return absurd()
       }
-//      this.scalings.pop()
    }
 
    graphic (tg: ExplValueCursor/*<Graphic>*/): void {
