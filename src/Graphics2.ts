@@ -16,15 +16,12 @@ export class Point extends DataValue<"Point"> {
 
 export type GraphicsElementTag = "Rect" | "Graphic"
 
-// Every graphics element has a coordinate expressed in the coordinate system of its parent, dimensions 
-// expressed in its own coordinate system, and a scaling transformation which relates the two frames of reference.
-// Thus (x, y) are in a sense "external" and (width, height) are "internal".
+// Every graphics element has coordinates and dimensions expressed in the coordinate system of its parent.
 export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
    x: Num = _
    y: Num = _
    width: Num = _
    height: Num = _
-   scale: Scale = _
 }
 
 export class Graphic extends GraphicsElement<"Graphic"> {

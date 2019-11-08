@@ -1,12 +1,6 @@
 let width = 1 in
 let height1 = 150 in
 let height2 = 50 in
-let rect1 = Rect(0, 0, width, height1, Scale(1 / 1, 1 / 1), "red") in
-let rect2 = Rect(width, 0, width, height2, Scale(1 / 1, 1 / 1), "blue") in
-Graphic(
-   0, 0, 2, 150, Scale(1, 1),
-   [
-      rect1,
-      rect2
-   ]
-)
+let rect1 = Rect(0, 0, width, height1, "red") in
+let rect2 = Rect(width, 0, width, height2, "blue") in
+Graphic(0, 0, 2, 150, [ rect1, rect2 ])
