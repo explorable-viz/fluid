@@ -35,7 +35,7 @@ describe("slice", () => {
    xdescribe("bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
-               e: Expr = openWithImports("bar-chart") // module_graphics
+               e: Expr = openWithImports("bar-chart")
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
                const here: ExplValueCursor = ExplValueCursor.descendant(null, ρ.tv)

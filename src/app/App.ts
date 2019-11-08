@@ -84,13 +84,13 @@ class App {
       this.graphicsView = new View(
          "graphicsView", 
          ρ,
-         openWithImports("bar-chart"), // module_graphics
+         openWithImports("bar-chart"),
          svgRootElement(400, 400)
       )
       this.dataView = new View(
          "dataView", 
          ρ,
-         parseWithImports("renderData data"), // module_renderData, module_graphics
+         parseWithImports("renderData data"), // module_renderData
          svgRootElement(400, 1200)
       )
       const dataView: View = this.dataView

@@ -14,8 +14,8 @@ import { ν, at, num, str } from "./Versioned"
 type Module = List<Expr.Def>
 
 // Define as constants to enforce sharing; could use memoisation.
-export const module_prelude: Module = loadModule("prelude")
-             // module_graphics: Module = loadModule("graphics"),
+export const module_prelude: Module = loadModule("prelude"),
+             module_graphics: Module = loadModule("graphics2")
              // module_renderData: Module = loadModule("renderData")
 
 function import_ (modules: Module[], e: Expr): Expr {
@@ -57,7 +57,7 @@ export function openDatasetAs (file: string, x: string): ExtendEnv {
 }
 
 export function parseWithImports (src: string, ...modules: Module[]): Expr {
-   return import_([module_prelude], import_(modules, successfulParse(src)))
+   return import_([module_prelude, module_graphics], import_(modules, successfulParse(src)))
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
