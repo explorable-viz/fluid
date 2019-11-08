@@ -15,7 +15,7 @@ let colours = [
    "PaleGreen",
    "Aquamarine",
    "Plum",
-   "Lime",
+   "LightCoral",
    "Navy"
 ];
 let data2015 = lookupNum 2015 data;
@@ -24,12 +24,7 @@ let makeBar = fun ((_, n), col) →
 let subChart = fun countryData →
    let rects = zipW makeBar countryData colours in
    Graphic(0, 0, length rects * w, max (map height rects), spaceRight w rects);
-let bars2 = flip map data2015 (fun (_, countryData) → subChart countryData);
-let bars = [
-   subChart (lookupStr "China" data2015),
-   subChart (lookupStr "Germany" data2015)
-];
-let n = length bars;
-let w1 = sum (map width bars) / length bars 
+let bars = flip map data2015 (fun (_, countryData) → subChart countryData);
+let w1 = sum (map width bars) / length bars
 in
-Graphic(0, 0, w1 * length bars, max (map height bars), spaceRight w1 bars)
+Graphic(0, 0, length bars * w, max (map height bars), spaceRight w1 bars)

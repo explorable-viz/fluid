@@ -4,7 +4,7 @@ import { BwdSlice, FwdSlice } from "./util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
-import { bindDataset, openWithImports } from "../src/Module"
+import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
 
@@ -259,9 +259,10 @@ describe("slice", () => {
 
    describe("nested-rectangles", () => {
       it("ok", () => {
+         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
          const e: Expr = openWithImports("nested-rectangles")
-         new FwdSlice(e)
-         new BwdSlice(e)
+         new FwdSlice(e, ρ)
+         new BwdSlice(e, ρ)
       })
    })
 
