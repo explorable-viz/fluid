@@ -1,7 +1,18 @@
 let width = 1 in
-let rects = [
-   Rect(0, 0, width, 150, "red"),
-   Rect(0, 0, width, 50, "blue"),
-   Rect(0, 0, width, 220, "green")
+let colours = [
+   "RosyBrown",
+   "HotPink",
+   "PaleGreen",
+   "Aquamarine",
+   "Plum"
 ] in
+let china2015 = [
+   ("Bio", 10.3),
+   ("Solar", 44),
+   ("Wind", 145)
+] in
+let makeBar = fun ((_, n), col) → 
+   Rect(0, 0, width, n, col) 
+in
+let rects = zipW makeBar china2015 colours in
 Graphic(0, 0, length rects * width, max (map height rects), spaceRight width rects)
