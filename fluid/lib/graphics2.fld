@@ -1,4 +1,15 @@
 // Want some kind of typeclass mechanism.
+// GraphicsElement → (Num, Num)
+let fun dimensions {
+   Rect(x, y, w, h, fill) → (w, h);
+   Graphic(x, y, w, h, gs) → (w, h)
+};
+
+let fun coords {
+   Rect(x, y, w, h, fill) → (x, y);
+   Graphic(x, y, w, h, gs) → (x, y))
+};
+
 // Num → GraphicsElement → GraphicsElement
 let x_translate = fun dx {
    Rect(x, y, w, h, fill) → Rect(x + dx, y, w, h, fill);
