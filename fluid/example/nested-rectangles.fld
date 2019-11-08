@@ -4,4 +4,4 @@ let rects = [
    Rect(0, 0, width, 50, "blue"),
    Rect(0, 0, width, 220, "green")
 ] in
-Graphic(0, 0, length rects * width, 220, spaceRight width rects)
+Graphic(0, 0, length rects * width, max (map height rects), spaceRight width rects)
