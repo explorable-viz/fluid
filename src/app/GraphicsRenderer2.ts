@@ -1,7 +1,7 @@
-import { __nonNull, absurd, as, assert } from "../util/Core"
-import { Cons, List } from "../BaseTypes"
+import { __nonNull, absurd, as, assert, error } from "../util/Core"
+import { Cons, List, None, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Graphic, GraphicsElement, Rect } from "../Graphics2"
+import { Graphic, GraphicsElement, Rect, Scale } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -85,6 +85,17 @@ export class GraphicsRenderer {
    graphic (tg: ExplValueCursor/*<Graphic>*/): void {
       const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
       const g: Graphic = as(tg.tv.v, Graphic)
+      if (g.scale instanceof Some) {
+         if (g.scale.t instanceof Scale) {
+            this.scalings.push(
+               postcompose(this.scale, [g.scale.t.x.val, g.scale.t.y.val])
+            )
+         } else {
+            error(`${g.scale.t} is not a ${Scale.name}.`)
+         }
+      } else {
+         assert(g.scale instanceof None)
+      }
       const [x_scale, y_scale] = this.scale
       const [x, y] = [Math.round(g.x.val * x_scale), Math.round(g.y.val * y_scale)]
       svg.setAttribute("x", `${x}`)
@@ -96,6 +107,9 @@ export class GraphicsRenderer {
          this.renderElement(tg̅.to(Cons, "head"))
       }
       this.ancestors.pop()
+      if (g.scale instanceof Some) {
+         this.scalings.pop()
+      }
    }
 
    asString (p̅: [number, number][]): string {
