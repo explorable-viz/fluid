@@ -6,7 +6,7 @@ import { Cons, Pair } from "../src/BaseTypes"
 import { exprClass } from "../src/DataType"
 import { Expr } from "../src/Expr"
 import { VarElim } from "../src/Match"
-import { open } from "../src/Module"
+import { openWithImports } from "../src/Module"
 import { Persistent } from "../src/Value"
 import { ν, at, num, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
@@ -18,7 +18,7 @@ before((done: MochaDone) => {
 describe("edit", () => {
    describe("arithmetic", () => {
       it("ok", () => {
-         const e: Expr = open("arithmetic")
+         const e: Expr = openWithImports("arithmetic")
          new (class extends Edit {
             setup (here: ExprCursor) {
                here.skipImports()
@@ -43,7 +43,7 @@ describe("edit", () => {
 
    describe("filter", () => {
       it("ok", () => {
-         const e: Expr = open("filter")
+         const e: Expr = openWithImports("filter")
          new (class extends Edit {
             setup (here: ExprCursor) {
                here.skipImports()
@@ -73,7 +73,7 @@ describe("edit", () => {
 
    describe("foldr_sumSquares", () => {
       it("ok", () => {
-         const e: Expr = open("foldr_sumSquares")
+         const e: Expr = openWithImports("foldr_sumSquares")
          new (class extends Edit {
             setup (here: ExprCursor) {
                here = here.skipImports()
@@ -111,7 +111,7 @@ describe("edit", () => {
 
    describe("ic2019", () => {
       it("ok", () => {
-         const e: Expr = open("ic2019")
+         const e: Expr = openWithImports("ic2019")
          new (class extends Edit {
             setup (here: ExprCursor) {
                here.skipImports()

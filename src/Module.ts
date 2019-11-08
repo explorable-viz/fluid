@@ -44,10 +44,6 @@ export function loadModule (file: string): Module {
    return e.def̅
 }
 
-export function open (file: string): Expr {
-   return openWithImports(file)
-}
-
 export function openWithImports (file: string, ...modules: Module[]): Expr {
    return parseWithImports(loadTestFile("fluid/example", file), ...modules)
 }
