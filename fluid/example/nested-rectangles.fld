@@ -22,8 +22,8 @@ let makeBar = fun ((_, n), col) →
    Rect(0, 0, 1, n, col);
 let subChart = fun countryData →
    let rects = zipW makeBar countryData colours in
-   Graphic(0, 0, length rects, max (map height rects), spaceRight 1 rects);
+   Graphic(0, 0, length rects, max (map height rects), spaceRight 1 rects, None);
 let bars = flip map data2015 (fun (_, countryData) → subChart countryData);
 let w1 = sum (map width bars) / length bars
 in
-Graphic(0, 0, length bars * w1, max (map height bars), spaceRight w1 bars)
+Graphic(0, 0, length bars * w1, max (map height bars), spaceRight w1 bars, None)

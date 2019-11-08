@@ -1,4 +1,4 @@
-import { List } from "./BaseTypes"
+import { List, Option } from "./BaseTypes"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Num, Str, _ } from "./Value"
@@ -26,6 +26,7 @@ export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag
 
 export class Graphic extends GraphicsElement<"Graphic"> {
    gs: List<GraphicsElement> = _
+   scale: Option<Scale> = _
 }
 
 export class Rect extends GraphicsElement<"Rect"> {

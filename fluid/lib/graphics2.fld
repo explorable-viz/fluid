@@ -1,7 +1,7 @@
 // Want some kind of typeclass mechanism plus record accessors/updaters.
 let coords = fun {
-   Rect(x, y, w, h, fill) → (x, y);
-   Graphic(x, y, w, h, gs) → (x, y)
+   Rect(x, y, _, _, _) → (x, y);
+   Graphic(x, y, _, _, _, _) → (x, y)
 };
 
 // Num → GraphicsElement → GraphicsElement
@@ -11,7 +11,7 @@ let x_translate = fun dx g →
 // Num → GraphicsElement → GraphicsElement
 let set_x = fun x {
    Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
-   Graphic(_, y, w, h, gs) → Graphic(x, y, w, h, gs)
+   Graphic(_, y, w, h, gs, scale) → Graphic(x, y, w, h, gs, scale)
 };
 
 // GraphicsElement → Num
@@ -22,8 +22,8 @@ let get_y = compose snd coords;
 
 // GraphicsElement → (Num, Num)
 let dimensions = fun {
-   Rect(x, y, w, h, fill) → (w, h);
-   Graphic(x, y, w, h, gs) → (w, h)
+   Rect(_, _, w, h, _) → (w, h);
+   Graphic(_, _, w, h, _, _) → (w, h)
 };
 
 // GraphicsElement → Num
