@@ -1,18 +1,27 @@
-let width = 1 in
+letrec fun lookupStr k [(k', v), ...kvs] → 
+   match k === k' as {
+      True → v;
+      False → lookupStr k kvs
+   };
+letrec fun lookupNum k [(k', v), ...kvs] → 
+   match k == k' as {
+      True → v;
+      False → lookupNum k kvs
+   };
+let width = 1;
 let colours = [
    "RosyBrown",
    "HotPink",
    "PaleGreen",
    "Aquamarine",
    "Plum"
-] in
+];
 let china2015 = [
    ("Bio", 10.3),
    ("Solar", 44),
    ("Wind", 145)
-] in
+];
 let makeBar = fun ((_, n), col) → 
-   Rect(0, 0, width, n, col) 
-in
+   Rect(0, 0, width, n, col);
 let rects = zipW makeBar china2015 colours in
 Graphic(0, 0, length rects * width, max (map height rects), spaceRight width rects)
