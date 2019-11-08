@@ -14,13 +14,11 @@ let colours = [
    "HotPink",
    "PaleGreen",
    "Aquamarine",
-   "Plum"
+   "Plum",
+   "Lime",
+   "Navy"
 ];
-let china2015 = [
-   ("Bio", 10.3),
-   ("Solar", 44),
-   ("Wind", 145)
-];
+let china2015 = lookupStr "China" (lookupNum 2015 data);
 let makeBar = fun ((_, n), col) → 
    Rect(0, 0, width, n, col);
 let rects = zipW makeBar china2015 colours in
