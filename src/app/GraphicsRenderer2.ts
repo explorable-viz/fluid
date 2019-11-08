@@ -68,7 +68,7 @@ export class GraphicsRenderer {
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
       const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
-      this.scalings.push(postcompose(this.scale, scale(g.scale.x.val, g.scale.y.val)))
+//      this.scalings.push(postcompose(this.scale, scale(g.scale.x.val, g.scale.y.val)))
       if (g instanceof Graphic) {
          this.graphic(tg)
       } else 
@@ -77,7 +77,7 @@ export class GraphicsRenderer {
       } else {
          return absurd()
       }
-      this.scalings.pop()
+//      this.scalings.pop()
    }
 
    graphic (tg: ExplValueCursor/*<Graphic>*/): void {
@@ -98,7 +98,7 @@ export class GraphicsRenderer {
    rect (tg: ExplValueCursor/*<Rect>*/): void {
       const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect"),
             g: Rect = as(tg.tv.v, Rect)
-      const [width, height] = [g.width.val * this.scale[0], g.height.val * this.scale[1]]
+      const [width, height] = [Math.round(g.width.val * this.scale[0]), Math.round(g.height.val * this.scale[1])]
       rect.setAttribute("x", `${g.x.val}`)
       rect.setAttribute("y", `${g.y.val}`)
       rect.setAttribute("width", `${width}`)
