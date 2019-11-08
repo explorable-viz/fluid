@@ -98,9 +98,11 @@ export class GraphicsRenderer {
    rect (tg: ExplValueCursor/*<Rect>*/): void {
       const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect"),
             g: Rect = as(tg.tv.v, Rect)
-      const [width, height] = [Math.round(g.width.val * this.scale[0]), Math.round(g.height.val * this.scale[1])]
-      rect.setAttribute("x", `${g.x.val}`)
-      rect.setAttribute("y", `${g.y.val}`)
+      const [x_scale, y_scale] = this.scale
+      const [x, y] = [Math.round(g.x.val * x_scale), Math.round(g.y.val * y_scale)]
+      const [width, height] = [Math.round(g.width.val * x_scale), Math.round(g.height.val * y_scale)]
+      rect.setAttribute("x", `${x}`)
+      rect.setAttribute("y", `${y}`)
       rect.setAttribute("width", `${width}`)
       rect.setAttribute("height", `${height}`)
       rect.setAttribute("fill", g.fill.val)
