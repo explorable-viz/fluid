@@ -7,7 +7,7 @@ import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
 import { newRevision } from "../../src/Versioned"
-import "../../src/Graphics" // for graphical datatypes
+import "../../src/Graphics2" // for graphical datatypes
 import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
 import { Editor } from "../../src/app/Editor"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
