@@ -1,10 +1,3 @@
-// Wants some kind of typeclass mechanism.
-// Num → GraphicsElement → GraphicsElement
-let x_translate = fun dx {
-   Rect(x, y, w, h, fill) → Rect(x + dx, y, w, h, fill);
-   Graphic(x, y, w, h, gs) → Graphic(x + dx, y, w, h, gs)
-};
-
 // Num → List GraphicsElement → List GraphicsElement
 let spaceRight = fun sep gs →
    zipW (uncurry x_translate) (iterate (length gs) (fun x → x + sep) 0) gs

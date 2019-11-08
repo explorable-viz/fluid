@@ -4,4 +4,4 @@ let rects = [
    Rect(width, 0, width, 50, "blue"),
    Rect(width * 2, 0, width, 220, "green")
 ] in
-Graphic(0, 0, length rects * width, 220, rects)
+Graphic(0, 0, length rects * width, 150, rects)
