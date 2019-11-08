@@ -1,7 +1,7 @@
 import "../BaseTypes"
 import "../Graphics2"
-import { openWithImports } from "../Module"
+import { openDatasetAs, openWithImports } from "../Module"
 import "../app/GraphicsRenderer2"
 import { Editor } from "./Editor"
 
-new Editor(openWithImports("nested-rectangles"))
+new Editor(openWithImports("nested-rectangles"), openDatasetAs("renewables", "data"))
