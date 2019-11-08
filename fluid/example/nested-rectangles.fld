@@ -27,6 +27,7 @@ let subChart = fun countryData →
 let bars = [
    subChart (lookupStr "China" data2015),
    subChart (lookupStr "Germany" data2015)
-]
+];
+let w1 = sum (map width bars) / 2 
 in
-Graphic(0, 0, sum (map width bars), max (map height bars), bars)
+Graphic(0, 0, w1 * 2, max (map height bars), spaceRight w1 bars)
