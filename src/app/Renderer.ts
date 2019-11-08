@@ -256,21 +256,24 @@ export function space (): SVGElement {
    return text(`${space_char}`, DeltaStyle.Unchanged)
 }
 
-export function svgElement (w: number, h: number, invert_y: boolean): SVGSVGElement {
+// Chrome doesn't appear to fully support SVG 2.0 yet; in particular, transform attributes on svg elements are 
+// ignored (except at the root). To invert the y-axis, we have to add a nested g element containing the transform.
+// Elsewhere we avoid SVG transforms internally, to avoid having non-integer pixel attributes.
+export function svgElement (w: number, h: number): [SVGSVGElement, SVGGElement] {
    const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
    svg.setAttribute("width", `${w}`)
    svg.setAttribute("height", `${h}`)
-   // Don't use SVG transform internally, but compute our own transformations (to avoid having non-integer
-   // pixel attributes). But to invert y-axis use an SVG transform:
-   if (invert_y) {
-      svg.setAttribute("transform", "scale(1,-1)")
-   }
-   return svg
+   const g: SVGGElement = document.createElementNS(SVG.NS, "g")
+   g.setAttribute("transform", "scale(1,-1)")
+   svg.appendChild(g)
+   return [svg, g]
 }
 
 // Top-level SVG node with a "defs" element with id "defs".
-export function svgRootElement (w: number, h: number, invert_y: boolean): SVGSVGElement {
-   const svg: SVGSVGElement = svgElement(w, h, invert_y)
+export function svgRootElement (w: number, h: number): SVGSVGElement {
+   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   svg.setAttribute("width", `${w}`)
+   svg.setAttribute("height", `${h}`)
    // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
    svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
    svg.style.verticalAlign = "top"

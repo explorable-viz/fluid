@@ -19,7 +19,7 @@ export class Editor {
    here!: ExplValueCursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
-      this.root = svgRootElement(1400, 600, false)
+      this.root = svgRootElement(1400, 600)
       defineMarker(this.root, arrowhead())
       document.body.appendChild(this.root)
       this.ρ = ρ

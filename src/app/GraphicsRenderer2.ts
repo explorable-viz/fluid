@@ -38,7 +38,7 @@ export class GraphicsRenderer {
    scalings: ScaleFactor[] // stack of successive compositions of scaling transformations
    ancestors: SVGElement[] // stack of enclosing SVG elements
 
-   constructor (root: SVGSVGElement) {
+   constructor (root: SVGElement) {
       this.ancestors = [root]
       this.scalings = [[1, 1]]
    }
@@ -59,8 +59,8 @@ export class GraphicsRenderer {
       while (root.firstChild !== null) {
          root.removeChild(root.firstChild)
       }
-      const width: number = parseFloat(root.getAttribute("width")!)
-      const height: number = parseFloat(root.getAttribute("height")!)
+      const width: number = parseFloat(__nonNull(root.getAttribute("width")))
+      const height: number = parseFloat(__nonNull(root.getAttribute("height")))
       this.scalings.push(
          postcompose(
             this.scale, 
