@@ -26,4 +26,4 @@ let subChart = fun countryData →
 let bars = flip map data2015 (fun (_, countryData) → subChart countryData);
 let w1 = sum (map width bars) / length bars
 in
-Graphic(0, 0, length bars * w1, max (map height bars), spaceRight w1 bars, None)
+Graphic(0, 0, length bars * w1, max (map height bars), spaceRight w1 bars, Scale(1 / w1, 1))
