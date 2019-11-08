@@ -57,7 +57,7 @@ export function openDatasetAs (file: string, x: string): ExtendEnv {
 }
 
 export function parseWithImports (src: string, ...modules: Module[]): Expr {
-   return import_([module_prelude, module_graphics], import_(modules, successfulParse(src)))
+   return import_([module_prelude, module_graphics, ...modules], successfulParse(src))
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234

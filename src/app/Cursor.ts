@@ -189,7 +189,8 @@ export class ExprCursor extends Cursor {
    }
 
    skipImports (): ExprCursor {
-      return this.skipImport() // prelude
+      return this.skipImport()  // prelude
+                 .skipImport() // graphics
    }
 
    // No way to specify only "own" properties statically.
