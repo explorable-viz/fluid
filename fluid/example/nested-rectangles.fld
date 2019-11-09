@@ -1,3 +1,5 @@
-let bars = flip map (lookup 2015 data) (compose barChart snd)
-in
-Graphic(0, 0, length bars, max (map height bars), spaceRight 1 bars, None)
+let chartForYear = 
+   fun year → 
+      let bars = flip map (lookup year data) (compose barChart snd) in 
+      Graphic(0, 0, length bars, max (map height bars), spaceRight 1 bars, None)
+in chartForYear 2015
