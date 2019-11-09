@@ -25,4 +25,4 @@ let subChart = fun countryData →
    Graphic(0, 0, 1, max (map height rects), spaceRight 1 rects, Some(Scale(1 / length rects, 1)));
 let bars = flip map data2015 (fun (_, countryData) → subChart countryData)
 in
-Graphic(0, 0, length bars, max (map height bars), spaceRight 7 bars, None)
+Graphic(0, 0, length bars, max (map height bars), spaceRight 1 bars, None)

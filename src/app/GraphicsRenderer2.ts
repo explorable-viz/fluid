@@ -85,6 +85,12 @@ export class GraphicsRenderer {
    graphic (tg: ExplValueCursor/*<Graphic>*/): void {
       const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
       const g: Graphic = as(tg.tv.v, Graphic)
+      const [x_scale, y_scale] = this.scale
+      const [x, y] = [Math.round(g.x.val * x_scale), Math.round(g.y.val * y_scale)]
+      svg.setAttribute("x", `${x}`)
+      svg.setAttribute("y", `${y}`)
+      this.current.appendChild(svg)
+      this.ancestors.push(svg)
       if (g.scale instanceof Some) {
          if (g.scale.t instanceof Scale) {
             this.scalings.push(
@@ -96,20 +102,14 @@ export class GraphicsRenderer {
       } else {
          assert(g.scale instanceof None)
       }
-      const [x_scale, y_scale] = this.scale
-      const [x, y] = [Math.round(g.x.val * x_scale), Math.round(g.y.val * y_scale)]
-      svg.setAttribute("x", `${x}`)
-      svg.setAttribute("y", `${y}`)
-      this.current.appendChild(svg)
-      this.ancestors.push(svg)
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Graphic, "gs"); 
            Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
          this.renderElement(tg̅.to(Cons, "head"))
       }
-      this.ancestors.pop()
       if (g.scale instanceof Some) {
          this.scalings.pop()
       }
+      this.ancestors.pop()
    }
 
    asString (p̅: [number, number][]): string {
