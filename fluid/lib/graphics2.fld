@@ -48,7 +48,7 @@ let colours = [
    "Navy"
 ];
 
-// List (Str, Num) → GraphicsElement
+// List (a, Num) → GraphicsElement
 let barChart = 
    let makeBar = fun ((_, n), col) → 
       Rect(0, 0, 1, n, col) in

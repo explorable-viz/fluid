@@ -1,5 +1,7 @@
+// List (a, List (b, Num)) → GraphicsElement
 let chart = 
    fun data → 
+      // List GraphicsElement
       let bars = flip map data (compose barChart snd) in 
       Graphic(0, 0, length bars, max (map height bars), spaceRight 1 bars, Some(Scale(1 / length bars, 1)));
 let charts = map (compose chart snd) data
