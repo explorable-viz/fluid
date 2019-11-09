@@ -35,6 +35,11 @@ let dimensions = fun {
 // GraphicsElement → Num
 let width = compose fst dimensions;
 
+let set_width = fun w {
+   Rect(x, y, _, h, scale, fill) → Rect(x, y, w, h, scale, fill);
+   Group(x, y, _, h, scale, gs) → Group(x, y, w, h, scale, gs)
+};
+
 // GraphicsElement → Num
 let height = compose snd dimensions;
 
@@ -56,7 +61,7 @@ let colours = [
 
 // Num → GraphicsElement → GraphicsElement
 let scaleToWidth = fun n g → 
-   set_scale (Scale(n / width g, 1)) g;
+   set_width n (set_scale (Scale(n / width g, 1)) g);
 
 // List (a, Num) → GraphicsElement
 let barChart = 
