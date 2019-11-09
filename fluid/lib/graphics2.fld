@@ -14,6 +14,12 @@ let set_x = fun x {
    Group(_, y, w, h, scale, gs) → Group(x, y, w, h, scale, gs)
 };
 
+// Scale → GraphicsElement → GraphicsElement
+let set_scale = fun scale {
+   Rect(x, y, w, h, _, fill) → Rect(x, y, w, h, Some(scale), fill);
+   Group(x, y, w, h, _, gs) → Group(x, y, w, h, Some(scale), gs)
+};
+
 // GraphicsElement → Num
 let get_x = compose fst coords;
 
@@ -54,4 +60,8 @@ let barChart =
       Rect(0, 0, 1, n, None, col) in
    fun data →
       let rects = zipW makeBar data colours in
-      Group(0, 0, 1, max (map height rects), Some(Scale(1 / length rects, 1)), spaceRight 1 rects)
+      Group(0, 0, 1, max (map height rects), Some(Scale(1 / length rects, 1)), spaceRight 1 rects);
+
+// Num → GraphicsElement → GraphicsElement
+let scaleToWidth = fun n g → 
+   set_scale (Scale(1 / width g, 1)) g
