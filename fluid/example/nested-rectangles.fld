@@ -1,5 +1,6 @@
 let chart = 
    fun data → 
       let bars = flip map data (compose barChart snd) in 
-      Graphic(0, 0, length bars, max (map height bars), spaceRight 1 bars, None)
-in map (compose chart snd) data
+      Graphic(0, 0, length bars, max (map height bars), spaceRight 1 bars, Some(Scale(1 / length bars, 1)));
+let charts = map (compose chart snd) data
+in Graphic(0, 0, length charts, max (map height charts), spaceRight 1 charts, None)
