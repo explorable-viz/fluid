@@ -3,6 +3,8 @@ let chart =
    fun data → 
       // List GraphicsElement
       let bars = flip map data (compose (scaleToWidth 1) (compose barChart snd)) in 
-      Group(0, 0, length bars, max (map height bars), None, spaceRight 1 bars);
+      Group(0, 0, length bars, max (map height bars), None, spaceRight 1 bars)
+in
+// chart (snd (head data))
 let charts = map (compose (scaleToWidth 1) (compose chart snd)) data
 in Group(0, 0, length charts, max (map height charts), None, spaceRight 1 charts)
