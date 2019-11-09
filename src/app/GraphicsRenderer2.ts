@@ -87,6 +87,9 @@ export class GraphicsRenderer {
       const g: Group = as(tg.tv.v, Group)
       const [x_scale, y_scale] = this.scale
       const [x, y] = [Math.round(g.x.val * x_scale), Math.round(g.y.val * y_scale)]
+      // x and y attributes are relative to parent coordinate space, so not transformed.
+      // width and height refer to size of viewport (again in parent coordinate space), although currently
+      // we ignore these; we should really clip the child content.
       svg.setAttribute("x", `${x}`)
       svg.setAttribute("y", `${y}`)
       this.current.appendChild(svg)
