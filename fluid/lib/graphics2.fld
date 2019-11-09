@@ -54,14 +54,14 @@ let colours = [
    "Navy"
 ];
 
+// Num → GraphicsElement → GraphicsElement
+let scaleToWidth = fun n g → 
+   set_scale (Scale(n / width g, 1)) g;
+
 // List (a, Num) → GraphicsElement
 let barChart = 
    let makeBar = fun ((_, n), col) → 
       Rect(0, 0, 1, n, None, col) in
    fun data →
       let rects = zipW makeBar data colours in
-      Group(0, 0, 1, max (map height rects), Some(Scale(1 / length rects, 1)), spaceRight 1 rects);
-
-// Num → GraphicsElement → GraphicsElement
-let scaleToWidth = fun n g → 
-   set_scale (Scale(n / width g, 1)) g
+      Group(0, 0, length rects, max (map height rects), None, spaceRight 1 rects)
