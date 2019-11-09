@@ -34,4 +34,24 @@ let height = compose snd dimensions;
 
 // Num → List GraphicsElement → List GraphicsElement
 let spaceRight = fun sep gs →
-   zipW (uncurry set_x) (iterate (length gs) (fun x → x + sep) 0) gs
+   zipW (uncurry set_x) (iterate (length gs) (fun x → x + sep) 0) gs;
+
+// Bake colour decisions into the library for the time being.
+// List Str
+let colours = [
+   "RosyBrown",
+   "HotPink",
+   "PaleGreen",
+   "Aquamarine",
+   "Plum",
+   "LightCoral",
+   "Navy"
+];
+
+// List (Str, Num) → GraphicsElement
+let barChart = 
+   let makeBar = fun ((_, n), col) → 
+      Rect(0, 0, 1, n, col) in
+   fun data →
+      let rects = zipW makeBar data colours in
+      Graphic(0, 0, 1, max (map height rects), spaceRight 1 rects, Some(Scale(1 / length rects, 1)))
