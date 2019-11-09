@@ -64,4 +64,4 @@ let barChart =
 
 // Num → GraphicsElement → GraphicsElement
 let scaleToWidth = fun n g → 
-   set_scale (Scale(1 / width g, 1)) g
+   set_scale (Scale(n / width g, 1)) g
