@@ -2,4 +2,4 @@ let chartForYear =
    fun year → 
       let bars = flip map (lookup year data) (compose barChart snd) in 
       Graphic(0, 0, length bars, max (map height bars), spaceRight 1 bars, None)
-in chartForYear 2015
+in map (compose chartForYear fst) data
