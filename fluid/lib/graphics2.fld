@@ -1,6 +1,6 @@
 // Want some kind of typeclass mechanism plus record accessors/updaters.
 let coords = fun {
-   Rect(x, y, _, _, _) → (x, y);
+   Rect(x, y, _, _, _, _) → (x, y);
    Graphic(x, y, _, _, _, _) → (x, y)
 };
 
@@ -10,8 +10,8 @@ let x_translate = fun dx g →
 
 // Num → GraphicsElement → GraphicsElement
 let set_x = fun x {
-   Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
-   Graphic(_, y, w, h, gs, scale) → Graphic(x, y, w, h, gs, scale)
+   Rect(_, y, w, h, scale, fill) → Rect(x, y, w, h, scale, fill);
+   Graphic(_, y, w, h, scale, gs) → Graphic(x, y, w, h, scale, gs)
 };
 
 // GraphicsElement → Num
@@ -22,7 +22,7 @@ let get_y = compose snd coords;
 
 // GraphicsElement → (Num, Num)
 let dimensions = fun {
-   Rect(_, _, w, h, _) → (w, h);
+   Rect(_, _, w, h, _, _) → (w, h);
    Graphic(_, _, w, h, _, _) → (w, h)
 };
 
@@ -51,7 +51,7 @@ let colours = [
 // List (a, Num) → GraphicsElement
 let barChart = 
    let makeBar = fun ((_, n), col) → 
-      Rect(0, 0, 1, n, col) in
+      Rect(0, 0, 1, n, None, col) in
    fun data →
       let rects = zipW makeBar data colours in
-      Graphic(0, 0, 1, max (map height rects), spaceRight 1 rects, Some(Scale(1 / length rects, 1)))
+      Graphic(0, 0, 1, max (map height rects), Some(Scale(1 / length rects, 1)), spaceRight 1 rects)

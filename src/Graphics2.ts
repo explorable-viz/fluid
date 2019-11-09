@@ -22,11 +22,11 @@ export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag
    y: Num = _
    width: Num = _
    height: Num = _
+   scale: Option<Scale> = _
 }
 
 export class Graphic extends GraphicsElement<"Graphic"> {
    gs: List<GraphicsElement> = _
-   scale: Option<Scale> = _
 }
 
 export class Rect extends GraphicsElement<"Rect"> {
