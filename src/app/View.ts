@@ -280,8 +280,11 @@ export class ExplView extends View {
             horizSpace(keyword("match", deltaStyle(this.t)), view(this.t.tu, false, true).render(), keyword("as", deltaStyle(this.t))),
             elimMatch(this.t.ξ)
          )
+      } else
+      if (this.t instanceof Expl.Typematch) {
+         return unimplemented(this.t)
       } else {
-         return absurd()
+         return absurd("Unknown explanation form", this.t)
       }
       return shading(g, "white")
    }
