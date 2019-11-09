@@ -8,6 +8,6 @@ letrec fun lookupNum k [(k', v), ...kvs] →
       True → v;
       False → lookupNum k kvs
    };
-let bars = flip map (lookupNum 2015 data) (fun (_, countryData) → barChart countryData)
+let bars = flip map (lookupNum 2015 data) (compose barChart snd)
 in
 Graphic(0, 0, length bars, max (map height bars), spaceRight 1 bars, None)
