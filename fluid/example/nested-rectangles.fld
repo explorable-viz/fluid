@@ -3,6 +3,6 @@ let chart =
    fun data → 
       // List GraphicsElement
       let bars = flip map data (compose barChart snd) in 
-      Graphic(0, 0, length bars, max (map height bars), Some(Scale(1 / length bars, 1)), spaceRight 1 bars);
+      Group(0, 0, length bars, max (map height bars), Some(Scale(1 / length bars, 1)), spaceRight 1 bars);
 let charts = map (compose chart snd) data
-in Graphic(0, 0, length charts, max (map height charts), None, spaceRight 1 charts)
+in Group(0, 0, length charts, max (map height charts), None, spaceRight 1 charts)

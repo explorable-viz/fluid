@@ -1,7 +1,7 @@
 import { __nonNull, absurd, as, assert, error } from "../util/Core"
 import { Cons, List, None, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Graphic, GraphicsElement, Rect, Scale } from "../Graphics2"
+import { Group, GraphicsElement, Rect, Scale } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -72,7 +72,7 @@ export class GraphicsRenderer {
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
       const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
-      if (g instanceof Graphic) {
+      if (g instanceof Group) {
          this.graphic(tg)
       } else 
       if (g instanceof Rect) {
@@ -84,7 +84,7 @@ export class GraphicsRenderer {
 
    graphic (tg: ExplValueCursor/*<Graphic>*/): void {
       const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
-      const g: Graphic = as(tg.tv.v, Graphic)
+      const g: Group = as(tg.tv.v, Group)
       const [x_scale, y_scale] = this.scale
       const [x, y] = [Math.round(g.x.val * x_scale), Math.round(g.y.val * y_scale)]
       svg.setAttribute("x", `${x}`)
@@ -102,7 +102,7 @@ export class GraphicsRenderer {
       } else {
          assert(g.scale instanceof None)
       }
-      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Graphic, "gs"); 
+      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
            Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
          this.renderElement(tg̅.to(Cons, "head"))
       }

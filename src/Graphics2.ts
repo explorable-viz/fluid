@@ -14,7 +14,7 @@ export class Point extends DataValue<"Point"> {
    }
 }
 
-export type GraphicsElementTag = "Rect" | "Graphic"
+export type GraphicsElementTag = "Rect" | "Group"
 
 // Every graphics element has coordinates and dimensions expressed in the coordinate system of its parent.
 export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
@@ -25,7 +25,7 @@ export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag
    scale: Option<Scale> = _
 }
 
-export class Graphic extends GraphicsElement<"Graphic"> {
+export class Group extends GraphicsElement<"Group"> {
    gs: List<GraphicsElement> = _
 }
 
@@ -38,6 +38,6 @@ export class Scale extends DataValue<"Scale"> {
    y: Num = _
 }
 
-initDataType(GraphicsElement, [Graphic, Rect])
+initDataType(GraphicsElement, [Group, Rect])
 initDataType(Scale, [Scale])
 initDataType(Point, [Point])
