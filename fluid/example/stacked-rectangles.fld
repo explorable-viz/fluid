@@ -1,0 +1,2 @@
+let countryData = lookup "China" (lookup 2015 data)
+in scanl (fun (x, y) → x + y) 0 [2, 5, 9]

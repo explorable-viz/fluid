@@ -22,6 +22,9 @@ primitive trace;
 // Would like infix operators. 
 let compose = fun f g x → f (g x);
 
+// a → b → a
+let const = fun x _ → x;
+
 // (a → b) → (a, c) → (b, c)
 let first = fun f (a, c) → (f a, c);
 
@@ -76,6 +79,12 @@ letrec fun foldr1 op {
    [x] → x;
    [x, y, ...xs] → op (x, foldr1 op [y, ...xs])
 };
+
+// ((a, b) → a) → a → List b -> List a
+letrec fun scanl op z xs → 
+   let go = fun (x, continue) acc → 
+      let next = op (acc, x) in [next, ...continue next] in
+   [z, ...foldr go (const []) xs z];
 
 // List a → a → List a
 letrec fun intersperse {
