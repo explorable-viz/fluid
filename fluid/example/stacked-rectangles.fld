@@ -1,4 +1,3 @@
-let countryData = lookup "China" (lookup 2015 data);
 let stackedBar = fun ns →
    let subtotals = scanl1 (fun (x, y) → x + y) 0 ns;
    let dims = zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals));
@@ -7,4 +6,4 @@ let stackedBar = fun ns →
       (zip dims colours)
    in Group(0, 0, 1, last subtotals, None, rects)
 in 
-stackedBar (map snd countryData)
+map (compose stackedBar (map snd)) (map snd (lookup 2015 data))
