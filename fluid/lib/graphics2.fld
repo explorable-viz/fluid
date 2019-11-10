@@ -63,10 +63,12 @@ let colours = [
 let scaleToWidth = fun n g → 
    set_width n (set_scale (Scale(n / width g, 1)) g);
 
+// List GraphicsElement → GraphicsElement
+let stackRight = fun gs →
+   Group(0, 0, length gs, max (map height gs), None, spaceRight 1 gs);
+
 // List (a, Num) → GraphicsElement
 let barChart = 
-   let makeBar = fun ((_, n), col) → 
-      Rect(0, 0, 1, n, None, col) in
-   fun data →
-      let rects = zipW makeBar data colours in
-      Group(0, 0, length rects, max (map height rects), None, spaceRight 1 rects)
+   compose 
+      stackRight 
+      (flip (zipW (fun ((_, n), col) → Rect(0, 0, 1, n, None, col))) colours)
