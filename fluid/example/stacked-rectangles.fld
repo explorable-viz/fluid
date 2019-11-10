@@ -1,4 +1,4 @@
 let countryData = lookup "China" (lookup 2015 data);
 let ns = map snd countryData;
 let subtotals = scanl1 (fun (x, y) → x + y) 0 ns
-in map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals)
+in zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals))
