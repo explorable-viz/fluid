@@ -1,4 +1,9 @@
 let countryData = lookup "China" (lookup 2015 data);
 let ns = map snd countryData;
 let subtotals = scanl1 (fun (x, y) → x + y) 0 ns
-in zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals))
+in 
+   map 
+      (fun ((y, height), col) → Rect(0, y, 1, height, None, col))
+      (zip 
+         (zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals)))
+         colours)
