@@ -81,10 +81,14 @@ letrec fun foldr1 op {
 };
 
 // ((a, b) → a) → a → List b -> List a
-letrec fun scanl op z xs → 
+letrec fun scanl1 op z xs → 
    let go = fun (x, continue) acc → 
       let next = op (acc, x) in [next, ...continue next] in
-   [z, ...foldr go (const []) xs z];
+   foldr go (const []) xs z;
+
+// ((a, b) → a) → a → List b -> List a
+let scanl = fun op z xs → 
+   [z, ...scanl1 op z xs];
 
 // List a → a → List a
 letrec fun intersperse {
