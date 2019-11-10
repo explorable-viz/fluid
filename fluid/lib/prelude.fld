@@ -150,6 +150,8 @@ letrec fun zipW op {
    }
 };
 
+let zip = zipW id;
+
 // Num → a → List a
 let repeat = flip iterate id;
 
