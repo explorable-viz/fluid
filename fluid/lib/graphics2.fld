@@ -1,22 +1,8 @@
 // Want some kind of typeclass mechanism plus record accessors/updaters.
-let coords = fun {
-   Rect(x, y, _, _, _, _) → (x, y);
-   Group(x, y, _, _, _, _) → (x, y)
-};
-
-// Num → GraphicsElement → GraphicsElement
-let x_translate = fun dx g → 
-   match coords g as (x, y) → set_x g (x + dx);
-
 // Num → GraphicsElement → GraphicsElement
 let set_x = fun x {
    Rect(_, y, w, h, scale, fill) → Rect(x, y, w, h, scale, fill);
    Group(_, y, w, h, scale, gs) → Group(x, y, w, h, scale, gs)
-};
-
-let get_scale = fun {
-   Rect(_, _, _, _, scale, _) → scale;
-   Group(_, _, _, _, scale, _) → scale
 };
 
 // Num → Num → Option Scale → Option Scale
@@ -30,12 +16,6 @@ let scaleBy = fun x1 y1 {
    Rect(x, y, w, h, scale, fill) → Rect(x, y, w, h, scaleByOpt x1 y1 scale, fill);
    Group(x, y, w, h, scale, gs) → Group(x, y, w, h, scaleByOpt x1 y1 scale, gs)
 };
-
-// GraphicsElement → Num
-let get_x = compose fst coords;
-
-// GraphicsElement → Num
-let get_y = compose snd coords;
 
 // GraphicsElement → (Num, Num)
 let dimensions = fun {
