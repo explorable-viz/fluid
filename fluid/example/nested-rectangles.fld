@@ -1,4 +1,4 @@
-// List (a, List (b, Num)) → GraphicsElement
-let subchart = fun data → 
-   stackRight (flip map data (compose barChart snd))
-in stackRight (map (compose subchart snd) data)
+stackRight 
+   (map 
+      (compose (compose stackRight (map (compose barChart snd))) snd) 
+      data)
