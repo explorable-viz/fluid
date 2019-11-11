@@ -257,10 +257,19 @@ describe("slice", () => {
       })
    })
 
-   describe("nested-rectangles", () => {
+   describe("graphics/nested-rectangles", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
          const e: Expr = openWithImports("graphics/nested-rectangles")
+         new FwdSlice(e, ρ)
+         new BwdSlice(e, ρ)
+      })
+   })
+
+   describe("graphics/stacked-rectangles", () => {
+      it("ok", () => {
+         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
+         const e: Expr = openWithImports("graphics/stacked-rectangles")
          new FwdSlice(e, ρ)
          new BwdSlice(e, ρ)
       })
