@@ -71,4 +71,13 @@ let stackRight = fun gs →
 let barChart = 
    compose 
       stackRight 
-      ((zipW (fun (col, (_, n)) → Rect(0, 0, 1, n, None, col))) colours)
+      ((zipW (fun (col, (_, n)) → Rect(0, 0, 1, n, None, col))) colours);
+
+// List (a, Num) → GraphicsElement
+let stackedBar = fun ns →
+   let subtotals = scanl1 (fun (x, y) → x + y) 0 (map snd ns);
+   let dims = zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals));
+   let rects = map 
+      (fun ((y, height), col) → Rect(0, y, 1, height, None, col))
+      (zip dims colours)
+   in Group(0, 0, 1, last subtotals, None, rects)

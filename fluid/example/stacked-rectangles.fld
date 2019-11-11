@@ -1,9 +1,4 @@
-let stackedBar = fun ns →
-   let subtotals = scanl1 (fun (x, y) → x + y) 0 ns;
-   let dims = zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals));
-   let rects = map 
-      (fun ((y, height), col) → Rect(0, y, 1, height, None, col))
-      (zip dims colours)
-   in Group(0, 0, 1, last subtotals, None, rects)
-in
-stackRight (map (compose stackedBar (map snd)) (map snd (lookup 2015 data)))
+stackRight 
+   (map 
+      stackedBar
+      (map snd (lookup 2015 data)))
