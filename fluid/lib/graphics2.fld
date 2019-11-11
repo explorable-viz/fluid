@@ -5,12 +5,6 @@ let set_x = fun x {
    Group(_, y, w, h, scale, gs) → Group(x, y, w, h, scale, gs)
 };
 
-// Num → Num → Option Scale → Option Scale
-let scaleByOpt = fun x1 y1 {
-   None → Some(Scale(x1, y1));
-   Some(Scale(x2, y2)) → Some(Scale(x1 * x2, y1 * y2))
-};
-
 // GraphicsElement → (Num, Num)
 let dimensions = fun {
    Rect(_, _, w, h, _) → (w, h);
@@ -44,12 +38,13 @@ let colours = [
    "Navy"
 ];
 
-// Compositionality principle: child coords/dimensions are always expressed directly using the parent's reference 
-// frame, to avoid having them depend on the content of the child.
+// Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
+// frame, to avoid depending on content of child.
 // Num → GraphicsElement → GraphicsElement
 let scaleToWidth = fun w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
-   Group(x, y, w0, h, scale, gs) → Group(x, y, w, h, scaleByOpt (w / w0) 1 scale, gs)
+   Group(x, y, w0, h, scale, gs) → Group(x, y, w, h, Some(Scale(w / w0, 1)), gs);
+   Polyline(scale, ps) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps)
 };
 
 // List GraphicsElement → Num → GraphicsElement

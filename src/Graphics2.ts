@@ -26,6 +26,7 @@ export class Rect extends GraphicsElement<"Rect"> {
 }
 
 export class Polyline extends GraphicsElement<"Polyline"> {
+   scale: Option<Scale> = _
    points: List<Pair<Num, Num>> = _
 }
 
@@ -34,5 +35,5 @@ export class Scale extends DataValue<"Scale"> {
    y: Num = _
 }
 
-initDataType(GraphicsElement, [Group, Rect])
+initDataType(GraphicsElement, [Group, Polyline, Rect])
 initDataType(Scale, [Scale])
