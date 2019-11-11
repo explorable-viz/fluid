@@ -257,19 +257,19 @@ describe("slice", () => {
       })
    })
 
-   describe("graphics/nested-rectangles", () => {
+   describe("graphics/grouped-bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const e: Expr = openWithImports("graphics/nested-rectangles")
+         const e: Expr = openWithImports("graphics/grouped-bar-chart")
          new FwdSlice(e, ρ)
          new BwdSlice(e, ρ)
       })
    })
 
-   describe("graphics/stacked-rectangles", () => {
+   describe("graphics/stacked-bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const e: Expr = openWithImports("graphics/stacked-rectangles")
+         const e: Expr = openWithImports("graphics/stacked-bar-chart")
          new FwdSlice(e, ρ)
          new BwdSlice(e, ρ)
       })
