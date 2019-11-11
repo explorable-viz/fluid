@@ -1,7 +1,7 @@
 import { __nonNull, absurd, as, assert, error } from "../util/Core"
 import { Cons, List, None, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Group, GraphicsElement, Rect, Scale } from "../Graphics2"
+import { Group, GraphicsElement, Polyline, Rect, Scale } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -70,7 +70,8 @@ export class GraphicsRenderer {
          this.renderElement(ExplValueCursor.descendant(null, tg))
          this.scalings.pop()
       } else {
-         error("Not yet supported")
+         console.log("WARNING: NOT YET SUPPORTED")
+         this.renderElement(ExplValueCursor.descendant(null, tg))
       }
    }
 
@@ -81,6 +82,9 @@ export class GraphicsRenderer {
       } else 
       if (g instanceof Rect) {
          this.rect(tg)
+      } else
+      if (g instanceof Polyline) {
+         console.log("TODO")
       } else {
          return absurd()
       }

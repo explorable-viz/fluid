@@ -181,11 +181,11 @@ let lookup =
          Str → lookupStr k
       };
 
-// List Num → Num
+// (Num, Num) → Num
 let max2 = fun (n, m) →
    match n > m as { True → n; False → m };
 
-// List Num → Num
+// (Num, Num) → Num
 let min2 = fun (n, m) →
    match n < m as { True → n; False → m };
 
