@@ -65,7 +65,7 @@ let scaleToWidth = fun n g →
 
 // List GraphicsElement → GraphicsElement
 let stackRight = fun gs →
-   Group(0, 0, length gs, max (map height gs), None, spaceRight 1 gs);
+   Group(0, 0, length gs, max (map height gs), None, map (scaleToWidth 1) (spaceRight 1 gs));
 
 // List (a, Num) → GraphicsElement
 let barChart = 
