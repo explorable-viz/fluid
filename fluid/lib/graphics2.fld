@@ -11,12 +11,6 @@ let scaleByOpt = fun x1 y1 {
    Some(Scale(x2, y2)) → Some(Scale(x1 * x2, y1 * y2))
 };
 
-// Num → Num → GraphicsElement → GraphicsElement
-let scaleBy = fun x1 y1 {
-   Rect(x, y, w, h, scale, fill) → Rect(x, y, w, h, scaleByOpt x1 y1 scale, fill);
-   Group(x, y, w, h, scale, gs) → Group(x, y, w, h, scaleByOpt x1 y1 scale, gs)
-};
-
 // GraphicsElement → (Num, Num)
 let dimensions = fun {
    Rect(_, _, w, h, _, _) → (w, h);
@@ -53,8 +47,10 @@ let colours = [
 // Compositionality principle: child coords/dimensions are always expressed directly using the parent's reference 
 // frame, to avoid having them depend on the content of the child.
 // Num → GraphicsElement → GraphicsElement
-let scaleToWidth = fun n g →
-   set_width n (scaleBy (n / width g) 1 g);
+let scaleToWidth = fun w {
+   Rect(x, y, _, h, scale, fill) → Rect(x, y, w, h, scale, fill);
+   Group(x, y, w0, h, scale, gs) → Group(x, y, w, h, scaleByOpt (w / w0) 1 scale, gs)
+};
 
 // List GraphicsElement → Num → GraphicsElement
 let stackRight = fun sep gs →
