@@ -1,4 +1,4 @@
-stackRight 
+stackRight 0
    (map 
       (compose (compose stackRight (map (compose barChart snd))) snd) 
       data)

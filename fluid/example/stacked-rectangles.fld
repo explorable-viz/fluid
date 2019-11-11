@@ -1,4 +1,4 @@
-stackRight 
+stackRight 0
    (map 
       stackedBar
       (map snd (lookup 2015 data)))
