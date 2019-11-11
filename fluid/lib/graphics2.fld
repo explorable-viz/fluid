@@ -71,4 +71,4 @@ let stackRight = fun gs →
 let barChart = 
    compose 
       stackRight 
-      (flip (zipW (fun ((_, n), col) → Rect(0, 0, 1, n, None, col))) colours)
+      ((zipW (fun (col, (_, n)) → Rect(0, 0, 1, n, None, col))) colours)
