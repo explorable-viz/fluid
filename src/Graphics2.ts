@@ -11,10 +11,10 @@ export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag
    y: Num = _
    width: Num = _
    height: Num = _
-   scale: Option<Scale> = _
 }
 
 export class Group extends GraphicsElement<"Group"> {
+   scale: Option<Scale> = _
    gs: List<GraphicsElement> = _
 }
 

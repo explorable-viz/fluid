@@ -1,7 +1,7 @@
 // Want some kind of typeclass mechanism plus record accessors/updaters.
 // Num → GraphicsElement → GraphicsElement
 let set_x = fun x {
-   Rect(_, y, w, h, scale, fill) → Rect(x, y, w, h, scale, fill);
+   Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
    Group(_, y, w, h, scale, gs) → Group(x, y, w, h, scale, gs)
 };
 
@@ -13,7 +13,7 @@ let scaleByOpt = fun x1 y1 {
 
 // GraphicsElement → (Num, Num)
 let dimensions = fun {
-   Rect(_, _, w, h, _, _) → (w, h);
+   Rect(_, _, w, h, _) → (w, h);
    Group(_, _, w, h, _, _) → (w, h)
 };
 
@@ -21,7 +21,7 @@ let dimensions = fun {
 let width = compose fst dimensions;
 
 let set_width = fun w {
-   Rect(x, y, _, h, scale, fill) → Rect(x, y, w, h, scale, fill);
+   Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
    Group(x, y, _, h, scale, gs) → Group(x, y, w, h, scale, gs)
 };
 
@@ -48,7 +48,7 @@ let colours = [
 // frame, to avoid having them depend on the content of the child.
 // Num → GraphicsElement → GraphicsElement
 let scaleToWidth = fun w {
-   Rect(x, y, _, h, scale, fill) → Rect(x, y, w, h, scale, fill);
+   Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
    Group(x, y, w0, h, scale, gs) → Group(x, y, w, h, scaleByOpt (w / w0) 1 scale, gs)
 };
 
@@ -60,13 +60,13 @@ let stackRight = fun sep gs →
 let barChart = fun sep →
    compose 
       (stackRight sep)
-      ((zipW (fun (col, (_, n)) → Rect(0, 0, 1, n, None, col))) colours);
+      ((zipW (fun (col, (_, n)) → Rect(0, 0, 1, n, col))) colours);
 
 // List (a, Num) → GraphicsElement
 let stackedBar = fun ns →
    let subtotals = scanl1 (fun (x, y) → x + y) 0 (map snd ns);
    let dims = zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals));
    let rects = map 
-      (fun ((y, height), col) → Rect(0, y, 1, height, None, col))
+      (fun ((y, height), col) → Rect(0, y, 1, height, col))
       (zip dims colours)
    in Group(0, 0, 1, last subtotals, None, rects)
