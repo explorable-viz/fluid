@@ -70,6 +70,8 @@ let colours = [
    "Navy"
 ];
 
+// Compositionality principle: child coords/dimensions are always expressed directly using the parent's reference 
+// frame, to avoid having them depend on the content of the child.
 // Num → GraphicsElement → GraphicsElement
 let scaleToWidth = fun n g →
    set_width n (scaleBy (n / width g) 1 g);
