@@ -43,9 +43,9 @@ let set_width = fun w {
 // GraphicsElement → Num
 let height = compose snd dimensions;
 
-// Num → List GraphicsElement → List GraphicsElement
-let spaceRight = fun sep gs →
-   zipW (uncurry set_x) (iterate (length gs) (fun x → x + sep) 0) gs;
+// Num → Num → List GraphicsElement → List GraphicsElement
+let spaceRight = fun z sep gs →
+   zipW (uncurry set_x) (iterate (length gs) (fun x → x + sep) z) gs;
 
 // Bake colour decisions into the library for the time being.
 // List Str
@@ -65,7 +65,7 @@ let scaleToWidth = fun n g →
 
 // List GraphicsElement → Num → GraphicsElement
 let stackRight = fun sep gs →
-   Group(0, 0, length gs, max (map height gs), None, map (scaleToWidth 1) (spaceRight 1 gs));
+   Group(0, 0, length gs, max (map height gs), None, map (scaleToWidth 1) (spaceRight sep 1 gs));
 
 // List (a, Num) → GraphicsElement
 let barChart = 
