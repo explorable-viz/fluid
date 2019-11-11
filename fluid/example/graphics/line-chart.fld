@@ -1,3 +1,4 @@
-// List (a, Num)
-let linePlot = id in
-lastN -3 [1, 2, 3, 4, 5, 6]
+let timeSeries = 
+   flip map data 
+      (fun (year, yearData) → (year, lookup "Bio" (lookup "China" yearData))) in
+timeSeries

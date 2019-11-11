@@ -14,10 +14,21 @@ let set_x = fun x {
    Group(_, y, w, h, scale, gs) → Group(x, y, w, h, scale, gs)
 };
 
+let get_scale = fun {
+   Rect(_, _, _, _, scale, _) → scale;
+   Group(_, _, _, _, scale, _) → scale
+};
+
+// Scale → Option Scale → Option Scale
+let scaleByOpt = fun Scale(x1, y1) {
+   None → Some(Scale(x1, y1));
+   Some(Scale(x2, y2)) → Some(Scale(x1 * x2, y1 * y2))
+};
+
 // Scale → GraphicsElement → GraphicsElement
-let set_scale = fun scale {
-   Rect(x, y, w, h, _, fill) → Rect(x, y, w, h, Some(scale), fill);
-   Group(x, y, w, h, _, gs) → Group(x, y, w, h, Some(scale), gs)
+let scaleBy = fun scale {
+   Rect(x, y, w, h, scaleOpt, fill) → Rect(x, y, w, h, scaleByOpt scale scaleOpt, fill);
+   Group(x, y, w, h, scaleOpt, gs) → Group(x, y, w, h, scaleByOpt scale scaleOpt, gs)
 };
 
 // GraphicsElement → Num
@@ -60,8 +71,8 @@ let colours = [
 ];
 
 // Num → GraphicsElement → GraphicsElement
-let scaleToWidth = fun n g → 
-   set_width n (set_scale (Scale(n / width g, 1)) g);
+let scaleToWidth = fun n g →
+   set_width n (scaleBy (Scale(n / width g, 1)) g);
 
 // List GraphicsElement → Num → GraphicsElement
 let stackRight = fun sep gs →
