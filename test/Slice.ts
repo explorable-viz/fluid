@@ -260,7 +260,7 @@ describe("slice", () => {
    describe("nested-rectangles", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const e: Expr = openWithImports("nested-rectangles")
+         const e: Expr = openWithImports("graphics/nested-rectangles")
          new FwdSlice(e, ρ)
          new BwdSlice(e, ρ)
       })
