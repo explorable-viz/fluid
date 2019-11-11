@@ -227,4 +227,22 @@ let or = fun {
    True x → True;
    False True → True;
    False False → False
-}
+};
+
+letrec fun take n xs →
+   match n <= 0 as {
+      True → [];
+      False → match xs as {
+         [] → [];
+         [x, ...xs] → [x, ...take (n - 1) xs]
+      }
+   };
+
+letrec fun drop n xs →
+   match n <= 0 as {
+      True → xs;
+      False → match xs as {
+         [] → [];
+         [_, ...xs] → drop (n - 1) xs
+      }
+   }
