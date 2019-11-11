@@ -1,4 +1,4 @@
 stackRight 0.2
    (map 
       (compose (compose (stackRight 0.2) (map (compose (barChart 0) snd))) snd) 
-      data)
+      (drop 3 data))
