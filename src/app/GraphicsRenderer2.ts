@@ -60,14 +60,18 @@ export class GraphicsRenderer {
       }
       const width: number = parseFloat(__nonNull(root.getAttribute("width")))
       const height: number = parseFloat(__nonNull(root.getAttribute("height")))
-      this.scalings.push(
-         postcompose(
-            this.scale, 
-            scale(width / (tg.v.x.val + tg.v.width.val), height / (tg.v.y.val + tg.v.height.val))
+      if (tg.v instanceof Rect || tg.v instanceof Group) {
+         this.scalings.push(
+            postcompose(
+               this.scale,
+               scale(width / (tg.v.x.val + tg.v.width.val), height / (tg.v.y.val + tg.v.height.val))
+            )
          )
-      )
-      this.renderElement(ExplValueCursor.descendant(null, tg))
-      this.scalings.pop()
+         this.renderElement(ExplValueCursor.descendant(null, tg))
+         this.scalings.pop()
+      } else {
+         error("Not yet supported")
+      }
    }
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {

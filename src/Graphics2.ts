@@ -5,20 +5,23 @@ import { Num, Str, _ } from "./Value"
 
 export type GraphicsElementTag = "Polyline" | "Rect" | "Group"
 
-// Every graphics element has coordinates and dimensions expressed in the coordinate system of its parent.
 export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
+}
+
+export class Group extends GraphicsElement<"Group"> {
    x: Num = _
    y: Num = _
    width: Num = _
    height: Num = _
-}
-
-export class Group extends GraphicsElement<"Group"> {
    scale: Option<Scale> = _
    gs: List<GraphicsElement> = _
 }
 
 export class Rect extends GraphicsElement<"Rect"> {
+   x: Num = _
+   y: Num = _
+   width: Num = _
+   height: Num = _
    fill: Str = _
 }
 
