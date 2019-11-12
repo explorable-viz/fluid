@@ -308,7 +308,7 @@ export class ExplView extends View {
    }
 }
 
-// Rather tedious shenanigans to call an internal function.
+// Shenanigans to call an internal function. Will extract this into a (reverse) FFI.
 let dims: (tg: ExplValue<GraphicsElement>) => [number, number]
 {
    const x: string = "g"

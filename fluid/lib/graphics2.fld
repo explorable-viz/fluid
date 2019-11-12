@@ -24,7 +24,7 @@ let dimensions = fun {
 };
 
 // GraphicsElement → Num
-let width = fun g → fst (fst dimensions);
+let width = compose fst dimensions;
 
 let set_width = fun w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
@@ -32,7 +32,7 @@ let set_width = fun w {
 };
 
 // GraphicsElement → Num
-let height = fun g → snd (fst dimensions);
+let height = compose snd dimensions;
 
 // Num → Num → List GraphicsElement → List GraphicsElement
 let spaceRight = fun z sep gs →
