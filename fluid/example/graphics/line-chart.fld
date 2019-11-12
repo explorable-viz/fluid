@@ -11,10 +11,10 @@ let chinaData = countryData "China";
 let energyTypes = map fst (snd (head chinaData));
 // Str → List (Num, Num)
 let chinaPlot = flip timeSeries chinaData;
-// Str → GraphicsElement
-let plot = fun energyType →
+// Str → Str → GraphicsElement
+let plot = fun energyType col →
    let ps = chinaPlot energyType;
    let start = min (map fst ps)
    in
-   Polyline(None, map (first (fun year → year - startYear)) ps, "blue")
-in map plot energyTypes
+   Polyline(None, map (first (fun year → year - startYear)) ps, col)
+in zipW (uncurry plot) energyTypes colours
