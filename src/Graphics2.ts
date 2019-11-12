@@ -28,6 +28,7 @@ export class Rect extends GraphicsElement<"Rect"> {
 export class Polyline extends GraphicsElement<"Polyline"> {
    scale: Option<Scale> = _
    points: List<Pair<Num, Num>> = _
+   stroke: Str = _
 }
 
 export class Scale extends DataValue<"Scale"> {

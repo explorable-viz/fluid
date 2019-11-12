@@ -141,7 +141,7 @@ export class GraphicsRenderer {
          })
       })
       path.setAttribute("points", asString(ps))
-      path.setAttribute("stroke", "black")
+      path.setAttribute("stroke", g.stroke.val)
       path.setAttribute("fill", "none")
       this.current.appendChild(path)
    }

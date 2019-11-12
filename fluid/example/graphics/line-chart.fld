@@ -16,5 +16,5 @@ let plot = fun energyType →
    let ps = chinaPlot energyType;
    let start = min (map fst ps)
    in
-   Polyline(None, map (first (fun year → year - startYear)) ps)
+   Polyline(None, map (first (fun year → year - startYear)) ps, "blue")
 in map plot energyTypes

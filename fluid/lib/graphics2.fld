@@ -14,7 +14,7 @@ let dimensions2 = fun ((x1, y1), (x2, y2)) →
 let dimensions = fun {
    Rect(_, _, w, h, _) → (w, h);
    Group(_, _, w, h, _, _) → (w, h);
-   Polyline(scale, ps) → 
+   Polyline(scale, ps, _) → 
       match foldl dimensions2 (0, 0) ps as
       (w, h) → match scale as {
          None → (w, h);
@@ -55,7 +55,7 @@ let colours = [
 let scaleToWidth = fun w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
    Group(x, y, w0, h, scale, gs) → Group(x, y, w, h, Some(Scale(w / w0, 1)), gs);
-   Polyline(scale, ps) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps)
+   Polyline(scale, ps, stroke) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps, stroke)
 };
 
 // List GraphicsElement → Num → GraphicsElement
