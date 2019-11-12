@@ -52,7 +52,7 @@ export class GraphicsRenderer {
       return this.scalings[this.scalings.length - 1]
    }
 
-   render (tg: ExplValue<GraphicsElement>): void {
+   render (tg: ExplValue<GraphicsElement>, [w, h]: [number, number]): void {
       assert(this.ancestors.length === 1)
       const root: SVGElement = this.current
       while (root.firstChild !== null) {
@@ -60,19 +60,14 @@ export class GraphicsRenderer {
       }
       const width: number = parseFloat(__nonNull(root.getAttribute("width")))
       const height: number = parseFloat(__nonNull(root.getAttribute("height")))
-      if (tg.v instanceof Rect || tg.v instanceof Group) {
-         this.scalings.push(
-            postcompose(
-               this.scale,
-               scale(width / (tg.v.x.val + tg.v.width.val), height / (tg.v.y.val + tg.v.height.val))
-            )
+      this.scalings.push(
+         postcompose(
+            this.scale,
+            scale(width / w, height / h)
          )
-         this.renderElement(ExplValueCursor.descendant(null, tg))
-         this.scalings.pop()
-      } else {
-         console.log("WARNING: NOT YET SUPPORTED")
-         this.renderElement(ExplValueCursor.descendant(null, tg))
-      }
+      )
+      this.renderElement(ExplValueCursor.descendant(null, tg))
+      this.scalings.pop()
    }
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {

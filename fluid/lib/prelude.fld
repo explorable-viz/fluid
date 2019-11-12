@@ -169,7 +169,7 @@ let lookup =
          True → v;
          False → lookupStr k kvs
       };
-   letrec fun lookupNum k [(k', v), ...kvs] → 
+   letrec fun lookupNum k [(k', v), ...kvs] →
       match k == k' as {
          True → v;
          False → lookupNum k kvs

@@ -4,11 +4,13 @@ import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, exprClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Change } from "../Delta"
+import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics2"
 import { DataElim, Elim, Match, VarElim } from "../Match"
+import { parseWithImports } from "../Module"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
@@ -306,6 +308,22 @@ export class ExplView extends View {
    }
 }
 
+// Rather tedious shenanigans to call an internal function.
+let dims: (tg: ExplValue<GraphicsElement>) => [number, number]
+{
+   const x: string = "g"
+   const dimsExpr: Expr = parseWithImports(`dimensions ${x}`)
+
+   dims = function (tg: ExplValue<GraphicsElement>): [number, number] {
+      const tv: ExplValue = Eval.eval_(Env.singleton(str(x)(ν()), tg), dimsExpr)
+      if (tv.v instanceof Pair && tv.v.fst instanceof Num && tv.v.snd instanceof Num) {
+         return [tv.v.fst.val, tv.v.snd.val]
+      } else {
+         return absurd()
+      }
+   }
+}
+
 export class ValueView extends View {
    // We need the "leaf" explanation to render a value, for two reasons: so we can retrieve the original expression for 
    // editing purposes, and to render component explanations of data values.
@@ -331,10 +349,11 @@ export class ValueView extends View {
       } else
       if (this.tv.v instanceof DataValue) {
          if (this.tv.v instanceof GraphicsElement) {
+            const tg: ExplValue<GraphicsElement> = this.tv as ExplValue<GraphicsElement>
             const dim = { width: 140, height: 160 }
             let g1: SVGGElement
             [g, g1] = svgElement(dim.width, dim.height)
-            new GraphicsRenderer(g1).render(this.tv as ExplValue<GraphicsElement>)
+            new GraphicsRenderer(g1).render(tg, dims(tg))
             dimensions.set(g, dim)
          } else
          if (this.tv.v instanceof Pair) {
