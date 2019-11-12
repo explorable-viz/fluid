@@ -1,4 +1,5 @@
 let timeSeries = 
    flip map data 
       (fun (year, yearData) → (year, lookup "Bio" (lookup "China" yearData))) in
-Polyline(None, timeSeries)
+foldl1 (fun (x, y) → x + y) [2, 3]
+// dimensions Polyline(None, timeSeries)
