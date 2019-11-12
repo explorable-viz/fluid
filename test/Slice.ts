@@ -266,6 +266,15 @@ describe("slice", () => {
       })
    })
 
+   describe("graphics/line-chart", () => {
+      it("ok", () => {
+         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
+         const e: Expr = openWithImports("graphics/line-chart")
+         new FwdSlice(e, ρ)
+         new BwdSlice(e, ρ)
+      })
+   })
+
    describe("graphics/stacked-bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")

@@ -125,7 +125,6 @@ export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]
    C̅.forEach((C: Class<T>): void => {
       ctrToDataType.set(C.name, d)
    })
-   console.log(`Registering datatype ${D.name} with constructors ${C̅.map(C => C.name).join(", ")}`)
    elimToDataType.set(D.name, d)
    types.set(d.name.val, d)
 }

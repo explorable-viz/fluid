@@ -1,5 +1,6 @@
-// assume uniform start date for all time series
+// assume uniform range for all time series, and moreover data sorted by year
 let startYear = fst (head data);
+let finishYear = fst (last data);
 // Str → List (Num, List (Str, Num))
 let countryData = fun country →
    map (second (lookup country)) data;
@@ -13,8 +14,8 @@ let energyTypes = map fst (snd (head chinaData));
 let chinaPlot = flip timeSeries chinaData;
 // Str → Str → GraphicsElement
 let plot = fun energyType col →
-   let ps = chinaPlot energyType;
-   let start = min (map fst ps)
-   in
-   Polyline(None, map (first (fun year → year - startYear)) ps, col)
-in zipW (uncurry plot) energyTypes colours
+   let ps = chinaPlot energyType in
+   Polyline(None, map (first (fun year → year - startYear)) ps, col);
+let lines = zipW (uncurry plot) energyTypes colours
+in
+Group(0, 0, finishYear - startYear, 400, None, lines)
