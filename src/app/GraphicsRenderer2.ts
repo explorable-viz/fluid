@@ -84,9 +84,7 @@ export class GraphicsRenderer {
       let t: T
       if (scale instanceof Some) {
          if (scale.t instanceof Scale) {
-            this.scalings.push(
-               postcompose(this.scale, [scale.t.x.val, scale.t.y.val])
-            )
+            this.scalings.push(postcompose(this.scale, [scale.t.x.val, scale.t.y.val]))
          } else {
             error(`${scale.t} is not a ${Scale.name}.`)
          }
