@@ -1,5 +1,5 @@
 import { __nonNull, absurd, as, assert, error } from "../util/Core"
-import { Cons, List, None, Some } from "../BaseTypes"
+import { Cons, List, None, Option, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Group, GraphicsElement, Polyline, Rect, Scale } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
@@ -60,12 +60,7 @@ export class GraphicsRenderer {
       }
       const width: number = parseFloat(__nonNull(root.getAttribute("width")))
       const height: number = parseFloat(__nonNull(root.getAttribute("height")))
-      this.scalings.push(
-         postcompose(
-            this.scale,
-            scale(width / w, height / h)
-         )
-      )
+      this.scalings.push(postcompose(this.scale, scale(width / w, height / h)))
       this.renderElement(ExplValueCursor.descendant(null, tg))
       this.scalings.pop()
    }
@@ -73,23 +68,42 @@ export class GraphicsRenderer {
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
       const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
       if (g instanceof Group) {
-         this.graphic(tg)
+         this.group(tg)
       } else 
       if (g instanceof Rect) {
          this.rect(tg)
       } else
       if (g instanceof Polyline) {
-         console.log("TODO")
+         this.polyline(tg)
       } else {
          return absurd()
       }
    }
 
-   graphic (tg: ExplValueCursor/*<Graphic>*/): void {
+   withLocalScale<T> (scale: Option<Scale>, localRender: () => T): T {
+      let t: T
+      if (scale instanceof Some) {
+         if (scale.t instanceof Scale) {
+            this.scalings.push(
+               postcompose(this.scale, [scale.t.x.val, scale.t.y.val])
+            )
+         } else {
+            error(`${scale.t} is not a ${Scale.name}.`)
+         }
+      } else {
+         assert(scale instanceof None)
+      }
+      t = localRender()
+      if (scale instanceof Some) {
+         this.scalings.pop()
+      }
+      return t
+   }
+
+   group (tg: ExplValueCursor/*<Graphic>*/): void {
       const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
       const g: Group = as(tg.tv.v, Group)
-      const [x_scale, y_scale] = this.scale
-      const [x, y] = [Math.round(g.x.val * x_scale), Math.round(g.y.val * y_scale)]
+      const [x, y] = scaleBy(g.x, g.y, this.scale)
       // x and y attributes are relative to parent coordinate space, so not transformed.
       // width and height refer to size of viewport (again in parent coordinate space), although currently
       // we ignore these; we should really clip the child content.
@@ -97,37 +111,20 @@ export class GraphicsRenderer {
       svg.setAttribute("y", `${y}`)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
-      if (g.scale instanceof Some) {
-         if (g.scale.t instanceof Scale) {
-            this.scalings.push(
-               postcompose(this.scale, [g.scale.t.x.val, g.scale.t.y.val])
-            )
-         } else {
-            error(`${g.scale.t} is not a ${Scale.name}.`)
+      this.withLocalScale(g.scale, () => {
+         for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
+         Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
+            this.renderElement(tg̅.to(Cons, "head"))
          }
-      } else {
-         assert(g.scale instanceof None)
-      }
-      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
-           Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
-         this.renderElement(tg̅.to(Cons, "head"))
-      }
-      if (g.scale instanceof Some) {
-         this.scalings.pop()
-      }
+      })
       this.ancestors.pop()
    }
 
-   asString (p̅: [number, number][]): string {
-      return p̅.map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
-   }
-
    rect (tg: ExplValueCursor/*<Rect>*/): void {
-      const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect"),
-            g: Rect = as(tg.tv.v, Rect)
-      const [x_scale, y_scale] = this.scale
-      const [x, y] = [Math.round(g.x.val * x_scale), Math.round(g.y.val * y_scale)]
-      const [width, height] = [Math.round(g.width.val * x_scale), Math.round(g.height.val * y_scale)]
+      const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect")
+      const g: Rect = as(tg.tv.v, Rect)
+      const [x, y] = scaleBy(g.x, g.y, this.scale)
+      const [width, height] = scaleBy(g.width, g.height, this.scale)
       rect.setAttribute("x", `${x}`)
       rect.setAttribute("y", `${y}`)
       rect.setAttribute("width", `${width}`)
@@ -135,6 +132,28 @@ export class GraphicsRenderer {
       rect.setAttribute("fill", g.fill.val)
       this.current.appendChild(rect)
    }
+
+   polyline (tg: ExplValueCursor/*<Polyline>*/): void {
+      const path: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
+      const g: Polyline = as(tg.tv.v, Polyline)
+      // each point is considered a "child", and therefore subject to my local scaling
+      const ps: [number, number][] = this.withLocalScale(g.scale, () => {
+         return g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
+            return scaleBy(p.fst, p.snd, this.scale)
+         })
+      })
+      path.setAttribute("points", asString(ps))
+      path.setAttribute("stroke", "black")
+      this.current.appendChild(path)
+   }
+}
+
+function asString (p̅: [number, number][]): string {
+   return p̅.map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
+}
+
+function scaleBy (x: Num, y: Num, [x_scale, y_scale]: ScaleFactor): [number, number] {
+   return [Math.round(x.val * x_scale), Math.round(y.val * y_scale)]
 }
 
 {
