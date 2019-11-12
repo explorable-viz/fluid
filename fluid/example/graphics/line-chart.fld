@@ -1,4 +1,6 @@
 let timeSeries = 
    flip map data 
-      (fun (year, yearData) → (year, lookup "Bio" (lookup "China" yearData))) in
-dimensions Polyline(None, timeSeries)
+      (fun (year, yearData) → (year, lookup "Bio" (lookup "China" yearData)));
+let start = min (map fst timeSeries) 
+in
+Polyline(None, flip map timeSeries (fun (year, n) → (year - start, n)))

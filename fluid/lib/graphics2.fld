@@ -9,6 +9,7 @@ let set_x = fun x {
 let dimensions2 = fun ((x1, y1), (x2, y2)) →
    (max2 (x1, x2), max2 (y1, y2));
 
+// A polyline has an implicit coordinate of (0, 0), relative to which its points are located.
 // GraphicsElement → (Num, Num)
 let dimensions = fun {
    Rect(_, _, w, h, _) → (w, h);
