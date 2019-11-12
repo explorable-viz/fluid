@@ -3,8 +3,9 @@ let countryData = fun country →
    map (second (lookup country)) data;
 // Str → List (Num, List (Str, Num)) → List (Num, Num)
 let timeSeries = compose map (compose second lookup);
-let chinaPlot = flip timeSeries (countryData "China");
-let chinaData = chinaPlot "Bio";
-let start = min (map fst chinaData)
+let chinaData = countryData "China";
+let chinaPlot = flip timeSeries chinaData;
+let ps = chinaPlot "Bio";
+let start = min (map fst ps)
 in
-Polyline(None, map (first (fun year → year - start))) chinaData
+Polyline(None, map (first (fun year → year - start)) ps)
