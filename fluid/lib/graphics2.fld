@@ -5,23 +5,20 @@ let set_x = fun x {
    Group(_, y, w, h, scale, gs) → Group(x, y, w, h, scale, gs)
 };
 
-// ((Num, Num) → Num) ((Num, Num), (Num, Num) → (Num, Num)
-let dimensions2 = fun minMax ((x1, y1), (x2, y2)) →
-   (minMax (x1, x2), minMax (y1, y2));
+// ((Num, Num), (Num, Num)) → (Num, Num)
+let dimensions2 = fun ((x1, y1), (x2, y2)) →
+   (max2 (x1, x2), max2 (y1, y2));
 
-// A polyline has to have at least one point.
 // GraphicsElement → (Num, Num)
 let dimensions = fun {
    Rect(_, _, w, h, _) → (w, h);
    Group(_, _, w, h, _, _) → (w, h);
    Polyline(scale, ps) → 
-      match (foldl1 (dimensions2 min2) ps, foldl1 (dimensions2 max2) ps) as
-      ((x_min, y_min), (x_max, y_max)) →
-         match (x_max - x_min, y_max - y_min) as
-         (w, h) → match scale as {
-            None → (w, h);
-            Some(Scale(x, y)) → (w * x, h * y)
-         }
+      match foldl dimensions2 (0, 0) ps as
+      (w, h) → match scale as {
+         None → (w, h);
+         Some(Scale(x, y)) → (w * x, h * y)
+      }
 };
 
 // GraphicsElement → Num
