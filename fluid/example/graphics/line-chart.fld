@@ -4,8 +4,12 @@ let countryData = fun country →
 // Str → List (Num, List (Str, Num)) → List (Num, Num)
 let timeSeries = compose map (compose second lookup);
 let chinaData = countryData "China";
+// assume uniform energy types for all countries
+let energyTypes = map fst (snd (head chinaData));
 let chinaPlot = flip timeSeries chinaData;
-let ps = chinaPlot "Bio";
-let start = min (map fst ps)
-in
-Polyline(None, map (first (fun year → year - start)) ps)
+let plot = fun energyType →
+   let ps = chinaPlot energyType;
+   let start = min (map fst ps)
+   in
+   Polyline(None, map (first (fun year → year - start)) ps)
+in map plot energyTypes
