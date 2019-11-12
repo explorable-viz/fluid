@@ -1,8 +1,6 @@
 // assume uniform energy types for all countries, to simplify colour mapping
 // List Str
 let energyTypes = map fst (snd (head (snd (head data))));
-// List Str
-let countries = map fst (snd (head data));
 // Str → List (Num, List (Str, Num)) → List (Num, Num)
 let timeSeries = compose map (compose second lookup);
 // List (Num, List (Str, Num)) → GraphicsElement
@@ -17,7 +15,9 @@ let bibble = fun start finish countryData →
 // Str → List (Num, List (Str, Num))
 let countryData = compose (flip map data) (compose second lookup);
 // assume uniform range for all time series, and moreover data sorted by year
-let startYear = fst (head data);
-let finishYear = fst (last data)
+let startYear = 2013; // fst (head data);
+let finishYear = 2018 // fst (last data)
+let countries = map fst (snd (head data));
 in
-bibble startYear finishYear (countryData "China")
+stackRight 0.2 
+   (map (compose (bibble startYear finishYear) countryData) countries)
