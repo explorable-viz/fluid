@@ -2,13 +2,9 @@
 let countryData = fun country →
    flip map data (fun (year, yearData) → (year, lookup country yearData));
 // Str → List (Num, List (Str, Num)) → List (Num, Num)
-let timeSeries_ = fun energyType → map (second (lookup energyType));
-let timeSeries = fun country → 
-   flip map data 
-      (fun (year, yearData) → (year, lookup "Bio" (lookup country yearData)));
-let chinaData = timeSeries "China";
-let start = min (map fst chinaData);
-let chinaPlot = fun energyType → timeSeries_ energyType (countryData "China")
+let timeSeries = fun energyType → map (second (lookup energyType));
+let chinaPlot = fun energyType → timeSeries energyType (countryData "China");
+let chinaData = chinaPlot "Bio";
+let start = min (map fst chinaData)
 in
-chinaPlot "Bio"
-// Polyline(None, flip map chinaData (fun (year, n) → (year - start, n)))
+Polyline(None, flip map chinaData (fun (year, n) → (year - start, n)))
