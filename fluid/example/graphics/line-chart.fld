@@ -7,4 +7,4 @@ let chinaPlot = flip timeSeries (countryData "China");
 let chinaData = chinaPlot "Bio";
 let start = min (map fst chinaData)
 in
-Polyline(None, flip map chinaData (fun (year, n) → (year - start, n)))
+Polyline(None, flip map chinaData (first (fun year → year - start)))
