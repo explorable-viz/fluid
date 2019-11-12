@@ -1,9 +1,9 @@
 // Str → List (Num, List (Str, Num))
 let countryData = fun country →
-   flip map data (fun (year, yearData) → (year, lookup country yearData));
+   map (second (lookup country)) data;
 // Str → List (Num, List (Str, Num)) → List (Num, Num)
-let timeSeries = fun energyType → map (second (lookup energyType));
-let chinaPlot = fun energyType → timeSeries energyType (countryData "China");
+let timeSeries = compose map (compose second lookup);
+let chinaPlot = flip timeSeries (countryData "China");
 let chinaData = chinaPlot "Bio";
 let start = min (map fst chinaData)
 in
