@@ -1,3 +1,5 @@
+// assume uniform start date for all time series
+let startYear = fst (head data);
 // Str → List (Num, List (Str, Num))
 let countryData = fun country →
    map (second (lookup country)) data;
@@ -11,5 +13,5 @@ let plot = fun energyType →
    let ps = chinaPlot energyType;
    let start = min (map fst ps)
    in
-   Polyline(None, map (first (fun year → year - start)) ps)
+   Polyline(None, map (first (fun year → year - startYear)) ps)
 in map plot energyTypes
