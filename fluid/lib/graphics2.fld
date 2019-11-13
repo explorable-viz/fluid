@@ -17,8 +17,8 @@ let set_x = fun x {
 let boundingRect2 = fun ((x1, y1), (x2, y2)) →
    ((min2 (x1, x2), min2 (y1, y2)), (max2 (x1, x2), max2 (y1, y2)));
 
-// A polyline has an implicit coordinate of (0, 0), relative to which its points are located.
-// Moreover a polyline must have at least one point for this implementation to work.
+// Polyline must have at least one point for the min case to work.
+// Hmm, this isn't really a bounding rect because of the way Group behaves.
 // GraphicsElement → ((Num, Num), (Num, Num))
 let boundingRect = fun {
    Rect(x, y, w, h, _) → ((x, y), (w, h));
@@ -57,12 +57,13 @@ let colours = [
 ];
 
 // Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
-// frame, to avoid depending on content of child.
+// frame, to avoid depending on content of child, so they are not scaled here.
 // Num → GraphicsElement → GraphicsElement
 let scaleToWidth = fun w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
-   Group(x, y, w0, h, scale, gs) → Group(x, y, w, h, Some(Scale(w / w0, 1)), gs);
-   Polyline(scale, ps, stroke) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps, stroke)
+   Group(x, y, w0, h, _, gs) → Group(x, y, w, h, Some(Scale(w / w0, 1)), gs);
+   // polyline has an implicit coordinate of (0, 0), relative to which its points are located
+   Polyline(_, ps, stroke) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps, stroke)
 };
 
 // List GraphicsElement → Num → GraphicsElement

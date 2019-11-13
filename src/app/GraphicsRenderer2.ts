@@ -132,7 +132,6 @@ export class GraphicsRenderer {
    }
 
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
-      const path: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
       const g: Polyline = as(tg.tv.v, Polyline)
       // each point is considered a "child", and therefore subject to my local scaling
       const ps: [number, number][] = this.withLocalScale(g.scale, () => {
@@ -140,11 +139,24 @@ export class GraphicsRenderer {
             return scaleBy(p.fst, p.snd, this.scale)
          })
       })
-      path.setAttribute("points", asString(ps))
+      // experiment with optimising pair case to line rather than polyline
+      // TODO: what should we do when there is only a single point?
+      let path: SVGElement
+      if (ps.length === 2) {
+         path = document.createElementNS(SVG.NS, "line")
+         const [[x1, y1], [x2, y2]] = ps
+         path.setAttribute("x1", `${x1}`)
+         path.setAttribute("y1", `${y1}`)
+         path.setAttribute("x2", `${x2}`)
+         path.setAttribute("y2", `${y2}`)
+      } else {
+         path = document.createElementNS(SVG.NS, "polyline")
+         path.setAttribute("points", asString(ps))
+      }
       path.setAttribute("stroke", g.stroke.val)
       path.setAttribute("fill", "none")
       this.current.appendChild(path)
-   }
+}
 }
 
 function asString (p̅: [number, number][]): string {
