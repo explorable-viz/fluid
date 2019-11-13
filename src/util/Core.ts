@@ -47,7 +47,7 @@ export function absurd (msg?: string, ...x̅: unknown[]): any {
 }
 
 // User-level error.
-export function error (msg: string, ...x̅: unknown[]): any {
+export function userError (msg: string, ...x̅: unknown[]): any {
    if (x̅.length > 0) {
       console.warn("Error data:\n")
       x̅.forEach(x => console.warn(x))

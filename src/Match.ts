@@ -1,5 +1,5 @@
 import { zip, zipWith } from "./util/Array"
-import { Class, __nonNull, absurd, assert, className, error } from "./util/Core"
+import { Class, __nonNull, absurd, assert, className, userError } from "./util/Core"
 import { eq } from "./util/Ord"
 import { Annotation, ann } from "./util/Lattice"
 import { setjoinα } from "./Annotated"
@@ -64,13 +64,13 @@ function apply_<K extends Cont> (σ: Elim<K>, tv: ExplValue, u̅: MatchPrefix): 
          } else {
             const d: DataType = elimToDataType.get(className(σ))!
             if (d.ctrs.has(c)) {
-               return error(`Pattern mismatch: ${c} case is undefined for ${d.name.val} eliminator.`)
+               return userError(`Pattern mismatch: ${c} case is undefined for ${d.name.val} eliminator.`)
             } else {
-               return error(`Pattern mismatch: found ${c}, expected ${d.name.val}.`)
+               return userError(`Pattern mismatch: found ${c}, expected ${d.name.val}.`)
             }
          }
       } else {
-         return error(`Pattern mismatch: ${c} is not a datatype.`, v, σ)
+         return userError(`Pattern mismatch: ${c} is not a datatype.`, v, σ)
       }
    } else {
       return absurd()
@@ -111,7 +111,7 @@ export abstract class DataElim<K extends Cont = Cont> extends Elim<K> {
          const c_σ: string = fields(σ)[0],
                c_τ: string = fields(τ)[0]
          if (ctrToDataType.get(c_σ) !== ctrToDataType.get(c_τ)) {
-            error(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
+            userError(`${c_σ} and ${c_τ} are constructors of different datatypes.`)
          }
          const cκ̅1: [string, K][] = zip(fields(σ), σ.__children as K[]),
                cκ̅2: [string, K][] = zip(fields(τ), τ.__children as K[])

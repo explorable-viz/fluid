@@ -166,25 +166,12 @@ let zip = zipW id;
 // Num → a → List a
 let repeat = flip iterate id;
 
-// We don't have typeclasses, so this is the best we can do.
 // a → List (a, b) → b (where a ∈ {Num, Str})
-let lookup =
-   letrec fun lookupStr k [(k', v), ...kvs] → 
-      match k === k' as {
-         True → v;
-         False → lookupStr k kvs
-      };
-   letrec fun lookupNum k [(k', v), ...kvs] →
-      match k == k' as {
-         True → v;
-         False → lookupNum k kvs
-      }
-   in
-   fun k →
-      typematch k as {
-         Num → lookupNum k;
-         Str → lookupStr k
-      };
+letrec fun lookup k [(k', v), ...kvs] → 
+   match k == k' as {
+      True → v;
+      False → lookup k kvs
+   };
 
 // (Num, Num) → Num
 let max2 = fun (n, m) →

@@ -1,5 +1,5 @@
 import { last, nth } from "../../src/util/Array"
-import { AClass, Class, __check, __nonNull, absurd, as, assert, className, error } from "../../src/util/Core"
+import { AClass, Class, __check, __nonNull, absurd, as, assert, className, userError } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
@@ -95,7 +95,7 @@ export class ExplValueCursor extends Cursor {
             return this
          }
       } else {
-         return error("Not a data value")
+         return userError("Not a data value")
       }
    }
 
@@ -104,12 +104,12 @@ export class ExplValueCursor extends Cursor {
          const tvs: ExplValue[] = Expl.explChildren(this.tv.t, this.tv.v)
          const n: number = tvs.findIndex(tv_ => tv_ === tv)
          if (n === -1) {
-            return error("Not a child")
+            return userError("Not a child")
          } else {
             return this.toChild(n + offset)
          }
       } else {
-         return error("Not a data value")
+         return userError("Not a data value")
       }
    }
 
@@ -190,7 +190,7 @@ export class ExprCursor extends Cursor {
       if (annotated(this.v)) {
          return this.v
       } else {
-         return error(className(this.v) + " is not an annotated value.")
+         return userError(className(this.v) + " is not an annotated value.")
       }
    }
 

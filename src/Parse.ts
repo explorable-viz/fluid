@@ -39,7 +39,7 @@ const lexer = moo.compile({
 })
 
 
-import { __check, assert, error } from "./util/Core"
+import { __check, assert, userError } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Ctr, ctrFor, exprClass, types } from "./DataType"
 import { Expr } from "./Expr"
@@ -304,14 +304,14 @@ const grammar: Grammar = {
     {"name": "typeMatches$macrocall$4", "symbols": [{"literal":"}"}]},
     {"name": "typeMatches$macrocall$3", "symbols": ["typeMatches$macrocall$4"], "postprocess": id},
     {"name": "typeMatches$macrocall$3", "symbols": ["typeMatches$macrocall$4", "_"], "postprocess": ([x, ]) => x},
-    {"name": "typeMatches", "symbols": ["typeMatches$macrocall$1", "typeMatch", "typeMatches$ebnf$1", "typeMatches$macrocall$3"], "postprocess": ([, m, ms,]) => [m, ...ms].reduce((m1, m2) => unionWith(m1, m2, (e: Expr, eʹ: Expr): Expr => error("Overlapping typecase branches.")))},
+    {"name": "typeMatches", "symbols": ["typeMatches$macrocall$1", "typeMatch", "typeMatches$ebnf$1", "typeMatches$macrocall$3"], "postprocess": ([, m, ms,]) => [m, ...ms].reduce((m1, m2) => unionWith(m1, m2, (e: Expr, eʹ: Expr): Expr => userError("Overlapping typecase branches.")))},
     {"name": "typeMatch$macrocall$2", "symbols": [{"literal":"→"}]},
     {"name": "typeMatch$macrocall$1", "symbols": ["typeMatch$macrocall$2"], "postprocess": id},
     {"name": "typeMatch$macrocall$1", "symbols": ["typeMatch$macrocall$2", "_"], "postprocess": ([x, ]) => x},
     {"name": "typeMatch", "symbols": ["typename", "typeMatch$macrocall$1", "expr"], "postprocess":  ([x, , e]) => {
            assert(x instanceof Str)
            if (!types.has(x.val)) {
-              error(`Type name ${x.val} not found.`)
+              userError(`Type name ${x.val} not found.`)
            }
            return singleton(x, e)
         } },

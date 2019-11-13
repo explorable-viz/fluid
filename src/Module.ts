@@ -1,5 +1,5 @@
 import { Grammar, Parser } from "nearley"
-import { __nonNull, as, error } from "./util/Core"
+import { __nonNull, as, userError } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { exprClass } from "./DataType"
 import { Env, ExtendEnv, emptyEnv, extendEnv } from "./Env"
@@ -60,10 +60,10 @@ export function parseWithImports (src: string, ...modules: Module[]): Expr {
 export function successfulParse (str: string): Expr {
    const { results }: Parser = new Parser(Grammar.fromCompiled(grammar)).feed(str)
    if (results.length > 1) {
-      error("Ambiguous parse.")
+      userError("Ambiguous parse.")
    } else
    if (results.length === 0) {
-      error("Unsuccessful parse.")
+      userError("Unsuccessful parse.")
    }
    return results[0]
 }
@@ -98,6 +98,6 @@ function asPrimValue (v: unknown): Expr {
    if (typeof v === "string") {
       return Expr.constStr(str(v)(ν()))(ν())
    } else {
-      return error(`Ill-formed data: expected string or number, found ${typeof v}.`)
+      return userError(`Ill-formed data: expected string or number, found ${typeof v}.`)
    }
 }

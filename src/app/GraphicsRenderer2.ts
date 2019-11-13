@@ -1,4 +1,4 @@
-import { __nonNull, absurd, as, assert, error } from "../util/Core"
+import { __nonNull, absurd, as, assert, userError } from "../util/Core"
 import { Cons, List, None, Option, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Group, GraphicsElement, Polyline, Rect, Scale } from "../Graphics2"
@@ -86,7 +86,7 @@ export class GraphicsRenderer {
          if (scale.t instanceof Scale) {
             this.scalings.push(postcompose(this.scale, [scale.t.x.val, scale.t.y.val]))
          } else {
-            error(`${scale.t} is not a ${Scale.name}.`)
+            userError(`${scale.t} is not a ${Scale.name}.`)
          }
       } else {
          assert(scale instanceof None)
