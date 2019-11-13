@@ -1,1 +1,4 @@
-stackRight 0.2 ((compose (map (compose (barChart 0) snd)) snd) (last data))
+stackRight 0.2
+   (map 
+      (compose (compose (stackRight 0.2) (map (compose (barChart 0) snd))) snd) 
+      (lastN 2 data))

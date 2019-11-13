@@ -114,7 +114,7 @@ export class GraphicsRenderer {
       const ts_: Transform[] = ts.filter(t => t instanceof Some).map(t => as(as(t, Some).t, Transform))
       let result: T
       ts_.forEach(t => {
-         this.transforms.push(transformFun(t))
+         this.transforms.push(postcompose(this.transform, transformFun(t)))
          this.transforms_.push(t)
       })
       result = localRender()
