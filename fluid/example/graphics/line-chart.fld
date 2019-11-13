@@ -1,9 +1,9 @@
 // Str → List (Num, List (Str, Num))
 let countryData = compose (flip map data) (compose second lookup);
-// assume uniform range for all time series, and moreover data sorted by year
-let startYear = 2013; // fst (head data);
-let finishYear = 2018; // fst (last data);
-let energyTypes = map fst (snd (head (snd (head data))));
-let countries = map fst (snd (head data)) in
+let year1 = head data;
+let startYear = fst year1;
+let finishYear = fst (last data);
+let energyTypes = map fst (snd (head (snd year1)));
+let countries = map fst (snd year1) in
 stackRight 0.2 
    (map (compose (multiPlot startYear finishYear energyTypes) countryData) countries)
