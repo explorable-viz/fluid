@@ -34,7 +34,7 @@ const lexer = moo.compile({
    sumOp: /\-|\+\+|\+/,
    exponentOp: /\*\*/,
    productOp: /\*|\//, // must come after exponentOp
-   compareOp: /===|==|<==|<=|<|>==|>=|>/,
+   compareOp: /==|<=|<|>=|>/,
    symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "..."], // must come after compareOp
 })
 

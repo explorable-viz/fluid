@@ -56,8 +56,16 @@ const greaterEq: Binary<Num | Str, Num | Str, Bool> = (x, y) => {
    }
 }
 const greaterInt: Binary<Num, Num, Bool> = (x, y) => as(x, Num).val > as(y, Num).val ? true_() : false_()
-const lessEqInt: Binary<Num, Num, Bool> = (x, y) => as(x, Num).val <= as(y, Num).val ? true_() : false_()
-const lessEqStr: Binary<Str, Str, Bool> = (x, y) => as(x, Str).leq(as(y, Str)) ? true_() : false_()
+const lessEq: Binary<Num, Num, Bool> = (x, y) => {
+   if (x instanceof Num && y instanceof Num) {
+      return as(x, Num).val <= as(y, Num).val ? true_() : false_()
+   } else
+   if (x instanceof Str && y instanceof Str) {
+      return x.leq(y) ? true_() : false_()
+   } else {
+      return userError(`Expected ${Num.name} or ${Str.name}.`)
+   }
+}
 const lessInt: Binary<Num, Num, Bool> = (x, y) => as(x, Num).val < as(y, Num).val ? true_() : false_()
 const minus: Binary<Num, Num, Num> = (x, y) => num(as(x, Num).val - as(y, Num).val)
 const plus: Binary<Num, Num, Num> = (x, y) => num(as(x, Num).val + as(y, Num).val)
@@ -93,7 +101,6 @@ export const binaryOps: Map<string, ExplValue<BinaryOp>> = new Map([
    [">", binary_(greaterInt)],
    [">=", binary_(greaterEq)],
    ["<", binary_(lessInt)],
-   ["<=", binary_(lessEqInt)],
-   ["<==", binary_(lessEqStr)],
+   ["<=", binary_(lessEq)],
    ["++", binary_(concat)]
 ])
