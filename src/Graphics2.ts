@@ -14,7 +14,7 @@ export class Group extends GraphicsElement<"Group"> {
    width: Num = _
    height: Num = _
    scale: Option<Transform> = _
-   translate: Option<Transform> = _
+   translate: Option<Transform> = _ // scaling applies to translates coordinates
    gs: List<GraphicsElement> = _
 }
 

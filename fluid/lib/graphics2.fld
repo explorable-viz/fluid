@@ -88,7 +88,7 @@ let stackedBar = fun ns →
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // List k2 → List (Num, List (k2, Num)) → GraphicsElement
-let multiPlot = fun ks data →
+let multiPlot = fun x_start ks data →
    let xs = map fst data;
    // Str → Str → (GraphicsElement, Num)
    let plot = fun k colour →
@@ -96,4 +96,4 @@ let multiPlot = fun ks data →
       let ps = map (second (lookup k)) data in
       (Polyline(None, ps, colour), max (map snd ps));
    let lines = zipWith (uncurry plot) ks colours in
-   Group(0, 0, last xs, max (map snd lines), None, None, map fst lines)
+   Group(0, 0, last xs - x_start, max (map snd lines), None, Some(Translate(0 - x_start, 0)), map fst lines)

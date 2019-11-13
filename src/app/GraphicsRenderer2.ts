@@ -110,7 +110,7 @@ export class GraphicsRenderer {
       }
    }
 
-   withLocalTransform<T> (ts: Option<Transform>[], localRender: () => T): T {
+   withLocalTransforms<T> (ts: Option<Transform>[], localRender: () => T): T {
       const ts_: Transform[] = ts.filter(t => t instanceof Some).map(t => as(as(t, Some).t, Transform))
       let result: T
       ts_.forEach(t => {
@@ -136,7 +136,7 @@ export class GraphicsRenderer {
       svg.setAttribute("y", `${y}`)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
-      this.withLocalTransform([g.scale], () => {
+      this.withLocalTransforms([g.scale, g.translate], () => { // scaling applies to translated coordinates
          for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
          Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
             this.renderElement(tg̅.to(Cons, "head"))
@@ -161,7 +161,7 @@ export class GraphicsRenderer {
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const g: Polyline = as(tg.tv.v, Polyline)
       // each point is considered a "child", and therefore subject to my local scaling
-      const ps: [number, number][] = this.withLocalTransform([g.scale], () => {
+      const ps: [number, number][] = this.withLocalTransforms([g.scale], () => {
          return g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
             return this.transform(p.fst.val, p.snd.val)
          })
