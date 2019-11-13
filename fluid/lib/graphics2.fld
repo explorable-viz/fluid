@@ -70,23 +70,23 @@ let barChart = fun sep colours →
       (stackRight sep)
       ((zipWith (fun (colour, (_, n)) → Rect(0, 0, 1, n, colour))) colours);
 
-// List (a, Num) → GraphicsElement
-let stackedBar = fun ns →
+// List Str → List (a, Num) → GraphicsElement
+let stackedBar = fun colours ns →
    let subtotals = scanl1 (fun (x, y) → x + y) 0 (map snd ns);
    let dims = zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals));
    let rects = map 
-      (fun ((y, height), col) → Rect(0, y, 1, height, col))
-      (zip dims colours1)
+      (fun ((y, height), colour) → Rect(0, y, 1, height, colour))
+      (zip dims colours)
    in Group(0, 0, 1, last subtotals, None, None, rects);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
-// List k2 → List (Num, List (k2, Num)) → GraphicsElement
-let multiPlot = fun x_start ks data →
+// List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
+let multiPlot = fun colours x_start ks data →
    let xs = map fst data;
    // Str → Str → (GraphicsElement, Num)
    let plot = fun k colour →
       // List (Num, Num)
       let ps = map (second (lookup k)) data in
       (Polyline(None, ps, colour), max (map snd ps));
-   let lines = zipWith (uncurry plot) ks colours1 in
+   let lines = zipWith (uncurry plot) ks colours in
    Group(0, 0, last xs - x_start, max (map snd lines), None, Some(Translate(0 - x_start, 0)), map fst lines)

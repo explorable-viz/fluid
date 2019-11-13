@@ -159,8 +159,6 @@ export class GraphicsRenderer {
       rect.setAttribute("width", `${round(width)}`)
       rect.setAttribute("height", `${round(height)}`)
       rect.setAttribute("fill", g.fill.val)
-      rect.setAttribute("stroke", "black")
-      rect.setAttribute("stroke-width",  "0.15")
       this.current.appendChild(rect)
    }
 
