@@ -1,7 +1,7 @@
 import { __nonNull, absurd, as, assert } from "../util/Core"
 import { Annotation, ann } from "../util/Lattice"
 import { setα } from "../Annotated"
-import { Cons, List } from "../BaseTypes"
+import { Cons, List, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Direction } from "../Eval"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
@@ -11,7 +11,7 @@ import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 
-export const svg: SVG = new SVG(true)
+export const svg: SVG = new SVG()
 const fontSize: number = 12
 
 // The SVG text element for the supplied text; centralised so can be used to compute text metrics.
@@ -55,16 +55,16 @@ export interface ViewCoordinator {
 
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
-   ancestors: SVGGraphicsElement[] // stack of enclosing SVG elements
+   ancestors: SVGElement[] // stack of enclosing SVG elements
    slicer: Slicer
 
-   constructor (root: SVGSVGElement, slicer: Slicer) {
+   constructor (root: SVGElement, slicer: Slicer) {
       this.ancestors = [root]
       this.slicer = slicer
       this.transforms = [x => x]
    }
 
-   get current (): SVGGraphicsElement {
+   get current (): SVGElement {
       return this.ancestors[this.ancestors.length - 1]
    }
 
@@ -132,17 +132,26 @@ export class GraphicsRenderer {
       this.transforms.pop()
    }
 
-   svgPath (p̅: List<Point>): [number, number][] {
+   transformedPath (p̅: List<Point>): [number, number][] {
       return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
    }
 
-   points (p̅: List<Point>): string {
-      return this.svgPath(p̅).map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
+   transformedScaledPath (p̅: List<Point>): [number, number][] {
+      return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val * 40, y.val * 0.15]))
+   }
+
+   asString (p̅: [number, number][]): string {
+      return p̅.map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
    }
 
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const path: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
-      path.setAttribute("points", this.points(as(tg.tv.v, Polyline).points))
+      const g: Polyline = as(tg.tv.v, Polyline)
+      const ps: [number, number][] = this.transformedScaledPath(g.points)
+      if (Some.is(g.marker)) {
+         ps.map(([x, y]) => this.plotPoint(2.5, x, y)) // hardcoded radius for now
+      }
+      path.setAttribute("points", this.asString(ps))
       path.setAttribute("stroke", "black")
       path.addEventListener("click", (e: MouseEvent): void => {
          e.stopPropagation()
@@ -150,6 +159,21 @@ export class GraphicsRenderer {
       })
       this.current.appendChild(path)
       this.pointHighlights(tg.to(Polyline, "points"))
+   }
+
+   line (x1: number, y1: number, x2: number, y2: number): void {
+      const line: SVGLineElement = document.createElementNS(SVG.NS, "line")
+      line.setAttribute("x1", `${x1}`)
+      line.setAttribute("y1", `${y1}`)
+      line.setAttribute("x2", `${x2}`)
+      line.setAttribute("y2", `${y2}`)
+      line.setAttribute("stroke", "black")
+      this.current.appendChild(line)
+   }
+
+   plotPoint (radius: number, x: number, y: number): void {
+      this.line(x - radius, y - radius, x + radius, y + radius)
+      this.line(x - radius, y + radius, x + radius, y - radius)
    }
 
    pointHighlights (tp̅: ExplValueCursor/*<List<Point>>*/): void {
@@ -185,7 +209,7 @@ export class GraphicsRenderer {
    polygon (tg: ExplValueCursor/*<Polygon>*/): void {
       const polygon: SVGPolygonElement = document.createElementNS(SVG.NS, "polygon"),
             g: Polygon = as(tg.tv.v, Polygon)
-      polygon.setAttribute("points", this.points(g.points))
+      polygon.setAttribute("points", this.asString(this.transformedScaledPath(g.points)))
       polygon.setAttribute("stroke", g.stroke.val)
       polygon.setAttribute("fill", g.fill.val)
       polygon.addEventListener("click", (e: MouseEvent): void => {

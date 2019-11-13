@@ -1,0 +1,4 @@
+stackRight 0.2
+   (map 
+      (stackedBar colours1) // energy type
+      (map snd (lookup 2015 data)))

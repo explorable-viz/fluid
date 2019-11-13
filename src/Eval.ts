@@ -1,5 +1,5 @@
 import { zip } from "./util/Array"
-import { Class, __nonNull, absurd, as, assert, className, classOf, error } from "./util/Core"
+import { Class, __nonNull, absurd, as, assert, className, classOf, userError } from "./util/Core"
 import { ann } from "./util/Lattice"
 import { AnnotatedC, setjoinα, setmeetα, setα } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
@@ -84,7 +84,7 @@ function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
                   [def̅ₜ, ρ_extʹ]: [List<Expl.Def>, Env] = defs(ρ, def̅.tail, extendEnv(ρ_ext, def.x, t_op))
             return [cons(Expl.prim(def.x, t_op)(k), def̅ₜ), ρ_extʹ]
          } else {
-            return error(`No implementation found for primitive "${def.x.val}".`)
+            return userError(`No implementation found for primitive "${def.x.val}".`)
          }
       } else
       if (def instanceof Expr.LetRec) {
@@ -163,7 +163,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
          const {t, v}: ExplValue = ρ.get(e.x)!
          return explValue(Expl.var_(e.x, t)(kₜ), v)
       } else {
-         return error(`Variable "${e.x.val}" not found.`)
+         return userError(`Variable "${e.x.val}" not found.`)
       }
    } else
    if (e instanceof Expr.App) {
@@ -179,10 +179,10 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
          if (u instanceof Num || u instanceof Str) {
             return explValue(Expl.unaryApp(tf as ExplValue<UnaryOp>, tu as ExplValue<PrimValue>)(kₜ), v.op(u)(kᵥ))
          } else {
-            return error(`Applying "${v.name}" to non-primitive value.`, u)
+            return userError(`Applying "${v.name}" to non-primitive value.`, u)
          }
       } else {
-         return error(`Cannot apply ${className(v)}`)
+         return userError(`Cannot apply ${className(v)}`)
       }
    } else
    // Binary operators are (currently) "syntax", rather than first-class.
@@ -195,10 +195,10 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             const k: MemoId = memoId(op.op, [v1, v2])
             return explValue(Expl.binaryApp(tv1 as ExplValue<PrimValue>, e.opName, tv2 as ExplValue<PrimValue>)(kₜ), op.op(v1, v2)(k))
          } else {
-            return error(`Applying "${e.opName}" to non-primitive value.`, v1, v2)
+            return userError(`Applying "${e.opName}" to non-primitive value.`, v1, v2)
          }
       } else {
-         return error(`Binary primitive "${e.opName.val}" not found.`)
+         return userError(`Binary primitive "${e.opName.val}" not found.`)
       }
    } else
    if (e instanceof Expr.Defs) {
@@ -217,7 +217,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             d: DataType | PrimType = ctrToDataType.get(className(tu.v)) || types.get(className(tu.v))!,
             eʹ: Expr | undefined = get(e.cases, d.name)
       if (eʹ === undefined) {
-         return error(`Typecase mismatch: no clause for ${className(tu.v)}.`)
+         return userError(`Typecase mismatch: no clause for ${className(tu.v)}.`)
       } else {
          const {t, v}: ExplValue = eval_(ρ, eʹ)
          return explValue(Expl.typematch(tu, d.name, t)(kₜ), v)

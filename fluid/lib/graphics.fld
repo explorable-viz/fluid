@@ -25,7 +25,7 @@ let transposePoint = fun Point(x, y) → Point(y, x);
 // Not a true linear transformation, because text isn't reflected; positions only.
 // GraphicsElement → GraphicsElement
 letrec fun transpose {
-   Polyline(ps) → Polyline(map transposePoint ps);
+   Polyline(ps, marker) → Polyline(map transposePoint ps, marker);
    Polygon(ps, stroke, fill) → Polygon(map transposePoint ps, stroke, fill);
    Graphic(gs) → Graphic(map transpose gs);
    Text(x, y, str) → Text(y, x, str);
@@ -35,7 +35,7 @@ letrec fun transpose {
 // See GitHub issue #167. The dimensions (width, height) are measured from the origin.
 // GraphicsElement → (Num, Num)
 letrec fun dimensions {
-   Polyline(ps) → 
+   Polyline(ps, _) → 
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
    Polygon(ps, _, _) →
       pathDimensions (map (fun Point(x, y) → (x, y)) ps);
@@ -98,10 +98,10 @@ let renderRect = fun Rect(w, h) stroke fill →
    Polygon([Point(0, 0), Point(w, 0), Point(w, h), Point(0, h)], stroke, fill);
 
 let horizLine = fun x x' →
-   Polyline([Point(x, 0), Point(x', 0)]);
+   Polyline([Point(x, 0), Point(x', 0)], None);
 
 let vertLine = fun y y' →
-   Polyline([Point(0, y), Point(0, y')]);
+   Polyline([Point(0, y), Point(0, y')], None);
 
 // Heuristic saying how often to place a tick on an axis of length n.
 // Num → Num
@@ -113,10 +113,10 @@ let tickEvery = fun n →
    };
 
 // Return negative offset from x-axis; caller responsible for translating into positive space (if desired).
-// Bool → Num → Num → (Num, Num) → Num → Num → (Num → Str) → (GraphicsElement, Num)
-let axis = fun vert scale margin (start, end) tickSp tickLength labelFun →
+// Bool → Num → (Num, Num) → Num → Num → (Num → Str) → (GraphicsElement, Num)
+let axis = fun vert scale (start, end) tickSp tickLength labelFun →
    let tickSp' = tickSp * scale;
-   let tick = vertLine 0 (negate tickLength);
+   let tick = vertLine 0 (negate (tickLength * scale)); // hardcoded to invert scaling for y-axis only
    let firstTick = ceilingTo start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
    let ticks = spaceRight tickSp' (repeat n tick);
@@ -127,15 +127,13 @@ let axis = fun vert scale margin (start, end) tickSp tickLength labelFun →
    let labels = map (compose mkLabel labelFun) (iterate n (fun x → x + tickSp) firstTick);
    let labelStart = negate (min (map (fun Text(x, y, str) → y) labels));
    let labels' = spaceRight tickSp' labels;
-   let line = horizLine 0 ((end - start) * scale);
-   let axis = y_translate (negate margin)
-      Graphic([line, x_translate ((firstTick - start) * scale) Graphic(concat ticks labels')])
+   let line = horizLine 0 (end - start);
+   let axis = Graphic([line, x_translate ((firstTick - start) * scale) Graphic(concat ticks labels')])
    in
-   (match vert as { True → transpose axis; False → axis }, margin + labelStart);
+   (match vert as { True → transpose axis; False → axis }, labelStart);
 
 // Some numerical constants for charts; should parameterise by these instead.
-let tickLength = 4;
-let axisMargin = 0;
+let tickLength = 1;
 
 // List (Str, Num) → Num
 let maxVal = compose max (map snd);
@@ -144,38 +142,29 @@ let maxVal = compose max (map snd);
 // (Num, Num) → List (Str, Num) → GraphicsElement
 let barGraph = fun (x_scale, y_scale) catData →
    let labelFun = fun n → fst (nth n catData) in
-   match axis False x_scale axisMargin (-0.5, length catData - 0.5) 1 tickLength labelFun as (x_axis, y_offset) →
+   match axis False x_scale (-0.5, length catData - 0.5) 1 tickLength labelFun as (x_axis, y_offset) →
    let y_max = maxVal catData in 
-   match (axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
+   match (axis True y_scale (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
    let shrinkBy = 0.75; // ratio of bar width to bar spacing
-   let mkBar = fun (k, v) → renderRect Rect(shrinkBy * x_scale, v * y_scale) "black" "#f6831e";
+   let mkBar = fun (k, v) → renderRect Rect(shrinkBy, v) "black" "#f6831e";
    let bars = x_translate ((1 - shrinkBy) / 2 * x_scale) // centre bars
       Graphic(spaceRight x_scale (map mkBar catData))
    in
    Translate(x_offset, y_offset, Graphic([bars, x_axis, y_axis]));
 
-// Cross used to render points of a line plot.
-// Num → Point → GraphicsElement
-let plotPoint = fun radius Point(x, y) →
-   Graphic([
-      Polyline([Point(x - radius, y - radius), Point(x + radius, y + radius)]),
-      Polyline([Point(x - radius, y + radius), Point(x + radius, y - radius)])
-   ]);
-
 // List Point → (Num, Num) → GraphicsElement
 let linePlot = fun (x_scale, y_scale) ps →
-   let ps' = map (fun Point(x, y) → Point(x * x_scale, y * y_scale)) ps;
-   let points = map (plotPoint 2.5) ps'
+   let ps' = map (fun Point(x, y) → Point(x * x_scale, y * y_scale)) ps
    in
-   Graphic([Polyline(ps'), ...points]);
+   Polyline(ps', Some(Marker));
 
 // (Num, Num) → List (Num, Num) → Num → GraphicsElement
 let lineGraph = fun (x_scale, y_scale) x_start numData →
-   match axis False x_scale axisMargin (x_start, fst (last numData)) 1 tickLength numToStr as (x_axis, y_offset) →
-   let y_max = maxVal numData in 
-   match (axis True y_scale axisMargin (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
+   match axis False x_scale (x_start, fst (last numData)) 1 tickLength numToStr as (x_axis, y_offset) →
+   let y_max = maxVal numData in
+   match (axis True y_scale (0, y_max) (tickEvery y_max) tickLength) numToStr as (y_axis, x_offset) →
    let ps = map (fun (x, y) → Point(x - x_start, y)) numData in
-   Translate(x_offset, y_offset, Graphic([linePlot (x_scale, y_scale) ps, x_axis, y_axis]));
+   Translate(x_offset, y_offset, Graphic([linePlot (1, 1) ps, x_axis, y_axis]));
 
 // Treats the element as located at (0, 0).
 // Num → GraphicsElement → GraphicsElement

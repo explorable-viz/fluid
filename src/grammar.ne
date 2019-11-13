@@ -22,7 +22,7 @@ const lexer = moo.compile({
    sumOp: /\-|\+\+|\+/,
    exponentOp: /\*\*/,
    productOp: /\*|\//, // must come after exponentOp
-   compareOp: /===|==|<==|<=|<|>==|>=|>/,
+   compareOp: /==|<=|<|>=|>/,
    symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "..."], // must come after compareOp
 })
 %}
@@ -30,7 +30,7 @@ const lexer = moo.compile({
 @lexer lexer
 
 @{%
-import { __check, assert, error } from "./util/Core"
+import { __check, assert, userError } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { Ctr, ctrFor, exprClass, types } from "./DataType"
 import { Expr } from "./Expr"
@@ -228,14 +228,14 @@ typeMatches ->
    typeMatch
    {% id %} |
    lexeme["{"] typeMatch (lexeme[";"] typeMatch {% ([, m]) => m %}):* lexeme["}"]
-   {% ([, m, ms,]) => [m, ...ms].reduce((m1, m2) => unionWith(m1, m2, (e: Expr, eʹ: Expr): Expr => error("Overlapping typecase branches."))) %}
+   {% ([, m, ms,]) => [m, ...ms].reduce((m1, m2) => unionWith(m1, m2, (e: Expr, eʹ: Expr): Expr => userError("Overlapping typecase branches."))) %}
 
 typeMatch -> 
    typename lexeme["→"] expr
    {% ([x, , e]) => {
       assert(x instanceof Str)
       if (!types.has(x.val)) {
-         error(`Type name ${x.val} not found.`)
+         userError(`Type name ${x.val} not found.`)
       }
       return singleton(x, e)
    } %}

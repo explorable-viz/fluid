@@ -1,6 +1,6 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "LambdaCalc",
+	"name": "Fluid",
 	"patterns": [
 		{
 			"include": "#keywords"
@@ -12,21 +12,21 @@
 	"repository": {
 		"keywords": {
 			"patterns": [{
-				"name": "keyword.control.lcalc",
+				"name": "keyword.control.fluid",
 				"match": "\\b(as|fun|in|let|letrec|match|primitive|typematch)\\b"
 			}]
 		},
 		"strings": {
-			"name": "string.quoted.double.lcalc",
+			"name": "string.quoted.double.fluid",
 			"begin": "\"",
 			"end": "\"",
 			"patterns": [
 				{
-					"name": "constant.character.escape.lcalc",
+					"name": "constant.character.escape.fluid",
 					"match": "\\\\."
 				}
 			]
 		}
 	},
-	"scopeName": "source.lcalc"
+	"scopeName": "source.fluid"
 }

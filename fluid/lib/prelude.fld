@@ -22,6 +22,9 @@ primitive trace;
 // Would like infix operators. 
 let compose = fun f g x → f (g x);
 
+// a → b → a
+let const = fun x _ → x;
+
 // (a → b) → (a, c) → (b, c)
 let first = fun f (a, c) → (f a, c);
 
@@ -65,6 +68,17 @@ letrec fun filter p {
 // (a → b → c) → b → a → c
 let flip = fun f x y → f y x;
 
+// ((a, b) → a) → a → List b → a
+letrec fun foldl op z {
+   [] → z;
+   [x, ...xs] → foldl op (op (z, x)) xs
+};
+
+// ((a, b) → a) → List b → a
+letrec fun foldl1 op {
+   [x, ...xs] → foldl op x xs
+};
+
 // ((a, b) → b) → b → List a → b
 letrec fun foldr op z {
    [] → z;
@@ -76,6 +90,16 @@ letrec fun foldr1 op {
    [x] → x;
    [x, y, ...xs] → op (x, foldr1 op [y, ...xs])
 };
+
+// ((a, b) → a) → a → List b -> List a
+letrec fun scanl1 op z xs → 
+   let go = fun (x, continue) acc → 
+      let next = op (acc, x) in [next, ...continue next] in
+   foldr go (const []) xs z;
+
+// ((a, b) → a) → a → List b -> List a
+let scanl = fun op z xs → 
+   [z, ...scanl1 op z xs];
 
 // List a → a → List a
 letrec fun intersperse {
@@ -129,22 +153,31 @@ letrec fun unzip {
 };
 
 // ((a, b) → c) → List a → List b → List c
-letrec fun zipW op {
+letrec fun zipWith op {
    [] ys → [];
    [x, ...xs] {
       [] → [];
-      [y, ...ys] → [op (x, y), ...zipW op xs ys]
+      [y, ...ys] → [op (x, y), ...zipWith op xs ys]
    }
 };
+
+let zip = zipWith id;
 
 // Num → a → List a
 let repeat = flip iterate id;
 
-// List Num → Num
+// a → List (a, b) → b (where a ∈ {Num, Str})
+letrec fun lookup k [(k', v), ...kvs] → 
+   match k == k' as {
+      True → v;
+      False → lookup k kvs
+   };
+
+// (Num, Num) → Num
 let max2 = fun (n, m) →
    match n > m as { True → n; False → m };
 
-// List Num → Num
+// (Num, Num) → Num
 let min2 = fun (n, m) →
    match n < m as { True → n; False → m };
 
@@ -192,4 +225,26 @@ let or = fun {
    True x → True;
    False True → True;
    False False → False
-}
+};
+
+letrec fun take n xs →
+   match n <= 0 as {
+      True → [];
+      False → match xs as {
+         [] → [];
+         [x, ...xs] → [x, ...take (n - 1) xs]
+      }
+   };
+
+letrec fun drop n xs →
+   match n <= 0 as {
+      True → xs;
+      False → match xs as {
+         [] → [];
+         [_, ...xs] → drop (n - 1) xs
+      }
+   };
+
+// Num → List a → List a
+let lastN = fun n xs →
+   foldl (uncurry (compose const (drop 1))) xs (drop n xs)

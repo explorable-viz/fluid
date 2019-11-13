@@ -4,17 +4,21 @@ import { Cons, List, Nil, Pair } from "../BaseTypes"
 import { Ctr, ctrFor, exprClass } from "../DataType"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { Change } from "../Delta"
+import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
+import { GraphicsElement } from "../Graphics2"
 import { DataElim, Elim, Match, VarElim } from "../Match"
+import { parseWithImports } from "../Module"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
+import { GraphicsRenderer } from "./GraphicsRenderer2"
 import { 
-   DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, connector, deltaStyle, ellipsis, horiz, horizSpace, keyword, 
-   edge_left, parenthesise, parenthesiseIf, shading, space, text, unimplemented, vert 
+   DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, connector, deltaStyle, dimensions, ellipsis, horiz, 
+   horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement, text, unimplemented, vert 
 } from "./Renderer"
 
 import Closure = Eval.Closure
@@ -278,8 +282,11 @@ export class ExplView extends View {
             horizSpace(keyword("match", deltaStyle(this.t)), view(this.t.tu, false, true).render(), keyword("as", deltaStyle(this.t))),
             elimMatch(this.t.ξ)
          )
+      } else
+      if (this.t instanceof Expl.Typematch) {
+         return unimplemented(this.t)
       } else {
-         return absurd()
+         return absurd("Unknown explanation form", this.t)
       }
       return shading(g, "white")
    }
@@ -297,6 +304,22 @@ export class ExplView extends View {
             __editor!.onViewChange()
          })
          return g
+      }
+   }
+}
+
+// Shenanigans to call an internal function. Will extract this into a (reverse) FFI.
+let dims: (tg: ExplValue<GraphicsElement>) => [number, number]
+{
+   const x: string = "g"
+   const dimsExpr: Expr = parseWithImports(`dimensions ${x}`)
+
+   dims = function (tg: ExplValue<GraphicsElement>): [number, number] {
+      const tv: ExplValue = Eval.eval_(Env.singleton(str(x)(ν()), tg), dimsExpr)
+      if (tv.v instanceof Pair && tv.v.fst instanceof Num && tv.v.snd instanceof Num) {
+         return [tv.v.fst.val, tv.v.snd.val]
+      } else {
+         return absurd()
       }
    }
 }
@@ -325,6 +348,14 @@ export class ValueView extends View {
          g = horizSpace(keyword("fun", deltaStyle(this.tv.v)), elim(this.tv.v.f))
       } else
       if (this.tv.v instanceof DataValue) {
+         if (this.tv.v instanceof GraphicsElement) {
+            const tg: ExplValue<GraphicsElement> = this.tv as ExplValue<GraphicsElement>
+            const dim = { width: 140, height: 160 }
+            let g1: SVGGElement
+            [g, g1] = svgElement(dim.width, dim.height)
+            new GraphicsRenderer(g1).render(tg, dims(tg))
+            dimensions.set(g, dim)
+         } else
          if (this.tv.v instanceof Pair) {
             g = pair(this.tv as ExplValue<Pair>)
          } else

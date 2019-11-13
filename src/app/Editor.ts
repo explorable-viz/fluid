@@ -7,7 +7,7 @@ import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { newRevision } from "../Versioned"
 import { ExplValueCursor } from "./Cursor"
-import { arrowhead, defineMarker, svg } from "./Renderer"
+import { arrowhead, defineMarker, svgRootElement } from "./Renderer"
 import { Viewer, existingView } from "./View"
 import "./styles.css"
 
@@ -19,13 +19,13 @@ export class Editor {
    here!: ExplValueCursor
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
-      this.root = svg.createSvg(1400, 600)
+      this.root = svgRootElement(1400, 1200)
       defineMarker(this.root, arrowhead())
       document.body.appendChild(this.root)
       this.ρ = ρ
       this.e = e,
       this.tv = Eval.eval_(ρ, this.e)
-      this.here = ExplValueCursor.descendant(null, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) // skip prelude
+      this.here = ExplValueCursor.descendant(null, this.tv).skipImports()
       newRevision()
       Eval.eval_(ρ, this.e) // reestablish reachable nodes
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
@@ -42,7 +42,7 @@ export class Editor {
             this.root.removeChild(child)
          }
       })
-      const tv: ExplValue = explValue(as(this.tv.t, Expl.Defs).t, this.tv.v) // skip prelude
+      const tv: ExplValue = ExplValueCursor.descendant(null, this.tv).skipImports().tv
       new Viewer().render(this.root, tv, this)
       const this_: this = this
       // https://stackoverflow.com/questions/5597060

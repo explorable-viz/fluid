@@ -1,5 +1,5 @@
 import { last, nth } from "../../src/util/Array"
-import { AClass, Class, __check, __nonNull, absurd, as, assert, className, error } from "../../src/util/Core"
+import { AClass, Class, __check, __nonNull, absurd, as, assert, className, userError } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
@@ -23,6 +23,7 @@ export abstract class Cursor {
    abstract annotated: Annotated & Value
    abstract to<T extends DataValue> (C: Class<T>, k: keyof T): Cursor
    abstract at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor
+   abstract skipImport (): this
 
    assert<T extends Value> (C: AClass<T>, pred: (v: T) => boolean): Cursor {
       return this.at(C, v => assert(pred(v)))
@@ -46,6 +47,11 @@ export abstract class Cursor {
    clearα (): this {
       setα(ann.bot, this.annotated)
       return this
+   }
+
+   skipImports (): this {
+      return this.skipImport()  // prelude
+                 .skipImport()  // graphics
    }
 }
 
@@ -72,6 +78,10 @@ export class ExplValueCursor extends Cursor {
       return this.tv.t
    }
 
+   skipImport (): this {
+      return ExplValueCursor.descendant(this, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) as this
+   }
+
    to<T extends DataValue> (C: Class<T>, k: keyof T): ExplValueCursor {
       return ExplValueCursor.descendant(this, Expl.explChild(this.tv.t, as(this.tv.v, C), k))
    }
@@ -85,7 +95,7 @@ export class ExplValueCursor extends Cursor {
             return this
          }
       } else {
-         return error("Not a data value")
+         return userError("Not a data value")
       }
    }
 
@@ -94,12 +104,12 @@ export class ExplValueCursor extends Cursor {
          const tvs: ExplValue[] = Expl.explChildren(this.tv.t, this.tv.v)
          const n: number = tvs.findIndex(tv_ => tv_ === tv)
          if (n === -1) {
-            return error("Not a child")
+            return userError("Not a child")
          } else {
             return this.toChild(n + offset)
          }
       } else {
-         return error("Not a data value")
+         return userError("Not a data value")
       }
    }
 
@@ -180,16 +190,12 @@ export class ExprCursor extends Cursor {
       if (annotated(this.v)) {
          return this.v
       } else {
-         return error(className(this.v) + " is not an annotated value.")
+         return userError(className(this.v) + " is not an annotated value.")
       }
    }
 
-   skipImport (): ExprCursor {
-      return this.to(Expr.Defs, "e") // all "modules" have this form
-   }
-
-   skipImports (): ExprCursor {
-      return this.skipImport() // prelude
+   skipImport (): this {
+      return this.to(Expr.Defs, "e") as this // all "modules" have this form
    }
 
    // No way to specify only "own" properties statically.

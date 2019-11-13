@@ -1,11 +1,11 @@
 import { Grammar, Parser } from "nearley"
-import { __nonNull, as, error } from "./util/Core"
+import { __nonNull, as, userError } from "./util/Core"
 import { Cons, List, Nil, Pair } from "./BaseTypes"
 import { exprClass } from "./DataType"
 import { Env, ExtendEnv, emptyEnv, extendEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
-import "./Graphics" // for datatypes
+import "./Graphics2" // for datatypes
 import grammar from "./Parse"
 import { PrimValue, Str } from "./Value"
 import { ν, at, num, str } from "./Versioned"
@@ -15,8 +15,8 @@ type Module = List<Expr.Def>
 
 // Define as constants to enforce sharing; could use memoisation.
 export const module_prelude: Module = loadModule("prelude"),
-             module_graphics: Module = loadModule("graphics"),
-             module_renderData: Module = loadModule("renderData")
+             module_graphics: Module = loadModule("graphics2")
+             // module_renderData: Module = loadModule("renderData")
 
 function import_ (modules: Module[], e: Expr): Expr {
    if (modules.length === 0) {
@@ -44,10 +44,6 @@ export function loadModule (file: string): Module {
    return e.def̅
 }
 
-export function open (file: string): Expr {
-   return openWithImports(file)
-}
-
 export function openWithImports (file: string, ...modules: Module[]): Expr {
    return parseWithImports(loadTestFile("fluid/example", file), ...modules)
 }
@@ -57,17 +53,17 @@ export function openDatasetAs (file: string, x: string): ExtendEnv {
 }
 
 export function parseWithImports (src: string, ...modules: Module[]): Expr {
-   return import_([module_prelude], import_(modules, successfulParse(src)))
+   return import_([module_prelude, module_graphics, ...modules], successfulParse(src))
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
 export function successfulParse (str: string): Expr {
    const { results }: Parser = new Parser(Grammar.fromCompiled(grammar)).feed(str)
    if (results.length > 1) {
-      error("Ambiguous parse.")
+      userError("Ambiguous parse.")
    } else
    if (results.length === 0) {
-      error("Unsuccessful parse.")
+      userError("Unsuccessful parse.")
    }
    return results[0]
 }
@@ -102,6 +98,6 @@ function asPrimValue (v: unknown): Expr {
    if (typeof v === "string") {
       return Expr.constStr(str(v)(ν()))(ν())
    } else {
-      return error(`Ill-formed data: expected string or number, found ${typeof v}.`)
+      return userError(`Ill-formed data: expected string or number, found ${typeof v}.`)
    }
 }

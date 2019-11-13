@@ -1,5 +1,4 @@
-import { List } from "./BaseTypes"
-import { initDataType } from "./DataType"
+import { List, Option } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { Num, Str, _ } from "./Value"
 
@@ -19,7 +18,7 @@ export class Point extends DataValue<"Point"> {
    }
 }
 
-export type GraphicsElementTag = "Graphic" | "Polyline" | "Polygon" | "Text" | "Translate"
+export type GraphicsElementTag = "Graphic" | "Marker" | "Polyline" | "Polygon" | "Text" | "Translate"
 
 export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
 }
@@ -28,8 +27,13 @@ export class Graphic extends GraphicsElement<"Graphic"> {
    gs: List<GraphicsElement> = _
 }
 
+// Isomorphic to unit for now, but will extend later.
+export class Marker extends GraphicsElement<"Marker"> {
+}
+
 export class Polyline extends GraphicsElement<"Polyline"> {
    points: List<Point> = _
+   marker: Option<Marker> = _
 }
 
 export class Polygon extends GraphicsElement<"Polygon"> {
@@ -50,7 +54,3 @@ export class Translate extends GraphicsElement<"Translate"> {
    y: Num = _
    g: GraphicsElement = _
 }
-
-initDataType(GraphicsElement, [Polygon, Polyline, Text, Translate, Graphic])
-initDataType(Point, [Point])
-initDataType(Rect, [Rect])

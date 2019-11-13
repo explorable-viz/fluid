@@ -1,0 +1,92 @@
+// Simplistic but something more general may require primitives which take data values as inputs.
+// Application module GraphicsRenderer must be loaded for these definitions to work.
+// Str → Num
+primitive textWidth;
+
+// Str → Num
+primitive textHeight;
+
+// Want some kind of typeclass mechanism plus record accessors/updaters.
+// Num → GraphicsElement → GraphicsElement
+let set_x = fun x {
+   Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
+   Group(_, y, w, h, scale, translate, gs) → Group(x, y, w, h, scale, translate, gs)
+};
+
+// ((Num, Num), (Num, Num)) → ((Num, Num), (Num, Num))
+let boundingRect2 = fun ((x1, y1), (x2, y2)) →
+   ((min2 (x1, x2), min2 (y1, y2)), (max2 (x1, x2), max2 (y1, y2)));
+
+// Polyline must have at least one point for the min case to work.
+// Hmm, this isn't really a bounding rect because of the Group case.
+// GraphicsElement → ((Num, Num), (Num, Num))
+let boundingRect = fun {
+   Rect(x, y, w, h, _) → ((x, y), (w, h));
+   Group(x, y, w, h, _, _, _) → ((x, y), (w, h));
+   Polyline(scale, ps, _) → 
+      match foldl1 boundingRect2 ps as
+      ((x, y), (x2, y2)) → match (x2 - x, y2 - y) as 
+         (w, h) → match scale as {
+            None → ((x, y) (w, h));
+            Some(Scale(x_scale, y_scale)) → ((y * x_scale, y * y_scale), (w * x_scale, h * y_scale))
+         }
+};
+
+// GraphicsElement → (Num, Num)
+let dimensions = compose snd boundingRect;
+
+// GraphicsElement → Num
+let width = compose fst dimensions;
+
+// GraphicsElement → Num
+let height = compose snd dimensions;
+
+// Num → Num → List GraphicsElement → List GraphicsElement
+let spaceRight = fun z sep gs →
+   zipWith (uncurry set_x) (iterate (length gs) (fun x → x + sep) z) gs;
+
+// Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
+// different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org.
+let colours1 = ["#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f", "#e5c494", "#b3b3b3"];
+let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf"];
+
+// Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
+// frame, to avoid depending on content of child, and so are not themselves scaled.
+// Num → GraphicsElement → GraphicsElement
+let scaleToWidth = fun w {
+   Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
+   Group(x, y, w0, h, _, translate, gs) → Group(x, y, w, h, Some(Scale(w / w0, 1)), translate, gs);
+   // polyline has an implicit coordinate of (0, 0), relative to which its points are located
+   Polyline(scale, ps, stroke) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps, stroke)
+};
+
+// List GraphicsElement → Num → GraphicsElement
+let stackRight = fun sep gs →
+   Group(0, 0, length gs, max (map height gs), None, None, map (scaleToWidth (1 - sep)) (spaceRight (sep / 2) 1 gs));
+
+// Num → List Str → List (a, Num) → GraphicsElement
+let barChart = fun sep colours →
+   compose 
+      (stackRight sep)
+      ((zipWith (fun (colour, (_, n)) → Rect(0, 0, 1, n, colour))) colours);
+
+// List Str → List (a, Num) → GraphicsElement
+let stackedBar = fun colours ns →
+   let subtotals = scanl1 (fun (x, y) → x + y) 0 (map snd ns);
+   let dims = zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals));
+   let rects = map 
+      (fun ((y, height), colour) → Rect(0, y, 1, height, colour))
+      (zip dims colours)
+   in Group(0, 0, 1, last subtotals, None, None, rects);
+
+// Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
+// List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
+let multiPlot = fun colours x_start ks data →
+   let xs = map fst data;
+   // Str → Str → (GraphicsElement, Num)
+   let plot = fun k colour →
+      // List (Num, Num)
+      let ps = map (second (lookup k)) data in
+      (Polyline(None, ps, colour), max (map snd ps));
+   let lines = zipWith (uncurry plot) ks colours in
+   Group(0, 0, last xs - x_start, max (map snd lines), None, Some(Translate(0 - x_start, 0)), map fst lines)

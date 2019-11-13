@@ -10,7 +10,7 @@ import "./styles.css"
 type Point = { x: number, y: number }
 type Rect = Point & { width: number, height: number }
 
-export const svg: SVG = new SVG(false)
+export const svg: SVG = new SVG()
 const fontSize: number = 18
 const classes: string = "code"
 // bizarrely, if I do this later, font metrics are borked:
@@ -254,6 +254,36 @@ export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
 
 export function space (): SVGElement {
    return text(`${space_char}`, DeltaStyle.Unchanged)
+}
+
+// Chrome doesn't appear to fully support SVG 2.0 yet; in particular, transform attributes on svg elements are 
+// ignored (except at the root). To invert the y-axis, we have to add a nested g element containing the transform.
+// Elsewhere we avoid SVG transforms to avoid non-integer pixel attributes.
+export function svgElement (w: number, h: number): [SVGSVGElement, SVGGElement] {
+   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   svg.setAttribute("width", `${w}`)
+   svg.setAttribute("height", `${h}`)
+   const g: SVGGElement = document.createElementNS(SVG.NS, "g")
+   g.setAttribute("transform", `scale(1,-1) translate(0,${-h})`)
+   g.setAttribute("width", `${w}`)
+   g.setAttribute("height", `${h}`)
+   svg.appendChild(g)
+   return [svg, g]
+}
+
+// Top-level SVG node with a "defs" element with id "defs".
+export function svgRootElement (w: number, h: number): SVGSVGElement {
+   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   svg.setAttribute("width", `${w}`)
+   svg.setAttribute("height", `${h}`)
+   // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
+   svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
+   svg.style.verticalAlign = "top"
+   svg.style.display = "inline-block"
+   const defs: SVGDefsElement = document.createElementNS(SVG.NS, "defs")
+   defs.setAttribute("id", "defs")
+   svg.appendChild(defs)
+   return svg
 }
 
 export function text (str: string, ẟ_style: DeltaStyle): SVGTextElement {
