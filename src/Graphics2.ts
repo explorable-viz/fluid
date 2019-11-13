@@ -13,8 +13,8 @@ export class Group extends GraphicsElement<"Group"> {
    y: Num = _
    width: Num = _
    height: Num = _
-   scale: Option<Scale> = _
-   translate: Option<Translate> = _
+   scale: Option<Transform> = _
+   translate: Option<Transform> = _
    gs: List<GraphicsElement> = _
 }
 
@@ -27,21 +27,25 @@ export class Rect extends GraphicsElement<"Rect"> {
 }
 
 export class Polyline extends GraphicsElement<"Polyline"> {
-   scale: Option<Scale> = _
+   scale: Option<Transform> = _
    points: List<Pair<Num, Num>> = _
    stroke: Str = _
 }
 
-export class Scale extends DataValue<"Scale"> {
+export type TransformTag = "Scale" | "Translate"
+
+export class Transform<Tag extends TransformTag = TransformTag> extends DataValue<Tag> {
+}
+
+export class Scale extends Transform<"Scale"> {
    x: Num = _
    y: Num = _
 }
 
-export class Translate extends DataValue<"Translate"> {
+export class Translate extends Transform<"Translate"> {
    x: Num = _
    y: Num = _
 }
 
 initDataType(GraphicsElement, [Group, Polyline, Rect])
-initDataType(Scale, [Scale])
-initDataType(Translate, [Translate])
+initDataType(Transform, [Scale, Translate])

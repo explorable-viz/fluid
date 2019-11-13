@@ -1,7 +1,7 @@
-import { __nonNull, absurd, as, assert, userError } from "../util/Core"
-import { Cons, List, None, Option, Pair, Some } from "../BaseTypes"
+import { __nonNull, absurd, as, assert } from "../util/Core"
+import { Cons, List, Option, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Group, GraphicsElement, Polyline, Rect, Scale } from "../Graphics2"
+import { Group, GraphicsElement, Polyline, Rect, Scale, Transform, Translate } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -24,32 +24,59 @@ function textElement (x: number, y: number, fontSize: number, str: string): SVGT
 
 export const svg: SVG = new SVG()
 
-type ScaleFactor = [number, number]
+type TransformFun = (x: number, y: number) => [number, number]
 
-function scale (x_scale: number, y_scale: number): ScaleFactor {
-   return [x_scale, y_scale]
+function scale (x_scale: number, y_scale: number): TransformFun {
+   return (x, y): [number, number] => {
+      return [x * x_scale, y * y_scale]
+   }
 }
 
-function postcompose ([x1, y1]: ScaleFactor, [x2, y2]: ScaleFactor): ScaleFactor {
-   return [x1 * x2, y1 * y2]
+function translate (x_inc: number, y_inc: number): TransformFun {
+   return (x, y): [number, number] => {
+      return [x + x_inc, y + y_inc]
+   }
+}
+
+function transformFun (t: Transform): TransformFun {
+   if (t instanceof Scale) {
+      return scale(t.x.val, t.y.val)
+   } else
+   if (t instanceof Translate) {
+      return translate(t.x.val, t.y.val)
+   } else {
+      return absurd()
+   }
+}
+
+function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
+   return (x, y): [number, number] => {
+      let [x_, y_] = f2(x, y)
+      return f1(x_, y_)
+   }
 }
 
 export class GraphicsRenderer {
-   scalings: ScaleFactor[] // stack of successive compositions of scaling transformations
+   transforms: TransformFun[] // stack of successive compositions of linear transformations
    ancestors: SVGElement[] // stack of enclosing SVG elements
 
    constructor (root: SVGElement) {
       this.ancestors = [root]
-      this.scalings = [[1, 1]]
+      this.transforms = [(x, y) => [x, y]]
    }
 
    get current (): SVGElement {
       return this.ancestors[this.ancestors.length - 1]
    }
 
-   get scale (): ScaleFactor {
-      assert(this.scalings.length > 0)
-      return this.scalings[this.scalings.length - 1]
+   get transform (): TransformFun {
+      assert(this.transforms.length > 0)
+      // query the current transform rather than returing a closure that accesses it...
+      const transform: TransformFun = this.transforms[this.transforms.length - 1]
+      return (x, y) => {
+         const [xʹ, yʹ] = transform(x, y)
+         return [Math.round(xʹ), Math.round(yʹ)]
+      } 
    }
 
    render (tg: ExplValue<GraphicsElement>, [w, h]: [number, number]): void {
@@ -60,9 +87,10 @@ export class GraphicsRenderer {
       }
       const width: number = parseFloat(__nonNull(root.getAttribute("width")))
       const height: number = parseFloat(__nonNull(root.getAttribute("height")))
-      this.scalings.push(postcompose(this.scale, scale(width / w, height / h)))
+      // TODO: use withLocalTransform here
+      this.transforms.push(postcompose(this.transform, scale(width / w, height / h)))
       this.renderElement(ExplValueCursor.descendant(null, tg))
-      this.scalings.pop()
+      this.transforms.pop()
    }
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
@@ -80,28 +108,19 @@ export class GraphicsRenderer {
       }
    }
 
-   withLocalScale<T> (scale: Option<Scale>, localRender: () => T): T {
-      let t: T
-      if (scale instanceof Some) {
-         if (scale.t instanceof Scale) {
-            this.scalings.push(postcompose(this.scale, [scale.t.x.val, scale.t.y.val]))
-         } else {
-            userError(`${scale.t} is not a ${Scale.name}.`)
-         }
-      } else {
-         assert(scale instanceof None)
-      }
-      t = localRender()
-      if (scale instanceof Some) {
-         this.scalings.pop()
-      }
-      return t
+   withLocalTransform<T> (ts: Option<Transform>[], localRender: () => T): T {
+      const ts_: Transform[] = ts.filter(t => t instanceof Some).map(t => as(as(t, Some).t, Transform))
+      let result: T
+      ts_.forEach(t => this.transforms.push(transformFun(t)))
+      result = localRender()
+      ts_.forEach(_ => this.transforms.pop())
+      return result
    }
 
    group (tg: ExplValueCursor/*<Graphic>*/): void {
       const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
       const g: Group = as(tg.tv.v, Group)
-      const [x, y] = scaleBy(g.x, g.y, this.scale)
+      const [x, y] = this.transform(g.x.val, g.y.val)
       // x and y attributes are relative to parent coordinate space, so not transformed.
       // width and height refer to size of viewport (again in parent coordinate space), although currently
       // we ignore these; we should really clip the child content.
@@ -109,7 +128,7 @@ export class GraphicsRenderer {
       svg.setAttribute("y", `${y}`)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
-      this.withLocalScale(g.scale, () => {
+      this.withLocalTransform([g.scale], () => {
          for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
          Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
             this.renderElement(tg̅.to(Cons, "head"))
@@ -121,8 +140,8 @@ export class GraphicsRenderer {
    rect (tg: ExplValueCursor/*<Rect>*/): void {
       const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect")
       const g: Rect = as(tg.tv.v, Rect)
-      const [x, y] = scaleBy(g.x, g.y, this.scale)
-      const [width, height] = scaleBy(g.width, g.height, this.scale)
+      const [x, y] = this.transform(g.x.val, g.y.val)
+      const [width, height] = this.transform(g.width.val, g.height.val)
       rect.setAttribute("x", `${x}`)
       rect.setAttribute("y", `${y}`)
       rect.setAttribute("width", `${width}`)
@@ -134,9 +153,9 @@ export class GraphicsRenderer {
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const g: Polyline = as(tg.tv.v, Polyline)
       // each point is considered a "child", and therefore subject to my local scaling
-      const ps: [number, number][] = this.withLocalScale(g.scale, () => {
+      const ps: [number, number][] = this.withLocalTransform([g.scale], () => {
          return g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
-            return scaleBy(p.fst, p.snd, this.scale)
+            return this.transform(p.fst.val, p.snd.val)
          })
       })
       // experiment with optimising pair case to line rather than polyline
@@ -161,10 +180,6 @@ export class GraphicsRenderer {
 
 function asString (p̅: [number, number][]): string {
    return p̅.map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
-}
-
-function scaleBy (x: Num, y: Num, [x_scale, y_scale]: ScaleFactor): [number, number] {
-   return [Math.round(x.val * x_scale), Math.round(y.val * y_scale)]
 }
 
 {
