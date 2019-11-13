@@ -44,9 +44,17 @@ const equal: Binary<Num | Str, Num | Str, Bool> = (x, y) => {
    }
 }
 const error: Unary<Str, Value> = message => assert(false, "LambdaCalc error:\n" + message.val)
-const greaterEqInt: Binary<Num, Num, Bool> = (x, y) => as(x, Num).val >= as(y, Num).val ? true_() : false_()
-// String comparison delegates to central implementation for consistency.
-const greaterEqStr: Binary<Str, Str, Bool> = (x, y) => as(x, Str).geq(as(y, Str)) ? true_() : false_()
+const greaterEq: Binary<Num | Str, Num | Str, Bool> = (x, y) => {
+   if (x instanceof Num && y instanceof Num) {
+      return x.val >= y.val ? true_() : false_()
+   } else
+   if (x instanceof Str && y instanceof Str) {
+      // string comparison delegates to central implementation for consistency
+      return x.geq(y) ? true_() : false_()
+   } else {
+      return userError(`Expected ${Num.name} or ${Str.name}.`)
+   }
+}
 const greaterInt: Binary<Num, Num, Bool> = (x, y) => as(x, Num).val > as(y, Num).val ? true_() : false_()
 const lessEqInt: Binary<Num, Num, Bool> = (x, y) => as(x, Num).val <= as(y, Num).val ? true_() : false_()
 const lessEqStr: Binary<Str, Str, Bool> = (x, y) => as(x, Str).leq(as(y, Str)) ? true_() : false_()
@@ -83,8 +91,7 @@ export const binaryOps: Map<string, ExplValue<BinaryOp>> = new Map([
    ["/", binary_(div)],
    ["==", binary_(equal)],
    [">", binary_(greaterInt)],
-   [">=", binary_(greaterEqInt)],
-   [">==", binary_(greaterEqStr)],
+   [">=", binary_(greaterEq)],
    ["<", binary_(lessInt)],
    ["<=", binary_(lessEqInt)],
    ["<==", binary_(lessEqStr)],
