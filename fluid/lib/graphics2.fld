@@ -17,6 +17,7 @@ let set_x = fun x {
 let burble = fun ((x1, y1), (x2, y2)) →
    ((min2 (x1, x2), min2 (y1, y2)), (max2 (x1, x2), max2 (y1, y2)));
 
+// A polyline has an implicit coordinate of (0, 0), relative to which its points are located.
 // GraphicsElement → ((Num, Num), (Num, Num))
 let boundingRect = fun {
    Rect(x, y, w, h, _) → ((x, y), (w, h));
@@ -29,22 +30,8 @@ let boundingRect = fun {
       }
 };
 
-// ((Num, Num), (Num, Num)) → (Num, Num)
-let dimensions2 = fun ((x1, y1), (x2, y2)) →
-   (max2 (x1, x2), max2 (y1, y2));
-
-// A polyline has an implicit coordinate of (0, 0), relative to which its points are located.
 // GraphicsElement → (Num, Num)
-let dimensions = fun {
-   Rect(_, _, w, h, _) → (w, h);
-   Group(_, _, w, h, _, _) → (w, h);
-   Polyline(scale, ps, _) → 
-      match foldl dimensions2 (0, 0) ps as
-      (w, h) → match scale as {
-         None → (w, h);
-         Some(Scale(x, y)) → (w * x, h * y)
-      }
-};
+let dimensions = compose snd boundingRect;
 
 // GraphicsElement → Num
 let width = compose fst dimensions;
