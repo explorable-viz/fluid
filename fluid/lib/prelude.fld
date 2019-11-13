@@ -153,15 +153,15 @@ letrec fun unzip {
 };
 
 // ((a, b) → c) → List a → List b → List c
-letrec fun zipW op {
+letrec fun zipWith op {
    [] ys → [];
    [x, ...xs] {
       [] → [];
-      [y, ...ys] → [op (x, y), ...zipW op xs ys]
+      [y, ...ys] → [op (x, y), ...zipWith op xs ys]
    }
 };
 
-let zip = zipW id;
+let zip = zipWith id;
 
 // Num → a → List a
 let repeat = flip iterate id;

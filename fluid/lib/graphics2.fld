@@ -35,7 +35,7 @@ let height = compose snd dimensions;
 
 // Num → Num → List GraphicsElement → List GraphicsElement
 let spaceRight = fun z sep gs →
-   zipW (uncurry set_x) (iterate (length gs) (fun x → x + sep) z) gs;
+   zipWith (uncurry set_x) (iterate (length gs) (fun x → x + sep) z) gs;
 
 // Bake colour decisions into the library for the time being.
 // List Str
@@ -66,7 +66,7 @@ let stackRight = fun sep gs →
 let barChart = fun sep →
    compose 
       (stackRight sep)
-      ((zipW (fun (col, (_, n)) → Rect(0, 0, 1, n, col))) colours);
+      ((zipWith (fun (col, (_, n)) → Rect(0, 0, 1, n, col))) colours);
 
 // List (a, Num) → GraphicsElement
 let stackedBar = fun ns →

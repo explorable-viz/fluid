@@ -9,7 +9,7 @@ let bibble = fun start finish countryData →
    let plot = fun energyType col →
       let ps = timeSeries energyType countryData in
       Polyline(None, map (first (fun year → year - start)) ps, col);
-   let lines = zipW (uncurry plot) energyTypes colours
+   let lines = zipWith (uncurry plot) energyTypes colours
    in
    Group(0, 0, finish - start, 400, None, lines);
 // Str → List (Num, List (Str, Num))

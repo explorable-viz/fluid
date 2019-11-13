@@ -339,9 +339,9 @@ describe("slice", () => {
       })
    })
 
-   describe("zipW", () => {
+   describe("zipWith", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("zipW")
+         const e: Expr = openWithImports("zipWith")
          new FwdSlice(e)
          // needing first cons cell of output needs same amount of input lists
          new (class extends BwdSlice {
@@ -349,7 +349,7 @@ describe("slice", () => {
                here.setα()
             }
             expect (here: ExprCursor): void {
-               here.toDef("zipW").αset().to(Expr.RecDef, "σ").var_("op").αset()
+               here.toDef("zipWith").αset().to(Expr.RecDef, "σ").var_("op").αset()
                here = here.skipImports()
                here.to(Expr.App, "e").αset()
                here.to(Expr.App, "f").to(Expr.App, "e").αset()
@@ -362,7 +362,7 @@ describe("slice", () => {
             }
             expect (here: ExprCursor): void {
                let hereʹ: ExprCursor = here
-                  .toDef("zipW")
+                  .toDef("zipWith")
                   .to(Expr.RecDef, "σ")
                   .var_("op")
                   .to(Expr.Fun, "σ")
