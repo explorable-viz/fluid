@@ -58,11 +58,13 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
 
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
+   transforms_: Transform[] // stack of original transform objects for debugging
    ancestors: SVGElement[] // stack of enclosing SVG elements
 
    constructor (root: SVGElement) {
       this.ancestors = [root]
       this.transforms = [(x, y) => [x, y]]
+      this.transforms_ = [] // indices will be out by two, but only for debugging..
    }
 
    get current (): SVGElement {
@@ -111,9 +113,15 @@ export class GraphicsRenderer {
    withLocalTransform<T> (ts: Option<Transform>[], localRender: () => T): T {
       const ts_: Transform[] = ts.filter(t => t instanceof Some).map(t => as(as(t, Some).t, Transform))
       let result: T
-      ts_.forEach(t => this.transforms.push(transformFun(t)))
+      ts_.forEach(t => {
+         this.transforms.push(transformFun(t))
+         this.transforms_.push(t)
+      })
       result = localRender()
-      ts_.forEach(_ => this.transforms.pop())
+      ts_.forEach(_ => {
+         this.transforms.pop()
+         this.transforms_.pop()
+      })
       return result
    }
 
