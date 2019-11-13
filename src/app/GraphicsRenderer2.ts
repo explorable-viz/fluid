@@ -56,6 +56,14 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
    }
 }
 
+// Rounding to pixel boundaries (although often desirable for SVG, e.g. to get sharp lines) doesn't work well 
+// for small shapes, but we don't need to maintain the full monstrosity that are floating-point numbers. Round 
+// to an appropriate number of decimal places, cast to number to strip trailing zeros, and then cast back to string.
+// This seems to be sufficient precision for SVG but is also human-friendly.
+function round (n: number): string {
+   return (+n.toFixed(3)).toString()
+}
+
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
    transforms_: Transform[] // stack of original transform objects for debugging
@@ -71,14 +79,10 @@ export class GraphicsRenderer {
       return this.ancestors[this.ancestors.length - 1]
    }
 
+   // rounding is problematic
    get transform (): TransformFun {
       assert(this.transforms.length > 0)
-      // query the current transform rather than returing a closure that accesses it...
-      const transform: TransformFun = this.transforms[this.transforms.length - 1]
-      return (x, y) => {
-         const [xʹ, yʹ] = transform(x, y)
-         return [Math.round(xʹ), Math.round(yʹ)]
-      } 
+      return this.transforms[this.transforms.length - 1] 
    }
 
    render (tg: ExplValue<GraphicsElement>, [w, h]: [number, number]): void {
@@ -132,8 +136,8 @@ export class GraphicsRenderer {
       // x and y attributes are relative to parent coordinate space, so not transformed.
       // width and height refer to size of viewport (again in parent coordinate space), although currently
       // we ignore these; we should really clip the child content.
-      svg.setAttribute("x", `${x}`)
-      svg.setAttribute("y", `${y}`)
+      svg.setAttribute("x", `${round(x)}`)
+      svg.setAttribute("y", `${round(y)}`)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
       this.withLocalTransforms([g.scale, g.translate], () => { // scaling applies to translated coordinates
@@ -150,11 +154,13 @@ export class GraphicsRenderer {
       const g: Rect = as(tg.tv.v, Rect)
       const [x, y] = this.transform(g.x.val, g.y.val)
       const [width, height] = this.transform(g.width.val, g.height.val)
-      rect.setAttribute("x", `${x}`)
-      rect.setAttribute("y", `${y}`)
-      rect.setAttribute("width", `${width}`)
-      rect.setAttribute("height", `${height}`)
+      rect.setAttribute("x", `${round(x)}`)
+      rect.setAttribute("y", `${round(y)}`)
+      rect.setAttribute("width", `${round(width)}`)
+      rect.setAttribute("height", `${round(height)}`)
       rect.setAttribute("fill", g.fill.val)
+      rect.setAttribute("stroke", "black")
+      rect.setAttribute("stroke-width",  "0.15")
       this.current.appendChild(rect)
    }
 
@@ -172,10 +178,10 @@ export class GraphicsRenderer {
       if (ps.length === 2) {
          path = document.createElementNS(SVG.NS, "line")
          const [[x1, y1], [x2, y2]] = ps
-         path.setAttribute("x1", `${x1}`)
-         path.setAttribute("y1", `${y1}`)
-         path.setAttribute("x2", `${x2}`)
-         path.setAttribute("y2", `${y2}`)
+         path.setAttribute("x1", `${round(x1)}`)
+         path.setAttribute("y1", `${round(y1)}`)
+         path.setAttribute("x2", `${round(x2)}`)
+         path.setAttribute("y2", `${round(y2)}`)
       } else {
          path = document.createElementNS(SVG.NS, "polyline")
          path.setAttribute("points", asString(ps))

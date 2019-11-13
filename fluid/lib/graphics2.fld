@@ -64,11 +64,11 @@ let scaleToWidth = fun w {
 let stackRight = fun sep gs →
    Group(0, 0, length gs, max (map height gs), None, None, map (scaleToWidth (1 - sep)) (spaceRight (sep / 2) 1 gs));
 
-// Num → List (a, Num) → GraphicsElement
-let barChart = fun sep →
+// Num → List Str → List (a, Num) → GraphicsElement
+let barChart = fun sep colours →
    compose 
       (stackRight sep)
-      ((zipWith (fun (col, (_, n)) → Rect(0, 0, 1, n, col))) colours1);
+      ((zipWith (fun (colour, (_, n)) → Rect(0, 0, 1, n, colour))) colours);
 
 // List (a, Num) → GraphicsElement
 let stackedBar = fun ns →
