@@ -1,3 +1,11 @@
+// Simplistic but something more general may require primitives which take data values as inputs.
+// Application module GraphicsRenderer must be loaded for these definitions to work.
+// Str → Num
+primitive textWidth;
+
+// Str → Num
+primitive textHeight;
+
 // Want some kind of typeclass mechanism plus record accessors/updaters.
 // Num → GraphicsElement → GraphicsElement
 let set_x = fun x {
@@ -78,12 +86,14 @@ let stackedBar = fun ns →
    in Group(0, 0, 1, last subtotals, None, rects);
 
 // The argument ks must be subset of the k2 data keys.
-// Num → Num → List k2 → List (Num, List (k2, Num)) → GraphicsElement
-let multiPlot = fun x_start x_end ks data →
+// List k2 → List (Num, List (k2, Num)) → GraphicsElement
+let multiPlot = fun ks data →
+   let xs = map fst data;
+   let x_start = head xs;
    // Str → Str → (GraphicsElement, Num)
    let plot = fun k colour →
       // List (Num, Num)
       let ps = map (second (lookup k)) data in
       (Polyline(None, map (first (fun x → x - x_start)) ps, colour), max (map snd ps));
    let lines = zipWith (uncurry plot) ks colours in
-   Group(0, 0, x_end - x_start, max (map snd lines), None, map fst lines)
+   Group(0, 0, last xs - x_start, max (map snd lines), None, map fst lines)
