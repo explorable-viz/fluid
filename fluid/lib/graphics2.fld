@@ -45,17 +45,10 @@ let height = compose snd dimensions;
 let spaceRight = fun z sep gs →
    zipWith (uncurry set_x) (iterate (length gs) (fun x → x + sep) z) gs;
 
-// Bake colour decisions into the library for the time being.
-// List Str
-let colours = [
-   "RosyBrown",
-   "HotPink",
-   "PaleGreen",
-   "Aquamarine",
-   "Plum",
-   "LightCoral",
-   "Navy"
-];
+// Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
+// different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org.
+let colours1 = ["#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f", "#e5c494", "#b3b3b3"];
+let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf"];
 
 // Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
 // frame, to avoid depending on content of child, and so are not themselves scaled.
@@ -75,7 +68,7 @@ let stackRight = fun sep gs →
 let barChart = fun sep →
    compose 
       (stackRight sep)
-      ((zipWith (fun (col, (_, n)) → Rect(0, 0, 1, n, col))) colours);
+      ((zipWith (fun (col, (_, n)) → Rect(0, 0, 1, n, col))) colours1);
 
 // List (a, Num) → GraphicsElement
 let stackedBar = fun ns →
@@ -83,7 +76,7 @@ let stackedBar = fun ns →
    let dims = zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals));
    let rects = map 
       (fun ((y, height), col) → Rect(0, y, 1, height, col))
-      (zip dims colours)
+      (zip dims colours1)
    in Group(0, 0, 1, last subtotals, None, None, rects);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
@@ -95,5 +88,5 @@ let multiPlot = fun x_start ks data →
       // List (Num, Num)
       let ps = map (second (lookup k)) data in
       (Polyline(None, ps, colour), max (map snd ps));
-   let lines = zipWith (uncurry plot) ks colours in
+   let lines = zipWith (uncurry plot) ks colours1 in
    Group(0, 0, last xs - x_start, max (map snd lines), None, Some(Translate(0 - x_start, 0)), map fst lines)
