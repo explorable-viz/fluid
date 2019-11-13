@@ -37,11 +37,6 @@ let dimensions = compose snd boundingRect;
 // GraphicsElement → Num
 let width = compose fst dimensions;
 
-let set_width = fun w {
-   Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
-   Group(x, y, _, h, scale, gs) → Group(x, y, w, h, scale, gs)
-};
-
 // GraphicsElement → Num
 let height = compose snd dimensions;
 
