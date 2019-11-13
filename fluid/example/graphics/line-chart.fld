@@ -1,13 +1,11 @@
 // assume uniform energy types for all countries, to simplify colour mapping
 // List Str
 let energyTypes = map fst (snd (head (snd (head data))));
-// Str → List (Num, List (Str, Num)) → List (Num, Num)
-let timeSeries = compose map (compose second lookup);
 // List (Num, List (Str, Num)) → GraphicsElement
 let bibble = fun start finish countryData →
    // Str → Str → GraphicsElement
    let plot = fun energyType col →
-      let ps = timeSeries energyType countryData in
+      let ps = map (second (lookup energyType)) countryData in
       Polyline(None, map (first (fun year → year - start)) ps, col);
    let lines = zipWith (uncurry plot) energyTypes colours
    in
