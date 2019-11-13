@@ -77,8 +77,8 @@ let stackedBar = fun ns →
       (zip dims colours)
    in Group(0, 0, 1, last subtotals, None, rects);
 
-// ks argument must be subset of keys of data
-// Num → Num → List Num → List (Num, List (Str, Num)) → GraphicsElement
+// The argument ks must be subset of the data keys of type k2.
+// Num → Num → List k2 → List (Num, List (k2, Num)) → GraphicsElement
 let bibble = fun x_start x_end ks data →
    // Str → Str → GraphicsElement
    let plot = fun k colour →
