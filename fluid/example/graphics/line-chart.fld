@@ -6,4 +6,4 @@ let finishYear = 2018; // fst (last data);
 let energyTypes = map fst (snd (head (snd (head data))));
 let countries = map fst (snd (head data)) in
 stackRight 0.2 
-   (map (compose (bibble startYear finishYear energyTypes) countryData) countries)
+   (map (compose (multiPlot startYear finishYear energyTypes) countryData) countries)
