@@ -57,13 +57,13 @@ let colours = [
 ];
 
 // Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
-// frame, to avoid depending on content of child, so they are not scaled here.
+// frame, to avoid depending on content of child, and so are not themselves scaled.
 // Num → GraphicsElement → GraphicsElement
 let scaleToWidth = fun w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
    Group(x, y, w0, h, _, gs) → Group(x, y, w, h, Some(Scale(w / w0, 1)), gs);
    // polyline has an implicit coordinate of (0, 0), relative to which its points are located
-   Polyline(_, ps, stroke) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps, stroke)
+   Polyline(scale, ps, stroke) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps, stroke)
 };
 
 // List GraphicsElement → Num → GraphicsElement
