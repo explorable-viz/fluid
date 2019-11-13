@@ -1,21 +1,17 @@
-// assume uniform energy types for all countries, to simplify colour mapping
-// List Str
-let energyTypes = map fst (snd (head (snd (head data))));
-// List (Num, List (Str, Num)) → GraphicsElement
-let bibble = fun start finish countryData →
+// List (Num, List (Str, Num)) → List Num → GraphicsElement
+let bibble = fun start finish keys countryData →
    // Str → Str → GraphicsElement
    let plot = fun energyType col →
       let ps = map (second (lookup energyType)) countryData in
       Polyline(None, map (first (fun year → year - start)) ps, col);
-   let lines = zipWith (uncurry plot) energyTypes colours
-   in
+   let lines = zipWith (uncurry plot) keys colours in
    Group(0, 0, finish - start, 400, None, lines);
 // Str → List (Num, List (Str, Num))
 let countryData = compose (flip map data) (compose second lookup);
 // assume uniform range for all time series, and moreover data sorted by year
 let startYear = 2013; // fst (head data);
 let finishYear = 2018; // fst (last data);
-let countries = map fst (snd (head data))
-in
+let energyTypes = map fst (snd (head (snd (head data))));
+let countries = map fst (snd (head data)) in
 stackRight 0.2 
-   (map (compose (bibble startYear finishYear) countryData) countries)
+   (map (compose (bibble startYear finishYear energyTypes) countryData) countries)
