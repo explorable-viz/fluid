@@ -85,7 +85,7 @@ let stackedBar = fun ns →
       (zip dims colours)
    in Group(0, 0, 1, last subtotals, None, rects);
 
-// The argument ks must be subset of the k2 data keys.
+// Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // List k2 → List (Num, List (k2, Num)) → GraphicsElement
 let multiPlot = fun ks data →
    let xs = map fst data;
