@@ -1,0 +1,3 @@
+stackRight 0.2 
+   [Rect(1, 0, 3, 120, "blue"),
+    Rect(2, 0, 3, 120, "green")]
