@@ -14,6 +14,7 @@ export class Group extends GraphicsElement<"Group"> {
    width: Num = _
    height: Num = _
    scale: Option<Scale> = _
+   translate: Option<Translate> = _
    gs: List<GraphicsElement> = _
 }
 
@@ -36,5 +37,11 @@ export class Scale extends DataValue<"Scale"> {
    y: Num = _
 }
 
+export class Translate extends DataValue<"Translate"> {
+   x: Num = _
+   y: Num = _
+}
+
 initDataType(GraphicsElement, [Group, Polyline, Rect])
 initDataType(Scale, [Scale])
+initDataType(Translate, [Translate])
