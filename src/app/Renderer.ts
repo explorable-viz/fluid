@@ -360,6 +360,18 @@ function textElement (fontSize: number, class_: string, str: string): SVGTextEle
    return text
 }
 
+// The SVG text element for the supplied text; centralised so can be used to compute text metrics.
+// Use "translate" to locate the element, so that we can apply it after scaling.
+export function textElement2 (x: number, y: number, fontSize: number, str: string): SVGTextElement {
+   const text: SVGTextElement = document.createElementNS(SVG.NS, "text")
+   text.setAttribute("stroke", "none")
+   text.setAttribute("font-size", fontSize.toString())
+   let transform: string = `translate(${x.toString()},${y.toString()})`
+   text.setAttribute("transform", transform + " scale(1,-1)")
+   text.appendChild(document.createTextNode(str))
+   return text
+}
+
 export function unimplemented (v: Value): SVGSVGElement {
    return horiz(text(`TODO: ${className(v)}`, DeltaStyle.Unchanged))
 }

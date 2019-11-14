@@ -7,21 +7,9 @@ import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
-import { line, rect, round, svgElement } from "./Renderer"
+import { line, rect, round, svgElement, textElement2 } from "./Renderer"
 
 const fontSize: number = 12
-
-// The SVG text element for the supplied text; centralised so can be used to compute text metrics.
-// Use "translate" to locate the element, so that we can apply it after scaling.
-function textElement (x: number, y: number, fontSize: number, str: string): SVGTextElement {
-   const text: SVGTextElement = document.createElementNS(SVG.NS, "text")
-   text.setAttribute("stroke", "none")
-   text.setAttribute("font-size", fontSize.toString())
-   let transform: string = `translate(${x.toString()},${y.toString()})`
-   text.setAttribute("transform", transform + " scale(1,-1)")
-   text.appendChild(document.createTextNode(str))
-   return text
-}
 
 export const svg: SVG = new SVG()
 
@@ -182,11 +170,11 @@ function asString (p̅: [number, number][]): string {
    // Additional primitives that rely on offline rendering to compute text metrics. Combining these would 
    // require more general primitives that can return tuples.
    const textWidth: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(svg.textWidth(textElement(0, 0, fontSize, str.val)))
+      return num(svg.textWidth(textElement2(0, 0, fontSize, str.val)))
    }
    
    const textHeight: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(svg.textHeight(textElement(0, 0, fontSize, str.val)))
+      return num(svg.textHeight(textElement2(0, 0, fontSize, str.val)))
    }
    
    unaryOps.set(textWidth.name, unary_(textWidth))
