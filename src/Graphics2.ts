@@ -47,5 +47,17 @@ export class Translate extends Transform<"Translate"> {
    y: Num = _
 }
 
+export type MarkerTag = "Tick" | "Circle"
+
+export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
+}
+
+export class Tick extends Marker<"Tick"> {
+}
+
+export class Circle extends Marker<"Circle"> {   
+}
+
 initDataType(GraphicsElement, [Group, Polyline, Rect])
 initDataType(Transform, [Scale, Translate])
+initDataType(Marker, [Tick, Circle])
