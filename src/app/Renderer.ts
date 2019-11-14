@@ -354,21 +354,19 @@ export function text (str: string, ẟ_style: DeltaStyle): SVGTextElement {
 
 function textElement (fontSize: number, class_: string, str: string): SVGTextElement {
    const text: SVGTextElement = document.createElementNS(SVG.NS, "text")
+   text.setAttribute("stroke", "none")
    text.setAttribute("font-size", fontSize.toString()) // wasn't able to set this through CSS for some reason
    text.setAttribute("class", class_) // set styling before creating text node, for font metrics to be correct
    text.appendChild(document.createTextNode(str))
    return text
 }
 
-// The SVG text element for the supplied text; centralised so can be used to compute text metrics.
+// Text for use inside graphics; needs to be inverted, to undo the SVG inversion we apply at the top level.
 // Use "translate" to locate the element, so that we can apply it after scaling.
-export function textElement2 (x: number, y: number, fontSize: number, str: string): SVGTextElement {
-   const text: SVGTextElement = document.createElementNS(SVG.NS, "text")
-   text.setAttribute("stroke", "none")
-   text.setAttribute("font-size", fontSize.toString())
+export function textElement_graphical (x: number, y: number, fontSize: number, str: string): SVGTextElement {
+   const text: SVGTextElement = textElement(fontSize, "", str)
    let transform: string = `translate(${x.toString()},${y.toString()})`
    text.setAttribute("transform", transform + " scale(1,-1)")
-   text.appendChild(document.createTextNode(str))
    return text
 }
 
