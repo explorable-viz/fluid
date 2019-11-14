@@ -7,7 +7,7 @@ import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
-import { line, rect, round, svgElement, textElement2 } from "./Renderer"
+import { line, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 12
 
@@ -141,17 +141,13 @@ export class GraphicsRenderer {
             return this.transform(p.fst.val, p.snd.val)
          })
       })
-      // experiment with optimising pair case to line rather than polyline
-      // TODO: what should we do when there is only a single point?
+      // Optimise polyline with 2 points to line. TODO: what about when there is only one point?
       let line_: SVGElement
       if (ps.length === 2) {
          const [[x1, y1], [x2, y2]] = ps
          line_ = line(x1, y1, x2, y2, g.stroke.val)
       } else {
-         line_ = document.createElementNS(SVG.NS, "polyline")
-         line_.setAttribute("points", asString(ps))
-         line_.setAttribute("stroke", g.stroke.val)
-         line_.setAttribute("fill", "none")
+         line_ = polyline(ps, g.stroke.val)
       }
       if (Some.is(g.marker)) {
          line_.setAttribute("marker-mid", `url(#${className(g.marker.t).toLowerCase()})`)
@@ -162,19 +158,15 @@ export class GraphicsRenderer {
    }
 }
 
-function asString (p̅: [number, number][]): string {
-   return p̅.map(([x, y]: [number, number]) => `${round(x)},${round(y)}`).join(" ")
-}
-
 {
    // Additional primitives that rely on offline rendering to compute text metrics. Combining these would 
    // require more general primitives that can return tuples.
    const textWidth: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(svg.textWidth(textElement2(0, 0, fontSize, str.val)))
+      return num(svg.textWidth(textElement_graphical(0, 0, fontSize, str.val)))
    }
    
    const textHeight: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(svg.textHeight(textElement2(0, 0, fontSize, str.val)))
+      return num(svg.textHeight(textElement_graphical(0, 0, fontSize, str.val)))
    }
    
    unaryOps.set(textWidth.name, unary_(textWidth))

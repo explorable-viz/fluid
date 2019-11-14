@@ -269,6 +269,19 @@ export function parenthesiseIf (parens: boolean, g: SVGSVGElement, ẟ_style: De
    return parens ? parenthesise(g, ẟ_style) : g
 }
 
+// TODO: use Point consistently everywhere?
+function pointsToString (p̅: [number, number][]): string {
+   return p̅.map(([x, y]: [number, number]) => `${round(x)},${round(y)}`).join(" ")
+}
+
+export function polyline (p̅: [number, number][], stroke: string): SVGPolylineElement {
+   const line_: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
+   line_.setAttribute("points", pointsToString(p̅))
+   line_.setAttribute("stroke", stroke)
+   line_.setAttribute("fill", "none")
+   return line_
+}
+
 export function rect (x: number, y: number, width: number, height: number, stroke: string, fill: string): SVGRectElement {
    const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect")
    rect.setAttribute("x", `${round(x)}`)
