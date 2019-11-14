@@ -61,13 +61,9 @@ function leftOf (r1: Dims, r2: Dims): boolean {
    return r1.x + r1.width / 2 <= r2.x + r2.width
 }
 
+// TODO: remember what this is for.
 function blah (x: number, length: number, proportion: number):  number {
    return x + proportion * length
-}
-
-// Path segment corrresponding to a line.
-export function line (p1: Point, p2: Point): string {
-   return `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`
 }
 
 // Offset might be better computed as a function of distance between p1 and p2.
@@ -145,13 +141,14 @@ function dims (g: SVGSVGElement): Dims {
 }
 
 export function edge_left (g: SVGSVGElement): SVGSVGElement {
-   const edge: SVGLineElement = document.createElementNS(SVG.NS, "line")
-   edge.setAttribute("x1", g.x.baseVal.valueAsString)
-   edge.setAttribute("y1", g.y.baseVal.valueAsString)
    const { height }: Dimensions = dimensions.get(g)!
-   edge.setAttribute("x2", g.x.baseVal.valueAsString)
-   edge.setAttribute("y2", `${g.y.baseVal.value + height}`)
-   edge.setAttribute("stroke", "gray")
+   const edge: SVGLineElement = line(
+      g.x.baseVal.value, 
+      g.y.baseVal.value, 
+      g.x.baseVal.value, 
+      g.y.baseVal.value + height, 
+      "gray"
+   )
    edge.setAttribute("stroke-width", "4")
 //   edge.setAttribute("stroke-dasharray", "2,2")
    g.appendChild(edge)
@@ -159,13 +156,14 @@ export function edge_left (g: SVGSVGElement): SVGSVGElement {
 }
 
 export function edge_bottom (g: SVGSVGElement): SVGSVGElement {
-   const edge: SVGLineElement = document.createElementNS(SVG.NS, "line")
    const { width, height }: Dimensions = dimensions.get(g)!
-   edge.setAttribute("x1", g.x.baseVal.valueAsString)
-   edge.setAttribute("y1", `${g.y.baseVal.value + height}`)
-   edge.setAttribute("x2", `${g.y.baseVal.value + width}`)
-   edge.setAttribute("y2", `${g.y.baseVal.value + height}`)
-   edge.setAttribute("stroke", "gray")
+   const edge: SVGLineElement = line(
+      g.x.baseVal.value, 
+      g.y.baseVal.value + height, 
+      g.y.baseVal.value + width, 
+      g.y.baseVal.value + height, 
+      "gray"
+   )
    edge.setAttribute("stroke-width", "2")
 //   edge.setAttribute("stroke-dasharray", "2,2")
    g.appendChild(edge)
@@ -198,6 +196,16 @@ export function horizSpace (...gs: SVGElement[]): SVGSVGElement {
 
 export function keyword (str: keyof typeof strings, ẟ_style: DeltaStyle): SVGElement {
    return text(strings[str], ẟ_style)
+}
+
+export function line (x1: number, y1: number, x2: number, y2: number, stroke: string): SVGLineElement {
+   const line: SVGLineElement = document.createElementNS(SVG.NS, "line")
+   line.setAttribute("x1", `${round(x1)}`)
+   line.setAttribute("y1", `${round(y1)}`)
+   line.setAttribute("x2", `${round(x2)}`)
+   line.setAttribute("y2", `${round(y2)}`)
+   line.setAttribute("stroke", stroke)
+   return line
 }
 
 export function marker (id: string, fill: string): SVGMarkerElement {
@@ -248,13 +256,8 @@ export function marker_tick (): SVGMarkerElement {
    m.setAttribute("markerWidth", `${height * 2}`)
    m.setAttribute("markerHeight", `${height * 2}`)
    m.setAttribute("overflow", "visible") // for debugging
-   const line: SVGLineElement = document.createElementNS(SVG.NS, "line")
-   m.appendChild(line)
-   line.setAttribute("x1", `${0}`)
-   line.setAttribute("y1", `${0}`)
-   line.setAttribute("x2", `${0}`)
-   line.setAttribute("y2", `${height}`)
-   line.setAttribute("stroke", "black")
+   const tick: SVGLineElement = line(0, 0, 0, height, "black")
+   m.appendChild(tick)
    return m
 }
 
