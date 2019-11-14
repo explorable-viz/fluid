@@ -13,27 +13,21 @@ let set_x = fun x {
    Group(_, y, w, h, scale, translate, gs) → Group(x, y, w, h, scale, translate, gs)
 };
 
-// ((Num, Num), (Num, Num)) → ((Num, Num), (Num, Num))
-let boundingRect2 = fun ((x1, y1), (x2, y2)) →
-   ((min2 (x1, x2), min2 (y1, y2)), (max2 (x1, x2), max2 (y1, y2)));
-
-// Polyline must have at least one point for the min case to work.
-// Hmm, this isn't really a bounding rect because of the Group case.
-// GraphicsElement → ((Num, Num), (Num, Num))
-let boundingRect = fun {
-   Rect(x, y, w, h, _) → ((x, y), (w, h));
-   Group(x, y, w, h, _, _, _) → ((x, y), (w, h));
-   Polyline(scale, ps, _) → 
-      match foldl1 boundingRect2 ps as
-      ((x, y), (x2, y2)) → match (x2 - x, y2 - y) as 
-         (w, h) → match scale as {
-            None → ((x, y) (w, h));
-            Some(Scale(x_scale, y_scale)) → ((y * x_scale, y * y_scale), (w * x_scale, h * y_scale))
-         }
-};
+// ((Num, Num), (Num, Num)) → (Num, Num)
+let dimensions2 = fun ((x1, y1), (x2, y2)) →
+   (max2 (x1, x2), max2 (y1, y2));
 
 // GraphicsElement → (Num, Num)
-let dimensions = compose snd boundingRect;
+let dimensions = fun {
+   Rect(_, _, w, h, _) → (w, h);
+   Group(_, _, w, h, _, _, _) → (w, h);
+   Polyline(scale, ps, _) →
+      match foldl boundingRect2 (0, 0) ps as
+      (w, h) → match scale as {
+         None → (w, h);
+         Some(Scale(x_scale, y_scale)) → (w * x_scale, h * y_scale)
+      }
+};
 
 // GraphicsElement → Num
 let width = compose fst dimensions;
