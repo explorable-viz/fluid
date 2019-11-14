@@ -8,7 +8,7 @@ import "./styles.css"
 
 // Maybe there are some built-in types for this, but don't care yet
 type Point = { x: number, y: number }
-type Rect = Point & { width: number, height: number }
+type Dims = Point & { width: number, height: number }
 
 export const svg: SVG = new SVG()
 const fontSize: number = 18
@@ -27,15 +27,8 @@ export function arrow (ẟ_style: DeltaStyle): SVGElement {
 }
 
 export function border (g: SVGSVGElement, stroke: string): SVGRectElement {
-   const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
-   border.setAttribute("x", g.x.baseVal.valueAsString)
-   border.setAttribute("y", g.y.baseVal.valueAsString)
    const { width, height }: Dimensions = dimensions.get(g)!
-   border.setAttribute("height", height.toString())
-   border.setAttribute("width", width.toString())
-   border.setAttribute("stroke", stroke)
-   border.setAttribute("fill", "none")
-   return border
+   return rect(g.x.baseVal.value, g.y.baseVal.value, width, height, stroke, "none")
 }
 
 export function border_changed (g: SVGSVGElement): SVGSVGElement {
@@ -64,7 +57,7 @@ export function comma (ẟ_style: DeltaStyle): SVGElement {
 }
 
 // Whether the centre of r1 is to the left of the centre of r2.
-function leftOf (r1: Rect, r2: Rect): boolean {
+function leftOf (r1: Dims, r2: Dims): boolean {
    return r1.x + r1.width / 2 <= r2.x + r2.width
 }
 
@@ -87,8 +80,8 @@ function curvedLine (p1: Point, p2: Point, offset: number): string {
 }
 
 export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
-   const g1_: Rect = rect(g1)
-   const g2_: Rect = rect(g2)
+   const g1_: Dims = dims(g1)
+   const g2_: Dims = dims(g2)
    const [fromBottom, fromTop]: [number, number] = [0.1, 0.9]
    const connector_: SVGPathElement = document.createElementNS(SVG.NS, "path")
    const curveOffset: number = 5 // somewhat arbitrary
@@ -117,12 +110,6 @@ export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    return connector_
 }
 
-// Assume root has a unique defs element called "defs".
-export function defineMarker (root: SVGSVGElement, marker: SVGMarkerElement): void {
-   const defs: SVGDefsElement = as(root.getElementById("defs"), SVGDefsElement)
-   defs.appendChild(marker)
-}
-
 // Couldn't get getScreenCTM or getBoundingClientRect to work properly (perhaps because of nested SVGs?) so just use this to compute 
 // coordinates of g relative to root SVG.
 function coordinates (g: SVGSVGElement): { x: number, y: number } {
@@ -134,6 +121,12 @@ function coordinates (g: SVGSVGElement): { x: number, y: number } {
    }
 } 
 
+// Assume root has a unique defs element called "defs".
+export function defineMarker (root: SVGSVGElement, marker: SVGMarkerElement): void {
+   const defs: SVGDefsElement = as(root.getElementById("defs"), SVGDefsElement)
+   defs.appendChild(marker)
+}
+
 export function delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGElement[] {
    const gsʹ: SVGElement[] = []
    gs.forEach((g: SVGElement, n: number): void => {
@@ -143,6 +136,12 @@ export function delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGE
       }
    })
    return gsʹ
+}
+
+function dims (g: SVGSVGElement): Dims {
+   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
+   const { x, y } = coordinates(g)
+   return { x, y, width, height }
 }
 
 export function edge_left (g: SVGSVGElement): SVGSVGElement {
@@ -267,10 +266,15 @@ export function parenthesiseIf (parens: boolean, g: SVGSVGElement, ẟ_style: De
    return parens ? parenthesise(g, ẟ_style) : g
 }
 
-function rect (g: SVGSVGElement): Rect {
-   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
-   const { x, y } = coordinates(g)
-   return { x, y, width, height }
+export function rect (x: number, y: number, width: number, height: number, stroke: string, fill: string): SVGRectElement {
+   const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect")
+   rect.setAttribute("x", `${x}`)
+   rect.setAttribute("y", `${y}`)
+   rect.setAttribute("height", `${height}`)
+   rect.setAttribute("width", `${width}`)
+   rect.setAttribute("stroke", stroke)
+   rect.setAttribute("fill", fill)
+   return rect
 }
 
 // Rounding to pixel boundaries (although often desirable for SVG, e.g. to get sharp lines) doesn't work well 
@@ -284,14 +288,8 @@ export function round (n: number): string {
 // Needs to be at the bottom in the z-order, and opaque.
 export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
    const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
-   const background: SVGRectElement = document.createElementNS(SVG.NS, "rect")
-   background.setAttribute("x", g.x.baseVal.valueAsString)
-   background.setAttribute("y", g.y.baseVal.valueAsString)
    const { width, height }: Dimensions = dimensions.get(g)!
-   background.setAttribute("height", height.toString())
-   background.setAttribute("width", width.toString())
-   background.setAttribute("stroke", "none")
-   background.setAttribute("fill", fill)
+   const background: SVGRectElement = rect(g.x.baseVal.value, g.y.baseVal.value, width, height, "none", fill)
    background.setAttribute("pointer-events", "none")
    svg.appendChild(background)
    svg.appendChild(g)
