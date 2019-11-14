@@ -26,25 +26,6 @@ export function arrow (ẟ_style: DeltaStyle): SVGElement {
    return keyword("arrow", ẟ_style)
 }
 
-export function arrowhead (): SVGMarkerElement {
-   const marker: SVGMarkerElement = document.createElementNS(SVG.NS, "marker")
-   marker.setAttribute("id", "arrowhead")
-//   marker.setAttribute("viewBox", "0 0 10 10")
-   const length: number = 6,
-         width: number = 4
-   marker.setAttribute("refX", `${length}`)
-   marker.setAttribute("refY", `${width / 2}`)
-   marker.setAttribute("markerUnits", "strokeWidth")
-   marker.setAttribute("markerWidth", "16")
-   marker.setAttribute("markerHeight", "16")
-   marker.setAttribute("orient", "auto")
-   marker.setAttribute("fill", "blue") // will want to change this
-   const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
-   marker.appendChild(path)
-   path.setAttribute("d", `M ${length} ${width / 2} L 0 ${width} L 0 0 Z`)
-   return marker
-}
-
 export function border (g: SVGSVGElement, stroke: string): SVGRectElement {
    const border: SVGRectElement = document.createElementNS(SVG.NS, "rect")
    border.setAttribute("x", g.x.baseVal.valueAsString)
@@ -218,6 +199,44 @@ export function horizSpace (...gs: SVGElement[]): SVGSVGElement {
 
 export function keyword (str: keyof typeof strings, ẟ_style: DeltaStyle): SVGElement {
    return text(strings[str], ẟ_style)
+}
+
+export function marker (id: string, fill: string): SVGMarkerElement {
+   const m: SVGMarkerElement = document.createElementNS(SVG.NS, "marker")
+   m.setAttribute("id", id)
+   m.setAttribute("markerUnits", "strokeWidth")
+   m.setAttribute("orient", "auto")
+   return m
+}
+
+export function marker_arrowhead (): SVGMarkerElement {
+   const m: SVGMarkerElement = marker("arrowhead", "blue")
+//   marker.setAttribute("viewBox", "0 0 10 10")
+   const length: number = 6,
+         width: number = 4
+   m.setAttribute("refX", `${length}`)
+   m.setAttribute("refY", `${width / 2}`)
+   m.setAttribute("markerWidth", "16")
+   m.setAttribute("markerHeight", "16")
+   const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
+   m.appendChild(path)
+   path.setAttribute("d", `M ${length} ${width / 2} L 0 ${width} L 0 0 Z`)
+   return m
+}
+
+export function marker_tick (): SVGMarkerElement {
+   const m: SVGMarkerElement = marker("tick", "blue")
+//   marker.setAttribute("viewBox", "0 0 10 10")
+   const length: number = 6,
+         width: number = 4
+   m.setAttribute("refX", `${length}`)
+   m.setAttribute("refY", `${width / 2}`)
+   m.setAttribute("markerWidth", "16")
+   m.setAttribute("markerHeight", "16")
+   const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
+   m.appendChild(path)
+   path.setAttribute("d", `M ${length} ${width / 2} L 0 ${width} L 0 0 Z`)
+   return m
 }
 
 export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGSVGElement {

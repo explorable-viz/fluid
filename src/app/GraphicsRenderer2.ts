@@ -172,21 +172,24 @@ export class GraphicsRenderer {
       })
       // experiment with optimising pair case to line rather than polyline
       // TODO: what should we do when there is only a single point?
-      let path: SVGElement
+      let line: SVGElement
       if (ps.length === 2) {
-         path = document.createElementNS(SVG.NS, "line")
+         line = document.createElementNS(SVG.NS, "line")
          const [[x1, y1], [x2, y2]] = ps
-         path.setAttribute("x1", `${round(x1)}`)
-         path.setAttribute("y1", `${round(y1)}`)
-         path.setAttribute("x2", `${round(x2)}`)
-         path.setAttribute("y2", `${round(y2)}`)
+         line.setAttribute("x1", `${round(x1)}`)
+         line.setAttribute("y1", `${round(y1)}`)
+         line.setAttribute("x2", `${round(x2)}`)
+         line.setAttribute("y2", `${round(y2)}`)
       } else {
-         path = document.createElementNS(SVG.NS, "polyline")
-         path.setAttribute("points", asString(ps))
+         line = document.createElementNS(SVG.NS, "polyline")
+         line.setAttribute("points", asString(ps))
       }
-      path.setAttribute("stroke", g.stroke.val)
-      path.setAttribute("fill", "none")
-      this.current.appendChild(path)
+      line.setAttribute("stroke", g.stroke.val)
+      line.setAttribute("fill", "none")
+      if (Some.is(g.marker)) {
+         line.setAttribute("marker-mid", "url(#tick)")
+      }
+      this.current.appendChild(line)
    }
 }
 
