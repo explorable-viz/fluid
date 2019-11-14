@@ -273,6 +273,14 @@ function rect (g: SVGSVGElement): Rect {
    return { x, y, width, height }
 }
 
+// Rounding to pixel boundaries (although often desirable for SVG, e.g. to get sharp lines) doesn't work well 
+// for small shapes, but we don't need to maintain the full monstrosity that are floating-point numbers. Round 
+// to an appropriate number of decimal places, cast to number to strip trailing zeros, and then cast back to string.
+// This seems to be sufficient precision for SVG but is also human-friendly.
+export function round (n: number): string {
+   return (+n.toFixed(3)).toString()
+}
+
 // Needs to be at the bottom in the z-order, and opaque.
 export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
    const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
@@ -298,10 +306,8 @@ export function space (): SVGElement {
 // Chrome doesn't appear to fully support SVG 2.0 yet; in particular, transform attributes on svg elements are 
 // ignored (except at the root). To invert the y-axis, we have to add a nested g element containing the transform.
 // Elsewhere we avoid SVG transforms to avoid non-integer pixel attributes.
-export function svgElement (w: number, h: number): [SVGSVGElement, SVGGElement] {
-   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
-   svg.setAttribute("width", `${w}`)
-   svg.setAttribute("height", `${h}`)
+export function svgElement_inverted (w: number, h: number): [SVGSVGElement, SVGGElement] {
+   const svg: SVGSVGElement = svgElement(0, 0, w, h)
    const g: SVGGElement = document.createElementNS(SVG.NS, "g")
    g.setAttribute("transform", `scale(1,-1) translate(0,${-h})`)
    g.setAttribute("width", `${w}`)
@@ -310,11 +316,20 @@ export function svgElement (w: number, h: number): [SVGSVGElement, SVGGElement] 
    return [svg, g]
 }
 
+// Content below or to the left is clipped automatically; content to above or to the right is clipped 
+// if we set width and height.
+export function svgElement (x: number, y: number, width: number, height: number): SVGSVGElement {
+   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   svg.setAttribute("x", `${round(x)}`)
+   svg.setAttribute("y", `${round(y)}`)
+   svg.setAttribute("width", `${round(width)}`)
+   svg.setAttribute("height", `${round(height)}`)
+   return svg
+}
+
 // Top-level SVG node with a "defs" element with id "defs".
 export function svgRootElement (w: number, h: number): SVGSVGElement {
-   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
-   svg.setAttribute("width", `${w}`)
-   svg.setAttribute("height", `${h}`)
+   const svg: SVGSVGElement = svgElement(0, 0, w, h)
    // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
    svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
    svg.style.verticalAlign = "top"

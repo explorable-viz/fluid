@@ -18,7 +18,7 @@ import { Editor } from "./Editor"
 import { GraphicsRenderer } from "./GraphicsRenderer2"
 import { 
    DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, connector, deltaStyle, dimensions, ellipsis, horiz, 
-   horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement, text, unimplemented, vert 
+   horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement_inverted, text, unimplemented, vert 
 } from "./Renderer"
 
 import Closure = Eval.Closure
@@ -352,7 +352,7 @@ export class ValueView extends View {
             const tg: ExplValue<GraphicsElement> = this.tv as ExplValue<GraphicsElement>
             const dim = { width: 140, height: 160 }
             let g1: SVGGElement
-            [g, g1] = svgElement(dim.width, dim.height)
+            [g, g1] = svgElement_inverted(dim.width, dim.height)
             new GraphicsRenderer(g1).render(tg, dims(tg))
             dimensions.set(g, dim)
          } else

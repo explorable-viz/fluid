@@ -7,6 +7,7 @@ import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
+import { round, svgElement } from "./Renderer"
 
 const fontSize: number = 12
 
@@ -54,14 +55,6 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
       let [x_, y_] = f2(x, y)
       return f1(x_, y_)
    }
-}
-
-// Rounding to pixel boundaries (although often desirable for SVG, e.g. to get sharp lines) doesn't work well 
-// for small shapes, but we don't need to maintain the full monstrosity that are floating-point numbers. Round 
-// to an appropriate number of decimal places, cast to number to strip trailing zeros, and then cast back to string.
-// This seems to be sufficient precision for SVG but is also human-friendly.
-function round (n: number): string {
-   return (+n.toFixed(3)).toString()
 }
 
 export class GraphicsRenderer {
@@ -130,17 +123,11 @@ export class GraphicsRenderer {
    }
 
    group (tg: ExplValueCursor/*<Graphic>*/): void {
-      const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
       const g: Group = as(tg.tv.v, Group)
+      // dimensions are relative to parent coordinate space, so not transformed by g's scaling
       const [x, y] = this.transform(g.x.val, g.y.val)
       const [width, height] = this.transform(g.width.val, g.height.val)
-      // dimensions are relative to parent coordinate space, so not transformed
-      // content below or to the left is clipped automatically; content to above or to the right is clipped 
-      // if we set width and height.
-      svg.setAttribute("x", `${round(x)}`)
-      svg.setAttribute("y", `${round(y)}`)
-      svg.setAttribute("width", `${round(width)}`)
-      svg.setAttribute("height", `${round(height)}`)
+      const svg: SVGSVGElement = svgElement(x, y, width, height)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
       this.withLocalTransforms([g.scale, g.translate], () => { // scaling applies to translated coordinates
