@@ -21,7 +21,7 @@ let dimensions2 = fun ((x1, y1), (x2, y2)) →
 let dimensions = fun {
    Rect(_, _, w, h, _) → (w, h);
    Group(_, _, w, h, _, _, _) → (w, h);
-   Polyline(scale, ps, _) →
+   Polyline(scale, ps, _, _) →
       match foldl boundingRect2 (0, 0) ps as
       (w, h) → match scale as {
          None → (w, h);
@@ -51,7 +51,7 @@ let scaleToWidth = fun w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
    Group(x, y, w0, h, _, translate, gs) → Group(x, y, w, h, Some(Scale(w / w0, 1)), translate, gs);
    // polyline has an implicit coordinate of (0, 0), relative to which its points are located
-   Polyline(scale, ps, stroke) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps, stroke)
+   Polyline(scale, ps, stroke, marker) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps, stroke, marker)
 };
 
 // List GraphicsElement → Num → GraphicsElement
@@ -84,7 +84,7 @@ let tickEvery = fun n →
 
 // Str → Num → Num → GraphicsElement 
 let x_axis = fun colour y start end →
-   Polyline(None, [(start, y), (end, y)], colour);
+   Polyline(None, [(start, y), (end, y)], colour, None);
 
 // Str → Num → Num → GraphicsElement 
 let y_axis = fun colour x start end →
@@ -97,7 +97,7 @@ let y_axis = fun colour x start end →
       True → [start, ...ys];
       False → ys
    }
-   in Polyline(None, map (fun y → (x, y)) ys, colour);
+   in Polyline(None, map (fun y → (x, y)) ys, colour, None);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
@@ -106,7 +106,7 @@ let multiPlot = fun withAxes colours x_start ks data →
    // Str → Str → (GraphicsElement, Num)
    let plot = fun k colour →
       let ps = map (second (lookup k)) data in
-      (Polyline(None, ps, colour), max (map snd ps));
+      (Polyline(None, ps, colour, None), max (map snd ps));
    let lines = zipWith (uncurry plot) ks colours;
    let x_finish = last xs;
    let y_finish = max (map snd lines);
