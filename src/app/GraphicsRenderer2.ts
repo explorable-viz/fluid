@@ -7,7 +7,7 @@ import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
-import { rect, round, svgElement } from "./Renderer"
+import { line, rect, round, svgElement } from "./Renderer"
 
 const fontSize: number = 12
 
@@ -155,26 +155,22 @@ export class GraphicsRenderer {
       })
       // experiment with optimising pair case to line rather than polyline
       // TODO: what should we do when there is only a single point?
-      let line: SVGElement
+      let line_: SVGElement
       if (ps.length === 2) {
-         line = document.createElementNS(SVG.NS, "line")
          const [[x1, y1], [x2, y2]] = ps
-         line.setAttribute("x1", `${round(x1)}`)
-         line.setAttribute("y1", `${round(y1)}`)
-         line.setAttribute("x2", `${round(x2)}`)
-         line.setAttribute("y2", `${round(y2)}`)
+         line_ = line(x1, y1, x2, y2, g.stroke.val)
       } else {
-         line = document.createElementNS(SVG.NS, "polyline")
-         line.setAttribute("points", asString(ps))
+         line_ = document.createElementNS(SVG.NS, "polyline")
+         line_.setAttribute("points", asString(ps))
+         line_.setAttribute("stroke", g.stroke.val)
+         line_.setAttribute("fill", "none")
       }
-      line.setAttribute("stroke", g.stroke.val)
-      line.setAttribute("fill", "none")
       if (Some.is(g.marker)) {
-         line.setAttribute("marker-mid", `url(#${className(g.marker.t).toLowerCase()})`)
+         line_.setAttribute("marker-mid", `url(#${className(g.marker.t).toLowerCase()})`)
       } else {
          assert(None.is(g.marker))
       }
-      this.current.appendChild(line)
+      this.current.appendChild(line_)
    }
 }
 
