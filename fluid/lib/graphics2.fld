@@ -74,12 +74,12 @@ let stackedBar = fun colours ns →
    in Group(0, 0, 1, last subtotals, None, None, rects);
 
 // Str → Num → Num → GraphicsElement 
-let x_axis = fun colour start end →
-   Polyline(None, [(start, 1), (end, 1)], colour);
+let x_axis = fun colour y start end →
+   Polyline(None, [(start, y), (end, y)], colour);
 
 // Str → Num → Num → GraphicsElement 
-let y_axis = fun colour start end → 
-   Polyline(None, [(2014, start), (2014, end)], colour);
+let y_axis = fun colour x start end → 
+   Polyline(None, [(x, start), (x, end)], colour);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
@@ -94,7 +94,7 @@ let multiPlot = fun withAxes colours x_start ks data →
    let y_finish = max (map snd lines);
    let gs = map fst lines;
    let axes = match withAxes as {
-      True → [x_axis "black" x_start x_finish, y_axis "black" 0 y_finish];
+      True → [x_axis "black" 0 x_start x_finish, y_axis "black" x_start 0 y_finish];
       False → []
    }
    in Group(0, 0, x_finish - x_start, y_finish, None, Some(Translate(0 - x_start, 0)), concat gs axes)
