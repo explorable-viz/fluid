@@ -226,7 +226,7 @@ export function marker_arrowhead (): SVGMarkerElement {
 
 export function marker_circle (): SVGMarkerElement {
    const m: SVGMarkerElement = marker("circle", "black")
-   const radius: number = 4
+   const radius: number = 1
    m.setAttribute("refX", `${radius}`)
    m.setAttribute("refY", `${radius}`)
    m.setAttribute("markerWidth", `${radius * 2}`)
@@ -237,7 +237,7 @@ export function marker_circle (): SVGMarkerElement {
    circle.setAttribute("cx", `${radius}`)
    circle.setAttribute("cy", `${radius}`)
    circle.setAttribute("r", `${radius}`)
-   circle.setAttribute("stroke", "none")
+   circle.setAttribute("stroke", "black")
    return m
 }
 

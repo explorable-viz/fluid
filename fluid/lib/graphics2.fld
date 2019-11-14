@@ -106,7 +106,7 @@ let multiPlot = fun withAxes colours x_start ks data →
    // Str → Str → (GraphicsElement, Num)
    let plot = fun k colour →
       let ps = map (second (lookup k)) data in
-      (Polyline(None, ps, colour, None), max (map snd ps));
+      (Polyline(None, ps, colour, Some(Circle)), max (map snd ps));
    let lines = zipWith (uncurry plot) ks colours;
    let x_finish = last xs;
    let y_finish = max (map snd lines);

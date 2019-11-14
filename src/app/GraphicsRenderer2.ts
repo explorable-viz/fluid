@@ -1,5 +1,5 @@
-import { __nonNull, absurd, as, assert } from "../util/Core"
-import { Cons, List, Option, Pair, Some } from "../BaseTypes"
+import { __nonNull, absurd, as, assert, className } from "../util/Core"
+import { Cons, List, None, Option, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Group, GraphicsElement, Polyline, Rect, Scale, Transform, Translate } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
@@ -190,7 +190,9 @@ export class GraphicsRenderer {
       line.setAttribute("stroke", g.stroke.val)
       line.setAttribute("fill", "none")
       if (Some.is(g.marker)) {
-         line.setAttribute("marker-mid", "url(#tick)")
+         line.setAttribute("marker-mid", `url(#${className(g.marker.t).toLowerCase()})`)
+      } else {
+         assert(None.is(g.marker))
       }
       this.current.appendChild(line)
    }
