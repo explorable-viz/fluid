@@ -7,7 +7,7 @@ import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
-import { round, svgElement } from "./Renderer"
+import { rect, round, svgElement } from "./Renderer"
 
 const fontSize: number = 12
 
@@ -138,16 +138,11 @@ export class GraphicsRenderer {
    }
 
    rect (tg: ExplValueCursor/*<Rect>*/): void {
-      const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect")
       const g: Rect = as(tg.tv.v, Rect)
       const [x, y] = this.transform(g.x.val, g.y.val)
       const [width, height] = this.transform(g.width.val, g.height.val)
-      rect.setAttribute("x", `${round(x)}`)
-      rect.setAttribute("y", `${round(y)}`)
-      rect.setAttribute("width", `${round(width)}`)
-      rect.setAttribute("height", `${round(height)}`)
-      rect.setAttribute("fill", g.fill.val)
-      this.current.appendChild(rect)
+      const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val)
+      this.current.appendChild(r)
    }
 
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {

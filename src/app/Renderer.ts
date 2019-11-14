@@ -268,10 +268,10 @@ export function parenthesiseIf (parens: boolean, g: SVGSVGElement, ẟ_style: De
 
 export function rect (x: number, y: number, width: number, height: number, stroke: string, fill: string): SVGRectElement {
    const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect")
-   rect.setAttribute("x", `${x}`)
-   rect.setAttribute("y", `${y}`)
-   rect.setAttribute("height", `${height}`)
-   rect.setAttribute("width", `${width}`)
+   rect.setAttribute("x", `${round(x)}`)
+   rect.setAttribute("y", `${round(y)}`)
+   rect.setAttribute("height", `${round(height)}`)
+   rect.setAttribute("width", `${round(width)}`)
    rect.setAttribute("stroke", stroke)
    rect.setAttribute("fill", fill)
    return rect
