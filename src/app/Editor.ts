@@ -7,7 +7,7 @@ import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { newRevision } from "../Versioned"
 import { ExplValueCursor } from "./Cursor"
-import { marker_arrowhead, marker_tick, defineMarker, svgRootElement } from "./Renderer"
+import { marker_arrowhead, marker_circle, marker_tick, defineMarker, svgRootElement } from "./Renderer"
 import { Viewer, existingView } from "./View"
 import "./styles.css"
 
@@ -21,6 +21,7 @@ export class Editor {
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       this.root = svgRootElement(1400, 1200)
       defineMarker(this.root, marker_arrowhead())
+      defineMarker(this.root, marker_circle())
       defineMarker(this.root, marker_tick())
       document.body.appendChild(this.root)
       this.ρ = ρ

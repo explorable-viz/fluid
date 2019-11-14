@@ -133,11 +133,14 @@ export class GraphicsRenderer {
       const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
       const g: Group = as(tg.tv.v, Group)
       const [x, y] = this.transform(g.x.val, g.y.val)
-      // x and y attributes are relative to parent coordinate space, so not transformed.
-      // width and height refer to size of viewport (again in parent coordinate space), although currently
-      // we ignore these; we should really clip the child content.
+      const [width, height] = this.transform(g.width.val, g.height.val)
+      // dimensions are relative to parent coordinate space, so not transformed
+      // content below or to the left is clipped automatically; content to above or to the right is clipped 
+      // if we set width and height.
       svg.setAttribute("x", `${round(x)}`)
       svg.setAttribute("y", `${round(y)}`)
+      svg.setAttribute("width", `${round(width)}`)
+      svg.setAttribute("height", `${round(height)}`)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
       this.withLocalTransforms([g.scale, g.translate], () => { // scaling applies to translated coordinates

@@ -212,7 +212,6 @@ export function marker (id: string, fill: string): SVGMarkerElement {
 
 export function marker_arrowhead (): SVGMarkerElement {
    const m: SVGMarkerElement = marker("arrowhead", "blue")
-//   marker.setAttribute("viewBox", "0 0 10 10")
    const length: number = 6,
          width: number = 4
    m.setAttribute("refX", `${length}`)
@@ -225,20 +224,37 @@ export function marker_arrowhead (): SVGMarkerElement {
    return m
 }
 
+export function marker_circle (): SVGMarkerElement {
+   const m: SVGMarkerElement = marker("circle", "black")
+   const radius: number = 4
+   m.setAttribute("refX", `${radius}`)
+   m.setAttribute("refY", `${radius}`)
+   m.setAttribute("markerWidth", `${radius * 2}`)
+   m.setAttribute("markerHeight", `${radius * 2}`)
+   m.setAttribute("overflow", "visible") // for debugging
+   const circle: SVGCircleElement = document.createElementNS(SVG.NS, "circle")
+   m.appendChild(circle)
+   circle.setAttribute("cx", `${radius}`)
+   circle.setAttribute("cy", `${radius}`)
+   circle.setAttribute("r", `${radius}`)
+   circle.setAttribute("stroke", "none")
+   return m
+}
+
 export function marker_tick (): SVGMarkerElement {
-   const m: SVGMarkerElement = marker("tick", "black")
-   const length: number = 6,
-         width: number = 4
-   m.setAttribute("refX", `${length}`)
-   m.setAttribute("refY", `${width / 2}`)
-   m.setAttribute("markerWidth", "16")
-   m.setAttribute("markerHeight", "16")
+   const m: SVGMarkerElement = marker("tick", "none")
+   const height: number = 8
+   m.setAttribute("refX", `${0}`)
+   m.setAttribute("refY", `${height / 2}`)
+   m.setAttribute("markerWidth", `${height * 2}`)
+   m.setAttribute("markerHeight", `${height * 2}`)
+   m.setAttribute("overflow", "visible") // for debugging
    const line: SVGLineElement = document.createElementNS(SVG.NS, "line")
    m.appendChild(line)
    line.setAttribute("x1", `${0}`)
    line.setAttribute("y1", `${0}`)
-   line.setAttribute("x1", `${0}`)
-   line.setAttribute("y1", `${5}`)
+   line.setAttribute("x2", `${0}`)
+   line.setAttribute("y2", `${height}`)
    line.setAttribute("stroke", "black")
    return m
 }
