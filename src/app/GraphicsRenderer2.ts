@@ -187,7 +187,7 @@ export class GraphicsRenderer {
       path.setAttribute("stroke", g.stroke.val)
       path.setAttribute("fill", "none")
       this.current.appendChild(path)
-}
+   }
 }
 
 function asString (p̅: [number, number][]): string {

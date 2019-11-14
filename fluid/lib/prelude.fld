@@ -16,7 +16,7 @@ primitive numToStr;
 
 // Print argument to the console and return it.
 // a → a
-primitive trace;
+primitive debugLog;
 
 // (b → c) → (a → b) → a → c
 // Would like infix operators. 
