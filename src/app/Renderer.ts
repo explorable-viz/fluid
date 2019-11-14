@@ -206,6 +206,7 @@ export function marker (id: string, fill: string): SVGMarkerElement {
    m.setAttribute("id", id)
    m.setAttribute("markerUnits", "strokeWidth")
    m.setAttribute("orient", "auto")
+   m.setAttribute("fill", fill)
    return m
 }
 
@@ -225,17 +226,20 @@ export function marker_arrowhead (): SVGMarkerElement {
 }
 
 export function marker_tick (): SVGMarkerElement {
-   const m: SVGMarkerElement = marker("tick", "blue")
-//   marker.setAttribute("viewBox", "0 0 10 10")
+   const m: SVGMarkerElement = marker("tick", "black")
    const length: number = 6,
          width: number = 4
    m.setAttribute("refX", `${length}`)
    m.setAttribute("refY", `${width / 2}`)
    m.setAttribute("markerWidth", "16")
    m.setAttribute("markerHeight", "16")
-   const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
-   m.appendChild(path)
-   path.setAttribute("d", `M ${length} ${width / 2} L 0 ${width} L 0 0 Z`)
+   const line: SVGLineElement = document.createElementNS(SVG.NS, "line")
+   m.appendChild(line)
+   line.setAttribute("x1", `${0}`)
+   line.setAttribute("y1", `${0}`)
+   line.setAttribute("x1", `${0}`)
+   line.setAttribute("y1", `${5}`)
+   line.setAttribute("stroke", "black")
    return m
 }
 
