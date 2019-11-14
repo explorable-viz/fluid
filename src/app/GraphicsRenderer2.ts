@@ -50,6 +50,10 @@ function transformFun (t: Transform): TransformFun {
    }
 }
 
+function transformFuns (...ts: Option<Transform>[]): TransformFun[] {
+   return ts.filter(t => t instanceof Some).map(t => transformFun(as(as(t, Some).t, Transform)))
+}
+
 function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
    return (x, y): [number, number] => {
       let [x_, y_] = f2(x, y)
@@ -59,13 +63,11 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
 
 export class GraphicsRenderer {
    transforms: TransformFun[] // stack of successive compositions of linear transformations
-   transforms_: Transform[] // stack of original transform objects for debugging
    ancestors: SVGElement[] // stack of enclosing SVG elements
 
    constructor (root: SVGElement) {
       this.ancestors = [root]
       this.transforms = [(x, y) => [x, y]]
-      this.transforms_ = [] // indices will be out by two, but only for debugging..
    }
 
    get current (): SVGElement {
@@ -86,10 +88,9 @@ export class GraphicsRenderer {
       }
       const width: number = parseFloat(__nonNull(root.getAttribute("width")))
       const height: number = parseFloat(__nonNull(root.getAttribute("height")))
-      // TODO: use withLocalTransform here
-      this.transforms.push(postcompose(this.transform, scale(width / w, height / h)))
-      this.renderElement(ExplValueCursor.descendant(null, tg))
-      this.transforms.pop()
+      this.withLocalTransforms([scale(width / w, height / h)], () => {
+         this.renderElement(ExplValueCursor.descendant(null, tg))
+      })
    }
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
@@ -107,17 +108,14 @@ export class GraphicsRenderer {
       }
    }
 
-   withLocalTransforms<T> (ts: Option<Transform>[], localRender: () => T): T {
-      const ts_: Transform[] = ts.filter(t => t instanceof Some).map(t => as(as(t, Some).t, Transform))
+   withLocalTransforms<T> (ts: TransformFun[], localRender: () => T): T {
       let result: T
-      ts_.forEach(t => {
-         this.transforms.push(postcompose(this.transform, transformFun(t)))
-         this.transforms_.push(t)
+      ts.forEach(t => {
+         this.transforms.push(postcompose(this.transform, t))
       })
       result = localRender()
-      ts_.forEach(_ => {
+      ts.forEach(_ => {
          this.transforms.pop()
-         this.transforms_.pop()
       })
       return result
    }
@@ -130,7 +128,7 @@ export class GraphicsRenderer {
       const svg: SVGSVGElement = svgElement(x, y, width, height)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
-      this.withLocalTransforms([g.scale, g.translate], () => { // scaling applies to translated coordinates
+      this.withLocalTransforms(transformFuns(g.scale, g.translate), () => { // scaling applies to translated coordinates
          for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
          Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
             this.renderElement(tg̅.to(Cons, "head"))
@@ -155,7 +153,7 @@ export class GraphicsRenderer {
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const g: Polyline = as(tg.tv.v, Polyline)
       // each point is considered a "child", and therefore subject to my local scaling
-      const ps: [number, number][] = this.withLocalTransforms([g.scale], () => {
+      const ps: [number, number][] = this.withLocalTransforms(transformFuns(g.scale), () => {
          return g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
             return this.transform(p.fst.val, p.snd.val)
          })

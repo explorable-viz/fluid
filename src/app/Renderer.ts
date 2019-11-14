@@ -305,7 +305,8 @@ export function space (): SVGElement {
 
 // Chrome doesn't appear to fully support SVG 2.0 yet; in particular, transform attributes on svg elements are 
 // ignored (except at the root). To invert the y-axis, we have to add a nested g element containing the transform.
-// Elsewhere we avoid SVG transforms to avoid non-integer pixel attributes.
+// Elsewhere we have avoided SVG transforms, originally to avoid non-integer pixel attributes, although that no
+// longer applies.
 export function svgElement_inverted (w: number, h: number): [SVGSVGElement, SVGGElement] {
    const svg: SVGSVGElement = svgElement(0, 0, w, h)
    const g: SVGGElement = document.createElementNS(SVG.NS, "g")
