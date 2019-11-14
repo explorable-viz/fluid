@@ -87,7 +87,9 @@ let x_axis = fun colour y start end →
    Polyline(None, [(start, y), (end, y)], colour);
 
 // Str → Num → Num → GraphicsElement 
-let y_axis = fun colour x start end → 
+let y_axis = fun colour x start end →
+   let tickSp = tickEvery (start - end);
+   let firstTick = ceilingTo start tickSp in
    Polyline(None, [(x, start), (x, end)], colour);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
