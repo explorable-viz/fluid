@@ -73,6 +73,15 @@ let stackedBar = fun colours ns →
       (zip dims colours)
    in Group(0, 0, 1, last subtotals, None, None, rects);
 
+// Heuristic saying how often to place a tick on an axis of length n.
+// Num → Num
+let tickEvery = fun n →
+   let m = floor (logBase 10 n) in
+   match n <= 2 * 10 ** m as {
+      True → 2 * 10 ** (m - 1);
+      False → 10 ** m
+   };
+
 // Str → Num → Num → GraphicsElement 
 let x_axis = fun colour y start end →
    Polyline(None, [(start, y), (end, y)], colour);
