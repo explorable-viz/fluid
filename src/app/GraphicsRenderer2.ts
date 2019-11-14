@@ -191,7 +191,7 @@ export class GraphicsRenderer {
 }
 
 function asString (p̅: [number, number][]): string {
-   return p̅.map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
+   return p̅.map(([x, y]: [number, number]) => `${round(x)},${round(y)}`).join(" ")
 }
 
 {

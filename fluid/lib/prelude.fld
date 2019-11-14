@@ -195,7 +195,7 @@ letrec fun nth n [x, ...xs] → match n == 0 as {
 };
 
 // Num → Num → Num
-let ceilingTo = fun n m → 
+let ceilingToNearest = fun n m → 
    ceiling (n / m) * m;
 
 // (a → b) → (c, a) → (c, b)

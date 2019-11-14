@@ -88,9 +88,16 @@ let x_axis = fun colour y start end →
 
 // Str → Num → Num → GraphicsElement 
 let y_axis = fun colour x start end →
-   let tickSp = tickEvery (start - end);
-   let firstTick = ceilingTo start tickSp in
-   Polyline(None, [(x, start), (x, end)], colour);
+   let tickSp = debugLog (tickEvery (debugLog (end - start)));
+   let firstTick = ceilingToNearest start tickSp;
+   let n = floor ((end - firstTick) / tickSp) + 1;
+   let ys = concat (iterate n (fun y → y + tickSp) firstTick) [end];
+   // avoid redundant start point; not so easy/efficient for end point, so don't bother
+   let ys = match firstTick > start as {
+      True → [start, ...ys];
+      False → ys
+   }
+   in Polyline(None, map (fun y → (x, y)) ys, colour);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
