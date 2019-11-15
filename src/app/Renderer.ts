@@ -103,7 +103,7 @@ export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    connector_.setAttribute("stroke", "blue") // hardcoded
    connector_.setAttribute("stroke-width", "1")
    connector_.setAttribute("stroke-dasharray", "1,1")
-   connector_.setAttribute("marker-end", "url(#arrowhead)")
+   connector_.setAttribute("marker-end", "url(#Arrowhead-blue)") // extract to helper function
    return connector_
 }
 
