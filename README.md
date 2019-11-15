@@ -27,7 +27,7 @@
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
 | November | Display image in Wrattler output pane | [211](https://github.com/rolyp/lambdacalc/issues/211), [55](https://github.com/rolyp/lambdacalc/issues/55) |
-| November | Higher-level graphics primitives to eliminate spurious layout-related dependencies and improve performance | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) |
+| November | Nested coordinate frames and “domain units” to localise layout-related dependencies and improve performance | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) |
 | December | Resolve interference between slicing and execution indexing | [248](https://github.com/rolyp/lambdacalc/issues/248) |
 
 ### Possible submissions

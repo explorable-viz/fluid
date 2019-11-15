@@ -48,9 +48,12 @@ export class Translate extends Transform<"Translate"> {
    y: Num = _
 }
 
-export type MarkerTag = "Tick" | "Circle"
+export type MarkerTag = "Arrowhead" | "Tick" | "Circle"
 
 export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
+}
+
+export class Arrowhead extends Marker<"Arrowhead"> {   
 }
 
 export class Tick extends Marker<"Tick"> {

@@ -1,13 +1,13 @@
-import { __nonNull, absurd, as, assert, className } from "../util/Core"
+import { Class, __nonNull, absurd, as, assert, classOf } from "../util/Core"
 import { Cons, List, None, Option, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Group, GraphicsElement, Polyline, Rect, Scale, Transform, Translate } from "../Graphics2"
+import { Group, GraphicsElement, Marker, Polyline, Rect, Scale, Transform, Translate } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
-import { line, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
+import { line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 12
 
@@ -50,11 +50,14 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
 }
 
 export class GraphicsRenderer {
-   transforms: TransformFun[] // stack of successive compositions of linear transformations
+   root: SVGSVGElement
    ancestors: SVGElement[] // stack of enclosing SVG elements
+   transforms: TransformFun[] // stack of successive compositions of linear transformations
 
-   constructor (root: SVGElement) {
-      this.ancestors = [root]
+   // transform attribute isn't supported on SVGElement, so it contains a group element with the inversion transform.
+   constructor (root: SVGSVGElement, initialAncestor: SVGElement) {
+      this.root = root
+      this.ancestors = [initialAncestor]
       this.transforms = [(x, y) => [x, y]]
    }
 
@@ -113,7 +116,7 @@ export class GraphicsRenderer {
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
       const [x, y] = this.transform(g.x.val, g.y.val)
       const [width, height] = this.transform(g.width.val, g.height.val)
-      const svg: SVGSVGElement = svgElement(x, y, width, height)
+      const svg: SVGSVGElement = svgElement(x, y, width, height, false)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
       this.withLocalTransforms(transformFuns(g.scale, g.translate), () => { // scaling applies to translated coordinates
@@ -150,11 +153,16 @@ export class GraphicsRenderer {
          line_ = polyline(ps, g.stroke.val)
       }
       if (Some.is(g.marker)) {
-         line_.setAttribute("marker-mid", `url(#${className(g.marker.t).toLowerCase()})`)
+         this.setMarkerMid(line_, classOf(g.marker.t), g.stroke.val)
       } else {
          assert(None.is(g.marker))
       }
       this.current.appendChild(line_)
+   }
+
+   setMarkerMid (el: SVGElement, C: Class<Marker>, colour: string): void {
+      const markerId: string = markerEnsureDefined(this.root, C, colour) // revisit cast
+      el.setAttribute("marker-mid", `url(#${markerId})`)
    }
 }
 

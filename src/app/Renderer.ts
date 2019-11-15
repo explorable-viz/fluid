@@ -1,6 +1,7 @@
-import { __nonNull, absurd, as, className } from "../util/Core"
+import { Class, __nonNull, absurd, as, assert, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
 import { strings } from "../Expr"
+import { Arrowhead, Circle, Marker, Tick } from "../Graphics2"
 import { Value, isPrim } from "../Value"
 import { versioned } from "../Versioned"
 import { SVG } from "./Core"
@@ -117,12 +118,6 @@ function coordinates (g: SVGSVGElement): { x: number, y: number } {
    }
 } 
 
-// Assume root has a unique defs element called "defs".
-export function defineMarker (root: SVGSVGElement, marker: SVGMarkerElement): void {
-   const defs: SVGDefsElement = as(root.getElementById("defs"), SVGDefsElement)
-   defs.appendChild(marker)
-}
-
 export function delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGElement[] {
    const gsʹ: SVGElement[] = []
    gs.forEach((g: SVGElement, n: number): void => {
@@ -208,17 +203,47 @@ export function line (x1: number, y1: number, x2: number, y2: number, stroke: st
    return line
 }
 
-export function marker (id: string, fill: string): SVGMarkerElement {
+export function marker (C: Class<Marker>, colour: string): SVGMarkerElement {
    const m: SVGMarkerElement = document.createElementNS(SVG.NS, "marker")
-   m.setAttribute("id", id)
-   m.setAttribute("markerUnits", "strokeWidth")
+   m.setAttribute("id", markerId(C, colour))
    m.setAttribute("orient", "auto")
-   m.setAttribute("fill", fill)
+   m.setAttribute("fill", colour)
+   m.setAttribute("stroke", colour)
    return m
 }
 
-export function marker_arrowhead (): SVGMarkerElement {
-   const m: SVGMarkerElement = marker("arrowhead", "blue")
+function markerId (C: Class<Marker>, colour: string): string {
+   return `${C.name}-${colour}`
+}
+
+export type MarkerFactory = (colour: string) => SVGMarkerElement
+
+let markerFactory: Map<string, MarkerFactory>
+
+{
+   markerFactory = new Map()
+   markerFactory.set(Arrowhead.name, marker_arrowhead)
+   markerFactory.set(Circle.name, marker_circle)
+   markerFactory.set(Tick.name, marker_tick)
+}
+
+// Assume root has a unique defs element called "defs". Return composite marker id.
+export function markerEnsureDefined (root: SVGSVGElement, C: Class<Marker>, colour: string): string {
+   const id: string = markerId(C, colour)
+   let marker: Element | null = root.getElementById(id)
+   if (marker === null) {
+      marker = __nonNull(markerFactory.get(C.name))(colour)
+      const defs: SVGDefsElement = as(root.getElementById("defs"), SVGDefsElement)
+      defs.appendChild(marker)
+      assert(root.getElementById(id) === marker)
+   } else {
+      assert(marker instanceof SVGMarkerElement)
+   }
+   return id
+}
+
+export function marker_arrowhead (colour: string): SVGMarkerElement {
+   const m: SVGMarkerElement = marker(Arrowhead, colour)
    const length: number = 6,
          width: number = 4
    m.setAttribute("refX", `${length}`)
@@ -231,8 +256,8 @@ export function marker_arrowhead (): SVGMarkerElement {
    return m
 }
 
-export function marker_circle (): SVGMarkerElement {
-   const m: SVGMarkerElement = marker("circle", "black")
+function marker_circle (colour: string): SVGMarkerElement {
+   const m: SVGMarkerElement = marker(Circle, colour)
    const radius: number = 1
    m.setAttribute("refX", `${radius}`)
    m.setAttribute("refY", `${radius}`)
@@ -244,12 +269,11 @@ export function marker_circle (): SVGMarkerElement {
    circle.setAttribute("cx", `${radius}`)
    circle.setAttribute("cy", `${radius}`)
    circle.setAttribute("r", `${radius}`)
-   circle.setAttribute("stroke", "black")
    return m
 }
 
-export function marker_tick (): SVGMarkerElement {
-   const m: SVGMarkerElement = marker("tick", "none")
+function marker_tick (colour: string): SVGMarkerElement {
+   const m: SVGMarkerElement = marker(Tick, "none")
    const height: number = 8
    m.setAttribute("refX", `${0}`)
    m.setAttribute("refY", `${height / 2}`)
@@ -317,12 +341,24 @@ export function space (): SVGElement {
    return text(`${space_char}`, DeltaStyle.Unchanged)
 }
 
+// Content below or to the left is clipped automatically; content to above or to the right is clipped 
+// if we set width and height.
+export function svgElement (x: number, y: number, width: number, height: number, defs: boolean): SVGSVGElement {
+   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   svg.setAttribute("x", `${round(x)}`)
+   svg.setAttribute("y", `${round(y)}`)
+   svg.setAttribute("width", `${round(width)}`)
+   svg.setAttribute("height", `${round(height)}`)
+   const d: SVGDefsElement = document.createElementNS(SVG.NS, "defs")
+   d.setAttribute("id", "defs")
+   svg.appendChild(d)
+   return svg
+}
+
 // Chrome doesn't appear to fully support SVG 2.0 yet; in particular, transform attributes on svg elements are 
 // ignored (except at the root). To invert the y-axis, we have to add a nested g element containing the transform.
-// Elsewhere we have avoided SVG transforms, originally to avoid non-integer pixel attributes, although that no
-// longer applies.
 export function svgElement_inverted (w: number, h: number): [SVGSVGElement, SVGGElement] {
-   const svg: SVGSVGElement = svgElement(0, 0, w, h)
+   const svg: SVGSVGElement = svgElement(0, 0, w, h, true)
    const g: SVGGElement = document.createElementNS(SVG.NS, "g")
    g.setAttribute("transform", `scale(1,-1) translate(0,${-h})`)
    g.setAttribute("width", `${w}`)
@@ -331,27 +367,13 @@ export function svgElement_inverted (w: number, h: number): [SVGSVGElement, SVGG
    return [svg, g]
 }
 
-// Content below or to the left is clipped automatically; content to above or to the right is clipped 
-// if we set width and height.
-export function svgElement (x: number, y: number, width: number, height: number): SVGSVGElement {
-   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
-   svg.setAttribute("x", `${round(x)}`)
-   svg.setAttribute("y", `${round(y)}`)
-   svg.setAttribute("width", `${round(width)}`)
-   svg.setAttribute("height", `${round(height)}`)
-   return svg
-}
-
 // Top-level SVG node with a "defs" element with id "defs".
 export function svgRootElement (w: number, h: number): SVGSVGElement {
-   const svg: SVGSVGElement = svgElement(0, 0, w, h)
+   const svg: SVGSVGElement = svgElement(0, 0, w, h, true)
    // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
    svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
    svg.style.verticalAlign = "top"
    svg.style.display = "inline-block"
-   const defs: SVGDefsElement = document.createElementNS(SVG.NS, "defs")
-   defs.setAttribute("id", "defs")
-   svg.appendChild(defs)
    return svg
 }
 

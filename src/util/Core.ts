@@ -64,11 +64,11 @@ export function abstractMethodError<T> (this_: Object): T {
    return assert(false, "Abstract method in " + this_)
 }
 
-export function __nonNull<T> (x: T | null | undefined): T {
+export function __nonNull<T> (x: T | null | undefined, msg?: string): T {
    if (x !== null && x !== undefined) {
       return x
    } else {
-      return assert(false, "Unexpected null | undefined.")
+      return assert(false, `Unexpected null | undefined.${msg === undefined ? "" : `\n${msg}`}`)
    }
 }
 

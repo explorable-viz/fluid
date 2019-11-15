@@ -353,7 +353,7 @@ export class ValueView extends View {
             const dim = { width: 140, height: 160 }
             let g1: SVGGElement
             [g, g1] = svgElement_inverted(dim.width, dim.height)
-            new GraphicsRenderer(g1).render(tg, dims(tg))
+            new GraphicsRenderer(g, g1).render(tg, dims(tg))
             dimensions.set(g, dim)
          } else
          if (this.tv.v instanceof Pair) {
