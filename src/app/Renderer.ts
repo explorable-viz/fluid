@@ -273,7 +273,7 @@ function marker_circle (colour: string): SVGMarkerElement {
 }
 
 function marker_tick (colour: string): SVGMarkerElement {
-   const m: SVGMarkerElement = marker(Tick, "none")
+   const m: SVGMarkerElement = marker(Tick, "black")
    const height: number = 8
    m.setAttribute("refX", `${0}`)
    m.setAttribute("refY", `${height / 2}`)
