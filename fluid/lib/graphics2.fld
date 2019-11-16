@@ -83,11 +83,7 @@ let tickEvery = fun n →
    };
 
 // Str → Num → Num → GraphicsElement 
-let x_axis = fun colour y start end →
-   Polyline(None, [(start, y), (end, y)], colour, None);
-
-// Str → Num → Num → GraphicsElement 
-let y_axis = fun colour x start end →
+let y_axis = fun vert colour x start end →
    let tickSp = tickEvery (end - start);
    let firstTick = ceilingToNearest start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
@@ -96,8 +92,12 @@ let y_axis = fun colour x start end →
    let ys = match firstTick > start as {
       True → [start, ...ys];
       False → ys
+   };
+   let mkPoint = match vert as {
+      True → fun y → (x, y);
+      False → fun y → (y, x)
    }
-   in Polyline(None, map (fun y → (x, y)) ys, colour, Some(Tick));
+   in Polyline(None, map mkPoint ys, colour, Some(Tick));
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
@@ -112,7 +112,7 @@ let multiPlot = fun withAxes colours x_start ks data →
    let y_finish = max (map snd lines);
    let gs = map fst lines;
    let axes = match withAxes as {
-      True → [x_axis "black" 0 x_start x_finish, y_axis "black" x_start 0 y_finish];
+      True → [y_axis False "black" 0 x_start x_finish, y_axis True "black" x_start 0 y_finish];
       False → []
    }
    in Group(0, 0, x_finish - x_start, y_finish, None, Some(Translate(0 - x_start, 0)), concat gs axes)
