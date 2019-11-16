@@ -54,13 +54,13 @@ let scaleToWidth = fun w {
       Polyline(scale, ps, stroke, strokeWidth, marker)
 };
 
-// List GraphicsElement → Num → List GraphicsElement
+// Num → List GraphicsElement → List GraphicsElement
 let stackRight = fun sep gs →
    map (scaleToWidth (1 - sep)) (spaceRight (sep / 2) 1 gs);
 
-// List GraphicsElement → Num → GraphicsElement
+// Num → List GraphicsElement → GraphicsElement
 let groupRight = fun sep gs →
-   Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), stackRight gs);
+   Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), stackRight sep gs);
 
 // Num → List Str → List (a, Num) → GraphicsElement
 let barChart = fun sep colours →
@@ -113,9 +113,9 @@ let y_axis = axis True;
 // Num → GraphicsElement → GraphicsElement
 let background = fun m Group(x, y, w, h, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
    // should detect division by zero here
-   let x_scale' = x_scale * debugLog (max2 (w - 2 * m, 0) / w);
+   let x_scale' = x_scale * (max2 (w - 2 * m, 0) / w);
    let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
-   let translate = Translate(dx + m / x_scale', dy + m * y_scale');
+   let translate = Translate(dx + m / x_scale', dy + m / y_scale');
    let gs = [Rect(x, y, w, h, "Gainsboro"), Group(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]
    in Group(0, 0, x + w, y + h, Scale(1, 1), Translate(0, 0), gs);
 
@@ -148,5 +148,5 @@ let stackedBarChart = fun withAxes sep data →
       True → [x_axis "black" 10 0 n, y_axis "black" 0 0 h];
       False → []
    }
-   in background 0.56
+   in background 1
       Group(0, 0, n, h, Scale(1, 1), Translate(0, 0), concat gs axes)
