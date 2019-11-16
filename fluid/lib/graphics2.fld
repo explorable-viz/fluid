@@ -82,8 +82,8 @@ let tickEvery = fun n →
       False → 10 ** m
    };
 
-// Str → Num → Num → GraphicsElement 
-let y_axis = fun vert colour x start end →
+// Bool → Str → Num → Num → GraphicsElement 
+let axis = fun vert colour x start end →
    let tickSp = tickEvery (end - start);
    let firstTick = ceilingToNearest start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
@@ -99,6 +99,10 @@ let y_axis = fun vert colour x start end →
    }
    in Polyline(None, map mkPoint ys, colour, Some(Tick));
 
+// Str → Num → Num → GraphicsElement 
+let x_axis = axis False;
+let y_axis = axis True;
+
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
 let multiPlot = fun withAxes colours x_start ks data →
@@ -112,7 +116,7 @@ let multiPlot = fun withAxes colours x_start ks data →
    let y_finish = max (map snd lines);
    let gs = map fst lines;
    let axes = match withAxes as {
-      True → [y_axis False "black" 0 x_start x_finish, y_axis True "black" x_start 0 y_finish];
+      True → [x_axis "black" 0 x_start x_finish, y_axis "black" x_start 0 y_finish];
       False → []
    }
    in Group(0, 0, x_finish - x_start, y_finish, None, Some(Translate(0 - x_start, 0)), concat gs axes)
