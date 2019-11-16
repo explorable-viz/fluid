@@ -113,7 +113,7 @@ let y_axis = axis True;
 // Num → GraphicsElement → GraphicsElement
 let background = fun m Group(x, y, w, h, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
    // should detect division by zero here
-   let x_scale' = x_scale * (max2 (w - 2 * m, 0) / w);
+   let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
    let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
    let translate = Translate(dx + m / x_scale', dy + m / y_scale');
    let gs = [Rect(x, y, w, h, "Gainsboro"), Group(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]
