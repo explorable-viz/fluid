@@ -41,6 +41,10 @@ export class Transform<Tag extends TransformTag = TransformTag> extends DataValu
 export class Scale extends Transform<"Scale"> {
    x: Num = _
    y: Num = _
+
+   Scale (x: Num, y: Num) {
+      console.log(`In Scale constructor, x = ${x}, y = ${y}`)
+   }
 }
 
 export class Translate extends Transform<"Translate"> {

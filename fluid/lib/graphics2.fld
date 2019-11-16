@@ -106,7 +106,7 @@ let y_axis = axis True;
 // Worry about dimensions of margin later. Only defined for Group for now.
 // GraphicsElement → GraphicsElement
 let addMargin = 
-   let m = 1.2 in // relative to parent coordinate frame
+   let m = 0.2 in // relative to parent coordinate frame
    fun Group(x, y, w, h, Scale(x_scale, y_scale), Translate(x, y), gs) →
       let x_scale' = x_scale * (w - 2 * m) / w;
       let y_scale' = y_scale * (h - 2 * m) / h;
