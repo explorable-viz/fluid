@@ -29,7 +29,7 @@ function translate (x_inc: number, y_inc: number): TransformFun {
 
 function transformFun (t: Transform): TransformFun {
    if (t instanceof Scale) {
-      console.log(t.x.val, t.y.val)
+      assert(t.x.val >= 0 && t.y.val >= 0)
       return scale(t.x.val, t.y.val)
    } else
    if (t instanceof Translate) {
@@ -116,7 +116,8 @@ export class GraphicsRenderer {
       const g: Group = as(tg.tv.v, Group)
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
       const [x, y] = this.transform(g.x.val, g.y.val)
-      const [width, height] = this.transform(g.width.val, g.height.val)
+      const [x2, y2] = this.transform(g.x.val + g.width.val, g.y.val + g.height.val)
+      const [width, height] = [x2 - x, y2 - y]
       const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.group)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
@@ -132,7 +133,8 @@ export class GraphicsRenderer {
    rect (tg: ExplValueCursor/*<Rect>*/): void {
       const g: Rect = as(tg.tv.v, Rect)
       const [x, y] = this.transform(g.x.val, g.y.val)
-      const [width, height] = this.transform(g.width.val, g.height.val)
+      const [x2, y2] = this.transform(g.x.val + g.width.val, g.y.val + g.height.val)
+      const [width, height] = [x2 - x, y2 - y]
       const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val)
       this.current.appendChild(r)
    }

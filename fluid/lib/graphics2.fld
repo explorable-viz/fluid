@@ -110,8 +110,9 @@ let addMargin =
    fun Group(x, y, w, h, Scale(x_scale, y_scale), Translate(x, y), gs) →
       let x_scale' = x_scale * (w - 2 * m) / w;
       let y_scale' = y_scale * (h - 2 * m) / h;
-      let translate = Translate(x + m * x_scale', y + m * y_scale')
-      in Group(x, y, w, h, Scale(x_scale', y_scale'), translate, gs);
+      let translate = Translate(x + m * x_scale', y + m * y_scale');
+      let gs = [Rect(x, y, w, h, "white"), Group(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]
+      in Group(0, 0, x + w, y + h, Scale(1, 1), Translate(0, 0), gs);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement

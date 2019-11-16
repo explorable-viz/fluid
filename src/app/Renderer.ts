@@ -316,6 +316,7 @@ export function polyline (p̅: [number, number][], stroke: string): SVGPolylineE
 }
 
 export function rect (x: number, y: number, width: number, height: number, stroke: string, fill: string): SVGRectElement {
+   assert(width >= 0 && height >= 0)
    const r: SVGRectElement = createElement("rect", rect)
    r.setAttribute("x", `${round(x)}`)
    r.setAttribute("y", `${round(y)}`)
