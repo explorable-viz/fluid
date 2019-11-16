@@ -106,19 +106,17 @@ let axis = fun vert colour x start end →
 let x_axis = axis False;
 let y_axis = axis True;
 
-// Worry about dimensions of margin later. Only defined for Group for now.
-// GraphicsElement → GraphicsElement
-let background = 
-   let m = 1.5 in // relative to parent coordinate frame
-   fun Group(x, y, w, h, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
-      let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
-      let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
-      let translate = Translate(debugLog dx + m / debugLog x_scale', dy + m * y_scale');
-      let gs = [Rect(x, y, w, h, "white"), Group(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]
-      in Group(0, 0, x + w, y + h, Scale(1, 1), Translate(0, 0), gs);
+// Only defined for Group for now. Margin size is relative to parent coordinate frame.
+// Num → GraphicsElement → GraphicsElement
+let background = fun m Group(x, y, w, h, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
+   let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
+   let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
+   let translate = Translate(dx + m / x_scale', dy + m * y_scale');
+   let gs = [Rect(x, y, w, h, "white"), Group(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]
+   in Group(0, 0, x + w, y + h, Scale(1, 1), Translate(0, 0), gs);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
-// List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
+// Bool → List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
 let multiPlot = fun withAxes colours x_start ks data →
    let xs = map fst data;
    // Str → Str → (GraphicsElement, Num)
@@ -133,10 +131,10 @@ let multiPlot = fun withAxes colours x_start ks data →
       True → [x_axis "black" 0 x_start x_finish, y_axis "black" x_start 0 y_finish];
       False → []
    }
-   in background
+   in background 1.5
       Group(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), concat gs axes);
 
 // See stackedBar for strong (unjustified) assumption about uniformity of data.
-// Num → List (List (a, Num)) → GraphicsElement
-let stackedBarChart = fun sep →
-   compose (stackRight sep) (map (stackedBar colours1))
+// Bool → Num → List (List (a, Num)) → GraphicsElement
+let stackedBarChart = fun withAxes sep data →
+   (stackRight sep (map (stackedBar colours1) data))
