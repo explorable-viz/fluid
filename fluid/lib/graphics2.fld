@@ -54,15 +54,18 @@ let scaleToWidth = fun w {
       Polyline(scale, ps, stroke, strokeWidth, marker)
 };
 
-// List GraphicsElement → Num → GraphicsElement
+// List GraphicsElement → Num → List GraphicsElement
 let stackRight = fun sep gs →
-   let gs' = map (scaleToWidth (1 - sep)) (spaceRight (sep / 2) 1 gs) in
-   Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), gs');
+   map (scaleToWidth (1 - sep)) (spaceRight (sep / 2) 1 gs);
+
+// List GraphicsElement → Num → GraphicsElement
+let groupRight = fun sep gs →
+   Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), stackRight gs);
 
 // Num → List Str → List (a, Num) → GraphicsElement
 let barChart = fun sep colours →
    compose 
-      (stackRight sep)
+      (groupRight sep)
       ((zipWith (fun (colour, (_, n)) → Rect(0, 0, 1, n, colour))) colours);
 
 // First component of data (categorical value) currently ignored; values just mapped positionally to colors.
@@ -137,4 +140,9 @@ let multiPlot = fun withAxes colours x_start ks data →
 // See stackedBar for strong (unjustified) assumption about uniformity of data.
 // Bool → Num → List (List (a, Num)) → GraphicsElement
 let stackedBarChart = fun withAxes sep data →
-   (stackRight sep (map (stackedBar colours1) data))
+   let axes = match withAxes as {
+      True → [];
+      False → []
+   };
+   let gs = stackRight sep (map (stackedBar colours1) data)
+   in Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), gs)
