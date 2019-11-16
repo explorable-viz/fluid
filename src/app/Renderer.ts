@@ -352,14 +352,14 @@ export function space (): SVGElement {
 
 // Content below or to the left is clipped automatically; content to above or to the right is clipped 
 // if we set width and height.
-export function svgElement (x: number, y: number, width: number, height: number, defs: boolean): SVGSVGElement {
-   const svg: SVGSVGElement = createElement("svg", svgElement)
+export function svgElement (x: number, y: number, width: number, height: number, defs: boolean, createdBy: Function): SVGSVGElement {
+   const svg: SVGSVGElement = createElement("svg", createdBy)
    svg.setAttribute("x", `${round(x)}`)
    svg.setAttribute("y", `${round(y)}`)
    svg.setAttribute("width", `${round(width)}`)
    svg.setAttribute("height", `${round(height)}`)
    if (defs) {
-      const d: SVGDefsElement = createElement("defs", svgElement)
+      const d: SVGDefsElement = createElement("defs", createdBy)
       d.setAttribute("id", "defs")
       svg.appendChild(d)
    }
@@ -369,7 +369,7 @@ export function svgElement (x: number, y: number, width: number, height: number,
 // Chrome doesn't appear to fully support SVG 2.0 yet; in particular, transform attributes on svg elements are 
 // ignored (except at the root). To invert the y-axis, we have to add a nested g element containing the transform.
 export function svgElement_inverted (w: number, h: number): [SVGSVGElement, SVGGElement] {
-   const svg: SVGSVGElement = svgElement(0, 0, w, h, true)
+   const svg: SVGSVGElement = svgElement(0, 0, w, h, true, svgElement_inverted)
    const g: SVGGElement = createElement("g", svgElement_inverted)
    g.setAttribute("transform", `scale(1,-1) translate(0,${-h})`)
    g.setAttribute("width", `${w}`)
@@ -380,7 +380,7 @@ export function svgElement_inverted (w: number, h: number): [SVGSVGElement, SVGG
 
 // Top-level SVG node with a "defs" element with id "defs".
 export function svgRootElement (w: number, h: number): SVGSVGElement {
-   const svg: SVGSVGElement = svgElement(0, 0, w, h, true)
+   const svg: SVGSVGElement = svgElement(0, 0, w, h, true, svgRootElement)
    // See https://vecta.io/blog/guide-to-getting-sharp-and-crisp-svg-images
    svg.setAttribute("viewBox", `-0.5 -0.5 ${w.toString()} ${h.toString()}`)
    svg.style.verticalAlign = "top"

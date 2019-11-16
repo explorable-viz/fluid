@@ -1,5 +1,5 @@
 import { Class, __nonNull, absurd, as, assert, classOf } from "../util/Core"
-import { Cons, List, None, Option, Pair, Some } from "../BaseTypes"
+import { Cons, List, None, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Group, GraphicsElement, Marker, Polyline, Rect, Scale, Transform, Translate } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
@@ -38,8 +38,8 @@ function transformFun (t: Transform): TransformFun {
    }
 }
 
-function transformFuns (...ts: Option<Transform>[]): TransformFun[] {
-   return ts.filter(t => t instanceof Some).map(t => transformFun(as(as(t, Some).t, Transform)))
+function transformFuns (...ts: Transform[]): TransformFun[] {
+   return ts.map(t => transformFun(as(t, Transform)))
 }
 
 function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
@@ -116,7 +116,7 @@ export class GraphicsRenderer {
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
       const [x, y] = this.transform(g.x.val, g.y.val)
       const [width, height] = this.transform(g.width.val, g.height.val)
-      const svg: SVGSVGElement = svgElement(x, y, width, height, false)
+      const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.group)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
       this.withLocalTransforms(transformFuns(g.scale, g.translate), () => { // scaling applies to translated coordinates

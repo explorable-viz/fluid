@@ -13,8 +13,8 @@ export class Group extends GraphicsElement<"Group"> {
    y: Num = _
    width: Num = _
    height: Num = _
-   scale: Option<Transform> = _
-   translate: Option<Transform> = _ // scaling applies to translates coordinates
+   scale: Transform = _
+   translate: Transform = _ // scaling applies to translates coordinates
    gs: List<GraphicsElement> = _
 }
 
@@ -27,7 +27,7 @@ export class Rect extends GraphicsElement<"Rect"> {
 }
 
 export class Polyline extends GraphicsElement<"Polyline"> {
-   scale: Option<Transform> = _
+   scale: Transform = _
    points: List<Pair<Num, Num>> = _
    stroke: Str = _
    marker: Option<Marker> = _
