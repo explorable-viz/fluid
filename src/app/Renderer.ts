@@ -149,7 +149,8 @@ export function edge_left (g: SVGSVGElement): SVGSVGElement {
       g.y.baseVal.value, 
       g.x.baseVal.value, 
       g.y.baseVal.value + height, 
-      "gray"
+      "gray",
+      1
    )
    edge.setAttribute("stroke-width", "4")
 //   edge.setAttribute("stroke-dasharray", "2,2")
@@ -164,7 +165,8 @@ export function edge_bottom (g: SVGSVGElement): SVGSVGElement {
       g.y.baseVal.value + height, 
       g.y.baseVal.value + width, 
       g.y.baseVal.value + height, 
-      "gray"
+      "gray",
+      1
    )
    edge.setAttribute("stroke-width", "2")
 //   edge.setAttribute("stroke-dasharray", "2,2")
@@ -200,13 +202,14 @@ export function keyword (str: keyof typeof strings, ẟ_style: DeltaStyle): SVGE
    return text(strings[str], ẟ_style)
 }
 
-export function line (x1: number, y1: number, x2: number, y2: number, stroke: string): SVGLineElement {
+export function line (x1: number, y1: number, x2: number, y2: number, stroke: string, strokeWidth: number): SVGLineElement {
    const l: SVGLineElement = createElement("line", line)
    l.setAttribute("x1", `${round(x1)}`)
    l.setAttribute("y1", `${round(y1)}`)
    l.setAttribute("x2", `${round(x2)}`)
    l.setAttribute("y2", `${round(y2)}`)
    l.setAttribute("stroke", stroke)
+   l.setAttribute("stroke-width", `${round(strokeWidth)}`)
    l.setAttribute("stroke-linecap", "round")
    return l
 }
@@ -289,7 +292,7 @@ function marker_tick (colour: string, C: Class<Marker>): SVGMarkerElement {
    m.setAttribute("markerWidth", `${height * 2}`)
    m.setAttribute("markerHeight", `${height * 2}`)
    m.setAttribute("overflow", "visible") // for debugging
-   const tick: SVGLineElement = line(0, 0, 0, height, colour)
+   const tick: SVGLineElement = line(0, 0, 0, height, colour, 1)
    m.appendChild(tick)
    return m
 }
@@ -315,13 +318,14 @@ function pointsToString (p̅: [number, number][]): string {
    return p̅.map(([x, y]: [number, number]) => `${round(x)},${round(y)}`).join(" ")
 }
 
-export function polyline (p̅: [number, number][], stroke: string): SVGPolylineElement {
-   const line_: SVGPolylineElement = createElement("polyline", polyline)
-   line_.setAttribute("points", pointsToString(p̅))
-   line_.setAttribute("stroke", stroke)
-   line_.setAttribute("stroke-linecap", "round")
-   line_.setAttribute("fill", "none")
-   return line_
+export function polyline (p̅: [number, number][], stroke: string, strokeWidth: number): SVGPolylineElement {
+   const l: SVGPolylineElement = createElement("polyline", polyline)
+   l.setAttribute("points", pointsToString(p̅))
+   l.setAttribute("stroke", stroke)
+   l.setAttribute("stroke-width", `${round(strokeWidth)}`)
+   l.setAttribute("stroke-linecap", "round")
+   l.setAttribute("fill", "none")
+   return l
 }
 
 export function rect (x: number, y: number, width: number, height: number, stroke: string, fill: string): SVGRectElement {

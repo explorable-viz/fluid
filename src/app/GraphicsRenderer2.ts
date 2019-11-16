@@ -153,9 +153,9 @@ export class GraphicsRenderer {
       let line_: SVGElement
       if (ps.length === 2) {
          const [[x1, y1], [x2, y2]] = ps
-         line_ = line(x1, y1, x2, y2, g.stroke.val)
+         line_ = line(x1, y1, x2, y2, g.stroke.val, g.strokeWidth.val)
       } else {
-         line_ = polyline(ps, g.stroke.val)
+         line_ = polyline(ps, g.stroke.val, g.strokeWidth.val)
       }
       if (Some.is(g.marker)) {
          this.setMarkerMid(line_, classOf(g.marker.t), g.stroke.val)

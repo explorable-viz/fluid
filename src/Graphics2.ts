@@ -30,6 +30,7 @@ export class Polyline extends GraphicsElement<"Polyline"> {
    scale: Transform = _
    points: List<Pair<Num, Num>> = _
    stroke: Str = _
+   strokeWidth: Num = _
    marker: Option<Marker> = _
 }
 
