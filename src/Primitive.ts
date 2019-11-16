@@ -39,7 +39,9 @@ const numToStr: Unary<Num, Str> = x => str(x.val.toString())
 // If we want integer division, apparently ~~(x / y) will round in the right direction.
 const div: Binary<Num, Num, Num> = (x, y) => (k: Id) => {
    const n: Num = num(as(x, Num).val / as(y, Num).val)(k)
-   assert(isFinite(n.val)) // we don't have a graceful way of handling errors at the moment
+   if (!isFinite(n.val)) {
+      userError("Division by zero", x, y)
+   }
    return n
 }
 
