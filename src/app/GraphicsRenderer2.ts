@@ -118,6 +118,7 @@ export class GraphicsRenderer {
       const [x, y] = this.transform(g.x.val, g.y.val)
       const [x2, y2] = this.transform(g.x.val + g.width.val, g.y.val + g.height.val)
       const [width, height] = [x2 - x, y2 - y]
+      assert(width >= 0 && height >= 0)
       const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.group)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
@@ -135,6 +136,7 @@ export class GraphicsRenderer {
       const [x, y] = this.transform(g.x.val, g.y.val)
       const [x2, y2] = this.transform(g.x.val + g.width.val, g.y.val + g.height.val)
       const [width, height] = [x2 - x, y2 - y]
+      assert(width >= 0 && height >= 0)
       const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val)
       this.current.appendChild(r)
    }
