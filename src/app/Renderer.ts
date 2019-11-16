@@ -76,11 +76,16 @@ function curvedLine (p1: Point, p2: Point, offset: number): string {
    return `M ${p1.x} ${p1.y} Q ${control.x} ${control.y} ${p2.x} ${p2.y}`
 }
 
+// Factor all element creation through this so we can tag with extra metadata.
+function createElement<K extends keyof SVGElementTagNameMap>(name: K): SVGElementTagNameMap[K] {
+   return document.createElementNS(SVG.NS, name)
+}
+
 export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
    const g1_: Dims = dims(g1)
    const g2_: Dims = dims(g2)
    const [fromBottom, fromTop]: [number, number] = [0.1, 0.9]
-   const connector_: SVGPathElement = document.createElementNS(SVG.NS, "path")
+   const connector_: SVGPathElement = createElement("path")
    const curveOffset: number = 5 // somewhat arbitrary
    if (leftOf(g1_, g2_)) {
       connector_.setAttribute("d", 
@@ -170,7 +175,7 @@ export function ellipsis (ẟ_style: DeltaStyle): SVGElement {
 }
 
 export function horiz (...gs: SVGElement[]): SVGSVGElement {
-   const g: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   const g: SVGSVGElement = createElement("svg")
    let width_sum: number = 0,
        height_max: number = 0
    gs.forEach((gʹ: SVGElement): void => {
@@ -194,7 +199,7 @@ export function keyword (str: keyof typeof strings, ẟ_style: DeltaStyle): SVGE
 }
 
 export function line (x1: number, y1: number, x2: number, y2: number, stroke: string): SVGLineElement {
-   const line: SVGLineElement = document.createElementNS(SVG.NS, "line")
+   const line: SVGLineElement = createElement("line")
    line.setAttribute("x1", `${round(x1)}`)
    line.setAttribute("y1", `${round(y1)}`)
    line.setAttribute("x2", `${round(x2)}`)
@@ -205,7 +210,7 @@ export function line (x1: number, y1: number, x2: number, y2: number, stroke: st
 }
 
 export function marker (C: Class<Marker>, colour: string): SVGMarkerElement {
-   const m: SVGMarkerElement = document.createElementNS(SVG.NS, "marker")
+   const m: SVGMarkerElement = createElement("marker")
    m.setAttribute("id", markerId(C, colour))
    m.setAttribute("orient", "auto")
    m.setAttribute("fill", colour)
@@ -251,7 +256,7 @@ export function marker_arrowhead (colour: string): SVGMarkerElement {
    m.setAttribute("refY", `${width / 2}`)
    m.setAttribute("markerWidth", "16")
    m.setAttribute("markerHeight", "16")
-   const path: SVGPathElement = document.createElementNS(SVG.NS, "path")
+   const path: SVGPathElement = createElement("path")
    m.appendChild(path)
    path.setAttribute("d", `M ${length} ${width / 2} L 0 ${width} L 0 0 Z`)
    return m
@@ -265,7 +270,7 @@ function marker_circle (colour: string): SVGMarkerElement {
    m.setAttribute("markerWidth", `${radius * 2}`)
    m.setAttribute("markerHeight", `${radius * 2}`)
    m.setAttribute("overflow", "visible") // for debugging
-   const circle: SVGCircleElement = document.createElementNS(SVG.NS, "circle")
+   const circle: SVGCircleElement = createElement("circle")
    m.appendChild(circle)
    circle.setAttribute("cx", `${radius}`)
    circle.setAttribute("cy", `${radius}`)
@@ -300,7 +305,7 @@ function pointsToString (p̅: [number, number][]): string {
 }
 
 export function polyline (p̅: [number, number][], stroke: string): SVGPolylineElement {
-   const line_: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
+   const line_: SVGPolylineElement = createElement("polyline")
    line_.setAttribute("points", pointsToString(p̅))
    line_.setAttribute("stroke", stroke)
    line_.setAttribute("stroke-linecap", "round")
@@ -309,7 +314,7 @@ export function polyline (p̅: [number, number][], stroke: string): SVGPolylineE
 }
 
 export function rect (x: number, y: number, width: number, height: number, stroke: string, fill: string): SVGRectElement {
-   const rect: SVGRectElement = document.createElementNS(SVG.NS, "rect")
+   const rect: SVGRectElement = createElement("rect")
    rect.setAttribute("x", `${round(x)}`)
    rect.setAttribute("y", `${round(y)}`)
    rect.setAttribute("height", `${round(height)}`)
@@ -329,7 +334,7 @@ export function round (n: number): string {
 
 // Needs to be at the bottom in the z-order, and opaque.
 export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
-   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   const svg: SVGSVGElement = createElement("svg")
    const { width, height }: Dimensions = dimensions.get(g)!
    const background: SVGRectElement = rect(g.x.baseVal.value, g.y.baseVal.value, width, height, "none", fill)
    background.setAttribute("pointer-events", "none")
@@ -346,12 +351,12 @@ export function space (): SVGElement {
 // Content below or to the left is clipped automatically; content to above or to the right is clipped 
 // if we set width and height.
 export function svgElement (x: number, y: number, width: number, height: number, defs: boolean): SVGSVGElement {
-   const svg: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   const svg: SVGSVGElement = createElement("svg")
    svg.setAttribute("x", `${round(x)}`)
    svg.setAttribute("y", `${round(y)}`)
    svg.setAttribute("width", `${round(width)}`)
    svg.setAttribute("height", `${round(height)}`)
-   const d: SVGDefsElement = document.createElementNS(SVG.NS, "defs")
+   const d: SVGDefsElement = createElement("defs")
    d.setAttribute("id", "defs")
    svg.appendChild(d)
    return svg
@@ -361,7 +366,7 @@ export function svgElement (x: number, y: number, width: number, height: number,
 // ignored (except at the root). To invert the y-axis, we have to add a nested g element containing the transform.
 export function svgElement_inverted (w: number, h: number): [SVGSVGElement, SVGGElement] {
    const svg: SVGSVGElement = svgElement(0, 0, w, h, true)
-   const g: SVGGElement = document.createElementNS(SVG.NS, "g")
+   const g: SVGGElement = createElement("g")
    g.setAttribute("transform", `scale(1,-1) translate(0,${-h})`)
    g.setAttribute("width", `${w}`)
    g.setAttribute("height", `${h}`)
@@ -390,7 +395,7 @@ export function text (str: string, ẟ_style: DeltaStyle): SVGTextElement {
 }
 
 function textElement (fontSize: number, class_: string, str: string): SVGTextElement {
-   const text: SVGTextElement = document.createElementNS(SVG.NS, "text")
+   const text: SVGTextElement = createElement("text")
    text.setAttribute("stroke", "none")
    text.setAttribute("font-size", fontSize.toString()) // wasn't able to set this through CSS for some reason
    text.setAttribute("class", class_) // set styling before creating text node, for font metrics to be correct
@@ -412,7 +417,7 @@ export function unimplemented (v: Value): SVGSVGElement {
 }
 
 export function vert (...gs: SVGElement[]): SVGSVGElement {
-   const g: SVGSVGElement = document.createElementNS(SVG.NS, "svg")
+   const g: SVGSVGElement = createElement("svg")
    let height_sum: number = 0,
        width_max: number = 0
    gs.forEach((gʹ: SVGElement): void => {
