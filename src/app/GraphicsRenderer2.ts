@@ -29,6 +29,7 @@ function translate (x_inc: number, y_inc: number): TransformFun {
 
 function transformFun (t: Transform): TransformFun {
    if (t instanceof Scale) {
+      console.log(t.x.val, t.y.val)
       return scale(t.x.val, t.y.val)
    } else
    if (t instanceof Translate) {
