@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, as, assert, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
 import { strings } from "../Expr"
-import { Arrowhead, Circle, Marker, Tick } from "../Graphics2"
+import { Arrowhead, Circle, Marker, LeftTick, RightTick } from "../Graphics2"
 import { Value, isPrim } from "../Value"
 import { versioned } from "../Versioned"
 import { SVG } from "./Core"
@@ -232,7 +232,8 @@ let markerFactory: Map<string, MarkerFactory>
    markerFactory = new Map()
    markerFactory.set(Arrowhead.name, marker_arrowhead)
    markerFactory.set(Circle.name, marker_circle)
-   markerFactory.set(Tick.name, marker_tick)
+   markerFactory.set(LeftTick.name, marker_leftTick)
+   markerFactory.set(RightTick.name, marker_rightTick)
 }
 
 // Assume root has a unique defs element called "defs". Return composite marker id.
@@ -280,15 +281,28 @@ function marker_circle (colour: string): SVGMarkerElement {
    return m
 }
 
-function marker_tick (colour: string): SVGMarkerElement {
-   const m: SVGMarkerElement = marker(Tick, "black")
-   const height: number = 8
+function marker_leftTick (colour: string): SVGMarkerElement {
+   const m: SVGMarkerElement = marker(LeftTick, colour)
+   const height: number = 4
    m.setAttribute("refX", `${0}`)
-   m.setAttribute("refY", `${height / 2}`)
+   m.setAttribute("refY", `${height}`)
    m.setAttribute("markerWidth", `${height * 2}`)
    m.setAttribute("markerHeight", `${height * 2}`)
    m.setAttribute("overflow", "visible") // for debugging
-   const tick: SVGLineElement = line(0, 0, 0, height, "black")
+   const tick: SVGLineElement = line(0, 0, 0, height, colour)
+   m.appendChild(tick)
+   return m
+}
+
+function marker_rightTick (colour: string): SVGMarkerElement {
+   const m: SVGMarkerElement = marker(RightTick, colour)
+   const height: number = 4
+   m.setAttribute("refX", `${0}`)
+   m.setAttribute("refY", `${height}`)
+   m.setAttribute("markerWidth", `${height * 2}`)
+   m.setAttribute("markerHeight", `${height * 2}`)
+   m.setAttribute("overflow", "visible") // for debugging
+   const tick: SVGLineElement = line(0, 0, 0, height, colour)
    m.appendChild(tick)
    return m
 }

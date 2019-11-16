@@ -41,10 +41,6 @@ export class Transform<Tag extends TransformTag = TransformTag> extends DataValu
 export class Scale extends Transform<"Scale"> {
    x: Num = _
    y: Num = _
-
-   Scale (x: Num, y: Num) {
-      console.log(`In Scale constructor, x = ${x}, y = ${y}`)
-   }
 }
 
 export class Translate extends Transform<"Translate"> {
@@ -52,7 +48,7 @@ export class Translate extends Transform<"Translate"> {
    y: Num = _
 }
 
-export type MarkerTag = "Arrowhead" | "Tick" | "Circle"
+export type MarkerTag = "Arrowhead" | "Circle" | "LeftTick" | "RightTick"
 
 export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
 }
@@ -60,7 +56,10 @@ export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
 export class Arrowhead extends Marker<"Arrowhead"> {   
 }
 
-export class Tick extends Marker<"Tick"> {
+export class LeftTick extends Marker<"LeftTick"> {
+}
+
+export class RightTick extends Marker<"RightTick"> {
 }
 
 export class Circle extends Marker<"Circle"> {   
@@ -68,4 +67,4 @@ export class Circle extends Marker<"Circle"> {
 
 initDataType(GraphicsElement, [Group, Polyline, Rect])
 initDataType(Transform, [Scale, Translate])
-initDataType(Marker, [Tick, Circle])
+initDataType(Marker, [Arrowhead, Circle, LeftTick, RightTick])
