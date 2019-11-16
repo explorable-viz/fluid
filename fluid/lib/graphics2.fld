@@ -121,7 +121,9 @@ let multiPlot = fun withAxes colours x_start ks data →
    }
    in Group(0, 0, x_finish - x_start, y_finish, None, Some(Translate(0 - x_start, 0)), concat gs axes);
 
-// Num → Num → GraphicsElement → GraphicsElement
-let addMargin = fun x y g →
+// Worry about dimensions of margin later.
+// GraphicsElement → GraphicsElement
+let addMargin = fun g →
+   let margin = 1 in
    match dimensions g as (w, h) →
-   Group(0, 0, w + 2 * x, h + 2 * y, None, Some(Translate(x, y)), [g])
+   Group(0, 0, w + 2 * margin, h + 2 * margin, None, Some(Translate(margin, margin)), [g])
