@@ -33,6 +33,7 @@ function transformFun (t: Transform): TransformFun {
       return scale(t.x.val, t.y.val)
    } else
    if (t instanceof Translate) {
+      assert(isFinite(t.x.val) && isFinite(t.y.val))
       return translate(t.x.val, t.y.val)
    } else {
       return absurd()

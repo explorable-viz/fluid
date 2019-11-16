@@ -153,8 +153,12 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             C: Class<DataValue> = valueClass(classOf(e)),
             t: Expl = at(explClass(C), ...tv̅.map(({t}) => t))(kₜ),
             v: Value = at(C, ...tv̅.map(({v}) => v))(kᵥ)
-      if (C.name === "Group" && as(tv̅[2].v, Num).val < 0) {
-         assert(false)
+      if (C.name === "Translate") {
+         const w = as(tv̅[0].v, Num).val
+         console.log(w)
+         if (!isFinite(w)) {
+            assert(false)
+         }
       }
       return explValue(t, v)
    } else
