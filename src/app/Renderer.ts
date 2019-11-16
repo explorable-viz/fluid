@@ -281,11 +281,11 @@ function marker_circle (colour: string): SVGMarkerElement {
    return m
 }
 
-function marker_leftTick (colour: string): SVGMarkerElement {
-   const m: SVGMarkerElement = marker(LeftTick, colour)
+function marker_tick (colour: string, C: Class<Marker>): SVGMarkerElement {
+   const m: SVGMarkerElement = marker(C, colour)
    const height: number = 4
    m.setAttribute("refX", `${0}`)
-   m.setAttribute("refY", `${height}`)
+   m.setAttribute("refY", `${C === LeftTick ? 0 : height}`)
    m.setAttribute("markerWidth", `${height * 2}`)
    m.setAttribute("markerHeight", `${height * 2}`)
    m.setAttribute("overflow", "visible") // for debugging
@@ -294,17 +294,12 @@ function marker_leftTick (colour: string): SVGMarkerElement {
    return m
 }
 
+function marker_leftTick (colour: string): SVGMarkerElement {
+   return marker_tick(colour, LeftTick)
+}
+
 function marker_rightTick (colour: string): SVGMarkerElement {
-   const m: SVGMarkerElement = marker(RightTick, colour)
-   const height: number = 4
-   m.setAttribute("refX", `${0}`)
-   m.setAttribute("refY", `${height}`)
-   m.setAttribute("markerWidth", `${height * 2}`)
-   m.setAttribute("markerHeight", `${height * 2}`)
-   m.setAttribute("overflow", "visible") // for debugging
-   const tick: SVGLineElement = line(0, 0, 0, height, colour)
-   m.appendChild(tick)
-   return m
+   return marker_tick(colour, RightTick)
 }
 
 export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGSVGElement {
