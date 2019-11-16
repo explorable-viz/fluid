@@ -65,6 +65,8 @@ let barChart = fun sep colours →
       (stackRight sep)
       ((zipWith (fun (colour, (_, n)) → Rect(0, 0, 1, n, colour))) colours);
 
+// Currently first component of data (categorical value) is ignored; values are just mapped
+// positionally to colours, which is a strong assumption about the data.
 // List Str → List (a, Num) → GraphicsElement
 let stackedBar = fun colours ns →
    let subtotals = scanl1 (fun (x, y) → x + y) 0 (map snd ns);
@@ -133,4 +135,8 @@ let multiPlot = fun withAxes colours x_start ks data →
       False → []
    }
    in background
-      Group(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), concat gs axes)
+      Group(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), concat gs axes);
+
+// Num → List (List (a, Num)) → GraphicsElement
+let stackedBarChart = fun sep →
+   compose (stackRight sep) (map (stackedBar colours1))
