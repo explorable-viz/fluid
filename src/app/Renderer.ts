@@ -200,6 +200,7 @@ export function line (x1: number, y1: number, x2: number, y2: number, stroke: st
    line.setAttribute("x2", `${round(x2)}`)
    line.setAttribute("y2", `${round(y2)}`)
    line.setAttribute("stroke", stroke)
+   line.setAttribute("stroke-linecap", "round")
    return line
 }
 
@@ -302,6 +303,7 @@ export function polyline (p̅: [number, number][], stroke: string): SVGPolylineE
    const line_: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
    line_.setAttribute("points", pointsToString(p̅))
    line_.setAttribute("stroke", stroke)
+   line_.setAttribute("stroke-linecap", "round")
    line_.setAttribute("fill", "none")
    return line_
 }

@@ -103,6 +103,13 @@ let axis = fun vert colour x start end →
 let x_axis = axis False;
 let y_axis = axis True;
 
+// Worry about dimensions of margin later.
+// GraphicsElement → GraphicsElement
+let addMargin = fun g →
+   let margin = 1 in
+   match dimensions g as (w, h) →
+   Group(0, 0, w + 2 * margin, h + 2 * margin, None, Some(Translate(margin, margin)), [g]);
+
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
 let multiPlot = fun withAxes colours x_start ks data →
@@ -119,11 +126,5 @@ let multiPlot = fun withAxes colours x_start ks data →
       True → [x_axis "black" 0 x_start x_finish, y_axis "black" x_start 0 y_finish];
       False → []
    }
-   in Group(0, 0, x_finish - x_start, y_finish, None, Some(Translate(0 - x_start, 0)), concat gs axes);
-
-// Worry about dimensions of margin later.
-// GraphicsElement → GraphicsElement
-let addMargin = fun g →
-   let margin = 1 in
-   match dimensions g as (w, h) →
-   Group(0, 0, w + 2 * margin, h + 2 * margin, None, Some(Translate(margin, margin)), [g])
+   in addMargin
+      Group(0, 0, x_finish - x_start, y_finish, None, Some(Translate(0 - x_start, 0)), concat gs axes)
