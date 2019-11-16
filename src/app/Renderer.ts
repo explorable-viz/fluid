@@ -319,8 +319,8 @@ export function rect (x: number, y: number, width: number, height: number, strok
    const r: SVGRectElement = createElement("rect", rect)
    r.setAttribute("x", `${round(x)}`)
    r.setAttribute("y", `${round(y)}`)
-   r.setAttribute("height", `${round(height)}`)
    r.setAttribute("width", `${round(width)}`)
+   r.setAttribute("height", `${round(height)}`)
    r.setAttribute("stroke", stroke)
    r.setAttribute("fill", fill)
    return r
