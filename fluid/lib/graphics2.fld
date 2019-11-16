@@ -46,9 +46,11 @@ let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33"
 // Num → GraphicsElement → GraphicsElement
 let scaleToWidth = fun w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
-   Group(x, y, w0, h, _, translate, gs) → Group(x, y, w, h, Scale(w / w0, 1), translate, gs);
+   Group(x, y, w0, h, Scale(x_scale, y_scale), translate, gs) → 
+      let scale = Scale(x_scale * w / w0, y_scale) in Group(x, y, w, h, scale, translate, gs);
    // polyline has an implicit coordinate of (0, 0), relative to which its points are located
-   Polyline(_, ps, stroke, marker) → Polyline(Scale(w / max (map fst ps), 1), ps, stroke, marker)
+   Polyline(Scale(x_scale, y_scale), ps, stroke, marker) → 
+      let scale = Scale(x_scale * w / max (map fst ps), y_scale) in Polyline(scale, ps, stroke, marker)
 };
 
 // List GraphicsElement → Num → GraphicsElement
