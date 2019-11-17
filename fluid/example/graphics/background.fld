@@ -1,5 +1,11 @@
 let gs = [
    stackedBar colours1 [("a", 3), ("b", 1), ("c", 2)]
-]
-in background 0.3
-   Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), gs)
+];
+let w = length gs;
+let h = max (map height gs);
+let m = 0.3;
+let x_scale' = max2 (w - 2 * m, 0) / w;
+let y_scale' = max2 (h - 2 * m, 0) / h;
+let translate = Translate(m / x_scale', m / y_scale');
+let gs = [Rect(0, 0, w, h, "Gainsboro"), Group(0, 0, w, h, Scale(x_scale', y_scale'), translate, gs)]
+in Group(0, 0, w, h, Scale(1, 1), Translate(0, 0), gs)
