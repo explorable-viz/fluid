@@ -7,7 +7,7 @@ import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
-import { line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
+import { border, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 12
 
@@ -125,15 +125,15 @@ export class GraphicsRenderer {
       const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.group)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
-      if (this.showInvisible) {
-//         svg.appendChild(border(svg, "gray"))
-      }
       this.withLocalTransforms(transformFuns(g.scale, g.translate), () => { // scaling applies to translated coordinates
          for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
          Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
             this.renderElement(tg̅.to(Cons, "head"))
          }
       })
+      if (this.showInvisible) {
+         svg.appendChild(border(x, y, width, height, "gray", true))
+      }
       this.ancestors.pop()
    }
 

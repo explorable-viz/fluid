@@ -27,21 +27,25 @@ export function arrow (ẟ_style: DeltaStyle): SVGElement {
    return keyword("arrow", ẟ_style)
 }
 
-export function border (g: SVGSVGElement, stroke: string): SVGRectElement {
-   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
-   return rect(g.x.baseVal.value, g.y.baseVal.value, width, height, stroke, "none")
+export function border (x: number, y: number, width: number, height: number, stroke: string, dashed: boolean): SVGRectElement {
+   const b: SVGRectElement = rect(x, y, width, height, stroke, "none")
+   if (dashed) {
+      b.setAttribute("stroke-dasharray", "1,1")
+   }
+   return b
 }
 
 export function addBorder_changed (g: SVGSVGElement): SVGSVGElement {
-   const border_: SVGRectElement = border(g, "blue")
-   border_.setAttribute("stroke-dasharray", "1,1")
-   g.appendChild(border_)
+   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
+   const b: SVGRectElement = border(g.x.baseVal.value, g.y.baseVal.value, width, height, "blue", true)
+   g.appendChild(b)
    return g
 }
 
 export function addBorder_focus (g: SVGSVGElement): SVGSVGElement {
-   const border_: SVGRectElement = border(g, "gray")
-   g.appendChild(border_)
+   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
+   const b: SVGRectElement = border(g.x.baseVal.value, g.y.baseVal.value, width, height, "gray", false)
+   g.appendChild(b)
    return g
 }
 
@@ -190,8 +194,6 @@ export function horiz (...gs: SVGElement[]): SVGSVGElement {
       height_max = Math.max(height_max, height)
       g.appendChild(gʹ)
    })
-   g.setAttribute("width", `${width_sum}`)
-   g.setAttribute("height", `${height_max}`)
    dimensions.set(g, { width: width_sum, height: height_max })
    return g
 }
@@ -357,8 +359,6 @@ export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
    background.setAttribute("pointer-events", "none")
    svg.appendChild(background)
    svg.appendChild(g)
-   g.setAttribute("width", `${width}`)
-   g.setAttribute("height", `${height}`)
    dimensions.set(svg, { width, height })
    return svg
 }
@@ -450,8 +450,6 @@ export function vert (...gs: SVGElement[]): SVGSVGElement {
       width_max = Math.max(width_max, width)
       g.appendChild(gʹ)
    })
-   g.setAttribute("width", `${width_max}`)
-   g.setAttribute("height", `${height_sum}`)
    dimensions.set(g, { width: width_max, height: height_sum })
    return g
 }
