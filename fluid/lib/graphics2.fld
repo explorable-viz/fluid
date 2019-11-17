@@ -135,7 +135,7 @@ let wibble = fun colours ns →
 
 // Bool → List Str → Num → List (a, Num) → GraphicsElement
 let barChart = fun withAxes colours sep data →
-   let gs = stackRight sep (zipWith (fun (colour, n) → Rect(0, 0, 1, n, colour)) colours (map snd data));
+   let gs = stackRight sep (wibble colours (map snd data));
    let w = length gs;
    let h = max (map height gs);
    let axes = match withAxes as {
