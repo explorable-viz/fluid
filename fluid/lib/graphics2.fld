@@ -145,8 +145,8 @@ let stackedBarChart = fun withAxes sep data →
    let n = length gs;
    let h = max (map height gs);
    let axes = match withAxes as {
-      True → [x_axis "black" 10 0 n, y_axis "black" 0 0 h];
+      True → [x_axis "black" 0 0 n, y_axis "black" 0 0 h];
       False → []
    }
-   in background 0
+   in background 0.2
       Group(0, 0, n, h, Scale(1, 1), Translate(0, 0), concat gs axes)

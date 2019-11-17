@@ -52,7 +52,7 @@ export class GraphicsRenderer {
    ancestors: SVGElement[] // stack of enclosing SVG elements
    translations: TransformFun[] // stack of (uncomposed) active translations, each relative to parent SVG
    scalings: TransformFun[] // stack of successively composed scalings, each relative to root SVG
-   showInvisible: boolean = true
+   showInvisible: boolean = false
 
    // transform attribute isn't supported on SVGElement, so it contains a group element with the inversion transform.
    constructor (root: SVGSVGElement, initialAncestor: SVGElement) {
@@ -155,7 +155,7 @@ export class GraphicsRenderer {
       // each point is considered a "child", and therefore subject to my local scaling
       const ps: [number, number][] = this.withLocalFrame(
          transformFun(g.scale),
-         id,
+         last(this.translations),
          () => {
             return g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
                return this.transform([p.fst.val, p.snd.val])
