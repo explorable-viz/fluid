@@ -4,6 +4,5 @@ let w = length gs;
 let h = max (map height gs);
 let m = 0.3;
 let x_scale = max2 (w - 2 * m, 0) / w;
-let y_scale = max2 (h - 2 * m, 0) / h;
-let translate = Translate(m / x_scale, m / y_scale)
-in Group(0, 0, w, h, Scale(x_scale, y_scale), translate, gs)
+let translate = Translate(m / x_scale, 0)
+in Group(0, 0, w, h, Scale(x_scale, 1), translate, gs)
