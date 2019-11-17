@@ -148,5 +148,6 @@ let barChart = fun sep colours →
 
 // For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
 // List (a, List (b, Num)) → GraphicsElement
-let groupedBarChart =
-   compose (compose (groupRight 0.2) (map (compose (barChart 0 colours1) snd))) snd
+let groupedBarChart = fun withAxes data →
+   let gs = (compose (compose (groupRight 0.2) (map (compose (barChart 0 colours1) snd))) snd) data
+   in gs
