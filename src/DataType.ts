@@ -60,7 +60,7 @@ export class Ctr {
 }
 
 export function ctrFor (c: string): Ctr {
-   return __nonNull(ctrToDataType.get(c)!.ctrs.get(c))
+   return __nonNull(ctrToDataType.get(c), `Unknown constructor ${c}.`).ctrs.get(c)!
 }
 
 export function explClass (C: Class<DataValue>): Class<Expl.DataExpl> {
