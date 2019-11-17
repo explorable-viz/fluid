@@ -126,7 +126,6 @@ export class GraphicsRenderer {
       this.current.appendChild(svg)
       if (this.showInvisible) {
          this.current.appendChild(border(x, y, width, height, "gray", true))
-         console.log("HERE")
       }
       this.ancestors.push(svg)
       this.withLocalTransforms(transformFuns(g.scale, g.translate), () => { // scaling applies to translated coordinates
