@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, as, assert, classOf } from "../util/Core"
 import { Cons, List, None, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Group, GraphicsElement, Marker, Polyline, Rect, Scale, Transform, Translate } from "../Graphics2"
+import { Group, GraphicsElement, Marker, Polyline, Rect } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -16,32 +16,17 @@ export const svg: SVG = new SVG()
 type TransformFun = (x: number, y: number) => [number, number]
 
 function scale (x_scale: number, y_scale: number): TransformFun {
+   assert(x_scale >= 0 && y_scale >= 0)
    return (x, y): [number, number] => {
       return [x * x_scale, y * y_scale]
    }
 }
 
 function translate (x_inc: number, y_inc: number): TransformFun {
+   assert(isFinite(x_inc) && isFinite(y_inc))
    return (x, y): [number, number] => {
       return [x + x_inc, y + y_inc]
    }
-}
-
-function transformFun (t: Transform): TransformFun {
-   if (t instanceof Scale) {
-      assert(t.x.val >= 0 && t.y.val >= 0)
-      return scale(t.x.val, t.y.val)
-   } else
-   if (t instanceof Translate) {
-      assert(isFinite(t.x.val) && isFinite(t.y.val))
-      return translate(t.x.val, t.y.val)
-   } else {
-      return absurd()
-   }
-}
-
-function transformFuns (...ts: Transform[]): TransformFun[] {
-   return ts.map(t => transformFun(as(t, Transform)))
 }
 
 function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
@@ -128,12 +113,15 @@ export class GraphicsRenderer {
          this.current.appendChild(border(x, y, width, height, "gray", true))
       }
       this.ancestors.push(svg)
-      this.withLocalTransforms(transformFuns(g.scale, g.translate), () => { // scaling applies to translated coordinates
-         for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
-         Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
-            this.renderElement(tg̅.to(Cons, "head"))
+      this.withLocalTransforms(
+         [scale(g.scale.fst.val, g.scale.snd.val), translate(g.translate.fst.val, g.translate.snd.val)], 
+         () => { // scaling applies to translated coordinates
+            for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
+            Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
+               this.renderElement(tg̅.to(Cons, "head"))
+            }
          }
-      })
+      )
       this.ancestors.pop()
    }
 
@@ -150,11 +138,14 @@ export class GraphicsRenderer {
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const g: Polyline = as(tg.tv.v, Polyline)
       // each point is considered a "child", and therefore subject to my local scaling
-      const ps: [number, number][] = this.withLocalTransforms(transformFuns(g.scale), () => {
-         return g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
-            return this.transform(p.fst.val, p.snd.val)
-         })
-      })
+      const ps: [number, number][] = this.withLocalTransforms(
+         [scale(g.scale.fst.val, g.scale.snd.val)], 
+         () => {
+            return g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
+               return this.transform(p.fst.val, p.snd.val)
+            })
+         }
+      )
       // Optimise polyline with 2 points to line. TODO: what about when there is only one point?
       let line_: SVGElement
       if (ps.length === 2) {
