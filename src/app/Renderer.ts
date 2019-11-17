@@ -29,6 +29,7 @@ export function arrow (ẟ_style: DeltaStyle): SVGElement {
 
 export function border (x: number, y: number, width: number, height: number, stroke: string, dashed: boolean): SVGRectElement {
    const b: SVGRectElement = rect(x, y, width, height, stroke, "none", border)
+   b.setAttribute("stroke-width", "0.5")
    if (dashed) {
       b.setAttribute("stroke-dasharray", "1,1")
    }
