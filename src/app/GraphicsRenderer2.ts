@@ -67,6 +67,7 @@ export class GraphicsRenderer {
       return this.ancestors[this.ancestors.length - 1]
    }
 
+   // scaling applies to translated coordinates
    get transform (): TransformFun {
       return postcompose(last(this.scalings), last(this.translations))
    }
@@ -80,7 +81,7 @@ export class GraphicsRenderer {
       const width: number = parseFloat(__nonNull(root.getAttribute("width")))
       const height: number = parseFloat(__nonNull(root.getAttribute("height")))
       this.withLocalFrame(
-         scale(width / w, height / h), 
+         scale(width / w, height / h),
          id,
          () => {
             this.renderElement(ExplValueCursor.descendant(null, tg))
@@ -106,7 +107,7 @@ export class GraphicsRenderer {
    // Scalings accumulate as we go down. Translations don't, because we use nested SVGs.
    withLocalFrame<T> (scale: TransformFun, translate: TransformFun, localRender: () => T): T {
       let result: T
-      this.scalings.push(postcompose(this.transform, scale))
+      this.scalings.push(postcompose(last(this.scalings), scale))
       this.translations.push(translate)
       result = localRender()
       this.translations.pop()
@@ -130,7 +131,7 @@ export class GraphicsRenderer {
       this.withLocalFrame(
          transformFun(g.scale), 
          transformFun(g.translate), 
-         () => { // scaling applies to translated coordinates
+         () => {
             for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
             Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
                this.renderElement(tg̅.to(Cons, "head"))
