@@ -146,9 +146,7 @@ let barChart = fun sep colours →
       (groupRight sep)
       ((zipWith (fun (colour, (_, n)) → Rect(0, 0, 1, n, colour))) colours);
 
-// For each top-level numerical index, plot a bar chart for the corresponding data.
-// List (Num, (List (a, (List (b, Num)))))
-let groupedBarChart = fun data →
-   groupRight 0.2
-      (flip map data
-         (compose (compose (groupRight 0.2) (map (compose (barChart 0 colours1) snd))) snd))
+// For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
+// List (a, List (b, Num)) → GraphicsElement
+let groupedBarChart =
+   compose (compose (groupRight 0.2) (map (compose (barChart 0 colours1) snd))) snd

@@ -1,1 +1,1 @@
-groupedBarChart (lastN 2 data)
+groupRight 0.2 (map groupedBarChart (lastN 2 data))
