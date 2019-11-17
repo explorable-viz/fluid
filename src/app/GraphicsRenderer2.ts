@@ -55,12 +55,14 @@ export class GraphicsRenderer {
    root: SVGSVGElement
    ancestors: SVGElement[] // stack of enclosing SVG elements
    transforms: TransformFun[] // stack of successive compositions of linear transformations
+   showInvisible: boolean
 
    // transform attribute isn't supported on SVGElement, so it contains a group element with the inversion transform.
    constructor (root: SVGSVGElement, initialAncestor: SVGElement) {
       this.root = root
       this.ancestors = [initialAncestor]
       this.transforms = [(x, y) => [x, y]]
+      this.showInvisible = true
    }
 
    get current (): SVGElement {
@@ -123,6 +125,9 @@ export class GraphicsRenderer {
       const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.group)
       this.current.appendChild(svg)
       this.ancestors.push(svg)
+      if (this.showInvisible) {
+//         svg.appendChild(border(svg, "gray"))
+      }
       this.withLocalTransforms(transformFuns(g.scale, g.translate), () => { // scaling applies to translated coordinates
          for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
          Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
@@ -137,7 +142,6 @@ export class GraphicsRenderer {
       const [x, y] = this.transform(g.x.val, g.y.val)
       const [x2, y2] = this.transform(g.x.val + g.width.val, g.y.val + g.height.val)
       const [width, height] = [x2 - x, y2 - y]
-      console.log(width, height)
       assert(width >= 0 && height >= 0)
       const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val)
       this.current.appendChild(r)

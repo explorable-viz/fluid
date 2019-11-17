@@ -28,18 +28,18 @@ export function arrow (ẟ_style: DeltaStyle): SVGElement {
 }
 
 export function border (g: SVGSVGElement, stroke: string): SVGRectElement {
-   const { width, height }: Dimensions = dimensions.get(g)!
+   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
    return rect(g.x.baseVal.value, g.y.baseVal.value, width, height, stroke, "none")
 }
 
-export function border_changed (g: SVGSVGElement): SVGSVGElement {
+export function addBorder_changed (g: SVGSVGElement): SVGSVGElement {
    const border_: SVGRectElement = border(g, "blue")
    border_.setAttribute("stroke-dasharray", "1,1")
    g.appendChild(border_)
    return g
 }
 
-export function border_focus (g: SVGSVGElement): SVGSVGElement {
+export function addBorder_focus (g: SVGSVGElement): SVGSVGElement {
    const border_: SVGRectElement = border(g, "gray")
    g.appendChild(border_)
    return g
@@ -190,6 +190,8 @@ export function horiz (...gs: SVGElement[]): SVGSVGElement {
       height_max = Math.max(height_max, height)
       g.appendChild(gʹ)
    })
+   g.setAttribute("width", `${width_sum}`)
+   g.setAttribute("height", `${height_max}`)
    dimensions.set(g, { width: width_sum, height: height_max })
    return g
 }
@@ -355,6 +357,8 @@ export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
    background.setAttribute("pointer-events", "none")
    svg.appendChild(background)
    svg.appendChild(g)
+   g.setAttribute("width", `${width}`)
+   g.setAttribute("height", `${height}`)
    dimensions.set(svg, { width, height })
    return svg
 }
@@ -446,6 +450,8 @@ export function vert (...gs: SVGElement[]): SVGSVGElement {
       width_max = Math.max(width_max, width)
       g.appendChild(gʹ)
    })
+   g.setAttribute("width", `${width_max}`)
+   g.setAttribute("height", `${height_sum}`)
    dimensions.set(g, { width: width_max, height: height_sum })
    return g
 }

@@ -1,4 +1,4 @@
-stackRight 0.2
+groupRight 0.2
    (map 
-      (compose (compose (stackRight 0.2) (map (compose (barChart 0 colours1) snd))) snd) // energy type
+      (compose (compose (groupRight 0.2) (map (compose (barChart 0 colours1) snd))) snd) // energy type
       (lastN 2 data))

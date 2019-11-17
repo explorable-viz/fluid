@@ -17,7 +17,7 @@ import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { GraphicsRenderer } from "./GraphicsRenderer2"
 import { 
-   DeltaStyle, arrow, border_changed, border_focus, centreDot, comma, connector, deltaStyle, dimensions, ellipsis, horiz, 
+   DeltaStyle, arrow, addBorder_changed, addBorder_focus, centreDot, comma, connector, deltaStyle, dimensions, ellipsis, horiz, 
    horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement_inverted, text, unimplemented, vert 
 } from "./Renderer"
 
@@ -217,7 +217,7 @@ class ExplValueView extends View {
          g = vert(expls(ts), horizSpace(text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render()))
       }
       if (this.tv === __editor!.here.tv) {
-         return border_focus(!this.t_visible && ts.length > 0  ? edge_left(g) : g)
+         return addBorder_focus(!this.t_visible && ts.length > 0  ? edge_left(g) : g)
       } else {
          return g
       }
@@ -410,7 +410,7 @@ function view_child<T extends DataValue> (C: Class<T>, tv: ExplValue<T>, prop_: 
          if (w_existing) {
             __links.add({ from: w, to: w_existing })
          }
-         return border_changed(g)
+         return addBorder_changed(g)
       } else {
          return g
       }
@@ -572,19 +572,19 @@ function consComma (ẟ_style: DeltaStyle, src?: Expr.DataExpr): SVGElement {
 function dataConstr (parens: boolean, {t, v}: ExplValue<DataValue>): SVGSVGElement {
    const tvs: ExplValue[] = Expl.explChildren(t, v)
    // a constructor expression makes its value, so their root delta highlighting must agree
-   const gs: SVGElement[] = tvs.map(tvʹ => view(tvʹ, true, false).render())
+   const gs: SVGSVGElement[] = tvs.map(tvʹ => view(tvʹ, true, false).render())
    const g: SVGSVGElement = horizSpace(text(v.ctr, deltaStyle(v)), ...(tvs.length > 2 ? [vert(...gs)] : gs))
    return parenthesiseIf(tvs.length > 0 && parens, g, deltaStyle(t))
 }
 
 function dataConstr_expr (parens: boolean, e: Expr.DataExpr): SVGSVGElement {
    const es: Expr[] = e.__children
-   const gs: SVGElement[] = es.map(eʹ => expr(true, eʹ))
+   const gs: SVGSVGElement[] = es.map(eʹ => expr(true, eʹ))
    const g: SVGSVGElement = horizSpace(text(e.ctr, deltaStyle(e)), ...(es.length > 2 ? [vert(...gs)] : gs))
    return parenthesiseIf(es.length > 0 && parens, g, deltaStyle(e))
 }
 
-function def (def: Expr.Def): SVGElement {
+function def (def: Expr.Def): SVGSVGElement {
    if (def instanceof Expr.Prim) {
       return horizSpace(keyword("primitive", deltaStyle(def)), patternVar(def.x))
    } else
@@ -607,7 +607,7 @@ function def (def: Expr.Def): SVGElement {
    }
 }
 
-function defₜ (def: Expl.Def): SVGElement {
+function defₜ (def: Expl.Def): SVGSVGElement {
    if (def instanceof Expl.Prim) {
       return horizSpace(keyword("primitive", deltaStyle(def)), patternVar(def.x))
    } else
@@ -630,7 +630,7 @@ function defₜ (def: Expl.Def): SVGElement {
    }
 }
 
-function elim<K extends Cont> (σ: Elim<K>): SVGElement {
+function elim<K extends Cont> (σ: Elim<K>): SVGSVGElement {
    return vert(...clauses(σ).map(([cxs, e]) => {
       const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, 1, cxs)
       assert(cxsʹ.length === 0)
@@ -643,7 +643,7 @@ function elim<K extends Cont> (σ: Elim<K>): SVGElement {
 }
 
 // Hack just to support Bool, Ordering, etc.
-function elimMatch<K extends Cont> (ξ: Match<K>): SVGElement {
+function elimMatch<K extends Cont> (ξ: Match<K>): SVGSVGElement {
    const tv: ExplValue<DataValue> = nth(ξ.tv̅.toArray(), 0)
    // don't think the contination is needed; already stored in the trace
    return horizSpace(text(tv.v.ctr, deltaStyle(tv.v)), arrow(deltaStyle(tv.v)))
@@ -674,7 +674,7 @@ function expr_child<T extends DataValue> (C: Class<T>, parens: boolean, e: Expr.
          if (w_existing) {
             __links.add({ from: w, to: w_existing })
          }
-         return border_changed(g)
+         return addBorder_changed(g)
       } else {
          return g
       }
@@ -815,11 +815,11 @@ function patternVar (x: Str): SVGElement {
    return text(x.val, deltaStyle(x))
 }
 
-function recDef (def: Expr.RecDef): SVGElement {
+function recDef (def: Expr.RecDef): SVGSVGElement {
    return horizSpace(patternVar(def.x), elim(def.σ))
 }
 
-function recDefₜ (def: Expl.RecDef): SVGElement {
+function recDefₜ (def: Expl.RecDef): SVGSVGElement {
    return horizSpace(patternVar(def.x), elim(def.tf.v.f))
 }
 
