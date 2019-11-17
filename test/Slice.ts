@@ -257,6 +257,14 @@ describe("slice", () => {
       })
    })
 
+   describe("graphics/background", () => {
+      it("ok", () => {
+         const e: Expr = openWithImports("graphics/background")
+         new FwdSlice(e)
+         new BwdSlice(e)
+      })
+   })
+
    describe("graphics/grouped-bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")

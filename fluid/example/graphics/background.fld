@@ -1,8 +1,6 @@
 let gs = [
-   Group(0, 0, 1, 6, Scale(1, 1), Translate(0, 0), [
-      Rect(0, 0, 1, 3, "red"),
-      Rect(0, 3, 1, 1, "green"),
-      Rect(0, 4, 1, 2, "yellow")
+   Group(0, 0, 1, 3, Scale(1, 1), Translate(0, 0), [
+      Rect(0, 0, 1, 3, "red")
    ])
 ];
 let w = length gs;
