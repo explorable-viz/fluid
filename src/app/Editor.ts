@@ -5,9 +5,10 @@ import { Env, emptyEnv } from "../Env"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
+import { Arrowhead } from "../Graphics2"
 import { newRevision } from "../Versioned"
 import { ExplValueCursor } from "./Cursor"
-import { arrowhead, defineMarker, svgRootElement } from "./Renderer"
+import { markerEnsureDefined, svgRootElement } from "./Renderer"
 import { Viewer, existingView } from "./View"
 import "./styles.css"
 
@@ -20,7 +21,7 @@ export class Editor {
 
    constructor (e: Expr, ρ: Env = emptyEnv()) {
       this.root = svgRootElement(1400, 1200)
-      defineMarker(this.root, arrowhead())
+      markerEnsureDefined(this.root, Arrowhead, "blue")
       document.body.appendChild(this.root)
       this.ρ = ρ
       this.e = e,

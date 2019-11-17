@@ -13,8 +13,8 @@ export class Group extends GraphicsElement<"Group"> {
    y: Num = _
    width: Num = _
    height: Num = _
-   scale: Option<Transform> = _
-   translate: Option<Transform> = _ // scaling applies to translates coordinates
+   scale: Transform = _
+   translate: Transform = _ // scaling applies to translated coordinates
    gs: List<GraphicsElement> = _
 }
 
@@ -27,9 +27,10 @@ export class Rect extends GraphicsElement<"Rect"> {
 }
 
 export class Polyline extends GraphicsElement<"Polyline"> {
-   scale: Option<Transform> = _
    points: List<Pair<Num, Num>> = _
    stroke: Str = _
+   strokeWidth: Num = _
+   marker: Option<Marker> = _
 }
 
 export type TransformTag = "Scale" | "Translate"
@@ -47,5 +48,23 @@ export class Translate extends Transform<"Translate"> {
    y: Num = _
 }
 
+export type MarkerTag = "Arrowhead" | "Circle" | "LeftTick" | "RightTick"
+
+export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
+}
+
+export class Arrowhead extends Marker<"Arrowhead"> {   
+}
+
+export class LeftTick extends Marker<"LeftTick"> {
+}
+
+export class RightTick extends Marker<"RightTick"> {
+}
+
+export class Circle extends Marker<"Circle"> {   
+}
+
 initDataType(GraphicsElement, [Group, Polyline, Rect])
 initDataType(Transform, [Scale, Translate])
+initDataType(Marker, [Arrowhead, Circle, LeftTick, RightTick])

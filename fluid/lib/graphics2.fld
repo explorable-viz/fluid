@@ -13,27 +13,16 @@ let set_x = fun x {
    Group(_, y, w, h, scale, translate, gs) → Group(x, y, w, h, scale, translate, gs)
 };
 
-// ((Num, Num), (Num, Num)) → ((Num, Num), (Num, Num))
-let boundingRect2 = fun ((x1, y1), (x2, y2)) →
-   ((min2 (x1, x2), min2 (y1, y2)), (max2 (x1, x2), max2 (y1, y2)));
-
-// Polyline must have at least one point for the min case to work.
-// Hmm, this isn't really a bounding rect because of the Group case.
-// GraphicsElement → ((Num, Num), (Num, Num))
-let boundingRect = fun {
-   Rect(x, y, w, h, _) → ((x, y), (w, h));
-   Group(x, y, w, h, _, _, _) → ((x, y), (w, h));
-   Polyline(scale, ps, _) → 
-      match foldl1 boundingRect2 ps as
-      ((x, y), (x2, y2)) → match (x2 - x, y2 - y) as 
-         (w, h) → match scale as {
-            None → ((x, y) (w, h));
-            Some(Scale(x_scale, y_scale)) → ((y * x_scale, y * y_scale), (w * x_scale, h * y_scale))
-         }
-};
+// ((Num, Num), (Num, Num)) → (Num, Num)
+let dimensions2 = fun ((x1, y1), (x2, y2)) →
+   (max2 (x1, x2), max2 (y1, y2));
 
 // GraphicsElement → (Num, Num)
-let dimensions = compose snd boundingRect;
+let dimensions = fun {
+   Rect(_, _, w, h, _) → (w, h);
+   Group(_, _, w, h, _, _, _) → (w, h);
+   Polyline(ps, _, _, _) → foldl dimensions2 (0, 0) ps
+};
 
 // GraphicsElement → Num
 let width = compose fst dimensions;
@@ -51,25 +40,100 @@ let colours1 = ["#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f"
 let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf"];
 
 // Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
-// frame, to avoid depending on content of child, and so are not themselves scaled.
+// frame, to avoid depending on content of child, and so are not themselves scaled. Polyline can't be scaled
+// directly because it inherits its frame of reference from its parent.
 // Num → GraphicsElement → GraphicsElement
 let scaleToWidth = fun w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
-   Group(x, y, w0, h, _, translate, gs) → Group(x, y, w, h, Some(Scale(w / w0, 1)), translate, gs);
-   // polyline has an implicit coordinate of (0, 0), relative to which its points are located
-   Polyline(scale, ps, stroke) → Polyline(Some(Scale(w / max (map fst ps), 1)), ps, stroke)
+   Group(x, y, w0, h, Scale(x_scale, y_scale), translate, gs) → 
+      let scale = Scale(x_scale * w / w0, y_scale) in Group(x, y, w, h, scale, translate, gs)
 };
 
-// List GraphicsElement → Num → GraphicsElement
+// Num → List GraphicsElement → List GraphicsElement
 let stackRight = fun sep gs →
-   Group(0, 0, length gs, max (map height gs), None, None, map (scaleToWidth (1 - sep)) (spaceRight (sep / 2) 1 gs));
+   map (scaleToWidth (1 - sep)) (spaceRight (sep / 2) 1 gs);
 
-// Num → List Str → List (a, Num) → GraphicsElement
-let barChart = fun sep colours →
-   compose 
-      (stackRight sep)
-      ((zipWith (fun (colour, (_, n)) → Rect(0, 0, 1, n, colour))) colours);
+// Num → List GraphicsElement → GraphicsElement
+let groupRight = fun sep gs →
+   Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), stackRight sep gs);
 
+// Heuristic saying how often to place a tick on an axis of length n.
+// Num → Num
+let tickEvery = fun n →
+   let m = floor (logBase 10 n) in
+   match n <= 2 * 10 ** m as {
+      True → 2 * 10 ** (m - 1);
+      False → 10 ** m
+   };
+
+// Bool → Str → Num → Num → GraphicsElement 
+let axis = fun vert colour x start end →
+   let tickSp = tickEvery (end - start);
+   let firstTick = ceilingToNearest start tickSp;
+   let n = floor ((end - firstTick) / tickSp) + 1;
+   let ys = concat (iterate n (fun y → y + tickSp) firstTick) [end];
+   // avoid redundant start point; not so easy/efficient for end point, so don't bother
+   let ys = match firstTick > start as {
+      True → [start, ...ys];
+      False → ys
+   };
+   let mkPoint = match vert as {
+      True → fun y → (x, y);
+      False → fun y → (y, x)
+   };
+   let tick = match vert as { True → LeftTick; False → RightTick }
+   in Polyline(map mkPoint ys, colour, 0.5, Some(tick));
+
+// Str → Num → Num → GraphicsElement 
+let x_axis = axis False;
+let y_axis = axis True;
+
+// Only defined for Group for now. Margin size is relative to parent coordinate frame.
+// Num → GraphicsElement → GraphicsElement
+let background = fun m Group(x, y, w, h, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
+   // should detect division by zero here
+   let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
+   let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
+   let translate = Translate(dx + m / x_scale', dy + m / y_scale');
+   let gs = [Rect(x, y, w, h, "Gainsboro"), Group(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]
+   in Group(0, 0, x + w, y + h, Scale(1, 1), Translate(0, 0), gs);
+
+// Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
+// Bool → List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
+let lineChart = fun withAxes colours x_start ks data →
+   let xs = map fst data;
+   // Str → Str → (GraphicsElement, Num)
+   let plot = fun k colour →
+      let ps = map (second (lookup k)) data in
+      (Polyline(ps, colour, 1, Some(Circle)), max (map snd ps));
+   let lines = zipWith (uncurry plot) ks colours;
+   let x_finish = last xs;
+   let y_finish = max (map snd lines);
+   let gs = map fst lines;
+   let axes = match withAxes as {
+      True → [x_axis "black" 0 x_start x_finish, y_axis "black" x_start 0 y_finish];
+      False → []
+   }
+   in background 1.5
+      Group(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), concat gs axes);
+
+// (List Str → List a → GraphicsElement) → Bool → List Str → Num → List (b, a) → GraphicsElement
+let chart = fun mkChart withAxes colours sep data →
+   let gs = stackRight sep (mkChart colours (map snd data));
+   let w = length gs;
+   let h = max (map height gs);
+   let axes = match withAxes as {
+      True → [x_axis "black" 0 0 w, y_axis "black" 0 0 h];
+      False → []
+   }
+   in background 0.2
+      Group(0, 0, w, h, Scale(1, 1), Translate(0, 0), concat gs axes);
+
+// List Str → List a → GraphicsElement
+let rects = fun colours ns →
+   zipWith (fun (colour, n) → Rect(0, 0, 1, n, colour)) colours ns;
+
+// First component of data (categorical value) currently ignored; values just mapped positionally to colors.
 // List Str → List (a, Num) → GraphicsElement
 let stackedBar = fun colours ns →
    let subtotals = scanl1 (fun (x, y) → x + y) 0 (map snd ns);
@@ -77,16 +141,15 @@ let stackedBar = fun colours ns →
    let rects = map 
       (fun ((y, height), colour) → Rect(0, y, 1, height, colour))
       (zip dims colours)
-   in Group(0, 0, 1, last subtotals, None, None, rects);
+   in Group(0, 0, 1, last subtotals, Scale(1, 1), Translate(0, 0), rects);
 
-// Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
-// List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
-let multiPlot = fun colours x_start ks data →
-   let xs = map fst data;
-   // Str → Str → (GraphicsElement, Num)
-   let plot = fun k colour →
-      // List (Num, Num)
-      let ps = map (second (lookup k)) data in
-      (Polyline(None, ps, colour), max (map snd ps));
-   let lines = zipWith (uncurry plot) ks colours in
-   Group(0, 0, last xs - x_start, max (map snd lines), None, Some(Translate(0 - x_start, 0)), map fst lines)
+// Bool → List Str → Num → List (a, Num) → GraphicsElement
+let barChart = chart rects;
+
+// For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
+// Bool → List Str → Num → List (a, List (b, Num)) → GraphicsElement
+let groupedBarChart = chart (compose map (flip (barChart False) 0));
+
+// See stackedBar for strong (unjustified) assumption about uniformity of data.
+// Bool → List Str → Num → List (a, List (b, Num)) → GraphicsElement
+let stackedBarChart = chart (compose map stackedBar)

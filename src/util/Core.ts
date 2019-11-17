@@ -46,6 +46,10 @@ export function absurd (msg?: string, ...x̅: unknown[]): any {
    assert(false, msg, ...x̅)
 }
 
+export function id<T> (x: T): T {
+   return x
+}
+
 // User-level error.
 export function userError (msg: string, ...x̅: unknown[]): any {
    if (x̅.length > 0) {
@@ -64,11 +68,11 @@ export function abstractMethodError<T> (this_: Object): T {
    return assert(false, "Abstract method in " + this_)
 }
 
-export function __nonNull<T> (x: T | null | undefined): T {
+export function __nonNull<T> (x: T | null | undefined, msg?: string): T {
    if (x !== null && x !== undefined) {
       return x
    } else {
-      return assert(false, "Unexpected null | undefined.")
+      return assert(false, `Unexpected null | undefined.${msg === undefined ? "" : `\n${msg}`}`)
    }
 }
 
