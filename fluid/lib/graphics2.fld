@@ -57,12 +57,6 @@ let stackRight = fun sep gs →
 let groupRight = fun sep gs →
    Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), stackRight sep gs);
 
-// Num → List Str → List (a, Num) → GraphicsElement
-let barChart = fun sep colours →
-   compose 
-      (groupRight sep)
-      ((zipWith (fun (colour, (_, n)) → Rect(0, 0, 1, n, colour))) colours);
-
 // First component of data (categorical value) currently ignored; values just mapped positionally to colors.
 // List Str → List (a, Num) → GraphicsElement
 let stackedBar = fun colours ns →
@@ -144,4 +138,17 @@ let stackedBarChart = fun withAxes sep data →
       False → []
    }
    in background 0.2
-      Group(0, 0, n, h, Scale(1, 1), Translate(0, 0), concat gs axes)
+      Group(0, 0, n, h, Scale(1, 1), Translate(0, 0), concat gs axes);
+
+// Num → List Str → List (a, Num) → GraphicsElement
+let barChart = fun sep colours →
+   compose 
+      (groupRight sep)
+      ((zipWith (fun (colour, (_, n)) → Rect(0, 0, 1, n, colour))) colours);
+
+// For each top-level numerical index, plot a bar chart for the corresponding data.
+// List (Num, (List (a, (List (b, Num)))))
+let groupedBarChart = fun data →
+   groupRight 0.2
+      (flip map data
+         (compose (compose (groupRight 0.2) (map (compose (barChart 0 colours1) snd))) snd))

@@ -2,10 +2,10 @@
 // typedef Country = Str
 // typedef EnergyType = Str
 // typedef Output = Num
-// typedef Data = List (Year, AnnualData)
-// typedef AnnualData = List (Country, CountryData)
 // typedef CountryData = List (EnergyType, Output)
-// The original dataset sometimes has '~0' instead of '0'. Including only 3 top countries here.
+// typedef AnnualData = List (Country, CountryData)
+// typedef Data = List (Year, AnnualData)
+// The original dataset sometimes has '~0' instead of '0'. Including only 4 countries here.
 [
    // https://www.ren21.net/wp-content/uploads/2019/05/GSR2014_Full-Report_English.pdf
    (2013, [
