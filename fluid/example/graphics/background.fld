@@ -1,0 +1,6 @@
+let gs = stackRight 0.2 [
+   stackedBar colours1 [("a", 3), ("b", 1), ("c", 2)],
+   stackedBar colours1 [("a", 0), ("b", 4), ("c", 3)]
+]
+in background 0.3
+   Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), gs)

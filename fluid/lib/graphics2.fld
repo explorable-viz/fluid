@@ -22,7 +22,7 @@ let dimensions = fun {
    Rect(_, _, w, h, _) → (w, h);
    Group(_, _, w, h, _, _, _) → (w, h);
    Polyline(Scale(x_scale, y_scale), ps, _, _, _) →
-      match foldl boundingRect2 (0, 0) ps as
+      match foldl dimensions2 (0, 0) ps as
       (w, h) → (w * x_scale, h * y_scale)
 };
 
@@ -148,5 +148,5 @@ let stackedBarChart = fun withAxes sep data →
       True → [x_axis "black" 10 0 n, y_axis "black" 0 0 h];
       False → []
    }
-   in background 0.5
+   in background 0
       Group(0, 0, n, h, Scale(1, 1), Translate(0, 0), concat gs axes)
