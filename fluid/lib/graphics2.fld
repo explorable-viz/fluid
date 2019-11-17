@@ -130,20 +130,11 @@ let metaChart = fun mkChart withAxes colours sep data →
       Group(0, 0, w, h, Scale(1, 1), Translate(0, 0), concat gs axes);
 
 // List Str → List a → GraphicsElement
-let wibble = fun colours ns →
+let makeRects = fun colours ns →
    zipWith (fun (colour, n) → Rect(0, 0, 1, n, colour)) colours ns;
 
 // Bool → List Str → Num → List (a, Num) → GraphicsElement
-let barChart = fun withAxes colours sep data →
-   let gs = stackRight sep (wibble colours (map snd data));
-   let w = length gs;
-   let h = max (map height gs);
-   let axes = match withAxes as {
-      True → [x_axis "black" 0 0 w, y_axis "black" 0 0 h];
-      False → []
-   }
-   in background 0.2
-      Group(0, 0, w, h, Scale(1, 1), Translate(0, 0), concat gs axes);
+let barChart = metaChart makeRects;
 
 // For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
 // Bool → List Str → Num → List (a, List (b, Num)) → GraphicsElement
