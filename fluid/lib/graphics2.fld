@@ -117,9 +117,9 @@ let lineChart = fun withAxes colours x_start ks data →
    in background 1.5
       Group(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), concat gs axes);
 
-// (List Str → a → GraphicsElement) → Bool → List Str → Num → List (b, a) → GraphicsElement
+// (List Str → List a → GraphicsElement) → Bool → List Str → Num → List (b, a) → GraphicsElement
 let metaChart = fun mkChart withAxes colours sep data →
-   let gs = stackRight sep (map (compose (mkChart colours) snd) data);
+   let gs = stackRight sep (mkChart colours (map snd data));
    let w = length gs;
    let h = max (map height gs);
    let axes = match withAxes as {
@@ -129,7 +129,7 @@ let metaChart = fun mkChart withAxes colours sep data →
    in background 0.2
       Group(0, 0, w, h, Scale(1, 1), Translate(0, 0), concat gs axes);
 
-// List Str → Num → List (a, Num) → GraphicsElement
+// Bool → List Str → Num → List (a, Num) → GraphicsElement
 let barChart = fun withAxes colours sep data →
    let gs = stackRight sep (zipWith (fun (colour, (_, n)) → Rect(0, 0, 1, n, colour)) colours data);
    let w = length gs;
@@ -143,7 +143,7 @@ let barChart = fun withAxes colours sep data →
 
 // For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
 // Bool → List Str → Num → List (a, List (b, Num)) → GraphicsElement
-let groupedBarChart = metaChart (flip (barChart False) 0);
+let groupedBarChart = metaChart (compose map (flip (barChart False) 0));
 
 // First component of data (categorical value) currently ignored; values just mapped positionally to colors.
 // List Str → List (a, Num) → GraphicsElement
@@ -157,4 +157,4 @@ let stackedBar = fun colours ns →
 
 // See stackedBar for strong (unjustified) assumption about uniformity of data.
 // Bool → List Str → Num → List (a, List (b, Num)) → GraphicsElement
-let stackedBarChart = metaChart stackedBar
+let stackedBarChart = metaChart (compose map stackedBar)
