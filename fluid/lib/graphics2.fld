@@ -21,9 +21,7 @@ let dimensions2 = fun ((x1, y1), (x2, y2)) →
 let dimensions = fun {
    Rect(_, _, w, h, _) → (w, h);
    Group(_, _, w, h, _, _, _) → (w, h);
-   Polyline(Scale(x_scale, y_scale), ps, _, _, _) →
-      match foldl dimensions2 (0, 0) ps as
-      (w, h) → (w * x_scale, h * y_scale)
+   Polyline(ps, _, _, _) → foldl dimensions2 (0, 0) ps
 };
 
 // GraphicsElement → Num
@@ -42,16 +40,13 @@ let colours1 = ["#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f"
 let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf"];
 
 // Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
-// frame, to avoid depending on content of child, and so are not themselves scaled.
+// frame, to avoid depending on content of child, and so are not themselves scaled. Polyline can't be scaled
+// directly because it inherits its frame of reference from its parent.
 // Num → GraphicsElement → GraphicsElement
 let scaleToWidth = fun w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
    Group(x, y, w0, h, Scale(x_scale, y_scale), translate, gs) → 
-      let scale = Scale(x_scale * w / w0, y_scale) in Group(x, y, w, h, scale, translate, gs);
-   // polyline has an implicit coordinate of (0, 0), relative to which its points are located
-   Polyline(Scale(x_scale, y_scale), ps, stroke, strokeWidth, marker) → 
-      let scale = Scale(x_scale * w / max (map fst ps), y_scale) in 
-      Polyline(scale, ps, stroke, strokeWidth, marker)
+      let scale = Scale(x_scale * w / w0, y_scale) in Group(x, y, w, h, scale, translate, gs)
 };
 
 // Num → List GraphicsElement → List GraphicsElement
@@ -103,7 +98,7 @@ let axis = fun vert colour x start end →
       False → fun y → (y, x)
    };
    let tick = match vert as { True → LeftTick; False → RightTick }
-   in Polyline(Scale(1, 1), map mkPoint ys, colour, 0.5, Some(tick));
+   in Polyline(map mkPoint ys, colour, 0.5, Some(tick));
 
 // Str → Num → Num → GraphicsElement 
 let x_axis = axis False;
@@ -126,7 +121,7 @@ let multiPlot = fun withAxes colours x_start ks data →
    // Str → Str → (GraphicsElement, Num)
    let plot = fun k colour →
       let ps = map (second (lookup k)) data in
-      (Polyline(Scale(1, 1), ps, colour, 1, Some(Circle)), max (map snd ps));
+      (Polyline(ps, colour, 1, Some(Circle)), max (map snd ps));
    let lines = zipWith (uncurry plot) ks colours;
    let x_finish = last xs;
    let y_finish = max (map snd lines);

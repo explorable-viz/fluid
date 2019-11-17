@@ -153,15 +153,9 @@ export class GraphicsRenderer {
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const g: Polyline = as(tg.tv.v, Polyline)
       // each point is considered a "child", and therefore subject to my local scaling
-      const ps: [number, number][] = this.withLocalFrame(
-         transformFun(g.scale),
-         last(this.translations),
-         () => {
-            return g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
-               return this.transform([p.fst.val, p.snd.val])
-            })
-         }
-      )
+      const ps: [number, number][] = g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
+         return this.transform([p.fst.val, p.snd.val])
+      })
       // Optimise polyline with 2 points to line. TODO: what about when there is only one point?
       let line_: SVGElement
       if (ps.length === 2) {
