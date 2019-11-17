@@ -1,4 +1,5 @@
-import { Class, __nonNull, absurd, as, assert, classOf } from "../util/Core"
+import { last } from "../util/Array"
+import { Class, __nonNull, absurd, as, assert, classOf, id } from "../util/Core"
 import { Cons, List, None, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Group, GraphicsElement, Marker, Polyline, Rect, Scale, Transform, Translate } from "../Graphics2"
@@ -13,16 +14,16 @@ const fontSize: number = 12
 
 export const svg: SVG = new SVG()
 
-type TransformFun = (x: number, y: number) => [number, number]
+type TransformFun = ([x, y]: [number, number]) => [number, number]
 
 function scale (x_scale: number, y_scale: number): TransformFun {
-   return (x, y): [number, number] => {
+   return ([x, y]): [number, number] => {
       return [x * x_scale, y * y_scale]
    }
 }
 
 function translate (x_inc: number, y_inc: number): TransformFun {
-   return (x, y): [number, number] => {
+   return ([x, y]): [number, number] => {
       return [x + x_inc, y + y_inc]
    }
 }
@@ -40,28 +41,25 @@ function transformFun (t: Transform): TransformFun {
    }
 }
 
-function transformFuns (...ts: Transform[]): TransformFun[] {
-   return ts.map(t => transformFun(as(t, Transform)))
-}
-
 function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
-   return (x, y): [number, number] => {
-      let [x_, y_] = f2(x, y)
-      return f1(x_, y_)
+   return ([x, y]): [number, number] => {
+      return f1(f2([x, y]))
    }
 }
 
 export class GraphicsRenderer {
    root: SVGSVGElement
    ancestors: SVGElement[] // stack of enclosing SVG elements
-   transforms: TransformFun[] // stack of successive compositions of linear transformations
+   translations: TransformFun[] // stack of (uncomposed) active translations, each relative to parent SVG
+   scalings: TransformFun[] // stack of successively composed scalings, each relative to root SVG
    showInvisible: boolean
 
    // transform attribute isn't supported on SVGElement, so it contains a group element with the inversion transform.
    constructor (root: SVGSVGElement, initialAncestor: SVGElement) {
       this.root = root
       this.ancestors = [initialAncestor]
-      this.transforms = [(x, y) => [x, y]]
+      this.translations = [id]
+      this.scalings = [id]
       this.showInvisible = true
    }
 
@@ -69,10 +67,8 @@ export class GraphicsRenderer {
       return this.ancestors[this.ancestors.length - 1]
    }
 
-   // rounding is problematic
    get transform (): TransformFun {
-      assert(this.transforms.length > 0)
-      return this.transforms[this.transforms.length - 1] 
+      return postcompose(last(this.scalings), last(this.translations))
    }
 
    render (tg: ExplValue<GraphicsElement>, [w, h]: [number, number]): void {
@@ -83,9 +79,13 @@ export class GraphicsRenderer {
       }
       const width: number = parseFloat(__nonNull(root.getAttribute("width")))
       const height: number = parseFloat(__nonNull(root.getAttribute("height")))
-      this.withLocalTransforms([scale(width / w, height / h)], () => {
-         this.renderElement(ExplValueCursor.descendant(null, tg))
-      })
+      this.withLocalFrame(
+         scale(width / w, height / h), 
+         id,
+         () => {
+            this.renderElement(ExplValueCursor.descendant(null, tg))
+         }
+      )
    }
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
@@ -103,23 +103,22 @@ export class GraphicsRenderer {
       }
    }
 
-   withLocalTransforms<T> (ts: TransformFun[], localRender: () => T): T {
+   // Scalings accumulate as we go down. Translations don't, because we use nested SVGs.
+   withLocalFrame<T> (scale: TransformFun, translate: TransformFun, localRender: () => T): T {
       let result: T
-      ts.forEach(t => {
-         this.transforms.push(postcompose(this.transform, t))
-      })
+      this.scalings.push(postcompose(this.transform, scale))
+      this.translations.push(translate)
       result = localRender()
-      ts.forEach(_ => {
-         this.transforms.pop()
-      })
+      this.translations.pop()
+      this.scalings.pop()
       return result
    }
 
    group (tg: ExplValueCursor/*<Graphic>*/): void {
       const g: Group = as(tg.tv.v, Group)
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
-      const [x, y] = this.transform(g.x.val, g.y.val)
-      const [x2, y2] = this.transform(g.x.val + g.width.val, g.y.val + g.height.val)
+      const [x, y] = this.transform([g.x.val, g.y.val])
+      const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
       const [width, height] = [x2 - x, y2 - y]
       assert(width >= 0 && height >= 0)
       const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.group)
@@ -128,19 +127,23 @@ export class GraphicsRenderer {
          this.current.appendChild(border(x, y, width, height, "gray", true))
       }
       this.ancestors.push(svg)
-      this.withLocalTransforms(transformFuns(g.scale, g.translate), () => { // scaling applies to translated coordinates
-         for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
-         Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
-            this.renderElement(tg̅.to(Cons, "head"))
+      this.withLocalFrame(
+         transformFun(g.scale), 
+         transformFun(g.translate), 
+         () => { // scaling applies to translated coordinates
+            for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
+            Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
+               this.renderElement(tg̅.to(Cons, "head"))
+            }
          }
-      })
+      )
       this.ancestors.pop()
    }
 
    rect (tg: ExplValueCursor/*<Rect>*/): void {
       const g: Rect = as(tg.tv.v, Rect)
-      const [x, y] = this.transform(g.x.val, g.y.val)
-      const [x2, y2] = this.transform(g.x.val + g.width.val, g.y.val + g.height.val)
+      const [x, y] = this.transform([g.x.val, g.y.val])
+      const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
       const [width, height] = [x2 - x, y2 - y]
       assert(width >= 0 && height >= 0)
       const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val, this.rect)
@@ -150,11 +153,15 @@ export class GraphicsRenderer {
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const g: Polyline = as(tg.tv.v, Polyline)
       // each point is considered a "child", and therefore subject to my local scaling
-      const ps: [number, number][] = this.withLocalTransforms(transformFuns(g.scale), () => {
-         return g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
-            return this.transform(p.fst.val, p.snd.val)
-         })
-      })
+      const ps: [number, number][] = this.withLocalFrame(
+         transformFun(g.scale),
+         id,
+         () => {
+            return g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
+               return this.transform([p.fst.val, p.snd.val])
+            })
+         }
+      )
       // Optimise polyline with 2 points to line. TODO: what about when there is only one point?
       let line_: SVGElement
       if (ps.length === 2) {

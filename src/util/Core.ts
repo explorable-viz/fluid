@@ -46,6 +46,10 @@ export function absurd (msg?: string, ...x̅: unknown[]): any {
    assert(false, msg, ...x̅)
 }
 
+export function id<T> (x: T): T {
+   return x
+}
+
 // User-level error.
 export function userError (msg: string, ...x̅: unknown[]): any {
    if (x̅.length > 0) {
