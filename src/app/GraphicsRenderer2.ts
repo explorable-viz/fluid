@@ -124,6 +124,10 @@ export class GraphicsRenderer {
       assert(width >= 0 && height >= 0)
       const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.group)
       this.current.appendChild(svg)
+      if (this.showInvisible) {
+         this.current.appendChild(border(x, y, width, height, "gray", true))
+         console.log("HERE")
+      }
       this.ancestors.push(svg)
       this.withLocalTransforms(transformFuns(g.scale, g.translate), () => { // scaling applies to translated coordinates
          for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
@@ -131,9 +135,6 @@ export class GraphicsRenderer {
             this.renderElement(tg̅.to(Cons, "head"))
          }
       })
-      if (this.showInvisible) {
-         svg.appendChild(border(x, y, width, height, "gray", true))
-      }
       this.ancestors.pop()
    }
 
@@ -143,7 +144,7 @@ export class GraphicsRenderer {
       const [x2, y2] = this.transform(g.x.val + g.width.val, g.y.val + g.height.val)
       const [width, height] = [x2 - x, y2 - y]
       assert(width >= 0 && height >= 0)
-      const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val)
+      const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val, this.rect)
       this.current.appendChild(r)
    }
 

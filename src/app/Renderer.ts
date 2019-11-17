@@ -28,7 +28,7 @@ export function arrow (ẟ_style: DeltaStyle): SVGElement {
 }
 
 export function border (x: number, y: number, width: number, height: number, stroke: string, dashed: boolean): SVGRectElement {
-   const b: SVGRectElement = rect(x, y, width, height, stroke, "none")
+   const b: SVGRectElement = rect(x, y, width, height, stroke, "none", border)
    if (dashed) {
       b.setAttribute("stroke-dasharray", "1,1")
    }
@@ -332,8 +332,8 @@ export function polyline (p̅: [number, number][], stroke: string, strokeWidth: 
    return l
 }
 
-export function rect (x: number, y: number, width: number, height: number, stroke: string, fill: string): SVGRectElement {
-   const r: SVGRectElement = createElement("rect", rect)
+export function rect (x: number, y: number, width: number, height: number, stroke: string, fill: string, createdBy: Function): SVGRectElement {
+   const r: SVGRectElement = createElement("rect", createdBy)
    r.setAttribute("x", `${round(x)}`)
    r.setAttribute("y", `${round(y)}`)
    r.setAttribute("width", `${round(width)}`)
@@ -355,7 +355,7 @@ export function round (n: number): string {
 export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
    const svg: SVGSVGElement = createElement("svg", shading)
    const { width, height }: Dimensions = dimensions.get(g)!
-   const background: SVGRectElement = rect(g.x.baseVal.value, g.y.baseVal.value, width, height, "none", fill)
+   const background: SVGRectElement = rect(g.x.baseVal.value, g.y.baseVal.value, width, height, "none", fill, shading)
    background.setAttribute("pointer-events", "none")
    svg.appendChild(background)
    svg.appendChild(g)
