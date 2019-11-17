@@ -116,7 +116,7 @@ let background = fun m Group(x, y, w, h, Scale(x_scale, y_scale), Translate(dx, 
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // Bool → List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
-let multiPlot = fun withAxes colours x_start ks data →
+let lineChart = fun withAxes colours x_start ks data →
    let xs = map fst data;
    // Str → Str → (GraphicsElement, Num)
    let plot = fun k colour →
