@@ -78,7 +78,7 @@ let axisColour = "black";
 let tickLength = 0.1;
 let markerRadius = 0.5;
 
-// Helpers for axis functions. Need some 'transpose' consolidation.
+// Helpers for axis functions.
 // Bool → Colour → Num → GraphicsElement
 let tick = fun {
    True colour len →
@@ -87,15 +87,15 @@ let tick = fun {
       Line((0, 0), (0, 0 - len), colour, axisStrokeWidth)
    };
 
-// Bool → Str → GraphicsElement
+// Bool → Num → Num → Str → GraphicsElement
 let label = fun {
-   True len str → Text(0 - len, 0, str, "end", "central");
-   False len str → Text(0, 0 - len, str, "middle", "hanging")
+   True x len str → Text(0 - len, x, str, "end", "central");
+   False x len str → Text(x, 0 - len, str, "middle", "hanging")
 };
 
 // Bool → Colour → Num → Str → GraphicsElement
 let labelledTick = fun vert colour len str →
-   Group([tick vert colour len, label vert len str]);
+   Group([tick vert colour len, label vert 0 len str]);
 
 // Bool → Num → Num → (Num, Num)
 let mkPoint = fun {
