@@ -219,8 +219,8 @@ export class GraphicsRenderer {
             text: SVGTextElement = textElement_graphical(x, y, fontSize, g.str.val)
       this.current.appendChild(text)
       text.setAttribute("fill", "black")
-      text.setAttribute("text-anchor", `${g.textAnchor.val}`)
-      text.setAttribute("alignment-baseline", "central")
+      text.setAttribute("text-anchor", `${g.anchor.val}`)
+      text.setAttribute("alignment-baseline", `${g.baseline.val}`)
    }
 
    setMarkerMid (el: SVGElement, C: Class<Marker>, colour: string): void {

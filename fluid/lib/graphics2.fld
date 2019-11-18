@@ -75,11 +75,11 @@ let tickLength = 0.1;
 // Str → Num → GraphicsElement
 let leftTick = fun colour str len →
    let tick = Line((0, 0), (0 - len, 0), colour, axisStrokeWidth)
-   in Group([tick, Text(0 - len, 0, str, "end")]);
+   in Group([tick, Text(0 - len, 0, str, "end", "central")]);
 
 let downTick = fun colour str len →
    let tick = Line((0, 0), (0, 0 - len), colour, axisStrokeWidth)
-   in Group([tick, Text(0, 0 - len, str, "middle")]);
+   in Group([tick, Text(0, 0 - len, str, "middle", "hanging")]);
 
 // Notionally a y-axis located at position x on the x-axis.
 // Bool → Str → Num → Num → GraphicsElement 

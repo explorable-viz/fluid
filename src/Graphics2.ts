@@ -53,7 +53,8 @@ export class Text extends GraphicsElement<"Text"> {
    x: Num = _
    y: Num = _
    str: Str = _
-   textAnchor: Str = _
+   anchor: Str = _   // SVG text-anchor
+   baseline: Str = _ // SVG alignment-baseline
 }
 
 export type TransformTag = "Scale" | "Translate"
