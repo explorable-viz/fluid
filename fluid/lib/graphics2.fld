@@ -1,3 +1,5 @@
+// typedef Colours = List Str
+
 // Simplistic but something more general may require primitives which take data values as inputs.
 // Application module GraphicsRenderer must be loaded for these definitions to work.
 // Str → Num
@@ -108,9 +110,28 @@ let axis = fun vert colour x start end →
       Polymarkers(ps, flip map ys (compose (flip (makeTick vert colour) tickLength) numToStr))
    ]);
 
+// Bool → Str → Num → Num → GraphicsElement 
+let categoricalAxis = fun vert colour x start end →
+   let tickSp = tickEvery (end - start);
+   let firstTick = ceilingToNearest start tickSp;
+   let n = floor ((end - firstTick) / tickSp) + 1;
+   let ys = concat (iterate n (fun y → y + tickSp) firstTick) [end];
+   // avoid redundant start point; not so easy/efficient for end point, so don't bother
+   let ys = match firstTick > start as {
+      True → [start, ...ys];
+      False → ys
+   };
+   let ps = map (mkPoint vert x) ys
+   in Group([
+      Line(head ps, last ps, colour, axisStrokeWidth),
+      Polymarkers(ps, flip map ys (compose (flip (makeTick vert colour) tickLength) numToStr))
+   ]);
+
 // Str → Num → Num → GraphicsElement 
 let x_axis = axis False;
 let y_axis = axis True;
+let x_categoricalAxis = categoricalAxis False;
+let y_categoricalAxis = categoricalAxis True;
 
 // Only defined for Group for now. Margin size is relative to parent coordinate frame.
 // Num → GraphicsElement → GraphicsElement
@@ -122,7 +143,7 @@ let background = fun m Viewport(x, y, w, h, Scale(x_scale, y_scale), Translate(d
    in Group([Rect(x, y, w, h, "Gainsboro"), Viewport(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]);
    
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
-// Bool → List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
+// Bool → Colours → List k2 → List (Num, List (k2, Num)) → GraphicsElement
 let lineChart = fun withAxes colours x_start ks data →
    let xs = map fst data;
    // Str → Str → (GraphicsElement, Num)
@@ -144,24 +165,24 @@ let lineChart = fun withAxes colours x_start ks data →
    in background 0.7
       Viewport(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), concat gs axes);
 
-// (List Str → List a → GraphicsElement) → Bool → List Str → Num → List (b, a) → GraphicsElement
-let chart = fun mkChart withAxes colours sep data →
+// (Colours → List a → GraphicsElement) → Bool → Colours → Num → List (b, a) → GraphicsElement
+let categoricalChart = fun mkChart withAxes colours sep data →
    let gs = stackRight sep (mkChart colours (map snd data));
    let w = length gs;
    let h = max (map height gs);
    let axes = match withAxes as {
-      True → [x_axis "black" 20 0 w, y_axis "black" 0 0 h];
+      True → [x_categoricalAxis "black" 20 0 w, y_categoricalAxis "black" 0 0 h];
       False → []
    }
    in background 0.2
       Viewport(0, 0, w, h, Scale(1, 1), Translate(0, 0), concat gs axes);
 
-// List Str → List a → GraphicsElement
+// Colours → List a → GraphicsElement
 let rects = fun colours ns →
    zipWith (fun (colour, n) → Rect(0, 0, 1, n, colour)) colours ns;
 
 // First component of data (categorical value) currently ignored; values just mapped positionally to colors.
-// List Str → List (a, Num) → GraphicsElement
+// Colours → List (a, Num) → GraphicsElement
 let stackedBar = fun colours ns →
    let subtotals = scanl1 (fun (x, y) → x + y) 0 (map snd ns);
    let dims = zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals));
@@ -170,13 +191,13 @@ let stackedBar = fun colours ns →
       (zip dims colours)
    in Viewport(0, 0, 1, last subtotals, Scale(1, 1), Translate(0, 0), rects);
 
-// Bool → List Str → Num → List (a, Num) → GraphicsElement
-let barChart = chart rects;
+// Bool → Colours → Num → List (a, Num) → GraphicsElement
+let barChart = categoricalChart rects;
 
 // For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
-// Bool → List Str → Num → List (a, List (b, Num)) → GraphicsElement
-let groupedBarChart = chart (compose map (flip (barChart False) 0));
+// Bool → Colours → Num → List (a, List (b, Num)) → GraphicsElement
+let groupedBarChart = categoricalChart (compose map (flip (barChart False) 0));
 
 // See stackedBar for strong (unjustified) assumption about uniformity of data.
-// Bool → List Str → Num → List (a, List (b, Num)) → GraphicsElement
-let stackedBarChart = chart (compose map stackedBar)
+// Bool → Colours → Num → List (a, List (b, Num)) → GraphicsElement
+let stackedBarChart = categoricalChart (compose map stackedBar)
