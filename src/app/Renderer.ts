@@ -429,7 +429,7 @@ function textElement (fontSize: number, class_: string, str: string): SVGTextEle
 // Flip text vertically to cancel out the global vertical flip. Don't set x and y but express
 // position through a translation so that the scaling doesn't affect the position.
 export function textElement_graphical (x: number, y: number, fontSize: number, str: string): SVGTextElement {
-   const text: SVGTextElement = textElement(fontSize, "", str)
+   const text: SVGTextElement = textElement(fontSize, "label", str)
    let transform: string = `translate(${round(x)},${round(y)})`
    text.setAttribute("transform", transform + " scale(1,-1)")
    return text

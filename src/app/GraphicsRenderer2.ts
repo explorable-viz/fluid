@@ -10,7 +10,7 @@ import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 import { border, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
-const fontSize: number = 12
+const fontSize: number = 8
 
 export const svg: SVG = new SVG()
 
@@ -187,9 +187,13 @@ export class GraphicsRenderer {
             userError(`${Polymarkers.name}: more markers than points.`)
          } else {
             const p: Pair<Num, Num> = as(tps.to(Cons, "head").tv.v, Pair)
-            this.withLocalFrame(id, translate(p.fst.val, p.snd.val), () => {
-               this.renderElement(tg̅.to(Cons, "head"))
-            })
+            this.withLocalFrame(
+               id, 
+               postcompose(last(this.translations), translate(p.fst.val, p.snd.val)), 
+               () => {
+                  this.renderElement(tg̅.to(Cons, "head"))
+               }
+            )
          }
       }
    }
@@ -210,6 +214,8 @@ export class GraphicsRenderer {
             text: SVGTextElement = textElement_graphical(x, y, fontSize, g.str.val)
       this.current.appendChild(text)
       text.setAttribute("fill", "black")
+      text.setAttribute("text-anchor", "end")
+      text.setAttribute("alignment-baseline", "central")
    }
 
    setMarkerMid (el: SVGElement, C: Class<Marker>, colour: string): void {
