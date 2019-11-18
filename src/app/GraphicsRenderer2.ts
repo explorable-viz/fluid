@@ -1,6 +1,6 @@
 import { last } from "../util/Array"
-import { Class, __nonNull, absurd, as, assert, classOf, id, userError } from "../util/Core"
-import { Cons, List, None, Pair, Some } from "../BaseTypes"
+import { Class, __nonNull, absurd, as, assert, id, userError } from "../util/Core"
+import { Cons, List, Pair } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Circle, Group, GraphicsElement, Line, Marker, Polyline, Polymarkers, Rect, Scale, Text, Transform, Translate, Viewport } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
@@ -136,7 +136,7 @@ export class GraphicsRenderer {
    circle (tg: ExplValueCursor/*<Rect>*/): void {
       const g: Circle = as(tg.tv.v, Circle)
       const [x, y] = this.transform([g.x.val, g.y.val])
-      const [radius,] = this.scale([g.radius.val, 1]) // translations can apply to individual dimensions
+      const [, radius] = this.scale([0, g.radius.val])
       const r: SVGCircleElement = circle(x, y, radius, "none", g.fill.val, this.circle)
       this.current.appendChild(r)
    }
@@ -163,13 +163,7 @@ export class GraphicsRenderer {
       const ps: [number, number][] = g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
          return this.transform([p.fst.val, p.snd.val])
       })
-      let l: SVGElement = polyline(ps, g.stroke.val, g.strokeWidth.val)
-      if (Some.is(g.marker)) {
-         this.setMarkerMid(l, classOf(g.marker.t), g.stroke.val)
-      } else {
-         assert(None.is(g.marker))
-      }
-      this.current.appendChild(l)
+      this.current.appendChild(polyline(ps, g.stroke.val, g.strokeWidth.val))
    }
 
    polymarkers (tg: ExplValueCursor/*<Polymarkers>*/): void {

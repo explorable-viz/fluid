@@ -1,4 +1,4 @@
-import { List, Option, Pair } from "./BaseTypes"
+import { List, Pair } from "./BaseTypes"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Num, Str, _ } from "./Value"
@@ -30,7 +30,6 @@ export class Polyline extends GraphicsElement<"Polyline"> {
    points: List<Pair<Num, Num>> = _
    stroke: Str = _
    strokeWidth: Num = _
-   marker: Option<Marker> = _
 }
 
 export class Polymarkers extends GraphicsElement<"Polymarkers"> {
