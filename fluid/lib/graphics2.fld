@@ -78,15 +78,21 @@ let axisColour = "black";
 let tickLength = 0.1;
 let markerRadius = 0.5;
 
-// Helpers for axis functions.
+// Helpers for axis functions. Need some 'transpose' consolidation.
+// Bool → Colour → Num → GraphicsElement
+let tick = fun {
+   True colour len →
+      Line((0, 0), (0 - len, 0), colour, axisStrokeWidth);
+   False colour len →
+      Line((0, 0), (0, 0 - len), colour, axisStrokeWidth)
+   };
+
 // Bool → Colour → Num → Str → GraphicsElement
-let makeTick = fun {
+let labelledTick = fun {
    True colour len str →
-      let tick = Line((0, 0), (0 - len, 0), colour, axisStrokeWidth)
-      in Group([tick, Text(0 - len, 0, str, "end", "central")]);
+      Group([tick True colour len, Text(0 - len, 0, str, "end", "central")]);
    False colour len str →
-      let tick = Line((0, 0), (0, 0 - len), colour, axisStrokeWidth)
-      in Group([tick, Text(0, 0 - len, str, "middle", "hanging")])
+      Group([tick False colour len, Text(0, 0 - len, str, "middle", "hanging")])
 };
 
 // Bool → Num → Num → (Num, Num)
@@ -110,7 +116,7 @@ let axis = fun vert colour x start end →
    let ps = map (mkPoint vert x) ys
    in Group([
       Line(head ps, last ps, colour, axisStrokeWidth),
-      Polymarkers(ps, flip map ys (compose (makeTick vert colour tickLength) numToStr))
+      Polymarkers(ps, flip map ys (compose (labelledTick vert colour tickLength) numToStr))
    ]);
 
 // Notionally a y-axis located at position x on the x-axis.
@@ -120,7 +126,11 @@ let categoricalAxis = fun vert colour x catValues →
    let ps = map (mkPoint vert x) ys
    in Group([
       Line(head ps, last ps, colour, axisStrokeWidth),
-      Polymarkers(tail ps, flip map catValues (makeTick vert colour tickLength))
+      Polymarkers(tail ps, flip map catValues (const (tick vert colour tickLength))),
+      Polymarkers(
+         map (mkPoint vert x) (iterate (length catValues) (fun y → y + 1) 0.5), 
+         flip map catValues (fun str → Text(0, 0, str, "middle", "hanging"))
+      )
    ]);
 
 // Num → Num → GraphicsElement 
