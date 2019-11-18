@@ -129,7 +129,7 @@ let categoricalAxis = fun vert colour x catValues →
    in Group([
       Line(head ps, last ps, colour, axisStrokeWidth),
       Polymarkers(tail ps, map (const (tick vert colour tickLength)) catValues),
-      Polymarkers(tail ps, map (fun str → Text(-0.5, 0, str, "middle", "hanging")) catValues)
+      Polymarkers(tail ps, map (label vert -0.5 0) catValues)
    ]);
 
 // Num → Num → GraphicsElement 
