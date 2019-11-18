@@ -124,7 +124,7 @@ let chart = fun mkChart withAxes colours sep data →
    let w = length gs;
    let h = max (map height gs);
    let axes = match withAxes as {
-      True → [x_axis "black" 100 0 w, y_axis "black" 0 0 h];
+      True → [x_axis "black" 0 0 w, y_axis "black" 0 0 h];
       False → []
    }
    in background 0.2
