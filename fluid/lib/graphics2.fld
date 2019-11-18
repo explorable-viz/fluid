@@ -73,8 +73,8 @@ let axisStrokeWidth = 0.5;
 
 // Str → Num → GraphicsElement
 let leftTick = fun colour str len →
-   Line((0, 0), (0 - len, 0), colour, axisStrokeWidth);
-//   Group([Line((0, 0), (0 - len, 0), colour, axisStrokeWidth), Text(0, 0, str)];
+   let tick = Line((0, 0), (0 - len, 0), colour, axisStrokeWidth)
+   in Group([tick, Text(0 - len, 0, str)]);
 
 let downTick = fun colour str len →
    Line((0, 0), (0, 0 - len), colour, axisStrokeWidth);
@@ -98,7 +98,7 @@ let axis = fun vert colour x start end →
    let makeTick = match vert as { True → leftTick colour; False → downTick colour };
    let ps = map mkPoint ys
    in Group([
-      Polyline(ps, colour, axisStrokeWidth, None),
+      Line(head ps, last ps, colour, axisStrokeWidth),
       Polymarkers(ps, flip map ys (compose (flip makeTick 4) numToStr))
    ]);
 

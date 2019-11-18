@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, as, assert, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
 import { strings } from "../Expr"
-import { Arrowhead, Circle, Marker, LeftTick, RightTick } from "../Graphics2"
+import { Arrowhead, Circle, Marker } from "../Graphics2"
 import { Value, isPrim } from "../Value"
 import { versioned } from "../Versioned"
 import { SVG } from "./Core"
@@ -240,8 +240,6 @@ let markerFactory: Map<string, MarkerFactory>
    markerFactory = new Map()
    markerFactory.set(Arrowhead.name, marker_arrowhead)
    markerFactory.set(Circle.name, marker_circle)
-   markerFactory.set(LeftTick.name, marker_leftTick)
-   markerFactory.set(RightTick.name, marker_rightTick)
 }
 
 // Assume root has a unique defs element called "defs". Return composite marker id.
