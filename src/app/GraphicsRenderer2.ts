@@ -2,7 +2,7 @@ import { last } from "../util/Array"
 import { Class, __nonNull, absurd, as, assert, classOf, id } from "../util/Core"
 import { Cons, List, None, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Group, Group2, GraphicsElement, Marker, Polyline, Rect, Scale, Text, Transform, Translate } from "../Graphics2"
+import { Viewport, Group, GraphicsElement, Marker, Polyline, Rect, Scale, Text, Transform, Translate } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -90,8 +90,11 @@ export class GraphicsRenderer {
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
       const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
+      if (g instanceof Viewport) {
+         this.viewport(tg)
+      } else 
       if (g instanceof Group) {
-         this.group(tg)
+         this.group2(tg)
       } else 
       if (g instanceof Polyline) {
          this.polyline(tg)
@@ -117,14 +120,14 @@ export class GraphicsRenderer {
       return result
    }
 
-   group (tg: ExplValueCursor/*<Group>*/): void {
-      const g: Group = as(tg.tv.v, Group)
+   viewport (tg: ExplValueCursor/*<Viewport>*/): void {
+      const g: Viewport = as(tg.tv.v, Viewport)
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
       const [x, y] = this.transform([g.x.val, g.y.val])
       const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
       const [width, height] = [x2 - x, y2 - y]
       assert(width >= 0 && height >= 0)
-      const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.group)
+      const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.viewport)
       this.current.appendChild(svg)
       if (this.showInvisible) {
          this.current.appendChild(border(x, y, width, height, "gray", true))
@@ -134,7 +137,7 @@ export class GraphicsRenderer {
          transformFun(g.scale), 
          transformFun(g.translate), 
          () => {
-            for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
+            for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Viewport, "gs"); 
             Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
                this.renderElement(tg̅.to(Cons, "head"))
             }
@@ -144,7 +147,7 @@ export class GraphicsRenderer {
    }
 
    group2 (tg: ExplValueCursor/*<Group2>*/): void {
-      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group2, "gs"); 
+      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
       Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
          this.renderElement(tg̅.to(Cons, "head"))
       }

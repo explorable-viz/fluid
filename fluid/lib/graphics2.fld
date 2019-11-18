@@ -8,9 +8,10 @@ primitive textHeight;
 
 // Want some kind of typeclass mechanism plus record accessors/updaters.
 // Num → GraphicsElement → GraphicsElement
-let set_x = fun x {
+letrec fun set_x x {
    Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
-   Group(_, y, w, h, scale, translate, gs) → Group(x, y, w, h, scale, translate, gs)
+   Viewport(_, y, w, h, scale, translate, gs) → Viewport(x, y, w, h, scale, translate, gs);
+   Group(gs) → Group(map (set_x x) gs)
 };
 
 // ((Num, Num), (Num, Num)) → (Num, Num)
@@ -18,9 +19,10 @@ let dimensions2 = fun ((x1, y1), (x2, y2)) →
    (max2 (x1, x2), max2 (y1, y2));
 
 // GraphicsElement → (Num, Num)
-let dimensions = fun {
+letrec fun dimensions {
    Rect(_, _, w, h, _) → (w, h);
-   Group(_, _, w, h, _, _, _) → (w, h);
+   Viewport(_, _, w, h, _, _, _) → (w, h);
+   Group(gs) → match unzip (map dimensions gs) as (ws, hs) → (max ws, max hs);
    Polyline(ps, _, _, _) → foldl dimensions2 (0, 0) ps
 };
 
@@ -43,10 +45,11 @@ let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33"
 // frame, to avoid depending on content of child, and so are not themselves scaled. Polyline can't be scaled
 // directly because it inherits its frame of reference from its parent.
 // Num → GraphicsElement → GraphicsElement
-let scaleToWidth = fun w {
+letrec fun scaleToWidth w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
-   Group(x, y, w0, h, Scale(x_scale, y_scale), translate, gs) → 
-      let scale = Scale(x_scale * w / w0, y_scale) in Group(x, y, w, h, scale, translate, gs)
+   Viewport(x, y, w0, h, Scale(x_scale, y_scale), translate, gs) → 
+      let scale = Scale(x_scale * w / w0, y_scale) in Viewport(x, y, w, h, scale, translate, gs);
+   Group(gs) → Group(map (scaleToWidth w) gs)
 };
 
 // Num → List GraphicsElement → List GraphicsElement
@@ -55,7 +58,7 @@ let stackRight = fun sep gs →
 
 // Num → List GraphicsElement → GraphicsElement
 let groupRight = fun sep gs →
-   Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), stackRight sep gs);
+   Viewport(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), stackRight sep gs);
 
 // Heuristic saying how often to place a tick on an axis of length n.
 // Num → Num
@@ -91,13 +94,13 @@ let y_axis = axis True;
 
 // Only defined for Group for now. Margin size is relative to parent coordinate frame.
 // Num → GraphicsElement → GraphicsElement
-let background = fun m Group(x, y, w, h, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
+let background = fun m Viewport(x, y, w, h, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
    // should detect division by zero here
    let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
    let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
    let translate = Translate(dx + m / x_scale', dy + m / y_scale');
-   let gs = [Rect(0, 0, w, h, "Gainsboro"), Group(0, 0, w, h, Scale(x_scale', y_scale'), translate, gs)]
-   in Group(x, y, w, h, Scale(1, 1), Translate(0, 0), gs);
+   let gs = [Rect(x, y, w, h, "Gainsboro"), Viewport(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]
+   in Group(gs);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // Bool → List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
@@ -116,7 +119,7 @@ let lineChart = fun withAxes colours x_start ks data →
       False → []
    }
    in background 0.7
-      Group(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), concat gs axes);
+      Viewport(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), concat gs axes);
 
 // (List Str → List a → GraphicsElement) → Bool → List Str → Num → List (b, a) → GraphicsElement
 let chart = fun mkChart withAxes colours sep data →
@@ -128,7 +131,7 @@ let chart = fun mkChart withAxes colours sep data →
       False → []
    }
    in background 0.2
-      Group(0, 0, w, h, Scale(1, 1), Translate(0, 0), concat gs axes);
+      Viewport(0, 0, w, h, Scale(1, 1), Translate(0, 0), concat gs axes);
 
 // List Str → List a → GraphicsElement
 let rects = fun colours ns →
@@ -142,7 +145,7 @@ let stackedBar = fun colours ns →
    let rects = map 
       (fun ((y, height), colour) → Rect(0, y, 1, height, colour))
       (zip dims colours)
-   in Group(0, 0, 1, last subtotals, Scale(1, 1), Translate(0, 0), rects);
+   in Viewport(0, 0, 1, last subtotals, Scale(1, 1), Translate(0, 0), rects);
 
 // Bool → List Str → Num → List (a, Num) → GraphicsElement
 let barChart = chart rects;
