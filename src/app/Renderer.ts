@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, as, assert, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
 import { strings } from "../Expr"
-import { Arrowhead, Circle, Marker } from "../Graphics2"
+import { Arrowhead, Marker } from "../Graphics2"
 import { Value, isPrim } from "../Value"
 import { versioned } from "../Versioned"
 import { SVG } from "./Core"
@@ -239,7 +239,6 @@ let markerFactory: Map<string, MarkerFactory>
 {
    markerFactory = new Map()
    markerFactory.set(Arrowhead.name, marker_arrowhead)
-   markerFactory.set(Circle.name, marker_circle)
 }
 
 // Assume root has a unique defs element called "defs". Return composite marker id.
@@ -271,20 +270,14 @@ export function marker_arrowhead (colour: string): SVGMarkerElement {
    return m
 }
 
-function marker_circle (colour: string): SVGMarkerElement {
-   const m: SVGMarkerElement = marker(Circle, colour)
-   const radius: number = 1
-   m.setAttribute("refX", `${radius}`)
-   m.setAttribute("refY", `${radius}`)
-   m.setAttribute("markerWidth", `${radius * 2}`)
-   m.setAttribute("markerHeight", `${radius * 2}`)
-   m.setAttribute("overflow", "visible") // for debugging
-   const circle: SVGCircleElement = createElement("circle", marker_circle)
-   m.appendChild(circle)
-   circle.setAttribute("cx", `${radius}`)
-   circle.setAttribute("cy", `${radius}`)
-   circle.setAttribute("r", `${radius}`)
-   return m
+export function circle (x: number, y: number, radius: number, stroke: string, fill: string, createdBy: Function): SVGCircleElement {
+   const r: SVGCircleElement = createElement("circle", createdBy)
+   r.setAttribute("cx", `${round(x)}`)
+   r.setAttribute("cy", `${round(y)}`)
+   r.setAttribute("r", `${round(radius)}`)
+   r.setAttribute("stroke", stroke)
+   r.setAttribute("fill", fill)
+   return r
 }
 
 export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGSVGElement {

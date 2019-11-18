@@ -2,13 +2,13 @@ import { last } from "../util/Array"
 import { Class, __nonNull, absurd, as, assert, classOf, id, userError } from "../util/Core"
 import { Cons, List, None, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Viewport, Group, GraphicsElement, Line, Marker, Polyline, Polymarkers, Rect, Scale, Text, Transform, Translate } from "../Graphics2"
+import { Circle, Group, GraphicsElement, Line, Marker, Polyline, Polymarkers, Rect, Scale, Text, Transform, Translate, Viewport } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
-import { border, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
+import { border, circle, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 8
 
@@ -68,7 +68,11 @@ export class GraphicsRenderer {
 
    // scaling applies to translated coordinates
    get transform (): TransformFun {
-      return postcompose(last(this.scalings), last(this.translations))
+      return postcompose(this.scale, last(this.translations))
+   }
+
+   get scale (): TransformFun {
+      return last(this.scalings)
    }
 
    render (tg: ExplValue<GraphicsElement>, [w, h]: [number, number]): void {
@@ -90,8 +94,8 @@ export class GraphicsRenderer {
 
    renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
       const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
-      if (g instanceof Viewport) {
-         this.viewport(tg)
+      if (g instanceof Circle) {
+         this.circle(tg)
       } else 
       if (g instanceof Group) {
          this.group(tg)
@@ -110,6 +114,9 @@ export class GraphicsRenderer {
       } else
       if (g instanceof Text) {
          this.text(tg)
+      } else
+      if (g instanceof Viewport) {
+         this.viewport(tg)
       } else {
             return absurd()
       }
@@ -126,30 +133,12 @@ export class GraphicsRenderer {
       return result
    }
 
-   viewport (tg: ExplValueCursor/*<Viewport>*/): void {
-      const g: Viewport = as(tg.tv.v, Viewport)
-      // dimensions are relative to parent coordinate space, so not transformed by g's scaling
+   circle (tg: ExplValueCursor/*<Rect>*/): void {
+      const g: Circle = as(tg.tv.v, Circle)
       const [x, y] = this.transform([g.x.val, g.y.val])
-      const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
-      const [width, height] = [x2 - x, y2 - y]
-      assert(width >= 0 && height >= 0)
-      const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.viewport)
-      this.current.appendChild(svg)
-      if (this.showInvisible) {
-         this.current.appendChild(border(x, y, width, height, "gray", true))
-      }
-      this.ancestors.push(svg)
-      this.withLocalFrame(
-         transformFun(g.scale), 
-         transformFun(g.translate), 
-         () => {
-            for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Viewport, "gs"); 
-                 Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
-               this.renderElement(tg̅.to(Cons, "head"))
-            }
-         }
-      )
-      this.ancestors.pop()
+      const [radius,] = this.scale([g.radius.val, 1]) // translations can apply to individual dimensions
+      const r: SVGCircleElement = circle(x, y, radius, "none", g.fill.val, this.circle)
+      this.current.appendChild(r)
    }
 
    group (tg: ExplValueCursor/*<Group>*/): void {
@@ -206,6 +195,7 @@ export class GraphicsRenderer {
    rect (tg: ExplValueCursor/*<Rect>*/): void {
       const g: Rect = as(tg.tv.v, Rect)
       const [x, y] = this.transform([g.x.val, g.y.val])
+      // TODO: replace this shenanigan by this.scale?
       const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
       const [width, height] = [x2 - x, y2 - y]
       assert(width >= 0 && height >= 0)
@@ -221,6 +211,33 @@ export class GraphicsRenderer {
       text.setAttribute("fill", "black")
       text.setAttribute("text-anchor", `${g.anchor.val}`)
       text.setAttribute("alignment-baseline", `${g.baseline.val}`)
+   }
+
+   viewport (tg: ExplValueCursor/*<Viewport>*/): void {
+      const g: Viewport = as(tg.tv.v, Viewport)
+      // dimensions are relative to parent coordinate space, so not transformed by g's scaling
+      const [x, y] = this.transform([g.x.val, g.y.val])
+      // TODO: replace this shenanigan by this.scale?
+      const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
+      const [width, height] = [x2 - x, y2 - y]
+      assert(width >= 0 && height >= 0)
+      const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.viewport)
+      this.current.appendChild(svg)
+      if (this.showInvisible) {
+         this.current.appendChild(border(x, y, width, height, "gray", true))
+      }
+      this.ancestors.push(svg)
+      this.withLocalFrame(
+         transformFun(g.scale), 
+         transformFun(g.translate), 
+         () => {
+            for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Viewport, "gs"); 
+                 Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
+               this.renderElement(tg̅.to(Cons, "head"))
+            }
+         }
+      )
+      this.ancestors.pop()
    }
 
    setMarkerMid (el: SVGElement, C: Class<Marker>, colour: string): void {
