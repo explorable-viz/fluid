@@ -113,12 +113,7 @@ let axis = fun vert colour x start end →
 // Bool → Str → Num → Num → GraphicsElement 
 let categoricalAxis = fun vert colour x start end →
    let n = end - start + 1;
-   let ys = concat (iterate n (fun y → y + 1) start) [end];
-   // avoid redundant start point; not so easy/efficient for end point, so don't bother
-   let ys = match start > start as {
-      True → [start, ...ys];
-      False → ys
-   };
+   let ys = iterate n (fun y → y + 1) start;
    let ps = map (mkPoint vert x) ys
    in Group([
       Line(head ps, last ps, colour, axisStrokeWidth),
