@@ -82,6 +82,12 @@ let downTick = fun colour str len →
    let tick = Line((0, 0), (0, 0 - len), colour, axisStrokeWidth)
    in Group([tick, Text(0, 0 - len, str, "middle", "hanging")]);
 
+// Bool → Num → Num → (Num, Num)
+let mkPoint = fun {
+   True x y → (x, y);
+   False x y → (y, x)
+};
+
 // Notionally a y-axis located at position x on the x-axis.
 // Bool → Str → Num → Num → GraphicsElement 
 let axis = fun vert colour x start end →
@@ -94,12 +100,8 @@ let axis = fun vert colour x start end →
       True → [start, ...ys];
       False → ys
    };
-   let mkPoint = match vert as {
-      True → fun y → (x, y);
-      False → fun y → (y, x)
-   };
    let makeTick = match vert as { True → leftTick colour; False → downTick colour };
-   let ps = map mkPoint ys
+   let ps = map (mkPoint vert x) ys
    in Group([
       Line(head ps, last ps, colour, axisStrokeWidth),
       Polymarkers(ps, flip map ys (compose (flip makeTick tickLength) numToStr))
