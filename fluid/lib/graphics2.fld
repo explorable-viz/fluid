@@ -66,6 +66,7 @@ let tickEvery = fun n →
       False → 10 ** m
    };
 
+// Notionally a y-axis located at position x on the x-axis.
 // Bool → Str → Num → Num → GraphicsElement 
 let axis = fun vert colour x start end →
    let tickSp = tickEvery (end - start);
@@ -123,7 +124,7 @@ let chart = fun mkChart withAxes colours sep data →
    let w = length gs;
    let h = max (map height gs);
    let axes = match withAxes as {
-      True → [x_axis "black" 0 0 w, y_axis "black" 0 0 h];
+      True → [x_axis "black" 100 0 w, y_axis "black" 0 0 h];
       False → []
    }
    in background 0.2

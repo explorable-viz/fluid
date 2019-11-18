@@ -280,7 +280,7 @@ function marker_circle (colour: string): SVGMarkerElement {
    m.setAttribute("refY", `${radius}`)
    m.setAttribute("markerWidth", `${radius * 2}`)
    m.setAttribute("markerHeight", `${radius * 2}`)
-   m.setAttribute("overflow", "visible") // for debugging
+//   m.setAttribute("overflow", "visible") // for debugging
    const circle: SVGCircleElement = createElement("circle", marker_circle)
    m.appendChild(circle)
    circle.setAttribute("cx", `${radius}`)
@@ -296,8 +296,8 @@ function marker_tick (colour: string, C: Class<Marker>): SVGMarkerElement {
    m.setAttribute("refY", `${C === LeftTick ? 0 : height}`)
    m.setAttribute("markerWidth", `${height * 2}`)
    m.setAttribute("markerHeight", `${height * 2}`)
-   m.setAttribute("overflow", "visible") // for debugging
-   const tick: SVGLineElement = line(0, 0, 0, height, colour, 1)
+//   m.setAttribute("overflow", "visible") // for debugging
+   const tick: SVGLineElement = line(0, 0, 0, height, colour, 10)
    m.appendChild(tick)
    return m
 }
