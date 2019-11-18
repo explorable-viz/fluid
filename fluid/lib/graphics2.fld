@@ -111,9 +111,9 @@ let axis = fun vert colour x start end →
    ]);
 
 // Bool → Str → Num → Num → GraphicsElement 
-let categoricalAxis = fun vert colour x start end →
-   let n = end - start + 1;
-   let ys = iterate n (fun y → y + 1) start;
+let categoricalAxis = fun vert colour x end →
+   let n = end + 1;
+   let ys = iterate n (fun y → y + 1) 0;
    let ps = map (mkPoint vert x) ys
    in Group([
       Line(head ps, last ps, colour, axisStrokeWidth),
@@ -164,7 +164,7 @@ let categoricalChart = fun mkChart withAxes colours sep data →
    let w = length gs;
    let h = max (map height gs);
    let axes = match withAxes as {
-      True → [x_categoricalAxis "black" 20 0 w, y_axis "black" 0 0 h];
+      True → [x_categoricalAxis "black" 20 w, y_axis "black" 0 0 h];
       False → []
    }
    in background 0.2
