@@ -85,8 +85,12 @@ let axis = fun vert colour x start end →
       True → fun y → (x, y);
       False → fun y → (y, x)
    };
-   let tick = match vert as { True → LeftTick; False → RightTick }
-   in Polyline(map mkPoint ys, colour, 0.5, Some(tick));
+   let tick = match vert as { True → LeftTick; False → RightTick };
+   let ps = map mkPoint ys
+   in Group([
+      Polyline(ps, colour, 0.5, Some(tick)),
+      Polymarkers(ps, flip map ys (fun y → Text(0, 0, numToStr y)))
+   ]);
 
 // Str → Num → Num → GraphicsElement 
 let x_axis = axis False;

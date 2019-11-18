@@ -1,8 +1,8 @@
 import { last } from "../util/Array"
-import { Class, __nonNull, absurd, as, assert, classOf, id } from "../util/Core"
+import { Class, __nonNull, absurd, as, assert, classOf, id, userError } from "../util/Core"
 import { Cons, List, None, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Viewport, Group, GraphicsElement, Marker, Polyline, Rect, Scale, Text, Transform, Translate } from "../Graphics2"
+import { Viewport, Group, GraphicsElement, Marker, Polyline, Polymarkers, Rect, Scale, Text, Transform, Translate } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -99,6 +99,9 @@ export class GraphicsRenderer {
       if (g instanceof Polyline) {
          this.polyline(tg)
       } else
+      if (g instanceof Polymarkers) {
+         this.polymarkers(tg)
+      } else
       if (g instanceof Rect) {
          this.rect(tg)
       } else
@@ -138,7 +141,7 @@ export class GraphicsRenderer {
          transformFun(g.translate), 
          () => {
             for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Viewport, "gs"); 
-            Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
+                 Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
                this.renderElement(tg̅.to(Cons, "head"))
             }
          }
@@ -148,7 +151,7 @@ export class GraphicsRenderer {
 
    group2 (tg: ExplValueCursor/*<Group2>*/): void {
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
-      Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
+           Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
          this.renderElement(tg̅.to(Cons, "head"))
       }
    }
@@ -173,6 +176,22 @@ export class GraphicsRenderer {
          assert(None.is(g.marker))
       }
       this.current.appendChild(line_)
+   }
+
+   polymarkers (tg: ExplValueCursor/*<Polymarkers>*/): void {
+      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Polymarkers, "markers"),
+               tps: ExplValueCursor/*<List<Pair<Num, Num>>*/ = tg.to(Polymarkers, "points"); 
+           Cons.is(as(tg̅.tv.v, List)) || Cons.is(as(tps.tv.v, List)); 
+           tg̅ = tg̅.to(Cons, "tail"), tps = tps.to(Cons, "tail")) {
+         if (!Cons.is(as(tg̅.tv.v, List)) || !Cons.is(as(tps.tv.v, List))) {
+            userError(`${Polymarkers.name}: more markers than points.`)
+         } else {
+            const p: Pair<Num, Num> = as(tps.to(Cons, "head").tv.v, Pair)
+            this.withLocalFrame(last(this.scalings), translate(p.fst.val, p.snd.val), () => {
+               this.renderElement(tg̅.to(Cons, "head"))
+            })
+         }
+      }
    }
 
    rect (tg: ExplValueCursor/*<Rect>*/): void {
