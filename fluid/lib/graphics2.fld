@@ -70,6 +70,7 @@ let tickEvery = fun n →
    };
 
 let axisStrokeWidth = 0.5;
+let tickLength = 0.1;
 
 // Str → Num → GraphicsElement
 let leftTick = fun colour str len →
@@ -99,7 +100,7 @@ let axis = fun vert colour x start end →
    let ps = map mkPoint ys
    in Group([
       Line(head ps, last ps, colour, axisStrokeWidth),
-      Polymarkers(ps, flip map ys (compose (flip makeTick 4) numToStr))
+      Polymarkers(ps, flip map ys (compose (flip makeTick tickLength) numToStr))
    ]);
 
 // Str → Num → Num → GraphicsElement 
