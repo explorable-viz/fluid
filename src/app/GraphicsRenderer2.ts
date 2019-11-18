@@ -162,7 +162,7 @@ export class GraphicsRenderer {
       const ps: [number, number][] = g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
          return this.transform([p.fst.val, p.snd.val])
       })
-      // Optimise polyline with 2 points to line. TODO: what about when there is only one point?
+      // Optimise polyline with 2 points to a line. TODO: what about when there is only one point?
       let line_: SVGElement
       if (ps.length === 2) {
          const [[x1, y1], [x2, y2]] = ps
@@ -187,7 +187,7 @@ export class GraphicsRenderer {
             userError(`${Polymarkers.name}: more markers than points.`)
          } else {
             const p: Pair<Num, Num> = as(tps.to(Cons, "head").tv.v, Pair)
-            this.withLocalFrame(last(this.scalings), translate(p.fst.val, p.snd.val), () => {
+            this.withLocalFrame(id, translate(p.fst.val, p.snd.val), () => {
                this.renderElement(tg̅.to(Cons, "head"))
             })
          }

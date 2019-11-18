@@ -430,7 +430,7 @@ function textElement (fontSize: number, class_: string, str: string): SVGTextEle
 // position through a translation so that the scaling doesn't affect the position.
 export function textElement_graphical (x: number, y: number, fontSize: number, str: string): SVGTextElement {
    const text: SVGTextElement = textElement(fontSize, "", str)
-   let transform: string = `translate(${x.toString()},${y.toString()})`
+   let transform: string = `translate(${round(x)},${round(y)})`
    text.setAttribute("transform", transform + " scale(1,-1)")
    return text
 }
