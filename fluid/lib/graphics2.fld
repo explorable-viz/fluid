@@ -112,7 +112,7 @@ let axis = fun vert colour x start end →
 
 // Bool → Str → Num → Num → GraphicsElement 
 let categoricalAxis = fun vert colour x start end →
-   let tickSp = tickEvery (end - start);
+   let tickSp = 1;
    let firstTick = ceilingToNearest start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
    let ys = concat (iterate n (fun y → y + tickSp) firstTick) [end];
@@ -171,7 +171,7 @@ let categoricalChart = fun mkChart withAxes colours sep data →
    let w = length gs;
    let h = max (map height gs);
    let axes = match withAxes as {
-      True → [x_categoricalAxis "black" 20 0 w, y_categoricalAxis "black" 0 0 h];
+      True → [x_categoricalAxis "black" 20 0 w, y_axis "black" 0 0 h];
       False → []
    }
    in background 0.2
