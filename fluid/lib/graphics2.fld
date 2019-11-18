@@ -94,12 +94,8 @@ let label = fun {
 };
 
 // Bool → Colour → Num → Str → GraphicsElement
-let labelledTick = fun {
-   True colour len str →
-      Group([tick True colour len, label True len str]);
-   False colour len str →
-      Group([tick False colour len, label False len str])
-};
+let labelledTick = fun vert colour len str →
+   Group([tick vert colour len, label vert len str]);
 
 // Bool → Num → Num → (Num, Num)
 let mkPoint = fun {
