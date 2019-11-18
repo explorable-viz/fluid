@@ -70,7 +70,7 @@ export class Translate extends Transform<"Translate"> {
    y: Num = _
 }
 
-export type MarkerTag = "Arrowhead" | "Circle" | "LeftTick" | "RightTick"
+export type MarkerTag = "Arrowhead" | "Circle"
 
 export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
 }
@@ -78,15 +78,9 @@ export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
 export class Arrowhead extends Marker<"Arrowhead"> {   
 }
 
-export class LeftTick extends Marker<"LeftTick"> {
-}
-
-export class RightTick extends Marker<"RightTick"> {
-}
-
 export class Circle extends Marker<"Circle"> {   
 }
 
 initDataType(GraphicsElement, [Group, Line, Polyline, Polymarkers, Rect, Text, Viewport])
 initDataType(Transform, [Scale, Translate])
-initDataType(Marker, [Arrowhead, Circle, LeftTick, RightTick])
+initDataType(Marker, [Arrowhead, Circle])

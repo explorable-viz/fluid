@@ -289,27 +289,6 @@ function marker_circle (colour: string): SVGMarkerElement {
    return m
 }
 
-function marker_tick (colour: string, C: Class<Marker>): SVGMarkerElement {
-   const m: SVGMarkerElement = marker(C, colour)
-   const height: number = 4
-   m.setAttribute("refX", `${0}`)
-   m.setAttribute("refY", `${C === LeftTick ? 0 : height}`)
-   m.setAttribute("markerWidth", `${height * 2}`)
-   m.setAttribute("markerHeight", `${height * 2}`)
-   m.setAttribute("overflow", "visible") // for debugging
-   const tick: SVGLineElement = line(0, 0, 0, height, colour, 1)
-   m.appendChild(tick)
-   return m
-}
-
-function marker_leftTick (colour: string): SVGMarkerElement {
-   return marker_tick(colour, LeftTick)
-}
-
-function marker_rightTick (colour: string): SVGMarkerElement {
-   return marker_tick(colour, RightTick)
-}
-
 export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGSVGElement {
    return horiz(keyword("parenL", ẟ_style), g, keyword("parenR", ẟ_style))
 }
