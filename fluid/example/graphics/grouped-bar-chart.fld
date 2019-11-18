@@ -1,2 +1,2 @@
-groupRight 0.2
-   (map (compose (groupedBarChart True colours1 0.2) snd) (lastN 2 data))
+groupedBarChart True colours1 0.2 
+   (lookup 2018 data)

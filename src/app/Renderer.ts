@@ -426,8 +426,8 @@ function textElement (fontSize: number, class_: string, str: string): SVGTextEle
    return text
 }
 
-// Text for use inside graphics; needs to be inverted, to undo the SVG inversion we apply at the top level.
-// Use "translate" to locate the element, so that we can apply it after scaling.
+// Flip text vertically to cancel out the global vertical flip. Don't set x and y but express
+// position through a translation so that the scaling doesn't affect the position.
 export function textElement_graphical (x: number, y: number, fontSize: number, str: string): SVGTextElement {
    const text: SVGTextElement = textElement(fontSize, "", str)
    let transform: string = `translate(${x.toString()},${y.toString()})`

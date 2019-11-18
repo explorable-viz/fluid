@@ -2,7 +2,7 @@ import { last } from "../util/Array"
 import { Class, __nonNull, absurd, as, assert, classOf, id } from "../util/Core"
 import { Cons, List, None, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Group, GraphicsElement, Marker, Polyline, Rect, Scale, Transform, Translate } from "../Graphics2"
+import { Group, GraphicsElement, Marker, Polyline, Rect, Scale, Text, Transform, Translate } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -93,13 +93,16 @@ export class GraphicsRenderer {
       if (g instanceof Group) {
          this.group(tg)
       } else 
+      if (g instanceof Polyline) {
+         this.polyline(tg)
+      } else
       if (g instanceof Rect) {
          this.rect(tg)
       } else
-      if (g instanceof Polyline) {
-         this.polyline(tg)
+      if (g instanceof Text) {
+         this.text(tg)
       } else {
-         return absurd()
+            return absurd()
       }
    }
 
@@ -140,16 +143,6 @@ export class GraphicsRenderer {
       this.ancestors.pop()
    }
 
-   rect (tg: ExplValueCursor/*<Rect>*/): void {
-      const g: Rect = as(tg.tv.v, Rect)
-      const [x, y] = this.transform([g.x.val, g.y.val])
-      const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
-      const [width, height] = [x2 - x, y2 - y]
-      assert(width >= 0 && height >= 0)
-      const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val, this.rect)
-      this.current.appendChild(r)
-   }
-
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const g: Polyline = as(tg.tv.v, Polyline)
       // each point is considered a "child", and therefore subject to my local scaling
@@ -170,6 +163,24 @@ export class GraphicsRenderer {
          assert(None.is(g.marker))
       }
       this.current.appendChild(line_)
+   }
+
+   rect (tg: ExplValueCursor/*<Rect>*/): void {
+      const g: Rect = as(tg.tv.v, Rect)
+      const [x, y] = this.transform([g.x.val, g.y.val])
+      const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
+      const [width, height] = [x2 - x, y2 - y]
+      assert(width >= 0 && height >= 0)
+      const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val, this.rect)
+      this.current.appendChild(r)
+   }
+
+   text (tg: ExplValueCursor/*<Text>*/): void {
+      const g: Text = as(tg.tv.v, Text),
+            [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
+            text: SVGTextElement = textElement_graphical(x, y, fontSize, g.str.val)
+      this.current.appendChild(text)
+      text.setAttribute("fill", "black")
    }
 
    setMarkerMid (el: SVGElement, C: Class<Marker>, colour: string): void {
