@@ -73,15 +73,17 @@ let axisStrokeWidth = 0.5;
 let tickLength = 0.1;
 let markerRadius = 0.5;
 
-// Str → Num → GraphicsElement
-let leftTick = fun colour str len →
-   let tick = Line((0, 0), (0 - len, 0), colour, axisStrokeWidth)
-   in Group([tick, Text(0 - len, 0, str, "end", "central")]);
+// Bool → Str → Str → Num → GraphicsElement
+let makeTick = fun {
+   True colour str len →
+      let tick = Line((0, 0), (0 - len, 0), colour, axisStrokeWidth)
+      in Group([tick, Text(0 - len, 0, str, "end", "central")]);
+   False colour str len →
+      let tick = Line((0, 0), (0, 0 - len), colour, axisStrokeWidth)
+      in Group([tick, Text(0, 0 - len, str, "middle", "hanging")])
+};
 
-let downTick = fun colour str len →
-   let tick = Line((0, 0), (0, 0 - len), colour, axisStrokeWidth)
-   in Group([tick, Text(0, 0 - len, str, "middle", "hanging")]);
-
+// Helpers for axis functions.
 // Bool → Num → Num → (Num, Num)
 let mkPoint = fun {
    True x y → (x, y);
@@ -100,11 +102,10 @@ let axis = fun vert colour x start end →
       True → [start, ...ys];
       False → ys
    };
-   let makeTick = match vert as { True → leftTick colour; False → downTick colour };
    let ps = map (mkPoint vert x) ys
    in Group([
       Line(head ps, last ps, colour, axisStrokeWidth),
-      Polymarkers(ps, flip map ys (compose (flip makeTick tickLength) numToStr))
+      Polymarkers(ps, flip map ys (compose (flip (makeTick vert colour) tickLength) numToStr))
    ]);
 
 // Str → Num → Num → GraphicsElement 
