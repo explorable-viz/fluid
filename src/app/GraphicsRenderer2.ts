@@ -219,7 +219,7 @@ export class GraphicsRenderer {
             text: SVGTextElement = textElement_graphical(x, y, fontSize, g.str.val)
       this.current.appendChild(text)
       text.setAttribute("fill", "black")
-      text.setAttribute("text-anchor", "end")
+      text.setAttribute("text-anchor", `${g.textAnchor.val}`)
       text.setAttribute("alignment-baseline", "central")
    }
 

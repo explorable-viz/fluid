@@ -53,6 +53,7 @@ export class Text extends GraphicsElement<"Text"> {
    x: Num = _
    y: Num = _
    str: Str = _
+   textAnchor: Str = _
 }
 
 export type TransformTag = "Scale" | "Translate"
