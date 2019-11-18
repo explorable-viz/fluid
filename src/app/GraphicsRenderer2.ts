@@ -2,7 +2,7 @@ import { last } from "../util/Array"
 import { Class, __nonNull, absurd, as, assert, classOf, id } from "../util/Core"
 import { Cons, List, None, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Group, GraphicsElement, Marker, Polyline, Rect, Scale, Text, Transform, Translate } from "../Graphics2"
+import { Group, Group2, GraphicsElement, Marker, Polyline, Rect, Scale, Text, Transform, Translate } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -117,7 +117,7 @@ export class GraphicsRenderer {
       return result
    }
 
-   group (tg: ExplValueCursor/*<Graphic>*/): void {
+   group (tg: ExplValueCursor/*<Group>*/): void {
       const g: Group = as(tg.tv.v, Group)
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
       const [x, y] = this.transform([g.x.val, g.y.val])
@@ -141,6 +141,13 @@ export class GraphicsRenderer {
          }
       )
       this.ancestors.pop()
+   }
+
+   group2 (tg: ExplValueCursor/*<Group2>*/): void {
+      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group2, "gs"); 
+      Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
+         this.renderElement(tg̅.to(Cons, "head"))
+      }
    }
 
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {

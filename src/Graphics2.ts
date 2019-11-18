@@ -3,9 +3,13 @@ import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Num, Str, _ } from "./Value"
 
-export type GraphicsElementTag = "Polyline" | "Rect" | "Text" | "Group"
+export type GraphicsElementTag = "Group" | "Group2" | "Polyline" | "Rect" | "Text"
 
 export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
+}
+
+export class Group2 extends GraphicsElement<"Group2"> {
+   gs: List<GraphicsElement> = _
 }
 
 export class Group extends GraphicsElement<"Group"> {
@@ -71,6 +75,6 @@ export class RightTick extends Marker<"RightTick"> {
 export class Circle extends Marker<"Circle"> {   
 }
 
-initDataType(GraphicsElement, [Group, Polyline, Rect, Text])
+initDataType(GraphicsElement, [Group, Group2, Polyline, Rect, Text])
 initDataType(Transform, [Scale, Translate])
 initDataType(Marker, [Arrowhead, Circle, LeftTick, RightTick])
