@@ -4,4 +4,4 @@ let year1 = head data;
 let energyTypes = map fst (snd (head (snd year1)));
 let countries = map fst (snd year1) in
 groupRight 0.2 
-   (map (compose (lineChart True colours1 (fst year1) energyTypes) countryData) (lastN 2 countries)) // energy types
+   (map (compose (lineChart True colours1 (fst year1) energyTypes) countryData) (lastN 1 countries)) // energy types
