@@ -73,6 +73,7 @@ let axisStrokeWidth = 0.5;
 let tickLength = 0.1;
 let markerRadius = 0.5;
 
+// Helpers for axis functions.
 // Bool → Str → Str → Num → GraphicsElement
 let makeTick = fun {
    True colour str len →
@@ -83,7 +84,6 @@ let makeTick = fun {
       in Group([tick, Text(0, 0 - len, str, "middle", "hanging")])
 };
 
-// Helpers for axis functions.
 // Bool → Num → Num → (Num, Num)
 let mkPoint = fun {
    True x y → (x, y);
