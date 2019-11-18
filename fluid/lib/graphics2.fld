@@ -69,6 +69,10 @@ let tickEvery = fun n →
       False → 10 ** m
    };
 
+// Str → Num → GraphicsElement
+let leftTick = fun str len →
+   Text(0, 0, str);
+
 // Notionally a y-axis located at position x on the x-axis.
 // Bool → Str → Num → Num → GraphicsElement 
 let axis = fun vert colour x start end →
@@ -89,7 +93,7 @@ let axis = fun vert colour x start end →
    let ps = map mkPoint ys
    in Group([
       Polyline(ps, colour, 0.5, Some(tick)),
-      Polymarkers(ps, flip map ys (fun y → Text(0, 0, numToStr y)))
+      Polymarkers(ps, flip map ys (compose (flip leftTick 0) numToStr))
    ]);
 
 // Str → Num → Num → GraphicsElement 

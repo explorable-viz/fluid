@@ -8,7 +8,7 @@ export const _: any = undefined
 // Somewhat perverse to do this, but need some type safety!
 export type DataValueTag =
    // TODO: sync these up when new graphics design complete.
-   "Graphic" | "Viewport" | "Group" | "Marker" | "Polyline" | "Polymarkers" | "Polygon" | "Scale" | "Text" | "Transform" | "LeftTick" | "RightTick" | "Circle" | "Arrowhead" |
+   "Graphic" | "Viewport" | "Group" | "Line" | "Marker" | "Polyline" | "Polymarkers" | "Polygon" | "Scale" | "Text" | "Transform" | "LeftTick" | "RightTick" | "Circle" | "Arrowhead" |
    "Bool" | "Closure" | "DataExpl" | "Elim" | "Match" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" |  
    "Translate" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Token"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"

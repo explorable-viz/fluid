@@ -3,7 +3,7 @@ import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Num, Str, _ } from "./Value"
 
-export type GraphicsElementTag = "Group" | "Polyline" | "Polymarkers" | "Rect" | "Text" | "Viewport"
+export type GraphicsElementTag = "Group" | "Line" | "Polyline" | "Polymarkers" | "Rect" | "Text" | "Viewport"
 
 export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
 }
@@ -28,6 +28,13 @@ export class Rect extends GraphicsElement<"Rect"> {
    width: Num = _
    height: Num = _
    fill: Str = _
+}
+
+export class Line extends GraphicsElement<"Line"> {
+   p1: Pair<Num, Num> = _
+   p2: Pair<Num, Num> = _
+   stroke: Str = _
+   strokeWidth: Num = _
 }
 
 export class Polyline extends GraphicsElement<"Polyline"> {
@@ -80,6 +87,6 @@ export class RightTick extends Marker<"RightTick"> {
 export class Circle extends Marker<"Circle"> {   
 }
 
-initDataType(GraphicsElement, [Viewport, Group, Polyline, Polymarkers, Rect, Text])
+initDataType(GraphicsElement, [Group, Line, Polyline, Polymarkers, Rect, Text, Viewport])
 initDataType(Transform, [Scale, Translate])
 initDataType(Marker, [Arrowhead, Circle, LeftTick, RightTick])

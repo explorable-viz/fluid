@@ -2,7 +2,7 @@ import { last } from "../util/Array"
 import { Class, __nonNull, absurd, as, assert, classOf, id, userError } from "../util/Core"
 import { Cons, List, None, Pair, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Viewport, Group, GraphicsElement, Marker, Polyline, Polymarkers, Rect, Scale, Text, Transform, Translate } from "../Graphics2"
+import { Viewport, Group, GraphicsElement, Line, Marker, Polyline, Polymarkers, Rect, Scale, Text, Transform, Translate } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -94,8 +94,11 @@ export class GraphicsRenderer {
          this.viewport(tg)
       } else 
       if (g instanceof Group) {
-         this.group2(tg)
+         this.group(tg)
       } else 
+      if (g instanceof Line) {
+         this.line(tg)
+      } else
       if (g instanceof Polyline) {
          this.polyline(tg)
       } else
@@ -149,33 +152,35 @@ export class GraphicsRenderer {
       this.ancestors.pop()
    }
 
-   group2 (tg: ExplValueCursor/*<Group2>*/): void {
+   group (tg: ExplValueCursor/*<Group>*/): void {
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
            Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
          this.renderElement(tg̅.to(Cons, "head"))
       }
    }
 
+   // For line/polyline, each point is considered a "child", and therefore subject to my local scaling.
+   line (tg: ExplValueCursor/*<Polyline>*/): void {
+      const g: Line = as(tg.tv.v, Line)
+      const [[x1, y1], [x2, y2]] = [
+         this.transform([g.p1.fst.val, g.p1.snd.val]), 
+         this.transform([g.p2.fst.val, g.p2.snd.val])
+      ]
+      this.current.appendChild(line(x1, y1, x2, y2, g.stroke.val, g.strokeWidth.val))
+   }
+
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
       const g: Polyline = as(tg.tv.v, Polyline)
-      // each point is considered a "child", and therefore subject to my local scaling
       const ps: [number, number][] = g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
          return this.transform([p.fst.val, p.snd.val])
       })
-      // Optimise polyline with 2 points to a line. TODO: what about when there is only one point?
-      let line_: SVGElement
-      if (ps.length === 2) {
-         const [[x1, y1], [x2, y2]] = ps
-         line_ = line(x1, y1, x2, y2, g.stroke.val, g.strokeWidth.val)
-      } else {
-         line_ = polyline(ps, g.stroke.val, g.strokeWidth.val)
-      }
+      let l: SVGElement = polyline(ps, g.stroke.val, g.strokeWidth.val)
       if (Some.is(g.marker)) {
-         this.setMarkerMid(line_, classOf(g.marker.t), g.stroke.val)
+         this.setMarkerMid(l, classOf(g.marker.t), g.stroke.val)
       } else {
          assert(None.is(g.marker))
       }
-      this.current.appendChild(line_)
+      this.current.appendChild(l)
    }
 
    polymarkers (tg: ExplValueCursor/*<Polymarkers>*/): void {
