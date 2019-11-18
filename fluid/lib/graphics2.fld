@@ -87,12 +87,18 @@ let tick = fun {
       Line((0, 0), (0, 0 - len), colour, axisStrokeWidth)
    };
 
+// Bool → Str → GraphicsElement
+let label = fun {
+   True len str → Text(0 - len, 0, str, "end", "central");
+   False len str → Text(0, 0 - len, str, "middle", "hanging")
+};
+
 // Bool → Colour → Num → Str → GraphicsElement
 let labelledTick = fun {
    True colour len str →
-      Group([tick True colour len, Text(0 - len, 0, str, "end", "central")]);
+      Group([tick True colour len, label True len str]);
    False colour len str →
-      Group([tick False colour len, Text(0, 0 - len, str, "middle", "hanging")])
+      Group([tick False colour len, label False len str])
 };
 
 // Bool → Num → Num → (Num, Num)
@@ -126,8 +132,8 @@ let categoricalAxis = fun vert colour x catValues →
    let ps = map (mkPoint vert x) ys
    in Group([
       Line(head ps, last ps, colour, axisStrokeWidth),
-      Polymarkers(tail ps, flip map catValues (const (tick vert colour tickLength))),
-      Polymarkers(tail ps, flip map catValues (fun str → Text(-0.5, 0, str, "middle", "hanging")))
+      Polymarkers(tail ps, map (const (tick vert colour tickLength)) catValues),
+      Polymarkers(tail ps, map (fun str → Text(-0.5, 0, str, "middle", "hanging")) catValues)
    ]);
 
 // Num → Num → GraphicsElement 
