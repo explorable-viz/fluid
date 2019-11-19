@@ -2,7 +2,7 @@
 // typedef Colours = List Colour
 // typedef Cat = Str
 
-// Simplistic but something more general may require primitives which take data values as inputs.
+// Simplistic but something more general may require primitives which take data values for input.
 // Application module GraphicsRenderer must be loaded for these definitions to work.
 // Str → Num
 primitive textWidth;
@@ -10,12 +10,25 @@ primitive textWidth;
 // Str → Num
 primitive textHeight;
 
+// GraphicsElement → (Num, Num)
+letrec fun coords {
+   Rect(x, y, _, _, _) → (x, y);
+   Viewport(x, y, _, _, _, _, _) → (x, y);
+   Group(gs) → match unzip (map coords gs) as (xs, ys) → (min xs, min ys)
+};
+
+// GraphicsElement → Num
+let get_x = compose fst coords;
+
+// GraphicsElement → Num
+let get_y = compose snd coords;
+
 // Want some kind of typeclass mechanism plus record accessors/updaters.
 // Num → GraphicsElement → GraphicsElement
 letrec fun set_x x {
    Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
    Viewport(_, y, w, h, scale, translate, gs) → Viewport(x, y, w, h, scale, translate, gs);
-   Group(gs) → Group(map (set_x x) gs)
+   Group(gs) → let dx = x - get_x Group(gs) in Group(map (fun g → set_x (get_x g + dx) g) gs)
 };
 
 // ((Num, Num), (Num, Num)) → (Num, Num)
@@ -90,11 +103,11 @@ let tick = fun {
 
 // Orient → Num → Num → Str → GraphicsElement
 let label = fun {
-   Horiz x len str → Text(x, 0 - len, str, "middle", "hanging");
-   Vert x len str → Text(0 - len, x, str, "end", "central")
+   Horiz x distance str → Text(x, 0 - distance, str, "middle", "hanging");
+   Vert x distance str → Text(0 - distance, x, str, "end", "central")
 };
 
-// Bool → Colour → Num → Str → GraphicsElement
+// Orient → Colour → Num → Str → GraphicsElement
 let labelledTick = fun orient colour len str →
    Group([tick orient colour len, label orient 0 len str]);
 
@@ -214,4 +227,8 @@ let groupedBarChart = categoricalChart (compose map (flip (barChart False) 0));
 
 // See stackedBar for strong (unjustified) assumption about uniformity of data.
 // Bool → Colours → Num → List (a, List (b, Num)) → GraphicsElement
-let stackedBarChart = categoricalChart (compose map stackedBar)
+let stackedBarChart = categoricalChart (compose map stackedBar);
+
+// Str → GraphicsElement → GraphicsElement
+let caption = fun text g →
+   Text(x, 0, str, "middle", "hanging")
