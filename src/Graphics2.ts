@@ -97,6 +97,6 @@ export class Arrowhead extends Marker<"Arrowhead"> {
 }
 
 initDataType(Orient, [Horiz, Vert])
-initDataType(GraphicsElement, [Group, Line, Polyline, Polymarkers, Rect, Text, Viewport])
+initDataType(GraphicsElement, [Circle, Group, Line, Polyline, Polymarkers, Rect, Text, Viewport])
 initDataType(Transform, [Scale, Translate])
-initDataType(Marker, [Arrowhead, Circle])
+initDataType(Marker, [Arrowhead])

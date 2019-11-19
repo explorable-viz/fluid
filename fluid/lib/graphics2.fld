@@ -12,9 +12,10 @@ primitive textHeight;
 
 // GraphicsElement → (Num, Num)
 letrec fun coords {
+   Group(gs) → match unzip (map coords gs) as (xs, ys) → (min xs, min ys);
    Rect(x, y, _, _, _) → (x, y);
-   Viewport(x, y, _, _, _, _, _) → (x, y);
-   Group(gs) → match unzip (map coords gs) as (xs, ys) → (min xs, min ys)
+   Text(x, y, _, _, _) → (x, y);
+   Viewport(x, y, _, _, _, _, _) → (x, y)
 };
 
 // GraphicsElement → Num
@@ -26,21 +27,25 @@ let get_y = compose snd coords;
 // Want some kind of typeclass mechanism plus record accessors/updaters.
 // Num → GraphicsElement → GraphicsElement
 letrec fun set_x x {
+   Group(gs) → let dx = x - get_x Group(gs) in Group(map (fun g → set_x (get_x g + dx) g) gs);
    Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
-   Viewport(_, y, w, h, scale, translate, gs) → Viewport(x, y, w, h, scale, translate, gs);
-   Group(gs) → let dx = x - get_x Group(gs) in Group(map (fun g → set_x (get_x g + dx) g) gs)
+   Text(_, y, str, anchor, baseline) → Text(x, y, str, anchor, baseline);
+   Viewport(_, y, w, h, scale, translate, gs) → Viewport(x, y, w, h, scale, translate, gs)
 };
 
 // ((Num, Num), (Num, Num)) → (Num, Num)
 let dimensions2 = fun ((x1, y1), (x2, y2)) →
    (max2 (x1, x2), max2 (y1, y2));
 
+// Text has zero dimensions; essentially it behaves like an (invisible) point, with the text rendering
+// merely a decoration located relative to that reference point.
 // GraphicsElement → (Num, Num)
 letrec fun dimensions {
-   Rect(_, _, w, h, _) → (w, h);
-   Viewport(_, _, w, h, _, _, _) → (w, h);
    Group(gs) → match unzip (map dimensions gs) as (ws, hs) → (max ws, max hs);
-   Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps
+   Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps;
+   Rect(_, _, w, h, _) → (w, h);
+   Text(_, _, str, _, _) → (0, 0);
+   Viewport(_, _, w, h, _, _, _) → (w, h)
 };
 
 // GraphicsElement → Num
@@ -60,13 +65,14 @@ let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33"
 
 // Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
 // frame, to avoid depending on content of child, and so are not themselves scaled. Polyline can't be scaled
-// directly because it inherits its frame of reference from its parent.
+// directly because it inherits its frame of reference from its parent; text case doesn't make sense yet.
 // Num → GraphicsElement → GraphicsElement
 letrec fun scaleToWidth w {
+   Group(gs) → Group(map (scaleToWidth w) gs);
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
    Viewport(x, y, w0, h, Scale(x_scale, y_scale), translate, gs) → 
       let scale = Scale(x_scale * w / w0, y_scale) in Viewport(x, y, w, h, scale, translate, gs);
-   Group(gs) → Group(map (scaleToWidth w) gs)
+   Text(x, y, str, anchor, baseline) → Text(x, y, str, anchor, baseline)
 };
 
 // Num → List GraphicsElement → List GraphicsElement
@@ -230,6 +236,6 @@ let groupedBarChart = categoricalChart (compose map (flip (barChart False) 0));
 let stackedBarChart = categoricalChart (compose map stackedBar);
 
 // Str → GraphicsElement → GraphicsElement
-let caption = fun text g →
+let caption = fun str g →
    match prod coords dimensions g as 
-   ((x, _), (w, h)) → Text(x + width / 2, y, str, "middle", "hanging")
+   ((x, y), (w, _)) → Group([g, Circle(x + w / 2, y + 50, 10, "red")]) // Text(x + w / 2, y + 50, str, "middle", "hanging")])
