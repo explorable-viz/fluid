@@ -3,6 +3,16 @@ import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Num, Str, _ } from "./Value"
 
+// Isomorphic to Bool
+export class Orient extends DataValue<"Orient"> {
+}
+
+export class Horiz extends Orient {
+}
+
+export class Vert extends Orient {
+}
+
 export type GraphicsElementTag = "Circle" | "Group" | "Line" | "Polyline" | "Polymarkers" | "Rect" | "Text" | "Viewport"
 
 export class GraphicsElement<Tag extends GraphicsElementTag = GraphicsElementTag> extends DataValue<Tag> {
@@ -86,6 +96,7 @@ export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
 export class Arrowhead extends Marker<"Arrowhead"> {   
 }
 
+initDataType(Orient, [Horiz, Vert])
 initDataType(GraphicsElement, [Group, Line, Polyline, Polymarkers, Rect, Text, Viewport])
 initDataType(Transform, [Scale, Translate])
 initDataType(Marker, [Arrowhead, Circle])

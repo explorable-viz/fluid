@@ -80,33 +80,33 @@ let markerRadius = 0.5;
 let tickLength = 0.1;
 
 // Helpers for axis functions.
-// Bool → Colour → Num → GraphicsElement
+// Orient → Colour → Num → GraphicsElement
 let tick = fun {
-   True colour len →
-      Line((0, 0), (0 - len, 0), colour, axisStrokeWidth);
-   False colour len →
-      Line((0, 0), (0, 0 - len), colour, axisStrokeWidth)
+   Horiz colour len →
+      Line((0, 0), (0, 0 - len), colour, axisStrokeWidth);
+   Vert colour len →
+      Line((0, 0), (0 - len, 0), colour, axisStrokeWidth)
    };
 
-// Bool → Num → Num → Str → GraphicsElement
+// Orient → Num → Num → Str → GraphicsElement
 let label = fun {
-   True x len str → Text(0 - len, x, str, "end", "central");
-   False x len str → Text(x, 0 - len, str, "middle", "hanging")
+   Horiz x len str → Text(x, 0 - len, str, "middle", "hanging");
+   Vert x len str → Text(0 - len, x, str, "end", "central")
 };
 
 // Bool → Colour → Num → Str → GraphicsElement
-let labelledTick = fun vert colour len str →
-   Group([tick vert colour len, label vert 0 len str]);
+let labelledTick = fun orient colour len str →
+   Group([tick orient colour len, label orient 0 len str]);
 
-// Bool → Num → Num → (Num, Num)
+// Orient → Num → Num → (Num, Num)
 let mkPoint = fun {
-   True x y → (x, y);
-   False x y → (y, x)
+   Horiz x y → (y, x);
+   Vert x y → (x, y)
 };
 
-// Notionally a y-axis located at position x on the x-axis.
-// Bool → Num → Num → GraphicsElement 
-let axis = fun vert x start end →
+// x is position of this axis on the other axis.
+// Orient → Num → Num → GraphicsElement 
+let axis = fun orient x start end →
    let tickSp = tickEvery (end - start);
    let firstTick = ceilingToNearest start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
@@ -116,28 +116,28 @@ let axis = fun vert x start end →
       True → [start, ...ys];
       False → ys
    };
-   let ps = map (mkPoint vert x) ys
+   let ps = map (mkPoint orient x) ys
    in Group([
       Line(head ps, last ps, axisColour, axisStrokeWidth),
-      Polymarkers(ps, flip map ys (compose (labelledTick vert axisColour tickLength) numToStr))
+      Polymarkers(ps, flip map ys (compose (labelledTick orient axisColour tickLength) numToStr))
    ]);
 
-// Notionally a y-axis located at position x on the x-axis.
-// Bool → Num → Num → List Cat → GraphicsElement 
-let categoricalAxis = fun vert x catValues →
+// x is position of this axis on the other axis.
+// Orient → Num → Num → List Cat → GraphicsElement 
+let catAxis = fun orient x catValues →
    let ys = iterate (length catValues + 1) (fun y → y + 1) 0;
-   let ps = map (mkPoint vert x) ys
+   let ps = map (mkPoint orient x) ys
    in Group([
       Line(head ps, last ps, axisColour, axisStrokeWidth),
-      Polymarkers(tail ps, map (const (tick vert axisColour tickLength)) catValues),
-      Polymarkers(tail ps, map (label vert -0.5 0) catValues)
+      Polymarkers(tail ps, map (const (tick orient axisColour tickLength)) catValues),
+      Polymarkers(tail ps, map (label orient -0.5 0) catValues)
    ]);
 
 // Num → Num → GraphicsElement 
-let x_axis = axis False;
-let y_axis = axis True;
-let x_categoricalAxis = categoricalAxis False;
-let y_categoricalAxis = categoricalAxis True;
+let x_axis = axis Horiz;
+let y_axis = axis Vert;
+let x_catAxis = catAxis Horiz;
+let y_catAxis = catAxis Vert;
 
 // Only defined for Group for now. Margin size is relative to parent coordinate frame.
 // Num → GraphicsElement → GraphicsElement
@@ -178,7 +178,7 @@ let categoricalChart = fun plotValue withAxes colours sep data →
    let w = length gs;
    let h = max (map height gs);
    let axes = match withAxes as {
-      True → [x_categoricalAxis 20 (map fst data), y_axis 0 0 h];
+      True → [x_catAxis 20 (map fst data), y_axis 0 0 h];
       False → []
    }
    in background 0.2
