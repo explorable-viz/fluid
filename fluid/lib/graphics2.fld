@@ -231,4 +231,5 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 
 // Str → GraphicsElement → GraphicsElement
 let caption = fun text g →
-   Text(x, 0, str, "middle", "hanging")
+   match prod coords dimensions g as 
+   ((x, _), (w, h)) → Text(x + width / 2, y, str, "middle", "hanging")
