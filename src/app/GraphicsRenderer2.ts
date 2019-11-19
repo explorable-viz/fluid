@@ -217,10 +217,13 @@ export class GraphicsRenderer {
       assert(width >= 0 && height >= 0)
       const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.viewport)
       this.current.appendChild(svg)
+      this.ancestors.push(svg)
+      if (g.fill.val !== "none") {
+         this.current.appendChild(rect(x, y, width, height, "none", g.fill.val, this.viewport))
+      }
       if (this.showInvisible) {
          this.current.appendChild(border(x, y, width, height, "gray", true))
       }
-      this.ancestors.push(svg)
       this.withLocalFrame(
          transformFun(g.scale), 
          transformFun(g.translate), 

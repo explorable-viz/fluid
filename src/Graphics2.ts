@@ -68,6 +68,7 @@ export class Viewport extends GraphicsElement<"Viewport"> {
    y: Num = _
    width: Num = _
    height: Num = _
+   fill: Str = _
    scale: Transform = _
    translate: Transform = _ // scaling applies to translated coordinates
    gs: List<GraphicsElement> = _
