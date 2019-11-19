@@ -52,7 +52,7 @@ export class GraphicsRenderer {
    ancestors: SVGElement[] // stack of enclosing SVG elements
    translations: TransformFun[] // stack of (uncomposed) active translations, each relative to parent SVG
    scalings: TransformFun[] // stack of successively composed scalings, each relative to root SVG
-   showInvisible: boolean = false
+   showInvisible: boolean = true
 
    // transform attribute isn't supported on SVGElement, so it contains a group element with the inversion transform.
    constructor (root: SVGSVGElement, initialAncestor: SVGElement) {
@@ -216,14 +216,14 @@ export class GraphicsRenderer {
       const [width, height] = [x2 - x, y2 - y]
       assert(width >= 0 && height >= 0)
       const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.viewport)
-      this.current.appendChild(svg)
-      this.ancestors.push(svg)
       if (g.fill.val !== "none") {
          this.current.appendChild(rect(x, y, width, height, "none", g.fill.val, this.viewport))
       }
+      this.current.appendChild(svg)
       if (this.showInvisible) {
          this.current.appendChild(border(x, y, width, height, "gray", true))
       }
+      this.ancestors.push(svg)
       this.withLocalFrame(
          transformFun(g.scale), 
          transformFun(g.translate), 

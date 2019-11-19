@@ -37,14 +37,11 @@ letrec fun set_x x {
 let dimensions2 = fun ((x1, y1), (x2, y2)) →
    (max2 (x1, x2), max2 (y1, y2));
 
-// Text currently has zero dimensions; essentially behaves like an (invisible) point, with the text
-// merely a decoration located relative to that reference point.
+// Possible to implement for Group using bounding rect, but don't need it yet.
 // GraphicsElement → (Num, Num)
 letrec fun dimensions {
-   Group(gs) → match unzip (map dimensions gs) as (ws, hs) → (max ws, max hs); // INCORRECT
    Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps;
    Rect(_, _, w, h, _) → (w, h);
-   Text(_, _, str, _, _) → (0, 0);
    Viewport(_, _, w, h, _, _, _, _) → (w, h)
 };
 
@@ -233,8 +230,13 @@ let groupedBarChart = categoricalChart (compose map (flip (barChart False) 0));
 // Bool → Colours → Num → List (a, List (b, Num)) → GraphicsElement
 let stackedBarChart = categoricalChart (compose map stackedBar);
 
-// Want to use something like 
-//   match prod coords dimensions g as 
-//   ((x, y), (w, _)) → Text(x + w / 2, y + 50, str, "middle", "hanging")])
+// Hacky solution for now.
 // Str → GraphicsElement → GraphicsElement
-let caption = fun str g → g
+let caption = fun str g → 
+   match g as Viewport(x, y, w, h, fill, scale, translate, gs) → 
+   let dh = textHeight str;
+   let gs' = [
+      Text(x + w / 2, dh, str, "middle", "hanging"),
+      Viewport(0, dh, w, h, fill, scale, translate, gs)
+   ]
+   in Viewport(x, y, w, h + dh, "none", Scale(1, 1), Translate(0, 0), gs')
