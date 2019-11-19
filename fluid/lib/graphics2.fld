@@ -201,7 +201,13 @@ let categoricalChart = fun plotValue withAxes colours sep data →
       True → [catAxis Horiz 20 (map fst data), axis Vert 0 0 h];
       False → []
    }
-   in background 0.2 (viewport 0 w h (concat gs axes));
+   in background 0.2 (match withAxes as {
+      True → 
+         match catAxis Horiz 20 (map fst data) as 
+         x_axis → match axis Vert 0 0 h as
+         y_axis → viewport 0 w h [x_axis, y_axis, ...gs];
+      False → viewport 0 w h gs
+   });
 
 // Colours → List a → GraphicsElement
 let rects = fun colours ns →
