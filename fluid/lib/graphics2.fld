@@ -110,7 +110,7 @@ let axis = fun orient x start end →
    let tickSp = tickEvery (end - start);
    let firstTick = ceilingToNearest start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
-   let ys = concat (iterate n (fun y → y + tickSp) firstTick) [end];
+   let ys = concat (iterate n (fun y → y + tickSp) firstTick) [ceilingToNearest end tickSp];
    // avoid redundant start point; not so easy/efficient for end point, so don't bother
    let ys = match firstTick > start as {
       True → [start, ...ys];
@@ -121,6 +121,26 @@ let axis = fun orient x start end →
       Line(head ps, last ps, axisColour, axisStrokeWidth),
       Polymarkers(ps, flip map ys (compose (labelledTick orient axisColour tickLength) numToStr))
    ]);
+
+// x is position of this axis on the other axis. Returns axis and position of last tick.
+// Orient → Num → Num → GraphicsElement 
+let axis2 = fun orient x start end →
+   let tickSp = tickEvery (end - start);
+   let firstTick = ceilingToNearest start tickSp;
+   let lastTick = ceilingToNearest end tickSp;
+   let n = floor ((end - firstTick) / tickSp) + 1;
+   let ys = concat (iterate n (fun y → y + tickSp) firstTick) [lastTick];
+   // avoid redundant start point; not so easy/efficient for end point, so don't bother
+   let ys = match firstTick > start as {
+      True → [start, ...ys];
+      False → ys
+   };
+   let ps = map (mkPoint orient x) ys;
+   let ax = Group([
+      Line(head ps, last ps, axisColour, axisStrokeWidth),
+      Polymarkers(ps, flip map ys (compose (labelledTick orient axisColour tickLength) numToStr))
+   ])
+   in (ax, lastTick);
 
 // x is position of this axis on the other axis.
 // Orient → Num → Num → List Cat → GraphicsElement 
@@ -142,10 +162,15 @@ let background = fun m Viewport(x, y, w, h, Scale(x_scale, y_scale), Translate(d
    let translate = Translate(dx + m / x_scale', dy + m / y_scale')
    in Group([Rect(x, y, w, h, backgroundColour), Viewport(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]);
    
+// Num → Num → Num → List GraphicsElement → GraphicsElement
+let viewport = fun x_start x_finish y_finish gs →
+   Viewport(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), gs);
+
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // Bool → Colours → List Cat → List (Num, List (Cat, Num)) → GraphicsElement
 let lineChart = fun withAxes colours x_start ks data →
    let xs = map fst data;
+   // Returns the plot along with its maximum y-value.
    // Cat → Colour → (GraphicsElement, Num)
    let plot = fun k colour →
       let ps = map (second (lookup k)) data;
@@ -162,8 +187,7 @@ let lineChart = fun withAxes colours x_start ks data →
       True → [axis Horiz 10 x_start x_finish, axis Vert x_start 0 y_finish];
       False → []
    }
-   in background 0.7
-      Viewport(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), concat gs axes);
+   in background 0.7 (viewport x_start x_finish y_finish (concat gs axes));
 
 // Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
 // (Colours → List a → GraphicsElement) → Bool → Colours → Num → List (Cat, a) → GraphicsElement
