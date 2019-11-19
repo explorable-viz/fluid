@@ -111,10 +111,14 @@ let axis = fun orient x start end →
    let firstTick = ceilingToNearest start tickSp;
    let lastTick = ceilingToNearest end tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
-   let ys = concat (iterate n (fun y → y + tickSp) firstTick) [lastTick];
-   // avoid redundant start point; not so easy/efficient for end point, so don't bother
+   let ys = iterate n (fun y → y + tickSp) firstTick;
+   // avoid redundant start and end points
    let ys = match firstTick > start as {
       True → [start, ...ys];
+      False → ys
+   };
+   let ys = match lastTick > end as {
+      True → concat ys [lastTick];
       False → ys
    };
    let ps = map (mkPoint orient x) ys;
@@ -167,7 +171,7 @@ let lineChart = fun withAxes colours x_start ks data →
    let gs = map fst lines
    in background 0.7 (match withAxes as {
       True →
-         match axis Horiz 10 x_start x_finish as
+         match axis Horiz 0 x_start x_finish as
          (x_axis, x_finish) → match axis Vert x_start 0 y_finish as 
          (y_axis, y_finish) → viewport x_start x_finish y_finish [x_axis, y_axis, ...gs];
       False → viewport x_start x_finish y_finish gs
@@ -181,7 +185,7 @@ let categoricalChart = fun plotValue withAxes colours sep data →
    let h = max (map height gs)
    in background 0.2 (match withAxes as {
       True → 
-         match catAxis Horiz 20 (map fst data) as 
+         match catAxis Horiz 0 (map fst data) as 
          x_axis → match axis Vert 0 0 h as
          (y_axis, h) → viewport 0 w h [x_axis, y_axis, ...gs];
       False → viewport 0 w h gs
