@@ -195,7 +195,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             const k: MemoId = memoId(op.op, [v1, v2])
             return explValue(Expl.binaryApp(tv1 as ExplValue<PrimValue>, e.opName, tv2 as ExplValue<PrimValue>)(kₜ), op.op(v1, v2)(k))
          } else {
-            return userError(`Applying "${e.opName}" to non-primitive value.`, v1, v2)
+            return userError(`Applying "${e.opName.val}" to non-primitive value.`, v1, v2)
          }
       } else {
          return userError(`Binary primitive "${e.opName.val}" not found.`)
