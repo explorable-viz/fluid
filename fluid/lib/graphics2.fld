@@ -65,14 +65,13 @@ let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33"
 
 // Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
 // frame, to avoid depending on content of child, and so are not themselves scaled. Polyline can't be scaled
-// directly because it inherits its frame of reference from its parent; text case doesn't make sense yet.
+// directly because it inherits its frame of reference from its parent.
 // Num → GraphicsElement → GraphicsElement
 letrec fun scaleToWidth w {
-   Group(gs) → Group(map (scaleToWidth w) gs);
+   Group(_) → error "Don't do this.";
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
    Viewport(x, y, w0, h, Scale(x_scale, y_scale), translate, gs) → 
-      let scale = Scale(x_scale * w / w0, y_scale) in Viewport(x, y, w, h, scale, translate, gs);
-   Text(x, y, str, anchor, baseline) → Text(x, y, str, anchor, baseline)
+      let scale = Scale(x_scale * w / w0, y_scale) in Viewport(x, y, w, h, scale, translate, gs)
 };
 
 // Num → List GraphicsElement → List GraphicsElement
@@ -238,4 +237,5 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 // Str → GraphicsElement → GraphicsElement
 let caption = fun str g →
    match prod coords dimensions g as 
-   ((x, y), (w, _)) → Group([g, Rect(x + w / 2, y + 50, 10, 10, "red")]) // Text(x + w / 2, y + 50, str, "middle", "hanging")])
+   // was: Text(x + w / 2, y + 50, str, "middle", "hanging")])   
+   ((x, y), (w, _)) → Group([g, Rect(debugLog x + w / 2, y, 10, 10, "red")])
