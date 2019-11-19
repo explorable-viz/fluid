@@ -1,2 +1,3 @@
-groupRight 0.2
-   (map (compose (groupedBarChart True colours1 0.2) snd) (lastN 2 data))
+let year = 2013 in
+caption ("Renewables by country and by energy type, " ++ numToStr year)
+   (groupedBarChart True colours1 0.2 (lookup year data))

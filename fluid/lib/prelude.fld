@@ -37,6 +37,9 @@ let head = fun [x, ...xs] → x;
 // a → a
 let id = fun x → x;
 
+// (a → b) → (a → c) → a → (b, c)
+let prod = fun f g x → (f x, g x);
+
 // Num → Num → Ordering
 let compare =
    fun (x, y) →

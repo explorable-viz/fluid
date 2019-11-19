@@ -58,7 +58,7 @@ const equal: Binary<Num | Str, Num | Str, Bool> = (x, y) => {
    }
 }
 
-const error: Unary<Str, Value> = message => assert(false, "LambdaCalc error:\n" + message.val)
+const error: Unary<Str, Value> = message => assert(false, "Fluid error:\n" + message.val)
 
 const greaterEq: Binary<Num | Str, Num | Str, Bool> = (x, y) => {
    if (x instanceof Num && y instanceof Num) {

@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, as, assert, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
 import { strings } from "../Expr"
-import { Arrowhead, Circle, Marker, LeftTick, RightTick } from "../Graphics2"
+import { Arrowhead, Marker } from "../Graphics2"
 import { Value, isPrim } from "../Value"
 import { versioned } from "../Versioned"
 import { SVG } from "./Core"
@@ -239,9 +239,6 @@ let markerFactory: Map<string, MarkerFactory>
 {
    markerFactory = new Map()
    markerFactory.set(Arrowhead.name, marker_arrowhead)
-   markerFactory.set(Circle.name, marker_circle)
-   markerFactory.set(LeftTick.name, marker_leftTick)
-   markerFactory.set(RightTick.name, marker_rightTick)
 }
 
 // Assume root has a unique defs element called "defs". Return composite marker id.
@@ -273,41 +270,14 @@ export function marker_arrowhead (colour: string): SVGMarkerElement {
    return m
 }
 
-function marker_circle (colour: string): SVGMarkerElement {
-   const m: SVGMarkerElement = marker(Circle, colour)
-   const radius: number = 1
-   m.setAttribute("refX", `${radius}`)
-   m.setAttribute("refY", `${radius}`)
-   m.setAttribute("markerWidth", `${radius * 2}`)
-   m.setAttribute("markerHeight", `${radius * 2}`)
-   m.setAttribute("overflow", "visible") // for debugging
-   const circle: SVGCircleElement = createElement("circle", marker_circle)
-   m.appendChild(circle)
-   circle.setAttribute("cx", `${radius}`)
-   circle.setAttribute("cy", `${radius}`)
-   circle.setAttribute("r", `${radius}`)
-   return m
-}
-
-function marker_tick (colour: string, C: Class<Marker>): SVGMarkerElement {
-   const m: SVGMarkerElement = marker(C, colour)
-   const height: number = 4
-   m.setAttribute("refX", `${0}`)
-   m.setAttribute("refY", `${C === LeftTick ? 0 : height}`)
-   m.setAttribute("markerWidth", `${height * 2}`)
-   m.setAttribute("markerHeight", `${height * 2}`)
-   m.setAttribute("overflow", "visible") // for debugging
-   const tick: SVGLineElement = line(0, 0, 0, height, colour, 1)
-   m.appendChild(tick)
-   return m
-}
-
-function marker_leftTick (colour: string): SVGMarkerElement {
-   return marker_tick(colour, LeftTick)
-}
-
-function marker_rightTick (colour: string): SVGMarkerElement {
-   return marker_tick(colour, RightTick)
+export function circle (x: number, y: number, radius: number, stroke: string, fill: string, createdBy: Function): SVGCircleElement {
+   const r: SVGCircleElement = createElement("circle", createdBy)
+   r.setAttribute("cx", `${round(x)}`)
+   r.setAttribute("cy", `${round(y)}`)
+   r.setAttribute("r", `${round(radius)}`)
+   r.setAttribute("stroke", stroke)
+   r.setAttribute("fill", fill)
+   return r
 }
 
 export function parenthesise (g: SVGElement, ẟ_style: DeltaStyle): SVGSVGElement {
@@ -426,11 +396,11 @@ function textElement (fontSize: number, class_: string, str: string): SVGTextEle
    return text
 }
 
-// Text for use inside graphics; needs to be inverted, to undo the SVG inversion we apply at the top level.
-// Use "translate" to locate the element, so that we can apply it after scaling.
+// Flip text vertically to cancel out the global vertical flip. Don't set x and y but express
+// position through a translation so that the scaling doesn't affect the position.
 export function textElement_graphical (x: number, y: number, fontSize: number, str: string): SVGTextElement {
-   const text: SVGTextElement = textElement(fontSize, "", str)
-   let transform: string = `translate(${x.toString()},${y.toString()})`
+   const text: SVGTextElement = textElement(fontSize, "label", str)
+   let transform: string = `translate(${round(x)},${round(y)})`
    text.setAttribute("transform", transform + " scale(1,-1)")
    return text
 }

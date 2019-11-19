@@ -64,7 +64,7 @@ function apply_<K extends Cont> (σ: Elim<K>, tv: ExplValue, u̅: MatchPrefix): 
          } else {
             const d: DataType = elimToDataType.get(className(σ))!
             if (d.ctrs.has(c)) {
-               return userError(`Pattern mismatch: ${c} case is undefined for ${d.name.val} eliminator.`)
+               return userError(`Pattern mismatch: "${c}" case undefined for ${d.name.val}.`)
             } else {
                return userError(`Pattern mismatch: found ${c}, expected ${d.name.val}.`)
             }

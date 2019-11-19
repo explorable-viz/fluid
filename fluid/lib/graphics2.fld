@@ -1,4 +1,8 @@
-// Simplistic but something more general may require primitives which take data values as inputs.
+// typedef Colour = Str
+// typedef Colours = List Colour
+// typedef Cat = Str
+
+// Simplistic but something more general may require primitives which take data values for input.
 // Application module GraphicsRenderer must be loaded for these definitions to work.
 // Str → Num
 primitive textWidth;
@@ -6,22 +10,39 @@ primitive textWidth;
 // Str → Num
 primitive textHeight;
 
+// GraphicsElement → (Num, Num)
+letrec fun coords {
+   Group(gs) → match unzip (map coords gs) as (xs, ys) → (min xs, min ys);
+   Rect(x, y, _, _, _) → (x, y);
+   Text(x, y, _, _, _) → (x, y);
+   Viewport(x, y, _, _, _, _, _, _) → (x, y)
+};
+
+// GraphicsElement → Num
+let get_x = compose fst coords;
+
+// GraphicsElement → Num
+let get_y = compose snd coords;
+
 // Want some kind of typeclass mechanism plus record accessors/updaters.
 // Num → GraphicsElement → GraphicsElement
-let set_x = fun x {
+letrec fun set_x x {
+   Group(gs) → let dx = x - get_x Group(gs) in Group(map (fun g → set_x (get_x g + dx) g) gs);
    Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
-   Group(_, y, w, h, scale, translate, gs) → Group(x, y, w, h, scale, translate, gs)
+   Text(_, y, str, anchor, baseline) → Text(x, y, str, anchor, baseline);
+   Viewport(_, y, w, h, fill, scale, translate, gs) → Viewport(x, y, w, h, fill, scale, translate, gs)
 };
 
 // ((Num, Num), (Num, Num)) → (Num, Num)
 let dimensions2 = fun ((x1, y1), (x2, y2)) →
    (max2 (x1, x2), max2 (y1, y2));
 
+// Possible to implement for Group using bounding rect, but don't need it yet.
 // GraphicsElement → (Num, Num)
-let dimensions = fun {
+letrec fun dimensions {
+   Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps;
    Rect(_, _, w, h, _) → (w, h);
-   Group(_, _, w, h, _, _, _) → (w, h);
-   Polyline(ps, _, _, _) → foldl dimensions2 (0, 0) ps
+   Viewport(_, _, w, h, _, _, _, _) → (w, h)
 };
 
 // GraphicsElement → Num
@@ -43,10 +64,10 @@ let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33"
 // frame, to avoid depending on content of child, and so are not themselves scaled. Polyline can't be scaled
 // directly because it inherits its frame of reference from its parent.
 // Num → GraphicsElement → GraphicsElement
-let scaleToWidth = fun w {
+letrec fun scaleToWidth w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
-   Group(x, y, w0, h, Scale(x_scale, y_scale), translate, gs) → 
-      let scale = Scale(x_scale * w / w0, y_scale) in Group(x, y, w, h, scale, translate, gs)
+   Viewport(x, y, w0, h, fill, Scale(x_scale, y_scale), translate, gs) → 
+      let scale = Scale(x_scale * w / w0, y_scale) in Viewport(x, y, w, h, fill, scale, translate, gs)
 };
 
 // Num → List GraphicsElement → List GraphicsElement
@@ -55,7 +76,7 @@ let stackRight = fun sep gs →
 
 // Num → List GraphicsElement → GraphicsElement
 let groupRight = fun sep gs →
-   Group(0, 0, length gs, max (map height gs), Scale(1, 1), Translate(0, 0), stackRight sep gs);
+   Viewport(0, 0, length gs, max (map height gs), "none", Scale(1, 1), Translate(0, 0), stackRight sep gs);
 
 // Heuristic saying how often to place a tick on an axis of length n.
 // Num → Num
@@ -66,90 +87,156 @@ let tickEvery = fun n →
       False → 10 ** m
    };
 
-// Bool → Str → Num → Num → GraphicsElement 
-let axis = fun vert colour x start end →
+let axisStrokeWidth = 0.5;
+let axisColour = "black";
+let backgroundColour = "Gainsboro";
+let markerRadius = 0.5;
+let tickLength = 0.1;
+
+// Helpers for axis functions.
+// Orient → Colour → Num → GraphicsElement
+let tick = fun {
+   Horiz colour len →
+      Line((0, 0), (0, 0 - len), colour, axisStrokeWidth);
+   Vert colour len →
+      Line((0, 0), (0 - len, 0), colour, axisStrokeWidth)
+   };
+
+// Orient → Num → Num → Str → GraphicsElement
+let label = fun {
+   Horiz x distance str → Text(x, 0 - distance, str, "middle", "hanging");
+   Vert x distance str → Text(0 - distance, x, str, "end", "central")
+};
+
+// Orient → Colour → Num → Str → GraphicsElement
+let labelledTick = fun orient colour len str →
+   Group([tick orient colour len, label orient 0 len str]);
+
+// Orient → Num → Num → (Num, Num)
+let mkPoint = fun {
+   Horiz x y → (y, x);
+   Vert x y → (x, y)
+};
+
+// x is position of this axis on the other axis. Returns axis and position of last tick.
+// Orient → Num → Num → GraphicsElement 
+let axis = fun orient x start end →
    let tickSp = tickEvery (end - start);
    let firstTick = ceilingToNearest start tickSp;
+   let lastTick = ceilingToNearest end tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
-   let ys = concat (iterate n (fun y → y + tickSp) firstTick) [end];
-   // avoid redundant start point; not so easy/efficient for end point, so don't bother
+   let ys = iterate n (fun y → y + tickSp) firstTick;
+   // avoid redundant start and end points
    let ys = match firstTick > start as {
       True → [start, ...ys];
       False → ys
    };
-   let mkPoint = match vert as {
-      True → fun y → (x, y);
-      False → fun y → (y, x)
+   let ys = match lastTick > end as {
+      True → concat ys [lastTick];
+      False → ys
    };
-   let tick = match vert as { True → LeftTick; False → RightTick }
-   in Polyline(map mkPoint ys, colour, 0.5, Some(tick));
+   let ps = map (mkPoint orient x) ys;
+   let ax = Group([
+      Line(head ps, last ps, axisColour, axisStrokeWidth),
+      Polymarkers(ps, flip map ys (compose (labelledTick orient axisColour tickLength) numToStr))
+   ])
+   in (ax, lastTick);
 
-// Str → Num → Num → GraphicsElement 
-let x_axis = axis False;
-let y_axis = axis True;
+// x is position of this axis on the other axis.
+// Orient → Num → Num → List Cat → GraphicsElement 
+let catAxis = fun orient x catValues →
+   let ys = iterate (length catValues + 1) (fun y → y + 1) 0;
+   let ps = map (mkPoint orient x) ys
+   in Group([
+      Line(head ps, last ps, axisColour, axisStrokeWidth),
+      Polymarkers(tail ps, map (const (tick orient axisColour tickLength)) catValues),
+      Polymarkers(tail ps, map (label orient -0.5 0) catValues)
+   ]);
 
-// Only defined for Group for now. Margin size is relative to parent coordinate frame.
+// Only defined for Viewport for now. Margin size is relative to parent coordinate frame.
 // Num → GraphicsElement → GraphicsElement
-let background = fun m Group(x, y, w, h, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
+let background = fun m Viewport(x, y, w, h, fill, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
    // should detect division by zero here
    let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
    let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
-   let translate = Translate(dx + m / x_scale', dy + m / y_scale');
-   let gs = [Rect(x, y, w, h, "Gainsboro"), Group(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]
-   in Group(0, 0, x + w, y + h, Scale(1, 1), Translate(0, 0), gs);
+   let translate = Translate(dx + m / x_scale', dy + m / y_scale')
+   in Viewport(x, y, w, h, fill, Scale(x_scale', y_scale'), translate, gs);
+   
+// Num → Num → Num → List GraphicsElement → GraphicsElement
+let viewport = fun x_start x_finish y_finish gs →
+   Viewport(0, 0, x_finish - x_start, y_finish, backgroundColour, Scale(1, 1), Translate(0 - x_start, 0), gs);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
-// Bool → List Str → List k2 → List (Num, List (k2, Num)) → GraphicsElement
+// Bool → Colours → List Cat → List (Num, List (Cat, Num)) → GraphicsElement
 let lineChart = fun withAxes colours x_start ks data →
    let xs = map fst data;
-   // Str → Str → (GraphicsElement, Num)
+   // Returns the plot along with its maximum y-value.
+   // Cat → Colour → (GraphicsElement, Num)
    let plot = fun k colour →
-      let ps = map (second (lookup k)) data in
-      (Polyline(ps, colour, 1, Some(Circle)), max (map snd ps));
+      let ps = map (second (lookup k)) data;
+      let line = Group([
+         Polyline(ps, colour, 1),
+         Polymarkers(ps, repeat (length ps) Circle(0, 0, markerRadius, colour))
+      ])
+      in (line, max (map snd ps));
    let lines = zipWith (uncurry plot) ks colours;
    let x_finish = last xs;
    let y_finish = max (map snd lines);
-   let gs = map fst lines;
-   let axes = match withAxes as {
-      True → [x_axis "black" 0 x_start x_finish, y_axis "black" x_start 0 y_finish];
-      False → []
-   }
-   in background 1.5
-      Group(0, 0, x_finish - x_start, y_finish, Scale(1, 1), Translate(0 - x_start, 0), concat gs axes);
+   let gs = map fst lines
+   in background 0.7 (match withAxes as {
+      True →
+         match axis Horiz 0 x_start x_finish as
+         (x_axis, x_finish) → match axis Vert x_start 0 y_finish as 
+         (y_axis, y_finish) → viewport x_start x_finish y_finish [x_axis, y_axis, ...gs];
+      False → viewport x_start x_finish y_finish gs
+   });
 
-// (List Str → List a → GraphicsElement) → Bool → List Str → Num → List (b, a) → GraphicsElement
-let chart = fun mkChart withAxes colours sep data →
-   let gs = stackRight sep (mkChart colours (map snd data));
+// Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
+// (Colours → List a → GraphicsElement) → Bool → Colours → Num → List (Cat, a) → GraphicsElement
+let categoricalChart = fun plotValue withAxes colours sep data →
+   let gs = stackRight sep (plotValue colours (map snd data));
    let w = length gs;
-   let h = max (map height gs);
-   let axes = match withAxes as {
-      True → [x_axis "black" 0 0 w, y_axis "black" 0 0 h];
-      False → []
-   }
-   in background 0.2
-      Group(0, 0, w, h, Scale(1, 1), Translate(0, 0), concat gs axes);
+   let h = max (map height gs)
+   in background 0.2 (match withAxes as {
+      True → 
+         match catAxis Horiz 0 (map fst data) as 
+         x_axis → match axis Vert 0 0 h as
+         (y_axis, h) → viewport 0 w h [x_axis, y_axis, ...gs];
+      False → viewport 0 w h gs
+   });
 
-// List Str → List a → GraphicsElement
+// Colours → List a → GraphicsElement
 let rects = fun colours ns →
    zipWith (fun (colour, n) → Rect(0, 0, 1, n, colour)) colours ns;
 
 // First component of data (categorical value) currently ignored; values just mapped positionally to colors.
-// List Str → List (a, Num) → GraphicsElement
+// Colours → List (a, Num) → GraphicsElement
 let stackedBar = fun colours ns →
    let subtotals = scanl1 (fun (x, y) → x + y) 0 (map snd ns);
    let dims = zip [0, ...subtotals] (map (fun (x, y) → y - x) (zip [0, ...subtotals] subtotals));
    let rects = map 
       (fun ((y, height), colour) → Rect(0, y, 1, height, colour))
       (zip dims colours)
-   in Group(0, 0, 1, last subtotals, Scale(1, 1), Translate(0, 0), rects);
+   in Viewport(0, 0, 1, last subtotals, "none", Scale(1, 1), Translate(0, 0), rects);
 
-// Bool → List Str → Num → List (a, Num) → GraphicsElement
-let barChart = chart rects;
+// Bool → Colours → Num → List (a, Num) → GraphicsElement
+let barChart = categoricalChart rects;
 
 // For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
-// Bool → List Str → Num → List (a, List (b, Num)) → GraphicsElement
-let groupedBarChart = chart (compose map (flip (barChart False) 0));
+// Bool → Colours → Num → List (a, List (b, Num)) → GraphicsElement
+let groupedBarChart = categoricalChart (compose map (flip (barChart False) 0));
 
 // See stackedBar for strong (unjustified) assumption about uniformity of data.
-// Bool → List Str → Num → List (a, List (b, Num)) → GraphicsElement
-let stackedBarChart = chart (compose map stackedBar)
+// Bool → Colours → Num → List (a, List (b, Num)) → GraphicsElement
+let stackedBarChart = categoricalChart (compose map stackedBar);
+
+// Hacky solution for now.
+// Str → GraphicsElement → GraphicsElement
+let caption = fun str g → 
+   match g as Viewport(x, y, w, h, fill, scale, translate, gs) → 
+   let dh = textHeight str;
+   let gs' = [
+      Text(x + w / 2, dh, str, "middle", "hanging"),
+      Viewport(0, dh, w, h, fill, scale, translate, gs)
+   ]
+   in Viewport(x, y, w, h + dh, "none", Scale(1, 1), Translate(0, 0), gs')

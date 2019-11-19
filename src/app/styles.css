@@ -7,8 +7,15 @@
    src: url(./inconsolata-webfont.woff) format('woff');
 }
 
+@import url('https://fonts.googleapis.com/css?family=Slabo+13px&display=swap');
+
 .code {
    font-family: "inconsolata";
+   stroke: none;
+}
+
+.label {
+   font-family: "Slabo 13px";
    stroke: none;
 }
 
