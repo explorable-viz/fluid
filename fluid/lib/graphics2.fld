@@ -37,11 +37,11 @@ letrec fun set_x x {
 let dimensions2 = fun ((x1, y1), (x2, y2)) →
    (max2 (x1, x2), max2 (y1, y2));
 
-// Text has zero dimensions; essentially it behaves like an (invisible) point, with the text rendering
+// Text currently has zero dimensions; essentially behaves like an (invisible) point, with the text
 // merely a decoration located relative to that reference point.
 // GraphicsElement → (Num, Num)
 letrec fun dimensions {
-   Group(gs) → match unzip (map (prod coords dimensions) gs) as (ws, hs) → (max ws, max hs);
+   Group(gs) → match unzip (map dimensions gs) as (ws, hs) → (max ws, max hs); // INCORRECT
    Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps;
    Rect(_, _, w, h, _) → (w, h);
    Text(_, _, str, _, _) → (0, 0);
@@ -156,14 +156,18 @@ let catAxis = fun orient x catValues →
       Polymarkers(tail ps, map (label orient -0.5 0) catValues)
    ]);
 
-// Only defined for Group for now. Margin size is relative to parent coordinate frame.
+// Only defined for Viewport for now. Margin relative to parent coordinate frame.
 // Num → GraphicsElement → GraphicsElement
-let background = fun m Viewport(x, y, w, h, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
-   // should detect division by zero here
-   let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
-   let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
-   let translate = Translate(dx + m / x_scale', dy + m / y_scale')
-   in Group([Rect(x, y, w, h, backgroundColour), Viewport(x, y, w, h, Scale(x_scale', y_scale'), translate, gs)]);
+let background = fun m Viewport(x, y, w, h, Scale(x_scale, y_scale), translate, gs) →
+   let w' = max2 (w - 2 * m, 0);
+   let h' = max2 (h - 2 * m, 0);
+   let x_scale' = x_scale * w' / w; // should detect division by zero here
+   let y_scale' = y_scale * h' / h;
+   let gs = [
+      Rect(0, 0, w, h, backgroundColour),
+      Viewport(m, m, w', h', Scale(x_scale', y_scale'), translate, gs)
+   ]
+   in Viewport(x, y, w, h, Scale(1, 1), Translate(0, 0), gs);
    
 // Num → Num → Num → List GraphicsElement → GraphicsElement
 let viewport = fun x_start x_finish y_finish gs →
@@ -186,7 +190,7 @@ let lineChart = fun withAxes colours x_start ks data →
    let x_finish = last xs;
    let y_finish = max (map snd lines);
    let gs = map fst lines
-   in background 0.7 (match withAxes as {
+   in background 1 (match withAxes as {
       True →
          match axis Horiz 0 x_start x_finish as
          (x_axis, x_finish) → match axis Vert x_start 0 y_finish as 
@@ -233,8 +237,8 @@ let groupedBarChart = categoricalChart (compose map (flip (barChart False) 0));
 // Bool → Colours → Num → List (a, List (b, Num)) → GraphicsElement
 let stackedBarChart = categoricalChart (compose map stackedBar);
 
-// Want to use something like Text(x + w / 2, y + 50, str, "middle", "hanging")]).
+// Want to use something like 
+//   match prod coords dimensions g as 
+//   ((x, y), (w, _)) → Text(x + w / 2, y + 50, str, "middle", "hanging")])
 // Str → GraphicsElement → GraphicsElement
-let caption = fun str g →
-   match prod coords dimensions g as 
-   ((x, y), (w, _)) → Group([g, Rect(x + w / 2, y, 10, 10, "red")])
+let caption = fun str g → g
