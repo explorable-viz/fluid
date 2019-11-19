@@ -10,7 +10,7 @@ import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 import { border, circle, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
-const fontSize: number = 8
+const fontSize: number = 12
 
 export const svg: SVG = new SVG()
 

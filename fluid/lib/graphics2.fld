@@ -104,8 +104,8 @@ let mkPoint = fun {
 };
 
 // Notionally a y-axis located at position x on the x-axis.
-// Bool → Colour → Num → Num → GraphicsElement 
-let axis = fun vert colour x start end →
+// Bool → Num → Num → GraphicsElement 
+let axis = fun vert x start end →
    let tickSp = tickEvery (end - start);
    let firstTick = ceilingToNearest start tickSp;
    let n = floor ((end - firstTick) / tickSp) + 1;
@@ -117,26 +117,26 @@ let axis = fun vert colour x start end →
    };
    let ps = map (mkPoint vert x) ys
    in Group([
-      Line(head ps, last ps, colour, axisStrokeWidth),
-      Polymarkers(ps, flip map ys (compose (labelledTick vert colour tickLength) numToStr))
+      Line(head ps, last ps, axisColour, axisStrokeWidth),
+      Polymarkers(ps, flip map ys (compose (labelledTick vert axisColour tickLength) numToStr))
    ]);
 
 // Notionally a y-axis located at position x on the x-axis.
-// Bool → Colour → Num → Num → List Cat → GraphicsElement 
-let categoricalAxis = fun vert colour x catValues →
+// Bool → Num → Num → List Cat → GraphicsElement 
+let categoricalAxis = fun vert x catValues →
    let ys = iterate (length catValues + 1) (fun y → y + 1) 0;
    let ps = map (mkPoint vert x) ys
    in Group([
-      Line(head ps, last ps, colour, axisStrokeWidth),
-      Polymarkers(tail ps, map (const (tick vert colour tickLength)) catValues),
+      Line(head ps, last ps, axisColour, axisStrokeWidth),
+      Polymarkers(tail ps, map (const (tick vert axisColour tickLength)) catValues),
       Polymarkers(tail ps, map (label vert -0.5 0) catValues)
    ]);
 
 // Num → Num → GraphicsElement 
-let x_axis = axis False axisColour;
-let y_axis = axis True axisColour;
-let x_categoricalAxis = categoricalAxis False axisColour;
-let y_categoricalAxis = categoricalAxis True axisColour;
+let x_axis = axis False;
+let y_axis = axis True;
+let x_categoricalAxis = categoricalAxis False;
+let y_categoricalAxis = categoricalAxis True;
 
 // Only defined for Group for now. Margin size is relative to parent coordinate frame.
 // Num → GraphicsElement → GraphicsElement
