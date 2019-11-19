@@ -104,24 +104,6 @@ let mkPoint = fun {
    Vert x y → (x, y)
 };
 
-// x is position of this axis on the other axis.
-// Orient → Num → Num → GraphicsElement 
-let axis = fun orient x start end →
-   let tickSp = tickEvery (end - start);
-   let firstTick = ceilingToNearest start tickSp;
-   let n = floor ((end - firstTick) / tickSp) + 1;
-   let ys = concat (iterate n (fun y → y + tickSp) firstTick) [ceilingToNearest end tickSp];
-   // avoid redundant start point; not so easy/efficient for end point, so don't bother
-   let ys = match firstTick > start as {
-      True → [start, ...ys];
-      False → ys
-   };
-   let ps = map (mkPoint orient x) ys
-   in Group([
-      Line(head ps, last ps, axisColour, axisStrokeWidth),
-      Polymarkers(ps, flip map ys (compose (labelledTick orient axisColour tickLength) numToStr))
-   ]);
-
 // x is position of this axis on the other axis. Returns axis and position of last tick.
 // Orient → Num → Num → GraphicsElement 
 let axis2 = fun orient x start end →
