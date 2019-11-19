@@ -6,6 +6,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 19 November 2019 | Stacked bar, grouped bar and multiline chart examples | [110](https://github.com/rolyp/lambdacalc/issues/110), [250](https://github.com/rolyp/lambdacalc/issues/250) |
 | 4 November 2019 | Merge with Wrattler `develop` | [247](https://github.com/rolyp/lambdacalc/issues/247) |
 | 25 October 2019 | “Swap node” proof-of-concept | [237](https://github.com/rolyp/lambdacalc/issues/237) |
 | 21 October 2019 | Basic delta-visualisation for IC 2019 presentation | [220](https://github.com/rolyp/lambdacalc/issues/220), [225](https://github.com/rolyp/lambdacalc/issues/225), [230](https://github.com/rolyp/lambdacalc/issues/230), [232](https://github.com/rolyp/lambdacalc/issues/232), [235](https://github.com/rolyp/lambdacalc/issues/235), [238](https://github.com/rolyp/lambdacalc/issues/238) |
