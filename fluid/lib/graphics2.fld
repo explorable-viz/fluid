@@ -238,4 +238,4 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 // Str → GraphicsElement → GraphicsElement
 let caption = fun str g →
    match prod coords dimensions g as 
-   ((x, y), (w, _)) → Group([g, Circle(x + w / 2, y + 50, 10, "red")]) // Text(x + w / 2, y + 50, str, "middle", "hanging")])
+   ((x, y), (w, _)) → Group([g, Rect(x + w / 2, y + 50, 10, 10, "red")]) // Text(x + w / 2, y + 50, str, "middle", "hanging")])
