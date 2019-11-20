@@ -9,8 +9,9 @@ let countryData = fun country →
    flip map data (second (compose total (lookup country)));
 // List Country
 let countries = map fst (snd year1) in
-countryData "China"
-// groupRight 0.2 
-//   (map 
-//      (fun country → caption country (lineChart True colours1 (fst year1) energyTypes (countryData country)))
-//      (lastN 1 countries))
+groupRight 0.2 
+   (flip map (lastN 1 countries) 
+      (fun country → 
+         caption country 
+            (lineChart True colours1 (fst year1) 
+               [energyTotal, ...energyTypes] (countryData country))))
