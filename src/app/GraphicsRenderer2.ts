@@ -140,11 +140,12 @@ export class GraphicsRenderer {
       return result
    }
 
+   // Scale circle by product of x, y scaling factors to maintain ratio of area to fixed rectangle as an invariant.
    circle (tg: ExplValueCursor/*<Rect>*/): void {
       const g: Circle = as(tg.tv.v, Circle)
       const [x, y] = this.transform([g.x.val, g.y.val])
-      const [, radius] = this.scale([0, g.radius.val])
-      const r: SVGCircleElement = circle(x, y, radius, "none", g.fill.val, this.circle)
+      const [x_scale, y_scale] = this.scale([1, 1])
+      const r: SVGCircleElement = circle(x, y, g.radius.val * x_scale * y_scale, "none", g.fill.val, this.circle)
       this.current.appendChild(r)
    }
 
