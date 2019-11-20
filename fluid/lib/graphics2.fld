@@ -15,7 +15,7 @@ letrec fun coords {
    Group(gs) → match unzip (map coords gs) as (xs, ys) → (min xs, min ys);
    Rect(x, y, _, _, _) → (x, y);
    Text(x, y, _, _, _) → (x, y);
-   Viewport(x, y, _, _, _, _, _, _) → (x, y)
+   Viewport(x, y, _, _, _, _, _, _, _) → (x, y)
 };
 
 // GraphicsElement → Num
@@ -30,7 +30,7 @@ letrec fun set_x x {
    Group(gs) → let dx = x - get_x Group(gs) in Group(map (fun g → set_x (get_x g + dx) g) gs);
    Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
    Text(_, y, str, anchor, baseline) → Text(x, y, str, anchor, baseline);
-   Viewport(_, y, w, h, fill, scale, translate, gs) → Viewport(x, y, w, h, fill, scale, translate, gs)
+   Viewport(_, y, w, h, fill, margin, scale, translate, gs) → Viewport(x, y, w, h, fill, margin, scale, translate, gs)
 };
 
 // ((Num, Num), (Num, Num)) → (Num, Num)
@@ -43,7 +43,7 @@ let dimensions2 = fun ((x1, y1), (x2, y2)) →
 letrec fun dimensions {
    Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps;
    Rect(_, _, w, h, _) → (w, h);
-   Viewport(_, _, w, h, _, _, _, _) → (w, h)
+   Viewport(_, _, w, h, _, _, _, _, _) → (w, h)
 };
 
 // GraphicsElement → Num
@@ -63,12 +63,13 @@ let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33"
 
 // Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
 // frame, to avoid depending on content of child, and so are not themselves scaled. Polyline can't be scaled
-// directly because it inherits its frame of reference from its parent.
+// directly because it inherits its frame of reference from its parent. For Viewport, margin will shrink the
+// available area, possibly to zero, at which point nothing will be rendered.
 // Num → GraphicsElement → GraphicsElement
 letrec fun scaleToWidth w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
-   Viewport(x, y, w0, h, fill, Scale(x_scale, y_scale), translate, gs) → 
-      let scale = Scale(x_scale * w / w0, y_scale) in Viewport(x, y, w, h, fill, scale, translate, gs)
+   Viewport(x, y, w0, h, fill, margin, Scale(x_scale, y_scale), translate, gs) → 
+      let scale = Scale(x_scale * w / w0, y_scale) in Viewport(x, y, w, h, fill, margin, scale, translate, gs)
 };
 
 // Num → List GraphicsElement → List GraphicsElement
@@ -77,7 +78,7 @@ let stackRight = fun sep gs →
 
 // Num → List GraphicsElement → GraphicsElement
 let groupRight = fun sep gs →
-   Viewport(0, 0, length gs, max (map height gs), "none", Scale(1, 1), Translate(0, 0), stackRight sep gs);
+   Viewport(0, 0, length gs, max (map height gs), 0, "none", Scale(1, 1), Translate(0, 0), stackRight sep gs);
 
 // Heuristic saying how often to place a tick on an axis of length n.
 // Num → Num
@@ -91,6 +92,7 @@ let tickEvery = fun n →
 let axisStrokeWidth = 0.5;
 let axisColour = "black";
 let backgroundColour = "Gainsboro";
+let defaultMargin = 3;
 let markerRadius = 2.5;
 let tickLength = 4;
 
@@ -156,16 +158,15 @@ let catAxis = fun orient x catValues →
 
 // Only defined for Viewport for now. Margin size is relative to parent coordinate frame.
 // Num → GraphicsElement → GraphicsElement
-let margin = fun m Viewport(x, y, w, h, fill, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
-   // should detect division by zero here
-   let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
-   let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
-   let translate = Translate(dx + m / x_scale', dy + m / y_scale')
-   in Viewport(x, y, w, h, fill, Scale(x_scale', y_scale'), translate, gs);
+// let margin = fun m Viewport(x, y, w, h, fill, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
+//   let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
+//   let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
+//   let translate = Translate(dx + m / x_scale', dy + m / y_scale')
+//   in Viewport(x, y, w, h, fill, Scale(x_scale', y_scale'), translate, gs);
    
-// Num → Num → Num → List GraphicsElement → GraphicsElement
-let viewport = fun x_start x_finish y_finish gs →
-   Viewport(0, 0, x_finish - x_start, y_finish, backgroundColour, Scale(1, 1), Translate(0 - x_start, 0), gs);
+// Num → Num → Num → Num → List GraphicsElement → GraphicsElement
+let viewport = fun x_start x_finish y_finish margin gs →
+   Viewport(0, 0, x_finish - x_start, y_finish, margin, backgroundColour, Scale(1, 1), Translate(0 - x_start, 0), gs);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // Bool → Colours → Num → List Cat → List (Num, List (Cat, Num)) → GraphicsElement
@@ -184,13 +185,13 @@ let lineChart = fun withAxes colours x_start ks data →
    let x_finish = last xs;
    let y_finish = max (map snd lines);
    let gs = map fst lines
-   in margin 0.7 (match withAxes as {
+   in match withAxes as {
       True →
          match axis Horiz 0 x_start x_finish as
          (x_axis, x_finish) → match axis Vert x_start 0 y_finish as 
-         (y_axis, y_finish) → viewport x_start x_finish y_finish [x_axis, y_axis, ...gs];
-      False → viewport x_start x_finish y_finish gs
-   });
+         (y_axis, y_finish) → viewport x_start x_finish y_finish defaultMargin [x_axis, y_axis, ...gs];
+      False → viewport x_start x_finish y_finish defaultMargin gs
+   };
 
 // Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
 // (Colours → List a → GraphicsElement) → Bool → Colours → Num → List (Cat, a) → GraphicsElement
@@ -198,19 +199,20 @@ let categoricalChart = fun plotValue withAxes colours sep data →
    let gs = stackRight sep (plotValue colours (map snd data));
    let w = length gs;
    let h = max (map height gs)
-   in margin 0.2 (match withAxes as {
+   in match withAxes as {
       True → 
          match catAxis Horiz 0 (map fst data) as 
          x_axis → match axis Vert 0 0 h as
-         (y_axis, h) → viewport 0 w h [x_axis, y_axis, ...gs];
-      False → viewport 0 w h gs
-   });
+         (y_axis, h) → viewport 0 w h defaultMargin [x_axis, y_axis, ...gs];
+      False → viewport 0 w h defaultMargin gs
+   };
 
 // Colours → List a → GraphicsElement
 let rects = fun colours ns →
    zipWith (fun (colour, n) → Rect(0, 0, 1, n, colour)) colours ns;
 
 // First component of data (categorical value) currently ignored; values just mapped positionally to colors.
+// Can we use Group instead of Viewport here?
 // Colours → List (a, Num) → GraphicsElement
 let stackedBar = fun colours ns →
    let subtotals = scanl1 (fun (x, y) → x + y) 0 (map snd ns);
@@ -218,7 +220,7 @@ let stackedBar = fun colours ns →
    let rects = map 
       (fun ((y, height), colour) → Rect(0, y, 1, height, colour))
       (zip dims colours)
-   in Viewport(0, 0, 1, last subtotals, "none", Scale(1, 1), Translate(0, 0), rects);
+   in Viewport(0, 0, 1, last subtotals, 0, "none", Scale(1, 1), Translate(0, 0), rects);
 
 // Bool → Colours → Num → List (a, Num) → GraphicsElement
 let barChart = categoricalChart rects;
@@ -234,10 +236,10 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 // TODO: less hacky version.
 // Str → GraphicsElement → GraphicsElement
 let caption = fun str g → 
-   match g as Viewport(x, y, w, h, fill, scale, translate, gs) → 
+   match g as Viewport(x, y, w, h, margin, fill, scale, translate, gs) → 
    let dh = textHeight str;
    let gs' = [
       Text(x + w / 2, dh, str, "middle", "hanging"),
-      Viewport(0, dh, w, h, fill, scale, translate, gs)
+      Viewport(0, dh, w, h, fill, margin, scale, translate, gs)
    ]
-   in Viewport(x, y, w, h + dh, backgroundColour, Scale(1, 1), Translate(0, 0), gs')
+   in Viewport(x, y, w, h + dh, 0, backgroundColour, Scale(1, 1), Translate(0, 0), gs')
