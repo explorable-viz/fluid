@@ -6,10 +6,10 @@ let total = fun kvs →
    [(energyTotal, sum (map snd kvs)), ...kvs];
 // Country → List (Year, List (EnergyType, Output))
 let countryData = fun country →
-   flip map data (second (lookup country));
+   flip map data (second (compose total (lookup country)));
 // List Country
 let countries = map fst (snd year1) in
-map (second total) (countryData "China")
+countryData "China"
 // groupRight 0.2 
 //   (map 
 //      (fun country → caption country (lineChart True colours1 (fst year1) energyTypes (countryData country)))
