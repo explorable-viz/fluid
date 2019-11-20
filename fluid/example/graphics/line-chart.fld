@@ -1,10 +1,16 @@
 let year1 = head data;
 let energyTypes = map fst (snd (head (snd year1)));
+// List (EnergyType, Output) → List(EnergyType', Output)
+let energyTotal = "Total";
+let total = fun kvs →
+   [(energyTotal, sum (map snd kvs)), ...kvs];
 // Country → List (Year, List (EnergyType, Output))
-let countryData = compose (flip map data) (compose second lookup);
+let countryData = fun country →
+   flip map data (second (lookup country));
 // List Country
 let countries = map fst (snd year1) in
-groupRight 0.2 
-   (map 
-      (fun country → caption country (lineChart True colours1 (fst year1) energyTypes (countryData country)))
-      (lastN 1 countries))
+map (second total) (countryData "China")
+// groupRight 0.2 
+//   (map 
+//      (fun country → caption country (lineChart True colours1 (fst year1) energyTypes (countryData country)))
+//      (lastN 1 countries))
