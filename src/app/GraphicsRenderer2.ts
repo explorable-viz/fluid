@@ -166,6 +166,7 @@ export class GraphicsRenderer {
       this.current.appendChild(polyline(ps, g.stroke.val, g.strokeWidth.val))
    }
 
+   // Polymarkers have coordinates relative to the points, in the *parent* scaling.
    polymarkers (tg: ExplValueCursor/*<Polymarkers>*/): void {
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Polymarkers, "markers"),
                tps: ExplValueCursor/*<List<Pair<Num, Num>>*/ = tg.to(Polymarkers, "points"); 
