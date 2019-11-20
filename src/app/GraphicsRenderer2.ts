@@ -219,6 +219,12 @@ export class GraphicsRenderer {
       text.setAttribute("alignment-baseline", `${g.baseline.val}`)
    }
 
+   // let margin = fun m Viewport(x, y, w, h, fill, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
+   //   let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
+   //   let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
+   //   let translate = Translate(dx + m / x_scale', dy + m / y_scale')
+   //   in Viewport(x, y, w, h, fill, Scale(x_scale', y_scale'), translate, gs);
+   
    viewport (tg: ExplValueCursor/*<Viewport>*/): void {
       const g: Viewport = as(tg.tv.v, Viewport)
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
@@ -234,6 +240,9 @@ export class GraphicsRenderer {
          this.current.appendChild(border(x, y, width, height, "gray", true))
       }
       this.ancestors.push(svg)
+      const v: SVGSVGElement = svgElement(0, 0, width, height, false, this.viewport)
+      this.current.appendChild(v)
+      this.ancestors.push(v)
       this.withLocalFrame(
          transformFun(g.scale), 
          transformFun(g.translate), 
@@ -244,6 +253,7 @@ export class GraphicsRenderer {
             }
          }
       )
+      this.ancestors.pop()
       this.ancestors.pop()
    }
 

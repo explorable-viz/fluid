@@ -156,14 +156,6 @@ let catAxis = fun orient x catValues →
       Polymarkers(tail ps, map (label orient -0.5 0) catValues)
    ]);
 
-// Only defined for Viewport for now. Margin size is relative to parent coordinate frame.
-// Num → GraphicsElement → GraphicsElement
-// let margin = fun m Viewport(x, y, w, h, fill, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
-//   let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
-//   let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
-//   let translate = Translate(dx + m / x_scale', dy + m / y_scale')
-//   in Viewport(x, y, w, h, fill, Scale(x_scale', y_scale'), translate, gs);
-   
 // Num → Num → Num → Num → List GraphicsElement → GraphicsElement
 let viewport = fun x_start x_finish y_finish margin gs →
    Viewport(0, 0, x_finish - x_start, y_finish, backgroundColour, margin, Scale(1, 1), Translate(0 - x_start, 0), gs);
