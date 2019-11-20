@@ -1,4 +1,7 @@
-/* @import url('https://fonts.googleapis.com/css?family=Inconsolata&display=swap'); */
+/* 
+@import url('https://fonts.googleapis.com/css?family=Inconsolata&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Slabo+13px&display=swap'); 
+*/
 
 @font-face {
    font-family: "inconsolata";
@@ -7,7 +10,12 @@
    src: url(./inconsolata-webfont.woff) format('woff');
 }
 
-@import url('https://fonts.googleapis.com/css?family=Slabo+13px&display=swap');
+@font-face {
+   font-family: "Slabo 13px";
+   font-style: normal;
+   font-weight: 400;
+   src: url(./Slabo13px-Regular.woff) format('woff');
+}
 
 .code {
    font-family: "inconsolata";
