@@ -239,4 +239,4 @@ let caption = fun str g →
       Text(x + w / 2, dh, str, "middle", "hanging"),
       Viewport(0, dh, w, h, fill, scale, translate, gs)
    ]
-   in Viewport(x, y, w, h + dh, "none", Scale(1, 1), Translate(0, 0), gs')
+   in Viewport(x, y, w, h + dh, backgroundColour, Scale(1, 1), Translate(0, 0), gs')
