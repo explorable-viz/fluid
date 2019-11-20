@@ -78,7 +78,7 @@ let stackRight = fun sep gs →
 
 // Num → List GraphicsElement → GraphicsElement
 let groupRight = fun sep gs →
-   Viewport(0, 0, length gs, max (map height gs), 0, "none", Scale(1, 1), Translate(0, 0), stackRight sep gs);
+   Viewport(0, 0, length gs, max (map height gs), "none", 0, Scale(1, 1), Translate(0, 0), stackRight sep gs);
 
 // Heuristic saying how often to place a tick on an axis of length n.
 // Num → Num
@@ -166,7 +166,7 @@ let catAxis = fun orient x catValues →
    
 // Num → Num → Num → Num → List GraphicsElement → GraphicsElement
 let viewport = fun x_start x_finish y_finish margin gs →
-   Viewport(0, 0, x_finish - x_start, y_finish, margin, backgroundColour, Scale(1, 1), Translate(0 - x_start, 0), gs);
+   Viewport(0, 0, x_finish - x_start, y_finish, backgroundColour, margin, Scale(1, 1), Translate(0 - x_start, 0), gs);
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // Bool → Colours → Num → List Cat → List (Num, List (Cat, Num)) → GraphicsElement
@@ -220,7 +220,7 @@ let stackedBar = fun colours ns →
    let rects = map 
       (fun ((y, height), colour) → Rect(0, y, 1, height, colour))
       (zip dims colours)
-   in Viewport(0, 0, 1, last subtotals, 0, "none", Scale(1, 1), Translate(0, 0), rects);
+   in Viewport(0, 0, 1, last subtotals, "none", 0, Scale(1, 1), Translate(0, 0), rects);
 
 // Bool → Colours → Num → List (a, Num) → GraphicsElement
 let barChart = categoricalChart rects;
@@ -236,10 +236,10 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 // TODO: less hacky version.
 // Str → GraphicsElement → GraphicsElement
 let caption = fun str g → 
-   match g as Viewport(x, y, w, h, margin, fill, scale, translate, gs) → 
+   match g as Viewport(x, y, w, h, fill, margin, scale, translate, gs) → 
    let dh = textHeight str;
    let gs' = [
       Text(x + w / 2, dh, str, "middle", "hanging"),
       Viewport(0, dh, w, h, fill, margin, scale, translate, gs)
    ]
-   in Viewport(x, y, w, h + dh, 0, backgroundColour, Scale(1, 1), Translate(0, 0), gs')
+   in Viewport(x, y, w, h + dh, backgroundColour, 0, Scale(1, 1), Translate(0, 0), gs')
