@@ -203,9 +203,10 @@ export class GraphicsRenderer {
    rect (tg: ExplValueCursor/*<Rect>*/): void {
       const g: Rect = as(tg.tv.v, Rect)
       const [x, y] = this.transform([g.x.val, g.y.val])
-      // TODO: replace this shenanigan by this.scale?
-      const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
-      const [width, height] = [x2 - x, y2 - y]
+      const [width, height] = this.scale([g.width.val, g.height.val])
+//    Previously:
+//    const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
+//    const [width, height] = [x2 - x, y2 - y]
       assert(width >= 0 && height >= 0)
       const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val, this.rect)
       this.current.appendChild(r)
@@ -225,9 +226,10 @@ export class GraphicsRenderer {
       const g: Viewport = as(tg.tv.v, Viewport)
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
       const [x, y] = this.transform([g.x.val, g.y.val])
-      // TODO: replace this shenanigan by this.scale?
-      const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
-      const [width, height] = [x2 - x, y2 - y]
+      const [width, height] = this.scale([g.width.val, g.height.val])
+//    Previously:
+//    const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
+//    const [width, height] = [x2 - x, y2 - y]
       assert(width >= 0 && height >= 0)
       const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.viewport)
       if (g.fill.val !== "none") {
