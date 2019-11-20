@@ -28,6 +28,13 @@ function translate (x_inc: number, y_inc: number): TransformFun {
    }
 }
 
+function invertScale (scale: TransformFun): TransformFun {
+   return ([x, y]): [number, number] => {
+      const [x_scale, y_scale]: [number, number] = scale([1, 1])
+      return [x / x_scale, y / y_scale]
+   }
+}
+
 function transformFun (t: Transform): TransformFun {
    if (t instanceof Scale) {
       assert(t.x.val >= 0 && t.y.val >= 0)
@@ -176,13 +183,18 @@ export class GraphicsRenderer {
             userError(`${Polymarkers.name}: more markers than points.`)
          } else {
             const p: Pair<Num, Num> = as(tps.to(Cons, "head").tv.v, Pair)
+            const [x, y] = this.transform([p.fst.val, p.snd.val])
+            const svg: SVGSVGElement = svgElement(x, y, 10, 10, false, this.polymarkers)
+            this.current.appendChild(svg)
+            this.ancestors.push(svg)
             this.withLocalFrame(
+               invertScale(this.scale),
                id, 
-               postcompose(last(this.translations), translate(p.fst.val, p.snd.val)), 
                () => {
                   this.renderElement(tg̅.to(Cons, "head"))
                }
             )
+            this.ancestors.pop()
          }
       }
    }

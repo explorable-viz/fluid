@@ -37,7 +37,8 @@ letrec fun set_x x {
 let dimensions2 = fun ((x1, y1), (x2, y2)) →
    (max2 (x1, x2), max2 (y1, y2));
 
-// Possible to implement for Group using bounding rect, but don't need it yet.
+// Possible to implement for Group using bounding rect, but don't need it yet. For Polymarker, will
+// probably have to ignore the markers themselves, since they are scale-invariant.
 // GraphicsElement → (Num, Num)
 letrec fun dimensions {
    Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps;
@@ -90,8 +91,8 @@ let tickEvery = fun n →
 let axisStrokeWidth = 0.5;
 let axisColour = "black";
 let backgroundColour = "Gainsboro";
-let markerRadius = 0.75;
-let tickLength = 0.1;
+let markerRadius = 2.5;
+let tickLength = 4;
 
 // Helpers for axis functions.
 // Orient → Colour → Num → GraphicsElement
@@ -230,7 +231,7 @@ let groupedBarChart = categoricalChart (compose map (flip (barChart False) 0));
 // Bool → Colours → Num → List (a, List (b, Num)) → GraphicsElement
 let stackedBarChart = categoricalChart (compose map stackedBar);
 
-// Hacky solution for now.
+// TODO: less hacky version.
 // Str → GraphicsElement → GraphicsElement
 let caption = fun str g → 
    match g as Viewport(x, y, w, h, fill, scale, translate, gs) → 

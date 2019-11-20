@@ -346,7 +346,7 @@ export function svgElement (x: number, y: number, width: number, height: number,
    svg.setAttribute("y", `${round(y)}`)
    svg.setAttribute("width", `${round(width)}`)
    svg.setAttribute("height", `${round(height)}`)
-//   svg.setAttribute("overflow", "visible") // for debugging
+   svg.setAttribute("overflow", "visible") // for debugging
    if (defs) {
       const d: SVGDefsElement = createElement("defs", createdBy)
       d.setAttribute("id", "defs")

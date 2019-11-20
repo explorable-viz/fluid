@@ -97,14 +97,6 @@ export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
 export class Arrowhead extends Marker<"Arrowhead"> {   
 }
 
-// A "locally scale-invariant" graphics element. SVG markers are similar, but we can use this for elements that
-// change at every point of a polymarkers element (for example).
-export class Unscaled extends DataValue<"Unscaled"> {
-   width: Num = _
-   height: Num = _
-   g: GraphicsElement = _
-}
-
 initDataType(Orient, [Horiz, Vert])
 initDataType(GraphicsElement, [Circle, Group, Line, Polyline, Polymarkers, Rect, Text, Viewport])
 initDataType(Transform, [Scale, Translate])
