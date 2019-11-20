@@ -57,6 +57,12 @@ letrec fun concat {
    [x, ...xs] ys → [x, ...concat xs ys]
 };
 
+// a → List a → Bool (where a ∈ {Num, Str})
+letrec fun elem x {
+   [] → False;
+   [x', ...xs] → or (x == x') (elem x xs)
+};
+
 // (a → Bool) → List a → List a
 letrec fun filter p {
    [] → [];
@@ -228,6 +234,12 @@ let or = fun {
    True x → True;
    False True → True;
    False False → False
+};
+
+// Bool → Bool
+let not = fun {
+   True → False;
+   False → True
 };
 
 letrec fun take n xs →

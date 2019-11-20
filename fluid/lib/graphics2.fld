@@ -199,7 +199,7 @@ let categoricalChart = fun plotValue withAxes colours sep data →
    let h = max (map height gs)
    in background 0.2 (match withAxes as {
       True → 
-         match catAxis Horiz 0 (map fst data) as 
+         match catAxis Horiz 100 (map fst data) as 
          x_axis → match axis Vert 0 0 h as
          (y_axis, h) → viewport 0 w h [x_axis, y_axis, ...gs];
       False → viewport 0 w h gs

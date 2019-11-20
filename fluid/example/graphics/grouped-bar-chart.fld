@@ -1,3 +1,6 @@
-let year = 2013 in
-caption ("Renewables by country and by energy type, " ++ numToStr year)
-   (groupedBarChart True colours1 0.2 (lookup year data))
+let year = 2013;
+// List (Country, List (EnergyType, Output)) → List (Country, List (EnergyType, Output)) 
+let select = fun exclude yearData →
+   flip map yearData (second (filter (fun (country, countryData) → not (elem country exclude))))
+in caption ("Renewables by country and by energy type, " ++ numToStr year)
+   (groupedBarChart True colours1 0.2 (select [] (lookup year data)))
