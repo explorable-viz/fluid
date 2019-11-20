@@ -1,7 +1,8 @@
-// Str → List (Num, List (Str, Num))
-let countryData = compose (flip map data) (compose second lookup);
 let year1 = head data;
 let energyTypes = map fst (snd (head (snd year1)));
+// Country → List (Year, List (EnergyType, Output))
+let countryData = compose (flip map data) (compose second lookup);
+// List Country
 let countries = map fst (snd year1) in
 groupRight 0.2 
    (map 
