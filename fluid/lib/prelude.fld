@@ -18,6 +18,19 @@ primitive numToStr;
 // a → a
 primitive debugLog;
 
+// Bool → Bool
+let or = fun {
+   True x → True;
+   False True → True;
+   False False → False
+};
+
+// Bool → Bool
+let not = fun {
+   True → False;
+   False → True
+};
+
 // (b → c) → (a → b) → a → c
 // Would like infix operators. 
 let compose = fun f g x → f (g x);
@@ -55,6 +68,12 @@ let compare =
 letrec fun concat {
    [] ys → ys;
    [x, ...xs] ys → [x, ...concat xs ys]
+};
+
+// a → List a → Bool (where a ∈ {Num, Str})
+letrec fun elem x {
+   [] → False;
+   [x', ...xs] → or (x == x') (elem x xs)
 };
 
 // (a → Bool) → List a → List a
@@ -222,13 +241,6 @@ let curry = fun f x y → f (x, y);
 
 // (a → b → c) → (a, b) → c
 let uncurry = fun f (x, y) → f x y;
-
-// Bool → Bool
-let or = fun {
-   True x → True;
-   False True → True;
-   False False → False
-};
 
 letrec fun take n xs →
    match n <= 0 as {
