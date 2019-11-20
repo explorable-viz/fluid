@@ -92,7 +92,7 @@ let tickEvery = fun n →
 let axisStrokeWidth = 0.5;
 let axisColour = "black";
 let backgroundColour = "Gainsboro";
-let defaultMargin = 3;
+let defaultMargin = 40;
 let markerRadius = 2.5;
 let tickLength = 4;
 

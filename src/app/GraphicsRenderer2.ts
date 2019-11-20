@@ -231,18 +231,21 @@ export class GraphicsRenderer {
       const [x, y] = this.transform([g.x.val, g.y.val])
       const [width, height] = this.scale([g.width.val, g.height.val])
       assert(width >= 0 && height >= 0)
-      const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.viewport)
+      const outerSvg: SVGSVGElement = svgElement(x, y, width, height, false, this.viewport)
       if (g.fill.val !== "none") {
          this.current.appendChild(rect(x, y, width, height, "none", g.fill.val, this.viewport))
       }
-      this.current.appendChild(svg)
+      this.current.appendChild(outerSvg)
       if (this.showInvisible) {
          this.current.appendChild(border(x, y, width, height, "gray", true))
       }
-      this.ancestors.push(svg)
-      const v: SVGSVGElement = svgElement(0, 0, width, height, false, this.viewport)
-      this.current.appendChild(v)
-      this.ancestors.push(v)
+      this.ancestors.push(outerSvg)
+      const m: number = g.margin.val
+      // TODO: check for zero w or h
+      const [w, h]: [number, number] = [Math.max(width - m * 2), height - m * 2]
+      const innerViewport: SVGSVGElement = svgElement(m, m, w, h, false, this.viewport)
+      this.current.appendChild(innerViewport)
+      this.ancestors.push(innerViewport)
       this.withLocalFrame(
          transformFun(g.scale), 
          transformFun(g.translate), 
