@@ -13,5 +13,5 @@ groupRight 0.2
    (flip map (lastN 1 countries) 
       (fun country → 
          caption country 
-            (lineChart True colours1 (fst year1) 
+            (lineChart True ["black", ...colours1] (fst year1) 
                [energyTotal, ...energyTypes] (countryData country))))
