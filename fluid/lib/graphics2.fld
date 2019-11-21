@@ -39,12 +39,15 @@ letrec fun set_x x {
 let dimensions2 = fun ((x1, y1), (x2, y2)) →
    (max2 (x1, x2), max2 (y1, y2));
 
+let coords_op = fun g → match prod coords dimensions g as 
+   ((x, y), (w, h)) → (x + w, y + h);
+
 // For Group, compute relative to constant coords of (0, 0); using bounding rect would imply computed
-// coordinates and repositioning of children relative to that origin. For Polymarker, will
-// probably have to ignore the markers themselves, since they are scale-invariant.
+// coordinates and repositioning of children relative to those. For Polymarker, will probably have to 
+// ignore the markers themselves, since they are scale-invariant.
 // GraphicsElement → (Num, Num)
 letrec fun dimensions {
-   Group(gs) → foldl dimensions2 (0, 0) (map dimensions gs);
+   Group(gs) → foldl dimensions2 (0, 0) (map (coords_op) gs);
    Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps;
    Rect(_, _, w, h, _) → (w, h);
    Viewport(_, _, w, h, _, _, _, _, _) → (w, h)
