@@ -162,7 +162,7 @@ let catAxis = fun orient x catValues →
    in Group([
       Line(head ps, last ps, axisColour, axisStrokeWidth),
       Polymarkers(tail ps, map (const (tick orient axisColour tickLength)) catValues),
-      Polymarkers(tail ps, map (label orient -0.5 0) catValues)
+      Polymarkers(flip map (tail ps) (first (fun x → x - 0.5)), map (label orient -0.5 0) catValues)
    ]);
 
 // Num → Num → Num → Num → List GraphicsElement → GraphicsElement
