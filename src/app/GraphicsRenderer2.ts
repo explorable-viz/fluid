@@ -219,12 +219,6 @@ export class GraphicsRenderer {
       text.setAttribute("alignment-baseline", `${g.baseline.val}`)
    }
 
-   // let margin = fun m Viewport(x, y, w, h, fill, Scale(x_scale, y_scale), Translate(dx, dy), gs) →
-   //   let x_scale' = x_scale * max2 (w - 2 * m, 0) / w;
-   //   let y_scale' = y_scale * max2 (h - 2 * m, 0) / h;
-   //   let translate = Translate(dx + m / x_scale', dy + m / y_scale')
-   //   in Viewport(x, y, w, h, fill, Scale(x_scale', y_scale'), translate, gs);
-   
    viewport (tg: ExplValueCursor/*<Viewport>*/): void {
       const g: Viewport = as(tg.tv.v, Viewport)
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
@@ -240,14 +234,17 @@ export class GraphicsRenderer {
          this.current.appendChild(border(x, y, width, height, "gray", true))
       }
       this.ancestors.push(outerSvg)
-      const m: number = g.margin.val
-      // TODO: check for zero w or h
-      const [w, h]: [number, number] = [Math.max(width - m * 2), height - m * 2]
-      const innerViewport: SVGSVGElement = svgElement(m, m, w, h, false, this.viewport)
+      const margin: number = g.margin.val
+      const [widthʹ, heightʹ]: [number, number] = [Math.max(width - margin * 2), height - margin * 2]
+      // TODO: check for zero component of innerScale, and render nothing in that case
+      const innerScale: TransformFun = ([x, y]: [number, number]) => {
+         return [x * widthʹ / width, y * heightʹ / height]
+      }
+      const innerViewport: SVGSVGElement = svgElement(margin, margin, widthʹ, heightʹ, false, this.viewport)
       this.current.appendChild(innerViewport)
       this.ancestors.push(innerViewport)
       this.withLocalFrame(
-         transformFun(g.scale), 
+         postcompose(innerScale, transformFun(g.scale)),
          transformFun(g.translate), 
          () => {
             for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Viewport, "gs"); 
