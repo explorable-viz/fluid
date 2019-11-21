@@ -227,7 +227,7 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 
 // TODO: less hacky version.
 // Str → GraphicsElement → GraphicsElement
-let caption = fun str g → 
+let caption = fun str g →
    match g as Viewport(x, y, w, h, fill, margin, scale, translate, gs) → 
    let dh = textHeight str;
    let gs' = [
