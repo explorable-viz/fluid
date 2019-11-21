@@ -9,7 +9,7 @@ let countryData = fun country →
    flip map data (second (compose total (lookup country)));
 // List Country
 let countries = map fst (snd year1) in
-groupRight 0.2 
+groupRight 0.1
    (flip map (lastN 1 countries) 
       (fun country → 
          caption country 

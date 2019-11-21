@@ -1,5 +1,5 @@
 import { last } from "../util/Array"
-import { Class, __nonNull, absurd, as, assert, id, userError } from "../util/Core"
+import { Class, __log, __nonNull, absurd, as, assert, id, userError } from "../util/Core"
 import { Cons, List, Pair } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Circle, Group, GraphicsElement, Line, Marker, Polyline, Polymarkers, Rect, Scale, Text, Transform, Translate, Viewport } from "../Graphics2"
@@ -10,7 +10,7 @@ import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 import { border, circle, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
-const fontSize: number = 12
+const fontSize: number = 11
 
 export const svg: SVG = new SVG()
 
@@ -176,6 +176,7 @@ export class GraphicsRenderer {
 
    // Polymarkers have coordinates relative to the points, in the *parent* scaling.
    polymarkers (tg: ExplValueCursor/*<Polymarkers>*/): void {
+      const invScale: TransformFun = invertScale(this.scale)
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Polymarkers, "markers"),
                tps: ExplValueCursor/*<List<Pair<Num, Num>>*/ = tg.to(Polymarkers, "points"); 
            Cons.is(as(tg̅.tv.v, List)) || Cons.is(as(tps.tv.v, List)); 
@@ -185,11 +186,11 @@ export class GraphicsRenderer {
          } else {
             const p: Pair<Num, Num> = as(tps.to(Cons, "head").tv.v, Pair)
             const [x, y] = this.transform([p.fst.val, p.snd.val])
-            const svg: SVGSVGElement = svgElement(x, y, 10, 10, false, this.polymarkers)
+            const svg: SVGSVGElement = svgElement(true, x, y, 10, 10, false, this.polymarkers)
             this.current.appendChild(svg)
             this.ancestors.push(svg)
             this.withLocalFrame(
-               invertScale(this.scale),
+               invScale,
                id, 
                () => {
                   this.renderElement(tg̅.to(Cons, "head"))
@@ -225,7 +226,7 @@ export class GraphicsRenderer {
       const [x, y] = this.transform([g.x.val, g.y.val])
       const [width, height] = this.scale([g.width.val, g.height.val])
       assert(width >= 0 && height >= 0)
-      const outerSvg: SVGSVGElement = svgElement(x, y, width, height, false, this.viewport)
+      const outerSvg: SVGSVGElement = svgElement(false, x, y, width, height, false, this.viewport)
       if (g.fill.val !== "none") {
          this.current.appendChild(rect(x, y, width, height, "none", g.fill.val, this.viewport))
       }
@@ -239,12 +240,12 @@ export class GraphicsRenderer {
       const innerScale: TransformFun = ([x, y]: [number, number]) => {
          return [x * widthʹ / width, y * heightʹ / height]
       }
-      const innerViewport: SVGSVGElement = svgElement(margin, margin, widthʹ, heightʹ, false, this.viewport)
+      const innerViewport: SVGSVGElement = svgElement(true, margin, margin, widthʹ, heightʹ, false, this.viewport)
       this.current.appendChild(innerViewport)
       this.ancestors.push(innerViewport)
       this.withLocalFrame(
          postcompose(innerScale, transformFun(g.scale)),
-         transformFun(g.translate), 
+         transformFun(g.translate),
          () => {
             this.renderElement(tg.to(Viewport, "g"))
          }
