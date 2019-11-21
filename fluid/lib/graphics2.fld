@@ -31,27 +31,29 @@ letrec fun set_x x {
    Group(gs) → error "Group has immutable coordinates";
    Rect(_, y, w, h, fill) → Rect(x, y, w, h, fill);
    Text(_, y, str, anchor, baseline) → Text(x, y, str, anchor, baseline);
-   Viewport(_, y, w, h, fill, margin, scale, translate, gs) → 
-      Viewport(x, y, w, h, fill, margin, scale, translate, gs)
+   Viewport(_, y, w, h, fill, margin, scale, translate, g) → 
+      Viewport(x, y, w, h, fill, margin, scale, translate, g)
 };
 
 // ((Num, Num), (Num, Num)) → (Num, Num)
 let dimensions2 = fun ((x1, y1), (x2, y2)) →
    (max2 (x1, x2), max2 (y1, y2));
 
-let coords_op = fun g → match prod coords dimensions g as 
-   ((x, y), (w, h)) → (x + w, y + h);
-
-// For Group, compute relative to constant coords of (0, 0); using bounding rect would imply computed
-// coordinates and repositioning of children relative to those. For Polymarker, will probably have to 
-// ignore the markers themselves, since they are scale-invariant.
+// For Group, dimensions are relative to implicit coords of (0, 0), since a Group's children are effectively
+// positioned relative to parent of Group. For Polymarker, will probably have to ignore the markers themselves, 
+// since they are scale-invariant.
 // GraphicsElement → (Num, Num)
-letrec fun dimensions {
-   Group(gs) → foldl dimensions2 (0, 0) (map (coords_op) gs);
-   Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps;
-   Rect(_, _, w, h, _) → (w, h);
-   Viewport(_, _, w, h, _, _, _, _, _) → (w, h)
-};
+letrec 
+   fun dimensions {
+      Group(gs) → foldl dimensions2 (0, 0) (map (coords_op) gs);
+      Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps;
+      Rect(_, _, w, h, _) → (w, h);
+      Viewport(_, _, w, h, _, _, _, _, _) → (w, h)
+   };
+
+   fun coords_op g → 
+      match prod coords dimensions g as 
+      ((x, y), (w, h)) → (x + w, y + h);
 
 // GraphicsElement → Num
 let width = compose fst dimensions;
@@ -75,8 +77,8 @@ let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33"
 // Num → GraphicsElement → GraphicsElement
 letrec fun scaleToWidth w {
    Rect(x, y, _, h, fill) → Rect(x, y, w, h, fill);
-   Viewport(x, y, w0, h, fill, margin, Scale(x_scale, y_scale), translate, gs) → 
-      let scale = Scale(x_scale * w / w0, y_scale) in Viewport(x, y, w, h, fill, margin, scale, translate, gs)
+   Viewport(x, y, w0, h, fill, margin, Scale(x_scale, y_scale), translate, g) → 
+      let scale = Scale(x_scale * w / w0, y_scale) in Viewport(x, y, w, h, fill, margin, scale, translate, g)
 };
 
 // Num → List GraphicsElement → List GraphicsElement
@@ -85,7 +87,7 @@ let stackRight = fun sep gs →
 
 // Num → List GraphicsElement → GraphicsElement
 let groupRight = fun sep gs →
-   Viewport(0, 0, length gs, max (map height gs), "none", 0, Scale(1, 1), Translate(0, 0), stackRight sep gs);
+   Viewport(0, 0, length gs, max (map height gs), "none", 0, Scale(1, 1), Translate(0, 0), Group(stackRight sep gs));
 
 // Heuristic saying how often to place a tick on an axis of length n.
 // Num → Num
@@ -165,7 +167,7 @@ let catAxis = fun orient x catValues →
 
 // Num → Num → Num → Num → List GraphicsElement → GraphicsElement
 let viewport = fun x_start x_finish y_finish margin gs →
-   Viewport(0, 0, x_finish - x_start, y_finish, backgroundColour, margin, Scale(1, 1), Translate(0 - x_start, 0), gs);
+   Viewport(0, 0, x_finish - x_start, y_finish, backgroundColour, margin, Scale(1, 1), Translate(0 - x_start, 0), Group(gs));
 
 // Plot a subset of the categories from a map of x values to (categorical value, y value) pairs.
 // Bool → Colours → Num → List Cat → List (Num, List (Cat, Num)) → GraphicsElement
@@ -219,7 +221,7 @@ let stackedBar = fun colours ns →
    let rects = map 
       (fun ((y, height), colour) → Rect(0, y, 1, height, colour))
       (zip dims colours)
-   in Viewport(0, 0, 1, last subtotals, "none", 0, Scale(1, 1), Translate(0, 0), rects);
+   in Viewport(0, 0, 1, last subtotals, "none", 0, Scale(1, 1), Translate(0, 0), Group(rects));
 
 // Bool → Colours → Num → List (a, Num) → GraphicsElement
 let barChart = categoricalChart rects;
@@ -234,11 +236,10 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 
 // TODO: less hacky version.
 // Str → GraphicsElement → GraphicsElement
-let caption = fun str g →
-   match g as Viewport(x, y, w, h, fill, margin, scale, translate, gs) → 
+let caption = fun str Viewport(x, y, w, h, fill, margin, scale, translate, g) →
    let dh = textHeight str;
-   let gs' = [
+   let g' = Group([
       Text(x + w / 2, dh, str, "middle", "hanging"),
-      Viewport(0, dh, w, h, fill, margin, scale, translate, gs)
-   ]
-   in Viewport(x, y, w, h + dh, backgroundColour, 0, Scale(1, 1), Translate(0, 0), gs')
+      Viewport(0, dh, w, h, fill, margin, scale, translate, g)
+   ])
+   in Viewport(x, y, w, h + dh, backgroundColour, 0, Scale(1, 1), Translate(0, 0), g')

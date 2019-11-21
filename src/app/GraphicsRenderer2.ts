@@ -236,7 +236,6 @@ export class GraphicsRenderer {
       this.ancestors.push(outerSvg)
       const margin: number = g.margin.val
       const [widthʹ, heightʹ]: [number, number] = [Math.max(width - margin * 2), height - margin * 2]
-      // TODO: check for zero component of innerScale, and render nothing in that case
       const innerScale: TransformFun = ([x, y]: [number, number]) => {
          return [x * widthʹ / width, y * heightʹ / height]
       }
@@ -247,10 +246,7 @@ export class GraphicsRenderer {
          postcompose(innerScale, transformFun(g.scale)),
          transformFun(g.translate), 
          () => {
-            for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Viewport, "gs"); 
-                 Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
-               this.renderElement(tg̅.to(Cons, "head"))
-            }
+            this.renderElement(tg.to(Viewport, "g"))
          }
       )
       this.ancestors.pop()

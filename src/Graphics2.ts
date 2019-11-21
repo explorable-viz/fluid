@@ -72,7 +72,7 @@ export class Viewport extends GraphicsElement<"Viewport"> {
    margin: Num = _ // in *parent* reference frame
    scale: Transform = _
    translate: Transform = _ // scaling applies to translated coordinates
-   gs: List<GraphicsElement> = _
+   g: GraphicsElement = _
 }
 
 export type TransformTag = "Scale" | "Translate"
