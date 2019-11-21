@@ -1,5 +1,5 @@
 import { last } from "../util/Array"
-import { Class, __nonNull, absurd, as, assert, id, userError } from "../util/Core"
+import { Class, __log, __nonNull, absurd, as, assert, id, userError } from "../util/Core"
 import { Cons, List, Pair } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Circle, Group, GraphicsElement, Line, Marker, Polyline, Polymarkers, Rect, Scale, Text, Transform, Translate, Viewport } from "../Graphics2"
@@ -10,7 +10,7 @@ import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 import { border, circle, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
-const fontSize: number = 12
+const fontSize: number = 11
 
 export const svg: SVG = new SVG()
 
@@ -25,6 +25,13 @@ function scale (x_scale: number, y_scale: number): TransformFun {
 function translate (x_inc: number, y_inc: number): TransformFun {
    return ([x, y]): [number, number] => {
       return [x + x_inc, y + y_inc]
+   }
+}
+
+function invertScale (scale: TransformFun): TransformFun {
+   return ([x, y]): [number, number] => {
+      const [x_scale, y_scale]: [number, number] = scale([1, 1])
+      return [x / x_scale, y / y_scale]
    }
 }
 
@@ -133,11 +140,12 @@ export class GraphicsRenderer {
       return result
    }
 
+   // Scale circle by product of x, y scaling factors to maintain ratio of area to fixed rectangle as an invariant.
    circle (tg: ExplValueCursor/*<Rect>*/): void {
       const g: Circle = as(tg.tv.v, Circle)
       const [x, y] = this.transform([g.x.val, g.y.val])
-      const [, radius] = this.scale([0, g.radius.val])
-      const r: SVGCircleElement = circle(x, y, radius, "none", g.fill.val, this.circle)
+      const [x_scale, y_scale] = this.scale([1, 1])
+      const r: SVGCircleElement = circle(x, y, g.radius.val * x_scale * y_scale, "none", g.fill.val, this.circle)
       this.current.appendChild(r)
    }
 
@@ -166,7 +174,9 @@ export class GraphicsRenderer {
       this.current.appendChild(polyline(ps, g.stroke.val, g.strokeWidth.val))
    }
 
+   // Polymarkers have coordinates relative to the points, in the *parent* scaling.
    polymarkers (tg: ExplValueCursor/*<Polymarkers>*/): void {
+      const invScale: TransformFun = invertScale(this.scale)
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Polymarkers, "markers"),
                tps: ExplValueCursor/*<List<Pair<Num, Num>>*/ = tg.to(Polymarkers, "points"); 
            Cons.is(as(tg̅.tv.v, List)) || Cons.is(as(tps.tv.v, List)); 
@@ -175,13 +185,18 @@ export class GraphicsRenderer {
             userError(`${Polymarkers.name}: more markers than points.`)
          } else {
             const p: Pair<Num, Num> = as(tps.to(Cons, "head").tv.v, Pair)
+            const [x, y] = this.transform([p.fst.val, p.snd.val])
+            const svg: SVGSVGElement = svgElement(true, x, y, 10, 10, false, this.polymarkers)
+            this.current.appendChild(svg)
+            this.ancestors.push(svg)
             this.withLocalFrame(
+               invScale,
                id, 
-               postcompose(last(this.translations), translate(p.fst.val, p.snd.val)), 
                () => {
                   this.renderElement(tg̅.to(Cons, "head"))
                }
             )
+            this.ancestors.pop()
          }
       }
    }
@@ -189,9 +204,7 @@ export class GraphicsRenderer {
    rect (tg: ExplValueCursor/*<Rect>*/): void {
       const g: Rect = as(tg.tv.v, Rect)
       const [x, y] = this.transform([g.x.val, g.y.val])
-      // TODO: replace this shenanigan by this.scale?
-      const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
-      const [width, height] = [x2 - x, y2 - y]
+      const [width, height] = this.scale([g.width.val, g.height.val])
       assert(width >= 0 && height >= 0)
       const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val, this.rect)
       this.current.appendChild(r)
@@ -211,29 +224,33 @@ export class GraphicsRenderer {
       const g: Viewport = as(tg.tv.v, Viewport)
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
       const [x, y] = this.transform([g.x.val, g.y.val])
-      // TODO: replace this shenanigan by this.scale?
-      const [x2, y2] = this.transform([g.x.val + g.width.val, g.y.val + g.height.val])
-      const [width, height] = [x2 - x, y2 - y]
+      const [width, height] = this.scale([g.width.val, g.height.val])
       assert(width >= 0 && height >= 0)
-      const svg: SVGSVGElement = svgElement(x, y, width, height, false, this.viewport)
+      const outerSvg: SVGSVGElement = svgElement(false, x, y, width, height, false, this.viewport)
       if (g.fill.val !== "none") {
          this.current.appendChild(rect(x, y, width, height, "none", g.fill.val, this.viewport))
       }
-      this.current.appendChild(svg)
+      this.current.appendChild(outerSvg)
       if (this.showInvisible) {
          this.current.appendChild(border(x, y, width, height, "gray", true))
       }
-      this.ancestors.push(svg)
+      this.ancestors.push(outerSvg)
+      const margin: number = g.margin.val
+      const [widthʹ, heightʹ]: [number, number] = [Math.max(width - margin * 2), height - margin * 2]
+      const innerScale: TransformFun = ([x, y]: [number, number]) => {
+         return [x * widthʹ / width, y * heightʹ / height]
+      }
+      const innerViewport: SVGSVGElement = svgElement(true, margin, margin, widthʹ, heightʹ, false, this.viewport)
+      this.current.appendChild(innerViewport)
+      this.ancestors.push(innerViewport)
       this.withLocalFrame(
-         transformFun(g.scale), 
-         transformFun(g.translate), 
+         postcompose(innerScale, transformFun(g.scale)),
+         transformFun(g.translate),
          () => {
-            for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Viewport, "gs"); 
-                 Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
-               this.renderElement(tg̅.to(Cons, "head"))
-            }
+            this.renderElement(tg.to(Viewport, "g"))
          }
       )
+      this.ancestors.pop()
       this.ancestors.pop()
    }
 

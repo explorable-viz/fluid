@@ -15,7 +15,7 @@ type Module = List<Expr.Def>
 
 // Define as constants to enforce sharing; could use memoisation.
 export const module_prelude: Module = loadModule("prelude"),
-             module_graphics: Module = loadModule("graphics2")
+             module_graphics: Module = loadModule("graphics")
              // module_renderData: Module = loadModule("renderData")
 
 function import_ (modules: Module[], e: Expr): Expr {

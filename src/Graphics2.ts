@@ -69,9 +69,10 @@ export class Viewport extends GraphicsElement<"Viewport"> {
    width: Num = _
    height: Num = _
    fill: Str = _
+   margin: Num = _ // in *parent* reference frame
    scale: Transform = _
    translate: Transform = _ // scaling applies to translated coordinates
-   gs: List<GraphicsElement> = _
+   g: GraphicsElement = _
 }
 
 export type TransformTag = "Scale" | "Translate"
@@ -89,7 +90,7 @@ export class Translate extends Transform<"Translate"> {
    y: Num = _
 }
 
-export type MarkerTag = "Arrowhead" | "Circle"
+export type MarkerTag = "Arrowhead"
 
 export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
 }
