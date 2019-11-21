@@ -17,7 +17,7 @@ import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { GraphicsRenderer } from "./GraphicsRenderer2"
 import { 
-   DeltaStyle, arrow, addBorder_changed, addBorder_focus, centreDot, comma, connector, deltaStyle, dimensions, ellipsis, horiz, 
+   DeltaStyle, arrow, addBorder_changed, addBorder_focus, centreDot, comma, connector, deltaStyle, __dimensions, ellipsis, horiz, 
    horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement_inverted, text, unimplemented, vert 
 } from "./Renderer"
 
@@ -309,12 +309,12 @@ export class ExplView extends View {
 }
 
 // Shenanigans to call an internal function. Will extract this into a (reverse) FFI.
-let dims: (tg: ExplValue<GraphicsElement>) => [number, number]
+export let dimensions: (tg: ExplValue<GraphicsElement>) => [number, number]
 {
    const x: string = "g"
    const dimsExpr: Expr = parseWithImports(`dimensions ${x}`)
 
-   dims = function (tg: ExplValue<GraphicsElement>): [number, number] {
+   dimensions = function (tg: ExplValue<GraphicsElement>): [number, number] {
       const tv: ExplValue = Eval.eval_(Env.singleton(str(x)(ν()), tg), dimsExpr)
       if (tv.v instanceof Pair && tv.v.fst instanceof Num && tv.v.snd instanceof Num) {
          return [tv.v.fst.val, tv.v.snd.val]
@@ -353,8 +353,8 @@ export class ValueView extends View {
             const dim = { width: 480, height: 480 }
             let g1: SVGGElement
             [g, g1] = svgElement_inverted(dim.width, dim.height)
-            new GraphicsRenderer(g, g1).render(tg, dims(tg))
-            dimensions.set(g, dim)
+            new GraphicsRenderer(g, g1).render(tg, dimensions(tg))
+            __dimensions.set(g, dim)
          } else
          if (this.tv.v instanceof Pair) {
             g = pair(this.tv as ExplValue<Pair>)

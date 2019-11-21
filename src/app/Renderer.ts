@@ -21,7 +21,7 @@ const space_char: string = "\u00a0"
 
 // Populate explicity, rather than using a memoised function.
 type Dimensions = { width: number, height: number }
-export const dimensions: Map<SVGElement, Dimensions> = new Map()
+export const __dimensions: Map<SVGElement, Dimensions> = new Map()
 
 export function arrow (ẟ_style: DeltaStyle): SVGElement {
    return keyword("arrow", ẟ_style)
@@ -37,14 +37,14 @@ export function border (x: number, y: number, width: number, height: number, str
 }
 
 export function addBorder_changed (g: SVGSVGElement): SVGSVGElement {
-   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
+   const { width, height }: Dimensions = __nonNull(__dimensions.get(g))
    const b: SVGRectElement = border(g.x.baseVal.value, g.y.baseVal.value, width, height, "blue", true)
    g.appendChild(b)
    return g
 }
 
 export function addBorder_focus (g: SVGSVGElement): SVGSVGElement {
-   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
+   const { width, height }: Dimensions = __nonNull(__dimensions.get(g))
    const b: SVGRectElement = border(g.x.baseVal.value, g.y.baseVal.value, width, height, "gray", false)
    g.appendChild(b)
    return g
@@ -142,13 +142,13 @@ export function delimit (delimiter: () => SVGElement, ...gs: SVGElement[]): SVGE
 }
 
 function dims (g: SVGSVGElement): Dims {
-   const { width, height }: Dimensions = __nonNull(dimensions.get(g))
+   const { width, height }: Dimensions = __nonNull(__dimensions.get(g))
    const { x, y } = coordinates(g)
    return { x, y, width, height }
 }
 
 export function edge_left (g: SVGSVGElement): SVGSVGElement {
-   const { height }: Dimensions = dimensions.get(g)!
+   const { height }: Dimensions = __dimensions.get(g)!
    const edge: SVGLineElement = line(
       g.x.baseVal.value, 
       g.y.baseVal.value, 
@@ -164,7 +164,7 @@ export function edge_left (g: SVGSVGElement): SVGSVGElement {
 }
 
 export function edge_bottom (g: SVGSVGElement): SVGSVGElement {
-   const { width, height }: Dimensions = dimensions.get(g)!
+   const { width, height }: Dimensions = __dimensions.get(g)!
    const edge: SVGLineElement = line(
       g.x.baseVal.value, 
       g.y.baseVal.value + height, 
@@ -190,12 +190,12 @@ export function horiz (...gs: SVGElement[]): SVGSVGElement {
    gs.forEach((gʹ: SVGElement): void => {
       gʹ.setAttribute("x", `${width_sum}`)
       gʹ.setAttribute("y", `0`)
-      const { width, height }: Dimensions = dimensions.get(gʹ)!
+      const { width, height }: Dimensions = __dimensions.get(gʹ)!
       width_sum += width
       height_max = Math.max(height_max, height)
       g.appendChild(gʹ)
    })
-   dimensions.set(g, { width: width_sum, height: height_max })
+   __dimensions.set(g, { width: width_sum, height: height_max })
    return g
 }
 
@@ -325,12 +325,12 @@ export function round (n: number): string {
 // Needs to be at the bottom in the z-order, and opaque.
 export function shading (g: SVGSVGElement, fill: string): SVGSVGElement {
    const svg: SVGSVGElement = createElement("svg", shading)
-   const { width, height }: Dimensions = dimensions.get(g)!
+   const { width, height }: Dimensions = __dimensions.get(g)!
    const background: SVGRectElement = rect(g.x.baseVal.value, g.y.baseVal.value, width, height, "none", fill, shading)
    background.setAttribute("pointer-events", "none")
    svg.appendChild(background)
    svg.appendChild(g)
-   dimensions.set(svg, { width, height })
+   __dimensions.set(svg, { width, height })
    return svg
 }
 
@@ -382,7 +382,7 @@ export function text (str: string, ẟ_style: DeltaStyle): SVGTextElement {
    text.setAttribute("transform", `translate(${0},${lineHeight / 2})`)
    text.setAttribute("alignment-baseline", "central")
    const width: number = svg.textWidth(text)
-   dimensions.set(text, { width, height: lineHeight })
+   __dimensions.set(text, { width, height: lineHeight })
    text.remove()
    return text
 }
@@ -416,12 +416,12 @@ export function vert (...gs: SVGElement[]): SVGSVGElement {
    gs.forEach((gʹ: SVGElement): void => {
       gʹ.setAttribute("y", `${height_sum}`)
       gʹ.setAttribute("x", `0`)
-      const { width, height }: Dimensions = dimensions.get(gʹ)!
+      const { width, height }: Dimensions = __dimensions.get(gʹ)!
       height_sum += height
       width_max = Math.max(width_max, width)
       g.appendChild(gʹ)
    })
-   dimensions.set(g, { width: width_max, height: height_sum })
+   __dimensions.set(g, { width: width_max, height: height_sum })
    return g
 }
 
