@@ -1,7 +1,11 @@
 import "../BaseTypes"
 import "../Graphics2"
-import { openDatasetAs, openWithImports } from "../Module"
+import { Env } from "../Env"
+import { Expr } from "../Expr"
+import { openDatasetAs, openWithImports2 } from "../Module"
 import "../app/GraphicsRenderer2"
 import { Editor } from "./Editor"
 
-new Editor(true, openWithImports("graphics/grouped-bar-chart"), openDatasetAs("renewables", "data"))
+const ρ: Env = openDatasetAs("renewables", "data")
+const [ρʹ, e]: [Env, Expr] = openWithImports2("graphics/grouped-bar-chart")
+new Editor(false, e, ρ.concat(ρʹ))

@@ -7,7 +7,7 @@ import { exprClass } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { VarElim } from "../src/Match"
-import { openWithImports, openWithImports2 } from "../src/Module"
+import { openWithImports2 } from "../src/Module"
 import { Persistent } from "../src/Value"
 import { ν, at, num, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
@@ -72,10 +72,10 @@ describe("edit", () => {
 
    describe("foldr_sumSquares", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("foldr_sumSquares")
+         const [ρ, e]: [Env, Expr] = openWithImports2("foldr_sumSquares")
          new (class extends Edit {
             setup (here: ExprCursor) {
-               here = here.skipImports()
+               here = here
                    .to(Expr.App, "f")
                    .to(Expr.App, "f")
                    .to(Expr.App, "e")
@@ -104,17 +104,16 @@ describe("edit", () => {
                here.toBinaryArg1("*").isNew()
                here.toBinaryArg2("*").isNew()
             }
-         })(true, e)
+         })(false, e, ρ)
       })
    })
 
    describe("ic2019", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("ic2019")
+         const [ρ, e]: [Env, Expr] = openWithImports2("ic2019")
          new (class extends Edit {
             setup (here: ExprCursor) {
-               here.skipImports()
-                   .toDef("f")
+               here.toDef("f")
                    .to(Expr.RecDef, "σ")
                    .toCase(Cons)
                    .var_("x").var_("xs")
@@ -131,7 +130,7 @@ describe("edit", () => {
                here.to(Cons, "head").isNew().to(Pair, "fst").isUnchanged()
                here.to(Cons, "head").to(Pair, "snd").isNew()
             }
-         })(true, e)
+         })(false, e, ρ)
       })
    })   
 })
