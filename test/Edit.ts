@@ -4,9 +4,10 @@ import { Edit } from "./util/Core"
 import { as } from "../src/util/Core"
 import { Cons, Pair } from "../src/BaseTypes"
 import { exprClass } from "../src/DataType"
+import { Env } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { VarElim } from "../src/Match"
-import { openWithImports } from "../src/Module"
+import { openWithImports, openWithImports2 } from "../src/Module"
 import { Persistent } from "../src/Value"
 import { ν, at, num, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
@@ -18,11 +19,10 @@ before((done: MochaDone) => {
 describe("edit", () => {
    describe("arithmetic", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("arithmetic")
+         const [ρ, e]: [Env, Expr] = openWithImports2("arithmetic")
          new (class extends Edit {
             setup (here: ExprCursor) {
-               here.skipImports()
-                   .to(Expr.BinaryApp, "e1")
+               here.to(Expr.BinaryApp, "e1")
                    .to(Expr.BinaryApp, "e2")
                    .to(Expr.ConstNum, "val")
                    .setNum(6)
@@ -37,17 +37,16 @@ describe("edit", () => {
                    .toBinaryArg2("+")
                    .isChanged({ val: { before: 5, after: 6 } })
             }
-         })(true, e)
+         })(false, e, ρ)
       })
    })
 
    describe("filter", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("filter")
+         const [ρ, e]: [Env, Expr] = openWithImports2("filter")
          new (class extends Edit {
             setup (here: ExprCursor) {
-               here.skipImports()
-                   .to(Expr.App, "f")
+               here.to(Expr.App, "f")
                    .to(Expr.App, "e")
                    .to(Expr.Fun, "σ")
                    .to(VarElim, "κ")
@@ -67,7 +66,7 @@ describe("edit", () => {
                    .to(Cons, "tail")
                    .isUnchanged()
             }
-         })(true, e)
+         })(false, e, ρ)
       })
    })
 

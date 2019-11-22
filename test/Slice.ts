@@ -5,7 +5,7 @@ import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { Elim } from "../src/Match"
-import { bindDataset, openDatasetAs, openWithImports, openWithImports2 } from "../src/Module"
+import { bindDataset, openDatasetAs, openWithImports2 } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
 import { BwdSlice, FwdSlice, funDef } from "./util/Core"
@@ -241,19 +241,18 @@ describe("slice", () => {
 
    describe("normalise", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("normalise")
-         new FwdSlice(true, e)
+         const [ρ, e]: [Env, Expr] = openWithImports2("normalise")
+         new FwdSlice(false, e, ρ)
          // retaining either component of pair retains both subcomputations:
          new (class extends BwdSlice {
             setup (here: ExplValueCursor): void {
                here.to(Pair, "fst").setα()
             }
             expect (here: ExprCursor): void {
-               here = here.skipImports()
                here.toDef("x").to(Expr.Let, "e").αset()
                here.toDef("y").to(Expr.Let, "e").αset()
             }
-         })(true, e)
+         })(false, e, ρ)
       })
    })
 
