@@ -295,29 +295,26 @@ describe("slice", () => {
 
    describe("zipWith", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("zipWith")
-         new FwdSlice(true, e)
+         const [ρ, e]: [Env, Expr] = openWithImports2("zipWith")
+         new FwdSlice(false, e, ρ)
          // needing first cons cell of output needs same amount of input lists
          new (class extends BwdSlice {
             setup (here: ExplValueCursor): void {
                here.setα()
             }
             expect (here: ExprCursor): void {
-               here.toDef("zipWith").αset().to(Expr.RecDef, "σ").var_("op").αset()
-               here = here.skipImports()
+               new ExprCursor(funDef(ρ, "zipWith")).var_("op").αset()
                here.to(Expr.App, "e").αset()
                here.to(Expr.App, "f").to(Expr.App, "e").αset()
             }
-         })(true, e)
+         })(false, e, ρ)
          // needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
          new (class extends BwdSlice {
             setup (here: ExplValueCursor): void {
                here.to(Cons, "head").setα()
             }
             expect (here: ExprCursor): void {
-               let hereʹ: ExprCursor = here
-                  .toDef("zipWith")
-                  .to(Expr.RecDef, "σ")
+               let hereʹ: ExprCursor = new ExprCursor(funDef(ρ, "zipWith"))
                   .var_("op")
                   .to(Expr.Fun, "σ")
                hereʹ.toCase(Nil).αclear() // body of outer Nil clause
@@ -332,7 +329,6 @@ describe("slice", () => {
                hereʹ.constr_to(Pair, "fst").αclear()
                hereʹ.constr_to(Pair, "snd").αclear()
                here
-                  .skipImports()
                   .to(Expr.App, "f")
                   .to(Expr.App, "f")
                   .to(Expr.App, "e")
@@ -340,7 +336,7 @@ describe("slice", () => {
                   .toCase(Pair)
                   .var_("x").var_("y").αset()
             }
-         })(true, e)
+         })(false, e, ρ)
       })
    })
 })
