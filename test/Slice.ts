@@ -231,11 +231,10 @@ describe("slice", () => {
 
    describe("map", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("map")
+         const [ρ, e]: [Env, Expr] = openWithImports2("map")
          new (class extends FwdSlice {
             setup (here: ExprCursor): void {
                here
-                  .skipImports()
                   .to(Expr.Defs, "e")
                   .to(Expr.App, "e")
                   .constr_to(Cons, "head").clearα()
@@ -244,8 +243,8 @@ describe("slice", () => {
                here.to(Cons, "head").αclear()
                here.to(Cons, "tail").αset()
             }
-         })(true, e)
-         new BwdSlice(true, e)
+         })(false, e, ρ)
+         new BwdSlice(false, e, ρ)
       })
    })
 
