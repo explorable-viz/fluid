@@ -1,4 +1,4 @@
-import { __nonNull } from "../../src/util/Core"
+import { __nonNull, as } from "../../src/util/Core"
 import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { ExplValue } from "../../src/DataValue"
@@ -6,11 +6,18 @@ import { __deltas } from "../../src/Delta"
 import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
-import { newRevision } from "../../src/Versioned"
+import { Elim } from "../../src/Match"
+import { ν, newRevision, str } from "../../src/Versioned"
 import "../../src/Graphics2" // for graphical datatypes
 import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
 import { Editor } from "../../src/app/Editor"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
+
+// Helper for extracting a function definition from an environment. Unfortunate that we have to
+// create a new string.
+export function funDef (ρ: Env, f: string): Elim<Expr> {
+   return as(__nonNull(ρ.get(str(f)(ν()))).v, Eval.Closure).f
+}
 
 // Key idea here is that we never push slicing further back than ρ (since ρ could potentially
 // be supplied by a library function, dataframe in another language, or other resource which

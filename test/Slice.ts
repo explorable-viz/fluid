@@ -1,12 +1,14 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { BwdSlice, FwdSlice } from "./util/Core"
+import { __nonNull } from "../src/util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
+import { Elim } from "../src/Match"
 import { bindDataset, openDatasetAs, openWithImports, openWithImports2 } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
+import { BwdSlice, FwdSlice, funDef } from "./util/Core"
 
 before((done: MochaDone) => {
    done()
@@ -63,12 +65,12 @@ describe("slice", () => {
 
    describe("filter", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("filter")
+         const [ρ, e]: [Env, Expr] = openWithImports2("filter")
          new (class extends FwdSlice {
-            setup (here: ExprCursor): void {
+            setup (_: ExprCursor): void {
+               const σ: Elim<Expr> = funDef(ρ, "filter")
+               const here: ExprCursor = new ExprCursor(σ)
                here
-                  .toDef("filter")
-                  .to(Expr.RecDef, "σ")
                   .var_("p")
                   .to(Expr.Fun, "σ")
                   .toCase(Cons)
@@ -83,8 +85,8 @@ describe("slice", () => {
                here.to(Cons, "head").αclear()
                here.to(Cons, "tail").to(Cons, "tail").assert(List, v => Nil.is(v))
             }
-         })(true, e)
-         new BwdSlice(true, e)
+         })(false, e, ρ)
+         new BwdSlice(false, e, ρ)
       })
    })
 
