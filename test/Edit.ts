@@ -7,13 +7,14 @@ import { exprClass } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { VarElim } from "../src/Match"
-import { Module, openWithImports } from "../src/Module"
+import { openWithImports } from "../src/Module"
 import { Persistent } from "../src/Value"
 import { ν, at, num, str } from "../src/Versioned"
-import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
+import { ExplValueCursor, ExprCursor } from "../src/app/Cursor"
+import { Editor } from "../src/app/Editor"
 
 before((done: MochaDone) => {
-   Module.initialise()
+   Editor.initialise()
    done()
 })
 

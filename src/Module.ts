@@ -37,7 +37,6 @@ function import_ (modules: Module[], e: Expr): Expr {
    }
 }
 
-// Concatenation always unpleasant but we will assume libraries to be unchanging for now.
 function import2 (...modules: Module2[]): Env {
    if (modules.length === 0) {
       return emptyEnv()

@@ -10,7 +10,7 @@ export function initialise(): void {
    Module.initialise()
    const ρ: Env = openDatasetAs("renewables", "data")
    const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/line-chart")
-   new Editor(e, ρ.concat(ρʹ))
+   new Editor.Editor(e, ρ.concat(ρʹ))
 }
 
 initialise()
