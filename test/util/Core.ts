@@ -3,7 +3,7 @@ import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { ExplValue } from "../../src/DataValue"
 import { __deltas } from "../../src/Delta"
-import { Env, emptyEnv } from "../../src/Env"
+import { Env } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
 import { Elim } from "../../src/Match"
@@ -24,7 +24,7 @@ export function funDef (ρ: Env, f: string): Elim<Expr> {
 // lacks source code).
 
 export class FwdSlice {
-   constructor (skipImports: boolean, e: Expr, ρ: Env = emptyEnv()) {
+   constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.FwdSlice)) {
          newRevision()
          setallα(ann.top, e)
@@ -49,7 +49,7 @@ export class FwdSlice {
 }
 
 export class BwdSlice {
-   constructor (skipImports: boolean, e: Expr, ρ: Env = emptyEnv()) {
+   constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.BwdSlice)) {
          newRevision()
          setallα(ann.bot, e)
@@ -74,9 +74,9 @@ export class BwdSlice {
 }
 
 export class Edit {
-   constructor (skipImports: boolean, e: Expr, ρ: Env = emptyEnv()) {
+   constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.Visualise)) {
-         new Editor(skipImports, e, ρ).render()
+         new Editor(false, e, ρ).render()
       }
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)

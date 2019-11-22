@@ -38,7 +38,7 @@ describe("edit", () => {
                    .toBinaryArg2("+")
                    .isChanged({ val: { before: 5, after: 6 } })
             }
-         })(false, e, ρ)
+         })(ρ, e)
       })
    })
 
@@ -67,7 +67,7 @@ describe("edit", () => {
                    .to(Cons, "tail")
                    .isUnchanged()
             }
-         })(false, e, ρ)
+         })(ρ, e)
       })
    })
 
@@ -105,7 +105,7 @@ describe("edit", () => {
                here.toBinaryArg1("*").isNew()
                here.toBinaryArg2("*").isNew()
             }
-         })(false, e, ρ)
+         })(ρ, e)
       })
    })
 
@@ -131,7 +131,7 @@ describe("edit", () => {
                here.to(Cons, "head").isNew().to(Pair, "fst").isUnchanged()
                here.to(Cons, "head").to(Pair, "snd").isNew()
             }
-         })(false, e, ρ)
+         })(ρ, e)
       })
    })   
 })

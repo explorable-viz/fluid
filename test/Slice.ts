@@ -28,16 +28,16 @@ describe("slice", () => {
             expect (here: ExplValueCursor): void {
                here.αclear()
             } 
-         })(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         })(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
    describe("compose", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("compose")
-         new FwdSlice(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         new FwdSlice(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
@@ -52,15 +52,15 @@ describe("slice", () => {
          ]
          const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data")
          const [ρʹ, e]: [Env, Expr] = openWithImports2("create-dataset")
-         new FwdSlice(false, e, ρ.concat(ρʹ))
+         new FwdSlice(ρ.concat(ρʹ), e)
       })
    })
 
    describe("factorial", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("factorial")
-         new FwdSlice(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         new FwdSlice(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
@@ -86,16 +86,16 @@ describe("slice", () => {
                here.to(Cons, "head").αclear()
                here.to(Cons, "tail").to(Cons, "tail").assert(List, v => Nil.is(v))
             }
-         })(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         })(ρ,e )
+         new BwdSlice(ρ, e)
       })
    })
 
    describe("foldr_sumSquares", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("foldr_sumSquares")
-         new FwdSlice(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         new FwdSlice(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
@@ -112,7 +112,7 @@ describe("slice", () => {
             expect (here: ExplValueCursor): void {
                here.αset()
             }
-         })(false, e, ρ)
+         })(ρ, e)
          // deleting the tail of the tail means length can't be computed:
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
@@ -121,7 +121,7 @@ describe("slice", () => {
             expect (here: ExplValueCursor): void {
                here.αclear()
             }
-         })(false, e, ρ)
+         })(ρ, e)
          // needing the result only needs the cons cells:
          new (class extends BwdSlice {
             setup (here: ExplValueCursor): void {
@@ -134,15 +134,15 @@ describe("slice", () => {
                hereʹ.constr_to(Cons, "head").αclear()
                hereʹ.constr_to(Cons, "tail").αset()
             }
-         })(false, e, ρ)
+         })(ρ, e)
       })
    })
 
    describe("lexicalScoping", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("lexicalScoping")
-         new FwdSlice(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         new FwdSlice(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
@@ -163,7 +163,7 @@ describe("slice", () => {
                here.to(Some, "t").assert(Str, str => str.toString() === `"sarah"`)
                here.αset()
             }
-         })(false, e, ρ)
+         })(ρ, e)
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
                here
@@ -173,8 +173,8 @@ describe("slice", () => {
             expect (here: ExplValueCursor): void {
                here.αclear()
             }
-         })(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         })(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
@@ -192,24 +192,24 @@ describe("slice", () => {
                here.to(Cons, "head").αclear()
                here.to(Cons, "tail").αset()
             }
-         })(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         })(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
    describe("mergeSort", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("mergeSort")
-         new FwdSlice(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         new FwdSlice(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
    describe("graphics/background", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("graphics/background")
-         new FwdSlice(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         new FwdSlice(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
@@ -217,8 +217,8 @@ describe("slice", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
          const [ρʹ, e]: [Env, Expr] = openWithImports2("graphics/grouped-bar-chart")
-         new FwdSlice(false, e, ρ.concat(ρʹ))
-         new BwdSlice(false, e, ρ.concat(ρʹ))
+         new FwdSlice(ρ.concat(ρʹ), e)
+         new BwdSlice(ρ.concat(ρʹ), e)
       })
    })
 
@@ -226,8 +226,8 @@ describe("slice", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
          const [ρʹ, e]: [Env, Expr] = openWithImports2("graphics/line-chart")
-         new FwdSlice(false, e, ρ.concat(ρʹ))
-         new BwdSlice(false, e, ρ.concat(ρʹ))
+         new FwdSlice(ρ.concat(ρʹ), e)
+         new BwdSlice(ρ.concat(ρʹ), e)
       })
    })
 
@@ -235,15 +235,15 @@ describe("slice", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
          const [ρʹ, e]: [Env, Expr] = openWithImports2("graphics/stacked-bar-chart")
-         new FwdSlice(false, e, ρ.concat(ρʹ))
-         new BwdSlice(false, e, ρ.concat(ρʹ))
+         new FwdSlice(ρ.concat(ρʹ), e)
+         new BwdSlice(ρ.concat(ρʹ), e)
       })
    })
 
    describe("normalise", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("normalise")
-         new FwdSlice(false, e, ρ)
+         new FwdSlice(ρ, e)
          // retaining either component of pair retains both subcomputations:
          new (class extends BwdSlice {
             setup (here: ExplValueCursor): void {
@@ -253,15 +253,15 @@ describe("slice", () => {
                here.toDef("x").to(Expr.Let, "e").αset()
                here.toDef("y").to(Expr.Let, "e").αset()
             }
-         })(false, e, ρ)
+         })(ρ, e)
       })
    })
 
    describe("pattern-match", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("pattern-match")
-         new BwdSlice(false, e, ρ)
-         new FwdSlice(false, e, ρ)
+         new BwdSlice(ρ, e)
+         new FwdSlice(ρ, e)
       })
    })
 
@@ -280,23 +280,23 @@ describe("slice", () => {
                here.to(Cons, "head").αset()
                here.to(Cons, "tail").αset()
             }
-         })(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         })(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
    describe("typematch", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("typematch")
-         new FwdSlice(false, e, ρ)
-         new BwdSlice(false, e, ρ)
+         new FwdSlice(ρ, e)
+         new BwdSlice(ρ, e)
       })
    })
 
    describe("zipWith", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("zipWith")
-         new FwdSlice(false, e, ρ)
+         new FwdSlice(ρ, e)
          // needing first cons cell of output needs same amount of input lists
          new (class extends BwdSlice {
             setup (here: ExplValueCursor): void {
@@ -307,7 +307,7 @@ describe("slice", () => {
                here.to(Expr.App, "e").αset()
                here.to(Expr.App, "f").to(Expr.App, "e").αset()
             }
-         })(false, e, ρ)
+         })(ρ, e)
          // needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
          new (class extends BwdSlice {
             setup (here: ExplValueCursor): void {
@@ -336,7 +336,7 @@ describe("slice", () => {
                   .toCase(Pair)
                   .var_("x").var_("y").αset()
             }
-         })(false, e, ρ)
+         })(ρ, e)
       })
    })
 })
