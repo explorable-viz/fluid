@@ -88,7 +88,7 @@ class App {
          svgRootElement(400, 400)
       )
       this.dataView = new View(
-         "dataView", 
+         "dataView",
          ρ,
          parseWithImports("renderData data"), // module_renderData
          svgRootElement(400, 1200)
