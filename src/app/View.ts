@@ -15,6 +15,7 @@ import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
+import { Interactor } from "./Interactor"
 import { GraphicsRenderer } from "./GraphicsRenderer2"
 import { 
    DeltaStyle, arrow, addBorder_changed, addBorder_focus, centreDot, comma, connector, deltaStyle, __dimensions, ellipsis, horiz, 
@@ -353,7 +354,7 @@ export class ValueView extends View {
             const dim = { width: 480, height: 480 }
             let g1: SVGGElement
             [g, g1] = svgElement_inverted(dim.width, dim.height)
-            new GraphicsRenderer(g, g1).render(tg, dimensions(tg))
+            new GraphicsRenderer(new Interactor(), g, g1).render(tg, dimensions(tg))
             __dimensions.set(g, dim)
          } else
          if (this.tv.v instanceof Pair) {

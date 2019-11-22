@@ -14,6 +14,7 @@
     "three": "^0.93",
     "three-orbitcontrols-ts": "^0.1.2",
     "three.meshline": "^1.2.0",
+    "tippy.js": "^5.1.1",
     "ts-loader": "^4.0.0",
     "typescript": "^3.6.3"
   },
