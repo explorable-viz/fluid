@@ -1,7 +1,7 @@
 import { __nonNull, as } from "../util/Core"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
-import { Env, emptyEnv } from "../Env"
+import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
@@ -19,7 +19,7 @@ export class Editor {
    tv: ExplValue
    here!: ExplValueCursor
 
-   constructor (e: Expr, ρ: Env = emptyEnv()) {
+   constructor (e: Expr, ρ: Env) {
       this.root = svgRootElement(1400, 1200)
       markerEnsureDefined(this.root, Arrowhead, "blue")
       document.body.appendChild(this.root)
