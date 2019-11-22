@@ -143,16 +143,16 @@ describe("slice", () => {
 
    describe("foldr_sumSquares", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("foldr_sumSquares")
-         new FwdSlice(true, e)
-         new BwdSlice(true, e)
+         const [ρ, e]: [Env, Expr] = openWithImports2("foldr_sumSquares")
+         new FwdSlice(false, e, ρ)
+         new BwdSlice(false, e, ρ)
       })
    })
 
    describe("length", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("length"),
-               here: ExprCursor = new ExprCursor(e).skipImports().to(Expr.App, "e")
+         const [ρ, e]: [Env, Expr] = openWithImports2("length"),
+               here: ExprCursor = new ExprCursor(e).to(Expr.App, "e")
          // erasing the elements doesn't affect the count:
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
@@ -162,7 +162,7 @@ describe("slice", () => {
             expect (here: ExplValueCursor): void {
                here.αset()
             }
-         })(true, e)
+         })(false, e, ρ)
          // deleting the tail of the tail means length can't be computed:
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
@@ -171,7 +171,7 @@ describe("slice", () => {
             expect (here: ExplValueCursor): void {
                here.αclear()
             }
-         })(true, e)
+         })(false, e, ρ)
          // needing the result only needs the cons cells:
          new (class extends BwdSlice {
             setup (here: ExplValueCursor): void {
@@ -184,23 +184,22 @@ describe("slice", () => {
                hereʹ.constr_to(Cons, "head").αclear()
                hereʹ.constr_to(Cons, "tail").αset()
             }
-         })(true, e)
+         })(false, e, ρ)
       })
    })
 
    describe("lexicalScoping", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("lexicalScoping")
-         new FwdSlice(true, e)
-         new BwdSlice(true, e)
+         const [ρ, e]: [Env, Expr] = openWithImports2("lexicalScoping")
+         new FwdSlice(false, e, ρ)
+         new BwdSlice(false, e, ρ)
       })
    })
 
    describe("lookup", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("lookup"),
+         const [ρ, e]: [Env, Expr] = openWithImports2("lookup"),
                here: ExprCursor = new ExprCursor(e)
-            .skipImports()
             .to(Expr.Defs, "e")
             .to(Expr.App, "e")
 	      new (class extends FwdSlice {
@@ -214,7 +213,7 @@ describe("slice", () => {
                here.to(Some, "t").assert(Str, str => str.toString() === `"sarah"`)
                here.αset()
             }
-         })(true, e)
+         })(false, e, ρ)
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
                here
@@ -224,8 +223,8 @@ describe("slice", () => {
             expect (here: ExplValueCursor): void {
                here.αclear()
             }
-         })(true, e)
-         new BwdSlice(true, e)
+         })(false, e, ρ)
+         new BwdSlice(false, e, ρ)
       })
    })
 
