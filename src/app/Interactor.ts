@@ -4,13 +4,14 @@ import { Rect } from "../Graphics2"
 import tippy from "tippy.js"
 import { Instance } from "tippy.js"
 import "tippy.js/dist/tippy.css"
+import "tippy.js/themes/light-border.css"
 
 export class Interactor {
    tooltip: Instance | null = null // just have one for now
    tooltips: Map<SVGElement, Instance> = new Map()
 
    initialise (element: SVGElement): void {
-      this.tooltips.set(element, tippy(element))
+      this.tooltips.set(element, tippy(element, { theme: "light-border" }))
    }
 
    onRectMousemove (g: Rect, r: SVGRectElement, e: MouseEvent): void {
@@ -21,7 +22,6 @@ export class Interactor {
       const x_or_width: string = x_prop >= 0.5 ? `width: ${g.width}` : `x: ${g.x}`
       const y_or_height: string = y_prop >= 0.5 ? `height: ${g.height}` : `y: ${g.y}`
       const content: string = `${x_or_width}\n${y_or_height}`
-//      r.setAttribute("data-tippy-content", content) // needed?
       const tooltip: Instance = __nonNull(this.tooltips.get(r))
       tooltip.setContent(content)
    }
