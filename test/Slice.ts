@@ -5,7 +5,7 @@ import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { Elim } from "../src/Match"
-import { Module, bindDataset, openDatasetAs, openWithImports2 } from "../src/Module"
+import { Module, bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
 import { BwdSlice, FwdSlice, funDef } from "./util/Core"
@@ -19,7 +19,7 @@ before((done: MochaDone) => {
 describe("slice", () => {
    describe("arithmetic", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("arithmetic")
+         const [ρ, e]: [Env, Expr] = openWithImports("arithmetic")
          new (class extends FwdSlice {
             setup (here: ExprCursor): void {
                here
@@ -35,7 +35,7 @@ describe("slice", () => {
 
    describe("compose", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("compose")
+         const [ρ, e]: [Env, Expr] = openWithImports("compose")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
       })
@@ -51,14 +51,14 @@ describe("slice", () => {
             { year: 2015, country: "China", energyType: "Hydro", value: 296 }
          ]
          const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports2("create-dataset")
+         const [ρʹ, e]: [Env, Expr] = openWithImports("create-dataset")
          new FwdSlice(ρ.concat(ρʹ), e)
       })
    })
 
    describe("factorial", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("factorial")
+         const [ρ, e]: [Env, Expr] = openWithImports("factorial")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
       })
@@ -66,7 +66,7 @@ describe("slice", () => {
 
    describe("filter", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("filter")
+         const [ρ, e]: [Env, Expr] = openWithImports("filter")
          new (class extends FwdSlice {
             setup (_: ExprCursor): void {
                const σ: Elim<Expr> = funDef(ρ, "filter")
@@ -93,7 +93,7 @@ describe("slice", () => {
 
    describe("foldr_sumSquares", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("foldr_sumSquares")
+         const [ρ, e]: [Env, Expr] = openWithImports("foldr_sumSquares")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
       })
@@ -101,7 +101,7 @@ describe("slice", () => {
 
    describe("length", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("length"),
+         const [ρ, e]: [Env, Expr] = openWithImports("length"),
                here: ExprCursor = new ExprCursor(e).to(Expr.App, "e")
          // erasing the elements doesn't affect the count:
          new (class extends FwdSlice {
@@ -140,7 +140,7 @@ describe("slice", () => {
 
    describe("lexicalScoping", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("lexicalScoping")
+         const [ρ, e]: [Env, Expr] = openWithImports("lexicalScoping")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
       })
@@ -148,7 +148,7 @@ describe("slice", () => {
 
    describe("lookup", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("lookup"),
+         const [ρ, e]: [Env, Expr] = openWithImports("lookup"),
                here: ExprCursor = new ExprCursor(e)
             .to(Expr.Defs, "e")
             .to(Expr.App, "e")
@@ -180,7 +180,7 @@ describe("slice", () => {
 
    describe("map", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("map")
+         const [ρ, e]: [Env, Expr] = openWithImports("map")
          new (class extends FwdSlice {
             setup (here: ExprCursor): void {
                here
@@ -199,7 +199,7 @@ describe("slice", () => {
 
    describe("mergeSort", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("mergeSort")
+         const [ρ, e]: [Env, Expr] = openWithImports("mergeSort")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
       })
@@ -207,7 +207,7 @@ describe("slice", () => {
 
    describe("graphics/background", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("graphics/background")
+         const [ρ, e]: [Env, Expr] = openWithImports("graphics/background")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
       })
@@ -216,7 +216,7 @@ describe("slice", () => {
    describe("graphics/grouped-bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports2("graphics/grouped-bar-chart")
+         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
          new FwdSlice(ρ.concat(ρʹ), e)
          new BwdSlice(ρ.concat(ρʹ), e)
       })
@@ -225,7 +225,7 @@ describe("slice", () => {
    describe("graphics/line-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports2("graphics/line-chart")
+         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/line-chart")
          new FwdSlice(ρ.concat(ρʹ), e)
          new BwdSlice(ρ.concat(ρʹ), e)
       })
@@ -234,7 +234,7 @@ describe("slice", () => {
    describe("graphics/stacked-bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports2("graphics/stacked-bar-chart")
+         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
          new FwdSlice(ρ.concat(ρʹ), e)
          new BwdSlice(ρ.concat(ρʹ), e)
       })
@@ -242,7 +242,7 @@ describe("slice", () => {
 
    describe("normalise", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("normalise")
+         const [ρ, e]: [Env, Expr] = openWithImports("normalise")
          new FwdSlice(ρ, e)
          // retaining either component of pair retains both subcomputations:
          new (class extends BwdSlice {
@@ -259,7 +259,7 @@ describe("slice", () => {
 
    describe("pattern-match", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("pattern-match")
+         const [ρ, e]: [Env, Expr] = openWithImports("pattern-match")
          new BwdSlice(ρ, e)
          new FwdSlice(ρ, e)
       })
@@ -267,7 +267,7 @@ describe("slice", () => {
 
    describe("reverse", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("reverse")
+         const [ρ, e]: [Env, Expr] = openWithImports("reverse")
          new (class extends FwdSlice {
             setup (here: ExprCursor): void {
                here
@@ -287,7 +287,7 @@ describe("slice", () => {
 
    describe("typematch", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("typematch")
+         const [ρ, e]: [Env, Expr] = openWithImports("typematch")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
       })
@@ -295,7 +295,7 @@ describe("slice", () => {
 
    describe("zipWith", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("zipWith")
+         const [ρ, e]: [Env, Expr] = openWithImports("zipWith")
          new FwdSlice(ρ, e)
          // needing first cons cell of output needs same amount of input lists
          new (class extends BwdSlice {

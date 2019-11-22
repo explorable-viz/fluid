@@ -72,16 +72,13 @@ export function loadModule2 (ρ: Env, file: string): Module2 {
    return Eval.defs(ρ, e.def̅, emptyEnv())[1]
 }
 
-export function openWithImports (file: string, ...modules: Module[]): Expr {
-   return parseWithImports(loadTestFile("fluid/example", file), ...modules)
-}
-
-export function openWithImports2 (file: string, ...modules: Module2[]): [Env, Expr] {
+export function openWithImports (file: string, ...modules: Module2[]): [Env, Expr] {
    return parseWithImports2(loadTestFile("fluid/example", file), ...modules)
 }
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
-   return Env.singleton(str(x)(ν()), Eval.eval_(emptyEnv(), parseWithImports(loadTestFile("fluid/dataset", file))))
+   const [ρ, e]: [Env, Expr] = parseWithImports2(loadTestFile("fluid/dataset", file))
+   return Env.singleton(str(x)(ν()), Eval.eval_(ρ, e))
 }
 
 export function parseWithImports (src: string, ...modules: Module[]): Expr {

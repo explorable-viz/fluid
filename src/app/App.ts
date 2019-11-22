@@ -7,7 +7,7 @@ import { Env } from "../Env"
 import { Direction, Eval } from "../Eval"
 import { Expr } from "../Expr"
 import  { GraphicsElement } from "../Graphics"
-import { openWithImports, openDatasetAs, parseWithImports } from "../Module"
+import { openWithImports, openDatasetAs, parseWithImports2 } from "../Module"
 import { newRevision } from "../Versioned"
 import { GraphicsRenderer, Slicer, ViewCoordinator } from "./GraphicsRenderer"
 import { svgRootElement } from "./Renderer"
@@ -22,10 +22,10 @@ export class View implements Slicer {
    view: GraphicsRenderer
    direction!: Direction
 
-   constructor (name: string, ρ: Env, e: Expr, svg: SVGElement) {
+   constructor (name: string, ρ: Env, [ρʹ, e]: [Env, Expr], svg: SVGElement) {
       this.name = name
       this.e = e
-      this.tv = Eval.eval_(ρ, e)
+      this.tv = Eval.eval_(ρ.concat(ρʹ), e)
       this.view = new GraphicsRenderer(svg, this)
       this.fwdSlice()
       this.draw()
@@ -90,7 +90,7 @@ class App {
       this.dataView = new View(
          "dataView",
          ρ,
-         parseWithImports("renderData data"), // module_renderData
+         parseWithImports2("renderData data"), // module_renderData
          svgRootElement(400, 1200)
       )
       const dataView: View = this.dataView

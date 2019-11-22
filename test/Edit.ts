@@ -7,7 +7,7 @@ import { exprClass } from "../src/DataType"
 import { Env } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { VarElim } from "../src/Match"
-import { Module, openWithImports2 } from "../src/Module"
+import { Module, openWithImports } from "../src/Module"
 import { Persistent } from "../src/Value"
 import { ν, at, num, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
@@ -20,7 +20,7 @@ before((done: MochaDone) => {
 describe("edit", () => {
    describe("arithmetic", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("arithmetic")
+         const [ρ, e]: [Env, Expr] = openWithImports("arithmetic")
          new (class extends Edit {
             setup (here: ExprCursor) {
                here.to(Expr.BinaryApp, "e1")
@@ -44,7 +44,7 @@ describe("edit", () => {
 
    describe("filter", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("filter")
+         const [ρ, e]: [Env, Expr] = openWithImports("filter")
          new (class extends Edit {
             setup (here: ExprCursor) {
                here.to(Expr.App, "f")
@@ -73,7 +73,7 @@ describe("edit", () => {
 
    describe("foldr_sumSquares", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("foldr_sumSquares")
+         const [ρ, e]: [Env, Expr] = openWithImports("foldr_sumSquares")
          new (class extends Edit {
             setup (here: ExprCursor) {
                here = here
@@ -111,7 +111,7 @@ describe("edit", () => {
 
    describe("ic2019", () => {
       it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports2("ic2019")
+         const [ρ, e]: [Env, Expr] = openWithImports("ic2019")
          new (class extends Edit {
             setup (here: ExprCursor) {
                here.toDef("f")
