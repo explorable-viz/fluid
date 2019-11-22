@@ -17,7 +17,7 @@ import "../../src/app/GraphicsRenderer" // for graphics primitives
 // lacks source code).
 
 export class FwdSlice {
-   constructor (e: Expr, ρ: Env = emptyEnv()) {
+   constructor (skipImports: boolean, e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.FwdSlice)) {
          newRevision()
          setallα(ann.top, e)
@@ -30,7 +30,7 @@ export class FwdSlice {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor(e, ρ).render()
+         new Editor(skipImports, e, ρ).render()
       }
    }
 
@@ -42,7 +42,7 @@ export class FwdSlice {
 }
 
 export class BwdSlice {
-   constructor (e: Expr, ρ: Env = emptyEnv()) {
+   constructor (skipImports: boolean, e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.BwdSlice)) {
          newRevision()
          setallα(ann.bot, e)
@@ -55,7 +55,7 @@ export class BwdSlice {
          this.expect(new ExprCursor(e))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor(e, ρ).render()
+         new Editor(skipImports, e, ρ).render()
       }
    }
 
@@ -67,9 +67,9 @@ export class BwdSlice {
 }
 
 export class Edit {
-   constructor (e: Expr, ρ: Env = emptyEnv()) {
+   constructor (skipImports: boolean, e: Expr, ρ: Env = emptyEnv()) {
       if (flags.get(Flags.Visualise)) {
-         new Editor(e, ρ).render()
+         new Editor(skipImports, e, ρ).render()
       }
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
@@ -79,7 +79,7 @@ export class Edit {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor(e, ρ).render()
+         new Editor(skipImports, e, ρ).render()
       }
    }
 

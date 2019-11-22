@@ -68,7 +68,7 @@ function recDefs_ (dir: Direction, δ: List<Expl.RecDef>): void {
 }
 
 // Here we mustn't invert definition order.
-function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
+export function defs (ρ: Env, def̅: List<Def>, ρ_ext: Env): [List<Expl.Def>, Env] {
    const k: MemoId = memoId(defs, arguments)
    if (Cons.is(def̅)) {
       const def: Def = def̅.head

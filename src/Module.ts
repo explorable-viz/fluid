@@ -9,20 +9,34 @@ import "./Graphics2" // for datatypes
 import grammar from "./Parse"
 import { PrimValue, Str } from "./Value"
 import { ν, at, num, str } from "./Versioned"
+import "./app/GraphicsRenderer2" // for graphics primitives
 
 // Kindergarten modules.
 type Module = List<Expr.Def>
+type Module2 = Env
 
 // Define as constants to enforce sharing; could use memoisation.
 export const module_prelude: Module = loadModule("prelude"),
              module_graphics: Module = loadModule("graphics")
-             // module_renderData: Module = loadModule("renderData")
+
+export const module_prelude2: Module2 = loadModule2(emptyEnv(), "prelude"),
+             module_graphics2: Module2 = loadModule2(module_prelude2, "graphics")
 
 function import_ (modules: Module[], e: Expr): Expr {
    if (modules.length === 0) {
       return e
    } else {
       return Expr.defs(modules[0], import_(modules.slice(1), e))(ν())
+   }
+}
+
+// Concatenation always unpleasant but we will assume libraries to be unchanging for now.
+function import2 (...modules: Module2[]): Env {
+   if (modules.length === 0) {
+      return emptyEnv()
+   } else {
+      const [m, ...ms] = modules
+      return m.concat(import2(...ms))
    }
 }
 
@@ -44,8 +58,19 @@ export function loadModule (file: string): Module {
    return e.def̅
 }
 
+// Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
+export function loadModule2 (ρ: Env, file: string): Module2 {
+   const fileʹ: string = loadTestFile("fluid/lib", file) + " in 0",
+         e: Expr.Defs = as(successfulParse(fileʹ), Expr.Defs)
+   return Eval.defs(ρ, e.def̅, emptyEnv())[1]
+}
+
 export function openWithImports (file: string, ...modules: Module[]): Expr {
    return parseWithImports(loadTestFile("fluid/example", file), ...modules)
+}
+
+export function openWithImports2 (file: string, ...modules: Module2[]): [Env, Expr] {
+   return parseWithImports2(loadTestFile("fluid/example", file), ...modules)
 }
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
@@ -54,6 +79,10 @@ export function openDatasetAs (file: string, x: string): ExtendEnv {
 
 export function parseWithImports (src: string, ...modules: Module[]): Expr {
    return import_([module_prelude, module_graphics, ...modules], successfulParse(src))
+}
+
+export function parseWithImports2 (src: string, ...modules: Module2[]): [Env, Expr] {
+   return [import2(module_prelude2, module_graphics2, ...modules), successfulParse(src)]
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234

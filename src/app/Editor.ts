@@ -13,20 +13,26 @@ import { Viewer, existingView } from "./View"
 import "./styles.css"
 
 export class Editor {
+   skipImports: boolean
    root: SVGSVGElement
    ρ: Env
    e: Expr
    tv: ExplValue
    here!: ExplValueCursor
 
-   constructor (e: Expr, ρ: Env = emptyEnv()) {
+   // TODO: remove skipImports once refactoring complete.
+   constructor (skipImports: boolean, e: Expr, ρ: Env = emptyEnv()) {
+      this.skipImports = skipImports
       this.root = svgRootElement(1400, 1200)
       markerEnsureDefined(this.root, Arrowhead, "blue")
       document.body.appendChild(this.root)
       this.ρ = ρ
       this.e = e,
       this.tv = Eval.eval_(ρ, this.e)
-      this.here = ExplValueCursor.descendant(null, this.tv).skipImports()
+      this.here = ExplValueCursor.descendant(null, this.tv)
+      if (skipImports) {
+         this.here = this.here.skipImports()
+      }
       newRevision()
       Eval.eval_(ρ, this.e) // reestablish reachable nodes
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
@@ -43,7 +49,9 @@ export class Editor {
             this.root.removeChild(child)
          }
       })
-      const tv: ExplValue = ExplValueCursor.descendant(null, this.tv).skipImports().tv
+      const tv: ExplValue = this.skipImports ? 
+         ExplValueCursor.descendant(null, this.tv).skipImports().tv : 
+         this.tv
       new Viewer().render(this.root, tv, this)
       const this_: this = this
       // https://stackoverflow.com/questions/5597060
