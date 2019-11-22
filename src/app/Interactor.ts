@@ -18,9 +18,8 @@ export class Interactor {
       // invert sign on y axis because of global inversion for SVG graphics
       const x_prop: number = Math.max(e.clientX - rect.left, 0) / rect.width
       const y_prop: number = Math.min(rect.bottom - e.clientY, rect.height) / rect.height
-      const x_or_width: string = x_prop >= 0.5 ? `width: ${g.width}` : `x: ${g.x}`
-      const y_or_height: string = y_prop >= 0.5 ? `height: ${g.height}` : `y: ${g.y}`
-      const content: string = `${x_or_width}<br/>${y_or_height}`
+      const prop: keyof Rect = rectAttribute(x_prop, y_prop, 1, 1)
+      const content: string = `${prop}: ${g[prop]}`
       const tooltip: Instance = __nonNull(this.tooltips.get(r))
       tooltip.setContent(content)
    }
@@ -28,4 +27,12 @@ export class Interactor {
    onRectMouseOut (): void {
       __nonNull(this.tooltip).hide()
    }
+}
+
+// Determine which "diagonal quadrant" of the rectangle [width, height] contains [x, y], and
+// then map to the corresponding attribute of the rectangle.
+function rectAttribute (x: number, y: number, width: number, height: number): keyof Rect {
+   const y_diag: number = (height / width) * x
+   const corner: [keyof Rect, keyof Rect] = y > y_diag ? ["x", "height"] : ["y", "width"]
+   return y < height - y_diag ? corner[0] : corner[1]
 }
