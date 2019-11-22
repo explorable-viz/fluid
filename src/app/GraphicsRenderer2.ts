@@ -12,7 +12,6 @@ import { Interactor } from "./Interactor"
 import { border, circle, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 11
-
 export const svg: SVG = new SVG()
 
 type TransformFun = ([x, y]: [number, number]) => [number, number]

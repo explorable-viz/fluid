@@ -5,12 +5,13 @@ import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { Elim } from "../src/Match"
-import { bindDataset, openDatasetAs, openWithImports2 } from "../src/Module"
+import { Module, bindDataset, openDatasetAs, openWithImports2 } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "..//src/app/Cursor"
 import { BwdSlice, FwdSlice, funDef } from "./util/Core"
 
 before((done: MochaDone) => {
+   Module.initialise()
    done()
 })
 

@@ -9,7 +9,7 @@ import "./Graphics2" // for datatypes
 import grammar from "./Parse"
 import { PrimValue, Str } from "./Value"
 import { ν, at, num, str } from "./Versioned"
-import "./app/GraphicsRenderer2" // for graphics primitives
+// import "./app/GraphicsRenderer2" // for graphics primitives
 
 // Kindergarten modules.
 type Module = List<Expr.Def>
@@ -19,8 +19,15 @@ type Module2 = Env
 export const module_prelude: Module = loadModule("prelude"),
              module_graphics: Module = loadModule("graphics")
 
-export const module_prelude2: Module2 = loadModule2(emptyEnv(), "prelude"),
-             module_graphics2: Module2 = loadModule2(module_prelude2, "graphics")
+export let module_prelude2: Module2
+export let module_graphics2: Module2
+
+export namespace Module {
+   export function initialise (): void {
+      module_prelude2 = loadModule2(emptyEnv(), "prelude")
+      module_graphics2 = loadModule2(module_prelude2, "graphics")
+   }
+}
 
 function import_ (modules: Module[], e: Expr): Expr {
    if (modules.length === 0) {
@@ -82,7 +89,7 @@ export function parseWithImports (src: string, ...modules: Module[]): Expr {
 }
 
 export function parseWithImports2 (src: string, ...modules: Module2[]): [Env, Expr] {
-   return [import2(module_prelude2, module_graphics2, ...modules), successfulParse(src)]
+   return [import2(__nonNull(module_prelude2), __nonNull(module_graphics2), ...modules), successfulParse(src)]
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
