@@ -108,9 +108,9 @@ describe("slice", () => {
 
    describe("factorial", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("factorial")
-         new FwdSlice(true, e)
-         new BwdSlice(true, e)
+         const [ρ, e]: [Env, Expr] = openWithImports2("factorial")
+         new FwdSlice(false, e, ρ)
+         new BwdSlice(false, e, ρ)
       })
    })
 
