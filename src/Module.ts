@@ -9,15 +9,12 @@ import "./Graphics2" // for datatypes
 import grammar from "./Parse"
 import { PrimValue, Str } from "./Value"
 import { ν, at, num, str } from "./Versioned"
-// import "./app/GraphicsRenderer2" // for graphics primitives
 
 // Kindergarten modules.
-type Module = List<Expr.Def>
-type Module2 = Env
 
 // Define as constants to enforce sharing; could use memoisation.
-export let module_prelude: Module2
-export let module_graphics: Module2
+export let module_prelude: Env
+export let module_graphics: Env
 
 export namespace Module {
    export function initialise (): void {
@@ -26,7 +23,7 @@ export namespace Module {
    }
 }
 
-function import_ (...modules: Module2[]): Env {
+function import_ (...modules: Env[]): Env {
    if (modules.length === 0) {
       return emptyEnv()
    } else {
@@ -47,13 +44,13 @@ export function loadTestFile (folder: string, file: string): string {
 }
 
 // Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
-export function loadModule (ρ: Env, file: string): Module2 {
+export function loadModule (ρ: Env, file: string): Env {
    const fileʹ: string = loadTestFile("fluid/lib", file) + " in 0",
          e: Expr.Defs = as(successfulParse(fileʹ), Expr.Defs)
    return Eval.defs(ρ, e.def̅, emptyEnv())[1]
 }
 
-export function openWithImports (file: string, ...modules: Module2[]): [Env, Expr] {
+export function openWithImports (file: string, ...modules: Env[]): [Env, Expr] {
    return parseWithImports(loadTestFile("fluid/example", file), ...modules)
 }
 
@@ -62,7 +59,7 @@ export function openDatasetAs (file: string, x: string): ExtendEnv {
    return Env.singleton(str(x)(ν()), Eval.eval_(ρ, e))
 }
 
-export function parseWithImports (src: string, ...modules: Module2[]): [Env, Expr] {
+export function parseWithImports (src: string, ...modules: Env[]): [Env, Expr] {
    return [import_(__nonNull(module_prelude), __nonNull(module_graphics), ...modules), successfulParse(src)]
 }
 
