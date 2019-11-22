@@ -257,19 +257,18 @@ describe("slice", () => {
 
    describe("pattern-match", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("pattern-match")
-         new BwdSlice(true, e)
-         new FwdSlice(true, e)
+         const [ρ, e]: [Env, Expr] = openWithImports2("pattern-match")
+         new BwdSlice(false, e, ρ)
+         new FwdSlice(false, e, ρ)
       })
    })
 
    describe("reverse", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("reverse")
+         const [ρ, e]: [Env, Expr] = openWithImports2("reverse")
          new (class extends FwdSlice {
             setup (here: ExprCursor): void {
                here
-                  .skipImports()
                   .to(Expr.App, "e")
                   .constr_to(Cons, "tail")
                   .constr_to(Cons, "tail").clearα()
@@ -279,16 +278,16 @@ describe("slice", () => {
                here.to(Cons, "head").αset()
                here.to(Cons, "tail").αset()
             }
-         })(true, e)
-         new BwdSlice(true, e)
+         })(false, e, ρ)
+         new BwdSlice(false, e, ρ)
       })
    })
 
    describe("typematch", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("typematch")
-         new FwdSlice(true, e)
-         new BwdSlice(true, e)
+         const [ρ, e]: [Env, Expr] = openWithImports2("typematch")
+         new FwdSlice(false, e, ρ)
+         new BwdSlice(false, e, ρ)
       })
    })
 
