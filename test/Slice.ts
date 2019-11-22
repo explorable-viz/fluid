@@ -31,58 +31,6 @@ describe("slice", () => {
       })
    })
 
-/*
-   describe("bar-chart", () => {
-      it("ok", () => {
-         const ρ: ExtendEnv = openDatasetAs("renewables", "data"),
-               e: Expr = openWithImports("bar-chart")
-         new (class extends FwdSlice {
-            setup (_: ExprCursor): void {
-               const here: ExplValueCursor = ExplValueCursor.descendant(null, ρ.tv)
-               here.to(Cons, "head")
-                   .to(Pair, "snd")
-                   .to(Cons, "head")
-                   .to(Pair, "snd")
-                   .to(Cons, "head")
-                   .to(Pair, "snd").clearα()
-            }
-            expect (here: ExplValueCursor): void {
-					const hereʹ = here
-                  .to(Graphic, "gs")
-                  .to(Cons, "head")
-                  .to(Graphic, "gs")
-                  .to(Cons, "tail")
-                  .to(Cons, "head")
-                  .to(Translate, "g")
-                  .to(Graphic, "gs")
-                  .to(Cons, "head")
-                  .to(Translate, "g")
-                  .to(Translate, "g")
-                  .to(Graphic, "gs")
-                  .to(Cons, "head")
-                  .to(Translate, "g")
-                  .to(Graphic, "gs")
-                  .to(Cons, "head")
-                  .to(Translate, "g")
-                  .to(Polygon, "points")
-                  .to(Cons, "tail")
-                  .to(Cons, "tail")
-               hereʹ.to(Cons, "head").to(Point, "y").αclear()
-               hereʹ.to(Cons, "tail").to(Cons, "head").to(Point, "y").αclear()
-            }
-         })(e, ρ)
-         new (class extends BwdSlice {
-            setup (here: ExplValueCursor): void {
-               here.setα()
-            }
-            expect (here: ExprCursor): void {
-               here.αset()
-            }
-         })(e, ρ)
-      })
-   })
-*/
-
    describe("compose", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports2("compose")
