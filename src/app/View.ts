@@ -10,7 +10,7 @@ import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { GraphicsElement } from "../Graphics2"
 import { DataElim, Elim, Match, VarElim } from "../Match"
-import { Module, parseWithImports2 } from "../Module"
+import { Module, parseWithImports } from "../Module"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
@@ -32,7 +32,7 @@ export module View {
    export function initialise (): void {
       Module.initialise()
       const x: string = "g"
-      const [ρ, dimsExpr]: [Env, Expr] = parseWithImports2(`dimensions ${x}`)
+      const [ρ, dimsExpr]: [Env, Expr] = parseWithImports(`dimensions ${x}`)
 
       dimensions = function (tg: ExplValue<GraphicsElement>): [number, number] {
          const tv: ExplValue = Eval.eval_(ρ.concat(Env.singleton(str(x)(ν()), tg)), dimsExpr)

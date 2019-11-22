@@ -16,33 +16,22 @@ type Module = List<Expr.Def>
 type Module2 = Env
 
 // Define as constants to enforce sharing; could use memoisation.
-export const module_prelude: Module = loadModule("prelude"),
-             module_graphics: Module = loadModule("graphics")
-
-export let module_prelude2: Module2
-export let module_graphics2: Module2
+export let module_prelude: Module2
+export let module_graphics: Module2
 
 export namespace Module {
    export function initialise (): void {
-      module_prelude2 = loadModule2(emptyEnv(), "prelude")
-      module_graphics2 = loadModule2(module_prelude2, "graphics")
+      module_prelude = loadModule(emptyEnv(), "prelude")
+      module_graphics = loadModule(module_prelude, "graphics")
    }
 }
 
-function import_ (modules: Module[], e: Expr): Expr {
-   if (modules.length === 0) {
-      return e
-   } else {
-      return Expr.defs(modules[0], import_(modules.slice(1), e))(ν())
-   }
-}
-
-function import2 (...modules: Module2[]): Env {
+function import_ (...modules: Module2[]): Env {
    if (modules.length === 0) {
       return emptyEnv()
    } else {
       const [m, ...ms] = modules
-      return m.concat(import2(...ms))
+      return m.concat(import_(...ms))
    }
 }
 
@@ -58,34 +47,23 @@ export function loadTestFile (folder: string, file: string): string {
 }
 
 // Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
-export function loadModule (file: string): Module {
-   const fileʹ: string = loadTestFile("fluid/lib", file) + " in 0",
-         e: Expr.Defs = as(successfulParse(fileʹ), Expr.Defs)
-   return e.def̅
-}
-
-// Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
-export function loadModule2 (ρ: Env, file: string): Module2 {
+export function loadModule (ρ: Env, file: string): Module2 {
    const fileʹ: string = loadTestFile("fluid/lib", file) + " in 0",
          e: Expr.Defs = as(successfulParse(fileʹ), Expr.Defs)
    return Eval.defs(ρ, e.def̅, emptyEnv())[1]
 }
 
 export function openWithImports (file: string, ...modules: Module2[]): [Env, Expr] {
-   return parseWithImports2(loadTestFile("fluid/example", file), ...modules)
+   return parseWithImports(loadTestFile("fluid/example", file), ...modules)
 }
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
-   const [ρ, e]: [Env, Expr] = parseWithImports2(loadTestFile("fluid/dataset", file))
+   const [ρ, e]: [Env, Expr] = parseWithImports(loadTestFile("fluid/dataset", file))
    return Env.singleton(str(x)(ν()), Eval.eval_(ρ, e))
 }
 
-export function parseWithImports (src: string, ...modules: Module[]): Expr {
-   return import_([module_prelude, module_graphics, ...modules], successfulParse(src))
-}
-
-export function parseWithImports2 (src: string, ...modules: Module2[]): [Env, Expr] {
-   return [import2(__nonNull(module_prelude2), __nonNull(module_graphics2), ...modules), successfulParse(src)]
+export function parseWithImports (src: string, ...modules: Module2[]): [Env, Expr] {
+   return [import_(__nonNull(module_prelude), __nonNull(module_graphics), ...modules), successfulParse(src)]
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
