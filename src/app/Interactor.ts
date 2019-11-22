@@ -1,19 +1,32 @@
-import { __log } from "../util/Core"
+import { __log, __nonNull } from "../util/Core"
 import { Rect } from "../Graphics2"
 
-import tippy from 'tippy.js'
-import 'tippy.js/dist/tippy.css'
+import tippy from "tippy.js"
+import { Instance } from "tippy.js"
+import "tippy.js/dist/tippy.css"
 
 export class Interactor {
-   onRectMousemove (g: Rect, r: SVGRectElement, e: MouseEvent) {
+   tooltip: Instance | null = null // just have one for now
+   tooltips: Map<SVGElement, Instance> = new Map()
+
+   initialise (element: SVGElement): void {
+      this.tooltips.set(element, tippy(element))
+   }
+
+   onRectMousemove (g: Rect, r: SVGRectElement, e: MouseEvent): void {
       const rect: ClientRect = r.getBoundingClientRect()
       // invert sign on y axis because of global inversion for SVG graphics
       const x_prop: number = Math.max(e.clientX - rect.left, 0) / rect.width
       const y_prop: number = Math.min(rect.bottom - e.clientY, rect.height) / rect.height
-      const x_or_width: string = x_prop >= 0.5 ? "width" : "x"
-      const y_or_height: string = y_prop >= 0.5 ? "height": "y"
-      console.log(`(${x_or_width}, ${y_or_height})`)
-      r.setAttribute("data-tippy-content", "Hello")
-      tippy(r) 
+      const x_or_width: string = x_prop >= 0.5 ? `width: ${g.width}` : `x: ${g.x}`
+      const y_or_height: string = y_prop >= 0.5 ? `height: ${g.height}` : `y: ${g.y}`
+      const content: string = `${x_or_width}\n${y_or_height}`
+//      r.setAttribute("data-tippy-content", content) // needed?
+      const tooltip: Instance = __nonNull(this.tooltips.get(r))
+      tooltip.setContent(content)
+   }
+
+   onRectMouseOut (): void {
+      __nonNull(this.tooltip).hide()
    }
 }
