@@ -9,6 +9,8 @@ import { Editor } from "./Editor"
 export function initialise(): void {
    Module.initialise()
    const ρ: Env = openDatasetAs("renewables", "data")
-   const [ρʹ, e]: [Env, Expr] = openWithImports2("graphics/grouped-bar-chart")
+   const [ρʹ, e]: [Env, Expr] = openWithImports2("graphics/line-chart")
    new Editor(false, e, ρ.concat(ρʹ))
 }
+
+initialise()

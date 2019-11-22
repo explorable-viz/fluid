@@ -37,7 +37,7 @@ export class FwdSlice {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor(skipImports, e, ρ).render()
+         new Editor(false, e, ρ).render()
       }
    }
 
@@ -62,7 +62,7 @@ export class BwdSlice {
          this.expect(new ExprCursor(e))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor(skipImports, e, ρ).render()
+         new Editor(false, e, ρ).render()
       }
    }
 
@@ -86,7 +86,7 @@ export class Edit {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor(skipImports, e, ρ).render()
+         new Editor(false, e, ρ).render()
       }
    }
 
