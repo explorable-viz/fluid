@@ -85,9 +85,9 @@ describe("slice", () => {
 
    describe("compose", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("compose")
-         new FwdSlice(true, e)
-         new BwdSlice(true, e)
+         const [ρ, e]: [Env, Expr] = openWithImports2("compose")
+         new FwdSlice(false, e, ρ)
+         new BwdSlice(false, e, ρ)
       })
    })
 
@@ -100,9 +100,9 @@ describe("slice", () => {
             { year: 2015, country: "China", energyType: "Geothermal", value: 0 },
             { year: 2015, country: "China", energyType: "Hydro", value: 296 }
          ]
-         const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data"),
-         e: Expr = openWithImports("create-dataset")
-         new FwdSlice(true, e, ρ)
+         const ρ: ExtendEnv = bindDataset(emptyEnv(), data, "data")
+         const [ρʹ, e]: [Env, Expr] = openWithImports2("create-dataset")
+         new FwdSlice(false, e, ρ.concat(ρʹ))
       })
    })
 
