@@ -7,6 +7,7 @@ import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { Arrowhead } from "../Graphics2"
+import { newRevision } from "../Versioned"
 import { ExplValueCursor } from "./Cursor"
 import { markerEnsureDefined, svgRootElement } from "./Renderer"
 import { View } from "./View"
@@ -31,8 +32,10 @@ export module Editor {
          document.body.appendChild(this.root)
          this.ρ = ρ_external.concat(ρ)
          this.e = e
-         this.tv = Eval.eval_(ρ, this.e)
+         this.tv = Eval.eval_(this.ρ, this.e)
          this.here = ExplValueCursor.descendant(null, this.tv)
+         newRevision()
+         Eval.eval_(this.ρ, this.e) // reestablish reachable nodes
          // Wait for fonts to load before rendering, otherwise metrics will be wrong.
          window.onload = (ev: Event) => this.onload(ev)
       }
@@ -98,8 +101,9 @@ export module Editor {
       }
    
       onEdit (): void {
+         console.log(__deltas)
          this.tv = Eval.eval_(this.ρ, this.e)
-         this.here = ExplValueCursor.descendant(null, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) // skip prelude
+         this.here = ExplValueCursor.descendant(null, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v))
          // cursor may no longer be valid, how to deal with that?
          this.render()
       }

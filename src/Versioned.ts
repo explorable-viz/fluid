@@ -127,7 +127,7 @@ export function str (val: string): (k: Id) => Versioned<Str> {
 
 const __funMemo: MemoTable = new Map
 
-// We should clear memo table at each revision, but there are no memo-functions at the moment.
+// Should clear memo table at each revision, but there are no memo-functions at the moment.
 export function newRevision (): void {
    __deltas.clear()
    __versioned.forEach((v: Versioned<Value>, k: Id): void => {
