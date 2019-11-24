@@ -42,9 +42,7 @@ export class RectInteractor {
          this.tooltip.setContent(content)
          this.editor.resetForBwd()
          setα(bool_.top, this.tg.to(Rect, this.propFocus).tv.t)
-         console.time("bwdSlice")
          this.editor.bwdSlice()
-         console.timeEnd("bwdSlice")
       }
    }
 
