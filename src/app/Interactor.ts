@@ -2,8 +2,10 @@ import tippy from "tippy.js"
 import { Instance } from "tippy.js"
 import "tippy.js/dist/tippy.css"
 import "tippy.js/themes/light-border.css"
-import { __log, __nonNull } from "../util/Core"
+import { __log, __nonNull, as } from "../util/Core"
 import { Rect } from "../Graphics2"
+import { Num } from "../Value"
+import { round } from "./Renderer"
 
 export class Interactor {
    tooltip: Instance | null = null // just have one for now
@@ -19,7 +21,7 @@ export class Interactor {
       const x_prop: number = Math.max(e.clientX - rect.left, 0) / rect.width
       const y_prop: number = Math.min(rect.bottom - e.clientY, rect.height) / rect.height
       const prop: keyof Rect = rectAttribute(x_prop, y_prop, 1, 1)
-      const content: string = `${prop}: ${g[prop]}`
+      const content: string = `${prop}: ${round(as(g[prop], Num).val)}`
       const tooltip: Instance = __nonNull(this.tooltips.get(r))
       tooltip.setContent(content)
    }
