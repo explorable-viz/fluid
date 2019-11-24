@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
 import { Class, __nonNull, absurd, as, assert, className, classOf, userError } from "./util/Core"
 import { bool_ } from "./util/Lattice"
-import { AnnotatedC, Direction, setjoinα, setmeetα, setα } from "./Annotated"
+import { AnnotatedC, Direction, getα, setjoinα, setmeetα, setα } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, explClass, initDataType, types, valueClass } from "./DataType"
 import { DataValue, ExplValue, explValue } from "./DataValue"
@@ -54,9 +54,9 @@ function recDefs_ (dir: Direction, δ: List<Expl.RecDef>): void {
       zip(δ.head.tf.v.δ.toArray(), δ.toArray()).map(([def, defₜ]: [RecDef, Expl.RecDef]): void => {
          assert(def.x.eq(defₜ.x))
          if (dir === Direction.Fwd) {
-            setα(def.__α, defₜ.tf.t)
+            setα(getα(def), defₜ.tf.t)
          } else {
-            setjoinα(defₜ.tf.t.__α, def)
+            setjoinα(getα(defₜ.tf.t), def)
          }
       })
    } else
@@ -105,10 +105,10 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).forEach(([def, defₜ]: [Def, Expl.Def]) => {
       if (def instanceof Expr.Let && defₜ instanceof Expl.Let) {
          eval_fwd(def.e, defₜ.tv)
-         setmeetα(def.__α, defₜ.tv.t)
+         setmeetα(getα(def), defₜ.tv.t)
       } else
       if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
-         setα(def.__α, defₜ.t_op.t)
+         setα(getα(def), defₜ.t_op.t)
       } else
       if (def instanceof Expr.LetRec && defₜ instanceof Expl.LetRec) {
          recDefs_(Direction.Fwd, defₜ.δ)
@@ -121,11 +121,11 @@ function defs_fwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
    zip(def̅.toArray(), def̅ₜ.toArray()).reverse().forEach(([def, defₜ]: [Def, Expl.Def]) => {
       if (def instanceof Expr.Let && defₜ instanceof Expl.Let) {
-         setjoinα(defₜ.tv.t.__α, def)
+         setjoinα(getα(defₜ.tv.t), def)
          eval_bwd(def.e, defₜ.tv)
       } else
       if (def instanceof Expr.Prim && defₜ instanceof Expl.Prim) {
-         setjoinα(defₜ.t_op.t.__α, def)
+         setjoinα(getα(defₜ.t_op.t), def)
       } else
       if (def instanceof Expr.LetRec && defₜ instanceof Expl.LetRec) {
          recDefs_(Direction.Bwd, defₜ.δ)
@@ -228,22 +228,22 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
 
 export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
    if (t instanceof Expl.Const && (v instanceof Num || v instanceof Str)) {
-      setα(e.__α, t)
+      setα(getα(e), t)
    } else
    if (t instanceof Expl.Fun && v instanceof Closure) {
-      setα(e.__α, t)
+      setα(getα(e), t)
    } else
    if (t instanceof Expl.Quote) {
-      setα(e.__α, t)
+      setα(getα(e), t)
    } else
    if (t instanceof Expl.Var) {
-      setα(bool_.meet(e.__α, t.t.__α), t)
+      setα(bool_.meet(getα(e), getα(t.t)), t)
    } else
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
          const eʹ: Expr.DataExpr = as(e, Expr.DataExpr)
          zip(Expl.explChildren(t, v), eʹ.__children).map(([tv, e]) => eval_fwd(e, tv))
-         setα(e.__α, t)
+         setα(getα(e), t)
       } else {
          absurd()
       }
@@ -254,37 +254,37 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
       eval_fwd(eʹ.e, t.tu)
       recDefs_(Direction.Fwd, t.δ)
       eval_fwd(t.ξ.κ, explValue(t.t, v))
-      setα(bool_.meet(t.tf.t.__α, apply_fwd(t.ξ), e.__α, t.t.__α), t)
+      setα(bool_.meet(getα(t.tf.t), apply_fwd(t.ξ), getα(e), getα(t.t)), t)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
       eval_fwd(eʹ.f, t.tf)
       eval_fwd(eʹ.e, t.tv)
-      setα(bool_.meet(t.tf.t.__α, t.tv.t.__α, e.__α), t)
+      setα(bool_.meet(getα(t.tf.t), getα(t.tv.t), getα(e)), t)
    } else
    if (t instanceof Expl.BinaryApp) {
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_fwd(eʹ.e1, t.tv1)
       eval_fwd(eʹ.e2, t.tv2)
-      setα(bool_.meet(t.tv1.t.__α, t.tv2.t.__α, e.__α), t)
+      setα(bool_.meet(getα(t.tv1.t), getα(t.tv2.t), getα(e)), t)
    } else
    if (t instanceof Expl.Defs) {
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       defs_fwd(eʹ.def̅, t.def̅)
       eval_fwd(eʹ.e, explValue(t.t, v))
-      setα(bool_.meet(e.__α, t.t.__α), t)
+      setα(bool_.meet(getα(e), getα(t.t)), t)
    } else
    if (t instanceof Expl.MatchAs) {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(t.ξ.κ, explValue(t.t, v))
-      setα(bool_.meet(apply_fwd(t.ξ), e.__α, t.t.__α), t)
+      setα(bool_.meet(apply_fwd(t.ξ), getα(e), getα(t.t)), t)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(get(eʹ.cases, t.d)!, explValue(t.t, v))
-      setα(bool_.meet(e.__α, t.t.__α), t)
+      setα(bool_.meet(getα(e), getα(t.t)), t)
    } else {
       absurd()
    }
@@ -293,7 +293,7 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
 // Avoid excessive joins via a merging implementation; requires all annotations to have been cleared first.
 export function eval_bwd (e: Expr, {t, v}: ExplValue): void {
    if (t instanceof Expl.Const && (v instanceof Num || v instanceof Str)) {
-      setjoinα(t.__α, e)
+      setjoinα(getα(t), e)
    } else
    if (t instanceof Expl.Fun && v instanceof Closure) {
       setjoinα(t.__α, e)
