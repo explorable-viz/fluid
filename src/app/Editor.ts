@@ -7,7 +7,6 @@ import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { Arrowhead } from "../Graphics2"
-import { newRevision } from "../Versioned"
 import { ExplValueCursor } from "./Cursor"
 import { markerEnsureDefined, svgRootElement } from "./Renderer"
 import { View } from "./View"
@@ -34,8 +33,6 @@ export module Editor {
          this.e = e
          this.tv = Eval.eval_(ρ, this.e)
          this.here = ExplValueCursor.descendant(null, this.tv)
-         newRevision()
-         Eval.eval_(ρ, this.e) // reestablish reachable nodes
          // Wait for fonts to load before rendering, otherwise metrics will be wrong.
          window.onload = (ev: Event) => this.onload(ev)
       }
@@ -84,7 +81,6 @@ export module Editor {
 
       // Consider availability of ρ_external only; treat ρ and e as unlimited resources.
       fwdSlice (): void {
-         newRevision()
          Eval.eval_fwd(this.e, this.tv)
          this.direction = Direction.Fwd
          this.render()
