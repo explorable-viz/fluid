@@ -18,6 +18,11 @@ export function funDef (ρ: Env, f: string): Elim<Expr> {
    return as(__nonNull(ρ.get(str(f)(ν()))).v, Eval.Closure).f
 }
 
+const __editorListener: Editor.Listener = new class implements Editor.Listener {
+   onBwd (): void {
+   }
+}()
+
 // Key idea here is that we never push slicing further back than ρ (since ρ could potentially
 // be supplied by a library function, dataframe in another language, or other resource which
 // lacks source code).
@@ -32,7 +37,7 @@ export class FwdSlice {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(400, 400, emptyEnv(), ρ, e).render() // yuk, this copies ρ
+         new Editor.Editor(__editorListener, 400, 400, emptyEnv(), ρ, e).render() // yuk, this copies ρ
       }
    }
 
@@ -53,7 +58,7 @@ export class BwdSlice {
          this.expect(new ExprCursor(e))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(400, 400, emptyEnv(), ρ, e).render()
+         new Editor.Editor(__editorListener, 400, 400, emptyEnv(), ρ, e).render()
       }
    }
 
@@ -67,7 +72,7 @@ export class BwdSlice {
 export class Edit {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(400, 400, emptyEnv(), ρ, e).render()
+         new Editor.Editor(__editorListener, 400, 400, emptyEnv(), ρ, e).render()
       }
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
@@ -77,7 +82,7 @@ export class Edit {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(400, 400, emptyEnv(), ρ, e).render()
+         new Editor.Editor(__editorListener, 400, 400, emptyEnv(), ρ, e).render()
       }
    }
 

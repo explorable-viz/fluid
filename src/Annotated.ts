@@ -7,10 +7,8 @@ export function getα<T extends Value> (v: T): Annotation {
    return __annotations.get(v)
 }
 
+// Currently no deltas are associated with annotations.
 export function setα<T extends Value> (α: Annotation, v: T): T {
-   if (getα(v) !== α) {
-      __deltas.changed(v, { __α: { before: getα(v), after: α } })
-   }
    __annotations.set(v, α)
    return v
 }

@@ -1,5 +1,5 @@
 import { __nonNull, as } from "../util/Core"
-import { Direction } from "../Annotated"
+import { Direction, __annotations } from "../Annotated"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
@@ -18,7 +18,12 @@ export module Editor {
       View.initialise()
    }
 
+   export interface Listener {
+      onBwd (editor: Editor): void
+   }
+
    export class Editor {
+      listener: Listener
       rootPane: SVGSVGElement
       ρ: Env
       e: Expr
@@ -26,7 +31,8 @@ export module Editor {
       here!: ExplValueCursor
       direction!: Direction
    
-      constructor (width: number, height: number, ρ_external: Env, ρ: Env, e: Expr) {
+      constructor (listener: Listener, width: number, height: number, ρ_external: Env, ρ: Env, e: Expr) {
+         this.listener = listener
          this.rootPane = svgRootElement(width, height)
          markerEnsureDefined(this.rootPane, Arrowhead, "blue")
          document.body.appendChild(this.rootPane)
@@ -81,12 +87,13 @@ export module Editor {
       }
 
       resetForBwd (): void {
+         __annotations.reset(Direction.Bwd)
       }
 
       bwdSlice (): void {
          Eval.eval_bwd(this.e, this.tv)
-         console.log("Bwd slicing!")
          this.direction = Direction.Bwd
+         this.listener.onBwd(this)
       }
 
       // Consider availability of ρ_external only; treat ρ and e as unlimited resources.
