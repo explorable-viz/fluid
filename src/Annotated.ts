@@ -32,7 +32,7 @@ export function setα<T extends Annotated & Value> (α: Annotation, v: T): T {
       __annotations.set(v, α)
       __deltas.changed(v, { __α: { before: v.__α, after: α } })
    }
-   v.__α = α
+//   v.__α = α
    return v
 }
 
@@ -71,11 +71,11 @@ export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T):
 }
 
 export function setjoinα<T extends Annotated & Value> (α: Annotation, v: T): T {
-   return setα(bool_.join(α, v.__α), v)
+   return setα(bool_.join(α, getα(v)), v)
 }
 
 export function setmeetα<T extends Annotated & Value> (α: Annotation, v: T): T {
-   return setα(bool_.meet(α, v.__α), v)
+   return setα(bool_.meet(α, getα(v)), v)
 }
 
 export enum Direction { Fwd, Bwd }
