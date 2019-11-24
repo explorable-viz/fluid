@@ -30,13 +30,11 @@ export abstract class Cursor {
    }
 
    αset (): this {
-      assert(this.annotated.__α === bool_.top)
       assert(getα(this.annotated) === bool_.top)
       return this
    }
 
    αclear (): this {
-      assert(this.annotated.__α === bool_.bot)
       assert(getα(this.annotated) === bool_.bot)
       return this
    }

@@ -1,6 +1,6 @@
 import { __nonNull, absurd, as, assert } from "../util/Core"
 import { Annotation, bool_ } from "../util/Lattice"
-import { Direction, setα } from "../Annotated"
+import { Direction, getα, setα } from "../Annotated"
 import { Cons, List, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
@@ -184,7 +184,7 @@ export class GraphicsRenderer {
    }
 
    xyHighlight (tx: ExplValueCursor/*<Num>*/, ty: ExplValueCursor/*<Num>*/): void {
-      const [x_α, y_α] = [__nonNull(tx.tv.t).__α, __nonNull(ty.tv.t).__α]
+      const [x_α, y_α] = [getα(tx.tv.t), getα(ty.tv.t)]
       let α: Annotation = bool_.meet(x_α, y_α)
       if (this.slicer.direction === Direction.Fwd) {
          α = bool_.negate(α)
@@ -244,7 +244,7 @@ export class GraphicsRenderer {
       this.current.appendChild(text)
       // this.xyHighlight(g.x, g.y)
       // TODO: annotation on text element itself is not considered yet
-      let α: Annotation = __nonNull(tg.to(Text, "str").tv.t.__α)
+      let α: Annotation = getα(tg.to(Text, "str").tv.t)
       if (this.slicer.direction === Direction.Fwd) {
          α = bool_.negate(α)
       }

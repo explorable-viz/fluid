@@ -28,11 +28,10 @@ export function getα<T extends Annotated & Value> (v: T): Annotation {
 }
 
 export function setα<T extends Annotated & Value> (α: Annotation, v: T): T {
-   if (v.__α !== α) {
-      __annotations.set(v, α)
-      __deltas.changed(v, { __α: { before: v.__α, after: α } })
+   if (getα(v) !== α) {
+      __deltas.changed(v, { __α: { before: getα(v), after: α } })
    }
-//   v.__α = α
+   __annotations.set(v, α)
    return v
 }
 
@@ -60,7 +59,7 @@ export function negateallα<T extends Persistent> (v: T): T {
 
 export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
    if (annotated(v)) {
-      setα(bool_.negate(v.__α), v)
+      setα(bool_.negate(getα(v)), v)
    }
    v.__children.forEach((v: Persistent): void => {
       if (v instanceof Value) {
