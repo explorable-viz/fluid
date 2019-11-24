@@ -1,6 +1,6 @@
 import "../BaseTypes"
 import "../Graphics2"
-import { Direction, __annotations, negateallα } from "../Annotation"
+import { Direction, __annotations } from "../Annotation"
 import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expr } from "../Expr"
@@ -36,15 +36,17 @@ class IDE implements Editor.Listener {
    bwdSlice (editor: Editor.Editor): void {
       editor.direction = Direction.Bwd
       Eval.eval_bwd(editor.e, editor.tv)
-      // TODO: make sure program slice is disregarded
-      __annotations.reset(Direction.Fwd)
-      negateallα(this.ρ_external)
+      console.log(__annotations.ann)
+      // consider availability of ρ_external only; treat ρ and e as unlimited resources
+      __annotations.restrictTo(this.ρ_external)
+      console.log(__annotations.ann)
+      __annotations.direction = Direction.Fwd
       this.editors.filter(editor_ => editor_ !== editor).forEach((editor_: Editor.Editor): void => {
-      // Consider availability of ρ_external only; treat ρ and e as unlimited resources.
          Eval.eval_fwd(editor_.e, editor_.tv)
          editor_.direction = Direction.Fwd
          editor_.render() // TODO: just redo selection rendering
       })
+      console.log(__annotations.ann)
    }
 }
 

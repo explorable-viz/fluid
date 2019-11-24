@@ -1,7 +1,7 @@
 import { __nonNull, absurd } from "./util/Core"
 import { Annotation, bool_ } from "./util/Lattice"
 import { __deltas } from "./Delta" 
-import { Value, ValueTag, _ } from "./Value"
+import { Persistent, Value, _ } from "./Value"
 
 export function getα<T extends Value> (v: T): Annotation {
    return __annotations.get(v)
@@ -13,10 +13,6 @@ export function setα<T extends Value> (α: Annotation, v: T): T {
    return v
 }
 
-export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): void {
-   __annotations.direction = negate(__annotations.direction)
-}
-
 export function setjoinα<T extends Value> (α: Annotation, v: T): T {
    return setα(bool_.join(α, getα(v)), v)
 }
@@ -26,10 +22,6 @@ export function setmeetα<T extends Value> (α: Annotation, v: T): T {
 }
 
 export enum Direction { Fwd, Bwd }
-
-function negate (direction: Direction): Direction {
-   return direction === Direction.Fwd ? Direction.Bwd : Direction.Fwd
-}
 
 export class Annotations {
    ann: Set<Value> = new Set() // unavailable nodes (fwd) or needed nodes (bwd)
@@ -63,6 +55,23 @@ export class Annotations {
    reset (direction: Direction): void {
       this.direction = direction
       this.ann.clear()
+   }
+
+   restrictTo (v: Value): void {
+      const ann: Set<Value> = new Set()
+      this.restrictTo_aux(v, ann)
+      this.ann = ann
+   }
+
+   restrictTo_aux (v: Value, ann: Set<Value>): void {
+      if (this.ann.has(v)) {
+         ann.add(v)
+      }
+      v.__children.forEach((v: Persistent): void => {
+         if (v instanceof Value) {
+            this.restrictTo_aux(v, ann)
+         }
+      })
    }
 }
 

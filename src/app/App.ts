@@ -1,5 +1,5 @@
 import { __nonNull } from "../util/Core"
-import { Direction, negateallα } from "../Annotation"
+import { Direction } from "../Annotation"
 import { ExplValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
@@ -96,7 +96,7 @@ class App {
       this.graphicsView.coordinator = new class ViewCoordinator {
          onBwd (): void {
             newRevision()
-            negateallα(ρ)
+//            negateallα(ρ)
             dataView.fwdSlice()
          }
 
@@ -111,7 +111,7 @@ class App {
       this.dataView.coordinator = new class ViewCoordinator {
          onBwd (): void {
             newRevision()
-            negateallα(ρ)
+//            negateallα(ρ)
             graphicsView.fwdSlice()
          }
 
