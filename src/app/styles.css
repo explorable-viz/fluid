@@ -1,8 +1,3 @@
-/* 
-@import url('https://fonts.googleapis.com/css?family=Inconsolata&display=swap');
-@import url('https://fonts.googleapis.com/css?family=Slabo+13px&display=swap'); 
-*/
-
 @font-face {
    font-family: "inconsolata";
    font-style: normal;
@@ -37,4 +32,12 @@
 
 .new {
    fill: limegreen;
+}
+
+.tippy-tooltip {
+   font-family: "inconsolata";
+}
+
+.tippy-tooltip.light-border-theme {
+   font-size: 9pt;
 }

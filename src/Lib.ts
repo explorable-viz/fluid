@@ -4,4 +4,4 @@ import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { bindDataset, parseWithImports } from "./Module"
 
-export { Env, Eval, Expr, bindDataset, emptyEnv, parseWithImports }
+export { Env, Eval, Expr, bindDataset, emptyEnv, parseWithImports as parseWithImports2 }

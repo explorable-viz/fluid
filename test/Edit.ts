@@ -4,25 +4,27 @@ import { Edit } from "./util/Core"
 import { as } from "../src/util/Core"
 import { Cons, Pair } from "../src/BaseTypes"
 import { exprClass } from "../src/DataType"
+import { Env } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { VarElim } from "../src/Match"
 import { openWithImports } from "../src/Module"
 import { Persistent } from "../src/Value"
 import { ν, at, num, str } from "../src/Versioned"
-import { ExplValueCursor, ExprCursor } from "..//src/app/Cursor"
+import { ExplValueCursor, ExprCursor } from "../src/app/Cursor"
+import { Editor } from "../src/app/Editor"
 
 before((done: MochaDone) => {
+   Editor.initialise()
    done()
 })
 
 describe("edit", () => {
    describe("arithmetic", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("arithmetic")
+         const [ρ, e]: [Env, Expr] = openWithImports("arithmetic")
          new (class extends Edit {
             setup (here: ExprCursor) {
-               here.skipImports()
-                   .to(Expr.BinaryApp, "e1")
+               here.to(Expr.BinaryApp, "e1")
                    .to(Expr.BinaryApp, "e2")
                    .to(Expr.ConstNum, "val")
                    .setNum(6)
@@ -37,17 +39,16 @@ describe("edit", () => {
                    .toBinaryArg2("+")
                    .isChanged({ val: { before: 5, after: 6 } })
             }
-         })(e)
+         })(ρ, e)
       })
    })
 
    describe("filter", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("filter")
+         const [ρ, e]: [Env, Expr] = openWithImports("filter")
          new (class extends Edit {
             setup (here: ExprCursor) {
-               here.skipImports()
-                   .to(Expr.App, "f")
+               here.to(Expr.App, "f")
                    .to(Expr.App, "e")
                    .to(Expr.Fun, "σ")
                    .to(VarElim, "κ")
@@ -67,16 +68,16 @@ describe("edit", () => {
                    .to(Cons, "tail")
                    .isUnchanged()
             }
-         })(e)
+         })(ρ, e)
       })
    })
 
    describe("foldr_sumSquares", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("foldr_sumSquares")
+         const [ρ, e]: [Env, Expr] = openWithImports("foldr_sumSquares")
          new (class extends Edit {
             setup (here: ExprCursor) {
-               here = here.skipImports()
+               here = here
                    .to(Expr.App, "f")
                    .to(Expr.App, "f")
                    .to(Expr.App, "e")
@@ -105,17 +106,16 @@ describe("edit", () => {
                here.toBinaryArg1("*").isNew()
                here.toBinaryArg2("*").isNew()
             }
-         })(e)
+         })(ρ, e)
       })
    })
 
    describe("ic2019", () => {
       it("ok", () => {
-         const e: Expr = openWithImports("ic2019")
+         const [ρ, e]: [Env, Expr] = openWithImports("ic2019")
          new (class extends Edit {
             setup (here: ExprCursor) {
-               here.skipImports()
-                   .toDef("f")
+               here.toDef("f")
                    .to(Expr.RecDef, "σ")
                    .toCase(Cons)
                    .var_("x").var_("xs")
@@ -132,7 +132,7 @@ describe("edit", () => {
                here.to(Cons, "head").isNew().to(Pair, "fst").isUnchanged()
                here.to(Cons, "head").to(Pair, "snd").isNew()
             }
-         })(e)
+         })(ρ, e)
       })
    })   
 })

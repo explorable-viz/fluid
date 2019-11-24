@@ -8,10 +8,10 @@ import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
+import { Interactor } from "./Interactor"
 import { border, circle, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 11
-
 export const svg: SVG = new SVG()
 
 type TransformFun = ([x, y]: [number, number]) => [number, number]
@@ -55,6 +55,7 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
 }
 
 export class GraphicsRenderer {
+   interactor: Interactor
    root: SVGSVGElement
    ancestors: SVGElement[] // stack of enclosing SVG elements
    translations: TransformFun[] // stack of (uncomposed) active translations, each relative to parent SVG
@@ -62,7 +63,8 @@ export class GraphicsRenderer {
    showInvisible: boolean = false
 
    // transform attribute isn't supported on SVGElement, so it contains a group element with the inversion transform.
-   constructor (root: SVGSVGElement, initialAncestor: SVGElement) {
+   constructor (interactor: Interactor, root: SVGSVGElement, initialAncestor: SVGElement) {
+      this.interactor = interactor
       this.root = root
       this.ancestors = [initialAncestor]
       this.translations = [id]
@@ -186,9 +188,9 @@ export class GraphicsRenderer {
          } else {
             const p: Pair<Num, Num> = as(tps.to(Cons, "head").tv.v, Pair)
             const [x, y] = this.transform([p.fst.val, p.snd.val])
-            const svg: SVGSVGElement = svgElement(true, x, y, 10, 10, false, this.polymarkers)
-            this.current.appendChild(svg)
-            this.ancestors.push(svg)
+            const markerViewport: SVGSVGElement = svgElement(true, x, y, 10, 10, false, this.polymarkers)
+            this.current.appendChild(markerViewport)
+            this.ancestors.push(markerViewport)
             this.withLocalFrame(
                invScale,
                id, 
@@ -207,6 +209,11 @@ export class GraphicsRenderer {
       const [width, height] = this.scale([g.width.val, g.height.val])
       assert(width >= 0 && height >= 0)
       const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val, this.rect)
+      this.interactor.initialise(r)
+      r.addEventListener("mousemove", (e: MouseEvent): void => {
+         e.stopPropagation()
+         this.interactor.onRectMousemove(g, r, e)
+      })
       this.current.appendChild(r)
    }
 

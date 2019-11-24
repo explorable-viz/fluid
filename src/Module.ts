@@ -11,18 +11,24 @@ import { PrimValue, Str } from "./Value"
 import { ν, at, num, str } from "./Versioned"
 
 // Kindergarten modules.
-type Module = List<Expr.Def>
 
 // Define as constants to enforce sharing; could use memoisation.
-export const module_prelude: Module = loadModule("prelude"),
-             module_graphics: Module = loadModule("graphics")
-             // module_renderData: Module = loadModule("renderData")
+export let module_prelude: Env
+export let module_graphics: Env
 
-function import_ (modules: Module[], e: Expr): Expr {
+export namespace Module {
+   export function initialise (): void {
+      module_prelude = loadModule(emptyEnv(), "prelude")
+      module_graphics = loadModule(module_prelude, "graphics")
+   }
+}
+
+function import_ (...modules: Env[]): Env {
    if (modules.length === 0) {
-      return e
+      return emptyEnv()
    } else {
-      return Expr.defs(modules[0], import_(modules.slice(1), e))(ν())
+      const [m, ...ms] = modules
+      return m.concat(import_(...ms))
    }
 }
 
@@ -38,22 +44,23 @@ export function loadTestFile (folder: string, file: string): string {
 }
 
 // Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
-export function loadModule (file: string): Module {
+export function loadModule (ρ: Env, file: string): Env {
    const fileʹ: string = loadTestFile("fluid/lib", file) + " in 0",
          e: Expr.Defs = as(successfulParse(fileʹ), Expr.Defs)
-   return e.def̅
+   return Eval.defs(ρ, e.def̅, emptyEnv())[1]
 }
 
-export function openWithImports (file: string, ...modules: Module[]): Expr {
+export function openWithImports (file: string, ...modules: Env[]): [Env, Expr] {
    return parseWithImports(loadTestFile("fluid/example", file), ...modules)
 }
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
-   return Env.singleton(str(x)(ν()), Eval.eval_(emptyEnv(), parseWithImports(loadTestFile("fluid/dataset", file))))
+   const [ρ, e]: [Env, Expr] = parseWithImports(loadTestFile("fluid/dataset", file))
+   return Env.singleton(str(x)(ν()), Eval.eval_(ρ, e))
 }
 
-export function parseWithImports (src: string, ...modules: Module[]): Expr {
-   return import_([module_prelude, module_graphics, ...modules], successfulParse(src))
+export function parseWithImports (src: string, ...modules: Env[]): [Env, Expr] {
+   return [import_(__nonNull(module_prelude), __nonNull(module_graphics), ...modules), successfulParse(src)]
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
