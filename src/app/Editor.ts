@@ -84,6 +84,9 @@ export module Editor {
       }
 
       bwdSlice (): void {
+         Eval.eval_bwd(this.e, this.tv)
+         console.log("Bwd slicing!")
+         this.direction = Direction.Bwd
       }
 
       // Consider availability of ρ_external only; treat ρ and e as unlimited resources.
