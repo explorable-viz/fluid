@@ -1,5 +1,5 @@
 import { __nonNull } from "../util/Core"
-import { Direction, negateallα } from "../Annotated"
+import { Direction, negateallα } from "../Annotation"
 import { ExplValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"

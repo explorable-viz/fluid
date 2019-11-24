@@ -1,5 +1,5 @@
 import { __nonNull, as } from "../../src/util/Core"
-import { Direction, __annotations } from "../../src/Annotated"
+import { Direction, __annotations } from "../../src/Annotation"
 import { ExplValue } from "../../src/DataValue"
 import { __deltas } from "../../src/Delta"
 import { Env, emptyEnv } from "../../src/Env"
@@ -19,7 +19,10 @@ export function funDef (ρ: Env, f: string): Elim<Expr> {
 }
 
 const __editorListener: Editor.Listener = new class implements Editor.Listener {
-   onBwd (): void {
+   resetForBwd (): void {
+   }
+
+   bwdSlice (): void {
    }
 }()
 

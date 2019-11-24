@@ -1,5 +1,5 @@
 import { __nonNull, as } from "../util/Core"
-import { Direction, __annotations } from "../Annotated"
+import { Direction, __annotations } from "../Annotation"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
@@ -19,7 +19,8 @@ export module Editor {
    }
 
    export interface Listener {
-      onBwd (editor: Editor): void
+      resetForBwd (): void
+      bwdSlice (editor: Editor): void
    }
 
    export class Editor {
@@ -87,22 +88,13 @@ export module Editor {
       }
 
       resetForBwd (): void {
-         __annotations.reset(Direction.Bwd)
+         this.listener.resetForBwd()
       }
 
       bwdSlice (): void {
-         Eval.eval_bwd(this.e, this.tv)
-         this.direction = Direction.Bwd
-         this.listener.onBwd(this)
+         this.listener.bwdSlice(this)
       }
 
-      // Consider availability of ρ_external only; treat ρ and e as unlimited resources.
-      fwdSlice (): void {
-         Eval.eval_fwd(this.e, this.tv)
-         this.direction = Direction.Fwd
-         this.render()
-      }
-  
       render (): void {
          // https://stackoverflow.com/questions/48310643
          const children: ChildNode[] = Array.from(this.rootPane.childNodes)

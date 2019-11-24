@@ -1,7 +1,7 @@
 import { last, nth } from "../../src/util/Array"
 import { AClass, Class, __check, __nonNull, absurd, as, assert, userError } from "../../src/util/Core"
 import { bool_ } from "../../src/util/Lattice"
-import { __annotations, getα, setα } from "../../src/Annotated"
+import { __annotations, getα, setα } from "../../src/Annotation"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { exprClass } from "../../src/DataType"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"

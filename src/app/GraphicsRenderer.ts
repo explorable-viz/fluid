@@ -1,6 +1,6 @@
 import { __nonNull, absurd, as, assert } from "../util/Core"
 import { Annotation, bool_ } from "../util/Lattice"
-import { Direction, getα, setα } from "../Annotated"
+import { Direction, getα, setα } from "../Annotation"
 import { Cons, List, Some } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
