@@ -11,7 +11,7 @@ export class Interactor {
    tooltip: Instance | null = null // just have one for now
    tooltips: Map<SVGElement, Instance> = new Map()
 
-   initialise (element: SVGElement): void {
+   initialiseElement (element: SVGElement): void {
       this.tooltips.set(element, tippy(element, { theme: "light-border" }))
    }
 
