@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
 import { Class, __nonNull, absurd, as, assert, className, classOf, userError } from "./util/Core"
 import { bool_ } from "./util/Lattice"
-import { Direction, getα, setjoinα, setmeetα, setα } from "./Annotated"
+import { Direction, getα, setjoinα, setmeetα, setα } from "./Annotation"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, explClass, initDataType, types, valueClass } from "./DataType"
 import { DataValue, ExplValue, explValue } from "./DataValue"
