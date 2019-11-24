@@ -1,7 +1,7 @@
 import { last, nth } from "../../src/util/Array"
-import { AClass, Class, __check, __nonNull, absurd, as, assert, className, userError } from "../../src/util/Core"
+import { AClass, Class, __check, __nonNull, absurd, as, assert, userError } from "../../src/util/Core"
 import { bool_ } from "../../src/util/Lattice"
-import { Annotated, annotated, getα, setα } from "../../src/Annotated"
+import { __annotations, getα, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { exprClass } from "../../src/DataType"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"
@@ -20,7 +20,7 @@ import Prim = Expr.Prim
 import RecDef = Expr.RecDef
 
 export abstract class Cursor {
-   abstract annotated: Annotated & Value
+   abstract on: Value
    abstract to<T extends DataValue> (C: Class<T>, k: keyof T): Cursor
    abstract at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor
    abstract skipImport (): this
@@ -30,22 +30,24 @@ export abstract class Cursor {
    }
 
    αset (): this {
-      assert(getα(this.annotated) === bool_.top)
+      assert(__annotations.ann.has(this.on))
+      assert(getα(this.on) === bool_.top)
       return this
    }
 
    αclear (): this {
-      assert(getα(this.annotated) === bool_.bot)
+      assert(__annotations.ann.has(this.on))
+      assert(getα(this.on) === bool_.bot)
       return this
    }
 
    setα (): this {
-      setα(bool_.top, this.annotated)
+      setα(bool_.top, this.on)
       return this
    }
 
    clearα (): this {
-      setα(bool_.bot, this.annotated)
+      setα(bool_.bot, this.on)
       return this
    }
 
@@ -74,7 +76,7 @@ export class ExplValueCursor extends Cursor {
       return new ExplValueCursor(child.ancestors.slice(0, child.ancestors.length - 1), last(child.ancestors))
    }
 
-   get annotated (): Annotated & Value {
+   get on (): Value {
       return this.tv.t
    }
 
@@ -186,12 +188,8 @@ export class ExprCursor extends Cursor {
       this.v = v
    }
 
-   get annotated (): Annotated & Value {
-      if (annotated(this.v)) {
-         return this.v
-      } else {
-         return userError(className(this.v) + " is not an annotated value.")
-      }
+   get on (): Value {
+      return this.v
    }
 
    skipImport (): this {

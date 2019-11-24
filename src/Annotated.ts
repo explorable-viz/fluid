@@ -38,8 +38,9 @@ export function negateallα<T extends Persistent> (v: T): T {
    return memo<T>(negateallα_ as MemoFunType<T>, v)
 }	
 
+// Shouldn't it be possible to "flip polarity" without actually doing anything?
 export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
-   if (annotated(v)) {
+   if (__annotations.ann.has(v)) {
       setα(bool_.negate(getα(v)), v)
    }
    v.__children.forEach((v: Persistent): void => {
