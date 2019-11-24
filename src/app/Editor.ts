@@ -1,10 +1,9 @@
-import { ann } from "../util/Lattice"
 import { __nonNull, as } from "../util/Core"
-import { setallα } from "../Annotated"
+import { Direction } from "../Annotated"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
-import { Direction, Eval } from "../Eval"
+import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { Arrowhead } from "../Graphics2"
@@ -86,7 +85,6 @@ export module Editor {
       // Consider availability of ρ_external only; treat ρ and e as unlimited resources.
       fwdSlice (): void {
          newRevision()
-         setallα(ann.top, this.e)
          Eval.eval_fwd(this.e, this.tv)
          this.direction = Direction.Fwd
          this.render()

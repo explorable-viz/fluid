@@ -1,5 +1,4 @@
 import { __nonNull, absurd, assert, className } from "./util/Core"
-import { AnnotatedC } from "./Annotated"
 import { List } from "./BaseTypes"
 import { DataValue, ExplValue, explValue } from "./DataValue"
 import { Eval } from "./Eval"
@@ -13,7 +12,7 @@ export type Closure = Eval.Closure
 export type Expl = Expl.Expl
 
 export namespace Expl {
-   export abstract class Expl extends AnnotatedC(DataValue)<"Expl"> {
+   export abstract class Expl extends DataValue<"Expl"> {
    }
 
    export abstract class NonTerminal extends Expl {

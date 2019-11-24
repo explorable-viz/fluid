@@ -1,8 +1,8 @@
 import { zip, zipWith } from "./util/Array"
 import { Class, __nonNull, absurd, assert, className, userError } from "./util/Core"
 import { eq } from "./util/Ord"
-import { Annotation, ann } from "./util/Lattice"
-import { setjoinα } from "./Annotated"
+import { Annotation, bool_ } from "./util/Lattice"
+import { getα, setjoinα } from "./Annotated"
 import { List, cons, nil } from "./BaseTypes"
 import { DataValue, ExplValue } from "./DataValue"
 import { DataType, ctrToDataType, elimToDataType } from "./DataType"
@@ -159,7 +159,7 @@ export function varElim<K extends Cont> (x: Str, κ: K): (k: Id) => VarElim<K> {
 }
 
 export function apply_fwd (ξ: Match<Expr>): Annotation {
-   return ξ.tv̅.toArray().reduce((α: Annotation, tv: ExplValue): Annotation => ann.meet(α, tv.t.__α), ann.top)
+   return ξ.tv̅.toArray().reduce((α: Annotation, tv: ExplValue): Annotation => bool_.meet(α, getα(tv.t)), bool_.top)
 }
 
 export function apply_bwd (ξ: Match<Expr>, α: Annotation): void {

@@ -1,74 +1,77 @@
-import { Class, __nonNull } from "./util/Core"
-import { Annotation, ann } from "./util/Lattice"
+import { __nonNull, absurd } from "./util/Core"
+import { Annotation, bool_ } from "./util/Lattice"
 import { __deltas } from "./Delta" 
-import { Persistent, Value, ValueTag, _ } from "./Value"
-import { MemoFunType, memo } from "./Versioned"
+import { Value, ValueTag, _ } from "./Value"
 
-// For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
-// https://github.com/Microsoft/TypeScript/issues/21710.
-export function AnnotatedC<T extends Class<Value>> (C: T) {
-   // https://stackoverflow.com/questions/33605775
-   return {
-      [C.name]: class extends C {
-            __α: Annotation = _
-         }
-   }[C.name] // give versioned class same name as C
+export function getα<T extends Value> (v: T): Annotation {
+   return __annotations.get(v)
 }
 
-export interface Annotated {
-   __α: Annotation
-}
-
-export function annotated<T extends Object> (v: T): v is T & Annotated {
-   return v.hasOwnProperty("__α")
-}
-
-export function setα<T extends Annotated & Value> (α: Annotation, v: T): T {
-   if (v.__α !== α) {
-      __deltas.changed(v, { __α: { before: v.__α, after: α } })
+export function setα<T extends Value> (α: Annotation, v: T): T {
+   if (getα(v) !== α) {
+      __deltas.changed(v, { __α: { before: getα(v), after: α } })
    }
-   v.__α = α
+   __annotations.set(v, α)
    return v
 }
 
-// Memoising an imperative function makes any side effects idempotent. Not clear yet how to "partially" 
-// memoise LVar-like functions like joinα, but setall isn't one of those.
-export function setallα<T extends Persistent> (α: Annotation, v: T): T {	
-   return memo<T>(setallα_ as MemoFunType<T>, α, v)
-}	
-
-export function setallα_<Tag extends ValueTag, T extends Value<Tag>> (α: Annotation, v: T): T {
-   if (annotated(v)) {
-      setα(α, v)
-   }
-   v.__children.forEach((v: Persistent): void => {
-      if (v instanceof Value) {
-         setallα(α, v)
-      }
+export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): void {
+   __annotations.ann.forEach((α: Annotation, v: Value): void => {
+      __annotations.ann.set(v, bool_.negate(α))
    })
-   return v
 }
 
-export function negateallα<T extends Persistent> (v: T): T {	
-   return memo<T>(negateallα_ as MemoFunType<T>, v)
-}	
+export function setjoinα<T extends Value> (α: Annotation, v: T): T {
+   return setα(bool_.join(α, getα(v)), v)
+}
 
-export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
-   if (annotated(v)) {
-      setα(ann.negate(v.__α), v)
-   }
-   v.__children.forEach((v: Persistent): void => {
-      if (v instanceof Value) {
-         negateallα(v)
+export function setmeetα<T extends Value> (α: Annotation, v: T): T {
+   return setα(bool_.meet(α, getα(v)), v)
+}
+
+export enum Direction { Fwd, Bwd }
+
+export class Annotations {
+   ann: Map<Value, Annotation> = new Map()
+   direction: Direction = Direction.Fwd
+
+   // We could strengthen by requiring annotations to be set/cleared up front (on expressions, going forward,
+   // and values, going backward) as we did before.
+   get (v: Value): Annotation {
+      const α: Annotation | undefined = this.ann.get(v)
+      if (α !== undefined) {
+         return α
+      } else 
+      if (this.direction === Direction.Fwd) {
+         return bool_.top
+      } else {
+         return bool_.bot
       }
-   })
-   return v
+   }
+   
+   // Going forward, annotation updates must be decreasing; going backward, increasing. This is because during
+   // forward slicing, we propagate non-availability, whereas during backward slicing, we propagate demand.
+   set (v: Value, α: Annotation): void {
+      const current: Annotation | undefined = this.ann.get(v)
+      if (current === undefined) {
+         this.ann.set(v, α)
+      } else
+      if (this.direction === Direction.Fwd && α < current ||
+          this.direction === Direction.Bwd && α > current) {
+         this.ann.set(v, α)
+      } else
+      if (this.direction === Direction.Fwd && α > current ||
+         this.direction === Direction.Bwd && α < current) {
+         absurd(`Incompatible update of annotation from ${current} to ${α}.`, current, α)
+      } else {
+         // idempotent
+      }
+   }
+
+   reset (direction: Direction): void {
+      this.direction = direction
+      this.ann.clear()
+   }
 }
 
-export function setjoinα<T extends Annotated & Value> (α: Annotation, v: T): T {
-   return setα(ann.join(α, v.__α), v)
-}
-
-export function setmeetα<T extends Annotated & Value> (α: Annotation, v: T): T {
-   return setα(ann.meet(α, v.__α), v)
-}
+export const __annotations = new Annotations()
