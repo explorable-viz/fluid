@@ -8,8 +8,17 @@ import { Editor } from "./Editor"
 
 export function initialise(): void {
    Editor.initialise()
-   const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/line-chart")
-   new Editor.Editor(openDatasetAs("renewables", "data"), ρʹ, e)
+   new IDE()
+}
+
+class IDE {
+   constructor () {
+      const ρ_external: Env = openDatasetAs("renewables", "data")
+      const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/line-chart")
+      const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
+      new Editor.Editor(ρ_external, ρ1, e1)
+      new Editor.Editor(ρ_external, ρ2, e2)
+   }
 }
 
 initialise()
