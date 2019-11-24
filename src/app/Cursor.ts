@@ -1,7 +1,7 @@
 import { last, nth } from "../../src/util/Array"
 import { AClass, Class, __check, __nonNull, absurd, as, assert, className, userError } from "../../src/util/Core"
 import { bool_ } from "../../src/util/Lattice"
-import { Annotated, annotated, setα } from "../../src/Annotated"
+import { Annotated, annotated, getα, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { exprClass } from "../../src/DataType"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"
@@ -31,11 +31,13 @@ export abstract class Cursor {
 
    αset (): this {
       assert(this.annotated.__α === bool_.top)
+      assert(getα(this.annotated) === bool_.top)
       return this
    }
 
    αclear (): this {
       assert(this.annotated.__α === bool_.bot)
+      assert(getα(this.annotated) === bool_.bot)
       return this
    }
 
