@@ -84,7 +84,7 @@ export const elimToDataType: Map<string, DataType> = new Map
 export function initDataType<T extends DataValue> (D: AClass<T>, C̅: Class<T>[]) {
    C̅.sort((C, Cʹ): number => C.name.localeCompare(Cʹ.name)) // consistent with Str.leq
    const ctrs: [string, Ctr][] = C̅.map(
-            (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C))]
+            (C: Class<T>): [string, Ctr] => [C.name, new Ctr(C, fields(new C) as string[])]
          ),
          elimC: Class<DataElim> = {
             [D.name]: class extends DataElim {

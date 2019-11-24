@@ -9,7 +9,7 @@ export type Versioned<T> = Versioned_ & T
 // Why do versioned objects need to store their id?
 export interface Versioned_ {
    __id: Id
-   __ẟ: Delta
+   __ẟ: Delta // deltas should be restricted to keys of type
 }
 
 export function versioned<T extends Value> (v: T): v is Versioned<T> {

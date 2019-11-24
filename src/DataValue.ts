@@ -8,7 +8,7 @@ export class DataValue<Tag extends DataValueTag = DataValueTag> extends Value<Ta
       return className(this)
    }
 
-   __child (k: string): Value {
+   __child (k: keyof this): Value {
       return super.__child(k) as Value
    }
 

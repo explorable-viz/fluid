@@ -19,7 +19,7 @@ class IDE implements Editor.Listener {
 
    constructor () {
       this.ρ_external = openDatasetAs("renewables", "data")
-      const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/line-chart")
+      const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
       const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
       this.editors.push(
          new Editor.Editor(this, 700, 600, this.ρ_external, ρ1, e1),

@@ -19,7 +19,7 @@ export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Id" | "Num" | "St
 export class Value<Tag extends ValueTag = ValueTag> {
    readonly __tag!: Tag
 
-   __child (k: string): Persistent {
+   __child (k: keyof this): Persistent {
       return (this as any)[k]
    } 
 
@@ -196,14 +196,14 @@ export function make<T extends Value> (C: Class<T>, ...v̅: Persistent[]): T {
 // Depends heavily on (1) getOwnPropertyNames() returning fields in definition-order; and (2)
 // constructor functions supplying arguments in the same order.
 export function construct<T extends Value> (compare: boolean, tgt: T, v̅: Persistent[]): ValueDelta | null {
-   const f̅: string[] = fields(tgt),
+   const f̅: (keyof T)[] = fields(tgt),
          ẟ: ValueDelta | null = compare ? {} : null
    assert(f̅.length === v̅.length)
    let n: number = 0
-   f̅.forEach((prop: string): void => {
+   f̅.forEach((prop: keyof T): void => {
       const src: Persistent = v̅[n++]
       if (compare && tgt.__child(prop) !== src) {
-         ẟ![prop] = { before: tgt.__child(prop), after: src }
+         ẟ![prop as string] = { before: tgt.__child(prop), after: src }
       }
       (tgt as any)[prop] = src
    })
@@ -215,8 +215,8 @@ export function isField (prop: string): boolean {
    return !prop.startsWith("__")
 }
 
-export function fields (v: Object): string[] {
-   return Object.getOwnPropertyNames(v).filter(isField)
+export function fields<T> (v: T): (keyof T)[] {
+   return Object.getOwnPropertyNames(v).filter(isField) as (keyof T)[]
 }
 
 export function metadataFields (v: Value): string[] {

@@ -4,9 +4,10 @@ import "tippy.js/dist/tippy.css"
 import "tippy.js/themes/light-border.css"
 import { __log, __nonNull, as } from "../util/Core"
 import { bool_ } from "../util/Lattice"
-import { setα } from "../Annotation"
+import { getα, setα } from "../Annotation"
+import { Expl } from "../Expl"
 import { Rect } from "../Graphics2"
-import { Num } from "../Value"
+import { Num, fields } from "../Value"
 import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { round } from "./Renderer"
@@ -27,6 +28,10 @@ export class RectInteractor {
       this.tooltip = createTooltip(r)
       this.tg = tg
       this.r = r
+      const propsFocus: (keyof Rect)[] = fields(tg.tv.v).filter((prop: keyof Rect) => {
+         return !getα(Expl.explChild(tg.tv.t, as(tg.tv.v, Rect), prop))
+      })
+      console.log(propsFocus)
    }
 
    onMousemove (e: MouseEvent): void {

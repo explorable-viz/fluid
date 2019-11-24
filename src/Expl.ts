@@ -166,7 +166,7 @@ export namespace Expl {
    export function explChild<T extends DataValue> (t: Expl, v: T, k: keyof T): ExplValue {
       if (t instanceof Terminal) {
          assert(t instanceof DataExpl)
-         return explValue(t.__child(k as string) as Expl, v.__child(k as string))
+         return explValue(t.__child(k as keyof Expl) as Expl, v.__child(k))
       } else
       if (t instanceof NonTerminal) {
          return explChild(t.t, v, k)

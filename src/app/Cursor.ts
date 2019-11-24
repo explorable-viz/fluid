@@ -276,7 +276,7 @@ export class ExprCursor extends Cursor {
    splice<T extends Value> (C: Class<T>, props: (keyof T)[], makeNode: (v̅: Persistent[]) => Persistent[]): ExprCursor {
       const v: T = as<Persistent, T>(this.v, C), 
             v̅: Persistent[] = v.__children,
-            n̅: number[] = props.map(prop => __check(fields(v).indexOf(prop as string), n => n != -1)),
+            n̅: number[] = props.map(prop => __check(fields(v).indexOf(prop), n => n != -1)),
             v̅ʹ: Persistent[] = makeNode(n̅.map((n: number): Persistent => v̅[n]))
       n̅.forEach((n: number, m: number): void => {
          v̅[n] = v̅ʹ[m]
