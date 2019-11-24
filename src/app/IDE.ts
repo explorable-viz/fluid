@@ -8,9 +8,8 @@ import { Editor } from "./Editor"
 
 export function initialise(): void {
    Editor.initialise()
-   const ρ: Env = openDatasetAs("renewables", "data")
    const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/line-chart")
-   new Editor.Editor(e, ρ.concat(ρʹ))
+   new Editor.Editor(openDatasetAs("renewables", "data"), ρʹ, e)
 }
 
 initialise()

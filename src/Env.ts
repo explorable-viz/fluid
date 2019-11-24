@@ -2,8 +2,6 @@ import { absurd } from "./util/Core"
 import { DataValue, ExplValue } from "./DataValue"
 import { Str, _, make } from "./Value"
 
-// Idiom is to permit instance methods on reflected datatypes, but not have them use polymorphism.
-
 // Environments are snoc lists; the values are "explained" because usage information is recorded on traces.
 export abstract class Env extends DataValue<"Env"> {
    get (k: Str): ExplValue | undefined {

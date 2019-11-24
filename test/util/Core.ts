@@ -3,7 +3,7 @@ import { ann } from "../../src/util/Lattice"
 import { setallα } from "../../src/Annotated"
 import { ExplValue } from "../../src/DataValue"
 import { __deltas } from "../../src/Delta"
-import { Env } from "../../src/Env"
+import { Env, emptyEnv } from "../../src/Env"
 import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
 import { Elim } from "../../src/Match"
@@ -37,7 +37,7 @@ export class FwdSlice {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(e, ρ).render()
+         new Editor.Editor(emptyEnv(), ρ, e).render() // yuk, this copies ρ
       }
    }
 
@@ -62,7 +62,7 @@ export class BwdSlice {
          this.expect(new ExprCursor(e))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(e, ρ).render()
+         new Editor.Editor(emptyEnv(), ρ, e).render()
       }
    }
 
@@ -76,7 +76,7 @@ export class BwdSlice {
 export class Edit {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(e, ρ).render()
+         new Editor.Editor(emptyEnv(), ρ, e).render()
       }
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
@@ -86,7 +86,7 @@ export class Edit {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(e, ρ).render()
+         new Editor.Editor(emptyEnv(), ρ, e).render()
       }
    }
 

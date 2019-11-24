@@ -1,8 +1,10 @@
+import { ann } from "../util/Lattice"
 import { __nonNull, as } from "../util/Core"
+import { setallα } from "../Annotated"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
-import { Eval } from "../Eval"
+import { Direction, Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
 import { Arrowhead } from "../Graphics2"
@@ -23,35 +25,27 @@ export module Editor {
       e: Expr
       tv: ExplValue
       here!: ExplValueCursor
+      direction!: Direction
    
-      constructor (e: Expr, ρ: Env) {
+      constructor (ρ_external: Env, ρ: Env, e: Expr) {
          this.root = svgRootElement(1400, 1200)
          markerEnsureDefined(this.root, Arrowhead, "blue")
          document.body.appendChild(this.root)
-         this.ρ = ρ
-         this.e = e,
+         this.ρ = ρ_external.concat(ρ)
+         this.e = e
          this.tv = Eval.eval_(ρ, this.e)
          this.here = ExplValueCursor.descendant(null, this.tv)
          newRevision()
          Eval.eval_(ρ, this.e) // reestablish reachable nodes
          // Wait for fonts to load before rendering, otherwise metrics will be wrong.
-         window.onload = (ev: Event): void => {
-            this.render()
-         }
+         window.onload = (ev: Event) => this.onload(ev)
       }
-   
-      render (): void {
-         // https://stackoverflow.com/questions/48310643
-         const children: ChildNode[] = Array.from(this.root.childNodes)
-         children.forEach((child: ChildNode): void => {
-            if (!(child instanceof SVGDefsElement)) {
-               this.root.removeChild(child)
-            }
-         })
-         View.render(this.root, this.tv, this)
+
+      onload (ev: Event): void {
+         this.render()
          const this_: this = this
          // https://stackoverflow.com/questions/5597060
-         document.onkeydown = function (ev: KeyboardEvent) {
+            document.onkeydown = function (ev: KeyboardEvent) {
             if (ev.shiftKey) {
                if (ev.keyCode == 37) { // left
                   this_.here = this_.here.prevSibling()
@@ -87,6 +81,26 @@ export module Editor {
                }
             }
          }
+      }
+
+      // Consider availability of ρ_external only; treat ρ and e as unlimited resources.
+      fwdSlice (): void {
+         newRevision()
+         setallα(ann.top, this.e)
+         Eval.eval_fwd(this.e, this.tv)
+         this.direction = Direction.Fwd
+         this.render()
+      }
+  
+      render (): void {
+         // https://stackoverflow.com/questions/48310643
+         const children: ChildNode[] = Array.from(this.root.childNodes)
+         children.forEach((child: ChildNode): void => {
+            if (!(child instanceof SVGDefsElement)) {
+               this.root.removeChild(child)
+            }
+         })
+         View.render(this.root, this.tv, this)
       }
    
       onEdit (): void {
