@@ -37,5 +37,5 @@ export class BoolLattice extends LatticeImpl<boolean> {
    }
 }
 
-export const ann: BooleanLattice<Annotation> = new BoolLattice()
+export const bool_: BooleanLattice<Annotation> = new BoolLattice()
 export type Annotation = boolean // for now

@@ -1,6 +1,6 @@
 import { last, nth } from "../../src/util/Array"
 import { AClass, Class, __check, __nonNull, absurd, as, assert, className, userError } from "../../src/util/Core"
-import { ann } from "../../src/util/Lattice"
+import { bool_ } from "../../src/util/Lattice"
 import { Annotated, annotated, setα } from "../../src/Annotated"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { exprClass } from "../../src/DataType"
@@ -30,22 +30,22 @@ export abstract class Cursor {
    }
 
    αset (): this {
-      assert(this.annotated.__α === ann.top)
+      assert(this.annotated.__α === bool_.top)
       return this
    }
 
    αclear (): this {
-      assert(this.annotated.__α === ann.bot)
+      assert(this.annotated.__α === bool_.bot)
       return this
    }
 
    setα (): this {
-      setα(ann.top, this.annotated)
+      setα(bool_.top, this.annotated)
       return this
    }
 
    clearα (): this {
-      setα(ann.bot, this.annotated)
+      setα(bool_.bot, this.annotated)
       return this
    }
 

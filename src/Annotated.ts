@@ -1,5 +1,5 @@
-import { Class, __nonNull } from "./util/Core"
-import { Annotation, ann } from "./util/Lattice"
+import { Class, __nonNull, absurd } from "./util/Core"
+import { Annotation, bool_ } from "./util/Lattice"
 import { __deltas } from "./Delta" 
 import { Persistent, Value, ValueTag, _ } from "./Value"
 import { MemoFunType, memo } from "./Versioned"
@@ -25,6 +25,7 @@ export function annotated<T extends Object> (v: T): v is T & Annotated {
 
 export function setα<T extends Annotated & Value> (α: Annotation, v: T): T {
    if (v.__α !== α) {
+      __annotations.set(v, α)
       __deltas.changed(v, { __α: { before: v.__α, after: α } })
    }
    v.__α = α
@@ -55,7 +56,7 @@ export function negateallα<T extends Persistent> (v: T): T {
 
 export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
    if (annotated(v)) {
-      setα(ann.negate(v.__α), v)
+      setα(bool_.negate(v.__α), v)
    }
    v.__children.forEach((v: Persistent): void => {
       if (v instanceof Value) {
@@ -66,9 +67,40 @@ export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T):
 }
 
 export function setjoinα<T extends Annotated & Value> (α: Annotation, v: T): T {
-   return setα(ann.join(α, v.__α), v)
+   return setα(bool_.join(α, v.__α), v)
 }
 
 export function setmeetα<T extends Annotated & Value> (α: Annotation, v: T): T {
-   return setα(ann.meet(α, v.__α), v)
+   return setα(bool_.meet(α, v.__α), v)
 }
+
+export enum Direction { Fwd, Bwd }
+
+export class Annotations {
+   ann: Map<Value, Annotation> = new Map()
+   direction: Direction = Direction.Fwd
+
+   // Going forward, assume everything is available; annotation updates must be decreasing. 
+   // Going backward, assume everything is not needed; annotation updates must be increasing.
+   set (v: Value, α: Annotation): void {
+      const current: Annotation | undefined = this.ann.get(v)
+      if (current === undefined) {
+         this.ann.set(v, α)
+      } else
+      if (this.direction === Direction.Fwd && α < current ||
+          this.direction === Direction.Bwd && α > current) {
+         this.ann.set(v, α)
+      } else
+      if (this.direction === Direction.Fwd && α > current ||
+         this.direction === Direction.Bwd && α < current) {
+         absurd(`Incompatible update of annotation from ${current} to ${α}.`, current, α)
+      } 
+   }
+
+   reset (direction: Direction): void {
+      this.direction = direction
+      this.ann.clear()
+   }
+}
+
+export const __annotations = new Annotations()

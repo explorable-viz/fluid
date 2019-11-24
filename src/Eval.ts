@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
 import { Class, __nonNull, absurd, as, assert, className, classOf, userError } from "./util/Core"
-import { ann } from "./util/Lattice"
-import { AnnotatedC, setjoinα, setmeetα, setα } from "./Annotated"
+import { bool_ } from "./util/Lattice"
+import { AnnotatedC, Direction, setjoinα, setmeetα, setα } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, explClass, initDataType, types, valueClass } from "./DataType"
 import { DataValue, ExplValue, explValue } from "./DataValue"
@@ -14,7 +14,6 @@ import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId } from "./Value"
 import { at, num, str } from "./Versioned"
 
-export enum Direction { Fwd, Bwd }
 type Def = Expr.Def
 type RecDef = Expr.RecDef
 
@@ -238,7 +237,7 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
       setα(e.__α, t)
    } else
    if (t instanceof Expl.Var) {
-      setα(ann.meet(e.__α, t.t.__α), t)
+      setα(bool_.meet(e.__α, t.t.__α), t)
    } else
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
@@ -255,37 +254,37 @@ export function eval_fwd (e: Expr, {t, v}: ExplValue): void {
       eval_fwd(eʹ.e, t.tu)
       recDefs_(Direction.Fwd, t.δ)
       eval_fwd(t.ξ.κ, explValue(t.t, v))
-      setα(ann.meet(t.tf.t.__α, apply_fwd(t.ξ), e.__α, t.t.__α), t)
+      setα(bool_.meet(t.tf.t.__α, apply_fwd(t.ξ), e.__α, t.t.__α), t)
    } else
    if (t instanceof Expl.UnaryApp) {
       const eʹ: Expr.App = as(e, Expr.App)
       eval_fwd(eʹ.f, t.tf)
       eval_fwd(eʹ.e, t.tv)
-      setα(ann.meet(t.tf.t.__α, t.tv.t.__α, e.__α), t)
+      setα(bool_.meet(t.tf.t.__α, t.tv.t.__α, e.__α), t)
    } else
    if (t instanceof Expl.BinaryApp) {
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_fwd(eʹ.e1, t.tv1)
       eval_fwd(eʹ.e2, t.tv2)
-      setα(ann.meet(t.tv1.t.__α, t.tv2.t.__α, e.__α), t)
+      setα(bool_.meet(t.tv1.t.__α, t.tv2.t.__α, e.__α), t)
    } else
    if (t instanceof Expl.Defs) {
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       defs_fwd(eʹ.def̅, t.def̅)
       eval_fwd(eʹ.e, explValue(t.t, v))
-      setα(ann.meet(e.__α, t.t.__α), t)
+      setα(bool_.meet(e.__α, t.t.__α), t)
    } else
    if (t instanceof Expl.MatchAs) {
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(t.ξ.κ, explValue(t.t, v))
-      setα(ann.meet(apply_fwd(t.ξ), e.__α, t.t.__α), t)
+      setα(bool_.meet(apply_fwd(t.ξ), e.__α, t.t.__α), t)
    } else
    if (t instanceof Expl.Typematch) {
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_fwd(eʹ.e, t.tu)
       eval_fwd(get(eʹ.cases, t.d)!, explValue(t.t, v))
-      setα(ann.meet(e.__α, t.t.__α), t)
+      setα(bool_.meet(e.__α, t.t.__α), t)
    } else {
       absurd()
    }
