@@ -27,10 +27,8 @@ import Cont = Expr.Cont
 
 export module View {
    export let dimensions: (tg: ExplValue<GraphicsElement>) => [number, number]
-   let __coordinator: Editor.Coordinator | null
 
-   export function initialise (coordinator: Editor.Coordinator): void {
-      __coordinator = coordinator
+   export function initialise (): void {
       Module.initialise()
 
       // Shenanigans to call an internal function. Will extract this into a (reverse) FFI.
@@ -46,8 +44,8 @@ export module View {
       }
    }
 
-   // Prefer globals to threading parameters everywhere :-o
-   let __editor: Editor.Editor | null = null
+   // Prefer globals to threading parameters everywhere.
+   let __currentEditor: Editor.Editor | null = null
 
    type Link = {
       from: View, 
@@ -57,15 +55,17 @@ export module View {
    const __links: Set<Link> = new Set()
    const __svgs: Map<View, SVGSVGElement> = new Map() // memoised render within a single update 
 
-   export function render (root: SVGSVGElement, tv: ExplValue, editor: Editor.Editor): void {
+   export function render (editor: Editor.Editor): void {
       __svgs.clear()
       __links.clear()
-      __editor = editor
-      const g: SVGElement = view(tv, true, false).render()
-      root.appendChild(g) // need to render the main view so links can make use of getBoundingClientRect
+      assert(__currentEditor === null)
+      __currentEditor = editor
+      const g: SVGElement = view(editor.tv, true, false).render()
+      editor.rootPane.appendChild(g) // need to render the main view so links can make use of getBoundingClientRect
       renderLinks(__links).forEach((link: SVGElement): void => {
-         root.appendChild(link)
+         editor.rootPane.appendChild(link)
       })
+      __currentEditor = null
    }
 
    const views: Map<Value, View> = new Map() // persists across edits
@@ -236,7 +236,7 @@ export module View {
          } else {
             g = vert(expls(ts), horizSpace(text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render()))
          }
-         if (this.tv === __editor!.here.tv) {
+         if (this.tv === __currentEditor!.here.tv) {
             return addBorder_focus(!this.t_visible && ts.length > 0  ? edge_left(g) : g)
          } else {
             return g
@@ -321,7 +321,7 @@ export module View {
             g.addEventListener("click", (ev: MouseEvent): void => {
                ev.stopPropagation()
                this.bodyVisible = true
-               __editor!.onViewChange()
+               __currentEditor!.onViewChange()
             })
             return g
          }
@@ -357,7 +357,7 @@ export module View {
                const dim = { width: 480, height: 480 }
                let g1: SVGGElement
                [g, g1] = svgElement_inverted(dim.width, dim.height)
-               new GraphicsRenderer(new Interactor(__coordinator!), g, g1).render(tg, __nonNull(dimensions)(tg))
+               new GraphicsRenderer(new Interactor(__currentEditor!), g, g1).render(tg, __nonNull(dimensions)(tg))
                __dimensions.set(g, dim)
             } else
             if (this.tv.v instanceof Pair) {
@@ -567,7 +567,7 @@ export module View {
                   return [at(exprClass(Cons), eʹ, e)(ν())]
                })
             }
-            __editor!.onEdit()
+            __currentEditor!.onEdit()
          }
       })
       return g
@@ -731,7 +731,7 @@ export module View {
             newRevision()
             new ExprCursor(src).setNum(ev.metaKey ? src.val - 1 : src.val + 1)
             ev.stopPropagation()
-            __editor!.onEdit()
+            __currentEditor!.onEdit()
          })
       }
       return g
@@ -760,7 +760,7 @@ export module View {
                   return [e2, e1]
                })
             }
-            __editor!.onEdit()
+            __currentEditor!.onEdit()
          }
       })
       return g

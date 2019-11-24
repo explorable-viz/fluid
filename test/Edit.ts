@@ -12,10 +12,9 @@ import { ν, at, num, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "../src/app/Cursor"
 import { Editor } from "../src/app/Editor"
 import { Edit } from "./util/Core"
-import { TestCoordinator } from "./util/TestCoordinator"
 
 before((done: MochaDone) => {
-   Editor.initialise(new TestCoordinator())
+   Editor.initialise()
    done()
 })
 

@@ -14,13 +14,8 @@ import { View } from "./View"
 import "./styles.css"
 
 export module Editor {
-   export interface Coordinator {
-      resetForBwd (): void
-      bwdSlice (): void
-   }
-
-   export function initialise (coordinator: Coordinator): void {
-      View.initialise(coordinator)
+   export function initialise (): void {
+      View.initialise()
    }
 
    export class Editor {
@@ -85,6 +80,12 @@ export module Editor {
          }
       }
 
+      resetForBwd (): void {
+      }
+
+      bwdSlice (): void {
+      }
+
       // Consider availability of ρ_external only; treat ρ and e as unlimited resources.
       fwdSlice (): void {
          Eval.eval_fwd(this.e, this.tv)
@@ -100,7 +101,7 @@ export module Editor {
                this.rootPane.removeChild(child)
             }
          })
-         View.render(this.rootPane, this.tv, this)
+         View.render(this)
       }
    
       onEdit (): void {

@@ -1,5 +1,6 @@
 import "../BaseTypes"
 import "../Graphics2"
+import { __annotations } from "../Annotated"
 import { Env } from "../Env"
 import { Expr } from "../Expr"
 import { openDatasetAs, openWithImports } from "../Module"
@@ -7,10 +8,11 @@ import "../app/GraphicsRenderer2"
 import { Editor } from "./Editor"
 
 export function initialise (): void {
-   Editor.initialise(new IDE())
+   new IDE()
+   Editor.initialise()
 }
 
-class IDE implements Editor.Coordinator {
+class IDE {
    editors: Editor.Editor[] = []
 
    constructor () {
@@ -23,12 +25,6 @@ class IDE implements Editor.Coordinator {
       )
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event) => this.editors.forEach(editor => editor.onload(ev))
-   }
-
-   resetForBwd (): void {
-   }
-
-   bwdSlice (): void {
    }
 }
 

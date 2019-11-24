@@ -12,12 +12,12 @@ import { Editor } from "./Editor"
 import { round } from "./Renderer"
 
 export class Interactor {
-   coordinator: Editor.Coordinator
+   editor: Editor.Editor
    tooltip: Instance | null = null // just have one for now
    tooltips: Map<SVGElement, Instance> = new Map()
 
-   constructor (coordinator: Editor.Coordinator) {
-      this.coordinator = __nonNull(coordinator)
+   constructor (editor: Editor.Editor) {
+      this.editor = __nonNull(editor)
    }
 
    initialiseElement (element: SVGElement): void {
@@ -35,9 +35,9 @@ export class Interactor {
       const tooltip: Instance = __nonNull(this.tooltips.get(r))
       tooltip.setContent(content)
 
-      this.coordinator.resetForBwd()
+      this.editor.resetForBwd()
       setα(bool_.top, tg.to(Rect, prop).tv.t)
-      this.coordinator.bwdSlice()
+      this.editor.bwdSlice()
 }
 
    onRectMouseOut (): void {

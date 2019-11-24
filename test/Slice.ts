@@ -10,10 +10,9 @@ import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "../src/app/Cursor"
 import { Editor } from "../src/app/Editor"
 import { BwdSlice, FwdSlice, funDef } from "./util/Core"
-import { TestCoordinator } from "./util/TestCoordinator"
 
 before((done: MochaDone) => {
-   Editor.initialise(new TestCoordinator())
+   Editor.initialise()
    done()
 })
 
