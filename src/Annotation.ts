@@ -14,9 +14,7 @@ export function setα<T extends Value> (α: Annotation, v: T): T {
 }
 
 export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): void {
-   __annotations.ann.forEach((α: Annotation, v: Value): void => {
-      __annotations.ann.set(v, bool_.negate(α))
-   })
+   __annotations.direction = negate(__annotations.direction)
 }
 
 export function setjoinα<T extends Value> (α: Annotation, v: T): T {
@@ -29,34 +27,30 @@ export function setmeetα<T extends Value> (α: Annotation, v: T): T {
 
 export enum Direction { Fwd, Bwd }
 
+function negate (direction: Direction): Direction {
+   return direction === Direction.Fwd ? Direction.Bwd : Direction.Fwd
+}
+
 export class Annotations {
-   ann: Map<Value, Annotation> = new Map()
+   ann: Set<Value> = new Set() // unavailable nodes (fwd) or needed nodes (bwd)
    direction: Direction = Direction.Fwd
 
-   // We could strengthen by requiring annotations to be set/cleared up front (on expressions, going forward,
-   // and values, going backward) as we did before.
+   // Whether v is needed (going backward) or available (going forward).
    get (v: Value): Annotation {
-      const α: Annotation | undefined = this.ann.get(v)
-      if (α !== undefined) {
-         return α
-      } else 
       if (this.direction === Direction.Fwd) {
-         return bool_.top
+         return bool_.negate(this.ann.has(v))
       } else {
-         return bool_.bot
+         return this.ann.has(v)
       }
    }
    
-   // Going forward, annotation updates must be decreasing; going backward, increasing. This is because during
-   // forward slicing, we propagate non-availability, whereas during backward slicing, we propagate demand.
+   // Going forward, annotation updates must be decreasing; going backward, increasing. This is because 
+   // forward slicing propagates non-availability, whereas backward slicing propagates demand.
    set (v: Value, α: Annotation): void {
-      const current: Annotation | undefined = this.ann.get(v)
-      if (current === undefined) {
-         this.ann.set(v, α)
-      } else
+      const current: Annotation = this.get(v)
       if (this.direction === Direction.Fwd && α < current ||
           this.direction === Direction.Bwd && α > current) {
-         this.ann.set(v, α)
+         this.ann.add(v)
       } else
       if (this.direction === Direction.Fwd && α > current ||
          this.direction === Direction.Bwd && α < current) {

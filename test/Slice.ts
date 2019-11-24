@@ -1,6 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { __nonNull } from "../src/util/Core"
+import { __annotations } from "../src/Annotation"
 import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
@@ -81,8 +82,10 @@ describe("slice", () => {
                   .to(Expr.MatchAs, "σ")
                   .toCase(True)
                   .constr_to(Cons, "head").clearα()
+                  console.log(__annotations.ann)
             }
             expect (here: ExplValueCursor): void {
+               console.log(__annotations.ann)
                here.αset()
                here.to(Cons, "head").αclear()
                here.to(Cons, "tail").to(Cons, "tail").assert(List, v => Nil.is(v))
