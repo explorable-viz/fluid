@@ -296,75 +296,75 @@ export function eval_bwd (e: Expr, {t, v}: ExplValue): void {
       setjoinα(getα(t), e)
    } else
    if (t instanceof Expl.Fun && v instanceof Closure) {
-      setjoinα(t.__α, e)
+      setjoinα(getα(t), e)
    } else
    if (t instanceof Expl.DataExpl) {
       if (v instanceof DataValue) {
          const eʹ: Expr.DataExpr = as(e, Expr.DataExpr)
          // reverse order but shouldn't matter in absence of side-effects:
          zip(Expl.explChildren(t, v), eʹ.__children).map(([tv, e]) => eval_bwd(e, tv))
-         setjoinα(t.__α, e)
+         setjoinα(getα(t), e)
       } else {
          absurd()
       }
    } else
    if (t instanceof Expl.Quote) {
-      setjoinα(t.__α, e)
+      setjoinα(getα(t), e)
    } else
    if (t instanceof Expl.Var) {
-      setjoinα(t.__α, t.t)
-      setjoinα(t.__α, e)
+      setjoinα(getα(t), t.t)
+      setjoinα(getα(t), e)
    } else
    if (t instanceof Expl.App) {
       assert(t.tf.v instanceof Closure)
-      setjoinα(t.__α, t.t)
+      setjoinα(getα(t), t.t)
       eval_bwd(t.ξ.κ, explValue(t.t, v))
-      apply_bwd(t.ξ, t.__α)
+      apply_bwd(t.ξ, getα(t))
       recDefs_(Direction.Bwd, t.δ)
-      setjoinα(t.__α, t.tf.t)
+      setjoinα(getα(t), t.tf.t)
       const eʹ: Expr.App = as(e, Expr.App)
       eval_bwd(eʹ.f, t.tf)
       eval_bwd(eʹ.e, t.tu)
-      setjoinα(t.__α, e)
+      setjoinα(getα(t), e)
    } else
    if (t instanceof Expl.UnaryApp) {
-      setjoinα(t.__α, t.tf.t)
-      setjoinα(t.__α, t.tv.t)
+      setjoinα(getα(t), t.tf.t)
+      setjoinα(getα(t), t.tv.t)
       const eʹ: Expr.App = as(e, Expr.App)
       eval_bwd(eʹ.f, t.tf)
       eval_bwd(eʹ.e, t.tv)
-      setjoinα(t.__α, e)
+      setjoinα(getα(t), e)
    } else
    if (t instanceof Expl.BinaryApp) {
       assert(binaryOps.has(t.opName.val))
-      setjoinα(t.__α, t.tv1.t)
-      setjoinα(t.__α, t.tv2.t)
+      setjoinα(getα(t), t.tv1.t)
+      setjoinα(getα(t), t.tv2.t)
       const eʹ: Expr.BinaryApp = as(e, Expr.BinaryApp)
       eval_bwd(eʹ.e1, t.tv1)
       eval_bwd(eʹ.e2, t.tv2)
-      setjoinα(t.__α, e)
+      setjoinα(getα(t), e)
    } else
    if (t instanceof Expl.Defs) {
-      setjoinα(t.__α, t.t)
+      setjoinα(getα(t), t.t)
       const eʹ: Expr.Defs = as(e, Expr.Defs)
       eval_bwd(eʹ.e, explValue(t.t, v))
       defs_bwd(eʹ.def̅, t.def̅)
-      setjoinα(t.__α, e)
+      setjoinα(getα(t), e)
    } else
    if (t instanceof Expl.MatchAs) {
-      setjoinα(t.__α, t.t)
+      setjoinα(getα(t), t.t)
       const eʹ: Expr.MatchAs = as(e, Expr.MatchAs)
       eval_bwd(t.ξ.κ, explValue(t.t, v))
-      apply_bwd(t.ξ, t.__α)
+      apply_bwd(t.ξ, getα(t))
       eval_bwd(eʹ.e, t.tu)
-      setjoinα(t.__α, e)
+      setjoinα(getα(t), e)
    } else
    if (t instanceof Expl.Typematch) {
-      setjoinα(t.__α, t.t)
+      setjoinα(getα(t), t.t)
       const eʹ: Expr.Typematch = as(e, Expr.Typematch)
       eval_bwd(get(eʹ.cases, t.d)!, explValue(t.t, v))
       eval_bwd(eʹ.e, t.tu)
-      setjoinα(t.__α, e)
+      setjoinα(getα(t), e)
    } else {
       absurd()
    }
