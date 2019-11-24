@@ -32,7 +32,7 @@ export class FwdSlice {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(emptyEnv(), ρ, e).render() // yuk, this copies ρ
+         new Editor.Editor(400, 400, emptyEnv(), ρ, e).render() // yuk, this copies ρ
       }
    }
 
@@ -53,7 +53,7 @@ export class BwdSlice {
          this.expect(new ExprCursor(e))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(emptyEnv(), ρ, e).render()
+         new Editor.Editor(400, 400, emptyEnv(), ρ, e).render()
       }
    }
 
@@ -67,7 +67,7 @@ export class BwdSlice {
 export class Edit {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(emptyEnv(), ρ, e).render()
+         new Editor.Editor(400, 400, emptyEnv(), ρ, e).render()
       }
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
@@ -77,7 +77,7 @@ export class Edit {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(emptyEnv(), ρ, e).render()
+         new Editor.Editor(400, 400, emptyEnv(), ρ, e).render()
       }
    }
 

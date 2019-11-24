@@ -59,7 +59,7 @@ export module View {
       __svgs.clear()
       __links.clear()
       __editor = editor
-      const g: SVGElement = view(tv, true, true).render()
+      const g: SVGElement = view(tv, true, false).render()
       root.appendChild(g) // need to render the main view so links can make use of getBoundingClientRect
       renderLinks(__links).forEach((link: SVGElement): void => {
          root.appendChild(link)
