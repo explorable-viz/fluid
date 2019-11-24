@@ -43,10 +43,11 @@ class IDE implements Editor.Listener {
       __annotations.direction = Direction.Fwd
       this.editors.filter(editor_ => editor_ !== editor).forEach((editor_: Editor.Editor): void => {
          Eval.eval_fwd(editor_.e, editor_.tv)
+         __annotations.restrictTo(editor_.tv.v)
+         console.log(__annotations.ann)
          editor_.direction = Direction.Fwd
          editor_.render() // TODO: just redo selection rendering
       })
-      console.log(__annotations.ann)
    }
 }
 
