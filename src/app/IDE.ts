@@ -8,8 +8,8 @@ import "../app/GraphicsRenderer2"
 import { Editor } from "./Editor"
 
 export function initialise (): void {
-   new IDE()
    Editor.initialise()
+   new IDE()
 }
 
 class IDE {
