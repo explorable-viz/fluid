@@ -1,6 +1,5 @@
 import { __nonNull } from "../util/Core"
-import { bool_ } from "../util/Lattice"
-import { Direction, setallα, negateallα } from "../Annotated"
+import { Direction, negateallα } from "../Annotated"
 import { ExplValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
@@ -36,7 +35,7 @@ export class View implements Slicer {
    // Consider (un)availability of dataset only; treat e as an unlimited resource.
    fwdSlice (): void {
       newRevision()
-      setallα(bool_.top, this.e)
+      // setallα(bool_.top, this.e)
       Eval.eval_fwd(this.e, this.tv)
       this.direction = Direction.Fwd
       this.draw()
@@ -45,7 +44,7 @@ export class View implements Slicer {
    // Clear annotations on program and forward slice, to erase all annotations prior to backward slicing.
    resetForBwd (): void {
       newRevision()
-      setallα(bool_.bot, this.e)
+      // setallα(bool_.bot, this.e)
       Eval.eval_fwd(this.e, this.tv)
       newRevision()
    }
@@ -80,7 +79,7 @@ class App {
    constructor () {
       const ρ: Env = openDatasetAs("renewables", "data")
       newRevision()
-      setallα(bool_.top, ρ)
+      // setallα(bool_.top, ρ)
       this.graphicsView = new View(
          "graphicsView", 
          ρ,
@@ -103,7 +102,7 @@ class App {
 
          resetForBwd (): void {
             newRevision()
-            setallα(bool_.bot, ρ)
+            // setallα(bool_.bot, ρ)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
          }
@@ -118,7 +117,7 @@ class App {
 
          resetForBwd (): void {
             newRevision()
-            setallα(bool_.bot, ρ)
+            // setallα(bool_.bot, ρ)
             dataView.resetForBwd()
             graphicsView.resetForBwd()
          }

@@ -1,6 +1,5 @@
 import { __nonNull, as } from "../../src/util/Core"
-import { bool_ } from "../../src/util/Lattice"
-import { Direction, __annotations, setallα } from "../../src/Annotated"
+import { Direction, __annotations } from "../../src/Annotated"
 import { ExplValue } from "../../src/DataValue"
 import { __deltas } from "../../src/Delta"
 import { Env, emptyEnv } from "../../src/Env"
@@ -28,8 +27,6 @@ export class FwdSlice {
       if (flags.get(Flags.FwdSlice)) {
          newRevision()
          __annotations.reset(Direction.Fwd)
-         setallα(bool_.top, e)
-         setallα(bool_.top, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e)
          Eval.eval_fwd(e, tv) // slice with full availability first to compute delta
          newRevision()
@@ -54,8 +51,6 @@ export class BwdSlice {
       if (flags.get(Flags.BwdSlice)) {
          newRevision()
          __annotations.reset(Direction.Bwd)
-         setallα(bool_.bot, e)
-         setallα(bool_.bot, ρ)
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
          Eval.eval_fwd(e, tv) // clear annotations on all values
          newRevision()

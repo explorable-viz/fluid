@@ -34,16 +34,6 @@ export function setα<T extends Annotated & Value> (α: Annotation, v: T): T {
    return v
 }
 
-// Memoising an imperative function makes any side effects idempotent. Not clear yet how to "partially" 
-// memoise LVar-like functions like joinα, but setall isn't one of those.
-export function setallα<T extends Persistent> (α: Annotation, v: T): T {	
-   return memo<T>(setallα_ as MemoFunType<T>, α, v)
-}	
-
-export function setallα_<Tag extends ValueTag, T extends Value<Tag>> (α: Annotation, v: T): T {
-   return v
-}
-
 export function negateallα<T extends Persistent> (v: T): T {	
    return memo<T>(negateallα_ as MemoFunType<T>, v)
 }	

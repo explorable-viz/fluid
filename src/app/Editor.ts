@@ -1,6 +1,5 @@
-import { bool_ } from "../util/Lattice"
 import { __nonNull, as } from "../util/Core"
-import { Direction, setallα } from "../Annotated"
+import { Direction } from "../Annotated"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
@@ -86,7 +85,6 @@ export module Editor {
       // Consider availability of ρ_external only; treat ρ and e as unlimited resources.
       fwdSlice (): void {
          newRevision()
-         setallα(bool_.top, this.e)
          Eval.eval_fwd(this.e, this.tv)
          this.direction = Direction.Fwd
          this.render()
