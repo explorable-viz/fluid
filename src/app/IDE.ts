@@ -36,15 +36,12 @@ class IDE implements Editor.Listener {
    bwdSlice (editor: Editor.Editor): void {
       editor.direction = Direction.Bwd
       Eval.eval_bwd(editor.e, editor.tv)
-      console.log(__annotations.ann)
       // consider availability of ρ_external only; treat ρ and e as unlimited resources
       __annotations.restrictTo(this.ρ_external)
-      console.log(__annotations.ann)
       __annotations.direction = Direction.Fwd
       this.editors.filter(editor_ => editor_ !== editor).forEach((editor_: Editor.Editor): void => {
          Eval.eval_fwd(editor_.e, editor_.tv)
          __annotations.restrictTo2(editor_.tv)
-         console.log(__annotations.ann)
          editor_.direction = Direction.Fwd
          editor_.render() // TODO: just redo selection rendering
       })
