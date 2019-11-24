@@ -11,44 +11,52 @@ import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { round } from "./Renderer"
 
-export class Interactor {
+function createTooltip (element: SVGElement): Instance {
+   return tippy(element, { theme: "light-border" })
+}
+
+export class RectInteractor {
    editor: Editor.Editor
-   tooltip: Instance | null = null // just have one for now
-   tooltips: Map<SVGElement, Instance> = new Map()
+   tooltip: Instance
+   tg: ExplValueCursor/*<Rect>*/
+   r: SVGRectElement
+   propFocus: keyof Rect | null = null
 
-   constructor (editor: Editor.Editor) {
+   constructor (editor: Editor.Editor, tg: ExplValueCursor/*<Rect>*/, r: SVGRectElement) {
       this.editor = __nonNull(editor)
+      this.tooltip = createTooltip(r)
+      this.tg = tg
+      this.r = r
    }
 
-   initialiseElement (element: SVGElement): void {
-      this.tooltips.set(element, tippy(element, { theme: "light-border" }))
-   }
-
-   onRectMousemove (tg: ExplValueCursor/*<Rect>*/, r: SVGRectElement, e: MouseEvent): void {
-      const g: Rect = as(tg.tv.v, Rect)
-      const rect: ClientRect = r.getBoundingClientRect()
+   onMousemove (e: MouseEvent): void {
+      const g: Rect = as(this.tg.tv.v, Rect)
+      const rect: ClientRect = this.r.getBoundingClientRect()
       // invert sign on y axis because of global inversion for SVG graphics
       const x_prop: number = Math.max(e.clientX - rect.left, 0) / rect.width
       const y_prop: number = Math.min(rect.bottom - e.clientY, rect.height) / rect.height
-      const prop: keyof Rect = rectAttribute(x_prop, y_prop, 1, 1)
-      const content: string = `${prop}: ${round(as(g[prop], Num).val)}`
-      const tooltip: Instance = __nonNull(this.tooltips.get(r))
-      tooltip.setContent(content)
+      const propFocus: keyof Rect = this.propFor(x_prop, y_prop, 1, 1)
+      if (this.propFocus !== propFocus) {
+         this.propFocus = propFocus
+         const content: string = `${this.propFocus}: ${round(as(g[this.propFocus], Num).val)}`
+         this.tooltip.setContent(content)
+         this.editor.resetForBwd()
+         setα(bool_.top, this.tg.to(Rect, this.propFocus).tv.t)
+         console.time("bwdSlice")
+         this.editor.bwdSlice()
+         console.timeEnd("bwdSlice")
+      }
+   }
 
-      this.editor.resetForBwd()
-      setα(bool_.top, tg.to(Rect, prop).tv.t)
-      this.editor.bwdSlice()
-}
-
-   onRectMouseOut (): void {
+   onMouseOut (): void {
       __nonNull(this.tooltip).hide()
    }
-}
 
-// Determine which "diagonal quadrant" of the rectangle [width, height] contains [x, y], and
-// then map to the corresponding attribute of the rectangle.
-function rectAttribute (x: number, y: number, width: number, height: number): keyof Rect {
-   const y_diag: number = (height / width) * x
-   const corner: [keyof Rect, keyof Rect] = y > y_diag ? ["x", "height"] : ["y", "width"]
-   return y < height - y_diag ? corner[0] : corner[1]
+   // Determine which "diagonal quadrant" of the rectangle [width, height] contains [x, y], and
+   // then map to the corresponding attribute of the rectangle.
+   propFor (x: number, y: number, width: number, height: number): keyof Rect {
+      const y_diag: number = (height / width) * x
+      const corner: [keyof Rect, keyof Rect] = y > y_diag ? ["x", "height"] : ["y", "width"]
+      return y < height - y_diag ? corner[0] : corner[1]
+   }
 }

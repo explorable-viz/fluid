@@ -8,7 +8,8 @@ import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
-import { Interactor } from "./Interactor"
+import { Editor } from "./Editor"
+import { RectInteractor } from "./Interactor"
 import { border, circle, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 11
@@ -55,7 +56,7 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
 }
 
 export class GraphicsRenderer {
-   interactor: Interactor
+   editor: Editor.Editor
    root: SVGSVGElement
    ancestors: SVGElement[] // stack of enclosing SVG elements
    translations: TransformFun[] // stack of (uncomposed) active translations, each relative to parent SVG
@@ -63,8 +64,8 @@ export class GraphicsRenderer {
    showInvisible: boolean = false
 
    // transform attribute isn't supported on SVGElement, so it contains a group element with the inversion transform.
-   constructor (interactor: Interactor, root: SVGSVGElement, initialAncestor: SVGElement) {
-      this.interactor = interactor
+   constructor (editor: Editor.Editor, root: SVGSVGElement, initialAncestor: SVGElement) {
+      this.editor = editor
       this.root = root
       this.ancestors = [initialAncestor]
       this.translations = [id]
@@ -209,10 +210,10 @@ export class GraphicsRenderer {
       const [width, height] = this.scale([g.width.val, g.height.val])
       assert(width >= 0 && height >= 0)
       const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val, this.rect)
-      this.interactor.initialiseElement(r)
+      const interactor: RectInteractor = new RectInteractor(this.editor, tg, r)
       r.addEventListener("mousemove", (e: MouseEvent): void => {
          e.stopPropagation()
-         this.interactor.onRectMousemove(tg, r, e)
+         interactor.onMousemove(e)
       })
       this.current.appendChild(r)
    }
