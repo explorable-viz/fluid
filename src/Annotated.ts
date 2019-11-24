@@ -1,8 +1,7 @@
 import { __nonNull, absurd } from "./util/Core"
 import { Annotation, bool_ } from "./util/Lattice"
 import { __deltas } from "./Delta" 
-import { Persistent, Value, ValueTag, _ } from "./Value"
-import { MemoFunType, memo } from "./Versioned"
+import { Value, ValueTag, _ } from "./Value"
 
 export function getα<T extends Value> (v: T): Annotation {
    return __annotations.get(v)
@@ -16,21 +15,10 @@ export function setα<T extends Value> (α: Annotation, v: T): T {
    return v
 }
 
-export function negateallα<T extends Persistent> (v: T): T {	
-   return memo<T>(negateallα_ as MemoFunType<T>, v)
-}	
-
-// Shouldn't it be possible to "flip polarity" without actually doing anything?
-export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T): T {
-   if (__annotations.ann.has(v)) {
-      setα(bool_.negate(getα(v)), v)
-   }
-   v.__children.forEach((v: Persistent): void => {
-      if (v instanceof Value) {
-         negateallα(v)
-      }
+export function negateallα<Tag extends ValueTag, T extends Value<Tag>> (v: T): void {
+   __annotations.ann.forEach((α: Annotation, v: Value): void => {
+      __annotations.ann.set(v, bool_.negate(α))
    })
-   return v
 }
 
 export function setjoinα<T extends Value> (α: Annotation, v: T): T {

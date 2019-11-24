@@ -125,11 +125,10 @@ export function str (val: string): (k: Id) => Versioned<Str> {
    return at(Str, val)
 }
 
-// Memo-entries for functions are not invariant across revisions, so clear memo table at each revision.
 const __funMemo: MemoTable = new Map
 
+// We should clear memo table at each revision, but there are no memo-functions at the moment.
 export function newRevision (): void {
-   __funMemo.clear()
    __deltas.clear()
    __versioned.forEach((v: Versioned<Value>, k: Id): void => {
       if (!__reachable.has(v)) {
