@@ -1,7 +1,7 @@
 import { zip } from "./util/Array"
 import { Class, __nonNull, absurd, as, assert, className, classOf, userError } from "./util/Core"
 import { bool_ } from "./util/Lattice"
-import { AnnotatedC, Direction, getα, setjoinα, setmeetα, setα } from "./Annotated"
+import { Direction, getα, setjoinα, setmeetα, setα } from "./Annotated"
 import { Cons, List, Nil, cons, nil } from "./BaseTypes"
 import { DataType, PrimType, ctrToDataType, explClass, initDataType, types, valueClass } from "./DataType"
 import { DataValue, ExplValue, explValue } from "./DataValue"
@@ -23,7 +23,7 @@ export type ValId = TaggedId<"v">
 export module Eval {
 
 // ρ plus bindings in δ are closing for f.
-export class Closure extends AnnotatedC(DataValue)<"Closure"> {
+export class Closure extends DataValue<"Closure"> {
    ρ: Env = _ 
    δ: List<RecDef> = _
    f: Elim<Expr> = _

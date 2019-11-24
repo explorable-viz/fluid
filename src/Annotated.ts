@@ -1,32 +1,14 @@
-import { Class, __nonNull, absurd } from "./util/Core"
+import { __nonNull, absurd } from "./util/Core"
 import { Annotation, bool_ } from "./util/Lattice"
 import { __deltas } from "./Delta" 
 import { Persistent, Value, ValueTag, _ } from "./Value"
 import { MemoFunType, memo } from "./Versioned"
 
-// For trait idiom see https://www.bryntum.com/blog/the-mixin-pattern-in-typescript-all-you-need-to-know/ and
-// https://github.com/Microsoft/TypeScript/issues/21710.
-export function AnnotatedC<T extends Class<Value>> (C: T) {
-   // https://stackoverflow.com/questions/33605775
-   return {
-      [C.name]: class extends C {
-            __α: Annotation = _
-         }
-   }[C.name] // give versioned class same name as C
-}
-
-export interface Annotated {
-}
-
-export function annotated<T extends Object> (v: T): v is T & Annotated {
-   return v.hasOwnProperty("__α")
-}
-
-export function getα<T extends Annotated & Value> (v: T): Annotation {
+export function getα<T extends Value> (v: T): Annotation {
    return __annotations.get(v)
 }
 
-export function setα<T extends Annotated & Value> (α: Annotation, v: T): T {
+export function setα<T extends Value> (α: Annotation, v: T): T {
    if (getα(v) !== α) {
       __deltas.changed(v, { __α: { before: getα(v), after: α } })
    }
@@ -51,11 +33,11 @@ export function negateallα_<Tag extends ValueTag, T extends Value<Tag>> (v: T):
    return v
 }
 
-export function setjoinα<T extends Annotated & Value> (α: Annotation, v: T): T {
+export function setjoinα<T extends Value> (α: Annotation, v: T): T {
    return setα(bool_.join(α, getα(v)), v)
 }
 
-export function setmeetα<T extends Annotated & Value> (α: Annotation, v: T): T {
+export function setmeetα<T extends Value> (α: Annotation, v: T): T {
    return setα(bool_.meet(α, getα(v)), v)
 }
 

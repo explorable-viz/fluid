@@ -1,6 +1,5 @@
 import { __nonNull, absurd, className } from "./util/Core"
 import { diff, union } from "./util/Set"
-import { AnnotatedC } from "./Annotated"
 import { Cons, List, Nil } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { FiniteMap } from "./FiniteMap"
@@ -39,7 +38,7 @@ export namespace Expr {
    // Use to be a parameterised class but we can simplify using our nominal type idiom.
    export type Cont = Expr | DataValue<"Elim">
 
-   export abstract class SyntaxNode<Tag extends DataValueTag = DataValueTag> extends AnnotatedC(DataValue)<Tag> {
+   export abstract class SyntaxNode<Tag extends DataValueTag = DataValueTag> extends DataValue<Tag> {
    }
 
    export abstract class Expr extends SyntaxNode<"Expr"> {
