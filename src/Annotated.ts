@@ -16,7 +16,6 @@ export function AnnotatedC<T extends Class<Value>> (C: T) {
 }
 
 export interface Annotated {
-   __α: Annotation
 }
 
 export function annotated<T extends Object> (v: T): v is T & Annotated {
@@ -42,14 +41,6 @@ export function setallα<T extends Persistent> (α: Annotation, v: T): T {
 }	
 
 export function setallα_<Tag extends ValueTag, T extends Value<Tag>> (α: Annotation, v: T): T {
-   if (annotated(v)) {
-      setα(α, v)
-   }
-   v.__children.forEach((v: Persistent): void => {
-      if (v instanceof Value) {
-         setallα(α, v)
-      }
-   })
    return v
 }
 
