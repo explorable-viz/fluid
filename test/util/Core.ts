@@ -25,11 +25,8 @@ export function funDef (ρ: Env, f: string): Elim<Expr> {
 export class FwdSlice {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.FwdSlice)) {
-         newRevision()
          __annotations.reset(Direction.Fwd)
          const tv: ExplValue = Eval.eval_(ρ, e)
-         Eval.eval_fwd(e, tv) // slice with full availability first to compute delta
-         newRevision()
          this.setup(new ExprCursor(e))
          Eval.eval_fwd(e, tv)
          this.expect(ExplValueCursor.descendant(null, tv))
@@ -49,11 +46,8 @@ export class FwdSlice {
 export class BwdSlice {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.BwdSlice)) {
-         newRevision()
          __annotations.reset(Direction.Bwd)
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
-         Eval.eval_fwd(e, tv) // clear annotations on all values
-         newRevision()
          this.setup(ExplValueCursor.descendant(null, tv))
          Eval.eval_bwd(e, tv)
          this.expect(new ExprCursor(e))

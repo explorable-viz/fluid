@@ -35,7 +35,8 @@ export class Annotations {
    ann: Map<Value, Annotation> = new Map()
    direction: Direction = Direction.Fwd
 
-   // This is rather weak, in that we no longer require annotations to be set to top/bot upfront.
+   // We could strengthen by requiring annotations to be set/cleared up front (on expressions, going forward,
+   // and values, going backward) as we did before.
    get (v: Value): Annotation {
       const α: Annotation | undefined = this.ann.get(v)
       if (α !== undefined) {
@@ -48,8 +49,8 @@ export class Annotations {
       }
    }
    
-   // Going forward, assume everything is available; annotation updates must be decreasing. 
-   // Going backward, assume everything is not needed; annotation updates must be increasing.
+   // Going forward, annotation updates must be decreasing; going backward, increasing. This is because during
+   // forward slicing, we propagate non-availability, whereas during backward slicing, we propagate demand.
    set (v: Value, α: Annotation): void {
       const current: Annotation | undefined = this.ann.get(v)
       if (current === undefined) {
