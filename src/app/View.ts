@@ -27,13 +27,15 @@ import Cont = Expr.Cont
 
 export module View {
    export let dimensions: (tg: ExplValue<GraphicsElement>) => [number, number]
+   let __coordinator: Editor.Coordinator | null
 
-   // Shenanigans to call an internal function. Will extract this into a (reverse) FFI.
-   export function initialise (): void {
+   export function initialise (coordinator: Editor.Coordinator): void {
+      __coordinator = coordinator
       Module.initialise()
+
+      // Shenanigans to call an internal function. Will extract this into a (reverse) FFI.
       const x: string = "g"
       const [ρ, dimsExpr]: [Env, Expr] = parseWithImports(`dimensions ${x}`)
-
       dimensions = function (tg: ExplValue<GraphicsElement>): [number, number] {
          const tv: ExplValue = Eval.eval_(ρ.concat(Env.singleton(str(x)(ν()), tg)), dimsExpr)
          if (tv.v instanceof Pair && tv.v.fst instanceof Num && tv.v.snd instanceof Num) {
@@ -355,7 +357,7 @@ export module View {
                const dim = { width: 480, height: 480 }
                let g1: SVGGElement
                [g, g1] = svgElement_inverted(dim.width, dim.height)
-               new GraphicsRenderer(new Interactor(), g, g1).render(tg, __nonNull(dimensions)(tg))
+               new GraphicsRenderer(new Interactor(__coordinator!), g, g1).render(tg, __nonNull(dimensions)(tg))
                __dimensions.set(g, dim)
             } else
             if (this.tv.v instanceof Pair) {

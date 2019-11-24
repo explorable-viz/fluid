@@ -6,12 +6,11 @@ import { openDatasetAs, openWithImports } from "../Module"
 import "../app/GraphicsRenderer2"
 import { Editor } from "./Editor"
 
-export function initialise(): void {
-   Editor.initialise()
-   new IDE()
+export function initialise (): void {
+   Editor.initialise(new IDE())
 }
 
-class IDE {
+class IDE implements Editor.Coordinator {
    editors: Editor.Editor[] = []
 
    constructor () {
@@ -24,6 +23,12 @@ class IDE {
       )
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event) => this.editors.forEach(editor => editor.onload(ev))
+   }
+
+   resetForBwd (): void {
+   }
+
+   bwdSlice (): void {
    }
 }
 

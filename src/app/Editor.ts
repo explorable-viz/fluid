@@ -14,8 +14,13 @@ import { View } from "./View"
 import "./styles.css"
 
 export module Editor {
-   export function initialise (): void {
-      View.initialise()
+   export interface Coordinator {
+      resetForBwd (): void
+      bwdSlice (): void
+   }
+
+   export function initialise (coordinator: Coordinator): void {
+      View.initialise(coordinator)
    }
 
    export class Editor {

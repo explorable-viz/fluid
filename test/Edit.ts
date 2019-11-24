@@ -1,6 +1,5 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { Edit } from "./util/Core"
 import { as } from "../src/util/Core"
 import { Cons, Pair } from "../src/BaseTypes"
 import { exprClass } from "../src/DataType"
@@ -12,9 +11,11 @@ import { Persistent } from "../src/Value"
 import { ν, at, num, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "../src/app/Cursor"
 import { Editor } from "../src/app/Editor"
+import { Edit } from "./util/Core"
+import { TestCoordinator } from "./util/TestCoordinator"
 
 before((done: MochaDone) => {
-   Editor.initialise()
+   Editor.initialise(new TestCoordinator())
    done()
 })
 

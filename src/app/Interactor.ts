@@ -3,19 +3,29 @@ import { Instance } from "tippy.js"
 import "tippy.js/dist/tippy.css"
 import "tippy.js/themes/light-border.css"
 import { __log, __nonNull, as } from "../util/Core"
+import { bool_ } from "../util/Lattice"
+import { setα } from "../Annotated"
 import { Rect } from "../Graphics2"
 import { Num } from "../Value"
+import { ExplValueCursor } from "./Cursor"
+import { Editor } from "./Editor"
 import { round } from "./Renderer"
 
 export class Interactor {
+   coordinator: Editor.Coordinator
    tooltip: Instance | null = null // just have one for now
    tooltips: Map<SVGElement, Instance> = new Map()
+
+   constructor (coordinator: Editor.Coordinator) {
+      this.coordinator = __nonNull(coordinator)
+   }
 
    initialiseElement (element: SVGElement): void {
       this.tooltips.set(element, tippy(element, { theme: "light-border" }))
    }
 
-   onRectMousemove (g: Rect, r: SVGRectElement, e: MouseEvent): void {
+   onRectMousemove (tg: ExplValueCursor/*<Rect>*/, r: SVGRectElement, e: MouseEvent): void {
+      const g: Rect = as(tg.tv.v, Rect)
       const rect: ClientRect = r.getBoundingClientRect()
       // invert sign on y axis because of global inversion for SVG graphics
       const x_prop: number = Math.max(e.clientX - rect.left, 0) / rect.width
@@ -24,7 +34,11 @@ export class Interactor {
       const content: string = `${prop}: ${round(as(g[prop], Num).val)}`
       const tooltip: Instance = __nonNull(this.tooltips.get(r))
       tooltip.setContent(content)
-   }
+
+      this.coordinator.resetForBwd()
+      setα(bool_.top, tg.to(Rect, prop).tv.t)
+      this.coordinator.bwdSlice()
+}
 
    onRectMouseOut (): void {
       __nonNull(this.tooltip).hide()

@@ -209,10 +209,10 @@ export class GraphicsRenderer {
       const [width, height] = this.scale([g.width.val, g.height.val])
       assert(width >= 0 && height >= 0)
       const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val, this.rect)
-      this.interactor.initialise(r)
+      this.interactor.initialiseElement(r)
       r.addEventListener("mousemove", (e: MouseEvent): void => {
          e.stopPropagation()
-         this.interactor.onRectMousemove(g, r, e)
+         this.interactor.onRectMousemove(tg, r, e)
       })
       this.current.appendChild(r)
    }
