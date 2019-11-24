@@ -1,6 +1,8 @@
 import { __nonNull, absurd } from "./util/Core"
 import { Annotation, bool_ } from "./util/Lattice"
-import { __deltas } from "./Delta" 
+import { ExplValue, DataValue } from "./DataValue"
+import { __deltas } from "./Delta"
+import { Expl } from "./Expl"
 import { Persistent, Value, _ } from "./Value"
 
 export function getα<T extends Value> (v: T): Annotation {
@@ -72,6 +74,23 @@ export class Annotations {
             this.restrictTo_aux(v, ann)
          }
       })
+   }
+
+   restrictTo2 (tv: ExplValue<Value>): void {
+      const ann: Set<Value> = new Set()
+      this.restrictTo2_aux(tv, ann)
+      this.ann = ann
+   }
+
+   restrictTo2_aux (tv: ExplValue<Value>, ann: Set<Value>): void {
+      if (this.ann.has(tv.t)) {
+         ann.add(tv.t)
+      }
+      if (tv.v instanceof DataValue) {
+         Expl.explChildren(tv.t, tv.v).forEach((tv: ExplValue): void => {
+            this.restrictTo2_aux(tv, ann)
+         })
+      }
    }
 }
 
