@@ -12,12 +12,18 @@ export function initialise(): void {
 }
 
 class IDE {
+   editors: Editor.Editor[] = []
+
    constructor () {
       const ρ_external: Env = openDatasetAs("renewables", "data")
       const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/line-chart")
       const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
-      new Editor.Editor(ρ_external, ρ1, e1)
-      new Editor.Editor(ρ_external, ρ2, e2)
+      this.editors.push(
+         new Editor.Editor(700, 600, ρ_external, ρ1, e1),
+         new Editor.Editor(700, 600, ρ_external, ρ2, e2)
+      )
+      // Wait for fonts to load before rendering, otherwise metrics will be wrong.
+      window.onload = (ev: Event) => this.editors.forEach(editor => editor.onload(ev))
    }
 }
 

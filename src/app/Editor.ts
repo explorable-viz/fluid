@@ -19,25 +19,23 @@ export module Editor {
    }
 
    export class Editor {
-      root: SVGSVGElement
+      rootPane: SVGSVGElement
       ρ: Env
       e: Expr
       tv: ExplValue
       here!: ExplValueCursor
       direction!: Direction
    
-      constructor (ρ_external: Env, ρ: Env, e: Expr) {
-         this.root = svgRootElement(1400, 1200)
-         markerEnsureDefined(this.root, Arrowhead, "blue")
-         document.body.appendChild(this.root)
+      constructor (width: number, height: number, ρ_external: Env, ρ: Env, e: Expr) {
+         this.rootPane = svgRootElement(width, height)
+         markerEnsureDefined(this.rootPane, Arrowhead, "blue")
+         document.body.appendChild(this.rootPane)
          this.ρ = ρ_external.concat(ρ)
          this.e = e
          this.tv = Eval.eval_(this.ρ, this.e)
          this.here = ExplValueCursor.descendant(null, this.tv)
          newRevision()
          Eval.eval_(this.ρ, this.e) // reestablish reachable nodes
-         // Wait for fonts to load before rendering, otherwise metrics will be wrong.
-         window.onload = (ev: Event) => this.onload(ev)
       }
 
       onload (ev: Event): void {
@@ -91,17 +89,16 @@ export module Editor {
   
       render (): void {
          // https://stackoverflow.com/questions/48310643
-         const children: ChildNode[] = Array.from(this.root.childNodes)
+         const children: ChildNode[] = Array.from(this.rootPane.childNodes)
          children.forEach((child: ChildNode): void => {
             if (!(child instanceof SVGDefsElement)) {
-               this.root.removeChild(child)
+               this.rootPane.removeChild(child)
             }
          })
-         View.render(this.root, this.tv, this)
+         View.render(this.rootPane, this.tv, this)
       }
    
       onEdit (): void {
-         console.log(__deltas)
          this.tv = Eval.eval_(this.ρ, this.e)
          this.here = ExplValueCursor.descendant(null, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v))
          // cursor may no longer be valid, how to deal with that?
