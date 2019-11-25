@@ -46,7 +46,7 @@ export class RectInteractor {
       const g: Rect = as(tg.tv.v, Rect)
       const propsFocus: (keyof Rect)[] = fields(tg.tv.v).filter((prop: keyof Rect) => {
          const tv: ExplValue = Expl.explChild(tg.tv.t, g, prop)
-         return __nonNull(editor.direction) === Direction.Fwd ? bool_.negate(isα(tv.t)) : isα(tv.t)
+         return __nonNull(editor.direction) === Direction.Fwd ? bool_.negate(isα(tv)) : isα(tv)
       })
       if (propsFocus.length > 0) {
          this.tooltip.setContent(propValues(g, propsFocus))
@@ -64,7 +64,7 @@ export class RectInteractor {
       if (this.propFocus !== propFocus) {
          this.propFocus = propFocus
          const dependencies: Set<Annotated> = this.editor.bwdSlice(() => {
-            setα(bool_.top, this.tg.to(Rect, propFocus).tv.t)
+            setα(bool_.top, this.tg.to(Rect, propFocus).tv)
          })
          console.log(dependencies)
          this.tooltip.setContent(propValues(g, [propFocus]))

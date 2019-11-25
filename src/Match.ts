@@ -159,9 +159,9 @@ export function varElim<K extends Cont> (x: Str, κ: K): (k: Id) => VarElim<K> {
 }
 
 export function apply_fwd (ξ: Match<Expr>): Annotation {
-   return ξ.tv̅.toArray().reduce((α: Annotation, tv: ExplValue): Annotation => bool_.meet(α, isα(tv.t)), bool_.top)
+   return ξ.tv̅.toArray().reduce((α: Annotation, tv: ExplValue): Annotation => bool_.meet(α, isα(tv)), bool_.top)
 }
 
 export function apply_bwd (ξ: Match<Expr>, α: Annotation): void {
-   ξ.tv̅.toArray().forEach((tv: ExplValue): void => setjoinα(α, tv.t))
+   ξ.tv̅.toArray().forEach((tv: ExplValue): void => setjoinα(α, tv))
 }

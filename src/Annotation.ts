@@ -6,10 +6,10 @@ import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { Persistent, Value, _ } from "./Value"
 
-export type Annotated = Expr | Expr.Def | Expr.RecDef | Expl 
+export type Annotated = Expr.SyntaxNode | ExplValue 
 
 export function annotated (v: Value): v is Annotated {
-   return v instanceof Expr.Expr || v instanceof Expl.Expl
+   return v instanceof Expr.SyntaxNode || v instanceof ExplValue
 }
 
 export function isα (v: Annotated): Annotation {
@@ -89,8 +89,8 @@ export class Annotations {
    }
 
    restrictTo2_aux (tv: ExplValue, ann: Set<Annotated>): void {
-      if (this.ann.has(tv.t)) {
-         ann.add(tv.t)
+      if (this.ann.has(tv)) {
+         ann.add(tv)
       }
       if (tv.v instanceof DataValue) {
          Expl.explChildren(tv.t, tv.v).forEach((tv: ExplValue): void => {

@@ -95,7 +95,7 @@ export class ExplValueCursor extends Cursor {
    }
 
    get on (): Value {
-      return this.tv.t
+      return this.tv
    }
 
    skipImport (): this {
