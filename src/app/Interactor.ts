@@ -64,6 +64,14 @@ export class RectInteractor {
          this.tooltip.setContent(propValues(g, propsFocus))
          this.tooltip.show()
       }
+      r.addEventListener("mousemove", (e: MouseEvent): void => {
+         e.stopPropagation()
+         this.onMouseMove(e)
+      })
+      r.addEventListener("mouseout", (e: MouseEvent): void => {
+         e.stopPropagation()
+         this.onMouseOut(e)
+      })
    }
 
    onMouseMove (e: MouseEvent): void {
