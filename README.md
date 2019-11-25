@@ -6,6 +6,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 25 November 2019 | First pass over nested coordinate frames and “domain units” | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) |
 | 19 November 2019 | Stacked bar, grouped bar and multiline chart examples | [110](https://github.com/rolyp/lambdacalc/issues/110), [250](https://github.com/rolyp/lambdacalc/issues/250) |
 | 4 November 2019 | Merge with Wrattler `develop` | [247](https://github.com/rolyp/lambdacalc/issues/247) |
 | 25 October 2019 | “Swap node” proof-of-concept | [237](https://github.com/rolyp/lambdacalc/issues/237) |
@@ -28,7 +29,6 @@
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
 | November | Display image in Wrattler output pane | [211](https://github.com/rolyp/lambdacalc/issues/211), [55](https://github.com/rolyp/lambdacalc/issues/55) |
-| November | Nested coordinate frames and “domain units” to localise layout-related dependencies and improve performance | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) |
 | December | Resolve interference between slicing and execution indexing | [248](https://github.com/rolyp/lambdacalc/issues/248) |
 
 ### Possible submissions
