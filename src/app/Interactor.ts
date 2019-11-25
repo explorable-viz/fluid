@@ -14,7 +14,7 @@ import { Editor } from "./Editor"
 import { round } from "./Renderer"
 
 function createTooltip (element: SVGElement): Tooltip {
-   return tippy(element, { theme: "light-border" })
+   return tippy(element, { theme: "light-border", placement: "right" })
 }
 
 // Non-primitive dependencies render as a bullet.
