@@ -2,9 +2,9 @@ import tippy from "tippy.js"
 import { Instance as Tooltip } from "tippy.js"
 import "tippy.js/dist/tippy.css"
 import "tippy.js/themes/light-border.css"
-import { __log, __nonNull, as } from "../util/Core"
+import { __log, __nonNull, as, assert } from "../util/Core"
 import { bool_ } from "../util/Lattice"
-import { Direction, isα, setα } from "../Annotation"
+import { Annotated, Direction, isα, setα } from "../Annotation"
 import { ExplValue } from "../DataValue"
 import { Expl } from "../Expl"
 import { GraphicsElement, Rect } from "../Graphics2"
@@ -63,16 +63,17 @@ export class RectInteractor {
       const propFocus: keyof Rect = this.propFor(x_prop, y_prop, 1, 1)
       if (this.propFocus !== propFocus) {
          this.propFocus = propFocus
-         this.editor.bwdSlice(() => {
+         const dependencies: Set<Annotated> = this.editor.bwdSlice(() => {
             setα(bool_.top, this.tg.to(Rect, propFocus).tv.t)
          })
+         console.log(dependencies)
          this.tooltip.setContent(propValues(g, [propFocus]))
       }
    }
 
    onMouseOut (e: MouseEvent): void {
       this.propFocus = null
-      this.editor.bwdSlice(() => {})
+      assert(this.editor.bwdSlice(() => {}).size === 0)
    }
 
    // Determine which "diagonal quadrant" of the rectangle [width, height] contains [x, y], and

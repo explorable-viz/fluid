@@ -6,7 +6,7 @@ import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { Persistent, Value, _ } from "./Value"
 
-type Annotated = Expr | Expr.Def | Expr.RecDef | Expl 
+export type Annotated = Expr | Expr.Def | Expr.RecDef | Expl 
 
 export function annotated (v: Value): v is Annotated {
    return v instanceof Expr.Expr || v instanceof Expl.Expl

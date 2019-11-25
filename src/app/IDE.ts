@@ -1,6 +1,6 @@
 import "../BaseTypes"
 import "../Graphics2"
-import { Direction, __annotations } from "../Annotation"
+import { Annotated, Direction, __annotations } from "../Annotation"
 import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expr } from "../Expr"
@@ -34,11 +34,12 @@ class IDE implements Editor.Listener {
    }
 
    // Returns "external" dependencies identified by the backward slice.
-   bwdSlice (editor: Editor.Editor): typeof __annotations.ann {
+   bwdSlice (editor: Editor.Editor): Set<Annotated> {
       editor.direction = Direction.Bwd
       Eval.eval_bwd(editor.e, editor.tv)
       // consider availability of ρ_external only; treat ρ and e as unlimited resources
       __annotations.restrictTo(this.ρ_external)
+      const externDeps: Set<Annotated> = new Set(__annotations.ann)
       __annotations.direction = Direction.Fwd
       this.editors.filter(editor_ => editor_ !== editor).forEach((editor_: Editor.Editor): void => {
          Eval.eval_fwd(editor_.e, editor_.tv)
@@ -46,7 +47,7 @@ class IDE implements Editor.Listener {
          editor_.direction = Direction.Fwd
          editor_.render() // TODO: just redo selection rendering
       })
-      return new Set(__annotations.ann)
+      return externDeps
    }
 }
 
