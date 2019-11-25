@@ -22,7 +22,8 @@ const __editorListener: Editor.Listener = new class implements Editor.Listener {
    resetForBwd (): void {
    }
 
-   bwdSlice (): void {
+   bwdSlice (editor: Editor.Editor): typeof __annotations.ann {
+      return new Set()
    }
 }()
 

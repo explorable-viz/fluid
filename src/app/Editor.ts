@@ -21,7 +21,7 @@ export module Editor {
 
    export interface Listener {
       resetForBwd (): void
-      bwdSlice (editor: Editor): void
+      bwdSlice (editor: Editor): typeof __annotations.ann
    }
 
    export class Editor {
@@ -91,10 +91,11 @@ export module Editor {
          }
       }
 
-      bwdSlice (setNeeded: () => void): void {
+      // returns whether the backward slice reveals "external" dependencies
+      bwdSlice (setNeeded: () => void): typeof __annotations.ann {
          this.listener.resetForBwd()
          setNeeded()
-         this.listener.bwdSlice(this)
+         return this.listener.bwdSlice(this)
       }
 
       render (): void {

@@ -33,7 +33,8 @@ class IDE implements Editor.Listener {
       __annotations.reset(Direction.Bwd)
    }
 
-   bwdSlice (editor: Editor.Editor): void {
+   // Returns "external" dependencies identified by the backward slice.
+   bwdSlice (editor: Editor.Editor): typeof __annotations.ann {
       editor.direction = Direction.Bwd
       Eval.eval_bwd(editor.e, editor.tv)
       // consider availability of ρ_external only; treat ρ and e as unlimited resources
@@ -44,8 +45,8 @@ class IDE implements Editor.Listener {
          __annotations.restrictTo2(editor_.tv)
          editor_.direction = Direction.Fwd
          editor_.render() // TODO: just redo selection rendering
-         console.log(`Rendering editor ${this.editors.indexOf(editor_)}`)
       })
+      return new Set(__annotations.ann)
    }
 }
 

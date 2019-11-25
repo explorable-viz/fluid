@@ -17,9 +17,8 @@ export function isα (v: Annotated): Annotation {
 }
 
 // Currently no deltas are associated with annotations.
-export function setα<T extends Value> (α: Annotation, v: T): T {
+export function setα<T extends Annotated> (α: Annotation, v: T): void {
    __annotations.set(v, α)
-   return v
 }
 
 export function setjoinα (α: Annotation, v: Annotated): void {
@@ -33,11 +32,11 @@ export function setmeetα (α: Annotation, v: Annotated): void {
 export enum Direction { Fwd, Bwd }
 
 export class Annotations {
-   ann: Set<Value> = new Set() // unavailable nodes (fwd) or needed nodes (bwd)
+   ann: Set<Annotated> = new Set() // unavailable nodes (fwd) or needed nodes (bwd)
    direction: Direction = Direction.Fwd
 
    // Whether v is needed (going backward) or available (going forward).
-   is (v: Value): Annotation {
+   is (v: Annotated): Annotation {
       if (this.direction === Direction.Fwd) {
          return bool_.negate(this.ann.has(v))
       } else {
@@ -47,7 +46,7 @@ export class Annotations {
    
    // Going forward, annotation updates must be decreasing; going backward, increasing. This is because 
    // forward slicing propagates non-availability, whereas backward slicing propagates demand.
-   set (v: Value, α: Annotation): void {
+   set (v: Annotated, α: Annotation): void {
       const current: Annotation = this.is(v)
       if (this.direction === Direction.Fwd && α < current ||
           this.direction === Direction.Bwd && α > current) {
@@ -67,13 +66,13 @@ export class Annotations {
    }
 
    restrictTo (v: Value): void {
-      const ann: Set<Value> = new Set()
+      const ann: Set<Annotated> = new Set()
       this.restrictTo_aux(v, ann)
       this.ann = ann
    }
 
    restrictTo_aux (v: Value, ann: Set<Value>): void {
-      if (this.ann.has(v)) {
+      if (this.ann.has(v as Annotated)) { // cast is a bit cheeky
          ann.add(v)
       }
       v.__children.forEach((v: Persistent): void => {
@@ -84,7 +83,7 @@ export class Annotations {
    }
 
    restrictTo2 (tv: ExplValue<Value>): void {
-      const ann: Set<Value> = new Set()
+      const ann: Set<Annotated> = new Set()
       this.restrictTo2_aux(tv, ann)
       this.ann = ann
    }

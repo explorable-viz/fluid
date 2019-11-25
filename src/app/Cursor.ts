@@ -25,6 +25,10 @@ export abstract class Cursor {
    abstract at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor
    abstract skipImport (): this
 
+   notAnnotated (): this {
+      return userError("Not an annotated node.", this.on)
+   }
+
    assert<T extends Value> (C: AClass<T>, pred: (v: T) => boolean): Cursor {
       return this.at(C, v => assert(pred(v)))
    }
@@ -34,7 +38,7 @@ export abstract class Cursor {
          assert(isα(this.on) === bool_.top)
          return this
       } else {
-         return userError("Not an annotated node.")
+         return this.notAnnotated()
       }
    }
 
@@ -43,18 +47,26 @@ export abstract class Cursor {
          assert(isα(this.on) === bool_.bot)
          return this
       } else {
-         return userError("Not an annotated node.")
+         return this.notAnnotated()
       }
    }
 
    setα (): this {
-      setα(bool_.top, this.on)
-      return this
+      if (annotated(this.on)) {
+         setα(bool_.top, this.on)
+         return this
+      } else {
+         return this.notAnnotated()
+      }
    }
 
    clearα (): this {
-      setα(bool_.bot, this.on)
-      return this
+      if (annotated(this.on)) {
+         setα(bool_.bot, this.on)
+         return this
+      } else {
+         return this.notAnnotated()
+      }
    }
 
    skipImports (): this {

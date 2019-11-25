@@ -51,8 +51,6 @@ export class RectInteractor {
       if (propsFocus.length > 0) {
          this.tooltip.setContent(propValues(g, propsFocus))
          this.tooltip.show()
-      } else {
-         this.tooltip.hide()
       }
    }
 
@@ -65,14 +63,15 @@ export class RectInteractor {
       const propFocus: keyof Rect = this.propFor(x_prop, y_prop, 1, 1)
       if (this.propFocus !== propFocus) {
          this.propFocus = propFocus
-         this.tooltip.setContent(propValues(g, [propFocus]))
          this.editor.bwdSlice(() => {
             setα(bool_.top, this.tg.to(Rect, propFocus).tv.t)
          })
+         this.tooltip.setContent(propValues(g, [propFocus]))
       }
    }
 
    onMouseOut (e: MouseEvent): void {
+      this.propFocus = null
       this.editor.bwdSlice(() => {})
    }
 
