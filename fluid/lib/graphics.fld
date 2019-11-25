@@ -35,8 +35,8 @@ letrec fun set_x x {
       Viewport(x, y, w, h, fill, margin, scale, translate, g)
 };
 
-// (Point, (Num, Num)) → Point
-let dimensions2 = fun (Point(x1, y1), (x2, y2)) →
+// (Point, Point) → Point
+let dimensions2 = fun (Point(x1, y1), Point(x2, y2)) →
    Point(max2 (x1, x2), max2 (y1, y2));
 
 // For Group, dimensions are relative to implicit coords of (0, 0), since a Group's children are effectively
@@ -46,7 +46,7 @@ let dimensions2 = fun (Point(x1, y1), (x2, y2)) →
 letrec 
    fun dimensions {
       Group(gs) → match foldl dimensions2 Point(0, 0) (map (coords_op) gs) as Point(x, y) → (x, y);
-      Polyline(ps, _, _) → match foldl dimensions2 Point(0, 0) ps as Point(x, y) → (x, y);
+      Polyline(ps, _, _) → match foldl dimensions2 Point(0, 0) (map ps (fun (x, y) → Point(x, y))) as Point(x, y) → (x, y);
       Rect(_, _, w, h, _) → (w, h);
       Text(_, _, _, _, _) → (0, 0); // treat text like markers; scale-invariant
       Viewport(_, _, w, h, _, _, _, _, _) → (w, h)
@@ -54,7 +54,7 @@ letrec
 
    fun coords_op g → 
       match prod coords dimensions g as 
-      ((x, y), (w, h)) → (x + w, y + h);
+      ((x, y), (w, h)) → Point(x + w, y + h);
 
 // GraphicsElement → Num
 let width = compose fst dimensions;
