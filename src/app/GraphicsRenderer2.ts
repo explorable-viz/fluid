@@ -10,7 +10,7 @@ import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { PolymarkersInteractor, RectInteractor } from "./Interactor"
-import { border, circle, lineRounded, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
+import { border, circle, group, lineRounded, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 11
 export const svg: SVG = new SVG()
@@ -153,11 +153,16 @@ export class GraphicsRenderer {
       return r
    }
 
-   group (tg: ExplValueCursor/*<Group>*/): void {
+   group (tg: ExplValueCursor/*<Group>*/): SVGGElement {
+      const g: SVGGElement = group()
+      this.current.appendChild(g)
+      this.ancestors.push(g)
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
            Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
          this.renderElement(tg̅.to(Cons, "head"))
       }
+      this.ancestors.pop()
+      return g
    }
 
    // For line/polyline, each point is considered a "child", and therefore subject to my local scaling.
@@ -183,7 +188,10 @@ export class GraphicsRenderer {
    }
 
    // Polymarkers have coordinates relative to the points, in the *parent* scaling.
-   polymarkers (tg: ExplValueCursor/*<Polymarkers>*/): void {
+   polymarkers (tg: ExplValueCursor/*<Polymarkers>*/): SVGGElement {
+      const g: SVGGElement = group()
+      this.current.appendChild(g)
+      this.ancestors.push(g)
       const invScale: TransformFun = invertScale(this.scale)
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Polymarkers, "markers"),
                tps: ExplValueCursor/*<List<Pair<Num, Num>>*/ = tg.to(Polymarkers, "points"); 
@@ -208,6 +216,8 @@ export class GraphicsRenderer {
             new PolymarkersInteractor(this.editor, tg)
          }
       }
+      this.ancestors.pop()
+      return g
    }
 
    rect (tg: ExplValueCursor/*<Rect>*/): SVGRectElement {

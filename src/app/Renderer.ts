@@ -183,6 +183,10 @@ export function ellipsis (ẟ_style: DeltaStyle): SVGElement {
    return text("…", ẟ_style)
 }
 
+export function group (): SVGGElement {
+   return createElement("g", group)
+}
+
 export function horiz (...gs: SVGElement[]): SVGSVGElement {
    const g: SVGSVGElement = createElement("svg", horiz)
    let width_sum: number = 0,
