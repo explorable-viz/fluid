@@ -6,7 +6,7 @@ import { __log, __nonNull, as, assert } from "../util/Core"
 import { bool_ } from "../util/Lattice"
 import { Direction, isα, setα } from "../Annotation"
 import { Pair } from "../BaseTypes"
-import { ExplValue } from "../DataValue"
+import { DataValue, ExplValue } from "../DataValue"
 import { Expl } from "../Expl"
 import { GraphicsElement, Rect } from "../Graphics2"
 import { Num, Persistent, Str, fields } from "../Value"
@@ -29,6 +29,13 @@ function propValues<T extends GraphicsElement> (g: T, props: (keyof T)[]): strin
       return `${prop}: ${propStr}`
    })
    return lines.join("</br>")
+}
+
+function focusedProps<T extends DataValue> (direction: Direction, tv: ExplValue<T>): (keyof T)[] {
+   return fields(tv.v).filter((prop: keyof T) => {
+      const tv_: ExplValue = Expl.explChild(tv.t, tv.v, prop)
+      return __nonNull(direction) === Direction.Fwd ? bool_.negate(isα(tv_)) : isα(tv_)
+   })
 }
 
 export class PolymarkersInteractor {
@@ -73,13 +80,10 @@ export class RectInteractor {
       this.editor.tooltips.add(this.tooltip)
       this.tg = tg
       this.r = r
-      const g: Rect = as(tg.tv.v, Rect)
-      const propsFocus: (keyof Rect)[] = fields(tg.tv.v).filter((prop: keyof Rect) => {
-         const tv: ExplValue = Expl.explChild(tg.tv.t, g, prop)
-         return __nonNull(editor.direction) === Direction.Fwd ? bool_.negate(isα(tv)) : isα(tv)
-      })
+      const tv: ExplValue<Rect> = as(tg.tv.v, ExplValue)
+      const propsFocus: (keyof Rect)[] = focusedProps(editor.direction, tv)
       if (propsFocus.length > 0) {
-         this.tooltip.setContent(propValues(g, propsFocus))
+         this.tooltip.setContent(propValues(tv.v, propsFocus))
          this.tooltip.show()
          r.classList.add("focus")
       }
