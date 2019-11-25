@@ -5,10 +5,9 @@ import "tippy.js/themes/light-border.css"
 import { Class, __log, __nonNull, as, assert } from "../util/Core"
 import { bool_ } from "../util/Lattice"
 import { Direction, isα, setα } from "../Annotation"
-import { Pair } from "../BaseTypes"
 import { DataValue, ExplValue } from "../DataValue"
 import { Expl } from "../Expl"
-import { Rect } from "../Graphics2"
+import { Point, Rect } from "../Graphics2"
 import { Num, Persistent, Str, fields } from "../Value"
 import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
@@ -96,13 +95,13 @@ abstract class Interactor<T extends DataValue, U extends SVGElement> {
    }
 }
 
-export class PointInteractor extends Interactor<Pair, SVGElement> {
-   constructor (editor: Editor.Editor, tp: ExplValueCursor/*<Pair<Num, Num>>*/, marker: SVGElement) {
-      super(editor, Pair, tp, marker)
+export class PointInteractor extends Interactor<Point, SVGElement> {
+   constructor (editor: Editor.Editor, tp: ExplValueCursor/*<Point>*/, marker: SVGElement) {
+      super(editor, Point, tp, marker)
    }
 
-   propFor (x_prop: number, y_prop: number): keyof Pair {
-      return "snd"
+   propFor (x_prop: number, y_prop: number): keyof Point {
+      return "y"
    }
 }
 

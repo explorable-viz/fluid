@@ -1,4 +1,4 @@
-import { List, Pair } from "./BaseTypes"
+import { List } from "./BaseTypes"
 import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Num, Str, _ } from "./Value"
@@ -35,20 +35,20 @@ export class Group extends GraphicsElement<"Group"> {
 }
 
 export class Line extends GraphicsElement<"Line"> {
-   p1: Pair<Num, Num> = _
-   p2: Pair<Num, Num> = _
+   p1: Point = _
+   p2: Point = _
    stroke: Str = _
    strokeWidth: Num = _
 }
 
 export class Polyline extends GraphicsElement<"Polyline"> {
-   points: List<Pair<Num, Num>> = _
+   points: List<Point> = _
    stroke: Str = _
    strokeWidth: Num = _
 }
 
 export class Polymarkers extends GraphicsElement<"Polymarkers"> {
-   points: List<Pair<Num, Num>> = _
+   points: List<Point> = _
    markers: List<GraphicsElement> = _
 }
 

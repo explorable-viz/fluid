@@ -1,8 +1,8 @@
 import { last } from "../util/Array"
 import { Class, __log, __nonNull, absurd, as, assert, id, userError } from "../util/Core"
-import { Cons, List, Pair } from "../BaseTypes"
+import { Cons, List } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Circle, Group, GraphicsElement, Line, Marker, Polyline, Polymarkers, Rect, Scale, Text, Transform, Translate, Viewport } from "../Graphics2"
+import { Circle, Group, GraphicsElement, Line, Marker, Polyline, Polymarkers, Point, Rect, Scale, Text, Transform, Translate, Viewport } from "../Graphics2"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
@@ -169,8 +169,8 @@ export class GraphicsRenderer {
    line (tg: ExplValueCursor/*<Polyline>*/): SVGLineElement {
       const g: Line = as(tg.tv.v, Line)
       const [[x1, y1], [x2, y2]] = [
-         this.transform([g.p1.fst.val, g.p1.snd.val]), 
-         this.transform([g.p2.fst.val, g.p2.snd.val])
+         this.transform([g.p1.x.val, g.p1.y.val]), 
+         this.transform([g.p2.x.val, g.p2.y.val])
       ]
       const l: SVGLineElement = lineRounded(x1, y1, x2, y2, g.stroke.val, g.strokeWidth.val)
       this.current.appendChild(l)
@@ -179,8 +179,8 @@ export class GraphicsRenderer {
 
    polyline (tg: ExplValueCursor/*<Polyline>*/): SVGPolylineElement {
       const g: Polyline = as(tg.tv.v, Polyline)
-      const ps: [number, number][] = g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
-         return this.transform([p.fst.val, p.snd.val])
+      const ps: [number, number][] = g.points.toArray().map((p: Point): [number, number] => {
+         return this.transform([p.x.val, p.y.val])
       })
       const l: SVGPolylineElement = polyline(ps, g.stroke.val, g.strokeWidth.val)
       this.current.appendChild(l)
@@ -194,15 +194,15 @@ export class GraphicsRenderer {
       this.ancestors.push(g)
       const invScale: TransformFun = invertScale(this.scale)
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Polymarkers, "markers"),
-               tps: ExplValueCursor/*<List<Pair<Num, Num>>*/ = tg.to(Polymarkers, "points"); 
+               tps: ExplValueCursor/*<List<Point>*/ = tg.to(Polymarkers, "points"); 
            Cons.is(as(tg̅.tv.v, List)) || Cons.is(as(tps.tv.v, List)); 
            tg̅ = tg̅.to(Cons, "tail"), tps = tps.to(Cons, "tail")) {
          if (!Cons.is(as(tg̅.tv.v, List)) || !Cons.is(as(tps.tv.v, List))) {
             userError(`${Polymarkers.name}: more markers than points.`)
          } else {
-            const tp: ExplValueCursor/*<Pair<Num, Num>>*/ = tps.to(Cons, "head")
-            const p: Pair<Num, Num> = as(tp.tv.v, Pair)
-            const [x, y] = this.transform([p.fst.val, p.snd.val])
+            const tp: ExplValueCursor/*<Point>*/ = tps.to(Cons, "head")
+            const p: Point = as(tp.tv.v, Point)
+            const [x, y] = this.transform([p.x.val, p.y.val])
             const markerViewport: SVGSVGElement = svgElement(true, x, y, 10, 10, false, this.polymarkers)
             this.current.appendChild(markerViewport)
             this.ancestors.push(markerViewport)
