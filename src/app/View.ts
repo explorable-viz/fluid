@@ -8,7 +8,7 @@ import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
-import { GraphicsElement } from "../Graphics2"
+import { GraphicsElement, Point } from "../Graphics2"
 import { DataElim, Elim, Match, VarElim } from "../Match"
 import { Module, parseWithImports } from "../Module"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
@@ -36,8 +36,8 @@ export module View {
       const [ρ, dimsExpr]: [Env, Expr] = parseWithImports(`dimensions ${x}`)
       dimensions = function (tg: ExplValue<GraphicsElement>): [number, number] {
          const tv: ExplValue = Eval.eval_(ρ.concat(Env.singleton(str(x)(ν()), tg)), dimsExpr)
-         if (tv.v instanceof Pair && tv.v.fst instanceof Num && tv.v.snd instanceof Num) {
-            return [tv.v.fst.val, tv.v.snd.val]
+         if (tv.v instanceof Point) {
+            return [tv.v.x.val, tv.v.y.val]
          } else {
             return absurd()
          }

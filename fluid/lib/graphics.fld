@@ -42,25 +42,25 @@ let dimensions2 = fun (Point(x1, y1), Point(x2, y2)) →
 // For Group, dimensions are relative to implicit coords of (0, 0), since a Group's children are effectively
 // positioned relative to parent of Group. For Polymarker, will probably have to ignore the markers themselves, 
 // since they are scale-invariant.
-// GraphicsElement → (Num, Num)
+// GraphicsElement → Point
 letrec 
    fun dimensions {
-      Group(gs) → match foldl dimensions2 Point(0, 0) (map (coords_op) gs) as Point(x, y) → (x, y);
-      Polyline(ps, _, _) → match foldl dimensions2 Point(0, 0) (map ps (fun (x, y) → Point(x, y))) as Point(x, y) → (x, y);
-      Rect(_, _, w, h, _) → (w, h);
-      Text(_, _, _, _, _) → (0, 0); // treat text like markers; scale-invariant
-      Viewport(_, _, w, h, _, _, _, _, _) → (w, h)
+      Group(gs) → foldl dimensions2 Point(0, 0) (map (coords_op) gs);
+      Polyline(ps, _, _) → foldl dimensions2 Point(0, 0) (map ps (fun (x, y) → Point(x, y)));
+      Rect(_, _, w, h, _) → Point(w, h);
+      Text(_, _, _, _, _) → Point(0, 0); // treat text like markers; scale-invariant
+      Viewport(_, _, w, h, _, _, _, _, _) → Point(w, h)
    };
 
    fun coords_op g → 
       match prod coords dimensions g as 
-      ((x, y), (w, h)) → Point(x + w, y + h);
+      ((x, y), Point(w, h)) → Point(x + w, y + h);
 
 // GraphicsElement → Num
-let width = compose fst dimensions;
+let width = fun g → match dimensions g as Point(w, _) → w;
 
 // GraphicsElement → Num
-let height = compose snd dimensions;
+let height = fun g → match dimensions g as Point(_, h) → h;
 
 // Num → Num → List GraphicsElement → List GraphicsElement
 let spaceRight = fun z sep gs →
