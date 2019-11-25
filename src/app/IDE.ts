@@ -38,12 +38,12 @@ class IDE implements Editor.Listener {
       editor.direction = Direction.Bwd
       Eval.eval_bwd(editor.e, editor.tv)
       // consider availability of ρ_external only; treat ρ and e as unlimited resources
-      __annotations.restrictTo(this.ρ_external)
+      __annotations.restrictTo(this.ρ_external.values())
       const externDeps: Set<Annotated> = new Set(__annotations.ann)
       __annotations.direction = Direction.Fwd
       this.editors.filter(editor_ => editor_ !== editor).forEach((editor_: Editor.Editor): void => {
          Eval.eval_fwd(editor_.e, editor_.tv)
-         __annotations.restrictTo2(editor_.tv)
+         __annotations.restrictTo([editor_.tv])
          editor_.direction = Direction.Fwd
          editor_.render() // TODO: just redo selection rendering
       })

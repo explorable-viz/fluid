@@ -1,10 +1,11 @@
 import { __nonNull, absurd } from "./util/Core"
 import { Annotation, bool_ } from "./util/Lattice"
-import { ExplValue, DataValue } from "./DataValue"
+import { intersection, union } from "./util/Set"
+import { ExplValue } from "./DataValue"
 import { __deltas } from "./Delta"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
-import { Persistent, Value, _ } from "./Value"
+import { Value, _ } from "./Value"
 
 export type Annotated = Expr.SyntaxNode | ExplValue 
 
@@ -65,38 +66,8 @@ export class Annotations {
       this.ann.clear()
    }
 
-   restrictTo (v: Value): void {
-      const ann: Set<Annotated> = new Set()
-      this.restrictTo_aux(v, ann)
-      this.ann = ann
-   }
-
-   restrictTo_aux (v: Value, ann: Set<Annotated>): void {
-      if (this.ann.has(v as Annotated)) { // cast is a bit cheeky
-         ann.add(v as Annotated)
-      }
-      v.__children.forEach((v: Persistent): void => {
-         if (v instanceof Value) {
-            this.restrictTo_aux(v, ann)
-         }
-      })
-   }
-
-   restrictTo2 (tv: ExplValue): void {
-      const ann: Set<Annotated> = new Set()
-      this.restrictTo2_aux(tv, ann)
-      this.ann = ann
-   }
-
-   restrictTo2_aux (tv: ExplValue, ann: Set<Annotated>): void {
-      if (this.ann.has(tv)) {
-         ann.add(tv)
-      }
-      if (tv.v instanceof DataValue) {
-         Expl.explChildren(tv.t, tv.v).forEach((tv: ExplValue): void => {
-            this.restrictTo2_aux(tv, ann)
-         })
-      }
+   restrictTo (tvs: ExplValue[]): void {
+      this.ann = intersection(this.ann, union(...tvs.map(tv => Expl.explDescendants(tv))))
    }
 }
 

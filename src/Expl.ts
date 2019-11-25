@@ -181,4 +181,20 @@ export namespace Expl {
    export function explChildren (t: Expl, v: DataValue): ExplValue[] {
       return fields(v).map(k => explChild(t, v, k as any))
    }
+
+   export function explDescendants (tv: ExplValue): Set<ExplValue> {
+      const desc: Set<ExplValue> = new Set()
+      explDescendants_aux(tv, desc)
+      return desc
+   }
+
+   function explDescendants_aux (tv: ExplValue, desc: Set<ExplValue>): void {
+      desc.add(tv)
+      if (tv.v instanceof DataValue) {
+         const {t, v}: ExplValue = tv
+         explChildren(t, v).forEach((tv: ExplValue): void => {
+               explDescendants_aux(tv, desc)
+         })
+      }
+   }
 }

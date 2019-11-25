@@ -37,6 +37,14 @@ export abstract class Env extends DataValue<"Env"> {
          return absurd()
       }
    }
+
+   values (): ExplValue[] {
+      const tvs: ExplValue[] = []
+      for (let ρ: Env = this; ρ instanceof ExtendEnv; ρ = ρ.ρ) {
+         tvs.push(ρ.tv)
+      }
+      return tvs
+   }
 }
 
 export class EmptyEnv extends Env {
