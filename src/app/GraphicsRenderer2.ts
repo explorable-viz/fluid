@@ -213,7 +213,11 @@ export class GraphicsRenderer {
       const interactor: RectInteractor = new RectInteractor(this.editor, tg, r)
       r.addEventListener("mousemove", (e: MouseEvent): void => {
          e.stopPropagation()
-         interactor.onMousemove(e)
+         interactor.onMouseMove(e)
+      })
+      r.addEventListener("mouseout", (e: MouseEvent): void => {
+         e.stopPropagation()
+         interactor.onMouseOut(e)
       })
       this.current.appendChild(r)
    }

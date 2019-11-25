@@ -56,7 +56,7 @@ export class RectInteractor {
       }
    }
 
-   onMousemove (e: MouseEvent): void {
+   onMouseMove (e: MouseEvent): void {
       const g: Rect = as(this.tg.tv.v, Rect)
       const rect: ClientRect = this.r.getBoundingClientRect()
       // invert sign on y axis because of global inversion for SVG graphics
@@ -72,8 +72,8 @@ export class RectInteractor {
       }
    }
 
-   onMouseOut (): void {
-      this.tooltip.hide()
+   onMouseOut (e: MouseEvent): void {
+      this.editor.bwdSlice(() => {})
    }
 
    // Determine which "diagonal quadrant" of the rectangle [width, height] contains [x, y], and
