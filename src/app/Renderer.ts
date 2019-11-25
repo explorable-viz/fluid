@@ -397,6 +397,7 @@ function textElement (fontSize: number, class_: string, str: string): SVGTextEle
    text.setAttribute("stroke", "none")
    text.setAttribute("font-size", fontSize.toString()) // wasn't able to set this through CSS for some reason
    text.setAttribute("class", class_) // set styling before creating text node, for font metrics to be correct
+   text.setAttribute("pointer-events", "none")
    text.appendChild(document.createTextNode(str))
    return text
 }
