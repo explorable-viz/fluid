@@ -5,8 +5,8 @@ import { __deltas } from "./Delta"
 import { Expl } from "./Expl"
 import { Persistent, Value, _ } from "./Value"
 
-export function getα<T extends Value> (v: T): Annotation {
-   return __annotations.get(v)
+export function isα<T extends Value> (v: T): Annotation {
+   return __annotations.is(v)
 }
 
 // Currently no deltas are associated with annotations.
@@ -16,11 +16,11 @@ export function setα<T extends Value> (α: Annotation, v: T): T {
 }
 
 export function setjoinα<T extends Value> (α: Annotation, v: T): T {
-   return setα(bool_.join(α, getα(v)), v)
+   return setα(bool_.join(α, isα(v)), v)
 }
 
 export function setmeetα<T extends Value> (α: Annotation, v: T): T {
-   return setα(bool_.meet(α, getα(v)), v)
+   return setα(bool_.meet(α, isα(v)), v)
 }
 
 export enum Direction { Fwd, Bwd }
@@ -30,7 +30,7 @@ export class Annotations {
    direction: Direction = Direction.Fwd
 
    // Whether v is needed (going backward) or available (going forward).
-   get (v: Value): Annotation {
+   is (v: Value): Annotation {
       if (this.direction === Direction.Fwd) {
          return bool_.negate(this.ann.has(v))
       } else {
@@ -41,7 +41,7 @@ export class Annotations {
    // Going forward, annotation updates must be decreasing; going backward, increasing. This is because 
    // forward slicing propagates non-availability, whereas backward slicing propagates demand.
    set (v: Value, α: Annotation): void {
-      const current: Annotation = this.get(v)
+      const current: Annotation = this.is(v)
       if (this.direction === Direction.Fwd && α < current ||
           this.direction === Direction.Bwd && α > current) {
          this.ann.add(v)

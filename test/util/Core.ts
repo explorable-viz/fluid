@@ -33,14 +33,18 @@ const __editorListener: Editor.Listener = new class implements Editor.Listener {
 export class FwdSlice {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.FwdSlice)) {
-         __annotations.reset(Direction.Fwd)
          const tv: ExplValue = Eval.eval_(ρ, e)
+         __annotations.reset(Direction.Fwd)
          this.setup(new ExprCursor(e))
          Eval.eval_fwd(e, tv)
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(__editorListener, 400, 400, emptyEnv(), ρ, e).render() // yuk, this copies ρ
+         const editor = new Editor.Editor(__editorListener, 400, 400, emptyEnv(), ρ, e)
+         if (flags.get(Flags.FwdSlice)) {
+            editor.direction = Direction.Fwd
+         }
+         editor.render()
       }
    }
 
@@ -54,14 +58,18 @@ export class FwdSlice {
 export class BwdSlice {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.BwdSlice)) {
-         __annotations.reset(Direction.Bwd)
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
+         __annotations.reset(Direction.Bwd)
          this.setup(ExplValueCursor.descendant(null, tv))
          Eval.eval_bwd(e, tv)
          this.expect(new ExprCursor(e))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(__editorListener, 400, 400, emptyEnv(), ρ, e).render()
+         const editor = new Editor.Editor(__editorListener, 400, 400, emptyEnv(), ρ, e)
+         if (flags.get(Flags.BwdSlice)) {
+            editor.direction = Direction.Bwd
+         }
+         editor.render()
       }
    }
 
@@ -99,7 +107,7 @@ export class Edit {
 enum Flags { BwdSlice, FwdSlice, Edit, Visualise }
 
 const flags: Map<Flags, boolean> = new Map([
-   [Flags.FwdSlice, true],
+   [Flags.FwdSlice, false],
    [Flags.BwdSlice, true],
    [Flags.Edit, true],
    [Flags.Visualise, true]
