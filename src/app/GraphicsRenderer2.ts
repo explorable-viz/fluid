@@ -102,33 +102,33 @@ export class GraphicsRenderer {
       )
    }
 
-   renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
+   renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): SVGElement {
       const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
       if (g instanceof Circle) {
-         this.circle(tg)
+         return this.circle(tg)
       } else 
       if (g instanceof Group) {
-         this.group(tg)
+         return this.group(tg)
       } else 
       if (g instanceof Line) {
-         this.line(tg)
+         return this.line(tg)
       } else
       if (g instanceof Polyline) {
-         this.polyline(tg)
+         return this.polyline(tg)
       } else
       if (g instanceof Polymarkers) {
-         this.polymarkers(tg)
+         return this.polymarkers(tg)
       } else
       if (g instanceof Rect) {
-         this.rect(tg)
+         return this.rect(tg)
       } else
       if (g instanceof Text) {
-         this.text(tg)
+         return this.text(tg)
       } else
       if (g instanceof Viewport) {
-         this.viewport(tg)
+         return this.viewport(tg)
       } else {
-         absurd()
+         return absurd()
       }
    }
 
