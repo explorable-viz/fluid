@@ -3,6 +3,11 @@ import { initDataType } from "./DataType"
 import { DataValue } from "./DataValue"
 import { Num, Str, _ } from "./Value"
 
+export class Point extends DataValue<"Point"> {
+   x: Num = _
+   y: Num = _
+}
+
 // Isomorphic to Bool
 export class Orient extends DataValue<"Orient"> {
 }
@@ -98,6 +103,7 @@ export class Marker<Tag extends MarkerTag = MarkerTag> extends DataValue<Tag> {
 export class Arrowhead extends Marker<"Arrowhead"> {   
 }
 
+initDataType(Point, [Point])
 initDataType(Orient, [Horiz, Vert])
 initDataType(GraphicsElement, [Circle, Group, Line, Polyline, Polymarkers, Rect, Text, Viewport])
 initDataType(Transform, [Scale, Translate])
