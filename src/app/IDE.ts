@@ -24,9 +24,9 @@ class IDE implements Editor.Listener {
       const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
       const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
       this.editors.push(
-         new Editor.Editor(this, View.defaultDims, this.ρ_external, ρ1, e1),
-         new Editor.Editor(this, View.defaultDims, this.ρ_external, ρ2, e2),
-         new Editor.Editor(this, View.defaultDims, this.ρ_external, ρ3, e3)
+         new Editor.Editor(this, View.defaultDims, "top", this.ρ_external, ρ1, e1),
+         new Editor.Editor(this, View.defaultDims, "right", this.ρ_external, ρ2, e2),
+         new Editor.Editor(this, View.defaultDims, "top", this.ρ_external, ρ3, e3)
       )
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event) => this.editors.forEach(editor => editor.onload(ev))

@@ -1,4 +1,4 @@
-import { Instance as Tooltip } from "tippy.js"
+import { Instance as Tooltip, Placement } from "tippy.js"
 import { __nonNull, as } from "../util/Core"
 import { Annotated, Direction, __annotations } from "../Annotation"
 import { DataValue, ExplValue, explValue } from "../DataValue"
@@ -28,16 +28,25 @@ export module Editor {
       listener: Listener
       rootPane: SVGSVGElement
       tooltips: Set<Tooltip>
+      tooltipPlacement: Placement // hack to make for nicer examples
       ρ: Env
       e: Expr
       tv: ExplValue
       here!: ExplValueCursor
       direction: Direction
    
-      constructor (listener: Listener, [width, height]: [number, number], ρ_external: Env, ρ: Env, e: Expr) {
+      constructor (
+         listener: Listener, 
+         [width, height]: [number, number], 
+         tooltipPlacement: Placement, 
+         ρ_external: Env, 
+         ρ: Env, 
+         e: Expr
+      ) {
          this.listener = listener
          this.rootPane = svgRootElement(width, height)
          this.tooltips = new Set()
+         this.tooltipPlacement = tooltipPlacement
          markerEnsureDefined(this.rootPane, Arrowhead, "blue")
          document.body.appendChild(this.rootPane)
          this.ρ = ρ_external.concat(ρ)

@@ -1,5 +1,5 @@
 import tippy from "tippy.js"
-import { Instance as Tooltip } from "tippy.js"
+import { Instance as Tooltip, Placement } from "tippy.js"
 import "tippy.js/dist/tippy.css"
 import "tippy.js/themes/light-border.css"
 import { __log, __nonNull, as, assert } from "../util/Core"
@@ -14,8 +14,8 @@ import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { round } from "./Renderer"
 
-function createTooltip (element: SVGElement): Tooltip {
-   return tippy(element, { theme: "light-border", placement: "right" })
+function createTooltip (element: SVGElement, placement: Placement): Tooltip {
+   return tippy(element, { theme: "light-border", placement })
 }
 
 // Non-primitive dependencies render as a bullet.
@@ -69,7 +69,7 @@ export class RectInteractor {
 
    constructor (editor: Editor.Editor, tg: ExplValueCursor/*<Rect>*/, r: SVGRectElement) {
       this.editor = __nonNull(editor)
-      this.tooltip = createTooltip(r)
+      this.tooltip = createTooltip(r, editor.tooltipPlacement)
       this.editor.tooltips.add(this.tooltip)
       this.tg = tg
       this.r = r
