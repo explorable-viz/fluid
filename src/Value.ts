@@ -20,8 +20,8 @@ export class Value<Tag extends ValueTag = ValueTag> {
    readonly __tag!: Tag
 
    __child (k: keyof this): Persistent {
-      return (this as any)[k]
-   } 
+      return this[k] as unknown as Persistent
+   }
 
    // Probably confusingly, "children" isn't a user-level notion; specifically, wrappers
    // like Num and Str have children which are not observable through pattern-matching.

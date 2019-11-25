@@ -7,14 +7,27 @@ import { bool_ } from "../util/Lattice"
 import { Direction, isα, setα } from "../Annotation"
 import { ExplValue } from "../DataValue"
 import { Expl } from "../Expl"
-import { Rect } from "../Graphics2"
-import { Num, fields } from "../Value"
+import { GraphicsElement, Rect } from "../Graphics2"
+import { Num, Persistent, Str, fields } from "../Value"
 import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { round } from "./Renderer"
 
 function createTooltip (element: SVGElement): Instance {
    return tippy(element, { theme: "light-border" })
+}
+
+// Non-primitive dependencies render as a bullet.
+function propValues<T extends GraphicsElement> (g: T, props: (keyof T)[]): string {
+   const lines: string[] = props.map((prop: keyof T): string => {
+      const propVal: Persistent = g.__child(prop)
+      const propStr: string = propVal instanceof Num ? 
+            round(propVal.val) :
+            propVal instanceof Str ? 
+               propVal.val : "•"
+      return `${prop}: ${propStr}`
+   })
+   return lines.join("</br>")
 }
 
 export class RectInteractor {
@@ -29,14 +42,14 @@ export class RectInteractor {
       this.tooltip = createTooltip(r)
       this.tg = tg
       this.r = r
+      const g: Rect = as(tg.tv.v, Rect)
       const propsFocus: (keyof Rect)[] = fields(tg.tv.v).filter((prop: keyof Rect) => {
-         const tv: ExplValue = Expl.explChild(tg.tv.t, as(tg.tv.v, Rect), prop)
+         const tv: ExplValue = Expl.explChild(tg.tv.t, g, prop)
          return editor.direction === Direction.Fwd ? bool_.negate(isα(tv.t)) : isα(tv.t)
       })
+      this.tooltip.setContent(propValues(g, propsFocus))
       if (propsFocus.length > 0) {
-         console.log("***** " + propsFocus)
-      } else {
-         console.log("***** NO")
+         console.log(propValues(g, propsFocus))
       }
    }
 
@@ -49,8 +62,7 @@ export class RectInteractor {
       const propFocus: keyof Rect = this.propFor(x_prop, y_prop, 1, 1)
       if (this.propFocus !== propFocus) {
          this.propFocus = propFocus
-         const content: string = `${this.propFocus}: ${round(as(g[this.propFocus], Num).val)}`
-         this.tooltip.setContent(content)
+         this.tooltip.setContent(propValues(g, [propFocus]))
          this.editor.resetForBwd()
          setα(bool_.top, this.tg.to(Rect, this.propFocus).tv.t)
          this.editor.bwdSlice()
