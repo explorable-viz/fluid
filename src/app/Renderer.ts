@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, as, assert, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
 import { strings } from "../Expr"
-import { Arrowhead, Marker } from "../Graphics2"
+import { Arrowhead, Marker } from "../Graphics"
 import { Value, isPrim } from "../Value"
 import { versioned } from "../Versioned"
 import { SVG } from "./Core"

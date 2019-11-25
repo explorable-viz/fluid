@@ -5,7 +5,7 @@ import { exprClass } from "./DataType"
 import { Env, ExtendEnv, emptyEnv, extendEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
-import "./Graphics2" // for datatypes
+import "./Graphics" // for datatypes
 import grammar from "./Parse"
 import { PrimValue, Str } from "./Value"
 import { ν, at, num, str } from "./Versioned"

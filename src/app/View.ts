@@ -8,14 +8,14 @@ import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
-import { GraphicsElement, Point } from "../Graphics2"
+import { GraphicsElement, Point } from "../Graphics"
 import { DataElim, Elim, Match, VarElim } from "../Match"
 import { Module, parseWithImports } from "../Module"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
-import { GraphicsRenderer } from "./GraphicsRenderer2"
+import { GraphicsRenderer } from "./GraphicsRenderer"
 import { 
    DeltaStyle, arrow, addBorder_changed, addBorder_focus, centreDot, comma, connector, deltaStyle, __dimensions, ellipsis, horiz, 
    horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement_inverted, text, unimplemented, vert 

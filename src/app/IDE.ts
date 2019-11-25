@@ -1,11 +1,11 @@
 import "../BaseTypes"
-import "../Graphics2"
+import "../Graphics"
 import { Annotated, Direction, __annotations } from "../Annotation"
 import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expr } from "../Expr"
 import { openDatasetAs, openWithImports } from "../Module"
-import "../app/GraphicsRenderer2"
+import "../app/GraphicsRenderer"
 import { Editor } from "./Editor"
 import { View } from "./View"
 

@@ -1,35 +1,51 @@
-import { __nonNull, absurd, as, assert } from "../util/Core"
-import { Annotation, bool_ } from "../util/Lattice"
-import { Direction, isα, setα } from "../Annotation"
-import { Cons, List, Some } from "../BaseTypes"
+import { last } from "../util/Array"
+import { Class, __log, __nonNull, absurd, as, assert, id, userError } from "../util/Core"
+import { Cons, List } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
-import { Graphic, GraphicsElement, Polygon, Polyline, Point, Text, Translate } from "../Graphics"
+import { Circle, Group, GraphicsElement, Line, Marker, Polyline, Polymarkers, Point, Rect, Scale, Text, Transform, Translate, Viewport } from "../Graphics"
 import { Unary, unary_, unaryOps } from "../Primitive"
 import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
+import { Editor } from "./Editor"
+import { PointInteractor, RectInteractor } from "./Interactor"
+import { border, circle, group, lineRounded, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
+const fontSize: number = 11
 export const svg: SVG = new SVG()
-const fontSize: number = 12
 
-// The SVG text element for the supplied text; centralised so can be used to compute text metrics.
-// Use "translate" to locate the element, so that we can apply it after scaling.
-function textElement (x: number, y: number, fontSize: number, str: string): SVGTextElement {
-   const text: SVGTextElement = document.createElementNS(SVG.NS, "text")
-   text.setAttribute("stroke", "none")
-   text.setAttribute("font-size", fontSize.toString())
-   let transform: string = `translate(${x.toString()},${y.toString()})`
-   text.setAttribute("transform", transform + " scale(1,-1)")
-   text.appendChild(document.createTextNode(str))
-   return text
+type TransformFun = ([x, y]: [number, number]) => [number, number]
+
+function scale (x_scale: number, y_scale: number): TransformFun {
+   return ([x, y]): [number, number] => {
+      return [x * x_scale, y * y_scale]
+   }
 }
-
-type TransformFun = (p: [number, number]) => [number, number]
 
 function translate (x_inc: number, y_inc: number): TransformFun {
    return ([x, y]): [number, number] => {
       return [x + x_inc, y + y_inc]
+   }
+}
+
+function invertScale (scale: TransformFun): TransformFun {
+   return ([x, y]): [number, number] => {
+      const [x_scale, y_scale]: [number, number] = scale([1, 1])
+      return [x / x_scale, y / y_scale]
+   }
+}
+
+function transformFun (t: Transform): TransformFun {
+   if (t instanceof Scale) {
+      assert(t.x.val >= 0 && t.y.val >= 0)
+      return scale(t.x.val, t.y.val)
+   } else
+   if (t instanceof Translate) {
+      assert(isFinite(t.x.val) && isFinite(t.y.val))
+      return translate(t.x.val, t.y.val)
+   } else {
+      return absurd()
    }
 }
 
@@ -39,229 +55,234 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
    }
 }
 
-export interface Slicer {
-   fwdSlice (): void    // fwd slice and set direction to fwd
-   resetForBwd (): void // set all annotations to bot
-   bwdSlice (): void    // bwd slice and set direction to bwd
-   direction: Direction
-   coordinator: ViewCoordinator
-}
-
-export interface ViewCoordinator {
-   onBwd (): void
-   resetForBwd (): void
-}
-
 export class GraphicsRenderer {
-   transforms: TransformFun[] // stack of successive compositions of linear transformations
+   editor: Editor.Editor
+   root: SVGSVGElement
    ancestors: SVGElement[] // stack of enclosing SVG elements
-   slicer: Slicer
+   translations: TransformFun[] // stack of (uncomposed) active translations, each relative to parent SVG
+   scalings: TransformFun[] // stack of successively composed scalings, each relative to root SVG
+   showInvisible: boolean = false
 
-   constructor (root: SVGElement, slicer: Slicer) {
-      this.ancestors = [root]
-      this.slicer = slicer
-      this.transforms = [x => x]
+   // transform attribute isn't supported on SVGElement, so it contains a group element with the inversion transform.
+   constructor (editor: Editor.Editor, root: SVGSVGElement, initialAncestor: SVGElement) {
+      this.editor = editor
+      this.root = root
+      this.ancestors = [initialAncestor]
+      this.translations = [id]
+      this.scalings = [id]
    }
 
    get current (): SVGElement {
       return this.ancestors[this.ancestors.length - 1]
    }
 
+   // scaling applies to translated coordinates
    get transform (): TransformFun {
-      assert(this.transforms.length > 0)
-      // query the current transform rather than returing a closure that accesses it...
-      const transform: TransformFun = this.transforms[this.transforms.length - 1]
-      return ([x, y]) => {
-         const [xʹ, yʹ] = transform([x, y])
-         return [Math.round(xʹ), Math.round(yʹ)]
-      } 
+      return postcompose(this.scale, last(this.translations))
    }
 
-   render (tg: ExplValue<GraphicsElement>): void {
+   get scale (): TransformFun {
+      return last(this.scalings)
+   }
+
+   render (tg: ExplValue<GraphicsElement>, [w, h]: [number, number]): void {
       assert(this.ancestors.length === 1)
-      while (this.current.firstChild !== null) {
-         this.current.removeChild(this.current.firstChild)
+      const root: SVGElement = this.current
+      while (root.firstChild !== null) {
+         root.removeChild(root.firstChild)
       }
-      this.renderElement(ExplValueCursor.descendant(null, tg))
+      const width: number = parseFloat(__nonNull(root.getAttribute("width")))
+      const height: number = parseFloat(__nonNull(root.getAttribute("height")))
+      this.withLocalFrame(
+         scale(width / w, height / h),
+         id,
+         () => {
+            this.renderElement(ExplValueCursor.descendant(null, tg))
+         }
+      )
    }
 
-   renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): void {
+   renderElement (tg: ExplValueCursor/*<GraphicsElement>*/): SVGElement {
       const g: GraphicsElement = as(tg.tv.v, GraphicsElement)
-      if (g instanceof Graphic) {
-         this.group(tg)
+      if (g instanceof Circle) {
+         return this.circle(tg)
       } else 
-      if (g instanceof Polyline) {
-         this.polyline(tg)
+      if (g instanceof Group) {
+         return this.group(tg)
+      } else 
+      if (g instanceof Line) {
+         return this.line(tg)
       } else
-      if (g instanceof Polygon) {
-         this.polygon(tg)
+      if (g instanceof Polyline) {
+         return this.polyline(tg)
+      } else
+      if (g instanceof Polymarkers) {
+         return this.polymarkers(tg)
+      } else
+      if (g instanceof Rect) {
+         return this.rect(tg)
       } else
       if (g instanceof Text) {
-         this.text(tg)
+         return this.text(tg)
       } else
-      if (g instanceof Translate) {
-         this.translate(tg)
-      }
-      else {
+      if (g instanceof Viewport) {
+         return this.viewport(tg)
+      } else {
          return absurd()
       }
    }
 
-   group (tg: ExplValueCursor/*<Graphic>*/): void {
-      const group: SVGGElement = document.createElementNS(SVG.NS, "g")
-      // See https://www.smashingmagazine.com/2018/05/svg-interaction-pointer-events-property/.
-      group.setAttribute("pointer-events", "bounding-box")
-      this.current.appendChild(group)
-      this.ancestors.push(group)
-      // ignoring annotations on cons cells
-      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Graphic, "gs"); 
+   // Scalings accumulate as we go down. Translations don't, because we use nested SVGs.
+   withLocalFrame<T> (scale: TransformFun, translate: TransformFun, localRender: () => T): T {
+      let result: T
+      this.scalings.push(postcompose(last(this.scalings), scale))
+      this.translations.push(translate)
+      result = localRender()
+      this.translations.pop()
+      this.scalings.pop()
+      return result
+   }
+
+   // Scale circle by product of x, y scaling factors to maintain ratio of area to fixed rectangle as an invariant.
+   circle (tg: ExplValueCursor/*<Rect>*/): SVGCircleElement {
+      const g: Circle = as(tg.tv.v, Circle)
+      const [x, y] = this.transform([g.x.val, g.y.val])
+      const [x_scale, y_scale] = this.scale([1, 1])
+      const r: SVGCircleElement = circle(x, y, g.radius.val * x_scale * y_scale, "none", g.fill.val, this.circle)
+      this.current.appendChild(r)
+      return r
+   }
+
+   group (tg: ExplValueCursor/*<Group>*/): SVGGElement {
+      const g: SVGGElement = group()
+      this.current.appendChild(g)
+      this.ancestors.push(g)
+      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Group, "gs"); 
            Cons.is(as(tg̅.tv.v, List)); tg̅ = tg̅.to(Cons, "tail")) {
          this.renderElement(tg̅.to(Cons, "head"))
       }
       this.ancestors.pop()
+      return g
    }
 
-   translate (tg: ExplValueCursor/*<Translate>*/): void {
-      const g: Translate = as(tg.tv.v, Translate),
-            tgʹ: ExplValueCursor/*<GraphicsElement>*/ = tg.to(Translate, "g"), 
-            f: TransformFun = translate(g.x.val, g.y.val)
-      const transform: TransformFun = this.transform
-      this.transforms.push(postcompose(transform, f))
-      this.renderElement(tgʹ)
-      this.transforms.pop()
+   // For line/polyline, each point is considered a "child", and therefore subject to my local scaling.
+   line (tg: ExplValueCursor/*<Polyline>*/): SVGLineElement {
+      const g: Line = as(tg.tv.v, Line)
+      const [[x1, y1], [x2, y2]] = [
+         this.transform([g.p1.x.val, g.p1.y.val]), 
+         this.transform([g.p2.x.val, g.p2.y.val])
+      ]
+      const l: SVGLineElement = lineRounded(x1, y1, x2, y2, g.stroke.val, g.strokeWidth.val)
+      this.current.appendChild(l)
+      return l
    }
 
-   transformedPath (p̅: List<Point>): [number, number][] {
-      return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val, y.val]))
-   }
-
-   transformedScaledPath (p̅: List<Point>): [number, number][] {
-      return p̅.toArray().map(({ x, y }): [number, number] => this.transform([x.val * 40, y.val * 0.15]))
-   }
-
-   asString (p̅: [number, number][]): string {
-      return p̅.map(([x, y]: [number, number]) => `${x},${y}`).join(" ")
-   }
-
-   polyline (tg: ExplValueCursor/*<Polyline>*/): void {
-      const path: SVGPolylineElement = document.createElementNS(SVG.NS, "polyline")
+   polyline (tg: ExplValueCursor/*<Polyline>*/): SVGPolylineElement {
       const g: Polyline = as(tg.tv.v, Polyline)
-      const ps: [number, number][] = this.transformedScaledPath(g.points)
-      if (Some.is(g.marker)) {
-         ps.map(([x, y]) => this.plotPoint(2.5, x, y)) // hardcoded radius for now
-      }
-      path.setAttribute("points", this.asString(ps))
-      path.setAttribute("stroke", "black")
-      path.addEventListener("click", (e: MouseEvent): void => {
-         e.stopPropagation()
-         assert(false, "Not implemented yet")
+      const ps: [number, number][] = g.points.toArray().map((p: Point): [number, number] => {
+         return this.transform([p.x.val, p.y.val])
       })
-      this.current.appendChild(path)
-      this.pointHighlights(tg.to(Polyline, "points"))
+      const l: SVGPolylineElement = polyline(ps, g.stroke.val, g.strokeWidth.val)
+      this.current.appendChild(l)
+      return l
    }
 
-   line (x1: number, y1: number, x2: number, y2: number): void {
-      const line: SVGLineElement = document.createElementNS(SVG.NS, "line")
-      line.setAttribute("x1", `${x1}`)
-      line.setAttribute("y1", `${y1}`)
-      line.setAttribute("x2", `${x2}`)
-      line.setAttribute("y2", `${y2}`)
-      line.setAttribute("stroke", "black")
-      this.current.appendChild(line)
-   }
-
-   plotPoint (radius: number, x: number, y: number): void {
-      this.line(x - radius, y - radius, x + radius, y + radius)
-      this.line(x - radius, y + radius, x + radius, y - radius)
-   }
-
-   pointHighlights (tp̅: ExplValueCursor/*<List<Point>>*/): void {
-      for (; Cons.is(as(tp̅.tv.v, List)); tp̅ = tp̅.to(Cons, "tail")) {
-         // TODO: annotation on point itself is not considered yet
-         const p: ExplValueCursor/*<Point>*/ = tp̅.to(Cons, "head")
-         this.xyHighlight(p.to(Point, "x"), p.to(Point, "y"))
-      }
-   }
-
-   xyHighlight (tx: ExplValueCursor/*<Num>*/, ty: ExplValueCursor/*<Num>*/): void {
-      const [x_α, y_α] = [isα(tx.tv), isα(ty.tv)]
-      let α: Annotation = bool_.meet(x_α, y_α)
-      if (this.slicer.direction === Direction.Fwd) {
-         α = bool_.negate(α)
-      }
-      if (α) {
-         const [xʹ, yʹ]: [number, number] = this.transform([as(tx.tv.v, Num).val, as(ty.tv.v, Num).val])
-         this.circle(xʹ, yʹ, 3)
-      }
-   }
-
-   circle (x: number, y: number, radius: number): void {
-      const circle: SVGCircleElement = document.createElementNS(SVG.NS, "circle")
-      circle.setAttribute("cx", x.toString())
-      circle.setAttribute("cy", y.toString())
-      circle.setAttribute("r", radius.toString())
-      circle.setAttribute("stroke", "blue")
-      circle.setAttribute("fill", "none")
-      this.current.appendChild(circle)
-   }
-
-   polygon (tg: ExplValueCursor/*<Polygon>*/): void {
-      const polygon: SVGPolygonElement = document.createElementNS(SVG.NS, "polygon"),
-            g: Polygon = as(tg.tv.v, Polygon)
-      polygon.setAttribute("points", this.asString(this.transformedScaledPath(g.points)))
-      polygon.setAttribute("stroke", g.stroke.val)
-      polygon.setAttribute("fill", g.fill.val)
-      polygon.addEventListener("click", (e: MouseEvent): void => {
-         e.stopPropagation()
-         this.slicer.coordinator.resetForBwd()
-         // set annotations only on _points_, not list containing them or polygon itself
-         for (let tp̅: ExplValueCursor/*<List<Point>>*/ = tg.to(Polygon, "points"); 
-              Cons.is(as(tp̅.tv.v, List)); tp̅ = tp̅.to(Cons, "tail")) {
-            const tp: ExplValueCursor/*<Point>*/ = tp̅.to(Cons, "head")
-            setα(bool_.top, tp.tv)
-            setα(bool_.top, tp.to(Point, "x").tv)
-            setα(bool_.top, tp.to(Point, "y").tv)
+   // Polymarkers have coordinates relative to the points, in the *parent* scaling.
+   polymarkers (tg: ExplValueCursor/*<Polymarkers>*/): SVGGElement {
+      const g: SVGGElement = group()
+      this.current.appendChild(g)
+      this.ancestors.push(g)
+      const invScale: TransformFun = invertScale(this.scale)
+      for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Polymarkers, "markers"),
+               tps: ExplValueCursor/*<List<Point>*/ = tg.to(Polymarkers, "points"); 
+           Cons.is(as(tg̅.tv.v, List)) || Cons.is(as(tps.tv.v, List)); 
+           tg̅ = tg̅.to(Cons, "tail"), tps = tps.to(Cons, "tail")) {
+         if (!Cons.is(as(tg̅.tv.v, List)) || !Cons.is(as(tps.tv.v, List))) {
+            userError(`${Polymarkers.name}: more markers than points.`)
+         } else {
+            const tp: ExplValueCursor/*<Point>*/ = tps.to(Cons, "head")
+            const p: Point = as(tp.tv.v, Point)
+            const [x, y] = this.transform([p.x.val, p.y.val])
+            const markerViewport: SVGSVGElement = svgElement(true, x, y, 10, 10, false, this.polymarkers)
+            this.current.appendChild(markerViewport)
+            this.ancestors.push(markerViewport)
+            this.withLocalFrame(
+               invScale,
+               id, 
+               () => {
+                  const marker: SVGElement = this.renderElement(tg̅.to(Cons, "head"))
+                  if (marker instanceof SVGCircleElement) {
+                     new PointInteractor(this.editor, tp, marker)
+                  }
+               }
+            )
+            this.ancestors.pop()
          }
-         this.slicer.bwdSlice()
-      })
-      this.current.appendChild(polygon)
-      this.pointHighlights(tg.to(Polygon, "points"))
+      }
+      this.ancestors.pop()
+      return g
    }
 
-   // Flip text vertically to cancel out the global vertical flip. Don't set x and y but express
-   // position through a translation so that the scaling doesn't affect the position.
-   text (tg: ExplValueCursor/*<Text>*/): void {
+   rect (tg: ExplValueCursor/*<Rect>*/): SVGRectElement {
+      const g: Rect = as(tg.tv.v, Rect)
+      const [x, y] = this.transform([g.x.val, g.y.val])
+      const [width, height] = this.scale([g.width.val, g.height.val])
+      assert(width >= 0 && height >= 0)
+      const r: SVGRectElement = rect(x, y, width, height, "none", g.fill.val, this.rect)
+      new RectInteractor(this.editor, tg, r)
+      this.current.appendChild(r)
+      return r
+   }
+
+   text (tg: ExplValueCursor/*<Text>*/): SVGTextElement {
       const g: Text = as(tg.tv.v, Text),
             [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
-            text: SVGTextElement = textElement(x, y, fontSize, g.str.val)
-      text.addEventListener("click", (e: MouseEvent): void => {
-         e.stopPropagation()
-         this.slicer.coordinator.resetForBwd()
-         setα(bool_.top, tg.tv)
-         setα(bool_.top, tg.to(Text, "str").tv)
-         this.slicer.bwdSlice()
-      })
-      this.current.appendChild(text)
-      // this.xyHighlight(g.x, g.y)
-      // TODO: annotation on text element itself is not considered yet
-      let α: Annotation = isα(tg.to(Text, "str").tv)
-      if (this.slicer.direction === Direction.Fwd) {
-         α = bool_.negate(α)
+            t: SVGTextElement = textElement_graphical(x, y, fontSize, g.str.val)
+      this.current.appendChild(t)
+      t.setAttribute("fill", "black")
+      t.setAttribute("text-anchor", `${g.anchor.val}`)
+      t.setAttribute("alignment-baseline", `${g.baseline.val}`)
+      return t
+   }
+
+   viewport (tg: ExplValueCursor/*<Viewport>*/): SVGSVGElement {
+      const g: Viewport = as(tg.tv.v, Viewport)
+      // dimensions are relative to parent coordinate space, so not transformed by g's scaling
+      const [x, y] = this.transform([g.x.val, g.y.val])
+      const [width, height] = this.scale([g.width.val, g.height.val])
+      assert(width >= 0 && height >= 0)
+      const outerSvg: SVGSVGElement = svgElement(false, x, y, width, height, false, this.viewport)
+      if (g.fill.val !== "none") {
+         outerSvg.appendChild(rect(0, 0, width, height, "none", g.fill.val, this.viewport))
       }
-      if (α) {
-         const bbox: SVGRect = text.getBBox(),
-               rect = document.createElementNS(SVG.NS, "rect")
-             rect.setAttribute("x", bbox.x.toString())
-             rect.setAttribute("y", bbox.y.toString())
-             rect.setAttribute("width", bbox.width.toString())
-             rect.setAttribute("height", bbox.height.toString())
-             rect.setAttribute("fill", "#D3D3D3")
-             rect.setAttribute("transform", `translate(${x.toString()},${y.toString()}) scale(1,-1)`)
-             this.current.insertBefore(rect, text)
-         text.setAttribute("fill", "blue")
-      } else {
-         text.setAttribute("fill", "black")
+      this.current.appendChild(outerSvg)
+      if (this.showInvisible) {
+         this.current.appendChild(border(x, y, width, height, "gray", true))
       }
+      this.ancestors.push(outerSvg)
+      const margin: number = g.margin.val
+      const [widthʹ, heightʹ]: [number, number] = [Math.max(width - margin * 2), height - margin * 2]
+      const innerScale: TransformFun = ([x, y]: [number, number]) => {
+         return [x * widthʹ / width, y * heightʹ / height]
+      }
+      const innerViewport: SVGSVGElement = svgElement(true, margin, margin, widthʹ, heightʹ, false, this.viewport)
+      this.current.appendChild(innerViewport)
+      this.ancestors.push(innerViewport)
+      this.withLocalFrame(
+         postcompose(innerScale, transformFun(g.scale)),
+         transformFun(g.translate),
+         () => {
+            this.renderElement(tg.to(Viewport, "g"))
+         }
+      )
+      this.ancestors.pop()
+      this.ancestors.pop()
+      return outerSvg
+   }
+
+   setMarkerMid (el: SVGElement, C: Class<Marker>, colour: string): void {
+      const markerId: string = markerEnsureDefined(this.root, C, colour) // revisit cast
+      el.setAttribute("marker-mid", `url(#${markerId})`)
    }
 }
 
@@ -269,11 +290,11 @@ export class GraphicsRenderer {
    // Additional primitives that rely on offline rendering to compute text metrics. Combining these would 
    // require more general primitives that can return tuples.
    const textWidth: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(svg.textWidth(textElement(0, 0, fontSize, str.val)))
+      return num(svg.textWidth(textElement_graphical(0, 0, fontSize, str.val)))
    }
    
    const textHeight: Unary<Str, Num> = (str: Str): (k: Id) => Num => {
-      return num(svg.textHeight(textElement(0, 0, fontSize, str.val)))
+      return num(svg.textHeight(textElement_graphical(0, 0, fontSize, str.val)))
    }
    
    unaryOps.set(textWidth.name, unary_(textWidth))

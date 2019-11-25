@@ -7,7 +7,7 @@ import { Eval } from "../../src/Eval"
 import { Expr } from "../../src/Expr"
 import { Elim } from "../../src/Match"
 import { ν, newRevision, str } from "../../src/Versioned"
-import "../../src/Graphics2" // for graphical datatypes
+import "../../src/Graphics" // for graphical datatypes
 import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
 import { Editor } from "../../src/app/Editor"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
