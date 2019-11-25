@@ -2,9 +2,9 @@ import tippy from "tippy.js"
 import { Instance as Tooltip } from "tippy.js"
 import "tippy.js/dist/tippy.css"
 import "tippy.js/themes/light-border.css"
-import { __log, __nonNull, as } from "../util/Core"
+import { __log, __nonNull, as, assert } from "../util/Core"
 import { bool_ } from "../util/Lattice"
-import { Direction, isα, setα } from "../Annotation"
+import { Annotated, Direction, isα, setα } from "../Annotation"
 import { ExplValue } from "../DataValue"
 import { Expl } from "../Expl"
 import { GraphicsElement, Rect } from "../Graphics2"
@@ -14,7 +14,7 @@ import { Editor } from "./Editor"
 import { round } from "./Renderer"
 
 function createTooltip (element: SVGElement): Tooltip {
-   return tippy(element, { theme: "light-border" })
+   return tippy(element, { theme: "light-border", placement: "right" })
 }
 
 // Non-primitive dependencies render as a bullet.
@@ -46,17 +46,15 @@ export class RectInteractor {
       const g: Rect = as(tg.tv.v, Rect)
       const propsFocus: (keyof Rect)[] = fields(tg.tv.v).filter((prop: keyof Rect) => {
          const tv: ExplValue = Expl.explChild(tg.tv.t, g, prop)
-         return __nonNull(editor.direction) === Direction.Fwd ? bool_.negate(isα(tv.t)) : isα(tv.t)
+         return __nonNull(editor.direction) === Direction.Fwd ? bool_.negate(isα(tv)) : isα(tv)
       })
       if (propsFocus.length > 0) {
          this.tooltip.setContent(propValues(g, propsFocus))
          this.tooltip.show()
-      } else {
-         this.tooltip.hide()
       }
    }
 
-   onMousemove (e: MouseEvent): void {
+   onMouseMove (e: MouseEvent): void {
       const g: Rect = as(this.tg.tv.v, Rect)
       const rect: ClientRect = this.r.getBoundingClientRect()
       // invert sign on y axis because of global inversion for SVG graphics
@@ -65,15 +63,17 @@ export class RectInteractor {
       const propFocus: keyof Rect = this.propFor(x_prop, y_prop, 1, 1)
       if (this.propFocus !== propFocus) {
          this.propFocus = propFocus
+         const dependencies: Set<Annotated> = this.editor.bwdSlice(() => {
+            setα(bool_.top, this.tg.to(Rect, propFocus).tv)
+         })
+         console.log(dependencies)
          this.tooltip.setContent(propValues(g, [propFocus]))
-         this.editor.resetForBwd()
-         setα(bool_.top, this.tg.to(Rect, this.propFocus).tv.t)
-         this.editor.bwdSlice()
       }
    }
 
-   onMouseOut (): void {
-      __nonNull(this.tooltip).hide()
+   onMouseOut (e: MouseEvent): void {
+      this.propFocus = null
+      assert(this.editor.bwdSlice(() => {}).size === 0)
    }
 
    // Determine which "diagonal quadrant" of the rectangle [width, height] contains [x, y], and

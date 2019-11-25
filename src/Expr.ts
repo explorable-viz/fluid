@@ -4,7 +4,7 @@ import { Cons, List, Nil } from "./BaseTypes"
 import { DataValue } from "./DataValue"
 import { FiniteMap } from "./FiniteMap"
 import { Elim, DataElim, VarElim } from "./Match"
-import { DataValueTag, Id, Num, Str, _ } from "./Value"
+import { Id, Num, Str, _ } from "./Value"
 import { at } from "./Versioned"
 
 // Constants used for parsing, and also for toString() implementations.
@@ -38,7 +38,9 @@ export namespace Expr {
    // Use to be a parameterised class but we can simplify using our nominal type idiom.
    export type Cont = Expr | DataValue<"Elim">
 
-   export abstract class SyntaxNode<Tag extends DataValueTag = DataValueTag> extends DataValue<Tag> {
+   type SyntaxNodeTag = "Expr" | "Expr.Def" | "Expr.RecDef"
+
+   export abstract class SyntaxNode<Tag extends SyntaxNodeTag = SyntaxNodeTag> extends DataValue<Tag> {
    }
 
    export abstract class Expr extends SyntaxNode<"Expr"> {
@@ -114,7 +116,7 @@ export namespace Expr {
       return at(Prim, x)
    }
 
-   export class RecDef extends SyntaxNode<"RecDef"> {
+   export class RecDef extends SyntaxNode<"Expr.RecDef"> {
       x: Str = _
       σ: Elim<Expr> = _
    }

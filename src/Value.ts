@@ -10,7 +10,7 @@ export type DataValueTag =
    // TODO: sync these up when new graphics design complete.
    "Graphic" | "Viewport" | "Circle" | "Group" | "Line" | "Marker" | "Orient" | "Polyline" | "Polymarkers" | "Polygon" | "Scale" | "Text" | "Transform" | "LeftTick" | "RightTick" | "Circle" | "Arrowhead" |
    "Bool" | "Closure" | "DataExpl" | "Elim" | "Match" | "Env" | "Expl" | "Expl.Def" | "Expl.RecDef" | "ExplValue" | "Expr" | "Expr.Def" |  
-   "Translate" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "RecDef" | "Rect" | "Tree" | "Token"
+   "Translate" | "List" | "Option" | "Ordering" | "Pair" | "Plug" | "Point" | "Expr.RecDef" | "Rect" | "Tree" | "Token"
 export type LexemeTag = "Whitespace" | "SingleLineComment" | "Operator"
 export type PrimOpTag = "UnaryOp" | "BinaryOp"
 export type ValueTag = DataValueTag | LexemeTag | PrimOpTag | "Id" | "Num" | "Str"
