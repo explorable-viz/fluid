@@ -211,7 +211,9 @@ export class GraphicsRenderer {
                id, 
                () => {
                   const marker: SVGElement = this.renderElement(tg̅.to(Cons, "head"))
-                  new PointInteractor(this.editor, tp, marker)
+                  if (marker instanceof SVGCircleElement) {
+                     new PointInteractor(this.editor, tp, marker)
+                  }
                }
             )
             this.ancestors.pop()

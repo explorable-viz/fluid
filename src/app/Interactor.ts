@@ -9,7 +9,7 @@ import { Pair } from "../BaseTypes"
 import { DataValue, ExplValue } from "../DataValue"
 import { Expl } from "../Expl"
 import { Rect } from "../Graphics2"
-import { Num, Persistent, Str, Value, fields } from "../Value"
+import { Num, Persistent, Str, fields } from "../Value"
 import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { round } from "./Renderer"
@@ -18,21 +18,9 @@ function createTooltip (element: SVGElement, placement: Placement): Tooltip {
    return tippy(element, { theme: "light-border", placement })
 }
 
-// Non-primitive dependencies render as a bullet.
-function propValues<T extends Value> (g: T, props: (keyof T)[]): string {
-   const lines: string[] = props.map((prop: keyof T): string => {
-      const propVal: Persistent = g.__child(prop)
-      const propStr: string = propVal instanceof Num ? 
-            round(propVal.val) :
-            propVal instanceof Str ? 
-               propVal.val : "•"
-      return `${prop}: ${propStr}`
-   })
-   return lines.join("</br>")
-}
-
-abstract class Interactor<T, U extends SVGElement> {
+abstract class Interactor<T extends DataValue, U extends SVGElement> {
    editor: Editor.Editor
+   C: Class<T>
    tooltip: Tooltip
    cursor: ExplValueCursor/*<Pair<Num, Num>>*/
    element: U
@@ -40,14 +28,15 @@ abstract class Interactor<T, U extends SVGElement> {
 
    constructor (editor: Editor.Editor, C: Class<T>, cursor: ExplValueCursor/*<Pair<Num, Num>>*/, element: U) {
       this.editor = editor
+      this.C = C
       this.tooltip = createTooltip(element, editor.tooltipPlacement)
       this.editor.tooltips.add(this.tooltip)
       this.cursor = cursor
       this.element = element
-      const p: Pair<Num, Num> = as(cursor.tv.v, C)
-      const propsFocus: (keyof Pair)[] = this.focusedProps(cursor.tv as ExplValue<Pair>)
+      const p: T = as(cursor.tv.v, C)
+      const propsFocus: (keyof T)[] = this.focusedProps(cursor.tv as ExplValue<T>)
       if (propsFocus.length > 0) {
-         this.tooltip.setContent(propValues(p, propsFocus))
+         this.tooltip.setContent(this.propValues(p, propsFocus))
          this.tooltip.show()
          element.classList.add("focus")
       }
@@ -61,14 +50,44 @@ abstract class Interactor<T, U extends SVGElement> {
       })
    }
 
+   // Non-primitive dependencies render as a bullet.
+   propValues (g: T, props: (keyof T)[]): string {
+      const lines: string[] = props.map((prop: keyof T): string => {
+         const propVal: Persistent = g.__child(prop)
+         const propStr: string = propVal instanceof Num ? 
+               round(propVal.val) :
+               propVal instanceof Str ? 
+                  propVal.val : "•"
+         return `${prop}: ${propStr}`
+      })
+      return lines.join("</br>")
+   }
+
    focusedProps<T extends DataValue> (tv: ExplValue<T>): (keyof T)[] {
       return fields(tv.v).filter((prop: keyof T) => {
          const tv_: ExplValue = Expl.explChild(tv.t, tv.v, prop)
          return __nonNull(this.editor.direction) === Direction.Fwd ? bool_.negate(isα(tv_)) : isα(tv_)
       })
    }
-   
-   abstract onMouseMove (e: MouseEvent): void
+
+   abstract propFor (x_prop: number, y_prop: number): keyof T
+
+   onMouseMove (e: MouseEvent): void {
+      const v: T = as(this.cursor.tv.v, this.C)
+      const rect: ClientRect = this.element.getBoundingClientRect()
+      // invert sign on y axis because of global inversion for SVG graphics
+      const x_prop: number = Math.max(e.clientX - rect.left, 0) / rect.width
+      const y_prop: number = Math.min(rect.bottom - e.clientY, rect.height) / rect.height
+      const propFocus: keyof T = this.propFor(x_prop, y_prop)
+      if (this.propFocus !== propFocus) {
+         this.propFocus = propFocus
+         this.editor.bwdSlice(() => {
+            setα(bool_.top, this.cursor.to(this.C, propFocus).tv)
+         })
+         this.tooltip.setContent(this.propValues(v, [propFocus]))
+         this.element.classList.add("focus")
+      }
+   }
 
    onMouseOut (e: MouseEvent): void {
       this.propFocus = null
@@ -82,7 +101,8 @@ export class PointInteractor extends Interactor<Pair, SVGElement> {
       super(editor, Pair, tp, marker)
    }
 
-   onMouseMove (e: MouseEvent): void {
+   propFor (x_prop: number, y_prop: number): keyof Pair {
+      return "snd"
    }
 }
 
@@ -91,28 +111,10 @@ export class RectInteractor extends Interactor<Rect, SVGRectElement> {
       super(editor, Rect, tg, r)
    }
 
-   onMouseMove (e: MouseEvent): void {
-      const g: Rect = as(this.cursor.tv.v, Rect)
-      const rect: ClientRect = this.element.getBoundingClientRect()
-      // invert sign on y axis because of global inversion for SVG graphics
-      const x_prop: number = Math.max(e.clientX - rect.left, 0) / rect.width
-      const y_prop: number = Math.min(rect.bottom - e.clientY, rect.height) / rect.height
-      const propFocus: keyof Rect = this.propFor(x_prop, y_prop, 1, 1)
-      if (this.propFocus !== propFocus) {
-         this.propFocus = propFocus
-         this.editor.bwdSlice(() => {
-            setα(bool_.top, this.cursor.to(Rect, propFocus).tv)
-         })
-         this.tooltip.setContent(propValues(g, [propFocus]))
-         this.element.classList.add("focus")
-      }
-   }
-
-   // Determine which "diagonal quadrant" of the rectangle [width, height] contains [x, y], and
+   // Determine which "diagonal quadrant" of the unit square [1, 1] contains [x, y], and
    // then map to the corresponding attribute of the rectangle.
-   propFor (x: number, y: number, width: number, height: number): keyof Rect {
-      const y_diag: number = (height / width) * x
-      const corner: [keyof Rect, keyof Rect] = y > y_diag ? ["x", "height"] : ["y", "width"]
-      return y < height - y_diag ? corner[0] : corner[1]
+   propFor (x: number, y: number): keyof Rect {
+      const corner: [keyof Rect, keyof Rect] = y > x ? ["x", "height"] : ["y", "width"]
+      return y < 1 - x ? corner[0] : corner[1]
    }
 }
