@@ -128,7 +128,7 @@ export class GraphicsRenderer {
       if (g instanceof Viewport) {
          this.viewport(tg)
       } else {
-            return absurd()
+         absurd()
       }
    }
 
@@ -144,12 +144,13 @@ export class GraphicsRenderer {
    }
 
    // Scale circle by product of x, y scaling factors to maintain ratio of area to fixed rectangle as an invariant.
-   circle (tg: ExplValueCursor/*<Rect>*/): void {
+   circle (tg: ExplValueCursor/*<Rect>*/): SVGCircleElement {
       const g: Circle = as(tg.tv.v, Circle)
       const [x, y] = this.transform([g.x.val, g.y.val])
       const [x_scale, y_scale] = this.scale([1, 1])
       const r: SVGCircleElement = circle(x, y, g.radius.val * x_scale * y_scale, "none", g.fill.val, this.circle)
       this.current.appendChild(r)
+      return r
    }
 
    group (tg: ExplValueCursor/*<Group>*/): void {
@@ -160,21 +161,25 @@ export class GraphicsRenderer {
    }
 
    // For line/polyline, each point is considered a "child", and therefore subject to my local scaling.
-   line (tg: ExplValueCursor/*<Polyline>*/): void {
+   line (tg: ExplValueCursor/*<Polyline>*/): SVGLineElement {
       const g: Line = as(tg.tv.v, Line)
       const [[x1, y1], [x2, y2]] = [
          this.transform([g.p1.fst.val, g.p1.snd.val]), 
          this.transform([g.p2.fst.val, g.p2.snd.val])
       ]
-      this.current.appendChild(lineRounded(x1, y1, x2, y2, g.stroke.val, g.strokeWidth.val))
+      const l: SVGLineElement = lineRounded(x1, y1, x2, y2, g.stroke.val, g.strokeWidth.val)
+      this.current.appendChild(l)
+      return l
    }
 
-   polyline (tg: ExplValueCursor/*<Polyline>*/): void {
+   polyline (tg: ExplValueCursor/*<Polyline>*/): SVGPolylineElement {
       const g: Polyline = as(tg.tv.v, Polyline)
       const ps: [number, number][] = g.points.toArray().map((p: Pair<Num, Num>): [number, number] => {
          return this.transform([p.fst.val, p.snd.val])
       })
-      this.current.appendChild(polyline(ps, g.stroke.val, g.strokeWidth.val))
+      const l: SVGPolylineElement = polyline(ps, g.stroke.val, g.strokeWidth.val)
+      this.current.appendChild(l)
+      return l
    }
 
    // Polymarkers have coordinates relative to the points, in the *parent* scaling.
@@ -204,7 +209,7 @@ export class GraphicsRenderer {
       }
    }
 
-   rect (tg: ExplValueCursor/*<Rect>*/): void {
+   rect (tg: ExplValueCursor/*<Rect>*/): SVGRectElement {
       const g: Rect = as(tg.tv.v, Rect)
       const [x, y] = this.transform([g.x.val, g.y.val])
       const [width, height] = this.scale([g.width.val, g.height.val])
@@ -220,19 +225,21 @@ export class GraphicsRenderer {
          interactor.onMouseOut(e)
       })
       this.current.appendChild(r)
+      return r
    }
 
-   text (tg: ExplValueCursor/*<Text>*/): void {
+   text (tg: ExplValueCursor/*<Text>*/): SVGTextElement {
       const g: Text = as(tg.tv.v, Text),
             [x, y]: [number, number] = this.transform([g.x.val, g.y.val]),
-            text: SVGTextElement = textElement_graphical(x, y, fontSize, g.str.val)
-      this.current.appendChild(text)
-      text.setAttribute("fill", "black")
-      text.setAttribute("text-anchor", `${g.anchor.val}`)
-      text.setAttribute("alignment-baseline", `${g.baseline.val}`)
+            t: SVGTextElement = textElement_graphical(x, y, fontSize, g.str.val)
+      this.current.appendChild(t)
+      t.setAttribute("fill", "black")
+      t.setAttribute("text-anchor", `${g.anchor.val}`)
+      t.setAttribute("alignment-baseline", `${g.baseline.val}`)
+      return t
    }
 
-   viewport (tg: ExplValueCursor/*<Viewport>*/): void {
+   viewport (tg: ExplValueCursor/*<Viewport>*/): SVGSVGElement {
       const g: Viewport = as(tg.tv.v, Viewport)
       // dimensions are relative to parent coordinate space, so not transformed by g's scaling
       const [x, y] = this.transform([g.x.val, g.y.val])
@@ -240,7 +247,7 @@ export class GraphicsRenderer {
       assert(width >= 0 && height >= 0)
       const outerSvg: SVGSVGElement = svgElement(false, x, y, width, height, false, this.viewport)
       if (g.fill.val !== "none") {
-         this.current.appendChild(rect(x, y, width, height, "none", g.fill.val, this.viewport))
+         outerSvg.appendChild(rect(0, 0, width, height, "none", g.fill.val, this.viewport))
       }
       this.current.appendChild(outerSvg)
       if (this.showInvisible) {
@@ -264,6 +271,7 @@ export class GraphicsRenderer {
       )
       this.ancestors.pop()
       this.ancestors.pop()
+      return outerSvg
    }
 
    setMarkerMid (el: SVGElement, C: Class<Marker>, colour: string): void {
