@@ -45,11 +45,11 @@ export class RectInteractor {
       const g: Rect = as(tg.tv.v, Rect)
       const propsFocus: (keyof Rect)[] = fields(tg.tv.v).filter((prop: keyof Rect) => {
          const tv: ExplValue = Expl.explChild(tg.tv.t, g, prop)
-         return editor.direction === Direction.Fwd ? bool_.negate(isα(tv.t)) : isα(tv.t)
+         return __nonNull(editor.direction) === Direction.Fwd ? bool_.negate(isα(tv.t)) : isα(tv.t)
       })
-      this.tooltip.setContent(propValues(g, propsFocus))
       if (propsFocus.length > 0) {
-         console.log(propsFocus)
+         this.tooltip.setContent(propValues(g, propsFocus))
+         this.tooltip.show()
       }
    }
 
