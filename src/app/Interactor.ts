@@ -33,10 +33,12 @@ function propValues<T extends GraphicsElement> (g: T, props: (keyof T)[]): strin
 export class PolymarkersInteractor {
    editor: Editor.Editor
    tg: ExplValueCursor/*<Polymarkers>*/
+   markers: SVGElement[]
    
-   constructor (editor: Editor.Editor, tg: ExplValueCursor/*<Polymarkers>*/) {
+   constructor (editor: Editor.Editor, tg: ExplValueCursor/*<Polymarkers>*/, markers: SVGElement[]) {
       this.editor = __nonNull(editor)
       this.tg = tg
+      this.markers = markers
    }
 }
 

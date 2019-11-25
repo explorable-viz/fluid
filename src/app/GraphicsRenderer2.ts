@@ -193,6 +193,7 @@ export class GraphicsRenderer {
       this.current.appendChild(g)
       this.ancestors.push(g)
       const invScale: TransformFun = invertScale(this.scale)
+      const markers: SVGElement[] = []
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Polymarkers, "markers"),
                tps: ExplValueCursor/*<List<Pair<Num, Num>>*/ = tg.to(Polymarkers, "points"); 
            Cons.is(as(tg̅.tv.v, List)) || Cons.is(as(tps.tv.v, List)); 
@@ -209,14 +210,14 @@ export class GraphicsRenderer {
                invScale,
                id, 
                () => {
-                  this.renderElement(tg̅.to(Cons, "head"))
+                  markers.push(this.renderElement(tg̅.to(Cons, "head")))
                }
             )
             this.ancestors.pop()
-            new PolymarkersInteractor(this.editor, tg)
          }
       }
       this.ancestors.pop()
+      new PolymarkersInteractor(this.editor, tg, markers)
       return g
    }
 
