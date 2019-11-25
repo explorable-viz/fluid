@@ -215,6 +215,11 @@ export function line (x1: number, y1: number, x2: number, y2: number, stroke: st
    l.setAttribute("y2", `${round(y2)}`)
    l.setAttribute("stroke", stroke)
    l.setAttribute("stroke-width", `${round(strokeWidth)}`)
+   return l
+}
+
+export function lineRounded (x1: number, y1: number, x2: number, y2: number, stroke: string, strokeWidth: number): SVGLineElement {
+   const l: SVGLineElement = line(x1, y1, x2, y2, stroke, strokeWidth)
    l.setAttribute("stroke-linecap", "round")
    return l
 }

@@ -10,7 +10,7 @@ import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { RectInteractor } from "./Interactor"
-import { border, circle, line, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
+import { border, circle, lineRounded, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 11
 export const svg: SVG = new SVG()
@@ -166,7 +166,7 @@ export class GraphicsRenderer {
          this.transform([g.p1.fst.val, g.p1.snd.val]), 
          this.transform([g.p2.fst.val, g.p2.snd.val])
       ]
-      this.current.appendChild(line(x1, y1, x2, y2, g.stroke.val, g.strokeWidth.val))
+      this.current.appendChild(lineRounded(x1, y1, x2, y2, g.stroke.val, g.strokeWidth.val))
    }
 
    polyline (tg: ExplValueCursor/*<Polyline>*/): void {
