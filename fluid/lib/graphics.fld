@@ -11,19 +11,19 @@ primitive textWidth;
 primitive textHeight;
 
 // Group has location (0, 0) because it doesn't interfere with positioning of its children.
-// GraphicsElement → (Num, Num)
+// GraphicsElement → Point
 letrec fun coords {
-   Group(gs) → (0, 0);
-   Rect(x, y, _, _, _) → (x, y);
-   Text(x, y, _, _, _) → (x, y);
-   Viewport(x, y, _, _, _, _, _, _, _) → (x, y)
+   Group(gs) → Point(0, 0);
+   Rect(x, y, _, _, _) → Point(x, y);
+   Text(x, y, _, _, _) → Point(x, y);
+   Viewport(x, y, _, _, _, _, _, _, _) → Point(x, y)
 };
 
 // GraphicsElement → Num
-let get_x = compose fst coords;
+let get_x = fun g → match coords g as Point(x, _) → x;
 
 // GraphicsElement → Num
-let get_y = compose snd coords;
+let get_y = fun g → match coords g as Point(_, y) → x;
 
 // Want some kind of typeclass mechanism plus record accessors/updaters.
 // Num → GraphicsElement → GraphicsElement
@@ -54,7 +54,7 @@ letrec
 
    fun coords_op g → 
       match prod coords dimensions g as 
-      ((x, y), Point(w, h)) → Point(x + w, y + h);
+      (Point(x, y), Point(w, h)) → Point(x + w, y + h);
 
 // GraphicsElement → Num
 let width = fun g → match dimensions g as Point(w, _) → w;
