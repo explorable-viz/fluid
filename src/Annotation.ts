@@ -3,9 +3,16 @@ import { Annotation, bool_ } from "./util/Lattice"
 import { ExplValue, DataValue } from "./DataValue"
 import { __deltas } from "./Delta"
 import { Expl } from "./Expl"
+import { Expr } from "./Expr"
 import { Persistent, Value, _ } from "./Value"
 
-export function isα<T extends Value> (v: T): Annotation {
+type Annotated = Expr | Expr.Def | Expr.RecDef | Expl 
+
+export function annotated (v: Value): v is Annotated {
+   return v instanceof Expr.Expr || v instanceof Expl.Expl
+}
+
+export function isα (v: Annotated): Annotation {
    return __annotations.is(v)
 }
 
@@ -15,12 +22,12 @@ export function setα<T extends Value> (α: Annotation, v: T): T {
    return v
 }
 
-export function setjoinα<T extends Value> (α: Annotation, v: T): T {
-   return setα(bool_.join(α, isα(v)), v)
+export function setjoinα (α: Annotation, v: Annotated): void {
+   setα(bool_.join(α, isα(v)), v)
 }
 
-export function setmeetα<T extends Value> (α: Annotation, v: T): T {
-   return setα(bool_.meet(α, isα(v)), v)
+export function setmeetα (α: Annotation, v: Annotated): void {
+   setα(bool_.meet(α, isα(v)), v)
 }
 
 export enum Direction { Fwd, Bwd }

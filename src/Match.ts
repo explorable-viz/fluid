@@ -163,5 +163,5 @@ export function apply_fwd (ξ: Match<Expr>): Annotation {
 }
 
 export function apply_bwd (ξ: Match<Expr>, α: Annotation): void {
-   ξ.tv̅.toArray().map((tv: ExplValue): Value => setjoinα(α, tv.t))
+   ξ.tv̅.toArray().forEach((tv: ExplValue): void => setjoinα(α, tv.t))
 }

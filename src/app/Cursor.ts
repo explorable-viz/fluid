@@ -1,7 +1,7 @@
 import { last, nth } from "../../src/util/Array"
 import { AClass, Class, __check, __nonNull, absurd, as, assert, userError } from "../../src/util/Core"
 import { bool_ } from "../../src/util/Lattice"
-import { __annotations, isα, setα } from "../../src/Annotation"
+import { __annotations, annotated, isα, setα } from "../../src/Annotation"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { exprClass } from "../../src/DataType"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"
@@ -30,13 +30,21 @@ export abstract class Cursor {
    }
 
    αset (): this {
-      assert(isα(this.on) === bool_.top)
-      return this
+      if (annotated(this.on)) {
+         assert(isα(this.on) === bool_.top)
+         return this
+      } else {
+         return userError("Not an annotated node.")
+      }
    }
 
    αclear (): this {
-      assert(isα(this.on) === bool_.bot)
-      return this
+      if (annotated(this.on)) {
+         assert(isα(this.on) === bool_.bot)
+         return this
+      } else {
+         return userError("Not an annotated node.")
+      }
    }
 
    setα (): this {
