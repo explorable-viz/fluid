@@ -31,10 +31,12 @@ export class RectInteractor {
       this.r = r
       const propsFocus: (keyof Rect)[] = fields(tg.tv.v).filter((prop: keyof Rect) => {
          const tv: ExplValue = Expl.explChild(tg.tv.t, as(tg.tv.v, Rect), prop)
-         return editor.direction === Direction.Fwd ? bool_.negate(isα(tv)) : isα(tv)
+         return editor.direction === Direction.Fwd ? bool_.negate(isα(tv.t)) : isα(tv.t)
       })
       if (propsFocus.length > 0) {
          console.log("***** " + propsFocus)
+      } else {
+         console.log("***** NO")
       }
    }
 
