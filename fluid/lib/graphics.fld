@@ -103,7 +103,7 @@ let axisStrokeWidth = 0.5;
 let axisColour = "black";
 let backgroundColour = "Gainsboro";
 let defaultMargin = 24;
-let markerRadius = 2.5;
+let markerRadius = 3.5;
 let tickLength = 4;
 
 // Helpers for axis functions.
