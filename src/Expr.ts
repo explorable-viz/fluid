@@ -85,7 +85,7 @@ export namespace Expr {
          return className(this)
       }
 
-      __child (prop: string): Expr {
+      __child (prop: keyof this): Expr {
          return super.__child(prop) as Expr
       }
 

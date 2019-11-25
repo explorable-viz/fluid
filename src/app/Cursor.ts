@@ -1,7 +1,7 @@
 import { last, nth } from "../../src/util/Array"
 import { AClass, Class, __check, __nonNull, absurd, as, assert, userError } from "../../src/util/Core"
 import { bool_ } from "../../src/util/Lattice"
-import { __annotations, getα, setα } from "../../src/Annotated"
+import { __annotations, annotated, isα, setα } from "../../src/Annotation"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { exprClass } from "../../src/DataType"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"
@@ -30,15 +30,21 @@ export abstract class Cursor {
    }
 
    αset (): this {
-      assert(__annotations.ann.has(this.on))
-      assert(getα(this.on) === bool_.top)
-      return this
+      if (annotated(this.on)) {
+         assert(isα(this.on) === bool_.top)
+         return this
+      } else {
+         return userError("Not an annotated node.")
+      }
    }
 
    αclear (): this {
-      assert(__annotations.ann.has(this.on))
-      assert(getα(this.on) === bool_.bot)
-      return this
+      if (annotated(this.on)) {
+         assert(isα(this.on) === bool_.bot)
+         return this
+      } else {
+         return userError("Not an annotated node.")
+      }
    }
 
    setα (): this {
@@ -278,7 +284,7 @@ export class ExprCursor extends Cursor {
    splice<T extends Value> (C: Class<T>, props: (keyof T)[], makeNode: (v̅: Persistent[]) => Persistent[]): ExprCursor {
       const v: T = as<Persistent, T>(this.v, C), 
             v̅: Persistent[] = v.__children,
-            n̅: number[] = props.map(prop => __check(fields(v).indexOf(prop as string), n => n != -1)),
+            n̅: number[] = props.map(prop => __check(fields(v).indexOf(prop), n => n != -1)),
             v̅ʹ: Persistent[] = makeNode(n̅.map((n: number): Persistent => v̅[n]))
       n̅.forEach((n: number, m: number): void => {
          v̅[n] = v̅ʹ[m]

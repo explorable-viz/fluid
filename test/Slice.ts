@@ -1,6 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { __nonNull } from "../src/util/Core"
+import { __annotations } from "../src/Annotation"
 import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
@@ -97,6 +98,41 @@ describe("slice", () => {
          const [ρ, e]: [Env, Expr] = openWithImports("foldr_sumSquares")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
+      })
+   })
+
+   describe("graphics/background", () => {
+      it("ok", () => {
+         const [ρ, e]: [Env, Expr] = openWithImports("graphics/background")
+         new FwdSlice(ρ, e)
+         new BwdSlice(ρ, e)
+      })
+   })
+
+   describe("graphics/grouped-bar-chart", () => {
+      it("ok", () => {
+         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
+         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
+         new FwdSlice(ρ.concat(ρʹ), e)
+         new BwdSlice(ρ.concat(ρʹ), e)
+      })
+   })
+
+   describe("graphics/line-chart", () => {
+      it("ok", () => {
+         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
+         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/line-chart")
+         new FwdSlice(ρ.concat(ρʹ), e)
+         new BwdSlice(ρ.concat(ρʹ), e)
+      })
+   })
+
+   describe("graphics/stacked-bar-chart", () => {
+      it("ok", () => {
+         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
+         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
+         new FwdSlice(ρ.concat(ρʹ), e)
+         new BwdSlice(ρ.concat(ρʹ), e)
       })
    })
 
@@ -203,41 +239,6 @@ describe("slice", () => {
          const [ρ, e]: [Env, Expr] = openWithImports("mergeSort")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
-      })
-   })
-
-   describe("graphics/background", () => {
-      it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports("graphics/background")
-         new FwdSlice(ρ, e)
-         new BwdSlice(ρ, e)
-      })
-   })
-
-   describe("graphics/grouped-bar-chart", () => {
-      it("ok", () => {
-         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
-         new FwdSlice(ρ.concat(ρʹ), e)
-         new BwdSlice(ρ.concat(ρʹ), e)
-      })
-   })
-
-   describe("graphics/line-chart", () => {
-      it("ok", () => {
-         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/line-chart")
-         new FwdSlice(ρ.concat(ρʹ), e)
-         new BwdSlice(ρ.concat(ρʹ), e)
-      })
-   })
-
-   describe("graphics/stacked-bar-chart", () => {
-      it("ok", () => {
-         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
-         new FwdSlice(ρ.concat(ρʹ), e)
-         new BwdSlice(ρ.concat(ρʹ), e)
       })
    })
 

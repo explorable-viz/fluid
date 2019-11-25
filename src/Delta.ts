@@ -2,7 +2,8 @@ import { absurd, assert } from "./util/Core"
 import { Ord } from "./util/Ord"
 import { Persistent, Value, fields, mergeInto } from "./Value"
 
-// Difference between two states (of the same value class). Should probably make this more like Value.
+// Difference between two states (of the same value class). Should probably make this more like Value, and
+// parameterised on type of values being compared.
 export interface ValueDelta {
    [prop: string]: { before: Persistent, after: Persistent } // [before, after]
 }

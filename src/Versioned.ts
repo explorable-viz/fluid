@@ -9,7 +9,7 @@ export type Versioned<T> = Versioned_ & T
 // Why do versioned objects need to store their id?
 export interface Versioned_ {
    __id: Id
-   __ẟ: Delta
+   __ẟ: Delta // deltas should be restricted to keys of type
 }
 
 export function versioned<T extends Value> (v: T): v is Versioned<T> {
@@ -127,7 +127,7 @@ export function str (val: string): (k: Id) => Versioned<Str> {
 
 const __funMemo: MemoTable = new Map
 
-// We should clear memo table at each revision, but there are no memo-functions at the moment.
+// Should clear memo table at each revision, but there are no memo-functions at the moment.
 export function newRevision (): void {
    __deltas.clear()
    __versioned.forEach((v: Versioned<Value>, k: Id): void => {

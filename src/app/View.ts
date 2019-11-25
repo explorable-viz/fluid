@@ -15,7 +15,6 @@ import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
-import { Interactor } from "./Interactor"
 import { GraphicsRenderer } from "./GraphicsRenderer2"
 import { 
    DeltaStyle, arrow, addBorder_changed, addBorder_focus, centreDot, comma, connector, deltaStyle, __dimensions, ellipsis, horiz, 
@@ -28,12 +27,12 @@ import Cont = Expr.Cont
 export module View {
    export let dimensions: (tg: ExplValue<GraphicsElement>) => [number, number]
 
-   // Shenanigans to call an internal function. Will extract this into a (reverse) FFI.
    export function initialise (): void {
       Module.initialise()
+
+      // Shenanigans to call an internal function. Will extract this into a (reverse) FFI.
       const x: string = "g"
       const [ρ, dimsExpr]: [Env, Expr] = parseWithImports(`dimensions ${x}`)
-
       dimensions = function (tg: ExplValue<GraphicsElement>): [number, number] {
          const tv: ExplValue = Eval.eval_(ρ.concat(Env.singleton(str(x)(ν()), tg)), dimsExpr)
          if (tv.v instanceof Pair && tv.v.fst instanceof Num && tv.v.snd instanceof Num) {
@@ -44,8 +43,8 @@ export module View {
       }
    }
 
-   // Prefer globals to threading parameters everywhere :-o
-   let __editor: Editor.Editor | null = null
+   // Prefer globals to threading parameters everywhere.
+   let __currentEditor: Editor.Editor | null = null
 
    type Link = {
       from: View, 
@@ -55,15 +54,17 @@ export module View {
    const __links: Set<Link> = new Set()
    const __svgs: Map<View, SVGSVGElement> = new Map() // memoised render within a single update 
 
-   export function render (root: SVGSVGElement, tv: ExplValue, editor: Editor.Editor): void {
+   export function render (editor: Editor.Editor): void {
       __svgs.clear()
       __links.clear()
-      __editor = editor
-      const g: SVGElement = view(tv, true, true).render()
-      root.appendChild(g) // need to render the main view so links can make use of getBoundingClientRect
+      assert(__currentEditor === null)
+      __currentEditor = editor
+      const g: SVGElement = view(editor.tv, true, false).render()
+      editor.rootPane.appendChild(g) // need to render the main view so links can make use of getBoundingClientRect
       renderLinks(__links).forEach((link: SVGElement): void => {
-         root.appendChild(link)
+         editor.rootPane.appendChild(link)
       })
+      __currentEditor = null
    }
 
    const views: Map<Value, View> = new Map() // persists across edits
@@ -234,7 +235,7 @@ export module View {
          } else {
             g = vert(expls(ts), horizSpace(text("▸", deltaStyle(nth(ts, ts.length - 1))), valueView(tv!).render()))
          }
-         if (this.tv === __editor!.here.tv) {
+         if (this.tv === __currentEditor!.here.tv) {
             return addBorder_focus(!this.t_visible && ts.length > 0  ? edge_left(g) : g)
          } else {
             return g
@@ -319,7 +320,7 @@ export module View {
             g.addEventListener("click", (ev: MouseEvent): void => {
                ev.stopPropagation()
                this.bodyVisible = true
-               __editor!.onViewChange()
+               __currentEditor!.onViewChange()
             })
             return g
          }
@@ -355,7 +356,7 @@ export module View {
                const dim = { width: 480, height: 480 }
                let g1: SVGGElement
                [g, g1] = svgElement_inverted(dim.width, dim.height)
-               new GraphicsRenderer(new Interactor(), g, g1).render(tg, __nonNull(dimensions)(tg))
+               new GraphicsRenderer(__currentEditor!, g, g1).render(tg, __nonNull(dimensions)(tg))
                __dimensions.set(g, dim)
             } else
             if (this.tv.v instanceof Pair) {
@@ -565,7 +566,7 @@ export module View {
                   return [at(exprClass(Cons), eʹ, e)(ν())]
                })
             }
-            __editor!.onEdit()
+            __currentEditor!.onEdit()
          }
       })
       return g
@@ -669,7 +670,7 @@ export module View {
    // Really want some kind of view typeclass, so this isn't specific to expression. Also: consolidate with ExprCursor.
    function expr_child<T extends DataValue> (C: Class<T>, parens: boolean, e: Expr.DataExpr, prop: keyof T): SVGElement {
       if (versioned(e)) {
-         const w: ExprView = expr_(parens, e.__child(prop as string))
+         const w: ExprView = expr_(parens, e.__child(prop as keyof Expr.DataExpr))
          const g: SVGSVGElement = w.render()
          if (e.__ẟ instanceof Change && e.__ẟ.hasChanged(prop as string)) {
             const w_existing: View | undefined = views.get(as(e.__ẟ.changed[prop as string].before, Expr.Expr))
@@ -710,7 +711,7 @@ export module View {
                expr_child(Cons, false, e, "head"),
                consComma(deltaStyle(e), e),
                space(), 
-               list_expr(false, e.__child("tail") as Expr.DataExpr)
+               list_expr(false, e.__child("tail" as keyof Expr.DataExpr) as Expr.DataExpr)
             ),
             deltaStyle(e)
          )
@@ -729,7 +730,7 @@ export module View {
             newRevision()
             new ExprCursor(src).setNum(ev.metaKey ? src.val - 1 : src.val + 1)
             ev.stopPropagation()
-            __editor!.onEdit()
+            __currentEditor!.onEdit()
          })
       }
       return g
@@ -758,7 +759,7 @@ export module View {
                   return [e2, e1]
                })
             }
-            __editor!.onEdit()
+            __currentEditor!.onEdit()
          }
       })
       return g

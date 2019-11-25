@@ -3,4 +3,7 @@ let year = 2013;
 let exclude = fun countries yearData →
    flip map yearData (second (filter (fun (country, countryData) → not (elem country countries))))
 in caption ("Renewables capacity (GW) by country and energy type, " ++ numToStr year)
-   (groupedBarChart True colours1 0.2 (exclude ["Geothermal", "Ocean", "CSP"] (lookup year data)))
+   (groupedBarChart True colours1 0.2 
+      (exclude 
+         [] // ["Geothermal", "Ocean", "CSP"] 
+         (lookup year data)))
