@@ -1,3 +1,4 @@
+import { Instance as Tooltip } from "tippy.js"
 import { __nonNull, as } from "../util/Core"
 import { Direction, __annotations } from "../Annotation"
 import { DataValue, ExplValue, explValue } from "../DataValue"
@@ -26,21 +27,24 @@ export module Editor {
    export class Editor {
       listener: Listener
       rootPane: SVGSVGElement
+      tooltips: Set<Tooltip>
       ρ: Env
       e: Expr
       tv: ExplValue
       here!: ExplValueCursor
-      direction!: Direction
+      direction: Direction
    
       constructor (listener: Listener, width: number, height: number, ρ_external: Env, ρ: Env, e: Expr) {
          this.listener = listener
          this.rootPane = svgRootElement(width, height)
+         this.tooltips = new Set()
          markerEnsureDefined(this.rootPane, Arrowhead, "blue")
          document.body.appendChild(this.rootPane)
          this.ρ = ρ_external.concat(ρ)
          this.e = e
          this.tv = Eval.eval_(this.ρ, this.e)
          this.here = ExplValueCursor.descendant(null, this.tv)
+         this.direction = Direction.Fwd
          newRevision()
          Eval.eval_(this.ρ, this.e) // reestablish reachable nodes
       }
@@ -103,6 +107,8 @@ export module Editor {
                this.rootPane.removeChild(child)
             }
          })
+         this.tooltips.forEach(tooltip => tooltip.destroy())
+         this.tooltips.clear()
          View.render(this)
       }
    

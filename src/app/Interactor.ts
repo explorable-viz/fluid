@@ -1,5 +1,5 @@
 import tippy from "tippy.js"
-import { Instance } from "tippy.js"
+import { Instance as Tooltip } from "tippy.js"
 import "tippy.js/dist/tippy.css"
 import "tippy.js/themes/light-border.css"
 import { __log, __nonNull, as } from "../util/Core"
@@ -13,7 +13,7 @@ import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { round } from "./Renderer"
 
-function createTooltip (element: SVGElement): Instance {
+function createTooltip (element: SVGElement): Tooltip {
    return tippy(element, { theme: "light-border" })
 }
 
@@ -32,7 +32,7 @@ function propValues<T extends GraphicsElement> (g: T, props: (keyof T)[]): strin
 
 export class RectInteractor {
    editor: Editor.Editor
-   tooltip: Instance
+   tooltip: Tooltip
    tg: ExplValueCursor/*<Rect>*/
    r: SVGRectElement
    propFocus: keyof Rect | null = null
@@ -40,6 +40,7 @@ export class RectInteractor {
    constructor (editor: Editor.Editor, tg: ExplValueCursor/*<Rect>*/, r: SVGRectElement) {
       this.editor = __nonNull(editor)
       this.tooltip = createTooltip(r)
+      this.editor.tooltips.add(this.tooltip)
       this.tg = tg
       this.r = r
       const g: Rect = as(tg.tv.v, Rect)
@@ -50,6 +51,8 @@ export class RectInteractor {
       if (propsFocus.length > 0) {
          this.tooltip.setContent(propValues(g, propsFocus))
          this.tooltip.show()
+      } else {
+         this.tooltip.hide()
       }
    }
 
