@@ -30,6 +30,16 @@ function propValues<T extends GraphicsElement> (g: T, props: (keyof T)[]): strin
    return lines.join("</br>")
 }
 
+export class PolymarkersInteractor {
+   editor: Editor.Editor
+   tg: ExplValueCursor/*<Polymarkers>*/
+   
+   constructor (editor: Editor.Editor, tg: ExplValueCursor/*<Polymarkers>*/) {
+      this.editor = __nonNull(editor)
+      this.tg = tg
+   }
+}
+
 export class RectInteractor {
    editor: Editor.Editor
    tooltip: Tooltip

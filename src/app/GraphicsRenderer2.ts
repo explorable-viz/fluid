@@ -9,7 +9,7 @@ import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
-import { RectInteractor } from "./Interactor"
+import { PolymarkersInteractor, RectInteractor } from "./Interactor"
 import { border, circle, lineRounded, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 11
@@ -205,6 +205,7 @@ export class GraphicsRenderer {
                }
             )
             this.ancestors.pop()
+            new PolymarkersInteractor(this.editor, tg)
          }
       }
    }
