@@ -4,7 +4,7 @@ import "tippy.js/dist/tippy.css"
 import "tippy.js/themes/light-border.css"
 import { __log, __nonNull, as, assert } from "../util/Core"
 import { bool_ } from "../util/Lattice"
-import { Annotated, Direction, isα, setα } from "../Annotation"
+import { Direction, isα, setα } from "../Annotation"
 import { ExplValue } from "../DataValue"
 import { Expl } from "../Expl"
 import { GraphicsElement, Rect } from "../Graphics2"
@@ -63,10 +63,9 @@ export class RectInteractor {
       const propFocus: keyof Rect = this.propFor(x_prop, y_prop, 1, 1)
       if (this.propFocus !== propFocus) {
          this.propFocus = propFocus
-         const dependencies: Set<Annotated> = this.editor.bwdSlice(() => {
+         this.editor.bwdSlice(() => {
             setα(bool_.top, this.tg.to(Rect, propFocus).tv)
          })
-         console.log(dependencies)
          this.tooltip.setContent(propValues(g, [propFocus]))
       }
    }

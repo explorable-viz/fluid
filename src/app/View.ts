@@ -26,6 +26,7 @@ import Cont = Expr.Cont
 
 export module View {
    export let dimensions: (tg: ExplValue<GraphicsElement>) => [number, number]
+   export let defaultDims: [number, number] = [480, 480]
 
    export function initialise (): void {
       Module.initialise()
@@ -353,7 +354,7 @@ export module View {
          if (this.tv.v instanceof DataValue) {
             if (this.tv.v instanceof GraphicsElement) {
                const tg: ExplValue<GraphicsElement> = this.tv as ExplValue<GraphicsElement>
-               const dim = { width: 480, height: 480 }
+               const dim = { width: defaultDims[0], height: defaultDims[1] }
                let g1: SVGGElement
                [g, g1] = svgElement_inverted(dim.width, dim.height)
                new GraphicsRenderer(__currentEditor!, g, g1).render(tg, __nonNull(dimensions)(tg))

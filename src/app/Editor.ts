@@ -34,7 +34,7 @@ export module Editor {
       here!: ExplValueCursor
       direction: Direction
    
-      constructor (listener: Listener, width: number, height: number, ρ_external: Env, ρ: Env, e: Expr) {
+      constructor (listener: Listener, [width, height]: [number, number], ρ_external: Env, ρ: Env, e: Expr) {
          this.listener = listener
          this.rootPane = svgRootElement(width, height)
          this.tooltips = new Set()
