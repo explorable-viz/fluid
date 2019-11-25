@@ -5,6 +5,7 @@ import "tippy.js/themes/light-border.css"
 import { __log, __nonNull, as, assert } from "../util/Core"
 import { bool_ } from "../util/Lattice"
 import { Direction, isα, setα } from "../Annotation"
+import { Pair } from "../BaseTypes"
 import { ExplValue } from "../DataValue"
 import { Expl } from "../Expl"
 import { GraphicsElement, Rect } from "../Graphics2"
@@ -33,12 +34,30 @@ function propValues<T extends GraphicsElement> (g: T, props: (keyof T)[]): strin
 export class PolymarkersInteractor {
    editor: Editor.Editor
    tg: ExplValueCursor/*<Polymarkers>*/
-   markers: SVGElement[]
+   markers: [SVGElement, ExplValueCursor/*<Pair<Num, Num>>*/][]
    
-   constructor (editor: Editor.Editor, tg: ExplValueCursor/*<Polymarkers>*/, markers: SVGElement[]) {
+   constructor (
+      editor: Editor.Editor, 
+      tg: ExplValueCursor/*<Polymarkers>*/, 
+      markers: [SVGElement, ExplValueCursor/*<Pair<Num, Num>>*/][]
+   ) {
       this.editor = __nonNull(editor)
       this.tg = tg
       this.markers = markers
+      markers.forEach(([marker, tp]) => {
+         marker.addEventListener("mousemove", (e: MouseEvent): void => {
+            e.stopPropagation()
+            this.onMouseMove(e, marker, tp)
+         })
+      })
+   }
+
+   onMouseMove (e: MouseEvent, marker: SVGElement, tp: ExplValueCursor/*<Pair<Num, Num>>*/): void {
+      const propFocus: keyof Pair = "snd"
+      this.editor.bwdSlice(() => {
+         setα(bool_.top, tp.to(Pair, propFocus).tv)
+         console.log("HERE")
+      })
    }
 }
 

@@ -1,4 +1,4 @@
-let year = 2013;
+let year = 2015;
 // List (Country, List (EnergyType, Output)) → List (Country, List (EnergyType, Output)) 
 let exclude = fun countries yearData →
    flip map yearData (second (filter (fun (country, countryData) → not (elem country countries))))

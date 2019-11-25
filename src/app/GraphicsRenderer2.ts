@@ -193,7 +193,7 @@ export class GraphicsRenderer {
       this.current.appendChild(g)
       this.ancestors.push(g)
       const invScale: TransformFun = invertScale(this.scale)
-      const markers: SVGElement[] = []
+      const markers: [SVGElement, ExplValueCursor/*<Pair<Num, Num>>*/][] = []
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Polymarkers, "markers"),
                tps: ExplValueCursor/*<List<Pair<Num, Num>>*/ = tg.to(Polymarkers, "points"); 
            Cons.is(as(tg̅.tv.v, List)) || Cons.is(as(tps.tv.v, List)); 
@@ -201,7 +201,8 @@ export class GraphicsRenderer {
          if (!Cons.is(as(tg̅.tv.v, List)) || !Cons.is(as(tps.tv.v, List))) {
             userError(`${Polymarkers.name}: more markers than points.`)
          } else {
-            const p: Pair<Num, Num> = as(tps.to(Cons, "head").tv.v, Pair)
+            const tp: ExplValueCursor/*<Pair<Num, Num>>*/ = tps.to(Cons, "head")
+            const p: Pair<Num, Num> = as(tp.tv.v, Pair)
             const [x, y] = this.transform([p.fst.val, p.snd.val])
             const markerViewport: SVGSVGElement = svgElement(true, x, y, 10, 10, false, this.polymarkers)
             this.current.appendChild(markerViewport)
@@ -210,7 +211,7 @@ export class GraphicsRenderer {
                invScale,
                id, 
                () => {
-                  markers.push(this.renderElement(tg̅.to(Cons, "head")))
+                  markers.push([this.renderElement(tg̅.to(Cons, "head")), tp])
                }
             )
             this.ancestors.pop()
