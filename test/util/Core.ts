@@ -41,7 +41,7 @@ export class FwdSlice {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         const editor = new Editor.Editor(__editorListener, [400, 400], emptyEnv(), ρ, e)
+         const editor = new Editor.Editor(__editorListener, [400, 400], "top", emptyEnv(), ρ, e)
          if (flags.get(Flags.FwdSlice)) {
             editor.direction = Direction.Fwd
          }
@@ -66,7 +66,7 @@ export class BwdSlice {
          this.expect(new ExprCursor(e))
       }
       if (flags.get(Flags.Visualise)) {
-         const editor = new Editor.Editor(__editorListener, [400, 400], emptyEnv(), ρ, e)
+         const editor = new Editor.Editor(__editorListener, [400, 400], "top", emptyEnv(), ρ, e)
          if (flags.get(Flags.BwdSlice)) {
             editor.direction = Direction.Bwd
          }
@@ -84,7 +84,7 @@ export class BwdSlice {
 export class Edit {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(__editorListener, [400, 400], emptyEnv(), ρ, e).render()
+         new Editor.Editor(__editorListener, [400, 400], "top", emptyEnv(), ρ, e).render()
       }
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
@@ -94,7 +94,7 @@ export class Edit {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(__editorListener, [400, 400], emptyEnv(), ρ, e).render()
+         new Editor.Editor(__editorListener, [400, 400], "top", emptyEnv(), ρ, e).render()
       }
    }
 

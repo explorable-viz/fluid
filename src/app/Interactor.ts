@@ -8,8 +8,8 @@ import { Direction, isα, setα } from "../Annotation"
 import { Pair } from "../BaseTypes"
 import { DataValue, ExplValue } from "../DataValue"
 import { Expl } from "../Expl"
-import { GraphicsElement, Rect } from "../Graphics2"
-import { Num, Persistent, Str, fields } from "../Value"
+import { Rect } from "../Graphics2"
+import { Num, Persistent, Str, Value, fields } from "../Value"
 import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
 import { round } from "./Renderer"
@@ -19,7 +19,7 @@ function createTooltip (element: SVGElement, placement: Placement): Tooltip {
 }
 
 // Non-primitive dependencies render as a bullet.
-function propValues<T extends GraphicsElement> (g: T, props: (keyof T)[]): string {
+function propValues<T extends Value> (g: T, props: (keyof T)[]): string {
    const lines: string[] = props.map((prop: keyof T): string => {
       const propVal: Persistent = g.__child(prop)
       const propStr: string = propVal instanceof Num ? 
@@ -38,32 +38,40 @@ function focusedProps<T extends DataValue> (direction: Direction, tv: ExplValue<
    })
 }
 
-export class PolymarkersInteractor {
+export class PointInteractor {
    editor: Editor.Editor
-   tg: ExplValueCursor/*<Polymarkers>*/
-   markers: [SVGElement, ExplValueCursor/*<Pair<Num, Num>>*/][]
-   
-   constructor (
-      editor: Editor.Editor, 
-      tg: ExplValueCursor/*<Polymarkers>*/, 
-      markers: [SVGElement, ExplValueCursor/*<Pair<Num, Num>>*/][]
-   ) {
-      this.editor = __nonNull(editor)
-      this.tg = tg
-      this.markers = markers
-      markers.forEach(([marker, tp]) => {
-         marker.addEventListener("mousemove", (e: MouseEvent): void => {
-            e.stopPropagation()
-            this.onMouseMove(e, marker, tp)
-         })
+   tooltip: Tooltip
+   tp: ExplValueCursor/*<Pair<Num, Num>>*/
+   marker: SVGElement
+   propFocus: keyof Pair | null = null
+
+   constructor (editor: Editor.Editor, tp: ExplValueCursor/*<Pair<Num, Num>>*/, marker: SVGElement) {
+      this.editor = editor
+      this.tooltip = createTooltip(marker, editor.tooltipPlacement)
+      this.editor.tooltips.add(this.tooltip)
+      this.tp = tp
+      this.marker = marker
+      const p: Pair<Num, Num> = as(tp.tv.v, Pair)
+      const propsFocus: (keyof Pair)[] = focusedProps(editor.direction, tp.tv as ExplValue<Pair>)
+      if (propsFocus.length > 0) {
+         this.tooltip.setContent(propValues(p, propsFocus))
+         this.tooltip.show()
+         marker.classList.add("focus")
+      }
+      marker.addEventListener("mousemove", (e: MouseEvent): void => {
+         e.stopPropagation()
+         this.onMouseMove(e)
+      })
+      marker.addEventListener("mouseout", (e: MouseEvent): void => {
+         e.stopPropagation()
+         this.onMouseOut(e)
       })
    }
 
-   onMouseMove (e: MouseEvent, marker: SVGElement, tp: ExplValueCursor/*<Pair<Num, Num>>*/): void {
-      const propFocus: keyof Pair = "snd"
-      this.editor.bwdSlice(() => {
-         setα(bool_.top, tp.to(Pair, propFocus).tv)
-      })
+   onMouseMove (e: MouseEvent): void {
+   }
+
+   onMouseOut (e: MouseEvent): void {
    }
 }
 
@@ -75,15 +83,15 @@ export class RectInteractor {
    propFocus: keyof Rect | null = null
 
    constructor (editor: Editor.Editor, tg: ExplValueCursor/*<Rect>*/, r: SVGRectElement) {
-      this.editor = __nonNull(editor)
+      this.editor = editor
       this.tooltip = createTooltip(r, editor.tooltipPlacement)
       this.editor.tooltips.add(this.tooltip)
       this.tg = tg
       this.r = r
-      const tv: ExplValue<Rect> = as(tg.tv.v, ExplValue)
-      const propsFocus: (keyof Rect)[] = focusedProps(editor.direction, tv)
+      const g: Rect = as(tg.tv.v, Rect)
+      const propsFocus: (keyof Rect)[] = focusedProps(editor.direction, tg.tv as ExplValue<Rect>)
       if (propsFocus.length > 0) {
-         this.tooltip.setContent(propValues(tv.v, propsFocus))
+         this.tooltip.setContent(propValues(g, propsFocus))
          this.tooltip.show()
          r.classList.add("focus")
       }

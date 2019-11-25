@@ -9,7 +9,7 @@ import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
 import { Editor } from "./Editor"
-import { PolymarkersInteractor, RectInteractor } from "./Interactor"
+import { PointInteractor, RectInteractor } from "./Interactor"
 import { border, circle, group, lineRounded, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 11
@@ -193,7 +193,6 @@ export class GraphicsRenderer {
       this.current.appendChild(g)
       this.ancestors.push(g)
       const invScale: TransformFun = invertScale(this.scale)
-      const markers: [SVGElement, ExplValueCursor/*<Pair<Num, Num>>*/][] = []
       for (let tg̅: ExplValueCursor/*<List<GraphicsElement>>*/ = tg.to(Polymarkers, "markers"),
                tps: ExplValueCursor/*<List<Pair<Num, Num>>*/ = tg.to(Polymarkers, "points"); 
            Cons.is(as(tg̅.tv.v, List)) || Cons.is(as(tps.tv.v, List)); 
@@ -211,14 +210,14 @@ export class GraphicsRenderer {
                invScale,
                id, 
                () => {
-                  markers.push([this.renderElement(tg̅.to(Cons, "head")), tp])
+                  const marker: SVGElement = this.renderElement(tg̅.to(Cons, "head"))
+                  new PointInteractor(this.editor, tp, marker)
                }
             )
             this.ancestors.pop()
          }
       }
       this.ancestors.pop()
-      new PolymarkersInteractor(this.editor, tg, markers)
       return g
    }
 
