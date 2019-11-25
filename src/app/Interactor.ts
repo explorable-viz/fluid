@@ -49,7 +49,7 @@ export class RectInteractor {
       })
       this.tooltip.setContent(propValues(g, propsFocus))
       if (propsFocus.length > 0) {
-         console.log(propValues(g, propsFocus))
+         console.log(propsFocus)
       }
    }
 
