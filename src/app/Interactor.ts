@@ -66,14 +66,14 @@ export class RectInteractor {
       if (this.propFocus !== propFocus) {
          this.propFocus = propFocus
          this.tooltip.setContent(propValues(g, [propFocus]))
-         this.editor.resetForBwd()
-         setα(bool_.top, this.tg.to(Rect, this.propFocus).tv.t)
-         this.editor.bwdSlice()
+         this.editor.bwdSlice(() => {
+            setα(bool_.top, this.tg.to(Rect, propFocus).tv.t)
+         })
       }
    }
 
    onMouseOut (): void {
-      __nonNull(this.tooltip).hide()
+      this.tooltip.hide()
    }
 
    // Determine which "diagonal quadrant" of the rectangle [width, height] contains [x, y], and

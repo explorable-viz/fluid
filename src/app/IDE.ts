@@ -44,6 +44,7 @@ class IDE implements Editor.Listener {
          __annotations.restrictTo2(editor_.tv)
          editor_.direction = Direction.Fwd
          editor_.render() // TODO: just redo selection rendering
+         console.log(`Rendering editor ${this.editors.indexOf(editor_)}`)
       })
    }
 }

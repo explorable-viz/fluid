@@ -91,11 +91,9 @@ export module Editor {
          }
       }
 
-      resetForBwd (): void {
+      bwdSlice (setNeeded: () => void): void {
          this.listener.resetForBwd()
-      }
-
-      bwdSlice (): void {
+         setNeeded()
          this.listener.bwdSlice(this)
       }
 
