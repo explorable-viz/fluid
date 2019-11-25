@@ -56,7 +56,6 @@ export class PolymarkersInteractor {
       const propFocus: keyof Pair = "snd"
       this.editor.bwdSlice(() => {
          setα(bool_.top, tp.to(Pair, propFocus).tv)
-         console.log("HERE")
       })
    }
 }
@@ -82,6 +81,7 @@ export class RectInteractor {
       if (propsFocus.length > 0) {
          this.tooltip.setContent(propValues(g, propsFocus))
          this.tooltip.show()
+         r.classList.add("focus")
       }
       r.addEventListener("mousemove", (e: MouseEvent): void => {
          e.stopPropagation()
@@ -106,12 +106,14 @@ export class RectInteractor {
             setα(bool_.top, this.tg.to(Rect, propFocus).tv)
          })
          this.tooltip.setContent(propValues(g, [propFocus]))
+         this.r.classList.add("focus")
       }
    }
 
    onMouseOut (e: MouseEvent): void {
       this.propFocus = null
       assert(this.editor.bwdSlice(() => {}).size === 0)
+      this.r.classList.remove("focus")
    }
 
    // Determine which "diagonal quadrant" of the rectangle [width, height] contains [x, y], and
