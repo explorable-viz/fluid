@@ -71,9 +71,9 @@ export class Annotations {
       this.ann = ann
    }
 
-   restrictTo_aux (v: Value, ann: Set<Value>): void {
+   restrictTo_aux (v: Value, ann: Set<Annotated>): void {
       if (this.ann.has(v as Annotated)) { // cast is a bit cheeky
-         ann.add(v)
+         ann.add(v as Annotated)
       }
       v.__children.forEach((v: Persistent): void => {
          if (v instanceof Value) {
@@ -82,13 +82,13 @@ export class Annotations {
       })
    }
 
-   restrictTo2 (tv: ExplValue<Value>): void {
+   restrictTo2 (tv: ExplValue): void {
       const ann: Set<Annotated> = new Set()
       this.restrictTo2_aux(tv, ann)
       this.ann = ann
    }
 
-   restrictTo2_aux (tv: ExplValue<Value>, ann: Set<Value>): void {
+   restrictTo2_aux (tv: ExplValue, ann: Set<Annotated>): void {
       if (this.ann.has(tv.t)) {
          ann.add(tv.t)
       }
