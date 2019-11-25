@@ -11,19 +11,19 @@ primitive textWidth;
 primitive textHeight;
 
 // Group has location (0, 0) because it doesn't interfere with positioning of its children.
-// GraphicsElement → (Num, Num)
+// GraphicsElement → Point
 letrec fun coords {
-   Group(gs) → (0, 0);
-   Rect(x, y, _, _, _) → (x, y);
-   Text(x, y, _, _, _) → (x, y);
-   Viewport(x, y, _, _, _, _, _, _, _) → (x, y)
+   Group(gs) → Point(0, 0);
+   Rect(x, y, _, _, _) → Point(x, y);
+   Text(x, y, _, _, _) → Point(x, y);
+   Viewport(x, y, _, _, _, _, _, _, _) → Point(x, y)
 };
 
 // GraphicsElement → Num
-let get_x = compose fst coords;
+let get_x = fun g → match coords g as Point(x, _) → x;
 
 // GraphicsElement → Num
-let get_y = compose snd coords;
+let get_y = fun g → match coords g as Point(_, y) → x;
 
 // Want some kind of typeclass mechanism plus record accessors/updaters.
 // Num → GraphicsElement → GraphicsElement
@@ -35,32 +35,32 @@ letrec fun set_x x {
       Viewport(x, y, w, h, fill, margin, scale, translate, g)
 };
 
-// ((Num, Num), (Num, Num)) → (Num, Num)
-let dimensions2 = fun ((x1, y1), (x2, y2)) →
-   (max2 (x1, x2), max2 (y1, y2));
+// (Point, Point) → Point
+let dimensions2 = fun (Point(x1, y1), Point(x2, y2)) →
+   Point(max2 (x1, x2), max2 (y1, y2));
 
 // For Group, dimensions are relative to implicit coords of (0, 0), since a Group's children are effectively
 // positioned relative to parent of Group. For Polymarker, will probably have to ignore the markers themselves, 
 // since they are scale-invariant.
-// GraphicsElement → (Num, Num)
+// GraphicsElement → Point
 letrec 
    fun dimensions {
-      Group(gs) → foldl dimensions2 (0, 0) (map (coords_op) gs);
-      Polyline(ps, _, _) → foldl dimensions2 (0, 0) ps;
-      Rect(_, _, w, h, _) → (w, h);
-      Text(_, _, _, _, _) → (0, 0); // treat text like markers; scale-invariant
-      Viewport(_, _, w, h, _, _, _, _, _) → (w, h)
+      Group(gs) → foldl dimensions2 Point(0, 0) (map (coords_op) gs);
+      Polyline(ps, _, _) → foldl dimensions2 Point(0, 0) ps;
+      Rect(_, _, w, h, _) → Point(w, h);
+      Text(_, _, _, _, _) → Point(0, 0); // treat text like markers; scale-invariant
+      Viewport(_, _, w, h, _, _, _, _, _) → Point(w, h)
    };
 
    fun coords_op g → 
       match prod coords dimensions g as 
-      ((x, y), (w, h)) → (x + w, y + h);
+      (Point(x, y), Point(w, h)) → Point(x + w, y + h);
 
 // GraphicsElement → Num
-let width = compose fst dimensions;
+let width = fun g → match dimensions g as Point(w, _) → w;
 
 // GraphicsElement → Num
-let height = compose snd dimensions;
+let height = fun g → match dimensions g as Point(_, h) → h;
 
 // Num → Num → List GraphicsElement → List GraphicsElement
 let spaceRight = fun z sep gs →
@@ -68,7 +68,7 @@ let spaceRight = fun z sep gs →
 
 // Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
 // different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org.
-let colours1 = ["#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f", "#e5c494", "#b3b3b3"];
+let colours1 = ["#66c2a5", "#a6d854", "#ffd92f", "#e5c494", "#fc8d62", "#b3b3b3", "#8da0cb", "#e78ac3"];
 let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf"];
 
 // Compositionality principle: child coords/dimensions are always expressed directly using parent reference 
@@ -103,16 +103,16 @@ let axisStrokeWidth = 0.5;
 let axisColour = "black";
 let backgroundColour = "Gainsboro";
 let defaultMargin = 24;
-let markerRadius = 2.5;
+let markerRadius = 3.5;
 let tickLength = 4;
 
 // Helpers for axis functions.
 // Orient → Colour → Num → GraphicsElement
 let tick = fun {
    Horiz colour len →
-      Line((0, 0), (0, 0 - len), colour, axisStrokeWidth);
+      Line(Point(0, 0), Point(0, 0 - len), colour, axisStrokeWidth);
    Vert colour len →
-      Line((0, 0), (0 - len, 0), colour, axisStrokeWidth)
+      Line(Point(0, 0), Point(0 - len, 0), colour, axisStrokeWidth)
    };
 
 // Orient → Num → Num → Str → GraphicsElement
@@ -125,10 +125,10 @@ let label = fun {
 let labelledTick = fun orient colour len str →
    Group([tick orient colour len, label orient 0 len str]);
 
-// Orient → Num → Num → (Num, Num)
+// Orient → Num → Num → Point
 let mkPoint = fun {
-   Horiz x y → (y, x);
-   Vert x y → (x, y)
+   Horiz x y → Point(y, x);
+   Vert x y → Point(x, y)
 };
 
 // x is position of this axis on the other axis. Returns axis and position of last tick.
@@ -163,7 +163,7 @@ let catAxis = fun orient x catValues →
    in Group([
       Line(head ps, last ps, axisColour, axisStrokeWidth),
       Polymarkers(tail ps, map (const (tick orient axisColour tickLength)) catValues),
-      Polymarkers(flip map (tail ps) (first (fun x → x - 0.5)), map (label orient -0.5 0) catValues)
+      Polymarkers(flip map (tail ps) (fun Point(x, y) → Point(x - 0.5, y)), map (label orient -0.5 0) catValues)
    ]);
 
 // Num → Num → Num → Num → List GraphicsElement → GraphicsElement
@@ -177,12 +177,13 @@ let lineChart = fun withAxes colours x_start ks data →
    // Returns the plot along with its maximum y-value.
    // Cat → Colour → (GraphicsElement, Num)
    let plot = fun k colour →
-      let ps = map (second (lookup k)) data;
+      let ps = map (fun (x, kvs) → Point(x, lookup k kvs)) data;
       let line = Group([
          Polyline(ps, colour, 1),
          Polymarkers(ps, repeat (length ps) Circle(0, 0, markerRadius, colour))
       ])
-      in (line, max (map snd ps));
+      in (line, max (map (fun Point(_, y) → y) ps));
+   // List (GraphicsElement, Num)
    let lines = zipWith (uncurry plot) ks colours;
    let x_finish = last xs;
    let y_finish = max (map snd lines);

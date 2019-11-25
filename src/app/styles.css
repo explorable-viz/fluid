@@ -41,3 +41,9 @@
 .tippy-tooltip.light-border-theme {
    font-size: 9pt;
 }
+
+.focus {
+   stroke: black;
+   stroke-opacity: 0.1;
+   fill-opacity: 0.7;
+}

@@ -1,7 +1,7 @@
 import { Class, __nonNull, absurd, as, assert, className } from "../util/Core"
 import { Change, New, Reclassify } from "../Delta"
 import { strings } from "../Expr"
-import { Arrowhead, Marker } from "../Graphics2"
+import { Arrowhead, Marker } from "../Graphics"
 import { Value, isPrim } from "../Value"
 import { versioned } from "../Versioned"
 import { SVG } from "./Core"
@@ -181,6 +181,10 @@ export function edge_bottom (g: SVGSVGElement): SVGSVGElement {
 
 export function ellipsis (ẟ_style: DeltaStyle): SVGElement {
    return text("…", ẟ_style)
+}
+
+export function group (): SVGGElement {
+   return createElement("g", group)
 }
 
 export function horiz (...gs: SVGElement[]): SVGSVGElement {

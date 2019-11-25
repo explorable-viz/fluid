@@ -8,14 +8,14 @@ import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expl } from "../Expl"
 import { Expr } from "../Expr"
-import { GraphicsElement } from "../Graphics2"
+import { GraphicsElement, Point } from "../Graphics"
 import { DataElim, Elim, Match, VarElim } from "../Match"
 import { Module, parseWithImports } from "../Module"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { Editor } from "./Editor"
-import { GraphicsRenderer } from "./GraphicsRenderer2"
+import { GraphicsRenderer } from "./GraphicsRenderer"
 import { 
    DeltaStyle, arrow, addBorder_changed, addBorder_focus, centreDot, comma, connector, deltaStyle, __dimensions, ellipsis, horiz, 
    horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement_inverted, text, unimplemented, vert 
@@ -26,6 +26,7 @@ import Cont = Expr.Cont
 
 export module View {
    export let dimensions: (tg: ExplValue<GraphicsElement>) => [number, number]
+   export let defaultDims: [number, number] = [480, 480]
 
    export function initialise (): void {
       Module.initialise()
@@ -35,8 +36,8 @@ export module View {
       const [ρ, dimsExpr]: [Env, Expr] = parseWithImports(`dimensions ${x}`)
       dimensions = function (tg: ExplValue<GraphicsElement>): [number, number] {
          const tv: ExplValue = Eval.eval_(ρ.concat(Env.singleton(str(x)(ν()), tg)), dimsExpr)
-         if (tv.v instanceof Pair && tv.v.fst instanceof Num && tv.v.snd instanceof Num) {
-            return [tv.v.fst.val, tv.v.snd.val]
+         if (tv.v instanceof Point) {
+            return [tv.v.x.val, tv.v.y.val]
          } else {
             return absurd()
          }
@@ -353,7 +354,7 @@ export module View {
          if (this.tv.v instanceof DataValue) {
             if (this.tv.v instanceof GraphicsElement) {
                const tg: ExplValue<GraphicsElement> = this.tv as ExplValue<GraphicsElement>
-               const dim = { width: 480, height: 480 }
+               const dim = { width: defaultDims[0], height: defaultDims[1] }
                let g1: SVGGElement
                [g, g1] = svgElement_inverted(dim.width, dim.height)
                new GraphicsRenderer(__currentEditor!, g, g1).render(tg, __nonNull(dimensions)(tg))

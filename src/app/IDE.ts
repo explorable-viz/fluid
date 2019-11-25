@@ -1,12 +1,13 @@
 import "../BaseTypes"
-import "../Graphics2"
+import "../Graphics"
 import { Annotated, Direction, __annotations } from "../Annotation"
 import { Env } from "../Env"
 import { Eval } from "../Eval"
 import { Expr } from "../Expr"
 import { openDatasetAs, openWithImports } from "../Module"
-import "../app/GraphicsRenderer2"
+import "../app/GraphicsRenderer"
 import { Editor } from "./Editor"
+import { View } from "./View"
 
 export function initialise (): void {
    Editor.initialise()
@@ -18,12 +19,14 @@ class IDE implements Editor.Listener {
    editors: Editor.Editor[] = []
 
    constructor () {
-      this.ρ_external = openDatasetAs("renewables", "data")
+      this.ρ_external = openDatasetAs("renewables-restricted", "data")
       const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
       const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
+      const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
       this.editors.push(
-         new Editor.Editor(this, 700, 600, this.ρ_external, ρ1, e1),
-         new Editor.Editor(this, 700, 600, this.ρ_external, ρ2, e2)
+         new Editor.Editor(this, View.defaultDims, "top", this.ρ_external, ρ1, e1),
+         new Editor.Editor(this, View.defaultDims, "right", this.ρ_external, ρ2, e2),
+         new Editor.Editor(this, View.defaultDims, "top", this.ρ_external, ρ3, e3)
       )
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event) => this.editors.forEach(editor => editor.onload(ev))
