@@ -2,7 +2,7 @@ import tippy from "tippy.js"
 import { Instance as Tooltip, Placement } from "tippy.js"
 import "tippy.js/dist/tippy.css"
 import "tippy.js/themes/light-border.css"
-import { Class, __log, __nonNull, as, assert } from "../util/Core"
+import { Class, __log, __nonNull, as } from "../util/Core"
 import { bool_ } from "../util/Lattice"
 import { Direction, isα, setα } from "../Annotation"
 import { DataValue, ExplValue } from "../DataValue"
@@ -90,7 +90,7 @@ abstract class Interactor<T extends DataValue, U extends SVGElement> {
 
    onMouseOut (e: MouseEvent): void {
       this.propFocus = null
-      assert(this.editor.bwdSlice(() => {}).size === 0)
+      this.editor.bwdSlice(() => {})
       this.element.classList.remove("focus")
    }
 }

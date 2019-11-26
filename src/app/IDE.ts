@@ -35,7 +35,7 @@ class IDE implements Editor.Listener {
    }
 
    // Returns "external" dependencies identified by the backward slice.
-   bwdSlice (editor: Editor.Editor): Set<Annotated> {
+   bwdSlice (editor: Editor.Editor): void {
       editor.direction = Direction.Bwd
       Eval.eval_bwd(editor.e, editor.tv)
       // consider availability of ρ_external only; treat ρ and e as unlimited resources      
@@ -51,7 +51,6 @@ class IDE implements Editor.Listener {
             editor_.render() // TODO: just redo selection rendering
          })
       __slice.reset(Direction.Fwd)
-      return externDeps
    }
 }
 
