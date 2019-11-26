@@ -112,6 +112,7 @@ describe("slice", () => {
          const stackedBar: Editor.Editor = ide.addEditor(ρ2, e2)
          const line: Editor.Editor = ide.addEditor(ρ3, e3)
          line.bwdSlice((): void => {
+            const here: ExplValueCursor = ExplValueCursor.descendant(null, line.tv)
          })
          assert([...groupedBar.tooltips].every(tooltip => tooltip.props["content"] === ""))
          assert([...stackedBar.tooltips].every(tooltip => tooltip.props["content"] === ""))
