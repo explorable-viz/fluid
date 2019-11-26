@@ -182,12 +182,12 @@ let lineChart = fun withAxes colours x_start ks data →
          Polyline(ps, colour, 1),
          Polymarkers(ps, repeat (length ps) Circle(0, 0, markerRadius, colour))
       ]);
-   let wurble = fun k →
+   let max_y = fun k →
       max (map (fun (_, kvs) → lookup k kvs) data);
    // List (GraphicsElement, Num)
    let lines = zipWith (uncurry plot) ks colours;
    let x_finish = last xs;
-   let y_finish = max (map wurble ks)
+   let y_finish = max (map max_y ks)
    in match withAxes as {
       True →
          match axis Horiz 0 x_start x_finish as
