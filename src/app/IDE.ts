@@ -1,3 +1,4 @@
+import { Placement } from "tippy.js"
 import "../BaseTypes" // need these early because of a Webpack dependency problem
 import "../Graphics"
 import { Annotated, Direction, __slice } from "../Annotation"
@@ -23,11 +24,15 @@ class IDE implements Editor.Listener {
       const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
       const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
       const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
-      this.editors.push(new Editor.Editor(this, View.defaultDims, "top", this.ρ_external, ρ1, e1))
-      this.editors.push(new Editor.Editor(this, View.defaultDims, "right", this.ρ_external, ρ2, e2))
-      this.editors.push(new Editor.Editor(this, View.defaultDims, "top", this.ρ_external, ρ3, e3))
+      this.addEditor(ρ1, e1)
+      this.addEditor(ρ2, e2)
+      this.addEditor(ρ3, e3)
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event) => this.editors.forEach(editor => editor.onload(ev))
+   }
+
+   addEditor (ρ: Env, e: Expr, tooltipPlacement: Placement = "top"): void {
+      this.editors.push(new Editor.Editor(this, View.defaultDims, tooltipPlacement, this.ρ_external, ρ, e))
    }
 
    resetForBwd (): void {
