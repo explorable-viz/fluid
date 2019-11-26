@@ -12,21 +12,21 @@ import { View } from "./View"
 
 export function initialise (): void {
    Editor.initialise()
-   new IDE()
+   const ide: IDE = new IDE(openDatasetAs("renewables-restricted", "data"))
+   const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
+   const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
+   const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
+   ide.addEditor(ρ1, e1)
+   ide.addEditor(ρ2, e2)
+   ide.addEditor(ρ3, e3)
 }
 
 class IDE implements Editor.Listener {
    ρ_external: Env
    editors: Editor.Editor[] = []
 
-   constructor () {
-      this.ρ_external = openDatasetAs("renewables-restricted", "data")
-      const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
-      const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
-      const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
-      this.addEditor(ρ1, e1)
-      this.addEditor(ρ2, e2)
-      this.addEditor(ρ3, e3)
+   constructor (ρ_external: Env) {
+      this.ρ_external = ρ_external
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
       window.onload = (ev: Event) => this.editors.forEach(editor => editor.onload(ev))
    }
