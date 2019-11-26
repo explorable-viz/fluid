@@ -174,17 +174,17 @@ let viewport = fun x_start x_finish y_finish margin gs →
 // Bool → Colours → Num → List Cat → List (Num, List (Cat, Num)) → GraphicsElement
 let lineChart = fun withAxes colours x_start ks data →
    let xs = map fst data;
-   // Returns the plot along with its maximum y-value.
-   // Cat → Colour → (GraphicsElement, Num)
+   // Cat → Colour → GraphicsElement
    let plot = fun k colour →
       let ps = map (fun (x, kvs) → Point(x, lookup k kvs)) data
       in Group([
          Polyline(ps, colour, 1),
          Polymarkers(ps, repeat (length ps) Circle(0, 0, markerRadius, colour))
       ]);
+   // Cat → Num
    let max_y = fun k →
       max (map (fun (_, kvs) → lookup k kvs) data);
-   // List (GraphicsElement, Num)
+   // List GraphicsElement
    let lines = zipWith (uncurry plot) ks colours;
    let x_finish = last xs;
    let y_finish = max (map max_y ks)
