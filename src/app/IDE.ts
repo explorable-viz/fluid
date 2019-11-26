@@ -32,8 +32,10 @@ export class IDE implements Editor.Listener {
       window.onload = (ev: Event) => this.editors.forEach(editor => editor.onload(ev))
    }
 
-   addEditor (ρ: Env, e: Expr, tooltipPlacement: Placement = "top"): void {
-      this.editors.push(new Editor.Editor(this, View.defaultDims, tooltipPlacement, this.ρ_external, ρ, e))
+   addEditor (ρ: Env, e: Expr, tooltipPlacement: Placement = "top"): Editor.Editor {
+      const editor: Editor.Editor = new Editor.Editor(this, View.defaultDims, tooltipPlacement, this.ρ_external, ρ, e)
+      this.editors.push(editor)
+      return editor
    }
 
    resetForBwd (): void {

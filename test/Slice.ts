@@ -1,10 +1,10 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { __nonNull } from "../src/util/Core"
-import { __slice } from "../src/Annotation"
+import { __nonNull, assert } from "../src/util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
+import { __slice } from "../src/Annotation" // Webpack confused by dependencies; put after Expr
 import { Elim } from "../src/Match"
 import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
@@ -108,9 +108,13 @@ describe("slice", () => {
          const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
          const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
          const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
-         ide.addEditor(ρ1, e1)
-         ide.addEditor(ρ2, e2)
-         ide.addEditor(ρ3, e3)
+         const groupedBar: Editor.Editor = ide.addEditor(ρ1, e1)
+         const stackedBar: Editor.Editor = ide.addEditor(ρ2, e2)
+         const line: Editor.Editor = ide.addEditor(ρ3, e3)
+         line.bwdSlice((): void => {
+         })
+         assert([...groupedBar.tooltips].every(tooltip => tooltip.props["content"] === ""))
+         assert([...stackedBar.tooltips].every(tooltip => tooltip.props["content"] === ""))
       })
    })
 
