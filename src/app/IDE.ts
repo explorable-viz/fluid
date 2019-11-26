@@ -12,6 +12,7 @@ import { View } from "./View"
 
 export function initialise (): void {
    Editor.initialise()
+   // TODO: eliminate redundancy with "renewables" test
    const ide: IDE = new IDE(openDatasetAs("renewables-restricted", "data"))
    const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
    const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
@@ -21,7 +22,7 @@ export function initialise (): void {
    ide.addEditor(ρ3, e3)
 }
 
-class IDE implements Editor.Listener {
+export class IDE implements Editor.Listener {
    ρ_external: Env
    editors: Editor.Editor[] = []
 

@@ -10,6 +10,7 @@ import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "../src/app/Cursor"
 import { Editor } from "../src/app/Editor"
+import { IDE } from "../src/app/IDE"
 import { BwdSlice, FwdSlice, funDef } from "./util/Core"
 
 before((done: MochaDone) => {
@@ -98,6 +99,18 @@ describe("slice", () => {
          const [ρ, e]: [Env, Expr] = openWithImports("foldr_sumSquares")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
+      })
+   })
+
+   describe("graphics/renewables", () => {
+      it("ok", () => {
+         const ide: IDE = new IDE(openDatasetAs("renewables-restricted", "data"))
+         const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
+         const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
+         const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
+         ide.addEditor(ρ1, e1)
+         ide.addEditor(ρ2, e2)
+         ide.addEditor(ρ3, e3)
       })
    })
 
