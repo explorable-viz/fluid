@@ -174,9 +174,11 @@ let viewport = fun x_start x_finish y_finish margin gs →
 // Bool → Colours → Num → List Cat → List (Num, List (Cat, Num)) → GraphicsElement
 let lineChart = fun withAxes colours x_start ks data →
    let xs = map fst data;
-   let wibble = flip map data
-      // (Num, List (Cat, Num)) → List (Cat, List Point)
-      (fun (x, kvs) → flip map kvs (fun (k, y) → (k, Point(x, y))));
+   // the y-series, for a given categorical value, for the y-values under consideration 
+   // List (List (List Point))
+   let ySeries = flip map data
+      // (Num, List (Cat, Num)) → List (List Point)
+      (fun (x, kvs) → flip map kvs (fun (k, y) → Point(x, y)));
    // Cat → Colour → GraphicsElement
    let plot = fun n colour →
       let ps = map (fun (x, kvs) → Point(x, snd (nth n kvs))) data
