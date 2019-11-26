@@ -1,4 +1,4 @@
-import "../BaseTypes"
+import "../BaseTypes" // need these early because of a Webpack dependency problem
 import "../Graphics"
 import { Annotated, Direction, __annotations } from "../Annotation"
 import { Env } from "../Env"
