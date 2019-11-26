@@ -1,7 +1,7 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
 import { __nonNull } from "../src/util/Core"
-import { __annotations } from "../src/Annotation"
+import { __slice } from "../src/Annotation"
 import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"

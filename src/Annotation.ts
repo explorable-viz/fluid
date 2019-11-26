@@ -14,12 +14,12 @@ export function annotated (v: Value): v is Annotated {
 }
 
 export function isα (v: Annotated): Annotation {
-   return __annotations.is(v)
+   return __slice.is(v)
 }
 
 // Currently no deltas are associated with annotations.
 export function setα<T extends Annotated> (α: Annotation, v: T): void {
-   __annotations.set(v, α)
+   __slice.set(v, α)
 }
 
 export function setjoinα (α: Annotation, v: Annotated): void {
@@ -66,9 +66,9 @@ export class Annotations {
       this.ann.clear()
    }
 
-   restrictTo (tvs: ExplValue[]): void {
-      this.ann = intersection(this.ann, union(...tvs.map(tv => Expl.explDescendants(tv))))
+   restrictTo (tvs: ExplValue[]): Set<Annotated> {
+      return intersection(this.ann, union(...tvs.map(tv => Expl.explDescendants(tv))))
    }
 }
 
-export const __annotations = new Annotations()
+export const __slice = new Annotations()

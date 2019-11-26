@@ -1,6 +1,6 @@
 import { Instance as Tooltip, Placement } from "tippy.js"
 import { __nonNull, as } from "../util/Core"
-import { Annotated, Direction, __annotations } from "../Annotation"
+import { Annotated, Direction, __slice } from "../Annotation"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
@@ -101,7 +101,7 @@ export module Editor {
       }
 
       // returns whether the backward slice reveals "external" dependencies
-      bwdSlice (setNeeded: () => void): typeof __annotations.ann {
+      bwdSlice (setNeeded: () => void): typeof __slice.ann {
          this.listener.resetForBwd()
          setNeeded()
          return this.listener.bwdSlice(this)
