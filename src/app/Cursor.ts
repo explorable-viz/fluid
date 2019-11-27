@@ -23,7 +23,6 @@ export abstract class Cursor {
    abstract on: Value
    abstract to<T extends DataValue> (C: Class<T>, k: keyof T): Cursor
    abstract at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor
-   abstract skipImport (): this
 
    notAnnotated (): this {
       return userError("Not an annotated node.", this.on)
@@ -91,10 +90,6 @@ export class ExplValueCursor extends Cursor {
 
    get on (): Value {
       return this.tv
-   }
-
-   skipImport (): this {
-      return ExplValueCursor.descendant(this, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) as this
    }
 
    to<T extends DataValue> (C: Class<T>, k: keyof T): ExplValueCursor {
@@ -203,10 +198,6 @@ export class ExprCursor extends Cursor {
 
    get on (): Value {
       return this.v
-   }
-
-   skipImport (): this {
-      return this.to(Expr.Defs, "e") as this // all "modules" have this form
    }
 
    // No way to specify only "own" properties statically.
