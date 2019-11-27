@@ -27,7 +27,7 @@ export module Editor {
       listener: Listener
       rootPane: SVGSVGElement
       tooltips: Set<Tooltip>
-      tooltipPlacement: Placement // hack to make for nicer examples
+      tooltipPlacement: Placement // make for nicer examples
       ρ: Env
       e: Expr
       tv: ExplValue
@@ -105,7 +105,7 @@ export module Editor {
          setNeeded()
          this.direction = Direction.Bwd
          Eval.eval_bwd(this.e, this.tv)
-            this.listener.onBwdSlice(this)
+         this.listener.onBwdSlice(this)
       }
 
       render (): void {
