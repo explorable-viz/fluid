@@ -1,4 +1,4 @@
-import { Class, __nonNull, absurd } from "./util/Core"
+import { Class, __nonNull, absurd, classOf } from "./util/Core"
 import { Annotation, bool_ } from "./util/Lattice"
 import { intersection, union } from "./util/Set"
 import { DataValue, ExplValue } from "./DataValue"
@@ -100,7 +100,13 @@ function explDescendants_aux (tv: ExplValue, exclude: ExcludedProps, desc: Set<E
    if (tv.v instanceof DataValue) {
       const {t, v}: ExplValue<DataValue> = tv as ExplValue<DataValue>
       fields(v).forEach((prop: keyof typeof v): void => {
-         explDescendants_aux(Expl.explChild(t, v, prop), exclude, desc)
+         const C: Class = classOf(v)
+         const excluded: Set<String> | undefined = exclude.excluded.get(C) 
+         if (!excluded || !excluded.has(prop)) {
+            explDescendants_aux(Expl.explChild(t, v, prop), exclude, desc)
+         } else {
+            console.log(`Ignoring ${C.name}.${prop}.`)
+         }
       })
    }
 }
