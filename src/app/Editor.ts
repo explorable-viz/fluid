@@ -1,6 +1,6 @@
 import { Instance as Tooltip, Placement } from "tippy.js"
 import { __nonNull, as } from "../util/Core"
-import { Direction, ExcludedProps, Slice, __slice } from "../Annotation"
+import { Direction, Slice, __slice } from "../Annotation"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
@@ -65,6 +65,10 @@ export module Editor {
          return this.ρ_external.concat(this.ρ_imports)
       }
 
+      visibleTooltips (): Tooltip[] {
+         return [...this.tooltips].filter(tooltip => tooltip.state.isVisible)
+      }
+
       onLoad (ev: Event): void {
          this.render()
          const this_: this = this
@@ -111,18 +115,18 @@ export module Editor {
          __slice.reset(Direction.Bwd)
          setNeeded()
          Eval.eval_bwd(this.e, this.tv)
-         __slice.ann = __slice.restrictTo(this.ρ_external.values(), new ExcludedProps())
+         __slice.ann = __slice.restrictTo(this.ρ_external.values())
          this.listener.onBwdSlice(this, __slice.ann)
          this.direction = Direction.Bwd
          this.slice = __slice.ann
       }
 
       // Forward-slice with respect to supplied slice of ρ_external.
-      fwdSlice (externDeps: Slice, exclude: ExcludedProps): void {
+      fwdSlice (externDeps: Slice): void {
          __slice.direction = Direction.Fwd
          __slice.ann = externDeps
          Eval.eval_fwd(this.e, this.tv)
-         __slice.ann = __slice.restrictTo([this.tv], exclude)
+         __slice.ann = __slice.restrictTo([this.tv])
          this.direction = Direction.Fwd
          this.slice = __slice.ann
       }

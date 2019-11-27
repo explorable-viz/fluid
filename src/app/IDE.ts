@@ -1,16 +1,13 @@
 import { Placement } from "tippy.js"
 import "../BaseTypes" // need these early because of a Webpack dependency problem
 import "../Graphics"
-import { Direction, ExcludedProps, Slice, __slice } from "../Annotation"
+import { Direction, Slice, __slice } from "../Annotation"
 import { Env } from "../Env"
 import { Expr } from "../Expr"
-import { Viewport } from "../Graphics"
 import { openDatasetAs, openWithImports } from "../Module"
 import "../app/GraphicsRenderer"
 import { Editor } from "./Editor"
 import { View } from "./View"
-
-let excluded: ExcludedProps = new ExcludedProps()
 
 export function initialise (): void {
    Editor.initialise()
@@ -22,7 +19,6 @@ export function initialise (): void {
    ide.addEditor(ρ1, e1)
    ide.addEditor(ρ2, e2)
    ide.addEditor(ρ3, e3)
-   excluded.add(Viewport, "height")
 }
 
 export class IDE implements Editor.Listener {
@@ -46,7 +42,7 @@ export class IDE implements Editor.Listener {
       this.editors
          .filter(editor_ => editor_ !== editor)
          .forEach((editor_: Editor.Editor): void => {
-            editor_.fwdSlice(externDeps, excluded)
+            editor_.fwdSlice(externDeps)
             editor_.render() // TODO: just redo selection rendering
          })
       __slice.reset(Direction.Fwd)

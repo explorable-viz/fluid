@@ -1,3 +1,4 @@
+import { Instance as Tooltip } from "tippy.js"
 import { __nonNull, as } from "../../src/util/Core"
 import { Direction, __slice } from "../../src/Annotation"
 import { ExplValue } from "../../src/DataValue"
@@ -22,10 +23,13 @@ const __editorListener: Editor.Listener = new class implements Editor.Listener {
    resetForBwd (): void {
    }
 
-   onBwdSlice (editor: Editor.Editor): typeof __slice.ann {
-      return new Set()
+   onBwdSlice (editor: Editor.Editor): void {
    }
 }()
+
+export function tooltipsEqual (tooltips: Tooltip[], tooltipContent: string[]): boolean {
+   return [...tooltips].map(tooltip => tooltip.props["content"]).join() === tooltipContent.join()
+}
 
 // Key idea here is that we never push slicing further back than ρ (since ρ could potentially
 // be supplied by a library function, dataframe in another language, or other resource which

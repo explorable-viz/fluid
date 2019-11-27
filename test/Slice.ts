@@ -12,7 +12,7 @@ import { Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "../src/app/Cursor"
 import { Editor } from "../src/app/Editor"
 import { IDE } from "../src/app/IDE"
-import { BwdSlice, FwdSlice, funDef } from "./util/Core"
+import { BwdSlice, FwdSlice, funDef, tooltipsEqual } from "./util/Core"
 
 before((done: MochaDone) => {
    Editor.initialise()
@@ -114,7 +114,6 @@ describe("slice", () => {
          const line: Editor.Editor = ide.addEditor(ρ3, e3)
          line.bwdSlice((): void => {
             const here: ExplValueCursor = ExplValueCursor.descendant(null, line.tv)
-            console.log( 
             here.to(Viewport, "g")
                 .to(Group, "gs")
                 .nth(1)
@@ -123,14 +122,13 @@ describe("slice", () => {
                 .nth(3) // first two elements are axes; third element is total
                 .to(Group, "gs")
                 .nth(1) // first element is polyline; second is polymarkers
-                .to(Polymarkers, "points") 
+                .to(Polymarkers, "points")
                 .nth(2) // third point is 2015
                 .to(Point, "y")
                 .setα()
-            )
          })
-         assert(groupedBar.slice.size === 0)
-         assert(stackedBar.slice.size === 0)
+         assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3"]))
+         assert(tooltipsEqual(stackedBar.visibleTooltips(), ["height: 10.3", "y: 10.3", "y: 306.3", "y: 350.3"]))
       })
    })
 
