@@ -117,8 +117,8 @@ describe("slice", () => {
             here.to(Viewport, "g")
                 .to(Group, "gs")
          })
-         assert([...groupedBar.tooltips].every(tooltip => tooltip.props["content"] === ""))
-         assert([...stackedBar.tooltips].every(tooltip => tooltip.props["content"] === ""))
+         assert(groupedBar.slice.size === 0)
+         assert(stackedBar.slice.size === 0)
       })
    })
 
