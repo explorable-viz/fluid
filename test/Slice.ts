@@ -154,15 +154,6 @@ describe("slice", () => {
       })
    })
 
-   describe("graphics/line-chart", () => {
-      it("ok", () => {
-         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/line-chart")
-         new FwdSlice(ρ.concat(ρʹ), e)
-         new BwdSlice(ρ.concat(ρʹ), e)
-      })
-   })
-
    describe("graphics/stacked-bar-chart", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
