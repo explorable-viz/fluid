@@ -3,7 +3,6 @@ import "../BaseTypes" // need these early because of a Webpack dependency proble
 import "../Graphics"
 import { Annotated, Direction, __slice } from "../Annotation"
 import { Env } from "../Env"
-import { Eval } from "../Eval"
 import { Expr } from "../Expr"
 import { openDatasetAs, openWithImports } from "../Module"
 import "../app/GraphicsRenderer"
@@ -41,14 +40,10 @@ export class IDE implements Editor.Listener {
    onBwdSlice (editor: Editor.Editor): void {
       // consider availability of ρ_external only; treat ρ and e as unlimited resources      
       const externDeps: Set<Annotated> = __slice.restrictTo(this.ρ_external.values())
-      __slice.reset(Direction.Fwd)
       this.editors
          .filter(editor_ => editor_ !== editor)
          .forEach((editor_: Editor.Editor): void => {
-            __slice.ann = externDeps
-            Eval.eval_fwd(editor_.e, editor_.tv)
-            __slice.ann = __slice.restrictTo([editor_.tv])
-            editor_.direction = Direction.Fwd
+            editor_.fwdSlice(externDeps)
             editor_.render() // TODO: just redo selection rendering
          })
       __slice.reset(Direction.Fwd)

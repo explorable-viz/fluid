@@ -1,6 +1,6 @@
 import { Instance as Tooltip, Placement } from "tippy.js"
 import { __nonNull, as } from "../util/Core"
-import { Direction, __slice } from "../Annotation"
+import { Annotated, Direction, __slice } from "../Annotation"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
@@ -106,6 +106,15 @@ export module Editor {
          this.direction = Direction.Bwd
          Eval.eval_bwd(this.e, this.tv)
          this.listener.onBwdSlice(this)
+      }
+
+      // Forward-slice with respect to supplied slice of ρ_external.
+      fwdSlice (externDeps: Set<Annotated>): void {
+         __slice.direction = Direction.Fwd
+         __slice.ann = externDeps
+         Eval.eval_fwd(this.e, this.tv)
+         __slice.ann = __slice.restrictTo([this.tv])
+         this.direction = Direction.Fwd
       }
 
       render (): void {
