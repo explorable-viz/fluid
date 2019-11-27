@@ -1,14 +1,26 @@
-import { Class, __nonNull, absurd, userError } from "./util/Core"
+import { Class, __nonNull, absurd } from "./util/Core"
 import { Annotation, bool_ } from "./util/Lattice"
-import { filter, intersection, union } from "./util/Set"
-import { ExplValue } from "./DataValue"
+import { intersection, union } from "./util/Set"
+import { DataValue, ExplValue } from "./DataValue"
 import { __deltas } from "./Delta"
 import { Expl } from "./Expl"
 import { Expr } from "./Expr"
-import { Value, _ } from "./Value"
+import { Value, _, fields } from "./Value"
 
 export type Annotated = Expr.SyntaxNode | ExplValue
 export type Slice = Set<Annotated>
+
+// Allow certain properties in the final forward slice to be excluded, because we don't visualise them and frankly there
+// are too many "peripheral" dependencies for it to be likely that we will want to any time soon. Can't store them in a 
+// type-safe way, but at least construct them safely.
+export class ExcludedProps {
+   excluded: [Class, string][] = []
+
+   add<T> (C: Class<T>, prop: keyof T): ExcludedProps {
+      this.excluded.push([C, prop as string])
+      return this
+   }
+}
 
 export function annotated (v: Value): v is Annotated {
    return v instanceof Expr.SyntaxNode || v instanceof ExplValue
@@ -67,17 +79,23 @@ export class Annotations {
       this.ann = new Set()
    }
 
-   restrictTo (tvs: ExplValue[]): Slice {
-      return intersection(this.ann, union(...tvs.map(tv => Expl.explDescendants(tv))))
+   restrictTo (tvs: ExplValue[], exclude: ExcludedProps): Slice {
+      return intersection(this.ann, union(...tvs.map(tv => explDescendants(tv, exclude))))
    }
+}
 
-   static restrictToClass<T extends Value> (slice: Slice, C: Class<T>): Slice {
-      return filter(slice, (tv: Annotated): boolean => {
-         if (tv instanceof ExplValue) {
-            return tv.v instanceof C
-         } else {
-            return userError("Not an output slice.") // arguably program slices and output slices are different beasts
-         }
+function explDescendants (tv: ExplValue, exclude: ExcludedProps): Set<ExplValue> {
+   const desc: Set<ExplValue> = new Set()
+   explDescendants_aux(tv, exclude, desc)
+   return desc
+}
+
+function explDescendants_aux (tv: ExplValue, exclude: ExcludedProps, desc: Set<ExplValue>): void {
+   desc.add(tv)
+   if (tv.v instanceof DataValue) {
+      const {t, v}: ExplValue<DataValue> = tv as ExplValue<DataValue>
+      fields(v).forEach((prop: keyof typeof v): void => {
+         explDescendants_aux(Expl.explChild(t, v, prop), exclude, desc)
       })
    }
 }

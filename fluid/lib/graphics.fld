@@ -205,7 +205,7 @@ let categoricalChart = fun plotValue withAxes colours sep data →
       True → 
          match catAxis Horiz 0 (map fst data) as 
          x_axis → match axis Vert 0 0 h as
-         (y_axis, h) → viewport 0 w h defaultMargin (concat gs [x_axis, y_axis]); // axes on top
+         (y_axis, h') → viewport 0 w h' defaultMargin (concat gs [x_axis, y_axis]); // axes on top
       False → viewport 0 w h 0 gs
    };
 

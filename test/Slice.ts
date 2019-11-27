@@ -4,8 +4,8 @@ import { __nonNull, assert } from "../src/util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
-import { Annotations, __slice } from "../src/Annotation" // Webpack confused by dependencies; put after Expr
-import { Group, Point, Polymarkers, Rect, Viewport } from "../src/Graphics"
+import { __slice } from "../src/Annotation" // Webpack confused by dependencies; put after Expr
+import { Group, Point, Polymarkers, Viewport } from "../src/Graphics"
 import { Elim } from "../src/Match"
 import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
@@ -129,7 +129,7 @@ describe("slice", () => {
                 .setα()
             )
          })
-         assert(Annotations.restrictToClass(groupedBar.slice, Rect).size === 0)
+         assert(groupedBar.slice.size === 0)
          assert(stackedBar.slice.size === 0)
       })
    })
