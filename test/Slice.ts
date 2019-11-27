@@ -5,7 +5,7 @@ import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { __slice } from "../src/Annotation" // Webpack confused by dependencies; put after Expr
-import { Group, Polymarkers, Viewport } from "../src/Graphics"
+import { Group, Point, Polymarkers, Viewport } from "../src/Graphics"
 import { Elim } from "../src/Match"
 import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
@@ -87,7 +87,7 @@ describe("slice", () => {
             }
             expect (here: ExplValueCursor): void {
                here.αset()
-               here.to(Cons, "head").αclear()
+               here.nth(0).αclear()
                here.to(Cons, "tail").to(Cons, "tail").assert(List, v => Nil.is(v))
             }
          })(ρ,e )
@@ -125,8 +125,9 @@ describe("slice", () => {
                 .nth(1) // first element is polyline; second is polymarkers
                 .to(Polymarkers, "points") 
                 .nth(2) // third point is 2015
+                .to(Point, "y")
+                .setα()
             )
-//            assert(false)
          })
          assert(groupedBar.slice.size === 0)
          assert(stackedBar.slice.size === 0)
@@ -258,7 +259,7 @@ describe("slice", () => {
                   .constr_to(Cons, "head").clearα()
               }
             expect (here: ExplValueCursor): void {
-               here.to(Cons, "head").αclear()
+               here.nth(0).αclear()
                here.to(Cons, "tail").αset()
             }
          })(ρ, e)
@@ -311,7 +312,7 @@ describe("slice", () => {
             }
             expect (here: ExplValueCursor): void {
                here.αclear()
-               here.to(Cons, "head").αset()
+               here.nth(0).αset()
                here.to(Cons, "tail").αset()
             }
          })(ρ, e)
@@ -345,7 +346,7 @@ describe("slice", () => {
          // needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
          new (class extends BwdSlice {
             setup (here: ExplValueCursor): void {
-               here.to(Cons, "head").setα()
+               here.nth(0).setα()
             }
             expect (here: ExprCursor): void {
                let hereʹ: ExprCursor = new ExprCursor(funDef(ρ, "zipWith"))
