@@ -7,7 +7,8 @@ import { Expl } from "./Expl"
 import { Expr } from "./Expr"
 import { Value, _ } from "./Value"
 
-export type Annotated = Expr.SyntaxNode | ExplValue 
+export type Annotated = Expr.SyntaxNode | ExplValue
+export type Slice = Set<Annotated>
 
 export function annotated (v: Value): v is Annotated {
    return v instanceof Expr.SyntaxNode || v instanceof ExplValue
@@ -33,7 +34,7 @@ export function setmeetα (α: Annotation, v: Annotated): void {
 export enum Direction { Fwd, Bwd }
 
 export class Annotations {
-   ann: Set<Annotated> = new Set() // unavailable nodes (fwd) or needed nodes (bwd)
+   ann: Slice = new Set() // unavailable nodes (fwd) or needed nodes (bwd)
    direction: Direction = Direction.Fwd
 
    // Whether v is needed (going backward) or available (going forward).
@@ -66,7 +67,7 @@ export class Annotations {
       this.ann.clear()
    }
 
-   restrictTo (tvs: ExplValue[]): Set<Annotated> {
+   restrictTo (tvs: ExplValue[]): Slice {
       return intersection(this.ann, union(...tvs.map(tv => Expl.explDescendants(tv))))
    }
 }
