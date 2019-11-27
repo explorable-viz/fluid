@@ -145,6 +145,17 @@ describe("slice", () => {
          })
          assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3", "height: 296", "height: 44"]))
          assert(tooltipsEqual(line.visibleTooltips(), ["y: 495.3", "y: 10.3", "y: 296", "y: 44"]))
+         groupedBar.bwdSlice((): void => {
+            const here: ExplValueCursor = ExplValueCursor.descendant(null, groupedBar.tv)
+            here.to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(1) // skip caption
+                .to(Viewport, "g")
+                .to(Group, "gs")         
+         })
+         console.log(stackedBar.visibleTooltips().map(tooltip => tooltip.props["content"]).join())
+         console.log(line.visibleTooltips().map(tooltip => tooltip.props["content"]).join())
+         assert(false)
       })
    })
 
