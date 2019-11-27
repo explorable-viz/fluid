@@ -143,9 +143,9 @@ describe("slice", () => {
                 .to(Rect, "y")
                 .setα()
          })
-         console.log(groupedBar.visibleTooltips())
-         console.log(line.visibleTooltips())
-   })
+         assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3", "height: 296", "height: 44"]))
+         assert(tooltipsEqual(line.visibleTooltips(), ["y: 495.3", "y: 10.3", "y: 296", "y: 44"]))
+      })
    })
 
    describe("graphics/background", () => {
@@ -160,15 +160,6 @@ describe("slice", () => {
       it("ok", () => {
          const ρ: ExtendEnv = openDatasetAs("renewables", "data")
          const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
-         new FwdSlice(ρ.concat(ρʹ), e)
-         new BwdSlice(ρ.concat(ρʹ), e)
-      })
-   })
-
-   describe("graphics/stacked-bar-chart", () => {
-      it("ok", () => {
-         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
          new FwdSlice(ρ.concat(ρʹ), e)
          new BwdSlice(ρ.concat(ρʹ), e)
       })
