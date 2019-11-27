@@ -1,7 +1,7 @@
 import { Placement } from "tippy.js"
 import "../BaseTypes" // need these early because of a Webpack dependency problem
 import "../Graphics"
-import { Annotated, Direction, __slice } from "../Annotation"
+import { Direction, Slice, __slice } from "../Annotation"
 import { Env } from "../Env"
 import { Expr } from "../Expr"
 import { openDatasetAs, openWithImports } from "../Module"
@@ -37,9 +37,8 @@ export class IDE implements Editor.Listener {
       return editor
    }
 
-   onBwdSlice (editor: Editor.Editor): void {
-      // consider availability of ρ_external only; treat ρ and e as unlimited resources      
-      const externDeps: Set<Annotated> = __slice.restrictTo(this.ρ_external.values())
+   onBwdSlice (editor: Editor.Editor, externDeps: Slice): void {
+      // consider availability of ρ_external only; treat ρ and e as unlimited resources
       this.editors
          .filter(editor_ => editor_ !== editor)
          .forEach((editor_: Editor.Editor): void => {

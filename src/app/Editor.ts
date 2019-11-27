@@ -20,7 +20,7 @@ export module Editor {
    }
 
    export interface Listener {
-      onBwdSlice (editor: Editor): void
+      onBwdSlice (editor: Editor, externDeps: Slice): void
    }
 
    export class Editor {
@@ -110,9 +110,11 @@ export module Editor {
       bwdSlice (setNeeded: () => void): void {
          __slice.reset(Direction.Bwd)
          setNeeded()
-         this.direction = Direction.Bwd
          Eval.eval_bwd(this.e, this.tv)
-         this.listener.onBwdSlice(this)
+         __slice.ann = __slice.restrictTo(this.ρ_external.values())
+         this.listener.onBwdSlice(this, __slice.ann)
+         this.direction = Direction.Bwd
+         this.slice = __slice.ann
       }
 
       // Forward-slice with respect to supplied slice of ρ_external.
