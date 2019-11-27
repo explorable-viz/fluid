@@ -8,7 +8,7 @@ import { __slice } from "../src/Annotation" // Webpack confused by dependencies;
 import { Group, Point, Polymarkers, Rect,  Viewport } from "../src/Graphics"
 import { Elim } from "../src/Match"
 import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
-import { Str } from "../src/Value"
+import { Num, Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "../src/app/Cursor"
 import { Editor } from "../src/app/Editor"
 import { IDE } from "../src/app/IDE"
@@ -151,11 +151,16 @@ describe("slice", () => {
                 .to(Group, "gs")
                 .nth(1) // skip caption
                 .to(Viewport, "g")
-                .to(Group, "gs")         
+                .to(Group, "gs")
+                .nth(0) // first group of bars
+                .to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(3) // 4th bar in group
+                .to(Rect, "height").assert(Num, n => n.val === 145)
+                .setα() 
          })
          console.log(stackedBar.visibleTooltips().map(tooltip => tooltip.props["content"]).join())
          console.log(line.visibleTooltips().map(tooltip => tooltip.props["content"]).join())
-         assert(false)
       })
    })
 
