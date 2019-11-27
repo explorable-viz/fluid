@@ -21,7 +21,7 @@ import RecDef = Expr.RecDef
 
 export abstract class Cursor {
    abstract on: Value
-   abstract to<T extends DataValue> (C: Class<T>, k: keyof T): Cursor
+   abstract to<T extends DataValue> (C: Class<T>, k: keyof T): this
    abstract at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor
 
    notAnnotated (): this {
@@ -67,6 +67,21 @@ export abstract class Cursor {
          return this.notAnnotated()
       }
    }
+
+   // Helpers specific to certain datatypes.
+
+   treeNodeValue (): this {
+      return this.to(NonEmpty, "t")
+                 .to(Pair, "snd")
+   }
+
+   nth (n: number): this {
+      if (n === 0) {
+         return this.to(Cons, "head")
+      } else {
+         return this.to(Cons, "tail").nth(n - 1)
+      }
+   }
 }
 
 export class ExplValueCursor extends Cursor {
@@ -92,8 +107,8 @@ export class ExplValueCursor extends Cursor {
       return this.tv
    }
 
-   to<T extends DataValue> (C: Class<T>, k: keyof T): ExplValueCursor {
-      return ExplValueCursor.descendant(this, Expl.explChild(this.tv.t, as(this.tv.v, C), k))
+   to<T extends DataValue> (C: Class<T>, k: keyof T): this {
+      return ExplValueCursor.descendant(this, Expl.explChild(this.tv.t, as(this.tv.v, C), k)) as this
    }
 
    toChild (n: number): ExplValueCursor {
@@ -201,9 +216,9 @@ export class ExprCursor extends Cursor {
    }
 
    // No way to specify only "own" properties statically.
-   to<T extends Value> (C: Class<T>, prop: keyof T): ExprCursor {
+   to<T extends DataValue> (C: Class<T>, prop: keyof T): this {
       const vʹ: T[keyof T] = as<Persistent, T>(this.v, C)[prop] // TypeScript nonsense
-      return new ExprCursor(vʹ as any)
+      return new ExprCursor(vʹ as any) as this
    }
 
    // Allow the data value class to be used to navigate the data expression form.
@@ -247,14 +262,7 @@ export class ExprCursor extends Cursor {
       return this
    }
 
-   // Helpers specific to certain datatypes.
-
-   treeNodeValue (): ExprCursor {
-      return this.to(NonEmpty, "t")
-                 .to(Pair, "snd")
-   }
-
-   var_ (x: string): ExprCursor {
+   var_ (x: string): this {
       this.assert(VarElim, σ => σ.x.val === x)
       return this.to(VarElim, "κ")      
    }

@@ -5,7 +5,7 @@ import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { __slice } from "../src/Annotation" // Webpack confused by dependencies; put after Expr
-import { Group, Viewport } from "../src/Graphics"
+import { Group, Polymarkers, Viewport } from "../src/Graphics"
 import { Elim } from "../src/Match"
 import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
@@ -114,8 +114,19 @@ describe("slice", () => {
          const line: Editor.Editor = ide.addEditor(ρ3, e3)
          line.bwdSlice((): void => {
             const here: ExplValueCursor = ExplValueCursor.descendant(null, line.tv)
+            console.log( 
             here.to(Viewport, "g")
                 .to(Group, "gs")
+                .nth(1)
+                .to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(2) // first two elements are axes
+                .to(Group, "gs")
+                .nth(1) // first element is polyline; second is polymarkers
+                .to(Polymarkers, "points") 
+                .nth(2) // third point is 2015
+            )
+//            assert(false)
          })
          assert(groupedBar.slice.size === 0)
          assert(stackedBar.slice.size === 0)
