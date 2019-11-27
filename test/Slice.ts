@@ -1,16 +1,18 @@
 /// <reference path="../node_modules/@types/mocha/index.d.ts" />
 
-import { __nonNull } from "../src/util/Core"
-import { __annotations } from "../src/Annotation"
+import { __nonNull, assert } from "../src/util/Core"
 import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
+import { __slice } from "../src/Annotation" // Webpack confused by dependencies; put after Expr
+import { Group, Point, Polymarkers, Rect,  Viewport } from "../src/Graphics"
 import { Elim } from "../src/Match"
 import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
-import { Str } from "../src/Value"
+import { Num, Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "../src/app/Cursor"
 import { Editor } from "../src/app/Editor"
-import { BwdSlice, FwdSlice, funDef } from "./util/Core"
+import { IDE } from "../src/app/IDE"
+import { BwdSlice, FwdSlice, funDef, tooltipsEqual } from "./util/Core"
 
 before((done: MochaDone) => {
    Editor.initialise()
@@ -85,7 +87,7 @@ describe("slice", () => {
             }
             expect (here: ExplValueCursor): void {
                here.αset()
-               here.to(Cons, "head").αclear()
+               here.nth(0).αclear()
                here.to(Cons, "tail").to(Cons, "tail").assert(List, v => Nil.is(v))
             }
          })(ρ,e )
@@ -101,38 +103,72 @@ describe("slice", () => {
       })
    })
 
+   describe("graphics/renewables", () => {
+      it("ok", () => {
+         const ide: IDE = new IDE(openDatasetAs("renewables-restricted", "data"))
+         const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
+         const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
+         const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
+         const groupedBar: Editor.Editor = ide.addEditor(ρ1, e1)
+         const stackedBar: Editor.Editor = ide.addEditor(ρ2, e2)
+         const line: Editor.Editor = ide.addEditor(ρ3, e3)
+         line.bwdSlice((): void => {
+            const here: ExplValueCursor = ExplValueCursor.descendant(null, line.tv)
+            here.to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(1) // skip caption
+                .to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(3) // first two elements are axes; third element is total
+                .to(Group, "gs")
+                .nth(1) // first element is polyline; second is polymarkers
+                .to(Polymarkers, "points")
+                .nth(2) // third point is 2015
+                .to(Point, "y")
+                .setα()
+         })
+         assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3"]))
+         assert(tooltipsEqual(stackedBar.visibleTooltips(), ["height: 10.3", "y: 10.3", "y: 306.3", "y: 350.3"]))
+         stackedBar.bwdSlice((): void => {
+            const here: ExplValueCursor = ExplValueCursor.descendant(null, stackedBar.tv)
+            here.to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(1) // skip caption
+                .to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(0) // first stacked bar
+                .to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(3) // 4th component of stacked bar
+                .to(Rect, "y")
+                .setα()
+         })
+         assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3", "height: 296", "height: 44"]))
+         assert(tooltipsEqual(line.visibleTooltips(), ["y: 495.3", "y: 10.3", "y: 296", "y: 44"]))
+         groupedBar.bwdSlice((): void => {
+            const here: ExplValueCursor = ExplValueCursor.descendant(null, groupedBar.tv)
+            here.to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(1) // skip caption
+                .to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(0) // first group of bars
+                .to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(3) // 4th bar in group
+                .to(Rect, "height").assert(Num, n => n.val === 145)
+                .setα() 
+         })
+         assert(tooltipsEqual(stackedBar.visibleTooltips(), ["height: 145"]))
+         assert(tooltipsEqual(line.visibleTooltips(), ["y: 495.3", "y: 145"]))
+      })
+   })
+
    describe("graphics/background", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports("graphics/background")
          new FwdSlice(ρ, e)
          new BwdSlice(ρ, e)
-      })
-   })
-
-   describe("graphics/grouped-bar-chart", () => {
-      it("ok", () => {
-         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
-         new FwdSlice(ρ.concat(ρʹ), e)
-         new BwdSlice(ρ.concat(ρʹ), e)
-      })
-   })
-
-   describe("graphics/line-chart", () => {
-      it("ok", () => {
-         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/line-chart")
-         new FwdSlice(ρ.concat(ρʹ), e)
-         new BwdSlice(ρ.concat(ρʹ), e)
-      })
-   })
-
-   describe("graphics/stacked-bar-chart", () => {
-      it("ok", () => {
-         const ρ: ExtendEnv = openDatasetAs("renewables", "data")
-         const [ρʹ, e]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
-         new FwdSlice(ρ.concat(ρʹ), e)
-         new BwdSlice(ρ.concat(ρʹ), e)
       })
    })
 
@@ -226,7 +262,7 @@ describe("slice", () => {
                   .constr_to(Cons, "head").clearα()
               }
             expect (here: ExplValueCursor): void {
-               here.to(Cons, "head").αclear()
+               here.nth(0).αclear()
                here.to(Cons, "tail").αset()
             }
          })(ρ, e)
@@ -279,7 +315,7 @@ describe("slice", () => {
             }
             expect (here: ExplValueCursor): void {
                here.αclear()
-               here.to(Cons, "head").αset()
+               here.nth(0).αset()
                here.to(Cons, "tail").αset()
             }
          })(ρ, e)
@@ -313,7 +349,7 @@ describe("slice", () => {
          // needing constructor of first element requires constructor at head of supplied op, plus application of op in zipW
          new (class extends BwdSlice {
             setup (here: ExplValueCursor): void {
-               here.to(Cons, "head").setα()
+               here.nth(0).setα()
             }
             expect (here: ExprCursor): void {
                let hereʹ: ExprCursor = new ExprCursor(funDef(ρ, "zipWith"))

@@ -147,9 +147,9 @@ letrec fun map f {
 };
 
 // Num → (a → a) → a → List a
-letrec fun iterate n f x → match n == 0 as {
+letrec fun iterate n f z → match n == 0 as {
    True → [];
-   False → [x, ...map f (iterate (n - 1) f x)]
+   False → [z, ...map f (iterate (n - 1) f z)]
 };
 
 // List a → Num

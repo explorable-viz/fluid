@@ -1,5 +1,6 @@
+import { Instance as Tooltip } from "tippy.js"
 import { __nonNull, as } from "../../src/util/Core"
-import { Direction, __annotations } from "../../src/Annotation"
+import { Direction, __slice } from "../../src/Annotation"
 import { ExplValue } from "../../src/DataValue"
 import { __deltas } from "../../src/Delta"
 import { Env, emptyEnv } from "../../src/Env"
@@ -22,10 +23,13 @@ const __editorListener: Editor.Listener = new class implements Editor.Listener {
    resetForBwd (): void {
    }
 
-   bwdSlice (editor: Editor.Editor): typeof __annotations.ann {
-      return new Set()
+   onBwdSlice (editor: Editor.Editor): void {
    }
 }()
+
+export function tooltipsEqual (tooltips: Tooltip[], tooltipContent: string[]): boolean {
+   return [...tooltips].map(tooltip => tooltip.props["content"]).join() === tooltipContent.join()
+}
 
 // Key idea here is that we never push slicing further back than ρ (since ρ could potentially
 // be supplied by a library function, dataframe in another language, or other resource which
@@ -35,7 +39,7 @@ export class FwdSlice {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.FwdSlice)) {
          const tv: ExplValue = Eval.eval_(ρ, e)
-         __annotations.reset(Direction.Fwd)
+         __slice.reset(Direction.Fwd)
          this.setup(new ExprCursor(e))
          Eval.eval_fwd(e, tv)
          this.expect(ExplValueCursor.descendant(null, tv))
@@ -60,7 +64,7 @@ export class BwdSlice {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.BwdSlice)) {
          const tv: ExplValue = Eval.eval_(ρ, e) // to obtain tv
-         __annotations.reset(Direction.Bwd)
+         __slice.reset(Direction.Bwd)
          this.setup(ExplValueCursor.descendant(null, tv))
          Eval.eval_bwd(e, tv)
          this.expect(new ExprCursor(e))

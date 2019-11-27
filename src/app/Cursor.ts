@@ -1,7 +1,7 @@
 import { last, nth } from "../../src/util/Array"
 import { AClass, Class, __check, __nonNull, absurd, as, assert, userError } from "../../src/util/Core"
 import { bool_ } from "../../src/util/Lattice"
-import { __annotations, annotated, isα, setα } from "../../src/Annotation"
+import { __slice, annotated, isα, setα } from "../../src/Annotation"
 import { Cons, List, NonEmpty, Pair } from "../../src/BaseTypes"
 import { exprClass } from "../../src/DataType"
 import { DataValue, ExplValue, explValue } from "../../src/DataValue"
@@ -21,9 +21,8 @@ import RecDef = Expr.RecDef
 
 export abstract class Cursor {
    abstract on: Value
-   abstract to<T extends DataValue> (C: Class<T>, k: keyof T): Cursor
+   abstract to<T extends DataValue> (C: Class<T>, k: keyof T): this
    abstract at<T extends Value> (C: AClass<T>, f: (o: T) => void): Cursor
-   abstract skipImport (): this
 
    notAnnotated (): this {
       return userError("Not an annotated node.", this.on)
@@ -69,9 +68,19 @@ export abstract class Cursor {
       }
    }
 
-   skipImports (): this {
-      return this.skipImport()  // prelude
-                 .skipImport()  // graphics
+   // Helpers specific to certain datatypes.
+
+   treeNodeValue (): this {
+      return this.to(NonEmpty, "t")
+                 .to(Pair, "snd")
+   }
+
+   nth (n: number): this {
+      if (n === 0) {
+         return this.to(Cons, "head")
+      } else {
+         return this.to(Cons, "tail").nth(n - 1)
+      }
    }
 }
 
@@ -98,12 +107,8 @@ export class ExplValueCursor extends Cursor {
       return this.tv
    }
 
-   skipImport (): this {
-      return ExplValueCursor.descendant(this, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v)) as this
-   }
-
-   to<T extends DataValue> (C: Class<T>, k: keyof T): ExplValueCursor {
-      return ExplValueCursor.descendant(this, Expl.explChild(this.tv.t, as(this.tv.v, C), k))
+   to<T extends DataValue> (C: Class<T>, k: keyof T): this {
+      return ExplValueCursor.descendant(this, Expl.explChild(this.tv.t, as(this.tv.v, C), k)) as this
    }
 
    toChild (n: number): ExplValueCursor {
@@ -210,14 +215,10 @@ export class ExprCursor extends Cursor {
       return this.v
    }
 
-   skipImport (): this {
-      return this.to(Expr.Defs, "e") as this // all "modules" have this form
-   }
-
    // No way to specify only "own" properties statically.
-   to<T extends Value> (C: Class<T>, prop: keyof T): ExprCursor {
+   to<T extends DataValue> (C: Class<T>, prop: keyof T): this {
       const vʹ: T[keyof T] = as<Persistent, T>(this.v, C)[prop] // TypeScript nonsense
-      return new ExprCursor(vʹ as any)
+      return new ExprCursor(vʹ as any) as this
    }
 
    // Allow the data value class to be used to navigate the data expression form.
@@ -261,14 +262,7 @@ export class ExprCursor extends Cursor {
       return this
    }
 
-   // Helpers specific to certain datatypes.
-
-   treeNodeValue (): ExprCursor {
-      return this.to(NonEmpty, "t")
-                 .to(Pair, "snd")
-   }
-
-   var_ (x: string): ExprCursor {
+   var_ (x: string): this {
       this.assert(VarElim, σ => σ.x.val === x)
       return this.to(VarElim, "κ")      
    }

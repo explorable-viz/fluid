@@ -7,19 +7,11 @@ export function every<T> (x̅: Set<T>, pred: (x: T) => boolean): boolean {
 }
 
 export function filter<T> (x̅: Set<T>, pred: (x: T) => boolean): Set<T> {
-   const y̅: Set<T> = new Set()
-   x̅.forEach(x => {
-      if (pred(x)) {
-         y̅.add(x)
-      }
-   })
-   return y̅
+   return new Set([...x̅].filter(pred))
 }
 
 export function map<T, U> (x̅: Set<T>, f: (x: T) => U): Set<U> {
-   const y̅: Set<U> = new Set()
-   x̅.forEach(x => y̅.add(f(x)))
-   return y̅
+   return new Set([...x̅].map(f))
 }
 
 export function some<T> (x̅: Set<T>, pred: (x: T) => boolean): boolean {

@@ -1,6 +1,6 @@
 import { Instance as Tooltip, Placement } from "tippy.js"
 import { __nonNull, as } from "../util/Core"
-import { Annotated, Direction, __annotations } from "../Annotation"
+import { Direction, Slice, __slice } from "../Annotation"
 import { DataValue, ExplValue, explValue } from "../DataValue"
 import { __deltas } from "../Delta"
 import { Env } from "../Env"
@@ -20,27 +20,28 @@ export module Editor {
    }
 
    export interface Listener {
-      resetForBwd (): void
-      bwdSlice (editor: Editor): Set<Annotated>
+      onBwdSlice (editor: Editor, externDeps: Slice): void
    }
 
    export class Editor {
       listener: Listener
       rootPane: SVGSVGElement
       tooltips: Set<Tooltip>
-      tooltipPlacement: Placement // hack to make for nicer examples
-      ρ: Env
+      tooltipPlacement: Placement // make for nicer examples
+      ρ_external: Env
+      ρ_imports: Env
       e: Expr
       tv: ExplValue
       here!: ExplValueCursor
       direction: Direction
+      slice: Slice = new Set()
    
       constructor (
          listener: Listener, 
          [width, height]: [number, number], 
          tooltipPlacement: Placement, 
          ρ_external: Env, 
-         ρ: Env, 
+         ρ_imports: Env,
          e: Expr
       ) {
          this.listener = listener
@@ -49,8 +50,10 @@ export module Editor {
          this.tooltipPlacement = tooltipPlacement
          markerEnsureDefined(this.rootPane, Arrowhead, "blue")
          document.body.appendChild(this.rootPane)
-         this.ρ = ρ_external.concat(ρ)
+         this.ρ_external = ρ_external
+         this.ρ_imports = ρ_imports
          this.e = e
+         // evaluate twice so we can start with an empty delta
          this.tv = Eval.eval_(this.ρ, this.e)
          this.here = ExplValueCursor.descendant(null, this.tv)
          this.direction = Direction.Fwd
@@ -58,7 +61,15 @@ export module Editor {
          Eval.eval_(this.ρ, this.e) // reestablish reachable nodes
       }
 
-      onload (ev: Event): void {
+      get ρ (): Env {
+         return this.ρ_external.concat(this.ρ_imports)
+      }
+
+      visibleTooltips (): Tooltip[] {
+         return [...this.tooltips].filter(tooltip => tooltip.state.isVisible)
+      }
+
+      onLoad (ev: Event): void {
          this.render()
          const this_: this = this
          // https://stackoverflow.com/questions/5597060
@@ -100,11 +111,24 @@ export module Editor {
          }
       }
 
-      // returns whether the backward slice reveals "external" dependencies
-      bwdSlice (setNeeded: () => void): typeof __annotations.ann {
-         this.listener.resetForBwd()
+      bwdSlice (setNeeded: () => void): void {
+         __slice.reset(Direction.Bwd)
          setNeeded()
-         return this.listener.bwdSlice(this)
+         Eval.eval_bwd(this.e, this.tv)
+         __slice.ann = __slice.restrictTo(this.ρ_external.values())
+         this.listener.onBwdSlice(this, __slice.ann)
+         this.direction = Direction.Bwd
+         this.slice = __slice.ann
+      }
+
+      // Forward-slice with respect to supplied slice of ρ_external.
+      fwdSlice (externDeps: Slice): void {
+         __slice.direction = Direction.Fwd
+         __slice.ann = externDeps
+         Eval.eval_fwd(this.e, this.tv)
+         __slice.ann = __slice.restrictTo([this.tv])
+         this.direction = Direction.Fwd
+         this.slice = __slice.ann
       }
 
       render (): void {

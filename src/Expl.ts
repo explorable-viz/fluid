@@ -163,13 +163,13 @@ export namespace Expl {
    }
 
    // Should probably do a better job of restricting k to be a bona fide field name.
-   export function explChild<T extends DataValue> (t: Expl, v: T, k: keyof T): ExplValue {
+   export function explChild<T extends DataValue> (t: Expl, v: T, prop: keyof T): ExplValue {
       if (t instanceof Terminal) {
          assert(t instanceof DataExpl)
-         return explValue(t.__child(k as keyof Expl) as Expl, v.__child(k))
+         return explValue(t.__child(prop as keyof Expl) as Expl, v.__child(prop))
       } else
       if (t instanceof NonTerminal) {
-         return explChild(t.t, v, k)
+         return explChild(t.t, v, prop)
       } else {
          // Primitive applications are currently "terminal" forms, which is technically inconsistent with the fact 
          // that they can return structured data. In practice this doesn't matter because they only return values 
@@ -180,21 +180,5 @@ export namespace Expl {
 
    export function explChildren (t: Expl, v: DataValue): ExplValue[] {
       return fields(v).map(k => explChild(t, v, k as any))
-   }
-
-   export function explDescendants (tv: ExplValue): Set<ExplValue> {
-      const desc: Set<ExplValue> = new Set()
-      explDescendants_aux(tv, desc)
-      return desc
-   }
-
-   function explDescendants_aux (tv: ExplValue, desc: Set<ExplValue>): void {
-      desc.add(tv)
-      if (tv.v instanceof DataValue) {
-         const {t, v}: ExplValue = tv
-         explChildren(t, v).forEach((tv: ExplValue): void => {
-               explDescendants_aux(tv, desc)
-         })
-      }
    }
 }
