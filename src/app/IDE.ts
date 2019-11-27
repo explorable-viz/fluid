@@ -29,7 +29,7 @@ export class IDE implements Editor.Listener {
    constructor (ρ_external: Env) {
       this.ρ_external = ρ_external
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
-      window.onload = (ev: Event) => this.editors.forEach(editor => editor.onload(ev))
+      window.onload = (ev: Event) => this.editors.forEach(editor => editor.onLoad(ev))
    }
 
    addEditor (ρ: Env, e: Expr, tooltipPlacement: Placement = "top"): Editor.Editor {
@@ -38,12 +38,9 @@ export class IDE implements Editor.Listener {
       return editor
    }
 
-   resetForBwd (): void {
+   onBwdSlice (editor: Editor.Editor, setNeeded: () => void): void {
       __slice.reset(Direction.Bwd)
-   }
-
-   // Returns "external" dependencies identified by the backward slice.
-   bwdSlice (editor: Editor.Editor): void {
+      setNeeded()
       editor.direction = Direction.Bwd
       Eval.eval_bwd(editor.e, editor.tv)
       // consider availability of ρ_external only; treat ρ and e as unlimited resources      

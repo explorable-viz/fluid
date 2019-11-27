@@ -5,6 +5,7 @@ import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { __slice } from "../src/Annotation" // Webpack confused by dependencies; put after Expr
+import { Group, Viewport } from "../src/Graphics"
 import { Elim } from "../src/Match"
 import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
@@ -113,6 +114,8 @@ describe("slice", () => {
          const line: Editor.Editor = ide.addEditor(ρ3, e3)
          line.bwdSlice((): void => {
             const here: ExplValueCursor = ExplValueCursor.descendant(null, line.tv)
+            here.to(Viewport, "g")
+                .to(Group, "gs")
          })
          assert([...groupedBar.tooltips].every(tooltip => tooltip.props["content"] === ""))
          assert([...stackedBar.tooltips].every(tooltip => tooltip.props["content"] === ""))

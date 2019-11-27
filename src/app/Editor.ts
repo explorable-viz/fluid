@@ -20,8 +20,7 @@ export module Editor {
    }
 
    export interface Listener {
-      resetForBwd (): void
-      bwdSlice (editor: Editor): void
+      onBwdSlice (editor: Editor, setNeeded: () => void): void
    }
 
    export class Editor {
@@ -51,6 +50,7 @@ export module Editor {
          document.body.appendChild(this.rootPane)
          this.ρ = ρ_external.concat(ρ)
          this.e = e
+         // evaluate twice so we can start with an empty delta
          this.tv = Eval.eval_(this.ρ, this.e)
          this.here = ExplValueCursor.descendant(null, this.tv)
          this.direction = Direction.Fwd
@@ -58,7 +58,7 @@ export module Editor {
          Eval.eval_(this.ρ, this.e) // reestablish reachable nodes
       }
 
-      onload (ev: Event): void {
+      onLoad (ev: Event): void {
          this.render()
          const this_: this = this
          // https://stackoverflow.com/questions/5597060
@@ -100,11 +100,8 @@ export module Editor {
          }
       }
 
-      // returns whether the backward slice reveals "external" dependencies
       bwdSlice (setNeeded: () => void): void {
-         this.listener.resetForBwd()
-         setNeeded()
-         this.listener.bwdSlice(this)
+         this.listener.onBwdSlice(this, setNeeded)
       }
 
       render (): void {

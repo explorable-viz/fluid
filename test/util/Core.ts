@@ -22,7 +22,7 @@ const __editorListener: Editor.Listener = new class implements Editor.Listener {
    resetForBwd (): void {
    }
 
-   bwdSlice (editor: Editor.Editor): typeof __slice.ann {
+   onBwdSlice (editor: Editor.Editor): typeof __slice.ann {
       return new Set()
    }
 }()
