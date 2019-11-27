@@ -5,7 +5,7 @@ import { Cons, List, Nil, NonEmpty, Pair, Some, True } from "../src/BaseTypes"
 import { Env, ExtendEnv, emptyEnv } from "../src/Env"
 import { Expr } from "../src/Expr"
 import { __slice } from "../src/Annotation" // Webpack confused by dependencies; put after Expr
-import { Group, Point, Polymarkers, Viewport } from "../src/Graphics"
+import { Group, Point, Polymarkers, Rect,  Viewport } from "../src/Graphics"
 import { Elim } from "../src/Match"
 import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Str } from "../src/Value"
@@ -116,7 +116,7 @@ describe("slice", () => {
             const here: ExplValueCursor = ExplValueCursor.descendant(null, line.tv)
             here.to(Viewport, "g")
                 .to(Group, "gs")
-                .nth(1)
+                .nth(1) // skip caption
                 .to(Viewport, "g")
                 .to(Group, "gs")
                 .nth(3) // first two elements are axes; third element is total
@@ -130,11 +130,22 @@ describe("slice", () => {
          assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3"]))
          assert(tooltipsEqual(stackedBar.visibleTooltips(), ["height: 10.3", "y: 10.3", "y: 306.3", "y: 350.3"]))
          stackedBar.bwdSlice((): void => {
-            const here: ExplValueCursor = ExplValueCursor.descendant(null, line.tv)
+            const here: ExplValueCursor = ExplValueCursor.descendant(null, stackedBar.tv)
             here.to(Viewport, "g")
-            assert(false)
+                .to(Group, "gs")
+                .nth(1) // skip caption
+                .to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(0) // first stacked bar
+                .to(Viewport, "g")
+                .to(Group, "gs")
+                .nth(3) // 4th component of stacked bar
+                .to(Rect, "y")
+                .setα()
          })
-      })
+         console.log(groupedBar.visibleTooltips())
+         console.log(line.visibleTooltips())
+   })
    })
 
    describe("graphics/background", () => {
