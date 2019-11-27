@@ -68,11 +68,6 @@ export abstract class Cursor {
          return this.notAnnotated()
       }
    }
-
-   skipImports (): this {
-      return this.skipImport()  // prelude
-                 .skipImport()  // graphics
-   }
 }
 
 export class ExplValueCursor extends Cursor {
