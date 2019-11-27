@@ -28,18 +28,20 @@ export module Editor {
       rootPane: SVGSVGElement
       tooltips: Set<Tooltip>
       tooltipPlacement: Placement // make for nicer examples
-      ρ: Env
+      ρ_external: Env
+      ρ_imports: Env
       e: Expr
       tv: ExplValue
       here!: ExplValueCursor
       direction: Direction
+      slice: Slice = new Set()
    
       constructor (
          listener: Listener, 
          [width, height]: [number, number], 
          tooltipPlacement: Placement, 
          ρ_external: Env, 
-         ρ: Env, 
+         ρ_imports: Env,
          e: Expr
       ) {
          this.listener = listener
@@ -48,7 +50,8 @@ export module Editor {
          this.tooltipPlacement = tooltipPlacement
          markerEnsureDefined(this.rootPane, Arrowhead, "blue")
          document.body.appendChild(this.rootPane)
-         this.ρ = ρ_external.concat(ρ)
+         this.ρ_external = ρ_external
+         this.ρ_imports = ρ_imports
          this.e = e
          // evaluate twice so we can start with an empty delta
          this.tv = Eval.eval_(this.ρ, this.e)
@@ -56,6 +59,10 @@ export module Editor {
          this.direction = Direction.Fwd
          newRevision()
          Eval.eval_(this.ρ, this.e) // reestablish reachable nodes
+      }
+
+      get ρ (): Env {
+         return this.ρ_external.concat(this.ρ_imports)
       }
 
       onLoad (ev: Event): void {
@@ -115,6 +122,7 @@ export module Editor {
          Eval.eval_fwd(this.e, this.tv)
          __slice.ann = __slice.restrictTo([this.tv])
          this.direction = Direction.Fwd
+         this.slice = __slice.ann
       }
 
       render (): void {

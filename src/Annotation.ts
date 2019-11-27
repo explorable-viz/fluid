@@ -64,7 +64,7 @@ export class Annotations {
 
    reset (direction: Direction): void {
       this.direction = direction
-      this.ann.clear()
+      this.ann = new Set()
    }
 
    restrictTo (tvs: ExplValue[]): Slice {
