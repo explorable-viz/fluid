@@ -14,10 +14,15 @@ export type Slice = Set<Annotated>
 // are too many "peripheral" dependencies for it to be likely that we will want to any time soon. Can't store them in a 
 // type-safe way, but at least construct them safely.
 export class ExcludedProps {
-   excluded: [Class, string][] = []
+   excluded: Map<Class, Set<string>> = new Map()
 
    add<T> (C: Class<T>, prop: keyof T): ExcludedProps {
-      this.excluded.push([C, prop as string])
+      let props: Set<string> | undefined = this.excluded.get(C)
+      if (props === undefined) {
+         props = new Set()
+         this.excluded.set(C, props)
+      }
+      props.add(prop as string)
       return this
    }
 }
