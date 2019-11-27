@@ -38,11 +38,7 @@ export class IDE implements Editor.Listener {
       return editor
    }
 
-   onBwdSlice (editor: Editor.Editor, setNeeded: () => void): void {
-      __slice.reset(Direction.Bwd)
-      setNeeded()
-      editor.direction = Direction.Bwd
-      Eval.eval_bwd(editor.e, editor.tv)
+   onBwdSlice (editor: Editor.Editor): void {
       // consider availability of ρ_external only; treat ρ and e as unlimited resources      
       const externDeps: Set<Annotated> = __slice.restrictTo(this.ρ_external.values())
       __slice.reset(Direction.Fwd)

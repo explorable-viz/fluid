@@ -20,7 +20,7 @@ export module Editor {
    }
 
    export interface Listener {
-      onBwdSlice (editor: Editor, setNeeded: () => void): void
+      onBwdSlice (editor: Editor): void
    }
 
    export class Editor {
@@ -101,7 +101,11 @@ export module Editor {
       }
 
       bwdSlice (setNeeded: () => void): void {
-         this.listener.onBwdSlice(this, setNeeded)
+         __slice.reset(Direction.Bwd)
+         setNeeded()
+         this.direction = Direction.Bwd
+         Eval.eval_bwd(this.e, this.tv)
+            this.listener.onBwdSlice(this)
       }
 
       render (): void {
