@@ -1,6 +1,6 @@
-import { __nonNull, absurd } from "./util/Core"
+import { Class, __nonNull, absurd, userError } from "./util/Core"
 import { Annotation, bool_ } from "./util/Lattice"
-import { intersection, union } from "./util/Set"
+import { filter, intersection, union } from "./util/Set"
 import { ExplValue } from "./DataValue"
 import { __deltas } from "./Delta"
 import { Expl } from "./Expl"
@@ -69,6 +69,16 @@ export class Annotations {
 
    restrictTo (tvs: ExplValue[]): Slice {
       return intersection(this.ann, union(...tvs.map(tv => Expl.explDescendants(tv))))
+   }
+
+   static restrictToClass<T extends Value> (slice: Slice, C: Class<T>): Slice {
+      return filter(slice, (tv: Annotated): boolean => {
+         if (tv instanceof ExplValue) {
+            return tv.v instanceof C
+         } else {
+            return userError("Not an output slice.") // arguably program slices and output slices are different beasts
+         }
+      })
    }
 }
 
