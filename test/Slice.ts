@@ -129,6 +129,11 @@ describe("slice", () => {
          })
          assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3"]))
          assert(tooltipsEqual(stackedBar.visibleTooltips(), ["height: 10.3", "y: 10.3", "y: 306.3", "y: 350.3"]))
+         stackedBar.bwdSlice((): void => {
+            const here: ExplValueCursor = ExplValueCursor.descendant(null, line.tv)
+            here.to(Viewport, "g")
+            assert(false)
+         })
       })
    })
 
