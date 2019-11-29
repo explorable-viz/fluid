@@ -124,7 +124,7 @@ describe("slice", () => {
                 .nth(1) // first element is polyline; second is polymarkers
                 .to(Polymarkers, "points")
                 .nth(2) // third point is 2015
-                .to(Point, "y")
+                .to(Point, "y").assert(Num, n => n.val === 10.3)
                 .setα()
          })
          assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3"]))
@@ -140,7 +140,7 @@ describe("slice", () => {
                 .to(Viewport, "g")
                 .to(Group, "gs")
                 .nth(3) // 4th component of stacked bar
-                .to(Rect, "y")
+                .to(Rect, "y").assert(Num, n => n.val === 350.3)
                 .setα()
          })
          assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3", "height: 296", "height: 44"]))
