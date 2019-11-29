@@ -6,6 +6,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 26 November 2919 | Demo for Wrattler workshop ||
 | 25 November 2019 | First pass over nested coordinate frames and “domain units” | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) |
 | 19 November 2019 | Stacked bar, grouped bar and multiline chart examples | [110](https://github.com/rolyp/lambdacalc/issues/110), [250](https://github.com/rolyp/lambdacalc/issues/250) |
 | 4 November 2019 | Merge with Wrattler `develop` | [247](https://github.com/rolyp/lambdacalc/issues/247) |
