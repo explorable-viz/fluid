@@ -18,6 +18,7 @@ const classes: string = "code"
 const lineHeight = svg.textHeight(textElement(fontSize, classes, "m")) // representative character 
 // ASCII spaces seem to be trimmed; only Unicode space that seems to render monospaced is this: 
 const space_char: string = "\u00a0"
+const shapeRendering: string = "geometricPrecision"
 
 // Populate explicity, rather than using a memoised function.
 type Dimensions = { width: number, height: number }
@@ -111,6 +112,7 @@ export function connector (g1: SVGSVGElement, g2: SVGSVGElement): SVGElement {
          )
       )
    }
+   connector_.setAttribute("shape-rendering", shapeRendering)
    connector_.setAttribute("fill", "none")
    connector_.setAttribute("stroke", "blue") // hardcoded
    connector_.setAttribute("stroke-width", "1")
@@ -213,6 +215,7 @@ export function keyword (str: keyof typeof strings, ẟ_style: DeltaStyle): SVGE
 
 export function line (x1: number, y1: number, x2: number, y2: number, stroke: string, strokeWidth: number): SVGLineElement {
    const l: SVGLineElement = createElement("line", line)
+   l.setAttribute("shape-rendering", shapeRendering)
    l.setAttribute("x1", `${round(x1)}`)
    l.setAttribute("y1", `${round(y1)}`)
    l.setAttribute("x2", `${round(x2)}`)
@@ -275,12 +278,14 @@ export function marker_arrowhead (colour: string): SVGMarkerElement {
    m.setAttribute("markerHeight", "16")
    const path: SVGPathElement = createElement("path", marker_arrowhead)
    m.appendChild(path)
+   path.setAttribute("shape-rendering", shapeRendering)
    path.setAttribute("d", `M ${length} ${width / 2} L 0 ${width} L 0 0 Z`)
    return m
 }
 
 export function circle (x: number, y: number, radius: number, stroke: string, fill: string, createdBy: Function): SVGCircleElement {
    const r: SVGCircleElement = createElement("circle", createdBy)
+   r.setAttribute("shape-rendering", shapeRendering)
    r.setAttribute("cx", `${round(x)}`)
    r.setAttribute("cy", `${round(y)}`)
    r.setAttribute("r", `${round(radius)}`)
@@ -304,6 +309,7 @@ function pointsToString (p̅: [number, number][]): string {
 
 export function polyline (p̅: [number, number][], stroke: string, strokeWidth: number): SVGPolylineElement {
    const l: SVGPolylineElement = createElement("polyline", polyline)
+   l.setAttribute("shape-rendering", shapeRendering)
    l.setAttribute("points", pointsToString(p̅))
    l.setAttribute("stroke", stroke)
    l.setAttribute("stroke-width", `${round(strokeWidth)}`)
@@ -314,6 +320,7 @@ export function polyline (p̅: [number, number][], stroke: string, strokeWidth: 
 
 export function rect (x: number, y: number, width: number, height: number, stroke: string, fill: string, createdBy: Function): SVGRectElement {
    const r: SVGRectElement = createElement("rect", createdBy)
+   r.setAttribute("shape-rendering", shapeRendering)
    r.setAttribute("x", `${round(x)}`)
    r.setAttribute("y", `${round(y)}`)
    r.setAttribute("width", `${round(width)}`)
