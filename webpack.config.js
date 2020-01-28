@@ -87,6 +87,16 @@ module.exports = [{
          {
              test: /\.css$/,
              loaders: ["style-loader", "css-loader"]
+         },
+         // woff files; base64 encode
+         {
+            test: /\.woff$/, 
+            use: {
+               loader: "url-loader",
+               options: {
+                 limit: 100000,
+               },
+            }
          }
       ]
    },
