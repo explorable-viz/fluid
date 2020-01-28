@@ -16,7 +16,7 @@
     "three.meshline": "^1.2.0",
     "tippy.js": "^5.1.1",
     "ts-loader": "^4.0.0",
-    "typescript": "^3.6.3"
+    "typescript": "3.6.3"
   },
   "devDependencies": {
     "@types/chai": "^3.4.35",
