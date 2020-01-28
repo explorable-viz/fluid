@@ -26,7 +26,7 @@ import Cont = Expr.Cont
 
 export module View {
    export let dimensions: (tg: ExplValue<GraphicsElement>) => [number, number]
-   export let defaultDims: [number, number] = [480, 480]
+   export let defaultDims: [number, number] = [320, 360]
 
    export function initialise (): void {
       Module.initialise()
@@ -61,7 +61,7 @@ export module View {
       assert(__currentEditor === null)
       __currentEditor = editor
       const g: SVGElement = view(editor.tv, true, false).render()
-      editor.rootPane.appendChild(g) // need to render the main view so links can make use of getBoundingClientRect
+      editor.rootPane.appendChild(g) // need to render main view so links can make use of getBoundingClientRect
       renderLinks(__links).forEach((link: SVGElement): void => {
          editor.rootPane.appendChild(link)
       })

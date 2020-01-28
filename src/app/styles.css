@@ -12,13 +12,20 @@
    src: url(./Slabo13px-Regular.woff) format('woff');
 }
 
+@font-face {
+   font-family: "AvenirLTStd-Book";
+   font-style: normal;
+   font-weight: 400;
+   src: url(./AvenirLTStd-Book.woff) format('woff');
+}
+
 .code {
    font-family: "inconsolata";
    stroke: none;
 }
 
 .label {
-   font-family: "Slabo 13px";
+   font-family: "AvenirLTStd-Book";
    stroke: none;
 }
 

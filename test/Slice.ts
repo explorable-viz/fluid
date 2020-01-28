@@ -103,6 +103,14 @@ describe("slice", () => {
       })
    })
 
+   describe("graphics/background", () => {
+      it("ok", () => {
+         const [ρ, e]: [Env, Expr] = openWithImports("graphics/background")
+         new FwdSlice(ρ, e)
+         new BwdSlice(ρ, e)
+      })
+   })
+
    describe("graphics/renewables", () => {
       it("ok", () => {
          const ide: IDE = new IDE(openDatasetAs("renewables-restricted", "data"))
@@ -128,7 +136,7 @@ describe("slice", () => {
                 .setα()
          })
          assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3"]))
-         assert(tooltipsEqual(stackedBar.visibleTooltips(), ["height: 10.3", "y: 10.3", "y: 306.3", "y: 350.3"]))
+         assert(tooltipsEqual(stackedBar.visibleTooltips(), ["height: 10.3", "y: 10.3", "y: 106.3", "y: 150.3"]))
          stackedBar.bwdSlice((): void => {
             const here: ExplValueCursor = ExplValueCursor.descendant(null, stackedBar.tv)
             here.to(Viewport, "g")
@@ -140,11 +148,11 @@ describe("slice", () => {
                 .to(Viewport, "g")
                 .to(Group, "gs")
                 .nth(3) // 4th component of stacked bar
-                .to(Rect, "y").assert(Num, n => n.val === 350.3)
+                .to(Rect, "y").assert(Num, n => n.val === 150.3)
                 .setα()
          })
-         assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3", "height: 296", "height: 44"]))
-         assert(tooltipsEqual(line.visibleTooltips(), ["y: 495.3", "y: 10.3", "y: 296", "y: 44"]))
+         assert(tooltipsEqual(groupedBar.visibleTooltips(), ["height: 10.3", "height: 96", "height: 44"]))
+         assert(tooltipsEqual(line.visibleTooltips(), ["y: 295.3", "y: 10.3", "y: 96", "y: 44"]))
          groupedBar.bwdSlice((): void => {
             const here: ExplValueCursor = ExplValueCursor.descendant(null, groupedBar.tv)
             here.to(Viewport, "g")
@@ -160,15 +168,7 @@ describe("slice", () => {
                 .setα() 
          })
          assert(tooltipsEqual(stackedBar.visibleTooltips(), ["height: 145"]))
-         assert(tooltipsEqual(line.visibleTooltips(), ["y: 495.3", "y: 145"]))
-      })
-   })
-
-   describe("graphics/background", () => {
-      it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports("graphics/background")
-         new FwdSlice(ρ, e)
-         new BwdSlice(ρ, e)
+         assert(tooltipsEqual(line.visibleTooltips(), ["y: 295.3", "y: 145"]))
       })
    })
 

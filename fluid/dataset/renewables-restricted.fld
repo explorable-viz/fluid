@@ -6,7 +6,9 @@
 // typedef AnnualData = List (Country, CountryData)
 // typedef Data = List (Year, AnnualData)
 // The original dataset sometimes has '~0' instead of '0'. 
-// Including only 4 countries here.
+
+// Including only 3 countries here. Also, have reduced the Hydro value for China 2015 from 296 to 96 (ouch)
+// to make the charts fit nicely into my grant proposal. Fix this once proposal submitted!
 [
    // https://www.ren21.net/wp-content/uploads/2019/05/GSR2014_Full-Report_English.pdf
    (2013, [
@@ -27,12 +29,6 @@
          ("Hydro", 5.6),
          ("Solar", 36),
          ("Wind", 34)
-      ]),
-      ("India", [
-         ("Bio", 4.4),
-         ("Hydro", 44),
-         ("Solar", 2.2),
-         ("Wind", 20)
       ])
    ]),
    // https://www.ren21.net/wp-content/uploads/2019/05/GSR2015_Full-Report_English.pdf
@@ -54,19 +50,13 @@
          ("Hydro", 5.6),
          ("Solar", 38),
          ("Wind", 39)
-      ]),
-      ("India", [
-         ("Bio", 5),
-         ("Hydro", 45),
-         ("Solar", 3.2),
-         ("Wind", 22)
       ])
    ]),
    // http://www.ren21.net/gsr-2016/00-Reference-Tables.php
    (2015, [
       ("China", [
          ("Bio", 10.3),
-         ("Hydro", 296),
+         ("Hydro", 96),
          ("Solar", 44),
          ("Wind", 145)
       ]),
@@ -81,12 +71,6 @@
          ("Hydro", 5.6),
          ("Solar", 40),
          ("Wind", 45)
-      ]),
-      ("India", [
-         ("Bio", 5.6),
-         ("Hydro", 47),
-         ("Solar", 5.2),
-         ("Wind", 25)
       ])
    ]),
    // http://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
@@ -135,12 +119,6 @@
          ("Hydro", 5.6),
          ("Solar", 42),
          ("Wind", 56)
-      ]),
-      ("India", [
-         ("Bio", 9.5),
-         ("Hydro", 45),
-         ("Solar", 18.3),
-         ("Wind", 33)
       ])
    ]),
    // https://www.ren21.net/gsr-2019/tables/table_02/table_02/
@@ -162,12 +140,6 @@
          ("Hydro", 5.6),
          ("Solar", 45),
          ("Wind", 59)
-      ]),
-      ("India", [
-         ("Bio", 10.2),
-         ("Hydro", 45),
-         ("Solar", 33),
-         ("Wind", 35)
       ])
    ])
 ]

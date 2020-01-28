@@ -101,7 +101,7 @@ let tickEvery = fun n →
 
 let axisStrokeWidth = 0.5;
 let axisColour = "black";
-let backgroundColour = "Gainsboro";
+let backgroundColour = "white";
 let defaultMargin = 24;
 let markerRadius = 3.5;
 let tickLength = 4;
@@ -117,7 +117,7 @@ let tick = fun {
 
 // Orient → Num → Num → Str → GraphicsElement
 let label = fun {
-   Horiz x distance str → Text(x, 0 - distance, str, "middle", "hanging");
+   Horiz x distance str → Text(x, (0 - 4) - distance, str, "middle", "hanging"); // -4 , ugh
    Vert x distance str → Text(0 - distance, x, str, "end", "central")
 };
 
@@ -239,9 +239,8 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 // Bit of a hack, but how text fits into our model is a bit unclear at the moment.
 // Str → GraphicsElement → GraphicsElement
 let caption = fun str Viewport(x, y, w, h, fill, margin, scale, translate, g) →
-   let dh = textHeight str;
    let g' = Group([
-      Text(x + w / 2, 0, str, "middle", "hanging"),
+      Text(x + w / 2, -2, str, "middle", "hanging"), // -3, ugh
       Viewport(0, 0, w, h, fill, margin, scale, translate, g)
    ])
-   in Viewport(x, y, w, h, backgroundColour, defaultMargin / 2, Scale(1, 1), Translate(0, 0), g')
+   in Viewport(x, y, w, h, backgroundColour, defaultMargin / 2 + 4, Scale(1, 1), Translate(0, 0), g')

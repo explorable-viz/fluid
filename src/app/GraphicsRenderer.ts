@@ -12,7 +12,7 @@ import { Editor } from "./Editor"
 import { PointInteractor, RectInteractor } from "./Interactor"
 import { border, circle, group, lineRounded, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
-const fontSize: number = 11
+const fontSize: number = 12
 export const svg: SVG = new SVG()
 
 type TransformFun = ([x, y]: [number, number]) => [number, number]
