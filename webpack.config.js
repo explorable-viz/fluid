@@ -27,7 +27,7 @@ module.exports = [{
          },
          // woff files; base64 encode
          {
-            test: /\.woff$/, 
+            test: /\.(woff|fld)$/, 
             use: {
                loader: "url-loader",
                options: {
@@ -88,9 +88,9 @@ module.exports = [{
              test: /\.css$/,
              loaders: ["style-loader", "css-loader"]
          },
-         // woff files; base64 encode
+         // woff and Fluid source files; base64 encode
          {
-            test: /\.woff$/, 
+            test: /\.(woff|fld)$/, 
             use: {
                loader: "url-loader",
                options: {
