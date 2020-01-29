@@ -15,17 +15,14 @@ module.exports = [{
    },
    module: {
       rules: [
-         // all files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'
          {
             test: /\.ts$/,
             loader: "ts-loader"
          },
-         // css files; import css files in .ts using 'import' or 'require'
          {
             test: /\.css$/,
             loaders: ["style-loader", "css-loader"]
          },
-         // woff files; base64 encode
          {
             test: /\.(woff|fld)$/, 
             use: {
@@ -78,19 +75,16 @@ module.exports = [{
    },
    module: {
       rules: [
-         // all files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'
          {
              test: /\.ts$/,
              loader: "ts-loader"
          },
-         // css files; import css files in .ts using 'import' or 'require'
          {
              test: /\.css$/,
              loaders: ["style-loader", "css-loader"]
          },
-         // woff and Fluid source files; base64 encode
          {
-            test: /\.(woff|fld)$/, 
+            test: /\.woff$/, 
             use: {
                loader: "url-loader",
                options: {
