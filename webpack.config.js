@@ -24,12 +24,18 @@ module.exports = [{
             loaders: ["style-loader", "css-loader"]
          },
          {
-            test: /\.(woff|fld)$/, 
+            test: /\.woff$/,
             use: {
                loader: "url-loader",
                options: {
                  limit: 100000,
                },
+            }
+         },
+         {
+            test: /\.fld$/,
+            use: {
+               loader: "raw-loader"
             }
          }
       ]
@@ -90,6 +96,12 @@ module.exports = [{
                options: {
                  limit: 100000,
                },
+            }
+         },
+         {
+            test: /\.fld$/,
+            use: {
+               loader: "raw-loader"
             }
          }
       ]
