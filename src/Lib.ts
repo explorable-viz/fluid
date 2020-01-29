@@ -4,6 +4,6 @@ import { Editor } from "./app/Editor"
 import { Env, emptyEnv } from "./Env"
 import { Eval } from "./Eval"
 import { Expr } from "./Expr"
-import { bindDataset, parseWithImports } from "./Module"
+import { bindDataset, openDatasetAs, parseWithImports } from "./Module"
 
-export { Editor, Env, Eval, Expr, bindDataset, emptyEnv, parseWithImports }
+export { Editor, Env, Eval, Expr, bindDataset, emptyEnv, openDatasetAs, parseWithImports }

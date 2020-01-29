@@ -28,7 +28,7 @@ export class IDE implements Editor.Listener {
    constructor (ρ_external: Env) {
       this.ρ_external = ρ_external
       // Wait for fonts to load before rendering, otherwise metrics will be wrong.
-      window.onload = (ev: Event): void => this.editors.forEach(editor => editor.onLoad(ev))
+      window.onload = (ev: Event): void => this.editors.forEach(editor => editor.initialise())
    }
 
    addEditor (ρ: Env, e: Expr, tooltipPlacement: Placement = "top"): Editor.Editor {

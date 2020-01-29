@@ -69,7 +69,7 @@ export module Editor {
          return [...this.tooltips].filter(tooltip => tooltip.state.isVisible)
       }
 
-      onLoad (ev: Event): void {
+      initialise (): void {
          this.render()
          const this_: this = this
          // https://stackoverflow.com/questions/5597060
