@@ -32,7 +32,7 @@ export class IDE implements Editor.Listener {
    }
 
    addEditor (ρ: Env, e: Expr, tooltipPlacement: Placement = "top"): Editor.Editor {
-      const editor: Editor.Editor = new Editor.Editor(this, View.defaultDims, tooltipPlacement, this.ρ_external, ρ, e)
+       const editor: Editor.Editor = new Editor.Editor(this, View.defaultDims, tooltipPlacement, this.ρ_external, ρ, e)
       this.editors.push(editor)
       return editor
    }
