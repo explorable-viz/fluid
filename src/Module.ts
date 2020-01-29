@@ -12,7 +12,8 @@ import { ν, at, num, str } from "./Versioned"
 
 // Kindergarten modules.
 
-import "./app/graphics.fld"
+import "../fluid/lib/prelude.fld"
+import "../fluid/lib/graphics.fld"
 
 // Define as constants to enforce sharing; could use memoisation.
 export let module_prelude: Env
