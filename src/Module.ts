@@ -13,6 +13,7 @@ import { ν, at, num, str } from "./Versioned"
 // Kindergarten modules.
 
 import src_prelude from "../fluid/lib/prelude.fld"
+import src_graphics from "../fluid/lib/graphics.fld"
 
 // Define as constants to enforce sharing; could use memoisation.
 export let module_prelude: Env
@@ -21,7 +22,7 @@ export let module_graphics: Env
 export namespace Module {
    export function initialise (): void {
       module_prelude = loadModule2(emptyEnv(), src_prelude)
-      module_graphics = loadModule2(module_prelude, "graphics")
+      module_graphics = loadModule2(module_prelude, src_graphics)
    }
 }
 
