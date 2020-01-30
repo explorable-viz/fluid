@@ -15,9 +15,12 @@ export function initialise (): void {
    const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
    const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
    const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
-   coordinator.addEditor(ρ1, e1)
-   coordinator.addEditor(ρ2, e2)
-   coordinator.addEditor(ρ3, e3)
+   // Wait for fonts to load before rendering, otherwise metrics will be wrong.
+   window.onload = (ev: Event): void => {
+      coordinator.addEditor(ρ1, e1)
+      coordinator.addEditor(ρ2, e2)
+      coordinator.addEditor(ρ3, e3)
+   }
 }
 
 initialise()

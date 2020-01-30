@@ -12,12 +12,11 @@ export class EditorCoordinator implements Editor.Listener {
 
    constructor (ρ_external: Env) {
       this.ρ_external = ρ_external
-      // Wait for fonts to load before rendering, otherwise metrics will be wrong.
-      window.onload = (ev: Event): void => this.editors.forEach(editor => editor.initialise())
    }
 
    addEditor (ρ: Env, e: Expr, tooltipPlacement: Placement = "top"): Editor.Editor {
       const editor: Editor.Editor = new Editor.Editor(this, View.defaultDims, tooltipPlacement, this.ρ_external, ρ, e)
+      editor.initialise()
       this.editors.add(editor)
       return editor
    }
