@@ -11,7 +11,7 @@ import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Num, Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "../src/app/Cursor"
 import { Editor } from "../src/app/Editor"
-import { IDE } from "../src/app/IDE"
+import { EditorCoordinator } from "../src/app/EditorCoordinator"
 import { BwdSlice, FwdSlice, funDef, tooltipsEqual } from "./util/Core"
 
 before((done: MochaDone) => {
@@ -113,13 +113,13 @@ describe("slice", () => {
 
    describe("graphics/renewables", () => {
       it("ok", () => {
-         const ide: IDE = new IDE(openDatasetAs("renewables-restricted", "data"))
+         const coordinator: EditorCoordinator = new EditorCoordinator(openDatasetAs("renewables-restricted", "data"))
          const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
          const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
          const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
-         const groupedBar: Editor.Editor = ide.addEditor(ρ1, e1)
-         const stackedBar: Editor.Editor = ide.addEditor(ρ2, e2)
-         const line: Editor.Editor = ide.addEditor(ρ3, e3)
+         const groupedBar: Editor.Editor = coordinator.addEditor(ρ1, e1)
+         const stackedBar: Editor.Editor = coordinator.addEditor(ρ2, e2)
+         const line: Editor.Editor = coordinator.addEditor(ρ3, e3)
          line.bwdSlice((): void => {
             const here: ExplValueCursor = ExplValueCursor.descendant(null, line.tv)
             here.to(Viewport, "g")
