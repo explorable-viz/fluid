@@ -362,7 +362,8 @@ export function svgElement (overflow: boolean, x: number, y: number, width: numb
    svg.setAttribute("y", `${round(y)}`)
    svg.setAttribute("width", `${round(width)}`)
    svg.setAttribute("height", `${round(height)}`)
-   svg.setAttribute("overflow", overflow ? "visible" : "hidden")
+   // use inline style rather than an attribute, otherwise any active styling will override
+   svg.setAttribute("style", `overflow: ${overflow ? "visible" : "hidden"}`)
    if (defs) {
       const d: SVGDefsElement = createElement("defs", createdBy)
       d.setAttribute("id", "defs")
