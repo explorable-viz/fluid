@@ -14,8 +14,8 @@ import { Module, parseWithImports } from "../Module"
 import { ApplicationId, Num, Str, TaggedId, Value, fields } from "../Value"
 import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
-import { Editor } from "./Editor"
 import { GraphicsRenderer } from "./GraphicsRenderer"
+import { Pane } from "./Pane"
 import { 
    DeltaStyle, arrow, addBorder_changed, addBorder_focus, centreDot, comma, connector, deltaStyle, __dimensions, ellipsis, horiz, 
    horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement_inverted, text, unimplemented, vert 
@@ -45,7 +45,7 @@ export module View {
    }
 
    // Prefer globals to threading parameters everywhere.
-   let __currentEditor: Editor.Editor | null = null
+   let __currentEditor: Pane.Pane | null = null
 
    type Link = {
       from: View, 
@@ -55,7 +55,7 @@ export module View {
    const __links: Set<Link> = new Set()
    const __svgs: Map<View, SVGSVGElement> = new Map() // memoised render within a single update 
 
-   export function render (editor: Editor.Editor): void {
+   export function render (editor: Pane.Pane): void {
       __svgs.clear()
       __links.clear()
       assert(__currentEditor === null)

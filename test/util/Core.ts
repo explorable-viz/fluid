@@ -10,7 +10,7 @@ import { Elim } from "../../src/Match"
 import { ν, newRevision, str } from "../../src/Versioned"
 import "../../src/Graphics" // for graphical datatypes
 import { ExprCursor, ExplValueCursor } from "../../src/app/Cursor"
-import { Editor } from "../../src/app/Editor"
+import { Pane } from "../../src/app/Pane"
 import "../../src/app/GraphicsRenderer" // for graphics primitives
 
 // Helper for extracting a function definition from an environment. Unfortunate that we have to
@@ -19,11 +19,11 @@ export function funDef (ρ: Env, f: string): Elim<Expr> {
    return as(__nonNull(ρ.get(str(f)(ν()))).v, Eval.Closure).f
 }
 
-const __editorListener: Editor.Listener = new class implements Editor.Listener {
+const __editorListener: Pane.Listener = new class implements Pane.Listener {
    resetForBwd (): void {
    }
 
-   onBwdSlice (editor: Editor.Editor): void {
+   onBwdSlice (editor: Pane.Pane): void {
    }
 }()
 
@@ -45,7 +45,7 @@ export class FwdSlice {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         const editor = new Editor.Editor(__editorListener, [400, 400], "top", emptyEnv(), ρ, e)
+         const editor = new Pane.Pane(__editorListener, [400, 400], "top", emptyEnv(), ρ, e)
          if (flags.get(Flags.FwdSlice)) {
             editor.direction = Direction.Fwd
          }
@@ -70,7 +70,7 @@ export class BwdSlice {
          this.expect(new ExprCursor(e))
       }
       if (flags.get(Flags.Visualise)) {
-         const editor = new Editor.Editor(__editorListener, [400, 400], "top", emptyEnv(), ρ, e)
+         const editor = new Pane.Pane(__editorListener, [400, 400], "top", emptyEnv(), ρ, e)
          if (flags.get(Flags.BwdSlice)) {
             editor.direction = Direction.Bwd
          }
@@ -88,7 +88,7 @@ export class BwdSlice {
 export class Edit {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(__editorListener, [400, 400], "top", emptyEnv(), ρ, e).render()
+         new Pane.Pane(__editorListener, [400, 400], "top", emptyEnv(), ρ, e).render()
       }
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
@@ -98,7 +98,7 @@ export class Edit {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Editor.Editor(__editorListener, [400, 400], "top", emptyEnv(), ρ, e).render()
+         new Pane.Pane(__editorListener, [400, 400], "top", emptyEnv(), ρ, e).render()
       }
    }
 

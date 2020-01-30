@@ -14,16 +14,17 @@ import { markerEnsureDefined, svgRootElement } from "./Renderer"
 import { View } from "./View"
 import "./styles.css"
 
-export module Editor {
+// Previously Editor, but clashes a bit with the Wrattler class of the same name.
+export module Pane {
    export function initialise (): void {
       View.initialise()
    }
 
    export interface Listener {
-      onBwdSlice (editor: Editor, externDeps: Slice): void
+      onBwdSlice (editor: Pane, externDeps: Slice): void
    }
 
-   export class Editor {
+   export class Pane {
       listener: Listener
       rootPane: SVGSVGElement
       tooltips: Set<Tooltip>

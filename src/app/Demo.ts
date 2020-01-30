@@ -5,21 +5,21 @@ import { Env } from "../Env"
 import { Expr } from "../Expr"
 import { openDatasetAs, openWithImports } from "../Module"
 import "../app/GraphicsRenderer"
-import { Editor } from "./Editor"
-import { EditorCoordinator } from "./EditorCoordinator"
+import { Pane } from "./Pane"
+import { PaneCoordinator } from "./PaneCoordinator"
 
 export function initialise (): void {
-   Editor.initialise()
+   Pane.initialise()
    // TODO: eliminate redundancy with "renewables" test
-   const coordinator: EditorCoordinator = new EditorCoordinator(openDatasetAs("renewables-restricted", "data"))
+   const coordinator: PaneCoordinator = new PaneCoordinator(openDatasetAs("renewables-restricted", "data"))
    const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
    const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
    const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
    // Wait for fonts to load before rendering, otherwise metrics will be wrong.
    window.onload = (ev: Event): void => {
-      coordinator.addEditor(ρ1, e1)
-      coordinator.addEditor(ρ2, e2)
-      coordinator.addEditor(ρ3, e3)
+      coordinator.addPane(ρ1, e1)
+      coordinator.addPane(ρ2, e2)
+      coordinator.addPane(ρ3, e3)
    }
 }
 
