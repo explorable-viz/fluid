@@ -9,6 +9,7 @@
 | When | Activity | Issue(s) |
 | --- | --- | --- |
 | 30 January 2020 | Display image in Wrattler output pane | [W222](https://github.com/wrattler/wrattler/issues/222) |
+| 21 January 2020 | Initial meeting with Meng Wang and Minh Nguyen at University of Bristol ||
 | 26 November 2919 | Demo for Wrattler workshop for DSTL ||
 | 25 November 2019 | First pass over nested coordinate frames and “domain units” | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) |
 | 19 November 2019 | Stacked bar, grouped bar and multiline chart examples | [110](https://github.com/rolyp/lambdacalc/issues/110), [250](https://github.com/rolyp/lambdacalc/issues/250) |
