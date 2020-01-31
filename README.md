@@ -4,6 +4,8 @@
 
 ### Recent activity
 
+(**W** on an issue number indicates a Wrattler issue.)
+
 | When | Activity | Issue(s) |
 | --- | --- | --- |
 | 30 January 2020 | Display image in Wrattler output pane | [W222](https://github.com/wrattler/wrattler/issues/222) |
@@ -31,7 +33,7 @@
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
 | February | Online demo | [127](https://github.com/rolyp/lambdacalc/issues/127) |
-| March | Table view | [121](https://github.com/rolyp/lambdacalc/issues/121) |
+| March | Table view | [121](https://github.com/rolyp/lambdacalc/issues/121), [269](https://github.com/wrattler/wrattler/issues/269) |
 
 ### Possible submissions
 
@@ -48,8 +50,8 @@
 
 - Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/). Then run `npm install`.
 
-- To run the tests in debug mode with Chrome, run `karma start --browsers=Chrome --singleRun=false`.
+- To run the tests in debug mode with Chrome, run `npm run browser-test`.
 
-- To start the UI, run `npm start` and open a browser at http://localhost:8080/webpack-dev-server/.
+- To start the UI, run `npm start` and open a browser at http://localhost:8000.
 
 ![LambdaCalc](http://i.imgur.com/ERSxpE0.png "LambdaCalc")
