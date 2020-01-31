@@ -10,11 +10,11 @@ import { openWithImports } from "../src/Module"
 import { Persistent } from "../src/Value"
 import { ν, at, num, str } from "../src/Versioned"
 import { ExplValueCursor, ExprCursor } from "../src/app/Cursor"
-import { Editor } from "../src/app/Editor"
+import { Pane } from "../src/app/Pane"
 import { Edit } from "./util/Core"
 
 before((done: MochaDone) => {
-   Editor.initialise()
+   Pane.initialise()
    done()
 })
 

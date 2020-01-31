@@ -10,7 +10,7 @@ import { Expl } from "../Expl"
 import { Point, Rect } from "../Graphics"
 import { Num, Persistent, Str, fields } from "../Value"
 import { ExplValueCursor } from "./Cursor"
-import { Editor } from "./Editor"
+import { Pane } from "./Pane"
 import { round } from "./Renderer"
 
 function createTooltip (element: SVGElement, placement: Placement): Tooltip {
@@ -18,14 +18,14 @@ function createTooltip (element: SVGElement, placement: Placement): Tooltip {
 }
 
 abstract class Interactor<T extends DataValue, U extends SVGElement> {
-   editor: Editor.Editor
+   editor: Pane.Pane
    C: Class<T>
    tooltip: Tooltip
    cursor: ExplValueCursor/*<Pair<Num, Num>>*/
    element: U
    propFocus: keyof T | null = null
 
-   constructor (editor: Editor.Editor, C: Class<T>, cursor: ExplValueCursor/*<Pair<Num, Num>>*/, element: U) {
+   constructor (editor: Pane.Pane, C: Class<T>, cursor: ExplValueCursor/*<Pair<Num, Num>>*/, element: U) {
       this.editor = editor
       this.C = C
       this.tooltip = createTooltip(element, editor.tooltipPlacement)
@@ -96,7 +96,7 @@ abstract class Interactor<T extends DataValue, U extends SVGElement> {
 }
 
 export class PointInteractor extends Interactor<Point, SVGElement> {
-   constructor (editor: Editor.Editor, tp: ExplValueCursor/*<Point>*/, marker: SVGElement) {
+   constructor (editor: Pane.Pane, tp: ExplValueCursor/*<Point>*/, marker: SVGElement) {
       super(editor, Point, tp, marker)
    }
 
@@ -106,7 +106,7 @@ export class PointInteractor extends Interactor<Point, SVGElement> {
 }
 
 export class RectInteractor extends Interactor<Rect, SVGRectElement> {
-   constructor (editor: Editor.Editor, tg: ExplValueCursor/*<Rect>*/, r: SVGRectElement) {
+   constructor (editor: Pane.Pane, tg: ExplValueCursor/*<Rect>*/, r: SVGRectElement) {
       super(editor, Rect, tg, r)
    }
 

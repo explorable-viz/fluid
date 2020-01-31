@@ -8,8 +8,8 @@ import { Id, Num, Str } from "../Value"
 import { num } from "../Versioned"
 import { SVG } from "./Core"
 import { ExplValueCursor } from "./Cursor"
-import { Editor } from "./Editor"
 import { PointInteractor, RectInteractor } from "./Interactor"
+import { Pane } from "./Pane"
 import { border, circle, group, lineRounded, markerEnsureDefined, polyline, rect, svgElement, textElement_graphical } from "./Renderer"
 
 const fontSize: number = 12
@@ -56,7 +56,7 @@ function postcompose (f1: TransformFun, f2: TransformFun): TransformFun {
 }
 
 export class GraphicsRenderer {
-   editor: Editor.Editor
+   editor: Pane.Pane
    root: SVGSVGElement
    ancestors: SVGElement[] // stack of enclosing SVG elements
    translations: TransformFun[] // stack of (uncomposed) active translations, each relative to parent SVG
@@ -64,7 +64,7 @@ export class GraphicsRenderer {
    showInvisible: boolean = false
 
    // transform attribute isn't supported on SVGElement, so it contains a group element with the inversion transform.
-   constructor (editor: Editor.Editor, root: SVGSVGElement, initialAncestor: SVGElement) {
+   constructor (editor: Pane.Pane, root: SVGSVGElement, initialAncestor: SVGElement) {
       this.editor = editor
       this.root = root
       this.ancestors = [initialAncestor]

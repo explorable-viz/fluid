@@ -12,8 +12,8 @@ import { ν, at, num, str } from "./Versioned"
 
 // Kindergarten modules.
 
-import src_prelude from "../fluid/lib/prelude.fld"
-import src_graphics from "../fluid/lib/graphics.fld"
+import lib_prelude from "../fluid/lib/prelude.fld"
+import lib_graphics from "../fluid/lib/graphics.fld"
 
 // Define as constants to enforce sharing; could use memoisation.
 export let module_prelude: Env
@@ -21,8 +21,8 @@ export let module_graphics: Env
 
 export namespace Module {
    export function initialise (): void {
-      module_prelude = loadModule2(emptyEnv(), src_prelude)
-      module_graphics = loadModule2(module_prelude, src_graphics)
+      module_prelude = loadModule(emptyEnv(), lib_prelude)
+      module_graphics = loadModule(module_prelude, lib_graphics)
    }
 }
 
@@ -47,13 +47,7 @@ export function loadTestFile (folder: string, file: string): string {
 }
 
 // Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
-export function loadModule (ρ: Env, file: string): Env {
-   const src: string = loadTestFile("fluid/lib", file) + " in 0",
-         e: Expr.Defs = as(successfulParse(src), Expr.Defs)
-   return Eval.defs(ρ, e.def̅, emptyEnv())[1]
-}
-
-export function loadModule2 (ρ: Env, src: string): Env {
+export function loadModule (ρ: Env, src: string): Env {
    const srcʹ: string = src + " in 0",
          e: Expr.Defs = as(successfulParse(srcʹ), Expr.Defs)
    return Eval.defs(ρ, e.def̅, emptyEnv())[1]

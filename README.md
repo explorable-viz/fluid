@@ -29,7 +29,7 @@
 
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
-| November | Display image in Wrattler output pane | [211](https://github.com/rolyp/lambdacalc/issues/211), [55](https://github.com/rolyp/lambdacalc/issues/55) |
+| November | Display image in Wrattler output pane | (Wrattler) [222](https://github.com/wrattler/wrattler/issues/222) |
 | December | Resolve interference between slicing and execution indexing | [248](https://github.com/rolyp/lambdacalc/issues/248) |
 
 ### Possible submissions

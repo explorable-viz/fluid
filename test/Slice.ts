@@ -10,12 +10,12 @@ import { Elim } from "../src/Match"
 import { bindDataset, openDatasetAs, openWithImports } from "../src/Module"
 import { Num, Str } from "../src/Value"
 import { ExprCursor, ExplValueCursor } from "../src/app/Cursor"
-import { Editor } from "../src/app/Editor"
-import { IDE } from "../src/app/IDE"
+import { Pane } from "../src/app/Pane"
+import { PaneCoordinator } from "../src/app/PaneCoordinator"
 import { BwdSlice, FwdSlice, funDef, tooltipsEqual } from "./util/Core"
 
 before((done: MochaDone) => {
-   Editor.initialise()
+   Pane.initialise()
    done()
 })
 
@@ -113,13 +113,13 @@ describe("slice", () => {
 
    describe("graphics/renewables", () => {
       it("ok", () => {
-         const ide: IDE = new IDE(openDatasetAs("renewables-restricted", "data"))
+         const coordinator: PaneCoordinator = new PaneCoordinator(openDatasetAs("renewables-restricted", "data"))
          const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
          const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
          const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
-         const groupedBar: Editor.Editor = ide.addEditor(ρ1, e1)
-         const stackedBar: Editor.Editor = ide.addEditor(ρ2, e2)
-         const line: Editor.Editor = ide.addEditor(ρ3, e3)
+         const groupedBar: Pane.Pane = coordinator.addPane(ρ1, e1)
+         const stackedBar: Pane.Pane = coordinator.addPane(ρ2, e2)
+         const line: Pane.Pane = coordinator.addPane(ρ3, e3)
          line.bwdSlice((): void => {
             const here: ExplValueCursor = ExplValueCursor.descendant(null, line.tv)
             here.to(Viewport, "g")

@@ -1,6 +1,6 @@
 {
   "name": "@rolyp/fluid",
-  "version": "0.1.20",
+  "version": "0.1.29",
   "description": "Fluid",
   "dependencies": {
     "@types/three": "0.93.28",
@@ -64,7 +64,7 @@
   "homepage": "https://github.com/rolyp/lambdacalc",
   "files": [
     "dist/**/*",
-    "fluid/**/*"
+    "fluid/dataset/**/*"
   ],
   "main": "dist/lib.bundle.js",
   "typings": "dist/ts/Lib.d.ts"

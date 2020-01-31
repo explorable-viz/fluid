@@ -4,7 +4,7 @@ var path = require('path');
 // Specify two configs; first one (app) picked up automatically by webpack-dev-server. Second is lib.
 module.exports = [{
    entry: {
-      main: "./src/app/IDE.ts"
+      main: "./src/app/Demo.ts"
    },
    output: {
       filename: "[name].bundle.js"
