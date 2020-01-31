@@ -14,9 +14,9 @@ on:
       - master
 
 env:
-  AZURE_WEBAPP_NAME: your-app-name    # set this to your application's name
-  AZURE_WEBAPP_PACKAGE_PATH: '.'      # set this to the path to your web app project, defaults to the repository root
-  NODE_VERSION: '10.x'                # set this to the node version to use
+  AZURE_WEBAPP_NAME: explorableviz    # your application's name
+  AZURE_WEBAPP_PACKAGE_PATH: '.'      # path to your web app project, defaults to the repository root
+  NODE_VERSION: '10.1'                
 
 jobs:
   build-and-deploy:
