@@ -4,7 +4,7 @@
 
 ### Recent activity
 
-(**W** on an issue number indicates a Wrattler issue.)
+(**W** indicates a Wrattler issue.)
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
@@ -33,7 +33,7 @@
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
 | February | Online demo | [127](https://github.com/rolyp/lambdacalc/issues/127) |
-| March | Table view | [121](https://github.com/rolyp/lambdacalc/issues/121), [269](https://github.com/wrattler/wrattler/issues/269) |
+| March | Table view | [121](https://github.com/rolyp/lambdacalc/issues/121), [W269](https://github.com/wrattler/wrattler/issues/269) |
 
 ### Possible submissions
 
