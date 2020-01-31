@@ -7,4 +7,4 @@ import { Eval } from "./Eval"
 import { Expr } from "./Expr"
 import { bindDataset, openDatasetAs, parseWithImports } from "./Module"
 
-export { Pane as Editor, PaneCoordinator, Env, Eval, Expr, bindDataset, emptyEnv, openDatasetAs, parseWithImports }
+export { Pane, PaneCoordinator, Env, Eval, Expr, bindDataset, emptyEnv, openDatasetAs, parseWithImports }
