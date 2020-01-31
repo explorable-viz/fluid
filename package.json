@@ -44,7 +44,7 @@
     "webpack-dev-server": "^3.1.1"
   },
   "scripts": {
-    "start": "webpack-dev-server",
+    "local": "webpack-dev-server",
     "bundle": "webpack",
     "test": "karma start",
     "browser-test": "karma start --browsers=Chrome --singleRun=false"
