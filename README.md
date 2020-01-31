@@ -6,7 +6,8 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
-| 26 November 2919 | Demo for Wrattler workshop ||
+| 30 January 2020 | Display image in Wrattler output pane | [W222](https://github.com/wrattler/wrattler/issues/222) |
+| 26 November 2919 | Demo for Wrattler workshop for DSTL ||
 | 25 November 2019 | First pass over nested coordinate frames and “domain units” | [183](https://github.com/rolyp/lambdacalc/issues/183), [121](https://github.com/rolyp/lambdacalc/issues/121), [180](https://github.com/rolyp/lambdacalc/issues/180), [112](https://github.com/rolyp/lambdacalc/issues/112) |
 | 19 November 2019 | Stacked bar, grouped bar and multiline chart examples | [110](https://github.com/rolyp/lambdacalc/issues/110), [250](https://github.com/rolyp/lambdacalc/issues/250) |
 | 4 November 2019 | Merge with Wrattler `develop` | [247](https://github.com/rolyp/lambdacalc/issues/247) |
@@ -29,8 +30,8 @@
 
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
-| November | Display image in Wrattler output pane | (Wrattler) [222](https://github.com/wrattler/wrattler/issues/222) |
-| December | Resolve interference between slicing and execution indexing | [248](https://github.com/rolyp/lambdacalc/issues/248) |
+| February | Online demo | [127](https://github.com/rolyp/lambdacalc/issues/127) |
+| March | Table view | [121](https://github.com/rolyp/lambdacalc/issues/121) |
 
 ### Possible submissions
 
@@ -39,7 +40,7 @@
 | <s>2 Aug 2019</s> | <s>LIVE 2019</s> |
 | 2 Aug 2019 | IC 2019 :heavy_check_mark: | 
 | <s>5 Dec 2019</s> | <s>Eurovis 2020</s> |
-| 3 Mar 2020 | ICFP 2020 |
+| <s>3 Mar 2020</s> | <s>ICFP 2020</s> |
 | 15 Apr 2020 | OOPSLA 2020 |
 | ~10 July 2020 | POPL 2021 |
 
