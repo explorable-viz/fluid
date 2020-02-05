@@ -9,7 +9,7 @@ module.exports = [{
    // https://survivejs.com/webpack/techniques/deploying/
    output: {
       filename: "[name].bundle.js",
-      publicPath: "/webpack-demo/"
+      publicPath: "/"
    },
    resolve: {
       // Add '.ts' as a resolvable extension.
