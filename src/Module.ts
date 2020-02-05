@@ -1,6 +1,6 @@
 import { Grammar, Parser } from "nearley"
 import { __nonNull, as, userError } from "./util/Core"
-import { Cons, List, Nil, Pair } from "./BaseTypes"
+import { BaseTypes, Cons, List, Nil, Pair } from "./BaseTypes"
 import { exprClass } from "./DataType"
 import { Env, ExtendEnv, emptyEnv, extendEnv } from "./Env"
 import { Eval } from "./Eval"
@@ -21,6 +21,7 @@ export let module_graphics: Env
 
 export namespace Module {
    export function initialise (): void {
+      BaseTypes.initialise()
       module_prelude = loadModule(emptyEnv(), lib_prelude)
       module_graphics = loadModule(module_prelude, lib_graphics)
    }
