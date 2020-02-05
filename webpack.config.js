@@ -6,8 +6,10 @@ module.exports = [{
    entry: {
       main: "./src/app/Demo.ts"
    },
+   // https://survivejs.com/webpack/techniques/deploying/
    output: {
-      filename: "[name].bundle.js"
+      filename: "[name].bundle.js",
+      publicPath: "/webpack-demo/"
    },
    resolve: {
       // Add '.ts' as a resolvable extension.
@@ -39,9 +41,6 @@ module.exports = [{
             }
          }
       ]
-   },
-   devServer: {
-      port: 8000
    },
    plugins: [
       new HtmlWebpackPlugin(),

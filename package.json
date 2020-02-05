@@ -47,7 +47,8 @@
     "start": "webpack-dev-server",
     "bundle": "webpack",
     "test": "karma start",
-    "browser-test": "karma start --browsers=Chrome --singleRun=false"
+    "browser-test": "karma start --browsers=Chrome --singleRun=false",
+    "deploy": "gh-pages -d dist"
   },
   "repository": {
     "type": "git",
