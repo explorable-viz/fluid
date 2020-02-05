@@ -60,3 +60,6 @@ export declare class GT extends Ordering {
 }
 export declare class EQ extends Ordering {
 }
+export declare namespace BaseTypes {
+    function initialise(): void;
+}
