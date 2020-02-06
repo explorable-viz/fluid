@@ -6,7 +6,6 @@ module.exports = [{
    entry: {
       main: "./src/app/Demo.ts"
    },
-   // https://survivejs.com/webpack/techniques/deploying/
    output: {
       filename: "[name].bundle.js",
       publicPath: "/lambdacalc/"
@@ -14,6 +13,9 @@ module.exports = [{
    resolve: {
       // Add '.ts' as a resolvable extension.
       extensions: [".webpack.js", ".web.js", ".ts", ".js"]
+   },
+   optimization: {
+      minimize: false // for now (we rely heavily on reflected class names)
    },
    module: {
       rules: [
