@@ -8,8 +8,8 @@ export declare let module_graphics: Env;
 export declare namespace Module {
     function initialise(): void;
 }
-export declare function loadTestFile(folder: string, file: string): string;
-export declare function loadModule(ρ: Env, src: string): Env;
+export declare function loadFile(folder: string, file: string): string;
+export declare function loadModule(ρ: Env, file: string): Env;
 export declare function openWithImports(file: string, ...modules: Env[]): [Env, Expr];
 export declare function openDatasetAs(file: string, x: string): ExtendEnv;
 export declare function parseWithImports(src: string, ...modules: Env[]): [Env, Expr];
