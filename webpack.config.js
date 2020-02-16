@@ -37,12 +37,6 @@ module.exports = [{
                  limit: 100000,
                },
             }
-         },
-         {
-            test: /\.fld$/,
-            use: {
-               loader: "raw-loader"
-            }
          }
       ]
    },
@@ -102,12 +96,6 @@ module.exports = [{
                options: {
                  limit: 100000,
                },
-            }
-         },
-         {
-            test: /\.fld$/,
-            use: {
-               loader: "raw-loader"
             }
          }
       ]
