@@ -25,6 +25,7 @@
     "@types/nearley": "^2.11.0",
     "@types/node": "^10.14.4",
     "chai": "^3.5.0",
+    "copy-webpack-plugin": "^5.1.1",
     "file-loader": "^4.2.0",
     "gh-pages": "^2.2.0",
     "karma": "^1.7.1",
@@ -65,8 +66,7 @@
   },
   "homepage": "https://github.com/rolyp/lambdacalc",
   "files": [
-    "dist/**/*",
-    "fluid/dataset/**/*"
+    "dist/**/*"
   ],
   "main": "dist/lib.bundle.js",
   "typings": "dist/ts/Lib.d.ts"

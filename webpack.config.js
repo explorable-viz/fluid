@@ -1,7 +1,9 @@
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var path = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
+const HtmlPlugin = require('html-webpack-plugin');
+const path = require('path');
 
 // Specify two configs; first one (app) picked up automatically by webpack-dev-server. Second is lib.
+// TODO: use inheritance to factor out common elements.
 module.exports = [{
    entry: {
       main: "./src/app/Demo.ts"
@@ -45,11 +47,11 @@ module.exports = [{
       ]
    },
    plugins: [
-      new HtmlWebpackPlugin(),
+      new HtmlPlugin(),
       // cobbled together from https://github.com/webpack-contrib/karma-webpack/issues/66
-      function()
+      function ()
       {
-          this.plugin("done", function(stats)
+          this.plugin("done", function (stats)
           {
                if (stats && stats.hasErrors()) {
                   stats.toJson().errors.forEach(err => {
@@ -57,8 +59,11 @@ module.exports = [{
                   })
                   throw new Error()
                }
-          });
-      }
+          });  
+      },
+      new CopyPlugin([
+         { from: "fluid/**/*" }
+      ])
    ],
    devtool: "inline-source-map"
 },{
@@ -107,5 +112,10 @@ module.exports = [{
          }
       ]
    },
-  devtool: "inline-source-map"
+   plugins: [
+      new CopyPlugin([
+         { from: "fluid/**/*" }
+      ])
+   ],
+   devtool: "inline-source-map"
 }]
