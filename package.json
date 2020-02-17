@@ -25,6 +25,7 @@
     "@types/nearley": "^2.11.0",
     "@types/node": "^10.14.4",
     "chai": "^3.5.0",
+    "cname-webpack-plugin": "^2.0.1",
     "copy-webpack-plugin": "^5.1.1",
     "file-loader": "^4.2.0",
     "gh-pages": "^2.2.0",

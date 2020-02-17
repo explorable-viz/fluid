@@ -1,6 +1,7 @@
-const CopyPlugin = require('copy-webpack-plugin');
-const HtmlPlugin = require('html-webpack-plugin');
-const path = require('path');
+const CnamePlugin = require("cname-webpack-plugin")
+const CopyPlugin = require("copy-webpack-plugin")
+const HtmlPlugin = require("html-webpack-plugin")
+const path = require("path")
 
 // Specify two configs; first one (app) picked up automatically by webpack-dev-server. Second is lib.
 // TODO: use inheritance to factor out common elements.
@@ -10,7 +11,7 @@ module.exports = [{
    },
    output: {
       filename: "[name].bundle.js",
-      publicPath: "/lambdacalc/"
+      publicPath: "/"
    },
    resolve: {
       // Add '.ts' as a resolvable extension.
@@ -55,6 +56,9 @@ module.exports = [{
                }
           });  
       },
+      new CnamePlugin(
+         { domain: "luid.org" }
+      ),
       new CopyPlugin([
          { from: "fluid/**/*" }
       ])
