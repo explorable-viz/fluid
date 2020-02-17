@@ -155,9 +155,13 @@ export class GT extends Ordering {
 export class EQ extends Ordering {
 }
 
-initDataType(Bool, [True, False])
-initDataType(List, [Nil, Cons])
-initDataType(Option, [Some, None])
-initDataType(Ordering, [LT, GT, EQ])
-initDataType(Pair, [Pair])
-initDataType(Tree, [Empty, NonEmpty])
+export namespace BaseTypes {
+   export function initialise (): void {
+      initDataType(Bool, [True, False])
+      initDataType(List, [Nil, Cons])
+      initDataType(Option, [Some, None])
+      initDataType(Ordering, [LT, GT, EQ])
+      initDataType(Pair, [Pair])
+      initDataType(Tree, [Empty, NonEmpty])
+   }
+}

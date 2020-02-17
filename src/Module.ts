@@ -1,6 +1,6 @@
 import { Grammar, Parser } from "nearley"
 import { __nonNull, as, userError } from "./util/Core"
-import { Cons, List, Nil, Pair } from "./BaseTypes"
+import { BaseTypes, Cons, List, Nil, Pair } from "./BaseTypes"
 import { exprClass } from "./DataType"
 import { Env, ExtendEnv, emptyEnv, extendEnv } from "./Env"
 import { Eval } from "./Eval"
@@ -12,17 +12,15 @@ import { ν, at, num, str } from "./Versioned"
 
 // Kindergarten modules.
 
-import lib_prelude from "../fluid/lib/prelude.fld"
-import lib_graphics from "../fluid/lib/graphics.fld"
-
 // Define as constants to enforce sharing; could use memoisation.
 export let module_prelude: Env
 export let module_graphics: Env
 
 export namespace Module {
    export function initialise (): void {
-      module_prelude = loadModule(emptyEnv(), lib_prelude)
-      module_graphics = loadModule(module_prelude, lib_graphics)
+      BaseTypes.initialise()
+      module_prelude = loadModule(emptyEnv(), "prelude")
+      module_graphics = loadModule(module_prelude, "graphics")
    }
 }
 
@@ -35,7 +33,7 @@ function import_ (...modules: Env[]): Env {
    }
 }
 
-export function loadTestFile (folder: string, file: string): string {
+export function loadFile (folder: string, file: string): string {
    let text: string
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest
    xmlhttp.open("GET", "./" + folder + "/" + file + ".fld", false)
@@ -47,18 +45,19 @@ export function loadTestFile (folder: string, file: string): string {
 }
 
 // Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
-export function loadModule (ρ: Env, src: string): Env {
-   const srcʹ: string = src + " in 0",
-         e: Expr.Defs = as(successfulParse(srcʹ), Expr.Defs)
+export function loadModule (ρ: Env, file: string): Env {
+   const src: string = loadFile("fluid/lib", file)
+   const srcʹ: string = src + " in 0"
+   const e: Expr.Defs = as(successfulParse(srcʹ), Expr.Defs)
    return Eval.defs(ρ, e.def̅, emptyEnv())[1]
 }
 
 export function openWithImports (file: string, ...modules: Env[]): [Env, Expr] {
-   return parseWithImports(loadTestFile("fluid/example", file), ...modules)
+   return parseWithImports(loadFile("fluid/example", file), ...modules)
 }
 
 export function openDatasetAs (file: string, x: string): ExtendEnv {
-   const [ρ, e]: [Env, Expr] = parseWithImports(loadTestFile("fluid/dataset", file))
+   const [ρ, e]: [Env, Expr] = parseWithImports(loadFile("fluid/dataset", file))
    return Env.singleton(str(x)(ν()), Eval.eval_(ρ, e))
 }
 

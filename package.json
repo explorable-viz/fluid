@@ -1,6 +1,6 @@
 {
   "name": "@rolyp/fluid",
-  "version": "0.1.29",
+  "version": "0.2.0",
   "description": "Fluid",
   "dependencies": {
     "@types/three": "0.93.28",
@@ -25,7 +25,10 @@
     "@types/nearley": "^2.11.0",
     "@types/node": "^10.14.4",
     "chai": "^3.5.0",
+    "cname-webpack-plugin": "^2.0.1",
+    "copy-webpack-plugin": "^5.1.1",
     "file-loader": "^4.2.0",
+    "gh-pages": "^2.2.0",
     "karma": "^1.7.1",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^2.0.0",
@@ -47,7 +50,8 @@
     "start": "webpack-dev-server",
     "bundle": "webpack",
     "test": "karma start",
-    "browser-test": "karma start --browsers=Chrome --singleRun=false"
+    "browser-test": "karma start --browsers=Chrome --singleRun=false",
+    "deploy": "gh-pages -d dist"
   },
   "repository": {
     "type": "git",
@@ -63,8 +67,7 @@
   },
   "homepage": "https://github.com/rolyp/lambdacalc",
   "files": [
-    "dist/**/*",
-    "fluid/dataset/**/*"
+    "dist/**/*"
   ],
   "main": "dist/lib.bundle.js",
   "typings": "dist/ts/Lib.d.ts"
