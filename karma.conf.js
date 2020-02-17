@@ -1,18 +1,18 @@
-var webpackConfig = require('./webpack.config')[0] // ouch - pick out first configuration!
+const webpackConfig = require("./webpack.config")[0] // ouch - pick out first configuration!
 
 module.exports = function (config) {
    config.set({
-      basePath: '',
+      basePath: "",
       client: {
          mocha: {
            timeout: 60000 // default 2000; runs much slower in CircleCI environment
          }
       },
-      frameworks: ['mocha', 'chai'],
+      frameworks: ["mocha", "chai"],
       files: [
-         './test/**/*.ts',
+         "./test/**/*.ts",
          {
-            pattern: './fluid/**/*.fld',
+            pattern: "./fluid/**/*.fld",
             watched: true,
             included: false,
             served: true,
@@ -21,11 +21,11 @@ module.exports = function (config) {
       ],
       exclude: [
          // otherwise these will also appear as entry points
-         './test/util/*',
+         "./test/util/*",
       ],
       preprocessors: {
-         './src/**/*.ts': ['webpack'],
-         'test/**/*.ts': ['webpack']
+         "./src/**/*.ts": ["webpack"],
+         "test/**/*.ts": ["webpack"]
       },
       webpack: {
          module: webpackConfig.module,
@@ -35,16 +35,16 @@ module.exports = function (config) {
       webpackMiddleware: {
          // webpack-dev-middleware configuration
          // i.e.
-         stats: 'errors-only'
+         stats: "errors-only"
       },
       mime: {
-         'text/x-typescript': ['ts', 'tsx']
+         "text/x-typescript": ["ts", "tsx"]
       },
       proxies: {
-         '/fluid/': '/base/fluid/'
+         "/fluid/": "/base/fluid/"
       },
-      reporters: ['mocha'],
-      port: 8081,
+      reporters: ["mocha"],
+      port: 8080,
       captureTimeout: 30000,
       browserDisconnectTimeout : 30000,
       browserNoActivityTimeout : 60000,
@@ -53,11 +53,11 @@ module.exports = function (config) {
       autoWatch: true,
       singleRun: true,
       concurrency: Infinity,
-      browsers: ['ChromeHeadless'],
+      browsers: ["ChromeHeadless"],
       customLaunchers: {
-         'Chrome_with_debugging': {
-            base: 'Chrome',
-            flags: ['--remote-debugging-port=9222']
+         "Chrome_with_debugging": {
+            base: "Chrome",
+            flags: ["--remote-debugging-port=9222"]
          }
       },
    })
