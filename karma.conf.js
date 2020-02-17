@@ -33,8 +33,6 @@ module.exports = function (config) {
          plugins: webpackConfig.plugins
       },
       webpackMiddleware: {
-         // webpack-dev-middleware configuration
-         // i.e.
          stats: "errors-only"
       },
       mime: {
