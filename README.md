@@ -9,7 +9,7 @@
 | When | Activity | Issue(s) |
 | --- | --- | --- |
 | 22 February 2020 | Make repository public |
-| 17 February 2020 | Host demo online at http://luid.org | [121](https://github.com/rolyp/fluid/issues/121) |
+| 17 February 2020 | Host demo online at http://luid.org | [127](https://github.com/rolyp/lambdacalc/issues/127) |
 | 30 January 2020 | Display image in Wrattler output pane | [W222](https://github.com/wrattler/wrattler/issues/222) |
 | 21 January 2020 | Initial meeting with Meng Wang and Minh Nguyen at Bristol ||
 | 26 November 2019 | Demo for Wrattler workshop for DSTL ||
@@ -55,6 +55,6 @@
 
 - To run the tests in debug mode with Chrome, run `npm run browser-test`.
 
-- To start the UI, run `npm start` and open a browser at http://localhost:8000.
+- To start the UI, run `npm start` and open a browser at runs at http://localhost:8081/.
 
 ![LambdaCalc](http://i.imgur.com/ERSxpE0.png "LambdaCalc")
