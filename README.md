@@ -1,6 +1,6 @@
 ## Explorable visualisations for data science
 
-[![CircleCI](https://circleci.com/gh/rolyp/lambdacalc.svg?style=svg&circle-token=c86993fd6b2339b45286ddfc5a4c0c0d2401ffd7)](https://circleci.com/gh/rolyp/lambdacalc)
+[![CircleCI](https://circleci.com/gh/rolyp/fluid.svg?style=svg&circle-token=c86993fd6b2339b45286ddfc5a4c0c0d2401ffd7)](https://circleci.com/gh/rolyp/fluid)
 
 ### Recent activity
 
