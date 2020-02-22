@@ -55,6 +55,6 @@
 
 - To run the tests in debug mode with Chrome, run `npm run browser-test`.
 
-- To start the UI, run `npm start` and open a browser at http://localhost:8000.
+- To start the UI, run `npm start` and open a browser at runs at http://localhost:8081/.
 
 ![LambdaCalc](http://i.imgur.com/ERSxpE0.png "LambdaCalc")
