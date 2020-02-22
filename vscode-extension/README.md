@@ -1,6 +1,6 @@
-# lambdacalc README
+# fluid README
 
-This is the README for your extension "lambdacalc". After writing up a brief description, we recommend including the following sections.
+This is the README for your extension "fluid". After writing up a brief description, we recommend including the following sections.
 
 ## Features
 

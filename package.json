@@ -55,17 +55,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rolyp/lambdacalc.git"
+    "url": "git+https://github.com/rolyp/fluid.git"
   },
   "author": "Roly Perera <roly.perera@dynamicaspects.org> (http://dynamicaspects.org/)",
   "contributors": [
     "Roly Perera <roly.perera@dynamicaspects.org> (http://dynamicaspects.org/)"
   ],
-  "license": "UNLICENSED",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rolyp/lambdacalc/issues"
+    "url": "https://github.com/rolyp/fluid/issues"
   },
-  "homepage": "https://github.com/rolyp/lambdacalc",
+  "homepage": "https://github.com/rolyp/fluid",
   "files": [
     "dist/**/*"
   ],
