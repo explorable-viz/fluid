@@ -2,9 +2,9 @@ import Data.Array
 
 -- Extend with zero-padding
 
-conv_extend :: Array (Int, Int) Double -> Array (Int, Int) Double 
-            -> Array (Int, Int) Double
-conv_extend image filter = 
+conv_zero :: Array (Int, Int) Double -> Array (Int, Int) Double 
+          -> Array (Int, Int) Double
+conv_zero image filter = 
     array (bounds image) 
     [((c, d), (sum [ image!(image_y, image_x) * filter!(filter_y, filter_x) 
                     |  (y, x) <- range (bounds filter),
@@ -77,8 +77,8 @@ conv_mirror image filter =
                     |  (y, x) <- range (bounds filter),
                        let filter_y = iz - y,
                        let filter_x = jz - x,
-                       let image_y  = bound (ma, mz) (c + y - half_height), 
-                       let image_x  = bound (na, nz) (d + x - half_width)
+                       let image_y  = mirror (ma, mz) (c + y - half_height), 
+                       let image_x  = mirror (na, nz) (d + x - half_width)
                     ]) / spatial_extent)
                         | (c, d) <- range (bounds image) ]
     where ((ma, na), (mz, nz)) = bounds image 
