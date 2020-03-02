@@ -1,4 +1,4 @@
-// Generated automatically by nearley, version 2.19.0
+// Generated automatically by nearley, version 2.19.1
 // http://github.com/Hardmath123/nearley
 // Bypasses TS6133. Allow declared but unused functions.
 // @ts-ignore
@@ -35,7 +35,7 @@ const lexer = moo.compile({
    exponentOp: /\*\*/,
    productOp: /\*|\//, // must come after exponentOp
    compareOp: /==|<=|<|>=|>/,
-   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "..."], // must come after compareOp
+   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "...", ".."], // must come after compareOp
 })
 
 
@@ -127,6 +127,7 @@ const grammar: Grammar = {
     {"name": "simpleExpr", "symbols": ["parenthExpr"], "postprocess": id},
     {"name": "simpleExpr", "symbols": ["pair"], "postprocess": id},
     {"name": "simpleExpr", "symbols": ["list"], "postprocess": id},
+    {"name": "simpleExpr", "symbols": ["range"], "postprocess": id},
     {"name": "simpleExpr", "symbols": ["constr"], "postprocess": id},
     {"name": "variable", "symbols": ["var"], "postprocess": ([x]) => Expr.var_(x)(ν())},
     {"name": "var$macrocall$2", "symbols": [(lexer.has("ident") ? {type: "ident"} : ident)]},
@@ -170,6 +171,16 @@ const grammar: Grammar = {
     {"name": "list$macrocall$3", "symbols": ["list$macrocall$4"], "postprocess": id},
     {"name": "list$macrocall$3", "symbols": ["list$macrocall$4", "_"], "postprocess": ([x, ]) => x},
     {"name": "list", "symbols": ["list$macrocall$1", "listOpt", "list$macrocall$3"], "postprocess": ([, e, ]) => e},
+    {"name": "range$macrocall$2", "symbols": [{"literal":"["}]},
+    {"name": "range$macrocall$1", "symbols": ["range$macrocall$2"], "postprocess": id},
+    {"name": "range$macrocall$1", "symbols": ["range$macrocall$2", "_"], "postprocess": ([x, ]) => x},
+    {"name": "range$macrocall$4", "symbols": [{"literal":".."}]},
+    {"name": "range$macrocall$3", "symbols": ["range$macrocall$4"], "postprocess": id},
+    {"name": "range$macrocall$3", "symbols": ["range$macrocall$4", "_"], "postprocess": ([x, ]) => x},
+    {"name": "range$macrocall$6", "symbols": [{"literal":"]"}]},
+    {"name": "range$macrocall$5", "symbols": ["range$macrocall$6"], "postprocess": id},
+    {"name": "range$macrocall$5", "symbols": ["range$macrocall$6", "_"], "postprocess": ([x, ]) => x},
+    {"name": "range", "symbols": ["range$macrocall$1", "expr", "range$macrocall$3", "expr", "range$macrocall$5"], "postprocess": ([, e1, , e2,]) => Expr.range(e1, e2)(ν())},
     {"name": "constr", "symbols": ["ctr", "args"], "postprocess":  ([c, e̅], _, reject) => {
            assert(c instanceof Str)
            const ctr: Ctr = ctrFor(c.val)

@@ -23,7 +23,7 @@ const lexer = moo.compile({
    exponentOp: /\*\*/,
    productOp: /\*|\//, // must come after exponentOp
    compareOp: /==|<=|<|>=|>/,
-   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "..."], // must come after compareOp
+   symbol: ["(", ")", "=", "→", ";", "{", "}", ",", "[", "]", "...", ".."], // must come after compareOp
 })
 %}
 
@@ -115,6 +115,7 @@ simpleExpr ->
    parenthExpr {% id %} |
    pair {% id %} |
    list {% id %} |
+   range {% id %} |
    constr {% id %}
 
 variable -> 
@@ -149,6 +150,10 @@ pair ->
 list -> 
    lexeme["["] listOpt lexeme["]"] # ouch: "
    {% ([, e, ]) => e %}
+
+range ->
+   lexeme["["] expr lexeme[".."] expr lexeme["]"]
+   {% ([, e1, , e2,]) => Expr.range(e1, e2)(ν()) %}
 
 # inconsistency with constructor signatures must now be an unsuccessful parse, rather than an
 # error per se.
