@@ -12,7 +12,7 @@ import { get } from "./FiniteMap"
 import { Elim, Match, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId } from "./Value"
-import { at, num, str } from "./Versioned"
+import { ν, at, num, str } from "./Versioned"
 
 type Def = Expr.Def
 type RecDef = Expr.RecDef
@@ -162,7 +162,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
             [v1, v2]: [Value, Value] = [tv1.v, tv2.v]
       if (v1 instanceof Num && v2 instanceof Num){
          const number_array: number[] = Array.from({length: (v2.val - v1.val)}, (v, k) => k + v1.val),
-               num_arr: Num[] = number_array.map(x => num(x)(kᵥ)),
+               num_arr: Num[] = number_array.map(x => num(x)(ν())),
                num_list: List<Num> = List.fromArray(num_arr)
                return explValue(Expl.range(tv1, tv2)(kₜ), num_list)
       }
