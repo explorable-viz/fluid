@@ -157,6 +157,19 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote()(kₜ), e.e)
    } else
+   if (e instanceof Expr.Range) {
+      const [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
+            [v1, v2]: [Value, Value] = [tv1.v, tv2.v]
+      if (v1 instanceof Num && v2 instanceof Num){
+         const number_array: number[] = Array.from({length: (v2.val - v1.val)}, (v, k) => k + v1.val),
+               num_arr: Num[] = number_array.map(x => num(x)(kᵥ)),
+               num_list: List<Num> = List.fromArray(num_arr)
+               return explValue(Expl.range(tv1, tv2)(kₜ), num_list)
+      }
+      else{
+         return userError(`Value "${v1}" or "${v2}" is not of type Num in range.`)
+      }
+   }
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) {
          const {t, v}: ExplValue = ρ.get(e.x)!
