@@ -169,7 +169,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
       else{
          return userError(`Value "${v1}" or "${v2}" is not of type Num in range.`)
       }
-   }
+   } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) {
          const {t, v}: ExplValue = ρ.get(e.x)!
@@ -250,6 +250,9 @@ export function eval_fwd (e: Expr, tv: ExplValue): void {
    if (t instanceof Expl.Quote) {
       setα(isα(e), tv)
    } else
+   if (t instanceof Expl.Range) {
+
+   } else
    if (t instanceof Expl.Var) {
       setα(bool_.meet(isα(e), isα(explValue(t.t, v))), tv)
    } else
@@ -326,6 +329,9 @@ export function eval_bwd (e: Expr, tv: ExplValue): void {
    if (t instanceof Expl.Quote) {
       setjoinα(isα(tv), e)
    } else
+   if (t instanceof Expl.Range) {
+
+   } else
    if (t instanceof Expl.Var) {
       setjoinα(isα(tv), explValue(t.t, v))
       setjoinα(isα(tv), e)
@@ -389,5 +395,5 @@ export function eval_bwd (e: Expr, tv: ExplValue): void {
 
 initDataType(
    Expr.Expr,
-   [Expr.App, Expr.BinaryApp, Expr.ConstNum, Expr.ConstStr, Expr.DataExpr, Expr.Defs, Expr.Fun, Expr.MatchAs, Expr.Quote, Expr.Var]
+   [Expr.App, Expr.BinaryApp, Expr.ConstNum, Expr.ConstStr, Expr.Range, Expr.DataExpr, Expr.Defs, Expr.Fun, Expr.MatchAs, Expr.Quote, Expr.Var]
 )
