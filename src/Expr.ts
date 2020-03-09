@@ -167,15 +167,6 @@ export namespace Expr {
       return at(Quote, e)
    }
 
-   export class Range extends Expr {
-      e1: Expr = _
-      e2: Expr = _
-   }
-
-   export function range (e1: Expr, e2: Expr): (k: Id) => Range {
-      return at(Range, e1, e2)
-   }
-
    // Bring in line with the current eliminator design, i.e. optimise into an object?
    export class Typematch extends Expr {
       e: Expr = _

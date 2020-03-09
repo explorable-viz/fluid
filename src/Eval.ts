@@ -12,7 +12,7 @@ import { get } from "./FiniteMap"
 import { Elim, Match, apply_bwd, apply_fwd } from "./Match"
 import { UnaryOp, BinaryOp, binaryOps, unaryOps } from "./Primitive"
 import { Id, MemoId, PrimValue, Num, Str, TaggedId, Value, _, memoId } from "./Value"
-import { ν, at, num, str } from "./Versioned"
+import { at, num, str } from "./Versioned"
 
 type Def = Expr.Def
 type RecDef = Expr.RecDef
@@ -157,19 +157,6 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
    if (e instanceof Expr.Quote) {
       return explValue(Expl.quote()(kₜ), e.e)
    } else
-   if (e instanceof Expr.Range) {
-      const [tv1, tv2]: [ExplValue, ExplValue] = [eval_(ρ, e.e1), eval_(ρ, e.e2)],
-            [v1, v2]: [Value, Value] = [tv1.v, tv2.v]
-      if (v1 instanceof Num && v2 instanceof Num){
-         const number_array: number[] = Array.from({length: (v2.val - v1.val)}, (v, k) => k + v1.val),
-               num_arr: Num[] = number_array.map(x => num(x)(ν())),
-               num_list: List<Num> = List.fromArray(num_arr)
-               return explValue(Expl.range(tv1, tv2)(kₜ), num_list)
-      }
-      else{
-         return userError(`Value "${v1}" or "${v2}" is not of type Num in range.`)
-      }
-   } else
    if (e instanceof Expr.Var) {
       if (ρ.has(e.x)) {
          const {t, v}: ExplValue = ρ.get(e.x)!
@@ -250,9 +237,6 @@ export function eval_fwd (e: Expr, tv: ExplValue): void {
    if (t instanceof Expl.Quote) {
       setα(isα(e), tv)
    } else
-   if (t instanceof Expl.Range) {
-
-   } else
    if (t instanceof Expl.Var) {
       setα(bool_.meet(isα(e), isα(explValue(t.t, v))), tv)
    } else
@@ -329,9 +313,6 @@ export function eval_bwd (e: Expr, tv: ExplValue): void {
    if (t instanceof Expl.Quote) {
       setjoinα(isα(tv), e)
    } else
-   if (t instanceof Expl.Range) {
-
-   } else
    if (t instanceof Expl.Var) {
       setjoinα(isα(tv), explValue(t.t, v))
       setjoinα(isα(tv), e)
@@ -395,5 +376,5 @@ export function eval_bwd (e: Expr, tv: ExplValue): void {
 
 initDataType(
    Expr.Expr,
-   [Expr.App, Expr.BinaryApp, Expr.ConstNum, Expr.ConstStr, Expr.Range, Expr.DataExpr, Expr.Defs, Expr.Fun, Expr.MatchAs, Expr.Quote, Expr.Var]
+   [Expr.App, Expr.BinaryApp, Expr.ConstNum, Expr.ConstStr, Expr.DataExpr, Expr.Defs, Expr.Fun, Expr.MatchAs, Expr.Quote, Expr.Var]
 )

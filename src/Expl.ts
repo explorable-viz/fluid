@@ -162,15 +162,6 @@ export namespace Expl {
       return at(Var, x, t)
    }
 
-   export class Range extends Terminal {
-      t1: ExplValue = _ 
-      t2: ExplValue = _ 
-   }
-
-   export function range(t1: ExplValue, t2: ExplValue): (k: Id) => Range {
-      return at(Range, t1, t2)
-   }
-
    // Should probably do a better job of restricting k to be a bona fide field name.
    export function explChild<T extends DataValue> (t: Expl, v: T, prop: keyof T): ExplValue {
       if (t instanceof Terminal) {

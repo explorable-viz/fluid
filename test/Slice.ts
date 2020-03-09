@@ -303,14 +303,6 @@ describe("slice", () => {
       })
    })
 
-   describe("range", () => {
-      it("ok", () => {
-         const [ρ, e]: [Env, Expr] = openWithImports("range")
-         new BwdSlice(ρ, e)
-         new FwdSlice(ρ, e)
-      })
-   })
-
    describe("reverse", () => {
       it("ok", () => {
          const [ρ, e]: [Env, Expr] = openWithImports("reverse")
