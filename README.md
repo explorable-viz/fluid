@@ -35,7 +35,7 @@
 
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
-| February | Online demo | [127](https://github.com/rolyp/fluid/issues/127) |
+| March | List comprehensions, arrays | [277](https://github.com/rolyp/fluid/issues/277), [276](https://github.com/rolyp/fluid/issues/276) |
 | March | Table view | [121](https://github.com/rolyp/fluid/issues/121), [W269](https://github.com/wrattler/wrattler/issues/269) |
 
 ### Possible submissions
