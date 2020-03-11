@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | 10 March 2020 | Start on PureScript migration | [279](https://github.com/rolyp/lambdacalc/issues/279) |
 | 22 February 2020 | Make repository public |
-| 17 February 2020 | Host demo online at http://f.luid.org | [127](https://github.com/rolyp/lambdacalc/issues/127) |
+| 17 February 2020 | Host demo online at [f.luid.org](http://f.luid.org) | [127](https://github.com/rolyp/lambdacalc/issues/127) |
 | 30 January 2020 | Display image in Wrattler output pane | [W222](https://github.com/wrattler/wrattler/issues/222) |
 | 21 January 2020 | Initial meeting with Meng Wang and Minh Nguyen at Bristol ||
 | 26 November 2019 | Demo for Wrattler workshop for DSTL ||
