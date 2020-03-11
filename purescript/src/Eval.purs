@@ -2,9 +2,8 @@ module Eval where
 
 import Prelude ((==), (<>), ($))
 import Data.Tuple (Tuple(..))
-import Data.List (List(..), (:), (!!), find)
-import Data.Eq 
-import Data.Maybe 
+import Data.List (List(..), (:), find)
+import Data.Maybe (Maybe(..))
 
 import Lang 
 
