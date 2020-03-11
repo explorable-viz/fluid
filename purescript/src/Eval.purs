@@ -1,15 +1,32 @@
 module Eval where 
 
-import Prelude ((<<<), (==), (<>), ($))
+import Prelude ((==), (<>), ($))
 import Data.Tuple (Tuple(..))
 import Data.List (List(..), (:), (!!), find)
 import Data.Eq 
 import Data.Maybe 
-import Effect.Exception
 
 import Lang 
 
-eval :: Expr -> Env -> Value 
+-- Given val, match against elim to maybe return a 
+-- branch expr and updated env
+match :: Val -> Elim -> Maybe (Tuple Expr Env)
+match val elim
+ = case Tuple val elim of 
+    Tuple _ (ElimVar x expr) 
+        ->  Just $ Tuple expr ((Tuple x val):Nil)
+    Tuple ValNil (ElimList Nothing expr)  
+        ->  Just $ Tuple expr Nil
+    Tuple (ValCons v vs) (ElimList (Just (Tuple x xs)) expr) 
+        ->  let env' = ((Tuple x v):(Tuple xs vs):Nil)
+            in  Just $ Tuple expr env' 
+    Tuple (ValPair x' y') (ElimPair x y expr)
+        ->  let env' = ((Tuple x x'):(Tuple y y'):Nil)
+            in  Just $ Tuple expr env'
+    _   ->  Nothing
+
+
+eval :: Expr -> Env -> Val
 eval (ExprVar x) env 
  = case find (\(Tuple var val) -> var == x) env of 
     Just (Tuple var val) -> val
@@ -26,26 +43,17 @@ eval (ExprNil) env
  = ValNil
 eval (ExprCons e es) env 
  = ValCons (eval e env) (eval es env)
-eval (ExprMatch e Nil) env
- = ValFailure ("Match not found")
-eval (ExprMatch e (Cons elim elims)) env
- = let v = eval e env
-       elimv = match v elim 
-   in  case elimv of ValFailure _ -> eval (ExprMatch e elims) env
-                     _            -> elimv
-   where match v elim = case Tuple v elim of 
-                            Tuple _ (ElimVar x expr) 
-                                ->  let env' = ((Tuple x v):env)
-                                    in  eval expr env' 
-                            Tuple ValNil (ElimNil expr)  
-                                -> eval expr env 
-                            Tuple (ValCons y ys) (ElimCons x xs expr) 
-                                ->  let env' = ((Tuple x y):(Tuple xs ys):env)
-                                    in  eval expr env'
-                            Tuple (ValPair x' y') (ElimPair x y expr)
-                                ->  let env' = ((Tuple x x'):(Tuple y y'):env)
-                                    in  eval expr env'
-                            _ ->   ValFailure ("Match not found")
+eval (ExprMatch e elim) env
+ = case match (eval e env) elim of 
+    Nothing              -> ValFailure "Match not found"
+    Just (Tuple e' env') -> eval e' env'
 eval (ExprFunc elim) env 
  = ValClosure env elim
-
+eval (ExprApp e e') env 
+ = case eval e env  of 
+     ValClosure env' elim 
+        -> case match (eval e' env) elim of 
+                   Just (Tuple e'' env'') -> eval e'' (env' <> env'')
+                   Nothing                -> ValFailure "Match not found"
+     _  -> ValFailure "Applied expression e in e e' does not evaluate to closure"
+       
