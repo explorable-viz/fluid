@@ -2,8 +2,7 @@ module Eval where
 
 import Prelude ((==), (<>), ($))
 import Data.Tuple (Tuple(..))
-import Data.List (List(..), (:), (!!), find)
-import Data.Eq 
+import Data.List (List(..), (:), find)
 import Data.Maybe 
 
 import Lang 
@@ -15,14 +14,19 @@ match val elim
  = case Tuple val elim of 
     Tuple _ (ElimVar x expr) 
         ->  Just $ Tuple expr ((Tuple x val):Nil)
-    Tuple ValNil (ElimList Nothing expr)  
-        ->  Just $ Tuple expr Nil
-    Tuple (ValCons v vs) (ElimList (Just (Tuple x xs)) expr) 
-        ->  let env' = ((Tuple x v):(Tuple xs vs):Nil)
-            in  Just $ Tuple expr env' 
+    Tuple _ (ElimList (BranchNil expr2) (BranchCons x xs expr1) )
+        ->  case val of 
+                ValCons v vs -> let env' = ((Tuple x v):(Tuple xs vs):Nil)
+                                in  Just $ Tuple expr1 env' 
+                ValNil       -> Just $ Tuple expr2 Nil
+                _            -> Nothing
     Tuple (ValPair x' y') (ElimPair x y expr)
         ->  let env' = ((Tuple x x'):(Tuple y y'):Nil)
             in  Just $ Tuple expr env'
+    Tuple (ValBool b1) (ElimBool (BranchTrue expr1) (BranchFalse expr2))
+        ->  case b1 of 
+                true  -> Just $ Tuple expr1 Nil
+                false -> Just $ Tuple expr2 Nil
     _   ->  Nothing
 
 
@@ -39,6 +43,8 @@ eval (ExprLet x e1 e2) env
    in  eval e2 env'
 eval (ExprNum n) env 
  = ValNum n 
+eval (ExprBool b) env 
+ = ValBool b
 eval (ExprNil) env 
  = ValNil
 eval (ExprCons e es) env 
@@ -46,7 +52,7 @@ eval (ExprCons e es) env
 eval (ExprMatch e elim) env
  = case match (eval e env) elim of 
     Nothing              -> ValFailure "Match not found"
-    Just (Tuple e' env') -> eval e' env'
+    Just (Tuple e' env') -> eval e' (env' <> env)
 eval (ExprFunc elim) env 
  = ValClosure env elim
 eval (ExprApp e e') env 
