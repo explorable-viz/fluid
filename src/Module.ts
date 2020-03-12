@@ -1,5 +1,5 @@
 import { Grammar, Parser } from "nearley"
-import { __nonNull, as, userError } from "./util/Core"
+import { __nonNull, as, assert, userError } from "./util/Core"
 import { BaseTypes, Cons, List, Nil, Pair } from "./BaseTypes"
 import { exprClass } from "./DataType"
 import { Env, ExtendEnv, emptyEnv, extendEnv } from "./Env"
@@ -12,15 +12,19 @@ import { ν, at, num, str } from "./Versioned"
 
 // Kindergarten modules.
 
-// Define as constants to enforce sharing; could use memoisation.
-export let module_prelude: Env
-export let module_graphics: Env
-
 export namespace Module {
+   export let initialised: boolean = false
+
+   // Define as constants to enforce sharing; could use memoisation.
+   export let prelude: Env
+   export let graphics: Env
+
    export function initialise (): void {
+      assert(!initialised)
+      initialised = true
       BaseTypes.initialise()
-      module_prelude = loadModule(emptyEnv(), "prelude")
-      module_graphics = loadModule(module_prelude, "graphics")
+      prelude = loadModule(emptyEnv(), "prelude")
+      graphics = loadModule(prelude, "graphics")
    }
 }
 
@@ -62,7 +66,8 @@ export function openDatasetAs (file: string, x: string): ExtendEnv {
 }
 
 export function parseWithImports (src: string, ...modules: Env[]): [Env, Expr] {
-   return [import_(__nonNull(module_prelude), __nonNull(module_graphics), ...modules), successfulParse(src)]
+   assert(Module.initialised, "Module system not initialised.")
+   return [import_(__nonNull(Module.prelude), __nonNull(Module.graphics), ...modules), successfulParse(src)]
 }
 
 // https://github.com/kach/nearley/issues/276#issuecomment-324162234
