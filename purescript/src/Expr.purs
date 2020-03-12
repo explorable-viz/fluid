@@ -1,14 +1,9 @@
 module Expr where
 
-<<<<<<< HEAD
 import Prelude ((==))
 import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
 import Data.Eq 
-=======
-import Data.Tuple
-import Data.List (List)
->>>>>>> 8ef68c76c7c653f7723399264cffac85175c7cd4
 
 type Var = String  
 
