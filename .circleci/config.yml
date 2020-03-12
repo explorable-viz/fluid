@@ -20,8 +20,10 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
+      # https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
       - run: |
           npm install
+          npm install npm -g
           npm install -g spago
           cd purescript && spago install
 
