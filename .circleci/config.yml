@@ -23,7 +23,7 @@ jobs:
       # https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
       - run: |
           npm install
-          npm install npm -g
+          sudo npm install npm -g
           npm install -g spago
           cd purescript && spago install
 
