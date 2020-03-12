@@ -3,9 +3,9 @@ module Eval where
 import Prelude ((==), (<>), ($))
 import Data.Tuple (Tuple(..))
 import Data.List (List(..), (:), find)
-import Data.Maybe 
+import Data.Maybe (Maybe(..))
 
-import Lang 
+import Expr 
 
 -- Given val, match against elim to maybe return a 
 -- branch expr and updated env

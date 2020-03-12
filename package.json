@@ -1,6 +1,6 @@
 {
   "name": "@rolyp/fluid",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Fluid",
   "dependencies": {
     "@types/three": "0.93.28",
@@ -10,6 +10,7 @@
     "madge": "^3.4.4",
     "moo": "^0.5.0",
     "nearley": "^2.16.0",
+    "psa": "^1.0.0",
     "style-loader": "^1.0.0",
     "three": "^0.93",
     "three-orbitcontrols-ts": "^0.1.2",
@@ -39,7 +40,10 @@
     "karma-webpack": "^2.0.10",
     "mocha": "^3.5.3",
     "mocha-webpack": "^0.7.0",
+    "pscid": "^2.9.0",
+    "purescript": "^0.13.6",
     "raw-loader": "^4.0.0",
+    "spago": "^0.14.0",
     "ts-node": "^3.3.0",
     "url-loader": "^2.1.0",
     "webpack": "^4.20.2",

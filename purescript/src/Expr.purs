@@ -1,8 +1,8 @@
-module Lang where 
+module Expr where 
 
 import Data.Tuple 
-import Data.List (List, (:))
-import Data.Maybe 
+import Data.List (List)
+import Data.Maybe (Maybe)
 
 type Env = List (Tuple Var Val)
 
@@ -24,8 +24,7 @@ data Typ = TypNum
          | TypList Typ 
          | TypPair Typ Typ 
 
-data Val = ValNum Int 
-         | ValBool Boolean
+data Val = ValNum Int  
          | ValPair Val Val
          | ValNil 
          | ValCons Val Val
