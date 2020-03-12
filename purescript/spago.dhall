@@ -7,6 +7,7 @@ You can edit this file as you like.
   [ "console"
   , "effect"
   , "lists"
+  , "node-fs"
   , "parsing"
   , "psci-support"
   , "result"
