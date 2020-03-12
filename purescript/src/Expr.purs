@@ -1,9 +1,14 @@
-module Expr where 
+module Expr where
 
+<<<<<<< HEAD
 import Prelude ((==))
 import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
 import Data.Eq 
+=======
+import Data.Tuple
+import Data.List (List)
+>>>>>>> 8ef68c76c7c653f7723399264cffac85175c7cd4
 
 type Var = String  
 
@@ -57,9 +62,9 @@ derive instance eqBranchFalse :: Eq BranchFalse
 
 data Typ = TypNum 
          | TypBool
-         | TypFunc Typ Typ 
-         | TypList Typ 
-         | TypPair Typ Typ 
+         | TypFunc Typ Typ
+         | TypList Typ
+         | TypPair Typ Typ
 
 derive instance eqTyp :: Eq Typ
 
@@ -67,7 +72,7 @@ data Val = ValTrue
          | ValFalse
          | ValNum Int  
          | ValPair Val Val
-         | ValNil 
+         | ValNil
          | ValCons Val Val
          | ValClosure Env Elim
          | ValFailure String
@@ -81,7 +86,7 @@ data Expr = ExprNum Int
           | ExprPair Expr Expr 
           | ExprNil 
           | ExprCons Expr Expr
-          | ExprLet Var Expr Expr 
+          | ExprLet Var Expr Expr
           | ExprMatch Expr Elim
           | ExprFunc Elim
           | ExprApp Expr Expr
@@ -89,9 +94,9 @@ data Expr = ExprNum Int
 
 derive instance eqExpr :: Eq Expr
 
-data Elim = ElimVar Var Expr  
-          | ElimPair Var Var Expr  
-          | ElimList BranchNil BranchCons  
+data Elim = ElimVar Var Expr
+          | ElimPair Var Var Expr
+          | ElimList BranchNil BranchCons
           | ElimBool BranchTrue BranchFalse
 
 derive instance eqElim :: Eq Elim
