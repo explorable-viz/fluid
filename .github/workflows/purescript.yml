@@ -13,4 +13,4 @@ jobs:
     - name: test
       run: |
         sudo npm install --unsafe-perm purescript spago -g
-        cd purescript && spago build && spago test
+        cd purescript && sudo spago build && sudo spago test
