@@ -3,7 +3,7 @@ name: purescript
 on:
   push:
     branches:
-      - github-build # for now
+      - master
 
 jobs:
   build:
