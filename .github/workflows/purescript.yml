@@ -12,5 +12,5 @@ jobs:
     - uses: actions/checkout@v2
     - name: test
       run: |
-        sudo npm install purescript spago -g
+        sudo npm install --unsafe-perm purescript spago -g
         spago build && spago test
