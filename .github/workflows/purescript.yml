@@ -1,0 +1,16 @@
+name: purescript
+
+on:
+  push:
+    branches:
+      - github-build # for now
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: test
+      run: |
+        npm install purescript spago -g
+        spago build && spago test
