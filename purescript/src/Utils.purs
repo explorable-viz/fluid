@@ -1,11 +1,11 @@
 module Utils where
-  
+
 import Data.List (List(..), (:), difference, union, singleton)
 import Prelude ((<>))
 
 import Expr
 
-class FreeVars a where 
+class FreeVars a where
     freeVars :: a -> List Var
 
 instance freeVarsExpr :: FreeVars Expr where
@@ -18,7 +18,7 @@ instance freeVarsExpr :: FreeVars Expr where
     freeVars ExprTrue  = Nil
     freeVars ExprFalse = Nil
     freeVars (ExprPair e1 e2) = union (freeVars e1) (freeVars e2)
-    freeVars (ExprPair_Fst e1) = freeVars e1 
+    freeVars (ExprPair_Fst e1) = freeVars e1
     freeVars (ExprPair_Snd e2) = freeVars e2
     freeVars ExprNil = Nil
     freeVars (ExprCons e es) = (freeVars e <> freeVars es)
@@ -30,7 +30,7 @@ instance freeVarsExpr :: FreeVars Expr where
     freeVars (ExprApp_Fun e1) = freeVars e1
     freeVars (ExprFun elim) = freeVars elim
 
-instance freeVarsElim :: FreeVars Elim where 
+instance freeVarsElim :: FreeVars Elim where
     freeVars (ElimVar x e) = difference (freeVars e) (singleton x)
     freeVars (ElimPair x y e) = difference (freeVars e) (x:y:Nil)
     freeVars (ElimPair_Fst x e) = difference (freeVars e) (singleton x)
@@ -38,7 +38,7 @@ instance freeVarsElim :: FreeVars Elim where
     freeVars (ElimList bNil bCons) = union (freeVars bNil) (freeVars bCons)
     freeVars (ElimBool bTrue bFalse) = Nil
 
-instance freeVarsBranchNil :: FreeVars BranchNil where 
+instance freeVarsBranchNil :: FreeVars BranchNil where
     freeVars (BranchNil e) = freeVars e
 
 instance freeVarsBranchCons :: FreeVars BranchCons where
@@ -47,9 +47,7 @@ instance freeVarsBranchCons :: FreeVars BranchCons where
     freeVars (BranchCons_Tail xs e) = difference (freeVars e) (singleton xs)
 
 instance freeVarsBranchTrue :: FreeVars BranchTrue where
-    freeVars (BranchTrue e) = freeVars e 
+    freeVars (BranchTrue e) = freeVars e
 
 instance freeVarsBranchFalse :: FreeVars BranchFalse where
-    freeVars (BranchFalse e) = freeVars e 
-
-
+    freeVars (BranchFalse e) = freeVars e
