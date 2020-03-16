@@ -6,7 +6,7 @@ import Effect.Console (log)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (readTextFile)
 
-main :: Effect Unit
-main = do
-  text <- readTextFile ASCII "./input.txt"
+testParse1 :: Effect Unit
+testParse1 = do
+  text <- readTextFile ASCII "../fluid/example/normalise.fld"
   log text
