@@ -6,7 +6,7 @@ import Effect.Console (log)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (readTextFile)
 
-main :: Effect Unit
-main = do
+testParse1 :: Effect Unit
+testParse1 = do
   text <- readTextFile ASCII "./input.txt"
   log text
