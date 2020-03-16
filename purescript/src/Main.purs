@@ -7,4 +7,9 @@ import Effect.Console (log)
 
 main :: Effect Unit
 main = do
-  log "🍝"
+  log ""
+
+ordToString :: Ordering -> String
+ordToString LT = "LT"
+ordToString GT = "GT"
+ordToString EQ = "EQ"

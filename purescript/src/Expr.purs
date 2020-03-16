@@ -4,6 +4,7 @@ import Prelude ((==))
 import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
 import Data.Eq 
+import Data.Ord 
 
 type Var = String  
 
@@ -44,6 +45,8 @@ data BranchNil = BranchNil Expr
 derive instance eqBranchNil :: Eq BranchNil
 
 data BranchCons = BranchCons Var Var Expr 
+                | BranchCons_Head Var Expr 
+                | BranchCons_Tail Var Expr
 
 derive instance eqBranchCons :: Eq BranchCons
 
@@ -57,19 +60,19 @@ derive instance eqBranchFalse :: Eq BranchFalse
 
 data Typ = TypNum 
          | TypBool
-         | TypFunc Typ Typ
+         | TypFun Typ Typ 
          | TypList Typ
-         | TypPair Typ Typ
+         | TypPair Typ Typ | TypPair_Fst Typ | TypPair_Snd Typ
 
 derive instance eqTyp :: Eq Typ
 
 data Val = ValTrue
          | ValFalse
          | ValNum Int  
-         | ValPair Val Val
+         | ValPair Val Val | ValPair_Fst Val | ValPair_Snd Val
          | ValNil
-         | ValCons Val Val
-         | ValClosure Env Elim
+         | ValCons Val Val | ValCons_Head Val | ValCons_Tail Val
+         | ValClosure Env Elim 
          | ValFailure String
 
 derive instance eqVal :: Eq Val
@@ -78,19 +81,19 @@ data Expr = ExprNum Int
           | ExprVar Var
           | ExprTrue
           | ExprFalse
-          | ExprPair Expr Expr 
+          | ExprPair Expr Expr | ExprPair_Fst Expr | ExprPair_Snd Expr
           | ExprNil 
-          | ExprCons Expr Expr
-          | ExprLet Var Expr Expr
+          | ExprCons Expr Expr | ExprCons_Head Expr | ExprCons_Tail Expr
+          | ExprLet Var Expr Expr | ExprLet_Body Expr
           | ExprMatch Expr Elim
-          | ExprFunc Elim
-          | ExprApp Expr Expr
+          | ExprFun Elim
+          | ExprApp Expr Expr | ExprApp_Fun Expr
           | ExprAdd Expr Expr
 
 derive instance eqExpr :: Eq Expr
 
 data Elim = ElimVar Var Expr
-          | ElimPair Var Var Expr
+          | ElimPair Var Var Expr | ElimPair_Fst Var Expr | ElimPair_Snd Var Expr
           | ElimList BranchNil BranchCons
           | ElimBool BranchTrue BranchFalse
 
