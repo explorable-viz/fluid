@@ -2,7 +2,6 @@ module Eval where
 
 import Prelude ((<>), ($))
 import Data.Tuple (Tuple(..))
-import Data.List (List(..), (:), find)
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
 import Expr 
@@ -12,26 +11,27 @@ import Expr
 match :: Val -> Elim -> Maybe (Tuple Expr Env)
 match val elim
  = case Tuple val elim of 
-    Tuple _ (ElimVar x expr) 
-        ->  Just $ Tuple expr (EnvSnoc EnvNil (Tuple x val))
-    Tuple (ValCons v vs) (ElimList (BranchNil expr2) (BranchCons x xs expr1) )
+    Tuple _ (ElimVar x t expr) 
+        ->  
+            Just $ Tuple expr (EnvSnoc EnvNil (Tuple x val))
+    Tuple (ValCons v vs) (ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1) )
         ->  let env' = (EnvSnoc (EnvSnoc EnvNil (Tuple xs vs)) (Tuple x v))
             in  Just $ Tuple expr1 env' 
-    Tuple (ValCons_Head v) (ElimList (BranchNil expr2) (BranchCons_Head x expr1))
+    Tuple (ValCons_Head v) (ElimList (BranchNil _ expr2) (BranchCons_Head x _ expr1))
         ->  let env' = (EnvSnoc EnvNil (Tuple x v))
             in  Just $ Tuple expr1 env'         
-    Tuple (ValCons_Tail vs) (ElimList (BranchNil expr2) (BranchCons_Tail xs expr1))
+    Tuple (ValCons_Tail vs) (ElimList (BranchNil _ expr2) (BranchCons_Tail xs _ expr1))
         ->  let env' = (EnvSnoc EnvNil (Tuple xs vs))
             in  Just $ Tuple expr1 env'  
-    Tuple (ValNil) (ElimList (BranchNil expr2) (BranchCons x xs expr1) )
+    Tuple (ValNil) (ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1) )
         ->  Just $ Tuple expr2 EnvNil
-    Tuple (ValPair x' y') (ElimPair x y expr)
+    Tuple (ValPair x' y') (ElimPair x _ y _ expr)
         ->  let env' = (EnvSnoc (EnvSnoc EnvNil (Tuple y y')) (Tuple x x'))
             in  Just $ Tuple expr env'
-    Tuple (ValPair_Fst x') (ElimPair_Fst x expr)
+    Tuple (ValPair_Fst x') (ElimPair_Fst x _ expr)
         ->  let env' = EnvSnoc EnvNil (Tuple x x')
             in Just $ Tuple expr env'
-    Tuple (ValPair_Snd y') (ElimPair_Snd y expr)
+    Tuple (ValPair_Snd y') (ElimPair_Snd y _ expr)
         ->  let env' = EnvSnoc EnvNil (Tuple y y')
             in Just $ Tuple expr env'
     Tuple (ValTrue) (ElimBool (BranchTrue expr1) (BranchFalse expr2))
@@ -93,3 +93,4 @@ eval (ExprAdd e1 e2) env
    in  case Tuple v1 v2 of 
          Tuple (ValNum n1) (ValNum n2)  -> ValNum (n1 + n2)
          _                              -> ValFailure "Arithemetic type error: e1 or/and e2 do not evaluate to ints"
+

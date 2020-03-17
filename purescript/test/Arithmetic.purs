@@ -1,7 +1,7 @@
 module Arithmetic where 
  
-import Expr
-import Eval
+import Expr (Env(..), Expr(..), Val(..))
+import Eval (eval)
 import Prelude ((==))
 --  isEmpty :: Expr -> Boolean
 -- isEmpty (ExprCons x xs)

@@ -31,20 +31,20 @@ instance freeVarsExpr :: FreeVars Expr where
     freeVars (ExprFun elim) = freeVars elim
 
 instance freeVarsElim :: FreeVars Elim where 
-    freeVars (ElimVar x e) = difference (freeVars e) (singleton x)
-    freeVars (ElimPair x y e) = difference (freeVars e) (x:y:Nil)
-    freeVars (ElimPair_Fst x e) = difference (freeVars e) (singleton x)
-    freeVars (ElimPair_Snd y e) = difference (freeVars e) (singleton y)
+    freeVars (ElimVar x t e) = difference (freeVars e) (singleton x)
+    freeVars (ElimPair x _ y _ e) = difference (freeVars e) (x:y:Nil)
+    freeVars (ElimPair_Fst x _ e) = difference (freeVars e) (singleton x)
+    freeVars (ElimPair_Snd y _ e) = difference (freeVars e) (singleton y)
     freeVars (ElimList bNil bCons) = union (freeVars bNil) (freeVars bCons)
     freeVars (ElimBool bTrue bFalse) = Nil
 
 instance freeVarsBranchNil :: FreeVars BranchNil where 
-    freeVars (BranchNil e) = freeVars e
+    freeVars (BranchNil _ e) = freeVars e
 
 instance freeVarsBranchCons :: FreeVars BranchCons where
-    freeVars (BranchCons x xs e) = difference (freeVars e) (x:xs:Nil)
-    freeVars (BranchCons_Head x e) = difference (freeVars e) (singleton x)
-    freeVars (BranchCons_Tail xs e) = difference (freeVars e) (singleton xs)
+    freeVars (BranchCons x xs _ e) = difference (freeVars e) (x:xs:Nil)
+    freeVars (BranchCons_Head x _ e) = difference (freeVars e) (singleton x)
+    freeVars (BranchCons_Tail xs _ e) = difference (freeVars e) (singleton xs)
 
 instance freeVarsBranchTrue :: FreeVars BranchTrue where
     freeVars (BranchTrue e) = freeVars e 
