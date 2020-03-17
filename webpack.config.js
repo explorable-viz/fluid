@@ -56,7 +56,7 @@ module.exports = [{
           });
       },
       new CnamePlugin(
-         { domain: "luid.org" }
+         { domain: "f.luid.org" }
       ),
       new CopyPlugin([
          { from: "fluid/**/*" }
