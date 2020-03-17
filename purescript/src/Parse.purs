@@ -7,7 +7,10 @@ import Text.Parsing.Parser (ParserT)
 import Text.Parsing.Parser.Combinators (between)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (oneOf, string)
-import Text.Parsing.Parser.Token (GenLanguageDef(..), LanguageDef, alphaNum, letter, unGenLanguageDef)
+import Text.Parsing.Parser.Token (
+  GenLanguageDef(..), LanguageDef, TokenParser,
+  alphaNum, letter, makeTokenParser, unGenLanguageDef
+)
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
@@ -29,3 +32,6 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
   where
     op' :: forall m . (Monad m) => ParserT String m Char
     op' = oneOf [':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~']
+
+tokenParser :: TokenParser
+tokenParser = makeTokenParser languageDef
