@@ -43,13 +43,15 @@ findVarTyp _ CtxNil = Nothing
 findVarTyp x (CtxSnoc cs (Tuple var typ)) = if x == var then Just typ else findVarTyp x cs
 
 
-                -- (type of list, branch)
-data BranchNil  = BranchNil Typ Expr
+                
+data BranchNil -- (type of list, branch)
+                = BranchNil Typ Expr
 
 derive instance eqBranchNil :: Eq BranchNil
 
-                -- (x, xs, type(x), branch)
-data BranchCons = BranchCons Var Var Typ Expr 
+                
+data BranchCons -- (x, xs, type(x), branch)
+                = BranchCons Var Var Typ Expr 
                 -- (x, type(x), branch)
                 | BranchCons_Head Var Typ Expr 
                 -- ((x:xs), type(x), branch)
@@ -70,7 +72,7 @@ data Typ = TypNum
          | TypFun Typ Typ
          | TypList Typ
          | TypPair Typ Typ | TypPair_Fst Typ | TypPair_Snd Typ
-         | TypVar -- polymorphic
+         | TypPoly 
          | TypFailure String
 
 derive instance eqTyp :: Eq Typ
@@ -102,8 +104,9 @@ data Expr = ExprNum Int
 derive instance eqExpr :: Eq Expr
 
 
-            -- (x, type(x), branch)
-data Elim = ElimVar Var Typ Expr
+            
+data Elim = -- (x, type(x), branch)
+            ElimVar Var Typ Expr
             -- (x, type(x), y, type(y), branch)
           | ElimPair Var Typ Var Typ Expr | ElimPair_Fst Var Typ Expr | ElimPair_Snd Var Typ Expr
           | ElimList BranchNil BranchCons 

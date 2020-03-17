@@ -13,32 +13,32 @@ instance hasTypBranchNil :: HasTyp BranchNil where
     getTyp (BranchNil _ e) ctx = getTyp e ctx
 
 instance hasTypBranchCons :: HasTyp BranchCons where
-    getTyp (BranchCons x xs tx e ) ctx   = let txs = TypList tx
-                                               te  = getTyp e (ctx:>(Tuple x tx):>(Tuple xs txs)) 
-                                           in  TypFun txs te
-    getTyp (BranchCons_Head x tx e) ctx  = let te = getTyp e (ctx:>(Tuple x tx)) 
-                                           in  TypFun tx te
-    getTyp (BranchCons_Tail xs tx e) ctx = let txs = TypList tx
-                                               te  = getTyp e (ctx:>(Tuple xs txs)) 
-                                           in  TypFun txs te
+      getTyp (BranchCons x xs tx e ) ctx   = let txs = TypList tx
+                                                 te  = getTyp e (ctx:>(Tuple x tx):>(Tuple xs txs)) 
+                                             in  TypFun txs te
+      getTyp (BranchCons_Head x tx e) ctx  = let te = getTyp e (ctx:>(Tuple x tx)) 
+                                             in  TypFun tx te
+      getTyp (BranchCons_Tail xs tx e) ctx = let txs = TypList tx
+                                                 te  = getTyp e (ctx:>(Tuple xs txs)) 
+                                             in  TypFun txs te
 
 instance hasTypBranchTrue :: HasTyp BranchTrue where
-    getTyp (BranchTrue e) ctx = TypFun TypBool (getTyp e ctx)
+      getTyp (BranchTrue e) ctx = TypFun TypBool (getTyp e ctx)
 
 instance hasTypBranchFalse :: HasTyp BranchFalse where
-    getTyp (BranchFalse e) ctx = TypFun TypBool (getTyp e ctx)
+      getTyp (BranchFalse e) ctx = TypFun TypBool (getTyp e ctx)
 
 
 instance hasTypElim :: HasTyp Elim where
-    getTyp (ElimVar x tx e) ctx        = TypFun tx (getTyp e (ctx:>(Tuple x tx)))
-    getTyp (ElimPair x tx y ty e) ctx  = let te = getTyp e (ctx:>(Tuple x tx):>(Tuple y ty))
-                                         in  TypFun (TypPair tx ty) te 
-    getTyp (ElimPair_Fst x tx e) ctx   = let te = getTyp e (ctx:>(Tuple x tx))
-                                         in  TypFun (TypPair_Fst tx) te 
-    getTyp (ElimPair_Snd y ty e) ctx   = let te = getTyp e (ctx:>(Tuple y ty))
-                                         in  TypFun (TypPair_Snd ty) te 
-    getTyp (ElimList bNil bCons ) ctx  = getTyp bCons ctx 
-    getTyp (ElimBool bTrue bFalse) ctx = getTyp bTrue ctx
+      getTyp (ElimVar x tx e) ctx        = TypFun tx (getTyp e (ctx:>(Tuple x tx)))
+      getTyp (ElimPair x tx y ty e) ctx  = let te = getTyp e (ctx:>(Tuple x tx):>(Tuple y ty))
+                                           in  TypFun (TypPair tx ty) te 
+      getTyp (ElimPair_Fst x tx e) ctx   = let te = getTyp e (ctx:>(Tuple x tx))
+                                           in  TypFun (TypPair_Fst tx) te 
+      getTyp (ElimPair_Snd y ty e) ctx   = let te = getTyp e (ctx:>(Tuple y ty))
+                                           in  TypFun (TypPair_Snd ty) te 
+      getTyp (ElimList bNil bCons ) ctx  = getTyp bCons ctx 
+      getTyp (ElimBool bTrue bFalse) ctx = getTyp bTrue ctx
 
 
 instance hasTypExpr :: HasTyp Expr where
@@ -55,11 +55,10 @@ instance hasTypExpr :: HasTyp Expr where
       getTyp (ExprNum n) ctx        = TypNum 
       getTyp ExprTrue ctx           = TypBool
       getTyp ExprFalse ctx          = TypBool
-      getTyp ExprNil ctx            = TypList TypVar
+      getTyp ExprNil ctx            = TypList TypPoly
       getTyp (ExprCons e es) ctx    = TypList (getTyp e ctx)
       getTyp (ExprCons_Head e) ctx  = getTyp e ctx
       getTyp (ExprCons_Tail es) ctx = getTyp es ctx
-      -- needs revising after adding type annotation
       getTyp (ExprMatch e elim) ctx = let t2 = getTyp elim ctx
                                           t1 = getTyp e ctx
                                       in case Tuple t1 t2 of 
