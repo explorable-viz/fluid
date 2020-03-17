@@ -3,9 +3,10 @@ import { Env, ExtendEnv } from "./Env";
 import { Expr } from "./Expr";
 import "./Graphics";
 import { PrimValue, Str } from "./Value";
-export declare let module_prelude: Env;
-export declare let module_graphics: Env;
 export declare namespace Module {
+    let initialised: boolean;
+    let prelude: Env;
+    let graphics: Env;
     function initialise(): void;
 }
 export declare function loadFile(folder: string, file: string): string;
