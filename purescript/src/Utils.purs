@@ -1,11 +1,11 @@
 module Utils where
-  
+
 import Data.List (List(..), (:), difference, union, singleton)
 import Prelude ((<>))
 
 import Expr
 
-class FreeVars a where 
+class FreeVars a where
     freeVars :: a -> List Var
 
 instance freeVarsExpr :: FreeVars Expr where
@@ -18,7 +18,7 @@ instance freeVarsExpr :: FreeVars Expr where
     freeVars ExprTrue  = Nil
     freeVars ExprFalse = Nil
     freeVars (ExprPair e1 e2) = union (freeVars e1) (freeVars e2)
-    freeVars (ExprPair_Fst e1) = freeVars e1 
+    freeVars (ExprPair_Fst e1) = freeVars e1
     freeVars (ExprPair_Snd e2) = freeVars e2
     freeVars ExprNil = Nil
     freeVars (ExprCons e es) = (freeVars e <> freeVars es)
@@ -47,9 +47,7 @@ instance freeVarsBranchCons :: FreeVars BranchCons where
     freeVars (BranchCons_Tail xs _ e) = difference (freeVars e) (singleton xs)
 
 instance freeVarsBranchTrue :: FreeVars BranchTrue where
-    freeVars (BranchTrue e) = freeVars e 
+    freeVars (BranchTrue e) = freeVars e
 
 instance freeVarsBranchFalse :: FreeVars BranchFalse where
-    freeVars (BranchFalse e) = freeVars e 
-
-
+    freeVars (BranchFalse e) = freeVars e
