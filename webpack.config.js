@@ -42,7 +42,6 @@ module.exports = [{
       ]
    },
    plugins: [
-      new HtmlPlugin(),
       // cobbled together from https://github.com/webpack-contrib/karma-webpack/issues/66
       function ()
       {
@@ -54,7 +53,7 @@ module.exports = [{
                   })
                   throw new Error()
                }
-          });  
+          });
       },
       new CnamePlugin(
          { domain: "luid.org" }
@@ -94,7 +93,7 @@ module.exports = [{
              loaders: ["style-loader", "css-loader"]
          },
          {
-            test: /\.woff$/, 
+            test: /\.woff$/,
             use: {
                loader: "url-loader",
                options: {
