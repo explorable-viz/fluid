@@ -5,79 +5,92 @@ import Prelude ((==), (<>))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 
-class HasTyp a where 
-    getTyp :: a -> Ctx -> Typ
+class Typed a where 
+      typeOf :: a -> Ctx -> Typ
 
 
-instance hasTypBranchNil :: HasTyp BranchNil where 
-    getTyp (BranchNil _ e) ctx = getTyp e ctx
+instance hasTypBranchNil :: Typed BranchNil where 
+      typeOf (BranchNil _ e) ctx = typeOf e ctx
 
-instance hasTypBranchCons :: HasTyp BranchCons where
-      getTyp (BranchCons x xs tx e ) ctx   = let txs = TypList tx
-                                                 te  = getTyp e (ctx:>(Tuple x tx):>(Tuple xs txs)) 
+instance hasTypBranchCons :: Typed BranchCons where
+      typeOf (BranchCons x xs tx e ) ctx   = let txs = TypList tx
+                                                 te  = typeOf e (ctx:>(Tuple x tx):>(Tuple xs txs)) 
                                              in  TypFun txs te
-      getTyp (BranchCons_Head x tx e) ctx  = let te = getTyp e (ctx:>(Tuple x tx)) 
+      typeOf (BranchCons_Head x tx e) ctx  = let te = typeOf e (ctx:>(Tuple x tx)) 
                                              in  TypFun tx te
-      getTyp (BranchCons_Tail xs tx e) ctx = let txs = TypList tx
-                                                 te  = getTyp e (ctx:>(Tuple xs txs)) 
+      typeOf (BranchCons_Tail xs tx e) ctx = let txs = TypList tx
+                                                 te  = typeOf e (ctx:>(Tuple xs txs)) 
                                              in  TypFun txs te
 
-instance hasTypBranchTrue :: HasTyp BranchTrue where
-      getTyp (BranchTrue e) ctx = TypFun TypBool (getTyp e ctx)
+instance hasTypBranchTrue :: Typed BranchTrue where
+      typeOf (BranchTrue e) ctx = TypFun TypBool (typeOf e ctx)
 
-instance hasTypBranchFalse :: HasTyp BranchFalse where
-      getTyp (BranchFalse e) ctx = TypFun TypBool (getTyp e ctx)
+instance hasTypBranchFalse :: Typed BranchFalse where
+      typeOf (BranchFalse e) ctx = TypFun TypBool (typeOf e ctx)
 
 
-instance hasTypElim :: HasTyp Elim where
-      getTyp (ElimVar x tx e) ctx        = TypFun tx (getTyp e (ctx:>(Tuple x tx)))
-      getTyp (ElimPair x tx y ty e) ctx  = let te = getTyp e (ctx:>(Tuple x tx):>(Tuple y ty))
+instance hasTypElim :: Typed Elim where
+      typeOf (ElimVar x tx e) ctx        = TypFun tx (typeOf e (ctx:>(Tuple x tx)))
+      typeOf (ElimPair x tx y ty e) ctx  = let te = typeOf e (ctx:>(Tuple x tx):>(Tuple y ty))
                                            in  TypFun (TypPair tx ty) te 
-      getTyp (ElimPair_Fst x tx e) ctx   = let te = getTyp e (ctx:>(Tuple x tx))
+      typeOf (ElimPair_Fst x tx e) ctx   = let te = typeOf e (ctx:>(Tuple x tx))
                                            in  TypFun (TypPair_Fst tx) te 
-      getTyp (ElimPair_Snd y ty e) ctx   = let te = getTyp e (ctx:>(Tuple y ty))
+      typeOf (ElimPair_Snd y ty e) ctx   = let te = typeOf e (ctx:>(Tuple y ty))
                                            in  TypFun (TypPair_Snd ty) te 
-      getTyp (ElimList bNil bCons ) ctx  = getTyp bCons ctx 
-      getTyp (ElimBool bTrue bFalse) ctx = getTyp bTrue ctx
+      typeOf (ElimList bNil bCons ) ctx  = typeOf bCons ctx 
+      typeOf (ElimBool bTrue bFalse) ctx = typeOf bTrue ctx
 
 
-instance hasTypExpr :: HasTyp Expr where
-      getTyp (ExprVar x) ctx        = case findVarTyp x ctx of 
+instance hasTypExpr :: Typed Expr where
+      typeOf (ExprVar x) ctx        = case findVarTyp x ctx of 
                                                 Just t -> t
                                                 _      -> TypFailure ("variable " <> x <> " not found")
-      getTyp (ExprPair e1 e2) ctx   = TypPair (getTyp e1 ctx) (getTyp e2 ctx)
-      getTyp (ExprPair_Fst e1) ctx  = TypPair_Fst (getTyp e1 ctx)
-      getTyp (ExprPair_Snd e2) ctx  = TypPair_Snd (getTyp e2 ctx)
-      getTyp (ExprLet x e1 e2) ctx  = let v1    = (getTyp e1 ctx)
+      typeOf (ExprPair e1 e2) ctx   = TypPair (typeOf e1 ctx) (typeOf e2 ctx)
+      typeOf (ExprPair_Fst e1) ctx  = TypPair_Fst (typeOf e1 ctx)
+      typeOf (ExprPair_Snd e2) ctx  = TypPair_Snd (typeOf e2 ctx)
+      typeOf (ExprLet x e1 e2) ctx  = let v1    = (typeOf e1 ctx)
                                           ctx'  = (ctx:>(Tuple x v1))
-                                      in  getTyp e2 ctx'
-      getTyp (ExprLet_Body e2) ctx  = getTyp e2 ctx
-      getTyp (ExprNum n) ctx        = TypNum 
-      getTyp ExprTrue ctx           = TypBool
-      getTyp ExprFalse ctx          = TypBool
-      getTyp ExprNil ctx            = TypList TypPoly
-      getTyp (ExprCons e es) ctx    = TypList (getTyp e ctx)
-      getTyp (ExprCons_Head e) ctx  = getTyp e ctx
-      getTyp (ExprCons_Tail es) ctx = getTyp es ctx
-      getTyp (ExprMatch e elim) ctx = let t2 = getTyp elim ctx
-                                          t1 = getTyp e ctx
+                                      in  typeOf e2 ctx'
+      typeOf (ExprLet_Body e2) ctx  = typeOf e2 ctx
+      typeOf (ExprNum n) ctx        = TypNum 
+      typeOf ExprTrue ctx           = TypBool
+      typeOf ExprFalse ctx          = TypBool
+      typeOf ExprNil ctx            = TypList TypPoly
+      typeOf (ExprCons e es) ctx    = TypList (typeOf e ctx)
+      typeOf (ExprCons_Head e) ctx  = TypList_Head (typeOf e ctx)
+      typeOf (ExprCons_Tail es) ctx = TypList_Tail (typeOf es ctx)
+      typeOf (ExprMatch e elim) ctx = let t2 = typeOf elim ctx
+                                          t1 = typeOf e ctx
                                       in case Tuple t1 t2 of 
                                                 Tuple (TypFun a b) t  -> if t == a 
                                                                          then b 
                                                                          else TypFailure "Match type error"
                                                 _ -> TypFailure "Match type error"
-      getTyp (ExprFun elim) ctx     = getTyp elim ctx
-      getTyp (ExprApp e e') ctx     = let t1 = getTyp e ctx
-                                          t2 = getTyp e' ctx 
+      typeOf (ExprFun elim) ctx     = typeOf elim ctx
+      typeOf (ExprApp e e') ctx     = let t1 = typeOf e ctx
+                                          t2 = typeOf e' ctx 
                                       in case Tuple t1 t2 of 
                                                 Tuple (TypFun a b) t -> if t == a 
                                                                         then b 
                                                                         else TypFailure "Application type error: applied expression not compatible to argument expression"
                                                 _               -> TypFailure "Application type error"
-      getTyp (ExprApp_Fun e) ctx    = getTyp e ctx
-      getTyp (ExprAdd e1 e2) ctx    = let v1 = getTyp e1 ctx 
-                                          v2 = getTyp e2 ctx 
+      typeOf (ExprApp_Fun e) ctx    = typeOf e ctx
+      typeOf (ExprAdd e1 e2) ctx    = let v1 = typeOf e1 ctx 
+                                          v2 = typeOf e2 ctx 
                                       in  case Tuple v1 v2 of 
                                            Tuple TypNum TypNum -> TypNum 
                                            _  -> TypFailure "Arithemetic type error: e1 or/and e2 do not typecheck as ints"
 
+instance hasTypVal :: Typed Val where 
+      typeOf ValTrue ctx               = TypBool
+      typeOf ValFalse ctx              = TypBool
+      typeOf (ValNum n) ctx            = TypNum
+      typeOf (ValPair x y) ctx         = TypPair (typeOf x ctx) (typeOf y ctx) 
+      typeOf (ValPair_Fst x) ctx       = TypPair_Fst (typeOf x ctx)  
+      typeOf (ValPair_Snd y) ctx       = TypPair_Snd (typeOf y ctx) 
+      typeOf ValNil ctx                = TypList TypPoly
+      typeOf (ValCons x xs) ctx        = TypList (typeOf x ctx)
+      typeOf (ValCons_Head x) ctx      = TypList_Head (typeOf x ctx)
+      typeOf (ValCons_Tail xs) ctx     = TypList_Tail (typeOf xs ctx)
+      typeOf (ValClosure env elim) ctx = typeOf elim ctx
+      typeOf (ValFailure s) ctx        = TypFailure s

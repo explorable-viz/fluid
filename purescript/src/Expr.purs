@@ -70,7 +70,7 @@ derive instance eqBranchFalse :: Eq BranchFalse
 data Typ = TypNum
          | TypBool
          | TypFun Typ Typ
-         | TypList Typ
+         | TypList Typ | TypList_Head Typ | TypList_Tail Typ
          | TypPair Typ Typ | TypPair_Fst Typ | TypPair_Snd Typ
          | TypPoly 
          | TypFailure String
