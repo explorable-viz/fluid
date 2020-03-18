@@ -18,7 +18,8 @@ testPair1 = eval expr1 (EnvSnoc EnvNil (Tuple "x" (ValNum 10))) == ValPair (ValN
 
 
 testPair2 :: Boolean
-testPair2 = let env = (EnvSnoc EnvNil (Tuple "x" (ValNum 10)))
-                b1 = ((typeOf expr1 CtxNil) == (typeOf (eval expr1 env) CtxNil)) 
-                b2 = ((typeOf expr1 CtxNil) == TypPair TypNum (TypPair TypNum TypNum))
+testPair2 = let env = EnvSnoc EnvNil (Tuple "x" (ValNum 10))
+                ctx = CtxSnoc CtxNil (Tuple "x" (TypNum))
+                b1 = typeOf expr1 ctx == typeOf (eval expr1 env) ctx
+                b2 = typeOf expr1 ctx == TypPair TypNum (TypPair TypNum TypNum)
             in b1 && b2

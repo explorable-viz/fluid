@@ -28,7 +28,6 @@ findVarVal :: Var -> Env -> Maybe Val
 findVarVal _ EnvNil = Nothing
 findVarVal x (EnvSnoc vs (Tuple var val)) = if x == var then Just val else findVarVal x vs
 
-
 data Ctx = CtxNil | CtxSnoc Ctx (Tuple Var Typ)
 
 derive instance eqCtx :: Eq Ctx
@@ -48,9 +47,7 @@ concCtx ctx1 (CtxSnoc cs c) = CtxSnoc (concCtx ctx1 cs) c
 findVarTyp :: Var -> Ctx -> Maybe Typ
 findVarTyp _ CtxNil = Nothing
 findVarTyp x (CtxSnoc cs (Tuple var typ)) = if x == var then Just typ else findVarTyp x cs
-
-
-                
+  
 data BranchNil -- (type of list, branch)
                 = BranchNil Typ Expr
 
@@ -70,9 +67,6 @@ instance showBranchCons :: Show BranchCons where
   show (BranchCons x xs t e) = "BranchCons " <> show x <> " " <> show xs <> " " <> show t <> " " <> show e
   show (BranchCons_Head x t e) = "BranchCons_Head " <> show x <> " " <> show t <> " " <> show e
   show (BranchCons_Tail xs t e) = "BranchCons_Tail "  <> show xs <> " " <> show t <> " " <> show e
-
-
-
 
 data BranchTrue = BranchTrue Expr
 
