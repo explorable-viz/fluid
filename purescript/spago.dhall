@@ -13,6 +13,7 @@ You can edit this file as you like.
   , "result"
   , "tuples"
   , "unicode"
+  , "generics-rep"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

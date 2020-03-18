@@ -55,7 +55,7 @@ instance hasTypExpr :: Typed Expr where
       typeOf (ExprNum n) ctx        = TypNum 
       typeOf ExprTrue ctx           = TypBool
       typeOf ExprFalse ctx          = TypBool
-      typeOf ExprNil ctx            = TypList TypPoly
+      typeOf ExprNil ctx            = TypList TypNum
       typeOf (ExprCons e es) ctx    = TypList (typeOf e ctx)
       typeOf (ExprCons_Head e) ctx  = TypList_Head (typeOf e ctx)
       typeOf (ExprCons_Tail es) ctx = TypList_Tail (typeOf es ctx)
@@ -88,7 +88,7 @@ instance hasTypVal :: Typed Val where
       typeOf (ValPair x y) ctx         = TypPair (typeOf x ctx) (typeOf y ctx) 
       typeOf (ValPair_Fst x) ctx       = TypPair_Fst (typeOf x ctx)  
       typeOf (ValPair_Snd y) ctx       = TypPair_Snd (typeOf y ctx) 
-      typeOf ValNil ctx                = TypList TypPoly
+      typeOf ValNil ctx                = TypList TypNum
       typeOf (ValCons x xs) ctx        = TypList (typeOf x ctx)
       typeOf (ValCons_Head x) ctx      = TypList_Head (typeOf x ctx)
       typeOf (ValCons_Tail xs) ctx     = TypList_Tail (typeOf xs ctx)
