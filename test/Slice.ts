@@ -15,7 +15,7 @@ import { PaneCoordinator } from "../src/app/PaneCoordinator"
 import { BwdSlice, FwdSlice, funDef, tooltipsEqual } from "./util/Core"
 
 before((done: MochaDone) => {
-   Pane.initialise()
+   Pane.initialise("./")
    done()
 })
 
@@ -31,7 +31,7 @@ describe("slice", () => {
             }
             expect (here: ExplValueCursor): void {
                here.αclear()
-            } 
+            }
          })(ρ, e)
          new BwdSlice(ρ, e)
       })
@@ -165,7 +165,7 @@ describe("slice", () => {
                 .to(Group, "gs")
                 .nth(3) // 4th bar in group
                 .to(Rect, "height").assert(Num, n => n.val === 145)
-                .setα() 
+                .setα()
          })
          assert(tooltipsEqual(stackedBar.visibleTooltips(), ["height: 145"]))
          assert(tooltipsEqual(line.visibleTooltips(), ["y: 295.3", "y: 145"]))

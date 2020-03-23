@@ -16,8 +16,8 @@ import "./styles.css"
 
 // Previously Editor, but clashes a bit with the Wrattler class of the same name.
 export module Pane {
-   export function initialise (): void {
-      View.initialise()
+   export function initialise (resourceServerUrl: string): void {
+      View.initialise(resourceServerUrl)
    }
 
    export interface Listener {
@@ -36,12 +36,12 @@ export module Pane {
       here!: ExplValueCursor
       direction: Direction
       slice: Slice = new Set()
-   
+
       constructor (
-         listener: Listener, 
-         [width, height]: [number, number], 
-         tooltipPlacement: Placement, 
-         ρ_external: Env, 
+         listener: Listener,
+         [width, height]: [number, number],
+         tooltipPlacement: Placement,
+         ρ_external: Env,
          ρ_imports: Env,
          e: Expr
       ) {
@@ -144,14 +144,14 @@ export module Pane {
          this.tooltips.clear()
          View.render(this)
       }
-   
+
       onEdit (): void {
          this.tv = Eval.eval_(this.ρ, this.e)
          this.here = ExplValueCursor.descendant(null, explValue(as(this.tv.t, Expl.Defs).t, this.tv.v))
          // cursor may no longer be valid, how to deal with that?
          this.render()
       }
-   
+
       onViewChange (): void {
          this.render()
       }
