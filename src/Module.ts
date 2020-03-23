@@ -40,12 +40,17 @@ function import_ (...modules: Env[]): Env {
 export function loadFile (folder: string, file: string): string {
    let text: string
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest
-   xmlhttp.open("GET", "./" + folder + "/" + file + ".fld", false)
+   const url: string = "./" + folder + "/" + file + ".fld"
+   xmlhttp.open("GET", url, false)
    xmlhttp.send()
    if (xmlhttp.status === 200) {
       text = xmlhttp.responseText
    }
-   return __nonNull(text!)
+   if (text! === undefined) {
+      return assert(false, `${url} could not be loaded.`)
+   } else  {
+      return text!
+   }
 }
 
 // Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.
