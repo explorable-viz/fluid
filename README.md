@@ -1,4 +1,4 @@
-## Explorable, self-explaining data visualisation
+## Transparent, self-explaining data visualisation
 
 [![CircleCI](https://circleci.com/gh/rolyp/fluid.svg?style=svg&circle-token=c86993fd6b2339b45286ddfc5a4c0c0d2401ffd7)](https://circleci.com/gh/rolyp/fluid)
 
@@ -27,7 +27,7 @@
 | 20 August 2019 | Demo to Luke Marsden of [Dotscience](https://dotscience.com/) ||
 | 18 July 2019 | Demo to REG interview panel ||
 | 17 July 2019 | Demo to [Prodo](https://prodo.ai) ||
-| 29 June 2019 | Migrate to Nearley parser for improved error-reporting | [190](https://github.com/rolyp/fluid/issues/190) | 
+| 29 June 2019 | Migrate to Nearley parser for improved error-reporting | [190](https://github.com/rolyp/fluid/issues/190) |
 | 25 June 2019 | Demo for HPI [Software Architecture Group](https://www.hpi.uni-potsdam.de/hirschfeld/index.html)||
 | 18 June 2019 | Preliminary design for linking visualisations | [164](https://github.com/rolyp/fluid/issues/164), [188](https://github.com/rolyp/fluid/issues/188) |
 | 10 June 2019 | Library code for axes | [53](https://github.com/rolyp/fluid/issues/53), [111](https://github.com/rolyp/fluid/issues/111) |
@@ -44,7 +44,7 @@
 | Deadline    | Venue            |
 | --- | --- |
 | <s>2 Aug 2019</s> | <s>LIVE 2019</s> |
-| 2 Aug 2019 | IC 2019 :heavy_check_mark: | 
+| 2 Aug 2019 | IC 2019 :heavy_check_mark: |
 | <s>5 Dec 2019</s> | <s>Eurovis 2020</s> |
 | <s>3 Mar 2020</s> | <s>ICFP 2020</s> |
 | 15 Apr 2020 | OOPSLA 2020 |
@@ -52,10 +52,10 @@
 
 ### Installation
 
-- Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/). Then run `npm install`.
+- Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/). Then run `yarn install`.
 
 - To run the tests in debug mode with Chrome, run `npm run browser-test`.
 
-- To start the UI, run `npm start` and open a browser at runs at http://localhost:8081/.
+- To start the UI, run `npm start` and open a browser at http://localhost:8082/.
 
 ![LambdaCalc](http://i.imgur.com/ERSxpE0.png "LambdaCalc")

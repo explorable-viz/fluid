@@ -41,12 +41,17 @@ export function loadFile (folder: string, file: string): string {
    assert(Module.resourceServerUrl !== undefined, "Module system not initialised.")
    let text: string
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest
-   xmlhttp.open("GET", Module.resourceServerUrl + folder + "/" + file + ".fld", false)
+   const url: string = Module.resourceServerUrl + folder + "/" + file + ".fld"
+   xmlhttp.open("GET", url, false)
    xmlhttp.send()
    if (xmlhttp.status === 200) {
       text = xmlhttp.responseText
    }
-   return __nonNull(text!)
+   if (text! === undefined) {
+      return assert(false, `${url} could not be loaded.`)
+   } else  {
+      return text!
+   }
 }
 
 // Not sure if Nearley can parse arbitrary non-terminal, as opposed to root.

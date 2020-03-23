@@ -42,7 +42,7 @@ module.exports = function (config) {
          "/fluid/": "/base/fluid/"
       },
       reporters: ["mocha"],
-      port: 8080,
+      port: 8081,
       captureTimeout: 30000,
       browserDisconnectTimeout : 30000,
       browserNoActivityTimeout : 60000,
