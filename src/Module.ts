@@ -13,15 +13,15 @@ import { ν, at, num, str } from "./Versioned"
 // Kindergarten modules.
 
 export namespace Module {
-   export let initialised: boolean = false
+   export let resourceServerUrl: string // end in "/", use "./" for local run
 
    // Define as constants to enforce sharing; could use memoisation.
    export let prelude: Env
    export let graphics: Env
 
-   export function initialise (): void {
-      assert(!initialised)
-      initialised = true
+   export function initialise (resourceServerUrl: string): void {
+      assert(Module.resourceServerUrl === undefined)
+      Module.resourceServerUrl = resourceServerUrl
       BaseTypes.initialise()
       prelude = loadModule(emptyEnv(), "prelude")
       graphics = loadModule(prelude, "graphics")
@@ -38,9 +38,10 @@ function import_ (...modules: Env[]): Env {
 }
 
 export function loadFile (folder: string, file: string): string {
+   assert(Module.resourceServerUrl !== undefined, "Module system not initialised.")
    let text: string
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest
-   const url: string = "./" + folder + "/" + file + ".fld"
+   const url: string = Module.resourceServerUrl + folder + "/" + file + ".fld"
    xmlhttp.open("GET", url, false)
    xmlhttp.send()
    if (xmlhttp.status === 200) {
@@ -71,7 +72,7 @@ export function openDatasetAs (file: string, x: string): ExtendEnv {
 }
 
 export function parseWithImports (src: string, ...modules: Env[]): [Env, Expr] {
-   assert(Module.initialised, "Module system not initialised.")
+   assert(Module.resourceServerUrl !== undefined, "Module system not initialised.")
    return [import_(__nonNull(Module.prelude), __nonNull(Module.graphics), ...modules), successfulParse(src)]
 }
 

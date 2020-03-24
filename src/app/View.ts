@@ -16,9 +16,9 @@ import { ν, at, newRevision, num, str, versioned } from "../Versioned"
 import { ExprCursor } from "./Cursor"
 import { GraphicsRenderer } from "./GraphicsRenderer"
 import { Pane } from "./Pane"
-import { 
-   DeltaStyle, arrow, addBorder_changed, addBorder_focus, centreDot, comma, connector, deltaStyle, __dimensions, ellipsis, horiz, 
-   horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement_inverted, text, unimplemented, vert 
+import {
+   DeltaStyle, arrow, addBorder_changed, addBorder_focus, centreDot, comma, connector, deltaStyle, __dimensions, ellipsis, horiz,
+   horizSpace, keyword, edge_left, parenthesise, parenthesiseIf, shading, space, svgElement_inverted, text, unimplemented, vert
 } from "./Renderer"
 
 import Closure = Eval.Closure
@@ -28,8 +28,8 @@ export module View {
    export let dimensions: (tg: ExplValue<GraphicsElement>) => [number, number]
    export let defaultDims: [number, number] = [320, 360]
 
-   export function initialise (): void {
-      Module.initialise()
+   export function initialise (resourceServerUrl: string): void {
+      Module.initialise(resourceServerUrl)
 
       // Shenanigans to call an internal function. Will extract this into a (reverse) FFI.
       const x: string = "g"
@@ -48,12 +48,12 @@ export module View {
    let __currentEditor: Pane.Pane | null = null
 
    type Link = {
-      from: View, 
+      from: View,
       to: View
    }
 
    const __links: Set<Link> = new Set()
-   const __svgs: Map<View, SVGSVGElement> = new Map() // memoised render within a single update 
+   const __svgs: Map<View, SVGSVGElement> = new Map() // memoised render within a single update
 
    export function render (editor: Pane.Pane): void {
       __svgs.clear()
@@ -147,7 +147,7 @@ export module View {
          } else
          if (e instanceof Expr.App) {
             return parenthesiseIf(
-               parens, 
+               parens,
                horizSpace(expr(!(e.f instanceof Expr.App), e.f), expr(true, e.e)),
                deltaStyle(e)
             )
@@ -155,10 +155,10 @@ export module View {
          if (e instanceof Expr.BinaryApp) {
             // ignore operator precedence, but allow function application to take priority over any binary operation
             return parenthesiseIf(
-               parens, 
+               parens,
                horizSpace(
-                  expr(!(e.e1 instanceof Expr.App), e.e1), 
-                  text(e.opName.val, deltaStyle(e)), // what about changes associated with e.opName 
+                  expr(!(e.e1 instanceof Expr.App), e.e1),
+                  text(e.opName.val, deltaStyle(e)), // what about changes associated with e.opName
                   expr(!(e.e2 instanceof Expr.App), e.e2)
                ),
                deltaStyle(e)
@@ -183,7 +183,7 @@ export module View {
          if (e instanceof Expr.Typematch) {
             return vert(
                horizSpace(keyword("typematch", deltaStyle(e)), expr(false, e.e), keyword("as", deltaStyle(e))),
-               ...e.cases.toArray().map(({fst: x, snd: e}: Pair<Str, Expr>) => 
+               ...e.cases.toArray().map(({fst: x, snd: e}: Pair<Str, Expr>) =>
                   horizSpace(text(x.val, deltaStyle(x)), arrow(deltaStyle(e)), expr(false, e))
                )
             )
@@ -227,7 +227,7 @@ export module View {
       render_ (): SVGSVGElement {
          this.assertValid()
          const [ts, tv]: [Expl[], ExplValue | null] = this.initialise()
-         let g: SVGSVGElement 
+         let g: SVGSVGElement
          if (!this.v_visible) {
             g = expls(ts)
          } else
@@ -283,8 +283,8 @@ export module View {
          } else
          if (this.t instanceof Expl.BinaryApp) {
             g = horizSpace(
-               view(this.t.tv1, false, true).render(), 
-               text(this.t.opName.val, deltaStyle(this.t)), // what about changes associated with t.opName? 
+               view(this.t.tv1, false, true).render(),
+               text(this.t.opName.val, deltaStyle(this.t)), // what about changes associated with t.opName?
                view(this.t.tv2, false, true).render()
             )
          } else
@@ -329,7 +329,7 @@ export module View {
    }
 
    export class ValueView extends View {
-      // We need the "leaf" explanation to render a value, for two reasons: so we can retrieve the original expression for 
+      // We need the "leaf" explanation to render a value, for two reasons: so we can retrieve the original expression for
       // editing purposes, and to render component explanations of data values.
       tv: ExplValue
 
@@ -406,8 +406,8 @@ export module View {
          const g: SVGSVGElement = w.render()
          if (tv.v.__ẟ instanceof Change && tv.v.__ẟ.hasChanged(prop as string)) {
             // All a bit hacky, need to rethink:
-            const t_prev: Expl = 
-               tv.t.__ẟ instanceof Change && tv.t.__ẟ.hasChanged(prop as string) ? 
+            const t_prev: Expl =
+               tv.t.__ẟ instanceof Change && tv.t.__ẟ.hasChanged(prop as string) ?
                as(tv.t.__ẟ.changed[prop].before, Expl.Expl) :
                tv.t
             const w_existing: View | undefined = views.get(explValue(t_prev, as(tv.v.__ẟ.changed[prop].before, Value)))
@@ -597,9 +597,9 @@ export module View {
             return horizSpace(keyword("let_", deltaStyle(def)), patternVar(def.x), elim(def.e.σ))
          } else {
             return horizSpace(
-               keyword("let_", deltaStyle(def)), 
-               patternVar(def.x), 
-               keyword("equals", deltaStyle(def)), 
+               keyword("let_", deltaStyle(def)),
+               patternVar(def.x),
+               keyword("equals", deltaStyle(def)),
                expr(false, def.e)
             )
          }
@@ -620,8 +620,8 @@ export module View {
             return horizSpace(keyword("let_", deltaStyle(def)), patternVar(def.x), elim(def.tv.v.f))
          } else {
             return horizSpace(
-               keyword("let_", deltaStyle(def)), 
-               patternVar(def.x), 
+               keyword("let_", deltaStyle(def)),
+               patternVar(def.x),
                keyword("equals", deltaStyle(def)),
                view(def.tv, false, true).render()
             )
@@ -638,7 +638,7 @@ export module View {
       return vert(...clauses(σ).map(([cxs, e]) => {
          const [[g], cxsʹ]: [SVGElement[], PatternElement[]] = patterns(false, 1, cxs)
          assert(cxsʹ.length === 0)
-         const gʹ: SVGElement = 
+         const gʹ: SVGElement =
             e instanceof Expr.Fun ?
             elim(e.σ) : // curried function resugaring
             horizSpace(arrow(deltaStyle(e)), expr(false, e))
@@ -684,7 +684,7 @@ export module View {
          }
       } else {
          return absurd()
-      }   
+      }
    }
 
    function list ({t, v}: ExplValue<List>): SVGSVGElement {
@@ -707,11 +707,11 @@ export module View {
 
    function list_expr (parens: boolean, e: Expr.DataExpr): SVGSVGElement {
       if (isExprFor(e, Cons)) {
-         return parenthesiseIf(parens, 
+         return parenthesiseIf(parens,
             horiz(
                expr_child(Cons, false, e, "head"),
                consComma(deltaStyle(e), e),
-               space(), 
+               space(),
                list_expr(false, e.__child("tail" as keyof Expr.DataExpr) as Expr.DataExpr)
             ),
             deltaStyle(e)
@@ -744,7 +744,7 @@ export module View {
             pairComma(deltaStyle(tv.t), exprFor(tv.t) as Expr.DataExpr),
             space(),
             view_child(Pair, tv, "snd", true, false)
-         ), 
+         ),
          deltaStyle(tv.t)
       )
    }
@@ -773,7 +773,7 @@ export module View {
             pairComma(deltaStyle(e), e),
             space(),
             expr_child(Pair, false, e, "snd")
-         ), 
+         ),
          deltaStyle(e)
       )
    }

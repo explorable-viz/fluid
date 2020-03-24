@@ -14,7 +14,7 @@ import { Pane } from "../src/app/Pane"
 import { Edit } from "./util/Core"
 
 before((done: MochaDone) => {
-   Pane.initialise()
+   Pane.initialise("./")
    done()
 })
 
@@ -84,7 +84,7 @@ describe("edit", () => {
                    .to(Expr.Fun, "σ")
                    .toCase(Pair)
                    .var_("x")
-                   .var_("y") // body of clause 
+                   .var_("y") // body of clause
                here.to(Expr.BinaryApp, "opName")
                    .setStr("/")
                here.splice(Expr.BinaryApp, ["e1", "e2"], ([e1, e2]: Persistent[]): [Expr, Expr] => {
@@ -134,5 +134,5 @@ describe("edit", () => {
             }
          })(ρ, e)
       })
-   })   
+   })
 })
