@@ -1,96 +1,85 @@
 module Eval where
 
 import Prelude ((<>), ($))
-import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
 import Expr
 
--- Given val, match against elim to maybe return a
--- branch expr and updated env
-match :: Val -> Elim -> Maybe (Tuple Expr Env)
-match val elim
- = case Tuple val elim of 
-    Tuple _ (ElimVar x t expr) 
-        ->  
-            Just $ Tuple expr (EnvSnoc EnvNil (Tuple x val))
-    Tuple (ValCons v vs) (ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1) )
-        ->  let env' = (EnvSnoc (EnvSnoc EnvNil (Tuple xs vs)) (Tuple x v))
-            in  Just $ Tuple expr1 env' 
-    Tuple (ValCons_Head v) (ElimList (BranchNil _ expr2) (BranchCons_Head x _ expr1))
-        ->  let env' = (EnvSnoc EnvNil (Tuple x v))
-            in  Just $ Tuple expr1 env'         
-    Tuple (ValCons_Tail vs) (ElimList (BranchNil _ expr2) (BranchCons_Tail xs _ expr1))
-        ->  let env' = (EnvSnoc EnvNil (Tuple xs vs))
-            in  Just $ Tuple expr1 env'  
-    Tuple (ValNil) (ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1) )
-        ->  Just $ Tuple expr2 EnvNil
-    Tuple (ValPair x' y') (ElimPair x _ y _ expr)
-        ->  let env' = (EnvSnoc (EnvSnoc EnvNil (Tuple y y')) (Tuple x x'))
-            in  Just $ Tuple expr env'
-    Tuple (ValPair_Fst x') (ElimPair_Fst x _ expr)
-        ->  let env' = EnvSnoc EnvNil (Tuple x x')
-            in Just $ Tuple expr env'
-    Tuple (ValPair_Snd y') (ElimPair_Snd y _ expr)
-        ->  let env' = EnvSnoc EnvNil (Tuple y y')
-            in Just $ Tuple expr env'
-    Tuple (ValTrue) (ElimBool (BranchTrue expr1) (BranchFalse expr2))
-        ->  Just $ Tuple expr1 EnvNil
-    Tuple (ValFalse) (ElimBool (BranchTrue expr1) (BranchFalse expr2))
-        ->  Just $ Tuple expr2 EnvNil
+
+match :: Val -> Elim -> Maybe (T3 Env Expr Availability)
+match val σ
+ = case T2 val σ of 
+    T2 _ (ElimVar x t expr) 
+        ->  Just $ T3 (EnvNil :∈: T2 x val) expr Top
+    T2 (ValTrue) (ElimBool (BranchTrue expr1) (BranchFalse expr2))
+        ->  Just $ T3 EnvNil expr1 Top
+    T2 (ValFalse) (ElimBool (BranchTrue expr1) (BranchFalse expr2))
+        ->  Just $ T3 EnvNil expr2 Top
+    T2 (ValPair x' y') (ElimPair x _ y _ expr)
+        ->  let ρ' = (EnvNil :∈: T2 y y' :∈: T2 x x')
+            in  Just $ T3 ρ' expr Top
+    T2 (ValPair_Del x' y') (ElimPair x _ y _ expr)
+        ->  let ρ' = (EnvNil :∈: T2 y y' :∈: T2 x x')
+            in  Just $ T3 ρ' expr Bottom
+    T2 (ValNil) (ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1) )
+        ->  Just $ T3 EnvNil expr2 Top
+    T2 (ValCons v vs) (ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1) )
+        ->  let ρ' = (EnvNil :∈: T2 xs vs :∈: T2 x v)
+            in  Just $ T3 ρ' expr1 Top
+    T2 (ValCons_Del v vs) (ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1) )
+        ->  let ρ' = (EnvNil :∈: T2 xs vs :∈: T2 x v)
+            in  Just $ T3 ρ' expr1 Bottom
     _   ->  Nothing
 
 
-eval :: Expr -> Env -> Val
-eval (ExprVar x) env
- = case findVarVal x env of
+
+
+eval :: Expr -> Availability -> Env -> Val
+eval ExprBottom α ρ             = ValBottom
+eval (ExprVar x) α ρ
+ = case findVarVal x ρ of
     Just val -> val
     _        -> ValFailure ("variable " <> x <> " not found")
-eval (ExprPair e1 e2) env
- = ValPair (eval e1 env) (eval e2 env)
-eval (ExprPair_Fst e1) env
- = ValPair_Fst (eval e1 env)
-eval (ExprPair_Snd e2) env
- = ValPair_Snd (eval e2 env)
-eval (ExprLet x e1 e2) env
- = let v1    = (eval e1 env)
-       env'  = (EnvSnoc env (Tuple x v1))
-   in  eval e2 env'
-eval (ExprLet_Body e2) env
- = eval e2 env
-eval (ExprNum n) env
- = ValNum n
-eval ExprTrue env
- = ValTrue
-eval ExprFalse env
- = ValFalse
-eval ExprNil env
- = ValNil
-eval (ExprCons e es) env
- = ValCons (eval e env) (eval es env)
-eval (ExprCons_Head e) env
- = ValCons_Head (eval e env)
-eval (ExprCons_Tail es) env
- = ValCons_Tail (eval es env)
-eval (ExprMatch e elim) env
- = case match (eval e env) elim of
-    Nothing              -> ValFailure "Match not found"
-    Just (Tuple e' env') -> eval e' (concEnv env env')
-eval (ExprFun elim) env
- = ValClosure env elim
-eval (ExprApp e e') env
- = case eval e env  of
-     ValClosure env' elim
-        -> case match (eval e' env) elim of
-                   Just (Tuple e'' env'') -> eval e'' (concEnv env' env'')
-                   Nothing                -> ValFailure "Match not found"
+eval ExprTrue Top ρ             = ValTrue
+eval ExprTrue Bottom ρ          = ValBottom
+eval ExprFalse Top ρ            = ValFalse
+eval ExprFalse Bottom ρ         = ValBottom
+eval (ExprNum n) Top ρ          = ValNum n
+eval (ExprNum n) Bottom ρ       = ValBottom
+eval (ExprPair e1 e2) Top ρ     = ValPair (eval e1 Top ρ) (eval e2 Top ρ)
+eval (ExprPair e1 e2) Bottom ρ  = ValPair_Del (eval e1 Bottom ρ) (eval e2 Bottom ρ)
+eval (ExprPair_Del e1 e2) α ρ   = ValPair_Del (eval e1 α ρ) (eval e2 α ρ)
+eval (ExprFun fun σ) α ρ        = ValClosure ρ fun σ
+eval (ExprApp e e') α ρ
+ = case eval e α ρ  of
+     ValClosure ρ' fun σ
+        -> case match (eval e' α ρ) σ of
+                   Just (T3 ρ'' e''  α') -> eval e'' α' (concEnv ρ' ρ'' :∈: T2 fun (ValClosure ρ' fun σ))
+                   Nothing               -> ValFailure "Match not found"
      _  -> ValFailure "Applied expression e in e e' does not evaluate to closure"
-eval (ExprApp_Fun e) env
- = eval e env
-eval (ExprAdd e1 e2) env
- = let v1 = eval e1 env
-       v2 = eval e2 env
-   in  case Tuple v1 v2 of
-         Tuple (ValNum n1) (ValNum n2)  -> ValNum (n1 + n2)
-         _                              -> ValFailure "Arithemetic type error: e1 or/and e2 do not evaluate to ints"
+eval (ExprAdd e1 e2) Bottom ρ   = ValBottom
+eval (ExprAdd e1 e2) Top ρ
+ = let v1 = eval e1 Top ρ
+       v2 = eval e2 Top ρ
+   in  case T2 v1 v2 of
+         T2 (ValNum n1) (ValNum n2)  -> ValNum (n1 + n2)
+         T2 ValBottom   _            -> ValBottom 
+         T2 _           ValBottom    -> ValBottom
+         _                           -> ValFailure "Arithemetic type error: e1 or/and e2 do not evaluate to ints"
+eval (ExprLet x e1 e2) α ρ
+ = let v1  = eval e1 α ρ
+       ρ'  = (ρ :∈: T2 x v1)
+   in  eval e2 α ρ'
+eval (ExprLet_Body x e1 e2) α ρ = eval e2 α (ρ :∈: T2 x ValBottom)
+eval ExprNil α ρ                = ValNil
+eval (ExprCons e es) Top ρ      = ValCons (eval e Top ρ) (eval es Top ρ)
+eval (ExprCons e es) Bottom ρ   = ValCons_Del (eval e Bottom ρ) (eval es Bottom ρ)
+eval (ExprCons_Del e es) α ρ    = ValCons_Del (eval e α ρ) (eval es α ρ)
+eval (ExprMatch e σ) α ρ
+ = case match (eval e α ρ) σ of
+    Nothing            -> ValFailure "Match not found"
+    Just (T3 ρ' e' α') -> eval e' α' (concEnv ρ ρ')
 
+
+
+-- project :: 
