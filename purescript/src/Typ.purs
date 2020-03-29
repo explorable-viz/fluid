@@ -55,10 +55,11 @@ instance hasTypExpr :: Typed Expr where
                                                                          then b 
                                                                          else TypFailure "Match type error"
                                                 _ -> TypFailure "Match type error"
-      typeOf (ExprFun fun elim) ctx = typeOf elim ctx
-      typeOf (ExprApp e e') ctx     = let t1 = typeOf e ctx
-                                          t2 = typeOf e' ctx 
-                                      in case T2 t1 t2 of 
+      typeOf (ExprLetrec fun elim e) ctx = let ctx' = (ctx :∁: T2 fun (typeOf elim ctx))
+                                           in  typeOf e ctx'
+      typeOf (ExprApp e e') ctx          = let t1 = typeOf e ctx
+                                               t2 = typeOf e' ctx 
+                                           in case T2 t1 t2 of 
                                                 T2 (TypFun a b) t -> if t == a 
                                                                         then b 
                                                                         else TypFailure "Application type error: applied expression not compatible to argument expression"

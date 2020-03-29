@@ -4,6 +4,9 @@ import Prelude ((==), (<>))
 import Data.Maybe (Maybe(..))
 import Data.Eq (class Eq)
 import Data.Show
+import Data.Char.Unicode
+
+type Φ = String
 
 type Var = String
 
@@ -148,28 +151,28 @@ data Expr = ExprBottom
           | ExprCons Expr Expr | ExprCons_Del Expr Expr
           | ExprLet Var Expr Expr | ExprLet_Body Var Expr Expr
           | ExprMatch Expr Elim
-          | ExprFun String Elim
+          | ExprLetrec String Elim Expr
           | ExprApp Expr Expr
           | ExprAdd Expr Expr
 
 derive instance eqExpr :: Eq Expr
 instance showExpr :: Show Expr where
-  show ExprBottom             = "ExprBottom"
-  show (ExprNum n)            = "ExprNum " <> show n
-  show (ExprVar v)            = "ExprVar " <> show v
-  show ExprTrue               = "ExprTrue"
-  show ExprFalse              = "ExprFalse"
-  show (ExprPair x y)         = "ExprPair " <> show x <> " " <> show y
-  show (ExprPair_Del x y)     = "ExprPair_Del " <> show x <> " " <> show y
-  show ExprNil                = "ExprNil"
-  show (ExprCons x xs)        = "ExprCons " <> show x <> " " <> show xs
-  show (ExprCons_Del x xs)    = "ExprCons_Del " <> show x <> " " <> show xs
-  show (ExprLet v e1 e2)      = "ExprLet " <> show v <> " " <> show e1 <> " " <> show e2
-  show (ExprLet_Body v e1 e2) = "ExprLet_Body " <> show v <> " " <> show e1 <> " " <> show e2
-  show (ExprMatch e elim)     = "ExprMatch " <> show e <> " " <> show elim
-  show (ExprFun fun elim)     = "ExprFun " <> show fun <> " " <> show elim
-  show (ExprApp e1 e2)        = "ExprApp " <> show e1 <> " " <> show e2
-  show (ExprAdd e1 e2)        = "ExprAdd " <> show e1 <> " " <> show e2
+  show ExprBottom              = "ExprBottom"
+  show (ExprNum n)             = "ExprNum " <> show n
+  show (ExprVar v)             = "ExprVar " <> show v
+  show ExprTrue                = "ExprTrue"
+  show ExprFalse               = "ExprFalse"
+  show (ExprPair x y)          = "ExprPair " <> show x <> " " <> show y
+  show (ExprPair_Del x y)      = "ExprPair_Del " <> show x <> " " <> show y
+  show ExprNil                 = "ExprNil"
+  show (ExprCons x xs)         = "ExprCons " <> show x <> " " <> show xs
+  show (ExprCons_Del x xs)     = "ExprCons_Del " <> show x <> " " <> show xs
+  show (ExprLet v e1 e2)       = "ExprLet " <> show v <> " " <> show e1 <> " " <> show e2
+  show (ExprLet_Body v e1 e2)  = "ExprLet_Body " <> show v <> " " <> show e1 <> " " <> show e2
+  show (ExprMatch e elim)      = "ExprMatch " <> show e <> " " <> show elim
+  show (ExprLetrec fun elim e) = "ExprLetrec " <> show fun <> " " <> show elim <> " " <> show e
+  show (ExprApp e1 e2)         = "ExprApp " <> show e1 <> " " <> show e2
+  show (ExprAdd e1 e2)         = "ExprAdd " <> show e1 <> " " <> show e2
 
             
 data Elim = -- (x, type(x), branch)

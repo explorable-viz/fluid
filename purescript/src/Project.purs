@@ -23,7 +23,7 @@ instance projExpr :: Projectable Expr where
                                     T2 e' ExprBottom  ->  e'
                                     _  -> ExprBottom
 
-    project (ExprFun fun σ)        = ExprFun fun σ
+    project (ExprLetrec fun σ e)   = ExprLetrec fun (project σ) (project e)
     project (ExprApp e1 e2)        = ExprApp (project e1) (project e2)
     project (ExprLet x e1 e2)      = ExprLet x (project e1) (project e2)
     project (ExprLet_Body x e1 e2) = case project e1 of

@@ -23,7 +23,7 @@ instance freeVarsExpr :: FreeVars Expr where
     freeVars (ExprLet_Body x e1 e2)    = freeVars e2
     freeVars (ExprMatch e elim)   = union (freeVars e) (freeVars elim)
     freeVars (ExprApp e1 e2)      = union (freeVars e1) (freeVars e2)
-    freeVars (ExprFun fun elim)   = freeVars elim
+    freeVars (ExprLetrec fun elim e)   = union (freeVars elim) (difference (freeVars e) (singleton fun))
     freeVars ExprBottom           = Nil
 
 instance freeVarsElim :: FreeVars Elim where 
