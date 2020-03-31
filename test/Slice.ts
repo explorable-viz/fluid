@@ -15,7 +15,7 @@ import { PaneCoordinator } from "../src/app/PaneCoordinator"
 import { BwdSlice, FwdSlice, funDef, tooltipsEqual } from "./util/Core"
 
 before((done: MochaDone) => {
-   Pane.initialise("./")
+   Pane.initialise(".")
    done()
 })
 

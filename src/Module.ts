@@ -13,7 +13,7 @@ import { ν, at, num, str } from "./Versioned"
 // Kindergarten modules.
 
 export namespace Module {
-   export let resourceServerUrl: string // end in "/", use "./" for local run
+   export let resourceServerUrl: string // should not end in "/", use "." for local run
 
    // Define as constants to enforce sharing; could use memoisation.
    export let prelude: Env
@@ -22,7 +22,6 @@ export namespace Module {
    export function initialise (resourceServerUrl: string): void {
       assert(Module.resourceServerUrl === undefined)
       Module.resourceServerUrl = resourceServerUrl
-      console.log(`Using resourceServerUrl ${resourceServerUrl}`)
       BaseTypes.initialise()
       prelude = loadModule(emptyEnv(), "prelude")
       graphics = loadModule(prelude, "graphics")
@@ -42,7 +41,7 @@ export function loadFile (folder: string, file: string): string {
    assert(Module.resourceServerUrl !== undefined, "Module system not initialised.")
    let text: string
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest
-   const url: string = Module.resourceServerUrl + folder + "/" + file + ".fld"
+   const url: string = Module.resourceServerUrl + "/" + folder + "/" + file + ".fld"
    console.log(`Opening ${url}`)
    xmlhttp.open("GET", url, false)
    xmlhttp.send()
