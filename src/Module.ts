@@ -21,7 +21,7 @@ export namespace Module {
 
    export function initialise (resourceServerUrl: string): void {
       assert(Module.resourceServerUrl === undefined)
-      Module.resourceServerUrl = resourceServerUrl
+      Module.resourceServerUrl = __nonNull(resourceServerUrl, `resourceServerUrl is ${resourceServerUrl}`)
       BaseTypes.initialise()
       prelude = loadModule(emptyEnv(), "prelude")
       graphics = loadModule(prelude, "graphics")
