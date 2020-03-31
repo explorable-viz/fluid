@@ -22,6 +22,7 @@ export namespace Module {
    export function initialise (resourceServerUrl: string): void {
       assert(Module.resourceServerUrl === undefined)
       Module.resourceServerUrl = resourceServerUrl
+      console.log(`Using resourceServerUrl ${resourceServerUrl}`)
       BaseTypes.initialise()
       prelude = loadModule(emptyEnv(), "prelude")
       graphics = loadModule(prelude, "graphics")
@@ -42,6 +43,7 @@ export function loadFile (folder: string, file: string): string {
    let text: string
    const xmlhttp: XMLHttpRequest = new XMLHttpRequest
    const url: string = Module.resourceServerUrl + folder + "/" + file + ".fld"
+   console.log(`Opening ${url}`)
    xmlhttp.open("GET", url, false)
    xmlhttp.send()
    if (xmlhttp.status === 200) {
