@@ -28,8 +28,8 @@ export module View {
    export let dimensions: (tg: ExplValue<GraphicsElement>) => [number, number]
    export let defaultDims: [number, number] = [320, 360]
 
-   export function initialise (resourceServerUrl: string): void {
-      Module.initialise(resourceServerUrl)
+   export function initialiseView (resourceServerUrl: string): void {
+      Module.initialiseModule(resourceServerUrl)
 
       // Shenanigans to call an internal function. Will extract this into a (reverse) FFI.
       const x: string = "g"

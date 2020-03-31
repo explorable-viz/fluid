@@ -94,7 +94,7 @@ export abstract class Tree<T extends Persistent> extends DataValue<"Tree"> {
          this.left.toArray_(x̅)
          x̅.push(this.t)
          this.right.toArray_(x̅)
-      } else 
+      } else
       if (Empty.is(this)) {
       } else {
          return absurd()
@@ -156,7 +156,7 @@ export class EQ extends Ordering {
 }
 
 export namespace BaseTypes {
-   export function initialise (): void {
+   export function initialiseBaseTypes (): void {
       initDataType(Bool, [True, False])
       initDataType(List, [Nil, Cons])
       initDataType(Option, [Some, None])

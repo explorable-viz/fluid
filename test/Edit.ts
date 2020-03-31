@@ -14,7 +14,7 @@ import { Pane } from "../src/app/Pane"
 import { Edit } from "./util/Core"
 
 before((done: MochaDone) => {
-   Pane.initialise(".")
+   Pane.initialisePane(".")
    done()
 })
 

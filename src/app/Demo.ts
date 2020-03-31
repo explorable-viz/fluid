@@ -8,8 +8,8 @@ import "../app/GraphicsRenderer"
 import { Pane } from "./Pane"
 import { PaneCoordinator } from "./PaneCoordinator"
 
-export function initialise (): void {
-   Pane.initialise(".")
+export function initialiseDemo (): void {
+   Pane.initialisePane(".")
    // TODO: eliminate redundancy with "renewables" test
    const coordinator: PaneCoordinator = new PaneCoordinator(openDatasetAs("renewables-restricted", "data"))
    const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
@@ -23,4 +23,4 @@ export function initialise (): void {
    }
 }
 
-initialise()
+initialiseDemo()

@@ -19,10 +19,10 @@ export namespace Module {
    export let prelude: Env
    export let graphics: Env
 
-   export function initialise (resourceServerUrl: string): void {
+   export function initialiseModule (resourceServerUrl: string): void {
       assert(Module.resourceServerUrl === undefined)
       Module.resourceServerUrl = __nonNull(resourceServerUrl, `resourceServerUrl is ${resourceServerUrl}`)
-      BaseTypes.initialise()
+      BaseTypes.initialiseBaseTypes()
       console.log("Initialising base types")
       prelude = loadModule(emptyEnv(), "prelude")
       graphics = loadModule(prelude, "graphics")
