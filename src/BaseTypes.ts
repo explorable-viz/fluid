@@ -156,7 +156,7 @@ export class EQ extends Ordering {
 }
 
 export namespace BaseTypes {
-   export function initialiseBaseTypes (): void {
+   export function initialise (): void {
       initDataType(Bool, [True, False])
       initDataType(List, [Nil, Cons])
       initDataType(Option, [Some, None])

@@ -16,8 +16,8 @@ import "./styles.css"
 
 // Previously Editor, but clashes a bit with the Wrattler class of the same name.
 export module Pane {
-   export function initialisePane (resourceServerUrl: string): void {
-      View.initialiseView(resourceServerUrl)
+   export function initialise (resourceServerUrl: string): void {
+      View.initialise(resourceServerUrl)
    }
 
    export interface Listener {
