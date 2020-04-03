@@ -41,7 +41,9 @@ eval (ExprPair e1 e2)  ρ
  = let T2 t1 v1 = eval e1 ρ
        T2 t2 v2 = eval e2 ρ
    in  T2 (TracePair t1 t2) (ValPair v1 v2) 
-eval (ExprLetrec fun σ e)  ρ   = eval e (ρ :∈: T2 fun (ValClosure ρ fun σ))
+eval (ExprLetrec fun σ e)  ρ   = let T2 t v = eval e (ρ :∈: T2 fun (ValClosure ρ fun σ))
+                                     t'     = TraceLetrec fun (TraceClosure ρ σ) t 
+                                 in  T2 t' v
 eval (ExprApp e e')  ρ
  = case eval e ρ  of
      T2 t (ValClosure ρ' fun σ)

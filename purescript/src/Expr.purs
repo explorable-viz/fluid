@@ -214,8 +214,11 @@ data Trace = TraceBottom
            | TraceMatch Trace Match Trace
            | TraceAdd Trace Trace 
            | TraceLet Var Trace Trace
+           | TraceLetrec Var Trace Trace
+           | TraceClosure Env Elim 
            | TraceTrue
            | TraceFalse
+
 
 derive instance eqTrace :: Eq Trace
 instance showTrace :: Show Trace where 
@@ -229,5 +232,7 @@ instance showTrace :: Show Trace where
   show (TraceLet x e1 e2)   = "TraceLet " <> x <> " " <> show e1 <> " " <> show e1
   show (TraceAdd t1 t2)     = "TraceAdd " <> show t1 <> " " <> show t2
   show (TraceMatch t1 m t2) = "TraceMatch " <> show t1 <> " " <> show m <> " " <> show t2
+  show (TraceLetrec x t1 t2) = "TraceLetrec " <> x <> " " <> show t1 <> " " <> show t2
+  show (TraceClosure env elim) = "TraceClosure " <> show env <> " " <> show elim
   show TraceTrue            = "TraceTrue "
   show TraceFalse           = "TraceFalse "

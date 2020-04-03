@@ -1,84 +1,90 @@
 module Fwd where
 
--- import Prelude ((<>), ($))
--- import Data.Maybe (Maybe(..))
--- import Data.Semiring ((+))
--- import Expr
+import Prelude ((<>), ($))
+import Data.Maybe (Maybe(..))
+import Data.Semiring ((+))
+import Expr
 
 
--- match :: Val -> Elim -> Trace -> Maybe (T3 Env Expr Availability)
--- match val σ t
---  = case  val, σ of 
---     _, ElimVar x t expr 
---         ->  Just $ T3 (EnvNil :∈: T2 x val) expr Top
---     ValTrue, ElimBool (BranchTrue expr1) (BranchFalse expr2)
---         ->  Just $ T3 EnvNil expr1 Top
---     ValFalse, ElimBool (BranchTrue expr1) (BranchFalse expr2)
---         ->  Just $ T3 EnvNil expr2 Top
---     ValPair x' y', ElimPair x _ y _ expr
---         ->  let ρ' = (EnvNil :∈: T2 y y' :∈: T2 x x')
---             in  Just $ T3 ρ' expr Top
---     ValPair_Del x' y', ElimPair x _ y _ expr
---         ->  let ρ' = (EnvNil :∈: T2 y y' :∈: T2 x x')
---             in  Just $ T3 ρ' expr Bottom
---     ValNil, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1) 
---         ->  Just $ T3 EnvNil expr2 Top
---     ValCons v vs, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1) 
---         ->  let ρ' = (EnvNil :∈: T2 xs vs :∈: T2 x v)
---             in  Just $ T3 ρ' expr1 Top
---     ValCons_Del v vs, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1) 
---         ->  let ρ' = (EnvNil :∈: T2 xs vs :∈: T2 x v)
---             in  Just $ T3 ρ' expr1 Bottom
---     _, _ ->  Nothing
+fwd_match :: Val -> Elim -> Match -> Maybe (T3 Env Expr Availability)
+fwd_match val σ ξ
+ = case val, σ, ξ of 
+    _, ElimVar x t expr, MatchVar mx
+        ->  Just $ T3 (EnvNil :∈: T2 x val) expr Top
+    ValTrue, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchTrue
+        ->  Just $ T3 EnvNil expr1 Top
+    ValBottom, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchTrue
+        ->  Just $ T3 EnvNil expr1 Bottom
+    ValFalse, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchFalse
+        ->  Just $ T3 EnvNil expr2 Top
+    ValBottom, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchFalse
+        ->  Just $ T3 EnvNil expr2 Bottom
+    ValPair x' y', ElimPair x _ y _ expr, MatchPair mx my 
+        ->  let ρ' = (EnvNil :∈: T2 y y' :∈: T2 x x')
+            in  Just $ T3 ρ' expr Top
+    ValPair_Del x' y', ElimPair x _ y _ expr, MatchPair mx my
+        ->  let ρ' = (EnvNil :∈: T2 y y' :∈: T2 x x')
+            in  Just $ T3 ρ' expr Bottom
+    ValNil, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchNil
+        ->  Just $ T3 EnvNil expr2 Top
+    ValBottom, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchNil
+        ->  Just $ T3 EnvNil expr2 Bottom       
+    ValCons v vs, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchCons mx mxs
+        ->  let ρ' = (EnvNil :∈: T2 xs vs :∈: T2 x v)
+            in  Just $ T3 ρ' expr1 Top
+    ValCons_Del v vs, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchCons mx mxs
+        ->  let ρ' = (EnvNil :∈: T2 xs vs :∈: T2 x v)
+            in  Just $ T3 ρ' expr1 Bottom
+    _,_,_ ->  Nothing
 
 
 
 
--- fwd :: Expr -> Availability -> Trace -> Env -> Val
--- fwd ExprBottom α t ρ             = ValBottom
--- fwd (ExprVar x) α t ρ
---  = case findVarVal x t ρ of
---     Just val -> val
---     _        -> ValFailure ("variable " <> x <> " not found")
--- fwd ExprTrue Top t ρ             = ValTrue
--- fwd ExprTrue Bottom t ρ          = ValBottom
--- fwd ExprFalse Top t ρ            = ValFalse
--- fwd ExprFalse Bottom t ρ         = ValBottom
--- fwd (ExprNum n) Top t ρ          = ValNum n
--- fwd (ExprNum n) Bottom t ρ       = ValBottom
--- fwd (ExprPair e1 e2) Top t ρ     = ValPair (fwd e1 Top ρ) (fwd e2 Top ρ)
--- fwd (ExprPair e1 e2) Bottom t ρ  = ValPair_Del (fwd e1 Bottom ρ) (fwd e2 Bottom ρ)
--- fwd (ExprPair_Del e1 e2) α t ρ   = ValPair_Del (fwd e1 α ρ) (fwd e2 α ρ)
--- fwd (ExprLetrec fun σ e) α t ρ   = fwd e α (ρ :∈: T2 fun (ValClosure ρ fun σ))
--- fwd (ExprApp e e') α t ρ
---  = case fwd e α t ρ  of
---      ValClosure ρ' fun σ
---         -> case match (fwd e' α ρ) σ of
---                 Just (T3 ρ'' e''  α') -> fwd e'' α' (concEnv ρ' ρ'' :∈: T2 fun (ValClosure ρ' fun σ))
---                 Nothing               -> ValFailure "Match not found"
---      _  -> ValFailure "Applied expression e in e e' does not fwduate to closure"
--- fwd (ExprAdd e1 e2) Bottom t ρ   = ValBottom
--- fwd (ExprAdd e1 e2) Top t ρ
---  = let v1 = fwd e1 Top t ρ
---        v2 = fwd e2 Top t ρ
---    in  case v1, v2 of
---           (ValNum n1), (ValNum n2) -> ValNum (n1 + n2)
---           ValBottom,  _            -> ValBottom 
---           _,          ValBottom    -> ValBottom
---           _,          _            -> ValFailure "Arithemetic type error: e1 or/and e2 do not fwduate to ints"
--- fwd (ExprLet x e1 e2) α t ρ
---  = let v1  = fwd e1 α ρ
---        ρ'  = (ρ :∈: T2 x v1)
---    in  fwd e2 α ρ'
--- fwd (ExprLet_Body x e1 e2) α t ρ = fwd e2 α (ρ :∈: T2 x ValBottom)
--- fwd ExprNil α t ρ                = ValNil
--- fwd (ExprCons e es) Top t ρ      = ValCons (fwd e Top ρ) (fwd es Top ρ)
--- fwd (ExprCons e es) Bottom t ρ   = ValCons_Del (fwd e Bottom ρ) (fwd es Bottom ρ)
--- fwd (ExprCons_Del e es) α t ρ    = ValCons_Del (fwd e α ρ) (fwd es α ρ)
--- fwd (ExprMatch e σ) α t ρ
---  = case match (fwd e α t ρ) σ of
---     Nothing            -> ValFailure "Match not found"
---     Just (T3 ρ' e' α') -> fwd e' α' (concEnv ρ ρ')
+fwd :: Partial => Expr -> Trace  -> Availability -> Env -> Val
+fwd (ExprBottom) TraceBottom α ρ = ValBottom
+fwd (ExprVar x) t α ρ
+ = case findVarVal x ρ of
+    Just val -> val
+    _        -> ValFailure ("variable " <> x <> " not found")
+fwd ExprTrue TraceTrue Top  ρ                    = ValTrue
+fwd ExprTrue TraceTrue Bottom  ρ                 = ValBottom
+fwd ExprFalse TraceFalse Top ρ                   = ValFalse
+fwd ExprFalse TraceFalse Bottom ρ                = ValBottom
+fwd (ExprNum n) (TraceNum tn) Top ρ              = ValNum n
+fwd (ExprNum n) (TraceNum tn) Bottom ρ           = ValBottom
+fwd (ExprPair e1 e2) (TracePair te1 te2) Top  ρ  = ValPair (fwd e1 te1 Top ρ) (fwd e2 te2 Top ρ)
+fwd (ExprPair e1 e2) (TracePair te1 te2) Bottom ρ       = ValPair_Del (fwd e1 te1 Bottom ρ) (fwd e2 te2 Bottom ρ)
+fwd (ExprPair_Del e1 e2) (TracePair te1 te2) α ρ = ValPair_Del (fwd e1 te1 α ρ) (fwd e2 te2 α ρ)
+fwd ExprNil TraceNil α ρ                = ValNil
+fwd (ExprCons e es) (TraceCons te tes) Top ρ      = ValCons (fwd e te Top ρ) (fwd es tes Top ρ)
+fwd (ExprCons e es) (TraceCons te tes) Bottom ρ   = ValCons_Del (fwd e te Bottom ρ) (fwd es tes Bottom ρ)
+fwd (ExprCons_Del e es) (TraceCons te tes) α ρ    = ValCons_Del (fwd e te α ρ) (fwd es tes α ρ)
+fwd (ExprLetrec fun σ e) (TraceLetrec x tσ te) α ρ = fwd e te α (ρ :∈: T2 fun (ValClosure ρ fun σ))
+fwd (ExprApp e e') (TraceApp te te' m tu) α ρ
+ = case fwd e te α ρ  of
+     ValClosure ρ' fun σ
+        -> case fwd_match (fwd e' te' α ρ) σ m of
+                Just (T3 ρ'' e''  α') -> fwd e'' tu α' (concEnv ρ' ρ'' :∈: T2 fun (ValClosure ρ' fun σ))
+                Nothing               -> ValFailure "Match not found"
+     _  -> ValFailure "Applied expression e in e e' does not fwd to closure"
+fwd (ExprAdd e1 e2) (TraceAdd te1 te2) Bottom ρ   = ValBottom
+fwd (ExprAdd e1 e2) (TraceAdd te1 te2) Top ρ
+ = let v1 = fwd e1 te1 Top  ρ
+       v2 = fwd e2 te2 Top  ρ
+   in  case v1, v2 of
+          (ValNum n1), (ValNum n2) -> ValNum (n1 + n2)
+          ValBottom,  _            -> ValBottom 
+          _,          ValBottom    -> ValBottom
+          _,          _            -> ValFailure "Arithemetic type error: e1 or/and e2 do not fwd to ints"
+fwd (ExprLet x e1 e2) (TraceLet tx te1 te2) α ρ
+ = let v1  = fwd e1 te1 α ρ
+       ρ'  = (ρ :∈: T2 x v1)
+   in  fwd e2 te2 α ρ'
+fwd (ExprLet_Body x e1 e2) (TraceLet tx te1 te2) α ρ = fwd e2 te2 α (ρ :∈: T2 x ValBottom)
+fwd (ExprMatch e σ) (TraceMatch te m tu) α ρ
+ = case fwd_match (fwd e te α ρ) σ m of
+    Nothing            -> ValFailure "Match not found"
+    Just (T3 ρ' e' α') -> fwd e' tu α' (concEnv ρ ρ')
 
 
 
