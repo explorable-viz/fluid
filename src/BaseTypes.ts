@@ -94,7 +94,7 @@ export abstract class Tree<T extends Persistent> extends DataValue<"Tree"> {
          this.left.toArray_(x̅)
          x̅.push(this.t)
          this.right.toArray_(x̅)
-      } else 
+      } else
       if (Empty.is(this)) {
       } else {
          return absurd()
