@@ -23,6 +23,7 @@ export namespace Module {
       assert(Module.resourceServerUrl === undefined)
       Module.resourceServerUrl = __nonNull(resourceServerUrl, `resourceServerUrl is ${resourceServerUrl}`)
       BaseTypes.initialise()
+      console.log("Initialising base types")
       prelude = loadModule(emptyEnv(), "prelude")
       graphics = loadModule(prelude, "graphics")
    }
