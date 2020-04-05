@@ -26,14 +26,14 @@ instance freeVarsExpr :: FreeVars Expr where
     freeVars (ExprLetrec fun elim e)   = union (freeVars elim) (difference (freeVars e) (singleton fun))
     freeVars ExprBottom           = Nil
 
-instance freeVarsElim :: FreeVars Elim where 
+instance freeVarsElim :: FreeVars Elim where
     freeVars (ElimVar x t e)         = difference (freeVars e) (singleton x)
     freeVars (ElimPair x _ y _ e)    = difference (freeVars e) (x:y:Nil)
     freeVars (ElimList bNil bCons)   = union (freeVars bNil) (freeVars bCons)
     freeVars (ElimBool bTrue bFalse) = Nil
 
-instance freeVarsBranchNil :: FreeVars BranchNil where 
-    freeVars (BranchNil _ e) = freeVars e
+instance freeVarsBranchNil :: FreeVars BranchNil where
+    freeVars (BranchNil e) = freeVars e
 
 instance freeVarsBranchCons :: FreeVars BranchCons where
     freeVars (BranchCons x xs _ e) = difference (freeVars e) (x:xs:Nil)
