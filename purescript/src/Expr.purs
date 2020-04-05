@@ -9,11 +9,11 @@ type Φ = String
 
 type Var = String
 
-data T2 a b = T2 a b
+data Bind a b = Bind a b
 
-derive instance eqT2 :: (Eq a, Eq b) => Eq (T2 a b)
-instance showT2 :: (Show a, Show b) => Show (T2 a b) where
-  show (T2 a b) = "T2 " <> show a <> " " <> show b
+derive instance eqBind :: (Eq a, Eq b) => Eq (Bind a b)
+instance showBind :: (Show a, Show b) => Show (Bind a b) where
+  show (Bind a b) = "Bind " <> show a <> " " <> show b
 
 data T3 a b c = T3 a b c
 
@@ -21,12 +21,12 @@ derive instance eqT3 :: (Eq a, Eq b, Eq c) => Eq (T3 a b c)
 instance showT3 :: (Show a, Show b, Show c) => Show (T3 a b c) where
   show (T3 a b c) = "T3 " <> show a <> " " <> show b <> " " <> show c
 
-data Env = EnvNil | EnvSnoc Env (T2 Var Val)
+data Env = EnvNil | EnvSnoc Env (Bind Var Val)
 
 derive instance eqEnv :: Eq Env
 instance showEnv :: Show Env where
   show EnvNil = "EnvNil"
-  show (EnvSnoc env (T2 x v)) = show env <> ":∈: (" <> show x <> ", " <> show v <> ")"
+  show (EnvSnoc env (Bind x v)) = show env <> ":∈: (" <> show x <> ", " <> show v <> ")"
 
 infixl 5 EnvSnoc as :∈:
 
@@ -34,16 +34,17 @@ concEnv :: Env -> Env -> Env
 concEnv env1 EnvNil = env1
 concEnv env1 (EnvSnoc vs v) = EnvSnoc (concEnv env1 vs) v
 
+-- TODO: rename to "lookup", use a type class
 findVarVal :: Var -> Env -> Maybe Val
 findVarVal _ EnvNil = Nothing
-findVarVal x (EnvSnoc vs (T2 var val)) = if x == var then Just val else findVarVal x vs
+findVarVal x (EnvSnoc vs (Bind var val)) = if x == var then Just val else findVarVal x vs
 
-data Ctx = CtxNil | CtxSnoc Ctx (T2 Var Typ)
+data Ctx = CtxNil | CtxSnoc Ctx (Bind Var Typ)
 
 derive instance eqCtx :: Eq Ctx
 instance showCtx :: Show Ctx where
   show CtxNil = "EnvNil"
-  show (CtxSnoc ctx (T2 x v)) = show ctx <> ":∁: (" <> show x <> ", " <> show v <> ")"
+  show (CtxSnoc ctx (Bind x v)) = show ctx <> ":∁: (" <> show x <> ", " <> show v <> ")"
 
 infixl 5 CtxSnoc as :∁:
 
@@ -51,9 +52,10 @@ concCtx :: Ctx -> Ctx -> Ctx
 concCtx ctx1 CtxNil = ctx1
 concCtx ctx1 (CtxSnoc cs c) = CtxSnoc (concCtx ctx1 cs) c
 
+-- TODO: rename to "lookup", use a type class
 findVarTyp :: Var -> Ctx -> Maybe Typ
 findVarTyp _ CtxNil = Nothing
-findVarTyp x (CtxSnoc cs (T2 var typ)) = if x == var then Just typ else findVarTyp x cs
+findVarTyp x (CtxSnoc cs (Bind var typ)) = if x == var then Just typ else findVarTyp x cs
 
 data BranchNil -- (type of list, branch)
                 = BranchNil Typ Expr
