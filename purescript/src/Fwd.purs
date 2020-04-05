@@ -41,7 +41,7 @@ fwd_match val σ ξ
 
 
 
-fwd :: Partial => Expr -> Expl  -> Availability -> Env -> Val
+fwd :: Partial => Expr -> Expl -> Availability -> Env -> Val
 fwd (ExprBottom) ExplBottom α ρ = ValBottom
 fwd (ExprVar x) t α ρ
  = case findVarVal x ρ of
