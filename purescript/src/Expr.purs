@@ -24,16 +24,13 @@ instance showT3 :: (Show a, Show b, Show c) => Show (T3 a b c) where
 data Env = EnvNil | EnvSnoc Env (T2 Var Val)
 
 derive instance eqEnv :: Eq Env
-instance showEnv :: Show Env where 
+instance showEnv :: Show Env where
   show EnvNil = "EnvNil"
   show (EnvSnoc env (T2 x v)) = show env <> ":∈: (" <> show x <> ", " <> show v <> ")"
 
-appendToEnv :: Env -> (T2 Var Val) -> Env
-appendToEnv env x = EnvSnoc env x
+infixl 5 EnvSnoc as :∈:
 
-infixl 5 appendToEnv as :∈:
-
-concEnv :: Env -> Env -> Env 
+concEnv :: Env -> Env -> Env
 concEnv env1 EnvNil = env1
 concEnv env1 (EnvSnoc vs v) = EnvSnoc (concEnv env1 vs) v
 
@@ -44,23 +41,20 @@ findVarVal x (EnvSnoc vs (T2 var val)) = if x == var then Just val else findVarV
 data Ctx = CtxNil | CtxSnoc Ctx (T2 Var Typ)
 
 derive instance eqCtx :: Eq Ctx
-instance showCtx :: Show Ctx where 
+instance showCtx :: Show Ctx where
   show CtxNil = "EnvNil"
   show (CtxSnoc ctx (T2 x v)) = show ctx <> ":∁: (" <> show x <> ", " <> show v <> ")"
 
-appendToCtx :: Ctx -> (T2 Var Typ) -> Ctx
-appendToCtx ctx x = CtxSnoc ctx x
+infixl 5 CtxSnoc as :∁:
 
-infixl 5 appendToCtx as :∁:
-
-concCtx :: Ctx -> Ctx -> Ctx 
+concCtx :: Ctx -> Ctx -> Ctx
 concCtx ctx1 CtxNil = ctx1
 concCtx ctx1 (CtxSnoc cs c) = CtxSnoc (concCtx ctx1 cs) c
 
 findVarTyp :: Var -> Ctx -> Maybe Typ
 findVarTyp _ CtxNil = Nothing
 findVarTyp x (CtxSnoc cs (T2 var typ)) = if x == var then Just typ else findVarTyp x cs
-  
+
 data BranchNil -- (type of list, branch)
                 = BranchNil Typ Expr
 
@@ -69,8 +63,8 @@ instance showBranchNil :: Show BranchNil where
   show (BranchNil t e) = "BranchNil " <> show t <> " " <> show e
 
 data BranchCons -- (x, xs, type(x), branch)
-                = BranchCons Var Var Typ Expr 
-                
+                = BranchCons Var Var Typ Expr
+
 
 derive instance eqBranchCons :: Eq BranchCons
 instance showBranchCons :: Show BranchCons where
@@ -79,19 +73,19 @@ instance showBranchCons :: Show BranchCons where
 data BranchTrue = BranchTrue Expr
 
 derive instance eqBranchTrue :: Eq BranchTrue
-instance showBranchTrue :: Show BranchTrue where 
+instance showBranchTrue :: Show BranchTrue where
   show (BranchTrue e) = "BranchTrue " <> show e
 
 data BranchFalse = BranchFalse Expr
 
 derive instance eqBranchFalse :: Eq BranchFalse
-instance showBranchFalse :: Show BranchFalse where 
+instance showBranchFalse :: Show BranchFalse where
   show (BranchFalse e) = "BranchFalse " <> show e
 
 data Availability = Top | Bottom
 
 derive instance eqAvailability :: Eq Availability
-instance showAvailability :: Show Availability where 
+instance showAvailability :: Show Availability where
   show Top    = "Top"
   show Bottom = "Bottom"
 
@@ -100,12 +94,12 @@ data Typ = TypBottom
          | TypNum
          | TypBool
          | TypFun Typ Typ
-         | TypList Typ 
-         | TypPair Typ Typ 
+         | TypList Typ
+         | TypPair Typ Typ
          | TypFailure String
 
 derive instance eqTyp :: Eq Typ
-instance showTyp :: Show Typ where 
+instance showTyp :: Show Typ where
   show TypBottom       = "TypBottom"
   show TypNum          = "TypNum"
   show TypBool         = "TypBool"
@@ -115,7 +109,7 @@ instance showTyp :: Show Typ where
   show (TypFailure s)  = "TypFailure " <> s
 
 
-data Val = ValBottom 
+data Val = ValBottom
          | ValTrue
          | ValFalse
          | ValNum Int
@@ -126,7 +120,7 @@ data Val = ValBottom
          | ValFailure String
 
 derive instance eqVal :: Eq Val
-instance showVal :: Show Val where 
+instance showVal :: Show Val where
   show ValBottom                 = "⊥"
   show ValTrue                   = "ValTrue"
   show ValFalse                  = "ValFalse"
@@ -173,66 +167,17 @@ instance showExpr :: Show Expr where
   show (ExprApp e1 e2)         = "ExprApp " <> show e1 <> " " <> show e2
   show (ExprAdd e1 e2)         = "ExprAdd " <> show e1 <> " " <> show e2
 
-            
+
 data Elim = -- (x, type(x), branch)
             ElimVar Var Typ Expr
             -- (x, type(x), y, type(y), branch)
-          | ElimPair Var Typ Var Typ Expr 
-          | ElimList BranchNil BranchCons 
+          | ElimPair Var Typ Var Typ Expr
+          | ElimList BranchNil BranchCons
           | ElimBool BranchTrue BranchFalse
 
 derive instance eqElim :: Eq Elim
-instance showElim :: Show Elim where 
+instance showElim :: Show Elim where
   show (ElimVar v t e)          = "ElimVar " <> v <> ":" <> show t <> " " <> show e
   show (ElimPair v1 t1 v2 t2 e) = "ElimPair " <> show v1 <> ":" <> show t1 <> " " <> show v2 <> ":" <> show t2 <> show e
   show (ElimList bnil bcons)    = "ElimList " <> show bnil <> " " <> show bcons
   show (ElimBool btrue bfalse)  = "ElimBool " <> show btrue <> " " <> show bfalse
-
-data Match = MatchVar Var 
-           | MatchTrue
-           | MatchFalse
-           | MatchPair Var Var
-           | MatchNil
-           | MatchCons Var Var
-
-derive instance eqMatch :: Eq Match
-instance showMatch :: Show Match where 
-  show (MatchVar v )     = "MatchVar " <> v
-  show (MatchPair t1 t2) = "MatchPair " <> show t1 <> show t2
-  show (MatchNil)        = "MatchNil "
-  show (MatchCons x xs)  = "MatchCons " <> x <> " " <> xs
-  show (MatchTrue)       = "MatchTrue"
-  show (MatchFalse)      = "MatchFalse"
-
-data Trace = TraceBottom
-           | TraceVar Var 
-           | TraceNum Int 
-           | TracePair Trace Trace
-           | TraceNil
-           | TraceCons Trace Trace
-           | TraceApp Trace Trace Match Trace
-           | TraceMatch Trace Match Trace
-           | TraceAdd Trace Trace 
-           | TraceLet Var Trace Trace
-           | TraceLetrec Var Trace Trace
-           | TraceClosure Env Elim 
-           | TraceTrue
-           | TraceFalse
-
-
-derive instance eqTrace :: Eq Trace
-instance showTrace :: Show Trace where 
-  show (TraceBottom)        = "TraceBottom"
-  show (TraceVar v )        = "TraceVar " <> v
-  show (TraceNum n)         = "TraceNum " <> show n
-  show (TracePair t1 t2)    = "TracePair " <> show t1 <> show t2
-  show (TraceNil)           = "TraceNil "
-  show (TraceCons x xs)     = "TraceCons " <> show x <> " " <> show xs
-  show (TraceApp t1 t2 m b) = "TraceCons " <> show t1 <> " " <> show t2 <> " " <> show m <> " " <> show b
-  show (TraceLet x e1 e2)   = "TraceLet " <> x <> " " <> show e1 <> " " <> show e1
-  show (TraceAdd t1 t2)     = "TraceAdd " <> show t1 <> " " <> show t2
-  show (TraceMatch t1 m t2) = "TraceMatch " <> show t1 <> " " <> show m <> " " <> show t2
-  show (TraceLetrec x t1 t2) = "TraceLetrec " <> x <> " " <> show t1 <> " " <> show t2
-  show (TraceClosure env elim) = "TraceClosure " <> show env <> " " <> show elim
-  show TraceTrue            = "TraceTrue "
-  show TraceFalse           = "TraceFalse "

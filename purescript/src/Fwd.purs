@@ -3,12 +3,13 @@ module Fwd where
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
+import Expl (Match(..), Trace(..))
 import Expr
 
 
 fwd_match :: Val -> Elim -> Match -> Maybe (T3 Env Expr Availability)
 fwd_match val σ ξ
- = case val, σ, ξ of 
+ = case val, σ, ξ of
     _, ElimVar x t expr, MatchVar mx
         ->  Just $ T3 (EnvNil :∈: T2 x val) expr Top
     ValTrue, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchTrue
@@ -19,7 +20,7 @@ fwd_match val σ ξ
         ->  Just $ T3 EnvNil expr2 Top
     ValBottom, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchFalse
         ->  Just $ T3 EnvNil expr2 Bottom
-    ValPair x' y', ElimPair x _ y _ expr, MatchPair mx my 
+    ValPair x' y', ElimPair x _ y _ expr, MatchPair mx my
         ->  let ρ' = (EnvNil :∈: T2 y y' :∈: T2 x x')
             in  Just $ T3 ρ' expr Top
     ValPair_Del x' y', ElimPair x _ y _ expr, MatchPair mx my
@@ -28,7 +29,7 @@ fwd_match val σ ξ
     ValNil, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchNil
         ->  Just $ T3 EnvNil expr2 Top
     ValBottom, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchNil
-        ->  Just $ T3 EnvNil expr2 Bottom       
+        ->  Just $ T3 EnvNil expr2 Bottom
     ValCons v vs, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchCons mx mxs
         ->  let ρ' = (EnvNil :∈: T2 xs vs :∈: T2 x v)
             in  Just $ T3 ρ' expr1 Top
@@ -73,7 +74,7 @@ fwd (ExprAdd e1 e2) (TraceAdd te1 te2) Top ρ
        v2 = fwd e2 te2 Top  ρ
    in  case v1, v2 of
           (ValNum n1), (ValNum n2) -> ValNum (n1 + n2)
-          ValBottom,  _            -> ValBottom 
+          ValBottom,  _            -> ValBottom
           _,          ValBottom    -> ValBottom
           _,          _            -> ValFailure "Arithemetic type error: e1 or/and e2 do not fwd to ints"
 fwd (ExprLet x e1 e2) (TraceLet tx te1 te2) α ρ
