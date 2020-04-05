@@ -9,7 +9,7 @@ class Typed a where
 
 
 instance hasTypBranchNil :: Typed BranchNil where
-      typeOf (BranchNil _ e) ctx = typeOf e ctx
+      typeOf (BranchNil e) ctx = typeOf e ctx
 
 instance hasTypBranchCons :: Typed BranchCons where
       typeOf (BranchCons x xs tx e ) ctx   = let txs = TypList tx
@@ -50,25 +50,25 @@ instance hasTypExpr :: Typed Expr where
       typeOf (ExprCons_Del e es) ctx    = TypList (typeOf e ctx)
       typeOf (ExprMatch e elim) ctx = let t2 = typeOf elim ctx
                                           t1 = typeOf e ctx
-                                      in case Bind t1 t2 of
-                                                Bind (TypFun a b) t  -> if t == a
+                                      in case t1, t2 of
+                                                TypFun a b, t  -> if t == a
                                                                          then b
                                                                          else TypFailure "Match type error"
-                                                _ -> TypFailure "Match type error"
+                                                _, _ -> TypFailure "Match type error"
       typeOf (ExprLetrec fun elim e) ctx = let ctx' = (ctx :∈: Bind fun (typeOf elim ctx))
                                            in  typeOf e ctx'
       typeOf (ExprApp e e') ctx          = let t1 = typeOf e ctx
                                                t2 = typeOf e' ctx
-                                           in case Bind t1 t2 of
-                                                Bind (TypFun a b) t -> if t == a
+                                           in case t1, t2 of
+                                                TypFun a b, t -> if t == a
                                                                         then b
                                                                         else TypFailure "Application type error: applied expression not compatible to argument expression"
-                                                _               -> TypFailure "Application type error"
+                                                _, _               -> TypFailure "Application type error"
       typeOf (ExprAdd e1 e2) ctx    = let v1 = typeOf e1 ctx
                                           v2 = typeOf e2 ctx
-                                      in  case Bind v1 v2 of
-                                           Bind TypNum TypNum -> TypNum
-                                           _  -> TypFailure "Arithemetic type error: e1 or/and e2 do not typecheck as ints"
+                                      in  case v1, v2 of
+                                           TypNum, TypNum -> TypNum
+                                           _, _  -> TypFailure "Arithemetic type error: e1 or/and e2 do not typecheck as ints"
 
 instance hasTypVal :: Typed Val where
       typeOf ValTrue ctx               = TypBool

@@ -33,7 +33,7 @@ instance projExpr :: Projectable Expr where
     project (ExprAdd e1 e2) = ExprAdd e1 e2
 
 instance projBranchNil :: Projectable BranchNil where
-      project (BranchNil t e)  = BranchNil t (project e)
+      project (BranchNil e)  = BranchNil (project e)
 
 instance projBranchCons :: Projectable BranchCons where
       project (BranchCons x xs tx e) = BranchCons x xs tx (project e)

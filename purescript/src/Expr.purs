@@ -129,12 +129,12 @@ instance showExpr :: Show Expr where
   show (ExprAdd e1 e2)         = "ExprAdd " <> show e1 <> " " <> show e2
 
 
-data BranchNil -- (type of list, branch)
-                = BranchNil Typ Expr
+data BranchNil -- (branch)
+                = BranchNil Expr
 
 derive instance eqBranchNil :: Eq BranchNil
 instance showBranchNil :: Show BranchNil where
-  show (BranchNil t e) = "BranchNil " <> show t <> " " <> show e
+  show (BranchNil e) = "BranchNil " <> show e
 
 data BranchCons -- (x, xs, type(x), branch)
                 = BranchCons Var Var Typ Expr

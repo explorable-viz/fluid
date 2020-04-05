@@ -19,9 +19,9 @@ match val σ
     ValPair v v', ElimPair x _ y _ e
         ->  let ρ' = Empty :∈: Bind y v' :∈: Bind x v -- bindings in wrong order?
             in  Just $ T3 ρ' e (MatchPair x y)
-    ValNil, ElimList (BranchNil _ e2) (BranchCons _ _ _ _)
+    ValNil, ElimList (BranchNil e2) (BranchCons _ _ _ _)
         ->  Just $ T3 Empty e2 MatchNil
-    ValCons v v', ElimList (BranchNil _ _) (BranchCons x y _ e1)
+    ValCons v v', ElimList (BranchNil _) (BranchCons x y _ e1)
         ->  let ρ' = (Empty :∈: Bind y v' :∈: Bind x v)
             in  Just $ T3 ρ' e1 (MatchCons x y)
     _, _ ->  Nothing

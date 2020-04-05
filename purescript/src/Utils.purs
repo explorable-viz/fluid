@@ -33,7 +33,7 @@ instance freeVarsElim :: FreeVars Elim where
     freeVars (ElimBool bTrue bFalse) = Nil
 
 instance freeVarsBranchNil :: FreeVars BranchNil where
-    freeVars (BranchNil _ e) = freeVars e
+    freeVars (BranchNil e) = freeVars e
 
 instance freeVarsBranchCons :: FreeVars BranchCons where
     freeVars (BranchCons x xs _ e) = difference (freeVars e) (x:xs:Nil)

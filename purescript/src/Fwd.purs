@@ -26,14 +26,14 @@ fwd_match val σ ξ
     ValPair_Del x' y', ElimPair x _ y _ e, MatchPair mx my
         ->  let ρ' = (Empty :∈: Bind y y' :∈: Bind x x')
             in  Just $ T3 ρ' e Bottom
-    ValNil, ElimList (BranchNil _ e2) (BranchCons _ _ _ _), MatchNil
+    ValNil, ElimList (BranchNil e2) (BranchCons _ _ _ _), MatchNil
         ->  Just $ T3 Empty e2 Top
-    ValBottom, ElimList (BranchNil _ e2) (BranchCons _ _ _ _), MatchNil
+    ValBottom, ElimList (BranchNil e2) (BranchCons _ _ _ _), MatchNil
         ->  Just $ T3 Empty e2 Bottom
-    ValCons v v', ElimList (BranchNil _ _) (BranchCons x y _ e1), MatchCons mx mxs
+    ValCons v v', ElimList (BranchNil _) (BranchCons x y _ e1), MatchCons mx mxs
         ->  let ρ' = Empty :∈: Bind y v' :∈: Bind x v -- todo: are these bindings in the wrong order?
             in  Just $ T3 ρ' e1 Top
-    ValCons_Del v v', ElimList (BranchNil _ _) (BranchCons x y _ e1), MatchCons mx mxs
+    ValCons_Del v v', ElimList (BranchNil _) (BranchCons x y _ e1), MatchCons mx mxs
         ->  let ρ' = Empty :∈: Bind y v' :∈: Bind x v -- ditto
             in  Just $ T3 ρ' e1 Bottom
     _,_,_ ->  Nothing
