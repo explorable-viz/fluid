@@ -20,22 +20,22 @@ fwd_match val σ ξ
         ->  Just $ T3 EnvNil expr2 Top
     ValBottom, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchFalse
         ->  Just $ T3 EnvNil expr2 Bottom
-    ValPair x' y', ElimPair x _ y _ expr, MatchPair mx my
+    ValPair x' y', ElimPair x _ y _ e, MatchPair mx my
         ->  let ρ' = (EnvNil :∈: Bind y y' :∈: Bind x x')
-            in  Just $ T3 ρ' expr Top
-    ValPair_Del x' y', ElimPair x _ y _ expr, MatchPair mx my
+            in  Just $ T3 ρ' e Top
+    ValPair_Del x' y', ElimPair x _ y _ e, MatchPair mx my
         ->  let ρ' = (EnvNil :∈: Bind y y' :∈: Bind x x')
-            in  Just $ T3 ρ' expr Bottom
-    ValNil, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchNil
-        ->  Just $ T3 EnvNil expr2 Top
-    ValBottom, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchNil
-        ->  Just $ T3 EnvNil expr2 Bottom
-    ValCons v vs, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchCons mx mxs
-        ->  let ρ' = (EnvNil :∈: Bind xs vs :∈: Bind x v)
-            in  Just $ T3 ρ' expr1 Top
-    ValCons_Del v vs, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1), MatchCons mx mxs
-        ->  let ρ' = (EnvNil :∈: Bind xs vs :∈: Bind x v)
-            in  Just $ T3 ρ' expr1 Bottom
+            in  Just $ T3 ρ' e Bottom
+    ValNil, ElimList (BranchNil _ e2) (BranchCons _ _ _ _), MatchNil
+        ->  Just $ T3 EnvNil e2 Top
+    ValBottom, ElimList (BranchNil _ e2) (BranchCons _ _ _ _), MatchNil
+        ->  Just $ T3 EnvNil e2 Bottom
+    ValCons v v', ElimList (BranchNil _ _) (BranchCons x y _ e1), MatchCons mx mxs
+        ->  let ρ' = EnvNil :∈: Bind y v' :∈: Bind x v -- todo: are these bindings in the wrong order?
+            in  Just $ T3 ρ' e1 Top
+    ValCons_Del v v', ElimList (BranchNil _ _) (BranchCons x y _ e1), MatchCons mx mxs
+        ->  let ρ' = EnvNil :∈: Bind y v' :∈: Bind x v -- ditto
+            in  Just $ T3 ρ' e1 Bottom
     _,_,_ ->  Nothing
 
 
