@@ -9,11 +9,11 @@ type Φ = String
 
 type Var = String
 
-data Bind a b = Bind a b
+data Bind a = Bind Var a
 
-derive instance eqBind :: (Eq a, Eq b) => Eq (Bind a b)
-instance showBind :: (Show a, Show b) => Show (Bind a b) where
-  show (Bind a b) = "Bind " <> show a <> " " <> show b
+derive instance eqBind :: (Eq a) => Eq (Bind a)
+instance showBind :: (Show a) => Show (Bind a) where
+  show (Bind x a) = "Bind " <> show x <> " " <> show a
 
 data T3 a b c = T3 a b c
 
@@ -21,41 +21,27 @@ derive instance eqT3 :: (Eq a, Eq b, Eq c) => Eq (T3 a b c)
 instance showT3 :: (Show a, Show b, Show c) => Show (T3 a b c) where
   show (T3 a b c) = "T3 " <> show a <> " " <> show b <> " " <> show c
 
-data Env = EnvNil | EnvSnoc Env (Bind Var Val)
+data Bindings a =
+  Empty | Snoc (Bindings a) (Bind a)
 
-derive instance eqEnv :: Eq Env
-instance showEnv :: Show Env where
-  show EnvNil = "EnvNil"
-  show (EnvSnoc env (Bind x v)) = show env <> ":∈: (" <> show x <> ", " <> show v <> ")"
+derive instance eqBindings :: (Eq a) => Eq (Bindings a)
+instance showBindings :: (Show a) => Show (Bindings a) where
+  show Empty = "Empty"
+  show (Snoc m (Bind k v)) = show m <> ":+: (" <> show k <> ", " <> show v <> ")"
 
-infixl 5 EnvSnoc as :∈:
+type Env = Bindings Val
 
-concEnv :: Env -> Env -> Env
-concEnv env1 EnvNil = env1
-concEnv env1 (EnvSnoc vs v) = EnvSnoc (concEnv env1 vs) v
+infixl 5 Snoc as :∈:
 
--- TODO: rename to "lookup", use a type class
-findVarVal :: Var -> Env -> Maybe Val
-findVarVal _ EnvNil = Nothing
-findVarVal x (EnvSnoc vs (Bind var val)) = if x == var then Just val else findVarVal x vs
+conc :: forall a . Bindings a -> Bindings a -> Bindings a
+conc m Empty = m
+conc m1 (Snoc m2 kv) = Snoc (conc m1 m2) kv
 
-data Ctx = CtxNil | CtxSnoc Ctx (Bind Var Typ)
+find :: forall a . Var -> Bindings a -> Maybe a
+find _ Empty = Nothing
+find x (Snoc m (Bind k v)) = if x == k then Just v else find x m
 
-derive instance eqCtx :: Eq Ctx
-instance showCtx :: Show Ctx where
-  show CtxNil = "EnvNil"
-  show (CtxSnoc ctx (Bind x v)) = show ctx <> ":∁: (" <> show x <> ", " <> show v <> ")"
-
-infixl 5 CtxSnoc as :∁:
-
-concCtx :: Ctx -> Ctx -> Ctx
-concCtx ctx1 CtxNil = ctx1
-concCtx ctx1 (CtxSnoc cs c) = CtxSnoc (concCtx ctx1 cs) c
-
--- TODO: rename to "lookup", use a type class
-findVarTyp :: Var -> Ctx -> Maybe Typ
-findVarTyp _ CtxNil = Nothing
-findVarTyp x (CtxSnoc cs (Bind var typ)) = if x == var then Just typ else findVarTyp x cs
+type Ctx = Bindings Typ
 
 data BranchNil -- (type of list, branch)
                 = BranchNil Typ Expr

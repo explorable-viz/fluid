@@ -11,30 +11,30 @@ fwd_match :: Val -> Elim -> Match -> Maybe (T3 Env Expr Availability)
 fwd_match val σ ξ
  = case val, σ, ξ of
     _, ElimVar x t expr, MatchVar mx
-        ->  Just $ T3 (EnvNil :∈: Bind x val) expr Top
+        ->  Just $ T3 (Empty :∈: Bind x val) expr Top
     ValTrue, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchTrue
-        ->  Just $ T3 EnvNil expr1 Top
+        ->  Just $ T3 Empty expr1 Top
     ValBottom, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchTrue
-        ->  Just $ T3 EnvNil expr1 Bottom
+        ->  Just $ T3 Empty expr1 Bottom
     ValFalse, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchFalse
-        ->  Just $ T3 EnvNil expr2 Top
+        ->  Just $ T3 Empty expr2 Top
     ValBottom, ElimBool (BranchTrue expr1) (BranchFalse expr2), MatchFalse
-        ->  Just $ T3 EnvNil expr2 Bottom
+        ->  Just $ T3 Empty expr2 Bottom
     ValPair x' y', ElimPair x _ y _ e, MatchPair mx my
-        ->  let ρ' = (EnvNil :∈: Bind y y' :∈: Bind x x')
+        ->  let ρ' = (Empty :∈: Bind y y' :∈: Bind x x')
             in  Just $ T3 ρ' e Top
     ValPair_Del x' y', ElimPair x _ y _ e, MatchPair mx my
-        ->  let ρ' = (EnvNil :∈: Bind y y' :∈: Bind x x')
+        ->  let ρ' = (Empty :∈: Bind y y' :∈: Bind x x')
             in  Just $ T3 ρ' e Bottom
     ValNil, ElimList (BranchNil _ e2) (BranchCons _ _ _ _), MatchNil
-        ->  Just $ T3 EnvNil e2 Top
+        ->  Just $ T3 Empty e2 Top
     ValBottom, ElimList (BranchNil _ e2) (BranchCons _ _ _ _), MatchNil
-        ->  Just $ T3 EnvNil e2 Bottom
+        ->  Just $ T3 Empty e2 Bottom
     ValCons v v', ElimList (BranchNil _ _) (BranchCons x y _ e1), MatchCons mx mxs
-        ->  let ρ' = EnvNil :∈: Bind y v' :∈: Bind x v -- todo: are these bindings in the wrong order?
+        ->  let ρ' = Empty :∈: Bind y v' :∈: Bind x v -- todo: are these bindings in the wrong order?
             in  Just $ T3 ρ' e1 Top
     ValCons_Del v v', ElimList (BranchNil _ _) (BranchCons x y _ e1), MatchCons mx mxs
-        ->  let ρ' = EnvNil :∈: Bind y v' :∈: Bind x v -- ditto
+        ->  let ρ' = Empty :∈: Bind y v' :∈: Bind x v -- ditto
             in  Just $ T3 ρ' e1 Bottom
     _,_,_ ->  Nothing
 
@@ -44,7 +44,7 @@ fwd_match val σ ξ
 fwd :: Partial => Expr -> Expl -> Availability -> Env -> Val
 fwd (ExprBottom) ExplBottom α ρ = ValBottom
 fwd (ExprVar x) t α ρ
- = case findVarVal x ρ of
+ = case find x ρ of
     Just val -> val
     _        -> ValFailure ("variable " <> x <> " not found")
 fwd ExprTrue ExplTrue Top  ρ                    = ValTrue
@@ -65,7 +65,7 @@ fwd (ExprApp e e') (ExplApp te te' m tu) α ρ
  = case fwd e te α ρ  of
      ValClosure ρ' fun σ
         -> case fwd_match (fwd e' te' α ρ) σ m of
-                Just (T3 ρ'' e''  α') -> fwd e'' tu α' (concEnv ρ' ρ'' :∈: Bind fun (ValClosure ρ' fun σ))
+                Just (T3 ρ'' e''  α') -> fwd e'' tu α' (conc ρ' ρ'' :∈: Bind fun (ValClosure ρ' fun σ))
                 Nothing               -> ValFailure "Match not found"
      _  -> ValFailure "Applied expression e in e e' does not fwd to closure"
 fwd (ExprAdd e1 e2) (ExplAdd te1 te2) Bottom ρ   = ValBottom
@@ -85,7 +85,4 @@ fwd (ExprLet_Body x e1 e2) (ExplLet tx te1 te2) α ρ = fwd e2 te2 α (ρ :∈: 
 fwd (ExprMatch e σ) (ExplMatch te m tu) α ρ
  = case fwd_match (fwd e te α ρ) σ m of
     Nothing            -> ValFailure "Match not found"
-    Just (T3 ρ' e' α') -> fwd e' tu α' (concEnv ρ ρ')
-
-
-
+    Just (T3 ρ' e' α') -> fwd e' tu α' (conc ρ ρ')

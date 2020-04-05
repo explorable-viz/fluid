@@ -11,18 +11,18 @@ match :: Val -> Elim -> Maybe (T3 Env Expr Match)
 match val σ
  = case  val, σ of
     _, ElimVar x t e
-        ->  Just $ T3 (EnvNil :∈: Bind x val) e (MatchVar x)
+        ->  Just $ T3 (Empty :∈: Bind x val) e (MatchVar x)
     ValTrue, ElimBool (BranchTrue e1) (BranchFalse _)
-        ->  Just $ T3 EnvNil e1 MatchTrue
+        ->  Just $ T3 Empty e1 MatchTrue
     ValFalse, ElimBool (BranchTrue _) (BranchFalse e2)
-        ->  Just $ T3 EnvNil e2 MatchFalse
+        ->  Just $ T3 Empty e2 MatchFalse
     ValPair v v', ElimPair x _ y _ e
-        ->  let ρ' = EnvNil :∈: Bind y v' :∈: Bind x v -- bindings in wrong order?
+        ->  let ρ' = Empty :∈: Bind y v' :∈: Bind x v -- bindings in wrong order?
             in  Just $ T3 ρ' e (MatchPair x y)
     ValNil, ElimList (BranchNil _ e2) (BranchCons _ _ _ _)
-        ->  Just $ T3 EnvNil e2 MatchNil
+        ->  Just $ T3 Empty e2 MatchNil
     ValCons v v', ElimList (BranchNil _ _) (BranchCons x y _ e1)
-        ->  let ρ' = (EnvNil :∈: Bind y v' :∈: Bind x v)
+        ->  let ρ' = (Empty :∈: Bind y v' :∈: Bind x v)
             in  Just $ T3 ρ' e1 (MatchCons x y)
     _, _ ->  Nothing
 
@@ -33,7 +33,7 @@ type ExplVal = { t :: Expl, v :: Val }
 eval :: Partial => Expr -> Env -> ExplVal
 eval ExprBottom ρ = { t: ExplBottom, v: ValBottom }
 eval (ExprVar x) ρ
- = case findVarVal x ρ of
+ = case find x ρ of
     Just val -> { t: ExplVar x,  v: val }
     _        -> { t: ExplBottom, v: ValFailure ("variable " <> x <> " not found") }
 eval ExprTrue  ρ             = { t: ExplTrue, v: ValTrue }
@@ -51,7 +51,7 @@ eval (ExprApp e e')  ρ
      { t, v: ValClosure ρ' fun σ }
         -> let { t: t',  v } = eval e' ρ
            in case match v σ of
-                Just (T3 ρ'' e'' m) -> let { t: u, v: v' } = eval e'' (concEnv ρ' ρ'' :∈: Bind fun (ValClosure ρ' fun σ))
+                Just (T3 ρ'' e'' m) -> let { t: u, v: v' } = eval e'' (conc ρ' ρ'' :∈: Bind fun (ValClosure ρ' fun σ))
                                        in  { t: ExplApp t t' m u, v: v' }
                 Nothing           -> { t: ExplBottom, v: ValFailure "Match not found" }
      _  -> { t: ExplBottom, v: ValFailure "Applied expression e in e e' does not evaluate to closure" }
@@ -75,5 +75,5 @@ eval (ExprMatch e σ) ρ
  = let { t: t1, v: v1 } = eval e ρ
    in case match v1 σ of
         Nothing            -> { t: ExplBottom, v: ValFailure "Match not found" }
-        Just (T3 ρ' e' m)  -> let { t: t2, v: v2 } = eval e' (concEnv ρ ρ')
+        Just (T3 ρ' e' m)  -> let { t: t2, v: v2 } = eval e' (conc ρ ρ')
                               in  { t: ExplMatch t1 m t2, v: v2 }

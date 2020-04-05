@@ -13,7 +13,7 @@ instance hasTypBranchNil :: Typed BranchNil where
 
 instance hasTypBranchCons :: Typed BranchCons where
       typeOf (BranchCons x xs tx e ) ctx   = let txs = TypList tx
-                                                 te  = typeOf e (ctx :∁: (Bind x tx) :∁: (Bind xs txs))
+                                                 te  = typeOf e (ctx :∈: (Bind x tx) :∈: (Bind xs txs))
                                              in  TypFun txs te
 
 instance hasTypBranchTrue :: Typed BranchTrue where
@@ -24,8 +24,8 @@ instance hasTypBranchFalse :: Typed BranchFalse where
 
 
 instance hasTypElim :: Typed Elim where
-      typeOf (ElimVar x tx e) ctx        = TypFun tx (typeOf e (ctx :∁: (Bind x tx)))
-      typeOf (ElimPair x tx y ty e) ctx  = let te = typeOf e (ctx :∁: (Bind x tx) :∁: (Bind y ty))
+      typeOf (ElimVar x tx e) ctx        = TypFun tx (typeOf e (ctx :∈: (Bind x tx)))
+      typeOf (ElimPair x tx y ty e) ctx  = let te = typeOf e (ctx :∈: (Bind x tx) :∈: (Bind y ty))
                                            in  TypFun (TypPair tx ty) te
       typeOf (ElimList bNil bCons ) ctx  = typeOf bCons ctx
       typeOf (ElimBool bTrue bFalse) ctx = typeOf bTrue ctx
@@ -33,13 +33,13 @@ instance hasTypElim :: Typed Elim where
 
 instance hasTypExpr :: Typed Expr where
       typeOf ExprBottom ctx         = TypBottom
-      typeOf (ExprVar x) ctx        = case findVarTyp x ctx of
+      typeOf (ExprVar x) ctx        = case find x ctx of
                                                 Just t -> t
                                                 _      -> TypFailure ("variable " <> x <> " not found")
       typeOf (ExprPair e1 e2) ctx   = TypPair (typeOf e1 ctx) (typeOf e2 ctx)
       typeOf (ExprPair_Del e1 e2) ctx = TypPair (typeOf e1 ctx) (typeOf e2 ctx)
       typeOf (ExprLet x e1 e2) ctx  = let v1    = (typeOf e1 ctx)
-                                          ctx'  = (ctx :∁: (Bind x v1))
+                                          ctx'  = (ctx :∈: (Bind x v1))
                                       in  typeOf e2 ctx'
       typeOf (ExprLet_Body x e1 e2) ctx  = typeOf e2 ctx
       typeOf (ExprNum n) ctx        = TypNum
@@ -55,7 +55,7 @@ instance hasTypExpr :: Typed Expr where
                                                                          then b
                                                                          else TypFailure "Match type error"
                                                 _ -> TypFailure "Match type error"
-      typeOf (ExprLetrec fun elim e) ctx = let ctx' = (ctx :∁: Bind fun (typeOf elim ctx))
+      typeOf (ExprLetrec fun elim e) ctx = let ctx' = (ctx :∈: Bind fun (typeOf elim ctx))
                                            in  typeOf e ctx'
       typeOf (ExprApp e e') ctx          = let t1 = typeOf e ctx
                                                t2 = typeOf e' ctx
