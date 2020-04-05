@@ -10,20 +10,20 @@ import Expr
 match :: Val -> Elim -> Maybe (T3 Env Expr Match)
 match val σ
  = case  val, σ of
-    _, ElimVar x t expr
-        ->  Just $ T3 (EnvNil :∈: T2 x val) expr (MatchVar x)
-    ValTrue, ElimBool (BranchTrue expr1) (BranchFalse expr2)
-        ->  Just $ T3 EnvNil expr1 MatchTrue
-    ValFalse, ElimBool (BranchTrue expr1) (BranchFalse expr2)
-        ->  Just $ T3 EnvNil expr2 MatchFalse
-    ValPair x' y', ElimPair x _ y _ expr
-        ->  let ρ' = (EnvNil :∈: T2 y y' :∈: T2 x x')
-            in  Just $ T3 ρ' expr (MatchPair x y)
-    ValNil, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1)
-        ->  Just $ T3 EnvNil expr2 MatchNil
-    ValCons v vs, ElimList (BranchNil _ expr2) (BranchCons x xs _ expr1)
-        ->  let ρ' = (EnvNil :∈: T2 xs vs :∈: T2 x v)
-            in  Just $ T3 ρ' expr1 (MatchCons x xs)
+    _, ElimVar x t e
+        ->  Just $ T3 (EnvNil :∈: Bind x val) e (MatchVar x)
+    ValTrue, ElimBool (BranchTrue e1) (BranchFalse _)
+        ->  Just $ T3 EnvNil e1 MatchTrue
+    ValFalse, ElimBool (BranchTrue _) (BranchFalse e2)
+        ->  Just $ T3 EnvNil e2 MatchFalse
+    ValPair v v', ElimPair x _ y _ e
+        ->  let ρ' = EnvNil :∈: Bind y v' :∈: Bind x v -- bindings in wrong order?
+            in  Just $ T3 ρ' e (MatchPair x y)
+    ValNil, ElimList (BranchNil _ e2) (BranchCons _ _ _ _)
+        ->  Just $ T3 EnvNil e2 MatchNil
+    ValCons v v', ElimList (BranchNil _ _) (BranchCons x y _ e1)
+        ->  let ρ' = (EnvNil :∈: Bind y v' :∈: Bind x v)
+            in  Just $ T3 ρ' e1 (MatchCons x y)
     _, _ ->  Nothing
 
 
@@ -43,7 +43,7 @@ eval (ExprPair e1 e2)  ρ
  = let { t: t1, v: v1 } = eval e1 ρ
        { t: t2, v: v2 } = eval e2 ρ
    in  { t: ExplPair t1 t2, v: ValPair v1 v2 }
-eval (ExprLetrec fun σ e)  ρ   = let {t, v} = eval e (ρ :∈: T2 fun (ValClosure ρ fun σ))
+eval (ExprLetrec fun σ e)  ρ   = let {t, v} = eval e (ρ :∈: Bind fun (ValClosure ρ fun σ))
                                      t'     = ExplLetrec fun (ExplClosure ρ σ) t
                                  in {t: t', v}
 eval (ExprApp e e')  ρ
@@ -51,7 +51,7 @@ eval (ExprApp e e')  ρ
      { t, v: ValClosure ρ' fun σ }
         -> let { t: t',  v } = eval e' ρ
            in case match v σ of
-                Just (T3 ρ'' e'' m) -> let { t: u, v: v' } = eval e'' (concEnv ρ' ρ'' :∈: T2 fun (ValClosure ρ' fun σ))
+                Just (T3 ρ'' e'' m) -> let { t: u, v: v' } = eval e'' (concEnv ρ' ρ'' :∈: Bind fun (ValClosure ρ' fun σ))
                                        in  { t: ExplApp t t' m u, v: v' }
                 Nothing           -> { t: ExplBottom, v: ValFailure "Match not found" }
      _  -> { t: ExplBottom, v: ValFailure "Applied expression e in e e' does not evaluate to closure" }
@@ -63,7 +63,7 @@ eval (ExprAdd e1 e2) ρ
           _,          _        -> { t: ExplBottom, v: ValFailure "Arithmetic type error: e1 or/and e2 do not evaluate to ints" }
 eval (ExprLet x e1 e2) ρ
  = let { t: t1, v: v1 } = eval e1 ρ
-       ρ'  = (ρ :∈: T2 x v1)
+       ρ'  = (ρ :∈: Bind x v1)
        { t: t2, v: v2 }  = eval e2 ρ'
    in  {t: ExplLet x t1 t2, v: v2 }
 eval ExprNil ρ               = { t: ExplNil, v: ValNil }
