@@ -43,33 +43,6 @@ find x (Snoc m (Bind k v)) = if x == k then Just v else find x m
 
 type Ctx = Bindings Typ
 
-data BranchNil -- (type of list, branch)
-                = BranchNil Typ Expr
-
-derive instance eqBranchNil :: Eq BranchNil
-instance showBranchNil :: Show BranchNil where
-  show (BranchNil t e) = "BranchNil " <> show t <> " " <> show e
-
-data BranchCons -- (x, xs, type(x), branch)
-                = BranchCons Var Var Typ Expr
-
-
-derive instance eqBranchCons :: Eq BranchCons
-instance showBranchCons :: Show BranchCons where
-  show (BranchCons x xs t e) = "BranchCons " <> show x <> " " <> show xs <> " " <> show t <> " " <> show e
-
-data BranchTrue = BranchTrue Expr
-
-derive instance eqBranchTrue :: Eq BranchTrue
-instance showBranchTrue :: Show BranchTrue where
-  show (BranchTrue e) = "BranchTrue " <> show e
-
-data BranchFalse = BranchFalse Expr
-
-derive instance eqBranchFalse :: Eq BranchFalse
-instance showBranchFalse :: Show BranchFalse where
-  show (BranchFalse e) = "BranchFalse " <> show e
-
 data Availability = Top | Bottom
 
 derive instance eqAvailability :: Eq Availability
@@ -154,6 +127,34 @@ instance showExpr :: Show Expr where
   show (ExprLetrec fun elim e) = "ExprLetrec " <> show fun <> " " <> show elim <> " " <> show e
   show (ExprApp e1 e2)         = "ExprApp " <> show e1 <> " " <> show e2
   show (ExprAdd e1 e2)         = "ExprAdd " <> show e1 <> " " <> show e2
+
+
+data BranchNil -- (type of list, branch)
+                = BranchNil Typ Expr
+
+derive instance eqBranchNil :: Eq BranchNil
+instance showBranchNil :: Show BranchNil where
+  show (BranchNil t e) = "BranchNil " <> show t <> " " <> show e
+
+data BranchCons -- (x, xs, type(x), branch)
+                = BranchCons Var Var Typ Expr
+
+
+derive instance eqBranchCons :: Eq BranchCons
+instance showBranchCons :: Show BranchCons where
+  show (BranchCons x xs t e) = "BranchCons " <> show x <> " " <> show xs <> " " <> show t <> " " <> show e
+
+data BranchTrue = BranchTrue Expr
+
+derive instance eqBranchTrue :: Eq BranchTrue
+instance showBranchTrue :: Show BranchTrue where
+  show (BranchTrue e) = "BranchTrue " <> show e
+
+data BranchFalse = BranchFalse Expr
+
+derive instance eqBranchFalse :: Eq BranchFalse
+instance showBranchFalse :: Show BranchFalse where
+  show (BranchFalse e) = "BranchFalse " <> show e
 
 
 data Elim = -- (x, type(x), branch)
