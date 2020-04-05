@@ -3,7 +3,7 @@ module Fwd where
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
-import Expl (Match(..), Trace(..))
+import Expl (Match(..), Expl(..))
 import Expr
 
 
@@ -41,35 +41,35 @@ fwd_match val σ ξ
 
 
 
-fwd :: Partial => Expr -> Trace  -> Availability -> Env -> Val
-fwd (ExprBottom) TraceBottom α ρ = ValBottom
+fwd :: Partial => Expr -> Expl  -> Availability -> Env -> Val
+fwd (ExprBottom) ExplBottom α ρ = ValBottom
 fwd (ExprVar x) t α ρ
  = case findVarVal x ρ of
     Just val -> val
     _        -> ValFailure ("variable " <> x <> " not found")
-fwd ExprTrue TraceTrue Top  ρ                    = ValTrue
-fwd ExprTrue TraceTrue Bottom  ρ                 = ValBottom
-fwd ExprFalse TraceFalse Top ρ                   = ValFalse
-fwd ExprFalse TraceFalse Bottom ρ                = ValBottom
-fwd (ExprNum n) (TraceNum tn) Top ρ              = ValNum n
-fwd (ExprNum n) (TraceNum tn) Bottom ρ           = ValBottom
-fwd (ExprPair e1 e2) (TracePair te1 te2) Top  ρ  = ValPair (fwd e1 te1 Top ρ) (fwd e2 te2 Top ρ)
-fwd (ExprPair e1 e2) (TracePair te1 te2) Bottom ρ       = ValPair_Del (fwd e1 te1 Bottom ρ) (fwd e2 te2 Bottom ρ)
-fwd (ExprPair_Del e1 e2) (TracePair te1 te2) α ρ = ValPair_Del (fwd e1 te1 α ρ) (fwd e2 te2 α ρ)
-fwd ExprNil TraceNil α ρ                = ValNil
-fwd (ExprCons e es) (TraceCons te tes) Top ρ      = ValCons (fwd e te Top ρ) (fwd es tes Top ρ)
-fwd (ExprCons e es) (TraceCons te tes) Bottom ρ   = ValCons_Del (fwd e te Bottom ρ) (fwd es tes Bottom ρ)
-fwd (ExprCons_Del e es) (TraceCons te tes) α ρ    = ValCons_Del (fwd e te α ρ) (fwd es tes α ρ)
-fwd (ExprLetrec fun σ e) (TraceLetrec x tσ te) α ρ = fwd e te α (ρ :∈: T2 fun (ValClosure ρ fun σ))
-fwd (ExprApp e e') (TraceApp te te' m tu) α ρ
+fwd ExprTrue ExplTrue Top  ρ                    = ValTrue
+fwd ExprTrue ExplTrue Bottom  ρ                 = ValBottom
+fwd ExprFalse ExplFalse Top ρ                   = ValFalse
+fwd ExprFalse ExplFalse Bottom ρ                = ValBottom
+fwd (ExprNum n) (ExplNum tn) Top ρ              = ValNum n
+fwd (ExprNum n) (ExplNum tn) Bottom ρ           = ValBottom
+fwd (ExprPair e1 e2) (ExplPair te1 te2) Top  ρ  = ValPair (fwd e1 te1 Top ρ) (fwd e2 te2 Top ρ)
+fwd (ExprPair e1 e2) (ExplPair te1 te2) Bottom ρ       = ValPair_Del (fwd e1 te1 Bottom ρ) (fwd e2 te2 Bottom ρ)
+fwd (ExprPair_Del e1 e2) (ExplPair te1 te2) α ρ = ValPair_Del (fwd e1 te1 α ρ) (fwd e2 te2 α ρ)
+fwd ExprNil ExplNil α ρ                = ValNil
+fwd (ExprCons e es) (ExplCons te tes) Top ρ      = ValCons (fwd e te Top ρ) (fwd es tes Top ρ)
+fwd (ExprCons e es) (ExplCons te tes) Bottom ρ   = ValCons_Del (fwd e te Bottom ρ) (fwd es tes Bottom ρ)
+fwd (ExprCons_Del e es) (ExplCons te tes) α ρ    = ValCons_Del (fwd e te α ρ) (fwd es tes α ρ)
+fwd (ExprLetrec fun σ e) (ExplLetrec x tσ te) α ρ = fwd e te α (ρ :∈: T2 fun (ValClosure ρ fun σ))
+fwd (ExprApp e e') (ExplApp te te' m tu) α ρ
  = case fwd e te α ρ  of
      ValClosure ρ' fun σ
         -> case fwd_match (fwd e' te' α ρ) σ m of
                 Just (T3 ρ'' e''  α') -> fwd e'' tu α' (concEnv ρ' ρ'' :∈: T2 fun (ValClosure ρ' fun σ))
                 Nothing               -> ValFailure "Match not found"
      _  -> ValFailure "Applied expression e in e e' does not fwd to closure"
-fwd (ExprAdd e1 e2) (TraceAdd te1 te2) Bottom ρ   = ValBottom
-fwd (ExprAdd e1 e2) (TraceAdd te1 te2) Top ρ
+fwd (ExprAdd e1 e2) (ExplAdd te1 te2) Bottom ρ   = ValBottom
+fwd (ExprAdd e1 e2) (ExplAdd te1 te2) Top ρ
  = let v1 = fwd e1 te1 Top  ρ
        v2 = fwd e2 te2 Top  ρ
    in  case v1, v2 of
@@ -77,12 +77,12 @@ fwd (ExprAdd e1 e2) (TraceAdd te1 te2) Top ρ
           ValBottom,  _            -> ValBottom
           _,          ValBottom    -> ValBottom
           _,          _            -> ValFailure "Arithemetic type error: e1 or/and e2 do not fwd to ints"
-fwd (ExprLet x e1 e2) (TraceLet tx te1 te2) α ρ
+fwd (ExprLet x e1 e2) (ExplLet tx te1 te2) α ρ
  = let v1  = fwd e1 te1 α ρ
        ρ'  = (ρ :∈: T2 x v1)
    in  fwd e2 te2 α ρ'
-fwd (ExprLet_Body x e1 e2) (TraceLet tx te1 te2) α ρ = fwd e2 te2 α (ρ :∈: T2 x ValBottom)
-fwd (ExprMatch e σ) (TraceMatch te m tu) α ρ
+fwd (ExprLet_Body x e1 e2) (ExplLet tx te1 te2) α ρ = fwd e2 te2 α (ρ :∈: T2 x ValBottom)
+fwd (ExprMatch e σ) (ExplMatch te m tu) α ρ
  = case fwd_match (fwd e te α ρ) σ m of
     Nothing            -> ValFailure "Match not found"
     Just (T3 ρ' e' α') -> fwd e' tu α' (concEnv ρ ρ')

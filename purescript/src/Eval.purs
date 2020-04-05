@@ -3,7 +3,7 @@ module Eval where
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
-import Expl (Match(..), Trace(..))
+import Expl (Match(..), Expl(..))
 import Expr
 
 
@@ -29,21 +29,21 @@ match val σ
 
 
 
-eval :: Partial => Expr -> Env -> T2 Trace Val
-eval ExprBottom ρ = T2 TraceBottom ValBottom
+eval :: Partial => Expr -> Env -> T2 Expl Val
+eval ExprBottom ρ = T2 ExplBottom ValBottom
 eval (ExprVar x) ρ
  = case findVarVal x ρ of
-    Just val -> T2 (TraceVar x) val
-    _        -> T2 (TraceBottom) (ValFailure ("variable " <> x <> " not found"))
-eval ExprTrue  ρ             = T2 TraceTrue ValTrue
-eval ExprFalse  ρ            = T2 TraceFalse ValFalse
-eval (ExprNum n)  ρ          = T2 (TraceNum n) (ValNum n)
+    Just val -> T2 (ExplVar x) val
+    _        -> T2 (ExplBottom) (ValFailure ("variable " <> x <> " not found"))
+eval ExprTrue  ρ             = T2 ExplTrue ValTrue
+eval ExprFalse  ρ            = T2 ExplFalse ValFalse
+eval (ExprNum n)  ρ          = T2 (ExplNum n) (ValNum n)
 eval (ExprPair e1 e2)  ρ
  = let T2 t1 v1 = eval e1 ρ
        T2 t2 v2 = eval e2 ρ
-   in  T2 (TracePair t1 t2) (ValPair v1 v2)
+   in  T2 (ExplPair t1 t2) (ValPair v1 v2)
 eval (ExprLetrec fun σ e)  ρ   = let T2 t v = eval e (ρ :∈: T2 fun (ValClosure ρ fun σ))
-                                     t'     = TraceLetrec fun (TraceClosure ρ σ) t
+                                     t'     = ExplLetrec fun (ExplClosure ρ σ) t
                                  in  T2 t' v
 eval (ExprApp e e')  ρ
  = case eval e ρ  of
@@ -51,31 +51,31 @@ eval (ExprApp e e')  ρ
         -> let T2 t' v = eval e' ρ
            in case match v σ of
                 Just (T3 ρ'' e'' m) -> let T2 u v' = eval e'' (concEnv ρ' ρ'' :∈: T2 fun (ValClosure ρ' fun σ))
-                                       in  T2 (TraceApp t t' m u) v'
-                Nothing           -> T2 TraceBottom (ValFailure "Match not found")
-     _  -> T2 TraceBottom (ValFailure "Applied expression e in e e' does not evaluate to closure")
+                                       in  T2 (ExplApp t t' m u) v'
+                Nothing           -> T2 ExplBottom (ValFailure "Match not found")
+     _  -> T2 ExplBottom (ValFailure "Applied expression e in e e' does not evaluate to closure")
 eval (ExprAdd e1 e2) ρ
  = let T2 t1 v1 = eval e1 ρ
        T2 t2 v2 = eval e2 ρ
    in  case v1, v2 of
-          (ValNum n1), (ValNum n2) -> T2 (TraceAdd t1 t2) (ValNum (n1 + n2))
-          _,          _            -> T2 TraceBottom (ValFailure "Arithmetic type error: e1 or/and e2 do not evaluate to ints")
+          (ValNum n1), (ValNum n2) -> T2 (ExplAdd t1 t2) (ValNum (n1 + n2))
+          _,          _            -> T2 ExplBottom (ValFailure "Arithmetic type error: e1 or/and e2 do not evaluate to ints")
 eval (ExprLet x e1 e2) ρ
  = let T2 t1 v1  = eval e1 ρ
        ρ'  = (ρ :∈: T2 x v1)
        T2 t2 v2  = eval e2 ρ'
-   in  T2 (TraceLet x t1 t2) (v2)
-eval ExprNil ρ               = T2 TraceNil ValNil
+   in  T2 (ExplLet x t1 t2) (v2)
+eval ExprNil ρ               = T2 ExplNil ValNil
 eval (ExprCons e es)  ρ
  = let T2 t1 v1 = (eval e ρ)
        T2 t2 v2 = (eval es ρ)
-   in  T2 (TraceCons t1 t2) (ValCons v1 v2)
+   in  T2 (ExplCons t1 t2) (ValCons v1 v2)
 eval (ExprMatch e σ) ρ
  = let T2 t1 v1 =  (eval e ρ)
    in case (match v1 σ) of
-        Nothing            -> T2 TraceBottom (ValFailure "Match not found")
+        Nothing            -> T2 ExplBottom (ValFailure "Match not found")
         Just (T3 ρ' e' m)  -> let T2 t2 v2 = eval e' (concEnv ρ ρ')
-                              in  T2 (TraceMatch t1 m t2) v2
+                              in  T2 (ExplMatch t1 m t2) v2
 
 
 

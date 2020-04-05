@@ -19,35 +19,35 @@ instance showMatch :: Show Match where
   show (MatchTrue)       = "MatchTrue"
   show (MatchFalse)      = "MatchFalse"
 
-data Trace = TraceBottom
-           | TraceVar Var
-           | TraceNum Int
-           | TracePair Trace Trace
-           | TraceNil
-           | TraceCons Trace Trace
-           | TraceApp Trace Trace Match Trace
-           | TraceMatch Trace Match Trace
-           | TraceAdd Trace Trace
-           | TraceLet Var Trace Trace
-           | TraceLetrec Var Trace Trace
-           | TraceClosure Env Elim
-           | TraceTrue
-           | TraceFalse
+data Expl = ExplBottom
+           | ExplVar Var
+           | ExplNum Int
+           | ExplPair Expl Expl
+           | ExplNil
+           | ExplCons Expl Expl
+           | ExplApp Expl Expl Match Expl
+           | ExplMatch Expl Match Expl
+           | ExplAdd Expl Expl
+           | ExplLet Var Expl Expl
+           | ExplLetrec Var Expl Expl
+           | ExplClosure Env Elim
+           | ExplTrue
+           | ExplFalse
 
 
-derive instance eqTrace :: Eq Trace
-instance showTrace :: Show Trace where
-  show (TraceBottom)        = "TraceBottom"
-  show (TraceVar v )        = "TraceVar " <> v
-  show (TraceNum n)         = "TraceNum " <> show n
-  show (TracePair t1 t2)    = "TracePair " <> show t1 <> show t2
-  show (TraceNil)           = "TraceNil "
-  show (TraceCons x xs)     = "TraceCons " <> show x <> " " <> show xs
-  show (TraceApp t1 t2 m b) = "TraceCons " <> show t1 <> " " <> show t2 <> " " <> show m <> " " <> show b
-  show (TraceLet x e1 e2)   = "TraceLet " <> x <> " " <> show e1 <> " " <> show e1
-  show (TraceAdd t1 t2)     = "TraceAdd " <> show t1 <> " " <> show t2
-  show (TraceMatch t1 m t2) = "TraceMatch " <> show t1 <> " " <> show m <> " " <> show t2
-  show (TraceLetrec x t1 t2) = "TraceLetrec " <> x <> " " <> show t1 <> " " <> show t2
-  show (TraceClosure env elim) = "TraceClosure " <> show env <> " " <> show elim
-  show TraceTrue            = "TraceTrue "
-  show TraceFalse           = "TraceFalse "
+derive instance eqExpl :: Eq Expl
+instance showExpl :: Show Expl where
+  show (ExplBottom)        = "ExplBottom"
+  show (ExplVar v )        = "ExplVar " <> v
+  show (ExplNum n)         = "ExplNum " <> show n
+  show (ExplPair t1 t2)    = "ExplPair " <> show t1 <> show t2
+  show (ExplNil)           = "ExplNil "
+  show (ExplCons x xs)     = "ExplCons " <> show x <> " " <> show xs
+  show (ExplApp t1 t2 m b) = "ExplCons " <> show t1 <> " " <> show t2 <> " " <> show m <> " " <> show b
+  show (ExplLet x e1 e2)   = "ExplLet " <> x <> " " <> show e1 <> " " <> show e1
+  show (ExplAdd t1 t2)     = "ExplAdd " <> show t1 <> " " <> show t2
+  show (ExplMatch t1 m t2) = "ExplMatch " <> show t1 <> " " <> show m <> " " <> show t2
+  show (ExplLetrec x t1 t2) = "ExplLetrec " <> x <> " " <> show t1 <> " " <> show t2
+  show (ExplClosure env elim) = "ExplClosure " <> show env <> " " <> show elim
+  show ExplTrue            = "ExplTrue "
+  show ExplFalse           = "ExplFalse "
