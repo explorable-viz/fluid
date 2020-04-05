@@ -21,7 +21,7 @@ instance showMatch :: Show Match where
 
 data Expl = ExplBottom
            | ExplVar Var
-           | ExplNum Int
+           | ExplNum Int -- todo: rename Num to Int
            | ExplPair Expl Expl
            | ExplNil
            | ExplCons Expl Expl
@@ -30,7 +30,7 @@ data Expl = ExplBottom
            | ExplAdd Expl Expl
            | ExplLet Var Expl Expl
            | ExplLetrec Var Expl Expl
-           | ExplClosure Env Elim
+           | ExplClosure Env Elim -- todo: rename to ExplFun
            | ExplTrue
            | ExplFalse
 
