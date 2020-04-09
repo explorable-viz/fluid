@@ -9,7 +9,7 @@ class FreeVars a where
     freeVars :: a -> List Var
 
 instance freeVarsExpr :: FreeVars Expr where
-    freeVars (ExprNum i)          = Nil
+    freeVars (ExprInt i)          = Nil
     freeVars (ExprVar x)          = singleton x
     freeVars (ExprLet x e1 e2)    = union (freeVars e1) (difference (freeVars e2) (singleton x))
     freeVars (ExprAdd e1 e2)      = union (freeVars e1) (freeVars e2)

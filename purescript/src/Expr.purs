@@ -31,11 +31,13 @@ instance showBindings :: (Show a) => Show (Bindings a) where
 
 type Env = Bindings Val
 
-infixl 5 Snoc as :∈:
+infixl 5 Snoc as :+:
 
 conc :: forall a . Bindings a -> Bindings a -> Bindings a
 conc m Empty = m
 conc m1 (Snoc m2 kv) = Snoc (conc m1 m2) kv
+
+infixl 5 conc as :++:
 
 find :: forall a . Var -> Bindings a -> Maybe a
 find _ Empty = Nothing
@@ -52,7 +54,7 @@ instance showAvailability :: Show Availability where
 
 
 data Typ = TypBottom
-         | TypNum
+         | TypInt
          | TypBool
          | TypFun Typ Typ
          | TypList Typ
@@ -62,7 +64,7 @@ data Typ = TypBottom
 derive instance eqTyp :: Eq Typ
 instance showTyp :: Show Typ where
   show TypBottom       = "TypBottom"
-  show TypNum          = "TypNum"
+  show TypInt          = "TypInt"
   show TypBool         = "TypBool"
   show (TypFun t1 t2)  = "TypFun " <> show t1 <> " " <> show t2
   show (TypList t)     = "TypList " <> show t
@@ -73,7 +75,7 @@ instance showTyp :: Show Typ where
 data Val = ValBottom
          | ValTrue
          | ValFalse
-         | ValNum Int
+         | ValInt Int
          | ValClosure Env String Elim
          | ValPair Val Val | ValPair_Del Val Val
          | ValNil
@@ -85,7 +87,7 @@ instance showVal :: Show Val where
   show ValBottom                 = "⊥"
   show ValTrue                   = "ValTrue"
   show ValFalse                  = "ValFalse"
-  show (ValNum n)                = "ValNum " <> show n
+  show (ValInt n)                = "ValInt " <> show n
   show (ValPair x y)             = "ValPair " <> show x <> " " <> show y
   show (ValPair_Del x y)         = "ValPair_Del " <> show x <> " " <> show y
   show ValNil                    = "ValNil"
@@ -96,7 +98,7 @@ instance showVal :: Show Val where
 
 
 data Expr = ExprBottom
-          | ExprNum Int
+          | ExprInt Int
           | ExprVar Var
           | ExprTrue
           | ExprFalse
@@ -112,7 +114,7 @@ data Expr = ExprBottom
 derive instance eqExpr :: Eq Expr
 instance showExpr :: Show Expr where
   show ExprBottom              = "ExprBottom"
-  show (ExprNum n)             = "ExprNum " <> show n
+  show (ExprInt n)             = "ExprInt " <> show n
   show (ExprVar v)             = "ExprVar " <> show v
   show ExprTrue                = "ExprTrue"
   show ExprFalse               = "ExprFalse"

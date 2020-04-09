@@ -21,7 +21,7 @@ instance showMatch :: Show Match where
 
 data Expl = ExplBottom
            | ExplVar Var
-           | ExplNum Int -- todo: rename Num to Int
+           | ExplInt Int 
            | ExplPair Expl Expl
            | ExplNil
            | ExplCons Expl Expl
@@ -30,24 +30,24 @@ data Expl = ExplBottom
            | ExplAdd Expl Expl
            | ExplLet Var Expl Expl
            | ExplLetrec Var Expl Expl
-           | ExplClosure Env Elim -- todo: rename to ExplFun
+           | ExplFun Env Elim 
            | ExplTrue
            | ExplFalse
 
 
 derive instance eqExpl :: Eq Expl
 instance showExpl :: Show Expl where
-  show (ExplBottom)        = "ExplBottom"
-  show (ExplVar v )        = "ExplVar " <> v
-  show (ExplNum n)         = "ExplNum " <> show n
-  show (ExplPair t1 t2)    = "ExplPair " <> show t1 <> show t2
-  show (ExplNil)           = "ExplNil "
-  show (ExplCons x xs)     = "ExplCons " <> show x <> " " <> show xs
-  show (ExplApp t1 t2 m b) = "ExplCons " <> show t1 <> " " <> show t2 <> " " <> show m <> " " <> show b
-  show (ExplLet x e1 e2)   = "ExplLet " <> x <> " " <> show e1 <> " " <> show e1
-  show (ExplAdd t1 t2)     = "ExplAdd " <> show t1 <> " " <> show t2
-  show (ExplMatch t1 m t2) = "ExplMatch " <> show t1 <> " " <> show m <> " " <> show t2
+  show (ExplBottom)         = "ExplBottom"
+  show (ExplVar v )         = "ExplVar " <> v
+  show (ExplInt n)          = "ExplInt " <> show n
+  show (ExplPair t1 t2)     = "ExplPair " <> show t1 <> show t2
+  show (ExplNil)            = "ExplNil "
+  show (ExplCons x xs)      = "ExplCons " <> show x <> " " <> show xs
+  show (ExplApp t1 t2 m b)  = "ExplCons " <> show t1 <> " " <> show t2 <> " " <> show m <> " " <> show b
+  show (ExplLet x e1 e2)    = "ExplLet " <> x <> " " <> show e1 <> " " <> show e1
+  show (ExplAdd t1 t2)      = "ExplAdd " <> show t1 <> " " <> show t2
+  show (ExplMatch t1 m t2)  = "ExplMatch " <> show t1 <> " " <> show m <> " " <> show t2
   show (ExplLetrec x t1 t2) = "ExplLetrec " <> x <> " " <> show t1 <> " " <> show t2
-  show (ExplClosure env elim) = "ExplClosure " <> show env <> " " <> show elim
-  show ExplTrue            = "ExplTrue "
-  show ExplFalse           = "ExplFalse "
+  show (ExplFun env elim)   = "ExplClosure " <> show env <> " " <> show elim
+  show ExplTrue             = "ExplTrue "
+  show ExplFalse            = "ExplFalse "

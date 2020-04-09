@@ -10,7 +10,7 @@ instance projExpr :: Projectable Expr where
     project (ExprVar x)          = ExprVar x
     project ExprTrue             = ExprTrue
     project ExprFalse            = ExprFalse
-    project (ExprNum n)          = ExprNum n
+    project (ExprInt n)          = ExprInt n
     project (ExprPair e1 e2)     = ExprPair (project e1) (project e2)
     project (ExprPair_Del e1 e2) = case project e1, project e2 of
                                     ExprBottom, e2' ->  e2'
