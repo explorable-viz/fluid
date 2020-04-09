@@ -33,17 +33,17 @@ fwd_match val σ ξ
         ->  let ρ' = (Empty :+: Bind y y' :+: Bind x x')
             in  Just $ T3 ρ' expr Bottom
     -- nil
-    ValNil, ElimList (BranchNil expr2) (BranchCons x xs _ expr1), MatchNil
+    ValNil, ElimList (BranchNil expr2) (BranchCons x xs expr1), MatchNil
         ->  Just $ T3 Empty expr2 Top
     -- nil-del
-    ValBottom, ElimList (BranchNil expr2) (BranchCons x xs _ expr1), MatchNil
+    ValBottom, ElimList (BranchNil expr2) (BranchCons x xs expr1), MatchNil
         ->  Just $ T3 Empty expr2 Bottom   
     -- cons    
-    ValCons v vs, ElimList (BranchNil expr2) (BranchCons x xs _ expr1), MatchCons mx mxs
+    ValCons v vs, ElimList (BranchNil expr2) (BranchCons x xs expr1), MatchCons mx mxs
         ->  let ρ' = (Empty :+: Bind xs vs :+: Bind x v)
             in  Just $ T3 ρ' expr1 Top
     -- cons-del
-    ValCons_Del v vs, ElimList (BranchNil expr2) (BranchCons x xs _ expr1), MatchCons mx mxs
+    ValCons_Del v vs, ElimList (BranchNil expr2) (BranchCons x xs expr1), MatchCons mx mxs
         ->  let ρ' = (Empty :+: Bind xs vs :+: Bind x v)
             in  Just $ T3 ρ' expr1 Bottom
     -- failure

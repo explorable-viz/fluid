@@ -138,13 +138,13 @@ derive instance eqBranchNil :: Eq BranchNil
 instance showBranchNil :: Show BranchNil where
   show (BranchNil e) = "BranchNil " <> show e
 
-data BranchCons -- (x, xs, type(x), branch)
-                = BranchCons Var Var Typ Expr
+data BranchCons -- (x, xs, branch)
+                = BranchCons Var Var Expr
 
 
 derive instance eqBranchCons :: Eq BranchCons
 instance showBranchCons :: Show BranchCons where
-  show (BranchCons x xs t e) = "BranchCons " <> show x <> " " <> show xs <> " " <> show t <> " " <> show e
+  show (BranchCons x xs e) = "BranchCons " <> show x <> " " <> show xs <> " " <> show e
 
 data BranchTrue = BranchTrue Expr
 

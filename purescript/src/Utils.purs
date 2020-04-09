@@ -36,7 +36,7 @@ instance freeVarsBranchNil :: FreeVars BranchNil where
     freeVars (BranchNil e) = freeVars e
 
 instance freeVarsBranchCons :: FreeVars BranchCons where
-    freeVars (BranchCons x xs _ e) = difference (freeVars e) (x:xs:Nil)
+    freeVars (BranchCons x xs e) = difference (freeVars e) (x:xs:Nil)
 
 instance freeVarsBranchTrue :: FreeVars BranchTrue where
     freeVars (BranchTrue e) = freeVars e

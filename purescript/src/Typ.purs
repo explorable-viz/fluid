@@ -9,12 +9,13 @@ class Typed a where
 
 
 instance hasTypBranchNil :: Typed BranchNil where
-      typeOf (BranchNil e) ctx = typeOf e ctx
+      typeOf (BranchNil e) ctx = TypFun (TypList TypInt) (typeOf e ctx)  
 
 instance hasTypBranchCons :: Typed BranchCons where
-      typeOf (BranchCons x xs tx e ) ctx   = let txs = TypList tx
-                                                 te  = typeOf e (ctx :+: (Bind x tx) :+: (Bind xs txs))
-                                             in  TypFun txs te
+      typeOf (BranchCons x xs e ) ctx   = let tx = TypInt
+                                              txs = TypList TypInt  
+                                              te  = typeOf e (ctx :+: (Bind x tx) :+: (Bind xs txs))
+                                          in  TypFun txs te
 
 instance hasTypBranchTrue :: Typed BranchTrue where
       typeOf (BranchTrue e) ctx = TypFun TypBool (typeOf e ctx)

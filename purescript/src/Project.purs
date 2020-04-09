@@ -36,7 +36,7 @@ instance projBranchNil :: Projectable BranchNil where
       project (BranchNil e)  = BranchNil (project e)
 
 instance projBranchCons :: Projectable BranchCons where
-      project (BranchCons x xs tx e) = BranchCons x xs tx (project e)
+      project (BranchCons x xs  e) = BranchCons x xs  (project e)
 
 instance projBranchTrue :: Projectable BranchTrue where
       project (BranchTrue e) = BranchTrue (project e)

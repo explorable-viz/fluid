@@ -24,10 +24,10 @@ match val σ
         ->  let ρ' = Empty :+: Bind x v :+: Bind y v' 
             in  Just $ T3 ρ' e (MatchPair x y)
     -- nil
-    ValNil, ElimList (BranchNil e2) (BranchCons _ _ _ _)
+    ValNil, ElimList (BranchNil e2) (BranchCons _ _ _)
         ->  Just $ T3 Empty e2 MatchNil
     -- cons
-    ValCons v v', ElimList (BranchNil _) (BranchCons x y _ e1)
+    ValCons v v', ElimList (BranchNil _) (BranchCons x y e1)
         ->  let ρ' = (Empty :+: Bind x v :+: Bind y v' )
             in  Just $ T3 ρ' e1 (MatchCons x y)
     -- failure
