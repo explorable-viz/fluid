@@ -57,19 +57,23 @@ data Typ = TypBottom
          | TypInt
          | TypBool
          | TypFun Typ Typ
-         | TypList Typ
-         | TypPair Typ Typ
+         | TypList Typ | TypListHead Typ | TypListTail Typ
+         | TypPair Typ Typ | TypPairFst Typ | TypPairSnd Typ
          | TypFailure String
 
 derive instance eqTyp :: Eq Typ
 instance showTyp :: Show Typ where
-  show TypBottom       = "TypBottom"
-  show TypInt          = "TypInt"
-  show TypBool         = "TypBool"
-  show (TypFun t1 t2)  = "TypFun " <> show t1 <> " " <> show t2
-  show (TypList t)     = "TypList " <> show t
-  show (TypPair t1 t2) = "TypPair " <> show t1 <> " " <> show t2
-  show (TypFailure s)  = "TypFailure " <> s
+  show TypBottom        = "TypBottom"
+  show TypInt           = "TypInt"
+  show TypBool          = "TypBool"
+  show (TypFun t1 t2)   = "TypFun " <> show t1 <> " " <> show t2
+  show (TypList t)      = "TypList " <> show t
+  show (TypListHead x)  = "TypListHead " <> show x
+  show (TypListTail xs) = "TypListTail " <> show xs
+  show (TypPair t1 t2)  = "TypPair " <> show t1 <> " " <> show t2
+  show (TypPairFst t1)  = "TypPairFst " <> show t1
+  show (TypPairSnd t2)  = "TypPairSnd " <> show t2
+  show (TypFailure s)   = "TypFailure " <> s
 
 
 data Val = ValBottom
@@ -77,9 +81,9 @@ data Val = ValBottom
          | ValFalse
          | ValInt Int
          | ValClosure Env String Elim
-         | ValPair Val Val | ValPair_Del Val Val
+         | ValPair Val Val | ValPairFst Val | ValPairSnd Val
          | ValNil
-         | ValCons Val Val | ValCons_Del Val Val
+         | ValCons Val Val | ValConsHead Val | ValConsTail Val
          | ValFailure String
 
 derive instance eqVal :: Eq Val
@@ -89,10 +93,12 @@ instance showVal :: Show Val where
   show ValFalse                  = "ValFalse"
   show (ValInt n)                = "ValInt " <> show n
   show (ValPair x y)             = "ValPair " <> show x <> " " <> show y
-  show (ValPair_Del x y)         = "ValPair_Del " <> show x <> " " <> show y
+  show (ValPairFst x )           = "ValPairFst " <> show x
+  show (ValPairSnd y )           = "ValPairSnd " <> show y
   show ValNil                    = "ValNil"
   show (ValCons x xs)            = "ValCons " <> show x <> " " <> show xs
-  show (ValCons_Del x xs)        = "ValCons_Del " <> show x <> " " <> show xs
+  show (ValConsHead x )          = "ValConsHead " <> show x
+  show (ValConsTail xs)          = "ValConsTail " <> show xs
   show (ValClosure env fun elim) = "ValClosure " <> show env <> " " <> show fun <> " " <> show elim
   show (ValFailure s)            = "ValFailure " <> s
 
@@ -102,10 +108,10 @@ data Expr = ExprBottom
           | ExprVar Var
           | ExprTrue
           | ExprFalse
-          | ExprPair Expr Expr | ExprPair_Del Expr Expr
+          | ExprPair Expr Expr | ExprPairFst Expr | ExprPairSnd Expr
           | ExprNil
-          | ExprCons Expr Expr | ExprCons_Del Expr Expr
-          | ExprLet Var Expr Expr | ExprLet_Body Var Expr Expr
+          | ExprCons Expr Expr | ExprConsHead Expr | ExprConsTail Expr
+          | ExprLet Var Expr Expr | ExprLetBody Var Expr Expr
           | ExprMatch Expr Elim
           | ExprLetrec String Elim Expr
           | ExprApp Expr Expr
@@ -119,12 +125,14 @@ instance showExpr :: Show Expr where
   show ExprTrue                = "ExprTrue"
   show ExprFalse               = "ExprFalse"
   show (ExprPair x y)          = "ExprPair " <> show x <> " " <> show y
-  show (ExprPair_Del x y)      = "ExprPair_Del " <> show x <> " " <> show y
+  show (ExprPairFst x )        = "ExprPairFst " <> show x
+  show (ExprPairSnd y )        = "ExprPairSnd " <> " " <> show y
   show ExprNil                 = "ExprNil"
   show (ExprCons x xs)         = "ExprCons " <> show x <> " " <> show xs
-  show (ExprCons_Del x xs)     = "ExprCons_Del " <> show x <> " " <> show xs
+  show (ExprConsHead x )       = "ExprConsHead " <> show x
+  show (ExprConsTail xs)       = "ExprConsTail " <> show xs
   show (ExprLet v e1 e2)       = "ExprLet " <> show v <> " " <> show e1 <> " " <> show e2
-  show (ExprLet_Body v e1 e2)  = "ExprLet_Body " <> show v <> " " <> show e1 <> " " <> show e2
+  show (ExprLetBody v e1 e2)   = "ExprLetBody " <> show v <> " " <> show e1 <> " " <> show e2
   show (ExprMatch e elim)      = "ExprMatch " <> show e <> " " <> show elim
   show (ExprLetrec fun elim e) = "ExprLetrec " <> show fun <> " " <> show elim <> " " <> show e
   show (ExprApp e1 e2)         = "ExprApp " <> show e1 <> " " <> show e2

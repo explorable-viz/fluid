@@ -38,19 +38,21 @@ instance hasTypExpr :: Typed Expr where
                                                 Just t -> t
                                                 _      -> TypFailure ("variable " <> x <> " not found")
       typeOf (ExprPair e1 e2) ctx   = TypPair (typeOf e1 ctx) (typeOf e2 ctx)
-      typeOf (ExprPair_Del e1 e2) ctx = TypPair (typeOf e1 ctx) (typeOf e2 ctx)
+      typeOf (ExprPairFst e1 ) ctx = TypPairFst (typeOf e1 ctx) 
+      typeOf (ExprPairSnd e2) ctx = TypPairSnd (typeOf e2 ctx)
       typeOf (ExprLet x e1 e2) ctx  = let v1    = (typeOf e1 ctx)
                                           ctx'  = (ctx :+: (Bind x v1))
                                       in  typeOf e2 ctx'
-      typeOf (ExprLet_Body x e1 e2) ctx  = typeOf e2 ctx
-      typeOf (ExprInt n) ctx        = TypInt
-      typeOf ExprTrue ctx           = TypBool
-      typeOf ExprFalse ctx          = TypBool
-      typeOf ExprNil ctx            = TypList TypInt
-      typeOf (ExprCons e es) ctx    = TypList (typeOf e ctx)
-      typeOf (ExprCons_Del e es) ctx    = TypList (typeOf e ctx)
-      typeOf (ExprMatch e elim) ctx = let t2 = typeOf elim ctx
-                                          t1 = typeOf e ctx
+      typeOf (ExprLetBody x e1 e2) ctx = typeOf e2 ctx
+      typeOf (ExprInt n) ctx           = TypInt
+      typeOf ExprTrue ctx              = TypBool
+      typeOf ExprFalse ctx             = TypBool
+      typeOf ExprNil ctx               = TypList TypInt
+      typeOf (ExprCons e es) ctx       = TypList (typeOf e ctx)
+      typeOf (ExprConsHead e) ctx      = TypListHead (typeOf e ctx)
+      typeOf (ExprConsTail es) ctx     = (typeOf es ctx)
+      typeOf (ExprMatch e elim) ctx    = let t2 = typeOf elim ctx
+                                             t1 = typeOf e ctx
                                       in case t1, t2 of
                                                 TypFun a b, t  -> if t == a
                                                                          then b
@@ -72,14 +74,16 @@ instance hasTypExpr :: Typed Expr where
                                            _, _  -> TypFailure "Arithemetic type error: e1 or/and e2 do not typecheck as ints"
 
 instance hasTypVal :: Typed Val where
-      typeOf ValTrue ctx               = TypBool
-      typeOf ValFalse ctx              = TypBool
-      typeOf (ValInt n) ctx            = TypInt
-      typeOf (ValPair x y) ctx         = TypPair (typeOf x ctx) (typeOf y ctx)
-      typeOf (ValPair_Del x y) ctx     = TypPair (typeOf x ctx) (typeOf y ctx)
-      typeOf ValNil ctx                = TypList TypInt
-      typeOf (ValCons x xs) ctx        = TypList (typeOf x ctx)
-      typeOf (ValCons_Del x xs) ctx    = TypList (typeOf x ctx)
+      typeOf ValTrue ctx                   = TypBool
+      typeOf ValFalse ctx                  = TypBool
+      typeOf (ValInt n) ctx                = TypInt
+      typeOf (ValPair x y) ctx             = TypPair (typeOf x ctx) (typeOf y ctx)
+      typeOf (ValPairFst x) ctx            = TypPairFst (typeOf x ctx)
+      typeOf (ValPairSnd y) ctx            = TypPairSnd (typeOf y ctx)
+      typeOf ValNil ctx                    = TypList TypInt
+      typeOf (ValCons x xs) ctx            = TypList (typeOf x ctx)
+      typeOf (ValConsHead x ) ctx          = TypListHead (typeOf x ctx)
+      typeOf (ValConsTail xs ) ctx         = TypListTail (typeOf xs ctx)
       typeOf (ValClosure env fun elim) ctx = typeOf elim ctx
-      typeOf (ValFailure s) ctx        = TypFailure s
-      typeOf ValBottom ctx             = TypBottom
+      typeOf (ValFailure s) ctx            = TypFailure s
+      typeOf ValBottom ctx                 = TypBottom

@@ -19,7 +19,7 @@ instance showMatch :: Show Match where
   show (MatchTrue)       = "MatchTrue"
   show (MatchFalse)      = "MatchFalse"
 
-data Expl = ExplBottom
+data Expl =  ExplBottom
            | ExplVar Var
            | ExplInt Int 
            | ExplPair Expl Expl
