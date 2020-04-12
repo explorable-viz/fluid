@@ -12,8 +12,6 @@ You can edit this file as you like.
   , "psci-support"
   , "result"
   , "tuples"
-  , "unicode"
-  , "generics-rep"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
