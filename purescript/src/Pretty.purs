@@ -120,7 +120,7 @@ class Pretty p where
 
 foldExprCons :: Expr -> Doc
 foldExprCons (ExprNil) = text ""
-foldExprCons (ExprCons e es) = pretty e :<>: text ", " :<>: foldExprCons es
+foldExprCons (ExprCons e es) = text ", " :<>: pretty e :<>: foldExprCons es
 foldExprCons _ = text ""
 
 instance exprPretty :: Pretty Expr where 
@@ -133,32 +133,45 @@ instance exprPretty :: Pretty Expr where
     pretty (ExprPairFst e) = text  "(" :<>: pretty e :<>: text ", ⊥)"
     pretty (ExprPairSnd e) = text "(⊥, " :<>: pretty e :<>: text ")"
     pretty ExprNil = text "[]"
-    pretty (ExprCons e es) = text "[" :<>: foldExprCons (ExprCons e es) :<>: text "]" 
+    pretty (ExprCons e es) = text "[" :<>: pretty e :<>: foldExprCons es :<>: text "]" 
     pretty (ExprConsHead e) = text "[" :<>: pretty e :<>: text ", ⊥]" 
     pretty (ExprConsTail es) = text "[⊥, " :<>: foldExprCons es :<>: text "]" 
     pretty (ExprLet x e1 e2) = atop (text ("let " <>  x <> " = ") :<>: pretty e1)
                                     (text "in  " :<>: pretty e2)
-    pretty (ExprLetBody x e1 e2) = atop (text ("let " <> show x <> "= ⊥"))
-                                        (text "in " :<>: pretty e2)
+    pretty (ExprLetBody x e1 e2) = atop (text ("let " <>  x <> " = ⊥"))
+                                        (text "in  " :<>: pretty e2)
     pretty (ExprMatch e elim) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty elim)) (text "}")
-    pretty (ExprLetrec x elim e) = atop (text ("letrec " <> show x <> "=") :<>: pretty elim)
-                                        (text "in " :<>: pretty e)
-    pretty (ExprApp e1 e2) = pretty e1 :<>: pretty e2                                    
+    pretty (ExprLetrec x elim e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty elim)
+                                        (text "in     " :<>: pretty e)
+    pretty (ExprApp e1 e2) = pretty e1 :<>: text " " :<>: pretty e2                                    
     pretty (ExprAdd e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
 
 
 instance exprElim :: Pretty Elim where
-    pretty (ElimVar x t e) = text "  " :<>: text x :<>: text ":" :<>: text (show t) :<>: text " -> " :<>: pretty e 
-    pretty (ElimPair x xt y yt e) = text "   (" :<>: text x :<>: text ":" :<>: text (show xt) :<>:
-                                        text ", " :<>: text y :<>: text ":" :<>: text (show yt) :<>: text ") -> " :<>: pretty e
+    pretty (ElimVar x t e) = text "  " :<>: text x :<>: text " : " :<>: pretty t :<>: text " -> " :<>: pretty e 
+    pretty (ElimPair x xt y yt e) = text "   (" :<>: text x :<>: text " : " :<>: pretty xt :<>:
+                                        text ", " :<>: text y :<>: text " : " :<>: pretty yt :<>: text ") -> " :<>: pretty e
     pretty (ElimList bNil bCons) = text "    " :<>: atop (pretty bNil) (pretty bCons)
     pretty (ElimBool bTrue bFalse) = text "     " :<>: atop (pretty bTrue) (pretty bFalse)
 
 instance bNilPretty :: Pretty BranchNil where 
     pretty (BranchNil e) = text "[] -> " :<>: pretty e
 instance bConsPretty :: Pretty BranchCons where 
-    pretty (BranchCons x xs e) = text "(" :<>: text x :<>: text ", " :<>: text xs :<>: text ") -> " :<>: pretty e
+    pretty (BranchCons x xs e) = text "(" :<>: text x :<>: text ":" :<>: text xs :<>: text ") -> " :<>: pretty e
 instance bTruePretty :: Pretty BranchTrue where 
     pretty (BranchTrue e) = text "true -> " :<>: pretty e 
 instance bFalsePretty :: Pretty BranchFalse where
     pretty (BranchFalse e) = text "false -> " :<>: pretty e
+
+instance typPretty :: Pretty Typ where 
+    pretty TypBottom       = text "⊥"
+    pretty TypInt          = text "Int"
+    pretty TypBool         = text "Bool"
+    pretty (TypFun a b)    = pretty a :<>: text " -> " :<>: pretty b
+    pretty (TypList a)     = text "List " :<>: pretty a
+    pretty (TypListHead a) = text "ListHead " :<>: pretty a
+    pretty (TypListTail a) = text "ListTail " :<>: pretty a
+    pretty (TypPair a b)   = text "Pair " :<>: pretty a :<>: text " " :<>: pretty b
+    pretty (TypPairFst a)  = text "Pair " :<>: pretty a :<>: text " ⊥"
+    pretty (TypPairSnd b)  = text "Pair ⊥ " :<>: pretty b
+    pretty (TypFailure s)  = text "Fail " :<>: text s

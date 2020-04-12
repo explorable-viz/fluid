@@ -12,6 +12,5 @@ import Pretty
 
 main :: Effect Unit
 main = do
-  let res = render (pretty textExpr2)
-  log "Ok"
+  let res = render (pretty textExpr5)
   log res
