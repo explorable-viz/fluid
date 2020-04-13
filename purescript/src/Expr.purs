@@ -5,8 +5,6 @@ import Data.Maybe (Maybe(..))
 import Data.Eq (class Eq)
 import Data.Show
 
-type Φ = String
-
 type Var = String
 
 data Bind a = Bind Var a
@@ -139,44 +137,14 @@ instance showExpr :: Show Expr where
   show (ExprAdd e1 e2)         = "ExprAdd " <> show e1 <> " " <> show e2
 
 
-data BranchNil -- (branch)
-                = BranchNil Expr
-
-derive instance eqBranchNil :: Eq BranchNil
-instance showBranchNil :: Show BranchNil where
-  show (BranchNil e) = "BranchNil " <> show e
-
-data BranchCons -- (x, xs, branch)
-                = BranchCons Var Var Expr
-
-
-derive instance eqBranchCons :: Eq BranchCons
-instance showBranchCons :: Show BranchCons where
-  show (BranchCons x xs e) = "BranchCons " <> show x <> " " <> show xs <> " " <> show e
-
-data BranchTrue = BranchTrue Expr
-
-derive instance eqBranchTrue :: Eq BranchTrue
-instance showBranchTrue :: Show BranchTrue where
-  show (BranchTrue e) = "BranchTrue " <> show e
-
-data BranchFalse = BranchFalse Expr
-
-derive instance eqBranchFalse :: Eq BranchFalse
-instance showBranchFalse :: Show BranchFalse where
-  show (BranchFalse e) = "BranchFalse " <> show e
-
-
-data Elim = -- (x, type(x), branch)
-            ElimVar Var Typ Expr
-            -- (x, type(x), y, type(y), branch)
-          | ElimPair Var Typ Var Typ Expr
-          | ElimList BranchNil BranchCons
-          | ElimBool BranchTrue BranchFalse
+data Elim = ElimVar { x :: Var, tx :: Typ, e :: Expr }
+          | ElimPair { x :: Var, tx :: Typ, y :: Var, ty :: Typ, e:: Expr }
+          | ElimList { bnil :: Expr, bcons :: { x :: Var, y :: Var, e:: Expr } }
+          | ElimBool { btrue :: Expr, bfalse :: Expr }
 
 derive instance eqElim :: Eq Elim
 instance showElim :: Show Elim where
-  show (ElimVar v t e)          = "ElimVar " <> v <> ":" <> show t <> " " <> show e
-  show (ElimPair v1 t1 v2 t2 e) = "ElimPair " <> show v1 <> ":" <> show t1 <> " " <> show v2 <> ":" <> show t2 <> show e
-  show (ElimList bnil bcons)    = "ElimList " <> show bnil <> " " <> show bcons
-  show (ElimBool btrue bfalse)  = "ElimBool " <> show btrue <> " " <> show bfalse
+  show (ElimVar { x, tx, e })          = "ElimVar " <> x <> ":" <> show tx <> " " <> show e
+  show (ElimPair { x, tx, y, ty, e }) = "ElimPair " <> show x <> ":" <> show tx <> " " <> show y <> ":" <> show ty <> show e
+  show (ElimList { bnil,  bcons })    = "ElimList " <> show bnil <> " " <> show bcons
+  show (ElimBool { btrue, bfalse })  = "ElimBool " <> show btrue <> " " <> show bfalse

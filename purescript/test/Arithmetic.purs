@@ -17,6 +17,6 @@ module Test.Arithmetic where
 
 
 -- testAdd2 :: Boolean
--- testAdd2 = let b1 = ((typeOf expr1 CtxNil) == (typeOf (eval expr1 EnvNil) CtxNil)) 
+-- testAdd2 = let b1 = ((typeOf expr1 CtxNil) == (typeOf (eval expr1 EnvNil) CtxNil))
 --                b2 = ((typeOf expr1 CtxNil) == TypNum)
 --            in b1 && b2

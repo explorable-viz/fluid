@@ -29,19 +29,7 @@ instance freeVarsExpr :: FreeVars Expr where
     freeVars ExprBottom              = Nil
 
 instance freeVarsElim :: FreeVars Elim where
-    freeVars (ElimVar x t e)         = difference (freeVars e) (singleton x)
-    freeVars (ElimPair x _ y _ e)    = difference (freeVars e) (x:y:Nil)
-    freeVars (ElimList bNil bCons)   = union (freeVars bNil) (freeVars bCons)
-    freeVars (ElimBool bTrue bFalse) = Nil
-
-instance freeVarsBranchNil :: FreeVars BranchNil where
-    freeVars (BranchNil e) = freeVars e
-
-instance freeVarsBranchCons :: FreeVars BranchCons where
-    freeVars (BranchCons x xs e) = difference (freeVars e) (x:xs:Nil)
-
-instance freeVarsBranchTrue :: FreeVars BranchTrue where
-    freeVars (BranchTrue e) = freeVars e
-
-instance freeVarsBranchFalse :: FreeVars BranchFalse where
-    freeVars (BranchFalse e) = freeVars e
+    freeVars (ElimVar { x, e })  = difference (freeVars e) (singleton x)
+    freeVars (ElimPair { x, y, e })  = difference (freeVars e) (x:y:Nil)
+    freeVars (ElimList { bnil: e, bcons: { e: e' } })   = union (freeVars e) (freeVars e')
+    freeVars (ElimBool { btrue: e, bfalse: e' }) = Nil

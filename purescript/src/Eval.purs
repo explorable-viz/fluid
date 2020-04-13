@@ -4,32 +4,32 @@ import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
 import Expl (Match(..), Expl(..))
-import Expr 
+import Expr
 
 
 match :: Val -> Elim -> Maybe (T3 Env Expr Match)
 match val σ
  = case  val, σ of
     -- var
-    _, ElimVar x t e
+    _, ElimVar { x, tx, e }
         ->  Just $ T3 (Empty :+: Bind x val) e (MatchVar x)
     -- true
-    ValTrue, ElimBool (BranchTrue e1) (BranchFalse _)
+    ValTrue, ElimBool { btrue: e1, bfalse: _ }
         ->  Just $ T3 Empty e1 MatchTrue
     -- false
-    ValFalse, ElimBool (BranchTrue _) (BranchFalse e2)
+    ValFalse, ElimBool { btrue: _, bfalse: e2 }
         ->  Just $ T3 Empty e2 MatchFalse
     -- pair
-    ValPair v v', ElimPair x _ y _ e
-        ->  let ρ' = Empty :+: Bind x v :+: Bind y v' 
+    ValPair v v', ElimPair { x, y, e }
+        ->  let ρ' = Empty :+: Bind x v :+: Bind y v'
             in  Just $ T3 ρ' e (MatchPair x y)
     -- nil
-    ValNil, ElimList (BranchNil e2) (BranchCons _ _ _)
-        ->  Just $ T3 Empty e2 MatchNil
+    ValNil, ElimList { bnil: e, bcons: _ }
+        ->  Just $ T3 Empty e MatchNil
     -- cons
-    ValCons v v', ElimList (BranchNil _) (BranchCons x y e1)
-        ->  let ρ' = (Empty :+: Bind x v :+: Bind y v' )
-            in  Just $ T3 ρ' e1 (MatchCons x y)
+    ValCons v v', ElimList { bnil: _, bcons: { x, y, e } }
+        ->  let ρ' = Empty :+: Bind x v :+: Bind y v'
+            in  Just $ T3 ρ' e (MatchCons x y)
     -- failure
     _, _ ->  Nothing
 

@@ -8,28 +8,15 @@ class Typed a where
       typeOf :: a -> Ctx -> Typ
 
 
-instance hasTypBranchNil :: Typed BranchNil where
-      typeOf (BranchNil e) ctx = TypFun (TypList TypInt) (typeOf e ctx)  
-
-instance hasTypBranchCons :: Typed BranchCons where
-      typeOf (BranchCons x xs e ) ctx   = let tx = TypInt
-                                              txs = TypList TypInt  
-                                              te  = typeOf e (ctx :+: (Bind x tx) :+: (Bind xs txs))
-                                          in  TypFun txs te
-
-instance hasTypBranchTrue :: Typed BranchTrue where
-      typeOf (BranchTrue e) ctx = TypFun TypBool (typeOf e ctx)
-
-instance hasTypBranchFalse :: Typed BranchFalse where
-      typeOf (BranchFalse e) ctx = TypFun TypBool (typeOf e ctx)
-
-
 instance hasTypElim :: Typed Elim where
-      typeOf (ElimVar x tx e) ctx        = TypFun tx (typeOf e (ctx :+: (Bind x tx)))
-      typeOf (ElimPair x tx y ty e) ctx  = let te = typeOf e (ctx :+: (Bind x tx) :+: (Bind y ty))
+      typeOf (ElimVar { x, tx, e }) ctx        = TypFun tx (typeOf e (ctx :+: (Bind x tx)))
+      typeOf (ElimPair { x, tx, y, ty, e }) ctx  = let te = typeOf e (ctx :+: (Bind x tx) :+: (Bind y ty))
                                            in  TypFun (TypPair tx ty) te
-      typeOf (ElimList bNil bCons ) ctx  = typeOf bCons ctx
-      typeOf (ElimBool bTrue bFalse) ctx = typeOf bTrue ctx
+      typeOf (ElimList { bnil: e, bcons: { x, y, e: e' } } ) ctx  = let tx = TypInt
+                                                                        ty = TypList TypInt
+                                                                        te  = typeOf e (ctx :+: (Bind x tx) :+: (Bind y ty))
+                                          in  TypFun ty te
+      typeOf (ElimBool { btrue: e, bfalse: e' }) ctx = TypFun TypBool (typeOf e ctx)
 
 
 instance hasTypExpr :: Typed Expr where
@@ -38,7 +25,7 @@ instance hasTypExpr :: Typed Expr where
                                                 Just t -> t
                                                 _      -> TypFailure ("variable " <> x <> " not found")
       typeOf (ExprPair e1 e2) ctx   = TypPair (typeOf e1 ctx) (typeOf e2 ctx)
-      typeOf (ExprPairFst e1 ) ctx = TypPairFst (typeOf e1 ctx) 
+      typeOf (ExprPairFst e1 ) ctx = TypPairFst (typeOf e1 ctx)
       typeOf (ExprPairSnd e2) ctx = TypPairSnd (typeOf e2 ctx)
       typeOf (ExprLet x e1 e2) ctx  = let v1    = (typeOf e1 ctx)
                                           ctx'  = (ctx :+: (Bind x v1))

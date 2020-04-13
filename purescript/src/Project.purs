@@ -1,7 +1,7 @@
 module Project where
 
 import Expr
-import Availability
+import Availability (class Available, isTop)
 
 class Projectable a where
     project :: a -> a
@@ -26,26 +26,13 @@ instance projExpr :: Projectable Expr where
     project (ExprMatch e σ)       = ExprMatch (project e) σ
     project (ExprAdd e1 e2)       = ExprAdd e1 e2
 
-instance projBranchNil :: Projectable BranchNil where
-      project (BranchNil e)  = BranchNil (project e)
-
-instance projBranchCons :: Projectable BranchCons where
-      project (BranchCons x xs  e) = BranchCons x xs  (project e)
-
-instance projBranchTrue :: Projectable BranchTrue where
-      project (BranchTrue e) = BranchTrue (project e)
-
-instance projBranchFalse :: Projectable BranchFalse where
-      project (BranchFalse e)  = BranchFalse (project e)
-
-
 instance projElim :: Projectable Elim where
-      project (ElimVar x tx e)         = ElimVar x tx (project e)
-      project (ElimPair x tx y ty e)   = ElimPair x tx y ty (project e)
-      project (ElimList bNil bCons )   = ElimList (project bNil) (project bCons)
-      project (ElimBool bTrue bFalse)  = ElimBool (project bTrue) (project bFalse)
+      project (ElimVar { x, tx, e })   = ElimVar { x, tx, e: project e }
+      project (ElimPair { x, tx, y, ty, e })   = ElimPair { x, tx, y, ty, e: project e }
+      project (ElimList { bnil: e, bcons: { x, y, e: e' } })   = ElimList { bnil: project e, bcons: { x, y, e: project e' } }
+      project (ElimBool { btrue: e, bfalse: e' })  = ElimBool { btrue: project e, bfalse: project e' }
 
-instance projVal :: Projectable Val where 
+instance projVal :: Projectable Val where
       project ValBottom          = ValBottom
       project ValTrue            = ValTrue
       project ValFalse           = ValFalse
@@ -60,11 +47,11 @@ instance projVal :: Projectable Val where
       project (ValConsTail xs)   = project xs
       project (ValFailure x)     = ValFailure x
 
-instance projSnoc :: (Projectable a, Available a) => Projectable (Bindings a) where 
+instance projBindings :: (Projectable a, Available a) => Projectable (Bindings a) where
       project Empty = Empty
-      project (bs :+: Bind x a) =  if   isTop a  
+      project (bs :+: Bind x a) =  if   isTop a
                                    then project bs :+: Bind x a
-                                   else project bs 
+                                   else project bs
 
 instance projTyp :: Projectable Typ where
       project TypBottom       = TypBottom
