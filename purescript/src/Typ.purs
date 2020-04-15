@@ -9,15 +9,23 @@ class Typed a where
 
 
 instance hasTypElim :: Typed Elim where
-      typeOf (ElimVar { x, tx, e }) ctx        = TypFun tx (typeOf e (ctx :+: (Bind x tx)))
-      typeOf (ElimPair { x, tx, y, ty, e }) ctx  = let te = typeOf e (ctx :+: (Bind x tx) :+: (Bind y ty))
-                                           in  TypFun (TypPair tx ty) te
-      typeOf (ElimList { bnil: e, bcons: { x, y, e: e' } } ) ctx  = let tx = TypInt
-                                                                        ty = TypList TypInt
-                                                                        te  = typeOf e (ctx :+: (Bind x tx) :+: (Bind y ty))
-                                          in  TypFun ty te
-      typeOf (ElimBool { btrue: e, bfalse: e' }) ctx = TypFun TypBool (typeOf e ctx)
-
+      typeOf (ElimVar { x, tx, e }) ctx        
+            = TypFun tx (typeOf e (ctx :+: (Bind x tx)))
+      typeOf (ElimPair { x, tx, y, ty, e }) ctx  
+            = let te = typeOf e (ctx :+: (Bind x tx) :+: (Bind y ty))
+              in  TypFun (TypPair tx ty) te
+      typeOf (ElimList { bnil: e, bcons: { x, y, e: e' } } ) ctx  
+            = let tnil  = typeOf e ctx
+                  tx    = TypInt 
+                  ty    = TypList TypInt
+                  tcons = typeOf e' (ctx :+: (Bind x tx) :+: (Bind y ty))
+              in  if   tnil == tcons  
+                  then TypFun (TypList TypInt) tnil 
+                  else TypFailure "Elim branches have different types"
+      typeOf (ElimBool { btrue: e, bfalse: e' }) ctx 
+            = if   typeOf e ctx == typeOf e' ctx 
+              then TypFun TypBool (typeOf e ctx)
+              else TypFailure "Elim branches have different types"
 
 instance hasTypExpr :: Typed Expr where
       typeOf ExprBottom ctx         = TypBottom

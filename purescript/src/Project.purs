@@ -1,7 +1,7 @@
 module Project where
 
+import Prelude ((==))
 import Expr
-import Availability (class Available, isTop)
 
 class Projectable a where
     project :: a -> a
@@ -47,10 +47,16 @@ instance projVal :: Projectable Val where
       project (ValConsTail xs)   = project xs
       project (ValFailure x)     = ValFailure x
 
-instance projBindings :: (Projectable a, Available a) => Projectable (Bindings a) where
+instance projEnv :: Projectable (Bindings Val) where
       project Empty = Empty
-      project (bs :+: Bind x a) =  if   isTop a
-                                   then project bs :+: Bind x a
+      project (bs :+: Bind x v) =  if   v == ValBottom
+                                   then project bs :+: Bind x v
+                                   else project bs
+
+instance projCtx :: Projectable (Bindings Typ) where
+      project Empty = Empty
+      project (bs :+: Bind x t) =  if   t == TypBottom
+                                   then project bs :+: Bind x t
                                    else project bs
 
 instance projTyp :: Projectable Typ where

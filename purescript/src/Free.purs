@@ -1,4 +1,4 @@
-module Utils where
+module Free where
 
 import Data.List (List(..), (:), difference, union, singleton)
 import Prelude ((<>))
@@ -31,5 +31,5 @@ instance freeVarsExpr :: FreeVars Expr where
 instance freeVarsElim :: FreeVars Elim where
     freeVars (ElimVar { x, e })  = difference (freeVars e) (singleton x)
     freeVars (ElimPair { x, y, e })  = difference (freeVars e) (x:y:Nil)
-    freeVars (ElimList { bnil: e, bcons: { e: e' } })   = union (freeVars e) (freeVars e')
-    freeVars (ElimBool { btrue: e, bfalse: e' }) = Nil
+    freeVars (ElimList { bnil: e, bcons: { x, y, e: e'}}) = union (freeVars e) (difference (freeVars e') (x:y:Nil))
+    freeVars (ElimBool { btrue: e, bfalse: e' }) = union (freeVars e) (freeVars e')
