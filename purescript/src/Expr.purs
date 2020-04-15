@@ -9,23 +9,10 @@ type Var = String
 
 data Bind a = Bind Var a
 
-derive instance eqBind :: (Eq a) => Eq (Bind a)
-instance showBind :: (Show a) => Show (Bind a) where
-  show (Bind x a) = "Bind " <> show x <> " " <> show a
-
 data T3 a b c = T3 a b c
-
-derive instance eqT3 :: (Eq a, Eq b, Eq c) => Eq (T3 a b c)
-instance showT3 :: (Show a, Show b, Show c) => Show (T3 a b c) where
-  show (T3 a b c) = "T3 " <> show a <> " " <> show b <> " " <> show c
 
 data Bindings a =
   Empty | Snoc (Bindings a) (Bind a)
-
-derive instance eqBindings :: (Eq a) => Eq (Bindings a)
-instance showBindings :: (Show a) => Show (Bindings a) where
-  show Empty = "Empty"
-  show (Snoc m (Bind k v)) = show m <> ":+: (" <> show k <> ", " <> show v <> ")"
 
 type Env = Bindings Val
 
@@ -45,12 +32,6 @@ type Ctx = Bindings Typ
 
 data Availability = Top | Bottom
 
-derive instance eqAvailability :: Eq Availability
-instance showAvailability :: Show Availability where
-  show Top    = "Top"
-  show Bottom = "Bottom"
-
-
 data Typ = TypBottom
          | TypInt
          | TypBool
@@ -58,6 +39,55 @@ data Typ = TypBottom
          | TypList Typ | TypListHead Typ | TypListTail Typ
          | TypPair Typ Typ | TypPairFst Typ | TypPairSnd Typ
          | TypFailure String
+
+data Val = ValBottom
+         | ValTrue
+         | ValFalse
+         | ValInt Int
+         | ValClosure Env String Elim
+         | ValPair Val Val | ValPairFst Val | ValPairSnd Val
+         | ValNil
+         | ValCons Val Val | ValConsHead Val | ValConsTail Val
+         | ValFailure String
+
+data Expr = ExprBottom
+          | ExprInt Int
+          | ExprVar Var
+          | ExprTrue
+          | ExprFalse
+          | ExprPair Expr Expr | ExprPairFst Expr | ExprPairSnd Expr
+          | ExprNil
+          | ExprCons Expr Expr | ExprConsHead Expr | ExprConsTail Expr
+          | ExprLet Var Expr Expr | ExprLetBody Var Expr Expr
+          | ExprMatch Expr Elim
+          | ExprLetrec String Elim Expr
+          | ExprApp Expr Expr
+          | ExprAdd Expr Expr
+
+data Elim = ElimVar { x :: Var, tx :: Typ, e :: Expr }
+          | ElimPair { x :: Var, tx :: Typ, y :: Var, ty :: Typ, e:: Expr }
+          | ElimList { bnil :: Expr, bcons :: { x :: Var, y :: Var, e:: Expr } }
+          | ElimBool { btrue :: Expr, bfalse :: Expr }
+
+
+
+derive instance eqT3 :: (Eq a, Eq b, Eq c) => Eq (T3 a b c)
+instance showT3 :: (Show a, Show b, Show c) => Show (T3 a b c) where
+  show (T3 a b c) = "T3 " <> show a <> " " <> show b <> " " <> show c
+
+derive instance eqBind :: (Eq a) => Eq (Bind a)
+instance showBind :: (Show a) => Show (Bind a) where
+  show (Bind x a) = "Bind " <> show x <> " " <> show a
+
+derive instance eqBindings :: (Eq a) => Eq (Bindings a)
+instance showBindings :: (Show a) => Show (Bindings a) where
+  show Empty = "Empty"
+  show (Snoc m (Bind k v)) = show m <> ":+: (" <> show k <> ", " <> show v <> ")"
+
+derive instance eqAvailability :: Eq Availability
+instance showAvailability :: Show Availability where
+  show Top    = "Top"
+  show Bottom = "Bottom"
 
 derive instance eqTyp :: Eq Typ
 instance showTyp :: Show Typ where
@@ -72,17 +102,6 @@ instance showTyp :: Show Typ where
   show (TypPairFst t1)  = "TypPairFst " <> show t1
   show (TypPairSnd t2)  = "TypPairSnd " <> show t2
   show (TypFailure s)   = "TypFailure " <> s
-
-
-data Val = ValBottom
-         | ValTrue
-         | ValFalse
-         | ValInt Int
-         | ValClosure Env String Elim
-         | ValPair Val Val | ValPairFst Val | ValPairSnd Val
-         | ValNil
-         | ValCons Val Val | ValConsHead Val | ValConsTail Val
-         | ValFailure String
 
 derive instance eqVal :: Eq Val
 instance showVal :: Show Val where
@@ -99,21 +118,6 @@ instance showVal :: Show Val where
   show (ValConsTail xs)          = "ValConsTail " <> show xs
   show (ValClosure env fun elim) = "ValClosure " <> show env <> " " <> show fun <> " " <> show elim
   show (ValFailure s)            = "ValFailure " <> s
-
-
-data Expr = ExprBottom
-          | ExprInt Int
-          | ExprVar Var
-          | ExprTrue
-          | ExprFalse
-          | ExprPair Expr Expr | ExprPairFst Expr | ExprPairSnd Expr
-          | ExprNil
-          | ExprCons Expr Expr | ExprConsHead Expr | ExprConsTail Expr
-          | ExprLet Var Expr Expr | ExprLetBody Var Expr Expr
-          | ExprMatch Expr Elim
-          | ExprLetrec String Elim Expr
-          | ExprApp Expr Expr
-          | ExprAdd Expr Expr
 
 derive instance eqExpr :: Eq Expr
 instance showExpr :: Show Expr where
@@ -135,12 +139,6 @@ instance showExpr :: Show Expr where
   show (ExprLetrec fun elim e) = "ExprLetrec " <> show fun <> " " <> show elim <> " " <> show e
   show (ExprApp e1 e2)         = "ExprApp " <> show e1 <> " " <> show e2
   show (ExprAdd e1 e2)         = "ExprAdd " <> show e1 <> " " <> show e2
-
-
-data Elim = ElimVar { x :: Var, tx :: Typ, e :: Expr }
-          | ElimPair { x :: Var, tx :: Typ, y :: Var, ty :: Typ, e:: Expr }
-          | ElimList { bnil :: Expr, bcons :: { x :: Var, y :: Var, e:: Expr } }
-          | ElimBool { btrue :: Expr, bfalse :: Expr }
 
 derive instance eqElim :: Eq Elim
 instance showElim :: Show Elim where
