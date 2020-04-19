@@ -43,11 +43,11 @@ instance showExpl :: Show Expl where
   show (ExplPair t1 t2)     = "ExplPair " <> show t1 <> show t2
   show (ExplNil)            = "ExplNil "
   show (ExplCons x xs)      = "ExplCons " <> show x <> " " <> show xs
-  show (ExplApp t1 t2 m b)  = "ExplCons " <> show t1 <> " " <> show t2 <> " " <> show m <> " " <> show b
+  show (ExplApp t1 t2 m b)  = "ExplApp (" <> show t1 <> ") (" <> show t2 <> ")   " <> show m <> " " <> show b <> "\n   "
   show (ExplLet x e1 e2)    = "ExplLet " <> x <> " " <> show e1 <> " " <> show e1
   show (ExplAdd t1 t2)      = "ExplAdd " <> show t1 <> " " <> show t2
-  show (ExplMatch t1 m t2)  = "ExplMatch " <> show t1 <> " " <> show m <> " " <> show t2
-  show (ExplLetrec x t1 t2) = "ExplLetrec " <> x <> " " <> show t1 <> " " <> show t2
+  show (ExplMatch t1 m t2)  = "ExplMatch " <> show t1 <> " " <> show m <> " " <> show t2 
+  show (ExplLetrec x t1 t2) = "ExplLetrec \n        letrec " <> x <> " = " <> show t1 <> "\n        in     " <> show t2 <> "\n"
   show (ExplFun env elim)   = "ExplClosure " <> show env <> " " <> show elim
   show ExplTrue             = "ExplTrue "
   show ExplFalse            = "ExplFalse "

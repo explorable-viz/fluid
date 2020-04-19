@@ -1,6 +1,8 @@
 module Pretty where
 
-import Expr (Elim(..), Expr(..), Typ(..))
+import Expr (Elim(..), Expr(..), Typ(..), Val(..))
+import Eval
+import Expl
 import Prelude
 import Data.Array (length, range, take, zipWith)
 import Data.Foldable (class Foldable, foldl, foldMap, intercalate)
@@ -122,6 +124,16 @@ foldExprCons (ExprNil) = text ""
 foldExprCons (ExprCons e es) = text ", " :<>: pretty e :<>: foldExprCons es
 foldExprCons _ = text ""
 
+foldExplCons :: Expl -> Doc
+foldExplCons (ExplNil) = text ""
+foldExplCons (ExplCons e es) = text ", " :<>: pretty e :<>: foldExplCons es
+foldExplCons _ = text ""
+
+foldValCons :: Val -> Doc
+foldValCons (ValNil) = text ""
+foldValCons (ValCons e es) = text ", " :<>: pretty e :<>: foldValCons es
+foldValCons _ = text ""
+
 instance exprPretty :: Pretty Expr where
     pretty ExprBottom  = text "⊥"
     pretty (ExprInt n) = text (show n)
@@ -146,6 +158,36 @@ instance exprPretty :: Pretty Expr where
     pretty (ExprAdd e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
 
 
+instance explPretty :: Pretty Expl where
+    pretty ExplBottom  = text "⊥"
+    pretty (ExplInt n) = text (show n)
+    pretty (ExplVar x) = text x
+    pretty ExplTrue    = text "true"
+    pretty ExplFalse   = text "false"
+    pretty (ExplPair e1 e2) = text "(" :<>: pretty e1 :<>: text ", " :<>: pretty e2 :<>: text ")"
+    pretty ExplNil = text "[]"
+    pretty (ExplCons e es) = text "[" :<>: pretty e :<>: foldExplCons es :<>: text "]"
+    pretty (ExplLet x e1 e2) = atop (text ("let " <>  x <> " = ") :<>: pretty e1)
+                                    (text "in  " :<>: pretty e2)
+    pretty (ExplMatch e1 m e2) = atop (atop (text "match " :<>: pretty e1 :<>: text " as {") (pretty m)) (text "result = " :<>: pretty e2)
+    pretty (ExplLetrec x elim e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty elim)
+                                        (text "in     " :<>: pretty e)
+    pretty (ExplApp e1 e2 m e3) =  atop (atop (text "App (" :<>: pretty e1 :<>: text ", " :<>: pretty e2 :<>: text ")") 
+                                                   (text "     Match:  " :<>: pretty m)) 
+                                                   (text "     Result: " :<>: pretty e3)
+    pretty (ExplAdd e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
+    pretty (ExplFun env elim) = text "Fun(" :<>:  (text "env \n") :<>: (pretty elim) :<>: text ")" 
+
+
+instance prettyMatch :: Pretty Match where
+  pretty (MatchVar v )     = text "MatchVar " :<>: text v
+  pretty (MatchPair t1 t2) = text "MatchPair " :<>: text t1 :<>: text " " :<>: text t2
+  pretty (MatchNil)        = text "MatchNil "
+  pretty (MatchCons x xs)  = text "MatchCons " :<>: text x :<>: text " " :<>: text xs
+  pretty (MatchTrue)       = text "MatchTrue"
+  pretty (MatchFalse)      = text "MatchFalse"
+
+
 instance exprElim :: Pretty Elim where
     pretty (ElimVar { x, tx, e }) = text "  " :<>: text x :<>: text " : " :<>: pretty tx :<>: text " -> " :<>: pretty e
     pretty (ElimPair { x, tx, y, ty, e }) = text "   (" :<>: text x :<>: text " : " :<>: pretty tx :<>:
@@ -165,3 +207,23 @@ instance typPretty :: Pretty Typ where
     pretty (TypPairFst a)  = text "Pair " :<>: pretty a :<>: text " ⊥"
     pretty (TypPairSnd b)  = text "Pair ⊥ " :<>: pretty b
     pretty (TypFailure s)  = text "Fail " :<>: text s
+
+instance valPretty :: Pretty Val where 
+    pretty ValBottom = text "⊥"
+    pretty (ValInt n)  = text $ show n
+    pretty ValTrue = text "True"
+    pretty ValFalse = text "False"
+    pretty (ValClosure env f elim) = text "Closure(" :<>: atop (text "env" :<>: text f ) (pretty elim) :<>: text ")"
+    pretty (ValPair a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
+    pretty (ValPairFst a) = text "(" :<>: pretty a :<>: text ", ⊥)"
+    pretty (ValPairSnd b) = text "(⊥, " :<>: pretty b :<>: text ")"
+    pretty ValNil = text "[]"
+    pretty (ValCons x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
+    pretty (ValConsHead x) = text "[" :<>: pretty x :<>: text ", ⊥]"
+    pretty (ValConsTail xs) = text "[" :<>: text "⊥" :<>: foldValCons xs :<>: text "]"
+    pretty (ValFailure s) = text s
+
+
+
+instance explvalElim :: Pretty ExplVal where
+    pretty (ExplVal {t, v}) = atop (pretty t) (pretty v)
