@@ -4,11 +4,12 @@ import Prelude
 import Effect (Effect)
 import Effect.Class.Console (log)
 import Test.Eval (evalExpr1)
-import Test.Fwd (expr1')
+import Test.Fwd (v, v')
 import Pretty (pretty)
 import Partial.Unsafe (unsafePartial)
 
 main :: Effect Unit
 main = do
   log $ show (pretty (unsafePartial evalExpr1))
-  log $ show (pretty expr1')
+  log $ show (pretty v)
+  log $ show (pretty v')

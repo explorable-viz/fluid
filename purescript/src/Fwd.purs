@@ -58,6 +58,7 @@ fwd_match val σ ξ
     _,_,_ ->  Nothing
 
 
+-- TODO: remove Partial typeclass.
 fwd :: Partial => Env -> Expr -> Expl -> Availability -> Val
 -- bot
 fwd _ ExprBottom _ _ = ValBottom
