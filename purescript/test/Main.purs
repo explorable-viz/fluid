@@ -3,10 +3,9 @@ module Test.Main where
 import Prelude (Unit)
 import Effect (Effect)
 import Effect.Class.Console (log)
-import Test.Pretty
-import Test.Eval
-import Pretty (pretty, render)
-import Data.Show 
+import Test.Eval (evalExpr1)
+import Pretty (pretty)
+import Data.Show (show)
 import Partial.Unsafe (unsafePartial)
 
 main :: Effect Unit

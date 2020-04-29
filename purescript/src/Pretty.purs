@@ -1,8 +1,8 @@
 module Pretty where
 
 import Expr (Elim(..), Expr(..), Typ(..), Val(..))
-import Eval
-import Expl
+import Eval (ExplVal(..))
+import Expl (Expl(..), Match(..))
 import Prelude
 import Data.Array (length, range, take, zipWith)
 import Data.Foldable (class Foldable, foldl, foldMap, intercalate)
@@ -172,11 +172,11 @@ instance explPretty :: Pretty Expl where
     pretty (ExplMatch e1 m e2) = atop (atop (text "match " :<>: pretty e1 :<>: text " as {") (pretty m)) (text "result = " :<>: pretty e2)
     pretty (ExplLetrec x elim e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty elim)
                                         (text "in     " :<>: pretty e)
-    pretty (ExplApp e1 e2 m e3) =  atop (atop (text "App (" :<>: pretty e1 :<>: text ", " :<>: pretty e2 :<>: text ")") 
-                                                   (text "     Match:  " :<>: pretty m)) 
+    pretty (ExplApp e1 e2 m e3) =  atop (atop (text "App (" :<>: pretty e1 :<>: text ", " :<>: pretty e2 :<>: text ")")
+                                                   (text "     Match:  " :<>: pretty m))
                                                    (text "     Result: " :<>: pretty e3)
     pretty (ExplAdd e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
-    pretty (ExplFun env elim) = text "Fun(" :<>:  (text "env \n") :<>: (pretty elim) :<>: text ")" 
+    pretty (ExplFun env elim) = text "Fun(" :<>:  (text "env \n") :<>: (pretty elim) :<>: text ")"
 
 
 instance prettyMatch :: Pretty Match where
@@ -208,7 +208,7 @@ instance typPretty :: Pretty Typ where
     pretty (TypPairSnd b)  = text "Pair ⊥ " :<>: pretty b
     pretty (TypFailure s)  = text "Fail " :<>: text s
 
-instance valPretty :: Pretty Val where 
+instance valPretty :: Pretty Val where
     pretty ValBottom = text "⊥"
     pretty (ValInt n)  = text $ show n
     pretty ValTrue = text "True"
