@@ -4,6 +4,7 @@ import Expr
 import Prelude ((==), (<>))
 import Data.Maybe (Maybe(..))
 
+
 class Typed a where
       typeOf :: a -> Ctx -> Typ
 
