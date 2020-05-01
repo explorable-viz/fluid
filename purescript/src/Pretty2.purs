@@ -222,5 +222,5 @@ instance valPretty :: Pretty Val where
 
 
 
-instance explvalElim :: Pretty ExplVal where
+instance explvalPretty :: Pretty ExplVal where
     pretty (ExplVal {t, v}) = atop (pretty t) (pretty v)
