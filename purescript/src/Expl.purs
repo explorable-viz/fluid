@@ -11,13 +11,6 @@ data Match = MatchVar Var
            | MatchCons Var Var
 
 derive instance eqMatch :: Eq Match
-instance showMatch :: Show Match where
-  show (MatchVar v )     = "MatchVar " <> v
-  show (MatchPair t1 t2) = "MatchPair " <> show t1 <> show t2
-  show (MatchNil)        = "MatchNil "
-  show (MatchCons x xs)  = "MatchCons " <> x <> " " <> xs
-  show (MatchTrue)       = "MatchTrue"
-  show (MatchFalse)      = "MatchFalse"
 
 data Expl =  ExplBottom
            | ExplVar Var
@@ -36,18 +29,3 @@ data Expl =  ExplBottom
 
 
 derive instance eqExpl :: Eq Expl
-instance showExpl :: Show Expl where
-  show (ExplBottom)         = "ExplBottom"
-  show (ExplVar v )         = "ExplVar " <> v
-  show (ExplInt n)          = "ExplInt " <> show n
-  show (ExplPair t1 t2)     = "ExplPair " <> show t1 <> show t2
-  show (ExplNil)            = "ExplNil "
-  show (ExplCons x xs)      = "ExplCons " <> show x <> " " <> show xs
-  show (ExplApp t1 t2 m b)  = "ExplApp (" <> show t1 <> ") (" <> show t2 <> ")   " <> show m <> " " <> show b <> "\n   "
-  show (ExplLet x e1 e2)    = "ExplLet " <> x <> " " <> show e1 <> " " <> show e1
-  show (ExplAdd t1 t2)      = "ExplAdd " <> show t1 <> " " <> show t2
-  show (ExplMatch t1 m t2)  = "ExplMatch " <> show t1 <> " " <> show m <> " " <> show t2
-  show (ExplLetrec x t1 t2) = "ExplLetrec \n        letrec " <> x <> " = " <> show t1 <> "\n        in     " <> show t2 <> "\n"
-  show (ExplFun env elim)   = "ExplClosure " <> show env <> " " <> show elim
-  show ExplTrue             = "ExplTrue "
-  show ExplFalse            = "ExplFalse "
