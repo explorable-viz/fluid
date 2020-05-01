@@ -1,10 +1,10 @@
-module Fwd where
+module Fwd2 where
 
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
-import Expr
-import Expl (Expl(..), Match(..))
+import Expr2
+import Expl2 (Expl(..), Match(..))
 
 fwd_match :: Val -> Elim -> Match -> Maybe (T3 Env Expr Availability)
 fwd_match val σ ξ
@@ -12,47 +12,48 @@ fwd_match val σ ξ
     -- var
     _, ElimVar { x, tx, e }, MatchVar mx
         ->  Just $ T3 (Empty :+: Bind x val) e Top
+    -- true-sel
+    ValTrueSel, ElimBool { btrue: e, bfalse: _ }, MatchTrue
+        ->  Just $ T3 Empty e Top
     -- true
     ValTrue, ElimBool { btrue: e, bfalse: _ }, MatchTrue
-        ->  Just $ T3 Empty e Top
-    -- true-del
+        ->  Just $ T3 Empty e Bottom
+    -- true-bot
     ValBottom, ElimBool { btrue: e, bfalse: _ }, MatchTrue
         ->  Just $ T3 Empty e Bottom
+    -- false-sel
+    ValFalseSel, ElimBool { btrue: _, bfalse: e }, MatchFalse
+        ->  Just $ T3 Empty e Top
     -- false
     ValFalse, ElimBool { btrue: _, bfalse: e }, MatchFalse
-        ->  Just $ T3 Empty e Top
-    -- false-del
+        ->  Just $ T3 Empty e Bottom
+    -- false-bot
     ValBottom, ElimBool { btrue: _, bfalse: e }, MatchFalse
         ->  Just $ T3 Empty e Bottom
-    -- pair
-    ValPair x' y', ElimPair { x, y, e }, MatchPair mx my
-        ->  let ρ' = Empty :+: Bind x x' :+: Bind y y'
+    -- pair-sel
+    ValPairSel u v, ElimPair { x, y, e }, MatchPair mx my
+        ->  let ρ' = Empty :+: Bind x u :+: Bind y v
             in  Just $ T3 ρ' e Top
-    -- pair-projl
-    ValPairFst x', ElimPair { x, y, e }, MatchPair mx my
-        ->  let ρ' = Empty :+: Bind x x' :+: Bind y ValBottom
+    -- pair
+    ValPair u v, ElimPair { x, y, e }, MatchPair mx my
+        ->  let ρ' = Empty :+: Bind x u :+: Bind y v
             in  Just $ T3 ρ' e Bottom
-    -- pair-projr
-    ValPairSnd y', ElimPair { x, y, e }, MatchPair mx my
-        ->  let ρ' = Empty :+: Bind x ValBottom :+: Bind y y'
-            in  Just $ T3 ρ' e Bottom
-    -- nil
-    ValNil, ElimList { bnil: e, bcons: _ }, MatchNil
+    -- nil-sel
+    ValNilSel, ElimList { bnil: e, bcons: _ }, MatchNil
         ->  Just $ T3 Empty e Top
-    -- nil-del
+    -- nil-bot
+    ValNil, ElimList { bnil: e, bcons: _ }, MatchNil
+        ->  Just $ T3 Empty e Bottom
+    -- nil-bot
     ValBottom, ElimList { bnil: e, bcons: _ }, MatchNil
         ->  Just $ T3 Empty e Bottom
-    -- cons
-    ValCons v v', ElimList { bnil: _, bcons: { x, y, e } }, MatchCons mx mxs
-        ->  let ρ' = Empty :+: Bind x v :+: Bind y v'
+    -- cons-sel
+    ValConsSel u v, ElimList { bnil: _, bcons: { x, y, e } }, MatchCons mx mxs
+        ->  let ρ' = Empty :+: Bind x u :+: Bind y v
             in  Just $ T3 ρ' e Top
-    -- cons-projhead
-    ValConsHead v, ElimList { bnil: _, bcons: { x, y, e } }, MatchCons mx mxs
+    -- cons
+    ValCons v, ElimList { bnil: _, bcons: { x, y, e } }, MatchCons mx mxs
         ->  let ρ' = Empty :+: Bind x v :+: Bind y ValBottom
-            in  Just $ T3 ρ' e Bottom
-    -- cons-projtail
-    ValConsTail v', ElimList { bnil: _, bcons: { x, y, e } }, MatchCons mx mxs
-        ->  let ρ' = Empty :+: Bind x ValBottom :+: Bind y v'
             in  Just $ T3 ρ' e Bottom
     -- failure
     _,_,_ ->  Nothing
