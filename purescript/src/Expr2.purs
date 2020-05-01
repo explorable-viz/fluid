@@ -50,8 +50,7 @@ data Val = ValBottom
          | ValCons Val Val | ValConsSel Val Val
          | ValFailure String
 
-data Expr = ExprBottom
-          | ExprInt Int | ExprIntSel Int
+data Expr = ExprInt Int | ExprIntSel Int
           | ExprVar Var
           | ExprTrue | ExprTrueSel
           | ExprFalse | ExprFalseSel

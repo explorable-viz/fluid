@@ -38,8 +38,6 @@ data ExplVal = ExplVal { t :: Expl, v :: Val }
 
 
 eval :: Partial => Env -> Expr -> ExplVal
--- bot
-eval _ ExprBottom = ExplVal { t: ExplBottom, v: ValBottom }
 -- var
 eval ρ (ExprVar x)
  = case find x ρ of
