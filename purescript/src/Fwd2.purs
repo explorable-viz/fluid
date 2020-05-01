@@ -34,6 +34,10 @@ fwd_match val σ ξ
     ValPairSel u v, ElimPair { x, y, e }, MatchPair mx my
         ->  let ρ' = Empty :+: Bind x u :+: Bind y v
             in  Just $ T3 ρ' e Top
+    -- pair-bot
+    ValBottom, ElimPair { x, y, e }, MatchPair mx my
+        ->  let ρ' = Empty :+: Bind x ValBottom :+: Bind y ValBottom
+            in  Just $ T3 ρ' e Bottom
     -- pair
     ValPair u v, ElimPair { x, y, e }, MatchPair mx my
         ->  let ρ' = Empty :+: Bind x u :+: Bind y v
@@ -41,7 +45,7 @@ fwd_match val σ ξ
     -- nil-sel
     ValNilSel, ElimList { bnil: e, bcons: _ }, MatchNil
         ->  Just $ T3 Empty e Top
-    -- nil-bot
+    -- nil
     ValNil, ElimList { bnil: e, bcons: _ }, MatchNil
         ->  Just $ T3 Empty e Bottom
     -- nil-bot
@@ -51,6 +55,10 @@ fwd_match val σ ξ
     ValConsSel u v, ElimList { bnil: _, bcons: { x, y, e } }, MatchCons mx mxs
         ->  let ρ' = Empty :+: Bind x u :+: Bind y v
             in  Just $ T3 ρ' e Top
+    -- cons-bot
+    ValBottom, ElimList { bnil: _, bcons: { x, y, e } }, MatchCons mx mxs
+        ->  let ρ' = Empty :+: Bind x ValBottom :+: Bind y ValBottom
+            in  Just $ T3 ρ' e Bottom
     -- cons
     ValCons v, ElimList { bnil: _, bcons: { x, y, e } }, MatchCons mx mxs
         ->  let ρ' = Empty :+: Bind x v :+: Bind y ValBottom
