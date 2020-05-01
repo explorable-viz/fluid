@@ -58,69 +58,70 @@ fwd_match val σ ξ
     _,_,_ ->  Nothing
 
 
-fwd :: Partial => Expr -> Expl -> Availability -> Env -> Val
+-- TODO: remove Partial typeclass.
+fwd :: Partial => Env -> Expr -> Expl -> Availability -> Val
 -- bot
-fwd (ExprBottom) t α ρ = ValBottom
+fwd _ ExprBottom _ _ = ValBottom
 -- var
-fwd (ExprVar x) t α ρ
+fwd ρ (ExprVar x) t α
  = case find x ρ of
     Just val -> val
     _        -> ValFailure ("variable " <> x <> " not found")
 -- true
-fwd ExprTrue ExplTrue Top  ρ                      = ValTrue
+fwd ρ ExprTrue ExplTrue Top                        = ValTrue
 -- true-bot
-fwd ExprTrue ExplTrue Bottom  ρ                   = ValBottom
+fwd ρ ExprTrue ExplTrue Bottom                     = ValBottom
 -- false
-fwd ExprFalse ExplFalse Top ρ                     = ValFalse
+fwd ρ ExprFalse ExplFalse Top                     = ValFalse
 -- false-bot
-fwd ExprFalse ExplFalse Bottom ρ                  = ValBottom
+fwd ρ ExprFalse ExplFalse Bottom                  = ValBottom
 -- int
-fwd (ExprInt n) (ExplInt tn) Top ρ                = ValInt n
+fwd ρ (ExprInt n) (ExplInt tn) Top                = ValInt n
 -- int-bot
-fwd (ExprInt n) (ExplInt tn) Bottom ρ             = ValBottom
+fwd ρ (ExprInt n) (ExplInt tn) Bottom             = ValBottom
 -- pair
-fwd (ExprPair e1 e2) (ExplPair te1 te2) Top  ρ    = ValPair (fwd e1 te1 Top ρ) (fwd e2 te2 Top ρ)
+fwd ρ (ExprPair e1 e2) (ExplPair te1 te2) Top      = ValPair (fwd ρ e1 te1 Top) (fwd ρ e2 te2 Top)
 -- pair-botl or pair-botr
-fwd (ExprPair e1 e2) (ExplPair te1 te2) Bottom ρ  = case (fwd e1 te1 Bottom ρ) of
+fwd ρ (ExprPair e1 e2) (ExplPair te1 te2) Bottom  = case (fwd ρ e1 te1 Bottom) of
                                                         -- pair-botr
-                                                        ValBottom -> ValPairSnd (fwd e2 te2 Bottom ρ)
+                                                        ValBottom -> ValPairSnd (fwd ρ e2 te2 Bottom)
                                                         -- pair-botl
                                                         v         -> ValPairFst v
 -- pair-projl
-fwd (ExprPairFst e1) (ExplPair te1 te2) α ρ   = ValPairFst (fwd e1 te1 α ρ)
+fwd ρ (ExprPairFst e1) (ExplPair te1 te2) α   = ValPairFst (fwd ρ e1 te1 α)
 -- pair-projr
-fwd (ExprPairSnd e2) (ExplPair te1 te2) α ρ   = ValPairSnd (fwd e2 te2 α ρ)
+fwd ρ (ExprPairSnd e2) (ExplPair te1 te2) α   = ValPairSnd (fwd ρ e2 te2 α)
 -- nil
-fwd ExprNil ExplNil Top ρ                     = ValNil
+fwd ρ ExprNil ExplNil Top                     = ValNil
 -- nil-bot
-fwd ExprNil ExplNil Bottom ρ                  = ValBottom
+fwd ρ ExprNil ExplNil Bottom                  = ValBottom
 -- cons
-fwd (ExprCons e es) (ExplCons te tes) Top ρ       = ValCons (fwd e te Top ρ) (fwd es tes Top ρ)
+fwd ρ (ExprCons e es) (ExplCons te tes) Top       = ValCons (fwd ρ e te Top) (fwd ρ es tes Top)
 -- cons-bot-head or cons-bot-tail
-fwd (ExprCons e es) (ExplCons te tes) Bottom ρ = case (fwd e te Bottom ρ) of
+fwd ρ (ExprCons e es) (ExplCons te tes) Bottom = case (fwd ρ e te Bottom) of
                                                     -- cons-bot-tail
-                                                    ValBottom -> ValConsTail (fwd es tes Bottom ρ)
+                                                    ValBottom -> ValConsTail (fwd ρ es tes Bottom)
                                                     -- cons-bot-head
                                                     vs        -> ValConsHead vs
 -- cons-proj-tail
-fwd (ExprConsTail es) (ExplCons te tes) α ρ = ValConsTail (fwd es tes α ρ)
+fwd ρ (ExprConsTail es) (ExplCons te tes) α = ValConsTail (fwd ρ es tes α)
 -- cons-proj-head
-fwd (ExprConsHead e) (ExplCons te tes) α ρ = ValConsHead (fwd e te α ρ)
+fwd ρ (ExprConsHead e) (ExplCons te tes) α = ValConsHead (fwd ρ e te α)
 -- letrec (fun)
-fwd (ExprLetrec fun σ e) (ExplLetrec x tσ te) α ρ = fwd e te α (ρ :+: Bind fun (ValClosure ρ fun σ))
+fwd ρ (ExprLetrec f σ e) (ExplLetrec x tσ te) α = fwd (ρ :+: Bind f (ValClosure ρ f σ)) e te α
 -- apply
-fwd (ExprApp e e') (ExplApp te te' m tu) α ρ
- = case fwd e te α ρ  of
-     ValClosure ρ' fun σ
-        -> case fwd_match (fwd e' te' α ρ) σ m of
-                Just (T3 ρ'' e''  α') -> fwd e'' tu α' (ρ' :++: ρ'' :+: Bind fun (ValClosure ρ' fun σ))
+fwd ρ (ExprApp e e') (ExplApp te te' m tu) α
+ = case fwd ρ e te α  of
+     ValClosure ρ' f σ
+        -> case fwd_match (fwd ρ e' te' α) σ m of
+                Just (T3 ρ'' e''  α') -> fwd (ρ' :++: ρ'' :+: Bind f (ValClosure ρ' f σ)) e'' tu α'
                 Nothing               -> ValFailure "Match not found"
      _  -> ValFailure "Applied expression e in e e' does not fwd to closure"
 -- add-bot
-fwd (ExprAdd e1 e2) (ExplAdd te1 te2) Bottom ρ   = ValBottom
-fwd (ExprAdd e1 e2) (ExplAdd te1 te2) Top ρ
- = let v1 = fwd e1 te1 Top  ρ
-       v2 = fwd e2 te2 Top  ρ
+fwd ρ (ExprAdd e1 e2) (ExplAdd te1 te2) Bottom   = ValBottom
+fwd ρ (ExprAdd e1 e2) (ExplAdd te1 te2) Top
+ = let v1 = fwd ρ e1 te1 Top
+       v2 = fwd ρ e2 te2 Top
    in  case v1, v2 of
           -- add
           (ValInt n1), (ValInt n2) -> ValInt (n1 + n2)
@@ -130,15 +131,15 @@ fwd (ExprAdd e1 e2) (ExplAdd te1 te2) Top ρ
           _,          ValBottom    -> ValBottom
           _,          _            -> ValFailure "Arithmetic type error: e1 or/and e2 do not fwd to ints"
 -- let
-fwd (ExprLet x e1 e2) (ExplLet tx te1 te2) α ρ
- = let v1  = fwd e1 te1 α ρ
+fwd ρ (ExprLet x e1 e2) (ExplLet tx te1 te2) α
+ = let v1  = fwd ρ e1 te1 α
        ρ'  = (ρ :+: Bind x v1)
-   in  fwd e2 te2 α ρ'
+   in  fwd ρ' e2 te2 α
 -- let-proj
-fwd (ExprLetBody x e1 e2) (ExplLet tx te1 te2) α ρ = fwd e2 te2 α (ρ :+: Bind x ValBottom)
+fwd ρ (ExprLetBody x e1 e2) (ExplLet tx te1 te2) α = fwd (ρ :+: Bind x ValBottom) e2 te2 α
 -- match (no rule in paper)
-fwd (ExprMatch e σ) (ExplMatch te m tu) α ρ
- = case fwd_match (fwd e te α ρ) σ m of
+fwd ρ (ExprMatch e σ) (ExplMatch te m tu) α
+ = case fwd_match (fwd ρ e te α) σ m of
     Nothing            -> ValFailure "Match not found"
-    Just (T3 ρ' e' α') -> fwd e' tu α' (ρ :++: ρ')
+    Just (T3 ρ' e' α') -> fwd (ρ :++: ρ') e' tu α'
 

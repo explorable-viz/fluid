@@ -5,16 +5,14 @@ import Data.Maybe (Maybe(..))
 import Data.Eq (class Eq)
 import Data.Show
 
+data T3 a b c = T3 a b c
+
 type Var = String
 
 data Bind a = Bind Var a
 
-data T3 a b c = T3 a b c
-
 data Bindings a =
   Empty | Snoc (Bindings a) (Bind a)
-
-type Env = Bindings Val
 
 infixl 5 Snoc as :+:
 
@@ -29,6 +27,8 @@ find _ Empty = Nothing
 find x (Snoc m (Bind k v)) = if x == k then Just v else find x m
 
 type Ctx = Bindings Typ
+
+type Env = Bindings Val
 
 data Availability = Top | Bottom
 

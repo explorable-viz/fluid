@@ -1,15 +1,15 @@
 module Test.Main where
 
-import Prelude (Unit)
+import Prelude
 import Effect (Effect)
 import Effect.Class.Console (log)
-import Test.Pretty
-import Test.Eval
-import Pretty (pretty, render)
-import Data.Show 
+import Test.Eval (evalExpr1)
+import Test.Fwd (v, v')
+import Pretty (pretty)
 import Partial.Unsafe (unsafePartial)
 
 main :: Effect Unit
 main = do
-  let res = show (pretty  (unsafePartial evalExpr1))
-  log res
+  log $ show (pretty (unsafePartial evalExpr1))
+  log $ show (pretty v)
+  log $ show (pretty v')

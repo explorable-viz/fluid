@@ -19,7 +19,7 @@ instance projExpr :: Projectable Expr where
     project (ExprCons e es)       = ExprCons (project e) (project es)
     project (ExprConsHead e)      = project e
     project (ExprConsTail es)     = project es
-    project (ExprLetrec fun σ e)  = ExprLetrec fun (project σ) (project e)
+    project (ExprLetrec f σ e)    = ExprLetrec f (project σ) (project e)
     project (ExprApp e1 e2)       = ExprApp (project e1) (project e2)
     project (ExprLet x e1 e2)     = ExprLet x (project e1) (project e2)
     project (ExprLetBody x e1 e2) = project e2
