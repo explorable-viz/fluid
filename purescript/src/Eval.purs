@@ -1,10 +1,10 @@
-module Eval2 where
+module Eval where
 
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
-import Expl2 (Match(..), Expl(..))
-import Expr2
+import Expl (Match(..), Expl(..))
+import Expr
 
 
 match :: Val -> Elim -> Maybe (T3 Env Expr Match)

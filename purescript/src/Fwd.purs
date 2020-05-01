@@ -1,10 +1,10 @@
-module Fwd2 where
+module Fwd where
 
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
-import Expr2
-import Expl2 (Expl(..), Match(..))
+import Expr
+import Expl (Expl(..), Match(..))
 
 fwd_match :: Val -> Elim -> Match -> Maybe (T3 Env Expr Availability)
 fwd_match val σ ξ

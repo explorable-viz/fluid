@@ -1,7 +1,7 @@
-module Expl2 where
+module Expl where
 
 import Prelude
-import Expr2 (Elim, Env, Var)
+import Expr (Elim, Env, Var)
 
 data Match = MatchVar Var
            | MatchTrue

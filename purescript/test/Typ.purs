@@ -5,6 +5,7 @@ import Effect (Effect)
 import Effect.Class.Console (log)
 import Expr (Ctx, Bindings(..), Expr(..))
 import Typ
+import Pretty (pretty)
 
 typExpr1 :: Expr
 typExpr1 = ExprLet "x" (ExprInt 5) (ExprVar "x")
@@ -18,4 +19,4 @@ typExpr2 = ExprLet "x" (ExprTrue) (ExprVar "z")
 testTyp :: Effect Unit
 testTyp = do
     let r1 = typeOf typExpr1 ctx1
-    log $ show r1
+    log $ show (pretty r1)

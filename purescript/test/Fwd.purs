@@ -1,9 +1,9 @@
 module Test.Fwd where
 
-import Expl2 (Expl)
-import Expr2 (Availability(..), Bindings(..), Elim(..), Expr(..), Val)
-import Eval2 (ExplVal(..), eval)
-import Fwd2 (fwd)
+import Expl (Expl)
+import Expr (Availability(..), Bindings(..), Elim(..), Expr(..), Val)
+import Eval (ExplVal(..), eval)
+import Fwd (fwd)
 import Partial.Unsafe (unsafePartial)
 
 

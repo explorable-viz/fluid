@@ -36,29 +36,28 @@ data Typ = TypBottom
          | TypInt
          | TypBool
          | TypFun Typ Typ
-         | TypList Typ | TypListHead Typ | TypListTail Typ
-         | TypPair Typ Typ | TypPairFst Typ | TypPairSnd Typ
+         | TypList Typ
+         | TypPair Typ Typ
          | TypFailure String
 
 data Val = ValBottom
-         | ValTrue
-         | ValFalse
-         | ValInt Int
+         | ValTrue | ValTrueSel
+         | ValFalse | ValFalseSel
+         | ValInt Int | ValIntSel Int
          | ValClosure Env String Elim
-         | ValPair Val Val | ValPairFst Val | ValPairSnd Val
-         | ValNil
-         | ValCons Val Val | ValConsHead Val | ValConsTail Val
+         | ValPair Val Val | ValPairSel Val Val
+         | ValNil | ValNilSel
+         | ValCons Val Val | ValConsSel Val Val
          | ValFailure String
 
-data Expr = ExprBottom
-          | ExprInt Int
+data Expr = ExprInt Int | ExprIntSel Int
           | ExprVar Var
-          | ExprTrue
-          | ExprFalse
-          | ExprPair Expr Expr | ExprPairFst Expr | ExprPairSnd Expr
-          | ExprNil
-          | ExprCons Expr Expr | ExprConsHead Expr | ExprConsTail Expr
-          | ExprLet Var Expr Expr | ExprLetBody Var Expr Expr
+          | ExprTrue | ExprTrueSel
+          | ExprFalse | ExprFalseSel
+          | ExprPair Expr Expr | ExprPairSel Expr Expr
+          | ExprNil | ExprNilSel
+          | ExprCons Expr Expr | ExprConsSel Expr Expr
+          | ExprLet Var Expr Expr
           | ExprMatch Expr Elim
           | ExprLetrec String Elim Expr
           | ExprApp Expr Expr
@@ -90,59 +89,9 @@ instance showAvailability :: Show Availability where
   show Bottom = "Bottom"
 
 derive instance eqTyp :: Eq Typ
-instance showTyp :: Show Typ where
-  show TypBottom        = "TypBottom"
-  show TypInt           = "TypInt"
-  show TypBool          = "TypBool"
-  show (TypFun t1 t2)   = "TypFun " <> show t1 <> " " <> show t2
-  show (TypList t)      = "TypList " <> show t
-  show (TypListHead x)  = "TypListHead " <> show x
-  show (TypListTail xs) = "TypListTail " <> show xs
-  show (TypPair t1 t2)  = "TypPair " <> show t1 <> " " <> show t2
-  show (TypPairFst t1)  = "TypPairFst " <> show t1
-  show (TypPairSnd t2)  = "TypPairSnd " <> show t2
-  show (TypFailure s)   = "TypFailure " <> s
 
 derive instance eqVal :: Eq Val
-instance showVal :: Show Val where
-  show ValBottom                 = "⊥"
-  show ValTrue                   = "ValTrue"
-  show ValFalse                  = "ValFalse"
-  show (ValInt n)                = "ValInt " <> show n
-  show (ValPair x y)             = "ValPair " <> show x <> " " <> show y
-  show (ValPairFst x )           = "ValPairFst " <> show x
-  show (ValPairSnd y )           = "ValPairSnd " <> show y
-  show ValNil                    = "ValNil"
-  show (ValCons x xs)            = "ValCons " <> show x <> " " <> show xs
-  show (ValConsHead x )          = "ValConsHead " <> show x
-  show (ValConsTail xs)          = "ValConsTail " <> show xs
-  show (ValClosure env fun elim) = "ValClosure " <> show env <> " " <> show fun <> " " <> show elim
-  show (ValFailure s)            = "ValFailure " <> s
 
 derive instance eqExpr :: Eq Expr
-instance showExpr :: Show Expr where
-  show ExprBottom              = "ExprBottom"
-  show (ExprInt n)             = "ExprInt " <> show n
-  show (ExprVar v)             = "ExprVar " <> show v
-  show ExprTrue                = "ExprTrue"
-  show ExprFalse               = "ExprFalse"
-  show (ExprPair x y)          = "ExprPair " <> show x <> " " <> show y
-  show (ExprPairFst x )        = "ExprPairFst " <> show x
-  show (ExprPairSnd y )        = "ExprPairSnd " <> " " <> show y
-  show ExprNil                 = "ExprNil"
-  show (ExprCons x xs)         = "ExprCons " <> show x <> " " <> show xs
-  show (ExprConsHead x )       = "ExprConsHead " <> show x
-  show (ExprConsTail xs)       = "ExprConsTail " <> show xs
-  show (ExprLet v e1 e2)       = "ExprLet " <> show v <> " " <> show e1 <> " " <> show e2
-  show (ExprLetBody v e1 e2)   = "ExprLetBody " <> show v <> " " <> show e1 <> " " <> show e2
-  show (ExprMatch e elim)      = "ExprMatch " <> show e <> " " <> show elim
-  show (ExprLetrec fun elim e) = "ExprLetrec " <> show fun <> " " <> show elim <> " " <> show e
-  show (ExprApp e1 e2)         = "ExprApp " <> show e1 <> " " <> show e2
-  show (ExprAdd e1 e2)         = "ExprAdd " <> show e1 <> " " <> show e2
 
 derive instance eqElim :: Eq Elim
-instance showElim :: Show Elim where
-  show (ElimVar { x, tx, e })          = "ElimVar " <> x <> ":" <> show tx <> " " <> show e
-  show (ElimPair { x, tx, y, ty, e }) = "ElimPair " <> show x <> ":" <> show tx <> " " <> show y <> ":" <> show ty <> show e
-  show (ElimList { bnil,  bcons })    = "ElimList " <> show bnil <> " " <> show bcons
-  show (ElimBool { btrue, bfalse })  = "ElimBool " <> show btrue <> " " <> show bfalse

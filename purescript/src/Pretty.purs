@@ -1,8 +1,8 @@
-module Pretty2 where
+module Pretty where
 
-import Expr2 (Elim(..), Expr(..), Typ(..), Val(..))
-import Eval2 (ExplVal(..))
-import Expl2 (Expl(..), Match(..))
+import Expr (Elim(..), Expr(..), Typ(..), Val(..))
+import Eval (ExplVal(..))
+import Expl (Expl(..), Match(..))
 import Prelude
 import Data.Array (length, range, take, zipWith)
 import Data.Foldable (class Foldable, foldl, foldMap, intercalate)

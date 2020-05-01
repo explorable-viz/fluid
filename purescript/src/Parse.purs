@@ -11,7 +11,7 @@ import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser,
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
-import Expr2 (Expr(..))
+import Expr (Expr(..))
 
 parens :: forall m a. Monad m => ParserT String m a -> ParserT String m a
 parens = between (string "(") (string ")")
