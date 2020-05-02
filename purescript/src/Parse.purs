@@ -5,6 +5,7 @@ import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (between)
+import Text.Parsing.Parser.Expr (buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (oneOf, string)
 import Text.Parsing.Parser.Token (
@@ -93,4 +94,4 @@ appChain expr' = do
 
 expr :: SParser Expr
 expr = fix $ \p ->
-   simpleExpr p
+   flip buildExprParser (appChain p) []
