@@ -1,25 +1,27 @@
 module Test.Fwd where
 
+import Partial.Unsafe (unsafePartial)
+import Bindings (Bindings(..))
 import Expl (Expl)
-import Expr (Availability(..), Bindings(..), Elim(..), Expr(..), Val)
+import Expr (Availability(..), Elim(..), Expr(..))
 import Eval (ExplVal(..), eval)
 import Fwd (fwd)
-import Partial.Unsafe (unsafePartial)
+import Val (Val)
 
 
 e0 :: Expr
-e0 = let es = ExprCons (ExprInt 1) (ExprCons (ExprInt 2) (ExprCons (ExprInt 3) ExprNil))
-    in ExprLetrec "f" (ElimList { bnil  : ExprNil,
-                                  bcons : { x : "x", y : "xs", e : ExprCons (ExprAdd (ExprVar "x") (ExprInt 1))
-                                                                            (ExprApp (ExprVar "f") (ExprVar "xs"))}})
-                  (ExprApp (ExprVar "f") es)
+e0 = let es = Cons (Int 1) (Cons (Int 2) (Cons (Int 3) Nil))
+    in Letrec "f" (ElimList { bnil  : Nil,
+                              bcons : { x : "x", y : "xs", e : Cons (Add (Var "x") (Int 1))
+                                                                    (App (Var "f") (Var "xs"))}})
+                  (App (Var "f") es)
 
 e :: Expr
-e = let es = ExprCons (ExprInt 1) (ExprConsSel (ExprIntSel 2) (ExprCons (ExprInt 3) ExprNil))
-    in ExprLetrec "f" (ElimList { bnil  : ExprNil,
-                                  bcons : { x : "x", y : "xs", e : ExprCons (ExprAdd (ExprVar "x") (ExprInt 1))
-                                                                            (ExprApp (ExprVar "f") (ExprVar "xs"))}})
-                  (ExprApp (ExprVar "f") es)
+e = let es = Cons (Int 1) (ConsSel (IntSel 2) (Cons (Int 3) Nil))
+    in Letrec "f" (ElimList { bnil  : Nil,
+                              bcons : { x : "x", y : "xs", e : Cons (Add (Var "x") (Int 1))
+                                                                    (App (Var "f") (Var "xs"))}})
+                  (App (Var "f") es)
 
 t0 :: Expl
 t0 = let ExplVal { t, v } = unsafePartial (eval Empty e0) in t
