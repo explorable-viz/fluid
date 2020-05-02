@@ -56,7 +56,7 @@ ident = tokenParser.identifier
 -- JSON grammar for numbers, https://tools.ietf.org/html/rfc7159.html#section-6.
 -- I'm assuming (but haven't checked that) DIGIT is equivalent to LanguageDef's "digit" parser.
 
-{-}
+{-
 -- decimal-point = %x2E       ; .
 const decimal_point = ch(".")
 -- digit1-9 = %x31-39         ; 1-9
@@ -80,10 +80,14 @@ const numberʹ: Parser<string> =
    withJoin(sequence([optional(minus, () => ""), int, optional(frac, () => ""), optional(exp, () => "")]))
 -}
 
+int :: SParser Expr
+int = tokenParser.integer >>= compose pure ExprInt
+
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    variable <|>
-   let_ expr'
+   let_ expr' <|>
+   int
 {- string {% id %} |
    parenthExpr {% id %} |
    pair {% id %} |
