@@ -56,7 +56,7 @@ ident ∷ SParser Var
 ident = token.identifier
 
 int :: SParser Expr
-int = token.integer >>= compose pure Int
+int = token.integer >>= (pure <<< Int)
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = parens $ do
@@ -83,6 +83,13 @@ let_ term' = do
    e1 ← token.reservedOp "=" *> term'
    e2 ← keyword strIn *> term'
    pure $ Let x e1 e2
+
+appChain ∷ SParser Expr -> SParser Expr
+appChain expr' = do
+   simpleExpr expr' >>= rest
+   where
+      rest ∷ Expr -> SParser Expr
+      rest e1 = (simpleExpr expr' >>= (pure <<< App e1) >>= rest) <|> pure e1
 
 expr :: SParser Expr
 expr = fix $ \p ->
