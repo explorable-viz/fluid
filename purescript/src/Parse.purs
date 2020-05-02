@@ -42,21 +42,27 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    op' :: SParser Char
    op' = oneOf [':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~']
 
-tokenParser :: TokenParser
-tokenParser = makeTokenParser languageDef
+token :: TokenParser
+token = makeTokenParser languageDef
 
 keyword ∷ String → SParser Unit
-keyword = tokenParser.reserved
+keyword = token.reserved
 
 variable :: SParser Expr
 variable = ident >>= compose pure Var
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
-ident = tokenParser.identifier
+ident = token.identifier
 
 int :: SParser Expr
-int = tokenParser.integer >>= compose pure Int
+int = token.integer >>= compose pure Int
+
+pair :: SParser Expr -> SParser Expr
+pair expr' = parens $ do
+   e1 ← expr
+   e2 ← token.comma *> expr
+   pure $ Pair e1 e2
 
 -- TODO: string, float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -64,17 +70,17 @@ simpleExpr expr' =
    variable <|>
    let_ expr' <|>
    int <|>
-   parens expr'
-{- pair {% id %} |
+   parens expr' <|>
+   pair expr'
+{-
    list {% id %} |
-   constr {% id %}
 -}
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do
    keyword strLet
    x ← ident
-   e1 ← tokenParser.reservedOp "=" *> term'
+   e1 ← token.reservedOp "=" *> term'
    e2 ← keyword strIn *> term'
    pure $ Let x e1 e2
 
