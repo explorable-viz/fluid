@@ -74,9 +74,9 @@ eval ρ (App e e') =
       ExplVal { t, v: V.Closure ρ' fun σ } ->
          let ExplVal { t: t',  v } = eval ρ e'
          in case match v σ of
-            Just (T3 ρ'' e'' m) ->
+            Just (T3 ρ'' e'' ξ) ->
                let ExplVal { t: u, v: v' } = eval (conc ρ' ρ'' :+: Bind fun (V.Closure ρ' fun σ)) e''
-               in ExplVal { t: T.App t t' m u, v: v' }
+               in ExplVal { t: T.App t t' ξ u, v: v' }
             Nothing -> ExplVal { t: T.Bottom, v: V.Failure "Match not found" }
       _ -> ExplVal { t: T.Bottom, v: V.Failure "Expression does not evaluate to closure" }
 -- add
@@ -97,6 +97,6 @@ eval ρ (Match e σ) =
    let ExplVal { t: t1, v: v1 } = eval ρ e
    in case match v1 σ of
       Nothing -> ExplVal { t: T.Bottom, v: V.Failure "Match not found" }
-      Just (T3 ρ' e' m) ->
+      Just (T3 ρ' e' ξ) ->
          let ExplVal { t: t2, v: v2 } = eval (conc ρ ρ') e'
-         in  ExplVal { t: T.Match t1 m t2, v: v2 }
+         in ExplVal { t: T.Match t1 ξ t2, v: v2 }

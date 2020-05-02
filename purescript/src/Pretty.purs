@@ -153,8 +153,8 @@ instance exprPretty :: Pretty Expr where
     pretty (ConsSel e es) = text "[" :<>: pretty e :<>: foldExprCons es :<>: text "]"
     pretty (Let x e1 e2) = atop (text ("let " <>  x <> " = ") :<>: pretty e1)
                                     (text "in  " :<>: pretty e2)
-    pretty (Match e elim) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty elim)) (text "}")
-    pretty (Letrec x elim e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty elim)
+    pretty (Match e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
+    pretty (Letrec x σ e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty σ)
                                         (text "in     " :<>: pretty e)
     pretty (App e1 e2) = pretty e1 :<>: text " " :<>: pretty e2
     pretty (Add e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
@@ -172,13 +172,13 @@ instance explPretty :: Pretty Expl where
     pretty (T.Let x t1 t2) = atop (text ("let " <>  x <> " = ") :<>: pretty t1)
                                   (text "in  " :<>: pretty t2)
     pretty (T.Match t1 m t2) = atop (atop (text "match " :<>: pretty t1 :<>: text " as {") (pretty m)) (text "result = " :<>: pretty t2)
-    pretty (T.Letrec x elim t) = atop (text ("letrec " <>  x <> " = ") :<>: pretty elim)
+    pretty (T.Letrec x σ t) = atop (text ("letrec " <>  x <> " = ") :<>: pretty σ)
                                         (text "in     " :<>: pretty t)
     pretty (T.App t1 t2 m t3) =  atop (atop (text "App (" :<>: pretty t1 :<>: text ", " :<>: pretty t2 :<>: text ")")
                                                    (text "     Match:  " :<>: pretty m))
                                                    (text "     Result: " :<>: pretty t3)
     pretty (T.Add t1 t2) = pretty t1 :<>: text " + " :<>: pretty t2
-    pretty (T.Fun env elim) = text "Fun(" :<>:  (text "env \n") :<>: (pretty elim) :<>: text ")"
+    pretty (T.Fun ρ σ) = text "Fun(" :<>:  (text "env \n") :<>: (pretty σ) :<>: text ")"
 
 
 instance prettyMatch :: Pretty Match where
@@ -214,7 +214,7 @@ instance valPretty :: Pretty Val where
     pretty V.TrueSel = text "True"
     pretty V.False = text "False"
     pretty V.FalseSel = text "False"
-    pretty (V.Closure env f elim) = text "Closure(" :<>: atop (text "env" :<>: text f ) (pretty elim) :<>: text ")"
+    pretty (V.Closure ρ f σ) = text "Closure(" :<>: atop (text "env" :<>: text f ) (pretty σ) :<>: text ")"
     pretty (V.Pair a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
     pretty (V.PairSel a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
     pretty V.Nil = text "[]"
