@@ -9,13 +9,13 @@ import Typed
 import Pretty (pretty)
 
 typExpr1 :: Expr
-typExpr1 = ExprLet "x" (ExprInt 5) (ExprVar "x")
+typExpr1 = Let "x" (Int 5) (Var "x")
 
 ctx1 :: Ctx
 ctx1 = Empty
 
 typExpr2 :: Expr
-typExpr2 = ExprLet "x" (ExprTrue) (ExprVar "z")
+typExpr2 = Let "x" True (Var "z")
 
 testTyp :: Effect Unit
 testTyp = do

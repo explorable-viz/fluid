@@ -6,14 +6,14 @@ import Expr (Elim)
 
 type Env = Bindings Val
 
-data Val = ValBottom
-         | ValTrue | ValTrueSel
-         | ValFalse | ValFalseSel
-         | ValInt Int | ValIntSel Int
-         | ValClosure Env String Elim
-         | ValPair Val Val | ValPairSel Val Val
-         | ValNil | ValNilSel
-         | ValCons Val Val | ValConsSel Val Val
-         | ValFailure String
+data Val = Bot
+         | True | TrueSel
+         | False | FalseSel
+         | Int Int | IntSel Int
+         | Closure Env String Elim
+         | Pair Val Val | PairSel Val Val
+         | Nil | NilSel
+         | Cons Val Val | ConsSel Val Val
+         | Failure String
 
 derive instance eqVal :: Eq Val

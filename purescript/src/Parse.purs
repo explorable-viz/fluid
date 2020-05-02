@@ -12,8 +12,7 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Expr)
-import Expr (Expr(..)) as E
+import Expr (Expr(..))
 
 type SParser = Parser String
 
@@ -49,15 +48,15 @@ tokenParser = makeTokenParser languageDef
 keyword ∷ String → SParser Unit
 keyword = tokenParser.reserved
 
-variable :: SParser E.Expr
-variable = ident >>= compose pure E.ExprVar
+variable :: SParser Expr
+variable = ident >>= compose pure Var
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
 ident = tokenParser.identifier
 
 int :: SParser Expr
-int = tokenParser.integer >>= compose pure E.ExprInt
+int = tokenParser.integer >>= compose pure Int
 
 -- TODO: string, float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -77,7 +76,7 @@ let_ term' = do
    x ← ident
    e1 ← tokenParser.reservedOp "=" *> term'
    e2 ← keyword strIn *> term'
-   pure $ E.ExprLet x e1 e2
+   pure $ Let x e1 e2
 
 expr :: SParser Expr
 expr = fix $ \p ->

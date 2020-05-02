@@ -122,8 +122,8 @@ class Pretty p where
 
 
 foldExprCons :: Expr -> Doc
-foldExprCons (ExprNil) = text ""
-foldExprCons (ExprCons e es) = text ", " :<>: pretty e :<>: foldExprCons es
+foldExprCons (Nil) = text ""
+foldExprCons (Cons e es) = text ", " :<>: pretty e :<>: foldExprCons es
 foldExprCons _ = text ""
 
 foldExplCons :: Expl -> Doc
@@ -132,31 +132,31 @@ foldExplCons (ExplCons e es) = text ", " :<>: pretty e :<>: foldExplCons es
 foldExplCons _ = text ""
 
 foldValCons :: Val -> Doc
-foldValCons (V.ValNil) = text ""
-foldValCons (V.ValCons e es) = text ", " :<>: pretty e :<>: foldValCons es
+foldValCons (V.Nil) = text ""
+foldValCons (V.Cons e es) = text ", " :<>: pretty e :<>: foldValCons es
 foldValCons _ = text ""
 
 instance exprPretty :: Pretty Expr where
-    pretty (ExprInt n) = text (show n)
-    pretty (ExprIntSel n) = text (show n)
-    pretty (ExprVar x) = text x
-    pretty ExprTrue    = text "true"
-    pretty ExprTrueSel    = text "true"
-    pretty ExprFalse   = text "false"
-    pretty ExprFalseSel   = text "false"
-    pretty (ExprPair e1 e2) = text "(" :<>: pretty e1 :<>: text ", " :<>: pretty e2 :<>: text ")"
-    pretty (ExprPairSel e1 e2) = text  "(" :<>: pretty e1 :<>: text ", " :<>: pretty e2 :<>: text ")"
-    pretty ExprNil = text "[]"
-    pretty ExprNilSel = text "[]"
-    pretty (ExprCons e es) = text "[" :<>: pretty e :<>: foldExprCons es :<>: text "]"
-    pretty (ExprConsSel e es) = text "[" :<>: pretty e :<>: foldExprCons es :<>: text "]"
-    pretty (ExprLet x e1 e2) = atop (text ("let " <>  x <> " = ") :<>: pretty e1)
+    pretty (Int n) = text (show n)
+    pretty (IntSel n) = text (show n)
+    pretty (Var x) = text x
+    pretty True    = text "true"
+    pretty TrueSel    = text "true"
+    pretty False   = text "false"
+    pretty FalseSel   = text "false"
+    pretty (Pair e1 e2) = text "(" :<>: pretty e1 :<>: text ", " :<>: pretty e2 :<>: text ")"
+    pretty (PairSel e1 e2) = text  "(" :<>: pretty e1 :<>: text ", " :<>: pretty e2 :<>: text ")"
+    pretty Nil = text "[]"
+    pretty NilSel = text "[]"
+    pretty (Cons e es) = text "[" :<>: pretty e :<>: foldExprCons es :<>: text "]"
+    pretty (ConsSel e es) = text "[" :<>: pretty e :<>: foldExprCons es :<>: text "]"
+    pretty (Let x e1 e2) = atop (text ("let " <>  x <> " = ") :<>: pretty e1)
                                     (text "in  " :<>: pretty e2)
-    pretty (ExprMatch e elim) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty elim)) (text "}")
-    pretty (ExprLetrec x elim e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty elim)
+    pretty (Match e elim) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty elim)) (text "}")
+    pretty (Letrec x elim e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty elim)
                                         (text "in     " :<>: pretty e)
-    pretty (ExprApp e1 e2) = pretty e1 :<>: text " " :<>: pretty e2
-    pretty (ExprAdd e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
+    pretty (App e1 e2) = pretty e1 :<>: text " " :<>: pretty e2
+    pretty (Add e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
 
 
 instance explPretty :: Pretty Expl where
@@ -206,21 +206,21 @@ instance typPretty :: Pretty Typ where
     pretty (TypFailure s)  = text "Fail " :<>: text s
 
 instance valPretty :: Pretty Val where
-    pretty V.ValBottom = text "⊥"
-    pretty (V.ValInt n)  = text $ show n
-    pretty (V.ValIntSel n)  = text $ show n
-    pretty V.ValTrue = text "True"
-    pretty V.ValTrueSel = text "True"
-    pretty V.ValFalse = text "False"
-    pretty V.ValFalseSel = text "False"
-    pretty (V.ValClosure env f elim) = text "Closure(" :<>: atop (text "env" :<>: text f ) (pretty elim) :<>: text ")"
-    pretty (V.ValPair a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
-    pretty (V.ValPairSel a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
-    pretty V.ValNil = text "[]"
-    pretty V.ValNilSel = text "[]"
-    pretty (V.ValCons x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
-    pretty (V.ValConsSel x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
-    pretty (V.ValFailure s) = text s
+    pretty V.Bot = text "⊥"
+    pretty (V.Int n)  = text $ show n
+    pretty (V.IntSel n)  = text $ show n
+    pretty V.True = text "True"
+    pretty V.TrueSel = text "True"
+    pretty V.False = text "False"
+    pretty V.FalseSel = text "False"
+    pretty (V.Closure env f elim) = text "Closure(" :<>: atop (text "env" :<>: text f ) (pretty elim) :<>: text ")"
+    pretty (V.Pair a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
+    pretty (V.PairSel a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
+    pretty V.Nil = text "[]"
+    pretty V.NilSel = text "[]"
+    pretty (V.Cons x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
+    pretty (V.ConsSel x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
+    pretty (V.Failure s) = text s
 
 instance explvalPretty :: Pretty ExplVal where
     pretty (ExplVal {t, v}) = atop (pretty t) (pretty v)
