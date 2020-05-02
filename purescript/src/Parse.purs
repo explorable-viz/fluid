@@ -11,7 +11,9 @@ import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser,
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
-import Expr (Expr(..), Var)
+import Bindings (Var)
+import Expr (Expr)
+import Expr (Expr(..)) as E
 
 type SParser = Parser String
 
@@ -25,22 +27,21 @@ parens :: forall a . SParser a -> SParser a
 parens = between (string strLParen) (string strRParen)
 
 languageDef :: LanguageDef
-languageDef = LanguageDef (unGenLanguageDef emptyDef)
-                { commentStart    = "{-"
-                , commentEnd      = "-}"
-                , commentLine     = "--"
-                , nestedComments  = true
-                , identStart      = letter
-                , identLetter     = alphaNum <|> oneOf ['_', '\'']
-                , opStart         = op'
-                , opLetter        = op'
-                , reservedOpNames = []
-                , reservedNames   = []
-                , caseSensitive   = true
-                }
-   where
-      op' :: SParser Char
-      op' = oneOf [':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~']
+languageDef = LanguageDef (unGenLanguageDef emptyDef) {
+   commentStart    = "{-",
+   commentEnd      = "-}",
+   commentLine     = "--",
+   nestedComments  = true,
+   identStart      = letter,
+   identLetter     = alphaNum <|> oneOf ['_', '\''],
+   opStart         = op',
+   opLetter        = op',
+   reservedOpNames = [],
+   reservedNames   = [],
+   caseSensitive   = true
+} where
+   op' :: SParser Char
+   op' = oneOf [':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~']
 
 tokenParser :: TokenParser
 tokenParser = makeTokenParser languageDef
@@ -48,15 +49,15 @@ tokenParser = makeTokenParser languageDef
 keyword ∷ String → SParser Unit
 keyword = tokenParser.reserved
 
-variable :: SParser Expr
-variable = ident >>= compose pure ExprVar
+variable :: SParser E.Expr
+variable = ident >>= compose pure E.ExprVar
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
 ident = tokenParser.identifier
 
 int :: SParser Expr
-int = tokenParser.integer >>= compose pure ExprInt
+int = tokenParser.integer >>= compose pure E.ExprInt
 
 -- TODO: string, float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -74,13 +75,9 @@ let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do
    keyword strLet
    x ← ident
-   e1 ← do
-      tokenParser.reservedOp "="
-      term'
-   e2 ← do
-      keyword strIn
-      term'
-   pure $ ExprLet x e1 e2
+   e1 ← tokenParser.reservedOp "=" *> term'
+   e2 ← keyword strIn *> term'
+   pure $ E.ExprLet x e1 e2
 
 expr :: SParser Expr
 expr = fix $ \p ->

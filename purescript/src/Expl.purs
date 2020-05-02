@@ -1,7 +1,9 @@
 module Expl where
 
 import Prelude
-import Expr (Elim, Env, Var)
+import Bindings (Var)
+import Expr (Elim)
+import Val (Env)
 
 data Match = MatchVar Var
            | MatchTrue
@@ -26,6 +28,5 @@ data Expl =  ExplBottom
            | ExplFun Env Elim
            | ExplTrue
            | ExplFalse
-
 
 derive instance eqExpl :: Eq Expl

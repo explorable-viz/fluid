@@ -1,10 +1,11 @@
-module Test.Typ where
+module Test.Typed where
 
 import Prelude (($), Unit, show)
 import Effect (Effect)
 import Effect.Class.Console (log)
-import Expr (Ctx, Bindings(..), Expr(..))
-import Typ
+import Bindings (Bindings(..))
+import Expr (Ctx, Expr(..))
+import Typed
 import Pretty (pretty)
 
 typExpr1 :: Expr

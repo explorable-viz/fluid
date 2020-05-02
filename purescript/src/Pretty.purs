@@ -1,8 +1,5 @@
 module Pretty where
 
-import Expr (Elim(..), Expr(..), Typ(..), Val(..))
-import Eval (ExplVal(..))
-import Expl (Expl(..), Match(..))
 import Prelude
 import Data.Array (length, range, take, zipWith)
 import Data.Foldable (class Foldable, foldl, foldMap, intercalate)
@@ -10,6 +7,11 @@ import Data.Newtype (ala, class Newtype, wrap)
 import Data.String as S
 import Data.String.CodeUnits as SCU
 import Data.Unfoldable (replicate)
+import Expr (Elim(..), Expr(..), Typ(..))
+import Eval (ExplVal(..))
+import Expl (Expl(..), Match(..))
+import Val (Val)
+import Val (Val(..)) as V
 
 -- | A text document.
 newtype Doc = Doc
@@ -130,8 +132,8 @@ foldExplCons (ExplCons e es) = text ", " :<>: pretty e :<>: foldExplCons es
 foldExplCons _ = text ""
 
 foldValCons :: Val -> Doc
-foldValCons (ValNil) = text ""
-foldValCons (ValCons e es) = text ", " :<>: pretty e :<>: foldValCons es
+foldValCons (V.ValNil) = text ""
+foldValCons (V.ValCons e es) = text ", " :<>: pretty e :<>: foldValCons es
 foldValCons _ = text ""
 
 instance exprPretty :: Pretty Expr where
@@ -204,23 +206,21 @@ instance typPretty :: Pretty Typ where
     pretty (TypFailure s)  = text "Fail " :<>: text s
 
 instance valPretty :: Pretty Val where
-    pretty ValBottom = text "⊥"
-    pretty (ValInt n)  = text $ show n
-    pretty (ValIntSel n)  = text $ show n
-    pretty ValTrue = text "True"
-    pretty ValTrueSel = text "True"
-    pretty ValFalse = text "False"
-    pretty ValFalseSel = text "False"
-    pretty (ValClosure env f elim) = text "Closure(" :<>: atop (text "env" :<>: text f ) (pretty elim) :<>: text ")"
-    pretty (ValPair a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
-    pretty (ValPairSel a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
-    pretty ValNil = text "[]"
-    pretty ValNilSel = text "[]"
-    pretty (ValCons x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
-    pretty (ValConsSel x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
-    pretty (ValFailure s) = text s
-
-
+    pretty V.ValBottom = text "⊥"
+    pretty (V.ValInt n)  = text $ show n
+    pretty (V.ValIntSel n)  = text $ show n
+    pretty V.ValTrue = text "True"
+    pretty V.ValTrueSel = text "True"
+    pretty V.ValFalse = text "False"
+    pretty V.ValFalseSel = text "False"
+    pretty (V.ValClosure env f elim) = text "Closure(" :<>: atop (text "env" :<>: text f ) (pretty elim) :<>: text ")"
+    pretty (V.ValPair a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
+    pretty (V.ValPairSel a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
+    pretty V.ValNil = text "[]"
+    pretty V.ValNilSel = text "[]"
+    pretty (V.ValCons x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
+    pretty (V.ValConsSel x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
+    pretty (V.ValFailure s) = text s
 
 instance explvalPretty :: Pretty ExplVal where
     pretty (ExplVal {t, v}) = atop (pretty t) (pretty v)

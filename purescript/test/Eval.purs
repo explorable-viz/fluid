@@ -1,6 +1,7 @@
 module Test.Eval where
 
-import Expr (Bindings(..), Elim(..), Expr(..))
+import Bindings (Bindings(..))
+import Expr (Elim(..), Expr(..))
 import Eval (ExplVal, eval)
 
 
