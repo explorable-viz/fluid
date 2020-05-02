@@ -5,7 +5,8 @@ import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
 import Bindings (Bind(..), Bindings(..), (:+:), (:++:), find)
 import Expr
-import Expl (Expl(..), Match(..))
+import Expl (Expl(..)) as T
+import Expl (Expl, Match(..))
 import Val (Env, Val)
 import Val (Val(..)) as V
 
@@ -66,52 +67,52 @@ fwd ρ (Var x) t α =
       Just val -> val
       _        -> V.Failure ("variable " <> x <> " not found")
 -- true-sel
-fwd ρ TrueSel ExplTrue Top = V.TrueSel
+fwd ρ TrueSel T.True Top = V.TrueSel
 -- true-bot
-fwd ρ TrueSel ExplTrue Bottom = V.Bot
+fwd ρ TrueSel T.True Bottom = V.Bot
 -- true
-fwd ρ True ExplTrue _ = V.Bot
+fwd ρ True T.True _ = V.Bot
 -- false-sel
-fwd ρ FalseSel ExplFalse Top = V.FalseSel
+fwd ρ FalseSel T.False Top = V.FalseSel
 -- false-bot
-fwd ρ FalseSel ExplFalse Bottom = V.Bot
+fwd ρ FalseSel T.False Bottom = V.Bot
 -- false-bot
-fwd ρ False ExplFalse _ = V.Bot
+fwd ρ False T.False _ = V.Bot
 -- int-sel
-fwd ρ (IntSel n) (ExplInt tn) Top = V.IntSel n
+fwd ρ (IntSel n) (T.Int _) Top = V.IntSel n
 -- int-bot
-fwd ρ (IntSel n) (ExplInt tn) Bottom = V.Bot
+fwd ρ (IntSel n) (T.Int _) Bottom = V.Bot
 -- int
-fwd ρ (Int n) (ExplInt tn) _ = V.Bot
+fwd ρ (Int n) (T.Int _) _ = V.Bot
 -- pair-sel
-fwd ρ (PairSel e1 e2) (ExplPair te1 te2) Top = V.PairSel (fwd ρ e1 te1 Top) (fwd ρ e2 te2 Top)
+fwd ρ (PairSel e1 e2) (T.Pair t1 t2) Top = V.PairSel (fwd ρ e1 t1 Top) (fwd ρ e2 t2 Top)
 -- pair
-fwd ρ (Pair e1 e2) (ExplPair te1 te2) α = V.Pair (fwd ρ e1 te1 α) (fwd ρ e2 te2 α)
+fwd ρ (Pair e1 e2) (T.Pair t1 t2) α = V.Pair (fwd ρ e1 t1 α) (fwd ρ e2 t2 α)
 -- nil-sel
-fwd ρ NilSel ExplNil Top = V.NilSel
+fwd ρ NilSel T.Nil Top = V.NilSel
 -- nil-bot
-fwd ρ NilSel ExplNil Bottom = V.Bot
+fwd ρ NilSel T.Nil Bottom = V.Bot
 -- nil
-fwd ρ Nil ExplNil _ = V.Bot
+fwd ρ Nil T.Nil _ = V.Bot
 -- cons-sel
-fwd ρ (ConsSel e es) (ExplCons te tes) Top = V.ConsSel (fwd ρ e te Top) (fwd ρ es tes Top)
+fwd ρ (ConsSel e e') (T.Cons t t') Top = V.ConsSel (fwd ρ e t Top) (fwd ρ e' t' Top)
 -- cons-sel
-fwd ρ (Cons e es) (ExplCons te tes) α = V.Cons (fwd ρ e te α) (fwd ρ es tes α)
+fwd ρ (Cons e e') (T.Cons t t') α = V.Cons (fwd ρ e t α) (fwd ρ e' t' α)
 -- letrec (fun)
-fwd ρ (Letrec f σ e) (ExplLetrec x tσ te) α = fwd (ρ :+: Bind f (V.Closure ρ f σ)) e te α
+fwd ρ (Letrec f σ e) (T.Letrec _ _ t) α = fwd (ρ :+: Bind f (V.Closure ρ f σ)) e t α
 -- apply
-fwd ρ (App e e') (ExplApp te te' m tu) α =
-   case fwd ρ e te α  of
+fwd ρ (App e e') (T.App t t' m t'') α =
+   case fwd ρ e t α  of
       V.Closure ρ' f σ ->
-         case fwd_match (fwd ρ e' te' α) σ m of
-            Just (T3 ρ'' e''  α') -> fwd (ρ' :++: ρ'' :+: Bind f (V.Closure ρ' f σ)) e'' tu α'
+         case fwd_match (fwd ρ e' t' α) σ m of
+            Just (T3 ρ'' e''  α') -> fwd (ρ' :++: ρ'' :+: Bind f (V.Closure ρ' f σ)) e'' t'' α'
             Nothing -> V.Failure "Match not found"
       _  -> V.Failure "Impossible"
 -- add-bot
-fwd ρ (Add e1 e2) (ExplAdd te1 te2) Bottom = V.Bot
-fwd ρ (Add e1 e2) (ExplAdd te1 te2) Top =
-   let v1 = fwd ρ e1 te1 Top
-       v2 = fwd ρ e2 te2 Top
+fwd ρ (Add e1 e2) (T.Add t1 t2) Bottom = V.Bot
+fwd ρ (Add e1 e2) (T.Add t1 t2) Top =
+   let v1 = fwd ρ e1 t1 Top
+       v2 = fwd ρ e2 t2 Top
    in case v1, v2 of
       -- add
       (V.Int n1), (V.Int n2) -> V.Int (n1 + n2)
@@ -121,12 +122,12 @@ fwd ρ (Add e1 e2) (ExplAdd te1 te2) Top =
       _, V.Bot -> V.Bot
       _, _ -> V.Failure "Impossible"
 -- let
-fwd ρ (Let x e1 e2) (ExplLet tx te1 te2) α =
-   let v1  = fwd ρ e1 te1 α
+fwd ρ (Let x e1 e2) (T.Let _ t1 t2) α =
+   let v1  = fwd ρ e1 t1 α
        ρ'  = (ρ :+: Bind x v1)
-   in  fwd ρ' e2 te2 α
+   in  fwd ρ' e2 t2 α
 -- match (no rule in paper)
-fwd ρ (Match e σ) (ExplMatch te m tu) α =
-   case fwd_match (fwd ρ e te α) σ m of
+fwd ρ (Match e σ) (T.Match t m t') α =
+   case fwd_match (fwd ρ e t α) σ m of
       Nothing -> V.Failure "Impossible"
-      Just (T3 ρ' e' α') -> fwd (ρ :++: ρ') e' tu α'
+      Just (T3 ρ' e' α') -> fwd (ρ :++: ρ') e' t' α'

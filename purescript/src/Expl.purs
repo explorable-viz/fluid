@@ -14,19 +14,19 @@ data Match = MatchVar Var
 
 derive instance eqMatch :: Eq Match
 
-data Expl =  ExplBottom
-           | ExplVar Var
-           | ExplInt Int
-           | ExplPair Expl Expl
-           | ExplNil
-           | ExplCons Expl Expl
-           | ExplApp Expl Expl Match Expl
-           | ExplMatch Expl Match Expl
-           | ExplAdd Expl Expl
-           | ExplLet Var Expl Expl
-           | ExplLetrec Var Expl Expl
-           | ExplFun Env Elim
-           | ExplTrue
-           | ExplFalse
+data Expl =  Bottom
+           | Var Var
+           | Int Int
+           | Pair Expl Expl
+           | Nil
+           | Cons Expl Expl
+           | App Expl Expl Match Expl
+           | Match Expl Match Expl
+           | Add Expl Expl
+           | Let Var Expl Expl
+           | Letrec Var Expl Expl
+           | Fun Env Elim
+           | True
+           | False
 
 derive instance eqExpl :: Eq Expl
