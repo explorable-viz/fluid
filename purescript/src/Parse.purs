@@ -1,11 +1,11 @@
 module Parse where
 
-import Prelude hiding (between)
+import Prelude hiding (add, between)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (between)
-import Text.Parsing.Parser.Expr (buildExprParser)
+import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (oneOf, string)
 import Text.Parsing.Parser.Token (
@@ -50,14 +50,14 @@ keyword ∷ String → SParser Unit
 keyword = token.reserved
 
 variable :: SParser Expr
-variable = ident >>= compose pure Var
+variable = ident >>= pure <<< Var
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
 ident = token.identifier
 
 int :: SParser Expr
-int = token.integer >>= (pure <<< Int)
+int = token.integer >>= pure <<< Int
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = parens $ do
@@ -85,6 +85,9 @@ let_ term' = do
    e2 ← keyword strIn *> term'
    pure $ Let x e1 e2
 
+add ∷ SParser (Expr → Expr → Expr)
+add = token.reservedOp "+" $> Add
+
 appChain ∷ SParser Expr -> SParser Expr
 appChain expr' = do
    simpleExpr expr' >>= rest
@@ -92,6 +95,13 @@ appChain expr' = do
       rest ∷ Expr -> SParser Expr
       rest e1 = (simpleExpr expr' >>= (pure <<< App e1) >>= rest) <|> pure e1
 
+-- An expression is an operator tree. An operator tree is a tree whose branches are
+-- binary primitives and whose leaves are application chains. An application chain
+-- is a left-associative tree of one or more simple terms. A simple term is any
+-- expression other than an operator tree or an application chain.
 expr :: SParser Expr
 expr = fix $ \p ->
-   flip buildExprParser (appChain p) []
+   flip buildExprParser (appChain p) [
+      -- each element of the top-level list corresponds to a precedence level.
+      [Infix add AssocLeft]
+   ]
