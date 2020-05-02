@@ -1,8 +1,8 @@
-
 module Parse where
 
 import Prelude hiding (between)
 import Control.Alt ((<|>))
+import Control.Lazy (fix)
 import Text.Parsing.Parser (Parser, ParserT)
 import Text.Parsing.Parser.Combinators (between)
 import Text.Parsing.Parser.Language (emptyDef)
@@ -12,6 +12,8 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Expr (Expr(..), Var)
+
+type SParser = Parser String
 
 -- constants
 strIn = "in" :: String
@@ -41,19 +43,19 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef)
 tokenParser :: TokenParser
 tokenParser = makeTokenParser languageDef
 
-keyword ∷ String → Parser String Unit
+keyword ∷ String → SParser Unit
 keyword = tokenParser.reserved
 
-variable :: Parser String Expr
+variable :: SParser Expr
 variable = ident >>= compose pure ExprVar
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
-ident ∷ Parser String Var
+ident ∷ SParser Var
 ident = tokenParser.identifier
 
-simpleExpr :: Parser String Expr
-simpleExpr =
-   variable
+simpleExpr :: SParser Expr -> SParser Expr
+simpleExpr expr' =
+   variable <|> let_ expr'
 {-   variable {% id %} |
    string {% id %} |
    number {% id %} |
@@ -63,11 +65,8 @@ simpleExpr =
    constr {% id %}
 -}
 
-term :: Parser String Expr
-term = simpleExpr
-
-let_ ∷ Parser String Expr
-let_ = do
+let_ ∷ SParser Expr -> SParser Expr
+let_ term' = do
    keyword strLet
    x ← ident
    e1 ← do
@@ -75,5 +74,9 @@ let_ = do
       term
    e2 ← do
       keyword strIn
-      term
+      term'
    pure $ ExprLet x e1 e2
+
+term :: SParser Expr
+term = fix $ \p ->
+   simpleExpr p
