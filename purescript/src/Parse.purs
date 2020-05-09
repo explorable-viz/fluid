@@ -65,7 +65,7 @@ pair expr' = parens $ do
    e2 ← token.comma *> expr
    pure $ Pair e1 e2
 
--- TODO: string, float
+-- TODO: string, float, list
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    variable <|>
@@ -73,9 +73,6 @@ simpleExpr expr' =
    int <|>
    parens expr' <|>
    pair expr'
-{-
-   list {% id %} |
--}
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do

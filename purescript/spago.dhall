@@ -4,7 +4,8 @@ You can edit this file as you like.
 -}
 { name = "my-project"
 , dependencies =
-  [ "console"
+  [ "assert"
+  , "console"
   , "effect"
   , "lists"
   , "node-fs"
