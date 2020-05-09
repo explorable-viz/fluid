@@ -8,5 +8,5 @@ import Node.FS.Sync (readTextFile)
 
 testParse1 :: Effect Unit
 testParse1 = do
-  text <- readTextFile ASCII "../fluid/example/normalise.fld"
+  text <- readTextFile ASCII "../fluid/example/parser-wip.fld"
   log text
