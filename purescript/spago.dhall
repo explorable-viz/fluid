@@ -4,7 +4,8 @@ You can edit this file as you like.
 -}
 { name = "my-project"
 , dependencies =
-  [ "assert"
+  [ "aff"
+  , "assert"
   , "console"
   , "effect"
   , "lists"
@@ -12,6 +13,7 @@ You can edit this file as you like.
   , "parsing"
   , "psci-support"
   , "result"
+  , "spec"
   , "tuples"
   ]
 , packages = ./packages.dhall
