@@ -21,7 +21,7 @@ type SParser = Parser String
 strIn = "in" :: String
 strLet = "let" :: String
 strLParen = "(" :: String
-strRParen = "(" :: String
+strRParen = ")" :: String
 
 parens :: forall a . SParser a -> SParser a
 parens = between (string strLParen) (string strRParen)
@@ -37,7 +37,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    opStart         = op',
    opLetter        = op',
    reservedOpNames = [],
-   reservedNames   = [],
+   reservedNames   = [strIn, strLet],
    caseSensitive   = true
 } where
    op' :: SParser Char
@@ -83,7 +83,7 @@ let_ term' = do
    pure $ Let x e1 e2
 
 add ∷ SParser (Expr → Expr → Expr)
-add = token.reservedOp "+" $> Add
+add = token.reservedOp "*" $> Add
 
 appChain ∷ SParser Expr -> SParser Expr
 appChain expr' = do
