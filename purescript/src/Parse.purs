@@ -80,7 +80,7 @@ let_ term' = do
    pure $ Let x e1 e2
 
 add ∷ SParser (Expr → Expr → Expr)
-add = token.reservedOp "+" $> Add
+add = token.reservedOp "*" $> Add
 
 appChain ∷ SParser Expr -> SParser Expr
 appChain expr' = do
