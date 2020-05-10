@@ -23,9 +23,6 @@ strLet = "let" :: String
 strLParen = "(" :: String
 strRParen = ")" :: String
 
-parens :: forall a . SParser a -> SParser a
-parens = between (string strLParen) (string strRParen)
-
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    commentStart    = "{-",
@@ -60,7 +57,7 @@ int :: SParser Expr
 int = token.integer >>= pure <<< Int
 
 pair :: SParser Expr -> SParser Expr
-pair expr' = parens $ do
+pair expr' = token.parens $ do
    e1 ← expr
    e2 ← token.comma *> expr
    pure $ Pair e1 e2
@@ -71,7 +68,7 @@ simpleExpr expr' =
    variable <|>
    let_ expr' <|>
    int <|>
-   parens expr' <|>
+   token.parens expr' <|>
    pair expr'
 
 let_ ∷ SParser Expr -> SParser Expr
@@ -83,7 +80,7 @@ let_ term' = do
    pure $ Let x e1 e2
 
 add ∷ SParser (Expr → Expr → Expr)
-add = token.reservedOp "*" $> Add
+add = token.reservedOp "+" $> Add
 
 appChain ∷ SParser Expr -> SParser Expr
 appChain expr' = do
