@@ -4,6 +4,7 @@ import Prelude hiding (add, between)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Text.Parsing.Parser (Parser)
+import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (eof, oneOf)
@@ -66,7 +67,7 @@ simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    variable <|>
    let_ expr' <|>
-   int <|>
+   try int <|>
    token.parens expr' <|>
    pair expr'
 
@@ -78,7 +79,7 @@ let_ term' = do
    pure $ Let x e1 e2
 
 add ∷ SParser (Expr → Expr → Expr)
-add = token.reservedOp "*" $> Add
+add = token.reservedOp "+" $> Add
 
 appChain ∷ SParser Expr -> SParser Expr
 appChain expr' = do

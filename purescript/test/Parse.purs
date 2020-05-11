@@ -11,14 +11,14 @@ import Test.Spec (describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
-import Parse (expr)
+import Parse (program)
 import Pretty (pretty)
 
 
 testParse1 :: Effect Unit
 testParse1 = do
    text <- readTextFile ASCII "../fluid/example/parser-wip.fld"
-   let result = runParser text expr
+   let result = runParser text program
    launchAff_ $ runSpec [consoleReporter] do
       describe "Parse" do
          it "blah" do
