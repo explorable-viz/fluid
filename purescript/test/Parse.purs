@@ -12,7 +12,7 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
 import Parse (program)
-import Pretty (pretty)
+import Pretty (prettyProgram)
 
 
 testParse1 :: Effect Unit
@@ -26,4 +26,4 @@ testParse1 = do
                Left error -> do
                   true `shouldEqual` false
                Right e -> do
-                  (show $ pretty e) `shouldEqual` "let sum = x + y\nin (x + 100 + sum, y + 100 + sum)"
+                  (show $ prettyProgram e) `shouldEqual` text

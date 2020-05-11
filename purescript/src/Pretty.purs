@@ -217,3 +217,6 @@ instance valPretty :: Pretty Val where
 
 instance explvalPretty :: Pretty ExplVal where
     pretty (ExplVal {t, v}) = atop (pretty t) (pretty v)
+
+prettyProgram :: Expr -> Doc
+prettyProgram e = atop (pretty e) (text "")
