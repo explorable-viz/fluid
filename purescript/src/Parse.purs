@@ -7,7 +7,7 @@ import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
-import Text.Parsing.Parser.String (eof, oneOf)
+import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser,
   alphaNum, letter, makeTokenParser, unGenLanguageDef
@@ -53,8 +53,22 @@ variable = ident >>= pure <<< Var
 ident ∷ SParser Var
 ident = token.identifier
 
+sign :: forall a . (Ring a) => SParser (a -> a)
+sign =
+   (char '-' $> negate) <|>
+   (char '+' $> identity) <|>
+   pure identity
+
 int :: SParser Expr
 int = token.integer >>= pure <<< Int
+
+{-
+int :: ParserT String m Int
+    int = do
+        f <- lexeme sign
+        n <- nat
+        pure $ f n
+-}
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
