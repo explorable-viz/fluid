@@ -143,8 +143,8 @@ instance exprPretty :: Pretty Expr where
     pretty NilSel = text "[]"
     pretty (Cons e es) = text "[" :<>: pretty e :<>: foldExprCons es :<>: text "]"
     pretty (ConsSel e es) = text "[" :<>: pretty e :<>: foldExprCons es :<>: text "]"
-    pretty (Let x e1 e2) = atop (text ("let " <> x <> " = ") :<>: pretty e1)
-                                    (text "in " :<>: pretty e2)
+    pretty (Let x e1 e2) = atop (text ("let " <> x <> " = ") :<>: pretty e1 :<>: text " in")
+                                (pretty e2)
     pretty (Match e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
     pretty (Letrec x σ e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty σ)
                                         (text "in     " :<>: pretty e)
