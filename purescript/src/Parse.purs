@@ -77,7 +77,7 @@ simpleExpr expr' =
    variable <|>
    let_ expr' <|>
    try int <|> -- int may start with +/-
-   token.parens expr' <|>
+   try (token.parens expr') <|>
    pair expr'
 
 let_ ∷ SParser Expr -> SParser Expr
