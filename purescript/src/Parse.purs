@@ -60,15 +60,10 @@ sign =
    pure identity
 
 int :: SParser Expr
-int = token.integer >>= pure <<< Int
-
-{-
-int :: ParserT String m Int
-    int = do
-        f <- lexeme sign
-        n <- nat
-        pure $ f n
--}
+int = do
+   f <- sign
+   n <- token.natural
+   pure $ Int $ f n
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
@@ -81,7 +76,7 @@ simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    variable <|>
    let_ expr' <|>
-   try int <|> -- because an int may start with +/-
+   try int <|> -- int may start with +/-
    token.parens expr' <|>
    pair expr'
 

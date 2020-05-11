@@ -26,4 +26,4 @@ testParse1 = do
                Left error -> do
                   true `shouldEqual` false
                Right e -> do
-                  (show $ pretty e) `shouldEqual` "x + 100"
+                  (show $ pretty e) `shouldEqual` "x + -100"
