@@ -4,10 +4,9 @@ import Prelude hiding (add, between)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Text.Parsing.Parser (Parser)
-import Text.Parsing.Parser.Combinators (between)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
-import Text.Parsing.Parser.String (oneOf, string)
+import Text.Parsing.Parser.String (eof, oneOf)
 import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser,
   alphaNum, letter, makeTokenParser, unGenLanguageDef
@@ -58,8 +57,8 @@ int = token.integer >>= pure <<< Int
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
-   e1 ← expr
-   e2 ← token.comma *> expr
+   e1 <- expr
+   e2 <- token.comma *> expr
    pure $ Pair e1 e2
 
 -- TODO: string, float, list
@@ -73,10 +72,9 @@ simpleExpr expr' =
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do
-   keyword strLet
-   x ← ident
-   e1 ← token.reservedOp "=" *> term'
-   e2 ← keyword strIn *> term'
+   x <- keyword strLet *> ident
+   e1 <- token.reservedOp "=" *> term'
+   e2 <- keyword strIn *> term'
    pure $ Let x e1 e2
 
 add ∷ SParser (Expr → Expr → Expr)
@@ -99,3 +97,6 @@ expr = fix $ \p ->
       -- each element of the top-level list corresponds to a precedence level.
       [Infix add AssocLeft]
    ]
+
+program ∷ SParser Expr
+program = token.whiteSpace *> expr <* eof
