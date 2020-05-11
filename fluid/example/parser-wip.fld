@@ -1,1 +1,2 @@
+let sum = x + y in
 (x + 100 + sum, y + 100 + sum)

@@ -26,4 +26,4 @@ testParse1 = do
                Left error -> do
                   true `shouldEqual` false
                Right e -> do
-                  (show $ pretty e) `shouldEqual` "(x + 100 + sum, y + 100 + sum)"
+                  (show $ pretty e) `shouldEqual` "let sum = x + y\nin (x + 100 + sum, y + 100 + sum)"
