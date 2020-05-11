@@ -67,7 +67,7 @@ simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    variable <|>
    let_ expr' <|>
-   try int <|>
+   try int <|> -- because an int may start with +/-
    token.parens expr' <|>
    pair expr'
 
