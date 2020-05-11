@@ -4,10 +4,10 @@ import Prelude hiding (add, between)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Text.Parsing.Parser (Parser)
-import Text.Parsing.Parser.Combinators (between)
+import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
-import Text.Parsing.Parser.String (oneOf, string)
+import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser,
   alphaNum, letter, makeTokenParser, unGenLanguageDef
@@ -21,10 +21,7 @@ type SParser = Parser String
 strIn = "in" :: String
 strLet = "let" :: String
 strLParen = "(" :: String
-strRParen = "(" :: String
-
-parens :: forall a . SParser a -> SParser a
-parens = between (string strLParen) (string strRParen)
+strRParen = ")" :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -37,7 +34,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    opStart         = op',
    opLetter        = op',
    reservedOpNames = [],
-   reservedNames   = [],
+   reservedNames   = [strIn, strLet],
    caseSensitive   = true
 } where
    op' :: SParser Char
@@ -56,33 +53,38 @@ variable = ident >>= pure <<< Var
 ident ∷ SParser Var
 ident = token.identifier
 
+sign :: forall a . (Ring a) => SParser (a -> a)
+sign =
+   (char '-' $> negate) <|>
+   (char '+' $> identity) <|>
+   pure identity
+
 int :: SParser Expr
-int = token.integer >>= pure <<< Int
+int = do
+   f <- sign
+   n <- token.natural
+   pure $ Int $ f n
 
 pair :: SParser Expr -> SParser Expr
-pair expr' = parens $ do
-   e1 ← expr
-   e2 ← token.comma *> expr
+pair expr' = token.parens $ do
+   e1 <- expr
+   e2 <- token.comma *> expr
    pure $ Pair e1 e2
 
--- TODO: string, float
+-- TODO: string, float, list
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    variable <|>
    let_ expr' <|>
-   int <|>
-   parens expr' <|>
+   try int <|> -- int may start with +/-
+   try (token.parens expr') <|>
    pair expr'
-{-
-   list {% id %} |
--}
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do
-   keyword strLet
-   x ← ident
-   e1 ← token.reservedOp "=" *> term'
-   e2 ← keyword strIn *> term'
+   x <- keyword strLet *> ident
+   e1 <- token.reservedOp "=" *> term'
+   e2 <- keyword strIn *> term'
    pure $ Let x e1 e2
 
 add ∷ SParser (Expr → Expr → Expr)
@@ -105,3 +107,6 @@ expr = fix $ \p ->
       -- each element of the top-level list corresponds to a precedence level.
       [Infix add AssocLeft]
    ]
+
+program ∷ SParser Expr
+program = token.whiteSpace *> expr <* eof

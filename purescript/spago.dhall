@@ -4,13 +4,16 @@ You can edit this file as you like.
 -}
 { name = "my-project"
 , dependencies =
-  [ "console"
+  [ "aff"
+  , "assert"
+  , "console"
   , "effect"
   , "lists"
   , "node-fs"
   , "parsing"
   , "psci-support"
   , "result"
+  , "spec"
   , "tuples"
   ]
 , packages = ./packages.dhall
