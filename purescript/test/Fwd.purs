@@ -6,20 +6,21 @@ import Expl (Expl)
 import Expr (Availability(..), Elim(..), Expr(..))
 import Eval (ExplVal(..), eval)
 import Fwd (fwd)
+import Primitive (add)
 import Val (Val)
 
 
 e0 :: Expr
 e0 = let es = Cons (Int 1) (Cons (Int 2) (Cons (Int 3) Nil))
     in Letrec "f" (ElimList { bnil  : Nil,
-                              bcons : { x : "x", y : "xs", e : Cons (Add (Var "x") (Int 1))
+                              bcons : { x : "x", y : "xs", e : Cons (BinaryApp add (Var "x") (Int 1))
                                                                     (App (Var "f") (Var "xs"))}})
                   (App (Var "f") es)
 
 e :: Expr
 e = let es = Cons (Int 1) (ConsSel (IntSel 2) (Cons (Int 3) Nil))
     in Letrec "f" (ElimList { bnil  : Nil,
-                              bcons : { x : "x", y : "xs", e : Cons (Add (Var "x") (Int 1))
+                              bcons : { x : "x", y : "xs", e : Cons (BinaryApp add (Var "x") (Int 1))
                                                                     (App (Var "f") (Var "xs"))}})
                   (App (Var "f") es)
 

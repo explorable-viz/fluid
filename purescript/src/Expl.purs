@@ -23,7 +23,6 @@ data Expl =  Bottom
            | Cons Expl Expl
            | App Expl Expl Match Expl
            | Match Expl Match Expl
-           | Add Expl Expl
            | BinaryApp BinaryOp Expl Expl
            | Let Var Expl Expl
            | Letrec Var Expl Expl

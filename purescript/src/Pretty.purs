@@ -154,7 +154,6 @@ instance exprPretty :: Pretty Expr where
     pretty (Letrec x σ e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty σ)
                                         (text "in     " :<>: pretty e)
     pretty (App e1 e2) = pretty e1 :<>: text " " :<>: pretty e2
-    pretty (Add e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
     pretty (BinaryApp op e1 e2) = pretty e1 :<>: text " " :<>: pretty op :<>: text " " :<>: pretty e2
 
 
@@ -175,7 +174,6 @@ instance explPretty :: Pretty Expl where
     pretty (T.App t1 t2 m t3) =  atop (atop (text "App (" :<>: pretty t1 :<>: text ", " :<>: pretty t2 :<>: text ")")
                                                    (text "     Match:  " :<>: pretty m))
                                                    (text "     Result: " :<>: pretty t3)
-    pretty (T.Add t1 t2) = pretty t1 :<>: text " + " :<>: pretty t2
     pretty (T.BinaryApp op t1 t2) = pretty t1 :<>: text " " :<>: pretty op :<>: text " " :<>: pretty t2
     pretty (T.Fun ρ σ) = text "Fun(" :<>:  (text "env \n") :<>: (pretty σ) :<>: text ")"
 

@@ -108,20 +108,6 @@ fwd ρ (App e e') (T.App t t' ξ t'') α =
             Just (T3 ρ'' e''  α') -> fwd (ρ' :++: ρ'' :+: Bind f (V.Closure ρ' f σ)) e'' t'' α'
             Nothing -> V.Failure "Match not found"
       _  -> V.Failure "Impossible"
--- add-bot
-fwd ρ (Add e1 e2) (T.Add t1 t2) Bottom = V.Bot
--- add
-fwd ρ (Add e1 e2) (T.Add t1 t2) Top =
-   let v1 = fwd ρ e1 t1 Top
-       v2 = fwd ρ e2 t2 Top
-   in case v1, v2 of
-      -- add
-      (V.Int n1), (V.Int n2) -> V.Int (n1 + n2)
-      -- add-bot-1
-      V.Bot, _ -> V.Bot
-      -- add-bot-2
-      _, V.Bot -> V.Bot
-      _, _ -> V.Failure "Impossible"
 -- binary-app-bot
 fwd ρ (BinaryApp op e1 e2) (T.BinaryApp _ t1 t2) Bottom = V.Bot
 -- binary-app
