@@ -95,7 +95,7 @@ let_ term' = do
 binaryOp :: BinaryOp -> SParser (Expr -> Expr -> Expr)
 binaryOp op = do
    op' <- token.operator
-   if (opName op /= op') then fail "Confused" else pure $ BinaryApp op
+   if (opName op /= op') then fail $ "Expected " <> opName op else pure $ BinaryApp op
 
 backtick :: SParser Unit
 backtick = token.reservedOp "`"
@@ -109,7 +109,7 @@ appChain expr' = do
 
 -- each element of the top-level list corresponds to a precedence level.
 operators :: OperatorTable Identity String Expr
-operators = fromFoldable $ map (\op -> [Infix (binaryOp op) AssocLeft]) (values binaryOps)
+operators = fromFoldable $ map (\op -> [Infix (binaryOp op) AssocLeft]) $ values binaryOps
 
 -- An expression is an operator tree. An operator tree is a tree whose branches are
 -- binary primitives and whose leaves are application chains. An application chain
