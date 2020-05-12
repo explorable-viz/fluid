@@ -93,7 +93,7 @@ let_ term' = do
    pure $ Let x e1 e2
 
 binaryOp :: BinaryOp -> SParser (Expr -> Expr -> Expr)
-binaryOp op = do
+binaryOp op = try $ do
    op' <- token.operator
    if (opName op /= op') then fail $ "Expected " <> opName op else pure $ BinaryApp op
 
