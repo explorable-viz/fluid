@@ -21,7 +21,6 @@ data Expr = Int Int | IntSel Int
           | Match Expr Elim
           | Letrec String Elim Expr
           | App Expr Expr
-          | Add Expr Expr
           | BinaryApp BinaryOp Expr Expr
 
 data Elim = ElimVar { x :: Var, e :: Expr }
