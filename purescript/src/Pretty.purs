@@ -11,9 +11,9 @@ import Expr (Elim(..), Expr(..), Typ(..))
 import Eval (ExplVal(..))
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
+import Primitive (BinaryOp, opName)
 import Val (Val)
 import Val (Val(..)) as V
-import Util (__todo)
 
 
 -- | A text document.
@@ -131,6 +131,9 @@ foldValCons (V.Nil) = text ""
 foldValCons (V.Cons v v') = text ", " :<>: pretty v :<>: foldValCons v'
 foldValCons _ = text ""
 
+instance binaryOpPretty :: Pretty BinaryOp where
+   pretty = opName >>> text
+
 instance exprPretty :: Pretty Expr where
     pretty (Int n) = text (show n)
     pretty (IntSel n) = text (show n)
@@ -152,7 +155,7 @@ instance exprPretty :: Pretty Expr where
                                         (text "in     " :<>: pretty e)
     pretty (App e1 e2) = pretty e1 :<>: text " " :<>: pretty e2
     pretty (Add e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
-    pretty (BinaryApp _ _ _) = __todo
+    pretty (BinaryApp op e1 e2) = pretty e1 :<>: text " " :<>: pretty op :<>: text " " :<>: pretty e2
 
 
 instance explPretty :: Pretty Expl where
