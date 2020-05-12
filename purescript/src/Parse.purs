@@ -3,12 +3,10 @@ module Parse where
 import Prelude hiding (add, between)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
-import Data.Map (lookup)
-import Data.Maybe (fromJust)
-import Partial.Unsafe (unsafePartial)
-import Text.Parsing.Parser (Parser)
+import Data.Identity (Identity)
+import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (try)
-import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
+import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
@@ -17,7 +15,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import Expr (Expr(..))
-import Primitive (BinaryOp(..), binaryOps)
+import Primitive (BinaryOp, add, opName)
 
 
 type SParser = Parser String
@@ -92,8 +90,10 @@ let_ term' = do
    e2 <- keyword strIn *> term'
    pure $ Let x e1 e2
 
-add ∷ SParser (Expr → Expr → Expr)
-add = token.reservedOp "+" $> BinaryApp (unsafePartial $ fromJust (lookup "+" binaryOps))
+binaryOp :: BinaryOp -> SParser (Expr -> Expr -> Expr)
+binaryOp op = do
+   op' <- token.operator
+   if (opName op /= op') then fail "Confused" else pure $ BinaryApp op
 
 backtick :: SParser Unit
 backtick = token.reservedOp "`"
@@ -105,16 +105,18 @@ appChain expr' = do
       rest ∷ Expr -> SParser Expr
       rest e1 = (simpleExpr expr' >>= (pure <<< App e1) >>= rest) <|> pure e1
 
+-- each element of the top-level list corresponds to a precedence level.
+operators :: OperatorTable Identity String Expr
+operators = [
+      [Infix (binaryOp add) AssocLeft]
+   ]
+
 -- An expression is an operator tree. An operator tree is a tree whose branches are
 -- binary primitives and whose leaves are application chains. An application chain
 -- is a left-associative tree of one or more simple terms. A simple term is any
 -- expression other than an operator tree or an application chain.
 expr :: SParser Expr
-expr = fix $ \p ->
-   flip buildExprParser (appChain p) [
-      -- each element of the top-level list corresponds to a precedence level.
-      [Infix add AssocLeft]
-   ]
+expr = fix $ \p -> flip buildExprParser (appChain p) operators
 
 program ∷ SParser Expr
 program = token.whiteSpace *> expr <* eof
