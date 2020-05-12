@@ -14,6 +14,9 @@ data BinaryOp = BinaryOp {
 opName :: BinaryOp -> String
 opName (BinaryOp { name }) = name
 
+opPrec :: BinaryOp -> Int
+opPrec (BinaryOp { prec }) = prec
+
 instance eqBinaryOp :: Eq BinaryOp where
    eq (BinaryOp { name: op }) (BinaryOp { name: op' }) = op == op'
 

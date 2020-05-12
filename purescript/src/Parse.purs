@@ -4,8 +4,10 @@ import Prelude hiding (add, between)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Data.Array (fromFoldable)
-import Data.Map (values)
+import Data.Function (on)
 import Data.Identity (Identity)
+import Data.List (groupBy, sortBy)
+import Data.Map (values)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -17,7 +19,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import Expr (Expr(..))
-import Primitive (BinaryOp, binaryOps, opName)
+import Primitive (BinaryOp, binaryOps, opName, opPrec)
 
 
 type SParser = Parser String
@@ -106,6 +108,9 @@ appChain expr' = do
    where
       rest ∷ Expr -> SParser Expr
       rest e1 = (simpleExpr expr' >>= (pure <<< App e1) >>= rest) <|> pure e1
+
+wibble :: _
+wibble = fromFoldable $ map fromFoldable $ groupBy (eq `on` opPrec) $ sortBy (comparing opPrec) $ values binaryOps
 
 -- each element of the top-level list corresponds to a precedence level.
 operators :: OperatorTable Identity String Expr
