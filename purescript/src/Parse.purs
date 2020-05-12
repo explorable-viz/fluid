@@ -3,6 +3,8 @@ module Parse where
 import Prelude hiding (add, between)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
+import Data.Array (fromFoldable)
+import Data.Map (values)
 import Data.Identity (Identity)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (try)
@@ -15,7 +17,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import Expr (Expr(..))
-import Primitive (BinaryOp, add, opName)
+import Primitive (BinaryOp, binaryOps, opName)
 
 
 type SParser = Parser String
@@ -107,9 +109,7 @@ appChain expr' = do
 
 -- each element of the top-level list corresponds to a precedence level.
 operators :: OperatorTable Identity String Expr
-operators = [
-      [Infix (binaryOp add) AssocLeft]
-   ]
+operators = fromFoldable $ map (\op -> [Infix (binaryOp op) AssocLeft]) (values binaryOps)
 
 -- An expression is an operator tree. An operator tree is a tree whose branches are
 -- binary primitives and whose leaves are application chains. An application chain
