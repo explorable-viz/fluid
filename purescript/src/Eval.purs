@@ -14,7 +14,7 @@ match :: Val -> Elim -> Maybe (T3 Env Expr Match)
 match val σ
  = case  val, σ of
     -- var
-    _, ElimVar { x, tx, e }
+    _, ElimVar { x, e }
         ->  Just $ T3 (Empty :+: Bind x val) e (MatchVar x)
     -- true
     V.True, ElimBool { btrue: e1, bfalse: _ }
@@ -85,6 +85,13 @@ eval ρ (Add e1 e2) =
        ExplVal { t: t2, v: v2 } = eval ρ e2
    in  case v1, v2 of
       V.Int n1, V.Int n2 -> ExplVal { t: T.Add t1 t2, v: V.Int (n1 + n2) }
+      _, _ -> ExplVal { t: T.Bottom, v: V.Failure "Arithmetic type error: e1 or/and e2 do not evaluate to ints" }
+-- binary app
+eval ρ (BinaryApp op e1 e2) =
+   let ExplVal { t: t1, v: v1 } = eval ρ e1
+       ExplVal { t: t2, v: v2 } = eval ρ e2
+   in  case v1, v2 of
+      V.Int n1, V.Int n2 -> ExplVal { t: T.BinaryApp op t1 t2, v: V.Int (n1 + n2) }
       _, _ -> ExplVal { t: T.Bottom, v: V.Failure "Arithmetic type error: e1 or/and e2 do not evaluate to ints" }
 -- let
 eval ρ (Let x e1 e2) =
