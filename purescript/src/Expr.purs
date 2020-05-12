@@ -4,6 +4,7 @@ import Prelude ((<>))
 import Data.Eq (class Eq)
 import Data.Show
 import Bindings (Bindings, Var)
+import Primitive (BinaryOp)
 
 data T3 a b c = T3 a b c
 
@@ -31,6 +32,7 @@ data Expr = Int Int | IntSel Int
           | Letrec String Elim Expr
           | App Expr Expr
           | Add Expr Expr
+          | BinaryApp BinaryOp Expr Expr
 
 data Elim = ElimVar { x :: Var, tx :: Typ, e :: Expr }
           | ElimPair { x :: Var, tx :: Typ, y :: Var, ty :: Typ, e:: Expr }

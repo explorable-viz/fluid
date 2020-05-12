@@ -1,13 +1,14 @@
 module Typed where
 
+import Prelude ((==), (<>), unit)
+import Data.Maybe (Maybe(..))
 import Bindings (Bind(..), find, (:+:))
 import Expr (Ctx, Elim, Expr(..), Typ)
 import Expr (Elim(..)) as E
 import Expr (Typ(..)) as T
 import Val (Val)
 import Val (Val(..)) as V
-import Prelude ((==), (<>))
-import Data.Maybe (Maybe(..))
+import Util (__todo)
 
 
 class Typed a where
@@ -73,6 +74,7 @@ instance hasTypExpr :: Typed Expr where
                                       in  case v1, v2 of
                                            T.TypInt, T.TypInt -> T.TypInt
                                            _, _  -> T.TypFailure "Arithemetic type error: e1 or/and e2 do not typecheck as ints"
+      typeOf (BinaryApp _ _ _) ctx = __todo
 
 instance hasTypVal :: Typed Val where
       typeOf V.True ctx                   = T.TypBool

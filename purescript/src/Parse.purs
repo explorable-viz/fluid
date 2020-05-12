@@ -3,6 +3,9 @@ module Parse where
 import Prelude hiding (add, between)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
+import Data.Map (lookup)
+import Data.Maybe (fromJust)
+import Partial.Unsafe (unsafePartial)
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
@@ -14,6 +17,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import Expr (Expr(..))
+import Primitive (binaryOps)
 
 type SParser = Parser String
 
@@ -88,7 +92,7 @@ let_ term' = do
    pure $ Let x e1 e2
 
 add ∷ SParser (Expr → Expr → Expr)
-add = token.reservedOp "+" $> Add
+add = token.reservedOp "+" $> BinaryApp (unsafePartial $ fromJust (lookup "+" binaryOps))
 
 appChain ∷ SParser Expr -> SParser Expr
 appChain expr' = do

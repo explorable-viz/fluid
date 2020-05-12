@@ -13,6 +13,8 @@ import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Val (Val)
 import Val (Val(..)) as V
+import Util (__todo)
+
 
 -- | A text document.
 newtype Doc = Doc
@@ -150,6 +152,7 @@ instance exprPretty :: Pretty Expr where
                                         (text "in     " :<>: pretty e)
     pretty (App e1 e2) = pretty e1 :<>: text " " :<>: pretty e2
     pretty (Add e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
+    pretty (BinaryApp _ _ _) = __todo
 
 
 instance explPretty :: Pretty Expl where
