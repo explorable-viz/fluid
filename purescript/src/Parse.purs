@@ -17,7 +17,8 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import Expr (Expr(..))
-import Primitive (binaryOps)
+import Primitive (BinaryOp(..), binaryOps)
+
 
 type SParser = Parser String
 
@@ -93,6 +94,9 @@ let_ term' = do
 
 add ∷ SParser (Expr → Expr → Expr)
 add = token.reservedOp "+" $> BinaryApp (unsafePartial $ fromJust (lookup "+" binaryOps))
+
+backtick :: SParser Unit
+backtick = token.reservedOp "`"
 
 appChain ∷ SParser Expr -> SParser Expr
 appChain expr' = do
