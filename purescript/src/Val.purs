@@ -33,4 +33,4 @@ toValues :: (Int -> Int -> Int) -> Val -> Val -> Val
 toValues f { u } { u: u' } = val $ Int $ f (toInt u) (toInt u)
 
 toValues_fwd :: (Int -> Int -> Int) -> Selected -> Val -> Val -> Val
-toValues_fwd f α { α: α', u } { α: α'', u: u' } = { α: α ∧ α' ∧ α'', u: Int $ f (toInt u) (toInt u) }
+toValues_fwd f α v v' = { α: α ∧ v.α ∧ v'.α, u: Int $ f (toInt v.u) (toInt v'.u) }
