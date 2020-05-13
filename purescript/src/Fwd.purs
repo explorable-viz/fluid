@@ -1,9 +1,9 @@
 module Fwd where
 
-import Prelude (($))
+import Prelude (($), (<>))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
-import Bindings (Bind(..), Bindings(..), (:+:), (:++:), find)
+import Bindings (Bind(..), Bindings(..), (:+:), find)
 import Expr (Elim(..), Expr, RawExpr(..), T3(..))
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
@@ -57,7 +57,7 @@ fwd ρ { r: App e e' } (T.App t t' ξ t'') α =
       { α: α', u: V.Closure ρ' f σ } ->
          case fwd_match (fwd ρ e' t' α) σ ξ of
             Just (T3 ρ'' e'' α'') ->
-               let ρ_f = ρ' :++: ρ'' :+: Bind f { α: α', u: (V.Closure ρ' f σ) } in fwd ρ_f e'' t'' (α' ∧ α'')
+               let ρ_f = (ρ' <> ρ'') :+: Bind f { α: α', u: (V.Closure ρ' f σ) } in fwd ρ_f e'' t'' (α' ∧ α'')
             Nothing -> absurd
       _  -> absurd
 -- binary app
@@ -71,7 +71,7 @@ fwd ρ { r: Let x e1 e2 } (T.Let _ t1 t2) α =
 -- match
 fwd ρ { r: Match e σ } (T.Match t ξ t') α =
    case fwd_match (fwd ρ e t α) σ ξ of
-      Just (T3 ρ' e' α') -> fwd (ρ :++: ρ') e' t' α'
+      Just (T3 ρ' e' α') -> fwd (ρ <> ρ') e' t' α'
       Nothing -> absurd
 -- trace/expression mismatch
 fwd _ _ _ _ = absurd

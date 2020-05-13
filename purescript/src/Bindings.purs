@@ -10,7 +10,7 @@ data Bind a = Bind Var a
 data Bindings a =
    Empty | Snoc (Bindings a) (Bind a)
 
-infixl 5 Snoc as :+: -- give this a monoid instance instead
+infixl 5 Snoc as :+:
 
 instance bindingsSemigroup :: Semigroup (Bindings a) where
    append m Empty = m
