@@ -160,6 +160,7 @@ instance valPretty :: Pretty RawVal where
    pretty V.True = text "True"
    pretty V.False = text "False"
    pretty (V.Closure ρ f σ) = text "Closure(" :<>: atop (text "env" :<>: text f ) (pretty σ) :<>: text ")"
+   pretty (V.Op op) = text $ opName op
    pretty (V.Pair { u } { u: u' }) = text "(" :<>: pretty u :<>: text ", " :<>: pretty u' :<>: text ")"
    pretty V.Nil = text "[]"
    pretty (V.Cons { u } { u: u' }) = text "[" :<>: pretty u :<>: prettyList u' :<>: text "]"

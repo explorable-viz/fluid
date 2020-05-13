@@ -71,5 +71,5 @@ fwd ρ { r: Match e σ } α =
    case fwd_match (fwd ρ e α) σ of
       Just (T3 ρ' e' α') -> fwd (ρ <> ρ') e' α'
       Nothing -> absurd
--- unrecognised expression
+-- otherwise
 fwd _ _ _ = absurd

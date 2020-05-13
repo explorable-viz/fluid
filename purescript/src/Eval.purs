@@ -30,7 +30,7 @@ match _ _ = Nothing
 
 type ExplVal = { t :: Expl, v :: Val }
 
-eval :: Partial => Env -> Expr -> ExplVal
+eval :: Env -> Expr -> ExplVal
 -- var
 eval ρ { r: Var x } =
    case find x ρ of
@@ -53,7 +53,9 @@ eval ρ { r: Nil } = { t: T.Nil, v: val V.Nil }
 eval ρ { r: Cons e e' } =
    let { t: t1, v: v1 } = eval ρ e
        { t: t2, v: v2 } = eval ρ e'
-   in  { t: T.Cons t1 t2, v: val $ V.Cons v1 v2 }
+   in { t: T.Cons t1 t2, v: val $ V.Cons v1 v2 }
+-- op
+eval ρ { r: Op op } = { t: T.Op op, v: val $ V.Op op }
 -- letrec
 eval ρ { r: Letrec f σ e } =
    let { t, v } = eval (ρ :+: f ↦ (val $ V.Closure ρ f σ)) e

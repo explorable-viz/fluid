@@ -3,6 +3,7 @@ module Val where
 import Data.Eq (class Eq)
 import Bindings
 import Expr (Elim)
+import Primitive (BinaryOp)
 import Selected (Selected(..))
 
 type Env = Bindings Val
@@ -11,6 +12,7 @@ data RawVal =
      True | False
    | Int Int
    | Closure Env String Elim
+   | Op BinaryOp
    | Pair Val Val
    | Nil | Cons Val Val
 
