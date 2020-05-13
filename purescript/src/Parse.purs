@@ -7,7 +7,8 @@ import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (groupBy, sortBy)
-import Data.Map (values)
+import Data.Map (lookup, values)
+import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -87,6 +88,7 @@ simpleExpr expr' =
    let_ expr' <|>
    try int <|> -- int may start with +/-
    try (token.parens expr') <|>
+   try parensOp <|>
    pair expr'
 
 let_ ∷ SParser Expr -> SParser Expr
@@ -96,8 +98,17 @@ let_ term' = do
    e2 <- keyword strIn *> term'
    pure $ expr $ Let x e1 e2
 
-binaryOp :: BinaryOp -> SParser (Expr -> Expr -> Expr)
-binaryOp op = try $ do
+-- any binary operator, in parentheses
+parensOp :: SParser Expr
+parensOp = token.parens $ do
+   op <- token.operator
+   case lookup op binaryOps of
+      Nothing -> fail $ "Unrecognised operator " <> op
+      Just op' -> pure $ expr $ Op op'
+
+-- the specific binary operator
+theBinaryOp :: BinaryOp -> SParser (Expr -> Expr -> Expr)
+theBinaryOp op = try $ do
    op' <- token.operator
    if (opName op /= op')
    then fail $ "Expected " <> opName op
@@ -117,7 +128,7 @@ appChain expr' = do
 operators :: OperatorTable Identity String Expr
 operators =
    fromFoldable $ map fromFoldable $
-   map (map (\op -> Infix (binaryOp op) AssocLeft)) $
+   map (map (\op -> Infix (theBinaryOp op) AssocLeft)) $
    groupBy (eq `on` opPrec) $ sortBy (comparing opPrec) $ values binaryOps
 
 -- An expression is an operator tree. An operator tree is a tree whose branches are

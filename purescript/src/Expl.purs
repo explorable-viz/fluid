@@ -12,7 +12,9 @@ data Expl =
    | Pair Expl Expl
    | Nil
    | Cons Expl Expl
+   | Op BinaryOp
    | App Expl Expl Match Expl
+   | AppOp Expl Expl
    | Match Expl Match Expl
    | BinaryApp BinaryOp Expl Expl
    | Let Var Expl Expl
