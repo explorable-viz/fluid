@@ -13,8 +13,8 @@ import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Primitive (BinaryOp, opName)
 import Util (error)
-import Val (Val)
-import Val (Val(..)) as V
+import Val (Val, RawVal)
+import Val (RawVal(..)) as V
 
 
 -- | A text document.
@@ -120,12 +120,12 @@ class PrettyList p where
 
 instance exprPrettyList :: PrettyList RawExpr where
    prettyList (Nil) = text ""
-   prettyList (Cons e e') = text ", " :<>: pretty e :<>: prettyList e'
+   prettyList (Cons { r } { r: r' }) = text ", " :<>: pretty r :<>: prettyList r'
    prettyList _ = error "Ill-formed list"
 
-instance valPrettyList :: PrettyList Val where
+instance valPrettyList :: PrettyList RawVal where
    prettyList (V.Nil) = text ""
-   prettyList (V.Cons v v') = text ", " :<>: pretty v :<>: prettyList v'
+   prettyList (V.Cons { u } { u: u'}) = text ", " :<>: pretty u :<>: prettyList u'
    prettyList _ = error "Ill-formed list"
 
 instance binaryOpPretty :: Pretty BinaryOp where
@@ -136,42 +136,34 @@ instance rawExprPretty :: Pretty RawExpr where
     pretty (Var x) = text x
     pretty True    = text "true"
     pretty False   = text "false"
-    pretty (Pair e1 e2) = text "(" :<>: pretty e1 :<>: text ", " :<>: pretty e2 :<>: text ")"
+    pretty (Pair { r } { r: r' }) = text "(" :<>: pretty r :<>: text ", " :<>: pretty r' :<>: text ")"
     pretty Nil = text "[]"
-    pretty (Cons e es) = text "[" :<>: pretty e :<>: foldExprCons es :<>: text "]"
-    pretty (Let x e1 e2) = atop (text ("let " <> x <> " = ") :<>: pretty e1 :<>: text " in")
-                                (pretty e2)
-    pretty (Match e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
-    pretty (Letrec x σ e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty σ)
-                                        (text "in     " :<>: pretty e)
-    pretty (App e1 e2) = pretty e1 :<>: text " " :<>: pretty e2
-    pretty (BinaryApp op e1 e2) = pretty e1 :<>: text " " :<>: pretty op :<>: text " " :<>: pretty e2
+    pretty (Cons { r } { r: r' }) = text "[" :<>: pretty r :<>: prettyList r' :<>: text "]"
+    pretty (Let x { r } { r: r' }) =
+      atop (text ("let " <> x <> " = ") :<>: pretty r :<>: text " in") (pretty r')
+    pretty (Match { r } σ) = atop (atop (text "match " :<>: pretty r :<>: text " as {") (pretty σ)) (text "}")
+    pretty (Letrec x σ { r }) =
+      atop (text ("letrec " <>  x <> " = ") :<>: pretty σ) (text "in     " :<>: pretty r)
+    pretty (App { r } { r: r' }) = pretty r :<>: text " " :<>: pretty r'
+    pretty (BinaryApp op { r } { r: r' }) = pretty r :<>: text " " :<>: pretty op :<>: text " " :<>: pretty r'
 
 instance exprElim :: Pretty Elim where
-    pretty (ElimVar { x, e }) = text "  " :<>: text x :<>: text " -> " :<>: pretty e
-    pretty (ElimPair { x, y, e }) = text "   (" :<>: text x :<>: text ", " :<>: text y :<>: text ") -> " :<>: pretty e
-    pretty (ElimList { bnil: e, bcons: { x, y, e: e' } }) = text "    " :<>: atop (text "[] -> " :<>: pretty e) (text "(" :<>: text x :<>: text ":" :<>: text y :<>: text ") -> " :<>: pretty e')
-    pretty (ElimBool { btrue: e, bfalse: e' }) = text "     " :<>: atop (text "true -> " :<>: pretty e) (text "false -> " :<>: pretty e')
+    pretty (ElimVar { x, e: { r } }) = text "  " :<>: text x :<>: text " -> " :<>: pretty r
+    pretty (ElimPair { x, y, e: { r } }) =
+      text "   (" :<>: text x :<>: text ", " :<>: text y :<>: text ") -> " :<>: pretty r
+    pretty (ElimList { bnil: { r }, bcons: { x, y, e: { r: r' } } }) =
+      text "    " :<>: atop (text "[] -> " :<>: pretty r) (text "(" :<>: text x :<>: text ":" :<>: text y :<>: text ") -> " :<>: pretty r')
+    pretty (ElimBool { btrue: { r }, bfalse: { r: r' } }) =
+      text "     " :<>: atop (text "true -> " :<>: pretty r) (text "false -> " :<>: pretty r')
 
-instance valPretty :: Pretty Val where
-    pretty V.Bot = text "⊥"
+instance valPretty :: Pretty RawVal where
     pretty (V.Int n)  = text $ show n
-    pretty (V.IntSel n)  = text $ show n
     pretty V.True = text "True"
-    pretty V.TrueSel = text "True"
     pretty V.False = text "False"
-    pretty V.FalseSel = text "False"
     pretty (V.Closure ρ f σ) = text "Closure(" :<>: atop (text "env" :<>: text f ) (pretty σ) :<>: text ")"
-    pretty (V.Pair a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
-    pretty (V.PairSel a b) = text "(" :<>: pretty a :<>: text ", " :<>: pretty b :<>: text ")"
+    pretty (V.Pair { u } { u: u' }) = text "(" :<>: pretty u :<>: text ", " :<>: pretty u' :<>: text ")"
     pretty V.Nil = text "[]"
-    pretty V.NilSel = text "[]"
-    pretty (V.Cons x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
-    pretty (V.ConsSel x xs) = text "[" :<>: pretty x :<>: foldValCons xs :<>: text "]"
-    pretty (V.Failure s) = text s
-
-instance explvalPretty :: Pretty ExplVal where
-    pretty (ExplVal {t, v}) = atop (pretty t) (pretty v)
+    pretty (V.Cons { u } { u: u' }) = text "[" :<>: pretty u :<>: prettyList u' :<>: text "]"
 
 prettyProgram :: Expr -> Doc
-prettyProgram e = atop (pretty e) (text "")
+prettyProgram { r } = atop (pretty r) (text "")
