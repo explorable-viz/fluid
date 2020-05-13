@@ -15,15 +15,15 @@ match :: Val -> Elim -> Maybe (T3 Env Expr Match)
 -- var
 match v (ElimVar { x, e }) = Just $ T3 (Empty :+: Bind x v) e (MatchVar x)
 -- true
-match { u: V.True } (ElimBool { btrue: e1, bfalse: _ }) = Just $ T3 Empty e1 MatchTrue
+match { u: V.True } (ElimBool { true: e1, false: _ }) = Just $ T3 Empty e1 MatchTrue
 -- false
-match { u: V.False } (ElimBool { btrue: _, bfalse: e2 }) = Just $ T3 Empty e2 MatchFalse
+match { u: V.False } (ElimBool { true: _, false: e2 }) = Just $ T3 Empty e2 MatchFalse
 -- pair
 match { u: V.Pair v v' } (ElimPair { x, y, e }) = Just $ T3 (Empty :+: Bind x v :+: Bind y v') e (MatchPair x y)
 -- nil
-match { u: V.Nil } (ElimList { bnil: e, bcons: _ }) = Just $ T3 Empty e MatchNil
+match { u: V.Nil } (ElimList { nil: e, cons: _ }) = Just $ T3 Empty e MatchNil
 -- cons
-match { u : V.Cons v v' } (ElimList { bnil: _, bcons: { x, y, e } }) =
+match { u : V.Cons v v' } (ElimList { nil: _, cons: { x, y, e } }) =
    Just $ T3 (Empty :+: Bind x v :+: Bind y v') e (MatchCons x y)
 -- failure
 match _ _ = Nothing

@@ -15,6 +15,7 @@ data RawExpr =
   | True | False
   | Pair Expr Expr
   | Nil | Cons Expr Expr
+  | Op BinaryOp
   | Let Var Expr Expr
   | Match Expr Elim
   | Letrec String Elim Expr
@@ -29,8 +30,8 @@ expr r = { α: Bot, r }
 data Elim =
      ElimVar { x :: Var, e :: Expr }
    | ElimPair { x :: Var, y :: Var, e:: Expr }
-   | ElimList { bnil :: Expr, bcons :: { x :: Var, y :: Var, e:: Expr } }
-   | ElimBool { btrue :: Expr, bfalse :: Expr }
+   | ElimList { nil :: Expr, cons :: { x :: Var, y :: Var, e:: Expr } }
+   | ElimBool { true :: Expr, false :: Expr }
 
 derive instance eqT3 :: (Eq a, Eq b, Eq c) => Eq (T3 a b c)
 instance showT3 :: (Show a, Show b, Show c) => Show (T3 a b c) where

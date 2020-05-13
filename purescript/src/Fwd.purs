@@ -17,16 +17,16 @@ fwd_match :: Val -> Elim -> Match -> Maybe (T3 Env Expr Selected)
 -- var
 fwd_match v (ElimVar { x, e }) (MatchVar _) = Just $ T3 (Empty :+: Bind x v) e Top
 -- true
-fwd_match { α, u: V.True } (ElimBool { btrue: e, bfalse: _ }) MatchTrue = Just $ T3 Empty e α
+fwd_match { α, u: V.True } (ElimBool { true: e, false: _ }) MatchTrue = Just $ T3 Empty e α
 -- false
-fwd_match { α, u: V.False } (ElimBool { btrue: _, bfalse: e }) MatchFalse = Just $ T3 Empty e α
+fwd_match { α, u: V.False } (ElimBool { true: _, false: e }) MatchFalse = Just $ T3 Empty e α
 -- pair
 fwd_match { α, u: V.Pair u v } (ElimPair { x, y, e }) (MatchPair _ _) =
    Just $ T3 (Empty :+: Bind x u :+: Bind y v) e α
 -- nil
-fwd_match { α, u: V.Nil } (ElimList { bnil: e, bcons: _ }) MatchNil = Just $ T3 Empty e α
+fwd_match { α, u: V.Nil } (ElimList { nil: e, cons: _ }) MatchNil = Just $ T3 Empty e α
 -- cons
-fwd_match { α, u: V.Cons u v } (ElimList { bnil: _, bcons: { x, y, e } }) (MatchCons _ _) =
+fwd_match { α, u: V.Cons u v } (ElimList { nil: _, cons: { x, y, e } }) (MatchCons _ _) =
    Just $ T3 (Empty :+: Bind x u :+: Bind y v) e Top
 -- failure
 fwd_match _ _ _ =  Nothing
