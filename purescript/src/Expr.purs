@@ -8,7 +8,7 @@ import Primitive (BinaryOp)
 
 data T3 a b c = T3 a b c
 
-data Availability = Top | Bottom
+data Availability = Top | Bot
 
 data Expr = Int Int | IntSel Int
           | Var Var
@@ -33,10 +33,5 @@ instance showT3 :: (Show a, Show b, Show c) => Show (T3 a b c) where
   show (T3 a b c) = "T3 " <> show a <> " " <> show b <> " " <> show c
 
 derive instance eqAvailability :: Eq Availability
-instance showAvailability :: Show Availability where
-  show Top    = "Top"
-  show Bottom = "Bottom"
-
 derive instance eqExpr :: Eq Expr
-
 derive instance eqElim :: Eq Elim

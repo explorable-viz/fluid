@@ -16,15 +16,15 @@ fwd_match v (ElimVar { x, e }) (MatchVar _) = Just $ T3 (Empty :+: Bind x v) e T
 -- true-sel
 fwd_match V.TrueSel (ElimBool { btrue: e, bfalse: _ }) MatchTrue = Just $ T3 Empty e Top
 -- true
-fwd_match V.True (ElimBool { btrue: e, bfalse: _ }) MatchTrue = Just $ T3 Empty e Bottom
+fwd_match V.True (ElimBool { btrue: e, bfalse: _ }) MatchTrue = Just $ T3 Empty e Bot
 -- true-bot
-fwd_match V.Bot (ElimBool { btrue: e, bfalse: _ }) MatchTrue = Just $ T3 Empty e Bottom
+fwd_match V.Bot (ElimBool { btrue: e, bfalse: _ }) MatchTrue = Just $ T3 Empty e Bot
 -- false-sel
 fwd_match V.FalseSel (ElimBool { btrue: _, bfalse: e }) MatchFalse = Just $ T3 Empty e Top
 -- false
-fwd_match V.False (ElimBool { btrue: _, bfalse: e }) MatchFalse = Just $ T3 Empty e Bottom
+fwd_match V.False (ElimBool { btrue: _, bfalse: e }) MatchFalse = Just $ T3 Empty e Bot
 -- false-bot
-fwd_match V.Bot (ElimBool { btrue: _, bfalse: e }) MatchFalse = Just $ T3 Empty e Bottom
+fwd_match V.Bot (ElimBool { btrue: _, bfalse: e }) MatchFalse = Just $ T3 Empty e Bot
 -- pair-sel
 fwd_match (V.PairSel u v) (ElimPair { x, y, e }) (MatchPair _ _) =
    let ρ' = Empty :+: Bind x u :+: Bind y v
@@ -32,17 +32,17 @@ fwd_match (V.PairSel u v) (ElimPair { x, y, e }) (MatchPair _ _) =
 -- pair-bot
 fwd_match V.Bot (ElimPair { x, y, e }) (MatchPair _ _) =
    let ρ' = Empty :+: Bind x V.Bot :+: Bind y V.Bot
-   in  Just $ T3 ρ' e Bottom
+   in  Just $ T3 ρ' e Bot
 -- pair
 fwd_match (V.Pair u v) (ElimPair { x, y, e }) (MatchPair _ _) =
    let ρ' = Empty :+: Bind x u :+: Bind y v
-   in  Just $ T3 ρ' e Bottom
+   in  Just $ T3 ρ' e Bot
 -- nil-sel
 fwd_match V.NilSel (ElimList { bnil: e, bcons: _ }) MatchNil = Just $ T3 Empty e Top
 -- nil
-fwd_match V.Nil (ElimList { bnil: e, bcons: _ }) MatchNil = Just $ T3 Empty e Bottom
+fwd_match V.Nil (ElimList { bnil: e, bcons: _ }) MatchNil = Just $ T3 Empty e Bot
 -- nil-bot
-fwd_match V.Bot (ElimList { bnil: e, bcons: _ }) MatchNil = Just $ T3 Empty e Bottom
+fwd_match V.Bot (ElimList { bnil: e, bcons: _ }) MatchNil = Just $ T3 Empty e Bot
 -- cons-sel
 fwd_match (V.ConsSel u v) (ElimList { bnil: _, bcons: { x, y, e } }) (MatchCons _ _) =
    let ρ' = Empty :+: Bind x u :+: Bind y v
@@ -50,11 +50,11 @@ fwd_match (V.ConsSel u v) (ElimList { bnil: _, bcons: { x, y, e } }) (MatchCons 
 -- cons-bot
 fwd_match V.Bot (ElimList { bnil: _, bcons: { x, y, e } }) (MatchCons _ _) =
    let ρ' = Empty :+: Bind x V.Bot :+: Bind y V.Bot
-   in  Just $ T3 ρ' e Bottom
+   in  Just $ T3 ρ' e Bot
 -- cons
 fwd_match (V.Cons u v) (ElimList { bnil: _, bcons: { x, y, e } }) (MatchCons _ _) =
    let ρ' = Empty :+: Bind x u :+: Bind y v
-   in  Just $ T3 ρ' e Bottom
+   in  Just $ T3 ρ' e Bot
 -- failure
 fwd_match _ _ _ =  Nothing
 
@@ -69,19 +69,19 @@ fwd ρ (Var x) t α =
 -- true-sel
 fwd ρ TrueSel T.True Top = V.TrueSel
 -- true-bot
-fwd ρ TrueSel T.True Bottom = V.Bot
+fwd ρ TrueSel T.True Bot = V.Bot
 -- true
 fwd ρ True T.True _ = V.Bot
 -- false-sel
 fwd ρ FalseSel T.False Top = V.FalseSel
 -- false-bot
-fwd ρ FalseSel T.False Bottom = V.Bot
+fwd ρ FalseSel T.False Bot = V.Bot
 -- false-bot
 fwd ρ False T.False _ = V.Bot
 -- int-sel
 fwd ρ (IntSel n) (T.Int _) Top = V.IntSel n
 -- int-bot
-fwd ρ (IntSel n) (T.Int _) Bottom = V.Bot
+fwd ρ (IntSel n) (T.Int _) Bot = V.Bot
 -- int
 fwd ρ (Int n) (T.Int _) _ = V.Bot
 -- pair-sel
@@ -91,7 +91,7 @@ fwd ρ (Pair e1 e2) (T.Pair t1 t2) α = V.Pair (fwd ρ e1 t1 α) (fwd ρ e2 t2 �
 -- nil-sel
 fwd ρ NilSel T.Nil Top = V.NilSel
 -- nil-bot
-fwd ρ NilSel T.Nil Bottom = V.Bot
+fwd ρ NilSel T.Nil Bot = V.Bot
 -- nil
 fwd ρ Nil T.Nil _ = V.Bot
 -- cons-sel
@@ -109,7 +109,7 @@ fwd ρ (App e e') (T.App t t' ξ t'') α =
             Nothing -> V.Failure "Match not found"
       _  -> V.Failure "Impossible"
 -- binary-app-bot
-fwd ρ (BinaryApp op e1 e2) (T.BinaryApp _ t1 t2) Bottom = V.Bot
+fwd ρ (BinaryApp op e1 e2) (T.BinaryApp _ t1 t2) Bot = V.Bot
 -- binary-app
 fwd ρ (BinaryApp op e1 e2) (T.BinaryApp _ t1 t2) Top =
    let v1 = fwd ρ e1 t1 Top
