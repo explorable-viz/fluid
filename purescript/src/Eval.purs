@@ -3,7 +3,7 @@ module Eval where
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
-import Bindings (Bind(..), Bindings(..), (:+:), conc, find)
+import Bindings (Bind(..), Bindings(..), (:+:), find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr
@@ -65,7 +65,7 @@ eval ρ { r: App e e' } =
          let { t: t', v } = eval ρ e'
          in case match v σ of
             Just (T3 ρ'' e'' ξ) ->
-               let { t: u, v: v' } = eval (conc ρ' ρ'' :+: Bind fun v) e''
+               let { t: u, v: v' } = eval ((ρ' <> ρ'') :+: Bind fun v) e''
                in { t: T.App t t' ξ u, v: v' }
             Nothing -> error "Match not found"
       _ -> error "Expected closure"
@@ -87,5 +87,5 @@ eval ρ { r : Match e σ } =
    in case match v1 σ of
       Nothing -> error "Match not found"
       Just (T3 ρ' e' ξ) ->
-         let { t: t2, v: v2 } = eval (conc ρ ρ') e'
+         let { t: t2, v: v2 } = eval (ρ <> ρ') e'
          in { t: T.Match t1 ξ t2, v: v2 }
