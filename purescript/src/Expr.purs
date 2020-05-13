@@ -23,10 +23,11 @@ data RawExpr =
 
 type Expr = { α :: Selected, r :: RawExpr }
 
-data Elim = ElimVar { x :: Var, e :: Expr }
-          | ElimPair { x :: Var, y :: Var, e:: Expr }
-          | ElimList { bnil :: Expr, bcons :: { x :: Var, y :: Var, e:: Expr } }
-          | ElimBool { btrue :: Expr, bfalse :: Expr }
+data Elim =
+     ElimVar { x :: Var, e :: Expr }
+   | ElimPair { x :: Var, y :: Var, e:: Expr }
+   | ElimList { bnil :: Expr, bcons :: { x :: Var, y :: Var, e:: Expr } }
+   | ElimBool { btrue :: Expr, bfalse :: Expr }
 
 derive instance eqT3 :: (Eq a, Eq b, Eq c) => Eq (T3 a b c)
 instance showT3 :: (Show a, Show b, Show c) => Show (T3 a b c) where

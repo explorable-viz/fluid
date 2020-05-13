@@ -14,13 +14,20 @@ import Val (Val, RawVal)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> Maybe (T3 Env Expr Match)
+-- var
 match v (ElimVar { x, e }) = Just $ T3 (Empty :+: Bind x v) e (MatchVar x)
+-- true
 match { u: V.True } (ElimBool { btrue: e1, bfalse: _ }) = Just $ T3 Empty e1 MatchTrue
+-- false
 match { u: V.False } (ElimBool { btrue: _, bfalse: e2 }) = Just $ T3 Empty e2 MatchFalse
+-- pair
 match { u: V.Pair v v' } (ElimPair { x, y, e }) = Just $ T3 (Empty :+: Bind x v :+: Bind y v') e (MatchPair x y)
+-- nil
 match { u: V.Nil } (ElimList { bnil: e, bcons: _ }) = Just $ T3 Empty e MatchNil
+-- cons
 match { u : V.Cons v v' } (ElimList { bnil: _, bcons: { x, y, e } }) =
    Just $ T3 (Empty :+: Bind x v :+: Bind y v') e (MatchCons x y)
+-- failure
 match _ _ = Nothing
 
 type ExplVal = { t :: Expl, v :: Val }
@@ -52,7 +59,7 @@ eval ρ { r: Cons e e' } =
    let { t: t1, v: v1 } = eval ρ e
        { t: t2, v: v2 } = eval ρ e'
    in  { t: T.Cons t1 t2, v: val $ V.Cons v1 v2 }
--- letrec (fun)
+-- letrec
 eval ρ { r: Letrec f σ e } =
    let { t, v } = eval (ρ :+: Bind f (val $ V.Closure ρ f σ)) e
    in { t: T.Letrec f (T.Fun ρ σ) t, v }
@@ -79,7 +86,7 @@ eval ρ { r : Let x e1 e2 } =
    let { t: t1, v: v1 } = eval ρ e1
        { t: t2, v: v2 }  = eval (ρ :+: Bind x v1) e2
    in {t: T.Let x t1 t2, v: v2 }
--- match (no rule)
+-- match
 eval ρ { r : Match e σ } =
    let { t: t1, v: v1 } = eval ρ e
    in case match v1 σ of
