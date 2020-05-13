@@ -13,6 +13,7 @@ data RawVal =
    | Int Int
    | Closure Env String Elim
    | Op BinaryOp
+   | PartialApp BinaryOp Val
    | Pair Val Val
    | Nil | Cons Val Val
 

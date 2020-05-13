@@ -133,9 +133,9 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (Var x) = text x
    pretty True    = text "true"
    pretty False   = text "false"
-   pretty (Pair { r } { r: r' }) = text "(" :<>: pretty r :<>: text ", " :<>: pretty r' :<>: text ")"
+   pretty (Pair { r } { r: r' }) = parens (pretty r :<>: text ", " :<>: pretty r')
    pretty Nil = text "[]"
-   pretty (Op op) = text "(" :<>: text (opName op) :<>: text ")"
+   pretty (Op op) = parens $ text $ opName op
    pretty (Cons { r } { r: r' }) = text "[" :<>: pretty r :<>: prettyList r' :<>: text "]"
 
    pretty (Let x { r } { r: r' }) =
@@ -149,9 +149,11 @@ instance rawExprPretty :: Pretty RawExpr where
 instance exprElim :: Pretty Elim where
    pretty (ElimVar { x, e: { r } }) = text "  " :<>: text x :<>: text " -> " :<>: pretty r
    pretty (ElimPair { x, y, e: { r } }) =
-      text "   (" :<>: text x :<>: text ", " :<>: text y :<>: text ") -> " :<>: pretty r
+      text "   " :<>: parens (text x :<>: text ", " :<>: text y) :<>: text " -> " :<>: pretty r
    pretty (ElimList { nil: { r }, cons: { x, y, e: { r: r' } } }) =
-      text "    " :<>: atop (text "[] -> " :<>: pretty r) (text "(" :<>: text x :<>: text ":" :<>: text y :<>: text ") -> " :<>: pretty r')
+      text "    " :<>: atop
+         (text "[] -> " :<>: pretty r)
+         ((parens $ text x :<>: text ":" :<>: text y) :<>: text " -> " :<>: pretty r')
    pretty (ElimBool { true: { r }, false: { r: r' } }) =
       text "     " :<>: atop (text "true -> " :<>: pretty r) (text "false -> " :<>: pretty r')
 
@@ -159,11 +161,15 @@ instance valPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
    pretty V.True = text "True"
    pretty V.False = text "False"
-   pretty (V.Closure ρ f σ) = text "Closure(" :<>: atop (text "env" :<>: text f ) (pretty σ) :<>: text ")"
-   pretty (V.Op op) = text $ opName op
-   pretty (V.Pair { u } { u: u' }) = text "(" :<>: pretty u :<>: text ", " :<>: pretty u' :<>: text ")"
+   pretty (V.Closure ρ f σ) = text "Closure" :<>: parens (atop (text "env" :<>: text f ) (pretty σ))
+   pretty (V.Op op) = parens $ text $ opName op
+   pretty (V.PartialApp op { u }) = parens $ text (opName op <> " ") :<>: pretty u
+   pretty (V.Pair { u } { u: u' }) = parens $ pretty u :<>: text ", " :<>: pretty u'
    pretty V.Nil = text "[]"
    pretty (V.Cons { u } { u: u' }) = text "[" :<>: pretty u :<>: prettyList u' :<>: text "]"
+
+parens :: Doc -> Doc
+parens doc = text "(" :<>: doc :<>: text ")"
 
 prettyProgram :: Expr -> Doc
 prettyProgram { r } = atop (pretty r) (text "")

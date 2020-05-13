@@ -70,8 +70,8 @@ eval ρ { r: App e e' } =
                in { t: T.App t t' ξ u, v: v' }
             Nothing -> error "Match not found"
       { t, v: { u: V.Op op } }, { t: t', v } ->
-         error "todo"
-      _ -> error "Expected closure or operator"
+         { t: T.AppOp t t', v }
+      _, _ -> error "Expected closure or operator"
 -- binary app
 eval ρ { r : BinaryApp op e1 e2 } =
    let { t: t1, v: v1 } = eval ρ e1
