@@ -5,8 +5,6 @@ import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
 import Bindings (Bind(..), Bindings(..), (:+:), find)
 import Expr (Elim(..), Expr, RawExpr(..), T3(..))
-import Expl (Expl(..)) as T
-import Expl (Expl)
 import Selected (Selected(..), (∧))
 import Util (absurd)
 import Val (Env, Val)
