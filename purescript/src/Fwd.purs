@@ -5,9 +5,10 @@ import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
 import Bindings (Bindings(..), (:+:), (↦), find)
 import Expr (Elim(..), Expr, RawExpr(..), T3(..))
+import Primitive (opFun)
 import Selected (Selected(..), (∧))
 import Util (absurd)
-import Val (Env, Val)
+import Val (Env, Val, toValues_fwd)
 import Val (RawVal(..)) as V
 
 
@@ -53,13 +54,15 @@ fwd ρ { α, r: Op op } α' = { α: α ∧ α', u: V.Op op }
 fwd ρ { r: Letrec f σ e } α = fwd (ρ :+: f ↦ { α, u: V.Closure ρ f σ }) e α
 -- app
 fwd ρ { r: App e e' } α =
-   case fwd ρ e α  of
-      { α: α', u: V.Closure ρ' f σ } ->
-         case fwd_match (fwd ρ e' α) σ of
+   case fwd ρ e α, fwd ρ e' α of
+      { α: α', u: V.Closure ρ' f σ }, v ->
+         case fwd_match v σ of
             Just (T3 ρ'' e'' α'') ->
                let ρ_f = (ρ' <> ρ'') :+: f ↦ { α: α', u: (V.Closure ρ' f σ) } in fwd ρ_f e'' (α' ∧ α'')
             Nothing -> absurd
-      _  -> absurd
+      { α: α', u: V.Op op }, v -> { α: α', u: V.PartialApp op v }
+      { α: α', u: V.PartialApp op v }, v' -> toValues_fwd (opFun op) α' v v'
+      _, _ -> absurd
 -- binary app
 fwd ρ { r: BinaryApp op e1 e2 } α =
    case fwd ρ e1 α, fwd ρ e2 α of

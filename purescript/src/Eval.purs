@@ -8,7 +8,7 @@ import Expl (Expl, Match(..))
 import Expr
 import Primitive (opFun)
 import Util (error)
-import Val (Env, Val, val)
+import Val (Env, Val, toValues, val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> Maybe (T3 Env Expr Match)
@@ -43,17 +43,17 @@ eval ρ { r: False } = { t: T.False, v: val V.False }
 -- int
 eval ρ { r: Int n } = { t: T.Int n, v: val $ V.Int n }
 -- pair
-eval ρ { r: Pair e1 e2 } =
-   let { t: t1, v: v1 } = eval ρ e1
-       { t: t2, v: v2 } = eval ρ e2
-   in  { t: T.Pair t1 t2, v: val $ V.Pair v1 v2 }
+eval ρ { r: Pair e e' } =
+   let { t, v } = eval ρ e
+       { t: t', v: v' } = eval ρ e'
+   in  { t: T.Pair t t', v: val $ V.Pair v v' }
 -- nil
 eval ρ { r: Nil } = { t: T.Nil, v: val V.Nil }
 -- cons
 eval ρ { r: Cons e e' } =
-   let { t: t1, v: v1 } = eval ρ e
-       { t: t2, v: v2 } = eval ρ e'
-   in { t: T.Cons t1 t2, v: val $ V.Cons v1 v2 }
+   let { t, v } = eval ρ e
+       { t: t', v: v' } = eval ρ e'
+   in { t: T.Cons t t', v: val $ V.Cons v v' }
 -- op
 eval ρ { r: Op op } = { t: T.Op op, v: val $ V.Op op }
 -- letrec
@@ -68,29 +68,27 @@ eval ρ { r: App e e' } =
             Just (T3 ρ'' e'' ξ) ->
                let { t: u, v: v' } = eval ((ρ' <> ρ'') :+: f ↦ v) e''
                in { t: T.App t t' ξ u, v: v' }
-            Nothing -> error "Match not found"
+            Nothing -> error "Value mismatch"
       { t, v: { u: V.Op op } }, { t: t', v } ->
          { t: T.AppOp t t', v: val $ V.PartialApp op v }
       { t, v: { u: V.PartialApp op v } }, { t: t', v: v' } ->
-         { t: T.AppOp t t', v: val $ V.PartialApp op v }
+         { t: T.AppOp t t', v: toValues (opFun op) v v' }
       _, _ -> error "Expected closure or operator"
 -- binary app
-eval ρ { r : BinaryApp op e1 e2 } =
-   let { t: t1, v: v1 } = eval ρ e1
-       { t: t2, v: v2 } = eval ρ e2
-   in case v1, v2 of
-      { u: V.Int n1 }, {u : V.Int n2 } -> { t: T.BinaryApp op t1 t2, v: val $ V.Int $ opFun op n1 n2 }
-      _, _ -> error "Arithmetic type error: e1 or/and e2 do not evaluate to ints"
+eval ρ { r : BinaryApp op e e' } =
+   let { t, v } = eval ρ e
+       { t: t', v: v' } = eval ρ e'
+   in { t: T.BinaryApp op t t', v: toValues (opFun op) v v' }
 -- let
-eval ρ { r : Let x e1 e2 } =
-   let { t: t1, v: v1 } = eval ρ e1
-       { t: t2, v: v2 }  = eval (ρ :+: x ↦ v1) e2
-   in {t: T.Let x t1 t2, v: v2 }
+eval ρ { r : Let x e e' } =
+   let { t, v } = eval ρ e
+       { t: t', v: v' } = eval (ρ :+: x ↦ v) e'
+   in {t: T.Let x t t', v: v' }
 -- match
 eval ρ { r : Match e σ } =
-   let { t: t1, v: v1 } = eval ρ e
-   in case match v1 σ of
-      Nothing -> error "Match not found"
+   let { t, v } = eval ρ e
+   in case match v σ of
+      Nothing -> error "Value mismatch"
       Just (T3 ρ' e' ξ) ->
-         let { t: t2, v: v2 } = eval (ρ <> ρ') e'
-         in { t: T.Match t1 ξ t2, v: v2 }
+         let { t: t', v: v' } = eval (ρ <> ρ') e'
+         in { t: T.Match t ξ t', v: v' }

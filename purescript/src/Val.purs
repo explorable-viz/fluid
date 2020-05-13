@@ -1,10 +1,11 @@
 module Val where
 
-import Data.Eq (class Eq)
-import Bindings
+import Prelude
+import Bindings (Bindings)
 import Expr (Elim)
 import Primitive (BinaryOp)
-import Selected (Selected(..))
+import Selected (Selected(..), (∧))
+import Util (error)
 
 type Env = Bindings Val
 
@@ -23,3 +24,13 @@ val :: RawVal -> Val
 val u = { α: Bot, u }
 
 derive instance eqRawVal :: Eq RawVal
+
+toInt :: RawVal -> Int
+toInt (Int n) = n
+toInt _ = error "Integer expected"
+
+toValues :: (Int -> Int -> Int) -> Val -> Val -> Val
+toValues f { u } { u: u' } = val $ Int $ f (toInt u) (toInt u)
+
+toValues_fwd :: (Int -> Int -> Int) -> Selected -> Val -> Val -> Val
+toValues_fwd f α { α: α', u } { α: α'', u: u' } = { α: α ∧ α' ∧ α'', u: Int $ f (toInt u) (toInt u) }

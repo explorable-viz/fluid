@@ -24,7 +24,7 @@ instance eqBinaryOp :: Eq BinaryOp where
    eq (BinaryOp { name: op }) (BinaryOp { name: op' }) = op == op'
 
 makeBinary :: String -> (Int -> Int -> Int) -> Int -> Tuple String BinaryOp
-makeBinary name fun prec = Tuple name $ BinaryOp { name, fun, prec }
+makeBinary name f prec = Tuple name $ BinaryOp { name, fun: f, prec }
 
 binaryOps :: Map String BinaryOp
 binaryOps = fromFoldable [
