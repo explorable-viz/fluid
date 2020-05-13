@@ -1,6 +1,6 @@
 module Selected where
 
-data Selected = ⊤ | Bot
+data Selected = Top | Bot
 
 meet :: Selected -> Selected -> Selected
 meet Top Top = Top

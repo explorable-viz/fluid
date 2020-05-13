@@ -60,7 +60,6 @@ fwd_match (V.Cons u v) (ElimList { bnil: _, bcons: { x, y, e } }) (MatchCons _ _
 -- failure
 fwd_match _ _ _ =  Nothing
 
-
 -- TODO: remove Partial typeclass.
 fwd :: Partial => Env -> Expr -> Expl -> Selected -> Val
 fwd ρ (Var x) t α =
@@ -70,18 +69,9 @@ fwd ρ (Var x) t α =
 fwd ρ { α, r: True } _ α' = { α: α ∧ α', u: True }
 fwd ρ { α, r: False } _ α' = { α: α ∧ α', u: False }
 fwd ρ { α, r: Int n } _ α' = { α: α ∧ α', u: Int n }
--- pair-sel
-fwd ρ { α, r: Pair e1 e2 } (T.Pair t1 t2) α' = { α: α ∧ α', u: V.Pair (fwd ρ e1 t1 Top) (fwd ρ e2 t2 Top) }
--- nil-sel
-fwd ρ NilSel T.Nil Top = V.NilSel
--- nil-bot
-fwd ρ NilSel T.Nil Bot = V.Bot
--- nil
-fwd ρ Nil T.Nil _ = V.Bot
--- cons-sel
-fwd ρ (ConsSel e e') (T.Cons t t') Top = V.ConsSel (fwd ρ e t Top) (fwd ρ e' t' Top)
--- cons-sel
-fwd ρ (Cons e e') (T.Cons t t') α = V.Cons (fwd ρ e t α) (fwd ρ e' t' α)
+fwd ρ { α, r: Pair e1 e2 } (T.Pair t1 t2) α' = { α: α ∧ α', u: V.Pair (fwd ρ e1 t1 α') (fwd ρ e2 t2 α') }
+fwd ρ { α, r: Nil} _ α' = { α: α ∧ α', u: V.Nil }
+fwd ρ { α, r: Cons e e' } (T.Cons t t') α' = { α: α ∧ α', u: V.Cons (fwd ρ e t α') (fwd ρ e' t' α') }
 -- letrec (fun)
 fwd ρ (Letrec f σ e) (T.Letrec _ _ t) α = fwd (ρ :+: Bind f (V.Closure ρ f σ)) e t α
 -- apply
