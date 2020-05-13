@@ -19,8 +19,6 @@ instance bindingsSemigroup :: Semigroup (Bindings a) where
 instance bindingsMonoid :: Monoid (Bindings a) where
    mempty = Empty
 
-infixl 5 append as :++:
-
 find :: forall a . Var -> Bindings a -> Maybe a
 find _ Empty = Nothing
 find x (Snoc m (Bind k v)) = if x == k then Just v else find x m
