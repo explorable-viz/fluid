@@ -3,100 +3,89 @@ module Eval where
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
-import Bindings (Bind(..), Bindings(..), (:+:), conc, find)
+import Bindings (Bind(..), Bindings(..), (:+:), find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr
-import Val (Env, Val)
-import Val (Val(..)) as V
+import Util (error)
+import Val (Env, Val, val)
+import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> Maybe (T3 Env Expr Match)
-match val σ
- = case  val, σ of
-    -- var
-    _, ElimVar { x, e }
-        ->  Just $ T3 (Empty :+: Bind x val) e (MatchVar x)
-    -- true
-    V.True, ElimBool { btrue: e1, bfalse: _ }
-        ->  Just $ T3 Empty e1 MatchTrue
-    -- false
-    V.False, ElimBool { btrue: _, bfalse: e2 }
-        ->  Just $ T3 Empty e2 MatchFalse
-    -- pair
-    V.Pair v v', ElimPair { x, y, e }
-        ->  let ρ' = Empty :+: Bind x v :+: Bind y v'
-            in  Just $ T3 ρ' e (MatchPair x y)
-    -- nil
-    V.Nil, ElimList { bnil: e, bcons: _ }
-        ->  Just $ T3 Empty e MatchNil
-    -- cons
-    V.Cons v v', ElimList { bnil: _, bcons: { x, y, e } }
-        ->  let ρ' = Empty :+: Bind x v :+: Bind y v'
-            in  Just $ T3 ρ' e (MatchCons x y)
-    -- failure
-    _, _ ->  Nothing
+-- var
+match v (ElimVar { x, e }) = Just $ T3 (Empty :+: Bind x v) e (MatchVar x)
+-- true
+match { u: V.True } (ElimBool { btrue: e1, bfalse: _ }) = Just $ T3 Empty e1 MatchTrue
+-- false
+match { u: V.False } (ElimBool { btrue: _, bfalse: e2 }) = Just $ T3 Empty e2 MatchFalse
+-- pair
+match { u: V.Pair v v' } (ElimPair { x, y, e }) = Just $ T3 (Empty :+: Bind x v :+: Bind y v') e (MatchPair x y)
+-- nil
+match { u: V.Nil } (ElimList { bnil: e, bcons: _ }) = Just $ T3 Empty e MatchNil
+-- cons
+match { u : V.Cons v v' } (ElimList { bnil: _, bcons: { x, y, e } }) =
+   Just $ T3 (Empty :+: Bind x v :+: Bind y v') e (MatchCons x y)
+-- failure
+match _ _ = Nothing
 
+type ExplVal = { t :: Expl, v :: Val }
 
-data ExplVal = ExplVal { t :: Expl, v :: Val }
-
--- TODO: T.Failure instead of T.Bottom?
 eval :: Partial => Env -> Expr -> ExplVal
 -- var
-eval ρ (Var x) =
+eval ρ { r: Var x } =
    case find x ρ of
-      Just val -> ExplVal { t: T.Var x,  v: val }
-      _ -> ExplVal { t: T.Bottom, v: V.Failure ("variable " <> x <> " not found") }
+      Just v -> { t: T.Var x, v }
+      _ -> error $ "variable " <> x <> " not found"
 -- true
-eval ρ True = ExplVal { t: T.True, v: V.True }
+eval ρ { r: True } = { t: T.True, v: val V.True }
 -- false
-eval ρ False = ExplVal { t: T.False, v: V.False }
+eval ρ { r: False } = { t: T.False, v: val V.False }
 -- int
-eval ρ (Int n) = ExplVal { t: T.Int n, v: V.Int n }
+eval ρ { r: Int n } = { t: T.Int n, v: val $ V.Int n }
 -- pair
-eval ρ (Pair e1 e2) =
-   let ExplVal { t: t1, v: v1 } = eval ρ e1
-       ExplVal { t: t2, v: v2 } = eval ρ e2
-   in  ExplVal { t: T.Pair t1 t2, v: V.Pair v1 v2 }
+eval ρ { r: Pair e1 e2 } =
+   let { t: t1, v: v1 } = eval ρ e1
+       { t: t2, v: v2 } = eval ρ e2
+   in  { t: T.Pair t1 t2, v: val $ V.Pair v1 v2 }
 -- nil
-eval ρ Nil = ExplVal { t: T.Nil, v: V.Nil }
+eval ρ { r: Nil } = { t: T.Nil, v: val V.Nil }
 -- cons
-eval ρ (Cons e e') =
-   let ExplVal { t: t1, v: v1 } = eval ρ e
-       ExplVal { t: t2, v: v2 } = eval ρ e'
-   in  ExplVal { t: T.Cons t1 t2, v: V.Cons v1 v2 }
--- letrec (fun)
-eval ρ (Letrec f σ e) =
-   let ExplVal {t, v} = eval (ρ :+: Bind f (V.Closure ρ f σ)) e
-   in ExplVal {t: T.Letrec f (T.Fun ρ σ) t, v}
+eval ρ { r: Cons e e' } =
+   let { t: t1, v: v1 } = eval ρ e
+       { t: t2, v: v2 } = eval ρ e'
+   in  { t: T.Cons t1 t2, v: val $ V.Cons v1 v2 }
+-- letrec
+eval ρ { r: Letrec f σ e } =
+   let { t, v } = eval (ρ :+: Bind f (val $ V.Closure ρ f σ)) e
+   in { t: T.Letrec f (T.Fun ρ σ) t, v }
 -- apply
-eval ρ (App e e') =
+eval ρ { r: App e e' } =
    case eval ρ e of
-      ExplVal { t, v: V.Closure ρ' fun σ } ->
-         let ExplVal { t: t',  v } = eval ρ e'
+      { t, v: { u: V.Closure ρ' fun σ } } ->
+         let { t: t', v } = eval ρ e'
          in case match v σ of
             Just (T3 ρ'' e'' ξ) ->
-               let ExplVal { t: u, v: v' } = eval (conc ρ' ρ'' :+: Bind fun (V.Closure ρ' fun σ)) e''
-               in ExplVal { t: T.App t t' ξ u, v: v' }
-            Nothing -> ExplVal { t: T.Bottom, v: V.Failure "Match not found" }
-      _ -> ExplVal { t: T.Bottom, v: V.Failure "Expression does not evaluate to closure" }
+               let { t: u, v: v' } = eval ((ρ' <> ρ'') :+: Bind fun v) e''
+               in { t: T.App t t' ξ u, v: v' }
+            Nothing -> error "Match not found"
+      _ -> error "Expected closure"
 -- binary app
-eval ρ (BinaryApp op e1 e2) =
-   let ExplVal { t: t1, v: v1 } = eval ρ e1
-       ExplVal { t: t2, v: v2 } = eval ρ e2
-   in  case v1, v2 of
-      V.Int n1, V.Int n2 -> ExplVal { t: T.BinaryApp op t1 t2, v: V.Int (n1 + n2) }
-      _, _ -> ExplVal { t: T.Bottom, v: V.Failure "Arithmetic type error: e1 or/and e2 do not evaluate to ints" }
+eval ρ { r : BinaryApp op e1 e2 } =
+   let { t: t1, v: v1 } = eval ρ e1
+       { t: t2, v: v2 } = eval ρ e2
+   in case v1, v2 of
+      { u: V.Int n1 }, {u : V.Int n2 } -> { t: T.BinaryApp op t1 t2, v: val $ V.Int (n1 + n2) }
+      _, _ -> error "Arithmetic type error: e1 or/and e2 do not evaluate to ints"
 -- let
-eval ρ (Let x e1 e2) =
-   let ExplVal { t: t1, v: v1 } = eval ρ e1
-       ρ'  = (ρ :+: Bind x v1)
-       ExplVal { t: t2, v: v2 }  = eval ρ' e2
-   in  ExplVal {t: T.Let x t1 t2, v: v2 }
--- match (no rule)
-eval ρ (Match e σ) =
-   let ExplVal { t: t1, v: v1 } = eval ρ e
+eval ρ { r : Let x e1 e2 } =
+   let { t: t1, v: v1 } = eval ρ e1
+       { t: t2, v: v2 }  = eval (ρ :+: Bind x v1) e2
+   in {t: T.Let x t1 t2, v: v2 }
+-- match
+eval ρ { r : Match e σ } =
+   let { t: t1, v: v1 } = eval ρ e
    in case match v1 σ of
-      Nothing -> ExplVal { t: T.Bottom, v: V.Failure "Match not found" }
+      Nothing -> error "Match not found"
       Just (T3 ρ' e' ξ) ->
-         let ExplVal { t: t2, v: v2 } = eval (conc ρ ρ') e'
-         in ExplVal { t: T.Match t1 ξ t2, v: v2 }
+         let { t: t2, v: v2 } = eval (ρ <> ρ') e'
+         in { t: T.Match t1 ξ t2, v: v2 }
