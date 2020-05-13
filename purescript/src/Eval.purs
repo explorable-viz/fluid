@@ -70,7 +70,9 @@ eval ρ { r: App e e' } =
                in { t: T.App t t' ξ u, v: v' }
             Nothing -> error "Match not found"
       { t, v: { u: V.Op op } }, { t: t', v } ->
-         { t: T.AppOp t t', v }
+         { t: T.AppOp t t', v: val $ V.PartialApp op v }
+      { t, v: { u: V.PartialApp op v } }, { t: t', v: v' } ->
+         { t: T.AppOp t t', v: val $ V.PartialApp op v }
       _, _ -> error "Expected closure or operator"
 -- binary app
 eval ρ { r : BinaryApp op e1 e2 } =
