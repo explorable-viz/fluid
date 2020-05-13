@@ -8,7 +8,7 @@ import Expr
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Val (Env, Val)
-import Val (Val(..)) as V
+import Val (Val, RawVal(..)) as V
 import Selected (Selected, (∧))
 
 
@@ -63,24 +63,15 @@ fwd_match _ _ _ =  Nothing
 
 -- TODO: remove Partial typeclass.
 fwd :: Partial => Env -> Expr -> Expl -> Selected -> Val
--- var
 fwd ρ (Var x) t α =
    case find x ρ of
       Just val -> val
       _        -> V.Failure ("variable " <> x <> " not found")
-fwd ρ { α, r: True } T.True α' = { α: α ∧ α', u: True }
-fwd ρ { α, r: False } T.False α' = V.FalseSel
-fwd ρ False T.False _ = V.Bot
--- int-sel
-fwd ρ (IntSel n) (T.Int _) Top = V.IntSel n
--- int-bot
-fwd ρ (IntSel n) (T.Int _) Bot = V.Bot
--- int
-fwd ρ (Int n) (T.Int _) _ = V.Bot
+fwd ρ { α, r: True } _ α' = { α: α ∧ α', u: True }
+fwd ρ { α, r: False } _ α' = { α: α ∧ α', u: False }
+fwd ρ { α, r: Int n } _ α' = { α: α ∧ α', u: Int n }
 -- pair-sel
-fwd ρ (PairSel e1 e2) (T.Pair t1 t2) Top = V.PairSel (fwd ρ e1 t1 Top) (fwd ρ e2 t2 Top)
--- pair
-fwd ρ (Pair e1 e2) (T.Pair t1 t2) α = V.Pair (fwd ρ e1 t1 α) (fwd ρ e2 t2 α)
+fwd ρ { α, r: Pair e1 e2 } (T.Pair t1 t2) α' = { α: α ∧ α', u: V.Pair (fwd ρ e1 t1 Top) (fwd ρ e2 t2 Top) }
 -- nil-sel
 fwd ρ NilSel T.Nil Top = V.NilSel
 -- nil-bot
