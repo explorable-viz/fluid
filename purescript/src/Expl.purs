@@ -6,16 +6,6 @@ import Expr (Elim)
 import Primitive (BinaryOp)
 import Val (Env)
 
-data Match =
-     MatchVar Var
-   | MatchTrue
-   | MatchFalse
-   | MatchPair Var Var
-   | MatchNil
-   | MatchCons Var Var
-
-derive instance eqMatch :: Eq Match
-
 data Expl =
      Var Var
    | Int Int
@@ -32,3 +22,13 @@ data Expl =
    | False
 
 derive instance eqExpl :: Eq Expl
+
+data Match =
+     MatchVar Var
+   | MatchTrue
+   | MatchFalse
+   | MatchPair Var Var
+   | MatchNil
+   | MatchCons Var Var
+
+derive instance eqMatch :: Eq Match
