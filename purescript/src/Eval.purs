@@ -7,10 +7,8 @@ import Bindings (Bind(..), Bindings(..), (:+:), conc, find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr
-import Selected (Selected(..))
 import Util (error)
-import Val (Env, Val)
-import Val (Val, RawVal)
+import Val (Env, Val, val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> Maybe (T3 Env Expr Match)
@@ -31,9 +29,6 @@ match { u : V.Cons v v' } (ElimList { bnil: _, bcons: { x, y, e } }) =
 match _ _ = Nothing
 
 type ExplVal = { t :: Expl, v :: Val }
-
-val :: RawVal -> Val
-val u = { α: Bot, u }
 
 eval :: Partial => Env -> Expr -> ExplVal
 -- var

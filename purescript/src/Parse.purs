@@ -18,7 +18,7 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Expr(..))
+import Expr (Expr, RawExpr(..), expr)
 import Primitive (BinaryOp, binaryOps, opName, opPrec)
 
 
@@ -54,7 +54,9 @@ keyword ∷ String → SParser Unit
 keyword = token.reserved
 
 variable :: SParser Expr
-variable = ident >>= pure <<< Var
+variable = do
+   x <- ident
+   pure $ expr $ Var x
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
@@ -70,13 +72,13 @@ int :: SParser Expr
 int = do
    f <- sign
    n <- token.natural
-   pure $ Int $ f n
+   pure $ expr $ Int $ f n
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
-   e1 <- expr
-   e2 <- token.comma *> expr
-   pure $ Pair e1 e2
+   e1 <- expr'
+   e2 <- token.comma *> expr'
+   pure $ expr $ Pair e1 e2
 
 -- TODO: string, float, list
 simpleExpr :: SParser Expr -> SParser Expr
@@ -92,12 +94,14 @@ let_ term' = do
    x <- keyword strLet *> ident
    e1 <- token.reservedOp "=" *> term'
    e2 <- keyword strIn *> term'
-   pure $ Let x e1 e2
+   pure $ expr $ Let x e1 e2
 
 binaryOp :: BinaryOp -> SParser (Expr -> Expr -> Expr)
 binaryOp op = try $ do
    op' <- token.operator
-   if (opName op /= op') then fail $ "Expected " <> opName op else pure $ BinaryApp op
+   if (opName op /= op')
+   then fail $ "Expected " <> opName op
+   else pure $ (\e1 e2 -> expr $ BinaryApp op e1 e2)
 
 backtick :: SParser Unit
 backtick = token.reservedOp "`"
@@ -107,7 +111,7 @@ appChain expr' = do
    simpleExpr expr' >>= rest
    where
       rest ∷ Expr -> SParser Expr
-      rest e1 = (simpleExpr expr' >>= (pure <<< App e1) >>= rest) <|> pure e1
+      rest e1 = (simpleExpr expr' >>= (pure <<< expr <<< App e1) >>= rest) <|> pure e1
 
 -- each element of the top-level list corresponds to a precedence level.
 operators :: OperatorTable Identity String Expr
@@ -120,8 +124,8 @@ operators =
 -- binary primitives and whose leaves are application chains. An application chain
 -- is a left-associative tree of one or more simple terms. A simple term is any
 -- expression other than an operator tree or an application chain.
-expr :: SParser Expr
-expr = fix $ \p -> flip buildExprParser (appChain p) operators
+expr_ :: SParser Expr
+expr_ = fix $ \p -> flip buildExprParser (appChain p) operators
 
 program ∷ SParser Expr
-program = token.whiteSpace *> expr <* eof
+program = token.whiteSpace *> expr_ <* eof

@@ -23,6 +23,9 @@ data RawExpr =
 
 type Expr = { α :: Selected, r :: RawExpr }
 
+expr :: RawExpr -> Expr
+expr r = { α: Bot, r }
+
 data Elim =
      ElimVar { x :: Var, e :: Expr }
    | ElimPair { x :: Var, y :: Var, e:: Expr }

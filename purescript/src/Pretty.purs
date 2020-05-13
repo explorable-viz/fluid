@@ -8,12 +8,9 @@ import Data.String as S
 import Data.String.CodeUnits as SCU
 import Data.Unfoldable (replicate)
 import Expr (Elim(..), Expr, RawExpr(..))
-import Eval (ExplVal(..))
-import Expl (Expl(..)) as T
-import Expl (Expl, Match(..))
 import Primitive (BinaryOp, opName)
 import Util (error)
-import Val (Val, RawVal)
+import Val (RawVal)
 import Val (RawVal(..)) as V
 
 
