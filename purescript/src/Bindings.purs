@@ -10,7 +10,7 @@ data Bind a = Bind Var a
 data Bindings a =
   Empty | Snoc (Bindings a) (Bind a)
 
-infixl 5 Snoc as :+:
+infixl 5 Snoc as :+: -- give this a monoid instance instead
 
 conc :: forall a . Bindings a -> Bindings a -> Bindings a
 conc m Empty = m

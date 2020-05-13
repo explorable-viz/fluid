@@ -2,7 +2,8 @@ module Val where
 
 import Data.Eq (class Eq)
 import Bindings
-import Expr (Elim, Selected)
+import Expr (Elim)
+import Selected (Selected)
 
 type Env = Bindings Val
 
@@ -12,7 +13,6 @@ data RawVal =
    | Closure Env String Elim
    | Pair Val Val
    | Nil | Cons Val Val
-   | Failure String
 
 type Val = { α :: Selected, u :: RawVal }
 

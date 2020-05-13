@@ -1,5 +1,7 @@
 module Selected where
 
+import Prelude
+
 data Selected = Top | Bot
 
 meet :: Selected -> Selected -> Selected
@@ -13,3 +15,5 @@ join _ _ = Top
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
 infixl 6 join as ∨
+
+derive instance eqSelected :: Eq Selected

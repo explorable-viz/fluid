@@ -32,6 +32,5 @@ derive instance eqT3 :: (Eq a, Eq b, Eq c) => Eq (T3 a b c)
 instance showT3 :: (Show a, Show b, Show c) => Show (T3 a b c) where
   show (T3 a b c) = "T3 " <> show a <> " " <> show b <> " " <> show c
 
-derive instance eqSelected :: Eq Selected
 derive instance eqRawExpr :: Eq RawExpr
 derive instance eqElim :: Eq Elim

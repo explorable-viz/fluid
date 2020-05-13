@@ -7,9 +7,10 @@ import Bindings (Bind(..), Bindings(..), (:+:), (:++:), find)
 import Expr
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
+import Selected (Selected, (∧))
+import Util (absurd)
 import Val (Env, Val)
 import Val (Val, RawVal(..)) as V
-import Selected (Selected, (∧))
 
 
 fwd_match :: Val -> Elim -> Match -> Maybe (T3 Env Expr Selected)
@@ -74,35 +75,24 @@ fwd ρ { α, r: Nil} _ α' = { α: α ∧ α', u: V.Nil }
 fwd ρ { α, r: Cons e e' } (T.Cons t t') α' = { α: α ∧ α', u: V.Cons (fwd ρ e t α') (fwd ρ e' t' α') }
 -- letrec (fun)
 fwd ρ (Letrec f σ e) (T.Letrec _ _ t) α = fwd (ρ :+: Bind f (V.Closure ρ f σ)) e t α
--- apply
 fwd ρ (App e e') (T.App t t' ξ t'') α =
    case fwd ρ e t α  of
-      V.Closure ρ' f σ ->
+      { α: α', u: V.Closure ρ' f σ } ->
          case fwd_match (fwd ρ e' t' α) σ ξ of
-            Just (T3 ρ'' e''  α') -> fwd (ρ' :++: ρ'' :+: Bind f (V.Closure ρ' f σ)) e'' t'' α'
-            Nothing -> V.Failure "Match not found"
-      _  -> V.Failure "Impossible"
+            Just (T3 ρ'' e'' α'') ->
+               let ρ_f = ρ' :++: ρ'' :+: Bind f { α: α', u: (V.Closure ρ' f σ) } in fwd ρ_f e'' t'' (α' ∧ α'')
+            Nothing -> absurd
+      _  -> absurd
 -- binary-app-bot
 fwd ρ (BinaryApp op e1 e2) (T.BinaryApp _ t1 t2) Bot = V.Bot
 -- binary-app
-fwd ρ (BinaryApp op e1 e2) (T.BinaryApp _ t1 t2) Top =
-   let v1 = fwd ρ e1 t1 Top
-       v2 = fwd ρ e2 t2 Top
-   in case v1, v2 of
-      -- add
-      (V.Int n1), (V.Int n2) -> V.Int (n1 + n2)
-      -- add-bot-1
-      V.Bot, _ -> V.Bot
-      -- add-bot-2
-      _, V.Bot -> V.Bot
-      _, _ -> V.Failure "Impossible"
--- let
+fwd ρ (BinaryApp op e1 e2) (T.BinaryApp _ t1 t2) α =
+   case fwd ρ e1 t1 α, fwd ρ e2 t2 α of
+   { α: α', u: V.Int n1 }, { α: a'', u: V.Int n2 } -> { α: α ∧ α' ∧ α'', u: V.Int (n1 + n2) }
+   _, _ -> absurd
 fwd ρ (Let x e1 e2) (T.Let _ t1 t2) α =
-   let v1  = fwd ρ e1 t1 α
-       ρ'  = (ρ :+: Bind x v1)
-   in  fwd ρ' e2 t2 α
--- match (no rule in paper)
+   fwd (ρ :+: Bind x (fwd ρ e1 t1 α)) e2 t2 α
 fwd ρ (Match e σ) (T.Match t ξ t') α =
    case fwd_match (fwd ρ e t α) σ ξ of
-      Nothing -> V.Failure "Impossible"
       Just (T3 ρ' e' α') -> fwd (ρ :++: ρ') e' t' α'
+      Nothing -> absurd

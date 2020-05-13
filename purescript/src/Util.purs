@@ -7,3 +7,6 @@ __todo = unsafeCoerce "todo"
 
 error :: String -> forall a.a
 error msg = unsafeCoerce msg
+
+absurd :: forall a.a
+absurd = error "Impossible"
