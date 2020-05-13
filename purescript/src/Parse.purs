@@ -88,6 +88,7 @@ simpleExpr expr' =
    let_ expr' <|>
    try int <|> -- int may start with +/-
    try (token.parens expr') <|>
+   try parensOp <|>
    pair expr'
 
 let_ ∷ SParser Expr -> SParser Expr
@@ -97,15 +98,15 @@ let_ term' = do
    e2 <- keyword strIn *> term'
    pure $ expr $ Let x e1 e2
 
--- recognises any binary operator
-binaryOp :: SParser Expr
-binaryOp = do
+-- any binary operator, in parentheses
+parensOp :: SParser Expr
+parensOp = token.parens $ do
    op <- token.operator
    case lookup op binaryOps of
       Nothing -> fail $ "Unrecognised operator " <> op
       Just op' -> pure $ expr $ Op op'
 
--- recognises a specific binary operator
+-- the specific binary operator
 theBinaryOp :: BinaryOp -> SParser (Expr -> Expr -> Expr)
 theBinaryOp op = try $ do
    op' <- token.operator
