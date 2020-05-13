@@ -62,15 +62,15 @@ eval ρ { r: Letrec f σ e } =
    in { t: T.Letrec f (T.Fun ρ σ) t, v }
 -- apply
 eval ρ { r: App e e' } =
-   case eval ρ e of
-      { t, v: { u: V.Closure ρ' f σ } } ->
-         let { t: t', v } = eval ρ e'
-         in case match v σ of
+   case eval ρ e, eval ρ e' of
+      { t, v: { u: V.Closure ρ' f σ } }, { t: t', v } ->
+         case match v σ of
             Just (T3 ρ'' e'' ξ) ->
                let { t: u, v: v' } = eval ((ρ' <> ρ'') :+: f ↦ v) e''
                in { t: T.App t t' ξ u, v: v' }
             Nothing -> error "Match not found"
-      { t, v: { u: V.Op op } } -> error "todo"
+      { t, v: { u: V.Op op } }, { t: t', v } ->
+         error "todo"
       _ -> error "Expected closure or operator"
 -- binary app
 eval ρ { r : BinaryApp op e1 e2 } =
