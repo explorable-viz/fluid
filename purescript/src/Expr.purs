@@ -3,21 +3,12 @@ module Expr where
 import Prelude ((<>))
 import Data.Eq (class Eq)
 import Data.Show
-import Bindings (Bindings, Var)
+import Bindings (Var)
+import Primitive (BinaryOp)
 
 data T3 a b c = T3 a b c
 
-type Ctx = Bindings Typ
-
 data Availability = Top | Bottom
-
-data Typ = TypBottom
-         | TypInt
-         | TypBool
-         | TypFun Typ Typ
-         | TypList Typ
-         | TypPair Typ Typ
-         | TypFailure String
 
 data Expr = Int Int | IntSel Int
           | Var Var
@@ -30,10 +21,10 @@ data Expr = Int Int | IntSel Int
           | Match Expr Elim
           | Letrec String Elim Expr
           | App Expr Expr
-          | Add Expr Expr
+          | BinaryApp BinaryOp Expr Expr
 
-data Elim = ElimVar { x :: Var, tx :: Typ, e :: Expr }
-          | ElimPair { x :: Var, tx :: Typ, y :: Var, ty :: Typ, e:: Expr }
+data Elim = ElimVar { x :: Var, e :: Expr }
+          | ElimPair { x :: Var, y :: Var, e:: Expr }
           | ElimList { bnil :: Expr, bcons :: { x :: Var, y :: Var, e:: Expr } }
           | ElimBool { btrue :: Expr, bfalse :: Expr }
 
@@ -45,8 +36,6 @@ derive instance eqAvailability :: Eq Availability
 instance showAvailability :: Show Availability where
   show Top    = "Top"
   show Bottom = "Bottom"
-
-derive instance eqTyp :: Eq Typ
 
 derive instance eqExpr :: Eq Expr
 

@@ -4,6 +4,7 @@ import Prelude
 import Data.Either (Either(..))
 import Effect (Effect)
 import Effect.Aff (launchAff_)
+import Effect.Class.Console (log)
 import Node.Encoding (Encoding(..))
 import Node.FS.Sync (readTextFile)
 import Text.Parsing.Parser (runParser)
@@ -24,6 +25,7 @@ testParse1 = do
          it "blah" do
             case result of
                Left error -> do
+                  log $ show error
                   true `shouldEqual` false
                Right e -> do
                   (show $ prettyProgram e) `shouldEqual` text

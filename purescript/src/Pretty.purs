@@ -7,12 +7,14 @@ import Data.Newtype (ala, class Newtype, wrap)
 import Data.String as S
 import Data.String.CodeUnits as SCU
 import Data.Unfoldable (replicate)
-import Expr (Elim(..), Expr(..), Typ(..))
+import Expr (Elim(..), Expr(..))
 import Eval (ExplVal(..))
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
+import Primitive (BinaryOp, opName)
 import Val (Val)
 import Val (Val(..)) as V
+
 
 -- | A text document.
 newtype Doc = Doc
@@ -129,6 +131,9 @@ foldValCons (V.Nil) = text ""
 foldValCons (V.Cons v v') = text ", " :<>: pretty v :<>: foldValCons v'
 foldValCons _ = text ""
 
+instance binaryOpPretty :: Pretty BinaryOp where
+   pretty = opName >>> text
+
 instance exprPretty :: Pretty Expr where
     pretty (Int n) = text (show n)
     pretty (IntSel n) = text (show n)
@@ -149,7 +154,7 @@ instance exprPretty :: Pretty Expr where
     pretty (Letrec x σ e) = atop (text ("letrec " <>  x <> " = ") :<>: pretty σ)
                                         (text "in     " :<>: pretty e)
     pretty (App e1 e2) = pretty e1 :<>: text " " :<>: pretty e2
-    pretty (Add e1 e2) = pretty e1 :<>: text " + " :<>: pretty e2
+    pretty (BinaryApp op e1 e2) = pretty e1 :<>: text " " :<>: pretty op :<>: text " " :<>: pretty e2
 
 
 instance explPretty :: Pretty Expl where
@@ -169,7 +174,7 @@ instance explPretty :: Pretty Expl where
     pretty (T.App t1 t2 m t3) =  atop (atop (text "App (" :<>: pretty t1 :<>: text ", " :<>: pretty t2 :<>: text ")")
                                                    (text "     Match:  " :<>: pretty m))
                                                    (text "     Result: " :<>: pretty t3)
-    pretty (T.Add t1 t2) = pretty t1 :<>: text " + " :<>: pretty t2
+    pretty (T.BinaryApp op t1 t2) = pretty t1 :<>: text " " :<>: pretty op :<>: text " " :<>: pretty t2
     pretty (T.Fun ρ σ) = text "Fun(" :<>:  (text "env \n") :<>: (pretty σ) :<>: text ")"
 
 
@@ -183,20 +188,10 @@ instance prettyMatch :: Pretty Match where
 
 
 instance exprElim :: Pretty Elim where
-    pretty (ElimVar { x, tx, e }) = text "  " :<>: text x :<>: text " : " :<>: pretty tx :<>: text " -> " :<>: pretty e
-    pretty (ElimPair { x, tx, y, ty, e }) = text "   (" :<>: text x :<>: text " : " :<>: pretty tx :<>:
-                                        text ", " :<>: text y :<>: text " : " :<>: pretty ty :<>: text ") -> " :<>: pretty e
+    pretty (ElimVar { x, e }) = text "  " :<>: text x :<>: text " -> " :<>: pretty e
+    pretty (ElimPair { x, y, e }) = text "   (" :<>: text x :<>: text ", " :<>: text y :<>: text ") -> " :<>: pretty e
     pretty (ElimList { bnil: e, bcons: { x, y, e: e' } }) = text "    " :<>: atop (text "[] -> " :<>: pretty e) (text "(" :<>: text x :<>: text ":" :<>: text y :<>: text ") -> " :<>: pretty e')
     pretty (ElimBool { btrue: e, bfalse: e' }) = text "     " :<>: atop (text "true -> " :<>: pretty e) (text "false -> " :<>: pretty e')
-
-instance typPretty :: Pretty Typ where
-    pretty TypBottom       = text "⊥"
-    pretty TypInt          = text "Int"
-    pretty TypBool         = text "Bool"
-    pretty (TypFun a b)    = pretty a :<>: text " -> " :<>: pretty b
-    pretty (TypList a)     = text "List " :<>: pretty a
-    pretty (TypPair a b)   = text "Pair " :<>: pretty a :<>: text " " :<>: pretty b
-    pretty (TypFailure s)  = text "Fail " :<>: text s
 
 instance valPretty :: Pretty Val where
     pretty V.Bot = text "⊥"
