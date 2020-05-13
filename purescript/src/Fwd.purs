@@ -9,8 +9,10 @@ import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Val (Env, Val)
 import Val (Val(..)) as V
+import Selected (Selected, (∧))
 
-fwd_match :: Val -> Elim -> Match -> Maybe (T3 Env Expr Availability)
+
+fwd_match :: Val -> Elim -> Match -> Maybe (T3 Env Expr Selected)
 -- var
 fwd_match v (ElimVar { x, e }) (MatchVar _) = Just $ T3 (Empty :+: Bind x v) e Top
 -- true-sel
@@ -60,23 +62,14 @@ fwd_match _ _ _ =  Nothing
 
 
 -- TODO: remove Partial typeclass.
-fwd :: Partial => Env -> Expr -> Expl -> Availability -> Val
+fwd :: Partial => Env -> Expr -> Expl -> Selected -> Val
 -- var
 fwd ρ (Var x) t α =
    case find x ρ of
       Just val -> val
       _        -> V.Failure ("variable " <> x <> " not found")
--- true-sel
-fwd ρ TrueSel T.True Top = V.TrueSel
--- true-bot
-fwd ρ TrueSel T.True Bot = V.Bot
--- true
-fwd ρ True T.True _ = V.Bot
--- false-sel
-fwd ρ FalseSel T.False Top = V.FalseSel
--- false-bot
-fwd ρ FalseSel T.False Bot = V.Bot
--- false-bot
+fwd ρ { α, r: True } T.True α' = { α: α ∧ α', u: True }
+fwd ρ { α, r: False } T.False α' = V.FalseSel
 fwd ρ False T.False _ = V.Bot
 -- int-sel
 fwd ρ (IntSel n) (T.Int _) Top = V.IntSel n

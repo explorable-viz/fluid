@@ -42,34 +42,34 @@ data ExplVal = ExplVal { t :: Expl, v :: Val }
 -- TODO: T.Failure instead of T.Bottom?
 eval :: Partial => Env -> Expr -> ExplVal
 -- var
-eval ρ (Var x) =
+eval ρ { r: Var x } =
    case find x ρ of
       Just val -> ExplVal { t: T.Var x,  v: val }
       _ -> ExplVal { t: T.Bottom, v: V.Failure ("variable " <> x <> " not found") }
 -- true
-eval ρ True = ExplVal { t: T.True, v: V.True }
+eval ρ { r: True } = ExplVal { t: T.True, v: V.True }
 -- false
-eval ρ False = ExplVal { t: T.False, v: V.False }
+eval ρ { r: False } = ExplVal { t: T.False, v: V.False }
 -- int
-eval ρ (Int n) = ExplVal { t: T.Int n, v: V.Int n }
+eval ρ { r: Int n } = ExplVal { t: T.Int n, v: V.Int n }
 -- pair
-eval ρ (Pair e1 e2) =
+eval ρ { r: Pair e1 e2 } =
    let ExplVal { t: t1, v: v1 } = eval ρ e1
        ExplVal { t: t2, v: v2 } = eval ρ e2
    in  ExplVal { t: T.Pair t1 t2, v: V.Pair v1 v2 }
 -- nil
-eval ρ Nil = ExplVal { t: T.Nil, v: V.Nil }
+eval ρ { r: Nil } = ExplVal { t: T.Nil, v: V.Nil }
 -- cons
-eval ρ (Cons e e') =
+eval ρ { r: Cons e e' } =
    let ExplVal { t: t1, v: v1 } = eval ρ e
        ExplVal { t: t2, v: v2 } = eval ρ e'
    in  ExplVal { t: T.Cons t1 t2, v: V.Cons v1 v2 }
 -- letrec (fun)
-eval ρ (Letrec f σ e) =
+eval ρ { r: Letrec f σ e } =
    let ExplVal {t, v} = eval (ρ :+: Bind f (V.Closure ρ f σ)) e
    in ExplVal {t: T.Letrec f (T.Fun ρ σ) t, v}
 -- apply
-eval ρ (App e e') =
+eval ρ { r: App e e' } =
    case eval ρ e of
       ExplVal { t, v: V.Closure ρ' fun σ } ->
          let ExplVal { t: t',  v } = eval ρ e'
@@ -80,20 +80,20 @@ eval ρ (App e e') =
             Nothing -> ExplVal { t: T.Bottom, v: V.Failure "Match not found" }
       _ -> ExplVal { t: T.Bottom, v: V.Failure "Expression does not evaluate to closure" }
 -- binary app
-eval ρ (BinaryApp op e1 e2) =
+eval ρ { r : BinaryApp op e1 e2 } =
    let ExplVal { t: t1, v: v1 } = eval ρ e1
        ExplVal { t: t2, v: v2 } = eval ρ e2
    in  case v1, v2 of
       V.Int n1, V.Int n2 -> ExplVal { t: T.BinaryApp op t1 t2, v: V.Int (n1 + n2) }
       _, _ -> ExplVal { t: T.Bottom, v: V.Failure "Arithmetic type error: e1 or/and e2 do not evaluate to ints" }
 -- let
-eval ρ (Let x e1 e2) =
+eval ρ { r : Let x e1 e2 } =
    let ExplVal { t: t1, v: v1 } = eval ρ e1
        ρ'  = (ρ :+: Bind x v1)
        ExplVal { t: t2, v: v2 }  = eval ρ' e2
    in  ExplVal {t: T.Let x t1 t2, v: v2 }
 -- match (no rule)
-eval ρ (Match e σ) =
+eval ρ { r : Match e σ } =
    let ExplVal { t: t1, v: v1 } = eval ρ e
    in case match v1 σ of
       Nothing -> ExplVal { t: T.Bottom, v: V.Failure "Match not found" }
