@@ -2,11 +2,11 @@ module Eval where
 
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
-import Data.Semiring ((+))
 import Bindings (Bindings(..), (:+:), (↦), find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr
+import Primitive (opFun)
 import Util (error)
 import Val (Env, Val, val)
 import Val (RawVal(..)) as V
@@ -79,7 +79,7 @@ eval ρ { r : BinaryApp op e1 e2 } =
    let { t: t1, v: v1 } = eval ρ e1
        { t: t2, v: v2 } = eval ρ e2
    in case v1, v2 of
-      { u: V.Int n1 }, {u : V.Int n2 } -> { t: T.BinaryApp op t1 t2, v: val $ V.Int (n1 + n2) }
+      { u: V.Int n1 }, {u : V.Int n2 } -> { t: T.BinaryApp op t1 t2, v: val $ V.Int $ opFun op n1 n2 }
       _, _ -> error "Arithmetic type error: e1 or/and e2 do not evaluate to ints"
 -- let
 eval ρ { r : Let x e1 e2 } =

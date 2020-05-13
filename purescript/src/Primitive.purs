@@ -7,12 +7,15 @@ import Data.Tuple (Tuple(..))
 
 data BinaryOp = BinaryOp {
    name :: String,
-   op :: Int -> Int -> Int,
+   fun :: Int -> Int -> Int,
    prec :: Int -- 0 to 9, similar to Haskell 98
 }
 
 opName :: BinaryOp -> String
 opName (BinaryOp { name }) = name
+
+opFun :: BinaryOp -> Int -> Int -> Int
+opFun (BinaryOp { fun }) = fun
 
 opPrec :: BinaryOp -> Int
 opPrec (BinaryOp { prec }) = prec
@@ -21,7 +24,7 @@ instance eqBinaryOp :: Eq BinaryOp where
    eq (BinaryOp { name: op }) (BinaryOp { name: op' }) = op == op'
 
 makeBinary :: String -> (Int -> Int -> Int) -> Int -> Tuple String BinaryOp
-makeBinary name op prec = Tuple name $ BinaryOp { name, op, prec }
+makeBinary name fun prec = Tuple name $ BinaryOp { name, fun, prec }
 
 binaryOps :: Map String BinaryOp
 binaryOps = fromFoldable [
