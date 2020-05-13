@@ -109,12 +109,12 @@ appChain expr' = do
       rest ∷ Expr -> SParser Expr
       rest e1 = (simpleExpr expr' >>= (pure <<< App e1) >>= rest) <|> pure e1
 
-wibble :: _
-wibble = fromFoldable $ map fromFoldable $ groupBy (eq `on` opPrec) $ sortBy (comparing opPrec) $ values binaryOps
-
 -- each element of the top-level list corresponds to a precedence level.
 operators :: OperatorTable Identity String Expr
-operators = fromFoldable $ map (\op -> [Infix (binaryOp op) AssocLeft]) $ values binaryOps
+operators =
+   fromFoldable $ map fromFoldable $
+   map (map (\op -> Infix (binaryOp op) AssocLeft)) $
+   groupBy (eq `on` opPrec) $ sortBy (comparing opPrec) $ values binaryOps
 
 -- An expression is an operator tree. An operator tree is a tree whose branches are
 -- binary primitives and whose leaves are application chains. An application chain
