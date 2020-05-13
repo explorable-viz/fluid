@@ -2,7 +2,6 @@ module Fwd where
 
 import Prelude (($), (<>))
 import Data.Maybe (Maybe(..))
-import Data.Semiring ((+))
 import Bindings (Bindings(..), (:+:), (↦), find)
 import Expr (Elim(..), Expr, RawExpr(..), T3(..))
 import Primitive (opFun)
@@ -28,7 +27,7 @@ fwd_match { α, u: V.Nil } (ElimList { nil: e, cons: _ }) = Just $ T3 Empty e α
 fwd_match { α, u: V.Cons u v } (ElimList { nil: _, cons: { x, y, e } }) =
    Just $ T3 (Empty :+: x ↦ u :+: y ↦ v) e Top
 -- failure
-fwd_match _ _ =  Nothing
+fwd_match _ _ = Nothing
 
 fwd :: Env -> Expr -> Selected -> Val
 -- var
@@ -64,13 +63,9 @@ fwd ρ { r: App e e' } α =
       { α: α', u: V.PartialApp op v }, v' -> toValues_fwd (opFun op) α' v v'
       _, _ -> absurd
 -- binary app
-fwd ρ { r: BinaryApp op e1 e2 } α =
-   case fwd ρ e1 α, fwd ρ e2 α of
-   { α: α', u: V.Int n1 }, { α: α'', u: V.Int n2 } -> { α: α ∧ α' ∧ α'', u: V.Int (n1 + n2) }
-   _, _ -> absurd
+fwd ρ { r: BinaryApp op e1 e2 } α = toValues_fwd (opFun op) α (fwd ρ e1 α) (fwd ρ e2 α)
 -- let
-fwd ρ { r: Let x e1 e2 } α =
-   fwd (ρ :+: x ↦ fwd ρ e1 α) e2 α
+fwd ρ { r: Let x e1 e2 } α = fwd (ρ :+: x ↦ fwd ρ e1 α) e2 α
 -- match
 fwd ρ { r: Match e σ } α =
    case fwd_match (fwd ρ e α) σ of
