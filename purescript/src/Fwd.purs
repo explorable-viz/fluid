@@ -3,7 +3,7 @@ module Fwd where
 import Prelude (($), (<>))
 import Data.Maybe (Maybe(..))
 import Data.Semiring ((+))
-import Bindings (Bind(..), Bindings(..), (:+:), find)
+import Bindings (Bindings(..), (:+:), (↦), find)
 import Expr (Elim(..), Expr, RawExpr(..), T3(..))
 import Selected (Selected(..), (∧))
 import Util (absurd)
@@ -13,19 +13,19 @@ import Val (RawVal(..)) as V
 
 fwd_match :: Val -> Elim -> Maybe (T3 Env Expr Selected)
 -- var
-fwd_match v (ElimVar { x, e }) = Just $ T3 (Empty :+: Bind x v) e Top
+fwd_match v (ElimVar { x, e }) = Just $ T3 (Empty :+: x ↦ v) e Top
 -- true
 fwd_match { α, u: V.True } (ElimBool { true: e, false: _ }) = Just $ T3 Empty e α
 -- false
 fwd_match { α, u: V.False } (ElimBool { true: _, false: e }) = Just $ T3 Empty e α
 -- pair
 fwd_match { α, u: V.Pair u v } (ElimPair { x, y, e }) =
-   Just $ T3 (Empty :+: Bind x u :+: Bind y v) e α
+   Just $ T3 (Empty :+: x ↦ u :+: y ↦ v) e α
 -- nil
 fwd_match { α, u: V.Nil } (ElimList { nil: e, cons: _ }) = Just $ T3 Empty e α
 -- cons
 fwd_match { α, u: V.Cons u v } (ElimList { nil: _, cons: { x, y, e } }) =
-   Just $ T3 (Empty :+: Bind x u :+: Bind y v) e Top
+   Just $ T3 (Empty :+: x ↦ u :+: y ↦ v) e Top
 -- failure
 fwd_match _ _ =  Nothing
 
@@ -48,14 +48,14 @@ fwd ρ { α, r: Nil} α' = { α: α ∧ α', u: V.Nil }
 -- cons
 fwd ρ { α, r: Cons e e' } α' = { α: α ∧ α', u: V.Cons (fwd ρ e α') (fwd ρ e' α') }
 -- letrec
-fwd ρ { r: Letrec f σ e } α = fwd (ρ :+: Bind f { α, u: V.Closure ρ f σ }) e α
+fwd ρ { r: Letrec f σ e } α = fwd (ρ :+: f ↦ { α, u: V.Closure ρ f σ }) e α
 -- app
 fwd ρ { r: App e e' } α =
    case fwd ρ e α  of
       { α: α', u: V.Closure ρ' f σ } ->
          case fwd_match (fwd ρ e' α) σ of
             Just (T3 ρ'' e'' α'') ->
-               let ρ_f = (ρ' <> ρ'') :+: Bind f { α: α', u: (V.Closure ρ' f σ) } in fwd ρ_f e'' (α' ∧ α'')
+               let ρ_f = (ρ' <> ρ'') :+: f ↦ { α: α', u: (V.Closure ρ' f σ) } in fwd ρ_f e'' (α' ∧ α'')
             Nothing -> absurd
       _  -> absurd
 -- binary app
@@ -65,7 +65,7 @@ fwd ρ { r: BinaryApp op e1 e2 } α =
    _, _ -> absurd
 -- let
 fwd ρ { r: Let x e1 e2 } α =
-   fwd (ρ :+: Bind x (fwd ρ e1 α)) e2 α
+   fwd (ρ :+: x ↦ fwd ρ e1 α) e2 α
 -- match
 fwd ρ { r: Match e σ } α =
    case fwd_match (fwd ρ e α) σ of
