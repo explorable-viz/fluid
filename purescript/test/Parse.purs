@@ -18,7 +18,7 @@ import Pretty (prettyProgram)
 
 testParse1 :: Effect Unit
 testParse1 = do
-   text <- readTextFile ASCII "../fluid/example/parser-wip.fld"
+   text <- readTextFile ASCII "fluid/example/normalise.fld"
    let result = runParser text program
    launchAff_ $ runSpec [consoleReporter] do
       describe "Parse" do
