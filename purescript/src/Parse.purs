@@ -19,7 +19,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import Expr (Expr, RawExpr(..), expr)
-import Primitive (opNames, opName, opPrec)
+import Primitive (OpName(..), opNames, opPrec)
 
 
 type SParser = Parser String
@@ -125,7 +125,7 @@ appChain expr' = do
 operators :: OperatorTable Identity String Expr
 operators =
    fromFoldable $ map fromFoldable $
-   map (map (\op -> Infix (theBinaryOp (opName op)) AssocLeft)) $
+   map (map (\(OpName { op }) -> Infix (theBinaryOp op) AssocLeft)) $
    groupBy (eq `on` opPrec) $ sortBy (comparing opPrec) $ values opNames
 
 -- An expression is an operator tree. An operator tree is a tree whose branches are

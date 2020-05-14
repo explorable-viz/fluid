@@ -8,7 +8,7 @@ import Data.String as S
 import Data.String.CodeUnits as SCU
 import Data.Unfoldable (replicate)
 import Expr (Elim(..), Expr, RawExpr(..))
-import Primitive (BinaryOp, opName)
+import Primitive (BinaryOp(..))
 import Util (error)
 import Val (RawVal)
 import Val (RawVal(..)) as V
@@ -125,9 +125,6 @@ instance valPrettyList :: PrettyList RawVal where
    prettyList (V.Cons { u } { u: u'}) = text ", " :<>: pretty u :<>: prettyList u'
    prettyList _ = error "Ill-formed list"
 
-instance binaryOpPretty :: Pretty BinaryOp where
-   pretty = opName >>> text
-
 instance rawExprPretty :: Pretty RawExpr where
    pretty (Int n) = text (show n)
    pretty (Var x) = text x
@@ -135,7 +132,7 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty False   = text "false"
    pretty (Pair { r } { r: r' }) = parens (pretty r :<>: text ", " :<>: pretty r')
    pretty Nil = text "[]"
-   pretty (Op op) = parens $ text $ opName op
+   pretty (Op op) = parens $ text op
    pretty (Cons { r } { r: r' }) = text "[" :<>: pretty r :<>: prettyList r' :<>: text "]"
 
    pretty (Let x { r } { r: r' }) =
@@ -144,7 +141,7 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (Letrec x σ { r }) =
       atop (text ("letrec " <>  x <> " = ") :<>: pretty σ) (text "in     " :<>: pretty r)
    pretty (App { r } { r: r' }) = pretty r :<>: text " " :<>: pretty r'
-   pretty (BinaryApp op { r } { r: r' }) = pretty r :<>: text " " :<>: pretty op :<>: text " " :<>: pretty r'
+   pretty (BinaryApp { r } op { r: r' }) = pretty r :<>: text (" " <> op <> " ") :<>: pretty r'
 
 instance exprElim :: Pretty Elim where
    pretty (ElimVar { x, e: { r } }) = text "  " :<>: text x :<>: text " -> " :<>: pretty r
@@ -162,8 +159,8 @@ instance valPretty :: Pretty RawVal where
    pretty V.True = text "True"
    pretty V.False = text "False"
    pretty (V.Closure ρ f σ) = text "Closure" :<>: parens (atop (text "env" :<>: text f ) (pretty σ))
-   pretty (V.Op op) = parens $ text $ opName op
-   pretty (V.PartialApp op { u }) = parens $ text (opName op <> " ") :<>: pretty u
+   pretty (V.Op (BinaryOp { name })) = parens $ text name
+   pretty (V.PartialApp (BinaryOp { name }) { u }) = parens $ text (name <> " ") :<>: pretty u
    pretty (V.Pair { u } { u: u' }) = parens $ pretty u :<>: text ", " :<>: pretty u'
    pretty V.Nil = text "[]"
    pretty (V.Cons { u } { u: u' }) = text "[" :<>: pretty u :<>: prettyList u' :<>: text "]"

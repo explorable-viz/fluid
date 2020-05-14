@@ -19,9 +19,6 @@ data OpName = OpName {
    prec :: Int -- 0 to 9, similar to Haskell 98
 }
 
-opName :: OpName -> Var
-opName (OpName { op }) = op
-
 opPrec :: OpName -> Int
 opPrec (OpName { prec }) = prec
 
