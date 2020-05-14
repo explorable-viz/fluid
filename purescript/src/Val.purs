@@ -7,8 +7,6 @@ import Primitive (BinaryOp)
 import Selected (Selected(..), (∧))
 import Util (error)
 
-type Env = Bindings Val
-
 data RawVal =
      True | False
    | Int Int
@@ -34,3 +32,5 @@ toValues f { u } { u: u' } = val $ Int $ f (toInt u) (toInt u)
 
 toValues_fwd :: (Int -> Int -> Int) -> Selected -> Val -> Val -> Val
 toValues_fwd f α v v' = { α: α ∧ v.α ∧ v'.α, u: Int $ f (toInt v.u) (toInt v'.u) }
+
+type Env = Bindings Val
