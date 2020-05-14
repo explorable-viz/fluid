@@ -33,7 +33,12 @@ fwd :: Env -> Expr -> Selected -> Val
 -- var
 fwd ρ { r: Var x } _ =
    case find x ρ of
-      Just val -> val
+      Just v -> v
+      _ -> absurd
+-- op
+fwd ρ { r: Op op } _ =
+   case find op ρ of
+      Just v -> v
       _ -> absurd
 -- true
 fwd ρ { α, r: True } α' = { α: α ∧ α', u: V.True }
@@ -47,8 +52,6 @@ fwd ρ { α, r: Pair e1 e2 } α' = { α: α ∧ α', u: V.Pair (fwd ρ e1 α') (
 fwd ρ { α, r: Nil} α' = { α: α ∧ α', u: V.Nil }
 -- cons
 fwd ρ { α, r: Cons e e' } α' = { α: α ∧ α', u: V.Cons (fwd ρ e α') (fwd ρ e' α') }
--- op
-fwd ρ { α, r: Op op } α' = { α: α ∧ α', u: V.Op op }
 -- letrec
 fwd ρ { r: Letrec f σ e } α = fwd (ρ :+: f ↦ { α, u: V.Closure ρ f σ }) e α
 -- app
@@ -63,7 +66,10 @@ fwd ρ { r: App e e' } α =
       { α: α', u: V.PartialApp op v }, v' -> toValues_fwd (opFun op) α' v v'
       _, _ -> absurd
 -- binary app
-fwd ρ { r: BinaryApp op e1 e2 } α = toValues_fwd (opFun op) α (fwd ρ e1 α) (fwd ρ e2 α)
+fwd ρ { r: BinaryApp e1 op e2 } α =
+   case find op ρ of
+      Just { α: α', u: V.Op φ } -> toValues_fwd (opFun φ) α' (fwd ρ e1 α) (fwd ρ e2 α)
+      _ -> absurd
 -- let
 fwd ρ { r: Let x e1 e2 } α = fwd (ρ :+: x ↦ fwd ρ e1 α) e2 α
 -- match
