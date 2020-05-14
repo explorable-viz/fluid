@@ -4,7 +4,6 @@ import Prelude ((<>))
 import Data.Eq (class Eq)
 import Data.Show
 import Bindings (Var)
-import Primitive (BinaryOp)
 import Selected (Selected(..))
 
 data T3 a b c = T3 a b c
@@ -15,12 +14,12 @@ data RawExpr =
   | True | False
   | Pair Expr Expr
   | Nil | Cons Expr Expr
-  | Op BinaryOp
+  | Op Var
   | Let Var Expr Expr
   | Match Expr Elim
   | Letrec String Elim Expr
   | App Expr Expr
-  | BinaryApp BinaryOp Expr Expr
+  | BinaryApp Expr Var Expr
 
 type Expr = { α :: Selected, r :: RawExpr }
 

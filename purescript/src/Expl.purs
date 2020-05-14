@@ -3,7 +3,6 @@ module Expl where
 import Prelude
 import Bindings (Var)
 import Expr (Elim)
-import Primitive (BinaryOp)
 import Val (Env)
 
 data Expl =
@@ -12,11 +11,11 @@ data Expl =
    | Pair Expl Expl
    | Nil
    | Cons Expl Expl
-   | Op BinaryOp
+   | Op Var
    | App Expl Expl Match Expl
    | AppOp Expl Expl
    | Match Expl Match Expl
-   | BinaryApp BinaryOp Expl Expl
+   | BinaryApp Expl Var Expl
    | Let Var Expl Expl
    | Letrec Var Expl Expl
    | Fun Env Elim

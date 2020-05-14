@@ -7,8 +7,7 @@ import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (groupBy, sortBy)
-import Data.Map (lookup, values)
-import Data.Maybe (Maybe(..))
+import Data.Map (values)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -20,7 +19,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import Expr (Expr, RawExpr(..), expr)
-import Primitive (BinaryOp, binaryOps, opName, opPrec)
+import Primitive (opNames, opName, opPrec)
 
 
 type SParser = Parser String
@@ -102,17 +101,15 @@ let_ term' = do
 parensOp :: SParser Expr
 parensOp = token.parens $ do
    op <- token.operator
-   case lookup op binaryOps of
-      Nothing -> fail $ "Unrecognised operator " <> op
-      Just op' -> pure $ expr $ Op op'
+   pure $ expr $ Op op
 
 -- the specific binary operator
-theBinaryOp :: BinaryOp -> SParser (Expr -> Expr -> Expr)
+theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
 theBinaryOp op = try $ do
    op' <- token.operator
-   if (opName op /= op')
-   then fail $ "Expected " <> opName op
-   else pure $ (\e1 e2 -> expr $ BinaryApp op e1 e2)
+   if (op /= op')
+   then fail $ "Expected " <> op
+   else pure $ (\e1 e2 -> expr $ BinaryApp e1 op e2)
 
 backtick :: SParser Unit
 backtick = token.reservedOp "`"
@@ -128,8 +125,8 @@ appChain expr' = do
 operators :: OperatorTable Identity String Expr
 operators =
    fromFoldable $ map fromFoldable $
-   map (map (\op -> Infix (theBinaryOp op) AssocLeft)) $
-   groupBy (eq `on` opPrec) $ sortBy (comparing opPrec) $ values binaryOps
+   map (map (\op -> Infix (theBinaryOp (opName op)) AssocLeft)) $
+   groupBy (eq `on` opPrec) $ sortBy (comparing opPrec) $ values opNames
 
 -- An expression is an operator tree. An operator tree is a tree whose branches are
 -- binary primitives and whose leaves are application chains. An application chain

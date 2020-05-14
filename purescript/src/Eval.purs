@@ -36,6 +36,11 @@ eval ρ { r: Var x } =
    case find x ρ of
       Just v -> { t: T.Var x, v }
       _ -> error $ "variable " <> x <> " not found"
+-- op
+eval ρ { r: Op op } =
+   case find op ρ of
+      Just v -> { t: T.Op op, v }
+      _ -> error $ "operator " <> op <> " not found"
 -- true
 eval ρ { r: True } = { t: T.True, v: val V.True }
 -- false
@@ -54,8 +59,6 @@ eval ρ { r: Cons e e' } =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e'
    in { t: T.Cons t t', v: val $ V.Cons v v' }
--- op
-eval ρ { r: Op op } = { t: T.Op op, v: val $ V.Op op }
 -- letrec
 eval ρ { r: Letrec f σ e } =
    let { t, v } = eval (ρ :+: f ↦ (val $ V.Closure ρ f σ)) e
@@ -75,10 +78,12 @@ eval ρ { r: App e e' } =
          { t: T.AppOp t t', v: toValues (opFun op) v v' }
       _, _ -> error "Expected closure or operator"
 -- binary app
-eval ρ { r : BinaryApp op e e' } =
+eval ρ { r : BinaryApp e op e' } =
    let { t, v } = eval ρ e
-       { t: t', v: v' } = eval ρ e'
-   in { t: T.BinaryApp op t t', v: toValues (opFun op) v v' }
+       { t: t', v: v' } = eval ρ e' in
+   case find op ρ of
+      Just { u: V.Op φ } -> { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
+      _ -> error $ "operator " <> op <> " not found"
 -- let
 eval ρ { r : Let x e e' } =
    let { t, v } = eval ρ e
