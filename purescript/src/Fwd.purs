@@ -11,23 +11,23 @@ import Val (Env, Val, toValues_fwd)
 import Val (RawVal(..)) as V
 
 
-fwd_match :: Val -> Elim -> Maybe (T3 Env Expr Selected)
+match_fwd :: Val -> Elim -> Maybe (T3 Env Expr Selected)
 -- var
-fwd_match v (ElimVar { x, e }) = Just $ T3 (Empty :+: x ↦ v) e Top
+match_fwd v (ElimVar { x, e }) = Just $ T3 (Empty :+: x ↦ v) e Top
 -- true
-fwd_match { α, u: V.True } (ElimBool { true: e, false: _ }) = Just $ T3 Empty e α
+match_fwd { α, u: V.True } (ElimBool { true: e, false: _ }) = Just $ T3 Empty e α
 -- false
-fwd_match { α, u: V.False } (ElimBool { true: _, false: e }) = Just $ T3 Empty e α
+match_fwd { α, u: V.False } (ElimBool { true: _, false: e }) = Just $ T3 Empty e α
 -- pair
-fwd_match { α, u: V.Pair u v } (ElimPair { x, y, e }) =
+match_fwd { α, u: V.Pair u v } (ElimPair { x, y, e }) =
    Just $ T3 (Empty :+: x ↦ u :+: y ↦ v) e α
 -- nil
-fwd_match { α, u: V.Nil } (ElimList { nil: e, cons: _ }) = Just $ T3 Empty e α
+match_fwd { α, u: V.Nil } (ElimList { nil: e, cons: _ }) = Just $ T3 Empty e α
 -- cons
-fwd_match { α, u: V.Cons u v } (ElimList { nil: _, cons: { x, y, e } }) =
+match_fwd { α, u: V.Cons u v } (ElimList { nil: _, cons: { x, y, e } }) =
    Just $ T3 (Empty :+: x ↦ u :+: y ↦ v) e Top
 -- failure
-fwd_match _ _ = Nothing
+match_fwd _ _ = Nothing
 
 fwd :: Env -> Expr -> Selected -> Val
 -- var
@@ -55,7 +55,7 @@ fwd ρ { r: Letrec f σ e } α = fwd (ρ :+: f ↦ { α, u: V.Closure ρ f σ })
 fwd ρ { r: App e e' } α =
    case fwd ρ e α, fwd ρ e' α of
       { α: α', u: V.Closure ρ' f σ }, v ->
-         case fwd_match v σ of
+         case match_fwd v σ of
             Just (T3 ρ'' e'' α'') ->
                let ρ_f = (ρ' <> ρ'') :+: f ↦ { α: α', u: (V.Closure ρ' f σ) } in fwd ρ_f e'' (α' ∧ α'')
             Nothing -> absurd
@@ -68,6 +68,6 @@ fwd ρ { r: BinaryApp op e1 e2 } α = toValues_fwd (opFun op) α (fwd ρ e1 α) 
 fwd ρ { r: Let x e1 e2 } α = fwd (ρ :+: x ↦ fwd ρ e1 α) e2 α
 -- match
 fwd ρ { r: Match e σ } α =
-   case fwd_match (fwd ρ e α) σ of
+   case match_fwd (fwd ρ e α) σ of
       Just (T3 ρ' e' α') -> fwd (ρ <> ρ') e' α'
       Nothing -> absurd
