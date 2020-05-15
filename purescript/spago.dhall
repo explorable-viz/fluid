@@ -9,6 +9,7 @@ You can edit this file as you like.
   , "console"
   , "debug"
   , "effect"
+  , "exceptions"
   , "lists"
   , "node-fs"
   , "parsing"
