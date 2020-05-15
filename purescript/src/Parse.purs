@@ -62,7 +62,7 @@ variable = do
 ident ∷ SParser Var
 ident = token.identifier
 
-sign :: forall a . (Ring a) => SParser (a -> a)
+sign :: ∀ a . (Ring a) => SParser (a -> a)
 sign =
    (char '-' $> negate) <|>
    (char '+' $> identity) <|>

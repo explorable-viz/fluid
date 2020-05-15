@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
-import Bindings (Bindings(..), (:+:), (↦), find)
+import Bindings (Bindings(..), (:+:), (↦), ε, find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr
@@ -13,18 +13,18 @@ import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> Maybe (T3 Env Expr Match)
 -- var
-match v (ElimVar { x, e }) = Just $ T3 (Empty :+: x ↦ v) e (MatchVar x)
+match v (ElimVar { x, e }) = Just $ T3 (ε :+: x ↦ v) e (MatchVar x)
 -- true
-match { u: V.True } (ElimBool { true: e1, false: _ }) = Just $ T3 Empty e1 MatchTrue
+match { u: V.True } (ElimBool { true: e1, false: _ }) = Just $ T3 ε e1 MatchTrue
 -- false
-match { u: V.False } (ElimBool { true: _, false: e2 }) = Just $ T3 Empty e2 MatchFalse
+match { u: V.False } (ElimBool { true: _, false: e2 }) = Just $ T3 ε e2 MatchFalse
 -- pair
-match { u: V.Pair v v' } (ElimPair { x, y, e }) = Just $ T3 (Empty :+: x ↦ v :+: y ↦ v') e (MatchPair x y)
+match { u: V.Pair v v' } (ElimPair { x, y, e }) = Just $ T3 (ε :+: x ↦ v :+: y ↦ v') e (MatchPair x y)
 -- nil
-match { u: V.Nil } (ElimList { nil: e, cons: _ }) = Just $ T3 Empty e MatchNil
+match { u: V.Nil } (ElimList { nil: e, cons: _ }) = Just $ T3 ε e MatchNil
 -- cons
 match { u : V.Cons v v' } (ElimList { nil: _, cons: { x, y, e } }) =
-   Just $ T3 (Empty :+: x ↦ v :+: y ↦ v') e (MatchCons x y)
+   Just $ T3 (ε :+: x ↦ v :+: y ↦ v') e (MatchCons x y)
 -- failure
 match _ _ = Nothing
 

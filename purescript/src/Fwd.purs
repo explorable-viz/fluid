@@ -2,7 +2,7 @@ module Fwd where
 
 import Prelude (($), (<>))
 import Data.Maybe (Maybe(..))
-import Bindings (Bindings(..), (:+:), (↦), find)
+import Bindings (Bindings(..), (:+:), (↦), ε, find)
 import Expr (Elim(..), Expr, RawExpr(..), T3(..))
 import Primitive (opFun)
 import Selected (Selected(..), (∧))
@@ -13,19 +13,19 @@ import Val (RawVal(..)) as V
 
 match_fwd :: Val -> Elim -> Maybe (T3 Env Expr Selected)
 -- var
-match_fwd v (ElimVar { x, e }) = Just $ T3 (Empty :+: x ↦ v) e Top
+match_fwd v (ElimVar { x, e }) = Just $ T3 (ε :+: x ↦ v) e Top
 -- true
-match_fwd { α, u: V.True } (ElimBool { true: e, false: _ }) = Just $ T3 Empty e α
+match_fwd { α, u: V.True } (ElimBool { true: e, false: _ }) = Just $ T3 ε e α
 -- false
-match_fwd { α, u: V.False } (ElimBool { true: _, false: e }) = Just $ T3 Empty e α
+match_fwd { α, u: V.False } (ElimBool { true: _, false: e }) = Just $ T3 ε e α
 -- pair
 match_fwd { α, u: V.Pair u v } (ElimPair { x, y, e }) =
-   Just $ T3 (Empty :+: x ↦ u :+: y ↦ v) e α
+   Just $ T3 (ε :+: x ↦ u :+: y ↦ v) e α
 -- nil
-match_fwd { α, u: V.Nil } (ElimList { nil: e, cons: _ }) = Just $ T3 Empty e α
+match_fwd { α, u: V.Nil } (ElimList { nil: e, cons: _ }) = Just $ T3 ε e α
 -- cons
 match_fwd { α, u: V.Cons u v } (ElimList { nil: _, cons: { x, y, e } }) =
-   Just $ T3 (Empty :+: x ↦ u :+: y ↦ v) e Top
+   Just $ T3 (ε :+: x ↦ u :+: y ↦ v) e Top
 -- failure
 match_fwd _ _ = Nothing
 

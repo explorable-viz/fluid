@@ -1,7 +1,7 @@
 module Val where
 
 import Prelude
-import Bindings (Bindings(..), (:+:), (↦))
+import Bindings (Bindings(..), (:+:), (↦), ε)
 import Expr (Elim)
 import Primitive (BinaryOp(..))
 import Selected (Selected(..), (∧))
@@ -36,5 +36,5 @@ toValues_fwd f α v v' = { α: α ∧ v.α ∧ v'.α, u: Int $ f (toInt v.u) (to
 type Env = Bindings Val
 
 primitives :: Env
-primitives = Empty :+:
+primitives = ε :+:
    "+" ↦ (val $ Op $ BinaryOp { name: "prim-plus", fun: (+) })

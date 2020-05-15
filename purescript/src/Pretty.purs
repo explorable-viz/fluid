@@ -80,11 +80,11 @@ atop (Doc d1) (Doc d2) =
       }
 
 -- | Place documents in columns
-hcat :: forall f. Foldable f => f Doc -> Doc
+hcat :: ∀ f. Foldable f => f Doc -> Doc
 hcat = ala Columns foldMap
 
 -- | Stack documents vertically
-vcat :: forall f. Foldable f => f Doc -> Doc
+vcat :: ∀ f. Foldable f => f Doc -> Doc
 vcat = ala Stack foldMap
 
 -- | A wrapper for `Doc` with a `Monoid` instance which stacks documents vertically.

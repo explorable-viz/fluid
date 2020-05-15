@@ -14,14 +14,17 @@ data Bindings a =
 
 infixl 5 Extend as :+:
 
+ε :: ∀ a . Bindings a
+ε = Empty
+
 instance bindingsSemigroup :: Semigroup (Bindings a) where
    append m Empty = m
    append m1 (Extend m2 kv) = Extend (append m1 m2) kv
 
 instance bindingsMonoid :: Monoid (Bindings a) where
-   mempty = Empty
+   mempty = ε
 
-find :: forall a . Var -> Bindings a -> Maybe a
+find :: ∀ a . Var -> Bindings a -> Maybe a
 find _ Empty = Nothing
 find x (Extend m (k ↦ v)) = if x == k then Just v else find x m
 
