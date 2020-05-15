@@ -7,6 +7,7 @@ You can edit this file as you like.
   [ "aff"
   , "assert"
   , "console"
+  , "debug"
   , "effect"
   , "lists"
   , "node-fs"
