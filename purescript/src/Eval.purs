@@ -2,13 +2,12 @@ module Eval where
 
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
-import Debug.Trace (trace)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr
 import Primitive (opFun)
-import Util (error)
+import Util (absurd, error)
 import Val (Env, Val, toValues, val)
 import Val (RawVal(..)) as V
 
@@ -82,10 +81,10 @@ eval ρ { r: App e e' } =
 eval ρ { r : BinaryApp e op e' } =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e' in
-   trace op \_ ->
    case find op ρ of
       Just { u: V.Op φ } -> { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
-      _ -> error $ "operator " <> op <> " not found"
+      Just _ -> absurd
+      Nothing -> error $ "operator " <> op <> " not found"
 -- let
 eval ρ { r : Let x e e' } =
    let { t, v } = eval ρ e
