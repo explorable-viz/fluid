@@ -1,6 +1,6 @@
 {
   "name": "@rolyp/fluid",
-  "version": "0.2.8",
+  "version": "0.2.10",
   "description": "Fluid",
   "dependencies": {
     "@types/three": "0.93.28",
@@ -59,7 +59,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rolyp/fluid.git"
+    "url": "git+https://github.com/explorable-viz/fluid.git"
   },
   "author": "Roly Perera <roly.perera@dynamicaspects.org> (http://dynamicaspects.org/)",
   "contributors": [
@@ -67,9 +67,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rolyp/fluid/issues"
+    "url": "https://github.com/explorable-viz/fluid/issues"
   },
-  "homepage": "https://github.com/rolyp/fluid",
+  "homepage": "https://github.com/explorable-viz/fluid",
   "files": [
     "dist/**/*"
   ],

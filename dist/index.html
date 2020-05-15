@@ -3,7 +3,7 @@
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1">
-   <title>Roly Perera</title>
+   <title>Fluid: Explorable Data Visualisation</title>
    <script src="https://use.fontawesome.com/1091715d00.js"></script>
    <link href="./css/styles.css" rel="stylesheet" type="text/css">
    <link href="./css/simplegrid.css" rel="stylesheet" type="text/css">
@@ -12,7 +12,6 @@
 </head>
 
 <body>
-<div w3-include-html="common.html"></div>
 <script>w3.includeHTML();</script>
 
 <div class="grid grid-pad">
@@ -21,25 +20,10 @@
 	<nav>
 	  <ul>
 	    <li>
-	        <a href="index.html" class="active-page">Computing</a>
-	    </li>
-	    <li>
-	        <a href="consciousness.html">Consciousness</a>
-	    </li>
-		 <li>
-	        <a href="news.html">News</a>
-	    </li>
-	    <li>
-	        <a href="publications.html">Publications</a>
+	        <a href="index.html" class="active-page">Fluid</a>
 	    </li>
 	    <li>
 	        <a href="projects.html">Projects</a>
-	    </li>
-	    <li>
-	        <a href="bio.html">Bio</a>
-	    </li>
-		 <li>
-	        <a href="thesis.html">PhD</a>
 	    </li>
 	  </ul>
 	</nav>
@@ -48,38 +32,24 @@
 
 <div id="RESEARCH" class="grid grid-pad">
 <div class="col-3-12 align-right">
-	<h3 class="title lowercase">transparency, explorability and explainability in data science and data visualisation</h3>
+	<h3 class="title lowercase">fluid:</br><u>f</u>unctional <u>l</u>anguage for <u>u</u>nderstanding and <u>i</u>nteracting with <u>d</u>ependencies</h3>
 </div>
 <div class="col-9-12">
 
-	<p>My interest is in new programming language foundations for transparent and
-	explorable digital media. A scientific paper should allow a reviewer to drill
-	into a bar chart to see the underlying distribution, tweak model parameters,
-	or remove an outlier from the dataset to see how the results would be
-	affected, all within the context of the paper.
+	<p>Digital technology is transforming the way scientists generate, evaluate and communicate knowledge. <b>Fluid</b> is a functional programming language which makes computational artefacts such as charts, figures and statistical analyses more transparent and explorable. A Fluid chart is written in a purely functional style, but the resulting graphics automatically provide affordances that allow a reader to discover how views relate to each other, and to the underlying code and datasets. The current prototype allows us to <emph>link</emph> charts to other charts, so that the reader can select data elements and have the relevant parts of the chart be automatically highlighted, and vice versa. See the example below (best viewed in Chrome):
 
-   <p>Modern interactive notebooks for data science, such as Jupyter, provide a
-   certain level of transparency by capturing the steps of a workflow and
-   showing intermediate results such as statistical data or charts. However the
-   steps themselves remain black boxes: if I want to understand how a complex
-   chart is obtained, there is no easy way to break that step into substeps
-   or to investigate how various aspects of the chart depend on specific bits of
-   data or code.
+	<div id="app-root"></div>
 
-   <p>My research focuses on tools and techniques that expose, to readers as
-   well as authors, this fine-grained structure. This will make it possible to
-   create digital media which reveal how parts of visualisations relate to data
-   and code. For example, removing a data point or changing visualisation logic
-   will automatically update only the affected parts of a dependent
-   visualisation and moreover make it visually apparent which parts changed.
-   Both authors and readers will be able to conduct “experiments” &mdash; to
-   formulate hypotheses about the fine-grained relationships between code and
-   data which they can test by changing things and observing the consequences.
+	<p>The left-hand chart shows total renewable energy output for the four main kinds of renewable energy (bio, hydro, solar and wind) for three of the leading countries in 2015. The right-hand chart shows a fluctuation in renewables output over time for the same four energy types, just for China.
+
+	<p>Visualisation libraries such as <a href="https://docs.bokeh.org/en/latest/">Bokeh</a> and spatial analytics applications like <a href="https://geodacenter.github.io/">GeoDa</a> provide limited support for this kind of linking, but usually only for specific predefined visualisations, or with a certain amount of programmer effort. Fluid takes a more foundational approach, through a runtime that makes linking automatic, application-agnostic and mathematically robust.
+
+	<p>To see the Fluid code for the above charts, open the Wrattler notebook in <a href="https://mybinder.org/v2/gh/wrattler/wrattler-examples/master?urlpath=lab/tree/examples">Binder</a>, and then open the <code>fluid-example.wrattler</code> notebook. (Warning: Binder is slow; Wrattler will take several minutes to launch even from a prebuilt image.) Fluid is open source and is available on <a href="https://github.com/rolyp/fluid">GitHub</a>.
 
 </div>
 </div>
-
 </div>
 
+<script type="text/javascript" src="/main.bundle.js"></script></body>
 
 </body></html>

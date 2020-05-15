@@ -39,6 +39,7 @@ export module Pane {
 
       constructor (
          listener: Listener,
+         appRoot: HTMLElement,
          [width, height]: [number, number],
          tooltipPlacement: Placement,
          ρ_external: Env,
@@ -50,7 +51,7 @@ export module Pane {
          this.tooltips = new Set()
          this.tooltipPlacement = tooltipPlacement
          markerEnsureDefined(this.rootPane, Arrowhead, "blue")
-         document.body.appendChild(this.rootPane)
+         appRoot.appendChild(this.rootPane)
          this.ρ_external = ρ_external
          this.ρ_imports = ρ_imports
          this.e = e
