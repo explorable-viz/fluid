@@ -10,20 +10,23 @@ data Bind a = Bind Var a
 infix 6 Bind as ↦
 
 data Bindings a =
-   Empty | Snoc (Bindings a) (Bind a)
+   Empty | Extend (Bindings a) (Bind a)
 
-infixl 5 Snoc as :+:
+infixl 5 Extend as :+:
+
+ε :: ∀ a . Bindings a
+ε = Empty
 
 instance bindingsSemigroup :: Semigroup (Bindings a) where
    append m Empty = m
-   append m1 (Snoc m2 kv) = Snoc (append m1 m2) kv
+   append m1 (Extend m2 kv) = Extend (append m1 m2) kv
 
 instance bindingsMonoid :: Monoid (Bindings a) where
-   mempty = Empty
+   mempty = ε
 
-find :: forall a . Var -> Bindings a -> Maybe a
+find :: ∀ a . Var -> Bindings a -> Maybe a
 find _ Empty = Nothing
-find x (Snoc m (k ↦ v)) = if x == k then Just v else find x m
+find x (Extend m (k ↦ v)) = if x == k then Just v else find x m
 
 derive instance eqBind :: (Eq a) => Eq (Bind a)
 derive instance eqBindings :: (Eq a) => Eq (Bindings a)

@@ -1,13 +1,11 @@
 module Val where
 
 import Prelude
-import Bindings (Bindings)
+import Bindings (Bindings, (:+:), (↦), ε)
 import Expr (Elim)
-import Primitive (BinaryOp)
+import Primitive (BinaryOp(..))
 import Selected (Selected(..), (∧))
 import Util (error)
-
-type Env = Bindings Val
 
 data RawVal =
      True | False
@@ -30,7 +28,13 @@ toInt (Int n) = n
 toInt _ = error "Integer expected"
 
 toValues :: (Int -> Int -> Int) -> Val -> Val -> Val
-toValues f { u } { u: u' } = val $ Int $ f (toInt u) (toInt u)
+toValues f { u } { u: u' } = val $ Int $ f (toInt u) (toInt u')
 
 toValues_fwd :: (Int -> Int -> Int) -> Selected -> Val -> Val -> Val
 toValues_fwd f α v v' = { α: α ∧ v.α ∧ v'.α, u: Int $ f (toInt v.u) (toInt v'.u) }
+
+type Env = Bindings Val
+
+primitives :: Env
+primitives = ε :+:
+   "+" ↦ (val $ Op $ BinaryOp { name: "prim-plus", fun: (+) })
