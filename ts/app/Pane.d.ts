@@ -22,7 +22,7 @@ export declare module Pane {
         here: ExplValueCursor;
         direction: Direction;
         slice: Slice;
-        constructor(listener: Listener, [width, height]: [number, number], tooltipPlacement: Placement, ρ_external: Env, ρ_imports: Env, e: Expr);
+        constructor(listener: Listener, appRoot: HTMLElement, [width, height]: [number, number], tooltipPlacement: Placement, ρ_external: Env, ρ_imports: Env, e: Expr);
         readonly ρ: Env;
         visibleTooltips(): Tooltip[];
         initialise(): void;
