@@ -1,6 +1,5 @@
 ## Transparent, self-explaining data visualisation
 
-[![CircleCI](https://circleci.com/gh/rolyp/fluid.svg?style=svg&circle-token=c86993fd6b2339b45286ddfc5a4c0c0d2401ffd7)](https://circleci.com/gh/rolyp/fluid)
 ![purescript](https://github.com/explorable-viz/fluid/workflows/purescript/badge.svg)
 
 ### Recent activity
