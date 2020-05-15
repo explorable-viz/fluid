@@ -1,3 +1,4 @@
+import { __nonNull } from "../util/Core"
 import "../BaseTypes" // need these early because of a Webpack dependency problem
 import "../Graphics"
 import { __slice } from "../Annotation"
@@ -11,7 +12,8 @@ import { PaneCoordinator } from "./PaneCoordinator"
 export function initialise (): void {
    Pane.initialise(".")
    // TODO: eliminate redundancy with "renewables" test
-   const coordinator: PaneCoordinator = new PaneCoordinator(openDatasetAs("renewables-restricted", "data"))
+   const appRoot: HTMLElement = __nonNull(document.getElementById("app-root"))
+   const coordinator: PaneCoordinator = new PaneCoordinator(appRoot, openDatasetAs("renewables-restricted", "data"))
    const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
    const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
    const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")

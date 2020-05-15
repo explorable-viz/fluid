@@ -7,15 +7,18 @@ import { Pane } from "./Pane"
 import { View } from "./View"
 
 export class PaneCoordinator implements Pane.Listener {
+   appRoot: HTMLElement
    ρ_external: Env
    panes: Set<Pane.Pane> = new Set()
 
-   constructor (ρ_external: Env) {
+   constructor (appRoot: HTMLElement, ρ_external: Env) {
+      this.appRoot = appRoot
       this.ρ_external = ρ_external
    }
 
    addPane (ρ: Env, e: Expr, tooltipPlacement: Placement = "top"): Pane.Pane {
-      const pane: Pane.Pane = new Pane.Pane(this, View.defaultDims, tooltipPlacement, this.ρ_external, ρ, e)
+      const pane: Pane.Pane =
+         new Pane.Pane(this, this.appRoot, View.defaultDims, tooltipPlacement, this.ρ_external, ρ, e)
       pane.initialise()
       this.panes.add(pane)
       return pane
