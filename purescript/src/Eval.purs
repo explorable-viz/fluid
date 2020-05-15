@@ -82,15 +82,9 @@ eval ρ { r: App e e' } =
 eval ρ { r : BinaryApp e op e' } =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e' in
+   trace op \_ ->
    case find op ρ of
-      Just { u: V.Op φ } ->
-         trace "Arg 1:" \_ ->
-         trace v \_ ->
-         trace "Arg 2:" \_ ->
-         trace v' \_ ->
-         trace op \_ ->
-         trace (toValues (opFun φ) v v') \_ ->
-            { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
+      Just { u: V.Op φ } -> { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
       _ -> error $ "operator " <> op <> " not found"
 -- let
 eval ρ { r : Let x e e' } =
