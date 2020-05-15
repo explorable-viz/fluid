@@ -2,15 +2,14 @@ module Util where
 
 import Prelude
 import Debug.Trace (trace)
-import Effect.Exception (error) as X
-import Effect.Exception (throwException)
+import Effect.Exception (throw)
 import Unsafe.Coerce (unsafeCoerce)
 
 
 error :: String -> ∀ a.a
 error msg =
    trace ("Error: " <> msg) \_ ->
-   unsafeCoerce $ throwException $ X.error msg
+   unsafeCoerce $ throw msg
 
 __todo :: ∀ a.a
 __todo = error "todo"

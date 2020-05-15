@@ -1,7 +1,7 @@
 module Val where
 
 import Prelude
-import Bindings (Bindings(..), (:+:), (↦), ε)
+import Bindings (Bindings, (:+:), (↦), ε)
 import Expr (Elim)
 import Primitive (BinaryOp(..))
 import Selected (Selected(..), (∧))

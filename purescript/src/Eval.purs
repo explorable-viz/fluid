@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude ((<>), ($))
 import Data.Maybe (Maybe(..))
-import Bindings (Bindings(..), (:+:), (↦), ε, find)
+import Bindings ((:+:), (↦), ε, find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr

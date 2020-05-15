@@ -2,7 +2,7 @@ module Fwd where
 
 import Prelude (($), (<>))
 import Data.Maybe (Maybe(..))
-import Bindings (Bindings(..), (:+:), (↦), ε, find)
+import Bindings ((:+:), (↦), ε, find)
 import Expr (Elim(..), Expr, RawExpr(..), T3(..))
 import Primitive (opFun)
 import Selected (Selected(..), (∧))
