@@ -8,6 +8,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 15 May 2020 | Update [f.luid.org](http://f.luid.org) | [289](https://github.com/explorable-viz/fluid/issues/289) |
 | 2 April 2020 | Fluid plugin running in Binder | [W279](https://github.com/rolyp/wrattler/wrattler/issues/279) |
 | 10 March 2020 | Start on PureScript migration | [279](https://github.com/rolyp/lambdacalc/issues/279) |
 | 22 February 2020 | Make repository public |
