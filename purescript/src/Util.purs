@@ -6,9 +6,9 @@ import Effect.Exception (throw)
 import Unsafe.Coerce (unsafeCoerce)
 
 
-error :: String -> ∀ a.a
+error :: ∀ a . String -> a
 error msg =
-   trace ("Error: " <> msg) \_ ->
+   trace msg \_ ->
    unsafeCoerce $ throw msg
 
 __todo :: ∀ a.a

@@ -17,9 +17,12 @@ import Pretty (pretty)
 import Util (error)
 import Val (primitives)
 
+import Test.Test (main) as Test
+
 main :: Effect Unit
 main = do
-  test_normalise
+   Test.main
+   test_normalise
 
 test_normalise :: Effect Unit
 test_normalise = do
