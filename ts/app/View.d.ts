@@ -5,7 +5,7 @@ import { Pane } from "./Pane";
 export declare module View {
     export let dimensions: (tg: ExplValue<GraphicsElement>) => [number, number];
     export let defaultDims: [number, number];
-    export function initialise(): void;
+    export function initialise(resourceServerUrl: string): void;
     export function render(editor: Pane.Pane): void;
     export function existingView(tv: ExplValue): ExplValueView;
     abstract class View {

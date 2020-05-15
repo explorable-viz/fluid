@@ -4,10 +4,10 @@ import { Expr } from "./Expr";
 import "./Graphics";
 import { PrimValue, Str } from "./Value";
 export declare namespace Module {
-    let initialised: boolean;
+    let resourceServerUrl: string;
     let prelude: Env;
     let graphics: Env;
-    function initialise(): void;
+    function initialise(resourceServerUrl: string): void;
 }
 export declare function loadFile(folder: string, file: string): string;
 export declare function loadModule(ρ: Env, file: string): Env;

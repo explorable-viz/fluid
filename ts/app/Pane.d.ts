@@ -6,7 +6,7 @@ import { Expr } from "../Expr";
 import { ExplValueCursor } from "./Cursor";
 import "./styles.css";
 export declare module Pane {
-    function initialise(): void;
+    function initialise(resourceServerUrl: string): void;
     interface Listener {
         onBwdSlice(editor: Pane, externDeps: Slice): void;
     }
