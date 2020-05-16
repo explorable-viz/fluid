@@ -12,4 +12,4 @@ __todo :: ∀ a.a
 __todo = error "todo"
 
 absurd :: ∀ a.a
-absurd = error "Impossible"
+absurd = error "Absurd"
