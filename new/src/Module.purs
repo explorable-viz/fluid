@@ -17,9 +17,11 @@ resourceServerUrl = "."
 loadFile :: String -> String -> Aff String
 loadFile folder file = do
    let fileUrl = resourceServerUrl <> "/" <> folder <> "/" <> file <> ".fld"
-   result <- request (defaultRequest { url = fileUrl, method = Left GET, responseFormat = string })
-   case result of
-      Left err -> error $ printError err
-      Right response ->
-         trace response \_ ->
-         pure response.body
+   let request_ = defaultRequest { url = fileUrl, method = Left GET, responseFormat = string }
+   trace request_ \_ -> do
+      result <- request request_
+      case result of
+         Left err -> error $ printError err
+         Right response ->
+            trace response \_ ->
+            pure response.body

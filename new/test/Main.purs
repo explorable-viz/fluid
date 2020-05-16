@@ -23,7 +23,7 @@ main = do
 test_normalise :: Effect Unit
 test_normalise = do
    launchAff_ do
-      text <- loadFile "fluid/example" "normalise.fld"
+      text <- loadFile "fluid/example" "normalise"
       let result = runParser text program
       runSpec [consoleReporter] do
          describe "Parse" do
