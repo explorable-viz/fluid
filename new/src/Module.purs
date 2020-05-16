@@ -1,12 +1,12 @@
 module Module where
 
 import Prelude
-import Affjax (defaultRequest, request)
+import Affjax (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Effect (Effect)
-import Effect.Aff (launchAff_)
+import Effect.Aff (launchAff)
 import Effect.Console (log)
 
 
@@ -18,13 +18,15 @@ resourceServerUrl = "."
 loadFile :: String -> String -> Effect String
 loadFile folder file = do
    let url = resourceServerUrl <> "/" <> folder <> "/" <> file <> ".fld"
-   launchAff_ $ do
-      result <- request (defaultRequest { url = url, method = Left GET, responseFormat = string })
-      pure unit
    log $ "Opening" <> url
+   _ <- launchAff $ do
+      result <- request (defaultRequest { url = url, method = Left GET, responseFormat = string })
+      case result of
+         Left err -> do
+            pure $ printError err
+         Right response -> pure response.body
    pure "hello"
 {-
-   xmlhttp.open("GET", url, false)
    xmlhttp.send()
    if (xmlhttp.status === 200) {
       text = xmlhttp.responseText
