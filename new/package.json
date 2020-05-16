@@ -3,8 +3,10 @@
     "start": "spago bundle-app --main Test.Main --to dist/app.js && parcel serve index.html"
   },
   "staticFiles": {
-    "staticPath": "fluid",
-    "staticOutDir": "fluid",
+    "staticPath": {
+      "staticPath": "fluid",
+      "staticOutDir": "fluid"
+    },
     "watcherGlob": "**"
   },
   "devDependencies": {
