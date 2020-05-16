@@ -5,8 +5,7 @@ import Affjax (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Effect (Effect)
-import Effect.Aff (Aff, launchAff_)
+import Effect.Aff (Aff)
 import Util (error)
 
 
@@ -14,7 +13,6 @@ import Util (error)
 resourceServerUrl :: String
 resourceServerUrl = "."
 
---
 loadFile :: String -> String -> Aff String
 loadFile folder file = do
    let url = resourceServerUrl <> "/" <> folder <> "/" <> file <> ".fld"

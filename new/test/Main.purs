@@ -2,6 +2,7 @@ module Test.Main where
 
 import Prelude
 import Data.Either (Either(..))
+import Debug.Trace (trace)
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Text.Parsing.Parser (runParser)
@@ -24,13 +25,14 @@ test_normalise :: Effect Unit
 test_normalise = do
    launchAff_ do
       text <- loadFile "fluid/example" "normalise.fld"
-      let result = runParser text program
-      runSpec [consoleReporter] do
-         describe "Parse" do
-            it "blah" do
-               case result of
-                  Left parseError -> do
-                     error $ show parseError
-                  Right e -> do
-                     let { u } = (eval primitives e).v
-                     (show $ pretty u) `shouldEqual` "5"
+      trace ("File contents:\n" <> text) \_ -> do
+         let result = runParser text program
+         runSpec [consoleReporter] do
+            describe "Parse" do
+               it "blah" do
+                  case result of
+                     Left parseError -> do
+                        error $ show parseError
+                     Right e -> do
+                        let { u } = (eval primitives e).v
+                        (show $ pretty u) `shouldEqual` "5"
