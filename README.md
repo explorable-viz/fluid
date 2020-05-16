@@ -1,5 +1,6 @@
 ## Transparent, self-explaining data visualisation
 
+![typescript](https://github.com/explorable-viz/fluid/workflows/typescript/badge.svg)
 ![purescript](https://github.com/explorable-viz/fluid/workflows/purescript/badge.svg)
 
 ### Recent activity
