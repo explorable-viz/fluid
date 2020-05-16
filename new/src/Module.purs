@@ -16,8 +16,8 @@ resourceServerUrl = "."
 
 loadFile :: String -> String -> Aff String
 loadFile folder file = do
-   let fileUrl = folder <> "/" <> file <> ".fld"
-   let request_ = defaultRequest { url = fileUrl, method = Left GET, responseFormat = string }
+   let url = folder <> "/" <> file <> ".fld"
+   let request_ = defaultRequest { url = url, method = Left GET, responseFormat = string }
    trace request_ \_ -> do
       result <- request request_
       case result of
