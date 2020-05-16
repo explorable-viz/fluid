@@ -12,4 +12,4 @@ todo :: String
 todo = "todo"
 
 absurd :: String
-absurd = "Absurd"
+absurd = "absurd"
