@@ -8,8 +8,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: test
-      # ouch, probably a way to avoid these permissions hacks
       run: |
         cd new
         yarn install
-        sudo spago build && sudo spago test
+        yarn test
