@@ -1,0 +1,12 @@
+name: typescript
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: test
+      run: |
+        cd old && npm test
