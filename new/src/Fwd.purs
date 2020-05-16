@@ -6,7 +6,7 @@ import Bindings ((:+:), (↦), ε, find)
 import Expr (Elim(..), Expr, RawExpr(..), T3(..))
 import Primitive (opFun)
 import Selected (Selected(..), (∧))
-import Util (absurd)
+import Util (absurd, error)
 import Val (Env, Val, toValues_fwd)
 import Val (RawVal(..)) as V
 
@@ -24,11 +24,11 @@ fwd :: Env -> Expr -> Selected -> Val
 fwd ρ { r: Var x } _ =
    case find x ρ of
       Just v -> v
-      _ -> absurd
+      _ -> error absurd
 fwd ρ { r: Op op } _ =
    case find op ρ of
       Just v -> v
-      _ -> absurd
+      _ -> error absurd
 fwd ρ { α, r: True } α' = { α: α ∧ α', u: V.True }
 fwd ρ { α, r: False } α' = { α: α ∧ α', u: V.False }
 fwd ρ { α, r: Int n } α' = { α: α ∧ α', u: V.Int n }
@@ -42,16 +42,16 @@ fwd ρ { r: App e e' } α =
          case match_fwd v σ of
             Just (T3 ρ'' e'' α'') ->
                let ρ_f = (ρ' <> ρ'') :+: f ↦ { α: α', u: (V.Closure ρ' f σ) } in fwd ρ_f e'' (α' ∧ α'')
-            Nothing -> absurd
+            Nothing -> error absurd
       { α: α', u: V.Op op }, v -> { α: α', u: V.PartialApp op v }
       { α: α', u: V.PartialApp op v }, v' -> toValues_fwd (opFun op) α' v v'
-      _, _ -> absurd
+      _, _ -> error absurd
 fwd ρ { r: BinaryApp e1 op e2 } α =
    case find op ρ of
       Just { α: α', u: V.Op φ } -> toValues_fwd (opFun φ) α' (fwd ρ e1 α) (fwd ρ e2 α)
-      _ -> absurd
+      _ -> error absurd
 fwd ρ { r: Let x e1 e2 } α = fwd (ρ :+: x ↦ fwd ρ e1 α) e2 α
 fwd ρ { r: Match e σ } α =
    case match_fwd (fwd ρ e α) σ of
       Just (T3 ρ' e' α') -> fwd (ρ <> ρ') e' α'
-      Nothing -> absurd
+      Nothing -> error absurd

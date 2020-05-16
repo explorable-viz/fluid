@@ -1,6 +1,6 @@
 module Selected where
 
-import Prelude
+import Prelude hiding (join)
 
 data Selected = Top | Bot
 

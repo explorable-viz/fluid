@@ -35,6 +35,11 @@ toValues_fwd f α v v' = { α: α ∧ v.α ∧ v'.α, u: Int $ f (toInt v.u) (to
 
 type Env = Bindings Val
 
+primitive :: String -> (Int -> Int -> Int) -> Val
+primitive name fun = val $ Op $ BinaryOp { name, fun }
+
 primitives :: Env
 primitives = ε :+:
-   "+" ↦ (val $ Op $ BinaryOp { name: "prim-plus", fun: (+) })
+   "+" ↦ primitive "prim-plus" (+) :+:
+   "-" ↦ primitive "prim-minus" (-) :+:
+   "*" ↦ primitive "prim-times" (*)
