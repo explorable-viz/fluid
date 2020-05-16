@@ -8,8 +8,8 @@ import Effect.Unsafe (unsafePerformEffect)
 error :: ∀ a . String -> a
 error = unsafePerformEffect <<< throw
 
-__todo :: ∀ a.a
-__todo = error "todo"
+todo :: String
+todo = "todo"
 
-absurd :: ∀ a.a
-absurd = error "Absurd"
+absurd :: String
+absurd = "Absurd"

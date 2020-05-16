@@ -65,7 +65,7 @@ eval ρ { r : BinaryApp e op e' } =
        { t: t', v: v' } = eval ρ e' in
    case find op ρ of
       Just { u: V.Op φ } -> { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
-      Just _ -> absurd
+      Just _ -> error absurd
       Nothing -> error $ "operator " <> op <> " not found"
 eval ρ { r : Let x e e' } =
    let { t, v } = eval ρ e
