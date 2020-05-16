@@ -5,6 +5,7 @@ import Affjax (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
+import Debug.Trace (trace)
 import Effect.Aff (Aff)
 import Util (error)
 
@@ -15,8 +16,10 @@ resourceServerUrl = "."
 
 loadFile :: String -> String -> Aff String
 loadFile folder file = do
-   let url = resourceServerUrl <> "/" <> folder <> "/" <> file <> ".fld"
-   result <- request (defaultRequest { url = url, method = Left GET, responseFormat = string })
+   let fileUrl = resourceServerUrl <> "/" <> folder <> "/" <> file <> ".fld"
+   result <- request (defaultRequest { url = fileUrl, method = Left GET, responseFormat = string })
    case result of
       Left err -> error $ printError err
-      Right response -> pure response.body
+      Right response ->
+         trace response \_ ->
+         pure response.body
