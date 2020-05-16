@@ -10,18 +10,16 @@ import Effect.Aff (Aff)
 import Util (error)
 
 
--- Placeholder for Wrattler integration. Should not end in "/", use "." for local run
+-- For Wrattler integration. Should not end in "/".
 resourceServerUrl :: String
-resourceServerUrl = "http://127.0.0.1:1234"
+resourceServerUrl = "http://127.0.0.1:1234" -- "." no longer works for local run
 
 loadFile :: String -> String -> Aff String
 loadFile folder file = do
    let url = resourceServerUrl <> "/" <> folder <> "/" <> file <> ".fld"
-   let request_ = defaultRequest { url = url, method = Left GET, responseFormat = string }
-   trace request_ \_ -> do
-      result <- request request_
-      case result of
-         Left err -> error $ printError err
-         Right response ->
-            trace response \_ ->
-            pure response.body
+   result <- request (defaultRequest { url = url, method = Left GET, responseFormat = string })
+   case result of
+      Left err -> error $ printError err
+      Right response ->
+         trace response \_ ->
+         pure response.body
