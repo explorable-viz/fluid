@@ -7,7 +7,7 @@ import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr
 import Primitive (opFun)
-import Util (error)
+import Util (absurd, error)
 import Val (Env, Val, toValues, val)
 import Val (RawVal(..)) as V
 
@@ -65,7 +65,7 @@ eval ρ { r : BinaryApp e op e' } =
        { t: t', v: v' } = eval ρ e' in
    case find op ρ of
       Just { u: V.Op φ } -> { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
-      Just _ -> error "Banana"
+      Just _ -> absurd
       Nothing -> error $ "operator " <> op <> " not found"
 eval ρ { r : Let x e e' } =
    let { t, v } = eval ρ e
