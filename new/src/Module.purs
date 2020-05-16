@@ -5,7 +5,6 @@ import Affjax (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Debug.Trace (trace)
 import Effect.Aff (Aff)
 import Util (error)
 
@@ -20,6 +19,4 @@ loadFile folder file = do
    result <- request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
       Left err -> error $ printError err
-      Right response ->
-         trace response \_ ->
-         pure response.body
+      Right response -> pure response.body

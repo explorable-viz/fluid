@@ -33,4 +33,4 @@ test_normalise = do
                      error $ show parseError
                   Right e -> do
                      let { u } = (eval primitives e).v
-                     (show $ pretty u) `shouldEqual` "5"
+                     (show $ pretty u) `shouldEqual` "(492, 984)"
