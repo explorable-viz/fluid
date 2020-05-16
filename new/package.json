@@ -14,5 +14,8 @@
     "parcel-plugin-static-files-copy": "^2.3.1",
     "purescript": "^0.13.6",
     "spago": "^0.15.2"
+  },
+  "dependencies": {
+    "xhr2": "^0.2.0"
   }
 }
