@@ -41,4 +41,5 @@ primitive name fun = val $ Op $ BinaryOp { name, fun }
 primitives :: Env
 primitives = ε :+:
    "+" ↦ primitive "prim-plus" (+) :+:
-   "-" ↦ primitive "prim-minus" (-)
+   "-" ↦ primitive "prim-minus" (-) :+:
+   "*" ↦ primitive "prim-times" (*)
