@@ -11,4 +11,4 @@ jobs:
       run: |
         cd new
         yarn start &
-        yarn test
+        yarn spago test
