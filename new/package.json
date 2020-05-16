@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "spago bundle-app --main Test.Main --to dist/app.js && parcel serve index.html",
-    "test": "spago bundle-app --main Test.Main --to dist/app.js && parcel serve index.html && spago test"
+    "test": "spago test"
   },
   "staticFiles": {
     "staticPath": {

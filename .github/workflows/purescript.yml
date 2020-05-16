@@ -10,5 +10,5 @@ jobs:
     - name: test
       run: |
         cd new
-        yarn install
+        yarn start &
         yarn test
