@@ -11,4 +11,4 @@ jobs:
       # ouch, probably a way to avoid these permissions hacks
       run: |
         sudo npm install --unsafe-perm purescript spago -g
-        cd purescript && sudo spago build && sudo spago test
+        cd new && sudo spago build && sudo spago test
