@@ -45,7 +45,7 @@ export class FwdSlice {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         const editor = new Pane.Pane(__editorListener, [400, 400], "top", emptyEnv(), ρ, e)
+         const editor = new Pane.Pane(__editorListener, document.body, [400, 400], "top", emptyEnv(), ρ, e)
          if (flags.get(Flags.FwdSlice)) {
             editor.direction = Direction.Fwd
          }
@@ -70,7 +70,7 @@ export class BwdSlice {
          this.expect(new ExprCursor(e))
       }
       if (flags.get(Flags.Visualise)) {
-         const editor = new Pane.Pane(__editorListener, [400, 400], "top", emptyEnv(), ρ, e)
+         const editor = new Pane.Pane(__editorListener, document.body, [400, 400], "top", emptyEnv(), ρ, e)
          if (flags.get(Flags.BwdSlice)) {
             editor.direction = Direction.Bwd
          }
@@ -81,14 +81,14 @@ export class BwdSlice {
    setup (here: ExplValueCursor): void {
    }
 
-   expect (here: ExprCursor): void {      
+   expect (here: ExprCursor): void {
    }
 }
 
 export class Edit {
    constructor (ρ: Env, e: Expr) {
       if (flags.get(Flags.Visualise)) {
-         new Pane.Pane(__editorListener, [400, 400], "top", emptyEnv(), ρ, e).render()
+         new Pane.Pane(__editorListener, document.body, [400, 400], "top", emptyEnv(), ρ, e).render()
       }
       if (flags.get(Flags.Edit)) {
          Eval.eval_(ρ, e)
@@ -98,7 +98,7 @@ export class Edit {
          this.expect(ExplValueCursor.descendant(null, tv))
       }
       if (flags.get(Flags.Visualise)) {
-         new Pane.Pane(__editorListener, [400, 400], "top", emptyEnv(), ρ, e).render()
+         new Pane.Pane(__editorListener, document.body, [400, 400], "top", emptyEnv(), ρ, e).render()
       }
    }
 

@@ -113,7 +113,7 @@ describe("slice", () => {
 
    describe("graphics/renewables", () => {
       it("ok", () => {
-         const coordinator: PaneCoordinator = new PaneCoordinator(openDatasetAs("renewables-restricted", "data"))
+         const coordinator: PaneCoordinator = new PaneCoordinator(document.body, openDatasetAs("renewables-restricted", "data"))
          const [ρ1, e1]: [Env, Expr] = openWithImports("graphics/grouped-bar-chart")
          const [ρ2, e2]: [Env, Expr] = openWithImports("graphics/stacked-bar-chart")
          const [ρ3, e3]: [Env, Expr] = openWithImports("graphics/line-chart")
