@@ -20,20 +20,17 @@ main :: Effect Unit
 main = do
    test_normalise
 
-main2 :: String -> Effect Unit
-main2 text = runMocha do
-   let result = runParser text program
-   describe "Parse" do
-      it "blah" do
-         case result of
-            Left parseError -> do
-               error $ show parseError
-            Right e -> do
-               let { u } = (eval primitives e).v
-               (show $ pretty u) `shouldEqual` "(492, 984)"
-
 test_normalise :: Effect Unit
 test_normalise =
    launchAff_ do
       text <- loadFile "fluid/example" "normalise"
-      liftEffect $ main2 text
+      liftEffect $ runMocha do
+         let result = runParser text program
+         describe "Parse" do
+            it "blah" do
+               case result of
+                  Left parseError -> do
+                     error $ show parseError
+                  Right e -> do
+                     let { u } = (eval primitives e).v
+                     (show $ pretty u) `shouldEqual` "(492, 984)"
