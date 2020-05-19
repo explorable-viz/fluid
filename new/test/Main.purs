@@ -8,7 +8,7 @@ import Text.Parsing.Parser (runParser)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Reporter.Console (consoleReporter)
-import Test.Spec.Mocha (MOCHA, runMocha)
+import Test.Spec.Mocha (runMocha)
 import Test.Spec.Runner (runSpec)
 import Eval (eval)
 import Module (loadFile)
@@ -21,8 +21,14 @@ main :: Effect Unit
 main = do
    test_normalise
 
+main2 :: Effect Unit
+main2 = runMocha do
+   describe "your feature" do
+      it "works" $
+         (1 + 1) `shouldEqual` 2
+
 test_normalise :: Effect Unit
-test_normalise = do
+test_normalise =
    launchAff_ do
       text <- loadFile "fluid/example" "normalise"
       let result = runParser text program
