@@ -19,7 +19,7 @@ module.exports = function (config) {
       proxies: {
          "/fluid/": "/base/fluid/"
       },
-//      reporters: ["spec"],
+      reporters: ["mocha"],
       port: 1234,
       captureTimeout: 30000,
       browserDisconnectTimeout : 30000,

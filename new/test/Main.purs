@@ -5,6 +5,7 @@ import Data.Either (Either(..))
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Text.Parsing.Parser (runParser)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -21,16 +22,21 @@ main = do
    test_normalise
 
 test_normalise :: Effect Unit
-test_normalise =
+test_normalise = do
+   log "Starting."
    launchAff_ do
       text <- loadFile "fluid/example" "normalise"
-      liftEffect $ runMocha do
-         let result = runParser text program
-         describe "Parse" do
-            it "blah" do
-               case result of
-                  Left parseError -> do
-                     error $ show parseError
-                  Right e -> do
-                     let { u } = (eval primitives e).v
-                     (show $ pretty u) `shouldEqual` "(492, 984)"
+      liftEffect do
+         log text
+         runMocha do
+            let result = runParser text program
+            describe "Parse" do
+               it "blah" do
+                  case result of
+                     Left parseError -> do
+                        liftEffect $ log "Parse error."
+                        error $ show parseError
+                     Right e -> do
+                        liftEffect $ log "Parsed ok."
+                        let { u } = (eval primitives e).v
+                        (show $ pretty u) `shouldEqual` "(492, 984)"
