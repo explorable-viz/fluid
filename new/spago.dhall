@@ -17,6 +17,7 @@ You can edit this file as you like.
   , "psci-support"
   , "result"
   , "spec"
+  , "spec-mocha"
   , "tuples"
   ]
 , packages = ./packages.dhall

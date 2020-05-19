@@ -123,6 +123,19 @@ let upstream =
 
 let overrides = {=}
 
-let additions = {=}
+let additions =
+  { spec-mocha =
+      { dependencies =
+          [ "exceptions"
+          , "console"
+          , "foldable-traversable"
+          , "spec"
+          ]
+      , repo =
+          "https://github.com/purescript-spec/purescript-spec-mocha"
+      , version =
+          "v4.0.0"
+      }
+  }
 
 in  upstream // overrides // additions
