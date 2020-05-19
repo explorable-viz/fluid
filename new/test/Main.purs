@@ -22,14 +22,17 @@ main = do
    test_normalise
 
 main2 :: Effect Unit
-main2 =
-   launchAff_ do
-      text <- loadFile "fluid/example" "normalise"
-      let result = runParser text program
-      runMocha do
-         describe "your feature" do
-            it "works" $
-               (1 + 1) `shouldEqual` 2
+main2 = runMocha do
+   let text = "source code"
+   let result = runParser text program
+   describe "Parse" do
+      it "blah" do
+         case result of
+            Left parseError -> do
+               error $ show parseError
+            Right e -> do
+               let { u } = (eval primitives e).v
+               (show $ pretty u) `shouldEqual` "(492, 984)"
 
 test_normalise :: Effect Unit
 test_normalise =
