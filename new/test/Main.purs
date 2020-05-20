@@ -2,6 +2,7 @@ module Test.Main where
 
 import Prelude
 import Data.Either (Either(..))
+import Debug.Trace (trace)
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
@@ -17,35 +18,37 @@ import Pretty (pretty)
 import Util (error)
 import Val (primitives)
 
-{-
 main :: Effect Unit
 main = do
-   test_normalise
--}
+   test2
+   runMocha do
+      describe "your feature" do
+         it "works" $
+            (1 + 1) `shouldEqual` 2
 
-main :: Effect Unit
-main = runMocha do
-  describe "your feature" do
-    it "works" $
-      (1 + 1) `shouldEqual` 2
+test2 :: Effect Unit
+test2 = launchAff_ do
+   liftEffect do
+      runMocha do
+         describe "another feature" do
+            it "works" $
+               (2 + 3) `shouldEqual` 5
 
 test_normalise :: Effect Unit
-test_normalise = do
-   log "Starting."
-   launchAff_ do
-      text <- loadFile "fluid/example" "normalise"
-      liftEffect do
-         log text
-         runMocha do
-            liftEffect $ log "Parsing"
-            let result = runParser text program
-            describe "Parse" do
-               it "blah" do
-                  case result of
-                     Left parseError -> do
-                        liftEffect $ log "Parse error."
-                        error $ show parseError
-                     Right e -> do
+test_normalise = launchAff_ do
+   text <- loadFile "fluid/example" "normalise"
+   liftEffect do
+      log text
+      runMocha do
+         liftEffect $ log "Parsing"
+         let result = runParser text program
+         describe "Parse" do
+            it "works"
+               case result of
+                  Left parseError -> do
+                     error $ show parseError
+                  Right e ->
+                     trace e \_ -> do
                         liftEffect $ log "Parsed ok."
                         let { u } = (eval primitives e).v
                         (show $ pretty u) `shouldEqual` "(492, 984)"
