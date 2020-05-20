@@ -44,3 +44,12 @@ primitives = ε :+:
    "-" ↦ primitive "prim-minus" (-) :+:
    "*" ↦ primitive "prim-times" (*) :+:
    "div" ↦ primitive "prim-div" div
+
+x :: Int -> Int
+x = \n -> z n
+
+y :: Int -> Int
+y = \n -> x n
+
+z :: Int -> Int
+z = \n -> y n
