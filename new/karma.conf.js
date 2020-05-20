@@ -1,6 +1,7 @@
 module.exports = function (config) {
    config.set({
       basePath: "",
+      browsers: ["ChromeHeadless"],
       files: [
          "./dist/app.js",
          {
@@ -11,10 +12,10 @@ module.exports = function (config) {
             nocache: false
          }
       ],
+      frameworks: ["mocha"],
       proxies: {
          "/fluid/": "/base/fluid/"
       },
-      frameworks: ["mocha"],
       reporters: ["mocha"],
    })
 }
