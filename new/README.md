@@ -55,8 +55,12 @@
 
 ### Installation
 
-- Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/). Then run `yarn install`.
+Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/) and install using `yarn install`. The `yarn` scripts (invoked using `yarn run`) are as follows:
 
-- To run the tests in debug mode with Chrome, run `yarn run browser-test`. To run then in headless mode, run `yarn run test`.
+- `browser-test` to run tests in debug mode with Chrome
+- `test` to run tests in headless mode, retesting when files change
+- `bundle` to bundle the app
+- `bundle-watch` to bundle the app, rebundling when files change
+- `continuous-test` to run `test` and `bundle-watch` in parallel
 
 ![LambdaCalc](http://i.imgur.com/ERSxpE0.png "LambdaCalc")
