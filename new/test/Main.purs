@@ -26,7 +26,7 @@ main = runMocha $
                   error $ show parseError
                Right e -> do
                   let { u } = (eval primitives e).v
-                  (show $ pretty u) `shouldEqual` "(492, 983)"
+                  (show $ pretty u) `shouldEqual` "(492, 984)"
 
 {-
 test_normalise :: Effect Unit
