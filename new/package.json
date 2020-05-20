@@ -2,6 +2,7 @@
    "license": "MIT",
    "scripts": {
       "bundle": "spago bundle-app --main Test.Main --to dist/app.js",
+      "browser-test": "karma start --browsers=Chrome --singleRun=false",
       "test": "karma start"
    },
    "staticFiles": {

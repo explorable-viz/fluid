@@ -1,5 +1,6 @@
 module.exports = function (config) {
    config.set({
+      autoWatch: true,
       basePath: "",
       browsers: ["ChromeHeadless"],
       files: [
@@ -17,5 +18,6 @@ module.exports = function (config) {
          "/fluid/": "/base/fluid/"
       },
       reporters: ["mocha"],
+      singleRun: true
    })
 }
