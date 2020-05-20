@@ -11,12 +11,14 @@ You can edit this file as you like.
   , "debug"
   , "effect"
   , "exceptions"
+  , "fork"
   , "lists"
   , "node-fs"
   , "parsing"
   , "psci-support"
   , "result"
   , "spec"
+  , "spec-mocha"
   , "tuples"
   ]
 , packages = ./packages.dhall

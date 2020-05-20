@@ -11,7 +11,7 @@ import Util (error)
 
 -- For Wrattler integration. Should not end in "/".
 resourceServerUrl :: String
-resourceServerUrl = "http://127.0.0.1:1234" -- "." no longer works for local run
+resourceServerUrl = "."
 
 loadFile :: String -> String -> Aff String
 loadFile folder file = do

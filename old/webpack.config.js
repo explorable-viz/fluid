@@ -1,6 +1,5 @@
 const CnamePlugin = require("cname-webpack-plugin")
 const CopyPlugin = require("copy-webpack-plugin")
-const HtmlPlugin = require("html-webpack-plugin")
 const path = require("path")
 
 // Specify two configs; first one (app) picked up automatically by webpack-dev-server. Second is lib.

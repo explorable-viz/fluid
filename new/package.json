@@ -1,22 +1,27 @@
 {
-  "scripts": {
-    "start": "spago bundle-app --main Test.Main --to dist/app.js && parcel serve index.html",
-    "test": "spago test"
-  },
-  "staticFiles": {
-    "staticPath": {
-      "staticPath": "fluid",
-      "staticOutDir": "fluid"
-    },
-    "watcherGlob": "**"
-  },
-  "devDependencies": {
-    "parcel-bundler": "^1.12.4",
-    "parcel-plugin-static-files-copy": "^2.3.1",
-    "purescript": "^0.13.6",
-    "spago": "^0.15.2"
-  },
-  "dependencies": {
-    "xhr2": "^0.2.0"
-  }
+   "license": "MIT",
+   "scripts": {
+      "bundle": "spago bundle-app --main Test.Main --to dist/app.js",
+      "browser-test": "karma start --browsers=Chrome --singleRun=false",
+      "test": "karma start"
+   },
+   "staticFiles": {
+      "staticPath": {
+         "staticPath": "fluid",
+         "staticOutDir": "fluid"
+      },
+      "watcherGlob": "**"
+   },
+   "dependencies": {
+      "purescript": "^0.13.6"
+   },
+   "devDependencies": {
+      "karma": "^5.0.9",
+      "karma-chrome-launcher": "^3.1.0",
+      "karma-mocha": "^2.0.1",
+      "karma-mocha-reporter": "^2.2.5",
+      "mocha": "^7.1.2",
+      "parcel-bundler": "^1.12.4",
+      "spago": "^0.15.2"
+   }
 }
