@@ -2,7 +2,7 @@ module Selected where
 
 import Prelude hiding (join)
 
-data Selected = Top | Bot
+data Selected = Top | Bot -- maybe tt, ff would be better
 
 meet :: Selected -> Selected -> Selected
 meet Top Top = Top
