@@ -105,7 +105,7 @@ let rec foldr1 op {
 
 // ((a, b) → a) → a → List b -> List a
 let rec scanl1 op z xs =
-   let go = fun (x, continue) acc →
+   let go (x, continue) acc =
       let next = op (acc, x) in [next, ...continue next] in
    foldr go (const []) xs z;
 
@@ -138,10 +138,9 @@ let rec map f {
 
 // Num → (a → a) → a → List a
 let rec iterate n f z =
-   match n == 0 as {
-      True → [];
-      False → [z, ...map f (iterate (n - 1) f z)]
-   };
+   if n == 0
+   then []
+   else [z, ...map f (iterate (n - 1) f z)];
 
 // List a → Num
 let rec length {
@@ -150,7 +149,7 @@ let rec length {
 };
 
 // Num → Num
-let negate = fun n → 0 - n;
+let negate = (-) 0;
 
 // List a → List a
 let rec reverse {
@@ -181,18 +180,15 @@ let repeat = flip iterate id;
 
 // a → List (a, b) → b (where a ∈ {Num, Str})
 let rec lookup k [(k', v), ...kvs] →
-   match k == k' as {
-      True → v;
-      False → lookup k kvs
-   };
+   if k == k' then v else lookup k kvs;
 
 // (Num, Num) → Num
-let max2 = fun (n, m) →
-   match n > m as { True → n; False → m };
+let max2 (n, m) =
+   if n > m then n else m;
 
 // (Num, Num) → Num
-let min2 = fun (n, m) →
-   match n < m as { True → n; False → m };
+let min2 (n, m) =
+   if n < m then n else m;
 
 // List Num → Num
 let max = foldr1 max2;
@@ -202,53 +198,49 @@ let min = foldr1 min2;
 
 // Expects non-negative integer as first argument and non-empty list as second argument.
 // Num → List a → a
-let rec nth n [x, ...xs] → match n == 0 as {
-   True → x;
-   False → nth (n - 1) xs
-};
+let rec nth n [x, ...xs] →
+   if n == 0 then x else nth (n - 1) xs;
 
 // Num → Num → Num
 let ceilingToNearest n m =
    ceiling (n / m) * m;
 
 // (a → b) → (c, a) → (c, b)
-let second f = fun (c, a) → (c, f a);
+let second f (c, a) = (c, f a);
 
 // (a, b) → b
-let snd = fun (x, y) → y;
+let snd (x, y) = y;
 
 // List Num → Num
 let sum xs =
    foldr (fun (x, y) → x + y) 0 xs;
 
 // (a, b) → (b, a)
-let swap = fun (a, b) → (b, a);
+let swap (a, b) = (b, a);
 
 // List a → List a
-let tail = fun [x, ...xs] → xs;
+let tail [x, ...xs] = xs;
 
 // (a, b) → c) → a → b → c
 let curry f x y = f (x, y);
 
 // (a → b → c) → (a, b) → c
-let uncurry = fun f (x, y) → f x y;
+let uncurry f (x, y) = f x y;
 
 let rec take n xs =
-   match n <= 0 as {
-      True → [];
-      False → match xs as {
-         [] → [];
-         [x, ...xs] → [x, ...take (n - 1) xs]
-      }
+   if n <= 0
+   then []
+   else match xs as {
+      [] → [];
+      [x, ...xs] → [x, ...take (n - 1) xs]
    };
 
 let rec drop n xs =
-   match n <= 0 as {
-      True → xs;
-      False → match xs as {
-         [] → [];
-         [_, ...xs] → drop (n - 1) xs
-      }
+   if n <= 0
+   then xs
+   else match xs as {
+      [] → [];
+      [_, ...xs] → drop (n - 1) xs
    };
 
 // Num → List a → List a
