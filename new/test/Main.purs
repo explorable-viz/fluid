@@ -1,39 +1,31 @@
 module Test.Main where
 
 import Prelude
-import Data.Either (Either(..))
-import Debug.Trace (trace)
 import Effect (Effect)
-import Effect.Aff (launchAff_)
+import Effect.Aff (Milliseconds(..), delay, launchAff_)
 import Effect.Class (liftEffect)
-import Effect.Console (log)
-import Text.Parsing.Parser (runParser)
-import Test.Spec (describe, it)
+import Test.Spec (Spec, before, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Eval (eval)
 import Module (loadFile)
-import Parse (program)
-import Pretty (pretty)
-import Util (error)
-import Val (primitives)
 
-main :: Effect Unit
-main = do
-   test2
-   runMocha do
-      describe "your feature" do
+
+main2 :: Effect Unit
+main2 = launchAff_ do
+   _ <- delay $ Milliseconds 10.0
+   liftEffect $ runMocha $
+      describe "feature" $
          it "works" $
-            (1 + 1) `shouldEqual` 2
+            (2 + 3) `shouldEqual` 5
 
-test2 :: Effect Unit
-test2 = launchAff_ do
-   liftEffect do
-      runMocha do
-         describe "another feature" do
-            it "works" $
-               (2 + 3) `shouldEqual` 5
+main :: Spec Unit
+main =
+   before (loadFile "fluid/example" "normalise") do
+      describe "feature" $
+         it "works" $ \text ->
+            (2 + 3) `shouldEqual` 5
 
+{-
 test_normalise :: Effect Unit
 test_normalise = launchAff_ do
    text <- loadFile "fluid/example" "normalise"
@@ -52,3 +44,4 @@ test_normalise = launchAff_ do
                         liftEffect $ log "Parsed ok."
                         let { u } = (eval primitives e).v
                         (show $ pretty u) `shouldEqual` "(492, 984)"
+-}

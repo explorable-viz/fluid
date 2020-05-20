@@ -11,6 +11,7 @@ You can edit this file as you like.
   , "debug"
   , "effect"
   , "exceptions"
+  , "fork"
   , "lists"
   , "node-fs"
   , "parsing"
