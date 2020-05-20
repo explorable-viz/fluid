@@ -51,14 +51,16 @@
 | <s>5 Dec 2019</s> | <s>Eurovis 2020</s> |
 | <s>3 Mar 2020</s> | <s>ICFP 2020</s> |
 | 15 Apr 2020 | OOPSLA 2020 |
-| ~10 July 2020 | POPL 2021 |
+| 9 July 2020 | POPL 2021 |
 
 ### Installation
 
-- Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/). Then run `yarn install`.
+Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/) and install using `yarn install`. The `yarn` scripts (invoked using `yarn run`) are as follows:
 
-- To run the tests in debug mode with Chrome, run `npm run browser-test`.
-
-- To start the UI, run `npm start` and open a browser at http://localhost:8082/.
+- `browser-test` to run tests in debug mode with Chrome
+- `test` to run tests in headless mode, retesting when files change
+- `bundle` to bundle the app
+- `bundle-watch` to bundle the app, rebundling when files change
+- `continuous-test` to run `test` and `bundle-watch` in parallel
 
 ![LambdaCalc](http://i.imgur.com/ERSxpE0.png "LambdaCalc")

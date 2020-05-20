@@ -42,4 +42,5 @@ primitives :: Env
 primitives = ε :+:
    "+" ↦ primitive "prim-plus" (+) :+:
    "-" ↦ primitive "prim-minus" (-) :+:
-   "*" ↦ primitive "prim-times" (*)
+   "*" ↦ primitive "prim-times" (*) :+:
+   "div" ↦ primitive "prim-div" div

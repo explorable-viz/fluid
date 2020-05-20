@@ -31,4 +31,4 @@ main = runMocha $
                   let { u } = (eval ρ e).v
                   let { u: u' } = eval_fwd ρ e Top
                   (show $ pretty u) `shouldEqual` (show $ pretty u')
-                  (show $ pretty u') `shouldEqual` "(492, 984)"
+                  (show $ pretty u') `shouldEqual` "(33, 66)"
