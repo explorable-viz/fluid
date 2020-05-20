@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude
 import Effect (Effect)
-import Test.Spec (Spec, before, describe, it)
+import Test.Spec (before, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Module (loadFile)
@@ -10,12 +10,6 @@ import Module (loadFile)
 
 main :: Effect Unit
 main = runMocha $
-   describe "feature" $
-      it "works" $
-         (2 + 3) `shouldEqual` 5
-
-test :: Spec Unit
-test =
    before (loadFile "fluid/example" "normalise") do
       describe "feature" $
          it "works" $ \text ->
