@@ -17,7 +17,7 @@ import Val (primitives)
 
 main :: Effect Unit
 main = runMocha $
-   before (loadFile "fluid/example" "normalise") do
+   before (loadFile "fluid/example" "normalise") $
       describe "feature" $
          it "works" $ \text -> do
             let result = runParser text program
@@ -27,24 +27,3 @@ main = runMocha $
                Right e -> do
                   let { u } = (eval primitives e).v
                   (show $ pretty u) `shouldEqual` "(492, 984)"
-
-{-
-test_normalise :: Effect Unit
-test_normalise = launchAff_ do
-   text <- loadFile "fluid/example" "normalise"
-   liftEffect do
-      log text
-      runMocha do
-         liftEffect $ log "Parsing"
-         let result = runParser text program
-         describe "Parse" do
-            it "works"
-               case result of
-                  Left parseError -> do
-                     error $ show parseError
-                  Right e ->
-                     trace e \_ -> do
-                        liftEffect $ log "Parsed ok."
-                        let { u } = (eval primitives e).v
-                        (show $ pretty u) `shouldEqual` "(492, 984)"
--}

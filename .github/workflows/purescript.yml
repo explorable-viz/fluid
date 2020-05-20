@@ -11,5 +11,5 @@ jobs:
       run: |
         cd new
         yarn install
-        yarn start &
-        yarn test
+        yarn run bundle
+        yarn run test
