@@ -50,7 +50,7 @@
 | 2 Aug 2019 | IC 2019 :heavy_check_mark: |
 | <s>5 Dec 2019</s> | <s>Eurovis 2020</s> |
 | <s>3 Mar 2020</s> | <s>ICFP 2020</s> |
-| <s>15 Apr 2020</s> | <s>OOPSLA 2020</s> |
+| <s>15 May 2020</s> | <s>OOPSLA 2020</s> |
 | 9 July 2020 | POPL 2021 |
 
 ### Installation
