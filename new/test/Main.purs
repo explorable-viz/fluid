@@ -5,14 +5,17 @@ import Effect (Effect)
 import Test.Spec (before, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
+import Text.Parsing.Parser (runParser)
 import Module (loadFile)
+import Parse (program)
 
 
 main :: Effect Unit
 main = runMocha $
    before (loadFile "fluid/example" "normalise") do
       describe "feature" $
-         it "works" $ \text ->
+         it "works" $ \text -> do
+            let result = runParser text program
             (2 + 3) `shouldEqual` 5
 
 {-
