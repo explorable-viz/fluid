@@ -3,6 +3,7 @@ module.exports = function (config) {
       autoWatch: true,
       basePath: "",
       browsers: ["ChromeHeadless"],
+      colors: true,
       files: [
          "./dist/app.js",
          {
