@@ -8,9 +8,11 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Text.Parsing.Parser (runParser)
 import Eval (eval)
+import Fwd (eval_fwd)
 import Module (loadFile)
 import Parse (program)
 import Pretty (pretty)
+import Selected (Selected(..))
 import Util (error)
 import Val (primitives)
 
@@ -25,5 +27,8 @@ main = runMocha $
                Left parseError -> do
                   error $ show parseError
                Right e -> do
-                  let { u } = (eval primitives e).v
-                  (show $ pretty u) `shouldEqual` "(492, 984)"
+                  let ρ = primitives
+                  let { u } = (eval ρ e).v
+                  let { u: u' } = eval_fwd ρ e Top
+                  (show $ pretty u) `shouldEqual` (show $ pretty u')
+                  (show $ pretty u') `shouldEqual` "(492, 984)"
