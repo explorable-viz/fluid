@@ -1,5 +1,7 @@
 {
+  "license": "MIT",
   "scripts": {
+    "build": "spago bundle-app --main Test.Main --to dist/app.js && parcel build index.html",
     "start": "spago bundle-app --main Test.Main --to dist/app.js && parcel serve index.html",
     "test": "spago test"
   },

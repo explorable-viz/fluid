@@ -8,7 +8,7 @@ module.exports = function (config) {
            timeout: 60000 // default 2000; runs much slower in CircleCI environment
          }
       },
-      frameworks: ["mocha", "chai"],
+      frameworks: ["mocha"],
       files: [
          "./test/**/*.ts",
          {
