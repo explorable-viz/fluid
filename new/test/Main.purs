@@ -17,9 +17,17 @@ import Pretty (pretty)
 import Util (error)
 import Val (primitives)
 
+{-
 main :: Effect Unit
 main = do
    test_normalise
+-}
+
+main :: Effect Unit
+main = runMocha do
+  describe "your feature" do
+    it "works" $
+      (1 + 1) `shouldEqual` 2
 
 test_normalise :: Effect Unit
 test_normalise = do
@@ -29,6 +37,7 @@ test_normalise = do
       liftEffect do
          log text
          runMocha do
+            liftEffect $ log "Parsing"
             let result = runParser text program
             describe "Parse" do
                it "blah" do
