@@ -70,7 +70,7 @@ let rec elem x {
 let rec filter p {
    [] → [];
    [x, ...xs] →
-      let ys = filter p xs in
+      let ys = filter p xs;
       match p x as {
          True → [x, ...ys];
          False → ys
@@ -106,7 +106,8 @@ let rec foldr1 op {
 // ((a, b) → a) → a → List b -> List a
 let rec scanl1 op z xs =
    let go (x, continue) acc =
-      let next = op (acc, x) in [next, ...continue next] in
+      let next = op (acc, x);
+      [next, ...continue next];
    foldr go (const []) xs z;
 
 // ((a, b) → a) → a → List b -> List a
