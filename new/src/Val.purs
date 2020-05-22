@@ -47,10 +47,16 @@ primitives = ε :+:
    "div" ↦ primitive "prim-div" div
 
 x :: Int -> Int
-x = \n -> z n
+x = \n -> z a
+
+a :: Int
+a = b
 
 y :: Int -> Int
-y = \n -> x n
+y = \n -> x a
 
 z :: Int -> Int
-z = \n -> y n
+z = \n -> y a
+
+b :: Int
+b = 6
