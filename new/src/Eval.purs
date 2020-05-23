@@ -54,7 +54,7 @@ eval ρ { r: App e e' } =
             Just (T3 ρ'' e'' ξ) ->
                let { t: u, v: v' } = eval ((ρ' <> ρ'') :+: f ↦ v) e''
                in { t: T.App t t' ξ u, v: v' }
-            Nothing -> error "Value mismatch"
+            Nothing -> error "Pattern mismatch"
       { t, v: { u: V.Op op } }, { t: t', v } ->
          { t: T.AppOp t t', v: val $ V.PartialApp op v }
       { t, v: { u: V.PartialApp op v } }, { t: t', v: v' } ->
@@ -74,7 +74,7 @@ eval ρ { r : Let x e e' } =
 eval ρ { r : Match e σ } =
    let { t, v } = eval ρ e
    in case match v σ of
-      Nothing -> error "Value mismatch"
+      Nothing -> error "Pattern mismatch"
       Just (T3 ρ' e' ξ) ->
          let { t: t', v: v' } = eval (ρ <> ρ') e'
          in { t: T.Match t ξ t', v: v' }

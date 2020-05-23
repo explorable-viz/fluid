@@ -39,8 +39,8 @@
 
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
-| March | List comprehensions, arrays | [277](https://github.com/rolyp/fluid/issues/277), [276](https://github.com/rolyp/fluid/issues/276) |
-| March | Table view | [121](https://github.com/rolyp/fluid/issues/121), [W269](https://github.com/wrattler/wrattler/issues/269) |
+| June | List comprehensions, arrays | [277](https://github.com/rolyp/fluid/issues/277), [276](https://github.com/rolyp/fluid/issues/276) |
+| July | Table view | [121](https://github.com/rolyp/fluid/issues/121), [W269](https://github.com/wrattler/wrattler/issues/269) |
 
 ### Possible submissions
 
@@ -50,7 +50,7 @@
 | 2 Aug 2019 | IC 2019 :heavy_check_mark: |
 | <s>5 Dec 2019</s> | <s>Eurovis 2020</s> |
 | <s>3 Mar 2020</s> | <s>ICFP 2020</s> |
-| 15 Apr 2020 | OOPSLA 2020 |
+| <s>15 May 2020</s> | <s>OOPSLA 2020</s> |
 | 9 July 2020 | POPL 2021 |
 
 ### Installation

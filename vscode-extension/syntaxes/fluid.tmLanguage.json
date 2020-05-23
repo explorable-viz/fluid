@@ -13,7 +13,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.fluid",
-				"match": "\\b(as|fun|in|let|letrec|match|primitive|typematch)\\b"
+				"match": "\\b(as|fun|if|then|else|in|let|letrec|match|primitive|rec|typematch)\\b"
 			}]
 		},
 		"strings": {
