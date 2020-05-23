@@ -2,7 +2,7 @@ module Val where
 
 import Prelude
 import Bindings (Bindings, (:+:), (↦), ε)
-import Expr (Elim)
+import Expr (Elim, Expr)
 import Primitive (BinaryOp(..))
 import Selected (Selected(..), (∧))
 import Util (error)
@@ -10,7 +10,7 @@ import Util (error)
 data RawVal =
      True | False
    | Int Int
-   | Closure Env String Elim
+   | Closure Env String (Elim Expr)
    | Op BinaryOp
    | PartialApp BinaryOp Val
    | Pair Val Val
@@ -21,7 +21,7 @@ type Val = { α :: Selected, u :: RawVal }
 val :: RawVal -> Val
 val u = { α: Bot, u }
 
-derive instance eqRawVal :: Eq RawVal
+-- derive instance eqRawVal :: Eq RawVal
 
 toInt :: RawVal -> Int
 toInt (Int n) = n
