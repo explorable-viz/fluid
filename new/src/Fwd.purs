@@ -1,6 +1,6 @@
 module Fwd where
 
-import Prelude
+import Prelude hiding (absurd)
 import Data.Maybe (Maybe(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expr (Elim(..), Expr(..), RawExpr(..), T3(..))
