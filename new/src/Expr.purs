@@ -48,8 +48,8 @@ data Elim =
    | ElimBool { true :: Expr, false :: Expr }
 
 data Elim2 k =
-     ElimVar2 { x :: Var, κ :: k }
-   | ElimPair2 { σ :: Elim2 (Elim2 k) }
+     ElimVar2 Var k
+   | ElimPair2 (Elim2 (Elim2 k))
    | ElimList2 { nil :: k, cons :: Elim2 (Elim2 k) }
    | ElimBool2 { true :: k, false :: k }
 
