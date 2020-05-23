@@ -128,8 +128,8 @@ instance valPrettyList :: PrettyList RawVal where
 instance rawExprPretty :: Pretty RawExpr where
    pretty (Int n) = text (show n)
    pretty (Var x) = text x
-   pretty True    = text "true"
-   pretty False   = text "false"
+   pretty True = text "true"
+   pretty False = text "false"
    pretty (Pair { r } { r: r' }) = parens (pretty r :<>: text ", " :<>: pretty r')
    pretty Nil = text "[]"
    pretty (Op op) = parens $ text op
@@ -143,16 +143,13 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (App { r } { r: r' }) = pretty r :<>: text " " :<>: pretty r'
    pretty (BinaryApp { r } op { r: r' }) = pretty r :<>: text (" " <> op <> " ") :<>: pretty r'
 
-instance exprElim :: Pretty Elim where
-   pretty (ElimVar { x, e: { r } }) = text "  " :<>: text x :<>: text " -> " :<>: pretty r
-   pretty (ElimPair { x, y, e: { r } }) =
-      text "   " :<>: parens (text x :<>: text ", " :<>: text y) :<>: text " -> " :<>: pretty r
-   pretty (ElimList { nil: { r }, cons: { x, y, e: { r: r' } } }) =
-      text "    " :<>: atop
-         (text "[] -> " :<>: pretty r)
-         ((parens $ text x :<>: text ":" :<>: text y) :<>: text " -> " :<>: pretty r')
-   pretty (ElimBool { true: { r }, false: { r: r' } }) =
-      text "     " :<>: atop (text "true -> " :<>: pretty r) (text "false -> " :<>: pretty r')
+instance prettyElim :: Pretty k => Pretty (Elim k) where
+   pretty (ElimVar x κ) = text "  " :<>: text x :<>: text " -> " :<>: pretty κ
+   pretty (ElimPair σ) = text "   " :<>: pretty σ
+   pretty (ElimList { nil: κ, cons: σ }) =
+      text "    " :<>: atop (text "[] -> " :<>: pretty κ) (pretty σ)
+   pretty (ElimBool { true: κ, false: κ' }) =
+      text "     " :<>: atop (text "true -> " :<>: pretty κ) (text "false -> " :<>: pretty κ')
 
 instance valPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
