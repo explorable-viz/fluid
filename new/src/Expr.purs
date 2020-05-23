@@ -21,22 +21,22 @@ data RawExpr =
   | App Expr Expr
   | BinaryApp Expr Var Expr
 
-data RawExpr2 k =
+data RawExpr2 =
     Int2 Int
   | Var2 Var
   | True2 | False2
-  | Pair2 (Expr2 k) (Expr2 k)
-  | Nil2 | Cons2 (Expr2 k) (Expr2 k)
+  | Pair2 Expr2 Expr2
+  | Nil2 | Cons2 Expr2 Expr2
   | Op2 Var
-  | Let2 Var (Expr2 k) (Expr2 k)
-  | Match2 (Expr2 k) (Elim2 (Expr2 k))
-  | Letrec2 String (Elim2 (Expr2 k)) (Expr2 k)
-  | App2 (Expr2 k) (Expr2 k)
-  | BinaryApp2 (Expr2 k) Var (Expr2 k)
+  | Let2 Var Expr2 Expr2
+  | Match2 Expr2 (Elim2 Expr2)
+  | Letrec2 String (Elim2 Expr2) Expr2
+  | App2 Expr2 Expr2
+  | BinaryApp2 Expr2 Var Expr2
 
 type Expr = { α :: Selected, r :: RawExpr }
 
-type Expr2 k = { α :: Selected, r :: RawExpr2 k }
+type Expr2 = { α :: Selected, r :: RawExpr2 }
 
 expr :: RawExpr -> Expr
 expr r = { α: Bot, r }

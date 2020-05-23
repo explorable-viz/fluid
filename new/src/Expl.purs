@@ -3,8 +3,8 @@ module Expl where
 import Prelude
 import Data.Tuple (Tuple)
 import Bindings (Var)
-import Expr (Elim, Elim2)
-import Val (Env)
+import Expr (Elim, Elim2, Expr2)
+import Val (Env, Env2)
 
 data Expl =
      Var Var
@@ -22,6 +22,23 @@ data Expl =
    | Fun Env Elim
    | True
    | False
+
+data Expl2 =
+     Var2 Var
+   | Int2 Int
+   | Pair2 Expl2 Expl2
+   | Nil2
+   | Cons2 Expl2 Expl2
+   | Op2 Var
+   | App2 Expl2 Expl2 (Match2 Expr2) Expl2
+   | AppOp2 Expl2 Expl2
+   | Match2 Expl2 (Match2 Expr2) Expl2
+   | BinaryApp2 Expl2 Var Expl2
+   | Let2 Var Expl2 Expl2
+   | Letrec2 Var Expl2 Expl2
+   | Fun2 Env2 (Elim2 Expr2)
+   | True2
+   | False2
 
 derive instance eqExpl :: Eq Expl
 
