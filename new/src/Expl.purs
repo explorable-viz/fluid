@@ -2,7 +2,7 @@ module Expl where
 
 import Data.Tuple (Tuple)
 import Bindings (Var)
-import Expr (Elim, Elim, Expr)
+import Expr (Elim, Expr)
 import Val (Env)
 
 data Expl =
@@ -22,8 +22,6 @@ data Expl =
    | True
    | False
 
--- derive instance eqExpl :: Eq Expl
-
 data Match k =
      MatchVar Var
    | MatchTrue k
@@ -31,5 +29,3 @@ data Match k =
    | MatchPair (Match (Elim k)) (Match k)
    | MatchNil (Elim (Elim k))
    | MatchCons { nil :: k, cons :: Tuple (Match (Elim k)) (Match k) }
-
--- derive instance eqMatch :: Eq Match

@@ -21,8 +21,6 @@ type Val = { α :: Selected, u :: RawVal }
 val :: RawVal -> Val
 val u = { α: Bot, u }
 
--- derive instance eqRawVal :: Eq RawVal
-
 toInt :: RawVal -> Int
 toInt (Int n) = n
 toInt _ = error "Integer expected"

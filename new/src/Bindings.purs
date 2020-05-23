@@ -27,6 +27,3 @@ instance bindingsMonoid :: Monoid (Bindings a) where
 find :: ∀ a . Var -> Bindings a -> Maybe a
 find _ Empty = Nothing
 find x (Extend m (k ↦ v)) = if x == k then Just v else find x m
-
-derive instance eqBind :: (Eq a) => Eq (Bind a)
-derive instance eqBindings :: (Eq a) => Eq (Bindings a)
