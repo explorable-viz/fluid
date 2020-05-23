@@ -7,7 +7,7 @@ import Data.Newtype (ala, class Newtype, wrap)
 import Data.String as S
 import Data.String.CodeUnits as SCU
 import Data.Unfoldable (replicate)
-import Expr (Elim(..), Expr, RawExpr(..))
+import Expr (Elim(..), Expr(..), RawExpr(..))
 import Primitive (BinaryOp(..))
 import Util (error)
 import Val (RawVal)
@@ -115,9 +115,12 @@ class Pretty p where
 class PrettyList p where
    prettyList :: p -> Doc
 
-instance exprPrettyList :: PrettyList RawExpr where
+instance exprPrettyList :: PrettyList Expr where
+   prettyList (Expr _ r) = prettyList r
+
+instance rawExprPrettyList :: PrettyList RawExpr where
    prettyList (Nil) = text ""
-   prettyList (Cons { r } { r: r' }) = text ", " :<>: pretty r :<>: prettyList r'
+   prettyList (Cons e e') = text ", " :<>: pretty e :<>: prettyList e'
    prettyList _ = error "Ill-formed list"
 
 instance valPrettyList :: PrettyList RawVal where
@@ -125,23 +128,25 @@ instance valPrettyList :: PrettyList RawVal where
    prettyList (V.Cons { u } { u: u'}) = text ", " :<>: pretty u :<>: prettyList u'
    prettyList _ = error "Ill-formed list"
 
+instance exprPretty :: Pretty Expr where
+   pretty (Expr _ r) = pretty r
+
 instance rawExprPretty :: Pretty RawExpr where
    pretty (Int n) = text (show n)
    pretty (Var x) = text x
    pretty True = text "true"
    pretty False = text "false"
-   pretty (Pair { r } { r: r' }) = parens (pretty r :<>: text ", " :<>: pretty r')
+   pretty (Pair e e') = parens (pretty e :<>: text ", " :<>: pretty e')
    pretty Nil = text "[]"
    pretty (Op op) = parens $ text op
-   pretty (Cons { r } { r: r' }) = text "[" :<>: pretty r :<>: prettyList r' :<>: text "]"
-
-   pretty (Let x { r } { r: r' }) =
-      atop (text ("let " <> x <> " = ") :<>: pretty r :<>: text " in") (pretty r')
-   pretty (Match { r } σ) = atop (atop (text "match " :<>: pretty r :<>: text " as {") (pretty σ)) (text "}")
-   pretty (Letrec x σ { r }) =
-      atop (text ("letrec " <>  x <> " = ") :<>: pretty σ) (text "in     " :<>: pretty r)
-   pretty (App { r } { r: r' }) = pretty r :<>: text " " :<>: pretty r'
-   pretty (BinaryApp { r } op { r: r' }) = pretty r :<>: text (" " <> op <> " ") :<>: pretty r'
+   pretty (Cons e e') = text "[" :<>: pretty e :<>: prettyList e' :<>: text "]"
+   pretty (Let x e e') =
+      atop (text ("let " <> x <> " = ") :<>: pretty e :<>: text " in") (pretty e')
+   pretty (Match e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
+   pretty (Letrec x σ e) =
+      atop (text ("letrec " <>  x <> " = ") :<>: pretty σ) (text "in     " :<>: pretty e)
+   pretty (App e e') = pretty e :<>: text " " :<>: pretty e'
+   pretty (BinaryApp e op e') = pretty e :<>: text (" " <> op <> " ") :<>: pretty e'
 
 instance prettyElim :: Pretty k => Pretty (Elim k) where
    pretty (ElimVar x κ) = text "  " :<>: text x :<>: text " -> " :<>: pretty κ
@@ -166,4 +171,4 @@ parens :: Doc -> Doc
 parens doc = text "(" :<>: doc :<>: text ")"
 
 prettyProgram :: Expr -> Doc
-prettyProgram { r } = atop (pretty r) (text "")
+prettyProgram e = atop (pretty e) (text "")
