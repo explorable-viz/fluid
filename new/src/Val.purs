@@ -16,6 +16,15 @@ data RawVal =
    | Pair Val Val
    | Nil | Cons Val Val
 
+data RawVal2 =
+     True2 | False2
+   | Int2 Int
+   | Closure2 String Elim
+   | Op2 BinaryOp
+   | PartialApp2 BinaryOp Val
+   | Pair2 Val Val
+   | Nil2 | Cons2 Val Val
+
 type Val = { α :: Selected, u :: RawVal }
 
 val :: RawVal -> Val

@@ -6,7 +6,7 @@ import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..), Match2(..))
-import Expr (Elim(..), Elim2(..), Expr, RawExpr(..), T3(..))
+import Expr (Elim(..), Elim2(..), Expr, Expr2, RawExpr(..), RawExpr2(..), T3(..))
 import Primitive (opFun)
 import Util (absurd, error)
 import Val (Env, Val, toValues, val)
@@ -93,4 +93,60 @@ eval ρ { r : Match e σ } =
       Nothing -> error "Pattern mismatch"
       Just (T3 ρ' e' ξ) ->
          let { t: t', v: v' } = eval (ρ <> ρ') e'
+         in { t: T.Match t ξ t', v: v' }
+
+eval2 :: forall k . Env -> (Expr2 k) -> ExplVal
+eval2 ρ { r: Var2 x } =
+   case find x ρ of
+      Just v -> { t: T.Var x, v }
+      _ -> error $ "variable " <> x <> " not found"
+eval2 ρ { r: Op2 op } =
+   case find op ρ of
+      Just v -> { t: T.Op op, v }
+      _ -> error $ "operator " <> op <> " not found"
+eval2 ρ { r: True2 } = { t: T.True, v: val V.True }
+eval2 ρ { r: False2 } = { t: T.False, v: val V.False }
+eval2 ρ { r: Int2 n } = { t: T.Int n, v: val $ V.Int n }
+eval2 ρ { r: Pair2 e e' } =
+   let { t, v } = eval2 ρ e
+       { t: t', v: v' } = eval2 ρ e'
+   in  { t: T.Pair t t', v: val $ V.Pair v v' }
+eval2 ρ { r: Nil2 } = { t: T.Nil, v: val V.Nil }
+eval2 ρ { r: Cons2 e e' } =
+   let { t, v } = eval2 ρ e
+       { t: t', v: v' } = eval2 ρ e'
+   in { t: T.Cons t t', v: val $ V.Cons v v' }
+eval2 ρ { r: Letrec2 f σ e } =
+   let { t, v } = eval2 (ρ :+: f ↦ (val $ V.Closure ρ f σ)) e
+   in { t: T.Letrec f (T.Fun ρ σ) t, v }
+eval2 ρ { r: App2 e e' } =
+   case eval2 ρ e, eval2 ρ e' of
+      { t, v: { u: V.Closure ρ' f σ } }, { t: t', v } ->
+         case match v σ of
+            Just (T3 ρ'' e'' ξ) ->
+               let { t: u, v: v' } = eval2 ((ρ' <> ρ'') :+: f ↦ v) e''
+               in { t: T.App t t' ξ u, v: v' }
+            Nothing -> error "Pattern mismatch"
+      { t, v: { u: V.Op op } }, { t: t', v } ->
+         { t: T.AppOp t t', v: val $ V.PartialApp op v }
+      { t, v: { u: V.PartialApp op v } }, { t: t', v: v' } ->
+         { t: T.AppOp t t', v: toValues (opFun op) v v' }
+      _, _ -> error "Expected closure or operator"
+eval2 ρ { r : BinaryApp2 e op e' } =
+   let { t, v } = eval2 ρ e
+       { t: t', v: v' } = eval2 ρ e' in
+   case find op ρ of
+      Just { u: V.Op φ } -> { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
+      Just _ -> error absurd
+      Nothing -> error $ "operator " <> op <> " not found"
+eval2 ρ { r : Let2 x e e' } =
+   let { t, v } = eval2 ρ e
+       { t: t', v: v' } = eval2 (ρ :+: x ↦ v) e'
+   in { t: T.Let x t t', v: v' }
+eval2 ρ { r : Match2 e σ } =
+   let { t, v } = eval2 ρ e
+   in case match v σ of
+      Nothing -> error "Pattern mismatch"
+      Just (T3 ρ' e' ξ) ->
+         let { t: t', v: v' } = eval2 (ρ <> ρ') e'
          in { t: T.Match t ξ t', v: v' }
