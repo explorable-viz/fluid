@@ -25,9 +25,10 @@ match2 :: forall k . Val -> Elim2 k -> Maybe (T3 Env k (Match2 k))
 match2 v (ElimVar2 x κ) = Just $ T3 (ε :+: x ↦ v) κ (MatchVar2 x)
 match2 { u: V.True } (ElimBool2 { true: κ, false: κ' }) = Just $ T3 ε κ (MatchTrue2 κ')
 match2 { u: V.False } (ElimBool2 { true: κ, false: κ' }) = Just $ T3 ε κ' (MatchFalse2 κ)
-match2 { u: V.Pair v v' } (ElimPair2 σ) =
-   match2 v σ >>= (\(T3 ρ1 τ ξ) ->
-   match2 v' τ >>= (\(T3 ρ2 κ ξ') -> pure $ T3 (ρ1 <> ρ2) κ (MatchPair2 ξ ξ')))
+match2 { u: V.Pair v v' } (ElimPair2 σ) = do
+   T3 ρ1 τ ξ <- match2 v σ
+   T3 ρ2 κ ξ' <- match2 v' τ
+   pure $ T3 (ρ1 <> ρ2) κ (MatchPair2 ξ ξ')
 match2 { u: V.Nil } (ElimList2 { nil: κ, cons: σ }) = Just $ T3 ε κ (MatchNil2 σ)
 match2 _ _ = Nothing
 
