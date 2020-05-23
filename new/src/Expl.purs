@@ -1,6 +1,7 @@
 module Expl where
 
 import Prelude
+import Data.Tuple (Tuple)
 import Bindings (Var)
 import Expr (Elim, Elim2)
 import Val (Env)
@@ -38,6 +39,6 @@ data Match2 k =
    | MatchFalse2 k
    | MatchPair2 (Match2 (Elim2 k)) (Match2 k)
    | MatchNil2 (Elim2 (Elim2 k))
-   | MatchCons2 k (Match2 (Match2 k))
+   | MatchCons2 { nil :: k, cons :: Tuple (Match2 (Elim2 k)) (Match2 k) }
 
 derive instance eqMatch :: Eq Match

@@ -2,6 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd)
 import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..), Match2(..))
@@ -30,6 +31,10 @@ match2 { u: V.Pair v v' } (ElimPair2 σ) = do
    T3 ρ2 κ ξ' <- match2 v' τ
    pure $ T3 (ρ1 <> ρ2) κ (MatchPair2 ξ ξ')
 match2 { u: V.Nil } (ElimList2 { nil: κ, cons: σ }) = Just $ T3 ε κ (MatchNil2 σ)
+match2 { u : V.Cons v v' } (ElimList2 { nil: κ, cons: σ }) = do
+   T3 ρ1 τ ξ <- match2 v σ
+   T3 ρ2 κ' ξ' <- match2 v' τ
+   pure $ T3 (ρ1 <> ρ2) κ' (MatchCons2 { nil: κ, cons: Tuple ξ ξ' })
 match2 _ _ = Nothing
 
 type ExplVal = { t :: Expl, v :: Val }
