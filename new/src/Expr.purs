@@ -1,9 +1,14 @@
 module Expr where
 
+import Data.List (List)
 import Bindings (Var)
 import Selected (Selected(..))
 
 data T3 a b c = T3 a b c
+
+-- recursive function
+data Def = Def Var (Elim Expr)
+type Defs = List Def
 
 data RawExpr =
     Int Int
