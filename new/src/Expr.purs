@@ -1,9 +1,14 @@
 module Expr where
 
+import Data.List (List)
 import Bindings (Var)
 import Selected (Selected(..))
 
 data T3 a b c = T3 a b c
+
+-- recursive function
+data Def = Def Var (Elim Expr)
+type Defs = List Def
 
 data RawExpr =
     Int Int
@@ -14,7 +19,7 @@ data RawExpr =
   | Op Var
   | Let Var Expr Expr
   | Match Expr (Elim Expr)
-  | Letrec String (Elim Expr) Expr
+  | Letrec Defs Expr
   | App Expr Expr
   | BinaryApp Expr Var Expr
 
