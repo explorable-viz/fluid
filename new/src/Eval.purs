@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), singleton)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
-import Bindings (Var, (:+:), (↦), ε, find)
+import Bindings ((:+:), (↦), ε, find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Def(..), Defs, Elim(..), Expr(..), T3(..))
@@ -30,12 +30,9 @@ match { u : V.Cons v v' } (ElimList { nil: κ, cons: σ }) = do
 match _ _ = Nothing
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-closeDefs :: Env -> Defs -> Env
-closeDefs ρ δ =
-   let toEnv :: List (Tuple Var Val) -> Env
-       toEnv Nil = ε
-       toEnv (Cons (Tuple k v) kvs) = toEnv kvs :+: k ↦ v in
-   toEnv $ map (\(Def f σ) -> Tuple f (val $ V.Closure ρ δ σ)) δ
+closeDefs :: Env -> Defs -> Defs -> Env
+closeDefs _ _ Nil = ε
+closeDefs ρ δ0 (Cons (Def f σ) δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ σ)
 
 type ExplVal = { t :: Expl, v :: Val }
 
@@ -66,7 +63,7 @@ eval ρ (Expr _ (E.Letrec f σ e)) =
 eval ρ (Expr _ (E.App e e')) =
    case eval ρ e, eval ρ e' of
       { t, v: { u: V.Closure ρ1 δ σ } }, { t: t', v } ->
-         let ρ2 = closeDefs ρ1 δ in
+         let ρ2 = closeDefs ρ1 δ δ in
          case match v σ of
             Just (T3 ρ3 e'' ξ) ->
                let { t: u, v: v' } = eval (ρ1 <> ρ2 <> ρ3) e''

@@ -26,4 +26,4 @@ instance bindingsMonoid :: Monoid (Bindings a) where
 
 find :: ∀ a . Var -> Bindings a -> Maybe a
 find _ Empty = Nothing
-find x (Extend m (k ↦ v)) = if x == k then Just v else find x m
+find x (m :+: (k ↦ v)) = if x == k then Just v else find x m
