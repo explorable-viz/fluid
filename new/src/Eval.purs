@@ -57,7 +57,7 @@ eval ρ (Expr _ (E.Cons e e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e'
    in { t: T.Cons t t', v: val $ V.Cons v v' }
-eval ρ (Expr _ (E.Letrec f σ e)) =
+eval ρ (Expr _ (E.Letrec (Def f σ) e)) =
    let { t, v } = eval (ρ :+: f ↦ (val $ V.Closure ρ (singleton $ Def f σ) σ)) e
    in { t: T.Letrec f (T.Fun ρ σ) t, v }
 eval ρ (Expr _ (E.App e e')) =

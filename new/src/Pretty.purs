@@ -7,7 +7,7 @@ import Data.Newtype (ala, class Newtype, wrap)
 import Data.String as S
 import Data.String.CodeUnits as SCU
 import Data.Unfoldable (replicate)
-import Expr (Elim(..), Expr(..), RawExpr(..))
+import Expr (Def(..), Elim(..), Expr(..), RawExpr(..))
 import Primitive (BinaryOp(..))
 import Util (error)
 import Val (RawVal)
@@ -143,8 +143,8 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (Let x e e') =
       atop (text ("let " <> x <> " = ") :<>: pretty e :<>: text " in") (pretty e')
    pretty (Match e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
-   pretty (Letrec x σ e) =
-      atop (text ("letrec " <>  x <> " = ") :<>: pretty σ) (text "in     " :<>: pretty e)
+   pretty (Letrec (Def f σ) e) =
+      atop (text ("letrec " <> f <> " = ") :<>: pretty σ) (text "in     " :<>: pretty e)
    pretty (App e e') = pretty e :<>: text " " :<>: pretty e'
    pretty (BinaryApp e op e') = pretty e :<>: text (" " <> op <> " ") :<>: pretty e'
 

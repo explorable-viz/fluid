@@ -47,7 +47,7 @@ eval_fwd ρ (Expr α (E.Int n)) α' = { α: α ∧ α', u: V.Int n }
 eval_fwd ρ (Expr α (E.Pair e1 e2)) α' = { α: α ∧ α', u: V.Pair (eval_fwd ρ e1 α') (eval_fwd ρ e2 α') }
 eval_fwd ρ (Expr α E.Nil) α' = { α: α ∧ α', u: V.Nil }
 eval_fwd ρ (Expr α (E.Cons e e')) α' = { α: α ∧ α', u: V.Cons (eval_fwd ρ e α') (eval_fwd ρ e' α') }
-eval_fwd ρ (Expr _ (E.Letrec f σ e)) α =
+eval_fwd ρ (Expr _ (E.Letrec (Def f σ) e)) α =
    eval_fwd (ρ :+: f ↦ { α, u: V.Closure ρ (singleton $ Def f σ) σ }) e α
 eval_fwd ρ (Expr _ (E.App e e')) α =
    case eval_fwd ρ e α, eval_fwd ρ e' α of
