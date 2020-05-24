@@ -19,7 +19,7 @@ data RawExpr =
   | Op Var
   | Let Var Expr Expr
   | Match Expr (Elim Expr)
-  | Letrec Def Expr
+  | Letrec Defs Expr
   | App Expr Expr
   | BinaryApp Expr Var Expr
 

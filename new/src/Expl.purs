@@ -2,7 +2,7 @@ module Expl where
 
 import Data.Tuple (Tuple)
 import Bindings (Var)
-import Expr (Elim, Expr)
+import Expr (Defs, Elim, Expr)
 import Val (Env)
 
 data Expl =
@@ -17,7 +17,7 @@ data Expl =
    | Match Expl (Match Expr) Expl
    | BinaryApp Expl Var Expl
    | Let Var Expl Expl
-   | Letrec Var Expl Expl
+   | Letrec Defs Expl
    | Fun Env (Elim Expr)
    | True
    | False

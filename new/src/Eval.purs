@@ -50,16 +50,17 @@ eval ρ (Expr _ E.False) = { t: T.False, v: val V.False }
 eval ρ (Expr _ (E.Int n)) = { t: T.Int n, v: val $ V.Int n }
 eval ρ (Expr _ (E.Pair e e')) =
    let { t, v } = eval ρ e
-       { t: t', v: v' } = eval ρ e'
-   in { t: T.Pair t t', v: val $ V.Pair v v' }
+       { t: t', v: v' } = eval ρ e' in
+      { t: T.Pair t t', v: val $ V.Pair v v' }
 eval ρ (Expr _ E.Nil) = { t: T.Nil, v: val V.Nil }
 eval ρ (Expr _ (E.Cons e e')) =
    let { t, v } = eval ρ e
-       { t: t', v: v' } = eval ρ e'
-   in { t: T.Cons t t', v: val $ V.Cons v v' }
-eval ρ (Expr _ (E.Letrec (Def f σ) e)) =
-   let { t, v } = eval (ρ :+: f ↦ (val $ V.Closure ρ (singleton $ Def f σ) σ)) e
-   in { t: T.Letrec f (T.Fun ρ σ) t, v }
+       { t: t', v: v' } = eval ρ e' in
+   { t: T.Cons t t', v: val $ V.Cons v v' }
+eval ρ (Expr _ (E.Letrec δ e)) =
+   let ρ' = closeDefs ρ δ δ
+       { t, v } = eval (ρ <> ρ') e in
+   { t: T.Letrec δ t, v }
 eval ρ (Expr _ (E.App e e')) =
    case eval ρ e, eval ρ e' of
       { t, v: { u: V.Closure ρ1 δ σ } }, { t: t', v } ->
