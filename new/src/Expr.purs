@@ -11,17 +11,18 @@ data Def = Def Var (Elim Expr)
 type Defs = List Def
 
 data RawExpr =
-    Int Int
-  | Var Var
+    Var Var
+  | Op Var
+  | Int Int
   | True | False
   | Pair Expr Expr
   | Nil | Cons Expr Expr
-  | Op Var
-  | Let Var Expr Expr
-  | Match Expr (Elim Expr)
-  | Letrec Defs Expr
+  | Lambda (Elim Expr)
   | App Expr Expr
   | BinaryApp Expr Var Expr
+  | Match Expr (Elim Expr)
+  | Let Var Expr Expr
+  | Letrec Defs Expr
 
 data Expr = Expr Selected RawExpr
 

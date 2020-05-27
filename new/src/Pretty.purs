@@ -147,6 +147,7 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Match e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
    pretty (E.Letrec δ e) =
       atop (text "letrec " :<>: pretty δ) (text "in     " :<>: pretty e)
+   pretty (E.Lambda σ) = text "fun" :<>: pretty σ
    pretty (E.App e e') = pretty e :<>: text " " :<>: pretty e'
    pretty (E.BinaryApp e op e') = pretty e :<>: text (" " <> op <> " ") :<>: pretty e'
 

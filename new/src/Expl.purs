@@ -3,24 +3,21 @@ module Expl where
 import Data.Tuple (Tuple)
 import Bindings (Var)
 import Expr (Defs, Elim, Expr)
-import Val (Env)
 
 data Expl =
      Var Var
-   | Int Int
-   | Pair Expl Expl
-   | Nil
-   | Cons Expl Expl
    | Op Var
+   | Int Int
+   | True | False
+   | Pair Expl Expl
+   | Nil | Cons Expl Expl
+   | Lambda (Elim Expr)
    | App Expl Expl (Match Expr) Expl
    | AppOp Expl Expl
-   | Match Expl (Match Expr) Expl
    | BinaryApp Expl Var Expl
+   | Match Expl (Match Expr) Expl
    | Let Var Expl Expl
    | Letrec Defs Expl
-   | Fun Env (Elim Expr)
-   | True
-   | False
 
 data Match k =
      MatchVar Var

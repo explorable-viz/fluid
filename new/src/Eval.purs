@@ -61,6 +61,8 @@ eval ρ (Expr _ (E.Letrec δ e)) =
    let ρ' = closeDefs ρ δ δ
        { t, v } = eval (ρ <> ρ') e in
    { t: T.Letrec δ t, v }
+eval ρ (Expr _ (E.Lambda σ)) =
+   { t: T.Lambda σ, v: val $ V.Closure ρ Nil σ }
 eval ρ (Expr _ (E.App e e')) =
    case eval ρ e, eval ρ e' of
       { t, v: { u: V.Closure ρ1 δ σ } }, { t: t', v } ->

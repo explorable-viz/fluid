@@ -21,7 +21,6 @@ import Bindings (Var)
 import Expr (Expr, RawExpr(..), expr)
 import Primitive (OpName(..), opNames, opPrec)
 
-
 type SParser = Parser String
 
 -- constants (should also be used by prettyprinter)
