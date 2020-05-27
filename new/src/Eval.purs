@@ -20,8 +20,8 @@ match { u: V.True } (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ (Match
 match { u: V.False } (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ' (MatchFalse κ)
 match { u: V.Pair v v' } (ElimPair σ) = do
    T3 ρ1 τ ξ <- match v σ
-   T3 ρ κ ξ' <- match v' τ
-   pure $ T3 (ρ1 <> ρ) κ (MatchPair ξ ξ')
+   T3 ρ2 κ ξ' <- match v' τ
+   pure $ T3 (ρ1 <> ρ2) κ (MatchPair ξ ξ')
 match { u: V.Nil } (ElimList { nil: κ, cons: σ }) = Just $ T3 ε κ (MatchNil σ)
 match { u : V.Cons v v' } (ElimList { nil: κ, cons: σ }) = do
    T3 ρ1 τ ξ <- match v σ
