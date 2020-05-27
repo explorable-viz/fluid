@@ -18,12 +18,14 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Expr, RawExpr(..), expr)
+import Expr (Elim(..), Expr, RawExpr(..), expr)
 import Primitive (OpName(..), opNames, opPrec)
+import Util (error, todo)
 
 type SParser = Parser String
 
 -- constants (should also be used by prettyprinter)
+strFun = "fun" :: String
 strIn = "in" :: String
 strLet = "let" :: String
 strLParen = "(" :: String
@@ -87,7 +89,44 @@ simpleExpr expr' =
    try int <|> -- int may start with +/-
    try (token.parens expr') <|>
    try parensOp <|>
-   pair expr'
+   pair expr' <|>
+   lambda expr'
+
+lambda :: SParser Expr -> SParser Expr
+lambda expr' = do
+   σ <- keyword strFun *> matches expr'
+   pure $ expr $ Lambda σ
+
+matches :: SParser Expr -> SParser (Elim Expr)
+matches = error todo
+
+{-
+   match {% id %} |
+   lexeme["{"] match (lexeme[";"] match {% ([, m]) => m %}):* lexeme["}"]
+-}
+
+match :: SParser Expr -> SParser (Elim Expr)
+match = error todo
+{-
+   pattern lexeme["→"] expr
+   {% ([mk_κ, , e]) => mk_κ(e) %} |
+   pattern matches
+   {% ([mk_κ1, σ]) => mk_κ1(Expr.fun(σ)(ν())) %}
+-}
+
+pattern :: forall k . SParser (k -> Elim k)
+pattern = patternVar
+{-
+   pair_pattern {% id %} |
+   list_pattern {% id %} |
+   constr_pattern {% id %}
+-}
+
+patternVar :: forall k . SParser (k -> Elim k)
+patternVar =
+--   keyword["_"]
+--   {% () => (κ: Cont) => varElim(str("_")(ν()), κ)(ν()) %} |
+   ident >>= pure <<< ElimVar
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do
