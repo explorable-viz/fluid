@@ -9,7 +9,7 @@ import Data.Identity (Identity)
 import Data.List (groupBy, sortBy)
 import Data.Map (values)
 import Text.Parsing.Parser (Parser, fail)
-import Text.Parsing.Parser.Combinators (try)
+import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
@@ -98,35 +98,36 @@ lambda expr' = do
    pure $ expr $ Lambda σ
 
 matches :: SParser Expr -> SParser (Elim Expr)
-matches = error todo
+matches expr' = match expr' <|> token.braces (blah expr')
 
-{-
-   match {% id %} |
-   lexeme["{"] match (lexeme[";"] match {% ([, m]) => m %}):* lexeme["}"]
--}
+blah :: SParser Expr -> SParser (Elim Expr)
+blah expr' = sepBy1 (match expr') token.semi
+-- match (lexeme[";"] match {% ([, m]) => m %}):*
 
 match :: SParser Expr -> SParser (Elim Expr)
-match = error todo
-{-
-   pattern lexeme["→"] expr
-   {% ([mk_κ, , e]) => mk_κ(e) %} |
-   pattern matches
-   {% ([mk_κ1, σ]) => mk_κ1(Expr.fun(σ)(ν())) %}
--}
+match expr' =
+   do
+      mkElim <- pattern
+      token.reservedOp "->" *> expr' >>= pure <<< mkElim
+   <|>
+   do
+      mkElim <- pattern
+      σ <- matches expr'
+      pure $ mkElim $ expr $ Lambda σ
 
-pattern :: forall k . SParser (k -> Elim k)
-pattern = patternVar
-{-
-   pair_pattern {% id %} |
-   list_pattern {% id %} |
-   constr_pattern {% id %}
--}
-
+-- TODO: anonymous variables
 patternVar :: forall k . SParser (k -> Elim k)
-patternVar =
---   keyword["_"]
---   {% () => (κ: Cont) => varElim(str("_")(ν()), κ)(ν()) %} |
-   ident >>= pure <<< ElimVar
+patternVar = ident >>= pure <<< ElimVar
+
+patternPair :: forall k . (forall k . SParser (k -> Elim k)) -> SParser (k -> Elim k)
+patternPair pattern' = token.parens $ do
+   mkElim1 <- pattern' <* token.comma
+   mkElim2 <- pattern'
+   pure $ ElimPair <<< mkElim1 <<< mkElim2
+
+-- TODO: pairs, lists
+pattern :: forall k . SParser (k -> Elim k)
+pattern = fix patternPair
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do
