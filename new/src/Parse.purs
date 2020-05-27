@@ -17,6 +17,7 @@ import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser,
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
+import Unsafe.Coerce (unsafeCoerce) -- ouch
 import Bindings (Var)
 import Expr (Elim(..), Expr, RawExpr(..), expr)
 import Primitive (OpName(..), opNames, opPrec)
@@ -125,9 +126,10 @@ patternPair pattern' = token.parens $ do
    mkElim2 <- pattern'
    pure $ ElimPair <<< mkElim1 <<< mkElim2
 
--- TODO: pairs, lists
+-- TODO: lists
+-- TODO: make 'fix' work with higher-rank polymorphism?
 pattern :: forall k . SParser (k -> Elim k)
-pattern = fix patternPair
+pattern = patternVar <|> fix (unsafeCoerce patternPair)
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do
