@@ -16,10 +16,9 @@ import Selected (Selected(..))
 import Util (error)
 import Val (primitives)
 
-
-main :: Effect Unit
-main = runMocha $
-   before (loadFile "fluid/example" "normalise") $
+runExample :: String -> String -> Effect Unit
+runExample file expected = runMocha $
+   before (loadFile "fluid/example" file) $
       describe "feature" $
          it "works" $ \text -> do
             let result = runParser text program
@@ -31,4 +30,9 @@ main = runMocha $
                   let { u } = (eval ρ e).v
                   let { u: u' } = eval_fwd ρ e Top
                   (show $ pretty u) `shouldEqual` (show $ pretty u')
-                  (show $ pretty u') `shouldEqual` "(33, 66)"
+                  (show $ pretty u') `shouldEqual` expected
+
+main :: Effect Unit
+main = do
+   runExample "normalise" "(33, 66)"
+   runExample "temp" "(4, 3)"
