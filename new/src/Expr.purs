@@ -45,9 +45,6 @@ instance elimFunctor :: Functor Elim where
    map f (ElimPair σ) = ElimPair $ map (map f) σ
    map f (ElimList { nil: κ, cons: σ }) = ElimList { nil: f κ, cons: map (map f) σ }
 
-class Joinable k where
-   join :: List k -> Maybe k
-
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
 data PElim k =
    PElimVar Var k |
@@ -68,6 +65,9 @@ instance pElimFunctor :: Functor PElim where
    map f (PElimNil κ) = PElimNil (f κ)
    map f (PElimCons σ) = PElimCons $ map (map f) σ
    map f (PElimList { nil: κ, cons: σ }) = PElimList { nil: f κ, cons: map (map f) σ }
+
+class Joinable k where
+   join :: List k -> Maybe k
 
 instance pElimJoinable :: Joinable k => Joinable (PElim k) where
    join L.Nil = Nothing
@@ -107,8 +107,12 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
    join _ = Nothing
 
 toElim :: forall k . PElim k -> Maybe (Elim k)
+toElim (PElimVar x κ) = Just $ ElimVar x κ
 toElim (PElimBool { true: κ, false: κ' }) =
    Just $ ElimBool { true: κ, false: κ' }
+toElim (PElimPair σ) = do
+   σ' <- bibble (map toElim σ) >>= toElim
+   Just $ ElimPair σ'
 toElim (PElimList { nil: κ, cons: σ }) = do
    σ' <- bibble (map toElim σ) >>= toElim
    Just $ ElimList { nil: κ, cons: σ' }
@@ -119,5 +123,10 @@ bibble (PElimVar x (Just κ)) = Just $ PElimVar x κ
 bibble (PElimTrue (Just κ)) = Just $ PElimTrue κ
 bibble (PElimFalse (Just κ)) = Just $ PElimFalse κ
 bibble (PElimBool { true: Just κ, false: Just κ' }) = Just $ PElimBool { true: κ, false: κ' }
-bibble (PElimPair σ) = bibble (map bibble σ) >>= pure <<< PElimPair
+bibble (PElimPair σ) = bibble (map bibble σ) >>= Just <<< PElimPair
+bibble (PElimNil (Just κ)) = Just $ PElimNil κ
+bibble (PElimCons σ) = bibble (map bibble σ) >>= Just <<< PElimCons
+bibble (PElimList { nil: Just κ, cons: σ }) = do
+   σ' <- bibble (map bibble σ)
+   pure $ PElimList { nil: κ, cons: σ' }
 bibble _ = Nothing
