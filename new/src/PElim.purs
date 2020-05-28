@@ -4,7 +4,7 @@ import Prelude hiding (join)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Bindings (Var)
-import Expr (Elim(..))
+import Expr (Expr, Elim(..))
 
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
@@ -30,6 +30,9 @@ instance pElimFunctor :: Functor PElim where
 
 class Joinable k where
    join :: List k -> Maybe k
+
+instance exprJoinable :: Joinable Expr where
+   join _ = Nothing
 
 -- This will simplify into a more generic style once we reinstate arbitrary data types.
 instance pElimJoinable :: Joinable k => Joinable (PElim k) where

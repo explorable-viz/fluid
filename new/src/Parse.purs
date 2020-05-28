@@ -1,15 +1,16 @@
 module Parse where
 
-import Prelude hiding (add, between)
+import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (groupBy, sortBy)
+import Data.List (List, groupBy, sortBy)
 import Data.Map (values)
+import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser (Parser, fail)
-import Text.Parsing.Parser.Combinators (try)
+import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
@@ -19,7 +20,8 @@ import Text.Parsing.Parser.Token (
 )
 import Unsafe.Coerce (unsafeCoerce) -- ouch
 import Bindings (Var)
-import Expr (Elim(..), Expr, RawExpr(..), expr)
+import Expr (Elim, Expr, RawExpr(..), expr)
+import PElim (PElim(..), join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (error)
 
@@ -99,14 +101,25 @@ lambda expr' = do
    pure $ expr $ Lambda σ
 
 matches :: SParser Expr -> SParser (Elim Expr)
-matches expr' = match expr' <|> token.braces (blah expr')
+matches expr' =
+   (do
+      σ <- match expr'
+      case toElim σ of
+         Nothing -> error "todo"
+         Just σ' -> pure σ')
+   <|>
+   (do
+      σs <- token.braces (blah expr')
+      case join σs of
+         Nothing -> error "todo"
+         Just σ -> case toElim σ of
+            Nothing -> error "todo"
+            Just σ' -> pure σ')
 
-blah :: SParser Expr -> SParser (Elim Expr)
-blah expr' = error "todo"
--- sepBy1 (match expr') token.semi
--- match (lexeme[";"] match {% ([, m]) => m %}):*
+blah :: SParser Expr -> SParser (List (PElim Expr))
+blah expr' = sepBy1 (match expr') token.semi
 
-match :: SParser Expr -> SParser (Elim Expr)
+match :: SParser Expr -> SParser (PElim Expr)
 match expr' = do
    mkElim <- pattern
    ((token.reservedOp "->" *> expr' >>= pure <<< mkElim)
@@ -114,18 +127,18 @@ match expr' = do
    (matches expr' >>= pure <<< mkElim <<< expr <<< Lambda))
 
 -- TODO: anonymous variables
-patternVar :: forall k . SParser (k -> Elim k)
-patternVar = ident >>= pure <<< ElimVar
+patternVar :: forall k . SParser (k -> PElim k)
+patternVar = ident >>= pure <<< PElimVar
 
-patternPair :: forall k . (forall k' . SParser (k' -> Elim k')) -> SParser (k -> Elim k)
+patternPair :: (forall k . SParser (k -> PElim k)) -> forall k . SParser (k -> PElim k)
 patternPair pattern' = token.parens $ do
    mkElim1 <- pattern' <* token.comma
    mkElim2 <- pattern'
-   pure $ ElimPair <<< mkElim1 <<< mkElim2
+   pure $ PElimPair <<< mkElim1 <<< mkElim2
 
 -- TODO: lists
--- TODO: make 'fix' work with higher-rank polymorphism?
-pattern :: forall k . SParser (k -> Elim k)
+-- TODO: 'fix' for polymorphic recursion
+pattern :: forall k . SParser (k -> PElim k)
 pattern = patternVar <|> fix (unsafeCoerce patternPair)
 
 let_ ∷ SParser Expr -> SParser Expr
