@@ -45,7 +45,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    opStart         = op',
    opLetter        = op',
    reservedOpNames = [],
-   reservedNames   = [strIn, strLet],
+   reservedNames   = [strFun, strIn, strLet],
    caseSensitive   = true
 } where
    op' :: SParser Char
@@ -107,6 +107,7 @@ matches expr' =
       case toElim σ of
          Nothing -> error "todo"
          Just σ' -> pure σ')
+{-}
    <|>
    (do
       σs <- token.braces (blah expr')
@@ -115,7 +116,7 @@ matches expr' =
          Just σ -> case toElim σ of
             Nothing -> error "todo"
             Just σ' -> pure σ')
-
+-}
 blah :: SParser Expr -> SParser (List (PElim Expr))
 blah expr' = sepBy1 (match expr') token.semi
 
