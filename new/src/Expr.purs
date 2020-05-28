@@ -72,9 +72,12 @@ class Joinable k where
 instance pElimJoinable :: Joinable k => Joinable (PElim k) where
    join L.Nil = Nothing
    join (b : L.Nil) = Just b
-   join (PElimVar x κ : PElimVar x' κ' : bs) = do
-      κ'' <- join (κ : κ' : L.Nil)
-      join $ PElimVar x κ'' : bs -- todo: check x == x'
+   join (PElimVar x κ : PElimVar x' κ' : bs) =
+      if x == x'
+      then do
+         κ'' <- join (κ : κ' : L.Nil)
+         join $ PElimVar x κ'' : bs
+      else Nothing
    join (PElimTrue κ : PElimTrue κ' : bs) = do
       κ'' <- join (κ : κ' : L.Nil)
       join $ PElimTrue κ'' : bs
@@ -111,22 +114,22 @@ toElim (PElimVar x κ) = Just $ ElimVar x κ
 toElim (PElimBool { true: κ, false: κ' }) =
    Just $ ElimBool { true: κ, false: κ' }
 toElim (PElimPair σ) = do
-   σ' <- bibble (map toElim σ) >>= toElim
+   σ' <- hoistMaybe (toElim <$> σ) >>= toElim
    Just $ ElimPair σ'
 toElim (PElimList { nil: κ, cons: σ }) = do
-   σ' <- bibble (map toElim σ) >>= toElim
+   σ' <- hoistMaybe (toElim <$> σ) >>= toElim
    Just $ ElimList { nil: κ, cons: σ' }
 toElim _ = Nothing
 
-bibble :: forall k . PElim (Maybe k) -> Maybe (PElim k)
-bibble (PElimVar x (Just κ)) = Just $ PElimVar x κ
-bibble (PElimTrue (Just κ)) = Just $ PElimTrue κ
-bibble (PElimFalse (Just κ)) = Just $ PElimFalse κ
-bibble (PElimBool { true: Just κ, false: Just κ' }) = Just $ PElimBool { true: κ, false: κ' }
-bibble (PElimPair σ) = bibble (map bibble σ) >>= Just <<< PElimPair
-bibble (PElimNil (Just κ)) = Just $ PElimNil κ
-bibble (PElimCons σ) = bibble (map bibble σ) >>= Just <<< PElimCons
-bibble (PElimList { nil: Just κ, cons: σ }) = do
-   σ' <- bibble (map bibble σ)
+hoistMaybe :: forall k . PElim (Maybe k) -> Maybe (PElim k)
+hoistMaybe (PElimVar x (Just κ)) = Just $ PElimVar x κ
+hoistMaybe (PElimTrue (Just κ)) = Just $ PElimTrue κ
+hoistMaybe (PElimFalse (Just κ)) = Just $ PElimFalse κ
+hoistMaybe (PElimBool { true: Just κ, false: Just κ' }) = Just $ PElimBool { true: κ, false: κ' }
+hoistMaybe (PElimPair σ) = hoistMaybe (hoistMaybe <$> σ) >>= Just <<< PElimPair
+hoistMaybe (PElimNil (Just κ)) = Just $ PElimNil κ
+hoistMaybe (PElimCons σ) = hoistMaybe (hoistMaybe <$> σ) >>= Just <<< PElimCons
+hoistMaybe (PElimList { nil: Just κ, cons: σ }) = do
+   σ' <- hoistMaybe (hoistMaybe <$> σ)
    pure $ PElimList { nil: κ, cons: σ' }
-bibble _ = Nothing
+hoistMaybe _ = Nothing
