@@ -3,7 +3,7 @@ module Pretty where
 import Prelude
 import Data.Array (length, range, take, zipWith)
 import Data.Foldable (class Foldable, foldl, foldMap, intercalate)
-import Data.List (List(..))
+import Data.List (List(..), (:))
 import Data.Newtype (ala, class Newtype, wrap)
 import Data.String as S
 import Data.String.CodeUnits as SCU
@@ -153,7 +153,7 @@ instance rawExprPretty :: Pretty RawExpr where
 
 instance prettyDefs :: Pretty (List Def) where
    pretty Nil = text ""
-   pretty (Cons (Def f σ) δ) = atop (text (f <> " = ") :<>: pretty σ) $ pretty δ
+   pretty (Def f σ : δ) = atop (text (f <> " = ") :<>: pretty σ) $ pretty δ
 
 instance prettyElim :: Pretty k => Pretty (Elim k) where
    pretty (ElimVar x κ) = text "  " :<>: text x :<>: text " -> " :<>: pretty κ

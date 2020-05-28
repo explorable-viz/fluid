@@ -1,7 +1,7 @@
 module Eval where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), singleton)
+import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
@@ -32,7 +32,7 @@ match _ _ = Nothing
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> Defs -> Defs -> Env
 closeDefs _ _ Nil = ε
-closeDefs ρ δ0 (Cons (Def f σ) δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ σ)
+closeDefs ρ δ0 (Def f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ σ)
 
 type ExplVal = { t :: Expl, v :: Val }
 
