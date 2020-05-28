@@ -9,7 +9,7 @@ import Data.Identity (Identity)
 import Data.List (groupBy, sortBy)
 import Data.Map (values)
 import Text.Parsing.Parser (Parser, fail)
-import Text.Parsing.Parser.Combinators (sepBy1, try)
+import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
@@ -21,7 +21,7 @@ import Unsafe.Coerce (unsafeCoerce) -- ouch
 import Bindings (Var)
 import Expr (Elim(..), Expr, RawExpr(..), expr)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (error, todo)
+import Util (error)
 
 type SParser = Parser String
 
