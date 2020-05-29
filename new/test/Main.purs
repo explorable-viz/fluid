@@ -20,7 +20,7 @@ runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
    before (loadFile "fluid/example" file) $
       describe "feature" $
-         it "works" $ \text -> do
+         it file $ \text -> do
             let result = runParser text program
             case result of
                Left parseError -> do
@@ -34,5 +34,6 @@ runExample file expected = runMocha $
 
 main :: Effect Unit
 main = do
+   runExample "arithmetic" "42"
    runExample "normalise" "(33, 66)"
    runExample "temp" "(4, 3)"

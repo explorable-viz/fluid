@@ -28,7 +28,6 @@ type SParser = Parser String
 
 -- constants (should also be used by prettyprinter)
 strFun = "fun" :: String
-strIn = "in" :: String
 strLet = "let" :: String
 strLParen = "(" :: String
 strRParen = ")" :: String
@@ -44,7 +43,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    opStart         = op',
    opLetter        = op',
    reservedOpNames = [],
-   reservedNames   = [strFun, strIn, strLet],
+   reservedNames   = [strFun, strLet],
    caseSensitive   = true
 } where
    op' :: SParser Char
@@ -152,7 +151,7 @@ let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do
    x <- keyword strLet *> ident
    e1 <- token.reservedOp "=" *> term'
-   e2 <- keyword strIn *> term'
+   e2 <- token.semi *> term'
    pure $ expr $ Let x e1 e2
 
 -- any binary operator, in parentheses
