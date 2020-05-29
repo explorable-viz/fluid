@@ -6,9 +6,10 @@ import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, many, groupBy, sortBy)
+import Data.List (many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..), uncurry)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -56,9 +57,7 @@ keyword ∷ String → SParser Unit
 keyword = token.reserved
 
 variable :: SParser Expr
-variable = do
-   x <- ident
-   pure $ expr $ Var x
+variable = ident <#> expr <<< Var
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
@@ -80,7 +79,7 @@ pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
    e1 <- expr'
    e2 <- token.comma *> expr'
-   pure $ expr $ Pair e1 e2
+   pure $ expr $ uncurry Pair (Tuple e1 e2)
 
 -- TODO: string, float, list
 simpleExpr :: SParser Expr -> SParser Expr
@@ -94,9 +93,8 @@ simpleExpr expr' =
    lambda expr'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' = do
-   σ <- keyword strFun *> matches expr'
-   pure $ expr $ Lambda σ
+lambda expr' =
+   keyword strFun *> matches expr' <#> expr <<< Lambda
 
 matches :: SParser Expr -> SParser (Elim Expr)
 matches expr' =
@@ -198,6 +196,4 @@ program ∷ SParser Expr
 program = token.whiteSpace *> expr_ <* eof
 
 module_ :: SParser Module
-module_ = do
-   ds <- many $ def expr_
-   pure $ Module ds
+module_ = many (def expr_) <#> Module

@@ -5,8 +5,6 @@ import Data.List (List)
 import Bindings (Var)
 import Selected (Selected(..))
 
-data T3 a b c = T3 a b c
-
 data Def = Def Var Expr
 data RecDef = RecDef Var (Elim Expr)
 type RecDefs = List RecDef

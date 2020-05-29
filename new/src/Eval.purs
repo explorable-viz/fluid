@@ -7,10 +7,10 @@ import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Elim(..), Expr(..), RecDef(..), RecDefs, T3(..))
+import Expr (Elim(..), Expr(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
 import Primitive (opFun)
-import Util (absurd, error)
+import Util (T3(..), absurd, error)
 import Val (Env, Val, toValues, val)
 import Val (RawVal(..)) as V
 

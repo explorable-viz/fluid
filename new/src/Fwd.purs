@@ -4,11 +4,11 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Bindings ((:+:), (↦), ε, find)
-import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs, T3(..))
+import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs)
 import Expr (RawExpr(..)) as E
 import Primitive (opFun)
 import Selected (Selected(..), (∧))
-import Util (absurd, error)
+import Util (T3(..), absurd, error)
 import Val (Env, Val, toValues_fwd)
 import Val (RawVal(..)) as V
 
