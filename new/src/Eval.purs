@@ -4,10 +4,10 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
-import Bindings ((:+:), (↦), ε, find)
+import Bindings (Bindings(..), (:+:), (↦), ε, find)
 import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Elim(..), Expr(..), RecDef(..), RecDefs)
+import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
 import Primitive (opFun)
 import Util (T3(..), absurd, error)
@@ -95,3 +95,8 @@ eval ρ (Expr _ (E.Match e σ)) =
       Just (T3 ρ' e' ξ) ->
          let { t: t', v: v' } = eval (ρ <> ρ') e'
          in { t: T.Match t ξ t', v: v' }
+
+defs :: Env -> Module -> Env -> Env
+defs _ (Module Nil) ρ = ρ
+defs ρ (Module ((E.Def x e) : ds)) ρ' =
+   defs ρ (Module ds) (ρ' :+: x ↦ (eval (ρ <> ρ') e).v)

@@ -155,7 +155,8 @@ fromBool true = Just
 theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
 theBinaryOp op = try $ do
    op' <- token.operator
-   maybePure ("Expected " <> op) $ fromBool (op == op') (\e1 e2 -> expr $ BinaryApp e1 op e2)
+   maybePure ("Expected " <> op) $
+      fromBool (op == op') (\e1 e2 -> expr $ BinaryApp e1 op e2)
 
 backtick :: SParser Unit
 backtick = token.reservedOp "`"
