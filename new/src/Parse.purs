@@ -6,7 +6,7 @@ import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, many, groupBy, sortBy)
+import Data.List (many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), uncurry)
@@ -21,9 +21,8 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), expr)
-import PElim (PElim(..), class Joinable, join, toElim)
+import PElim (PElim(..), join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (error)
 
 type SParser = Parser String
 
@@ -95,17 +94,17 @@ simpleExpr expr' =
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> matches expr' <#> expr <<< Lambda
 
-blah :: forall a . String -> Maybe a -> SParser a
-blah msg Nothing = fail msg
-blah _ (Just x) = pure x
+maybePure :: forall a . String -> Maybe a -> SParser a
+maybePure msg Nothing = fail msg
+maybePure _ (Just x) = pure x
 
 matches :: SParser Expr -> SParser (Elim Expr)
 matches expr' =
-   (match expr' >>= blah "Incomplete branches" <<< toElim)
+   (match expr' >>= maybePure "Incomplete branches" <<< toElim)
    <|>
    (do
       σs <- token.braces (sepBy1 (match expr') token.semi)
-      blah "Incompatible or incomplete branches" (join σs >>= toElim))
+      maybePure "Incompatible or incomplete branches" (join σs >>= toElim))
 
 match :: SParser Expr -> SParser (PElim Expr)
 match expr' = do
@@ -144,32 +143,30 @@ def expr' = do
    pure $ Def x e
 
 let_ ∷ SParser Expr -> SParser Expr
-let_ expr' = do
-   d <- def expr'
-   e <- expr'
-   pure $ expr $ Let d e
+let_ expr' = def expr' >>= \d -> expr' <#> expr <<< Let d
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
 parensOp = token.parens $ token.operator <#> expr <<< Op
 
+fromBool :: forall a . Boolean -> a -> Maybe a
+fromBool false _ = Nothing
+fromBool true a = Just a
+
 -- the specific binary operator
 theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
 theBinaryOp op = try $ do
    op' <- token.operator
-   if (op /= op')
-   then fail $ "Expected " <> op
-   else pure $ (\e1 e2 -> expr $ BinaryApp e1 op e2)
+   maybePure ("Expected " <> op) $ fromBool (op == op') (\e1 e2 -> expr $ BinaryApp e1 op e2)
 
 backtick :: SParser Unit
 backtick = token.reservedOp "`"
 
 appChain ∷ SParser Expr -> SParser Expr
-appChain expr' = do
-   simpleExpr expr' >>= rest
+appChain expr' = simpleExpr expr' >>= rest
    where
       rest ∷ Expr -> SParser Expr
-      rest e1 = (simpleExpr expr' >>= (pure <<< expr <<< App e1) >>= rest) <|> pure e1
+      rest e = (simpleExpr expr' >>= (pure <<< expr <<< App e) >>= rest) <|> pure e
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
