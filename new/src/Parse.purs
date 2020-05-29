@@ -123,15 +123,17 @@ blah expr' = sepBy1 (match expr') token.semi
 match :: SParser Expr -> SParser (PElim Expr)
 match expr' = do
    mkElim <- pattern
-   ((token.reservedOp "->" *> expr' >>= pure <<< mkElim)
+   (token.reservedOp "->" *> expr' >>= pure <<< mkElim)
+{-
    <|>
    (matches expr' >>= pure <<< mkElim <<< expr <<< Lambda))
+   -}
 
 -- TODO: anonymous variables
-patternVar :: forall k . SParser (k -> PElim k)
+patternVar :: MkElimParser
 patternVar = ident >>= pure <<< PElimVar
 
-patternPair :: (forall k . SParser (k -> PElim k)) -> forall k . SParser (k -> PElim k)
+patternPair :: MkElimParser -> MkElimParser
 patternPair pattern' = token.parens $ do
    mkElim1 <- pattern' <* token.comma
    mkElim2 <- pattern'
@@ -139,8 +141,15 @@ patternPair pattern' = token.parens $ do
 
 -- TODO: lists
 -- TODO: 'fix' for polymorphic recursion
-pattern :: forall k . SParser (k -> PElim k)
-pattern = patternVar <|> fix (unsafeCoerce patternPair)
+pattern :: MkElimParser -> MkElimParser
+pattern pattern' = myFix (\pattern' -> patternVar <|> patternPair pattern')
+
+type MkElimParser = forall k . SParser (k -> PElim k)
+
+myFix :: (MkElimParser -> MkElimParser) -> MkElimParser
+myFix f = x
+  where
+    x = (\_ -> f x) unit :: MkElimParser
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do
