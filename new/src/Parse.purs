@@ -9,7 +9,6 @@ import Data.Identity (Identity)
 import Data.List (many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..), uncurry)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -71,14 +70,12 @@ sign =
 int :: SParser Expr
 int = do
    f <- sign
-   n <- token.natural
-   pure $ expr $ Int $ f n
+   token.natural <#> f >>> Int >>> expr
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
    e1 <- expr'
-   e2 <- token.comma *> expr'
-   pure $ expr $ uncurry Pair (Tuple e1 e2)
+   token.comma *> expr' <#> expr <<< Pair e1
 
 -- TODO: string, float, list
 simpleExpr :: SParser Expr -> SParser Expr
@@ -139,19 +136,20 @@ fixParser f = x
 def :: SParser Expr -> SParser Def
 def expr' = do
    x <- keyword strLet *> ident
-   e <- token.reservedOp "=" *> expr' <* token.semi
-   pure $ Def x e
+   token.reservedOp "=" *> (expr' <#> Def x) <* token.semi
 
 let_ ∷ SParser Expr -> SParser Expr
-let_ expr' = def expr' >>= \d -> expr' <#> expr <<< Let d
+let_ expr' = do
+   d <- def expr'
+   expr' <#> expr <<< Let d
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
 parensOp = token.parens $ token.operator <#> expr <<< Op
 
 fromBool :: forall a . Boolean -> a -> Maybe a
-fromBool false _ = Nothing
-fromBool true a = Just a
+fromBool false = const Nothing
+fromBool true = Just
 
 -- the specific binary operator
 theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
@@ -166,7 +164,7 @@ appChain ∷ SParser Expr -> SParser Expr
 appChain expr' = simpleExpr expr' >>= rest
    where
       rest ∷ Expr -> SParser Expr
-      rest e = (simpleExpr expr' >>= (pure <<< expr <<< App e) >>= rest) <|> pure e
+      rest e = (simpleExpr expr' <#> expr <<< App e >>= rest) <|> pure e
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
