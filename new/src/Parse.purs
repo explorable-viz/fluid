@@ -93,24 +93,21 @@ simpleExpr expr' =
    lambda expr'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' =
-   keyword strFun *> matches expr' <#> expr <<< Lambda
+lambda expr' = keyword strFun *> matches expr' <#> expr <<< Lambda
+
+blah :: forall a . String -> Maybe a -> SParser a
+blah msg Nothing = fail msg
+blah _ (Just x) = pure x
 
 matches :: SParser Expr -> SParser (Elim Expr)
 matches expr' =
-   (do
-      σ <- match expr'
-      case toElim σ of
-         Nothing -> fail "Incomplete branches"
-         Just σ' -> pure σ')
+   (match expr' >>= blah "Incomplete branches" <<< toElim)
    <|>
    (do
       σs <- token.braces (sepBy1 (match expr') token.semi)
       case join σs of
          Nothing -> error "Incompatible branches"
-         Just σ -> case toElim σ of
-            Nothing -> error "Incomplete branches"
-            Just σ' -> pure σ')
+         Just σ -> blah "Incomplete branches" (toElim σ))
 
 match :: SParser Expr -> SParser (PElim Expr)
 match expr' = do
@@ -156,9 +153,7 @@ let_ expr' = do
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
-parensOp = token.parens $ do
-   op <- token.operator
-   pure $ expr $ Op op
+parensOp = token.parens $ token.operator <#> expr <<< Op
 
 -- the specific binary operator
 theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
@@ -178,7 +173,7 @@ appChain expr' = do
       rest ∷ Expr -> SParser Expr
       rest e1 = (simpleExpr expr' >>= (pure <<< expr <<< App e1) >>= rest) <|> pure e1
 
--- each element of the top-level list corresponds to a precedence level.
+-- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
 operators =
    fromFoldable $ map fromFoldable $
