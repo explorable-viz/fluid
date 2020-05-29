@@ -34,8 +34,8 @@ loadModule file ρ = do
    let m = successfulParse src module_
    pure $ defs ρ m
 
-openWithImports :: String -> List Env -> Aff (Tuple Env Expr)
-openWithImports file modules =
+openWithImports :: String -> Aff (Tuple Env Expr)
+openWithImports file =
    loadFile "fluid/example" file >>= parseWithImports
 
 successfulParse :: forall t . String -> SParser t -> t

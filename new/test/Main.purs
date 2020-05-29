@@ -1,25 +1,23 @@
 module Test.Main where
 
 import Prelude
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Eval (eval)
 import Fwd (eval_fwd)
-import Module (loadFile, successfulParse)
-import Parse (program)
+import Module (openWithImports)
 import Pretty (pretty)
 import Selected (Selected(..))
 import Val (primitives)
 
 runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
-   before (loadFile "fluid/example" file) $
-      it file $ \text -> do
-         let e = successfulParse text program
-         let ρ = primitives
-         let { u } = (eval ρ e).v
+   before (openWithImports file) $
+      it file $ \(Tuple ρ e) -> do
+         let { u } = (eval (ρ <> primitives) e).v
          let { u: u' } = eval_fwd ρ e Top
          (show $ pretty u) `shouldEqual` (show $ pretty u')
          (show $ pretty u') `shouldEqual` expected
