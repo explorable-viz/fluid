@@ -103,15 +103,15 @@ matches expr' =
    (do
       σ <- match expr'
       case toElim σ of
-         Nothing -> error "todo"
+         Nothing -> fail "Incomplete branches"
          Just σ' -> pure σ')
    <|>
    (do
       σs <- token.braces (blah expr')
       case join σs of
-         Nothing -> error "todo"
+         Nothing -> error "Incompatible branches"
          Just σ -> case toElim σ of
-            Nothing -> error "todo"
+            Nothing -> error "Incomplete branches"
             Just σ' -> pure σ')
 
 blah :: SParser Expr -> SParser (List (PElim Expr))
@@ -147,12 +147,16 @@ fixParser f = x
    -- type annotation and parentheses are not optional
    x = (defer \_ -> f x) :: MkElimParser
 
-let_ ∷ SParser Expr -> SParser Expr
-let_ term' = do
+letPrefix :: SParser Expr -> (SParser (Expr -> Expr))
+letPrefix expr' = do
    x <- keyword strLet *> ident
-   e1 <- token.reservedOp "=" *> term'
-   e2 <- token.semi *> term'
-   pure $ expr $ Let x e1 e2
+   e1 <- token.reservedOp "=" *> expr' <* token.semi
+   pure $ expr <<< Let x e1
+
+let_ ∷ SParser Expr -> SParser Expr
+let_ expr' = do
+   mkLet <- letPrefix expr'
+   expr' >>= pure <<< mkLet
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
