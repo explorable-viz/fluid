@@ -6,7 +6,7 @@ import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (many, groupBy, sortBy)
+import Data.List (List, many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), uncurry)
@@ -21,7 +21,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), expr)
-import PElim (PElim(..), join, toElim)
+import PElim (PElim(..), class Joinable, join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (error)
 
@@ -99,15 +99,22 @@ blah :: forall a . String -> Maybe a -> SParser a
 blah msg Nothing = fail msg
 blah _ (Just x) = pure x
 
+blah2 :: forall k . Joinable k => List (PElim k) -> Maybe (Elim k)
+blah2 σs = case join σs of
+   Nothing -> Nothing
+   Just σ -> case toElim σ of
+      Nothing -> Nothing
+      Just σ' -> Just σ'
+
 matches :: SParser Expr -> SParser (Elim Expr)
 matches expr' =
    (match expr' >>= blah "Incomplete branches" <<< toElim)
    <|>
    (do
       σs <- token.braces (sepBy1 (match expr') token.semi)
-      case join σs of
-         Nothing -> error "Incompatible branches"
-         Just σ -> blah "Incomplete branches" (toElim σ))
+      case blah2 σs of
+         Nothing -> error "Incompatible or incomplete branches"
+         Just σ -> pure σ)
 
 match :: SParser Expr -> SParser (PElim Expr)
 match expr' = do
