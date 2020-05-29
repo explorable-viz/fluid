@@ -2,7 +2,7 @@ module Parse where
 
 import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
-import Control.Lazy (fix)
+import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -18,10 +18,9 @@ import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser,
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
-import Unsafe.Coerce (unsafeCoerce) -- ouch
 import Bindings (Var)
 import Expr (Elim, Expr, RawExpr(..), expr)
-import PElim (PElim(..), join, toElim)
+import PElim (PElim(..), toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (error)
 
@@ -141,14 +140,15 @@ patternPair pattern' = token.parens $ do
 
 -- TODO: lists
 pattern :: MkElimParser
-pattern = myFix (\pattern' -> patternVar <|> patternPair pattern')
+pattern = myFix (\p -> patternVar <|> patternPair p)
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
 myFix :: (MkElimParser -> MkElimParser) -> MkElimParser
 myFix f = x
-  where
-    x = (\_ -> f x) unit :: MkElimParser
+   where
+   -- type annotation and parentheses are not optional
+   x = (defer \_ -> f x) :: MkElimParser
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do
