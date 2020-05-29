@@ -140,11 +140,11 @@ patternPair pattern' = token.parens $ do
 pattern :: MkElimParser
 pattern = fixParser (\p -> patternVar <|> patternPair p)
 
--- Lazy.fix isn't polymorphic enough.
+-- fix isn't polymorphic enough
 fixParser :: (MkElimParser -> MkElimParser) -> MkElimParser
 fixParser f = x
    where
-   -- type annotation and parentheses are not optional
+   -- type annotation and parentheses are essential :-o
    x = (defer \_ -> f x) :: MkElimParser
 
 letPrefix :: SParser Expr -> (SParser (Expr -> Expr))

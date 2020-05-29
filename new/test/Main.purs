@@ -9,7 +9,7 @@ import Test.Spec.Mocha (runMocha)
 import Text.Parsing.Parser (runParser)
 import Eval (eval)
 import Fwd (eval_fwd)
-import Module (loadFile)
+import Module (loadFile, successfulParse)
 import Parse (program)
 import Pretty (pretty)
 import Selected (Selected(..))
@@ -20,16 +20,12 @@ runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
    before (loadFile "fluid/example" file) $
       it file $ \text -> do
-         let result = runParser text program
-         case result of
-            Left parseError -> do
-               error $ show parseError
-            Right e -> do
-               let ρ = primitives
-               let { u } = (eval ρ e).v
-               let { u: u' } = eval_fwd ρ e Top
-               (show $ pretty u) `shouldEqual` (show $ pretty u')
-               (show $ pretty u') `shouldEqual` expected
+         let e = successfulParse text program
+         let ρ = primitives
+         let { u } = (eval ρ e).v
+         let { u: u' } = eval_fwd ρ e Top
+         (show $ pretty u) `shouldEqual` (show $ pretty u')
+         (show $ pretty u') `shouldEqual` expected
 
 main :: Effect Unit
 main = do
