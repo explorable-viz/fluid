@@ -2,7 +2,7 @@ module Parse where
 
 import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
-import Control.Lazy (class Lazy, defer, fix)
+import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -20,7 +20,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import Expr (Elim, Expr, RawExpr(..), expr)
-import PElim (PElim(..), toElim)
+import PElim (PElim(..), join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (error)
 
@@ -106,7 +106,6 @@ matches expr' =
       case toElim σ of
          Nothing -> error "todo"
          Just σ' -> pure σ')
-{-}
    <|>
    (do
       σs <- token.braces (blah expr')
@@ -115,18 +114,16 @@ matches expr' =
          Just σ -> case toElim σ of
             Nothing -> error "todo"
             Just σ' -> pure σ')
--}
+
 blah :: SParser Expr -> SParser (List (PElim Expr))
 blah expr' = sepBy1 (match expr') token.semi
 
 match :: SParser Expr -> SParser (PElim Expr)
 match expr' = do
    mkElim <- pattern
-   (token.reservedOp "->" *> expr' >>= pure <<< mkElim)
-{-
+   ((token.reservedOp "->" *> expr' >>= pure <<< mkElim)
    <|>
    (matches expr' >>= pure <<< mkElim <<< expr <<< Lambda))
-   -}
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
