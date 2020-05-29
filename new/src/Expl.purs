@@ -4,6 +4,8 @@ import Data.Tuple (Tuple)
 import Bindings (Var)
 import Expr (RecDefs, Elim, Expr)
 
+data Def = Def Var Expl
+
 data Expl =
      Var Var
    | Op Var
@@ -16,7 +18,7 @@ data Expl =
    | AppOp Expl Expl
    | BinaryApp Expl Var Expl
    | Match Expl (Match Expr) Expl
-   | Let Var Expl Expl
+   | Let Def Expl
    | Letrec RecDefs Expl
 
 data Match k =

@@ -5,10 +5,10 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
-import Expl (Expl(..)) as T
+import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs, T3(..))
-import Expr (RawExpr(..)) as E
+import Expr (Elim(..), Expr(..), RecDef(..), RecDefs, T3(..))
+import Expr (Def(..), RawExpr(..)) as E
 import Primitive (opFun)
 import Util (absurd, error)
 import Val (Env, Val, toValues, val)
@@ -84,10 +84,10 @@ eval ρ (Expr _ (E.BinaryApp e op e')) =
       Just { u: V.Op φ } -> { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
       Just _ -> error absurd
       Nothing -> error $ "operator " <> op <> " not found"
-eval ρ (Expr _ (E.Let (Def x e) e')) =
+eval ρ (Expr _ (E.Let (E.Def x e) e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval (ρ :+: x ↦ v) e'
-   in { t: T.Let x t t', v: v' }
+   in { t: T.Let (T.Def x t) t', v: v' }
 eval ρ (Expr _ (E.Match e σ)) =
    let { t, v } = eval ρ e
    in case match v σ of
