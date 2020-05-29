@@ -2,7 +2,7 @@ module Parse where
 
 import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
-import Control.Lazy (defer, fix)
+import Control.Lazy (class Lazy, defer, fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -128,6 +128,8 @@ match expr' = do
    (matches expr' >>= pure <<< mkElim <<< expr <<< Lambda))
    -}
 
+type MkElimParser = forall k . SParser (k -> PElim k)
+
 -- TODO: anonymous variables
 patternVar :: MkElimParser
 patternVar = ident >>= pure <<< PElimVar
@@ -140,12 +142,11 @@ patternPair pattern' = token.parens $ do
 
 -- TODO: lists
 pattern :: MkElimParser
-pattern = myFix (\p -> patternVar <|> patternPair p)
+pattern = fixParser (\p -> patternVar <|> patternPair p)
 
-type MkElimParser = forall k . SParser (k -> PElim k)
-
-myFix :: (MkElimParser -> MkElimParser) -> MkElimParser
-myFix f = x
+-- Lazy.fix isn't polymorphic enough.
+fixParser :: (MkElimParser -> MkElimParser) -> MkElimParser
+fixParser f = x
    where
    -- type annotation and parentheses are not optional
    x = (defer \_ -> f x) :: MkElimParser
