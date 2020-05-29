@@ -1,19 +1,16 @@
 module Test.Main where
 
 import Prelude
-import Data.Either (Either(..))
 import Effect (Effect)
 import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Text.Parsing.Parser (runParser)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Module (loadFile, successfulParse)
 import Parse (program)
 import Pretty (pretty)
 import Selected (Selected(..))
-import Util (error)
 import Val (primitives)
 
 runExample :: String -> String -> Effect Unit

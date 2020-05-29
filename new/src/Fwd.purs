@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Bindings ((:+:), (↦), ε, find)
-import Expr (Def(..), Defs, Elim(..), Expr(..), T3(..))
+import Expr (RecDef(..), RecDefs, Elim(..), Expr(..), T3(..))
 import Expr (RawExpr(..)) as E
 import Primitive (opFun)
 import Selected (Selected(..), (∧))
@@ -28,9 +28,9 @@ match_fwd { α, u : V.Cons v v' } (ElimList { nil: κ, cons: σ }) = do
    pure $ T3 (ρ1 <> ρ) κ' (α' ∧ α'')
 match_fwd _ _ = Nothing
 
-closeDefs_fwd :: Env -> Defs -> Defs -> Selected -> Env
+closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
 closeDefs_fwd _ _ Nil _ = ε
-closeDefs_fwd ρ δ0 (Def f σ : δ) α = closeDefs_fwd ρ δ0 δ α :+: f ↦ { α, u: V.Closure ρ δ σ }
+closeDefs_fwd ρ δ0 (RecDef f σ : δ) α = closeDefs_fwd ρ δ0 δ α :+: f ↦ { α, u: V.Closure ρ δ σ }
 
 eval_fwd :: Env -> Expr -> Selected -> Val
 eval_fwd ρ (Expr _ (E.Var x)) _ =

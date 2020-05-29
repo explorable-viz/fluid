@@ -50,5 +50,5 @@ successfulParse src p =
 parseWithImports :: String -> List Env -> Aff (Tuple Env Expr)
 parseWithImports src modules = do
    prelude <- loadModule "prelude" Empty
-   graphics <- loadModule "graphics" prelude
-   pure $ Tuple (fold (prelude : graphics : modules)) (successfulParse src program)
+-- graphics <- loadModule "graphics" prelude
+   pure $ Tuple (fold (prelude : {-graphics : -}modules)) (successfulParse src program)

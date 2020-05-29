@@ -7,7 +7,7 @@ import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Def(..), Defs, Elim(..), Expr(..), T3(..))
+import Expr (RecDef(..), RecDefs, Elim(..), Expr(..), T3(..))
 import Expr (RawExpr(..)) as E
 import Primitive (opFun)
 import Util (absurd, error)
@@ -30,9 +30,9 @@ match { u : V.Cons v v' } (ElimList { nil: κ, cons: σ }) = do
 match _ _ = Nothing
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-closeDefs :: Env -> Defs -> Defs -> Env
+closeDefs :: Env -> RecDefs -> RecDefs -> Env
 closeDefs _ _ Nil = ε
-closeDefs ρ δ0 (Def f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ σ)
+closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ σ)
 
 type ExplVal = { t :: Expl, v :: Val }
 
