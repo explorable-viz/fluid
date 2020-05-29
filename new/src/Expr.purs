@@ -7,7 +7,7 @@ import Selected (Selected(..))
 
 data T3 a b c = T3 a b c
 
--- recursive functions
+data Def = Def Var Expr
 data RecDef = RecDef Var (Elim Expr)
 type RecDefs = List RecDef
 
@@ -22,7 +22,7 @@ data RawExpr =
    App Expr Expr |
    BinaryApp Expr Var Expr |
    Match Expr (Elim Expr) |
-   Let Var Expr Expr |
+   Let Def Expr |
    Letrec RecDefs Expr
 
 data Expr = Expr Selected RawExpr

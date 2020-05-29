@@ -19,7 +19,7 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Elim, Expr, RawExpr(..), expr)
+import Expr (Def(..), Elim, Expr, RawExpr(..), expr)
 import PElim (PElim(..), join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (error)
@@ -147,16 +147,17 @@ fixParser f = x
    -- type annotation and parentheses are essential :-o
    x = (defer \_ -> f x) :: MkElimParser
 
-letPrefix :: SParser Expr -> (SParser (Expr -> Expr))
-letPrefix expr' = do
+def :: SParser Expr -> SParser Def
+def expr' = do
    x <- keyword strLet *> ident
-   e1 <- token.reservedOp "=" *> expr' <* token.semi
-   pure $ expr <<< Let x e1
+   e <- token.reservedOp "=" *> expr' <* token.semi
+   pure $ Def x e
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = do
-   mkLet <- letPrefix expr'
-   expr' >>= pure <<< mkLet
+   d <- def expr'
+   e <- expr'
+   pure $ expr $ Let d e
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
