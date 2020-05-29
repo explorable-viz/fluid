@@ -3,16 +3,16 @@ module Module where
 import Prelude
 import Affjax (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
-import Data.List (List, (:))
+import Data.List (List)
 import Data.Either (Either(..))
-import Data.Foldable (fold)
 import Data.HTTP.Method (Method(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Bindings (Bindings(..))
+import Eval (defs)
 import Expr (Expr)
-import Parse (SParser, program)
+import Parse (SParser, module_, program)
 import Val (Env)
 import Util (error)
 
@@ -30,16 +30,13 @@ loadFile folder file = do
 
 loadModule :: String -> Env -> Aff Env
 loadModule file ρ = do
-   -- assumed to be sequence of lets, which we make into an expression
    src <- loadFile "fluid/lib" (file <> "0")
-   let e = successfulParse src program
-   pure Empty -- todo
---   case e of
---      E.Defs -> return Eval.defs(ρ, e.def̅, emptyEnv())[1]
+   let m = successfulParse src module_
+   pure $ defs ρ m
 
 openWithImports :: String -> List Env -> Aff (Tuple Env Expr)
 openWithImports file modules =
-   loadFile "fluid/example" file >>= flip parseWithImports modules
+   loadFile "fluid/example" file >>= parseWithImports
 
 successfulParse :: forall t . String -> SParser t -> t
 successfulParse src p =
@@ -47,8 +44,7 @@ successfulParse src p =
       Left parseError -> error $ show parseError
       Right t -> t
 
-parseWithImports :: String -> List Env -> Aff (Tuple Env Expr)
-parseWithImports src modules = do
-   prelude <- loadModule "prelude" Empty
--- graphics <- loadModule "graphics" prelude
-   pure $ Tuple (fold (prelude : {-graphics : -}modules)) (successfulParse src program)
+parseWithImports :: String -> Aff (Tuple Env Expr)
+parseWithImports src = do
+   ρ' <- loadModule "prelude" Empty >>= loadModule "graphics"
+   pure $ Tuple ρ' (successfulParse src program)
