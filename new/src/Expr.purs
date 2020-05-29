@@ -41,3 +41,5 @@ instance elimFunctor :: Functor Elim where
    map f (ElimBool { true: κ, false: κ' }) = ElimBool { true: f κ, false: f κ' }
    map f (ElimPair σ) = ElimPair $ map (map f) σ
    map f (ElimList { nil: κ, cons: σ }) = ElimList { nil: f κ, cons: map (map f) σ }
+
+data Module = Module (List Def)

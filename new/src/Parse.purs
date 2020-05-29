@@ -6,7 +6,7 @@ import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, groupBy, sortBy)
+import Data.List (List, many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser (Parser, fail)
@@ -19,7 +19,7 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Def(..), Elim, Expr, RawExpr(..), expr)
+import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), expr)
 import PElim (PElim(..), join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (error)
@@ -107,15 +107,12 @@ matches expr' =
          Just σ' -> pure σ')
    <|>
    (do
-      σs <- token.braces (blah expr')
+      σs <- token.braces (sepBy1 (match expr') token.semi)
       case join σs of
          Nothing -> error "Incompatible branches"
          Just σ -> case toElim σ of
             Nothing -> error "Incomplete branches"
             Just σ' -> pure σ')
-
-blah :: SParser Expr -> SParser (List (PElim Expr))
-blah expr' = sepBy1 (match expr') token.semi
 
 match :: SParser Expr -> SParser (PElim Expr)
 match expr' = do
@@ -199,3 +196,8 @@ expr_ = fix $ \p -> flip buildExprParser (appChain p) operators
 
 program ∷ SParser Expr
 program = token.whiteSpace *> expr_ <* eof
+
+module_ :: SParser Module
+module_ = do
+   ds <- many $ def expr_
+   pure $ Module ds
