@@ -1,5 +1,5 @@
--- (b → c) → (a → b) → a → c
+-- (b -> c) -> (a -> b) -> a -> c
 -- Would like infix operators.
--- let compose = fun f g x → f (g x);
-let incr = fun n → n;
+let compose = fun f g x -> f (g x);
+let incr = fun n -> n + 1;
 (compose incr incr) 3

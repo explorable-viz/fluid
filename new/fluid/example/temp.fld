@@ -1,2 +1,2 @@
-let f = fun { (x, y) -> (y, x) };
+let f = fun (x, y) -> (y, x);
 f (3, 4)
