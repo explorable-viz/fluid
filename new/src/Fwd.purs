@@ -1,7 +1,7 @@
 module Fwd where
 
 import Prelude hiding (absurd)
-import Data.List (List(..))
+import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expr (Def(..), Defs, Elim(..), Expr(..), T3(..))
@@ -19,8 +19,8 @@ match_fwd { α, u: V.True } (ElimBool { true: κ, false: κ' }) = Just $ T3 ε �
 match_fwd { α, u: V.False } (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ' α
 match_fwd { α, u: V.Pair v v' } (ElimPair σ) = do
    T3 ρ1 τ α' <- match_fwd v σ
-   T3 ρ κ α'' <- match_fwd v' τ
-   pure $ T3 (ρ1 <> ρ) κ (α' ∧ α'')
+   T3 ρ2 κ α'' <- match_fwd v' τ
+   pure $ T3 (ρ1 <> ρ2) κ (α' ∧ α'')
 match_fwd { α, u: V.Nil } (ElimList { nil: κ, cons: σ }) = Just $ T3 ε κ α
 match_fwd { α, u : V.Cons v v' } (ElimList { nil: κ, cons: σ }) = do
    T3 ρ1 τ α' <- match_fwd v σ
@@ -30,7 +30,7 @@ match_fwd _ _ = Nothing
 
 closeDefs_fwd :: Env -> Defs -> Defs -> Selected -> Env
 closeDefs_fwd _ _ Nil _ = ε
-closeDefs_fwd ρ δ0 (Cons (Def f σ) δ) α = closeDefs_fwd ρ δ0 δ α :+: f ↦ { α, u: V.Closure ρ δ σ }
+closeDefs_fwd ρ δ0 (Def f σ : δ) α = closeDefs_fwd ρ δ0 δ α :+: f ↦ { α, u: V.Closure ρ δ σ }
 
 eval_fwd :: Env -> Expr -> Selected -> Val
 eval_fwd ρ (Expr _ (E.Var x)) _ =
@@ -50,6 +50,8 @@ eval_fwd ρ (Expr α (E.Cons e e')) α' = { α: α ∧ α', u: V.Cons (eval_fwd 
 eval_fwd ρ (Expr _ (E.Letrec δ e)) α =
    let ρ' = closeDefs_fwd ρ δ δ α in
    eval_fwd (ρ <> ρ') e α
+eval_fwd ρ (Expr _ (E.Lambda σ)) α =
+   { α, u: V.Closure ρ Nil σ }
 eval_fwd ρ (Expr _ (E.App e e')) α =
    case eval_fwd ρ e α, eval_fwd ρ e' α of
       { α: α', u: V.Closure ρ1 δ σ }, v ->

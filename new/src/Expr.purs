@@ -1,27 +1,29 @@
 module Expr where
 
+import Prelude hiding (join)
 import Data.List (List)
 import Bindings (Var)
 import Selected (Selected(..))
 
 data T3 a b c = T3 a b c
 
--- recursive function
+-- recursive functions
 data Def = Def Var (Elim Expr)
 type Defs = List Def
 
 data RawExpr =
-    Int Int
-  | Var Var
-  | True | False
-  | Pair Expr Expr
-  | Nil | Cons Expr Expr
-  | Op Var
-  | Let Var Expr Expr
-  | Match Expr (Elim Expr)
-  | Letrec Defs Expr
-  | App Expr Expr
-  | BinaryApp Expr Var Expr
+   Var Var |
+   Op Var |
+   Int Int |
+   True | False |
+   Pair Expr Expr |
+   Nil | Cons Expr Expr |
+   Lambda (Elim Expr) |
+   App Expr Expr |
+   BinaryApp Expr Var Expr |
+   Match Expr (Elim Expr) |
+   Let Var Expr Expr |
+   Letrec Defs Expr
 
 data Expr = Expr Selected RawExpr
 
@@ -29,7 +31,13 @@ expr :: RawExpr -> Expr
 expr r = Expr Bot r
 
 data Elim k =
-     ElimVar Var k
-   | ElimPair (Elim (Elim k))
-   | ElimList { nil :: k, cons :: Elim (Elim k) }
-   | ElimBool { true :: k, false :: k }
+   ElimVar Var k |
+   ElimBool { true :: k, false :: k } |
+   ElimPair (Elim (Elim k)) |
+   ElimList { nil :: k, cons :: Elim (Elim k) }
+
+instance elimFunctor :: Functor Elim where
+   map f (ElimVar x κ) = ElimVar x (f κ)
+   map f (ElimBool { true: κ, false: κ' }) = ElimBool { true: f κ, false: f κ' }
+   map f (ElimPair σ) = ElimPair $ map (map f) σ
+   map f (ElimList { nil: κ, cons: σ }) = ElimList { nil: f κ, cons: map (map f) σ }

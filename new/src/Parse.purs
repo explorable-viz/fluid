@@ -1,15 +1,16 @@
 module Parse where
 
-import Prelude hiding (add, between)
+import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
-import Control.Lazy (fix)
+import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (groupBy, sortBy)
+import Data.List (List, groupBy, sortBy)
 import Data.Map (values)
+import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser (Parser, fail)
-import Text.Parsing.Parser.Combinators (try)
+import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
@@ -18,13 +19,15 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Expr, RawExpr(..), expr)
+import Expr (Elim, Expr, RawExpr(..), expr)
+import PElim (PElim(..), join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-
+import Util (error)
 
 type SParser = Parser String
 
 -- constants (should also be used by prettyprinter)
+strFun = "fun" :: String
 strIn = "in" :: String
 strLet = "let" :: String
 strLParen = "(" :: String
@@ -41,7 +44,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    opStart         = op',
    opLetter        = op',
    reservedOpNames = [],
-   reservedNames   = [strIn, strLet],
+   reservedNames   = [strFun, strIn, strLet],
    caseSensitive   = true
 } where
    op' :: SParser Char
@@ -88,7 +91,62 @@ simpleExpr expr' =
    try int <|> -- int may start with +/-
    try (token.parens expr') <|>
    try parensOp <|>
-   pair expr'
+   pair expr' <|>
+   lambda expr'
+
+lambda :: SParser Expr -> SParser Expr
+lambda expr' = do
+   σ <- keyword strFun *> matches expr'
+   pure $ expr $ Lambda σ
+
+matches :: SParser Expr -> SParser (Elim Expr)
+matches expr' =
+   (do
+      σ <- match expr'
+      case toElim σ of
+         Nothing -> error "todo"
+         Just σ' -> pure σ')
+   <|>
+   (do
+      σs <- token.braces (blah expr')
+      case join σs of
+         Nothing -> error "todo"
+         Just σ -> case toElim σ of
+            Nothing -> error "todo"
+            Just σ' -> pure σ')
+
+blah :: SParser Expr -> SParser (List (PElim Expr))
+blah expr' = sepBy1 (match expr') token.semi
+
+match :: SParser Expr -> SParser (PElim Expr)
+match expr' = do
+   mkElim <- pattern
+   ((token.reservedOp "->" *> expr' >>= pure <<< mkElim)
+   <|>
+   (matches expr' >>= pure <<< mkElim <<< expr <<< Lambda))
+
+type MkElimParser = forall k . SParser (k -> PElim k)
+
+-- TODO: anonymous variables
+patternVar :: MkElimParser
+patternVar = ident >>= pure <<< PElimVar
+
+patternPair :: MkElimParser -> MkElimParser
+patternPair pattern' = token.parens $ do
+   mkElim1 <- pattern' <* token.comma
+   mkElim2 <- pattern'
+   pure $ PElimPair <<< mkElim1 <<< mkElim2
+
+-- TODO: lists
+pattern :: MkElimParser
+pattern = fixParser (\p -> patternVar <|> patternPair p)
+
+-- Lazy.fix isn't polymorphic enough.
+fixParser :: (MkElimParser -> MkElimParser) -> MkElimParser
+fixParser f = x
+   where
+   -- type annotation and parentheses are not optional
+   x = (defer \_ -> f x) :: MkElimParser
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ term' = do

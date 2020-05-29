@@ -1,7 +1,7 @@
 module Eval where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), singleton)
+import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
@@ -20,8 +20,8 @@ match { u: V.True } (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ (Match
 match { u: V.False } (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ' (MatchFalse κ)
 match { u: V.Pair v v' } (ElimPair σ) = do
    T3 ρ1 τ ξ <- match v σ
-   T3 ρ κ ξ' <- match v' τ
-   pure $ T3 (ρ1 <> ρ) κ (MatchPair ξ ξ')
+   T3 ρ2 κ ξ' <- match v' τ
+   pure $ T3 (ρ1 <> ρ2) κ (MatchPair ξ ξ')
 match { u: V.Nil } (ElimList { nil: κ, cons: σ }) = Just $ T3 ε κ (MatchNil σ)
 match { u : V.Cons v v' } (ElimList { nil: κ, cons: σ }) = do
    T3 ρ1 τ ξ <- match v σ
@@ -32,7 +32,7 @@ match _ _ = Nothing
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> Defs -> Defs -> Env
 closeDefs _ _ Nil = ε
-closeDefs ρ δ0 (Cons (Def f σ) δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ σ)
+closeDefs ρ δ0 (Def f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ σ)
 
 type ExplVal = { t :: Expl, v :: Val }
 
@@ -61,6 +61,8 @@ eval ρ (Expr _ (E.Letrec δ e)) =
    let ρ' = closeDefs ρ δ δ
        { t, v } = eval (ρ <> ρ') e in
    { t: T.Letrec δ t, v }
+eval ρ (Expr _ (E.Lambda σ)) =
+   { t: T.Lambda σ, v: val $ V.Closure ρ Nil σ }
 eval ρ (Expr _ (E.App e e')) =
    case eval ρ e, eval ρ e' of
       { t, v: { u: V.Closure ρ1 δ σ } }, { t: t', v } ->
