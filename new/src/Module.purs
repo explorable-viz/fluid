@@ -3,8 +3,9 @@ module Module where
 import Prelude
 import Affjax (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
-import Data.List (List(..), (:))
+import Data.List (List, (:))
 import Data.Either (Either(..))
+import Data.Foldable (fold)
 import Data.HTTP.Method (Method(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
@@ -50,8 +51,4 @@ parseWithImports :: String -> List Env -> Aff (Tuple Env Expr)
 parseWithImports src modules = do
    prelude <- loadModule "prelude" Empty
    graphics <- loadModule "graphics" prelude
-   pure $ Tuple (blah (prelude : graphics : modules)) (successfulParse src program)
-
-blah :: List Env -> Env
-blah Nil = Empty
-blah (ρ : ρs) = ρ <> blah ρs
+   pure $ Tuple (fold (prelude : graphics : modules)) (successfulParse src program)
