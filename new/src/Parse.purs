@@ -140,9 +140,8 @@ patternPair pattern' = token.parens $ do
    pure $ PElimPair <<< mkElim1 <<< mkElim2
 
 -- TODO: lists
--- TODO: 'fix' for polymorphic recursion
-pattern :: MkElimParser -> MkElimParser
-pattern pattern' = myFix (\pattern' -> patternVar <|> patternPair pattern')
+pattern :: MkElimParser
+pattern = myFix (\pattern' -> patternVar <|> patternPair pattern')
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
