@@ -99,22 +99,13 @@ blah :: forall a . String -> Maybe a -> SParser a
 blah msg Nothing = fail msg
 blah _ (Just x) = pure x
 
-blah2 :: forall k . Joinable k => List (PElim k) -> Maybe (Elim k)
-blah2 σs = case join σs of
-   Nothing -> Nothing
-   Just σ -> case toElim σ of
-      Nothing -> Nothing
-      Just σ' -> Just σ'
-
 matches :: SParser Expr -> SParser (Elim Expr)
 matches expr' =
    (match expr' >>= blah "Incomplete branches" <<< toElim)
    <|>
    (do
       σs <- token.braces (sepBy1 (match expr') token.semi)
-      case blah2 σs of
-         Nothing -> error "Incompatible or incomplete branches"
-         Just σ -> pure σ)
+      blah "Incompatible or incomplete branches" (join σs >>= toElim))
 
 match :: SParser Expr -> SParser (PElim Expr)
 match expr' = do
