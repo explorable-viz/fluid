@@ -96,7 +96,7 @@ eval ρ (Expr _ (E.Match e σ)) =
          let { t: t', v: v' } = eval (ρ <> ρ') e'
          in { t: T.Match t ξ t', v: v' }
 
-defs :: Env -> Module -> Env -> Env
-defs _ (Module Nil) ρ = ρ
-defs ρ (Module ((E.Def x e) : ds)) ρ' =
-   defs ρ (Module ds) (ρ' :+: x ↦ (eval (ρ <> ρ') e).v)
+defs :: Env -> Module -> Env
+defs ρ (Module Nil) = ρ
+defs ρ (Module ((E.Def x e) : ds)) =
+   defs (ρ :+: x ↦ (eval ρ e).v) (Module ds)
