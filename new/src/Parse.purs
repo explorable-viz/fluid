@@ -161,8 +161,7 @@ letRec expr' = do
 matchAs :: SParser Expr -> SParser Expr
 matchAs expr' = do
    e <- keyword strMatch *> expr' <* keyword strAs
-   σ <- elim expr'
-   pure $ expr $ MatchAs e σ
+   elim expr' <#> MatchAs e >>> expr
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
