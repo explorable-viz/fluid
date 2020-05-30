@@ -17,8 +17,9 @@ runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
    before (openWithImports file) $
       it file $ \(Tuple ρ e) -> do
-         let { u } = (eval (ρ <> primitives) e).v
-         let { u: u' } = eval_fwd ρ e Top
+         let ρ' = ρ <> primitives
+         let { u } = (eval ρ' e).v
+         let { u: u' } = eval_fwd ρ' e Top
          (show $ pretty u) `shouldEqual` (show $ pretty u')
          (show $ pretty u') `shouldEqual` expected
 
