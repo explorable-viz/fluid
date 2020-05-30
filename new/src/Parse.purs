@@ -181,8 +181,11 @@ operators =
 expr_ :: SParser Expr
 expr_ = fix $ \p -> flip buildExprParser (appChain p) operators
 
+topLevel :: forall a . SParser a -> SParser a
+topLevel p = token.whiteSpace *> p <* eof
+
 program ∷ SParser Expr
-program = token.whiteSpace *> expr_ <* eof
+program = topLevel expr_
 
 module_ :: SParser Module
-module_ = many (def expr_) <#> Module
+module_ = topLevel $ many (def expr_) <#> Module
