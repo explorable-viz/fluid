@@ -4,6 +4,7 @@ import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
 import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
+import Data.Foldable (notElem)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (many, groupBy, singleton, sortBy)
@@ -34,6 +35,10 @@ strMatch = "match" :: String
 strLParen = "(" :: String
 strRParen = ")" :: String
 
+-- treat datatype-generically later
+cTrue = "True" :: String
+cFalse = "False" :: String
+
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    commentStart    = "{-",
@@ -51,6 +56,9 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    op' :: SParser Char
    op' = oneOf [':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~']
 
+constructors :: Array String
+constructors = [cTrue, cFalse]
+
 token :: TokenParser
 token = makeTokenParser languageDef
 
@@ -62,7 +70,14 @@ variable = ident <#> expr <<< Var
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
-ident = token.identifier
+ident = do
+   x <- token.identifier
+   pureIf ("Unexpected constructor") (notElem x constructors) x
+
+ctr :: String -> SParser String
+ctr c = do
+   x <- token.identifier
+   pureIf ("Expected " <> c) (x == c) x
 
 sign :: ∀ a . (Ring a) => SParser (a -> a)
 sign =
@@ -75,6 +90,12 @@ int = do
    f <- sign
    token.natural <#> f >>> Int >>> expr
 
+true_ :: SParser Expr
+true_ = ctr cTrue <#> const (expr True)
+
+false_ :: SParser Expr
+false_ = ctr cFalse <#> const (expr False)
+
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
    e1 <- expr'
@@ -84,6 +105,8 @@ pair expr' = token.parens $ do
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    variable <|>
+   true_ <|>
+   false_ <|>
    try (let_ expr') <|>
    letRec expr' <|>
    matchAs expr' <|>
@@ -96,17 +119,20 @@ simpleExpr expr' =
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> elim expr' <#> Lambda >>> expr
 
-maybePure :: forall a . String -> Maybe a -> SParser a
-maybePure msg Nothing = fail msg
-maybePure _ (Just x) = pure x
+pureMaybe :: forall a . String -> Maybe a -> SParser a
+pureMaybe msg Nothing = fail msg
+pureMaybe _ (Just x) = pure x
+
+pureIf :: forall a . String -> Boolean -> a -> SParser a
+pureIf msg b = fromBool b >>> pureMaybe msg
 
 elim :: SParser Expr -> SParser (Elim Expr)
 elim expr' =
-   (partialElim expr' >>= toElim >>> maybePure "Incomplete branches")
+   (partialElim expr' >>= toElim >>> pureMaybe "Incomplete branches")
    <|>
    (do
       σs <- token.braces (sepBy1 (partialElim expr') token.semi)
-      maybePure "Incompatible or incomplete branches" (join σs >>= toElim))
+      pureMaybe "Incompatible or incomplete branches" (join σs >>= toElim))
 
 partialElim :: SParser Expr -> SParser (PElim Expr)
 partialElim expr' = do
@@ -127,9 +153,20 @@ patternPair pattern' = token.parens $ do
    mkElim2 <- pattern'
    pure $ mkElim2 >>> mkElim1 >>> PElimPair
 
+patternTrue :: MkElimParser
+patternTrue = ctr cTrue <#> const PElimTrue
+
+patternFalse :: MkElimParser
+patternFalse = ctr cFalse <#> const PElimFalse
+
 -- TODO: lists
 pattern :: MkElimParser
-pattern = fixParser (\p -> patternVar <|> patternPair p)
+pattern = fixParser (\p ->
+   patternVar <|>
+   patternTrue <|>
+   patternFalse <|>
+   patternPair p
+)
 
 -- fix isn't polymorphic enough
 fixParser :: (MkElimParser -> MkElimParser) -> MkElimParser
@@ -171,7 +208,7 @@ parensOp = token.parens $ token.operator <#> Op >>> expr
 theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
 theBinaryOp op = try $ do
    op' <- token.operator
-   maybePure ("Expected " <> op) $
+   pureMaybe ("Expected " <> op) $
       fromBool (op == op') (\e1 e2 -> expr $ BinaryApp e1 op e2)
 
 backtick :: SParser Unit
