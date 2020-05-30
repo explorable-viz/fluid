@@ -3,7 +3,7 @@
    "scripts": {
       "bundle": "spago bundle-app --main Test.Main --to dist/app.js",
       "continuous-test": "npm-run-all --parallel bundle-watch browser-test",
-      "bundle-watch": "spago bundle-app --watch --main Test.Main --to dist/app.js",
+      "bundle-watch": "spago bundle-app --watch --main Test.Main --to dist/app.js && parcel watch index.html",
       "browser-test": "karma start --browsers=Chrome --singleRun=false",
       "test": "karma start"
    },
