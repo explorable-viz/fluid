@@ -1,2 +1,4 @@
-let f = fun (x, y) -> (y, x);
-f (3, 4)
+match x == 0 as {
+   True -> 1;
+   False -> x * fact (x - 1)
+}

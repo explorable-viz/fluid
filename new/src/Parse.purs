@@ -45,7 +45,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    opStart         = op',
    opLetter        = op',
    reservedOpNames = [],
-   reservedNames   = [strFun, strLet],
+   reservedNames   = [strAs, strFun, strLet, strMatch],
    caseSensitive   = true
 } where
    op' :: SParser Char
