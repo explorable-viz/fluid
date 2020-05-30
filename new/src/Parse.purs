@@ -22,6 +22,7 @@ import Bindings (Var)
 import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), expr)
 import PElim (PElim(..), join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
+import Util (fromBool)
 
 type SParser = Parser String
 
@@ -75,7 +76,7 @@ int = do
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
    e1 <- expr'
-   token.comma *> expr' <#> expr <<< Pair e1
+   token.comma *> expr' <#> Pair e1 >>> expr
 
 -- TODO: string, float, list
 simpleExpr :: SParser Expr -> SParser Expr
@@ -89,7 +90,7 @@ simpleExpr expr' =
    lambda expr'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' = keyword strFun *> matches expr' <#> expr <<< Lambda
+lambda expr' = keyword strFun *> matches expr' <#> Lambda >>> expr
 
 maybePure :: forall a . String -> Maybe a -> SParser a
 maybePure msg Nothing = fail msg
@@ -106,21 +107,21 @@ matches expr' =
 match :: SParser Expr -> SParser (PElim Expr)
 match expr' = do
    mkElim <- pattern
-   ((token.reservedOp "->" *> expr' >>= pure <<< mkElim)
+   ((token.reservedOp "->" *> expr' <#> mkElim)
    <|>
-   (matches expr' >>= pure <<< mkElim <<< expr <<< Lambda))
+   (matches expr' <#> Lambda >>> expr >>> mkElim))
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
 -- TODO: anonymous variables
 patternVar :: MkElimParser
-patternVar = ident >>= pure <<< PElimVar
+patternVar = ident <#> PElimVar
 
 patternPair :: MkElimParser -> MkElimParser
 patternPair pattern' = token.parens $ do
    mkElim1 <- pattern' <* token.comma
    mkElim2 <- pattern'
-   pure $ PElimPair <<< mkElim1 <<< mkElim2
+   pure $ mkElim2 >>> mkElim1 >>> PElimPair
 
 -- TODO: lists
 pattern :: MkElimParser
@@ -141,15 +142,11 @@ def expr' = do
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = do
    d <- def expr'
-   expr' <#> expr <<< Let d
+   expr' <#> Let d >>> expr
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
-parensOp = token.parens $ token.operator <#> expr <<< Op
-
-fromBool :: forall a . Boolean -> a -> Maybe a
-fromBool false = const Nothing
-fromBool true = Just
+parensOp = token.parens $ token.operator <#> Op >>> expr
 
 -- the specific binary operator
 theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
@@ -165,7 +162,7 @@ appChain ∷ SParser Expr -> SParser Expr
 appChain expr' = simpleExpr expr' >>= rest
    where
       rest ∷ Expr -> SParser Expr
-      rest e = (simpleExpr expr' <#> expr <<< App e >>= rest) <|> pure e
+      rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr

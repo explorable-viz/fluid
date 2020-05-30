@@ -1,6 +1,7 @@
 module Util where
 
 import Prelude
+import Data.Maybe (Maybe(..))
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 
@@ -14,3 +15,7 @@ todo = "todo"
 
 absurd :: String
 absurd = "absurd"
+
+fromBool :: forall a . Boolean -> a -> Maybe a
+fromBool false = const Nothing
+fromBool true = Just

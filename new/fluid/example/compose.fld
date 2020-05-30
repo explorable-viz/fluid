@@ -1,3 +1,2 @@
-let compose = fun f g x -> f (g x); -- delete me once prelude loaded
 let incr = fun n -> n + 1;
 (compose incr incr) 3
