@@ -30,7 +30,7 @@ loadFile folder file = do
 
 loadModule :: String -> Env -> Aff Env
 loadModule file ρ = do
-   src <- loadFile "fluid/lib" (file <> "0")
+   src <- loadFile "fluid/lib" file
    let m = successfulParse src module_
    pure $ defs ρ m
 
