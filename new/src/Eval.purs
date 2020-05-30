@@ -88,13 +88,13 @@ eval ρ (Expr _ (E.Let (E.Def x e) e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval (ρ :+: x ↦ v) e'
    in { t: T.Let (T.Def x t) t', v: v' }
-eval ρ (Expr _ (E.Match e σ)) =
+eval ρ (Expr _ (E.MatchAs e σ)) =
    let { t, v } = eval ρ e
    in case match v σ of
       Nothing -> error "Pattern mismatch"
       Just (T3 ρ' e' ξ) ->
          let { t: t', v: v' } = eval (ρ <> ρ') e'
-         in { t: T.Match t ξ t', v: v' }
+         in { t: T.MatchAs t ξ t', v: v' }
 
 defs :: Env -> Module -> Env
 defs ρ (Module Nil) = ρ

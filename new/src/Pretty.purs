@@ -144,7 +144,7 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Op op) = parens $ text op
    pretty (E.Let (Def x e) e') =
       atop (text ("let " <> x <> " = ") :<>: pretty e :<>: text " in") (pretty e')
-   pretty (E.Match e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
+   pretty (E.MatchAs e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
    pretty (E.LetRec δ e) =
       atop (text "let " :<>: pretty δ) (text "in     " :<>: pretty e)
    pretty (E.Lambda σ) = text "fun" :<>: pretty σ

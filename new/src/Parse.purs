@@ -27,8 +27,10 @@ import Util (fromBool)
 type SParser = Parser String
 
 -- constants (should also be used by prettyprinter)
+strAs = "as" :: String
 strFun = "fun" :: String
 strLet = "let" :: String
+strMatch = "match" :: String
 strLParen = "(" :: String
 strRParen = ")" :: String
 
@@ -84,6 +86,7 @@ simpleExpr expr' =
    variable <|>
    try (let_ expr') <|>
    letRec expr' <|>
+   matchAs expr' <|>
    try int <|> -- int may start with +/-
    try (token.parens expr') <|>
    try parensOp <|>
@@ -99,7 +102,7 @@ maybePure _ (Just x) = pure x
 
 elim :: SParser Expr -> SParser (Elim Expr)
 elim expr' =
-   (partialElim expr' >>= maybePure "Incomplete branches" <<< toElim)
+   (partialElim expr' >>= toElim >>> maybePure "Incomplete branches")
    <|>
    (do
       σs <- token.braces (sepBy1 (partialElim expr') token.semi)
@@ -143,7 +146,7 @@ def expr' = do
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
    f <- keyword strLet *> ident
-   (matches expr' <#> RecDef f >>> singleton) <* token.semi
+   (elim expr' <#> RecDef f >>> singleton) <* token.semi
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = do
@@ -154,6 +157,12 @@ letRec :: SParser Expr -> SParser Expr
 letRec expr' = do
    δ <- recDefs expr'
    expr' <#> LetRec δ >>> expr
+
+matchAs :: SParser Expr -> SParser Expr
+matchAs expr' = do
+   e <- keyword strMatch *> expr' <* keyword strAs
+   σ <- elim expr'
+   pure $ expr $ MatchAs e σ
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
