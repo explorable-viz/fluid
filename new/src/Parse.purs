@@ -6,7 +6,7 @@ import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, groupBy, sortBy)
+import Data.List (many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser (Parser, fail)
@@ -19,10 +19,10 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Elim, Expr, RawExpr(..), expr)
+import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), expr)
 import PElim (PElim(..), join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (error)
+import Util (fromBool)
 
 type SParser = Parser String
 
@@ -56,9 +56,7 @@ keyword ∷ String → SParser Unit
 keyword = token.reserved
 
 variable :: SParser Expr
-variable = do
-   x <- ident
-   pure $ expr $ Var x
+variable = ident <#> expr <<< Var
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
@@ -73,14 +71,12 @@ sign =
 int :: SParser Expr
 int = do
    f <- sign
-   n <- token.natural
-   pure $ expr $ Int $ f n
+   token.natural <#> f >>> Int >>> expr
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
    e1 <- expr'
-   e2 <- token.comma *> expr'
-   pure $ expr $ Pair e1 e2
+   token.comma *> expr' <#> Pair e1 >>> expr
 
 -- TODO: string, float, list
 simpleExpr :: SParser Expr -> SParser Expr
@@ -94,91 +90,81 @@ simpleExpr expr' =
    lambda expr'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' = do
-   σ <- keyword strFun *> matches expr'
-   pure $ expr $ Lambda σ
+lambda expr' = keyword strFun *> matches expr' <#> Lambda >>> expr
+
+maybePure :: forall a . String -> Maybe a -> SParser a
+maybePure msg Nothing = fail msg
+maybePure _ (Just x) = pure x
 
 matches :: SParser Expr -> SParser (Elim Expr)
 matches expr' =
-   (do
-      σ <- match expr'
-      case toElim σ of
-         Nothing -> error "todo"
-         Just σ' -> pure σ')
+   (match expr' >>= maybePure "Incomplete branches" <<< toElim)
    <|>
    (do
-      σs <- token.braces (blah expr')
-      case join σs of
-         Nothing -> error "todo"
-         Just σ -> case toElim σ of
-            Nothing -> error "todo"
-            Just σ' -> pure σ')
-
-blah :: SParser Expr -> SParser (List (PElim Expr))
-blah expr' = sepBy1 (match expr') token.semi
+      σs <- token.braces (sepBy1 (match expr') token.semi)
+      maybePure "Incompatible or incomplete branches" (join σs >>= toElim))
 
 match :: SParser Expr -> SParser (PElim Expr)
 match expr' = do
    mkElim <- pattern
-   ((token.reservedOp "->" *> expr' >>= pure <<< mkElim)
+   ((token.reservedOp "->" *> expr' <#> mkElim)
    <|>
-   (matches expr' >>= pure <<< mkElim <<< expr <<< Lambda))
+   (matches expr' <#> Lambda >>> expr >>> mkElim))
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
 -- TODO: anonymous variables
 patternVar :: MkElimParser
-patternVar = ident >>= pure <<< PElimVar
+patternVar = ident <#> PElimVar
 
 patternPair :: MkElimParser -> MkElimParser
 patternPair pattern' = token.parens $ do
    mkElim1 <- pattern' <* token.comma
    mkElim2 <- pattern'
-   pure $ PElimPair <<< mkElim1 <<< mkElim2
+   pure $ mkElim2 >>> mkElim1 >>> PElimPair
 
 -- TODO: lists
 pattern :: MkElimParser
 pattern = fixParser (\p -> patternVar <|> patternPair p)
 
--- Lazy.fix isn't polymorphic enough.
+-- fix isn't polymorphic enough
 fixParser :: (MkElimParser -> MkElimParser) -> MkElimParser
 fixParser f = x
    where
-   -- type annotation and parentheses are not optional
+   -- type annotation and parentheses are essential :-o
    x = (defer \_ -> f x) :: MkElimParser
 
-let_ ∷ SParser Expr -> SParser Expr
-let_ term' = do
+def :: SParser Expr -> SParser Def
+def expr' = do
    x <- keyword strLet *> ident
-   e1 <- token.reservedOp "=" *> term'
-   e2 <- token.semi *> term'
-   pure $ expr $ Let x e1 e2
+   token.reservedOp "=" *> (expr' <#> Def x) <* token.semi
+
+let_ ∷ SParser Expr -> SParser Expr
+let_ expr' = do
+   d <- def expr'
+   expr' <#> Let d >>> expr
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
-parensOp = token.parens $ do
-   op <- token.operator
-   pure $ expr $ Op op
+parensOp = token.parens $ token.operator <#> Op >>> expr
 
 -- the specific binary operator
 theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
 theBinaryOp op = try $ do
    op' <- token.operator
-   if (op /= op')
-   then fail $ "Expected " <> op
-   else pure $ (\e1 e2 -> expr $ BinaryApp e1 op e2)
+   maybePure ("Expected " <> op) $
+      fromBool (op == op') (\e1 e2 -> expr $ BinaryApp e1 op e2)
 
 backtick :: SParser Unit
 backtick = token.reservedOp "`"
 
 appChain ∷ SParser Expr -> SParser Expr
-appChain expr' = do
-   simpleExpr expr' >>= rest
+appChain expr' = simpleExpr expr' >>= rest
    where
       rest ∷ Expr -> SParser Expr
-      rest e1 = (simpleExpr expr' >>= (pure <<< expr <<< App e1) >>= rest) <|> pure e1
+      rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
 
--- each element of the top-level list corresponds to a precedence level.
+-- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
 operators =
    fromFoldable $ map fromFoldable $
@@ -192,5 +178,11 @@ operators =
 expr_ :: SParser Expr
 expr_ = fix $ \p -> flip buildExprParser (appChain p) operators
 
+topLevel :: forall a . SParser a -> SParser a
+topLevel p = token.whiteSpace *> p <* eof
+
 program ∷ SParser Expr
-program = token.whiteSpace *> expr_ <* eof
+program = topLevel expr_
+
+module_ :: SParser Module
+module_ = topLevel $ many (def expr_) <#> Module

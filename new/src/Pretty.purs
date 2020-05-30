@@ -8,7 +8,7 @@ import Data.Newtype (ala, class Newtype, wrap)
 import Data.String as S
 import Data.String.CodeUnits as SCU
 import Data.Unfoldable (replicate)
-import Expr (Def(..), Elim(..), Expr(..), RawExpr)
+import Expr (Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Primitive (BinaryOp(..))
 import Util (error)
@@ -142,7 +142,7 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty E.Nil = text "[]"
    pretty (E.Cons e e') = text "[" :<>: pretty e :<>: prettyList e' :<>: text "]"
    pretty (E.Op op) = parens $ text op
-   pretty (E.Let x e e') =
+   pretty (E.Let (Def x e) e') =
       atop (text ("let " <> x <> " = ") :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.Match e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
    pretty (E.Letrec δ e) =
@@ -151,9 +151,9 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.App e e') = pretty e :<>: text " " :<>: pretty e'
    pretty (E.BinaryApp e op e') = pretty e :<>: text (" " <> op <> " ") :<>: pretty e'
 
-instance prettyDefs :: Pretty (List Def) where
+instance prettyDefs :: Pretty (List RecDef) where
    pretty Nil = text ""
-   pretty (Def f σ : δ) = atop (text (f <> " = ") :<>: pretty σ) $ pretty δ
+   pretty (RecDef f σ : δ) = atop (text (f <> " = ") :<>: pretty σ) $ pretty δ
 
 instance prettyElim :: Pretty k => Pretty (Elim k) where
    pretty (ElimVar x κ) = text "  " :<>: text x :<>: text " -> " :<>: pretty κ

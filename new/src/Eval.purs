@@ -4,13 +4,13 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
-import Bindings ((:+:), (↦), ε, find)
-import Expl (Expl(..)) as T
+import Bindings (Bindings(..), (:+:), (↦), ε, find)
+import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Def(..), Defs, Elim(..), Expr(..), T3(..))
-import Expr (RawExpr(..)) as E
+import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
+import Expr (Def(..), RawExpr(..)) as E
 import Primitive (opFun)
-import Util (absurd, error)
+import Util (T3(..), absurd, error)
 import Val (Env, Val, toValues, val)
 import Val (RawVal(..)) as V
 
@@ -30,9 +30,9 @@ match { u : V.Cons v v' } (ElimList { nil: κ, cons: σ }) = do
 match _ _ = Nothing
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-closeDefs :: Env -> Defs -> Defs -> Env
+closeDefs :: Env -> RecDefs -> RecDefs -> Env
 closeDefs _ _ Nil = ε
-closeDefs ρ δ0 (Def f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ σ)
+closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ σ)
 
 type ExplVal = { t :: Expl, v :: Val }
 
@@ -84,10 +84,10 @@ eval ρ (Expr _ (E.BinaryApp e op e')) =
       Just { u: V.Op φ } -> { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
       Just _ -> error absurd
       Nothing -> error $ "operator " <> op <> " not found"
-eval ρ (Expr _ (E.Let x e e')) =
+eval ρ (Expr _ (E.Let (E.Def x e) e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval (ρ :+: x ↦ v) e'
-   in { t: T.Let x t t', v: v' }
+   in { t: T.Let (T.Def x t) t', v: v' }
 eval ρ (Expr _ (E.Match e σ)) =
    let { t, v } = eval ρ e
    in case match v σ of
@@ -95,3 +95,8 @@ eval ρ (Expr _ (E.Match e σ)) =
       Just (T3 ρ' e' ξ) ->
          let { t: t', v: v' } = eval (ρ <> ρ') e'
          in { t: T.Match t ξ t', v: v' }
+
+defs :: Env -> Module -> Env
+defs ρ (Module Nil) = ρ
+defs ρ (Module ((E.Def x e) : ds)) =
+   defs (ρ :+: x ↦ (eval ρ e).v) (Module ds)

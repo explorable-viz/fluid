@@ -4,11 +4,11 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Bindings ((:+:), (↦), ε, find)
-import Expr (Def(..), Defs, Elim(..), Expr(..), T3(..))
+import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs)
 import Expr (RawExpr(..)) as E
 import Primitive (opFun)
 import Selected (Selected(..), (∧))
-import Util (absurd, error)
+import Util (T3(..), absurd, error)
 import Val (Env, Val, toValues_fwd)
 import Val (RawVal(..)) as V
 
@@ -28,9 +28,9 @@ match_fwd { α, u : V.Cons v v' } (ElimList { nil: κ, cons: σ }) = do
    pure $ T3 (ρ1 <> ρ) κ' (α' ∧ α'')
 match_fwd _ _ = Nothing
 
-closeDefs_fwd :: Env -> Defs -> Defs -> Selected -> Env
+closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
 closeDefs_fwd _ _ Nil _ = ε
-closeDefs_fwd ρ δ0 (Def f σ : δ) α = closeDefs_fwd ρ δ0 δ α :+: f ↦ { α, u: V.Closure ρ δ σ }
+closeDefs_fwd ρ δ0 (RecDef f σ : δ) α = closeDefs_fwd ρ δ0 δ α :+: f ↦ { α, u: V.Closure ρ δ σ }
 
 eval_fwd :: Env -> Expr -> Selected -> Val
 eval_fwd ρ (Expr _ (E.Var x)) _ =
@@ -66,7 +66,7 @@ eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
    case find op ρ of
       Just { α: α', u: V.Op φ } -> toValues_fwd (opFun φ) α' (eval_fwd ρ e1 α) (eval_fwd ρ e2 α)
       _ -> error absurd
-eval_fwd ρ (Expr _ (E.Let x e1 e2)) α = eval_fwd (ρ :+: x ↦ eval_fwd ρ e1 α) e2 α
+eval_fwd ρ (Expr _ (E.Let (Def x e1) e2)) α = eval_fwd (ρ :+: x ↦ eval_fwd ρ e1 α) e2 α
 eval_fwd ρ (Expr _ (E.Match e σ)) α =
    case match_fwd (eval_fwd ρ e α) σ of
       Just (T3 ρ' e' α') -> eval_fwd (ρ <> ρ') e' α'

@@ -1,9 +1,9 @@
 {
    "license": "MIT",
    "scripts": {
-      "bundle": "spago bundle-app --main Test.Main --to dist/app.js",
+      "bundle": "spago bundle-app --main Test.Main --to dist/app.js && parcel build index.html",
       "continuous-test": "npm-run-all --parallel bundle-watch browser-test",
-      "bundle-watch": "spago bundle-app --watch --main Test.Main --to dist/app.js",
+      "bundle-watch": "spago bundle-app --watch --main Test.Main --to dist/app.js && parcel watch index.html",
       "browser-test": "karma start --browsers=Chrome --singleRun=false",
       "test": "karma start"
    },
@@ -24,7 +24,7 @@
       "karma-mocha-reporter": "^2.2.5",
       "mocha": "^7.1.2",
       "npm-run-all": "^4.1.5",
-      "parcel-bundler": "^1.12.4",
+      "parcel-plugin-static-files-copy": "^2.3.1",
       "spago": "^0.15.2"
    }
 }

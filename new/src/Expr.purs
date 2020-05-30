@@ -5,11 +5,9 @@ import Data.List (List)
 import Bindings (Var)
 import Selected (Selected(..))
 
-data T3 a b c = T3 a b c
-
--- recursive functions
-data Def = Def Var (Elim Expr)
-type Defs = List Def
+data Def = Def Var Expr
+data RecDef = RecDef Var (Elim Expr)
+type RecDefs = List RecDef
 
 data RawExpr =
    Var Var |
@@ -22,8 +20,8 @@ data RawExpr =
    App Expr Expr |
    BinaryApp Expr Var Expr |
    Match Expr (Elim Expr) |
-   Let Var Expr Expr |
-   Letrec Defs Expr
+   Let Def Expr |
+   Letrec RecDefs Expr
 
 data Expr = Expr Selected RawExpr
 
@@ -41,3 +39,5 @@ instance elimFunctor :: Functor Elim where
    map f (ElimBool { true: κ, false: κ' }) = ElimBool { true: f κ, false: f κ' }
    map f (ElimPair σ) = ElimPair $ map (map f) σ
    map f (ElimList { nil: κ, cons: σ }) = ElimList { nil: f κ, cons: map (map f) σ }
+
+data Module = Module (List Def)
