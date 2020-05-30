@@ -21,7 +21,7 @@ data RawExpr =
    BinaryApp Expr Var Expr |
    Match Expr (Elim Expr) |
    Let Def Expr |
-   Letrec RecDefs Expr
+   LetRec RecDefs Expr
 
 data Expr = Expr Selected RawExpr
 

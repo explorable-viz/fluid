@@ -47,7 +47,7 @@ eval_fwd ρ (Expr α (E.Int n)) α' = { α: α ∧ α', u: V.Int n }
 eval_fwd ρ (Expr α (E.Pair e1 e2)) α' = { α: α ∧ α', u: V.Pair (eval_fwd ρ e1 α') (eval_fwd ρ e2 α') }
 eval_fwd ρ (Expr α E.Nil) α' = { α: α ∧ α', u: V.Nil }
 eval_fwd ρ (Expr α (E.Cons e e')) α' = { α: α ∧ α', u: V.Cons (eval_fwd ρ e α') (eval_fwd ρ e' α') }
-eval_fwd ρ (Expr _ (E.Letrec δ e)) α =
+eval_fwd ρ (Expr _ (E.LetRec δ e)) α =
    let ρ' = closeDefs_fwd ρ δ δ α in
    eval_fwd (ρ <> ρ') e α
 eval_fwd ρ (Expr _ (E.Lambda σ)) α =

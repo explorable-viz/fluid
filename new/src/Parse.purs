@@ -6,7 +6,7 @@ import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (many, groupBy, sortBy)
+import Data.List (many, groupBy, singleton, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser (Parser, fail)
@@ -19,7 +19,7 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), expr)
+import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (PElim(..), join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (fromBool)
@@ -82,7 +82,8 @@ pair expr' = token.parens $ do
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    variable <|>
-   let_ expr' <|>
+   try (let_ expr') <|>
+   letRec expr' <|>
    try int <|> -- int may start with +/-
    try (token.parens expr') <|>
    try parensOp <|>
@@ -90,26 +91,26 @@ simpleExpr expr' =
    lambda expr'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' = keyword strFun *> matches expr' <#> Lambda >>> expr
+lambda expr' = keyword strFun *> elim expr' <#> Lambda >>> expr
 
 maybePure :: forall a . String -> Maybe a -> SParser a
 maybePure msg Nothing = fail msg
 maybePure _ (Just x) = pure x
 
-matches :: SParser Expr -> SParser (Elim Expr)
-matches expr' =
-   (match expr' >>= maybePure "Incomplete branches" <<< toElim)
+elim :: SParser Expr -> SParser (Elim Expr)
+elim expr' =
+   (partialElim expr' >>= maybePure "Incomplete branches" <<< toElim)
    <|>
    (do
-      σs <- token.braces (sepBy1 (match expr') token.semi)
+      σs <- token.braces (sepBy1 (partialElim expr') token.semi)
       maybePure "Incompatible or incomplete branches" (join σs >>= toElim))
 
-match :: SParser Expr -> SParser (PElim Expr)
-match expr' = do
+partialElim :: SParser Expr -> SParser (PElim Expr)
+partialElim expr' = do
    mkElim <- pattern
    ((token.reservedOp "->" *> expr' <#> mkElim)
    <|>
-   (matches expr' <#> Lambda >>> expr >>> mkElim))
+   (elim expr' <#> Lambda >>> expr >>> mkElim))
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
@@ -139,10 +140,20 @@ def expr' = do
    x <- keyword strLet *> ident
    token.reservedOp "=" *> (expr' <#> Def x) <* token.semi
 
+recDefs :: SParser Expr -> SParser RecDefs
+recDefs expr' = do
+   f <- keyword strLet *> ident
+   (matches expr' <#> RecDef f >>> singleton) <* token.semi
+
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = do
    d <- def expr'
    expr' <#> Let d >>> expr
+
+letRec :: SParser Expr -> SParser Expr
+letRec expr' = do
+   δ <- recDefs expr'
+   expr' <#> LetRec δ >>> expr
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr

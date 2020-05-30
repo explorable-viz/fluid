@@ -27,5 +27,7 @@ main :: Effect Unit
 main = do
    runExample "arithmetic" "42"
    runExample "compose" "5"
+   runExample "factorial" "40320"
    runExample "normalise" "(33, 66)"
+
    runExample "temp" "(4, 3)"

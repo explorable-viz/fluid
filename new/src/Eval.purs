@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
-import Bindings (Bindings(..), (:+:), (↦), ε, find)
+import Bindings ((:+:), (↦), ε, find)
 import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
@@ -57,10 +57,10 @@ eval ρ (Expr _ (E.Cons e e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e' in
    { t: T.Cons t t', v: val $ V.Cons v v' }
-eval ρ (Expr _ (E.Letrec δ e)) =
+eval ρ (Expr _ (E.LetRec δ e)) =
    let ρ' = closeDefs ρ δ δ
        { t, v } = eval (ρ <> ρ') e in
-   { t: T.Letrec δ t, v }
+   { t: T.LetRec δ t, v }
 eval ρ (Expr _ (E.Lambda σ)) =
    { t: T.Lambda σ, v: val $ V.Closure ρ Nil σ }
 eval ρ (Expr _ (E.App e e')) =
