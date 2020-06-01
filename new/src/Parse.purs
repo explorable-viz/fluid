@@ -32,8 +32,6 @@ strAs = "as" :: String
 strFun = "fun" :: String
 strLet = "let" :: String
 strMatch = "match" :: String
-strLParen = "(" :: String
-strRParen = ")" :: String
 
 -- treat datatype-generically later
 cTrue = "True" :: String
