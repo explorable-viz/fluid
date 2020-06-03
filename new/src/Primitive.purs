@@ -51,13 +51,13 @@ instance fromInt :: From Int where
 instance fromBoolean :: From Boolean where
    from b = val $ if b then True else False
 
-apply :: BinaryOp -> Val -> Val -> Val
-apply (BinaryOp _ (IntIntInt f)) v1 v2 = from $ f (to v1) (to v2)
-apply (BinaryOp _ (IntIntBool f)) v1 v2 = from $ f (to v1) (to v2)
+applyBinary :: BinaryOp -> Val -> Val -> Val
+applyBinary (BinaryOp _ (IntIntInt f)) v1 v2 = from $ f (to v1) (to v2)
+applyBinary (BinaryOp _ (IntIntBool f)) v1 v2 = from $ f (to v1) (to v2)
 
-apply_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
-apply_fwd op α v1@(Val α1 _) v2@(Val α2 _) =
-   Val (α ∧ α1 ∧ α2) u where Val _ u = apply op v1 v2
+applyBinary_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
+applyBinary_fwd op α v1@(Val α1 _) v2@(Val α2 _) =
+   Val (α ∧ α1 ∧ α2) u where Val _ u = applyBinary op v1 v2
 
 intIntBool :: String -> (Int -> Int -> Boolean) -> Val
 intIntBool name = IntIntBool >>> BinaryOp name >>> Binary >>> val
