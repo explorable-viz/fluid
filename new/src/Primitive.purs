@@ -69,6 +69,9 @@ applyUnary_fwd :: UnaryOp -> Selected -> Val -> Val
 applyUnary_fwd op α v@(Val α' _) =
    Val (α ∧ α') u where Val _ u = applyUnary op v
 
+intStr :: String -> (Int -> String) -> Val
+intStr name = IntStr >>> UnaryOp name >>> Unary >>> val
+
 intIntBool :: String -> (Int -> Int -> Boolean) -> Val
 intIntBool name = IntIntBool >>> BinaryOp name >>> Binary >>> val
 
@@ -86,5 +89,6 @@ primitives = foldl (:+:) ε [
    "<" ↦ intIntBool "prim-lt" (<),
    ">" ↦ intIntBool "prim-gt" (>),
    "<=" ↦ intIntBool "prim-leq" (<=),
-   ">=" ↦ intIntBool "prim-geq" (>=)
+   ">=" ↦ intIntBool "prim-geq" (>=),
+   "intToStr" ↦ intStr "prim-intToStr" (show)
 ]
