@@ -77,12 +77,18 @@ instance rawValPretty :: Pretty RawVal where
    pretty V.True = text "True"
    pretty V.False = text "False"
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
-   pretty (V.Unary (UnaryOp name _)) = parens $ text name
-   pretty (V.Binary (BinaryOp name _)) = parens $ text name
-   pretty (V.PartialApp (BinaryOp name _) v) = parens $ text (name <> " ") :<>: pretty v
+   pretty (V.Unary op) = parens $ pretty op
+   pretty (V.Binary op) = parens $ pretty op
    pretty (V.Pair v v') = parens $ pretty v :<>: text ", " :<>: pretty v'
    pretty V.Nil = text "[]"
    pretty (V.Cons v v') = text "[" :<>: pretty v :<>: prettyList v' :<>: text "]"
+
+instance unaryOpPretty :: Pretty UnaryOp where
+   pretty (UnaryOp name _) = text name
+   pretty (PartialApp φ v) = pretty φ :<>: text "-" :<>: pretty v
+
+instance binaryOpPretty :: Pretty BinaryOp where
+   pretty (BinaryOp name _) = text name
 
 parens :: Doc -> Doc
 parens doc = text "(" :<>: doc :<>: text ")"

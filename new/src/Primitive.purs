@@ -55,15 +55,16 @@ instance fromString :: From String where
    from = Str >>> val
 
 applyBinary :: BinaryOp -> Val -> Val -> Val
-applyBinary (BinaryOp _ (IntIntInt f)) v1 v2 = from $ f (to v1) (to v2)
-applyBinary (BinaryOp _ (IntIntBool f)) v1 v2 = from $ f (to v1) (to v2)
+applyBinary (BinaryOp _ (IntIntInt f)) v v' = from $ f (to v) (to v')
+applyBinary (BinaryOp _ (IntIntBool f)) v v' = from $ f (to v) (to v')
 
 applyBinary_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
-applyBinary_fwd op α v1@(Val α1 _) v2@(Val α2 _) =
-   Val (α ∧ α1 ∧ α2) u where Val _ u = applyBinary op v1 v2
+applyBinary_fwd op α v@(Val α1 _) v'@(Val α2 _) =
+   Val (α ∧ α1 ∧ α2) u where Val _ u = applyBinary op v v'
 
 applyUnary :: UnaryOp -> Val -> Val
 applyUnary (UnaryOp _ (IntStr f)) v = from $ f (to v)
+applyUnary (PartialApp φ v) v' = applyBinary φ v v'
 
 applyUnary_fwd :: UnaryOp -> Selected -> Val -> Val
 applyUnary_fwd op α v@(Val α' _) =

@@ -1,6 +1,5 @@
 module Val where
 
-import Prelude
 import Bindings (Bindings)
 import Expr (RecDefs, Elim, Expr)
 import Selected (Selected(..))
@@ -12,15 +11,12 @@ data Binary =
    IntIntInt (Int -> Int -> Int) |
    IntIntBool (Int -> Int -> Boolean)
 
--- Operators have "internal" names used to provide an Eq instance; unrelated to syntactic operator name.
-data UnaryOp = UnaryOp String Unary
+-- Operators have "internal" names for printing, unrelated to any identifiers they happen to be bound to.
+data UnaryOp =
+   UnaryOp String Unary |
+   PartialApp BinaryOp Val
+
 data BinaryOp = BinaryOp String Binary
-
-instance eqUnaryOp :: Eq UnaryOp where
-   eq (UnaryOp name _) (UnaryOp name' _) = name == name'
-
-instance eqBinaryOp :: Eq BinaryOp where
-   eq (BinaryOp name _) (BinaryOp name' _) = name == name'
 
 data RawVal =
    True | False |
@@ -29,7 +25,6 @@ data RawVal =
    Closure Env RecDefs (Elim Expr) |
    Binary BinaryOp |
    Unary UnaryOp |
-   PartialApp BinaryOp Val |
    Pair Val Val |
    Nil | Cons Val Val
 

@@ -9,7 +9,7 @@ import Expr (RawExpr(..)) as E
 import Primitive (applyBinary_fwd, applyUnary_fwd)
 import Selected (Selected(..), (∧))
 import Util (T3(..), absurd, error)
-import Val (Env, Val(..))
+import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
 
 
@@ -60,8 +60,7 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
             Just (T3 ρ3 e'' α'') -> eval_fwd (ρ1 <> ρ2 <> ρ3) e'' (α' ∧ α'')
             Nothing -> error absurd
       Val α' (V.Unary φ), v -> applyUnary_fwd φ α' v
-      Val α' (V.Binary φ), v -> Val α' $ V.PartialApp φ v
-      Val α' (V.PartialApp φ v), v' -> v `applyBinary_fwd φ α'` v'
+      Val α' (V.Binary φ), v -> Val α' $ V.Unary $ PartialApp φ v
       _, _ -> error absurd
 eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
    case find op ρ of
