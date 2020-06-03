@@ -56,7 +56,10 @@ apply (BinaryOp _ (IntIntBool f)) v1 v2 = val $ from $ f (to v1) (to v2)
 
 apply_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
 apply_fwd op α v1@(Val α1 _) v2@(Val α2 _) =
-   let Val _ u = apply op v1 v2 in Val (α ∧ α1 ∧ α2) u
+   Val (α ∧ α1 ∧ α2) u where Val _ u = apply op v1 v2
+
+intIntBool :: String -> (Int -> Int -> Boolean) -> Val
+intIntBool name = IntIntBool >>> BinaryOp name >>> Op >>> val
 
 intIntInt :: String -> (Int -> Int -> Int) -> Val
 intIntInt name = IntIntInt >>> BinaryOp name >>> Op >>> val
@@ -66,4 +69,10 @@ primitives = ε :+:
    "+" ↦ intIntInt "prim-plus" (+) :+:
    "-" ↦ intIntInt "prim-minus" (-) :+:
    "*" ↦ intIntInt "prim-times" (*) :+:
-   "div" ↦ intIntInt "prim-div" div
+   "div" ↦ intIntInt "prim-div" div :+:
+   "==" ↦ intIntBool "prim-eq" (==) :+:
+   "/=" ↦ intIntBool "prim-eq" (/=) :+:
+   "<" ↦ intIntBool "prim-lt" (<) :+:
+   ">" ↦ intIntBool "prim-gt" (>) :+:
+   "<=" ↦ intIntBool "prim-leq" (<=) :+:
+   ">=" ↦ intIntBool "prim-geq" (>=)
