@@ -17,6 +17,7 @@ You can edit this file as you like.
   , "node-fs"
   , "parsing"
   , "pprint"
+  , "profunctor"
   , "psci-support"
   , "result"
   , "spec"
