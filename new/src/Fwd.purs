@@ -30,7 +30,7 @@ match_fwd _ _ = Nothing
 
 closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
 closeDefs_fwd _ _ Nil _ = ε
-closeDefs_fwd ρ δ0 (RecDef f σ : δ) α = closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ σ)
+closeDefs_fwd ρ δ0 (RecDef f σ : δ) α = closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
 
 eval_fwd :: Env -> Expr -> Selected -> Val
 eval_fwd ρ (Expr _ (E.Var x)) _ =
