@@ -32,5 +32,11 @@ opNames :: Map String OpName
 opNames = fromFoldable [
    makeOpName "*" 7,
    makeOpName "+" 6,
-   makeOpName "-" 6
+   makeOpName "-" 6,
+   makeOpName "==" 4,
+   makeOpName "/=" 4,
+   makeOpName "<" 4,
+   makeOpName ">" 4,
+   makeOpName "<=" 4,
+   makeOpName ">=" 4
 ]

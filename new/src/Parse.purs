@@ -53,14 +53,16 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    nestedComments  = true,
    identStart      = letter,
    identLetter     = alphaNum <|> oneOf ['_', '\''],
-   opStart         = op',
-   opLetter        = op',
+   opStart         = opChar,
+   opLetter        = opChar,
    reservedOpNames = [],
    reservedNames   = [strAs, strFun, strLet, strMatch],
    caseSensitive   = true
 } where
-   op' :: SParser Char
-   op' = oneOf [':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~']
+   opChar :: SParser Char
+   opChar = oneOf [
+      ':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~'
+   ]
 
 constructors :: Array String
 constructors = [cTrue, cFalse]
