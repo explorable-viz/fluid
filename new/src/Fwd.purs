@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs)
 import Expr (RawExpr(..)) as E
-import Primitive (applyBinary_fwd)
+import Primitive (applyBinary_fwd, applyUnary_fwd)
 import Selected (Selected(..), (∧))
 import Util (T3(..), absurd, error)
 import Val (Env, Val(..))
@@ -59,6 +59,7 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
          case match_fwd v σ of
             Just (T3 ρ3 e'' α'') -> eval_fwd (ρ1 <> ρ2 <> ρ3) e'' (α' ∧ α'')
             Nothing -> error absurd
+      Val α' (V.Unary φ), v -> applyUnary_fwd φ α' v
       Val α' (V.Binary φ), v -> Val α' $ V.PartialApp φ v
       Val α' (V.PartialApp φ v), v' -> v `applyBinary_fwd φ α'` v'
       _, _ -> error absurd

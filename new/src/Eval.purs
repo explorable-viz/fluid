@@ -10,7 +10,7 @@ import Expl (Expl, Match(..))
 import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
-import Primitive (applyBinary)
+import Primitive (applyBinary, applyUnary)
 import Util (T3(..), absurd, error)
 import Val (Env, Val(..), val)
 import Val (RawVal(..)) as V
@@ -74,6 +74,8 @@ eval ρ (Expr _ (E.App e e')) =
                let { t: u, v: v' } = eval (ρ1 <> ρ2 <> ρ3) e''
                in { t: T.App t t' ξ u, v: v' }
             Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
+      { t, v: (Val _ (V.Unary φ)) }, { t: t', v } ->
+         { t: T.AppOp t t', v: applyUnary φ v }
       { t, v: (Val _ (V.Binary φ)) }, { t: t', v } ->
          { t: T.AppOp t t', v: val $ V.PartialApp φ v }
       { t, v: (Val _ (V.PartialApp φ v)) }, { t: t', v: v' } ->
