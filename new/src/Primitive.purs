@@ -3,7 +3,7 @@ module Primitive where
 import Prelude hiding (apply)
 import Bindings (Var, ε, (:+:), (↦))
 import Selected (Selected, (∧))
-import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Val(..), val)
+import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Unary(..), UnaryOp(..), Val(..), val)
 import Data.Foldable (foldl)
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
@@ -51,6 +51,9 @@ instance fromInt :: From Int where
 instance fromBoolean :: From Boolean where
    from b = val $ if b then True else False
 
+instance fromString :: From String where
+   from = Str >>> val
+
 applyBinary :: BinaryOp -> Val -> Val -> Val
 applyBinary (BinaryOp _ (IntIntInt f)) v1 v2 = from $ f (to v1) (to v2)
 applyBinary (BinaryOp _ (IntIntBool f)) v1 v2 = from $ f (to v1) (to v2)
@@ -58,6 +61,13 @@ applyBinary (BinaryOp _ (IntIntBool f)) v1 v2 = from $ f (to v1) (to v2)
 applyBinary_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
 applyBinary_fwd op α v1@(Val α1 _) v2@(Val α2 _) =
    Val (α ∧ α1 ∧ α2) u where Val _ u = applyBinary op v1 v2
+
+applyUnary :: UnaryOp -> Val -> Val
+applyUnary (UnaryOp _ (IntStr f)) v = from $ f (to v)
+
+applyUnary_fwd :: UnaryOp -> Selected -> Val -> Val
+applyUnary_fwd op α v@(Val α' _) =
+   Val (α ∧ α') u where Val _ u = applyUnary op v
 
 intIntBool :: String -> (Int -> Int -> Boolean) -> Val
 intIntBool name = IntIntBool >>> BinaryOp name >>> Binary >>> val
