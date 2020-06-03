@@ -1,6 +1,6 @@
 module Primitive where
 
-import Prelude
+import Prelude hiding (apply)
 import Bindings (Var, ε, (:+:), (↦))
 import Selected (Selected, (∧))
 import Val (BinaryOp(..), Env, Op(..), RawVal(..), Val(..), val)
@@ -34,43 +34,36 @@ opNames = fromFoldable [
 ]
 
 -- Enforce argument type requirements.
-toInt :: RawVal -> Int
-toInt (Int n) = n
-toInt _ = error "Integer expected"
+class To a where
+   to :: Val -> a
 
-class Blah a where
-   to :: RawVal -> a
+class From a where
    from :: a -> RawVal
 
-instance intBlah :: Blah Int where
-   to (Int n) = n
+instance toInt :: To Int where
+   to (Val _ (Int n)) = n
    to _ = error "Integer expected"
+
+instance fromInt :: From Int where
    from = Int
 
-applyOp :: Op -> Val -> Val -> Val
-applyOp (IntIntInt f) (Val _ u1) (Val _ u2) =
-   val $ Int $ f (toInt u1) (toInt u2)
-applyOp (IntIntBool f) (Val _ u1) (Val _ u2) =
-   val $ if f (toInt u1) (toInt u2) then True else False
-
-applyOp_fwd :: Op -> Selected -> Val -> Val -> Val
-applyOp_fwd (IntIntInt f) α (Val α1 u1) (Val α2 u2) =
-   Val (α ∧ α1 ∧ α2) $ Int $ f (toInt u1) (toInt u2)
-applyOp_fwd (IntIntBool f) α (Val α1 u1) (Val α2 u2) =
-   Val (α ∧ α1 ∧ α2) $ if f (toInt u1) (toInt u2) then True else False
+instance fromBoolean :: From Boolean where
+   from b = if b then True else False
 
 apply :: BinaryOp -> Val -> Val -> Val
-apply (BinaryOp _ fun) = applyOp fun
+apply (BinaryOp _ (IntIntInt f)) v1 v2 = val $ from $ f (to v1) (to v2)
+apply (BinaryOp _ (IntIntBool f)) v1 v2 = val $ from $ f (to v1) (to v2)
 
 apply_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
-apply_fwd (BinaryOp _ fun) = applyOp_fwd fun
+apply_fwd op α v1@(Val α1 _) v2@(Val α2 _) =
+   let Val _ u = apply op v1 v2 in Val (α ∧ α1 ∧ α2) u
 
-prim_IntIntInt :: String -> (Int -> Int -> Int) -> Val
-prim_IntIntInt name f = val $ Op $ BinaryOp name (IntIntInt f)
+intIntInt :: String -> (Int -> Int -> Int) -> Val
+intIntInt name = IntIntInt >>> BinaryOp name >>> Op >>> val
 
 primitives :: Env
 primitives = ε :+:
-   "+" ↦ prim_IntIntInt "prim-plus" (+) :+:
-   "-" ↦ prim_IntIntInt "prim-minus" (-) :+:
-   "*" ↦ prim_IntIntInt "prim-times" (*) :+:
-   "div" ↦ prim_IntIntInt "prim-div" div
+   "+" ↦ intIntInt "prim-plus" (+) :+:
+   "-" ↦ intIntInt "prim-minus" (-) :+:
+   "*" ↦ intIntInt "prim-times" (*) :+:
+   "div" ↦ intIntInt "prim-div" div
