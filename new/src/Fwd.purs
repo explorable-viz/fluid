@@ -6,10 +6,10 @@ import Data.Maybe (Maybe(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs)
 import Expr (RawExpr(..)) as E
-import Primitive (liftVal_fwd)
+import Primitive (apply_fwd)
 import Selected (Selected(..), (∧))
 import Util (T3(..), absurd, error)
-import Val (Env, Val(..), opFun)
+import Val (Env, Val(..))
 import Val (RawVal(..)) as V
 
 
@@ -58,12 +58,12 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
          case match_fwd v σ of
             Just (T3 ρ3 e'' α'') -> eval_fwd (ρ1 <> ρ2 <> ρ3) e'' (α' ∧ α'')
             Nothing -> error absurd
-      Val α' (V.Op op), v -> Val α' $ V.PartialApp op v
-      Val α' (V.PartialApp op v), v' -> liftVal_fwd (opFun op) α' v v'
+      Val α' (V.Op φ), v -> Val α' $ V.PartialApp φ v
+      Val α' (V.PartialApp φ v), v' -> apply_fwd φ α' v v'
       _, _ -> error absurd
 eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
    case find op ρ of
-      Just (Val α' (V.Op φ)) -> liftVal_fwd (opFun φ) α' (eval_fwd ρ e1 α) (eval_fwd ρ e2 α)
+      Just (Val α' (V.Op φ)) -> apply_fwd φ α' (eval_fwd ρ e1 α) (eval_fwd ρ e2 α)
       _ -> error absurd
 eval_fwd ρ (Expr _ (E.Let (Def x e1) e2)) α = eval_fwd (ρ :+: x ↦ eval_fwd ρ e1 α) e2 α
 eval_fwd ρ (Expr _ (E.MatchAs e σ)) α =

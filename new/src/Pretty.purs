@@ -2,6 +2,7 @@ module Pretty (class Pretty, pretty, module P) where
 
 import Prelude
 import Data.List (List(..), (:))
+import Data.Newtype (unwrap)
 import Text.Pretty (Doc, atop, beside, text)
 import Text.Pretty (render) as P
 import Expr (Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
@@ -75,8 +76,8 @@ instance rawValPretty :: Pretty RawVal where
    pretty V.True = text "True"
    pretty V.False = text "False"
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
-   pretty (V.Op (BinaryOp { name })) = parens $ text name
-   pretty (V.PartialApp (BinaryOp { name }) v) = parens $ text (name <> " ") :<>: pretty v
+   pretty (V.Op (BinaryOp name _)) = parens $ text name
+   pretty (V.PartialApp (BinaryOp name _) v) = parens $ text (name <> " ") :<>: pretty v
    pretty (V.Pair v v') = parens $ pretty v :<>: text ", " :<>: pretty v'
    pretty V.Nil = text "[]"
    pretty (V.Cons v v') = text "[" :<>: pretty v :<>: prettyList v' :<>: text "]"

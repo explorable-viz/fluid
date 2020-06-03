@@ -1,6 +1,6 @@
 module Eval where
 
-import Prelude hiding (absurd)
+import Prelude hiding (absurd, apply)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
@@ -10,9 +10,9 @@ import Expl (Expl, Match(..))
 import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
-import Primitive (liftVal)
+import Primitive (apply)
 import Util (T3(..), absurd, error)
-import Val (Env, Val(..), opFun, val)
+import Val (Env, Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: forall k . Val -> Elim k -> Maybe (T3 Env k (Match k))
@@ -75,14 +75,14 @@ eval ρ (Expr _ (E.App e e')) =
             Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
       { t, v: (Val _ (V.Op op)) }, { t: t', v } ->
          { t: T.AppOp t t', v: val $ V.PartialApp op v }
-      { t, v: (Val _ (V.PartialApp op v)) }, { t: t', v: v' } ->
-         { t: T.AppOp t t', v: liftVal (opFun op) v v' }
+      { t, v: (Val _ (V.PartialApp φ v)) }, { t: t', v: v' } ->
+         { t: T.AppOp t t', v: apply φ v v' }
       _, _ -> error "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e' in
    case find op ρ of
-      Just (Val _ (V.Op φ)) -> { t: T.BinaryApp t op t', v: liftVal (opFun φ) v v' }
+      Just (Val _ (V.Op φ)) -> { t: T.BinaryApp t op t', v: apply φ v v' }
       Just _ -> error absurd
       Nothing -> error $ "operator " <> op <> " not found"
 eval ρ (Expr _ (E.Let (E.Def x e) e')) =
