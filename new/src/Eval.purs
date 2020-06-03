@@ -9,21 +9,22 @@ import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
+import Pretty (pretty)
 import Primitive (opFun)
 import Util (T3(..), absurd, error)
-import Val (Env, Val, toValues, val)
+import Val (Env, Val(..), toValues, val)
 import Val (RawVal(..)) as V
 
 match :: forall k . Val -> Elim k -> Maybe (T3 Env k (Match k))
 match v (ElimVar x κ) = Just $ T3 (ε :+: x ↦ v) κ (MatchVar x)
-match { u: V.True } (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ (MatchTrue κ')
-match { u: V.False } (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ' (MatchFalse κ)
-match { u: V.Pair v v' } (ElimPair σ) = do
+match (Val _ V.True) (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ (MatchTrue κ')
+match (Val _ V.False) (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ' (MatchFalse κ)
+match (Val _ (V.Pair v v')) (ElimPair σ) = do
    T3 ρ1 τ ξ <- match v σ
    T3 ρ2 κ ξ' <- match v' τ
    pure $ T3 (ρ1 <> ρ2) κ (MatchPair ξ ξ')
-match { u: V.Nil } (ElimList { nil: κ, cons: σ }) = Just $ T3 ε κ (MatchNil σ)
-match { u : V.Cons v v' } (ElimList { nil: κ, cons: σ }) = do
+match (Val _ V.Nil) (ElimList { nil: κ, cons: σ }) = Just $ T3 ε κ (MatchNil σ)
+match (Val _ (V.Cons v v')) (ElimList { nil: κ, cons: σ }) = do
    T3 ρ1 τ ξ <- match v σ
    T3 ρ κ' ξ' <- match v' τ
    pure $ T3 (ρ1 <> ρ) κ' (MatchCons { nil: κ, cons: Tuple ξ ξ' })
@@ -65,23 +66,23 @@ eval ρ (Expr _ (E.Lambda σ)) =
    { t: T.Lambda σ, v: val $ V.Closure ρ Nil σ }
 eval ρ (Expr _ (E.App e e')) =
    case eval ρ e, eval ρ e' of
-      { t, v: { u: V.Closure ρ1 δ σ } }, { t: t', v } ->
+      { t, v: (Val _ (V.Closure ρ1 δ σ)) }, { t: t', v } ->
          let ρ2 = closeDefs ρ1 δ δ in
          case match v σ of
             Just (T3 ρ3 e'' ξ) ->
                let { t: u, v: v' } = eval (ρ1 <> ρ2 <> ρ3) e''
                in { t: T.App t t' ξ u, v: v' }
-            Nothing -> error "Pattern mismatch"
-      { t, v: { u: V.Op op } }, { t: t', v } ->
+            Nothing -> error $ "Pattern mismatch for " <> show (pretty v)
+      { t, v: (Val _ (V.Op op)) }, { t: t', v } ->
          { t: T.AppOp t t', v: val $ V.PartialApp op v }
-      { t, v: { u: V.PartialApp op v } }, { t: t', v: v' } ->
+      { t, v: (Val _ (V.PartialApp op v)) }, { t: t', v: v' } ->
          { t: T.AppOp t t', v: toValues (opFun op) v v' }
       _, _ -> error "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e' in
    case find op ρ of
-      Just { u: V.Op φ } -> { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
+      Just (Val _ (V.Op φ)) -> { t: T.BinaryApp t op t', v: toValues (opFun φ) v v' }
       Just _ -> error absurd
       Nothing -> error $ "operator " <> op <> " not found"
 eval ρ (Expr _ (E.Let (E.Def x e) e')) =
@@ -91,7 +92,7 @@ eval ρ (Expr _ (E.Let (E.Def x e) e')) =
 eval ρ (Expr _ (E.MatchAs e σ)) =
    let { t, v } = eval ρ e
    in case match v σ of
-      Nothing -> error "Pattern mismatch"
+      Nothing -> error $ "Pattern mismatch for " <> show (pretty v)
       Just (T3 ρ' e' ξ) ->
          let { t: t', v: v' } = eval (ρ <> ρ') e'
          in { t: T.MatchAs t ξ t', v: v' }

@@ -12,7 +12,7 @@ import Expr (Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Primitive (BinaryOp(..))
 import Util (error)
-import Val (RawVal)
+import Val (Val(..), RawVal)
 import Val (RawVal(..)) as V
 
 
@@ -125,9 +125,12 @@ instance rawExprPrettyList :: PrettyList RawExpr where
    prettyList (E.Cons e e') = text ", " :<>: pretty e :<>: prettyList e'
    prettyList _ = error "Ill-formed list"
 
-instance valPrettyList :: PrettyList RawVal where
+instance valPrettyList :: PrettyList Val where
+   prettyList (Val _ u) = prettyList u
+
+instance rawValPrettyList :: PrettyList RawVal where
    prettyList (V.Nil) = text ""
-   prettyList (V.Cons { u } { u: u'}) = text ", " :<>: pretty u :<>: prettyList u'
+   prettyList (V.Cons v v') = text ", " :<>: pretty v :<>: prettyList v'
    prettyList _ = error "Ill-formed list"
 
 instance exprPretty :: Pretty Expr where
@@ -163,16 +166,19 @@ instance prettyElim :: Pretty k => Pretty (Elim k) where
    pretty (ElimBool { true: κ, false: κ' }) =
       text "     " :<>: atop (text "true -> " :<>: pretty κ) (text "false -> " :<>: pretty κ')
 
-instance valPretty :: Pretty RawVal where
+instance valPretty :: Pretty Val where
+   pretty (Val _ u) = pretty u
+
+instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
    pretty V.True = text "True"
    pretty V.False = text "False"
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
    pretty (V.Op (BinaryOp { name })) = parens $ text name
-   pretty (V.PartialApp (BinaryOp { name }) { u }) = parens $ text (name <> " ") :<>: pretty u
-   pretty (V.Pair { u } { u: u' }) = parens $ pretty u :<>: text ", " :<>: pretty u'
+   pretty (V.PartialApp (BinaryOp { name }) v) = parens $ text (name <> " ") :<>: pretty v
+   pretty (V.Pair v v') = parens $ pretty v :<>: text ", " :<>: pretty v'
    pretty V.Nil = text "[]"
-   pretty (V.Cons { u } { u: u' }) = text "[" :<>: pretty u :<>: prettyList u' :<>: text "]"
+   pretty (V.Cons v v') = text "[" :<>: pretty v :<>: prettyList v' :<>: text "]"
 
 parens :: Doc -> Doc
 parens doc = text "(" :<>: doc :<>: text ")"

@@ -10,7 +10,6 @@ import Data.Identity (Identity)
 import Data.List (many, groupBy, singleton, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
-import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -132,8 +131,7 @@ elim expr' =
    <|>
    (do
       σs <- token.braces (sepBy1 (partialElim expr') token.semi)
-      trace σs \_ ->
-         pureMaybe "Incompatible or incomplete branches" (join σs >>= toElim))
+      pureMaybe "Incompatible or incomplete branches" (join σs >>= toElim))
 
 partialElim :: SParser Expr -> SParser (PElim Expr)
 partialElim expr' = do

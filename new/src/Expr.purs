@@ -26,7 +26,7 @@ data RawExpr =
 data Expr = Expr Selected RawExpr
 
 expr :: RawExpr -> Expr
-expr r = Expr Bot r
+expr = Expr Bot
 
 data Elim k =
    ElimVar Var k |

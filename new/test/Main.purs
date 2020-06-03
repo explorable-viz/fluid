@@ -11,15 +11,15 @@ import Fwd (eval_fwd)
 import Module (openWithImports)
 import Pretty (pretty)
 import Selected (Selected(..))
-import Val (primitives)
+import Val (Val(..), primitives)
 
 runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
    before (openWithImports file) $
       it file $ \(Tuple ρ e) -> do
          let ρ' = ρ <> primitives
-         let { u } = (eval ρ' e).v
-         let { u: u' } = eval_fwd ρ' e Top
+         let (Val _ u) = (eval ρ' e).v
+         let (Val _ u') = eval_fwd ρ' e Top
          (show $ pretty u) `shouldEqual` (show $ pretty u')
          (show $ pretty u') `shouldEqual` expected
 

@@ -16,20 +16,20 @@ data RawVal =
    | Pair Val Val
    | Nil | Cons Val Val
 
-type Val = { α :: Selected, u :: RawVal }
+data Val = Val Selected RawVal
 
 val :: RawVal -> Val
-val u = { α: Bot, u }
+val = Val Bot
 
 toInt :: RawVal -> Int
 toInt (Int n) = n
 toInt _ = error "Integer expected"
 
 toValues :: (Int -> Int -> Int) -> Val -> Val -> Val
-toValues f { u } { u: u' } = val $ Int $ f (toInt u) (toInt u')
+toValues f (Val _ u1) (Val _ u2) = val $ Int $ f (toInt u1) (toInt u2)
 
 toValues_fwd :: (Int -> Int -> Int) -> Selected -> Val -> Val -> Val
-toValues_fwd f α v v' = { α: α ∧ v.α ∧ v'.α, u: Int $ f (toInt v.u) (toInt v'.u) }
+toValues_fwd f α (Val α1 u1) (Val α2 u2) = Val (α ∧ α1 ∧ α2) $ Int $ f (toInt u1) (toInt u2)
 
 type Env = Bindings Val
 
