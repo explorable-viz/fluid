@@ -74,7 +74,7 @@ eval ρ (Expr _ (E.App e e')) =
                let { t: u, v: v' } = eval (ρ1 <> ρ2 <> ρ3) e''
                in { t: T.App t t' ξ u, v: v' }
             Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
-      { t, v: (Val _ (V.BinOp φ)) }, { t: t', v } ->
+      { t, v: (Val _ (V.Binary φ)) }, { t: t', v } ->
          { t: T.AppOp t t', v: val $ V.PartialApp φ v }
       { t, v: (Val _ (V.PartialApp φ v)) }, { t: t', v: v' } ->
          { t: T.AppOp t t', v: apply φ v v' }
@@ -83,7 +83,7 @@ eval ρ (Expr _ (E.BinaryApp e op e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e' in
    case find op ρ of
-      Just (Val _ (V.BinOp φ)) -> { t: T.BinaryApp t op t', v: apply φ v v' }
+      Just (Val _ (V.Binary φ)) -> { t: T.BinaryApp t op t', v: apply φ v v' }
       Just _ -> error absurd
       Nothing -> error $ "operator " <> op <> " not found"
 eval ρ (Expr _ (E.Let (E.Def x e) e')) =

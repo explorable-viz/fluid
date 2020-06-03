@@ -60,10 +60,10 @@ apply_fwd op α v1@(Val α1 _) v2@(Val α2 _) =
    Val (α ∧ α1 ∧ α2) u where Val _ u = apply op v1 v2
 
 intIntBool :: String -> (Int -> Int -> Boolean) -> Val
-intIntBool name = IntIntBool >>> BinaryOp name >>> BinOp >>> val
+intIntBool name = IntIntBool >>> BinaryOp name >>> Binary >>> val
 
 intIntInt :: String -> (Int -> Int -> Int) -> Val
-intIntInt name = IntIntInt >>> BinaryOp name >>> BinOp >>> val
+intIntInt name = IntIntInt >>> BinaryOp name >>> Binary >>> val
 
 primitives :: Env
 primitives = foldl (:+:) ε [
