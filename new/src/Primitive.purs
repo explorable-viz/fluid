@@ -3,7 +3,7 @@ module Primitive where
 import Prelude
 import Bindings (Var, ε, (:+:), (↦))
 import Selected (Selected, (∧))
-import Val (BinaryOp(..), Env, Val(..), RawVal(..), toInt, val)
+import Val (BinaryOp(..), BinaryOp2, Env, Val(..), RawVal(..), toInt, val)
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
 
@@ -32,11 +32,17 @@ opNames = fromFoldable [
    makeOpName ">=" 4
 ]
 
-liftVal :: (Int -> Int -> Int) -> Val -> Val -> Val
-liftVal f (Val _ u1) (Val _ u2) = val $ Int $ f (toInt u1) (toInt u2)
+class LiftVal a where
+   liftVal :: (Int -> Int -> a) -> Val -> Val -> Val
+   liftVal_fwd :: (Int -> Int -> a) -> Selected -> Val -> Val -> Val
 
-liftVal_fwd :: (Int -> Int -> Int) -> Selected -> Val -> Val -> Val
-liftVal_fwd f α (Val α1 u1) (Val α2 u2) = Val (α ∧ α1 ∧ α2) $ Int $ f (toInt u1) (toInt u2)
+instance intLiftVal :: LiftVal Int where
+   liftVal f (Val _ u1) (Val _ u2) = val $ Int $ f (toInt u1) (toInt u2)
+   liftVal_fwd f α (Val α1 u1) (Val α2 u2) = Val (α ∧ α1 ∧ α2) $ Int $ f (toInt u1) (toInt u2)
+
+instance boolLiftVal :: LiftVal Boolean where
+   liftVal f (Val _ u1) (Val _ u2) = val $ if f (toInt u1) (toInt u2) then True else False
+   liftVal_fwd f α (Val α1 u1) (Val α2 u2) = Val (α ∧ α1 ∧ α2) $ if f (toInt u1) (toInt u2) then True else False
 
 primitive :: String -> (Int -> Int -> Int) -> Val
 primitive name fun =
