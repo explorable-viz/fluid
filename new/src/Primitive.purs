@@ -39,21 +39,21 @@ class To a where
    to :: Val -> a
 
 class From a where
-   from :: a -> RawVal
+   from :: a -> Val
 
 instance toInt :: To Int where
    to (Val _ (Int n)) = n
    to _ = error "Integer expected"
 
 instance fromInt :: From Int where
-   from = Int
+   from = Int >>> val
 
 instance fromBoolean :: From Boolean where
-   from b = if b then True else False
+   from b = val $ if b then True else False
 
 apply :: BinaryOp -> Val -> Val -> Val
-apply (BinaryOp _ (IntIntInt f)) v1 v2 = val $ from $ f (to v1) (to v2)
-apply (BinaryOp _ (IntIntBool f)) v1 v2 = val $ from $ f (to v1) (to v2)
+apply (BinaryOp _ (IntIntInt f)) v1 v2 = from $ f (to v1) (to v2)
+apply (BinaryOp _ (IntIntBool f)) v1 v2 = from $ f (to v1) (to v2)
 
 apply_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
 apply_fwd op α v1@(Val α1 _) v2@(Val α2 _) =
