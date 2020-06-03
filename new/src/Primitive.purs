@@ -63,8 +63,8 @@ applyBinary_fwd op α v@(Val α1 _) v'@(Val α2 _) =
    Val (α ∧ α1 ∧ α2) u where Val _ u = applyBinary op v v'
 
 applyUnary :: UnaryOp -> Val -> Val
-applyUnary (UnaryOp _ (IntStr f)) v = from $ f (to v)
-applyUnary (PartialApp φ v) v' = applyBinary φ v v'
+applyUnary (UnaryOp _ (IntStr f)) = to >>> f >>> from
+applyUnary (PartialApp φ v) = applyBinary φ v
 
 applyUnary_fwd :: UnaryOp -> Selected -> Val -> Val
 applyUnary_fwd op α v@(Val α' _) =

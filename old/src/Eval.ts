@@ -24,7 +24,7 @@ export module Eval {
 
 // ρ plus bindings in δ are closing for f.
 export class Closure extends DataValue<"Closure"> {
-   ρ: Env = _ 
+   ρ: Env = _
    δ: List<RecDef> = _
    f: Elim<Expr> = _
 }
@@ -136,7 +136,7 @@ function defs_bwd (def̅: List<Def>, def̅ₜ: List<Expl.Def>): void {
 }
 
 export function eval_ (ρ: Env, e: Expr): ExplValue {
-   const k: MemoId = memoId(eval_, arguments), 
+   const k: MemoId = memoId(eval_, arguments),
          [kₜ, kᵥ]: [ExplId, ValId] = [k.tag("t"), k.tag("v")]
    if (e instanceof Expr.ConstNum) {
       return explValue(Expl.const_()(kₜ), num(e.val.val)(kᵥ))
@@ -173,7 +173,7 @@ export function eval_ (ρ: Env, e: Expr): ExplValue {
                [ρʹ, ξκ]: [Env, Match<Expr>] = v.f.apply(tu),
                {t, v: vʹ}: ExplValue = eval_(v.ρ.concat(ρᵟ.concat(ρʹ)), ξκ.κ)
          return explValue(Expl.app(tf as ExplValue<Closure>, tu, δ, ξκ, t)(kₜ), vʹ)
-      } else 
+      } else
       if (v instanceof UnaryOp) {
          if (u instanceof Num || u instanceof Str) {
             return explValue(Expl.unaryApp(tf as ExplValue<UnaryOp>, tu as ExplValue<PrimValue>)(kₜ), v.op(u)(kᵥ))

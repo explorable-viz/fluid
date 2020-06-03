@@ -11,7 +11,7 @@ data Binary =
    IntIntInt (Int -> Int -> Int) |
    IntIntBool (Int -> Int -> Boolean)
 
--- Operators have "internal" names for printing, unrelated to any identifiers they happen to be bound to.
+-- String arguments are "internal" names for printing, unrelated to any user-level identifiers.
 data UnaryOp =
    UnaryOp String Unary |
    PartialApp BinaryOp Val
