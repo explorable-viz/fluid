@@ -29,6 +29,7 @@ main = do
    runExample "arithmetic" "42"
    runExample "compose" "5"
    runExample "factorial" "40320"
+   runExample "lexicalScoping" "6"
    runExample "normalise" "(33, 66)"
 
    runExample "temp" "1"
