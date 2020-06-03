@@ -10,9 +10,9 @@ import Expl (Expl, Match(..))
 import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
-import Primitive (opFun)
+import Primitive (toValues)
 import Util (T3(..), absurd, error)
-import Val (Env, Val(..), toValues, val)
+import Val (Env, Val(..), opFun, val)
 import Val (RawVal(..)) as V
 
 match :: forall k . Val -> Elim k -> Maybe (T3 Env k (Match k))

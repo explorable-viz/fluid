@@ -10,8 +10,9 @@ import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports)
 import Pretty (pretty, render)
+import Primitive (primitives)
 import Selected (Selected(..))
-import Val (Val(..), primitives)
+import Val (Val(..))
 
 runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $

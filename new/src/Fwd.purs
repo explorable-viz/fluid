@@ -6,10 +6,10 @@ import Data.Maybe (Maybe(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs)
 import Expr (RawExpr(..)) as E
-import Primitive (opFun)
+import Primitive (toValues_fwd)
 import Selected (Selected(..), (∧))
 import Util (T3(..), absurd, error)
-import Val (Env, Val(..), toValues_fwd)
+import Val (Env, Val(..), opFun)
 import Val (RawVal(..)) as V
 
 

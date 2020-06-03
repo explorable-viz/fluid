@@ -1,18 +1,11 @@
 module Primitive where
 
 import Prelude
-import Bindings (Var)
+import Bindings (Var, ε, (:+:), (↦))
+import Selected (Selected, (∧))
+import Val (BinaryOp(..), Env, Val(..), RawVal(..), toInt, val)
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
-
-
-data BinaryOp = BinaryOp {
-   name :: String, -- internal name used to provide an Eq instance; unrelated to operator name
-   fun :: Int -> Int -> Int
-}
-
-opFun :: BinaryOp -> Int -> Int -> Int
-opFun (BinaryOp { fun }) = fun
 
 data OpName = OpName {
    op :: Var, -- name in user land
@@ -21,9 +14,6 @@ data OpName = OpName {
 
 opPrec :: OpName -> Int
 opPrec (OpName { prec }) = prec
-
-instance eqBinaryOp :: Eq BinaryOp where
-   eq (BinaryOp { name: op }) (BinaryOp { name: op' }) = op == op'
 
 makeOpName :: String -> Int -> Tuple String OpName
 makeOpName op prec = Tuple op $ OpName { op, prec }
@@ -40,3 +30,20 @@ opNames = fromFoldable [
    makeOpName "<=" 4,
    makeOpName ">=" 4
 ]
+
+toValues :: (Int -> Int -> Int) -> Val -> Val -> Val
+toValues f (Val _ u1) (Val _ u2) = val $ Int $ f (toInt u1) (toInt u2)
+
+toValues_fwd :: (Int -> Int -> Int) -> Selected -> Val -> Val -> Val
+toValues_fwd f α (Val α1 u1) (Val α2 u2) = Val (α ∧ α1 ∧ α2) $ Int $ f (toInt u1) (toInt u2)
+
+primitive :: String -> (Int -> Int -> Int) -> Val
+primitive name fun =
+   val $ Op $ BinaryOp { name, fun }
+
+primitives :: Env
+primitives = ε :+:
+   "+" ↦ primitive "prim-plus" (+) :+:
+   "-" ↦ primitive "prim-minus" (-) :+:
+   "*" ↦ primitive "prim-times" (*) :+:
+   "div" ↦ primitive "prim-div" div

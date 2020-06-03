@@ -6,9 +6,8 @@ import Text.Pretty (Doc, atop, beside, text)
 import Text.Pretty (render) as P
 import Expr (Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
-import Primitive (BinaryOp(..))
 import Util (error)
-import Val (Val(..), RawVal)
+import Val (BinaryOp(..), Val(..), RawVal)
 import Val (RawVal(..)) as V
 
 infixl 5 beside as :<>:
