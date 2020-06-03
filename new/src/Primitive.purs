@@ -4,6 +4,7 @@ import Prelude hiding (apply)
 import Bindings (Var, ε, (:+:), (↦))
 import Selected (Selected, (∧))
 import Val (BinaryOp(..), Env, Op(..), RawVal(..), Val(..), val)
+import Data.Foldable (foldl)
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
 import Util (error)
@@ -16,21 +17,21 @@ data OpName = OpName {
 opPrec :: OpName -> Int
 opPrec (OpName { prec }) = prec
 
-makeOpName :: String -> Int -> Tuple String OpName
-makeOpName op prec = Tuple op $ OpName { op, prec }
+opName :: String -> Int -> Tuple String OpName
+opName op prec = Tuple op $ OpName { op, prec }
 
 -- Syntactic information only. No guarantee that any of these will be defined.
 opNames :: Map String OpName
 opNames = fromFoldable [
-   makeOpName "*" 7,
-   makeOpName "+" 6,
-   makeOpName "-" 6,
-   makeOpName "==" 4,
-   makeOpName "/=" 4,
-   makeOpName "<" 4,
-   makeOpName ">" 4,
-   makeOpName "<=" 4,
-   makeOpName ">=" 4
+   opName "*" 7,
+   opName "+" 6,
+   opName "-" 6,
+   opName "==" 4,
+   opName "/=" 4,
+   opName "<" 4,
+   opName ">" 4,
+   opName "<=" 4,
+   opName ">=" 4
 ]
 
 -- Enforce argument type requirements.
@@ -65,14 +66,15 @@ intIntInt :: String -> (Int -> Int -> Int) -> Val
 intIntInt name = IntIntInt >>> BinaryOp name >>> Op >>> val
 
 primitives :: Env
-primitives = ε :+:
-   "+" ↦ intIntInt "prim-plus" (+) :+:
-   "-" ↦ intIntInt "prim-minus" (-) :+:
-   "*" ↦ intIntInt "prim-times" (*) :+:
-   "div" ↦ intIntInt "prim-div" div :+:
-   "==" ↦ intIntBool "prim-eq" (==) :+:
-   "/=" ↦ intIntBool "prim-eq" (/=) :+:
-   "<" ↦ intIntBool "prim-lt" (<) :+:
-   ">" ↦ intIntBool "prim-gt" (>) :+:
-   "<=" ↦ intIntBool "prim-leq" (<=) :+:
+primitives = foldl (:+:) ε [
+   "+" ↦ intIntInt "prim-plus" (+),
+   "-" ↦ intIntInt "prim-minus" (-),
+   "*" ↦ intIntInt "prim-times" (*),
+   "div" ↦ intIntInt "prim-div" div,
+   "==" ↦ intIntBool "prim-eq" (==),
+   "/=" ↦ intIntBool "prim-eq" (/=),
+   "<" ↦ intIntBool "prim-lt" (<),
+   ">" ↦ intIntBool "prim-gt" (>),
+   "<=" ↦ intIntBool "prim-leq" (<=),
    ">=" ↦ intIntBool "prim-geq" (>=)
+]
