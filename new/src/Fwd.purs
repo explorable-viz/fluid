@@ -44,6 +44,7 @@ eval_fwd ρ (Expr _ (E.Op op)) _ =
 eval_fwd ρ (Expr α E.True) α' = Val (α ∧ α') V.True
 eval_fwd ρ (Expr α E.False) α' = Val (α ∧ α') V.False
 eval_fwd ρ (Expr α (E.Int n)) α' = Val (α ∧ α') $ V.Int n
+eval_fwd ρ (Expr α (E.Str str)) α' = Val (α ∧ α') $ V.Str str
 eval_fwd ρ (Expr α (E.Pair e1 e2)) α' = Val (α ∧ α') $ V.Pair (eval_fwd ρ e1 α') (eval_fwd ρ e2 α')
 eval_fwd ρ (Expr α E.Nil) α' = Val (α ∧ α') V.Nil
 eval_fwd ρ (Expr α (E.Cons e e')) α' = Val (α ∧ α') $ V.Cons (eval_fwd ρ e α') (eval_fwd ρ e' α')

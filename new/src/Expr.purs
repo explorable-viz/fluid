@@ -13,6 +13,7 @@ data RawExpr =
    Var Var |
    Op Var |
    Int Int |
+   Str String |
    True | False |
    Pair Expr Expr |
    Nil | Cons Expr Expr |

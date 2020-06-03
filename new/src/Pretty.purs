@@ -2,7 +2,6 @@ module Pretty (class Pretty, pretty, module P) where
 
 import Prelude
 import Data.List (List(..), (:))
-import Data.Newtype (unwrap)
 import Text.Pretty (Doc, atop, beside, text)
 import Text.Pretty (render) as P
 import Expr (Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
@@ -39,7 +38,8 @@ instance exprPretty :: Pretty Expr where
    pretty (Expr _ r) = pretty r
 
 instance rawExprPretty :: Pretty RawExpr where
-   pretty (E.Int n) = text (show n)
+   pretty (E.Int n) = text $ show n
+   pretty (E.Str str) = text $ show str
    pretty (E.Var x) = text x
    pretty E.True = text "true"
    pretty E.False = text "false"
@@ -73,6 +73,7 @@ instance valPretty :: Pretty Val where
 
 instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
+   pretty (V.Str str) = text $ show str
    pretty V.True = text "True"
    pretty V.False = text "False"
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))

@@ -3,7 +3,7 @@ module Primitive where
 import Prelude hiding (apply)
 import Bindings (Var, ε, (:+:), (↦))
 import Selected (Selected, (∧))
-import Val (BinaryOp(..), Env, Op(..), RawVal(..), Val(..), val)
+import Val (BinaryOp(..), Env, BinOp(..), RawVal(..), Val(..), val)
 import Data.Foldable (foldl)
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))

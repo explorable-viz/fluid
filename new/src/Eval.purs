@@ -49,6 +49,7 @@ eval ρ (Expr _ (E.Op op)) =
 eval ρ (Expr _ E.True) = { t: T.True, v: val V.True }
 eval ρ (Expr _ E.False) = { t: T.False, v: val V.False }
 eval ρ (Expr _ (E.Int n)) = { t: T.Int n, v: val $ V.Int n }
+eval ρ (Expr _ (E.Str str)) = { t: T.Str str, v: val $ V.Str str }
 eval ρ (Expr _ (E.Pair e e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e' in
