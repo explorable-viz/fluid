@@ -98,8 +98,8 @@ toElim (PElimList { nil: κ, cons: σ }) = do
 toElim _ = Nothing
 
 -- Partial eliminators are not supported at the moment.
-toSingletonElim :: forall k . PElim k -> Maybe (Tuple (Elim k) k)
-toSingletonElim (PElimVar x κ) = Just $ Tuple (ElimVar x κ) κ
+toSingletonElim :: forall k . PElim k -> Maybe (Tuple (Elim Unit) k)
+toSingletonElim (PElimVar x κ) = Just $ Tuple (ElimVar x unit) κ
 toSingletonElim (PElimPair σ) = do
    Tuple _ (Tuple σ'' κ) <- hoistMaybe (toSingletonElim <$> σ) >>= toSingletonElim
    Just $ Tuple σ'' κ
