@@ -3,7 +3,7 @@ module Primitive where
 import Prelude hiding (apply)
 import Bindings (Var, ε, (:+:), (↦))
 import Selected (Selected, (∧))
-import Val (BinaryOp(..), Env, BinOp(..), RawVal(..), Val(..), val)
+import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Val(..), val)
 import Data.Foldable (foldl)
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
@@ -60,10 +60,10 @@ apply_fwd op α v1@(Val α1 _) v2@(Val α2 _) =
    Val (α ∧ α1 ∧ α2) u where Val _ u = apply op v1 v2
 
 intIntBool :: String -> (Int -> Int -> Boolean) -> Val
-intIntBool name = IntIntBool >>> BinaryOp name >>> Op >>> val
+intIntBool name = IntIntBool >>> BinaryOp name >>> BinOp >>> val
 
 intIntInt :: String -> (Int -> Int -> Int) -> Val
-intIntInt name = IntIntInt >>> BinaryOp name >>> Op >>> val
+intIntInt name = IntIntInt >>> BinaryOp name >>> BinOp >>> val
 
 primitives :: Env
 primitives = foldl (:+:) ε [
