@@ -18,6 +18,7 @@ opPrec (OpName { prec }) = prec
 makeOpName :: String -> Int -> Tuple String OpName
 makeOpName op prec = Tuple op $ OpName { op, prec }
 
+-- Syntactic information only. No guarantee that any of these will be defined.
 opNames :: Map String OpName
 opNames = fromFoldable [
    makeOpName "*" 7,
@@ -31,11 +32,11 @@ opNames = fromFoldable [
    makeOpName ">=" 4
 ]
 
-toValues :: (Int -> Int -> Int) -> Val -> Val -> Val
-toValues f (Val _ u1) (Val _ u2) = val $ Int $ f (toInt u1) (toInt u2)
+liftVal :: (Int -> Int -> Int) -> Val -> Val -> Val
+liftVal f (Val _ u1) (Val _ u2) = val $ Int $ f (toInt u1) (toInt u2)
 
-toValues_fwd :: (Int -> Int -> Int) -> Selected -> Val -> Val -> Val
-toValues_fwd f α (Val α1 u1) (Val α2 u2) = Val (α ∧ α1 ∧ α2) $ Int $ f (toInt u1) (toInt u2)
+liftVal_fwd :: (Int -> Int -> Int) -> Selected -> Val -> Val -> Val
+liftVal_fwd f α (Val α1 u1) (Val α2 u2) = Val (α ∧ α1 ∧ α2) $ Int $ f (toInt u1) (toInt u2)
 
 primitive :: String -> (Int -> Int -> Int) -> Val
 primitive name fun =
