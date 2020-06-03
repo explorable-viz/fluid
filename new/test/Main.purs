@@ -30,4 +30,4 @@ main = do
    runExample "factorial" "40320"
    runExample "normalise" "(33, 66)"
 
-   runExample "temp" "(4, 3)"
+   runExample "temp" "1"
