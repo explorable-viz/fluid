@@ -3,7 +3,7 @@ module Primitive where
 import Prelude hiding (apply)
 import Bindings (Var, ε, (:+:), (↦))
 import Selected (Selected, (∧))
-import Val (BinaryOp(..), Env, Op(..), RawVal(..), Val(..), val)
+import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Unary(..), UnaryOp(..), Val(..), val)
 import Data.Foldable (foldl)
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
@@ -51,19 +51,33 @@ instance fromInt :: From Int where
 instance fromBoolean :: From Boolean where
    from b = val $ if b then True else False
 
-apply :: BinaryOp -> Val -> Val -> Val
-apply (BinaryOp _ (IntIntInt f)) v1 v2 = from $ f (to v1) (to v2)
-apply (BinaryOp _ (IntIntBool f)) v1 v2 = from $ f (to v1) (to v2)
+instance fromString :: From String where
+   from = Str >>> val
 
-apply_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
-apply_fwd op α v1@(Val α1 _) v2@(Val α2 _) =
-   Val (α ∧ α1 ∧ α2) u where Val _ u = apply op v1 v2
+applyBinary :: BinaryOp -> Val -> Val -> Val
+applyBinary (BinaryOp _ (IntIntInt f)) v v' = from $ f (to v) (to v')
+applyBinary (BinaryOp _ (IntIntBool f)) v v' = from $ f (to v) (to v')
+
+applyBinary_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
+applyBinary_fwd op α v@(Val α1 _) v'@(Val α2 _) =
+   Val (α ∧ α1 ∧ α2) u where Val _ u = applyBinary op v v'
+
+applyUnary :: UnaryOp -> Val -> Val
+applyUnary (UnaryOp _ (IntStr f)) = to >>> f >>> from
+applyUnary (PartialApp φ v) = applyBinary φ v
+
+applyUnary_fwd :: UnaryOp -> Selected -> Val -> Val
+applyUnary_fwd op α v@(Val α' _) =
+   Val (α ∧ α') u where Val _ u = applyUnary op v
+
+intStr :: String -> (Int -> String) -> Val
+intStr name = IntStr >>> UnaryOp name >>> Unary >>> val
 
 intIntBool :: String -> (Int -> Int -> Boolean) -> Val
-intIntBool name = IntIntBool >>> BinaryOp name >>> Op >>> val
+intIntBool name = IntIntBool >>> BinaryOp name >>> Binary >>> val
 
 intIntInt :: String -> (Int -> Int -> Int) -> Val
-intIntInt name = IntIntInt >>> BinaryOp name >>> Op >>> val
+intIntInt name = IntIntInt >>> BinaryOp name >>> Binary >>> val
 
 primitives :: Env
 primitives = foldl (:+:) ε [
@@ -76,5 +90,6 @@ primitives = foldl (:+:) ε [
    "<" ↦ intIntBool "prim-lt" (<),
    ">" ↦ intIntBool "prim-gt" (>),
    "<=" ↦ intIntBool "prim-leq" (<=),
-   ">=" ↦ intIntBool "prim-geq" (>=)
+   ">=" ↦ intIntBool "prim-geq" (>=),
+   "intToStr" ↦ intStr "prim-intToStr" (show)
 ]

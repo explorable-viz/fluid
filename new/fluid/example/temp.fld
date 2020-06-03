@@ -1,1 +1,1 @@
-match True as { True -> 1; False -> 2 }
+match True as { True -> "true"; False -> "false" }

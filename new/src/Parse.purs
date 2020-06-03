@@ -98,6 +98,9 @@ int = do
    sign <- signOpt
    token.natural <#> sign >>> Int >>> expr
 
+string :: SParser Expr
+string = token.stringLiteral <#> Str >>> expr
+
 true_ :: SParser Expr
 true_ = try $ ctr cTrue <#> const (expr True)
 
@@ -109,16 +112,17 @@ pair expr' = token.parens $ do
    e1 <- expr'
    token.comma *> expr' <#> Pair e1 >>> expr
 
--- TODO: string, float, list
+-- TODO: float, list
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    variable <|>
+   try int <|> -- int may start with +/-
+   string <|>
    false_ <|>
    true_ <|>
    let_ expr' <|>
    letRec expr' <|>
    matchAs expr' <|>
-   try int <|> -- int may start with +/-
    try (token.parens expr') <|>
    try parensOp <|>
    pair expr' <|>

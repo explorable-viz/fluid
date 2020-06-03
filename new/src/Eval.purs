@@ -10,9 +10,9 @@ import Expl (Expl, Match(..))
 import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
-import Primitive (apply)
+import Primitive (applyBinary, applyUnary)
 import Util (T3(..), absurd, error)
-import Val (Env, Val(..), val)
+import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: forall k . Val -> Elim k -> Maybe (T3 Env k (Match k))
@@ -49,6 +49,7 @@ eval ρ (Expr _ (E.Op op)) =
 eval ρ (Expr _ E.True) = { t: T.True, v: val V.True }
 eval ρ (Expr _ E.False) = { t: T.False, v: val V.False }
 eval ρ (Expr _ (E.Int n)) = { t: T.Int n, v: val $ V.Int n }
+eval ρ (Expr _ (E.Str str)) = { t: T.Str str, v: val $ V.Str str }
 eval ρ (Expr _ (E.Pair e e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e' in
@@ -73,16 +74,16 @@ eval ρ (Expr _ (E.App e e')) =
                let { t: u, v: v' } = eval (ρ1 <> ρ2 <> ρ3) e''
                in { t: T.App t t' ξ u, v: v' }
             Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
-      { t, v: (Val _ (V.Op op)) }, { t: t', v } ->
-         { t: T.AppOp t t', v: val $ V.PartialApp op v }
-      { t, v: (Val _ (V.PartialApp φ v)) }, { t: t', v: v' } ->
-         { t: T.AppOp t t', v: apply φ v v' }
+      { t, v: (Val _ (V.Unary φ)) }, { t: t', v } ->
+         { t: T.AppOp t t', v: applyUnary φ v }
+      { t, v: (Val _ (V.Binary φ)) }, { t: t', v } ->
+         { t: T.AppOp t t', v: val $ V.Unary (PartialApp φ v) }
       _, _ -> error "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval ρ e' in
    case find op ρ of
-      Just (Val _ (V.Op φ)) -> { t: T.BinaryApp t op t', v: apply φ v v' }
+      Just (Val _ (V.Binary φ)) -> { t: T.BinaryApp t op t', v: v `applyBinary φ` v' }
       Just _ -> error absurd
       Nothing -> error $ "operator " <> op <> " not found"
 eval ρ (Expr _ (E.Let (E.Def x e) e')) =

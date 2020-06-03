@@ -2,13 +2,12 @@ module Pretty (class Pretty, pretty, module P) where
 
 import Prelude
 import Data.List (List(..), (:))
-import Data.Newtype (unwrap)
 import Text.Pretty (Doc, atop, beside, text)
 import Text.Pretty (render) as P
 import Expr (Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Util (error)
-import Val (BinaryOp(..), Val(..), RawVal)
+import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
 import Val (RawVal(..)) as V
 
 infixl 5 beside as :<>:
@@ -39,7 +38,8 @@ instance exprPretty :: Pretty Expr where
    pretty (Expr _ r) = pretty r
 
 instance rawExprPretty :: Pretty RawExpr where
-   pretty (E.Int n) = text (show n)
+   pretty (E.Int n) = text $ show n
+   pretty (E.Str str) = text $ show str
    pretty (E.Var x) = text x
    pretty E.True = text "true"
    pretty E.False = text "false"
@@ -73,14 +73,22 @@ instance valPretty :: Pretty Val where
 
 instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
+   pretty (V.Str str) = text $ show str
    pretty V.True = text "True"
    pretty V.False = text "False"
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
-   pretty (V.Op (BinaryOp name _)) = parens $ text name
-   pretty (V.PartialApp (BinaryOp name _) v) = parens $ text (name <> " ") :<>: pretty v
+   pretty (V.Unary op) = parens $ pretty op
+   pretty (V.Binary op) = parens $ pretty op
    pretty (V.Pair v v') = parens $ pretty v :<>: text ", " :<>: pretty v'
    pretty V.Nil = text "[]"
    pretty (V.Cons v v') = text "[" :<>: pretty v :<>: prettyList v' :<>: text "]"
+
+instance unaryOpPretty :: Pretty UnaryOp where
+   pretty (UnaryOp name _) = text name
+   pretty (PartialApp φ v) = pretty φ :<>: text "-" :<>: pretty v
+
+instance binaryOpPretty :: Pretty BinaryOp where
+   pretty (BinaryOp name _) = text name
 
 parens :: Doc -> Doc
 parens doc = text "(" :<>: doc :<>: text ")"
