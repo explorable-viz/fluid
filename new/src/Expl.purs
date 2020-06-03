@@ -17,9 +17,9 @@ data Expl =
    | App Expl Expl (Match Expr) Expl
    | AppOp Expl Expl
    | BinaryApp Expl Var Expl
-   | Match Expl (Match Expr) Expl
+   | MatchAs Expl (Match Expr) Expl
    | Let Def Expl
-   | Letrec RecDefs Expl
+   | LetRec RecDefs Expl
 
 data Match k =
      MatchVar Var

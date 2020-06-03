@@ -9,23 +9,26 @@ import Test.Spec.Mocha (runMocha)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports)
-import Pretty (pretty)
+import Pretty (pretty, render)
+import Primitive (primitives)
 import Selected (Selected(..))
-import Val (primitives)
+import Val (Val(..))
 
 runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
    before (openWithImports file) $
       it file $ \(Tuple ρ e) -> do
          let ρ' = ρ <> primitives
-         let { u } = (eval ρ' e).v
-         let { u: u' } = eval_fwd ρ' e Top
-         (show $ pretty u) `shouldEqual` (show $ pretty u')
-         (show $ pretty u') `shouldEqual` expected
+         let (Val _ u) = (eval ρ' e).v
+         let (Val _ u') = eval_fwd ρ' e Top
+         (render $ pretty u) `shouldEqual` (render $ pretty u')
+         (render $ pretty u') `shouldEqual` expected
 
 main :: Effect Unit
 main = do
    runExample "arithmetic" "42"
    runExample "compose" "5"
+   runExample "factorial" "40320"
    runExample "normalise" "(33, 66)"
-   runExample "temp" "(4, 3)"
+
+   runExample "temp" "1"

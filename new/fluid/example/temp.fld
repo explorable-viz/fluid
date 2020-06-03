@@ -1,2 +1,1 @@
-let f = fun (x, y) -> (y, x);
-f (3, 4)
+match True as { True -> 1; False -> 2 }

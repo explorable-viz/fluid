@@ -19,14 +19,14 @@ data RawExpr =
    Lambda (Elim Expr) |
    App Expr Expr |
    BinaryApp Expr Var Expr |
-   Match Expr (Elim Expr) |
+   MatchAs Expr (Elim Expr) |
    Let Def Expr |
-   Letrec RecDefs Expr
+   LetRec RecDefs Expr
 
 data Expr = Expr Selected RawExpr
 
 expr :: RawExpr -> Expr
-expr r = Expr Bot r
+expr = Expr Bot
 
 data Elim k =
    ElimVar Var k |

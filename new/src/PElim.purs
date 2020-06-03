@@ -50,6 +50,10 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
    join (PElimFalse κ : PElimFalse κ' : bs) = do
       κ'' <- join (κ : κ' : Nil)
       join $ PElimTrue κ'' : bs
+   join (PElimTrue κ : PElimFalse κ' : bs) =
+      join $ PElimBool { true: κ, false: κ' } : bs
+   join (PElimFalse κ : PElimTrue κ' : bs) =
+      join $ PElimBool { true: κ', false: κ } : bs
    join (PElimBool { true: κ1, false: κ2 } : PElimTrue κ1' : bs) = do
       κ1'' <- join (κ1 : κ1' : Nil)
       join $ PElimBool { true: κ1'', false: κ2 } : bs
@@ -69,6 +73,10 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
    join (PElimCons σ : PElimCons σ' : bs) = do
       σ'' <- join (σ : σ' : Nil)
       join $ PElimCons σ'' : bs
+   join (PElimNil κ : PElimCons σ : bs) =
+      join $ PElimList { nil: κ, cons: σ } : bs
+   join (PElimCons σ : PElimNil κ : bs) =
+      join $ PElimList { nil: κ, cons: σ } : bs
    join (PElimList { nil: κ, cons: σ } : PElimList { nil: κ', cons: σ' } : bs) = do
       κ'' <- join (κ : κ' : Nil)
       σ'' <- join (σ : σ' : Nil)

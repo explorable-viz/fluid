@@ -135,6 +135,17 @@ let additions =
           "https://github.com/purescript-spec/purescript-spec-mocha"
       , version =
           "v4.0.0"
+      },
+    pprint =
+      { dependencies =
+          [ "arrays"
+          , "unfoldable"
+          , "strings"
+          ]
+      , repo =
+          "https://github.com/paf31/purescript-pprint"
+      , version =
+          "v5.0.0"
       }
   }
 

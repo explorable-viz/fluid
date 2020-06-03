@@ -4,9 +4,10 @@ import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
 import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
+import Data.Foldable (notElem)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (many, groupBy, sortBy)
+import Data.List (many, groupBy, singleton, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser (Parser, fail)
@@ -19,18 +20,30 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), expr)
+import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (PElim(..), join, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (fromBool)
 
 type SParser = Parser String
 
+-- helpers
+pureMaybe :: forall a . String -> Maybe a -> SParser a
+pureMaybe msg Nothing = fail msg
+pureMaybe _ (Just x) = pure x
+
+pureIf :: forall a . String -> Boolean -> a -> SParser a
+pureIf msg b = fromBool b >>> pureMaybe msg
+
 -- constants (should also be used by prettyprinter)
+strAs = "as" :: String
 strFun = "fun" :: String
 strLet = "let" :: String
-strLParen = "(" :: String
-strRParen = ")" :: String
+strMatch = "match" :: String
+
+-- treat datatype-generically later
+cTrue = "True" :: String
+cFalse = "False" :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -40,14 +53,19 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    nestedComments  = true,
    identStart      = letter,
    identLetter     = alphaNum <|> oneOf ['_', '\''],
-   opStart         = op',
-   opLetter        = op',
+   opStart         = opChar,
+   opLetter        = opChar,
    reservedOpNames = [],
-   reservedNames   = [strFun, strLet],
+   reservedNames   = [strAs, strFun, strLet, strMatch],
    caseSensitive   = true
 } where
-   op' :: SParser Char
-   op' = oneOf [':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~']
+   opChar :: SParser Char
+   opChar = oneOf [
+      ':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~'
+   ]
+
+constructors :: Array String
+constructors = [cTrue, cFalse]
 
 token :: TokenParser
 token = makeTokenParser languageDef
@@ -56,22 +74,35 @@ keyword ∷ String → SParser Unit
 keyword = token.reserved
 
 variable :: SParser Expr
-variable = ident <#> expr <<< Var
+variable = try $ ident <#> expr <<< Var
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
-ident = token.identifier
+ident = do
+   x <- token.identifier
+   pureIf ("Unexpected constructor") (notElem x constructors) x
 
-sign :: ∀ a . (Ring a) => SParser (a -> a)
-sign =
+ctr :: String -> SParser String
+ctr c = do
+   x <- token.identifier
+   pureIf ("Expected " <> c) (x == c) x
+
+signOpt :: ∀ a . (Ring a) => SParser (a -> a)
+signOpt =
    (char '-' $> negate) <|>
    (char '+' $> identity) <|>
    pure identity
 
 int :: SParser Expr
 int = do
-   f <- sign
-   token.natural <#> f >>> Int >>> expr
+   sign <- signOpt
+   token.natural <#> sign >>> Int >>> expr
+
+true_ :: SParser Expr
+true_ = try $ ctr cTrue <#> const (expr True)
+
+false_ :: SParser Expr
+false_ = try $ ctr cFalse <#> const (expr False)
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
@@ -82,7 +113,11 @@ pair expr' = token.parens $ do
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    variable <|>
+   false_ <|>
+   true_ <|>
    let_ expr' <|>
+   letRec expr' <|>
+   matchAs expr' <|>
    try int <|> -- int may start with +/-
    try (token.parens expr') <|>
    try parensOp <|>
@@ -90,32 +125,28 @@ simpleExpr expr' =
    lambda expr'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' = keyword strFun *> matches expr' <#> Lambda >>> expr
+lambda expr' = keyword strFun *> elim expr' <#> Lambda >>> expr
 
-maybePure :: forall a . String -> Maybe a -> SParser a
-maybePure msg Nothing = fail msg
-maybePure _ (Just x) = pure x
-
-matches :: SParser Expr -> SParser (Elim Expr)
-matches expr' =
-   (match expr' >>= maybePure "Incomplete branches" <<< toElim)
+elim :: SParser Expr -> SParser (Elim Expr)
+elim expr' =
+   (partialElim expr' >>= toElim >>> pureMaybe "Incomplete branches")
    <|>
    (do
-      σs <- token.braces (sepBy1 (match expr') token.semi)
-      maybePure "Incompatible or incomplete branches" (join σs >>= toElim))
+      σs <- token.braces (sepBy1 (partialElim expr') token.semi)
+      pureMaybe "Incompatible or incomplete branches" (join σs >>= toElim))
 
-match :: SParser Expr -> SParser (PElim Expr)
-match expr' = do
+partialElim :: SParser Expr -> SParser (PElim Expr)
+partialElim expr' = do
    mkElim <- pattern
    ((token.reservedOp "->" *> expr' <#> mkElim)
    <|>
-   (matches expr' <#> Lambda >>> expr >>> mkElim))
+   (elim expr' <#> Lambda >>> expr >>> mkElim))
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
 -- TODO: anonymous variables
 patternVar :: MkElimParser
-patternVar = ident <#> PElimVar
+patternVar = try $ ident <#> PElimVar
 
 patternPair :: MkElimParser -> MkElimParser
 patternPair pattern' = token.parens $ do
@@ -123,9 +154,20 @@ patternPair pattern' = token.parens $ do
    mkElim2 <- pattern'
    pure $ mkElim2 >>> mkElim1 >>> PElimPair
 
+patternTrue :: MkElimParser
+patternTrue = try $ ctr cTrue <#> const PElimTrue
+
+patternFalse :: MkElimParser
+patternFalse = try $ ctr cFalse <#> const PElimFalse
+
 -- TODO: lists
 pattern :: MkElimParser
-pattern = fixParser (\p -> patternVar <|> patternPair p)
+pattern = fixParser (\p ->
+   patternVar <|>
+   patternTrue <|>
+   patternFalse <|>
+   patternPair p
+)
 
 -- fix isn't polymorphic enough
 fixParser :: (MkElimParser -> MkElimParser) -> MkElimParser
@@ -136,13 +178,31 @@ fixParser f = x
 
 def :: SParser Expr -> SParser Def
 def expr' = do
-   x <- keyword strLet *> ident
-   token.reservedOp "=" *> (expr' <#> Def x) <* token.semi
+   x <- try $ do
+      x <- keyword strLet *> ident
+      token.reservedOp "="
+      pure x
+   (expr' <#> Def x) <* token.semi
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = do
    d <- def expr'
    expr' <#> Let d >>> expr
+
+recDefs :: SParser Expr -> SParser RecDefs
+recDefs expr' = do
+   f <- keyword strLet *> ident
+   (elim expr' <#> RecDef f >>> singleton) <* token.semi
+
+letRec :: SParser Expr -> SParser Expr
+letRec expr' = do
+   δ <- recDefs expr'
+   expr' <#> LetRec δ >>> expr
+
+matchAs :: SParser Expr -> SParser Expr
+matchAs expr' = do
+   e <- keyword strMatch *> expr' <* keyword strAs
+   elim expr' <#> MatchAs e >>> expr
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
@@ -152,8 +212,8 @@ parensOp = token.parens $ token.operator <#> Op >>> expr
 theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
 theBinaryOp op = try $ do
    op' <- token.operator
-   maybePure ("Expected " <> op) $
-      fromBool (op == op') (\e1 e2 -> expr $ BinaryApp e1 op e2)
+   pureMaybe ("Expected " <> op) $
+      fromBool (op == op') (\e1 -> expr <<< BinaryApp e1 op)
 
 backtick :: SParser Unit
 backtick = token.reservedOp "`"
