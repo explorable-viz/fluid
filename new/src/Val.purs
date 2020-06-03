@@ -6,7 +6,6 @@ import Data.Newtype (class Newtype, un)
 import Bindings (Bindings)
 import Expr (RecDefs, Elim, Expr)
 import Selected (Selected(..))
-import Util (error)
 
 -- Operators have "internal" names used to provide an Eq instance; unrelated to syntactic operator name.
 data BinaryOp = BinaryOp {
@@ -15,8 +14,8 @@ data BinaryOp = BinaryOp {
 }
 
 data Op2 =
-   IntIntInt String (Int -> Int -> Int) |
-   IntIntBool String (Int -> Int -> Boolean)
+   IntIntInt (Int -> Int -> Int) |
+   IntIntBool (Int -> Int -> Boolean)
 
 newtype BinaryOp2 = BinaryOp2 {
    name :: String,
@@ -49,7 +48,3 @@ val :: RawVal -> Val
 val = Val Bot
 
 type Env = Bindings Val
-
-toInt :: RawVal -> Int
-toInt (Int n) = n
-toInt _ = error "Integer expected"
