@@ -3,9 +3,7 @@ module PElim where
 import Prelude hiding (join)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..))
 import Bindings (Var)
-import Expl (Match(..))
 import Expr (Expr, Elim(..))
 
 
@@ -98,12 +96,17 @@ toElim (PElimList { nil: κ, cons: σ }) = do
 toElim _ = Nothing
 
 -- Partial eliminators are not supported at the moment.
-toSingletonElim :: forall k . PElim k -> Maybe (Tuple (Elim Unit) k)
-toSingletonElim (PElimVar x κ) = Just $ Tuple (ElimVar x unit) κ
+toSingletonElim :: forall k . PElim k -> Maybe (Elim k)
+toSingletonElim (PElimVar x κ) = Just $ ElimVar x κ
 toSingletonElim (PElimPair σ) = do
-   Tuple _ (Tuple σ'' κ) <- hoistMaybe (toSingletonElim <$> σ) >>= toSingletonElim
-   Just $ Tuple σ'' κ
+   σ' <- hoistMaybe (toSingletonElim <$> σ) >>= toSingletonElim
+   Just $ ElimPair σ'
 toSingletonElim _ = Nothing
+
+cont :: forall k . Elim k -> Maybe k
+cont (ElimVar x κ) = Just κ
+cont (ElimPair σ) = cont σ >>= cont
+cont _ = Nothing
 
 hoistMaybe :: forall k . PElim (Maybe k) -> Maybe (PElim k)
 hoistMaybe (PElimVar x (Just κ)) = Just $ PElimVar x κ
