@@ -1,20 +1,17 @@
-module Pretty where
+module Pretty (class Pretty, pretty, module P) where
 
 import Prelude
-import Data.Array (length, range, take, zipWith)
-import Data.Foldable (class Foldable, foldl, foldMap, intercalate)
 import Data.List (List(..), (:))
-import Data.Newtype (ala, class Newtype, wrap)
-import Data.String as S
-import Data.String.CodeUnits as SCU
-import Data.Unfoldable (replicate)
-import Text.Pretty
+import Text.Pretty (Doc, atop, beside, text)
+import Text.Pretty (render) as P
 import Expr (Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Primitive (BinaryOp(..))
 import Util (error)
 import Val (Val(..), RawVal)
 import Val (RawVal(..)) as V
+
+infixl 5 beside as :<>:
 
 class Pretty p where
    pretty :: p -> Doc

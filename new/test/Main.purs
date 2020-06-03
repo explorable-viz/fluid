@@ -9,7 +9,7 @@ import Test.Spec.Mocha (runMocha)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports)
-import Pretty (pretty)
+import Pretty (pretty, render)
 import Selected (Selected(..))
 import Val (Val(..), primitives)
 
@@ -20,8 +20,8 @@ runExample file expected = runMocha $
          let ρ' = ρ <> primitives
          let (Val _ u) = (eval ρ' e).v
          let (Val _ u') = eval_fwd ρ' e Top
-         (show $ pretty u) `shouldEqual` (show $ pretty u')
-         (show $ pretty u') `shouldEqual` expected
+         (render $ pretty u) `shouldEqual` (render $ pretty u')
+         (render $ pretty u') `shouldEqual` expected
 
 main :: Effect Unit
 main = do

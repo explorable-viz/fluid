@@ -9,7 +9,7 @@ import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
-import Pretty (pretty)
+import Pretty (pretty, render)
 import Primitive (opFun)
 import Util (T3(..), absurd, error)
 import Val (Env, Val(..), toValues, val)
@@ -72,7 +72,7 @@ eval ρ (Expr _ (E.App e e')) =
             Just (T3 ρ3 e'' ξ) ->
                let { t: u, v: v' } = eval (ρ1 <> ρ2 <> ρ3) e''
                in { t: T.App t t' ξ u, v: v' }
-            Nothing -> error $ "Pattern mismatch for " <> show (pretty v)
+            Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
       { t, v: (Val _ (V.Op op)) }, { t: t', v } ->
          { t: T.AppOp t t', v: val $ V.PartialApp op v }
       { t, v: (Val _ (V.PartialApp op v)) }, { t: t', v: v' } ->
@@ -92,7 +92,7 @@ eval ρ (Expr _ (E.Let (E.Def x e) e')) =
 eval ρ (Expr _ (E.MatchAs e σ)) =
    let { t, v } = eval ρ e
    in case match v σ of
-      Nothing -> error $ "Pattern mismatch for " <> show (pretty v)
+      Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
       Just (T3 ρ' e' ξ) ->
          let { t: t', v: v' } = eval (ρ <> ρ') e'
          in { t: T.MatchAs t ξ t', v: v' }
