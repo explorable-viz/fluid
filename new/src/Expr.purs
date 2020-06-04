@@ -1,6 +1,7 @@
 module Expr where
 
 import Prelude hiding (join)
+import Data.Either (Either)
 import Data.List (List)
 import Bindings (Var)
 import Selected (Selected(..))
@@ -41,4 +42,4 @@ instance elimFunctor :: Functor Elim where
    map f (ElimPair σ) = ElimPair $ map (map f) σ
    map f (ElimList { nil: κ, cons: σ }) = ElimList { nil: f κ, cons: map (map f) σ }
 
-data Module = Module (List Def)
+data Module = Module (List (Either Def RecDefs))

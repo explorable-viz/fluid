@@ -4,6 +4,7 @@ import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
 import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
+import Data.Either (Either(..))
 import Data.Foldable (notElem)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -235,7 +236,7 @@ appChain expr' = simpleExpr expr' >>= rest
 operators :: OperatorTable Identity String Expr
 operators =
    fromFoldable $ map fromFoldable $
-   map (map (\(OpName { op }) -> Infix (theBinaryOp op) AssocLeft)) $
+   map (map (\(OpName op _) -> Infix (theBinaryOp op) AssocLeft)) $
    groupBy (eq `on` opPrec) $ sortBy (comparing opPrec) $ values opNames
 
 -- An expression is an operator tree. An operator tree is a tree whose branches are
@@ -252,4 +253,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = topLevel $ many (def expr_) <#> Module
+module_ = topLevel $ many ((def expr_ <#> Left) <|> (recDefs expr_ <#> Right)) <#> Module
