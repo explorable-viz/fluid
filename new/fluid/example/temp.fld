@@ -1,1 +1,1 @@
-match 5 as x y -> 5
+match 5 as x -> "true"

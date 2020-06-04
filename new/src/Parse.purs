@@ -147,6 +147,11 @@ elim2 expr' nested =
    <|>
    (token.braces (sepBy1 (partialElim expr' nested arrow) token.semi) <#> (join >=> toElim))
 
+elim' :: SParser Expr -> Boolean -> SParser (Elim Expr)
+elim' expr' nested = do
+   blah <- elim2 expr' nested
+   pureMaybe "Incompatible or incomplete branches" blah
+
 -- "nested" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elim expr' nested =
