@@ -195,9 +195,10 @@ def expr' = do
 def2 :: SParser Expr -> SParser Def2
 def2 expr' = do
    σ <- keyword strLet *> elim expr'
-   case singleBranch σ of
-      Nothing -> fail "Singleton eliminator expected"
-      Just e -> pure $ Def2 (σ <#> const unit) e
+   let d = case singleBranch σ of
+               Nothing -> Nothing
+               Just e -> Just $ Def2 (σ <#> const unit) e
+   pureMaybe "Singleton eliminator expected" d
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = do
