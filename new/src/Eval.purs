@@ -3,7 +3,6 @@ module Eval where
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expl (Def(..), Def2(..), Expl(..)) as T
@@ -43,77 +42,77 @@ closeDefs :: Env -> RecDefs -> RecDefs -> Env
 closeDefs _ _ Nil = ε
 closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ0 σ)
 
-type ExplVal = { t :: Expl, v :: Val }
+data ExplVal = ExplVal Expl Val
 
 eval :: Env -> Expr -> Either Error ExplVal
 eval ρ (Expr _ (E.Var x)) =
-   find x ρ <#> \v -> { t: T.Var x, v }
+   find x ρ <#> ExplVal (T.Var x)
 eval ρ (Expr _ (E.Op op)) =
-   find op ρ <#> \v -> { t: T.Op op, v }
+   find op ρ <#> ExplVal (T.Op op)
 eval ρ (Expr _ E.True) =
-   pure { t: T.True, v: val V.True }
+   pure $ ExplVal T.True $ val V.True
 eval ρ (Expr _ E.False) =
-   pure { t: T.False, v: val V.False }
+   pure $ ExplVal T.False $ val V.False
 eval ρ (Expr _ (E.Int n)) =
-   pure { t: T.Int n, v: val $ V.Int n }
+   pure $ ExplVal (T.Int n) $ val $ V.Int n
 eval ρ (Expr _ (E.Str str)) =
-   pure { t: T.Str str, v: val $ V.Str str }
+   pure $ ExplVal (T.Str str) $ val $ V.Str str
 eval ρ (Expr _ (E.Pair e e')) = do
-   { t, v } <- eval ρ e
-   { t: t', v: v' } <- eval ρ e'
-   pure { t: T.Pair t t', v: val $ V.Pair v v' }
+   ExplVal t v <- eval ρ e
+   ExplVal t' v' <- eval ρ e'
+   pure $ ExplVal (T.Pair t t') $ val $ V.Pair v v'
 eval ρ (Expr _ E.Nil) =
-   pure { t: T.Nil, v: val V.Nil }
+   pure $ ExplVal T.Nil $ val V.Nil
 eval ρ (Expr _ (E.Cons e e')) = do
-   { t, v } <- eval ρ e
-   { t: t', v: v' } <- eval ρ e'
-   pure { t: T.Cons t t', v: val $ V.Cons v v' }
+   ExplVal t v <- eval ρ e
+   ExplVal t' v' <- eval ρ e'
+   pure $ ExplVal (T.Cons t t') $ val $ V.Cons v v'
 eval ρ (Expr _ (E.LetRec δ e)) = do
    let ρ' = closeDefs ρ δ δ
-   { t, v } <- eval (ρ <> ρ') e
-   pure { t: T.LetRec δ t, v }
+   ExplVal t v <- eval (ρ <> ρ') e
+   pure $ ExplVal (T.LetRec δ t) v
 eval ρ (Expr _ (E.Lambda σ)) =
-   pure { t: T.Lambda σ, v: val $ V.Closure ρ Nil σ }
+   pure $ ExplVal (T.Lambda σ) $ val $ V.Closure ρ Nil σ
 eval ρ (Expr _ (E.App e e')) = do
-   { t, v } <- eval ρ e
-   { t: t', v: v' } <- eval ρ e'
+   ExplVal t v <- eval ρ e
+   ExplVal t' v' <- eval ρ e'
    case v of
       Val _ (V.Closure ρ1 δ σ) -> do
          let ρ2 = closeDefs ρ1 δ δ
          T3 ρ3 e'' ξ <- match v' σ
-         { t: u, v: v'' } <- eval (ρ1 <> ρ2 <> ρ3) e''
-         pure { t: T.App t t' ξ u, v: v'' }
+         ExplVal u v'' <- eval (ρ1 <> ρ2 <> ρ3) e''
+         pure $ ExplVal (T.App t t' ξ u) v''
       Val _ (V.Unary φ) ->
-         pure { t: T.AppOp t t', v: applyUnary φ v' }
+         pure $ ExplVal (T.AppOp t t') $ applyUnary φ v'
       Val _ (V.Binary φ) ->
-         pure { t: T.AppOp t t', v: val $ V.Unary (PartialApp φ v') }
+         pure $ ExplVal (T.AppOp t t') $ val $ V.Unary $ PartialApp φ v'
       _ -> Left "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
-   { t, v } <- eval ρ e
-   { t: t', v: v' } <- eval ρ e'
+   ExplVal t v <- eval ρ e
+   ExplVal t' v' <- eval ρ e'
    Val _ u <- find op ρ
    case u of
-      V.Binary φ -> pure { t: T.BinaryApp t op t', v: v `applyBinary φ` v' }
+      V.Binary φ -> pure $ ExplVal (T.BinaryApp t op t') (v `applyBinary φ` v')
       _ -> error absurd
 eval ρ (Expr _ (E.Let (E.Def x e) e')) = do
-   { t, v } <- eval ρ e
-   { t: t', v: v' } <- eval (ρ :+: x ↦ v) e'
-   pure { t: T.Let (T.Def x t) t', v: v' }
+   ExplVal t v <- eval ρ e
+   ExplVal t' v' <- eval (ρ :+: x ↦ v) e'
+   pure $ ExplVal (T.Let (T.Def x t) t') v'
 eval ρ (Expr _ (E.Let2 (E.Def2 σ e) e')) = do
-   { t, v } <- eval ρ e
+   ExplVal t v <- eval ρ e
    T3 ρ' _ ξ <- match v σ
-   { t: t', v: v' } <- eval (ρ <> ρ') e'
-   pure { t: T.Let2 (T.Def2 ξ t) t', v: v' }
+   ExplVal t' v' <- eval (ρ <> ρ') e'
+   pure $ ExplVal (T.Let2 (T.Def2 ξ t) t') v'
 eval ρ (Expr _ (E.MatchAs e σ)) = do
-   { t, v } <- eval ρ e
+   ExplVal t v <- eval ρ e
    T3 ρ' e' ξ <- match v σ
-   { t: t', v: v' } <- eval (ρ <> ρ') e'
-   pure { t: T.MatchAs t ξ t', v: v' }
+   ExplVal t' v' <- eval (ρ <> ρ') e'
+   pure $ ExplVal (T.MatchAs t ξ t') v'
 
 defs :: Env -> Module -> Either Error Env
 defs ρ (Module Nil) = pure ρ
 defs ρ (Module (Left (E.Def x e) : ds)) = do
-   { v } <- eval ρ e
+   ExplVal _ v <- eval ρ e
    defs (ρ :+: x ↦ v) (Module ds)
 defs ρ (Module (Right δ : ds)) =
    defs (ρ <> closeDefs ρ δ δ) (Module ds)

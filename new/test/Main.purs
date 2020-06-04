@@ -7,7 +7,7 @@ import Effect (Effect)
 import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Eval (eval)
+import Eval (ExplVal(..), eval)
 import Fwd (eval_fwd)
 import Module (openWithImports)
 import Pretty (pretty, render)
@@ -23,7 +23,7 @@ runExample file expected = runMocha $
          let ρ' = ρ <> primitives
          case eval ρ' e of
             Left msg -> error msg
-            Right { v: Val _ u } -> do
+            Right (ExplVal _ (Val _ u)) -> do
                let (Val _ u') = eval_fwd ρ' e Top
                (render $ pretty u) `shouldEqual` (render $ pretty u')
                (render $ pretty u') `shouldEqual` expected
