@@ -5,10 +5,10 @@ import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
-import Expl (Def(..), Def2(..), Expl(..)) as T
+import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
-import Expr (Def(..), Def2(..), RawExpr(..)) as E
+import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
 import Util (T3(..), absurd, error)
@@ -95,15 +95,11 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
       V.Binary φ ->
          pure $ ExplVal (T.BinaryApp t op t') (v `applyBinary φ` v')
       _ -> error absurd
-eval ρ (Expr _ (E.Let (E.Def x e) e')) = do
-   ExplVal t v <- eval ρ e
-   ExplVal t' v' <- eval (ρ :+: x ↦ v) e'
-   pure $ ExplVal (T.Let (T.Def x t) t') v'
-eval ρ (Expr _ (E.Let2 (E.Def2 σ e) e')) = do
+eval ρ (Expr _ (E.Let (E.Def σ e) e')) = do
    ExplVal t v <- eval ρ e
    T3 ρ' _ ξ <- match v σ
    ExplVal t' v' <- eval (ρ <> ρ') e'
-   pure $ ExplVal (T.Let2 (T.Def2 ξ t) t') v'
+   pure $ ExplVal (T.Let (T.Def ξ t) t') v'
 eval ρ (Expr _ (E.MatchAs e σ)) = do
    ExplVal t v <- eval ρ e
    T3 ρ' e' ξ <- match v σ
@@ -112,8 +108,9 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
 
 defs :: Env -> Module -> Either Error Env
 defs ρ (Module Nil) = pure ρ
-defs ρ (Module (Left (E.Def x e) : ds)) = do
+defs ρ (Module (Left (E.Def σ e) : ds)) = do
    ExplVal _ v <- eval ρ e
-   defs (ρ :+: x ↦ v) (Module ds)
+   T3 ρ' _ ξ <- match v σ
+   defs (ρ <> ρ') (Module ds)
 defs ρ (Module (Right δ : ds)) =
    defs (ρ <> closeDefs ρ δ δ) (Module ds)

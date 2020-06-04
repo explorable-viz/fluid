@@ -22,7 +22,7 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Def(..), Def2(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (PElim(..), join, singleBranch, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (fromBool)
@@ -124,7 +124,7 @@ simpleExpr expr' =
    string <|>
    try false_ <|>
    try true_ <|>
-   let2 expr' <|>
+   let_ expr' <|>
    letRec expr' <|>
    matchAs expr' <|>
    try (token.parens expr') <|>
@@ -194,23 +194,13 @@ fixParser f = x
 
 def :: SParser Expr -> SParser Def
 def expr' = do
-   x <- try $ keyword strLet *> ident <* equals
-   (expr' <#> Def x) <* token.semi
-
-def2 :: SParser Expr -> SParser Def2
-def2 expr' = do
    σ <- try $ keyword strLet *> elim expr' false <* token.semi
-   pureMaybe "Singleton eliminator expected" $ singleBranch σ <#> Def2 (σ <#> const unit)
+   pureMaybe "Singleton eliminator expected" $ singleBranch σ <#> Def (σ <#> const unit)
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = do
    d <- def expr'
    expr' <#> Let d >>> expr
-
-let2 ∷ SParser Expr -> SParser Expr
-let2 expr' = do
-   d <- def2 expr'
-   expr' <#> Let2 d >>> expr
 
 recDef :: SParser Expr -> SParser RecDef
 recDef expr' = do
