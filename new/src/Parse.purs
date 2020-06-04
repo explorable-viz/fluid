@@ -2,13 +2,14 @@ module Parse where
 
 import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
+import Control.Bind ((>=>))
 import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
 import Data.Either (Either(..))
 import Data.Foldable (notElem)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (many, groupBy, singleton, sortBy)
+import Data.List (many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser (Parser, fail)
@@ -139,6 +140,12 @@ arrow = token.reservedOp strArrow
 
 equals :: SParser Unit
 equals = token.reservedOp strEquals
+
+elim2 :: SParser Expr -> SParser (Maybe (Elim Expr))
+elim2 expr' =
+   (partialElim expr' (arrow <|> equals) <#> toElim)
+   <|>
+   (token.braces (sepBy1 (partialElim expr' arrow) token.semi) <#> (join >=> toElim))
 
 elim :: SParser Expr -> SParser (Elim Expr)
 elim expr' =
