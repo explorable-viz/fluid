@@ -2,13 +2,12 @@ module Fwd where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:))
-import Data.Either (Either(..))
 import Bindings ((:+:), (↦), ε, find)
 import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs)
 import Expr (RawExpr(..)) as E
 import Primitive (applyBinary_fwd, applyUnary_fwd)
 import Selected (Selected(..), (∧))
-import Util (T3(..), absurd, error)
+import Util (T3(..), absurd, error, successful)
 import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
 
@@ -35,17 +34,14 @@ match_fwd _ _ =
 
 closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
 closeDefs_fwd _ _ Nil _ = ε
-closeDefs_fwd ρ δ0 (RecDef f σ : δ) α = closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
+closeDefs_fwd ρ δ0 (RecDef f σ : δ) α =
+   closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
 
 eval_fwd :: Env -> Expr -> Selected -> Val
 eval_fwd ρ (Expr _ (E.Var x)) _ =
-   case find x ρ of
-      Right v -> v
-      Left _ -> error absurd
+   successful $ find x ρ
 eval_fwd ρ (Expr _ (E.Op op)) _ =
-   case find op ρ of
-      Right v -> v
-      Left _ -> error absurd
+   successful $ find op ρ
 eval_fwd ρ (Expr α E.True) α' =
    Val (α ∧ α') V.True
 eval_fwd ρ (Expr α E.False) α' =
@@ -76,8 +72,8 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
       V.Binary φ -> Val α' $ V.Unary $ PartialApp φ v
       _ -> error absurd
 eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
-   case find op ρ of
-      Right (Val α' (V.Binary φ)) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
+   case successful (find op ρ) of
+      Val α' (V.Binary φ) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
       _ -> error absurd
 eval_fwd ρ (Expr _ (E.Let (Def σ e) e')) α =
    let T3 ρ' _ α' = match_fwd (eval_fwd ρ e α) σ in

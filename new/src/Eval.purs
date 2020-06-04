@@ -11,13 +11,11 @@ import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
-import Util (T3(..), absurd, error)
+import Util (MayFail, T3(..), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
-type Error = String
-
-match :: forall k . Val -> Elim k -> Either Error (T3 Env k (Match k))
+match :: forall k . Val -> Elim k -> MayFail (T3 Env k (Match k))
 match v (ElimVar x κ) =
    pure $ T3 (ε :+: x ↦ v) κ (MatchVar x)
 match (Val _ V.True) (ElimBool { true: κ, false: κ' }) =
@@ -44,7 +42,7 @@ closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Clo
 
 data ExplVal = ExplVal Expl Val
 
-eval :: Env -> Expr -> Either Error ExplVal
+eval :: Env -> Expr -> MayFail ExplVal
 eval ρ (Expr _ (E.Var x)) =
    find x ρ <#> ExplVal (T.Var x)
 eval ρ (Expr _ (E.Op op)) =
@@ -106,7 +104,7 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
    ExplVal t' v' <- eval (ρ <> ρ') e'
    pure $ ExplVal (T.MatchAs t ξ t') v'
 
-defs :: Env -> Module -> Either Error Env
+defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
 defs ρ (Module (Left (E.Def σ e) : ds)) = do
    ExplVal _ v <- eval ρ e
