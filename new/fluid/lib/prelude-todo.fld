@@ -24,23 +24,8 @@ let or x y = if x then True else y;
 // Bool -> Bool
 let not x = if x then False else True;
 
-// a -> b -> a
-let const x _ = x;
-
-// (a -> b) -> (a, c) -> (b, c)
-let first f (a, c) = (f a, c);
-
-// (a, b) -> a
-let fst (x, y) = x;
-
 // List a -> a
 let head [x, ...xs] = x;
-
-// a -> a
-let id x = x;
-
-// (a -> b) -> (a -> c) -> a -> (b, c)
-let prod f g x = (f x, g x);
 
 // Num -> Num -> Ordering
 let compare (x, y) =
@@ -69,9 +54,6 @@ let filter p {
       let ys = filter p xs;
       if p x then [x, ...ys] else ys
 };
-
-// (a -> b -> c) -> b -> a -> c
-let flip f x y = f y x;
 
 // ((a, b) -> a) -> a -> List b -> a
 let foldl op z {
@@ -200,27 +182,12 @@ let nth n [x, ...xs] ->
 let ceilingToNearest n m =
    ceiling (n / m) * m;
 
-// (a -> b) -> (c, a) -> (c, b)
-let second f (c, a) = (c, f a);
-
-// (a, b) -> b
-let snd (x, y) = y;
-
 // List Num -> Num
 let sum xs =
    foldr (let (x, y) -> x + y) 0 xs;
 
-// (a, b) -> (b, a)
-let swap (a, b) = (b, a);
-
 // List a -> List a
 let tail [x, ...xs] = xs;
-
-// (a, b) -> c) -> a -> b -> c
-let curry f x y = f (x, y);
-
-// (a -> b -> c) -> (a, b) -> c
-let uncurry f (x, y) = f x y;
 
 let take n xs =
    if n <= 0
