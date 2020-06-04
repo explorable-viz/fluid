@@ -141,25 +141,13 @@ arrow = token.reservedOp strArrow
 equals :: SParser Unit
 equals = token.reservedOp strEquals
 
-elim2 :: SParser Expr -> Boolean -> SParser (Maybe (Elim Expr))
-elim2 expr' nested =
-   (partialElim expr' nested (arrow <|> equals) <#> toElim)
-   <|>
-   (token.braces (sepBy1 (partialElim expr' nested arrow) token.semi) <#> (join >=> toElim))
-
-elim' :: SParser Expr -> Boolean -> SParser (Elim Expr)
-elim' expr' nested = do
-   blah <- elim2 expr' nested
-   pureMaybe "Incompatible or incomplete branches" blah
-
 -- "nested" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elim expr' nested =
-   (partialElim expr' nested (arrow <|> equals) >>= toElim >>> pureMaybe "Incomplete branches")
+   pureMaybe "Incompatible or incomplete branches" =<<
+   (partialElim expr' nested (arrow <|> equals) <#> toElim)
    <|>
-   (do
-      σs <- token.braces (sepBy1 (partialElim expr' nested arrow) token.semi)
-      pureMaybe "Incompatible or incomplete branches" (join σs >>= toElim))
+   (token.braces (sepBy1 (partialElim expr' nested arrow) token.semi) <#> (join >=> toElim))
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun nested expr' = if nested then elim expr' nested <#> Lambda >>> expr else empty
