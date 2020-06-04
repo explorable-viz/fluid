@@ -5,7 +5,7 @@ import Control.Alt ((<|>))
 import Control.Lazy (defer, fix)
 import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
-import Data.Either (Either(..))
+import Data.Either (Either(..), choose)
 import Data.Foldable (notElem)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -145,8 +145,7 @@ equals = token.reservedOp strEquals
 elim :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elim expr' nest =
    pureMaybe "Incompatible or incomplete branches" =<<
-   (partialElim expr' nest (arrow <|> equals) <#> toElim)
-   <|>
+   (partialElim expr' nest (arrow <|> equals) <#> toElim) <|>
    (token.braces $ sepBy1 (partialElim expr' nest arrow) token.semi <#> (join >=> toElim))
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
@@ -208,7 +207,8 @@ recDef expr' = do
    (elim expr' true <#> RecDef f) <* token.semi
 
 recDefs :: SParser Expr -> SParser RecDefs
-recDefs expr' = keyword strLet *> many (try $ recDef expr')
+recDefs expr' =
+   keyword strLet *> many (try $ recDef expr')
 
 letRec :: SParser Expr -> SParser Expr
 letRec expr' = do
@@ -252,7 +252,7 @@ operators =
 -- is a left-associative tree of one or more simple terms. A simple term is any
 -- expression other than an operator tree or an application chain.
 expr_ :: SParser Expr
-expr_ = fix $ \p -> flip buildExprParser (appChain p) operators
+expr_ = fix $ appChain >>> buildExprParser operators
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
@@ -261,4 +261,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = topLevel $ many ((def expr_ <#> Left) <|> (recDefs expr_ <#> Right)) <#> Module
+module_ = topLevel $ many (choose (def expr_) (recDefs expr_)) <#> Module
