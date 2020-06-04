@@ -123,7 +123,7 @@ simpleExpr expr' =
    string <|>
    try false_ <|>
    try true_ <|>
-   let_ expr' <|>
+   let2 expr' <|>
    letRec expr' <|>
    matchAs expr' <|>
    try (token.parens expr') <|>
@@ -194,7 +194,7 @@ def expr' = do
 
 def2 :: SParser Expr -> SParser Def2
 def2 expr' = do
-   σ <- keyword strLet *> elim expr'
+   σ <- try $ keyword strLet *> elim expr' <* token.semi
    pureMaybe "Singleton eliminator expected" $ singleBranch σ <#> Def2 (σ <#> const unit)
 
 let_ ∷ SParser Expr -> SParser Expr
