@@ -80,7 +80,7 @@ keyword ∷ String → SParser Unit
 keyword = token.reserved
 
 variable :: SParser Expr
-variable = ident <#> expr <<< Var
+variable = ident <#> Var >>> expr
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
@@ -125,8 +125,7 @@ constr :: SParser Expr -> SParser Expr
 constr expr' =
    try false_ <|>
    try true_ <|>
-   try nil <|>
-   try (cons expr')
+   try nil
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
