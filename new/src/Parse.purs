@@ -36,6 +36,7 @@ pureIf :: forall a . String -> Boolean -> a -> SParser a
 pureIf msg b = fromBool b >>> pureMaybe msg
 
 -- constants (should also be used by prettyprinter)
+strArrow = "->" :: String
 strAs = "as" :: String
 strFun = "fun" :: String
 strLet = "let" :: String
@@ -133,18 +134,16 @@ lambda expr' = keyword strFun *> elim expr' <#> Lambda >>> expr
 
 elim :: SParser Expr -> SParser (Elim Expr)
 elim expr' =
-   (partialElim expr' >>= toElim >>> pureMaybe "Incomplete branches")
+   (partialElim expr' (token.reservedOp strArrow) >>= toElim >>> pureMaybe "Incomplete branches")
    <|>
    (do
-      σs <- token.braces (sepBy1 (partialElim expr') token.semi)
+      σs <- token.braces (sepBy1 (partialElim expr' (token.reservedOp strArrow)) token.semi)
       pureMaybe "Incompatible or incomplete branches" (join σs >>= toElim))
 
-partialElim :: SParser Expr -> SParser (PElim Expr)
-partialElim expr' = do
+partialElim :: SParser Expr -> SParser Unit -> SParser (PElim Expr)
+partialElim expr' delim = do
    mkElim <- pattern
-   ((token.reservedOp "->" *> expr' <#> mkElim)
-   <|>
-   (elim expr' <#> Lambda >>> expr >>> mkElim))
+   ((delim *> expr' <#> mkElim) <|> (elim expr' <#> Lambda >>> expr >>> mkElim))
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
