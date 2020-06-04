@@ -38,6 +38,7 @@ pureIf msg b = fromBool b >>> pureMaybe msg
 -- constants (should also be used by prettyprinter)
 strArrow = "->" :: String
 strAs = "as" :: String
+strEquals = "=" :: String
 strFun = "fun" :: String
 strLet = "let" :: String
 strMatch = "match" :: String
@@ -132,12 +133,18 @@ simpleExpr expr' =
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> elim expr' <#> Lambda >>> expr
 
+arrow :: SParser Unit
+arrow = token.reservedOp strArrow
+
+equals :: SParser Unit
+equals = token.reservedOp strEquals
+
 elim :: SParser Expr -> SParser (Elim Expr)
 elim expr' =
-   (partialElim expr' (token.reservedOp strArrow) >>= toElim >>> pureMaybe "Incomplete branches")
+   (partialElim expr' (arrow <|> equals) >>= toElim >>> pureMaybe "Incomplete branches")
    <|>
    (do
-      σs <- token.braces (sepBy1 (partialElim expr' (token.reservedOp strArrow)) token.semi)
+      σs <- token.braces (sepBy1 (partialElim expr' arrow) token.semi)
       pureMaybe "Incompatible or incomplete branches" (join σs >>= toElim))
 
 partialElim :: SParser Expr -> SParser Unit -> SParser (PElim Expr)
@@ -181,7 +188,7 @@ fixParser f = x
 
 def :: SParser Expr -> SParser Def
 def expr' = do
-   x <- try $ keyword strLet *> ident <* token.reservedOp "="
+   x <- try $ keyword strLet *> ident <* equals
    (expr' <#> Def x) <* token.semi
 
 let_ ∷ SParser Expr -> SParser Expr
