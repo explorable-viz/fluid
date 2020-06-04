@@ -203,7 +203,7 @@ recDef expr' = do
    (elim expr' <#> RecDef f) <* token.semi
 
 recDefs :: SParser Expr -> SParser RecDefs
-recDefs expr' = keyword strLet *> recDef expr' <#> singleton
+recDefs expr' = keyword strLet *> many (try $ recDef expr')
 
 letRec :: SParser Expr -> SParser Expr
 letRec expr' = do
