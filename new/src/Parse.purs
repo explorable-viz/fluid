@@ -141,22 +141,22 @@ arrow = token.reservedOp strArrow
 equals :: SParser Unit
 equals = token.reservedOp strEquals
 
--- "nested" controls whether nested (curried) functions are permitted in this context
+-- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser (Elim Expr)
-elim expr' nested =
+elim expr' nest =
    pureMaybe "Incompatible or incomplete branches" =<<
-   (partialElim expr' nested (arrow <|> equals) <#> toElim)
+   (partialElim expr' nest (arrow <|> equals) <#> toElim)
    <|>
-   (token.braces $ sepBy1 (partialElim expr' nested arrow) token.semi <#> (join >=> toElim))
+   (token.braces $ sepBy1 (partialElim expr' nest arrow) token.semi <#> (join >=> toElim))
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = elim expr' true <#> Lambda >>> expr
 nestedFun false _ = empty
 
 partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser (PElim Expr)
-partialElim expr' nested delim = do
+partialElim expr' nest delim = do
    mkElim <- pattern
-   (delim *> expr' <|> nestedFun nested expr') <#> mkElim
+   (delim *> expr' <|> nestedFun nest expr') <#> mkElim
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
