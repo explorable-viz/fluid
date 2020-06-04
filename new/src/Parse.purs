@@ -197,10 +197,13 @@ let_ expr' = do
    d <- def expr'
    expr' <#> Let d >>> expr
 
+recDef :: SParser Expr -> SParser RecDef
+recDef expr' = do
+   f <- ident
+   (elim expr' <#> RecDef f) <* token.semi
+
 recDefs :: SParser Expr -> SParser RecDefs
-recDefs expr' = do
-   f <- keyword strLet *> ident
-   (elim expr' <#> RecDef f >>> singleton) <* token.semi
+recDefs expr' = keyword strLet *> recDef expr' <#> singleton
 
 letRec :: SParser Expr -> SParser Expr
 letRec expr' = do
