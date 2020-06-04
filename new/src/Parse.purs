@@ -21,8 +21,8 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PElim(..), join, toElim)
+import Expr (Def(..), Def2(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import PElim (PElim(..), join, singleBranch, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (fromBool)
 
@@ -191,6 +191,13 @@ def :: SParser Expr -> SParser Def
 def expr' = do
    x <- try $ keyword strLet *> ident <* equals
    (expr' <#> Def x) <* token.semi
+
+def2 :: SParser Expr -> SParser Def2
+def2 expr' = do
+   σ <- keyword strLet *> elim expr'
+   case singleBranch σ of
+      Nothing -> fail "Singleton eliminator expected"
+      Just e -> pure $ Def2 (σ <#> const unit) e
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = do
