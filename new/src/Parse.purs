@@ -147,10 +147,11 @@ elim expr' nested =
    pureMaybe "Incompatible or incomplete branches" =<<
    (partialElim expr' nested (arrow <|> equals) <#> toElim)
    <|>
-   (token.braces (sepBy1 (partialElim expr' nested arrow) token.semi) <#> (join >=> toElim))
+   (token.braces $ sepBy1 (partialElim expr' nested arrow) token.semi <#> (join >=> toElim))
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
-nestedFun nested expr' = if nested then elim expr' nested <#> Lambda >>> expr else empty
+nestedFun true expr' = elim expr' true <#> Lambda >>> expr
+nestedFun false _ = empty
 
 partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser (PElim Expr)
 partialElim expr' nested delim = do
