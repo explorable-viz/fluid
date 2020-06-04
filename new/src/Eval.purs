@@ -37,78 +37,83 @@ closeDefs _ _ Nil = ε
 closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ0 σ)
 
 type ExplVal = { t :: Expl, v :: Val }
+type Error = String
 
-eval :: Env -> Expr -> ExplVal
+eval :: Env -> Expr -> Either Error ExplVal
 eval ρ (Expr _ (E.Var x)) =
-   case find x ρ of
-      Just v -> { t: T.Var x, v }
-      _ -> error $ "variable " <> x <> " not found"
+   find x ρ <#> \v -> { t: T.Var x, v }
 eval ρ (Expr _ (E.Op op)) =
-   case find op ρ of
-      Just v -> { t: T.Op op, v }
-      _ -> error $ "operator " <> op <> " not found"
-eval ρ (Expr _ E.True) = { t: T.True, v: val V.True }
-eval ρ (Expr _ E.False) = { t: T.False, v: val V.False }
-eval ρ (Expr _ (E.Int n)) = { t: T.Int n, v: val $ V.Int n }
-eval ρ (Expr _ (E.Str str)) = { t: T.Str str, v: val $ V.Str str }
-eval ρ (Expr _ (E.Pair e e')) =
-   let { t, v } = eval ρ e
-       { t: t', v: v' } = eval ρ e' in
-      { t: T.Pair t t', v: val $ V.Pair v v' }
-eval ρ (Expr _ E.Nil) = { t: T.Nil, v: val V.Nil }
-eval ρ (Expr _ (E.Cons e e')) =
-   let { t, v } = eval ρ e
-       { t: t', v: v' } = eval ρ e' in
-   { t: T.Cons t t', v: val $ V.Cons v v' }
-eval ρ (Expr _ (E.LetRec δ e)) =
+   find op ρ <#> \v -> { t: T.Op op, v }
+eval ρ (Expr _ E.True) =
+   pure { t: T.True, v: val V.True }
+eval ρ (Expr _ E.False) =
+   pure { t: T.False, v: val V.False }
+eval ρ (Expr _ (E.Int n)) =
+   pure { t: T.Int n, v: val $ V.Int n }
+eval ρ (Expr _ (E.Str str)) =
+   pure { t: T.Str str, v: val $ V.Str str }
+eval ρ (Expr _ (E.Pair e e')) = do
+   { t, v } <- eval ρ e
+   { t: t', v: v' } <- eval ρ e'
+   pure { t: T.Pair t t', v: val $ V.Pair v v' }
+eval ρ (Expr _ E.Nil) =
+   pure { t: T.Nil, v: val V.Nil }
+eval ρ (Expr _ (E.Cons e e')) = do
+   { t, v } <- eval ρ e
+   { t: t', v: v' } <- eval ρ e'
+   pure { t: T.Cons t t', v: val $ V.Cons v v' }
+eval ρ (Expr _ (E.LetRec δ e)) = do
    let ρ' = closeDefs ρ δ δ
-       { t, v } = eval (ρ <> ρ') e in
-   { t: T.LetRec δ t, v }
+   { t, v } <- eval (ρ <> ρ') e
+   pure { t: T.LetRec δ t, v }
 eval ρ (Expr _ (E.Lambda σ)) =
-   { t: T.Lambda σ, v: val $ V.Closure ρ Nil σ }
-eval ρ (Expr _ (E.App e e')) =
-   case eval ρ e, eval ρ e' of
-      { t, v: (Val _ (V.Closure ρ1 δ σ)) }, { t: t', v } ->
+   pure { t: T.Lambda σ, v: val $ V.Closure ρ Nil σ }
+eval ρ (Expr _ (E.App e e')) = do
+   { t, v } <- eval ρ e
+   { t: t', v: v' } <- eval ρ e'
+   case v of
+      Val _ (V.Closure ρ1 δ σ) ->
          let ρ2 = closeDefs ρ1 δ δ in
-         case match v σ of
-            Just (T3 ρ3 e'' ξ) ->
-               let { t: u, v: v' } = eval (ρ1 <> ρ2 <> ρ3) e''
-               in { t: T.App t t' ξ u, v: v' }
+         case match v' σ of
+            Just (T3 ρ3 e'' ξ) -> do
+               { t: u, v: v'' } <- eval (ρ1 <> ρ2 <> ρ3) e''
+               pure { t: T.App t t' ξ u, v: v'' }
             Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
-      { t, v: (Val _ (V.Unary φ)) }, { t: t', v } ->
-         { t: T.AppOp t t', v: applyUnary φ v }
-      { t, v: (Val _ (V.Binary φ)) }, { t: t', v } ->
-         { t: T.AppOp t t', v: val $ V.Unary (PartialApp φ v) }
-      _, _ -> error "Expected closure or operator"
-eval ρ (Expr _ (E.BinaryApp e op e')) =
-   let { t, v } = eval ρ e
-       { t: t', v: v' } = eval ρ e' in
-   case find op ρ of
-      Just (Val _ (V.Binary φ)) -> { t: T.BinaryApp t op t', v: v `applyBinary φ` v' }
-      Just _ -> error absurd
-      Nothing -> error $ "operator " <> op <> " not found"
-eval ρ (Expr _ (E.Let (E.Def x e) e')) =
-   let { t, v } = eval ρ e
-       { t: t', v: v' } = eval (ρ :+: x ↦ v) e'
-   in { t: T.Let (T.Def x t) t', v: v' }
-eval ρ (Expr _ (E.Let2 (E.Def2 σ e) e')) =
-   let { t, v } = eval ρ e
-   in case match v σ of
+      Val _ (V.Unary φ) ->
+         pure { t: T.AppOp t t', v: applyUnary φ v' }
+      Val _ (V.Binary φ) ->
+         pure { t: T.AppOp t t', v: val $ V.Unary (PartialApp φ v') }
+      _ -> Left "Expected closure or operator"
+eval ρ (Expr _ (E.BinaryApp e op e')) = do
+   { t, v } <- eval ρ e
+   { t: t', v: v' } <- eval ρ e'
+   Val _ u <- find op ρ
+   case u of
+      V.Binary φ -> pure { t: T.BinaryApp t op t', v: v `applyBinary φ` v' }
+      _ -> error absurd
+eval ρ (Expr _ (E.Let (E.Def x e) e')) = do
+   { t, v } <- eval ρ e
+   { t: t', v: v' } <- eval (ρ :+: x ↦ v) e'
+   pure { t: T.Let (T.Def x t) t', v: v' }
+eval ρ (Expr _ (E.Let2 (E.Def2 σ e) e')) = do
+   { t, v } <- eval ρ e
+   case match v σ of
       Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
-      Just (T3 ρ' _ ξ) ->
-         let { t: t', v: v' } = eval (ρ <> ρ') e'
-         in { t: T.Let2 (T.Def2 ξ t) t', v: v' }
-eval ρ (Expr _ (E.MatchAs e σ)) =
-   let { t, v } = eval ρ e
-   in case match v σ of
+      Just (T3 ρ' _ ξ) -> do
+         { t: t', v: v' } <- eval (ρ <> ρ') e'
+         pure { t: T.Let2 (T.Def2 ξ t) t', v: v' }
+eval ρ (Expr _ (E.MatchAs e σ)) = do
+   { t, v } <- eval ρ e
+   case match v σ of
       Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
-      Just (T3 ρ' e' ξ) ->
-         let { t: t', v: v' } = eval (ρ <> ρ') e'
-         in { t: T.MatchAs t ξ t', v: v' }
+      Just (T3 ρ' e' ξ) -> do
+         { t: t', v: v' } <- eval (ρ <> ρ') e'
+         pure { t: T.MatchAs t ξ t', v: v' }
 
-defs :: Env -> Module -> Env
-defs ρ (Module Nil) = ρ
-defs ρ (Module (Left (E.Def x e) : ds)) =
-   defs (ρ :+: x ↦ (eval ρ e).v) (Module ds)
+defs :: Env -> Module -> Either Error Env
+defs ρ (Module Nil) = pure ρ
+defs ρ (Module (Left (E.Def x e) : ds)) = do
+   { v } <- eval ρ e
+   defs (ρ :+: x ↦ v) (Module ds)
 defs ρ (Module (Right δ : ds)) =
    defs (ρ <> closeDefs ρ δ δ) (Module ds)

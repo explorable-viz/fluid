@@ -1,7 +1,7 @@
 module Bindings where
 
 import Prelude
-import Data.Maybe (Maybe(..))
+import Data.Either (Either(..))
 
 type Var = String
 
@@ -24,6 +24,6 @@ instance bindingsSemigroup :: Semigroup (Bindings a) where
 instance bindingsMonoid :: Monoid (Bindings a) where
    mempty = ε
 
-find :: ∀ a . Var -> Bindings a -> Maybe a
-find _ Empty = Nothing
-find x (m :+: (k ↦ v)) = if x == k then Just v else find x m
+find :: ∀ a . Var -> Bindings a -> Either String a
+find x Empty = Left $ "variable " <> x <> " not found"
+find x (m :+: k ↦ v) = if x == k then Right v else find x m
