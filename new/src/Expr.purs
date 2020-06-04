@@ -6,8 +6,7 @@ import Data.List (List)
 import Bindings (Var)
 import Selected (Selected(..))
 
-data Def = Def Var Expr
-data Def2 = Def2 (Elim Unit) Expr
+data Def = Def (Elim Unit) Expr
 data RecDef = RecDef Var (Elim Expr)
 type RecDefs = List RecDef
 
@@ -24,7 +23,6 @@ data RawExpr =
    BinaryApp Expr Var Expr |
    MatchAs Expr (Elim Expr) |
    Let Def Expr |
-   Let2 Def2 Expr |
    LetRec RecDefs Expr
 
 data Expr = Expr Selected RawExpr

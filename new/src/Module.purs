@@ -30,7 +30,9 @@ loadFile folder file = do
 loadModule :: String -> Env -> Aff Env
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
-   pure $ defs ρ $ successfulParse src module_
+   case defs ρ $ successfulParse src module_ of
+      Left msg -> error msg
+      Right ρ' -> pure ρ'
 
 openWithImports :: String -> Aff (Tuple Env Expr)
 openWithImports file =
