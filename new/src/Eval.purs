@@ -16,20 +16,27 @@ import Util (T3(..), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
-match :: forall k . Val -> Elim k -> Maybe (T3 Env k (Match k))
-match v (ElimVar x κ) = Just $ T3 (ε :+: x ↦ v) κ (MatchVar x)
-match (Val _ V.True) (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ (MatchTrue κ')
-match (Val _ V.False) (ElimBool { true: κ, false: κ' }) = Just $ T3 ε κ' (MatchFalse κ)
+type Error = String
+
+match :: forall k . Val -> Elim k -> Either Error (T3 Env k (Match k))
+match v (ElimVar x κ) =
+   pure $ T3 (ε :+: x ↦ v) κ (MatchVar x)
+match (Val _ V.True) (ElimBool { true: κ, false: κ' }) =
+   pure $ T3 ε κ (MatchTrue κ')
+match (Val _ V.False) (ElimBool { true: κ, false: κ' }) =
+   pure $ T3 ε κ' (MatchFalse κ)
 match (Val _ (V.Pair v v')) (ElimPair σ) = do
    T3 ρ1 τ ξ <- match v σ
    T3 ρ2 κ ξ' <- match v' τ
    pure $ T3 (ρ1 <> ρ2) κ (MatchPair ξ ξ')
-match (Val _ V.Nil) (ElimList { nil: κ, cons: σ }) = Just $ T3 ε κ (MatchNil σ)
+match (Val _ V.Nil) (ElimList { nil: κ, cons: σ }) =
+   pure $ T3 ε κ (MatchNil σ)
 match (Val _ (V.Cons v v')) (ElimList { nil: κ, cons: σ }) = do
    T3 ρ1 τ ξ <- match v σ
    T3 ρ κ' ξ' <- match v' τ
    pure $ T3 (ρ1 <> ρ) κ' (MatchCons { nil: κ, cons: Tuple ξ ξ' })
-match _ _ = Nothing
+match v _ =
+   Left $ "Pattern mismatch for " <> render (pretty v)
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
@@ -37,7 +44,6 @@ closeDefs _ _ Nil = ε
 closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ0 σ)
 
 type ExplVal = { t :: Expl, v :: Val }
-type Error = String
 
 eval :: Env -> Expr -> Either Error ExplVal
 eval ρ (Expr _ (E.Var x)) =
@@ -72,13 +78,11 @@ eval ρ (Expr _ (E.App e e')) = do
    { t, v } <- eval ρ e
    { t: t', v: v' } <- eval ρ e'
    case v of
-      Val _ (V.Closure ρ1 δ σ) ->
-         let ρ2 = closeDefs ρ1 δ δ in
-         case match v' σ of
-            Just (T3 ρ3 e'' ξ) -> do
-               { t: u, v: v'' } <- eval (ρ1 <> ρ2 <> ρ3) e''
-               pure { t: T.App t t' ξ u, v: v'' }
-            Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
+      Val _ (V.Closure ρ1 δ σ) -> do
+         let ρ2 = closeDefs ρ1 δ δ
+         T3 ρ3 e'' ξ <- match v' σ
+         { t: u, v: v'' } <- eval (ρ1 <> ρ2 <> ρ3) e''
+         pure { t: T.App t t' ξ u, v: v'' }
       Val _ (V.Unary φ) ->
          pure { t: T.AppOp t t', v: applyUnary φ v' }
       Val _ (V.Binary φ) ->
@@ -97,18 +101,14 @@ eval ρ (Expr _ (E.Let (E.Def x e) e')) = do
    pure { t: T.Let (T.Def x t) t', v: v' }
 eval ρ (Expr _ (E.Let2 (E.Def2 σ e) e')) = do
    { t, v } <- eval ρ e
-   case match v σ of
-      Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
-      Just (T3 ρ' _ ξ) -> do
-         { t: t', v: v' } <- eval (ρ <> ρ') e'
-         pure { t: T.Let2 (T.Def2 ξ t) t', v: v' }
+   T3 ρ' _ ξ <- match v σ
+   { t: t', v: v' } <- eval (ρ <> ρ') e'
+   pure { t: T.Let2 (T.Def2 ξ t) t', v: v' }
 eval ρ (Expr _ (E.MatchAs e σ)) = do
    { t, v } <- eval ρ e
-   case match v σ of
-      Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
-      Just (T3 ρ' e' ξ) -> do
-         { t: t', v: v' } <- eval (ρ <> ρ') e'
-         pure { t: T.MatchAs t ξ t', v: v' }
+   T3 ρ' e' ξ <- match v σ
+   { t: t', v: v' } <- eval (ρ <> ρ') e'
+   pure { t: T.MatchAs t ξ t', v: v' }
 
 defs :: Env -> Module -> Either Error Env
 defs ρ (Module Nil) = pure ρ
