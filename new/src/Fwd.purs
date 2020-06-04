@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Bindings ((:+:), (↦), ε, find)
-import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs)
+import Expr (Def(..), Def2(..), Elim(..), Expr(..), RecDef(..), RecDefs)
 import Expr (RawExpr(..)) as E
 import Primitive (applyBinary_fwd, applyUnary_fwd)
 import Selected (Selected(..), (∧))
@@ -66,7 +66,12 @@ eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
    case find op ρ of
       Just (Val α' (V.Binary φ)) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
       _ -> error absurd
-eval_fwd ρ (Expr _ (E.Let (Def x e1) e2)) α = eval_fwd (ρ :+: x ↦ eval_fwd ρ e1 α) e2 α
+eval_fwd ρ (Expr _ (E.Let (Def x e) e')) α =
+   eval_fwd (ρ :+: x ↦ eval_fwd ρ e α) e' α
+eval_fwd ρ (Expr _ (E.Let2 (Def2 σ e) e')) α =
+   case match_fwd (eval_fwd ρ e α) σ of
+      Just (T3 ρ' _ α') -> eval_fwd (ρ <> ρ') e' α'
+      Nothing -> error absurd
 eval_fwd ρ (Expr _ (E.MatchAs e σ)) α =
    case match_fwd (eval_fwd ρ e α) σ of
       Just (T3 ρ' e' α') -> eval_fwd (ρ <> ρ') e' α'
