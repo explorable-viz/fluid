@@ -5,7 +5,7 @@ import Control.Alt ((<|>))
 import Control.Lazy (defer, fix)
 import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
-import Data.Either (Either(..), choose)
+import Data.Either (choose)
 import Data.Foldable (notElem)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -46,8 +46,10 @@ strLet = "let" :: String
 strMatch = "match" :: String
 
 -- treat datatype-generically later
-cTrue = "True" :: String
 cFalse = "False" :: String
+cTrue = "True" :: String
+cNil = "Nil" :: String
+cCons = "Cons" :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -69,7 +71,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    ]
 
 constructors :: Array String
-constructors = [cTrue, cFalse]
+constructors = [cTrue, cFalse, cNil, cCons]
 
 token :: TokenParser
 token = makeTokenParser languageDef
@@ -111,6 +113,21 @@ true_ = ctr cTrue <#> const (expr True)
 false_ :: SParser Expr
 false_ = ctr cFalse <#> const (expr False)
 
+nil :: SParser Expr
+nil = ctr cNil <#> const (expr Nil)
+
+cons :: SParser Expr -> SParser Expr
+cons expr' = do
+   e <- ctr cCons *> expr'
+   expr' <#> Cons e >>> expr
+
+constr :: SParser Expr -> SParser Expr
+constr expr' =
+   try false_ <|>
+   try true_ <|>
+   try nil <|>
+   try (cons expr')
+
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
    e1 <- expr'
@@ -122,8 +139,7 @@ simpleExpr expr' =
    try variable <|>
    try int <|> -- int may start with +/-
    string <|>
-   try false_ <|>
-   try true_ <|>
+   constr expr' <|>
    let_ expr' <|>
    letRec expr' <|>
    matchAs expr' <|>

@@ -36,4 +36,4 @@ main = do
    runExample "lexicalScoping" "\"6\""
    runExample "normalise" "(33, 66)"
 
-   runExample "temp" "\"true\""
+   runExample "temp" "Nil"
