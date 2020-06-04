@@ -74,17 +74,17 @@ eval ρ (Expr _ (E.LetRec δ e)) = do
 eval ρ (Expr _ (E.Lambda σ)) =
    pure $ ExplVal (T.Lambda σ) $ val $ V.Closure ρ Nil σ
 eval ρ (Expr _ (E.App e e')) = do
-   ExplVal t v <- eval ρ e
+   ExplVal t (Val _ u) <- eval ρ e
    ExplVal t' v' <- eval ρ e'
-   case v of
-      Val _ (V.Closure ρ1 δ σ) -> do
+   case u of
+      V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs ρ1 δ δ
          T3 ρ3 e'' ξ <- match v' σ
-         ExplVal u v'' <- eval (ρ1 <> ρ2 <> ρ3) e''
-         pure $ ExplVal (T.App t t' ξ u) v''
-      Val _ (V.Unary φ) ->
+         ExplVal t'' v'' <- eval (ρ1 <> ρ2 <> ρ3) e''
+         pure $ ExplVal (T.App t t' ξ t'') v''
+      V.Unary φ ->
          pure $ ExplVal (T.AppOp t t') $ applyUnary φ v'
-      Val _ (V.Binary φ) ->
+      V.Binary φ ->
          pure $ ExplVal (T.AppOp t t') $ val $ V.Unary $ PartialApp φ v'
       _ -> Left "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
@@ -92,7 +92,8 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
    ExplVal t' v' <- eval ρ e'
    Val _ u <- find op ρ
    case u of
-      V.Binary φ -> pure $ ExplVal (T.BinaryApp t op t') (v `applyBinary φ` v')
+      V.Binary φ ->
+         pure $ ExplVal (T.BinaryApp t op t') (v `applyBinary φ` v')
       _ -> error absurd
 eval ρ (Expr _ (E.Let (E.Def x e) e')) = do
    ExplVal t v <- eval ρ e
