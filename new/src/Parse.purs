@@ -143,7 +143,7 @@ elim expr' =
 partialElim :: SParser Expr -> SParser Unit -> SParser (PElim Expr)
 partialElim expr' delim = do
    mkElim <- pattern
-   ((delim *> expr' <#> mkElim) <|> (elim expr' <#> Lambda >>> expr >>> mkElim))
+   (delim *> expr' <|> (elim expr' <#> Lambda >>> expr)) <#> mkElim
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
