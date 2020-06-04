@@ -6,10 +6,10 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
-import Expl (Def(..), Expl(..)) as T
+import Expl (Def(..), Def2(..), Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
-import Expr (Def(..), RawExpr(..)) as E
+import Expr (Def(..), Def2(..), RawExpr(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
 import Util (T3(..), absurd, error)
@@ -91,6 +91,13 @@ eval ρ (Expr _ (E.Let (E.Def x e) e')) =
    let { t, v } = eval ρ e
        { t: t', v: v' } = eval (ρ :+: x ↦ v) e'
    in { t: T.Let (T.Def x t) t', v: v' }
+eval ρ (Expr _ (E.Let2 (E.Def2 σ e) e')) =
+   let { t, v } = eval ρ e
+   in case match v σ of
+      Nothing -> error $ "Pattern mismatch for " <> render (pretty v)
+      Just (T3 ρ' _ ξ) ->
+         let { t: t', v: v' } = eval (ρ <> ρ') e'
+         in { t: T.Let2 (T.Def2 ξ t) t', v: v' }
 eval ρ (Expr _ (E.MatchAs e σ)) =
    let { t, v } = eval ρ e
    in case match v σ of

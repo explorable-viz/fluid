@@ -4,7 +4,7 @@ import Prelude
 import Data.List (List(..), (:))
 import Text.Pretty (Doc, atop, beside, text)
 import Text.Pretty (render) as P
-import Expr (Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
+import Expr (Def(..), Def2(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Util (error)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
@@ -37,6 +37,9 @@ instance rawValPrettyList :: PrettyList RawVal where
 instance exprPretty :: Pretty Expr where
    pretty (Expr _ r) = pretty r
 
+instance unitPretty :: Pretty Unit where
+   pretty _ = text ""
+
 instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Int n) = text $ show n
    pretty (E.Str str) = text $ show str
@@ -49,6 +52,8 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Op op) = parens $ text op
    pretty (E.Let (Def x e) e') =
       atop (text ("let " <> x <> " = ") :<>: pretty e :<>: text " in") (pretty e')
+   pretty (E.Let2 (Def2 σ e) e') =
+      atop (text ("let ") :<>: pretty σ :<>: text " = " :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.MatchAs e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
    pretty (E.LetRec δ e) =
       atop (text "let " :<>: pretty δ) (text "in     " :<>: pretty e)

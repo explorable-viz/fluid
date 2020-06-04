@@ -1,4 +1,3 @@
-let x = 6;
-let y = 12;
+let (x, y) = (6, 12);
 let sum = x + y;
 (div (x * 100) sum, div (y * 100) sum)

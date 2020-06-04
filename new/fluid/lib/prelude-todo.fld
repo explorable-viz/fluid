@@ -1,48 +1,33 @@
-// Num -> Num
+-- Num -> Num
 primitive ceiling;
 
-// Str -> a
+-- Str -> a
 primitive error;
 
-// Num -> Num
+-- Num -> Num
 primitive floor;
 
-// Natural logarithm.
-// Num -> Num
+-- Natural logarithm.
+-- Num -> Num
 primitive log;
 
-// Num -> Str
+-- Num -> Str
 primitive numToStr;
 
-// Print argument to the console and return it.
-// a -> a
+-- Print argument to the console and return it.
+-- a -> a
 primitive debugLog;
 
-// Bool -> Bool
+-- Bool -> Bool
 let or x y = if x then True else y;
 
-// Bool -> Bool
+-- Bool -> Bool
 let not x = if x then False else True;
 
-// a -> b -> a
-let const x _ = x;
-
-// (a -> b) -> (a, c) -> (b, c)
-let first f (a, c) = (f a, c);
-
-// (a, b) -> a
-let fst (x, y) = x;
-
-// List a -> a
+-- List a -> a
 let head [x, ...xs] = x;
 
-// a -> a
-let id x = x;
-
-// (a -> b) -> (a -> c) -> a -> (b, c)
-let prod f g x = (f x, g x);
-
-// Num -> Num -> Ordering
+-- Num -> Num -> Ordering
 let compare (x, y) =
    if x < y
    then LT
@@ -50,19 +35,19 @@ let compare (x, y) =
       then GT
       else EQ;
 
-// List a -> List a -> List a
+-- List a -> List a -> List a
 let concat {
    [] ys -> ys;
    [x, ...xs] ys -> [x, ...concat xs ys]
 };
 
-// a -> List a -> Bool (where a ∈ {Num, Str})
+-- a -> List a -> Bool (where a ∈ {Num, Str})
 let elem x {
    [] -> False;
    [x', ...xs] -> or (x == x') (elem x xs)
 };
 
-// (a -> Bool) -> List a -> List a
+-- (a -> Bool) -> List a -> List a
 let filter p {
    [] -> [];
    [x, ...xs] ->
@@ -70,88 +55,85 @@ let filter p {
       if p x then [x, ...ys] else ys
 };
 
-// (a -> b -> c) -> b -> a -> c
-let flip f x y = f y x;
-
-// ((a, b) -> a) -> a -> List b -> a
+-- ((a, b) -> a) -> a -> List b -> a
 let foldl op z {
    [] -> z;
    [x, ...xs] -> foldl op (op (z, x)) xs
 };
 
-// ((a, b) -> a) -> List b -> a
+-- ((a, b) -> a) -> List b -> a
 let foldl1 op {
    [x, ...xs] -> foldl op x xs
 };
 
-// ((a, b) -> b) -> b -> List a -> b
+-- ((a, b) -> b) -> b -> List a -> b
 let foldr op z {
    [] -> z;
    [x, ...xs] -> op (x, foldr op z xs)
 };
 
-// ((a, b) -> b) -> List a -> b
+-- ((a, b) -> b) -> List a -> b
 let foldr1 op {
    [x] -> x;
    [x, y, ...xs] -> op (x, foldr1 op [y, ...xs])
 };
 
-// ((a, b) -> a) -> a -> List b -> List a
+-- ((a, b) -> a) -> a -> List b -> List a
 let scanl1 op z xs =
    let go (x, continue) acc =
       let next = op (acc, x);
       [next, ...continue next];
    foldr go (const []) xs z;
 
-// ((a, b) -> a) -> a -> List b -> List a
+-- ((a, b) -> a) -> a -> List b -> List a
 let scanl op z xs =
    [z, ...scanl1 op z xs];
 
-// List a -> a -> List a
+-- List a -> a -> List a
 let intersperse {
    [] sep -> [];
    [x] sep -> [x];
    [x, y, ...ys] sep -> [x, sep, ...intersperse [y, ...ys]]
 };
 
-// List a -> a
+-- List a -> a
 let last {
    [x] -> x;
    [x, y, ...xs] -> last [y, ...xs]
 };
 
-// Log of x in base y.
-// Num -> Num -> Num
+-- Log of x in base y.
+-- Num -> Num -> Num
 let logBase x y = log y / log x;
 
-// (a -> b) -> List a -> List b
+-- (a -> b) -> List a -> List b
 let map f {
    [] -> [];
    [x, ...xs] -> [f x, ...map f xs]
 };
 
-// Num -> (a -> a) -> a -> List a
+-- Num -> (a -> a) -> a -> List a
 let iterate n f z =
    if n == 0
    then []
    else [z, ...map f (iterate (n - 1) f z)];
 
-// List a -> Num
+-- List a -> Num
 let length {
    [] -> 0;
    [x, ...xs] -> 1 + length xs
 };
 
-// Num -> Num
+-- Num -> Num
 let negate = (-) 0;
 
-// List a -> List a
+-- List a -> List a
 let reverse {
    [] -> [];
    [x, ...xs] -> concat (reverse xs) [x]
 };
 
-// List (a, b) -> (List a, List b)
+-- List (a, b) -> (List a, List b)
 let unzip {
    [] -> ([], []);
    [(x, y), ...xys] ->
@@ -159,7 +141,7 @@ let unzip {
       ([x, ...xs], [y, ...ys])
 };
 
-// ((a, b) -> c) -> List a -> List b -> List c
+-- ((a, b) -> c) -> List a -> List b -> List c
 let zipWith op {
    [] ys -> [];
    [x, ...xs] {
@@ -170,58 +152,44 @@ let zipWith op {
 
 let zip = zipWith id;
 
-// Num -> a -> List a
+-- Num -> a -> List a
 let repeat = flip iterate id;
 
-// a -> List (a, b) -> b (where a ∈ {Num, Str})
+-- a -> List (a, b) -> b (where a ∈ {Num, Str})
 let lookup k [(k', v), ...kvs] ->
    if k == k' then v else lookup k kvs;
 
-// (Num, Num) -> Num
+-- (Num, Num) -> Num
 let max2 (n, m) =
    if n > m then n else m;
 
-// (Num, Num) -> Num
+-- (Num, Num) -> Num
 let min2 (n, m) =
    if n < m then n else m;
 
-// List Num -> Num
+-- List Num -> Num
 let max = foldr1 max2;
 
-// List Num -> Num
+-- List Num -> Num
 let min = foldr1 min2;
 
-// Expects non-negative integer as first argument and non-empty list as second argument.
-// Num -> List a -> a
+-- Expects non-negative integer as first argument and non-empty list as second argument.
+-- Num -> List a -> a
 let nth n [x, ...xs] ->
    if n == 0 then x else nth (n - 1) xs;
 
-// Num -> Num -> Num
+-- Num -> Num -> Num
 let ceilingToNearest n m =
    ceiling (n / m) * m;
 
-// (a -> b) -> (c, a) -> (c, b)
-let second f (c, a) = (c, f a);
-
-// (a, b) -> b
-let snd (x, y) = y;
-
-// List Num -> Num
+-- List Num -> Num
 let sum xs =
    foldr (let (x, y) -> x + y) 0 xs;
 
-// (a, b) -> (b, a)
-let swap (a, b) = (b, a);
-
-// List a -> List a
+-- List a -> List a
 let tail [x, ...xs] = xs;
 
-// (a, b) -> c) -> a -> b -> c
-let curry f x y = f (x, y);
-
-// (a -> b -> c) -> (a, b) -> c
-let uncurry f (x, y) = f x y;
-
+-- Num -> List a -> List a
 let take n xs =
    if n <= 0
    then []
@@ -230,6 +198,7 @@ let take n xs =
       [x, ...xs] -> [x, ...take (n - 1) xs]
    };
 
+-- Num -> List a -> List a
 let drop n xs =
    if n <= 0
    then xs
@@ -238,6 +207,6 @@ let drop n xs =
       [_, ...xs] -> drop (n - 1) xs
    };
 
-// Num -> List a -> List a
+-- Num -> List a -> List a
 let lastN n xs =
    foldl (uncurry (compose const (drop 1))) xs (drop n xs);

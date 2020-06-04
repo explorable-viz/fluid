@@ -1,3 +1,34 @@
 -- (b -> c) -> (a -> b) -> a -> c
--- Would like infix operators.
+-- Want infix <<<
 let compose f g x = f (g x);
+
+-- (a, b) -> c) -> a -> b -> c
+let curry f x y = f (x, y);
+
+-- (a -> b -> c) -> (a, b) -> c
+let uncurry f (x, y) = f x y;
+
+-- (a -> b) -> (a, c) -> (b, c)
+let first f (a, c) = (f a, c);
+
+-- (a, b) -> b
+let snd (x, y) = y;
+
+-- (a -> b) -> (c, a) -> (c, b)
+let second f (c, a) = (c, f a);
+
+-- (a -> b -> c) -> b -> a -> c
+let flip f x y = f y x;
+
+-- (a, b) -> a
+let fst (x, y) = x;
+
+-- a -> a
+let id x = x;
+
+-- (a -> b) -> (a -> c) -> a -> (b, c)
+-- Want infix &&&
+let prod f g x = (f x, g x);
+
+-- (a, b) -> (b, a)
+let swap (a, b) = (b, a);
