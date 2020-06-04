@@ -1,4 +1,4 @@
-let fact x ->
+let fact x =
    match x == 0 as {
       True -> 1;
       False -> x * fact (x - 1)

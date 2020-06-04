@@ -95,6 +95,12 @@ toElim (PElimList { nil: κ, cons: σ }) = do
    Just $ ElimList { nil: κ, cons: σ' }
 toElim _ = Nothing
 
+-- Partial eliminators are not supported at the moment.
+singleBranch :: forall k . Elim k -> Maybe k
+singleBranch (ElimVar x κ) = Just κ
+singleBranch (ElimPair σ) = singleBranch σ >>= singleBranch
+singleBranch _ = Nothing
+
 hoistMaybe :: forall k . PElim (Maybe k) -> Maybe (PElim k)
 hoistMaybe (PElimVar x (Just κ)) = Just $ PElimVar x κ
 hoistMaybe (PElimTrue (Just κ)) = Just $ PElimTrue κ

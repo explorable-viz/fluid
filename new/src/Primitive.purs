@@ -9,16 +9,14 @@ import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
 import Util (error)
 
-data OpName = OpName {
-   op :: Var, -- name in user land
-   prec :: Int -- 0 to 9, similar to Haskell 98
-}
+-- name in user land and precedence 0 to 9, similar to Haskell 98
+data OpName = OpName Var Int
 
 opPrec :: OpName -> Int
-opPrec (OpName { prec }) = prec
+opPrec (OpName _ prec) = prec
 
 opName :: String -> Int -> Tuple String OpName
-opName op prec = Tuple op $ OpName { op, prec }
+opName op = OpName op >>> Tuple op
 
 -- Syntactic information only. No guarantee that any of these will be defined.
 opNames :: Map String OpName

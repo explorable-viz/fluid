@@ -4,6 +4,7 @@ import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
 import Control.Lazy (defer, fix)
 import Data.Array (fromFoldable)
+import Data.Either (Either(..))
 import Data.Foldable (notElem)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -36,7 +37,9 @@ pureIf :: forall a . String -> Boolean -> a -> SParser a
 pureIf msg b = fromBool b >>> pureMaybe msg
 
 -- constants (should also be used by prettyprinter)
+strArrow = "->" :: String
 strAs = "as" :: String
+strEquals = "=" :: String
 strFun = "fun" :: String
 strLet = "let" :: String
 strMatch = "match" :: String
@@ -74,7 +77,7 @@ keyword ∷ String → SParser Unit
 keyword = token.reserved
 
 variable :: SParser Expr
-variable = try $ ident <#> expr <<< Var
+variable = ident <#> expr <<< Var
 
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
@@ -102,10 +105,10 @@ string :: SParser Expr
 string = token.stringLiteral <#> Str >>> expr
 
 true_ :: SParser Expr
-true_ = try $ ctr cTrue <#> const (expr True)
+true_ = ctr cTrue <#> const (expr True)
 
 false_ :: SParser Expr
-false_ = try $ ctr cFalse <#> const (expr False)
+false_ = ctr cFalse <#> const (expr False)
 
 pair :: SParser Expr -> SParser Expr
 pair expr' = token.parens $ do
@@ -115,11 +118,11 @@ pair expr' = token.parens $ do
 -- TODO: float, list
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
-   variable <|>
+   try variable <|>
    try int <|> -- int may start with +/-
    string <|>
-   false_ <|>
-   true_ <|>
+   try false_ <|>
+   try true_ <|>
    let_ expr' <|>
    letRec expr' <|>
    matchAs expr' <|>
@@ -131,26 +134,30 @@ simpleExpr expr' =
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> elim expr' <#> Lambda >>> expr
 
+arrow :: SParser Unit
+arrow = token.reservedOp strArrow
+
+equals :: SParser Unit
+equals = token.reservedOp strEquals
+
 elim :: SParser Expr -> SParser (Elim Expr)
 elim expr' =
-   (partialElim expr' >>= toElim >>> pureMaybe "Incomplete branches")
+   (partialElim expr' (arrow <|> equals) >>= toElim >>> pureMaybe "Incomplete branches")
    <|>
    (do
-      σs <- token.braces (sepBy1 (partialElim expr') token.semi)
+      σs <- token.braces (sepBy1 (partialElim expr' arrow) token.semi)
       pureMaybe "Incompatible or incomplete branches" (join σs >>= toElim))
 
-partialElim :: SParser Expr -> SParser (PElim Expr)
-partialElim expr' = do
+partialElim :: SParser Expr -> SParser Unit -> SParser (PElim Expr)
+partialElim expr' delim = do
    mkElim <- pattern
-   ((token.reservedOp "->" *> expr' <#> mkElim)
-   <|>
-   (elim expr' <#> Lambda >>> expr >>> mkElim))
+   (delim *> expr' <|> (elim expr' <#> Lambda >>> expr)) <#> mkElim
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
 -- TODO: anonymous variables
 patternVar :: MkElimParser
-patternVar = try $ ident <#> PElimVar
+patternVar = ident <#> PElimVar
 
 patternPair :: MkElimParser -> MkElimParser
 patternPair pattern' = token.parens $ do
@@ -159,17 +166,17 @@ patternPair pattern' = token.parens $ do
    pure $ mkElim2 >>> mkElim1 >>> PElimPair
 
 patternTrue :: MkElimParser
-patternTrue = try $ ctr cTrue <#> const PElimTrue
+patternTrue = ctr cTrue <#> const PElimTrue
 
 patternFalse :: MkElimParser
-patternFalse = try $ ctr cFalse <#> const PElimFalse
+patternFalse = ctr cFalse <#> const PElimFalse
 
 -- TODO: lists
 pattern :: MkElimParser
 pattern = fixParser (\p ->
-   patternVar <|>
-   patternTrue <|>
-   patternFalse <|>
+   try patternVar <|>
+   try patternTrue <|>
+   try patternFalse <|>
    patternPair p
 )
 
@@ -182,10 +189,7 @@ fixParser f = x
 
 def :: SParser Expr -> SParser Def
 def expr' = do
-   x <- try $ do
-      x <- keyword strLet *> ident
-      token.reservedOp "="
-      pure x
+   x <- try $ keyword strLet *> ident <* equals
    (expr' <#> Def x) <* token.semi
 
 let_ ∷ SParser Expr -> SParser Expr
@@ -193,10 +197,13 @@ let_ expr' = do
    d <- def expr'
    expr' <#> Let d >>> expr
 
+recDef :: SParser Expr -> SParser RecDef
+recDef expr' = do
+   f <- ident
+   (elim expr' <#> RecDef f) <* token.semi
+
 recDefs :: SParser Expr -> SParser RecDefs
-recDefs expr' = do
-   f <- keyword strLet *> ident
-   (elim expr' <#> RecDef f >>> singleton) <* token.semi
+recDefs expr' = keyword strLet *> many (try $ recDef expr')
 
 letRec :: SParser Expr -> SParser Expr
 letRec expr' = do
@@ -232,7 +239,7 @@ appChain expr' = simpleExpr expr' >>= rest
 operators :: OperatorTable Identity String Expr
 operators =
    fromFoldable $ map fromFoldable $
-   map (map (\(OpName { op }) -> Infix (theBinaryOp op) AssocLeft)) $
+   map (map (\(OpName op _) -> Infix (theBinaryOp op) AssocLeft)) $
    groupBy (eq `on` opPrec) $ sortBy (comparing opPrec) $ values opNames
 
 -- An expression is an operator tree. An operator tree is a tree whose branches are
@@ -249,4 +256,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = topLevel $ many (def expr_) <#> Module
+module_ = topLevel $ many ((def expr_ <#> Left) <|> (recDefs expr_ <#> Right)) <#> Module

@@ -1,6 +1,7 @@
 module Eval where
 
 import Prelude hiding (absurd, apply)
+import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
@@ -100,5 +101,7 @@ eval ρ (Expr _ (E.MatchAs e σ)) =
 
 defs :: Env -> Module -> Env
 defs ρ (Module Nil) = ρ
-defs ρ (Module ((E.Def x e) : ds)) =
+defs ρ (Module (Left (E.Def x e) : ds)) =
    defs (ρ :+: x ↦ (eval ρ e).v) (Module ds)
+defs ρ (Module (Right δ : ds)) =
+   defs (ρ <> closeDefs ρ δ δ) (Module ds)
