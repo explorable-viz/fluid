@@ -96,17 +96,10 @@ toElim (PElimList { nil: κ, cons: σ }) = do
 toElim _ = Nothing
 
 -- Partial eliminators are not supported at the moment.
-toSingletonElim :: forall k . PElim k -> Maybe (Elim k)
-toSingletonElim (PElimVar x κ) = Just $ ElimVar x κ
-toSingletonElim (PElimPair σ) = do
-   σ' <- hoistMaybe (toSingletonElim <$> σ) >>= toSingletonElim
-   Just $ ElimPair σ'
-toSingletonElim _ = Nothing
-
-cont :: forall k . Elim k -> Maybe k
-cont (ElimVar x κ) = Just κ
-cont (ElimPair σ) = cont σ >>= cont
-cont _ = Nothing
+singleBranch :: forall k . Elim k -> Maybe k
+singleBranch (ElimVar x κ) = Just κ
+singleBranch (ElimPair σ) = singleBranch σ >>= singleBranch
+singleBranch _ = Nothing
 
 hoistMaybe :: forall k . PElim (Maybe k) -> Maybe (PElim k)
 hoistMaybe (PElimVar x (Just κ)) = Just $ PElimVar x κ
