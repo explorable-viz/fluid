@@ -2,8 +2,8 @@ module Parse where
 
 import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
-import Control.Bind ((>=>))
 import Control.Lazy (defer, fix)
+import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
 import Data.Either (Either(..))
 import Data.Foldable (notElem)
@@ -133,7 +133,7 @@ simpleExpr expr' =
    lambda expr'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' = keyword strFun *> elim expr' <#> Lambda >>> expr
+lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -141,24 +141,28 @@ arrow = token.reservedOp strArrow
 equals :: SParser Unit
 equals = token.reservedOp strEquals
 
-elim2 :: SParser Expr -> SParser (Maybe (Elim Expr))
-elim2 expr' =
-   (partialElim expr' (arrow <|> equals) <#> toElim)
+elim2 :: SParser Expr -> Boolean -> SParser (Maybe (Elim Expr))
+elim2 expr' nested =
+   (partialElim expr' nested (arrow <|> equals) <#> toElim)
    <|>
-   (token.braces (sepBy1 (partialElim expr' arrow) token.semi) <#> (join >=> toElim))
+   (token.braces (sepBy1 (partialElim expr' nested arrow) token.semi) <#> (join >=> toElim))
 
-elim :: SParser Expr -> SParser (Elim Expr)
-elim expr' =
-   (partialElim expr' (arrow <|> equals) >>= toElim >>> pureMaybe "Incomplete branches")
+-- "nested" controls whether nested (curried) functions are permitted in this context
+elim :: SParser Expr -> Boolean -> SParser (Elim Expr)
+elim expr' nested =
+   (partialElim expr' nested (arrow <|> equals) >>= toElim >>> pureMaybe "Incomplete branches")
    <|>
    (do
-      σs <- token.braces (sepBy1 (partialElim expr' arrow) token.semi)
+      σs <- token.braces (sepBy1 (partialElim expr' nested arrow) token.semi)
       pureMaybe "Incompatible or incomplete branches" (join σs >>= toElim))
 
-partialElim :: SParser Expr -> SParser Unit -> SParser (PElim Expr)
-partialElim expr' delim = do
+nestedFun :: Boolean -> SParser Expr -> SParser Expr
+nestedFun nested expr' = if nested then elim expr' nested <#> Lambda >>> expr else empty
+
+partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser (PElim Expr)
+partialElim expr' nested delim = do
    mkElim <- pattern
-   (delim *> expr' <|> (elim expr' <#> Lambda >>> expr)) <#> mkElim
+   (delim *> expr' <|> nestedFun nested expr') <#> mkElim
 
 type MkElimParser = forall k . SParser (k -> PElim k)
 
@@ -201,7 +205,7 @@ def expr' = do
 
 def2 :: SParser Expr -> SParser Def2
 def2 expr' = do
-   σ <- try $ keyword strLet *> elim expr' <* token.semi
+   σ <- try $ keyword strLet *> elim expr' false <* token.semi
    pureMaybe "Singleton eliminator expected" $ singleBranch σ <#> Def2 (σ <#> const unit)
 
 let_ ∷ SParser Expr -> SParser Expr
@@ -217,7 +221,7 @@ let2 expr' = do
 recDef :: SParser Expr -> SParser RecDef
 recDef expr' = do
    f <- ident
-   (elim expr' <#> RecDef f) <* token.semi
+   (elim expr' true <#> RecDef f) <* token.semi
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = keyword strLet *> many (try $ recDef expr')
@@ -230,7 +234,7 @@ letRec expr' = do
 matchAs :: SParser Expr -> SParser Expr
 matchAs expr' = do
    e <- keyword strMatch *> expr' <* keyword strAs
-   elim expr' <#> MatchAs e >>> expr
+   elim expr' false <#> MatchAs e >>> expr
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
