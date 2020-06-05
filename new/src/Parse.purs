@@ -181,6 +181,31 @@ partialElim expr' nest delim = do
 type MkElimParser = forall k . SParser (k -> PElim k)
 
 -- TODO: anonymous variables
+patternVar2 :: SParser (PElim Unit)
+patternVar2 = ident <#> flip PElimVar unit
+
+patternPair2 :: SParser (PElim Unit) -> SParser (PElim Unit)
+patternPair2 pattern' =
+   token.parens $ do
+      σ <- pattern' <* token.comma
+      pattern' <#> const >>> (<#>) σ >>> PElimPair
+
+patternTrue2 :: SParser (PElim Unit)
+patternTrue2 = ctr cTrue <#> const (PElimTrue unit)
+
+patternFalse2 :: SParser (PElim Unit)
+patternFalse2 = ctr cFalse <#> const (PElimFalse unit)
+
+-- TODO: lists
+pattern2 :: SParser (PElim Unit)
+pattern2 = fix (\p ->
+   try patternVar2 <|>
+   try patternTrue2 <|>
+   try patternFalse2 <|>
+   patternPair2 p
+)
+
+-- TODO: anonymous variables
 patternVar :: MkElimParser
 patternVar = ident <#> PElimVar
 
