@@ -147,6 +147,12 @@ simpleExpr expr' =
    pair expr' <|>
    lambda expr'
 
+simplePattern :: MkElimParser -> MkElimParser
+simplePattern pattern' =
+   patternVar <|>
+   try (token.parens pattern') <|>
+   patternPair pattern'
+
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr
 
@@ -179,10 +185,11 @@ patternVar :: MkElimParser
 patternVar = ident <#> PElimVar
 
 patternPair :: MkElimParser -> MkElimParser
-patternPair pattern' = token.parens $ do
-   mkElim1 <- pattern' <* token.comma
-   mkElim2 <- pattern'
-   pure $ mkElim2 >>> mkElim1 >>> PElimPair
+patternPair pattern' =
+   token.parens $ do
+      mkElim1 <- pattern' <* token.comma
+      mkElim2 <- pattern'
+      pure $ mkElim2 >>> mkElim1 >>> PElimPair
 
 patternTrue :: MkElimParser
 patternTrue = ctr cTrue <#> const PElimTrue
