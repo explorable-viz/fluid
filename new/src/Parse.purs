@@ -2,7 +2,7 @@ module Parse where
 
 import Prelude hiding (add, between, join)
 import Control.Alt ((<|>))
-import Control.Lazy (defer, fix)
+import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
 import Data.Either (choose)
@@ -147,12 +147,6 @@ simpleExpr expr' =
    pair expr' <|>
    lambda expr'
 
-simplePattern :: MkElimParser -> MkElimParser
-simplePattern pattern' =
-   patternVar <|>
-   try (token.parens pattern') <|>
-   patternPair pattern'
-
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr
 
@@ -175,73 +169,33 @@ nestedFun false _ = empty
 
 partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser (PElim Expr)
 partialElim expr' nest delim = do
-   mkElim <- pattern
-   (delim *> expr' <|> nestedFun nest expr') <#> mkElim
-
-partialElim2 :: SParser Expr -> Boolean -> SParser Unit -> SParser (PElim Expr)
-partialElim2 expr' nest delim = do
-   σ <- pattern2
+   σ <- pattern
    (delim *> expr' <|> nestedFun nest expr') <#> const >>> (<#>) σ
 
-type MkElimParser = forall k . SParser (k -> PElim k)
-
 -- TODO: anonymous variables
-patternVar2 :: SParser (PElim Unit)
-patternVar2 = ident <#> flip PElimVar unit
+patternVar :: SParser (PElim Unit)
+patternVar = ident <#> flip PElimVar unit
 
-patternPair2 :: SParser (PElim Unit) -> SParser (PElim Unit)
-patternPair2 pattern' =
+patternPair :: SParser (PElim Unit) -> SParser (PElim Unit)
+patternPair pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
       pattern' <#> const >>> (<#>) σ >>> PElimPair
 
-patternTrue2 :: SParser (PElim Unit)
-patternTrue2 = ctr cTrue <#> const (PElimTrue unit)
+patternTrue :: SParser (PElim Unit)
+patternTrue = ctr cTrue <#> const (PElimTrue unit)
 
-patternFalse2 :: SParser (PElim Unit)
-patternFalse2 = ctr cFalse <#> const (PElimFalse unit)
-
--- TODO: lists
-pattern2 :: SParser (PElim Unit)
-pattern2 = fix (\p ->
-   try patternVar2 <|>
-   try patternTrue2 <|>
-   try patternFalse2 <|>
-   patternPair2 p
-)
-
--- TODO: anonymous variables
-patternVar :: MkElimParser
-patternVar = ident <#> PElimVar
-
-patternPair :: MkElimParser -> MkElimParser
-patternPair pattern' =
-   token.parens $ do
-      mkElim1 <- pattern' <* token.comma
-      mkElim2 <- pattern'
-      pure $ mkElim2 >>> mkElim1 >>> PElimPair
-
-patternTrue :: MkElimParser
-patternTrue = ctr cTrue <#> const PElimTrue
-
-patternFalse :: MkElimParser
-patternFalse = ctr cFalse <#> const PElimFalse
+patternFalse :: SParser (PElim Unit)
+patternFalse = ctr cFalse <#> const (PElimFalse unit)
 
 -- TODO: lists
-pattern :: MkElimParser
-pattern = fixParser (\p ->
+pattern :: SParser (PElim Unit)
+pattern = fix (\p ->
    try patternVar <|>
    try patternTrue <|>
    try patternFalse <|>
    patternPair p
 )
-
--- fix isn't polymorphic enough
-fixParser :: (MkElimParser -> MkElimParser) -> MkElimParser
-fixParser f = x
-   where
-   -- type annotation and parentheses are essential :-o
-   x = (defer \_ -> f x) :: MkElimParser
 
 def :: SParser Expr -> SParser Def
 def expr' = do
