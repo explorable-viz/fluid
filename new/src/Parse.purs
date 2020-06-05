@@ -178,6 +178,11 @@ partialElim expr' nest delim = do
    mkElim <- pattern
    (delim *> expr' <|> nestedFun nest expr') <#> mkElim
 
+partialElim2 :: SParser Expr -> Boolean -> SParser Unit -> SParser (PElim Expr)
+partialElim2 expr' nest delim = do
+   σ <- pattern2
+   (delim *> expr' <|> nestedFun nest expr') <#> const >>> (<#>) σ
+
 type MkElimParser = forall k . SParser (k -> PElim k)
 
 -- TODO: anonymous variables
