@@ -82,6 +82,10 @@ keyword = token.reserved
 variable :: SParser Expr
 variable = ident <#> Var >>> expr
 
+-- TODO: anonymous variables
+patternVariable :: SParser (PElim Unit)
+patternVariable = ident <#> flip PElimVar unit
+
 -- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
 ident ∷ SParser Var
 ident = do
@@ -128,9 +132,16 @@ constr expr' =
    try nil
 
 pair :: SParser Expr -> SParser Expr
-pair expr' = token.parens $ do
-   e1 <- expr'
-   token.comma *> expr' <#> Pair e1 >>> expr
+pair expr' =
+   token.parens $ do
+      e1 <- expr' <* token.comma
+      expr' <#> Pair e1 >>> expr
+
+patternPair :: SParser (PElim Unit) -> SParser (PElim Unit)
+patternPair pattern' =
+   token.parens $ do
+      σ <- pattern' <* token.comma
+      pattern' <#> const >>> (<#>) σ >>> PElimPair
 
 -- TODO: float, list
 simpleExpr :: SParser Expr -> SParser Expr
@@ -146,6 +157,12 @@ simpleExpr expr' =
    try parensOp <|>
    pair expr' <|>
    lambda expr'
+
+simplePattern :: SParser (PElim Unit) -> SParser (PElim Unit)
+simplePattern pattern' =
+   patternVariable <|>
+   try (token.parens pattern') <|>
+   patternPair pattern'
 
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr
@@ -172,26 +189,17 @@ partialElim expr' nest delim = do
    σ <- pattern
    (delim *> expr' <|> nestedFun nest expr') <#> const >>> (<#>) σ
 
--- TODO: anonymous variables
-patternVar :: SParser (PElim Unit)
-patternVar = ident <#> flip PElimVar unit
-
-patternPair :: SParser (PElim Unit) -> SParser (PElim Unit)
-patternPair pattern' =
-   token.parens $ do
-      σ <- pattern' <* token.comma
-      pattern' <#> const >>> (<#>) σ >>> PElimPair
-
 patternTrue :: SParser (PElim Unit)
 patternTrue = ctr cTrue <#> const (PElimTrue unit)
 
 patternFalse :: SParser (PElim Unit)
 patternFalse = ctr cFalse <#> const (PElimFalse unit)
 
+-- Singleton eliminator.
 -- TODO: lists
 pattern :: SParser (PElim Unit)
 pattern = fix (\p ->
-   try patternVar <|>
+   try patternVariable <|>
    try patternTrue <|>
    try patternFalse <|>
    patternPair p
