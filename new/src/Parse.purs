@@ -1,13 +1,12 @@
 module Parse where
 
-import Prelude hiding (add, between, join)
+import Prelude hiding (absurd, add, between, join)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
 import Data.Char.Unicode (isUpper)
 import Data.Either (choose)
-import Data.Foldable (notElem)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (many, groupBy, sortBy)
