@@ -118,16 +118,30 @@ string = token.stringLiteral <#> Str >>> expr
 true_ :: SParser Expr
 true_ = ctr cTrue <#> const (expr True)
 
+patternTrue :: SParser (PElim Unit)
+patternTrue = ctr cTrue <#> const (PElimTrue unit)
+
 false_ :: SParser Expr
 false_ = ctr cFalse <#> const (expr False)
 
+patternFalse :: SParser (PElim Unit)
+patternFalse = ctr cFalse <#> const (PElimFalse unit)
+
 nil :: SParser Expr
 nil = ctr cNil <#> const (expr Nil)
+
+patternNil :: SParser (PElim Unit)
+patternNil = ctr cNil <#> const (PElimFalse unit)
 
 cons :: SParser Expr -> SParser Expr
 cons expr' = do
    e <- ctr cCons *> expr'
    expr' <#> Cons e >>> expr
+
+patternCons :: SParser (PElim Unit) -> SParser (PElim Unit)
+patternCons pattern' = do
+   σ <- ctr cCons *> pattern'
+   pattern' <#> const >>> (<#>) σ >>> PElimCons
 
 constr :: SParser Expr -> SParser Expr
 constr expr' =
@@ -193,22 +207,6 @@ partialElim expr' nest delim = do
    σ <- pattern
    (delim *> expr' <|> nestedFun nest expr') <#> const >>> (<#>) σ
 
-patternTrue :: SParser (PElim Unit)
-patternTrue = ctr cTrue <#> const (PElimTrue unit)
-
-patternFalse :: SParser (PElim Unit)
-patternFalse = ctr cFalse <#> const (PElimFalse unit)
-
--- Singleton eliminator.
--- TODO: lists
-pattern :: SParser (PElim Unit)
-pattern = fix (\p ->
-   try patternVariable <|>
-   try patternTrue <|>
-   try patternFalse <|>
-   patternPair p
-)
-
 def :: SParser Expr -> SParser Def
 def expr' = do
    σ <- try $ keyword strLet *> elim expr' false <* token.semi
@@ -257,6 +255,28 @@ appChain expr' = simpleExpr expr' >>= rest
    where
       rest ∷ Expr -> SParser Expr
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
+
+-- Singleton eliminator.
+-- Will be more similar to appChain when we have arbitrary data types.
+appChain_pattern :: SParser (PElim Unit) -> SParser (PElim Unit)
+appChain_pattern pattern' =
+   simplePattern pattern' <|>
+   patternTrue <|>
+   patternFalse <|>
+   patternNil <|>
+   patternCons (simplePattern pattern')
+
+-- TODO: allow infix constructors, via buildExprParser
+pattern :: SParser (PElim Unit)
+pattern = fix appChain_pattern
+
+pattern2 :: SParser (PElim Unit)
+pattern2 = fix (\p ->
+   try patternVariable <|>
+   try patternTrue <|>
+   try patternFalse <|>
+   patternPair p
+)
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
