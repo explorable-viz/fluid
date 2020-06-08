@@ -54,25 +54,22 @@ cCons = "Cons" :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
-   commentStart    = "{-",
-   commentEnd      = "-}",
-   commentLine     = "--",
-   nestedComments  = true,
-   identStart      = letter,
-   identLetter     = alphaNum <|> oneOf ['_', '\''],
-   opStart         = opChar,
-   opLetter        = opChar,
+   commentStart = "{-",
+   commentEnd = "-}",
+   commentLine = "--",
+   nestedComments = true,
+   identStart = letter,
+   identLetter = alphaNum <|> oneOf ['_', '\''],
+   opStart = opChar,
+   opLetter = opChar,
    reservedOpNames = [],
-   reservedNames   = [strAs, strFun, strLet, strMatch],
-   caseSensitive   = true
+   reservedNames = [strAs, strFun, strLet, strMatch],
+   caseSensitive = true
 } where
    opChar :: SParser Char
    opChar = oneOf [
       ':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~'
    ]
-
-constructors :: Array String
-constructors = [cTrue, cFalse, cNil, cCons]
 
 token :: TokenParser
 token = makeTokenParser languageDef
