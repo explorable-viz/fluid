@@ -5,6 +5,7 @@ import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
+import Data.Char.Unicode (isUpper)
 import Data.Either (choose)
 import Data.Foldable (notElem)
 import Data.Function (on)
@@ -12,6 +13,7 @@ import Data.Identity (Identity)
 import Data.List (many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
+import Data.String.CodeUnits (charAt)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -25,7 +27,7 @@ import Bindings (Var)
 import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (PElim(..), join, singleBranch, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (fromBool)
+import Util (absurd, error, fromBool)
 
 type SParser = Parser String
 
@@ -86,11 +88,17 @@ variable = ident <#> Var >>> expr
 patternVariable :: SParser (PElim Unit)
 patternVariable = ident <#> flip PElimVar unit
 
--- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
+-- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
+-- for distinguishing pattern variables from nullary constructors when parsing patterns.
+isCtr ∷ String → Boolean
+isCtr str = case charAt 0 str of
+   Nothing -> error absurd
+   Just ch -> isUpper ch
+
 ident ∷ SParser Var
 ident = do
    x <- token.identifier
-   pureIf ("Unexpected constructor") (notElem x constructors) x
+   pureIf ("Unexpected constructor") (not (isCtr x)) x
 
 ctr :: String -> SParser String
 ctr c = do
