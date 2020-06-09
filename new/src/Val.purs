@@ -67,11 +67,8 @@ instance valLattice :: Lattice Val where
     e   <- e1  ∨? e2
     e'  <- e1' ∨? e2'
     pure (Val α'' (Pair e e'))
-
    maybeJoin _ _ = Nothing
 
-   join e e' = case e ∨? e' of Just e'' -> e''
-                               Nothing  -> error absurd
 
    maybeMeet (Val α (Int x)) (Val α' (Int x')) = do
     α'' <- α ∧? α'
@@ -103,8 +100,6 @@ instance valLattice :: Lattice Val where
 
    maybeMeet _ _ = Nothing
 
-   meet e e' = case e ∧? e' of Just e'' -> e''
-                               Nothing  -> error absurd
 
    top (Val _ v) = Val Top v
    bot (Val _ v) = Val Bot v

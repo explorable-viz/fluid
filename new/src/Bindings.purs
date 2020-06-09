@@ -32,9 +32,7 @@ instance bindingsMonoid :: Monoid (Bindings a) where
 
 instance bindingsLattice :: Lattice a => Lattice (Bindings a) where
    maybeMeet xs ys          = Just $ intersect xs ys
-   meet      xs ys          = intersect xs ys
    maybeJoin xs ys          = Just $ union xs ys
-   join      xs ys          = union xs ys
    top       (xs :+: x ↦ v) = top xs :+:  x ↦ top v
    top       Empty          = Empty
    bot       (xs :+: x ↦ v) = bot xs :+:  x ↦ bot v
