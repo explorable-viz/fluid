@@ -1,1 +1,1 @@
-Nil
+match True as {Nil -> 5; Cons x xs -> 6}

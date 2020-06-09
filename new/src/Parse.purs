@@ -135,13 +135,13 @@ patternNil = ctr cNil <#> const (PElimFalse unit)
 
 cons :: SParser Expr -> SParser Expr
 cons expr' = do
-   e <- ctr cCons *> expr'
-   expr' <#> Cons e >>> expr
+   e <- ctr cCons *> simpleExpr expr'
+   simpleExpr expr' <#> Cons e >>> expr
 
 patternCons :: SParser (PElim Unit) -> SParser (PElim Unit)
 patternCons pattern' = do
-   σ <- ctr cCons *> pattern'
-   pattern' <#> const >>> (<#>) σ >>> PElimCons
+   σ <- ctr cCons *> simplePattern pattern'
+   simplePattern pattern' <#> const >>> (<#>) σ >>> PElimCons
 
 constr :: SParser Expr -> SParser Expr
 constr expr' =
@@ -161,13 +161,12 @@ patternPair pattern' =
       σ <- pattern' <* token.comma
       pattern' <#> const >>> (<#>) σ >>> PElimPair
 
--- TODO: float, list
+-- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    try variable <|>
    try int <|> -- int may start with +/-
    string <|>
-   constr expr' <|>
    let_ expr' <|>
    letRec expr' <|>
    matchAs expr' <|>
@@ -193,10 +192,24 @@ equals = token.reservedOp strEquals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser (Elim Expr)
-elim expr' nest =
-   pureMaybe "Incompatible or incomplete branches" =<<
-   (partialElim expr' nest (arrow <|> equals) <#> toElim) <|>
-   (token.braces $ sepBy1 (partialElim expr' nest arrow) token.semi <#> (join >=> toElim))
+elim expr' nest = elimSingle expr' nest <|> elimBraces expr' nest
+
+elimSingle :: SParser Expr -> Boolean -> SParser (Elim Expr)
+elimSingle expr' nest = do
+   σ <- partialElim expr' nest (arrow <|> equals)
+   case toElim σ of
+      Nothing -> error "Incomplete branches"
+      Just σ' -> pure σ'
+
+elimBraces :: SParser Expr -> Boolean -> SParser (Elim Expr)
+elimBraces expr' nest =
+   token.braces $ do
+      σs <- sepBy1 (partialElim expr' nest arrow) token.semi
+      case join σs of
+         Nothing -> error "Incompatible branches"
+         Just σ -> case toElim σ of
+            Nothing -> error "Incomplete branches"
+            Just σ' -> pure σ'
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = elim expr' true <#> Lambda >>> expr
@@ -251,7 +264,12 @@ backtick :: SParser Unit
 backtick = token.reservedOp "`"
 
 appChain ∷ SParser Expr -> SParser Expr
-appChain expr' = simpleExpr expr' >>= rest
+appChain expr' =
+   try (simpleExpr expr' >>= rest) <|>
+   try true_ <|>
+   try false_ <|>
+   try nil <|>
+   cons expr'
    where
       rest ∷ Expr -> SParser Expr
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
@@ -263,7 +281,7 @@ appChain_pattern pattern' =
    try patternTrue <|>
    try patternFalse <|>
    try patternNil <|>
-   patternCons (simplePattern pattern')
+   patternCons pattern'
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser (PElim Unit)
