@@ -1,8 +1,11 @@
 module Val where
 
+import Prelude (bind, pure, class Eq)
 import Bindings (Bindings)
 import Expr (RecDefs, Elim, Expr)
-import Selected (Selected(..))
+import Selected (class Lattice, Selected(..), bot, join, meet, top, maybeJoin, maybeMeet)
+import Util (absurd, error, (=?), isEq)
+import Data.Maybe (Maybe(..))
 
 data Unary =
    IntStr (Int -> String)
@@ -34,3 +37,88 @@ val :: RawVal -> Val
 val = Val Bot
 
 type Env = Bindings Val
+
+
+instance valLattice :: Lattice Val where
+   maybeJoin (Val α (Int x)) (Val α' (Int x')) 
+    = do 
+    α'' <- maybeJoin α α' 
+    x'' <- isEq x x' 
+    pure (Val α'' (Int x''))
+   maybeJoin (Val α (Str s)) (Val α' (Str s')) 
+    = do 
+    α''  <- maybeJoin α α' 
+    s''  <- isEq s s' 
+    pure (Val α'' (Str s''))
+   maybeJoin (Val α False) (Val α' False) 
+    = do 
+    α'' <- maybeJoin α   α' 
+    pure (Val α'' False) 
+   maybeJoin (Val α True) (Val α' True) 
+    = do 
+    α'' <- maybeJoin α α' 
+    pure (Val α'' True) 
+   maybeJoin (Val α Nil) (Val α' Nil) 
+    = do 
+    α'' <- maybeJoin α α'
+    pure (Val α'' Nil)
+   maybeJoin (Val α (Cons e1 e1')) (Val α' (Cons e2 e2'))
+    = do 
+    α'' <- maybeJoin α   α' 
+    e   <- maybeJoin e1  e2
+    e'  <- maybeJoin e1' e2'
+    pure (Val α'' (Cons e e')) 
+   maybeJoin (Val α (Pair e1 e1')) (Val α' (Pair e2 e2'))
+    = do 
+    α'' <- maybeJoin α   α' 
+    e   <- maybeJoin e1  e2
+    e'  <- maybeJoin e1' e2'
+    pure (Val α'' (Pair e e'))
+   
+   maybeJoin _ _ = Nothing
+
+   join e e' = case maybeJoin e e' of Just e'' -> e''
+                                      Nothing  -> error absurd
+      
+   maybeMeet (Val α (Int x)) (Val α' (Int x')) 
+    = do 
+    α'' <- maybeMeet α α' 
+    x'' <- isEq x x' 
+    pure (Val α'' (Int x''))
+   maybeMeet (Val α (Str s)) (Val α' (Str s')) 
+    = do 
+    α''  <- maybeMeet α α' 
+    s''  <- isEq s s' 
+    pure (Val α'' (Str s''))
+   maybeMeet (Val α False) (Val α' False) 
+    = do 
+    α'' <- maybeMeet α   α' 
+    pure (Val α'' False) 
+   maybeMeet (Val α True) (Val α' True) 
+    = do 
+    α'' <- maybeMeet α α' 
+    pure (Val α'' True) 
+   maybeMeet (Val α Nil) (Val α' Nil) 
+    = do 
+    α'' <- maybeMeet α α'
+    pure (Val α'' Nil)
+   maybeMeet (Val α (Cons e1 e1')) (Val α' (Cons e2 e2'))
+    = do 
+    α'' <- maybeMeet α   α' 
+    e   <- maybeMeet e1  e2
+    e'  <- maybeMeet e1' e2'
+    pure (Val α'' (Cons e e')) 
+   maybeMeet (Val α (Pair e1 e1')) (Val α' (Pair e2 e2'))
+    = do 
+    α'' <- maybeMeet α   α' 
+    e   <- maybeMeet e1  e2
+    e'  <- maybeMeet e1' e2'
+    pure (Val α'' (Pair e e'))
+   
+   maybeMeet _ _ = Nothing
+
+   meet e e' = case maybeMeet e e' of Just e'' -> e''
+                                      Nothing  -> error absurd
+      
+   top (Val _ v) = Val Top v
+   bot (Val _ v) = Val Bot v

@@ -23,6 +23,10 @@ fromBool :: forall a . Boolean -> a -> Maybe a
 fromBool false = const Nothing
 fromBool true = Just
 
+toBool :: forall a . Maybe a -> Boolean
+toBool (Just x) = true
+toBool Nothing  = false
+
 fromJust :: forall a . Maybe a -> a
 fromJust (Just a) = a
 fromJust Nothing  = error absurd
