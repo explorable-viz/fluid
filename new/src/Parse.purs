@@ -256,27 +256,18 @@ appChain expr' = simpleExpr expr' >>= rest
       rest ∷ Expr -> SParser Expr
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
 
--- Singleton eliminator.
--- Will be more similar to appChain when we have arbitrary data types.
+-- Singleton eliminator. Will be more similar to appChain when we have arbitrary data types.
 appChain_pattern :: SParser (PElim Unit) -> SParser (PElim Unit)
 appChain_pattern pattern' =
-   simplePattern pattern' <|>
-   patternTrue <|>
-   patternFalse <|>
-   patternNil <|>
+   try (simplePattern pattern') <|>
+   try patternTrue <|>
+   try patternFalse <|>
+   try patternNil <|>
    patternCons (simplePattern pattern')
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser (PElim Unit)
 pattern = fix appChain_pattern
-
-pattern2 :: SParser (PElim Unit)
-pattern2 = fix (\p ->
-   try patternVariable <|>
-   try patternTrue <|>
-   try patternFalse <|>
-   patternPair p
-)
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
