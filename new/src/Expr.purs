@@ -3,11 +3,10 @@ module Expr where
 
 import Prelude (class Functor, Unit, map, ($), (<$>), (<<<), bind, pure)
 import Bindings (Var)
-import Data.List (List) 
+import Data.List (List)
 import Data.Either (Either)
 import Control.Bind ((>>=))
-import Selected (class Lattice, Selected(..), bot, join, meet, top, maybeJoin, maybeMeet, 
-                 (∧?), (∧), (∨?), (∨))
+import Selected
 import Util (absurd, error, (≟), mayEq)
 import Data.Maybe (Maybe(..))
 
@@ -36,120 +35,98 @@ expr :: RawExpr -> Expr
 expr = Expr Bot
 
 instance exprLattice :: Lattice Expr where
-   maybeJoin (Expr α (Var x)) (Expr α' (Var x')) 
-    = do 
-    α'' <- α ∨? α' 
-    x'' <- x ≟ x' 
-    pure (Expr α'' (Var x''))
-   maybeJoin (Expr α (Op op)) (Expr α' (Op op')) 
-    = do 
-    α''  <- α ∨? α' 
-    op'' <- op ≟ op' 
-    pure (Expr α'' (Op op''))
-   maybeJoin (Expr α (Int n)) (Expr α' (Int n')) 
-    = do 
-    α'' <- α ∨? α' 
-    n'' <- n ≟ n' 
-    pure (Expr α'' (Int n'')) 
-   maybeJoin (Expr α (Str s)) (Expr α' (Var s'))
-    = do 
-    α'' <- α ∨? α' 
-    s'' <- s ≟ s' 
-    pure (Expr α'' (Str s'')) 
-   maybeJoin (Expr α False) (Expr α' False) 
-    = do 
-    α'' <- α ∨? α' 
-    pure (Expr α'' False) 
-   maybeJoin (Expr α False) (Expr α' True) 
-    = do 
-    α'' <- α ∨? α' 
-    pure (Expr α'' True) 
-   maybeJoin (Expr α True) (Expr α' False) 
-    = do 
-    α'' <- α ∨? α' 
-    pure (Expr α'' True) 
-   maybeJoin (Expr α True) (Expr α' True) 
-    = do 
-    α'' <- α ∨? α' 
-    pure (Expr α'' True) 
-   maybeJoin (Expr α (Pair e1 e1')) (Expr α' (Pair e2 e2'))
-    = do 
-    α'' <- α   ∨? α' 
-    e   <- e1  ∨? e2
-    e'  <- e1' ∨? e2'
-    pure (Expr α'' (Pair e e'))
-   maybeJoin (Expr α Nil) (Expr α' Nil) 
-    = do 
-    α'' <- α ∨? α' 
-    pure (Expr α'' Nil)
-   maybeJoin (Expr α (Cons e1 e1')) (Expr α' (Cons e2 e2'))
-    = do 
-    α'' <- α   ∨? α' 
-    e   <- e1  ∨? e2
-    e'  <- e1' ∨? e2'
-    pure (Expr α'' (Cons e e'))
+   maybeJoin (Expr α (Var x)) (Expr α' (Var x')) = do
+      α'' <- α ∨? α'
+      x'' <- x ≟ x'
+      pure (Expr α'' (Var x''))
+   maybeJoin (Expr α (Op op)) (Expr α' (Op op')) = do
+      α''  <- α ∨? α'
+      op'' <- op ≟ op'
+      pure (Expr α'' (Op op''))
+   maybeJoin (Expr α (Int n)) (Expr α' (Int n')) = do
+      α'' <- α ∨? α'
+      n'' <- n ≟ n'
+      pure (Expr α'' (Int n''))
+   maybeJoin (Expr α (Str s)) (Expr α' (Var s')) = do
+      α'' <- α ∨? α'
+      s'' <- s ≟ s'
+      pure (Expr α'' (Str s''))
+   maybeJoin (Expr α False) (Expr α' False) = do
+      α'' <- α ∨? α'
+      pure (Expr α'' False)
+   maybeJoin (Expr α False) (Expr α' True) = do
+      α'' <- α ∨? α'
+      pure (Expr α'' True)
+   maybeJoin (Expr α True) (Expr α' False) = do
+      α'' <- α ∨? α'
+      pure (Expr α'' True)
+   maybeJoin (Expr α True) (Expr α' True) = do
+      α'' <- α ∨? α'
+      pure (Expr α'' True)
+   maybeJoin (Expr α (Pair e1 e1')) (Expr α' (Pair e2 e2')) = do
+      α'' <- α   ∨? α'
+      e   <- e1  ∨? e2
+      e'  <- e1' ∨? e2'
+      pure (Expr α'' (Pair e e'))
+   maybeJoin (Expr α Nil) (Expr α' Nil) = do
+      α'' <- α ∨? α'
+      pure (Expr α'' Nil)
+   maybeJoin (Expr α (Cons e1 e1')) (Expr α' (Cons e2 e2')) = do
+      α'' <- α   ∨? α'
+      e   <- e1  ∨? e2
+      e'  <- e1' ∨? e2'
+      pure (Expr α'' (Cons e e'))
    maybeJoin _ _ = Nothing
 
    join e e' = case e ∨? e' of Just e'' -> e''
                                Nothing  -> error absurd
-      
-   maybeMeet (Expr α (Var x)) (Expr α' (Var x')) 
-    = do 
-    α'' <- α ∧? α' 
-    x'' <- x ≟ x' 
-    pure (Expr α'' (Var x''))
-   maybeMeet (Expr α (Op op)) (Expr α' (Op op')) 
-    = do 
-    α''  <- α ∧? α' 
-    op'' <- op ≟ op' 
-    pure (Expr α'' (Op op''))
-   maybeMeet (Expr α (Int n)) (Expr α' (Int n')) 
-    = do 
-    α'' <- α ∧? α' 
-    n'' <- n ≟ n' 
-    pure (Expr α'' (Int n'')) 
-   maybeMeet (Expr α (Str s)) (Expr α' (Var s'))
-    = do 
-    α'' <- α ∧? α' 
-    s'' <- s ≟ s' 
-    pure (Expr α'' (Str s'')) 
-   maybeMeet (Expr α False) (Expr α' False) 
-    = do 
-    α'' <- α ∧? α'  
-    pure (Expr α'' False) 
-   maybeMeet (Expr α False) (Expr α' True) 
-    = do 
-    α'' <- α ∧? α' 
-    pure (Expr α'' True) 
-   maybeMeet (Expr α True) (Expr α' False) 
-    = do 
-    α'' <- α ∧? α' 
-    pure (Expr α'' True) 
-   maybeMeet (Expr α True) (Expr α' True) 
-    = do 
-    α'' <- α ∧? α' 
-    pure (Expr α'' True) 
-   maybeMeet (Expr α (Pair e1 e1')) (Expr α' (Pair e2 e2'))
-    = do 
-    α'' <- α   ∧? α' 
-    e   <- e1  ∧? e2
-    e'  <- e1' ∧? e2'
-    pure (Expr α'' (Pair e e'))
-   maybeMeet (Expr α Nil) (Expr α' Nil) 
-    = do 
-    α'' <- α ∧? α' 
-    pure (Expr α'' Nil)
-   maybeMeet (Expr α (Cons e1 e1')) (Expr α' (Cons e2 e2'))
-    = do 
-    α'' <- α   ∧? α' 
-    e   <- e1  ∧? e2
-    e'  <- e1' ∧? e2'
-    pure (Expr α'' (Cons e e'))
+
+   maybeMeet (Expr α (Var x)) (Expr α' (Var x')) = do
+      α'' <- α ∧? α'
+      x'' <- x ≟ x'
+      pure (Expr α'' (Var x''))
+   maybeMeet (Expr α (Op op)) (Expr α' (Op op')) = do
+      α''  <- α ∧? α'
+      op'' <- op ≟ op'
+      pure (Expr α'' (Op op''))
+   maybeMeet (Expr α (Int n)) (Expr α' (Int n')) = do
+      α'' <- α ∧? α'
+      n'' <- n ≟ n'
+      pure (Expr α'' (Int n''))
+   maybeMeet (Expr α (Str s)) (Expr α' (Var s')) = do
+      α'' <- α ∧? α'
+      s'' <- s ≟ s'
+      pure (Expr α'' (Str s''))
+   maybeMeet (Expr α False) (Expr α' False) = do
+      α'' <- α ∧? α'
+      pure (Expr α'' False)
+   maybeMeet (Expr α False) (Expr α' True) = do
+      α'' <- α ∧? α'
+      pure (Expr α'' True)
+   maybeMeet (Expr α True) (Expr α' False) = do
+      α'' <- α ∧? α'
+      pure (Expr α'' True)
+   maybeMeet (Expr α True) (Expr α' True) = do
+      α'' <- α ∧? α'
+      pure (Expr α'' True)
+   maybeMeet (Expr α (Pair e1 e1')) (Expr α' (Pair e2 e2')) = do
+      α'' <- α   ∧? α'
+      e   <- e1  ∧? e2
+      e'  <- e1' ∧? e2'
+      pure (Expr α'' (Pair e e'))
+   maybeMeet (Expr α Nil) (Expr α' Nil) = do
+      α'' <- α ∧? α'
+      pure (Expr α'' Nil)
+   maybeMeet (Expr α (Cons e1 e1')) (Expr α' (Cons e2 e2')) = do
+      α'' <- α   ∧? α'
+      e   <- e1  ∧? e2
+      e'  <- e1' ∧? e2'
+      pure (Expr α'' (Cons e e'))
    maybeMeet _ _ = error absurd
 
    meet e e' = case e ∧? e' of Just e'' -> e''
                                Nothing  -> error absurd
-      
+
    top (Expr _ r) = Expr Top r
 
    bot (Expr _ r) = Expr Bot r
@@ -161,89 +138,77 @@ data Elim k =
    ElimList { nil :: k, cons :: Elim (Elim k) }
 
 instance elimFunctor :: Functor Elim where
-   map f (ElimVar x κ) = ElimVar x (f κ)
-   map f (ElimBool { true: κ, false: κ' }) = ElimBool { true: f κ, false: f κ' }
-   map f (ElimPair σ) = ElimPair $ map (map f) σ
-   map f (ElimList { nil: κ, cons: σ }) = ElimList { nil: f κ, cons: map (map f) σ }
+   map f (ElimVar x κ)                       = ElimVar x (f κ)
+   map f (ElimBool { true: κ, false: κ' })   = ElimBool { true: f κ, false: f κ' }
+   map f (ElimPair σ)                        = ElimPair $ map (map f) σ
+   map f (ElimList { nil: κ, cons: σ })      = ElimList { nil: f κ, cons: map (map f) σ }
 
 instance elimLattice :: Lattice k => Lattice (Elim k) where
-   maybeMeet (ElimVar x k) (ElimVar x' k') 
-    = do 
-    x'' <- x ≟ x' 
-    k'' <- k ∧? k'
-    pure (ElimVar x'' k'')
-   maybeMeet (ElimBool { true : k1, false : k2 }) (ElimBool { true : k1', false : k2' })
-    = do 
-    k1'' <- k1 ∧? k1'
-    k2'' <- k2 ∧? k2'
-    pure (ElimBool {true : k1'', false : k2''})
-   maybeMeet (ElimPair el) (ElimPair el') 
+   maybeMeet (ElimVar x k) (ElimVar x' k') = do
+      x'' <- x ≟ x'
+      k'' <- k ∧? k'
+      pure (ElimVar x'' k'')
+   maybeMeet (ElimBool { true : k1, false : k2 }) (ElimBool { true : k1', false : k2' }) = do
+      k1'' <- k1 ∧? k1'
+      k2'' <- k2 ∧? k2'
+      pure (ElimBool {true : k1'', false : k2''})
+   maybeMeet (ElimPair el) (ElimPair el')
     = hoistMaybe $ ElimPair (map (\k -> map (\k' -> k ∧? k') (ElimPair el')) (ElimPair el))
-   maybeMeet (ElimList { nil: κ1, cons: σ1 }) (ElimList { nil: κ2, cons: σ2 })
-    = do 
-    κ <- κ1 ∧? κ2 
-    σ <- maybeσ
-    pure $ ElimList { nil: κ, cons: σ }
-    where
-     maybeσ = case σ1, σ2 of 
-                  ElimVar x k, ElimVar x' k' 
-                     -> do 
-                     x'' <- x ≟ x'
-                     k'' <- k ∧? k' 
-                     pure (ElimVar x'' k'') 
-                  ElimBool { true : k1, false : k2 }, ElimBool { true : k1', false : k2' } 
-                     -> do 
-                     k1'' <- k1 ∧? k1'
-                     k2'' <- k2 ∧? k2'
-                     pure (ElimBool {true : k1'', false : k2''})                        
-                  ElimPair el, ElimPair el' 
-                     -> hoistMaybe $ ElimPair (map (\k -> map (\k' -> k ∧? k') (ElimPair el')) (ElimPair el))
-                  ElimList { nil: κ1', cons: σ1' }, ElimList { nil: κ2', cons: σ2' }
-                     -> do 
-                     κ  <- κ1' ∧? κ2'
-                     σ' <- σ1' ∧? σ2' 
-                     pure $ ElimList { nil: κ, cons: σ' }
-                  _, _ -> Nothing
+   maybeMeet (ElimList { nil: κ1, cons: σ1 }) (ElimList { nil: κ2, cons: σ2 }) = do
+      κ <- κ1 ∧? κ2
+      σ <- maybeσ
+      pure $ ElimList { nil: κ, cons: σ }
+      where
+         maybeσ = case σ1, σ2 of
+                        ElimVar x k, ElimVar x' k' -> do
+                           x'' <- x ≟ x'
+                           k'' <- k ∧? k'
+                           pure (ElimVar x'' k'')
+                        ElimBool { true : k1, false : k2 }, ElimBool { true : k1', false : k2' } -> do
+                           k1'' <- k1 ∧? k1'
+                           k2'' <- k2 ∧? k2'
+                           pure (ElimBool {true : k1'', false : k2''})
+                        ElimPair el, ElimPair el'
+                           -> hoistMaybe $ ElimPair (map (\k -> map (\k' -> k ∧? k') (ElimPair el')) (ElimPair el))
+                        ElimList { nil: κ1', cons: σ1' }, ElimList { nil: κ2', cons: σ2' } -> do
+                           κ  <- κ1' ∧? κ2'
+                           σ' <- σ1' ∧? σ2'
+                           pure $ ElimList { nil: κ, cons: σ' }
+                        _, _ -> Nothing
    maybeMeet _ _ = Nothing
 
    meet σ σ' = case σ ∧? σ' of Just σ'' -> σ''
                                Nothing  -> error absurd
 
-   maybeJoin (ElimVar x k) (ElimVar x' k') 
-    = do 
-    x'' <- x ≟ x' 
-    k'' <- k ∨? k'
-    pure (ElimVar x'' k'')
-   maybeJoin (ElimBool { true : k1, false : k2 }) (ElimBool { true : k1', false : k2' })
-    = do 
-    k1'' <- k1 ∨? k1'
-    k2'' <- k2 ∨? k2'
-    pure (ElimBool {true : k1'', false : k2''})
-   maybeJoin (ElimPair el) (ElimPair el') 
-    = hoistMaybe $ ElimPair (map (\k -> map (\k' -> k ∨? k') (ElimPair el')) (ElimPair el))
-   maybeJoin (ElimList { nil: κ1, cons: σ1 }) (ElimList { nil: κ2, cons: σ2 })
-    = do 
-    κ <- κ1 ∨? κ2 
-    σ <- maybeσ
-    pure $ ElimList { nil: κ, cons: σ }
-    where
-     maybeσ = case σ1, σ2 of 
-                  ElimVar x k, ElimVar x' k' 
-                     -> do 
+   maybeJoin (ElimVar x k) (ElimVar x' k') = do
+      x'' <- x ≟ x'
+      k'' <- k ∨? k'
+      pure (ElimVar x'' k'')
+   maybeJoin (ElimBool { true : k1, false : k2 }) (ElimBool { true : k1', false : k2' }) = do
+      k1'' <- k1 ∨? k1'
+      k2'' <- k2 ∨? k2'
+      pure (ElimBool {true : k1'', false : k2''})
+   maybeJoin (ElimPair el) (ElimPair el') =
+      hoistMaybe $ ElimPair (map (\k -> map (\k' -> k ∨? k') (ElimPair el')) (ElimPair el))
+   maybeJoin (ElimList { nil: κ1, cons: σ1 }) (ElimList { nil: κ2, cons: σ2 }) = do
+      κ <- κ1 ∨? κ2
+      σ <- maybeσ
+      pure $ ElimList { nil: κ, cons: σ }
+      where
+      maybeσ = case σ1, σ2 of
+                  ElimVar x k, ElimVar x' k' -> do
                      x'' <- x ≟ x'
-                     k'' <- k ∨? k' 
-                     pure (ElimVar x'' k'') 
-                  ElimBool { true : k1, false : k2 }, ElimBool { true : k1', false : k2' } 
-                     -> do 
+                     k'' <- k ∨? k'
+                     pure (ElimVar x'' k'')
+                  ElimBool { true : k1, false : k2 }, ElimBool { true : k1', false : k2' } -> do
                      k1'' <- k1 ∨? k1'
                      k2'' <- k2 ∨? k2'
-                     pure (ElimBool {true : k1'', false : k2''})                        
-                  ElimPair el, ElimPair el' 
+                     pure (ElimBool {true : k1'', false : k2''})
+                  ElimPair el, ElimPair el'
                      -> hoistMaybe $ ElimPair (map (\k -> map (\k' -> k ∨? k') (ElimPair el')) (ElimPair el))
-                  ElimList { nil: κ1', cons: σ1' }, ElimList { nil: κ2', cons: σ2' }
-                     -> do 
+                  ElimList { nil: κ1', cons: σ1' }, ElimList { nil: κ2', cons: σ2' } -> do
                      κ  <- κ1' ∨? κ2'
-                     σ' <- σ1' ∨? σ2' 
+                     σ' <- σ1' ∨? σ2'
                      pure $ ElimList { nil: κ, cons: σ' }
                   _, _ -> Nothing
    maybeJoin _ _ = Nothing
@@ -251,23 +216,23 @@ instance elimLattice :: Lattice k => Lattice (Elim k) where
    join σ σ' = case σ ∨? σ' of Just σ'' -> σ''
                                Nothing  -> error absurd
 
-   bot (ElimVar x k) 
-    = ElimVar x (bot k)
-   bot (ElimBool { true : k1, false : k2 }) 
-    = (ElimBool { true : bot k1, false : bot k2 })
-   bot (ElimPair el) 
-    = ElimPair (map bot el)
-   bot (ElimList { nil: κ, cons: σ }) 
-    = ElimList { nil: bot κ, cons: map bot σ}
+   bot (ElimVar x k)
+      = ElimVar x (bot k)
+   bot (ElimBool { true : k1, false : k2 })
+      = (ElimBool { true : bot k1, false : bot k2 })
+   bot (ElimPair el)
+      = ElimPair (map bot el)
+   bot (ElimList { nil: κ, cons: σ })
+      = ElimList { nil: bot κ, cons: map bot σ}
 
-   top (ElimVar x k) 
-    = ElimVar x (top k)
-   top (ElimBool { true : k1, false : k2 }) 
-    = (ElimBool { true : top k1, false : top k2 })
-   top (ElimPair el) 
-    = ElimPair (map top el)
-   top (ElimList { nil: κ, cons: σ }) 
-    = ElimList { nil: top κ, cons: map top σ}
+   top (ElimVar x k)
+      = ElimVar x (top k)
+   top (ElimBool { true : k1, false : k2 })
+      = (ElimBool { true : top k1, false : top k2 })
+   top (ElimPair el)
+      = ElimPair (map top el)
+   top (ElimList { nil: κ, cons: σ })
+      = ElimList { nil: top κ, cons: map top σ}
 
 hoistMaybe :: forall k . Elim (Maybe k) -> Maybe (Elim k)
 hoistMaybe (ElimVar x (Just κ)) = Just $ ElimVar x κ
