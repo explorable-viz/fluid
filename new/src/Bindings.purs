@@ -19,6 +19,8 @@ data Bindings a =
 
 infixl 5 Extend as :+:
 
+infixl 5 update as ◃
+
 ε :: ∀ a . Bindings a
 ε = Empty
 
@@ -30,14 +32,14 @@ instance bindingsMonoid :: Monoid (Bindings a) where
    mempty = ε
 
 instance bindingsLattice :: Lattice a => Lattice (Bindings a) where
-   maybeMeet xs ys = Just $ intersect xs ys
-   meet xs ys      = intersect xs ys
-
-   maybeJoin xs ys = Just $ union xs ys
-   join xs ys      = union xs ys
-
-   top _ = error todo
-   bot _ = error todo       
+   maybeMeet xs ys          = Just $ intersect xs ys
+   meet      xs ys          = intersect xs ys
+   maybeJoin xs ys          = Just $ union xs ys
+   join      xs ys          = union xs ys
+   top       (xs :+: x ↦ v) = top xs :+:  x ↦ top v
+   top       Empty          = Empty
+   bot       (xs :+: x ↦ v) = bot xs :+:  x ↦ bot v
+   bot       Empty          = Empty
 
 foldl :: forall a . (Bind a -> Bindings a -> Bindings a) -> Bindings a -> Bindings a -> Bindings a 
 foldl f z (xs :+: Bind v x) = f (Bind v x) (foldl f z xs) 
@@ -47,11 +49,20 @@ find :: ∀ a . Var -> Bindings a -> Either String a
 find x Empty = Left $ "variable " <> x <> " not found"
 find x (m :+: k ↦ v) = if x == k then Right v else find x m
 
+update :: ∀ a . Var -> a -> Bindings a -> Bindings a
+update k' v' (xs :+: k ↦ v) 
+ = if k == k' then xs :+: k ↦ v' else (update k' v' xs) :+: k ↦ v
+update k' v' xs = go ε
+   where go (xs :+: k ↦ v) = if k == k' 
+                             then    xs :+: k ↦ v' 
+                             else go xs :+: k ↦ v
+         go Empty = Empty
+
 reverse :: forall a . Bindings a -> Bindings a
 reverse = go ε
     where
-        go acc ε = acc
         go acc (xs :+: x) = go (acc :+: x) xs
+        go acc Empty = acc
 
 filter :: forall a. (Bind a -> Boolean) -> Bindings a -> Bindings a
 filter p = go Empty

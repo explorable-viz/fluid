@@ -209,7 +209,6 @@ instance elimLattice :: Lattice k => Lattice (Elim k) where
    meet σ σ' = case σ ∧? σ' of Just σ'' -> σ''
                                Nothing  -> error absurd
 
-
    maybeJoin (ElimVar x k) (ElimVar x' k') 
     = do 
     x'' <- x ≟ x' 

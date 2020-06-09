@@ -2,14 +2,13 @@ module Bwd where
 
 import Prelude (($), (<>), (==), append)
 import Bindings (Bindings(..), (:+:), (↦), ε, find, Var)
-import Expr (Elim(..), Expr(..), RawExpr(..), expr)
+import Expr (Elim(..), Expr(..), RawExpr(..))
 import Selected 
 import Util (T3(..), absurd, error, todo, successful, (≟), (≜))
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
 import Expl (Expl(..)) as T
-import Expl (Expl) 
-import Expl (Match(..))
+import Expl (Expl, Match(..))
 import Data.Tuple (Tuple(..))
 
 bwd_env :: forall k . Env -> Match (Elim k) -> (Match k) -> Tuple Env Env
