@@ -13,6 +13,7 @@ import Data.List (many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (charAt)
+import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -131,7 +132,7 @@ nil :: SParser Expr
 nil = ctr cNil <#> const (expr Nil)
 
 patternNil :: SParser (PElim Unit)
-patternNil = ctr cNil <#> const (PElimFalse unit)
+patternNil = ctr cNil <#> const (PElimNil unit)
 
 cons :: SParser Expr -> SParser Expr
 cons expr' = do
@@ -206,7 +207,7 @@ elimBraces expr' nest =
    token.braces $ do
       σs <- sepBy1 (partialElim expr' nest arrow) token.semi
       case join σs of
-         Nothing -> error "Incompatible branches"
+         Nothing -> trace σs \_ -> error "Incompatible branches"
          Just σ -> case toElim σ of
             Nothing -> error "Incomplete branches"
             Just σ' -> pure σ'
