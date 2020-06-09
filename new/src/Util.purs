@@ -17,11 +17,9 @@ todo = "todo"
 absurd :: String
 absurd = "absurd"
 
-
-
 fromBool :: forall a . Boolean -> a -> Maybe a
 fromBool false = const Nothing
-fromBool true = Just
+fromBool true  = Just
 
 toBool :: forall a . Maybe a -> Boolean
 toBool (Just x) = true
@@ -35,13 +33,14 @@ type MayFail a = Either String a
 
 successful :: forall a . MayFail a -> a
 successful (Left msg) = error msg
-successful (Right b) = b
+successful (Right b)  = b
 
-isEq :: forall a . Eq a => a -> a -> Maybe a
-isEq x x' = if x == x' then Just x else Nothing
+mayEq :: forall a . Eq a => a -> a -> Maybe a
+mayEq x x' = if x == x' then Just x else Nothing
 
 mustEq :: forall a . Eq a => a -> a -> a
 mustEq x x' = if x == x' then x else error absurd
 
+infixl 5 mayEq as ≟
 
-infixl 5 mustEq as =?
+infixl 5 mustEq as ≜

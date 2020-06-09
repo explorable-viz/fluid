@@ -2,8 +2,9 @@ module Bindings where
 
 import Prelude
 import Data.Either (Either(..))
-import Selected (class Lattice, Selected(..), bot, join, meet, top, maybeJoin, maybeMeet)
-import Util (error, todo, toBool, isEq)
+import Selected (class Lattice, Selected(..), bot, join, meet, top, maybeJoin, maybeMeet, (∧?),
+                 (∧), (∨?), (∨))
+import Util (error, todo, toBool, (≟))
 import Data.Foldable
 import Data.Maybe (Maybe(..))
 
@@ -62,7 +63,7 @@ filter p = go Empty
 
 any :: forall a. Lattice a => Bind a -> Bindings a -> Boolean
 any (Bind v x) (xs :+: Bind v' x') = 
-   case isEq v v', maybeMeet x x' of 
+   case v ≟ v', x ∧? x' of 
       Just _, Just _ -> true
       _, _           -> false
 any (Bind v x) Empty = false
@@ -75,7 +76,7 @@ intersect xs  ys      = filter (\x -> any x ys) xs
 union :: forall a. Lattice a => Bindings a -> Bindings a -> Bindings a
 union xs ys =  foldl (deleteBy eq) (nubBy eq ys) xs
    where eq (Bind v x) (Bind v' x') 
-          = case isEq v v', maybeMeet x x' of 
+          = case v ≟ v', x ∧? x' of 
                Just _, Just _ -> true
                _, _           -> false
 
