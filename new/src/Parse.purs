@@ -178,7 +178,10 @@ simpleExpr expr' =
 
 simplePattern :: SParser (PElim Unit) -> SParser (PElim Unit)
 simplePattern pattern' =
-   patternVariable <|>
+   try patternVariable <|>
+   try patternTrue <|>
+   try patternFalse <|>
+   try patternNil <|>
    try (token.parens pattern') <|>
    patternPair pattern'
 
@@ -279,9 +282,6 @@ appChain expr' =
 appChain_pattern :: SParser (PElim Unit) -> SParser (PElim Unit)
 appChain_pattern pattern' =
    try (simplePattern pattern') <|>
-   try patternTrue <|>
-   try patternFalse <|>
-   try patternNil <|>
    patternCons pattern'
 
 -- TODO: allow infix constructors, via buildExprParser

@@ -5,7 +5,7 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Bindings (Var)
 import Expr (Expr, Elim(..))
-
+import Util ((≟))
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
 data PElim k =
@@ -38,12 +38,10 @@ instance exprJoinable :: Joinable Expr where
 instance pElimJoinable :: Joinable k => Joinable (PElim k) where
    join Nil = Nothing
    join (b : Nil) = Just b
-   join (PElimVar x κ : PElimVar x' κ' : bs) =
-      if x == x'
-      then do
-         κ'' <- join (κ : κ' : Nil)
-         join $ PElimVar x κ'' : bs
-      else Nothing
+   join (PElimVar x κ : PElimVar x' κ' : bs) = do
+      x'' <- x ≟ x'
+      κ'' <- join (κ : κ' : Nil)
+      join $ PElimVar x κ'' : bs
    join (PElimTrue κ : PElimTrue κ' : bs) = do
       κ'' <- join (κ : κ' : Nil)
       join $ PElimTrue κ'' : bs

@@ -1,1 +1,5 @@
-match Nil as {Nil -> Nil; Cons x xs -> 6}
+match Nil as {
+   Nil -> Nil;
+   Cons x Nil -> Cons x xs;
+   Cons x (Cons y ys) -> Nil
+}
