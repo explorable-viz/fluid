@@ -13,7 +13,6 @@ import Data.List (many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (charAt)
-import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -213,7 +212,7 @@ elimBraces expr' nest =
    token.braces $ do
       σs <- sepBy1 (partialElim expr' nest arrow) token.semi
       case join σs of
-         Nothing -> trace σs \_ -> error "Incompatible branches"
+         Nothing -> error "Incompatible branches"
          Just σ -> case toElim σ of
             Nothing -> error "Incomplete branches"
             Just σ' -> pure σ'
@@ -272,8 +271,7 @@ backtick = token.reservedOp "`"
 
 appChain ∷ SParser Expr -> SParser Expr
 appChain expr' =
-   try (simpleExpr expr' >>= rest) <|>
-   cons expr'
+   (simpleExpr expr' >>= rest) <|> cons expr'
    where
       rest ∷ Expr -> SParser Expr
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
@@ -281,8 +279,7 @@ appChain expr' =
 -- Singleton eliminator. Will be more similar to appChain when we have arbitrary data types.
 appChain_pattern :: SParser (PElim Unit) -> SParser (PElim Unit)
 appChain_pattern pattern' =
-   try (simplePattern pattern') <|>
-   patternCons pattern'
+   simplePattern pattern' <|> patternCons pattern'
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser (PElim Unit)
