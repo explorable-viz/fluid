@@ -1,12 +1,10 @@
 module Bindings where
 
-import Prelude
+import Prelude hiding (top)
 import Data.Either (Either(..))
-import Selected (class Lattice, Selected(..), bot, join, meet, top, maybeJoin, maybeMeet, (∧?),
-                 (∧), (∨?), (∨))
-import Util (error, todo, toBool, (≟))
-import Data.Foldable
 import Data.Maybe (Maybe(..))
+import Selected (class Lattice, bot, top, (∧?))
+import Util (MayFail, (≟))
 
 type Var = String
 
@@ -36,26 +34,28 @@ instance bindingsLattice :: Lattice a => Lattice (Bindings a) where
    meet      xs ys          = intersect xs ys
    maybeJoin xs ys          = Just $ union xs ys
    join      xs ys          = union xs ys
+
    top       (xs :+: x ↦ v) = top xs :+:  x ↦ top v
    top       Empty          = Empty
+
    bot       (xs :+: x ↦ v) = bot xs :+:  x ↦ bot v
    bot       Empty          = Empty
 
-foldl :: forall a . (Bind a -> Bindings a -> Bindings a) -> Bindings a -> Bindings a -> Bindings a 
-foldl f z (xs :+: Bind v x) = f (Bind v x) (foldl f z xs) 
+foldl :: forall a . (Bind a -> Bindings a -> Bindings a) -> Bindings a -> Bindings a -> Bindings a
+foldl f z (xs :+: Bind v x) = f (Bind v x) (foldl f z xs)
 foldl f z Empty             = z
 
-find :: ∀ a . Var -> Bindings a -> Either String a
+find :: ∀ a . Var -> Bindings a -> MayFail a
 find x Empty = Left $ "variable " <> x <> " not found"
 find x (m :+: k ↦ v) = if x == k then Right v else find x m
 
 update :: ∀ a . Var -> a -> Bindings a -> Bindings a
-update k' v' (xs :+: k ↦ v) 
+update k' v' (xs :+: k ↦ v)
  = if k == k' then xs :+: k ↦ v' else (update k' v' xs) :+: k ↦ v
 update k' v' xs = go ε
-   where go (xs :+: k ↦ v) = if k == k' 
-                             then    xs :+: k ↦ v' 
-                             else go xs :+: k ↦ v
+   where go (xs' :+: k ↦ v) = if k == k'
+                              then    xs' :+: k ↦ v'
+                              else go xs' :+: k ↦ v
          go Empty = Empty
 
 reverse :: forall a . Bindings a -> Bindings a
@@ -73,8 +73,8 @@ filter p = go Empty
     | otherwise = go acc xs
 
 any :: forall a. Lattice a => Bind a -> Bindings a -> Boolean
-any (Bind v x) (xs :+: Bind v' x') = 
-   case v ≟ v', x ∧? x' of 
+any (Bind v x) (xs :+: Bind v' x') =
+   case v ≟ v', x ∧? x' of
       Just _, Just _ -> true
       _, _           -> false
 any (Bind v x) Empty = false
@@ -86,8 +86,8 @@ intersect xs  ys      = filter (\x -> any x ys) xs
 
 union :: forall a. Lattice a => Bindings a -> Bindings a -> Bindings a
 union xs ys =  foldl (deleteBy eq) (nubBy eq ys) xs
-   where eq (Bind v x) (Bind v' x') 
-          = case v ≟ v', x ∧? x' of 
+   where eq (Bind v x) (Bind v' x')
+          = case v ≟ v', x ∧? x' of
                Just _, Just _ -> true
                _, _           -> false
 
@@ -98,6 +98,5 @@ deleteBy eq' x (ys :+: y) = (deleteBy eq' x ys) :+: y
 
 nubBy :: forall a. (Bind a -> Bind a -> Boolean) -> Bindings a -> Bindings a
 nubBy _     Empty = Empty
-nubBy eq' (xs :+: x) 
+nubBy eq' (xs :+: x)
  = nubBy eq' (filter (\x' -> not (eq' x x')) xs) :+: x
-
