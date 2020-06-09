@@ -166,6 +166,9 @@ patternPair pattern' =
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    try variable <|>
+   try true_ <|>
+   try false_ <|>
+   try nil <|>
    try int <|> -- int may start with +/-
    string <|>
    let_ expr' <|>
@@ -270,9 +273,6 @@ backtick = token.reservedOp "`"
 appChain ∷ SParser Expr -> SParser Expr
 appChain expr' =
    try (simpleExpr expr' >>= rest) <|>
-   try true_ <|>
-   try false_ <|>
-   try nil <|>
    cons expr'
    where
       rest ∷ Expr -> SParser Expr
