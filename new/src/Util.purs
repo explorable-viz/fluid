@@ -39,7 +39,7 @@ mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = if x == x' then Just x else Nothing
 
 mustEq :: forall a . Eq a => a -> a -> a
-mustEq x x' = if x == x' then x else error absurd
+mustEq x x' = fromJust $ x ≟ x'
 
 infixl 5 mayEq as ≟
 infixl 5 mustEq as ≜

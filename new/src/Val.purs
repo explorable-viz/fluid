@@ -7,7 +7,7 @@ import Bindings (Bindings)
 import Elim (Elim)
 import Expr (RecDefs, Expr)
 import Lattice (class Selectable, Selected, (∨?), mapα, maybeZipWithα)
-import Util (error, (≟))
+import Util ((≟))
 import Data.Maybe (Maybe(..))
 
 data Unary =

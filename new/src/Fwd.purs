@@ -12,7 +12,6 @@ import Util (T3(..), absurd, error, successful)
 import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
 
-
 match_fwd :: forall k . Val -> Elim k -> T3 Env k Selected
 match_fwd v (ElimVar x κ) =
    T3 (ε :+: x ↦ v) κ true
