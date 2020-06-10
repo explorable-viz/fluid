@@ -3,7 +3,7 @@ module Bindings where
 import Prelude hiding (top)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Lattice (class Lattice, bot, top, (∧?))
+import Lattice (class Lattice, bot, top, (∧?), (∨?))
 import Util ((≟))
 
 type Var = String
@@ -29,11 +29,24 @@ instance bindingsMonoid :: Monoid (Bindings a) where
    mempty = ε
 
 instance bindingsLattice :: Lattice a => Lattice (Bindings a) where
-   maybeMeet xs ys          = Just $ intersect xs ys
-   maybeJoin xs ys          = Just $ union xs ys
+   maybeMeet (xs :+: x ↦ vx) (ys :+: y ↦ vy) = do
+      z  <- x ≟ y
+      vz <- vx ∧? vy
+      zs <- xs ∧? ys
+      pure (zs :+: z ↦ vz)
+   maybeMeet Empty Empty    = pure Empty
+   maybeMeet _     Empty    = Nothing
+   maybeMeet Empty _        = Nothing
+   maybeJoin (xs :+: x ↦ vx) (ys :+: y ↦ vy) = do
+      z  <- x ≟ y
+      vz <- vx ∨? vy
+      zs <- xs ∨? ys
+      pure (zs :+: z ↦ vz)
+   maybeJoin Empty Empty    = pure Empty
+   maybeJoin _     Empty    = Nothing
+   maybeJoin Empty _        = Nothing
    top       (xs :+: x ↦ v) = top xs :+:  x ↦ top v
    top       Empty          = Empty
-
    bot       (xs :+: x ↦ v) = bot xs :+:  x ↦ bot v
    bot       Empty          = Empty
 
