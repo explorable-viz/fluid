@@ -3,8 +3,8 @@ module Bwd where
 import Prelude hiding (absurd, join)
 import Bindings ((:+:), (↦), ε, find)
 import Expr (Elim(..), Expr(..), RawExpr(..))
-import Selected
-import Util (T3(..), absurd, error, todo, successful, (≟), (≜))
+import Lattice (class Lattice, Selected(..), (∨), bot, join)
+import Util (T3(..), absurd, error, successful, (≜))
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
 import Expl (Expl(..)) as T
@@ -55,14 +55,15 @@ eval_bwd (Val α V.False) T.False = T3 ε (Expr α False) α
 -- pair
 -- eval_bwd { α, u: V.Pair v1 v2} (T.Pair t1 t2) = ...
 -- var
-eval_bwd (Val α v) (T.Var x) = T3 (ε :+: x ↦ (Val α v)) (Expr α (Var x)) Bot
+eval_bwd (Val α v) (T.Var x) =
+   T3 (ε :+: x ↦ (Val α v)) (Expr α (Var x)) FF
 -- int
 eval_bwd (Val α (V.Int n)) (T.Int tn) = T3 ε (Expr α (Int n)) α
 -- op
 eval_bwd (Val α (V.Binary (BinaryOp s bin))) (T.Op op)
-   = T3 (ε :+: op ↦ (Val α (V.Binary (BinaryOp s bin)))) (Expr α (Op op)) Bot
+   = T3 (ε :+: op ↦ (Val α (V.Binary (BinaryOp s bin)))) (Expr α (Op op)) FF
 eval_bwd (Val α (V.Unary (UnaryOp s una))) (T.Op op)
-   = T3 (ε :+: op ↦ (Val α (V.Unary (UnaryOp s una)))) (Expr α (Op op)) Bot
+   = T3 (ε :+: op ↦ (Val α (V.Unary (UnaryOp s una)))) (Expr α (Op op)) FF
 -- nil
 eval_bwd (Val α V.Nil) T.Nil = T3 ε (Expr α Nil) α
 -- cons

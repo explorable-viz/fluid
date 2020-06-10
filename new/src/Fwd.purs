@@ -5,8 +5,8 @@ import Data.List (List(..), (:))
 import Bindings ((:+:), (↦), ε, find)
 import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs)
 import Expr (RawExpr(..)) as E
+import Lattice (Selected(..), (∧))
 import Primitive (applyBinary_fwd, applyUnary_fwd)
-import Selected (Selected(..), (∧))
 import Util (T3(..), absurd, error, successful)
 import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
@@ -14,7 +14,7 @@ import Val (RawVal(..)) as V
 
 match_fwd :: forall k . Val -> Elim k -> T3 Env k Selected
 match_fwd v (ElimVar x κ) =
-   T3 (ε :+: x ↦ v) κ Top
+   T3 (ε :+: x ↦ v) κ TT
 match_fwd (Val α V.True) (ElimBool { true: κ, false: κ' }) =
    T3 ε κ α
 match_fwd (Val α V.False) (ElimBool { true: κ, false: κ' }) =

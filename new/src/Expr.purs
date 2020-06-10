@@ -1,20 +1,16 @@
 module Expr where
 
-
-import Prelude (class Functor, Unit, map, ($), (<$>), (<<<), bind, pure)
+import Prelude hiding (top)
 import Bindings (Var)
 import Data.List (List)
 import Data.Either (Either)
-import Data.Unit
-import Control.Bind ((>>=))
-import Selected
-import Util (absurd, error, (≟), mayEq)
+import Lattice (class Lattice, Selected(..), (∧?), (∨?), top, bot)
+import Util ((≟))
 import Data.Maybe (Maybe(..))
 
 data Def = Def (Elim Unit) Expr
 data RecDef = RecDef Var (Elim Expr)
 type RecDefs = List RecDef
-
 
 instance defLattice :: Lattice Def where
    maybeMeet (Def σ e) (Def σ' e') = do
@@ -40,8 +36,6 @@ instance recDefLattice :: Lattice RecDef where
    top (RecDef x σ) = RecDef x (top σ)
    bot (RecDef x σ) = RecDef x (bot σ)
 
-
-
 data RawExpr =
    Var Var |
    Op Var |
@@ -60,7 +54,7 @@ data RawExpr =
 data Expr = Expr Selected RawExpr
 
 expr :: RawExpr -> Expr
-expr = Expr Bot
+expr = Expr FF
 
 instance rawExprLattice :: Lattice RawExpr where
    maybeJoin (Var x) (Var x') = do
@@ -146,8 +140,8 @@ instance exprLattice :: Lattice Expr where
       α'' <- α ∧? α'
       e'' <- e ∧? e'
       pure (Expr α'' e'')
-   top (Expr _ r) = Expr Top r
-   bot (Expr _ r) = Expr Bot r
+   top (Expr _ r) = Expr TT r
+   bot (Expr _ r) = Expr FF r
 
 data Elim k =
    ElimVar Var k |
