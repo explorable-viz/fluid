@@ -30,7 +30,7 @@ instance latticeSelected :: Lattice Selected where
    maybeMeet TT TT = Just TT
    maybeMeet _ _   = Just FF
    maybeJoin FF FF = Just FF
-   maybeJoin _ _     = Just TT
+   maybeJoin _ _   = Just TT
    top _ = TT
    bot _ = FF
 
