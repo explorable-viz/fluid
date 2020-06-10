@@ -1,9 +1,10 @@
 module Elim where
 
 import Prelude hiding (top)
+import Data.Maybe (Maybe(..))
 import Bindings (Var)
 import Lattice (class Selectable, (∧?), mapα, maybeZipWithα)
-import Util (error, (≟))
+import Util ((≟))
 
 data Elim k =
    ElimVar Var k |
@@ -31,59 +32,4 @@ instance elimSelectable :: Selectable k => Selectable (Elim k) where
       ElimPair <$> maybeZipWithα f σ σ'
    maybeZipWithα f (ElimList { nil: κ1, cons: σ1 }) (ElimList { nil: κ2, cons: σ2 }) =
       (\κ σ -> ElimList { nil: κ, cons: σ }) <$> maybeZipWithα f κ1 κ2 <*> maybeZipWithα f σ1 σ2
-   maybeZipWithα _ _ _ = error "todo"
-
-{-
-instance elimLattice :: Lattice k => Lattice (Elim k) where
-   maybeMeet (ElimVar x κ) (ElimVar x' κ') = do
-      x'' <- x ≟ x'
-      κ'' <- κ ∧? κ'
-      pure (ElimVar x'' κ'')
-   maybeMeet (ElimBool { true : κ1, false : κ2 }) (ElimBool { true : κ1', false : κ2' }) = do
-      κ1'' <- κ1 ∧? κ1'
-      κ2'' <- κ2 ∧? κ2'
-      pure (ElimBool {true : κ1'', false : κ2''})
-   maybeMeet (ElimPair σ) (ElimPair σ') = do
-      σ'' <- σ ∧? σ'
-      pure (ElimPair σ'')
-   maybeMeet (ElimList { nil: κ1, cons: σ1 }) (ElimList { nil: κ2, cons: σ2 }) = do
-      κ <- κ1 ∧? κ2
-      σ <- σ1 ∧? σ2
-      pure (ElimList { nil: κ, cons: σ })
-   maybeMeet _ _ = Nothing
-
-   maybeJoin (ElimVar x κ) (ElimVar x' κ') = do
-      x'' <- x ≟ x'
-      κ'' <- κ ∨? κ'
-      pure (ElimVar x'' κ'')
-   maybeJoin (ElimBool { true : κ1, false : κ2 }) (ElimBool { true : κ1', false : κ2' }) = do
-      κ1'' <- κ1 ∨? κ1'
-      κ2'' <- κ2 ∨? κ2'
-      pure (ElimBool {true : κ1'', false : κ2''})
-   maybeJoin (ElimPair σ) (ElimPair σ') = do
-      σ'' <- σ ∨? σ'
-      pure (ElimPair σ'')
-   maybeJoin (ElimList { nil: κ1, cons: σ1 }) (ElimList { nil: κ2, cons: σ2 }) = do
-      κ <- κ1 ∨? κ2
-      σ <- σ1 ∨? σ2
-      pure (ElimList { nil: κ, cons: σ })
-   maybeJoin _ _ = Nothing
-
-   bot (ElimVar x κ)
-      = ElimVar x (bot κ)
-   bot (ElimBool { true : κ1, false : κ2 })
-      = (ElimBool { true : bot κ1, false : bot κ2 })
-   bot (ElimPair σ)
-      = ElimPair (bot σ)
-   bot (ElimList { nil: κ, cons: σ })
-      = ElimList { nil: bot κ, cons: bot σ}
-
-   top (ElimVar x κ)
-      = ElimVar x (top κ)
-   top (ElimBool { true : κ1, false : κ2 })
-      = (ElimBool { true : top κ1, false : top κ2 })
-   top (ElimPair σ)
-      = ElimPair (top σ)
-   top (ElimList { nil: κ, cons: σ })
-      = ElimList { nil: top κ, cons: top σ}
--}
+   maybeZipWithα _ _ _ = Nothing

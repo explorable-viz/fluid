@@ -50,6 +50,10 @@ instance selectableLattice :: Selectable a => Lattice a where
    top = mapα (const true)
    bot = mapα (const false)
 
+instance booleanSelectable :: Selectable Boolean where
+   mapα f = f
+   maybeZipWithα op α α' = pure $ α `op` α'
+
 instance unitSelectable :: Selectable Unit where
    mapα f = identity
    maybeZipWithα φ _ _ = pure unit

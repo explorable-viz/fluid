@@ -9,7 +9,7 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Eval (ExplVal(..), eval)
 import Fwd (eval_fwd)
-import Lattice (Selected(..))
+import Lattice (Selected)
 import Module (openWithImports)
 import Pretty (pretty, render)
 import Primitive (primitives)
@@ -24,7 +24,7 @@ runExample file expected = runMocha $
          case eval ρ' e of
             Left msg -> error msg
             Right (ExplVal _ (Val _ u)) -> do
-               let (Val _ u') = eval_fwd ρ' e TT
+               let (Val _ u') = eval_fwd ρ' e true
                (render $ pretty u) `shouldEqual` (render $ pretty u')
                (render $ pretty u') `shouldEqual` expected
 

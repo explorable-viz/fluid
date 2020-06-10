@@ -4,7 +4,7 @@ import Prelude hiding (absurd, join)
 import Bindings ((:+:), (↦), ε, find)
 import Elim (Elim(..))
 import Expr (Expr(..), RawExpr(..))
-import Lattice (class Lattice, Selected(..), (∨), bot, join)
+import Lattice (class Selectable, Selected, (∨), bot, join)
 import Util (T3(..), absurd, error, successful, (≜))
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
@@ -25,7 +25,7 @@ bound_vars ρ (MatchPair ξ ξ') = append (bound_vars ρ ξ) (bound_vars ρ ξ')
 bound_vars ρ (MatchNil k)     = ε
 bound_vars ρ (MatchCons {nil: k, cons: Tuple ξ ξ'}) = append (bound_vars ρ ξ) (bound_vars ρ ξ')
 
-match_bwd :: forall k . Lattice k => Env -> k -> Selected -> Match k -> Tuple Val (Elim k)
+match_bwd :: forall k . Selectable k => Env -> k -> Selected -> Match k -> Tuple Val (Elim k)
 -- var
 match_bwd (ε :+: x ↦ v) κ α (MatchVar x') = Tuple v (ElimVar (x ≜ x') κ)
 -- true
@@ -57,14 +57,14 @@ eval_bwd (Val α V.False) T.False = T3 ε (Expr α False) α
 -- eval_bwd { α, u: V.Pair v1 v2} (T.Pair t1 t2) = ...
 -- var
 eval_bwd (Val α v) (T.Var x) =
-   T3 (ε :+: x ↦ (Val α v)) (Expr α (Var x)) FF
+   T3 (ε :+: x ↦ (Val α v)) (Expr α (Var x)) false
 -- int
 eval_bwd (Val α (V.Int n)) (T.Int tn) = T3 ε (Expr α (Int n)) α
 -- op
 eval_bwd (Val α (V.Binary (BinaryOp s bin))) (T.Op op)
-   = T3 (ε :+: op ↦ (Val α (V.Binary (BinaryOp s bin)))) (Expr α (Op op)) FF
+   = T3 (ε :+: op ↦ (Val α (V.Binary (BinaryOp s bin)))) (Expr α (Op op)) false
 eval_bwd (Val α (V.Unary (UnaryOp s una))) (T.Op op)
-   = T3 (ε :+: op ↦ (Val α (V.Unary (UnaryOp s una)))) (Expr α (Op op)) FF
+   = T3 (ε :+: op ↦ (Val α (V.Unary (UnaryOp s una)))) (Expr α (Op op)) false
 -- nil
 eval_bwd (Val α V.Nil) T.Nil = T3 ε (Expr α Nil) α
 -- cons
