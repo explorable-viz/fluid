@@ -1,8 +1,8 @@
 module Selected where
 
-import Prelude hiding (join)
-import Util (error, absurd)
+import Prelude hiding (absurd, join)
 import Data.Maybe (Maybe(..))
+import Util (fromJust)
 
 class Lattice a where
     maybeMeet   :: a -> a -> Maybe a
@@ -11,6 +11,12 @@ class Lattice a where
     join        :: a -> a -> a
     top         :: a -> a
     bot         :: a -> a
+
+meetDefault :: forall a . Lattice a => a -> a -> a
+meetDefault a a' = fromJust $ maybeMeet a a'
+
+joinDefault :: forall a . Lattice a => a -> a -> a
+joinDefault a a' = fromJust $ maybeJoin a a'
 
 data Selected = Top | Bot -- maybe tt, ff would be better
 
@@ -23,13 +29,15 @@ infix 6 maybeJoin as ∨?
 derive instance eqSelected :: Eq Selected
 
 instance latticeSelected :: Lattice Selected where
-    maybeMeet Top Top = Just Top
-    maybeMeet _ _     = Just Bot
-    meet α α' = case α ∧? α' of Just α'' -> α''
-                                Nothing  -> error absurd
-    maybeJoin Bot Bot = Just Bot
-    maybeJoin _ _     = Just Top
-    join α α' = case α ∨? α' of Just α'' -> α''
-                                Nothing  -> error absurd
+    meet Top Top = Top
+    meet _ _     = Bot
+
+    maybeMeet α α' = Just $ α ∧ α'
+
+    join Bot Bot = Bot
+    join _ _     = Top
+
+    maybeJoin α α' = Just $ α ∨ α'
+
     top _ = Top
-    bot _ = Bot 
+    bot _ = Bot
