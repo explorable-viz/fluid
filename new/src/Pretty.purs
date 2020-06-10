@@ -4,7 +4,8 @@ import Prelude
 import Data.List (List(..), (:))
 import Text.Pretty (Doc, atop, beside, text)
 import Text.Pretty (render) as P
-import Expr (Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
+import Elim (Elim(..))
+import Expr (Def(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Parse (cFalse, cNil, cTrue)
 import Util (error)

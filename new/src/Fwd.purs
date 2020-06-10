@@ -3,7 +3,8 @@ module Fwd where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Bindings ((:+:), (↦), ε, find)
-import Expr (Def(..), Elim(..), Expr(..), RecDef(..), RecDefs)
+import Elim (Elim(..))
+import Expr (Def(..), Expr(..), RecDef(..), RecDefs)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected(..), (∧))
 import Primitive (applyBinary_fwd, applyUnary_fwd)

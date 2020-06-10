@@ -1,3 +1,10 @@
+module Elim where
+
+import Prelude hiding (top)
+import Data.Maybe (Maybe(..))
+import Bindings (Var)
+import Lattice (class Lattice, (∧?), (∨?), bot, top)
+import Util ((≟))
 
 data Elim k =
    ElimVar Var k |

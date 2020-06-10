@@ -2,7 +2,8 @@ module Val where
 
 import Prelude hiding (absurd, top)
 import Bindings (Bindings)
-import Expr (RecDefs, Elim, Expr)
+import Elim (Elim)
+import Expr (RecDefs, Expr)
 import Lattice (class Lattice, Selected(..), (∧?), (∨?), bot, top)
 import Util (error, (≟))
 import Data.Maybe (Maybe(..))

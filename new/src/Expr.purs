@@ -4,6 +4,7 @@ import Prelude hiding (top)
 import Bindings (Var)
 import Data.List (List)
 import Data.Either (Either)
+import Elim (Elim)
 import Lattice (class Lattice, Selected(..), (∧?), (∨?), top, bot)
 import Util ((≟))
 import Data.Maybe (Maybe(..))
@@ -57,58 +58,32 @@ expr :: RawExpr -> Expr
 expr = Expr FF
 
 instance rawExprLattice :: Lattice RawExpr where
-   maybeJoin (Var x) (Var x') = do
-      x'' <- x ≟ x'
-      pure (Var x'')
-   maybeJoin (Op op) (Op op') = do
-      op'' <- op ≟ op'
-      pure (Op op'')
-   maybeJoin (Int n) (Int n') = do
-      n'' <- n ≟ n'
-      pure (Int n'')
-   maybeJoin (Str s) (Var s') = do
-      s'' <- s ≟ s'
-      pure (Str s'')
-   maybeJoin False False      = pure False
-   maybeJoin False True       = pure True
-   maybeJoin True False       = pure True
-   maybeJoin True True        = pure True
-   maybeJoin (Pair e1 e1') (Pair e2 e2') = do
-      e   <- e1  ∨? e2
-      e'  <- e1' ∨? e2'
-      pure (Pair e e')
+   maybeJoin (Var x) (Var x') = Var <$> x ≟ x'
+   maybeJoin (Op op) (Op op') = Op <$> op ≟ op'
+   maybeJoin (Int n) (Int n') = Int <$> n ≟ n'
+   maybeJoin (Str s) (Var s') = Str <$> s ≟ s'
+   maybeJoin False False = pure False
+   maybeJoin False True = pure True
+   maybeJoin True False = pure True
+   maybeJoin True True = pure True
+   maybeJoin (Pair e1 e1') (Pair e2 e2') =
+      Pair <$> e1  ∨? e2 <*> e1' ∨? e2'
    maybeJoin Nil Nil = pure Nil
-   maybeJoin (Cons e1 e1') (Cons e2 e2') = do
-      e   <- e1  ∨? e2
-      e'  <- e1' ∨? e2'
-      pure (Cons e e')
+   maybeJoin (Cons e1 e1') (Cons e2 e2') =
+      Cons <$> e1  ∨? e2 <*> e1' ∨? e2'
    maybeJoin _ _ = Nothing
 
-   maybeMeet (Var x) (Var x') = do
-      x'' <- x ≟ x'
-      pure (Var x'')
-   maybeMeet (Op op) (Op op') = do
-      op'' <- op ≟ op'
-      pure (Op op'')
-   maybeMeet (Int n) (Int n') = do
-      n'' <- n ≟ n'
-      pure (Int n'')
-   maybeMeet (Str s) (Var s') = do
-      s'' <- s ≟ s'
-      pure (Str s'')
-   maybeMeet False False      = pure False
-   maybeMeet False True       = pure True
-   maybeMeet True False       = pure True
-   maybeMeet True True        = pure True
-   maybeMeet (Pair e1 e1') (Pair e2 e2') = do
-      e   <- e1  ∧? e2
-      e'  <- e1' ∧? e2'
-      pure (Pair e e')
-   maybeMeet Nil Nil          = pure Nil
-   maybeMeet (Cons e1 e1') (Cons e2 e2') = do
-      e   <- e1  ∧? e2
-      e'  <- e1' ∧? e2'
-      pure (Cons e e')
+   maybeMeet (Var x) (Var x') = Var <$> x ≟ x'
+   maybeMeet (Op op) (Op op') = Op <$> op ≟ op'
+   maybeMeet (Int n) (Int n') = Int <$> n ≟ n'
+   maybeMeet (Str s) (Var s') = Str <$> s ≟ s'
+   maybeMeet False False = pure False
+   maybeMeet False True = pure True
+   maybeMeet True False = pure True
+   maybeMeet True True = pure True
+   maybeMeet (Pair e1 e2) (Pair e1' e2') = Pair <$> e1 ∧? e1' <*> e2 ∧? e2'
+   maybeMeet Nil Nil = pure Nil
+   maybeMeet (Cons e1 e2) (Cons e1' e2') = Cons <$> e1 ∧? e1' <*> e2 ∧? e2'
    maybeMeet _ _ = Nothing
 
    top (Pair e e')            = Pair (top e) (top e')
@@ -132,14 +107,8 @@ instance rawExprLattice :: Lattice RawExpr where
    bot e                      = e
 
 instance exprLattice :: Lattice Expr where
-   maybeJoin (Expr α e) (Expr α' e') = do
-      α'' <- α ∨? α'
-      e'' <- e ∨? e'
-      pure (Expr α'' e'')
-   maybeMeet (Expr α e) (Expr α' e') = do
-      α'' <- α ∧? α'
-      e'' <- e ∧? e'
-      pure (Expr α'' e'')
+   maybeJoin (Expr α e) (Expr α' e') = Expr <$> α ∨? α' <*> e ∨? e'
+   maybeMeet (Expr α e) (Expr α' e') = Expr <$> α ∧? α' <*> e ∧? e'
    top (Expr _ r) = Expr TT r
    bot (Expr _ r) = Expr FF r
 

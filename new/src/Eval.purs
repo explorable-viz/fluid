@@ -5,9 +5,10 @@ import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
+import Elim (Elim(..))
 import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Elim(..), Expr(..), Module(..), RecDef(..), RecDefs)
+import Expr (Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
