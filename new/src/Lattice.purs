@@ -49,3 +49,7 @@ instance selectableLattice :: Selectable a => Lattice a where
    maybeMeet = maybeZipWithα ((&&))
    top = mapα (const true)
    bot = mapα (const false)
+
+instance unitSelectable :: Selectable Unit where
+   mapα f = identity
+   maybeZipWithα φ _ _ = pure unit
