@@ -4,7 +4,8 @@ import Prelude hiding (absurd, join)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Bindings (Var)
-import Expr (Expr, Elim(..))
+import Elim (Elim(..))
+import Expr (Expr)
 import Util ((≟), absurd, error)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
@@ -101,6 +102,7 @@ singleBranch (ElimVar x κ) = Just κ
 singleBranch (ElimPair σ) = singleBranch σ >>= singleBranch
 singleBranch _ = Nothing
 
+-- TODO: provide a Traversable instance for PElim; then this is sequence.
 hoistMaybe :: forall k . PElim (Maybe k) -> Maybe (PElim k)
 hoistMaybe (PElimVar x (Just κ)) = Just $ PElimVar x κ
 hoistMaybe (PElimTrue (Just κ)) = Just $ PElimTrue κ

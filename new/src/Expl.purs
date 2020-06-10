@@ -3,7 +3,8 @@ module Expl where
 import Prelude
 import Data.Tuple (Tuple)
 import Bindings (Var)
-import Expr (RecDefs, Elim, Expr)
+import Elim (Elim)
+import Expr (RecDefs, Expr)
 
 data Def = Def (Match Unit) Expl
 
