@@ -31,8 +31,8 @@ class Selectable a where
 instance selectableLattice :: Selectable a => Lattice a where
    maybeJoin = maybeZipWithα ((||))
    maybeMeet = maybeZipWithα ((&&))
-   top = mapα (const true)
-   bot = mapα (const false)
+   top = mapα $ const true
+   bot = mapα $ const false
 
 instance booleanSelectable :: Selectable Boolean where
    mapα = identity

@@ -6,7 +6,7 @@ import Data.List (List)
 import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Elim (Elim)
-import Lattice (class Selectable, Selected, (∧?), mapα, maybeZipWithα)
+import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟))
 
 data Def = Def (Elim Unit) Expr
@@ -70,7 +70,7 @@ instance rawExprSelectable :: Selectable RawExpr where
    maybeZipWithα _ (Str s) (Var s')             = Str <$> s ≟ s'
    maybeZipWithα _ False False                  = pure False
    maybeZipWithα _ True True                    = pure True
-   maybeZipWithα f (Pair e1 e2) (Pair e1' e2')  = Pair <$> e1 ∧? e1' <*> e2 ∧? e2'
+   maybeZipWithα f (Pair e1 e2) (Pair e1' e2')  = Pair <$> maybeZipWithα f e1 e1' <*> maybeZipWithα f e2 e2'
    maybeZipWithα _ Nil Nil                      = pure Nil
-   maybeZipWithα f (Cons e1 e2) (Cons e1' e2')  = Cons <$> e1 ∧? e1' <*> e2 ∧? e2'
+   maybeZipWithα f (Cons e1 e2) (Cons e1' e2')  = Cons <$> maybeZipWithα f e1 e1' <*> maybeZipWithα f e2 e2'
    maybeZipWithα _ _ _                          = Nothing

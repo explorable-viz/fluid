@@ -6,7 +6,7 @@ import Data.Traversable (sequence)
 import Bindings (Bindings)
 import Elim (Elim)
 import Expr (RecDefs, Expr)
-import Lattice (class Selectable, Selected, (∨?), mapα, maybeZipWithα)
+import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟))
 import Data.Maybe (Maybe(..))
 
@@ -73,8 +73,8 @@ instance selectableRawVal :: Selectable RawVal where
    maybeZipWithα f False False                        = pure False
    maybeZipWithα f True True                          = pure True
    maybeZipWithα f Nil Nil                            = pure Nil
-   maybeZipWithα f (Cons e1 e2) (Cons e1' e2')        = Cons <$> maybeZipWithα f e1 e1' <*> maybeZipWithα f e2' e2'
-   maybeZipWithα f (Pair e1 e2) (Pair e1' e2')        = Pair <$> e1 ∨? e1' <*> e2 ∨? e2'
+   maybeZipWithα f (Cons e1 e2) (Cons e1' e2')        = Cons <$> maybeZipWithα f e1 e1' <*> maybeZipWithα f e2 e2'
+   maybeZipWithα f (Pair e1 e2) (Pair e1' e2')        = Pair <$> maybeZipWithα f e1 e1' <*> maybeZipWithα f e2 e2'
    maybeZipWithα f (Closure ρ δ σ) (Closure ρ' δ' σ') =
       Closure <$> maybeZipWithα f ρ ρ'
               <*> (sequence $ zipWith (maybeZipWithα f) δ δ') <*> maybeZipWithα f σ σ'
