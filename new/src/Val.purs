@@ -15,7 +15,7 @@ data Binary =
    IntIntInt (Int -> Int -> Int) |
    IntIntBool (Int -> Int -> Boolean)
 
--- String arguments are "internal" names for printing, unrelated to any user-level identifiers.
+-- String arguments are "internal" names for printing and equality testing, unrelated to user-level identifiers.
 data UnaryOp =
    UnaryOp String Unary |
    PartialApp BinaryOp Val
@@ -52,17 +52,19 @@ instance selectableRawVal :: Selectable RawVal where
    mapα f (Cons e1 e2)     = Cons (mapα f e1) (mapα f e2)
    mapα f (Pair e1 e2)     = Pair (mapα f e1) (mapα f e2)
    mapα f (Closure ρ δ σ)  = Closure (mapα f ρ) (map (mapα f) δ) (mapα f σ)
-   mapα f (Binary φ)       = error "todo"
-   mapα f (Unary φ)        = error "todo"
+   mapα f (Binary φ)       = Binary φ
+   mapα f (Unary φ)        = Unary φ
 
-   maybeZipWithα f (Int x) (Int x') = x ≟ x' <#> Int
-   maybeZipWithα f (Str s) (Str s') = s ≟ s' <#> Str
-   maybeZipWithα f False False = pure False
-   maybeZipWithα f True True = pure True
-   maybeZipWithα f Nil Nil = pure Nil
-   maybeZipWithα f (Cons e1 e2) (Cons e1' e2') = Cons <$> e1 ∨? e1' <*> e2' ∨? e2'
-   maybeZipWithα f (Pair e1 e2) (Pair e1' e2') = Pair <$> e1 ∨? e1' <*> e2 ∨? e2'
-   maybeZipWithα f (Closure ρ δ σ) (Closure ρ' δ' σ') = error "todo"
-   maybeZipWithα f (Binary φ) (Binary φ') = error "todo"
-   maybeZipWithα f (Unary φ) (Unary φ') = error "todo"
-   maybeZipWithα f _ _ = Nothing
+   maybeZipWithα f (Int x) (Int x')                   = Int <$> x ≟ x'
+   maybeZipWithα f (Str s) (Str s')                   = Str <$> s ≟ s'
+   maybeZipWithα f False False                        = pure False
+   maybeZipWithα f True True                          = pure True
+   maybeZipWithα f Nil Nil                            = pure Nil
+   maybeZipWithα f (Cons e1 e2) (Cons e1' e2')        = Cons <$> maybeZipWithα f e1 e1' <*> maybeZipWithα f e2' e2'
+   maybeZipWithα f (Pair e1 e2) (Pair e1' e2')        = Pair <$> e1 ∨? e1' <*> e2 ∨? e2'
+   maybeZipWithα f (Closure ρ δ σ) (Closure ρ' δ' σ') =
+      Closure <$> maybeZipWithα f ρ ρ' <*> ?_ <*> maybeZipWithα f σ σ'
+   maybeZipWithα f (Binary (BinaryOp op f')) (Binary (BinaryOp op' _)) =
+      Binary <$> (BinaryOp <$> op ≟ op' <*> pure f')
+   maybeZipWithα f (Unary φ) (Unary φ')               = error "todo"
+   maybeZipWithα f _ _                                = Nothing
