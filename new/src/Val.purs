@@ -39,61 +39,46 @@ val = Val FF
 
 type Env = Bindings Val
 
+class Blah a where
+   mapα :: (Selected -> Selected) -> a -> a
+   maybeZipWithα :: (Selected -> Selected -> Maybe Selected) -> a -> a -> Maybe a
+
+instance blahVal :: Blah Val where
+   mapα f (Val α u) = Val (f α) u
+   maybeZipWithα f (Val α r) (Val α' r') = Val <$> α `f` α' <*> maybeZipWithα f r r'
+
+instance blahRawVal :: Blah RawVal where
+   mapα _ (Int x) = Int x
+   mapα _ (Str s) = Str s
+   mapα _ False = False
+   mapα _ True = True
+   mapα _ Nil = Nil
+   mapα f (Cons e1 e2) = Cons (mapα f e1) (mapα f e2)
+   mapα f (Pair e1 e2) = Pair (mapα f e1) (mapα f e2)
+   mapα f (Closure ρ δ σ) = error "todo"
+   mapα f (Binary φ) = error "todo"
+   mapα f (Unary φ) = error "todo"
+
+   maybeZipWithα f (Int x) (Int x') = x ≟ x' <#> Int
+   maybeZipWithα f (Str s) (Str s') = s ≟ s' <#> Str
+   maybeZipWithα f False False = pure False
+   maybeZipWithα f True True = pure True
+   maybeZipWithα f Nil Nil = pure Nil
+   maybeZipWithα f (Cons e1 e2) (Cons e1' e2') = Cons <$> e1 ∨? e1' <*> e2' ∨? e2'
+   maybeZipWithα f (Pair e1 e2) (Pair e1' e2') = Pair <$> e1 ∨? e1' <*> e2 ∨? e2'
+   maybeZipWithα f (Closure ρ δ σ) (Closure ρ' δ' σ') = error "todo"
+   maybeZipWithα f (Binary φ) (Binary φ') = error "todo"
+   maybeZipWithα f (Unary φ) (Unary φ') = error "todo"
+   maybeZipWithα f _ _ = Nothing
+
 instance rawValLattice :: Lattice RawVal where
-   maybeJoin (Int x) (Int x') = x ≟ x' <#> Int
-   maybeJoin (Str s) (Str s') = s ≟ s' <#> Str
-   maybeJoin False False = pure False
-   maybeJoin True True = pure True
-   maybeJoin Nil Nil = pure Nil
-   maybeJoin (Cons e1 e2) (Cons e1' e2') = Cons <$> e1 ∨? e1' <*> e2' ∨? e2'
-   maybeJoin (Pair e1 e2) (Pair e1' e2') = Pair <$> e1 ∨? e1' <*> e2 ∨? e2'
-   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') = error "todo"
-   maybeJoin (Binary φ) (Binary φ') = error "todo"
-   maybeJoin (Unary φ) (Unary φ') = error "todo"
-   maybeJoin _ _ = Nothing
-
-   maybeMeet (Int x) (Int x') = Int <$> x ≟ x'
-   maybeMeet (Str s) (Str s') = Str <$> s ≟ s'
-   maybeMeet False False = pure False
-   maybeMeet True True = pure True
-   maybeMeet Nil Nil = pure Nil
-   maybeMeet (Cons e1 e2) (Cons e1' e2') = Cons <$> e1 ∨? e1' <*> e2' ∧? e2'
-   maybeMeet (Pair e1 e2) (Pair e1' e2') = Pair <$> e1 ∨? e1' <*> e2 ∧? e2'
-   maybeMeet (Closure ρ δ σ) (Closure ρ' δ' σ') = error "todo"
-   maybeMeet (Binary φ) (Binary φ') = error "todo"
-   maybeMeet (Unary φ) (Unary φ') = error "todo"
-   maybeMeet _ _ = Nothing
-
-   top (Int x) = Int x
-   top (Str s) = Str s
-   top False = False
-   top True = True
-   top Nil = Nil
-   top (Cons e1 e2) = Cons (top e1) (top e2)
-   top (Pair e1 e2) = Pair (top e1) (top e2)
-   top (Closure ρ δ σ) = error "todo"
-   top (Binary φ) = error "todo"
-   top (Unary φ) = error "todo"
-
-   bot (Int x) = Int x
-   bot (Str s) = Str s
-   bot False = False
-   bot True = True
-   bot Nil = Nil
-   bot (Cons e1 e2) = Cons (bot e1) (bot e2)
-   bot (Pair e1 e2) = Pair (bot e1) (bot e2)
-   bot (Closure ρ δ σ) = error "todo"
-   bot (Binary φ) = error "todo"
-   bot (Unary φ) = error "todo"
+   maybeJoin = maybeZipWithα (∨?)
+   maybeMeet = maybeZipWithα (∧?)
+   top = mapα (const TT)
+   bot = mapα (const FF)
 
 instance valLattice :: Lattice Val where
-   maybeJoin (Val α r) (Val α' r') = do
-      α'' <- α ∨? α'
-      r ∨? r' <#> Val α''
-
-   maybeMeet (Val α r) (Val α' r') = do
-      α'' <- α ∨? α'
-      r ∧? r' <#> Val α''
-
+   maybeJoin (Val α r) (Val α' r') = Val <$> α ∨? α' <*> r ∨? r'
+   maybeMeet (Val α r) (Val α' r') = Val <$> α ∨? α' <*> r ∧? r'
    top (Val _ u) = Val TT $ top u
    bot (Val _ u) = Val FF $ bot u
