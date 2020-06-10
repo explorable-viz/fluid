@@ -1,10 +1,10 @@
 module Val where
 
-import Prelude (bind, pure, class Eq)
+import Prelude hiding (absurd, top)
 import Bindings (Bindings)
 import Expr (RecDefs, Elim, Expr)
-import Selected
-import Util (absurd, error, (≟))
+import Selected (class Lattice, Selected(..), (∧?), (∨?), bot, join, meet, top)
+import Util (error, (≟))
 import Data.Maybe (Maybe(..))
 
 data Unary =
@@ -31,54 +31,6 @@ data RawVal =
    Pair Val Val |
    Nil | Cons Val Val
 
-instance rawValLattice :: Lattice RawVal where
-   maybeJoin (Int x) (Int x') = do
-    x'' <- x ≟ x'
-    pure (Int x'')
-   maybeJoin (Str s) (Str s') = do
-    s''  <- s ≟ s'
-    pure (Str s'')
-   maybeJoin False False = do
-    pure False
-   maybeJoin True True = do
-    pure True
-   maybeJoin Nil Nil = do
-    pure Nil
-   maybeJoin (Cons e1 e1') (Cons e2 e2') = do
-    e   <- e1  ∨? e2
-    e'  <- e1' ∨? e2'
-    pure (Cons e e')
-   maybeJoin (Pair e1 e1') (Pair e2 e2') = do
-    e   <- e1  ∨? e2
-    e'  <- e1' ∨? e2'
-    pure (Pair e e')
-   maybeJoin _ _ = Nothing
-
-   maybeMeet (Int x) (Int x') = do
-    x'' <- x ≟ x'
-    pure (Int x'')
-   maybeMeet (Str s) (Str s') = do
-    s''  <- s ≟ s'
-    pure (Str s'')
-   maybeMeet False False = do
-    pure False
-   maybeMeet True True = do
-    pure True
-   maybeMeet Nil Nil = do
-    pure Nil
-   maybeMeet (Cons e1 e1') (Cons e2 e2') = do
-    e   <- e1  ∧? e2
-    e'  <- e1' ∧? e2'
-    pure (Cons e e')
-   maybeMeet (Pair e1 e1') (Pair e2 e2') = do
-    e   <- e1  ∧? e2
-    e'  <- e1' ∧? e2'
-    pure (Pair e e')
-   maybeMeet _ _ = Nothing
-
-   top (Cons e  x) = Val Top v
-   bot (Val _ v) = Val Bot v
-
 data Val = Val Selected RawVal
 
 val :: RawVal -> Val
@@ -86,66 +38,75 @@ val = Val Bot
 
 type Env = Bindings Val
 
-instance valLattice :: Lattice Val where
-   maybeJoin (Val α (Int x)) (Val α' (Int x')) = do
-    α'' <- α ∨? α'
-    x'' <- x ≟ x'
-    pure (Val α'' (Int x''))
-   maybeJoin (Val α (Str s)) (Val α' (Str s')) = do
-    α''  <- α ∨? α'
-    s''  <- s ≟ s'
-    pure (Val α'' (Str s''))
-   maybeJoin (Val α False) (Val α' False) = do
-    α'' <- α ∨? α'
-    pure (Val α'' False)
-   maybeJoin (Val α True) (Val α' True) = do
-    α'' <- α ∨? α'
-    pure (Val α'' True)
-   maybeJoin (Val α Nil) (Val α' Nil) = do
-    α'' <- α ∨? α'
-    pure (Val α'' Nil)
-   maybeJoin (Val α (Cons e1 e1')) (Val α' (Cons e2 e2')) = do
-    α'' <- α   ∨? α'
-    e   <- e1  ∨? e2
-    e'  <- e1' ∨? e2'
-    pure (Val α'' (Cons e e'))
-   maybeJoin (Val α (Pair e1 e1')) (Val α' (Pair e2 e2')) = do
-    α'' <- α   ∨? α'
-    e   <- e1  ∨? e2
-    e'  <- e1' ∨? e2'
-    pure (Val α'' (Pair e e'))
+instance rawValLattice :: Lattice RawVal where
+   maybeJoin (Int x) (Int x') = x ≟ x' <#> Int
+   maybeJoin (Str s) (Str s') = s ≟ s' <#> Str
+   maybeJoin False False = pure False
+   maybeJoin True True = pure True
+   maybeJoin Nil Nil = pure Nil
+   maybeJoin (Cons e1 e2) (Cons e1' e2') = do
+      e <- e1 ∨? e1'
+      e2' ∨? e2' <#> Cons e
+   maybeJoin (Pair e1 e2) (Pair e1' e2') = do
+      e <- e1 ∨? e1'
+      e2 ∨? e2' <#> Pair e
+   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') =
+      error "todo"
+   maybeJoin (Binary φ) (Binary φ') =
+      error "todo"
+   maybeJoin (Unary φ) (Unary φ') =
+      error "todo"
    maybeJoin _ _ = Nothing
 
-
-   maybeMeet (Val α (Int x)) (Val α' (Int x')) = do
-    α'' <- α ∧? α'
-    x'' <- x ≟ x'
-    pure (Val α'' (Int x''))
-   maybeMeet (Val α (Str s)) (Val α' (Str s')) = do
-    α''  <- α ∧? α'
-    s''  <- s ≟ s'
-    pure (Val α'' (Str s''))
-   maybeMeet (Val α False) (Val α' False) = do
-    α'' <- α ∧? α'
-    pure (Val α'' False)
-   maybeMeet (Val α True) (Val α' True) = do
-    α'' <- α ∧? α'
-    pure (Val α'' True)
-   maybeMeet (Val α Nil) (Val α' Nil) = do
-    α'' <- α ∧? α'
-    pure (Val α'' Nil)
-   maybeMeet (Val α (Cons e1 e1')) (Val α' (Cons e2 e2')) = do
-    α'' <- α   ∧? α'
-    e   <- e1  ∧? e2
-    e'  <- e1' ∧? e2'
-    pure (Val α'' (Cons e e'))
-   maybeMeet (Val α (Pair e1 e1')) (Val α' (Pair e2 e2')) = do
-    α'' <- α   ∧? α'
-    e   <- e1  ∧? e2
-    e'  <- e1' ∧? e2'
-    pure (Val α'' (Pair e e'))
+   maybeMeet (Int x) (Int x') = x ≟ x' <#> Int
+   maybeMeet (Str s) (Str s') = s ≟ s' <#> Str
+   maybeMeet False False = pure False
+   maybeMeet True True = pure True
+   maybeMeet Nil Nil = pure Nil
+   maybeMeet (Cons e1 e2) (Cons e1' e2') = do
+      e <- e1 ∨? e1'
+      e2' ∧? e2' <#> Cons e
+   maybeMeet (Pair e1 e2) (Pair e1' e2') = do
+      e <- e1 ∨? e1'
+      e2 ∧? e2' <#> Pair e
+   maybeMeet (Closure ρ δ σ) (Closure ρ' δ' σ') =
+      error "todo"
+   maybeMeet (Binary φ) (Binary φ') =
+      error "todo"
+   maybeMeet (Unary φ) (Unary φ') =
+      error "todo"
    maybeMeet _ _ = Nothing
 
+   top (Int x) = Int x
+   top (Str s) = Str s
+   top False = False
+   top True = True
+   top Nil = Nil
+   top (Cons e1 e2) = Cons (top e1) (top e2)
+   top (Pair e1 e2) = Pair (top e1) (top e2)
+   top (Closure ρ δ σ) = error "todo"
+   top (Binary φ) = error "todo"
+   top (Unary φ) = error "todo"
 
-   top (Val _ v) = Val Top v
-   bot (Val _ v) = Val Bot v
+   bot (Int x) = Int x
+   bot (Str s) = Str s
+   bot False = False
+   bot True = True
+   bot Nil = Nil
+   bot (Cons e1 e2) = Cons (bot e1) (bot e2)
+   bot (Pair e1 e2) = Pair (bot e1) (bot e2)
+   bot (Closure ρ δ σ) = error "todo"
+   bot (Binary φ) = error "todo"
+   bot (Unary φ) = error "todo"
+
+instance valLattice :: Lattice Val where
+   maybeJoin (Val α r) (Val α' r') = do
+      α'' <- α ∨? α'
+      r ∨? r' <#> Val α''
+
+   maybeMeet (Val α r) (Val α' r') = do
+      α'' <- α ∨? α'
+      r ∧? r' <#> Val α''
+
+   top (Val _ u) = Val Top $ top u
+   bot (Val _ u) = Val Bot $ bot u

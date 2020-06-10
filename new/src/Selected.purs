@@ -1,8 +1,8 @@
 module Selected where
 
-import Prelude hiding (join)
-import Util (error, absurd)
+import Prelude hiding (absurd, join)
 import Data.Maybe (Maybe(..))
+import Util (error, absurd)
 
 
 class Lattice a where

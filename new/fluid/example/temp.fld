@@ -1,1 +1,5 @@
-match 5 as x -> "true"
+match Nil as {
+   Nil -> Nil;
+   Cons x Nil -> Cons x Nil;
+   Cons x (Cons y ys) -> Cons x (Cons y ys)
+}

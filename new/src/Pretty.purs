@@ -6,6 +6,7 @@ import Text.Pretty (Doc, atop, beside, text)
 import Text.Pretty (render) as P
 import Expr (Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
+import Parse (cFalse, cNil, cTrue)
 import Util (error)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
 import Val (RawVal(..)) as V
@@ -44,10 +45,10 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Int n) = text $ show n
    pretty (E.Str str) = text $ show str
    pretty (E.Var x) = text x
-   pretty E.True = text "true"
-   pretty E.False = text "false"
+   pretty E.True = text cTrue
+   pretty E.False = text cFalse
    pretty (E.Pair e e') = parens (pretty e :<>: text ", " :<>: pretty e')
-   pretty E.Nil = text "[]"
+   pretty E.Nil = text cNil
    pretty (E.Cons e e') = text "[" :<>: pretty e :<>: prettyList e' :<>: text "]"
    pretty (E.Op op) = parens $ text op
    pretty (E.Let (Def σ e) e') =
@@ -77,13 +78,13 @@ instance valPretty :: Pretty Val where
 instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
    pretty (V.Str str) = text $ show str
-   pretty V.True = text "True"
-   pretty V.False = text "False"
+   pretty V.True = text cTrue
+   pretty V.False = text cFalse
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
    pretty (V.Unary op) = parens $ pretty op
    pretty (V.Binary op) = parens $ pretty op
    pretty (V.Pair v v') = parens $ pretty v :<>: text ", " :<>: pretty v'
-   pretty V.Nil = text "[]"
+   pretty V.Nil = text cNil
    pretty (V.Cons v v') = text "[" :<>: pretty v :<>: prettyList v' :<>: text "]"
 
 instance unaryOpPretty :: Pretty UnaryOp where

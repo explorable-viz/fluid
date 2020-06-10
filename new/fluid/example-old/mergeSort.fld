@@ -1,29 +1,27 @@
-letrec
-   fun split {
+let
+   split {
       [] → ([], []);
       [x, ...xs] →
-         match split xs as
-            (ys, zs) → ([x, ...zs], ys)
+         let (ys, zs) = split xs;
+         ([x, ...zs], ys)
    };
 
-   fun merge xs ys →
+   merge xs ys →
       match (xs, ys) as {
-         ([], _) → ys;                               
-         ([x, ...xs'], []) → xs;                   
+         ([], _) → ys;
+         ([x, ...xs'], []) → xs;
          ([x, ...xs'], [y, ...ys']) →
-            match x < y as {
-               True → [x, ...merge xs' ys];
-               False → [y, ...merge xs ys']
-            }
+            if x < y
+            then [x, ...merge xs' ys];
+            else [y, ...merge xs ys']
       };
 
-   fun mergesort xs →
+   mergesort xs →
       match xs as {
          [] → xs;
          [x] → xs;
          [x, y, ..._] →
-            match split xs as 
+            match split xs as
                (ys, zs) → merge (mergesort ys) (mergesort zs)
-      }
-in
+      };
 mergesort [1, 2, 3]

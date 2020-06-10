@@ -1,17 +1,18 @@
 module Parse where
 
-import Prelude hiding (add, between, join)
+import Prelude hiding (absurd, add, between, join)
 import Control.Alt ((<|>))
-import Control.Lazy (defer, fix)
+import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
-import Data.Either (Either(..), choose)
-import Data.Foldable (notElem)
+import Data.Char.Unicode (isUpper)
+import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (many, groupBy, sortBy)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
+import Data.String.CodeUnits (charAt)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -25,7 +26,7 @@ import Bindings (Var)
 import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (PElim(..), join, singleBranch, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (fromBool)
+import Util (absurd, error, fromBool)
 
 type SParser = Parser String
 
@@ -46,30 +47,29 @@ strLet = "let" :: String
 strMatch = "match" :: String
 
 -- treat datatype-generically later
-cTrue = "True" :: String
 cFalse = "False" :: String
+cTrue = "True" :: String
+cNil = "Nil" :: String
+cCons = "Cons" :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
-   commentStart    = "{-",
-   commentEnd      = "-}",
-   commentLine     = "--",
-   nestedComments  = true,
-   identStart      = letter,
-   identLetter     = alphaNum <|> oneOf ['_', '\''],
-   opStart         = opChar,
-   opLetter        = opChar,
+   commentStart = "{-",
+   commentEnd = "-}",
+   commentLine = "--",
+   nestedComments = true,
+   identStart = letter,
+   identLetter = alphaNum <|> oneOf ['_', '\''],
+   opStart = opChar,
+   opLetter = opChar,
    reservedOpNames = [],
-   reservedNames   = [strAs, strFun, strLet, strMatch],
-   caseSensitive   = true
+   reservedNames = [strAs, strFun, strLet, strMatch],
+   caseSensitive = true
 } where
    opChar :: SParser Char
    opChar = oneOf [
       ':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~'
    ]
-
-constructors :: Array String
-constructors = [cTrue, cFalse]
 
 token :: TokenParser
 token = makeTokenParser languageDef
@@ -78,13 +78,23 @@ keyword ∷ String → SParser Unit
 keyword = token.reserved
 
 variable :: SParser Expr
-variable = ident <#> expr <<< Var
+variable = ident <#> Var >>> expr
 
--- Need to resolve constructors vs. variables (https://github.com/explorable-viz/fluid/issues/49)
+-- TODO: anonymous variables
+patternVariable :: SParser (PElim Unit)
+patternVariable = ident <#> flip PElimVar unit
+
+-- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
+-- for distinguishing pattern variables from nullary constructors when parsing patterns.
+isCtr ∷ String → Boolean
+isCtr str = case charAt 0 str of
+   Nothing -> error absurd
+   Just ch -> isUpper ch
+
 ident ∷ SParser Var
 ident = do
    x <- token.identifier
-   pureIf ("Unexpected constructor") (notElem x constructors) x
+   pureIf ("Unexpected constructor") (not (isCtr x)) x
 
 ctr :: String -> SParser String
 ctr c = do
@@ -108,22 +118,58 @@ string = token.stringLiteral <#> Str >>> expr
 true_ :: SParser Expr
 true_ = ctr cTrue <#> const (expr True)
 
+patternTrue :: SParser (PElim Unit)
+patternTrue = ctr cTrue <#> const (PElimTrue unit)
+
 false_ :: SParser Expr
 false_ = ctr cFalse <#> const (expr False)
 
-pair :: SParser Expr -> SParser Expr
-pair expr' = token.parens $ do
-   e1 <- expr'
-   token.comma *> expr' <#> Pair e1 >>> expr
+patternFalse :: SParser (PElim Unit)
+patternFalse = ctr cFalse <#> const (PElimFalse unit)
 
--- TODO: float, list
+nil :: SParser Expr
+nil = ctr cNil <#> const (expr Nil)
+
+patternNil :: SParser (PElim Unit)
+patternNil = ctr cNil <#> const (PElimNil unit)
+
+cons :: SParser Expr -> SParser Expr
+cons expr' = do
+   e <- ctr cCons *> simpleExpr expr'
+   simpleExpr expr' <#> Cons e >>> expr
+
+patternCons :: SParser (PElim Unit) -> SParser (PElim Unit)
+patternCons pattern' = do
+   σ <- ctr cCons *> simplePattern pattern'
+   simplePattern pattern' <#> const >>> (<#>) σ >>> PElimCons
+
+constr :: SParser Expr -> SParser Expr
+constr expr' =
+   try false_ <|>
+   try true_ <|>
+   try nil
+
+pair :: SParser Expr -> SParser Expr
+pair expr' =
+   token.parens $ do
+      e1 <- expr' <* token.comma
+      expr' <#> Pair e1 >>> expr
+
+patternPair :: SParser (PElim Unit) -> SParser (PElim Unit)
+patternPair pattern' =
+   token.parens $ do
+      σ <- pattern' <* token.comma
+      pattern' <#> const >>> (<#>) σ >>> PElimPair
+
+-- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
    try variable <|>
+   try true_ <|>
+   try false_ <|>
+   try nil <|>
    try int <|> -- int may start with +/-
    string <|>
-   try false_ <|>
-   try true_ <|>
    let_ expr' <|>
    letRec expr' <|>
    matchAs expr' <|>
@@ -131,6 +177,15 @@ simpleExpr expr' =
    try parensOp <|>
    pair expr' <|>
    lambda expr'
+
+simplePattern :: SParser (PElim Unit) -> SParser (PElim Unit)
+simplePattern pattern' =
+   try patternVariable <|>
+   try patternTrue <|>
+   try patternFalse <|>
+   try patternNil <|>
+   try (token.parens pattern') <|>
+   patternPair pattern'
 
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr
@@ -143,10 +198,24 @@ equals = token.reservedOp strEquals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser (Elim Expr)
-elim expr' nest =
-   pureMaybe "Incompatible or incomplete branches" =<<
-   (partialElim expr' nest (arrow <|> equals) <#> toElim) <|>
-   (token.braces $ sepBy1 (partialElim expr' nest arrow) token.semi <#> (join >=> toElim))
+elim expr' nest = elimSingle expr' nest <|> elimBraces expr' nest
+
+elimSingle :: SParser Expr -> Boolean -> SParser (Elim Expr)
+elimSingle expr' nest = do
+   σ <- partialElim expr' nest (arrow <|> equals)
+   case toElim σ of
+      Nothing -> error "Incomplete branches"
+      Just σ' -> pure σ'
+
+elimBraces :: SParser Expr -> Boolean -> SParser (Elim Expr)
+elimBraces expr' nest =
+   token.braces $ do
+      σs <- sepBy1 (partialElim expr' nest arrow) token.semi
+      case join σs of
+         Nothing -> error "Incompatible branches"
+         Just σ -> case toElim σ of
+            Nothing -> error "Incomplete branches"
+            Just σ' -> pure σ'
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = elim expr' true <#> Lambda >>> expr
@@ -154,42 +223,8 @@ nestedFun false _ = empty
 
 partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser (PElim Expr)
 partialElim expr' nest delim = do
-   mkElim <- pattern
-   (delim *> expr' <|> nestedFun nest expr') <#> mkElim
-
-type MkElimParser = forall k . SParser (k -> PElim k)
-
--- TODO: anonymous variables
-patternVar :: MkElimParser
-patternVar = ident <#> PElimVar
-
-patternPair :: MkElimParser -> MkElimParser
-patternPair pattern' = token.parens $ do
-   mkElim1 <- pattern' <* token.comma
-   mkElim2 <- pattern'
-   pure $ mkElim2 >>> mkElim1 >>> PElimPair
-
-patternTrue :: MkElimParser
-patternTrue = ctr cTrue <#> const PElimTrue
-
-patternFalse :: MkElimParser
-patternFalse = ctr cFalse <#> const PElimFalse
-
--- TODO: lists
-pattern :: MkElimParser
-pattern = fixParser (\p ->
-   try patternVar <|>
-   try patternTrue <|>
-   try patternFalse <|>
-   patternPair p
-)
-
--- fix isn't polymorphic enough
-fixParser :: (MkElimParser -> MkElimParser) -> MkElimParser
-fixParser f = x
-   where
-   -- type annotation and parentheses are essential :-o
-   x = (defer \_ -> f x) :: MkElimParser
+   σ <- pattern
+   (delim *> expr' <|> nestedFun nest expr') <#> const >>> (<#>) σ
 
 def :: SParser Expr -> SParser Def
 def expr' = do
@@ -235,10 +270,20 @@ backtick :: SParser Unit
 backtick = token.reservedOp "`"
 
 appChain ∷ SParser Expr -> SParser Expr
-appChain expr' = simpleExpr expr' >>= rest
+appChain expr' =
+   (simpleExpr expr' >>= rest) <|> cons expr'
    where
       rest ∷ Expr -> SParser Expr
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
+
+-- Singleton eliminator. Will be more similar to appChain when we have arbitrary data types.
+appChain_pattern :: SParser (PElim Unit) -> SParser (PElim Unit)
+appChain_pattern pattern' =
+   simplePattern pattern' <|> patternCons pattern'
+
+-- TODO: allow infix constructors, via buildExprParser
+pattern :: SParser (PElim Unit)
+pattern = fix appChain_pattern
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr

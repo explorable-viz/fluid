@@ -7,6 +7,8 @@ import Util (error, todo, toBool, (≟))
 import Data.Foldable
 import Data.Eq
 import Data.Maybe (Maybe(..))
+import Selected (class Lattice, bot, top, (∧?))
+import Util (MayFail, (≟))
 
 type Var = String
 
@@ -35,6 +37,7 @@ instance bindingsLattice :: Lattice a => Lattice (Bindings a) where
    maybeJoin xs ys          = Just $ union xs ys
    top       (xs :+: x ↦ v) = top xs :+:  x ↦ top v
    top       Empty          = Empty
+
    bot       (xs :+: x ↦ v) = bot xs :+:  x ↦ bot v
    bot       Empty          = Empty
 

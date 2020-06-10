@@ -1,7 +1,7 @@
 module Bwd where
 
-import Prelude (($), (<>), (==), append)
-import Bindings (Bindings(..), (:+:), (↦), ε, find, Var)
+import Prelude hiding (absurd, join)
+import Bindings ((:+:), (↦), ε, find)
 import Expr (Elim(..), Expr(..), RawExpr(..))
 import Selected
 import Util (T3(..), absurd, error, todo, successful, (≟), (≜))

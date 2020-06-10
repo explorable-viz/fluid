@@ -1,11 +1,11 @@
 module PElim where
 
-import Prelude hiding (join)
+import Prelude hiding (absurd, join)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Bindings (Var)
 import Expr (Expr, Elim(..))
-
+import Util ((≟), absurd, error)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
 data PElim k =
@@ -38,12 +38,10 @@ instance exprJoinable :: Joinable Expr where
 instance pElimJoinable :: Joinable k => Joinable (PElim k) where
    join Nil = Nothing
    join (b : Nil) = Just b
-   join (PElimVar x κ : PElimVar x' κ' : bs) =
-      if x == x'
-      then do
-         κ'' <- join (κ : κ' : Nil)
-         join $ PElimVar x κ'' : bs
-      else Nothing
+   join (PElimVar x κ : PElimVar x' κ' : bs) = do
+      x'' <- x ≟ x'
+      κ'' <- join (κ : κ' : Nil)
+      join $ PElimVar x κ'' : bs
    join (PElimTrue κ : PElimTrue κ' : bs) = do
       κ'' <- join (κ : κ' : Nil)
       join $ PElimTrue κ'' : bs
@@ -60,10 +58,8 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
    join (PElimBool { true: κ1, false: κ2 } : PElimFalse κ2' : bs) = do
       κ2'' <- join (κ2 : κ2' : Nil)
       join $ PElimBool { true: κ1, false: κ2'' } : bs
-   join (PElimBool { true: κ1, false: κ2 } : PElimBool { true: κ1', false: κ2' } : bs) = do
-      κ1'' <- join (κ1 : κ1' : Nil)
-      κ2'' <- join (κ2 : κ2' : Nil)
-      join $ PElimBool { true: κ1'', false: κ2'' } : bs
+   join (_ : PElimBool { true: κ1', false: κ2' } : bs) =
+      error absurd
    join (PElimPair σ : PElimPair σ' : bs) = do
       σ'' <- join (σ : σ' : Nil)
       join $ PElimPair σ'' : bs
@@ -77,11 +73,15 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
       join $ PElimList { nil: κ, cons: σ } : bs
    join (PElimCons σ : PElimNil κ : bs) =
       join $ PElimList { nil: κ, cons: σ } : bs
-   join (PElimList { nil: κ, cons: σ } : PElimList { nil: κ', cons: σ' } : bs) = do
+   join (PElimList { nil: κ, cons: σ } : PElimNil κ' : bs) = do
       κ'' <- join (κ : κ' : Nil)
+      join $ PElimList { nil: κ'', cons: σ } : bs
+   join (PElimList { nil: κ, cons: σ } : PElimCons σ' : bs) = do
       σ'' <- join (σ : σ' : Nil)
-      join $ PElimList { nil: κ'', cons: σ'' } : bs
-   join _ = Nothing
+      join $ PElimList { nil: κ, cons: σ'' } : bs
+   join (_ : PElimList { nil: κ', cons: σ } : bs) =
+      error absurd
+   join (σ : τ : _) = Nothing
 
 toElim :: forall k . PElim k -> Maybe (Elim k)
 toElim (PElimVar x κ) = Just $ ElimVar x κ
