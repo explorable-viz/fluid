@@ -55,7 +55,7 @@ data RawExpr =
 data Expr = Expr Selected RawExpr
 
 expr :: RawExpr -> Expr
-expr = Expr FF
+expr = Expr false
 
 instance rawExprLattice :: Lattice RawExpr where
    maybeJoin (Var x) (Var x') = Var <$> x ≟ x'
@@ -117,7 +117,7 @@ instance rawExprLattice :: Lattice RawExpr where
 instance exprLattice :: Lattice Expr where
    maybeJoin (Expr α e) (Expr α' e') = Expr <$> α ∨? α' <*> e ∨? e'
    maybeMeet (Expr α e) (Expr α' e') = Expr <$> α ∧? α' <*> e ∧? e'
-   top (Expr _ r) = Expr TT r
-   bot (Expr _ r) = Expr FF r
+   top (Expr _ r) = Expr true r
+   bot (Expr _ r) = Expr false r
 
 data Module = Module (List (Either Def RecDefs))

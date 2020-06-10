@@ -1,9 +1,8 @@
 module Elim where
 
 import Prelude hiding (top)
-import Data.Maybe (Maybe(..))
 import Bindings (Var)
-import Lattice (class Lattice, class Selectable, (∧?), (∨?), bot, mapα, top)
+import Lattice (class Selectable, (∧?), mapα, maybeZipWithα)
 import Util (error, (≟))
 
 data Elim k =
@@ -24,7 +23,15 @@ instance elimSelectable :: Selectable k => Selectable (Elim k) where
    mapα f (ElimPair σ)                        = ElimPair $ map (mapα f) σ
    mapα f (ElimList { nil: κ, cons: σ })      = ElimList { nil: mapα f κ, cons: map (mapα f) σ }
 
-   maybeZipWithα = error "todo"
+   maybeZipWithα f (ElimVar x κ) (ElimVar x' κ') =
+      ElimVar <$> x ≟ x' <*> κ ∧? κ'
+   maybeZipWithα f (ElimBool { true : κ1, false : κ2 }) (ElimBool { true : κ1', false : κ2' }) =
+      (\κ κ' -> ElimBool { true : κ, false : κ' }) <$> maybeZipWithα f κ1 κ1' <*> maybeZipWithα f κ2 κ2'
+   maybeZipWithα f (ElimPair σ) (ElimPair σ') =
+      ElimPair <$> maybeZipWithα f σ σ'
+   maybeZipWithα f (ElimList { nil: κ1, cons: σ1 }) (ElimList { nil: κ2, cons: σ2 }) =
+      (\κ σ -> ElimList { nil: κ, cons: σ }) <$> maybeZipWithα f κ1 κ2 <*> maybeZipWithα f σ1 σ2
+   maybeZipWithα _ _ _ = error "todo"
 
 {-
 instance elimLattice :: Lattice k => Lattice (Elim k) where
