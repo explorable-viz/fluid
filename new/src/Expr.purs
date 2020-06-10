@@ -4,10 +4,10 @@ import Prelude hiding (top)
 import Bindings (Var)
 import Data.List (List)
 import Data.Either (Either)
+import Data.Maybe (Maybe(..))
 import Elim (Elim)
 import Lattice (class Lattice, Selected(..), (∧?), (∨?), top, bot)
-import Util ((≟))
-import Data.Maybe (Maybe(..))
+import Util ((≟), error, todo)
 
 data Def = Def (Elim Unit) Expr
 data RecDef = RecDef Var (Elim Expr)
