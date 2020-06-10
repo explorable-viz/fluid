@@ -82,8 +82,7 @@ instance rawExprLattice :: Lattice RawExpr where
    maybeJoin (Let def e) (Let def' e') =
       Let <$> def ∨? def' <*> e ∨? e'
    maybeJoin (LetRec rdefs e) (LetRec rdefs' e') =
-      error todo
-      -- LetRec <$> rdefs
+      LetRec <$> rdefs ∨? rdefs <*> e ∨? e'
    maybeJoin _ _ = Nothing
 
    maybeMeet (Var x) (Var x') = Var <$> x ≟ x'
@@ -97,6 +96,18 @@ instance rawExprLattice :: Lattice RawExpr where
    maybeMeet (Pair e1 e2) (Pair e1' e2') = Pair <$> e1 ∧? e1' <*> e2 ∧? e2'
    maybeMeet Nil Nil                     = pure Nil
    maybeMeet (Cons e1 e2) (Cons e1' e2') = Cons <$> e1 ∧? e1' <*> e2 ∧? e2'
+   maybeMeet (Lambda σ) (Lambda σ') =
+      Lambda <$> σ ∧? σ'
+   maybeMeet (App e1 e1') (App e2 e2') =
+      App <$> e1 ∧? e1' <*> e2 ∧? e2'
+   maybeMeet (BinaryApp e1 op1 e1') (BinaryApp e2 op2 e2') =
+      BinaryApp <$> e1 ∧? e1' <*> op1 ≟ op2 <*> e2 ∧? e2'
+   maybeMeet (MatchAs e σ) (MatchAs e' σ') =
+      MatchAs <$> e ∧? e' <*> σ ∧? σ'
+   maybeMeet (Let def e) (Let def' e') =
+      Let <$> def ∧? def' <*> e ∧? e'
+   maybeMeet (LetRec rdefs e) (LetRec rdefs' e') =
+      LetRec <$> rdefs ∧? rdefs <*> e ∧? e'
    maybeMeet _ _                         = Nothing
 
    top (Pair e e')            = Pair (top e) (top e')
