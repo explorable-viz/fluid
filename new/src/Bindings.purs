@@ -45,4 +45,4 @@ update :: forall a . Lattice a => Var -> a -> Bindings a -> Bindings a
 update x' v' (xs :+: x ↦ v)
    | x == x'    = xs :+: x' ↦ v'
    | otherwise  = (update x' v' xs) :+: x ↦ v
-update x' v' Empty = ε :+: x' ↦ v'
+update x' v' Empty = Empty
