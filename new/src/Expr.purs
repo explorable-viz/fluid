@@ -4,6 +4,7 @@ import Prelude hiding (top)
 import Bindings (Var)
 import Data.List (List)
 import Data.Either (Either)
+import Elim (Elim)
 import Lattice (class Lattice, Selected(..), (∧?), (∨?), top, bot)
 import Util ((≟))
 import Data.Maybe (Maybe(..))
@@ -110,56 +111,5 @@ instance exprLattice :: Lattice Expr where
    maybeMeet (Expr α e) (Expr α' e') = Expr <$> α ∧? α' <*> e ∧? e'
    top (Expr _ r) = Expr TT r
    bot (Expr _ r) = Expr FF r
-
-data Elim k =
-   ElimVar Var k |
-   ElimBool { true :: k, false :: k } |
-   ElimPair (Elim (Elim k)) |
-   ElimList { nil :: k, cons :: Elim (Elim k) }
-
-instance elimFunctor :: Functor Elim where
-   map f (ElimVar x κ)                       = ElimVar x (f κ)
-   map f (ElimBool { true: κ, false: κ' })   = ElimBool { true: f κ, false: f κ' }
-   map f (ElimPair σ)                        = ElimPair $ ((<$>) f) <$> σ
-   map f (ElimList { nil: κ, cons: σ })      = ElimList { nil: f κ, cons: ((<$>) f) <$> σ }
-
-instance elimLattice :: Lattice k => Lattice (Elim k) where
-   maybeMeet (ElimVar x κ) (ElimVar x' κ') =
-      ElimVar <$> x ≟ x' <*> κ ∧? κ'
-   maybeMeet (ElimBool { true : κ1, false : κ2 }) (ElimBool { true : κ1', false : κ2' }) =
-      (\κ κ' -> ElimBool { true : κ, false : κ' }) <$> κ1 ∧? κ1' <*> κ2 ∧? κ2'
-   maybeMeet (ElimPair σ) (ElimPair σ') =
-      ElimPair <$> σ ∧? σ'
-   maybeMeet (ElimList { nil: κ1, cons: σ1 }) (ElimList { nil: κ2, cons: σ2 }) =
-      (\κ σ -> ElimList { nil: κ, cons: σ }) <$> κ1 ∧? κ2 <*> σ1 ∧? σ2
-   maybeMeet _ _ = Nothing
-
-   maybeJoin (ElimVar x κ) (ElimVar x' κ') =
-      ElimVar <$> x ≟ x' <*> κ ∨? κ'
-   maybeJoin (ElimBool { true : κ1, false : κ2 }) (ElimBool { true : κ1', false : κ2' }) =
-      (\κ κ' -> ElimBool { true : κ, false : κ' }) <$> κ1 ∨? κ1' <*> κ2 ∨? κ2'
-   maybeJoin (ElimPair σ) (ElimPair σ') =
-      ElimPair <$> σ ∨? σ'
-   maybeJoin (ElimList { nil: κ1, cons: σ1 }) (ElimList { nil: κ2, cons: σ2 }) =
-      (\κ σ -> ElimList { nil: κ, cons: σ }) <$> κ1 ∨? κ2 <*> σ1 ∨? σ2
-   maybeJoin _ _ = Nothing
-
-   bot (ElimVar x κ) =
-      ElimVar x (bot κ)
-   bot (ElimBool { true : κ1, false : κ2 }) =
-      (ElimBool { true : bot κ1, false : bot κ2 })
-   bot (ElimPair σ) =
-      ElimPair (bot σ)
-   bot (ElimList { nil: κ, cons: σ }) =
-      ElimList { nil: bot κ, cons: bot σ}
-
-   top (ElimVar x κ) =
-      ElimVar x (top κ)
-   top (ElimBool { true : κ1, false : κ2 }) =
-      (ElimBool { true : top κ1, false : top κ2 })
-   top (ElimPair σ) =
-      ElimPair (top σ)
-   top (ElimList { nil: κ, cons: σ }) =
-      ElimList { nil: top κ, cons: top σ}
 
 data Module = Module (List (Either Def RecDefs))

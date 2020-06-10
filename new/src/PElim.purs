@@ -4,7 +4,8 @@ import Prelude hiding (absurd, join)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Bindings (Var)
-import Expr (Expr, Elim(..))
+import Elim (Elim(..))
+import Expr (Expr)
 import Util ((≟), absurd, error)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.

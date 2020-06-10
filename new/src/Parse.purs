@@ -23,7 +23,8 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import Elim (Elim)
+import Expr (Def(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (PElim(..), join, singleBranch, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool)
