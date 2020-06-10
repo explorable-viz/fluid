@@ -3,8 +3,8 @@ module Elim where
 import Prelude hiding (top)
 import Data.Maybe (Maybe(..))
 import Bindings (Var)
-import Lattice (class Lattice, (∧?), (∨?), bot, top)
-import Util ((≟))
+import Lattice (class Lattice, class Selectable, (∧?), (∨?), bot, mapα, top)
+import Util (error, (≟))
 
 data Elim k =
    ElimVar Var k |
@@ -18,6 +18,15 @@ instance elimFunctor :: Functor Elim where
    map f (ElimPair σ)                        = ElimPair $ map (map f) σ
    map f (ElimList { nil: κ, cons: σ })      = ElimList { nil: f κ, cons: map (map f) σ }
 
+instance elimSelectable :: Selectable k => Selectable (Elim k) where
+   mapα f (ElimVar x κ) = ElimVar x (mapα f κ)
+   mapα f (ElimBool { true: κ, false: κ' })   = ElimBool { true: mapα f κ, false: mapα f κ' }
+   mapα f (ElimPair σ)                        = ElimPair $ map (mapα f) σ
+   mapα f (ElimList { nil: κ, cons: σ })      = ElimList { nil: mapα f κ, cons: map (mapα f) σ }
+
+   maybeZipWithα = error "todo"
+
+{-
 instance elimLattice :: Lattice k => Lattice (Elim k) where
    maybeMeet (ElimVar x κ) (ElimVar x' κ') = do
       x'' <- x ≟ x'
@@ -70,3 +79,4 @@ instance elimLattice :: Lattice k => Lattice (Elim k) where
       = ElimPair (top σ)
    top (ElimList { nil: κ, cons: σ })
       = ElimList { nil: top κ, cons: top σ}
+-}
