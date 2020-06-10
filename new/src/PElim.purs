@@ -101,6 +101,7 @@ singleBranch (ElimVar x κ) = Just κ
 singleBranch (ElimPair σ) = singleBranch σ >>= singleBranch
 singleBranch _ = Nothing
 
+-- TODO: provide a Traversable instance for PElim; then this is sequence.
 hoistMaybe :: forall k . PElim (Maybe k) -> Maybe (PElim k)
 hoistMaybe (PElimVar x (Just κ)) = Just $ PElimVar x κ
 hoistMaybe (PElimTrue (Just κ)) = Just $ PElimTrue κ
