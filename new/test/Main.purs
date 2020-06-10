@@ -24,7 +24,7 @@ runExample file expected = runMocha $
          case eval ρ' e of
             Left msg -> error msg
             Right (ExplVal _ (Val _ u)) -> do
-               let (Val _ u') = eval_fwd ρ' e Top
+               let (Val _ u') = eval_fwd ρ' e TT
                (render $ pretty u) `shouldEqual` (render $ pretty u')
                (render $ pretty u') `shouldEqual` expected
 

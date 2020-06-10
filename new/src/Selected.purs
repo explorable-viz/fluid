@@ -2,8 +2,7 @@ module Selected where
 
 import Prelude hiding (absurd, join)
 import Data.Maybe (Maybe(..))
-import Util (error, absurd)
-
+import Util (fromJust)
 
 class Lattice a where
    maybeMeet   :: a -> a -> Maybe a
@@ -11,13 +10,11 @@ class Lattice a where
    top         :: a -> a
    bot         :: a -> a
 
-join :: forall a. Lattice a => a -> a -> a
-join p q = case p ∨? q of Just r   -> r
-                          Nothing  -> error absurd
+join :: forall a . Lattice a => a -> a -> a
+join p q = fromJust $ p ∨? q
 
-meet :: forall a. Lattice a => a -> a -> a
-meet p q = case p ∧? q of Just r   -> r
-                          Nothing  -> error absurd
+meet :: forall a . Lattice a => a -> a -> a
+meet p q = fromJust $ p ∧? q
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
@@ -25,17 +22,17 @@ infixl 6 join as ∨
 infix 7 maybeMeet as ∧?
 infix 6 maybeJoin as ∨?
 
-data Selected = Top | Bot -- maybe tt, ff would be better
+data Selected = TT | FF -- maybe tt, ff would be better
 
 derive instance eqSelected :: Eq Selected
 
 instance latticeSelected :: Lattice Selected where
-   maybeMeet Top Top = Just Top
-   maybeMeet _ _     = Just Bot
-   maybeJoin Bot Bot = Just Bot
-   maybeJoin _ _     = Just Top
-   top _ = Top
-   bot _ = Bot
+   maybeMeet TT TT = Just TT
+   maybeMeet _ _   = Just FF
+   maybeJoin FF FF = Just FF
+   maybeJoin _ _     = Just TT
+   top _ = TT
+   bot _ = FF
 
 instance unitLattice :: Lattice Unit where
    maybeMeet _ _ = pure unit

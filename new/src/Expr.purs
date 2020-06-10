@@ -8,7 +8,7 @@ import Data.Either (Either)
 import Data.Unit
 import Control.Bind ((>>=))
 import Selected
-import Util (absurd, error, (≟), mayEq)
+import Util ((≟))
 import Data.Maybe (Maybe(..))
 
 data Def = Def (Elim Unit) Expr
@@ -60,7 +60,7 @@ data RawExpr =
 data Expr = Expr Selected RawExpr
 
 expr :: RawExpr -> Expr
-expr = Expr Bot
+expr = Expr FF
 
 instance rawExprLattice :: Lattice RawExpr where
    maybeJoin (Var x) (Var x') = do
@@ -146,8 +146,8 @@ instance exprLattice :: Lattice Expr where
       α'' <- α ∧? α'
       e'' <- e ∧? e'
       pure (Expr α'' e'')
-   top (Expr _ r) = Expr Top r
-   bot (Expr _ r) = Expr Bot r
+   top (Expr _ r) = Expr TT r
+   bot (Expr _ r) = Expr FF r
 
 data Elim k =
    ElimVar Var k |
