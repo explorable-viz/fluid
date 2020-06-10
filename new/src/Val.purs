@@ -40,20 +40,20 @@ val = Val false
 type Env = Bindings Val
 
 instance selectableVal :: Selectable Val where
-   mapα f (Val α u) = Val (f α) u
-   maybeZipWithα f (Val α r) (Val α' r') = Val <$> pure (α `f` α') <*> maybeZipWithα f r r'
+   mapα f (Val α u)                       = Val (f α) u
+   maybeZipWithα f (Val α r) (Val α' r')  = Val <$> pure (α `f` α') <*> maybeZipWithα f r r'
 
 instance selectableRawVal :: Selectable RawVal where
-   mapα _ (Int x) = Int x
-   mapα _ (Str s) = Str s
-   mapα _ False = False
-   mapα _ True = True
-   mapα _ Nil = Nil
-   mapα f (Cons e1 e2) = Cons (mapα f e1) (mapα f e2)
-   mapα f (Pair e1 e2) = Pair (mapα f e1) (mapα f e2)
-   mapα f (Closure ρ δ σ) = error "todo"
-   mapα f (Binary φ) = error "todo"
-   mapα f (Unary φ) = error "todo"
+   mapα _ (Int x)          = Int x
+   mapα _ (Str s)          = Str s
+   mapα _ False            = False
+   mapα _ True             = True
+   mapα _ Nil              = Nil
+   mapα f (Cons e1 e2)     = Cons (mapα f e1) (mapα f e2)
+   mapα f (Pair e1 e2)     = Pair (mapα f e1) (mapα f e2)
+   mapα f (Closure ρ δ σ)  = Closure (mapα f ρ) (map (mapα f) δ) (mapα f σ)
+   mapα f (Binary φ)       = error "todo"
+   mapα f (Unary φ)        = error "todo"
 
    maybeZipWithα f (Int x) (Int x') = x ≟ x' <#> Int
    maybeZipWithα f (Str s) (Str s') = s ≟ s' <#> Str

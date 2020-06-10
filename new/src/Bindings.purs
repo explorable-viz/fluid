@@ -29,36 +29,13 @@ instance bindingsMonoid :: Monoid (Bindings a) where
    mempty = ε
 
 instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
-   mapα _ Empty = Empty
-   mapα f (Extend m (x ↦ v)) = Extend (mapα f m) (x ↦ mapα f v)
+   mapα _ Empty               = Empty
+   mapα f (Extend m (x ↦ v))  = Extend (mapα f m) (x ↦ mapα f v)
 
-   maybeZipWithα _ Empty Empty = pure Empty
-   maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v')) =
+   maybeZipWithα _ Empty Empty                              = pure Empty
+   maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))  =
       Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
-   maybeZipWithα _ _ _ = Nothing
-{-
-instance bindingsLattice :: Lattice a => Lattice (Bindings a) where
-   maybeMeet (xs :+: x ↦ vx) (ys :+: y ↦ vy) = do
-      z  <- x ≟ y
-      vz <- vx ∧? vy
-      zs <- xs ∧? ys
-      pure (zs :+: z ↦ vz)
-   maybeMeet Empty Empty    = pure Empty
-   maybeMeet _     Empty    = Nothing
-   maybeMeet Empty _        = Nothing
-   maybeJoin (xs :+: x ↦ vx) (ys :+: y ↦ vy) = do
-      z  <- x ≟ y
-      vz <- vx ∨? vy
-      zs <- xs ∨? ys
-      pure (zs :+: z ↦ vz)
-   maybeJoin Empty Empty    = pure Empty
-   maybeJoin _     Empty    = Nothing
-   maybeJoin Empty _        = Nothing
-   top       (xs :+: x ↦ v) = top xs :+:  x ↦ top v
-   top       Empty          = Empty
-   bot       (xs :+: x ↦ v) = bot xs :+:  x ↦ bot v
-   bot       Empty          = Empty
--}
+   maybeZipWithα _ _ _                                      = Nothing
 
 find :: forall a . Var -> Bindings a -> Either String a
 find x' Empty          = Left $ "variable " <> x' <> " not found"
@@ -69,24 +46,3 @@ update x' v' (xs :+: x ↦ v)
    | x == x'    = xs :+: x' ↦ v'
    | otherwise  = (update x' v' xs) :+: x ↦ v
 update x' v' Empty = ε :+: x' ↦ v'
-
--- instance listLattice :: Lattice a => Lattice (List a) where
---    maybeMeet (x:xs) (y:ys) = do
---       z  <- x  ∧? y
---       zs <- xs ∧? ys
---       pure (z:zs)
---    maybeMeet Empty Empty    = pure Empty
---    maybeMeet _     Empty    = Nothing
---    maybeMeet Empty _        = Nothing
---    maybeJoin (xs :+: x ↦ vx) (ys :+: y ↦ vy) = do
---       z  <- x ≟ y
---       vz <- vx ∨? vy
---       zs <- xs ∨? ys
---       pure (zs :+: z ↦ vz)
---    maybeJoin Empty Empty    = pure Empty
---    maybeJoin _     Empty    = Nothing
---    maybeJoin Empty _        = Nothing
---    top       (xs :+: x ↦ v) = top xs :+:  x ↦ top v
---    top       Empty          = Empty
---    bot       (xs :+: x ↦ v) = bot xs :+:  x ↦ bot v
---    bot       Empty          = Empty

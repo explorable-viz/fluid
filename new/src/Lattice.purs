@@ -24,22 +24,6 @@ infix 6 maybeJoin as ∨?
 
 type Selected = Boolean
 
-{-
-instance latticeSelected :: Lattice Selected where
-   maybeMeet TT TT = Just TT
-   maybeMeet _ _   = Just FF
-   maybeJoin FF FF = Just FF
-   maybeJoin _ _   = Just TT
-   top _ = TT
-   bot _ = FF
-
-instance unitLattice :: Lattice Unit where
-   maybeMeet _ _ = pure unit
-   maybeJoin _ _ = pure unit
-   top _ = unit
-   bot _ = unit
--}
-
 class Selectable a where
    mapα :: (Selected -> Selected) -> a -> a
    maybeZipWithα :: (Selected -> Selected -> Selected) -> a -> a -> Maybe a
@@ -51,9 +35,9 @@ instance selectableLattice :: Selectable a => Lattice a where
    bot = mapα (const false)
 
 instance booleanSelectable :: Selectable Boolean where
-   mapα f = f
+   mapα = identity
    maybeZipWithα op α α' = pure $ α `op` α'
 
 instance unitSelectable :: Selectable Unit where
-   mapα f = identity
-   maybeZipWithα φ _ _ = pure unit
+   mapα _ = identity
+   maybeZipWithα _ _ _ = pure unit

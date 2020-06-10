@@ -1,6 +1,6 @@
 module Util where
 
-import Prelude
+import Prelude hiding (absurd)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect.Exception (throw)
@@ -42,5 +42,4 @@ mustEq :: forall a . Eq a => a -> a -> a
 mustEq x x' = if x == x' then x else error absurd
 
 infixl 5 mayEq as ≟
-
 infixl 5 mustEq as ≜
