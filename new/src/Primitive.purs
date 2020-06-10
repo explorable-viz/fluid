@@ -1,12 +1,12 @@
 module Primitive where
 
 import Prelude hiding (apply)
-import Bindings (Var, ε, (:+:), (↦))
-import Selected (Selected, (∧))
-import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Unary(..), UnaryOp(..), Val(..), val)
 import Data.Foldable (foldl)
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
+import Bindings (Var, ε, (:+:), (↦))
+import Lattice (Selected, (∧))
+import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Unary(..), UnaryOp(..), Val(..), val)
 import Util (error)
 
 -- name in user land and precedence 0 to 9, similar to Haskell 98

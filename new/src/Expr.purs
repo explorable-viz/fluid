@@ -1,20 +1,16 @@
 module Expr where
 
-
-import Prelude (class Functor, Unit, map, ($), (<$>), (<<<), bind, pure)
+import Prelude hiding (top)
 import Bindings (Var)
 import Data.List (List)
 import Data.Either (Either)
-import Data.Unit
-import Control.Bind ((>>=))
-import Selected
+import Lattice (class Lattice, Selected(..), (∧?), (∨?), top, bot)
 import Util ((≟))
 import Data.Maybe (Maybe(..))
 
 data Def = Def (Elim Unit) Expr
 data RecDef = RecDef Var (Elim Expr)
 type RecDefs = List RecDef
-
 
 instance defLattice :: Lattice Def where
    maybeMeet (Def σ e) (Def σ' e') = do
@@ -39,8 +35,6 @@ instance recDefLattice :: Lattice RecDef where
       pure (RecDef x'' σ'')
    top (RecDef x σ) = RecDef x (top σ)
    bot (RecDef x σ) = RecDef x (bot σ)
-
-
 
 data RawExpr =
    Var Var |

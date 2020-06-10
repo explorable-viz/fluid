@@ -1,4 +1,4 @@
-module Selected where
+module Lattice where
 
 import Prelude hiding (absurd, join)
 import Data.Maybe (Maybe(..))
