@@ -45,37 +45,23 @@ instance rawValLattice :: Lattice RawVal where
    maybeJoin False False = pure False
    maybeJoin True True = pure True
    maybeJoin Nil Nil = pure Nil
-   maybeJoin (Cons e1 e2) (Cons e1' e2') = do
-      e <- e1 ∨? e1'
-      e2' ∨? e2' <#> Cons e
-   maybeJoin (Pair e1 e2) (Pair e1' e2') = do
-      e <- e1 ∨? e1'
-      e2 ∨? e2' <#> Pair e
-   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') =
-      error "todo"
-   maybeJoin (Binary φ) (Binary φ') =
-      error "todo"
-   maybeJoin (Unary φ) (Unary φ') =
-      error "todo"
+   maybeJoin (Cons e1 e2) (Cons e1' e2') = Cons <$> e1 ∨? e1' <*> e2' ∨? e2'
+   maybeJoin (Pair e1 e2) (Pair e1' e2') = Pair <$> e1 ∨? e1' <*> e2 ∨? e2'
+   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') = error "todo"
+   maybeJoin (Binary φ) (Binary φ') = error "todo"
+   maybeJoin (Unary φ) (Unary φ') = error "todo"
    maybeJoin _ _ = Nothing
 
-   maybeMeet (Int x) (Int x') = x ≟ x' <#> Int
-   maybeMeet (Str s) (Str s') = s ≟ s' <#> Str
+   maybeMeet (Int x) (Int x') = Int <$> x ≟ x'
+   maybeMeet (Str s) (Str s') = Str <$> s ≟ s'
    maybeMeet False False = pure False
    maybeMeet True True = pure True
    maybeMeet Nil Nil = pure Nil
-   maybeMeet (Cons e1 e2) (Cons e1' e2') = do
-      e <- e1 ∨? e1'
-      e2' ∧? e2' <#> Cons e
-   maybeMeet (Pair e1 e2) (Pair e1' e2') = do
-      e <- e1 ∨? e1'
-      e2 ∧? e2' <#> Pair e
-   maybeMeet (Closure ρ δ σ) (Closure ρ' δ' σ') =
-      error "todo"
-   maybeMeet (Binary φ) (Binary φ') =
-      error "todo"
-   maybeMeet (Unary φ) (Unary φ') =
-      error "todo"
+   maybeMeet (Cons e1 e2) (Cons e1' e2') = Cons <$> e1 ∨? e1' <*> e2' ∧? e2'
+   maybeMeet (Pair e1 e2) (Pair e1' e2') = Pair <$> e1 ∨? e1' <*> e2 ∧? e2'
+   maybeMeet (Closure ρ δ σ) (Closure ρ' δ' σ') = error "todo"
+   maybeMeet (Binary φ) (Binary φ') = error "todo"
+   maybeMeet (Unary φ) (Unary φ') = error "todo"
    maybeMeet _ _ = Nothing
 
    top (Int x) = Int x
