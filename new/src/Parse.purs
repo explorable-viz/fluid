@@ -236,23 +236,18 @@ let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')
 
 recDef :: SParser Expr -> SParser RecDef
-recDef expr' = do
-   f <- ident
-   (elim expr' true <#> RecDef f) <* token.semi
+recDef expr' = RecDef <$> ident <*> (elim expr' true <* token.semi)
 
 recDefs :: SParser Expr -> SParser RecDefs
-recDefs expr' =
-   keyword strLet *> many (try $ recDef expr')
+recDefs expr' = keyword strLet *> many (try $ recDef expr')
 
 letRec :: SParser Expr -> SParser Expr
-letRec expr' = do
-   δ <- recDefs expr'
-   expr' <#> LetRec δ >>> expr
+letRec expr' = expr <$>
+   (LetRec <$> recDefs expr' <*> expr')
 
 matchAs :: SParser Expr -> SParser Expr
-matchAs expr' = do
-   e <- keyword strMatch *> expr' <* keyword strAs
-   elim expr' false <#> MatchAs e >>> expr
+matchAs expr' = expr <$>
+   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim expr' false)
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
