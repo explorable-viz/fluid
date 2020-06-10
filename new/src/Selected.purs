@@ -4,6 +4,7 @@ import Prelude hiding (join)
 import Util (error, absurd)
 import Data.Maybe (Maybe(..))
 
+
 class Lattice a where
    maybeMeet   :: a -> a -> Maybe a
    maybeJoin   :: a -> a -> Maybe a
@@ -35,3 +36,9 @@ instance latticeSelected :: Lattice Selected where
    maybeJoin _ _     = Just Top
    top _ = Top
    bot _ = Bot
+
+instance unitLattice :: Lattice Unit where
+   maybeMeet _ _ = pure unit
+   maybeJoin _ _ = pure unit
+   top _ = unit
+   bot _ = unit

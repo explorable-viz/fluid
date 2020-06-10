@@ -5,6 +5,7 @@ import Prelude (class Functor, Unit, map, ($), (<$>), (<<<), bind, pure)
 import Bindings (Var)
 import Data.List (List)
 import Data.Either (Either)
+import Data.Unit
 import Control.Bind ((>>=))
 import Selected
 import Util (absurd, error, (≟), mayEq)
@@ -13,6 +14,33 @@ import Data.Maybe (Maybe(..))
 data Def = Def (Elim Unit) Expr
 data RecDef = RecDef Var (Elim Expr)
 type RecDefs = List RecDef
+
+
+instance defLattice :: Lattice Def where
+   maybeMeet (Def σ e) (Def σ' e') = do
+      σ'' <- σ ∧? σ'
+      e'' <- e ∧? e'
+      pure (Def σ'' e'')
+   maybeJoin (Def σ e) (Def σ' e') = do
+      σ'' <- σ ∨? σ'
+      e'' <- e ∨? e'
+      pure (Def σ'' e'')
+   top (Def σ e) = Def (top σ) (top e)
+   bot (Def σ e) = Def (bot σ) (bot e)
+
+instance recDefLattice :: Lattice RecDef where
+   maybeMeet (RecDef x σ) (RecDef x' σ') = do
+      x'' <- x ≟ x'
+      σ'' <- σ ∧? σ'
+      pure (RecDef x'' σ'')
+   maybeJoin (RecDef x σ) (RecDef x' σ') = do
+      x'' <- x ≟ x'
+      σ'' <- σ ∨? σ'
+      pure (RecDef x'' σ'')
+   top (RecDef x σ) = RecDef x (top σ)
+   bot (RecDef x σ) = RecDef x (bot σ)
+
+
 
 data RawExpr =
    Var Var |
@@ -33,7 +61,6 @@ data Expr = Expr Selected RawExpr
 
 expr :: RawExpr -> Expr
 expr = Expr Bot
-
 
 instance rawExprLattice :: Lattice RawExpr where
    maybeJoin (Var x) (Var x') = do
@@ -90,8 +117,25 @@ instance rawExprLattice :: Lattice RawExpr where
       pure (Cons e e')
    maybeMeet _ _ = Nothing
 
-   top e = e
-   bot e = e
+   top (Pair e e')            = Pair (top e) (top e')
+   top (Cons e e')            = Cons (top e) (top e')
+   top (Lambda σ)             = Lambda (top σ)
+   top (App e e')             = App (top e) (top e')
+   top (BinaryApp e binop e') = BinaryApp (top e) binop (top e')
+   top (MatchAs e σ)          = MatchAs (top e) (top σ)
+   top (Let def e)            = Let (top def) (top e)
+   top (LetRec rdefs e)       = LetRec (map top rdefs) (top e)
+   top e                      = e
+
+   bot (Pair e e')            = Pair (bot e) (bot e')
+   bot (Cons e e')            = Cons (bot e) (bot e')
+   bot (Lambda σ)             = Lambda (bot σ)
+   bot (App e e')             = App (bot e) (bot e')
+   bot (BinaryApp e binop e') = BinaryApp (bot e) binop (bot e')
+   bot (MatchAs e σ)          = MatchAs (bot e) (bot σ)
+   bot (Let def e)            = Let (bot def) (bot e)
+   bot (LetRec rdefs e)       = LetRec (map bot rdefs) (bot e)
+   bot e                      = e
 
 instance exprLattice :: Lattice Expr where
    maybeJoin (Expr α e) (Expr α' e') = do
@@ -133,22 +177,22 @@ instance elimLattice :: Lattice k => Lattice (Elim k) where
       σ <- maybeσ
       pure $ ElimList { nil: κ, cons: σ }
       where
-         maybeσ = case σ1, σ2 of
-                        ElimVar x κ, ElimVar x' κ' -> do
-                           x'' <- x ≟ x'
-                           κ'' <- κ ∧? κ'
-                           pure (ElimVar x'' κ'')
-                        ElimBool { true : κ1, false : κ2 }, ElimBool { true : κ1', false : κ2' } -> do
-                           κ1'' <- κ1 ∧? κ1'
-                           κ2'' <- κ2 ∧? κ2'
-                           pure (ElimBool {true : κ1'', false : κ2''})
-                        ElimPair σ, ElimPair σ'
-                           -> hoistMaybe $ ElimPair (map (\κ -> map (\κ' -> κ ∧? κ') (ElimPair σ')) (ElimPair σ))
-                        ElimList { nil: κ1', cons: σ1' }, ElimList { nil: κ2', cons: σ2' } -> do
-                           κ  <- κ1' ∧? κ2'
-                           σ' <- σ1' ∧? σ2'
-                           pure $ ElimList { nil: κ, cons: σ' }
-                        _, _ -> Nothing
+      maybeσ = case σ1, σ2 of
+                     ElimVar x κ, ElimVar x' κ' -> do
+                        x'' <- x ≟ x'
+                        κ'' <- κ ∧? κ'
+                        pure (ElimVar x'' κ'')
+                     ElimBool { true : κ1, false : κ2 }, ElimBool { true : κ1', false : κ2' } -> do
+                        κ1'' <- κ1 ∧? κ1'
+                        κ2'' <- κ2 ∧? κ2'
+                        pure (ElimBool {true : κ1'', false : κ2''})
+                     ElimPair σ, ElimPair σ'
+                        -> hoistMaybe $ ElimPair (map (\κ -> map (\κ' -> κ ∧? κ') (ElimPair σ')) (ElimPair σ))
+                     ElimList { nil: κ1', cons: σ1' }, ElimList { nil: κ2', cons: σ2' } -> do
+                        κ  <- κ1' ∧? κ2'
+                        σ' <- σ1' ∧? σ2'
+                        pure $ ElimList { nil: κ, cons: σ' }
+                     _, _ -> Nothing
    maybeMeet _ _ = Nothing
 
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = do
