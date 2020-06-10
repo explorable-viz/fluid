@@ -1,9 +1,8 @@
 module Lattice where
 
 import Prelude hiding (absurd, join)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe)
 import Util (fromJust)
-import Data.List (List(..), (:))
 
 class Lattice a where
    maybeMeet   :: a -> a -> Maybe a
@@ -23,40 +22,22 @@ infixl 6 join as ∨
 infix 7 maybeMeet as ∧?
 infix 6 maybeJoin as ∨?
 
-data Selected = TT | FF
+type Selected = Boolean
 
-derive instance eqSelected :: Eq Selected
+class Selectable a where
+   mapα :: (Selected -> Selected) -> a -> a
+   maybeZipWithα :: (Selected -> Selected -> Selected) -> a -> a -> Maybe a
 
-instance latticeSelected :: Lattice Selected where
-   maybeMeet TT TT = Just TT
-   maybeMeet _ _   = Just FF
-   maybeJoin FF FF = Just FF
-   maybeJoin _ _   = Just TT
-   top _ = TT
-   bot _ = FF
+instance selectableLattice :: Selectable a => Lattice a where
+   maybeJoin = maybeZipWithα ((||))
+   maybeMeet = maybeZipWithα ((&&))
+   top = mapα (const true)
+   bot = mapα (const false)
 
-instance unitLattice :: Lattice Unit where
-   maybeMeet _ _ = pure unit
-   maybeJoin _ _ = pure unit
-   top _ = unit
-   bot _ = unit
+instance booleanSelectable :: Selectable Boolean where
+   mapα = identity
+   maybeZipWithα op α α' = pure $ α `op` α'
 
-instance listLattice :: Lattice a => Lattice (List a) where
-   maybeMeet (x:xs) (y:ys) = do
-      z  <- x  ∧? y
-      zs <- xs ∧? ys
-      pure (z:zs)
-   maybeMeet Nil Nil   = pure Nil
-   maybeMeet _   Nil   = Nothing
-   maybeMeet Nil _     = Nothing
-   maybeJoin (x:xs) (y:ys) = do
-      z  <- x  ∨? y
-      zs <- xs ∨? ys
-      pure (z:zs)
-   maybeJoin Nil Nil    = pure Nil
-   maybeJoin _   Nil    = Nothing
-   maybeJoin Nil _      = Nothing
-   top       (x:xs)     = top x : top xs
-   top       Nil        = Nil
-   bot       (x:xs)     = bot x : bot xs
-   bot       Nil        = Nil
+instance unitSelectable :: Selectable Unit where
+   mapα _ = identity
+   maybeZipWithα _ _ _ = pure unit

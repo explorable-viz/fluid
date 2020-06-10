@@ -3,7 +3,7 @@ module Bindings where
 import Prelude hiding (top)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Lattice (class Lattice, bot, top, (∧?), (∨?))
+import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
 import Util ((≟))
 
 type Var = String
@@ -28,27 +28,14 @@ instance bindingsSemigroup :: Semigroup (Bindings a) where
 instance bindingsMonoid :: Monoid (Bindings a) where
    mempty = ε
 
-instance bindingsLattice :: Lattice a => Lattice (Bindings a) where
-   maybeMeet (xs :+: x ↦ vx) (ys :+: y ↦ vy) = do
-      z  <- x ≟ y
-      vz <- vx ∧? vy
-      zs <- xs ∧? ys
-      pure (zs :+: z ↦ vz)
-   maybeMeet Empty Empty    = pure Empty
-   maybeMeet _     Empty    = Nothing
-   maybeMeet Empty _        = Nothing
-   maybeJoin (xs :+: x ↦ vx) (ys :+: y ↦ vy) = do
-      z  <- x ≟ y
-      vz <- vx ∨? vy
-      zs <- xs ∨? ys
-      pure (zs :+: z ↦ vz)
-   maybeJoin Empty Empty    = pure Empty
-   maybeJoin _     Empty    = Nothing
-   maybeJoin Empty _        = Nothing
-   top       (xs :+: x ↦ v) = top xs :+:  x ↦ top v
-   top       Empty          = Empty
-   bot       (xs :+: x ↦ v) = bot xs :+:  x ↦ bot v
-   bot       Empty          = Empty
+instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
+   mapα _ Empty               = Empty
+   mapα f (Extend m (x ↦ v))  = Extend (mapα f m) (x ↦ mapα f v)
+
+   maybeZipWithα _ Empty Empty                              = pure Empty
+   maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))  =
+      Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
+   maybeZipWithα _ _ _                                      = Nothing
 
 find :: forall a . Var -> Bindings a -> Either String a
 find x' Empty          = Left $ "variable " <> x' <> " not found"

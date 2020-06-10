@@ -1,11 +1,13 @@
 module Val where
 
 import Prelude hiding (absurd, top)
+import Data.List (zipWith)
+import Data.Traversable (sequence)
 import Bindings (Bindings)
 import Elim (Elim)
 import Expr (RecDefs, Expr)
-import Lattice (class Lattice, Selected(..), (∧?), (∨?), bot, top)
-import Util (error, (≟))
+import Lattice (class Selectable, Selected, (∨?), mapα, maybeZipWithα)
+import Util ((≟))
 import Data.Maybe (Maybe(..))
 
 data Unary =
@@ -15,7 +17,7 @@ data Binary =
    IntIntInt (Int -> Int -> Int) |
    IntIntBool (Int -> Int -> Boolean)
 
--- String arguments are "internal" names for printing, unrelated to any user-level identifiers.
+-- String arguments are "internal" names for printing and equality testing, unrelated to user-level identifiers.
 data UnaryOp =
    UnaryOp String Unary |
    PartialApp BinaryOp Val
@@ -35,79 +37,47 @@ data RawVal =
 data Val = Val Selected RawVal
 
 val :: RawVal -> Val
-val = Val FF
+val = Val false
 
 type Env = Bindings Val
 
-instance rawValLattice :: Lattice RawVal where
-   maybeJoin (Int x) (Int x') = x ≟ x' <#> Int
-   maybeJoin (Str s) (Str s') = s ≟ s' <#> Str
-   maybeJoin False False = pure False
-   maybeJoin True True = pure True
-   maybeJoin Nil Nil = pure Nil
-   maybeJoin (Cons e1 e2) (Cons e1' e2') = do
-      e <- e1 ∨? e1'
-      e2' ∨? e2' <#> Cons e
-   maybeJoin (Pair e1 e2) (Pair e1' e2') = do
-      e <- e1 ∨? e1'
-      e2 ∨? e2' <#> Pair e
-   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') =
-      error "todo"
-   maybeJoin (Binary φ) (Binary φ') =
-      error "todo"
-   maybeJoin (Unary φ) (Unary φ') =
-      error "todo"
-   maybeJoin _ _ = Nothing
+instance selectableUnaryOp :: Selectable UnaryOp where
+   mapα _ = identity
 
-   maybeMeet (Int x) (Int x') = x ≟ x' <#> Int
-   maybeMeet (Str s) (Str s') = s ≟ s' <#> Str
-   maybeMeet False False = pure False
-   maybeMeet True True = pure True
-   maybeMeet Nil Nil = pure Nil
-   maybeMeet (Cons e1 e2) (Cons e1' e2') = do
-      e <- e1 ∨? e1'
-      e2' ∧? e2' <#> Cons e
-   maybeMeet (Pair e1 e2) (Pair e1' e2') = do
-      e <- e1 ∨? e1'
-      e2 ∧? e2' <#> Pair e
-   maybeMeet (Closure ρ δ σ) (Closure ρ' δ' σ') =
-      error "todo"
-   maybeMeet (Binary φ) (Binary φ') =
-      error "todo"
-   maybeMeet (Unary φ) (Unary φ') =
-      error "todo"
-   maybeMeet _ _ = Nothing
+   maybeZipWithα f (UnaryOp op f') (UnaryOp op' _)     = UnaryOp <$> op ≟ op' <*> pure f'
+   maybeZipWithα f (PartialApp φ v) (PartialApp φ' v') = PartialApp <$> maybeZipWithα f φ φ' <*> maybeZipWithα f v v'
+   maybeZipWithα _ _ _                                 = Nothing
 
-   top (Int x) = Int x
-   top (Str s) = Str s
-   top False = False
-   top True = True
-   top Nil = Nil
-   top (Cons e1 e2) = Cons (top e1) (top e2)
-   top (Pair e1 e2) = Pair (top e1) (top e2)
-   top (Closure ρ δ σ) = error "todo"
-   top (Binary φ) = error "todo"
-   top (Unary φ) = error "todo"
+instance selectableBinaryOp :: Selectable BinaryOp where
+   mapα _ = identity
+   maybeZipWithα f (BinaryOp op f') (BinaryOp op' _) = BinaryOp <$> op ≟ op' <*> pure f'
 
-   bot (Int x) = Int x
-   bot (Str s) = Str s
-   bot False = False
-   bot True = True
-   bot Nil = Nil
-   bot (Cons e1 e2) = Cons (bot e1) (bot e2)
-   bot (Pair e1 e2) = Pair (bot e1) (bot e2)
-   bot (Closure ρ δ σ) = error "todo"
-   bot (Binary φ) = error "todo"
-   bot (Unary φ) = error "todo"
+instance selectableVal :: Selectable Val where
+   mapα f (Val α u)                       = Val (f α) u
+   maybeZipWithα f (Val α r) (Val α' r')  = Val <$> pure (α `f` α') <*> maybeZipWithα f r r'
 
-instance valLattice :: Lattice Val where
-   maybeJoin (Val α r) (Val α' r') = do
-      α'' <- α ∨? α'
-      r ∨? r' <#> Val α''
+instance selectableRawVal :: Selectable RawVal where
+   mapα _ (Int x)          = Int x
+   mapα _ (Str s)          = Str s
+   mapα _ False            = False
+   mapα _ True             = True
+   mapα _ Nil              = Nil
+   mapα f (Cons e1 e2)     = Cons (mapα f e1) (mapα f e2)
+   mapα f (Pair e1 e2)     = Pair (mapα f e1) (mapα f e2)
+   mapα f (Closure ρ δ σ)  = Closure (mapα f ρ) (map (mapα f) δ) (mapα f σ)
+   mapα f (Binary φ)       = Binary (mapα f φ)
+   mapα f (Unary φ)        = Unary (mapα f φ)
 
-   maybeMeet (Val α r) (Val α' r') = do
-      α'' <- α ∨? α'
-      r ∧? r' <#> Val α''
-
-   top (Val _ u) = Val TT $ top u
-   bot (Val _ u) = Val FF $ bot u
+   maybeZipWithα f (Int x) (Int x')                   = Int <$> x ≟ x'
+   maybeZipWithα f (Str s) (Str s')                   = Str <$> s ≟ s'
+   maybeZipWithα f False False                        = pure False
+   maybeZipWithα f True True                          = pure True
+   maybeZipWithα f Nil Nil                            = pure Nil
+   maybeZipWithα f (Cons e1 e2) (Cons e1' e2')        = Cons <$> maybeZipWithα f e1 e1' <*> maybeZipWithα f e2' e2'
+   maybeZipWithα f (Pair e1 e2) (Pair e1' e2')        = Pair <$> e1 ∨? e1' <*> e2 ∨? e2'
+   maybeZipWithα f (Closure ρ δ σ) (Closure ρ' δ' σ') =
+      Closure <$> maybeZipWithα f ρ ρ'
+              <*> (sequence $ zipWith (maybeZipWithα f) δ δ') <*> maybeZipWithα f σ σ'
+   maybeZipWithα f (Binary φ) (Binary φ')             = Binary <$> maybeZipWithα f φ φ'
+   maybeZipWithα f (Unary φ) (Unary φ')               = Unary <$> maybeZipWithα f φ φ'
+   maybeZipWithα f _ _                                = Nothing
