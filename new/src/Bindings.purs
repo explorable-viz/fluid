@@ -3,8 +3,8 @@ module Bindings where
 import Prelude hiding (top)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Lattice (class Lattice, bot, top, (∧?), (∨?))
-import Util ((≟))
+import Lattice (class Lattice, class Selectable, bot, mapα, maybeZipWithα, top, (∧?), (∨?))
+import Util (error, (≟))
 
 type Var = String
 
@@ -28,6 +28,15 @@ instance bindingsSemigroup :: Semigroup (Bindings a) where
 instance bindingsMonoid :: Monoid (Bindings a) where
    mempty = ε
 
+instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
+   mapα _ Empty = Empty
+   mapα f (Extend m (x ↦ v)) = Extend (mapα f m) (x ↦ mapα f v)
+
+   maybeZipWithα _ Empty Empty = pure Empty
+   maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v')) =
+      Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
+   maybeZipWithα _ _ _ = Nothing
+{-
 instance bindingsLattice :: Lattice a => Lattice (Bindings a) where
    maybeMeet (xs :+: x ↦ vx) (ys :+: y ↦ vy) = do
       z  <- x ≟ y
@@ -49,6 +58,7 @@ instance bindingsLattice :: Lattice a => Lattice (Bindings a) where
    top       Empty          = Empty
    bot       (xs :+: x ↦ v) = bot xs :+:  x ↦ bot v
    bot       Empty          = Empty
+-}
 
 instance bindEq :: Lattice a => Eq (Bind a) where
    eq (x ↦ v) (x' ↦ v') = case x ≟ x', v ∧? v' of

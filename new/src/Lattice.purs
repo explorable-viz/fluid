@@ -1,7 +1,7 @@
 module Lattice where
 
 import Prelude hiding (absurd, join)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe)
 import Util (fromJust)
 
 class Lattice a where
@@ -22,10 +22,9 @@ infixl 6 join as ∨
 infix 7 maybeMeet as ∧?
 infix 6 maybeJoin as ∨?
 
-data Selected = TT | FF -- maybe tt, ff would be better
+type Selected = Boolean
 
-derive instance eqSelected :: Eq Selected
-
+{-
 instance latticeSelected :: Lattice Selected where
    maybeMeet TT TT = Just TT
    maybeMeet _ _   = Just FF
@@ -39,3 +38,14 @@ instance unitLattice :: Lattice Unit where
    maybeJoin _ _ = pure unit
    top _ = unit
    bot _ = unit
+-}
+
+class Selectable a where
+   mapα :: (Selected -> Selected) -> a -> a
+   maybeZipWithα :: (Selected -> Selected -> Selected) -> a -> a -> Maybe a
+
+instance selectableLattice :: Selectable a => Lattice a where
+   maybeJoin = maybeZipWithα ((||))
+   maybeMeet = maybeZipWithα ((&&))
+   top = mapα (const true)
+   bot = mapα (const false)

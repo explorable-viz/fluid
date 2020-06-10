@@ -4,7 +4,7 @@ import Prelude hiding (absurd, top)
 import Bindings (Bindings)
 import Elim (Elim)
 import Expr (RecDefs, Expr)
-import Lattice (class Lattice, Selected(..), (∧?), (∨?), bot, top)
+import Lattice (class Selectable, Selected, (∨?), mapα, maybeZipWithα)
 import Util (error, (≟))
 import Data.Maybe (Maybe(..))
 
@@ -35,19 +35,15 @@ data RawVal =
 data Val = Val Selected RawVal
 
 val :: RawVal -> Val
-val = Val FF
+val = Val false
 
 type Env = Bindings Val
 
-class Blah a where
-   mapα :: (Selected -> Selected) -> a -> a
-   maybeZipWithα :: (Selected -> Selected -> Maybe Selected) -> a -> a -> Maybe a
-
-instance blahVal :: Blah Val where
+instance selectableVal :: Selectable Val where
    mapα f (Val α u) = Val (f α) u
-   maybeZipWithα f (Val α r) (Val α' r') = Val <$> α `f` α' <*> maybeZipWithα f r r'
+   maybeZipWithα f (Val α r) (Val α' r') = Val <$> pure (α `f` α') <*> maybeZipWithα f r r'
 
-instance blahRawVal :: Blah RawVal where
+instance selectableRawVal :: Selectable RawVal where
    mapα _ (Int x) = Int x
    mapα _ (Str s) = Str s
    mapα _ False = False
@@ -70,15 +66,3 @@ instance blahRawVal :: Blah RawVal where
    maybeZipWithα f (Binary φ) (Binary φ') = error "todo"
    maybeZipWithα f (Unary φ) (Unary φ') = error "todo"
    maybeZipWithα f _ _ = Nothing
-
-instance rawValLattice :: Lattice RawVal where
-   maybeJoin = maybeZipWithα (∨?)
-   maybeMeet = maybeZipWithα (∧?)
-   top = mapα (const TT)
-   bot = mapα (const FF)
-
-instance valLattice :: Lattice Val where
-   maybeJoin (Val α r) (Val α' r') = Val <$> α ∨? α' <*> r ∨? r'
-   maybeMeet (Val α r) (Val α' r') = Val <$> α ∨? α' <*> r ∧? r'
-   top (Val _ u) = Val TT $ top u
-   bot (Val _ u) = Val FF $ bot u

@@ -233,9 +233,7 @@ def expr' = do
    pureMaybe "Singleton eliminator expected" $ singleBranch σ <#> Def (σ <#> const unit)
 
 let_ ∷ SParser Expr -> SParser Expr
-let_ expr' = do
-   d <- def expr'
-   expr' <#> Let d >>> expr
+let_ expr' = expr <$> (Let <$> def expr' <*> expr')
 
 recDef :: SParser Expr -> SParser RecDef
 recDef expr' = do
