@@ -62,37 +62,42 @@ instance rawExprLattice :: Lattice RawExpr where
    maybeJoin (Op op) (Op op') = Op <$> op ≟ op'
    maybeJoin (Int n) (Int n') = Int <$> n ≟ n'
    maybeJoin (Str s) (Var s') = Str <$> s ≟ s'
-   maybeJoin False False = pure False
-   maybeJoin False True = pure True
-   maybeJoin True False = pure True
-   maybeJoin True True = pure True
+   maybeJoin False False      = pure False
+   maybeJoin False True       = pure True
+   maybeJoin True False       = pure True
+   maybeJoin True True        = pure True
    maybeJoin (Pair e1 e1') (Pair e2 e2') =
-      Pair <$> e1  ∨? e2 <*> e1' ∨? e2'
+      Pair <$> e1 ∨? e2 <*> e1' ∨? e2'
    maybeJoin Nil Nil = pure Nil
    maybeJoin (Cons e1 e1') (Cons e2 e2') =
-      Cons <$> e1  ∨? e2 <*> e1' ∨? e2'
-   maybeJoin (Lambda σ) (Lambda σ') = do
-      σ'' <- σ ∨? σ'
-      pure (Lambda σ'')
-   -- maybeJoin (App e1 e1') (e2 e2')
-   -- BinaryApp Expr Var Expr |
-   -- MatchAs Expr (Elim Expr) |
-   -- Let Def Expr |
-   -- LetRec RecDefs Expr
+      Cons <$> e1 ∨? e2 <*> e1' ∨? e2'
+   maybeJoin (Lambda σ) (Lambda σ') =
+      Lambda <$> σ ∨? σ'
+   maybeJoin (App e1 e1') (App e2 e2') =
+      App <$> e1 ∨? e1' <*> e2 ∨? e2'
+   maybeJoin (BinaryApp e1 op1 e1') (BinaryApp e2 op2 e2') =
+      BinaryApp <$> e1 ∨? e1' <*> op1 ≟ op2 <*> e2 ∨? e2'
+   maybeJoin (MatchAs e σ) (MatchAs e' σ') =
+      MatchAs <$> e ∨? e' <*> σ ∨? σ'
+   maybeJoin (Let def e) (Let def' e') =
+      Let <$> def ∨? def' <*> e ∨? e'
+   maybeJoin (LetRec rdefs e) (LetRec rdefs' e') =
+      error todo
+      -- LetRec <$> rdefs
    maybeJoin _ _ = Nothing
 
    maybeMeet (Var x) (Var x') = Var <$> x ≟ x'
    maybeMeet (Op op) (Op op') = Op <$> op ≟ op'
    maybeMeet (Int n) (Int n') = Int <$> n ≟ n'
    maybeMeet (Str s) (Var s') = Str <$> s ≟ s'
-   maybeMeet False False = pure False
-   maybeMeet False True = pure True
-   maybeMeet True False = pure True
-   maybeMeet True True = pure True
+   maybeMeet False False                 = pure False
+   maybeMeet False True                  = pure True
+   maybeMeet True False                  = pure True
+   maybeMeet True True                   = pure True
    maybeMeet (Pair e1 e2) (Pair e1' e2') = Pair <$> e1 ∧? e1' <*> e2 ∧? e2'
-   maybeMeet Nil Nil = pure Nil
+   maybeMeet Nil Nil                     = pure Nil
    maybeMeet (Cons e1 e2) (Cons e1' e2') = Cons <$> e1 ∧? e1' <*> e2 ∧? e2'
-   maybeMeet _ _ = Nothing
+   maybeMeet _ _                         = Nothing
 
    top (Pair e e')            = Pair (top e) (top e')
    top (Cons e e')            = Cons (top e) (top e')
