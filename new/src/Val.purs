@@ -39,6 +39,17 @@ val = Val false
 
 type Env = Bindings Val
 
+instance selectableUnaryOp :: Selectable UnaryOp where
+   mapα _ = identity
+
+   maybeZipWithα f (UnaryOp op f') (UnaryOp op' _)     = UnaryOp <$> op ≟ op' <*> pure f'
+   maybeZipWithα f (PartialApp φ v) (PartialApp φ' v') = PartialApp <$> maybeZipWithα f φ φ' <*> maybeZipWithα f v v'
+   maybeZipWithα _ _ _                                 = Nothing
+
+instance selectableBinaryOp :: Selectable BinaryOp where
+   mapα _ = identity
+   maybeZipWithα f (BinaryOp op f') (BinaryOp op' _) = BinaryOp <$> op ≟ op' <*> pure f'
+
 instance selectableVal :: Selectable Val where
    mapα f (Val α u)                       = Val (f α) u
    maybeZipWithα f (Val α r) (Val α' r')  = Val <$> pure (α `f` α') <*> maybeZipWithα f r r'
@@ -64,7 +75,6 @@ instance selectableRawVal :: Selectable RawVal where
    maybeZipWithα f (Pair e1 e2) (Pair e1' e2')        = Pair <$> e1 ∨? e1' <*> e2 ∨? e2'
    maybeZipWithα f (Closure ρ δ σ) (Closure ρ' δ' σ') =
       Closure <$> maybeZipWithα f ρ ρ' <*> ?_ <*> maybeZipWithα f σ σ'
-   maybeZipWithα f (Binary (BinaryOp op f')) (Binary (BinaryOp op' _)) =
-      Binary <$> (BinaryOp <$> op ≟ op' <*> pure f')
-   maybeZipWithα f (Unary φ) (Unary φ')               = error "todo"
+   maybeZipWithα f (Binary φ) (Binary φ')             = Binary <$> maybeZipWithα f φ φ'
+   maybeZipWithα f (Unary φ) (Unary φ')               = Unary <$> maybeZipWithα f φ φ'
    maybeZipWithα f _ _                                = Nothing
