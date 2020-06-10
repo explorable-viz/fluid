@@ -2,13 +2,9 @@ module Bindings where
 
 import Prelude hiding (top)
 import Data.Either (Either(..))
-import Selected
-import Util (error, todo, toBool, (≟))
-import Data.Foldable
-import Data.Eq
 import Data.Maybe (Maybe(..))
-import Selected (class Lattice, bot, top, (∧?))
-import Util (MayFail, (≟))
+import Lattice (class Lattice, bot, top, (∧?))
+import Util ((≟))
 
 type Var = String
 

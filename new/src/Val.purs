@@ -3,7 +3,7 @@ module Val where
 import Prelude hiding (absurd, top)
 import Bindings (Bindings)
 import Expr (RecDefs, Elim, Expr)
-import Selected (class Lattice, Selected(..), (∧?), (∨?), bot, join, meet, top)
+import Lattice (class Lattice, Selected(..), (∧?), (∨?), bot, top)
 import Util (error, (≟))
 import Data.Maybe (Maybe(..))
 
@@ -34,7 +34,7 @@ data RawVal =
 data Val = Val Selected RawVal
 
 val :: RawVal -> Val
-val = Val Bot
+val = Val FF
 
 type Env = Bindings Val
 
@@ -108,5 +108,5 @@ instance valLattice :: Lattice Val where
       α'' <- α ∨? α'
       r ∧? r' <#> Val α''
 
-   top (Val _ u) = Val Top $ top u
-   bot (Val _ u) = Val Bot $ bot u
+   top (Val _ u) = Val TT $ top u
+   bot (Val _ u) = Val FF $ bot u
