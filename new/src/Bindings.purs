@@ -58,25 +58,4 @@ update :: forall a . Lattice a => Var -> a -> Bindings a -> Bindings a
 update x' v' (xs :+: x ↦ v)
    | x == x'    = xs :+: x' ↦ v'
    | otherwise  = (update x' v' xs) :+: x ↦ v
-update x' v' Empty = ε :+: x' ↦ v'
-
--- instance listLattice :: Lattice a => Lattice (List a) where
---    maybeMeet (x:xs) (y:ys) = do
---       z  <- x  ∧? y
---       zs <- xs ∧? ys
---       pure (z:zs)
---    maybeMeet Empty Empty    = pure Empty
---    maybeMeet _     Empty    = Nothing
---    maybeMeet Empty _        = Nothing
---    maybeJoin (xs :+: x ↦ vx) (ys :+: y ↦ vy) = do
---       z  <- x ≟ y
---       vz <- vx ∨? vy
---       zs <- xs ∨? ys
---       pure (zs :+: z ↦ vz)
---    maybeJoin Empty Empty    = pure Empty
---    maybeJoin _     Empty    = Nothing
---    maybeJoin Empty _        = Nothing
---    top       (xs :+: x ↦ v) = top xs :+:  x ↦ top v
---    top       Empty          = Empty
---    bot       (xs :+: x ↦ v) = bot xs :+:  x ↦ bot v
---    bot       Empty          = Empty
+update x' v' Empty = Empty
