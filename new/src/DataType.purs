@@ -5,18 +5,20 @@ import Data.Foldable (class Foldable)
 import Data.List (List)
 import Data.List (fromFoldable) as L
 import Data.Map (Map, fromFoldable)
+import Data.Newtype (class Newtype)
 import Data.Tuple (Tuple(..))
 
-data DataType = DataType String (Map String Ctr)
-data Ctr = Ctr String (List String)
+newtype Ctr = Ctr String
+derive instance newtypeCtr :: Newtype Ctr _
+derive instance eqCtr :: Eq Ctr
 
-ctr :: forall f . Foldable f => String -> f String -> Tuple String Ctr
-ctr c = L.fromFoldable >>> Ctr c >>> Tuple c
+data DataType = DataType String (Map String CtrSig)
+data CtrSig = CtrSig Ctr (List String)
 
-instance eqCtr :: Eq Ctr where
-   eq (Ctr c _) (Ctr c' _) = c == c'
+ctr :: forall f . Foldable f => String -> f String -> Tuple String CtrSig
+ctr c = L.fromFoldable >>> CtrSig (Ctr c) >>> Tuple c
 
-dataType :: forall f . Foldable f => String -> f (Tuple String Ctr) -> DataType
+dataType :: forall f . Foldable f => String -> f (Tuple String CtrSig) -> DataType
 dataType name = fromFoldable >>> DataType name
 
 dataTypes :: List DataType

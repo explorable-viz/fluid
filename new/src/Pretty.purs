@@ -99,7 +99,7 @@ instance valPretty :: Pretty Val where
 instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
    pretty (V.Str str) = text $ show str
-   pretty (V.Constr (Ctr c _) vs) = hcat $ intersperse space $ map pretty vs
+   pretty (V.Constr (Ctr c) vs) = hcat $ intersperse space $ map pretty vs
    pretty V.True = text cTrue
    pretty V.False = text cFalse
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
