@@ -42,7 +42,7 @@ type Cont = Either Expr Elim2
 
 data Elim2 =
    ElimVar2 Var Cont |
-   ElimConstr (FiniteMap Ctr Cont)
+   ElimConstr (Map Ctr Cont)
 
 instance elim2Selectable :: Selectable Elim2 where
    mapα f (ElimVar2 x κ)   = ElimVar2 x $ mapα f κ

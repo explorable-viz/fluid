@@ -2,7 +2,10 @@ module Lattice where
 
 import Prelude hiding (absurd, join)
 import Data.Either (Either(..))
+import Data.List (zipWith)
+import Data.Map (Map, fromFoldable, toUnfoldable)
 import Data.Maybe (Maybe(..))
+import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
 import Util ((≟), fromJust)
 
@@ -55,3 +58,8 @@ instance selectableUnit :: Selectable Unit where
 instance selectableTuple :: (Eq k, Selectable v) => Selectable (Tuple k v) where
    mapα f (Tuple k v)                        = Tuple k (mapα f v)
    maybeZipWithα f (Tuple k v) (Tuple k' v') = Tuple <$> k ≟ k' <*> maybeZipWithα f v v'
+
+instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
+   mapα f = map (mapα f)
+   maybeZipWithα f κs κs' =
+      fromFoldable <$> sequence (zipWith (maybeZipWithα f) (toUnfoldable κs) (toUnfoldable κs'))
