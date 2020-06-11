@@ -34,3 +34,7 @@ data Match k =
    MatchPair (Match (Elim k)) (Match k) |
    MatchNil (Elim (Elim k)) |
    MatchCons { nil :: k, cons :: Tuple (Match (Elim k)) (Match k) }
+
+data Match2 =
+   MatchVar2 Var |
+   MatchCtr2 Ctr (List Match2)

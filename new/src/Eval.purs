@@ -9,8 +9,8 @@ import Bindings ((:+:), (↦), ε, find)
 import Elim (Elim(..))
 import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Expr(..), Module(..), RecDef(..), RecDefs)
-import Expr (Def(..), RawExpr(..)) as E
+import Expr (Cont, Elim2, Expr(..), Module(..), RecDef(..), RecDefs)
+import Expr (Def(..), Elim2(..), RawExpr(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
 import Util (MayFail, T3(..), absurd, error)
@@ -36,6 +36,9 @@ match (Val _ (V.Cons v v')) (ElimList { nil: κ, cons: σ }) = do
    pure $ T3 (ρ1 <> ρ) κ' (MatchCons { nil: κ, cons: Tuple ξ ξ' })
 match v _ =
    Left $ "Pattern mismatch for " <> render (pretty v)
+
+match2 :: Val -> Elim2 -> MayFail (T3 Env Cont Match2)
+match2 = ?_
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
