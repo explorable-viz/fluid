@@ -2,11 +2,12 @@ module Pretty (class Pretty, pretty, module P) where
 
 import Prelude
 import Data.List (List(..), (:))
+import Data.Either (Either(..))
 import Text.Pretty (Doc, atop, beside, hcat, text)
 import Text.Pretty (render) as P
 import DataType (Ctr(..))
 import Elim (Elim(..))
-import Expr (Def(..), Expr(..), RawExpr, RecDef(..))
+import Expr (Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Parse (cFalse, cNil, cTrue)
 import Util (error, intersperse)
@@ -92,6 +93,14 @@ instance prettyElim :: Pretty k => Pretty (Elim k) where
       atop (text "[]" :<>: operator "->" :<>: pretty κ) (text "Cons" :<>: operator "->" :<>: pretty σ)
    pretty (ElimBool { true: κ, false: κ' }) =
       atop (text "true" :<>: operator "->" :<>: pretty κ) (text "false" :<>: operator "->" :<>: pretty κ')
+
+instance prettyEither :: (Pretty a, Pretty b) => Pretty (Either a b) where
+   pretty (Left x) = pretty x
+   pretty (Right x) = pretty x
+
+instance prettyElim2 :: Pretty Elim2 where
+   pretty (ElimVar2 x κ) = text x :<>: operator "->" :<>: pretty κ
+   pretty (ElimConstr (Ctr c) κ) = ?_
 
 instance valPretty :: Pretty Val where
    pretty (Val _ u) = pretty u

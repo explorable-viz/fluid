@@ -3,7 +3,8 @@ module Expr where
 import Prelude hiding (top)
 import Bindings (Var)
 import Data.List (List, zipWith)
-import Data.Either (Either(..))
+import Data.Map (Map)
+import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import DataType (Ctr)
@@ -40,15 +41,15 @@ type Cont = Either Expr Elim2
 
 data Elim2 =
    ElimVar2 Var Cont |
-   ElimConstr Ctr Cont
+   ElimConstr (Map Ctr Cont)
 
 instance elim2Selectable :: Selectable Elim2 where
    mapα f (ElimVar2 x κ)   = ElimVar2 x $ mapα f κ
-   mapα f (ElimConstr x κ) = ElimConstr x $ mapα f κ
+   mapα f (ElimConstr κs) = ElimConstr $ map (mapα f) κs
 
-   maybeZipWithα f (ElimVar2 x κ) (ElimVar2 x' κ')       = ElimVar2 <$> x ≟ x' <*> maybeZipWithα f κ κ'
-   maybeZipWithα f (ElimConstr c κ) (ElimConstr c' κ')   = ElimConstr <$> c ≟ c' <*> maybeZipWithα f κ κ'
-   maybeZipWithα _ _ _                                   = Nothing
+   maybeZipWithα f (ElimVar2 x κ) (ElimVar2 x' κ')    = ElimVar2 <$> x ≟ x' <*> maybeZipWithα f κ κ'
+   maybeZipWithα f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> ?_
+   maybeZipWithα _ _ _                                = Nothing
 
 data Module = Module (List (Either Def RecDefs))
 
