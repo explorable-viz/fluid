@@ -3,7 +3,7 @@ module Expr where
 import Prelude hiding (top)
 import Bindings (Var)
 import Data.List (List, zipWith)
-import Data.Either (Either)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import DataType (Ctr)
@@ -36,19 +36,33 @@ data Expr = Expr Selected RawExpr
 expr :: RawExpr -> Expr
 expr = Expr false
 
+type Cont = Either Expr Elim2
+
+data Elim2 =
+   ElimVar2 Var Cont |
+   ElimConstr Ctr Cont
+
+instance elim2Selectable :: Selectable Elim2 where
+   mapα f (ElimVar2 x κ)   = ElimVar2 x $ mapα f κ
+   mapα f (ElimConstr x κ) = ElimConstr x $ mapα f κ
+
+   maybeZipWithα f (ElimVar2 x κ) (ElimVar2 x' κ')       = ElimVar2 <$> x ≟ x' <*> maybeZipWithα f κ κ'
+   maybeZipWithα f (ElimConstr c κ) (ElimConstr c' κ')   = ElimConstr <$> c ≟ c' <*> maybeZipWithα f κ κ'
+   maybeZipWithα _ _ _                                   = Nothing
+
 data Module = Module (List (Either Def RecDefs))
 
 instance defSelectable :: Selectable Def where
-   mapα f (Def σ e) = Def (mapα f σ) (mapα f e)
-   maybeZipWithα f (Def σ e) (Def σ' e') = Def <$> maybeZipWithα f σ σ' <*> maybeZipWithα f e e'
+   mapα f (Def σ e)                       = Def (mapα f σ) (mapα f e)
+   maybeZipWithα f (Def σ e) (Def σ' e')  = Def <$> maybeZipWithα f σ σ' <*> maybeZipWithα f e e'
 
 instance recDefSelectable :: Selectable RecDef where
-   mapα f (RecDef x σ) = RecDef x (mapα f σ)
-   maybeZipWithα f (RecDef x σ) (RecDef x' σ') = RecDef <$> x ≟ x' <*> maybeZipWithα f σ σ'
+   mapα f (RecDef x σ)                          = RecDef x (mapα f σ)
+   maybeZipWithα f (RecDef x σ) (RecDef x' σ')  = RecDef <$> x ≟ x' <*> maybeZipWithα f σ σ'
 
 instance exprSelectable :: Selectable Expr where
-   mapα f (Expr α r) = Expr (f α) $ mapα f r
-   maybeZipWithα f (Expr α r) (Expr α' r') = Expr <$> pure (f α α') <*> maybeZipWithα f r r'
+   mapα f (Expr α r)                         = Expr (f α) $ mapα f r
+   maybeZipWithα f (Expr α r) (Expr α' r')   = Expr <$> pure (f α α') <*> maybeZipWithα f r r'
 
 instance rawExprSelectable :: Selectable RawExpr where
    mapα _ (Var x)             = Var x

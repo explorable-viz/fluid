@@ -1,7 +1,8 @@
 module Lattice where
 
 import Prelude hiding (absurd, join)
-import Data.Maybe (Maybe)
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Util (fromJust)
 
 class Lattice a where
@@ -27,6 +28,14 @@ type Selected = Boolean
 class Selectable a where
    mapα :: (Selected -> Selected) -> a -> a
    maybeZipWithα :: (Selected -> Selected -> Selected) -> a -> a -> Maybe a
+
+instance selectableEither :: (Selectable a, Selectable b) => Selectable (Either a b) where
+   mapα f (Left e) = Left $ mapα f e
+   mapα f (Right σ) = Right $ mapα f σ
+
+   maybeZipWithα f (Left e) (Left e') = Left <$> maybeZipWithα f e e'
+   maybeZipWithα f (Right σ) (Right σ') = Right <$> maybeZipWithα f σ σ'
+   maybeZipWithα _ _ _ = Nothing
 
 instance selectableLattice :: Selectable a => Lattice a where
    maybeJoin = maybeZipWithα ((||))
