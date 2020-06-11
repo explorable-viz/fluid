@@ -62,4 +62,5 @@ instance selectableTuple :: (Eq k, Selectable v) => Selectable (Tuple k v) where
 instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
    mapα f = map (mapα f)
    maybeZipWithα f κs κs' =
+      -- should require the maps to have the same cardinality
       fromFoldable <$> sequence (zipWith (maybeZipWithα f) (toUnfoldable κs) (toUnfoldable κs'))

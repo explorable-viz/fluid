@@ -3,6 +3,7 @@ module Pretty (class Pretty, pretty, module P) where
 import Prelude
 import Data.List (List(..), (:))
 import Data.Either (Either(..))
+import Data.Map (toUnfoldable)
 import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, text, vcat)
 import Text.Pretty (render) as P
@@ -10,7 +11,6 @@ import DataType (Ctr(..))
 import Elim (Elim(..))
 import Expr (Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
-import FiniteMap (values)
 import Parse (cFalse, cNil, cTrue)
 import Util (error, intersperse)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
@@ -105,7 +105,7 @@ instance prettyBranch :: Pretty (Tuple Ctr (Either Expr Elim2)) where
 
 instance prettyElim2 :: Pretty Elim2 where
    pretty (ElimVar2 x κ) = text x :<>: operator "->" :<>: pretty κ
-   pretty (ElimConstr κs) = vcat $ map pretty $ values κs
+   pretty (ElimConstr κs) = vcat $ map pretty $ (toUnfoldable κs :: List _)
 
 instance valPretty :: Pretty Val where
    pretty (Val _ u) = pretty u

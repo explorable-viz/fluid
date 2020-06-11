@@ -3,6 +3,8 @@ module Eval where
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), unzip)
+import Data.Map (lookup)
+import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
@@ -11,7 +13,6 @@ import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..), Match2(..))
 import Expr (Cont, Elim2(..), Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
-import FiniteMap (lookup)
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
 import Util (MayFail, T3(..), absurd, error)
@@ -40,10 +41,12 @@ match v _ =
 
 match2 :: Val -> Elim2 -> MayFail (T3 Env Cont Match2)
 match2 v (ElimVar2 x κ)                            = pure $ T3 (ε :+: x ↦ v) κ (MatchVar2 x)
-match2 (Val _ (V.Constr c vs)) (ElimConstr κs)   = do
-   κ <- lookup c κs
-   T3 ρ κ' ξs <- matchArgs vs κ
-   T3 ρ κ' <$> pure (MatchConstr (Tuple c ξs) ?_)
+match2 (Val _ (V.Constr c vs)) (ElimConstr κs) =
+   case lookup c κs of
+      Nothing -> Left $ "Constructor " <> show c <> " not found"
+      Just κ -> do
+         T3 ρ κ' ξs <- matchArgs vs κ
+         T3 ρ κ' <$> pure (MatchConstr (Tuple c ξs) ?_)
 match2 v _                                         = Left $ "Pattern mismatch for " <> render (pretty v)
 
 matchArgs :: List Val -> Cont -> MayFail (T3 Env Cont (List Match2))

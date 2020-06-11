@@ -9,7 +9,6 @@ import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import DataType (Ctr)
 import Elim (Elim)
-import FiniteMap (FiniteMap)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟))
 

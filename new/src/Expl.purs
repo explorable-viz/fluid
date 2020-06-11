@@ -2,12 +2,12 @@ module Expl where
 
 import Prelude
 import Data.List (List)
+import Data.Map (Map)
 import Data.Tuple (Tuple)
 import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim)
 import Expr (Cont, RecDefs, Expr)
-import FiniteMap (FiniteMap)
 
 data Def = Def (Match Unit) Expl
 
@@ -38,4 +38,4 @@ data Match k =
 
 data Match2 =
    MatchVar2 Var |
-   MatchConstr (Tuple Ctr (List Match2)) (FiniteMap Ctr Cont)
+   MatchConstr (Tuple Ctr (List Match2)) (Map Ctr Cont)
