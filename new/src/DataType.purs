@@ -13,7 +13,8 @@ derive instance newtypeCtr :: Newtype Ctr _
 derive instance eqCtr :: Eq Ctr
 derive instance ordCtr :: Ord Ctr
 
-data DataType = DataType String (Map Ctr CtrSig)
+data DataType' a = DataType String (Map Ctr a)
+type DataType = DataType' CtrSig
 data CtrSig = CtrSig Ctr (List String)
 
 ctr :: forall f . Foldable f => String -> f String -> Tuple Ctr CtrSig
