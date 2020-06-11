@@ -3,12 +3,14 @@ module Pretty (class Pretty, pretty, module P) where
 import Prelude
 import Data.List (List(..), (:))
 import Data.Either (Either(..))
-import Text.Pretty (Doc, atop, beside, hcat, text)
+import Data.Tuple (Tuple(..))
+import Text.Pretty (Doc, atop, beside, hcat, text, vcat)
 import Text.Pretty (render) as P
 import DataType (Ctr(..))
 import Elim (Elim(..))
 import Expr (Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
+import FiniteMap (values)
 import Parse (cFalse, cNil, cTrue)
 import Util (error, intersperse)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
@@ -98,9 +100,12 @@ instance prettyEither :: (Pretty a, Pretty b) => Pretty (Either a b) where
    pretty (Left x) = pretty x
    pretty (Right x) = pretty x
 
+instance prettyBranch :: Pretty (Tuple Ctr (Either Expr Elim2)) where
+   pretty (Tuple c κ) = text (show c) :<>: operator "->" :<>: pretty κ
+
 instance prettyElim2 :: Pretty Elim2 where
    pretty (ElimVar2 x κ) = text x :<>: operator "->" :<>: pretty κ
-   pretty (ElimConstr κs) = ?_
+   pretty (ElimConstr κs) = vcat $ map pretty $ values κs
 
 instance valPretty :: Pretty Val where
    pretty (Val _ u) = pretty u
