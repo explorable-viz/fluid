@@ -13,6 +13,9 @@ data Ctr = Ctr String (List String)
 ctr :: forall f . Foldable f => String -> f String -> Tuple String Ctr
 ctr c = L.fromFoldable >>> Ctr c >>> Tuple c
 
+instance eqCtr :: Eq Ctr where
+   eq (Ctr c _) (Ctr c' _) = c == c'
+
 dataType :: forall f . Foldable f => String -> f (Tuple String Ctr) -> DataType
 dataType name = fromFoldable >>> DataType name
 
