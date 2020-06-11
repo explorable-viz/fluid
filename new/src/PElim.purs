@@ -19,15 +19,7 @@ data PElim k =
    PElimCons (PElim (PElim k)) |
    PElimList { nil :: k, cons :: PElim (PElim k) }
 
-instance pElimFunctor :: Functor PElim where
-   map f (PElimVar x κ) = PElimVar x (f κ)
-   map f (PElimTrue κ) = PElimTrue (f κ)
-   map f (PElimFalse κ) = PElimFalse (f κ)
-   map f (PElimBool { true: κ, false: κ' }) = PElimBool { true: f κ, false: f κ' }
-   map f (PElimPair σ) = PElimPair $ map (map f) σ
-   map f (PElimNil κ) = PElimNil (f κ)
-   map f (PElimCons σ) = PElimCons $ map (map f) σ
-   map f (PElimList { nil: κ, cons: σ }) = PElimList { nil: f κ, cons: map (map f) σ }
+derive instance pElimFunctor :: Functor PElim
 
 class Joinable k where
    join :: List k -> Maybe k
