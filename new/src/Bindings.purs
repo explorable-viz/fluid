@@ -3,6 +3,7 @@ module Bindings where
 import Prelude hiding (top)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..))
 import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
 import Util ((≟))
 
@@ -37,6 +38,12 @@ instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
 find :: forall a . Var -> Bindings a -> Either String a
 find x' Empty          = Left $ "variable " <> x' <> " not found"
 find x' (xs :+: x ↦ v) = if x == x' then Right v else find x' xs
+
+remove :: forall a . Var -> Bindings a -> Either String (Tuple a (Bindings a))
+remove x' xss   = go xss Empty
+   where go Empty          acc = Left $ "variable " <> x' <> " not found"
+         go (xs :+: x ↦ v) acc = if x == x' then Right (Tuple v (append xs acc))
+                                 else go xs (acc :+: x ↦ v)
 
 update :: forall a . Lattice a => Var -> a -> Bindings a -> Bindings a
 update _ _ Empty = Empty
