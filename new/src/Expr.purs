@@ -46,7 +46,7 @@ data Elim2 =
 
 instance elim2Selectable :: Selectable Elim2 where
    mapα f (ElimVar2 x κ)   = ElimVar2 x $ mapα f κ
-   mapα f (ElimConstr κs) = ElimConstr $ map (mapα f) κs
+   mapα f (ElimConstr κs)  = ElimConstr $ map (mapα f) κs
 
    maybeZipWithα f (ElimVar2 x κ) (ElimVar2 x' κ')    = ElimVar2 <$> x ≟ x' <*> maybeZipWithα f κ κ'
    maybeZipWithα f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> ?_
