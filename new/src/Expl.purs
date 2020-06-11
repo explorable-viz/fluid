@@ -6,7 +6,8 @@ import Data.Tuple (Tuple)
 import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim)
-import Expr (RecDefs, Expr)
+import Expr (Cont, RecDefs, Expr)
+import FiniteMap (FiniteMap)
 
 data Def = Def (Match Unit) Expl
 
@@ -37,4 +38,4 @@ data Match k =
 
 data Match2 =
    MatchVar2 Var |
-   MatchConstr Ctr (List Match2)
+   MatchConstr (Tuple Ctr (List Match2)) (FiniteMap Ctr Cont)
