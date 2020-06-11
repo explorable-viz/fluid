@@ -37,4 +37,4 @@ data Match k =
 
 data Match2 =
    MatchVar2 Var |
-   MatchCtr2 Ctr (List Match2)
+   MatchConstr Ctr (List Match2)

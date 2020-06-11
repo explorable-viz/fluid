@@ -5,13 +5,16 @@ import Data.Foldable (class Foldable)
 import Data.List (List)
 import Data.List (fromFoldable) as L
 import Data.Map (Map, fromFoldable)
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Tuple (Tuple(..))
 
 newtype Ctr = Ctr String
 derive instance newtypeCtr :: Newtype Ctr _
 derive instance eqCtr :: Eq Ctr
 derive instance ordCtr :: Ord Ctr
+
+instance showCtr :: Show Ctr where
+   show = unwrap
 
 data DataType' a = DataType String (Map Ctr a)
 type DataType = DataType' CtrSig

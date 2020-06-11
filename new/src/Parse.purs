@@ -117,22 +117,22 @@ string :: SParser Expr
 string = token.stringLiteral <#> Str >>> expr
 
 true_ :: SParser Expr
-true_ = ctr cTrue <#> const (expr True)
+true_ = ctr cTrue $> expr True
 
 patternTrue :: SParser (PElim Unit)
-patternTrue = ctr cTrue <#> const (PElimTrue unit)
+patternTrue = ctr cTrue $> PElimTrue unit
 
 false_ :: SParser Expr
-false_ = ctr cFalse <#> const (expr False)
+false_ = ctr cFalse $> expr False
 
 patternFalse :: SParser (PElim Unit)
-patternFalse = ctr cFalse <#> const (PElimFalse unit)
+patternFalse = ctr cFalse $> PElimFalse unit
 
 nil :: SParser Expr
-nil = ctr cNil <#> const (expr Nil)
+nil = ctr cNil $> expr Nil
 
 patternNil :: SParser (PElim Unit)
-patternNil = ctr cNil <#> const (PElimNil unit)
+patternNil = ctr cNil $> PElimNil unit
 
 cons :: SParser Expr -> SParser Expr
 cons expr' = do
@@ -230,7 +230,7 @@ partialElim expr' nest delim = do
 def :: SParser Expr -> SParser Def
 def expr' = do
    σ <- try $ keyword strLet *> elim expr' false <* token.semi
-   pureMaybe "Singleton eliminator expected" $ singleBranch σ <#> Def (σ <#> const unit)
+   pureMaybe "Singleton eliminator expected" $ singleBranch σ <#> Def (σ $> unit)
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')

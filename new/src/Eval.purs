@@ -8,12 +8,12 @@ import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find)
 import Elim (Elim(..))
 import Expl (Def(..), Expl(..)) as T
-import Expl (Expl, Match(..))
-import Expr (Cont, Elim2, Expr(..), Module(..), RecDef(..), RecDefs)
-import Expr (Def(..), Elim2(..), RawExpr(..)) as E
+import Expl (Expl, Match(..), Match2(..))
+import Expr (Cont, Elim2(..), Expr(..), Module(..), RecDef(..), RecDefs)
+import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
-import Util (MayFail, T3(..), absurd, error)
+import Util (MayFail, T3(..), absurd, eitherEq, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -38,7 +38,19 @@ match v _ =
    Left $ "Pattern mismatch for " <> render (pretty v)
 
 match2 :: Val -> Elim2 -> MayFail (T3 Env Cont Match2)
-match2 = ?_
+match2 v (ElimVar2 x κ)                            = pure $ T3 (ε :+: x ↦ v) κ (MatchVar2 x)
+match2 (Val _ (V.Constr c vs)) (ElimConstr c' κ)   = do
+   T3 ρ κ' ξs <- matchArgs vs κ
+   T3 ρ κ' <$> (MatchConstr <$> c `eitherEq` c' <@> ξs)
+match2 v _                                         = Left $ "Pattern mismatch for " <> render (pretty v)
+
+matchArgs :: List Val -> Cont -> MayFail (T3 Env Cont (List Match2))
+matchArgs Nil κ               = pure $ T3 ε κ Nil
+matchArgs (_ : _) (Left σ)    = Left $ "Too many arguments"
+matchArgs (v : vs) (Right σ)  = do
+   T3 ρ κ' ξ <- match2 v σ
+   T3 ρ' κ'' ξs <- matchArgs vs κ'
+   pure $ T3 (ρ <> ρ') κ'' (ξ : ξs)
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
