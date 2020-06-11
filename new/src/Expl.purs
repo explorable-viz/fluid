@@ -1,8 +1,10 @@
 module Expl where
 
 import Prelude
+import Data.List (List)
 import Data.Tuple (Tuple)
 import Bindings (Var)
+import DataType (Ctr)
 import Elim (Elim)
 import Expr (RecDefs, Expr)
 
@@ -13,6 +15,7 @@ data Expl =
    Op Var |
    Int Int |
    Str String |
+   Constr Ctr (List Expl) |
    True | False |
    Pair Expl Expl |
    Nil | Cons Expl Expl |

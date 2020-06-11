@@ -65,6 +65,7 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Int n) = text $ show n
    pretty (E.Str str) = text $ show str
    pretty (E.Var x) = text x
+   pretty (E.Constr c es) = hcat $ intersperse space $ map pretty es
    pretty E.True = text cTrue
    pretty E.False = text cFalse
    pretty (E.Pair e e') = parens $ pretty e :<>: comma :<>: pretty e'

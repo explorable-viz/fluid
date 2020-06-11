@@ -29,7 +29,7 @@ data RawVal =
    True | False |
    Int Int |
    Str String |
-   Constr Ctr (List Expr) |
+   Constr Ctr (List Val) |
    Closure Env RecDefs (Elim Expr) |
    Binary BinaryOp |
    Unary UnaryOp |
