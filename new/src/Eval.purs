@@ -3,7 +3,7 @@ module Eval where
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), unzip)
-import Data.Map (lookup)
+import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
@@ -46,7 +46,7 @@ match2 (Val _ (V.Constr c vs)) (ElimConstr κs) =
       Nothing -> Left $ "Constructor " <> show c <> " not found"
       Just κ -> do
          T3 ρ κ' ξs <- matchArgs vs κ
-         T3 ρ κ' <$> pure (MatchConstr (Tuple c ξs) ?_)
+         T3 ρ κ' <$> pure (MatchConstr (Tuple c ξs) $ update (const Nothing) c κs)
 match2 v _                                         = Left $ "Pattern mismatch for " <> render (pretty v)
 
 matchArgs :: List Val -> Cont -> MayFail (T3 Env Cont (List Match2))
