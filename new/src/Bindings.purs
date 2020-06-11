@@ -9,13 +9,10 @@ import Util ((≟))
 type Var = String
 
 data Bind a = Bind Var a
-
-infix 6 Bind as ↦
-
 data Bindings a = Empty | Extend (Bindings a) (Bind a)
 
+infix 6 Bind as ↦
 infixl 5 Extend as :+:
-
 infixl 5 update as ◃
 
 ε :: ∀ a . Bindings a
@@ -42,7 +39,7 @@ find x' Empty          = Left $ "variable " <> x' <> " not found"
 find x' (xs :+: x ↦ v) = if x == x' then Right v else find x' xs
 
 update :: forall a . Lattice a => Var -> a -> Bindings a -> Bindings a
+update _ _ Empty = Empty
 update x' v' (xs :+: x ↦ v)
    | x == x'    = xs :+: x' ↦ v'
    | otherwise  = (update x' v' xs) :+: x ↦ v
-update x' v' Empty = Empty
