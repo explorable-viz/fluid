@@ -9,6 +9,7 @@ import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import DataType (Ctr)
 import Elim (Elim)
+import FiniteMap (FiniteMap)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟))
 
@@ -41,7 +42,7 @@ type Cont = Either Expr Elim2
 
 data Elim2 =
    ElimVar2 Var Cont |
-   ElimConstr (Map Ctr Cont)
+   ElimConstr (FiniteMap Ctr Cont)
 
 instance elim2Selectable :: Selectable Elim2 where
    mapα f (ElimVar2 x κ)   = ElimVar2 x $ mapα f κ

@@ -11,6 +11,8 @@ data Tree a =
    Empty |
    NonEmpty (Tree a) a (Tree a)
 
+derive instance functorTree :: Functor Tree
+
 type FiniteMap k v = Tree (Tuple k v)
 
 lookup :: forall k v . Ord k => k -> FiniteMap k v -> Maybe v
