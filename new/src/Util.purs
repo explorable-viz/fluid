@@ -2,6 +2,7 @@ module Util where
 
 import Prelude hiding (absurd)
 import Data.Either (Either(..))
+import Data.List (List, intercalate)
 import Data.Maybe (Maybe(..))
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
@@ -41,5 +42,12 @@ mayEq x x' = if x == x' then Just x else Nothing
 mustEq :: forall a . Eq a => a -> a -> a
 mustEq x x' = fromJust $ x ≟ x'
 
+eitherEq :: forall a . Show a => Eq a => a -> a -> MayFail a
+eitherEq x x' = if x == x' then pure x else Left $ show x <> " ≠ " <> show x'
+
 infixl 5 mayEq as ≟
 infixl 5 mustEq as ≜
+
+-- Could be more efficient
+intersperse :: forall a . a -> List a -> List a
+intersperse x xs = intercalate (pure x) $ map pure xs

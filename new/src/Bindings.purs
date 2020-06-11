@@ -10,13 +10,10 @@ import Util ((≟))
 type Var = String
 
 data Bind a = Bind Var a
-
-infix 6 Bind as ↦
-
 data Bindings a = Empty | Extend (Bindings a) (Bind a)
 
+infix 6 Bind as ↦
 infixl 5 Extend as :+:
-
 infixl 5 update as ◃
 
 ε :: ∀ a . Bindings a
@@ -49,7 +46,7 @@ remove x' xss   = go xss Empty
                                  else go xs (acc :+: x ↦ v)
 
 update :: forall a . Lattice a => Var -> a -> Bindings a -> Bindings a
+update _ _ Empty = Empty
 update x' v' (xs :+: x ↦ v)
    | x == x'    = xs :+: x' ↦ v'
    | otherwise  = (update x' v' xs) :+: x ↦ v
-update x' v' Empty = Empty

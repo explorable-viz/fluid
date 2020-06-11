@@ -3,7 +3,6 @@ module Bwd where
 import Prelude hiding (absurd, join)
 import Bindings ((:+:), (↦), ε, find, remove)
 import Elim (Elim(..))
-import Primitive (primitives)
 import Expr (Expr(..), RawExpr(..))
 import Lattice (class Selectable, Selected, (∨), bot, join)
 import Util (T3(..), absurd, error, successful, (≜))
@@ -12,7 +11,6 @@ import Val (RawVal(..)) as V
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Data.Tuple (Tuple(..))
-
 
 unmatch :: forall k . Env -> Match k -> Tuple Env Env
 unmatch ρ (MatchVar x)

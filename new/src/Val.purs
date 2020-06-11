@@ -1,9 +1,10 @@
 module Val where
 
 import Prelude hiding (absurd, top)
-import Data.List (zipWith)
+import Data.List (List, zipWith)
 import Data.Traversable (sequence)
 import Bindings (Bindings)
+import DataType (Ctr)
 import Elim (Elim)
 import Expr (RecDefs, Expr)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
@@ -28,6 +29,7 @@ data RawVal =
    True | False |
    Int Int |
    Str String |
+   Constr Ctr (List Val) |
    Closure Env RecDefs (Elim Expr) |
    Binary BinaryOp |
    Unary UnaryOp |
@@ -59,6 +61,7 @@ instance selectableVal :: Selectable Val where
 instance selectableRawVal :: Selectable RawVal where
    mapα _ (Int x)          = Int x
    mapα _ (Str s)          = Str s
+   mapα f (Constr c es)    = Constr c (map (mapα f) es)
    mapα _ False            = False
    mapα _ True             = True
    mapα _ Nil              = Nil
@@ -70,6 +73,8 @@ instance selectableRawVal :: Selectable RawVal where
 
    maybeZipWithα f (Int x) (Int x')                   = Int <$> x ≟ x'
    maybeZipWithα f (Str s) (Str s')                   = Str <$> s ≟ s'
+   maybeZipWithα f (Constr c es) (Constr c' es') =
+      Constr <$> c ≟ c' <*> sequence (zipWith (maybeZipWithα f) es es')
    maybeZipWithα f False False                        = pure False
    maybeZipWithα f True True                          = pure True
    maybeZipWithα f Nil Nil                            = pure Nil
@@ -77,7 +82,7 @@ instance selectableRawVal :: Selectable RawVal where
    maybeZipWithα f (Pair e1 e2) (Pair e1' e2')        = Pair <$> maybeZipWithα f e1 e1' <*> maybeZipWithα f e2 e2'
    maybeZipWithα f (Closure ρ δ σ) (Closure ρ' δ' σ') =
       Closure <$> maybeZipWithα f ρ ρ'
-              <*> (sequence $ zipWith (maybeZipWithα f) δ δ') <*> maybeZipWithα f σ σ'
+              <*> sequence (zipWith (maybeZipWithα f) δ δ') <*> maybeZipWithα f σ σ'
    maybeZipWithα f (Binary φ) (Binary φ')             = Binary <$> maybeZipWithα f φ φ'
    maybeZipWithα f (Unary φ) (Unary φ')               = Unary <$> maybeZipWithα f φ φ'
    maybeZipWithα f _ _                                = Nothing

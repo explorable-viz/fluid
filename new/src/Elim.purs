@@ -12,11 +12,7 @@ data Elim k =
    ElimPair (Elim (Elim k)) |
    ElimList { nil :: k, cons :: Elim (Elim k) }
 
-instance elimFunctor :: Functor Elim where
-   map f (ElimVar x κ)                       = ElimVar x (f κ)
-   map f (ElimBool { true: κ, false: κ' })   = ElimBool { true: f κ, false: f κ' }
-   map f (ElimPair σ)                        = ElimPair $ map (map f) σ
-   map f (ElimList { nil: κ, cons: σ })      = ElimList { nil: f κ, cons: map (map f) σ }
+derive instance elimFunctor :: Functor Elim
 
 instance elimSelectable :: Selectable k => Selectable (Elim k) where
    mapα f (ElimVar x κ) = ElimVar x (mapα f κ)
