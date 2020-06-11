@@ -2,6 +2,7 @@ module FiniteMap where
 -- PureScript's map doesn't give us access to its constructors.
 
 import Prelude
+import Data.List (List(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Lattice (class Selectable, mapα, maybeZipWithα)
@@ -12,6 +13,10 @@ data Tree a =
    NonEmpty (Tree a) a (Tree a)
 
 derive instance functorTree :: Functor Tree
+
+values :: forall a . Tree a -> List a
+values Empty               = Nil
+values (NonEmpty t a t')   = values t <> pure a <> values t'
 
 type FiniteMap k v = Tree (Tuple k v)
 

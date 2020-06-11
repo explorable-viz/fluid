@@ -100,7 +100,7 @@ instance prettyEither :: (Pretty a, Pretty b) => Pretty (Either a b) where
 
 instance prettyElim2 :: Pretty Elim2 where
    pretty (ElimVar2 x κ) = text x :<>: operator "->" :<>: pretty κ
-   pretty (ElimConstr (Ctr c) κ) = ?_
+   pretty (ElimConstr κs) = ?_
 
 instance valPretty :: Pretty Val where
    pretty (Val _ u) = pretty u
