@@ -11,14 +11,15 @@ import Data.Tuple (Tuple(..))
 newtype Ctr = Ctr String
 derive instance newtypeCtr :: Newtype Ctr _
 derive instance eqCtr :: Eq Ctr
+derive instance ordCtr :: Ord Ctr
 
-data DataType = DataType String (Map String CtrSig)
+data DataType = DataType String (Map Ctr CtrSig)
 data CtrSig = CtrSig Ctr (List String)
 
-ctr :: forall f . Foldable f => String -> f String -> Tuple String CtrSig
-ctr c = L.fromFoldable >>> CtrSig (Ctr c) >>> Tuple c
+ctr :: forall f . Foldable f => String -> f String -> Tuple Ctr CtrSig
+ctr c = L.fromFoldable >>> CtrSig (Ctr c) >>> Tuple (Ctr c)
 
-dataType :: forall f . Foldable f => String -> f (Tuple String CtrSig) -> DataType
+dataType :: forall f . Foldable f => String -> f (Tuple Ctr CtrSig) -> DataType
 dataType name = fromFoldable >>> DataType name
 
 dataTypes :: List DataType
