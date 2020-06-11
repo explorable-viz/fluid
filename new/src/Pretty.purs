@@ -1,7 +1,7 @@
 module Pretty (class Pretty, pretty, module P) where
 
 import Prelude
-import Data.List (List(..), (:), intercalate, singleton)
+import Data.List (List(..), (:))
 import Text.Pretty (Doc, atop, beside, hcat, text)
 import Text.Pretty (render) as P
 import DataType (Ctr(..))
@@ -9,7 +9,7 @@ import Elim (Elim(..))
 import Expr (Def(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Parse (cFalse, cNil, cTrue)
-import Util (error)
+import Util (error, intersperse)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
 import Val (RawVal(..)) as V
 
@@ -94,9 +94,6 @@ instance prettyElim :: Pretty k => Pretty (Elim k) where
 
 instance valPretty :: Pretty Val where
    pretty (Val _ u) = pretty u
-
-intersperse :: forall a . a -> List a -> List a
-intersperse x xs = intercalate (singleton x) $ map singleton xs
 
 instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n

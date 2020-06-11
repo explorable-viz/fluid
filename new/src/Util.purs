@@ -2,6 +2,7 @@ module Util where
 
 import Prelude hiding (absurd)
 import Data.Either (Either(..))
+import Data.List (List, intercalate)
 import Data.Maybe (Maybe(..))
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
@@ -43,3 +44,7 @@ mustEq x x' = fromJust $ x ≟ x'
 
 infixl 5 mayEq as ≟
 infixl 5 mustEq as ≜
+
+-- Could be more efficient
+intersperse :: forall a . a -> List a -> List a
+intersperse x xs = intercalate (pure x) $ map pure xs
