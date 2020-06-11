@@ -1,8 +1,9 @@
 module Bwd where
 
 import Prelude hiding (absurd, join)
-import Bindings ((:+:), (↦), ε, find)
+import Bindings ((:+:), (↦), ε, find, remove)
 import Elim (Elim(..))
+import Primitive (primitives)
 import Expr (Expr(..), RawExpr(..))
 import Lattice (class Selectable, Selected, (∨), bot, join)
 import Util (T3(..), absurd, error, successful, (≜))
@@ -12,10 +13,22 @@ import Expl (Expl(..)) as T
 import Expl (Expl, Match(..))
 import Data.Tuple (Tuple(..))
 
-bwd_env :: forall k . Env -> Match (Elim k) -> (Match k) -> Tuple Env Env
-bwd_env ρ ξ ξ' = let ρ1 = bound_vars ρ ξ
-                     ρ2 = bound_vars ρ ξ'
-                 in  Tuple ρ1 ρ2
+
+unmatch :: forall k . Env -> Match k -> Tuple Env Env
+unmatch ρ (MatchVar x)
+   =  let Tuple v ρ' = successful (remove x ρ)
+      in  Tuple ρ' (ε :+: x ↦ v)
+unmatch ρ (MatchTrue k)    = Tuple ρ ε
+unmatch ρ (MatchFalse k)   = Tuple ρ ε
+unmatch ρ (MatchPair ξ ξ')
+   =  let Tuple ρ'  ρ2 = unmatch ρ  ξ'
+          Tuple ρ'' ρ1 = unmatch ρ' ξ
+      in  Tuple ρ (ρ1 <> ρ2)
+unmatch ρ (MatchNil k)     = Tuple ρ ε
+unmatch ρ (MatchCons {nil: k, cons: Tuple ξ ξ'})
+   =  let Tuple ρ'  ρ2 = unmatch ρ  ξ'
+          Tuple ρ'' ρ1 = unmatch ρ' ξ
+      in  Tuple ρ (ρ1 <> ρ2)
 
 bound_vars :: forall k . Env -> Match k -> Env
 bound_vars ρ (MatchVar x)     = ε :+: x ↦ successful (find x ρ)
@@ -34,7 +47,8 @@ match_bwd ε κ α (MatchTrue κ')  = Tuple (Val α V.True) (ElimBool { true: κ
 match_bwd ε κ α (MatchFalse κ') = Tuple (Val α V.False) (ElimBool { true: bot κ', false: κ })
 -- pair
 match_bwd ρ κ α (MatchPair ξ ξ') =
-   let Tuple ρ1 ρ2 = bwd_env ρ ξ ξ'
+   let ρ1 = bound_vars ρ ξ
+       ρ2 = bound_vars ρ ξ'
        Tuple v' σ  = match_bwd ρ2 κ α ξ'
        Tuple v  τ  = match_bwd ρ1 σ α ξ
    in  Tuple (Val α (V.Pair v v')) (ElimPair τ)
@@ -42,7 +56,8 @@ match_bwd ρ κ α (MatchPair ξ ξ') =
 match_bwd ε κ α (MatchNil σ) = Tuple (Val α V.Nil) (ElimList {nil: κ, cons: bot σ})
 -- cons
 match_bwd ρ κ α (MatchCons { nil: κ', cons: Tuple ξ ξ'}) =
-   let Tuple ρ1 ρ2 = bwd_env ρ ξ ξ'
+   let ρ1 = bound_vars ρ ξ
+       ρ2 = bound_vars ρ ξ'
        Tuple v' σ  = match_bwd ρ2 κ α ξ'
        Tuple v  τ  = match_bwd ρ1 σ α ξ
    in  Tuple (Val α (V.Cons v v')) (ElimList {nil: bot κ, cons: τ})
@@ -54,7 +69,10 @@ eval_bwd (Val α V.True ) T.True = T3 ε (Expr α True) α
 -- false
 eval_bwd (Val α V.False) T.False = T3 ε (Expr α False) α
 -- pair
--- eval_bwd { α, u: V.Pair v1 v2} (T.Pair t1 t2) = ...
+eval_bwd (Val α (V.Pair v1 v2)) (T.Pair t1 t2)
+   = let T3 ρ1  e1  α1 = eval_bwd v1 t1
+         T3 ρ2  e2  α2 = eval_bwd v2 t2
+     in  T3 (join ρ1 ρ2) (Expr α (Pair e1 e2)) (α ∨ α1 ∨ α2)
 -- var
 eval_bwd (Val α v) (T.Var x) =
    T3 (ε :+: x ↦ (Val α v)) (Expr α (Var x)) false
@@ -73,11 +91,36 @@ eval_bwd (Val α (V.Cons u v)) (T.Cons tT uU)
          T3 ρ' e' α'' = eval_bwd v uU
      in  T3 (join ρ ρ') (Expr α (Cons e e')) (α ∨ α' ∨ α'')
 -- apply
--- eval_bwd val (T.App t u match t') = ...
--- -- apply-prim
--- eval_bwd { α, n } (T.AppOp t u) = ...
+eval_bwd v (T.App t u ξ t')
+   = case eval_bwd v t' of
+      T3 (ρ1_ρ :+: f ↦ Val _ (V.Closure ρ1' δ σ)) e α ->
+         let Tuple ρ1 ρ         = unmatch ρ1_ρ ξ
+             Tuple v' σ'        = match_bwd ρ e α ξ
+             T3 ρ'  e'  α'      = eval_bwd v' u
+             T3 ρ'' e'' α''     = eval_bwd (Val α (V.Closure (ρ1 ∨ ρ1') δ (σ ∨ σ'))) t
+         in  T3 (ρ' ∨ ρ'') (e' ∨ e'') (α' ∨ α'')
+      _ -> error absurd
 -- -- binary-apply
--- eval_bwd { α, n } (T.BinaryApp t op u ) = ...
+-- eval_bwd (Val α (V.Int n)) (T.BinaryApp t op u)
+--    = case t, u of
+--       (T.Int val_t), (T.Int val_u) ->
+--          let T3 ρ  e  α'  = eval_bwd (Val α (V.Int val_t)) t
+--              T3 ρ' e' α'' = eval_bwd (Val α (V.Int val_u)) u
+--          in  T3 (ρ ∨ ρ') (Expr α (BinaryApp e e')) α
+--       _, _ -> error absurd
+-- -- apply-prim
+-- eval_bwd (Val α (V.Int n)) (T.AppOp t u)
+--    = case t of
+--       (T.Op op) -> let val_t = successful (find op primitives)
+--                        T3 ρ e α' = eval_bwd val_t t
+--                    in  case u of
+--                         (T.Int i) ->
+--                            let val_u = Val α i
+--                                T3 ρ' e' α'' = eval_bwd val_u u
+--                            in  T3 (ρ ∨ ρ') (e ∨ e') (α)
+--                         (T.Var x) ->
+--                         _
+--       _ -> error absurd
 -- let
 -- eval_bwd val (T.Let x t1 t2) = ...
 -- -- let-rec
