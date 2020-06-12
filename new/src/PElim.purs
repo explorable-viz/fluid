@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.Map (Map, values)
 import Data.Maybe (Maybe(..))
-import Data.Traversable (foldl, foldMap)
+import Data.Traversable (foldl, foldMap, sequence)
 import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim(..))
@@ -124,7 +124,7 @@ toCont κ = bisequence (bimap Just toElim2 κ)
 
 toElim2 :: PElim2 -> Maybe Elim2
 toElim2 (PElimVar2 x κ) = ElimVar2 x <$> toCont κ
-toElim2 _ = Nothing
+toElim2 (PElimConstr κs) = ElimConstr <$> sequence (toCont <$> κs)
 
 -- Partial eliminators are not supported at the moment.
 singleBranch :: forall k . Elim k -> Maybe k
