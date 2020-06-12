@@ -40,14 +40,14 @@ match v _ =
    Left $ "Pattern mismatch for " <> render (pretty v)
 
 match2 :: Val -> Elim2 -> MayFail (T3 Env Cont Match2)
-match2 v (ElimVar2 x κ)                            = pure $ T3 (ε :+: x ↦ v) κ (MatchVar2 x)
+match2 v (ElimVar2 x κ) = pure $ T3 (ε :+: x ↦ v) κ (MatchVar2 x)
 match2 (Val _ (V.Constr c vs)) (ElimConstr κs) =
    case lookup c κs of
       Nothing -> Left $ "Constructor " <> show c <> " not found"
       Just κ -> do
          T3 ρ κ' ξs <- matchArgs vs κ
          T3 ρ κ' <$> pure (MatchConstr (Tuple c ξs) $ update (const Nothing) c κs)
-match2 v _                                         = Left $ "Pattern mismatch for " <> render (pretty v)
+match2 v _ = Left $ "Pattern mismatch for " <> render (pretty v)
 
 matchArgs :: List Val -> Cont -> MayFail (T3 Env Cont (List Match2))
 matchArgs Nil κ               = pure $ T3 ε κ Nil
