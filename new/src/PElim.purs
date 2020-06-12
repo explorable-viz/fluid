@@ -31,6 +31,8 @@ derive instance pElimFunctor :: Functor PElim
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
 type PCont = Maybe (Either Expr PElim2)
 
+data PCont2 = None | Expr Expr | PElim2 PElim2
+
 data PElim2 =
    PElimVar2 Var PCont |
    PElimConstr (Map Ctr PCont)
