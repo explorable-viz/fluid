@@ -26,7 +26,7 @@ import Bindings (Var)
 import DataType (Ctr(..))
 import Elim (Elim)
 import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PCont(..), PElim(..), PElim2(..), join, mapCont, singleBranch, toElim, toElim2)
+import PElim (PCont(..), PElim(..), PElim2(..), join, joinAll, mapCont, singleBranch, toElim, toElim2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -223,9 +223,12 @@ arrow = token.reservedOp strArrow
 equals :: SParser Unit
 equals = token.reservedOp strEquals
 
--- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elim expr' nest = elimSingle expr' nest <|> elimBraces expr' nest
+
+-- "nest" controls whether nested (curried) functions are permitted in this context
+elim2 :: SParser Expr -> Boolean -> SParser Elim2
+elim2 expr' nest = elimSingle2 expr' nest <|> elimBraces2 expr' nest
 
 elimSingle :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elimSingle expr' nest = do
@@ -248,6 +251,16 @@ elimBraces expr' nest =
       case join σs of
          Nothing -> error "Incompatible branches"
          Just σ -> case toElim σ of
+            Nothing -> error "Incomplete branches"
+            Just σ' -> pure σ'
+
+elimBraces2 :: SParser Expr -> Boolean -> SParser Elim2
+elimBraces2 expr' nest =
+   token.braces $ do
+      σs <- sepBy1 (partialElim2 expr' nest arrow) token.semi
+      case joinAll σs of
+         Nothing -> error "Incompatible branches"
+         Just σ -> case toElim2 σ of
             Nothing -> error "Incomplete branches"
             Just σ' -> pure σ'
 
