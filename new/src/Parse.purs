@@ -243,19 +243,17 @@ elimBraces :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elimBraces expr' nest =
    token.braces $ do
       σs <- sepBy1 (partialElim expr' nest arrow) token.semi
-      case join σs of
+      pure $ case join σs of
          Nothing -> error "Incompatible branches"
-         Just σ -> pure $ fromJust "Incomplete branches" (toElim σ)
+         Just σ -> fromJust "Incomplete branches" (toElim σ)
 
 elimBraces2 :: SParser Expr -> Boolean -> SParser Elim2
 elimBraces2 expr' nest =
    token.braces $ do
       σs <- sepBy1 (partialElim2 expr' nest arrow) token.semi
-      case joinAll σs of
+      pure $ case joinAll σs of
          Nothing -> error "Incompatible branches"
-         Just σ -> case toElim2 σ of
-            Nothing -> error "Incomplete branches"
-            Just σ' -> pure σ'
+         Just σ -> fromJust "Incomplete branches" (toElim2 σ)
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = elim expr' true <#> Lambda >>> expr
