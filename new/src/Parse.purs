@@ -10,7 +10,7 @@ import Data.Either (Either(..), choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (many, groupBy, sortBy)
-import Data.Map (values)
+import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (charAt)
 import Text.Parsing.Parser (Parser, fail)
@@ -106,6 +106,10 @@ ctr = do
    x <- token.identifier
    pureIf ("Unexpected identifier") (isCtr x) $ Ctr x
 
+-- Parse a constructor name as a nullary constructor pattern.
+ctr_pattern :: SParser PElim2
+ctr_pattern = PElimConstr <$> (singleton <$> ctr <@> Nothing)
+
 theCtr :: Ctr -> SParser Ctr
 theCtr c = do
    c' <- ctr
@@ -124,6 +128,13 @@ int = do
 
 string :: SParser Expr
 string = token.stringLiteral <#> Str >>> expr
+
+constr_pattern :: SParser PElim2 -> SParser PElim2
+constr_pattern pattern' = ctr_pattern >>= rest
+   where
+      rest ∷ PElim2 -> SParser PElim2
+      rest σ = (simplePattern2 pattern' <|> ctr_pattern <#> (mapCont (Just $ Right σ) >>> fromJust) >>= rest) <|>
+               pure σ
 
 true_ :: SParser Expr
 true_ = theCtr cTrue $> expr True
@@ -169,7 +180,7 @@ patternPair2 :: SParser PElim2 -> SParser PElim2
 patternPair2 pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
-      fromJust <$> (pattern' <#> flip mapCont (Just $ Right σ))
+      fromJust <$> (pattern' <#> mapCont (Just $ Right σ))
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -286,18 +297,13 @@ appChain expr' =
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
 
 appChain_pattern :: SParser (PElim Unit) -> SParser (PElim Unit)
-appChain_pattern pattern' =
-   simplePattern pattern' <|> patternCons pattern'
+appChain_pattern pattern' = simplePattern pattern' <|> patternCons pattern'
 
 -- Singleton eliminator. Analogous in some way to app_chain, but there is nothing higher-order here:
--- there are no explicit application nodes or non-saturated constructor applications. This case deals
--- with constructor applications which are (syntactically) non-nullary; nullary constructors are "simple"
--- patterns.
+-- there are no explicit application nodes, non-saturated constructor applications, or patterns other
+-- than constructors in the function position.
 appChain_pattern2 :: SParser PElim2 -> SParser PElim2
-appChain_pattern2 pattern' = do
-   c <- ctr
-   σ <- simplePattern2 pattern'
-   ?_
+appChain_pattern2 pattern' = simplePattern2 pattern' <|> constr_pattern pattern'
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser (PElim Unit)

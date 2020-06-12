@@ -150,19 +150,19 @@ instance singleBranchElim :: SingleBranch Elim2 where
          _ -> Nothing
 
 class MapCont a where
-   mapCont :: a -> PCont -> Maybe a
+   mapCont :: PCont -> a -> Maybe a
 
 instance mapContCont :: MapCont (Maybe (Either Expr PElim2)) where
-   mapCont Nothing κ = pure κ
-   mapCont (Just (Left e)) κ = pure κ
-   mapCont (Just (Right σ)) κ = Just <$> Right <$> mapCont σ κ
+   mapCont κ Nothing = pure κ
+   mapCont κ (Just (Left e)) = pure κ
+   mapCont κ (Just (Right σ)) = Just <$> Right <$> mapCont κ σ
 
 instance mapContElim :: MapCont PElim2 where
-   mapCont (PElimVar2 x κ) κ' = Just $ PElimVar2 x κ'
-   mapCont (PElimConstr κs) κ =
+   mapCont κ' (PElimVar2 x κ) = Just $ PElimVar2 x κ'
+   mapCont κ (PElimConstr κs) =
       case toUnfoldable κs of
          Tuple c κ' : Nil -> do
-            κ'' <- mapCont κ' κ
+            κ'' <- mapCont κ κ'
             pure $ PElimConstr $ singleton c κ''
          _ -> Nothing
 
