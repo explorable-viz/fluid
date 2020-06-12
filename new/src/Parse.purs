@@ -25,7 +25,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..))
 import Elim (Elim)
-import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import Expr (Def(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (PElim(..), PElim2(..), join, mapCont, singleBranch, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
@@ -169,7 +169,7 @@ patternPair2 :: SParser PElim2 -> SParser PElim2
 patternPair2 pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
-      fromJust <$> (pattern' <#> flip mapCont (Right σ))
+      fromJust <$> (pattern' <#> flip mapCont (Just $ Right σ))
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -293,10 +293,10 @@ appChain_pattern pattern' =
 -- there are no explicit application nodes or non-saturated constructor applications. This case deals
 -- with constructor applications which are (syntactically) non-nullary; nullary constructors are "simple"
 -- patterns.
-appChain_pattern2 :: SParser Elim2 -> SParser Elim2
+appChain_pattern2 :: SParser PElim2 -> SParser PElim2
 appChain_pattern2 pattern' = do
    c <- ctr
-   σ <- simplePattern pattern'
+   σ <- simplePattern2 pattern'
    ?_
 
 -- TODO: allow infix constructors, via buildExprParser
