@@ -1,8 +1,6 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
-import Data.Bifunctor (bimap)
-import Data.Bitraversable (bisequence)
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.Map (Map, singleton, toUnfoldable, values)
@@ -29,9 +27,7 @@ data PElim k =
 derive instance pElimFunctor :: Functor PElim
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
-type PCont = Maybe (Either Expr PElim2)
-
-data PCont2 = None | Expr Expr | PElim2 PElim2
+data PCont = None | Expr Expr | PElim PElim2
 
 data PElim2 =
    PElimVar2 Var PCont |
@@ -98,11 +94,11 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
       error absurd
    join (σ : τ : _) = Nothing
 
-instance joinableCont :: Joinable2 (Maybe (Either Expr PElim2)) where
-   join2 Nothing Nothing                     = Nothing
-   join2 (Just (Left x)) (Just (Left x'))    = Just <$> Left <$> join2 x x'
-   join2 (Just (Right x)) (Just (Right x'))  = Just <$> Right <$> join2 x x'
-   join2 _ _                                 = Nothing
+instance joinableCont :: Joinable2 PCont where
+   join2 None None            = Nothing
+   join2 (Expr e) (Expr e')   = Expr <$> join2 e e'
+   join2 (PElim σ) (PElim σ') = PElim <$> join2 σ σ'
+   join2 _ _                  = Nothing
 
 instance joinablePElim2 :: Joinable2 PElim2 where
    join2 (PElimVar2 x κ) (PElimVar2 x' κ')   = PElimVar2 <$> x ≟ x' <*> join2 κ κ'
@@ -124,8 +120,9 @@ toElim (PElimList { nil: κ, cons: σ }) = do
 toElim _ = Nothing
 
 toCont :: PCont -> Maybe Cont
-toCont Nothing = Nothing
-toCont (Just κ) = bisequence (bimap Just toElim2 κ)
+toCont None = Nothing
+toCont (Expr e) = Left <$> pure e
+toCont (PElim σ) = Right <$> toElim2 σ
 
 toElim2 :: PElim2 -> Maybe Elim2
 toElim2 (PElimVar2 x κ) = ElimVar2 x <$> toCont κ
@@ -154,10 +151,10 @@ instance singleBranchElim :: SingleBranch Elim2 where
 class MapCont a where
    mapCont :: PCont -> a -> Maybe a
 
-instance mapContCont :: MapCont (Maybe (Either Expr PElim2)) where
-   mapCont κ Nothing = pure κ
-   mapCont κ (Just (Left e)) = pure κ
-   mapCont κ (Just (Right σ)) = Just <$> Right <$> mapCont κ σ
+instance mapContCont :: MapCont PCont where
+   mapCont κ None = pure κ
+   mapCont κ (Expr e) = pure κ
+   mapCont κ (PElim σ) = PElim <$> mapCont κ σ
 
 instance mapContElim :: MapCont PElim2 where
    mapCont κ' (PElimVar2 x κ) = Just $ PElimVar2 x κ'

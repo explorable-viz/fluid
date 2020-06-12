@@ -6,7 +6,7 @@ import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
 import Data.Char.Unicode (isUpper)
-import Data.Either (Either(..), choose)
+import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (many, groupBy, sortBy)
@@ -26,7 +26,7 @@ import Bindings (Var)
 import DataType (Ctr(..))
 import Elim (Elim)
 import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PElim(..), PElim2(..), join, mapCont, singleBranch, toElim, toElim2)
+import PElim (PCont(..), PElim(..), PElim2(..), join, mapCont, singleBranch, toElim, toElim2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -87,7 +87,7 @@ patternVariable :: SParser (PElim Unit)
 patternVariable = ident <#> flip PElimVar unit
 
 patternVariable2 :: SParser PElim2
-patternVariable2 = ident <#> flip PElimVar2 Nothing
+patternVariable2 = ident <#> flip PElimVar2 None
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
@@ -108,7 +108,7 @@ ctr = do
 
 -- Parse a constructor name as a nullary constructor pattern.
 ctr_pattern :: SParser PElim2
-ctr_pattern = PElimConstr <$> (singleton <$> ctr <@> Nothing)
+ctr_pattern = PElimConstr <$> (singleton <$> ctr <@> None)
 
 theCtr :: Ctr -> SParser Ctr
 theCtr c = do
@@ -133,7 +133,7 @@ constr_pattern :: SParser PElim2 -> SParser PElim2
 constr_pattern pattern' = ctr_pattern >>= rest
    where
       rest ∷ PElim2 -> SParser PElim2
-      rest σ = (simplePattern2 pattern' <|> ctr_pattern <#> (mapCont (Just $ Right σ) >>> fromJust absurd) >>= rest) <|>
+      rest σ = (simplePattern2 pattern' <|> ctr_pattern <#> (mapCont (PElim σ) >>> fromJust absurd) >>= rest) <|>
                pure σ
 
 true_ :: SParser Expr
@@ -180,7 +180,7 @@ patternPair2 :: SParser PElim2 -> SParser PElim2
 patternPair2 pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
-      fromJust absurd <$> (pattern' <#> mapCont (Just $ Right σ))
+      fromJust absurd <$> (pattern' <#> mapCont (PElim σ))
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -264,7 +264,7 @@ partialElim2 :: SParser Expr -> Boolean -> SParser Unit -> SParser PElim2
 partialElim2 expr' nest delim = do
    σ <- pattern2
    e <- delim *> expr' <|> nestedFun nest expr'
-   pure $ fromJust absurd $ mapCont (Just $ Left e) σ
+   pure $ fromJust absurd $ mapCont (Expr e) σ
 
 def :: SParser Expr -> SParser Def
 def expr' = do
