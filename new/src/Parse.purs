@@ -273,7 +273,7 @@ partialElim2 expr' nest delim = do
 def :: SParser Expr -> SParser Def
 def expr' = do
    σ <- try $ keyword strLet *> elim expr' false <* token.semi
-   pureMaybe "Singleton eliminator expected" $ singleBranch σ <#> Def (σ $> unit)
+   pure $ fromJust "Singleton eliminator expected" $ singleBranch σ <#> Def (σ $> unit)
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')
