@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..))
 import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim(..))
-import Expr (Cont, Expr)
+import Expr (Expr)
 import Util ((≟), absurd, error)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
@@ -34,8 +34,14 @@ data PElim2 =
 class Joinable k where
    join :: List k -> Maybe k
 
+class Joinable2 k where
+   join2 :: k -> k -> Maybe k
+
 instance exprJoinable :: Joinable Expr where
    join _ = Nothing
+
+instance joinableExpr :: Joinable2 Expr where
+   join2 _ _ = Nothing
 
 -- This will simplify into a more generic style once we reinstate arbitrary data types.
 instance pElimJoinable :: Joinable k => Joinable (PElim k) where
@@ -86,26 +92,21 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
       error absurd
    join (σ : τ : _) = Nothing
 
--- Factor into binary join and fold over list of joinables.
-instance joinableEither :: (Joinable a, Joinable b) => Joinable (Either a b) where
-   join Nil = Nothing
-   join (x : Nil) = Just x
-   join (Left a : Left a' : xs) = do
-      a'' <- join (a : a' : Nil)
-      join $ Left a'' : xs
-   join (Right b : Right b' : xs) = do
-      b'' <- join (b : b' : Nil)
-      join $ Right b'' : xs
-   join (x : y : _) = Nothing
+instance joinableEither :: (Joinable2 a, Joinable2 b) => Joinable2 (Either a b) where
+   join2 (Left a) (Left a') = do
+      a'' <- join2 a a'
+      pure $ Left a''
+   join2 (Right b) (Right b') = do
+      b'' <- join2 b b'
+      pure $ Right b''
+   join2 _ _ = Nothing
 
-instance joinablePElim2 :: Joinable PElim2 where
-   join Nil = Nothing
-   join (σ : Nil) = Just σ
-   join (PElimVar2 x κ : PElimVar2 x' κ' : bs) = do
+instance joinablePElim2 :: Joinable2 PElim2 where
+   join2 (PElimVar2 x κ) (PElimVar2 x' κ') = do
       x'' <- x ≟ x'
-      κ'' <- join (κ : κ' : Nil)
-      join $ PElimVar2 x κ'' : bs
-   join (σ : τ : _) = Nothing
+      κ'' <- join2 κ κ'
+      pure $ PElimVar2 x κ''
+   join2 σ τ = Nothing
 
 toElim :: forall k . PElim k -> Maybe (Elim k)
 toElim (PElimVar x κ) = Just $ ElimVar x κ
