@@ -25,8 +25,8 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..))
 import Elim (Elim)
-import Expr (Def(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PElim(..), join, singleBranch, toElim)
+import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import PElim (PElim(..), PElim2(..), join, singleBranch, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool)
 
@@ -122,10 +122,6 @@ int = do
 string :: SParser Expr
 string = token.stringLiteral <#> Str >>> expr
 
--- Don't assume constructor signatures are known at this stage.
-constr_pattern :: SParser Expr -> SParser Expr
-constr_pattern expr' = error "todo"
-
 true_ :: SParser Expr
 true_ = theCtr cTrue $> expr True
 
@@ -166,6 +162,12 @@ patternPair pattern' =
       σ <- pattern' <* token.comma
       pattern' <#> const >>> (<#>) σ >>> PElimPair
 
+patternPair2 :: SParser PElim2 -> SParser PElim2
+patternPair2 pattern' =
+   token.parens $ do
+      σ <- pattern' <* token.comma
+      pattern' <#> const >>> (<#>) σ >>> PElimPair
+
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
@@ -189,6 +191,12 @@ simplePattern pattern' =
    try patternTrue <|>
    try patternFalse <|>
    try patternNil <|>
+   try (token.parens pattern') <|>
+   patternPair pattern'
+
+simplePattern2 :: SParser PElim2 -> SParser PElim2
+simplePattern2 pattern' =
+   try patternVariable <|>
    try (token.parens pattern') <|>
    patternPair pattern'
 
@@ -274,11 +282,19 @@ appChain expr' =
       rest ∷ Expr -> SParser Expr
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
 
--- Singleton eliminator. Analogous in some to app_chain, but there is nothing higher-order about patterns:
--- there are no explicit application nodes and no non-saturated constructor applications.
 appChain_pattern :: SParser (PElim Unit) -> SParser (PElim Unit)
 appChain_pattern pattern' =
    simplePattern pattern' <|> patternCons pattern'
+
+-- Singleton eliminator. Analogous in some way to app_chain, but there is nothing higher-order here:
+-- there are no explicit application nodes or non-saturated constructor applications. This case deals
+-- with constructor applications which are (syntactically) non-nullary; nullary constructors are "simple"
+-- patterns.
+appChain_pattern2 :: SParser Elim2 -> SParser Elim2
+appChain_pattern2 pattern' = do
+   c <- ctr
+   σ <- simplePattern pattern'
+   ?_
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser (PElim Unit)

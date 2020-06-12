@@ -5,9 +5,10 @@ import Data.Bifunctor (bimap)
 import Data.Bitraversable (bisequence)
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
-import Data.Map (Map, values)
+import Data.Map (Map, singleton, toUnfoldable, values)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl, foldMap, sequence)
+import Data.Tuple (Tuple(..))
 import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim(..))
@@ -134,19 +135,28 @@ singleBranch _ = Nothing
 
 class SingleBranch a where
    singleBranch2 :: a -> Maybe Cont
+   mapCont :: a -> Cont -> Maybe a
 
-instance singleBranchExpr :: SingleBranch Expr where
-   singleBranch2 = Left >>> pure
+instance singleBranchCont :: SingleBranch (Either Expr Elim2) where
+   singleBranch2 (Left e) = pure $ Left e
+   singleBranch2 (Right σ) = singleBranch2 σ
 
-instance singleBranchEither :: (SingleBranch a, SingleBranch b) => SingleBranch (Either a b) where
-   singleBranch2 (Left x) = singleBranch2 x
-   singleBranch2 (Right x) = singleBranch2 x
+   mapCont (Left e) κ = pure κ
+   mapCont (Right σ) κ = Right <$> mapCont σ κ
 
-instance maybeSingleBranchElim :: SingleBranch Elim2 where
+instance singleBranchElim :: SingleBranch Elim2 where
    singleBranch2 (ElimVar2 x κ) = Just κ
    singleBranch2 (ElimConstr κs) =
       case values κs of
          κ : Nil -> singleBranch2 κ
+         _ -> Nothing
+
+   mapCont (ElimVar2 x κ) κ' = Just $ ElimVar2 x κ'
+   mapCont (ElimConstr κs) κ =
+      case toUnfoldable κs of
+         Tuple c κ' : Nil -> do
+            κ'' <- mapCont κ' κ
+            pure $ ElimConstr $ singleton c κ''
          _ -> Nothing
 
 -- TODO: provide a Traversable instance for PElim; then this is sequence.
