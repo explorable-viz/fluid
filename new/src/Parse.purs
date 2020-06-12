@@ -25,8 +25,8 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..))
 import Elim (Elim)
-import Expr (Def(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PElim(..), PElim2(..), join, mapCont, singleBranch, toElim)
+import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import PElim (PElim(..), PElim2(..), join, mapCont, singleBranch, toElim, toElim2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -133,7 +133,7 @@ constr_pattern :: SParser PElim2 -> SParser PElim2
 constr_pattern pattern' = ctr_pattern >>= rest
    where
       rest ∷ PElim2 -> SParser PElim2
-      rest σ = (simplePattern2 pattern' <|> ctr_pattern <#> (mapCont (Just $ Right σ) >>> fromJust) >>= rest) <|>
+      rest σ = (simplePattern2 pattern' <|> ctr_pattern <#> (mapCont (Just $ Right σ) >>> fromJust absurd) >>= rest) <|>
                pure σ
 
 true_ :: SParser Expr
@@ -180,7 +180,7 @@ patternPair2 :: SParser PElim2 -> SParser PElim2
 patternPair2 pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
-      fromJust <$> (pattern' <#> mapCont (Just $ Right σ))
+      fromJust absurd <$> (pattern' <#> mapCont (Just $ Right σ))
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -234,6 +234,13 @@ elimSingle expr' nest = do
       Nothing -> error "Incomplete branches"
       Just σ' -> pure σ'
 
+elimSingle2 :: SParser Expr -> Boolean -> SParser Elim2
+elimSingle2 expr' nest = do
+   σ <- partialElim2 expr' nest (arrow <|> equals)
+   case toElim2 σ of
+      Nothing -> error "Incomplete branches"
+      Just σ' -> pure σ'
+
 elimBraces :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elimBraces expr' nest =
    token.braces $ do
@@ -257,7 +264,7 @@ partialElim2 :: SParser Expr -> Boolean -> SParser Unit -> SParser PElim2
 partialElim2 expr' nest delim = do
    σ <- pattern2
    e <- delim *> expr' <|> nestedFun nest expr'
-   pure $ fromJust $ mapCont (Just $ Left e) σ
+   pure $ fromJust absurd $ mapCont (Just $ Left e) σ
 
 def :: SParser Expr -> SParser Def
 def expr' = do
