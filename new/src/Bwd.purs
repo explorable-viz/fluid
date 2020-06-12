@@ -1,16 +1,16 @@
 module Bwd where
 
 import Prelude hiding (absurd, join)
+import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find, remove)
 import Elim (Elim(..))
-import Expr (Expr(..), RawExpr(..))
+import Expl (Expl(..)) as T
+import Expl (Expl, Match(..), Match2(..))
+import Expr (Cont, Elim2(..), Expr(..), RawExpr(..))
 import Lattice (class Selectable, Selected, (∨), bot, join)
 import Util (T3(..), absurd, error, successful, (≜))
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
-import Expl (Expl(..)) as T
-import Expl (Expl, Match(..))
-import Data.Tuple (Tuple(..))
 
 unmatch :: forall k . Env -> Match k -> Tuple Env Env
 unmatch ρ (MatchVar x)
@@ -60,6 +60,11 @@ match_bwd ρ κ α (MatchCons { nil: κ', cons: Tuple ξ ξ'}) =
        Tuple v  τ  = match_bwd ρ1 σ α ξ
    in  Tuple (Val α (V.Cons v v')) (ElimList {nil: bot κ, cons: τ})
 match_bwd _ _ _ _ = error absurd
+
+match_bwd2 :: Env -> Cont -> Selected -> Match2 -> Tuple Val Elim2
+match_bwd2 (ε :+: x ↦ v) κ α (MatchVar2 x') = Tuple v (ElimVar2 (x ≜ x') κ)
+match_bwd2 _ _ _ (MatchVar2 x') = error absurd
+match_bwd2 ρ κ α (MatchConstr (Tuple c ξs) κs) = error "todo"
 
 eval_bwd :: Val -> Expl -> T3 Env Expr Selected
 -- true
