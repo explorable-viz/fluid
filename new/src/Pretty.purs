@@ -64,15 +64,18 @@ instance exprPretty :: Pretty Expr where
 instance unitPretty :: Pretty Unit where
    pretty _ = null
 
+instance prettyCtr :: Pretty Ctr where
+   pretty = show >>> text
+
 instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Int n) = text $ show n
    pretty (E.Str str) = text $ show str
    pretty (E.Var x) = text x
    pretty (E.Constr c es) = hcat $ intersperse space $ map pretty es
-   pretty E.True = text cTrue
-   pretty E.False = text cFalse
+   pretty E.True = pretty cTrue
+   pretty E.False = pretty cFalse
    pretty (E.Pair e e') = parens $ pretty e :<>: comma :<>: pretty e'
-   pretty E.Nil = text cNil
+   pretty E.Nil = text $ show cNil
    pretty (E.Cons e e') = brackets $ pretty e :<>: prettyList e'
    pretty (E.Op op) = parens $ text op
    pretty (E.Let (Def σ e) e') =
@@ -114,13 +117,13 @@ instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
    pretty (V.Str str) = text $ show str
    pretty (V.Constr (Ctr c) vs) = hcat $ intersperse space $ map pretty vs
-   pretty V.True = text cTrue
-   pretty V.False = text cFalse
+   pretty V.True = pretty cTrue
+   pretty V.False = pretty cFalse
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
    pretty (V.Unary op) = parens $ pretty op
    pretty (V.Binary op) = parens $ pretty op
    pretty (V.Pair v v') = parens $ pretty v :<>: comma :<>: pretty v'
-   pretty V.Nil = text cNil
+   pretty V.Nil = pretty cNil
    pretty (V.Cons v v') = brackets $ pretty v :<>: prettyList v'
 
 instance unaryOpPretty :: Pretty UnaryOp where

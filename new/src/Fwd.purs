@@ -2,13 +2,15 @@ module Fwd where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:))
+import Data.Either (Either(..))
+import Data.Map (lookup)
 import Bindings ((:+:), (↦), ε, find)
 import Elim (Elim(..))
-import Expr (Def(..), Expr(..), RecDef(..), RecDefs)
+import Expr (Cont, Def(..), Elim2(..), Expr(..), RecDef(..), RecDefs)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (applyBinary_fwd, applyUnary_fwd)
-import Util (T3(..), absurd, error, successful)
+import Util (T3(..), absurd, error, fromJust, successful)
 import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
 
@@ -31,6 +33,22 @@ match_fwd (Val α (V.Cons v v')) (ElimList { nil: κ, cons: σ }) =
    T3 (ρ1 <> ρ) κ' (α' ∧ α'')
 match_fwd _ _ =
    error absurd
+
+match_fwd2 :: Val -> Elim2 -> T3 Env Cont Selected
+match_fwd2 v (ElimVar2 x κ) = T3 (ε :+: x ↦ v) κ true
+match_fwd2 (Val α (V.Constr c vs)) (ElimConstr κs) =
+   let κ = fromJust absurd $ lookup c κs
+       T3 ρ κ' α' = matchArgs_fwd vs κ in
+   T3 ρ κ' (α ∧ α')
+match_fwd2 v _ = error absurd
+
+matchArgs_fwd :: List Val -> Cont -> T3 Env Cont Selected
+matchArgs_fwd Nil κ               = T3 ε κ true
+matchArgs_fwd (_ : _) (Left σ)    = error absurd
+matchArgs_fwd (v : vs) (Right σ)  =
+   let T3 ρ κ' α = match_fwd2 v σ
+       T3 ρ' κ'' α' = matchArgs_fwd vs κ' in
+   T3 (ρ <> ρ') κ'' (α ∧ α')
 
 closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
 closeDefs_fwd _ _ Nil _ = ε

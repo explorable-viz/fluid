@@ -1,11 +1,16 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
+import Data.Either (Either(..))
 import Data.List (List(..), (:))
+import Data.Map (Map, singleton, toUnfoldable, values)
 import Data.Maybe (Maybe(..))
+import Data.Traversable (foldl, sequence)
+import Data.Tuple (Tuple(..))
 import Bindings (Var)
+import DataType (Ctr)
 import Elim (Elim(..))
-import Expr (Expr)
+import Expr (Cont, Elim2(..), Expr)
 import Util ((≟), absurd, error)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
@@ -21,11 +26,24 @@ data PElim k =
 
 derive instance pElimFunctor :: Functor PElim
 
+-- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
+data PCont = None | Expr Expr | PElim PElim2
+
+data PElim2 =
+   PElimVar2 Var PCont |
+   PElimConstr (Map Ctr PCont)
+
 class Joinable k where
    join :: List k -> Maybe k
 
+class Joinable2 k where
+   join2 :: k -> k -> Maybe k
+
 instance exprJoinable :: Joinable Expr where
    join _ = Nothing
+
+instance joinableExpr :: Joinable2 Expr where
+   join2 _ _ = Nothing
 
 -- This will simplify into a more generic style once we reinstate arbitrary data types.
 instance pElimJoinable :: Joinable k => Joinable (PElim k) where
@@ -76,6 +94,19 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
       error absurd
    join (σ : τ : _) = Nothing
 
+instance joinableCont :: Joinable2 PCont where
+   join2 None None            = Nothing
+   join2 (Expr e) (Expr e')   = Expr <$> join2 e e'
+   join2 (PElim σ) (PElim σ') = PElim <$> join2 σ σ'
+   join2 _ _                  = Nothing
+
+instance joinablePElim2 :: Joinable2 PElim2 where
+   join2 (PElimVar2 x κ) (PElimVar2 x' κ')   = PElimVar2 <$> x ≟ x' <*> join2 κ κ'
+   join2 σ τ                                 = Nothing
+
+joinAll :: forall a . Joinable2 a => List a -> Maybe a
+joinAll = foldl (($>) join2) Nothing
+
 toElim :: forall k . PElim k -> Maybe (Elim k)
 toElim (PElimVar x κ) = Just $ ElimVar x κ
 toElim (PElimBool { true: κ, false: κ' }) =
@@ -88,11 +119,51 @@ toElim (PElimList { nil: κ, cons: σ }) = do
    Just $ ElimList { nil: κ, cons: σ' }
 toElim _ = Nothing
 
+toCont :: PCont -> Maybe Cont
+toCont None = Nothing
+toCont (Expr e) = Left <$> pure e
+toCont (PElim σ) = Right <$> toElim2 σ
+
+toElim2 :: PElim2 -> Maybe Elim2
+toElim2 (PElimVar2 x κ) = ElimVar2 x <$> toCont κ
+toElim2 (PElimConstr κs) = ElimConstr <$> sequence (toCont <$> κs)
+
 -- Partial eliminators are not supported at the moment.
 singleBranch :: forall k . Elim k -> Maybe k
 singleBranch (ElimVar x κ) = Just κ
 singleBranch (ElimPair σ) = singleBranch σ >>= singleBranch
 singleBranch _ = Nothing
+
+class SingleBranch a where
+   singleBranch2 :: a -> Maybe Cont
+
+instance singleBranchCont :: SingleBranch (Either Expr Elim2) where
+   singleBranch2 (Left e) = pure $ Left e
+   singleBranch2 (Right σ) = singleBranch2 σ
+
+instance singleBranchElim :: SingleBranch Elim2 where
+   singleBranch2 (ElimVar2 x κ) = Just κ
+   singleBranch2 (ElimConstr κs) =
+      case values κs of
+         κ : Nil -> singleBranch2 κ
+         _ -> Nothing
+
+class MapCont a where
+   mapCont :: PCont -> a -> Maybe a
+
+instance mapContCont :: MapCont PCont where
+   mapCont κ None = pure κ
+   mapCont κ (Expr e) = pure κ
+   mapCont κ (PElim σ) = PElim <$> mapCont κ σ
+
+instance mapContElim :: MapCont PElim2 where
+   mapCont κ' (PElimVar2 x κ) = Just $ PElimVar2 x κ'
+   mapCont κ (PElimConstr κs) =
+      case toUnfoldable κs of
+         Tuple c κ' : Nil -> do
+            κ'' <- mapCont κ κ'
+            pure $ PElimConstr $ singleton c κ''
+         _ -> Nothing
 
 -- TODO: provide a Traversable instance for PElim; then this is sequence.
 hoistMaybe :: forall k . PElim (Maybe k) -> Maybe (PElim k)

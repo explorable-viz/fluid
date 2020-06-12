@@ -16,10 +16,10 @@ class Lattice a where
    bot         :: a -> a
 
 join :: forall a . Lattice a => a -> a -> a
-join p q = fromJust $ p ∨? q
+join p q = fromJust "Join undefined" $ p ∨? q
 
 meet :: forall a . Lattice a => a -> a -> a
-meet p q = fromJust $ p ∧? q
+meet p q = fromJust "Meet undefined" $ p ∧? q
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
