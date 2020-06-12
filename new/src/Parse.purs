@@ -26,7 +26,7 @@ import Bindings (Var)
 import DataType (Ctr(..))
 import Elim (Elim)
 import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PElim(..), PElim2, join, mapCont, singleBranch, toElim)
+import PElim (PElim(..), PElim2(..), join, mapCont, singleBranch, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -85,6 +85,9 @@ variable = ident <#> Var >>> expr
 -- TODO: anonymous variables
 patternVariable :: SParser (PElim Unit)
 patternVariable = ident <#> flip PElimVar unit
+
+patternVariable2 :: SParser PElim2
+patternVariable2 = ident <#> flip PElimVar2 Nothing
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
@@ -196,7 +199,7 @@ simplePattern pattern' =
 
 simplePattern2 :: SParser PElim2 -> SParser PElim2
 simplePattern2 pattern' =
-   try patternVariable <|>
+   try patternVariable2 <|>
    try (token.parens pattern') <|>
    patternPair2 pattern'
 

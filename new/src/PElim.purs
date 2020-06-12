@@ -29,7 +29,7 @@ data PElim k =
 derive instance pElimFunctor :: Functor PElim
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
-type PCont = Either Expr PElim2
+type PCont = Maybe (Either Expr PElim2)
 
 data PElim2 =
    PElimVar2 Var PCont |
@@ -96,10 +96,11 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
       error absurd
    join (σ : τ : _) = Nothing
 
-instance joinableEither :: (Joinable2 a, Joinable2 b) => Joinable2 (Either a b) where
-   join2 (Left x) (Left x')   = Left <$> join2 x x'
-   join2 (Right x) (Right x') = Right <$> join2 x x'
-   join2 _ _                  = Nothing
+instance joinableCont :: Joinable2 (Maybe (Either Expr PElim2)) where
+   join2 Nothing Nothing                     = Nothing
+   join2 (Just (Left x)) (Just (Left x'))    = Just <$> Left <$> join2 x x'
+   join2 (Just (Right x)) (Just (Right x'))  = Just <$> Right <$> join2 x x'
+   join2 _ _                                 = Nothing
 
 instance joinablePElim2 :: Joinable2 PElim2 where
    join2 (PElimVar2 x κ) (PElimVar2 x' κ')   = PElimVar2 <$> x ≟ x' <*> join2 κ κ'
@@ -121,7 +122,8 @@ toElim (PElimList { nil: κ, cons: σ }) = do
 toElim _ = Nothing
 
 toCont :: PCont -> Maybe Cont
-toCont κ = bisequence (bimap Just toElim2 κ)
+toCont Nothing = Nothing
+toCont (Just κ) = bisequence (bimap Just toElim2 κ)
 
 toElim2 :: PElim2 -> Maybe Elim2
 toElim2 (PElimVar2 x κ) = ElimVar2 x <$> toCont κ
@@ -150,9 +152,10 @@ instance singleBranchElim :: SingleBranch Elim2 where
 class MapCont a where
    mapCont :: a -> PCont -> Maybe a
 
-instance mapContCont :: MapCont (Either Expr PElim2) where
-   mapCont (Left e) κ = pure κ
-   mapCont (Right σ) κ = Right <$> mapCont σ κ
+instance mapContCont :: MapCont (Maybe (Either Expr PElim2)) where
+   mapCont Nothing κ = pure κ
+   mapCont (Just (Left e)) κ = pure κ
+   mapCont (Just (Right σ)) κ = Just <$> Right <$> mapCont σ κ
 
 instance mapContElim :: MapCont PElim2 where
    mapCont (PElimVar2 x κ) κ' = Just $ PElimVar2 x κ'
