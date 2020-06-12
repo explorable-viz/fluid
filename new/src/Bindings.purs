@@ -35,6 +35,7 @@ instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
       Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
    maybeZipWithα _ _ _                                      = Nothing
 
+
 find :: forall a . Var -> Bindings a -> Either String a
 find x' Empty          = Left $ "variable " <> x' <> " not found"
 find x' (xs :+: x ↦ v) = if x == x' then Right v else find x' xs
