@@ -253,6 +253,12 @@ partialElim expr' nest delim = do
    σ <- pattern
    (delim *> expr' <|> nestedFun nest expr') <#> const >>> (<#>) σ
 
+partialElim2 :: SParser Expr -> Boolean -> SParser Unit -> SParser PElim2
+partialElim2 expr' nest delim = do
+   σ <- pattern2
+   e <- delim *> expr' <|> nestedFun nest expr'
+   pure $ fromJust $ mapCont (Just $ Left e) σ
+
 def :: SParser Expr -> SParser Def
 def expr' = do
    σ <- try $ keyword strLet *> elim expr' false <* token.semi
@@ -305,9 +311,12 @@ appChain_pattern pattern' = simplePattern pattern' <|> patternCons pattern'
 appChain_pattern2 :: SParser PElim2 -> SParser PElim2
 appChain_pattern2 pattern' = simplePattern2 pattern' <|> constr_pattern pattern'
 
--- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser (PElim Unit)
 pattern = fix appChain_pattern
+
+-- TODO: allow infix constructors, via buildExprParser
+pattern2 :: SParser PElim2
+pattern2 = fix appChain_pattern2
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
