@@ -233,16 +233,11 @@ elim2 expr' nest = elimSingle2 expr' nest <|> elimBraces2 expr' nest
 elimSingle :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elimSingle expr' nest = do
    σ <- partialElim expr' nest (arrow <|> equals)
-   case toElim σ of
-      Nothing -> error "Incomplete branches"
-      Just σ' -> pure σ'
+   pure $ fromJust "Incomplete branches" $ toElim σ
 
 elimSingle2 :: SParser Expr -> Boolean -> SParser Elim2
-elimSingle2 expr' nest = do
-   σ <- partialElim2 expr' nest (arrow <|> equals)
-   case toElim2 σ of
-      Nothing -> error "Incomplete branches"
-      Just σ' -> pure σ'
+elimSingle2 expr' nest =
+   fromJust "Incomplete branches" <$> (toElim2 <$> partialElim2 expr' nest (arrow <|> equals))
 
 elimBraces :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elimBraces expr' nest =
@@ -250,9 +245,7 @@ elimBraces expr' nest =
       σs <- sepBy1 (partialElim expr' nest arrow) token.semi
       case join σs of
          Nothing -> error "Incompatible branches"
-         Just σ -> case toElim σ of
-            Nothing -> error "Incomplete branches"
-            Just σ' -> pure σ'
+         Just σ -> pure $ fromJust "Incomplete branches" (toElim σ)
 
 elimBraces2 :: SParser Expr -> Boolean -> SParser Elim2
 elimBraces2 expr' nest =
