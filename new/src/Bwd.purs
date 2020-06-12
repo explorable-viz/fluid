@@ -1,6 +1,8 @@
 module Bwd where
 
 import Prelude hiding (absurd, join)
+import Data.List (List(..)) as L
+import Data.List (List, (:), foldMap)
 import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find, remove)
 import Elim (Elim(..))
@@ -23,18 +25,22 @@ unmatch ρ (MatchPair ξ ξ')
           Tuple ρ'' ρ1 = unmatch ρ' ξ
       in  Tuple ρ (ρ1 <> ρ2)
 unmatch ρ (MatchNil k)     = Tuple ρ ε
-unmatch ρ (MatchCons {nil: k, cons: Tuple ξ ξ'})
+unmatch ρ (MatchCons { nil: k, cons: Tuple ξ ξ' })
    =  let Tuple ρ'  ρ2 = unmatch ρ  ξ'
           Tuple ρ'' ρ1 = unmatch ρ' ξ
       in  Tuple ρ (ρ1 <> ρ2)
 
 bound_vars :: forall k . Env -> Match k -> Env
 bound_vars ρ (MatchVar x)     = ε :+: x ↦ successful (find x ρ)
-bound_vars ρ (MatchTrue k)    = ε
-bound_vars ρ (MatchFalse k)   = ε
-bound_vars ρ (MatchPair ξ ξ') = append (bound_vars ρ ξ) (bound_vars ρ ξ')
-bound_vars ρ (MatchNil k)     = ε
-bound_vars ρ (MatchCons {nil: k, cons: Tuple ξ ξ'}) = append (bound_vars ρ ξ) (bound_vars ρ ξ')
+bound_vars _ (MatchTrue k)    = ε
+bound_vars _ (MatchFalse k)   = ε
+bound_vars ρ (MatchPair ξ ξ') = bound_vars ρ ξ <> bound_vars ρ ξ'
+bound_vars _ (MatchNil k)     = ε
+bound_vars ρ (MatchCons { nil: k, cons: Tuple ξ ξ' }) = bound_vars ρ ξ <> bound_vars ρ ξ'
+
+bound_vars2 :: Env -> Match2 -> Env
+bound_vars2 ρ (MatchVar2 x) = ε :+: x ↦ successful (find x ρ)
+bound_vars2 ρ (MatchConstr (Tuple _ ξs) _) = foldMap (bound_vars2 ρ) ξs
 
 match_bwd :: forall k . Selectable k => Env -> k -> Selected -> Match k -> Tuple Val (Elim k)
 -- var
@@ -64,7 +70,9 @@ match_bwd _ _ _ _ = error absurd
 match_bwd2 :: Env -> Cont -> Selected -> Match2 -> Tuple Val Elim2
 match_bwd2 (ε :+: x ↦ v) κ α (MatchVar2 x') = Tuple v (ElimVar2 (x ≜ x') κ)
 match_bwd2 _ _ _ (MatchVar2 x') = error absurd
-match_bwd2 ρ κ α (MatchConstr (Tuple c ξs) κs) = error "todo"
+match_bwd2 ρ κ α (MatchConstr (Tuple c ξs) κs) =
+   let ρ1 = bound_vars2 ρ ξs in
+   ?_
 
 eval_bwd :: Val -> Expl -> T3 Env Expr Selected
 -- true
