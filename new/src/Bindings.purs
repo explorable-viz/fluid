@@ -35,9 +35,6 @@ instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
       Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
    maybeZipWithα _ _ _                                      = Nothing
 
-tail :: forall a . Bindings a -> Either String (Bindings a)
-tail Empty      = Left $ "can not take tail on empty environment"
-tail (xs :+: x) = Right xs
 
 find :: forall a . Var -> Bindings a -> Either String a
 find x' Empty          = Left $ "variable " <> x' <> " not found"
