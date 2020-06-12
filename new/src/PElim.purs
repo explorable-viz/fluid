@@ -1,15 +1,18 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
+import Data.Bifunctor (bimap)
+import Data.Bitraversable (bisequence)
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
-import Data.Map (Map)
+import Data.Map (Map, values)
 import Data.Maybe (Maybe(..))
+import Data.Traversable (foldl, foldMap)
 import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim(..))
-import Expr (Expr)
-import Util ((≟), absurd, error)
+import Expr (Cont, Elim2(..), Expr)
+import Util ((≟), absurd, error, om)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
 data PElim k =
@@ -93,20 +96,16 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
    join (σ : τ : _) = Nothing
 
 instance joinableEither :: (Joinable2 a, Joinable2 b) => Joinable2 (Either a b) where
-   join2 (Left a) (Left a') = do
-      a'' <- join2 a a'
-      pure $ Left a''
-   join2 (Right b) (Right b') = do
-      b'' <- join2 b b'
-      pure $ Right b''
-   join2 _ _ = Nothing
+   join2 (Left x) (Left x')   = Left <$> join2 x x'
+   join2 (Right x) (Right x') = Right <$> join2 x x'
+   join2 _ _                  = Nothing
 
 instance joinablePElim2 :: Joinable2 PElim2 where
-   join2 (PElimVar2 x κ) (PElimVar2 x' κ') = do
-      x'' <- x ≟ x'
-      κ'' <- join2 κ κ'
-      pure $ PElimVar2 x κ''
-   join2 σ τ = Nothing
+   join2 (PElimVar2 x κ) (PElimVar2 x' κ')   = PElimVar2 <$> x ≟ x' <*> join2 κ κ'
+   join2 σ τ                                 = Nothing
+
+joinAll :: forall a . Joinable2 a => List a -> Maybe a
+joinAll = foldl (om join2) Nothing
 
 toElim :: forall k . PElim k -> Maybe (Elim k)
 toElim (PElimVar x κ) = Just $ ElimVar x κ
@@ -120,11 +119,35 @@ toElim (PElimList { nil: κ, cons: σ }) = do
    Just $ ElimList { nil: κ, cons: σ' }
 toElim _ = Nothing
 
+toCont :: PCont -> Maybe Cont
+toCont κ = bisequence (bimap Just toElim2 κ)
+
+toElim2 :: PElim2 -> Maybe Elim2
+toElim2 (PElimVar2 x κ) = ElimVar2 x <$> toCont κ
+toElim2 _ = Nothing
+
 -- Partial eliminators are not supported at the moment.
 singleBranch :: forall k . Elim k -> Maybe k
 singleBranch (ElimVar x κ) = Just κ
 singleBranch (ElimPair σ) = singleBranch σ >>= singleBranch
 singleBranch _ = Nothing
+
+class SingleBranch a where
+   singleBranch2 :: a -> Maybe Cont
+
+instance singleBranchExpr :: SingleBranch Expr where
+   singleBranch2 = Left >>> pure
+
+instance singleBranchEither :: (SingleBranch a, SingleBranch b) => SingleBranch (Either a b) where
+   singleBranch2 (Left x) = singleBranch2 x
+   singleBranch2 (Right x) = singleBranch2 x
+
+instance maybeSingleBranchElim :: SingleBranch Elim2 where
+   singleBranch2 (ElimVar2 x κ) = Just κ
+   singleBranch2 (ElimConstr κs) =
+      case values κs of
+         κ : Nil -> singleBranch2 κ
+         _ -> Nothing
 
 -- TODO: provide a Traversable instance for PElim; then this is sequence.
 hoistMaybe :: forall k . PElim (Maybe k) -> Maybe (PElim k)

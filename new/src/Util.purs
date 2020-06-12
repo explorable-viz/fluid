@@ -51,3 +51,7 @@ infixl 5 mustEq as ≜
 -- Could be more efficient
 intersperse :: forall a . a -> List a -> List a
 intersperse x xs = intercalate (pure x) $ map pure xs
+
+-- From Haskell's Control.Monad.Extra
+om :: forall a b c m . Monad m => (a -> b -> m c) -> m a -> b -> m c
+om f m = flip f >>> ((>>=) m)
