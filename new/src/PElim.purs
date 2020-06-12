@@ -1,11 +1,14 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
+import Data.Either (Either(..))
 import Data.List (List(..), (:))
+import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Bindings (Var)
+import DataType (Ctr)
 import Elim (Elim(..))
-import Expr (Expr)
+import Expr (Cont, Expr)
 import Util ((≟), absurd, error)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
@@ -20,6 +23,13 @@ data PElim k =
    PElimList { nil :: k, cons :: PElim (PElim k) }
 
 derive instance pElimFunctor :: Functor PElim
+
+-- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
+type PCont = Either Expr PElim2
+
+data PElim2 =
+   PElimVar2 Var PCont |
+   PElimConstr (Map Ctr PCont)
 
 class Joinable k where
    join :: List k -> Maybe k
@@ -74,6 +84,27 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
       join $ PElimList { nil: κ, cons: σ'' } : bs
    join (_ : PElimList { nil: κ', cons: σ } : bs) =
       error absurd
+   join (σ : τ : _) = Nothing
+
+-- Factor into binary join and fold over list of joinables.
+instance joinableEither :: (Joinable a, Joinable b) => Joinable (Either a b) where
+   join Nil = Nothing
+   join (x : Nil) = Just x
+   join (Left a : Left a' : xs) = do
+      a'' <- join (a : a' : Nil)
+      join $ Left a'' : xs
+   join (Right b : Right b' : xs) = do
+      b'' <- join (b : b' : Nil)
+      join $ Right b'' : xs
+   join (x : y : _) = Nothing
+
+instance joinablePElim2 :: Joinable PElim2 where
+   join Nil = Nothing
+   join (σ : Nil) = Just σ
+   join (PElimVar2 x κ : PElimVar2 x' κ' : bs) = do
+      x'' <- x ≟ x'
+      κ'' <- join (κ : κ' : Nil)
+      join $ PElimVar2 x κ'' : bs
    join (σ : τ : _) = Nothing
 
 toElim :: forall k . PElim k -> Maybe (Elim k)
