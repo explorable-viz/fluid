@@ -23,6 +23,7 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
+import DataType (Ctr(..))
 import Elim (Elim)
 import Expr (Def(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (PElim(..), join, singleBranch, toElim)
@@ -48,10 +49,10 @@ strLet = "let" :: String
 strMatch = "match" :: String
 
 -- treat datatype-generically later
-cFalse = "False" :: String
-cTrue = "True" :: String
-cNil = "Nil" :: String
-cCons = "Cons" :: String
+cFalse = Ctr "False" :: Ctr
+cTrue = Ctr "True" :: Ctr
+cNil = Ctr "Nil" :: Ctr
+cCons = Ctr "Cons" :: Ctr
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -97,10 +98,15 @@ ident = do
    x <- token.identifier
    pureIf ("Unexpected constructor") (not (isCtr x)) x
 
-ctr :: String -> SParser String
-ctr c = do
+ctr :: SParser Ctr
+ctr = do
    x <- token.identifier
-   pureIf ("Expected " <> c) (x == c) x
+   pureIf ("Unexpected identifier") (isCtr x) $ Ctr x
+
+theCtr :: Ctr -> SParser Ctr
+theCtr c = do
+   c' <- ctr
+   pureIf ("Expected " <> show c) (c' == c) c
 
 signOpt :: ∀ a . (Ring a) => SParser (a -> a)
 signOpt =
@@ -116,39 +122,37 @@ int = do
 string :: SParser Expr
 string = token.stringLiteral <#> Str >>> expr
 
+-- Don't assume constructor signatures are known at this stage.
+constr_pattern :: SParser Expr -> SParser Expr
+constr_pattern expr' = error "todo"
+
 true_ :: SParser Expr
-true_ = ctr cTrue $> expr True
+true_ = theCtr cTrue $> expr True
 
 patternTrue :: SParser (PElim Unit)
-patternTrue = ctr cTrue $> PElimTrue unit
+patternTrue = theCtr cTrue $> PElimTrue unit
 
 false_ :: SParser Expr
-false_ = ctr cFalse $> expr False
+false_ = theCtr cFalse $> expr False
 
 patternFalse :: SParser (PElim Unit)
-patternFalse = ctr cFalse $> PElimFalse unit
+patternFalse = theCtr cFalse $> PElimFalse unit
 
 nil :: SParser Expr
-nil = ctr cNil $> expr Nil
+nil = theCtr cNil $> expr Nil
 
 patternNil :: SParser (PElim Unit)
-patternNil = ctr cNil $> PElimNil unit
+patternNil = theCtr cNil $> PElimNil unit
 
 cons :: SParser Expr -> SParser Expr
 cons expr' = do
-   e <- ctr cCons *> simpleExpr expr'
+   e <- theCtr cCons *> simpleExpr expr'
    simpleExpr expr' <#> Cons e >>> expr
 
 patternCons :: SParser (PElim Unit) -> SParser (PElim Unit)
 patternCons pattern' = do
-   σ <- ctr cCons *> simplePattern pattern'
+   σ <- theCtr cCons *> simplePattern pattern'
    simplePattern pattern' <#> const >>> (<#>) σ >>> PElimCons
-
-constr :: SParser Expr -> SParser Expr
-constr expr' =
-   try false_ <|>
-   try true_ <|>
-   try nil
 
 pair :: SParser Expr -> SParser Expr
 pair expr' =
@@ -270,7 +274,8 @@ appChain expr' =
       rest ∷ Expr -> SParser Expr
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
 
--- Singleton eliminator. Will be more similar to appChain when we have arbitrary data types.
+-- Singleton eliminator. Analogous in some to app_chain, but there is nothing higher-order about patterns:
+-- there are no explicit application nodes and no non-saturated constructor applications.
 appChain_pattern :: SParser (PElim Unit) -> SParser (PElim Unit)
 appChain_pattern pattern' =
    simplePattern pattern' <|> patternCons pattern'
