@@ -1,8 +1,10 @@
 module Bwd where
 
 import Prelude hiding (absurd, join)
+import Data.Either (Either(..))
 import Data.List (List(..)) as L
 import Data.List (List, (:), foldMap)
+import Data.Map (update)
 import Data.Tuple (Tuple(..))
 import Bindings ((:+:), (↦), ε, find, remove)
 import Elim (Elim(..))
@@ -68,11 +70,20 @@ match_bwd ρ κ α (MatchCons { nil: κ', cons: Tuple ξ ξ'}) =
 match_bwd _ _ _ _ = error absurd
 
 match_bwd2 :: Env -> Cont -> Selected -> Match2 -> Tuple Val Elim2
-match_bwd2 (ε :+: x ↦ v) κ α (MatchVar2 x') = Tuple v (ElimVar2 (x ≜ x') κ)
-match_bwd2 _ _ _ (MatchVar2 x') = error absurd
-match_bwd2 ρ κ α (MatchConstr (Tuple c ξs) κs) =
-   let ρ1 = bound_vars2 ρ ξs in
-   ?_
+match_bwd2 (ε :+: x ↦ v) κ α (MatchVar2 x')     = Tuple v (ElimVar2 (x ≜ x') κ)
+match_bwd2 _ _ _ (MatchVar2 x')                 = error absurd
+match_bwd2 ρ κ α (MatchConstr (Tuple c ξs) κs)  =
+   let Tuple vs κ = matchArgs_bwd ρ κ α ξs in
+   Tuple (Val α $ V.Constr c vs) (ElimConstr $ update (const $ pure κ) c $ map bot κs)
+
+matchArgs_bwd :: Env -> Cont -> Selected -> List Match2 -> Tuple (List Val) Cont
+matchArgs_bwd ρ κ α L.Nil     = Tuple L.Nil κ
+matchArgs_bwd ρ κ α (ξ : ξs)  =
+   let ρ1            = bound_vars2 ρ ξ -- revisit once Min has fixed match_bwd above
+       ρ2            = foldMap (bound_vars2 ρ) ξs
+       Tuple vs κ'   = matchArgs_bwd ρ2 κ α ξs
+       Tuple v σ     = match_bwd2 ρ1 κ' α ξ in
+   Tuple (v : vs) $ Right σ
 
 eval_bwd :: Val -> Expl -> T3 Env Expr Selected
 -- true
