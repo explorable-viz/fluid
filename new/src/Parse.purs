@@ -6,7 +6,7 @@ import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
 import Data.Char.Unicode (isUpper)
-import Data.Either (choose)
+import Data.Either (Either(..), choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (many, groupBy, sortBy)
@@ -26,9 +26,9 @@ import Bindings (Var)
 import DataType (Ctr(..))
 import Elim (Elim)
 import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PElim(..), PElim2(..), join, singleBranch, toElim)
+import PElim (PElim(..), PElim2, join, mapCont, singleBranch, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (absurd, error, fromBool)
+import Util (absurd, error, fromBool, fromJust)
 
 type SParser = Parser String
 
@@ -166,7 +166,7 @@ patternPair2 :: SParser PElim2 -> SParser PElim2
 patternPair2 pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
-      pattern' <#> const >>> (<#>) σ >>> PElimPair
+      fromJust <$> (pattern' <#> flip mapCont (Right σ))
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -198,7 +198,7 @@ simplePattern2 :: SParser PElim2 -> SParser PElim2
 simplePattern2 pattern' =
    try patternVariable <|>
    try (token.parens pattern') <|>
-   patternPair pattern'
+   patternPair2 pattern'
 
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr

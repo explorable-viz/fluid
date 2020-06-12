@@ -7,13 +7,13 @@ import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.Map (Map, singleton, toUnfoldable, values)
 import Data.Maybe (Maybe(..))
-import Data.Traversable (foldl, foldMap, sequence)
+import Data.Traversable (foldl, sequence)
 import Data.Tuple (Tuple(..))
 import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim(..))
 import Expr (Cont, Elim2(..), Expr)
-import Util ((≟), absurd, error, om)
+import Util ((≟), absurd, error)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
 data PElim k =
@@ -106,7 +106,7 @@ instance joinablePElim2 :: Joinable2 PElim2 where
    join2 σ τ                                 = Nothing
 
 joinAll :: forall a . Joinable2 a => List a -> Maybe a
-joinAll = foldl (om join2) Nothing
+joinAll = foldl (($>) join2) Nothing
 
 toElim :: forall k . PElim k -> Maybe (Elim k)
 toElim (PElimVar x κ) = Just $ ElimVar x κ
@@ -135,14 +135,10 @@ singleBranch _ = Nothing
 
 class SingleBranch a where
    singleBranch2 :: a -> Maybe Cont
-   mapCont :: a -> Cont -> Maybe a
 
 instance singleBranchCont :: SingleBranch (Either Expr Elim2) where
    singleBranch2 (Left e) = pure $ Left e
    singleBranch2 (Right σ) = singleBranch2 σ
-
-   mapCont (Left e) κ = pure κ
-   mapCont (Right σ) κ = Right <$> mapCont σ κ
 
 instance singleBranchElim :: SingleBranch Elim2 where
    singleBranch2 (ElimVar2 x κ) = Just κ
@@ -151,12 +147,20 @@ instance singleBranchElim :: SingleBranch Elim2 where
          κ : Nil -> singleBranch2 κ
          _ -> Nothing
 
-   mapCont (ElimVar2 x κ) κ' = Just $ ElimVar2 x κ'
-   mapCont (ElimConstr κs) κ =
+class MapCont a where
+   mapCont :: a -> PCont -> Maybe a
+
+instance mapContCont :: MapCont (Either Expr PElim2) where
+   mapCont (Left e) κ = pure κ
+   mapCont (Right σ) κ = Right <$> mapCont σ κ
+
+instance mapContElim :: MapCont PElim2 where
+   mapCont (PElimVar2 x κ) κ' = Just $ PElimVar2 x κ'
+   mapCont (PElimConstr κs) κ =
       case toUnfoldable κs of
          Tuple c κ' : Nil -> do
             κ'' <- mapCont κ' κ
-            pure $ ElimConstr $ singleton c κ''
+            pure $ PElimConstr $ singleton c κ''
          _ -> Nothing
 
 -- TODO: provide a Traversable instance for PElim; then this is sequence.
