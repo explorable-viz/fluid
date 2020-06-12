@@ -26,9 +26,9 @@ toBool :: forall a . Maybe a -> Boolean
 toBool (Just x) = true
 toBool Nothing  = false
 
-fromJust :: forall a . Maybe a -> a
-fromJust (Just a) = a
-fromJust Nothing  = error absurd
+fromJust :: forall a . String -> Maybe a -> a
+fromJust _ (Just a) = a
+fromJust msg Nothing  = error msg
 
 type MayFail a = Either String a
 
@@ -40,7 +40,7 @@ mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = if x == x' then Just x else Nothing
 
 mustEq :: forall a . Eq a => a -> a -> a
-mustEq x x' = fromJust $ x ≟ x'
+mustEq x x' = fromJust "Must be equal" $ x ≟ x'
 
 eitherEq :: forall a . Show a => Eq a => a -> a -> MayFail a
 eitherEq x x' = if x == x' then pure x else Left $ show x <> " ≠ " <> show x'
