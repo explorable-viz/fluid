@@ -15,8 +15,9 @@ data T3 a b c = T3 a b c
 error :: ∀ a . String -> a
 error = unsafePerformEffect <<< throw
 
-todo :: String
-todo = "todo"
+assert :: ∀ a . Boolean -> a -> a
+assert true = identity
+assert false = \_ -> error "Assertion failure"
 
 absurd :: String
 absurd = "absurd"
