@@ -3,7 +3,7 @@ module Bwd where
 import Prelude hiding (absurd, join)
 import Data.Either (Either(..))
 import Data.List (List(..)) as L
-import Data.List (List, (:), foldMap)
+import Data.List (List, (:))
 import Data.Map (update)
 import Data.Tuple (Tuple(..))
 import Primitive (primitives)
@@ -68,14 +68,14 @@ joinClosures ρ =
       foldClosures f z (xs :+: x ↦ v) = f v (foldClosures f z xs)
       foldClosures f z Empty          = z
 
-filterRecDefs :: Env -> RecDefs -> Tuple Env Env
+filterRecDefs :: Env -> RecDefs -> Env × Env
 filterRecDefs = go ε
    where
    go acc ρ L.Nil            = Tuple ρ acc
    go acc ρ (RecDef f σ : δ) = let Tuple v ρ' = successful (remove f ρ)
                                in  go (acc :+: f ↦ v) ρ' δ
 
-match_bwd :: forall k . Selectable k => Env -> k -> Selected -> Match k -> Tuple Val (Elim k)
+match_bwd :: forall k . Selectable k => Env -> k -> Selected -> Match k -> Val × Elim k
 -- var
 match_bwd (ε :+: x ↦ v) κ α (MatchVar x') = Tuple v (ElimVar (x ≜ x') κ)
 -- true
@@ -98,14 +98,14 @@ match_bwd ρ κ α (MatchCons { nil: κ', cons: Tuple ξ ξ'}) =
    in  Tuple (Val α (V.Cons v v')) (ElimList {nil: bot κ, cons: τ})
 match_bwd _ _ _ _ = error absurd
 
-match_bwd2 :: Env -> Cont -> Selected -> Match2 -> Tuple Val Elim2
+match_bwd2 :: Env -> Cont -> Selected -> Match2 -> Val × Elim2
 match_bwd2 (ε :+: x ↦ v) κ α (MatchVar2 x')     = Tuple v (ElimVar2 (x ≜ x') κ)
 match_bwd2 _ _ _ (MatchVar2 x')                 = error absurd
 match_bwd2 ρ κ α (MatchConstr (Tuple c ξs) κs)  =
    let Tuple vs κ = matchArgs_bwd ρ κ α ξs in
    Tuple (Val α $ V.Constr c vs) (ElimConstr $ update (const $ pure κ) c $ map bot κs)
 
-matchArgs_bwd :: Env -> Cont -> Selected -> List Match2 -> Tuple (List Val) Cont
+matchArgs_bwd :: Env -> Cont -> Selected -> List Match2 -> List Val × Cont
 matchArgs_bwd ρ κ α L.Nil     = Tuple L.Nil κ
 matchArgs_bwd ρ κ α (ξ : ξs)  =
    let Tuple ρ' ρ1   = unmatch2 ρ ξ
