@@ -46,18 +46,6 @@ unmatches ρ (ξ : ξs) =
        Tuple ρ'' ρ1  = unmatches ρ' ξs in
    Tuple ρ'' (ρ1 <> ρ2)
 
-bound_vars :: forall k . Env -> Match k -> Env
-bound_vars ρ (MatchVar x)     = ε :+: x ↦ successful (find x ρ)
-bound_vars _ (MatchTrue k)    = ε
-bound_vars _ (MatchFalse k)   = ε
-bound_vars ρ (MatchPair ξ ξ') = bound_vars ρ ξ <> bound_vars ρ ξ'
-bound_vars _ (MatchNil k)     = ε
-bound_vars ρ (MatchCons { nil: k, cons: Tuple ξ ξ' }) = bound_vars ρ ξ <> bound_vars ρ ξ'
-
-bound_vars2 :: Env -> Match2 -> Env
-bound_vars2 ρ (MatchVar2 x) = ε :+: x ↦ successful (find x ρ)
-bound_vars2 ρ (MatchConstr (Tuple _ ξs) _) = foldMap (bound_vars2 ρ) ξs
-
 joinClosures :: Env -> T3 Env RecDefs Selected
 joinClosures ρ =
    case filter ρ isClosure of
