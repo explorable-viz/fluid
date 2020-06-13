@@ -152,7 +152,7 @@ patternFalse :: SParser (PElim Unit)
 patternFalse = theCtr cFalse $> PElimFalse unit
 
 nil :: SParser Expr
-nil = theCtr cNil $> expr Nil
+nil = theCtr cNil $> expr (Constr cNil L.Nil)
 
 patternNil :: SParser (PElim Unit)
 patternNil = theCtr cNil $> PElimNil unit
