@@ -104,10 +104,16 @@ instance joinableCont :: Joinable2 PCont where
 instance joinableCtrCont :: Joinable2 (Ctr × PCont) where
    join2 (Tuple c κ) (Tuple c' κ') = bisequence $ Tuple (c ≟ c') $ join2 κ κ'
 
+unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
+unionWithMaybe f m m' = unionWith blah (map Just m) (map Just m')
+   where blah _ Nothing = Nothing
+         blah Nothing _ = Nothing
+         blah (Just x) (Just x') = f x x'
+
 instance joinablePElim2 :: Joinable2 PElim2 where
    join2 (PElimVar2 x κ) (PElimVar2 x' κ')   = PElimVar2 <$> x ≟ x' <*> join2 κ κ'
    join2 (PElimConstr κs) (PElimConstr κs')  = PElimConstr <$>
-      (fromFoldable <$> sequence (zipWith join2 (toUnfoldable κs) (toUnfoldable κs')))
+      (sequence $ unionWithMaybe join2 κs κs')
    join2 _ _ = Nothing
 
 joinAll :: forall a . Joinable2 a => List a -> Maybe a
