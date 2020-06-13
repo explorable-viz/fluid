@@ -2,7 +2,6 @@ module Pretty (class Pretty, pretty, module P) where
 
 import Prelude
 import Data.List (List(..), (:))
-import Data.Either (Either(..))
 import Data.Map (toUnfoldable)
 import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, text, vcat)

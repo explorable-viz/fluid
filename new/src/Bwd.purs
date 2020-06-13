@@ -1,7 +1,6 @@
 module Bwd where
 
 import Prelude hiding (absurd, join)
-import Data.Either (Either(..))
 import Data.List (List(..)) as L
 import Data.List (List, (:))
 import Data.Map (update)

@@ -13,6 +13,7 @@ import Data.List (many, groupBy, sortBy)
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (charAt)
+import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -133,8 +134,10 @@ constr_pattern :: SParser PElim2 -> SParser PElim2
 constr_pattern pattern' = ctr_pattern >>= rest
    where
       rest ∷ PElim2 -> SParser PElim2
-      rest σ = (simplePattern2 pattern' <|> ctr_pattern <#> (mapCont (PCPElim σ) >>> fromJust absurd) >>= rest) <|>
-               pure σ
+      rest σ = do
+         σ' <- simplePattern2 pattern' <|> ctr_pattern
+         rest $ fromJust absurd $ mapCont (PCPElim σ') σ
+         <|> pure σ
 
 true_ :: SParser Expr
 true_ = theCtr cTrue $> expr True
@@ -252,7 +255,7 @@ elimBraces2 expr' nest =
    token.braces $ do
       σs <- sepBy1 (partialElim2 expr' nest arrow) token.semi
       pure $ case joinAll σs of
-         Nothing -> error "Incompatible branches"
+         Nothing -> trace σs \_ -> error "Incompatible branches"
          Just σ -> fromJust "Incomplete branches" (toElim2 σ)
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
