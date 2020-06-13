@@ -9,7 +9,8 @@ import Data.Char.Unicode (isUpper)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (many, groupBy, sortBy)
+import Data.List ((:), many, groupBy, sortBy)
+import Data.List (List(..)) as L
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (charAt)
@@ -159,7 +160,8 @@ patternNil = theCtr cNil $> PElimNil unit
 cons :: SParser Expr -> SParser Expr
 cons expr' = do
    e <- theCtr cCons *> simpleExpr expr'
-   simpleExpr expr' <#> Cons e >>> expr
+   e' <- simpleExpr expr'
+   pure $ expr (Constr cCons (e : e' : L.Nil))
 
 patternCons :: SParser (PElim Unit) -> SParser (PElim Unit)
 patternCons pattern' = do
