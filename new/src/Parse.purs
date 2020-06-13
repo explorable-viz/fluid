@@ -13,7 +13,6 @@ import Data.List (many, groupBy, sortBy)
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (charAt)
-import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -255,7 +254,7 @@ elimBraces2 expr' nest =
    token.braces $ do
       σs <- sepBy1 (partialElim2 expr' nest arrow) token.semi
       pure $ case joinAll σs of
-         Nothing -> trace σs \_ -> error "Incompatible branches"
+         Nothing -> error "Incompatible branches"
          Just σ -> fromJust "Incomplete branches" (toElim2 σ)
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr

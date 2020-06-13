@@ -110,7 +110,8 @@ instance joinablePElim2 :: Joinable2 PElim2 where
    join2 _ _ = Nothing
 
 joinAll :: forall a . Joinable2 a => List a -> Maybe a
-joinAll = foldl (($>) join2) Nothing
+joinAll Nil = error "Non-empty list expected"
+joinAll (x : xs) = foldl (($>) join2) (Just x) xs
 
 toElim :: forall k . PElim k -> Maybe (Elim k)
 toElim (PElimVar x κ)                     = pure $ ElimVar x κ
