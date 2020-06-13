@@ -2,7 +2,6 @@ module Fwd where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:))
-import Data.Either (Either(..))
 import Data.Map (lookup)
 import Bindings ((:+:), (↦), ε, find)
 import Elim (Elim(..))

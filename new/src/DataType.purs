@@ -21,20 +21,26 @@ data DataType' a = DataType String (Map Ctr a)
 type DataType = DataType' CtrSig
 data CtrSig = CtrSig Ctr (List String)
 
-ctr :: forall f . Foldable f => String -> f String -> Ctr × CtrSig
-ctr c = L.fromFoldable >>> CtrSig (Ctr c) >>> Tuple (Ctr c)
+ctr :: forall f . Foldable f => Ctr -> f String -> Ctr × CtrSig
+ctr c = L.fromFoldable >>> CtrSig c >>> Tuple c
 
 dataType :: forall f . Foldable f => String -> f (Ctr × CtrSig) -> DataType
 dataType name = fromFoldable >>> DataType name
 
+-- treat datatype-generically later
+cFalse   = Ctr "False"  :: Ctr
+cTrue    = Ctr "True"   :: Ctr
+cNil     = Ctr "Nil"    :: Ctr
+cCons    = Ctr "Cons"   :: Ctr
+
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [
    dataType "Bool" [
-      ctr "True" [],
-      ctr "False" []
+      ctr cTrue [],
+      ctr cFalse []
    ],
    dataType "List" [
-      ctr "Nil" [],
-      ctr "Cons" ["head", "tail"]
+      ctr cNil [],
+      ctr cCons ["head", "tail"]
    ]
 ]

@@ -2,9 +2,11 @@ module Primitive where
 
 import Prelude hiding (apply)
 import Data.Foldable (foldl)
+import Data.List (List(..)) as L
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
 import Bindings (Var, ε, (:+:), (↦))
+import DataType (cTrue, cFalse)
 import Lattice (Selected, (∧))
 import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Unary(..), UnaryOp(..), Val(..), val)
 import Util (type (×), error)
@@ -46,8 +48,14 @@ instance toInt :: To Int where
 instance fromInt :: From Int where
    from = Int >>> val
 
+true_ :: Val
+true_ = val $ Constr cTrue L.Nil
+
+false_ :: Val
+false_ = val $ Constr cFalse L.Nil
+
 instance fromBoolean :: From Boolean where
-   from b = val $ if b then True else False
+   from b = if b then true_ else false_
 
 instance fromString :: From String where
    from = Str >>> val

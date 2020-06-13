@@ -24,7 +24,7 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import DataType (Ctr(..))
+import DataType (Ctr(..), cCons, cFalse, cNil, cTrue)
 import Elim (Elim)
 import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (PCont(..), PElim(..), PElim2(..), join, joinAll, mapCont, singleBranch, toElim, toElim2)
@@ -48,12 +48,6 @@ strEquals = "=" :: String
 strFun = "fun" :: String
 strLet = "let" :: String
 strMatch = "match" :: String
-
--- treat datatype-generically later
-cFalse = Ctr "False" :: Ctr
-cTrue = Ctr "True" :: Ctr
-cNil = Ctr "Nil" :: Ctr
-cCons = Ctr "Cons" :: Ctr
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {

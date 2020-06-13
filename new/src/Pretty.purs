@@ -6,11 +6,10 @@ import Data.Map (toUnfoldable)
 import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, text, vcat)
 import Text.Pretty (render) as P
-import DataType (Ctr)
+import DataType (Ctr, cFalse, cNil, cTrue)
 import Elim (Elim(..))
 import Expr (Cont(..), Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
-import Parse (cFalse, cNil, cTrue)
 import Util (type (×), error, intersperse)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
 import Val (RawVal(..)) as V
