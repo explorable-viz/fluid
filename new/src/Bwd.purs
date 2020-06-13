@@ -1,23 +1,23 @@
 module Bwd where
 
 import Prelude hiding (absurd, join)
+import Data.Either (Either(..))
+import Data.List (List(..)) as L
+import Data.List (List, (:))
+import Data.Map (update)
+import Data.Tuple (Tuple(..))
+import Primitive (primitives)
 import Bindings (Bindings(..), (:+:), (↦), ε, find, remove)
 import Elim (Elim(..))
-import Data.List (List(..)) as L
-import Data.List (List, (:), foldMap)
-import Data.Map (update)
-import Primitive (primitives)
-import Expr (Cont, Elim2(..), Expr(..), RawExpr(..), RecDef(..), RecDefs, Def(..))
+import Expl (Expl(..)) as T
+import Expl (Expl, Match(..), Match2(..))
+import Expr (Cont, Elim2(..), Expr(..), RawExpr(..), RecDef(..), RecDefs)
 import Lattice (class Selectable, Selected, (∨), bot, join)
-import Util (T3(..), absurd, error, successful, (≜))
+import Util (T3(..), (≜), type (×), absurd, error, successful)
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
-import Expl (Expl(..), Def(..)) as T
-import Expl (Expl, Match(..), Match2(..))
-import Data.Tuple (Tuple(..))
-import Data.Either (Either(..))
 
-unmatch :: forall k . Env -> Match k -> Tuple Env Env
+unmatch :: forall k . Env -> Match k -> Env × Env
 unmatch ρ (MatchVar x)
    =  let Tuple v ρ' = successful (remove x ρ)
       in  Tuple ρ' (ε :+: x ↦ v)
@@ -33,17 +33,18 @@ unmatch ρ (MatchCons { nil: k, cons: Tuple ξ ξ' })
           Tuple ρ'' ρ1 = unmatch ρ' ξ
       in  Tuple ρ'' (ρ1 <> ρ2)
 
-bound_vars :: forall k . Env -> Match k -> Env
-bound_vars ρ (MatchVar x)     = ε :+: x ↦ successful (find x ρ)
-bound_vars _ (MatchTrue k)    = ε
-bound_vars _ (MatchFalse k)   = ε
-bound_vars ρ (MatchPair ξ ξ') = bound_vars ρ ξ <> bound_vars ρ ξ'
-bound_vars _ (MatchNil k)     = ε
-bound_vars ρ (MatchCons { nil: k, cons: Tuple ξ ξ' }) = bound_vars ρ ξ <> bound_vars ρ ξ'
+unmatch2 :: Env -> Match2 -> Env × Env
+unmatch2 ρ (MatchVar2 x) =
+   let Tuple v ρ' = successful $ remove x ρ in
+   Tuple ρ' (ε :+: x ↦ v)
+unmatch2 ρ (MatchConstr (Tuple _ ξs) _) = unmatches ρ ξs
 
-bound_vars2 :: Env -> Match2 -> Env
-bound_vars2 ρ (MatchVar2 x) = ε :+: x ↦ successful (find x ρ)
-bound_vars2 ρ (MatchConstr (Tuple _ ξs) _) = foldMap (bound_vars2 ρ) ξs
+unmatches :: Env -> List Match2 -> Env × Env
+unmatches ρ L.Nil = Tuple ρ ε
+unmatches ρ (ξ : ξs) =
+   let Tuple ρ' ρ2   = unmatch2 ρ ξ
+       Tuple ρ'' ρ1  = unmatches ρ' ξs in
+   Tuple ρ'' (ρ1 <> ρ2)
 
 joinClosures :: Env -> T3 Env RecDefs Selected
 joinClosures ρ =
@@ -67,14 +68,14 @@ joinClosures ρ =
       foldClosures f z (xs :+: x ↦ v) = f v (foldClosures f z xs)
       foldClosures f z Empty          = z
 
-filterRecDefs :: Env -> RecDefs -> Tuple Env Env
+filterRecDefs :: Env -> RecDefs -> Env × Env
 filterRecDefs = go ε
    where
    go acc ρ L.Nil            = Tuple ρ acc
    go acc ρ (RecDef f σ : δ) = let Tuple v ρ' = successful (remove f ρ)
                                in  go (acc :+: f ↦ v) ρ' δ
 
-match_bwd :: forall k . Selectable k => Env -> k -> Selected -> Match k -> Tuple Val (Elim k)
+match_bwd :: forall k . Selectable k => Env -> k -> Selected -> Match k -> Val × Elim k
 -- var
 match_bwd (ε :+: x ↦ v) κ α (MatchVar x') = Tuple v (ElimVar (x ≜ x') κ)
 -- true
@@ -97,19 +98,18 @@ match_bwd ρ κ α (MatchCons { nil: κ', cons: Tuple ξ ξ'}) =
    in  Tuple (Val α (V.Cons v v')) (ElimList {nil: bot κ, cons: τ})
 match_bwd _ _ _ _ = error absurd
 
-match_bwd2 :: Env -> Cont -> Selected -> Match2 -> Tuple Val Elim2
+match_bwd2 :: Env -> Cont -> Selected -> Match2 -> Val × Elim2
 match_bwd2 (ε :+: x ↦ v) κ α (MatchVar2 x')     = Tuple v (ElimVar2 (x ≜ x') κ)
 match_bwd2 _ _ _ (MatchVar2 x')                 = error absurd
 match_bwd2 ρ κ α (MatchConstr (Tuple c ξs) κs)  =
    let Tuple vs κ = matchArgs_bwd ρ κ α ξs in
    Tuple (Val α $ V.Constr c vs) (ElimConstr $ update (const $ pure κ) c $ map bot κs)
 
-matchArgs_bwd :: Env -> Cont -> Selected -> List Match2 -> Tuple (List Val) Cont
+matchArgs_bwd :: Env -> Cont -> Selected -> List Match2 -> List Val × Cont
 matchArgs_bwd ρ κ α L.Nil     = Tuple L.Nil κ
 matchArgs_bwd ρ κ α (ξ : ξs)  =
-   let ρ1            = bound_vars2 ρ ξ -- revisit once Min has fixed match_bwd above
-       ρ2            = foldMap (bound_vars2 ρ) ξs
-       Tuple vs κ'   = matchArgs_bwd ρ2 κ α ξs
+   let Tuple ρ' ρ1   = unmatch2 ρ ξ
+       Tuple vs κ'   = matchArgs_bwd ρ' κ α ξs
        Tuple v σ     = match_bwd2 ρ1 κ' α ξ in
    Tuple (v : vs) $ Right σ
 

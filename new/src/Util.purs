@@ -4,8 +4,11 @@ import Prelude hiding (absurd)
 import Data.Either (Either(..))
 import Data.List (List, intercalate)
 import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
+
+infixr 6 type Tuple as ×
 
 data T3 a b c = T3 a b c
 

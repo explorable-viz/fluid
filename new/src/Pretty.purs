@@ -12,7 +12,7 @@ import Elim (Elim(..))
 import Expr (Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Parse (cFalse, cNil, cTrue)
-import Util (error, intersperse)
+import Util (type (×), error, intersperse)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
 import Val (RawVal(..)) as V
 
@@ -103,7 +103,7 @@ instance prettyEither :: (Pretty a, Pretty b) => Pretty (Either a b) where
    pretty (Left x) = pretty x
    pretty (Right x) = pretty x
 
-instance prettyBranch :: Pretty (Tuple Ctr (Either Expr Elim2)) where
+instance prettyBranch :: Pretty (Ctr × Either Expr Elim2) where
    pretty (Tuple c κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
 instance prettyElim2 :: Pretty Elim2 where

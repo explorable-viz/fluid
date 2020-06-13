@@ -15,7 +15,7 @@ import Expr (Cont, Elim2(..), Expr(..), Module(..), RecDef(..), RecDefs)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
-import Util (MayFail, T3(..), absurd, error)
+import Util (MayFail, T3(..), type (×), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -62,7 +62,7 @@ closeDefs :: Env -> RecDefs -> RecDefs -> Env
 closeDefs _ _ Nil = ε
 closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ0 σ)
 
-eval :: Env -> Expr -> MayFail (Tuple Expl Val)
+eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
    Tuple (T.Var x) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =

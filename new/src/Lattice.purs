@@ -7,7 +7,7 @@ import Data.Map (Map, fromFoldable, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
-import Util ((≟), fromJust)
+import Util (type (×), (≟), fromJust)
 
 class Lattice a where
    maybeMeet   :: a -> a -> Maybe a
@@ -55,7 +55,7 @@ instance selectableUnit :: Selectable Unit where
    mapα _               = identity
    maybeZipWithα _ _ _  = pure unit
 
-instance selectableTuple :: (Eq k, Selectable v) => Selectable (Tuple k v) where
+instance selectableTuple :: (Eq k, Selectable v) => Selectable (k × v) where
    mapα f (Tuple k v)                        = Tuple k (mapα f v)
    maybeZipWithα f (Tuple k v) (Tuple k' v') = Tuple <$> k ≟ k' <*> maybeZipWithα f v v'
 

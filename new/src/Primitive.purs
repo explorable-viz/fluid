@@ -7,7 +7,7 @@ import Data.Tuple (Tuple(..))
 import Bindings (Var, ε, (:+:), (↦))
 import Lattice (Selected, (∧))
 import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Unary(..), UnaryOp(..), Val(..), val)
-import Util (error)
+import Util (type (×), error)
 
 -- name in user land and precedence 0 to 9, similar to Haskell 98
 data OpName = OpName Var Int
@@ -15,7 +15,7 @@ data OpName = OpName Var Int
 opPrec :: OpName -> Int
 opPrec (OpName _ prec) = prec
 
-opName :: String -> Int -> Tuple String OpName
+opName :: String -> Int -> String × OpName
 opName op = OpName op >>> Tuple op
 
 -- Syntactic information only. No guarantee that any of these will be defined.

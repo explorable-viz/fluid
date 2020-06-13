@@ -13,7 +13,7 @@ import Eval (defs)
 import Expr (Expr)
 import Parse (SParser, module_, program)
 import Val (Env)
-import Util (error)
+import Util (type (×), error)
 
 -- For Wrattler integration. Should not end in "/".
 resourceServerUrl :: String
@@ -34,7 +34,7 @@ loadModule file ρ = do
       Left msg -> error msg
       Right ρ' -> pure ρ'
 
-openWithImports :: String -> Aff (Tuple Env Expr)
+openWithImports :: String -> Aff (Env × Expr)
 openWithImports file =
    loadFile "fluid/example" file >>= parseWithImports
 
@@ -44,7 +44,7 @@ successfulParse src p =
       Left parseError -> error $ show parseError
       Right t -> t
 
-parseWithImports :: String -> Aff (Tuple Env Expr)
+parseWithImports :: String -> Aff (Env × Expr)
 parseWithImports src = do
    ρ' <- loadModule "prelude" Empty >>= loadModule "graphics"
    pure $ Tuple ρ' (successfulParse src program)
