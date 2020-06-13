@@ -153,12 +153,11 @@ instance mapContCont :: MapCont PCont where
    mapCont κ (PCPElim σ)   = PCPElim <$> mapCont κ σ
 
 instance mapContElim :: MapCont PElim2 where
-   mapCont κ' (PElimVar2 x κ) = Just $ PElimVar2 x κ'
+   mapCont κ (PElimVar2 x κ') = PElimVar2 x <$> mapCont κ κ'
    mapCont κ (PElimConstr κs) =
       case toUnfoldable κs of
          Tuple c κ' : Nil -> do
-            κ'' <- mapCont κ κ'
-            pure $ PElimConstr $ singleton c κ''
+            PElimConstr <$> (singleton c <$> mapCont κ κ')
          _ -> Nothing
 
 -- TODO: provide a Traversable instance for PElim; then this is sequence.
