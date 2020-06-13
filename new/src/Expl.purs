@@ -1,6 +1,5 @@
 module Expl where
 
-import Prelude
 import Data.List (List)
 import Data.Map (Map)
 import Bindings (Var)
@@ -9,7 +8,7 @@ import Elim (Elim)
 import Expr (Cont, Elim2, RecDefs)
 import Util (type (×))
 
-data Def = Def (Match Unit) Expl
+data Def = Def Match2 Expl
 
 data Expl =
    Var Var |

@@ -95,7 +95,7 @@ eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
       Val α' (V.Binary φ) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
       _ -> error absurd
 eval_fwd ρ (Expr _ (E.Let (Def σ e) e')) α =
-   let T3 ρ' _ α' = match_fwd (eval_fwd ρ e α) σ in
+   let T3 ρ' _ α' = match_fwd2 (eval_fwd ρ e α) σ in
    eval_fwd (ρ <> ρ') e' α'
 eval_fwd ρ (Expr _ (E.MatchAs e σ)) α =
    let T3 ρ' e' α' = match_fwd2 (eval_fwd ρ e α) σ in

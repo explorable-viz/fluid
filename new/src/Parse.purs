@@ -14,6 +14,7 @@ import Data.List (List(..)) as L
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (charAt)
+import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -27,7 +28,7 @@ import Bindings (Var)
 import DataType (Ctr(..), cCons, cFalse, cNil, cTrue)
 import Elim (Elim)
 import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PCont(..), PElim(..), PElim2(..), join, joinAll, mapCont, singleBranch, toElim, toElim2)
+import PElim (PCont(..), PElim(..), PElim2(..), join, joinAll, mapCont, singleBranch2, toElim, toElim2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -221,6 +222,9 @@ arrow = token.reservedOp strArrow
 equals :: SParser Unit
 equals = token.reservedOp strEquals
 
+patternDelim :: SParser Unit
+patternDelim = arrow <|> equals
+
 elim :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elim expr' nest = elimSingle expr' nest <|> elimBraces expr' nest
 
@@ -230,12 +234,12 @@ elim2 expr' nest = elimSingle2 expr' nest <|> elimBraces2 expr' nest
 
 elimSingle :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elimSingle expr' nest = do
-   σ <- partialElim expr' nest (arrow <|> equals)
+   σ <- partialElim expr' nest patternDelim
    pure $ fromJust "Incomplete branches" $ toElim σ
 
 elimSingle2 :: SParser Expr -> Boolean -> SParser Elim2
 elimSingle2 expr' nest =
-   fromJust "Incomplete branches" <$> (toElim2 <$> partialElim2 expr' nest (arrow <|> equals))
+   fromJust "Incomplete branches" <$> (toElim2 <$> partialElim2 expr' nest patternDelim)
 
 elimBraces :: SParser Expr -> Boolean -> SParser (Elim Expr)
 elimBraces expr' nest =
@@ -250,7 +254,7 @@ elimBraces2 expr' nest =
    token.braces $ do
       σs <- sepBy1 (partialElim2 expr' nest arrow) token.semi
       pure $ case joinAll σs of
-         Nothing -> error "Incompatible branches"
+         Nothing -> trace σs \_ -> error "Incompatible branches"
          Just σ -> fromJust "Incomplete branches" (toElim2 σ)
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
@@ -270,8 +274,9 @@ partialElim2 expr' nest delim = do
 
 def :: SParser Expr -> SParser Def
 def expr' = do
-   σ <- try $ keyword strLet *> elim expr' false <* token.semi
-   pure $ fromJust "Singleton eliminator expected" $ singleBranch σ <#> Def (σ $> unit)
+   σ <- try $ keyword strLet *> pattern2 <* patternDelim
+   e <- expr' <* token.semi
+   pure $ Def (fromJust "Incomplete branches" $ trace σ \_ -> toElim2 σ) e
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')

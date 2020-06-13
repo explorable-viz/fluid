@@ -8,11 +8,10 @@ import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import DataType (Ctr)
-import Elim (Elim)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟), error)
 
-data Def = Def (Elim Unit) Expr
+data Def = Def Elim2 Expr -- elim has codomain unit
 data RecDef = RecDef Var Elim2
 type RecDefs = List RecDef
 

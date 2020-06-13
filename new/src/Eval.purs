@@ -118,7 +118,7 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
       _ -> error absurd
 eval ρ (Expr _ (E.Let (E.Def σ e) e')) = do
    Tuple t v <- eval ρ e
-   T3 ρ' _ ξ <- match v σ
+   T3 ρ' _ ξ <- match2 v σ
    Tuple t' v' <- eval (ρ <> ρ') e'
    pure $ Tuple (T.Let (T.Def ξ t) t') v'
 eval ρ (Expr _ (E.MatchAs e σ)) = do
@@ -131,7 +131,7 @@ defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
 defs ρ (Module (Left (E.Def σ e) : ds)) = do
    Tuple _ v <- eval ρ e
-   T3 ρ' _ ξ <- match v σ
+   T3 ρ' _ ξ <- match2 v σ
    defs (ρ <> ρ') (Module ds)
 defs ρ (Module (Right δ : ds)) =
    defs (ρ <> closeDefs ρ δ δ) (Module ds)
