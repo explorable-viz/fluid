@@ -1,20 +1,17 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
-import Control.Apply (lift2)
-import Control.Monad (join) as Monad
 import Data.Bitraversable (bisequence)
-import Data.Either (Either(..))
-import Data.List (List(..), (:), zipWith)
-import Data.Map (Map, fromFoldable, keys, singleton, toUnfoldable, unionWith, values)
+import Data.List (List(..), (:))
+import Data.Map (Map, singleton, toUnfoldable, values)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl, sequence)
-import Data.Tuple (Tuple(..), uncurry)
+import Data.Tuple (Tuple(..))
 import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim(..))
 import Expr (Cont(..), Elim2(..), Expr)
-import Util (type (×), (≟), absurd, assert, error)
+import Util (type (×), (≟), absurd, error, unionWithMaybe)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
 data PElim k =
@@ -105,9 +102,6 @@ instance joinableCont :: Joinable2 PCont where
 
 instance joinableCtrCont :: Joinable2 (Ctr × PCont) where
    join2 (Tuple c κ) (Tuple c' κ') = bisequence $ Tuple (c ≟ c') $ join2 κ κ'
-
-unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
-unionWithMaybe f m m' = unionWith (\x y -> Monad.join $ lift2 f x y) (map Just m) (map Just m')
 
 instance joinablePElim2 :: Joinable2 PElim2 where
    join2 (PElimVar2 x κ) (PElimVar2 x' κ')   = PElimVar2 <$> x ≟ x' <*> join2 κ κ'

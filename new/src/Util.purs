@@ -1,8 +1,10 @@
 module Util where
 
 import Prelude hiding (absurd)
+import Control.Apply (lift2)
 import Data.Either (Either(..))
 import Data.List (List, intercalate)
+import Data.Map (Map, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple)
 import Effect.Exception (throw)
@@ -45,6 +47,9 @@ mayEq x x' = if x == x' then Just x else Nothing
 
 mustEq :: forall a . Eq a => a -> a -> a
 mustEq x x' = fromJust "Must be equal" $ x ≟ x'
+
+unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
+unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (map Just m) (map Just m')
 
 eitherEq :: forall a . Show a => Eq a => a -> a -> MayFail a
 eitherEq x x' = if x == x' then pure x else Left $ show x <> " ≠ " <> show x'
