@@ -10,7 +10,7 @@ import Data.Traversable (sequence)
 import DataType (Ctr)
 import Elim (Elim)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
-import Util ((≟))
+import Util ((≟), error)
 
 data Def = Def (Elim Unit) Expr
 data RecDef = RecDef Var (Elim Expr)
@@ -28,7 +28,7 @@ data RawExpr =
    Lambda (Elim Expr) |
    App Expr Expr |
    BinaryApp Expr Var Expr |
-   MatchAs Expr (Elim Expr) |
+   MatchAs Expr Elim2 |
    Let Def Expr |
    LetRec RecDefs Expr
 
@@ -37,7 +37,19 @@ data Expr = Expr Selected RawExpr
 expr :: RawExpr -> Expr
 expr = Expr false
 
-type Cont = Either Expr Elim2
+data Cont = CExpr Expr | CElim Elim2
+
+asExpr :: Cont -> Expr
+asExpr (CExpr e) = e
+asExpr (CElim _) = error "Expression expected"
+
+instance selectableCont :: Selectable Cont where
+   mapα f (CExpr e)  = CExpr $ mapα f e
+   mapα f (CElim σ)  = CElim $ mapα f σ
+
+   maybeZipWithα f (CExpr e) (CExpr e')   = CExpr <$> maybeZipWithα f e e'
+   maybeZipWithα f (CElim σ) (CElim σ')   = CElim <$> maybeZipWithα f σ σ'
+   maybeZipWithα _ _ _                    = Nothing
 
 data Elim2 =
    ElimVar2 Var Cont |

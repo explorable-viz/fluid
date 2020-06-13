@@ -39,14 +39,6 @@ instance selectableLattice :: Selectable a => Lattice a where
    top         = mapα $ const true
    bot         = mapα $ const false
 
-instance selectableEither :: (Selectable a, Selectable b) => Selectable (Either a b) where
-   mapα f (Left e)   = Left $ mapα f e
-   mapα f (Right σ)  = Right $ mapα f σ
-
-   maybeZipWithα f (Left e) (Left e')     = Left <$> maybeZipWithα f e e'
-   maybeZipWithα f (Right σ) (Right σ')   = Right <$> maybeZipWithα f σ σ'
-   maybeZipWithα _ _ _                    = Nothing
-
 instance selectableBoolean :: Selectable Boolean where
    mapα                    = identity
    maybeZipWithα op α α'   = pure $ α `op` α'

@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.Map (lookup)
 import Bindings ((:+:), (↦), ε, find)
 import Elim (Elim(..))
-import Expr (Cont, Def(..), Elim2(..), Expr(..), RecDef(..), RecDefs)
+import Expr (Cont(..), Def(..), Elim2(..), Expr(..), RecDef(..), RecDefs, asExpr)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (applyBinary_fwd, applyUnary_fwd)
@@ -44,8 +44,8 @@ match_fwd2 v _ = error absurd
 
 matchArgs_fwd :: List Val -> Cont -> T3 Env Cont Selected
 matchArgs_fwd Nil κ               = T3 ε κ true
-matchArgs_fwd (_ : _) (Left σ)    = error absurd
-matchArgs_fwd (v : vs) (Right σ)  =
+matchArgs_fwd (_ : _) (CExpr _)   = error absurd
+matchArgs_fwd (v : vs) (CElim σ)  =
    let T3 ρ κ' α = match_fwd2 v σ
        T3 ρ' κ'' α' = matchArgs_fwd vs κ' in
    T3 (ρ <> ρ') κ'' (α ∧ α')
@@ -99,5 +99,5 @@ eval_fwd ρ (Expr _ (E.Let (Def σ e) e')) α =
    let T3 ρ' _ α' = match_fwd (eval_fwd ρ e α) σ in
    eval_fwd (ρ <> ρ') e' α'
 eval_fwd ρ (Expr _ (E.MatchAs e σ)) α =
-   let T3 ρ' e' α' = match_fwd (eval_fwd ρ e α) σ in
-   eval_fwd (ρ <> ρ') e' α'
+   let T3 ρ' e' α' = match_fwd2 (eval_fwd ρ e α) σ in
+   eval_fwd (ρ <> ρ') (asExpr e') α'

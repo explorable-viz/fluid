@@ -11,7 +11,7 @@ import Bindings (Bindings(..), (:+:), (↦), ε, find, remove)
 import Elim (Elim(..))
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..), Match2(..))
-import Expr (Cont, Elim2(..), Expr(..), RawExpr(..), RecDef(..), RecDefs)
+import Expr (Cont(..), Elim2(..), Expr(..), RawExpr(..), RecDef(..), RecDefs)
 import Lattice (class Selectable, Selected, (∨), bot, join)
 import Util (T3(..), (≜), type (×), absurd, error, successful)
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
@@ -111,7 +111,7 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
    let Tuple ρ' ρ1   = unmatch2 ρ ξ
        Tuple vs κ'   = matchArgs_bwd ρ' κ α ξs
        Tuple v σ     = match_bwd2 ρ1 κ' α ξ in
-   Tuple (v : vs) $ Right σ
+   Tuple (v : vs) $ CElim σ
 
 eval_bwd :: Val -> Expl -> T3 Env Expr Selected
 -- true

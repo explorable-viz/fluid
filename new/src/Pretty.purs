@@ -9,7 +9,7 @@ import Text.Pretty (Doc, atop, beside, hcat, text, vcat)
 import Text.Pretty (render) as P
 import DataType (Ctr(..))
 import Elim (Elim(..))
-import Expr (Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
+import Expr (Cont(..), Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Parse (cFalse, cNil, cTrue)
 import Util (type (×), error, intersperse)
@@ -99,11 +99,11 @@ instance prettyElim :: Pretty k => Pretty (Elim k) where
    pretty (ElimBool { true: κ, false: κ' }) =
       atop (text "true" :<>: operator "->" :<>: pretty κ) (text "false" :<>: operator "->" :<>: pretty κ')
 
-instance prettyEither :: (Pretty a, Pretty b) => Pretty (Either a b) where
-   pretty (Left x) = pretty x
-   pretty (Right x) = pretty x
+instance prettyCont :: Pretty Cont where
+   pretty (CExpr e) = pretty e
+   pretty (CElim σ) = pretty σ
 
-instance prettyBranch :: Pretty (Ctr × Either Expr Elim2) where
+instance prettyBranch :: Pretty (Ctr × Cont) where
    pretty (Tuple c κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
 instance prettyElim2 :: Pretty Elim2 where

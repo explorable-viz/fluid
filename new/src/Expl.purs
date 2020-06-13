@@ -24,7 +24,7 @@ data Expl =
    App Expl Expl (Match Expr) Expl |
    AppOp Expl Expl |
    BinaryApp Expl Var Expl |
-   MatchAs Expl (Match Expr) Expl |
+   MatchAs Expl Match2 Expl |
    Let Def Expl |
    LetRec RecDefs Expl
 

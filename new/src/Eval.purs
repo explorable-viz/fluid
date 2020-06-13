@@ -11,7 +11,7 @@ import Bindings ((:+:), (↦), ε, find)
 import Elim (Elim(..))
 import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..), Match2(..))
-import Expr (Cont, Elim2(..), Expr(..), Module(..), RecDef(..), RecDefs)
+import Expr (Cont(..), Elim2(..), Expr(..), Module(..), RecDef(..), RecDefs, asExpr)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
@@ -51,8 +51,8 @@ match2 v _ = Left $ "Pattern mismatch for " <> render (pretty v)
 
 matchArgs :: List Val -> Cont -> MayFail (T3 Env Cont (List Match2))
 matchArgs Nil κ               = pure $ T3 ε κ Nil
-matchArgs (_ : _) (Left σ)    = Left $ "Too many arguments"
-matchArgs (v : vs) (Right σ)  = do
+matchArgs (_ : _) (CExpr _)    = Left $ "Too many arguments"
+matchArgs (v : vs) (CElim σ)  = do
    T3 ρ κ' ξ <- match2 v σ
    T3 ρ' κ'' ξs <- matchArgs vs κ'
    pure $ T3 (ρ <> ρ') κ'' (ξ : ξs)
@@ -123,8 +123,8 @@ eval ρ (Expr _ (E.Let (E.Def σ e) e')) = do
    pure $ Tuple (T.Let (T.Def ξ t) t') v'
 eval ρ (Expr _ (E.MatchAs e σ)) = do
    Tuple t v <- eval ρ e
-   T3 ρ' e' ξ <- match v σ
-   Tuple t' v' <- eval (ρ <> ρ') e'
+   T3 ρ' e' ξ <- match2 v σ
+   Tuple t' v' <- eval (ρ <> ρ') (asExpr e')
    pure $ Tuple (T.MatchAs t ξ t') v'
 
 defs :: Env -> Module -> MayFail Env

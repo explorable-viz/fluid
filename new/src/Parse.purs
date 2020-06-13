@@ -133,7 +133,7 @@ constr_pattern :: SParser PElim2 -> SParser PElim2
 constr_pattern pattern' = ctr_pattern >>= rest
    where
       rest ∷ PElim2 -> SParser PElim2
-      rest σ = (simplePattern2 pattern' <|> ctr_pattern <#> (mapCont (PElim σ) >>> fromJust absurd) >>= rest) <|>
+      rest σ = (simplePattern2 pattern' <|> ctr_pattern <#> (mapCont (PCPElim σ) >>> fromJust absurd) >>= rest) <|>
                pure σ
 
 true_ :: SParser Expr
@@ -180,7 +180,7 @@ patternPair2 :: SParser PElim2 -> SParser PElim2
 patternPair2 pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
-      fromJust absurd <$> (pattern' <#> mapCont (PElim σ))
+      fromJust absurd <$> (pattern' <#> mapCont (PCPElim σ))
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -268,7 +268,7 @@ partialElim2 :: SParser Expr -> Boolean -> SParser Unit -> SParser PElim2
 partialElim2 expr' nest delim = do
    σ <- pattern2
    e <- delim *> expr' <|> nestedFun nest expr'
-   pure $ fromJust absurd $ mapCont (Expr e) σ
+   pure $ fromJust absurd $ mapCont (PCExpr e) σ
 
 def :: SParser Expr -> SParser Def
 def expr' = do
@@ -290,7 +290,7 @@ letRec expr' = expr <$>
 
 matchAs :: SParser Expr -> SParser Expr
 matchAs expr' = expr <$>
-   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim expr' false)
+   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim2 expr' false)
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
