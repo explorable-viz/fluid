@@ -70,7 +70,8 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Int n) = text $ show n
    pretty (E.Str str) = text $ show str
    pretty (E.Var x) = text x
-   pretty (E.Constr c es) = hcat $ intersperse space $ map pretty es
+   pretty (E.Constr c Nil) = pretty c
+   pretty (E.Constr c (e : es)) = pretty c :<>: space :<>: hcat (intersperse space $ map pretty (e : es))
    pretty E.True = pretty cTrue
    pretty E.False = pretty cFalse
    pretty (E.Pair e e') = parens $ pretty e :<>: comma :<>: pretty e'
@@ -115,7 +116,8 @@ instance valPretty :: Pretty Val where
 instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
    pretty (V.Str str) = text $ show str
-   pretty (V.Constr (Ctr c) vs) = hcat $ intersperse space $ map pretty vs
+   pretty (V.Constr c Nil) = pretty c
+   pretty (V.Constr c (v : vs)) = pretty c :<>: space :<>: hcat (intersperse space $ map pretty (v : vs))
    pretty V.True = pretty cTrue
    pretty V.False = pretty cFalse
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
