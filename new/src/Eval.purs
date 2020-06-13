@@ -51,7 +51,7 @@ match2 v _ = Left $ "Pattern mismatch for " <> render (pretty v)
 
 matchArgs :: List Val -> Cont -> MayFail (T3 Env Cont (List Match2))
 matchArgs Nil κ               = pure $ T3 ε κ Nil
-matchArgs (_ : _) (CExpr _)    = Left $ "Too many arguments"
+matchArgs (_ : _) (CExpr _)   = Left $ "Too many arguments"
 matchArgs (v : vs) (CElim σ)  = do
    T3 ρ κ' ξ <- match2 v σ
    T3 ρ' κ'' ξs <- matchArgs vs κ'
