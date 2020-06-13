@@ -1,6 +1,7 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
+import Data.Bitraversable (bisequence)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), zipWith)
 import Data.Map (Map, fromFoldable, keys, singleton, toUnfoldable, unionWith, values)
@@ -11,7 +12,7 @@ import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim(..))
 import Expr (Cont(..), Elim2(..), Expr)
-import Util ((≟), absurd, assert, error)
+import Util (type (×), (≟), absurd, assert, error)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
 data PElim k =
@@ -100,13 +101,13 @@ instance joinableCont :: Joinable2 PCont where
    join2 (PCPElim σ) (PCPElim σ')   = PCPElim <$> join2 σ σ'
    join2 _ _                        = Nothing
 
+instance joinableCtrCont :: Joinable2 (Ctr × PCont) where
+   join2 (Tuple c κ) (Tuple c' κ') = bisequence $ Tuple (c ≟ c') $ join2 κ κ'
+
 instance joinablePElim2 :: Joinable2 PElim2 where
    join2 (PElimVar2 x κ) (PElimVar2 x' κ')   = PElimVar2 <$> x ≟ x' <*> join2 κ κ'
-   join2 (PElimConstr κs) (PElimConstr κs')  =
-      let m = toUnfoldable κs
-          m' = toUnfoldable κs'
-          blah = sequence $ zipWith (\(Tuple c κ) (Tuple _ κ') -> sequence $ Tuple c $ join2 κ κ') m m' in
-      PElimConstr <$> (fromFoldable <$> blah)
+   join2 (PElimConstr κs) (PElimConstr κs')  = PElimConstr <$>
+      (fromFoldable <$> sequence (zipWith join2 (toUnfoldable κs) (toUnfoldable κs')))
    join2 _ _ = Nothing
 
 joinAll :: forall a . Joinable2 a => List a -> Maybe a
