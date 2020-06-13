@@ -6,7 +6,7 @@ import Data.Map (toUnfoldable)
 import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, text, vcat)
 import Text.Pretty (render) as P
-import DataType (Ctr(..))
+import DataType (Ctr)
 import Elim (Elim(..))
 import Expr (Cont(..), Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E

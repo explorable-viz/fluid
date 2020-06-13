@@ -140,13 +140,13 @@ constr_pattern pattern' = ctr_pattern >>= rest
          <|> pure σ
 
 true_ :: SParser Expr
-true_ = theCtr cTrue $> expr True
+true_ = theCtr cTrue $> expr (Constr cTrue L.Nil)
 
 patternTrue :: SParser (PElim Unit)
 patternTrue = theCtr cTrue $> PElimTrue unit
 
 false_ :: SParser Expr
-false_ = theCtr cFalse $> expr False
+false_ = theCtr cFalse $> expr (Constr cFalse L.Nil)
 
 patternFalse :: SParser (PElim Unit)
 patternFalse = theCtr cFalse $> PElimFalse unit
