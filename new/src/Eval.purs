@@ -100,8 +100,8 @@ eval ρ (Expr _ (E.App e e')) = do
    case u of
       V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs ρ1 δ δ
-         T3 ρ3 e'' ξ <- match v' σ
-         Tuple t'' v'' <- eval (ρ1 <> ρ2 <> ρ3) e''
+         T3 ρ3 e'' ξ <- match2 v' σ
+         Tuple t'' v'' <- eval (ρ1 <> ρ2 <> ρ3) $ asExpr e''
          pure $ Tuple (T.App t t' ξ t'') v''
       V.Unary φ ->
          pure $ Tuple (T.AppOp t t') $ applyUnary φ v'

@@ -85,8 +85,8 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
    case u of
       V.Closure ρ1 δ σ ->
          let ρ2 = closeDefs_fwd ρ1 δ δ α'
-             T3 ρ3 e'' α'' = match_fwd v σ in
-         eval_fwd (ρ1 <> ρ2 <> ρ3) e'' (α' ∧ α'')
+             T3 ρ3 e'' α'' = match_fwd2 v σ in
+         eval_fwd (ρ1 <> ρ2 <> ρ3) (asExpr e'') (α' ∧ α'')
       V.Unary φ -> applyUnary_fwd φ α' v
       V.Binary φ -> Val α' $ V.Unary $ PartialApp φ v
       _ -> error absurd

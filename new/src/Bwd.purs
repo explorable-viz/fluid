@@ -143,9 +143,9 @@ eval_bwd (Val α (V.Cons u v)) (T.Cons tT uU)
 eval_bwd v (T.App t u ξ t')
    = case eval_bwd v t' of
       T3 (ρ1ρ2ρ3 :+: f ↦ Val _ (V.Closure ρ1' δ σ)) e α ->
-         let Tuple ρ1ρ2 ρ3      = unmatch ρ1ρ2ρ3 ξ
+         let Tuple ρ1ρ2 ρ3      = unmatch2 ρ1ρ2ρ3 ξ
              Tuple ρ1 ρ2        = filterRecDefs ρ1ρ2 δ
-             Tuple v' σ         = match_bwd ρ3 e α ξ
+             Tuple v' σ         = match_bwd2 ρ3 (CExpr e) α ξ
              T3 ρ'  e'  α'      = eval_bwd v' u
              T3 ρ1' δ   α2      = joinClosures ρ2
              T3 ρ'' e'' α''     = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ σ)) t

@@ -213,7 +213,7 @@ simplePattern2 pattern' =
    patternPair2 pattern'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr
+lambda expr' = keyword strFun *> elim2 expr' true <#> Lambda >>> expr
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -254,7 +254,7 @@ elimBraces2 expr' nest =
          Just σ -> fromJust "Incomplete branches" (toElim2 σ)
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
-nestedFun true expr' = elim expr' true <#> Lambda >>> expr
+nestedFun true expr' = elim2 expr' true <#> Lambda >>> expr
 nestedFun false _ = empty
 
 partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser (PElim Expr)
@@ -277,7 +277,7 @@ let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')
 
 recDef :: SParser Expr -> SParser RecDef
-recDef expr' = RecDef <$> ident <*> (elim expr' true <* token.semi)
+recDef expr' = RecDef <$> ident <*> (elim2 expr' true <* token.semi)
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = keyword strLet *> many (try $ recDef expr')

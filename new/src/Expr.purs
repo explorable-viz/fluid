@@ -13,7 +13,7 @@ import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟), error)
 
 data Def = Def (Elim Unit) Expr
-data RecDef = RecDef Var (Elim Expr)
+data RecDef = RecDef Var Elim2
 type RecDefs = List RecDef
 
 data RawExpr =
@@ -25,7 +25,7 @@ data RawExpr =
    True | False |
    Pair Expr Expr |
    Nil | Cons Expr Expr |
-   Lambda (Elim Expr) |
+   Lambda Elim2 |
    App Expr Expr |
    BinaryApp Expr Var Expr |
    MatchAs Expr Elim2 |
