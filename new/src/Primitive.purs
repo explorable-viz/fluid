@@ -87,15 +87,15 @@ intIntInt name = IntIntInt >>> BinaryOp name >>> Binary >>> val
 
 primitives :: Env
 primitives = foldl (:+:) ε [
-   "+" ↦ intIntInt "prim-plus" (+),
-   "-" ↦ intIntInt "prim-minus" (-),
-   "*" ↦ intIntInt "prim-times" (*),
-   "div" ↦ intIntInt "prim-div" div,
-   "==" ↦ intIntBool "prim-eq" (==),
-   "/=" ↦ intIntBool "prim-eq" (/=),
-   "<" ↦ intIntBool "prim-lt" (<),
-   ">" ↦ intIntBool "prim-gt" (>),
-   "<=" ↦ intIntBool "prim-leq" (<=),
-   ">=" ↦ intIntBool "prim-geq" (>=),
-   "intToStr" ↦ intStr "prim-intToStr" (show)
+   "+"         ↦ intIntInt "prim-plus"    (+),
+   "-"         ↦ intIntInt "prim-minus"   (-),
+   "*"         ↦ intIntInt "prim-times"   (*),
+   "div"       ↦ intIntInt "prim-div"     div,
+   "=="        ↦ intIntBool "prim-eq"     (==),
+   "/="        ↦ intIntBool "prim-eq"     (/=),
+   "<"         ↦ intIntBool "prim-lt"     (<),
+   ">"         ↦ intIntBool "prim-gt"     (>),
+   "<="        ↦ intIntBool "prim-leq"    (<=),
+   ">="        ↦ intIntBool "prim-geq"    (>=),
+   "intToStr"  ↦ intStr "prim-intToStr"   show
 ]

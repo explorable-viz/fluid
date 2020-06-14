@@ -57,10 +57,10 @@ filterRecDefs = go ε
    go acc ρ (RecDef f σ : δ) = let Tuple v ρ' = successful (remove f ρ)
                                in  go (acc :+: f ↦ v) ρ' δ
 
-match_bwd2 :: Env -> Cont -> Selected -> Match -> Val × Elim
-match_bwd2 (ε :+: x ↦ v) κ α (MatchVar x')      = Tuple v (ElimVar (x ≜ x') κ)
-match_bwd2 _ _ _ (MatchVar x')                  = error absurd
-match_bwd2 ρ κ α (MatchConstr (Tuple c ξs) κs)  =
+match_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
+match_bwd (ε :+: x ↦ v) κ α (MatchVar x')      = Tuple v (ElimVar (x ≜ x') κ)
+match_bwd _ _ _ (MatchVar x')                  = error absurd
+match_bwd ρ κ α (MatchConstr (Tuple c ξs) κs)  =
    let Tuple vs κ = matchArgs_bwd ρ κ α ξs in
    Tuple (Val α $ V.Constr c vs) (ElimConstr $ update (const $ pure κ) c $ map bot κs)
 
@@ -69,7 +69,7 @@ matchArgs_bwd ρ κ α L.Nil     = Tuple L.Nil κ
 matchArgs_bwd ρ κ α (ξ : ξs)  =
    let Tuple ρ' ρ1   = unmatch ρ ξ
        Tuple vs κ'   = matchArgs_bwd ρ' κ α ξs
-       Tuple v σ     = match_bwd2 ρ1 κ' α ξ in
+       Tuple v σ     = match_bwd ρ1 κ' α ξ in
    Tuple (v : vs) $ CElim σ
 
 eval_bwd :: Val -> Expl -> T3 Env Expr Selected
@@ -81,7 +81,7 @@ eval_bwd (Val α V.False) T.False = T3 ε (Expr α False) α
 eval_bwd (Val α (V.Pair v1 v2)) (T.Pair t1 t2)
    = let T3 ρ1  e1  α1 = eval_bwd v1 t1
          T3 ρ2  e2  α2 = eval_bwd v2 t2
-     in  T3 (join ρ1 ρ2) (Expr α (Pair e1 e2)) (α ∨ α1 ∨ α2)
+     in  T3 (ρ1 ∨ ρ2) (Expr α (Pair e1 e2)) (α ∨ α1 ∨ α2)
 -- var
 eval_bwd (Val α v) (T.Var x) =
    T3 (ε :+: x ↦ (Val α v)) (Expr α (Var x)) false
@@ -98,14 +98,14 @@ eval_bwd (Val α V.Nil) T.Nil = T3 ε (Expr α Nil) α
 eval_bwd (Val α (V.Cons u v)) (T.Cons tT uU)
    = let T3 ρ  e  α'  = eval_bwd u tT
          T3 ρ' e' α'' = eval_bwd v uU
-     in  T3 (join ρ ρ') (Expr α (Cons e e')) (α ∨ α' ∨ α'')
+     in  T3 (ρ ∨ ρ') (Expr α (Cons e e')) (α ∨ α' ∨ α'')
 -- apply
 eval_bwd v (T.App t u ξ t')
    = case eval_bwd v t' of
       T3 (ρ1ρ2ρ3 :+: f ↦ Val _ (V.Closure ρ1' δ σ)) e α ->
          let Tuple ρ1ρ2 ρ3      = unmatch ρ1ρ2ρ3 ξ
              Tuple ρ1 ρ2        = filterRecDefs ρ1ρ2 δ
-             Tuple v' σ         = match_bwd2 ρ3 (CExpr e) α ξ
+             Tuple v' σ         = match_bwd ρ3 (CExpr e) α ξ
              T3 ρ'  e'  α'      = eval_bwd v' u
              T3 ρ1' δ   α2      = joinClosures ρ2
              T3 ρ'' e'' α''     = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ σ)) t

@@ -3,8 +3,9 @@ module Pretty (class Pretty, pretty, module P) where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), head)
 import Data.Map (toUnfoldable)
+import Data.String (Pattern(..), contains)
 import Data.Tuple (Tuple(..))
-import Text.Pretty (Doc, atop, beside, hcat, text, vcat)
+import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import DataType (Ctr, cFalse, cNil, cPair, cTrue)
 import Expr (Cont(..), Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
@@ -61,12 +62,21 @@ instance exprPretty :: Pretty Expr where
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> text
 
+-- Cheap hack to make progress on migrating some tests; need to revisit.
+prettyParensOpt :: forall a . Pretty a => a -> Doc
+prettyParensOpt x =
+   let doc = pretty x in
+   if contains (Pattern " ") $ render doc
+   then parens doc
+   else doc
+
+
 prettyConstr :: forall a . Pretty a => Ctr -> List a -> Doc
 prettyConstr c Nil = pretty c
 prettyConstr c xs@(x : xs') =
    if (c == cPair)
    then parens $ pretty x :<>: comma :<>: pretty (fromJust absurd $ head xs')
-   else pretty c :<>: space :<>: hcat (intersperse space $ map pretty xs)
+   else pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
 
 instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Int n) = text $ show n

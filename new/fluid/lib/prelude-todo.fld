@@ -24,9 +24,6 @@ let or x y = if x then True else y;
 -- Bool -> Bool
 let not x = if x then False else True;
 
--- List a -> a
-let head (x : xs) = x;
-
 -- Num -> Num -> Ordering
 let compare (x, y) =
    if x < y
@@ -34,12 +31,6 @@ let compare (x, y) =
    else if x > y
       then GT
       else EQ;
-
--- List a -> List a -> List a
-let concat {
-   [] ys -> ys;
-   (x : xs) ys -> x : concat xs ys
-};
 
 -- a -> List a -> Bool (where a ∈ {Num, Str})
 let elem x {
@@ -55,61 +46,15 @@ let filter p {
       if p x then x : ys else ys
 };
 
--- ((a, b) -> a) -> a -> List b -> a
-let foldl op z {
-   [] -> z;
-   x : xs -> foldl op (op (z, x)) xs
-};
-
--- ((a, b) -> a) -> List b -> a
-let foldl1 op {
-   x : xs -> foldl op x xs
-};
-
--- ((a, b) -> b) -> b -> List a -> b
-let foldr op z {
-   [] -> z;
-   x : xs -> op (x, foldr op z xs)
-};
-
--- ((a, b) -> b) -> List a -> b
-let foldr1 op {
-   x : [] -> x;
-   x : y : xs -> op (x, foldr1 op (Cons y xs))
-};
-
--- ((a, b) -> a) -> a -> List b -> List a
-let scanl1 op z xs =
-   let go (x, continue) acc =
-      let next = op (acc, x);
-      next : continue next;
-   foldr go (const []) xs z;
-
--- ((a, b) -> a) -> a -> List b -> List a
-let scanl op z xs =
-   z : scanl1 op z xs;
-
--- List a -> a -> List a
-let intersperse {
-   [] _ -> [];
-   (x : []) _ -> x : [];
-   (x : y : ys) sep -> x : sep : intersperse (y : ys)
-};
-
--- List a -> a
-let last {
-   x : [] -> x;
-   x : y : ys -> last (y : ys)
-};
-
 -- Log of x in base y.
 -- Num -> Num -> Num
 let logBase x y = log y / log x;
 
--- (a -> b) -> List a -> List b
-let map f {
-   [] -> [];
-   x : xs -> f x : map f xs
+-- List a -> a -> List a
+let intersperse {
+   Nil sep -> Nil;
+   (Cons x Nil) sep -> Cons x Nil;
+   (Cons x (Cons y ys)) sep -> Cons x (Cons sep (intersperse (Cons y ys)))
 };
 
 -- Num -> (a -> a) -> a -> List a
@@ -118,39 +63,8 @@ let iterate n f z =
    then []
    else z : map f (iterate (n - 1) f z);
 
--- List a -> Num
-let length {
-   [] -> 0;
-   x : xs -> 1 + length xs
-};
-
 -- Num -> Num
 let negate = (-) 0;
-
--- List a -> List a
-let reverse {
-   [] -> [];
-   x : xs -> concat (reverse xs) [x]
-};
-
--- List (a, b) -> (List a, List b)
-let unzip {
-   [] -> ([], []);
-   (x, y) : xys ->
-      let (xs, ys) = unzip xys;
-      (x : xs, y : ys)
-};
-
--- ((a, b) -> c) -> List a -> List b -> List c
-let zipWith op {
-   [] ys -> [];
-   (x : xs) {
-      [] -> [];
-      y : ys -> op (x, y) : zipWith op xs ys
-   }
-};
-
-let zip = zipWith id;
 
 -- Num -> a -> List a
 let repeat = flip iterate id;
@@ -181,13 +95,6 @@ let nth n (x : xs) ->
 -- Num -> Num -> Num
 let ceilingToNearest n m =
    ceiling (n / m) * m;
-
--- List Num -> Num
-let sum xs =
-   foldr (let (x, y) -> x + y) 0 xs;
-
--- List a -> List a
-let tail (x : xs) = xs;
 
 -- Num -> List a -> List a
 let take n xs =
