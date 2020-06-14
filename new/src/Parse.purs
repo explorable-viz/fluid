@@ -26,7 +26,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
 import Expr (Cont(..), Def(..), Elim(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (joinAll, mapCont, toElim)
+import PElim (joinAll, mapCont)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -198,16 +198,13 @@ elim :: SParser Expr -> Boolean -> SParser Elim
 elim expr' nest = elimSingle expr' nest <|> elimBraces expr' nest
 
 elimSingle :: SParser Expr -> Boolean -> SParser Elim
-elimSingle expr' nest =
-   fromJust "Incomplete branches" <$> (toElim <$> partialElim expr' nest patternDelim)
+elimSingle expr' nest = partialElim expr' nest patternDelim
 
 elimBraces :: SParser Expr -> Boolean -> SParser Elim
 elimBraces expr' nest =
    token.braces $ do
       σs <- sepBy1 (partialElim expr' nest arrow) token.semi
-      pure $ case joinAll σs of
-         Nothing -> error "Incompatible branches"
-         Just σ -> fromJust "Incomplete branches" (toElim σ)
+      pure $ fromJust "Incompatible branches" $ joinAll σs
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = elim expr' true <#> Lambda >>> expr
@@ -223,7 +220,7 @@ def :: SParser Expr -> SParser Def
 def expr' = do
    σ <- try $ keyword strLet *> pattern <* patternDelim
    e <- expr' <* token.semi
-   pure $ Def (fromJust "Incomplete branches" $ toElim σ) e
+   pure $ Def σ e
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')

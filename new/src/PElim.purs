@@ -35,15 +35,6 @@ joinAll :: forall a . Joinable2 a => List a -> Maybe a
 joinAll Nil = error "Non-empty list expected"
 joinAll (x : xs) = foldl (om join2) (Just x) xs
 
-toCont :: Cont -> Maybe Cont
-toCont CNone      = pure CNone
-toCont (CExpr e)  = CExpr <$> pure e
-toCont (CElim σ) = CElim <$> toElim σ
-
-toElim :: Elim -> Maybe Elim
-toElim (ElimVar x κ)   = ElimVar x <$> toCont κ
-toElim (ElimConstr κs) = ElimConstr <$> sequence (toCont <$> κs)
-
 class MapCont a where
    mapCont :: Cont -> a -> Maybe a
 
