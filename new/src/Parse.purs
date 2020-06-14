@@ -25,7 +25,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
-import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (PCont(..), PElim(..), PElim2(..), joinAll, mapCont, toElim2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
@@ -226,14 +226,14 @@ patternDelim :: SParser Unit
 patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
-elim2 :: SParser Expr -> Boolean -> SParser Elim2
+elim2 :: SParser Expr -> Boolean -> SParser Elim
 elim2 expr' nest = elimSingle2 expr' nest <|> elimBraces2 expr' nest
 
-elimSingle2 :: SParser Expr -> Boolean -> SParser Elim2
+elimSingle2 :: SParser Expr -> Boolean -> SParser Elim
 elimSingle2 expr' nest =
    fromJust "Incomplete branches" <$> (toElim2 <$> partialElim2 expr' nest patternDelim)
 
-elimBraces2 :: SParser Expr -> Boolean -> SParser Elim2
+elimBraces2 :: SParser Expr -> Boolean -> SParser Elim
 elimBraces2 expr' nest =
    token.braces $ do
       σs <- sepBy1 (partialElim2 expr' nest arrow) token.semi

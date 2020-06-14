@@ -8,20 +8,20 @@ import Data.Tuple (Tuple(..))
 import Primitive (primitives)
 import Bindings (Bindings(..), (:+:), (↦), ε, find, remove)
 import Expl (Expl(..)) as T
-import Expl (Expl, Match2(..))
-import Expr (Cont(..), Elim2(..), Expr(..), RawExpr(..), RecDef(..), RecDefs)
+import Expl (Expl, Match(..))
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), RecDefs)
 import Lattice (Selected, (∨), bot, join)
 import Util (T3(..), (≜), type (×), absurd, error, successful)
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
 
-unmatch2 :: Env -> Match2 -> Env × Env
-unmatch2 ρ (MatchVar2 x) =
+unmatch2 :: Env -> Match -> Env × Env
+unmatch2 ρ (MatchVar x) =
    let Tuple v ρ' = successful $ remove x ρ in
    Tuple ρ' (ε :+: x ↦ v)
 unmatch2 ρ (MatchConstr (Tuple _ ξs) _) = unmatches ρ ξs
 
-unmatches :: Env -> List Match2 -> Env × Env
+unmatches :: Env -> List Match -> Env × Env
 unmatches ρ L.Nil = Tuple ρ ε
 unmatches ρ (ξ : ξs) =
    let Tuple ρ' ρ2   = unmatch2 ρ ξ
@@ -57,14 +57,14 @@ filterRecDefs = go ε
    go acc ρ (RecDef f σ : δ) = let Tuple v ρ' = successful (remove f ρ)
                                in  go (acc :+: f ↦ v) ρ' δ
 
-match_bwd2 :: Env -> Cont -> Selected -> Match2 -> Val × Elim2
-match_bwd2 (ε :+: x ↦ v) κ α (MatchVar2 x')     = Tuple v (ElimVar2 (x ≜ x') κ)
-match_bwd2 _ _ _ (MatchVar2 x')                 = error absurd
+match_bwd2 :: Env -> Cont -> Selected -> Match -> Val × Elim
+match_bwd2 (ε :+: x ↦ v) κ α (MatchVar x')      = Tuple v (ElimVar (x ≜ x') κ)
+match_bwd2 _ _ _ (MatchVar x')                  = error absurd
 match_bwd2 ρ κ α (MatchConstr (Tuple c ξs) κs)  =
    let Tuple vs κ = matchArgs_bwd ρ κ α ξs in
    Tuple (Val α $ V.Constr c vs) (ElimConstr $ update (const $ pure κ) c $ map bot κs)
 
-matchArgs_bwd :: Env -> Cont -> Selected -> List Match2 -> List Val × Cont
+matchArgs_bwd :: Env -> Cont -> Selected -> List Match -> List Val × Cont
 matchArgs_bwd ρ κ α L.Nil     = Tuple L.Nil κ
 matchArgs_bwd ρ κ α (ξ : ξs)  =
    let Tuple ρ' ρ1   = unmatch2 ρ ξ

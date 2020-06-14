@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Map (lookup)
 import Bindings ((:+:), (↦), ε, find)
-import Expr (Cont(..), Def(..), Elim2(..), Expr(..), RecDef(..), RecDefs, asExpr)
+import Expr (Cont(..), Def(..), Elim(..), Expr(..), RecDef(..), RecDefs, asExpr)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (applyBinary_fwd, applyUnary_fwd)
@@ -12,8 +12,8 @@ import Util (T3(..), absurd, error, fromJust, successful)
 import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
 
-match_fwd2 :: Val -> Elim2 -> T3 Env Cont Selected
-match_fwd2 v (ElimVar2 x κ) = T3 (ε :+: x ↦ v) κ true
+match_fwd2 :: Val -> Elim -> T3 Env Cont Selected
+match_fwd2 v (ElimVar x κ) = T3 (ε :+: x ↦ v) κ true
 match_fwd2 (Val α (V.Constr c vs)) (ElimConstr κs) =
    let κ = fromJust absurd $ lookup c κs
        T3 ρ κ' α' = matchArgs_fwd vs κ in

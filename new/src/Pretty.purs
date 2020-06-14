@@ -7,7 +7,7 @@ import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, text, vcat)
 import Text.Pretty (render) as P
 import DataType (Ctr, cFalse, cNil, cPair, cTrue)
-import Expr (Cont(..), Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
+import Expr (Cont(..), Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Util (type (×), absurd, error, fromJust, intersperse)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
@@ -100,8 +100,8 @@ instance prettyCont :: Pretty Cont where
 instance prettyBranch :: Pretty (Ctr × Cont) where
    pretty (Tuple c κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
-instance prettyElim2 :: Pretty Elim2 where
-   pretty (ElimVar2 x κ) = text x :<>: operator "->" :<>: pretty κ
+instance prettyElim2 :: Pretty Elim where
+   pretty (ElimVar x κ) = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs) = vcat $ map pretty $ (toUnfoldable κs :: List _)
 
 instance valPretty :: Pretty Val where

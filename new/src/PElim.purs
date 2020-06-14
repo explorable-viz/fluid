@@ -9,7 +9,7 @@ import Data.Traversable (foldl, sequence)
 import Data.Tuple (Tuple(..))
 import Bindings (Var)
 import DataType (Ctr)
-import Expr (Cont(..), Elim2(..), Expr)
+import Expr (Cont(..), Elim(..), Expr)
 import Util (type (×), (≟), absurd, error, om, unionWithMaybe)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
@@ -116,8 +116,8 @@ toCont PCNone      = pure CNone
 toCont (PCExpr e)  = CExpr <$> pure e
 toCont (PCPElim σ) = CElim <$> toElim2 σ
 
-toElim2 :: PElim2 -> Maybe Elim2
-toElim2 (PElimVar2 x κ)    = ElimVar2 x <$> toCont κ
+toElim2 :: PElim2 -> Maybe Elim
+toElim2 (PElimVar2 x κ)    = ElimVar x <$> toCont κ
 toElim2 (PElimConstr κs)   = ElimConstr <$> sequence (toCont <$> κs)
 
 -- Partial eliminators are not supported at the moment.
@@ -129,8 +129,8 @@ instance singleBranchCont :: SingleBranch Cont where
    singleBranch2 (CExpr e) = CExpr <$> pure e
    singleBranch2 (CElim σ) = singleBranch2 σ
 
-instance singleBranchElim :: SingleBranch Elim2 where
-   singleBranch2 (ElimVar2 x κ)  = Just κ
+instance singleBranchElim :: SingleBranch Elim where
+   singleBranch2 (ElimVar x κ)  = Just κ
    singleBranch2 (ElimConstr κs) =
       case values κs of
          κ : Nil -> singleBranch2 κ
