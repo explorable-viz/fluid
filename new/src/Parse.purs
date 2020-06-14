@@ -155,7 +155,7 @@ cons :: SParser Expr -> SParser Expr
 cons expr' = do
    e <- theCtr cCons *> simpleExpr expr'
    e' <- simpleExpr expr'
-   pure $ expr (Constr cCons (e : e' : L.Nil))
+   pure $ expr $ Constr cCons (e : e' : L.Nil)
 
 patternCons :: SParser (PElim Unit) -> SParser (PElim Unit)
 patternCons pattern' = do
@@ -165,8 +165,9 @@ patternCons pattern' = do
 pair :: SParser Expr -> SParser Expr
 pair expr' =
    token.parens $ do
-      e1 <- expr' <* token.comma
-      expr' <#> Pair e1 >>> expr
+      e <- expr' <* token.comma
+      e' <- expr'
+      pure $ expr $ Constr cPair (e : e' : L.Nil)
 
 patternPair :: SParser (PElim Unit) -> SParser (PElim Unit)
 patternPair pattern' =

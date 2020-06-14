@@ -27,14 +27,11 @@ ctr c = L.fromFoldable >>> CtrSig c >>> Tuple c
 dataType :: forall f . Foldable f => String -> f (Ctr × CtrSig) -> DataType
 dataType name = fromFoldable >>> DataType name
 
--- Bool
-cFalse   = Ctr "False"  :: Ctr
+cFalse   = Ctr "False"  :: Ctr -- Bool
 cTrue    = Ctr "True"   :: Ctr
--- List
-cNil     = Ctr "Nil"    :: Ctr
+cNil     = Ctr "Nil"    :: Ctr -- List
 cCons    = Ctr "Cons"   :: Ctr
--- Pair
-cPair    = Ctr "Pair"   :: Ctr
+cPair    = Ctr "Pair"   :: Ctr -- Pair
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [
