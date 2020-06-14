@@ -3,7 +3,7 @@ module PElim where
 import Prelude hiding (absurd, join)
 import Data.Bitraversable (bisequence)
 import Data.List (List(..), (:))
-import Data.Map (Map, singleton, toUnfoldable, values)
+import Data.Map (Map, singleton, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl, sequence)
 import Data.Tuple (Tuple(..))
@@ -57,22 +57,6 @@ toCont (PCPElim σ) = CElim <$> toElim σ
 toElim :: PElim -> Maybe Elim
 toElim (PElimVar x κ)   = ElimVar x <$> toCont κ
 toElim (PElimConstr κs) = ElimConstr <$> sequence (toCont <$> κs)
-
--- Partial eliminators are not supported at the moment.
-class SingleBranch a where
-   singleBranch2 :: a -> Maybe Cont
-
-instance singleBranchCont :: SingleBranch Cont where
-   singleBranch2 CNone     = pure CNone
-   singleBranch2 (CExpr e) = CExpr <$> pure e
-   singleBranch2 (CElim σ) = singleBranch2 σ
-
-instance singleBranchElim :: SingleBranch Elim where
-   singleBranch2 (ElimVar x κ)  = Just κ
-   singleBranch2 (ElimConstr κs) =
-      case values κs of
-         κ : Nil -> singleBranch2 κ
-         _ -> Nothing
 
 class MapCont a where
    mapCont :: PCont -> a -> Maybe a
