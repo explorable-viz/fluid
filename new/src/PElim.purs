@@ -12,7 +12,7 @@ import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim(..))
 import Expr (Cont(..), Elim2(..), Expr)
-import Util (type (×), (≟), absurd, error, unionWithMaybe)
+import Util (type (×), (≟), absurd, error, om, unionWithMaybe)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
 data PElim k =
@@ -109,13 +109,9 @@ instance joinablePElim2 :: Joinable2 PElim2 where
    join2 (PElimConstr κs) (PElimConstr κs')  = PElimConstr <$> (sequence $ unionWithMaybe join2 κs κs')
    join2 _ _ = Nothing
 
-wurble :: forall a . Joinable2 a => Maybe a -> a -> Maybe a
-wurble Nothing = const Nothing
-wurble (Just x) = join2 x
-
 joinAll :: forall a . Joinable2 a => List a -> Maybe a
 joinAll Nil = error "Non-empty list expected"
-joinAll (x : xs) = foldl wurble (Just x) xs
+joinAll (x : xs) = foldl (om join2) (Just x) xs
 
 toElim :: forall k . PElim k -> Maybe (Elim k)
 toElim (PElimVar x κ)                     = pure $ ElimVar x κ
