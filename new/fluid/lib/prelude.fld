@@ -79,6 +79,12 @@ let scanl1 op z xs =
 let scanl op z xs =
    Cons z (scanl1 op z xs);
 
+-- (a -> b) -> List a -> List b
+let map f {
+   Nil -> Nil;
+   Cons x xs -> Cons (f x) (map f xs)
+};
+
 -- List Num -> Num
 let sum xs =
    foldr (fun (x, y) -> x + y) 0 xs;

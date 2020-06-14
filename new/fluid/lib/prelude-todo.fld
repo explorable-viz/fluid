@@ -50,12 +50,6 @@ let filter p {
 -- Num -> Num -> Num
 let logBase x y = log y / log x;
 
--- (a -> b) -> List a -> List b
-let map f {
-   [] -> [];
-   x : xs -> f x : map f xs
-};
-
 -- List a -> a -> List a
 let intersperse {
    Nil sep -> Nil;
