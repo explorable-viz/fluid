@@ -102,13 +102,6 @@ let nth n (x : xs) ->
 let ceilingToNearest n m =
    ceiling (n / m) * m;
 
--- List Num -> Num
-let sum xs =
-   foldr (let (x, y) -> x + y) 0 xs;
-
--- List a -> List a
-let tail (x : xs) = xs;
-
 -- Num -> List a -> List a
 let take n xs =
    if n <= 0

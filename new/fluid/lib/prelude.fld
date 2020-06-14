@@ -36,6 +36,9 @@ let swap (a, b) = (b, a);
 -- List a -> a
 let head (Cons x xs) = x;
 
+-- List a -> List a
+let tail (Cons x xs) = xs;
+
 -- List a -> List a -> List a
 let concat {
    Nil ys -> ys;
@@ -75,6 +78,10 @@ let scanl1 op z xs =
 -- ((a, b) -> a) -> a -> List b -> List a
 let scanl op z xs =
    Cons z (scanl1 op z xs);
+
+-- List Num -> Num
+let sum xs =
+   foldr (fun (x, y) -> x + y) 0 xs;
 
 -- List a -> a
 let last {

@@ -1,1 +1,1 @@
-filter (fun n → 5 < n) [8, 4, 7, 3]
+filter (fun n -> n + 1) (Cons 8 (Cons 4 (Cons 7 (Cons 3 Nil))))
