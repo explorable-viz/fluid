@@ -5,7 +5,7 @@ import Data.List (List, zipWith)
 import Data.Traversable (sequence)
 import Bindings (Bindings)
 import DataType (Ctr)
-import Expr (Elim2, RecDefs)
+import Expr (Elim, RecDefs)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟))
 import Data.Maybe (Maybe(..))
@@ -29,7 +29,7 @@ data RawVal =
    Int Int |
    Str String |
    Constr Ctr (List Val) |
-   Closure Env RecDefs Elim2 |
+   Closure Env RecDefs Elim |
    Binary BinaryOp |
    Unary UnaryOp |
    Pair Val Val |

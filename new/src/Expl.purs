@@ -4,11 +4,10 @@ import Data.List (List)
 import Data.Map (Map)
 import Bindings (Var)
 import DataType (Ctr)
-import Elim (Elim)
-import Expr (Cont, Elim2, RecDefs)
+import Expr (Cont, Elim, RecDefs)
 import Util (type (×))
 
-data Def = Def Match2 Expl
+data Def = Def Match Expl
 
 data Expl =
    Var Var |
@@ -19,22 +18,14 @@ data Expl =
    True | False |
    Pair Expl Expl |
    Nil | Cons Expl Expl |
-   Lambda Elim2 |
-   App Expl Expl Match2 Expl |
+   Lambda Elim |
+   App Expl Expl Match Expl |
    AppOp Expl Expl |
    BinaryApp Expl Var Expl |
-   MatchAs Expl Match2 Expl |
+   MatchAs Expl Match Expl |
    Let Def Expl |
    LetRec RecDefs Expl
 
-data Match k =
+data Match =
    MatchVar Var |
-   MatchTrue k |
-   MatchFalse k |
-   MatchPair (Match (Elim k)) (Match k) |
-   MatchNil (Elim (Elim k)) |
-   MatchCons { nil :: k, cons :: Match (Elim k) × Match k }
-
-data Match2 =
-   MatchVar2 Var |
-   MatchConstr (Ctr × List Match2) (Map Ctr Cont)
+   MatchConstr (Ctr × List Match) (Map Ctr Cont)

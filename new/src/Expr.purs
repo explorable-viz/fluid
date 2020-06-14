@@ -11,8 +11,8 @@ import DataType (Ctr)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟), error)
 
-data Def = Def Elim2 Expr -- elim has codomain unit
-data RecDef = RecDef Var Elim2
+data Def = Def Elim Expr -- elim has codomain unit
+data RecDef = RecDef Var Elim
 type RecDefs = List RecDef
 
 data RawExpr =
@@ -24,10 +24,10 @@ data RawExpr =
    True | False |
    Pair Expr Expr |
    Nil | Cons Expr Expr |
-   Lambda Elim2 |
+   Lambda Elim |
    App Expr Expr |
    BinaryApp Expr Var Expr |
-   MatchAs Expr Elim2 |
+   MatchAs Expr Elim |
    Let Def Expr |
    LetRec RecDefs Expr
 
@@ -37,7 +37,7 @@ expr :: RawExpr -> Expr
 expr = Expr false
 
 -- Continuation of an eliminator.
-data Cont = CNone | CExpr Expr | CElim Elim2
+data Cont = CNone | CExpr Expr | CElim Elim
 
 asExpr :: Cont -> Expr
 asExpr (CExpr e) = e
@@ -52,15 +52,15 @@ instance selectableCont :: Selectable Cont where
    maybeZipWithα f (CElim σ) (CElim σ')   = CElim <$> maybeZipWithα f σ σ'
    maybeZipWithα _ _ _                    = Nothing
 
-data Elim2 =
-   ElimVar2 Var Cont |
+data Elim =
+   ElimVar Var Cont |
    ElimConstr (Map Ctr Cont)
 
-instance elim2Selectable :: Selectable Elim2 where
-   mapα f (ElimVar2 x κ)   = ElimVar2 x $ mapα f κ
+instance elim2Selectable :: Selectable Elim where
+   mapα f (ElimVar x κ)    = ElimVar x $ mapα f κ
    mapα f (ElimConstr κs)  = ElimConstr $ map (mapα f) κs
 
-   maybeZipWithα f (ElimVar2 x κ) (ElimVar2 x' κ')    = ElimVar2 <$> x ≟ x' <*> maybeZipWithα f κ κ'
+   maybeZipWithα f (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> x ≟ x' <*> maybeZipWithα f κ κ'
    maybeZipWithα f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithα f κs κs'
    maybeZipWithα _ _ _                                = Nothing
 
