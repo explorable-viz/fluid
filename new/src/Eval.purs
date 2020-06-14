@@ -18,20 +18,20 @@ import Util (MayFail, T3(..), type (×), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
-match2 :: Val -> Elim -> MayFail (T3 Env Cont Match)
-match2 v (ElimVar x κ) = pure $ T3 (ε :+: x ↦ v) κ (MatchVar x)
-match2 (Val _ (V.Constr c vs)) (ElimConstr κs) =
+match :: Val -> Elim -> MayFail (T3 Env Cont Match)
+match v (ElimVar x κ) = pure $ T3 (ε :+: x ↦ v) κ (MatchVar x)
+match (Val _ (V.Constr c vs)) (ElimConstr κs) =
    case lookup c κs of
       Nothing -> Left $ "Constructor " <> show c <> " not found"
       Just κ -> do
          T3 ρ κ' ξs <- matchArgs vs κ
          T3 ρ κ' <$> pure (MatchConstr (Tuple c ξs) $ update (const Nothing) c κs)
-match2 v _ = Left $ "Pattern mismatch for " <> render (pretty v)
+match v _ = Left $ "Pattern mismatch for " <> render (pretty v)
 
 matchArgs :: List Val -> Cont -> MayFail (T3 Env Cont (List Match))
 matchArgs Nil κ               = pure $ T3 ε κ Nil
 matchArgs (v : vs) (CElim σ)  = do
-   T3 ρ κ' ξ <- match2 v σ
+   T3 ρ κ' ξ <- match v σ
    T3 ρ' κ'' ξs <- matchArgs vs κ'
    pure $ T3 (ρ <> ρ') κ'' (ξ : ξs)
 matchArgs (_ : _) _           = Left $ "Too many arguments"
@@ -79,7 +79,7 @@ eval ρ (Expr _ (E.App e e')) = do
    case u of
       V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs ρ1 δ δ
-         T3 ρ3 e'' ξ <- match2 v' σ
+         T3 ρ3 e'' ξ <- match v' σ
          Tuple t'' v'' <- eval (ρ1 <> ρ2 <> ρ3) $ asExpr e''
          pure $ Tuple (T.App t t' ξ t'') v''
       V.Unary φ ->
@@ -97,12 +97,12 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
       _ -> error absurd
 eval ρ (Expr _ (E.Let (E.Def σ e) e')) = do
    Tuple t v <- eval ρ e
-   T3 ρ' _ ξ <- match2 v σ
+   T3 ρ' _ ξ <- match v σ
    Tuple t' v' <- eval (ρ <> ρ') e'
    pure $ Tuple (T.Let (T.Def ξ t) t') v'
 eval ρ (Expr _ (E.MatchAs e σ)) = do
    Tuple t v <- eval ρ e
-   T3 ρ' e' ξ <- match2 v σ
+   T3 ρ' e' ξ <- match v σ
    Tuple t' v' <- eval (ρ <> ρ') (asExpr e')
    pure $ Tuple (T.MatchAs t ξ t') v'
 
@@ -110,7 +110,7 @@ defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
 defs ρ (Module (Left (E.Def σ e) : ds)) = do
    Tuple _ v <- eval ρ e
-   T3 ρ' _ ξ <- match2 v σ
+   T3 ρ' _ ξ <- match v σ
    defs (ρ <> ρ') (Module ds)
 defs ρ (Module (Right δ : ds)) =
    defs (ρ <> closeDefs ρ δ δ) (Module ds)

@@ -195,7 +195,9 @@ patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser Elim
-elim expr' nest = partialElim expr' nest patternDelim <|> elimBraces expr' nest
+elim expr' nest =
+   partialElim expr' nest patternDelim <|>
+   elimBraces expr' nest
 
 elimBraces :: SParser Expr -> Boolean -> SParser Elim
 elimBraces expr' nest =

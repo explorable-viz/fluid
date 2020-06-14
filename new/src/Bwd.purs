@@ -15,16 +15,16 @@ import Util (T3(..), (≜), type (×), absurd, error, successful)
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
 
-unmatch2 :: Env -> Match -> Env × Env
-unmatch2 ρ (MatchVar x) =
+unmatch :: Env -> Match -> Env × Env
+unmatch ρ (MatchVar x) =
    let Tuple v ρ' = successful $ remove x ρ in
    Tuple ρ' (ε :+: x ↦ v)
-unmatch2 ρ (MatchConstr (Tuple _ ξs) _) = unmatches ρ ξs
+unmatch ρ (MatchConstr (Tuple _ ξs) _) = unmatches ρ ξs
 
 unmatches :: Env -> List Match -> Env × Env
 unmatches ρ L.Nil = Tuple ρ ε
 unmatches ρ (ξ : ξs) =
-   let Tuple ρ' ρ2   = unmatch2 ρ ξ
+   let Tuple ρ' ρ2   = unmatch ρ ξ
        Tuple ρ'' ρ1  = unmatches ρ' ξs in
    Tuple ρ'' (ρ1 <> ρ2)
 
@@ -67,7 +67,7 @@ match_bwd2 ρ κ α (MatchConstr (Tuple c ξs) κs)  =
 matchArgs_bwd :: Env -> Cont -> Selected -> List Match -> List Val × Cont
 matchArgs_bwd ρ κ α L.Nil     = Tuple L.Nil κ
 matchArgs_bwd ρ κ α (ξ : ξs)  =
-   let Tuple ρ' ρ1   = unmatch2 ρ ξ
+   let Tuple ρ' ρ1   = unmatch ρ ξ
        Tuple vs κ'   = matchArgs_bwd ρ' κ α ξs
        Tuple v σ     = match_bwd2 ρ1 κ' α ξ in
    Tuple (v : vs) $ CElim σ
@@ -103,7 +103,7 @@ eval_bwd (Val α (V.Cons u v)) (T.Cons tT uU)
 eval_bwd v (T.App t u ξ t')
    = case eval_bwd v t' of
       T3 (ρ1ρ2ρ3 :+: f ↦ Val _ (V.Closure ρ1' δ σ)) e α ->
-         let Tuple ρ1ρ2 ρ3      = unmatch2 ρ1ρ2ρ3 ξ
+         let Tuple ρ1ρ2 ρ3      = unmatch ρ1ρ2ρ3 ξ
              Tuple ρ1 ρ2        = filterRecDefs ρ1ρ2 δ
              Tuple v' σ         = match_bwd2 ρ3 (CExpr e) α ξ
              T3 ρ'  e'  α'      = eval_bwd v' u
