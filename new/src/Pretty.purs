@@ -1,16 +1,16 @@
 module Pretty (class Pretty, pretty, module P) where
 
-import Prelude
-import Data.List (List(..), (:))
+import Prelude hiding (absurd)
+import Data.List (List(..), (:), head)
 import Data.Map (toUnfoldable)
 import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, text, vcat)
 import Text.Pretty (render) as P
-import DataType (Ctr, cFalse, cNil, cTrue)
+import DataType (Ctr, cFalse, cNil, cPair, cTrue)
 import Elim (Elim(..))
 import Expr (Cont(..), Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
-import Util (type (×), error, intersperse)
+import Util (type (×), absurd, error, fromJust, intersperse)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
 import Val (RawVal(..)) as V
 
@@ -62,12 +62,18 @@ instance exprPretty :: Pretty Expr where
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> text
 
+prettyConstr :: forall a . Pretty a => Ctr -> List a -> Doc
+prettyConstr c Nil = pretty c
+prettyConstr c xs@(x : xs') =
+   if (c == cPair)
+   then parens $ pretty x :<>: comma :<>: pretty (fromJust absurd $ head xs')
+   else pretty c :<>: space :<>: hcat (intersperse space $ map pretty xs)
+
 instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Int n) = text $ show n
    pretty (E.Str str) = text $ show str
    pretty (E.Var x) = text x
-   pretty (E.Constr c Nil) = pretty c
-   pretty (E.Constr c (e : es)) = pretty c :<>: space :<>: hcat (intersperse space $ map pretty (e : es))
+   pretty (E.Constr c es) = prettyConstr c es
    pretty E.True = pretty cTrue
    pretty E.False = pretty cFalse
    pretty (E.Pair e e') = parens $ pretty e :<>: comma :<>: pretty e'
@@ -75,7 +81,7 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Cons e e') = brackets $ pretty e :<>: prettyList e'
    pretty (E.Op op) = parens $ text op
    pretty (E.Let (Def σ e) e') =
-      atop (text ("let ") :<>: pretty σ :<>: text " = " :<>: pretty e :<>: text " in") (pretty e')
+      atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.MatchAs e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
    pretty (E.LetRec δ e) =
       atop (text "let " :<>: pretty δ) (text "in " :<>: pretty e)
@@ -113,8 +119,7 @@ instance valPretty :: Pretty Val where
 instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
    pretty (V.Str str) = text $ show str
-   pretty (V.Constr c Nil) = pretty c
-   pretty (V.Constr c (v : vs)) = pretty c :<>: space :<>: hcat (intersperse space $ map pretty (v : vs))
+   pretty (V.Constr c vs) = prettyConstr c vs
    pretty V.True = pretty cTrue
    pretty V.False = pretty cFalse
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
