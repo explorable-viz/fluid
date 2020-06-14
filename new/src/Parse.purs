@@ -195,10 +195,7 @@ patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser Elim
-elim expr' nest = elimSingle expr' nest <|> elimBraces expr' nest
-
-elimSingle :: SParser Expr -> Boolean -> SParser Elim
-elimSingle expr' nest = partialElim expr' nest patternDelim
+elim expr' nest = partialElim expr' nest patternDelim <|> elimBraces expr' nest
 
 elimBraces :: SParser Expr -> Boolean -> SParser Elim
 elimBraces expr' nest =
@@ -218,9 +215,7 @@ partialElim expr' nest delim = do
 
 def :: SParser Expr -> SParser Def
 def expr' = do
-   σ <- try $ keyword strLet *> pattern <* patternDelim
-   e <- expr' <* token.semi
-   pure $ Def σ e
+   Def <$> try (keyword strLet *> pattern <* patternDelim) <*> expr' <* token.semi
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')
