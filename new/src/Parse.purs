@@ -25,8 +25,8 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
-import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PCont(..), PElim(..), joinAll, mapCont, toElim)
+import Expr (Cont(..), Def(..), Elim(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import PElim (joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -77,8 +77,8 @@ variable :: SParser Expr
 variable = ident <#> Var >>> expr
 
 -- TODO: anonymous variables
-patternVariable :: SParser PElim
-patternVariable = PElimVar <$> ident <@> PCNone
+patternVariable :: SParser Elim
+patternVariable = ElimVar <$> ident <@> CNone
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
@@ -98,8 +98,8 @@ ctr = do
    pureIf ("Unexpected identifier") (isCtr x) $ Ctr x
 
 -- Parse a constructor name as a nullary constructor pattern.
-ctr_pattern :: SParser PElim
-ctr_pattern = PElimConstr <$> (singleton <$> ctr <@> PCNone)
+ctr_pattern :: SParser Elim
+ctr_pattern = ElimConstr <$> (singleton <$> ctr <@> CNone)
 
 theCtr :: Ctr -> SParser Ctr
 theCtr c = do
@@ -120,13 +120,13 @@ int = do
 string :: SParser Expr
 string = token.stringLiteral <#> Str >>> expr
 
-constr_pattern :: SParser PElim -> SParser PElim
+constr_pattern :: SParser Elim -> SParser Elim
 constr_pattern pattern' = ctr_pattern >>= rest
    where
-      rest ∷ PElim -> SParser PElim
+      rest ∷ Elim -> SParser Elim
       rest σ = do
          σ' <- simplePattern pattern' <|> ctr_pattern
-         rest $ fromJust absurd $ mapCont (PCPElim σ') σ
+         rest $ fromJust absurd $ mapCont (CElim σ') σ
          <|> pure σ
 
 true_ :: SParser Expr
@@ -151,12 +151,12 @@ pair expr' =
       e' <- expr'
       pure $ expr $ Constr cPair (e : e' : L.Nil)
 
-patternPair :: SParser PElim -> SParser PElim
+patternPair :: SParser Elim -> SParser Elim
 patternPair pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
       τ <- pattern'
-      pure $ PElimConstr $ singleton cPair $ PCPElim $ fromJust absurd $ mapCont (PCPElim τ) σ
+      pure $ ElimConstr $ singleton cPair $ CElim $ fromJust absurd $ mapCont (CElim τ) σ
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -175,7 +175,7 @@ simpleExpr expr' =
    pair expr' <|>
    lambda expr'
 
-simplePattern :: SParser PElim -> SParser PElim
+simplePattern :: SParser Elim -> SParser Elim
 simplePattern pattern' =
    try patternVariable <|>
    try (token.parens pattern') <|>
@@ -213,11 +213,11 @@ nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = elim expr' true <#> Lambda >>> expr
 nestedFun false _ = empty
 
-partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser PElim
+partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser Elim
 partialElim expr' nest delim = do
    σ <- pattern
    e <- delim *> expr' <|> nestedFun nest expr'
-   pure $ fromJust absurd $ mapCont (PCExpr e) σ
+   pure $ fromJust absurd $ mapCont (CExpr e) σ
 
 def :: SParser Expr -> SParser Def
 def expr' = do
@@ -266,11 +266,11 @@ appChain expr' =
 -- Singleton eliminator. Analogous in some way to app_chain, but there is nothing higher-order here:
 -- there are no explicit application nodes, non-saturated constructor applications, or patterns other
 -- than constructors in the function position.
-appChain_pattern :: SParser PElim -> SParser PElim
+appChain_pattern :: SParser Elim -> SParser Elim
 appChain_pattern pattern' = simplePattern pattern' <|> constr_pattern pattern'
 
 -- TODO: allow infix constructors, via buildExprParser
-pattern :: SParser PElim
+pattern :: SParser Elim
 pattern = fix appChain_pattern
 
 -- each element of the top-level list corresponds to a precedence level

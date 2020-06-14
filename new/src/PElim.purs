@@ -59,17 +59,17 @@ toElim (PElimVar x κ)   = ElimVar x <$> toCont κ
 toElim (PElimConstr κs) = ElimConstr <$> sequence (toCont <$> κs)
 
 class MapCont a where
-   mapCont :: PCont -> a -> Maybe a
+   mapCont :: Cont -> a -> Maybe a
 
-instance mapContCont :: MapCont PCont where
-   mapCont κ PCNone        = pure κ
-   mapCont κ (PCExpr _)    = pure κ
-   mapCont κ (PCPElim σ)   = PCPElim <$> mapCont κ σ
+instance mapContCont :: MapCont Cont where
+   mapCont κ CNone      = pure κ
+   mapCont κ (CExpr _)  = pure κ
+   mapCont κ (CElim σ)  = CElim <$> mapCont κ σ
 
-instance mapContElim :: MapCont PElim where
-   mapCont κ (PElimVar x κ') = PElimVar x <$> mapCont κ κ'
-   mapCont κ (PElimConstr κs) =
+instance mapContElim :: MapCont Elim where
+   mapCont κ (ElimVar x κ') = ElimVar x <$> mapCont κ κ'
+   mapCont κ (ElimConstr κs) =
       case toUnfoldable κs of
          Tuple c κ' : Nil -> do
-            PElimConstr <$> (singleton c <$> mapCont κ κ')
+            ElimConstr <$> (singleton c <$> mapCont κ κ')
          _ -> Nothing
