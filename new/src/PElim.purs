@@ -12,28 +12,28 @@ import Expr (Cont(..), Elim(..), Expr)
 import Util (type (×), (≟), error, om, unionWithMaybe)
 
 class Joinable k where
-   join2 :: k -> k -> Maybe k
+   maybeJoin :: k -> k -> Maybe k
 
 instance joinableExpr :: Joinable Expr where
-   join2 _ _ = Nothing
+   maybeJoin _ _ = Nothing
 
 instance joinableCont :: Joinable Cont where
-   join2 CNone CNone          = pure CNone
-   join2 (CExpr e) (CExpr e') = CExpr <$> join2 e e'
-   join2 (CElim σ) (CElim σ') = CElim <$> join2 σ σ'
-   join2 _ _                  = Nothing
+   maybeJoin CNone CNone          = pure CNone
+   maybeJoin (CExpr e) (CExpr e') = CExpr <$> maybeJoin e e'
+   maybeJoin (CElim σ) (CElim σ') = CElim <$> maybeJoin σ σ'
+   maybeJoin _ _                  = Nothing
 
 instance joinableCtrCont :: Joinable (Ctr × Cont) where
-   join2 (Tuple c κ) (Tuple c' κ') = bisequence $ Tuple (c ≟ c') $ join2 κ κ'
+   maybeJoin (Tuple c κ) (Tuple c' κ') = bisequence $ Tuple (c ≟ c') $ maybeJoin κ κ'
 
 instance joinableElim :: Joinable Elim where
-   join2 (ElimVar x κ) (ElimVar x' κ')    = ElimVar <$> x ≟ x' <*> join2 κ κ'
-   join2 (ElimConstr κs) (ElimConstr κs') = ElimConstr <$> (sequence $ unionWithMaybe join2 κs κs')
-   join2 _ _ = Nothing
+   maybeJoin (ElimVar x κ) (ElimVar x' κ')    = ElimVar <$> x ≟ x' <*> maybeJoin κ κ'
+   maybeJoin (ElimConstr κs) (ElimConstr κs') = ElimConstr <$> (sequence $ unionWithMaybe maybeJoin κs κs')
+   maybeJoin _ _ = Nothing
 
 joinAll :: forall a . Joinable a => List a -> Maybe a
 joinAll Nil = error "Non-empty list expected"
-joinAll (x : xs) = foldl (om join2) (Just x) xs
+joinAll (x : xs) = foldl (om maybeJoin) (Just x) xs
 
 class MapCont a where
    mapCont :: Cont -> a -> Maybe a
