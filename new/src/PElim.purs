@@ -11,27 +11,27 @@ import DataType (Ctr)
 import Expr (Cont(..), Elim(..), Expr)
 import Util (type (×), (≟), error, om, unionWithMaybe)
 
-class Joinable2 k where
+class Joinable k where
    join2 :: k -> k -> Maybe k
 
-instance joinableExpr :: Joinable2 Expr where
+instance joinableExpr :: Joinable Expr where
    join2 _ _ = Nothing
 
-instance joinableCont :: Joinable2 Cont where
+instance joinableCont :: Joinable Cont where
    join2 CNone CNone          = pure CNone
    join2 (CExpr e) (CExpr e') = CExpr <$> join2 e e'
    join2 (CElim σ) (CElim σ') = CElim <$> join2 σ σ'
    join2 _ _                  = Nothing
 
-instance joinableCtrCont :: Joinable2 (Ctr × Cont) where
+instance joinableCtrCont :: Joinable (Ctr × Cont) where
    join2 (Tuple c κ) (Tuple c' κ') = bisequence $ Tuple (c ≟ c') $ join2 κ κ'
 
-instance joinableElim :: Joinable2 Elim where
+instance joinableElim :: Joinable Elim where
    join2 (ElimVar x κ) (ElimVar x' κ')    = ElimVar <$> x ≟ x' <*> join2 κ κ'
    join2 (ElimConstr κs) (ElimConstr κs') = ElimConstr <$> (sequence $ unionWithMaybe join2 κs κs')
    join2 _ _ = Nothing
 
-joinAll :: forall a . Joinable2 a => List a -> Maybe a
+joinAll :: forall a . Joinable a => List a -> Maybe a
 joinAll Nil = error "Non-empty list expected"
 joinAll (x : xs) = foldl (om join2) (Just x) xs
 
