@@ -13,6 +13,7 @@ import Data.List ((:), many, groupBy, sortBy)
 import Data.List (List(..)) as L
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
+import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
@@ -272,7 +273,7 @@ operators :: OperatorTable Identity String Expr
 operators =
    fromFoldable $ map fromFoldable $
    map (map (\(OpName op _) -> Infix (theBinaryOp op) AssocLeft)) $
-   groupBy (eq `on` opPrec) $ sortBy (comparing opPrec) $ values opNames
+   groupBy (eq `on` opPrec) $ sortBy (\x -> comparing opPrec x >>> invert) $ values opNames
 
 -- An expression is an operator tree. An operator tree is a tree whose branches are
 -- binary primitives and whose leaves are application chains. An application chain

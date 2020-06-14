@@ -8,10 +8,10 @@ import Data.HTTP.Method (Method(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
-import Bindings (Bindings(..))
 import Eval (defs)
 import Expr (Expr)
 import Parse (SParser, module_, program)
+import Primitive (primitives)
 import Val (Env)
 import Util (type (×), error)
 
@@ -46,5 +46,5 @@ successfulParse src p =
 
 parseWithImports :: String -> Aff (Env × Expr)
 parseWithImports src = do
-   ρ' <- loadModule "prelude" Empty >>= loadModule "graphics"
-   pure $ Tuple ρ' (successfulParse src program)
+   Tuple <$> (loadModule "prelude" primitives >>= loadModule "graphics")
+         <@> successfulParse src program
