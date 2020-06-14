@@ -1,1 +1,1 @@
-foldr (fun (x, y) -> (x * x) + (y * y)) 0 (Cons 6 (Cons 3 (Cons 2 Nil)))
+foldr (fun (x, y) -> x * x + y * y) 0 (Cons 6 (Cons 3 (Cons 2 Nil)))
