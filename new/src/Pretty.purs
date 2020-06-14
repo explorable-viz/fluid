@@ -59,9 +59,6 @@ instance rawValPrettyList :: PrettyList RawVal where
 instance exprPretty :: Pretty Expr where
    pretty (Expr _ r) = pretty r
 
-instance unitPretty :: Pretty Unit where
-   pretty _ = null
-
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> text
 
@@ -99,6 +96,7 @@ instance prettyElim :: Pretty k => Pretty (Elim k) where
       atop (text "true" :<>: operator "->" :<>: pretty κ) (text "false" :<>: operator "->" :<>: pretty κ')
 
 instance prettyCont :: Pretty Cont where
+   pretty CNone = text "[ ]"
    pretty (CExpr e) = pretty e
    pretty (CElim σ) = pretty σ
 

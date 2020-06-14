@@ -7,6 +7,7 @@ import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
+import Debug.Trace (trace)
 import Bindings ((:+:), (↦), ε, find)
 import Elim (Elim(..))
 import Expl (Def(..), Expl(..)) as T
@@ -40,7 +41,7 @@ match v _ =
    Left $ "Pattern mismatch for " <> render (pretty v)
 
 match2 :: Val -> Elim2 -> MayFail (T3 Env Cont Match2)
-match2 v (ElimVar2 x κ) = pure $ T3 (ε :+: x ↦ v) κ (MatchVar2 x)
+match2 v (ElimVar2 x κ) = pure $ T3 (trace (ε :+: x ↦ v) \_ -> ε :+: x ↦ v) κ (MatchVar2 x)
 match2 (Val _ (V.Constr c vs)) (ElimConstr κs) =
    case lookup c κs of
       Nothing -> Left $ "Constructor " <> show c <> " not found"
@@ -51,11 +52,11 @@ match2 v _ = Left $ "Pattern mismatch for " <> render (pretty v)
 
 matchArgs :: List Val -> Cont -> MayFail (T3 Env Cont (List Match2))
 matchArgs Nil κ               = pure $ T3 ε κ Nil
-matchArgs (_ : _) (CExpr _)   = Left $ "Too many arguments"
 matchArgs (v : vs) (CElim σ)  = do
    T3 ρ κ' ξ <- match2 v σ
    T3 ρ' κ'' ξs <- matchArgs vs κ'
    pure $ T3 (ρ <> ρ') κ'' (ξ : ξs)
+matchArgs (_ : _) _           = Left $ "Too many arguments"
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env

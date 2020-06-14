@@ -36,13 +36,15 @@ data Expr = Expr Selected RawExpr
 expr :: RawExpr -> Expr
 expr = Expr false
 
-data Cont = CExpr Expr | CElim Elim2
+-- Continuation of an eliminator.
+data Cont = CNone | CExpr Expr | CElim Elim2
 
 asExpr :: Cont -> Expr
 asExpr (CExpr e) = e
-asExpr (CElim _) = error "Expression expected"
+asExpr _ = error "Expression expected"
 
 instance selectableCont :: Selectable Cont where
+   mapα f CNone  = CNone
    mapα f (CExpr e)  = CExpr $ mapα f e
    mapα f (CElim σ)  = CElim $ mapα f σ
 

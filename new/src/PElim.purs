@@ -27,7 +27,7 @@ data PElim k =
 derive instance pElimFunctor :: Functor PElim
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
-data PCont = None | PCExpr Expr | PCPElim PElim2
+data PCont = PCNone | PCExpr Expr | PCPElim PElim2
 
 data PElim2 =
    PElimVar2 Var PCont |
@@ -95,7 +95,7 @@ instance pElimJoinable :: Joinable k => Joinable (PElim k) where
    join (σ : τ : _) = Nothing
 
 instance joinableCont :: Joinable2 PCont where
-   join2 None None                  = Nothing
+   join2 PCNone PCNone              = pure $ PCNone
    join2 (PCExpr e) (PCExpr e')     = PCExpr <$> join2 e e'
    join2 (PCPElim σ) (PCPElim σ')   = PCPElim <$> join2 σ σ'
    join2 _ _                        = Nothing
@@ -122,7 +122,7 @@ toElim (PElimList { nil: κ, cons: σ })    = (\σ' -> ElimList { nil: κ, cons:
 toElim _ = Nothing
 
 toCont :: PCont -> Maybe Cont
-toCont None        = Nothing
+toCont PCNone      = pure CNone
 toCont (PCExpr e)  = CExpr <$> pure e
 toCont (PCPElim σ) = CElim <$> toElim2 σ
 
@@ -140,6 +140,7 @@ class SingleBranch a where
    singleBranch2 :: a -> Maybe Cont
 
 instance singleBranchCont :: SingleBranch Cont where
+   singleBranch2 CNone     = pure CNone
    singleBranch2 (CExpr e) = CExpr <$> pure e
    singleBranch2 (CElim σ) = singleBranch2 σ
 
@@ -154,7 +155,7 @@ class MapCont a where
    mapCont :: PCont -> a -> Maybe a
 
 instance mapContCont :: MapCont PCont where
-   mapCont κ None          = pure κ
+   mapCont κ PCNone        = pure κ
    mapCont κ (PCExpr _)    = pure κ
    mapCont κ (PCPElim σ)   = PCPElim <$> mapCont κ σ
 

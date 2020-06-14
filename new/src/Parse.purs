@@ -14,7 +14,6 @@ import Data.List (List(..)) as L
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (charAt)
-import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -25,10 +24,10 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import DataType (Ctr(..), cCons, cFalse, cNil, cTrue)
+import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
 import Elim (Elim)
 import Expr (Def(..), Elim2, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PCont(..), PElim(..), PElim2(..), join, joinAll, mapCont, singleBranch2, toElim, toElim2)
+import PElim (PCont(..), PElim(..), PElim2(..), join, joinAll, mapCont, toElim, toElim2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -83,7 +82,7 @@ patternVariable :: SParser (PElim Unit)
 patternVariable = ident <#> flip PElimVar unit
 
 patternVariable2 :: SParser PElim2
-patternVariable2 = ident <#> flip PElimVar2 None
+patternVariable2 = ident <#> flip PElimVar2 PCNone
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
@@ -104,7 +103,7 @@ ctr = do
 
 -- Parse a constructor name as a nullary constructor pattern.
 ctr_pattern :: SParser PElim2
-ctr_pattern = PElimConstr <$> (singleton <$> ctr <@> None)
+ctr_pattern = PElimConstr <$> (singleton <$> ctr <@> PCNone)
 
 theCtr :: Ctr -> SParser Ctr
 theCtr c = do
@@ -179,7 +178,8 @@ patternPair2 :: SParser PElim2 -> SParser PElim2
 patternPair2 pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
-      fromJust absurd <$> (pattern' <#> mapCont (PCPElim σ))
+      τ <- pattern'
+      pure $ PElimConstr $ singleton cPair $ PCPElim $ fromJust absurd $ mapCont (PCPElim τ) σ
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -254,7 +254,7 @@ elimBraces2 expr' nest =
    token.braces $ do
       σs <- sepBy1 (partialElim2 expr' nest arrow) token.semi
       pure $ case joinAll σs of
-         Nothing -> trace σs \_ -> error "Incompatible branches"
+         Nothing -> error "Incompatible branches"
          Just σ -> fromJust "Incomplete branches" (toElim2 σ)
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
@@ -276,7 +276,7 @@ def :: SParser Expr -> SParser Def
 def expr' = do
    σ <- try $ keyword strLet *> pattern2 <* patternDelim
    e <- expr' <* token.semi
-   pure $ Def (fromJust "Incomplete branches" $ trace σ \_ -> toElim2 σ) e
+   pure $ Def (fromJust "Incomplete branches" $ toElim2 σ) e
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')

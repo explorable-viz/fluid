@@ -42,12 +42,12 @@ match_fwd2 (Val α (V.Constr c vs)) (ElimConstr κs) =
 match_fwd2 v _ = error absurd
 
 matchArgs_fwd :: List Val -> Cont -> T3 Env Cont Selected
-matchArgs_fwd Nil κ               = T3 ε κ true
-matchArgs_fwd (_ : _) (CExpr _)   = error absurd
-matchArgs_fwd (v : vs) (CElim σ)  =
+matchArgs_fwd Nil κ              = T3 ε κ true
+matchArgs_fwd (v : vs) (CElim σ) =
    let T3 ρ κ' α = match_fwd2 v σ
        T3 ρ' κ'' α' = matchArgs_fwd vs κ' in
    T3 (ρ <> ρ') κ'' (α ∧ α')
+matchArgs_fwd (_ : _) _          = error absurd
 
 closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
 closeDefs_fwd _ _ Nil _ = ε
