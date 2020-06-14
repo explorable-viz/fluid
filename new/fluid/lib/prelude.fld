@@ -81,3 +81,34 @@ let last {
    Cons x Nil -> x;
    Cons x (Cons y ys) -> last (Cons y ys)
 };
+
+-- List a -> Num
+let length {
+   Nil -> 0;
+   Cons x xs -> 1 + length xs
+};
+
+-- List a -> List a
+let reverse {
+   Nil -> Nil;
+   Cons x xs -> concat (reverse xs) (Cons x Nil)
+};
+
+-- List (a, b) -> (List a, List b)
+let unzip {
+   Nil -> (Nil, Nil);
+   Cons (x, y) xys ->
+      let (xs, ys) = unzip xys;
+      (Cons x xs, Cons y ys)
+};
+
+-- ((a, b) -> c) -> List a -> List b -> List c
+let zipWith op {
+   Nil ys -> Nil;
+   Cons x xs {
+      Nil -> Nil;
+      Cons y ys -> Cons (op (x, y)) (zipWith op xs ys)
+   }
+};
+
+let zip = zipWith id;

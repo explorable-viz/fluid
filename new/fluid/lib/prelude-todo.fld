@@ -69,39 +69,8 @@ let iterate n f z =
    then []
    else z : map f (iterate (n - 1) f z);
 
--- List a -> Num
-let length {
-   [] -> 0;
-   x : xs -> 1 + length xs
-};
-
 -- Num -> Num
 let negate = (-) 0;
-
--- List a -> List a
-let reverse {
-   [] -> [];
-   x : xs -> concat (reverse xs) [x]
-};
-
--- List (a, b) -> (List a, List b)
-let unzip {
-   [] -> ([], []);
-   (x, y) : xys ->
-      let (xs, ys) = unzip xys;
-      (x : xs, y : ys)
-};
-
--- ((a, b) -> c) -> List a -> List b -> List c
-let zipWith op {
-   [] ys -> [];
-   (x : xs) {
-      [] -> [];
-      y : ys -> op (x, y) : zipWith op xs ys
-   }
-};
-
-let zip = zipWith id;
 
 -- Num -> a -> List a
 let repeat = flip iterate id;
