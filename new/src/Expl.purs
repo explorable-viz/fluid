@@ -1,15 +1,14 @@
 module Expl where
 
-import Prelude
 import Data.List (List)
 import Data.Map (Map)
 import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim)
-import Expr (Cont, RecDefs, Expr)
+import Expr (Cont, Elim2, RecDefs)
 import Util (type (×))
 
-data Def = Def (Match Unit) Expl
+data Def = Def Match2 Expl
 
 data Expl =
    Var Var |
@@ -20,11 +19,11 @@ data Expl =
    True | False |
    Pair Expl Expl |
    Nil | Cons Expl Expl |
-   Lambda (Elim Expr) |
-   App Expl Expl (Match Expr) Expl |
+   Lambda Elim2 |
+   App Expl Expl Match2 Expl |
    AppOp Expl Expl |
    BinaryApp Expl Var Expl |
-   MatchAs Expl (Match Expr) Expl |
+   MatchAs Expl Match2 Expl |
    Let Def Expl |
    LetRec RecDefs Expl
 

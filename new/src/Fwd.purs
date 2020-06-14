@@ -2,11 +2,10 @@ module Fwd where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:))
-import Data.Either (Either(..))
 import Data.Map (lookup)
 import Bindings ((:+:), (↦), ε, find)
 import Elim (Elim(..))
-import Expr (Cont, Def(..), Elim2(..), Expr(..), RecDef(..), RecDefs)
+import Expr (Cont(..), Def(..), Elim2(..), Expr(..), RecDef(..), RecDefs, asExpr)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (applyBinary_fwd, applyUnary_fwd)
@@ -43,12 +42,12 @@ match_fwd2 (Val α (V.Constr c vs)) (ElimConstr κs) =
 match_fwd2 v _ = error absurd
 
 matchArgs_fwd :: List Val -> Cont -> T3 Env Cont Selected
-matchArgs_fwd Nil κ               = T3 ε κ true
-matchArgs_fwd (_ : _) (Left σ)    = error absurd
-matchArgs_fwd (v : vs) (Right σ)  =
+matchArgs_fwd Nil κ              = T3 ε κ true
+matchArgs_fwd (v : vs) (CElim σ) =
    let T3 ρ κ' α = match_fwd2 v σ
        T3 ρ' κ'' α' = matchArgs_fwd vs κ' in
    T3 (ρ <> ρ') κ'' (α ∧ α')
+matchArgs_fwd (_ : _) _          = error absurd
 
 closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
 closeDefs_fwd _ _ Nil _ = ε
@@ -86,8 +85,8 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
    case u of
       V.Closure ρ1 δ σ ->
          let ρ2 = closeDefs_fwd ρ1 δ δ α'
-             T3 ρ3 e'' α'' = match_fwd v σ in
-         eval_fwd (ρ1 <> ρ2 <> ρ3) e'' (α' ∧ α'')
+             T3 ρ3 e'' α'' = match_fwd2 v σ in
+         eval_fwd (ρ1 <> ρ2 <> ρ3) (asExpr e'') (α' ∧ α'')
       V.Unary φ -> applyUnary_fwd φ α' v
       V.Binary φ -> Val α' $ V.Unary $ PartialApp φ v
       _ -> error absurd
@@ -96,8 +95,8 @@ eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
       Val α' (V.Binary φ) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
       _ -> error absurd
 eval_fwd ρ (Expr _ (E.Let (Def σ e) e')) α =
-   let T3 ρ' _ α' = match_fwd (eval_fwd ρ e α) σ in
+   let T3 ρ' _ α' = match_fwd2 (eval_fwd ρ e α) σ in
    eval_fwd (ρ <> ρ') e' α'
 eval_fwd ρ (Expr _ (E.MatchAs e σ)) α =
-   let T3 ρ' e' α' = match_fwd (eval_fwd ρ e α) σ in
-   eval_fwd (ρ <> ρ') e' α'
+   let T3 ρ' e' α' = match_fwd2 (eval_fwd ρ e α) σ in
+   eval_fwd (ρ <> ρ') (asExpr e') α'

@@ -8,12 +8,11 @@ import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import DataType (Ctr)
-import Elim (Elim)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
-import Util ((≟))
+import Util ((≟), error)
 
-data Def = Def (Elim Unit) Expr
-data RecDef = RecDef Var (Elim Expr)
+data Def = Def Elim2 Expr -- elim has codomain unit
+data RecDef = RecDef Var Elim2
 type RecDefs = List RecDef
 
 data RawExpr =
@@ -25,10 +24,10 @@ data RawExpr =
    True | False |
    Pair Expr Expr |
    Nil | Cons Expr Expr |
-   Lambda (Elim Expr) |
+   Lambda Elim2 |
    App Expr Expr |
    BinaryApp Expr Var Expr |
-   MatchAs Expr (Elim Expr) |
+   MatchAs Expr Elim2 |
    Let Def Expr |
    LetRec RecDefs Expr
 
@@ -37,7 +36,21 @@ data Expr = Expr Selected RawExpr
 expr :: RawExpr -> Expr
 expr = Expr false
 
-type Cont = Either Expr Elim2
+-- Continuation of an eliminator.
+data Cont = CNone | CExpr Expr | CElim Elim2
+
+asExpr :: Cont -> Expr
+asExpr (CExpr e) = e
+asExpr _ = error "Expression expected"
+
+instance selectableCont :: Selectable Cont where
+   mapα f CNone  = CNone
+   mapα f (CExpr e)  = CExpr $ mapα f e
+   mapα f (CElim σ)  = CElim $ mapα f σ
+
+   maybeZipWithα f (CExpr e) (CExpr e')   = CExpr <$> maybeZipWithα f e e'
+   maybeZipWithα f (CElim σ) (CElim σ')   = CElim <$> maybeZipWithα f σ σ'
+   maybeZipWithα _ _ _                    = Nothing
 
 data Elim2 =
    ElimVar2 Var Cont |

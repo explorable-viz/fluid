@@ -1,7 +1,6 @@
 module Bwd where
 
 import Prelude hiding (absurd, join)
-import Data.Either (Either(..))
 import Data.List (List(..)) as L
 import Data.List (List, (:))
 import Data.Map (update)
@@ -11,7 +10,7 @@ import Bindings (Bindings(..), (:+:), (↦), ε, find, remove)
 import Elim (Elim(..))
 import Expl (Expl(..)) as T
 import Expl (Expl, Match(..), Match2(..))
-import Expr (Cont, Elim2(..), Expr(..), RawExpr(..), RecDef(..), RecDefs)
+import Expr (Cont(..), Elim2(..), Expr(..), RawExpr(..), RecDef(..), RecDefs)
 import Lattice (class Selectable, Selected, (∨), bot, join)
 import Util (T3(..), (≜), type (×), absurd, error, successful)
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
@@ -111,7 +110,7 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
    let Tuple ρ' ρ1   = unmatch2 ρ ξ
        Tuple vs κ'   = matchArgs_bwd ρ' κ α ξs
        Tuple v σ     = match_bwd2 ρ1 κ' α ξ in
-   Tuple (v : vs) $ Right σ
+   Tuple (v : vs) $ CElim σ
 
 eval_bwd :: Val -> Expl -> T3 Env Expr Selected
 -- true
@@ -144,9 +143,9 @@ eval_bwd (Val α (V.Cons u v)) (T.Cons tT uU)
 eval_bwd v (T.App t u ξ t')
    = case eval_bwd v t' of
       T3 (ρ1ρ2ρ3 :+: f ↦ Val _ (V.Closure ρ1' δ σ)) e α ->
-         let Tuple ρ1ρ2 ρ3      = unmatch ρ1ρ2ρ3 ξ
+         let Tuple ρ1ρ2 ρ3      = unmatch2 ρ1ρ2ρ3 ξ
              Tuple ρ1 ρ2        = filterRecDefs ρ1ρ2 δ
-             Tuple v' σ         = match_bwd ρ3 e α ξ
+             Tuple v' σ         = match_bwd2 ρ3 (CExpr e) α ξ
              T3 ρ'  e'  α'      = eval_bwd v' u
              T3 ρ1' δ   α2      = joinClosures ρ2
              T3 ρ'' e'' α''     = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ σ)) t

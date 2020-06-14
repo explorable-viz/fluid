@@ -7,11 +7,12 @@ import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
+import Debug.Trace (trace)
 import Bindings ((:+:), (↦), ε, find)
 import Elim (Elim(..))
 import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..), Match2(..))
-import Expr (Cont, Elim2(..), Expr(..), Module(..), RecDef(..), RecDefs)
+import Expr (Cont(..), Elim2(..), Expr(..), Module(..), RecDef(..), RecDefs, asExpr)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
@@ -51,11 +52,11 @@ match2 v _ = Left $ "Pattern mismatch for " <> render (pretty v)
 
 matchArgs :: List Val -> Cont -> MayFail (T3 Env Cont (List Match2))
 matchArgs Nil κ               = pure $ T3 ε κ Nil
-matchArgs (_ : _) (Left σ)    = Left $ "Too many arguments"
-matchArgs (v : vs) (Right σ)  = do
+matchArgs (v : vs) (CElim σ)  = do
    T3 ρ κ' ξ <- match2 v σ
    T3 ρ' κ'' ξs <- matchArgs vs κ'
    pure $ T3 (ρ <> ρ') κ'' (ξ : ξs)
+matchArgs (_ : _) _           = Left $ "Too many arguments"
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
@@ -100,8 +101,8 @@ eval ρ (Expr _ (E.App e e')) = do
    case u of
       V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs ρ1 δ δ
-         T3 ρ3 e'' ξ <- match v' σ
-         Tuple t'' v'' <- eval (ρ1 <> ρ2 <> ρ3) e''
+         T3 ρ3 e'' ξ <- match2 v' σ
+         Tuple t'' v'' <- eval (ρ1 <> ρ2 <> ρ3) $ asExpr e''
          pure $ Tuple (T.App t t' ξ t'') v''
       V.Unary φ ->
          pure $ Tuple (T.AppOp t t') $ applyUnary φ v'
@@ -118,20 +119,20 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
       _ -> error absurd
 eval ρ (Expr _ (E.Let (E.Def σ e) e')) = do
    Tuple t v <- eval ρ e
-   T3 ρ' _ ξ <- match v σ
+   T3 ρ' _ ξ <- match2 v σ
    Tuple t' v' <- eval (ρ <> ρ') e'
    pure $ Tuple (T.Let (T.Def ξ t) t') v'
 eval ρ (Expr _ (E.MatchAs e σ)) = do
    Tuple t v <- eval ρ e
-   T3 ρ' e' ξ <- match v σ
-   Tuple t' v' <- eval (ρ <> ρ') e'
+   T3 ρ' e' ξ <- match2 v σ
+   Tuple t' v' <- eval (ρ <> ρ') (asExpr e')
    pure $ Tuple (T.MatchAs t ξ t') v'
 
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
 defs ρ (Module (Left (E.Def σ e) : ds)) = do
    Tuple _ v <- eval ρ e
-   T3 ρ' _ ξ <- match v σ
+   T3 ρ' _ ξ <- match2 v σ
    defs (ρ <> ρ') (Module ds)
 defs ρ (Module (Right δ : ds)) =
    defs (ρ <> closeDefs ρ δ δ) (Module ds)
