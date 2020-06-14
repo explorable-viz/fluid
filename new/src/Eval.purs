@@ -19,14 +19,14 @@ import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (T3 Env Cont Match)
-match v (ElimVar x κ) = pure $ T3 (ε :+: x ↦ v) κ (MatchVar x)
-match (Val _ (V.Constr c vs)) (ElimConstr κs) =
+match v (ElimVar x κ)                           = pure $ T3 (ε :+: x ↦ v) κ (MatchVar x)
+match (Val _ (V.Constr c vs)) (ElimConstr κs)   =
    case lookup c κs of
-      Nothing -> Left $ "Constructor " <> show c <> " not found"
-      Just κ -> do
+      Nothing  -> Left $ "Constructor " <> show c <> " not found"
+      Just κ   -> do
          T3 ρ κ' ξs <- matchArgs vs κ
          T3 ρ κ' <$> pure (MatchConstr (Tuple c ξs) $ update (const Nothing) c κs)
-match v _ = Left $ "Pattern mismatch for " <> render (pretty v)
+match v _                                       = Left $ "Pattern mismatch for " <> render (pretty v)
 
 matchArgs :: List Val -> Cont -> MayFail (T3 Env Cont (List Match))
 matchArgs Nil κ               = pure $ T3 ε κ Nil

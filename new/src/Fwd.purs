@@ -13,12 +13,12 @@ import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
 
 match_fwd :: Val -> Elim -> T3 Env Cont Selected
-match_fwd v (ElimVar x κ) = T3 (ε :+: x ↦ v) κ true
-match_fwd (Val α (V.Constr c vs)) (ElimConstr κs) =
+match_fwd v (ElimVar x κ)                          = T3 (ε :+: x ↦ v) κ true
+match_fwd (Val α (V.Constr c vs)) (ElimConstr κs)  =
    let κ = fromJust absurd $ lookup c κs
        T3 ρ κ' α' = matchArgs_fwd vs κ in
    T3 ρ κ' (α ∧ α')
-match_fwd v _ = error absurd
+match_fwd v _                                      = error absurd
 
 matchArgs_fwd :: List Val -> Cont -> T3 Env Cont Selected
 matchArgs_fwd Nil κ              = T3 ε κ true
@@ -29,8 +29,8 @@ matchArgs_fwd (v : vs) (CElim σ) =
 matchArgs_fwd (_ : _) _          = error absurd
 
 closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
-closeDefs_fwd _ _ Nil _ = ε
-closeDefs_fwd ρ δ0 (RecDef f σ : δ) α =
+closeDefs_fwd _ _ Nil _                = ε
+closeDefs_fwd ρ δ0 (RecDef f σ : δ) α  =
    closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
 
 eval_fwd :: Env -> Expr -> Selected -> Val
