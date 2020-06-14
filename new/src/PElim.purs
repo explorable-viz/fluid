@@ -52,11 +52,11 @@ joinAll (x : xs) = foldl (om join2) (Just x) xs
 toCont :: PCont -> Maybe Cont
 toCont PCNone      = pure CNone
 toCont (PCExpr e)  = CExpr <$> pure e
-toCont (PCPElim σ) = CElim <$> toElim2 σ
+toCont (PCPElim σ) = CElim <$> toElim σ
 
-toElim2 :: PElim -> Maybe Elim
-toElim2 (PElimVar x κ)    = ElimVar x <$> toCont κ
-toElim2 (PElimConstr κs)   = ElimConstr <$> sequence (toCont <$> κs)
+toElim :: PElim -> Maybe Elim
+toElim (PElimVar x κ)   = ElimVar x <$> toCont κ
+toElim (PElimConstr κs) = ElimConstr <$> sequence (toCont <$> κs)
 
 -- Partial eliminators are not supported at the moment.
 class SingleBranch a where

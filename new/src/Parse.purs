@@ -26,7 +26,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
 import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PCont(..), PElim(..), joinAll, mapCont, toElim2)
+import PElim (PCont(..), PElim(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -77,8 +77,8 @@ variable :: SParser Expr
 variable = ident <#> Var >>> expr
 
 -- TODO: anonymous variables
-patternVariable2 :: SParser PElim
-patternVariable2 = PElimVar <$> ident <@> PCNone
+patternVariable :: SParser PElim
+patternVariable = PElimVar <$> ident <@> PCNone
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
@@ -125,7 +125,7 @@ constr_pattern pattern' = ctr_pattern >>= rest
    where
       rest ∷ PElim -> SParser PElim
       rest σ = do
-         σ' <- simplePattern2 pattern' <|> ctr_pattern
+         σ' <- simplePattern pattern' <|> ctr_pattern
          rest $ fromJust absurd $ mapCont (PCPElim σ') σ
          <|> pure σ
 
@@ -151,8 +151,8 @@ pair expr' =
       e' <- expr'
       pure $ expr $ Constr cPair (e : e' : L.Nil)
 
-patternPair2 :: SParser PElim -> SParser PElim
-patternPair2 pattern' =
+patternPair :: SParser PElim -> SParser PElim
+patternPair pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
       τ <- pattern'
@@ -175,14 +175,14 @@ simpleExpr expr' =
    pair expr' <|>
    lambda expr'
 
-simplePattern2 :: SParser PElim -> SParser PElim
-simplePattern2 pattern' =
-   try patternVariable2 <|>
+simplePattern :: SParser PElim -> SParser PElim
+simplePattern pattern' =
+   try patternVariable <|>
    try (token.parens pattern') <|>
-   patternPair2 pattern'
+   patternPair pattern'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' = keyword strFun *> elim2 expr' true <#> Lambda >>> expr
+lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -194,42 +194,42 @@ patternDelim :: SParser Unit
 patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
-elim2 :: SParser Expr -> Boolean -> SParser Elim
-elim2 expr' nest = elimSingle2 expr' nest <|> elimBraces2 expr' nest
+elim :: SParser Expr -> Boolean -> SParser Elim
+elim expr' nest = elimSingle expr' nest <|> elimBraces expr' nest
 
-elimSingle2 :: SParser Expr -> Boolean -> SParser Elim
-elimSingle2 expr' nest =
-   fromJust "Incomplete branches" <$> (toElim2 <$> partialElim2 expr' nest patternDelim)
+elimSingle :: SParser Expr -> Boolean -> SParser Elim
+elimSingle expr' nest =
+   fromJust "Incomplete branches" <$> (toElim <$> partialElim expr' nest patternDelim)
 
-elimBraces2 :: SParser Expr -> Boolean -> SParser Elim
-elimBraces2 expr' nest =
+elimBraces :: SParser Expr -> Boolean -> SParser Elim
+elimBraces expr' nest =
    token.braces $ do
-      σs <- sepBy1 (partialElim2 expr' nest arrow) token.semi
+      σs <- sepBy1 (partialElim expr' nest arrow) token.semi
       pure $ case joinAll σs of
          Nothing -> error "Incompatible branches"
-         Just σ -> fromJust "Incomplete branches" (toElim2 σ)
+         Just σ -> fromJust "Incomplete branches" (toElim σ)
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
-nestedFun true expr' = elim2 expr' true <#> Lambda >>> expr
+nestedFun true expr' = elim expr' true <#> Lambda >>> expr
 nestedFun false _ = empty
 
-partialElim2 :: SParser Expr -> Boolean -> SParser Unit -> SParser PElim
-partialElim2 expr' nest delim = do
-   σ <- pattern2
+partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser PElim
+partialElim expr' nest delim = do
+   σ <- pattern
    e <- delim *> expr' <|> nestedFun nest expr'
    pure $ fromJust absurd $ mapCont (PCExpr e) σ
 
 def :: SParser Expr -> SParser Def
 def expr' = do
-   σ <- try $ keyword strLet *> pattern2 <* patternDelim
+   σ <- try $ keyword strLet *> pattern <* patternDelim
    e <- expr' <* token.semi
-   pure $ Def (fromJust "Incomplete branches" $ toElim2 σ) e
+   pure $ Def (fromJust "Incomplete branches" $ toElim σ) e
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')
 
 recDef :: SParser Expr -> SParser RecDef
-recDef expr' = RecDef <$> ident <*> (elim2 expr' true <* token.semi)
+recDef expr' = RecDef <$> ident <*> (elim expr' true <* token.semi)
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = keyword strLet *> many (try $ recDef expr')
@@ -240,7 +240,7 @@ letRec expr' = expr <$>
 
 matchAs :: SParser Expr -> SParser Expr
 matchAs expr' = expr <$>
-   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim2 expr' false)
+   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim expr' false)
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
@@ -266,12 +266,12 @@ appChain expr' =
 -- Singleton eliminator. Analogous in some way to app_chain, but there is nothing higher-order here:
 -- there are no explicit application nodes, non-saturated constructor applications, or patterns other
 -- than constructors in the function position.
-appChain_pattern2 :: SParser PElim -> SParser PElim
-appChain_pattern2 pattern' = simplePattern2 pattern' <|> constr_pattern pattern'
+appChain_pattern :: SParser PElim -> SParser PElim
+appChain_pattern pattern' = simplePattern pattern' <|> constr_pattern pattern'
 
 -- TODO: allow infix constructors, via buildExprParser
-pattern2 :: SParser PElim
-pattern2 = fix appChain_pattern2
+pattern :: SParser PElim
+pattern = fix appChain_pattern
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
