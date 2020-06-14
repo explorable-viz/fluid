@@ -32,3 +32,12 @@ let prod f g x = (f x, g x);
 
 -- (a, b) -> (b, a)
 let swap (a, b) = (b, a);
+
+-- List a -> a
+let head (Cons x xs) = x;
+
+-- List a -> List a -> List a
+let concat {
+   Nil ys -> ys;
+   (Cons x xs) ys -> Cons x (concat xs ys)
+};

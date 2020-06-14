@@ -24,9 +24,6 @@ let or x y = if x then True else y;
 -- Bool -> Bool
 let not x = if x then False else True;
 
--- List a -> a
-let head (x : xs) = x;
-
 -- Num -> Num -> Ordering
 let compare (x, y) =
    if x < y
@@ -34,12 +31,6 @@ let compare (x, y) =
    else if x > y
       then GT
       else EQ;
-
--- List a -> List a -> List a
-let concat {
-   [] ys -> ys;
-   (x : xs) ys -> x : concat xs ys
-};
 
 -- a -> List a -> Bool (where a ∈ {Num, Str})
 let elem x {
