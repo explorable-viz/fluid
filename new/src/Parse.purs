@@ -26,7 +26,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
 import Expr (Def(..), Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (PCont(..), PElim(..), PElim2(..), joinAll, mapCont, toElim2)
+import PElim (PCont(..), PElim2(..), joinAll, mapCont, toElim2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -77,9 +77,6 @@ variable :: SParser Expr
 variable = ident <#> Var >>> expr
 
 -- TODO: anonymous variables
-patternVariable :: SParser (PElim Unit)
-patternVariable = ident <#> flip PElimVar unit
-
 patternVariable2 :: SParser PElim2
 patternVariable2 = ident <#> flip PElimVar2 PCNone
 
@@ -135,20 +132,11 @@ constr_pattern pattern' = ctr_pattern >>= rest
 true_ :: SParser Expr
 true_ = theCtr cTrue $> expr (Constr cTrue L.Nil)
 
-patternTrue :: SParser (PElim Unit)
-patternTrue = theCtr cTrue $> PElimTrue unit
-
 false_ :: SParser Expr
 false_ = theCtr cFalse $> expr (Constr cFalse L.Nil)
 
-patternFalse :: SParser (PElim Unit)
-patternFalse = theCtr cFalse $> PElimFalse unit
-
 nil :: SParser Expr
 nil = theCtr cNil $> expr (Constr cNil L.Nil)
-
-patternNil :: SParser (PElim Unit)
-patternNil = theCtr cNil $> PElimNil unit
 
 cons :: SParser Expr -> SParser Expr
 cons expr' = do
@@ -156,23 +144,12 @@ cons expr' = do
    e' <- simpleExpr expr'
    pure $ expr $ Constr cCons (e : e' : L.Nil)
 
-patternCons :: SParser (PElim Unit) -> SParser (PElim Unit)
-patternCons pattern' = do
-   σ <- theCtr cCons *> simplePattern pattern'
-   simplePattern pattern' <#> const >>> (<#>) σ >>> PElimCons
-
 pair :: SParser Expr -> SParser Expr
 pair expr' =
    token.parens $ do
       e <- expr' <* token.comma
       e' <- expr'
       pure $ expr $ Constr cPair (e : e' : L.Nil)
-
-patternPair :: SParser (PElim Unit) -> SParser (PElim Unit)
-patternPair pattern' =
-   token.parens $ do
-      σ <- pattern' <* token.comma
-      pattern' <#> const >>> (<#>) σ >>> PElimPair
 
 patternPair2 :: SParser PElim2 -> SParser PElim2
 patternPair2 pattern' =
@@ -197,15 +174,6 @@ simpleExpr expr' =
    try parensOp <|>
    pair expr' <|>
    lambda expr'
-
-simplePattern :: SParser (PElim Unit) -> SParser (PElim Unit)
-simplePattern pattern' =
-   try patternVariable <|>
-   try patternTrue <|>
-   try patternFalse <|>
-   try patternNil <|>
-   try (token.parens pattern') <|>
-   patternPair pattern'
 
 simplePattern2 :: SParser PElim2 -> SParser PElim2
 simplePattern2 pattern' =
@@ -244,11 +212,6 @@ elimBraces2 expr' nest =
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = elim2 expr' true <#> Lambda >>> expr
 nestedFun false _ = empty
-
-partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser (PElim Expr)
-partialElim expr' nest delim = do
-   σ <- pattern
-   (delim *> expr' <|> nestedFun nest expr') <#> const >>> (<#>) σ
 
 partialElim2 :: SParser Expr -> Boolean -> SParser Unit -> SParser PElim2
 partialElim2 expr' nest delim = do
@@ -300,17 +263,11 @@ appChain expr' =
       rest ∷ Expr -> SParser Expr
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
 
-appChain_pattern :: SParser (PElim Unit) -> SParser (PElim Unit)
-appChain_pattern pattern' = simplePattern pattern' <|> patternCons pattern'
-
 -- Singleton eliminator. Analogous in some way to app_chain, but there is nothing higher-order here:
 -- there are no explicit application nodes, non-saturated constructor applications, or patterns other
 -- than constructors in the function position.
 appChain_pattern2 :: SParser PElim2 -> SParser PElim2
 appChain_pattern2 pattern' = simplePattern2 pattern' <|> constr_pattern pattern'
-
-pattern :: SParser (PElim Unit)
-pattern = fix appChain_pattern
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern2 :: SParser PElim2
