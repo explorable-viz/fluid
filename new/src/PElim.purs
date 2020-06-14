@@ -13,10 +13,10 @@ import Expr (Cont(..), Elim(..), Expr)
 import Util (type (×), (≟), error, om, unionWithMaybe)
 
 -- A "partial" eliminator. A convenience for the parser, which must assemble eliminators out of these.
-data PCont = PCNone | PCExpr Expr | PCPElim PElim2
+data PCont = PCNone | PCExpr Expr | PCPElim PElim
 
-data PElim2 =
-   PElimVar2 Var PCont |
+data PElim =
+   PElimVar Var PCont |
    PElimConstr (Map Ctr PCont)
 
 class Joinable k where
@@ -40,8 +40,8 @@ instance joinableCont :: Joinable2 PCont where
 instance joinableCtrCont :: Joinable2 (Ctr × PCont) where
    join2 (Tuple c κ) (Tuple c' κ') = bisequence $ Tuple (c ≟ c') $ join2 κ κ'
 
-instance joinablePElim2 :: Joinable2 PElim2 where
-   join2 (PElimVar2 x κ) (PElimVar2 x' κ')   = PElimVar2 <$> x ≟ x' <*> join2 κ κ'
+instance joinablePElim2 :: Joinable2 PElim where
+   join2 (PElimVar x κ) (PElimVar x' κ')     = PElimVar <$> x ≟ x' <*> join2 κ κ'
    join2 (PElimConstr κs) (PElimConstr κs')  = PElimConstr <$> (sequence $ unionWithMaybe join2 κs κs')
    join2 _ _ = Nothing
 
@@ -54,8 +54,8 @@ toCont PCNone      = pure CNone
 toCont (PCExpr e)  = CExpr <$> pure e
 toCont (PCPElim σ) = CElim <$> toElim2 σ
 
-toElim2 :: PElim2 -> Maybe Elim
-toElim2 (PElimVar2 x κ)    = ElimVar x <$> toCont κ
+toElim2 :: PElim -> Maybe Elim
+toElim2 (PElimVar x κ)    = ElimVar x <$> toCont κ
 toElim2 (PElimConstr κs)   = ElimConstr <$> sequence (toCont <$> κs)
 
 -- Partial eliminators are not supported at the moment.
@@ -82,8 +82,8 @@ instance mapContCont :: MapCont PCont where
    mapCont κ (PCExpr _)    = pure κ
    mapCont κ (PCPElim σ)   = PCPElim <$> mapCont κ σ
 
-instance mapContElim :: MapCont PElim2 where
-   mapCont κ (PElimVar2 x κ') = PElimVar2 x <$> mapCont κ κ'
+instance mapContElim :: MapCont PElim where
+   mapCont κ (PElimVar x κ') = PElimVar x <$> mapCont κ κ'
    mapCont κ (PElimConstr κs) =
       case toUnfoldable κs of
          Tuple c κ' : Nil -> do
