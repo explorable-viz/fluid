@@ -9,6 +9,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 4 June 2020 | PureScript implementation supports structured `let` syntax | [171](https://github.com/explorable-viz/fluid/issues/171) |
 | 15 May 2020 | Update [f.luid.org](http://f.luid.org) | [289](https://github.com/explorable-viz/fluid/issues/289) |
 | 13 May 2020 | PureScript implementation supports first-class binary operations | [139](https://github.com/explorable-viz/fluid/issues/139) |
 | 2 April 2020 | Fluid plugin running in Binder | [W279](https://github.com/rolyp/wrattler/wrattler/issues/279) |
