@@ -7,30 +7,13 @@ import Data.Map (update)
 import Data.Tuple (Tuple(..))
 import Primitive (primitives)
 import Bindings (Bindings(..), (:+:), (↦), ε, find, remove)
-import Elim (Elim(..))
 import Expl (Expl(..)) as T
-import Expl (Expl, Match(..), Match2(..))
+import Expl (Expl, Match2(..))
 import Expr (Cont(..), Elim2(..), Expr(..), RawExpr(..), RecDef(..), RecDefs)
-import Lattice (class Selectable, Selected, (∨), bot, join)
+import Lattice (Selected, (∨), bot, join)
 import Util (T3(..), (≜), type (×), absurd, error, successful)
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
-
-unmatch :: forall k . Env -> Match k -> Env × Env
-unmatch ρ (MatchVar x)
-   =  let Tuple v ρ' = successful (remove x ρ)
-      in  Tuple ρ' (ε :+: x ↦ v)
-unmatch ρ (MatchTrue k)    = Tuple ρ ε
-unmatch ρ (MatchFalse k)   = Tuple ρ ε
-unmatch ρ (MatchPair ξ ξ')
-   =  let Tuple ρ'  ρ2 = unmatch ρ  ξ'
-          Tuple ρ'' ρ1 = unmatch ρ' ξ
-      in  Tuple ρ'' (ρ1 <> ρ2)
-unmatch ρ (MatchNil k)     = Tuple ρ ε
-unmatch ρ (MatchCons { nil: k, cons: Tuple ξ ξ' })
-   =  let Tuple ρ'  ρ2 = unmatch ρ  ξ'
-          Tuple ρ'' ρ1 = unmatch ρ' ξ
-      in  Tuple ρ'' (ρ1 <> ρ2)
 
 unmatch2 :: Env -> Match2 -> Env × Env
 unmatch2 ρ (MatchVar2 x) =
@@ -73,29 +56,6 @@ filterRecDefs = go ε
    go acc ρ L.Nil            = Tuple ρ acc
    go acc ρ (RecDef f σ : δ) = let Tuple v ρ' = successful (remove f ρ)
                                in  go (acc :+: f ↦ v) ρ' δ
-
-match_bwd :: forall k . Selectable k => Env -> k -> Selected -> Match k -> Val × Elim k
--- var
-match_bwd (ε :+: x ↦ v) κ α (MatchVar x') = Tuple v (ElimVar (x ≜ x') κ)
--- true
-match_bwd ε κ α (MatchTrue κ')  = Tuple (Val α V.True) (ElimBool { true: κ, false: bot κ' })
--- false
-match_bwd ε κ α (MatchFalse κ') = Tuple (Val α V.False) (ElimBool { true: bot κ', false: κ })
--- pair
-match_bwd ρ κ α (MatchPair ξ ξ') =
-   let Tuple ρ1 ρ2 = unmatch ρ ξ'
-       Tuple v' σ    = match_bwd ρ2 κ α ξ'
-       Tuple v  τ    = match_bwd ρ1 σ α ξ
-   in  Tuple (Val α (V.Pair v v')) (ElimPair τ)
--- nil
-match_bwd ε κ α (MatchNil σ) = Tuple (Val α V.Nil) (ElimList {nil: κ, cons: bot σ})
--- cons
-match_bwd ρ κ α (MatchCons { nil: κ', cons: Tuple ξ ξ'}) =
-   let Tuple ρ1 ρ2 = unmatch ρ ξ'
-       Tuple v' σ  = match_bwd ρ2 κ α ξ'
-       Tuple v  τ  = match_bwd ρ1 σ α ξ
-   in  Tuple (Val α (V.Cons v v')) (ElimList {nil: bot κ, cons: τ})
-match_bwd _ _ _ _ = error absurd
 
 match_bwd2 :: Env -> Cont -> Selected -> Match2 -> Val × Elim2
 match_bwd2 (ε :+: x ↦ v) κ α (MatchVar2 x')     = Tuple v (ElimVar2 (x ≜ x') κ)

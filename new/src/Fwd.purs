@@ -4,7 +4,6 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Map (lookup)
 import Bindings ((:+:), (↦), ε, find)
-import Elim (Elim(..))
 import Expr (Cont(..), Def(..), Elim2(..), Expr(..), RecDef(..), RecDefs, asExpr)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
@@ -12,26 +11,6 @@ import Primitive (applyBinary_fwd, applyUnary_fwd)
 import Util (T3(..), absurd, error, fromJust, successful)
 import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
-
-match_fwd :: forall k . Val -> Elim k -> T3 Env k Selected
-match_fwd v (ElimVar x κ) =
-   T3 (ε :+: x ↦ v) κ true
-match_fwd (Val α V.True) (ElimBool { true: κ, false: κ' }) =
-   T3 ε κ α
-match_fwd (Val α V.False) (ElimBool { true: κ, false: κ' }) =
-   T3 ε κ' α
-match_fwd (Val α (V.Pair v v')) (ElimPair σ) =
-   let T3 ρ1 τ α' = match_fwd v σ
-       T3 ρ2 κ α'' = match_fwd v' τ in
-   T3 (ρ1 <> ρ2) κ (α' ∧ α'')
-match_fwd (Val α V.Nil) (ElimList { nil: κ, cons: σ }) =
-   T3 ε κ α
-match_fwd (Val α (V.Cons v v')) (ElimList { nil: κ, cons: σ }) =
-   let T3 ρ1 τ α' = match_fwd v σ
-       T3 ρ κ' α'' = match_fwd v' τ in
-   T3 (ρ1 <> ρ) κ' (α' ∧ α'')
-match_fwd _ _ =
-   error absurd
 
 match_fwd2 :: Val -> Elim2 -> T3 Env Cont Selected
 match_fwd2 v (ElimVar2 x κ) = T3 (ε :+: x ↦ v) κ true

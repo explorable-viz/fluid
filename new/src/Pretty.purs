@@ -7,7 +7,6 @@ import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, text, vcat)
 import Text.Pretty (render) as P
 import DataType (Ctr, cFalse, cNil, cPair, cTrue)
-import Elim (Elim(..))
 import Expr (Cont(..), Def(..), Elim2(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Util (type (×), absurd, error, fromJust, intersperse)
@@ -92,14 +91,6 @@ instance rawExprPretty :: Pretty RawExpr where
 instance prettyDefs :: Pretty (List RecDef) where
    pretty Nil = text ""
    pretty (RecDef f σ : δ) = atop (text f :<>: operator "=" :<>: pretty σ) $ pretty δ
-
-instance prettyElim :: Pretty k => Pretty (Elim k) where
-   pretty (ElimVar x κ) = text x :<>: operator "->" :<>: pretty κ
-   pretty (ElimPair σ) = pretty σ
-   pretty (ElimList { nil: κ, cons: σ }) =
-      atop (text "[]" :<>: operator "->" :<>: pretty κ) (text "Cons" :<>: operator "->" :<>: pretty σ)
-   pretty (ElimBool { true: κ, false: κ' }) =
-      atop (text "true" :<>: operator "->" :<>: pretty κ) (text "false" :<>: operator "->" :<>: pretty κ')
 
 instance prettyCont :: Pretty Cont where
    pretty CNone = text "[ ]"

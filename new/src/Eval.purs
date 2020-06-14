@@ -7,11 +7,9 @@ import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import Debug.Trace (trace)
 import Bindings ((:+:), (↦), ε, find)
-import Elim (Elim(..))
 import Expl (Def(..), Expl(..)) as T
-import Expl (Expl, Match(..), Match2(..))
+import Expl (Expl, Match2(..))
 import Expr (Cont(..), Elim2(..), Expr(..), Module(..), RecDef(..), RecDefs, asExpr)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
@@ -19,26 +17,6 @@ import Primitive (applyBinary, applyUnary)
 import Util (MayFail, T3(..), type (×), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
-
-match :: forall k . Val -> Elim k -> MayFail (T3 Env k (Match k))
-match v (ElimVar x κ) =
-   pure $ T3 (ε :+: x ↦ v) κ (MatchVar x)
-match (Val _ V.True) (ElimBool { true: κ, false: κ' }) =
-   pure $ T3 ε κ (MatchTrue κ')
-match (Val _ V.False) (ElimBool { true: κ, false: κ' }) =
-   pure $ T3 ε κ' (MatchFalse κ)
-match (Val _ (V.Pair v v')) (ElimPair σ) = do
-   T3 ρ1 τ ξ <- match v σ
-   T3 ρ2 κ ξ' <- match v' τ
-   pure $ T3 (ρ1 <> ρ2) κ (MatchPair ξ ξ')
-match (Val _ V.Nil) (ElimList { nil: κ, cons: σ }) =
-   pure $ T3 ε κ (MatchNil σ)
-match (Val _ (V.Cons v v')) (ElimList { nil: κ, cons: σ }) = do
-   T3 ρ1 τ ξ <- match v σ
-   T3 ρ κ' ξ' <- match v' τ
-   pure $ T3 (ρ1 <> ρ) κ' (MatchCons { nil: κ, cons: Tuple ξ ξ' })
-match v _ =
-   Left $ "Pattern mismatch for " <> render (pretty v)
 
 match2 :: Val -> Elim2 -> MayFail (T3 Env Cont Match2)
 match2 v (ElimVar2 x κ) = pure $ T3 (ε :+: x ↦ v) κ (MatchVar2 x)

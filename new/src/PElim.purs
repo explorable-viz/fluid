@@ -7,10 +7,8 @@ import Data.Map (Map, singleton, toUnfoldable, values)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl, sequence)
 import Data.Tuple (Tuple(..))
-import Debug.Trace (trace)
 import Bindings (Var)
 import DataType (Ctr)
-import Elim (Elim(..))
 import Expr (Cont(..), Elim2(..), Expr)
 import Util (type (×), (≟), absurd, error, om, unionWithMaybe)
 
@@ -113,14 +111,6 @@ joinAll :: forall a . Joinable2 a => List a -> Maybe a
 joinAll Nil = error "Non-empty list expected"
 joinAll (x : xs) = foldl (om join2) (Just x) xs
 
-toElim :: forall k . PElim k -> Maybe (Elim k)
-toElim (PElimVar x κ)                     = pure $ ElimVar x κ
-toElim (PElimBool { true: κ, false: κ' }) = pure $ ElimBool { true: κ, false: κ' }
-toElim (PElimPair σ)                      = ElimPair <$> (hoistMaybe (toElim <$> σ) >>= toElim)
-toElim (PElimList { nil: κ, cons: σ })    = (\σ' -> ElimList { nil: κ, cons: σ' }) <$>
-                                            (hoistMaybe (toElim <$> σ) >>= toElim)
-toElim _ = Nothing
-
 toCont :: PCont -> Maybe Cont
 toCont PCNone      = pure CNone
 toCont (PCExpr e)  = CExpr <$> pure e
@@ -131,11 +121,6 @@ toElim2 (PElimVar2 x κ)    = ElimVar2 x <$> toCont κ
 toElim2 (PElimConstr κs)   = ElimConstr <$> sequence (toCont <$> κs)
 
 -- Partial eliminators are not supported at the moment.
-singleBranch :: forall k . Elim k -> Maybe k
-singleBranch (ElimVar x κ) = Just κ
-singleBranch (ElimPair σ)  = singleBranch σ >>= singleBranch
-singleBranch _             = Nothing
-
 class SingleBranch a where
    singleBranch2 :: a -> Maybe Cont
 
