@@ -46,53 +46,6 @@ let filter p {
       if p x then x : ys else ys
 };
 
--- ((a, b) -> a) -> a -> List b -> a
-let foldl op z {
-   [] -> z;
-   x : xs -> foldl op (op (z, x)) xs
-};
-
--- ((a, b) -> a) -> List b -> a
-let foldl1 op {
-   x : xs -> foldl op x xs
-};
-
--- ((a, b) -> b) -> b -> List a -> b
-let foldr op z {
-   [] -> z;
-   x : xs -> op (x, foldr op z xs)
-};
-
--- ((a, b) -> b) -> List a -> b
-let foldr1 op {
-   x : [] -> x;
-   x : y : xs -> op (x, foldr1 op (Cons y xs))
-};
-
--- ((a, b) -> a) -> a -> List b -> List a
-let scanl1 op z xs =
-   let go (x, continue) acc =
-      let next = op (acc, x);
-      next : continue next;
-   foldr go (const []) xs z;
-
--- ((a, b) -> a) -> a -> List b -> List a
-let scanl op z xs =
-   z : scanl1 op z xs;
-
--- List a -> a -> List a
-let intersperse {
-   [] _ -> [];
-   (x : []) _ -> x : [];
-   (x : y : ys) sep -> x : sep : intersperse (y : ys)
-};
-
--- List a -> a
-let last {
-   x : [] -> x;
-   x : y : ys -> last (y : ys)
-};
-
 -- Log of x in base y.
 -- Num -> Num -> Num
 let logBase x y = log y / log x;
@@ -101,6 +54,13 @@ let logBase x y = log y / log x;
 let map f {
    [] -> [];
    x : xs -> f x : map f xs
+};
+
+-- List a -> a -> List a
+let intersperse {
+   Nil sep -> Nil;
+   (Cons x Nil) sep -> Cons x Nil;
+   (Cons x (Cons y ys)) sep -> Cons x (Cons sep (intersperse (Cons y ys)))
 };
 
 -- Num -> (a -> a) -> a -> List a

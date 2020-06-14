@@ -33,6 +33,7 @@ main = do
    runExample "compose" "5"
    runExample "factorial" "40320"
    runExample "lexicalScoping" "\"6\""
+   runExample "length" "2"
    runExample "normalise" "(33, 66)"
 
    runExample "temp" "Cons 5 Nil"
