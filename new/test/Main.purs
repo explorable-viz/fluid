@@ -30,6 +30,7 @@ main = do
    runExample "arithmetic" "42"
    runExample "compose" "5"
    runExample "factorial" "40320"
+   runExample "foldr_sumSquares" "661"
    runExample "lexicalScoping" "\"6\""
    runExample "length" "2"
    runExample "normalise" "(33, 66)"
