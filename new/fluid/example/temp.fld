@@ -1,4 +1,4 @@
-match Nil as {
+match Cons 5 Nil as {
    Nil -> Nil;
    Cons x Nil -> Cons x Nil;
    Cons x (Cons y ys) -> Cons x (Cons y ys)

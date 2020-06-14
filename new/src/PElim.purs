@@ -7,6 +7,7 @@ import Data.Map (Map, singleton, toUnfoldable, values)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl, sequence)
 import Data.Tuple (Tuple(..))
+import Debug.Trace (trace)
 import Bindings (Var)
 import DataType (Ctr)
 import Elim (Elim(..))
@@ -105,13 +106,16 @@ instance joinableCtrCont :: Joinable2 (Ctr × PCont) where
 
 instance joinablePElim2 :: Joinable2 PElim2 where
    join2 (PElimVar2 x κ) (PElimVar2 x' κ')   = PElimVar2 <$> x ≟ x' <*> join2 κ κ'
-   join2 (PElimConstr κs) (PElimConstr κs')  = PElimConstr <$>
-      (sequence $ unionWithMaybe join2 κs κs')
+   join2 (PElimConstr κs) (PElimConstr κs')  = PElimConstr <$> (sequence $ unionWithMaybe join2 κs κs')
    join2 _ _ = Nothing
+
+wurble :: forall a . Joinable2 a => Maybe a -> a -> Maybe a
+wurble Nothing = const Nothing
+wurble (Just x) = join2 x
 
 joinAll :: forall a . Joinable2 a => List a -> Maybe a
 joinAll Nil = error "Non-empty list expected"
-joinAll (x : xs) = foldl (($>) join2) (Just x) xs
+joinAll (x : xs) = foldl wurble (Just x) xs
 
 toElim :: forall k . PElim k -> Maybe (Elim k)
 toElim (PElimVar x κ)                     = pure $ ElimVar x κ

@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.List (List, intercalate)
 import Data.Map (Map, unionWith)
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple)
+import Data.Tuple (Tuple(..))
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 

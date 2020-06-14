@@ -41,7 +41,7 @@ match v _ =
    Left $ "Pattern mismatch for " <> render (pretty v)
 
 match2 :: Val -> Elim2 -> MayFail (T3 Env Cont Match2)
-match2 v (ElimVar2 x κ) = pure $ T3 (trace (ε :+: x ↦ v) \_ -> ε :+: x ↦ v) κ (MatchVar2 x)
+match2 v (ElimVar2 x κ) = pure $ T3 (ε :+: x ↦ v) κ (MatchVar2 x)
 match2 (Val _ (V.Constr c vs)) (ElimConstr κs) =
    case lookup c κs of
       Nothing -> Left $ "Constructor " <> show c <> " not found"

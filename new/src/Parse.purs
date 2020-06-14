@@ -14,6 +14,7 @@ import Data.List (List(..)) as L
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (charAt)
+import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
