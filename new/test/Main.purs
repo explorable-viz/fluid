@@ -11,7 +11,6 @@ import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports)
 import Pretty (pretty, render)
-import Primitive (primitives)
 import Util (error)
 import Val (Val(..))
 
@@ -19,11 +18,10 @@ runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
    before (openWithImports file) $
       it file $ \(Tuple ρ e) -> do
-         let ρ' = ρ <> primitives
-         case eval ρ' e of
+         case eval ρ e of
             Left msg -> error msg
             Right (Tuple _ (Val _ u)) -> do
-               let (Val _ u') = eval_fwd ρ' e true
+               let (Val _ u') = eval_fwd ρ e true
                (render $ pretty u) `shouldEqual` (render $ pretty u')
                (render $ pretty u') `shouldEqual` expected
 
@@ -36,4 +34,4 @@ main = do
    runExample "length" "2"
    runExample "normalise" "(33, 66)"
 
-   runExample "temp" "Cons 5 Nil"
+   runExample "temp" "7"
