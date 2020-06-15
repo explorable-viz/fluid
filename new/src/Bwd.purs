@@ -4,7 +4,7 @@ import Prelude hiding (absurd, join)
 import Data.List (List, (:))
 import Data.List (List(..)) as L
 import Data.Map (update)
-import Bindings (Bindings(..), (:+:), (↦), ε, find)
+import Bindings (Bind, Bindings(..), (:+:), (↦), ε, find)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), Def(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs)
@@ -26,23 +26,24 @@ unmatches :: Env -> List Match -> Env × Env
 unmatches ρ L.Nil = ρ × ε
 unmatches ρ (ξ : ξs) =
    let ρ'  × ρ2   = unmatch ρ ξ
-       ρ'' × ρ1  = unmatches ρ' ξs in
+       ρ'' × ρ1   = unmatches ρ' ξs in
    ρ'' × (ρ1 <> ρ2)
 
 closeDefs_bwd :: Env -> T3 Env RecDefs Selected
 closeDefs_bwd ρ =
    case ρ of
-      xs :+: f ↦ v@(Val α_f (V.Closure ρ_f δ_f σ_f))  -> joinδClsre (foldClosures joinRecDefs (δ_f × v) xs)
-      xs :+: _ ↦ _                                    -> error absurd
-      ε                                           -> T3 ε L.Nil false
+      ρ' :+: f ↦ v@(Val α_f (V.Closure ρ_f δ_f σ_f))  -> joinδClsre (foldClosures joinRecDefs (δ_f × v) ρ')
+      _  :+: _ ↦ _                                    -> error absurd
+      ε                                               -> T3 ε L.Nil false
    where
       joinδClsre (δ × Val α_f (V.Closure ρ_f δ_f σ_f))   = T3 ρ_f (δ ∨ δ_f) α_f
       joinδClsre (_ × _)                                 = error absurd
 
-      joinRecDefs (f ↦ x@(Val α_f (V.Closure ρ_f δ_f σ_f))) (δ × clsre) = (RecDef f σ_f : δ) × (x ∨ clsre)
-      joinRecDefs (_ ↦ _) _                                             = error absurd
+      joinRecDefs :: Bind Val -> RecDefs × Val -> RecDefs × Val
+      joinRecDefs (f ↦ v'@(Val α_f (V.Closure ρ_f δ_f σ_f))) (δ × clsre)   = (RecDef f σ_f : δ) × (v' ∨ clsre)
+      joinRecDefs (_ ↦ _) _                                                = error absurd
 
-      foldClosures f z (xs :+: x ↦ v)  = f (x ↦ v) (foldClosures f z xs)
+      foldClosures f z (ρ' :+: x ↦ v)  = f (x ↦ v) (foldClosures f z ρ')
       foldClosures f z ε               = z
 
 split :: Env -> RecDefs -> Env × Env
