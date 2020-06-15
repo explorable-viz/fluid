@@ -30,7 +30,7 @@ unmatches ρ (ξ : ξs) =
    ρ'' × (ρ1 <> ρ2)
 
 closeDefs_bwd :: Env -> T3 Env RecDefs Selected
-closeDefs_bwd (ρ' :+: _ ↦ v1@(Val _ (V.Closure _ δ1 _)))  = joinδClsre (foldClosures joinRecDefs (δ1 × v1) ρ')
+closeDefs_bwd (ρ' :+: _ ↦ v0@(Val _ (V.Closure _ δ0 _)))  = joinδClsre (foldClosures joinRecDefs (δ0 × v0) ρ')
    where
       joinδClsre :: RecDefs × Val -> T3 Env RecDefs Selected
       joinδClsre (δ × Val α (V.Closure ρ δ' _)) = T3 ρ (δ ∨ δ') α
