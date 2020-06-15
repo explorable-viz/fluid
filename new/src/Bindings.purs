@@ -35,6 +35,12 @@ instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
       Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
    maybeZipWithα _ _ _                                      = Nothing
 
+
+
+foldBind :: forall a b . (Bind b -> a -> a) -> a -> Bindings b -> a
+foldBind f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldBind f z ρ)
+foldBind _ z Empty           = z
+
 find :: forall a . Var -> Bindings a -> MayFail a
 find x' Empty          = Left $ "variable " <> x' <> " not found"
 find x' (xs :+: x ↦ v) = if x == x' then pure v else find x' xs
