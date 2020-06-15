@@ -5,7 +5,7 @@ import Data.Foldable (foldr)
 import Data.List (List, (:), zip)
 import Data.List (List(..)) as L
 import Data.Map (update)
-import Bindings (Bindings(..), (:+:), (↦), ε, find)
+import Bindings (Bind, Bindings(..), (:+:), (↦), ε, find)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), Def(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs)
@@ -27,39 +27,32 @@ unmatches :: Env -> List Match -> Env × Env
 unmatches ρ L.Nil = ρ × ε
 unmatches ρ (ξ : ξs) =
    let ρ'  × ρ2   = unmatch ρ ξ
-       ρ'' × ρ1  = unmatches ρ' ξs in
+       ρ'' × ρ1   = unmatches ρ' ξs in
    ρ'' × (ρ1 <> ρ2)
 
 closeDefs_bwd :: Env -> T3 Env RecDefs Selected
-closeDefs_bwd ρ =
-   case ρ of
-      xs :+: f ↦ v@(Val α_f (V.Closure ρ_f δ_f σ_f))
-         -> joinδClsre (foldClosures joinRecDefs (δ_f × v) xs)
-      xs :+: x ↦ v
-         -> error "non-closure found in env during closeDefs_bwd"
-      Empty  -> T3 ε L.Nil false
+closeDefs_bwd (ρ' :+: _ ↦ v0@(Val _ (V.Closure _ δ0 _)))  = joinδClsre (foldBindings joinRecDefs (δ0 × v0) ρ')
    where
-      joinδClsre (δ × v)
-         = case v of Val α_f (V.Closure ρ_f δ_f σ_f) -> T3 ρ_f (δ ∨ δ_f) α_f
-                     _                               -> error "not a closure"
-      joinRecDefs fσ (δ × clsre)
-         = case fσ of (f ↦ x@(Val α_f (V.Closure ρ_f δ_f σ_f)))
-                        -> let clsre' = x ∨ clsre
-                               δ'     = RecDef f σ_f : δ
-                           in  δ' × clsre'
-                      _ -> error "not a closure"
-      foldClosures f z (xs :+: x ↦ v) = f (x ↦ v) (foldClosures f z xs)
-      foldClosures f z Empty          = z
+      joinδClsre :: RecDefs × Val -> T3 Env RecDefs Selected
+      joinδClsre (δ × Val α (V.Closure ρ δ' _)) = T3 ρ (δ ∨ δ') α
+      joinδClsre (_ × _)                        = error absurd
 
-filterRecDefs :: Env -> RecDefs -> Env × Env
-filterRecDefs = go ε
+      joinRecDefs :: Bind Val -> RecDefs × Val -> RecDefs × Val
+      joinRecDefs (f ↦ v@(Val _ (V.Closure _ _ σ))) (δ × v')   = (RecDef f σ : δ) × (v ∨ v')
+      joinRecDefs (_ ↦ _) _                                    = error absurd
+
+      foldBindings :: forall a b . (Bind b -> a -> a) -> a -> Bindings b -> a
+      foldBindings f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldBindings f z ρ)
+      foldBindings _ z ε               = z
+closeDefs_bwd (_  :+: _ ↦ _)                             = error absurd
+closeDefs_bwd ε                                          = T3 ε L.Nil false
+
+split :: Env -> RecDefs -> Env × Env
+split = go ε
    where
-   go acc ρ L.Nil = ρ × acc
-   go acc (ρ :+: x ↦ v) (RecDef f σ : δ)
-      = if f == x then go (acc :+: x ↦ v) ρ δ
-        else error "filterRecDefs - function name does not match"
-   go acc Empty (RecDef f σ : δ)
-      = error "more recdefs than found in environment"
+   go acc ρ L.Nil                         = ρ × acc
+   go acc (ρ :+: x ↦ v) (RecDef f σ : δ)  = go (acc :+: (x ≜ f) ↦ v) ρ δ
+   go acc ε _                             = error absurd
 
 match_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
 match_bwd (ε :+: x ↦ v) κ α (MatchVar x')      = v × (ElimVar (x ≜ x') κ)
@@ -111,7 +104,7 @@ eval_bwd v (T.App t t' ξ t'')
    = case eval_bwd v t'' of
       T3 (ρ1ρ2ρ3 :+: f ↦ Val _ (V.Closure ρ1' δ σ)) e α ->
          let ρ1ρ2 × ρ3      = unmatch ρ1ρ2ρ3 ξ
-             ρ1   × ρ2      = filterRecDefs ρ1ρ2 δ
+             ρ1   × ρ2      = split ρ1ρ2 δ
              v'   × σ       = match_bwd ρ3 (CExpr e) α ξ
              T3 ρ'  e'  α'  = eval_bwd v' t'
              T3 ρ1' δ   α2  = closeDefs_bwd ρ2
@@ -148,7 +141,7 @@ eval_bwd v (T.Let (T.Def ξ t) t')
 -- let-rec
 eval_bwd v (T.LetRec δ t)
    = let T3 ρ_ρ' e α = eval_bwd v t
-         ρ × ρ'      = filterRecDefs ρ_ρ' δ
+         ρ × ρ'      = split ρ_ρ' δ
          T3 _ δ' α'  = closeDefs_bwd ρ'
      in  T3 (ρ ∨ ρ') (Expr false (LetRec δ' e)) (α ∨ α')
 -- constr
