@@ -2,7 +2,8 @@ module Lattice where
 
 import Prelude hiding (absurd, join)
 import Data.Either (Either(..))
-import Data.List (zipWith)
+import Data.List (List(..)) as L
+import Data.List (List, (:), zipWith)
 import Data.Map (Map, fromFoldable, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
@@ -56,3 +57,12 @@ instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
    maybeZipWithα f κs κs' =
       -- should require the maps to have the same cardinality
       fromFoldable <$> sequence (zipWith (maybeZipWithα f) (toUnfoldable κs) (toUnfoldable κs'))
+
+instance listSelectable :: Selectable a => Selectable (List a) where
+   mapα f (x:xs) = (mapα f x) : (mapα f xs)
+   mapα f L.Nil  = L.Nil
+   maybeZipWithα f (x:xs) (y:ys) =
+      L.Cons <$> maybeZipWithα f x y <*> (maybeZipWithα f xs ys)
+   maybeZipWithα f L.Nil L.Nil = Just L.Nil
+   maybeZipWithα f _   _       = Nothing
+

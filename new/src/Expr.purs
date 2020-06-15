@@ -1,8 +1,8 @@
 module Expr where
 
 import Prelude hiding (top)
-import Bindings (Var)
-import Data.List (List, zipWith)
+import Bindings (Var, ε)
+import Data.List (List, zipWith, (:))
 import Data.Map (Map)
 import Data.Either (Either)
 import Data.Maybe (Maybe(..))

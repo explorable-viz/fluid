@@ -10,7 +10,7 @@ import Bindings (Bindings(..), (:+:), (↦), ε, find)
 import Expl (Expl(..), Def(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs)
-import Lattice (Selected, (∨), bot, join)
+import Lattice (Selected, (∨), bot)
 import Util (T3(..), (≜), type (×), absurd, error, successful)
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
@@ -30,37 +30,26 @@ unmatches ρ (ξ : ξs) =
        Tuple ρ'' ρ1  = unmatches ρ' ξs in
    Tuple ρ'' (ρ1 <> ρ2)
 
-
 closeDefs_bwd :: Env -> T3 Env RecDefs Selected
 closeDefs_bwd ρ =
    case ρ of
-      (xs :+: f ↦ v@(Val α (V.Closure ρ_f δ_f σ_f))) -> closureToT3 (foldClosures join v xs)
-      _ -> error "closure not found in env"
+      xs :+: f ↦ v@(Val α_f (V.Closure ρ_f δ_f σ_f))
+         -> joinδClsre (foldClosures joinRecDefs (Tuple δ_f v) xs)
+      xs :+: x ↦ v
+         -> error "non-closure found in env during closeDefs_bwd"
+      Empty  -> T3 ε L.Nil false
    where
-      closureToT3 v
-         = case v of
-            Val α_f (V.Closure ρ_f δ_f σ_f) -> T3 ρ_f δ_f α_f
-            _                               -> error "not a closure"
-
-      foldClosures f z (xs :+: x ↦ v) = f v (foldClosures f z xs)
+      joinδClsre (Tuple δ v)
+         = case v of Val α_f (V.Closure ρ_f δ_f σ_f) -> T3 ρ_f (δ ∨ δ_f) α_f
+                     _                               -> error "not a closure"
+      joinRecDefs fσ (Tuple δ clsre)
+         = case fσ of (f ↦ x@(Val α_f (V.Closure ρ_f δ_f σ_f)))
+                        -> let clsre' = x ∨ clsre
+                               δ'     = RecDef f σ_f : δ
+                           in  Tuple δ' clsre'
+                      _ -> error "not a closure"
+      foldClosures f z (xs :+: x ↦ v) = f (x ↦ v) (foldClosures f z xs)
       foldClosures f z Empty          = z
-
--- closeDefs_bwd :: Env -> T3 Env RecDefs Selected
--- closeDefs_bwd ρ =
---    case ρ of
---       xs :+: f ↦ v@(Val α (V.Closure ρ_f δ_f σ_f)) -> closureToT3 (foldClosures ∨ v xs)
---       Empty -> ε
---    where
---       closureToT3 v
---          = case v of
---             Val α_f (V.Closure ρ_f δ_f σ_f) -> T3 ρ_f δ_f α_f
---             _                               -> error "not a closure"
---       joinRecDefs (Tuple v δs) (f ↦ v'@(V.Closure ρ_f δ_f σ_f))
---          = let closre = v ∨ v'
---                δs'      = δs :+: RecDef f σ_f
---            in  Tuple closre δs'
---       foldClosures f z (xs :+: x ↦ v) = f v (foldClosures f z xs)
---       foldClosures f z Empty          = z
 
 filterRecDefs :: Env -> RecDefs -> Env × Env
 filterRecDefs = go ε
@@ -110,48 +99,48 @@ eval_bwd (Val α (V.Unary (UnaryOp s una))) (T.Op op)
 -- nil
 eval_bwd (Val α V.Nil) T.Nil = T3 ε (Expr α Nil) α
 -- cons
-eval_bwd (Val α (V.Cons u v)) (T.Cons t_T u_T)
-   = let T3 ρ  e  α'  = eval_bwd u t_T
-         T3 ρ' e' α'' = eval_bwd v u_T
+eval_bwd (Val α (V.Cons u v)) (T.Cons t t')
+   = let T3 ρ  e  α'  = eval_bwd u t
+         T3 ρ' e' α'' = eval_bwd v t'
      in  T3 (ρ ∨ ρ') (Expr α (Cons e e')) (α ∨ α' ∨ α'')
 -- lambda
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = T3 ρ (Expr α (Lambda σ)) α
 -- apply
-eval_bwd v (T.App t u ξ t')
-   = case eval_bwd v t' of
+eval_bwd v (T.App t t' ξ t'')
+   = case eval_bwd v t'' of
       T3 (ρ1ρ2ρ3 :+: f ↦ Val _ (V.Closure ρ1' δ σ)) e α ->
          let Tuple ρ1ρ2 ρ3      = unmatch ρ1ρ2ρ3 ξ
              Tuple ρ1 ρ2        = filterRecDefs ρ1ρ2 δ
              Tuple v' σ         = match_bwd ρ3 (CExpr e) α ξ
-             T3 ρ'  e'  α'      = eval_bwd v' u
+             T3 ρ'  e'  α'      = eval_bwd v' t' --
              T3 ρ1' δ   α2      = closeDefs_bwd ρ2
              T3 ρ'' e'' α''     = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ σ)) t
          in  T3 (ρ' ∨ ρ'') (e' ∨ e'') (α' ∨ α'')
       _ -> error absurd
 -- binary-apply
-eval_bwd (Val α v) (T.BinaryApp t op u)
+eval_bwd (Val α v) (T.BinaryApp t op t')
    = T3 (ρ ∨ ρ') (Expr α (BinaryApp e op e')) α
    where
       f expl = case expl of T.Int n -> eval_bwd (Val α (V.Int n)) expl
                         --  T.Var x -> eval_bwd (Val α (V.Var x)) expl
                             _       -> error ""
       T3 ρ  e  α'  = f t
-      T3 ρ' e' α'' = f u
+      T3 ρ' e' α'' = f t'
 -- apply-prim
-eval_bwd (Val α v) (T.AppOp t u)
+eval_bwd (Val α v) (T.AppOp t t')
    = case t of
       T.Op op -> let val_t = successful (find op primitives)
-                     val_u = case u of  T.Int i -> Val α (V.Int i)
+                     val_t' = case t' of  T.Int i -> Val α (V.Int i)
                                  --     T.Var x -> Val α (V.Var x)
-                                        _       -> error absurd
+                                          _       -> error absurd
                      T3 ρ  e  α'  = eval_bwd val_t t
-                     T3 ρ' e' α'' = eval_bwd val_u u
+                     T3 ρ' e' α'' = eval_bwd val_t' t'
                  in  T3 (ρ ∨ ρ') (e ∨ e') α
       _ -> error absurd
 -- let
-eval_bwd v (T.Let (T.Def ξ t) u)
-   = let T3 ρρ'  e  α   = eval_bwd v  u
+eval_bwd v (T.Let (T.Def ξ t) t')
+   = let T3 ρρ'  e  α   = eval_bwd v  t'
          Tuple ρ ρ'     = unmatch ρρ' ξ
          Tuple v' σ     = match_bwd ρ' (CExpr e) α ξ
          T3 ρ'' e' α'   = eval_bwd v' t
