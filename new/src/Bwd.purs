@@ -32,9 +32,9 @@ unmatches ρ (ξ : ξs) =
 closeDefs_bwd :: Env -> T3 Env RecDefs Selected
 closeDefs_bwd ρ =
    case ρ of
-      ρ' :+: f ↦ v@(Val α_f (V.Closure ρ_f δ_f σ_f))  -> joinδClsre (foldClosures joinRecDefs (δ_f × v) ρ')
-      _  :+: _ ↦ _                                    -> error absurd
-      ε                                               -> T3 ε L.Nil false
+      ρ' :+: _ ↦ v@(Val _ (V.Closure _ δ1 _))  -> joinδClsre (foldClosures joinRecDefs (δ1 × v) ρ')
+      _  :+: _ ↦ _                             -> error absurd
+      ε                                        -> T3 ε L.Nil false
    where
       joinδClsre :: RecDefs × Val -> T3 Env RecDefs Selected
       joinδClsre (δ × Val α_f (V.Closure ρ_f δ_f σ_f))   = T3 ρ_f (δ ∨ δ_f) α_f
@@ -46,7 +46,7 @@ closeDefs_bwd ρ =
 
       foldClosures :: forall a . (Bind Val -> a -> a) -> a -> Env -> a
       foldClosures f z (ρ' :+: x ↦ v)  = f (x ↦ v) (foldClosures f z ρ')
-      foldClosures f z ε               = z
+      foldClosures _ z ε               = z
 
 split :: Env -> RecDefs -> Env × Env
 split = go ε
