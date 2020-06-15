@@ -122,7 +122,7 @@ eval_bwd (Val α v) (T.BinaryApp t op t')
 -- apply-prim
 eval_bwd (Val α v) (T.AppOp t t')
    = case t of
-      T.Op op -> let val_t = successful (find op primitives)
+      T.Op op -> let val_t  = successful (find op primitives)
                      val_t' = case t' of  T.Int i -> Val α (V.Int i)
                                  --     T.Var x -> Val α (V.Var x)
                                           _       -> error absurd
@@ -135,13 +135,13 @@ eval_bwd v (T.Let (T.Def ξ t) t')
    = let ρρ' ×  e × α   = eval_bwd v  t'
          ρ  × ρ'        = unmatch ρρ' ξ
          v' × σ         = match_bwd ρ' (CExpr e) α ξ
-         ρ'' × e' × α'   = eval_bwd v' t
+         ρ'' × e' × α'  = eval_bwd v' t
      in  (ρ ∨ ρ'') × (Expr (α ∨ α') (Let (Def σ e) e')) × (α ∨ α')
 -- let-rec
 eval_bwd v (T.LetRec δ t)
    = let ρ_ρ' × e × α = eval_bwd v t
-         ρ × ρ'      = split ρ_ρ' δ
-         _ × δ' × α' = closeDefs_bwd ρ'
+         ρ × ρ'       = split ρ_ρ' δ
+         _ × δ' × α'  = closeDefs_bwd ρ'
      in  (ρ ∨ ρ') × (Expr false (LetRec δ' e)) × (α ∨ α')
 -- constr
 eval_bwd (Val _ (V.Constr c vs)) (T.Constr c' ts)

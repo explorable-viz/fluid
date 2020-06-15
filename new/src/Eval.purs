@@ -105,6 +105,11 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
    t' × v'     <- eval (ρ <> ρ') (asExpr e')
    pure $ (T.MatchAs t ξ t') × v'
 
+-- desugar :: Expr -> Expr
+-- desugar (Expr _ (E.Let (E.Def σ e) e'))
+--  = E.Lambda σ
+
+
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
 defs ρ (Module (Left (E.Def σ e) : ds)) = do
