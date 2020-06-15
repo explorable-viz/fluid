@@ -13,7 +13,7 @@ import Effect.Unsafe (unsafePerformEffect)
 infixr 6 type Tuple as ×
 infixr 6 Tuple as ×
 
-data T3 a b c = T3 a b c
+type T3 a b c = Tuple a (Tuple b c)
 
 error :: ∀ a . String -> a
 error = unsafePerformEffect <<< throw

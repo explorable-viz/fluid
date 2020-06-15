@@ -8,24 +8,24 @@ import Expr (Cont(..), Def(..), Elim(..), Expr(..), RecDef(..), RecDefs, asExpr)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (applyBinary_fwd, applyUnary_fwd)
-import Util (T3(..), absurd, error, fromJust, successful)
+import Util (type (×), (×), absurd, error, fromJust, successful)
 import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
 
-match_fwd :: Val -> Elim -> T3 Env Cont Selected
-match_fwd v (ElimVar x κ)                          = T3 (ε :+: x ↦ v) κ true
+match_fwd :: Val -> Elim -> Env × Cont × Selected
+match_fwd v (ElimVar x κ)                          = (ε :+: x ↦ v) × κ × true
 match_fwd (Val α (V.Constr c vs)) (ElimConstr κs)  =
    let κ = fromJust absurd $ lookup c κs
-       T3 ρ κ' α' = matchArgs_fwd vs κ in
-   T3 ρ κ' (α ∧ α')
+       ρ × κ' × α' = matchArgs_fwd vs κ in
+   ρ × κ' × (α ∧ α')
 match_fwd v _                                      = error absurd
 
-matchArgs_fwd :: List Val -> Cont -> T3 Env Cont Selected
-matchArgs_fwd Nil κ              = T3 ε κ true
+matchArgs_fwd :: List Val -> Cont -> Env × Cont × Selected
+matchArgs_fwd Nil κ              = ε × κ × true
 matchArgs_fwd (v : vs) (CElim σ) =
-   let T3 ρ κ' α = match_fwd v σ
-       T3 ρ' κ'' α' = matchArgs_fwd vs κ' in
-   T3 (ρ <> ρ') κ'' (α ∧ α')
+   let ρ  × κ'  × α = match_fwd v σ
+       ρ' × κ'' × α' = matchArgs_fwd vs κ' in
+   (ρ <> ρ') × κ'' × (α ∧ α')
 matchArgs_fwd (_ : _) _          = error absurd
 
 closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
@@ -64,7 +64,7 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
    case u of
       V.Closure ρ1 δ σ ->
          let ρ2 = closeDefs_fwd ρ1 δ δ α'
-             T3 ρ3 e'' α'' = match_fwd v σ in
+             ρ3 × e'' × α'' = match_fwd v σ in
          eval_fwd (ρ1 <> ρ2 <> ρ3) (asExpr e'') (α' ∧ α'')
       V.Unary φ -> applyUnary_fwd φ α' v
       V.Binary φ -> Val α' $ V.Unary $ PartialApp φ v
@@ -74,8 +74,8 @@ eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
       Val α' (V.Binary φ) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
       _ -> error absurd
 eval_fwd ρ (Expr _ (E.Let (Def σ e) e')) α =
-   let T3 ρ' _ α' = match_fwd (eval_fwd ρ e α) σ in
+   let ρ' × _ × α' = match_fwd (eval_fwd ρ e α) σ in
    eval_fwd (ρ <> ρ') e' α'
 eval_fwd ρ (Expr _ (E.MatchAs e σ)) α =
-   let T3 ρ' e' α' = match_fwd (eval_fwd ρ e α) σ in
+   let ρ' × e' × α' = match_fwd (eval_fwd ρ e α) σ in
    eval_fwd (ρ <> ρ') (asExpr e') α'
