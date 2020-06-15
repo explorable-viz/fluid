@@ -50,15 +50,12 @@ closeDefs_bwd ρ =
       foldClosures f z (xs :+: x ↦ v) = f (x ↦ v) (foldClosures f z xs)
       foldClosures f z Empty          = z
 
-filterRecDefs :: Env -> RecDefs -> Env × Env
-filterRecDefs = go ε
+split :: Env -> RecDefs -> Env × Env
+split = go ε
    where
-   go acc ρ L.Nil = ρ × acc
-   go acc (ρ :+: x ↦ v) (RecDef f σ : δ)
-      = if f == x then go (acc :+: x ↦ v) ρ δ
-        else error "filterRecDefs - function name does not match"
-   go acc Empty (RecDef f σ : δ)
-      = error "more recdefs than found in environment"
+   go acc ρ L.Nil                         = ρ × acc
+   go acc (ρ :+: x ↦ v) (RecDef f σ : δ)  = go (acc :+: (x ≜ f) ↦ v) ρ δ
+   go acc Empty _                         = error absurd
 
 match_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
 match_bwd (ε :+: x ↦ v) κ α (MatchVar x')      = v × (ElimVar (x ≜ x') κ)
@@ -110,7 +107,7 @@ eval_bwd v (T.App t t' ξ t'')
    = case eval_bwd v t'' of
       T3 (ρ1ρ2ρ3 :+: f ↦ Val _ (V.Closure ρ1' δ σ)) e α ->
          let ρ1ρ2 × ρ3      = unmatch ρ1ρ2ρ3 ξ
-             ρ1   × ρ2      = filterRecDefs ρ1ρ2 δ
+             ρ1   × ρ2      = split ρ1ρ2 δ
              v'   × σ       = match_bwd ρ3 (CExpr e) α ξ
              T3 ρ'  e'  α'  = eval_bwd v' t'
              T3 ρ1' δ   α2  = closeDefs_bwd ρ2
@@ -147,7 +144,7 @@ eval_bwd v (T.Let (T.Def ξ t) t')
 -- -- let-rec
 eval_bwd v (T.LetRec δ t)
    = let T3 ρ_ρ' e α = eval_bwd v t
-         ρ × ρ'      = filterRecDefs ρ_ρ' δ
+         ρ × ρ'      = split ρ_ρ' δ
          T3 _ δ' α'  = closeDefs_bwd ρ'
      in  T3 (ρ ∨ ρ') (Expr false (LetRec δ' e)) (α ∨ α')
 eval_bwd _ _ = error absurd
