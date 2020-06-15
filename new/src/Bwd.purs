@@ -36,6 +36,7 @@ closeDefs_bwd ρ =
       _  :+: _ ↦ _                                    -> error absurd
       ε                                               -> T3 ε L.Nil false
    where
+      joinδClsre :: RecDefs × Val -> T3 Env RecDefs Selected
       joinδClsre (δ × Val α_f (V.Closure ρ_f δ_f σ_f))   = T3 ρ_f (δ ∨ δ_f) α_f
       joinδClsre (_ × _)                                 = error absurd
 
@@ -43,6 +44,7 @@ closeDefs_bwd ρ =
       joinRecDefs (f ↦ v'@(Val α_f (V.Closure ρ_f δ_f σ_f))) (δ × clsre)   = (RecDef f σ_f : δ) × (v' ∨ clsre)
       joinRecDefs (_ ↦ _) _                                                = error absurd
 
+      foldClosures :: forall a . (Bind Val -> a -> a) -> a -> Env -> a
       foldClosures f z (ρ' :+: x ↦ v)  = f (x ↦ v) (foldClosures f z ρ')
       foldClosures f z ε               = z
 
