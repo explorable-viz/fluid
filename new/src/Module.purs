@@ -12,8 +12,8 @@ import Eval (defs)
 import Expr (Expr)
 import Parse (SParser, module_, program)
 import Primitive (primitives)
-import Val (Env)
 import Util (type (×), error)
+import Val (Env)
 
 -- For Wrattler integration. Should not end in "/".
 resourceServerUrl :: String

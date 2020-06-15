@@ -1,9 +1,8 @@
 module Lattice where
 
 import Prelude hiding (absurd, join)
-import Data.Either (Either(..))
-import Data.List (List(..)) as L
 import Data.List (List, (:), zipWith)
+import Data.List (List(..)) as L
 import Data.Map (Map, fromFoldable, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
