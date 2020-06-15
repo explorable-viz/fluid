@@ -34,26 +34,23 @@ closeDefs_bwd ρ =
    case ρ of
       xs :+: f ↦ v@(Val α_f (V.Closure ρ_f δ_f σ_f))  -> joinδClsre (foldClosures joinRecDefs (δ_f × v) xs)
       xs :+: _ ↦ _                                    -> error absurd
-      Empty                                           -> T3 ε L.Nil false
+      ε                                           -> T3 ε L.Nil false
    where
       joinδClsre (δ × Val α_f (V.Closure ρ_f δ_f σ_f))   = T3 ρ_f (δ ∨ δ_f) α_f
       joinδClsre (_ × _)                                 = error absurd
 
-      joinRecDefs (f ↦ x@(Val α_f (V.Closure ρ_f δ_f σ_f))) (δ × clsre) =
-         let clsre' = x ∨ clsre
-             δ'     = RecDef f σ_f : δ in
-         δ' × clsre'
-      joinRecDefs (_ ↦ _) _ = error absurd
+      joinRecDefs (f ↦ x@(Val α_f (V.Closure ρ_f δ_f σ_f))) (δ × clsre) = (RecDef f σ_f : δ) × (x ∨ clsre)
+      joinRecDefs (_ ↦ _) _                                             = error absurd
 
-      foldClosures f z (xs :+: x ↦ v) = f (x ↦ v) (foldClosures f z xs)
-      foldClosures f z Empty          = z
+      foldClosures f z (xs :+: x ↦ v)  = f (x ↦ v) (foldClosures f z xs)
+      foldClosures f z ε               = z
 
 split :: Env -> RecDefs -> Env × Env
 split = go ε
    where
    go acc ρ L.Nil                         = ρ × acc
    go acc (ρ :+: x ↦ v) (RecDef f σ : δ)  = go (acc :+: (x ≜ f) ↦ v) ρ δ
-   go acc Empty _                         = error absurd
+   go acc ε _                             = error absurd
 
 match_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
 match_bwd (ε :+: x ↦ v) κ α (MatchVar x')      = v × (ElimVar (x ≜ x') κ)
