@@ -1,7 +1,8 @@
 module Bwd where
 
 import Prelude hiding (absurd, join)
-import Data.List (List, (:))
+import Data.Foldable (foldr)
+import Data.List (List, (:), zip)
 import Data.List (List(..)) as L
 import Data.Map (update)
 import Bindings (Bindings(..), (:+:), (↦), ε, find)
@@ -87,7 +88,7 @@ eval_bwd (Val α (V.Pair v1 v2)) (T.Pair t1 t2)
      in  T3 (ρ1 ∨ ρ2) (Expr α (Pair e1 e2)) (α ∨ α1 ∨ α2)
 -- var
 eval_bwd (Val α v) (T.Var x) =
-   T3 (ε :+: x ↦ (Val α v)) (Expr α (Var x)) false
+   T3 (ε :+: x ↦ Val α v) (Expr α (Var x)) false
 -- int
 eval_bwd (Val α (V.Int n)) (T.Int tn) = T3 ε (Expr α (Int n)) α
 -- op
@@ -115,7 +116,7 @@ eval_bwd v (T.App t t' ξ t'')
              T3 ρ'  e'  α'  = eval_bwd v' t'
              T3 ρ1' δ   α2  = closeDefs_bwd ρ2
              T3 ρ'' e'' α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ σ)) t
-         in  T3 (ρ' ∨ ρ'') (e' ∨ e'') (α' ∨ α'')
+         in  T3 (ρ' ∨ ρ'') (Expr false (App e'' e')) (α' ∨ α'')
       _ -> error absurd
 -- binary-apply
 eval_bwd (Val α v) (T.BinaryApp t op t')
@@ -135,7 +136,7 @@ eval_bwd (Val α v) (T.AppOp t t')
                                           _       -> error absurd
                      T3 ρ  e  α'  = eval_bwd val_t t
                      T3 ρ' e' α'' = eval_bwd val_t' t'
-                 in  T3 (ρ ∨ ρ') (e ∨ e') α
+                 in  T3 (ρ ∨ ρ') (Expr false (App e e')) α
       _ -> error absurd
 -- let
 eval_bwd v (T.Let (T.Def ξ t) t')
@@ -144,10 +145,17 @@ eval_bwd v (T.Let (T.Def ξ t) t')
          v' × σ         = match_bwd ρ' (CExpr e) α ξ
          T3 ρ'' e' α'   = eval_bwd v' t
      in  T3 (ρ ∨ ρ'') (Expr (α ∨ α') (Let (Def σ e) e')) (α ∨ α')
--- -- let-rec
+-- let-rec
 eval_bwd v (T.LetRec δ t)
    = let T3 ρ_ρ' e α = eval_bwd v t
          ρ × ρ'      = filterRecDefs ρ_ρ' δ
          T3 _ δ' α'  = closeDefs_bwd ρ'
      in  T3 (ρ ∨ ρ') (Expr false (LetRec δ' e)) (α ∨ α')
+-- constr
+eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
+   = let f = (\(v × t) (T3 ρ es α)
+                 -> let T3 ρ' e α' = eval_bwd v t
+                    in  T3 (ρ ∨ ρ') (e:es) (α ∨ α'))
+         T3 ρ es α' = foldr f (T3 ε L.Nil false) (zip vs ts)
+     in  T3 ρ (Expr false (Constr c es)) α'
 eval_bwd _ _ = error absurd
