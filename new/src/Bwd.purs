@@ -30,7 +30,7 @@ unmatches ρ (ξ : ξs) =
    ρ'' × (ρ1 <> ρ2)
 
 closeDefs_bwd :: Env -> T3 Env RecDefs Selected
-closeDefs_bwd (ρ' :+: _ ↦ v0@(Val _ (V.Closure _ δ0 _)))  = joinδClsre (foldClosures joinRecDefs (δ0 × v0) ρ')
+closeDefs_bwd (ρ' :+: _ ↦ v0@(Val _ (V.Closure _ δ0 _)))  = joinδClsre (foldBindings joinRecDefs (δ0 × v0) ρ')
    where
       joinδClsre :: RecDefs × Val -> T3 Env RecDefs Selected
       joinδClsre (δ × Val α (V.Closure ρ δ' _)) = T3 ρ (δ ∨ δ') α
@@ -40,9 +40,9 @@ closeDefs_bwd (ρ' :+: _ ↦ v0@(Val _ (V.Closure _ δ0 _)))  = joinδClsre (fol
       joinRecDefs (f ↦ v@(Val _ (V.Closure _ _ σ))) (δ × v')   = (RecDef f σ : δ) × (v ∨ v')
       joinRecDefs (_ ↦ _) _                                    = error absurd
 
-      foldClosures :: forall a b . (Bind b -> a -> a) -> a -> Bindings b -> a
-      foldClosures f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldClosures f z ρ)
-      foldClosures _ z ε               = z
+      foldBindings :: forall a b . (Bind b -> a -> a) -> a -> Bindings b -> a
+      foldBindings f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldBindings f z ρ)
+      foldBindings _ z ε               = z
 closeDefs_bwd (_  :+: _ ↦ _)                             = error absurd
 closeDefs_bwd ε                                          = T3 ε L.Nil false
 
