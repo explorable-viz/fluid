@@ -2,13 +2,13 @@ module Val where
 
 import Prelude hiding (absurd, top)
 import Data.List (List, zipWith)
+import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟))
-import Data.Maybe (Maybe(..))
 
 data Unary =
    IntStr (Int -> String)

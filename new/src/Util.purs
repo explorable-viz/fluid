@@ -11,6 +11,7 @@ import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 
 infixr 6 type Tuple as ×
+infixr 6 Tuple as ×
 
 data T3 a b c = T3 a b c
 

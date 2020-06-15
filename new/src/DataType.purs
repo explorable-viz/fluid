@@ -2,8 +2,8 @@ module DataType where
 
 import Prelude
 import Data.Foldable (class Foldable)
-import Data.List (List)
 import Data.List (fromFoldable) as L
+import Data.List (List)
 import Data.Map (Map, fromFoldable)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Tuple (Tuple(..))

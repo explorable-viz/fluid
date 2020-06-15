@@ -8,8 +8,8 @@ import Data.Tuple (Tuple(..))
 import Bindings (Var, ε, (:+:), (↦))
 import DataType (cTrue, cFalse)
 import Lattice (Selected, (∧))
-import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Unary(..), UnaryOp(..), Val(..), val)
 import Util (type (×), error)
+import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Unary(..), UnaryOp(..), Val(..), val)
 
 -- name in user land and precedence 0 to 9, similar to Haskell 98
 data OpName = OpName Var Int

@@ -1,12 +1,12 @@
 module Expr where
 
 import Prelude hiding (top)
-import Bindings (Var)
+import Data.Either (Either)
 import Data.List (List, zipWith)
 import Data.Map (Map)
-import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
+import Bindings (Var)
 import DataType (Ctr)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟), error)
