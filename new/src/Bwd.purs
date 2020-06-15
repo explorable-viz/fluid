@@ -37,8 +37,8 @@ closeDefs_bwd (ρ' :+: _ ↦ v1@(Val _ (V.Closure _ δ1 _)))  = joinδClsre (fol
       joinδClsre (_ × _)                        = error absurd
 
       joinRecDefs :: Bind Val -> RecDefs × Val -> RecDefs × Val
-      joinRecDefs (f ↦ v@(Val α_f (V.Closure ρ_f δ_f σ_f))) (δ × v') = (RecDef f σ_f : δ) × (v ∨ v')
-      joinRecDefs (_ ↦ _) _                                          = error absurd
+      joinRecDefs (f ↦ v@(Val _ (V.Closure _ _ σ))) (δ × v')   = (RecDef f σ : δ) × (v ∨ v')
+      joinRecDefs (_ ↦ _) _                                    = error absurd
 
       foldClosures :: forall a b . (Bind b -> a -> a) -> a -> Bindings b -> a
       foldClosures f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldClosures f z ρ)
