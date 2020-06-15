@@ -32,21 +32,19 @@ unmatches ρ (ξ : ξs) =
 closeDefs_bwd :: Env -> T3 Env RecDefs Selected
 closeDefs_bwd ρ =
    case ρ of
-      xs :+: f ↦ v@(Val α_f (V.Closure ρ_f δ_f σ_f))
-         -> joinδClsre (foldClosures joinRecDefs (δ_f × v) xs)
-      xs :+: x ↦ v
-         -> error "non-closure found in env during closeDefs_bwd"
-      Empty  -> T3 ε L.Nil false
+      xs :+: f ↦ v@(Val α_f (V.Closure ρ_f δ_f σ_f))  -> joinδClsre (foldClosures joinRecDefs (δ_f × v) xs)
+      xs :+: _ ↦ _                                    -> error absurd
+      Empty                                           -> T3 ε L.Nil false
    where
-      joinδClsre (δ × v)
-         = case v of Val α_f (V.Closure ρ_f δ_f σ_f) -> T3 ρ_f (δ ∨ δ_f) α_f
-                     _                               -> error "not a closure"
-      joinRecDefs fσ (δ × clsre)
-         = case fσ of (f ↦ x@(Val α_f (V.Closure ρ_f δ_f σ_f)))
-                        -> let clsre' = x ∨ clsre
-                               δ'     = RecDef f σ_f : δ
-                           in  δ' × clsre'
-                      _ -> error "not a closure"
+      joinδClsre (δ × Val α_f (V.Closure ρ_f δ_f σ_f))   = T3 ρ_f (δ ∨ δ_f) α_f
+      joinδClsre (_ × _)                                 = error absurd
+
+      joinRecDefs (f ↦ x@(Val α_f (V.Closure ρ_f δ_f σ_f))) (δ × clsre) =
+         let clsre' = x ∨ clsre
+             δ'     = RecDef f σ_f : δ in
+         δ' × clsre'
+      joinRecDefs (_ ↦ _) _ = error absurd
+
       foldClosures f z (xs :+: x ↦ v) = f (x ↦ v) (foldClosures f z xs)
       foldClosures f z Empty          = z
 
