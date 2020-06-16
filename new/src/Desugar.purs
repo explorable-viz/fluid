@@ -1,13 +1,13 @@
 module Desugar where
 
 import Prelude hiding (absurd)
-import Data.List (List(..)) as L
 import Data.List ((:), List)
+import Data.List (List(..)) as L
 import Data.Map (fromFoldable)
-import Expr (RawExpr(..), Def(..)) as E
-import Expr (Cont(..), Elim(..), Expr(..), Def, RecDefs, expr)
 import Bindings (Var)
 import DataType (Ctr(..))
+import Expr (Cont(..), Elim(..), Expr(..), Def, RecDefs, expr)
+import Expr (RawExpr(..), Def(..)) as E
 import Primitive (concatMap, map) as P
 import Util ((×), absurd, error)
 
@@ -33,7 +33,6 @@ data SugaredExpr =
 data ListCompExpr = Predicate SExpr | InputList SExpr SExpr
 
 data SExpr = SExpr Boolean SugaredExpr
-
 
 desugar :: SExpr -> Expr
 desugar (SExpr α (IfElse e1 e2 e3))
