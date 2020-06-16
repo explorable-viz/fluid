@@ -29,14 +29,14 @@ unmatches ρ (ξ : ξs) =
        ρ'' × ρ1   = unmatches ρ' ξs in
    ρ'' × (ρ1 <> ρ2)
 
+
+joinδ :: RecDefs × (Env × RecDefs × Selected) -> Env × RecDefs × Selected
+joinδ (δ' × ρ × δ × α) = ρ × (δ ∨ δ') × α
+
 closeDefs_bwd :: Env -> Env × RecDefs × Selected
 closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0))
    = joinδ $ foldBind joinClsre ((RecDef f0 σ0 : L.Nil) × ρ0 × δ0 × α0) ρ'
    where
-      joinδ       :: RecDefs × (Env × RecDefs × Selected)
-                  -> Env × RecDefs × Selected
-      joinδ (δ' × ρ × δ × α) = ρ × (δ ∨ δ') × α
-
       joinClsre   :: Bind Val
                   -> RecDefs × (Env × RecDefs × Selected)
                   -> RecDefs × (Env × RecDefs × Selected)

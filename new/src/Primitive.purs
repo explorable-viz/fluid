@@ -1,7 +1,8 @@
 module Primitive where
 
-import Prelude hiding (apply)
+import Prelude hiding (apply, append)
 import Data.Foldable (foldl)
+import Data.Function (flip)
 import Data.List (List(..)) as L
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
@@ -9,6 +10,8 @@ import Bindings (Var, ε, (:+:), (↦))
 import DataType (cTrue, cFalse)
 import Lattice (Selected, (∧))
 import Util (type (×), error)
+import Expr as E
+import Expr (Expr(..), Elim)
 import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Unary(..), UnaryOp(..), Val(..), val)
 
 -- name in user land and precedence 0 to 9, similar to Haskell 98
@@ -99,3 +102,33 @@ primitives = foldl (:+:) ε [
    ">="        ↦ intIntBool "prim-geq"    (>=),
    "intToStr"  ↦ intStr "prim-intToStr"   show
 ]
+
+
+append :: Expr -> Expr -> Expr
+append (Expr α E.Nil) (Expr α' ys) = (Expr α' ys)
+append (Expr α (E.Cons e es)) (Expr α' ys) = Expr α (E.Cons e (es `append` (Expr α' ys)))
+append _ _ = error "List expression expected"
+
+concat :: Expr -> Expr
+concat (Expr α (E.Cons e es)) = e `append` (concat es)
+concat (Expr α E.Nil) = (Expr α E.Nil)
+concat _ = error "List expression expected"
+
+map :: Elim -> Expr -> Expr
+map σ (Expr α (E.Cons e es))
+   = (Expr α (E.MatchAs e σ)) `append` (map σ es)
+map _ (Expr α E.Nil)
+   = (Expr α E.Nil)
+map _ _ = error "List expression expected"
+
+concatMap :: Elim -> Expr -> Expr
+concatMap σ (Expr α (E.Cons e es))
+   = (Expr α (E.MatchAs e σ)) `append` (concatMap σ es)
+concatMap _ (Expr α E.Nil)
+   = (Expr α E.Nil)
+concatMap _ _ = error "List expression expected"
+
+bind :: Expr -> Elim -> Expr
+bind = flip concatMap
+
+infixl 6 bind as >>=
