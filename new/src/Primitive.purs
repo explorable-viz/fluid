@@ -2,7 +2,6 @@ module Primitive where
 
 import Prelude hiding (apply, append)
 import Data.Foldable (foldl)
-import Data.Function (flip)
 import Data.List (List(..)) as L
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
@@ -127,8 +126,3 @@ concatMap σ (Expr α (E.Cons e es))
 concatMap _ (Expr α E.Nil)
    = (Expr α E.Nil)
 concatMap _ _ = error "List expression expected"
-
-bind :: Expr -> Elim -> Expr
-bind = flip concatMap
-
-infixl 6 bind as >>=

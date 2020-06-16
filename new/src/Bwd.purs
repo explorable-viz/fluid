@@ -29,7 +29,6 @@ unmatches ρ (ξ : ξs) =
        ρ'' × ρ1   = unmatches ρ' ξs in
    ρ'' × (ρ1 <> ρ2)
 
-
 joinδ :: RecDefs × (Env × RecDefs × Selected) -> Env × RecDefs × Selected
 joinδ (δ' × ρ × δ × α) = ρ × (δ ∨ δ') × α
 
