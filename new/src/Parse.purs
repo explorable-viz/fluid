@@ -198,24 +198,23 @@ patternDelim = arrow <|> equals
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser Elim
 elim expr' nest =
-   partialElim expr' nest patternDelim <|>
-   elimBraces expr' nest
+   partialElim patternDelim <|> elimBraces
+   where
+   elimBraces :: SParser Elim
+   elimBraces =
+      token.braces $ do
+         σs <- sepBy1 (partialElim arrow) token.semi
+         pure $ fromJust "Incompatible branches" $ joinAll σs
 
-elimBraces :: SParser Expr -> Boolean -> SParser Elim
-elimBraces expr' nest =
-   token.braces $ do
-      σs <- sepBy1 (partialElim expr' nest arrow) token.semi
-      pure $ fromJust "Incompatible branches" $ joinAll σs
+   partialElim :: SParser Unit -> SParser Elim
+   partialElim delim = do
+      σ <- pattern
+      e <- delim *> expr' <|> nestedFun nest expr'
+      pure $ fromJust absurd $ mapCont (IsExpr e) σ
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
 nestedFun false _ = empty
-
-partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser Elim
-partialElim expr' nest delim = do
-   σ <- pattern
-   e <- delim *> expr' <|> nestedFun nest expr'
-   pure $ fromJust absurd $ mapCont (IsExpr e) σ
 
 def :: SParser Expr -> SParser Def
 def expr' = do
