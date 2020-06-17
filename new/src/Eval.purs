@@ -18,22 +18,22 @@ import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
-match v (ElimVar x κ)                           = pure $ (ε :+: x ↦ v) × κ × (MatchVar x)
-match (Val _ (V.Constr c vs)) (ElimConstr κs)   =
+match v (ElimVar x κ) = pure $ (ε :+: x ↦ v) × κ × (MatchVar x)
+match (Val _ (V.Constr c vs)) (ElimConstr κs) =
    case lookup c κs of
-      Nothing  -> Left $ "Constructor " <> show c <> " not found"
+      Nothing  -> Left $ "Pattern mismatch: no branch for " <> show c
       Just κ   -> do
          ρ × κ' × ξs <- matchArgs vs κ
          pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
-match v _                                       = Left $ "Pattern mismatch for " <> render (pretty v)
+match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a value"
 
 matchArgs :: List Val -> Cont -> MayFail (Env × Cont × (List Match))
-matchArgs Nil κ               = pure $ ε × κ × Nil
+matchArgs Nil κ = pure $ ε × κ × Nil
 matchArgs (v : vs) (CElim σ)  = do
    ρ  × κ'  × ξ  <- match v σ
    ρ' × κ'' × ξs <- matchArgs vs κ'
    pure $ (ρ <> ρ') × κ'' × (ξ : ξs)
-matchArgs (_ : _) _           = Left $ "Too many arguments"
+matchArgs (_ : _) _ = Left $ "Too many arguments"
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
