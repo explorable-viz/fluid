@@ -2,7 +2,7 @@ module Primitive where
 
 import Prelude hiding (apply, append, map)
 import Data.Foldable (foldl)
-import Data.List (List(..)) as L
+import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
 import Bindings (Var, ε, (:+:), (↦))
@@ -11,7 +11,8 @@ import Lattice (Selected, (∧))
 import Util (type (×), error)
 import Expr as E
 import Expr (Expr(..), Elim)
-import Val (Binary(..), BinaryOp(..), Env, RawVal(..), Unary(..), UnaryOp(..), Val(..), val)
+import Val (Binary(..), BinaryOp(..), Env, RawVal, Unary(..), UnaryOp(..), Val(..), val)
+import Val (RawVal(..)) as V
 
 -- name in user land and precedence 0 to 9, similar to Haskell 98
 data OpName = OpName Var Int
@@ -44,23 +45,23 @@ class From a where
    from :: a -> Val
 
 instance toInt :: To Int where
-   to (Val _ (Int n)) = n
+   to (Val _ (V.Int n)) = n
    to _ = error "Integer expected"
 
 instance fromInt :: From Int where
-   from = Int >>> val
+   from = V.Int >>> val
 
 true_ :: Val
-true_ = val $ Constr cTrue L.Nil
+true_ = val $ V.Constr cTrue Nil
 
 false_ :: Val
-false_ = val $ Constr cFalse L.Nil
+false_ = val $ V.Constr cFalse Nil
 
 instance fromBoolean :: From Boolean where
    from b = if b then true_ else false_
 
 instance fromString :: From String where
-   from = Str >>> val
+   from = V.Str >>> val
 
 applyBinary :: BinaryOp -> Val -> Val -> Val
 applyBinary (BinaryOp _ (IntIntInt f)) v v' = from $ f (to v) (to v')
@@ -79,13 +80,13 @@ applyUnary_fwd op α v@(Val α' _) =
    Val (α ∧ α') u where Val _ u = applyUnary op v
 
 intStr :: String -> (Int -> String) -> Val
-intStr name = IntStr >>> UnaryOp name >>> Unary >>> val
+intStr name = IntStr >>> UnaryOp name >>> V.Unary >>> val
 
 intIntBool :: String -> (Int -> Int -> Boolean) -> Val
-intIntBool name = IntIntBool >>> BinaryOp name >>> Binary >>> val
+intIntBool name = IntIntBool >>> BinaryOp name >>> V.Binary >>> val
 
 intIntInt :: String -> (Int -> Int -> Int) -> Val
-intIntInt name = IntIntInt >>> BinaryOp name >>> Binary >>> val
+intIntInt name = IntIntInt >>> BinaryOp name >>> V.Binary >>> val
 
 primitives :: Env
 primitives = foldl (:+:) ε [
@@ -103,25 +104,26 @@ primitives = foldl (:+:) ε [
 ]
 
 append :: Expr -> Expr -> Expr
-append (Expr α E.Nil) (Expr α' ys) = (Expr α' ys)
-append (Expr α (E.Cons e es)) (Expr α' ys) = Expr α (E.Cons e (es `append` (Expr α' ys)))
+append (Expr α (E.Constr cNil Nil)) (Expr α' ys) = (Expr α' ys)
+append (Expr α (E.Constr cCons (e:es:Nil))) (Expr α' ys) = let zs = es `append` (Expr α' ys) 
+                                                           in  Expr α (E.Constr cCons (e:zs:Nil))
 append _ _ = error "List expression expected"
 
 concat :: Expr -> Expr
-concat (Expr α (E.Cons e es)) = e `append` (concat es)
-concat (Expr α E.Nil) = (Expr α E.Nil)
+concat (Expr α (E.Constr cCons (e:es:Nil))) = e `append` (concat es)
+concat (Expr α (E.Constr cNil Nil)) = (Expr α (E.Constr cNil Nil))
 concat _ = error "List expression expected"
 
 map :: Elim -> Expr -> Expr
-map σ (Expr α (E.Cons e es))
+map σ (Expr α (E.Constr cCons (e:es:Nil)))
    = (Expr α (E.MatchAs e σ)) `append` (map σ es)
-map _ (Expr α E.Nil)
-   = (Expr α E.Nil)
+map _ (Expr α (E.Constr cNil Nil))
+   = (Expr α (E.Constr cNil Nil))
 map _ _ = error "List expression expected"
 
 concatMap :: Elim -> Expr -> Expr
-concatMap σ (Expr α (E.Cons e es))
+concatMap σ (Expr α (E.Constr cCons (e:es:Nil)))
    = (Expr α (E.MatchAs e σ)) `append` (concatMap σ es)
-concatMap _ (Expr α E.Nil)
-   = (Expr α E.Nil)
+concatMap _ (Expr α (E.Constr cNil Nil))
+   = (Expr α (E.Constr cNil Nil))
 concatMap _ _ = error "List expression expected"

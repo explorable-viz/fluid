@@ -45,10 +45,6 @@ eval ρ (Expr _ (E.Var x)) =
    (T.Var x × _) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =
    (T.Op op × _) <$> find op ρ
-eval ρ (Expr _ E.True) =
-   pure $ T.True  × val V.True
-eval ρ (Expr _ E.False) =
-   pure $ T.False × val V.False
 eval ρ (Expr _ (E.Int n)) =
    pure $ T.Int n × val (V.Int n)
 eval ρ (Expr _ (E.Str str)) =
@@ -56,16 +52,6 @@ eval ρ (Expr _ (E.Str str)) =
 eval ρ (Expr _ (E.Constr c es)) = do
    ts × vs <- traverse (eval ρ) es <#> unzip
    pure $ (T.Constr c ts) × val (V.Constr c vs)
-eval ρ (Expr _ (E.Pair e e')) = do
-   t  × v  <- eval ρ e
-   t' × v' <- eval ρ e'
-   pure $ (T.Pair t t') × val (V.Pair v v')
-eval ρ (Expr _ E.Nil) =
-   pure $ T.Nil × (val V.Nil)
-eval ρ (Expr _ (E.Cons e e')) = do
-   t  × v  <- eval ρ e
-   t' × v' <- eval ρ e'
-   pure $ (T.Cons t t') × val (V.Cons v v')
 eval ρ (Expr _ (E.LetRec δ e)) = do
    let ρ' = closeDefs ρ δ δ
    t × v <- eval (ρ <> ρ') e
