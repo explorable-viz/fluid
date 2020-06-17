@@ -35,5 +35,6 @@ main = do
    runExample "length" "2"
    runExample "map" "Cons 5 (Cons 7 (Cons 13 (Cons 15 (Cons 4 (Cons 3 (Cons -3 Nil))))))"
    runExample "normalise" "(33, 66)"
+   runExample "pattern-match" "4"
 
    runExample "temp" "7"
