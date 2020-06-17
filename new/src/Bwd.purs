@@ -69,15 +69,6 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
    (v : vs) × (CElim σ)
 
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
--- true
-eval_bwd (Val α V.True ) T.True = ε × (Expr α True) × α
--- false
-eval_bwd (Val α V.False) T.False = ε × (Expr α False) × α
--- pair
-eval_bwd (Val α (V.Pair v1 v2)) (T.Pair t1 t2)
-   =  let ρ1 × e1 × α1 = eval_bwd v1 t1
-          ρ2 × e2 × α2 = eval_bwd v2 t2 in
-      (ρ1 ∨ ρ2) × (Expr α (Pair e1 e2)) × (α ∨ α1 ∨ α2)
 -- var
 eval_bwd (Val α v) (T.Var x)
    = (ε :+: x ↦ Val α v) × (Expr α (Var x)) × false
@@ -89,13 +80,6 @@ eval_bwd (Val α (V.Binary (BinaryOp s bin))) (T.Op op)
    = (ε :+: op ↦ (Val α (V.Binary (BinaryOp s bin)))) × (Expr α (Op op)) × false
 eval_bwd (Val α (V.Unary (UnaryOp s una))) (T.Op op)
    = (ε :+: op ↦ (Val α (V.Unary (UnaryOp s una)))) × (Expr α (Op op)) × false
--- nil
-eval_bwd (Val α V.Nil) T.Nil = ε × (Expr α Nil) × α
--- cons
-eval_bwd (Val α (V.Cons u v)) (T.Cons t t')
-   = let ρ  × e  × α'  = eval_bwd u t
-         ρ' × e' × α'' = eval_bwd v t' in
-     (ρ ∨ ρ') × (Expr α (Cons e e')) × (α ∨ α' ∨ α'')
 -- lambda
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × (Expr α (Lambda σ)) × α

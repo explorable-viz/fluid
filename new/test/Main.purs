@@ -33,7 +33,6 @@ main = do
    runExample "foldr_sumSquares" "661"
    runExample "lexicalScoping" "\"6\""
    runExample "length" "2"
-   runExample "map" "Cons 5 (Cons 7 (Cons 13 (Cons 15 (Cons 4 (Cons 3 (Cons -3 Nil))))))"
+   runExample "map" "[5, 7, 13, 15, 4, 3, -3]"
    runExample "normalise" "(33, 66)"
-
    runExample "temp" "7"

@@ -7,7 +7,7 @@ import Data.String (Pattern(..), contains)
 import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
-import DataType (Ctr, cFalse, cNil, cPair, cTrue)
+import DataType (Ctr(..), cPair, cCons)
 import Expr (Cont(..), Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Util (type (×), absurd, error, fromJust, intersperse)
@@ -44,16 +44,16 @@ instance exprPrettyList :: PrettyList Expr where
    prettyList (Expr _ r) = prettyList r
 
 instance rawExprPrettyList :: PrettyList RawExpr where
-   prettyList (E.Nil) = null
-   prettyList (E.Cons e e') = comma :<>: pretty e :<>: prettyList e'
+   prettyList (E.Constr cNil Nil) = null
+   prettyList (E.Constr cCons (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
    prettyList _ = error "Ill-formed list"
 
 instance valPrettyList :: PrettyList Val where
    prettyList (Val _ u) = prettyList u
 
 instance rawValPrettyList :: PrettyList RawVal where
-   prettyList (V.Nil) = null
-   prettyList (V.Cons v v') = comma :<>: pretty v :<>: prettyList v'
+   prettyList (V.Constr cNil Nil) = null
+   prettyList (V.Constr cCons (v:vs:Nil)) = comma :<>: pretty v :<>: prettyList vs
    prettyList _ = error "Ill-formed list"
 
 instance exprPretty :: Pretty Expr where
@@ -71,23 +71,18 @@ prettyParensOpt x =
    else doc
 
 
-prettyConstr :: forall a . Pretty a => Ctr -> List a -> Doc
+prettyConstr :: forall a . Pretty a => PrettyList a => Ctr -> List a -> Doc
 prettyConstr c Nil = pretty c
-prettyConstr c xs@(x : xs') =
-   if (c == cPair)
-   then parens $ pretty x :<>: comma :<>: pretty (fromJust absurd $ head xs')
-   else pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
+prettyConstr c xs@(x : xs')
+   | c == cPair = parens $ pretty x :<>: comma :<>: pretty (fromJust absurd $ head xs')
+   | c == cCons = brackets $ pretty x :<>: prettyList (fromJust absurd $ head xs')
+   | otherwise  = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
 
 instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Int n) = text $ show n
    pretty (E.Str str) = text $ show str
    pretty (E.Var x) = text x
    pretty (E.Constr c es) = prettyConstr c es
-   pretty E.True = pretty cTrue
-   pretty E.False = pretty cFalse
-   pretty (E.Pair e e') = parens $ pretty e :<>: comma :<>: pretty e'
-   pretty E.Nil = text $ show cNil
-   pretty (E.Cons e e') = brackets $ pretty e :<>: prettyList e'
    pretty (E.Op op) = parens $ text op
    pretty (E.Let (Def σ e) e') =
       atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
@@ -121,14 +116,9 @@ instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
    pretty (V.Str str) = text $ show str
    pretty (V.Constr c vs) = prettyConstr c vs
-   pretty V.True = pretty cTrue
-   pretty V.False = pretty cFalse
    pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
    pretty (V.Unary op) = parens $ pretty op
    pretty (V.Binary op) = parens $ pretty op
-   pretty (V.Pair v v') = parens $ pretty v :<>: comma :<>: pretty v'
-   pretty V.Nil = pretty cNil
-   pretty (V.Cons v v') = brackets $ pretty v :<>: prettyList v'
 
 instance unaryOpPretty :: Pretty UnaryOp where
    pretty (UnaryOp name _) = text name
