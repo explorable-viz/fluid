@@ -71,19 +71,17 @@ prettyParensOpt x =
    else doc
 
 
-prettyConstr :: forall a . Pretty a => Ctr -> List a -> Doc
+prettyConstr :: forall a . Pretty a => PrettyList a => Ctr -> List a -> Doc
 prettyConstr c Nil = pretty c
 prettyConstr c xs@(x : xs')
    | c == cPair = parens $ pretty x :<>: comma :<>: pretty (fromJust absurd $ head xs')
-   | c == cCons = brackets $ pretty x :<>: pretty (fromJust absurd $ head xs')
+   | c == cCons = brackets $ pretty x :<>: prettyList (fromJust absurd $ head xs')
    | otherwise  = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
 
 instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Int n) = text $ show n
    pretty (E.Str str) = text $ show str
    pretty (E.Var x) = text x
-   pretty (E.Constr (Ctr "Pair") (e:e':Nil)) = parens $ pretty e :<>: comma :<>: pretty e'
-   pretty (E.Constr (Ctr "Cons") (e:e':Nil)) = brackets $ pretty e :<>: prettyList e'
    pretty (E.Constr c es) = prettyConstr c es
    pretty (E.Op op) = parens $ text op
    pretty (E.Let (Def σ e) e') =
