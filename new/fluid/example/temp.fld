@@ -1,1 +1,7 @@
-3 + 4
+let
+   zip3 {
+      Nil Nil ->
+         Nil
+   };
+length (zip3 Nil Nil)
+
