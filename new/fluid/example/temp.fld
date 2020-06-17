@@ -1,7 +1,3 @@
 let
-   zip3 {
-      Nil Nil ->
-         Nil
-   };
-length (zip3 Nil Nil)
-
+   f Nil Nil -> Nil;
+f Nil Nil
