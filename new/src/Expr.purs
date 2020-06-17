@@ -21,9 +21,6 @@ data RawExpr =
    Int Int |
    Str String |
    Constr Ctr (List Expr) |
-   True | False |
-   Pair Expr Expr |
-   Nil | Cons Expr Expr |
    Lambda Elim |
    App Expr Expr |
    BinaryApp Expr Var Expr |
@@ -84,11 +81,6 @@ instance rawExprSelectable :: Selectable RawExpr where
    mapα _ (Int n)             = Int n
    mapα _ (Str str)           = Str str
    mapα f (Constr c es)       = Constr c $ map (mapα f) es
-   mapα _ True                = True
-   mapα _ False               = False
-   mapα f (Pair e e')         = Pair (mapα f e) (mapα f e')
-   mapα _ Nil                 = Nil
-   mapα f (Cons e e')         = Cons (mapα f e) (mapα f e')
    mapα f (Lambda σ)          = Lambda (mapα f σ)
    mapα f (App e e')          = App (mapα f e) (mapα f e')
    mapα f (BinaryApp e op e') = BinaryApp (mapα f e) op (mapα f e')
@@ -102,9 +94,4 @@ instance rawExprSelectable :: Selectable RawExpr where
    maybeZipWithα _ (Str s) (Var s')                = Str <$> s ≟ s'
    maybeZipWithα f (Constr c es) (Constr c' es') =
       Constr <$> c ≟ c' <*> sequence (zipWith (maybeZipWithα f) es' es')
-   maybeZipWithα _ False False                     = pure False
-   maybeZipWithα _ True True                       = pure True
-   maybeZipWithα f (Pair e1 e2) (Pair e1' e2')     = Pair <$> maybeZipWithα f e1 e1' <*> maybeZipWithα f e2 e2'
-   maybeZipWithα _ Nil Nil                         = pure Nil
-   maybeZipWithα f (Cons e1 e2) (Cons e1' e2')     = Cons <$> maybeZipWithα f e1 e1' <*> maybeZipWithα f e2 e2'
    maybeZipWithα _ _ _                             = Nothing

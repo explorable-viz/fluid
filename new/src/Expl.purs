@@ -15,9 +15,6 @@ data Expl =
    Int Int |
    Str String |
    Constr Ctr (List Expl) |
-   True | False |
-   Pair Expl Expl |
-   Nil | Cons Expl Expl |
    Lambda Elim |
    App Expl Expl Match Expl |
    AppOp Expl Expl |
