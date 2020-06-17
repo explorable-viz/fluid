@@ -19,8 +19,8 @@ instance joinableExpr :: Joinable Expr where
 
 instance joinableCont :: Joinable Cont where
    maybeJoin None None              = pure None
-   maybeJoin (IsExpr e) (IsExpr e') = IsExpr <$> maybeJoin e e'
-   maybeJoin (IsElim σ) (IsElim σ') = IsElim <$> maybeJoin σ σ'
+   maybeJoin (Body e) (Body e')     = Body <$> maybeJoin e e'
+   maybeJoin (Arg n σ) (Arg m σ')   = Arg <$> n ≟ m <*> maybeJoin σ σ'
    maybeJoin _ _                    = Nothing
 
 instance joinableCtrCont :: Joinable (Ctr × Cont) where
@@ -41,8 +41,8 @@ class MapCont a where
 
 instance mapContCont :: MapCont Cont where
    mapCont κ None       = pure κ
-   mapCont κ (IsExpr _) = pure κ
-   mapCont κ (IsElim σ) = IsElim <$> mapCont κ σ
+   mapCont κ (Body _)   = pure κ
+   mapCont κ (Arg n σ)  = Arg n <$> mapCont κ σ
 
 instance mapContElim :: MapCont Elim where
    mapCont κ (ElimVar x κ') = ElimVar x <$> mapCont κ κ'

@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Map (lookup)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import Expr (Cont(..), Def(..), Elim(..), Expr(..), RecDef(..), RecDefs, asExpr)
+import Expr (Cont(..), Def(..), Elim(..), Expr(..), RecDef(..), RecDefs, body)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (applyBinary_fwd, applyUnary_fwd)
@@ -22,7 +22,7 @@ match_fwd v _                                      = error absurd
 
 matchArgs_fwd :: List Val -> Cont -> Env × Cont × Selected
 matchArgs_fwd Nil κ              = Empty × κ × true
-matchArgs_fwd (v : vs) (IsElim σ) =
+matchArgs_fwd (v : vs) (Arg _ σ) =
    let ρ  × κ'  × α = match_fwd v σ
        ρ' × κ'' × α' = matchArgs_fwd vs κ' in
    (ρ <> ρ') × κ'' × (α ∧ α')
@@ -55,7 +55,7 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
       V.Closure ρ1 δ σ ->
          let ρ2 = closeDefs_fwd ρ1 δ δ α'
              ρ3 × e'' × α'' = match_fwd v σ in
-         eval_fwd (ρ1 <> ρ2 <> ρ3) (asExpr e'') (α' ∧ α'')
+         eval_fwd (ρ1 <> ρ2 <> ρ3) (body e'') (α' ∧ α'')
       V.Unary φ -> applyUnary_fwd φ α' v
       V.Binary φ -> Val α' $ V.Unary $ PartialApp φ v
       _ -> error absurd
@@ -68,4 +68,4 @@ eval_fwd ρ (Expr _ (E.Let (Def σ e) e')) α =
    eval_fwd (ρ <> ρ') e' α'
 eval_fwd ρ (Expr _ (E.MatchAs e σ)) α =
    let ρ' × e' × α' = match_fwd (eval_fwd ρ e α) σ in
-   eval_fwd (ρ <> ρ') (asExpr e') α'
+   eval_fwd (ρ <> ρ') (body e') α'

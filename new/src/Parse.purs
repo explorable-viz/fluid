@@ -122,12 +122,12 @@ string :: SParser Expr
 string = token.stringLiteral <#> Str >>> expr
 
 constr_pattern :: SParser Elim -> SParser Elim
-constr_pattern pattern' = ctr_pattern >>= rest
+constr_pattern pattern' = ctr_pattern >>= rest 0
    where
-      rest ∷ Elim -> SParser Elim
-      rest σ = do
+      rest ∷ Int -> Elim -> SParser Elim
+      rest n σ = do
          σ' <- simplePattern pattern' <|> ctr_pattern
-         rest $ fromJust absurd $ mapCont (IsElim σ') σ
+         rest (n + 1) $ fromJust absurd $ mapCont (Arg n σ') σ
          <|> pure σ
 
 true_ :: SParser Expr
@@ -157,7 +157,7 @@ patternPair pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
       τ <- pattern'
-      pure $ ElimConstr $ singleton cPair $ IsElim $ fromJust absurd $ mapCont (IsElim τ) σ
+      pure $ ElimConstr $ singleton cPair $ Arg 0 $ fromJust absurd $ mapCont (Arg 1 τ) σ
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -197,20 +197,19 @@ patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser Elim
-elim expr' nest =
-   partialElim patternDelim <|> elimBraces
+elim expr' nest = elimOne patternDelim <|> elimMany
    where
-   elimBraces :: SParser Elim
-   elimBraces =
+   elimMany :: SParser Elim
+   elimMany =
       token.braces $ do
-         σs <- sepBy1 (partialElim arrow) token.semi
+         σs <- sepBy1 (elimOne arrow) token.semi
          pure $ fromJust "Incompatible branches" $ joinAll σs
 
-   partialElim :: SParser Unit -> SParser Elim
-   partialElim delim = do
+   elimOne :: SParser Unit -> SParser Elim
+   elimOne delim = do
       σ <- pattern
       e <- delim *> expr' <|> nestedFun nest expr'
-      pure $ fromJust absurd $ mapCont (IsExpr e) σ
+      pure $ fromJust absurd $ mapCont (Body e) σ
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
