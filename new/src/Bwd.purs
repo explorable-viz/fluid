@@ -5,7 +5,7 @@ import Data.Foldable (foldr)
 import Data.List (List, (:), zip)
 import Data.List (List(..)) as L
 import Data.Map (update)
-import Bindings (Bind, Bindings(..), (:+:), (↦), ε, find, foldBind)
+import Bindings (Bind, Bindings(..), (:+:), (↦), find, foldBind)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), Def(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs)
@@ -17,13 +17,13 @@ import Val (RawVal(..)) as V
 
 unmatch :: Env -> Match -> Env × Env
 unmatch (ρ :+: x ↦ v) (MatchVar x')
-   = ρ × (ε :+: (x ≜ x') ↦ v)
+   = ρ × (Empty :+: (x ≜ x') ↦ v)
 unmatch Empty (MatchVar x')
    = error "unmatch - variable not found in empty env"
 unmatch ρ (MatchConstr (_ × ξs) _) = unmatches ρ ξs
 
 unmatches :: Env -> List Match -> Env × Env
-unmatches ρ L.Nil = ρ × ε
+unmatches ρ L.Nil = ρ × Empty
 unmatches ρ (ξ : ξs) =
    let ρ'  × ρ2   = unmatch ρ ξ
        ρ'' × ρ1   = unmatches ρ' ξs in
@@ -44,10 +44,10 @@ closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0))
       joinClsre (_ ↦ _) _      = error absurd
 
 closeDefs_bwd (_  :+: _ ↦ _)   = error absurd
-closeDefs_bwd Empty            = ε × L.Nil × false
+closeDefs_bwd Empty            = Empty × L.Nil × false
 
 split :: Env -> RecDefs -> Env × Env
-split = go ε
+split = go Empty
    where
    go acc ρ L.Nil                         = ρ × acc
    go acc (ρ :+: x ↦ v) (RecDef f σ : δ)  = go (acc :+: (x ≜ f) ↦ v) ρ δ
@@ -71,15 +71,15 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
 -- var
 eval_bwd (Val α v) (T.Var x)
-   = (ε :+: x ↦ Val α v) × (Expr α (Var x)) × false
+   = (Empty :+: x ↦ Val α v) × (Expr α (Var x)) × false
 -- int
 eval_bwd (Val α (V.Int n)) (T.Int tn)
-   = ε × (Expr α (Int n)) × α
+   = Empty × (Expr α (Int n)) × α
 -- op
 eval_bwd (Val α (V.Binary (BinaryOp s bin))) (T.Op op)
-   = (ε :+: op ↦ (Val α (V.Binary (BinaryOp s bin)))) × (Expr α (Op op)) × false
+   = (Empty :+: op ↦ (Val α (V.Binary (BinaryOp s bin)))) × (Expr α (Op op)) × false
 eval_bwd (Val α (V.Unary (UnaryOp s una))) (T.Op op)
-   = (ε :+: op ↦ (Val α (V.Unary (UnaryOp s una)))) × (Expr α (Op op)) × false
+   = (Empty :+: op ↦ (Val α (V.Unary (UnaryOp s una)))) × (Expr α (Op op)) × false
 -- lambda
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × (Expr α (Lambda σ)) × α
@@ -131,6 +131,6 @@ eval_bwd (Val _ (V.Constr c vs)) (T.Constr c' ts)
    = let f = (\(v × t) (ρ × es × α)
                  -> let ρ' × e × α' = eval_bwd v t
                     in  (ρ ∨ ρ') × (e:es) × (α ∨ α'))
-         ρ × es × α' = foldr f (ε × L.Nil × false) (zip vs ts)
+         ρ × es × α' = foldr f (Empty × L.Nil × false) (zip vs ts)
      in  ρ × (Expr false (Constr c es)) × α'
 eval_bwd _ _ = error absurd

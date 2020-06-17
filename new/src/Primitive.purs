@@ -5,13 +5,13 @@ import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Data.Tuple (Tuple(..))
-import Bindings (Var, ε, (:+:), (↦))
+import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cTrue, cFalse)
 import Lattice (Selected, (∧))
 import Util (type (×), error)
 import Expr as E
 import Expr (Expr(..), Elim)
-import Val (Binary(..), BinaryOp(..), Env, RawVal, Unary(..), UnaryOp(..), Val(..), val)
+import Val (Binary(..), BinaryOp(..), Env, Unary(..), UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 -- name in user land and precedence 0 to 9, similar to Haskell 98
@@ -89,7 +89,7 @@ intIntInt :: String -> (Int -> Int -> Int) -> Val
 intIntInt name = IntIntInt >>> BinaryOp name >>> V.Binary >>> val
 
 primitives :: Env
-primitives = foldl (:+:) ε [
+primitives = foldl (:+:) Empty [
    "+"         ↦ intIntInt "prim-plus"    (+),
    "-"         ↦ intIntInt "prim-minus"   (-),
    "*"         ↦ intIntInt "prim-times"   (*),
@@ -105,7 +105,7 @@ primitives = foldl (:+:) ε [
 
 append :: Expr -> Expr -> Expr
 append (Expr α (E.Constr cNil Nil)) (Expr α' ys) = (Expr α' ys)
-append (Expr α (E.Constr cCons (e:es:Nil))) (Expr α' ys) = let zs = es `append` (Expr α' ys) 
+append (Expr α (E.Constr cCons (e:es:Nil))) (Expr α' ys) = let zs = es `append` (Expr α' ys)
                                                            in  Expr α (E.Constr cCons (e:zs:Nil))
 append _ _ = error "List expression expected"
 

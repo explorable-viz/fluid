@@ -6,7 +6,7 @@ import Data.List (List(..), (:), unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
-import Bindings ((:+:), (↦), ε, find)
+import Bindings (Bindings(..), (:+:), (↦), find)
 import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, asExpr)
@@ -18,7 +18,7 @@ import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
-match v (ElimVar x κ) = pure $ (ε :+: x ↦ v) × κ × (MatchVar x)
+match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)
 match (Val _ (V.Constr c vs)) (ElimConstr κs) =
    case lookup c κs of
       Nothing  -> Left $ "Pattern mismatch: no branch for " <> show c
@@ -28,7 +28,7 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) =
 match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a value"
 
 matchArgs :: List Val -> Cont -> MayFail (Env × Cont × (List Match))
-matchArgs Nil κ = pure $ ε × κ × Nil
+matchArgs Nil κ = pure $ Empty × κ × Nil
 matchArgs (v : vs) (IsElim σ)  = do
    ρ  × κ'  × ξ  <- match v σ
    ρ' × κ'' × ξs <- matchArgs vs κ'
@@ -37,7 +37,7 @@ matchArgs (_ : _) _ = Left $ "Too many arguments"
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
-closeDefs _ _ Nil = ε
+closeDefs _ _ Nil = Empty
 closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ0 σ)
 
 eval :: Env -> Expr -> MayFail (Expl × Val)

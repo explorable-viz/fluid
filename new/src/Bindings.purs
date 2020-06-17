@@ -16,15 +16,12 @@ infix 6 Bind as ↦
 infixl 5 Extend as :+:
 infixl 5 update as ◃
 
-ε :: ∀ a . Bindings a
-ε = Empty
-
 instance bindingsSemigroup :: Semigroup (Bindings a) where
    append m Empty           = m
    append m1 (Extend m2 kv) = Extend (append m1 m2) kv
 
 instance bindingsMonoid :: Monoid (Bindings a) where
-   mempty = ε
+   mempty = Empty
 
 instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
    mapα _ Empty               = Empty

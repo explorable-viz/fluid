@@ -3,7 +3,7 @@ module Fwd where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Map (lookup)
-import Bindings ((:+:), (↦), ε, find)
+import Bindings (Bindings(..), (:+:), (↦), find)
 import Expr (Cont(..), Def(..), Elim(..), Expr(..), RecDef(..), RecDefs, asExpr)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
@@ -13,7 +13,7 @@ import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
 
 match_fwd :: Val -> Elim -> Env × Cont × Selected
-match_fwd v (ElimVar x κ)                          = (ε :+: x ↦ v) × κ × true
+match_fwd v (ElimVar x κ)                          = (Empty :+: x ↦ v) × κ × true
 match_fwd (Val α (V.Constr c vs)) (ElimConstr κs)  =
    let κ = fromJust absurd $ lookup c κs
        ρ × κ' × α' = matchArgs_fwd vs κ in
@@ -21,7 +21,7 @@ match_fwd (Val α (V.Constr c vs)) (ElimConstr κs)  =
 match_fwd v _                                      = error absurd
 
 matchArgs_fwd :: List Val -> Cont -> Env × Cont × Selected
-matchArgs_fwd Nil κ              = ε × κ × true
+matchArgs_fwd Nil κ              = Empty × κ × true
 matchArgs_fwd (v : vs) (IsElim σ) =
    let ρ  × κ'  × α = match_fwd v σ
        ρ' × κ'' × α' = matchArgs_fwd vs κ' in
@@ -29,7 +29,7 @@ matchArgs_fwd (v : vs) (IsElim σ) =
 matchArgs_fwd (_ : _) _          = error absurd
 
 closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
-closeDefs_fwd _ _ Nil _                = ε
+closeDefs_fwd _ _ Nil _                = Empty
 closeDefs_fwd ρ δ0 (RecDef f σ : δ) α  =
    closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
 
