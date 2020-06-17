@@ -79,7 +79,7 @@ variable = ident <#> Var >>> expr
 
 -- TODO: anonymous variables
 patternVariable :: SParser Elim
-patternVariable = ElimVar <$> ident <@> CNone
+patternVariable = ElimVar <$> ident <@> None
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
@@ -100,7 +100,7 @@ ctr = do
 
 -- Parse a constructor name as a nullary constructor pattern.
 ctr_pattern :: SParser Elim
-ctr_pattern = ElimConstr <$> (singleton <$> ctr <@> CNone)
+ctr_pattern = ElimConstr <$> (singleton <$> ctr <@> None)
 
 theCtr :: Ctr -> SParser Ctr
 theCtr c = do
@@ -127,7 +127,7 @@ constr_pattern pattern' = ctr_pattern >>= rest
       rest ∷ Elim -> SParser Elim
       rest σ = do
          σ' <- simplePattern pattern' <|> ctr_pattern
-         rest $ fromJust absurd $ mapCont (CElim σ') σ
+         rest $ fromJust absurd $ mapCont (IsElim σ') σ
          <|> pure σ
 
 true_ :: SParser Expr
@@ -157,7 +157,7 @@ patternPair pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
       τ <- pattern'
-      pure $ ElimConstr $ singleton cPair $ CElim $ fromJust absurd $ mapCont (CElim τ) σ
+      pure $ ElimConstr $ singleton cPair $ IsElim $ fromJust absurd $ mapCont (IsElim τ) σ
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -207,14 +207,14 @@ elimBraces expr' nest =
       pure $ fromJust "Incompatible branches" $ joinAll σs
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
-nestedFun true expr' = elim expr' true <#> Lambda >>> expr
+nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
 nestedFun false _ = empty
 
 partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser Elim
 partialElim expr' nest delim = do
    σ <- pattern
    e <- delim *> expr' <|> nestedFun nest expr'
-   pure $ fromJust absurd $ mapCont (CExpr e) σ
+   pure $ fromJust absurd $ mapCont (IsExpr e) σ
 
 def :: SParser Expr -> SParser Def
 def expr' = do

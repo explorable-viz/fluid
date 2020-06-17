@@ -18,10 +18,10 @@ instance joinableExpr :: Joinable Expr where
    maybeJoin _ _ = Nothing
 
 instance joinableCont :: Joinable Cont where
-   maybeJoin CNone CNone          = pure CNone
-   maybeJoin (CExpr e) (CExpr e') = CExpr <$> maybeJoin e e'
-   maybeJoin (CElim σ) (CElim σ') = CElim <$> maybeJoin σ σ'
-   maybeJoin _ _                  = Nothing
+   maybeJoin None None              = pure None
+   maybeJoin (IsExpr e) (IsExpr e') = IsExpr <$> maybeJoin e e'
+   maybeJoin (IsElim σ) (IsElim σ') = IsElim <$> maybeJoin σ σ'
+   maybeJoin _ _                    = Nothing
 
 instance joinableCtrCont :: Joinable (Ctr × Cont) where
    maybeJoin (Tuple c κ) (Tuple c' κ') = bisequence $ Tuple (c ≟ c') $ maybeJoin κ κ'
@@ -35,13 +35,14 @@ joinAll :: forall a . Joinable a => List a -> Maybe a
 joinAll Nil = error "Non-empty list expected"
 joinAll (x : xs) = foldl (om maybeJoin) (Just x) xs
 
+-- Defined only for singleton eliminators.
 class MapCont a where
    mapCont :: Cont -> a -> Maybe a
 
 instance mapContCont :: MapCont Cont where
-   mapCont κ CNone      = pure κ
-   mapCont κ (CExpr _)  = pure κ
-   mapCont κ (CElim σ)  = CElim <$> mapCont κ σ
+   mapCont κ None       = pure κ
+   mapCont κ (IsExpr _) = pure κ
+   mapCont κ (IsElim σ) = IsElim <$> mapCont κ σ
 
 instance mapContElim :: MapCont Elim where
    mapCont κ (ElimVar x κ') = ElimVar x <$> mapCont κ κ'

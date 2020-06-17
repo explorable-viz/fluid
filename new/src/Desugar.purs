@@ -39,8 +39,8 @@ desugar (SExpr α (IfElse e1 e2 e3))
     = let e1' = desugar e1
           e2' = desugar e2
           e3' = desugar e3
-          σ = ElimConstr (fromFoldable [ (Ctr "True")  × CExpr e2'
-                                       , (Ctr "False") × CExpr e3'])
+          σ = ElimConstr (fromFoldable [ (Ctr "True")  × IsExpr e2'
+                                       , (Ctr "False") × IsExpr e3'])
       in  Expr α (E.MatchAs e1' σ)
 desugar (SExpr α (ListSeq a z))
     | a <= z    = Expr α (go z E.Nil)
@@ -62,15 +62,15 @@ desugar (SExpr α (ListComp e_lhs e_rhs))
                 InputList bound_var list_expr ->
                     let Expr _ e'   = desugar bound_var
                         Expr _ es'  = desugar list_expr
-                        σ           = bound_vars (expr e') (CExpr $ go es (n - 1))
+                        σ           = bound_vars (expr e') (IsExpr $ go es (n - 1))
                         ebody       = if n == 0 then (P.map σ $ expr es')
                                       else (P.concatMap σ $ expr es') :: Expr
                     in  expr $ E.Let (E.Def σ (expr e')) ebody
 
                 Predicate p ->
                     let p' = desugar p
-                        σ  = ElimConstr (fromFoldable [ (Ctr "True")  × CExpr (go es n)
-                                                      , (Ctr "False") × CExpr (expr E.Nil)])
+                        σ  = ElimConstr (fromFoldable [ (Ctr "True")  × IsExpr (go es n)
+                                                      , (Ctr "False") × IsExpr (expr E.Nil)])
                     in  expr $ E.MatchAs p' σ
 desugar (SExpr α (Var x))              = Expr α (E.Var x)
 desugar (SExpr α (Op op))              = Expr α (E.Op op)
@@ -93,11 +93,11 @@ bound_vars :: Expr -> Cont -> Elim
 bound_vars (Expr _ (E.Var x)) κ
     = ElimVar x κ
 bound_vars (Expr _ (E.Pair x y)) κ
-    = ElimConstr (fromFoldable [(Ctr "Pair") × (CElim $ bound_vars x (CElim $ bound_vars y κ))])
+    = ElimConstr (fromFoldable [(Ctr "Pair") × (IsElim $ bound_vars x (IsElim $ bound_vars y κ))])
 bound_vars (Expr _ (E.Nil)) κ
     = ElimConstr (fromFoldable [(Ctr "Nil") × κ])
 bound_vars (Expr _ (E.Cons x xs)) κ
-    = ElimConstr (fromFoldable [(Ctr "Cons") × (CElim $ bound_vars x (CElim $ bound_vars xs κ))])
+    = ElimConstr (fromFoldable [(Ctr "Cons") × (IsElim $ bound_vars x (IsElim $ bound_vars xs κ))])
 bound_vars (Expr _ (E.True)) κ
     = ElimConstr (fromFoldable [(Ctr "True") × κ])
 bound_vars (Expr _ (E.False)) κ

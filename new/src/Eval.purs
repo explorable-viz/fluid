@@ -29,7 +29,7 @@ match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a value
 
 matchArgs :: List Val -> Cont -> MayFail (Env × Cont × (List Match))
 matchArgs Nil κ = pure $ ε × κ × Nil
-matchArgs (v : vs) (CElim σ)  = do
+matchArgs (v : vs) (IsElim σ)  = do
    ρ  × κ'  × ξ  <- match v σ
    ρ' × κ'' × ξs <- matchArgs vs κ'
    pure $ (ρ <> ρ') × κ'' × (ξ : ξs)

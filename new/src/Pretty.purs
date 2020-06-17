@@ -103,9 +103,9 @@ instance prettyDefs :: Pretty (List RecDef) where
    pretty (RecDef f σ : δ) = atop (text f :<>: operator "=" :<>: pretty σ) $ pretty δ
 
 instance prettyCont :: Pretty Cont where
-   pretty CNone = text "[ ]"
-   pretty (CExpr e) = pretty e
-   pretty (CElim σ) = pretty σ
+   pretty None = text "[ ]"
+   pretty (IsExpr e) = pretty e
+   pretty (IsElim σ) = pretty σ
 
 instance prettyBranch :: Pretty (Ctr × Cont) where
    pretty (Tuple c κ) = text (show c) :<>: operator "->" :<>: pretty κ
