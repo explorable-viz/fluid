@@ -35,4 +35,5 @@ main = do
    runExample "length" "2"
    runExample "map" "[5, 7, 13, 15, 4, 3, -3]"
    runExample "normalise" "(33, 66)"
-   runExample "temp" "7"
+
+--   runExample "temp" "7"

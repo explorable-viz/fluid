@@ -1,0 +1,15 @@
+-- Silly test of pattern-matching for list notation
+let
+   zip3 {
+      Nil Nil ->
+         Nil {-;
+      (Cons x1 Nil) (Cons y1 Nil) ->
+         Cons (x1, y1) (zip3 Nil Nil);
+      (Cons x1 (Cons x2 Nil)) (Cons y1 (Cons y2 Nil)) ->
+         Cons (x1, y1) (zip3 (Cons x2 Nil) (Cons y2 Nil));
+      (Cons x1 (Cons x2 (Cons x3 Nil))) (Cons y1 (Cons y2 (Cons y3 Nil))) ->
+         Cons (x1 , y1) (zip3 (Cons x2 (Cons x3 Nil)) (Cons y2 (Cons y3 Nil)));
+      (Cons x1 (Cons x2 (Cons x3 (Cons x4 xs)))) (Cons y1 (Cons y2 (Cons y3 (Cons y4 ys)))) ->
+         Cons (x1, y1) (Cons (x2, y2) (Cons (x3, y3) (Cons (x4, y4) (zip3 xs ys))))-}
+   };
+length (zip3 {-(Cons 3 (Cons 4 (Cons 5 (Cons 6 -}Nil{-))))-} {-(Cons 5 (Cons 6 (Cons 7 (Cons 8 -}Nil{-}))))-})

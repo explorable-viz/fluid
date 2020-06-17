@@ -1,1 +1,3 @@
-3 + 4
+let
+   f Nil Nil -> Nil;
+f Nil Nil

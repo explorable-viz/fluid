@@ -40,8 +40,8 @@ desugar (SExpr α (IfElse e1 e2 e3))
     = let e1' = desugar e1
           e2' = desugar e2
           e3' = desugar e3
-          σ = ElimConstr (M.fromFoldable [ cTrue × CExpr e2'
-                                         , cFalse × CExpr e3'])
+          σ = ElimConstr (M.fromFoldable [ cTrue × IsExpr e2'
+                                         , cFalse × IsExpr e3'])
       in  Expr α (E.MatchAs e1' σ)
 desugar (SExpr α (ListSeq a z))
     | a <= z    = Expr α (go z (E.Constr cNil L.Nil))
@@ -62,15 +62,15 @@ desugar (SExpr α (ListComp e_lhs e_rhs))
                 InputList bound_var list_expr ->
                     let Expr _ e'   = desugar bound_var
                         Expr _ es'  = desugar list_expr
-                        σ           = bound_vars (expr e') (CExpr $ go es (n - 1))
+                        σ           = bound_vars (expr e') (IsExpr $ go es (n - 1))
                         ebody       = if n == 0 then (P.map σ $ expr es')
                                       else (P.concatMap σ $ expr es') :: Expr
                     in  expr $ E.Let (E.Def σ (expr e')) ebody
 
                 Predicate p ->
                     let p' = desugar p
-                        σ  = ElimConstr (M.fromFoldable [ cTrue  × CExpr (go es n)
-                                                        , cFalse × CExpr (expr $ E.Constr cNil L.Nil)])
+                        σ  = ElimConstr (M.fromFoldable [ cTrue  × IsExpr (go es n)
+                                                        , cFalse × IsExpr (expr $ E.Constr cNil L.Nil)])
                     in  expr $ E.MatchAs p' σ
         go L.Nil _ = error absurd
 desugar (SExpr α (Var x))              = Expr α (E.Var x)
@@ -91,12 +91,12 @@ bound_vars (Expr _ (E.Var x)) κ
 bound_vars (Expr _ (E.Constr ctr args)) κ
     = case args of
         (e:es) -> let f :: (Cont -> Elim) -> Expr -> (Cont -> Elim)
-                      f κ_cont e' = \(κ' :: Cont) -> (κ_cont $ CElim $ bound_vars e' κ')
+                      f κ_cont e' = \(κ' :: Cont) -> (κ_cont $ IsElim $ bound_vars e' κ')
 
                       z :: Cont -> Elim
                       z = bound_vars e
 
-                  in  ElimConstr (M.fromFoldable [ctr × (CElim $ (foldl f z es) κ)])
+                  in  ElimConstr (M.fromFoldable [ctr × (IsElim $ (foldl f z es) κ)])
 
         L.Nil ->  ElimConstr M.empty
 bound_vars _ _ = error absurd

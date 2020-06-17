@@ -1,6 +1,6 @@
 module Primitive where
 
-import Prelude hiding (apply, append)
+import Prelude hiding (apply, append, map)
 import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
@@ -102,7 +102,6 @@ primitives = foldl (:+:) ε [
    ">="        ↦ intIntBool "prim-geq"    (>=),
    "intToStr"  ↦ intStr "prim-intToStr"   show
 ]
-
 
 append :: Expr -> Expr -> Expr
 append (Expr α (E.Constr cNil Nil)) (Expr α' ys) = (Expr α' ys)
