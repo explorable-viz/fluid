@@ -176,6 +176,7 @@ simpleExpr expr' =
    pair expr' <|>
    lambda expr'
 
+-- Singleton eliminator with no continuation.
 simplePattern :: SParser Elim -> SParser Elim
 simplePattern pattern' =
    try patternVariable <|>
@@ -258,9 +259,9 @@ appChain expr' =
       rest ∷ Expr -> SParser Expr
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
 
--- Singleton eliminator. Analogous in some way to app_chain, but there is nothing higher-order here:
--- there are no explicit application nodes, non-saturated constructor applications, or patterns other
--- than constructors in the function position.
+-- Singleton eliminator with no continuation. Analogous in some way to app_chain, but there is nothing
+-- higher-order here: no explicit application nodes, non-saturated constructor applications, or patterns
+-- other than constructors in the function position.
 appChain_pattern :: SParser Elim -> SParser Elim
 appChain_pattern pattern' = simplePattern pattern' <|> constr_pattern pattern'
 

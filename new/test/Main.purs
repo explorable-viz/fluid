@@ -3,6 +3,7 @@ module Test.Main where
 import Prelude
 import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
+import Debug.Trace (trace)
 import Effect (Effect)
 import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -18,12 +19,13 @@ runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
    before (openWithImports file) $
       it file $ \(Tuple ρ e) -> do
-         case eval ρ e of
-            Left msg -> error msg
-            Right (Tuple _ (Val _ u)) -> do
-               let (Val _ u') = eval_fwd ρ e true
-               (render $ pretty u) `shouldEqual` (render $ pretty u')
-               (render $ pretty u') `shouldEqual` expected
+         trace e \_ ->
+            case eval ρ e of
+               Left msg -> error msg
+               Right (Tuple _ (Val _ u)) -> do
+                  let (Val _ u') = eval_fwd ρ e true
+                  (render $ pretty u) `shouldEqual` (render $ pretty u')
+                  (render $ pretty u') `shouldEqual` expected
 
 main :: Effect Unit
 main = do
