@@ -6,7 +6,7 @@ import Data.List ((:), List)
 import Data.List (List(..)) as L
 import Data.Map (fromFoldable, empty) as M
 import Bindings (Var)
-import DataType (Ctr(..), cCons, cNil, cTrue, cFalse)
+import DataType (Ctr, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Expr(..), Def, RecDefs, expr)
 import Expr (RawExpr(..), Def(..)) as E
 import Primitive (concatMap, map) as P
@@ -40,8 +40,8 @@ desugar (SExpr α (IfElse e1 e2 e3))
     = let e1' = desugar e1
           e2' = desugar e2
           e3' = desugar e3
-          σ = ElimConstr (M.fromFoldable [ (Ctr "True")  × CExpr e2'
-                                         , (Ctr "False") × CExpr e3'])
+          σ = ElimConstr (M.fromFoldable [ cTrue × CExpr e2'
+                                         , cFalse × CExpr e3'])
       in  Expr α (E.MatchAs e1' σ)
 desugar (SExpr α (ListSeq a z))
     | a <= z    = Expr α (go z (E.Constr cNil L.Nil))
