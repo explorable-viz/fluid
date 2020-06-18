@@ -138,11 +138,12 @@ constr_pattern pattern' = ctr_pattern >>= rest 0
          <|> pure σ
 
 constr_pattern2 :: SParser Pattern -> SParser Pattern
-constr_pattern2 pattern' = ctr_pattern2 >>= rest 0
+constr_pattern2 pattern' = simplePattern2 pattern' >>= rest 0
    where
       rest ∷ Int -> Pattern -> SParser Pattern
-      rest n π = do
-         π' <- simplePattern2 pattern' <|> ctr_pattern2
+      rest _ π@(PattVar _ _)     = pure π
+      rest n π@(PattConstr _ _)  = do
+         π' <- simplePattern2 pattern'
          rest (n + 1) $ mapCont2 (PArg n π') π
          <|> pure π
 
@@ -208,6 +209,7 @@ simplePattern pattern' =
 
 simplePattern2 :: SParser Pattern -> SParser Pattern
 simplePattern2 pattern' =
+   try ctr_pattern2 <|>
    try patternVariable2 <|>
    try (token.parens pattern') <|>
    patternPair2 pattern'
