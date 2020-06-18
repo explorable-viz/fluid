@@ -10,7 +10,7 @@ import Data.Char.Unicode (isUpper)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, (:), many, groupBy, sortBy)
+import Data.List (List, (:), many, groupBy, some, sortBy)
 import Data.List.NonEmpty (NonEmptyList, fromList, head)
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
@@ -256,12 +256,11 @@ let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')
 
 clauses :: SParser Expr -> SParser (List (Var × Pattern))
-clauses expr' = sepBy1 clause token.semi
+clauses expr' = do
+   some $ try $ clause <* token.semi
    where
    clause :: SParser (Var × Pattern)
-   clause = do
-      fπ <- ident `lift2 (×)` (patternOne true expr' equals)
-      trace fπ \_ -> pure fπ
+   clause = ident `lift2 (×)` (patternOne true expr' equals)
 
 recDef :: SParser Expr -> SParser RecDef
 recDef expr' = RecDef <$> ident <*> (elim expr' true <* token.semi)
