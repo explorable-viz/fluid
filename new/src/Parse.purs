@@ -222,21 +222,21 @@ elim2 :: Boolean -> SParser Expr -> SParser Elim
 elim2 curried expr' = fromJust "Incompatible branches" <$> (joinAll2 <$> patterns curried expr')
 
 patterns :: Boolean -> SParser Expr -> SParser (List Pattern)
-patterns curried expr' = pure <$> patternOne patternDelim <|> patternMany
+patterns curried expr' = pure <$> patternOne curried expr' patternDelim <|> patternMany
    where
    patternMany :: SParser (List Pattern)
-   patternMany = token.braces $ sepBy1 (patternOne arrow) token.semi
+   patternMany = token.braces $ sepBy1 (patternOne curried expr' arrow) token.semi
 
-   patternOne :: SParser Unit -> SParser Pattern
-   patternOne delim = pattern' >>= rest
+patternOne :: Boolean -> SParser Expr -> SParser Unit -> SParser Pattern
+patternOne curried expr' delim = pattern' >>= rest
+   where
+   rest :: Pattern -> SParser Pattern
+   rest π = mapCont2 <$> body' <@> π
       where
-      rest :: Pattern -> SParser Pattern
-      rest π = mapCont2 <$> body' <@> π
-         where
-         body' = if curried then body <|> PLambda <$> (pattern' >>= rest) else body
+      body' = if curried then body <|> PLambda <$> (pattern' >>= rest) else body
 
-      pattern' = if curried then simplePattern2 pattern2 else pattern2
-      body = PBody <$> (delim *> expr')
+   pattern' = if curried then simplePattern2 pattern2 else pattern2
+   body = PBody <$> (delim *> expr')
 
 uncurriedPatterns :: SParser Expr -> SParser (List Pattern)
 uncurriedPatterns = patterns false
