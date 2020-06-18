@@ -191,7 +191,7 @@ simplePattern2 pattern' =
    patternPair2 pattern'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr
+lambda expr' = expr <$> (Lambda <$> (keyword strFun *> elim2 expr' true))
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
