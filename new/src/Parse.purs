@@ -233,10 +233,7 @@ patterns curried expr' = pure <$> patternOne patternDelim <|> patternMany
       rest :: Pattern -> SParser Pattern
       rest π = mapCont2 <$> body' <@> π
          where
-         body' =
-            if curried
-            then body <|> PLambda <$> (pattern2 >>= rest)
-            else body
+         body' = if curried then body <|> PLambda <$> (pattern' >>= rest) else body
 
       pattern' = if curried then simplePattern2 pattern2 else pattern2
       body = PBody <$> (delim *> expr')

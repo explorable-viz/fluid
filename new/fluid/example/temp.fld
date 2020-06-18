@@ -1,5 +1,4 @@
 (fun {
-   Nil Nil -> Nil;
-   (Cons x y) Nil -> Nil;
-   (Cons x y) (Cons a b) -> Nil
-}) (Cons 3 Nil) Nil
+   Nil -> Nil;
+   (Cons x y) -> Nil
+}) (Cons 3 Nil)
