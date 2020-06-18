@@ -17,6 +17,7 @@ import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
+import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -255,11 +256,22 @@ let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')
 
 clauses :: SParser Expr -> SParser (List (Var × Pattern))
-clauses expr' = sepBy1 (ident `lift2 (×)` (patternOne true expr' equals)) token.semi
+clauses expr' = sepBy1 clause token.semi
+   where
+   clause :: SParser (Var × Pattern)
+   clause = do
+      fπ <- ident `lift2 (×)` (patternOne true expr' equals)
+      trace fπ \_ -> pure fπ
 
-recDefs2 :: SParser Expr -> SParser RecDefs
-recDefs2 expr' = do
-   fπs <- clauses expr'
+recDef :: SParser Expr -> SParser RecDef
+recDef expr' = RecDef <$> ident <*> (elim expr' true <* token.semi)
+
+recDefs_old :: SParser Expr -> SParser RecDefs
+recDefs_old expr' = keyword strLet *> many (try $ recDef expr')
+
+recDefs :: SParser Expr -> SParser RecDefs
+recDefs expr' = do
+   fπs <- keyword strLet *> clauses expr'
    let fπss = groupBy (eq `on` fst) fπs
    pure $ map toRecDef fπss
       where
@@ -267,12 +279,6 @@ recDefs2 expr' = do
       toRecDef fπs =
          let f = fst $ head fπs in
          RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll2 $ map snd fπs
-
-recDef :: SParser Expr -> SParser RecDef
-recDef expr' = RecDef <$> ident <*> (elim expr' true <* token.semi)
-
-recDefs :: SParser Expr -> SParser RecDefs
-recDefs expr' = keyword strLet *> many (try $ recDef expr')
 
 letRec :: SParser Expr -> SParser Expr
 letRec expr' = expr <$>
