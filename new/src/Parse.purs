@@ -278,10 +278,9 @@ matchAs expr' = expr <$>
    (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim expr' false)
 
 matchAs2 :: SParser Expr -> SParser Expr
-matchAs2 expr' = do
-   e <- keyword strMatch *> expr' <* keyword strAs
-   πs <- patterns expr'
-   pure $ expr $ MatchAs e $ fromJust "Incompatible branches" $ joinAll2 πs
+matchAs2 expr' = expr <$>
+   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs)
+            <*> (fromJust "Incompatible branches" <$> (joinAll2 <$> patterns expr')))
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
