@@ -1,1 +1,4 @@
-(match Nil as Nil -> Nil)
+let f Nil = Nil;
+    f (Cons x xs) = x;
+    g Nil = 5;
+(f (Cons 3 4), g Nil)

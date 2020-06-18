@@ -40,33 +40,23 @@ let head (Cons x xs) = x;
 let tail (Cons x xs) = xs;
 
 -- List a -> List a -> List a
-let concat {
-   Nil ys -> ys;
-   (Cons x xs) ys -> Cons x (concat xs ys)
-};
+let concat Nil ys = ys;
+    concat (Cons x xs) ys = Cons x (concat xs ys);
 
 -- ((a, b) -> a) -> a -> List b -> a
-let foldl op z {
-   Nil -> z;
-   Cons x xs -> foldl op (op (z, x)) xs
-};
+let foldl op z Nil = z;
+    foldl op z (Cons x xs) = foldl op (op (z, x)) xs;
 
 -- ((a, b) -> a) -> List b -> a
-let foldl1 op {
-   Cons x xs -> foldl op x xs
-};
+let foldl1 op (Cons x xs) = foldl op x xs;
 
 -- ((a, b) -> b) -> b -> List a -> b
-let foldr op z {
-   Nil -> z;
-   Cons x xs -> op (x, foldr op z xs)
-};
+let foldr op z Nil = z;
+    foldr op z (Cons x xs) = op (x, foldr op z xs);
 
 -- ((a, b) -> b) -> List a -> b
-let foldr1 op {
-   Cons x Nil -> x;
-   Cons x (Cons y xs) -> op (x, foldr1 op (Cons y xs))
-};
+let foldr1 op (Cons x Nil) = x;
+    foldr1 op (Cons x (Cons y xs)) = op (x, foldr1 op (Cons y xs));
 
 -- ((a, b) -> a) -> a -> List b -> List a
 let scanl1 op z xs =
@@ -80,48 +70,34 @@ let scanl op z xs =
    Cons z (scanl1 op z xs);
 
 -- (a -> b) -> List a -> List b
-let map f {
-   Nil -> Nil;
-   Cons x xs -> Cons (f x) (map f xs)
-};
+let map f Nil = Nil;
+    map f (Cons x xs) = Cons (f x) (map f xs);
 
 -- List Num -> Num
 let sum xs =
    foldr (fun (x, y) -> x + y) 0 xs;
 
 -- List a -> a
-let last {
-   Cons x Nil -> x;
-   Cons x (Cons y ys) -> last (Cons y ys)
-};
+let last (Cons x Nil) = x;
+    last (Cons x (Cons y ys)) = last (Cons y ys);
 
 -- List a -> Num
-let length {
-   Nil -> 0;
-   Cons x xs -> 1 + length xs
-};
+let length Nil = 0;
+    length (Cons x xs) = 1 + length xs;
 
 -- List a -> List a
-let reverse {
-   Nil -> Nil;
-   Cons x xs -> concat (reverse xs) (Cons x Nil)
-};
+let reverse Nil = Nil;
+    reverse (Cons x xs) = concat (reverse xs) (Cons x Nil);
 
 -- List (a, b) -> (List a, List b)
-let unzip {
-   Nil -> (Nil, Nil);
-   Cons (x, y) xys ->
+let unzip Nil = (Nil, Nil);
+    unzip (Cons (x, y)) xys =
       let (xs, ys) = unzip xys;
-      (Cons x xs, Cons y ys)
-};
+      (Cons x xs, Cons y ys);
 
 -- ((a, b) -> c) -> List a -> List b -> List c
-let zipWith op {
-   Nil ys -> Nil;
-   Cons x xs {
-      Nil -> Nil;
-      Cons y ys -> Cons (op (x, y)) (zipWith op xs ys)
-   }
-};
+let zipWith op Nil ys = Nil;
+    zipWith op (Cons x xs) Nil = Nil;
+    zipWith op (Cons x xs) (Cons y ys) = Cons (op (x, y)) (zipWith op xs ys);
 
 let zip = zipWith id;

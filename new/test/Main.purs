@@ -35,5 +35,6 @@ main = do
    runExample "length" "2"
    runExample "map" "[5, 7, 13, 15, 4, 3, -3]"
    runExample "normalise" "(33, 66)"
+   runExample "pattern-match" "4"
 
-   runExample "temp" "Nil"
+   runExample "temp" "(3, 5)"

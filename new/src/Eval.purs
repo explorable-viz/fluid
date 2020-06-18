@@ -2,11 +2,12 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
-import Data.List (List(..), (:), unzip)
+import Data.List (List(..), (:), length, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
+import DataType (Ctr)
 import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
@@ -23,17 +24,18 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) =
    case lookup c κs of
       Nothing  -> Left $ "Pattern mismatch: no branch for " <> show c
       Just κ   -> do
-         ρ × κ' × ξs <- matchArgs vs κ
+         ρ × κ' × ξs <- matchArgs c vs κ
          pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a value"
 
-matchArgs :: List Val -> Cont -> MayFail (Env × Cont × (List Match))
-matchArgs Nil κ = pure $ Empty × κ × Nil
-matchArgs (v : vs) (Arg _ σ)  = do
+matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × (List Match))
+matchArgs _ Nil κ = pure $ Empty × κ × Nil
+matchArgs c (v : vs) (Arg _ σ)  = do
    ρ  × κ'  × ξ  <- match v σ
-   ρ' × κ'' × ξs <- matchArgs vs κ'
+   ρ' × κ'' × ξs <- matchArgs c vs κ'
    pure $ (ρ <> ρ') × κ'' × (ξ : ξs)
-matchArgs (_ : _) _ = Left $ "Too many arguments"
+matchArgs c vs _ = Left $
+   show (length vs) <> " extra arguments to " <> show c <> "; did you forget parentheses in lambda pattern?"
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
