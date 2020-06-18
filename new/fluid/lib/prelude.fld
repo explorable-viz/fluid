@@ -83,7 +83,7 @@ let last (Cons x Nil) = x;
 
 -- List a -> Num
 let length Nil = 0;
-    lengt (Cons x xs) = 1 + length xs;
+    length (Cons x xs) = 1 + length xs;
 
 -- List a -> List a
 let reverse Nil = Nil;

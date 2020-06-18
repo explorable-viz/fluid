@@ -27,7 +27,6 @@ runExample file expected = runMocha $
 
 main :: Effect Unit
 main = do
-{-
    runExample "arithmetic" "42"
    runExample "compose" "5"
    runExample "factorial" "40320"
@@ -36,5 +35,5 @@ main = do
    runExample "length" "2"
    runExample "map" "[5, 7, 13, 15, 4, 3, -3]"
    runExample "normalise" "(33, 66)"
--}
+
    runExample "temp" "(3, 5)"
