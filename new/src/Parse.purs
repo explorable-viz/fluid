@@ -259,8 +259,8 @@ nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
 nestedFun false _ = empty
 
-nestedFun2 :: SParser Expr -> SParser Expr
-nestedFun2 expr' = expr <$> (Lambda <$> elim2 expr')
+nestedFun2 :: SParser PCont
+nestedFun2 = PLambda <$> pattern2
 
 def :: SParser Expr -> SParser Def
 def expr' =

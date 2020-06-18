@@ -50,7 +50,11 @@ instance mapContElim :: MapCont Elim where
             ElimConstr <$> (singleton c <$> mapCont κ κ')
          _ -> Nothing
 
-data PCont = PNone | PBody Expr | PLambda Pattern | PArg Int Pattern
+data PCont =
+   PNone |
+   PBody Expr |
+   PLambda Pattern |  -- unnecessary if surface language supports piecewise definitions
+   PArg Int Pattern
 
 toCont :: PCont -> Cont
 toCont PNone         = None
