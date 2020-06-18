@@ -240,6 +240,9 @@ elim expr' nest = elimOne patternDelim <|> elimMany
       e <- delim *> expr' <|> nestedFun nest expr'
       pure $ fromJust absurd $ mapCont (Body e) σ
 
+elim2 :: SParser Expr -> SParser Elim
+elim2 expr' = fromJust "Incompatible branches" <$> (joinAll2 <$> patterns expr')
+
 -- One or more uncurried patterns.
 patterns :: SParser Expr -> SParser (List Pattern)
 patterns expr' = L.singleton <$> patternOne patternDelim <|> patternMany
@@ -254,8 +257,11 @@ nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
 nestedFun false _ = empty
 
+nestedFun2 :: SParser Expr -> SParser Expr
+nestedFun2 expr' = expr <$> (Lambda <$> elim2 expr')
+
 def :: SParser Expr -> SParser Def
-def expr' = do
+def expr' =
    Def <$> try (keyword strLet *> pattern <* patternDelim) <*> expr' <* token.semi
 
 let_ ∷ SParser Expr -> SParser Expr
@@ -277,8 +283,7 @@ matchAs_old expr' = expr <$>
 
 matchAs :: SParser Expr -> SParser Expr
 matchAs expr' = expr <$>
-   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs)
-            <*> (fromJust "Incompatible branches" <$> (joinAll2 <$> patterns expr')))
+   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim2 expr')
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr

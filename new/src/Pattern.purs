@@ -9,7 +9,7 @@ import Data.Traversable (foldl, sequence)
 import Data.Tuple (Tuple(..))
 import Bindings (Var)
 import DataType (Ctr)
-import Expr (Cont(..), Elim(..), Expr)
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
 import Util (type (×), (≟), error, om, unionWithMaybe)
 
 class Joinable k where
@@ -50,12 +50,13 @@ instance mapContElim :: MapCont Elim where
             ElimConstr <$> (singleton c <$> mapCont κ κ')
          _ -> Nothing
 
-data PCont = PNone | PBody Expr | PArg Int Pattern
+data PCont = PNone | PBody Expr | PLambda Pattern | PArg Int Pattern
 
 toCont :: PCont -> Cont
-toCont PNone      = None
-toCont (PBody e)  = Body e
-toCont (PArg n π) = Arg n (toElim π)
+toCont PNone         = None
+toCont (PBody e)     = Body e
+toCont (PLambda π)   = Body $ expr $ Lambda $ toElim π
+toCont (PArg n π)    = Arg n $ toElim π
 
 data Pattern =
    PattVar Var PCont |
@@ -69,9 +70,10 @@ class MapCont2 a where
    mapCont2 :: PCont -> a -> a
 
 instance mapCont2Cont :: MapCont2 PCont where
-   mapCont2 κ PNone       = κ
-   mapCont2 κ (PBody _)   = κ
-   mapCont2 κ (PArg n σ)  = PArg n $ mapCont2 κ σ
+   mapCont2 κ PNone        = κ
+   mapCont2 κ (PBody _)    = κ
+   mapCont2 κ (PLambda π)  = PLambda $ mapCont2 κ π
+   mapCont2 κ (PArg n π)   = PArg n $ mapCont2 κ π
 
 instance mapCont2Elim :: MapCont2 Pattern where
    mapCont2 κ (PattVar x κ')     = PattVar x $ mapCont2 κ κ'
@@ -92,10 +94,10 @@ instance joinablePatternElim :: Joinable2 Pattern Elim where
    maybeJoin2 _ _                               = Nothing
 
 instance joinablePContCont :: Joinable2 PCont Cont where
-   maybeJoin2 None PNone            = pure None
-   maybeJoin2 (Arg n σ) (PArg m π)  = Arg <$> (n ≟ m) <*> maybeJoin2 σ π
-   maybeJoin2 (Body _) (PBody _)    = Nothing
-   maybeJoin2 _ _                   = Nothing
+   maybeJoin2 None PNone                              = pure None
+   maybeJoin2 (Arg n σ) (PArg m π)                    = Arg <$> (n ≟ m) <*> maybeJoin2 σ π
+   maybeJoin2 (Body (Expr _ (Lambda σ))) (PLambda π)  = Body <$> (expr <$> (Lambda <$> maybeJoin2 σ π))
+   maybeJoin2 _ _                                     = Nothing
 
 joinAll2 :: List Pattern -> Maybe Elim
 joinAll2 Nil      = error "Non-empty list expected"
