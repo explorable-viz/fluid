@@ -12,6 +12,7 @@ import Bindings (Bindings(..))
 import Eval (defs)
 import Expr (Expr)
 import Parse (SParser, module_, program)
+import Primitive (primitives)
 import Util (type (×), error)
 import Val (Env)
 
@@ -46,5 +47,5 @@ successfulParse src p =
 
 parseWithImports :: String -> Aff (Env × Expr)
 parseWithImports src = do
-   Tuple <$> pure Empty -- (loadModule "prelude" primitives >>= loadModule "graphics")
+   Tuple <$> (loadModule "prelude-new" primitives >>= loadModule "graphics")
          <@> successfulParse src program
