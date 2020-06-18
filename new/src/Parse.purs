@@ -29,7 +29,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cPair)
 import Expr (Cont(..), Def(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (Pattern(..), PCont(..), joinAll2, mapCont, mapCont2)
+import PElim (Pattern(..), PCont(..), joinAll2, mapCont, mapCont2, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (type (×), (×), absurd, error, fromBool, fromJust)
 
@@ -134,28 +134,12 @@ constrExpr :: SParser Expr
 constrExpr =
    expr <$> (Constr <$> ctr <@> empty)
 
-constrPattern :: SParser Elim -> SParser Elim
-constrPattern pattern' = ctr_pattern >>= rest 0
-   where
-      rest ∷ Int -> Elim -> SParser Elim
-      rest n σ = do
-         σ' <- simplePattern pattern' <|> ctr_pattern
-         rest (n + 1) $ fromJust absurd $ mapCont (Arg n σ') σ
-         <|> pure σ
-
 pair :: SParser Expr -> SParser Expr
 pair expr' =
    token.parens $ do
       e <- expr' <* token.comma
       e' <- expr'
       pure $ expr $ Constr cPair (e : e' : empty)
-
-patternPair :: SParser Elim -> SParser Elim
-patternPair pattern' =
-   token.parens $ do
-      σ <- pattern' <* token.comma
-      τ <- pattern'
-      pure $ ElimConstr $ singleton cPair $ Arg 0 $ fromJust absurd $ mapCont (Arg 1 τ) σ
 
 patternPair2 :: SParser Pattern -> SParser Pattern
 patternPair2 pattern' =
@@ -180,12 +164,6 @@ simpleExpr expr' =
    lambda expr'
 
 -- Singleton eliminator with no continuation.
-simplePattern :: SParser Elim -> SParser Elim
-simplePattern pattern' =
-   try patternVariable <|>
-   try (token.parens pattern') <|>
-   patternPair pattern'
-
 simplePattern2 :: SParser Pattern -> SParser Pattern
 simplePattern2 pattern' =
    try ctr_pattern2 <|>
@@ -230,7 +208,7 @@ patternOne curried expr' delim = pattern' >>= rest
 
 def :: SParser Expr -> SParser Def
 def expr' =
-   Def <$> try (keyword strLet *> pattern <* patternDelim) <*> expr' <* token.semi
+   Def <$> try (keyword strLet *> (pattern2 <#> toElim) <* patternDelim) <*> expr' <* token.semi
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')
@@ -288,9 +266,6 @@ appChain expr' = simpleExpr expr' >>= rest
 -- Singleton eliminator with no continuation. Analogous in some way to app_chain, but there is nothing
 -- higher-order here: no explicit application nodes, non-saturated constructor applications, or patterns
 -- other than constructors in the function position.
-appChain_pattern :: SParser Elim -> SParser Elim
-appChain_pattern pattern' = simplePattern pattern' <|> constrPattern pattern'
-
 appChain_pattern2 :: SParser Pattern -> SParser Pattern
 appChain_pattern2 pattern' = simplePattern2 pattern' >>= rest 0
    where
@@ -302,9 +277,6 @@ appChain_pattern2 pattern' = simplePattern2 pattern' >>= rest 0
       rest _ π@(PattVar _ _) = pure π
 
 -- TODO: allow infix constructors, via buildExprParser
-pattern :: SParser Elim
-pattern = fix appChain_pattern
-
 pattern2 :: SParser Pattern
 pattern2 = fix appChain_pattern2
 
