@@ -166,7 +166,7 @@ simplePattern pattern' =
    patternPair pattern'
 
 lambda :: SParser Expr -> SParser Expr
-lambda expr' = expr <$> (Lambda <$> (keyword strFun *> elim2 true expr'))
+lambda expr' = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -178,8 +178,8 @@ patternDelim :: SParser Unit
 patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
-elim2 :: Boolean -> SParser Expr -> SParser Elim
-elim2 curried expr' = fromJust "Incompatible branches" <$> (joinAll2 <$> patterns curried expr')
+elim :: Boolean -> SParser Expr -> SParser Elim
+elim curried expr' = fromJust "Incompatible branches" <$> (joinAll2 <$> patterns curried expr')
 
 patterns :: Boolean -> SParser Expr -> SParser (NonEmptyList Pattern)
 patterns curried expr' = pure <$> patternOne curried expr' patternDelim <|> patternMany
@@ -231,7 +231,7 @@ letRec expr' = expr <$>
 
 matchAs :: SParser Expr -> SParser Expr
 matchAs expr' = expr <$>
-   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim2 false expr')
+   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim false expr')
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
