@@ -10,7 +10,7 @@ import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List, (:), many, groupBy, sortBy)
-import Data.List (List(..), singleton) as L
+import Data.List (singleton) as L
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
@@ -128,8 +128,12 @@ int = do
 string :: SParser Expr
 string = token.stringLiteral <#> Str >>> expr
 
-constr_pattern :: SParser Elim -> SParser Elim
-constr_pattern pattern' = ctr_pattern >>= rest 0
+constrExpr :: SParser Expr
+constrExpr =
+   expr <$> (Constr <$> ctr <@> empty)
+
+constrPattern :: SParser Elim -> SParser Elim
+constrPattern pattern' = ctr_pattern >>= rest 0
    where
       rest ∷ Int -> Elim -> SParser Elim
       rest n σ = do
@@ -137,8 +141,8 @@ constr_pattern pattern' = ctr_pattern >>= rest 0
          rest (n + 1) $ fromJust absurd $ mapCont (Arg n σ') σ
          <|> pure σ
 
-constr_pattern2 :: SParser Pattern -> SParser Pattern
-constr_pattern2 pattern' = simplePattern2 pattern' >>= rest 0
+constrPattern2 :: SParser Pattern -> SParser Pattern
+constrPattern2 pattern' = simplePattern2 pattern' >>= rest 0
    where
       rest ∷ Int -> Pattern -> SParser Pattern
       rest _ π@(PattVar _ _)     = pure π
@@ -148,26 +152,26 @@ constr_pattern2 pattern' = simplePattern2 pattern' >>= rest 0
          <|> pure π
 
 true_ :: SParser Expr
-true_ = theCtr cTrue $> expr (Constr cTrue L.Nil)
+true_ = theCtr cTrue $> expr (Constr cTrue empty)
 
 false_ :: SParser Expr
-false_ = theCtr cFalse $> expr (Constr cFalse L.Nil)
+false_ = theCtr cFalse $> expr (Constr cFalse empty)
 
 nil :: SParser Expr
-nil = theCtr cNil $> expr (Constr cNil L.Nil)
+nil = theCtr cNil $> expr (Constr cNil empty)
 
 cons :: SParser Expr -> SParser Expr
 cons expr' = do
    e <- theCtr cCons *> simpleExpr expr'
    e' <- simpleExpr expr'
-   pure $ expr $ Constr cCons (e : e' : L.Nil)
+   pure $ expr $ Constr cCons (e : e' : empty)
 
 pair :: SParser Expr -> SParser Expr
 pair expr' =
    token.parens $ do
       e <- expr' <* token.comma
       e' <- expr'
-      pure $ expr $ Constr cPair (e : e' : L.Nil)
+      pure $ expr $ Constr cPair (e : e' : empty)
 
 patternPair :: SParser Elim -> SParser Elim
 patternPair pattern' =
@@ -186,6 +190,23 @@ patternPair2 pattern' =
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
+   try variable <|>
+   try true_ <|>
+   try false_ <|>
+   try nil <|>
+   try int <|> -- int may start with +/-
+   string <|>
+   let_ expr' <|>
+   letRec expr' <|>
+   matchAs expr' <|>
+   try (token.parens expr') <|>
+   try parensOp <|>
+   pair expr' <|>
+   lambda expr'
+
+simpleExpr2 :: SParser Expr -> SParser Expr
+simpleExpr2 expr' =
+   try constrExpr <|>
    try variable <|>
    try true_ <|>
    try false_ <|>
@@ -314,10 +335,10 @@ appChain expr' =
 -- higher-order here: no explicit application nodes, non-saturated constructor applications, or patterns
 -- other than constructors in the function position.
 appChain_pattern :: SParser Elim -> SParser Elim
-appChain_pattern pattern' = simplePattern pattern' <|> constr_pattern pattern'
+appChain_pattern pattern' = simplePattern pattern' <|> constrPattern pattern'
 
 appChain_pattern2 :: SParser Pattern -> SParser Pattern
-appChain_pattern2 pattern' = simplePattern2 pattern' <|> constr_pattern2 pattern'
+appChain_pattern2 pattern' = simplePattern2 pattern' <|> constrPattern2 pattern'
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Elim
