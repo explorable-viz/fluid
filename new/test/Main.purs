@@ -37,4 +37,4 @@ main = do
    runExample "map" "[5, 7, 13, 15, 4, 3, -3]"
    runExample "normalise" "(33, 66)"
 -}
-   runExample "temp" "Nil"
+   runExample "temp" "7"

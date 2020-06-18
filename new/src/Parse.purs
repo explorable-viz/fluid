@@ -238,6 +238,19 @@ patterns curried expr' = pure <$> patternOne patternDelim <|> patternMany
       pattern' = if curried then simplePattern2 pattern2 else pattern2
       body = PBody <$> (delim *> expr')
 
+   patternOne2 :: SParser Unit -> SParser Pattern
+   patternOne2 delim =
+      pattern2 >>= \π -> mapCont2 <$> body <@> π
+      <|>
+      simplePattern2 pattern2 >>= rest
+      where
+         rest :: Pattern -> SParser Pattern
+         rest π = mapCont2 <$> body' <@> π
+            where
+            body' = if curried then body <|> PLambda <$> (simplePattern2 pattern2 >>= rest) else body
+
+         body = PBody <$> (delim *> expr')
+
 uncurriedPatterns :: SParser Expr -> SParser (List Pattern)
 uncurriedPatterns = patterns false
 
