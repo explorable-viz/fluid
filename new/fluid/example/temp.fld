@@ -1,1 +1,1 @@
-(match Nil as Nil -> Nil)
+(fun Nil Nil -> Nil) Nil Nil
