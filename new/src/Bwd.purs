@@ -2,7 +2,7 @@ module Bwd where
 
 import Prelude hiding (absurd, join)
 import Data.Foldable (foldr)
-import Data.List (List, (:), zip)
+import Data.List (List, (:), length, zip)
 import Data.List (List(..)) as L
 import Data.Map (update)
 import Bindings (Bind, Bindings(..), (:+:), (↦), find, foldBind)
@@ -66,7 +66,7 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
    let ρ' × ρ1   = unmatch ρ ξ
        vs × κ'   = matchArgs_bwd ρ' κ α ξs
        v  × σ    = match_bwd ρ1 κ' α ξ in
-   (v : vs) × (IsElim σ)
+   (v : vs) × (Arg (length vs) σ)
 
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
 -- var
@@ -88,7 +88,7 @@ eval_bwd v@(Val _ (V.Closure _ δ _)) (T.App t t' ξ t'')
    =  let ρ1ρ2ρ3 × e × α  = eval_bwd v t''
           ρ1ρ2 × ρ3       = unmatch ρ1ρ2ρ3 ξ
           ρ1   × ρ2       = split ρ1ρ2 δ
-          v'   × σ        = match_bwd ρ3 (IsExpr e) α ξ
+          v'   × σ        = match_bwd ρ3 (Body e) α ξ
           ρ'  × e'  × α'  = eval_bwd v' t'
           ρ1' × δ   × α2  = closeDefs_bwd ρ2
           ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ σ)) t in
@@ -117,7 +117,7 @@ eval_bwd (Val α v) (T.AppOp t t')
 eval_bwd v (T.Let (T.Def ξ t) t')
    = let ρρ' ×  e × α   = eval_bwd v  t'
          ρ  × ρ'        = unmatch ρρ' ξ
-         v' × σ         = match_bwd ρ' (IsExpr e) α ξ
+         v' × σ         = match_bwd ρ' (Body e) α ξ
          ρ'' × e' × α'  = eval_bwd v' t
      in  (ρ ∨ ρ'') × (Expr (α ∨ α') (Let (Def σ e) e')) × (α ∨ α')
 -- let-rec

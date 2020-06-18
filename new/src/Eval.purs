@@ -9,7 +9,7 @@ import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import Expl (Def(..), Expl(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, asExpr)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
@@ -29,7 +29,7 @@ match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a value
 
 matchArgs :: List Val -> Cont -> MayFail (Env × Cont × (List Match))
 matchArgs Nil κ = pure $ Empty × κ × Nil
-matchArgs (v : vs) (IsElim σ)  = do
+matchArgs (v : vs) (Arg _ σ)  = do
    ρ  × κ'  × ξ  <- match v σ
    ρ' × κ'' × ξs <- matchArgs vs κ'
    pure $ (ρ <> ρ') × κ'' × (ξ : ξs)
@@ -65,7 +65,7 @@ eval ρ (Expr _ (E.App e e')) = do
       V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × ξ <- match v' σ
-         t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ asExpr e''
+         t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
          pure $ (T.App t t' ξ t'') × v''
       V.Unary φ ->
          pure $ (T.AppOp t t') × applyUnary φ v'
@@ -88,7 +88,7 @@ eval ρ (Expr _ (E.Let (E.Def σ e) e')) = do
 eval ρ (Expr _ (E.MatchAs e σ)) = do
    t  × v      <- eval ρ e
    ρ' × e' × ξ <- match v σ
-   t' × v'     <- eval (ρ <> ρ') (asExpr e')
+   t' × v'     <- eval (ρ <> ρ') (body e')
    pure $ (T.MatchAs t ξ t') × v'
 
 -- desugar :: Expr -> Expr

@@ -99,8 +99,8 @@ instance prettyDefs :: Pretty (List RecDef) where
 
 instance prettyCont :: Pretty Cont where
    pretty None = text "[ ]"
-   pretty (IsExpr e) = pretty e
-   pretty (IsElim σ) = pretty σ
+   pretty (Body e) = pretty e
+   pretty (Arg _ σ) = pretty σ
 
 instance prettyBranch :: Pretty (Ctr × Cont) where
    pretty (Tuple c κ) = text (show c) :<>: operator "->" :<>: pretty κ

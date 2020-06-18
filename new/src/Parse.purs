@@ -9,8 +9,7 @@ import Data.Char.Unicode (isUpper)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List ((:), many, groupBy, sortBy)
-import Data.List (List(..)) as L
+import Data.List (List, (:), many, groupBy, sortBy)
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
@@ -25,9 +24,9 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
-import Expr (Cont(..), Def(..), Elim(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (joinAll, mapCont)
+import DataType (Ctr(..), cPair)
+import Expr (Cont(..), Def(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import PElim (Pattern(..), PCont(..), joinAll, joinAll2, mapCont, mapCont2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -42,12 +41,13 @@ pureIf :: forall a . String -> Boolean -> a -> SParser a
 pureIf msg b = fromBool b >>> pureMaybe msg
 
 -- constants (should also be used by prettyprinter)
-strArrow = "->" :: String
-strAs = "as" :: String
-strEquals = "=" :: String
-strFun = "fun" :: String
-strLet = "let" :: String
-strMatch = "match" :: String
+strArrow       = "->" :: String
+strAs          = "as" :: String
+strBackslash   = "\\" :: String
+strEquals      = "=" :: String
+strFun         = "fun" :: String
+strLet         = "let" :: String
+strMatch       = "match" :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -81,6 +81,9 @@ variable = ident <#> Var >>> expr
 patternVariable :: SParser Elim
 patternVariable = ElimVar <$> ident <@> None
 
+patternVariable2 :: SParser Pattern
+patternVariable2 = PattVar <$> ident <@> PNone
+
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
 isCtr ∷ String → Boolean
@@ -102,6 +105,9 @@ ctr = do
 ctr_pattern :: SParser Elim
 ctr_pattern = ElimConstr <$> (singleton <$> ctr <@> None)
 
+ctr_pattern2 :: SParser Pattern
+ctr_pattern2 = PattConstr <$> ctr <@> PNone
+
 theCtr :: Ctr -> SParser Ctr
 theCtr c = do
    c' <- ctr
@@ -121,51 +127,55 @@ int = do
 string :: SParser Expr
 string = token.stringLiteral <#> Str >>> expr
 
-constr_pattern :: SParser Elim -> SParser Elim
-constr_pattern pattern' = ctr_pattern >>= rest
+constrExpr :: SParser Expr
+constrExpr =
+   expr <$> (Constr <$> ctr <@> empty)
+
+constrPattern :: SParser Elim -> SParser Elim
+constrPattern pattern' = ctr_pattern >>= rest 0
    where
-      rest ∷ Elim -> SParser Elim
-      rest σ = do
+      rest ∷ Int -> Elim -> SParser Elim
+      rest n σ = do
          σ' <- simplePattern pattern' <|> ctr_pattern
-         rest $ fromJust absurd $ mapCont (IsElim σ') σ
+         rest (n + 1) $ fromJust absurd $ mapCont (Arg n σ') σ
          <|> pure σ
 
-true_ :: SParser Expr
-true_ = theCtr cTrue $> expr (Constr cTrue L.Nil)
-
-false_ :: SParser Expr
-false_ = theCtr cFalse $> expr (Constr cFalse L.Nil)
-
-nil :: SParser Expr
-nil = theCtr cNil $> expr (Constr cNil L.Nil)
-
-cons :: SParser Expr -> SParser Expr
-cons expr' = do
-   e <- theCtr cCons *> simpleExpr expr'
-   e' <- simpleExpr expr'
-   pure $ expr $ Constr cCons (e : e' : L.Nil)
+constrPattern2 :: SParser Pattern -> SParser Pattern
+constrPattern2 pattern' = simplePattern2 pattern' >>= rest 0
+   where
+      rest ∷ Int -> Pattern -> SParser Pattern
+      rest _ π@(PattVar _ _)     = pure π
+      rest n π@(PattConstr _ _)  = do
+         π' <- simplePattern2 pattern'
+         rest (n + 1) $ mapCont2 (PArg n π') π
+         <|> pure π
 
 pair :: SParser Expr -> SParser Expr
 pair expr' =
    token.parens $ do
       e <- expr' <* token.comma
       e' <- expr'
-      pure $ expr $ Constr cPair (e : e' : L.Nil)
+      pure $ expr $ Constr cPair (e : e' : empty)
 
 patternPair :: SParser Elim -> SParser Elim
 patternPair pattern' =
    token.parens $ do
       σ <- pattern' <* token.comma
       τ <- pattern'
-      pure $ ElimConstr $ singleton cPair $ IsElim $ fromJust absurd $ mapCont (IsElim τ) σ
+      pure $ ElimConstr $ singleton cPair $ Arg 0 $ fromJust absurd $ mapCont (Arg 1 τ) σ
+
+patternPair2 :: SParser Pattern -> SParser Pattern
+patternPair2 pattern' =
+   token.parens $ do
+      π <- pattern' <* token.comma
+      π' <- pattern'
+      pure $ PattConstr cPair $ PArg 0 $ mapCont2 (PArg 1 π') π
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
+   try constrExpr <|>
    try variable <|>
-   try true_ <|>
-   try false_ <|>
-   try nil <|>
    try int <|> -- int may start with +/-
    string <|>
    let_ expr' <|>
@@ -183,6 +193,13 @@ simplePattern pattern' =
    try (token.parens pattern') <|>
    patternPair pattern'
 
+simplePattern2 :: SParser Pattern -> SParser Pattern
+simplePattern2 pattern' =
+   try ctr_pattern2 <|>
+   try patternVariable2 <|>
+   try (token.parens pattern') <|>
+   patternPair2 pattern'
+
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr
 
@@ -197,28 +214,44 @@ patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: SParser Expr -> Boolean -> SParser Elim
-elim expr' nest =
-   partialElim expr' nest patternDelim <|>
-   elimBraces expr' nest
+elim expr' nest = elimOne patternDelim <|> elimMany
+   where
+   elimMany :: SParser Elim
+   elimMany =
+      token.braces $ do
+         σs <- sepBy1 (elimOne arrow) token.semi
+         pure $ fromJust "Incompatible branches" $ joinAll σs
 
-elimBraces :: SParser Expr -> Boolean -> SParser Elim
-elimBraces expr' nest =
-   token.braces $ do
-      σs <- sepBy1 (partialElim expr' nest arrow) token.semi
-      pure $ fromJust "Incompatible branches" $ joinAll σs
+   elimOne :: SParser Unit -> SParser Elim
+   elimOne delim = do
+      σ <- pattern
+      e <- delim *> expr' <|> nestedFun nest expr'
+      pure $ fromJust absurd $ mapCont (Body e) σ
+
+elim2 :: SParser Expr -> SParser Elim
+elim2 expr' = fromJust "Incompatible branches" <$> (joinAll2 <$> patterns expr')
+
+-- One or more uncurried patterns.
+patterns :: SParser Expr -> SParser (List Pattern)
+patterns expr' = pure <$> patternOne patternDelim <|> patternMany
+   where
+   patternMany :: SParser (List Pattern)
+   patternMany = token.braces $ sepBy1 (patternOne arrow) token.semi
+
+   patternOne :: SParser Unit -> SParser Pattern
+   patternOne delim = do
+      σ <- pattern2
+      mapCont2 <$> (PBody <$> (delim *> expr')) <@> σ
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
 nestedFun false _ = empty
 
-partialElim :: SParser Expr -> Boolean -> SParser Unit -> SParser Elim
-partialElim expr' nest delim = do
-   σ <- pattern
-   e <- delim *> expr' <|> nestedFun nest expr'
-   pure $ fromJust absurd $ mapCont (IsExpr e) σ
+nestedFun2 :: SParser PCont
+nestedFun2 = PLambda <$> pattern2
 
 def :: SParser Expr -> SParser Def
-def expr' = do
+def expr' =
    Def <$> try (keyword strLet *> pattern <* patternDelim) <*> expr' <* token.semi
 
 let_ ∷ SParser Expr -> SParser Expr
@@ -234,9 +267,13 @@ letRec :: SParser Expr -> SParser Expr
 letRec expr' = expr <$>
    (LetRec <$> recDefs expr' <*> expr')
 
+matchAs_old :: SParser Expr -> SParser Expr
+matchAs_old expr' = expr <$>
+   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim expr' false)
+
 matchAs :: SParser Expr -> SParser Expr
 matchAs expr' = expr <$>
-   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim expr' false)
+   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim2 expr')
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
@@ -252,22 +289,31 @@ theBinaryOp op = try $ do
 backtick :: SParser Unit
 backtick = token.reservedOp "`"
 
-appChain ∷ SParser Expr -> SParser Expr
-appChain expr' =
-   (simpleExpr expr' >>= rest) <|> cons expr'
+appChain :: SParser Expr -> SParser Expr
+appChain expr' = simpleExpr expr' >>= rest
    where
-      rest ∷ Expr -> SParser Expr
-      rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
+   rest :: Expr -> SParser Expr
+   rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
+      where
+      ctrArgs :: SParser Expr
+      ctrArgs = simpleExpr expr' >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
+   rest e = (expr <$> (App e <$> simpleExpr expr') >>= rest) <|> pure e
 
 -- Singleton eliminator with no continuation. Analogous in some way to app_chain, but there is nothing
 -- higher-order here: no explicit application nodes, non-saturated constructor applications, or patterns
 -- other than constructors in the function position.
 appChain_pattern :: SParser Elim -> SParser Elim
-appChain_pattern pattern' = simplePattern pattern' <|> constr_pattern pattern'
+appChain_pattern pattern' = simplePattern pattern' <|> constrPattern pattern'
+
+appChain_pattern2 :: SParser Pattern -> SParser Pattern
+appChain_pattern2 pattern' = simplePattern2 pattern' <|> constrPattern2 pattern'
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Elim
 pattern = fix appChain_pattern
+
+pattern2 :: SParser Pattern
+pattern2 = fix appChain_pattern2
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
