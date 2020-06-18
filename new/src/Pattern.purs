@@ -3,7 +3,7 @@ module PElim where
 import Prelude hiding (absurd, join)
 import Data.Bitraversable (bisequence)
 import Data.List (List(..), (:))
-import Data.Map (singleton, toUnfoldable)
+import Data.Map (Map, lookup, singleton, toUnfoldable, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl, sequence)
 import Data.Tuple (Tuple(..))
@@ -15,13 +15,10 @@ import Util (type (×), (≟), error, om, unionWithMaybe)
 class Joinable k where
    maybeJoin :: k -> k -> Maybe k
 
-instance joinableExpr :: Joinable Expr where
-   maybeJoin _ _ = Nothing
-
 instance joinableCont :: Joinable Cont where
    maybeJoin None None              = pure None
-   maybeJoin (Body e) (Body e')     = Body <$> maybeJoin e e'
    maybeJoin (Arg n σ) (Arg m σ')   = Arg <$> n ≟ m <*> maybeJoin σ σ'
+   maybeJoin (Body e) (Body e')     = Nothing
    maybeJoin _ _                    = Nothing
 
 instance joinableCtrCont :: Joinable (Ctr × Cont) where
@@ -55,9 +52,18 @@ instance mapContElim :: MapCont Elim where
 
 data PCont = PNone | PBody Expr | PArg Int Pattern
 
+toCont :: PCont -> Cont
+toCont PNone      = None
+toCont (PBody e)  = Body e
+toCont (PArg n π) = Arg n (toElim π)
+
 data Pattern =
    PattVar Var PCont |
    PattConstr Ctr PCont
+
+toElim :: Pattern -> Elim
+toElim (PattVar x κ)    = ElimVar x $ toCont κ
+toElim (PattConstr c κ) = ElimConstr $ singleton c $ toCont κ
 
 class MapCont2 a where
    mapCont2 :: PCont -> a -> a
@@ -70,3 +76,27 @@ instance mapCont2Cont :: MapCont2 PCont where
 instance mapCont2Elim :: MapCont2 Pattern where
    mapCont2 κ (PattVar x κ')     = PattVar x $ mapCont2 κ κ'
    mapCont2 κ (PattConstr c κ')  = PattConstr c $ mapCont2 κ κ'
+
+class Joinable2 a b | a -> b where
+   maybeJoin2 :: b -> a -> Maybe b
+
+maybeUpdate :: Ctr -> PCont -> Map Ctr Cont -> Maybe (Map Ctr Cont)
+maybeUpdate c κ κs =
+   case lookup c κs of
+      Nothing -> pure $ update (const $ Just $ toCont κ) c $ κs
+      Just κ' -> error "todo"
+
+instance joinablePatternElim :: Joinable2 Pattern Elim where
+   maybeJoin2 (ElimVar x κ) (PattVar y κ')      = ElimVar <$> x ≟ y <*> maybeJoin2 κ κ'
+   maybeJoin2 (ElimConstr κs) (PattConstr c κ)  = ElimConstr <$> maybeUpdate c κ κs
+   maybeJoin2 _ _                               = Nothing
+
+instance joinablePContCont :: Joinable2 PCont Cont where
+   maybeJoin2 None PNone            = pure None
+   maybeJoin2 (Arg n σ) (PArg m π)  = Arg <$> (n ≟ m) <*> maybeJoin2 σ π
+   maybeJoin2 (Body _) (PBody _)    = Nothing
+   maybeJoin2 _ _                   = Nothing
+
+joinAll2 :: List Pattern -> Maybe Elim
+joinAll2 Nil      = error "Non-empty list expected"
+joinAll2 (π : πs) = foldl (om maybeJoin2) (Just $ toElim π) πs
