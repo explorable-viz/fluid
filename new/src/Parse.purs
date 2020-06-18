@@ -29,7 +29,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cPair)
 import Expr (Def(..), Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (Pattern(..), PCont(..), joinAll2, mapCont2, toElim)
+import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (type (×), (×), absurd, error, fromBool, fromJust)
 
@@ -140,7 +140,7 @@ patternPair pattern' =
    token.parens $ do
       π <- pattern' <* token.comma
       π' <- pattern'
-      pure $ PattConstr cPair $ PArg 0 $ mapCont2 (PArg 1 π') π
+      pure $ PattConstr cPair $ PArg 0 $ mapCont (PArg 1 π') π
 
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
@@ -179,7 +179,7 @@ patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: Boolean -> SParser Expr -> SParser Elim
-elim curried expr' = fromJust "Incompatible branches" <$> (joinAll2 <$> patterns curried expr')
+elim curried expr' = fromJust "Incompatible branches" <$> (joinAll <$> patterns curried expr')
 
 patterns :: Boolean -> SParser Expr -> SParser (NonEmptyList Pattern)
 patterns curried expr' = pure <$> patternOne curried expr' patternDelim <|> patternMany
@@ -193,7 +193,7 @@ patternOne :: Boolean -> SParser Expr -> SParser Unit -> SParser Pattern
 patternOne curried expr' delim = pattern' >>= rest
    where
    rest :: Pattern -> SParser Pattern
-   rest π = mapCont2 <$> body' <@> π
+   rest π = mapCont <$> body' <@> π
       where
       body' = if curried then body <|> PLambda <$> (pattern' >>= rest) else body
 
@@ -223,7 +223,7 @@ recDefs expr' = do
       toRecDef :: NonEmptyList (String × Pattern) -> RecDef
       toRecDef fπs =
          let f = fst $ head fπs in
-         RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll2 $ map snd fπs
+         RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll $ map snd fπs
 
 letRec :: SParser Expr -> SParser Expr
 letRec expr' = expr <$>
@@ -267,7 +267,7 @@ appChain_pattern pattern' = simplePattern pattern' >>= rest 0
       rest n π@(PattConstr _ _) = ctrArgs <|> pure π
          where
          ctrArgs :: SParser Pattern
-         ctrArgs = simplePattern pattern' >>= \π' -> rest (n + 1) $ mapCont2 (PArg n π') π
+         ctrArgs = simplePattern pattern' >>= \π' -> rest (n + 1) $ mapCont (PArg n π') π
       rest _ π@(PattVar _ _) = pure π
 
 -- TODO: allow infix constructors, via buildExprParser
