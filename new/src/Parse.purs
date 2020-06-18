@@ -12,7 +12,7 @@ import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List, (:), many, groupBy, some, sortBy)
 import Data.List.NonEmpty (NonEmptyList, fromList, head)
-import Data.Map (singleton, values)
+import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
@@ -28,8 +28,8 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import DataType (Ctr(..), cPair)
-import Expr (Cont(..), Def(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (Pattern(..), PCont(..), joinAll2, mapCont, mapCont2, toElim)
+import Expr (Def(..), Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import PElim (Pattern(..), PCont(..), joinAll2, mapCont2, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (type (×), (×), absurd, error, fromBool, fromJust)
 
@@ -81,11 +81,8 @@ variable :: SParser Expr
 variable = ident <#> Var >>> expr
 
 -- TODO: anonymous variables
-patternVariable :: SParser Elim
-patternVariable = ElimVar <$> ident <@> None
-
-patternVariable2 :: SParser Pattern
-patternVariable2 = PattVar <$> ident <@> PNone
+patternVariable :: SParser Pattern
+patternVariable = PattVar <$> ident <@> PNone
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
@@ -105,11 +102,8 @@ ctr = do
    pureIf ("Unexpected identifier") (isCtr x) $ Ctr x
 
 -- Parse a constructor name as a nullary constructor pattern.
-ctr_pattern :: SParser Elim
-ctr_pattern = ElimConstr <$> (singleton <$> ctr <@> None)
-
-ctr_pattern2 :: SParser Pattern
-ctr_pattern2 = PattConstr <$> ctr <@> PNone
+ctr_pattern :: SParser Pattern
+ctr_pattern = PattConstr <$> ctr <@> PNone
 
 theCtr :: Ctr -> SParser Ctr
 theCtr c = do
@@ -141,8 +135,8 @@ pair expr' =
       e' <- expr'
       pure $ expr $ Constr cPair (e : e' : empty)
 
-patternPair2 :: SParser Pattern -> SParser Pattern
-patternPair2 pattern' =
+patternPair :: SParser Pattern -> SParser Pattern
+patternPair pattern' =
    token.parens $ do
       π <- pattern' <* token.comma
       π' <- pattern'
@@ -164,12 +158,12 @@ simpleExpr expr' =
    lambda expr'
 
 -- Singleton eliminator with no continuation.
-simplePattern2 :: SParser Pattern -> SParser Pattern
-simplePattern2 pattern' =
-   try ctr_pattern2 <|>
-   try patternVariable2 <|>
+simplePattern :: SParser Pattern -> SParser Pattern
+simplePattern pattern' =
+   try ctr_pattern <|>
+   try patternVariable <|>
    try (token.parens pattern') <|>
-   patternPair2 pattern'
+   patternPair pattern'
 
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = expr <$> (Lambda <$> (keyword strFun *> elim2 true expr'))
@@ -203,12 +197,12 @@ patternOne curried expr' delim = pattern' >>= rest
       where
       body' = if curried then body <|> PLambda <$> (pattern' >>= rest) else body
 
-   pattern' = if curried then simplePattern2 pattern2 else pattern2
+   pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
 def :: SParser Expr -> SParser Def
 def expr' =
-   Def <$> try (keyword strLet *> (pattern2 <#> toElim) <* patternDelim) <*> expr' <* token.semi
+   Def <$> try (keyword strLet *> (pattern <#> toElim) <* patternDelim) <*> expr' <* token.semi
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')
@@ -266,19 +260,19 @@ appChain expr' = simpleExpr expr' >>= rest
 -- Singleton eliminator with no continuation. Analogous in some way to app_chain, but there is nothing
 -- higher-order here: no explicit application nodes, non-saturated constructor applications, or patterns
 -- other than constructors in the function position.
-appChain_pattern2 :: SParser Pattern -> SParser Pattern
-appChain_pattern2 pattern' = simplePattern2 pattern' >>= rest 0
+appChain_pattern :: SParser Pattern -> SParser Pattern
+appChain_pattern pattern' = simplePattern pattern' >>= rest 0
    where
       rest ∷ Int -> Pattern -> SParser Pattern
       rest n π@(PattConstr _ _) = ctrArgs <|> pure π
          where
          ctrArgs :: SParser Pattern
-         ctrArgs = simplePattern2 pattern' >>= \π' -> rest (n + 1) $ mapCont2 (PArg n π') π
+         ctrArgs = simplePattern pattern' >>= \π' -> rest (n + 1) $ mapCont2 (PArg n π') π
       rest _ π@(PattVar _ _) = pure π
 
 -- TODO: allow infix constructors, via buildExprParser
-pattern2 :: SParser Pattern
-pattern2 = fix appChain_pattern2
+pattern :: SParser Pattern
+pattern = fix appChain_pattern
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
