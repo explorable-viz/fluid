@@ -9,8 +9,8 @@ import Data.Char.Unicode (isUpper)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List ((:), many, groupBy, sortBy)
-import Data.List (List(..)) as L
+import Data.List (List, (:), many, groupBy, sortBy)
+import Data.List (List(..), singleton) as L
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
@@ -238,6 +238,19 @@ elim expr' nest = elimOne patternDelim <|> elimMany
       σ <- pattern
       e <- delim *> expr' <|> nestedFun nest expr'
       pure $ fromJust absurd $ mapCont (Body e) σ
+
+-- One or more uncurried patterns.
+patterns :: SParser Expr -> SParser (List Pattern)
+patterns expr' = L.singleton <$> patternOne patternDelim <|> patternMany
+   where
+   patternMany :: SParser (List Pattern)
+   patternMany = token.braces $ sepBy1 (patternOne arrow) token.semi
+
+   patternOne :: SParser Unit -> SParser Pattern
+   patternOne delim = do
+      σ <- pattern2
+      e <- delim *> expr'
+      pure $ mapCont2 (PBody e) σ
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
