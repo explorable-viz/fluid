@@ -7,6 +7,7 @@ import Data.Map (singleton, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl, sequence)
 import Data.Tuple (Tuple(..))
+import Bindings (Var)
 import DataType (Ctr)
 import Expr (Cont(..), Elim(..), Expr)
 import Util (type (×), (≟), error, om, unionWithMaybe)
@@ -51,3 +52,21 @@ instance mapContElim :: MapCont Elim where
          Tuple c κ' : Nil -> do
             ElimConstr <$> (singleton c <$> mapCont κ κ')
          _ -> Nothing
+
+data PCont = PNone | PBody Expr | PArg Int Pattern
+
+data Pattern =
+   PattVar Var PCont |
+   PattConstr Ctr PCont
+
+class MapCont2 a where
+   mapCont2 :: PCont -> a -> a
+
+instance mapCont2Cont :: MapCont2 PCont where
+   mapCont2 κ PNone       = κ
+   mapCont2 κ (PBody _)   = κ
+   mapCont2 κ (PArg n σ)  = PArg n $ mapCont2 κ σ
+
+instance mapCont2Elim :: MapCont2 Pattern where
+   mapCont2 κ (PattVar x κ')     = PattVar x $ mapCont2 κ κ'
+   mapCont2 κ (PattConstr c κ')  = PattConstr c $ mapCont2 κ κ'
