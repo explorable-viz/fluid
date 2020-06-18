@@ -221,23 +221,24 @@ elim expr' nest = elimOne patternDelim <|> elimMany
 elim2 :: SParser Expr -> SParser Elim
 elim2 expr' = fromJust "Incompatible branches" <$> (joinAll2 <$> uncurriedPatterns expr')
 
--- Parameterised by a pattern parser and a [TODO]
-patterns :: SParser Expr -> SParser Pattern -> SParser (List Pattern)
-patterns expr' pattern' = pure <$> patternOne patternDelim <|> patternMany
+patterns :: Boolean -> SParser Expr -> SParser (List Pattern)
+patterns curried expr' = pure <$> patternOne patternDelim <|> patternMany
    where
    patternMany :: SParser (List Pattern)
    patternMany = token.braces $ sepBy1 (patternOne arrow) token.semi
 
    patternOne :: SParser Unit -> SParser Pattern
-   patternOne delim = do
-      σ <- pattern'
-      mapCont2 <$> (PBody <$> (delim *> expr')) <@> σ
+   patternOne delim = pattern' >>= \σ -> mapCont2 <$> rest <@> σ
+      where
+      pattern' = if curried then simplePattern2 pattern2 else pattern2
+      body = PBody <$> (delim *> expr')
+      rest = if curried then body <|> nestedFun2 else body
 
 uncurriedPatterns :: SParser Expr -> SParser (List Pattern)
-uncurriedPatterns = flip patterns pattern2
+uncurriedPatterns = patterns false
 
 curriedPatterns :: SParser Expr -> SParser (List Pattern)
-curriedPatterns = flip patterns (simplePattern2 pattern2)
+curriedPatterns = patterns true
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
