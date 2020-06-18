@@ -90,10 +90,8 @@ class Joinable2 a b | a -> b where
 maybeUpdate :: Ctr -> PCont -> Map Ctr Cont -> Maybe (Map Ctr Cont)
 maybeUpdate c κ κs =
    case lookup c κs of
-      Nothing -> pure $ insert c (toCont κ) κs
-      Just κ' -> case maybeJoin2 κ' κ of
-         Nothing -> Nothing
-         Just κ'' -> pure $ update (const $ Just κ'') c κs
+      Nothing -> insert <$> pure c <@> toCont κ <@> κs
+      Just κ' -> update <$> (const <$> (Just <$> maybeJoin2 κ' κ)) <@> c <@> κs
 
 instance joinablePatternElim :: Joinable2 Pattern Elim where
    maybeJoin2 (ElimVar x κ) (PattVar y κ')      = ElimVar <$> x ≟ y <*> maybeJoin2 κ κ'
