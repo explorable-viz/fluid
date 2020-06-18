@@ -42,12 +42,13 @@ pureIf :: forall a . String -> Boolean -> a -> SParser a
 pureIf msg b = fromBool b >>> pureMaybe msg
 
 -- constants (should also be used by prettyprinter)
-strArrow = "->" :: String
-strAs = "as" :: String
-strEquals = "=" :: String
-strFun = "fun" :: String
-strLet = "let" :: String
-strMatch = "match" :: String
+strArrow       = "->" :: String
+strAs          = "as" :: String
+strBackslash   = "\\" :: String
+strEquals      = "=" :: String
+strFun         = "fun" :: String
+strLet         = "let" :: String
+strMatch       = "match" :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -247,10 +248,7 @@ patterns expr' = L.singleton <$> patternOne patternDelim <|> patternMany
    patternMany = token.braces $ sepBy1 (patternOne arrow) token.semi
 
    patternOne :: SParser Unit -> SParser Pattern
-   patternOne delim = do
-      σ <- pattern2
-      e <- delim *> expr'
-      pure $ mapCont2 (PBody e) σ
+   patternOne delim = mapCont2 <$> (PBody <$> (delim *> expr')) <*> pattern2
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
