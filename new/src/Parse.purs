@@ -24,7 +24,7 @@ import Text.Parsing.Parser.Token (
   alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
+import DataType (Ctr(..), cPair)
 import Expr (Cont(..), Def(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, joinAll2, mapCont, mapCont2)
 import Primitive (OpName(..), opNames, opPrec)
@@ -150,21 +150,6 @@ constrPattern2 pattern' = simplePattern2 pattern' >>= rest 0
          rest (n + 1) $ mapCont2 (PArg n π') π
          <|> pure π
 
-true_ :: SParser Expr
-true_ = theCtr cTrue $> expr (Constr cTrue empty)
-
-false_ :: SParser Expr
-false_ = theCtr cFalse $> expr (Constr cFalse empty)
-
-nil :: SParser Expr
-nil = theCtr cNil $> expr (Constr cNil empty)
-
-cons :: SParser Expr -> SParser Expr
-cons expr' = do
-   e <- theCtr cCons *> simpleExpr expr'
-   e' <- simpleExpr expr'
-   pure $ expr $ Constr cCons (e : e' : empty)
-
 pair :: SParser Expr -> SParser Expr
 pair expr' =
    token.parens $ do
@@ -189,27 +174,8 @@ patternPair2 pattern' =
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
-   try variable <|>
-   try true_ <|>
-   try false_ <|>
-   try nil <|>
-   try int <|> -- int may start with +/-
-   string <|>
-   let_ expr' <|>
-   letRec expr' <|>
-   matchAs expr' <|>
-   try (token.parens expr') <|>
-   try parensOp <|>
-   pair expr' <|>
-   lambda expr'
-
-simpleExpr2 :: SParser Expr -> SParser Expr
-simpleExpr2 expr' =
    try constrExpr <|>
    try variable <|>
-   try true_ <|>
-   try false_ <|>
-   try nil <|>
    try int <|> -- int may start with +/-
    string <|>
    let_ expr' <|>
@@ -323,23 +289,15 @@ theBinaryOp op = try $ do
 backtick :: SParser Unit
 backtick = token.reservedOp "`"
 
-appChain ∷ SParser Expr -> SParser Expr
-appChain expr' =
-   (simpleExpr expr' >>= rest) <|> cons expr'
-   where
-      rest ∷ Expr -> SParser Expr
-      rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
-
-appChain2 :: SParser Expr -> SParser Expr
-appChain2 expr' =
-   simpleExpr2 expr' >>= rest
+appChain :: SParser Expr -> SParser Expr
+appChain expr' = simpleExpr expr' >>= rest
    where
    rest :: Expr -> SParser Expr
    rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
       where
       ctrArgs :: SParser Expr
-      ctrArgs = simpleExpr2 expr' >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
-   rest e = (expr <$> (App e <$> simpleExpr2 expr') >>= rest) <|> pure e
+      ctrArgs = simpleExpr expr' >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
+   rest e = (expr <$> (App e <$> simpleExpr expr') >>= rest) <|> pure e
 
 -- Singleton eliminator with no continuation. Analogous in some way to app_chain, but there is nothing
 -- higher-order here: no explicit application nodes, non-saturated constructor applications, or patterns
