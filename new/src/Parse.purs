@@ -228,10 +228,17 @@ patterns curried expr' = pure <$> patternOne patternDelim <|> patternMany
    patternMany = token.braces $ sepBy1 (patternOne arrow) token.semi
 
    patternOne :: SParser Unit -> SParser Pattern
-   patternOne delim = pattern' >>= \σ -> mapCont2 <$> body' <@> σ
+   patternOne delim = pattern' >>= rest
       where
+      rest :: Pattern -> SParser Pattern
+      rest π = mapCont2 <$> body' <@> π
+         where
+         body' =
+            if curried
+            then body <|> PLambda <$> (pattern2 >>= rest)
+            else body
+
       pattern' = if curried then simplePattern2 pattern2 else pattern2
-      body' = if curried then body <|> PLambda <$> pattern2 else body
       body = PBody <$> (delim *> expr')
 
 uncurriedPatterns :: SParser Expr -> SParser (List Pattern)
