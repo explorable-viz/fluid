@@ -27,7 +27,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
 import Expr (Cont(..), Def(..), Elim(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (Pattern(..), PCont(..), joinAll, mapCont, mapCont2)
+import PElim (Pattern(..), PCont(..), joinAll, joinAll2, mapCont, mapCont2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -276,6 +276,12 @@ letRec expr' = expr <$>
 matchAs :: SParser Expr -> SParser Expr
 matchAs expr' = expr <$>
    (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim expr' false)
+
+matchAs2 :: SParser Expr -> SParser Expr
+matchAs2 expr' = do
+   e <- keyword strMatch *> expr' <* keyword strAs
+   πs <- patterns expr'
+   pure $ expr $ MatchAs e $ fromJust "Incompatible branches" $ joinAll2 πs
 
 -- any binary operator, in parentheses
 parensOp :: SParser Expr
