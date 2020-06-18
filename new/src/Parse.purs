@@ -265,10 +265,6 @@ letRec :: SParser Expr -> SParser Expr
 letRec expr' = expr <$>
    (LetRec <$> recDefs expr' <*> expr')
 
-matchAs_old :: SParser Expr -> SParser Expr
-matchAs_old expr' = expr <$>
-   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim expr' false)
-
 matchAs :: SParser Expr -> SParser Expr
 matchAs expr' = expr <$>
    (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim2 false expr')
