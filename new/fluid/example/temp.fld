@@ -1,3 +1,1 @@
-let
-   f Nil Nil -> Nil;
-f Nil Nil
+(match Nil as Nil -> Nil)

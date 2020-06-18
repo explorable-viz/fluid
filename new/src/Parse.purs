@@ -273,12 +273,12 @@ letRec :: SParser Expr -> SParser Expr
 letRec expr' = expr <$>
    (LetRec <$> recDefs expr' <*> expr')
 
-matchAs :: SParser Expr -> SParser Expr
-matchAs expr' = expr <$>
+matchAs_old :: SParser Expr -> SParser Expr
+matchAs_old expr' = expr <$>
    (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim expr' false)
 
-matchAs2 :: SParser Expr -> SParser Expr
-matchAs2 expr' = expr <$>
+matchAs :: SParser Expr -> SParser Expr
+matchAs expr' = expr <$>
    (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs)
             <*> (fromJust "Incompatible branches" <$> (joinAll2 <$> patterns expr')))
 
