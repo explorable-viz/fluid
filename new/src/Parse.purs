@@ -231,8 +231,8 @@ patterns curried expr' = pure <$> patternOne patternDelim <|> patternMany
    patternOne delim = pattern' >>= \σ -> mapCont2 <$> rest <@> σ
       where
       pattern' = if curried then simplePattern2 pattern2 else pattern2
+      rest = if curried then body <|> PLambda <$> pattern2 else body
       body = PBody <$> (delim *> expr')
-      rest = if curried then body <|> nestedFun2 else body
 
 uncurriedPatterns :: SParser Expr -> SParser (List Pattern)
 uncurriedPatterns = patterns false
@@ -243,9 +243,6 @@ curriedPatterns = patterns true
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
 nestedFun false _ = empty
-
-nestedFun2 :: SParser PCont
-nestedFun2 = PLambda <$> pattern2
 
 def :: SParser Expr -> SParser Def
 def expr' =
