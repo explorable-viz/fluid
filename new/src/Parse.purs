@@ -251,7 +251,9 @@ patterns expr' = L.singleton <$> patternOne patternDelim <|> patternMany
    patternMany = token.braces $ sepBy1 (patternOne arrow) token.semi
 
    patternOne :: SParser Unit -> SParser Pattern
-   patternOne delim = mapCont2 <$> (PBody <$> (delim *> expr')) <*> pattern2
+   patternOne delim = do
+      σ <- pattern2
+      mapCont2 <$> (PBody <$> (delim *> expr')) <@> σ
 
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
