@@ -3,14 +3,15 @@ module PElim where
 import Prelude hiding (absurd, join)
 import Data.Bitraversable (bisequence)
 import Data.List (List(..), (:))
-import Data.Map (Map, lookup, singleton, toUnfoldable, update)
+import Data.Map (Map, insert, lookup, singleton, toUnfoldable, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (foldl, sequence)
 import Data.Tuple (Tuple(..))
+import Debug.Trace (trace)
 import Bindings (Var)
 import DataType (Ctr)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
-import Util (type (×), (≟), error, om, unionWithMaybe)
+import Util (type (×), (×), (≟), error, om, unionWithMaybe)
 
 class Joinable k where
    maybeJoin :: k -> k -> Maybe k
@@ -89,8 +90,10 @@ class Joinable2 a b | a -> b where
 maybeUpdate :: Ctr -> PCont -> Map Ctr Cont -> Maybe (Map Ctr Cont)
 maybeUpdate c κ κs =
    case lookup c κs of
-      Nothing -> pure $ update (const $ Just $ toCont κ) c $ κs
-      Just κ' -> error "todo"
+      Nothing -> pure $ insert c (toCont κ) κs
+      Just κ' -> case maybeJoin2 κ' κ of
+         Nothing -> Nothing
+         Just κ'' -> pure $ update (const $ Just κ'') c κs
 
 instance joinablePatternElim :: Joinable2 Pattern Elim where
    maybeJoin2 (ElimVar x κ) (PattVar y κ')      = ElimVar <$> x ≟ y <*> maybeJoin2 κ κ'
