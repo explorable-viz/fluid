@@ -3,8 +3,10 @@ module PElim where
 import Prelude hiding (absurd, join)
 import Data.Bitraversable (bisequence)
 import Data.List (List(..), (:))
+import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, insert, lookup, singleton, toUnfoldable, update)
 import Data.Maybe (Maybe(..))
+import Data.NonEmpty ((:|))
 import Data.Traversable (foldl, sequence)
 import Data.Tuple (Tuple(..))
 import Debug.Trace (trace)
@@ -104,6 +106,5 @@ instance joinablePContCont :: Joinable2 PCont Cont where
    maybeJoin2 (Body (Expr _ (Lambda σ))) (PLambda π)  = Body <$> (expr <$> (Lambda <$> maybeJoin2 σ π))
    maybeJoin2 _ _                                     = Nothing
 
-joinAll2 :: List Pattern -> Maybe Elim
-joinAll2 Nil      = error "Non-empty list expected"
-joinAll2 (π : πs) = foldl (om maybeJoin2) (Just $ toElim π) πs
+joinAll2 :: NonEmptyList Pattern -> Maybe Elim
+joinAll2 (NonEmptyList (π :| πs)) = foldl (om maybeJoin2) (Just $ toElim π) πs

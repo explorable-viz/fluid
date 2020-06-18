@@ -2,6 +2,7 @@ module Parse where
 
 import Prelude hiding (absurd, add, between, join)
 import Control.Alt ((<|>))
+import Control.Apply (lift2)
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
@@ -10,10 +11,12 @@ import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List, (:), many, groupBy, sortBy)
+import Data.List.NonEmpty (NonEmptyList, fromList, head)
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
+import Data.Tuple (fst, snd)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -28,7 +31,7 @@ import DataType (Ctr(..), cPair)
 import Expr (Cont(..), Def(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, joinAll2, mapCont, mapCont2)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (absurd, error, fromBool, fromJust)
+import Util (type (×), (×), absurd, error, fromBool, fromJust)
 
 type SParser = Parser String
 
@@ -221,11 +224,13 @@ elim expr' nest = elimOne patternDelim <|> elimMany
 elim2 :: Boolean -> SParser Expr -> SParser Elim
 elim2 curried expr' = fromJust "Incompatible branches" <$> (joinAll2 <$> patterns curried expr')
 
-patterns :: Boolean -> SParser Expr -> SParser (List Pattern)
+patterns :: Boolean -> SParser Expr -> SParser (NonEmptyList Pattern)
 patterns curried expr' = pure <$> patternOne curried expr' patternDelim <|> patternMany
    where
-   patternMany :: SParser (List Pattern)
-   patternMany = token.braces $ sepBy1 (patternOne curried expr' arrow) token.semi
+   patternMany :: SParser (NonEmptyList Pattern)
+   patternMany = do
+      πs <- token.braces $ sepBy1 (patternOne curried expr' arrow) token.semi
+      pure $ fromJust absurd $ fromList πs
 
 patternOne :: Boolean -> SParser Expr -> SParser Unit -> SParser Pattern
 patternOne curried expr' delim = pattern' >>= rest
@@ -238,12 +243,6 @@ patternOne curried expr' delim = pattern' >>= rest
    pattern' = if curried then simplePattern2 pattern2 else pattern2
    body = PBody <$> (delim *> expr')
 
-uncurriedPatterns :: SParser Expr -> SParser (List Pattern)
-uncurriedPatterns = patterns false
-
-curriedPatterns :: SParser Expr -> SParser (List Pattern)
-curriedPatterns = patterns true
-
 nestedFun :: Boolean -> SParser Expr -> SParser Expr
 nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
 nestedFun false _ = empty
@@ -254,6 +253,20 @@ def expr' =
 
 let_ ∷ SParser Expr -> SParser Expr
 let_ expr' = expr <$> (Let <$> def expr' <*> expr')
+
+clauses :: SParser Expr -> SParser (List (Var × Pattern))
+clauses expr' = sepBy1 (ident `lift2 (×)` (patternOne true expr' equals)) token.semi
+
+recDefs2 :: SParser Expr -> SParser RecDefs
+recDefs2 expr' = do
+   fπs <- clauses expr'
+   let fπss = groupBy (eq `on` fst) fπs
+   pure $ map toRecDef fπss
+      where
+      toRecDef :: NonEmptyList (String × Pattern) -> RecDef
+      toRecDef fπs =
+         let f = fst $ head fπs in
+         RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll2 $ map snd fπs
 
 recDef :: SParser Expr -> SParser RecDef
 recDef expr' = RecDef <$> ident <*> (elim expr' true <* token.semi)
