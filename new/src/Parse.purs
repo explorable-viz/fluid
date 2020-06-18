@@ -140,16 +140,6 @@ constrPattern pattern' = ctr_pattern >>= rest 0
          rest (n + 1) $ fromJust absurd $ mapCont (Arg n σ') σ
          <|> pure σ
 
-constrPattern2 :: SParser Pattern -> SParser Pattern
-constrPattern2 pattern' = simplePattern2 pattern' >>= rest 0
-   where
-      rest ∷ Int -> Pattern -> SParser Pattern
-      rest _ π@(PattVar _ _)     = pure π
-      rest n π@(PattConstr _ _)  = do
-         π' <- simplePattern2 pattern'
-         rest (n + 1) $ mapCont2 (PArg n π') π
-         <|> pure π
-
 pair :: SParser Expr -> SParser Expr
 pair expr' =
    token.parens $ do
@@ -306,7 +296,14 @@ appChain_pattern :: SParser Elim -> SParser Elim
 appChain_pattern pattern' = simplePattern pattern' <|> constrPattern pattern'
 
 appChain_pattern2 :: SParser Pattern -> SParser Pattern
-appChain_pattern2 pattern' = simplePattern2 pattern' <|> constrPattern2 pattern'
+appChain_pattern2 pattern' = simplePattern2 pattern' >>= rest 0
+   where
+      rest ∷ Int -> Pattern -> SParser Pattern
+      rest n π@(PattConstr _ _) = ctrArgs <|> pure π
+         where
+         ctrArgs :: SParser Pattern
+         ctrArgs = simplePattern2 pattern' >>= \π' -> rest (n + 1) $ mapCont2 (PArg n π') π
+      rest _ π@(PattVar _ _) = pure π
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Elim
