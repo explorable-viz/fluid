@@ -27,7 +27,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
 import Expr (Cont(..), Def(..), Elim(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (joinAll, mapCont)
+import PElim (Pattern(..), PCont(..), joinAll, mapCont, mapCont2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
 
@@ -81,6 +81,9 @@ variable = ident <#> Var >>> expr
 patternVariable :: SParser Elim
 patternVariable = ElimVar <$> ident <@> None
 
+patternVariable2 :: SParser Pattern
+patternVariable2 = PattVar <$> ident <@> PNone
+
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
 isCtr ∷ String → Boolean
@@ -101,6 +104,9 @@ ctr = do
 -- Parse a constructor name as a nullary constructor pattern.
 ctr_pattern :: SParser Elim
 ctr_pattern = ElimConstr <$> (singleton <$> ctr <@> None)
+
+ctr_pattern2 :: SParser Pattern
+ctr_pattern2 = PattConstr <$> ctr <@> PNone
 
 theCtr :: Ctr -> SParser Ctr
 theCtr c = do
@@ -129,6 +135,15 @@ constr_pattern pattern' = ctr_pattern >>= rest 0
          σ' <- simplePattern pattern' <|> ctr_pattern
          rest (n + 1) $ fromJust absurd $ mapCont (Arg n σ') σ
          <|> pure σ
+
+constr_pattern2 :: SParser Pattern -> SParser Pattern
+constr_pattern2 pattern' = ctr_pattern2 >>= rest 0
+   where
+      rest ∷ Int -> Pattern -> SParser Pattern
+      rest n π = do
+         π' <- simplePattern2 pattern' <|> ctr_pattern2
+         rest (n + 1) $ mapCont2 (PArg n π') π
+         <|> pure π
 
 true_ :: SParser Expr
 true_ = theCtr cTrue $> expr (Constr cTrue L.Nil)
@@ -159,6 +174,13 @@ patternPair pattern' =
       τ <- pattern'
       pure $ ElimConstr $ singleton cPair $ Arg 0 $ fromJust absurd $ mapCont (Arg 1 τ) σ
 
+patternPair2 :: SParser Pattern -> SParser Pattern
+patternPair2 pattern' =
+   token.parens $ do
+      π <- pattern' <* token.comma
+      π' <- pattern'
+      pure $ PattConstr cPair $ PArg 0 $ mapCont2 (PArg 1 π') π
+
 -- TODO: float
 simpleExpr :: SParser Expr -> SParser Expr
 simpleExpr expr' =
@@ -182,6 +204,12 @@ simplePattern pattern' =
    try patternVariable <|>
    try (token.parens pattern') <|>
    patternPair pattern'
+
+simplePattern2 :: SParser Pattern -> SParser Pattern
+simplePattern2 pattern' =
+   try patternVariable2 <|>
+   try (token.parens pattern') <|>
+   patternPair2 pattern'
 
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = keyword strFun *> elim expr' true <#> Lambda >>> expr
@@ -266,6 +294,9 @@ appChain_pattern pattern' = simplePattern pattern' <|> constr_pattern pattern'
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Elim
 pattern = fix appChain_pattern
+
+pattern2 :: SParser Pattern
+pattern2 = error "todo"
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
