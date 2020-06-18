@@ -17,7 +17,6 @@ import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
-import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser, fail)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -30,7 +29,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cPair)
 import Expr (Cont(..), Def(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
-import PElim (Pattern(..), PCont(..), joinAll, joinAll2, mapCont, mapCont2)
+import PElim (Pattern(..), PCont(..), joinAll2, mapCont, mapCont2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (type (×), (×), absurd, error, fromBool, fromJust)
 
@@ -207,21 +206,6 @@ patternDelim :: SParser Unit
 patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
-elim :: SParser Expr -> Boolean -> SParser Elim
-elim expr' nest = elimOne patternDelim <|> elimMany
-   where
-   elimMany :: SParser Elim
-   elimMany =
-      token.braces $ do
-         σs <- sepBy1 (elimOne arrow) token.semi
-         pure $ fromJust "Incompatible branches" $ joinAll σs
-
-   elimOne :: SParser Unit -> SParser Elim
-   elimOne delim = do
-      σ <- pattern
-      e <- delim *> expr' <|> nestedFun nest expr'
-      pure $ fromJust absurd $ mapCont (Body e) σ
-
 elim2 :: Boolean -> SParser Expr -> SParser Elim
 elim2 curried expr' = fromJust "Incompatible branches" <$> (joinAll2 <$> patterns curried expr')
 
@@ -244,10 +228,6 @@ patternOne curried expr' delim = pattern' >>= rest
    pattern' = if curried then simplePattern2 pattern2 else pattern2
    body = PBody <$> (delim *> expr')
 
-nestedFun :: Boolean -> SParser Expr -> SParser Expr
-nestedFun true expr' = expr <$> (Lambda <$> elim expr' true)
-nestedFun false _ = empty
-
 def :: SParser Expr -> SParser Def
 def expr' =
    Def <$> try (keyword strLet *> pattern <* patternDelim) <*> expr' <* token.semi
@@ -261,12 +241,6 @@ clauses expr' = do
    where
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)
-
-recDef :: SParser Expr -> SParser RecDef
-recDef expr' = RecDef <$> ident <*> (elim expr' true <* token.semi)
-
-recDefs_old :: SParser Expr -> SParser RecDefs
-recDefs_old expr' = keyword strLet *> many (try $ recDef expr')
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
