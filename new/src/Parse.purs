@@ -291,12 +291,15 @@ appChain expr' =
 appChain_pattern :: SParser Elim -> SParser Elim
 appChain_pattern pattern' = simplePattern pattern' <|> constr_pattern pattern'
 
+appChain_pattern2 :: SParser Pattern -> SParser Pattern
+appChain_pattern2 pattern' = simplePattern2 pattern' <|> constr_pattern2 pattern'
+
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Elim
 pattern = fix appChain_pattern
 
 pattern2 :: SParser Pattern
-pattern2 = error "todo"
+pattern2 = fix appChain_pattern2
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
