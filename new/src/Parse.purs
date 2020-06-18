@@ -10,7 +10,6 @@ import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List, (:), many, groupBy, sortBy)
-import Data.List (singleton) as L
 import Data.Map (singleton, values)
 import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
@@ -26,7 +25,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import DataType (Ctr(..), cCons, cFalse, cNil, cPair, cTrue)
-import Expr (Cont(..), Def(..), Elim(..), Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import Expr (Cont(..), Def(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, joinAll2, mapCont, mapCont2)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (absurd, error, fromBool, fromJust)
@@ -268,7 +267,7 @@ elim2 expr' = fromJust "Incompatible branches" <$> (joinAll2 <$> patterns expr')
 
 -- One or more uncurried patterns.
 patterns :: SParser Expr -> SParser (List Pattern)
-patterns expr' = L.singleton <$> patternOne patternDelim <|> patternMany
+patterns expr' = pure <$> patternOne patternDelim <|> patternMany
    where
    patternMany :: SParser (List Pattern)
    patternMany = token.braces $ sepBy1 (patternOne arrow) token.semi
@@ -330,6 +329,17 @@ appChain expr' =
    where
       rest ∷ Expr -> SParser Expr
       rest e = (simpleExpr expr' <#> App e >>> expr >>= rest) <|> pure e
+
+appChain2 :: SParser Expr -> SParser Expr
+appChain2 expr' =
+   simpleExpr2 expr' >>= rest
+   where
+   rest :: Expr -> SParser Expr
+   rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
+      where
+      ctrArgs :: SParser Expr
+      ctrArgs = simpleExpr2 expr' >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
+   rest e = (expr <$> (App e <$> simpleExpr2 expr') >>= rest) <|> pure e
 
 -- Singleton eliminator with no continuation. Analogous in some way to app_chain, but there is nothing
 -- higher-order here: no explicit application nodes, non-saturated constructor applications, or patterns
