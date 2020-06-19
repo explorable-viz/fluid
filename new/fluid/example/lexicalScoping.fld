@@ -1,4 +1,3 @@
-let decr =
-   let x = 2; fun y -> y - x;
+let decr = let x = 2; fun y -> y - x;
     x = 8;
 intToStr (decr x)
