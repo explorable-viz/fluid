@@ -285,4 +285,4 @@ module_ :: SParser Module
 module_ = Module <$> (topLevel $ concat <$> many defs)
    where
       defs :: SParser (List (Either Def RecDefs))
-      defs = (bisequence <$> choose (try $ toList <$> letDefs expr_) (pure <$> recDefs expr_))
+      defs = (bisequence <$> choose (toList <$> try (letDefs expr_)) (pure <$> recDefs expr_))
