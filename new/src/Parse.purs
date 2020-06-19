@@ -19,7 +19,8 @@ import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
 import Text.Parsing.Parser (Parser)
-import Text.Parsing.Parser.Combinators (sepBy1, try)
+import Text.Parsing.Parser.Combinators (try)
+import Text.Parsing.Parser.Combinators (sepBy1) as P
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
@@ -36,13 +37,16 @@ import Util (type (×), (×), absurd, fromBool, fromJust)
 
 type SParser = Parser String
 
--- helpers
+-- helpers (would generalise to arbitrary parsers)
 pureMaybe :: forall a . Maybe a -> SParser a
 pureMaybe Nothing    = empty
 pureMaybe (Just x)   = pure x
 
 pureIf :: forall a . Boolean -> a -> SParser a
 pureIf b = fromBool b >>> pureMaybe
+
+sepBy1 :: forall a sep . SParser a -> SParser sep -> SParser (NonEmptyList a)
+sepBy1 p sep = fromJust absurd <$> (fromList <$> P.sepBy1 p sep)
 
 -- constants (should also be used by prettyprinter)
 strArrow       = "->" :: String
@@ -134,8 +138,7 @@ elim curried expr' = fromJust "Incompatible branches" <$> (joinAll <$> patterns)
    patterns = pure <$> patternOne curried expr' patternDelim <|> patternMany
       where
       patternMany :: SParser (NonEmptyList Pattern)
-      patternMany = fromJust absurd <$>
-         (fromList <$> (token.braces $ sepBy1 (patternOne curried expr' arrow) token.semi))
+      patternMany = token.braces $ sepBy1 (patternOne curried expr' arrow) token.semi
 
 patternOne :: Boolean -> SParser Expr -> SParser Unit -> SParser Pattern
 patternOne curried expr' delim = pattern' >>= rest
@@ -281,4 +284,4 @@ module_ :: SParser Module
 module_ = Module <$> (topLevel $ concat <$> many defs)
    where
       defs :: SParser (List (Either Def RecDefs))
-      defs = (bisequence <$> choose (try $ pure <$> letDef expr_) (pure <$> recDefs expr_))
+      defs = (bisequence <$> choose (try $ letDefs expr_) (pure <$> recDefs expr_))
