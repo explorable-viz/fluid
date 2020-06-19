@@ -80,9 +80,7 @@ keyword = token.reserved
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
 isCtr ∷ String → Boolean
-isCtr str = case charAt 0 str of
-   Nothing -> error absurd
-   Just ch -> isUpper ch
+isCtr str = isUpper $ fromJust absurd $ charAt 0 str
 
 ident ∷ SParser Var
 ident = do
@@ -101,6 +99,7 @@ simplePattern pattern' =
    try patternVariable <|>
    try (token.parens pattern') <|>
    patternPair
+
    where
    -- Constructor name as a nullary constructor pattern.
    ctr_pattern :: SParser Pattern
@@ -117,9 +116,6 @@ simplePattern pattern' =
          π' <- pattern'
          pure $ PattConstr cPair $ PArg 0 $ mapCont (PArg 1 π') π
 
-lambda :: SParser Expr -> SParser Expr
-lambda expr' = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
-
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
 
@@ -131,15 +127,14 @@ patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: Boolean -> SParser Expr -> SParser Elim
-elim curried expr' = fromJust "Incompatible branches" <$> (joinAll <$> patterns curried expr')
-
-patterns :: Boolean -> SParser Expr -> SParser (NonEmptyList Pattern)
-patterns curried expr' = pure <$> patternOne curried expr' patternDelim <|> patternMany
+elim curried expr' = fromJust "Incompatible branches" <$> (joinAll <$> patterns)
    where
-   patternMany :: SParser (NonEmptyList Pattern)
-   patternMany = do
-      πs <- token.braces $ sepBy1 (patternOne curried expr' arrow) token.semi
-      pure $ fromJust absurd $ fromList πs
+   patterns :: SParser (NonEmptyList Pattern)
+   patterns = pure <$> patternOne curried expr' patternDelim <|> patternMany
+      where
+      patternMany :: SParser (NonEmptyList Pattern)
+      patternMany = fromJust absurd <$>
+         (fromList <$> (token.braces $ sepBy1 (patternOne curried expr' arrow) token.semi))
 
 patternOne :: Boolean -> SParser Expr -> SParser Unit -> SParser Pattern
 patternOne curried expr' delim = pattern' >>= rest
@@ -174,95 +169,89 @@ recDefs expr' = do
       clause :: SParser (Var × Pattern)
       clause = ident `lift2 (×)` (patternOne true expr' equals)
 
--- the specific binary operator
-theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
-theBinaryOp op = try $ do
-   op' <- token.operator
-   pureMaybe ("Expected " <> op) $
-      fromBool (op == op') (\e1 -> expr <<< BinaryApp e1 op)
-
-backtick :: SParser Unit
-backtick = token.reservedOp "`"
-
-appChain :: SParser Expr -> SParser Expr
-appChain expr' = simpleExpr >>= rest
+-- Tree whose branches are binary primitives and whose leaves are application chains.
+expr_ :: SParser Expr
+expr_ = fix $ appChain >>> buildExprParser operators
    where
-   rest :: Expr -> SParser Expr
-   rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
+   -- Left-associative tree of applications of one or more simple terms.
+   appChain :: SParser Expr -> SParser Expr
+   appChain expr' = simpleExpr >>= rest
       where
-      ctrArgs :: SParser Expr
-      ctrArgs = simpleExpr >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
-   rest e = (expr <$> (App e <$> simpleExpr) >>= rest) <|> pure e
-
-   -- TODO: float
-   simpleExpr :: SParser Expr
-   simpleExpr =
-      try constrExpr <|>
-      try variable <|>
-      try int <|> -- int may start with +/-
-      string <|>
-      let_ <|>
-      letRec <|>
-      matchAs <|>
-      try (token.parens expr') <|>
-      try parensOp <|>
-      pair <|>
-      lambda expr'
-
-      where
-      constrExpr :: SParser Expr
-      constrExpr = expr <$> (Constr <$> ctr <@> empty)
-
-      variable :: SParser Expr
-      variable = ident <#> Var >>> expr
-
-      int :: SParser Expr
-      int = do
-         sign <- signOpt
-         (sign >>> Int >>> expr) <$> token.natural
+      rest :: Expr -> SParser Expr
+      rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
          where
-         signOpt :: ∀ a . (Ring a) => SParser (a -> a)
-         signOpt =
-            (char '-' $> negate) <|>
-            (char '+' $> identity) <|>
-            pure identity
+         ctrArgs :: SParser Expr
+         ctrArgs = simpleExpr >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
+      rest e = (expr <$> (App e <$> simpleExpr) >>= rest) <|> pure e
 
-      string :: SParser Expr
-      string = token.stringLiteral <#> Str >>> expr
+      -- Any expression other than an operator tree or an application chain.
+      simpleExpr :: SParser Expr
+      simpleExpr =
+         try constrExpr <|>
+         try variable <|>
+         try int <|> -- int may start with +/-
+         string <|>
+         let_ <|>
+         letRec <|>
+         matchAs <|>
+         try (token.parens expr') <|>
+         try parensOp <|>
+         pair <|>
+         lambda
 
-      let_ ∷ SParser Expr
-      let_ = expr <$> (Let <$> def expr' <*> expr')
-
-      letRec :: SParser Expr
-      letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
-
-      matchAs :: SParser Expr
-      matchAs = expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim false expr')
-
-      -- any binary operator, in parentheses
-      parensOp :: SParser Expr
-      parensOp = expr <$> (Op <$> token.parens token.operator)
-
-      pair :: SParser Expr
-      pair = token.parens $
-         expr <$> (lift2 $ \e e' -> Constr cPair (e : e' : empty)) (expr' <* token.comma) expr'
-
--- Singleton eliminator with no continuation. Analogous in some way to app_chain, but there is nothing
--- higher-order here: no explicit application nodes, non-saturated constructor applications, or patterns
--- other than constructors in the function position.
-appChain_pattern :: SParser Pattern -> SParser Pattern
-appChain_pattern pattern' = simplePattern pattern' >>= rest 0
-   where
-      rest ∷ Int -> Pattern -> SParser Pattern
-      rest n π@(PattConstr _ _) = ctrArgs <|> pure π
          where
-         ctrArgs :: SParser Pattern
-         ctrArgs = simplePattern pattern' >>= \π' -> rest (n + 1) $ mapCont (PArg n π') π
-      rest _ π@(PattVar _ _) = pure π
+         constrExpr :: SParser Expr
+         constrExpr = expr <$> (Constr <$> ctr <@> empty)
+
+         variable :: SParser Expr
+         variable = ident <#> Var >>> expr
+
+         int :: SParser Expr
+         int = do
+            sign <- signOpt
+            (sign >>> Int >>> expr) <$> token.natural
+            where
+            signOpt :: ∀ a . (Ring a) => SParser (a -> a)
+            signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
+
+         string :: SParser Expr
+         string = token.stringLiteral <#> Str >>> expr
+
+         let_ ∷ SParser Expr
+         let_ = expr <$> (Let <$> def expr' <*> expr')
+
+         letRec :: SParser Expr
+         letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
+
+         matchAs :: SParser Expr
+         matchAs = expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim false expr')
+
+         -- any binary operator, in parentheses
+         parensOp :: SParser Expr
+         parensOp = expr <$> (Op <$> token.parens token.operator)
+
+         pair :: SParser Expr
+         pair = token.parens $
+            expr <$> (lift2 $ \e e' -> Constr cPair (e : e' : empty)) (expr' <* token.comma) expr'
+
+         lambda :: SParser Expr
+         lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Pattern
 pattern = fix appChain_pattern
+   where
+   -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
+   -- non-saturated constructor applications, or patterns other than constructors in the function position.
+   appChain_pattern :: SParser Pattern -> SParser Pattern
+   appChain_pattern pattern' = simplePattern pattern' >>= rest 0
+      where
+         rest ∷ Int -> Pattern -> SParser Pattern
+         rest n π@(PattConstr _ _) = ctrArgs <|> pure π
+            where
+            ctrArgs :: SParser Pattern
+            ctrArgs = simplePattern pattern' >>= \π' -> rest (n + 1) $ mapCont (PArg n π') π
+         rest _ π@(PattVar _ _) = pure π
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
@@ -270,13 +259,13 @@ operators =
    fromFoldable $ map fromFoldable $
    map (map (\(OpName op _) -> Infix (theBinaryOp op) AssocLeft)) $
    groupBy (eq `on` opPrec) $ sortBy (\x -> comparing opPrec x >>> invert) $ values opNames
-
--- An expression is an operator tree. An operator tree is a tree whose branches are
--- binary primitives and whose leaves are application chains. An application chain
--- is a left-associative tree of one or more simple terms. A simple term is any
--- expression other than an operator tree or an application chain.
-expr_ :: SParser Expr
-expr_ = fix $ appChain >>> buildExprParser operators
+   where
+   -- specific binary operator
+   theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
+   theBinaryOp op = try $ do
+      op' <- token.operator
+      pureMaybe ("Expected " <> op) $
+         fromBool (op == op') (\e1 -> expr <<< BinaryApp e1 op)
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
