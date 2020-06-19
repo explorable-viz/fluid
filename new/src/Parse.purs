@@ -157,14 +157,14 @@ patternOne curried expr' delim = pattern' >>= rest
    body = PBody <$> (delim *> expr')
 
 letDefs :: SParser Expr -> SParser (NonEmptyList Def)
-letDefs expr' = keyword strLet *> (some $ try $ clause <* token.semi)
+letDefs expr' = keyword strLet *> (some $ try clause <* token.semi)
    where
    clause :: SParser Def
    clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
-   fπs <- keyword strLet *> (some $ try $ clause <* token.semi)
+   fπs <- keyword strLet *> (some $ try clause <* token.semi)
    let fπss = groupBy (eq `on` fst) $ toList fπs
    pure $ map toRecDef fπss
    where
@@ -222,11 +222,11 @@ expr_ = fix $ appChain >>> buildExprParser operators
             signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
 
          string :: SParser Expr
-         string = token.stringLiteral <#> Str >>> expr
+         string = expr <$> (Str <$> token.stringLiteral)
 
          let_ ∷ SParser Expr
          let_ = do
-            defs <- unwrap <$> letDefs expr'
+            defs <- unwrap <$> try (letDefs expr')
             foldr (\def -> expr <<< Let def) <$> expr' <@> defs
 
          letRec :: SParser Expr
