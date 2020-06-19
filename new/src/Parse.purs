@@ -233,8 +233,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
          let_ ∷ SParser Expr
          let_ = do
             defs <- unwrap <$> letDefs expr'
-            e <- expr'
-            pure $ foldr (\def -> expr <<< Let def) e $ defs
+            foldr (\def -> expr <<< Let def) <$> expr' <@> defs
 
          letRec :: SParser Expr
          letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
