@@ -77,13 +77,6 @@ token = makeTokenParser languageDef
 keyword ∷ String → SParser Unit
 keyword = token.reserved
 
-variable :: SParser Expr
-variable = ident <#> Var >>> expr
-
--- TODO: anonymous variables
-patternVariable :: SParser Pattern
-patternVariable = PattVar <$> ident <@> PNone
-
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
 isCtr ∷ String → Boolean
@@ -101,69 +94,28 @@ ctr = do
    x <- token.identifier
    pureIf ("Unexpected identifier") (isCtr x) $ Ctr x
 
--- Parse a constructor name as a nullary constructor pattern.
-ctr_pattern :: SParser Pattern
-ctr_pattern = PattConstr <$> ctr <@> PNone
-
-theCtr :: Ctr -> SParser Ctr
-theCtr c = do
-   c' <- ctr
-   pureIf ("Expected " <> show c) (c' == c) c
-
-signOpt :: ∀ a . (Ring a) => SParser (a -> a)
-signOpt =
-   (char '-' $> negate) <|>
-   (char '+' $> identity) <|>
-   pure identity
-
-int :: SParser Expr
-int = do
-   sign <- signOpt
-   token.natural <#> sign >>> Int >>> expr
-
-string :: SParser Expr
-string = token.stringLiteral <#> Str >>> expr
-
-constrExpr :: SParser Expr
-constrExpr =
-   expr <$> (Constr <$> ctr <@> empty)
-
-pair :: SParser Expr -> SParser Expr
-pair expr' =
-   token.parens $ do
-      e <- expr' <* token.comma
-      e' <- expr'
-      pure $ expr $ Constr cPair (e : e' : empty)
-
-patternPair :: SParser Pattern -> SParser Pattern
-patternPair pattern' =
-   token.parens $ do
-      π <- pattern' <* token.comma
-      π' <- pattern'
-      pure $ PattConstr cPair $ PArg 0 $ mapCont (PArg 1 π') π
-
--- TODO: float
-simpleExpr :: SParser Expr -> SParser Expr
-simpleExpr expr' =
-   try constrExpr <|>
-   try variable <|>
-   try int <|> -- int may start with +/-
-   string <|>
-   let_ expr' <|>
-   letRec expr' <|>
-   matchAs expr' <|>
-   try (token.parens expr') <|>
-   try parensOp <|>
-   pair expr' <|>
-   lambda expr'
-
 -- Singleton eliminator with no continuation.
 simplePattern :: SParser Pattern -> SParser Pattern
 simplePattern pattern' =
    try ctr_pattern <|>
    try patternVariable <|>
    try (token.parens pattern') <|>
-   patternPair pattern'
+   patternPair
+   where
+   -- Constructor name as a nullary constructor pattern.
+   ctr_pattern :: SParser Pattern
+   ctr_pattern = PattConstr <$> ctr <@> PNone
+
+      -- TODO: anonymous variables
+   patternVariable :: SParser Pattern
+   patternVariable = PattVar <$> ident <@> PNone
+
+   patternPair :: SParser Pattern
+   patternPair =
+      token.parens $ do
+         π <- pattern' <* token.comma
+         π' <- pattern'
+         pure $ PattConstr cPair $ PArg 0 $ mapCont (PArg 1 π') π
 
 lambda :: SParser Expr -> SParser Expr
 lambda expr' = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
@@ -204,38 +156,23 @@ def :: SParser Expr -> SParser Def
 def expr' =
    Def <$> try (keyword strLet *> (pattern <#> toElim) <* patternDelim) <*> expr' <* token.semi
 
-let_ ∷ SParser Expr -> SParser Expr
-let_ expr' = expr <$> (Let <$> def expr' <*> expr')
-
-clauses :: SParser Expr -> SParser (List (Var × Pattern))
-clauses expr' = do
-   some $ try $ clause <* token.semi
-   where
-   clause :: SParser (Var × Pattern)
-   clause = ident `lift2 (×)` (patternOne true expr' equals)
-
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
-   fπs <- keyword strLet *> clauses expr'
+   fπs <- keyword strLet *> clauses
    let fπss = groupBy (eq `on` fst) fπs
    pure $ map toRecDef fπss
+   where
+   toRecDef :: NonEmptyList (String × Pattern) -> RecDef
+   toRecDef fπs =
+      let f = fst $ head fπs in
+      RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll $ map snd fπs
+
+   clauses :: SParser (List (Var × Pattern))
+   clauses = do
+      some $ try $ clause <* token.semi
       where
-      toRecDef :: NonEmptyList (String × Pattern) -> RecDef
-      toRecDef fπs =
-         let f = fst $ head fπs in
-         RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll $ map snd fπs
-
-letRec :: SParser Expr -> SParser Expr
-letRec expr' = expr <$>
-   (LetRec <$> recDefs expr' <*> expr')
-
-matchAs :: SParser Expr -> SParser Expr
-matchAs expr' = expr <$>
-   (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim false expr')
-
--- any binary operator, in parentheses
-parensOp :: SParser Expr
-parensOp = token.parens $ token.operator <#> Op >>> expr
+      clause :: SParser (Var × Pattern)
+      clause = ident `lift2 (×)` (patternOne true expr' equals)
 
 -- the specific binary operator
 theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
@@ -248,14 +185,67 @@ backtick :: SParser Unit
 backtick = token.reservedOp "`"
 
 appChain :: SParser Expr -> SParser Expr
-appChain expr' = simpleExpr expr' >>= rest
+appChain expr' = simpleExpr >>= rest
    where
    rest :: Expr -> SParser Expr
    rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
       where
       ctrArgs :: SParser Expr
-      ctrArgs = simpleExpr expr' >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
-   rest e = (expr <$> (App e <$> simpleExpr expr') >>= rest) <|> pure e
+      ctrArgs = simpleExpr >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
+   rest e = (expr <$> (App e <$> simpleExpr) >>= rest) <|> pure e
+
+   -- TODO: float
+   simpleExpr :: SParser Expr
+   simpleExpr =
+      try constrExpr <|>
+      try variable <|>
+      try int <|> -- int may start with +/-
+      string <|>
+      let_ <|>
+      letRec <|>
+      matchAs <|>
+      try (token.parens expr') <|>
+      try parensOp <|>
+      pair <|>
+      lambda expr'
+
+      where
+      constrExpr :: SParser Expr
+      constrExpr = expr <$> (Constr <$> ctr <@> empty)
+
+      variable :: SParser Expr
+      variable = ident <#> Var >>> expr
+
+      int :: SParser Expr
+      int = do
+         sign <- signOpt
+         (sign >>> Int >>> expr) <$> token.natural
+         where
+         signOpt :: ∀ a . (Ring a) => SParser (a -> a)
+         signOpt =
+            (char '-' $> negate) <|>
+            (char '+' $> identity) <|>
+            pure identity
+
+      string :: SParser Expr
+      string = token.stringLiteral <#> Str >>> expr
+
+      let_ ∷ SParser Expr
+      let_ = expr <$> (Let <$> def expr' <*> expr')
+
+      letRec :: SParser Expr
+      letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
+
+      matchAs :: SParser Expr
+      matchAs = expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim false expr')
+
+      -- any binary operator, in parentheses
+      parensOp :: SParser Expr
+      parensOp = expr <$> (Op <$> token.parens token.operator)
+
+      pair :: SParser Expr
+      pair = token.parens $
+         expr <$> (lift2 $ \e e' -> Constr cPair (e : e' : empty)) (expr' <* token.comma) expr'
 
 -- Singleton eliminator with no continuation. Analogous in some way to app_chain, but there is nothing
 -- higher-order here: no explicit application nodes, non-saturated constructor applications, or patterns
