@@ -11,11 +11,12 @@ import Data.Char.Unicode (isUpper)
 import Data.Either (Either, choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, (:), concat, many, groupBy, sortBy)
+import Data.List (List, (:), concat, foldl, many, groupBy, sortBy)
 import Data.List (some) as L
 import Data.List.NonEmpty (NonEmptyList, fromList, head, toList)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
@@ -229,8 +230,14 @@ expr_ = fix $ appChain >>> buildExprParser operators
          string :: SParser Expr
          string = token.stringLiteral <#> Str >>> expr
 
+         let_old ∷ SParser Expr
+         let_old = expr <$> (Let <$> letDef expr' <*> expr')
+
          let_ ∷ SParser Expr
-         let_ = expr <$> (Let <$> letDef expr' <*> expr')
+         let_ = do
+            defs <- unwrap <$> letDefs expr'
+            e <- expr'
+            pure $ foldl (\e def -> expr $ Let def e) e $ defs
 
          letRec :: SParser Expr
          letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
