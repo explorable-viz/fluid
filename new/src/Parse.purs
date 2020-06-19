@@ -149,7 +149,10 @@ patternOne curried expr' delim = pattern' >>= rest
 
 def :: SParser Expr -> SParser Def
 def expr' =
-   Def <$> (keyword strLet *> (pattern <#> toElim) <* patternDelim) <*> expr' <* token.semi
+   keyword strLet *> clause <* token.semi
+   where
+   clause :: SParser Def
+   clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
