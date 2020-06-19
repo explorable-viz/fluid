@@ -17,7 +17,7 @@ import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
-import Text.Parsing.Parser (Parser, fail)
+import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
@@ -31,14 +31,14 @@ import DataType (Ctr(..), cPair)
 import Expr (Def(..), Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (type (×), (×), absurd, error, fromBool, fromJust)
+import Util (type (×), (×), absurd, fromBool, fromJust)
 
 type SParser = Parser String
 
 -- helpers
 pureMaybe :: forall a . Maybe a -> SParser a
-pureMaybe Nothing = fail "fail"
-pureMaybe (Just x) = pure x
+pureMaybe Nothing    = empty
+pureMaybe (Just x)   = pure x
 
 pureIf :: forall a . Boolean -> a -> SParser a
 pureIf b = fromBool b >>> pureMaybe
