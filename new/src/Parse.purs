@@ -149,14 +149,14 @@ patternOne curried expr' delim = pattern' >>= rest
    pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
-def :: SParser Expr -> SParser Def
-def expr' = keyword strLet *> clause <* token.semi
+letDef :: SParser Expr -> SParser Def
+letDef expr' = keyword strLet *> clause <* token.semi
    where
    clause :: SParser Def
    clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
 
-defs :: SParser Expr -> SParser (List Def)
-defs expr' = keyword strLet *> (some $ try $ clause <* token.semi)
+letDefs :: SParser Expr -> SParser (List Def)
+letDefs expr' = keyword strLet *> (some $ try $ clause <* token.semi)
    where
    clause :: SParser Def
    clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
@@ -224,7 +224,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
          string = token.stringLiteral <#> Str >>> expr
 
          let_ ∷ SParser Expr
-         let_ = expr <$> (Let <$> def expr' <*> expr')
+         let_ = expr <$> (Let <$> letDef expr' <*> expr')
 
          letRec :: SParser Expr
          letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
@@ -279,7 +279,7 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = Module <$> (topLevel $ concat <$> many blah)
+module_ = Module <$> (topLevel $ concat <$> many defs)
    where
-      blah :: SParser (List (Either Def (List RecDef)))
-      blah = (bisequence <$> choose (try $ pure <$> def expr_) (pure <$> recDefs expr_))
+      defs :: SParser (List (Either Def (List RecDef)))
+      defs = (bisequence <$> choose (try $ pure <$> letDef expr_) (pure <$> recDefs expr_))
