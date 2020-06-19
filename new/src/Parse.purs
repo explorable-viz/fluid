@@ -153,7 +153,7 @@ def expr' =
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
-   fπs <- keyword strLet *> clauses
+   fπs <- keyword strLet *> (some $ try $ clause <* token.semi)
    let fπss = groupBy (eq `on` fst) fπs
    pure $ map toRecDef fπss
    where
@@ -162,11 +162,8 @@ recDefs expr' = do
       let f = fst $ head fπs in
       RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll $ map snd fπs
 
-   clauses :: SParser (List (Var × Pattern))
-   clauses = some $ try $ clause <* token.semi
-      where
-      clause :: SParser (Var × Pattern)
-      clause = ident `lift2 (×)` (patternOne true expr' equals)
+   clause :: SParser (Var × Pattern)
+   clause = ident `lift2 (×)` (patternOne true expr' equals)
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser Expr
