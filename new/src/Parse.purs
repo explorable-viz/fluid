@@ -11,7 +11,7 @@ import Data.Char.Unicode (isUpper)
 import Data.Either (Either, choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, (:), concat, foldl, many, groupBy, sortBy)
+import Data.List (List, (:), concat, foldr, many, groupBy, sortBy)
 import Data.List (some) as L
 import Data.List.NonEmpty (NonEmptyList, fromList, head, toList)
 import Data.Map (values)
@@ -234,7 +234,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
          let_ = do
             defs <- unwrap <$> letDefs expr'
             e <- expr'
-            pure $ foldl (\e def -> expr $ Let def e) e $ defs
+            pure $ foldr (\def -> expr <<< Let def) e $ defs
 
          letRec :: SParser Expr
          letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
