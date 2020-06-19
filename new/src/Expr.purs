@@ -53,7 +53,7 @@ data Elim =
    ElimVar Var Cont |
    ElimConstr (Map Ctr Cont)
 
-instance elim2Selectable :: Selectable Elim where
+instance elimSelectable :: Selectable Elim where
    mapα f (ElimVar x κ)    = ElimVar x $ mapα f κ
    mapα f (ElimConstr κs)  = ElimConstr $ map (mapα f) κs
 

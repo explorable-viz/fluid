@@ -6,16 +6,18 @@ import Control.Apply (lift2)
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
+import Data.Bitraversable (bisequence)
 import Data.Char.Unicode (isUpper)
-import Data.Either (choose)
+import Data.Either (Either(..), choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, (:), many, groupBy, some, sortBy)
+import Data.List (List, (:), concat, many, groupBy, some, sortBy)
 import Data.List.NonEmpty (NonEmptyList, fromList, head)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
+import Data.Traversable (sequence)
 import Data.Tuple (fst, snd)
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (sepBy1, try)
@@ -148,8 +150,13 @@ patternOne curried expr' delim = pattern' >>= rest
    body = PBody <$> (delim *> expr')
 
 def :: SParser Expr -> SParser Def
-def expr' =
-   keyword strLet *> clause <* token.semi
+def expr' = keyword strLet *> clause <* token.semi
+   where
+   clause :: SParser Def
+   clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
+
+defs :: SParser Expr -> SParser (List Def)
+defs expr' = keyword strLet *> (some $ try $ clause <* token.semi)
    where
    clause :: SParser Def
    clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
@@ -272,4 +279,7 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = topLevel $ many (choose (try $ def expr_) (recDefs expr_)) <#> Module
+module_ = Module <$> (topLevel $ concat <$> many blah)
+   where
+      blah :: SParser (List (Either Def (List RecDef)))
+      blah = (bisequence <$> choose (try $ pure <$> def expr_) (pure <$> recDefs expr_))
