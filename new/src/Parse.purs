@@ -149,7 +149,7 @@ patternOne curried expr' delim = pattern' >>= rest
 
 def :: SParser Expr -> SParser Def
 def expr' =
-   Def <$> try (keyword strLet *> (pattern <#> toElim) <* patternDelim) <*> expr' <* token.semi
+   Def <$> (keyword strLet *> (pattern <#> toElim) <* patternDelim) <*> expr' <* token.semi
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
@@ -163,8 +163,7 @@ recDefs expr' = do
       RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll $ map snd fπs
 
    clauses :: SParser (List (Var × Pattern))
-   clauses = do
-      some $ try $ clause <* token.semi
+   clauses = some $ try $ clause <* token.semi
       where
       clause :: SParser (Var × Pattern)
       clause = ident `lift2 (×)` (patternOne true expr' equals)
@@ -191,7 +190,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
          try variable <|>
          try int <|> -- int may start with +/-
          string <|>
-         let_ <|>
+         try let_ <|>
          letRec <|>
          matchAs <|>
          try (token.parens expr') <|>
@@ -273,4 +272,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = topLevel $ many (choose (def expr_) (recDefs expr_)) <#> Module
+module_ = topLevel $ many (choose (try $ def expr_) (recDefs expr_)) <#> Module
