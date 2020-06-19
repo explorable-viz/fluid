@@ -36,12 +36,12 @@ import Util (type (×), (×), absurd, error, fromBool, fromJust)
 type SParser = Parser String
 
 -- helpers
-pureMaybe :: forall a . String -> Maybe a -> SParser a
-pureMaybe msg Nothing = fail msg
-pureMaybe _ (Just x) = pure x
+pureMaybe :: forall a . Maybe a -> SParser a
+pureMaybe Nothing = fail "fail"
+pureMaybe (Just x) = pure x
 
-pureIf :: forall a . String -> Boolean -> a -> SParser a
-pureIf msg b = fromBool b >>> pureMaybe msg
+pureIf :: forall a . Boolean -> a -> SParser a
+pureIf b = fromBool b >>> pureMaybe
 
 -- constants (should also be used by prettyprinter)
 strArrow       = "->" :: String
@@ -85,12 +85,12 @@ isCtr str = isUpper $ fromJust absurd $ charAt 0 str
 ident ∷ SParser Var
 ident = do
    x <- token.identifier
-   pureIf ("Unexpected constructor") (not (isCtr x)) x
+   pureIf (not (isCtr x)) x
 
 ctr :: SParser Ctr
 ctr = do
    x <- token.identifier
-   pureIf ("Unexpected identifier") (isCtr x) $ Ctr x
+   pureIf (isCtr x) $ Ctr x
 
 -- Singleton eliminator with no continuation.
 simplePattern :: SParser Pattern -> SParser Pattern
@@ -257,15 +257,14 @@ pattern = fix appChain_pattern
 operators :: OperatorTable Identity String Expr
 operators =
    fromFoldable $ map fromFoldable $
-   map (map (\(OpName op _) -> Infix (theBinaryOp op) AssocLeft)) $
+   map (map (\(OpName op _) -> Infix (try $ theBinaryOp op) AssocLeft)) $
    groupBy (eq `on` opPrec) $ sortBy (\x -> comparing opPrec x >>> invert) $ values opNames
    where
    -- specific binary operator
    theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
-   theBinaryOp op = try $ do
+   theBinaryOp op = do
       op' <- token.operator
-      pureMaybe ("Expected " <> op) $
-         fromBool (op == op') (\e1 -> expr <<< BinaryApp e1 op)
+      pureMaybe $ fromBool (op == op') (\e1 -> expr <<< BinaryApp e1 op)
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
