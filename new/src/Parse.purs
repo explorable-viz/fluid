@@ -156,12 +156,6 @@ patternOne curried expr' delim = pattern' >>= rest
    pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
-letDef :: SParser Expr -> SParser Def
-letDef expr' = keyword strLet *> clause <* token.semi
-   where
-   clause :: SParser Def
-   clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
-
 letDefs :: SParser Expr -> SParser (NonEmptyList Def)
 letDefs expr' = keyword strLet *> (some $ try $ clause <* token.semi)
    where
