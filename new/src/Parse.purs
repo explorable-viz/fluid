@@ -230,9 +230,6 @@ expr_ = fix $ appChain >>> buildExprParser operators
          string :: SParser Expr
          string = token.stringLiteral <#> Str >>> expr
 
-         let_old ∷ SParser Expr
-         let_old = expr <$> (Let <$> letDef expr' <*> expr')
-
          let_ ∷ SParser Expr
          let_ = do
             defs <- unwrap <$> letDefs expr'
