@@ -21,6 +21,7 @@ import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
+import Debug.Trace (trace)
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (manyTill, try)
 import Text.Parsing.Parser.Combinators (sepBy1) as P
@@ -60,6 +61,7 @@ strAs          = "as" :: String
 strBackslash   = "\\" :: String
 strEquals      = "=" :: String
 strFun         = "fun" :: String
+strIn          = "in" :: String
 strLet         = "let" :: String
 strMatch       = "match" :: String
 
@@ -74,7 +76,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    opStart = opChar,
    opLetter = opChar,
    reservedOpNames = [],
-   reservedNames = [strAs, strFun, strLet, strMatch],
+   reservedNames = [strAs, strFun, strIn, strLet, strMatch],
    caseSensitive = true
 } where
    opChar :: SParser Char
@@ -157,14 +159,14 @@ patternOne curried expr' delim = pattern' >>= rest
    pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
-sepBy1Then :: forall a . SParser a -> SParser Unit -> SParser Unit -> SParser (NonEmptyList a)
+sepBy1Then :: forall a b c. SParser a -> SParser b -> SParser c -> SParser (NonEmptyList a)
 sepBy1Then p sep end = do
    x <- p
    xs <- manyTill (sep *> p) end
    pure $ wrap $ x :| xs
 
 letDefs :: SParser Expr -> SParser (NonEmptyList Def)
-letDefs expr' = keyword strLet *> (some $ try clause <* token.semi)
+letDefs expr' = keyword strLet *> (sepBy1Then clause token.semi $ keyword strIn)
    where
    clause :: SParser Def
    clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
