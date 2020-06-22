@@ -5,11 +5,11 @@ import Data.Foldable (foldr)
 import Data.List (List, (:), length, zip)
 import Data.List (List(..)) as L
 import Data.Map (update)
-import Bindings (Bind, Bindings(..), (:+:), (↦), find, foldBind)
+import Bindings (Bind, Bindings(..), (:+:), (:++:), (↦), find, foldBind)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), Def(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs)
-import Lattice (Selected, (∨), bot)
+import Lattice (Selected, (∨), bot, ff, tt)
 import Primitive (primitives)
 import Util ((≜), type (×), (×), absurd, error, successful)
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
@@ -70,16 +70,14 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
 
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
 -- var
-eval_bwd (Val α v) (T.Var x)
-   = (Empty :+: x ↦ Val α v) × (Expr α (Var x)) × false
+eval_bwd v (T.Var x ρ)
+   = (Empty :+: x ↦ v) × (Expr ff (Var x)) × ff
 -- int
-eval_bwd (Val α (V.Int n)) (T.Int tn)
-   = Empty × (Expr α (Int n)) × α
+eval_bwd (Val α (V.Int n)) (T.Int tn ρ)
+   = Empty × (Expr ff (Int n)) × ff
 -- op
-eval_bwd (Val α (V.Binary (BinaryOp s bin))) (T.Op op)
-   = (Empty :+: op ↦ (Val α (V.Binary (BinaryOp s bin)))) × (Expr α (Op op)) × false
-eval_bwd (Val α (V.Unary (UnaryOp s una))) (T.Op op)
-   = (Empty :+: op ↦ (Val α (V.Unary (UnaryOp s una)))) × (Expr α (Op op)) × false
+eval_bwd v (T.Op op ρ)
+   = (Empty :+: op ↦ v) × (Expr ff (Op op)) × ff
 -- lambda
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × (Expr α (Lambda σ)) × α
@@ -92,27 +90,26 @@ eval_bwd v@(Val _ (V.Closure _ δ _)) (T.App t t' ξ t'')
           ρ'  × e'  × α'  = eval_bwd v' t'
           ρ1' × δ   × α2  = closeDefs_bwd ρ2
           ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ σ)) t in
-      (ρ' ∨ ρ'') × (Expr false (App e'' e')) × (α' ∨ α'')
+      (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
 -- binary-apply
-eval_bwd (Val α v) (T.BinaryApp t op t')
-   = (ρ ∨ ρ') × (Expr α (BinaryApp e op e')) × α
-   where
-      f expl = case expl of T.Int n -> eval_bwd (Val α (V.Int n)) expl
-                        --  T.Var x -> eval_bwd (Val α (V.Var x)) expl
-                            _       -> error ""
-      ρ  × e  × α'  = f t
-      ρ' × e' × α'' = f t'
+eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
+   = let ρ  × e  × α'  = eval_bwd v1 t1
+         ρ' × e' × α'' = eval_bwd v2 t2
+     in  (ρ ∨ ρ') × (Expr α (BinaryApp e op e')) × α
 -- apply-prim
-eval_bwd (Val α v) (T.AppOp t t')
-   = case t of
-      T.Op op -> let val_t  = successful (find op primitives)
-                     val_t' = case t' of  T.Int i -> Val α (V.Int i)
-                                 --     T.Var x -> Val α (V.Var x)
-                                          _       -> error absurd
-                     ρ  × e  × α'  = eval_bwd val_t t
-                     ρ' × e' × α'' = eval_bwd val_t' t'
-                 in  (ρ ∨ ρ') × (Expr false (App e e')) × α
-      _ -> error absurd
+eval_bwd (Val α v) (T.AppOp (t1 × v1) (t2 × v2))
+   = let ρ  × e  × α'  = eval_bwd v1 t1
+         ρ' × e' × α'' = eval_bwd v2 t2
+     in  (ρ ∨ ρ') × (Expr α (App e e')) × α
+-- match-as
+eval_bwd v (T.MatchAs t1 ξ t2)
+   = let ρ1ρ2 × e × α = eval_bwd v t2
+         ρ1 × ρ2      = unmatch ρ1ρ2 ξ
+         v' × σ       = match_bwd ρ2 (Body e) α ξ
+         _ × e' × α'  = eval_bwd v' t1
+         ρ1' = ρ1 :++: bot ρ2
+         ρ2' = bot ρ1 :++: ρ2
+     in  (ρ1' ∨ ρ2') × (Expr false (MatchAs e' σ)) × (α ∨ α')
 -- let
 eval_bwd v (T.Let (T.Def ξ t) t')
    = let ρρ' ×  e × α   = eval_bwd v  t'
@@ -125,12 +122,12 @@ eval_bwd v (T.LetRec δ t)
    = let ρ_ρ' × e × α = eval_bwd v t
          ρ × ρ'       = split ρ_ρ' δ
          _ × δ' × α'  = closeDefs_bwd ρ'
-     in  (ρ ∨ ρ') × (Expr false (LetRec δ' e)) × (α ∨ α')
+     in  (ρ ∨ ρ') × (Expr ff (LetRec δ' e)) × (α ∨ α')
 -- constr
 eval_bwd (Val _ (V.Constr c vs)) (T.Constr c' ts)
    = let f = (\(v × t) (ρ × es × α)
                  -> let ρ' × e × α' = eval_bwd v t
                     in  (ρ ∨ ρ') × (e:es) × (α ∨ α'))
-         ρ × es × α' = foldr f (Empty × L.Nil × false) (zip vs ts)
-     in  ρ × (Expr false (Constr c es)) × α'
+         ρ × es × α' = foldr f (Empty × L.Nil × ff) (zip vs ts)
+     in  ρ × (Expr ff (Constr c es)) × α'
 eval_bwd _ _ = error absurd

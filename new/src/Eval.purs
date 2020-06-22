@@ -9,7 +9,7 @@ import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr)
 import Expl (Def(..), Expl(..)) as T
-import Expl (Expl, Match(..))
+import Expl (Expl, ExplVal, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
@@ -44,11 +44,11 @@ closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Clo
 
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
-   (T.Var x × _) <$> find x ρ
+   (T.Var x ρ × _) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =
-   (T.Op op × _) <$> find op ρ
+   (T.Op op ρ × _) <$> find op ρ
 eval ρ (Expr _ (E.Int n)) =
-   pure $ T.Int n × val (V.Int n)
+   pure $ T.Int n ρ × val (V.Int n)
 eval ρ (Expr _ (E.Str str)) =
    pure $ (T.Str str) × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
@@ -61,7 +61,7 @@ eval ρ (Expr _ (E.LetRec δ e)) = do
 eval ρ (Expr _ (E.Lambda σ)) =
    pure $ (T.Lambda σ) × val (V.Closure ρ Nil σ)
 eval ρ (Expr _ (E.App e e')) = do
-   t  × (Val _ u) <- eval ρ e
+   t  × v@(Val _ u) <- eval ρ e
    t' × v'        <- eval ρ e'
    case u of
       V.Closure ρ1 δ σ -> do
@@ -70,9 +70,9 @@ eval ρ (Expr _ (E.App e e')) = do
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
          pure $ (T.App t t' ξ t'') × v''
       V.Unary φ ->
-         pure $ (T.AppOp t t') × applyUnary φ v'
+         pure $ (T.AppOp (t × v) (t' × v')) × applyUnary φ v'
       V.Binary φ ->
-         pure $ (T.AppOp t t') × val (V.Unary $ PartialApp φ v')
+         pure $ (T.AppOp (t × v) (t' × v')) × val (V.Unary $ PartialApp φ v')
       _ -> Left "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
@@ -80,7 +80,7 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
    Val _ u <- find op ρ
    case u of
       V.Binary φ ->
-         pure $ (T.BinaryApp t op t') × (v `applyBinary φ` v')
+         pure $ (T.BinaryApp (t × v) op (t' × v')) × (v `applyBinary φ` v')
       _ -> error absurd
 eval ρ (Expr _ (E.Let (E.Def σ e) e')) = do
    t  × v      <- eval ρ e

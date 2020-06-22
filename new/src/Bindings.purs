@@ -14,6 +14,7 @@ data Bindings a = Empty | Extend (Bindings a) (Bind a)
 
 infix 6 Bind as ↦
 infixl 5 Extend as :+:
+infixl 5 append as :++:
 infixl 5 update as ◃
 
 instance bindingsSemigroup :: Semigroup (Bindings a) where
