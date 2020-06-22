@@ -49,8 +49,8 @@ remove x' ρ = go ρ Empty
          go (ρ' :+: x ↦ v) acc = if x == x' then pure $ Tuple v (ρ' <> acc)
                                  else go ρ' (acc :+: x ↦ v)
 
-update :: forall a . Lattice a => Var -> a -> Bindings a -> Bindings a
-update _ _ Empty = Empty
-update x' v' (xs :+: x ↦ v)
+update :: forall a . Lattice a => Bindings a -> Bind a -> Bindings a
+update Empty _ = Empty
+update (xs :+: x ↦ v) (x' ↦ v')
    | x == x'    = xs :+: x' ↦ v'
-   | otherwise  = (update x' v' xs) :+: x ↦ v
+   | otherwise  = (update xs (x' ↦ v')) :+: x ↦ v

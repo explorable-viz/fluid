@@ -5,12 +5,14 @@ import Data.Foldable (foldr)
 import Data.List (List, (:), length, zip)
 import Data.List (List(..)) as L
 import Data.Map (update)
-import Bindings (Bind, Bindings(..), (:+:), (:++:), (↦), find, foldBind)
+import Debug.Trace (trace)
+import Bindings (Bind, Bindings(..), (:+:), (:++:), (◃), (↦), find, foldBind)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), Def(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs)
 import Lattice (Selected, (∨), bot, ff, tt)
 import Primitive (primitives)
+import Pretty
 import Util ((≜), type (×), (×), absurd, error, successful)
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
@@ -71,13 +73,13 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
 -- var
 eval_bwd v (T.Var x ρ)
-   = (Empty :+: x ↦ v) × (Expr ff (Var x)) × ff
+   = ((bot ρ) ◃ (x ↦ v)) × (Expr ff (Var x)) × ff
 -- int
 eval_bwd (Val α (V.Int n)) (T.Int tn ρ)
-   = Empty × (Expr ff (Int n)) × ff
+   = bot ρ × (Expr ff (Int n)) × ff
 -- op
 eval_bwd v (T.Op op ρ)
-   = (Empty :+: op ↦ v) × (Expr ff (Op op)) × ff
+   = (bot ρ ◃ op ↦ v) × (Expr ff (Op op)) × ff
 -- lambda
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × (Expr α (Lambda σ)) × α
@@ -93,13 +95,14 @@ eval_bwd v@(Val _ (V.Closure _ δ _)) (T.App t t' ξ t'')
       (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
 -- binary-apply
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
-   = let ρ  × e  × α'  = eval_bwd v1 t1
-         ρ' × e' × α'' = eval_bwd v2 t2
-     in  (ρ ∨ ρ') × (Expr α (BinaryApp e op e')) × α
+   = let ρ  × e  × α'  = eval_bwd v2 t2
+         ρ' × e' × α'' = eval_bwd v1 t1
+         k = trace (render $ pretty $ ρ ∨ ρ') $ \_ -> ff
+     in  (ρ ∨ ρ') × (Expr α (BinaryApp e' op e)) × k
 -- apply-prim
 eval_bwd (Val α v) (T.AppOp (t1 × v1) (t2 × v2))
-   = let ρ  × e  × α'  = eval_bwd v1 t1
-         ρ' × e' × α'' = eval_bwd v2 t2
+   = let ρ  × e  × α'  = eval_bwd v2 t2
+         ρ' × e' × α'' = eval_bwd v1 t1
      in  (ρ ∨ ρ') × (Expr α (App e e')) × α
 -- match-as
 eval_bwd v (T.MatchAs t1 ξ t2)
@@ -109,20 +112,21 @@ eval_bwd v (T.MatchAs t1 ξ t2)
          _ × e' × α'  = eval_bwd v' t1
          ρ1' = ρ1 :++: bot ρ2
          ρ2' = bot ρ1 :++: ρ2
-     in  (ρ1' ∨ ρ2') × (Expr false (MatchAs e' σ)) × (α ∨ α')
+     in  (ρ1' ∨ ρ2') × (Expr ff (MatchAs e' σ)) × (α ∨ α')
 -- let
-eval_bwd v (T.Let (T.Def ξ t) t')
-   = let ρρ' ×  e × α   = eval_bwd v  t'
-         ρ  × ρ'        = unmatch ρρ' ξ
-         v' × σ         = match_bwd ρ' (Body e) α ξ
-         ρ'' × e' × α'  = eval_bwd v' t
-     in  (ρ ∨ ρ'') × (Expr (α ∨ α') (Let (Def σ e) e')) × (α ∨ α')
+eval_bwd v (T.Let (T.Def ξ t1) t2)
+   = let ρ1ρ2 × e2 × α2 = eval_bwd v t2
+         ρ1 × ρ2        = unmatch ρ1ρ2 ξ
+         v' × σ         = match_bwd ρ2 (Body e2) α2 ξ
+         ρ1' × e1 × α1  = eval_bwd v' t1
+
+     in  (ρ1 ∨ ρ1') × (Expr (α1 ∨ α2) (Let (Def σ e1) e2)) × (α1 ∨ α2)
 -- let-rec
 eval_bwd v (T.LetRec δ t)
-   = let ρ_ρ' × e × α = eval_bwd v t
-         ρ × ρ'       = split ρ_ρ' δ
-         _ × δ' × α'  = closeDefs_bwd ρ'
-     in  (ρ ∨ ρ') × (Expr ff (LetRec δ' e)) × (α ∨ α')
+   = let ρ1ρ2 × e × α = eval_bwd v t
+         _ × ρ2       = split ρ1ρ2 δ
+         ρ1 × δ' × α' = closeDefs_bwd ρ2
+     in  (ρ1 ∨ ρ2) × (Expr ff (LetRec δ' e)) × (α ∨ α')
 -- constr
 eval_bwd (Val _ (V.Constr c vs)) (T.Constr c' ts)
    = let f = (\(v × t) (ρ × es × α)

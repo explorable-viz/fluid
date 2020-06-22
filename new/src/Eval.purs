@@ -6,6 +6,7 @@ import Data.List (List(..), (:), length, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
+import Debug.Trace (trace)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr)
 import Expl (Def(..), Expl(..)) as T
