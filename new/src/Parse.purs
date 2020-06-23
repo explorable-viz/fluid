@@ -159,14 +159,8 @@ patternOne curried expr' delim = pattern' >>= rest
    pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
-sepBy1Then :: forall a b c. SParser a -> SParser b -> SParser c -> SParser (NonEmptyList a)
-sepBy1Then p sep end = do
-   x <- p
-   xs <- manyTill (sep *> p) end
-   pure $ wrap $ x :| xs
-
 letDefs :: SParser Expr -> SParser (NonEmptyList Def)
-letDefs expr' = keyword strLet *> (sepBy1Then clause token.semi $ keyword strIn)
+letDefs expr' = keyword strLet *> sepBy1 clause token.semi <* keyword strIn
    where
    clause :: SParser Def
    clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
