@@ -5,7 +5,7 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
-import Util (MayFail, type (×), (≟))
+import Util (MayFail, type (×), (≟), eitherToBool)
 
 type Var = String
 
@@ -54,3 +54,6 @@ update Empty _ = Empty
 update (xs :+: x ↦ v) (x' ↦ v')
    | x == x'    = xs :+: x' ↦ v'
    | otherwise  = (update xs (x' ↦ v')) :+: x ↦ v
+
+elem :: forall a . Var -> Bindings a -> Boolean
+elem x ρ = eitherToBool $ find x ρ

@@ -1,4 +1,4 @@
-module Pretty (class Pretty, pretty, module P) where
+module Pretty (class Pretty, pretty, module P, (:<>:)) where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), head)
@@ -7,7 +7,7 @@ import Data.String (Pattern(..), contains)
 import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
-import Bindings (Bindings(..), (:+:), (↦))
+import Bindings (Bindings(..), (:+:), (↦), elem)
 import DataType (Ctr(..), cPair, cCons)
 import Expr (Cont(..), Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
@@ -16,6 +16,7 @@ import Expl (Expl, Match(..))
 import Util (type (×), (×), absurd, error, fromJust, intersperse)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..), Env)
 import Val (RawVal(..)) as V
+import Primitive (primitives)
 
 infixl 5 beside as :<>:
 
@@ -28,11 +29,17 @@ comma = text "," :<>: space
 space :: Doc
 space = text " "
 
+tab :: Doc
+tab = text "   "
+
 operator :: String -> Doc
 operator op = space :<>: text op :<>: space
 
 parens :: Doc -> Doc
 parens doc = text "(" :<>: doc :<>: text ")"
+
+parens2 :: Doc -> Doc
+parens2 doc = atop (text "(" :<>: doc)  (text ")")
 
 cbrackets :: Doc -> Doc
 cbrackets doc = text "{" :<>: doc :<>: text "}"
@@ -57,23 +64,26 @@ instance explPretty :: Pretty Expl where
    pretty (T.Str s) = text s
    pretty (T.Constr c es) = prettyConstr c es
    pretty (T.Lambda σ) = text "fun" :<>: pretty σ
-   pretty (T.App t t' ξ t'') =  text "App" :<>: cbrackets (atop (pretty t) (atop (pretty t') (atop (pretty ξ) (pretty t''))))
+   pretty (T.App tv t' ξ t'') =  text "App" :<>: parens (atop (pretty tv :<>: comma) (atop (pretty t' :<>: comma) (atop (text $ render (pretty ξ) <> render comma) (pretty t''))))
    pretty (T.AppOp tv tv') = pretty tv :<>: space :<>: pretty tv'
    pretty (T.BinaryApp tv op tv') = pretty tv :<>: space :<>: text op :<>: space :<>: pretty tv'
-   pretty (T.MatchAs t ξ t') = text "MatchAs " :<>: pretty t :<>: space :<>: pretty ξ :<>: space :<>: pretty t'
+   pretty (T.MatchAs t ξ t') = atop (text "match " :<>: pretty t :<>: text " as {")
+                                 (atop (tab :<>: pretty ξ) (atop (text "} where outcome was: ") (tab :<>: pretty t') ))
    pretty (T.Let (T.Def ξ t) t') = atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
                                         (pretty t')
    pretty (T.LetRec δ t) = atop (text "letrec " :<>: pretty δ) (text "in     " :<>: pretty t)
 
 instance explMatch :: Pretty Match where
-   pretty (MatchVar x) = text x
-   pretty (MatchConstr (ctr × ξs) ks) = pretty (ctr × ξs) :<>: space :<>: pretty ks
+   pretty (MatchVar x) = text "ξ = " :<>: text x
+   pretty (MatchConstr (ctr × ξs) ks) = text "ξ = " :<>: (atop (pretty (ctr × ξs)) (pretty ks))
 
 instance explValPretty :: Pretty (Expl × Val) where
    pretty (a × b) = parens $ pretty a :<>: comma :<>: pretty b
 
 instance envPrettyList :: PrettyList (Bindings Val) where
-   prettyList (ρ :+: x ↦ Val α v) = prettyList ρ :<>: (text x :<>: text " ↦ " :<>: pretty v) :<>: text ", "
+   prettyList (ρ :+: x ↦ Val α v)
+      | x `elem` primitives = prettyList ρ :<>: (text x :<>: text " ↦ " :<>: pretty v) :<>: text ", "
+      | otherwise           = prettyList ρ
    prettyList Empty = text ""
 
 instance explPrettyList :: PrettyList Expl where
@@ -126,13 +136,21 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Constr c es) = prettyConstr c es
    pretty (E.Op op) = parens $ text op
    pretty (E.Let (Def σ e) e') =
-      atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
-   pretty (E.MatchAs e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
+      atop (text ("let ") :<>: pretty σ :<>: operator "->" :<>: pretty e :<>: text " in") (pretty e')
+   pretty (E.MatchAs e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (tab :<>: pretty σ)) (text "}")
    pretty (E.LetRec δ e) =
-      atop (text "let " :<>: pretty δ) (text "in " :<>: pretty e)
-   pretty (E.Lambda σ) = text "fun" :<>: pretty σ
+      atop (text "letrec " :<>: pretty δ) (text "in " :<>: pretty e)
+   pretty (E.Lambda σ) = text "fun " :<>: pretty σ
    pretty (E.App e e') = pretty e :<>: space :<>: pretty e'
    pretty (E.BinaryApp e op e') = pretty e :<>: operator op :<>: pretty e'
+
+-- instance defPretty :: Pretty Def where
+--    pretty (Def (ElimVar x _) e) = "x" :<>: operator "->" :<>: e
+--    pretty (Def (ElimConstr m e)) =
+--       case toUnfoldable m :: List (Ctr × Cont) of
+--          Nil         -> error "Pretty printing: absurd"
+--          Ctr c × κ   -> text c × pretty κ
+
 
 instance prettyDefs :: Pretty (List RecDef) where
    pretty Nil = text ""
@@ -168,7 +186,7 @@ instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
    pretty (V.Str str) = text $ show str
    pretty (V.Constr c vs) = prettyConstr c vs
-   pretty (V.Closure ρ δ σ) = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
+   pretty (V.Closure ρ δ σ) = text "Closure" :<>: text "(" :<>: (atop (atop (text "env,") (text "defs,")) (pretty σ)) :<>: (text ")")
    pretty (V.Unary op) = parens $ pretty op
    pretty (V.Binary op) = parens $ pretty op
 

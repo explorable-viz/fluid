@@ -31,7 +31,7 @@ import DataType (Ctr(..), cPair)
 import Expr (Def(..), Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (type (×), (×), absurd, error, fromBool, fromJust)
+import Util (type (×), (×), absurd, error, boolToMaybe, fromJust)
 
 type SParser = Parser String
 
@@ -41,7 +41,7 @@ pureMaybe msg Nothing = fail msg
 pureMaybe _ (Just x) = pure x
 
 pureIf :: forall a . String -> Boolean -> a -> SParser a
-pureIf msg b = fromBool b >>> pureMaybe msg
+pureIf msg b = boolToMaybe b >>> pureMaybe msg
 
 -- constants (should also be used by prettyprinter)
 strArrow       = "->" :: String
@@ -242,7 +242,7 @@ theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
 theBinaryOp op = try $ do
    op' <- token.operator
    pureMaybe ("Expected " <> op) $
-      fromBool (op == op') (\e1 -> expr <<< BinaryApp e1 op)
+      boolToMaybe (op == op') (\e1 -> expr <<< BinaryApp e1 op)
 
 backtick :: SParser Unit
 backtick = token.reservedOp "`"

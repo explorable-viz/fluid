@@ -6,6 +6,7 @@ import Data.List (List, (:), length, zip)
 import Data.List (List(..)) as L
 import Data.Map (update)
 import Debug.Trace (trace)
+import Text.Pretty (text)
 import Bindings (Bind, Bindings(..), (:+:), (:++:), (◃), (↦), find, foldBind)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), Def(..)) as T
@@ -81,14 +82,14 @@ eval_bwd (Val α (V.Int n)) (T.Int tn ρ)
 eval_bwd v (T.Op op ρ)
    = (bot ρ ◃ op ↦ v) × (Expr ff (Op op)) × ff
 -- lambda
-eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
+eval_bwd (Val α (V.Closure ρ _ _)) (T.Lambda σ)
    = ρ × (Expr α (Lambda σ)) × α
 -- apply
-eval_bwd v@(Val _ (V.Closure _ δ _)) (T.App t t' ξ t'')
-   =  let ρ1ρ2ρ3 × e × α  = eval_bwd v t''
+eval_bwd v'' (T.App (t × (Val _ (V.Closure _ δ _))) t' ξ t'')
+   =  let ρ1ρ2ρ3 × e × α  = trace (pretty t'') $ \_ -> trace (pretty v'') $ \_ -> eval_bwd v'' t''
           ρ1ρ2 × ρ3       = unmatch ρ1ρ2ρ3 ξ
-          ρ1   × ρ2       = split ρ1ρ2 δ
           v'   × σ        = match_bwd ρ3 (Body e) α ξ
+          ρ1   × ρ2       = split ρ1ρ2 δ -- don't have access to δ!! need to work on this.
           ρ'  × e'  × α'  = eval_bwd v' t'
           ρ1' × δ   × α2  = closeDefs_bwd ρ2
           ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ σ)) t in
@@ -97,8 +98,7 @@ eval_bwd v@(Val _ (V.Closure _ δ _)) (T.App t t' ξ t'')
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2
          ρ' × e' × α'' = eval_bwd v1 t1
-         k = trace (render $ pretty $ ρ ∨ ρ') $ \_ -> ff
-     in  (ρ ∨ ρ') × (Expr α (BinaryApp e' op e)) × k
+     in  (ρ ∨ ρ') × (Expr α (BinaryApp e' op e)) × ff
 -- apply-prim
 eval_bwd (Val α v) (T.AppOp (t1 × v1) (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2
@@ -134,4 +134,5 @@ eval_bwd (Val _ (V.Constr c vs)) (T.Constr c' ts)
                     in  (ρ ∨ ρ') × (e:es) × (α ∨ α'))
          ρ × es × α' = foldr f (Empty × L.Nil × ff) (zip vs ts)
      in  ρ × (Expr ff (Constr c es)) × α'
-eval_bwd _ _ = error absurd
+
+eval_bwd v t = error $ "No pattern match found for eval_bwd in \n" <> render (pretty t)

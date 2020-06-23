@@ -19,7 +19,7 @@ data Expl =
    Str String |
    Constr Ctr (List Expl) |
    Lambda Elim |
-   App Expl Expl Match Expl |
+   App ExplVal Expl Match Expl |
    AppOp ExplVal ExplVal |
    BinaryApp ExplVal Var ExplVal |
    MatchAs Expl Match Expl |

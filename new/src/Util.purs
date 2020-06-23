@@ -25,13 +25,13 @@ assert false = \_ -> error "Assertion failure"
 absurd :: String
 absurd = "absurd"
 
-fromBool :: forall a . Boolean -> a -> Maybe a
-fromBool false = const Nothing
-fromBool true  = Just
+boolToMaybe :: forall a . Boolean -> a -> Maybe a
+boolToMaybe false = const Nothing
+boolToMaybe true  = Just
 
-toBool :: forall a . Maybe a -> Boolean
-toBool (Just x) = true
-toBool Nothing  = false
+eitherToBool :: forall a b. Either a b -> Boolean
+eitherToBool (Left _) = false
+eitherToBool (Right _)  = true
 
 fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a

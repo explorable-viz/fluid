@@ -14,7 +14,7 @@ import Expl (Expl, ExplVal, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
 import Expr (Def(..), RawExpr(..)) as E
 import Pretty (pretty, render)
-import Primitive (applyBinary, applyUnary)
+import Primitive (applyBinary, applyUnary, primitives)
 import Util (MayFail, type (×), (×), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
@@ -47,7 +47,7 @@ eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
    (T.Var x ρ × _) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =
-   (T.Op op ρ × _) <$> find op ρ
+   (T.Op op ρ × _) <$> find op primitives
 eval ρ (Expr _ (E.Int n)) =
    pure $ T.Int n ρ × val (V.Int n)
 eval ρ (Expr _ (E.Str str)) =
@@ -63,13 +63,13 @@ eval ρ (Expr _ (E.Lambda σ)) =
    pure $ (T.Lambda σ) × val (V.Closure ρ Nil σ)
 eval ρ (Expr _ (E.App e e')) = do
    t  × v@(Val _ u) <- eval ρ e
-   t' × v'        <- eval ρ e'
+   t' × v'          <- eval ρ e'
    case u of
       V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × ξ <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
-         pure $ (T.App t t' ξ t'') × v''
+         pure $ (T.App (t × v) t' ξ t'') × v''
       V.Unary φ ->
          pure $ (T.AppOp (t × v) (t' × v')) × applyUnary φ v'
       V.Binary φ ->
