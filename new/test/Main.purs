@@ -37,4 +37,4 @@ main = do
    runExample "normalise" "(33, 66)"
    runExample "pattern-match" "4"
 
-   runExample "temp" "42"
+   runExample "temp" "16"

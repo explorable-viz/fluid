@@ -100,4 +100,4 @@ let zipWith op Nil ys = Nil;
     zipWith op (Cons x xs) Nil = Nil;
     zipWith op (Cons x xs) (Cons y ys) = Cons (op (x, y)) (zipWith op xs ys);
 
-let zip = zipWith id;
+let zip = zipWith id in
