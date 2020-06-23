@@ -9,9 +9,10 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
-| 4 June 2020 | PureScript implementation supports structured `let` syntax | [171](https://github.com/explorable-viz/fluid/issues/171) |
+| 18 June 2020 | (PureScript implementation) Piecewise function definitions | [356](https://github.com/explorable-viz/fluid/issues/356) |
+| 4 June 2020 | (PureScript implementation) Structured `let` syntax | [171](https://github.com/explorable-viz/fluid/issues/171) |
 | 15 May 2020 | Update [f.luid.org](http://f.luid.org) | [289](https://github.com/explorable-viz/fluid/issues/289) |
-| 13 May 2020 | PureScript implementation supports first-class binary operations | [139](https://github.com/explorable-viz/fluid/issues/139) |
+| 13 May 2020 | (PureScript implementation) First-class binary operations | [139](https://github.com/explorable-viz/fluid/issues/139) |
 | 2 April 2020 | Fluid plugin running in Binder | [W279](https://github.com/rolyp/wrattler/wrattler/issues/279) |
 | 10 March 2020 | Start on PureScript migration | [279](https://github.com/rolyp/lambdacalc/issues/279) |
 | 22 February 2020 | Make repository public |
