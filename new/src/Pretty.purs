@@ -4,13 +4,12 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:), head)
 import Data.Map (toUnfoldable)
 import Data.String (Pattern(..), contains)
-import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
-import DataType (Ctr(..), cPair, cCons)
+import DataType (Ctr, cPair, cCons)
 import Expr (Cont(..), Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
-import Util (type (×), absurd, error, fromJust, intersperse)
+import Util (type (×), (×), absurd, error, fromJust, intersperse)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
 import Val (RawVal(..)) as V
 
@@ -70,7 +69,6 @@ prettyParensOpt x =
    then parens doc
    else doc
 
-
 prettyConstr :: forall a . Pretty a => PrettyList a => Ctr -> List a -> Doc
 prettyConstr c Nil = pretty c
 prettyConstr c xs@(x : xs')
@@ -103,7 +101,7 @@ instance prettyCont :: Pretty Cont where
    pretty (Arg _ σ) = pretty σ
 
 instance prettyBranch :: Pretty (Ctr × Cont) where
-   pretty (Tuple c κ) = text (show c) :<>: operator "->" :<>: pretty κ
+   pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
 instance prettyElim2 :: Pretty Elim where
    pretty (ElimVar x κ) = text x :<>: operator "->" :<>: pretty κ
