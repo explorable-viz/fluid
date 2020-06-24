@@ -100,4 +100,5 @@ let zipWith op Nil ys = Nil;
     zipWith op (Cons x xs) Nil = Nil;
     zipWith op (Cons x xs) (Cons y ys) = Cons (op (x, y)) (zipWith op xs ys);
 
+-- List a -> List b -> List (a, b)
 let zip = zipWith id in

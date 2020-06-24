@@ -12,6 +12,7 @@ import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟), error)
 
 data Def = Def Elim Expr -- elim has codomain unit
+type Defs = List Def
 data RecDef = RecDef Var Elim
 type RecDefs = List RecDef
 

@@ -11,12 +11,11 @@ import Data.Char.Unicode (isUpper)
 import Data.Either (Either, choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, (:), concat, foldr, many, groupBy, sortBy)
+import Data.List (List, (:), concat, foldr, many, groupBy, singleton, sortBy)
 import Data.List (some) as L
 import Data.List.NonEmpty (NonEmptyList, fromList, head, toList)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap)
 import Data.Ordering (invert)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
@@ -32,7 +31,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import DataType (Ctr(..), cPair)
-import Expr (Def(..), Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import Expr (Def(..), Defs, Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (type (×), (×), absurd, fromBool, fromJust)
@@ -157,8 +156,8 @@ patternOne curried expr' delim = pattern' >>= rest
    pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
-letDefs :: SParser Expr -> SParser (NonEmptyList Def)
-letDefs expr' = keyword strLet *> sepBy1 clause token.semi <* keyword strIn
+letDefs :: SParser Expr -> SParser Defs
+letDefs expr' = keyword strLet *> (sepBy1 clause token.semi <#> toList) <* keyword strIn
    where
    clause :: SParser Def
    clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
@@ -227,8 +226,8 @@ expr_ = fix $ appChain >>> buildExprParser operators
 
          let_ ∷ SParser Expr
          let_ = do
-            defs <- unwrap <$> try (letDefs expr')
-            foldr (\def -> expr <<< Let def) <$> expr' <@> defs
+            defs <- try (letDefs expr')
+            foldr (\def' -> expr <<< Let def') <$> expr' <@> defs
 
          letRec :: SParser Expr
          letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
@@ -286,4 +285,4 @@ module_ :: SParser Module
 module_ = Module <$> (topLevel $ concat <$> many defs)
    where
       defs :: SParser (List (Either Def RecDefs))
-      defs = bisequence <$> choose (toList <$> try (letDefs expr_)) (pure <$> recDefs expr_)
+      defs = bisequence <$> choose (try (letDefs expr_)) (singleton <$> recDefs expr_)
