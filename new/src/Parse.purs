@@ -8,7 +8,7 @@ import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
 import Data.Bitraversable (bisequence)
 import Data.Char.Unicode (isUpper)
-import Data.Either (Either, choose)
+import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List, (:), concat, foldr, many, groupBy, singleton, sortBy)
@@ -34,7 +34,7 @@ import DataType (Ctr(..), cPair)
 import Expr (Def(..), Defs, Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (type (×), (×), absurd, fromBool, fromJust)
+import Util (type (×), (×), type (+), absurd, fromBool, fromJust)
 
 type SParser = Parser String
 
@@ -284,5 +284,5 @@ program = topLevel expr_
 module_ :: SParser Module
 module_ = Module <$> (topLevel $ concat <$> many defs)
    where
-      defs :: SParser (List (Either Def RecDefs))
+      defs :: SParser (List (Def + RecDefs))
       defs = bisequence <$> choose (try (letDefs expr_)) (singleton <$> recDefs expr_)

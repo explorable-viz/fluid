@@ -4,17 +4,16 @@ import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.Either (Either(..))
 import Data.List (List, intercalate)
-import Data.List (zipWith) as L
-import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, unionWith)
 import Data.Maybe (Maybe(..))
-import Data.NonEmpty ((:|))
 import Data.Tuple (Tuple(..))
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 
-infixr 6 type Tuple as ×
-infixr 6 Tuple as ×
+infixr 7 type Tuple as ×
+infixr 7 Tuple as ×
+
+infixr 6 type Either as +
 
 type T3 a b c = Tuple a (Tuple b c)
 
@@ -40,7 +39,7 @@ fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a
 fromJust msg Nothing  = error msg
 
-type MayFail a = Either String a
+type MayFail a = String + a
 
 successful :: forall a . MayFail a -> a
 successful (Left msg) = error msg

@@ -1,7 +1,6 @@
 module Expr where
 
 import Prelude hiding (top)
-import Data.Either (Either)
 import Data.List (List, zipWith)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
@@ -9,7 +8,7 @@ import Data.Traversable (sequence)
 import Bindings (Var)
 import DataType (Ctr)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
-import Util ((≟), error)
+import Util (type (+), (≟), error)
 
 data Def = Def Elim Expr -- elim has codomain unit
 type Defs = List Def
@@ -62,7 +61,7 @@ instance elimSelectable :: Selectable Elim where
    maybeZipWithα f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithα f κs κs'
    maybeZipWithα _ _ _                                = Nothing
 
-data Module = Module (List (Either Def RecDefs))
+data Module = Module (List (Def + RecDefs))
 
 instance defSelectable :: Selectable Def where
    mapα f (Def σ e)                       = Def (mapα f σ) (mapα f e)
