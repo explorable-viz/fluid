@@ -176,6 +176,9 @@ recDefs expr' = do
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)
 
+defs :: SParser (List (Def + RecDefs))
+defs = bisequence <$> choose (try (letDefs expr_)) (singleton <$> recDefs expr_)
+
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser Expr
 expr_ = fix $ appChain >>> buildExprParser operators
@@ -226,8 +229,8 @@ expr_ = fix $ appChain >>> buildExprParser operators
 
          let_ ∷ SParser Expr
          let_ = do
-            defs <- try (letDefs expr')
-            foldr (\def' -> expr <<< Let def') <$> expr' <@> defs
+            defs' <- try (letDefs expr')
+            foldr (\def -> expr <<< Let def) <$> expr' <@> defs'
 
          letRec :: SParser Expr
          letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
@@ -283,6 +286,3 @@ program = topLevel expr_
 
 module_ :: SParser Module
 module_ = Module <$> (topLevel $ concat <$> many defs)
-   where
-      defs :: SParser (List (Def + RecDefs))
-      defs = bisequence <$> choose (try (letDefs expr_)) (singleton <$> recDefs expr_)
