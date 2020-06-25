@@ -2,7 +2,7 @@ module Bwd where
 
 import Prelude hiding (absurd, join)
 import Data.Foldable (foldr)
-import Data.List (List, (:), length, zip)
+import Data.List (List, (:), length, zip, difference, drop)
 import Data.List (List(..)) as L
 import Data.Map (update)
 import Data.Maybe
@@ -13,13 +13,15 @@ import Expl (Expl, Match(..))
 import Expl (Expl(..), Def(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs)
 import Lattice (Selected, class Lattice, (∨?), bot, ff, tt)
-import Primitive (primitives)
+import Primitive (primitives, class FromList, fromList, toList, class ToList)
 import Pretty
 import Util ((≜), type (×), (×), absurd, error, successful)
 import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
 import Val (RawVal(..)) as V
 
+
 trace s a = T.trace (pretty s) $ \_-> a
+trace' s a = T.trace  s $ \_-> a
 
 
 join :: forall a . Pretty a => Lattice a => a -> a -> a
@@ -94,17 +96,19 @@ eval_bwd v (T.Op op ρ)
 eval_bwd (Val α (V.Closure ρ _ _)) (T.Lambda σ)
    = ρ × (Expr α (Lambda σ)) × α
 -- apply
-eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
+eval_bwd v'' (T.App (t × v@(Val _ (V.Closure ρ1 δ σ))) t' ξ t'')
    =  let ρ1ρ2ρ3 × e × α  = eval_bwd v'' t''
 
-          ρ1ρ2 × ρ3       = unmatch ρ1ρ2ρ3 ξ
-          v'   × σ        = match_bwd ρ3 (Body e) α ξ
-          ρ1   × ρ2       = split ρ1ρ2 δ -- don't have access to δ!! need to work on this.
-          ρ'  × e'  × α'  = eval_bwd v' t'
-
-          ρ1' × δ   × α2  = closeDefs_bwd ρ2
-
-          ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ σ)) t
+          ρ1ρ2 × ρ3        = unmatch ρ1ρ2ρ3 ξ
+          v'   × σ'        = match_bwd ρ3 (Body e) α ξ
+          _ × ρ2           = split ρ1ρ2 δ -- don't have access to δ!! need to work on this.
+          ρ'  × e'  × α'   = eval_bwd v' t'
+         --  kk = trace ξ $ 56
+         --  kk' = trace σ' 56
+          ρ1' × δ'   × α2  = closeDefs_bwd ρ2
+         --  k' = trace' "p1':" $ trace ρ1' 5
+          ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ')) t
+         --  k' = trace' "p':" $ trace ρ' $ trace' "p''" $ trace ρ'' $ 5
       in  (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
 -- binary-apply
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
@@ -121,10 +125,9 @@ eval_bwd v (T.MatchAs t1 ξ t2)
    = let ρ1ρ2 × e × α = eval_bwd v t2
          ρ1 × ρ2      = unmatch ρ1ρ2 ξ
          v' × σ       = match_bwd ρ2 (Body e) α ξ
-         _ × e' × α'  = eval_bwd v' t1
-         ρ1' = ρ1 :++: bot ρ2
-         ρ2' = bot ρ1 :++: ρ2
-     in  (ρ1' ∨ ρ2') × (Expr ff (MatchAs e' σ)) × (α ∨ α')
+         ρ1' × e' × α'  = eval_bwd v' t1
+         -- k = trace (ρ1' ∨ ρ1) 5
+     in  (ρ1' ∨ ρ1) × (Expr ff (MatchAs e' σ)) × (α ∨ α')
 -- let
 eval_bwd v (T.Let (T.Def ξ t1) t2)
    = let ρ1ρ2 × e2 × α2 = eval_bwd v t2

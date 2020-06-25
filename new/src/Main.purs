@@ -34,6 +34,13 @@ letexpr = "(1 + 5) * ((let x = 2; let y = 8; x * y) - (let y = 3; y * y))"
 composeexpr :: String
 composeexpr = "let incr = fun n -> n + 1; incr (incr 3)"
 
+factexpr :: String
+factexpr = "let fact x =\
+            \ match x == 0 as {\
+            \    True -> 1;\
+            \    False -> x * fact (x - 1)\
+            \ };\
+            \fact 1"
 
 testEnv1 :: Bindings Val
 testEnv1 = primitives :+: "x" ↦ Val false (V.Int 0)
@@ -45,4 +52,4 @@ main :: Effect Unit
 main = do
    -- let r = joinDebug "wtf" testEnv1 testEnv2
    -- log $ render $ pretty r
-   runExampleBwd composeexpr
+   runExampleBwd factexpr

@@ -33,8 +33,11 @@ instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
    mapα f (Extend m (x ↦ v))  = Extend (mapα f m) (x ↦ mapα f v)
 
    maybeZipWithα _ Empty Empty                              = pure Empty
-   maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))
-      = Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> Just (x ≜ y) <*> maybeZipWithα f v v')
+   maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))  
+      =
+     -- let k = trace (maybeZipWithα f m m') 5
+
+      Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> Just (x ≜ y) <*> maybeZipWithα f v v')
    maybeZipWithα _ _ _                                      = Nothing
 
 

@@ -78,8 +78,8 @@ instance explPretty :: Pretty Expl where
    pretty (T.LetRec δ t) = atop (text "letrec " :<>: pretty δ) (text "in     " :<>: pretty t)
 
 instance explMatch :: Pretty Match where
-   pretty (MatchVar x) = text "ξ = " :<>: text x
    pretty (MatchConstr (ctr × ξs) ks) = text "ξ = " :<>: (atop (pretty (ctr × ξs)) (pretty ks))
+   pretty (MatchVar x) = text "ξ = " :<>: text x
 
 instance explValPretty :: Pretty (Expl × Val) where
    pretty (a × b) = parens $ pretty a :<>: comma :<>: pretty b
