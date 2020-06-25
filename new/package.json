@@ -1,9 +1,10 @@
 {
   "license": "MIT",
   "scripts": {
-    "bundle": "spago bundle-app --main Test.Main --to dist/app.js && parcel build index.html",
+    "build": "spago bundle-app --purs-args '--strict' --main Test.Main --to dist/app.js",
+    "bundle": "yarn run build && parcel build index.html",
     "continuous-test": "npm-run-all --parallel bundle-watch browser-test",
-    "bundle-watch": "spago bundle-app --watch --main Test.Main --to dist/app.js && parcel watch index.html",
+    "bundle-watch": "yarn run build --watch && parcel watch index.html",
     "browser-test": "karma start --browsers=Chrome --singleRun=false",
     "test": "karma start"
   },
@@ -15,7 +16,8 @@
     "watcherGlob": "**"
   },
   "dependencies": {
-    "purescript": "^0.13.6"
+    "purescript": "^0.13.6",
+    "purescript-psa": "^0.7.3"
   },
   "devDependencies": {
     "jasmine-core": "^3.5.0",
