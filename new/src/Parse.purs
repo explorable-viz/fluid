@@ -13,16 +13,13 @@ import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List, (:), concat, foldr, many, groupBy, singleton, sortBy)
 import Data.List (some) as L
-import Data.List.NonEmpty (NonEmptyList, fromList, head, toList)
+import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (values)
-import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
-import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (try)
-import Text.Parsing.Parser.Combinators (sepBy1) as P
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
@@ -36,22 +33,7 @@ import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDe
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (type (×), (×), type (+), absurd, fromBool, fromJust)
-
-type SParser = Parser String
-
--- helpers (could generalise further)
-pureMaybe :: forall a . Maybe a -> SParser a
-pureMaybe Nothing    = empty
-pureMaybe (Just x)   = pure x
-
-pureIf :: forall a . Boolean -> a -> SParser a
-pureIf b = fromBool b >>> pureMaybe
-
-sepBy1 :: forall a sep . SParser a -> SParser sep -> SParser (NonEmptyList a)
-sepBy1 p sep = fromJust absurd <$> (fromList <$> P.sepBy1 p sep)
-
-some :: forall a . SParser a → SParser (NonEmptyList a)
-some p = fromJust absurd <$> (fromList <$> L.some p)
+import Util.Parse (SParser, pureMaybe, pureIf, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
 strArrow       = "->" :: String
@@ -165,8 +147,8 @@ varDefs expr' = keyword strLet *> (sepBy1 clause token.semi <#> toList) <* keywo
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
-   fπs <- keyword strLet *> (some $ try clause <* token.semi)
-   let fπss = groupBy (eq `on` fst) $ toList fπs
+   fπs <- keyword strLet *> sepBy1_try clause token.semi <* token.semi
+   let fπss = groupBy (eq `on` fst) fπs
    pure $ toRecDef <$> fπss
    where
    toRecDef :: NonEmptyList (String × Pattern) -> RecDef

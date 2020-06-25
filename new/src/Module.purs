@@ -9,9 +9,10 @@ import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Eval (defs)
 import Expr (Expr)
-import Parse (SParser, module_, program)
+import Parse (module_, program)
 import Primitive (primitives)
 import Util (type (×), (×), error)
+import Util.Parse (SParser)
 import Val (Env)
 
 -- For Wrattler integration. Should not end in "/".
