@@ -166,19 +166,18 @@ recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
    fπs <- keyword strLet *> (some $ try clause <* token.semi)
    let fπss = groupBy (eq `on` fst) $ toList fπs
-   pure $ map toRecDef fπss
+   pure $ toRecDef <$> fπss
    where
    toRecDef :: NonEmptyList (String × Pattern) -> RecDef
    toRecDef fπs =
       let f = fst $ head fπs in
-      RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll $ map snd fπs
+      RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll $ snd <$> fπs
 
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)
 
 defs :: SParser Expr -> SParser (List (VarDef + RecDefs))
-defs expr' = concat <$>
-   many (bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr'))
+defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser Expr
@@ -229,7 +228,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
 
          defsExpr :: SParser Expr
          defsExpr = do
-            defs' <- bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr')
+            defs' <- concat <$> L.some (defs expr')
             foldr (\def -> expr <<< either Let LetRec def) <$> expr' <@> defs'
 
          matchAs :: SParser Expr
@@ -282,4 +281,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = Module <$> topLevel (defs expr_)
+module_ = Module <$> topLevel (concat <$> many (defs expr_))
