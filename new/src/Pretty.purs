@@ -2,12 +2,12 @@ module Pretty (class Pretty, pretty, module P) where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), head)
-import Data.Map (Map, toUnfoldable, showTree)
+import Data.Map (Map, toUnfoldable)
 import Data.String (Pattern(..), contains)
 import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
-import DataType (Ctr(..), cPair, cCons)
+import DataType (Ctr, cPair, cCons)
 import Expr (Cont(..), Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Expl as T
