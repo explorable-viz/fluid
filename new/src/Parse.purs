@@ -177,7 +177,8 @@ recDefs expr' = do
    clause = ident `lift2 (×)` (patternOne true expr' equals)
 
 defs :: SParser Expr -> SParser (List (VarDef + RecDefs))
-defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr')
+defs expr' = concat <$>
+   many (bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr'))
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser Expr
@@ -290,4 +291,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = Module <$> (topLevel $ concat <$> many (defs expr_))
+module_ = Module <$> topLevel (defs expr_)
