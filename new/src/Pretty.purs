@@ -53,6 +53,10 @@ class Pretty p where
 class PrettyList p where
    prettyList :: p -> Doc
 
+instance boolPretty :: Pretty Boolean where
+   pretty true = text "true"
+   pretty false = text "false"
+
 instance envPretty :: Pretty (Bindings Val) where
    pretty (ρ :+: x ↦ v) = brackets $ prettyList ρ :<>: (text x :<>: text " ↦ " :<>: pretty v)
    pretty Empty = text "[]"
@@ -92,7 +96,7 @@ instance explPrettyList :: PrettyList Expl where
    prettyList _ = error "Ill-formed list"
 
 instance exprPrettyList :: PrettyList Expr where
-   prettyList (Expr _ r) = prettyList r
+   prettyList (Expr a r) = text "Expr (" :<>: text (show a) :<>: comma :<>: prettyList r :<>: text ")"
 
 instance rawExprPrettyList :: PrettyList RawExpr where
    prettyList (E.Constr cNil Nil) = null
@@ -108,7 +112,7 @@ instance rawValPrettyList :: PrettyList RawVal where
    prettyList _ = error "Ill-formed list"
 
 instance exprPretty :: Pretty Expr where
-   pretty (Expr _ r) = pretty r
+   pretty (Expr a r) = text "Expr (" :<>: text (show a) :<>: comma :<>: pretty r :<>: text ")"
 
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> text
@@ -165,9 +169,9 @@ instance prettyBranches :: Pretty (Map Ctr Cont) where
 
 
 instance prettyCont :: Pretty Cont where
-   pretty None = text "[ ]"
-   pretty (Body e) = pretty e
-   pretty (Arg _ σ) = pretty σ
+   pretty None = text "None"
+   pretty (Body e) = text "Body (" :<>: pretty e :<>: text ")"
+   pretty (Arg _ σ) = text "Arg (" :<>: pretty σ :<>: text ")"
 
 instance prettyBranch :: Pretty (Ctr × Cont) where
    pretty (Tuple c κ) = text (show c) :<>: operator "->" :<>: pretty κ
@@ -180,13 +184,15 @@ instance prettyElim2 :: Pretty Elim where
    pretty (ElimConstr κs) = vcat $ map pretty $ (toUnfoldable κs :: List _)
 
 instance valPretty :: Pretty Val where
-   pretty (Val _ u) = pretty u
+   pretty (Val a u) = text "Val (" :<>: text (show a) :<>: comma :<>: pretty u :<>: text ")"
 
 instance rawValPretty :: Pretty RawVal where
    pretty (V.Int n)  = text $ show n
    pretty (V.Str str) = text $ show str
    pretty (V.Constr c vs) = prettyConstr c vs
-   pretty (V.Closure ρ δ σ) = text "Closure" :<>: text "(" :<>: (atop (atop (text "env,") (text "defs,")) (pretty σ)) :<>: (text ")")
+   pretty (V.Closure ρ δ σ) 
+    = text "Closure" :<>: text "(" :<>: 
+    (atop (atop (text "env:" :<>: pretty ρ) (text " defs: " :<>: pretty δ)) (pretty σ)) :<>: (text ")")
    pretty (V.Unary op) = parens $ pretty op
    pretty (V.Binary op) = parens $ pretty op
 

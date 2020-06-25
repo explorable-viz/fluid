@@ -4,8 +4,9 @@ import Prelude hiding (top)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
+import Debug.Trace (trace) as T
 import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
-import Util (MayFail, type (×), (≟), eitherToBool)
+import Util (MayFail, type (×), (≟), (≜), eitherToBool)
 
 type Var = String
 
@@ -16,6 +17,9 @@ infix 6 Bind as ↦
 infixl 5 Extend as :+:
 infixl 5 append as :++:
 infixl 5 update as ◃
+
+trace s a = T.trace  s $ \_-> a
+
 
 instance bindingsSemigroup :: Semigroup (Bindings a) where
    append m Empty           = m
@@ -29,8 +33,8 @@ instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
    mapα f (Extend m (x ↦ v))  = Extend (mapα f m) (x ↦ mapα f v)
 
    maybeZipWithα _ Empty Empty                              = pure Empty
-   maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))  =
-      Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
+   maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))
+      = Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> Just (x ≜ y) <*> maybeZipWithα f v v')
    maybeZipWithα _ _ _                                      = Nothing
 
 

@@ -78,7 +78,7 @@ eval ρ (Expr _ (E.App e e')) = do
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
-   Val _ u <- find op ρ
+   Val _ u <- find op primitives
    case u of
       V.Binary φ ->
          pure $ (T.BinaryApp (t × v) op (t' × v')) × (v `applyBinary φ` v')
