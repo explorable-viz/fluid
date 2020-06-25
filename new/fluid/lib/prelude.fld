@@ -61,8 +61,8 @@ let foldr1 op (Cons x Nil) = x;
 -- ((a, b) -> a) -> a -> List b -> List a
 let scanl1 op z xs =
    let go (x, continue) acc =
-      let next = op (acc, x);
-      Cons next (continue next);
+      let next = op (acc, x) in
+      Cons next (continue next) in
    foldr go (const Nil) xs z;
 
 -- ((a, b) -> a) -> a -> List b -> List a
@@ -92,7 +92,7 @@ let reverse Nil = Nil;
 -- List (a, b) -> (List a, List b)
 let unzip Nil = (Nil, Nil);
     unzip (Cons (x, y)) xys =
-      let (xs, ys) = unzip xys;
+      let (xs, ys) = unzip xys in
       (Cons x xs, Cons y ys);
 
 -- ((a, b) -> c) -> List a -> List b -> List c
@@ -100,4 +100,5 @@ let zipWith op Nil ys = Nil;
     zipWith op (Cons x xs) Nil = Nil;
     zipWith op (Cons x xs) (Cons y ys) = Cons (op (x, y)) (zipWith op xs ys);
 
+-- List a -> List b -> List (a, b)
 let zip = zipWith id;

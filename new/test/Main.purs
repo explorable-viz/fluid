@@ -2,7 +2,6 @@ module Test.Main where
 
 import Prelude
 import Data.Either (Either(..))
-import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -11,17 +10,17 @@ import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports)
 import Pretty (pretty, render)
-import Util (error)
+import Util ((×), error)
 import Val (Val(..))
 
 runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
    before (openWithImports file) $
-      it file $ \(Tuple ρ e) -> do
+      it file $ \(ρ × e) -> do
          case eval ρ e of
             Left msg -> error msg
-            Right (Tuple _ (Val _ u)) -> do
-               let (Val _ u') = eval_fwd ρ e true
+            Right (_ × (Val _ u)) -> do
+               let Val _ u' = eval_fwd ρ e true
                (render $ pretty u) `shouldEqual` (render $ pretty u')
                (render $ pretty u') `shouldEqual` expected
 
@@ -37,4 +36,4 @@ main = do
    runExample "normalise" "(33, 66)"
    runExample "pattern-match" "4"
 
-   runExample "temp" "(3, 5)"
+   runExample "temp" "16"

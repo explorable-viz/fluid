@@ -7,8 +7,8 @@ import Data.List (List(..)) as L
 import Data.Map (update)
 import Bindings (Bind, Bindings(..), (:+:), (↦), find, foldBind)
 import Expl (Expl, Match(..))
-import Expl (Expl(..), Def(..)) as T
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs)
+import Expl (Expl(..), VarDef(..)) as T
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..))
 import Lattice (Selected, (∨), bot)
 import Primitive (primitives)
 import Util ((≜), type (×), (×), absurd, error, successful)
@@ -114,12 +114,12 @@ eval_bwd (Val α v) (T.AppOp t t')
                  in  (ρ ∨ ρ') × (Expr false (App e e')) × α
       _ -> error absurd
 -- let
-eval_bwd v (T.Let (T.Def ξ t) t')
+eval_bwd v (T.Let (T.VarDef ξ t) t')
    = let ρρ' ×  e × α   = eval_bwd v  t'
          ρ  × ρ'        = unmatch ρρ' ξ
          v' × σ         = match_bwd ρ' (Body e) α ξ
          ρ'' × e' × α'  = eval_bwd v' t
-     in  (ρ ∨ ρ'') × (Expr (α ∨ α') (Let (Def σ e) e')) × (α ∨ α')
+     in  (ρ ∨ ρ'') × (Expr (α ∨ α') (Let (VarDef σ e) e')) × (α ∨ α')
 -- let-rec
 eval_bwd v (T.LetRec δ t)
    = let ρ_ρ' × e × α = eval_bwd v t

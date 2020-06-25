@@ -4,11 +4,10 @@ import Prelude hiding (apply, append, map)
 import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
-import Data.Tuple (Tuple(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cTrue, cFalse)
 import Lattice (Selected, (∧))
-import Util (type (×), error)
+import Util (type (×), (×), error)
 import Expr as E
 import Expr (Expr(..), Elim)
 import Val (Binary(..), BinaryOp(..), Env, Unary(..), UnaryOp(..), Val(..), val)
@@ -21,7 +20,7 @@ opPrec :: OpName -> Int
 opPrec (OpName _ prec) = prec
 
 opName :: String -> Int -> String × OpName
-opName op = OpName op >>> Tuple op
+opName op = OpName op >>> (×) op
 
 -- Syntactic information only. No guarantee that any of these will be defined.
 opNames :: Map String OpName

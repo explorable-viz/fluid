@@ -6,8 +6,7 @@ import Data.List (fromFoldable) as L
 import Data.List (List)
 import Data.Map (Map, fromFoldable)
 import Data.Newtype (class Newtype, unwrap)
-import Data.Tuple (Tuple(..))
-import Util (type (×))
+import Util (type (×), (×))
 
 newtype Ctr = Ctr String
 derive instance newtypeCtr :: Newtype Ctr _
@@ -22,7 +21,7 @@ type DataType = DataType' CtrSig
 data CtrSig = CtrSig Ctr (List String)
 
 ctr :: forall f . Foldable f => Ctr -> f String -> Ctr × CtrSig
-ctr c = L.fromFoldable >>> CtrSig c >>> Tuple c
+ctr c = L.fromFoldable >>> CtrSig c >>> (×) c
 
 dataType :: forall f . Foldable f => String -> f (Ctr × CtrSig) -> DataType
 dataType name = fromFoldable >>> DataType name

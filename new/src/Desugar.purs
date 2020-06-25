@@ -7,8 +7,8 @@ import Data.List (List(..)) as L
 import Data.Map (fromFoldable, empty) as M
 import Bindings (Var)
 import DataType (Ctr, cCons, cNil, cTrue, cFalse)
-import Expr (Cont(..), Elim(..), Expr(..), Def, RecDefs, expr)
-import Expr (RawExpr(..), Def(..)) as E
+import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef, expr)
+import Expr (RawExpr(..), VarDef(..)) as E
 import Primitive (concatMap, map) as P
 import Util ((×), absurd, error)
 
@@ -28,7 +28,7 @@ data SugaredExpr =
    IfElse SExpr SExpr SExpr |
    ListSeq Int Int |
    ListComp SExpr (List ListCompExpr) |
-   Let Def SExpr |
+   Let VarDef SExpr |
    LetRec RecDefs SExpr
 
 data ListCompExpr = Predicate SExpr | InputList SExpr SExpr
@@ -65,7 +65,7 @@ desugar (SExpr α (ListComp e_lhs e_rhs))
                         σ           = bound_vars (expr e') (Body $ go es (n - 1))
                         ebody       = if n == 0 then (P.map σ $ expr es')
                                       else (P.concatMap σ $ expr es') :: Expr
-                    in  expr $ E.Let (E.Def σ (expr e')) ebody
+                    in  expr $ E.Let (E.VarDef σ (expr e')) ebody
 
                 Predicate p ->
                     let p' = desugar p

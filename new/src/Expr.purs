@@ -1,7 +1,6 @@
 module Expr where
 
 import Prelude hiding (top)
-import Data.Either (Either)
 import Data.List (List, zipWith)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
@@ -9,9 +8,10 @@ import Data.Traversable (sequence)
 import Bindings (Var)
 import DataType (Ctr)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
-import Util ((≟), error)
+import Util (type (+), (≟), error)
 
-data Def = Def Elim Expr -- elim has codomain unit
+data VarDef = VarDef Elim Expr -- elim has codomain unit
+type VarDefs = List VarDef
 data RecDef = RecDef Var Elim
 type RecDefs = List RecDef
 
@@ -25,7 +25,7 @@ data RawExpr =
    App Expr Expr |
    BinaryApp Expr Var Expr |
    MatchAs Expr Elim |
-   Let Def Expr |
+   Let VarDef Expr |
    LetRec RecDefs Expr
 
 data Expr = Expr Selected RawExpr
@@ -53,7 +53,7 @@ data Elim =
    ElimVar Var Cont |
    ElimConstr (Map Ctr Cont)
 
-instance elim2Selectable :: Selectable Elim where
+instance elimSelectable :: Selectable Elim where
    mapα f (ElimVar x κ)    = ElimVar x $ mapα f κ
    mapα f (ElimConstr κs)  = ElimConstr $ map (mapα f) κs
 
@@ -61,11 +61,11 @@ instance elim2Selectable :: Selectable Elim where
    maybeZipWithα f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithα f κs κs'
    maybeZipWithα _ _ _                                = Nothing
 
-data Module = Module (List (Either Def RecDefs))
+data Module = Module (List (VarDef + RecDefs))
 
-instance defSelectable :: Selectable Def where
-   mapα f (Def σ e)                       = Def (mapα f σ) (mapα f e)
-   maybeZipWithα f (Def σ e) (Def σ' e')  = Def <$> maybeZipWithα f σ σ' <*> maybeZipWithα f e e'
+instance defSelectable :: Selectable VarDef where
+   mapα f (VarDef σ e)                          = VarDef (mapα f σ) (mapα f e)
+   maybeZipWithα f (VarDef σ e) (VarDef σ' e')  = VarDef <$> maybeZipWithα f σ σ' <*> maybeZipWithα f e e'
 
 instance recDefSelectable :: Selectable RecDef where
    mapα f (RecDef x σ)                          = RecDef x (mapα f σ)
