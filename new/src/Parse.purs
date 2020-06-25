@@ -295,4 +295,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = topLevel $ many (choose (def expr_) (recDefs expr_)) <#> Module
+module_ = Module <$> topLevel (many $ choose (def expr_) (recDefs expr_))
