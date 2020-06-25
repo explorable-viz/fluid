@@ -1,3 +1,25 @@
+-- Bool -> Bool
+let and False y = False;
+    and True y = y;
+
+-- Bool -> Bool
+let or True y = True;
+    or False y = y;
+
+-- Bool -> Bool
+let not True = False;
+    not False = True;
+
+-- Int -> Int -> Ordering
+let compare (x, y) =
+   match x < y as {
+      True -> LT;
+      False -> match x > y as {
+        True -> GT;
+        False -> EQ
+      }
+   };
+
 -- (b -> c) -> (a -> b) -> a -> c
 -- Want infix <<<
 let compose f g x = f (g x);
@@ -42,6 +64,19 @@ let tail (Cons x xs) = xs;
 -- List a -> List a -> List a
 let concat Nil ys = ys;
     concat (Cons x xs) ys = Cons x (concat xs ys);
+
+-- Int -> List Int -> Bool
+let elem x Nil = False;
+    elem x (Cons x' xs) = or (x == x') (elem x xs);
+
+-- (a -> Bool) -> List a -> List a
+let filter p Nil = Nil;
+    filter p (Cons x xs) =
+      let ys = filter p xs in
+      match p x as {
+          True -> Cons x ys;
+          False -> ys
+      };
 
 -- ((a, b) -> a) -> a -> List b -> a
 let foldl op z Nil = z;

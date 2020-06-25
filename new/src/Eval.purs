@@ -26,7 +26,7 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) =
       Just κ   -> do
          ρ × κ' × ξs <- matchArgs c vs κ
          pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
-match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a value"
+match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
 matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × (List Match))
 matchArgs _ Nil κ = pure $ Empty × κ × Nil

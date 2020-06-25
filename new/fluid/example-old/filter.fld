@@ -1,1 +1,0 @@
-filter (fun n -> n + 1) (Cons 8 (Cons 4 (Cons 7 (Cons 3 Nil))))

@@ -29,6 +29,7 @@ main = do
    runExample "arithmetic" "42"
    runExample "compose" "5"
    runExample "factorial" "40320"
+   runExample "filter" "[8, 7]"
    runExample "foldr_sumSquares" "661"
    runExample "lexicalScoping" "\"6\""
    runExample "length" "2"

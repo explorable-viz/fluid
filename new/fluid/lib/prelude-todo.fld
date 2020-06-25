@@ -18,34 +18,6 @@ primitive numToStr;
 -- a -> a
 primitive debugLog;
 
--- Bool -> Bool
-let or x y = if x then True else y;
-
--- Bool -> Bool
-let not x = if x then False else True;
-
--- Num -> Num -> Ordering
-let compare (x, y) =
-   if x < y
-   then LT
-   else if x > y
-      then GT
-      else EQ;
-
--- a -> List a -> Bool (where a ∈ {Num, Str})
-let elem x {
-   [] -> False;
-   x' : xs -> or (x == x') (elem x xs)
-};
-
--- (a -> Bool) -> List a -> List a
-let filter p {
-   [] -> [];
-   x : xs ->
-      let ys = filter p xs;
-      if p x then x : ys else ys
-};
-
 -- Log of x in base y.
 -- Num -> Num -> Num
 let logBase x y = log y / log x;
