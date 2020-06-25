@@ -214,7 +214,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
 
          defsExpr :: SParser Expr
          defsExpr = do
-            defs' <- concat <$> (sepBy1 (defs expr') token.semi <#> toList)
+            defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
             foldr (\def -> expr <<< (Let ||| LetRec) def) <$> (keyword strIn *> expr') <@> defs'
 
          matchAs :: SParser Expr
@@ -267,4 +267,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = Module <$> topLevel (concat <$> (sepBy (defs expr_) token.semi))
+module_ = Module <<< concat <$> topLevel (sepBy (defs expr_) token.semi)
