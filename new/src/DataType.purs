@@ -30,6 +30,9 @@ cFalse   = Ctr "False"  :: Ctr -- Bool
 cTrue    = Ctr "True"   :: Ctr
 cNil     = Ctr "Nil"    :: Ctr -- List
 cCons    = Ctr "Cons"   :: Ctr
+cGT      = Ctr "GT"     :: Ctr -- Ordering
+cLT      = Ctr "LT"     :: Ctr
+cEQ      = Ctr "EQ"     :: Ctr
 cPair    = Ctr "Pair"   :: Ctr -- Pair
 
 dataTypes :: List DataType
@@ -41,6 +44,11 @@ dataTypes = L.fromFoldable [
    dataType "List" [
       ctr cNil [],
       ctr cCons ["head", "tail"]
+   ],
+   dataType "Ordering" [
+      ctr cGT [],
+      ctr cLT [],
+      ctr cEQ []
    ],
    dataType "Pair" [
       ctr cPair ["fst", "snd"]
