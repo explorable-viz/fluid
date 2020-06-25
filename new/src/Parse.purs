@@ -8,7 +8,7 @@ import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
 import Data.Bitraversable (bisequence)
 import Data.Char.Unicode (isUpper)
-import Data.Either (choose, either)
+import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List, (:), concat, foldr, many, groupBy, singleton, sortBy)
@@ -17,6 +17,7 @@ import Data.List.NonEmpty (NonEmptyList, fromList, head, toList)
 import Data.Map (values)
 import Data.Maybe (Maybe(..))
 import Data.Ordering (invert)
+import Data.Profunctor.Choice ((|||))
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
 import Text.Parsing.Parser (Parser)
@@ -229,7 +230,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
          defsExpr :: SParser Expr
          defsExpr = do
             defs' <- concat <$> L.some (defs expr')
-            foldr (\def -> expr <<< either Let LetRec def) <$> expr' <@> defs'
+            foldr (\def -> expr <<< (Let ||| LetRec) def) <$> expr' <@> defs'
 
          matchAs :: SParser Expr
          matchAs = expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim false expr')
