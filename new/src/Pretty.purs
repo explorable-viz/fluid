@@ -7,7 +7,7 @@ import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import DataType (Ctr, cPair, cCons)
-import Expr (Cont(..), Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..))
 import Expr (RawExpr(..)) as E
 import Expl as T
 import Expl (Expl, Match(..))
@@ -53,8 +53,9 @@ instance explPretty :: Pretty Expl where
    pretty (T.AppOp t t') = pretty t :<>: space :<>: pretty t'
    pretty (T.BinaryApp t op t') = pretty t :<>: space :<>: text op :<>: space :<>: pretty t'
    pretty (T.MatchAs t ξ t') = pretty t :<>: space :<>: pretty ξ :<>: space :<>: pretty t'
-   pretty (T.Let (T.Def ξ t) t') = atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
-                                        (pretty t')
+   pretty (T.Let (T.VarDef ξ t) t') =
+      atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
+           (pretty t')
    pretty (T.LetRec recdefs t) = text "letrec " :<>: space :<>: pretty recdefs :<>: space :<>: pretty t
 
 instance explMatch :: Pretty Match where
@@ -109,7 +110,7 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Var x) = text x
    pretty (E.Constr c es) = prettyConstr c es
    pretty (E.Op op) = parens $ text op
-   pretty (E.Let (Def σ e) e') =
+   pretty (E.Let (VarDef σ e) e') =
       atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.MatchAs e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (pretty σ)) (text "}")
    pretty (E.LetRec δ e) =

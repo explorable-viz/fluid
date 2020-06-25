@@ -8,10 +8,10 @@ import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr)
-import Expl (Def(..), Expl(..)) as T
+import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
-import Expr (Def(..), RawExpr(..)) as E
+import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
 import Util (MayFail, type (×), (×), absurd, error)
@@ -82,11 +82,11 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
       V.Binary φ ->
          pure $ (T.BinaryApp t op t') × (v `applyBinary φ` v')
       _ -> error absurd
-eval ρ (Expr _ (E.Let (E.Def σ e) e')) = do
+eval ρ (Expr _ (E.Let (E.VarDef σ e) e')) = do
    t  × v      <- eval ρ e
    ρ' × _ × ξ  <- match v σ
    t' × v'     <- eval (ρ <> ρ') e'
-   pure $ (T.Let (T.Def ξ t) t') × v'
+   pure $ (T.Let (T.VarDef ξ t) t') × v'
 eval ρ (Expr _ (E.MatchAs e σ)) = do
    t  × v      <- eval ρ e
    ρ' × e' × ξ <- match v σ
@@ -100,7 +100,7 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
 
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
-defs ρ (Module (Left (E.Def σ e) : ds)) = do
+defs ρ (Module (Left (E.VarDef σ e) : ds)) = do
    _  × v      <- eval ρ e
    ρ' × _ × ξ  <- match v σ
    defs (ρ <> ρ') (Module ds)

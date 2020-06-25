@@ -31,10 +31,10 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import DataType (Ctr(..), cPair)
-import Expr (Def(..), Defs, Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, expr)
+import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (type (×), (×), type (+), absurd, fromBool, fromJust)
+import Util (type (×), (×), type (+), absurd, error, fromBool, fromJust)
 
 type SParser = Parser String
 
@@ -156,11 +156,11 @@ patternOne curried expr' delim = pattern' >>= rest
    pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
-letDefs :: SParser Expr -> SParser Defs
-letDefs expr' = keyword strLet *> (sepBy1 clause token.semi <#> toList) <* keyword strIn
+varDefs :: SParser Expr -> SParser VarDefs
+varDefs expr' = keyword strLet *> (sepBy1 clause token.semi <#> toList) <* keyword strIn
    where
-   clause :: SParser Def
-   clause = Def <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
+   clause :: SParser VarDef
+   clause = VarDef <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
@@ -176,8 +176,8 @@ recDefs expr' = do
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)
 
-defs :: SParser (List (Def + RecDefs))
-defs = bisequence <$> choose (try (letDefs expr_)) (singleton <$> recDefs expr_)
+defs :: SParser Expr -> SParser (List (VarDef + RecDefs))
+defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser Expr
@@ -229,11 +229,16 @@ expr_ = fix $ appChain >>> buildExprParser operators
 
          let_ ∷ SParser Expr
          let_ = do
-            defs' <- try (letDefs expr')
+            defs' <- try (varDefs expr')
             foldr (\def -> expr <<< Let def) <$> expr' <@> defs'
 
          letRec :: SParser Expr
          letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
+
+         defsExpr :: SParser Expr
+         defsExpr = do
+            defs' <- many $ defs expr'
+            foldr (\def -> error "TODO") <$> expr' <@> defs'
 
          matchAs :: SParser Expr
          matchAs = expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim false expr')
@@ -285,4 +290,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = Module <$> (topLevel $ concat <$> many defs)
+module_ = Module <$> (topLevel $ concat <$> many (defs expr_))

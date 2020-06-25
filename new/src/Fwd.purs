@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Map (lookup)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import Expr (Cont(..), Def(..), Elim(..), Expr(..), RecDef(..), RecDefs, body)
+import Expr (Cont(..), Elim(..), Expr(..), RecDef(..), RecDefs, VarDef(..), body)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (applyBinary_fwd, applyUnary_fwd)
@@ -63,7 +63,7 @@ eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
    case successful (find op ρ) of
       Val α' (V.Binary φ) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
       _ -> error absurd
-eval_fwd ρ (Expr _ (E.Let (Def σ e) e')) α =
+eval_fwd ρ (Expr _ (E.Let (VarDef σ e) e')) α =
    let ρ' × _ × α' = match_fwd (eval_fwd ρ e α) σ in
    eval_fwd (ρ <> ρ') e' α'
 eval_fwd ρ (Expr _ (E.MatchAs e σ)) α =

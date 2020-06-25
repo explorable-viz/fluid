@@ -7,7 +7,7 @@ import DataType (Ctr)
 import Expr (Cont, Elim, RecDefs)
 import Util (type (×))
 
-data Def = Def Match Expl
+data VarDef = VarDef Match Expl
 
 data Expl =
    Var Var |
@@ -20,7 +20,7 @@ data Expl =
    AppOp Expl Expl |
    BinaryApp Expl Var Expl |
    MatchAs Expl Match Expl |
-   Let Def Expl |
+   Let VarDef Expl |
    LetRec RecDefs Expl
 
 data Match =
