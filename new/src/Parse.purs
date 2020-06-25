@@ -5,7 +5,7 @@ import Control.Alt ((<|>))
 import Control.Apply (lift2)
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
-import Data.Array (fromFoldable)
+import Data.Array (elem, fromFoldable)
 import Data.Bitraversable (bisequence)
 import Data.Char.Unicode (isUpper)
 import Data.Either (choose)
@@ -32,7 +32,7 @@ import DataType (Ctr(..), cPair)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (type (×), (×), type (+), absurd, fromBool, fromJust)
+import Util (type (×), (×), type (+), absurd, error, fromBool, fromJust)
 import Util.Parse (SParser, pureMaybe, pureIf, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
@@ -67,8 +67,12 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
 token :: TokenParser
 token = makeTokenParser languageDef
 
+-- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
-keyword = token.reserved
+keyword str =
+   if str `elem` (unGenLanguageDef languageDef).reservedNames
+   then token.reserved str
+   else error $ str <> " is not a reserved word"
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
