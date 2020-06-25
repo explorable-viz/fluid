@@ -32,7 +32,7 @@ import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDe
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
 import Util (type (×), (×), type (+), absurd, error, fromBool, fromJust)
-import Util.Parse (SParser, pureMaybe, pureIf, sepBy1, sepBy1_try)
+import Util.Parse (SParser, pureMaybe, pureIf, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
 strArrow       = "->" :: String
@@ -143,7 +143,7 @@ patternOne curried expr' delim = pattern' >>= rest
    body = PBody <$> (delim *> expr')
 
 varDefs :: SParser Expr -> SParser VarDefs
-varDefs expr' = keyword strLet *> (sepBy1 clause token.semi <#> toList)
+varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
    clause :: SParser VarDef
    clause = VarDef <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
@@ -267,4 +267,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = Module <<< concat <$> topLevel (sepBy (defs expr_) token.semi)
+module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
