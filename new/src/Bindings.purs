@@ -64,3 +64,9 @@ update (xs :+: x ↦ v) (x' ↦ v')
 
 elem :: forall a . Var -> Bindings a -> Boolean
 elem x ρ = eitherToBool $ find x ρ
+
+reverse :: forall a. Bindings a -> Bindings a
+reverse = go Empty
+  where
+  go acc Empty = acc
+  go acc (xs :+: x) = go (acc :+: x) xs

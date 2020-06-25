@@ -6,7 +6,7 @@ import Data.List (List(..), (:), length, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
-import Debug.Trace (trace)
+import Debug.Trace (trace) as T
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr)
 import Expl (Def(..), Expl(..)) as T
@@ -18,6 +18,9 @@ import Primitive (applyBinary, applyUnary, primitives)
 import Util (MayFail, type (×), (×), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
+
+trace s a = T.trace (pretty s) $ \_-> a
+trace' s a = T.trace  s $ \_-> a
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
 match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)

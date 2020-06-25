@@ -4,7 +4,7 @@ import Prelude hiding (absurd, join)
 import Data.Foldable (foldr)
 import Data.List (List, (:), length, zip, difference, drop)
 import Data.List (List(..)) as L
-import Data.Map (update)
+import Data.Map (update, insert)
 import Data.Maybe
 import Debug.Trace (trace) as T
 import Text.Pretty (text)
@@ -72,7 +72,7 @@ match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')  = v × (ElimVar (x ≜ x') κ
 match_bwd _ _ _ (MatchVar x')                  = error absurd
 match_bwd ρ κ α (MatchConstr (c × ξs) κs)  =
    let vs × κ = matchArgs_bwd ρ κ α ξs in
-   (Val α $ V.Constr c vs) × (ElimConstr $ update (const $ pure κ) c $ map bot κs)
+   (Val α $ V.Constr c vs) × (ElimConstr $ insert c κ $ map bot κs)
 
 matchArgs_bwd :: Env -> Cont -> Selected -> List Match -> List Val × Cont
 matchArgs_bwd ρ κ α L.Nil     = L.Nil × κ
@@ -96,19 +96,18 @@ eval_bwd v (T.Op op ρ)
 eval_bwd (Val α (V.Closure ρ _ _)) (T.Lambda σ)
    = ρ × (Expr α (Lambda σ)) × α
 -- apply
-eval_bwd v'' (T.App (t × v@(Val _ (V.Closure ρ1 δ σ))) t' ξ t'')
+eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
    =  let ρ1ρ2ρ3 × e × α  = eval_bwd v'' t''
 
           ρ1ρ2 × ρ3        = unmatch ρ1ρ2ρ3 ξ
           v'   × σ'        = match_bwd ρ3 (Body e) α ξ
-          _ × ρ2           = split ρ1ρ2 δ -- don't have access to δ!! need to work on this.
+          ρ1 × ρ2          = split ρ1ρ2 δ
           ρ'  × e'  × α'   = eval_bwd v' t'
-         --  kk = trace ξ $ 56
-         --  kk' = trace σ' 56
+
           ρ1' × δ'   × α2  = closeDefs_bwd ρ2
-         --  k' = trace' "p1':" $ trace ρ1' 5
+
           ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ')) t
-         --  k' = trace' "p':" $ trace ρ' $ trace' "p''" $ trace ρ'' $ 5
+
       in  (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
 -- binary-apply
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
@@ -126,13 +125,14 @@ eval_bwd v (T.MatchAs t1 ξ t2)
          ρ1 × ρ2      = unmatch ρ1ρ2 ξ
          v' × σ       = match_bwd ρ2 (Body e) α ξ
          ρ1' × e' × α'  = eval_bwd v' t1
-         -- k = trace (ρ1' ∨ ρ1) 5
+
      in  (ρ1' ∨ ρ1) × (Expr ff (MatchAs e' σ)) × (α ∨ α')
 -- let
 eval_bwd v (T.Let (T.Def ξ t1) t2)
    = let ρ1ρ2 × e2 × α2 = eval_bwd v t2
 
          ρ1 × ρ2        = unmatch ρ1ρ2 ξ
+
          v' × σ         = match_bwd ρ2 (Body e2) α2 ξ
          ρ1' × e1 × α1  = eval_bwd v' t1
 
@@ -140,9 +140,11 @@ eval_bwd v (T.Let (T.Def ξ t1) t2)
 -- let-rec
 eval_bwd v (T.LetRec δ t)
    = let ρ1ρ2 × e × α = eval_bwd v t
-         _ × ρ2       = split ρ1ρ2 δ
-         ρ1 × δ' × α' = closeDefs_bwd ρ2
-     in  (ρ1 ∨ ρ2) × (Expr ff (LetRec δ' e)) × (α ∨ α')
+
+         ρ1 × ρ2       = split ρ1ρ2 δ
+         ρ1' × δ' × α' = closeDefs_bwd ρ2
+
+     in  (ρ1 ∨ ρ1') × (Expr ff (LetRec δ' e)) × (α ∨ α')
 -- constr
 eval_bwd (Val _ (V.Constr c vs)) (T.Constr c' ts)
    = let f = (\(v × t) (ρ × es × α)

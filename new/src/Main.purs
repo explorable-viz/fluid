@@ -40,7 +40,7 @@ factexpr = "let fact x =\
             \    True -> 1;\
             \    False -> x * fact (x - 1)\
             \ };\
-            \fact 1"
+            \fact 2"
 
 testEnv1 :: Bindings Val
 testEnv1 = primitives :+: "x" ↦ Val false (V.Int 0)
