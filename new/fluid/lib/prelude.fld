@@ -108,7 +108,19 @@ let scanl op z xs =
 let map f Nil = Nil;
     map f (Cons x xs) = Cons (f x) (map f xs);
 
--- List Num -> Num
+-- List a -> a -> List a
+let intersperse Nil sep = Nil;
+    intersperse (Cons x Nil) sep = Cons x Nil;
+    intersperse (Cons x (Cons y ys)) sep = Cons x (Cons sep (intersperse (Cons y ys)));
+
+-- Int -> (a -> a) -> a -> List a
+let iterate n f z =
+   match n == 0 as {
+      True -> Nil;
+      False -> Cons z (map f (iterate (n - 1) f z))
+   };
+
+-- List Int -> Int
 let sum xs =
    foldr (fun (x, y) -> x + y) 0 xs;
 
@@ -116,13 +128,43 @@ let sum xs =
 let last (Cons x Nil) = x;
     last (Cons x (Cons y ys)) = last (Cons y ys);
 
--- List a -> Num
+-- List a -> Int
 let length Nil = 0;
     length (Cons x xs) = 1 + length xs;
 
 -- List a -> List a
 let reverse Nil = Nil;
     reverse (Cons x xs) = concat (reverse xs) (Cons x Nil);
+
+-- Int -> a -> List a
+let repeat = flip iterate id;
+
+-- Int -> List (Int, b) -> b
+let lookup k (Cons (k', v) kvs) =
+   match k == k' as {
+      True -> v;
+      False -> lookup k kvs
+   };
+
+-- (Int, Int) -> Int
+let max2 (n, m) =
+   match n > m as {
+      True -> n;
+      False -> m
+   };
+
+-- (Int, Int) -> Int
+let min2 (n, m) =
+   match n < m as {
+      True -> n;
+      False -> m
+   };
+
+-- List Int -> Int
+let max = foldr1 max2;
+
+-- List Int -> Int
+let min = foldr1 min2;
 
 -- List (a, b) -> (List a, List b)
 let unzip Nil = (Nil, Nil);

@@ -22,42 +22,8 @@ primitive debugLog;
 -- Num -> Num -> Num
 let logBase x y = log y / log x;
 
--- List a -> a -> List a
-let intersperse {
-   Nil sep -> Nil;
-   (Cons x Nil) sep -> Cons x Nil;
-   (Cons x (Cons y ys)) sep -> Cons x (Cons sep (intersperse (Cons y ys)))
-};
-
--- Num -> (a -> a) -> a -> List a
-let iterate n f z =
-   if n == 0
-   then []
-   else z : map f (iterate (n - 1) f z);
-
 -- Num -> Num
 let negate = (-) 0;
-
--- Num -> a -> List a
-let repeat = flip iterate id;
-
--- a -> List (a, b) -> b (where a ∈ {Num, Str})
-let lookup k ((k', v) : kvs) ->
-   if k == k' then v else lookup k kvs;
-
--- (Num, Num) -> Num
-let max2 (n, m) =
-   if n > m then n else m;
-
--- (Num, Num) -> Num
-let min2 (n, m) =
-   if n < m then n else m;
-
--- List Num -> Num
-let max = foldr1 max2;
-
--- List Num -> Num
-let min = foldr1 min2;
 
 -- Expects non-negative integer as first argument and non-empty list as second argument.
 -- Num -> List a -> a
