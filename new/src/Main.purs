@@ -22,10 +22,11 @@ runExampleBwd :: String -> Effect Unit
 runExampleBwd src =
     let e = successfulParse src program
         ρ = Empty
+        k = trace e $ \_ -> 5
     in  case eval ρ e of
             Left msg -> error msg
             Right (Tuple t v) -> do
-                let ρ' × e × α = eval_bwd v t
+                -- let ρ' × e × α = eval_bwd v t
                 log $ render (pretty $ t × v)
 
 letexpr :: String
@@ -42,6 +43,9 @@ factexpr = "let fact x =\
             \ };\
             \fact 2"
 
+lexscopingexpr :: String
+lexscopingexpr = " let decr = let x = 2; fun y -> y - x; let x = 8; (decr x)"
+
 testEnv1 :: Bindings Val
 testEnv1 = primitives :+: "x" ↦ Val false (V.Int 0)
 
@@ -52,4 +56,4 @@ main :: Effect Unit
 main = do
    -- let r = joinDebug "wtf" testEnv1 testEnv2
    -- log $ render $ pretty r
-   runExampleBwd factexpr
+   runExampleBwd lexscopingexpr
