@@ -8,7 +8,7 @@ import Control.MonadPlus (empty)
 import Data.Array (fromFoldable)
 import Data.Bitraversable (bisequence)
 import Data.Char.Unicode (isUpper)
-import Data.Either (Either(..), choose, either)
+import Data.Either (choose, either)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List, (:), concat, foldr, many, groupBy, singleton, sortBy)
@@ -34,7 +34,7 @@ import DataType (Ctr(..), cPair)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (OpName(..), opNames, opPrec)
-import Util (type (×), (×), type (+), absurd, error, fromBool, fromJust)
+import Util (type (×), (×), type (+), absurd, fromBool, fromJust)
 
 type SParser = Parser String
 
@@ -202,8 +202,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
          try variable <|>
          try int <|> -- int may start with +/-
          string <|>
-         try let_ <|>
-         letRec <|>
+         defsExpr <|>
          matchAs <|>
          try (token.parens expr') <|>
          try parensOp <|>
@@ -228,17 +227,9 @@ expr_ = fix $ appChain >>> buildExprParser operators
          string :: SParser Expr
          string = expr <$> (Str <$> token.stringLiteral)
 
-         let_ ∷ SParser Expr
-         let_ = do
-            defs' <- try (varDefs expr')
-            foldr (\def -> expr <<< Let def) <$> expr' <@> defs'
-
-         letRec :: SParser Expr
-         letRec = expr <$> (LetRec <$> recDefs expr' <*> expr')
-
          defsExpr :: SParser Expr
          defsExpr = do
-            defs' <- defs expr'
+            defs' <- bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr')
             foldr (\def -> expr <<< either Let LetRec def) <$> expr' <@> defs'
 
          matchAs :: SParser Expr
