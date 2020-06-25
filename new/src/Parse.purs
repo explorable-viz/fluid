@@ -11,15 +11,14 @@ import Data.Char.Unicode (isUpper)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, (:), concat, foldr, many, groupBy, singleton, sortBy)
-import Data.List (some) as L
+import Data.List (List, (:), concat, foldr, groupBy, singleton, sortBy)
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (values)
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
-import Text.Parsing.Parser.Combinators (try)
+import Text.Parsing.Parser.Combinators (sepBy, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
@@ -144,14 +143,14 @@ patternOne curried expr' delim = pattern' >>= rest
    body = PBody <$> (delim *> expr')
 
 varDefs :: SParser Expr -> SParser VarDefs
-varDefs expr' = keyword strLet *> (sepBy1 clause token.semi <#> toList) <* keyword strIn
+varDefs expr' = keyword strLet *> (sepBy1 clause token.semi <#> toList)
    where
    clause :: SParser VarDef
    clause = VarDef <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
-   fπs <- keyword strLet *> sepBy1_try clause token.semi <* token.semi
+   fπs <- keyword strLet *> sepBy1_try clause token.semi
    let fπss = groupBy (eq `on` fst) fπs
    pure $ toRecDef <$> fπss
    where
@@ -215,8 +214,8 @@ expr_ = fix $ appChain >>> buildExprParser operators
 
          defsExpr :: SParser Expr
          defsExpr = do
-            defs' <- concat <$> L.some (defs expr')
-            foldr (\def -> expr <<< (Let ||| LetRec) def) <$> expr' <@> defs'
+            defs' <- concat <$> (sepBy1 (defs expr') token.semi <#> toList)
+            foldr (\def -> expr <<< (Let ||| LetRec) def) <$> (keyword strIn *> expr') <@> defs'
 
          matchAs :: SParser Expr
          matchAs = expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim false expr')
@@ -268,4 +267,4 @@ program ∷ SParser Expr
 program = topLevel expr_
 
 module_ :: SParser Module
-module_ = Module <$> topLevel (concat <$> many (defs expr_))
+module_ = Module <$> topLevel (concat <$> (sepBy (defs expr_) token.semi))
