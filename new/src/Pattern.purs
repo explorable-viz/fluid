@@ -1,6 +1,7 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
+import Data.Either (hush, note)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, insert, lookup, singleton, update)
 import Data.Maybe (Maybe(..))
@@ -9,7 +10,7 @@ import Data.Traversable (foldl)
 import Bindings (Var)
 import DataType (Ctr)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
-import Util ((≟), om)
+import Util (MayFail, (≟), om)
 
 data PCont =
    PNone |
@@ -47,15 +48,15 @@ instance mapContPattern :: MapCont Pattern where
 class Joinable a b | a -> b where
    maybeJoin :: b -> a -> Maybe b
 
-maybeUpdate :: Ctr -> PCont -> Map Ctr Cont -> Maybe (Map Ctr Cont)
-maybeUpdate c κ κs =
+mayFailUpdate :: Ctr -> PCont -> Map Ctr Cont -> MayFail (Map Ctr Cont)
+mayFailUpdate c κ κs =
    case lookup c κs of
       Nothing -> insert <$> pure c <@> toCont κ <@> κs
-      Just κ' -> update <$> (const <$> (Just <$> maybeJoin κ' κ)) <@> c <@> κs
+      Just κ' -> update <$> (const <$> pure <$> note "join undefined" (maybeJoin κ' κ)) <@> c <@> κs
 
 instance joinablePatternElim :: Joinable Pattern Elim where
    maybeJoin (ElimVar x κ) (PattVar y κ')      = ElimVar <$> x ≟ y <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr κs) (PattConstr c κ)  = ElimConstr <$> maybeUpdate c κ κs
+   maybeJoin (ElimConstr κs) (PattConstr c κ)  = ElimConstr <$> hush (mayFailUpdate c κ κs)
    maybeJoin _ _                               = Nothing
 
 instance joinablePContCont :: Joinable PCont Cont where
