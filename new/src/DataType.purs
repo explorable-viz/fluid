@@ -3,8 +3,9 @@ module DataType where
 import Prelude
 import Data.Foldable (class Foldable)
 import Data.List (fromFoldable) as L
-import Data.List (List)
+import Data.List (List, concat)
 import Data.Map (Map, fromFoldable)
+import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
 import Util (type (×), (×))
 
@@ -17,15 +18,19 @@ derive instance ordCtr :: Ord Ctr
 instance showCtr :: Show Ctr where
    show = unwrap
 
-data DataType' a = DataType String (Map Ctr a)
+data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
-data CtrSig = CtrSig Ctr (List String)
+data CtrSig = CtrSig Ctr (List TypeName)
 
-ctr :: forall f . Foldable f => Ctr -> f String -> Ctr × CtrSig
+ctr :: forall f . Foldable f => Ctr -> f TypeName -> Ctr × CtrSig
 ctr c = L.fromFoldable >>> CtrSig c >>> (×) c
 
-dataType :: forall f . Foldable f => TypeName -> f (Ctr × CtrSig) -> TypeName × DataType
-dataType name ctrs = name × (DataType name $ fromFoldable ctrs)
+dataType :: forall f . Foldable f => TypeName -> f (Ctr × CtrSig) -> DataType
+dataType name = fromFoldable >>> DataType name
+
+ctrToDataType :: Map Ctr DataType
+ctrToDataType = fromFoldable $
+   concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> \c -> c × d)
 
 cFalse   = Ctr "False"  :: Ctr -- Bool
 cTrue    = Ctr "True"   :: Ctr
@@ -36,7 +41,7 @@ cLT      = Ctr "LT"     :: Ctr
 cEQ      = Ctr "EQ"     :: Ctr
 cPair    = Ctr "Pair"   :: Ctr -- Pair
 
-dataTypes :: List (TypeName × DataType)
+dataTypes :: List DataType
 dataTypes = L.fromFoldable [
    dataType "Bool" [
       ctr cTrue [],
