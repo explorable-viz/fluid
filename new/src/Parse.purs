@@ -30,7 +30,7 @@ import DataType (Ctr(..), cPair)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (opDefs)
-import Util (type (×), (×), type (+), absurd, error, fromJust, pureIf)
+import Util (type (×), (×), type (+), absurd, error, fromJust, pureIf, successfulWith)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
@@ -122,7 +122,7 @@ patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: Boolean -> SParser Expr -> SParser Elim
-elim curried expr' = fromJust "Incompatible branches" <$> (joinAll <$> patterns)
+elim curried expr' = successfulWith "Incompatible branches in match or lambda" <$> (joinAll <$> patterns)
    where
    patterns :: SParser (NonEmptyList Pattern)
    patterns = pure <$> patternOne curried expr' patternDelim <|> patternMany
@@ -156,7 +156,7 @@ recDefs expr' = do
    toRecDef :: NonEmptyList (String × Pattern) -> RecDef
    toRecDef fπs =
       let f = fst $ head fπs in
-      RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll $ snd <$> fπs
+      RecDef f $ successfulWith ("Incompatible branches for '" <> f <> "'") $ joinAll $ snd <$> fπs
 
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)

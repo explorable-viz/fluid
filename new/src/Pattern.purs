@@ -1,16 +1,18 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
-import Data.Either (hush, note)
+import Data.Either (Either(..))
+import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, insert, lookup, singleton, update)
+import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
 import Bindings (Var)
-import DataType (Ctr)
+import DataType (DataType, Ctr, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
-import Util (MayFail, (≟), om)
+import Util (MayFail, (≟=), absurd, error, om)
 
 data PCont =
    PNone |
@@ -46,24 +48,29 @@ instance mapContPattern :: MapCont Pattern where
    mapCont κ (PattConstr c κ')  = PattConstr c $ mapCont κ κ'
 
 class Joinable a b | a -> b where
-   maybeJoin :: b -> a -> Maybe b
+   maybeJoin :: b -> a -> MayFail b
 
-mayFailUpdate :: Ctr -> PCont -> Map Ctr Cont -> MayFail (Map Ctr Cont)
-mayFailUpdate c κ κs =
-   case lookup c κs of
-      Nothing -> insert <$> pure c <@> toCont κ <@> κs
-      Just κ' -> update <$> (const <$> pure <$> note "join undefined" (maybeJoin κ' κ)) <@> c <@> κs
+dataType :: Map Ctr Cont -> MayFail DataType
+dataType κs = case keys κs of
+   Nil   -> error absurd
+   c : _ -> dataTypeFor c
 
 instance joinablePatternElim :: Joinable Pattern Elim where
-   maybeJoin (ElimVar x κ) (PattVar y κ')      = ElimVar <$> x ≟ y <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr κs) (PattConstr c κ)  = ElimConstr <$> hush (mayFailUpdate c κ κs)
-   maybeJoin _ _                               = Nothing
+   maybeJoin (ElimVar x κ) (PattVar y κ')      = ElimVar <$> x ≟= y <*> maybeJoin κ κ'
+   maybeJoin (ElimConstr κs) (PattConstr c κ)  = ElimConstr <$> mayFailUpdate
+      where
+      mayFailUpdate :: MayFail (Map Ctr Cont)
+      mayFailUpdate =
+         case lookup c κs of
+            Nothing -> insert <$> pure c <@> toCont κ <@> κs
+            Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
+   maybeJoin _ _                               = Left "Can't join variable and constructor patterns"
 
 instance joinablePContCont :: Joinable PCont Cont where
    maybeJoin None PNone                               = pure None
    maybeJoin (Arg σ) (PArg π)                         = Arg <$> maybeJoin σ π
    maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)   = Body <$> (expr <$> (Lambda <$> maybeJoin σ π))
-   maybeJoin _ _                                      = Nothing
+   maybeJoin _ _                                      = Left "Incompatible continuations"
 
-joinAll :: NonEmptyList Pattern -> Maybe Elim
-joinAll (NonEmptyList (π :| πs)) = foldl (om maybeJoin) (Just $ toElim π) πs
+joinAll :: NonEmptyList Pattern -> MayFail Elim
+joinAll (NonEmptyList (π :| πs)) = foldl (om $ maybeJoin) (Right $ toElim π) πs

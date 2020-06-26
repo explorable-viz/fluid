@@ -35,9 +35,12 @@ ctrToDataType :: Map Ctr DataType
 ctrToDataType = fromFoldable $
    concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> \c -> c × d)
 
+dataTypeFor :: Ctr -> MayFail DataType
+dataTypeFor c = note ("Unknown constructor " <> show c) $ lookup c ctrToDataType
+
 arity :: Ctr -> MayFail Int
 arity c = do
-   DataType _ sigs <- note ("Unknown constructor " <> show c) $ lookup c ctrToDataType
+   DataType _ sigs <- dataTypeFor c
    length <$> note absurd (lookup c sigs)
 
 cFalse   = Ctr "False"  :: Ctr -- Bool

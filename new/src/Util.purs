@@ -44,8 +44,11 @@ pureIf b = fromBool b >>> pureMaybe
 type MayFail a = String + a
 
 successful :: forall a . MayFail a -> a
-successful (Left msg) = error msg
-successful (Right b)  = b
+successful = successfulWith ""
+
+successfulWith :: forall a . String -> MayFail a -> a
+successfulWith msg (Left msg')   = error $ msg' <> if msg == "" then "" else ("\n" <> msg)
+successfulWith _ (Right b)       = b
 
 mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = fromBool (x == x') x
@@ -60,6 +63,7 @@ mayFailEq :: forall a . Show a => Eq a => a -> a -> MayFail a
 mayFailEq x x' = note (show x <> " ≠ " <> show x') $ x ≟ x'
 
 infixl 5 mayEq as ≟
+infixl 5 mayFailEq as ≟=
 infixl 5 mustEq as ≜
 
 -- Could be more efficient
