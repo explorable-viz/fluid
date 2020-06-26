@@ -53,9 +53,9 @@ successful :: forall a . MayFail a -> a
 successful (Left msg) = error msg
 successful (Right b)  = b
 
-blah :: String -> Maybe ~> MayFail
-blah msg Nothing  = Left msg
-blah _ (Just x)   = Right x
+maybeFail :: String -> Maybe ~> MayFail
+maybeFail msg Nothing  = Left msg
+maybeFail _ (Just x)   = Right x
 
 mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = if x == x' then Just x else Nothing

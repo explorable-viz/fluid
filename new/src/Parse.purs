@@ -23,8 +23,7 @@ import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
-  GenLanguageDef(..), LanguageDef, TokenParser,
-  alphaNum, letter, makeTokenParser, unGenLanguageDef
+  GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
 import DataType (Ctr(..), cPair)
@@ -81,7 +80,7 @@ isCtr str = isUpper $ fromJust absurd $ charAt 0 str
 ident ∷ SParser Var
 ident = do
    x <- token.identifier
-   pureIf (not (isCtr x)) x
+   pureIf (not $ isCtr x) x
 
 ctr :: SParser Ctr
 ctr = do
