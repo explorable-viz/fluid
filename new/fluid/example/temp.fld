@@ -1,6 +1,4 @@
-let unzip2 Nil = (Nil, Nil);
-    unzip2 (Cons (x, y)) xys =
-      let (xs, ys) = unzip2 xys in
-      (Cons x xs, Cons y ys)
+let unzip2 Nil = 6;
+    unzip2 (Cons (Cons (x, y)) zs) = 5
 in
-unzip2 Nil
+unzip2 (Cons (Cons (5, 6) Nil) Nil)
