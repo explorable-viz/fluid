@@ -15,16 +15,18 @@ import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
 import Util (MayFail, (≟=), absurd, error, om)
 
 data PCont =
-   PNone |
+   PNone |              -- intermediate state during construction, but also for structured let
    PBody Expr |
-   PLambda Pattern |  -- unnecessary if surface language supports piecewise definitions
-   PArg Pattern
+   PLambda Pattern |    -- unnecessary if surface language supports piecewise definitions
+   PArg Pattern |
+   PArgsEnd PCont
 
 toCont :: PCont -> Cont
 toCont PNone         = None
 toCont (PBody e)     = Body e
 toCont (PLambda π)   = Body $ expr $ Lambda $ toElim π
 toCont (PArg π)      = Arg $ toElim π
+toCont (PArgsEnd κ)  = ArgsEnd $ toCont κ
 
 data Pattern =
    PattVar Var PCont |
@@ -35,17 +37,19 @@ toElim (PattVar x κ)    = ElimVar x $ toCont κ
 toElim (PattConstr c κ) = ElimConstr $ singleton c $ toCont κ
 
 class MapCont a where
-   mapCont :: PCont -> a -> a
+   -- replace a None continuation by a non-None one
+   setCont :: PCont -> a -> a
 
-instance mapPContCont :: MapCont PCont where
-   mapCont κ PNone         = κ
-   mapCont κ (PBody _)     = κ
-   mapCont κ (PLambda π)   = PLambda $ mapCont κ π
-   mapCont κ (PArg π)      = PArg $ mapCont κ π
+instance setContPCont :: MapCont PCont where
+   setCont κ PNone         = κ
+   setCont κ (PBody _)     = error absurd
+   setCont κ (PLambda π)   = PLambda $ setCont κ π
+   setCont κ (PArg π)      = PArg $ setCont κ π
+   setCont κ (PArgsEnd κ') = PArgsEnd $ setCont κ κ'
 
-instance mapContPattern :: MapCont Pattern where
-   mapCont κ (PattVar x κ')     = PattVar x $ mapCont κ κ'
-   mapCont κ (PattConstr c κ')  = PattConstr c $ mapCont κ κ'
+instance setContPattern :: MapCont Pattern where
+   setCont κ (PattVar x κ')     = PattVar x $ setCont κ κ'
+   setCont κ (PattConstr c κ')  = PattConstr c $ setCont κ κ'
 
 class Joinable a b | a -> b where
    maybeJoin :: b -> a -> MayFail b
@@ -77,6 +81,7 @@ instance joinablePatternElim :: Joinable Pattern Elim where
 instance joinablePContCont :: Joinable PCont Cont where
    maybeJoin None PNone                               = pure None
    maybeJoin (Arg σ) (PArg π)                         = Arg <$> maybeJoin σ π
+   maybeJoin (ArgsEnd κ) (PArgsEnd κ')                = ArgsEnd <$> maybeJoin κ κ'
    maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)   = Body <$> (expr <$> (Lambda <$> maybeJoin σ π))
    maybeJoin _ _                                      = Left "Incompatible continuations"
 

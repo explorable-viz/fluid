@@ -1,4 +1,10 @@
+{-
 let unzip2 Nil = 6;
     unzip2 (Cons (Cons (x, y)) zs) = 5
 in
 unzip2 (Cons (Cons (5, 6) Nil) Nil)
+-}
+
+let filter Nil = Nil
+in
+filter Nil

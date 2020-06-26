@@ -28,7 +28,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cPair)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
-import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
+import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
 import Util (type (×), (×), type (+), absurd, error, fromJust, pureIf, successfulWith)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
@@ -109,7 +109,7 @@ simplePattern pattern' =
       token.parens $ do
          π <- pattern' <* token.comma
          π' <- pattern'
-         pure $ PattConstr cPair $ PArg $ mapCont (PArg π') π
+         pure $ PattConstr cPair $ PArg $ setCont (PArg $ setCont (PArgsEnd PNone) π') π
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -134,11 +134,11 @@ patternOne :: Boolean -> SParser Expr -> SParser Unit -> SParser Pattern
 patternOne curried expr' delim = pattern' >>= rest
    where
    rest :: Pattern -> SParser Pattern
-   rest π = mapCont <$> body' <@> π
+   rest π = setCont <$> body' <@> π
       where
       body' = if curried then body <|> PLambda <$> (pattern' >>= rest) else body
 
-   pattern' = if curried then simplePattern pattern else pattern
+   pattern' = if curried then finalise <$> simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
 varDefs :: SParser Expr -> SParser VarDefs
@@ -240,11 +240,15 @@ pattern = fix $ appChain_pattern
    appChain_pattern pattern' = simplePattern pattern' >>= rest
       where
          rest ∷ Pattern -> SParser Pattern
-         rest π@(PattConstr _ _) = ctrArgs <|> pure π
+         rest π@(PattConstr _ _) = ctrArgs <|> pure (finalise π)
             where
             ctrArgs :: SParser Pattern
-            ctrArgs = simplePattern pattern' >>= \π' -> rest $ mapCont (PArg π') π
+            ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') π
          rest π@(PattVar _ _) = pure π
+
+finalise :: Pattern -> Pattern
+finalise π@(PattConstr _ _) = setCont (PArgsEnd PNone) π
+finalise π@(PattVar _ _)    = π
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
