@@ -16,8 +16,6 @@ infixr 7 Tuple as ×
 
 infixr 6 type Either as +
 
-type T3 a b c = Tuple a (Tuple b c)
-
 error :: ∀ a . String -> a
 error = unsafePerformEffect <<< throw
 
@@ -33,7 +31,7 @@ fromBool false = const Nothing
 fromBool true  = Just
 
 toBool :: forall a . Maybe a -> Boolean
-toBool (Just x) = true
+toBool (Just _) = true
 toBool Nothing  = false
 
 fromJust :: forall a . String -> Maybe a -> a
@@ -53,6 +51,7 @@ successful :: forall a . MayFail a -> a
 successful (Left msg) = error msg
 successful (Right b)  = b
 
+-- No MonadPlus instance for Either
 maybeFail :: String -> Maybe ~> MayFail
 maybeFail msg Nothing  = Left msg
 maybeFail _ (Just x)   = Right x
