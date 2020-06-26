@@ -71,4 +71,4 @@ instance selectableRawVal :: Selectable RawVal where
               <*> sequence (zipWith (maybeZipWithα f) δ δ') <*> maybeZipWithα f σ σ'
    maybeZipWithα f (Binary φ) (Binary φ')             = Binary <$> maybeZipWithα f φ φ'
    maybeZipWithα f (Unary φ) (Unary φ')               = Unary <$> maybeZipWithα f φ φ'
-   maybeZipWithα f _ _                                = Nothing
+   maybeZipWithα f _ _                                = Int 5
