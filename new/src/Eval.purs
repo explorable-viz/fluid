@@ -20,12 +20,10 @@ import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
 match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)
-match (Val _ (V.Constr c vs)) (ElimConstr κs) =
-   case lookup c κs of
-      Nothing  -> Left $ "Pattern mismatch: no branch for " <> show c
-      Just κ   -> do
-         ρ × κ' × ξs <- matchArgs c vs κ
-         pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
+match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
+   κ <- maybeFail ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
+   ρ × κ' × ξs <- matchArgs c vs κ
+   pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
 matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × (List Match))

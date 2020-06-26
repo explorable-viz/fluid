@@ -65,8 +65,8 @@ mustEq x x' = fromJust "Must be equal" $ x ≟ x'
 unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (map Just m) (map Just m')
 
-eitherEq :: forall a . Show a => Eq a => a -> a -> MayFail a
-eitherEq x x' = maybeFail (show x <> " ≠ " <> show x') $ x ≟ x'
+mayFailEq :: forall a . Show a => Eq a => a -> a -> MayFail a
+mayFailEq x x' = maybeFail (show x <> " ≠ " <> show x') $ x ≟ x'
 
 infixl 5 mayEq as ≟
 infixl 5 mustEq as ≜
