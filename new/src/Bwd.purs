@@ -75,9 +75,8 @@ match_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')  = v × (ElimVar (x ≜ x') κ)
 match_bwd _ _ _ (MatchVar x')                  = error absurd
 match_bwd ρ κ α (MatchConstr (c × ξs) κs)  =
-   let vs × κ' = matchArgs_bwd ρ κ α (reverse ξs) 
-       in
-   (Val α $ V.Constr c (reverse vs)) × (ElimConstr $ insert c κ' $ map bot κs)
+   let vs × κ' = matchArgs_bwd ρ κ α (reverse ξs)
+   in (Val α $ V.Constr c (reverse vs)) × (ElimConstr $ insert c κ' $ map bot κs)
 
 matchArgs_bwd :: Env -> Cont -> Selected -> List Match -> List Val × Cont
 matchArgs_bwd ρ κ α L.Nil     = L.Nil × κ
@@ -99,11 +98,11 @@ eval_bwd v (T.Op op ρ)
    = (bot ρ ◃ op ↦ v) × (Expr ff (Op op)) × ff
 -- lambda
 eval_bwd (Val α (V.Closure ρ _ _)) (T.Lambda σ)
-   = let k = trace' "hey" 5 in ρ × (Expr α (Lambda σ)) × α
+   = ρ × (Expr α (Lambda σ)) × α
 -- apply
 eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
    =  let
-         --  k = trace t'' $ trace v'' 5
+
           ρ1ρ2ρ3 × e × α  = eval_bwd v'' t''
 
           ρ1ρ2 × ρ3        = unmatch ρ1ρ2ρ3 ξ
@@ -111,14 +110,13 @@ eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
           v'   × σ'        = match_bwd ρ3 (Body e) α ξ
 
           ρ1 × ρ2          = split ρ1ρ2 δ
-         --  k = trace v' $ trace  t' 5
+
           ρ'  × e'  × α'   = eval_bwd v' t'
 
           ρ1' × δ'   × α2  = closeDefs_bwd ρ2
-         --  k = trace ρ1 $ trace e' 5
+
           ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ')) t
-          l = trace v' 5
-         --  k = trace' (show $ length ρ') $ trace' (show $ length ρ'') 5
+
       in  (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
 -- binary-apply
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
@@ -140,7 +138,7 @@ eval_bwd v (T.MatchAs t1 ξ t2)
          v' × σ       = match_bwd ρ2 (Body e) α ξ
 
          ρ1' × e' × α'  = eval_bwd v' t1
-         -- k = trace (ρ1' ∨ ρ1) 5
+
      in  (ρ1' ∨ ρ1) × (Expr ff (MatchAs e' σ)) × (α ∨ α')
 -- let
 eval_bwd v (T.Let (T.Def ξ t1) t2)
@@ -162,23 +160,21 @@ eval_bwd v (T.LetRec δ t)
      in  (ρ1 ∨ ρ1') × (Expr ff (LetRec δ' e)) × (α ∨ α')
 -- constr
 eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
-   = let --k = trace (T.Constr c' ts) 65
+   = let
          f = (\(ρ0 × es0 × α0) (t × v)
                  -> let ρ' × e × α' = eval_bwd v t
-                        -- k = trace (ρ' ∨ ρ0)  5
+
                     in  (ρ' ∨ ρ0) × (e:es0) × (α' ∨ α0))
          base = (\(t × v)
                  -> let ρ × e × α' = eval_bwd v t
-                        -- k = trace e 5
+
                     in  ρ × (e:L.Nil) × α')
 
          ρ × es × α'
             = case zip ts vs of
                (tv:tvs) -> foldl f (base tv) tvs
                _        -> error "should be nullary constructor"
-         -- k = trace' c $ trace es 5
-         -- z = trace es 5
-         k = trace (Expr ff (Constr c (reverse es))) 5
+
      in  ρ × (Expr ff (Constr c (reverse es))) × α'
 eval_bwd (Val α (V.Constr c vs)) (T.NullConstr c' ρ)
    = ρ  × (Expr ff (Constr c L.Nil)) × α

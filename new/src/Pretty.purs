@@ -163,6 +163,14 @@ instance rawExprPretty :: Pretty RawExpr where
 --          Nil         -> error "Pretty printing: absurd"
 --          Ctr c × κ   -> text c × pretty κ
 
+instance prettylistExpl :: Pretty (List Expl) where
+   pretty Nil    = text ""
+   pretty (v:vs) = brackets (pretty v :<>: prettyList vs)
+
+instance prettylistExplList :: PrettyList (List Expl) where
+   prettyList Nil    = text ""
+   prettyList (v:vs) = comma :<>: pretty v :<>: prettyList vs
+
 instance prettylistExplVal :: Pretty (List (Tuple  Expl Val)) where
    pretty Nil    = text ""
    pretty (v:vs) = brackets (pretty v :<>: prettyList vs)
