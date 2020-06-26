@@ -3,7 +3,7 @@ module DataType where
 import Prelude
 import Data.Foldable (class Foldable)
 import Data.List (fromFoldable) as L
-import Data.List (List, concat)
+import Data.List (List, concat, length)
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Map.Internal (keys)
 import Data.Maybe (Maybe)
@@ -35,10 +35,10 @@ ctrToDataType :: Map Ctr DataType
 ctrToDataType = fromFoldable $
    concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> \c -> c × d)
 
-arity :: Ctr -> Maybe CtrSig
+arity :: Ctr -> Maybe Int
 arity c = do
    DataType _ sigs <- lookup c ctrToDataType
-   lookup c sigs -- always succeeds
+   length <$> lookup c sigs -- always succeeds
 
 cFalse   = Ctr "False"  :: Ctr -- Bool
 cTrue    = Ctr "True"   :: Ctr
