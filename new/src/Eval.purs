@@ -14,7 +14,7 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
-import Util (MayFail, type (×), (×), absurd, error, maybeFail)
+import Util (MayFail, type (×), (×), absurd, error, fromBool, maybeFail)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -43,8 +43,7 @@ closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Clo
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
    n' <- arity c
-   maybeFail (show c <> " got " <> show n <> " argument(s), expects " <> show n') $
-      if n == n' then Just unit else Nothing
+   maybeFail (show c <> " got " <> show n <> " argument(s), expects " <> show n') $ fromBool (n == n') unit
 
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
