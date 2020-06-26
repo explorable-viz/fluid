@@ -63,7 +63,7 @@ instance elim2Selectable :: Selectable Elim where
    maybeZipWithα f (ElimVar x κ) (ElimVar x' κ')
       = ElimVar <$> x ≟ x' <*> maybeZipWithα f κ κ'
    maybeZipWithα f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithα f κs κs'
-   maybeZipWithα _ _ _                                = Nothing
+   maybeZipWithα _ _ _                                = Just $ ElimVar "x" None --Nothing
 
 data Module = Module (List (Either Def RecDefs))
 
@@ -110,4 +110,4 @@ instance rawExprSelectable :: Selectable RawExpr where
       = Let <$> maybeZipWithα f def def' <*> maybeZipWithα f e e'
    maybeZipWithα f (LetRec δ e) (LetRec δ' e')
       = LetRec <$> maybeZipWithα f δ δ' <*>  maybeZipWithα f e e'
-   maybeZipWithα _ _ _                             = Nothing
+   maybeZipWithα _ _ _                             = Just $ Int 5 --Nothing

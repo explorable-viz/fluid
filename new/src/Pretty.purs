@@ -68,7 +68,7 @@ instance envPretty :: Pretty (Bindings Val) where
 
 
 instance explPretty :: Pretty Expl where
-   pretty (T.Var x ρ) = text x
+   pretty (T.Var x ρ) = text "Var" :<>: parens (text x)
    pretty (T.Op op ρ) = text op
    pretty (T.Int n ρ) = text $ show n
    pretty (T.Str s) = text s

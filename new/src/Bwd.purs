@@ -99,7 +99,7 @@ eval_bwd v (T.Op op ρ)
    = (bot ρ ◃ op ↦ v) × (Expr ff (Op op)) × ff
 -- lambda
 eval_bwd (Val α (V.Closure ρ _ _)) (T.Lambda σ)
-   = ρ × (Expr α (Lambda σ)) × α
+   = let k = trace' "hey" 5 in ρ × (Expr α (Lambda σ)) × α
 -- apply
 eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
    =  let
@@ -117,7 +117,7 @@ eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
           ρ1' × δ'   × α2  = closeDefs_bwd ρ2
          --  k = trace ρ1 $ trace e' 5
           ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ')) t
-          l = trace ((getVal $ head  ρ') ∨ (getVal $ head  ρ'')) 5
+          l = trace v' 5
          --  k = trace' (show $ length ρ') $ trace' (show $ length ρ'') 5
       in  (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
 -- binary-apply
@@ -178,6 +178,7 @@ eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
                _        -> error "should be nullary constructor"
          -- k = trace' c $ trace es 5
          -- z = trace es 5
+         k = trace (Expr ff (Constr c (reverse es))) 5
      in  ρ × (Expr ff (Constr c (reverse es))) × α'
 eval_bwd (Val α (V.Constr c vs)) (T.NullConstr c' ρ)
    = ρ  × (Expr ff (Constr c L.Nil)) × α
