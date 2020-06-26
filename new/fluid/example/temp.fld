@@ -4,7 +4,4 @@ let unzip2 Nil = 6;
 in
 unzip2 (Cons (Cons (5, 6) Nil) Nil)
 -}
-
-let filter Nil = Nil
-in
-filter Nil
+length (Cons 2 (Cons 3 Nil))
