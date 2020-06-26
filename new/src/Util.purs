@@ -58,7 +58,7 @@ maybeFail msg Nothing  = Left msg
 maybeFail _ (Just x)   = Right x
 
 mayEq :: forall a . Eq a => a -> a -> Maybe a
-mayEq x x' = if x == x' then Just x else Nothing
+mayEq x x' = fromBool (x == x') x
 
 mustEq :: forall a . Eq a => a -> a -> a
 mustEq x x' = fromJust "Must be equal" $ x ≟ x'

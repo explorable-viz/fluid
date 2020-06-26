@@ -14,7 +14,7 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
-import Util (MayFail, type (×), (×), absurd, error)
+import Util (MayFail, type (×), (×), absurd, error, maybeFail)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -42,6 +42,12 @@ closeDefs :: Env -> RecDefs -> RecDefs -> Env
 closeDefs _ _ Nil = Empty
 closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ0 σ)
 
+checkArity :: Ctr -> Int -> MayFail Unit
+checkArity c n = do
+   n' <- arity c
+   maybeFail (show c <> " got " <> show n <> " argument(s), expects " <> show n') $
+      if n == n' then Just unit else Nothing
+
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
    (T.Var x × _) <$> find x ρ
@@ -52,7 +58,7 @@ eval ρ (Expr _ (E.Int n)) =
 eval ρ (Expr _ (E.Str str)) =
    pure $ (T.Str str) × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
-   n <- arity c
+   checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
    pure $ (T.Constr c ts) × val (V.Constr c vs)
 eval ρ (Expr _ (E.LetRec δ e)) = do
