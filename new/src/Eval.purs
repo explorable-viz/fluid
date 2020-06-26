@@ -2,6 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
+import Data.Functor (void)
 import Data.List (List(..), (:), length, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
@@ -43,7 +44,7 @@ closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Clo
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
    n' <- arity c
-   maybeFail (show c <> " got " <> show n <> " argument(s), expects " <> show n') $ n ≟ n' <#> const unit
+   maybeFail (show c <> " got " <> show n <> " argument(s), expects " <> show n') $ void $ n ≟ n'
 
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
