@@ -3,7 +3,7 @@ module Util where
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Control.MonadPlus (class MonadPlus, empty)
-import Data.Either (Either(..))
+import Data.Either (Either(..), note)
 import Data.List (List, intercalate)
 import Data.Map (Map, unionWith)
 import Data.Maybe (Maybe(..))
@@ -51,11 +51,6 @@ successful :: forall a . MayFail a -> a
 successful (Left msg) = error msg
 successful (Right b)  = b
 
--- No MonadPlus instance for Either
-maybeFail :: String -> Maybe ~> MayFail
-maybeFail msg Nothing  = Left msg
-maybeFail _ (Just x)   = Right x
-
 mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = fromBool (x == x') x
 
@@ -66,7 +61,7 @@ unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a 
 unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (map Just m) (map Just m')
 
 mayFailEq :: forall a . Show a => Eq a => a -> a -> MayFail a
-mayFailEq x x' = maybeFail (show x <> " ≠ " <> show x') $ x ≟ x'
+mayFailEq x x' = note (show x <> " ≠ " <> show x') $ x ≟ x'
 
 infixl 5 mayEq as ≟
 infixl 5 mustEq as ≜

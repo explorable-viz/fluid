@@ -1,7 +1,7 @@
 module Eval where
 
 import Prelude hiding (absurd, apply)
-import Data.Either (Either(..))
+import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
@@ -14,14 +14,14 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
-import Util (MayFail, type (×), (×), (≟), absurd, error, maybeFail)
+import Util (MayFail, type (×), (×), (≟), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
 match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)
 match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
-   κ <- maybeFail ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
+   κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
@@ -43,7 +43,7 @@ closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Clo
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
    n' <- arity c
-   maybeFail (show c <> " got " <> show n <> " argument(s), expects " <> show n') $ void $ n ≟ n'
+   note (show c <> " got " <> show n <> " argument(s), expects " <> show n') $ void $ n ≟ n'
 
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =

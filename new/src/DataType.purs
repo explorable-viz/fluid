@@ -1,13 +1,14 @@
 module DataType where
 
 import Prelude hiding (absurd)
+import Data.Either (note)
 import Data.Foldable (class Foldable)
 import Data.List (fromFoldable) as L
 import Data.List (List, concat, length)
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
-import Util (MayFail, type (×), (×), absurd, maybeFail)
+import Util (MayFail, type (×), (×), absurd)
 
 type TypeName = String
 
@@ -36,8 +37,8 @@ ctrToDataType = fromFoldable $
 
 arity :: Ctr -> MayFail Int
 arity c = do
-   DataType _ sigs <- maybeFail ("Unknown constructor " <> show c) $ lookup c ctrToDataType
-   length <$> maybeFail absurd (lookup c sigs)
+   DataType _ sigs <- note ("Unknown constructor " <> show c) $ lookup c ctrToDataType
+   length <$> note absurd (lookup c sigs)
 
 cFalse   = Ctr "False"  :: Ctr -- Bool
 cTrue    = Ctr "True"   :: Ctr
