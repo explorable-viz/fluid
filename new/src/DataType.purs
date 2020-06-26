@@ -8,6 +8,7 @@ import Data.Map (Map, fromFoldable)
 import Data.Newtype (class Newtype, unwrap)
 import Util (type (×), (×))
 
+type TypeName = String
 newtype Ctr = Ctr String
 derive instance newtypeCtr :: Newtype Ctr _
 derive instance eqCtr :: Eq Ctr
@@ -23,8 +24,8 @@ data CtrSig = CtrSig Ctr (List String)
 ctr :: forall f . Foldable f => Ctr -> f String -> Ctr × CtrSig
 ctr c = L.fromFoldable >>> CtrSig c >>> (×) c
 
-dataType :: forall f . Foldable f => String -> f (Ctr × CtrSig) -> DataType
-dataType name = fromFoldable >>> DataType name
+dataType :: forall f . Foldable f => TypeName -> f (Ctr × CtrSig) -> TypeName × DataType
+dataType name ctrs = name × (DataType name $ fromFoldable ctrs)
 
 cFalse   = Ctr "False"  :: Ctr -- Bool
 cTrue    = Ctr "True"   :: Ctr
@@ -35,7 +36,7 @@ cLT      = Ctr "LT"     :: Ctr
 cEQ      = Ctr "EQ"     :: Ctr
 cPair    = Ctr "Pair"   :: Ctr -- Pair
 
-dataTypes :: List DataType
+dataTypes :: List (TypeName × DataType)
 dataTypes = L.fromFoldable [
    dataType "Bool" [
       ctr cTrue [],

@@ -35,14 +35,14 @@ import Util (type (×), (×), type (+), absurd, error, fromJust)
 import Util.Parse (SParser, pureIf, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
-strArrow       = "->" :: String
-strAs          = "as" :: String
-strBackslash   = "\\" :: String
-strEquals      = "=" :: String
-strFun         = "fun" :: String
-strIn          = "in" :: String
-strLet         = "let" :: String
-strMatch       = "match" :: String
+strArrow       = "->"      :: String
+strAs          = "as"      :: String
+strBackslash   = "\\"      :: String
+strEquals      = "="       :: String
+strFun         = "fun"     :: String
+strIn          = "in"      :: String
+strLet         = "let"     :: String
+strMatch       = "match"   :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
