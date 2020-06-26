@@ -19,7 +19,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
 import Text.Parsing.Parser.Combinators (try)
-import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
+import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
@@ -30,9 +30,9 @@ import Bindings (Var)
 import DataType (Ctr(..), cPair)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
-import Primitive (OpName(..), opNames, opPrec)
-import Util (type (×), (×), type (+), absurd, error, fromBool, fromJust)
-import Util.Parse (SParser, pureMaybe, pureIf, sepBy_try, sepBy1, sepBy1_try)
+import Primitive (opDefs)
+import Util (type (×), (×), type (+), absurd, error, fromJust)
+import Util.Parse (SParser, pureIf, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
 strArrow       = "->" :: String
@@ -233,7 +233,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Pattern
-pattern = fix appChain_pattern
+pattern = fix $ appChain_pattern
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
@@ -250,15 +250,15 @@ pattern = fix appChain_pattern
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
 operators =
-   fromFoldable $ map fromFoldable $
-   map (map (\(OpName op _) -> Infix (try $ theBinaryOp op) AssocLeft)) $
-   groupBy (eq `on` opPrec) $ sortBy (\x -> comparing opPrec x >>> invert) $ values opNames
+   fromFoldable $ fromFoldable <$>
+   (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
+   groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
    where
    -- specific binary operator
-   theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
-   theBinaryOp op = do
+   binaryOp :: Var -> SParser (Expr -> Expr -> Expr)
+   binaryOp op = do
       op' <- token.operator
-      pureMaybe $ fromBool (op == op') (\e1 -> expr <<< BinaryApp e1 op)
+      pureIf (op == op') (\e1 -> expr <<< BinaryApp e1 op)
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
