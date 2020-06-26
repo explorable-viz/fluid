@@ -2,6 +2,7 @@ module Util where
 
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
+import Control.MonadPlus (class MonadPlus, empty)
 import Data.Either (Either(..))
 import Data.List (List, intercalate)
 import Data.Map (Map, unionWith)
@@ -39,11 +40,22 @@ fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a
 fromJust msg Nothing  = error msg
 
+pureMaybe :: forall m . MonadPlus m => Maybe ~> m
+pureMaybe Nothing    = empty
+pureMaybe (Just x)   = pure x
+
+pureIf :: forall m a . MonadPlus m => Boolean -> a -> m a
+pureIf b = fromBool b >>> pureMaybe
+
 type MayFail a = String + a
 
 successful :: forall a . MayFail a -> a
 successful (Left msg) = error msg
 successful (Right b)  = b
+
+blah :: String -> Maybe ~> MayFail
+blah msg Nothing  = Left msg
+blah _ (Just x)   = Right x
 
 mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = if x == x' then Just x else Nothing

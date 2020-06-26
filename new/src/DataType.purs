@@ -6,9 +6,8 @@ import Data.List (fromFoldable) as L
 import Data.List (List, concat, length)
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Map.Internal (keys)
-import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype, unwrap)
-import Util (type (×), (×))
+import Util (MayFail, type (×), (×), absurd, blah)
 
 type TypeName = String
 
@@ -35,10 +34,10 @@ ctrToDataType :: Map Ctr DataType
 ctrToDataType = fromFoldable $
    concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> \c -> c × d)
 
-arity :: Ctr -> Maybe Int
+arity :: Ctr -> MayFail Int
 arity c = do
-   DataType _ sigs <- lookup c ctrToDataType
-   length <$> lookup c sigs -- always succeeds
+   DataType _ sigs <- blah ("Unknown constructor " <> show c) $ lookup c ctrToDataType
+   length <$> blah absurd (lookup c sigs)
 
 cFalse   = Ctr "False"  :: Ctr -- Bool
 cTrue    = Ctr "True"   :: Ctr

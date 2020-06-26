@@ -7,7 +7,7 @@ import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import DataType (Ctr)
+import DataType (Ctr, arity)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
@@ -52,6 +52,7 @@ eval ρ (Expr _ (E.Int n)) =
 eval ρ (Expr _ (E.Str str)) =
    pure $ (T.Str str) × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
+   n <- arity c
    ts × vs <- traverse (eval ρ) es <#> unzip
    pure $ (T.Constr c ts) × val (V.Constr c vs)
 eval ρ (Expr _ (E.LetRec δ e)) = do

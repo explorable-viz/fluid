@@ -31,8 +31,8 @@ import DataType (Ctr(..), cPair)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
 import Primitive (opDefs)
-import Util (type (×), (×), type (+), absurd, error, fromJust)
-import Util.Parse (SParser, pureIf, sepBy_try, sepBy1, sepBy1_try)
+import Util (type (×), (×), type (+), absurd, error, fromJust, pureIf)
+import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
 strArrow       = "->"      :: String
