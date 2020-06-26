@@ -10,7 +10,7 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
 import Bindings (Var)
-import DataType (DataType, Ctr, dataTypeFor)
+import DataType (DataType, Ctr, dataTypeFor, typeName)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
 import Util (MayFail, (≟=), absurd, error, om)
 
@@ -62,7 +62,15 @@ instance joinablePatternElim :: Joinable Pattern Elim where
       mayFailUpdate :: MayFail (Map Ctr Cont)
       mayFailUpdate =
          case lookup c κs of
-            Nothing -> insert <$> pure c <@> toCont κ <@> κs
+            Nothing -> do
+               checkDataType
+               insert <$> pure c <@> toCont κ <@> κs
+               where
+               checkDataType :: MayFail Unit
+               checkDataType = do
+                  d <- dataType κs
+                  d' <- dataTypeFor c
+                  void $ typeName d ≟= typeName d'
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
    maybeJoin _ _                               = Left "Can't join variable and constructor patterns"
 

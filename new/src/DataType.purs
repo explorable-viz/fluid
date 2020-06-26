@@ -25,6 +25,9 @@ data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
 type CtrSig = List TypeName
 
+typeName :: DataType -> TypeName
+typeName (DataType name _) = name
+
 ctr :: forall f . Foldable f => Ctr -> f TypeName -> Ctr × CtrSig
 ctr c = L.fromFoldable >>> (×) c
 

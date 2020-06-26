@@ -168,8 +168,8 @@ let min = foldr1 min2;
 
 -- List (a, b) -> (List a, List b)
 let unzip Nil = (Nil, Nil);
-    unzip (Cons (x, y)) xys =
-      let (xs, ys) = unzip xys in
+    unzip (Cons (x, y) zs) =
+      let (xs, ys) = unzip zs in
       (Cons x xs, Cons y ys);
 
 -- ((a, b) -> c) -> List a -> List b -> List c

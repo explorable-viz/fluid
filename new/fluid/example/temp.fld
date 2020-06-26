@@ -1,1 +1,6 @@
-let x = 2; y = 8 in x * y
+let unzip2 Nil = (Nil, Nil);
+    unzip2 (Cons (x, y)) xys =
+      let (xs, ys) = unzip2 xys in
+      (Cons x xs, Cons y ys)
+in
+unzip2 Nil
