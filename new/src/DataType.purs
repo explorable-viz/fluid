@@ -23,10 +23,10 @@ instance showCtr :: Show Ctr where
 
 data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
-data CtrSig = CtrSig (List TypeName)
+type CtrSig = List TypeName
 
 ctr :: forall f . Foldable f => Ctr -> f TypeName -> Ctr × CtrSig
-ctr c = L.fromFoldable >>> CtrSig >>> (×) c
+ctr c = L.fromFoldable >>> (×) c
 
 dataType :: forall f . Foldable f => TypeName -> f (Ctr × CtrSig) -> DataType
 dataType name = fromFoldable >>> DataType name
