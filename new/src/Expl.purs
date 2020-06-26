@@ -18,6 +18,7 @@ data Expl =
    Int Int Env |
    Str String |
    Constr Ctr (List Expl) |
+   NullConstr Ctr Env |
    Lambda Elim |
    App ExplVal Expl Match Expl |
    AppOp ExplVal ExplVal |

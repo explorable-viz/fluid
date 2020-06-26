@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Debug.Trace (trace) as T
 import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
-import Util (MayFail, type (×), (≟), (≜), eitherToBool)
+import Util (MayFail, type (×), (≟), (≜), eitherToBool, error, absurd)
 
 type Var = String
 
@@ -34,10 +34,12 @@ instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
 
    maybeZipWithα _ Empty Empty                              = pure Empty
    maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))
-      = Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> Just (x ≜ y) <*> maybeZipWithα f v v')
+      = Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
    maybeZipWithα _ _ _                                      = Nothing
 
 
+getVal :: forall a . Bind a -> a
+getVal (x ↦ v) = v
 
 foldBind :: forall a b . (Bind b -> a -> a) -> a -> Bindings b -> a
 foldBind f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldBind f z ρ)
@@ -67,3 +69,11 @@ reverse = go Empty
   where
   go acc Empty = acc
   go acc (xs :+: x) = go (acc :+: x) xs
+
+length :: forall a. Bindings a -> Int
+length (ρ :+: x ↦ v) = 1 + length ρ
+length Empty = 0
+
+head :: forall a. Bindings a -> Bind a
+head (xs :+: x ↦ v) = (x ↦ v)
+head Empty = error absurd

@@ -50,14 +50,15 @@ eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
    (T.Var x ρ × _) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =
-   (T.Op op ρ × _) <$> find op primitives
+   (T.Op op ρ × _) <$> find op ρ
 eval ρ (Expr _ (E.Int n)) =
    pure $ T.Int n ρ × val (V.Int n)
 eval ρ (Expr _ (E.Str str)) =
    pure $ (T.Str str) × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
    ts × vs <- traverse (eval ρ) es <#> unzip
-   pure $ (T.Constr c ts) × val (V.Constr c vs)
+   pure $ case es of Nil -> (T.NullConstr c ρ) × val (V.Constr c vs)
+                     _   -> (T.Constr c ts) × val (V.Constr c vs)
 eval ρ (Expr _ (E.LetRec δ e)) = do
    let ρ' = closeDefs ρ δ δ
    t × v <- eval (ρ <> ρ') e
@@ -81,7 +82,7 @@ eval ρ (Expr _ (E.App e e')) = do
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
-   Val _ u <- find op primitives
+   Val _ u <- find op ρ
    case u of
       V.Binary φ ->
          pure $ (T.BinaryApp (t × v) op (t' × v')) × (v `applyBinary φ` v')
