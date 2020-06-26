@@ -134,7 +134,7 @@ instance prettyBranches :: Pretty (Map Ctr Cont) where
 instance prettyCont :: Pretty Cont where
    pretty None = text "[ ]"
    pretty (Body e) = pretty e
-   pretty (Arg _ σ) = pretty σ
+   pretty (Arg σ) = pretty σ
 
 instance prettyBranch :: Pretty (Ctr × Cont) where
    pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ

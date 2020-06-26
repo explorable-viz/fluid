@@ -15,13 +15,13 @@ data PCont =
    PNone |
    PBody Expr |
    PLambda Pattern |  -- unnecessary if surface language supports piecewise definitions
-   PArg Int Pattern
+   PArg Pattern
 
 toCont :: PCont -> Cont
 toCont PNone         = None
 toCont (PBody e)     = Body e
 toCont (PLambda π)   = Body $ expr $ Lambda $ toElim π
-toCont (PArg n π)    = Arg n $ toElim π
+toCont (PArg π)      = Arg $ toElim π
 
 data Pattern =
    PattVar Var PCont |
@@ -35,10 +35,10 @@ class MapCont a where
    mapCont :: PCont -> a -> a
 
 instance mapPContCont :: MapCont PCont where
-   mapCont κ PNone        = κ
-   mapCont κ (PBody _)    = κ
-   mapCont κ (PLambda π)  = PLambda $ mapCont κ π
-   mapCont κ (PArg n π)   = PArg n $ mapCont κ π
+   mapCont κ PNone         = κ
+   mapCont κ (PBody _)     = κ
+   mapCont κ (PLambda π)   = PLambda $ mapCont κ π
+   mapCont κ (PArg π)      = PArg $ mapCont κ π
 
 instance mapContPattern :: MapCont Pattern where
    mapCont κ (PattVar x κ')     = PattVar x $ mapCont κ κ'
@@ -59,10 +59,10 @@ instance joinablePatternElim :: Joinable Pattern Elim where
    maybeJoin _ _                               = Nothing
 
 instance joinablePContCont :: Joinable PCont Cont where
-   maybeJoin None PNone                              = pure None
-   maybeJoin (Arg n σ) (PArg m π)                    = Arg <$> (n ≟ m) <*> maybeJoin σ π
-   maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)  = Body <$> (expr <$> (Lambda <$> maybeJoin σ π))
-   maybeJoin _ _                                     = Nothing
+   maybeJoin None PNone                               = pure None
+   maybeJoin (Arg σ) (PArg π)                         = Arg <$> maybeJoin σ π
+   maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)   = Body <$> (expr <$> (Lambda <$> maybeJoin σ π))
+   maybeJoin _ _                                      = Nothing
 
 joinAll :: NonEmptyList Pattern -> Maybe Elim
 joinAll (NonEmptyList (π :| πs)) = foldl (om maybeJoin) (Just $ toElim π) πs

@@ -91,12 +91,12 @@ bound_vars (Expr _ (E.Var x)) κ
 bound_vars (Expr _ (E.Constr ctr args)) κ
     = case args of
         (e:es) -> let f :: (Cont -> Elim) -> Expr -> (Cont -> Elim)
-                      f κ_cont e' = \(κ' :: Cont) -> (κ_cont $ Arg 0 $ bound_vars e' κ')
+                      f κ_cont e' = \(κ' :: Cont) -> (κ_cont $ Arg $ bound_vars e' κ')
 
                       z :: Cont -> Elim
                       z = bound_vars e
 
-                  in  ElimConstr (M.fromFoldable [ctr × (Arg 0 $ (foldl f z es) κ)])
+                  in  ElimConstr (M.fromFoldable [ctr × (Arg $ (foldl f z es) κ)])
 
         L.Nil ->  ElimConstr M.empty
 bound_vars _ _ = error absurd

@@ -2,7 +2,7 @@ module Bwd where
 
 import Prelude hiding (absurd, join)
 import Data.Foldable (foldr)
-import Data.List (List, (:), length, zip)
+import Data.List (List, (:), zip)
 import Data.List (List(..)) as L
 import Data.Map (update)
 import Bindings (Bind, Bindings(..), (:+:), (↦), find, foldBind)
@@ -66,7 +66,7 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
    let ρ' × ρ1   = unmatch ρ ξ
        vs × κ'   = matchArgs_bwd ρ' κ α ξs
        v  × σ    = match_bwd ρ1 κ' α ξ in
-   (v : vs) × (Arg (length vs) σ)
+   (v : vs) × Arg σ
 
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
 -- var

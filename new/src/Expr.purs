@@ -34,7 +34,7 @@ expr :: RawExpr -> Expr
 expr = Expr false
 
 -- Continuation of an eliminator.
-data Cont = None | Body Expr | Arg Int Elim
+data Cont = None | Body Expr | Arg Elim
 
 body :: Cont -> Expr
 body (Body e) = e
@@ -43,11 +43,11 @@ body _ = error "Expression expected"
 instance selectableCont :: Selectable Cont where
    mapα f None  = None
    mapα f (Body e)  = Body $ mapα f e
-   mapα f (Arg n σ)  = Arg n $ mapα f σ
+   mapα f (Arg σ)  = Arg $ mapα f σ
 
-   maybeZipWithα f (Body e) (Body e')     = Body <$> maybeZipWithα f e e'
-   maybeZipWithα f (Arg n σ) (Arg m σ')   = Arg <$> n ≟ m <*> maybeZipWithα f σ σ'
-   maybeZipWithα _ _ _                    = Nothing
+   maybeZipWithα f (Body e) (Body e')  = Body <$> maybeZipWithα f e e'
+   maybeZipWithα f (Arg σ) (Arg σ')  = Arg <$> maybeZipWithα f σ σ'
+   maybeZipWithα _ _ _                 = Nothing
 
 data Elim =
    ElimVar Var Cont |

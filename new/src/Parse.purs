@@ -109,7 +109,7 @@ simplePattern pattern' =
       token.parens $ do
          π <- pattern' <* token.comma
          π' <- pattern'
-         pure $ PattConstr cPair $ PArg 0 $ mapCont (PArg 1 π') π
+         pure $ PattConstr cPair $ PArg $ mapCont (PArg π') π
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -237,14 +237,14 @@ pattern = fix $ appChain_pattern
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
    appChain_pattern :: SParser Pattern -> SParser Pattern
-   appChain_pattern pattern' = simplePattern pattern' >>= rest 0
+   appChain_pattern pattern' = simplePattern pattern' >>= rest
       where
-         rest ∷ Int -> Pattern -> SParser Pattern
-         rest n π@(PattConstr _ _) = ctrArgs <|> pure π
+         rest ∷ Pattern -> SParser Pattern
+         rest π@(PattConstr _ _) = ctrArgs <|> pure π
             where
             ctrArgs :: SParser Pattern
-            ctrArgs = simplePattern pattern' >>= \π' -> rest (n + 1) $ mapCont (PArg n π') π
-         rest _ π@(PattVar _ _) = pure π
+            ctrArgs = simplePattern pattern' >>= \π' -> rest $ mapCont (PArg π') π
+         rest π@(PattVar _ _) = pure π
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr

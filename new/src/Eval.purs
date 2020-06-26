@@ -2,7 +2,6 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
-import Data.Functor (void)
 import Data.List (List(..), (:), length, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
@@ -29,12 +28,12 @@ match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a const
 
 matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × (List Match))
 matchArgs _ Nil κ = pure $ Empty × κ × Nil
-matchArgs c (v : vs) (Arg _ σ)  = do
+matchArgs c (v : vs) (Arg σ)  = do
    ρ  × κ'  × ξ  <- match v σ
    ρ' × κ'' × ξs <- matchArgs c vs κ'
    pure $ (ρ <> ρ') × κ'' × (ξ : ξs)
-matchArgs c vs _ = Left $
-   show (length vs) <> " extra arguments to " <> show c <> "; did you forget parentheses in lambda pattern?"
+matchArgs c (_ : vs) _ = Left $
+   show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
