@@ -30,10 +30,6 @@ fromBool :: forall a . Boolean -> a -> Maybe a
 fromBool false = const Nothing
 fromBool true  = Just
 
-toBool :: forall a . Maybe a -> Boolean
-toBool (Just _) = true
-toBool Nothing  = false
-
 fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a
 fromJust msg Nothing  = error msg
