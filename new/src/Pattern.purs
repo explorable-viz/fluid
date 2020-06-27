@@ -1,6 +1,8 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
+import Control.Apply (lift2)
+import Control.Monad (join)
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList(..))
@@ -9,8 +11,9 @@ import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
+import Debug.Trace (trace)
 import Bindings (Var)
-import DataType (DataType, Ctr, dataTypeFor, typeName)
+import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
 import Util (MayFail, (≞), absurd, error, om)
 
@@ -69,9 +72,8 @@ instance joinablePatternElim :: Joinable Pattern Elim where
                where
                checkDataType :: MayFail Unit
                checkDataType = do
-                  d <- dataType κs
-                  d' <- dataTypeFor c
-                  void $ typeName d ≞ typeName d'
+                  void $ join $ (typeName <$> dataType κs) `lift2 (≞)` (typeName <$> dataTypeFor c)
+                  void $ join $ arity c `lift2 (≞)` trace n \_ -> pure n
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
    maybeJoin _ _                               = Left "Can't join variable and constructor patterns"
 
