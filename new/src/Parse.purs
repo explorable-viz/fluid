@@ -246,7 +246,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Pattern
-pattern = fix $ appChain_pattern
+pattern = fix appChain_pattern
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
@@ -259,6 +259,34 @@ pattern = fix $ appChain_pattern
             ctrArgs :: SParser Pattern
             ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
          rest π@(PattVar _ _) = pure π
+
+pattern2 :: SParser Pattern
+pattern2 = fix $ appChain_pattern >>> buildExprParser operators
+   where
+   -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
+   -- non-saturated constructor applications, or patterns other than constructors in the function position.
+   appChain_pattern :: SParser Pattern -> SParser Pattern
+   appChain_pattern pattern' = simplePattern pattern' >>= rest
+      where
+         rest ∷ Pattern -> SParser Pattern
+         rest π@(PattConstr c n κ) = ctrArgs <|> pure π
+            where
+            ctrArgs :: SParser Pattern
+            ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
+         rest π@(PattVar _ _) = pure π
+
+   -- each element of the top-level list corresponds to a precedence level
+   operators :: OperatorTable Identity String Pattern
+   operators =
+      fromFoldable $ fromFoldable <$>
+      (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
+      groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
+      where
+      -- specific binary operator
+      binaryOp :: Var -> SParser (Pattern -> Pattern -> Pattern)
+      binaryOp op = do
+         op' <- token.operator
+         pureIf (op == op') (\π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π)
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
