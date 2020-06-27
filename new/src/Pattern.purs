@@ -12,7 +12,7 @@ import Data.Traversable (foldl)
 import Bindings (Var)
 import DataType (DataType, Ctr, dataTypeFor, typeName)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
-import Util (MayFail, (≟=), absurd, error, om)
+import Util (MayFail, (≞), absurd, error, om)
 
 data PCont =
    PNone |              -- intermediate state during construction, but also for structured let
@@ -57,8 +57,8 @@ dataType κs = case keys κs of
    c : _ -> dataTypeFor c
 
 instance joinablePatternElim :: Joinable Pattern Elim where
-   maybeJoin (ElimVar x κ) (PattVar y κ')       = ElimVar <$> x ≟= y <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr κs) (PattConstr c _ κ) = ElimConstr <$> mayFailUpdate
+   maybeJoin (ElimVar x κ) (PattVar y κ')       = ElimVar <$> x ≞ y <*> maybeJoin κ κ'
+   maybeJoin (ElimConstr κs) (PattConstr c n κ) = ElimConstr <$> mayFailUpdate
       where
       mayFailUpdate :: MayFail (Map Ctr Cont)
       mayFailUpdate =
@@ -71,7 +71,7 @@ instance joinablePatternElim :: Joinable Pattern Elim where
                checkDataType = do
                   d <- dataType κs
                   d' <- dataTypeFor c
-                  void $ typeName d ≟= typeName d'
+                  void $ typeName d ≞ typeName d'
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
    maybeJoin _ _                               = Left "Can't join variable and constructor patterns"
 

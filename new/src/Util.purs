@@ -54,16 +54,16 @@ mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = fromBool (x == x') x
 
 mustEq :: forall a . Eq a => a -> a -> a
-mustEq x x' = fromJust "Must be equal" $ x ≟ x'
+mustEq x x' = fromJust "Must be equal" $ x `mayEq` x'
 
 unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (map Just m) (map Just m')
 
 mayFailEq :: forall a . Show a => Eq a => a -> a -> MayFail a
-mayFailEq x x' = note (show x <> " ≠ " <> show x') $ x ≟ x'
+mayFailEq x x' = note (show x <> " ≠ " <> show x') $ x `mayEq` x'
 
 infixl 5 mayEq as ≟
-infixl 5 mayFailEq as ≟=
+infixl 5 mayFailEq as ≞
 infixl 5 mustEq as ≜
 
 -- Could be more efficient
