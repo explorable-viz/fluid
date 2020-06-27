@@ -7,7 +7,6 @@ import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (elem, fromFoldable)
 import Data.Bitraversable (bisequence)
-import Data.Char.Unicode (isUpper)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -16,7 +15,6 @@ import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (values)
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
@@ -26,11 +24,11 @@ import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import DataType (Ctr(..), cPair)
+import DataType (Ctr(..), cPair, isCtrName)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
-import Util (type (×), (×), type (+), absurd, error, fromJust, pureIf, successful, successfulWith)
+import Util (type (×), (×), type (+), error, pureIf, successful, successfulWith)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
@@ -72,20 +70,15 @@ keyword str =
    then token.reserved str
    else error $ str <> " is not a reserved word"
 
--- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
--- for distinguishing pattern variables from nullary constructors when parsing patterns.
-isCtr ∷ String → Boolean
-isCtr str = isUpper $ fromJust absurd $ charAt 0 str
-
 ident ∷ SParser Var
 ident = do
    x <- token.identifier
-   pureIf (not $ isCtr x) x
+   pureIf (not $ isCtrName x) x
 
 ctr :: SParser Ctr
 ctr = do
    x <- token.identifier
-   pureIf (isCtr x) $ Ctr x
+   pureIf (isCtrName x) $ Ctr x
 
 -- Singleton eliminator with no continuation.
 simplePattern :: SParser Pattern -> SParser Pattern

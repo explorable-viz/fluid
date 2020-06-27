@@ -1,6 +1,7 @@
 module DataType where
 
 import Prelude hiding (absurd)
+import Data.Char.Unicode (isUpper)
 import Data.Either (note)
 import Data.Foldable (class Foldable)
 import Data.List (fromFoldable) as L
@@ -8,7 +9,8 @@ import Data.List (List, concat, length)
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
-import Util (MayFail, type (×), (×), absurd)
+import Data.String.CodeUnits (charAt)
+import Util (MayFail, type (×), (×), absurd, fromJust)
 
 type TypeName = String
 
@@ -18,8 +20,15 @@ derive instance newtypeCtr :: Newtype Ctr _
 derive instance eqCtr :: Eq Ctr
 derive instance ordCtr :: Ord Ctr
 
+-- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
+-- for distinguishing pattern variables from nullary constructors when parsing patterns.
+isCtrName ∷ String → Boolean
+isCtrName str = isUpper $ fromJust absurd $ charAt 0 str
+
 instance showCtr :: Show Ctr where
-   show = unwrap
+   -- assume binary infix if not constructor name
+   show c = if isCtrName str then str else "(" <> str <> ")"
+      where str = unwrap c
 
 data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
