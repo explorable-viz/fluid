@@ -21,7 +21,7 @@ match_fwd (Val α (V.Constr c vs)) (ElimConstr κs)  =
 match_fwd v _                                      = error absurd
 
 matchArgs_fwd :: List Val -> Cont -> Env × Cont × Selected
-matchArgs_fwd Nil (ArgsEnd κ)    = Empty × κ × true
+matchArgs_fwd Nil κ              = Empty × κ × true
 matchArgs_fwd (v : vs) (Arg σ)   =
    let ρ  × κ'  × α = match_fwd v σ
        ρ' × κ'' × α' = matchArgs_fwd vs κ' in

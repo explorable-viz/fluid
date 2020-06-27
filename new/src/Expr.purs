@@ -34,7 +34,7 @@ expr :: RawExpr -> Expr
 expr = Expr false
 
 -- Continuation of an eliminator. None form only used in structured let.
-data Cont = None | Body Expr | Arg Elim | ArgsEnd Cont
+data Cont = None | Body Expr | Arg Elim
 
 body :: Cont -> Expr
 body (Body e) = e
@@ -44,11 +44,9 @@ instance selectableCont :: Selectable Cont where
    mapα f None          = None
    mapα f (Body e)      = Body $ mapα f e
    mapα f (Arg σ)       = Arg $ mapα f σ
-   mapα f (ArgsEnd κ)   = ArgsEnd $ mapα f κ
 
    maybeZipWithα f (Body e) (Body e')        = Body <$> maybeZipWithα f e e'
    maybeZipWithα f (Arg σ) (Arg σ')          = Arg <$> maybeZipWithα f σ σ'
-   maybeZipWithα f (ArgsEnd κ) (ArgsEnd κ')  = ArgsEnd <$> maybeZipWithα f κ κ'
    maybeZipWithα _ _ _                       = Nothing
 
 data Elim =

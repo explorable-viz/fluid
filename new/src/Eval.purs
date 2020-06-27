@@ -27,12 +27,12 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
 match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
 matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × (List Match))
-matchArgs _ Nil (ArgsEnd κ)      = pure $ Empty × κ × Nil
+matchArgs _ Nil κ                = pure $ Empty × κ × Nil
 matchArgs c (v : vs) (Arg σ)     = do
    ρ  × κ'  × ξ  <- match v σ
    ρ' × κ'' × ξs <- matchArgs c vs κ'
    pure $ (ρ <> ρ') × κ'' × (ξ : ξs)
-matchArgs c (_ : vs) (ArgsEnd _) = Left $
+matchArgs c (_ : vs) (Body _)    = Left $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _                  = error absurd
 

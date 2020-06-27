@@ -109,7 +109,7 @@ simplePattern pattern' =
       token.parens $ do
          π <- pattern' <* token.comma
          π' <- pattern'
-         pure $ PattConstr cPair $ PArg $ setCont (PArg $ setCont (PArgsEnd PNone) π') π
+         pure $ PattConstr cPair $ PArg $ setCont (PArg π') π
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -138,7 +138,7 @@ patternOne curried expr' delim = pattern' >>= rest
       where
       body' = if curried then body <|> PLambda <$> (pattern' >>= rest) else body
 
-   pattern' = if curried then finalise <$> simplePattern pattern else pattern
+   pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
 varDefs :: SParser Expr -> SParser VarDefs
@@ -240,15 +240,11 @@ pattern = fix $ appChain_pattern
    appChain_pattern pattern' = simplePattern pattern' >>= rest
       where
          rest ∷ Pattern -> SParser Pattern
-         rest π@(PattConstr _ _) = ctrArgs <|> pure (finalise π)
+         rest π@(PattConstr _ _) = ctrArgs <|> pure π
             where
             ctrArgs :: SParser Pattern
             ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') π
          rest π@(PattVar _ _) = pure π
-
-finalise :: Pattern -> Pattern
-finalise π@(PattConstr _ _) = setCont (PArgsEnd PNone) π
-finalise π@(PattVar _ _)    = π
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
