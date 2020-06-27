@@ -20,25 +20,21 @@ data PCont =
    PLambda Pattern |    -- unnecessary if surface language supports piecewise definitions
    PArg Pattern
 
-toCont :: PCont -> Cont
-toCont PNone         = None
-toCont (PBody e)     = Body e
-toCont (PLambda π)   = Body $ expr $ Lambda $ toElim π
-toCont (PArg π)      = Arg $ toElim π
+toCont :: PCont -> MayFail Cont
+toCont PNone         = pure None
+toCont (PBody e)     = pure $ Body e
+toCont (PLambda π)   = Body <$> (expr <$> (Lambda <$> toElim π))
+toCont (PArg π)      = Arg <$> toElim π
 
 data Pattern =
    PattVar Var PCont |
    PattConstr Ctr Int PCont
 
-toElim :: Pattern -> Elim
-toElim (PattVar x κ)       = ElimVar x $ toCont κ
-toElim (PattConstr c _ κ)  = ElimConstr $ singleton c $ toCont κ
-
-toElim2 :: Pattern -> MayFail Elim
-toElim2 (PattVar x κ)      = pure $ ElimVar x $ toCont κ
-toElim2 (PattConstr c n κ) = do
+toElim :: Pattern -> MayFail Elim
+toElim (PattVar x κ)      = ElimVar x <$> toCont κ
+toElim (PattConstr c n κ) = do
    void $ arity c `(=<<<) (≞)` pure n
-   pure $ ElimConstr $ singleton c $ toCont κ
+   ElimConstr <$> (singleton c <$> toCont κ)
 
 class MapCont a where
    -- replace a None continuation by a non-None one
@@ -71,7 +67,7 @@ instance joinablePatternElim :: Joinable Pattern Elim where
          case lookup c κs of
             Nothing -> do
                checkDataType
-               insert <$> pure c <@> toCont κ <@> κs
+               insert <$> pure c <*> toCont κ <@> κs
                where
                checkDataType :: MayFail Unit
                checkDataType = do
@@ -87,4 +83,4 @@ instance joinablePContCont :: Joinable PCont Cont where
    maybeJoin _ _                                      = Left "Incompatible continuations"
 
 joinAll :: NonEmptyList Pattern -> MayFail Elim
-joinAll (NonEmptyList (π :| πs)) = foldl (om $ maybeJoin) (Right $ toElim π) πs
+joinAll (NonEmptyList (π :| πs)) = foldl (om $ maybeJoin) (toElim π) πs
