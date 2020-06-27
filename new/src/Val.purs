@@ -5,7 +5,7 @@ import Data.List (List, zipWith)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Bindings (Bindings)
-import DataType (Ctr)
+import DataType (Ctr, CtrSig)
 import Expr (Elim, RecDefs)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util ((≟))
@@ -21,6 +21,12 @@ data Binary =
 data UnaryOp =
    UnaryOp String Unary |
    PartialApp BinaryOp Val
+
+data Primitive =
+   Constr2 Ctr CtrSig |
+   Unary2 UnaryOp |
+   Binary2 BinaryOp |
+   PartialApp2 Primitive Val
 
 data BinaryOp = BinaryOp String Binary
 
