@@ -40,4 +40,4 @@ main = do
    runExample "reverse" "[2, 1]"
    runExample "zipWith" "[(3, 10), (4, 12), (8, 20)]"
 -}
-   runExample "temp" "2"
+   runExample "temp" "5"
