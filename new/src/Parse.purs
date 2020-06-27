@@ -157,7 +157,7 @@ recDefs expr' = do
    toRecDef :: NonEmptyList (String × Pattern) -> RecDef
    toRecDef fπs =
       let f = fst $ head fπs in
-      RecDef f $ successfulWith ("Incompatible branches for '" <> f <> "'") $ joinAll $ snd <$> fπs
+      RecDef f $ successfulWith ("Bad branches for '" <> f <> "'") $ joinAll $ snd <$> fπs
 
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)

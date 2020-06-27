@@ -12,7 +12,7 @@ import Data.Traversable (foldl)
 import Bindings (Var)
 import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
-import Util (MayFail, (≞), (=<<<), absurd, error, om)
+import Util (MayFail, (≞), (=<<<), absurd, check, error, om)
 
 data PCont =
    PNone |              -- intermediate state during construction, but also for structured let
@@ -33,7 +33,7 @@ data Pattern =
 toElim :: Pattern -> MayFail Elim
 toElim (PattVar x κ)      = ElimVar x <$> toCont κ
 toElim (PattConstr c n κ) = do
-   void $ arity c `(=<<<) (≞)` pure n
+   check ("Arity mismatch for " <> show c) $ arity c `(=<<<) (≞)` pure n
    ElimConstr <$> (singleton c <$> toCont κ)
 
 class MapCont a where
@@ -71,8 +71,8 @@ instance joinablePatternElim :: Joinable Pattern Elim where
                where
                checkDataType :: MayFail Unit
                checkDataType = do
-                  void $ (typeName <$> dataType κs) `(=<<<) (≞)` (typeName <$> dataTypeFor c)
-                  void $ arity c `(=<<<) (≞)` pure n
+                  check "non-uniform patterns" $ (typeName <$> dataType κs) `(=<<<) (≞)` (typeName <$> dataTypeFor c)
+                  check ("arity mismatch for " <> show c) $ arity c `(=<<<) (≞)` pure n
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
    maybeJoin _ _                               = Left "Can't join variable and constructor patterns"
 
