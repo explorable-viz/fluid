@@ -33,7 +33,7 @@ data Pattern =
 toElim :: Pattern -> MayFail Elim
 toElim (PattVar x κ)      = ElimVar x <$> toCont κ
 toElim (PattConstr c n κ) = do
-   check ("Arity mismatch for " <> show c) $ arity c `(=<<<) (≞)` pure n
+   checkArity c n
    ElimConstr <$> (singleton c <$> toCont κ)
 
 class MapCont a where
@@ -72,7 +72,7 @@ instance joinablePatternElim :: Joinable Pattern Elim where
                checkDataType :: MayFail Unit
                checkDataType = do
                   check "non-uniform patterns" $ (typeName <$> dataType κs) `(=<<<) (≞)` (typeName <$> dataTypeFor c)
-                  check ("arity mismatch for " <> show c) $ arity c `(=<<<) (≞)` pure n
+                  checkArity c n
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
    maybeJoin _ _                               = Left "Can't join variable and constructor patterns"
 
@@ -84,3 +84,6 @@ instance joinablePContCont :: Joinable PCont Cont where
 
 joinAll :: NonEmptyList Pattern -> MayFail Elim
 joinAll (NonEmptyList (π :| πs)) = foldl (om $ maybeJoin) (toElim π) πs
+
+checkArity :: Ctr -> Int -> MayFail Unit
+checkArity c n = check ("Checking arity of " <> show c) $ arity c `(=<<<) (≞)` pure n
