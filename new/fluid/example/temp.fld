@@ -1,1 +1,4 @@
-let x = 2; y = 8 in x * y
+let unzip2 Nil = 6;
+    unzip2 (Cons (Cons (x, y) Nil) zs) = 5
+in
+unzip2 (Cons (Cons (5, 6) Nil) Nil)

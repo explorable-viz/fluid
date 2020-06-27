@@ -22,11 +22,11 @@ match_fwd v _                                      = error absurd
 
 matchArgs_fwd :: List Val -> Cont -> Env × Cont × Selected
 matchArgs_fwd Nil κ              = Empty × κ × true
-matchArgs_fwd (v : vs) (Arg _ σ) =
+matchArgs_fwd (v : vs) (Arg σ)   =
    let ρ  × κ'  × α = match_fwd v σ
        ρ' × κ'' × α' = matchArgs_fwd vs κ' in
    (ρ <> ρ') × κ'' × (α ∧ α')
-matchArgs_fwd (_ : _) _          = error absurd
+matchArgs_fwd _ _                = error absurd
 
 closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
 closeDefs_fwd _ _ Nil _                = Empty

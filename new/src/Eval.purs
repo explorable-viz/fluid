@@ -1,46 +1,50 @@
 module Eval where
 
 import Prelude hiding (absurd, apply)
-import Data.Either (Either(..))
+import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import DataType (Ctr)
+import DataType (Ctr, arity)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
-import Util (MayFail, type (×), (×), absurd, error)
+import Util (MayFail, type (×), (×), (≟), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
 match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)
-match (Val _ (V.Constr c vs)) (ElimConstr κs) =
-   case lookup c κs of
-      Nothing  -> Left $ "Pattern mismatch: no branch for " <> show c
-      Just κ   -> do
-         ρ × κ' × ξs <- matchArgs c vs κ
-         pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
+match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
+   κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
+   ρ × κ' × ξs <- matchArgs c vs κ
+   pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
 matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × (List Match))
-matchArgs _ Nil κ = pure $ Empty × κ × Nil
-matchArgs c (v : vs) (Arg _ σ)  = do
+matchArgs _ Nil κ                = pure $ Empty × κ × Nil
+matchArgs c (v : vs) (Arg σ)     = do
    ρ  × κ'  × ξ  <- match v σ
    ρ' × κ'' × ξs <- matchArgs c vs κ'
    pure $ (ρ <> ρ') × κ'' × (ξ : ξs)
-matchArgs c vs _ = Left $
-   show (length vs) <> " extra arguments to " <> show c <> "; did you forget parentheses in lambda pattern?"
+matchArgs c (_ : vs) (Body _)    = Left $
+   show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
+matchArgs _ _ _                  = error absurd
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
 closeDefs _ _ Nil = Empty
 closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ0 σ)
+
+checkArity :: Ctr -> Int -> MayFail Unit
+checkArity c n = do
+   n' <- arity c
+   note (show c <> " got " <> show n <> " argument(s), expects " <> show n') $ void $ n ≟ n'
 
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
@@ -52,6 +56,7 @@ eval ρ (Expr _ (E.Int n)) =
 eval ρ (Expr _ (E.Str str)) =
    pure $ (T.Str str) × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
+   checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
    pure $ (T.Constr c ts) × val (V.Constr c vs)
 eval ρ (Expr _ (E.LetRec δ e)) = do
@@ -96,7 +101,6 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
 -- desugar :: Expr -> Expr
 -- desugar (Expr _ (E.Let (E.Def σ e) e'))
 --  = E.Lambda σ
-
 
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ

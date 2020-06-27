@@ -19,30 +19,29 @@ import Data.Profunctor.Choice ((|||))
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
 import Text.Parsing.Parser.Combinators (try)
-import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
+import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
-  GenLanguageDef(..), LanguageDef, TokenParser,
-  alphaNum, letter, makeTokenParser, unGenLanguageDef
+  GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
 import DataType (Ctr(..), cPair)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
-import PElim (Pattern(..), PCont(..), joinAll, mapCont, toElim)
-import Primitive (OpName(..), opNames, opPrec)
-import Util (type (×), (×), type (+), absurd, error, fromBool, fromJust)
-import Util.Parse (SParser, pureMaybe, pureIf, sepBy_try, sepBy1, sepBy1_try)
+import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
+import Primitive (opDefs)
+import Util (type (×), (×), type (+), absurd, error, fromJust, pureIf, successful, successfulWith)
+import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
-strArrow       = "->" :: String
-strAs          = "as" :: String
-strBackslash   = "\\" :: String
-strEquals      = "=" :: String
-strFun         = "fun" :: String
-strIn          = "in" :: String
-strLet         = "let" :: String
-strMatch       = "match" :: String
+strArrow       = "->"      :: String
+strAs          = "as"      :: String
+strBackslash   = "\\"      :: String
+strEquals      = "="       :: String
+strFun         = "fun"     :: String
+strIn          = "in"      :: String
+strLet         = "let"     :: String
+strMatch       = "match"   :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -81,7 +80,7 @@ isCtr str = isUpper $ fromJust absurd $ charAt 0 str
 ident ∷ SParser Var
 ident = do
    x <- token.identifier
-   pureIf (not (isCtr x)) x
+   pureIf (not $ isCtr x) x
 
 ctr :: SParser Ctr
 ctr = do
@@ -99,7 +98,7 @@ simplePattern pattern' =
    where
    -- Constructor name as a nullary constructor pattern.
    ctr_pattern :: SParser Pattern
-   ctr_pattern = PattConstr <$> ctr <@> PNone
+   ctr_pattern = PattConstr <$> ctr <@> 0 <@> PNone
 
       -- TODO: anonymous variables
    patternVariable :: SParser Pattern
@@ -110,7 +109,7 @@ simplePattern pattern' =
       token.parens $ do
          π <- pattern' <* token.comma
          π' <- pattern'
-         pure $ PattConstr cPair $ PArg 0 $ mapCont (PArg 1 π') π
+         pure $ PattConstr cPair 2 $ PArg $ setCont (PArg π') π
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -123,7 +122,7 @@ patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
 elim :: Boolean -> SParser Expr -> SParser Elim
-elim curried expr' = fromJust "Incompatible branches" <$> (joinAll <$> patterns)
+elim curried expr' = successfulWith "Incompatible branches in match or lambda" <$> (joinAll <$> patterns)
    where
    patterns :: SParser (NonEmptyList Pattern)
    patterns = pure <$> patternOne curried expr' patternDelim <|> patternMany
@@ -135,7 +134,7 @@ patternOne :: Boolean -> SParser Expr -> SParser Unit -> SParser Pattern
 patternOne curried expr' delim = pattern' >>= rest
    where
    rest :: Pattern -> SParser Pattern
-   rest π = mapCont <$> body' <@> π
+   rest π = setCont <$> body' <@> π
       where
       body' = if curried then body <|> PLambda <$> (pattern' >>= rest) else body
 
@@ -146,7 +145,8 @@ varDefs :: SParser Expr -> SParser VarDefs
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
    clause :: SParser VarDef
-   clause = VarDef <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
+   clause =
+      VarDef <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
@@ -157,7 +157,7 @@ recDefs expr' = do
    toRecDef :: NonEmptyList (String × Pattern) -> RecDef
    toRecDef fπs =
       let f = fst $ head fπs in
-      RecDef f $ fromJust ("Incompatible branches for '" <> f <> "'") $ joinAll $ snd <$> fπs
+      RecDef f $ successfulWith ("Bad branches for '" <> f <> "'") $ joinAll $ snd <$> fπs
 
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)
@@ -233,32 +233,32 @@ expr_ = fix $ appChain >>> buildExprParser operators
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Pattern
-pattern = fix appChain_pattern
+pattern = fix $ appChain_pattern
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
    appChain_pattern :: SParser Pattern -> SParser Pattern
-   appChain_pattern pattern' = simplePattern pattern' >>= rest 0
+   appChain_pattern pattern' = simplePattern pattern' >>= rest
       where
-         rest ∷ Int -> Pattern -> SParser Pattern
-         rest n π@(PattConstr _ _) = ctrArgs <|> pure π
+         rest ∷ Pattern -> SParser Pattern
+         rest π@(PattConstr c n κ) = ctrArgs <|> pure π
             where
             ctrArgs :: SParser Pattern
-            ctrArgs = simplePattern pattern' >>= \π' -> rest (n + 1) $ mapCont (PArg n π') π
-         rest _ π@(PattVar _ _) = pure π
+            ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
+         rest π@(PattVar _ _) = pure π
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: OperatorTable Identity String Expr
 operators =
-   fromFoldable $ map fromFoldable $
-   map (map (\(OpName op _) -> Infix (try $ theBinaryOp op) AssocLeft)) $
-   groupBy (eq `on` opPrec) $ sortBy (\x -> comparing opPrec x >>> invert) $ values opNames
+   fromFoldable $ fromFoldable <$>
+   (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
+   groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
    where
    -- specific binary operator
-   theBinaryOp :: Var -> SParser (Expr -> Expr -> Expr)
-   theBinaryOp op = do
+   binaryOp :: Var -> SParser (Expr -> Expr -> Expr)
+   binaryOp op = do
       op' <- token.operator
-      pureMaybe $ fromBool (op == op') (\e1 -> expr <<< BinaryApp e1 op)
+      pureIf (op == op') (\e1 -> expr <<< BinaryApp e1 op)
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
