@@ -28,11 +28,11 @@ toCont (PArg π)      = Arg $ toElim π
 
 data Pattern =
    PattVar Var PCont |
-   PattConstr Ctr PCont
+   PattConstr Ctr Int PCont
 
 toElim :: Pattern -> Elim
-toElim (PattVar x κ)    = ElimVar x $ toCont κ
-toElim (PattConstr c κ) = ElimConstr $ singleton c $ toCont κ
+toElim (PattVar x κ)       = ElimVar x $ toCont κ
+toElim (PattConstr c _ κ)  = ElimConstr $ singleton c $ toCont κ
 
 class MapCont a where
    -- replace a None continuation by a non-None one
@@ -45,8 +45,8 @@ instance setContPCont :: MapCont PCont where
    setCont κ (PArg π)      = PArg $ setCont κ π
 
 instance setContPattern :: MapCont Pattern where
-   setCont κ (PattVar x κ')     = PattVar x $ setCont κ κ'
-   setCont κ (PattConstr c κ')  = PattConstr c $ setCont κ κ'
+   setCont κ (PattVar x κ')      = PattVar x $ setCont κ κ'
+   setCont κ (PattConstr c n κ') = PattConstr c n $ setCont κ κ'
 
 class Joinable a b | a -> b where
    maybeJoin :: b -> a -> MayFail b
@@ -57,8 +57,8 @@ dataType κs = case keys κs of
    c : _ -> dataTypeFor c
 
 instance joinablePatternElim :: Joinable Pattern Elim where
-   maybeJoin (ElimVar x κ) (PattVar y κ')      = ElimVar <$> x ≟= y <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr κs) (PattConstr c κ)  = ElimConstr <$> mayFailUpdate
+   maybeJoin (ElimVar x κ) (PattVar y κ')       = ElimVar <$> x ≟= y <*> maybeJoin κ κ'
+   maybeJoin (ElimConstr κs) (PattConstr c _ κ) = ElimConstr <$> mayFailUpdate
       where
       mayFailUpdate :: MayFail (Map Ctr Cont)
       mayFailUpdate =

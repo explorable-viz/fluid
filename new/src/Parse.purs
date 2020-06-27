@@ -98,7 +98,7 @@ simplePattern pattern' =
    where
    -- Constructor name as a nullary constructor pattern.
    ctr_pattern :: SParser Pattern
-   ctr_pattern = PattConstr <$> ctr <@> PNone
+   ctr_pattern = PattConstr <$> ctr <@> 0 <@> PNone
 
       -- TODO: anonymous variables
    patternVariable :: SParser Pattern
@@ -109,7 +109,7 @@ simplePattern pattern' =
       token.parens $ do
          π <- pattern' <* token.comma
          π' <- pattern'
-         pure $ PattConstr cPair $ PArg $ setCont (PArg π') π
+         pure $ PattConstr cPair 2 $ PArg $ setCont (PArg π') π
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -240,10 +240,10 @@ pattern = fix $ appChain_pattern
    appChain_pattern pattern' = simplePattern pattern' >>= rest
       where
          rest ∷ Pattern -> SParser Pattern
-         rest π@(PattConstr _ _) = ctrArgs <|> pure π
+         rest π@(PattConstr c n κ) = ctrArgs <|> pure π
             where
             ctrArgs :: SParser Pattern
-            ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') π
+            ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
          rest π@(PattVar _ _) = pure π
 
 -- each element of the top-level list corresponds to a precedence level
