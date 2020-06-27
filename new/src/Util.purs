@@ -72,3 +72,8 @@ intersperse x xs = intercalate (pure x) $ map pure xs
 
 om :: forall a b c m . Monad m => (a -> b -> m c) -> m a -> b -> m c
 om f m x = m >>= flip f x
+
+bind2Flipped :: forall m a b c . Monad m => (a -> b -> m c) -> m a -> m b -> m c
+bind2Flipped f x y = join $ lift2 f x y
+
+infixr 1 bind2Flipped as =<<<
