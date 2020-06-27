@@ -231,6 +231,19 @@ expr_ = fix $ appChain >>> buildExprParser operators
          lambda :: SParser Expr
          lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
 
+   -- each element of the top-level list corresponds to a precedence level
+   operators :: OperatorTable Identity String Expr
+   operators =
+      fromFoldable $ fromFoldable <$>
+      (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
+      groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
+      where
+      -- specific binary operator
+      binaryOp :: Var -> SParser (Expr -> Expr -> Expr)
+      binaryOp op = do
+         op' <- token.operator
+         pureIf (op == op') (\e1 -> expr <<< BinaryApp e1 op)
+
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Pattern
 pattern = fix $ appChain_pattern
@@ -246,19 +259,6 @@ pattern = fix $ appChain_pattern
             ctrArgs :: SParser Pattern
             ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
          rest π@(PattVar _ _) = pure π
-
--- each element of the top-level list corresponds to a precedence level
-operators :: OperatorTable Identity String Expr
-operators =
-   fromFoldable $ fromFoldable <$>
-   (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
-   groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
-   where
-   -- specific binary operator
-   binaryOp :: Var -> SParser (Expr -> Expr -> Expr)
-   binaryOp op = do
-      op' <- token.operator
-      pureIf (op == op') (\e1 -> expr <<< BinaryApp e1 op)
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
