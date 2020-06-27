@@ -238,8 +238,8 @@ expr_ = fix $ appChain >>> buildExprParser operators
          pureIf (op == op') (\e1 -> expr <<< BinaryApp e1 op)
 
 -- TODO: allow infix constructors, via buildExprParser
-pattern_old :: SParser Pattern
-pattern_old = fix appChain_pattern
+pattern :: SParser Pattern
+pattern = fix appChain_pattern
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
@@ -253,8 +253,8 @@ pattern_old = fix appChain_pattern
             ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
          rest π@(PattVar _ _) = pure π
 
-pattern :: SParser Pattern
-pattern = fix $ appChain_pattern >>> buildExprParser operators
+pattern_new :: SParser Pattern
+pattern_new = fix $ appChain_pattern >>> buildExprParser operators
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
