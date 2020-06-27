@@ -5,7 +5,7 @@ import Data.List (List, zipWith)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Bindings (Bindings)
-import DataType (Ctr, CtrSig)
+import DataType (Ctr)
 import DataType (arity) as D
 import Expr (Elim, RecDefs)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
@@ -43,7 +43,8 @@ data RawVal =
    Constr Ctr (List Val) |
    Closure Env RecDefs Elim |
    Binary BinaryOp |
-   Unary UnaryOp
+   Unary UnaryOp |
+   Primitive Primitive
 
 data Val = Val Selected RawVal
 
@@ -63,6 +64,19 @@ instance selectableBinaryOp :: Selectable BinaryOp where
    mapα _ = identity
    maybeZipWithα f (BinaryOp op f') (BinaryOp op' _) = BinaryOp <$> op ≟ op' <*> pure f'
 
+instance selectablePrimitive :: Selectable Primitive where
+   mapα f (Constr2 c)         = Constr2 c
+   mapα f (Unary2 φ)          = Unary2 (mapα f φ)
+   mapα f (Binary2 φ)         = Binary2 (mapα f φ)
+   mapα f (PartialApp2 op v)  = PartialApp2 (mapα f op) (mapα f v)
+
+   maybeZipWithα f (Constr2 c) (Constr2 c')                 = Constr2 <$> c ≟ c'
+   maybeZipWithα f (Unary2 φ) (Unary2 φ')                   = Unary2 <$> maybeZipWithα f φ φ'
+   maybeZipWithα f (Binary2 φ) (Binary2 φ')                 = Binary2 <$> maybeZipWithα f φ φ'
+   maybeZipWithα f (PartialApp2 op v) (PartialApp2 op' v')  =
+      PartialApp2 <$> maybeZipWithα f op op' <*> maybeZipWithα f v v'
+   maybeZipWithα _ _ _                                      = Nothing
+
 instance selectableVal :: Selectable Val where
    mapα f (Val α u)                       = Val (f α) u
    maybeZipWithα f (Val α r) (Val α' r')  = Val <$> pure (α `f` α') <*> maybeZipWithα f r r'
@@ -74,6 +88,7 @@ instance selectableRawVal :: Selectable RawVal where
    mapα f (Closure ρ δ σ)  = Closure (mapα f ρ) (map (mapα f) δ) (mapα f σ)
    mapα f (Binary φ)       = Binary (mapα f φ)
    mapα f (Unary φ)        = Unary (mapα f φ)
+   mapα f (Primitive op)   = Primitive (mapα f op)
 
    maybeZipWithα f (Int x) (Int x')                   = Int <$> x ≟ x'
    maybeZipWithα f (Str s) (Str s')                   = Str <$> s ≟ s'
@@ -84,4 +99,4 @@ instance selectableRawVal :: Selectable RawVal where
               <*> sequence (zipWith (maybeZipWithα f) δ δ') <*> maybeZipWithα f σ σ'
    maybeZipWithα f (Binary φ) (Binary φ')             = Binary <$> maybeZipWithα f φ φ'
    maybeZipWithα f (Unary φ) (Unary φ')               = Unary <$> maybeZipWithα f φ φ'
-   maybeZipWithα f _ _                                = Nothing
+   maybeZipWithα _ _ _                                = Nothing

@@ -15,7 +15,7 @@ import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
 import Util (MayFail, type (×), (×), (≟), absurd, error)
-import Val (Env, UnaryOp(..), Val(..), val)
+import Val (Env, Primitive(..), UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
@@ -97,6 +97,10 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
    ρ' × e' × ξ <- match v σ
    t' × v'     <- eval (ρ <> ρ') (body e')
    pure $ T.MatchAs t ξ t' × v'
+
+apply :: Primitive -> Val -> Val
+apply (Unary2 φ) v = applyUnary φ v
+
 
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
