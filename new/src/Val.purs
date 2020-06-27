@@ -6,9 +6,10 @@ import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Bindings (Bindings)
 import DataType (Ctr, CtrSig)
+import DataType (arity) as D
 import Expr (Elim, RecDefs)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
-import Util ((≟))
+import Util ((≟), successful)
 
 data Unary =
    IntStr (Int -> String)
@@ -23,10 +24,16 @@ data UnaryOp =
    PartialApp BinaryOp Val
 
 data Primitive =
-   Constr2 Ctr CtrSig |
+   Constr2 Ctr |
    Unary2 UnaryOp |
    Binary2 BinaryOp |
    PartialApp2 Primitive Val
+
+arity :: Primitive -> Int
+arity (Constr2 c)          = successful $ D.arity c
+arity (Unary2 φ)           = 1
+arity (Binary2 φ)          = 2
+arity (PartialApp2 op _)   = arity op - 1
 
 data BinaryOp = BinaryOp String Binary
 
