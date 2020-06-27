@@ -54,17 +54,17 @@ eval ρ (Expr _ (E.Op op)) =
 eval ρ (Expr _ (E.Int n)) =
    pure $ T.Int n × val (V.Int n)
 eval ρ (Expr _ (E.Str str)) =
-   pure $ (T.Str str) × val (V.Str str)
+   pure $ T.Str str × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
-   pure $ (T.Constr c ts) × val (V.Constr c vs)
+   pure $ T.Constr c ts × val (V.Constr c vs)
 eval ρ (Expr _ (E.LetRec δ e)) = do
    let ρ' = closeDefs ρ δ δ
    t × v <- eval (ρ <> ρ') e
-   pure $ (T.LetRec δ t) × v
+   pure $ T.LetRec δ t × v
 eval ρ (Expr _ (E.Lambda σ)) =
-   pure $ (T.Lambda σ) × val (V.Closure ρ Nil σ)
+   pure $ T.Lambda σ × val (V.Closure ρ Nil σ)
 eval ρ (Expr _ (E.App e e')) = do
    t  × (Val _ u) <- eval ρ e
    t' × v'        <- eval ρ e'
@@ -73,11 +73,11 @@ eval ρ (Expr _ (E.App e e')) = do
          let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × ξ <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
-         pure $ (T.App t t' ξ t'') × v''
+         pure $ T.App t t' ξ t'' × v''
       V.Unary φ ->
-         pure $ (T.AppOp t t') × applyUnary φ v'
+         pure $ T.AppOp t t' × applyUnary φ v'
       V.Binary φ ->
-         pure $ (T.AppOp t t') × val (V.Unary $ PartialApp φ v')
+         pure $ T.AppOp t t' × val (V.Unary $ PartialApp φ v')
       _ -> Left "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
@@ -85,22 +85,18 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
    Val _ u <- find op ρ
    case u of
       V.Binary φ ->
-         pure $ (T.BinaryApp t op t') × (v `applyBinary φ` v')
+         pure $ T.BinaryApp t op t' × v `applyBinary φ` v'
       _ -> error absurd
 eval ρ (Expr _ (E.Let (E.VarDef σ e) e')) = do
    t  × v      <- eval ρ e
    ρ' × _ × ξ  <- match v σ
    t' × v'     <- eval (ρ <> ρ') e'
-   pure $ (T.Let (T.VarDef ξ t) t') × v'
+   pure $ T.Let (T.VarDef ξ t) t' × v'
 eval ρ (Expr _ (E.MatchAs e σ)) = do
    t  × v      <- eval ρ e
    ρ' × e' × ξ <- match v σ
    t' × v'     <- eval (ρ <> ρ') (body e')
-   pure $ (T.MatchAs t ξ t') × v'
-
--- desugar :: Expr -> Expr
--- desugar (Expr _ (E.Let (E.Def σ e) e'))
---  = E.Lambda σ
+   pure $ T.MatchAs t ξ t' × v'
 
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ

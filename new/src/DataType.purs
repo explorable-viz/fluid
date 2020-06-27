@@ -45,7 +45,7 @@ dataType name = fromFoldable >>> DataType name
 
 ctrToDataType :: Map Ctr DataType
 ctrToDataType = fromFoldable $
-   concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> \c -> c × d)
+   concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> (_ × d))
 
 dataTypeFor :: Ctr -> MayFail DataType
 dataTypeFor c = note ("Unknown constructor " <> show c) $ lookup c ctrToDataType

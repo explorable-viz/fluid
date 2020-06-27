@@ -17,7 +17,7 @@ data Binary =
    IntIntInt (Int -> Int -> Int) |
    IntIntBool (Int -> Int -> Boolean)
 
--- String arguments are "internal" names for printing and equality testing, unrelated to user-level identifiers.
+-- String argument is "internal" name for printing/equality testing, unrelated to user-level identifiers.
 data UnaryOp =
    UnaryOp String Unary |
    PartialApp BinaryOp Val
