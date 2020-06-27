@@ -11,7 +11,6 @@ import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
-import Debug.Trace (trace)
 import Bindings (Var)
 import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
@@ -73,7 +72,7 @@ instance joinablePatternElim :: Joinable Pattern Elim where
                checkDataType :: MayFail Unit
                checkDataType = do
                   void $ join $ (typeName <$> dataType κs) `lift2 (≞)` (typeName <$> dataTypeFor c)
-                  void $ join $ arity c `lift2 (≞)` trace n \_ -> pure n
+                  void $ join $ arity c `lift2 (≞)` pure n
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
    maybeJoin _ _                               = Left "Can't join variable and constructor patterns"
 
