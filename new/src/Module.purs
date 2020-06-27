@@ -46,5 +46,5 @@ successfulParse src p =
 
 parseWithImports :: String -> Aff (Env × Expr)
 parseWithImports src = do
-   (×) <$> pure primitives -- loadModule "prelude" primitives
+   (×) <$> loadModule "prelude" primitives
        <@> successfulParse src program
