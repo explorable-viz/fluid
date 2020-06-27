@@ -30,7 +30,7 @@ import DataType (Ctr(..), cPair)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
-import Util (type (×), (×), type (+), absurd, error, fromJust, pureIf, successfulWith)
+import Util (type (×), (×), type (+), absurd, error, fromJust, pureIf, successful, successfulWith)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
@@ -145,7 +145,8 @@ varDefs :: SParser Expr -> SParser VarDefs
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
    clause :: SParser VarDef
-   clause = VarDef <$> ((toElim <$> pattern) <* patternDelim) <*> expr'
+   clause =
+      VarDef <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
 
 recDefs :: SParser Expr -> SParser RecDefs
 recDefs expr' = do
