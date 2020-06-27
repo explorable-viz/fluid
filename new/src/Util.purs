@@ -3,6 +3,7 @@ module Util where
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Control.MonadPlus (class MonadPlus, empty)
+import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List, intercalate)
 import Data.Map (Map, unionWith)
@@ -16,21 +17,21 @@ infixr 7 Tuple as ×
 
 infixr 6 type Either as +
 
-error :: ∀ a . String -> a
-error = unsafePerformEffect <<< throw
+error :: String -> ∀ a . a
+error msg = unsafePerformEffect $ throw msg
 
-assert :: ∀ a . Boolean -> a -> a
+assert :: Boolean -> ∀ a . a -> a
 assert true = identity
 assert false = \_ -> error "Assertion failure"
 
 absurd :: String
 absurd = "absurd"
 
-fromBool :: forall a . Boolean -> a -> Maybe a
+fromBool :: Boolean -> forall a . a -> Maybe a
 fromBool false = const Nothing
 fromBool true  = Just
 
-fromJust :: forall a . String -> Maybe a -> a
+fromJust :: String -> forall a . Maybe a -> a
 fromJust _ (Just a) = a
 fromJust msg Nothing  = error msg
 
@@ -38,17 +39,24 @@ pureMaybe :: forall m . MonadPlus m => Maybe ~> m
 pureMaybe Nothing    = empty
 pureMaybe (Just x)   = pure x
 
-pureIf :: forall m a . MonadPlus m => Boolean -> a -> m a
+pureIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 pureIf b = fromBool b >>> pureMaybe
 
 type MayFail a = String + a
 
 successful :: forall a . MayFail a -> a
-successful = successfulWith ""
+successful (Left msg)   = error msg
+successful (Right x)    = x
 
-successfulWith :: forall a . String -> MayFail a -> a
-successfulWith msg (Left msg')   = error $ msg' <> if msg == "" then "" else ("\n" <> msg)
-successfulWith _ (Right b)       = b
+successfulWith :: String -> forall a . MayFail a -> a
+successfulWith msg = successful <<< with msg
+
+-- If the property fails, add an extra error message.
+with :: String -> forall a . MayFail a -> MayFail a
+with msg = bimap (\msg' -> msg' <> if msg == "" then "" else ("\n" <> msg)) identity
+
+check :: String -> forall a . MayFail a -> MayFail Unit
+check msg = with msg >>> void
 
 mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = fromBool (x == x') x
