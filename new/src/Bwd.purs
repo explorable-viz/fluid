@@ -12,7 +12,7 @@ import Bindings (Bind, Bindings(..), (:+:), (:++:), (◃), (↦), getVal, find, 
 import DataType (Ctr(..))
 import Expl (Expl, Match(..))
 import Expl (Expl(..), Def(..)) as T
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs)
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs, reverseArgs)
 import Lattice (Selected, class Lattice, (∨?), bot, ff, tt)
 import Primitive (primitives, class FromList, fromList, toList, class ToList)
 import Pretty
@@ -76,15 +76,22 @@ match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')  = v × (ElimVar (x ≜ x') κ
 match_bwd _ _ _ (MatchVar x')                  = error absurd
 match_bwd ρ κ α (MatchConstr (c × ξs) κs)  =
    let vs × κ' = matchArgs_bwd ρ κ α (reverse ξs)
-   in (Val α $ V.Constr c (reverse vs)) × (ElimConstr $ insert c κ' $ map bot κs)
+      --  k = trace κ' 5
+   in (Val α $ V.Constr c (reverse vs)) × (ElimConstr $ insert c (reverseArgs κ') $ map bot κs)
 
 matchArgs_bwd :: Env -> Cont -> Selected -> List Match -> List Val × Cont
 matchArgs_bwd ρ κ α L.Nil     = L.Nil × κ
 matchArgs_bwd ρ κ α (ξ : ξs)  =
-   let ρ' × ρ1   = unmatch ρ ξ
+   let 
+      --  k = trace  ρ 5
+       ρ' × ρ1   = unmatch ρ ξ
+      --  k = trace ρ' $  5
        vs × κ'   = matchArgs_bwd ρ' κ α ξs
-       v  × σ    = match_bwd ρ1 κ' α ξ in
-   (v : vs) × (Arg (L.length vs) σ)
+      --  k' = trace ξ 5
+      --  k'' = trace (reverseArgs κ') 5
+       v  × σ    = match_bwd ρ1 (κ') α ξ 
+      --  k'' = trace σ 5 
+   in  (v : vs) × (Arg (L.length vs) σ)
 
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
 -- var
@@ -103,21 +110,21 @@ eval_bwd (Val α (V.Closure ρ _ _)) (T.Lambda σ)
 eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
    =  let
 
-          ρ1ρ2ρ3 × e × α  = eval_bwd v'' t''
+         ρ1ρ2ρ3 × e × α  = eval_bwd v'' t''
+         -- k = trace e 56
+         ρ1ρ2 × ρ3        = unmatch ρ1ρ2ρ3 ξ
 
-          ρ1ρ2 × ρ3        = unmatch ρ1ρ2ρ3 ξ
+         v'   × σ'        = match_bwd ρ3 (Body e) α ξ
+         
+         ρ1 × ρ2          = split ρ1ρ2 δ
 
-          v'   × σ'        = match_bwd ρ3 (Body e) α ξ
+         ρ'  × e'  × α'   = eval_bwd v' t'
 
-          ρ1 × ρ2          = split ρ1ρ2 δ
+         ρ1' × δ'   × α2  = closeDefs_bwd ρ2
 
-          ρ'  × e'  × α'   = eval_bwd v' t'
-
-          ρ1' × δ'   × α2  = closeDefs_bwd ρ2
-
-          ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ')) t
-
-      in  (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
+         ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ')) t
+         k = trace  ρ' $ trace ρ'' 5
+      in (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
 -- binary-apply
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2
@@ -134,9 +141,9 @@ eval_bwd v (T.MatchAs t1 ξ t2)
          ρ1ρ2 × e × α = eval_bwd v t2
 
          ρ1 × ρ2      = unmatch ρ1ρ2 ξ
-
+         
          v' × σ       = match_bwd ρ2 (Body e) α ξ
-
+         -- k = trace ρ2 5
          ρ1' × e' × α'  = eval_bwd v' t1
 
      in  (ρ1' ∨ ρ1) × (Expr ff (MatchAs e' σ)) × (α ∨ α')

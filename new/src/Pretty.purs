@@ -100,6 +100,7 @@ instance envPrettyList :: PrettyList (Bindings Val) where
 
 instance explPrettyList :: PrettyList Expl where
    prettyList (T.Constr cNil Nil) = null
+   prettyList (T.NullConstr cNil ρ) = text "NilExpl"
    prettyList (T.Constr cCons (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
    prettyList t = let k = trace t 5 in  error "Ill-formed list for expls"
 
@@ -138,7 +139,7 @@ prettyConstr :: forall a . Pretty a => PrettyList a => Ctr -> List a -> Doc
 prettyConstr c Nil = pretty c
 prettyConstr c xs@(x : xs')
    | c == cPair = parens $ pretty x :<>: comma :<>: pretty (fromJust absurd $ head xs')
-   | c == cCons = brackets $ pretty x :<>: prettyList (fromJust absurd $ head xs')
+   | c == cCons = text "Cons " :<>: pretty x :<>: pretty (fromJust absurd $ head xs')
    | otherwise  = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
 
 instance rawExprPretty :: Pretty RawExpr where
@@ -230,8 +231,8 @@ instance prettyBranch2 :: Pretty (Ctr × List Match) where
    pretty (Tuple c ξs) = text (show c) :<>: operator "-> " :<>: pretty ξs
 
 instance prettyElim2 :: Pretty Elim where
-   pretty (ElimVar x κ) = text x :<>: operator "->" :<>: pretty κ
-   pretty (ElimConstr κs) = vcat $ map pretty $ (toUnfoldable κs :: List _)
+   pretty (ElimVar x κ) = text "ElimVar " :<>: text x :<>: operator "->" :<>: pretty κ
+   pretty (ElimConstr κs) = text "ElimConstr " :<>: (vcat $ map pretty $ (toUnfoldable κs :: List _))
 
 instance valPretty :: Pretty Val where
    pretty (Val a u) = text "Val (" :<>: text (show a) :<>: comma :<>: pretty u :<>: text ")"

@@ -36,6 +36,16 @@ data Expr = Expr Selected RawExpr
 expr :: RawExpr -> Expr
 expr = Expr false
 
+
+reverseArgs :: Cont -> Cont
+reverseArgs (Body e) = (Body e)
+reverseArgs (Arg n (ElimVar x k))
+   = let k' = reverseArgs k
+     in  case k' of (Arg n' (ElimVar x' k'')) -> (Arg n (ElimVar x' (Arg n' (ElimVar x k''))))
+                    (Body e) -> (Arg n (ElimVar x (Body e)))
+                    _ -> (Arg n (ElimVar x k))
+reverseArgs c = c
+
 -- Continuation of an eliminator.
 data Cont = None | Body Expr | Arg Int Elim
 
@@ -50,7 +60,7 @@ instance selectableCont :: Selectable Cont where
 
    maybeZipWithα f (Body e) (Body e')     = Body <$> maybeZipWithα f e e'
    maybeZipWithα f (Arg n σ) (Arg m σ')   = Arg <$> n ≟ m <*> maybeZipWithα f σ σ'
-   maybeZipWithα _ _ _                    = Nothing
+   maybeZipWithα _ _ _                    = Just None
 
 data Elim =
    ElimVar Var Cont |

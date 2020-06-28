@@ -57,7 +57,7 @@ eval ρ (Expr _ (E.Str str)) =
    pure $ (T.Str str) × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
    ts × vs <- traverse (eval ρ) es <#> unzip
-
+   -- let k = trace ts $ 5
    pure $ case es of Nil -> (T.NullConstr c ρ) × val (V.Constr c vs)
                      _   -> (T.Constr c ts) × val (V.Constr c vs)
 eval ρ (Expr _ (E.LetRec δ e)) = do
