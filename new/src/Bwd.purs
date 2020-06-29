@@ -103,7 +103,7 @@ matchMany_bwd ρ κ α (ξ : ξs)  =
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
 -- var
 eval_bwd v (T.Var x ρ)
-   = ((bot ρ) ◃ (x ↦ v)) × (Expr ff (Var x)) × ff
+   = (bot ρ ◃ x ↦ v) × (Expr ff (Var x)) × ff
 -- int
 eval_bwd (Val α (V.Int n)) (T.Int tn ρ)
    = bot ρ × (Expr α (Int n)) × α
@@ -115,22 +115,15 @@ eval_bwd (Val α (V.Closure ρ _ _)) (T.Lambda σ)
    = ρ × (Expr α (Lambda σ)) × α
 -- apply
 eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
-   =  let
-         ρ1ρ2ρ3 × e × α  = eval_bwd v'' t''
-
-         ρ1ρ2 × ρ3        = unmatch ρ1ρ2ρ3 ξ
-
-         v'   × σ'        = match_bwd ρ3 (Body e) α ξ
-
-         ρ1 × ρ2          = split ρ1ρ2 δ
-
-         ρ'  × e'  × α'   = eval_bwd v' t'
-
-         ρ1' × δ'   × α2  = closeDefs_bwd ρ2
-
-         ρ'' × e'' × α'' = eval_bwd (Val α (V.Closure (ρ1 ∨ ρ1') δ' σ')) t
-
-      in (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
+   = let ρ1ρ2ρ3 × e × α    = eval_bwd v'' t''
+         ρ1ρ2 × ρ3         = unmatch ρ1ρ2ρ3 ξ
+         v'   × σ          = match_bwd ρ3 (Body e) α ξ
+         ρ1 × ρ2           = split ρ1ρ2 δ
+         ρ'  × e'  × α'    = eval_bwd v' t'
+         ρ1' × δ'   × α2   = closeDefs_bwd ρ2
+         ρ'' × e'' × α''  = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ)) t
+         k = trace t 5
+     in (ρ' ∨ ρ'') × (Expr (α' ∨ α'') (App e'' e')) × (α' ∨ α'')
 -- binary-apply
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2
@@ -143,22 +136,16 @@ eval_bwd (Val α v) (T.AppOp (t1 × v1) (t2 × v2))
      in  (ρ ∨ ρ') × (Expr α (App e e')) × α
 -- match-as
 eval_bwd v (T.MatchAs t1 ξ t2)
-   = let
-         ρ1ρ2 × e × α = eval_bwd v t2
-
+   = let ρ1ρ2 × e × α = eval_bwd v t2
          ρ1 × ρ2 = unmatch ρ1ρ2 ξ
-
          v1 × σ = match_bwd ρ2 (Body e) α ξ
-
          ρ1' × e' × α'  = eval_bwd v1 t1
 
-     in  (ρ1' ∨ ρ1) × (Expr ff (MatchAs e' σ)) × (α ∨ α')
+     in  (ρ1' ∨ ρ1) × (Expr (α ∨ α') (MatchAs e' σ)) × (α ∨ α')
 -- let
 eval_bwd v (T.Let (T.VarDef ξ t1) t2)
    = let ρ1ρ2 × e2 × α2 = eval_bwd v t2
-
          ρ1 × ρ2        = unmatch ρ1ρ2 ξ
-
          v' × σ         = match_bwd ρ2 (Body e2) α2 ξ
          ρ1' × e1 × α1  = eval_bwd v' t1
 
@@ -170,7 +157,7 @@ eval_bwd v (T.LetRec δ t)
          ρ1 × ρ2       = split ρ1ρ2 δ
          ρ1' × δ' × α' = closeDefs_bwd ρ2
 
-     in  (ρ1 ∨ ρ1') × (Expr ff (LetRec δ' e)) × (α ∨ α')
+     in  (ρ1 ∨ ρ1') × (Expr (α ∨ α') (LetRec δ' e)) × (α ∨ α')
 -- constr
 eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
    = let
@@ -185,8 +172,8 @@ eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
 
          ρ  × es  × α'   = evalArgs_bwd vs ts
 
-     in  ρ × (Expr ff (Constr c es)) × (α ∨ α')
+     in  ρ × (Expr α (Constr c es)) × (α ∨ α')
 eval_bwd (Val α (V.Constr c vs)) (T.NullConstr c' ρ)
-   = ρ  × (Expr α (Constr c L.Nil)) × α
+   = bot ρ × (Expr α (Constr c L.Nil)) × α
 eval_bwd v t = error $ "No pattern match found for eval_bwd in \n" <> render (pretty t)
 

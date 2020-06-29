@@ -7,7 +7,7 @@ import Bindings (Bindings(..), (:+:), (↦), find)
 import Expr (Cont(..), Elim(..), Expr(..), RecDef(..), RecDefs, VarDef(..), body)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
-import Primitive (applyBinary_fwd, applyUnary_fwd)
+import Primitive (applyBinary_fwd, applyUnary_fwd, primitives)
 import Util (type (×), (×), absurd, error, fromJust, successful)
 import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
@@ -37,7 +37,7 @@ eval_fwd :: Env -> Expr -> Selected -> Val
 eval_fwd ρ (Expr _ (E.Var x)) _ =
    successful $ find x ρ
 eval_fwd ρ (Expr _ (E.Op op)) _ =
-   successful $ find op ρ
+   successful $ find op primitives
 eval_fwd ρ (Expr α (E.Int n)) α' =
    Val (α ∧ α') $ V.Int n
 eval_fwd ρ (Expr α (E.Str str)) α' =
@@ -60,7 +60,7 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
       V.Binary φ -> Val α' $ V.Unary $ PartialApp φ v
       _ -> error absurd
 eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
-   case successful (find op ρ) of
+   case successful (find op primitives) of
       Val α' (V.Binary φ) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
       _ -> error absurd
 eval_fwd ρ (Expr _ (E.Let (VarDef σ e) e')) α =
