@@ -6,19 +6,23 @@ import Bindings (Var)
 import DataType (Ctr)
 import Expr (Cont, Elim, RecDefs)
 import Util (type (×))
+import Val (Env, Val)
+
+type ExplVal = Expl × Val
 
 data VarDef = VarDef Match Expl
 
 data Expl =
-   Var Var |
-   Op Var |
-   Int Int |
+   Var Var Env |
+   Op Var Env |
+   Int Int Env |
    Str String |
    Constr Ctr (List Expl) |
+   NullConstr Ctr Env |
    Lambda Elim |
-   App Expl Expl Match Expl |
-   AppOp Expl Expl |
-   BinaryApp Expl Var Expl |
+   App ExplVal Expl Match Expl |
+   AppOp ExplVal ExplVal |
+   BinaryApp ExplVal Var ExplVal |
    MatchAs Expl Match Expl |
    Let VarDef Expl |
    LetRec RecDefs Expl

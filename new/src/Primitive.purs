@@ -2,7 +2,7 @@ module Primitive where
 
 import Prelude hiding (apply, append, map)
 import Data.Foldable (foldl)
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), reverse)
 import Data.Map (Map, fromFoldable)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
@@ -40,6 +40,22 @@ opDefs = fromFoldable [
 ]
 
 -- Enforce argument type requirements.
+class ToList f where
+   toList :: forall a. f a -> List (Var × a)
+
+class FromList f where
+   fromList :: forall a. List (Var × a) -> f a
+
+instance envToList :: ToList Bindings where
+   toList ys = reverse (go ys)
+    where go (xs :+: x ↦ v) = ((x × v) : (go xs))
+          go Empty = Nil
+
+instance envFromList :: FromList Bindings where
+   fromList ys = go (reverse ys)
+    where go ((x × v):xs) = ((go xs) :+: (x ↦ v))
+          go Nil = Empty
+
 class To a where
    to :: Val -> a
 

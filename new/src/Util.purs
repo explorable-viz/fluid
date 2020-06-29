@@ -27,11 +27,15 @@ assert false = \_ -> error "Assertion failure"
 absurd :: String
 absurd = "absurd"
 
-fromBool :: Boolean -> forall a . a -> Maybe a
-fromBool false = const Nothing
-fromBool true  = Just
+boolToMaybe :: forall a . Boolean -> a -> Maybe a
+boolToMaybe false = const Nothing
+boolToMaybe true  = Just
 
-fromJust :: String -> forall a . Maybe a -> a
+eitherToBool :: forall a b. Either a b -> Boolean
+eitherToBool (Left _) = false
+eitherToBool (Right _)  = true
+
+fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a
 fromJust msg Nothing  = error msg
 
@@ -40,7 +44,7 @@ pureMaybe Nothing    = empty
 pureMaybe (Just x)   = pure x
 
 pureIf :: Boolean -> forall m a . MonadPlus m => a -> m a
-pureIf b = fromBool b >>> pureMaybe
+pureIf b = boolToMaybe b >>> pureMaybe
 
 type MayFail a = String + a
 
@@ -59,7 +63,7 @@ check :: String -> forall a . MayFail a -> MayFail Unit
 check msg = with msg >>> void
 
 mayEq :: forall a . Eq a => a -> a -> Maybe a
-mayEq x x' = fromBool (x == x') x
+mayEq x x' = boolToMaybe (x == x') x
 
 mustEq :: forall a . Eq a => a -> a -> a
 mustEq x x' = fromJust "Must be equal" $ x `mayEq` x'
