@@ -61,8 +61,6 @@ instance envPretty :: Pretty2 (Bindings Val) where
    pretty2 (ρ :+: x ↦ v) = brackets $ prettyList2 ρ :<>: (text x :<>: text " ↦ " :<>: pretty2 v)
    pretty2 Empty = text "[]"
 
-
-
 instance explPretty :: Pretty2 Expl where
    pretty2 (T.Var x ρ) = text "Var" :<>: parens (text x)
    pretty2 (T.Op op ρ) = text op
@@ -153,13 +151,6 @@ instance rawExprPretty :: Pretty2 RawExpr where
    pretty2 (E.App e e') = pretty2 e :<>: space :<>: pretty2 e'
    pretty2 (E.BinaryApp e op e') = pretty2 e :<>: operator op :<>: pretty2 e'
 
--- instance defPretty :: Pretty2 Def where
---    pretty2 (Def (ElimVar x _) e) = "x" :<>: operator "->" :<>: e
---    pretty2 (Def (ElimConstr m e)) =
---       case toUnfoldable m :: List (Ctr × Cont) of
---          Nil         -> error "Pretty2 printing: absurd"
---          Ctr c × κ   -> text c × pretty2 κ
-
 instance prettylistExpl :: Pretty2 (List Expl) where
    pretty2 Nil    = text ""
    pretty2 (v:vs) = brackets (pretty2 v :<>: prettyList2 vs)
@@ -237,8 +228,8 @@ instance rawValPretty :: Pretty2 RawVal where
    pretty2 (V.Int n)  = text $ show n
    pretty2 (V.Str str) = text $ show str
    pretty2 (V.Constr c vs) = prettyConstr c vs
-   pretty2 (V.Closure ρ δ σ) 
-    = text "Closure" :<>: text "(" :<>: 
+   pretty2 (V.Closure ρ δ σ)
+    = text "Closure" :<>: text "(" :<>:
     (atop (atop (text "env: " :<>: pretty2 ρ) (text "defs: " :<>: pretty2 δ)) (text "elim: " :<>: pretty2 σ)) :<>: (text ")")
    pretty2 (V.Unary op) = parens $ pretty2 op
    pretty2 (V.Binary op) = parens $ pretty2 op

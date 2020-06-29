@@ -115,7 +115,7 @@ instance rawValPrettyList :: PrettyList RawVal where
    prettyList v = error "Ill-formed list for values"
 
 instance exprPretty :: Pretty Expr where
-   pretty (Expr a r) = text "Expr (" :<>: text (show a) :<>: comma :<>: pretty r :<>: text ")"
+   pretty (Expr _ r) = pretty r
 
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> text

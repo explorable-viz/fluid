@@ -57,7 +57,6 @@ eval ρ (Expr _ (E.Str str)) =
    pure $ (T.Str str) × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
    ts × vs <- traverse (eval ρ) es <#> unzip
-   -- let k = trace ρ $ 5
    pure $ case es of Nil -> (T.NullConstr c ρ) × val (V.Constr c vs)
                      _   -> (T.Constr c ts) × val (V.Constr c vs)
 eval ρ (Expr _ (E.LetRec δ e)) = do
@@ -98,11 +97,6 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
    ρ' × e' × ξ <- match v σ
    t' × v'     <- eval (ρ <> ρ') (body e')
    pure $ (T.MatchAs t ξ t') × v'
-
--- desugar :: Expr -> Expr
--- desugar (Expr _ (E.Let (E.Def σ e) e'))
---  = E.Lambda σ
-
 
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
