@@ -1,13 +1,13 @@
 module Lattice where
 
 import Prelude hiding (absurd, join)
+import Control.Apply (lift2)
 import Data.List (List, (:), zipWith)
 import Data.List (List(..)) as L
 import Data.Map (Map, fromFoldable, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
-import Data.Tuple (Tuple(..))
-import Util (type (×), (≟), fromJust)
+import Util (type (×), (×), (≟), fromJust)
 
 class Lattice a where
    maybeMeet   :: a -> a -> Maybe a
@@ -54,8 +54,8 @@ instance selectableUnit :: Selectable Unit where
    maybeZipWithα _ _ _  = pure unit
 
 instance selectableTuple :: (Eq k, Selectable v) => Selectable (k × v) where
-   mapα f (Tuple k v)                        = Tuple k (mapα f v)
-   maybeZipWithα f (Tuple k v) (Tuple k' v') = Tuple <$> k ≟ k' <*> maybeZipWithα f v v'
+   mapα f (k × v)                    = k × mapα f v
+   maybeZipWithα f (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeZipWithα f v v'
 
 instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
    mapα f = map (mapα f)
@@ -70,4 +70,3 @@ instance listSelectable :: Selectable a => Selectable (List a) where
       L.Cons <$> maybeZipWithα f x y <*> (maybeZipWithα f xs ys)
    maybeZipWithα f L.Nil L.Nil = Just L.Nil
    maybeZipWithα f _   _       = Nothing
-

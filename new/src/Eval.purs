@@ -1,21 +1,21 @@
 module Eval where
 
 import Prelude hiding (absurd, apply)
-import Data.Either (Either(..))
+import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Debug.Trace (trace) as T
 import Bindings (Bindings(..), (:+:), (↦), find)
-import DataType (Ctr)
-import Expl (Def(..), Expl(..)) as T
-import Expl (Expl, ExplVal, Match(..))
+import DataType (Ctr, arity)
+import Expl (Expl(..), VarDef(..)) as T
+import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
-import Expr (Def(..), RawExpr(..)) as E
+import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary, primitives)
-import Util (MayFail, type (×), (×), absurd, error)
+import Util (MayFail, type (×), (×), (≟), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -24,27 +24,31 @@ trace' s a = T.trace  s $ \_-> a
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
 match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)
-match (Val _ (V.Constr c vs)) (ElimConstr κs) =
-   case lookup c κs of
-      Nothing  -> Left $ "Pattern mismatch: no branch for " <> show c
-      Just κ   -> do
-         ρ × κ' × ξs <- matchArgs c vs κ
-         pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
-match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a value"
+match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
+   κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
+   ρ × κ' × ξs <- matchArgs c vs κ
+   pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
+match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
 matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × (List Match))
-matchArgs _ Nil κ = pure $ Empty × κ × Nil
-matchArgs c (v : vs) (Arg _ σ)  = do
+matchArgs _ Nil κ                = pure $ Empty × κ × Nil
+matchArgs c (v : vs) (Arg σ)     = do
    ρ  × κ'  × ξ  <- match v σ
    ρ' × κ'' × ξs <- matchArgs c vs κ'
    pure $ (ρ <> ρ') × κ'' × (ξ : ξs)
-matchArgs c vs _ = Left $
-   show (length vs) <> " extra arguments to " <> show c <> "; did you forget parentheses in lambda pattern?"
+matchArgs c (_ : vs) (Body _)    = Left $
+   show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
+matchArgs _ _ _                  = error absurd
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
 closeDefs _ _ Nil = Empty
 closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ0 σ)
+
+checkArity :: Ctr -> Int -> MayFail Unit
+checkArity c n = do
+   n' <- arity c
+   note (show c <> " got " <> show n <> " argument(s), expects " <> show n') $ void $ n ≟ n'
 
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
@@ -56,6 +60,7 @@ eval ρ (Expr _ (E.Int n)) =
 eval ρ (Expr _ (E.Str str)) =
    pure $ (T.Str str) × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
+   checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
    pure $ case es of Nil -> (T.NullConstr c ρ) × val (V.Constr c vs)
                      _   -> (T.Constr c ts) × val (V.Constr c vs)
@@ -87,11 +92,11 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
       V.Binary φ ->
          pure $ (T.BinaryApp (t × v) op (t' × v')) × (v `applyBinary φ` v')
       _ -> error absurd
-eval ρ (Expr _ (E.Let (E.Def σ e) e')) = do
+eval ρ (Expr _ (E.Let (E.VarDef σ e) e')) = do
    t  × v      <- eval ρ e
    ρ' × _ × ξ  <- match v σ
    t' × v'     <- eval (ρ <> ρ') e'
-   pure $ (T.Let (T.Def ξ t) t') × v'
+   pure $ (T.Let (T.VarDef ξ t) t') × v'
 eval ρ (Expr _ (E.MatchAs e σ)) = do
    t  × v      <- eval ρ e
    ρ' × e' × ξ <- match v σ
@@ -100,7 +105,7 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
 
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
-defs ρ (Module (Left (E.Def σ e) : ds)) = do
+defs ρ (Module (Left (E.VarDef σ e) : ds)) = do
    _  × v      <- eval ρ e
    ρ' × _ × ξ  <- match v σ
    defs (ρ <> ρ') (Module ds)

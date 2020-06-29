@@ -8,11 +8,11 @@ import Data.Map (update, insert)
 import Data.Maybe
 import Debug.Trace (trace) as T
 import Text.Pretty (text)
-import Bindings (Bind, Bindings(..), (:+:), (:++:), (◃), (↦), getVal, find, head, foldBind, length)
+import Bindings (Bind, Bindings(..), (:+:), (:++:), (◃), (↦), find, head, foldBind, length)
 import DataType (Ctr(..))
 import Expl (Expl, Match(..))
-import Expl (Expl(..), Def(..)) as T
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), Def(..), RecDefs, reverseArgs)
+import Expl (Expl(..), VarDef(..)) as T
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs)
 import Lattice (Selected, class Lattice, (∨?), bot, ff, tt)
 import Primitive (primitives, class FromList, fromList, toList, class ToList)
 import Pretty
@@ -97,7 +97,7 @@ matchMany_bwd ρ κ α L.Nil     = L.Nil × κ
 matchMany_bwd ρ κ α (ξ : ξs)  =
    let ρ' × ρ1   = unmatch ρ ξ
        v  × σ    = matchOne_bwd ρ1 κ α ξ
-       vs × κ'   = matchMany_bwd ρ' (Arg (L.length ξs) σ) α ξs
+       vs × κ'   = matchMany_bwd ρ' (Arg σ) α ξs
    in  (vs <> L.Cons v L.Nil) × κ'
 
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
@@ -154,7 +154,7 @@ eval_bwd v (T.MatchAs t1 ξ t2)
 
      in  (ρ1' ∨ ρ1) × (Expr ff (MatchAs e' σ)) × (α ∨ α')
 -- let
-eval_bwd v (T.Let (T.Def ξ t1) t2)
+eval_bwd v (T.Let (T.VarDef ξ t1) t2)
    = let ρ1ρ2 × e2 × α2 = eval_bwd v t2
 
          ρ1 × ρ2        = unmatch ρ1ρ2 ξ
@@ -162,7 +162,7 @@ eval_bwd v (T.Let (T.Def ξ t1) t2)
          v' × σ         = match_bwd ρ2 (Body e2) α2 ξ
          ρ1' × e1 × α1  = eval_bwd v' t1
 
-     in  (ρ1 ∨ ρ1') × (Expr (α1 ∨ α2) (Let (Def σ e1) e2)) × (α1 ∨ α2)
+     in  (ρ1 ∨ ρ1') × (Expr (α1 ∨ α2) (Let (VarDef σ e1) e2)) × (α1 ∨ α2)
 -- let-rec
 eval_bwd v (T.LetRec δ t)
    = let ρ1ρ2 × e × α = eval_bwd v t

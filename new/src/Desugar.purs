@@ -7,8 +7,8 @@ import Data.List (List(..)) as L
 import Data.Map (fromFoldable, empty) as M
 import Bindings (Var)
 import DataType (Ctr, cCons, cNil, cTrue, cFalse)
-import Expr (Cont(..), Elim(..), Expr(..), Def, RecDefs, expr)
-import Expr (RawExpr(..), Def(..)) as E
+import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef, expr)
+import Expr (RawExpr(..), VarDef(..)) as E
 import Primitive (concatMap, map) as P
 import Util ((×), absurd, error)
 
@@ -28,7 +28,7 @@ data SugaredExpr =
    IfElse SExpr SExpr SExpr |
    ListSeq Int Int |
    ListComp SExpr (List ListCompExpr) |
-   Let Def SExpr |
+   Let VarDef SExpr |
    LetRec RecDefs SExpr
 
 data ListCompExpr = Predicate SExpr | InputList SExpr SExpr
@@ -65,7 +65,7 @@ desugar (SExpr α (ListComp e_lhs e_rhs))
                         σ           = bound_vars (expr e') (Body $ go es (n - 1))
                         ebody       = if n == 0 then (P.map σ $ expr es')
                                       else (P.concatMap σ $ expr es') :: Expr
-                    in  expr $ E.Let (E.Def σ (expr e')) ebody
+                    in  expr $ E.Let (E.VarDef σ (expr e')) ebody
 
                 Predicate p ->
                     let p' = desugar p
@@ -91,12 +91,12 @@ bound_vars (Expr _ (E.Var x)) κ
 bound_vars (Expr _ (E.Constr ctr args)) κ
     = case args of
         (e:es) -> let f :: (Cont -> Elim) -> Expr -> (Cont -> Elim)
-                      f κ_cont e' = \(κ' :: Cont) -> (κ_cont $ Arg 0 $ bound_vars e' κ')
+                      f κ_cont e' = \(κ' :: Cont) -> (κ_cont $ Arg $ bound_vars e' κ')
 
                       z :: Cont -> Elim
                       z = bound_vars e
 
-                  in  ElimConstr (M.fromFoldable [ctr × (Arg 0 $ (foldl f z es) κ)])
+                  in  ElimConstr (M.fromFoldable [ctr × (Arg $ (foldl f z es) κ)])
 
         L.Nil ->  ElimConstr M.empty
 bound_vars _ _ = error absurd

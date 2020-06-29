@@ -4,37 +4,39 @@ import Prelude hiding (apply, append, map)
 import Data.Foldable (foldl)
 import Data.List (List(..), (:), reverse)
 import Data.Map (Map, fromFoldable)
-import Data.Tuple (Tuple(..))
+import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cTrue, cFalse)
 import Lattice (Selected, (∧))
-import Util (type (×), (×),  error)
+import Util (type (×), (×), error)
 import Expr as E
 import Expr (Expr(..), Elim)
 import Val (Binary(..), BinaryOp(..), Env, Unary(..), UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
--- name in user land and precedence 0 to 9, similar to Haskell 98
-data OpName = OpName Var Int
+-- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
+type OpDef = {
+   op    :: Var,
+   prec  :: Int,
+   assoc :: Assoc
+}
 
-opPrec :: OpName -> Int
-opPrec (OpName _ prec) = prec
-
-opName :: String -> Int -> String × OpName
-opName op = OpName op >>> Tuple op
+opDef :: Var -> Int -> Assoc -> Var × OpDef
+opDef op prec assoc = op × { op, prec, assoc }
 
 -- Syntactic information only. No guarantee that any of these will be defined.
-opNames :: Map String OpName
-opNames = fromFoldable [
-   opName "*" 7,
-   opName "+" 6,
-   opName "-" 6,
-   opName "==" 4,
-   opName "/=" 4,
-   opName "<" 4,
-   opName ">" 4,
-   opName "<=" 4,
-   opName ">=" 4
+opDefs :: Map String OpDef
+opDefs = fromFoldable [
+   opDef "*"   7 AssocLeft,
+   opDef "+"   6 AssocLeft,
+   opDef "-"   6 AssocLeft,
+   opDef ":"   6 AssocRight,
+   opDef "=="  4 AssocNone,
+   opDef "/="  4 AssocNone,
+   opDef "<"   4 AssocLeft,
+   opDef ">"   4 AssocLeft,
+   opDef "<="  4 AssocLeft,
+   opDef ">="  4 AssocLeft
 ]
 
 -- Enforce argument type requirements.

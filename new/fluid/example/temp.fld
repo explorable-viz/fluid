@@ -1,4 +1,4 @@
-let f Nil = Nil;
-    f (Cons x xs) = x;
-    g Nil = 5;
-(f (Cons 3 4), g Nil)
+let unzip2 Nil = 6;
+    unzip2 (Cons (Cons (x, y) Nil) zs) = 5
+in
+unzip2 (Cons (Cons (5, 6) Nil) Nil)

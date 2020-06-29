@@ -4,12 +4,11 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:), head)
 import Data.Map (Map, toUnfoldable)
 import Data.String (Pattern(..), contains)
-import Data.Tuple (Tuple(..))
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import Bindings (Bindings(..), Bind, (:+:), (↦), elem)
 import DataType (Ctr, cPair, cCons)
-import Expr (Cont(..), Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..))
 import Expr (RawExpr(..)) as E
 import Expl as T
 import Expl (Expl, Match(..))
@@ -74,7 +73,7 @@ instance explPretty :: Pretty Expl where
    pretty (T.BinaryApp tv op tv') = pretty tv :<>: space :<>: text op :<>: space :<>: pretty tv'
    pretty (T.MatchAs t ξ t') = atop (text "match " :<>: pretty t :<>: text " as {")
                                  (atop (tab :<>: pretty ξ) (atop (text "} where outcome was: ") (tab :<>: pretty t') ))
-   pretty (T.Let (T.Def ξ t) t') = atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
+   pretty (T.Let (T.VarDef ξ t) t') = atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
                                         (pretty t')
    pretty (T.LetRec δ t) = atop (text "letrec " :<>: pretty δ) (text "in     " :<>: pretty t)
 
@@ -128,7 +127,6 @@ prettyParensOpt x =
    then parens doc
    else doc
 
-
 prettyConstr :: forall a . Pretty a => PrettyList a => Ctr -> List a -> Doc
 prettyConstr c Nil = pretty c
 prettyConstr c xs@(x : xs')
@@ -142,7 +140,7 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Var x) = text x
    pretty (E.Constr c es) = prettyConstr c es
    pretty (E.Op op) = parens $ text op
-   pretty (E.Let (Def σ e) e') =
+   pretty (E.Let (VarDef σ e) e') =
       atop (text ("let ") :<>: pretty σ :<>: operator "->" :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.MatchAs e σ) = atop (atop (text "match " :<>: pretty e :<>: text " as {") (tab :<>: pretty σ)) (text "}")
    pretty (E.LetRec δ e) =
@@ -159,25 +157,25 @@ instance prettylistExplList :: PrettyList (List Expl) where
    prettyList Nil    = text ""
    prettyList (v:vs) = comma :<>: pretty v :<>: prettyList vs
 
-instance prettylistExplVal :: Pretty (List (Tuple  Expl Val)) where
+instance prettylistExplVal :: Pretty (List (Expl × Val)) where
    pretty Nil    = text ""
    pretty (v:vs) = brackets (pretty v :<>: prettyList vs)
 
-instance prettylistExplValList :: PrettyList (List (Tuple  Expl Val)) where
+instance prettylistExplValList :: PrettyList (List (Expl × Val)) where
    prettyList Nil    = text ""
    prettyList (v:vs) = comma :<>: pretty v :<>: prettyList vs
 
-instance prettyVEB :: Pretty (List (Tuple (Bindings Val) (Tuple Expr Boolean))) where
+instance prettyVEB :: Pretty (List ((Bindings Val) × (Expr × Boolean))) where
    pretty Nil    = text ""
    pretty ((v × e × b):vs) = brackets (parens (pretty v) :<>: prettyList vs)
 
-instance prettyVEBList :: PrettyList (List (Tuple (Bindings Val) (Tuple Expr Boolean))) where
+instance prettyVEBList :: PrettyList (List ((Bindings Val) × (Expr × Boolean))) where
    prettyList Nil    = text ""
    prettyList ((v × e × b):vs) = comma :<>: (parens (pretty v) :<>: prettyList vs)
 
 
 instance prettyDefs :: Pretty (List RecDef) where
-   pretty Nil = text ""
+   pretty Nil              = text ""
    pretty (RecDef f σ : δ) = atop (text f :<>: operator "=" :<>: pretty σ) $ pretty δ
 
 instance prettyMatches :: Pretty (List Match) where
@@ -207,19 +205,19 @@ instance prettyBind :: Pretty a => Pretty (Bind a) where
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
 instance prettyCont :: Pretty Cont where
-   pretty None = text "[ ]"
-   pretty (Body e) = pretty e
-   pretty (Arg _ σ) = pretty σ
+   pretty None          = text "[ ]"
+   pretty (Body e)      = pretty e
+   pretty (Arg σ)       = pretty σ
 
 instance prettyBranch :: Pretty (Ctr × Cont) where
-   pretty (Tuple c κ) = text (show c) :<>: operator "->" :<>: pretty κ
+   pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
 instance prettyBranch2 :: Pretty (Ctr × List Match) where
-   pretty (Tuple c ξs) = text (show c) :<>: operator "-> " :<>: pretty ξs
+   pretty (c × ξs) = text (show c) :<>: operator "-> " :<>: pretty ξs
 
 instance prettyElim2 :: Pretty Elim where
-   pretty (ElimVar x κ) = text x :<>: operator "->" :<>: pretty κ
-   pretty (ElimConstr κs) = vcat $ map pretty $ (toUnfoldable κs :: List _)
+   pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
+   pretty (ElimConstr κs)  = vcat $ map pretty $ (toUnfoldable κs :: List _)
 
 instance valPretty :: Pretty Val where
    pretty (Val a u) = pretty u

@@ -10,7 +10,7 @@ import Val (Env, Val)
 
 type ExplVal = Expl × Val
 
-data Def = Def Match Expl
+data VarDef = VarDef Match Expl
 
 data Expl =
    Var Var Env |
@@ -24,7 +24,7 @@ data Expl =
    AppOp ExplVal ExplVal |
    BinaryApp ExplVal Var ExplVal |
    MatchAs Expl Match Expl |
-   Let Def Expl |
+   Let VarDef Expl |
    LetRec RecDefs Expl
 
 data Match =

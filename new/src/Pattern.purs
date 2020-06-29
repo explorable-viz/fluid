@@ -1,68 +1,86 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
+import Data.Either (Either(..))
+import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, insert, lookup, singleton, update)
+import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
 import Bindings (Var)
-import DataType (Ctr)
+import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
-import Util ((≟), om)
+import Util (MayFail, (≞), (=<<<), absurd, check, error, om)
 
 data PCont =
-   PNone |
+   PNone |              -- intermediate state during construction, but also for structured let
    PBody Expr |
-   PLambda Pattern |  -- unnecessary if surface language supports piecewise definitions
-   PArg Int Pattern
+   PLambda Pattern |    -- unnecessary if surface language supports piecewise definitions
+   PArg Pattern
 
-toCont :: PCont -> Cont
-toCont PNone         = None
-toCont (PBody e)     = Body e
-toCont (PLambda π)   = Body $ expr $ Lambda $ toElim π
-toCont (PArg n π)    = Arg n $ toElim π
+toCont :: PCont -> MayFail Cont
+toCont PNone         = pure None
+toCont (PBody e)     = pure $ Body e
+toCont (PLambda π)   = Body <$> (expr <$> (Lambda <$> toElim π))
+toCont (PArg π)      = Arg <$> toElim π
 
 data Pattern =
    PattVar Var PCont |
-   PattConstr Ctr PCont
+   PattConstr Ctr Int PCont
 
-toElim :: Pattern -> Elim
-toElim (PattVar x κ)    = ElimVar x $ toCont κ
-toElim (PattConstr c κ) = ElimConstr $ singleton c $ toCont κ
+toElim :: Pattern -> MayFail Elim
+toElim (PattVar x κ)      = ElimVar x <$> toCont κ
+toElim (PattConstr c n κ) = do
+   check ("Arity mismatch for " <> show c) $ arity c `(=<<<) (≞)` pure n
+   ElimConstr <$> (singleton c <$> toCont κ)
 
 class MapCont a where
-   mapCont :: PCont -> a -> a
+   -- replace a None continuation by a non-None one
+   setCont :: PCont -> a -> a
 
-instance mapPContCont :: MapCont PCont where
-   mapCont κ PNone        = κ
-   mapCont κ (PBody _)    = κ
-   mapCont κ (PLambda π)  = PLambda $ mapCont κ π
-   mapCont κ (PArg n π)   = PArg n $ mapCont κ π
+instance setContPCont :: MapCont PCont where
+   setCont κ PNone         = κ
+   setCont κ (PBody _)     = error absurd
+   setCont κ (PLambda π)   = PLambda $ setCont κ π
+   setCont κ (PArg π)      = PArg $ setCont κ π
 
-instance mapContPattern :: MapCont Pattern where
-   mapCont κ (PattVar x κ')     = PattVar x $ mapCont κ κ'
-   mapCont κ (PattConstr c κ')  = PattConstr c $ mapCont κ κ'
+instance setContPattern :: MapCont Pattern where
+   setCont κ (PattVar x κ')      = PattVar x $ setCont κ κ'
+   setCont κ (PattConstr c n κ') = PattConstr c n $ setCont κ κ'
 
 class Joinable a b | a -> b where
-   maybeJoin :: b -> a -> Maybe b
+   maybeJoin :: b -> a -> MayFail b
 
-maybeUpdate :: Ctr -> PCont -> Map Ctr Cont -> Maybe (Map Ctr Cont)
-maybeUpdate c κ κs =
-   case lookup c κs of
-      Nothing -> insert <$> pure c <@> toCont κ <@> κs
-      Just κ' -> update <$> (const <$> (Just <$> maybeJoin κ' κ)) <@> c <@> κs
+dataType :: Map Ctr Cont -> MayFail DataType
+dataType κs = case keys κs of
+   Nil   -> error absurd
+   c : _ -> dataTypeFor c
 
 instance joinablePatternElim :: Joinable Pattern Elim where
-   maybeJoin (ElimVar x κ) (PattVar y κ')      = ElimVar <$> x ≟ y <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr κs) (PattConstr c κ)  = ElimConstr <$> maybeUpdate c κ κs
-   maybeJoin _ _                               = Nothing
+   maybeJoin (ElimVar x κ) (PattVar y κ')       = ElimVar <$> x ≞ y <*> maybeJoin κ κ'
+   maybeJoin (ElimConstr κs) (PattConstr c n κ) = ElimConstr <$> mayFailUpdate
+      where
+      mayFailUpdate :: MayFail (Map Ctr Cont)
+      mayFailUpdate =
+         case lookup c κs of
+            Nothing -> do
+               checkDataType
+               insert <$> pure c <*> toCont κ <@> κs
+               where
+               checkDataType :: MayFail Unit
+               checkDataType = do
+                  check "non-uniform patterns" $ (typeName <$> dataType κs) `(=<<<) (≞)` (typeName <$> dataTypeFor c)
+                  check ("arity mismatch for " <> show c) $ arity c `(=<<<) (≞)` pure n
+            Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
+   maybeJoin _ _                               = Left "Can't join variable and constructor patterns"
 
 instance joinablePContCont :: Joinable PCont Cont where
-   maybeJoin None PNone                              = pure None
-   maybeJoin (Arg n σ) (PArg m π)                    = Arg <$> (n ≟ m) <*> maybeJoin σ π
-   maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)  = Body <$> (expr <$> (Lambda <$> maybeJoin σ π))
-   maybeJoin _ _                                     = Nothing
+   maybeJoin None PNone                               = pure None
+   maybeJoin (Arg σ) (PArg π)                         = Arg <$> maybeJoin σ π
+   maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)   = Body <$> (expr <$> (Lambda <$> maybeJoin σ π))
+   maybeJoin _ _                                      = Left "Incompatible continuations"
 
-joinAll :: NonEmptyList Pattern -> Maybe Elim
-joinAll (NonEmptyList (π :| πs)) = foldl (om maybeJoin) (Just $ toElim π) πs
+joinAll :: NonEmptyList Pattern -> MayFail Elim
+joinAll (NonEmptyList (π :| πs)) = foldl (om $ maybeJoin) (toElim π) πs

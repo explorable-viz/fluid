@@ -3,10 +3,9 @@ module Bindings where
 import Prelude hiding (top)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..))
 import Debug.Trace (trace) as T
 import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
-import Util (MayFail, type (×), (≟), (≜), eitherToBool, error, absurd)
+import Util (MayFail, type (×), (×), (≟), eitherToBool, error, absurd)
 
 type Var = String
 
@@ -37,10 +36,6 @@ instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
       = Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
    maybeZipWithα _ _ _                                      = Nothing
 
-
-getVal :: forall a . Bind a -> a
-getVal (x ↦ v) = v
-
 foldBind :: forall a b . (Bind b -> a -> a) -> a -> Bindings b -> a
 foldBind f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldBind f z ρ)
 foldBind _ z Empty           = z
@@ -52,7 +47,7 @@ find x' (xs :+: x ↦ v) = if x == x' then pure v else find x' xs
 remove :: forall a . Var -> Bindings a -> MayFail (a × Bindings a)
 remove x' ρ = go ρ Empty
    where go Empty          acc = Left $ "variable " <> x' <> " not found"
-         go (ρ' :+: x ↦ v) acc = if x == x' then pure $ Tuple v (ρ' <> acc)
+         go (ρ' :+: x ↦ v) acc = if x == x' then pure $ v × (ρ' <> acc)
                                  else go ρ' (acc :+: x ↦ v)
 
 update :: forall a . Lattice a => Bindings a -> Bind a -> Bindings a

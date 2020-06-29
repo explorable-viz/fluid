@@ -9,7 +9,7 @@ import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import Bindings (Bindings(..), Bind, (:+:), (↦), elem)
 import DataType (Ctr, cPair, cCons)
-import Expr (Cont(..), Def(..), Elim(..), Expr(..), RawExpr, RecDef(..))
+import Expr (Cont(..), VarDef(..), Elim(..), Expr(..), RawExpr, RecDef(..))
 import Expr (RawExpr(..)) as E
 import Expl as T
 import Expl (Expl, Match(..))
@@ -74,7 +74,7 @@ instance explPretty :: Pretty2 Expl where
    pretty2 (T.BinaryApp tv op tv') = pretty2 tv :<>: space :<>: text op :<>: space :<>: pretty2 tv'
    pretty2 (T.MatchAs t ξ t') = atop (text "match " :<>: pretty2 t :<>: text " as {")
                                  (atop (tab :<>: pretty2 ξ) (atop (text "} where outcome was: ") (tab :<>: pretty2 t') ))
-   pretty2 (T.Let (T.Def ξ t) t') = atop (text "let " :<>: pretty2 ξ :<>: text " = " :<>: pretty2 t :<>: text " in")
+   pretty2 (T.Let (T.VarDef ξ t) t') = atop (text "let " :<>: pretty2 ξ :<>: text " = " :<>: pretty2 t :<>: text " in")
                                         (pretty2 t')
    pretty2 (T.LetRec δ t) = atop (text "letrec " :<>: pretty2 δ) (text "in     " :<>: pretty2 t)
 
@@ -142,7 +142,7 @@ instance rawExprPretty :: Pretty2 RawExpr where
    pretty2 (E.Var x) = text x
    pretty2 (E.Constr c es) = prettyConstr c es
    pretty2 (E.Op op) = parens $ text op
-   pretty2 (E.Let (Def σ e) e') =
+   pretty2 (E.Let (VarDef σ e) e') =
       atop (text ("let ") :<>: pretty2 σ :<>: operator "->" :<>: pretty2 e :<>: text " in") (pretty2 e')
    pretty2 (E.MatchAs e σ) = atop (atop (text "match " :<>: pretty2 e :<>: text " as {") (tab :<>: pretty2 σ)) (text "}")
    pretty2 (E.LetRec δ e) =
@@ -209,7 +209,7 @@ instance prettyBind :: Pretty2 a => Pretty2 (Bind a) where
 instance prettyCont :: Pretty2 Cont where
    pretty2 None = text "None"
    pretty2 (Body e) = text "Body (" :<>: pretty2 e :<>: text ")"
-   pretty2 (Arg _ σ) = text "Arg (" :<>: pretty2 σ :<>: text ")"
+   pretty2 (Arg σ) = text "Arg (" :<>: pretty2 σ :<>: text ")"
 
 instance prettyBranch :: Pretty2 (Ctr × Cont) where
    pretty2 (Tuple c κ) = text (show c) :<>: operator "->" :<>: pretty2 κ

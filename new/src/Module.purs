@@ -5,14 +5,14 @@ import Affjax (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Eval (defs)
 import Expr (Expr)
-import Parse (SParser, module_, program)
+import Parse (module_, program)
 import Primitive (primitives)
-import Util (type (×), error)
+import Util (type (×), (×), error)
+import Util.Parse (SParser)
 import Val (Env)
 
 -- For Wrattler integration. Should not end in "/".
@@ -46,5 +46,5 @@ successfulParse src p =
 
 parseWithImports :: String -> Aff (Env × Expr)
 parseWithImports src = do
-   Tuple <$> (loadModule "prelude" primitives >>= loadModule "graphics")
-         <@> successfulParse src program
+   (×) <$> loadModule "prelude" primitives
+       <@> successfulParse src program
