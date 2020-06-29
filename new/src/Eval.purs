@@ -50,7 +50,7 @@ eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
    (T.Var x ρ × _) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =
-   (T.Op op ρ × _) <$> find op ρ
+   (T.Op op ρ × _) <$> find op primitives
 eval ρ (Expr _ (E.Int n)) =
    pure $ T.Int n ρ × val (V.Int n)
 eval ρ (Expr _ (E.Str str)) =
@@ -83,7 +83,7 @@ eval ρ (Expr _ (E.App e e')) = do
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
-   Val _ u <- find op ρ
+   Val _ u <- find op primitives
    case u of
       V.Binary φ ->
          pure $ (T.BinaryApp (t × v) op (t' × v')) × (v `applyBinary φ` v')

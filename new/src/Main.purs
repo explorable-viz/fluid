@@ -59,6 +59,5 @@ testEnv2 = primitives :+: "x" ↦ Val false (V.Int 1)
 
 main :: Effect Unit
 main = do
-   -- let r = joinDebug "wtf" testEnv1 testEnv2
-   -- log $ render $ pretty r
-   runExampleBwd tailexpr
+   runExampleBwd letexpr
+
