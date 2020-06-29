@@ -3,7 +3,7 @@ module Main where
 import Prelude
 import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
-import Debug.Trace (trace)
+import Debug.Trace (trace) as T
 import Bindings
 import Bwd (eval_bwd)
 import Effect (Effect)
@@ -18,16 +18,33 @@ import Util (error, (×))
 import Val (Val(..))
 import Val (RawVal(..)) as V
 
+trace s a = T.trace (pretty s) $ \_-> a
+trace' s a = T.trace  s $ \_-> a
+
 runExampleBwd :: String -> Effect Unit
 runExampleBwd src =
     let e = successfulParse src program
         ρ = Empty
-        -- k = trace e $ \_ -> 5
     in  case eval ρ e of
             Left msg -> error msg
             Right (Tuple t v) -> do
-                let ρ' × e × α = eval_bwd v t
-                log $ render (pretty $ t × v)
+                let ρ' × e' × α = eval_bwd v t
+                log $ render (pretty $ e')
+
+testExampleBwd :: String -> Effect Unit
+testExampleBwd src =
+    let e = successfulParse src program
+        ρ = Empty
+    in  case eval ρ e of
+            Left msg -> error msg
+            Right (Tuple t v) -> do
+                let ρ' × e' × α = eval_bwd v t
+                case eval ρ' e' of
+                    Left msg -> error msg
+                    Right (Tuple t' v') -> do
+                        let bt = (render $ pretty t) == (render $ pretty t')
+                            bv = (render $ pretty v) == (render $ pretty v')
+                        log $ show (bt && bv)
 
 letexpr :: String
 letexpr = "(1 + 5) * ((let x = 2; let y = 8; x * y) - (let y = 3; y * y))"
@@ -51,13 +68,6 @@ tailexpr = "let tail zs =\
             \ };\
             \tail (Cons 6 (Cons 3 (Cons 2 Nil)))"
 
-testEnv1 :: Bindings Val
-testEnv1 = primitives :+: "x" ↦ Val false (V.Int 0)
-
-testEnv2 :: Bindings Val
-testEnv2 = primitives :+: "x" ↦ Val false (V.Int 1)
-
 main :: Effect Unit
 main = do
-   runExampleBwd letexpr
-
+   testExampleBwd tailexpr

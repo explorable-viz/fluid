@@ -121,3 +121,4 @@ instance rawExprSelectable :: Selectable RawExpr where
    maybeZipWithα f (LetRec δ e) (LetRec δ' e')
       = LetRec <$> maybeZipWithα f δ δ' <*>  maybeZipWithα f e e'
    maybeZipWithα _ _ _                             = Just $ Int 5 --Nothing
+
