@@ -176,9 +176,9 @@ eval_bwd v (T.LetRec δ t)
 eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
    = let
          evalArgs_bwd :: List Val -> List Expl -> Env × List Expr × Boolean
-         evalArgs_bwd (v:vs) (t:ts) =
+         evalArgs_bwd (v:vs') (t:ts') =
             let ρ  × e  × α   = eval_bwd v t
-                ρ' × e' × α'  = evalArgs_bwd vs ts
+                ρ' × e' × α'  = evalArgs_bwd vs' ts'
             in  case ρ' of Empty -> ρ × (e:L.Nil) × α
                            _     -> (ρ ∨ ρ') × (e:e') × (α ∨ α')
          evalArgs_bwd L.Nil L.Nil = Empty × L.Nil × ff
