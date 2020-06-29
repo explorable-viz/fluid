@@ -106,7 +106,7 @@ eval_bwd v (T.Var x ρ)
    = ((bot ρ) ◃ (x ↦ v)) × (Expr ff (Var x)) × ff
 -- int
 eval_bwd (Val α (V.Int n)) (T.Int tn ρ)
-   = bot ρ × (Expr ff (Int n)) × ff
+   = bot ρ × (Expr α (Int n)) × α
 -- op
 eval_bwd v (T.Op op ρ)
    = (bot ρ ◃ op ↦ v) × (Expr ff (Op op)) × ff
@@ -116,7 +116,6 @@ eval_bwd (Val α (V.Closure ρ _ _)) (T.Lambda σ)
 -- apply
 eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
    =  let
-
          ρ1ρ2ρ3 × e × α  = eval_bwd v'' t''
 
          ρ1ρ2 × ρ3        = unmatch ρ1ρ2ρ3 ξ
@@ -129,14 +128,14 @@ eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
 
          ρ1' × δ'   × α2  = closeDefs_bwd ρ2
 
-         ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ')) t
+         ρ'' × e'' × α'' = eval_bwd (Val α (V.Closure (ρ1 ∨ ρ1') δ' σ')) t
 
       in (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
 -- binary-apply
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2
          ρ' × e' × α'' = eval_bwd v1 t1
-     in  (ρ ∨ ρ') × (Expr α (BinaryApp e' op e)) × ff
+     in  (ρ ∨ ρ') × (Expr α (BinaryApp e' op e)) × α
 -- apply-prim
 eval_bwd (Val α v) (T.AppOp (t1 × v1) (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2
@@ -184,10 +183,10 @@ eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
          evalArgs_bwd L.Nil L.Nil = Empty × L.Nil × ff
          evalArgs_bwd _ _ = error absurd
 
-         ρ  × es  × α   = evalArgs_bwd vs ts
+         ρ  × es  × α'   = evalArgs_bwd vs ts
 
-     in  ρ × (Expr ff (Constr c es)) × α
+     in  ρ × (Expr ff (Constr c es)) × (α ∨ α')
 eval_bwd (Val α (V.Constr c vs)) (T.NullConstr c' ρ)
-   = ρ  × (Expr ff (Constr c L.Nil)) × α
+   = ρ  × (Expr α (Constr c L.Nil)) × α
 eval_bwd v t = error $ "No pattern match found for eval_bwd in \n" <> render (pretty t)
 
