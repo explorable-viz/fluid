@@ -10,9 +10,11 @@ import Effect (Effect)
 import Effect.Console (log)
 import Eval (eval)
 import Fwd (eval_fwd)
+import Lattice (top)
 import Module (successfulParse)
 import Parse (program)
 import Pretty (pretty, render)
+import Pretty2 (pretty2)
 import Primitive (primitives)
 import Util (error, (×))
 import Val (Val(..))
@@ -28,8 +30,8 @@ runExampleBwd src =
     in  case eval ρ e of
             Left msg -> error msg
             Right (Tuple t v) -> do
-                let ρ' × e' × α = eval_bwd v t
-                log $ render (pretty $ e')
+                let ρ' × e' × α = eval_bwd (top v) t
+                log $ render (pretty2 $ e')
 
 testExampleBwd :: String -> Effect Unit
 testExampleBwd src =
@@ -70,4 +72,4 @@ tailexpr = "let tail zs =\
 
 main :: Effect Unit
 main = do
-   testExampleBwd letexpr
+   runExampleBwd letexpr
