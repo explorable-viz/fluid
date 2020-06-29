@@ -139,7 +139,7 @@ prettyConstr :: forall a . Pretty a => PrettyList a => Ctr -> List a -> Doc
 prettyConstr c Nil = pretty c
 prettyConstr c xs@(x : xs')
    | c == cPair = parens $ pretty x :<>: comma :<>: pretty (fromJust absurd $ head xs')
-   | c == cCons = text "Cons " :<>: pretty x :<>: pretty (fromJust absurd $ head xs')
+   | c == cCons = text "Cons (" :<>: pretty x :<>: comma :<>: pretty (fromJust absurd $ head xs') :<>: text ")"
    | otherwise  = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
 
 instance rawExprPretty :: Pretty RawExpr where

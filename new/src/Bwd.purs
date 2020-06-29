@@ -34,17 +34,24 @@ join p q = case p ∨? q of Just a -> a
 infixl 6 join as ∨
 
 unmatch :: Env -> Match -> Env × Env
-unmatch (ρ :+: x ↦ v) (MatchVar x')
-   = ρ × (Empty :+: (x ≜ x') ↦ v)
-unmatch Empty (MatchVar x')
-   = error "unmatch - variable not found in empty env"
-unmatch ρ (MatchConstr (_ × ξs) _) = unmatches ρ (reverse ξs)
+unmatch ρ (MatchVar x')
+   = unmatchOne ρ (MatchVar x')
+unmatch ρ (MatchConstr (ctr × ξs) m) =
+   unmatchOne ρ (MatchConstr (ctr × (reverse ξs)) m)
 
-unmatches :: Env -> List Match -> Env × Env
-unmatches ρ L.Nil = ρ × Empty
-unmatches ρ (ξ : ξs) =
-   let ρ'  × ρ2   = unmatch ρ ξ
-       ρ'' × ρ1   = unmatches ρ' ξs in
+unmatchOne :: Env -> Match -> Env × Env
+unmatchOne (ρ :+: x ↦ v) (MatchVar x')
+   = ρ × (Empty :+: (x ≜ x') ↦ v)
+unmatchOne Empty (MatchVar x')
+   = error "unmatch - variable not found in empty env"
+unmatchOne ρ (MatchConstr (_ × ξs) _) =
+   unmatchMany ρ ξs
+
+unmatchMany :: Env -> List Match -> Env × Env
+unmatchMany ρ L.Nil = ρ × Empty
+unmatchMany ρ (ξ : ξs) =
+   let ρ'  × ρ2   = unmatchOne ρ ξ
+       ρ'' × ρ1   = unmatchMany ρ' ξs in
    ρ'' × (ρ1 <> ρ2)
 
 joinδ :: RecDefs × (Env × RecDefs × Selected) -> Env × RecDefs × Selected
@@ -72,26 +79,26 @@ split = go Empty
    go acc Empty _                         = error absurd
 
 match_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
-match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')  = v × (ElimVar (x ≜ x') κ)
-match_bwd _ _ _ (MatchVar x')                  = error absurd
-match_bwd ρ κ α (MatchConstr (c × ξs) κs)  =
-   let vs × κ' = matchArgs_bwd ρ κ α (reverse ξs)
-      --  k = trace κ' 5
-   in (Val α $ V.Constr c (reverse vs)) × (ElimConstr $ insert c (reverseArgs κ') $ map bot κs)
+match_bwd ρ κ α (MatchVar x')
+   = matchOne_bwd ρ κ α (MatchVar x')
+match_bwd ρ κ α (MatchConstr (c × ξs) κs)
+   = matchOne_bwd ρ κ α (MatchConstr (c × (reverse ξs)) κs)
 
-matchArgs_bwd :: Env -> Cont -> Selected -> List Match -> List Val × Cont
-matchArgs_bwd ρ κ α L.Nil     = L.Nil × κ
-matchArgs_bwd ρ κ α (ξ : ξs)  =
-   let 
-      --  k = trace  ρ 5
-       ρ' × ρ1   = unmatch ρ ξ
-      --  k = trace ρ' $  5
-       vs × κ'   = matchArgs_bwd ρ' κ α ξs
-      --  k' = trace ξ 5
-      --  k'' = trace (reverseArgs κ') 5
-       v  × σ    = match_bwd ρ1 (κ') α ξ 
-      --  k'' = trace σ 5 
-   in  (v : vs) × (Arg (L.length vs) σ)
+
+matchOne_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
+matchOne_bwd (Empty :+: x ↦ v) κ α (MatchVar x')  = v × (ElimVar (x ≜ x') κ)
+matchOne_bwd _ _ _ (MatchVar x')                  = error absurd
+matchOne_bwd ρ κ α (MatchConstr (c × ξs) κs)  =
+   let vs × κ' = matchMany_bwd ρ κ α ξs
+   in (Val α $ V.Constr c vs) × (ElimConstr $ insert c κ' $ map bot κs)
+
+matchMany_bwd :: Env -> Cont -> Selected -> List Match -> List Val × Cont
+matchMany_bwd ρ κ α L.Nil     = L.Nil × κ
+matchMany_bwd ρ κ α (ξ : ξs)  =
+   let ρ' × ρ1   = unmatch ρ ξ
+       v  × σ    = matchOne_bwd ρ1 κ α ξ
+       vs × κ'   = matchMany_bwd ρ' (Arg (L.length ξs) σ) α ξs
+   in  (vs <> L.Cons v L.Nil) × κ'
 
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
 -- var
@@ -111,11 +118,11 @@ eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
    =  let
 
          ρ1ρ2ρ3 × e × α  = eval_bwd v'' t''
-         -- k = trace e 56
+
          ρ1ρ2 × ρ3        = unmatch ρ1ρ2ρ3 ξ
 
          v'   × σ'        = match_bwd ρ3 (Body e) α ξ
-         
+
          ρ1 × ρ2          = split ρ1ρ2 δ
 
          ρ'  × e'  × α'   = eval_bwd v' t'
@@ -123,7 +130,7 @@ eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
          ρ1' × δ'   × α2  = closeDefs_bwd ρ2
 
          ρ'' × e'' × α'' = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ')) t
-         k = trace  ρ' $ trace ρ'' 5
+
       in (ρ' ∨ ρ'') × (Expr ff (App e'' e')) × (α' ∨ α'')
 -- binary-apply
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
@@ -140,11 +147,11 @@ eval_bwd v (T.MatchAs t1 ξ t2)
    = let
          ρ1ρ2 × e × α = eval_bwd v t2
 
-         ρ1 × ρ2      = unmatch ρ1ρ2 ξ
-         
-         v' × σ       = match_bwd ρ2 (Body e) α ξ
-         -- k = trace ρ2 5
-         ρ1' × e' × α'  = eval_bwd v' t1
+         ρ1 × ρ2 = unmatch ρ1ρ2 ξ
+
+         v1 × σ = match_bwd ρ2 (Body e) α ξ
+
+         ρ1' × e' × α'  = eval_bwd v1 t1
 
      in  (ρ1' ∨ ρ1) × (Expr ff (MatchAs e' σ)) × (α ∨ α')
 -- let
@@ -168,21 +175,19 @@ eval_bwd v (T.LetRec δ t)
 -- constr
 eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
    = let
-         f = (\(ρ0 × es0 × α0) (t × v)
-                 -> let ρ' × e × α' = eval_bwd v t
+         evalArgs_bwd :: List Val -> List Expl -> Env × List Expr × Boolean
+         evalArgs_bwd (v:vs) (t:ts) =
+            let ρ  × e  × α   = eval_bwd v t
+                ρ' × e' × α'  = evalArgs_bwd vs ts
+            in  case ρ' of Empty -> ρ × (e:L.Nil) × α
+                           _     -> (ρ ∨ ρ') × (e:e') × (α ∨ α')
+         evalArgs_bwd L.Nil L.Nil = Empty × L.Nil × ff
+         evalArgs_bwd _ _ = error absurd
 
-                    in  (ρ' ∨ ρ0) × (e:es0) × (α' ∨ α0))
-         base = (\(t × v)
-                 -> let ρ × e × α' = eval_bwd v t
+         ρ  × es  × α   = evalArgs_bwd vs ts
 
-                    in  ρ × (e:L.Nil) × α')
-
-         ρ × es × α'
-            = case zip ts vs of
-               (tv:tvs) -> foldl f (base tv) tvs
-               _        -> error "should be nullary constructor"
-
-     in  ρ × (Expr ff (Constr c (reverse es))) × α'
+     in  ρ × (Expr ff (Constr c es)) × α
 eval_bwd (Val α (V.Constr c vs)) (T.NullConstr c' ρ)
    = ρ  × (Expr ff (Constr c L.Nil)) × α
 eval_bwd v t = error $ "No pattern match found for eval_bwd in \n" <> render (pretty t)
+
