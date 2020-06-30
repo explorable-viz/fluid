@@ -6,7 +6,6 @@ import Data.List (List(..), (:), length, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
-import Debug.Trace (trace) as T
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity)
 import Expl (Expl(..), VarDef(..)) as T
@@ -14,13 +13,11 @@ import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
-import Primitive (applyBinary, applyUnary, primitives)
+import Primitive (applyBinary, applyUnary)
 import Util (MayFail, type (×), (×), (≟), absurd, error)
 import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
-trace s a = T.trace (pretty s) $ \_-> a
-trace' s a = T.trace  s $ \_-> a
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
 match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)
@@ -54,11 +51,11 @@ eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
    (T.Var x ρ × _) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =
-   (T.Op op ρ × _) <$> find op primitives
+   (T.Op op ρ × _) <$> find op ρ
 eval ρ (Expr _ (E.Int n)) =
    pure $ T.Int n ρ × val (V.Int n)
 eval ρ (Expr _ (E.Str str)) =
-   pure $ (T.Str str) × val (V.Str str)
+   pure $ (T.Str str ρ) × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
@@ -87,7 +84,7 @@ eval ρ (Expr _ (E.App e e')) = do
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
-   Val _ u <- find op primitives
+   Val _ u <- find op ρ
    case u of
       V.Binary φ ->
          pure $ (T.BinaryApp (t × v) op (t' × v')) × (v `applyBinary φ` v')

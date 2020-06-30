@@ -1,27 +1,25 @@
 module Main where
 
-import Prelude
+import Prelude (Unit, show, ($), (&&), (==))
 import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
-import Debug.Trace (trace) as T
-import Bindings
+-- import Debug.Trace (trace) as T
+import Bindings (Bindings(..))
 import Bwd (eval_bwd)
 import Effect (Effect)
 import Effect.Console (log)
 import Eval (eval)
-import Fwd (eval_fwd)
+-- import Fwd (eval_fwd)
 import Lattice (top)
 import Module (successfulParse)
 import Parse (program)
 import Pretty (pretty, render)
 import Pretty2 (pretty2)
-import Primitive (primitives)
+-- import Primitive (primitives)
 import Util (error, (×))
-import Val (Val(..))
-import Val (RawVal(..)) as V
 
-trace s a = T.trace (pretty s) $ \_-> a
-trace' s a = T.trace  s $ \_-> a
+-- trace s a = T.trace (pretty s) $ \_-> a
+-- trace' s a = T.trace  s $ \_-> a
 
 runExampleBwd :: String -> Effect Unit
 runExampleBwd src =

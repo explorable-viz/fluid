@@ -16,7 +16,7 @@ data Expl =
    Var Var Env |
    Op Var Env |
    Int Int Env |
-   Str String |
+   Str String Env |
    Constr Ctr (List Expl) |
    NullConstr Ctr Env |
    Lambda Elim |

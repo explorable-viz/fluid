@@ -65,7 +65,7 @@ instance explPretty :: Pretty2 Expl where
    pretty2 (T.Var x ρ) = text "Var" :<>: parens (text x)
    pretty2 (T.Op op ρ) = text op
    pretty2 (T.Int n ρ) = text $ show n
-   pretty2 (T.Str s) = text s
+   pretty2 (T.Str s ρ) = text s
    pretty2 (T.Constr c es) = prettyConstr c es
    pretty2 (T.NullConstr c ρ) = pretty2 c
    pretty2 (T.Lambda σ) = text "fun" :<>: pretty2 σ

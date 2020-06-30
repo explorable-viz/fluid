@@ -31,10 +31,6 @@ boolToMaybe :: forall a . Boolean -> a -> Maybe a
 boolToMaybe false = const Nothing
 boolToMaybe true  = Just
 
-eitherToBool :: forall a b. Either a b -> Boolean
-eitherToBool (Left _) = false
-eitherToBool (Right _)  = true
-
 fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a
 fromJust msg Nothing  = error msg

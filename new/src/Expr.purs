@@ -9,9 +9,6 @@ import Bindings (Var)
 import DataType (Ctr)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
 import Util (type (+), (≟), error)
-import Debug.Trace (trace) as T
-
-trace s a = T.trace  s $ \_-> a
 
 data VarDef = VarDef Elim Expr -- elim has codomain unit
 type VarDefs = List VarDef
@@ -63,7 +60,7 @@ instance elimSelectable :: Selectable Elim where
    maybeZipWithα f (ElimVar x κ) (ElimVar x' κ')
       = ElimVar <$> x ≟ x' <*> maybeZipWithα f κ κ'
    maybeZipWithα f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithα f κs κs'
-   maybeZipWithα _ _ _                                = Just $ ElimVar "x" None --Nothing
+   maybeZipWithα _ _ _                                = Nothing
 
 data Module = Module (List (VarDef + RecDefs))
 

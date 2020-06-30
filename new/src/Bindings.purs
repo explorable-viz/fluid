@@ -1,11 +1,10 @@
 module Bindings where
 
-import Prelude hiding (top)
-import Data.Either (Either(..))
+import Prelude hiding (top, absurd)
+import Data.Either (Either(..), isRight)
 import Data.Maybe (Maybe(..))
-import Debug.Trace (trace) as T
 import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
-import Util (MayFail, type (×), (×), (≟), eitherToBool, error, absurd)
+import Util (MayFail, type (×), (×), (≟), error, absurd)
 
 type Var = String
 
@@ -16,9 +15,6 @@ infix 6 Bind as ↦
 infixl 5 Extend as :+:
 infixl 5 append as :++:
 infixl 5 update as ◃
-
-trace s a = T.trace  s $ \_-> a
-
 
 instance bindingsSemigroup :: Semigroup (Bindings a) where
    append m Empty           = m
@@ -57,7 +53,7 @@ update (xs :+: x ↦ v) (x' ↦ v')
    | otherwise  = (update xs (x' ↦ v')) :+: x ↦ v
 
 elem :: forall a . Var -> Bindings a -> Boolean
-elem x ρ = eitherToBool $ find x ρ
+elem x ρ = isRight $ find x ρ
 
 reverse :: forall a. Bindings a -> Bindings a
 reverse = go Empty
