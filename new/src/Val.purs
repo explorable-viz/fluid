@@ -26,14 +26,12 @@ data UnaryOp =
 data Primitive =
    Constr2 Ctr |
    Unary2 UnaryOp |
-   Binary2 BinaryOp |
-   PartialApp2 Primitive Val
+   Binary2 BinaryOp
 
 arity :: Primitive -> Int
-arity (Constr2 c)          = successful $ D.arity c
-arity (Unary2 φ)           = 1
-arity (Binary2 φ)          = 2
-arity (PartialApp2 op _)   = arity op - 1
+arity (Constr2 c) = successful $ D.arity c
+arity (Unary2 φ)  = 1
+arity (Binary2 φ) = 2
 
 data BinaryOp = BinaryOp String Binary
 
@@ -44,7 +42,8 @@ data RawVal =
    Closure Env RecDefs Elim |
    Binary BinaryOp |
    Unary UnaryOp |
-   Primitive Primitive
+   Primitive Primitive |
+   PartialApp2 Primitive (List Val)
 
 data Val = Val Selected RawVal
 
@@ -68,13 +67,10 @@ instance selectablePrimitive :: Selectable Primitive where
    mapα f (Constr2 c)         = Constr2 c
    mapα f (Unary2 φ)          = Unary2 (mapα f φ)
    mapα f (Binary2 φ)         = Binary2 (mapα f φ)
-   mapα f (PartialApp2 op v)  = PartialApp2 (mapα f op) (mapα f v)
 
    maybeZipWithα f (Constr2 c) (Constr2 c')                 = Constr2 <$> c ≟ c'
    maybeZipWithα f (Unary2 φ) (Unary2 φ')                   = Unary2 <$> maybeZipWithα f φ φ'
    maybeZipWithα f (Binary2 φ) (Binary2 φ')                 = Binary2 <$> maybeZipWithα f φ φ'
-   maybeZipWithα f (PartialApp2 op v) (PartialApp2 op' v')  =
-      PartialApp2 <$> maybeZipWithα f op op' <*> maybeZipWithα f v v'
    maybeZipWithα _ _ _                                      = Nothing
 
 instance selectableVal :: Selectable Val where
@@ -89,6 +85,7 @@ instance selectableRawVal :: Selectable RawVal where
    mapα f (Binary φ)       = Binary (mapα f φ)
    mapα f (Unary φ)        = Unary (mapα f φ)
    mapα f (Primitive op)   = Primitive (mapα f op)
+   mapα f (PartialApp2 op v)  = PartialApp2 (mapα f op) (mapα f v)
 
    maybeZipWithα f (Int x) (Int x')                   = Int <$> x ≟ x'
    maybeZipWithα f (Str s) (Str s')                   = Str <$> s ≟ s'
@@ -99,4 +96,7 @@ instance selectableRawVal :: Selectable RawVal where
               <*> sequence (zipWith (maybeZipWithα f) δ δ') <*> maybeZipWithα f σ σ'
    maybeZipWithα f (Binary φ) (Binary φ')             = Binary <$> maybeZipWithα f φ φ'
    maybeZipWithα f (Unary φ) (Unary φ')               = Unary <$> maybeZipWithα f φ φ'
+   maybeZipWithα f (Primitive op) (Primitive op')     = Primitive <$> maybeZipWithα f op op'
+   maybeZipWithα f (PartialApp2 op v) (PartialApp2 op' v')  =
+      PartialApp2 <$> maybeZipWithα f op op' <*> maybeZipWithα f v v'
    maybeZipWithα _ _ _                                = Nothing

@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, unzip)
+import Data.List (List(..), (:), length, singleton, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
@@ -14,9 +14,9 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
-import Util (MayFail, type (×), (×), (≟), absurd, error)
-import Val (Env, Primitive(..), UnaryOp(..), Val(..), val)
-import Val (RawVal(..)) as V
+import Util (MayFail, type (×), (×), (≟), absurd, assert, error, successful)
+import Val (Env, Primitive(..), RawVal(..), UnaryOp(..), Val(..), val)
+import Val (RawVal(..), arity) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
 match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)
@@ -98,9 +98,13 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
    t' × v'     <- eval (ρ <> ρ') (body e')
    pure $ T.MatchAs t ξ t' × v'
 
-apply :: Primitive -> Val -> Val
-apply (Unary2 φ) v = applyUnary φ v
-
+applySaturated :: Primitive -> List Val -> Val
+applySaturated (Unary2 φ) (v : Nil)       = applyUnary φ v
+applySaturated (Unary2 φ) _               = error absurd
+applySaturated (Binary2 φ) (v : v' : Nil) = applyBinary φ v v'
+applySaturated (Binary2 φ) _              = error absurd
+applySaturated (Constr2 c) vs             =
+   assert (successful (arity c) == length vs) val $ V.Constr c vs
 
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
