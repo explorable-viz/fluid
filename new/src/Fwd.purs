@@ -58,9 +58,7 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
              ρ3 × e'' × α'' = match_fwd v σ in
          eval_fwd (ρ1 <> ρ2 <> ρ3) (body e'') (α' ∧ α'')
       V.Primitive φ     -> apply_fwd φ α' v
-      V.Constr c vs     ->
-         assert (successful (arity c) < length vs) $
-         Val α $ V.Constr c $ vs <> singleton v
+      V.Constr c vs     -> Val (α ∧ α') $ V.Constr c $ vs <> singleton v
       _                 -> error absurd
 eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
    case successful (find op ρ) of
