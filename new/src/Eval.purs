@@ -69,26 +69,27 @@ eval ρ (Expr _ (E.App e e')) = do
    t  × (Val _ u) <- eval ρ e
    t' × v'        <- eval ρ e'
    case u of
-      V.Closure ρ1 δ σ -> do
+      V.Closure ρ1 δ σ  -> do
          let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × ξ <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
          pure $ T.App t t' ξ t'' × v''
-      V.Unary φ ->
-         pure $ T.AppOp t t' × applyUnary φ v'
-      V.Binary φ ->
-         pure $ T.AppOp t t' × val (V.Unary $ PartialApp φ v')
-      V.Primitive φ ->
-         pure $ T.AppOp t t' × apply φ v'
-      _ -> Left "Expected closure or operator"
+      V.Unary φ         -> pure $ T.AppOp t t' × applyUnary φ v'
+      V.Binary φ        -> pure $ T.AppOp t t' × val (V.Unary $ PartialApp φ v')
+      V.Primitive φ     -> pure $ T.AppOp t t' × apply φ v'
+      _                 -> Left "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
    Val _ u <- find op ρ
    case u of
-      V.Binary φ ->
-         pure $ T.BinaryApp t op t' × v `applyBinary φ` v'
-      _ -> error absurd
+      V.Binary φ     -> pure $ T.BinaryApp t op t' × v `applyBinary φ` v'
+      V.Primitive φ  ->
+         let Val _ u' = apply φ v in
+         case u' of
+            V.Primitive φ_v   -> pure $ T.BinaryApp t op t' × apply φ_v v'
+            _                 -> Left "Not a binary operator"
+      _ -> Left "Not an operator"
 eval ρ (Expr _ (E.Let (E.VarDef σ e) e')) = do
    t  × v      <- eval ρ e
    ρ' × _ × ξ  <- match v σ
