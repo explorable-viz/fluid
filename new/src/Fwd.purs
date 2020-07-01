@@ -7,7 +7,7 @@ import Bindings (Bindings(..), (:+:), (↦), find)
 import Expr (Cont(..), Elim(..), Expr(..), RecDef(..), RecDefs, VarDef(..), body)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
-import Primitive (applyBinary_fwd, applyUnary_fwd)
+import Primitive (applyBinary_fwd, applyUnary_fwd, apply_fwd)
 import Util (type (×), (×), absurd, error, fromJust, successful)
 import Val (Env, UnaryOp(..), Val(..))
 import Val (RawVal(..)) as V
@@ -52,13 +52,14 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
    let Val α' u = eval_fwd ρ e α
        v = eval_fwd ρ e' α in
    case u of
-      V.Closure ρ1 δ σ ->
+      V.Closure ρ1 δ σ  ->
          let ρ2 = closeDefs_fwd ρ1 δ δ α'
              ρ3 × e'' × α'' = match_fwd v σ in
          eval_fwd (ρ1 <> ρ2 <> ρ3) (body e'') (α' ∧ α'')
-      V.Unary φ -> applyUnary_fwd φ α' v
-      V.Binary φ -> Val α' $ V.Unary $ PartialApp φ v
-      _ -> error absurd
+      V.Unary φ         -> applyUnary_fwd φ α' v
+      V.Binary φ        -> Val α' $ V.Unary $ PartialApp φ v
+      V.Primitive φ     -> apply_fwd φ α' v
+      _                 -> error absurd
 eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
    case successful (find op ρ) of
       Val α' (V.Binary φ) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α

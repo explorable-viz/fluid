@@ -84,6 +84,13 @@ applyUnary_fwd :: UnaryOp -> Selected -> Val -> Val
 applyUnary_fwd op α v@(Val α' _) =
    Val (α ∧ α') u where Val _ u = applyUnary op v
 
+apply :: Primitive -> Val -> Val
+apply (IntOp op) v = op $ to v
+
+apply_fwd :: Primitive -> Selected -> Val -> Val
+apply_fwd φ α v@(Val α' _) =
+   Val (α ∧ α') u where Val _ u = apply φ v
+
 intStr :: String -> (Int -> String) -> Val
 intStr name = IntStr >>> UnaryOp name >>> V.Unary >>> val
 
