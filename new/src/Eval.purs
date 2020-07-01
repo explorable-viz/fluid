@@ -78,7 +78,7 @@ eval ρ (Expr _ (E.App e e')) = do
          pure $ T.App t t' ξ t'' × v''
       V.Primitive φ     -> pure $ T.AppOp t t' × apply φ v'
       V.Constr c vs     ->
-         if successful (arity c) < length vs
+         if successful (arity c) > length vs
          then pure $ T.AppOp t t' × val (V.Constr c $ vs <> singleton v')
          else report $ "Too many arguments to " <> show c
       _                 -> report "Expected closure or operator"
