@@ -78,7 +78,7 @@ eval ρ (Expr _ (E.App e e')) = do
       V.Constr c vs     -> do
          check (successful (arity c) > length vs) $ "Too many arguments to " <> show c
          pure $ T.AppOp t t' × val (V.Constr c $ vs <> singleton v')
-      _                 -> report "Expected closure or operator"
+      _                 -> report "Expected closure, operator or unsaturated constructor"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
