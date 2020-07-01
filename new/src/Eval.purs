@@ -13,9 +13,9 @@ import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
-import Primitive (applyBinary, applyUnary, apply)
+import Primitive (apply)
 import Util (MayFail, type (×), (×), (≟), absurd, error)
-import Val (Env, UnaryOp(..), Val(..), val)
+import Val (Env, Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
@@ -74,8 +74,6 @@ eval ρ (Expr _ (E.App e e')) = do
          ρ3 × e'' × ξ <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
          pure $ T.App t t' ξ t'' × v''
-      V.Unary φ         -> pure $ T.AppOp t t' × applyUnary φ v'
-      V.Binary φ        -> pure $ T.AppOp t t' × val (V.Unary $ PartialApp φ v')
       V.Primitive φ     -> pure $ T.AppOp t t' × apply φ v'
       _                 -> Left "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
@@ -83,7 +81,6 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t' × v' <- eval ρ e'
    Val _ u <- find op ρ
    case u of
-      V.Binary φ     -> pure $ T.BinaryApp t op t' × v `applyBinary φ` v'
       V.Primitive φ  ->
          let Val _ u' = apply φ v in
          case u' of

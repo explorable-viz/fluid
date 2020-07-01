@@ -12,7 +12,7 @@ import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), RecDefs, Var
 import Lattice (Selected, (∨), bot)
 import Primitive (primitives)
 import Util ((≜), type (×), (×), absurd, error, successful)
-import Val (Env, Val(..), BinaryOp(..), UnaryOp(..))
+import Val (Env, Val(..))
 import Val (RawVal(..)) as V
 
 unmatch :: Env -> Match -> Env × Env
@@ -76,10 +76,8 @@ eval_bwd (Val α v) (T.Var x)
 eval_bwd (Val α (V.Int n)) (T.Int tn)
    = Empty × (Expr α (Int n)) × α
 -- op
-eval_bwd (Val α (V.Binary (BinaryOp s bin))) (T.Op op)
-   = (Empty :+: op ↦ (Val α (V.Binary (BinaryOp s bin)))) × (Expr α (Op op)) × false
-eval_bwd (Val α (V.Unary (UnaryOp s una))) (T.Op op)
-   = (Empty :+: op ↦ (Val α (V.Unary (UnaryOp s una)))) × (Expr α (Op op)) × false
+eval_bwd (Val α (V.Primitive φ)) (T.Op op)
+   = (Empty :+: op ↦ (Val α $ V.Primitive φ)) × (Expr α (Op op)) × false
 -- lambda
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × (Expr α (Lambda σ)) × α

@@ -11,7 +11,7 @@ import Lattice (Selected, (∧))
 import Util (type (×), (×), error)
 import Expr as E
 import Expr (Expr(..), Elim)
-import Val (Binary(..), BinaryOp(..), Env, Primitive(..), Unary(..), UnaryOp(..), Val(..), val)
+import Val (Env, Primitive(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 -- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
@@ -68,52 +68,12 @@ instance fromString :: From String where
 instance fromIntOp :: From a => From (Int -> a) where
    from op = val $ V.Primitive $ IntOp $ op >>> from
 
-applyBinary :: BinaryOp -> Val -> Val -> Val
-applyBinary (BinaryOp _ (IntIntInt f)) v v'  = from $ f (to v) (to v')
-applyBinary (BinaryOp _ (IntIntBool f)) v v' = from $ f (to v) (to v')
-
-applyBinary_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
-applyBinary_fwd op α v@(Val α1 _) v'@(Val α2 _) =
-   Val (α ∧ α1 ∧ α2) u where Val _ u = applyBinary op v v'
-
-applyUnary :: UnaryOp -> Val -> Val
-applyUnary (UnaryOp _ (IntStr f)) = to >>> f >>> from
-applyUnary (PartialApp φ v) = applyBinary φ v
-
-applyUnary_fwd :: UnaryOp -> Selected -> Val -> Val
-applyUnary_fwd op α v@(Val α' _) =
-   Val (α ∧ α') u where Val _ u = applyUnary op v
-
 apply :: Primitive -> Val -> Val
 apply (IntOp op) v = op $ to v
 
 apply_fwd :: Primitive -> Selected -> Val -> Val
 apply_fwd φ α v@(Val α' _) =
    Val (α ∧ α') u where Val _ u = apply φ v
-
-intStr :: String -> (Int -> String) -> Val
-intStr name = IntStr >>> UnaryOp name >>> V.Unary >>> val
-
-intIntBool :: String -> (Int -> Int -> Boolean) -> Val
-intIntBool name = IntIntBool >>> BinaryOp name >>> V.Binary >>> val
-
-intIntInt :: String -> (Int -> Int -> Int) -> Val
-intIntInt name = IntIntInt >>> BinaryOp name >>> V.Binary >>> val
-
-primitives2 :: Env
-primitives2 = foldl (:+:) Empty [
-   "+"         ↦ intIntInt "prim-plus"    (+),
-   "-"         ↦ intIntInt "prim-minus"   (-),
-   "*"         ↦ intIntInt "prim-times"   (*),
-   "div"       ↦ intIntInt "prim-div"     div,
-   "=="        ↦ intIntBool "prim-eq"     (==),
-   "/="        ↦ intIntBool "prim-eq"     (/=),
-   "<"         ↦ intIntBool "prim-lt"     (<),
-   ">"         ↦ intIntBool "prim-gt"     (>),
-   "<="        ↦ intIntBool "prim-leq"    (<=),
-   ">="        ↦ intIntBool "prim-geq"    (>=),
-   "intToStr"  ↦ intStr "prim-intToStr"   show
-]
 
 primitives :: Env
 primitives = foldl (:+:) Empty [

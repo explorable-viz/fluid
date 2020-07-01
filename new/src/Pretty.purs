@@ -11,8 +11,8 @@ import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..))
 import Expr (RawExpr(..)) as E
 import Expl as T
 import Expl (Expl, Match(..))
-import Util (type (×), (×), absurd, error, fromJust, intersperse, unimplemented)
-import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
+import Util (type (×), (×), absurd, error, fromJust, intersperse)
+import Val (Primitive(..), RawVal, Val(..))
 import Val (RawVal(..)) as V
 
 infixl 5 beside as :<>:
@@ -154,16 +154,10 @@ instance rawValPretty :: Pretty RawVal where
    pretty (V.Str str)         = text $ show str
    pretty (V.Constr c vs)     = prettyConstr c vs
    pretty (V.Closure ρ δ σ)   = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
-   pretty (V.Unary op)        = parens $ pretty op
-   pretty (V.Binary op)       = parens $ pretty op
-   pretty (V.Primitive op)    = error unimplemented
+   pretty (V.Primitive op)    = parens $ pretty op
 
-instance unaryOpPretty :: Pretty UnaryOp where
-   pretty (UnaryOp name _) = text name
-   pretty (PartialApp φ v) = pretty φ :<>: text "-" :<>: pretty v
-
-instance binaryOpPretty :: Pretty BinaryOp where
-   pretty (BinaryOp name _) = text name
+instance unaryOpPretty :: Pretty Primitive where
+   pretty (IntOp _) = text "<prim-op>"
 
 prettyProgram :: Expr -> Doc
 prettyProgram e = atop (pretty e) (text "")
