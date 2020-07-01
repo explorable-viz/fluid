@@ -11,7 +11,7 @@ import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..))
 import Expr (RawExpr(..)) as E
 import Expl as T
 import Expl (Expl, Match(..))
-import Util (type (×), (×), absurd, error, fromJust, intersperse)
+import Util (type (×), (×), absurd, error, fromJust, intersperse, unimplemented)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
 import Val (RawVal(..)) as V
 
@@ -156,6 +156,7 @@ instance rawValPretty :: Pretty RawVal where
    pretty (V.Closure ρ δ σ)   = text "Closure" :<>: parens (atop (text "env, defs") (pretty σ))
    pretty (V.Unary op)        = parens $ pretty op
    pretty (V.Binary op)       = parens $ pretty op
+   pretty _                   = error unimplemented
 
 instance unaryOpPretty :: Pretty UnaryOp where
    pretty (UnaryOp name _) = text name

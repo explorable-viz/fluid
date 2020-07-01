@@ -27,6 +27,9 @@ assert false = \_ -> error "Assertion failure"
 absurd :: String
 absurd = "absurd"
 
+unimplemented :: String
+unimplemented = "unimplemented"
+
 fromBool :: Boolean -> forall a . a -> Maybe a
 fromBool false = const Nothing
 fromBool true  = Just

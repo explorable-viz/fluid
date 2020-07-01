@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, singleton, unzip)
+import Data.List (List(..), (:), length, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
@@ -15,8 +15,8 @@ import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
 import Util (MayFail, type (×), (×), (≟), absurd, assert, error, successful)
-import Val (Env, Primitive(..), RawVal(..), UnaryOp(..), Val(..), val)
-import Val (RawVal(..), arity) as V
+import Val (Env, Primitive(..), UnaryOp(..), Val(..), val)
+import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
 match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)
