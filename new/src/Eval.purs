@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, unzip)
+import Data.List (List(..), (:), length, singleton, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
@@ -14,7 +14,7 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (apply)
-import Util (MayFail, type (×), (×), (≟), absurd, error, report)
+import Util (MayFail, type (×), (×), (≟), absurd, error, report, successful)
 import Val (Env, Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -75,6 +75,10 @@ eval ρ (Expr _ (E.App e e')) = do
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
          pure $ T.App t t' ξ t'' × v''
       V.Primitive φ     -> pure $ T.AppOp t t' × apply φ v'
+      V.Constr c vs     ->
+         if successful (arity c) < length vs
+         then pure $ T.AppOp t t' × val (V.Constr c $ vs <> singleton v')
+         else report $ "Too many arguments to " <> show c
       _                 -> report "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
