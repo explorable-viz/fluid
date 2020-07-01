@@ -69,7 +69,7 @@ instance fromIntOp :: From a => From (Int -> a) where
    from op = val $ V.Primitive $ IntOp $ op >>> from
 
 apply :: Primitive -> Val -> Val
-apply (IntOp op) v = op $ to v
+apply (IntOp op) = op <<< to
 
 apply_fwd :: Primitive -> Selected -> Val -> Val
 apply_fwd φ α v@(Val α' _) =

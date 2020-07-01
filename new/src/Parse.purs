@@ -176,7 +176,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser Expr
       simpleExpr =
-         try constrExpr <|>
+         try ctrExpr <|>
          try variable <|>
          try int <|> -- int may start with +/-
          string <|>
@@ -188,8 +188,8 @@ expr_ = fix $ appChain >>> buildExprParser operators
          lambda
 
          where
-         constrExpr :: SParser Expr
-         constrExpr = expr <$> (Constr <$> ctr <@> empty)
+         ctrExpr :: SParser Expr
+         ctrExpr = expr <$> (Constr <$> ctr <@> empty)
 
          variable :: SParser Expr
          variable = ident <#> Var >>> expr
