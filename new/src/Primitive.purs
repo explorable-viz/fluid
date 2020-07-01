@@ -39,7 +39,7 @@ opDefs = fromFoldable [
    opDef ">="  4 AssocLeft
 ]
 
--- Enforce argument type requirements.
+-- Enforce primitive argument types.
 class To a where
    to :: Val -> a
 
@@ -65,6 +65,9 @@ instance fromBoolean :: From Boolean where
 instance fromString :: From String where
    from = V.Str >>> val
 
+instance fromIntOp :: From a => From (Int -> a) where
+   from op = val $ V.Primitive $ IntOp $ op >>> from
+
 applyBinary :: BinaryOp -> Val -> Val -> Val
 applyBinary (BinaryOp _ (IntIntInt f)) v v'  = from $ f (to v) (to v')
 applyBinary (BinaryOp _ (IntIntBool f)) v v' = from $ f (to v) (to v')
@@ -89,9 +92,6 @@ intIntBool name = IntIntBool >>> BinaryOp name >>> V.Binary >>> val
 
 intIntInt :: String -> (Int -> Int -> Int) -> Val
 intIntInt name = IntIntInt >>> BinaryOp name >>> V.Binary >>> val
-
-instance fromIntOp :: From a => From (Int -> a) where
-   from op = val $ V.Primitive $ IntOp $ op >>> from
 
 primitives :: Env
 primitives = foldl (:+:) Empty [
