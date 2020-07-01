@@ -14,8 +14,8 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (applyBinary, applyUnary)
-import Util (MayFail, type (×), (×), (≟), absurd, assert, error, successful)
-import Val (Env, Primitive(..), UnaryOp(..), Val(..), val)
+import Util (MayFail, type (×), (×), (≟), absurd, error)
+import Val (Env, UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
@@ -97,14 +97,6 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
    ρ' × e' × ξ <- match v σ
    t' × v'     <- eval (ρ <> ρ') (body e')
    pure $ T.MatchAs t ξ t' × v'
-
-applySaturated :: Primitive -> List Val -> Val
-applySaturated (Unary2 φ) (v : Nil)       = applyUnary φ v
-applySaturated (Unary2 φ) _               = error absurd
-applySaturated (Binary2 φ) (v : v' : Nil) = applyBinary φ v v'
-applySaturated (Binary2 φ) _              = error absurd
-applySaturated (Constr2 c) vs             =
-   assert (successful (arity c) == length vs) val $ V.Constr c vs
 
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
