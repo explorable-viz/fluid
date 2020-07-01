@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, unzip)
+import Data.List (List(..), (:), length, singleton, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
@@ -14,7 +14,7 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (apply)
-import Util (MayFail, type (×), (×), (≟), absurd, error, report)
+import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Val (Env, Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -44,7 +44,7 @@ closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Clo
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
    n' <- arity c
-   note (show c <> " got " <> show n <> " argument(s), expects " <> show n') $ void $ n ≟ n'
+   check (n' >= n) $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
 
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
@@ -75,7 +75,10 @@ eval ρ (Expr _ (E.App e e')) = do
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
          pure $ T.App t t' ξ t'' × v''
       V.Primitive φ     -> pure $ T.AppOp t t' × apply φ v'
-      _                 -> report "Expected closure or operator"
+      V.Constr c vs     -> do
+         check (successful (arity c) > length vs) $ "Too many arguments to " <> show c
+         pure $ T.AppOp t t' × val (V.Constr c $ vs <> singleton v')
+      _                 -> report "Expected closure, operator or unsaturated constructor"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'

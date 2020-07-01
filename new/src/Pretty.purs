@@ -44,6 +44,7 @@ class PrettyList p where
 instance explPretty :: Pretty Expl where
    pretty (T.Var x)                 = text x
    pretty (T.Op op)                 = text op
+   pretty (T.Ctr c)                 = text $ show c
    pretty (T.Int n)                 = text $ show n
    pretty (T.Str s)                 = text s
    pretty (T.Constr c es)           = prettyConstr c es

@@ -14,6 +14,7 @@ data Expl =
    Op Var |
    Int Int |
    Str String |
+   Ctr Ctr |
    Constr Ctr (List Expl) |
    Lambda Elim |
    App Expl Expl Match Expl |
