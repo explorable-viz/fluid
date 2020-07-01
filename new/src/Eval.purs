@@ -44,7 +44,9 @@ closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Clo
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
    n' <- arity c
-   note (show c <> " got " <> show n <> " argument(s), expects " <> show n') $ void $ n ≟ n'
+   if n' >= n
+   then pure unit
+   else report $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
 
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =

@@ -4,12 +4,13 @@ import Prelude hiding (absurd, add, between, join)
 import Control.Alt ((<|>))
 import Control.Apply (lift2)
 import Control.Lazy (fix)
+import Control.MonadPlus (empty)
 import Data.Array (elem, fromFoldable)
 import Data.Bitraversable (bisequence)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, concat, foldr, groupBy, singleton, sortBy)
+import Data.List (List, (:), concat, foldr, groupBy, singleton, sortBy)
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (values)
 import Data.Ordering (invert)
@@ -24,7 +25,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName)
-import Expr (Elim, Expr, Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
+import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
 import Util (type (×), (×), type (+), error, pureIf, successful, successfulWith)
@@ -166,12 +167,16 @@ expr_ = fix $ appChain >>> buildExprParser operators
    appChain expr' = simpleExpr >>= rest
       where
       rest :: Expr -> SParser Expr
+      rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
+         where
+         ctrArgs :: SParser Expr
+         ctrArgs = simpleExpr >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
       rest e = (expr <$> (App e <$> simpleExpr) >>= rest) <|> pure e
 
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser Expr
       simpleExpr =
-         try constr <|>
+         try ctrExpr <|>
          try variable <|>
          try int <|> -- int may start with +/-
          string <|>
@@ -183,8 +188,8 @@ expr_ = fix $ appChain >>> buildExprParser operators
          lambda
 
          where
-         constr :: SParser Expr
-         constr = expr <$> (Constr' <$> ctr)
+         ctrExpr :: SParser Expr
+         ctrExpr = expr <$> (Constr <$> ctr <@> empty)
 
          variable :: SParser Expr
          variable = ident <#> Var >>> expr
@@ -213,10 +218,8 @@ expr_ = fix $ appChain >>> buildExprParser operators
          parensOp = expr <$> (Op <$> token.parens token.operator)
 
          pair :: SParser Expr
-         pair = token.parens $ do
-            e <- expr' <* token.comma
-            e' <- expr'
-            pure $ expr $ App (expr $ App (expr $ Constr' cPair) e) e'
+         pair = token.parens $
+            expr <$> (lift2 $ \e e' -> Constr cPair (e : e' : empty)) (expr' <* token.comma) expr'
 
          lambda :: SParser Expr
          lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))

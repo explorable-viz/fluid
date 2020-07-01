@@ -20,7 +20,6 @@ data RawExpr =
    Op Var |
    Int Int |
    Str String |
-   Constr' Ctr |
    Constr Ctr (List Expr) |
    Lambda Elim |
    App Expr Expr |
@@ -79,7 +78,6 @@ instance exprSelectable :: Selectable Expr where
 instance rawExprSelectable :: Selectable RawExpr where
    mapα _ (Var x)             = Var x
    mapα _ (Op φ)              = Op φ
-   mapα _ (Constr' c)         = Constr' c
    mapα _ (Int n)             = Int n
    mapα _ (Str str)           = Str str
    mapα f (Constr c es)       = Constr c $ map (mapα f) es
@@ -92,7 +90,6 @@ instance rawExprSelectable :: Selectable RawExpr where
 
    maybeZipWithα _ (Var x) (Var x')                = Var <$> x ≟ x'
    maybeZipWithα _ (Op op) (Op op')                = Op <$> op ≟ op'
-   maybeZipWithα _ (Constr' c) (Constr' c')        = Constr' <$> c ≟ c'
    maybeZipWithα _ (Int n) (Int n')                = Int <$> n ≟ n'
    maybeZipWithα _ (Str s) (Var s')                = Str <$> s ≟ s'
    maybeZipWithα f (Constr c es) (Constr c' es') =
