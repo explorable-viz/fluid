@@ -15,7 +15,7 @@ import Module (successfulParse)
 import Parse (program)
 import Pretty (pretty, render)
 import Pretty2 (pretty2)
--- import Primitive (primitives)
+import Primitive (primitives)
 import Util (error, (×))
 
 -- trace s a = T.trace (pretty s) $ \_-> a
@@ -24,7 +24,7 @@ import Util (error, (×))
 runExampleBwd :: String -> Effect Unit
 runExampleBwd src =
     let e = successfulParse src program
-        ρ = Empty
+        ρ = primitives
     in  case eval ρ e of
             Left msg -> error msg
             Right (Tuple t v) -> do
@@ -34,7 +34,7 @@ runExampleBwd src =
 testExampleBwd :: String -> Effect Unit
 testExampleBwd src =
     let e = successfulParse src program
-        ρ = Empty
+        ρ = primitives
     in  case eval ρ e of
             Left msg -> error msg
             Right (Tuple t v) -> do

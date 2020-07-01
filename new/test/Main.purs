@@ -14,7 +14,6 @@ import Pretty (pretty, render)
 import Util ((×), error)
 import Val (Val(..))
 
-
 runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
    before (openWithImports file) $
