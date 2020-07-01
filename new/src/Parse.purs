@@ -188,9 +188,6 @@ expr_ = fix $ appChain >>> buildExprParser operators
          lambda
 
          where
-         ctrExpr :: SParser Expr
-         ctrExpr = expr <$> (Constr <$> ctr <@> empty)
-
          constr :: SParser Expr
          constr = expr <$> (Constr' <$> ctr)
 
@@ -221,8 +218,10 @@ expr_ = fix $ appChain >>> buildExprParser operators
          parensOp = expr <$> (Op <$> token.parens token.operator)
 
          pair :: SParser Expr
-         pair = token.parens $
-            expr <$> (lift2 $ \e e' -> Constr cPair (e : e' : empty)) (expr' <* token.comma) expr'
+         pair = token.parens $ do
+            e <- expr' <* token.comma
+            e' <- expr'
+            pure $ expr $ App (expr $ App (expr $ Constr' cPair) e) e'
 
          lambda :: SParser Expr
          lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
