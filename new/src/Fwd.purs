@@ -62,8 +62,12 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
       _                 -> error absurd
 eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
    case successful (find op ρ) of
-      Val α' (V.Binary φ) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
-      _ -> error absurd
+      Val α' (V.Binary φ)     -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
+      Val α' (V.Primitive φ)  ->
+         case apply_fwd φ α' (eval_fwd ρ e1 α) of
+            Val α'' (V.Primitive φ_v)  -> apply_fwd φ_v α'' (eval_fwd ρ e2 α)
+            _                          -> error absurd
+      _                       -> error absurd
 eval_fwd ρ (Expr _ (E.Let (VarDef σ e) e')) α =
    let ρ' × _ × α' = match_fwd (eval_fwd ρ e α) σ in
    eval_fwd (ρ <> ρ') e' α'
