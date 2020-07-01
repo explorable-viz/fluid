@@ -1,7 +1,6 @@
 module Test.Main where
 
 import Prelude
-import Data.Either (Either(..))
 import Effect (Effect)
 import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -10,16 +9,15 @@ import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports)
 import Pretty (pretty, render)
-import Util ((×), error)
+import Util ((×), successful)
 import Val (Val(..))
 
 runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
    before (openWithImports file) $
       it file $ \(ρ × e) -> do
-         case eval ρ e of
-            Left msg -> error msg
-            Right (_ × (Val _ u)) -> do
+         case successful $ eval ρ e of
+            _ × (Val _ u) -> do
                let Val _ u' = eval_fwd ρ e true
                (render $ pretty u) `shouldEqual` (render $ pretty u')
                (render $ pretty u') `shouldEqual` expected

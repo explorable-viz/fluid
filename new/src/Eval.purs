@@ -14,7 +14,7 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (apply)
-import Util (MayFail, type (×), (×), (≟), absurd, error)
+import Util (MayFail, type (×), (×), (≟), absurd, error, report)
 import Val (Env, Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -24,7 +24,7 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
-match v _ = Left $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
+match v _ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
 matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × (List Match))
 matchArgs _ Nil κ                = pure $ Empty × κ × Nil
@@ -32,7 +32,7 @@ matchArgs c (v : vs) (Arg σ)     = do
    ρ  × κ'  × ξ  <- match v σ
    ρ' × κ'' × ξs <- matchArgs c vs κ'
    pure $ (ρ <> ρ') × κ'' × (ξ : ξs)
-matchArgs c (_ : vs) (Body _)    = Left $
+matchArgs c (_ : vs) (Body _)    = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _                  = error absurd
 
@@ -75,18 +75,18 @@ eval ρ (Expr _ (E.App e e')) = do
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
          pure $ T.App t t' ξ t'' × v''
       V.Primitive φ     -> pure $ T.AppOp t t' × apply φ v'
-      _                 -> Left "Expected closure or operator"
+      _                 -> report "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
    Val _ u <- find op ρ
    case u of
-      V.Primitive φ  ->
+      V.Primitive φ ->
          let Val _ u' = apply φ v in
          case u' of
             V.Primitive φ_v   -> pure $ T.BinaryApp t op t' × apply φ_v v'
-            _                 -> Left "Not a binary operator"
-      _ -> Left "Not an operator"
+            _                 -> report "Not a binary operator"
+      _ -> report "Not an operator"
 eval ρ (Expr _ (E.Let (E.VarDef σ e) e')) = do
    t  × v      <- eval ρ e
    ρ' × _ × ξ  <- match v σ

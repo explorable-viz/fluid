@@ -1,7 +1,6 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
-import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, insert, lookup, singleton, update)
@@ -12,7 +11,7 @@ import Data.Traversable (foldl)
 import Bindings (Var)
 import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
-import Util (MayFail, (≞), (=<<<), absurd, error, om, with)
+import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =
    PNone |              -- intermediate state during construction, but also for structured let
@@ -73,13 +72,13 @@ instance joinablePatternElim :: Joinable Pattern Elim where
                      (typeName <$> dataType κs) `(=<<<) (≞)` (typeName <$> dataTypeFor c))
                   *> checkArity c n
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
-   maybeJoin _ _                               = Left "Can't join variable and constructor patterns"
+   maybeJoin _ _                               = report "Can't join variable and constructor patterns"
 
 instance joinablePContCont :: Joinable PCont Cont where
    maybeJoin None PNone                               = pure None
    maybeJoin (Arg σ) (PArg π)                         = Arg <$> maybeJoin σ π
    maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)   = Body <$> (expr <$> (Lambda <$> maybeJoin σ π))
-   maybeJoin _ _                                      = Left "Incompatible continuations"
+   maybeJoin _ _                                      = report "Incompatible continuations"
 
 joinAll :: NonEmptyList Pattern -> MayFail Elim
 joinAll (NonEmptyList (π :| πs)) = foldl (om $ maybeJoin) (toElim π) πs

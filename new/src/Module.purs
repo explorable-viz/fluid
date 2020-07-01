@@ -11,7 +11,7 @@ import Eval (defs)
 import Expr (Expr)
 import Parse (module_, program)
 import Primitive (primitives)
-import Util (type (×), (×), error)
+import Util (type (×), (×), error, successful)
 import Util.Parse (SParser)
 import Val (Env)
 
@@ -30,9 +30,7 @@ loadFile folder file = do
 loadModule :: String -> Env -> Aff Env
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
-   case defs ρ $ successfulParse src module_ of
-      Left msg -> error msg
-      Right ρ' -> pure ρ'
+   pure $ successful $ defs ρ $ successfulParse src module_
 
 openWithImports :: String -> Aff (Env × Expr)
 openWithImports file =
