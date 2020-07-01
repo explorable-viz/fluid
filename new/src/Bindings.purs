@@ -1,10 +1,9 @@
 module Bindings where
 
 import Prelude hiding (top)
-import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
-import Util (MayFail, (≟))
+import Util (MayFail, (≟), report)
 
 type Var = String
 
@@ -36,7 +35,7 @@ foldBind f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldBind f z ρ)
 foldBind _ z Empty           = z
 
 find :: forall a . Var -> Bindings a -> MayFail a
-find x' Empty          = Left $ "variable " <> x' <> " not found"
+find x' Empty          = report $ "variable " <> x' <> " not found"
 find x' (xs :+: x ↦ v) = if x == x' then pure v else find x' xs
 
 update :: forall a . Lattice a => Var -> a -> Bindings a -> Bindings a

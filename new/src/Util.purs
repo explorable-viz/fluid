@@ -47,6 +47,9 @@ pureIf b = fromBool b >>> pureMaybe
 
 type MayFail a = String + a
 
+report :: String -> forall a . MayFail a
+report = Left
+
 successful :: forall a . MayFail a -> a
 successful (Left msg)   = error msg
 successful (Right x)    = x
