@@ -90,8 +90,11 @@ intIntBool name = IntIntBool >>> BinaryOp name >>> V.Binary >>> val
 intIntInt :: String -> (Int -> Int -> Int) -> Val
 intIntInt name = IntIntInt >>> BinaryOp name >>> V.Binary >>> val
 
-intIntOp :: forall a . From a => (Int -> Int -> a) -> Primitive
-intIntOp op = IntOp (\n -> val $ V.Primitive $ IntOp $ \m -> from $ n `op` m)
+intIntOp :: forall a . From a => (Int -> Int -> a) -> Val
+intIntOp op = val $ V.Primitive $ IntOp (\n -> val $ V.Primitive $ IntOp $ \m -> from $ n `op` m)
+
+intOp :: forall a . From a => (Int -> a) -> Val
+intOp op = val $ V.Primitive $ IntOp $ op >>> from
 
 primitives :: Env
 primitives = foldl (:+:) Empty [
@@ -106,6 +109,21 @@ primitives = foldl (:+:) Empty [
    "<="        ↦ intIntBool "prim-leq"    (<=),
    ">="        ↦ intIntBool "prim-geq"    (>=),
    "intToStr"  ↦ intStr "prim-intToStr"   show
+]
+
+primitives2 :: Env
+primitives2 = foldl (:+:) Empty [
+   "+"         ↦ intIntOp  (+),
+   "-"         ↦ intIntOp  (-),
+   "*"         ↦ intIntOp  (*),
+   "div"       ↦ intIntOp  div,
+   "=="        ↦ intIntOp  (==),
+   "/="        ↦ intIntOp  (/=),
+   "<"         ↦ intIntOp  (<),
+   ">"         ↦ intIntOp  (>),
+   "<="        ↦ intIntOp  (<=),
+   ">="        ↦ intIntOp  (>=),
+   "intToStr"  ↦ intOp     show
 ]
 
 append :: Expr -> Expr -> Expr
