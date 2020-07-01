@@ -51,6 +51,8 @@ eval ρ (Expr _ (E.Var x)) =
    (T.Var x × _) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =
    (T.Op op × _) <$> find op ρ
+eval ρ (Expr _ (E.Constr' c)) =
+   pure $ T.Ctr c × val (V.Constr c Nil)
 eval ρ (Expr _ (E.Int n)) =
    pure $ T.Int n × val (V.Int n)
 eval ρ (Expr _ (E.Str str)) =

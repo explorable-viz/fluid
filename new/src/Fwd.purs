@@ -1,15 +1,14 @@
 module Fwd where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), (:), length, singleton)
+import Data.List (List(..), (:), singleton)
 import Data.Map (lookup)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import DataType (arity)
 import Expr (Cont(..), Elim(..), Expr(..), RecDef(..), RecDefs, VarDef(..), body)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (apply_fwd)
-import Util (type (×), (×), absurd, assert, error, fromJust, successful)
+import Util (type (×), (×), absurd, error, fromJust, successful)
 import Val (Env, Val(..))
 import Val (RawVal(..)) as V
 
@@ -39,6 +38,8 @@ eval_fwd ρ (Expr _ (E.Var x)) _ =
    successful $ find x ρ
 eval_fwd ρ (Expr _ (E.Op op)) _ =
    successful $ find op ρ
+eval_fwd ρ (Expr _ (E.Constr' c)) α =
+   Val α $ V.Constr c Nil
 eval_fwd ρ (Expr α (E.Int n)) α' =
    Val (α ∧ α') $ V.Int n
 eval_fwd ρ (Expr α (E.Str str)) α' =
