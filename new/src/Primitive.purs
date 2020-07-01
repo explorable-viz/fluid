@@ -91,10 +91,13 @@ intIntInt :: String -> (Int -> Int -> Int) -> Val
 intIntInt name = IntIntInt >>> BinaryOp name >>> V.Binary >>> val
 
 intIntOp :: forall a . From a => (Int -> Int -> a) -> Val
-intIntOp op = val $ V.Primitive $ IntOp (\n -> val $ V.Primitive $ IntOp $ \m -> from $ n `op` m)
+intIntOp op = val $ V.Primitive $ IntOp \n -> val $ V.Primitive $ IntOp $ \m -> from $ n `op` m
 
 intOp :: forall a . From a => (Int -> a) -> Val
 intOp op = val $ V.Primitive $ IntOp $ op >>> from
+
+instance fromIntOp :: From b => From (Int -> b) where
+   from op = val $ V.Primitive $ IntOp \n -> from $ op n
 
 primitives :: Env
 primitives = foldl (:+:) Empty [
