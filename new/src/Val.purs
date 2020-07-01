@@ -25,8 +25,7 @@ data UnaryOp =
 data BinaryOp = BinaryOp String Binary
 
 data Primitive =
-   IntOp (Int -> Val) |
-   StrOp (String -> Val)
+   IntOp (Int -> Val) -- one constructor for each primitive type we care about
 
 data RawVal =
    Int Int |

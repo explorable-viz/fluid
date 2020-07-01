@@ -13,9 +13,9 @@ import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
-import Primitive (applyBinary, applyUnary)
+import Primitive (applyBinary, applyUnary, to)
 import Util (MayFail, type (×), (×), (≟), absurd, error)
-import Val (Env, UnaryOp(..), Val(..), val)
+import Val (Env, UnaryOp(..), Primitive(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
@@ -78,6 +78,8 @@ eval ρ (Expr _ (E.App e e')) = do
          pure $ T.AppOp t t' × applyUnary φ v'
       V.Binary φ ->
          pure $ T.AppOp t t' × val (V.Unary $ PartialApp φ v')
+      V.Primitive φ ->
+         pure $ T.AppOp t t' × apply φ v'
       _ -> Left "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
@@ -97,6 +99,9 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
    ρ' × e' × ξ <- match v σ
    t' × v'     <- eval (ρ <> ρ') (body e')
    pure $ T.MatchAs t ξ t' × v'
+
+apply :: Primitive -> Val -> Val
+apply (IntOp op) v = op $ to v
 
 defs :: Env -> Module -> MayFail Env
 defs ρ (Module Nil) = pure ρ
