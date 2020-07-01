@@ -11,7 +11,7 @@ import Lattice (Selected, (∧))
 import Util (type (×), (×), error)
 import Expr as E
 import Expr (Expr(..), Elim)
-import Val (Binary(..), BinaryOp(..), Env, Unary(..), UnaryOp(..), Val(..), val)
+import Val (Binary(..), BinaryOp(..), Env, Primitive(..), Unary(..), UnaryOp(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 -- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
@@ -66,7 +66,7 @@ instance fromString :: From String where
    from = V.Str >>> val
 
 applyBinary :: BinaryOp -> Val -> Val -> Val
-applyBinary (BinaryOp _ (IntIntInt f)) v v' = from $ f (to v) (to v')
+applyBinary (BinaryOp _ (IntIntInt f)) v v'  = from $ f (to v) (to v')
 applyBinary (BinaryOp _ (IntIntBool f)) v v' = from $ f (to v) (to v')
 
 applyBinary_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
@@ -89,6 +89,9 @@ intIntBool name = IntIntBool >>> BinaryOp name >>> V.Binary >>> val
 
 intIntInt :: String -> (Int -> Int -> Int) -> Val
 intIntInt name = IntIntInt >>> BinaryOp name >>> V.Binary >>> val
+
+intIntOp :: forall a . From a => (Int -> Int -> a) -> Primitive
+intIntOp op = IntOp (\n -> val $ V.Primitive $ IntOp $ \m -> from $ n `op` m)
 
 primitives :: Env
 primitives = foldl (:+:) Empty [

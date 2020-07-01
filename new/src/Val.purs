@@ -8,7 +8,7 @@ import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
-import Util ((≟))
+import Util ((≟), error, unimplemented)
 
 data Unary =
    IntStr (Int -> String)
@@ -24,13 +24,18 @@ data UnaryOp =
 
 data BinaryOp = BinaryOp String Binary
 
+data Primitive =
+   IntOp (Int -> Val) |
+   StrOp (String -> Val)
+
 data RawVal =
    Int Int |
    Str String |
    Constr Ctr (List Val) |
    Closure Env RecDefs Elim |
    Binary BinaryOp |
-   Unary UnaryOp
+   Unary UnaryOp |
+   Primitive Primitive
 
 data Val = Val Selected RawVal
 
@@ -61,6 +66,7 @@ instance selectableRawVal :: Selectable RawVal where
    mapα f (Closure ρ δ σ)  = Closure (mapα f ρ) (map (mapα f) δ) (mapα f σ)
    mapα f (Binary φ)       = Binary (mapα f φ)
    mapα f (Unary φ)        = Unary (mapα f φ)
+   mapα f (Primitive φ)    = error unimplemented
 
    maybeZipWithα f (Int x) (Int x')                   = Int <$> x ≟ x'
    maybeZipWithα f (Str s) (Str s')                   = Str <$> s ≟ s'
@@ -71,4 +77,6 @@ instance selectableRawVal :: Selectable RawVal where
               <*> sequence (zipWith (maybeZipWithα f) δ δ') <*> maybeZipWithα f σ σ'
    maybeZipWithα f (Binary φ) (Binary φ')             = Binary <$> maybeZipWithα f φ φ'
    maybeZipWithα f (Unary φ) (Unary φ')               = Unary <$> maybeZipWithα f φ φ'
+
+   maybeZipWithα f (Primitive φ) (Primitive φ')       = error unimplemented
    maybeZipWithα _ _ _                                = Nothing
