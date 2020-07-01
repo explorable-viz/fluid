@@ -14,7 +14,7 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body
 import Expr (RawExpr(..), VarDef(..)) as E
 import Pretty (pretty, render)
 import Primitive (apply)
-import Util (MayFail, type (×), (×), (≟), absurd, error, report, successful)
+import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Val (Env, Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -44,17 +44,13 @@ closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Clo
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
    n' <- arity c
-   if n' >= n
-   then pure unit
-   else report $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
+   check (n' >= n) $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
 
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
    (T.Var x × _) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =
    (T.Op op × _) <$> find op ρ
-eval ρ (Expr _ (E.Constr' c)) =
-   pure $ T.Ctr c × val (V.Constr c Nil)
 eval ρ (Expr _ (E.Int n)) =
    pure $ T.Int n × val (V.Int n)
 eval ρ (Expr _ (E.Str str)) =
@@ -79,10 +75,9 @@ eval ρ (Expr _ (E.App e e')) = do
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
          pure $ T.App t t' ξ t'' × v''
       V.Primitive φ     -> pure $ T.AppOp t t' × apply φ v'
-      V.Constr c vs     ->
-         if successful (arity c) > length vs
-         then pure $ T.AppOp t t' × val (V.Constr c $ vs <> singleton v')
-         else report $ "Too many arguments to " <> show c
+      V.Constr c vs     -> do
+         check (successful (arity c) > length vs) $ "Too many arguments to " <> show c
+         pure $ T.AppOp t t' × val (V.Constr c $ vs <> singleton v')
       _                 -> report "Expected closure or operator"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e

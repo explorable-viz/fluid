@@ -38,8 +38,6 @@ eval_fwd ρ (Expr _ (E.Var x)) _ =
    successful $ find x ρ
 eval_fwd ρ (Expr _ (E.Op op)) _ =
    successful $ find op ρ
-eval_fwd ρ (Expr _ (E.Constr' c)) α =
-   Val α $ V.Constr c Nil
 eval_fwd ρ (Expr α (E.Int n)) α' =
    Val (α ∧ α') $ V.Int n
 eval_fwd ρ (Expr α (E.Str str)) α' =

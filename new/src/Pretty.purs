@@ -108,7 +108,6 @@ instance rawExprPretty :: Pretty RawExpr where
    pretty (E.Int n)                 = text $ show n
    pretty (E.Str str)               = text $ show str
    pretty (E.Var x)                 = text x
-   pretty (E.Constr' c)             = text $ show c
    pretty (E.Constr c es)           = prettyConstr c es
    pretty (E.Op op)                 = parens $ text op
    pretty (E.Let (VarDef σ e) e')   =

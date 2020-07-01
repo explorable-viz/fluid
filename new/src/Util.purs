@@ -61,8 +61,9 @@ successfulWith msg = successful <<< with msg
 with :: String -> forall a . MayFail a -> MayFail a
 with msg = bimap (\msg' -> msg' <> if msg == "" then "" else ("\n" <> msg)) identity
 
-check :: String -> forall a . MayFail a -> MayFail Unit
-check msg = with msg >>> void
+check :: Boolean -> String -> MayFail Unit
+check true _      = pure unit
+check false msg   = report msg
 
 mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = fromBool (x == x') x
