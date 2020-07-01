@@ -1,6 +1,6 @@
 module Main where
 
-import Prelude (Unit, show, ($), (&&), (==))
+import Prelude (Unit, show, ($), (&&), (==), discard)
 import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
 -- import Debug.Trace (trace) as T
@@ -50,7 +50,7 @@ letexpr :: String
 letexpr = "(1 + 5) * ((let x = 2; y = 8 in x * y) - (let y = 3 in y * y))"
 
 composeexpr :: String
-composeexpr = "let incr = fun n -> n + 1 in incr (incr 3)"
+composeexpr = "let incr = fun n -> n + 1 in (incr (incr 3))"
 
 factexpr :: String
 factexpr = "let fact x =\
@@ -70,4 +70,7 @@ tailexpr = "let tail zs =\
 
 main :: Effect Unit
 main = do
-   runExampleBwd letexpr
+   -- runExampleBwd letexpr
+   runExampleBwd composeexpr
+   -- runExampleBwd factexpr
+   -- runExampleBwd tailexpr
