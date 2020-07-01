@@ -100,8 +100,8 @@ intIntBool name = IntIntBool >>> BinaryOp name >>> V.Binary >>> val
 intIntInt :: String -> (Int -> Int -> Int) -> Val
 intIntInt name = IntIntInt >>> BinaryOp name >>> V.Binary >>> val
 
-primitives :: Env
-primitives = foldl (:+:) Empty [
+primitives2 :: Env
+primitives2 = foldl (:+:) Empty [
    "+"         ↦ intIntInt "prim-plus"    (+),
    "-"         ↦ intIntInt "prim-minus"   (-),
    "*"         ↦ intIntInt "prim-times"   (*),
@@ -115,8 +115,8 @@ primitives = foldl (:+:) Empty [
    "intToStr"  ↦ intStr "prim-intToStr"   show
 ]
 
-primitives2 :: Env
-primitives2 = foldl (:+:) Empty [
+primitives :: Env
+primitives = foldl (:+:) Empty [
    -- need to instantiate the corresponding PureScript primitive at a concrete type
    "+"         ↦ from   ((+)  :: Int -> Int -> Int),
    "-"         ↦ from   ((-)  :: Int -> Int -> Int),
