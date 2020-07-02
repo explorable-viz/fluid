@@ -3,11 +3,10 @@ module Pretty (class Pretty, pretty, module P, (:<>:)) where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), head)
 import Data.Map (Map, toUnfoldable)
-import Debug.Trace (trace) as T
 import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
-import Bindings (Bindings(..), Bind, (:+:), (↦), elem)
+import Bindings (Bindings(..), Bind, (:+:), (↦))
 import DataType (Ctr(..), cPair, cCons)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..))
 import Expr (RawExpr(..)) as E
@@ -16,10 +15,6 @@ import Expl (Expl, Match(..))
 import Util (type (×), (×), absurd, error, fromJust, intersperse)
 import Val (BinaryOp(..), Val(..), RawVal, UnaryOp(..))
 import Val (RawVal(..)) as V
-import Primitive (primitives)
-
-trace s a = T.trace (pretty s) $ \_-> a
-trace' s a = T.trace  s $ \_-> a
 
 infixl 5 beside as :<>:
 
@@ -106,8 +101,8 @@ instance exprPrettyList :: PrettyList Expr where
 instance rawExprPrettyList :: PrettyList RawExpr where
    prettyList (E.Constr (Ctr "Nil") Nil) = null
    prettyList (E.Constr (Ctr "Cons") (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
-   prettyList e = let k = trace e 5 in pretty e
-   -- prettyList e = let k = trace e 5 in error "Ill-formed list for exprs"
+   prettyList e = pretty e
+   -- prettyList e = error "Ill-formed list for exprs"
 
 instance valPrettyList :: PrettyList Val where
    prettyList (Val _ u) = prettyList u
