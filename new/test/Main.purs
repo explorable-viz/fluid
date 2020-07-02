@@ -24,6 +24,7 @@ runExample file expected = runMocha $
 
 main :: Effect Unit
 main = do
+{-
    runExample "arithmetic" "42"
    runExample "compose" "5"
    runExample "factorial" "40320"
@@ -36,5 +37,5 @@ main = do
    runExample "pattern-match" "4"
    runExample "reverse" "[2, 1]"
    runExample "zipWith" "[(3, 10), (4, 12), (8, 20)]"
-
+-}
    runExample "temp" "5"

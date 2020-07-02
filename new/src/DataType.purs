@@ -10,7 +10,7 @@ import Data.Map (Map, fromFoldable, lookup)
 import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
 import Data.String.CodeUnits (charAt)
-import Util (MayFail, type (×), (×), absurd, fromJust)
+import Util (MayFail, type (×), (×), absurd, error, fromJust)
 
 type TypeName = String
 
@@ -25,10 +25,15 @@ derive instance ordCtr :: Ord Ctr
 isCtrName ∷ String → Boolean
 isCtrName str = isUpper $ fromJust absurd $ charAt 0 str
 
+isCtrSymbol :: String -> Boolean
+isCtrSymbol str = ':' == (fromJust absurd $ charAt 0 str)
+
 instance showCtr :: Show Ctr where
    -- assume binary infix if not constructor name
-   show c = if isCtrName str then str else "(" <> str <> ")"
-      where str = unwrap c
+   show c = show' $ unwrap c where
+      show' str | isCtrName str   = str
+                | isCtrSymbol str = "(" <> str <> ")"
+                | otherwise       = error absurd
 
 data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
@@ -58,7 +63,7 @@ arity c = do
 cFalse   = Ctr "False"  :: Ctr -- Bool
 cTrue    = Ctr "True"   :: Ctr
 cNil     = Ctr "Nil"    :: Ctr -- List
-cCons    = Ctr "Cons"   :: Ctr
+cCons    = Ctr ":"      :: Ctr
 cGT      = Ctr "GT"     :: Ctr -- Ordering
 cLT      = Ctr "LT"     :: Ctr
 cEQ      = Ctr "EQ"     :: Ctr

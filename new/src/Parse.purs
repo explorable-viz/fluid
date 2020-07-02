@@ -237,7 +237,7 @@ operators binaryOp =
    groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
 
 pattern :: SParser Pattern
-pattern = fix $ appChain_pattern >>> buildExprParser (operators binaryOp)
+pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
@@ -251,8 +251,8 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators binaryOp)
             ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
          rest π@(PattVar _ _) = pure π
 
-   binaryOp :: Var -> SParser (Pattern -> Pattern -> Pattern)
-   binaryOp op = do
+   infixCtr :: Var -> SParser (Pattern -> Pattern -> Pattern)
+   infixCtr op = do
       op' <- token.operator
       pureIf (op == op') (\π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π)
 
