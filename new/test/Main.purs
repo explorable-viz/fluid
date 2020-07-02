@@ -5,6 +5,7 @@ import Effect (Effect)
 import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
+import Bwd (eval_bwd)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports)
@@ -12,8 +13,8 @@ import Pretty (pretty, render)
 import Util ((×), successful)
 import Val (Val(..))
 
-runExample :: String -> String -> Effect Unit
-runExample file expected = runMocha $
+runExample :: String -> String -> Boolean -> Effect Unit
+runExample file expected runBwd = runMocha $
    before (openWithImports file) $
       it file $ \(ρ × e) -> do
          case successful $ eval ρ e of
@@ -21,19 +22,26 @@ runExample file expected = runMocha $
                let fwd_v@(Val _ u') = eval_fwd ρ e true
                (render $ pretty u) `shouldEqual` (render $ pretty u')
                (render $ pretty u') `shouldEqual` expected
+               if runBwd then
+                  do let ρ' × e' × α' = eval_bwd fwd_v t
+                         t' × v'      = successful $ eval ρ' e'
+                     (render $ pretty t) `shouldEqual` (render $ pretty t')
+                     (render $ pretty v') `shouldEqual` expected
+               else pure unit
+
 
 main :: Effect Unit
 main = do
-   runExample "arithmetic" "42"
-   runExample "compose" "5"
-   runExample "factorial" "40320"
-   runExample "filter" "[8, 7]"
-   runExample "foldr_sumSquares" "661"
-   runExample "lexicalScoping" "\"6\""
-   runExample "length" "2"
-   runExample "map" "[5, 7, 13, 15, 4, 3, -3]"
-   runExample "normalise" "(33, 66)"
-   runExample "pattern-match" "4"
-   runExample "reverse" "[2, 1]"
-   runExample "zipWith" "[(3, 10), (4, 12), (8, 20)]"
-   runExample "temp" "5"
+   runExample "arithmetic" "42" false
+   runExample "compose" "5" false
+   runExample "factorial" "40320" false
+   runExample "filter" "[8, 7]" false
+   runExample "foldr_sumSquares" "661" false
+   runExample "lexicalScoping" "\"6\"" false
+   runExample "length" "2" false
+   runExample "map" "[5, 7, 13, 15, 4, 3, -3]" false
+   runExample "normalise" "(33, 66)" false
+   runExample "pattern-match" "4" false
+   runExample "reverse" "[2, 1]" false
+   runExample "zipWith" "[(3, 10), (4, 12), (8, 20)]" false
+   runExample "temp" "5" false
