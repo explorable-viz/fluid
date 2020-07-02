@@ -1,10 +1,9 @@
 module Main where
 
-import Prelude (Unit, show, ($), (&&), (==), discard)
+import Prelude (Unit, show, ($), (&&), (==))
 import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
 -- import Debug.Trace (trace) as T
-import Bindings (Bindings(..))
 import Bwd (eval_bwd)
 import Effect (Effect)
 import Effect.Console (log)
