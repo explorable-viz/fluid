@@ -1,1 +1,1 @@
-filter ((<) 5) (Cons 8 (Cons 4 (Cons 7 (Cons 3 Nil))))
+filter ((<) 5) (8 : 4 : 7 : 3 : Nil)
