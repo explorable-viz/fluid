@@ -236,24 +236,8 @@ operators binaryOp =
    (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
    groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
 
--- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Pattern
-pattern = fix appChain_pattern
-   where
-   -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
-   -- non-saturated constructor applications, or patterns other than constructors in the function position.
-   appChain_pattern :: SParser Pattern -> SParser Pattern
-   appChain_pattern pattern' = simplePattern pattern' >>= rest
-      where
-         rest ∷ Pattern -> SParser Pattern
-         rest π@(PattConstr c n κ) = ctrArgs <|> pure π
-            where
-            ctrArgs :: SParser Pattern
-            ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
-         rest π@(PattVar _ _) = pure π
-
-pattern_new :: SParser Pattern
-pattern_new = fix $ appChain_pattern >>> buildExprParser (operators binaryOp)
+pattern = fix $ appChain_pattern >>> buildExprParser (operators binaryOp)
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
