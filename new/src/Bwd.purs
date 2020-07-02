@@ -38,8 +38,8 @@ unmatchMany ρ (ξ : ξs) =
 joinδ :: RecDefs × (Env × RecDefs × Selected) -> Env × RecDefs × Selected
 joinδ (δ' × ρ × δ × α) = ρ × (δ ∨ δ') × α
 
-closeDefs_bwd :: Env -> Env × RecDefs × Selected
-closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0))
+closeDefs_bwd :: Env -> Env -> Env × RecDefs × Selected
+closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _
    = joinδ $ foldBind joinClsre ((RecDef f0 σ0 : L.Nil) × ρ0 × δ0 × α0) ρ'
    where
       joinClsre   :: Bind Val
@@ -48,8 +48,8 @@ closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0))
       joinClsre (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ × δ × α)
          = (RecDef f σ_f : δ_acc) × (ρ ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
       joinClsre (_ ↦ _) _      = error absurd
-closeDefs_bwd (_  :+: _ ↦ _)   = error absurd
-closeDefs_bwd Empty            = Empty × L.Nil × false
+closeDefs_bwd (_  :+: _ ↦ _) _ = error absurd
+closeDefs_bwd Empty ρ1         = bot ρ1 × L.Nil × false
 
 split :: Env -> RecDefs -> Env × Env
 split = go Empty
@@ -96,7 +96,7 @@ eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
          v'   × σ          = match_bwd ρ3 (Body e) α ξ
          ρ1 × ρ2           = split ρ1ρ2 δ
          ρ'  × e'  × α'    = eval_bwd v' t'
-         ρ1' × δ'   × α2   = closeDefs_bwd ρ2
+         ρ1' × δ'   × α2   = closeDefs_bwd ρ2 ρ1
          ρ'' × e'' × α''   = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ)) t in
       (ρ' ∨ ρ'') × (Expr (α' ∨ α'') (App e'' e')) × (α' ∨ α'')
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
@@ -108,9 +108,9 @@ eval_bwd (Val α v) (T.AppOp (t1 × v1) (t2 × v2))
          ρ' × e' × α'' = eval_bwd v1 t1 in
      (ρ ∨ ρ') × (Expr α (App e e')) × α
 eval_bwd v (T.MatchAs t1 ξ t2)
-   = let ρ1ρ2 × e × α = eval_bwd v t2
-         ρ1 × ρ2 = unmatch ρ1ρ2 ξ
-         v1 × σ = match_bwd ρ2 (Body e) α ξ
+   = let ρ1ρ2 × e × α   = eval_bwd v t2
+         ρ1 × ρ2        = unmatch ρ1ρ2 ξ
+         v1 × σ         = match_bwd ρ2 (Body e) α ξ
          ρ1' × e' × α'  = eval_bwd v1 t1 in
      (ρ1' ∨ ρ1) × (Expr (α ∨ α') (MatchAs e' σ)) × (α ∨ α')
 eval_bwd v (T.Let (T.VarDef ξ t1) t2)
@@ -120,9 +120,9 @@ eval_bwd v (T.Let (T.VarDef ξ t1) t2)
          ρ1' × e1 × α1  = eval_bwd v' t1 in
      (ρ1 ∨ ρ1') × (Expr (α1 ∨ α2) (Let (VarDef σ e1) e2)) × (α1 ∨ α2)
 eval_bwd v (T.LetRec δ t)
-   = let ρ1ρ2 × e × α = eval_bwd v t
-         ρ1 × ρ2       = split ρ1ρ2 δ
-         ρ1' × δ' × α' = closeDefs_bwd ρ2 in
+   = let ρ1ρ2 × e × α   = eval_bwd v t
+         ρ1 × ρ2        = split ρ1ρ2 δ
+         ρ1' × δ' × α'  = closeDefs_bwd ρ2 ρ1 in
      (ρ1 ∨ ρ1') × (Expr (α ∨ α') (LetRec δ' e)) × (α ∨ α')
 eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
    = let

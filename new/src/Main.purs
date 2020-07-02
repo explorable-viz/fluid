@@ -1,6 +1,6 @@
 module Main where
 
-import Prelude (Unit, show, ($), (&&), (==))
+import Prelude (Unit, show, ($), (&&), (==), discard)
 import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
 -- import Debug.Trace (trace) as T
@@ -69,7 +69,7 @@ tailexpr = "let tail zs =\
 
 main :: Effect Unit
 main = do
-   -- runExampleBwd letexpr
+   runExampleBwd letexpr
    runExampleBwd composeexpr
-   -- runExampleBwd factexpr
-   -- runExampleBwd tailexpr
+   runExampleBwd factexpr
+   runExampleBwd tailexpr

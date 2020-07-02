@@ -6,8 +6,8 @@ import Data.Map (Map, toUnfoldable)
 import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
-import Bindings (Bindings(..), Bind, (:+:), (↦), elem)
-import DataType (Ctr, cPair, cCons)
+import Bindings (Bindings(..), Bind, (:+:), (↦))
+import DataType (Ctr(..), cPair, cCons)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..))
 import Expr (RawExpr(..)) as E
 import Expl as T
@@ -15,7 +15,6 @@ import Expl (Expl, Match(..))
 import Util (type (×), (×), absurd, error, fromJust, intersperse)
 import Val (Primitive(..), RawVal, Val(..))
 import Val (RawVal(..)) as V
-import Primitive (primitives)
 
 infixl 5 beside as :<>:
 
@@ -92,30 +91,30 @@ instance explValPretty :: Pretty (Expl × Val) where
 
 instance envPrettyList :: PrettyList (Bindings Val) where
    prettyList (ρ :+: x ↦ Val α v)
-      | x `elem` primitives = prettyList ρ :<>: (text x :<>: text " ↦ " :<>: pretty v) :<>: text ", "
-      | otherwise           = prettyList ρ
+      = prettyList ρ :<>: (text x :<>: text " ↦ " :<>: pretty v) :<>: text ", "
    prettyList Empty = text ""
 
 instance explPrettyList :: PrettyList Expl where
-   prettyList (T.Constr cNil Nil) = null
-   prettyList (T.NullConstr cNil ρ) = text "NilExpl"
-   prettyList (T.Constr cCons (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
+   prettyList (T.Constr (Ctr "Nil") Nil) = null
+   prettyList (T.NullConstr (Ctr "Nil") ρ) = text "NilExpl"
+   prettyList (T.Constr (Ctr "Cons") (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
    prettyList t = error "Ill-formed list for expls"
 
 instance exprPrettyList :: PrettyList Expr where
    prettyList (Expr a r) = text "Expr (" :<>: text (show a) :<>: comma :<>: prettyList r :<>: text ")"
 
 instance rawExprPrettyList :: PrettyList RawExpr where
-   prettyList (E.Constr cNil Nil) = null
-   prettyList (E.Constr cCons (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
-   prettyList e = error "Ill-formed list for exprs"
+   prettyList (E.Constr (Ctr "Nil") Nil) = null
+   prettyList (E.Constr (Ctr "Cons") (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
+   prettyList e = pretty e
+   -- prettyList e = error "Ill-formed list for exprs"
 
 instance valPrettyList :: PrettyList Val where
    prettyList (Val _ u) = prettyList u
 
 instance rawValPrettyList :: PrettyList RawVal where
-   prettyList (V.Constr cNil Nil) = null
-   prettyList (V.Constr cCons (v:vs:Nil)) = comma :<>: pretty v :<>: prettyList vs
+   prettyList (V.Constr (Ctr "Nil") Nil) = null
+   prettyList (V.Constr (Ctr "Cons") (v:vs:Nil)) = comma :<>: pretty v :<>: prettyList vs
    prettyList v = error "Ill-formed list for values"
 
 instance exprPretty :: Pretty Expr where
