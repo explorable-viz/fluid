@@ -6,14 +6,12 @@ import Effect (Effect)
 import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Bwd (eval_bwd)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports)
 import Pretty (pretty, render)
 import Util ((×), error)
 import Val (Val(..))
-
 
 runExample :: String -> String -> Effect Unit
 runExample file expected = runMocha $
@@ -25,12 +23,6 @@ runExample file expected = runMocha $
                let fwd_v@(Val _ u') = eval_fwd ρ e true
                (render $ pretty u) `shouldEqual` (render $ pretty u')
                (render $ pretty u') `shouldEqual` expected
-               let ρ' × e' × α = eval_bwd fwd_v t
-               case eval ρ' e' of
-                    Left msg -> error msg
-                    Right (t' × v') -> do
-                        (render $ pretty t) `shouldEqual` (render $ pretty t')
-                        (render $ pretty v') `shouldEqual` expected
 
 main :: Effect Unit
 main = do

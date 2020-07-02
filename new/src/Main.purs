@@ -4,7 +4,6 @@ import Prelude (Unit, show, ($), (&&), (==))
 import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
 -- import Debug.Trace (trace) as T
-import Bindings (Bindings(..))
 import Bwd (eval_bwd)
 import Effect (Effect)
 import Effect.Console (log)
@@ -15,7 +14,7 @@ import Module (successfulParse)
 import Parse (program)
 import Pretty (pretty, render)
 import Pretty2 (pretty2)
--- import Primitive (primitives)
+import Primitive (primitives)
 import Util (error, (×))
 
 -- trace s a = T.trace (pretty s) $ \_-> a
@@ -24,7 +23,7 @@ import Util (error, (×))
 runExampleBwd :: String -> Effect Unit
 runExampleBwd src =
     let e = successfulParse src program
-        ρ = Empty
+        ρ = primitives
     in  case eval ρ e of
             Left msg -> error msg
             Right (Tuple t v) -> do
@@ -34,7 +33,7 @@ runExampleBwd src =
 testExampleBwd :: String -> Effect Unit
 testExampleBwd src =
     let e = successfulParse src program
-        ρ = Empty
+        ρ = primitives
     in  case eval ρ e of
             Left msg -> error msg
             Right (Tuple t v) -> do
@@ -50,7 +49,7 @@ letexpr :: String
 letexpr = "(1 + 5) * ((let x = 2; y = 8 in x * y) - (let y = 3 in y * y))"
 
 composeexpr :: String
-composeexpr = "let incr = fun n -> n + 1 in incr (incr 3)"
+composeexpr = "let incr = fun n -> n + 1 in (incr (incr 3))"
 
 factexpr :: String
 factexpr = "let fact x =\
@@ -70,4 +69,7 @@ tailexpr = "let tail zs =\
 
 main :: Effect Unit
 main = do
-   runExampleBwd letexpr
+   -- runExampleBwd letexpr
+   runExampleBwd composeexpr
+   -- runExampleBwd factexpr
+   -- runExampleBwd tailexpr
