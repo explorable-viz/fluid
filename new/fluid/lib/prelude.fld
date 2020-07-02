@@ -34,7 +34,7 @@ let uncurry f (x, y) = f x y;
 let first f (a, c) = (f a, c);
 
 -- (a, b) -> b
-let snd (x, y) = y;
+let snd (_, y) = y;
 
 -- (a -> b) -> (c, a) -> (c, b)
 let second f (c, a) = (c, f a);
@@ -43,7 +43,7 @@ let second f (c, a) = (c, f a);
 let flip f x y = f y x;
 
 -- (a, b) -> a
-let fst (x, y) = x;
+let fst (x, _) = x;
 
 -- a -> a
 let id x = x;
@@ -56,10 +56,10 @@ let prod f g x = (f x, g x);
 let swap (a, b) = (b, a);
 
 -- List a -> a
-let head (x : xs) = x;
+let head (x : _) = x;
 
 -- List a -> List a
-let tail (x : xs) = xs;
+let tail (_ : xs) = xs;
 
 -- List a -> List a -> List a
 let concat Nil ys = ys;
