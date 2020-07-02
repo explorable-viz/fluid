@@ -19,7 +19,9 @@ import Val (Env, Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
-match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)
+match v (ElimVar x κ) =
+   let ρ = if x == "_" then Empty else Empty :+: x ↦ v in
+   pure $ ρ × κ × (MatchVar x)
 match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
