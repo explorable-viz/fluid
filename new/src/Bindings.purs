@@ -68,3 +68,15 @@ length Empty = 0
 head :: forall a. Bindings a -> Bind a
 head (xs :+: x ↦ v) = (x ↦ v)
 head Empty = error absurd
+
+splitAt :: forall a. Int -> Bindings a -> Bindings a × Bindings a
+splitAt n ρ
+  | n <= 0 = ρ × Empty
+  | otherwise          = splitAt' n ρ
+    where
+        splitAt' :: Int -> Bindings a -> Bindings a × Bindings a
+        splitAt' _  Empty     = Empty × Empty
+        splitAt' 1  (ρ0 :+: xv) = ρ0 × Extend Empty xv
+        splitAt' m  (ρ0 :+: xv) = ρ' × (ρ'' :+: xv)
+          where
+            ρ' × ρ'' = splitAt' (m - 1) ρ0

@@ -1,10 +1,10 @@
 module Bwd where
 
 import Prelude (map, ($), (<>))
-import Data.List (List, (:), reverse)
+import Data.List (List, (:), reverse, length)
 import Data.List (List(..)) as L
 import Data.Map (insert)
-import Bindings (Bind, Bindings(..), foldBind, (:+:), (↦), (◃))
+import Bindings (Bind, Bindings(..), foldBind, splitAt, (:+:), (↦), (◃))
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs)
@@ -52,11 +52,7 @@ closeDefs_bwd (_  :+: _ ↦ _) _ = error absurd
 closeDefs_bwd Empty ρ1         = bot ρ1 × L.Nil × false
 
 split :: Env -> RecDefs -> Env × Env
-split = go Empty
-   where
-   go acc ρ L.Nil                         = ρ × acc
-   go acc (ρ :+: x ↦ v) (RecDef f σ : δ)  = go (acc :+: (x ≜ f) ↦ v) ρ δ
-   go acc Empty _                         = error absurd
+split ρ δ = splitAt (length δ) ρ
 
 match_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
 match_bwd ρ κ α (MatchVar x')
