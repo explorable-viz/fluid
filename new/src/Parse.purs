@@ -80,11 +80,6 @@ ctr = do
    x <- token.identifier
    pureIf (isCtrName x) $ Ctr x
 
-ctrOp :: SParser Ctr
-ctrOp = do
-   x <- token.operator
-   pureIf (isCtrOp x) $ Ctr x
-
 -- Singleton eliminator with no continuation.
 simplePattern :: SParser Pattern -> SParser Pattern
 simplePattern pattern' =
@@ -167,10 +162,15 @@ defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs 
 expr_ :: SParser Expr
 expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
    where
+   -- Syntactically distinguishing infix constructors from other operators (a la Haskell) allows us to
+   -- optimise an application tree into a (potentially partial) constructor application.
    binaryOp :: String -> SParser (Expr -> Expr -> Expr)
    binaryOp op = do
       op' <- token.operator
-      pureIf (op == op') (\e1 -> expr <<< BinaryApp e1 op)
+      pureIf (op == op') $
+         if isCtrOp op'
+         then \e e' -> expr $ Constr (Ctr op') (e : e' : empty)
+         else \e e' -> expr $ BinaryApp e op e'
 
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: SParser Expr -> SParser Expr
@@ -258,8 +258,10 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
 
    infixCtr :: String -> SParser (Pattern -> Pattern -> Pattern)
    infixCtr op = do
-      Ctr op' <- ctrOp
-      pureIf (op == op') (\π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π)
+      op' <- token.operator
+      if isCtrOp op'
+      then pureIf (op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
+      else error $ op' <> " is not an infix constructor"
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
