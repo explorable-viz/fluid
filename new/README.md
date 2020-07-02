@@ -9,6 +9,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 2 July 2020 | (PureScript implementation) First-class constructors | [49](https://github.com/explorable-viz/fluid/issues/49) |
 | 18 June 2020 | (PureScript implementation) Piecewise function definitions | [356](https://github.com/explorable-viz/fluid/issues/356) |
 | 4 June 2020 | (PureScript implementation) Structured `let` syntax | [171](https://github.com/explorable-viz/fluid/issues/171) |
 | 15 May 2020 | Update [f.luid.org](http://f.luid.org) | [289](https://github.com/explorable-viz/fluid/issues/289) |
