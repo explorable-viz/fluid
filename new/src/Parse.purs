@@ -160,8 +160,13 @@ defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs 
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser Expr
-expr_ = fix $ appChain >>> buildExprParser operators
+expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
    where
+   binaryOp :: Var -> SParser (Expr -> Expr -> Expr)
+   binaryOp op = do
+      op' <- token.operator
+      pureIf (op == op') (\e1 -> expr <<< BinaryApp e1 op)
+
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: SParser Expr -> SParser Expr
    appChain expr' = simpleExpr >>= rest
@@ -224,18 +229,12 @@ expr_ = fix $ appChain >>> buildExprParser operators
          lambda :: SParser Expr
          lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
 
-   -- each element of the top-level list corresponds to a precedence level
-   operators :: OperatorTable Identity String Expr
-   operators =
-      fromFoldable $ fromFoldable <$>
-      (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
-      groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
-      where
-      -- specific binary operator
-      binaryOp :: Var -> SParser (Expr -> Expr -> Expr)
-      binaryOp op = do
-         op' <- token.operator
-         pureIf (op == op') (\e1 -> expr <<< BinaryApp e1 op)
+-- each element of the top-level list corresponds to a precedence level
+operators :: forall a . (Var -> SParser (a -> a -> a)) -> OperatorTable Identity String a
+operators binaryOp =
+   fromFoldable $ fromFoldable <$>
+   (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
+   groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
 
 -- TODO: allow infix constructors, via buildExprParser
 pattern :: SParser Pattern
@@ -254,7 +253,7 @@ pattern = fix appChain_pattern
          rest π@(PattVar _ _) = pure π
 
 pattern_new :: SParser Pattern
-pattern_new = fix $ appChain_pattern >>> buildExprParser operators
+pattern_new = fix $ appChain_pattern >>> buildExprParser (operators binaryOp)
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
@@ -268,18 +267,10 @@ pattern_new = fix $ appChain_pattern >>> buildExprParser operators
             ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
          rest π@(PattVar _ _) = pure π
 
-   -- each element of the top-level list corresponds to a precedence level
-   operators :: OperatorTable Identity String Pattern
-   operators =
-      fromFoldable $ fromFoldable <$>
-      (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
-      groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
-      where
-      -- specific binary operator
-      binaryOp :: Var -> SParser (Pattern -> Pattern -> Pattern)
-      binaryOp op = do
-         op' <- token.operator
-         pureIf (op == op') (\π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π)
+   binaryOp :: Var -> SParser (Pattern -> Pattern -> Pattern)
+   binaryOp op = do
+      op' <- token.operator
+      pureIf (op == op') (\π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π)
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
