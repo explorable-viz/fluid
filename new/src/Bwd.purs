@@ -86,9 +86,9 @@ eval_bwd (Val α (V.Str s)) (T.Str ts ρ)
    = bot ρ × (Expr α (Str s)) × α
 eval_bwd (Val α (V.Int n)) (T.Int tn ρ)
    = bot ρ × (Expr α (Int n)) × α
-eval_bwd v (T.Op op ρ)
+eval_bwd v@(Val α (V.Primitive φ)) (T.Op op ρ)
    = (bot ρ ◃ op ↦ v) × (Expr ff (Op op)) × ff
-eval_bwd (Val α (V.Closure ρ _ _)) (T.Lambda σ)
+eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × (Expr α (Lambda σ)) × α
 eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
    = let ρ1ρ2ρ3 × e × α    = eval_bwd v'' t''

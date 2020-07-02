@@ -1,6 +1,7 @@
 module DataType where
 
 import Prelude hiding (absurd)
+import Data.Char.Unicode (isUpper)
 import Data.Either (note)
 import Data.Foldable (class Foldable)
 import Data.List (fromFoldable) as L
@@ -8,7 +9,8 @@ import Data.List (List, concat, length)
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
-import Util (MayFail, type (×), (×), absurd)
+import Data.String.CodeUnits (charAt)
+import Util (MayFail, type (×), (×), absurd, error, fromJust)
 
 type TypeName = String
 
@@ -18,8 +20,20 @@ derive instance newtypeCtr :: Newtype Ctr _
 derive instance eqCtr :: Eq Ctr
 derive instance ordCtr :: Ord Ctr
 
+-- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
+-- for distinguishing pattern variables from nullary constructors when parsing patterns.
+isCtrName ∷ String → Boolean
+isCtrName str = isUpper $ fromJust absurd $ charAt 0 str
+
+isCtrOp :: String -> Boolean
+isCtrOp str = ':' == (fromJust absurd $ charAt 0 str)
+
 instance showCtr :: Show Ctr where
-   show = unwrap
+   -- assume binary infix if not constructor name
+   show c = show' $ unwrap c where
+      show' str | isCtrName str  = str
+                | isCtrOp str    = "(" <> str <> ")"
+                | otherwise      = error absurd
 
 data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
@@ -36,7 +50,7 @@ dataType name = fromFoldable >>> DataType name
 
 ctrToDataType :: Map Ctr DataType
 ctrToDataType = fromFoldable $
-   concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> \c -> c × d)
+   concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> (_ × d))
 
 dataTypeFor :: Ctr -> MayFail DataType
 dataTypeFor c = note ("Unknown constructor " <> show c) $ lookup c ctrToDataType
@@ -49,7 +63,7 @@ arity c = do
 cFalse   = Ctr "False"  :: Ctr -- Bool
 cTrue    = Ctr "True"   :: Ctr
 cNil     = Ctr "Nil"    :: Ctr -- List
-cCons    = Ctr "Cons"   :: Ctr
+cCons    = Ctr ":"      :: Ctr
 cGT      = Ctr "GT"     :: Ctr -- Ordering
 cLT      = Ctr "LT"     :: Ctr
 cEQ      = Ctr "EQ"     :: Ctr

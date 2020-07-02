@@ -1,1 +1,1 @@
-zipWith swap (Cons 10 (Cons 12 (Cons 20 Nil))) (Cons 3 (Cons 4 (Cons 8 (Cons 16 Nil))))
+zipWith swap (10 : 12 : 20 : Nil) (3 : 4 : 8 : 16 : Nil)

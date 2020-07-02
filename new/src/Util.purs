@@ -27,6 +27,9 @@ assert false = \_ -> error "Assertion failure"
 absurd :: String
 absurd = "absurd"
 
+unimplemented :: String
+unimplemented = "unimplemented"
+
 boolToMaybe :: forall a . Boolean -> a -> Maybe a
 boolToMaybe false = const Nothing
 boolToMaybe true  = Just
@@ -44,6 +47,9 @@ pureIf b = boolToMaybe b >>> pureMaybe
 
 type MayFail a = String + a
 
+report :: String -> forall a . MayFail a
+report = Left
+
 successful :: forall a . MayFail a -> a
 successful (Left msg)   = error msg
 successful (Right x)    = x
@@ -55,20 +61,21 @@ successfulWith msg = successful <<< with msg
 with :: String -> forall a . MayFail a -> MayFail a
 with msg = bimap (\msg' -> msg' <> if msg == "" then "" else ("\n" <> msg)) identity
 
-check :: String -> forall a . MayFail a -> MayFail Unit
-check msg = with msg >>> void
+check :: Boolean -> String -> MayFail Unit
+check true _      = pure unit
+check false msg   = report msg
 
 mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = boolToMaybe (x == x') x
 
 mustEq :: forall a . Eq a => a -> a -> a
-mustEq x x' = fromJust "Must be equal" $ x `mayEq` x'
+mustEq x x' = fromJust "Must be equal" $ x ≟ x'
 
 unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (map Just m) (map Just m')
 
 mayFailEq :: forall a . Show a => Eq a => a -> a -> MayFail a
-mayFailEq x x' = note (show x <> " ≠ " <> show x') $ x `mayEq` x'
+mayFailEq x x' = note (show x <> " ≠ " <> show x') $ x ≟ x'
 
 infixl 5 mayEq as ≟
 infixl 5 mayFailEq as ≞

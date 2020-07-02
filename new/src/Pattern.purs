@@ -1,7 +1,6 @@
 module PElim where
 
 import Prelude hiding (absurd, join)
-import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, insert, lookup, singleton, update)
@@ -12,7 +11,7 @@ import Data.Traversable (foldl)
 import Bindings (Var)
 import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
-import Util (MayFail, (≞), (=<<<), absurd, check, error, om)
+import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =
    PNone |              -- intermediate state during construction, but also for structured let
@@ -32,9 +31,7 @@ data Pattern =
 
 toElim :: Pattern -> MayFail Elim
 toElim (PattVar x κ)      = ElimVar x <$> toCont κ
-toElim (PattConstr c n κ) = do
-   check ("Arity mismatch for " <> show c) $ arity c `(=<<<) (≞)` pure n
-   ElimConstr <$> (singleton c <$> toCont κ)
+toElim (PattConstr c n κ) = checkArity c n *> (ElimConstr <$> (singleton c <$> toCont κ))
 
 class MapCont a where
    -- replace a None continuation by a non-None one
@@ -70,17 +67,21 @@ instance joinablePatternElim :: Joinable Pattern Elim where
                insert <$> pure c <*> toCont κ <@> κs
                where
                checkDataType :: MayFail Unit
-               checkDataType = do
-                  check "non-uniform patterns" $ (typeName <$> dataType κs) `(=<<<) (≞)` (typeName <$> dataTypeFor c)
-                  check ("arity mismatch for " <> show c) $ arity c `(=<<<) (≞)` pure n
+               checkDataType = void $ do
+                  (with "Non-uniform patterns" $
+                     (typeName <$> dataType κs) `(=<<<) (≞)` (typeName <$> dataTypeFor c))
+                  *> checkArity c n
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
-   maybeJoin _ _                               = Left "Can't join variable and constructor patterns"
+   maybeJoin _ _                               = report "Can't join variable and constructor patterns"
 
 instance joinablePContCont :: Joinable PCont Cont where
    maybeJoin None PNone                               = pure None
    maybeJoin (Arg σ) (PArg π)                         = Arg <$> maybeJoin σ π
    maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)   = Body <$> (expr <$> (Lambda <$> maybeJoin σ π))
-   maybeJoin _ _                                      = Left "Incompatible continuations"
+   maybeJoin _ _                                      = report "Incompatible continuations"
 
 joinAll :: NonEmptyList Pattern -> MayFail Elim
 joinAll (NonEmptyList (π :| πs)) = foldl (om $ maybeJoin) (toElim π) πs
+
+checkArity :: Ctr -> Int -> MayFail Int
+checkArity c n = with ("Checking arity of " <> show c) $ arity c `(=<<<) (≞)` pure n

@@ -13,7 +13,7 @@ import Lattice (Selected, (∧))
 import Util (type (×), (×), error)
 import Expr as E
 import Expr (Expr(..), Elim, expr)
-import Val (Binary(..), BinaryOp(..), Env, Unary(..), UnaryOp(..), Val(..), val)
+import Val (Env, Primitive(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 -- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
@@ -41,7 +41,6 @@ opDefs = fromFoldable [
    opDef ">="  4 AssocLeft
 ]
 
--- Enforce argument type requirements.
 class ToList a where
    toList :: a -> List a
 
@@ -57,6 +56,7 @@ instance exprFromList :: FromList Expr where
    fromList (x:xs) = expr $ (E.Constr (Ctr "Cons") (x:fromList xs:Nil))
    fromList Nil    = expr $ E.Constr (Ctr "Nil") Nil
 
+-- Enforce primitive argument types.
 class To a where
    to :: Val -> a
 
@@ -82,44 +82,30 @@ instance fromBoolean :: From Boolean where
 instance fromString :: From String where
    from = V.Str >>> val
 
-applyBinary :: BinaryOp -> Val -> Val -> Val
-applyBinary (BinaryOp _ (IntIntInt f)) v v' = from $ f (to v) (to v')
-applyBinary (BinaryOp _ (IntIntBool f)) v v' = from $ f (to v) (to v')
+instance fromIntOp :: From a => From (Int -> a) where
+   from op = val $ V.Primitive $ IntOp $ op >>> from
 
-applyBinary_fwd :: BinaryOp -> Selected -> Val -> Val -> Val
-applyBinary_fwd op α v@(Val α1 _) v'@(Val α2 _) =
-   Val (α ∧ α1 ∧ α2) u where Val _ u = applyBinary op v v'
+apply :: Primitive -> Val -> Val
+apply (IntOp op) = op <<< to
 
-applyUnary :: UnaryOp -> Val -> Val
-applyUnary (UnaryOp _ (IntStr f)) = to >>> f >>> from
-applyUnary (PartialApp φ v) = applyBinary φ v
-
-applyUnary_fwd :: UnaryOp -> Selected -> Val -> Val
-applyUnary_fwd op α v@(Val α' _) =
-   Val (α ∧ α') u where Val _ u = applyUnary op v
-
-intStr :: String -> (Int -> String) -> Val
-intStr name = IntStr >>> UnaryOp name >>> V.Unary >>> val
-
-intIntBool :: String -> (Int -> Int -> Boolean) -> Val
-intIntBool name = IntIntBool >>> BinaryOp name >>> V.Binary >>> val
-
-intIntInt :: String -> (Int -> Int -> Int) -> Val
-intIntInt name = IntIntInt >>> BinaryOp name >>> V.Binary >>> val
+apply_fwd :: Primitive -> Selected -> Val -> Val
+apply_fwd φ α v@(Val α' _) =
+   Val (α ∧ α') u where Val _ u = apply φ v
 
 primitives :: Env
 primitives = foldl (:+:) Empty [
-   "+"         ↦ intIntInt "prim-plus"    (+),
-   "-"         ↦ intIntInt "prim-minus"   (-),
-   "*"         ↦ intIntInt "prim-times"   (*),
-   "div"       ↦ intIntInt "prim-div"     div,
-   "=="        ↦ intIntBool "prim-eq"     (==),
-   "/="        ↦ intIntBool "prim-eq"     (/=),
-   "<"         ↦ intIntBool "prim-lt"     (<),
-   ">"         ↦ intIntBool "prim-gt"     (>),
-   "<="        ↦ intIntBool "prim-leq"    (<=),
-   ">="        ↦ intIntBool "prim-geq"    (>=),
-   "intToStr"  ↦ intStr "prim-intToStr"   show
+   -- need to instantiate the corresponding PureScript primitive at a concrete type
+   "+"         ↦ from   ((+)  :: Int -> Int -> Int),
+   "-"         ↦ from   ((-)  :: Int -> Int -> Int),
+   "*"         ↦ from   ((*)  :: Int -> Int -> Int),
+   "div"       ↦ from   (div  :: Int -> Int -> Int),
+   "=="        ↦ from   ((==) :: Int -> Int -> Boolean),
+   "/="        ↦ from   ((/=) :: Int -> Int -> Boolean),
+   "<"         ↦ from   ((<)  :: Int -> Int -> Boolean),
+   ">"         ↦ from   ((>)  :: Int -> Int -> Boolean),
+   "<="        ↦ from   ((<=) :: Int -> Int -> Boolean),
+   ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
+   "intToStr"  ↦ from   (show :: Int -> String)
 ]
 
 append :: Expr -> Expr -> Expr

@@ -1,12 +1,12 @@
 -- Silly test of pattern-matching for list notation
 let
    zip3 Nil Nil = Nil;
-   zip3 (Cons x1 Nil) (Cons y1 Nil) = Cons (x1, y1) (zip3 Nil Nil);
-   zip3 (Cons x1 (Cons x2 Nil)) (Cons y1 (Cons y2 Nil)) =
-      Cons (x1, y1) (zip3 (Cons x2 Nil) (Cons y2 Nil));
-   zip3 (Cons x1 (Cons x2 (Cons x3 Nil))) (Cons y1 (Cons y2 (Cons y3 Nil))) =
-      Cons (x1 , y1) (zip3 (Cons x2 (Cons x3 Nil)) (Cons y2 (Cons y3 Nil)));
-   zip3 (Cons x1 (Cons x2 (Cons x3 (Cons x4 xs)))) (Cons y1 (Cons y2 (Cons y3 (Cons y4 ys)))) =
-      Cons (x1, y1) (Cons (x2, y2) (Cons (x3, y3) (Cons (x4, y4) (zip3 xs ys))))
+   zip3 (x1 : Nil) (y1 : Nil) = (x1, y1) : zip3 Nil Nil;
+   zip3 (x1 : x2 : Nil) (y1 : y2 : Nil) =
+      (x1, y1) : zip3 (x2 : Nil) (y2 : Nil);
+   zip3 (x1 : x2 : x3 : Nil) (y1 : y2 : y3 : Nil) =
+      (x1 , y1) : zip3 (x2 : x3 : Nil) (y2 : y3 : Nil);
+   zip3 (x1 : x2 : x3 : x4 : xs) (y1 : y2 : y3 : y4 : ys) =
+      (x1, y1) : (x2, y2) : (x3, y3) : (x4, y4) : zip3 xs ys
 in
-length (zip3 (Cons 3 (Cons 4 (Cons 5 (Cons 6 Nil)))) (Cons 5 (Cons 6 (Cons 7 (Cons 8 Nil)))))
+length (zip3 (3 : 4 : 5 : 6 : Nil) (5 : 6 : 7 : 8 : Nil))

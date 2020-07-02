@@ -1,15 +1,15 @@
 module Fwd where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), singleton)
 import Data.Map (lookup)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import Expr (Cont(..), Elim(..), Expr(..), RecDef(..), RecDefs, VarDef(..), body)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
-import Primitive (applyBinary_fwd, applyUnary_fwd)
+import Primitive (apply_fwd)
 import Util (type (×), (×), absurd, error, fromJust, successful)
-import Val (Env, UnaryOp(..), Val(..))
+import Val (Env, Val(..))
 import Val (RawVal(..)) as V
 
 match_fwd :: Val -> Elim -> Env × Cont × Selected
@@ -52,17 +52,20 @@ eval_fwd ρ (Expr _ (E.App e e')) α =
    let Val α' u = eval_fwd ρ e α
        v = eval_fwd ρ e' α in
    case u of
-      V.Closure ρ1 δ σ ->
+      V.Closure ρ1 δ σ  ->
          let ρ2 = closeDefs_fwd ρ1 δ δ α'
              ρ3 × e'' × α'' = match_fwd v σ in
          eval_fwd (ρ1 <> ρ2 <> ρ3) (body e'') (α' ∧ α'')
-      V.Unary φ -> applyUnary_fwd φ α' v
-      V.Binary φ -> Val α' $ V.Unary $ PartialApp φ v
-      _ -> error absurd
+      V.Primitive φ     -> apply_fwd φ α' v
+      V.Constr c vs     -> Val (α ∧ α') $ V.Constr c $ vs <> singleton v
+      _                 -> error absurd
 eval_fwd ρ (Expr _ (E.BinaryApp e1 op e2)) α =
    case successful (find op ρ) of
-      Val α' (V.Binary φ) -> eval_fwd ρ e1 α `applyBinary_fwd φ α'` eval_fwd ρ e2 α
-      _ -> error absurd
+      Val α' (V.Primitive φ)  ->
+         case apply_fwd φ α' (eval_fwd ρ e1 α) of
+            Val α'' (V.Primitive φ_v)  -> apply_fwd φ_v α'' (eval_fwd ρ e2 α)
+            _                          -> error absurd
+      _                       -> error absurd
 eval_fwd ρ (Expr _ (E.Let (VarDef σ e) e')) α =
    let ρ' × _ × α' = match_fwd (eval_fwd ρ e α) σ in
    eval_fwd (ρ <> ρ') e' α'

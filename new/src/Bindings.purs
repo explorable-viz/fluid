@@ -4,7 +4,7 @@ import Prelude hiding (top, absurd)
 import Data.Either (Either(..), isRight)
 import Data.Maybe (Maybe(..))
 import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
-import Util (MayFail, type (×), (×), (≟), error, absurd)
+import Util (MayFail, type (×), (×), (≟), absurd, error, report)
 
 type Var = String
 
@@ -37,7 +37,7 @@ foldBind f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldBind f z ρ)
 foldBind _ z Empty           = z
 
 find :: forall a . Var -> Bindings a -> MayFail a
-find x' Empty          = Left $ "variable " <> x' <> " not found"
+find x' Empty          = report $ "variable " <> x' <> " not found"
 find x' (xs :+: x ↦ v) = if x == x' then pure v else find x' xs
 
 remove :: forall a . Var -> Bindings a -> MayFail (a × Bindings a)

@@ -7,7 +7,6 @@ import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (elem, fromFoldable)
 import Data.Bitraversable (bisequence)
-import Data.Char.Unicode (isUpper)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -16,7 +15,6 @@ import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (values)
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Data.String.CodeUnits (charAt)
 import Data.Tuple (fst, snd)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
@@ -26,11 +24,11 @@ import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import DataType (Ctr(..), cPair)
+import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
-import Util (type (×), (×), type (+), absurd, error, fromJust, pureIf, successful, successfulWith)
+import Util (type (×), (×), type (+), error, pureIf, successful, successfulWith)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
@@ -72,20 +70,15 @@ keyword str =
    then token.reserved str
    else error $ str <> " is not a reserved word"
 
--- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
--- for distinguishing pattern variables from nullary constructors when parsing patterns.
-isCtr ∷ String → Boolean
-isCtr str = isUpper $ fromJust absurd $ charAt 0 str
-
 ident ∷ SParser Var
 ident = do
    x <- token.identifier
-   pureIf (not $ isCtr x) x
+   pureIf (not $ isCtrName x) x
 
 ctr :: SParser Ctr
 ctr = do
    x <- token.identifier
-   pureIf (isCtr x) $ Ctr x
+   pureIf (isCtrName x) $ Ctr x
 
 -- Singleton eliminator with no continuation.
 simplePattern :: SParser Pattern -> SParser Pattern
@@ -167,8 +160,18 @@ defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs 
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser Expr
-expr_ = fix $ appChain >>> buildExprParser operators
+expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
    where
+   -- Syntactically distinguishing infix constructors from other operators (a la Haskell) allows us to
+   -- optimise an application tree into a (potentially partial) constructor application.
+   binaryOp :: String -> SParser (Expr -> Expr -> Expr)
+   binaryOp op = do
+      op' <- token.operator
+      pureIf (op == op') $
+         if isCtrOp op'
+         then \e e' -> expr $ Constr (Ctr op') (e : e' : empty)
+         else \e e' -> expr $ BinaryApp e op e'
+
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: SParser Expr -> SParser Expr
    appChain expr' = simpleExpr >>= rest
@@ -183,7 +186,7 @@ expr_ = fix $ appChain >>> buildExprParser operators
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser Expr
       simpleExpr =
-         try constrExpr <|>
+         try ctrExpr <|>
          try variable <|>
          try int <|> -- int may start with +/-
          string <|>
@@ -195,8 +198,8 @@ expr_ = fix $ appChain >>> buildExprParser operators
          lambda
 
          where
-         constrExpr :: SParser Expr
-         constrExpr = expr <$> (Constr <$> ctr <@> empty)
+         ctrExpr :: SParser Expr
+         ctrExpr = expr <$> (Constr <$> ctr <@> empty)
 
          variable :: SParser Expr
          variable = ident <#> Var >>> expr
@@ -231,9 +234,15 @@ expr_ = fix $ appChain >>> buildExprParser operators
          lambda :: SParser Expr
          lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
 
--- TODO: allow infix constructors, via buildExprParser
+-- each element of the top-level list corresponds to a precedence level
+operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
+operators binaryOp =
+   fromFoldable $ fromFoldable <$>
+   (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
+   groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
+
 pattern :: SParser Pattern
-pattern = fix $ appChain_pattern
+pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
@@ -247,18 +256,10 @@ pattern = fix $ appChain_pattern
             ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
          rest π@(PattVar _ _) = pure π
 
--- each element of the top-level list corresponds to a precedence level
-operators :: OperatorTable Identity String Expr
-operators =
-   fromFoldable $ fromFoldable <$>
-   (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
-   groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
-   where
-   -- specific binary operator
-   binaryOp :: Var -> SParser (Expr -> Expr -> Expr)
-   binaryOp op = do
+   infixCtr :: String -> SParser (Pattern -> Pattern -> Pattern)
+   infixCtr op = do
       op' <- token.operator
-      pureIf (op == op') (\e1 -> expr <<< BinaryApp e1 op)
+      pureIf (isCtrOp op' && op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
