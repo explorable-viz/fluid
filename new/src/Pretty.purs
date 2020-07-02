@@ -7,12 +7,12 @@ import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import Bindings (Bindings(..), Bind, (:+:), (↦))
-import DataType (Ctr(..), cPair, cCons)
+import DataType (Ctr(..), cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..))
 import Expr (RawExpr(..)) as E
 import Expl as T
 import Expl (Expl, Match(..))
-import Util (type (×), (×), absurd, error, fromJust, intersperse)
+import Util (type (×), (×), absurd, assert, error, fromJust, intersperse)
 import Val (Primitive(..), RawVal, Val(..))
 import Val (RawVal(..)) as V
 
@@ -95,9 +95,8 @@ instance envPrettyList :: PrettyList (Bindings Val) where
    prettyList Empty = text ""
 
 instance explPrettyList :: PrettyList Expl where
-   prettyList (T.Constr (Ctr "Nil") Nil) = null
-   prettyList (T.NullConstr (Ctr "Nil") ρ) = text "NilExpl"
-   prettyList (T.Constr (Ctr "Cons") (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
+   prettyList (T.NullConstr c ρ) = assert (c == cNil) $ text "NilExpl"
+   prettyList (T.Constr c (e:es:Nil)) = assert (c == cCons) $ comma :<>: pretty e :<>: prettyList es
    prettyList t = error "Ill-formed list for expls"
 
 instance exprPrettyList :: PrettyList Expr where
@@ -107,14 +106,13 @@ instance rawExprPrettyList :: PrettyList RawExpr where
    prettyList (E.Constr (Ctr "Nil") Nil) = null
    prettyList (E.Constr (Ctr "Cons") (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
    prettyList e = pretty e
-   -- prettyList e = error "Ill-formed list for exprs"
 
 instance valPrettyList :: PrettyList Val where
    prettyList (Val _ u) = prettyList u
 
 instance rawValPrettyList :: PrettyList RawVal where
-   prettyList (V.Constr (Ctr "Nil") Nil) = null
-   prettyList (V.Constr (Ctr "Cons") (v:vs:Nil)) = comma :<>: pretty v :<>: prettyList vs
+   prettyList (V.Constr c Nil) = assert (c == cNil) $ null
+   prettyList (V.Constr c (v:vs:Nil)) = assert (c == cCons) $ comma :<>: pretty v :<>: prettyList vs
    prettyList v = error "Ill-formed list for values"
 
 instance exprPretty :: Pretty Expr where
