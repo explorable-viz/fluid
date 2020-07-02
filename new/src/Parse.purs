@@ -259,9 +259,7 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    infixCtr :: String -> SParser (Pattern -> Pattern -> Pattern)
    infixCtr op = do
       op' <- token.operator
-      if isCtrOp op'
-      then pureIf (op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
-      else error $ op' <> " is not an infix constructor"
+      pureIf (isCtrOp op' && op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
