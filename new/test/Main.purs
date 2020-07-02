@@ -36,4 +36,5 @@ main = do
    runExample "pattern-match" "4"
    runExample "reverse" "[2, 1]"
    runExample "zipWith" "[[10], [12], [20]]"
+   -- scratchpad
    runExample "temp" "5"

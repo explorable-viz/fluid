@@ -3,7 +3,7 @@ module Fwd where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), singleton)
 import Data.Map (lookup)
-import Bindings (Bindings(..), (:+:), (↦), find)
+import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
 import Expr (Cont(..), Elim(..), Expr(..), RecDef(..), RecDefs, VarDef(..), body)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
@@ -13,9 +13,9 @@ import Val (Env, Val(..))
 import Val (RawVal(..)) as V
 
 match_fwd :: Val -> Elim -> Env × Cont × Selected
-match_fwd v (ElimVar x κ)                          =
-   let ρ = if x == "_" then Empty else Empty :+: x ↦ v in
-   ρ × κ × true
+match_fwd v (ElimVar x κ)
+   | x == varAnon = Empty × κ × true
+   | otherwise    = (Empty :+: x ↦ v) × κ × true
 match_fwd (Val α (V.Constr c vs)) (ElimConstr κs)  =
    let κ = fromJust absurd $ lookup c κs
        ρ × κ' × α' = matchArgs_fwd vs κ in

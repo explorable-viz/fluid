@@ -29,4 +29,5 @@ data Expl =
 
 data Match =
    MatchVar Var |
+   MatchVarAnon Val |
    MatchConstr (Ctr × List Match) (Map Ctr Cont)

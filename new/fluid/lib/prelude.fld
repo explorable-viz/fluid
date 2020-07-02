@@ -122,7 +122,7 @@ let iterate n f z =
 
 -- List Int -> Int
 let sum xs =
-   foldr (fun (x, y) -> x + y) 0 xs;
+   foldr (+) 0 xs;
 
 -- List a -> a
 let last (x : Nil) = x;
@@ -130,7 +130,7 @@ let last (x : Nil) = x;
 
 -- List a -> Int
 let length Nil = 0;
-    length (x : xs) = 1 + length xs;
+    length (_ : xs) = 1 + length xs;
 
 -- List a -> List a
 let reverse Nil = Nil;

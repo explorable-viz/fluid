@@ -6,7 +6,7 @@ import Data.Map (Map, toUnfoldable)
 import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
-import Bindings (Bindings(..), Bind, (:+:), (↦))
+import Bindings (Bindings(..), Bind, (:+:), (↦), varAnon)
 import DataType (Ctr(..), cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..))
 import Expr (RawExpr(..)) as E
@@ -85,6 +85,7 @@ instance explMatch :: Pretty Match where
    pretty (MatchConstr (ctr × ξs) ks) = text "ξ = " :<>: (atop (text "Pattern:       " :<>: pretty (ctr × ξs))
                                                                (text "Continuations: " :<>: pretty ks))
    pretty (MatchVar x) = text "ξ = " :<>: text x
+   pretty (MatchVarAnon x) = text "ξ = " :<>: text varAnon
 
 instance explValPretty :: Pretty (Expl × Val) where
    pretty (a × b) = parens $ pretty a :<>: comma :<>: pretty b
