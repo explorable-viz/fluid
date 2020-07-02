@@ -25,15 +25,15 @@ derive instance ordCtr :: Ord Ctr
 isCtrName ∷ String → Boolean
 isCtrName str = isUpper $ fromJust absurd $ charAt 0 str
 
-isCtrSymbol :: String -> Boolean
-isCtrSymbol str = ':' == (fromJust absurd $ charAt 0 str)
+isCtrOp :: String -> Boolean
+isCtrOp str = ':' == (fromJust absurd $ charAt 0 str)
 
 instance showCtr :: Show Ctr where
    -- assume binary infix if not constructor name
    show c = show' $ unwrap c where
-      show' str | isCtrName str   = str
-                | isCtrSymbol str = "(" <> str <> ")"
-                | otherwise       = error absurd
+      show' str | isCtrName str  = str
+                | isCtrOp str    = "(" <> str <> ")"
+                | otherwise      = error absurd
 
 data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig

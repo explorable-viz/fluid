@@ -24,7 +24,7 @@ import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Var)
-import DataType (Ctr(..), cPair, isCtrName)
+import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
@@ -79,6 +79,11 @@ ctr :: SParser Ctr
 ctr = do
    x <- token.identifier
    pureIf (isCtrName x) $ Ctr x
+
+ctrOp :: SParser Ctr
+ctrOp = do
+   x <- token.operator
+   pureIf (isCtrOp x) $ Ctr x
 
 -- Singleton eliminator with no continuation.
 simplePattern :: SParser Pattern -> SParser Pattern
@@ -162,7 +167,7 @@ defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs 
 expr_ :: SParser Expr
 expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
    where
-   binaryOp :: Var -> SParser (Expr -> Expr -> Expr)
+   binaryOp :: String -> SParser (Expr -> Expr -> Expr)
    binaryOp op = do
       op' <- token.operator
       pureIf (op == op') (\e1 -> expr <<< BinaryApp e1 op)
@@ -230,7 +235,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
 
 -- each element of the top-level list corresponds to a precedence level
-operators :: forall a . (Var -> SParser (a -> a -> a)) -> OperatorTable Identity String a
+operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
 operators binaryOp =
    fromFoldable $ fromFoldable <$>
    (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
@@ -251,9 +256,9 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
             ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
          rest π@(PattVar _ _) = pure π
 
-   infixCtr :: Var -> SParser (Pattern -> Pattern -> Pattern)
+   infixCtr :: String -> SParser (Pattern -> Pattern -> Pattern)
    infixCtr op = do
-      op' <- token.operator
+      Ctr op' <- ctrOp
       pureIf (op == op') (\π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π)
 
 topLevel :: forall a . SParser a -> SParser a
