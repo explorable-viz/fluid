@@ -1,16 +1,18 @@
 module Primitive where
 
 import Prelude hiding (apply, append, map)
+import Prelude (map) as P
 import Data.Foldable (foldl)
 import Data.List (List(..), (:))
+import Data.List as L
 import Data.Map (Map, fromFoldable)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
-import DataType (cTrue, cFalse)
+import DataType (cTrue, cFalse, Ctr(..))
 import Lattice (Selected, (∧))
 import Util (type (×), (×), error)
 import Expr as E
-import Expr (Expr(..), Elim)
+import Expr (Expr(..), Elim, expr)
 import Val (Env, Primitive(..), Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -38,6 +40,21 @@ opDefs = fromFoldable [
    opDef "<="  4 AssocLeft,
    opDef ">="  4 AssocLeft
 ]
+
+class ToList a where
+   toList :: a -> List a
+
+class FromList a where
+   fromList :: List a -> a
+
+instance exprToList :: ToList Expr where
+   toList (Expr a (E.Constr (Ctr "Cons") (e:es:Nil))) = (e:toList es)
+   toList (Expr a (E.Constr (Ctr "Nil") Nil)) = Nil
+   toList _ = error "expected list expression"
+
+instance exprFromList :: FromList Expr where
+   fromList (x:xs) = expr $ (E.Constr (Ctr "Cons") (x:fromList xs:Nil))
+   fromList Nil    = expr $ E.Constr (Ctr "Nil") Nil
 
 -- Enforce primitive argument types.
 class To a where
@@ -92,26 +109,15 @@ primitives = foldl (:+:) Empty [
 ]
 
 append :: Expr -> Expr -> Expr
-append (Expr α (E.Constr cNil Nil)) (Expr α' ys) = (Expr α' ys)
-append (Expr α (E.Constr cCons (e:es:Nil))) (Expr α' ys) = let zs = es `append` (Expr α' ys)
-                                                           in  Expr α (E.Constr cCons (e:zs:Nil))
-append _ _ = error "List expression expected"
+append e1 e2 = fromList $ (toList e1) <> (toList e2)
 
 concat :: Expr -> Expr
-concat (Expr α (E.Constr cCons (e:es:Nil))) = e `append` (concat es)
-concat (Expr α (E.Constr cNil Nil)) = (Expr α (E.Constr cNil Nil))
-concat _ = error "List expression expected"
+concat e1 = fromList $ L.concat $ P.map toList (toList e1)
 
 map :: Elim -> Expr -> Expr
-map σ (Expr α (E.Constr cCons (e:es:Nil)))
-   = (Expr α (E.MatchAs e σ)) `append` (map σ es)
-map _ (Expr α (E.Constr cNil Nil))
-   = (Expr α (E.Constr cNil Nil))
-map _ _ = error "List expression expected"
+map σ e = fromList $ P.map (applyσ σ) (toList e)
+   where applyσ :: Elim -> Expr -> Expr
+         applyσ σ' e' = expr $ E.MatchAs e' σ'
 
 concatMap :: Elim -> Expr -> Expr
-concatMap σ (Expr α (E.Constr cCons (e:es:Nil)))
-   = (Expr α (E.MatchAs e σ)) `append` (concatMap σ es)
-concatMap _ (Expr α (E.Constr cNil Nil))
-   = (Expr α (E.Constr cNil Nil))
-concatMap _ _ = error "List expression expected"
+concatMap = map

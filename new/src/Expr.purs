@@ -57,7 +57,8 @@ instance elimSelectable :: Selectable Elim where
    mapα f (ElimVar x κ)    = ElimVar x $ mapα f κ
    mapα f (ElimConstr κs)  = ElimConstr $ map (mapα f) κs
 
-   maybeZipWithα f (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> x ≟ x' <*> maybeZipWithα f κ κ'
+   maybeZipWithα f (ElimVar x κ) (ElimVar x' κ')
+      = ElimVar <$> x ≟ x' <*> maybeZipWithα f κ κ'
    maybeZipWithα f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithα f κs κs'
    maybeZipWithα _ _ _                                = Nothing
 
@@ -92,6 +93,19 @@ instance rawExprSelectable :: Selectable RawExpr where
    maybeZipWithα _ (Op op) (Op op')                = Op <$> op ≟ op'
    maybeZipWithα _ (Int n) (Int n')                = Int <$> n ≟ n'
    maybeZipWithα _ (Str s) (Var s')                = Str <$> s ≟ s'
-   maybeZipWithα f (Constr c es) (Constr c' es') =
-      Constr <$> c ≟ c' <*> sequence (zipWith (maybeZipWithα f) es' es')
+   maybeZipWithα f (Constr c es) (Constr c' es')
+      = Constr <$> c ≟ c' <*> sequence (zipWith (maybeZipWithα f) es' es')
+   maybeZipWithα f (App e1 e2) (App e1' e2')
+      = App <$>  maybeZipWithα f e1 e1' <*> maybeZipWithα f e2 e2'
+   maybeZipWithα f (BinaryApp e1 op e2) (BinaryApp e1' op' e2')
+      = BinaryApp <$> maybeZipWithα f e1 e1' <*> op ≟ op' <*> maybeZipWithα f e2 e2'
+   maybeZipWithα f (Lambda σ) (Lambda σ')
+      = Lambda <$> maybeZipWithα f σ σ'
+   maybeZipWithα f (MatchAs e σ) (MatchAs e' σ')
+      = MatchAs <$> maybeZipWithα f e e' <*> maybeZipWithα f σ σ'
+   maybeZipWithα f (Let def e) (Let def' e')
+      = Let <$> maybeZipWithα f def def' <*> maybeZipWithα f e e'
+   maybeZipWithα f (LetRec δ e) (LetRec δ' e')
+      = LetRec <$> maybeZipWithα f δ δ' <*>  maybeZipWithα f e e'
    maybeZipWithα _ _ _                             = Nothing
+

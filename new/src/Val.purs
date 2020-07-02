@@ -32,7 +32,7 @@ instance selectablePrimitive :: Selectable Primitive where
    maybeZipWithα f (IntOp op) (IntOp op') = pure $ IntOp op'
 
 instance selectableVal :: Selectable Val where
-   mapα f (Val α u)                       = Val (f α) u
+   mapα f (Val α u)                       = Val (f α) (mapα f u)
    maybeZipWithα f (Val α r) (Val α' r')  = Val <$> pure (α `f` α') <*> maybeZipWithα f r r'
 
 instance selectableRawVal :: Selectable RawVal where

@@ -17,8 +17,8 @@ runExample file expected = runMocha $
    before (openWithImports file) $
       it file $ \(ρ × e) -> do
          case successful $ eval ρ e of
-            _ × (Val _ u) -> do
-               let Val _ u' = eval_fwd ρ e true
+            t × (Val _ u) -> do
+               let fwd_v@(Val _ u') = eval_fwd ρ e true
                (render $ pretty u) `shouldEqual` (render $ pretty u')
                (render $ pretty u') `shouldEqual` expected
 
@@ -36,5 +36,4 @@ main = do
    runExample "pattern-match" "4"
    runExample "reverse" "[2, 1]"
    runExample "zipWith" "[(3, 10), (4, 12), (8, 20)]"
-
    runExample "temp" "5"

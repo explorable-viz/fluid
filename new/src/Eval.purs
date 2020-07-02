@@ -48,17 +48,18 @@ checkArity c n = do
 
 eval :: Env -> Expr -> MayFail (Expl × Val)
 eval ρ (Expr _ (E.Var x)) =
-   (T.Var x × _) <$> find x ρ
+   (T.Var x ρ × _) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =
-   (T.Op op × _) <$> find op ρ
+   (T.Op op ρ × _) <$> find op ρ
 eval ρ (Expr _ (E.Int n)) =
-   pure $ T.Int n × val (V.Int n)
+   pure $ T.Int n ρ × val (V.Int n)
 eval ρ (Expr _ (E.Str str)) =
-   pure $ T.Str str × val (V.Str str)
+   pure $ T.Str str ρ × val (V.Str str)
 eval ρ (Expr _ (E.Constr c es)) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
-   pure $ T.Constr c ts × val (V.Constr c vs)
+   pure $ case es of Nil -> (T.NullConstr c ρ) × val (V.Constr c vs)
+                     _   -> (T.Constr c ts) × val (V.Constr c vs)
 eval ρ (Expr _ (E.LetRec δ e)) = do
    let ρ' = closeDefs ρ δ δ
    t × v <- eval (ρ <> ρ') e
@@ -66,18 +67,18 @@ eval ρ (Expr _ (E.LetRec δ e)) = do
 eval ρ (Expr _ (E.Lambda σ)) =
    pure $ T.Lambda σ × val (V.Closure ρ Nil σ)
 eval ρ (Expr _ (E.App e e')) = do
-   t  × (Val _ u) <- eval ρ e
-   t' × v'        <- eval ρ e'
+   t  × v@(Val _ u) <- eval ρ e
+   t' × v'          <- eval ρ e'
    case u of
       V.Closure ρ1 δ σ  -> do
          let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × ξ <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
-         pure $ T.App t t' ξ t'' × v''
-      V.Primitive φ     -> pure $ T.AppOp t t' × apply φ v'
+         pure $ T.App (t × v) t' ξ t'' × v''
+      V.Primitive φ     -> pure $ T.AppOp (t × v) (t' × v') × apply φ v'
       V.Constr c vs     -> do
          check (successful (arity c) > length vs) $ "Too many arguments to " <> show c
-         pure $ T.AppOp t t' × val (V.Constr c $ vs <> singleton v')
+         pure $ T.AppOp (t × v) (t' × v') × val (V.Constr c $ vs <> singleton v')
       _                 -> report "Expected closure, operator or unsaturated constructor"
 eval ρ (Expr _ (E.BinaryApp e op e')) = do
    t  × v  <- eval ρ e
@@ -87,7 +88,7 @@ eval ρ (Expr _ (E.BinaryApp e op e')) = do
       V.Primitive φ ->
          let Val _ u' = apply φ v in
          case u' of
-            V.Primitive φ_v   -> pure $ T.BinaryApp t op t' × apply φ_v v'
+            V.Primitive φ_v   -> pure $ T.BinaryApp (t × v) op (t' × v') × apply φ_v v'
             _                 -> report "Not a binary operator"
       _ -> report "Not an operator"
 eval ρ (Expr _ (E.Let (E.VarDef σ e) e')) = do

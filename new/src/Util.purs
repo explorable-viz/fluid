@@ -30,11 +30,11 @@ absurd = "absurd"
 unimplemented :: String
 unimplemented = "unimplemented"
 
-fromBool :: Boolean -> forall a . a -> Maybe a
-fromBool false = const Nothing
-fromBool true  = Just
+boolToMaybe :: forall a . Boolean -> a -> Maybe a
+boolToMaybe false = const Nothing
+boolToMaybe true  = Just
 
-fromJust :: String -> forall a . Maybe a -> a
+fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a
 fromJust msg Nothing  = error msg
 
@@ -43,7 +43,7 @@ pureMaybe Nothing    = empty
 pureMaybe (Just x)   = pure x
 
 pureIf :: Boolean -> forall m a . MonadPlus m => a -> m a
-pureIf b = fromBool b >>> pureMaybe
+pureIf b = boolToMaybe b >>> pureMaybe
 
 type MayFail a = String + a
 
@@ -66,7 +66,7 @@ check true _      = pure unit
 check false msg   = report msg
 
 mayEq :: forall a . Eq a => a -> a -> Maybe a
-mayEq x x' = fromBool (x == x') x
+mayEq x x' = boolToMaybe (x == x') x
 
 mustEq :: forall a . Eq a => a -> a -> a
 mustEq x x' = fromJust "Must be equal" $ x ≟ x'
