@@ -10,7 +10,7 @@ import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWi
 import Util (type (+), (≟), error)
 
 data VarDef = VarDef Elim Expr -- elim has codomain unit
-data VarDef2 a = VarDef2 (Elim2 a) (Expr2 a) -- elim has codomain unit
+data VarDef2 a = VarDef2 (Elim2 a) (Expr2' a) -- elim has codomain unit
 type VarDefs = List VarDef
 data RecDef = RecDef Var Elim
 data RecDef2 a = RecDef2 Var (Elim2 a)
@@ -35,29 +35,33 @@ data RawExpr2 a =
    Op2 Var |
    Int2 Int |
    Str2 String |
-   Constr2 Ctr (List (Expr2 a)) |
+   Constr2 Ctr (List (Expr2' a)) |
    Lambda2 (Elim2 a) |
-   App2 (Expr2 a) (Expr2 a) |
-   BinaryApp2 (Expr2 a) Var (Expr2 a) |
-   MatchAs2 (Expr2 a) (Elim2 a) |
-   Let2 (VarDef2 a) (Expr2 a) |
-   LetRec2 (RecDefs2 a) (Expr2 a)
+   App2 (Expr2' a) (Expr2' a) |
+   BinaryApp2 (Expr2' a) Var (Expr2' a) |
+   MatchAs2 (Expr2' a) (Elim2 a) |
+   Let2 (VarDef2 a) (Expr2' a) |
+   LetRec2 (RecDefs2 a) (Expr2' a)
 
 data Expr = Expr Selected RawExpr
 
-data Expr2 a = Expr2 a (RawExpr2 a)
+data Expr2' a = Expr2' a (RawExpr2 a)
+type Expr2 = Expr2' Selected
 
 derive instance functorVarDef :: Functor VarDef2
 derive instance functorRecDef :: Functor RecDef2
 derive instance functorRawExpr :: Functor RawExpr2
-derive instance functorExpr :: Functor Expr2
+derive instance functorExpr :: Functor Expr2'
 
 expr :: RawExpr -> Expr
 expr = Expr false
 
+expr2 :: RawExpr2 Selected -> Expr2
+expr2 = Expr2' false
+
 -- Continuation of an eliminator. None form only used in structured let.
 data Cont = None | Body Expr | Arg Elim
-data Cont2 a = None2 | Body2 (Expr2 a) | Arg2 (Elim2 a)
+data Cont2 a = None2 | Body2 (Expr2' a) | Arg2 (Elim2 a)
 
 body :: Cont -> Expr
 body (Body e) = e
@@ -156,8 +160,8 @@ instance selectable2Def :: Selectable2 VarDef2 where
 instance selectable2RecDef :: Selectable2 RecDef2 where
    maybeZipWith f (RecDef2 x σ) (RecDef2 x' σ')  = RecDef2 <$> x ≟ x' <*> maybeZipWith f σ σ'
 
-instance selectable2Expr :: Selectable2 Expr2 where
-   maybeZipWith f (Expr2 α r) (Expr2 α' r')   = Expr2 <$> pure (f α α') <*> maybeZipWith f r r'
+instance selectable2Expr :: Selectable2 Expr2' where
+   maybeZipWith f (Expr2' α r) (Expr2' α' r')   = Expr2' <$> pure (f α α') <*> maybeZipWith f r r'
 
 instance selectable2RawExpr :: Selectable2 RawExpr2 where
    maybeZipWith _ (Var2 x) (Var2 x')                = Var2 <$> x ≟ x'
