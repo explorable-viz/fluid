@@ -6,9 +6,9 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings, Var)
 import DataType (Ctr)
-import Expr (Elim, RecDefs, RecDefs2)
+import Expr (Elim, Elim2, RecDefs, RecDefs2)
 import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithα)
-import Util ((≟))
+import Util ((≟), error)
 
 data Primitive =
    IntOp (Int -> Val) -- one constructor for each primitive type we care about
@@ -24,13 +24,14 @@ data RawVal2 a =
    Int2 Int |
    Str2 String |
    Constr2 Ctr (List (Val2 a)) |
-   Closure2 (Env2 a) (RecDefs2 a) Elim |
+   Closure2 (Env2 a) (RecDefs2 a) (Elim2 a) |
    Primitive2 Primitive
 
 data Val = Val Selected RawVal
 
 data Val2 a = Val2 a (RawVal2 a)
 
+derive instance functorRawVal :: Functor RawVal2
 derive instance functorVal :: Functor Val2
 
 type Val' = Val2 Selected
@@ -71,10 +72,10 @@ instance selectable2RawVal :: Selectable2 RawVal2 where
    maybeZipWith f (Int2 x) (Int2 x')                   = Int2 <$> x ≟ x'
    maybeZipWith f (Str2 s) (Str2 s')                   = Str2 <$> s ≟ s'
    maybeZipWith f (Constr2 c es) (Constr2 c' es') =
-      Constr2 <$> c ≟ c' <*> maybeZipWith (lift2 f) es es'
+      Constr2 <$> c ≟ c' <*> maybeZipWith (error "todo") es es'
    maybeZipWith f (Closure2 ρ δ σ) (Closure2 ρ' δ' σ') =
-      Closure2 <$> maybeZipWith f ρ ρ' <*> maybeZipWith f δ δ' <*> maybeZipWith f σ σ'
-   maybeZipWith f (Primitive2 φ) (Primitive2 φ')       = Primitive2 <$> maybeZipWith f φ φ'
+      Closure2 <$> maybeZipWith f ρ ρ' <*> maybeZipWith (error "todo") δ δ' <*> maybeZipWith f σ σ'
+   maybeZipWith f (Primitive2 φ) (Primitive2 φ')       = pure $ Primitive2 φ -- should require φ == φ'
    maybeZipWith _ _ _                                = Nothing
 
 data Bind2 a = Bind2 Var (Maybe (Val2 a))
@@ -83,11 +84,14 @@ data Env2 a = Empty2 | Extend2 (Env2 a) (Bind2 a)
 infix 6 Bind2 as ↦
 infixl 5 Extend2 as :+:
 
+derive instance functorBind :: Functor Bind2
+derive instance functorEnv :: Functor Env2
+
 instance semigroupEnv :: Semigroup (Env2 a) where
    append m Empty2          = m
    append m (Extend2 m' kv) = Extend2 (append m m') kv
 
-instance monoidEnv :: Monoid Env2 where
+instance monoidEnv :: Monoid (Env2 a) where
    mempty = Empty2
 
 instance selectableEnv :: Selectable2 Env2 where

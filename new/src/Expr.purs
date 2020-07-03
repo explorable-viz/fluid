@@ -37,7 +37,7 @@ data RawExpr2 a =
    Int2 Int |
    Str2 String |
    Constr2 Ctr (List (Expr2 a)) |
-   Lambda2 Elim |
+   Lambda2 (Elim2 a) |
    App2 (Expr2 a) (Expr2 a) |
    BinaryApp2 (Expr2 a) Var (Expr2 a) |
    MatchAs2 (Expr2 a) (Elim2 a) |
@@ -100,7 +100,7 @@ instance elimSelectable :: Selectable Elim where
 
 instance selectable2Elim :: Selectable2 Elim2 where
    maybeZipWith f (ElimVar2 x κ) (ElimVar2 x' κ')
-      = ElimVar2 <$> x ≟ x' <*> maybeZipWith (error "todo") κ κ'
+      = ElimVar2 <$> x ≟ x' <*> maybeZipWith f κ κ'
    maybeZipWith f (ElimConstr2 κs) (ElimConstr2 κs')   = ElimConstr2 <$> maybeZipWith (error "todo") κs κs'
    maybeZipWith _ _ _                                = Nothing
 
@@ -152,7 +152,7 @@ instance rawExprSelectable :: Selectable RawExpr where
    maybeZipWithα _ _ _                             = Nothing
 
 instance selectable2Def :: Selectable2 VarDef2 where
-   maybeZipWith f (VarDef2 σ e) (VarDef2 σ' e')  = VarDef2 <$> maybeZipWith (error "todo") σ σ' <*> maybeZipWith f e e'
+   maybeZipWith f (VarDef2 σ e) (VarDef2 σ' e')  = VarDef2 <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'
 
 instance selectable2RecDef :: Selectable2 RecDef2 where
    maybeZipWith f (RecDef2 x σ) (RecDef2 x' σ')  = RecDef2 <$> x ≟ x' <*> maybeZipWith f σ σ'
@@ -170,11 +170,11 @@ instance selectable2RawExpr :: Selectable2 RawExpr2 where
    maybeZipWith f (App2 e1 e2) (App2 e1' e2')
       = App2 <$> maybeZipWith f e1 e1' <*> maybeZipWith f e2 e2'
    maybeZipWith f (BinaryApp2 e1 op e2) (BinaryApp2 e1' op' e2')
-      = BinaryApp2 <$> maybeZipWith (error "todo") e1 e1' <*> op ≟ op' <*> maybeZipWith f e2 e2'
+      = BinaryApp2 <$> maybeZipWith f e1 e1' <*> op ≟ op' <*> maybeZipWith f e2 e2'
    maybeZipWith f (Lambda2 σ) (Lambda2 σ')
-      = Lambda2 <$> (error "todo") -- maybeZipWith f σ σ'
+      = Lambda2 <$> maybeZipWith f σ σ'
    maybeZipWith f (MatchAs2 e σ) (MatchAs2 e' σ')
-      = MatchAs2 <$> maybeZipWith (error "todo") e e' <*> maybeZipWith f σ σ'
+      = MatchAs2 <$> maybeZipWith f e e' <*> maybeZipWith f σ σ'
    maybeZipWith f (Let2 def e) (Let2 def' e')
       = Let2 <$> maybeZipWith f def def' <*> maybeZipWith f e e'
    maybeZipWith f (LetRec2 δ e) (LetRec2 δ' e')
