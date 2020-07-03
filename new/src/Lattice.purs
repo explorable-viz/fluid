@@ -2,9 +2,9 @@ module Lattice where
 
 import Prelude hiding (absurd, join)
 import Control.Apply (lift2)
-import Data.List (List, (:), zipWith)
-import Data.List (List(..)) as L
-import Data.Map (Map, fromFoldable, toUnfoldable)
+import Data.Function (on)
+import Data.List (List, length, zipWith)
+import Data.Map (Map, fromFoldable, size, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Util (type (×), (×), (≟), fromJust)
@@ -59,14 +59,13 @@ instance selectableTuple :: (Eq k, Selectable v) => Selectable (k × v) where
 
 instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
    mapα f = map (mapα f)
-   maybeZipWithα f κs κs' =
-      -- should require the maps to have the same cardinality
-      fromFoldable <$> sequence (zipWith (maybeZipWithα f) (toUnfoldable κs) (toUnfoldable κs'))
+   maybeZipWithα f κs κs'
+      | (eq `on` size) κs κs' =
+         fromFoldable <$> sequence (zipWith (maybeZipWithα f) (toUnfoldable κs) (toUnfoldable κs'))
+      | otherwise = Nothing
 
-instance listSelectable :: Selectable a => Selectable (List a) where
-   mapα f (x:xs) = (mapα f x) : (mapα f xs)
-   mapα f L.Nil  = L.Nil
-   maybeZipWithα f (x:xs) (y:ys) =
-      L.Cons <$> maybeZipWithα f x y <*> (maybeZipWithα f xs ys)
-   maybeZipWithα f L.Nil L.Nil = Just L.Nil
-   maybeZipWithα f _   _       = Nothing
+instance selectableList :: Selectable a => Selectable (List a) where
+   mapα f = map (mapα f)
+   maybeZipWithα f xs ys
+      | (eq `on` length) xs ys   = sequence (zipWith (maybeZipWithα f) xs ys)
+      | otherwise                = Nothing
