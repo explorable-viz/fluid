@@ -7,7 +7,7 @@ import Data.Maybe (Maybe(..))
 import Bindings (Bindings, Var)
 import DataType (Ctr)
 import Expr (Elim, Elim2, RecDefs, RecDefs2)
-import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithα)
+import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithList, maybeZipWithα)
 import Util ((≟), error)
 
 data Primitive =
@@ -74,7 +74,7 @@ instance selectable2RawVal :: Selectable2 RawVal2 where
    maybeZipWith f (Constr2 c vs) (Constr2 c' vs') =
       Constr2 <$> c ≟ c' <*> maybeZipWithList f vs vs'
    maybeZipWith f (Closure2 ρ δ σ) (Closure2 ρ' δ' σ') =
-      Closure2 <$> maybeZipWith f ρ ρ' <*> maybeZipWith (error "todo") δ δ' <*> maybeZipWith f σ σ'
+      Closure2 <$> maybeZipWith f ρ ρ' <*> maybeZipWithList f δ δ' <*> maybeZipWith f σ σ'
    maybeZipWith f (Primitive2 φ) (Primitive2 φ')       = pure $ Primitive2 φ -- should require φ == φ'
    maybeZipWith _ _ _                                = Nothing
 

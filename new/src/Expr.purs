@@ -1,13 +1,12 @@
 module Expr where
 
 import Prelude hiding (top)
-import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Bindings (Var)
 import DataType (Ctr)
-import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithα)
+import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithList, maybeZipWithα)
 import Util (type (+), (≟), error)
 
 data VarDef = VarDef Elim Expr -- elim has codomain unit
@@ -101,7 +100,7 @@ instance elimSelectable :: Selectable Elim where
 instance selectable2Elim :: Selectable2 Elim2 where
    maybeZipWith f (ElimVar2 x κ) (ElimVar2 x' κ')
       = ElimVar2 <$> x ≟ x' <*> maybeZipWith f κ κ'
-   maybeZipWith f (ElimConstr2 κs) (ElimConstr2 κs')   = ElimConstr2 <$> maybeZipWith (error "todo") κs κs'
+   maybeZipWith f (ElimConstr2 κs) (ElimConstr2 κs')   = ElimConstr2 <$> maybeZipWithMap f κs κs'
    maybeZipWith _ _ _                                = Nothing
 
 data Module = Module (List (VarDef + RecDefs))
@@ -166,7 +165,7 @@ instance selectable2RawExpr :: Selectable2 RawExpr2 where
    maybeZipWith _ (Int2 n) (Int2 n')                = Int2 <$> n ≟ n'
    maybeZipWith _ (Str2 s) (Var2 s')                = Str2 <$> s ≟ s'
    maybeZipWith f (Constr2 c es) (Constr2 c' es')
-      = Constr2 <$> c ≟ c' <*> maybeZipWith (error "todo") es es'
+      = Constr2 <$> c ≟ c' <*> maybeZipWithList f es es'
    maybeZipWith f (App2 e1 e2) (App2 e1' e2')
       = App2 <$> maybeZipWith f e1 e1' <*> maybeZipWith f e2 e2'
    maybeZipWith f (BinaryApp2 e1 op e2) (BinaryApp2 e1' op' e2')
@@ -178,5 +177,5 @@ instance selectable2RawExpr :: Selectable2 RawExpr2 where
    maybeZipWith f (Let2 def e) (Let2 def' e')
       = Let2 <$> maybeZipWith f def def' <*> maybeZipWith f e e'
    maybeZipWith f (LetRec2 δ e) (LetRec2 δ' e')
-      = LetRec2 <$> maybeZipWith (error "todo") δ δ' <*> maybeZipWith f e e'
+      = LetRec2 <$> maybeZipWithList f δ δ' <*> maybeZipWith f e e'
    maybeZipWith _ _ _                             = Nothing

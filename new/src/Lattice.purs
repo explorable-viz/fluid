@@ -58,12 +58,6 @@ instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
          fromFoldable <$> sequence (zipWith (maybeZipWithα f) (toUnfoldable κs) (toUnfoldable κs'))
       | otherwise = Nothing
 
-instance selectable2Map :: (Ord k) => Selectable2 (Map k) where
-   maybeZipWith f κs κs'
-      | size κs == size κs' =
-         fromFoldable <$> sequence (zipWith (maybeZipWith f) (toUnfoldable κs) (toUnfoldable κs'))
-      | otherwise = Nothing
-
 instance selectableList :: Selectable a => Selectable (List a) where
    mapα f = map (mapα f)
 
@@ -71,12 +65,20 @@ instance selectableList :: Selectable a => Selectable (List a) where
       | (eq `on` length) xs ys   = sequence (zipWith (maybeZipWithα f) xs ys)
       | otherwise                = Nothing
 
-instance selectable2List :: Selectable2 List where
-   maybeZipWith f xs ys
-      | length xs == length ys   = pure $ zipWith f xs ys
-      | otherwise                = Nothing
+-- Not sure how to do these with instances (need curried type constructors)
+maybeZipWithTuple :: forall a b c k t . Eq k => Selectable2 t =>
+   (a -> b -> c) -> Tuple k (t a) -> Tuple k (t b) -> Maybe (Tuple k (t c))
+maybeZipWithTuple f (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeZipWith f v v'
 
-maybeZipWithList :: forall a b c t . (a -> b -> c) -> List (t a) -> List (t b) -> Maybe (List (t c))
-maybeZipWithList _ Nil Nil             = pure Nil
-maybeZipWithList f (x : xs) (y : ys)   = f x y : error "todo" -- maybeZipWith (?_) vs vs'
-maybeZipWithList _ _ _                 = Nothing
+maybeZipWithMap :: forall a b c k t . Ord k => Selectable2 t =>
+   (a -> b -> c) -> Map k (t a) -> Map k (t b) -> Maybe (Map k (t c))
+maybeZipWithMap f κs κs'
+   | size κs == size κs' =
+      fromFoldable <$> (sequence $ zipWith (maybeZipWithTuple f) (toUnfoldable κs) (toUnfoldable κs'))
+   | otherwise = Nothing
+
+maybeZipWithList :: forall a b c t . Selectable2 t =>
+   (a -> b -> c) -> List (t a) -> List (t b) -> Maybe (List (t c))
+maybeZipWithList f xs ys
+   | length xs == length ys   = sequence $ zipWith (maybeZipWith f) xs ys
+   | otherwise                = Nothing
