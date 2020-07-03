@@ -43,5 +43,5 @@ main = do
    runExample "normalise" "(33, 66)" false
    runExample "pattern-match" "4" false
    runExample "reverse" "[2, 1]" false
-   runExample "zipWith" "[(3, 10), (4, 12), (8, 20)]" false
+   runExample "zipWith" "[[10], [12], [20]]" false
    runExample "temp" "5" false
