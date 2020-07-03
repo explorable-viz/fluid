@@ -1,6 +1,6 @@
 module Lattice where
 
-import Prelude hiding (absurd, join)
+import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
 import Data.List (List, length, zipWith)
 import Data.Map (Map, fromFoldable, size, toUnfoldable)
@@ -24,11 +24,17 @@ type Selected = Boolean
 class Functor t <= Selectable t where
    maybeZipWith  :: forall a b c . (a -> b -> c) -> t a -> t b -> Maybe (t c)
 
-instance selectable2Lattice :: Selectable t => Lattice (t Boolean) where
-   join x y = fromJust "Join undefined" $ maybeZipWith (||) x y
-   meet x y = fromJust "Meet undefined" $ maybeZipWith (&&) x y
-   top   = map $ const true
-   bot   = map $ const false
+instance latticeBoolean :: Lattice Boolean where
+   join  = (||)
+   meet  = (&&)
+   top   = const true
+   bot   = const false
+
+instance latticeSelectable :: Selectable t => Lattice (t Boolean) where
+   join x y = fromJust "Join undefined" $ maybeZipWith join x y
+   meet x y = fromJust "Meet undefined" $ maybeZipWith meet x y
+   top   = map top
+   bot   = map bot
 
 -- Not sure how to do these with instances (need curried type constructors)
 maybeZipWithTuple :: forall a b c k t . Eq k => Selectable t =>
