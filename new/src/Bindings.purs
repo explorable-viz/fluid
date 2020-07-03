@@ -25,7 +25,7 @@ instance bindingsMonoid :: Monoid (Bindings a) where
 
 instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
    mapα _ Empty               = Empty
-   mapα f (Extend m (x ↦ v))  = Extend (mapα f m) (x ↦ mapα f v)
+   mapα f (Extend m (x ↦ v))  = Extend (mapα f m) $ x ↦ mapα f v
 
    maybeZipWithα _ Empty Empty                              = pure Empty
    maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))
