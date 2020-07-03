@@ -31,25 +31,25 @@ unmatchArgs ρ (ξ : ξs) =
        ρ'' × ρ1   = unmatchArgs ρ' ξs in
    ρ'' × (ρ1 <> ρ2)
 
-joinδ :: RecDefs × (Env × RecDefs × Selected) -> Env × RecDefs × Selected
-joinδ (δ' × ρ × δ × α) = ρ × (δ ∨ δ') × α
-
 closeDefs_bwd :: Env -> Env -> Env × RecDefs × Selected
 closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _
    = joinδ $ foldBind joinClsre ((RecDef f0 σ0 : L.Nil) × ρ0 × δ0 × α0) ρ'
    where
+      joinδ :: RecDefs × (Env × RecDefs × Selected) -> Env × RecDefs × Selected
+      joinδ (δ' × ρ × δ × α) = ρ × (δ ∨ δ') × α
+
       joinClsre   :: Bind Val
                   -> RecDefs × (Env × RecDefs × Selected)
                   -> RecDefs × (Env × RecDefs × Selected)
       joinClsre (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ × δ × α)
          = (RecDef f σ_f : δ_acc) × (ρ ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
       joinClsre (_ ↦ _) _      = error absurd
+
 closeDefs_bwd (_  :+: _ ↦ _) _ = error absurd
 closeDefs_bwd Empty ρ1         = bot ρ1 × L.Nil × false
 
 split :: Env -> RecDefs -> Env × Env
 split ρ δ = splitAt (length δ) ρ
-
 
 match_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
