@@ -7,7 +7,8 @@ import Data.List (List, length, zipWith)
 import Data.Map (Map, fromFoldable, size, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
-import Util (type (×), (×), (≟), fromJust)
+import Data.Tuple (Tuple)
+import Util (type (×), (×), (≟), error, fromJust)
 
 class Lattice a where
    join   :: a -> a -> a
@@ -24,6 +25,9 @@ type Selected = Boolean
 class Selectable a where
    mapα           :: (Selected -> Selected) -> a -> a
    maybeZipWithα  :: (Selected -> Selected -> Selected) -> a -> a -> Maybe a
+
+class Selectable2 t where
+   maybeZipWith  :: forall a b c . (a -> b -> c) -> t a -> t b -> Maybe (t c)
 
 instance selectableLattice :: Selectable a => Lattice a where
    join x y = fromJust "Join undefined" $ maybeZipWithα (||) x y
@@ -43,6 +47,9 @@ instance selectableTuple :: (Eq k, Selectable v) => Selectable (k × v) where
    mapα f (k × v)                    = k × mapα f v
    maybeZipWithα f (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeZipWithα f v v'
 
+instance selectable2Tuple :: (Eq k) => Selectable2 (Tuple k) where
+   maybeZipWith f (k × v) (k' × v') = (k ≟ k') `lift2 (×)` (error "todo") -- maybeZipWith ?_ v v'
+
 instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
    mapα f = map (mapα f)
 
@@ -51,9 +58,20 @@ instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
          fromFoldable <$> sequence (zipWith (maybeZipWithα f) (toUnfoldable κs) (toUnfoldable κs'))
       | otherwise = Nothing
 
+instance selectable2Map :: (Ord k) => Selectable2 (Map k) where
+   maybeZipWith f κs κs'
+      | size κs == size κs' =
+         fromFoldable <$> sequence (zipWith (maybeZipWith f) (toUnfoldable κs) (toUnfoldable κs'))
+      | otherwise = Nothing
+
 instance selectableList :: Selectable a => Selectable (List a) where
    mapα f = map (mapα f)
 
    maybeZipWithα f xs ys
       | (eq `on` length) xs ys   = sequence (zipWith (maybeZipWithα f) xs ys)
+      | otherwise                = Nothing
+
+instance selectable2List :: Selectable2 List where
+   maybeZipWith f xs ys
+      | length xs == length ys   = pure $ zipWith f xs ys
       | otherwise                = Nothing

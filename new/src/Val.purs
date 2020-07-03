@@ -1,12 +1,13 @@
 module Val where
 
 import Prelude hiding (absurd, top)
+import Control.Apply (lift2)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
-import Bindings (Bindings)
+import Bindings (Bindings, Var)
 import DataType (Ctr)
-import Expr (Elim, RecDefs)
-import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
+import Expr (Elim, RecDefs, RecDefs2)
+import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithα)
 import Util ((≟))
 
 data Primitive =
@@ -19,7 +20,20 @@ data RawVal =
    Closure Env RecDefs Elim |
    Primitive Primitive
 
+data RawVal2 a =
+   Int2 Int |
+   Str2 String |
+   Constr2 Ctr (List (Val2 a)) |
+   Closure2 (Env2 a) (RecDefs2 a) Elim |
+   Primitive2 Primitive
+
 data Val = Val Selected RawVal
+
+data Val2 a = Val2 a (RawVal2 a)
+
+derive instance functorVal :: Functor Val2
+
+type Val' = Val2 Selected
 
 val :: RawVal -> Val
 val = Val false
@@ -49,3 +63,35 @@ instance selectableRawVal :: Selectable RawVal where
       Closure <$> maybeZipWithα f ρ ρ' <*> maybeZipWithα f δ δ' <*> maybeZipWithα f σ σ'
    maybeZipWithα f (Primitive φ) (Primitive φ')       = Primitive <$> maybeZipWithα f φ φ'
    maybeZipWithα _ _ _                                = Nothing
+
+instance selectable2Val :: Selectable2 Val2 where
+   maybeZipWith f (Val2 α r) (Val2 α' r')  = Val2 <$> pure (α `f` α') <*> maybeZipWith f r r'
+
+instance selectable2RawVal :: Selectable2 RawVal2 where
+   maybeZipWith f (Int2 x) (Int2 x')                   = Int2 <$> x ≟ x'
+   maybeZipWith f (Str2 s) (Str2 s')                   = Str2 <$> s ≟ s'
+   maybeZipWith f (Constr2 c es) (Constr2 c' es') =
+      Constr2 <$> c ≟ c' <*> maybeZipWith (lift2 f) es es'
+   maybeZipWith f (Closure2 ρ δ σ) (Closure2 ρ' δ' σ') =
+      Closure2 <$> maybeZipWith f ρ ρ' <*> maybeZipWith f δ δ' <*> maybeZipWith f σ σ'
+   maybeZipWith f (Primitive2 φ) (Primitive2 φ')       = Primitive2 <$> maybeZipWith f φ φ'
+   maybeZipWith _ _ _                                = Nothing
+
+data Bind2 a = Bind2 Var (Maybe (Val2 a))
+data Env2 a = Empty2 | Extend2 (Env2 a) (Bind2 a)
+
+infix 6 Bind2 as ↦
+infixl 5 Extend2 as :+:
+
+instance semigroupEnv :: Semigroup (Env2 a) where
+   append m Empty2          = m
+   append m (Extend2 m' kv) = Extend2 (append m m') kv
+
+instance monoidEnv :: Monoid Env2 where
+   mempty = Empty2
+
+instance selectableEnv :: Selectable2 Env2 where
+   maybeZipWith _ Empty2 Empty2                              = pure Empty2
+   maybeZipWith f (Extend2 m (x ↦ v)) (Extend2 m' (y ↦ v'))
+      = Extend2 <$> maybeZipWith f m m' <*> ((↦) <$> x ≟ y <*> lift2 (maybeZipWith f) v v')
+   maybeZipWith _ _ _                                      = Nothing

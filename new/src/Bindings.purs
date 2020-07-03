@@ -2,7 +2,7 @@ module Bindings where
 
 import Prelude hiding (top, absurd)
 import Data.Maybe (Maybe(..))
-import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
+import Lattice (class Lattice, class Selectable, class Selectable2, mapα, maybeZipWith, maybeZipWithα)
 import Util (MayFail, (≟), report)
 
 type Var = String
