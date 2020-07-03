@@ -20,21 +20,21 @@ data RawVal =
    Closure Env RecDefs Elim |
    Primitive Primitive
 
-data RawVal2 a =
+data RawVal2' a =
    Int2 Int |
    Str2 String |
-   Constr2 Ctr (List (Val2 a)) |
+   Constr2 Ctr (List (Val2' a)) |
    Closure2 (Env2 a) (RecDefs2 a) (Elim2' a) |
    Primitive2 Primitive
 
 data Val = Val Selected RawVal
 
-data Val2 a = Val2 a (RawVal2 a)
+data Val2' a = Val2' a (RawVal2' a)
 
-derive instance functorRawVal :: Functor RawVal2
-derive instance functorVal :: Functor Val2
+derive instance functorRawVal :: Functor RawVal2'
+derive instance functorVal :: Functor Val2'
 
-type Val' = Val2 Selected
+type Val2 = Val2' Selected
 
 val :: RawVal -> Val
 val = Val false
@@ -65,10 +65,10 @@ instance selectableRawVal :: Selectable RawVal where
    maybeZipWithα f (Primitive φ) (Primitive φ')       = Primitive <$> maybeZipWithα f φ φ'
    maybeZipWithα _ _ _                                = Nothing
 
-instance selectable2Val :: Selectable2 Val2 where
-   maybeZipWith f (Val2 α r) (Val2 α' r')  = Val2 <$> pure (α `f` α') <*> maybeZipWith f r r'
+instance selectable2Val :: Selectable2 Val2' where
+   maybeZipWith f (Val2' α r) (Val2' α' r')  = Val2' <$> pure (α `f` α') <*> maybeZipWith f r r'
 
-instance selectable2RawVal :: Selectable2 RawVal2 where
+instance selectable2RawVal :: Selectable2 RawVal2' where
    maybeZipWith f (Int2 x) (Int2 x')                   = Int2 <$> x ≟ x'
    maybeZipWith f (Str2 s) (Str2 s')                   = Str2 <$> s ≟ s'
    maybeZipWith f (Constr2 c vs) (Constr2 c' vs') =
@@ -78,7 +78,7 @@ instance selectable2RawVal :: Selectable2 RawVal2 where
    maybeZipWith f (Primitive2 φ) (Primitive2 φ')       = pure $ Primitive2 φ -- should require φ == φ'
    maybeZipWith _ _ _                                = Nothing
 
-data Bind2 a = Bind2 Var (Maybe (Val2 a))
+data Bind2 a = Bind2 Var (Maybe (Val2' a))
 data Env2 a = Empty2 | Extend2 (Env2 a) (Bind2 a)
 
 infix 6 Bind2 as ↦

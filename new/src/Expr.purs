@@ -12,6 +12,7 @@ import Util (type (+), (≟), error)
 data VarDef = VarDef Elim Expr -- elim has codomain unit
 data VarDef2 a = VarDef2 (Elim2' a) (Expr2' a) -- elim has codomain unit
 type VarDefs = List VarDef
+type VarDefs2 a = List (VarDef2 a)
 data RecDef = RecDef Var Elim
 data RecDef2 a = RecDef2 Var (Elim2' a)
 type RecDefs = List RecDef
@@ -110,6 +111,7 @@ instance selectable2Elim :: Selectable2 Elim2' where
    maybeZipWith _ _ _                                = Nothing
 
 data Module = Module (List (VarDef + RecDefs))
+data Module2 a = Module2 (List (VarDef2 a + RecDefs2 a))
 
 instance defSelectable :: Selectable VarDef where
    mapα f (VarDef σ e)                          = VarDef (mapα f σ) (mapα f e)

@@ -26,7 +26,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
-import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
+import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
 import Util (type (×), (×), type (+), error, onlyIf, successful, successfulWith)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)

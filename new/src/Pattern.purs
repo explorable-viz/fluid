@@ -1,4 +1,4 @@
-module PElim where
+module Pattern where
 
 import Prelude hiding (absurd, join)
 import Data.List (List(..), (:))
