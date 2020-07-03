@@ -10,8 +10,7 @@ import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
 import Bindings (Var)
 import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
-import Expr (Cont2(..), Elim2, Elim2'(..), Expr2, Expr2'(..), RawExpr2(..), expr2)
-import Lattice (Selected)
+import Expr (Cont2, Cont2'(..), Elim2, Elim2'(..), Expr2, Expr2'(..), RawExpr2(..), expr2)
 import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =
@@ -20,7 +19,7 @@ data PCont =
    PLambda Pattern |    -- unnecessary if surface language supports piecewise definitions
    PArg Pattern
 
-toCont :: PCont -> MayFail (Cont2 Selected)
+toCont :: PCont -> MayFail Cont2
 toCont PNone         = pure None2
 toCont (PBody e)     = pure $ Body2 e
 toCont (PLambda π)   = Body2 <$> (expr2 <$> (Lambda2 <$> toElim π))
@@ -51,7 +50,7 @@ instance setContPattern :: MapCont Pattern where
 class Joinable a b | a -> b where
    maybeJoin :: b -> a -> MayFail b
 
-dataType :: Map Ctr (Cont2 Selected) -> MayFail DataType
+dataType :: Map Ctr Cont2 -> MayFail DataType
 dataType κs = case keys κs of
    Nil   -> error absurd
    c : _ -> dataTypeFor c
@@ -60,7 +59,7 @@ instance joinablePatternElim :: Joinable Pattern (Elim2' Boolean) where
    maybeJoin (ElimVar2 x κ) (PattVar y κ')       = ElimVar2 <$> x ≞ y <*> maybeJoin κ κ'
    maybeJoin (ElimConstr2 κs) (PattConstr c n κ) = ElimConstr2 <$> mayFailUpdate
       where
-      mayFailUpdate :: MayFail (Map Ctr (Cont2 Selected))
+      mayFailUpdate :: MayFail (Map Ctr Cont2)
       mayFailUpdate =
          case lookup c κs of
             Nothing -> do
@@ -75,7 +74,7 @@ instance joinablePatternElim :: Joinable Pattern (Elim2' Boolean) where
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
    maybeJoin _ _                               = report "Can't join variable and constructor patterns"
 
-instance joinablePContCont :: Joinable PCont (Cont2 Boolean) where
+instance joinablePContCont :: Joinable PCont (Cont2' Boolean) where
    maybeJoin None2 PNone                               = pure None2
    maybeJoin (Arg2 σ) (PArg π)                         = Arg2 <$> maybeJoin σ π
    maybeJoin (Body2 (Expr2' _ (Lambda2 σ))) (PLambda π)   = Body2<$> (expr2 <$> (Lambda2 <$> maybeJoin σ π))

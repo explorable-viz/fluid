@@ -25,7 +25,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
-import Expr (Elim2, Expr2, Expr2'(..), Module2(..), RawExpr2(..), RecDef2(..), RecDefs2, VarDef2(..), VarDefs2, expr2)
+import Expr (Elim2, Expr2, Expr2'(..), Module2(..), RawExpr2(..), RecDef2(..), RecDefs2', VarDef2(..), VarDefs2, expr2)
 import Lattice (Selected)
 import Pattern2 (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
@@ -142,7 +142,7 @@ varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    clause =
       VarDef2 <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
 
-recDefs :: SParser Expr2 -> SParser (RecDefs2 Selected)
+recDefs :: SParser Expr2 -> SParser (RecDefs2' Selected)
 recDefs expr' = do
    fπs <- keyword strLet *> sepBy1_try clause token.semi
    let fπss = groupBy (eq `on` fst) fπs
@@ -156,7 +156,7 @@ recDefs expr' = do
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)
 
-defs :: SParser Expr2 -> SParser (List (VarDef2 Selected + RecDefs2 Selected))
+defs :: SParser Expr2 -> SParser (List (VarDef2 Selected + RecDefs2' Selected))
 defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.

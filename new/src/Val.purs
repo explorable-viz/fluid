@@ -2,13 +2,14 @@ module Val where
 
 import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
+import Data.Either (note)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings, Var)
 import DataType (Ctr)
-import Expr (Elim, Elim2', RecDefs, RecDefs2)
+import Expr (Elim, Elim2', RecDefs, RecDefs2')
 import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithList, maybeZipWithα)
-import Util ((≟))
+import Util (MayFail, (≟), report)
 
 data Primitive =
    IntOp (Int -> Val) -- one constructor for each primitive type we care about
@@ -24,7 +25,7 @@ data RawVal2' a =
    Int2 Int |
    Str2 String |
    Constr2 Ctr (List (Val2' a)) |
-   Closure2 (Env2 a) (RecDefs2 a) (Elim2' a) |
+   Closure2 (Env2' a) (RecDefs2' a) (Elim2' a) |
    Primitive2 Primitive
 
 data Val = Val Selected RawVal
@@ -35,9 +36,13 @@ derive instance functorRawVal :: Functor RawVal2'
 derive instance functorVal :: Functor Val2'
 
 type Val2 = Val2' Selected
+type RawVal2 = RawVal2' Selected
 
 val :: RawVal -> Val
 val = Val false
+
+val2 :: RawVal2 -> Val2
+val2 = Val2' false
 
 type Env = Bindings Val
 
@@ -79,22 +84,29 @@ instance selectable2RawVal :: Selectable2 RawVal2' where
    maybeZipWith _ _ _                                = Nothing
 
 data Bind2 a = Bind2 Var (Maybe (Val2' a))
-data Env2 a = Empty2 | Extend2 (Env2 a) (Bind2 a)
+data Env2' a = Empty2 | Extend2 (Env2' a) (Bind2 a)
+type Env2 = Env2' Selected
 
 infix 6 Bind2 as ↦
 infixl 5 Extend2 as :+:
 
-derive instance functorBind :: Functor Bind2
-derive instance functorEnv :: Functor Env2
+find :: Var -> Env2 -> MayFail Val2
+find x' Empty2          = report $ "variable " <> x' <> " not found"
+find x' (xs :+: x ↦ v)
+   | x == x'   = note "TODO: should map to a bottom value" v
+   | otherwise = find x' xs
 
-instance semigroupEnv :: Semigroup (Env2 a) where
+derive instance functorBind :: Functor Bind2
+derive instance functorEnv :: Functor Env2'
+
+instance semigroupEnv :: Semigroup (Env2' a) where
    append m Empty2          = m
    append m (Extend2 m' kv) = Extend2 (append m m') kv
 
-instance monoidEnv :: Monoid (Env2 a) where
+instance monoidEnv :: Monoid (Env2' a) where
    mempty = Empty2
 
-instance selectableEnv :: Selectable2 Env2 where
+instance selectableEnv :: Selectable2 Env2' where
    maybeZipWith _ Empty2 Empty2                              = pure Empty2
    maybeZipWith f (Extend2 m (x ↦ v)) (Extend2 m' (y ↦ v'))
       = Extend2 <$> maybeZipWith f m m' <*> ((↦) <$> x ≟ y <*> lift2 (maybeZipWith f) v v')

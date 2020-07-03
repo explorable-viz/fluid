@@ -16,7 +16,8 @@ type VarDefs2 a = List (VarDef2 a)
 data RecDef = RecDef Var Elim
 data RecDef2 a = RecDef2 Var (Elim2' a)
 type RecDefs = List RecDef
-type RecDefs2 a = List (RecDef2 a)
+type RecDefs2' a = List (RecDef2 a)
+type RecDefs2 = RecDefs2' Selected
 
 data RawExpr =
    Var Var |
@@ -42,7 +43,7 @@ data RawExpr2 a =
    BinaryApp2 (Expr2' a) Var (Expr2' a) |
    MatchAs2 (Expr2' a) (Elim2' a) |
    Let2 (VarDef2 a) (Expr2' a) |
-   LetRec2 (RecDefs2 a) (Expr2' a)
+   LetRec2 (RecDefs2' a) (Expr2' a)
 
 data Expr = Expr Selected RawExpr
 
@@ -62,11 +63,16 @@ expr2 = Expr2' false
 
 -- Continuation of an eliminator. None form only used in structured let.
 data Cont = None | Body Expr | Arg Elim
-data Cont2 a = None2 | Body2 (Expr2' a) | Arg2 (Elim2' a)
+data Cont2' a = None2 | Body2 (Expr2' a) | Arg2 (Elim2' a)
+type Cont2 = Cont2' Selected
 
 body :: Cont -> Expr
 body (Body e) = e
 body _ = error "Expression expected"
+
+body2 :: Cont2 -> Expr2
+body2 (Body2 e) = e
+body2 _ = error "Expression expected"
 
 instance selectableCont :: Selectable Cont where
    mapα f None          = None
@@ -77,7 +83,7 @@ instance selectableCont :: Selectable Cont where
    maybeZipWithα f (Arg σ) (Arg σ')          = Arg <$> maybeZipWithα f σ σ'
    maybeZipWithα _ _ _                       = Nothing
 
-instance selectable2Cont :: Selectable2 Cont2 where
+instance selectable2Cont :: Selectable2 Cont2' where
    maybeZipWith f (Body2 e) (Body2 e')        = Body2 <$> maybeZipWith f e e'
    maybeZipWith f (Arg2 σ) (Arg2 σ')          = Arg2 <$> maybeZipWith f σ σ'
    maybeZipWith _ _ _                       = Nothing
@@ -87,12 +93,12 @@ data Elim =
    ElimConstr (Map Ctr Cont)
 
 data Elim2' a =
-   ElimVar2 Var (Cont2 a) |
-   ElimConstr2 (Map Ctr (Cont2 a))
+   ElimVar2 Var (Cont2' a) |
+   ElimConstr2 (Map Ctr (Cont2' a))
 
 type Elim2 = Elim2' Selected
 
-derive instance functorCont :: Functor Cont2
+derive instance functorCont :: Functor Cont2'
 derive instance functorElim :: Functor Elim2'
 
 instance elimSelectable :: Selectable Elim where
@@ -111,7 +117,7 @@ instance selectable2Elim :: Selectable2 Elim2' where
    maybeZipWith _ _ _                                = Nothing
 
 data Module = Module (List (VarDef + RecDefs))
-data Module2 a = Module2 (List (VarDef2 a + RecDefs2 a))
+data Module2 a = Module2 (List (VarDef2 a + RecDefs2' a))
 
 instance defSelectable :: Selectable VarDef where
    mapα f (VarDef σ e)                          = VarDef (mapα f σ) (mapα f e)
