@@ -8,6 +8,8 @@ import Util (MayFail, type (×), (×), (≟), absurd, error, report)
 
 type Var = String
 
+varAnon = "_" :: Var
+
 data Bind a = Bind Var a
 data Bindings a = Empty | Extend (Bindings a) (Bind a)
 

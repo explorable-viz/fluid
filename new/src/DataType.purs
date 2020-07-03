@@ -60,14 +60,18 @@ arity c = do
    DataType _ sigs <- dataTypeFor c
    length <$> note absurd (lookup c sigs)
 
-cFalse   = Ctr "False"  :: Ctr -- Bool
-cTrue    = Ctr "True"   :: Ctr
-cNil     = Ctr "Nil"    :: Ctr -- List
-cCons    = Ctr ":"      :: Ctr
-cGT      = Ctr "GT"     :: Ctr -- Ordering
-cLT      = Ctr "LT"     :: Ctr
-cEQ      = Ctr "EQ"     :: Ctr
-cPair    = Ctr "Pair"   :: Ctr -- Pair
+cFalse      = Ctr "False"     :: Ctr -- Bool
+cTrue       = Ctr "True"      :: Ctr
+cNil        = Ctr "Nil"       :: Ctr -- List
+cCons       = Ctr ":"         :: Ctr
+cNone       = Ctr "None"      :: Ctr -- Option
+cSome       = Ctr "Some"      :: Ctr
+cGT         = Ctr "GT"        :: Ctr -- Ordering
+cLT         = Ctr "LT"        :: Ctr
+cEQ         = Ctr "EQ"        :: Ctr
+cPair       = Ctr "Pair"      :: Ctr -- Pair
+cEmpty      = Ctr "Empty"     :: Ctr -- Tree
+cNonEmpty   = Ctr "NonEmpty"  :: Ctr
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [
@@ -79,6 +83,10 @@ dataTypes = L.fromFoldable [
       ctr cNil [],
       ctr cCons ["head", "tail"]
    ],
+   dataType "Option" [
+      ctr cNone [],
+      ctr cSome ["x"]
+   ],
    dataType "Ordering" [
       ctr cGT [],
       ctr cLT [],
@@ -86,5 +94,9 @@ dataTypes = L.fromFoldable [
    ],
    dataType "Pair" [
       ctr cPair ["fst", "snd"]
+   ],
+   dataType "Tree" [
+      ctr cEmpty [],
+      ctr cNonEmpty ["left", "x", "right"]
    ]
 ]

@@ -38,12 +38,9 @@ fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a
 fromJust msg Nothing  = error msg
 
-pureMaybe :: forall m . MonadPlus m => Maybe ~> m
-pureMaybe Nothing    = empty
-pureMaybe (Just x)   = pure x
-
-pureIf :: Boolean -> forall m a . MonadPlus m => a -> m a
-pureIf b = boolToMaybe b >>> pureMaybe
+onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
+onlyIf true    = pure
+onlyIf false   = const empty
 
 type MayFail a = String + a
 

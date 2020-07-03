@@ -6,7 +6,7 @@ import Data.List (List(..), (:), length, singleton, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
-import Bindings (Bindings(..), (:+:), (↦), find)
+import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
 import DataType (Ctr, arity)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -19,7 +19,9 @@ import Val (Env, Val(..), val)
 import Val (RawVal(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
-match v (ElimVar x κ) = pure $ (Empty :+: x ↦ v) × κ × (MatchVar x)
+match v (ElimVar x κ)
+   | x == varAnon = pure $ Empty × κ × MatchVarAnon v
+   | otherwise    = pure $ (Empty :+: x ↦ v) × κ × MatchVar x
 match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
