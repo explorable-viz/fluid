@@ -9,10 +9,13 @@ import DataType (Ctr)
 import Lattice (class Selectable2, Selected, maybeZipWith, maybeZipWithList, maybeZipWithMap)
 import Util (type (+), (≟), error)
 
-data VarDef a = VarDef (Elim' a) (Expr' a) -- elim has codomain unit
-type VarDefs a = List (VarDef a)
-data RecDef a = RecDef Var (Elim' a)
-type RecDefs' a = List (RecDef a)
+data VarDef' a = VarDef (Elim' a) (Expr' a) -- elim has codomain unit
+type VarDef = VarDef' Selected
+type VarDefs a = List (VarDef' a)
+
+data RecDef' a = RecDef Var (Elim' a)
+type RecDef = RecDef' Selected
+type RecDefs' a = List (RecDef' a)
 type RecDefs = RecDefs' Selected
 
 data RawExpr a =
@@ -25,14 +28,14 @@ data RawExpr a =
    App (Expr' a) (Expr' a) |
    BinaryApp (Expr' a) Var (Expr' a) |
    MatchAs (Expr' a) (Elim' a) |
-   Let (VarDef a) (Expr' a) |
+   Let (VarDef' a) (Expr' a) |
    LetRec (RecDefs' a) (Expr' a)
 
 data Expr' a = Expr a (RawExpr a)
 type Expr = Expr' Selected
 
-derive instance functorVarDef :: Functor VarDef
-derive instance functorRecDef :: Functor RecDef
+derive instance functorVarDef :: Functor VarDef'
+derive instance functorRecDef :: Functor RecDef'
 derive instance functorRawExpr :: Functor RawExpr
 derive instance functorExpr :: Functor Expr'
 
@@ -67,17 +70,17 @@ instance selectableElim :: Selectable2 Elim' where
    maybeZipWith f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithMap f κs κs'
    maybeZipWith _ _ _                                = Nothing
 
-data Module' a = Module (List (VarDef a + RecDefs' a))
+data Module' a = Module (List (VarDef' a + RecDefs' a))
 type Module = Module' Selected
 
-instance selectableDef :: Selectable2 VarDef where
-   maybeZipWith f (VarDef σ e) (VarDef σ' e')  = VarDef <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'
+instance selectableDef :: Selectable2 VarDef' where
+   maybeZipWith f (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'
 
-instance selectableRecDef :: Selectable2 RecDef where
-   maybeZipWith f (RecDef x σ) (RecDef x' σ')  = RecDef <$> x ≟ x' <*> maybeZipWith f σ σ'
+instance selectableRecDef :: Selectable2 RecDef' where
+   maybeZipWith f (RecDef x σ) (RecDef x' σ') = RecDef <$> x ≟ x' <*> maybeZipWith f σ σ'
 
 instance selectableExpr :: Selectable2 Expr' where
-   maybeZipWith f (Expr α r) (Expr' α' r')   = Expr' <$> pure (f α α') <*> maybeZipWith f r r'
+   maybeZipWith f (Expr α r) (Expr α' r') = Expr <$> pure (f α α') <*> maybeZipWith f r r'
 
 instance selectableRawExpr :: Selectable2 RawExpr where
    maybeZipWith _ (Var x) (Var x')                = Var <$> x ≟ x'

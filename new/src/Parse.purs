@@ -26,7 +26,12 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Expr (
-   Elim, Expr, Expr'(..), Module, Module'(..), RawExpr(..), RecDef(..), RecDefs', VarDef(..), VarDefs, expr
+   Elim, Expr, Expr'(..),
+   Module, Module'(..),
+   RawExpr(..),
+   RecDef, RecDef'(..), RecDefs, RecDefs',
+   VarDef, VarDef'(..), VarDefs,
+   expr
 )
 import Lattice (Selected)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
@@ -140,7 +145,7 @@ patternOne curried expr' delim = pattern' >>= rest
 varDefs :: SParser Expr -> SParser (VarDefs Selected)
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
-   clause :: SParser (VarDef Selected)
+   clause :: SParser VarDef
    clause =
       VarDef <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
 
@@ -150,7 +155,7 @@ recDefs expr' = do
    let fπss = groupBy (eq `on` fst) fπs
    pure $ toRecDef <$> fπss
    where
-   toRecDef :: NonEmptyList (String × Pattern) -> RecDef Selected
+   toRecDef :: NonEmptyList (String × Pattern) -> RecDef
    toRecDef fπs =
       let f = fst $ head fπs in
       RecDef f $ successfulWith ("Bad branches for '" <> f <> "'") $ joinAll $ snd <$> fπs
@@ -158,7 +163,7 @@ recDefs expr' = do
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)
 
-defs :: SParser Expr -> SParser (List (VarDef Selected + RecDefs' Selected))
+defs :: SParser Expr -> SParser (List (VarDef + RecDefs))
 defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
@@ -180,7 +185,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
    appChain expr' = simpleExpr >>= rest
       where
       rest :: Expr -> SParser Expr
-      rest e@(Expr' _ (Constr c es)) = ctrArgs <|> pure e
+      rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
          where
          ctrArgs :: SParser Expr
          ctrArgs = simpleExpr >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))

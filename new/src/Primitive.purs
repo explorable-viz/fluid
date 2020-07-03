@@ -6,15 +6,16 @@ import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.List as L
 import Data.Map (Map, fromFoldable)
+import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser.Expr (Assoc(..))
-import Bindings (Bindings(..), Var, (:+:), (↦))
+import Bindings (Var)
 import DataType (cTrue, cFalse, Ctr(..))
 import Lattice (Selected, (∧))
 import Util (type (×), (×), error)
 import Expr as E
-import Expr (Expr(..), Elim, expr)
-import Val (Env, Primitive(..), Val(..), val)
-import Val (RawVal(..)) as V
+import Expr (Expr, Expr'(..), Elim, expr)
+import Val (Env, Env'(..), Primitive(..), Val, Val'(..), (:+:), (↦), val)
+import Val (RawVal'(..)) as V
 
 -- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
 type OpDef = {
@@ -41,18 +42,19 @@ opDefs = fromFoldable [
    opDef ">="  4 AssocLeft
 ]
 
+-- TODO: move to Expr
 class ToList a where
    toList :: a -> List a
 
 class FromList a where
    fromList :: List a -> a
 
-instance exprToList :: ToList Expr where
+instance exprToList :: ToList (Expr' Boolean) where
    toList (Expr a (E.Constr (Ctr "Cons") (e:es:Nil))) = (e:toList es)
    toList (Expr a (E.Constr (Ctr "Nil") Nil)) = Nil
    toList _ = error "expected list expression"
 
-instance exprFromList :: FromList Expr where
+instance exprFromList :: FromList (Expr' Boolean) where
    fromList (x:xs) = expr $ (E.Constr (Ctr "Cons") (x:fromList xs:Nil))
    fromList Nil    = expr $ E.Constr (Ctr "Nil") Nil
 
@@ -95,17 +97,17 @@ apply_fwd φ α v@(Val α' _) =
 primitives :: Env
 primitives = foldl (:+:) Empty [
    -- need to instantiate the corresponding PureScript primitive at a concrete type
-   "+"         ↦ from   ((+)  :: Int -> Int -> Int),
-   "-"         ↦ from   ((-)  :: Int -> Int -> Int),
-   "*"         ↦ from   ((*)  :: Int -> Int -> Int),
-   "div"       ↦ from   (div  :: Int -> Int -> Int),
-   "=="        ↦ from   ((==) :: Int -> Int -> Boolean),
-   "/="        ↦ from   ((/=) :: Int -> Int -> Boolean),
-   "<"         ↦ from   ((<)  :: Int -> Int -> Boolean),
-   ">"         ↦ from   ((>)  :: Int -> Int -> Boolean),
-   "<="        ↦ from   ((<=) :: Int -> Int -> Boolean),
-   ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
-   "intToStr"  ↦ from   (show :: Int -> String)
+   "+"         ↦ Just (from   ((+)  :: Int -> Int -> Int)),
+   "-"         ↦ Just (from   ((-)  :: Int -> Int -> Int)),
+   "*"         ↦ Just (from   ((*)  :: Int -> Int -> Int)),
+   "div"       ↦ Just (from   (div  :: Int -> Int -> Int)),
+   "=="        ↦ Just (from   ((==) :: Int -> Int -> Boolean)),
+   "/="        ↦ Just (from   ((/=) :: Int -> Int -> Boolean)),
+   "<"         ↦ Just (from   ((<)  :: Int -> Int -> Boolean)),
+   ">"         ↦ Just (from   ((>)  :: Int -> Int -> Boolean)),
+   "<="        ↦ Just (from   ((<=) :: Int -> Int -> Boolean)),
+   ">="        ↦ Just (from   ((>=) :: Int -> Int -> Boolean)),
+   "intToStr"  ↦ Just (from   (show :: Int -> String))
 ]
 
 append :: Expr -> Expr -> Expr

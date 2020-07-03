@@ -11,7 +11,7 @@ import Val (Env', Val')
 
 type ExplVal a = Expl' a × Val' a
 
-data VarDef a = VarDef (Match' a) (Expl' a)
+data VarDef' a = VarDef (Match' a) (Expl' a)
 
 data Expl' a =
    Var Var (Env' a) |
@@ -25,7 +25,7 @@ data Expl' a =
    AppOp (ExplVal a) (ExplVal a) |
    BinaryApp (ExplVal a) Var (ExplVal a) |
    MatchAs (Expl' a) (Match' a) (Expl' a) |
-   Let (VarDef a) (Expl' a) |
+   Let (VarDef' a) (Expl' a) |
    LetRec (RecDefs' a) (Expl' a)
 
 type Expl = Expl' Selected

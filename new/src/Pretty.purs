@@ -9,9 +9,9 @@ import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import Bindings (varAnon)
 import DataType (Ctr(..), cCons, cNil, cPair)
-import Expr (Cont'(..), Elim'(..), Expr'(..), RawExpr, RecDef(..), VarDef(..))
+import Expr (Cont'(..), Elim'(..), Expr'(..), RawExpr, RecDef'(..), VarDef'(..))
 import Expr (RawExpr(..)) as E
-import Expl (Expl'(..), VarDef(..)) as T
+import Expl (Expl'(..), VarDef'(..)) as T
 import Expl (Expl', Match'(..))
 import Util (type (×), (×), absurd, assert, error, fromJust, intersperse)
 import Val (Bind, Env'(..), Primitive(..), RawVal', Val'(..), (:+:), (↦))
@@ -101,7 +101,7 @@ instance explPrettyList :: PrettyList (Expl' Boolean) where
    prettyList t = error "Ill-formed list for expls"
 
 instance exprPrettyList :: PrettyList (Expr' Boolean) where
-   prettyList (Expr' α r) = text "Expr (" :<>: text (show α) :<>: comma :<>: prettyList r :<>: text ")"
+   prettyList (Expr α r) = text "Expr (" :<>: text (show α) :<>: comma :<>: prettyList r :<>: text ")"
 
 instance rawExprPrettyList :: PrettyList (RawExpr Boolean) where
    prettyList (E.Constr (Ctr "Nil") Nil) = null
@@ -109,7 +109,7 @@ instance rawExprPrettyList :: PrettyList (RawExpr Boolean) where
    prettyList e = pretty e
 
 instance valPrettyList :: PrettyList (Val' Boolean) where
-   prettyList (Val' _ u) = prettyList u
+   prettyList (Val _ u) = prettyList u
 
 instance rawValPrettyList :: PrettyList (RawVal' Boolean) where
    prettyList (V.Constr c Nil) = assert (c == cNil) $ null
@@ -117,7 +117,7 @@ instance rawValPrettyList :: PrettyList (RawVal' Boolean) where
    prettyList v = error "Ill-formed list for values"
 
 instance exprPretty :: Pretty (Expr' Boolean) where
-   pretty (Expr' _ r) = pretty r
+   pretty (Expr _ r) = pretty r
 
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> text
@@ -178,7 +178,7 @@ instance prettyVEBList :: PrettyList (List (Env' Boolean × (Expr' Boolean) × B
    prettyList ((v × e × b):vs) = comma :<>: (parens (pretty v) :<>: prettyList vs)
 
 
-instance prettyDefs :: Pretty (List (RecDef Boolean)) where
+instance prettyDefs :: Pretty (List (RecDef' Boolean)) where
    pretty Nil              = text ""
    pretty (RecDef f σ : δ) = atop (text f :<>: operator "=" :<>: pretty σ) $ pretty δ
 
@@ -225,7 +225,7 @@ instance prettyElim2' :: Pretty (Elim' Boolean) where
    pretty (ElimConstr κs)  = vcat $ map pretty $ (toUnfoldable κs :: List _)
 
 instance valPretty :: Pretty (Val' Boolean) where
-   pretty (Val' a u) = pretty u
+   pretty (Val a u) = pretty u
 
 instance rawValPretty :: Pretty (RawVal' Boolean) where
    pretty (V.Int n)           = text $ show n

@@ -21,7 +21,7 @@ data RawVal' a =
    Closure (Env' a) (RecDefs' a) (Elim' a) |
    Primitive Primitive
 
-data Val' a = Val' a (RawVal' a)
+data Val' a = Val a (RawVal' a)
 
 derive instance functorRawVal :: Functor RawVal'
 derive instance functorVal :: Functor Val'
@@ -30,10 +30,10 @@ type Val = Val' Selected
 type RawVal = RawVal' Selected
 
 val :: RawVal -> Val
-val = Val' false
+val = Val false
 
 instance selectable2Val :: Selectable2 Val' where
-   maybeZipWith f (Val' α r) (Val' α' r')  = Val' <$> pure (α `f` α') <*> maybeZipWith f r r'
+   maybeZipWith f (Val α r) (Val α' r') = Val <$> pure (α `f` α') <*> maybeZipWith f r r'
 
 instance selectable2RawVal :: Selectable2 RawVal' where
    maybeZipWith f (Int x) (Int x')                   = Int <$> x ≟ x'

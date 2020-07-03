@@ -77,7 +77,7 @@ instance joinablePatternElim :: Joinable Pattern (Elim' Boolean) where
 instance joinablePContCont :: Joinable PCont (Cont' Boolean) where
    maybeJoin None PNone                               = pure None
    maybeJoin (Arg σ) (PArg π)                         = Arg <$> maybeJoin σ π
-   maybeJoin (Body (Expr' _ (Lambda σ))) (PLambda π)  = Body<$> (expr <$> (Lambda <$> maybeJoin σ π))
+   maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)   = Body<$> (expr <$> (Lambda <$> maybeJoin σ π))
    maybeJoin _ _                                      = report "Incompatible continuations"
 
 joinAll :: NonEmptyList Pattern -> MayFail Elim

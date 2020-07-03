@@ -7,8 +7,8 @@ import Data.List (List(..)) as L
 import Data.Map (fromFoldable, empty) as M
 import Bindings (Var)
 import DataType (Ctr, cCons, cNil, cTrue, cFalse)
-import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef, expr)
-import Expr (RawExpr(..), VarDef(..)) as E
+import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDefs, VarDef, expr)
+import Expr (RawExpr(..), VarDef, VarDef'(..)) as E
 import Primitive (concatMap, map) as P
 import Util ((×), absurd, error)
 
