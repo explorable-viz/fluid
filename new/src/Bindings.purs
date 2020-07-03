@@ -3,7 +3,7 @@ module Bindings where
 import Prelude hiding (top, absurd)
 import Data.Maybe (Maybe(..))
 import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
-import Util (MayFail, (≟), report)
+import Util (MayFail, (≟), report, type (×), (×))
 
 type Var = String
 
@@ -45,3 +45,15 @@ update Empty _ = Empty
 update (xs :+: x ↦ v) (x' ↦ v')
    | x == x'    = xs :+: x' ↦ v'
    | otherwise  = (update xs (x' ↦ v')) :+: x ↦ v
+
+splitAt :: forall a. Int -> Bindings a -> Bindings a × Bindings a
+splitAt n ρ
+  | n <= 0 = ρ × Empty
+  | otherwise          = splitAt' n ρ
+    where
+        splitAt' :: Int -> Bindings a -> Bindings a × Bindings a
+        splitAt' _  Empty     = Empty × Empty
+        splitAt' 1  (ρ0 :+: xv) = ρ0 × Extend Empty xv
+        splitAt' m  (ρ0 :+: xv) = ρ' × (ρ'' :+: xv)
+          where
+            ρ' × ρ'' = splitAt' (m - 1) ρ0

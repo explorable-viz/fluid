@@ -7,7 +7,7 @@ import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import Bindings (Bindings(..), Bind, (:+:), (↦), varAnon)
-import DataType (Ctr(..), cCons, cNil, cPair)
+import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..))
 import Expr (RawExpr(..)) as E
 import Expl as T
@@ -101,11 +101,11 @@ instance explPrettyList :: PrettyList Expl where
    prettyList t = error "Ill-formed list for expls"
 
 instance exprPrettyList :: PrettyList Expr where
-   prettyList (Expr a r) = text "Expr (" :<>: text (show a) :<>: comma :<>: prettyList r :<>: text ")"
+   prettyList (Expr a r) = prettyList r
 
 instance rawExprPrettyList :: PrettyList RawExpr where
-   prettyList (E.Constr (Ctr "Nil") Nil) = null
-   prettyList (E.Constr (Ctr "Cons") (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
+   prettyList (E.Constr c Nil) = null
+   prettyList (E.Constr c (e:es:Nil)) = comma :<>: pretty e :<>: prettyList es
    prettyList e = pretty e
 
 instance valPrettyList :: PrettyList Val where

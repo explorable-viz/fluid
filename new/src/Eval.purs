@@ -2,7 +2,7 @@ module Eval where
 
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, singleton, unzip)
+import Data.List (List(..), (:), length, singleton, unzip, snoc)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
@@ -33,7 +33,7 @@ matchArgs _ Nil κ                = pure $ Empty × κ × Nil
 matchArgs c (v : vs) (Arg σ)     = do
    ρ  × κ'  × ξ  <- match v σ
    ρ' × κ'' × ξs <- matchArgs c vs κ'
-   pure $ (ρ <> ρ') × κ'' × (ξ : ξs)
+   pure $ (ρ <> ρ') × κ'' × (snoc ξs ξ)
 matchArgs c (_ : vs) (Body _)    = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _                  = error absurd
