@@ -1,7 +1,7 @@
 module Env where
 
 import Prelude hiding (top, absurd)
-import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
+-- import Lattice (class Lattice, class Selectable, mapα, maybeZipWithα)
 import Val (Val)
 
 type Var = String

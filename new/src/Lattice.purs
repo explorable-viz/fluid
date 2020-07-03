@@ -16,16 +16,14 @@ class Lattice a where
    bot         :: a -> a
 
 join :: forall a . Lattice a => a -> a -> a
-join p q = fromJust "Join undefined" $ p ∨? q
+join p q = fromJust "Join undefined" $ p `maybeJoin` q
 
 meet :: forall a . Lattice a => a -> a -> a
-meet p q = fromJust "Meet undefined" $ p ∧? q
+meet p q = fromJust "Meet undefined" $ p `maybeMeet` q
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
 infixl 6 join as ∨
-infix 7 maybeMeet as ∧?
-infix 6 maybeJoin as ∨?
 
 type Selected = Boolean
 
