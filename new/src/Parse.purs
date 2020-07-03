@@ -23,13 +23,13 @@ import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
-import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Expr (
    Elim, Expr, Expr'(..),
    Module, Module'(..),
    RawExpr(..),
    RecDef, RecDef'(..), RecDefs, RecDefs',
+   Var,
    VarDef, VarDef'(..), VarDefs,
    expr
 )

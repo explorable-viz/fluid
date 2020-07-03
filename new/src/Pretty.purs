@@ -7,14 +7,13 @@ import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
-import Bindings (varAnon)
 import DataType (Ctr(..), cCons, cNil, cPair)
-import Expr (Cont'(..), Elim'(..), Expr'(..), RawExpr, RecDef'(..), VarDef'(..))
+import Expr (Cont'(..), Elim'(..), Expr'(..), RawExpr, RecDef'(..), VarDef'(..), varAnon)
 import Expr (RawExpr(..)) as E
 import Expl (Expl'(..), VarDef'(..)) as T
 import Expl (Expl', Match'(..))
 import Util (type (×), (×), absurd, assert, error, fromJust, intersperse)
-import Val (Bind, Env'(..), Primitive(..), RawVal', Val'(..), (:+:), (↦))
+import Val (Bind', Env'(..), Primitive(..), RawVal', Val'(..), (:+:), (↦))
 import Val (RawVal'(..)) as V
 
 infixl 5 beside as :<>:
@@ -205,7 +204,7 @@ instance prettyExpr :: Pretty (List (Expr' Boolean)) where
 instance prettyBranches :: Pretty (Map Ctr (Cont' Boolean)) where
    pretty m = vcat $ map pretty $ (toUnfoldable m :: List _)
 
-instance prettyBind :: Pretty (Bind Boolean) where
+instance prettyBind :: Pretty (Bind' Boolean) where
    pretty (x ↦ Nothing) = text x :<>: text " ↦ " :<>: text "_"
    pretty (x ↦ Just v) = text x :<>: text " ↦ " :<>: pretty v
 

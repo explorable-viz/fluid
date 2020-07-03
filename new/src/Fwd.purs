@@ -3,8 +3,7 @@ module Fwd where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), singleton)
 import Data.Map (lookup)
-import Bindings (varAnon)
-import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDef'(..), RecDefs, VarDef'(..), body)
+import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDef'(..), RecDefs, VarDef'(..), body, varAnon)
 import Expr (RawExpr(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (apply_fwd)

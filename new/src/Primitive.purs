@@ -8,12 +8,11 @@ import Data.List as L
 import Data.Map (Map, fromFoldable)
 import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser.Expr (Assoc(..))
-import Bindings (Var)
 import DataType (cTrue, cFalse, Ctr(..))
 import Lattice (Selected, (∧))
 import Util (type (×), (×), error)
 import Expr as E
-import Expr (Expr, Expr'(..), Elim, expr)
+import Expr (Expr, Expr'(..), Elim, Var, expr)
 import Val (Env, Env'(..), Primitive(..), Val, Val'(..), (:+:), (↦), val)
 import Val (RawVal'(..)) as V
 

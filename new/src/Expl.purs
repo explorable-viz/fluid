@@ -2,9 +2,8 @@ module Expl where
 
 import Data.List (List)
 import Data.Map (Map)
-import Bindings (Var)
 import DataType (Ctr)
-import Expr (Cont', Elim', RecDefs')
+import Expr (Cont', Elim', RecDefs', Var)
 import Lattice (Selected)
 import Util (type (×))
 import Val (Env', Val')

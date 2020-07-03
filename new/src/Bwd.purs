@@ -4,15 +4,15 @@ import Prelude (map, ($), (<>))
 import Data.List (List, (:), reverse)
 import Data.List (List(..)) as L
 import Data.Map (insert)
-import Bindings (Bind, Bindings(..), (:+:), (↦), (◃), foldBind, varAnon)
-import Expl (Expl, Match(..))
-import Expl (Expl(..), VarDef(..)) as T
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs)
+import Data.Maybe (Maybe (..))
+import Expl (Expl, Match, Match'(..))
+import Expl (Expl'(..), VarDef'(..)) as T
+import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RawExpr(..), RecDef'(..), VarDef'(..), RecDefs, varAnon)
 import Lattice (Selected, bot, (∨))
 import Pretty (pretty, render)
 import Util (type (×), absurd, error, (×), (≜))
-import Val (Env, Val(..))
-import Val (RawVal(..)) as V
+import Val (Bind, Env, Env'(..), Val, Val'(..), (:+:), (↦), (◃), foldEnv)
+import Val (RawVal'(..)) as V
 
 unmatch :: Env -> Match -> Env × Env
 unmatch ρ (MatchVar x)
@@ -44,9 +44,9 @@ joinδ (δ' × ρ × δ × α) = ρ × (δ ∨ δ') × α
 
 closeDefs_bwd :: Env -> Env -> Env × RecDefs × Selected
 closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _
-   = joinδ $ foldBind joinClsre ((RecDef f0 σ0 : L.Nil) × ρ0 × δ0 × α0) ρ'
+   = joinδ $ foldEnv joinClsre ((RecDef f0 σ0 : L.Nil) × ρ0 × δ0 × α0) ρ'
    where
-      joinClsre   :: Bind Val
+      joinClsre   :: Bind
                   -> RecDefs × (Env × RecDefs × Selected)
                   -> RecDefs × (Env × RecDefs × Selected)
       joinClsre (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ × δ × α)
@@ -71,9 +71,10 @@ match_bwd ρ κ α (MatchConstr (c × ξs) κs)
    = matchOne_bwd ρ κ α (MatchConstr (c × reverse ξs) κs)
 
 matchOne_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
-matchOne_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
-matchOne_bwd Empty κ α (MatchVarAnon v)            = bot v × ElimVar varAnon κ
-matchOne_bwd ρ κ α (MatchConstr (c × ξs) κs)       =
+matchOne_bwd (Empty :+: x ↦ Just v) κ α (MatchVar x')    = v × ElimVar (x ≜ x') κ
+matchOne_bwd (Empty :+: x ↦ Nothing) κ α (MatchVar x')   = error "TOOD: return a bot value"
+matchOne_bwd Empty κ α (MatchVarAnon v)                  = bot v × ElimVar varAnon κ
+matchOne_bwd ρ κ α (MatchConstr (c × ξs) κs)             =
    let vs × κ' = matchMany_bwd ρ κ α ξs in
    (Val α $ V.Constr c vs) × (ElimConstr $ insert c κ' $ map bot κs)
 matchOne_bwd _ _ _ _                               = error absurd

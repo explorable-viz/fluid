@@ -4,10 +4,13 @@ import Prelude hiding (top)
 import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
-import Bindings (Var)
 import DataType (Ctr)
 import Lattice (class Selectable2, Selected, maybeZipWith, maybeZipWithList, maybeZipWithMap)
 import Util (type (+), (≟), error)
+
+type Var = String
+
+varAnon = "_" :: Var
 
 data VarDef' a = VarDef (Elim' a) (Expr' a) -- elim has codomain unit
 type VarDef = VarDef' Selected

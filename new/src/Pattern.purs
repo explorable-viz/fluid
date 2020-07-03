@@ -8,9 +8,8 @@ import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
-import Bindings (Var)
 import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
-import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RawExpr(..), expr)
+import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RawExpr(..), Var, expr)
 import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =

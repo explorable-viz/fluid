@@ -5,9 +5,8 @@ import Control.Apply (lift2)
 import Data.Either (note)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
-import Bindings (Var)
 import DataType (Ctr)
-import Expr (Elim', RecDefs')
+import Expr (Elim', RecDefs', Var)
 import Lattice (class Selectable2, Selected, maybeZipWith, maybeZipWithList)
 import Util (MayFail, (≟), report)
 
@@ -45,12 +44,14 @@ instance selectable2RawVal :: Selectable2 RawVal' where
    maybeZipWith f (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
    maybeZipWith _ _ _                                = Nothing
 
-data Bind a = Bind Var (Maybe (Val' a))
-data Env' a = Empty | Extend (Env' a) (Bind a)
+data Bind' a = Bind Var (Maybe (Val' a))
+type Bind = Bind' Selected
+data Env' a = Empty | Extend (Env' a) (Bind' a)
 type Env = Env' Selected
 
 infix 6 Bind as ↦
 infixl 5 Extend as :+:
+infixl 5 update as ◃
 
 find :: Var -> Env -> MayFail Val
 find x' Empty  = report $ "variable " <> x' <> " not found"
@@ -58,7 +59,17 @@ find x' (xs :+: x ↦ v)
    | x == x'   = note "TODO: should map to a bottom value" v
    | otherwise = find x' xs
 
-derive instance functorBind :: Functor Bind
+foldEnv :: forall a . (Bind -> a -> a) -> a -> Env -> a
+foldEnv f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldEnv f z ρ)
+foldEnv _ z Empty           = z
+
+update :: Env -> Bind -> Env
+update Empty _ = Empty
+update (xs :+: x ↦ v) (x' ↦ v')
+   | x == x'    = xs :+: x' ↦ v'
+   | otherwise  = (update xs $ x' ↦ v') :+: x ↦ v
+
+derive instance functorBind :: Functor Bind'
 derive instance functorEnv :: Functor Env'
 
 instance semigroupEnv :: Semigroup (Env' a) where

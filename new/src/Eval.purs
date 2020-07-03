@@ -6,11 +6,12 @@ import Data.List (List(..), (:), length, singleton, unzip)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
-import Bindings (varAnon)
 import DataType (Ctr, arity)
 import Expl (Expl'(..), VarDef'(..)) as T
 import Expl (Expl, Match, Match'(..))
-import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), Module, Module'(..), RecDef'(..), RecDefs, body)
+import Expr (
+   Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), Module, Module'(..), RecDef'(..), RecDefs, body, varAnon
+)
 import Expr (RawExpr(..), VarDef'(..)) as E
 import Pretty (pretty, render)
 import Primitive (apply)
