@@ -6,7 +6,7 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings, Var)
 import DataType (Ctr)
-import Expr (Elim, Elim2, RecDefs, RecDefs2)
+import Expr (Elim, Elim2', RecDefs, RecDefs2)
 import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithList, maybeZipWithα)
 import Util ((≟))
 
@@ -24,7 +24,7 @@ data RawVal2 a =
    Int2 Int |
    Str2 String |
    Constr2 Ctr (List (Val2 a)) |
-   Closure2 (Env2 a) (RecDefs2 a) (Elim2 a) |
+   Closure2 (Env2 a) (RecDefs2 a) (Elim2' a) |
    Primitive2 Primitive
 
 data Val = Val Selected RawVal

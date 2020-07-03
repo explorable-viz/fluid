@@ -10,10 +10,10 @@ import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWi
 import Util (type (+), (≟), error)
 
 data VarDef = VarDef Elim Expr -- elim has codomain unit
-data VarDef2 a = VarDef2 (Elim2 a) (Expr2' a) -- elim has codomain unit
+data VarDef2 a = VarDef2 (Elim2' a) (Expr2' a) -- elim has codomain unit
 type VarDefs = List VarDef
 data RecDef = RecDef Var Elim
-data RecDef2 a = RecDef2 Var (Elim2 a)
+data RecDef2 a = RecDef2 Var (Elim2' a)
 type RecDefs = List RecDef
 type RecDefs2 a = List (RecDef2 a)
 
@@ -36,10 +36,10 @@ data RawExpr2 a =
    Int2 Int |
    Str2 String |
    Constr2 Ctr (List (Expr2' a)) |
-   Lambda2 (Elim2 a) |
+   Lambda2 (Elim2' a) |
    App2 (Expr2' a) (Expr2' a) |
    BinaryApp2 (Expr2' a) Var (Expr2' a) |
-   MatchAs2 (Expr2' a) (Elim2 a) |
+   MatchAs2 (Expr2' a) (Elim2' a) |
    Let2 (VarDef2 a) (Expr2' a) |
    LetRec2 (RecDefs2 a) (Expr2' a)
 
@@ -61,7 +61,7 @@ expr2 = Expr2' false
 
 -- Continuation of an eliminator. None form only used in structured let.
 data Cont = None | Body Expr | Arg Elim
-data Cont2 a = None2 | Body2 (Expr2' a) | Arg2 (Elim2 a)
+data Cont2 a = None2 | Body2 (Expr2' a) | Arg2 (Elim2' a)
 
 body :: Cont -> Expr
 body (Body e) = e
@@ -85,12 +85,12 @@ data Elim =
    ElimVar Var Cont |
    ElimConstr (Map Ctr Cont)
 
-data Elim2 a =
+data Elim2' a =
    ElimVar2 Var (Cont2 a) |
    ElimConstr2 (Map Ctr (Cont2 a))
 
 derive instance functorCont :: Functor Cont2
-derive instance functorElim :: Functor Elim2
+derive instance functorElim :: Functor Elim2'
 
 instance elimSelectable :: Selectable Elim where
    mapα f (ElimVar x κ)    = ElimVar x $ mapα f κ
@@ -101,7 +101,7 @@ instance elimSelectable :: Selectable Elim where
    maybeZipWithα f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithα f κs κs'
    maybeZipWithα _ _ _                                = Nothing
 
-instance selectable2Elim :: Selectable2 Elim2 where
+instance selectable2Elim :: Selectable2 Elim2' where
    maybeZipWith f (ElimVar2 x κ) (ElimVar2 x' κ')
       = ElimVar2 <$> x ≟ x' <*> maybeZipWith f κ κ'
    maybeZipWith f (ElimConstr2 κs) (ElimConstr2 κs')   = ElimConstr2 <$> maybeZipWithMap f κs κs'

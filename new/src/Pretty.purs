@@ -219,7 +219,7 @@ instance prettyBranch :: Pretty (Ctr × Cont) where
 instance prettyBranch2 :: Pretty (Ctr × List Match) where
    pretty (c × ξs) = text (show c) :<>: operator "-> " :<>: pretty ξs
 
-instance prettyElim2 :: Pretty Elim where
+instance prettyElim2' :: Pretty Elim where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = vcat $ map pretty $ (toUnfoldable κs :: List _)
 
