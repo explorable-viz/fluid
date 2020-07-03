@@ -5,7 +5,7 @@ import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr)
-import Lattice (class Selectable2, Selected, maybeZipWith, maybeZipWithList, maybeZipWithMap)
+import Lattice (class Selectable, Selected, maybeZipWith, maybeZipWithList, maybeZipWithMap)
 import Util (type (+), (≟), error)
 
 type Var = String
@@ -53,7 +53,7 @@ body :: Cont -> Expr
 body (Body e) = e
 body _ = error "Expression expected"
 
-instance selectableCont :: Selectable2 Cont' where
+instance selectableCont :: Selectable Cont' where
    maybeZipWith f (Body e) (Body e')        = Body <$> maybeZipWith f e e'
    maybeZipWith f (Arg σ) (Arg σ')          = Arg <$> maybeZipWith f σ σ'
    maybeZipWith _ _ _                       = Nothing
@@ -67,7 +67,7 @@ type Elim = Elim' Selected
 derive instance functorCont :: Functor Cont'
 derive instance functorElim :: Functor Elim'
 
-instance selectableElim :: Selectable2 Elim' where
+instance selectableElim :: Selectable Elim' where
    maybeZipWith f (ElimVar x κ) (ElimVar x' κ')
       = ElimVar <$> x ≟ x' <*> maybeZipWith f κ κ'
    maybeZipWith f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithMap f κs κs'
@@ -76,16 +76,16 @@ instance selectableElim :: Selectable2 Elim' where
 data Module' a = Module (List (VarDef' a + RecDefs' a))
 type Module = Module' Selected
 
-instance selectableDef :: Selectable2 VarDef' where
+instance selectableDef :: Selectable VarDef' where
    maybeZipWith f (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'
 
-instance selectableRecDef :: Selectable2 RecDef' where
+instance selectableRecDef :: Selectable RecDef' where
    maybeZipWith f (RecDef x σ) (RecDef x' σ') = RecDef <$> x ≟ x' <*> maybeZipWith f σ σ'
 
-instance selectableExpr :: Selectable2 Expr' where
+instance selectableExpr :: Selectable Expr' where
    maybeZipWith f (Expr α r) (Expr α' r') = Expr <$> pure (f α α') <*> maybeZipWith f r r'
 
-instance selectableRawExpr :: Selectable2 RawExpr where
+instance selectableRawExpr :: Selectable RawExpr where
    maybeZipWith _ (Var x) (Var x')                = Var <$> x ≟ x'
    maybeZipWith _ (Op op) (Op op')                = Op <$> op ≟ op'
    maybeZipWith _ (Int n) (Int n')                = Int <$> n ≟ n'
