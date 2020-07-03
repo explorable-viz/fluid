@@ -8,7 +8,7 @@ import Bindings (Bind, Bindings(..), (:+:), (↦), (◃), foldBind, varAnon)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs)
-import Lattice (Selected, bot, ff, (∨))
+import Lattice (Selected, bot, (∨))
 import Pretty (pretty, render)
 import Util (type (×), absurd, error, (×), (≜))
 import Val (Env, Val(..))
@@ -88,13 +88,13 @@ matchMany_bwd ρ κ α (ξ : ξs)  =
 
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
 eval_bwd v (T.Var x ρ)
-   = (bot ρ ◃ x ↦ v) × (Expr ff (Var x)) × ff
+   = (bot ρ ◃ x ↦ v) × (Expr false (Var x)) × false
 eval_bwd (Val α (V.Str s)) (T.Str ts ρ)
    = bot ρ × (Expr α (Str s)) × α
 eval_bwd (Val α (V.Int n)) (T.Int tn ρ)
    = bot ρ × (Expr α (Int n)) × α
 eval_bwd v@(Val α (V.Primitive φ)) (T.Op op ρ)
-   = (bot ρ ◃ op ↦ v) × (Expr ff (Op op)) × ff
+   = (bot ρ ◃ op ↦ v) × (Expr false (Op op)) × false
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × (Expr α (Lambda σ)) × α
 eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
@@ -139,7 +139,7 @@ eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
                 ρ' × e' × α'  = evalArgs_bwd vs' ts'
             in  case ρ' of Empty -> ρ × (e:L.Nil) × α
                            _     -> (ρ ∨ ρ') × (e:e') × (α ∨ α')
-         evalArgs_bwd L.Nil L.Nil = Empty × L.Nil × ff
+         evalArgs_bwd L.Nil L.Nil = Empty × L.Nil × false
          evalArgs_bwd _ _ = error absurd
 
          ρ  × es  × α'   = evalArgs_bwd vs ts in

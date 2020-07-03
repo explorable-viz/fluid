@@ -29,12 +29,6 @@ infix 6 maybeJoin as ∨?
 
 type Selected = Boolean
 
-ff :: Boolean
-ff = false
-
-tt :: Boolean
-tt = true
-
 class Selectable a where
    mapα           :: (Selected -> Selected) -> a -> a
    maybeZipWithα  :: (Selected -> Selected -> Selected) -> a -> a -> Maybe a
