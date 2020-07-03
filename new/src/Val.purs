@@ -7,7 +7,7 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr)
 import Expr (Elim', RecDefs', Var)
-import Lattice (class Selectable, Selected, maybeZipWith, maybeZipWithList)
+import Lattice (class MaybeZippable, Selected, maybeZipWith, maybeZipWithList)
 import Util (MayFail, (≟), report)
 
 data Primitive =
@@ -31,10 +31,10 @@ type RawVal = RawVal' Selected
 val :: RawVal -> Val
 val = Val false
 
-instance selectableVal :: Selectable Val' where
+instance maybeZippableVal :: MaybeZippable Val' where
    maybeZipWith f (Val α r) (Val α' r') = Val <$> pure (α `f` α') <*> maybeZipWith f r r'
 
-instance selectableRawVal :: Selectable RawVal' where
+instance maybeZippableRawVal :: MaybeZippable RawVal' where
    maybeZipWith f (Int x) (Int x')                   = Int <$> x ≟ x'
    maybeZipWith f (Str s) (Str s')                   = Str <$> s ≟ s'
    maybeZipWith f (Constr c vs) (Constr c' vs') =
@@ -79,7 +79,7 @@ instance semigroupEnv :: Semigroup (Env' a) where
 instance monoidEnv :: Monoid (Env' a) where
    mempty = Empty
 
-instance selectableEnv :: Selectable Env' where
+instance maybeZippableEnv :: MaybeZippable Env' where
    maybeZipWith _ Empty Empty                              = pure Empty
    maybeZipWith f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))
       = Extend <$> maybeZipWith f m m' <*> ((↦) <$> x ≟ y <*> lift2 (maybeZipWith f) v v')

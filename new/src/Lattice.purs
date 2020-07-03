@@ -2,7 +2,7 @@ module Lattice where
 
 import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
-import Data.List (List, length, zipWith)
+import Data.List (List(..), (:), length, zipWith)
 import Data.Map (Map, fromFoldable, size, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
@@ -21,8 +21,13 @@ infixl 6 join as ∨
 
 type Selected = Boolean
 
-class Functor t <= Selectable t where
+class Functor t <= MaybeZippable t where
    maybeZipWith  :: forall a b c . (a -> b -> c) -> t a -> t b -> Maybe (t c)
+
+instance maybeZippableList :: MaybeZippable List where
+   maybeZipWith f Nil Nil           = pure Nil
+   maybeZipWith f (x : xs) (y : ys) = (pure $ f x y) `lift2 (:)` maybeZipWith f xs ys
+   maybeZipWith _ _ _               = Nothing
 
 instance latticeBoolean :: Lattice Boolean where
    join  = (||)
@@ -30,25 +35,25 @@ instance latticeBoolean :: Lattice Boolean where
    top   = const true
    bot   = const false
 
-instance latticeSelectable :: Selectable t => Lattice (t Boolean) where
+instance latticeMaybeZippable :: MaybeZippable t => Lattice (t Boolean) where
    join x y = fromJust "Join undefined" $ maybeZipWith join x y
    meet x y = fromJust "Meet undefined" $ maybeZipWith meet x y
    top   = map top
    bot   = map bot
 
--- Not sure how to do these with instances (need curried type constructors)
-maybeZipWithTuple :: forall a b c k t . Eq k => Selectable t =>
+-- Not sure how to do these with instances (need curried type constructors).
+maybeZipWithTuple :: forall a b c k t . Eq k => MaybeZippable t =>
    (a -> b -> c) -> Tuple k (t a) -> Tuple k (t b) -> Maybe (Tuple k (t c))
 maybeZipWithTuple f (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeZipWith f v v'
 
-maybeZipWithMap :: forall a b c k t . Ord k => Selectable t =>
+maybeZipWithMap :: forall a b c k t . Ord k => MaybeZippable t =>
    (a -> b -> c) -> Map k (t a) -> Map k (t b) -> Maybe (Map k (t c))
 maybeZipWithMap f κs κs'
    | size κs == size κs' =
       fromFoldable <$> (sequence $ zipWith (maybeZipWithTuple f) (toUnfoldable κs) (toUnfoldable κs'))
    | otherwise = Nothing
 
-maybeZipWithList :: forall a b c t . Selectable t =>
+maybeZipWithList :: forall a b c t . MaybeZippable t =>
    (a -> b -> c) -> List (t a) -> List (t b) -> Maybe (List (t c))
 maybeZipWithList f xs ys
    | length xs == length ys   = sequence $ zipWith (maybeZipWith f) xs ys
