@@ -10,16 +10,10 @@ import Data.Traversable (sequence)
 import Util (type (×), (×), (≟), fromJust)
 
 class Lattice a where
-   maybeMeet   :: a -> a -> Maybe a
-   maybeJoin   :: a -> a -> Maybe a
-   top         :: a -> a
-   bot         :: a -> a
-
-join :: forall a . Lattice a => a -> a -> a
-join p q = fromJust "Join undefined" $ p `maybeJoin` q
-
-meet :: forall a . Lattice a => a -> a -> a
-meet p q = fromJust "Meet undefined" $ p `maybeMeet` q
+   join   :: a -> a -> a
+   meet   :: a -> a -> a
+   top    :: a -> a
+   bot    :: a -> a
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
@@ -32,10 +26,10 @@ class Selectable a where
    maybeZipWithα  :: (Selected -> Selected -> Selected) -> a -> a -> Maybe a
 
 instance selectableLattice :: Selectable a => Lattice a where
-   maybeJoin   = maybeZipWithα ((||))
-   maybeMeet   = maybeZipWithα ((&&))
-   top         = mapα $ const true
-   bot         = mapα $ const false
+   join x y = fromJust "Join undefined" $ maybeZipWithα (||) x y
+   meet x y = fromJust "Meet undefined" $ maybeZipWithα (&&) x y
+   top   = mapα $ const true
+   bot   = mapα $ const false
 
 instance selectableBoolean :: Selectable Boolean where
    mapα                    = identity
