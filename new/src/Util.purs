@@ -30,9 +30,9 @@ absurd = "absurd"
 unimplemented :: String
 unimplemented = "unimplemented"
 
-boolToMaybe :: forall a . Boolean -> a -> Maybe a
-boolToMaybe false = const Nothing
-boolToMaybe true  = Just
+whenever :: forall a . Boolean -> a -> Maybe a
+whenever false = const Nothing
+whenever true  = Just
 
 fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a
@@ -63,7 +63,7 @@ check true _      = pure unit
 check false msg   = report msg
 
 mayEq :: forall a . Eq a => a -> a -> Maybe a
-mayEq x x' = boolToMaybe (x == x') x
+mayEq x x' = whenever (x == x') x
 
 mustEq :: forall a . Eq a => a -> a -> a
 mustEq x x' = fromJust "Must be equal" $ x ≟ x'

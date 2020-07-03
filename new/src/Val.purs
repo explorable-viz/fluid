@@ -1,9 +1,8 @@
 module Val where
 
 import Prelude hiding (absurd, top)
-import Data.List (List, zipWith)
+import Data.List (List)
 import Data.Maybe (Maybe(..))
-import Data.Traversable (sequence)
 import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
@@ -45,9 +44,8 @@ instance selectableRawVal :: Selectable RawVal where
    maybeZipWithα f (Int x) (Int x')                   = Int <$> x ≟ x'
    maybeZipWithα f (Str s) (Str s')                   = Str <$> s ≟ s'
    maybeZipWithα f (Constr c es) (Constr c' es') =
-      Constr <$> c ≟ c' <*> sequence (zipWith (maybeZipWithα f) es es')
+      Constr <$> c ≟ c' <*> maybeZipWithα f es es'
    maybeZipWithα f (Closure ρ δ σ) (Closure ρ' δ' σ') =
-      Closure <$> maybeZipWithα f ρ ρ'
-              <*> sequence (zipWith (maybeZipWithα f) δ δ') <*> maybeZipWithα f σ σ'
+      Closure <$> maybeZipWithα f ρ ρ' <*> maybeZipWithα f δ δ' <*> maybeZipWithα f σ σ'
    maybeZipWithα f (Primitive φ) (Primitive φ')       = Primitive <$> maybeZipWithα f φ φ'
    maybeZipWithα _ _ _                                = Nothing
