@@ -5,10 +5,10 @@ import Control.Apply (lift2)
 import Data.Either (note)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
-import Bindings (Bindings, Var)
+import Bindings (Var)
 import DataType (Ctr)
-import Expr (Elim, Elim2', RecDefs, RecDefs')
-import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithList, maybeZipWithα)
+import Expr (Elim', RecDefs')
+import Lattice (class Selectable2, Selected, maybeZipWith, maybeZipWithList)
 import Util (MayFail, (≟), report)
 
 data Primitive =

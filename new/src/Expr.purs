@@ -28,7 +28,7 @@ data RawExpr a =
    Let (VarDef a) (Expr' a) |
    LetRec (RecDefs' a) (Expr' a)
 
-data Expr' a = Expr' a (RawExpr a)
+data Expr' a = Expr a (RawExpr a)
 type Expr = Expr' Selected
 
 derive instance functorVarDef :: Functor VarDef
@@ -36,16 +36,16 @@ derive instance functorRecDef :: Functor RecDef
 derive instance functorRawExpr :: Functor RawExpr
 derive instance functorExpr :: Functor Expr'
 
-expr2 :: RawExpr Selected -> Expr
-expr2 = Expr' false
+expr :: RawExpr Selected -> Expr
+expr = Expr false
 
 -- Continuation of an eliminator. None form only used in structured let.
 data Cont' a = None | Body (Expr' a) | Arg (Elim' a)
 type Cont = Cont' Selected
 
-body2 :: Cont -> Expr
-body2 (Body e) = e
-body2 _ = error "Expression expected"
+body :: Cont -> Expr
+body (Body e) = e
+body _ = error "Expression expected"
 
 instance selectableCont :: Selectable2 Cont' where
    maybeZipWith f (Body e) (Body e')        = Body <$> maybeZipWith f e e'
@@ -67,7 +67,8 @@ instance selectableElim :: Selectable2 Elim' where
    maybeZipWith f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithMap f κs κs'
    maybeZipWith _ _ _                                = Nothing
 
-data Module a = Module (List (VarDef a + RecDefs' a))
+data Module' a = Module (List (VarDef a + RecDefs' a))
+type Module = Module' Selected
 
 instance selectableDef :: Selectable2 VarDef where
    maybeZipWith f (VarDef σ e) (VarDef σ' e')  = VarDef <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'
@@ -76,7 +77,7 @@ instance selectableRecDef :: Selectable2 RecDef where
    maybeZipWith f (RecDef x σ) (RecDef x' σ')  = RecDef <$> x ≟ x' <*> maybeZipWith f σ σ'
 
 instance selectableExpr :: Selectable2 Expr' where
-   maybeZipWith f (Expr' α r) (Expr' α' r')   = Expr' <$> pure (f α α') <*> maybeZipWith f r r'
+   maybeZipWith f (Expr α r) (Expr' α' r')   = Expr' <$> pure (f α α') <*> maybeZipWith f r r'
 
 instance selectableRawExpr :: Selectable2 RawExpr where
    maybeZipWith _ (Var x) (Var x')                = Var <$> x ≟ x'
