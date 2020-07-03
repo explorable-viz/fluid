@@ -1,10 +1,9 @@
 module Expr where
 
 import Prelude hiding (top)
-import Data.List (List, zipWith)
+import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
-import Data.Traversable (sequence)
 import Bindings (Var)
 import DataType (Ctr)
 import Lattice (class Selectable, Selected, mapα, maybeZipWithα)
@@ -94,7 +93,7 @@ instance rawExprSelectable :: Selectable RawExpr where
    maybeZipWithα _ (Int n) (Int n')                = Int <$> n ≟ n'
    maybeZipWithα _ (Str s) (Var s')                = Str <$> s ≟ s'
    maybeZipWithα f (Constr c es) (Constr c' es')
-      = Constr <$> c ≟ c' <*> sequence (zipWith (maybeZipWithα f) es' es')
+      = Constr <$> c ≟ c' <*> maybeZipWithα f es' es'
    maybeZipWithα f (App e1 e2) (App e1' e2')
       = App <$>  maybeZipWithα f e1 e1' <*> maybeZipWithα f e2 e2'
    maybeZipWithα f (BinaryApp e1 op e2) (BinaryApp e1' op' e2')

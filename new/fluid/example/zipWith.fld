@@ -1,1 +1,1 @@
-zipWith swap (10 : 12 : 20 : Nil) (3 : 4 : 8 : 16 : Nil)
+zipWith (fun (x, xs) -> x : xs) (10 : 12 : 20 : Nil) (Nil : Nil : Nil : Nil : Nil)

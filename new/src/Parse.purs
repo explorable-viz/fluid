@@ -28,7 +28,7 @@ import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
-import Util (type (×), (×), type (+), error, pureIf, successful, successfulWith)
+import Util (type (×), (×), type (+), error, onlyIf, successful, successfulWith)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
@@ -47,7 +47,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    commentEnd = "-}",
    commentLine = "--",
    nestedComments = true,
-   identStart = letter,
+   identStart = letter <|> char '_',
    identLetter = alphaNum <|> oneOf ['_', '\''],
    opStart = opChar,
    opLetter = opChar,
@@ -73,12 +73,12 @@ keyword str =
 ident ∷ SParser Var
 ident = do
    x <- token.identifier
-   pureIf (not $ isCtrName x) x
+   onlyIf (not $ isCtrName x) x
 
 ctr :: SParser Ctr
 ctr = do
    x <- token.identifier
-   pureIf (isCtrName x) $ Ctr x
+   onlyIf (isCtrName x) $ Ctr x
 
 -- Singleton eliminator with no continuation.
 simplePattern :: SParser Pattern -> SParser Pattern
@@ -167,7 +167,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
    binaryOp :: String -> SParser (Expr -> Expr -> Expr)
    binaryOp op = do
       op' <- token.operator
-      pureIf (op == op') $
+      onlyIf (op == op') $
          if isCtrOp op'
          then \e e' -> expr $ Constr (Ctr op') (e : e' : empty)
          else \e e' -> expr $ BinaryApp e op e'
@@ -259,7 +259,7 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    infixCtr :: String -> SParser (Pattern -> Pattern -> Pattern)
    infixCtr op = do
       op' <- token.operator
-      pureIf (isCtrOp op' && op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
+      onlyIf (isCtrOp op' && op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
 
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof

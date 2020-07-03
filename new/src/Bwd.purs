@@ -1,10 +1,10 @@
 module Bwd where
 
 import Prelude (map, ($), (<>))
-import Data.List (List, (:), reverse, length)
+import Data.List (List, (:), length)
 import Data.List (List(..)) as L
 import Data.Map (insert)
-import Bindings (Bind, Bindings(..), foldBind, splitAt, (:+:), (↦), (◃))
+import Bindings (Bind, Bindings(..), (:+:), (↦), (◃), foldBind, varAnon, splitAt)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs)
@@ -15,16 +15,20 @@ import Val (Env, Val(..))
 import Val (RawVal(..)) as V
 
 unmatch :: Env -> Match -> Env × Env
-unmatch ρ (MatchVar x')
-   = unmatchOne ρ (MatchVar x')
+unmatch ρ (MatchVar x)
+   = unmatchOne ρ (MatchVar x)
+unmatch ρ (MatchVarAnon v)
+   = unmatchOne ρ (MatchVarAnon v)
 unmatch ρ (MatchConstr (ctr × ξs) m) =
-   unmatchOne ρ (MatchConstr (ctr × (reverse ξs)) m)
+   unmatchOne ρ (MatchConstr (ctr × ξs) m)
 
 unmatchOne :: Env -> Match -> Env × Env
 unmatchOne (ρ :+: x ↦ v) (MatchVar x')
    = ρ × (Empty :+: (x ≜ x') ↦ v)
 unmatchOne Empty (MatchVar x')
-   = error "unmatch - variable not found in empty env"
+   = error absurd
+unmatchOne ρ (MatchVarAnon _)
+   = ρ × Empty
 unmatchOne ρ (MatchConstr (_ × ξs) _) =
    unmatchMany ρ ξs
 
@@ -55,17 +59,20 @@ split :: Env -> RecDefs -> Env × Env
 split ρ δ = splitAt (length δ) ρ
 
 match_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
-match_bwd ρ κ α (MatchVar x')
-   = matchOne_bwd ρ κ α (MatchVar x')
+match_bwd ρ κ α (MatchVar x)
+   = matchOne_bwd ρ κ α (MatchVar x)
+match_bwd ρ κ α (MatchVarAnon v)
+   = matchOne_bwd ρ κ α (MatchVarAnon v)
 match_bwd ρ κ α (MatchConstr (c × ξs) κs)
-   = matchOne_bwd ρ κ α (MatchConstr (c × (reverse ξs)) κs)
+   = matchOne_bwd ρ κ α (MatchConstr (c × ξs) κs)
 
 matchOne_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
-matchOne_bwd (Empty :+: x ↦ v) κ α (MatchVar x')  = v × (ElimVar (x ≜ x') κ)
-matchOne_bwd _ _ _ (MatchVar x')                  = error absurd
-matchOne_bwd ρ κ α (MatchConstr (c × ξs) κs)  =
+matchOne_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
+matchOne_bwd Empty κ α (MatchVarAnon v)            = bot v × ElimVar varAnon κ
+matchOne_bwd ρ κ α (MatchConstr (c × ξs) κs)       =
    let vs × κ' = matchMany_bwd ρ κ α ξs in
    (Val α $ V.Constr c vs) × (ElimConstr $ insert c κ' $ map bot κs)
+matchOne_bwd _ _ _ _                               = error absurd
 
 matchMany_bwd :: Env -> Cont -> Selected -> List Match -> List Val × Cont
 matchMany_bwd ρ κ α L.Nil     = L.Nil × κ
