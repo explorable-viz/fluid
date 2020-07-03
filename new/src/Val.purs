@@ -71,8 +71,8 @@ instance selectable2Val :: Selectable2 Val2 where
 instance selectable2RawVal :: Selectable2 RawVal2 where
    maybeZipWith f (Int2 x) (Int2 x')                   = Int2 <$> x ≟ x'
    maybeZipWith f (Str2 s) (Str2 s')                   = Str2 <$> s ≟ s'
-   maybeZipWith f (Constr2 c es) (Constr2 c' es') =
-      Constr2 <$> c ≟ c' <*> maybeZipWith (error "todo") es es'
+   maybeZipWith f (Constr2 c vs) (Constr2 c' vs') =
+      Constr2 <$> c ≟ c' <*> maybeZipWithList f vs vs'
    maybeZipWith f (Closure2 ρ δ σ) (Closure2 ρ' δ' σ') =
       Closure2 <$> maybeZipWith f ρ ρ' <*> maybeZipWith (error "todo") δ δ' <*> maybeZipWith f σ σ'
    maybeZipWith f (Primitive2 φ) (Primitive2 φ')       = pure $ Primitive2 φ -- should require φ == φ'

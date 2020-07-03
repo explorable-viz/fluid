@@ -3,7 +3,7 @@ module Lattice where
 import Prelude hiding (absurd, join)
 import Control.Apply (lift2)
 import Data.Function (on)
-import Data.List (List, length, zipWith)
+import Data.List (List(..), (:), length, zipWith)
 import Data.Map (Map, fromFoldable, size, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
@@ -75,3 +75,8 @@ instance selectable2List :: Selectable2 List where
    maybeZipWith f xs ys
       | length xs == length ys   = pure $ zipWith f xs ys
       | otherwise                = Nothing
+
+maybeZipWithList :: forall a b c t . (a -> b -> c) -> List (t a) -> List (t b) -> Maybe (List (t c))
+maybeZipWithList _ Nil Nil             = pure Nil
+maybeZipWithList f (x : xs) (y : ys)   = f x y : error "todo" -- maybeZipWith (?_) vs vs'
+maybeZipWithList _ _ _                 = Nothing
