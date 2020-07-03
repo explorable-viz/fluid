@@ -3,12 +3,12 @@ module Lattice where
 import Prelude hiding (absurd, join)
 import Control.Apply (lift2)
 import Data.Function (on)
-import Data.List (List(..), (:), length, zipWith)
+import Data.List (List, length, zipWith)
 import Data.Map (Map, fromFoldable, size, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util (type (×), (×), (≟), error, fromJust)
+import Util (type (×), (×), (≟), fromJust)
 
 class Lattice a where
    join   :: a -> a -> a
@@ -52,9 +52,6 @@ instance selectableUnit :: Selectable Unit where
 instance selectableTuple :: (Eq k, Selectable v) => Selectable (k × v) where
    mapα f (k × v)                    = k × mapα f v
    maybeZipWithα f (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeZipWithα f v v'
-
-instance selectable2Tuple :: (Eq k) => Selectable2 (Tuple k) where
-   maybeZipWith f (k × v) (k' × v') = (k ≟ k') `lift2 (×)` (error "todo") -- maybeZipWith ?_ v v'
 
 instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
    mapα f = map (mapα f)
