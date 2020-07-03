@@ -29,7 +29,7 @@ instance bindingsSelectable :: Selectable a => Selectable (Bindings a) where
 
    maybeZipWithα _ Empty Empty                              = pure Empty
    maybeZipWithα f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))
-      = Extend <$> (maybeZipWithα f m m') <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
+      = Extend <$> maybeZipWithα f m m' <*> ((↦) <$> x ≟ y <*> maybeZipWithα f v v')
    maybeZipWithα _ _ _                                      = Nothing
 
 foldBind :: forall a b . (Bind b -> a -> a) -> a -> Bindings b -> a
@@ -38,10 +38,12 @@ foldBind _ z Empty           = z
 
 find :: forall a . Var -> Bindings a -> MayFail a
 find x' Empty          = report $ "variable " <> x' <> " not found"
-find x' (xs :+: x ↦ v) = if x == x' then pure v else find x' xs
+find x' (xs :+: x ↦ v)
+   | x == x'   = pure v
+   | otherwise = find x' xs
 
 update :: forall a . Lattice a => Bindings a -> Bind a -> Bindings a
 update Empty _ = Empty
 update (xs :+: x ↦ v) (x' ↦ v')
    | x == x'    = xs :+: x' ↦ v'
-   | otherwise  = (update xs (x' ↦ v')) :+: x ↦ v
+   | otherwise  = (update xs $ x' ↦ v') :+: x ↦ v
