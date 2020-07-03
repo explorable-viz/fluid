@@ -25,7 +25,7 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
-import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
+import Expr (Elim2, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
 import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
 import Util (type (×), (×), type (+), error, onlyIf, successful, successfulWith)
@@ -114,7 +114,7 @@ patternDelim :: SParser Unit
 patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
-elim :: Boolean -> SParser Expr -> SParser Elim
+elim :: Boolean -> SParser Expr -> SParser Elim2
 elim curried expr' = successfulWith "Incompatible branches in match or lambda" <$> (joinAll <$> patterns)
    where
    patterns :: SParser (NonEmptyList Pattern)

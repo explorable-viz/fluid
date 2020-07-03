@@ -89,6 +89,8 @@ data Elim2' a =
    ElimVar2 Var (Cont2 a) |
    ElimConstr2 (Map Ctr (Cont2 a))
 
+type Elim2 = Elim2' Selected
+
 derive instance functorCont :: Functor Cont2
 derive instance functorElim :: Functor Elim2'
 
