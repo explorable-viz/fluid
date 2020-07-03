@@ -45,6 +45,7 @@ instance selectableTuple :: (Eq k, Selectable v) => Selectable (k × v) where
 
 instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
    mapα f = map (mapα f)
+
    maybeZipWithα f κs κs'
       | (eq `on` size) κs κs' =
          fromFoldable <$> sequence (zipWith (maybeZipWithα f) (toUnfoldable κs) (toUnfoldable κs'))
@@ -52,6 +53,7 @@ instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
 
 instance selectableList :: Selectable a => Selectable (List a) where
    mapα f = map (mapα f)
+
    maybeZipWithα f xs ys
       | (eq `on` length) xs ys   = sequence (zipWith (maybeZipWithα f) xs ys)
       | otherwise                = Nothing
