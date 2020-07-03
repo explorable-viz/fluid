@@ -6,7 +6,7 @@ import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Bindings (Var)
 import DataType (Ctr)
-import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithList, maybeZipWithα)
+import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithList, maybeZipWithMap, maybeZipWithα)
 import Util (type (+), (≟), error)
 
 data VarDef = VarDef Elim Expr -- elim has codomain unit

@@ -8,7 +8,7 @@ import Bindings (Bindings, Var)
 import DataType (Ctr)
 import Expr (Elim, Elim2, RecDefs, RecDefs2)
 import Lattice (class Selectable, class Selectable2, Selected, mapα, maybeZipWith, maybeZipWithList, maybeZipWithα)
-import Util ((≟), error)
+import Util ((≟))
 
 data Primitive =
    IntOp (Int -> Val) -- one constructor for each primitive type we care about

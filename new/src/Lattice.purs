@@ -26,7 +26,7 @@ class Selectable a where
    mapα           :: (Selected -> Selected) -> a -> a
    maybeZipWithα  :: (Selected -> Selected -> Selected) -> a -> a -> Maybe a
 
-class Selectable2 t where
+class Functor t <= Selectable2 t where
    maybeZipWith  :: forall a b c . (a -> b -> c) -> t a -> t b -> Maybe (t c)
 
 instance selectableLattice :: Selectable a => Lattice a where
@@ -34,6 +34,12 @@ instance selectableLattice :: Selectable a => Lattice a where
    meet x y = fromJust "Meet undefined" $ maybeZipWithα (&&) x y
    top   = mapα $ const true
    bot   = mapα $ const false
+
+else instance selectable2Lattice :: Selectable2 t => Lattice (t Boolean) where
+   join x y = fromJust "Join undefined" $ maybeZipWith (||) x y
+   meet x y = fromJust "Meet undefined" $ maybeZipWith (&&) x y
+   top   = map $ const true
+   bot   = map $ const false
 
 instance selectableBoolean :: Selectable Boolean where
    mapα                    = identity
