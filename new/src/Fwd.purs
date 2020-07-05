@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:), singleton)
 import Data.Map (lookup)
 import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDef'(..), RecDefs, VarDef'(..), body, varAnon)
-import Expr (RawExpr(..)) as E
+import Expr (RawExpr'(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (apply_fwd)
 import Util (type (×), (×), absurd, error, fromJust, successful)

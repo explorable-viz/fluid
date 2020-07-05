@@ -21,7 +21,7 @@ type RecDef = RecDef' Selected
 type RecDefs' a = List (RecDef' a)
 type RecDefs = RecDefs' Selected
 
-data RawExpr a =
+data RawExpr' a =
    Var Var |
    Op Var |
    Int Int |
@@ -34,15 +34,17 @@ data RawExpr a =
    Let (VarDef' a) (Expr' a) |
    LetRec (RecDefs' a) (Expr' a)
 
-data Expr' a = Expr a (RawExpr a)
+data Expr' a = Expr a (RawExpr' a)
+
 type Expr = Expr' Selected
+type RawExpr = RawExpr' Selected
 
 derive instance functorVarDef :: Functor VarDef'
 derive instance functorRecDef :: Functor RecDef'
-derive instance functorRawExpr :: Functor RawExpr
+derive instance functorRawExpr :: Functor RawExpr'
 derive instance functorExpr :: Functor Expr'
 
-expr :: RawExpr Selected -> Expr
+expr :: RawExpr -> Expr
 expr = Expr false
 
 -- Continuation of an eliminator. None form only used in structured let.
@@ -85,7 +87,7 @@ instance maybeZippableRecDef :: MaybeZippable RecDef' where
 instance maybeZippableExpr :: MaybeZippable Expr' where
    maybeZipWith f (Expr α r) (Expr α' r') = Expr <$> pure (f α α') <*> maybeZipWith f r r'
 
-instance maybeZippableRawExpr :: MaybeZippable RawExpr where
+instance maybeZippableRawExpr :: MaybeZippable RawExpr' where
    maybeZipWith _ (Var x) (Var x')                = Var <$> x ≟ x'
    maybeZipWith _ (Op op) (Op op')                = Op <$> op ≟ op'
    maybeZipWith _ (Int n) (Int n')                = Int <$> n ≟ n'

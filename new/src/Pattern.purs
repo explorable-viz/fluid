@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
 import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
-import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RawExpr(..), Var, expr)
+import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RawExpr'(..), Var, expr)
 import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =

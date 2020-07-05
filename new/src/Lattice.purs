@@ -41,7 +41,7 @@ instance latticeMaybeZippable :: (Lattice a, MaybeZippable t) => Lattice (t a) w
    top   = map top
    bot   = map bot
 
--- Not sure how to do these with instances (need curried type constructors).
+-- Not sure how to do these with instances (need composable type constructors).
 maybeZipWithTuple :: forall a b c k t . Eq k => MaybeZippable t =>
    (a -> b -> c) -> Tuple k (t a) -> Tuple k (t b) -> Maybe (Tuple k (t c))
 maybeZipWithTuple f (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeZipWith f v v'

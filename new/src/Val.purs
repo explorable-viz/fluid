@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import DataType (Ctr)
 import Expr (Elim', RecDefs', Var)
 import Lattice (class MaybeZippable, Selected, maybeZipWith, maybeZipWithList)
-import Util (MayFail, (≟), report)
+import Util (MayFail, type (×), (×), (≟), report)
 
 data Primitive =
    IntOp (Int -> Val) -- one constructor for each primitive type we care about
@@ -66,6 +66,18 @@ update Empty _ = Empty
 update (xs :+: x ↦ v) (x' ↦ v')
    | x == x'    = xs :+: x' ↦ v'
    | otherwise  = (update xs $ x' ↦ v') :+: x ↦ v
+
+splitAt :: Int -> Env -> Env × Env
+splitAt n ρ
+  | n <= 0     = ρ × Empty
+  | otherwise  = splitAt' n ρ
+    where
+        splitAt' :: Int -> Env -> Env × Env
+        splitAt' _  Empty        = Empty × Empty
+        splitAt' 1  (ρ0 :+: xv)  = ρ0 × Extend Empty xv
+        splitAt' m  (ρ0 :+: xv)  = ρ' × (ρ'' :+: xv)
+         where
+         ρ' × ρ'' = splitAt' (m - 1) ρ0
 
 derive instance functorBind :: Functor Bind'
 derive instance functorEnv :: Functor Env'

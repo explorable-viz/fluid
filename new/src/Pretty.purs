@@ -7,8 +7,8 @@ import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import DataType (Ctr(..), cCons, cNil, cPair)
-import Expr (Cont'(..), Elim'(..), Expr'(..), RawExpr, RecDef'(..), VarDef'(..), varAnon)
-import Expr (RawExpr(..)) as E
+import Expr (Cont'(..), Elim'(..), Expr'(..), RawExpr', RecDef'(..), VarDef'(..), varAnon)
+import Expr (RawExpr'(..)) as E
 import Expl (Expl'(..), VarDef'(..)) as T
 import Expl (Expl', Match'(..))
 import Util (type (×), (×), absurd, assert, error, fromJust, intersperse)
@@ -99,12 +99,12 @@ instance explPrettyList :: PrettyList (Expl' Boolean) where
    prettyList t = error "Ill-formed list for expls"
 
 instance exprPrettyList :: PrettyList (Expr' Boolean) where
-   prettyList (Expr α r) = text "Expr (" :<>: text (show α) :<>: comma :<>: prettyList r :<>: text ")"
+   prettyList (Expr a r) = prettyList r
 
-instance rawExprPrettyList :: PrettyList (RawExpr Boolean) where
-   prettyList (E.Constr (Ctr "Nil") Nil) = null
-   prettyList (E.Constr (Ctr "Cons") (e : es : Nil)) = comma :<>: pretty e :<>: prettyList es
-   prettyList e = pretty e
+instance rawExprPrettyList :: PrettyList (RawExpr' Boolean) where
+   prettyList (E.Constr (Ctr "Nil") Nil)              = null
+   prettyList (E.Constr (Ctr "Cons") (e : es : Nil))  = comma :<>: pretty e :<>: prettyList es
+   prettyList _                                       = error absurd
 
 instance valPrettyList :: PrettyList (Val' Boolean) where
    prettyList (Val _ u) = prettyList u
@@ -133,9 +133,9 @@ prettyConstr c Nil = pretty c
 prettyConstr c xs@(x : xs')
    | c == cPair   = parens $ pretty x :<>: comma :<>: pretty (fromJust absurd $ head xs')
    | c == cCons   = brackets $ pretty x :<>: prettyList (fromJust absurd $ head xs')
-   | otherwise  = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
+   | otherwise    = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
 
-instance rawExprPretty :: Pretty (RawExpr Boolean) where
+instance rawExprPretty :: Pretty (RawExpr' Boolean) where
    pretty (E.Int n)                 = text $ show n
    pretty (E.Str str)               = text $ show str
    pretty (E.Var x)                 = text x

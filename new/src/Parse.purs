@@ -27,7 +27,7 @@ import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Expr (
    Elim, Expr, Expr'(..),
    Module, Module'(..),
-   RawExpr(..),
+   RawExpr'(..),
    RecDef, RecDef'(..), RecDefs, RecDefs',
    Var,
    VarDef, VarDef'(..), VarDefs,

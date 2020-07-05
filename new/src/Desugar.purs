@@ -7,7 +7,7 @@ import Data.List (List(..)) as L
 import Data.Map (fromFoldable, empty) as M
 import DataType (Ctr, cCons, cNil, cTrue, cFalse)
 import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDefs, Var, VarDef, expr)
-import Expr (RawExpr(..), VarDef'(..)) as E
+import Expr (RawExpr'(..), VarDef'(..)) as E
 import Primitive (concatMap, map) as P
 import Util ((×), absurd, error)
 
