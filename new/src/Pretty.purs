@@ -51,8 +51,7 @@ class PrettyList p where
    prettyList :: p -> Doc
 
 instance boolPretty :: Pretty Boolean where
-   pretty true = text "true"
-   pretty false = text "false"
+   pretty = text <<< show
 
 instance envPretty :: Pretty (Env' Boolean) where
    pretty (ρ :+: kv) = brackets $ pretty $ ρ :+: kv
@@ -88,10 +87,6 @@ instance explMatch :: Pretty (Match' Boolean) where
 
 instance explValPretty :: Pretty (Expl' Boolean × Val' Boolean) where
    pretty (a × b) = parens $ pretty a :<>: comma :<>: pretty b
-
-instance envPrettyList :: PrettyList (Env' Boolean) where
-   prettyList (ρ :+: kv)   = prettyList ρ :<>: pretty kv
-   prettyList Empty       = text ""
 
 instance explPrettyList :: PrettyList (Expl' Boolean) where
    prettyList (T.NullConstr c ρ) = assert (c == cNil) $ text "NilExpl"
