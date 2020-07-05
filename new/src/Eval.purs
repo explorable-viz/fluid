@@ -6,17 +6,18 @@ import Data.List (List(..), (:), length, singleton, unzip, snoc)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
-import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
 import DataType (Ctr, arity)
-import Expl (Expl(..), VarDef(..)) as T
-import Expl (Expl, Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body)
-import Expr (RawExpr(..), VarDef(..)) as E
+import Expl (Expl'(..), VarDef'(..)) as T
+import Expl (Expl, Match, Match'(..))
+import Expr (
+   Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), Module, Module'(..), RecDef'(..), RecDefs, body, varAnon
+)
+import Expr (RawExpr'(..), VarDef'(..)) as E
 import Pretty (pretty, render)
 import Primitive (apply)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Val (Env, Val(..), val)
-import Val (RawVal(..)) as V
+import Val (Env, Env'(..), Val, Val'(..), (:+:), (↦), find, val)
+import Val (RawVal'(..)) as V
 
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
 match v (ElimVar x κ)
@@ -28,7 +29,7 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v _ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
-matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × (List Match))
+matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × List Match)
 matchArgs _ Nil κ                = pure $ Empty × κ × Nil
 matchArgs c (v : vs) (Arg σ)     = do
    ρ  × κ'  × ξ  <- match v σ
@@ -41,7 +42,7 @@ matchArgs _ _ _                  = error absurd
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
 closeDefs _ _ Nil = Empty
-closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ (val $ V.Closure ρ δ0 σ)
+closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ val (V.Closure ρ δ0 σ)
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do

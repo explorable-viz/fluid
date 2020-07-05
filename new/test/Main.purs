@@ -11,7 +11,7 @@ import Fwd (eval_fwd)
 import Module (openWithImports)
 import Pretty (pretty, render)
 import Util ((×), successful)
-import Val (Val(..))
+import Val (Val'(..))
 
 runExample :: String -> String -> Boolean -> Effect Unit
 runExample file expected runBwd = runMocha $

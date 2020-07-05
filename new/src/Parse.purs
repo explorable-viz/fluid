@@ -23,10 +23,18 @@ import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
-import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
-import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), VarDefs, expr)
-import PElim (Pattern(..), PCont(..), joinAll, setCont, toElim)
+import Expr (
+   Elim, Expr, Expr'(..),
+   Module, Module'(..),
+   RawExpr'(..),
+   RecDef, RecDef'(..), RecDefs, RecDefs',
+   Var,
+   VarDef, VarDef'(..), VarDefs,
+   expr
+)
+import Lattice (Selected)
+import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
 import Util (type (×), (×), type (+), error, onlyIf, successful, successfulWith)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
@@ -134,14 +142,14 @@ patternOne curried expr' delim = pattern' >>= rest
    pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
-varDefs :: SParser Expr -> SParser VarDefs
+varDefs :: SParser Expr -> SParser (VarDefs Selected)
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
    clause :: SParser VarDef
    clause =
       VarDef <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
 
-recDefs :: SParser Expr -> SParser RecDefs
+recDefs :: SParser Expr -> SParser (RecDefs' Selected)
 recDefs expr' = do
    fπs <- keyword strLet *> sepBy1_try clause token.semi
    let fπss = groupBy (eq `on` fst) fπs

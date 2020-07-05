@@ -3,14 +3,13 @@ module Fwd where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), singleton)
 import Data.Map (lookup)
-import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
-import Expr (Cont(..), Elim(..), Expr(..), RecDef(..), RecDefs, VarDef(..), body)
-import Expr (RawExpr(..)) as E
+import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDef'(..), RecDefs, VarDef'(..), body, varAnon)
+import Expr (RawExpr'(..)) as E
 import Lattice (Selected, (∧))
 import Primitive (apply_fwd)
 import Util (type (×), (×), absurd, error, fromJust, successful)
-import Val (Env, Val(..))
-import Val (RawVal(..)) as V
+import Val (Env, Env'(..), Val, Val'(..), (:+:), (↦), find)
+import Val (RawVal'(..)) as V
 
 match_fwd :: Val -> Elim -> Env × Cont × Selected
 match_fwd v (ElimVar x κ)

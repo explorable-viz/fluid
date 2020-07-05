@@ -1,4 +1,4 @@
-module PElim where
+module Pattern where
 
 import Prelude hiding (absurd, join)
 import Data.List (List(..), (:))
@@ -8,9 +8,8 @@ import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
-import Bindings (Var)
 import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), expr)
+import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RawExpr'(..), Var, expr)
 import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =
@@ -55,7 +54,7 @@ dataType κs = case keys κs of
    Nil   -> error absurd
    c : _ -> dataTypeFor c
 
-instance joinablePatternElim :: Joinable Pattern Elim where
+instance joinablePatternElim :: Joinable Pattern (Elim' Boolean) where
    maybeJoin (ElimVar x κ) (PattVar y κ')       = ElimVar <$> x ≞ y <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (PattConstr c n κ) = ElimConstr <$> mayFailUpdate
       where
@@ -74,10 +73,10 @@ instance joinablePatternElim :: Joinable Pattern Elim where
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
    maybeJoin _ _                               = report "Can't join variable and constructor patterns"
 
-instance joinablePContCont :: Joinable PCont Cont where
+instance joinablePContCont :: Joinable PCont (Cont' Boolean) where
    maybeJoin None PNone                               = pure None
    maybeJoin (Arg σ) (PArg π)                         = Arg <$> maybeJoin σ π
-   maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)   = Body <$> (expr <$> (Lambda <$> maybeJoin σ π))
+   maybeJoin (Body (Expr _ (Lambda σ))) (PLambda π)   = Body<$> (expr <$> (Lambda <$> maybeJoin σ π))
    maybeJoin _ _                                      = report "Incompatible continuations"
 
 joinAll :: NonEmptyList Pattern -> MayFail Elim

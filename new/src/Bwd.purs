@@ -4,15 +4,14 @@ import Prelude (map, ($), (<>))
 import Data.List (List, (:), length)
 import Data.List (List(..)) as L
 import Data.Map (insert)
-import Bindings (Bind, Bindings(..), (:+:), (↦), (◃), foldBind, varAnon, splitAt)
-import Expl (Expl, Match(..))
-import Expl (Expl(..), VarDef(..)) as T
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs)
-import Lattice (Selected, bot, ff, (∨))
+import Expl (Expl, Match, Match'(..))
+import Expl (Expl'(..), VarDef'(..)) as T
+import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RawExpr'(..), RecDef'(..), VarDef'(..), RecDefs, varAnon)
+import Lattice (Selected, bot, (∨))
 import Pretty (pretty, render)
 import Util (type (×), absurd, error, (×), (≜))
-import Val (Env, Val(..))
-import Val (RawVal(..)) as V
+import Val (Bind, Env, Env'(..), Val, Val'(..), (:+:), (↦), (◃), foldEnv, splitAt)
+import Val (RawVal'(..)) as V
 
 unmatch :: Env -> Match -> Env × Env
 unmatch (ρ :+: x ↦ v) (MatchVar x')
@@ -33,12 +32,12 @@ unmatchArgs ρ (ξ : ξs) =
 
 closeDefs_bwd :: Env -> Env -> Env × RecDefs × Selected
 closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _
-   = joinδ $ foldBind joinClsre ((RecDef f0 σ0 : L.Nil) × ρ0 × δ0 × α0) ρ'
+   = joinδ $ foldEnv joinClsre ((RecDef f0 σ0 : L.Nil) × ρ0 × δ0 × α0) ρ'
    where
       joinδ :: RecDefs × (Env × RecDefs × Selected) -> Env × RecDefs × Selected
       joinδ (δ' × ρ × δ × α) = ρ × (δ ∨ δ') × α
 
-      joinClsre   :: Bind Val
+      joinClsre   :: Bind
                   -> RecDefs × (Env × RecDefs × Selected)
                   -> RecDefs × (Env × RecDefs × Selected)
       joinClsre (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ × δ × α)
@@ -47,9 +46,6 @@ closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _
 
 closeDefs_bwd (_  :+: _ ↦ _) _ = error absurd
 closeDefs_bwd Empty ρ1         = bot ρ1 × L.Nil × false
-
-split :: Env -> RecDefs -> Env × Env
-split ρ δ = splitAt (length δ) ρ
 
 match_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
@@ -69,20 +65,20 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
 
 eval_bwd :: Val -> Expl -> Env × Expr × Selected
 eval_bwd v (T.Var x ρ)
-   = (bot ρ ◃ x ↦ v) × (Expr ff (Var x)) × ff
+   = (bot ρ ◃ x ↦ v) × (Expr false (Var x)) × false
 eval_bwd (Val α (V.Str s)) (T.Str ts ρ)
    = bot ρ × (Expr α (Str s)) × α
 eval_bwd (Val α (V.Int n)) (T.Int tn ρ)
    = bot ρ × (Expr α (Int n)) × α
 eval_bwd v@(Val α (V.Primitive φ)) (T.Op op ρ)
-   = (bot ρ ◃ op ↦ v) × (Expr ff (Op op)) × ff
+   = (bot ρ ◃ op ↦ v) × (Expr false (Op op)) × false
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × (Expr α (Lambda σ)) × α
 eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
    = let ρ1ρ2ρ3 × e × α    = eval_bwd v'' t''
          ρ1ρ2 × ρ3         = unmatch ρ1ρ2ρ3 ξ
          v'   × σ          = match_bwd ρ3 (Body e) α ξ
-         ρ1 × ρ2           = split ρ1ρ2 δ
+         ρ1 × ρ2           = splitAt (length δ) ρ1ρ2
          ρ'  × e'  × α'    = eval_bwd v' t'
          ρ1' × δ'   × α2   = closeDefs_bwd ρ2 ρ1
          ρ'' × e'' × α''   = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ)) t in
@@ -109,7 +105,7 @@ eval_bwd v (T.Let (T.VarDef ξ t1) t2)
      (ρ1 ∨ ρ1') × (Expr (α1 ∨ α2) (Let (VarDef σ e1) e2)) × (α1 ∨ α2)
 eval_bwd v (T.LetRec δ t)
    = let ρ1ρ2 × e × α   = eval_bwd v t
-         ρ1 × ρ2        = split ρ1ρ2 δ
+         ρ1 × ρ2        = splitAt (length δ) ρ1ρ2
          ρ1' × δ' × α'  = closeDefs_bwd ρ2 ρ1 in
      (ρ1 ∨ ρ1') × (Expr (α ∨ α') (LetRec δ' e)) × (α ∨ α')
 eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
@@ -120,7 +116,7 @@ eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
                 ρ' × e' × α'  = evalArgs_bwd vs' ts'
             in  case ρ' of Empty -> ρ × (e:L.Nil) × α
                            _     -> (ρ ∨ ρ') × (e:e') × (α ∨ α')
-         evalArgs_bwd L.Nil L.Nil = Empty × L.Nil × ff
+         evalArgs_bwd L.Nil L.Nil = Empty × L.Nil × false
          evalArgs_bwd _ _ = error absurd
 
          ρ  × es  × α'   = evalArgs_bwd vs ts in

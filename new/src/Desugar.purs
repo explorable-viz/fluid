@@ -5,11 +5,9 @@ import Data.Foldable (foldl)
 import Data.List ((:), List)
 import Data.List (List(..)) as L
 import Data.Map (fromFoldable, empty) as M
-import Bindings (Var)
 import DataType (Ctr, cCons, cNil, cTrue, cFalse)
-import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef, expr)
-import Expr (RawExpr(..), VarDef(..)) as E
-import Primitive (concatMap, map) as P
+import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDefs, Var, VarDef, concatMapE, mapE, expr)
+import Expr (RawExpr'(..), VarDef'(..)) as E
 import Util ((×), absurd, error)
 
 data SugaredExpr =
@@ -63,8 +61,8 @@ desugar (SExpr α (ListComp e_lhs e_rhs))
                     let Expr _ e'   = desugar bound_var
                         Expr _ es'  = desugar list_expr
                         σ           = bound_vars (expr e') (Body $ go es (n - 1))
-                        ebody       = if n == 0 then (P.map σ $ expr es')
-                                      else (P.concatMap σ $ expr es') :: Expr
+                        ebody       = if n == 0 then mapE σ $ expr es'
+                                      else concatMapE σ $ expr es' :: Expr
                     in  expr $ E.Let (E.VarDef σ (expr e')) ebody
 
                 Predicate p ->

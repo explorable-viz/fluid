@@ -2,32 +2,36 @@ module Expl where
 
 import Data.List (List)
 import Data.Map (Map)
-import Bindings (Var)
 import DataType (Ctr)
-import Expr (Cont, Elim, RecDefs)
+import Expr (Cont', Elim', RecDefs', Var)
+import Lattice (Selected)
 import Util (type (×))
-import Val (Env, Val)
+import Val (Env', Val')
 
-type ExplVal = Expl × Val
+type ExplVal a = Expl' a × Val' a
 
-data VarDef = VarDef Match Expl
+data VarDef' a = VarDef (Match' a) (Expl' a)
 
-data Expl =
-   Var Var Env |
-   Op Var Env |
-   Int Int Env |
-   Str String Env |
-   Constr Ctr (List Expl) |
-   NullConstr Ctr Env |
-   Lambda Elim |
-   App ExplVal Expl Match Expl |
-   AppOp ExplVal ExplVal |
-   BinaryApp ExplVal Var ExplVal |
-   MatchAs Expl Match Expl |
-   Let VarDef Expl |
-   LetRec RecDefs Expl
+data Expl' a =
+   Var Var (Env' a) |
+   Op Var (Env' a) |
+   Int Int (Env' a) |
+   Str String (Env' a) |
+   Constr Ctr (List (Expl' a)) |
+   NullConstr Ctr (Env' a) |
+   Lambda (Elim' a) |
+   App (ExplVal a) (Expl' a) (Match' a) (Expl' a) |
+   AppOp (ExplVal a) (ExplVal a) |
+   BinaryApp (ExplVal a) Var (ExplVal a) |
+   MatchAs (Expl' a) (Match' a) (Expl' a) |
+   Let (VarDef' a) (Expl' a) |
+   LetRec (RecDefs' a) (Expl' a)
 
-data Match =
+type Expl = Expl' Selected
+
+data Match' a =
    MatchVar Var |
-   MatchVarAnon Val |
-   MatchConstr (Ctr × List Match) (Map Ctr Cont)
+   MatchVarAnon (Val' a) |
+   MatchConstr (Ctr × List (Match' a)) (Map Ctr (Cont' a))
+
+type Match = Match' Selected

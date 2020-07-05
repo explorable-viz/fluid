@@ -1,71 +1,60 @@
 module Lattice where
 
-import Prelude hiding (absurd, join)
+import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
-import Data.Function (on)
-import Data.List (List, length, zipWith)
+import Data.List (List(..), (:), length, zipWith)
 import Data.Map (Map, fromFoldable, size, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
-import Util (type (×), (×), (≟), fromJust)
+import Data.Tuple (Tuple)
+import Util ((×), (≟), fromJust)
 
 class Lattice a where
-   maybeMeet   :: a -> a -> Maybe a
-   maybeJoin   :: a -> a -> Maybe a
-   top         :: a -> a
-   bot         :: a -> a
-
-join :: forall a . Lattice a => a -> a -> a
-join p q = fromJust "Join undefined" $ p ∨? q
-
-meet :: forall a . Lattice a => a -> a -> a
-meet p q = fromJust "Meet undefined" $ p ∧? q
+   join   :: a -> a -> a
+   meet   :: a -> a -> a
+   top    :: a -> a
+   bot    :: a -> a
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
 infixl 6 join as ∨
-infix 7 maybeMeet as ∧?
-infix 6 maybeJoin as ∨?
 
 type Selected = Boolean
 
-ff :: Boolean
-ff = false
+class Functor t <= MaybeZippable t where
+   maybeZipWith  :: forall a b c . (a -> b -> c) -> t a -> t b -> Maybe (t c)
 
-tt :: Boolean
-tt = true
+instance maybeZippableList :: MaybeZippable List where
+   maybeZipWith f Nil Nil           = pure Nil
+   maybeZipWith f (x : xs) (y : ys) = (pure $ f x y) `lift2 (:)` maybeZipWith f xs ys
+   maybeZipWith _ _ _               = Nothing
 
-class Selectable a where
-   mapα           :: (Selected -> Selected) -> a -> a
-   maybeZipWithα  :: (Selected -> Selected -> Selected) -> a -> a -> Maybe a
+instance latticeBoolean :: Lattice Boolean where
+   join  = (||)
+   meet  = (&&)
+   top   = const true
+   bot   = const false
 
-instance selectableLattice :: Selectable a => Lattice a where
-   maybeJoin   = maybeZipWithα ((||))
-   maybeMeet   = maybeZipWithα ((&&))
-   top         = mapα $ const true
-   bot         = mapα $ const false
+instance latticeMaybeZippable :: (Lattice a, MaybeZippable t) => Lattice (t a) where
+   join x y = fromJust "Join undefined" $ maybeZipWith join x y
+   meet x y = fromJust "Meet undefined" $ maybeZipWith meet x y
+   top   = map top
+   bot   = map bot
 
-instance selectableBoolean :: Selectable Boolean where
-   mapα                    = identity
-   maybeZipWithα op α α'   = pure $ α `op` α'
+-- Not sure how to do these with instances (need composable type constructors).
+maybeZipWithTuple :: forall a b c k t . Eq k => MaybeZippable t =>
+   (a -> b -> c) -> Tuple k (t a) -> Tuple k (t b) -> Maybe (Tuple k (t c))
+maybeZipWithTuple f (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeZipWith f v v'
 
-instance selectableUnit :: Selectable Unit where
-   mapα _               = identity
-   maybeZipWithα _ _ _  = pure unit
+maybeZipWithMap :: forall a b c k t . Ord k => MaybeZippable t =>
+   (a -> b -> c) -> Map k (t a) -> Map k (t b) -> Maybe (Map k (t c))
+maybeZipWithMap f κs κs'
+   | size κs == size κs' =
+      fromFoldable <$> (sequence $ zipWith (maybeZipWithTuple f) (toUnfoldable κs) (toUnfoldable κs'))
+   | otherwise = Nothing
 
-instance selectableTuple :: (Eq k, Selectable v) => Selectable (k × v) where
-   mapα f (k × v)                    = k × mapα f v
-   maybeZipWithα f (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeZipWithα f v v'
-
-instance selectableMap :: (Ord k, Selectable v) => Selectable (Map k v) where
-   mapα f = map (mapα f)
-   maybeZipWithα f κs κs'
-      | (eq `on` size) κs κs' =
-         fromFoldable <$> sequence (zipWith (maybeZipWithα f) (toUnfoldable κs) (toUnfoldable κs'))
-      | otherwise = Nothing
-
-instance selectableList :: Selectable a => Selectable (List a) where
-   mapα f = map (mapα f)
-   maybeZipWithα f xs ys
-      | (eq `on` length) xs ys   = sequence (zipWith (maybeZipWithα f) xs ys)
-      | otherwise                = Nothing
+maybeZipWithList :: forall a b c t . MaybeZippable t =>
+   (a -> b -> c) -> List (t a) -> List (t b) -> Maybe (List (t c))
+maybeZipWithList f xs ys
+   | length xs == length ys   = sequence $ zipWith (maybeZipWith f) xs ys
+   | otherwise                = Nothing
