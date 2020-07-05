@@ -1,10 +1,11 @@
 module Expr where
 
 import Prelude hiding (top)
-import Data.List (List)
+import Data.List (List(..), (:))
+import Data.List (concat) as L
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
-import DataType (Ctr)
+import DataType (Ctr(..))
 import Lattice (class MaybeZippable, Selected, maybeZipWith, maybeZipWithList, maybeZipWithMap)
 import Util (type (+), (≟), error)
 
@@ -77,6 +78,36 @@ instance maybeZippableElim :: MaybeZippable Elim' where
 
 data Module' a = Module (List (VarDef' a + RecDefs' a))
 type Module = Module' Selected
+
+class ToList a where
+   toList :: a -> List a
+
+class FromList a where
+   fromList :: List a -> a
+
+instance exprToList :: ToList (Expr' Boolean) where
+   toList (Expr a (Constr (Ctr "Cons") (e : es : Nil))) = (e:toList es)
+   toList (Expr a (Constr (Ctr "Nil") Nil)) = Nil
+   toList _ = error "expected list expression"
+
+instance exprFromList :: FromList (Expr' Boolean) where
+   fromList (x : xs) = expr $ Constr (Ctr "Cons") (x: fromList xs : Nil)
+   fromList Nil      = expr $ Constr (Ctr "Nil") Nil
+
+appendE :: Expr -> Expr -> Expr
+appendE e1 e2 = fromList $ (toList e1) <> (toList e2)
+
+concatE :: Expr -> Expr
+concatE e1 = fromList $ L.concat $ map toList (toList e1)
+
+mapE :: Elim -> Expr -> Expr
+mapE σ e = fromList $ map (applyσ σ) (toList e)
+   where
+   applyσ :: Elim -> Expr -> Expr
+   applyσ σ' e' = expr $ MatchAs e' σ'
+
+concatMapE :: Elim -> Expr -> Expr
+concatMapE = mapE
 
 instance maybeZippableDef :: MaybeZippable VarDef' where
    maybeZipWith f (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'
