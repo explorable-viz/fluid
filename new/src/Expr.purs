@@ -95,16 +95,16 @@ instance exprFromList :: FromList (Expr' Boolean) where
    fromList Nil      = expr $ Constr (Ctr "Nil") Nil
 
 appendE :: Expr -> Expr -> Expr
-appendE e1 e2 = fromList $ (toList e1) <> (toList e2)
+appendE e1 e2 = fromList $ toList e1 <> toList e2
 
 concatE :: Expr -> Expr
-concatE e1 = fromList $ L.concat $ map toList (toList e1)
+concatE e1 = fromList $ L.concat $ map toList $ toList e1
 
 mapE :: Elim -> Expr -> Expr
-mapE σ e = fromList $ map (applyσ σ) (toList e)
+mapE σ e = fromList $ map (apply σ) $ toList e
    where
-   applyσ :: Elim -> Expr -> Expr
-   applyσ σ' e' = expr $ MatchAs e' σ'
+   apply :: Elim -> Expr -> Expr
+   apply σ' e' = expr $ MatchAs e' σ'
 
 concatMapE :: Elim -> Expr -> Expr
 concatMapE = mapE
