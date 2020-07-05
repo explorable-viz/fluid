@@ -22,7 +22,7 @@ import Val (RawVal'(..)) as V
 match :: Val -> Elim -> MayFail (Env × Cont × Match)
 match v (ElimVar x κ)
    | x == varAnon = pure $ Empty × κ × MatchVarAnon v
-   | otherwise    = pure $ (Empty :+: x ↦ pure v) × κ × MatchVar x
+   | otherwise    = pure $ (Empty :+: x ↦ v) × κ × MatchVar x
 match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
@@ -42,7 +42,7 @@ matchArgs _ _ _                  = error absurd
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env -> RecDefs -> RecDefs -> Env
 closeDefs _ _ Nil = Empty
-closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ pure (val $ V.Closure ρ δ0 σ)
+closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ val (V.Closure ρ δ0 σ)
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do

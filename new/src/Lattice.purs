@@ -35,7 +35,7 @@ instance latticeBoolean :: Lattice Boolean where
    top   = const true
    bot   = const false
 
-instance latticeMaybeZippable :: MaybeZippable t => Lattice (t Boolean) where
+instance latticeMaybeZippable :: (Lattice a, MaybeZippable t) => Lattice (t a) where
    join x y = fromJust "Join undefined" $ maybeZipWith join x y
    meet x y = fromJust "Meet undefined" $ maybeZipWith meet x y
    top   = map top

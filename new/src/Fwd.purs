@@ -14,7 +14,7 @@ import Val (RawVal'(..)) as V
 match_fwd :: Val -> Elim -> Env × Cont × Selected
 match_fwd v (ElimVar x κ)
    | x == varAnon = Empty × κ × true
-   | otherwise    = (Empty :+: x ↦ pure v) × κ × true
+   | otherwise    = (Empty :+: x ↦ v) × κ × true
 match_fwd (Val α (V.Constr c vs)) (ElimConstr κs)  =
    let κ = fromJust absurd $ lookup c κs
        ρ × κ' × α' = matchArgs_fwd vs κ in
@@ -32,7 +32,7 @@ matchArgs_fwd _ _                = error absurd
 closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
 closeDefs_fwd _ _ Nil _                = Empty
 closeDefs_fwd ρ δ0 (RecDef f σ : δ) α  =
-   closeDefs_fwd ρ δ0 δ α :+: f ↦ pure (Val α (V.Closure ρ δ0 σ))
+   closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
 
 eval_fwd :: Env -> Expr -> Selected -> Val
 eval_fwd ρ (Expr _ (E.Var x)) _ =

@@ -6,7 +6,6 @@ import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.List as L
 import Data.Map (Map, fromFoldable)
-import Data.Maybe (Maybe(..))
 import Text.Parsing.Parser.Expr (Assoc(..))
 import DataType (cTrue, cFalse, Ctr(..))
 import Lattice (Selected, (∧))
@@ -96,17 +95,17 @@ apply_fwd φ α v@(Val α' _) =
 primitives :: Env
 primitives = foldl (:+:) Empty [
    -- need to instantiate the corresponding PureScript primitive at a concrete type
-   "+"         ↦ Just (from   ((+)  :: Int -> Int -> Int)),
-   "-"         ↦ Just (from   ((-)  :: Int -> Int -> Int)),
-   "*"         ↦ Just (from   ((*)  :: Int -> Int -> Int)),
-   "div"       ↦ Just (from   (div  :: Int -> Int -> Int)),
-   "=="        ↦ Just (from   ((==) :: Int -> Int -> Boolean)),
-   "/="        ↦ Just (from   ((/=) :: Int -> Int -> Boolean)),
-   "<"         ↦ Just (from   ((<)  :: Int -> Int -> Boolean)),
-   ">"         ↦ Just (from   ((>)  :: Int -> Int -> Boolean)),
-   "<="        ↦ Just (from   ((<=) :: Int -> Int -> Boolean)),
-   ">="        ↦ Just (from   ((>=) :: Int -> Int -> Boolean)),
-   "intToStr"  ↦ Just (from   (show :: Int -> String))
+   "+"         ↦ from   ((+)  :: Int -> Int -> Int),
+   "-"         ↦ from   ((-)  :: Int -> Int -> Int),
+   "*"         ↦ from   ((*)  :: Int -> Int -> Int),
+   "div"       ↦ from   (div  :: Int -> Int -> Int),
+   "=="        ↦ from   ((==) :: Int -> Int -> Boolean),
+   "/="        ↦ from   ((/=) :: Int -> Int -> Boolean),
+   "<"         ↦ from   ((<)  :: Int -> Int -> Boolean),
+   ">"         ↦ from   ((>)  :: Int -> Int -> Boolean),
+   "<="        ↦ from   ((<=) :: Int -> Int -> Boolean),
+   ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
+   "intToStr"  ↦ from   (show :: Int -> String)
 ]
 
 append :: Expr -> Expr -> Expr

@@ -3,7 +3,6 @@ module Pretty (class Pretty, pretty, module P, (:<>:)) where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), head)
 import Data.Map (Map, toUnfoldable)
-import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
@@ -205,8 +204,7 @@ instance prettyBranches :: Pretty (Map Ctr (Cont' Boolean)) where
    pretty m = vcat $ map pretty $ (toUnfoldable m :: List _)
 
 instance prettyBind :: Pretty (Bind' Boolean) where
-   pretty (x ↦ Nothing) = text x :<>: text " ↦ " :<>: text "_"
-   pretty (x ↦ Just v) = text x :<>: text " ↦ " :<>: pretty v
+   pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
 instance prettyCont :: Pretty (Cont' Boolean) where
    pretty None          = text "[ ]"

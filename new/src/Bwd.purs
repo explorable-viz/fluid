@@ -4,7 +4,6 @@ import Prelude (map, ($), (<>))
 import Data.List (List, (:), reverse)
 import Data.List (List(..)) as L
 import Data.Map (insert)
-import Data.Maybe (Maybe (..))
 import Expl (Expl, Match, Match'(..))
 import Expl (Expl'(..), VarDef'(..)) as T
 import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RawExpr(..), RecDef'(..), VarDef'(..), RecDefs, varAnon)
@@ -71,10 +70,9 @@ match_bwd ρ κ α (MatchConstr (c × ξs) κs)
    = matchOne_bwd ρ κ α (MatchConstr (c × reverse ξs) κs)
 
 matchOne_bwd :: Env -> Cont -> Selected -> Match -> Val × Elim
-matchOne_bwd (Empty :+: x ↦ Just v) κ α (MatchVar x')    = v × ElimVar (x ≜ x') κ
-matchOne_bwd (Empty :+: x ↦ Nothing) κ α (MatchVar x')   = error "TOOD: return a bot value"
-matchOne_bwd Empty κ α (MatchVarAnon v)                  = bot v × ElimVar varAnon κ
-matchOne_bwd ρ κ α (MatchConstr (c × ξs) κs)             =
+matchOne_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
+matchOne_bwd Empty κ α (MatchVarAnon v)            = bot v × ElimVar varAnon κ
+matchOne_bwd ρ κ α (MatchConstr (c × ξs) κs)       =
    let vs × κ' = matchMany_bwd ρ κ α ξs in
    (Val α $ V.Constr c vs) × (ElimConstr $ insert c κ' $ map bot κs)
 matchOne_bwd _ _ _ _                               = error absurd

@@ -1,8 +1,6 @@
 module Val where
 
 import Prelude hiding (absurd, top)
-import Control.Apply (lift2)
-import Data.Either (note)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr)
@@ -44,7 +42,7 @@ instance maybeZippableRawVal :: MaybeZippable RawVal' where
    maybeZipWith f (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
    maybeZipWith _ _ _                                = Nothing
 
-data Bind' a = Bind Var (Maybe (Val' a))
+data Bind' a = Bind Var (Val' a)
 type Bind = Bind' Selected
 data Env' a = Empty | Extend (Env' a) (Bind' a)
 type Env = Env' Selected
@@ -56,7 +54,7 @@ infixl 5 update as ◃
 find :: Var -> Env -> MayFail Val
 find x' Empty  = report $ "variable " <> x' <> " not found"
 find x' (xs :+: x ↦ v)
-   | x == x'   = note "TODO: should map to a bottom value" v
+   | x == x'   = pure v
    | otherwise = find x' xs
 
 foldEnv :: forall a . (Bind -> a -> a) -> a -> Env -> a
@@ -82,5 +80,5 @@ instance monoidEnv :: Monoid (Env' a) where
 instance maybeZippableEnv :: MaybeZippable Env' where
    maybeZipWith _ Empty Empty                              = pure Empty
    maybeZipWith f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))
-      = Extend <$> maybeZipWith f m m' <*> ((↦) <$> x ≟ y <*> lift2 (maybeZipWith f) v v')
+      = Extend <$> maybeZipWith f m m' <*> ((↦) <$> x ≟ y <*> maybeZipWith f v v')
    maybeZipWith _ _ _                                      = Nothing
