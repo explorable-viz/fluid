@@ -2,7 +2,7 @@ module Pretty (class Pretty, pretty, module P, (:<>:)) where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), head)
-import Data.Map (Map, toUnfoldable)
+import Data.Map (toUnfoldable)
 import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
@@ -80,8 +80,9 @@ instance explPretty :: Pretty (Expl' Boolean) where
    pretty (T.LetRec δ t)            = atop (text "letrec " :<>: pretty δ) (text "in     " :<>: pretty t)
 
 instance explMatch :: Pretty (Match' Boolean) where
-   pretty (MatchConstr (ctr × ξs) ks) = text "ξ = " :<>: (atop (text "Pattern:       " :<>: pretty (ctr × ξs))
-                                                               (text "Continuations: " :<>: pretty ks))
+   pretty (MatchConstr (ctr × ξs) κs) =
+      text "ξ = " :<>: (atop (text "Pattern:       " :<>: pretty (ctr × ξs))
+                             (text "Continuations: " :<>: vcat (map pretty $ (toUnfoldable κs :: List _))))
    pretty (MatchVar x) = text "ξ = " :<>: text x
    pretty (MatchVarAnon x) = text "ξ = " :<>: text varAnon
 
@@ -174,9 +175,6 @@ instance prettyDefs :: Pretty (List (RecDef' Boolean)) where
    pretty Nil              = text ""
    pretty (RecDef f σ : δ) = atop (text f :<>: operator "=" :<>: pretty σ) $ pretty δ
 
-instance prettyBranches :: Pretty (Map Ctr (Cont' Boolean)) where
-   pretty m = vcat $ map pretty $ (toUnfoldable m :: List _)
-
 instance prettyBind :: Pretty (Bind' Boolean) where
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
@@ -191,7 +189,7 @@ instance prettyBranch :: Pretty (Ctr × Cont' Boolean) where
 instance prettyBranch2 :: Pretty (Ctr × List (Match' Boolean)) where
    pretty (c × ξs) = text (show c) :<>: operator "-> " :<>: vcat (map pretty ξs)
 
-instance prettyElim2' :: Pretty (Elim' Boolean) where
+instance prettyElim :: Pretty (Elim' Boolean) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = vcat $ map pretty $ (toUnfoldable κs :: List _)
 
