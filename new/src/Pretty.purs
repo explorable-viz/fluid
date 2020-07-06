@@ -155,14 +155,11 @@ instance prettylistExplList :: PrettyList (List (Expl' Boolean)) where
    prettyList Nil    = text ""
    prettyList (v:vs) = comma :<>: pretty v :<>: prettyList vs
 
-instance prettylistExplVal :: Pretty (List (Expl' Boolean × Val' Boolean)) where
-   pretty Nil    = text ""
-   pretty (v:vs) = brackets (pretty v :<>: prettyList vs)
-
+{-
 instance prettylistExplValList :: PrettyList (List (Expl' Boolean × Val' Boolean)) where
    prettyList Nil    = text ""
    prettyList (v:vs) = comma :<>: pretty v :<>: prettyList vs
-
+-}
 instance prettyVEB :: Pretty (List (Env' Boolean × (Expr' Boolean) × Boolean)) where
    pretty Nil    = text ""
    pretty ((v × e × b):vs) = brackets (parens (pretty v) :<>: prettyList vs)
