@@ -147,19 +147,6 @@ instance rawExprPretty :: Pretty (RawExpr' Boolean) where
    pretty (E.App e e')              = pretty e :<>: space :<>: pretty e'
    pretty (E.BinaryApp e op e')     = pretty e :<>: operator op :<>: pretty e'
 
-instance prettylistExpl :: Pretty (List (Expl' Boolean)) where
-   pretty Nil    = text ""
-   pretty (v:vs) = brackets (pretty v :<>: prettyList vs)
-
-instance prettylistExplList :: PrettyList (List (Expl' Boolean)) where
-   prettyList Nil    = text ""
-   prettyList (v:vs) = comma :<>: pretty v :<>: prettyList vs
-
-{-
-instance prettylistExplValList :: PrettyList (List (Expl' Boolean × Val' Boolean)) where
-   prettyList Nil    = text ""
-   prettyList (v:vs) = comma :<>: pretty v :<>: prettyList vs
--}
 instance prettyVEB :: Pretty (List (Env' Boolean × (Expr' Boolean) × Boolean)) where
    pretty Nil    = text ""
    pretty ((v × e × b):vs) = brackets (parens (pretty v) :<>: prettyList vs)
