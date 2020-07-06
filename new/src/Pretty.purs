@@ -186,10 +186,6 @@ instance prettyExprList :: PrettyList (List (Expr' Boolean)) where
    prettyList Nil    = text ""
    prettyList (e:es) = comma :<>: pretty e :<>: prettyList es
 
-instance prettyExpr :: Pretty (List (Expr' Boolean)) where
-   pretty Nil    = text ""
-   pretty (e:es) = brackets (pretty e :<>: prettyList es)
-
 instance prettyBranches :: Pretty (Map Ctr (Cont' Boolean)) where
    pretty m = vcat $ map pretty $ (toUnfoldable m :: List _)
 
