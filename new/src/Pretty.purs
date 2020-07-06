@@ -6,7 +6,7 @@ import Data.Map (toUnfoldable)
 import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
-import DataType (Ctr(..), cCons, cNil, cPair)
+import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont'(..), Elim'(..), Expr'(..), RawExpr', RecDef'(..), VarDef'(..), varAnon)
 import Expr (RawExpr'(..)) as E
 import Expl (Expl'(..), VarDef'(..)) as T
@@ -93,17 +93,17 @@ instance explValPretty :: Pretty (Expl' Boolean × Val' Boolean) where
    pretty (t × v) = parens $ pretty t :<>: comma :<>: pretty v
 
 instance explPrettyList :: PrettyList (Expl' Boolean) where
-   prettyList (T.NullConstr (Ctr "Nil") _)            = null
-   prettyList (T.Constr (Ctr "Cons" ) (t : t' : Nil)) = comma :<>: pretty t :<>: prettyList t'
-   prettyList _                                       = error "Not a list"
+   prettyList (T.NullConstr c _) | c == cNil             = null
+   prettyList (T.Constr c (t : t' : Nil)) | c == cCons   = comma :<>: pretty t :<>: prettyList t'
+   prettyList _                                          = error "Not a list"
 
 instance exprPrettyList :: PrettyList (Expr' Boolean) where
    prettyList (Expr _ r) = prettyList r
 
 instance rawExprPrettyList :: PrettyList (RawExpr' Boolean) where
-   prettyList (E.Constr (Ctr "Nil") Nil)              = null
-   prettyList (E.Constr (Ctr "Cons") (e : e' : Nil))  = comma :<>: pretty e :<>: prettyList e'
-   prettyList _                                       = error "Not a list"
+   prettyList (E.Constr c Nil) | c == cNil               = null
+   prettyList (E.Constr c (e : e' : Nil)) | c == cCons   = comma :<>: pretty e :<>: prettyList e'
+   prettyList _                                          = error "Not a list"
 
 instance valPrettyList :: PrettyList (Val' Boolean) where
    prettyList (Val _ u) = prettyList u

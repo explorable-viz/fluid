@@ -2,12 +2,11 @@ module Expr where
 
 import Prelude hiding (top)
 import Data.List (List(..), (:))
-import Data.List (concat) as L
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
-import DataType (Ctr(..))
+import DataType (Ctr, cCons, cNil)
 import Lattice (class MaybeZippable, Selected, maybeZipWith, maybeZipWithList, maybeZipWithMap)
-import Util (type (+), (≟), error)
+import Util (class QuaList, type (+), (≟), error, fromList, quaList, quaList2, toList)
 
 type Var = String
 
@@ -79,35 +78,22 @@ instance maybeZippableElim :: MaybeZippable Elim' where
 data Module' a = Module (List (VarDef' a + RecDefs' a))
 type Module = Module' Selected
 
-class ToList a where
-   toList :: a -> List a
+instance quaListExpr :: QuaList (Expr' Boolean) where
+   toList (Expr a (Constr c (e : e' : Nil))) | c == cCons   = e : toList e'
+   toList (Expr a (Constr c Nil)) | c == cNil               = Nil
+   toList _                                                 = error "expected list expression"
 
-class FromList a where
-   fromList :: List a -> a
-
-instance exprToList :: ToList (Expr' Boolean) where
-   toList (Expr a (Constr (Ctr "Cons") (e : es : Nil))) = (e:toList es)
-   toList (Expr a (Constr (Ctr "Nil") Nil)) = Nil
-   toList _ = error "expected list expression"
-
-instance exprFromList :: FromList (Expr' Boolean) where
-   fromList (x : xs) = expr $ Constr (Ctr "Cons") (x: fromList xs : Nil)
-   fromList Nil      = expr $ Constr (Ctr "Nil") Nil
+   fromList (x : xs) = expr $ Constr cCons (x : fromList xs : Nil)
+   fromList Nil      = expr $ Constr cNil Nil
 
 appendE :: Expr -> Expr -> Expr
-appendE e1 e2 = fromList $ toList e1 <> toList e2
-
-concatE :: Expr -> Expr
-concatE e1 = fromList $ L.concat $ map toList $ toList e1
+appendE = quaList2 (<>)
 
 mapE :: Elim -> Expr -> Expr
-mapE σ e = fromList $ map (apply σ) $ toList e
+mapE σ = quaList $ map (apply σ)
    where
    apply :: Elim -> Expr -> Expr
-   apply σ' e' = expr $ MatchAs e' σ'
-
-concatMapE :: Elim -> Expr -> Expr
-concatMapE = mapE
+   apply σ' e = expr $ MatchAs e σ'
 
 instance maybeZippableDef :: MaybeZippable VarDef' where
    maybeZipWith f (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'

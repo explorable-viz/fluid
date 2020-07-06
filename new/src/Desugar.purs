@@ -6,7 +6,7 @@ import Data.List ((:), List)
 import Data.List (List(..)) as L
 import Data.Map (fromFoldable, empty) as M
 import DataType (Ctr, cCons, cNil, cTrue, cFalse)
-import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDefs, Var, VarDef, concatMapE, mapE, expr)
+import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDefs, Var, VarDef, mapE, expr)
 import Expr (RawExpr'(..), VarDef'(..)) as E
 import Util ((×), absurd, error)
 
@@ -62,7 +62,7 @@ desugar (SExpr α (ListComp e_lhs e_rhs))
                         Expr _ es'  = desugar list_expr
                         σ           = bound_vars (expr e') (Body $ go es (n - 1))
                         ebody       = if n == 0 then mapE σ $ expr es'
-                                      else concatMapE σ $ expr es' :: Expr
+                                      else mapE σ $ expr es' :: Expr
                     in  expr $ E.Let (E.VarDef σ (expr e')) ebody
 
                 Predicate p ->
