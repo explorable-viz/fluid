@@ -11,7 +11,7 @@ import Expr (Cont'(..), Elim'(..), Expr'(..), RawExpr', RecDef'(..), VarDef'(..)
 import Expr (RawExpr'(..)) as E
 import Expl (Expl'(..), VarDef'(..)) as T
 import Expl (Expl', Match'(..))
-import Util (type (×), (×), absurd, assert, error, fromJust, intersperse)
+import Util (type (×), (×), absurd, assert, error, fromJust, intersperse, toList)
 import Val (Bind', Env'(..), Primitive(..), RawVal', Val'(..), (:+:), (↦))
 import Val (RawVal'(..)) as V
 
@@ -98,13 +98,14 @@ instance explPrettyList :: PrettyList (Expl' Boolean) where
    prettyList _                                          = error "Not a list"
 
 instance exprPrettyList :: PrettyList (Expr' Boolean) where
-   prettyList (Expr _ r) = prettyList r
+   prettyList e = vcat $ intersperse comma $ map pretty $ toList e
 
+{-
 instance rawExprPrettyList :: PrettyList (RawExpr' Boolean) where
    prettyList (E.Constr c Nil) | c == cNil               = null
    prettyList (E.Constr c (e : e' : Nil)) | c == cCons   = comma :<>: pretty e :<>: prettyList e'
    prettyList _                                          = error "Not a list"
-
+-}
 instance valPrettyList :: PrettyList (Val' Boolean) where
    prettyList (Val _ u) = prettyList u
 
