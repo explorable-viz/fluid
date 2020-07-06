@@ -93,25 +93,25 @@ instance explValPretty :: Pretty (Expl' Boolean × Val' Boolean) where
    pretty (t × v) = parens $ pretty t :<>: comma :<>: pretty v
 
 instance explPrettyList :: PrettyList (Expl' Boolean) where
-   prettyList (T.NullConstr c ρ) = assert (c == cNil) $ text "NilExpl"
-   prettyList (T.Constr c (t : t' :Nil)) = assert (c == cCons) $ comma :<>: pretty t :<>: prettyList t'
-   prettyList t = error "Ill-formed list for expls"
+   prettyList (T.NullConstr (Ctr "Nil") _)            = null
+   prettyList (T.Constr (Ctr "Cons" ) (t : t' : Nil)) = comma :<>: pretty t :<>: prettyList t'
+   prettyList _                                       = error "Not a list"
 
 instance exprPrettyList :: PrettyList (Expr' Boolean) where
-   prettyList (Expr a r) = prettyList r
+   prettyList (Expr _ r) = prettyList r
 
 instance rawExprPrettyList :: PrettyList (RawExpr' Boolean) where
    prettyList (E.Constr (Ctr "Nil") Nil)              = null
-   prettyList (E.Constr (Ctr "Cons") (e : es : Nil))  = comma :<>: pretty e :<>: prettyList es
-   prettyList _                                       = error absurd
+   prettyList (E.Constr (Ctr "Cons") (e : e' : Nil))  = comma :<>: pretty e :<>: prettyList e'
+   prettyList _                                       = error "Not a list"
 
 instance valPrettyList :: PrettyList (Val' Boolean) where
    prettyList (Val _ u) = prettyList u
 
 instance rawValPrettyList :: PrettyList (RawVal' Boolean) where
-   prettyList (V.Constr c Nil) = assert (c == cNil) $ null
-   prettyList (V.Constr c (v : vs : Nil)) = assert (c == cCons) $ comma :<>: pretty v :<>: prettyList vs
-   prettyList v = error "Ill-formed list for values"
+   prettyList (V.Constr c Nil)            = assert (c == cNil) $ null
+   prettyList (V.Constr c (v : v' : Nil)) = assert (c == cCons) $ comma :<>: pretty v :<>: prettyList v'
+   prettyList _                           = error "Not a list"
 
 instance exprPretty :: Pretty (Expr' Boolean) where
    pretty (Expr _ r) = pretty r
