@@ -87,7 +87,7 @@ instance explMatch :: Pretty (Match' Boolean) where
    pretty (MatchVarAnon x) = text "ξ = " :<>: text varAnon
 
 instance explValPretty :: Pretty (Expl' Boolean × Val' Boolean) where
-   pretty (a × b) = parens $ pretty a :<>: comma :<>: pretty b
+   pretty (t × v) = parens $ pretty t :<>: comma :<>: pretty v
 
 instance explPrettyList :: PrettyList (Expl' Boolean) where
    prettyList (T.NullConstr c ρ) = assert (c == cNil) $ text "NilExpl"
