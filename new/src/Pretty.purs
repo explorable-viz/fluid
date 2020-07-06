@@ -170,14 +170,9 @@ instance prettyVEBList :: PrettyList (List (Env' Boolean × (Expr' Boolean) × B
    prettyList Nil    = text ""
    prettyList ((v × e × b):vs) = comma :<>: (parens (pretty v) :<>: prettyList vs)
 
-
 instance prettyDefs :: Pretty (List (RecDef' Boolean)) where
    pretty Nil              = text ""
    pretty (RecDef f σ : δ) = atop (text f :<>: operator "=" :<>: pretty σ) $ pretty δ
-
-instance prettyMatches :: Pretty (List (Match' Boolean)) where
-   pretty Nil    = text ""
-   pretty (ξ:ξs) = atop (pretty ξ) $ pretty ξs
 
 instance prettyValsList :: PrettyList (List (Val' Boolean)) where
    prettyList Nil    = text ""
@@ -210,7 +205,7 @@ instance prettyBranch :: Pretty (Ctr × Cont' Boolean) where
    pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
 instance prettyBranch2 :: Pretty (Ctr × List (Match' Boolean)) where
-   pretty (c × ξs) = text (show c) :<>: operator "-> " :<>: pretty ξs
+   pretty (c × ξs) = text (show c) :<>: operator "-> " :<>: vcat (map pretty ξs)
 
 instance prettyElim2' :: Pretty (Elim' Boolean) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ

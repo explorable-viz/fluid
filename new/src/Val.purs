@@ -42,14 +42,14 @@ find x (xs :+: x' ↦ v)
    | otherwise = find x xs
 
 foldEnv :: forall a . (Bind -> a -> a) -> a -> Env -> a
-foldEnv f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldEnv f z ρ)
+foldEnv f z (ρ :+: x ↦ v)   = f (x ↦ v) $ foldEnv f z ρ
 foldEnv _ z Empty           = z
 
 update :: Env -> Bind -> Env
 update Empty _ = Empty
 update (xs :+: x ↦ v) (x' ↦ v')
    | x == x'    = xs :+: x' ↦ v'
-   | otherwise  = (update xs $ x' ↦ v') :+: x ↦ v
+   | otherwise  = update xs (x' ↦ v') :+: x ↦ v
 
 splitAt :: Int -> Env -> Env × Env
 splitAt n ρ
