@@ -58,12 +58,12 @@ instance envPretty :: Pretty (Env' Boolean) where
    pretty Empty = text "[]"
 
 instance explPretty :: Pretty (Expl' Boolean) where
-   pretty (T.Var x ρ)               = text x
-   pretty (T.Op op ρ)               = text op
-   pretty (T.Int n ρ)               = text $ show n
-   pretty (T.Str s ρ)               = text $ show s
-   pretty (T.Constr c es)           = prettyConstr c es
-   pretty (T.NullConstr c ρ)        = pretty c
+   pretty (T.Var x _)               = text x
+   pretty (T.Op op _)               = text op
+   pretty (T.Int n _)               = text $ show n
+   pretty (T.Str s _)               = text $ show s
+   pretty (T.Constr c ts)           = prettyConstr c ts
+   pretty (T.NullConstr c _)        = pretty c
    pretty (T.Lambda σ)              = text "fun " :<>: pretty σ
    pretty (T.App tv t' ξ t'')       =
       text "App" :<>:
@@ -80,9 +80,10 @@ instance explPretty :: Pretty (Expl' Boolean) where
    pretty (T.LetRec δ t)            = atop (text "letrec " :<>: pretty δ) (text "in     " :<>: pretty t)
 
 instance explMatch :: Pretty (Match' Boolean) where
-   pretty (MatchConstr (ctr × ξs) κs) =
-      text "ξ = " :<>: (atop (text "Pattern:       " :<>: pretty (ctr × ξs))
-                             (text "Continuations: " :<>: vcat (map pretty $ (toUnfoldable κs :: List _))))
+   pretty (MatchConstr (c × ξs) κs) =
+      text "ξ = " :<>:
+      atop (text "Pattern:       " :<>: text (show c) :<>: operator "-> " :<>: vcat (map pretty ξs))
+           (text "Continuations: " :<>: vcat (map pretty $ (toUnfoldable κs :: List _)))
    pretty (MatchVar x) = text "ξ = " :<>: text x
    pretty (MatchVarAnon x) = text "ξ = " :<>: text varAnon
 
@@ -170,9 +171,10 @@ instance prettyCont :: Pretty (Cont' Boolean) where
 instance prettyBranch :: Pretty (Ctr × Cont' Boolean) where
    pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
+{-
 instance prettyBranch2 :: Pretty (Ctr × List (Match' Boolean)) where
    pretty (c × ξs) = text (show c) :<>: operator "-> " :<>: vcat (map pretty ξs)
-
+-}
 instance prettyElim :: Pretty (Elim' Boolean) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = vcat $ map pretty $ (toUnfoldable κs :: List _)
