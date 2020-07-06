@@ -171,10 +171,6 @@ instance prettyCont :: Pretty (Cont' Boolean) where
 instance prettyBranch :: Pretty (Ctr × Cont' Boolean) where
    pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
-{-
-instance prettyBranch2 :: Pretty (Ctr × List (Match' Boolean)) where
-   pretty (c × ξs) = text (show c) :<>: operator "-> " :<>: vcat (map pretty ξs)
--}
 instance prettyElim :: Pretty (Elim' Boolean) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = vcat $ map pretty $ (toUnfoldable κs :: List _)
