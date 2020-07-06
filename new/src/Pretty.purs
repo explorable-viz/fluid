@@ -77,7 +77,9 @@ instance explPretty :: Pretty (Expl' Boolean) where
            (atop (tab :<>: pretty ξ) (atop (text "} where outcome was: ") (tab :<>: pretty t')))
    pretty (T.Let (T.VarDef ξ t) t') = atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
                                         (pretty t')
-   pretty (T.LetRec δ t)            = atop (text "letrec " :<>: pretty δ) (text "in     " :<>: pretty t)
+   pretty (T.LetRec δ t)            =
+      atop (text "letrec " :<>: pretty δ)
+           (text "in     " :<>: pretty t)
 
 instance explMatch :: Pretty (Match' Boolean) where
    pretty (MatchConstr (c × ξs) κs) =
@@ -156,9 +158,11 @@ instance prettyVEBList :: PrettyList (List (Env' Boolean × (Expr' Boolean) × B
    prettyList Nil    = text ""
    prettyList ((v × e × b):vs) = comma :<>: (parens (pretty v) :<>: prettyList vs)
 
-instance prettyDefs :: Pretty (List (RecDef' Boolean)) where
-   pretty Nil              = text ""
-   pretty (RecDef f σ : δ) = atop (text f :<>: operator "=" :<>: pretty σ) $ pretty δ
+instance prettyRecDef :: Pretty (RecDef' Boolean) where
+   pretty (RecDef f σ) = text f :<>: operator "=" :<>: pretty σ
+
+instance prettyRecDefs :: Pretty (List (RecDef' Boolean)) where
+   pretty = vcat <<< map pretty
 
 instance prettyBind :: Pretty (Bind' Boolean) where
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
