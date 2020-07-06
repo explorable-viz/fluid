@@ -90,7 +90,7 @@ instance explValPretty :: Pretty (Expl' Boolean × Val' Boolean) where
 
 instance explPrettyList :: PrettyList (Expl' Boolean) where
    prettyList (T.NullConstr c ρ) = assert (c == cNil) $ text "NilExpl"
-   prettyList (T.Constr c (e:es:Nil)) = assert (c == cCons) $ comma :<>: pretty e :<>: prettyList es
+   prettyList (T.Constr c (t : t' :Nil)) = assert (c == cCons) $ comma :<>: pretty t :<>: prettyList t'
    prettyList t = error "Ill-formed list for expls"
 
 instance exprPrettyList :: PrettyList (Expr' Boolean) where
@@ -173,18 +173,6 @@ instance prettyVEBList :: PrettyList (List (Env' Boolean × (Expr' Boolean) × B
 instance prettyDefs :: Pretty (List (RecDef' Boolean)) where
    pretty Nil              = text ""
    pretty (RecDef f σ : δ) = atop (text f :<>: operator "=" :<>: pretty σ) $ pretty δ
-
-instance prettyValsList :: PrettyList (List (Val' Boolean)) where
-   prettyList Nil    = text ""
-   prettyList (v:vs) = comma :<>: pretty v :<>: prettyList vs
-
-instance prettyVals :: Pretty (List (Val' Boolean)) where
-   pretty Nil    = text ""
-   pretty (v:vs) = brackets (pretty v :<>: prettyList vs)
-
-instance prettyExprList :: PrettyList (List (Expr' Boolean)) where
-   prettyList Nil    = text ""
-   prettyList (e:es) = comma :<>: pretty e :<>: prettyList es
 
 instance prettyBranches :: Pretty (Map Ctr (Cont' Boolean)) where
    pretty m = vcat $ map pretty $ (toUnfoldable m :: List _)
