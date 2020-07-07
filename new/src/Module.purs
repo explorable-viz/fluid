@@ -9,6 +9,7 @@ import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Eval (defs)
 import Expr (Expr)
+import Lattice (𝔹)
 import Parse (module_, program)
 import Primitive (primitives)
 import Util (type (×), (×), error, successful)
@@ -27,12 +28,12 @@ loadFile folder file = do
       Left err -> error $ printError err
       Right response -> pure response.body
 
-loadModule :: String -> Env -> Aff Env
+loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
    pure $ successful $ defs ρ $ successfulParse src module_
 
-openWithImports :: String -> Aff (Env × Expr)
+openWithImports :: String -> Aff (Env 𝔹 × Expr 𝔹)
 openWithImports file =
    loadFile "fluid/example" file >>= parseWithImports
 
@@ -42,7 +43,7 @@ successfulParse src p =
       Left parseError -> error $ show parseError
       Right t -> t
 
-parseWithImports :: String -> Aff (Env × Expr)
+parseWithImports :: String -> Aff (Env 𝔹 × Expr 𝔹)
 parseWithImports src = do
    (×) <$> loadModule "prelude" primitives
        <@> successfulParse src program

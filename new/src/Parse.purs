@@ -24,16 +24,8 @@ import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
-import Expr (
-   Elim, Expr, Expr'(..),
-   Module, Module'(..),
-   RawExpr'(..),
-   RecDef, RecDef'(..), RecDefs, RecDefs',
-   Var,
-   VarDef, VarDef'(..), VarDefs,
-   expr
-)
-import Lattice (Selected)
+import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, Var, VarDef(..), VarDefs, expr)
+import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
 import Util (type (×), (×), type (+), error, onlyIf, successful, successfulWith)
@@ -122,7 +114,7 @@ patternDelim :: SParser Unit
 patternDelim = arrow <|> equals
 
 -- "nest" controls whether nested (curried) functions are permitted in this context
-elim :: Boolean -> SParser Expr -> SParser Elim
+elim :: Boolean -> SParser (Expr 𝔹) -> SParser (Elim 𝔹)
 elim curried expr' = successfulWith "Incompatible branches in match or lambda" <$> (joinAll <$> patterns)
    where
    patterns :: SParser (NonEmptyList Pattern)
@@ -131,7 +123,7 @@ elim curried expr' = successfulWith "Incompatible branches in match or lambda" <
       patternMany :: SParser (NonEmptyList Pattern)
       patternMany = token.braces $ sepBy1 (patternOne curried expr' arrow) token.semi
 
-patternOne :: Boolean -> SParser Expr -> SParser Unit -> SParser Pattern
+patternOne :: Boolean -> SParser (Expr 𝔹) -> SParser Unit -> SParser Pattern
 patternOne curried expr' delim = pattern' >>= rest
    where
    rest :: Pattern -> SParser Pattern
@@ -142,20 +134,20 @@ patternOne curried expr' delim = pattern' >>= rest
    pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
 
-varDefs :: SParser Expr -> SParser (VarDefs Selected)
+varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
-   clause :: SParser VarDef
+   clause :: SParser (VarDef 𝔹)
    clause =
       VarDef <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
 
-recDefs :: SParser Expr -> SParser (RecDefs' Selected)
+recDefs :: SParser (Expr 𝔹) -> SParser (RecDefs 𝔹)
 recDefs expr' = do
    fπs <- keyword strLet *> sepBy1_try clause token.semi
    let fπss = groupBy (eq `on` fst) fπs
    pure $ toRecDef <$> fπss
    where
-   toRecDef :: NonEmptyList (String × Pattern) -> RecDef
+   toRecDef :: NonEmptyList (String × Pattern) -> RecDef 𝔹
    toRecDef fπs =
       let f = fst $ head fπs in
       RecDef f $ successfulWith ("Bad branches for '" <> f <> "'") $ joinAll $ snd <$> fπs
@@ -163,16 +155,16 @@ recDefs expr' = do
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)
 
-defs :: SParser Expr -> SParser (List (VarDef + RecDefs))
+defs :: SParser (Expr 𝔹) -> SParser (List (VarDef 𝔹 + RecDefs 𝔹))
 defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
-expr_ :: SParser Expr
+expr_ :: SParser (Expr 𝔹)
 expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
    where
    -- Syntactically distinguishing infix constructors from other operators (a la Haskell) allows us to
    -- optimise an application tree into a (potentially partial) constructor application.
-   binaryOp :: String -> SParser (Expr -> Expr -> Expr)
+   binaryOp :: String -> SParser (Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹)
    binaryOp op = do
       op' <- token.operator
       onlyIf (op == op') $
@@ -181,18 +173,18 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          else \e e' -> expr $ BinaryApp e op e'
 
    -- Left-associative tree of applications of one or more simple terms.
-   appChain :: SParser Expr -> SParser Expr
+   appChain :: SParser (Expr 𝔹) -> SParser (Expr 𝔹)
    appChain expr' = simpleExpr >>= rest
       where
-      rest :: Expr -> SParser Expr
+      rest :: Expr 𝔹 -> SParser (Expr 𝔹)
       rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
          where
-         ctrArgs :: SParser Expr
+         ctrArgs :: SParser (Expr 𝔹)
          ctrArgs = simpleExpr >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
       rest e = (expr <$> (App e <$> simpleExpr) >>= rest) <|> pure e
 
       -- Any expression other than an operator tree or an application chain.
-      simpleExpr :: SParser Expr
+      simpleExpr :: SParser (Expr 𝔹)
       simpleExpr =
          try ctrExpr <|>
          try variable <|>
@@ -206,13 +198,13 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          lambda
 
          where
-         ctrExpr :: SParser Expr
+         ctrExpr :: SParser (Expr 𝔹)
          ctrExpr = expr <$> (Constr <$> ctr <@> empty)
 
-         variable :: SParser Expr
+         variable :: SParser (Expr 𝔹)
          variable = ident <#> Var >>> expr
 
-         int :: SParser Expr
+         int :: SParser (Expr 𝔹)
          int = do
             sign <- signOpt
             (sign >>> Int >>> expr) <$> token.natural
@@ -220,26 +212,26 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             signOpt :: ∀ a . (Ring a) => SParser (a -> a)
             signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
 
-         string :: SParser Expr
+         string :: SParser (Expr 𝔹)
          string = expr <$> (Str <$> token.stringLiteral)
 
-         defsExpr :: SParser Expr
+         defsExpr :: SParser (Expr 𝔹)
          defsExpr = do
             defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
             foldr (\def -> expr <<< (Let ||| LetRec) def) <$> (keyword strIn *> expr') <@> defs'
 
-         matchAs :: SParser Expr
+         matchAs :: SParser (Expr 𝔹)
          matchAs = expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim false expr')
 
          -- any binary operator, in parentheses
-         parensOp :: SParser Expr
+         parensOp :: SParser (Expr 𝔹)
          parensOp = expr <$> (Op <$> token.parens token.operator)
 
-         pair :: SParser Expr
+         pair :: SParser (Expr 𝔹)
          pair = token.parens $
             expr <$> (lift2 $ \e e' -> Constr cPair (e : e' : empty)) (expr' <* token.comma) expr'
 
-         lambda :: SParser Expr
+         lambda :: SParser (Expr 𝔹)
          lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
 
 -- each element of the top-level list corresponds to a precedence level
@@ -272,8 +264,8 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
 topLevel :: forall a . SParser a -> SParser a
 topLevel p = token.whiteSpace *> p <* eof
 
-program ∷ SParser Expr
+program ∷ SParser (Expr 𝔹)
 program = topLevel expr_
 
-module_ :: SParser Module
+module_ :: SParser (Module 𝔹)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)

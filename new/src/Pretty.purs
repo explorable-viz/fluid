@@ -7,13 +7,13 @@ import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import DataType (Ctr, cCons, cNil, cPair)
-import Expr (Cont'(..), Elim'(..), Expr'(..), RawExpr', RecDef'(..), VarDef'(..), expr, varAnon)
-import Expr (RawExpr'(..)) as E
-import Expl (Expl'(..), VarDef'(..)) as T
-import Expl (Expl', Match'(..))
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..), expr, varAnon)
+import Expr (RawExpr(..)) as E
+import Expl (Expl(..), VarDef(..)) as T
+import Expl (Expl, Match(..))
 import Util (type (×), (×), absurd, error, intersperse, toList)
-import Val (Bind', Env'(..), Primitive(..), RawVal', Val'(..), (:+:), (↦), val)
-import Val (RawVal'(..)) as V
+import Val (Bind, Env(..), Primitive(..), RawVal, Val(..), (:+:), (↦), val)
+import Val (RawVal(..)) as V
 
 infixl 5 beside as :<>:
 
@@ -50,14 +50,14 @@ class PrettyList p where
 instance boolPretty :: Pretty Boolean where
    pretty = text <<< show
 
-instance envPretty :: Pretty (Env' Boolean) where
+instance envPretty :: Pretty (Env Boolean) where
    pretty (ρ :+: kv) = brackets $ pretty $ ρ :+: kv
    pretty Empty = text "[]"
 
 instance prettyVoid :: Pretty Void where
    pretty _ = error absurd
 
-instance explPretty :: Pretty (Expl' Boolean) where
+instance explPretty :: Pretty (Expl Boolean) where
    pretty (T.Var x _)               = text x
    pretty (T.Op op _)               = text op
    pretty (T.Int n _)               = text $ show n
@@ -82,7 +82,7 @@ instance explPretty :: Pretty (Expl' Boolean) where
       atop (text "letrec " :<>: pretty δ)
            (text "in     " :<>: pretty t)
 
-instance explMatch :: Pretty (Match' Boolean) where
+instance explMatch :: Pretty (Match Boolean) where
    pretty (MatchConstr (c × ξs) κs) =
       text "ξ = " :<>:
       atop (text "Pattern:       " :<>: text (show c) :<>: operator "-> " :<>: vcat (map pretty ξs))
@@ -90,13 +90,13 @@ instance explMatch :: Pretty (Match' Boolean) where
    pretty (MatchVar x) = text "ξ = " :<>: text x
    pretty (MatchVarAnon x) = text "ξ = " :<>: text varAnon
 
-instance explValPretty :: Pretty (Expl' Boolean × Val' Boolean) where
+instance explValPretty :: Pretty (Expl Boolean × Val Boolean) where
    pretty (t × v) = parens $ pretty t :<>: comma :<>: pretty v
 
 instance prettyListPretty :: Pretty a => Pretty (List a) where
    pretty xs = brackets $ hcat $ intersperse comma $ map pretty xs
 
-instance exprPretty :: Pretty (Expr' Boolean) where
+instance exprPretty :: Pretty (Expr Boolean) where
    pretty (Expr _ r) = pretty r
 
 instance prettyCtr :: Pretty Ctr where
@@ -118,7 +118,7 @@ prettyConstr c xs
    | c == cNil || c == cCons = pretty xs
    | otherwise = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
 
-instance rawExprPretty :: Pretty (RawExpr' Boolean) where
+instance rawExprPretty :: Pretty (RawExpr Boolean) where
    pretty (E.Int n)                 = text $ show n
    pretty (E.Str str)               = text $ show str
    pretty (E.Var x)                 = text x
@@ -136,28 +136,28 @@ instance rawExprPretty :: Pretty (RawExpr' Boolean) where
    pretty (E.App e e')              = pretty e :<>: space :<>: pretty e'
    pretty (E.BinaryApp e op e')     = pretty e :<>: operator op :<>: pretty e'
 
-instance prettyRecDef :: Pretty (RecDef' Boolean) where
+instance prettyRecDef :: Pretty (RecDef Boolean) where
    pretty (RecDef f σ) = text f :<>: operator "=" :<>: pretty σ
 
-instance prettyBind :: Pretty (Bind' Boolean) where
+instance prettyBind :: Pretty (Bind Boolean) where
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
-instance prettyCont :: Pretty (Cont' Boolean) where
+instance prettyCont :: Pretty (Cont Boolean) where
    pretty None          = text "[ ]"
    pretty (Body e)      = pretty e
    pretty (Arg σ)       = pretty σ
 
-instance prettyBranch :: Pretty (Ctr × Cont' Boolean) where
+instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
    pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
-instance prettyElim :: Pretty (Elim' Boolean) where
+instance prettyElim :: Pretty (Elim Boolean) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = vcat $ map pretty $ (toUnfoldable κs :: List _)
 
-instance valPretty :: Pretty (Val' Boolean) where
+instance valPretty :: Pretty (Val Boolean) where
    pretty (Val _ u) = pretty u
 
-instance rawValPretty :: Pretty (RawVal' Boolean) where
+instance rawValPretty :: Pretty (RawVal Boolean) where
    pretty (V.Int n)           = text $ show n
    pretty (V.Str str)         = text $ show str
    pretty u@(V.Constr c vs)
@@ -171,5 +171,5 @@ instance rawValPretty :: Pretty (RawVal' Boolean) where
 instance unaryOpPretty :: Pretty Primitive where
    pretty (IntOp _) = text "<prim-op>"
 
-prettyProgram :: Expr' Boolean -> Doc
+prettyProgram :: Expr Boolean -> Doc
 prettyProgram e = atop (pretty e) (text "")

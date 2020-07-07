@@ -7,19 +7,18 @@ import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import DataType (Ctr, arity)
-import Expl (Expl'(..), VarDef'(..)) as T
-import Expl (Expl, Match, Match'(..))
-import Expr (
-   Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), Module, Module'(..), RecDef'(..), RecDefs, body, varAnon
-)
-import Expr (RawExpr'(..), VarDef'(..)) as E
+import Expl (Expl(..), VarDef(..)) as T
+import Expl (Expl, Match(..))
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDef(..), RecDefs, body, varAnon)
+import Expr (RawExpr(..), VarDef(..)) as E
+import Lattice (𝔹)
 import Pretty (pretty, render)
 import Primitive (apply)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Val (Env, Env'(..), Val, Val'(..), (:+:), (↦), find, val)
-import Val (RawVal'(..)) as V
+import Val (Env(..), Val(..), (:+:), (↦), find, val)
+import Val (RawVal(..)) as V
 
-match :: Val -> Elim -> MayFail (Env × Cont × Match)
+match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match v (ElimVar x κ)
    | x == varAnon = pure $ Empty × κ × MatchVarAnon v
    | otherwise    = pure $ (Empty :+: x ↦ v) × κ × MatchVar x
@@ -29,7 +28,7 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v _ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
-matchArgs :: Ctr -> List Val -> Cont -> MayFail (Env × Cont × List Match)
+matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ                = pure $ Empty × κ × Nil
 matchArgs c (v : vs) (Arg σ)     = do
    ρ  × κ'  × ξ  <- match v σ
@@ -40,7 +39,7 @@ matchArgs c (_ : vs) (Body _)    = report $
 matchArgs _ _ _                  = error absurd
 
 -- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
-closeDefs :: Env -> RecDefs -> RecDefs -> Env
+closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs _ _ Nil = Empty
 closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ val (V.Closure ρ δ0 σ)
 
@@ -49,7 +48,7 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
 
-eval :: Env -> Expr -> MayFail (Expl × Val)
+eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ (Expr _ (E.Var x)) =
    (T.Var x ρ × _) <$> find x ρ
 eval ρ (Expr _ (E.Op op)) =
@@ -105,7 +104,7 @@ eval ρ (Expr _ (E.MatchAs e σ)) = do
    t' × v'     <- eval (ρ <> ρ') (body e')
    pure $ T.MatchAs t ξ t' × v'
 
-defs :: Env -> Module -> MayFail Env
+defs :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 defs ρ (Module Nil) = pure ρ
 defs ρ (Module (Left (E.VarDef σ e) : ds)) = do
    _  × v      <- eval ρ e

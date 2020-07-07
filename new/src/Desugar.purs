@@ -6,9 +6,10 @@ import Data.List ((:), List)
 import Data.List (List(..)) as L
 import Data.Map (fromFoldable, empty) as M
 import DataType (Ctr, cCons, cNil, cTrue, cFalse)
-import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDefs, Var, VarDef, mapE, expr)
-import Expr (RawExpr'(..), VarDef'(..)) as E
-import Util ((×), absurd, error)
+import Expr (Cont(..), Elim(..), Expr(..), RecDefs, Var, VarDef, expr)
+import Expr (RawExpr(..), VarDef(..)) as E
+import Lattice (𝔹)
+import Util ((×), absurd, error, quaList)
 
 data SugaredExpr =
    Var Var |
@@ -19,21 +20,21 @@ data SugaredExpr =
    True | False |
    Pair SExpr SExpr |
    Nil | Cons SExpr SExpr |
-   Lambda Elim |
+   Lambda (Elim 𝔹) |
    App SExpr SExpr |
    BinaryApp SExpr Var SExpr |
-   MatchAs SExpr Elim |
+   MatchAs SExpr (Elim 𝔹) |
    IfElse SExpr SExpr SExpr |
    ListSeq Int Int |
    ListComp SExpr (List ListCompExpr) |
-   Let VarDef SExpr |
-   LetRec RecDefs SExpr
+   Let (VarDef 𝔹) SExpr |
+   LetRec (RecDefs 𝔹) SExpr
 
 data ListCompExpr = Predicate SExpr | InputList SExpr SExpr
 
 data SExpr = SExpr Boolean SugaredExpr
 
-desugar :: SExpr -> Expr
+desugar :: SExpr -> Expr 𝔹
 desugar (SExpr α (IfElse e1 e2 e3))
     = let e1' = desugar e1
           e2' = desugar e2
@@ -54,7 +55,7 @@ desugar (SExpr α (ListComp e_lhs e_rhs))
         numLists (L.Cons e es) = case e of Predicate _   -> numLists es
                                            InputList _ _ -> numLists es + 1
 
-        go :: List ListCompExpr -> Int -> Expr
+        go :: List ListCompExpr -> Int -> Expr 𝔹
         go (e:es) n
             = case e of
                 InputList bound_var list_expr ->
@@ -62,7 +63,7 @@ desugar (SExpr α (ListComp e_lhs e_rhs))
                         Expr _ es'  = desugar list_expr
                         σ           = bound_vars (expr e') (Body $ go es (n - 1))
                         ebody       = if n == 0 then mapE σ $ expr es'
-                                      else mapE σ $ expr es' :: Expr
+                                      else mapE σ $ expr es' :: Expr 𝔹
                     in  expr $ E.Let (E.VarDef σ (expr e')) ebody
 
                 Predicate p ->
@@ -83,15 +84,21 @@ desugar (SExpr α (Let def e))          = Expr α (E.Let def (desugar e))
 desugar (SExpr α (LetRec δ e))         = Expr α (E.LetRec δ (desugar e))
 desugar _ = error absurd
 
-bound_vars :: Expr -> Cont -> Elim
+mapE :: Elim 𝔹 -> Expr 𝔹 -> Expr 𝔹
+mapE σ = quaList $ map (apply σ)
+   where
+   apply :: Elim 𝔹 -> Expr 𝔹 -> Expr 𝔹
+   apply σ' e = expr $ E.MatchAs e σ'
+
+bound_vars :: Expr 𝔹 -> Cont 𝔹 -> Elim 𝔹
 bound_vars (Expr _ (E.Var x)) κ
     = ElimVar x κ
 bound_vars (Expr _ (E.Constr ctr args)) κ
     = case args of
-        (e:es) -> let f :: (Cont -> Elim) -> Expr -> (Cont -> Elim)
-                      f κ_cont e' = \(κ' :: Cont) -> (κ_cont $ Arg $ bound_vars e' κ')
+        (e:es) -> let f :: (Cont 𝔹 -> Elim 𝔹) -> Expr 𝔹 -> Cont 𝔹 -> Elim 𝔹
+                      f κ_cont e' = \(κ' :: Cont 𝔹) -> (κ_cont $ Arg $ bound_vars e' κ')
 
-                      z :: Cont -> Elim
+                      z :: Cont 𝔹 -> Elim 𝔹
                       z = bound_vars e
 
                   in  ElimConstr (M.fromFoldable [ctr × (Arg $ (foldl f z es) κ)])
