@@ -56,9 +56,10 @@ body (Body e) = e
 body _ = error "Expression expected"
 
 instance selectableCont :: MaybeZippable Cont' where
-   maybeZipWith f (Body e) (Body e')        = Body <$> maybeZipWith f e e'
-   maybeZipWith f (Arg σ) (Arg σ')          = Arg <$> maybeZipWith f σ σ'
-   maybeZipWith _ _ _                       = Nothing
+   maybeZipWith f None None            = pure None
+   maybeZipWith f (Body e) (Body e')   = Body <$> maybeZipWith f e e'
+   maybeZipWith f (Arg σ) (Arg σ')     = Arg <$> maybeZipWith f σ σ'
+   maybeZipWith _ _ _                  = Nothing
 
 data Elim' a =
    ElimVar Var (Cont' a) |

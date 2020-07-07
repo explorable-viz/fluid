@@ -55,7 +55,7 @@ instance envPretty :: Pretty (Env' Boolean) where
    pretty Empty = text "[]"
 
 instance prettyVoid :: Pretty Void where
-   pretty = error absurd
+   pretty _ = error absurd
 
 instance explPretty :: Pretty (Expl' Boolean) where
    pretty (T.Var x _)               = text x
