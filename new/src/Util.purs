@@ -100,6 +100,3 @@ quaList f x = fromList $ f (toList x)
 
 quaList2 :: forall a . QuaList a => (List a -> List a -> List a) -> a -> a -> a
 quaList2 f x y = fromList $ f (toList x) (toList y)
-
-concatQ :: forall a . QuaList a => a -> a
-concatQ = quaList (concat <<< map toList)

@@ -1,12 +1,12 @@
 module Expr where
 
 import Prelude hiding (top)
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), foldr)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr, cCons, cNil)
 import Lattice (class MaybeZippable, Selected, maybeZipWith, maybeZipWithList, maybeZipWithMap)
-import Util (class QuaList, type (+), (≟), error, fromList, quaList, quaList2, toList)
+import Util (class QuaList, type (+), (≟), error, quaList, toList)
 
 type Var = String
 
@@ -78,16 +78,12 @@ instance maybeZippableElim :: MaybeZippable Elim' where
 data Module' a = Module (List (VarDef' a + RecDefs' a))
 type Module = Module' Selected
 
-instance quaListExpr :: QuaList (Expr' Boolean) where
-   toList (Expr a (Constr c (e : e' : Nil))) | c == cCons   = e : toList e'
-   toList (Expr a (Constr c Nil)) | c == cNil               = Nil
-   toList _                                                 = error "expected list expression"
+instance quaListExpr :: QuaList (Expr' Boolean)  where
+   toList (Expr _ (Constr c (e : e' : Nil))) | c == cCons   = e : toList e'
+   toList (Expr _ (Constr c Nil)) | c == cNil               = Nil
+   toList _                                                 = error "not a list"
 
-   fromList (x : xs) = expr $ Constr cCons (x : fromList xs : Nil)
-   fromList Nil      = expr $ Constr cNil Nil
-
-appendE :: Expr -> Expr -> Expr
-appendE = quaList2 (<>)
+   fromList = foldr (\e e' -> expr $ Constr cCons (e : e' : Nil)) (expr $ Constr cNil Nil)
 
 mapE :: Elim -> Expr -> Expr
 mapE σ = quaList $ map (apply σ)

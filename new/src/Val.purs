@@ -1,12 +1,12 @@
 module Val where
 
 import Prelude hiding (absurd, top)
-import Data.List (List)
+import Data.List (List(..), (:), foldr)
 import Data.Maybe (Maybe(..))
-import DataType (Ctr)
+import DataType (Ctr, cCons, cNil)
 import Expr (Elim', RecDefs', Var)
 import Lattice (class MaybeZippable, Selected, maybeZipWith, maybeZipWithList)
-import Util (MayFail, type (×), (×), (≟), report)
+import Util (class QuaList, MayFail, type (×), (×), (≟), error, report, toList)
 
 data Primitive =
    IntOp (Int -> Val) -- one constructor for each primitive type we care about
@@ -94,3 +94,10 @@ instance maybeZippableEnv :: MaybeZippable Env' where
    maybeZipWith f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))
       = Extend <$> maybeZipWith f m m' <*> ((↦) <$> x ≟ y <*> maybeZipWith f v v')
    maybeZipWith _ _ _                                      = Nothing
+
+instance quaListVal :: QuaList (Val' Boolean) where
+   toList (Val _ (Constr c (e : e' : Nil))) | c == cCons = e : toList e'
+   toList (Val _ (Constr c Nil)) | c == cNil             = Nil
+   toList _                                              = error "not a list"
+
+   fromList = foldr (\e e' -> val $ Constr cCons (e : e' : Nil)) (val $ Constr cNil Nil)
