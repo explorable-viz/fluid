@@ -3,25 +3,25 @@ module Fwd where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), singleton)
 import Data.Map (lookup)
-import Expr (Cont, Cont'(..), Elim, Elim'(..), Expr, Expr'(..), RecDef'(..), RecDefs, VarDef'(..), body, varAnon)
-import Expr (RawExpr'(..)) as E
-import Lattice (Selected, (∧))
+import Expr (Cont(..), Elim(..), Expr(..), RecDef(..), RecDefs, VarDef(..), body, varAnon)
+import Expr (RawExpr(..)) as E
+import Lattice (𝔹, (∧))
 import Primitive (apply_fwd)
 import Util (type (×), (×), absurd, error, fromJust, successful)
-import Val (Env, Env'(..), Val, Val'(..), (:+:), (↦), find)
-import Val (RawVal'(..)) as V
+import Val (Env(..), Val(..), (:+:), (↦), find)
+import Val (RawVal(..)) as V
 
-match_fwd :: Val -> Elim -> Env × Cont × Selected
+match_fwd :: Val 𝔹 -> Elim 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 match_fwd v (ElimVar x κ)
    | x == varAnon = Empty × κ × true
    | otherwise    = (Empty :+: x ↦ v) × κ × true
-match_fwd (Val α (V.Constr c vs)) (ElimConstr κs)  =
+match_fwd (Val α (V.Constr c vs)) (ElimConstr κs) =
    let κ = fromJust absurd $ lookup c κs
        ρ × κ' × α' = matchArgs_fwd vs κ in
    ρ × κ' × (α ∧ α')
-match_fwd v _                                      = error absurd
+match_fwd v _ = error absurd
 
-matchArgs_fwd :: List Val -> Cont -> Env × Cont × Selected
+matchArgs_fwd :: List (Val 𝔹) -> Cont 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchArgs_fwd Nil κ              = Empty × κ × true
 matchArgs_fwd (v : vs) (Arg σ)   =
    let ρ  × κ'  × α = match_fwd v σ
@@ -29,12 +29,12 @@ matchArgs_fwd (v : vs) (Arg σ)   =
    (ρ <> ρ') × κ'' × (α ∧ α')
 matchArgs_fwd _ _                = error absurd
 
-closeDefs_fwd :: Env -> RecDefs -> RecDefs -> Selected -> Env
+closeDefs_fwd :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> 𝔹 -> Env 𝔹
 closeDefs_fwd _ _ Nil _                = Empty
 closeDefs_fwd ρ δ0 (RecDef f σ : δ) α  =
    closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
 
-eval_fwd :: Env -> Expr -> Selected -> Val
+eval_fwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Val 𝔹
 eval_fwd ρ (Expr _ (E.Var x)) _ =
    successful $ find x ρ
 eval_fwd ρ (Expr _ (E.Op op)) _ =

@@ -89,3 +89,14 @@ bind2Flipped :: forall m a b c . Monad m => (a -> b -> m c) -> m a -> m b -> m c
 bind2Flipped f x y = join $ lift2 f x y
 
 infixr 1 bind2Flipped as =<<<
+
+-- Data types that have a List embedding.
+class QuaList a where
+   toList :: a -> List a
+   fromList :: List a -> a
+
+quaList :: forall a . QuaList a => (List a -> List a) -> a -> a
+quaList f x = fromList $ f (toList x)
+
+quaList2 :: forall a . QuaList a => (List a -> List a -> List a) -> a -> a -> a
+quaList2 f x y = fromList $ f (toList x) (toList y)

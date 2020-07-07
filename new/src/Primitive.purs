@@ -6,11 +6,11 @@ import Data.List (List(..))
 import Data.Map (Map, fromFoldable)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import DataType (cTrue, cFalse)
-import Lattice (Selected, (∧))
+import Lattice (𝔹, (∧))
 import Util (type (×), (×), error)
 import Expr (Var)
-import Val (Env, Env'(..), Primitive(..), Val, Val'(..), (:+:), (↦), val)
-import Val (RawVal'(..)) as V
+import Val (Env(..), Primitive(..), Val(..), (:+:), (↦), val)
+import Val (RawVal(..)) as V
 
 -- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
 type OpDef = {
@@ -39,10 +39,10 @@ opDefs = fromFoldable [
 
 -- Enforce primitive argument types.
 class To a where
-   to :: Val -> a
+   to :: Val 𝔹 -> a
 
 class From a where
-   from :: a -> Val
+   from :: a -> Val 𝔹
 
 instance toInt :: To Int where
    to (Val _ (V.Int n)) = n
@@ -51,10 +51,10 @@ instance toInt :: To Int where
 instance fromInt :: From Int where
    from = V.Int >>> val
 
-true_ :: Val
+true_ :: Val 𝔹
 true_ = val $ V.Constr cTrue Nil
 
-false_ :: Val
+false_ :: Val 𝔹
 false_ = val $ V.Constr cFalse Nil
 
 instance fromBoolean :: From Boolean where
@@ -66,14 +66,14 @@ instance fromString :: From String where
 instance fromIntOp :: From a => From (Int -> a) where
    from op = val $ V.Primitive $ IntOp $ op >>> from
 
-apply :: Primitive -> Val -> Val
+apply :: Primitive -> Val 𝔹 -> Val 𝔹
 apply (IntOp op) = op <<< to
 
-apply_fwd :: Primitive -> Selected -> Val -> Val
+apply_fwd :: Primitive -> 𝔹 -> Val 𝔹 -> Val 𝔹
 apply_fwd φ α v@(Val α' _) =
    Val (α ∧ α') u where Val _ u = apply φ v
 
-primitives :: Env
+primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    -- need to instantiate the corresponding PureScript primitive at a concrete type
    "+"         ↦ from   ((+)  :: Int -> Int -> Int),

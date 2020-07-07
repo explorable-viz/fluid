@@ -19,7 +19,7 @@ class Lattice a where
 infixl 7 meet as ∧
 infixl 6 join as ∨
 
-type Selected = Boolean
+type 𝔹 = Boolean
 
 class Functor t <= MaybeZippable t where
    maybeZipWith  :: forall a b c . (a -> b -> c) -> t a -> t b -> Maybe (t c)

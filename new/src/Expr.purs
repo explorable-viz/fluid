@@ -1,124 +1,93 @@
 module Expr where
 
 import Prelude hiding (top)
-import Data.List (List(..), (:))
-import Data.List (concat) as L
+import Data.List (List(..), (:), foldr)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
-import DataType (Ctr(..))
-import Lattice (class MaybeZippable, Selected, maybeZipWith, maybeZipWithList, maybeZipWithMap)
-import Util (type (+), (≟), error)
+import DataType (Ctr, cCons, cNil)
+import Lattice (class MaybeZippable, 𝔹, maybeZipWith, maybeZipWithList, maybeZipWithMap)
+import Util (class QuaList, type (+), (≟), error, toList)
 
 type Var = String
 
 varAnon = "_" :: Var
 
-data VarDef' a = VarDef (Elim' a) (Expr' a) -- elim has codomain unit
-type VarDef = VarDef' Selected
-type VarDefs a = List (VarDef' a)
+data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
+type VarDefs a = List (VarDef a)
 
-data RecDef' a = RecDef Var (Elim' a)
-type RecDef = RecDef' Selected
-type RecDefs' a = List (RecDef' a)
-type RecDefs = RecDefs' Selected
+data RecDef a = RecDef Var (Elim a)
+type RecDefs a = List (RecDef a)
 
-data RawExpr' a =
+data RawExpr a =
    Var Var |
    Op Var |
    Int Int |
    Str String |
-   Constr Ctr (List (Expr' a)) |
-   Lambda (Elim' a) |
-   App (Expr' a) (Expr' a) |
-   BinaryApp (Expr' a) Var (Expr' a) |
-   MatchAs (Expr' a) (Elim' a) |
-   Let (VarDef' a) (Expr' a) |
-   LetRec (RecDefs' a) (Expr' a)
+   Constr Ctr (List (Expr a)) |
+   Lambda (Elim a) |
+   App (Expr a) (Expr a) |
+   BinaryApp (Expr a) Var (Expr a) |
+   MatchAs (Expr a) (Elim a) |
+   Let (VarDef a) (Expr a) |
+   LetRec (RecDefs a) (Expr a)
 
-data Expr' a = Expr a (RawExpr' a)
+data Expr a = Expr a (RawExpr a)
 
-type Expr = Expr' Selected
-type RawExpr = RawExpr' Selected
-
-derive instance functorVarDef :: Functor VarDef'
-derive instance functorRecDef :: Functor RecDef'
-derive instance functorRawExpr :: Functor RawExpr'
-derive instance functorExpr :: Functor Expr'
-
-expr :: RawExpr -> Expr
+expr :: RawExpr 𝔹 -> Expr 𝔹
 expr = Expr false
 
 -- Continuation of an eliminator. None form only used in structured let.
-data Cont' a = None | Body (Expr' a) | Arg (Elim' a)
-type Cont = Cont' Selected
+data Cont a = None | Body (Expr a) | Arg (Elim a)
 
-body :: Cont -> Expr
+body :: Cont 𝔹 -> Expr 𝔹
 body (Body e) = e
 body _ = error "Expression expected"
 
-instance selectableCont :: MaybeZippable Cont' where
-   maybeZipWith f (Body e) (Body e')        = Body <$> maybeZipWith f e e'
-   maybeZipWith f (Arg σ) (Arg σ')          = Arg <$> maybeZipWith f σ σ'
-   maybeZipWith _ _ _                       = Nothing
+data Elim a =
+   ElimVar Var (Cont a) |
+   ElimConstr (Map Ctr (Cont a))
 
-data Elim' a =
-   ElimVar Var (Cont' a) |
-   ElimConstr (Map Ctr (Cont' a))
+data Module a = Module (List (VarDef a + RecDefs a))
 
-type Elim = Elim' Selected
+-- ======================
+-- boilerplate
+-- ======================
+derive instance functorVarDef :: Functor VarDef
+derive instance functorRecDef :: Functor RecDef
+derive instance functorRawExpr :: Functor RawExpr
+derive instance functorExpr :: Functor Expr
+derive instance functorCont :: Functor Cont
+derive instance functorElim :: Functor Elim
 
-derive instance functorCont :: Functor Cont'
-derive instance functorElim :: Functor Elim'
-
-instance maybeZippableElim :: MaybeZippable Elim' where
+instance maybeZippableElim :: MaybeZippable Elim where
    maybeZipWith f (ElimVar x κ) (ElimVar x' κ')
       = ElimVar <$> x ≟ x' <*> maybeZipWith f κ κ'
    maybeZipWith f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithMap f κs κs'
    maybeZipWith _ _ _                                = Nothing
 
-data Module' a = Module (List (VarDef' a + RecDefs' a))
-type Module = Module' Selected
+instance quaListExpr :: QuaList (Expr Boolean)  where
+   toList (Expr _ (Constr c (e : e' : Nil))) | c == cCons   = e : toList e'
+   toList (Expr _ (Constr c Nil)) | c == cNil               = Nil
+   toList _                                                 = error "not a list"
 
-class ToList a where
-   toList :: a -> List a
+   fromList = foldr (\e e' -> expr $ Constr cCons (e : e' : Nil)) (expr $ Constr cNil Nil)
 
-class FromList a where
-   fromList :: List a -> a
+instance maybeZippableCont :: MaybeZippable Cont where
+   maybeZipWith f None None            = pure None
+   maybeZipWith f (Body e) (Body e')   = Body <$> maybeZipWith f e e'
+   maybeZipWith f (Arg σ) (Arg σ')     = Arg <$> maybeZipWith f σ σ'
+   maybeZipWith _ _ _                  = Nothing
 
-instance exprToList :: ToList (Expr' Boolean) where
-   toList (Expr a (Constr (Ctr "Cons") (e : es : Nil))) = (e:toList es)
-   toList (Expr a (Constr (Ctr "Nil") Nil)) = Nil
-   toList _ = error "expected list expression"
-
-instance exprFromList :: FromList (Expr' Boolean) where
-   fromList (x : xs) = expr $ Constr (Ctr "Cons") (x: fromList xs : Nil)
-   fromList Nil      = expr $ Constr (Ctr "Nil") Nil
-
-appendE :: Expr -> Expr -> Expr
-appendE e1 e2 = fromList $ toList e1 <> toList e2
-
-concatE :: Expr -> Expr
-concatE e1 = fromList $ L.concat $ map toList $ toList e1
-
-mapE :: Elim -> Expr -> Expr
-mapE σ e = fromList $ map (apply σ) $ toList e
-   where
-   apply :: Elim -> Expr -> Expr
-   apply σ' e' = expr $ MatchAs e' σ'
-
-concatMapE :: Elim -> Expr -> Expr
-concatMapE = mapE
-
-instance maybeZippableDef :: MaybeZippable VarDef' where
+instance maybeZippableDef :: MaybeZippable VarDef where
    maybeZipWith f (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'
 
-instance maybeZippableRecDef :: MaybeZippable RecDef' where
+instance maybeZippableRecDef :: MaybeZippable RecDef where
    maybeZipWith f (RecDef x σ) (RecDef x' σ') = RecDef <$> x ≟ x' <*> maybeZipWith f σ σ'
 
-instance maybeZippableExpr :: MaybeZippable Expr' where
+instance maybeZippableExpr :: MaybeZippable Expr where
    maybeZipWith f (Expr α r) (Expr α' r') = Expr <$> pure (f α α') <*> maybeZipWith f r r'
 
-instance maybeZippableRawExpr :: MaybeZippable RawExpr' where
+instance maybeZippableRawExpr :: MaybeZippable RawExpr where
    maybeZipWith _ (Var x) (Var x')                = Var <$> x ≟ x'
    maybeZipWith _ (Op op) (Op op')                = Op <$> op ≟ op'
    maybeZipWith _ (Int n) (Int n')                = Int <$> n ≟ n'
