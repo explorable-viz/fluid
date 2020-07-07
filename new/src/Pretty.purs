@@ -51,13 +51,16 @@ instance envPretty :: Pretty (Env' Boolean) where
    pretty (ρ :+: kv) = brackets $ pretty $ ρ :+: kv
    pretty Empty = text "[]"
 
+instance prettyVoid :: Pretty Void where
+   pretty = error absurd
+
 instance explPretty :: Pretty (Expl' Boolean) where
    pretty (T.Var x _)               = text x
    pretty (T.Op op _)               = text op
    pretty (T.Int n _)               = text $ show n
    pretty (T.Str s _)               = text $ show s
    pretty (T.Constr c ts)           = prettyConstr c ts
-   pretty (T.NullConstr c _)        = pretty c
+   pretty (T.NullConstr c _)        = prettyConstr c (Nil :: List Void)
    pretty (T.Lambda σ)              = text "fun " :<>: pretty σ
    pretty (T.App tv t' ξ t'')       =
       text "App" :<>:
@@ -69,8 +72,9 @@ instance explPretty :: Pretty (Expl' Boolean) where
    pretty (T.MatchAs t ξ t')        =
       atop (text "match " :<>: pretty t :<>: text " as {")
            (atop (tab :<>: pretty ξ) (atop (text "} where outcome was: ") (tab :<>: pretty t')))
-   pretty (T.Let (T.VarDef ξ t) t') = atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
-                                        (pretty t')
+   pretty (T.Let (T.VarDef ξ t) t') =
+      atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
+           (pretty t')
    pretty (T.LetRec δ t)            =
       atop (text "letrec " :<>: pretty δ)
            (text "in     " :<>: pretty t)
@@ -85,11 +89,6 @@ instance explMatch :: Pretty (Match' Boolean) where
 
 instance explValPretty :: Pretty (Expl' Boolean × Val' Boolean) where
    pretty (t × v) = parens $ pretty t :<>: comma :<>: pretty v
-
-instance explPrettyList :: PrettyList (Expl' Boolean) where
-   prettyList (T.NullConstr c _) | c == cNil             = null
-   prettyList (T.Constr c (t : t' : Nil)) | c == cCons   = comma :<>: pretty t :<>: prettyList t'
-   prettyList _                                          = error "Not a list"
 
 instance prettyListPretty :: Pretty a => Pretty (List a) where
    pretty xs = brackets $ hcat $ intersperse comma $ map pretty xs
