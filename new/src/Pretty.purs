@@ -35,12 +35,6 @@ operator op = space :<>: text op :<>: space
 parens :: Doc -> Doc
 parens doc = text "(" :<>: doc :<>: text ")"
 
-parens2 :: Doc -> Doc
-parens2 doc = atop (text "(" :<>: doc)  (text ")")
-
-cbrackets :: Doc -> Doc
-cbrackets doc = text "{" :<>: doc :<>: text "}"
-
 null :: Doc
 null = text ""
 
@@ -140,11 +134,6 @@ instance rawExprPretty :: Pretty (RawExpr' Boolean) where
    pretty (E.App e e')              = pretty e :<>: space :<>: pretty e'
    pretty (E.BinaryApp e op e')     = pretty e :<>: operator op :<>: pretty e'
 
-{-
-instance prettyVEBList :: PrettyList (List (Env' Boolean × (Expr' Boolean) × Boolean)) where
-   prettyList Nil    = text ""
-   prettyList ((v × e × b):vs) = comma :<>: (parens (pretty v) :<>: prettyList vs)
--}
 instance prettyRecDef :: Pretty (RecDef' Boolean) where
    pretty (RecDef f σ) = text f :<>: operator "=" :<>: pretty σ
 
