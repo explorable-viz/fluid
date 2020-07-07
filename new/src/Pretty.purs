@@ -1,6 +1,6 @@
-module Pretty (class Pretty, pretty, module P, (:<>:)) where
+module Pretty (class Pretty, pretty, module P) where
 
-import Prelude hiding (absurd)
+import Prelude hiding (absurd, between)
 import Data.List (List(..), (:))
 import Data.Map (toUnfoldable)
 import Data.String (Pattern(..), contains)
@@ -17,8 +17,11 @@ import Val (RawVal'(..)) as V
 
 infixl 5 beside as :<>:
 
+between :: Doc -> Doc -> Doc -> Doc
+between l r doc = l :<>: doc :<>: r
+
 brackets :: Doc -> Doc
-brackets doc = text "[" :<>: doc :<>: text "]"
+brackets = between (text "[") (text "]")
 
 comma :: Doc
 comma = text "," :<>: space
@@ -30,10 +33,10 @@ tab :: Doc
 tab = text "   "
 
 operator :: String -> Doc
-operator op = space :<>: text op :<>: space
+operator = text >>> between space space
 
 parens :: Doc -> Doc
-parens doc = text "(" :<>: doc :<>: text ")"
+parens = between (text "(") (text ")")
 
 null :: Doc
 null = text ""
@@ -152,7 +155,7 @@ instance prettyElim :: Pretty (Elim' Boolean) where
    pretty (ElimConstr κs)  = vcat $ map pretty $ (toUnfoldable κs :: List _)
 
 instance valPretty :: Pretty (Val' Boolean) where
-   pretty (Val a u) = pretty u
+   pretty (Val _ u) = pretty u
 
 instance rawValPretty :: Pretty (RawVal' Boolean) where
    pretty (V.Int n)           = text $ show n
