@@ -72,6 +72,7 @@ cEQ         = Ctr "EQ"        :: Ctr
 cPair       = Ctr "Pair"      :: Ctr -- Pair
 cEmpty      = Ctr "Empty"     :: Ctr -- Tree
 cNonEmpty   = Ctr "NonEmpty"  :: Ctr
+cMany       = Ctr "Many"      :: Ctr
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [

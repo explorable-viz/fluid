@@ -11,7 +11,7 @@ import DataType (Ctr, cCons, cNil, cPair, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef, expr)
 import Expr (RawExpr(..)) as E
 import Pretty (pretty)
-import Primitive (map) as P
+import Primitive (map, concat') as P
 import Util ((×), absurd, error)
 
 trace s a = T.trace (pretty s) $ \_-> a
@@ -60,6 +60,16 @@ lcomp3 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var 
                     (InputList (sexpr $ Var "y") (sexpr $ Cons (sexpr $ Int 9)
                     (sexpr $ Cons (sexpr $ Int 7) (sexpr $ Cons (sexpr $ Int 5) (sexpr $ Nil))))):L.Nil)
 
+lcomp4 :: SExpr
+lcomp4 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var "y"))
+                 ((InputList (sexpr $ Var "x") (sexpr $ Cons (sexpr $ Int 5)
+                  (sexpr $ Cons (sexpr $ Int 4) (sexpr $ Cons (sexpr $ Int 3) (sexpr $ Nil))))):
+                 (InputList (sexpr $ Var "y") (sexpr $ Cons (sexpr $ Int 9)
+                  (sexpr $ Cons (sexpr $ Int 7) (sexpr $ Cons (sexpr $ Int 5) (sexpr $ Nil))))):
+                 (InputList (sexpr $ Var "z") (sexpr $ Cons (sexpr $ Int 12)
+                  (sexpr $ Cons (sexpr $ Int 2) (sexpr $ Cons (sexpr $ Int 13) (sexpr $ Nil))))):
+                    L.Nil)
+
 desugar :: SExpr -> Expr
 desugar (SExpr α (Int n)) = Expr α (E.Int n)
 desugar (SExpr α True) = Expr α (E.Constr cTrue L.Nil)
@@ -102,7 +112,7 @@ desugar (SExpr α (ListComp s_lhs s_rhs))
                     let bound_expr  = desugar bound_var
                         list_expr   = desugar input_list
                         σ           = bindingToElim bound_expr (Body $ go ss)
-                    in  (P.map σ list_expr)
+                    in  P.concat' (P.map σ list_expr)
 
                 Predicate p ->
                     let p' = desugar p
