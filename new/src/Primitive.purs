@@ -56,7 +56,7 @@ class FromList a where
 instance exprToList :: ToList Expr where
    toList (Expr a (E.Constr (Ctr ":") (e:es:Nil))) = (e:toList es)
    toList (Expr a (E.Constr (Ctr "Nil") Nil)) = Nil
-   toList _ = error "expected list expression"
+   toList e = let k = trace' "toList error: " (trace e 0) in error "expected list expression"
 
 instance exprFromList :: FromList Expr where
    fromList (x:xs) = expr $ (E.Constr (Ctr ":") (x:fromList xs:Nil))
@@ -128,11 +128,13 @@ map σ e = fromList $ P.map (applyσ σ) (toList e)
 nilExpr :: Expr
 nilExpr = Expr false (E.Constr cNil Nil)
 
-concat' :: Expr -> Expr
-concat' es = fromList (L.concat (P.map toList (toList $ fromList $ (P.map concat (toList es)))))
-
 concat :: Expr -> Expr
-concat (Expr _ (E.MatchAs e (ElimVar x (Body match_es))))
+concat e@(Expr _ (E.MatchAs e' σ)) = e
+concat es@(Expr _ (E.Constr cCons es')) = fromList (L.concat (P.map toList (P.map concat' (toList es))))
+concat _ = error "concat error"
+
+concat' :: Expr -> Expr
+concat' (Expr _ (E.MatchAs e (ElimVar x (Body match_es))))
    = fromList $ P.map mergeMatch (toList match_es)
    where mergeMatch :: Expr -> Expr
          mergeMatch (Expr _ (E.MatchAs e' (ElimVar y (Body e_body))))
@@ -146,18 +148,18 @@ concat (Expr _ (E.MatchAs e (ElimVar x (Body match_es))))
               in  Expr false (E.MatchAs merged_e merged_σ)
          mergeMatch e = let k0 = trace e 0 in error "mergeMatch error 1"
 
-concat (Expr _ (E.MatchAs (Expr _ (E.Constr cMany es)) (ElimConstr m)))
-   = fromList $ P.map mergeMatch (toList match_es)
-   where ctr × k = fromJust "No head element found" (L.head $ toUnfoldable m)
-         match_es = getEMatches k
-         mergeMatch :: Expr -> Expr
-         mergeMatch (Expr _ (E.MatchAs e' (ElimVar y (Body e_body))))
-            = let merged_e = Expr false (E.Constr cMany (snoc es e'))
-                  merged_σ = ElimConstr (singleton cMany (insertArgEbody k y e_body))
-              in  Expr false (E.MatchAs merged_e merged_σ)
-         mergeMatch e = let k0 = trace e 0 in error "mergeMatch error 2"
+-- concat' (Expr _ (E.MatchAs (Expr _ (E.Constr cMany es)) (ElimConstr m)))
+--    = fromList $ P.map mergeMatch (toList match_es)
+--    where ctr × k = fromJust "No head element found" (L.head $ toUnfoldable m)
+--          match_es = getEMatches k
+--          mergeMatch :: Expr -> Expr
+--          mergeMatch (Expr _ (E.MatchAs e' (ElimVar y (Body e_body))))
+--             = let merged_e = Expr false (E.Constr cMany (snoc es e'))
+--                   merged_σ = ElimConstr (singleton cMany (insertArgEbody k y e_body))
+--               in  Expr false (E.MatchAs merged_e merged_σ)
+--          mergeMatch e = let k0 = trace e 0 in error "mergeMatch error 2"
 
-concat _ = error "concat error"
+concat' _ = error "concat' error"
 
 getEMatches :: Cont -> Expr
 getEMatches (Arg (ElimVar x k)) = getEMatches k
