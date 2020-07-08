@@ -70,6 +70,17 @@ lcomp4 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var 
                   (sexpr $ Cons (sexpr $ Int 2) (sexpr $ Cons (sexpr $ Int 13) (sexpr $ Nil))))):
                     L.Nil)
 
+lcomp5 :: SExpr
+lcomp5 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var "y"))
+                 ((InputList (sexpr $ Var "x") (sexpr $ Cons (sexpr $ Int 5)
+                  (sexpr $ Cons (sexpr $ Int 4) (sexpr $ Cons (sexpr $ Int 3) (sexpr $ Nil))))):
+                 (InputList (sexpr $ Var "y") (sexpr $ Cons (sexpr $ Int 9)
+                  (sexpr $ Cons (sexpr $ Int 7) (sexpr $ Cons (sexpr $ Int 5) (sexpr $ Nil))))):
+                 (InputList (sexpr $ Var "(a, b)") (sexpr $ Cons (sexpr $ Pair (sexpr $ Int 3) (sexpr $ Int 12))
+                  (sexpr $ Cons (sexpr $ Pair (sexpr $ Int 2) (sexpr $ Int 0)) (sexpr $ Cons (sexpr $ Pair (sexpr $ Int 13) (sexpr $ Int 7)) (sexpr $ Nil))))):
+                    L.Nil)
+
+
 desugar :: SExpr -> Expr
 desugar (SExpr α (Int n)) = Expr α (E.Int n)
 desugar (SExpr α True) = Expr α (E.Constr cTrue L.Nil)
