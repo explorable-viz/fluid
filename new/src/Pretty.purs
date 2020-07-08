@@ -184,7 +184,7 @@ instance prettyDefs :: Pretty (List RecDef) where
 
 instance prettyMatches :: Pretty (List Match) where
    pretty Nil    = text ""
-   pretty (ξ:ξs) = atop (pretty ξ) $ pretty ξs
+   pretty (ξ:ξs) = (pretty ξ) :<>: comma :<>: pretty ξs
 
 instance prettyValsList :: PrettyList (List Val) where
    prettyList Nil    = text ""
@@ -221,7 +221,7 @@ instance prettyBranch2 :: Pretty (Ctr × List Match) where
 
 instance prettyElim2 :: Pretty Elim where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
-   pretty (ElimConstr κs)  = vcat $ map pretty $ (toUnfoldable κs :: List _)
+   pretty (ElimConstr κs)  = hcat $ map (\x -> pretty x :<>: comma) $ (toUnfoldable κs :: List _)
 
 instance valPretty :: Pretty Val where
    pretty (Val a u) = pretty u

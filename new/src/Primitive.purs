@@ -129,8 +129,14 @@ nilExpr :: Expr
 nilExpr = Expr false (E.Constr cNil Nil)
 
 concat :: Expr -> Expr
-concat e@(Expr _ (E.MatchAs e' σ)) = e
-concat es@(Expr _ (E.Constr cCons es')) = fromList (L.concat (P.map toList (P.map concat' (toList es))))
+-- concat e@(Expr _ (E.MatchAs e' σ)) = let k0 = trace e 5 in e
+concat es@(Expr _ (E.Constr cCons es'))
+   = let m = trace es 5
+         e = (P.map concat' (toList es))
+         
+     in case fromJust "No head element found in concat" (L.head e) of
+         p@(Expr _ (E.MatchAs e' σ)) -> p
+         _ -> fromList (L.concat (P.map toList e))
 concat _ = error "concat error"
 
 concat' :: Expr -> Expr

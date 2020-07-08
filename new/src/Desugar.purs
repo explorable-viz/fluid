@@ -127,18 +127,19 @@ desugar (SExpr α (ListComp s_lhs s_rhs))
                         σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar s_lhs)
                                                         , cFalse × Body (expr $ E.Constr cNil L.Nil)])
                     in  expr $ E.MatchAs p' σ
-        go (s:ss)
+        go (s:s':ss)
             = case s of
                 InputList bound_var input_list ->
                     let bound_expr  = desugar bound_var
                         list_expr   = desugar input_list
-                        σ           = bindingToElim bound_expr (Body $ go ss)
+                        σ           = bindingToElim bound_expr (Body $ go (s':ss))
                         k0 = trace σ $ trace list_expr 5
-                    in  P.concat (P.map σ list_expr)
+                    in  case s' of Predicate p -> (P.map σ list_expr)
+                                   _ -> P.concat (P.map σ list_expr)
 
                 Predicate p ->
                     let p' = desugar p
-                        σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (go ss)
+                        σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (go (s':ss))
                                                         , cFalse × Body (expr $ E.Constr cNil L.Nil)])
                     in  expr $ E.MatchAs p' σ
         go L.Nil  = error absurd
