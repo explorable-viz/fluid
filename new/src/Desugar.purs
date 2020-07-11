@@ -119,29 +119,27 @@ desugar (SExpr α (ListComp s_lhs s_rhs))
                 InputList bound_var input_list ->
                     let bound_expr  = desugar bound_var
                         list_expr   = desugar input_list
-                        σ           = bindingToElim (bound_expr) (Body $ desugar s_lhs)
-                    in  (P.map σ list_expr)
+                        λ           = expr $ E.Lambda (bindingToElim (bound_expr) (Body $ desugar s_lhs))
+                    in  expr $ E.App (expr $ E.App (expr $ E.Var "map") λ) list_expr
 
                 Predicate p ->
                     let p' = desugar p
                         σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar s_lhs)
                                                         , cFalse × Body (expr $ E.Constr cNil L.Nil)])
                     in  expr $ E.MatchAs p' σ
-        go (s:s':ss)
+        go (s:ss)
             = case s of
                 InputList bound_var input_list ->
                     let bound_expr  = desugar bound_var
                         list_expr   = desugar input_list
-                        σ           = bindingToElim bound_expr (Body $ go (s':ss))
-                        k0 = trace σ $ trace list_expr 5
-                    in  case s' of Predicate p -> (P.map σ list_expr)
-                                   _ -> P.concat (P.map σ list_expr)
+                        λ           = expr $ E.Lambda (bindingToElim bound_expr (Body $ go ss))
+                    in  expr $ E.App (expr $ E.Var "concat") (expr $ E.App (expr $ E.App (expr $ E.Var "map") λ) list_expr)
 
                 Predicate p ->
                     let p' = desugar p
-                        σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (go (s':ss))
+                        σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (go ss)
                                                         , cFalse × Body (expr $ E.Constr cNil L.Nil)])
-                    in  expr $ E.MatchAs p' σ
+                    in  expr $ E.App (expr $ E.Var "concat") (expr $ E.MatchAs p' σ)
         go L.Nil  = error absurd
 desugar (SExpr α (Var x))              = Expr α (E.Var x)
 desugar (SExpr α (Op op))              = Expr α (E.Op op)

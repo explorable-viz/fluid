@@ -61,10 +61,6 @@ let head (x : _) = x;
 -- List a -> List a
 let tail (_ : xs) = xs;
 
--- List a -> List a -> List a
-let concat Nil ys = ys;
-    concat (x : xs) ys = x : concat xs ys;
-
 -- Int -> List Int -> Bool
 let elem x Nil = False;
     elem x (x' : xs) = or (x == x') (elem x xs);
@@ -108,6 +104,13 @@ let scanl op z xs =
 let map f Nil = Nil;
     map f (x : xs) = f x : map f xs;
 
+-- (List a, List a) -> List a
+let append (Nil, ys) = ys;
+    append ((x:xs), ys) = x : (append (xs, ys));
+
+-- (List (List a)) -> List a
+let concat = foldr append Nil;
+
 -- List a -> a -> List a
 let intersperse Nil sep = Nil;
     intersperse (x : Nil) sep = x : Nil;
@@ -134,7 +137,7 @@ let length Nil = 0;
 
 -- List a -> List a
 let reverse Nil = Nil;
-    reverse (x : xs) = concat (reverse xs) (x : Nil);
+    reverse (x : xs) = append ((reverse xs), (x : Nil));
 
 -- Int -> a -> List a
 let repeat = flip iterate id;
