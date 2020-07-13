@@ -29,7 +29,6 @@ runExample file expected runBwd = runMocha $
                      (render $ pretty v') `shouldEqual` expected
                else pure unit
 
-
 main :: Effect Unit
 main = do
    runExample "arithmetic" "42" false

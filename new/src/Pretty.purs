@@ -129,7 +129,7 @@ instance rawExprPretty :: Pretty (RawExpr Boolean) where
    pretty (E.Let (VarDef σ e) e')   =
       atop (text ("let ") :<>: pretty σ :<>: operator "->" :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.MatchAs e σ)           =
-      atop (atop (text "match " :<>: pretty e :<>: text " as {") (tab :<>: pretty σ)) (text "}")
+      text "match " :<>: pretty e :<>: text " as { " :<>: pretty σ :<>: text "}"
    pretty (E.LetRec δ e)            =
       atop (text "letrec " :<>: pretty δ) (text "in " :<>: pretty e)
    pretty (E.Lambda σ)              = text "fun " :<>: pretty σ
@@ -152,7 +152,7 @@ instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
 
 instance prettyElim :: Pretty (Elim Boolean) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
-   pretty (ElimConstr κs)  = vcat $ map pretty $ (toUnfoldable κs :: List _)
+   pretty (ElimConstr κs)  = hcat $ map (\x -> pretty x :<>: comma) $ (toUnfoldable κs :: List _)
 
 instance valPretty :: Pretty (Val Boolean) where
    pretty (Val _ u) = pretty u

@@ -2,14 +2,15 @@ module Primitive where
 
 import Prelude hiding (apply, append, map)
 import Data.Foldable (foldl)
-import Data.List (List(..))
+import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Text.Parsing.Parser.Expr (Assoc(..))
-import DataType (cTrue, cFalse)
+import DataType (cTrue, cFalse, Ctr(..))
 import Lattice (𝔹, (∧))
 import Util (type (×), (×), error)
-import Expr (Var)
-import Val (Env(..), Primitive(..), Val(..), (:+:), (↦), val)
+import Expr as E
+import Expr (Expr(..), Var, expr)
+import Val (Env(..), Primitive(..), Val(..), (:+:),  (↦), val)
 import Val (RawVal(..)) as V
 
 -- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
@@ -36,6 +37,21 @@ opDefs = fromFoldable [
    opDef "<="  4 AssocLeft,
    opDef ">="  4 AssocLeft
 ]
+
+class ToList a where
+   toList :: a -> List a
+
+class FromList a where
+   fromList :: List a -> a
+
+instance exprToList :: ToList (Expr Boolean) where
+   toList (Expr a (E.Constr (Ctr ":") (e:es:Nil))) = (e:toList es)
+   toList (Expr a (E.Constr (Ctr "Nil") Nil)) = Nil
+   toList e = error "expected list expression"
+
+instance exprFromList :: FromList (Expr Boolean) where
+   fromList (x:xs) = expr $ (E.Constr (Ctr ":") (x:fromList xs:Nil))
+   fromList Nil    = expr $ E.Constr (Ctr "Nil") Nil
 
 -- Enforce primitive argument types.
 class To a where
