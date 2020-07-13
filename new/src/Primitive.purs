@@ -1,21 +1,19 @@
 module Primitive where
 
 import Prelude hiding (apply, append, map)
-import Prelude (map) as P
 import Data.Foldable (foldl)
 import Data.List (List(..), (:), snoc)
 import Data.List as L
 import Data.Map (Map, fromFoldable, toUnfoldable, singleton)
 import Debug.Trace (trace) as T
 import Text.Parsing.Parser.Expr (Assoc(..))
-import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cTrue, cNil, cCons, cFalse, cMany, Ctr(..))
 import Pretty (pretty)
-import Lattice (Selected, (∧))
+import Lattice (𝔹, (∧))
 import Util (type (×), (×), error, fromJust)
 import Expr as E
-import Expr (Expr(..), Elim(..), Cont(..), expr)
-import Val (Env, Primitive(..), Val(..), val)
+import Expr (Expr(..), Elim(..), Cont(..), Var, expr)
+import Val (Env(..), Primitive(..), Val(..), (:+:),  (↦), val)
 import Val (RawVal(..)) as V
 
 
@@ -53,21 +51,21 @@ class ToList a where
 class FromList a where
    fromList :: List a -> a
 
-instance exprToList :: ToList Expr where
+instance exprToList :: ToList (Expr Boolean) where
    toList (Expr a (E.Constr (Ctr ":") (e:es:Nil))) = (e:toList es)
    toList (Expr a (E.Constr (Ctr "Nil") Nil)) = Nil
    toList e = let k = trace' "toList error: " (trace e 0) in error "expected list expression"
 
-instance exprFromList :: FromList Expr where
+instance exprFromList :: FromList (Expr Boolean) where
    fromList (x:xs) = expr $ (E.Constr (Ctr ":") (x:fromList xs:Nil))
    fromList Nil    = expr $ E.Constr (Ctr "Nil") Nil
 
 -- Enforce primitive argument types.
 class To a where
-   to :: Val -> a
+   to :: Val 𝔹 -> a
 
 class From a where
-   from :: a -> Val
+   from :: a -> Val 𝔹
 
 instance toInt :: To Int where
    to (Val _ (V.Int n)) = n
@@ -76,10 +74,10 @@ instance toInt :: To Int where
 instance fromInt :: From Int where
    from = V.Int >>> val
 
-true_ :: Val
+true_ :: Val 𝔹
 true_ = val $ V.Constr cTrue Nil
 
-false_ :: Val
+false_ :: Val 𝔹
 false_ = val $ V.Constr cFalse Nil
 
 instance fromBoolean :: From Boolean where
@@ -91,14 +89,14 @@ instance fromString :: From String where
 instance fromIntOp :: From a => From (Int -> a) where
    from op = val $ V.Primitive $ IntOp $ op >>> from
 
-apply :: Primitive -> Val -> Val
+apply :: Primitive -> Val 𝔹 -> Val 𝔹
 apply (IntOp op) = op <<< to
 
-apply_fwd :: Primitive -> Selected -> Val -> Val
+apply_fwd :: Primitive -> 𝔹 -> Val 𝔹 -> Val 𝔹
 apply_fwd φ α v@(Val α' _) =
    Val (α ∧ α') u where Val _ u = apply φ v
 
-primitives :: Env
+primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    -- need to instantiate the corresponding PureScript primitive at a concrete type
    "+"         ↦ from   ((+)  :: Int -> Int -> Int),
@@ -113,71 +111,3 @@ primitives = foldl (:+:) Empty [
    ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
    "intToStr"  ↦ from   (show :: Int -> String)
 ]
-
-append :: Expr -> Expr -> Expr
-append e1 e2 = fromList $ (toList e1) <> (toList e2)
-
--- concat :: Expr -> Expr
--- concat e1 = fromList $ L.concat $ P.map toList (toList e1)
-
-map :: Elim -> Expr -> Expr
-map σ e = fromList $ P.map (applyσ σ) (toList e)
-   where applyσ :: Elim -> Expr -> Expr
-         applyσ σ' e' = expr $ E.MatchAs e' σ'
-
-nilExpr :: Expr
-nilExpr = Expr false (E.Constr cNil Nil)
-
-concat :: Expr -> Expr
--- concat e@(Expr _ (E.MatchAs e' σ)) = let k0 = trace e 5 in e
-concat es@(Expr _ (E.Constr cCons es'))
-   = let m = trace es 5
-         e = (P.map concat' (toList es))
-         
-     in case fromJust "No head element found in concat" (L.head e) of
-         p@(Expr _ (E.MatchAs e' σ)) -> p
-         _ -> fromList (L.concat (P.map toList e))
-concat _ = error "concat error"
-
-concat' :: Expr -> Expr
-concat' (Expr _ (E.MatchAs e (ElimVar x (Body match_es))))
-   = fromList $ P.map mergeMatch (toList match_es)
-   where mergeMatch :: Expr -> Expr
-         mergeMatch (Expr _ (E.MatchAs e' (ElimVar y (Body e_body))))
-            = let merged_e = Expr false (E.Constr cMany (e':e:Nil))
-                  merged_σ = ElimConstr (singleton cMany (Arg (ElimVar y (Arg (ElimVar x (Body (e_body)))))))
-              in  Expr false (E.MatchAs merged_e merged_σ)
-         mergeMatch (Expr _ (E.MatchAs (Expr _ (E.Constr cMany es)) (ElimConstr m)))
-            = let ctr × k = fromJust "No head element found" (L.head $ toUnfoldable m)
-                  merged_e = Expr false (E.Constr cMany (snoc es e))
-                  merged_σ = ElimConstr (singleton cMany (insertArg k x))
-              in  Expr false (E.MatchAs merged_e merged_σ)
-         mergeMatch e = let k0 = trace e 0 in error "mergeMatch error 1"
-
--- concat' (Expr _ (E.MatchAs (Expr _ (E.Constr cMany es)) (ElimConstr m)))
---    = fromList $ P.map mergeMatch (toList match_es)
---    where ctr × k = fromJust "No head element found" (L.head $ toUnfoldable m)
---          match_es = getEMatches k
---          mergeMatch :: Expr -> Expr
---          mergeMatch (Expr _ (E.MatchAs e' (ElimVar y (Body e_body))))
---             = let merged_e = Expr false (E.Constr cMany (snoc es e'))
---                   merged_σ = ElimConstr (singleton cMany (insertArgEbody k y e_body))
---               in  Expr false (E.MatchAs merged_e merged_σ)
---          mergeMatch e = let k0 = trace e 0 in error "mergeMatch error 2"
-
-concat' _ = error "concat' error"
-
-getEMatches :: Cont -> Expr
-getEMatches (Arg (ElimVar x k)) = getEMatches k
-getEMatches (Body es) = es
-getEMatches _ = error "getEMatches error"
-
-insertArg :: Cont -> Var -> Cont
-insertArg (Arg (ElimVar x k)) y = Arg (ElimVar x (insertArg k y))
-insertArg (Body e_body) y = Arg (ElimVar y (Body e_body))
-insertArg _ _ = error "insertArg error"
-
-insertArgEbody :: Cont -> Var -> Expr -> Cont
-insertArgEbody (Arg (ElimVar x k)) y e_body = Arg (ElimVar x (insertArgEbody k y e_body))
-insertArgEbody (Body e_matchas) y e_body = Arg (ElimVar y (Body e_body))
-insertArgEbody _ _ _ = error "insertArgEbody error"

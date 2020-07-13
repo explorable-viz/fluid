@@ -6,12 +6,11 @@ import Data.List ((:), List)
 import Data.List (List(..)) as L
 import Data.Map (fromFoldable, empty) as M
 import Debug.Trace (trace) as T
-import Bindings (Var)
 import DataType (Ctr, cCons, cNil, cPair, cTrue, cFalse)
-import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef, expr)
+import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef, Var, expr)
 import Expr (RawExpr(..)) as E
+import Lattice (𝔹)
 import Pretty (pretty)
-import Primitive (map, concat) as P
 import Util ((×), absurd, error)
 
 trace s a = T.trace (pretty s) $ \_-> a
@@ -26,15 +25,15 @@ data SugaredExpr =
    True | False |
    Pair SExpr SExpr |
    Nil | Cons SExpr SExpr |
-   Lambda Elim |
+   Lambda (Elim 𝔹) |
    App SExpr SExpr |
    BinaryApp SExpr Var SExpr |
-   MatchAs SExpr Elim |
+   MatchAs SExpr (Elim 𝔹) |
    IfElse SExpr SExpr SExpr |
    ListSeq Int Int |
    ListComp SExpr (List ListCompExpr) |
-   Let VarDef SExpr |
-   LetRec RecDefs SExpr
+   Let (VarDef 𝔹) SExpr |
+   LetRec (RecDefs 𝔹) SExpr
 
 data ListCompExpr = Predicate SExpr | InputList SExpr SExpr
 
@@ -91,7 +90,7 @@ lcomp6 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var 
                   (sexpr $ Cons (sexpr $ Int 2) (sexpr $ Cons (sexpr $ Int 13) (sexpr $ Nil))))):
                     L.Nil)
 
-desugar :: SExpr -> Expr
+desugar :: SExpr -> Expr 𝔹
 desugar (SExpr α (Int n)) = Expr α (E.Int n)
 desugar (SExpr α True) = Expr α (E.Constr cTrue L.Nil)
 desugar (SExpr α False) = Expr α (E.Constr cFalse L.Nil)
@@ -113,7 +112,7 @@ desugar (SExpr α (ListSeq a z))
 desugar (SExpr α (ListComp s_lhs s_rhs))
     = go s_rhs
     where
-        go :: List ListCompExpr -> Expr
+        go :: List ListCompExpr -> Expr 𝔹
         go (s:L.Nil)
             = case s of
                 InputList bound_var input_list ->
@@ -152,15 +151,15 @@ desugar (SExpr α (MatchAs e σ))        = Expr α (E.MatchAs (desugar e) σ)
 desugar (SExpr α (Let def e))          = Expr α (E.Let def (desugar e))
 desugar (SExpr α (LetRec δ e))         = Expr α (E.LetRec δ (desugar e))
 
-bindingToElim :: Expr -> Cont -> Elim
+bindingToElim :: Expr 𝔹 -> Cont 𝔹 -> Elim 𝔹
 bindingToElim (Expr _ (E.Var x)) κ
     = ElimVar x κ
 bindingToElim (Expr _ (E.Constr ctr args)) κ
     = case args of
-        (e:es) -> let f :: (Cont -> Elim) -> Expr -> (Cont -> Elim)
-                      f κ_cont e' = \(κ' :: Cont) -> (κ_cont $ Arg $ bindingToElim e' κ')
+        (e:es) -> let f :: (Cont 𝔹 -> Elim 𝔹) -> Expr 𝔹 -> (Cont 𝔹 -> Elim 𝔹)
+                      f κ_cont e' = \(κ' :: Cont 𝔹) -> (κ_cont $ Arg $ bindingToElim e' κ')
 
-                      z :: Cont -> Elim
+                      z :: Cont 𝔹 -> Elim 𝔹
                       z = bindingToElim e
 
                   in  ElimConstr (M.fromFoldable [ctr × (Arg $ (foldl f z es) κ)])
