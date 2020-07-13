@@ -2,23 +2,16 @@ module Primitive where
 
 import Prelude hiding (apply, append, map)
 import Data.Foldable (foldl)
-import Data.List (List(..), (:), snoc)
-import Data.List as L
-import Data.Map (Map, fromFoldable, toUnfoldable, singleton)
-import Debug.Trace (trace) as T
+import Data.List (List(..), (:))
+import Data.Map (Map, fromFoldable)
 import Text.Parsing.Parser.Expr (Assoc(..))
-import DataType (cTrue, cNil, cCons, cFalse, cMany, Ctr(..))
-import Pretty (pretty)
+import DataType (cTrue, cFalse, Ctr(..))
 import Lattice (𝔹, (∧))
-import Util (type (×), (×), error, fromJust)
+import Util (type (×), (×), error)
 import Expr as E
-import Expr (Expr(..), Elim(..), Cont(..), Var, expr)
+import Expr (Expr(..), Var, expr)
 import Val (Env(..), Primitive(..), Val(..), (:+:),  (↦), val)
 import Val (RawVal(..)) as V
-
-
-trace s a = T.trace (pretty s) $ \_-> a
-trace' s a = T.trace  s $ \_-> a
 
 -- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
 type OpDef = {
@@ -54,7 +47,7 @@ class FromList a where
 instance exprToList :: ToList (Expr Boolean) where
    toList (Expr a (E.Constr (Ctr ":") (e:es:Nil))) = (e:toList es)
    toList (Expr a (E.Constr (Ctr "Nil") Nil)) = Nil
-   toList e = let k = trace' "toList error: " (trace e 0) in error "expected list expression"
+   toList e = error "expected list expression"
 
 instance exprFromList :: FromList (Expr Boolean) where
    fromList (x:xs) = expr $ (E.Constr (Ctr ":") (x:fromList xs:Nil))
