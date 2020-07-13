@@ -6,9 +6,8 @@ import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Debug.Trace (trace) as T
-
 import Bwd (eval_bwd)
-import Desugar (desugar, lcomp3)
+import Desugar (desugar, lcomp6, lcomp6_pretty)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports)
@@ -39,7 +38,8 @@ runDesugaring :: String -> String -> Effect Unit
 runDesugaring file expected = runMocha $
    before (openWithImports file) $
       it file $ \(ρ × _) ->
-         let e = desugar lcomp3
+         let e = desugar lcomp6
+             k0 = trace e 5
          in case successful $ eval ρ e of
             t × (Val _ u) -> do
                let k0 = trace u 5
@@ -48,7 +48,7 @@ runDesugaring file expected = runMocha $
 
 main :: Effect Unit
 main = do
-   runDesugaring "arithmetic" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
+   runDesugaring "arithmetic" lcomp6_pretty
    -- runExample "arithmetic" "42" false
    -- runExample "compose" "5" false
    -- runExample "factorial" "40320" false

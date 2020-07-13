@@ -59,6 +59,9 @@ lcomp3 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var 
                     (InputList (sexpr $ Var "y") (sexpr $ Cons (sexpr $ Int 9)
                     (sexpr $ Cons (sexpr $ Int 7) (sexpr $ Cons (sexpr $ Int 5) (sexpr $ Nil))))):L.Nil)
 
+lcomp3_pretty :: String
+lcomp3_pretty = "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
+
 lcomp4 :: SExpr
 lcomp4 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var "y"))
                  ((InputList (sexpr $ Var "x") (sexpr $ Cons (sexpr $ Int 5)
@@ -70,14 +73,17 @@ lcomp4 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var 
                     L.Nil)
 
 lcomp5 :: SExpr
-lcomp5 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var "y"))
+lcomp5 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var "y")) "+" (sexpr $ Var "a"))
                  ((InputList (sexpr $ Var "x") (sexpr $ Cons (sexpr $ Int 5)
                   (sexpr $ Cons (sexpr $ Int 4) (sexpr $ Cons (sexpr $ Int 3) (sexpr $ Nil))))):
                  (InputList (sexpr $ Var "y") (sexpr $ Cons (sexpr $ Int 9)
                   (sexpr $ Cons (sexpr $ Int 7) (sexpr $ Cons (sexpr $ Int 5) (sexpr $ Nil))))):
-                 (InputList (sexpr $ Var "(a, b)") (sexpr $ Cons (sexpr $ Pair (sexpr $ Int 3) (sexpr $ Int 12))
-                  (sexpr $ Cons (sexpr $ Pair (sexpr $ Int 2) (sexpr $ Int 0)) (sexpr $ Cons (sexpr $ Pair (sexpr $ Int 13) (sexpr $ Int 7)) (sexpr $ Nil))))):
+                 (InputList (sexpr $ Pair (sexpr $ Var "a") (sexpr $ Var "b")) (sexpr $ Cons (sexpr $ Pair (sexpr $ Int 3) (sexpr $ Int 12))
+                  (sexpr $ Cons (sexpr $ Pair (sexpr $ Int 2) (sexpr $ Int 0)) (sexpr $ Cons (sexpr $ Pair (sexpr $ Int 3) (sexpr $ Int 7)) (sexpr $ Nil))))):
                     L.Nil)
+
+lcomp5_pretty :: String
+lcomp5_pretty = "[17, 16, 17, 15, 14, 15, 13, 12, 13, 16, 15, 16, 14, 13, 14, 12, 11, 12, 15, 14, 15, 13, 12, 13, 11, 10, 11]"
 
 lcomp6 :: SExpr
 lcomp6 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var "y"))
@@ -89,6 +95,9 @@ lcomp6 = sexpr $ ListComp (sexpr $ BinaryApp (sexpr $ Var "x") "+" (sexpr $ Var 
                  (InputList (sexpr $ Var "z") (sexpr $ Cons (sexpr $ Int 12)
                   (sexpr $ Cons (sexpr $ Int 2) (sexpr $ Cons (sexpr $ Int 13) (sexpr $ Nil))))):
                     L.Nil)
+
+lcomp6_pretty :: String
+lcomp6_pretty = "[12, 12, 12, 10, 10, 10, 11, 11, 11, 9, 9, 9, 10, 10, 10, 8, 8, 8]"
 
 desugar :: SExpr -> Expr 𝔹
 desugar (SExpr α (Int n)) = Expr α (E.Int n)
@@ -138,7 +147,7 @@ desugar (SExpr α (ListComp s_lhs s_rhs))
                     let p' = desugar p
                         σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (go ss)
                                                         , cFalse × Body (expr $ E.Constr cNil L.Nil)])
-                    in  expr $ E.App (expr $ E.Var "concat") (expr $ E.MatchAs p' σ)
+                    in  expr $ E.MatchAs p' σ
         go L.Nil  = error absurd
 desugar (SExpr α (Var x))              = Expr α (E.Var x)
 desugar (SExpr α (Op op))              = Expr α (E.Op op)
