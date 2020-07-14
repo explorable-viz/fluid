@@ -4,12 +4,46 @@ import Prelude hiding (absurd)
 import Data.Foldable (foldl)
 import Data.List ((:), List)
 import Data.List (List(..)) as L
-import Data.Map (fromFoldable, empty) as M
-import DataType (Ctr, cCons, cNil, cTrue, cFalse)
-import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef, Var, expr)
+import Data.Map (fromFoldable, empty, singleton) as M
+import DataType (Ctr, cCons, cNil, cTrue, cPair, cFalse)
+import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), Var, expr)
 import Expr (RawExpr(..)) as E
 import Lattice (𝔹)
 import Util ((×), absurd, error)
+
+lcomp2 :: SExpr
+lcomp2
+ = sexpr $ ListComp (sexpr $ BinaryApp (svar "x") "+" (svar "y"))
+            ((Generator (PVar "x") (scons (sint 5)
+            (scons (sint 4) (scons (sint 3) (snil))))):
+            (Generator (PVar "y") (scons (sint 9)
+            (scons (sint 7) (scons (sint 5) (snil))))):
+            L.Nil)
+
+lcomp3 :: SExpr
+lcomp3
+ = sexpr $ ListComp (svar "z")
+            ((Generator (PVar "x") (scons (sint 5)
+            (scons (sint 4) (scons (sint 3) (snil))))):
+            (Generator (PVar "y") (scons (sint 9)
+            (scons (sint 7) (scons (sint 5) (snil))))):
+            (Declaration (PVar "z") (sexpr $ BinaryApp (svar "x") "+" (svar "y")))
+            :L.Nil)
+
+lcomp3_eval :: String
+lcomp3_eval = "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
+
+svar :: Var -> SExpr
+svar x = sexpr $ Var x
+
+scons :: SExpr -> SExpr -> SExpr
+scons se1 se2 = sexpr $ Constr cCons (se1:se2:L.Nil)
+
+snil :: SExpr
+snil = sexpr $ Constr cNil L.Nil
+
+sint :: Int -> SExpr
+sint n = sexpr $ Int n
 
 data SugaredExpr =
    Var Var |
@@ -23,11 +57,13 @@ data SugaredExpr =
    MatchAs SExpr (Elim 𝔹) |
    IfElse SExpr SExpr SExpr |
    ListSeq Int Int |
-   ListComp SExpr (List ListCompExpr) |
+   ListComp SExpr (List Predicate) |
    Let (VarDef 𝔹) SExpr |
    LetRec (RecDefs 𝔹) SExpr
 
-data ListCompExpr = Predicate SExpr | InputList SExpr SExpr
+data Pattern = PVar Var | PPair Pattern Pattern | PNil | PCons Pattern Pattern
+
+data Predicate = Guard SExpr | Generator Pattern SExpr | Declaration Pattern SExpr
 
 data SExpr = SExpr Boolean SugaredExpr
 
@@ -51,33 +87,43 @@ desugar (SExpr α (ListSeq a z))
 desugar (SExpr α (ListComp s_lhs s_rhs))
     = go s_rhs
     where
-        go :: List ListCompExpr -> Expr 𝔹
+        go :: List Predicate -> Expr 𝔹
         go (s:L.Nil)
             = case s of
-                InputList bound_var input_list ->
-                    let bound_expr  = desugar bound_var
-                        list_expr   = desugar input_list
-                        λ           = expr $ E.Lambda (bindingToElim (bound_expr) (Body $ desugar s_lhs))
+                Generator pattern input_list ->
+                    let list_expr   = desugar input_list
+                        λ           = expr $ E.Lambda (patternToElim pattern (Body $ desugar s_lhs))
                     in  expr $ E.App (expr $ E.App (expr $ E.Var "map") λ) list_expr
 
-                Predicate p ->
-                    let p' = desugar p
+                Guard g ->
+                    let g' = desugar g
                         σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar s_lhs)
                                                         , cFalse × Body (expr $ E.Constr cNil L.Nil)])
-                    in  expr $ E.MatchAs p' σ
-        go (s:ss)
-            = case s of
-                InputList bound_var input_list ->
-                    let bound_expr  = desugar bound_var
-                        list_expr   = desugar input_list
-                        λ           = expr $ E.Lambda (bindingToElim bound_expr (Body $ go ss))
-                    in  expr $ E.App (expr $ E.Var "concat") (expr $ E.App (expr $ E.App (expr $ E.Var "map") λ) list_expr)
+                    in  expr $ E.MatchAs g' σ
 
-                Predicate p ->
-                    let p' = desugar p
-                        σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (go ss)
+                Declaration pattern se ->
+                    let e  = desugar se
+                        σ  = patternToElim pattern None
+                    in  expr $ E.Let (VarDef σ e) (desugar s_lhs)
+        go (s:s':ss)
+            = case s of
+                Generator pattern input_list ->
+                    let list_expr   = desugar input_list
+                        λ           = expr $ E.Lambda (patternToElim pattern (Body $ go (s':ss)))
+                        maybeConcat = case s' of Generator _ _ -> \x -> expr $ E.App (expr $ E.Var "concat") x
+                                                 _ -> \x -> x
+                    in  maybeConcat (expr $ E.App (expr $ E.App (expr $ E.Var "map") λ) list_expr)
+
+                Guard g ->
+                    let g' = desugar g
+                        σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (go (s':ss))
                                                         , cFalse × Body (expr $ E.Constr cNil L.Nil)])
-                    in  expr $ E.MatchAs p' σ
+                    in  expr $ E.MatchAs g' σ
+
+                Declaration pattern se ->
+                    let e  = desugar se
+                        σ  = patternToElim pattern None
+                    in  expr $ E.Let (VarDef σ e) (go (s':ss))
         go L.Nil  = error absurd
 desugar (SExpr α (Var x))              = Expr α (E.Var x)
 desugar (SExpr α (Op op))              = Expr α (E.Op op)
@@ -90,18 +136,29 @@ desugar (SExpr α (MatchAs e σ))        = Expr α (E.MatchAs (desugar e) σ)
 desugar (SExpr α (Let def e))          = Expr α (E.Let def (desugar e))
 desugar (SExpr α (LetRec δ e))         = Expr α (E.LetRec δ (desugar e))
 
-bindingToElim :: Expr 𝔹 -> Cont 𝔹 -> Elim 𝔹
-bindingToElim (Expr _ (E.Var x)) κ
+patternToElim :: Pattern -> Cont 𝔹 -> Elim 𝔹
+patternToElim (PVar x) κ
     = ElimVar x κ
-bindingToElim (Expr _ (E.Constr ctr args)) κ
-    = case args of
-        (e:es) -> let f :: (Cont 𝔹 -> Elim 𝔹) -> Expr 𝔹 -> (Cont 𝔹 -> Elim 𝔹)
-                      f κ_cont e' = \(κ' :: Cont 𝔹) -> (κ_cont $ Arg $ bindingToElim e' κ')
+patternToElim (PPair p1 p2) κ
+    = let σ  = patternToElim p2 κ
+          σ' = patternToElim p1 (Arg σ)
+      in  ElimConstr (M.singleton cPair (Arg σ'))
+patternToElim (PNil) κ
+    = ElimConstr (M.singleton cNil κ)
+patternToElim (PCons p1 p2) κ
+    = let  σ = patternToElim p2 κ
+           σ' = patternToElim p1 (Arg σ)
+      in   ElimConstr (M.singleton cCons (Arg σ'))
+-- patternToElim _ _ = error absurd
+-- patternToElim (Expr _ (E.Constr ctr args)) κ
+--     = case args of
+--         (e:es) -> let f :: (Cont 𝔹 -> Elim 𝔹) -> Expr 𝔹 -> (Cont 𝔹 -> Elim 𝔹)
+--                       f κ_cont e' = \(κ' :: Cont 𝔹) -> (κ_cont $ Arg $ bindingToElim e' κ')
 
-                      z :: Cont 𝔹 -> Elim 𝔹
-                      z = bindingToElim e
+--                       z :: Cont 𝔹 -> Elim 𝔹
+--                       z = bindingToElim e
 
-                  in  ElimConstr (M.fromFoldable [ctr × (Arg $ (foldl f z es) κ)])
+--                   in  ElimConstr (M.fromFoldable [ctr × (Arg $ (foldl f z es) κ)])
 
-        L.Nil ->  ElimConstr M.empty
-bindingToElim _ _ = error absurd
+--         L.Nil ->  ElimConstr M.empty
+
