@@ -6,17 +6,14 @@ import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
+import Desugar (SExpr, desugar, lcomp1, lcomp2, lcomp3, lcomp1_eval, lcomp2_eval, lcomp3_eval, lseq1, lseq1_eval)
 import Eval (eval)
 import Fwd (eval_fwd)
-import Module (openWithImports)
+import Module (openWithImports, loadModule)
 import Pretty (pretty, render)
+import Primitive (primitives)
 import Util ((×), successful)
 import Val (Val(..))
-import Desugar (desugar, lcomp2, lcomp3, lcomp3_eval)
-import Debug.Trace (trace) as T
-
-trace s a = T.trace (pretty s) $ \_-> a
-trace' s a = T.trace  s $ \_-> a
 
 runExample :: String -> String -> Boolean -> Effect Unit
 runExample file expected runBwd = runMocha $
@@ -34,29 +31,31 @@ runExample file expected runBwd = runMocha $
                      (render $ pretty v') `shouldEqual` expected
                else pure unit
 
-runDesugar :: String -> String -> Effect Unit
-runDesugar file expected  = runMocha $
-   before (openWithImports file) $
-      it file $ \(ρ × _) -> do
-         let k = trace (desugar lcomp3) 5
-         case successful $ eval ρ (desugar lcomp3) of
+runDesugar :: String -> SExpr -> String -> Effect Unit
+runDesugar test sexpr expected  = runMocha $
+   before (loadModule "prelude" primitives) $
+      it test $ \ρ -> do
+         case successful $ eval ρ (desugar sexpr) of
             t × (Val _ u) -> do
                (render $ pretty u) `shouldEqual` expected
 
 
 main :: Effect Unit
 main = do
-   runDesugar "arithmetic" lcomp3_eval
-   -- runExample "arithmetic" "42" false
-   -- runExample "compose" "5" false
-   -- runExample "factorial" "40320" false
-   -- runExample "filter" "[8, 7]" false
-   -- runExample "foldr_sumSquares" "661" false
-   -- runExample "lexicalScoping" "\"6\"" false
-   -- runExample "length" "2" false
-   -- runExample "map" "[5, 7, 13, 15, 4, 3, -3]" false
-   -- runExample "normalise" "(33, 66)" false
-   -- runExample "pattern-match" "4" false
-   -- runExample "reverse" "[2, 1]" false
-   -- runExample "zipWith" "[[10], [12], [20]]" false
-   -- runExample "temp" "5" false
+   runDesugar "list-comp-1" lcomp1 lcomp1_eval
+   runDesugar "list-comp-2" lcomp2 lcomp2_eval
+   runDesugar "list-comp-3" lcomp3 lcomp3_eval
+   runDesugar "list-seq-1" lseq1 lseq1_eval
+   runExample "arithmetic" "42" false
+   runExample "compose" "5" false
+   runExample "factorial" "40320" false
+   runExample "filter" "[8, 7]" false
+   runExample "foldr_sumSquares" "661" false
+   runExample "lexicalScoping" "\"6\"" false
+   runExample "length" "2" false
+   runExample "map" "[5, 7, 13, 15, 4, 3, -3]" false
+   runExample "normalise" "(33, 66)" false
+   runExample "pattern-match" "4" false
+   runExample "reverse" "[2, 1]" false
+   runExample "zipWith" "[[10], [12], [20]]" false
+   runExample "temp" "5" false
