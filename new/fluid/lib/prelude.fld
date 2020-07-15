@@ -109,7 +109,9 @@ let append (Nil, ys) = ys;
     append ((x:xs), ys) = x : (append (xs, ys));
 
 -- (List (List a)) -> List a
-let concat = foldr append Nil;
+let concat Nil = Nil;
+    concat (Nil:ys) = concat ys;
+    concat ((x:xs):ys) = x : concat (xs:ys);
 
 -- List a -> a -> List a
 let intersperse Nil sep = Nil;
@@ -182,3 +184,10 @@ let zipWith op Nil ys = Nil;
 
 -- List a -> List b -> List (a, b)
 let zip = zipWith id;
+
+-- Int -> Int -> List Int
+let enumFromTo n m =
+    match n <= m as {
+       True  -> n : (enumFromTo (n + 1) m);
+       False -> Nil
+    };
