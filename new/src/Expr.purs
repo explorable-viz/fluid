@@ -40,8 +40,8 @@ expr = Expr false
 data Cont a = None | Body (Expr a) | Arg (Elim a)
 
 body :: Cont 𝔹 -> Expr 𝔹
-body (Body e) = e
-body _ = error "Expression expected"
+body (Body e)  = e
+body _         = error "Expression expected"
 
 data Elim a =
    ElimVar Var (Cont a) |
@@ -60,8 +60,7 @@ derive instance functorCont :: Functor Cont
 derive instance functorElim :: Functor Elim
 
 instance maybeZippableElim :: MaybeZippable Elim where
-   maybeZipWith f (ElimVar x κ) (ElimVar x' κ')
-      = ElimVar <$> x ≟ x' <*> maybeZipWith f κ κ'
+   maybeZipWith f (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> x ≟ x' <*> maybeZipWith f κ κ'
    maybeZipWith f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithMap f κs κs'
    maybeZipWith _ _ _                                = Nothing
 
