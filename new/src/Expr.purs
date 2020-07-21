@@ -31,7 +31,7 @@ data RawExpr a =
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
 
-data Expr a = Expr a (RawExpr a)
+data Expr a = Hole | Expr a (RawExpr a)
 
 expr :: RawExpr 𝔹 -> Expr 𝔹
 expr = Expr false
@@ -77,7 +77,9 @@ instance maybeZippableRecDef :: MaybeZippable RecDef where
    maybeZipWith f (RecDef x σ) (RecDef x' σ') = RecDef <$> x ≟ x' <*> maybeZipWith f σ σ'
 
 instance maybeZippableExpr :: MaybeZippable Expr where
+   maybeZipWith _ Hole Hole               = pure Hole
    maybeZipWith f (Expr α r) (Expr α' r') = Expr <$> pure (f α α') <*> maybeZipWith f r r'
+   maybeZipWith _ _ _                     = Nothing
 
 instance maybeZippableRawExpr :: MaybeZippable RawExpr where
    maybeZipWith _ (Var x) (Var x')                = Var <$> x ≟ x'

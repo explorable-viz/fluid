@@ -18,7 +18,7 @@ data RawVal a =
    Closure (Env a) (RecDefs a) (Elim a) |
    Primitive Primitive
 
-data Val a = Val a (RawVal a)
+data Val a = Hole | Val a (RawVal a)
 
 val :: RawVal 𝔹 -> Val 𝔹
 val = Val false
@@ -66,7 +66,9 @@ derive instance functorRawVal :: Functor RawVal
 derive instance functorVal :: Functor Val
 
 instance maybeZippableVal :: MaybeZippable Val where
-   maybeZipWith f (Val α r) (Val α' r') = Val <$> pure (α `f` α') <*> maybeZipWith f r r'
+   maybeZipWith _ Hole Hole               = pure Hole
+   maybeZipWith f (Val α r) (Val α' r')   = Val <$> pure (α `f` α') <*> maybeZipWith f r r'
+   maybeZipWith _ _ _                     = Nothing
 
 instance maybeZippableRawVal :: MaybeZippable RawVal where
    maybeZipWith f (Int x) (Int x')                   = Int <$> x ≟ x'

@@ -8,12 +8,12 @@ import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..), expr, varAnon)
-import Expr (RawExpr(..)) as E
+import Expr (RawExpr(..), Expr(Hole)) as E
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Util (type (×), (×), absurd, error, intersperse)
 import Val (Bind, Env(..), Primitive(..), RawVal, Val(..), (:+:), (↦), val)
-import Val (RawVal(..)) as V
+import Val (RawVal(..), Val(Hole)) as V
 
 infixl 5 beside as :<>:
 
@@ -41,6 +41,9 @@ parens = between (text "(") (text ")")
 null :: Doc
 null = text ""
 
+hole :: Doc
+hole = text "□"
+
 class ToList a where
    toList :: a -> List a
 
@@ -57,17 +60,18 @@ instance toListVal :: ToList (Val Boolean)  where
 class Pretty p where
    pretty :: p -> Doc
 
-instance boolPretty :: Pretty Boolean where
+instance prettyBool :: Pretty Boolean where
    pretty = text <<< show
 
-instance envPretty :: Pretty (Env Boolean) where
+instance prettyEnv :: Pretty (Env Boolean) where
    pretty (ρ :+: kv) = brackets $ pretty $ ρ :+: kv
    pretty Empty = text "[]"
 
 instance prettyVoid :: Pretty Void where
    pretty _ = error absurd
 
-instance explPretty :: Pretty (Expl Boolean) where
+instance prettyExpl :: Pretty (Expl Boolean) where
+   pretty T.Hole                    = hole
    pretty (T.Var x _)               = text x
    pretty (T.Op op _)               = text op
    pretty (T.Int n _)               = text $ show n
@@ -75,6 +79,7 @@ instance explPretty :: Pretty (Expl Boolean) where
    pretty (T.Constr c ts)           = prettyConstr c ts
    pretty (T.NullConstr c _)        = prettyConstr c (Nil :: List Void)
    pretty (T.Lambda σ)              = text "fun " :<>: pretty σ
+   pretty (T.AppHole t)             = text "App" :<>: parens (hole :<>: comma :<>: hole)
    pretty (T.App tv t' ξ t'')       =
       text "App" :<>:
       parens (atop (text "t1: " :<>: pretty tv :<>: comma)
@@ -92,7 +97,7 @@ instance explPretty :: Pretty (Expl Boolean) where
       atop (text "letrec " :<>: pretty δ)
            (text "in     " :<>: pretty t)
 
-instance explMatch :: Pretty (Match Boolean) where
+instance prettyMatch :: Pretty (Match Boolean) where
    pretty (MatchConstr (c × ξs) κs) =
       text "ξ = " :<>:
       atop (text "Pattern:       " :<>: text (show c) :<>: operator "-> " :<>: vcat (map pretty ξs))
@@ -100,13 +105,14 @@ instance explMatch :: Pretty (Match Boolean) where
    pretty (MatchVar x) = text "ξ = " :<>: text x
    pretty (MatchVarAnon x) = text "ξ = " :<>: text varAnon
 
-instance explValPretty :: Pretty (Expl Boolean × Val Boolean) where
+instance prettyExplVal :: Pretty (Expl Boolean × Val Boolean) where
    pretty (t × v) = parens $ pretty t :<>: comma :<>: pretty v
 
-instance prettyListPretty :: Pretty a => Pretty (List a) where
+instance prettyList :: Pretty a => Pretty (List a) where
    pretty xs = brackets $ hcat $ intersperse comma $ map pretty xs
 
-instance exprPretty :: Pretty (Expr Boolean) where
+instance prettyExpr :: Pretty (Expr Boolean) where
+   pretty E.Hole     = hole
    pretty (Expr _ r) = pretty r
 
 instance prettyCtr :: Pretty Ctr where
@@ -128,7 +134,7 @@ prettyConstr c xs
    | c == cNil || c == cCons = pretty xs
    | otherwise = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
 
-instance rawExprPretty :: Pretty (RawExpr Boolean) where
+instance prettyRawExpr :: Pretty (RawExpr Boolean) where
    pretty (E.Int n)                 = text $ show n
    pretty (E.Str str)               = text $ show str
    pretty (E.Var x)                 = text x
@@ -164,21 +170,22 @@ instance prettyElim :: Pretty (Elim Boolean) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = hcat $ map (\x -> pretty x :<>: comma) $ (toUnfoldable κs :: List _)
 
-instance valPretty :: Pretty (Val Boolean) where
-   pretty (Val _ u) = pretty u
+instance prettyVal :: Pretty (Val Boolean) where
+   pretty V.Hole     = hole
+   pretty (Val _ u)  = pretty u
 
-instance rawValPretty :: Pretty (RawVal Boolean) where
-   pretty (V.Int n)           = text $ show n
-   pretty (V.Str str)         = text $ show str
+instance prettyRawVal :: Pretty (RawVal Boolean) where
+   pretty (V.Int n)              = text $ show n
+   pretty (V.Str str)            = text $ show str
    pretty u@(V.Constr c vs)
-      | c == cNil || c == cCons     = pretty $ toList $ val u
-      | otherwise                   = prettyConstr c vs
-   pretty (V.Closure ρ δ σ)   =
+      | c == cNil || c == cCons  = pretty $ toList $ val u
+      | otherwise                = prettyConstr c vs
+   pretty (V.Closure ρ δ σ)      =
     text "Closure" :<>: text "(" :<>:
     (atop (atop (text "env: " :<>: pretty ρ) (text "defs: " :<>: pretty δ)) (text "elim: " :<>: pretty σ)) :<>: (text ")")
-   pretty (V.Primitive op)    = parens $ pretty op
+   pretty (V.Primitive op)       = parens $ pretty op
 
-instance unaryOpPretty :: Pretty Primitive where
+instance prettyPrimitive :: Pretty Primitive where
    pretty (IntOp _) = text "<prim-op>"
 
 prettyProgram :: Expr Boolean -> Doc

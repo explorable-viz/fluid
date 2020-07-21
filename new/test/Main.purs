@@ -13,17 +13,16 @@ import Module (openWithImports, loadModule)
 import Pretty (pretty, render)
 import Primitive (primitives)
 import Util ((×), successful)
-import Val (Val(..))
 
 runExample :: String -> String -> Boolean -> Effect Unit
 runExample file expected runBwd = runMocha $
    before (openWithImports file) $
       it file $ \(ρ × e) -> do
          case successful $ eval ρ e of
-            t × (Val _ u) -> do
-               let fwd_v@(Val _ u') = eval_fwd ρ e true
-               (render $ pretty u) `shouldEqual` (render $ pretty u')
-               (render $ pretty u') `shouldEqual` expected
+            t × v -> do
+               let fwd_v = eval_fwd ρ e true
+               (render $ pretty v) `shouldEqual` (render $ pretty fwd_v)
+               (render $ pretty fwd_v) `shouldEqual` expected
                if runBwd then
                   do let ρ' × e' × α' = eval_bwd fwd_v t
                          t' × v'      = successful $ eval ρ' e'
@@ -36,8 +35,8 @@ runDesugar test sexpr expected  = runMocha $
    before (loadModule "prelude" primitives) $
       it test $ \ρ -> do
          case successful $ eval ρ (desugar sexpr) of
-            t × (Val _ u) -> do
-               (render $ pretty u) `shouldEqual` expected
+            t × v -> do
+               (render $ pretty v) `shouldEqual` expected
 
 
 main :: Effect Unit

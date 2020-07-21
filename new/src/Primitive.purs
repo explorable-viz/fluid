@@ -1,15 +1,14 @@
 module Primitive where
 
-import Prelude hiding (apply, append, map)
+import Prelude hiding (absurd, apply)
 import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import DataType (cTrue, cFalse, Ctr(..))
 import Lattice (𝔹, (∧))
-import Util (type (×), (×), error)
-import Expr as E
-import Expr (Expr(..), Var, expr)
+import Expr (Expr(Expr), RawExpr(..), Var, expr)
+import Util (type (×), (×), absurd, error)
 import Val (Env(..), Primitive(..), Val(..), (:+:),  (↦), val)
 import Val (RawVal(..)) as V
 
@@ -45,13 +44,13 @@ class FromList a where
    fromList :: List a -> a
 
 instance exprToList :: ToList (Expr Boolean) where
-   toList (Expr a (E.Constr (Ctr ":") (e:es:Nil))) = (e:toList es)
-   toList (Expr a (E.Constr (Ctr "Nil") Nil)) = Nil
+   toList (Expr a (Constr (Ctr ":") (e:es:Nil))) = (e:toList es)
+   toList (Expr a (Constr (Ctr "Nil") Nil)) = Nil
    toList e = error "expected list expression"
 
 instance exprFromList :: FromList (Expr Boolean) where
-   fromList (x:xs) = expr $ (E.Constr (Ctr ":") (x:fromList xs:Nil))
-   fromList Nil    = expr $ E.Constr (Ctr "Nil") Nil
+   fromList (x:xs) = expr $ (Constr (Ctr ":") (x:fromList xs:Nil))
+   fromList Nil    = expr $ Constr (Ctr "Nil") Nil
 
 -- Enforce primitive argument types.
 class To a where
@@ -86,8 +85,10 @@ apply :: Primitive -> Val 𝔹 -> Val 𝔹
 apply (IntOp op) = op <<< to
 
 apply_fwd :: Primitive -> 𝔹 -> Val 𝔹 -> Val 𝔹
-apply_fwd φ α v@(Val α' _) =
-   Val (α ∧ α') u where Val _ u = apply φ v
+apply_fwd _ _ Hole         = Hole
+apply_fwd φ α v@(Val α' _) = case apply φ v of
+   Hole     -> error absurd
+   Val _ u  -> Val (α ∧ α') u
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [

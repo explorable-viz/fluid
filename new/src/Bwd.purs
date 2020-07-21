@@ -7,7 +7,6 @@ import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs, varAnon)
 import Lattice (𝔹, bot, (∨))
-import Pretty (pretty, render)
 import Util (type (×), absurd, error, (×), (≜))
 import Val (Bind, Env(..), Val(..), (:+:), (↦), (◃), foldEnv, splitAt)
 import Val (RawVal(..)) as V
@@ -122,5 +121,4 @@ eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
      ρ × (Expr α (Constr c es)) × (α ∨ α')
 eval_bwd (Val α (V.Constr c vs)) (T.NullConstr c' ρ)
    = bot ρ × (Expr α (Constr c Nil)) × α
-eval_bwd v t = error $ "No pattern match found for eval_bwd in \n" <> render (pretty t)
-
+eval_bwd _ _ = error absurd
