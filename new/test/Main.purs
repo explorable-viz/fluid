@@ -31,13 +31,11 @@ runExample file expected runBwd = runMocha $
                else pure unit
 
 runDesugar :: String -> SExpr -> String -> Effect Unit
-runDesugar test sexpr expected  = runMocha $
+runDesugar test s expected = runMocha $
    before (loadModule "prelude" primitives) $
-      it test $ \ρ -> do
-         case successful $ eval ρ (desugar sexpr) of
-            t × v -> do
-               (render $ pretty v) `shouldEqual` expected
-
+      it test $ \ρ ->
+         case successful $ eval ρ (desugar s) of
+            t × v -> (render $ pretty v) `shouldEqual` expected
 
 main :: Effect Unit
 main = do
