@@ -11,7 +11,7 @@ import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..), expr
 import Expr (RawExpr(..)) as E
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
-import Util (type (×), (×), absurd, error, intersperse, toList)
+import Util (type (×), (×), absurd, error, intersperse)
 import Val (Bind, Env(..), Primitive(..), RawVal, Val(..), (:+:), (↦), val)
 import Val (RawVal(..)) as V
 
@@ -41,11 +41,21 @@ parens = between (text "(") (text ")")
 null :: Doc
 null = text ""
 
+class ToList a where
+   toList :: a -> List a
+
+instance toListExpr :: ToList (Expr Boolean)  where
+   toList (Expr _ (E.Constr c (e : e' : Nil))) | c == cCons = e : toList e'
+   toList (Expr _ (E.Constr c Nil)) | c == cNil             = Nil
+   toList _                                                 = error "not a list"
+
+instance toListVal :: ToList (Val Boolean)  where
+   toList (Val _ (V.Constr c (v : v' : Nil))) | c == cCons  = v : toList v'
+   toList (Val _ (V.Constr c Nil)) | c == cNil              = Nil
+   toList _                                                 = error "not a list"
+
 class Pretty p where
    pretty :: p -> Doc
-
-class PrettyList p where
-   prettyList :: p -> Doc
 
 instance boolPretty :: Pretty Boolean where
    pretty = text <<< show

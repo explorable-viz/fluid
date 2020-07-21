@@ -1,12 +1,12 @@
 module Expr where
 
 import Prelude hiding (top)
-import Data.List (List(..), (:), foldr)
+import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
-import DataType (Ctr, cCons, cNil)
+import DataType (Ctr)
 import Lattice (class MaybeZippable, 𝔹, maybeZipWith, maybeZipWithList, maybeZipWithMap)
-import Util (class QuaList, type (+), (≟), error, toList)
+import Util (type (+), (≟), error)
 
 type Var = String
 
@@ -65,20 +65,13 @@ instance maybeZippableElim :: MaybeZippable Elim where
    maybeZipWith f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithMap f κs κs'
    maybeZipWith _ _ _                                = Nothing
 
-instance quaListExpr :: QuaList (Expr Boolean)  where
-   toList (Expr _ (Constr c (e : e' : Nil))) | c == cCons   = e : toList e'
-   toList (Expr _ (Constr c Nil)) | c == cNil               = Nil
-   toList _                                                 = error "not a list"
-
-   fromList = foldr (\e e' -> expr $ Constr cCons (e : e' : Nil)) (expr $ Constr cNil Nil)
-
 instance maybeZippableCont :: MaybeZippable Cont where
    maybeZipWith f None None            = pure None
    maybeZipWith f (Body e) (Body e')   = Body <$> maybeZipWith f e e'
    maybeZipWith f (Arg σ) (Arg σ')     = Arg <$> maybeZipWith f σ σ'
    maybeZipWith _ _ _                  = Nothing
 
-instance maybeZippableDef :: MaybeZippable VarDef where
+instance maybeZippableVarDef :: MaybeZippable VarDef where
    maybeZipWith f (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'
 
 instance maybeZippableRecDef :: MaybeZippable RecDef where
