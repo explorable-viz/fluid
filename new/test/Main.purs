@@ -24,6 +24,7 @@ runExample file expected slice = runMocha $
                if slice then do
                   let ρ' × e' × α'  = eval_bwd v t
                       v'            = eval_fwd ρ' e' true
+                  (render $ pretty e') `shouldEqual` "blah"
                   (render $ pretty v') `shouldEqual` expected
                else pure unit
 
