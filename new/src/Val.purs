@@ -5,7 +5,7 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr)
 import Expr (Elim, RecDefs, Var)
-import Lattice (class MaybeZippable, 𝔹, maybeZipWith, maybeZipWithList)
+import Lattice (class BoundedJoinSemilattice, class MaybeZippable, 𝔹, bot2, maybeZipWith, maybeZipWithList)
 import Util (MayFail, type (×), (×), (≟), report)
 
 data Primitive =
@@ -84,14 +84,18 @@ derive instance functorBind :: Functor Bind
 derive instance functorEnv :: Functor Env
 
 instance semigroupEnv :: Semigroup (Env a) where
-   append m Empty          = m
-   append m (Extend m' kv) = Extend (append m m') kv
+   append ρ Empty          = ρ
+   append ρ (Extend ρ' kv) = Extend (append ρ ρ') kv
 
 instance monoidEnv :: Monoid (Env a) where
    mempty = Empty
 
 instance maybeZippableEnv :: MaybeZippable Env where
    maybeZipWith _ Empty Empty                              = pure Empty
-   maybeZipWith f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))
-      = Extend <$> maybeZipWith f m m' <*> ((↦) <$> x ≟ y <*> maybeZipWith f v v')
+   maybeZipWith f (Extend ρ (x ↦ v)) (Extend ρ' (y ↦ v'))
+      = Extend <$> maybeZipWith f ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeZipWith f v v')
    maybeZipWith _ _ _                                      = Nothing
+
+instance boundedJoinSemilatticeEnv :: BoundedJoinSemilattice (Env Boolean) where
+   bot2 Empty = Empty
+   bot2 (Extend ρ (x ↦ v)) = Extend (bot2 ρ) (x ↦ bot2 v)
