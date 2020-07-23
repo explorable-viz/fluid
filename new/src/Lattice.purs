@@ -15,6 +15,12 @@ class Lattice a where
    top    :: a -> a
    bot    :: a -> a
 
+class JoinSemilattice a where
+   maybeJoin :: a -> a -> Maybe a
+
+class JoinSemilattice a <= BoundedJoinSemilattice a where
+   bot2 :: a -> a
+
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
 infixl 6 join as ∨
@@ -58,3 +64,17 @@ maybeZipWithList :: forall a b c t . MaybeZippable t =>
 maybeZipWithList f xs ys
    | length xs == length ys   = sequence $ zipWith (maybeZipWith f) xs ys
    | otherwise                = Nothing
+
+instance joinSemilatticeTuple :: (Eq k, JoinSemilattice t) => JoinSemilattice (Tuple k t) where
+   maybeJoin (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeJoin v v'
+
+instance joinSemilatticeList :: JoinSemilattice t => JoinSemilattice (List t) where
+   maybeJoin xs ys
+      | length xs == length ys   = sequence $ zipWith maybeJoin xs ys
+      | otherwise                = Nothing
+
+instance joinSemilatticeMap :: (Ord k, JoinSemilattice t) => JoinSemilattice (Map k t) where
+   maybeJoin κs κs'
+      | size κs == size κs' =
+         fromFoldable <$> (sequence $ zipWith maybeJoin (toUnfoldable κs) (toUnfoldable κs'))
+      | otherwise = Nothing
