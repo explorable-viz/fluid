@@ -15,19 +15,16 @@ import Primitive (primitives)
 import Util ((×), successful)
 
 runExample :: String -> String -> Boolean -> Effect Unit
-runExample file expected runBwd = runMocha $
+runExample file expected slice = runMocha $
    before (openWithImports file) $
       it file $ \(ρ × e) -> do
          case successful $ eval ρ e of
             t × v -> do
-               let fwd_v = eval_fwd ρ e true
-               (render $ pretty v) `shouldEqual` (render $ pretty fwd_v)
-               (render $ pretty fwd_v) `shouldEqual` expected
-               if runBwd then
-                  do let ρ' × e' × α' = eval_bwd fwd_v t
-                         t' × v'      = successful $ eval ρ' e'
-                     (render $ pretty t) `shouldEqual` (render $ pretty t')
-                     (render $ pretty v') `shouldEqual` expected
+               (render $ pretty v) `shouldEqual` expected
+               if slice then do
+                  let ρ' × e' × α'  = eval_bwd v t
+                      v'            = eval_fwd ρ' e' true
+                  (render $ pretty v') `shouldEqual` expected
                else pure unit
 
 runDesugar :: String -> SExpr -> String -> Effect Unit
