@@ -13,22 +13,23 @@ class JoinSemilattice a where
    maybeJoin :: a -> a -> Maybe a
 
 class JoinSemilattice a <= BoundedJoinSemilattice a where
-   bot2 :: a -> a
+   bot :: a -> a
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
-infixl 7 meet2 as ∧   -- don't need a meet semilattice typeclass yet
-infixl 6 join2 as ∨
+infixl 7 meet as ∧
+infixl 6 join as ∨
 
 type 𝔹 = Boolean
 
 instance joinSemilatticeBoolean :: JoinSemilattice Boolean where
    maybeJoin x y = pure $ x || y
 
-join2 :: forall a . JoinSemilattice a => a -> a -> a
-join2 x y = fromJust "Join undefined" $ maybeJoin x y
+join :: forall a . JoinSemilattice a => a -> a -> a
+join x y = fromJust "Join undefined" $ maybeJoin x y
 
-meet2 :: Boolean -> Boolean -> Boolean
-meet2 = (&&)
+-- don't need a meet semilattice typeclass just yet
+meet :: Boolean -> Boolean -> Boolean
+meet = (&&)
 
 instance joinSemilatticeTuple :: (Eq k, JoinSemilattice t) => JoinSemilattice (Tuple k t) where
    maybeJoin (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeJoin v v'
