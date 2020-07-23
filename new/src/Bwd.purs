@@ -6,7 +6,7 @@ import Data.Map (insert)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs, varAnon)
-import Lattice (𝔹, bot, (∨))
+import Lattice (𝔹, bot2, (∨))
 import Util (type (×), absurd, error, (×), (≜))
 import Val (Bind, Env(..), Val(..), (:+:), (↦), (◃), foldEnv, splitAt)
 import Val (RawVal(..)) as V
@@ -39,14 +39,14 @@ closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _
       joinClsre (_ ↦ _) _      = error absurd
 
 closeDefs_bwd (_  :+: _ ↦ _) _ = error absurd
-closeDefs_bwd Empty ρ1         = bot ρ1 × Nil × false
+closeDefs_bwd Empty ρ1         = bot2 ρ1 × Nil × false
 
 match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
-match_bwd Empty κ α (MatchVarAnon v)            = bot v × ElimVar varAnon κ
+match_bwd Empty κ α (MatchVarAnon v)            = bot2 v × ElimVar varAnon κ
 match_bwd ρ κ α (MatchConstr (c × ξs) κs)       =
    let vs × κ' = matchArgs_bwd ρ κ α ξs in
-   (Val α $ V.Constr c vs) × (ElimConstr $ insert c κ' $ map bot κs)
+   (Val α $ V.Constr c vs) × (ElimConstr $ insert c κ' $ map bot2 κs)
 match_bwd _ _ _ _                               = error absurd
 
 matchArgs_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -59,13 +59,13 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
 
 eval_bwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 eval_bwd v (T.Var x ρ)
-   = (bot ρ ◃ x ↦ v) × (Expr false (Var x)) × false
+   = (bot2 ρ ◃ x ↦ v) × (Expr false (Var x)) × false
 eval_bwd (Val α (V.Str s)) (T.Str ts ρ)
-   = bot ρ × (Expr α (Str s)) × α
+   = bot2 ρ × (Expr α (Str s)) × α
 eval_bwd (Val α (V.Int n)) (T.Int tn ρ)
-   = bot ρ × (Expr α (Int n)) × α
+   = bot2 ρ × (Expr α (Int n)) × α
 eval_bwd v@(Val α (V.Primitive φ)) (T.Op op ρ)
-   = (bot ρ ◃ op ↦ v) × (Expr false (Op op)) × false
+   = (bot2 ρ ◃ op ↦ v) × (Expr false (Op op)) × false
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × (Expr α (Lambda σ)) × α
 eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
@@ -116,5 +116,5 @@ eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
          ρ  × es  × α'   = evalArgs_bwd vs ts in
      ρ × (Expr α (Constr c es)) × (α ∨ α')
 eval_bwd (Val α (V.Constr c vs)) (T.NullConstr c' ρ)
-   = bot ρ × (Expr α (Constr c Nil)) × α
+   = bot2 ρ × (Expr α (Constr c Nil)) × α
 eval_bwd _ _ = error absurd

@@ -5,7 +5,7 @@ import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr)
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MaybeZippable, 𝔹, (∨), maybeJoin, maybeZipWith, maybeZipWithList, maybeZipWithMap)
+import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MaybeZippable, 𝔹, (∨), bot2, maybeJoin, maybeZipWith, maybeZipWithList, maybeZipWithMap)
 import Util (type (+), (≟), error)
 
 type Var = String
@@ -69,6 +69,10 @@ instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
    maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
    maybeJoin _ _                                = Nothing
 
+instance boundedSemilatticeElim :: BoundedJoinSemilattice (Elim Boolean) where
+   bot2 (ElimVar x κ)   = ElimVar x (bot2 κ)
+   bot2 (ElimConstr κs) = ElimConstr $ map bot2 κs
+
 instance maybeZippableCont :: MaybeZippable Cont where
    maybeZipWith f None None            = pure None
    maybeZipWith f (Body e) (Body e')   = Body <$> maybeZipWith f e e'
@@ -80,6 +84,11 @@ instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
    maybeJoin (Body e) (Body e')   = Body <$> maybeJoin e e'
    maybeJoin (Arg σ) (Arg σ')     = Arg <$> maybeJoin σ σ'
    maybeJoin _ _                  = Nothing
+
+instance boundedJoinSemilatticeCont :: BoundedJoinSemilattice (Cont Boolean) where
+   bot2 None      = None
+   bot2 (Body e)  = Body $ bot2 e
+   bot2 (Arg σ)   = Arg $ bot2 σ
 
 instance maybeZippableVarDef :: MaybeZippable VarDef where
    maybeZipWith f (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'
