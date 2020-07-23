@@ -2,10 +2,11 @@ module Val where
 
 import Prelude hiding (absurd, top)
 import Data.List (List)
+import Data.Maybe (Maybe(..))
 import DataType (Ctr)
 import Expr (Elim, RecDefs, Var)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), bot, maybeJoin)
-import Util (MayFail, type (×), (×), (≟), error, report)
+import Util (MayFail, type (×), (×), (≟), report)
 
 data Primitive =
    IntOp (Int -> Val 𝔹) -- one constructor for each primitive type we care about
@@ -78,7 +79,7 @@ instance joinSemilatticeRawVal :: JoinSemilattice (RawVal Boolean) where
    maybeJoin (Constr c vs) (Constr c' vs')      = Constr <$> c ≟ c' <*> maybeJoin vs vs'
    maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
-   maybeJoin _ _                                = error "Shouldn't happen" -- Nothing
+   maybeJoin _ _                                = Nothing
 
 derive instance functorBind :: Functor Bind
 derive instance functorEnv :: Functor Env
@@ -93,7 +94,7 @@ instance monoidEnv :: Monoid (Env a) where
 instance joinSemilatticeEnv :: JoinSemilattice (Env Boolean) where
    maybeJoin Empty Empty                             = pure Empty
    maybeJoin (Extend ρ (x ↦ v)) (Extend ρ' (y ↦ v')) = Extend <$> maybeJoin ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeJoin v v')
-   maybeJoin _ _                                     = error "Shouldn't happen" -- Nothing
+   maybeJoin _ _                                     = Nothing
 
 instance boundedJoinSemilatticeEnv :: BoundedJoinSemilattice (Env Boolean) where
    bot Empty = Empty
