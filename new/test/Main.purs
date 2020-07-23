@@ -43,7 +43,7 @@ main = do
    runDesugar "list-comp-2" lcomp2 lcomp2_eval
    runDesugar "list-comp-3" lcomp3 lcomp3_eval
    runDesugar "list-seq-1" lseq1 lseq1_eval
-   runExample "arithmetic" "42" false
+   runExample "arithmetic" "42" true
    runExample "compose" "5" false
    runExample "factorial" "40320" false
    runExample "filter" "[8, 7]" false

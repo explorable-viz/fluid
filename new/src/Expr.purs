@@ -5,7 +5,7 @@ import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr)
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), bot2, maybeJoin)
+import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), bot, maybeJoin)
 import Util (type (+), (≟), error)
 
 type Var = String
@@ -65,8 +65,8 @@ instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
    maybeJoin _ _                                = Nothing
 
 instance boundedSemilatticeElim :: BoundedJoinSemilattice (Elim Boolean) where
-   bot2 (ElimVar x κ)   = ElimVar x (bot2 κ)
-   bot2 (ElimConstr κs) = ElimConstr $ map bot2 κs
+   bot (ElimVar x κ)   = ElimVar x (bot κ)
+   bot (ElimConstr κs) = ElimConstr $ map bot κs
 
 instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
    maybeJoin None None            = pure None
@@ -75,9 +75,9 @@ instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
    maybeJoin _ _                  = Nothing
 
 instance boundedJoinSemilatticeCont :: BoundedJoinSemilattice (Cont Boolean) where
-   bot2 None      = None
-   bot2 (Body e)  = Body $ bot2 e
-   bot2 (Arg σ)   = Arg $ bot2 σ
+   bot None      = None
+   bot (Body e)  = Body $ bot e
+   bot (Arg σ)   = Arg $ bot σ
 
 instance joinSemilatticeVarDef :: JoinSemilattice (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
@@ -91,7 +91,7 @@ instance joinSemilatticeExpr :: JoinSemilattice (Expr Boolean) where
    maybeJoin (Expr α r) (Expr α' r')   = Expr <$> pure (α ∨ α') <*> maybeJoin r r'
 
 instance boundedJoinSemilatticeExpr :: BoundedJoinSemilattice (Expr Boolean) where
-   bot2 = const Hole
+   bot = const Hole
 
 instance joinSemilatticeRawExpr :: JoinSemilattice (RawExpr Boolean) where
    maybeJoin (Var x) (Var x')              = Var <$> x ≟ x'
