@@ -88,8 +88,8 @@ eval ρ (Expr _ (App e e')) = do
 eval ρ (Expr _ (BinaryApp e op e')) = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
-   let t_app = T.BinaryApp (t × v) op (t' × v')
    v_φ <- find op ρ
+   let t_app = T.BinaryApp (t × v) (op × v_φ) (t' × v')
    case v_φ of
       V.Hole                  -> pure $ t_app × V.Hole
       Val _ (V.Primitive φ)   ->

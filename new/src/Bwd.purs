@@ -77,10 +77,10 @@ eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
          ρ1' × δ'   × α2   = closeDefs_bwd ρ2 ρ1
          ρ'' × e'' × α''   = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ)) t in
       (ρ' ∨ ρ'') × (Expr (α' ∨ α'') $ App e'' e') × (α' ∨ α'')
-eval_bwd (Val α v) (T.BinaryApp (t1 × v1) op (t2 × v2))
+eval_bwd (Val α v) (T.BinaryApp (t1 × v1) (op × Val _ φ) (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2
          ρ' × e' × α'' = eval_bwd v1 t1 in
-     (ρ ∨ ρ') × (Expr α $ BinaryApp e' op e) × α
+     (ρ ∨ ρ' ◃ op ↦ Val α φ) × (Expr α $ BinaryApp e' op e) × α
 eval_bwd (Val α v) (T.AppOp (t1 × v1) (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2
          ρ' × e' × α'' = eval_bwd v1 t1 in

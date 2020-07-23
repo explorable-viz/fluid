@@ -71,29 +71,30 @@ instance prettyVoid :: Pretty Void where
    pretty _ = error absurd
 
 instance prettyExpl :: Pretty (Expl Boolean) where
-   pretty T.Hole                    = hole
-   pretty (T.Var x _)               = text x
-   pretty (T.Op op _)               = text op
-   pretty (T.Int n _)               = text $ show n
-   pretty (T.Str s _)               = text $ show s
-   pretty (T.Constr c ts)           = prettyConstr c ts
-   pretty (T.NullConstr c _)        = prettyConstr c (Nil :: List Void)
-   pretty (T.Lambda σ)              = text "fun " :<>: pretty σ
-   pretty (T.AppHole t)             = text "App" :<>: parens (hole :<>: comma :<>: hole)
-   pretty (T.App tv t' ξ t'')       =
+   pretty T.Hole                          = hole
+   pretty (T.Var x _)                     = text x
+   pretty (T.Op op _)                     = text op
+   pretty (T.Int n _)                     = text $ show n
+   pretty (T.Str s _)                     = text $ show s
+   pretty (T.Constr c ts)                 = prettyConstr c ts
+   pretty (T.NullConstr c _)              = prettyConstr c (Nil :: List Void)
+   pretty (T.Lambda σ)                    = text "fun " :<>: pretty σ
+   pretty (T.AppHole t)                   = text "App" :<>: parens (hole :<>: comma :<>: hole)
+   pretty (T.App tv t' ξ t'')             =
       text "App" :<>:
       parens (atop (text "t1: " :<>: pretty tv :<>: comma)
                    (atop (text "t2: " :<>: pretty t' :<>: comma)
                          (atop (text "match: " :<>:  pretty ξ :<>: comma) (text "t3: " :<>: pretty t''))))
-   pretty (T.AppOp tv tv')          = pretty tv :<>: space :<>: pretty tv'
-   pretty (T.BinaryApp tv op tv')   = pretty tv :<>: space :<>: text op :<>: space :<>: pretty tv'
-   pretty (T.MatchAs t ξ t')        =
+   pretty (T.AppOp tv tv')                = pretty tv :<>: space :<>: pretty tv'
+   pretty (T.BinaryApp tv (op × _) tv')   =
+      pretty tv :<>: space :<>: text op :<>: space :<>: pretty tv'
+   pretty (T.MatchAs t ξ t')              =
       atop (text "match " :<>: pretty t :<>: text " as {")
            (atop (tab :<>: pretty ξ) (atop (text "} where outcome was: ") (tab :<>: pretty t')))
-   pretty (T.Let (T.VarDef ξ t) t') =
+   pretty (T.Let (T.VarDef ξ t) t')       =
       atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
            (pretty t')
-   pretty (T.LetRec δ t)            =
+   pretty (T.LetRec δ t)                  =
       atop (text "letrec " :<>: pretty δ)
            (text "in     " :<>: pretty t)
 
