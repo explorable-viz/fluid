@@ -23,7 +23,7 @@ class JoinSemilattice a <= BoundedJoinSemilattice a where
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
-infixl 6 join as ∨
+infixl 6 join2 as ∨
 
 type 𝔹 = Boolean
 
@@ -41,11 +41,17 @@ instance latticeBoolean :: Lattice Boolean where
    top   = const true
    bot   = const false
 
+instance joinSemilatticeBoolean :: JoinSemilattice Boolean where
+   maybeJoin x y = pure $ x || y
+
 instance latticeMaybeZippable :: (Lattice a, MaybeZippable t) => Lattice (t a) where
    join x y = fromJust "Join undefined" $ maybeZipWith join x y
    meet x y = fromJust "Meet undefined" $ maybeZipWith meet x y
    top   = map top
    bot   = map bot
+
+join2 :: forall a . JoinSemilattice a => a -> a -> a
+join2 x y = fromJust "Join undefined" $ maybeJoin x y
 
 -- Not sure how to do these with instances (need composable type constructors).
 maybeZipWithTuple :: forall a b c k t . Eq k => MaybeZippable t =>

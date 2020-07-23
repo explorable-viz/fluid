@@ -5,7 +5,7 @@ import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr)
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MaybeZippable, 𝔹, (∨), bot2, maybeJoin, maybeZipWith, maybeZipWithList, maybeZipWithMap)
+import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), bot2, maybeJoin)
 import Util (type (+), (≟), error)
 
 type Var = String
@@ -59,11 +59,6 @@ derive instance functorExpr :: Functor Expr
 derive instance functorCont :: Functor Cont
 derive instance functorElim :: Functor Elim
 
-instance maybeZippableElim :: MaybeZippable Elim where
-   maybeZipWith f (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> x ≟ x' <*> maybeZipWith f κ κ'
-   maybeZipWith f (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeZipWithMap f κs κs'
-   maybeZipWith _ _ _                                = Nothing
-
 instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> x ≟ x' <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
@@ -72,12 +67,6 @@ instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
 instance boundedSemilatticeElim :: BoundedJoinSemilattice (Elim Boolean) where
    bot2 (ElimVar x κ)   = ElimVar x (bot2 κ)
    bot2 (ElimConstr κs) = ElimConstr $ map bot2 κs
-
-instance maybeZippableCont :: MaybeZippable Cont where
-   maybeZipWith f None None            = pure None
-   maybeZipWith f (Body e) (Body e')   = Body <$> maybeZipWith f e e'
-   maybeZipWith f (Arg σ) (Arg σ')     = Arg <$> maybeZipWith f σ σ'
-   maybeZipWith _ _ _                  = Nothing
 
 instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
    maybeJoin None None            = pure None
@@ -90,43 +79,11 @@ instance boundedJoinSemilatticeCont :: BoundedJoinSemilattice (Cont Boolean) whe
    bot2 (Body e)  = Body $ bot2 e
    bot2 (Arg σ)   = Arg $ bot2 σ
 
-instance maybeZippableVarDef :: MaybeZippable VarDef where
-   maybeZipWith f (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeZipWith f σ σ' <*> maybeZipWith f e e'
-
 instance joinSemilatticeVarDef :: JoinSemilattice (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
-instance maybeZippableRecDef :: MaybeZippable RecDef where
-   maybeZipWith f (RecDef x σ) (RecDef x' σ') = RecDef <$> x ≟ x' <*> maybeZipWith f σ σ'
-
 instance joinSemilatticeRecDef :: JoinSemilattice (RecDef Boolean) where
    maybeJoin (RecDef x σ) (RecDef x' σ') = RecDef <$> x ≟ x' <*> maybeJoin σ σ'
-
-instance maybeZippableExpr :: MaybeZippable Expr where
-   maybeZipWith _ Hole Hole               = pure Hole
-   maybeZipWith f (Expr α r) (Expr α' r') = Expr <$> pure (f α α') <*> maybeZipWith f r r'
-   maybeZipWith _ _ _                     = Nothing
-
-instance maybeZippableRawExpr :: MaybeZippable RawExpr where
-   maybeZipWith _ (Var x) (Var x')                = Var <$> x ≟ x'
-   maybeZipWith _ (Op op) (Op op')                = Op <$> op ≟ op'
-   maybeZipWith _ (Int n) (Int n')                = Int <$> n ≟ n'
-   maybeZipWith _ (Str s) (Var s')                = Str <$> s ≟ s'
-   maybeZipWith f (Constr c es) (Constr c' es')
-      = Constr <$> c ≟ c' <*> maybeZipWithList f es es'
-   maybeZipWith f (App e1 e2) (App e1' e2')
-      = App <$> maybeZipWith f e1 e1' <*> maybeZipWith f e2 e2'
-   maybeZipWith f (BinaryApp e1 op e2) (BinaryApp e1' op' e2')
-      = BinaryApp <$> maybeZipWith f e1 e1' <*> op ≟ op' <*> maybeZipWith f e2 e2'
-   maybeZipWith f (Lambda σ) (Lambda σ')
-      = Lambda <$> maybeZipWith f σ σ'
-   maybeZipWith f (MatchAs e σ) (MatchAs e' σ')
-      = MatchAs <$> maybeZipWith f e e' <*> maybeZipWith f σ σ'
-   maybeZipWith f (Let def e) (Let def' e')
-      = Let <$> maybeZipWith f def def' <*> maybeZipWith f e e'
-   maybeZipWith f (LetRec δ e) (LetRec δ' e')
-      = LetRec <$> maybeZipWithList f δ δ' <*> maybeZipWith f e e'
-   maybeZipWith _ _ _                             = Nothing
 
 instance joinSemilatticeExpr :: JoinSemilattice (Expr Boolean) where
    maybeJoin Hole e                    = pure e

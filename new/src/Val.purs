@@ -5,7 +5,7 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr)
 import Expr (Elim, RecDefs, Var)
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MaybeZippable, 𝔹, (∨), bot2, maybeJoin, maybeZipWith, maybeZipWithList)
+import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), bot2, maybeJoin)
 import Util (MayFail, type (×), (×), (≟), report)
 
 data Primitive =
@@ -65,11 +65,6 @@ splitAt n ρ
 derive instance functorRawVal :: Functor RawVal
 derive instance functorVal :: Functor Val
 
-instance maybeZippableVal :: MaybeZippable Val where
-   maybeZipWith _ Hole Hole               = pure Hole
-   maybeZipWith f (Val α r) (Val α' r')   = Val <$> pure (α `f` α') <*> maybeZipWith f r r'
-   maybeZipWith _ _ _                     = Nothing
-
 instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
    maybeJoin Hole Hole               = pure Hole
    maybeJoin (Val α r) (Val α' r')   = Val <$> pure (α ∨ α') <*> maybeJoin r r'
@@ -77,16 +72,6 @@ instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
 
 instance boundedJoinSemilattice :: BoundedJoinSemilattice (Val Boolean) where
    bot2 = const Hole
-
-instance maybeZippableRawVal :: MaybeZippable RawVal where
-   maybeZipWith f (Int x) (Int x')                   = Int <$> x ≟ x'
-   maybeZipWith f (Str s) (Str s')                   = Str <$> s ≟ s'
-   maybeZipWith f (Constr c vs) (Constr c' vs') =
-      Constr <$> c ≟ c' <*> maybeZipWithList f vs vs'
-   maybeZipWith f (Closure ρ δ σ) (Closure ρ' δ' σ') =
-      Closure <$> maybeZipWith f ρ ρ' <*> maybeZipWithList f δ δ' <*> maybeZipWith f σ σ'
-   maybeZipWith f (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
-   maybeZipWith _ _ _                                = Nothing
 
 instance joinSemilatticeRawVal :: JoinSemilattice (RawVal Boolean) where
    maybeJoin (Int x) (Int x')                   = Int <$> x ≟ x'
@@ -105,12 +90,6 @@ instance semigroupEnv :: Semigroup (Env a) where
 
 instance monoidEnv :: Monoid (Env a) where
    mempty = Empty
-
-instance maybeZippableEnv :: MaybeZippable Env where
-   maybeZipWith _ Empty Empty                              = pure Empty
-   maybeZipWith f (Extend ρ (x ↦ v)) (Extend ρ' (y ↦ v'))
-      = Extend <$> maybeZipWith f ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeZipWith f v v')
-   maybeZipWith _ _ _                                      = Nothing
 
 instance joinSemilatticeEnv :: JoinSemilattice (Env Boolean) where
    maybeJoin Empty Empty                             = pure Empty
