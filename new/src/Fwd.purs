@@ -51,7 +51,7 @@ eval_fwd ρ (Expr _ (LetRec δ e)) α =
 eval_fwd ρ (Expr _ (Lambda σ)) α = Val α $ V.Closure ρ Nil σ
 eval_fwd ρ (Expr _ (App e e')) α =
    case eval_fwd ρ e α of
-      V.Hole     -> V.Hole
+      V.Hole   -> V.Hole
       Val α' u ->
          let v = eval_fwd ρ e' α in
          case u of
@@ -64,8 +64,10 @@ eval_fwd ρ (Expr _ (App e e')) α =
             _                 -> error absurd
 eval_fwd ρ (Expr _ (BinaryApp e1 op e2)) α =
    case successful $ find op ρ of
+      V.Hole                  -> V.Hole
       Val α' (V.Primitive φ)  ->
          case apply_fwd φ α' (eval_fwd ρ e1 α) of
+            V.Hole                     -> V.Hole
             Val α'' (V.Primitive φ_v)  -> apply_fwd φ_v α'' $ eval_fwd ρ e2 α
             _                          -> error absurd
       _                       -> error absurd
