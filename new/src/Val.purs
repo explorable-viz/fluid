@@ -5,7 +5,7 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import DataType (Ctr)
 import Expr (Elim, RecDefs, Var)
-import Lattice (class BoundedJoinSemilattice, class MaybeZippable, 𝔹, bot2, maybeZipWith, maybeZipWithList)
+import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, class MaybeZippable, 𝔹, (∨), bot2, maybeJoin, maybeZipWith, maybeZipWithList)
 import Util (MayFail, type (×), (×), (≟), report)
 
 data Primitive =
@@ -70,6 +70,14 @@ instance maybeZippableVal :: MaybeZippable Val where
    maybeZipWith f (Val α r) (Val α' r')   = Val <$> pure (α `f` α') <*> maybeZipWith f r r'
    maybeZipWith _ _ _                     = Nothing
 
+instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
+   maybeJoin Hole Hole               = pure Hole
+   maybeJoin (Val α r) (Val α' r')   = Val <$> pure (α ∨ α') <*> maybeJoin r r'
+   maybeJoin _ _                     = Nothing
+
+instance boundedJoinSemilattice :: BoundedJoinSemilattice (Val Boolean) where
+   bot2 = const Hole
+
 instance maybeZippableRawVal :: MaybeZippable RawVal where
    maybeZipWith f (Int x) (Int x')                   = Int <$> x ≟ x'
    maybeZipWith f (Str s) (Str s')                   = Str <$> s ≟ s'
@@ -79,6 +87,14 @@ instance maybeZippableRawVal :: MaybeZippable RawVal where
       Closure <$> maybeZipWith f ρ ρ' <*> maybeZipWithList f δ δ' <*> maybeZipWith f σ σ'
    maybeZipWith f (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
    maybeZipWith _ _ _                                = Nothing
+
+instance joinSemilatticeRawVal :: JoinSemilattice (RawVal Boolean) where
+   maybeJoin (Int x) (Int x')                   = Int <$> x ≟ x'
+   maybeJoin (Str s) (Str s')                   = Str <$> s ≟ s'
+   maybeJoin (Constr c vs) (Constr c' vs')      = Constr <$> c ≟ c' <*> maybeJoin vs vs'
+   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
+   maybeJoin (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
+   maybeJoin _ _                                = Nothing
 
 derive instance functorBind :: Functor Bind
 derive instance functorEnv :: Functor Env
@@ -95,6 +111,11 @@ instance maybeZippableEnv :: MaybeZippable Env where
    maybeZipWith f (Extend ρ (x ↦ v)) (Extend ρ' (y ↦ v'))
       = Extend <$> maybeZipWith f ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeZipWith f v v')
    maybeZipWith _ _ _                                      = Nothing
+
+instance joinSemilatticeEnv :: JoinSemilattice (Env Boolean) where
+   maybeJoin Empty Empty                             = pure Empty
+   maybeJoin (Extend ρ (x ↦ v)) (Extend ρ' (y ↦ v')) = Extend <$> maybeJoin ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeJoin v v')
+   maybeJoin _ _                                     = Nothing
 
 instance boundedJoinSemilatticeEnv :: BoundedJoinSemilattice (Env Boolean) where
    bot2 Empty = Empty
