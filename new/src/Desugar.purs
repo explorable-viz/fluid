@@ -3,7 +3,7 @@ module Desugar where
 import Prelude hiding (absurd)
 import Data.List ((:), List)
 import Data.List (List(..)) as L
-import Data.Map (fromFoldable, singleton) as M
+import Data.Map (fromFoldable, singleton, member, insert) as M
 import DataType (Ctr, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), Var, expr)
 import Expr (RawExpr(..)) as E
@@ -162,3 +162,17 @@ patternToElim (PConstr ctr ps) κ
          go (p':L.Nil)   = Arg (patternToElim p' κ)
          go L.Nil        = κ
      in  ElimConstr (M.singleton ctr (go ps))
+
+totalize :: Elim 𝔹 -> Expr 𝔹 -> Elim 𝔹
+totalize (ElimConstr m) e
+   | M.member cTrue m && not (M.member cFalse) m
+      = ElimConstr (M.insert cFalse (Body e) m)
+   | M.member cFalse m && not (M.member cTrue) m
+      = ElimConstr (M.insert cTrue (Body e) m)
+   | M.member cNil m && not (M.member cCons) m
+      = ElimConstr (M.insert cCons (Body e) m)
+   | M.member cCons m && not (M.member cNil) m
+      = ElimConstr (M.insert cNil (Body e) m)
+   | otherwise = ElimConstr m
+totalize (ElimVar e k) _
+   = ElimVar e k
