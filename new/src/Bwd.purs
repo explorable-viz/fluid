@@ -24,7 +24,8 @@ unmatchArgs ρ (ξ : ξs) =
        ρ'' × ρ1   = unmatchArgs ρ' ξs in
    ρ'' × (ρ1 <> ρ2)
 
-closeDefs_bwd :: Env 𝔹 -> Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
+-- second argument contains original environment and recursive definitions
+closeDefs_bwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
 closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _ =
    case foldEnv joinDefs ((RecDef f0 σ0 : Nil) × ρ0 × δ0 × α0) ρ' of
    δ' × ρ × δ × α -> ρ × (δ ∨ δ') × α
@@ -37,7 +38,8 @@ closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _ =
 
 closeDefs_bwd (_ :+: _ ↦ Val _ _) _ = error absurd
 closeDefs_bwd (_ :+: _ ↦ V.Hole) _  = error "todo"
-closeDefs_bwd Empty ρ               = bot ρ × Nil × false
+closeDefs_bwd Empty (ρ × Nil)       = bot ρ × Nil × false
+closeDefs_bwd Empty (ρ × (_ : _))   = error absurd
 
 match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
@@ -71,8 +73,8 @@ eval_bwd v (T.App (t × δ) t' ξ t'')
          ρ1ρ2 × ρ3         = unmatch ρ1ρ2ρ3 ξ
          v' × σ            = match_bwd ρ3 (Body e) α ξ
          ρ1 × ρ2           = splitAt (length δ) ρ1ρ2
-         ρ' × e'  × α'     = eval_bwd v' t'
-         ρ1' × δ'  × α2    = closeDefs_bwd ρ2 ρ1
+         ρ' × e' × α'      = eval_bwd v' t'
+         ρ1' × δ' × α2     = closeDefs_bwd ρ2 (ρ1 × δ)
          ρ'' × e'' × α''   = eval_bwd (Val (α ∨ α2) $ V.Closure (ρ1 ∨ ρ1') δ' σ) t in
       (ρ' ∨ ρ'') × Expr (α' ∨ α'') (App e'' e') × (α' ∨ α'')
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) (op × Val _ φ) (t2 × v2))
@@ -98,7 +100,7 @@ eval_bwd v (T.Let (T.VarDef ξ t1) t2)
 eval_bwd v (T.LetRec δ t)
    = let ρ1ρ2 × e × α   = eval_bwd v t
          ρ1 × ρ2        = splitAt (length δ) ρ1ρ2
-         ρ1' × δ' × α'  = closeDefs_bwd ρ2 ρ1 in
+         ρ1' × δ' × α'  = closeDefs_bwd ρ2 (ρ1 × δ) in
      (ρ1 ∨ ρ1') × Expr (α ∨ α') (LetRec δ' e) × (α ∨ α')
 eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
    = let

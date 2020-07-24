@@ -80,9 +80,9 @@ instance prettyExpl :: Pretty (Expl Boolean) where
    pretty (T.NullConstr c _)              = prettyConstr c (Nil :: List Void)
    pretty (T.Lambda σ)                    = text "fun " :<>: pretty σ
    pretty (T.AppHole t)                   = text "App" :<>: parens (hole :<>: comma :<>: hole)
-   pretty (T.App tv t' ξ t'')             =
+   pretty (T.App (t × _) t' ξ t'')             =
       text "App" :<>:
-      parens (atop (text "t1: " :<>: pretty tv :<>: comma)
+      parens (atop (text "t1: " :<>: pretty t :<>: comma)
                    (atop (text "t2: " :<>: pretty t' :<>: comma)
                          (atop (text "match: " :<>:  pretty ξ :<>: comma) (text "t3: " :<>: pretty t''))))
    pretty (T.AppOp tv tv')                = pretty tv :<>: space :<>: pretty tv'
