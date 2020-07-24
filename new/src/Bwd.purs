@@ -37,7 +37,7 @@ closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _ =
 
 closeDefs_bwd (_ :+: _ ↦ Val _ _) _ = error absurd
 closeDefs_bwd (_ :+: _ ↦ V.Hole) _  = error "todo"
-closeDefs_bwd Empty ρ              = bot ρ × Nil × false
+closeDefs_bwd Empty ρ               = bot ρ × Nil × false
 
 match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
@@ -66,14 +66,14 @@ eval_bwd v@(Val α (V.Primitive φ)) (T.Op op ρ)
    = (bot ρ ◃ op ↦ v) × (Expr false $ Op op) × false
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × (Expr α $ Lambda σ) × α
-eval_bwd v'' (T.App (t × v@(Val _ (V.Closure _ δ _))) t' ξ t'')
-   = let ρ1ρ2ρ3 × e × α    = eval_bwd v'' t''
+eval_bwd v (T.App (t × (Val _ (V.Closure _ δ _))) t' ξ t'')
+   = let ρ1ρ2ρ3 × e × α    = eval_bwd v t''
          ρ1ρ2 × ρ3         = unmatch ρ1ρ2ρ3 ξ
          v'   × σ          = match_bwd ρ3 (Body e) α ξ
          ρ1 × ρ2           = splitAt (length δ) ρ1ρ2
          ρ'  × e'  × α'    = eval_bwd v' t'
-         ρ1' × δ'   × α2   = closeDefs_bwd ρ2 ρ1
-         ρ'' × e'' × α''   = eval_bwd (Val (α ∨ α2) (V.Closure (ρ1 ∨ ρ1') δ' σ)) t in
+         ρ1' × δ'  × α2    = closeDefs_bwd ρ2 ρ1
+         ρ'' × e'' × α''   = eval_bwd (Val (α ∨ α2) $ V.Closure (ρ1 ∨ ρ1') δ' σ) t in
       (ρ' ∨ ρ'') × (Expr (α' ∨ α'') $ App e'' e') × (α' ∨ α'')
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) (op × Val _ φ) (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2

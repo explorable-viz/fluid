@@ -12,12 +12,6 @@ type Var = String
 
 varAnon = "_" :: Var
 
-data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
-type VarDefs a = List (VarDef a)
-
-data RecDef a = RecDef Var (Elim a)
-type RecDefs a = List (RecDef a)
-
 data RawExpr a =
    Var Var |
    Op Var |
@@ -36,16 +30,22 @@ data Expr a = Hole | Expr a (RawExpr a)
 expr :: RawExpr 𝔹 -> Expr 𝔹
 expr = Expr false
 
+data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
+type VarDefs a = List (VarDef a)
+
+data RecDef a = RecDef Var (Elim a)
+type RecDefs a = List (RecDef a)
+
+data Elim a =
+   ElimVar Var (Cont a) |
+   ElimConstr (Map Ctr (Cont a))
+
 -- Continuation of an eliminator. None form only used in structured let.
 data Cont a = None | Body (Expr a) | Arg (Elim a)
 
 body :: Cont 𝔹 -> Expr 𝔹
 body (Body e)  = e
 body _         = error "Expression expected"
-
-data Elim a =
-   ElimVar Var (Cont a) |
-   ElimConstr (Map Ctr (Cont a))
 
 data Module a = Module (List (VarDef a + RecDefs a))
 
