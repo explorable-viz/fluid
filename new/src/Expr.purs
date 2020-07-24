@@ -82,6 +82,9 @@ instance boundedJoinSemilatticeCont :: BoundedJoinSemilattice (Cont Boolean) whe
 instance joinSemilatticeVarDef :: JoinSemilattice (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
+instance boundedSemilatticeRecDef :: BoundedJoinSemilattice (RecDef Boolean) where
+   bot (RecDef x σ) = RecDef x $ bot σ
+
 instance joinSemilatticeRecDef :: JoinSemilattice (RecDef Boolean) where
    maybeJoin (RecDef x σ) (RecDef x' σ') = RecDef <$> x ≟ x' <*> maybeJoin σ σ'
 

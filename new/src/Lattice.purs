@@ -39,6 +39,9 @@ instance joinSemilatticeList :: JoinSemilattice t => JoinSemilattice (List t) wh
       | length xs == length ys   = sequence $ zipWith maybeJoin xs ys
       | otherwise                = Nothing
 
+instance boundedSemilatticeList :: BoundedJoinSemilattice t => BoundedJoinSemilattice (List t) where
+   bot = map bot
+
 instance joinSemilatticeMap :: (Ord k, JoinSemilattice t) => JoinSemilattice (Map k t) where
    maybeJoin κs κs'
       | size κs == size κs' =
