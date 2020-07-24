@@ -1,6 +1,6 @@
 module Bwd where
 
-import Prelude (map, ($), (<>))
+import Prelude hiding (absurd)
 import Data.List (List(..), (:), length)
 import Data.Map (insert)
 import Expl (Expl, Match(..))
