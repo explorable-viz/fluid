@@ -23,10 +23,10 @@ data Val a = Hole | Val a (RawVal a)
 val :: RawVal 𝔹 -> Val 𝔹
 val = Val false
 
-data Bind a = Bind Var (Val a)
-data Env a = Empty | Extend (Env a) (Bind a)
+data Binding a = Binding Var (Val a)
+data Env a = Empty | Extend (Env a) (Binding a)
 
-infix 6 Bind as ↦
+infix 6 Binding as ↦
 infixl 5 Extend as :+:
 infixl 5 update as ◃
 
@@ -36,11 +36,11 @@ find x (xs :+: x' ↦ v)
    | x == x'   = pure v
    | otherwise = find x xs
 
-foldEnv :: forall a . (Bind 𝔹 -> Endo a) -> a -> Env 𝔹 -> a
+foldEnv :: forall a . (Binding 𝔹 -> Endo a) -> a -> Env 𝔹 -> a
 foldEnv f z (ρ :+: x ↦ v)   = f (x ↦ v) $ foldEnv f z ρ
 foldEnv _ z Empty           = z
 
-update :: Env 𝔹 -> Bind 𝔹 -> Env 𝔹
+update :: Env 𝔹 -> Binding 𝔹 -> Env 𝔹
 update Empty _ = Empty
 update (xs :+: x ↦ v) (x' ↦ v')
    | x == x'    = xs :+: x' ↦ v'
@@ -81,7 +81,7 @@ instance joinSemilatticeRawVal :: JoinSemilattice (RawVal Boolean) where
    maybeJoin (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
    maybeJoin _ _                                = Nothing
 
-derive instance functorBind :: Functor Bind
+derive instance functorBinding :: Functor Binding
 derive instance functorEnv :: Functor Env
 
 instance semigroupEnv :: Semigroup (Env a) where

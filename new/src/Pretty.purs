@@ -12,7 +12,7 @@ import Expr (RawExpr(..), Expr(Hole)) as E
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Util (Endo, type (×), (×), absurd, error, intersperse)
-import Val (Bind, Env(..), Primitive(..), RawVal, Val(..), (:+:), (↦), val)
+import Val (Binding, Env(..), Primitive(..), RawVal, Val(..), (:+:), (↦), val)
 import Val (RawVal(..), Val(Hole)) as V
 
 infixl 5 beside as :<>:
@@ -156,7 +156,7 @@ instance prettyRawExpr :: Pretty (RawExpr Boolean) where
 instance prettyRecDef :: Pretty (RecDef Boolean) where
    pretty (RecDef f σ) = text f :<>: operator "=" :<>: pretty σ
 
-instance prettyBind :: Pretty (Bind Boolean) where
+instance prettyBinding :: Pretty (Binding Boolean) where
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
 instance prettyCont :: Pretty (Cont Boolean) where
