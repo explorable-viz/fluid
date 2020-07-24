@@ -21,7 +21,7 @@ data Expl a =
    NullConstr Ctr (Env a) |
    Lambda (Elim a) |
    AppHole (Expl a) |
-   App (ExplVal a) (Expl a) (Match a) (Expl a) |
+   App (Expl a × RecDefs a) (Expl a) (Match a) (Expl a) |
    AppOp (ExplVal a) (ExplVal a) |
    BinaryApp (ExplVal a) (Var × Val a) (ExplVal a) |
    MatchAs (Expl a) (Match a) (Expl a) |

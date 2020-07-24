@@ -66,12 +66,12 @@ eval_bwd v@(Val α (V.Primitive φ)) (T.Op op ρ)
    = (bot ρ ◃ op ↦ v) × Expr false (Op op) × false
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
    = ρ × Expr α (Lambda σ) × α
-eval_bwd v (T.App (t × Val _ (V.Closure _ δ _)) t' ξ t'')
+eval_bwd v (T.App (t × δ) t' ξ t'')
    = let ρ1ρ2ρ3 × e × α    = eval_bwd v t''
          ρ1ρ2 × ρ3         = unmatch ρ1ρ2ρ3 ξ
-         v'   × σ          = match_bwd ρ3 (Body e) α ξ
+         v' × σ            = match_bwd ρ3 (Body e) α ξ
          ρ1 × ρ2           = splitAt (length δ) ρ1ρ2
-         ρ'  × e'  × α'    = eval_bwd v' t'
+         ρ' × e'  × α'     = eval_bwd v' t'
          ρ1' × δ'  × α2    = closeDefs_bwd ρ2 ρ1
          ρ'' × e'' × α''   = eval_bwd (Val (α ∨ α2) $ V.Closure (ρ1 ∨ ρ1') δ' σ) t in
       (ρ' ∨ ρ'') × Expr (α' ∨ α'') (App e'' e') × (α' ∨ α'')

@@ -79,7 +79,7 @@ eval ρ (Expr _ (App e e')) = do
                let ρ2 = closeDefs ρ1 δ δ
                ρ3 × e'' × ξ <- match v' σ
                t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
-               pure $ T.App (t × v) t' ξ t'' × v''
+               pure $ T.App (t × δ) t' ξ t'' × v''
             V.Primitive φ     -> pure $ T.AppOp (t × v) (t' × v') × apply φ v'
             V.Constr c vs     -> do
                check (successful (arity c) > length vs) $ "Too many arguments to " <> show c
