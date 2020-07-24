@@ -3,12 +3,12 @@ module Desugar where
 import Prelude hiding (absurd)
 import Data.List ((:), List)
 import Data.List (List(..)) as L
-import Data.Map (fromFoldable, singleton, member, insert) as M
-import DataType (Ctr, cCons, cNil, cTrue, cFalse)
+import Data.Map (fromFoldable, singleton, member, insert, lookup) as M
+import DataType (Ctr, cCons, cNil, cTrue, cFalse, cPair)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), Var, expr)
 import Expr (RawExpr(..)) as E
 import Lattice (𝔹)
-import Util ((×), absurd, error)
+import Util ((×), absurd, error, fromJust)
 
 lcomp1 :: SExpr
 lcomp1
@@ -42,6 +42,14 @@ lcomp3
             (Guard (sexpr $ BinaryApp (svar "z") "<" (sint 10))):
             L.Nil)
 
+
+lcomp4 :: SExpr
+lcomp4
+ = sexpr $ ListComp (svar "x")
+            ((Generator (PConstr cCons (PVar "x":PVar "xs":L.Nil)) (scons (scons (sint 5) snil)
+             (scons (scons (sint 4) snil) (scons (scons (sint 3) snil) (scons snil snil))))):
+            L.Nil)
+
 lcomp1_eval :: String
 lcomp1_eval = "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
 
@@ -50,6 +58,9 @@ lcomp2_eval = "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9
 
 lcomp3_eval :: String
 lcomp3_eval = "[9, 8]"
+
+lcomp4_eval :: String
+lcomp4_eval = "[5, 4, 3]"
 
 lseq1 :: SExpr
 lseq1 = sexpr $ ListSeq (sint 3) (sint 7)
@@ -134,7 +145,7 @@ desugar (SExpr α (ListComp s_body (Guard s : qs)))
 desugar (SExpr α (ListComp s_body (Generator p slist : qs)))
    =  let elist = desugar slist
           erest = desugar (sexpr $ ListComp s_body qs)
-          λ     = expr $ E.Lambda (patternToElim p (Body erest))
+          λ     = expr $ E.Lambda (totalize (patternToElim p (Body erest)) enil)
       in  eapp (evar "concat") (eapp (eapp (evar "map") λ) elist)
 desugar (SExpr α (ListComp s_body (Declaration p s : qs)))
    =  let e     = desugar s
@@ -172,7 +183,20 @@ totalize (ElimConstr m) e
    | M.member cNil m && not (M.member cCons) m
       = ElimConstr (M.insert cCons (Body e) m)
    | M.member cCons m && not (M.member cNil) m
-      = ElimConstr (M.insert cNil (Body e) m)
+      = let cons_κ = case fromJust "" (M.lookup cCons m) of
+                        Arg σ   -> Arg (totalize σ e)
+                        Body e' -> Body e'
+                        None    -> Body e
+            nil_κ  = Body e
+        in  ElimConstr (M.fromFoldable ((cCons × cons_κ):(cNil × nil_κ):L.Nil))
+   | M.member cPair m
+      = let pair_κ = case fromJust "" (M.lookup cPair m) of
+                        Arg σ   -> Arg (totalize σ e)
+                        Body e' -> Body e'
+                        None    -> Body e
+        in  ElimConstr (M.singleton cPair pair_κ)
    | otherwise = ElimConstr m
-totalize (ElimVar e k) _
-   = ElimVar e k
+totalize (ElimVar e k) e'
+   = case k of Arg σ  -> ElimVar e (Arg (totalize σ e'))
+               Body _ -> ElimVar e k
+               None   -> ElimVar e (Body e')
