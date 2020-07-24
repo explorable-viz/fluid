@@ -57,16 +57,16 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
 
 eval_bwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 eval_bwd v (T.Var x ρ)
-   = (bot ρ ◃ x ↦ v) × (Expr false $ Var x) × false
+   = (bot ρ ◃ x ↦ v) × Expr false (Var x) × false
 eval_bwd (Val α (V.Str s)) (T.Str ts ρ)
-   = bot ρ × (Expr α $ Str s) × α
+   = bot ρ × Expr α (Str s) × α
 eval_bwd (Val α (V.Int n)) (T.Int tn ρ)
-   = bot ρ × (Expr α $ Int n) × α
+   = bot ρ × Expr α (Int n) × α
 eval_bwd v@(Val α (V.Primitive φ)) (T.Op op ρ)
-   = (bot ρ ◃ op ↦ v) × (Expr false $ Op op) × false
+   = (bot ρ ◃ op ↦ v) × Expr false (Op op) × false
 eval_bwd (Val α (V.Closure ρ δ σ)) (T.Lambda σ')
-   = ρ × (Expr α $ Lambda σ) × α
-eval_bwd v (T.App (t × (Val _ (V.Closure _ δ _))) t' ξ t'')
+   = ρ × Expr α (Lambda σ) × α
+eval_bwd v (T.App (t × Val _ (V.Closure _ δ _)) t' ξ t'')
    = let ρ1ρ2ρ3 × e × α    = eval_bwd v t''
          ρ1ρ2 × ρ3         = unmatch ρ1ρ2ρ3 ξ
          v'   × σ          = match_bwd ρ3 (Body e) α ξ
@@ -74,32 +74,32 @@ eval_bwd v (T.App (t × (Val _ (V.Closure _ δ _))) t' ξ t'')
          ρ'  × e'  × α'    = eval_bwd v' t'
          ρ1' × δ'  × α2    = closeDefs_bwd ρ2 ρ1
          ρ'' × e'' × α''   = eval_bwd (Val (α ∨ α2) $ V.Closure (ρ1 ∨ ρ1') δ' σ) t in
-      (ρ' ∨ ρ'') × (Expr (α' ∨ α'') $ App e'' e') × (α' ∨ α'')
+      (ρ' ∨ ρ'') × Expr (α' ∨ α'') (App e'' e') × (α' ∨ α'')
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) (op × Val _ φ) (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2
          ρ' × e' × α'' = eval_bwd v1 t1 in
-     (ρ ∨ ρ' ◃ op ↦ Val α φ) × (Expr α $ BinaryApp e' op e) × α
+     (ρ ∨ ρ' ◃ op ↦ Val α φ) × Expr α (BinaryApp e' op e) × α
 eval_bwd (Val α v) (T.AppOp (t1 × v1) (t2 × v2))
    = let ρ  × e  × α'  = eval_bwd v2 t2
          ρ' × e' × α'' = eval_bwd v1 t1 in
-     (ρ ∨ ρ') × (Expr α $ App e e') × α
+     (ρ ∨ ρ') × Expr α (App e e') × α
 eval_bwd v (T.MatchAs t1 ξ t2)
    = let ρ1ρ2 × e × α   = eval_bwd v t2
          ρ1 × ρ2        = unmatch ρ1ρ2 ξ
          v1 × σ         = match_bwd ρ2 (Body e) α ξ
          ρ1' × e' × α'  = eval_bwd v1 t1 in
-     (ρ1' ∨ ρ1) × (Expr (α ∨ α') $ MatchAs e' σ) × (α ∨ α')
+     (ρ1' ∨ ρ1) × Expr (α ∨ α') (MatchAs e' σ) × (α ∨ α')
 eval_bwd v (T.Let (T.VarDef ξ t1) t2)
    = let ρ1ρ2 × e2 × α2 = eval_bwd v t2
          ρ1 × ρ2        = unmatch ρ1ρ2 ξ
          v' × σ         = match_bwd ρ2 (Body e2) α2 ξ
          ρ1' × e1 × α1  = eval_bwd v' t1 in
-     (ρ1 ∨ ρ1') × (Expr (α1 ∨ α2) $ Let (VarDef σ e1) e2) × (α1 ∨ α2)
+     (ρ1 ∨ ρ1') × Expr (α1 ∨ α2) (Let (VarDef σ e1) e2) × (α1 ∨ α2)
 eval_bwd v (T.LetRec δ t)
    = let ρ1ρ2 × e × α   = eval_bwd v t
          ρ1 × ρ2        = splitAt (length δ) ρ1ρ2
          ρ1' × δ' × α'  = closeDefs_bwd ρ2 ρ1 in
-     (ρ1 ∨ ρ1') × (Expr (α ∨ α') $ LetRec δ' e) × (α ∨ α')
+     (ρ1 ∨ ρ1') × Expr (α ∨ α') (LetRec δ' e) × (α ∨ α')
 eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
    = let
          evalArgs_bwd :: List (Val 𝔹) -> List (Expl 𝔹) -> Env 𝔹 × List (Expr 𝔹) × 𝔹
@@ -112,7 +112,7 @@ eval_bwd (Val α (V.Constr c vs)) (T.Constr c' ts)
          evalArgs_bwd _ _ = error absurd
 
          ρ × es × α' = evalArgs_bwd vs ts in
-     ρ × (Expr α $ Constr c es) × (α ∨ α')
+     ρ × Expr α (Constr c es) × (α ∨ α')
 eval_bwd (Val α (V.Constr c vs)) (T.NullConstr c' ρ)
-   = bot ρ × (Expr α $ Constr c Nil) × α
+   = bot ρ × Expr α (Constr c Nil) × α
 eval_bwd _ _ = error absurd
