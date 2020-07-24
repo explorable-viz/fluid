@@ -14,9 +14,6 @@ import Pretty (pretty, render)
 import Primitive (primitives)
 import Util ((×), successful)
 import Val (Val(..))
-import Debug.Trace (trace) as T
-
-trace s a = T.trace (pretty s) $ \_ -> a
 
 runExample :: String -> String -> Boolean -> Effect Unit
 runExample file expected runBwd = runMocha $
@@ -40,7 +37,6 @@ runDesugar test sexpr expected  = runMocha $
       it test $ \ρ -> do
          case successful $ eval ρ (desugar sexpr) of
             t × (Val _ u) -> do
-               let k = trace u 5
                (render $ pretty u) `shouldEqual` expected
 
 
