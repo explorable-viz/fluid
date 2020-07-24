@@ -8,8 +8,8 @@ import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs, varAnon)
 import Lattice (𝔹, bot, (∨))
 import Util (type (×), absurd, error, (×), (≜))
-import Val (Bind, Env(..), Val(..), (:+:), (↦), (◃), foldEnv, splitAt)
-import Val (RawVal(..)) as V
+import Val (Bind, Env(..), Val(Val), (:+:), (↦), (◃), foldEnv, splitAt)
+import Val (RawVal(..), Val(Hole)) as V
 
 unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
 unmatch (ρ :+: x ↦ v) (MatchVar x') = ρ × (Empty :+: (x ≜ x') ↦ v)
@@ -25,21 +25,21 @@ unmatchArgs ρ (ξ : ξs) =
    ρ'' × (ρ1 <> ρ2)
 
 closeDefs_bwd :: Env 𝔹 -> Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
-closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _
-   = joinδ $ foldEnv joinClsre ((RecDef f0 σ0 : Nil) × ρ0 × δ0 × α0) ρ'
+closeDefs_bwd (ρ' :+: f0 ↦ Val α0 (V.Closure ρ0 δ0 σ0)) _ =
+   case foldEnv joinDefs ((RecDef f0 σ0 : Nil) × ρ0 × δ0 × α0) ρ' of
+   δ' × ρ × δ × α -> ρ × (δ ∨ δ') × α
    where
-      joinδ :: RecDefs 𝔹 × (Env 𝔹 × RecDefs 𝔹 × 𝔹) -> Env 𝔹 × RecDefs 𝔹 × 𝔹
-      joinδ (δ' × ρ × δ × α) = ρ × (δ ∨ δ') × α
-
-      joinClsre   :: Bind 𝔹
+      joinDefs   :: Bind 𝔹
                   -> RecDefs 𝔹 × (Env 𝔹 × RecDefs 𝔹 × 𝔹)
                   -> RecDefs 𝔹 × (Env 𝔹 × RecDefs 𝔹 × 𝔹)
-      joinClsre (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ × δ × α)
+      joinDefs (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ × δ × α)
          = (RecDef f σ_f : δ_acc) × (ρ ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
-      joinClsre (_ ↦ _) _      = error absurd
+      joinDefs (f ↦ V.Hole) _   = error "todo"
+      joinDefs (_ ↦ Val _ _) _  = error absurd
 
-closeDefs_bwd (_  :+: _ ↦ _) _ = error absurd
-closeDefs_bwd Empty ρ1         = bot ρ1 × Nil × false
+closeDefs_bwd (_ :+: _ ↦ Val _ _) _ = error absurd
+closeDefs_bwd (_ :+: _ ↦ V.Hole) _  = error "todo"
+closeDefs_bwd Empty ρ1              = bot ρ1 × Nil × false
 
 match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
