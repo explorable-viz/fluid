@@ -37,6 +37,7 @@ data RecDef a = RecDef Var (Elim a)
 type RecDefs a = List (RecDef a)
 
 data Elim a =
+   ElimHole |
    ElimVar Var (Cont a) |
    ElimConstr (Map Ctr (Cont a))
 
@@ -65,8 +66,7 @@ instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
    maybeJoin _ _                                = Nothing
 
 instance boundedSemilatticeElim :: BoundedJoinSemilattice (Elim Boolean) where
-   bot (ElimVar x κ)   = ElimVar x (bot κ)
-   bot (ElimConstr κs) = ElimConstr $ map bot κs
+   bot = const ElimHole
 
 instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
    maybeJoin None None            = pure None

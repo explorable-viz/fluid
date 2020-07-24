@@ -168,6 +168,7 @@ instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
    pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
 instance prettyElim :: Pretty (Elim Boolean) where
+   pretty ElimHole         = hole
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = hcat $ map (\x -> pretty x :<>: comma) $ (toUnfoldable κs :: List _)
 
