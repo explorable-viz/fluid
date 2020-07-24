@@ -27,7 +27,6 @@ assert false = \_ -> error "Assertion failure"
 absurd :: String
 absurd = "absurd"
 
-
 unimplemented :: String
 unimplemented = "unimplemented"
 
@@ -80,7 +79,7 @@ infixl 5 mayFailEq as ≞
 infixl 5 mustEq as ≜
 
 -- Could be more efficient
-intersperse :: forall a . a -> List a -> List a
+intersperse :: forall a . a -> Endo (List a)
 intersperse x xs = intercalate (pure x) $ map pure xs
 
 om :: forall a b c m . Monad m => (a -> b -> m c) -> m a -> b -> m c
@@ -90,3 +89,5 @@ bind2Flipped :: forall m a b c . Monad m => (a -> b -> m c) -> m a -> m b -> m c
 bind2Flipped f x y = join $ lift2 f x y
 
 infixr 1 bind2Flipped as =<<<
+
+type Endo a = a -> a

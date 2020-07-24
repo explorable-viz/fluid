@@ -28,7 +28,7 @@ import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, Var, 
 import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
-import Util (type (×), (×), type (+), error, onlyIf, successful, successfulWith)
+import Util (Endo, type (×), (×), type (+), error, onlyIf, successful, successfulWith)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
@@ -81,7 +81,7 @@ ctr = do
    onlyIf (isCtrName x) $ Ctr x
 
 -- Singleton eliminator with no continuation.
-simplePattern :: SParser Pattern -> SParser Pattern
+simplePattern :: Endo (SParser Pattern)
 simplePattern pattern' =
    try ctr_pattern <|>
    try patternVariable <|>
@@ -173,7 +173,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          else \e e' -> expr $ BinaryApp e op e'
 
    -- Left-associative tree of applications of one or more simple terms.
-   appChain :: SParser (Expr 𝔹) -> SParser (Expr 𝔹)
+   appChain :: Endo (SParser (Expr 𝔹))
    appChain expr' = simpleExpr >>= rest
       where
       rest :: Expr 𝔹 -> SParser (Expr 𝔹)
@@ -246,7 +246,7 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
-   appChain_pattern :: SParser Pattern -> SParser Pattern
+   appChain_pattern :: Endo (SParser Pattern)
    appChain_pattern pattern' = simplePattern pattern' >>= rest
       where
          rest ∷ Pattern -> SParser Pattern
@@ -261,7 +261,7 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
       op' <- token.operator
       onlyIf (isCtrOp op' && op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
 
-topLevel :: forall a . SParser a -> SParser a
+topLevel :: forall a . Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
 
 program ∷ SParser (Expr 𝔹)

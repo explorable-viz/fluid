@@ -11,16 +11,16 @@ import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..), expr
 import Expr (RawExpr(..), Expr(Hole)) as E
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
-import Util (type (×), (×), absurd, error, intersperse)
+import Util (Endo, type (×), (×), absurd, error, intersperse)
 import Val (Bind, Env(..), Primitive(..), RawVal, Val(..), (:+:), (↦), val)
 import Val (RawVal(..), Val(Hole)) as V
 
 infixl 5 beside as :<>:
 
-between :: Doc -> Doc -> Doc -> Doc
+between :: Doc -> Doc -> Endo Doc
 between l r doc = l :<>: doc :<>: r
 
-brackets :: Doc -> Doc
+brackets :: Endo Doc
 brackets = between (text "[") (text "]")
 
 comma :: Doc
@@ -35,7 +35,7 @@ tab = text "   "
 operator :: String -> Doc
 operator = text >>> between space space
 
-parens :: Doc -> Doc
+parens :: Endo Doc
 parens = between (text "(") (text ")")
 
 null :: Doc

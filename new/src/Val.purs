@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import DataType (Ctr)
 import Expr (Elim, RecDefs, Var)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), bot, maybeJoin)
-import Util (MayFail, type (×), (×), (≟), report)
+import Util (Endo, MayFail, type (×), (×), (≟), report)
 
 data Primitive =
    IntOp (Int -> Val 𝔹) -- one constructor for each primitive type we care about
@@ -36,7 +36,7 @@ find x (xs :+: x' ↦ v)
    | x == x'   = pure v
    | otherwise = find x xs
 
-foldEnv :: forall a . (Bind 𝔹 -> a -> a) -> a -> Env 𝔹 -> a
+foldEnv :: forall a . (Bind 𝔹 -> Endo a) -> a -> Env 𝔹 -> a
 foldEnv f z (ρ :+: x ↦ v)   = f (x ↦ v) $ foldEnv f z ρ
 foldEnv _ z Empty           = z
 
@@ -50,13 +50,13 @@ splitAt :: Int -> Env 𝔹 -> Env 𝔹 × Env 𝔹
 splitAt n ρ
   | n <= 0     = ρ × Empty
   | otherwise  = splitAt' n ρ
-    where
-        splitAt' :: Int -> Env 𝔹 -> Env 𝔹 × Env 𝔹
-        splitAt' _  Empty        = Empty × Empty
-        splitAt' 1  (ρ0 :+: xv)  = ρ0 × Extend Empty xv
-        splitAt' m  (ρ0 :+: xv)  = ρ' × (ρ'' :+: xv)
-         where
-         ρ' × ρ'' = splitAt' (m - 1) ρ0
+   where
+   splitAt' :: Int -> Env 𝔹 -> Env 𝔹 × Env 𝔹
+   splitAt' _  Empty        = Empty × Empty
+   splitAt' 1  (ρ0 :+: xv)  = ρ0 × Extend Empty xv
+   splitAt' m  (ρ0 :+: xv)  = ρ' × (ρ'' :+: xv)
+      where
+      ρ' × ρ'' = splitAt' (m - 1) ρ0
 
 -- ======================
 -- boilerplate
