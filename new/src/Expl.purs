@@ -12,6 +12,7 @@ type ExplVal a = Expl a × Val a
 data VarDef a = VarDef (Match a) (Expl a)
 
 data Expl a =
+   Hole |
    Var Var (Env a) |
    Op Var (Env a) |
    Int Int (Env a) |
@@ -19,9 +20,10 @@ data Expl a =
    Constr Ctr (List (Expl a)) |
    NullConstr Ctr (Env a) |
    Lambda (Elim a) |
+   AppHole (Expl a) |
    App (ExplVal a) (Expl a) (Match a) (Expl a) |
    AppOp (ExplVal a) (ExplVal a) |
-   BinaryApp (ExplVal a) Var (ExplVal a) |
+   BinaryApp (ExplVal a) (Var × Val a) (ExplVal a) |
    MatchAs (Expl a) (Match a) (Expl a) |
    Let (VarDef a) (Expl a) |
    LetRec (RecDefs a) (Expl a)

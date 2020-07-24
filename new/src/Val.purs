@@ -1,12 +1,12 @@
 module Val where
 
 import Prelude hiding (absurd, top)
-import Data.List (List(..), (:), foldr)
+import Data.List (List)
 import Data.Maybe (Maybe(..))
-import DataType (Ctr, cCons, cNil)
+import DataType (Ctr)
 import Expr (Elim, RecDefs, Var)
-import Lattice (class MaybeZippable, 𝔹, maybeZipWith, maybeZipWithList)
-import Util (class QuaList, MayFail, type (×), (×), (≟), error, report, toList)
+import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), bot, maybeJoin)
+import Util (MayFail, type (×), (×), (≟), report)
 
 data Primitive =
    IntOp (Int -> Val 𝔹) -- one constructor for each primitive type we care about
@@ -18,7 +18,7 @@ data RawVal a =
    Closure (Env a) (RecDefs a) (Elim a) |
    Primitive Primitive
 
-data Val a = Val a (RawVal a)
+data Val a = Hole | Val a (RawVal a)
 
 val :: RawVal 𝔹 -> Val 𝔹
 val = Val false
@@ -65,38 +65,37 @@ splitAt n ρ
 derive instance functorRawVal :: Functor RawVal
 derive instance functorVal :: Functor Val
 
-instance maybeZippableVal :: MaybeZippable Val where
-   maybeZipWith f (Val α r) (Val α' r') = Val <$> pure (α `f` α') <*> maybeZipWith f r r'
+instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
+   maybeJoin Hole v                 = pure v
+   maybeJoin v Hole                 = pure v
+   maybeJoin (Val α r) (Val α' r')  = Val <$> pure (α ∨ α') <*> maybeJoin r r'
 
-instance maybeZippableRawVal :: MaybeZippable RawVal where
-   maybeZipWith f (Int x) (Int x')                   = Int <$> x ≟ x'
-   maybeZipWith f (Str s) (Str s')                   = Str <$> s ≟ s'
-   maybeZipWith f (Constr c vs) (Constr c' vs') =
-      Constr <$> c ≟ c' <*> maybeZipWithList f vs vs'
-   maybeZipWith f (Closure ρ δ σ) (Closure ρ' δ' σ') =
-      Closure <$> maybeZipWith f ρ ρ' <*> maybeZipWithList f δ δ' <*> maybeZipWith f σ σ'
-   maybeZipWith f (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
-   maybeZipWith _ _ _                                = Nothing
+instance boundedJoinSemilattice :: BoundedJoinSemilattice (Val Boolean) where
+   bot = const Hole
+
+instance joinSemilatticeRawVal :: JoinSemilattice (RawVal Boolean) where
+   maybeJoin (Int n) (Int m)                   = Int <$> n ≟ m
+   maybeJoin (Str s) (Str s')                   = Str <$> s ≟ s'
+   maybeJoin (Constr c vs) (Constr c' vs')      = Constr <$> c ≟ c' <*> maybeJoin vs vs'
+   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
+   maybeJoin (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
+   maybeJoin _ _                                = Nothing
 
 derive instance functorBind :: Functor Bind
 derive instance functorEnv :: Functor Env
 
 instance semigroupEnv :: Semigroup (Env a) where
-   append m Empty          = m
-   append m (Extend m' kv) = Extend (append m m') kv
+   append ρ Empty          = ρ
+   append ρ (Extend ρ' kv) = Extend (append ρ ρ') kv
 
 instance monoidEnv :: Monoid (Env a) where
    mempty = Empty
 
-instance maybeZippableEnv :: MaybeZippable Env where
-   maybeZipWith _ Empty Empty                              = pure Empty
-   maybeZipWith f (Extend m (x ↦ v)) (Extend m' (y ↦ v'))
-      = Extend <$> maybeZipWith f m m' <*> ((↦) <$> x ≟ y <*> maybeZipWith f v v')
-   maybeZipWith _ _ _                                      = Nothing
+instance joinSemilatticeEnv :: JoinSemilattice (Env Boolean) where
+   maybeJoin Empty Empty                             = pure Empty
+   maybeJoin (Extend ρ (x ↦ v)) (Extend ρ' (y ↦ v')) = Extend <$> maybeJoin ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeJoin v v')
+   maybeJoin _ _                                     = Nothing
 
-instance quaListVal :: QuaList (Val Boolean) where
-   toList (Val _ (Constr c (e : e' : Nil))) | c == cCons = e : toList e'
-   toList (Val _ (Constr c Nil)) | c == cNil             = Nil
-   toList _                                              = error "not a list"
-
-   fromList = foldr (\e e' -> val $ Constr cCons (e : e' : Nil)) (val $ Constr cNil Nil)
+instance boundedJoinSemilatticeEnv :: BoundedJoinSemilattice (Env Boolean) where
+   bot Empty = Empty
+   bot (Extend ρ (x ↦ v)) = Extend (bot ρ) (x ↦ bot v)
