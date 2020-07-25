@@ -62,9 +62,6 @@ splitAt n ρ
 -- boilerplate
 -- ======================
 
-derive instance functorRawVal :: Functor RawVal
-derive instance functorVal :: Functor Val
-
 instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
    maybeJoin Hole v                 = pure v
    maybeJoin v Hole                 = pure v
@@ -80,9 +77,6 @@ instance joinSemilatticeRawVal :: JoinSemilattice (RawVal Boolean) where
    maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
    maybeJoin _ _                                = Nothing
-
-derive instance functorBinding :: Functor Binding
-derive instance functorEnv :: Functor Env
 
 instance semigroupEnv :: Semigroup (Env a) where
    append ρ Empty          = ρ

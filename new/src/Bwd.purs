@@ -34,7 +34,7 @@ closeDefs_bwd ρ (ρ0 × δ0) =
    joinDefs (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ' × δ × α)
       = (RecDef f σ_f : δ_acc) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
    joinDefs (_ ↦ Val _ _) _                     = error absurd
-   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α)   = (RecDef f ElimHole : δ_acc) × ρ' × δ × α
+   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α)   = (RecDef f (error "todo") : δ_acc) × ρ' × δ × α
 
 match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
@@ -45,7 +45,7 @@ match_bwd ρ κ α (MatchConstr (c × ξs) κs)       =
 match_bwd _ _ _ _                               = error absurd
 
 matchArgs_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgs_bwd ρ κ α Nil = Nil × κ
+matchArgs_bwd ρ κ α Nil       = Nil × κ
 matchArgs_bwd ρ κ α (ξ : ξs)  =
    let ρ' × ρ1   = unmatch ρ ξ
        v  × σ    = match_bwd ρ1 κ α ξ

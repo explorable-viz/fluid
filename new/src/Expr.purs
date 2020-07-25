@@ -37,7 +37,6 @@ data RecDef a = RecDef Var (Elim a)
 type RecDefs a = List (RecDef a)
 
 data Elim a =
-   ElimHole |
    ElimVar Var (Cont a) |
    ElimConstr (Map Ctr (Cont a))
 
@@ -53,12 +52,6 @@ data Module a = Module (List (VarDef a + RecDefs a))
 -- ======================
 -- boilerplate
 -- ======================
-derive instance functorVarDef :: Functor VarDef
-derive instance functorRecDef :: Functor RecDef
-derive instance functorRawExpr :: Functor RawExpr
-derive instance functorExpr :: Functor Expr
-derive instance functorCont :: Functor Cont
-derive instance functorElim :: Functor Elim
 
 instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> x ≟ x' <*> maybeJoin κ κ'
@@ -66,7 +59,8 @@ instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
    maybeJoin _ _                                = Nothing
 
 instance boundedSemilatticeElim :: BoundedJoinSemilattice (Elim Boolean) where
-   bot = const ElimHole
+   bot (ElimVar x κ)   = ElimVar x (bot κ)
+   bot (ElimConstr κs) = ElimConstr $ map bot κs
 
 instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
    maybeJoin None None            = pure None
