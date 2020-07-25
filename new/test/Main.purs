@@ -48,9 +48,9 @@ main = do
    runExample "lexicalScoping" "\"6\"" true
    runExample "length" "2" false
    runExample "map" "[5, 7, 13, 15, 4, 3, -3]" false
-   runExample "normalise" "(33, 66)" false
-   runExample "pattern-match" "4" false
+   runExample "normalise" "(33, 66)" true
+   runExample "pattern-match" "4" true
    runExample "reverse" "[2, 1]" false
    runExample "zipWith" "[[10], [12], [20]]" false
    -- scratchpad
-   runExample "temp" "5" false
+   runExample "temp" "5" true
