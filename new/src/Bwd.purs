@@ -54,6 +54,8 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
    (vs <> v : Nil) × κ'
 
 eval_bwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
+eval_bwd V.Hole (Expl ρ _)
+   = bot ρ × Hole × false
 eval_bwd v (Expl ρ (T.Var x))
    = (bot ρ ◃ x ↦ v) × Expr false (Var x) × false
 eval_bwd (Val α (V.Str s)) (Expl ρ (T.Str _))
