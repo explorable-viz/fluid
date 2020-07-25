@@ -6,7 +6,7 @@ import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
-import Desugar (SExpr, desugar, lcomp1, lcomp2, lcomp3, lcomp1_eval, lcomp2_eval, lcomp3_eval, lseq1, lseq1_eval)
+import Desugar (SExpr, desugar, lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports, loadModule)
@@ -39,6 +39,7 @@ main = do
    runDesugar "list-comp-1" lcomp1 lcomp1_eval
    runDesugar "list-comp-2" lcomp2 lcomp2_eval
    runDesugar "list-comp-3" lcomp3 lcomp3_eval
+   runDesugar "list-comp-4" lcomp4 lcomp4_eval
    runDesugar "list-seq-1" lseq1 lseq1_eval
    runExample "arithmetic" "42" true
    runExample "compose" "5" false
