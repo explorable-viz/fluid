@@ -3,12 +3,12 @@ module Bwd where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Map (insert)
-import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, foldEnv, splitAt)
+import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, find, foldEnv, splitAt)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), VarDef(..), RecDefs, varAnon)
 import Lattice (𝔹, bot, (∨))
-import Util (Endo, type (×), absurd, error, (×), (≜))
+import Util (Endo, type (×), (×), (≜), absurd, error, successful)
 import Val (Env, Val(Val))
 import Val (RawVal(..), Val(Hole)) as V
 
@@ -35,7 +35,7 @@ closeDefs_bwd ρ (ρ0 × δ0) =
    joinDefs (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ' × δ × α)
       = (δ_acc :+: f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
    joinDefs (_ ↦ Val _ _) _                     = error absurd
-   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α)   = (δ_acc :+: f ↦ error "todo") × ρ' × δ × α
+   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α)   = (δ_acc :+: f ↦ bot (successful $ find f δ0)) × ρ' × δ × α
 
 match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
@@ -74,12 +74,12 @@ eval_bwd v (T.App (t × δ) t' ξ t'')
          ρ'' × e'' × α''   = eval_bwd (Val (α ∨ α2) $ V.Closure (ρ1 ∨ ρ1') δ' σ) t in
       (ρ' ∨ ρ'') × Expr (α' ∨ α'') (App e'' e') × (α' ∨ α'')
 eval_bwd (Val α v) (T.BinaryApp (t1 × v1) (op × Val _ φ) (t2 × v2))
-   = let ρ  × e  × α'  = eval_bwd v2 t2
-         ρ' × e' × α'' = eval_bwd v1 t1 in
-     (ρ ∨ ρ' ◃ op ↦ Val α φ) × Expr α (BinaryApp e' op e) × α
+   = let ρ  × e  × _ = eval_bwd v1 t1
+         ρ' × e' × _ = eval_bwd v2 t2 in
+     (ρ ∨ ρ' ◃ op ↦ Val α φ) × Expr α (BinaryApp e op e') × α
 eval_bwd (Val α v) (T.AppOp (t1 × v1) (t2 × v2))
-   = let ρ  × e  × α'  = eval_bwd v2 t2
-         ρ' × e' × α'' = eval_bwd v1 t1 in
+   = let ρ  × e  × _ = eval_bwd v1 t1
+         ρ' × e' × _ = eval_bwd v2 t2 in
      (ρ ∨ ρ') × Expr α (App e e') × α
 eval_bwd v (T.MatchAs t1 ξ t2)
    = let ρ1ρ2 × e × α   = eval_bwd v t2
@@ -90,7 +90,7 @@ eval_bwd v (T.MatchAs t1 ξ t2)
 eval_bwd v (T.Let (T.VarDef ξ t1) t2)
    = let ρ1ρ2 × e2 × α2 = eval_bwd v t2
          ρ1 × ρ2        = unmatch ρ1ρ2 ξ
-         v' × σ         = match_bwd ρ2 (Body e2) α2 ξ
+         v' × σ         = match_bwd ρ2 None α2 ξ
          ρ1' × e1 × α1  = eval_bwd v' t1 in
      (ρ1 ∨ ρ1') × Expr (α1 ∨ α2) (Let (VarDef σ e1) e2) × (α1 ∨ α2)
 eval_bwd v (T.LetRec δ t)

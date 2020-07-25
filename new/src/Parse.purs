@@ -139,8 +139,7 @@ varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
    clause :: SParser (VarDef 𝔹)
-   clause =
-      VarDef <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
+   clause = VarDef <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
 
 recDefs :: SParser (Expr 𝔹) -> SParser (RecDefs 𝔹)
 recDefs expr' = do
@@ -242,6 +241,7 @@ operators binaryOp =
    (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
    groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
 
+-- Pattern with no continuation.
 pattern :: SParser Pattern
 pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    where

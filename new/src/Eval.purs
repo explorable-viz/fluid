@@ -102,7 +102,7 @@ eval ρ (Expr _ (BinaryApp e op e')) = do
       _ -> report "Not an operator"
 eval ρ (Expr _ (Let (VarDef σ e) e')) = do
    t  × v      <- eval ρ e
-   ρ' × _ × ξ  <- match v σ
+   ρ' × κ × ξ  <- match v σ
    t' × v'     <- eval (ρ <> ρ') e'
    pure $ T.Let (T.VarDef ξ t) t' × v'
 eval ρ (Expr _ (MatchAs e σ)) = do

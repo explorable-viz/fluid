@@ -145,7 +145,7 @@ instance prettyRawExpr :: Pretty (RawExpr Boolean) where
       | otherwise                   = prettyConstr c es
    pretty (E.Op op)                 = parens $ text op
    pretty (E.Let (VarDef σ e) e')   =
-      atop (text ("let ") :<>: pretty σ :<>: operator "->" :<>: pretty e :<>: text " in") (pretty e')
+      atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.MatchAs e σ)           =
       text "match " :<>: pretty e :<>: text " as { " :<>: pretty σ :<>: text "}"
    pretty (E.LetRec δ e)            =
@@ -161,7 +161,7 @@ instance prettyBindingVal :: Pretty (Binding Val Boolean) where
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
 instance prettyCont :: Pretty (Cont Boolean) where
-   pretty None          = text "[ ]"
+   pretty None          = text "⋆"
    pretty (Body e)      = pretty e
    pretty (Arg σ)       = pretty σ
 
