@@ -61,6 +61,10 @@ splitAt n ρ
 -- ======================
 -- boilerplate
 -- ======================
+derive instance functorRawVal :: Functor RawVal
+derive instance functorVal :: Functor Val
+derive instance functorBinding :: Functor Binding
+derive instance functorEnv :: Functor Env
 
 instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
    maybeJoin Hole v                 = pure v

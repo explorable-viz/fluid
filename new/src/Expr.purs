@@ -52,6 +52,12 @@ data Module a = Module (List (VarDef a + RecDefs a))
 -- ======================
 -- boilerplate
 -- ======================
+derive instance functorVarDef :: Functor VarDef
+derive instance functorRecDef :: Functor RecDef
+derive instance functorRawExpr :: Functor RawExpr
+derive instance functorExpr :: Functor Expr
+derive instance functorCont :: Functor Cont
+derive instance functorElim :: Functor Elim
 
 instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> x ≟ x' <*> maybeJoin κ κ'
