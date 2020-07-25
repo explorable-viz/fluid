@@ -7,7 +7,7 @@ import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), maybeJoin)
-import Util ((≟))
+import Util (Endo, (≟), absurd, error)
 
 data Primitive =
    IntOp (Int -> Val 𝔹) -- one constructor for each primitive type we care about
@@ -23,6 +23,11 @@ data Val a = Hole | Val a (RawVal a)
 
 val :: RawVal 𝔹 -> Val 𝔹
 val = Val false
+
+setα :: 𝔹 -> Endo (Val 𝔹)
+setα true Hole    = error absurd
+setα false Hole   = Hole
+setα α (Val _ u)  = Val α u
 
 type Env = Bindings Val
 

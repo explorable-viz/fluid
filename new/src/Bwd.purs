@@ -9,7 +9,7 @@ import Expl (RawExpl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), VarDef(..), RecDefs, varAnon)
 import Lattice (𝔹, bot, (∨))
 import Util (Endo, type (×), (×), (≜), absurd, error, successful)
-import Val (Env, Val(Val))
+import Val (Env, Val(Val), setα)
 import Val (RawVal(..), Val(Hole)) as V
 
 unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
@@ -86,13 +86,13 @@ eval_bwd v (Expl _ (T.App (t × δ) t' ξ t''))
          ρ' × e' × α'      = eval_bwd v' t'
          ρ1' × δ' × α2     = closeDefs_bwd ρ2 (ρ1 × δ)
          ρ'' × e'' × α''   = eval_bwd (Val (α ∨ α2) $ V.Closure (ρ1 ∨ ρ1') δ' σ) t in
-      (ρ' ∨ ρ'') × Expr (α' ∨ α'') (App e'' e') × (α' ∨ α'')
-eval_bwd (Val α v) (Expl _ (T.BinaryApp (t1 × v1) (op × Val _ φ) (t2 × v2)))
-   = let ρ  × e  × _ = eval_bwd v1 t1
-         ρ' × e' × _ = eval_bwd v2 t2 in
-     (ρ ∨ ρ' ◃ op ↦ Val α φ) × Expr α (BinaryApp e op e') × α
-eval_bwd (Val α v) (Expl _ (T.AppOp (t1 × v1) (t2 × v2)))
-   = let ρ  × e  × _ = eval_bwd v1 t1
+     (ρ' ∨ ρ'') × Expr (α' ∨ α'') (App e'' e') × (α' ∨ α'')
+eval_bwd (Val α v) (Expl _ (T.BinaryApp (t1 × v1) (op × φ) (t2 × v2)))
+   = let ρ  × e  × _ = eval_bwd (setα α v1) t1
+         ρ' × e' × _ = eval_bwd (setα α v2) t2 in
+     (ρ ∨ ρ' ◃ op ↦ setα α φ) × Expr α (BinaryApp e op e') × false
+eval_bwd (Val α v) (Expl _ (T.AppOp (t1 × u1) (t2 × v2)))
+   = let ρ  × e  × _ = eval_bwd (Val α u1) t1
          ρ' × e' × _ = eval_bwd v2 t2 in
      (ρ ∨ ρ') × Expr α (App e e') × α
 eval_bwd v (Expl _ (T.MatchAs t1 ξ t2))

@@ -5,7 +5,7 @@ import Data.Map (Map)
 import DataType (Ctr)
 import Expr (Cont, Elim, RecDefs, Var)
 import Util (type (×))
-import Val (Env, Val)
+import Val (Env, RawVal, Val)
 
 type ExplVal a = Expl a × Val a
 
@@ -21,7 +21,7 @@ data RawExpl a =
    Lambda (Elim a) |
    AppHole (Expl a) |
    App (Expl a × RecDefs a) (Expl a) (Match a) (Expl a) |
-   AppOp (ExplVal a) (ExplVal a) |
+   AppOp (Expl a × RawVal a) (ExplVal a) |
    BinaryApp (ExplVal a) (Var × Val a) (ExplVal a) |
    MatchAs (Expl a) (Match a) (Expl a) |
    Let (VarDef a) (Expl a) |
