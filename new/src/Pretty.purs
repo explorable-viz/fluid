@@ -81,7 +81,6 @@ instance prettyRawExpl :: Pretty (RawExpl Boolean) where
    pretty (T.Int n _)                     = text $ show n
    pretty (T.Str s _)                     = text $ show s
    pretty (T.Constr c ts)                 = prettyConstr c ts
-   pretty (T.NullConstr c _)              = prettyConstr c (Nil :: List Void)
    pretty (T.Lambda σ)                    = text "fun " :<>: pretty σ
    pretty (T.AppHole t)                   = text "App" :<>: parens (hole :<>: comma :<>: hole)
    pretty (T.App (t × _) t' ξ t'')             =

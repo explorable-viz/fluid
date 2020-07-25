@@ -18,7 +18,6 @@ data RawExpl a =
    Int Int (Env a) |
    Str String (Env a) |
    Constr Ctr (List (Expl a)) |
-   NullConstr Ctr (Env a) |
    Lambda (Elim a) |
    AppHole (Expl a) |
    App (Expl a × RecDefs a) (Expl a) (Match a) (Expl a) |
