@@ -10,8 +10,8 @@ import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr, VarDef(..), expr, varAnon)
 import Expr (RawExpr(..), Expr(Hole)) as E
-import Expl (Expl(..), VarDef(..)) as T
-import Expl (Expl, Match(..))
+import Expl (RawExpl(..), VarDef(..)) as T
+import Expl (Expl(..), Match(..), RawExpl)
 import Util (Endo, type (×), (×), absurd, error, intersperse)
 import Val (Primitive(..), RawVal, Val(..), val)
 import Val (RawVal(..), Val(Hole)) as V
@@ -72,6 +72,9 @@ instance prettyVoid :: Pretty Void where
    pretty _ = error absurd
 
 instance prettyExpl :: Pretty (Expl Boolean) where
+   pretty (Expl _ t) = pretty t
+
+instance prettyRawExpl :: Pretty (RawExpl Boolean) where
    pretty T.Hole                          = hole
    pretty (T.Var x _)                     = text x
    pretty (T.Op op _)                     = text op

@@ -11,7 +11,7 @@ type ExplVal a = Expl a × Val a
 
 data VarDef a = VarDef (Match a) (Expl a)
 
-data Expl a =
+data RawExpl a =
    Hole |
    Var Var (Env a) |
    Op Var (Env a) |
@@ -27,6 +27,8 @@ data Expl a =
    MatchAs (Expl a) (Match a) (Expl a) |
    Let (VarDef a) (Expl a) |
    LetRec (RecDefs a) (Expl a)
+
+data Expl a = Expl (Env a) (RawExpl a)
 
 data Match a =
    MatchVar Var |

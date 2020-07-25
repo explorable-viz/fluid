@@ -42,14 +42,15 @@ main = do
    runDesugar "list-seq-1" lseq1 lseq1_eval
    runExample "arithmetic" "42" true
    runExample "compose" "5" true
-   runExample "factorial" "40320" false
+   runExample "factorial" "40320" true
    runExample "filter" "[8, 7]" false
    runExample "foldr_sumSquares" "661" false
-   runExample "lexicalScoping" "\"6\"" false
+   runExample "lexicalScoping" "\"6\"" true
    runExample "length" "2" false
    runExample "map" "[5, 7, 13, 15, 4, 3, -3]" false
    runExample "normalise" "(33, 66)" false
    runExample "pattern-match" "4" false
    runExample "reverse" "[2, 1]" false
    runExample "zipWith" "[[10], [12], [20]]" false
+   -- scratchpad
    runExample "temp" "5" false
