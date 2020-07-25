@@ -1,6 +1,7 @@
 module Bindings where
 
 import Prelude
+import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, bot, maybeJoin)
 import Util (Endo, MayFail, type (×), (×), (≟), report)
@@ -48,25 +49,29 @@ length :: forall t a . Bindings t a -> Int
 length Empty      = 0
 length (ρ :+: _)  = 1 + length ρ
 
+fromList :: forall t a . List (Binding t a) -> Bindings t a
+fromList Nil         = Empty
+fromList (xv : xvs)  = fromList xvs :+: xv
+
 -- ======================
 -- boilerplate
 -- ======================
 derive instance functorBinding :: Functor t => Functor (Binding t)
 derive instance functorBindings :: Functor t => Functor (Bindings t)
 
-instance semigroupEnv :: Semigroup (Bindings t a) where
+instance semigroupBindings :: Semigroup (Bindings t a) where
    append ρ Empty          = ρ
-   append ρ (Extend ρ' kv) = Extend (append ρ ρ') kv
+   append ρ (Extend ρ' xv) = Extend (append ρ ρ') xv
 
-instance monoidEnv :: Monoid (Bindings t a) where
+instance monoidBindings :: Monoid (Bindings t a) where
    mempty = Empty
 
-instance joinSemilatticeEnv :: JoinSemilattice (t Boolean) => JoinSemilattice (Bindings t Boolean) where
-   maybeJoin Empty Empty                             = pure Empty
-   maybeJoin (Extend ρ (x ↦ v)) (Extend ρ' (y ↦ v')) = Extend <$> maybeJoin ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeJoin v v')
-   maybeJoin _ _                                     = Nothing
+instance joinSemilatticeBindings :: JoinSemilattice (t Boolean) => JoinSemilattice (Bindings t Boolean) where
+   maybeJoin Empty Empty                     = pure Empty
+   maybeJoin (ρ :+: x ↦ v) (ρ' :+: y ↦ v')   = (:+:) <$> maybeJoin ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeJoin v v')
+   maybeJoin _ _                             = Nothing
 
-instance boundedJoinSemilatticeEnv ::
+instance boundedJoinSemilatticeBindings ::
    BoundedJoinSemilattice (t Boolean) => BoundedJoinSemilattice (Bindings t Boolean) where
    bot Empty = Empty
    bot (Extend ρ (x ↦ v)) = Extend (bot ρ) (x ↦ bot v)

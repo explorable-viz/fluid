@@ -10,7 +10,7 @@ import Data.Bitraversable (bisequence)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, (:), concat, foldr, groupBy, singleton, sortBy)
+import Data.List (List, (:), concat, foldr, groupBy, reverse, singleton, sortBy)
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (values)
 import Data.Ordering (invert)
@@ -23,8 +23,9 @@ import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
+import Bindings (Binding, (↦), fromList)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
-import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, Var, VarDef(..), VarDefs, expr)
+import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDefs, Var, VarDef(..), VarDefs, expr)
 import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
@@ -145,12 +146,12 @@ recDefs :: SParser (Expr 𝔹) -> SParser (RecDefs 𝔹)
 recDefs expr' = do
    fπs <- keyword strLet *> sepBy1_try clause token.semi
    let fπss = groupBy (eq `on` fst) fπs
-   pure $ toRecDef <$> fπss
+   pure $ fromList $ reverse $ toRecDef <$> fπss
    where
-   toRecDef :: NonEmptyList (String × Pattern) -> RecDef 𝔹
+   toRecDef :: NonEmptyList (String × Pattern) -> Binding Elim 𝔹
    toRecDef fπs =
       let f = fst $ head fπs in
-      RecDef f $ successfulWith ("Bad branches for '" <> f <> "'") $ joinAll $ snd <$> fπs
+      f ↦ successfulWith ("Bad branches for '" <> f <> "'") (joinAll $ snd <$> fπs)
 
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)
