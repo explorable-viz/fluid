@@ -54,13 +54,13 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
    (vs <> v : Nil) × κ'
 
 eval_bwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
-eval_bwd v (Expl ρ (T.Var x _))
+eval_bwd v (Expl ρ (T.Var x))
    = (bot ρ ◃ x ↦ v) × Expr false (Var x) × false
-eval_bwd (Val α (V.Str s)) (Expl ρ (T.Str _ _))
+eval_bwd (Val α (V.Str s)) (Expl ρ (T.Str _))
    = bot ρ × Expr α (Str s) × α
-eval_bwd (Val α (V.Int n)) (Expl ρ (T.Int _ _))
+eval_bwd (Val α (V.Int n)) (Expl ρ (T.Int _))
    = bot ρ × Expr α (Int n) × α
-eval_bwd v@(Val α (V.Primitive φ)) (Expl ρ (T.Op op _))
+eval_bwd v@(Val α (V.Primitive φ)) (Expl ρ (T.Op op))
    = (bot ρ ◃ op ↦ v) × Expr false (Op op) × false
 eval_bwd (Val α (V.Closure ρ δ σ)) (Expl _ (T.Lambda σ'))
    = ρ × Expr α (Lambda σ) × α

@@ -50,13 +50,13 @@ checkArity c n = do
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ Hole = pure $ Expl ρ T.Hole × V.Hole
 eval ρ (Expr _ (Var x)) =
-   (Expl ρ (T.Var x ρ) × _) <$> find x ρ
+   (Expl ρ (T.Var x) × _) <$> find x ρ
 eval ρ (Expr _ (Op op)) =
-   (Expl ρ (T.Op op ρ) × _) <$> find op ρ
+   (Expl ρ (T.Op op) × _) <$> find op ρ
 eval ρ (Expr _ (Int n)) =
-   (Expl ρ (T.Int n ρ) × _) <$> pure (val $ V.Int n)
+   (Expl ρ (T.Int n) × _) <$> pure (val $ V.Int n)
 eval ρ (Expr _ (Str str)) =
-   (Expl ρ (T.Str str ρ) × _) <$> pure (val $ V.Str str)
+   (Expl ρ (T.Str str) × _) <$> pure (val $ V.Str str)
 eval ρ (Expr _ (Constr c es)) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip

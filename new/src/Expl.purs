@@ -13,10 +13,10 @@ data VarDef a = VarDef (Match a) (Expl a)
 
 data RawExpl a =
    Hole |
-   Var Var (Env a) |
-   Op Var (Env a) |
-   Int Int (Env a) |
-   Str String (Env a) |
+   Var Var |
+   Op Var |
+   Int Int |
+   Str String |
    Constr Ctr (List (Expl a)) |
    Lambda (Elim a) |
    AppHole (Expl a) |
