@@ -25,6 +25,7 @@ toCont (PBody e)     = pure $ Body e
 toCont (PLambda π)   = Body <$> (expr <$> (Lambda <$> toElim π))
 toCont (PArg π)      = Arg <$> toElim π
 
+-- Since this includes the continuation, "Branch" might be a better name.
 data Pattern =
    PattVar Var PCont |
    PattConstr Ctr Int PCont

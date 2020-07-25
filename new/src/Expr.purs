@@ -4,6 +4,7 @@ import Prelude hiding (top)
 import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
+import Bindings (Bindings)
 import DataType (Ctr)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), bot, maybeJoin)
 import Util (type (+), (≟), error)
@@ -11,12 +12,6 @@ import Util (type (+), (≟), error)
 type Var = String
 
 varAnon = "_" :: Var
-
-data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
-type VarDefs a = List (VarDef a)
-
-data RecDef a = RecDef Var (Elim a)
-type RecDefs a = List (RecDef a)
 
 data RawExpr a =
    Var Var |
@@ -36,6 +31,15 @@ data Expr a = Hole | Expr a (RawExpr a)
 expr :: RawExpr 𝔹 -> Expr 𝔹
 expr = Expr false
 
+data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
+type VarDefs a = List (VarDef a) -- todo: move to surface language
+
+type RecDefs = Bindings Elim
+
+data Elim a =
+   ElimVar Var (Cont a) |
+   ElimConstr (Map Ctr (Cont a))
+
 -- Continuation of an eliminator. None form only used in structured let.
 data Cont a = None | Body (Expr a) | Arg (Elim a)
 
@@ -43,17 +47,12 @@ body :: Cont 𝔹 -> Expr 𝔹
 body (Body e)  = e
 body _         = error "Expression expected"
 
-data Elim a =
-   ElimVar Var (Cont a) |
-   ElimConstr (Map Ctr (Cont a))
-
 data Module a = Module (List (VarDef a + RecDefs a))
 
 -- ======================
 -- boilerplate
 -- ======================
 derive instance functorVarDef :: Functor VarDef
-derive instance functorRecDef :: Functor RecDef
 derive instance functorRawExpr :: Functor RawExpr
 derive instance functorExpr :: Functor Expr
 derive instance functorCont :: Functor Cont
@@ -81,9 +80,6 @@ instance boundedJoinSemilatticeCont :: BoundedJoinSemilattice (Cont Boolean) whe
 
 instance joinSemilatticeVarDef :: JoinSemilattice (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
-
-instance joinSemilatticeRecDef :: JoinSemilattice (RecDef Boolean) where
-   maybeJoin (RecDef x σ) (RecDef x' σ') = RecDef <$> x ≟ x' <*> maybeJoin σ σ'
 
 instance joinSemilatticeExpr :: JoinSemilattice (Expr Boolean) where
    maybeJoin Hole e                    = pure e

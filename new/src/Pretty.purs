@@ -6,21 +6,22 @@ import Data.Map (toUnfoldable)
 import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
+import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..), expr, varAnon)
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr, VarDef(..), expr, varAnon)
 import Expr (RawExpr(..), Expr(Hole)) as E
-import Expl (Expl(..), VarDef(..)) as T
-import Expl (Expl, Match(..))
-import Util (type (×), (×), absurd, error, intersperse)
-import Val (Bind, Env(..), Primitive(..), RawVal, Val(..), (:+:), (↦), val)
+import Expl (RawExpl(..), VarDef(..)) as T
+import Expl (Expl(..), Match(..), RawExpl)
+import Util (Endo, type (×), (×), absurd, error, intersperse)
+import Val (Primitive(..), RawVal, Val(..), val)
 import Val (RawVal(..), Val(Hole)) as V
 
 infixl 5 beside as :<>:
 
-between :: Doc -> Doc -> Doc -> Doc
+between :: Doc -> Doc -> Endo Doc
 between l r doc = l :<>: doc :<>: r
 
-brackets :: Doc -> Doc
+brackets :: Endo Doc
 brackets = between (text "[") (text "]")
 
 comma :: Doc
@@ -35,7 +36,7 @@ tab = text "   "
 operator :: String -> Doc
 operator = text >>> between space space
 
-parens :: Doc -> Doc
+parens :: Endo Doc
 parens = between (text "(") (text ")")
 
 null :: Doc
@@ -63,7 +64,7 @@ class Pretty p where
 instance prettyBool :: Pretty Boolean where
    pretty = text <<< show
 
-instance prettyEnv :: Pretty (Env Boolean) where
+instance prettyBindings :: Pretty (t Boolean) => Pretty (Bindings t Boolean) where
    pretty (ρ :+: kv) = brackets $ pretty $ ρ :+: kv
    pretty Empty = text "[]"
 
@@ -71,18 +72,20 @@ instance prettyVoid :: Pretty Void where
    pretty _ = error absurd
 
 instance prettyExpl :: Pretty (Expl Boolean) where
+   pretty (Expl _ t) = pretty t
+
+instance prettyRawExpl :: Pretty (RawExpl Boolean) where
    pretty T.Hole                          = hole
-   pretty (T.Var x _)                     = text x
-   pretty (T.Op op _)                     = text op
-   pretty (T.Int n _)                     = text $ show n
-   pretty (T.Str s _)                     = text $ show s
+   pretty (T.Var x)                       = text x
+   pretty (T.Op op)                       = text op
+   pretty (T.Int n)                       = text $ show n
+   pretty (T.Str s)                       = text $ show s
    pretty (T.Constr c ts)                 = prettyConstr c ts
-   pretty (T.NullConstr c _)              = prettyConstr c (Nil :: List Void)
    pretty (T.Lambda σ)                    = text "fun " :<>: pretty σ
    pretty (T.AppHole t)                   = text "App" :<>: parens (hole :<>: comma :<>: hole)
-   pretty (T.App tv t' ξ t'')             =
+   pretty (T.App (t × _) t' ξ t'')        =
       text "App" :<>:
-      parens (atop (text "t1: " :<>: pretty tv :<>: comma)
+      parens (atop (text "t1: " :<>: pretty t :<>: comma)
                    (atop (text "t2: " :<>: pretty t' :<>: comma)
                          (atop (text "match: " :<>:  pretty ξ :<>: comma) (text "t3: " :<>: pretty t''))))
    pretty (T.AppOp tv tv')                = pretty tv :<>: space :<>: pretty tv'
@@ -144,7 +147,7 @@ instance prettyRawExpr :: Pretty (RawExpr Boolean) where
       | otherwise                   = prettyConstr c es
    pretty (E.Op op)                 = parens $ text op
    pretty (E.Let (VarDef σ e) e')   =
-      atop (text ("let ") :<>: pretty σ :<>: operator "->" :<>: pretty e :<>: text " in") (pretty e')
+      atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.MatchAs e σ)           =
       text "match " :<>: pretty e :<>: text " as { " :<>: pretty σ :<>: text "}"
    pretty (E.LetRec δ e)            =
@@ -153,14 +156,14 @@ instance prettyRawExpr :: Pretty (RawExpr Boolean) where
    pretty (E.App e e')              = pretty e :<>: space :<>: pretty e'
    pretty (E.BinaryApp e op e')     = pretty e :<>: operator op :<>: pretty e'
 
-instance prettyRecDef :: Pretty (RecDef Boolean) where
-   pretty (RecDef f σ) = text f :<>: operator "=" :<>: pretty σ
+instance prettyBindingElim :: Pretty (Binding Elim Boolean) where
+   pretty (f ↦ σ) = text f :<>: operator "=" :<>: pretty σ
 
-instance prettyBind :: Pretty (Bind Boolean) where
+instance prettyBindingVal :: Pretty (Binding Val Boolean) where
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
 instance prettyCont :: Pretty (Cont Boolean) where
-   pretty None          = text "[ ]"
+   pretty None          = text "⋆"
    pretty (Body e)      = pretty e
    pretty (Arg σ)       = pretty σ
 
