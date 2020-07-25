@@ -8,7 +8,7 @@ import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
 import Desugar (SExpr, desugar, lcomp1, lcomp2, lcomp3, lcomp1_eval, lcomp2_eval, lcomp3_eval, lseq1, lseq1_eval)
 import Eval (eval)
---import Fwd (eval_fwd)
+import Fwd (eval_fwd)
 import Module (openWithImports, loadModule)
 import Pretty (pretty, render)
 import Primitive (primitives)
@@ -23,9 +23,8 @@ runExample file expected slice = runMocha $
                (render $ pretty v) `shouldEqual` expected
                if slice then do
                   let ρ' × e' × α'  = eval_bwd v t
---                      v'            = eval_fwd ρ' e' true
-                  (render $ pretty e') `shouldEqual` expected
---                  (render $ pretty v') `shouldEqual` expected
+                      v'            = eval_fwd ρ' e' true
+                  (render $ pretty v') `shouldEqual` expected
                else pure unit
 
 runDesugar :: String -> SExpr -> String -> Effect Unit
