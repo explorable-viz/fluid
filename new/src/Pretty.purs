@@ -6,13 +6,14 @@ import Data.Map (toUnfoldable)
 import Data.String (Pattern(..), contains)
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
+import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..), expr, varAnon)
 import Expr (RawExpr(..), Expr(Hole)) as E
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Util (Endo, type (×), (×), absurd, error, intersperse)
-import Val (Binding, Env(..), Primitive(..), RawVal, Val(..), (:+:), (↦), val)
+import Val (Primitive(..), RawVal, Val(..), val)
 import Val (RawVal(..), Val(Hole)) as V
 
 infixl 5 beside as :<>:
@@ -63,7 +64,7 @@ class Pretty p where
 instance prettyBool :: Pretty Boolean where
    pretty = text <<< show
 
-instance prettyEnv :: Pretty (Env Boolean) where
+instance prettyEnv :: Pretty (Bindings Val Boolean) where
    pretty (ρ :+: kv) = brackets $ pretty $ ρ :+: kv
    pretty Empty = text "[]"
 
@@ -156,7 +157,7 @@ instance prettyRawExpr :: Pretty (RawExpr Boolean) where
 instance prettyRecDef :: Pretty (RecDef Boolean) where
    pretty (RecDef f σ) = text f :<>: operator "=" :<>: pretty σ
 
-instance prettyBinding :: Pretty (Binding Boolean) where
+instance prettyBinding :: Pretty (Binding Val Boolean) where
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
 instance prettyCont :: Pretty (Cont Boolean) where

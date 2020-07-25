@@ -3,12 +3,13 @@ module Bwd where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), length)
 import Data.Map (insert)
+import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), foldEnv, splitAt)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs, varAnon)
 import Lattice (𝔹, bot, (∨))
 import Util (Endo, type (×), absurd, error, (×), (≜))
-import Val (Binding, Env(..), Val(Val), (:+:), (↦), (◃), foldEnv, splitAt)
+import Val (Env, Val(Val))
 import Val (RawVal(..), Val(Hole)) as V
 
 unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
@@ -30,7 +31,7 @@ closeDefs_bwd ρ (ρ0 × δ0) =
    case foldEnv joinDefs (Nil × bot ρ0 × bot δ0 × false) ρ of
    δ' × ρ' × δ × α -> ρ' × (δ ∨ δ') × α
    where
-   joinDefs :: Binding 𝔹 -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
+   joinDefs :: Binding Val 𝔹 -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
    joinDefs (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ' × δ × α)
       = (RecDef f σ_f : δ_acc) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
    joinDefs (_ ↦ Val _ _) _                     = error absurd

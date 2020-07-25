@@ -5,11 +5,12 @@ import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Text.Parsing.Parser.Expr (Assoc(..))
+import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cTrue, cFalse, Ctr(..))
 import Lattice (𝔹, (∧))
 import Expr (Expr(Expr), RawExpr(..), Var, expr)
 import Util (type (×), (×), absurd, error)
-import Val (Env(..), Primitive(..), Val(..), (:+:),  (↦), val)
+import Val (Env, Primitive(..), Val(..), val)
 import Val (RawVal(..)) as V
 
 -- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity

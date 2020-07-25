@@ -1,7 +1,9 @@
 module Bindings where
 
 import Prelude
-import Util (Endo, MayFail, type (×), (×), report)
+import Data.Maybe (Maybe(..))
+import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, bot, maybeJoin)
+import Util (Endo, MayFail, type (×), (×), (≟), report)
 
 type Var = String
 
@@ -47,3 +49,20 @@ splitAt n ρ
 -- ======================
 derive instance functorBinding :: Functor t => Functor (Binding t)
 derive instance functorBindings :: Functor t => Functor (Bindings t)
+
+instance semigroupEnv :: Semigroup (Bindings t a) where
+   append ρ Empty          = ρ
+   append ρ (Extend ρ' kv) = Extend (append ρ ρ') kv
+
+instance monoidEnv :: Monoid (Bindings t a) where
+   mempty = Empty
+
+instance joinSemilatticeEnv :: JoinSemilattice (t Boolean) => JoinSemilattice (Bindings t Boolean) where
+   maybeJoin Empty Empty                             = pure Empty
+   maybeJoin (Extend ρ (x ↦ v)) (Extend ρ' (y ↦ v')) = Extend <$> maybeJoin ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeJoin v v')
+   maybeJoin _ _                                     = Nothing
+
+instance boundedJoinSemilatticeEnv ::
+   BoundedJoinSemilattice (t Boolean) => BoundedJoinSemilattice (Bindings t Boolean) where
+   bot Empty = Empty
+   bot (Extend ρ (x ↦ v)) = Extend (bot ρ) (x ↦ bot v)

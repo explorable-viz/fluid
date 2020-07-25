@@ -6,6 +6,7 @@ import Data.List (List(..), (:), length, singleton, unzip, snoc)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
+import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -14,7 +15,7 @@ import Lattice (𝔹)
 import Pretty (pretty, render)
 import Primitive (apply)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Val (Env(..), Val(Val), (:+:), (↦), find, val)
+import Val (Env, Val(Val), val)
 import Val (RawVal(..), Val(Hole)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
