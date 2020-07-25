@@ -13,32 +13,26 @@ import Module (openWithImports, loadModule)
 import Pretty (pretty, render)
 import Primitive (primitives)
 import Util ((×), successful)
-import Val (Val(..))
 
 runExample :: String -> String -> Boolean -> Effect Unit
-runExample file expected runBwd = runMocha $
+runExample file expected slice = runMocha $
    before (openWithImports file) $
       it file $ \(ρ × e) -> do
          case successful $ eval ρ e of
-            t × (Val _ u) -> do
-               let fwd_v@(Val _ u') = eval_fwd ρ e true
-               (render $ pretty u) `shouldEqual` (render $ pretty u')
-               (render $ pretty u') `shouldEqual` expected
-               if runBwd then
-                  do let ρ' × e' × α' = eval_bwd fwd_v t
-                         t' × v'      = successful $ eval ρ' e'
-                     (render $ pretty t) `shouldEqual` (render $ pretty t')
-                     (render $ pretty v') `shouldEqual` expected
+            t × v -> do
+               (render $ pretty v) `shouldEqual` expected
+               if slice then do
+                  let ρ' × e' × α'  = eval_bwd v t
+                      v'            = eval_fwd ρ' e' true
+                  (render $ pretty v') `shouldEqual` expected
                else pure unit
 
 runDesugar :: String -> SExpr -> String -> Effect Unit
-runDesugar test sexpr expected  = runMocha $
+runDesugar test s expected = runMocha $
    before (loadModule "prelude" primitives) $
-      it test $ \ρ -> do
-         case successful $ eval ρ (desugar sexpr) of
-            t × (Val _ u) -> do
-               (render $ pretty u) `shouldEqual` expected
-
+      it test $ \ρ ->
+         case successful $ eval ρ (desugar s) of
+            t × v -> (render $ pretty v) `shouldEqual` expected
 
 main :: Effect Unit
 main = do
@@ -47,7 +41,7 @@ main = do
    runDesugar "list-comp-3" lcomp3 lcomp3_eval
    runDesugar "list-comp-4" lcomp4 lcomp4_eval
    runDesugar "list-seq-1" lseq1 lseq1_eval
-   runExample "arithmetic" "42" false
+   runExample "arithmetic" "42" true
    runExample "compose" "5" false
    runExample "factorial" "40320" false
    runExample "filter" "[8, 7]" false
