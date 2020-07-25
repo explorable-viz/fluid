@@ -1,7 +1,7 @@
 module Bwd where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), foldr, zip)
 import Data.Map (insert)
 import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, find, foldEnv, splitAt)
 import Expl (Expl(..), Match(..))
@@ -67,16 +67,10 @@ eval_bwd v@(Val α (V.Primitive φ)) (Expl ρ (T.Op op))
 eval_bwd (Val α (V.Closure ρ δ σ)) (Expl _ (T.Lambda σ'))
    = ρ × Expr α (Lambda σ) × α
 eval_bwd (Val α (V.Constr c vs)) (Expl ρ (T.Constr c' ts))
-   = let evalArgs_bwd :: List (Val 𝔹) -> List (Expl 𝔹) -> Env 𝔹 × List (Expr 𝔹) × 𝔹
-         evalArgs_bwd (v : vs') (t : ts') =
-            let ρ  × e  × α   = eval_bwd v t
-                ρ' × es × α'  = evalArgs_bwd vs' ts'
-            in  case ρ' of Empty -> ρ × (e : Nil) × α
-                           _     -> (ρ ∨ ρ') × (e : es) × (α ∨ α')
-         evalArgs_bwd Nil Nil = bot ρ × Nil × α
-         evalArgs_bwd _ _ = error absurd
-
-         ρ' × es × α' = evalArgs_bwd vs ts in
+   = let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
+         evalArg_bwd (v × t) (ρ' × es × α') = (ρ' ∨ ρ'') × (e : es) × (α' ∨ α'')
+            where ρ'' × e × α'' = eval_bwd v t
+         ρ' × es × α' = foldr evalArg_bwd (bot ρ × Nil × α) (zip vs ts) in
      ρ' × Expr α (Constr c es) × α'
 eval_bwd v (Expl _ (T.App (t × δ) t' ξ t''))
    = let ρ1ρ2ρ3 × e × α    = eval_bwd v t''
@@ -91,9 +85,9 @@ eval_bwd (Val α v) (Expl _ (T.BinaryApp (t1 × v1) (op × φ) (t2 × v2)))
    = let ρ  × e  × _ = eval_bwd (setα α v1) t1
          ρ' × e' × _ = eval_bwd (setα α v2) t2 in
      (ρ ∨ ρ' ◃ op ↦ setα α φ) × Expr α (BinaryApp e op e') × false
-eval_bwd (Val α v) (Expl _ (T.AppOp (t1 × u1) (t2 × v2)))
-   = let ρ  × e  × _ = eval_bwd (Val α u1) t1
-         ρ' × e' × _ = eval_bwd v2 t2 in
+eval_bwd (Val α v) (Expl _ (T.AppOp (t1 × v1) (t2 × v2)))
+   = let ρ  × e  × _ = eval_bwd (setα α v1) t1
+         ρ' × e' × _ = eval_bwd (setα α v2) t2 in
      (ρ ∨ ρ') × Expr α (App e e') × α
 eval_bwd v (Expl _ (T.MatchAs t1 ξ t2))
    = let ρ1ρ2 × e × α   = eval_bwd v t2

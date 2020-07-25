@@ -81,10 +81,10 @@ eval ρ (Expr _ (App e e')) = do
                t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
                (Expl ρ (T.App (t × δ) t' ξ t'') × _) <$> pure v''
             V.Primitive φ ->
-               (Expl ρ (T.AppOp (t × u) (t' × v')) × _) <$> pure (apply φ v')
+               (Expl ρ (T.AppOp (t × v) (t' × v')) × _) <$> pure (apply φ v')
             V.Constr c vs -> do
                check (successful (arity c) > length vs) $ "Too many arguments to " <> show c
-               (Expl ρ (T.AppOp (t × u) (t' × v')) × _) <$> pure (val $ V.Constr c $ vs <> singleton v')
+               (Expl ρ (T.AppOp (t × v) (t' × v')) × _) <$> pure (val $ V.Constr c $ vs <> singleton v')
             _ -> report "Expected closure, operator or unsaturated constructor"
 eval ρ (Expr _ (BinaryApp e op e')) = do
    t  × v  <- eval ρ e
