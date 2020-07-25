@@ -8,7 +8,7 @@ import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr, RecDef(..), VarDef(..), expr, varAnon)
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr, VarDef(..), expr, varAnon)
 import Expr (RawExpr(..), Expr(Hole)) as E
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -64,7 +64,7 @@ class Pretty p where
 instance prettyBool :: Pretty Boolean where
    pretty = text <<< show
 
-instance prettyEnv :: Pretty (Bindings Val Boolean) where
+instance prettyBindings :: Pretty (t Boolean) => Pretty (Bindings t Boolean) where
    pretty (ρ :+: kv) = brackets $ pretty $ ρ :+: kv
    pretty Empty = text "[]"
 
@@ -154,10 +154,10 @@ instance prettyRawExpr :: Pretty (RawExpr Boolean) where
    pretty (E.App e e')              = pretty e :<>: space :<>: pretty e'
    pretty (E.BinaryApp e op e')     = pretty e :<>: operator op :<>: pretty e'
 
-instance prettyRecDef :: Pretty (RecDef Boolean) where
-   pretty (RecDef f σ) = text f :<>: operator "=" :<>: pretty σ
+instance prettyBindingElim :: Pretty (Binding Elim Boolean) where
+   pretty (f ↦ σ) = text f :<>: operator "=" :<>: pretty σ
 
-instance prettyBinding :: Pretty (Binding Val Boolean) where
+instance prettyBindingVal :: Pretty (Binding Val Boolean) where
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
 instance prettyCont :: Pretty (Cont Boolean) where

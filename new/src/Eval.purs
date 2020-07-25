@@ -10,7 +10,7 @@ import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), body, varAnon)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹)
 import Pretty (pretty, render)
 import Primitive (apply)
@@ -38,10 +38,9 @@ matchArgs c (_ : vs) (Body _)    = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _                  = error absurd
 
--- Environments are snoc-lists, so this (inconsequentially) reverses declaration order.
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
-closeDefs _ _ Nil = Empty
-closeDefs ρ δ0 (RecDef f σ : δ) = closeDefs ρ δ0 δ :+: f ↦ val (V.Closure ρ δ0 σ)
+closeDefs _ _ Empty           = Empty
+closeDefs ρ δ0 (δ :+: f ↦ σ)  = closeDefs ρ δ0 δ :+: f ↦ val (V.Closure ρ δ0 σ)
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -68,7 +67,7 @@ eval ρ (Expr _ (LetRec δ e)) = do
    t × v <- eval (ρ <> ρ') e
    pure $ T.LetRec δ t × v
 eval ρ (Expr _ (Lambda σ)) =
-   pure $ T.Lambda σ × val (V.Closure ρ Nil σ)
+   pure $ T.Lambda σ × val (V.Closure ρ Empty σ)
 eval ρ (Expr _ (App e e')) = do
    t × v <- eval ρ e
    case v of

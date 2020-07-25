@@ -4,6 +4,7 @@ import Prelude hiding (top)
 import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
+import Bindings (Bindings)
 import DataType (Ctr)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), bot, maybeJoin)
 import Util (type (+), (≟), error)
@@ -31,10 +32,9 @@ expr :: RawExpr 𝔹 -> Expr 𝔹
 expr = Expr false
 
 data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
-type VarDefs a = List (VarDef a)
+type VarDefs a = List (VarDef a) -- todo: move to surface language
 
-data RecDef a = RecDef Var (Elim a)
-type RecDefs a = List (RecDef a)
+type RecDefs = Bindings Elim
 
 data Elim a =
    ElimVar Var (Cont a) |
@@ -53,7 +53,6 @@ data Module a = Module (List (VarDef a + RecDefs a))
 -- boilerplate
 -- ======================
 derive instance functorVarDef :: Functor VarDef
-derive instance functorRecDef :: Functor RecDef
 derive instance functorRawExpr :: Functor RawExpr
 derive instance functorExpr :: Functor Expr
 derive instance functorCont :: Functor Cont
@@ -81,12 +80,6 @@ instance boundedJoinSemilatticeCont :: BoundedJoinSemilattice (Cont Boolean) whe
 
 instance joinSemilatticeVarDef :: JoinSemilattice (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
-
-instance boundedSemilatticeRecDef :: BoundedJoinSemilattice (RecDef Boolean) where
-   bot (RecDef x σ) = RecDef x $ bot σ
-
-instance joinSemilatticeRecDef :: JoinSemilattice (RecDef Boolean) where
-   maybeJoin (RecDef x σ) (RecDef x' σ') = RecDef <$> x ≟ x' <*> maybeJoin σ σ'
 
 instance joinSemilatticeExpr :: JoinSemilattice (Expr Boolean) where
    maybeJoin Hole e                    = pure e

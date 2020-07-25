@@ -18,9 +18,9 @@ infixl 5 update as ◃
 
 find :: forall t a . Var -> Bindings t a -> MayFail (t a)
 find x Empty  = report $ "variable " <> x <> " not found"
-find x (xs :+: x' ↦ v)
+find x (ρ :+: x' ↦ v)
    | x == x'   = pure v
-   | otherwise = find x xs
+   | otherwise = find x ρ
 
 foldEnv :: forall t a b . (Binding t a -> Endo b) -> b -> Bindings t a -> b
 foldEnv f z (ρ :+: x ↦ v)   = f (x ↦ v) $ foldEnv f z ρ
@@ -28,9 +28,9 @@ foldEnv _ z Empty           = z
 
 update :: forall t a . Bindings t a -> Binding t a -> Bindings t a
 update Empty _ = Empty
-update (xs :+: x ↦ v) (x' ↦ v')
-   | x == x'    = xs :+: x' ↦ v'
-   | otherwise  = update xs (x' ↦ v') :+: x ↦ v
+update (ρ :+: x ↦ v) (x' ↦ v')
+   | x == x'    = ρ :+: x' ↦ v'
+   | otherwise  = update ρ (x' ↦ v') :+: x ↦ v
 
 splitAt :: forall t a . Int -> Bindings t a -> Bindings t a × Bindings t a
 splitAt n ρ
@@ -43,6 +43,10 @@ splitAt n ρ
    splitAt' m  (ρ0 :+: xv)  = ρ' × (ρ'' :+: xv)
       where
       ρ' × ρ'' = splitAt' (m - 1) ρ0
+
+length :: forall t a . Bindings t a -> Int
+length Empty      = 0
+length (ρ :+: _)  = 1 + length ρ
 
 -- ======================
 -- boilerplate

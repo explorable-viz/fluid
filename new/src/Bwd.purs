@@ -1,12 +1,12 @@
 module Bwd where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), (:), length)
+import Data.List (List(..), (:))
 import Data.Map (insert)
-import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), foldEnv, splitAt)
+import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, foldEnv, splitAt)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), VarDef(..), RecDefs, varAnon)
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), VarDef(..), RecDefs, varAnon)
 import Lattice (𝔹, bot, (∨))
 import Util (Endo, type (×), absurd, error, (×), (≜))
 import Val (Env, Val(Val))
@@ -28,14 +28,14 @@ unmatchArgs ρ (ξ : ξs) =
 -- second argument contains original environment and recursive definitions
 closeDefs_bwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
 closeDefs_bwd ρ (ρ0 × δ0) =
-   case foldEnv joinDefs (Nil × bot ρ0 × bot δ0 × false) ρ of
+   case foldEnv joinDefs (Empty × bot ρ0 × bot δ0 × false) ρ of
    δ' × ρ' × δ × α -> ρ' × (δ ∨ δ') × α
    where
    joinDefs :: Binding Val 𝔹 -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
    joinDefs (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ' × δ × α)
-      = (RecDef f σ_f : δ_acc) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
+      = (δ_acc :+: f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
    joinDefs (_ ↦ Val _ _) _                     = error absurd
-   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α)   = (RecDef f (error "todo") : δ_acc) × ρ' × δ × α
+   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α)   = (δ_acc :+: f ↦ error "todo") × ρ' × δ × α
 
 match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ

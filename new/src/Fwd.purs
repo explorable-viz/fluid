@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:), singleton)
 import Data.Map (lookup)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDef(..), RecDefs, VarDef(..), body, varAnon)
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹, (∧))
 import Primitive (apply_fwd)
 import Util (type (×), (×), absurd, error, fromJust, successful)
@@ -30,9 +30,8 @@ matchArgs_fwd (v : vs) (Arg σ)   =
 matchArgs_fwd _ _                = error absurd
 
 closeDefs_fwd :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> 𝔹 -> Env 𝔹
-closeDefs_fwd _ _ Nil _                = Empty
-closeDefs_fwd ρ δ0 (RecDef f σ : δ) α  =
-   closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
+closeDefs_fwd _ _ Empty _           = Empty
+closeDefs_fwd ρ δ0 (δ :+: f ↦ σ) α  = closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
 
 eval_fwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Val 𝔹
 eval_fwd _ Hole _ = V.Hole
@@ -49,7 +48,7 @@ eval_fwd ρ (Expr α (Constr c es)) α' =
 eval_fwd ρ (Expr _ (LetRec δ e)) α =
    let ρ' = closeDefs_fwd ρ δ δ α in
    eval_fwd (ρ <> ρ') e α
-eval_fwd ρ (Expr _ (Lambda σ)) α = Val α $ V.Closure ρ Nil σ
+eval_fwd ρ (Expr _ (Lambda σ)) α = Val α $ V.Closure ρ Empty σ
 eval_fwd ρ (Expr _ (App e e')) α =
    case eval_fwd ρ e α of
       V.Hole   -> V.Hole
