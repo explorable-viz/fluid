@@ -5,7 +5,7 @@ import Data.Char.Unicode (isUpper)
 import Data.Either (note)
 import Data.Foldable (class Foldable)
 import Data.List (fromFoldable) as L
-import Data.List (List, concat, length)
+import Data.List (List(..), concat, length, (:))
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
@@ -48,12 +48,15 @@ ctr c = L.fromFoldable >>> (×) c
 dataType :: forall f . Foldable f => TypeName -> f (Ctr × CtrSig) -> DataType
 dataType name = fromFoldable >>> DataType name
 
+
+
 ctrToDataType :: Map Ctr DataType
 ctrToDataType = fromFoldable $
    concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> (_ × d))
 
 dataTypeFor :: Ctr -> MayFail DataType
 dataTypeFor c = note ("Unknown constructor " <> show c) $ lookup c ctrToDataType
+
 
 arity :: Ctr -> MayFail Int
 arity c = do
@@ -72,6 +75,34 @@ cEQ         = Ctr "EQ"        :: Ctr
 cPair       = Ctr "Pair"      :: Ctr -- Pair
 cEmpty      = Ctr "Empty"     :: Ctr -- Tree
 cNonEmpty   = Ctr "NonEmpty"  :: Ctr
+
+ctrToDataTypeStr :: Ctr -> String
+ctrToDataTypeStr ctr'
+   = let m = fromFoldable [
+               cFalse × "Bool",
+               cTrue × "Bool",
+               cNil × "List",
+               cCons × "List",
+               cNone × "Option",
+               cSome × "Option",
+               cGT × "Ordering",
+               cLT × "Ordering",
+               cEQ × "Ordering",
+               cPair × "Pair",
+               cEmpty × "Tree",
+               cNonEmpty × "Tree"]
+   in fromJust "" $ lookup ctr' m
+
+dataTypeStrToCtrs :: String -> List Ctr
+dataTypeStrToCtrs dt
+   = let m = fromFoldable [
+               "Bool" × (cFalse:cTrue:Nil),
+               "List" × (cNil:cCons:Nil),
+               "Option" × (cNone:cSome:Nil),
+               "Ordering" × (cGT:cLT:cEQ:Nil),
+               "Pair" × (cPair:Nil),
+               "Tree" × (cEmpty:cNonEmpty:Nil)]
+     in fromJust "" $ lookup dt m
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [
