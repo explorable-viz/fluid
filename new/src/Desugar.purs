@@ -1,10 +1,11 @@
 module Desugar where
 
 import Prelude hiding (absurd)
-import Data.List ((:), List)
-import Data.List (List(..)) as L
-import Data.Map (fromFoldable, singleton, member, insert, lookup) as M
-import DataType (Ctr, cCons, cNil, cTrue, cFalse, cPair)
+import Data.List ((:), List, difference)
+import Data.List (List(..), head) as L
+import Data.Map (fromFoldable, toUnfoldable, singleton, lookup) as M
+import Data.Tuple (fst)
+import DataType (Ctr, ctrToDataTypeStr, dataTypeStrToCtrs, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), Var, expr)
 import Expr (RawExpr(..)) as E
 import Lattice (𝔹)
@@ -176,26 +177,17 @@ patternToElim (PConstr ctr ps) κ
 
 totalize :: Elim 𝔹 -> Expr 𝔹 -> Elim 𝔹
 totalize (ElimConstr m) e
-   | M.member cTrue m && not (M.member cFalse) m
-      = ElimConstr (M.insert cFalse (Body e) m)
-   | M.member cFalse m && not (M.member cTrue) m
-      = ElimConstr (M.insert cTrue (Body e) m)
-   | M.member cNil m && not (M.member cCons) m
-      = ElimConstr (M.insert cCons (Body e) m)
-   | M.member cCons m && not (M.member cNil) m
-      = let cons_κ = case fromJust "" (M.lookup cCons m) of
-                        Arg σ   -> Arg (totalize σ e)
-                        Body e' -> Body e'
-                        None    -> Body e
-            nil_κ  = Body e
-        in  ElimConstr (M.fromFoldable ((cCons × cons_κ):(cNil × nil_κ):L.Nil))
-   | M.member cPair m
-      = let pair_κ = case fromJust "" (M.lookup cPair m) of
-                        Arg σ   -> Arg (totalize σ e)
-                        Body e' -> Body e'
-                        None    -> Body e
-        in  ElimConstr (M.singleton cPair pair_κ)
-   | otherwise = ElimConstr m
+   = let ctr × κ              = fromJust "" (L.head $ M.toUnfoldable m)
+         branches             = (M.toUnfoldable m)
+         existing_ctrs        = map fst branches
+         all_ctrs             = dataTypeStrToCtrs (ctrToDataTypeStr ctr)
+         new_branches         = map (\c -> c × (Body e)) (difference ctrs existing_ctrs)
+         totalized_branches   = map
+                                 (\(c × κ) -> case fromJust "" (M.lookup c m) of
+                                                Arg σ   -> c × (Arg (totalize σ e))
+                                                Body e' -> c × (Body e')
+                                                None    -> c × (Body e)) branches
+     in   ElimConstr (M.fromFoldable $ totalized_branches <> new_branches)
 totalize (ElimVar e k) e'
    = case k of Arg σ  -> ElimVar e (Arg (totalize σ e'))
                Body _ -> ElimVar e k
