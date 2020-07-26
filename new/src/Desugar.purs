@@ -181,7 +181,7 @@ totalize (ElimConstr m) e
          branches             = (M.toUnfoldable m)
          existing_ctrs        = map fst branches
          all_ctrs             = dataTypeStrToCtrs (ctrToDataTypeStr ctr)
-         new_branches         = map (\c -> c × (Body e)) (difference ctrs existing_ctrs)
+         new_branches         = map (\c -> c × (Body e)) (difference all_ctrs existing_ctrs)
          totalized_branches   = map
                                  (\(c × κ) -> case fromJust "" (M.lookup c m) of
                                                 Arg σ   -> c × (Arg (totalize σ e))
