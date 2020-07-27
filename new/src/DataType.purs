@@ -3,11 +3,13 @@ module DataType where
 import Prelude hiding (absurd)
 import Data.Char.Unicode (isUpper)
 import Data.Either (note)
-import Data.Foldable (class Foldable)
+import Data.Foldable (class Foldable, foldr)
 import Data.List (fromFoldable) as L
-import Data.List (List(..), concat, length, (:))
-import Data.Map (Map, fromFoldable, lookup)
+import Data.List (List(..), concat, length, (:), findIndex, alterAt)
+import Data.Map (Map, lookup)
+import Data.Map (fromFoldable, toUnfoldable) as M
 import Data.Map.Internal (keys)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.String.CodeUnits (charAt)
 import Util (MayFail, type (×), (×), absurd, error, fromJust)
@@ -46,17 +48,14 @@ ctr :: forall f . Foldable f => Ctr -> f TypeName -> Ctr × CtrSig
 ctr c = L.fromFoldable >>> (×) c
 
 dataType :: forall f . Foldable f => TypeName -> f (Ctr × CtrSig) -> DataType
-dataType name = fromFoldable >>> DataType name
-
-
+dataType name = M.fromFoldable >>> DataType name
 
 ctrToDataType :: Map Ctr DataType
-ctrToDataType = fromFoldable $
+ctrToDataType = M.fromFoldable $
    concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> (_ × d))
 
 dataTypeFor :: Ctr -> MayFail DataType
 dataTypeFor c = note ("Unknown constructor " <> show c) $ lookup c ctrToDataType
-
 
 arity :: Ctr -> MayFail Int
 arity c = do
@@ -78,31 +77,43 @@ cNonEmpty   = Ctr "NonEmpty"  :: Ctr
 
 ctrToDataTypeStr :: Ctr -> String
 ctrToDataTypeStr ctr'
-   = let m = fromFoldable [
-               cFalse × "Bool",
-               cTrue × "Bool",
-               cNil × "List",
-               cCons × "List",
-               cNone × "Option",
-               cSome × "Option",
-               cGT × "Ordering",
-               cLT × "Ordering",
-               cEQ × "Ordering",
-               cPair × "Pair",
-               cEmpty × "Tree",
-               cNonEmpty × "Tree"]
+   = let m = ctrDataTypeMap
    in fromJust "" $ lookup ctr' m
 
 dataTypeStrToCtrs :: String -> List Ctr
 dataTypeStrToCtrs dt
-   = let m = fromFoldable [
-               "Bool" × (cFalse:cTrue:Nil),
-               "List" × (cNil:cCons:Nil),
-               "Option" × (cNone:cSome:Nil),
-               "Ordering" × (cGT:cLT:cEQ:Nil),
-               "Pair" × (cPair:Nil),
-               "Tree" × (cEmpty:cNonEmpty:Nil)]
+   = let m = flipMap ctrDataTypeMap
      in fromJust "" $ lookup dt m
+
+flipMap :: forall k v. Eq v => Ord v => Map k v -> Map v (List k)
+flipMap m
+   = let f   = \(k × v) v_to_ks
+                  -> updateAt (\(v' × _) -> v == v')
+                              (\(_ × ks) -> v × (k:ks))
+                              (v × (k:Nil)) v_to_ks
+
+     in M.fromFoldable $ foldr f Nil (M.toUnfoldable m :: List (k × v))
+
+updateAt :: forall a. (a -> Boolean) -> (a -> a) -> a -> List a -> List a
+updateAt predicate f default xs
+   = case findIndex predicate xs of
+      Just i -> fromJust "" $ alterAt i (\x -> Just (f x)) xs
+      Nothing -> (default:xs)
+
+ctrDataTypeMap :: Map Ctr String
+ctrDataTypeMap = M.fromFoldable [
+   cFalse × "Bool",
+   cTrue × "Bool",
+   cNil × "List",
+   cCons × "List",
+   cNone × "Option",
+   cSome × "Option",
+   cGT × "Ordering",
+   cLT × "Ordering",
+   cEQ × "Ordering",
+   cPair × "Pair",
+   cEmpty × "Tree",
+   cNonEmpty × "Tree"]
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [
