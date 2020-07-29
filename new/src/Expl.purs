@@ -3,7 +3,7 @@ module Expl where
 import Data.List (List)
 import Data.Map (Map)
 import DataType (Ctr)
-import Expr (Cont, Elim, RecDefs, Var)
+import Expr (Cont, RecDefs, Var)
 import Util (type (×))
 import Val (Env, Val)
 
@@ -15,11 +15,11 @@ data RawExpl a =
    Hole |
    Var Var |
    Op Var |
-   Int Int |
-   Float Number |
-   Str String |
+   Int |
+   Float |
+   Str  |
    Constr Ctr (List (Expl a)) |
-   Lambda (Elim a) |
+   Lambda |
    AppHole (Expl a) |
    App (Expl a × RecDefs a) (Expl a) (Match a) (Expl a) |
    AppOp (ExplVal a) (ExplVal a) |

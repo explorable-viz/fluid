@@ -6,6 +6,7 @@ import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
+import Math (log)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cTrue, cFalse, Ctr(..))
@@ -121,10 +122,9 @@ apply_fwd φ α v@(Val α' _) = case apply φ v of
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    -- need to instantiate the corresponding PureScript primitive at a concrete type
-   "+"         ↦ from   ((+) `union` (+)),
-   "-"         ↦ from   ((-) `union` (-)),
-   "*"         ↦ from   ((*) `union` (*)),
-   "div"       ↦ from   (div  :: Int -> Int -> Int),
+   "+"         ↦ from   ((+) `union2` (+)),
+   "-"         ↦ from   ((-) `union2` (-)),
+   "*"         ↦ from   ((*) `union2` (*)),
    "/"         ↦ from   ((/)  :: Number -> Number -> Number),
    "=="        ↦ from   ((==) :: Int -> Int -> Boolean),
    "/="        ↦ from   ((/=) :: Int -> Int -> Boolean),
@@ -133,12 +133,18 @@ primitives = foldl (:+:) Empty [
    "<="        ↦ from   ((<=) :: Int -> Int -> Boolean),
    ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
    "ceiling"   ↦ from   ceil,
+   "div"       ↦ from   (div  :: Int -> Int -> Int),
    "floor"     ↦ from   floor,
-   "intToStr"  ↦ from   (show :: Int -> String)
+   "log"       ↦ from   log,
+   "numToStr"  ↦ from   (show `union` show)
 ]
 
-union :: (Int -> Int -> Int) -> (Number -> Number -> Number) -> Int + Number -> Int + Number -> Int + Number
-union f _ (Left x) (Left y) = Left $ f x y
-union _ f (Left x) (Right y) = Right $ f (toNumber x) y
-union _ f (Right x) (Left y) = Right $ f x (toNumber y)
-union _ f (Right x) (Right y) = Right $ f x y
+union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
+union f _ (Left x) = f x
+union _ f (Right x) = f x
+
+union2 :: (Int -> Int -> Int) -> (Number -> Number -> Number) -> Int + Number -> Int + Number -> Int + Number
+union2 f _ (Left x) (Left y) = Left $ f x y
+union2 _ f (Left x) (Right y) = Right $ f (toNumber x) y
+union2 _ f (Right x) (Left y) = Right $ f x (toNumber y)
+union2 _ f (Right x) (Right y) = Right $ f x y

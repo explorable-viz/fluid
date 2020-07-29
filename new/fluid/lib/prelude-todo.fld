@@ -1,18 +1,9 @@
--- Num -> Num
-primitive ceiling;
-
 -- Str -> a
 primitive error;
-
--- Num -> Num
-primitive floor;
 
 -- Natural logarithm.
 -- Num -> Num
 primitive log;
-
--- Num -> Str
-primitive numToStr;
 
 -- Print argument to the console and return it.
 -- a -> a

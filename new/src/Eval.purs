@@ -54,11 +54,11 @@ eval ρ (Expr _ (Var x)) =
 eval ρ (Expr _ (Op op)) =
    (Expl ρ (T.Op op) × _) <$> find op ρ
 eval ρ (Expr _ (Int n)) =
-   (Expl ρ (T.Int n) × _) <$> pure (val $ V.Int n)
+   (Expl ρ T.Int × _) <$> pure (val $ V.Int n)
 eval ρ (Expr _ (Float n)) =
-   (Expl ρ (T.Float n) × _) <$> pure (val $ V.Float n)
+   (Expl ρ T.Float × _) <$> pure (val $ V.Float n)
 eval ρ (Expr _ (Str str)) =
-   (Expl ρ (T.Str str) × _) <$> pure (val $ V.Str str)
+   (Expl ρ T.Str × _) <$> pure (val $ V.Str str)
 eval ρ (Expr _ (Constr c es)) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
@@ -68,7 +68,7 @@ eval ρ (Expr _ (LetRec δ e)) = do
    t × v <- eval (ρ <> ρ') e
    (Expl ρ (T.LetRec δ t) × _) <$> pure v
 eval ρ (Expr _ (Lambda σ)) =
-   (Expl ρ (T.Lambda σ) × _) <$> pure (val $ V.Closure ρ Empty σ)
+   (Expl ρ T.Lambda × _) <$> pure (val $ V.Closure ρ Empty σ)
 eval ρ (Expr _ (App e e')) = do
    t × v <- eval ρ e
    case v of

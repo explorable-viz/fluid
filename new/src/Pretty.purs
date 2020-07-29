@@ -78,11 +78,11 @@ instance prettyRawExpl :: Pretty (RawExpl Boolean) where
    pretty T.Hole                          = hole
    pretty (T.Var x)                       = text x
    pretty (T.Op op)                       = text op
-   pretty (T.Int n)                       = text $ show n
-   pretty (T.Float n)                     = text $ show n
-   pretty (T.Str s)                       = text $ show s
+   pretty T.Int                           = text "int"
+   pretty T.Float                         = text "float"
+   pretty T.Str                           = text "str"
    pretty (T.Constr c ts)                 = prettyConstr c ts
-   pretty (T.Lambda σ)                    = text "fun " :<>: pretty σ
+   pretty T.Lambda                        = text "fun"
    pretty (T.AppHole t)                   = text "App" :<>: parens (hole :<>: comma :<>: hole)
    pretty (T.App (t × _) t' ξ t'')        =
       text "App" :<>:
