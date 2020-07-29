@@ -50,6 +50,7 @@ main = do
    runExample "foldr_sumSquares" "661" true
    runExample "lexicalScoping" "\"6\"" true
    runExample "length" "2" true
+   runExample "lookup" "Some \"sarah\"" true
    runExample "map" "[5, 7, 13, 15, 4, 3, -3]" true
    runExample "normalise" "(33, 66)" true
    runExample "pattern-match" "4" true
