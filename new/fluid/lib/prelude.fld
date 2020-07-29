@@ -74,6 +74,7 @@ let filter p Nil = Nil;
           False -> ys
       };
 
+-- Todo: have these take uncurried operators
 -- ((a, b) -> a) -> a -> List b -> a
 let foldl op z Nil = z;
     foldl op z (x : xs) = foldl op (op (z, x)) xs;
@@ -108,15 +109,13 @@ let map f Nil = Nil;
 let append (Nil, ys) = ys;
     append ((x:xs), ys) = x : (append (xs, ys));
 
--- List (List a) -> List a
-let concat Nil = Nil;
-    concat (Nil : yss) = concat yss;
-    concat ((x : xs) : yss) = x : concat (xs : yss);
-
 -- List a -> List -> List a
 -- Want infix ++
 let concat2 Nil ys = ys;
     concat2 (x : xs) ys = x : concat2 xs ys;
+
+-- List (List a) -> List a
+let concat = foldl (uncurry concat2) Nil;
 
 -- List a -> a -> List a
 let intersperse Nil sep = Nil;
