@@ -6,13 +6,14 @@ import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
-import Desugar (SExpr, desugar, lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
+import Desugar (SExpr, desugar)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Module (openWithImports, loadModule)
 import Pretty (pretty, render)
 import Primitive (primitives)
 import Util ((×), successful)
+import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
 
 runExample :: String -> String -> Boolean -> Effect Unit
 runExample file expected slice = runMocha $
