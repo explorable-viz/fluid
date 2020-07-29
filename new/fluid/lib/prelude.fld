@@ -108,10 +108,10 @@ let map f Nil = Nil;
 let append (Nil, ys) = ys;
     append ((x:xs), ys) = x : (append (xs, ys));
 
--- (List (List a)) -> List a
+-- List (List a) -> List a
 let concat Nil = Nil;
-    concat (Nil:ys) = concat ys;
-    concat ((x:xs):ys) = x : concat (xs:ys);
+    concat (Nil : yss) = concat yss;
+    concat ((x : xs) : yss) = x : concat (xs : yss);
 
 -- List a -> a -> List a
 let intersperse Nil sep = Nil;

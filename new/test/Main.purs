@@ -46,7 +46,7 @@ main = do
    runExample "compose" "5" true
    runExample "factorial" "40320" true
    runExample "filter" "[8, 7]" true
---   runExample "flatten" "[8, 7]" false
+   runExample "flatten" "[8, 7]" false
    runExample "foldr_sumSquares" "661" true
    runExample "lexicalScoping" "\"6\"" true
    runExample "length" "2" true
