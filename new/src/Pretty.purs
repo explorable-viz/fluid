@@ -13,7 +13,7 @@ import Expr (RawExpr(..), Expr(Hole)) as E
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
 import Util (Endo, type (×), (×), absurd, error, intersperse)
-import Val (Primitive(..), RawVal, Val(..), val)
+import Val (Primitive, RawVal, Val(..), val)
 import Val (RawVal(..), Val(Hole)) as V
 
 infixl 5 beside as :<>:
@@ -193,7 +193,7 @@ instance prettyRawVal :: Pretty (RawVal Boolean) where
    pretty (V.Primitive op)       = parens $ pretty op
 
 instance prettyPrimitive :: Pretty Primitive where
-   pretty (IntOp _) = text "<prim-op>"
+   pretty _ = text "<prim-op>"
 
 prettyProgram :: Expr Boolean -> Doc
 prettyProgram e = atop (pretty e) (text "")
