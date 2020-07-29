@@ -6,7 +6,7 @@ import Control.MonadPlus (class MonadPlus, empty)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List, intercalate)
-import Data.Map (Map, unionWith)
+import Data.Map (Map, lookup, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Effect.Exception (throw)
@@ -37,6 +37,9 @@ whenever true  = Just
 fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a
 fromJust msg Nothing  = error msg
+
+mustLookup :: forall k v . Ord k => k -> Map k v -> v
+mustLookup k = fromJust absurd <<< lookup k
 
 onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 onlyIf true    = pure

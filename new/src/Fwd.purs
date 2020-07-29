@@ -2,12 +2,11 @@ module Fwd where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), singleton)
-import Data.Map (lookup)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹, (∧))
 import Primitive (apply_fwd)
-import Util (type (×), (×), absurd, error, fromJust, successful)
+import Util (type (×), (×), absurd, error, mustLookup, successful)
 import Val (Env, Val(Val))
 import Val (RawVal(..), Val(Hole)) as V
 
@@ -16,7 +15,7 @@ match_fwd v (ElimVar x κ)
    | x == varAnon = Empty × κ × true
    | otherwise    = (Empty :+: x ↦ v) × κ × true
 match_fwd (Val α (V.Constr c vs)) (ElimConstr κs) =
-   let κ = fromJust absurd $ lookup c κs
+   let κ = mustLookup c κs
        ρ × κ' × α' = matchArgs_fwd vs κ in
    ρ × κ' × (α ∧ α')
 match_fwd v _ = error absurd
