@@ -2,9 +2,8 @@ module Desugar where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), (\\), head)
-import Data.Map (fromFoldable, keys, singleton, toUnfoldable) as M
+import Data.Map (fromFoldable, singleton, toUnfoldable) as M
 import Data.Tuple (fst)
-import Data.Set (toUnfoldable)
 import DataType (Ctr, DataType'(..), ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), Var, expr)
 import Expr (RawExpr(..)) as E
@@ -100,26 +99,25 @@ patternToElim :: Pattern -> Cont 𝔹 -> Elim 𝔹
 patternToElim (PVar x) κ
    = ElimVar x κ
 patternToElim (PConstr ctr ps) κ
-   = let go (p':p'':ps') = Arg (patternToElim p' (go (p'':ps')))
-         go (p':Nil)   = Arg (patternToElim p' κ)
-         go Nil        = κ
+   = let go (p':p'':ps')   = Arg (patternToElim p' (go (p'':ps')))
+         go (p':Nil)       = Arg (patternToElim p' κ)
+         go Nil            = κ
      in  ElimConstr (M.singleton ctr (go ps))
 
 totalise :: Elim 𝔹 -> Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e
    = let ctr × κ              = fromJust "" (head $ M.toUnfoldable m)
-         branches             = (M.toUnfoldable m)
-         existing_ctrs        = fst <$> branches
+         branches             = M.toUnfoldable m
          DataType _ sigs      = mustLookup ctr ctrToDataType
-         all_ctrs             = toUnfoldable $ M.keys sigs
-         new_branches         = (_ × Body e) <$> (all_ctrs \\ existing_ctrs)
+         all_ctrs             = fst <$> M.toUnfoldable sigs
+         new_branches         = (_ × Body e) <$> (all_ctrs \\ (fst <$> branches))
          totalised_branches   = branches <#>
                                  \(c × κ) -> case mustLookup c m of
-                                                Arg σ   -> c × (Arg (totalise σ e))
-                                                Body e' -> c × (Body e')
-                                                None    -> c × (Body e)
+                                                Arg σ   -> c × Arg (totalise σ e)
+                                                Body e' -> c × Body e'
+                                                None    -> c × Body e
      in   ElimConstr (M.fromFoldable $ totalised_branches <> new_branches)
 totalise (ElimVar e k) e'
-   = case k of Arg σ  -> ElimVar e (Arg (totalise σ e'))
+   = case k of Arg σ  -> ElimVar e $ Arg (totalise σ e')
                Body _ -> ElimVar e k
-               None   -> ElimVar e (Body e')
+               None   -> ElimVar e $ Body e'
