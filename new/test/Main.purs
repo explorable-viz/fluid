@@ -45,14 +45,15 @@ main = do
    runExample "arithmetic" "42" true
    runExample "compose" "5" true
    runExample "factorial" "40320" true
-   runExample "filter" "[8, 7]" false
-   runExample "foldr_sumSquares" "661" false
+   runExample "filter" "[8, 7]" true
+--   runExample "flatten" "[8, 7]" false
+   runExample "foldr_sumSquares" "661" true
    runExample "lexicalScoping" "\"6\"" true
-   runExample "length" "2" false
-   runExample "map" "[5, 7, 13, 15, 4, 3, -3]" false
+   runExample "length" "2" true
+   runExample "map" "[5, 7, 13, 15, 4, 3, -3]" true
    runExample "normalise" "(33, 66)" true
    runExample "pattern-match" "4" true
-   runExample "reverse" "[2, 1]" false
-   runExample "zipWith" "[[10], [12], [20]]" false
+   runExample "reverse" "[2, 1]" true
+   runExample "zipWith" "[[10], [12], [20]]" true
    -- scratchpad
    runExample "temp" "5" true
