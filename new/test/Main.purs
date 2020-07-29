@@ -13,7 +13,7 @@ import Module (openWithImports, loadModule)
 import Pretty (pretty, render)
 import Primitive (primitives)
 import Util ((×), successful)
-import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
+-- import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
 
 runExample :: String -> String -> Boolean -> Effect Unit
 runExample file expected slice = runMocha $
@@ -37,6 +37,7 @@ runDesugar test s expected = runMocha $
 
 main :: Effect Unit
 main = do
+{-
    runDesugar "list-comp-1" lcomp1 lcomp1_eval
    runDesugar "list-comp-2" lcomp2 lcomp2_eval
    runDesugar "list-comp-3" lcomp3 lcomp3_eval
@@ -57,5 +58,6 @@ main = do
    runExample "pattern-match" "4" true
    runExample "reverse" "[2, 1]" true
    runExample "zipWith" "[[10], [12], [20]]" true
+-}
    -- scratchpad
    runExample "temp" "5" true

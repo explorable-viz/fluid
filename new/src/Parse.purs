@@ -189,6 +189,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          try ctrExpr <|>
          try variable <|>
          try int <|> -- int may start with +/-
+         float <|>
          string <|>
          defsExpr <|>
          matchAs <|>
@@ -204,7 +205,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          variable :: SParser (Expr 𝔹)
          variable = ident <#> Var >>> expr
 
-         -- Use token.integer instead?
+         -- TODO: explain why not using token.integer.
          int :: SParser (Expr 𝔹)
          int = do
             sign <- signOpt
@@ -213,8 +214,11 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             signOpt :: ∀ a . (Ring a) => SParser (a -> a)
             signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
 
+         float :: SParser (Expr 𝔹)
+         float = (Float >>> expr) <$> token.float
+
          string :: SParser (Expr 𝔹)
-         string = expr <$> (Str <$> token.stringLiteral)
+         string = (Str >>> expr) <$> token.stringLiteral
 
          defsExpr :: SParser (Expr 𝔹)
          defsExpr = do
