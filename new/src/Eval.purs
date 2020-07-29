@@ -55,6 +55,8 @@ eval ρ (Expr _ (Op op)) =
    (Expl ρ (T.Op op) × _) <$> find op ρ
 eval ρ (Expr _ (Int n)) =
    (Expl ρ (T.Int n) × _) <$> pure (val $ V.Int n)
+eval ρ (Expr _ (Float n)) =
+   (Expl ρ (T.Float n) × _) <$> pure (val $ V.Float n)
 eval ρ (Expr _ (Str str)) =
    (Expl ρ (T.Str str) × _) <$> pure (val $ V.Str str)
 eval ρ (Expr _ (Constr c es)) = do

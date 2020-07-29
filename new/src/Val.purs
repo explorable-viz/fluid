@@ -14,6 +14,7 @@ data Primitive =
 
 data RawVal a =
    Int Int |
+   Float Number |
    Str String |
    Constr Ctr (List (Val a)) |
    Closure (Env a) (RecDefs a) (Elim a) |
@@ -46,7 +47,8 @@ instance boundedJoinSemilattice :: BoundedJoinSemilattice (Val Boolean) where
    bot = const Hole
 
 instance joinSemilatticeRawVal :: JoinSemilattice (RawVal Boolean) where
-   maybeJoin (Int n) (Int m)                   = Int <$> n ≟ m
+   maybeJoin (Int n) (Int m)                    = Int <$> n ≟ m
+   maybeJoin (Float n) (Float m)                = Float <$> n ≟ m
    maybeJoin (Str s) (Str s')                   = Str <$> s ≟ s'
    maybeJoin (Constr c vs) (Constr c' vs')      = Constr <$> c ≟ c' <*> maybeJoin vs vs'
    maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'

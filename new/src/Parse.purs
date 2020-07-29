@@ -204,6 +204,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          variable :: SParser (Expr 𝔹)
          variable = ident <#> Var >>> expr
 
+         -- Use token.integer instead?
          int :: SParser (Expr 𝔹)
          int = do
             sign <- signOpt

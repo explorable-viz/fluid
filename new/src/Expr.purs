@@ -17,6 +17,7 @@ data RawExpr a =
    Var Var |
    Op Var |
    Int Int |
+   Float Number |
    Str String |
    Constr Ctr (List (Expr a)) |
    Lambda (Elim a) |
@@ -93,6 +94,7 @@ instance joinSemilatticeRawExpr :: JoinSemilattice (RawExpr Boolean) where
    maybeJoin (Var x) (Var x')              = Var <$> x ≟ x'
    maybeJoin (Op op) (Op op')              = Op <$> op ≟ op'
    maybeJoin (Int n) (Int n')              = Int <$> n ≟ n'
+   maybeJoin (Float n) (Float n')          = Float <$> n ≟ n'
    maybeJoin (Str s) (Var s')              = Str <$> s ≟ s'
    maybeJoin (Constr c es) (Constr c' es') = Constr <$> c ≟ c' <*> maybeJoin es es'
    maybeJoin (App e1 e2) (App e1' e2')     = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'

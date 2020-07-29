@@ -79,6 +79,7 @@ instance prettyRawExpl :: Pretty (RawExpl Boolean) where
    pretty (T.Var x)                       = text x
    pretty (T.Op op)                       = text op
    pretty (T.Int n)                       = text $ show n
+   pretty (T.Float n)                     = text $ show n
    pretty (T.Str s)                       = text $ show s
    pretty (T.Constr c ts)                 = prettyConstr c ts
    pretty (T.Lambda σ)                    = text "fun " :<>: pretty σ
@@ -140,6 +141,7 @@ prettyConstr c xs
 
 instance prettyRawExpr :: Pretty (RawExpr Boolean) where
    pretty (E.Int n)                 = text $ show n
+   pretty (E.Float n)               = text $ show n
    pretty (E.Str str)               = text $ show str
    pretty (E.Var x)                 = text x
    pretty r@(E.Constr c es)
@@ -180,6 +182,7 @@ instance prettyVal :: Pretty (Val Boolean) where
 
 instance prettyRawVal :: Pretty (RawVal Boolean) where
    pretty (V.Int n)              = text $ show n
+   pretty (V.Float n)            = text $ show n
    pretty (V.Str str)            = text $ show str
    pretty u@(V.Constr c vs)
       | c == cNil || c == cCons  = pretty $ toList $ val u

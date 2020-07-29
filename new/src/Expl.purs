@@ -16,6 +16,7 @@ data RawExpl a =
    Var Var |
    Op Var |
    Int Int |
+   Float Number |
    Str String |
    Constr Ctr (List (Expl a)) |
    Lambda (Elim a) |
