@@ -1,6 +1,3 @@
--- Str -> a
-primitive error;
-
 -- Print argument to the console and return it.
 -- a -> a
 primitive debugLog;

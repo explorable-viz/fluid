@@ -6,6 +6,7 @@ import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
+import Debug.Trace (trace)
 import Math (log)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), (:+:), (↦))
@@ -97,11 +98,17 @@ true_ = val $ V.Constr cTrue Nil
 false_ :: Val 𝔹
 false_ = val $ V.Constr cFalse Nil
 
+instance fromVal :: From (Val Boolean) where
+   from = identity
+
 instance fromBoolean :: From Boolean where
    from b = if b then true_ else false_
 
 instance fromString :: From String where
    from = V.Str >>> val
+
+instance fromValOp :: From a => From (Val Boolean -> a) where
+   from op = val $ V.Primitive $ ValOp $ op >>> from
 
 instance fromIntOp :: From a => From (Int -> a) where
    from op = val $ V.Primitive $ IntOp $ op >>> from
@@ -116,6 +123,7 @@ instance fromStringOp :: From a => From (String -> a) where
    from op = val $ V.Primitive $ StringOp $ op >>> from
 
 apply :: Primitive -> Val 𝔹 -> Val 𝔹
+apply (ValOp op)           = op
 apply (IntOp op)           = op <<< to
 apply (NumberOp op)        = op <<< to
 apply (IntOrNumberOp op)   = op <<< to
@@ -141,12 +149,16 @@ primitives = foldl (:+:) Empty [
    "<="        ↦ from   ((<=) :: Int -> Int -> Boolean),
    ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
    "ceiling"   ↦ from   ceil,
+   "debugLog"  ↦ from   debugLog,
    "div"       ↦ from   (div  :: Int -> Int -> Int),
    "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
    "log"       ↦ from   log,
    "numToStr"  ↦ from   (show `union` show)
 ]
+
+debugLog :: Val 𝔹 -> Val 𝔹
+debugLog x = trace x \_ -> x
 
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
 union f _ (Left x) = f x

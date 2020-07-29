@@ -9,8 +9,9 @@ import Expr (Elim, RecDefs)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), maybeJoin)
 import Util (Endo, type (+), (≟), absurd, error)
 
--- one constructor for each PureScript primitive type that appears in an exported operator signature
+-- one constructor for each PureScript type that appears in an exported operator signature
 data Primitive =
+   ValOp (Val 𝔹 -> Val 𝔹) |
    IntOp (Int -> Val 𝔹) |
    NumberOp (Number -> Val 𝔹) |
    IntOrNumberOp (Int + Number -> Val 𝔹) |
