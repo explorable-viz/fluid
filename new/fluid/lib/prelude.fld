@@ -113,6 +113,11 @@ let concat Nil = Nil;
     concat (Nil : yss) = concat yss;
     concat ((x : xs) : yss) = x : concat (xs : yss);
 
+-- List a -> List -> List a
+-- Want infix ++
+let concat2 Nil ys = ys;
+    concat2 (x : xs) ys = x : concat2 xs ys;
+
 -- List a -> a -> List a
 let intersperse Nil sep = Nil;
     intersperse (x : Nil) sep = x : Nil;
