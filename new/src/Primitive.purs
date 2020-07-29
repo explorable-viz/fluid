@@ -29,6 +29,7 @@ opDef op prec assoc = op × { op, prec, assoc }
 opDefs :: Map String OpDef
 opDefs = fromFoldable [
    opDef "*"   7 AssocLeft,
+   opDef "/"   7 AssocLeft,
    opDef "+"   6 AssocLeft,
    opDef "-"   6 AssocLeft,
    opDef ":"   6 AssocRight,
