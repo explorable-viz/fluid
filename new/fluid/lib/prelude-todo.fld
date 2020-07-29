@@ -1,10 +1,6 @@
 -- Str -> a
 primitive error;
 
--- Natural logarithm.
--- Num -> Num
-primitive log;
-
 -- Print argument to the console and return it.
 -- a -> a
 primitive debugLog;

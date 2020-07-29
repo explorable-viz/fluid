@@ -66,14 +66,18 @@ class From a where
 
 instance toInt :: To Int where
    to (Val _ (V.Int n)) = n
-   to _ = error "Integer expected"
+   to _                 = error "Integer expected"
 
 instance fromInt :: From Int where
    from = V.Int >>> val
 
 instance toNumber :: To Number where
-   to (Val _ (V.Float n)) = n
-   to _ = error "Float expected"
+   to (Val _ (V.Float n))  = n
+   to _                    = error "Float expected"
+
+instance toString :: To String where
+   to (Val _ (V.Str str))  = str
+   to _                    = error "String expected"
 
 instance fromNumber :: From Number where
    from = V.Float >>> val
@@ -81,7 +85,7 @@ instance fromNumber :: From Number where
 instance toIntOrNumber :: To (Either Int Number) where
    to (Val _ (V.Int n))    = Left n
    to (Val _ (V.Float n))  = Right n
-   to _ = error "Integer or float expected"
+   to _                    = error "Integer or float expected"
 
 instance fromIntOrNumber :: From (Either Int Number) where
    from (Left n)   = val $ V.Int n
@@ -108,10 +112,14 @@ instance fromNumberOp :: From a => From (Number -> a) where
 instance fromIntOrNumberOp :: From a => From (Either Int Number -> a) where
    from op = val $ V.Primitive $ IntOrNumberOp $ op >>> from
 
+instance fromStringOp :: From a => From (String -> a) where
+   from op = val $ V.Primitive $ StringOp $ op >>> from
+
 apply :: Primitive -> Val 𝔹 -> Val 𝔹
 apply (IntOp op)           = op <<< to
 apply (NumberOp op)        = op <<< to
 apply (IntOrNumberOp op)   = op <<< to
+apply (StringOp op)        = op <<< to
 
 apply_fwd :: Primitive -> 𝔹 -> Val 𝔹 -> Val 𝔹
 apply_fwd _ _ Hole         = Hole
@@ -134,6 +142,7 @@ primitives = foldl (:+:) Empty [
    ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
    "ceiling"   ↦ from   ceil,
    "div"       ↦ from   (div  :: Int -> Int -> Int),
+   "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
    "log"       ↦ from   log,
    "numToStr"  ↦ from   (show `union` show)

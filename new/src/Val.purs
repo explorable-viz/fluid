@@ -13,7 +13,8 @@ import Util (Endo, type (+), (≟), absurd, error)
 data Primitive =
    IntOp (Int -> Val 𝔹) |
    NumberOp (Number -> Val 𝔹) |
-   IntOrNumberOp (Int + Number -> Val 𝔹)
+   IntOrNumberOp (Int + Number -> Val 𝔹) |
+   StringOp (String -> Val 𝔹)
 
 data RawVal a =
    Int Int |
