@@ -20,6 +20,9 @@ let compare (x, y) =
       }
    };
 
+-- Int -> Int
+let negate = (-) 0;
+
 -- (b -> c) -> (a -> b) -> a -> c
 -- Want infix <<<
 let compose f g x = f (g x);
@@ -166,6 +169,18 @@ let drop n xs =
          Nil -> Nil;
          _ : xs -> drop (n - 1) xs
       }
+   };
+
+-- Int -> List a -> List a
+let lastN n xs =
+   foldl (uncurry (compose const (drop 1))) xs (drop n xs);
+
+-- Expects non-negative integer as first argument and non-empty list as second argument.
+-- Int -> List a -> a
+let nth n (x : xs) =
+   match n == 0 as {
+      True -> x;
+      False -> nth (n - 1) xs
    };
 
 -- Int -> List (Int, b) -> b
