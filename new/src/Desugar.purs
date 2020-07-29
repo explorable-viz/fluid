@@ -1,8 +1,7 @@
 module Desugar where
 
 import Prelude hiding (absurd)
-import Data.List ((:), (\\), List)
-import Data.List (List(..), head) as L
+import Data.List (List(..), (:), (\\), head)
 import Data.Map (fromFoldable, keys, singleton, toUnfoldable) as M
 import Data.Tuple (fst)
 import Data.Set (toUnfoldable)
@@ -44,13 +43,13 @@ sexpr :: SugaredExpr -> SExpr
 sexpr = SExpr false
 
 eapp :: Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
-eapp f x = expr $ E.App f x
+eapp f = expr <<< E.App f
 
 enil :: Expr 𝔹
-enil = expr $ E.Constr cNil L.Nil
+enil = expr $ E.Constr cNil Nil
 
 evar :: Var -> Expr 𝔹
-evar x = expr $ E.Var x
+evar = expr <<< E.Var
 
 desugar :: SExpr -> Expr 𝔹
 desugar (SExpr α (Int n)) = Expr α (E.Int n)
@@ -65,10 +64,10 @@ desugar (SExpr α (ListSeq s1 s2))
    = let e1 = desugar s1
          e2 = desugar s2
      in  eapp (eapp (evar "enumFromTo") e1) e2
-desugar (SExpr α (ListComp s_body (Guard (SExpr _ (Constr cTrue L.Nil)) : L.Nil )))
-   = expr $ E.Constr cCons (desugar s_body : enil : L.Nil)
-desugar (SExpr α (ListComp s_body (q:L.Nil)))
-   = desugar (sexpr $ ListComp s_body (q : Guard (sexpr $ Constr cTrue L.Nil) : L.Nil))
+desugar (SExpr α (ListComp s_body (Guard (SExpr _ (Constr cTrue Nil)) : Nil )))
+   = expr $ E.Constr cCons (desugar s_body : enil : Nil)
+desugar (SExpr α (ListComp s_body (q:Nil)))
+   = desugar (sexpr $ ListComp s_body (q : Guard (sexpr $ Constr cTrue Nil) : Nil))
 desugar (SExpr α (ListComp s_body (Guard s : qs)))
    =  let e = desugar s
           σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar (SExpr α (ListComp s_body qs)))
@@ -102,13 +101,13 @@ patternToElim (PVar x) κ
    = ElimVar x κ
 patternToElim (PConstr ctr ps) κ
    = let go (p':p'':ps') = Arg (patternToElim p' (go (p'':ps')))
-         go (p':L.Nil)   = Arg (patternToElim p' κ)
-         go L.Nil        = κ
+         go (p':Nil)   = Arg (patternToElim p' κ)
+         go Nil        = κ
      in  ElimConstr (M.singleton ctr (go ps))
 
 totalise :: Elim 𝔹 -> Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e
-   = let ctr × κ              = fromJust "" (L.head $ M.toUnfoldable m)
+   = let ctr × κ              = fromJust "" (head $ M.toUnfoldable m)
          branches             = (M.toUnfoldable m)
          existing_ctrs        = fst <$> branches
          DataType _ sigs      = mustLookup ctr ctrToDataType
