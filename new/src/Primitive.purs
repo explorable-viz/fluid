@@ -3,7 +3,7 @@ module Primitive where
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
-import Data.Int (toNumber)
+import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Text.Parsing.Parser.Expr (Assoc(..))
@@ -132,6 +132,8 @@ primitives = foldl (:+:) Empty [
    ">"         ↦ from   ((>)  :: Int -> Int -> Boolean),
    "<="        ↦ from   ((<=) :: Int -> Int -> Boolean),
    ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
+   "ceiling"   ↦ from   ceil,
+   "floor"     ↦ from   floor,
    "intToStr"  ↦ from   (show :: Int -> String)
 ]
 
