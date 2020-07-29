@@ -62,7 +62,7 @@ desugar (SExpr α (IfElse s1 s2 s3))
 desugar (SExpr α (ListSeq s1 s2))
    = let e1 = desugar s1
          e2 = desugar s2
-     in  eapp (eapp (evar "enumFromTo") e1) e2
+     in  eapp (eapp (evar "range") e1) e2
 desugar (SExpr α (ListComp s_body (Guard (SExpr _ (Constr cTrue Nil)) : Nil )))
    = expr $ E.Constr cCons (desugar s_body : enil : Nil)
 desugar (SExpr α (ListComp s_body (q:Nil)))

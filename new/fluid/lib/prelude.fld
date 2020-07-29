@@ -1,3 +1,5 @@
+-- "Num" throughout means (Int + Float).
+
 -- Bool -> Bool
 let and False y = False;
     and True y = y;
@@ -20,8 +22,16 @@ let compare (x, y) =
       }
    };
 
--- Int -> Int
+-- Num -> Num
 let negate = (-) 0;
+
+-- Log of x in base y.
+-- Float -> Float -> Float
+let logBase x y = log y / log x;
+
+-- Float -> Float -> Float
+let ceilingToNearest n m =
+   ceiling (n / m) * m;
 
 -- (b -> c) -> (a -> b) -> a -> c
 -- Want infix <<<
@@ -225,8 +235,8 @@ let zipWith op Nil ys = Nil;
 let zip = zipWith id;
 
 -- Int -> Int -> List Int
-let enumFromTo n m =
+let range n m =
     match n <= m as {
-       True  -> n : (enumFromTo (n + 1) m);
+       True  -> n : range (n + 1) m;
        False -> Nil
     };

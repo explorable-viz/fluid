@@ -8,11 +8,3 @@ primitive log;
 -- Print argument to the console and return it.
 -- a -> a
 primitive debugLog;
-
--- Log of x in base y.
--- Num -> Num -> Num
-let logBase x y = log y / log x;
-
--- Num -> Num -> Num
-let ceilingToNearest n m =
-   ceiling (n / m) * m;
