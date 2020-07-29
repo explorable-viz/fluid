@@ -13,7 +13,7 @@ import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cTrue, cFalse, Ctr(..))
 import Lattice (𝔹, (∧))
 import Expr (Expr(Expr), RawExpr(..), Var, expr)
-import Util (type (×), (×), type (+), absurd, error)
+import Util (Endo, type (×), (×), type (+), absurd, error)
 import Val (Env, Primitive(..), Val(..), val)
 import Val (RawVal(..)) as V
 
@@ -149,16 +149,13 @@ primitives = foldl (:+:) Empty [
    "<="        ↦ from   ((<=) :: Int -> Int -> Boolean),
    ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
    "ceiling"   ↦ from   ceil,
-   "debugLog"  ↦ from   debugLog,
+   "debugLog"  ↦ from   ((\x -> trace x \_ -> x) :: Endo (Val 𝔹)),
    "div"       ↦ from   (div  :: Int -> Int -> Int),
    "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
    "log"       ↦ from   log,
    "numToStr"  ↦ from   (show `union` show)
 ]
-
-debugLog :: Val 𝔹 -> Val 𝔹
-debugLog x = trace x \_ -> x
 
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
 union f _ (Left x) = f x
