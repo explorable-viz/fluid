@@ -35,23 +35,5 @@ let ceilingToNearest n m =
    ceiling (n / m) * m;
 
 -- Num -> List a -> List a
-let take n xs =
-   if n <= 0
-   then []
-   else match xs as {
-      [] -> [];
-      x : xs -> x : take (n - 1) xs
-   };
-
--- Num -> List a -> List a
-let drop n xs =
-   if n <= 0
-   then xs
-   else match xs as {
-      [] -> [];
-      _ : xs -> drop (n - 1) xs
-   };
-
--- Num -> List a -> List a
 let lastN n xs =
    foldl (uncurry (compose const (drop 1))) xs (drop n xs);

@@ -148,6 +148,26 @@ let reverse Nil = Nil;
 -- Int -> a -> List a
 let repeat = flip iterate id;
 
+-- Int -> List a -> List a
+let take n xs =
+    match n <= 0 as {
+       True -> Nil;
+       False -> match xs as {
+           Nil -> Nil;
+           x : xs -> x : take (n - 1) xs
+       }
+    };
+
+-- Int -> List a -> List a
+let drop n xs =
+   match n <= 0 as {
+      True -> xs;
+      False -> match xs as {
+         Nil -> Nil;
+         _ : xs -> drop (n - 1) xs
+      }
+   };
+
 -- Int -> List (Int, b) -> b
 let lookup k ((k', v) : kvs) =
    match k == k' as {
