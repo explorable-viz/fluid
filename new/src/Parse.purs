@@ -16,7 +16,6 @@ import Data.Map (values)
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst, snd)
-import Debug.Trace (trace)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
@@ -219,10 +218,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          -- exponent	->	(e | E) [+ | -] decimal
 
          float :: SParser (Expr 𝔹)
-         float = do
-            n <- token.float
-            trace n \_ ->
-               pure $ expr $ Float n
+         float = (Float >>> expr) <$> token.float
 
          string :: SParser (Expr 𝔹)
          string = (Str >>> expr) <$> token.stringLiteral
