@@ -62,6 +62,8 @@ eval_bwd (Val α (V.Str s)) (Expl ρ (T.Str _))
    = bot ρ × Expr α (Str s) × α
 eval_bwd (Val α (V.Int n)) (Expl ρ (T.Int _))
    = bot ρ × Expr α (Int n) × α
+eval_bwd (Val α (V.Float n)) (Expl ρ (T.Float _))
+   = bot ρ × Expr α (Float n) × α
 eval_bwd v@(Val α (V.Primitive φ)) (Expl ρ (T.Op op))
    = (bot ρ ◃ op ↦ v) × Expr false (Op op) × false
 eval_bwd (Val α (V.Closure ρ δ σ)) (Expl _ (T.Lambda σ'))
