@@ -3,13 +3,12 @@ module DataType where
 import Prelude hiding (absurd)
 import Data.Char.Unicode (isUpper)
 import Data.Either (note)
-import Data.Foldable (class Foldable, foldr)
+import Data.Foldable (class Foldable)
 import Data.List (fromFoldable) as L
-import Data.List (List(..), concat, length, (:), findIndex, alterAt)
+import Data.List (List, concat, length)
 import Data.Map (Map, lookup)
-import Data.Map (fromFoldable, toUnfoldable) as M
+import Data.Map (fromFoldable) as M
 import Data.Map.Internal (keys)
-import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.String.CodeUnits (charAt)
 import Util (MayFail, type (×), (×), absurd, error, fromJust)
@@ -74,46 +73,6 @@ cEQ         = Ctr "EQ"        :: Ctr
 cPair       = Ctr "Pair"      :: Ctr -- Pair
 cEmpty      = Ctr "Empty"     :: Ctr -- Tree
 cNonEmpty   = Ctr "NonEmpty"  :: Ctr
-
-ctrToDataTypeStr :: Ctr -> String
-ctrToDataTypeStr ctr'
-   = let m = ctrDataTypeMap
-   in fromJust "" $ lookup ctr' m
-
-dataTypeStrToCtrs :: String -> List Ctr
-dataTypeStrToCtrs dt
-   = let m = flipMap ctrDataTypeMap
-     in fromJust "" $ lookup dt m
-
-flipMap :: forall k v. Eq v => Ord v => Map k v -> Map v (List k)
-flipMap m
-   = let f   = \(k × v) v_to_ks
-                  -> updateAt (\(v' × _) -> v == v')
-                              (\(_ × ks) -> v × (k:ks))
-                              (v × (k:Nil)) v_to_ks
-
-     in M.fromFoldable $ foldr f Nil (M.toUnfoldable m :: List (k × v))
-
-updateAt :: forall a. (a -> Boolean) -> (a -> a) -> a -> List a -> List a
-updateAt predicate f default xs
-   = case findIndex predicate xs of
-      Just i -> fromJust "" $ alterAt i (\x -> Just (f x)) xs
-      Nothing -> (default:xs)
-
-ctrDataTypeMap :: Map Ctr String
-ctrDataTypeMap = M.fromFoldable [
-   cFalse × "Bool",
-   cTrue × "Bool",
-   cNil × "List",
-   cCons × "List",
-   cNone × "Option",
-   cSome × "Option",
-   cGT × "Ordering",
-   cLT × "Ordering",
-   cEQ × "Ordering",
-   cPair × "Pair",
-   cEmpty × "Tree",
-   cNonEmpty × "Tree"]
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [

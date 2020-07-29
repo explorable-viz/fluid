@@ -3,9 +3,10 @@ module Desugar where
 import Prelude hiding (absurd)
 import Data.List ((:), List, difference)
 import Data.List (List(..), head) as L
-import Data.Map (fromFoldable, toUnfoldable, singleton, lookup) as M
+import Data.Map (fromFoldable, keys, lookup, singleton, toUnfoldable) as M
 import Data.Tuple (fst)
-import DataType (Ctr, ctrToDataTypeStr, dataTypeStrToCtrs, cCons, cNil, cTrue, cFalse)
+import Data.Set (toUnfoldable)
+import DataType (Ctr, DataType'(..), ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), Var, expr)
 import Expr (RawExpr(..)) as E
 import Lattice (𝔹)
@@ -179,14 +180,15 @@ totalize :: Elim 𝔹 -> Expr 𝔹 -> Elim 𝔹
 totalize (ElimConstr m) e
    = let ctr × κ              = fromJust "" (L.head $ M.toUnfoldable m)
          branches             = (M.toUnfoldable m)
-         existing_ctrs        = map fst branches
-         all_ctrs             = dataTypeStrToCtrs (ctrToDataTypeStr ctr)
-         new_branches         = map (\c -> c × (Body e)) (difference all_ctrs existing_ctrs)
-         totalized_branches   = map
+         existing_ctrs        = fst <$> branches
+         DataType _ sigs      = fromJust "" $ M.lookup ctr ctrToDataType
+         all_ctrs             = toUnfoldable $ M.keys sigs
+         new_branches         = (_ × Body e) <$> (difference all_ctrs existing_ctrs)
+         totalized_branches   = branches <#>
                                  (\(c × κ) -> case fromJust "" (M.lookup c m) of
                                                 Arg σ   -> c × (Arg (totalize σ e))
                                                 Body e' -> c × (Body e')
-                                                None    -> c × (Body e)) branches
+                                                None    -> c × (Body e))
      in   ElimConstr (M.fromFoldable $ totalized_branches <> new_branches)
 totalize (ElimVar e k) e'
    = case k of Arg σ  -> ElimVar e (Arg (totalize σ e'))
