@@ -1,17 +1,3 @@
-// Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
-// (Colours → List a → GraphicsElement) → Bool → Colours → Num → List (Cat, a) → GraphicsElement
-let categoricalChart = fun plotValue withAxes colours sep data →
-   let gs = stackRight sep (plotValue colours (map snd data));
-   let w = length gs;
-   let h = max (map height gs)
-   in match withAxes as {
-      True →
-         match catAxis Horiz 0 (map fst data) as
-         x_axis → match axis Vert 0 0 h as
-         (y_axis, h') → viewport 0 w h' defaultMargin (concat gs [x_axis, y_axis]); // axes on top
-      False → viewport 0 w h 0 gs
-   };
-
 // Colours → List a → GraphicsElement
 let rects = fun colours ns →
    zipWith (fun (colour, n) → Rect(0, 0, 1, n, colour)) colours ns;

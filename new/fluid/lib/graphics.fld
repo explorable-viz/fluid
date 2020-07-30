@@ -174,3 +174,16 @@ let lineChart withAxes colours x_start data =
       False -> viewport x_start x_finish y_finish 0 lines
    };
 
+-- Plot a chart of categorical values on the x-axis and renderings of the corresponding a-value on the y-axis.
+-- (Colours -> List a -> GraphicsElement) -> Bool -> Colours -> Float -> List (Cat, a) -> GraphicsElement
+let categoricalChart plotValue withAxes colours sep data =
+   let gs = stackRight sep (plotValue colours (map snd data));
+       w = length gs;
+       h = max (map height gs)
+   in match withAxes as {
+      True ->
+         let x_axis = catAxis Horiz 0 (map fst data);
+             (y_axis, h') = axis Vert 0 0 h
+         in viewport 0 w h' defaultMargin (concat gs (x_axis : y_axis : Nil)); -- axes on top
+      False -> viewport 0 w h 0 gs
+   };
