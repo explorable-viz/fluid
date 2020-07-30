@@ -136,17 +136,17 @@ primitives = foldl (:+:) Empty [
    "-"         ↦ from   ((-) `union2` (-)),
    "*"         ↦ from   ((*) `union2` (*)),
    "**"        ↦ from   (pow :: Number -> Number -> Number),
-   "/"         ↦ from   ((/)  :: Number -> Number -> Number),
-   "=="        ↦ from   ((==) :: Int -> Int -> Boolean),
-   "/="        ↦ from   ((/=) :: Int -> Int -> Boolean),
-   "<"         ↦ from   ((<)  :: Int -> Int -> Boolean),
-   ">"         ↦ from   ((>)  :: Int -> Int -> Boolean),
-   "<="        ↦ from   ((<=) :: Int -> Int -> Boolean),
-   ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
+   "/"         ↦ from   ((/) :: Number -> Number -> Number),
+   "=="        ↦ from   ((==) `union2'` (==)),
+   "/="        ↦ from   ((/=) `union2'` (/=)),
+   "<"         ↦ from   ((<) `union2'` (<)),
+   ">"         ↦ from   ((>) `union2'` (>)),
+   "<="        ↦ from   ((<=) `union2'` (<=)),
+   ">="        ↦ from   ((>=) `union2'` (>=)),
    "++"        ↦ from   ((<>) :: String -> String -> String),
    "ceiling"   ↦ from   ceil,
    "debugLog"  ↦ from   debugLog,
-   "div"       ↦ from   (div  :: Int -> Int -> Int),
+   "div"       ↦ from   (div :: Int -> Int -> Int),
    "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
    "log"       ↦ from   (log :: Number -> Number),
@@ -156,6 +156,7 @@ primitives = foldl (:+:) Empty [
 debugLog :: Endo (Val 𝔹)
 debugLog x = trace x (const x)
 
+-- TODO: unify these a bit (at least the last two).
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
 union f _ (Left x) = f x
 union _ f (Right x) = f x
@@ -165,3 +166,9 @@ union2 f _ (Left x) (Left y) = Left $ f x y
 union2 _ f (Left x) (Right y) = Right $ f (toNumber x) y
 union2 _ f (Right x) (Left y) = Right $ f x (toNumber y)
 union2 _ f (Right x) (Right y) = Right $ f x y
+
+union2' :: forall a . (Int -> Int -> a) -> (Number -> Number -> a) -> Int + Number -> Int + Number -> a
+union2' f _ (Left x) (Left y) = f x y
+union2' _ f (Left x) (Right y) = f (toNumber x) y
+union2' _ f (Right x) (Left y) = f x (toNumber y)
+union2' _ f (Right x) (Right y) = f x y

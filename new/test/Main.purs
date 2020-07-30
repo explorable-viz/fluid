@@ -6,6 +6,7 @@ import Test.Spec (before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
+import DataType (dataTypeFor, typeName)
 import Desugar (SExpr, desugar)
 import Eval (eval)
 import Fwd (eval_fwd)
@@ -13,7 +14,13 @@ import Module (openWithImports, loadModule)
 import Pretty (pretty, render)
 import Primitive (primitives)
 import Util ((×), successful)
+import Val (Val(..), RawVal(..))
 import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
+
+isGraphical :: forall a . Val a -> Boolean
+isGraphical Hole                 = false
+isGraphical (Val _ (Constr c _)) = typeName (successful $ dataTypeFor c) == "GraphicsElement"
+isGraphical (Val _ _)            = false
 
 runExample :: String -> String -> Boolean -> Effect Unit
 runExample file expected slice = runMocha $
@@ -21,12 +28,13 @@ runExample file expected slice = runMocha $
       it file $ \(ρ × e) -> do
          case successful $ eval ρ e of
             t × v -> do
-               (render $ pretty v) `shouldEqual` expected
-               if slice then do
+               unless (isGraphical v) $
+                  (render $ pretty v) `shouldEqual` expected
+               when slice do
                   let ρ' × e' × α'  = eval_bwd v t
                       v'            = eval_fwd ρ' e' true
-                  (render $ pretty v') `shouldEqual` expected
-               else pure unit
+                  unless (isGraphical v) $
+                     (render $ pretty v') `shouldEqual` expected
 
 runDesugar :: String -> SExpr -> String -> Effect Unit
 runDesugar test s expected = runMocha $
@@ -57,5 +65,7 @@ main = do
    runExample "pattern-match" "4" true
    runExample "reverse" "[2, 1]" true
    runExample "zipWith" "[[10], [12], [20]]" true
+   -- graphics
+   runExample "graphics/background" "" true
    -- scratchpad
    runExample "temp" "5.2" true
