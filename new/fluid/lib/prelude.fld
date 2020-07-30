@@ -200,6 +200,7 @@ let lookup k ((k', v) : kvs) =
       False -> lookup k kvs
    };
 
+-- TODO: curry.
 -- (Int, Int) -> Int
 let max2 (n, m) =
    match n > m as {

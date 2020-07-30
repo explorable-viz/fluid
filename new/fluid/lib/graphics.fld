@@ -4,8 +4,38 @@
 
 -- Group has location (0, 0) because it doesn't interfere with positioning of its children.
 -- GraphicsElement -> Point
+let coords (Group gs) = Point 0 0;
+    coords (Rect x y _ _ _) = Point x y;
+    coords (Text x y _ _ _) = Point x y;
+    coords (Viewport x y _ _ _ _ _ _ _) = Point x y;
+
+-- GraphicsElement -> Float
+let get_x g = let Point x _ = coords g in x;
+
+-- GraphicsElement -> Float
+let get_y g = let Point _ y = coords g in x;
+
+-- Want some kind of typeclass mechanism plus record accessors/updaters.
+-- Float -> GraphicsElement -> GraphicsElement
+let set_x x (Group gs) = error "Group has immutable coordinates";
+    set_x x (Rect _ y w h fill) = Rect x y w h fill;
+    set_x x (Text _ y str anchor baseline) = Text x y str anchor baseline;
+    set_x x (Viewport _ y w h fill margin scale translate g) = Viewport x y w h fill margin scale translate g;
+
+-- (Point, Point) -> Point
+let dimensions2 (Point x1 y1, Point x2 y2) = Point (max2 (x1, x2)) (max2 (y1, y2));
+
+-- For Group, dimensions are relative to implicit coords of (0, 0), since a Group's children are effectively
+-- positioned relative to parent of Group. For Polymarker, will probably have to ignore the markers themselves,
+-- since they are scale-invariant.
+-- GraphicsElement -> Point
 let
-   coords (Group gs) = Point 0 0;
-   coords (Rect x y _ _ _) = Point x y;
-   coords (Text x y _ _ _) = Point x y;
-   coords (Viewport x y _ _ _ _ _ _ _) = Point x y;
+   dimensions (Group gs) = foldl dimensions2 (Point 0 0) (map (coords_op) gs);
+   dimensions (Polyline ps _ _) = foldl dimensions2 (Point 0 0) ps;
+   dimensions (Rect _ _ w h _) = Point w h;
+   dimensions (Text _ _ _ _ _) = Point 0 0; -- treat text like markers; scale-invariant
+   dimensions (Viewport _ _ w h _ _ _ _ _) = Point w h;
+
+   coords_op g =
+      let (Point x y, Point w h) = prod coords dimensions g in
+      Point (x + w) (y + h);
