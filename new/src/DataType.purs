@@ -63,7 +63,7 @@ arity c = do
    DataType _ sigs <- dataTypeFor c
    length <$> note absurd (lookup c sigs)
 
--- Constructors used internally for primitives or syntactic sugar.
+-- Used internally by primitives or desugaring.
 cFalse      = Ctr "False"     :: Ctr -- Bool
 cTrue       = Ctr "True"      :: Ctr
 cNil        = Ctr "Nil"       :: Ctr -- List
@@ -158,12 +158,34 @@ dataTypes = L.fromFoldable [
          "x",        -- Float
          "y",        -- Float
          "str",      -- Str
-         "anchor",   -- Str
-         "baseline"  -- Str
+         "anchor",   -- Str (SVG text-anchor)
+         "baseline"  -- Str (SVG alignment-baseline)
       ],
-      Ctr "Viewport" × []
+      Ctr "Viewport" × [
+         "x",           -- Float
+         "y",           -- Float
+         "width",       -- Float
+         "height",      -- Float
+         "fill",        -- Str
+         "margin",      -- Float (in *parent* reference frame)
+         "scale",       -- Transform
+         "translate",   -- Transform (scaling applies to translated coordinates)
+         "g"            -- GraphicsElement
+      ]
+   ],
+
+   dataType "Transform" [
+      Ctr "Scale" × [
+         "x",  -- Float
+         "y"   -- Float
+      ],
+      Ctr "Translate" × [
+         "x",  -- Float
+         "y"   -- Float
+      ]
+   ],
+
+   dataType "Marker" [
+      Ctr "Arrowhead" × []
    ]
 ]
-
--- initDataType(Transform, [Scale, Translate])
--- initDataType(Marker, [Arrowhead])
