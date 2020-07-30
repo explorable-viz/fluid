@@ -3,8 +3,8 @@ module Test.Desugar where
 import Prelude
 import Data.List (List(..), (:))
 import Bindings (Var)
-import DataType (Ctr(..), cCons, cNil)
-import Desugar (Pattern(..), Predicate(..), SExpr, SugaredExpr(..), sexpr)
+import DataType (cCons, cNil)
+import Desugar (Pattern(..), Predicate(..), SExpr, RawSExpr(..), sexpr)
 
 lcomp1 :: SExpr
 lcomp1
@@ -42,7 +42,7 @@ lcomp3
 lcomp4 :: SExpr
 lcomp4
  = sexpr $ ListComp (svar "x")
-            ((Generator (PConstr (Ctr cCons) (PVar "x":PVar "xs":Nil)) (scons (scons (sint 5) snil)
+            ((Generator (PConstr cCons (PVar "x":PVar "xs":Nil)) (scons (scons (sint 5) snil)
              (scons (scons (sint 4) snil) (scons (scons (sint 3) snil) (scons snil snil))))):
             Nil)
 
@@ -68,10 +68,10 @@ svar :: Var -> SExpr
 svar x = sexpr $ Var x
 
 scons :: SExpr -> SExpr -> SExpr
-scons se1 se2 = sexpr $ Constr (Ctr cCons) (se1:se2:Nil)
+scons se1 se2 = sexpr $ Constr cCons (se1:se2:Nil)
 
 snil :: SExpr
-snil = sexpr $ Constr (Ctr cNil) Nil
+snil = sexpr $ Constr cNil Nil
 
 sint :: Int -> SExpr
 sint n = sexpr $ Int n

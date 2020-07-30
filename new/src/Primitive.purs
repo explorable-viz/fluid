@@ -10,7 +10,7 @@ import Debug.Trace (trace)
 import Math (log)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), (:+:), (↦))
-import DataType (Ctr(..), cTrue, cFalse)
+import DataType (cTrue, cFalse)
 import Lattice (𝔹, (∧))
 import Expr (Var)
 import Util (Endo, type (×), (×), type (+), absurd, error)
@@ -84,10 +84,10 @@ instance fromIntOrNumber :: From (Either Int Number) where
    from (Right n)  = val $ V.Float n
 
 true_ :: Val 𝔹
-true_ = val $ V.Constr (Ctr cTrue) Nil
+true_ = val $ V.Constr cTrue Nil
 
 false_ :: Val 𝔹
-false_ = val $ V.Constr (Ctr cFalse) Nil
+false_ = val $ V.Constr cFalse Nil
 
 instance fromVal :: From (Val Boolean) where
    from = identity
@@ -128,7 +128,7 @@ apply_fwd φ α v@(Val α' _) = case apply φ v of
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
-   -- need to instantiate the corresponding PureScript primitive at a concrete type
+   -- where necessary instantiate corresponding PureScript primitive at concrete type
    "+"         ↦ from   ((+) `union2` (+)),
    "-"         ↦ from   ((-) `union2` (-)),
    "*"         ↦ from   ((*) `union2` (*)),
