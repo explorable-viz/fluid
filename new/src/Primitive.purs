@@ -7,7 +7,7 @@ import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..))
 import Data.Map (Map, fromFoldable)
 import Debug.Trace (trace)
-import Math (log)
+import Math (log, pow)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cTrue, cFalse)
@@ -30,6 +30,7 @@ opDef op prec assoc = op × { op, prec, assoc }
 -- Syntactic information only. No guarantee that any of these will be defined.
 opDefs :: Map String OpDef
 opDefs = fromFoldable [
+   opDef "**"  8 AssocRight,
    opDef "*"   7 AssocLeft,
    opDef "/"   7 AssocLeft,
    opDef "+"   6 AssocLeft,
@@ -129,9 +130,11 @@ apply_fwd φ α v@(Val α' _) = case apply φ v of
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    -- where necessary instantiate corresponding PureScript primitive at concrete type
+   -- pow and log are not overloaded, but useful to document their type
    "+"         ↦ from   ((+) `union2` (+)),
    "-"         ↦ from   ((-) `union2` (-)),
    "*"         ↦ from   ((*) `union2` (*)),
+   "**"        ↦ from   (pow :: Number -> Number -> Number),
    "/"         ↦ from   ((/)  :: Number -> Number -> Number),
    "=="        ↦ from   ((==) :: Int -> Int -> Boolean),
    "/="        ↦ from   ((/=) :: Int -> Int -> Boolean),
@@ -144,7 +147,7 @@ primitives = foldl (:+:) Empty [
    "div"       ↦ from   (div  :: Int -> Int -> Int),
    "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
-   "log"       ↦ from   log,
+   "log"       ↦ from   (log :: Number -> Number),
    "numToStr"  ↦ from   (show `union` show)
 ]
 

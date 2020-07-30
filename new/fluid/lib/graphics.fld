@@ -39,3 +39,52 @@ let
    coords_op g =
       let (Point x y, Point w h) = prod coords dimensions g in
       Point (x + w) (y + h);
+
+-- GraphicsElement -> Float
+let width g = let Point w _ = dimensions g in w;
+
+-- GraphicsElement -> Float
+let height g = let Point _ h = dimensions g in h;
+
+-- Float -> Float -> List GraphicsElement -> List GraphicsElement
+let spaceRight z sep gs =
+   zipWith (uncurry set_x) (iterate (length gs) ((+) sep) z) gs;
+
+-- Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
+-- different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org.
+let colours1 = "#66c2a5" : "#a6d854" : "#ffd92f" : "#e5c494" : "#fc8d62" : "#b3b3b3" : "#8da0cb" : "#e78ac3" : Nil;
+let colours2 = "#e41a1c" : "#377eb8" : "#4daf4a" : "#984ea3" : "#ff7f00" : "#ffff33" : "#a65628" : "#f781bf" : Nil;
+
+-- Compositionality principle: child coords/dimensions are always expressed directly using parent reference
+-- frame, to avoid depending on content of child, and so are not themselves scaled. Polyline can't be scaled
+-- directly because it inherits its frame of reference from its parent. For Viewport, margin will shrink the
+-- available area, possibly to zero, at which point nothing will be rendered.
+-- Float -> GraphicsElement -> GraphicsElement
+let scaleToWidth w (Rect x y _ h fill) = Rect x y w h fill;
+    scaleToWidth w (Viewport x y w0 h fill margin (Scale x_scale y_scale) translate g) =
+      let scale = Scale (x_scale * w / w0) y_scale in
+      Viewport x y w h fill margin scale translate g;
+
+-- Float -> List GraphicsElement -> List GraphicsElement
+let stackRight sep gs =
+   map (scaleToWidth (1 - sep)) (spaceRight (sep / 2) 1 gs);
+
+-- Float -> List GraphicsElement -> GraphicsElement
+let groupRight sep gs =
+   Viewport 0 0 (length gs) (max (map height gs)) "none" 0 (Scale 1 1) (Translate 0 0) (Group (stackRight sep gs));
+
+-- Heuristic saying how often to place a tick on an axis of length n.
+-- Float -> Float
+let tickEvery n =
+   let m = floor (logBase 10 n) in
+   match n <= 2 * 10 ** m as {
+      True -> 2 * 10 ** (m - 1);
+      False -> 10 ** m
+   };
+
+let axisStrokeWidth = 0.5;
+let axisColour = "black";
+let backgroundColour = "white";
+let defaultMargin = 24;
+let markerRadius = 3.5;
+let tickLength = 4;
