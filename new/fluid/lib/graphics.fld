@@ -83,8 +83,50 @@ let tickEvery n =
    };
 
 let axisStrokeWidth = 0.5;
-let axisColour = "black";
-let backgroundColour = "white";
-let defaultMargin = 24;
-let markerRadius = 3.5;
-let tickLength = 4;
+    axisColour = "black";
+    backgroundColour = "white";
+    defaultMargin = 24;
+    markerRadius = 3.5;
+    tickLength = 4;
+
+-- Helpers for axis functions.
+-- Orient -> Colour -> Float -> GraphicsElement
+let tick Horiz colour len = Line (Point 0 0) (Point 0 (0 - len)) colour axisStrokeWidth;
+    tick Vert colour len = Line (Point 0 0) (Point (0 - len) 0) colour axisStrokeWidth;
+
+-- Orient -> Num -> Num -> Str -> GraphicsElement
+let label Horiz x distance str = Text x (0 - distance - 4) str "middle" "hanging";
+    label Vert x distance str = Text (0 - distance) x str "end" "central";
+
+-- Orient -> Colour -> Num -> Str -> GraphicsElement
+let labelledTick orient colour len str =
+   Group (tick orient colour len : label orient 0 len str : Nil);
+
+-- Orient -> Num -> Num -> Point
+let mkPoint Horiz x y = Point y x;
+    mkPoint Vert x y = Point x y;
+
+-- x is position of this axis on the other axis. Returns axis and position of last tick.
+-- Orient -> Num -> Num -> GraphicsElement
+let axis orient x start end =
+   let tickSp = tickEvery (end - start);
+       firstTick = ceilingToNearest start tickSp;
+       lastTick = ceilingToNearest end tickSp;
+       n = floor ((end - firstTick) / tickSp) + 1;
+       ys = iterate n ((+) tickSp) firstTick;
+       -- avoid redundant start and end points
+       ys = match firstTick > start as {
+          True -> start : ys;
+          False -> ys
+       };
+       ys = match lastTick > end as {
+          True -> concat2 ys (lastTick : Nil);
+          False -> ys
+       };
+       ps = map (mkPoint orient x) ys;
+       ax = Group (
+          Line (head ps) (last ps) axisColour axisStrokeWidth :
+          Polymarkers ps (flip map ys (compose (labelledTick orient axisColour tickLength) numToStr)) :
+          Nil
+       )
+   in (ax, lastTick);
