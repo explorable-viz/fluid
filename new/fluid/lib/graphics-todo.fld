@@ -1,22 +1,3 @@
-// Colours → List a → GraphicsElement
-let rects = fun colours ns →
-   zipWith (fun (colour, n) → Rect(0, 0, 1, n, colour)) colours ns;
-
-// First component of data (categorical value) currently ignored; values just mapped positionally to colors.
-// Can we use Group instead of Viewport here?
-// Colours → List (a, Num) → GraphicsElement
-let stackedBar = fun colours ns →
-   let heights = (map snd ns);
-   let subtotals = scanl1 (fun (x, y) → x + y) 0 heights;
-   let dims = zip [0, ...subtotals] heights;
-   let rects = map
-      (fun ((y, height), colour) → Rect(0, y, 1, height, colour))
-      (zip dims colours)
-   in Viewport(0, 0, 1, last subtotals, "none", 0, Scale(1, 1), Translate(0, 0), Group(rects));
-
-// Bool → Colours → Num → List (a, Num) → GraphicsElement
-let barChart = categoricalChart rects;
-
 // For each categorical value of type a, plot a bar chart for the corresponding b-indexed data.
 // Bool → Colours → Num → List (a, List (b, Num)) → GraphicsElement
 let groupedBarChart = categoricalChart (compose map (flip (barChart False) 0));
