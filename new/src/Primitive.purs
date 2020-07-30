@@ -149,7 +149,7 @@ primitives = foldl (:+:) Empty [
    "<="        ↦ from   ((<=) :: Int -> Int -> Boolean),
    ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
    "ceiling"   ↦ from   ceil,
-   "debugLog"  ↦ from   ((\x -> trace x \_ -> x) :: Endo (Val 𝔹)),
+   "debugLog"  ↦ from   ((\x -> trace x (const x)) :: Endo (Val 𝔹)),
    "div"       ↦ from   (div  :: Int -> Int -> Int),
    "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
