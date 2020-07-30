@@ -1,0 +1,11 @@
+-- typedef Colour = Str
+-- typedef Colours = List Colour
+-- typedef Cat = Str
+
+-- Group has location (0, 0) because it doesn't interfere with positioning of its children.
+-- GraphicsElement -> Point
+let
+   coords (Group gs) = Point 0 0;
+   coords (Rect x y _ _ _) = Point x y;
+   coords (Text x y _ _ _) = Point x y;
+   coords (Viewport x y _ _ _ _ _ _ _) = Point x y;
