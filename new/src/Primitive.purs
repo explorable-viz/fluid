@@ -140,13 +140,16 @@ primitives = foldl (:+:) Empty [
    "<="        ↦ from   ((<=) :: Int -> Int -> Boolean),
    ">="        ↦ from   ((>=) :: Int -> Int -> Boolean),
    "ceiling"   ↦ from   ceil,
-   "debugLog"  ↦ from   ((\x -> trace x (const x)) :: Endo (Val 𝔹)),
+   "debugLog"  ↦ from   debugLog,
    "div"       ↦ from   (div  :: Int -> Int -> Int),
    "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
    "log"       ↦ from   log,
    "numToStr"  ↦ from   (show `union` show)
 ]
+
+debugLog :: Endo (Val 𝔹)
+debugLog x = trace x (const x)
 
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
 union f _ (Left x) = f x
