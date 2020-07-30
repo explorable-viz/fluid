@@ -94,20 +94,20 @@ let axisStrokeWidth = 0.5;
 let tick Horiz colour len = Line (Point 0 0) (Point 0 (0 - len)) colour axisStrokeWidth;
     tick Vert colour len = Line (Point 0 0) (Point (0 - len) 0) colour axisStrokeWidth;
 
--- Orient -> Num -> Num -> Str -> GraphicsElement
+-- Orient -> Float -> Float -> Str -> GraphicsElement
 let label Horiz x distance str = Text x (0 - distance - 4) str "middle" "hanging";
     label Vert x distance str = Text (0 - distance) x str "end" "central";
 
--- Orient -> Colour -> Num -> Str -> GraphicsElement
+-- Orient -> Colour -> Float -> Str -> GraphicsElement
 let labelledTick orient colour len str =
    Group (tick orient colour len : label orient 0 len str : Nil);
 
--- Orient -> Num -> Num -> Point
+-- Orient -> Float -> Float -> Point
 let mkPoint Horiz x y = Point y x;
     mkPoint Vert x y = Point x y;
 
 -- x is position of this axis on the other axis. Returns axis and position of last tick.
--- Orient -> Num -> Num -> GraphicsElement
+-- Orient -> Float -> Float -> Float -> GraphicsElement
 let axis orient x start end =
    let tickSp = tickEvery (end - start);
        firstTick = ceilingToNearest start tickSp;
@@ -130,3 +130,20 @@ let axis orient x start end =
           Nil
        )
    in (ax, lastTick);
+
+-- x is position of this axis on the other axis.
+-- Orient -> Float -> List Cat -> GraphicsElement
+let catAxis orient x catValues =
+   let ys = iterate (length catValues + 1) ((+) 1) 0;
+       ps = map (mkPoint orient x) ys
+   in Group (
+      Line (head ps) (last ps) axisColour axisStrokeWidth :
+      Polymarkers (tail ps) (map (const (tick orient axisColour tickLength)) catValues) :
+      Polymarkers (flip map (tail ps) (fun (Point x y) -> Point (x - 0.5) y)) (map (label orient -0.5 0) catValues) :
+      Nil
+   );
+
+-- Float -> Float -> Float -> Float -> List GraphicsElement -> GraphicsElement
+let viewport x_start x_finish y_finish margin gs =
+   Viewport 0 0 (x_finish - x_start) y_finish backgroundColour margin
+            (Scale 1 1) (Translate (0 - x_start) 0) (Group gs);
