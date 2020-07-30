@@ -61,43 +61,53 @@ arity c = do
    DataType _ sigs <- dataTypeFor c
    length <$> note absurd (lookup c sigs)
 
-cFalse      = Ctr "False"     :: Ctr -- Bool
-cTrue       = Ctr "True"      :: Ctr
-cNil        = Ctr "Nil"       :: Ctr -- List
-cCons       = Ctr ":"         :: Ctr
-cNone       = Ctr "None"      :: Ctr -- Option
-cSome       = Ctr "Some"      :: Ctr
-cGT         = Ctr "GT"        :: Ctr -- Ordering
-cLT         = Ctr "LT"        :: Ctr
-cEQ         = Ctr "EQ"        :: Ctr
-cPair       = Ctr "Pair"      :: Ctr -- Pair
-cEmpty      = Ctr "Empty"     :: Ctr -- Tree
-cNonEmpty   = Ctr "NonEmpty"  :: Ctr
+-- Some constructor names used internally for primitives, syntactic sugar.
+cFalse      = "False"      :: String   -- Bool
+cTrue       = "True"       :: String
+cNil        = "Nil"        :: String   -- List
+cCons       = ":"          :: String
+cPair       = "Pair"       :: String   -- Pair
+
+-- Graphics
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [
+   -- Core
    dataType "Bool" [
-      ctr cTrue [],
-      ctr cFalse []
+      ctr (Ctr cTrue) [],
+      ctr (Ctr cFalse) []
    ],
    dataType "List" [
-      ctr cNil [],
-      ctr cCons ["head", "tail"]
+      ctr (Ctr cNil) [],
+      ctr (Ctr cCons) ["head", "tail"]
    ],
    dataType "Option" [
-      ctr cNone [],
-      ctr cSome ["x"]
+      ctr (Ctr "None") [],
+      ctr (Ctr "Some") ["x"]
    ],
    dataType "Ordering" [
-      ctr cGT [],
-      ctr cLT [],
-      ctr cEQ []
+      ctr (Ctr "GT") [],
+      ctr (Ctr "LT") [],
+      ctr (Ctr "EQ") []
    ],
    dataType "Pair" [
-      ctr cPair ["fst", "snd"]
+      ctr (Ctr "Pair") ["fst", "snd"]
    ],
    dataType "Tree" [
-      ctr cEmpty [],
-      ctr cNonEmpty ["left", "x", "right"]
+      ctr (Ctr "Empty") [],
+      ctr (Ctr "NonEmpty") ["left", "x", "right"]
+   ],
+   -- Graphics
+   dataType "Point" [
+      ctr (Ctr "Point") []
+   ],
+
+   dataType "Orient" [
+      ctr (Ctr "Horiz") [],
+      ctr (Ctr "Vert") []
    ]
 ]
+
+-- initDataType(GraphicsElement, [Circle, Group, Line, Polyline, Polymarkers, Rect, Text, Viewport])
+-- initDataType(Transform, [Scale, Translate])
+-- initDataType(Marker, [Arrowhead])

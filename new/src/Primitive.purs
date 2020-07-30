@@ -4,15 +4,15 @@ import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
-import Data.List (List(..), (:))
+import Data.List (List(..))
 import Data.Map (Map, fromFoldable)
 import Debug.Trace (trace)
 import Math (log)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), (:+:), (↦))
-import DataType (cTrue, cFalse, Ctr(..))
+import DataType (Ctr(..), cTrue, cFalse)
 import Lattice (𝔹, (∧))
-import Expr (Expr(Expr), RawExpr(..), Var, expr)
+import Expr (Var)
 import Util (Endo, type (×), (×), type (+), absurd, error)
 import Val (Env, Primitive(..), Val(..), val)
 import Val (RawVal(..)) as V
@@ -49,15 +49,6 @@ class ToList a where
 class FromList a where
    fromList :: List a -> a
 
-instance exprToList :: ToList (Expr Boolean) where
-   toList (Expr a (Constr (Ctr ":") (e:es:Nil))) = (e:toList es)
-   toList (Expr a (Constr (Ctr "Nil") Nil)) = Nil
-   toList e = error "expected list expression"
-
-instance exprFromList :: FromList (Expr Boolean) where
-   fromList (x:xs) = expr $ (Constr (Ctr ":") (x:fromList xs:Nil))
-   fromList Nil    = expr $ Constr (Ctr "Nil") Nil
-
 -- Enforce primitive argument types.
 class To a where
    to :: Val 𝔹 -> a
@@ -93,10 +84,10 @@ instance fromIntOrNumber :: From (Either Int Number) where
    from (Right n)  = val $ V.Float n
 
 true_ :: Val 𝔹
-true_ = val $ V.Constr cTrue Nil
+true_ = val $ V.Constr (Ctr cTrue) Nil
 
 false_ :: Val 𝔹
-false_ = val $ V.Constr cFalse Nil
+false_ = val $ V.Constr (Ctr cFalse) Nil
 
 instance fromVal :: From (Val Boolean) where
    from = identity

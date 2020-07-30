@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:), (\\), head)
 import Data.Map (fromFoldable, singleton, toUnfoldable) as M
 import Data.Tuple (fst)
-import DataType (Ctr, DataType'(..), ctrToDataType, cCons, cNil, cTrue, cFalse)
+import DataType (Ctr(..), DataType'(..), ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), Var, expr)
 import Expr (RawExpr(..)) as E
 import Lattice (𝔹)
@@ -45,7 +45,7 @@ eapp :: Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 eapp f = expr <<< E.App f
 
 enil :: Expr 𝔹
-enil = expr $ E.Constr cNil Nil
+enil = expr $ E.Constr (Ctr cNil) Nil
 
 evar :: Var -> Expr 𝔹
 evar = expr <<< E.Var
@@ -56,21 +56,21 @@ desugar (SExpr α (IfElse s1 s2 s3))
     = let e1 = desugar s1
           e2 = desugar s2
           e3 = desugar s3
-          σ = ElimConstr (M.fromFoldable [ cTrue  × Body e2
-                                         , cFalse × Body e3])
+          σ = ElimConstr (M.fromFoldable [ Ctr cTrue  × Body e2
+                                         , Ctr cFalse × Body e3])
       in  Expr α (E.MatchAs e1 σ)
 desugar (SExpr α (ListSeq s1 s2))
    = let e1 = desugar s1
          e2 = desugar s2
      in  eapp (eapp (evar "range") e1) e2
 desugar (SExpr α (ListComp s_body (Guard (SExpr _ (Constr cTrue Nil)) : Nil )))
-   = expr $ E.Constr cCons (desugar s_body : enil : Nil)
+   = expr $ E.Constr (Ctr cCons) (desugar s_body : enil : Nil)
 desugar (SExpr α (ListComp s_body (q:Nil)))
-   = desugar (sexpr $ ListComp s_body (q : Guard (sexpr $ Constr cTrue Nil) : Nil))
+   = desugar (sexpr $ ListComp s_body (q : Guard (sexpr $ Constr (Ctr cTrue) Nil) : Nil))
 desugar (SExpr α (ListComp s_body (Guard s : qs)))
    =  let e = desugar s
-          σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar (SExpr α (ListComp s_body qs)))
-                                          , cFalse × Body enil])
+          σ  = ElimConstr (M.fromFoldable [ Ctr cTrue  × Body (desugar (SExpr α (ListComp s_body qs)))
+                                          , Ctr cFalse × Body enil])
       in  expr $ E.MatchAs e σ
 desugar (SExpr α (ListComp s_body (Generator p slist : qs)))
    =  let elist = desugar slist

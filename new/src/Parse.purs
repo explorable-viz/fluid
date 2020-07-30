@@ -103,7 +103,7 @@ simplePattern pattern' =
       token.parens $ do
          π <- pattern' <* token.comma
          π' <- pattern'
-         pure $ PattConstr cPair 2 $ PArg $ setCont (PArg π') π
+         pure $ PattConstr (Ctr cPair) 2 $ PArg $ setCont (PArg π') π
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -237,7 +237,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          pair :: SParser (Expr 𝔹)
          pair = token.parens $
-            expr <$> (lift2 $ \e e' -> Constr cPair (e : e' : empty)) (expr' <* token.comma) expr'
+            expr <$> (lift2 $ \e e' -> Constr (Ctr cPair) (e : e' : empty)) (expr' <* token.comma) expr'
 
          lambda :: SParser (Expr 𝔹)
          lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
