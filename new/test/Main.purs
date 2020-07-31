@@ -52,13 +52,11 @@ test' name setup expected =
 test :: String -> String -> SpecT Aff Unit Effect Unit
 test file = test' file (openWithImports file)
 
-blah :: String -> String -> String -> Aff (Env 𝔹 × Expr 𝔹)
-blah dataset x file =
-   bitraverse (uncurry openDatasetAs) openWithImports ((dataset × x) × file) <#>
-   (\(ρ × ρ' × e) -> (ρ <> ρ') × e)
-
 testWithDataset :: String -> String -> SpecT Aff Unit Effect Unit
-testWithDataset dataset file =  test' file (blah dataset "data" file) ""
+testWithDataset dataset file =
+   flip (test' file) "" $
+      bitraverse (uncurry openDatasetAs) openWithImports ((dataset × "data") × file) <#>
+      (\(ρ × ρ' × e) -> (ρ <> ρ') × e)
 
 desugarTest :: String -> SExpr -> String -> SpecT Aff Unit Effect Unit
 desugarTest name s expected =
