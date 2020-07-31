@@ -3,7 +3,7 @@ module Val where
 import Prelude hiding (absurd, top)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
-import Bindings (Bindings)
+import Bindings (Bindings(..))
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), maybeJoin)
