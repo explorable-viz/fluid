@@ -60,7 +60,7 @@ class From a where
 
 instance toInt :: To Int where
    to (Val _ (V.Int n)) = n
-   to _                 = error "Integer expected"
+   to _                 = error "Int expected"
 
 instance fromInt :: From Int where
    from = V.Int >>> val
@@ -69,21 +69,30 @@ instance toNumber :: To Number where
    to (Val _ (V.Float n))  = n
    to _                    = error "Float expected"
 
-instance toString :: To String where
-   to (Val _ (V.Str str))  = str
-   to _                    = error "String expected"
-
 instance fromNumber :: From Number where
    from = V.Float >>> val
+
+instance toString :: To String where
+   to (Val _ (V.Str str))  = str
+   to _                    = error "Str expected"
+
+instance fromString :: From String where
+   from = V.Str >>> val
 
 instance toIntOrNumber :: To (Either Int Number) where
    to (Val _ (V.Int n))    = Left n
    to (Val _ (V.Float n))  = Right n
-   to _                    = error "Integer or float expected"
+   to _                    = error "Int or Float expected"
 
 instance fromIntOrNumber :: From (Either Int Number) where
    from (Left n)   = val $ V.Int n
    from (Right n)  = val $ V.Float n
+
+instance toIntOrNumberOrString :: To (Either (Either Int Number) String) where
+   to (Val _ (V.Int n))    = Left (Left n)
+   to (Val _ (V.Float n))  = Left (Right n)
+   to (Val _ (V.Str n))    = Right n
+   to _                    = error "Int, Float or Str expected"
 
 true_ :: Val 𝔹
 true_ = val $ V.Constr cTrue Nil
@@ -96,9 +105,6 @@ instance fromVal :: From (Val Boolean) where
 
 instance fromBoolean :: From Boolean where
    from b = if b then true_ else false_
-
-instance fromString :: From String where
-   from = V.Str >>> val
 
 instance fromValOp :: From a => From (Val Boolean -> a) where
    from op = val $ V.Primitive $ ValOp $ op >>> from
@@ -115,12 +121,16 @@ instance fromIntOrNumberOp :: From a => From (Either Int Number -> a) where
 instance fromStringOp :: From a => From (String -> a) where
    from op = val $ V.Primitive $ StringOp $ op >>> from
 
+instance fromOrStringOp :: From a => From (Either (Either Int Number) String -> a) where
+   from op = val $ V.Primitive $ IntOrNumberOrStringOp $ op >>> from
+
 apply :: Primitive -> Val 𝔹 -> Val 𝔹
-apply (ValOp op)           = op
-apply (IntOp op)           = op <<< to
-apply (NumberOp op)        = op <<< to
-apply (IntOrNumberOp op)   = op <<< to
-apply (StringOp op)        = op <<< to
+apply (ValOp op)                 = op
+apply (IntOp op)                 = op <<< to
+apply (NumberOp op)              = op <<< to
+apply (IntOrNumberOp op)         = op <<< to
+apply (StringOp op)              = op <<< to
+apply (IntOrNumberOrStringOp op) = op <<< to
 
 apply_fwd :: Primitive -> 𝔹 -> Val 𝔹 -> Val 𝔹
 apply_fwd _ _ Hole         = Hole
@@ -132,17 +142,17 @@ primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    -- where necessary instantiate corresponding PureScript primitive at concrete type
    -- pow and log are not overloaded, but useful to document their type
-   "+"         ↦ from   ((+) `union2` (+)),
-   "-"         ↦ from   ((-) `union2` (-)),
-   "*"         ↦ from   ((*) `union2` (*)),
+   "+"         ↦ from   ((+) `union2` (+) :: Int + Number -> Int + Number -> Int + Number),
+   "-"         ↦ from   ((-) `union2` (-) :: Int + Number -> Int + Number -> Int + Number),
+   "*"         ↦ from   ((*) `union2` (*) :: Int + Number -> Int + Number -> Int + Number),
    "**"        ↦ from   (pow :: Number -> Number -> Number),
    "/"         ↦ from   ((/) :: Number -> Number -> Number),
-   "=="        ↦ from   ((==) `union2'` (==)),
-   "/="        ↦ from   ((/=) `union2'` (/=)),
-   "<"         ↦ from   ((<) `union2'` (<)),
-   ">"         ↦ from   ((>) `union2'` (>)),
-   "<="        ↦ from   ((<=) `union2'` (<=)),
-   ">="        ↦ from   ((>=) `union2'` (>=)),
+   "=="        ↦ from   ((==) `union2` (==) `unionDisj` (==)),
+   "/="        ↦ from   ((/=) `union2` (/=) `unionDisj` (==)),
+   "<"         ↦ from   ((<) `union2` (<) `unionDisj` (==)),
+   ">"         ↦ from   ((>) `union2` (>) `unionDisj` (==)),
+   "<="        ↦ from   ((<=) `union2` (<=) `unionDisj` (==)),
+   ">="        ↦ from   ((>=) `union2` (>=) `unionDisj` (==)),
    "++"        ↦ from   ((<>) :: String -> String -> String),
    "ceiling"   ↦ from   ceil,
    "debugLog"  ↦ from   debugLog,
@@ -156,19 +166,31 @@ primitives = foldl (:+:) Empty [
 debugLog :: Endo (Val 𝔹)
 debugLog x = trace x (const x)
 
--- TODO: unify these a bit (at least the last two).
+class Coerce a b where
+   coerce :: a -> b
+
+instance coerceIntIntOrNum :: Coerce Int (Either Int Number) where
+   coerce = Left
+
+instance coerceNumIntOrNum :: Coerce Number (Either Int Number) where
+   coerce = Right
+
+instance coerceBooleanBoolean :: Coerce Boolean Boolean where
+   coerce = identity
+
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
-union f _ (Left x) = f x
-union _ f (Right x) = f x
+union f _ (Left x)   = f x
+union _ f (Right x)  = f x
 
-union2 :: (Int -> Int -> Int) -> (Number -> Number -> Number) -> Int + Number -> Int + Number -> Int + Number
-union2 f _ (Left x) (Left y) = Left $ f x y
-union2 _ f (Left x) (Right y) = Right $ f (toNumber x) y
-union2 _ f (Right x) (Left y) = Right $ f x (toNumber y)
-union2 _ f (Right x) (Right y) = Right $ f x y
+union2 :: forall a b c . Coerce a c => Coerce b c =>
+           (Int -> Int -> a) -> (Number -> Number -> b) -> Int + Number -> Int + Number -> c
+union2 f _ (Left x) (Left y)     = coerce $ f x y
+union2 _ f (Left x) (Right y)    = coerce $ f (toNumber x) y
+union2 _ f (Right x) (Right y)   = coerce $ f x y
+union2 _ f (Right x) (Left y)    = coerce $ f x (toNumber y)
 
-union2' :: forall a . (Int -> Int -> a) -> (Number -> Number -> a) -> Int + Number -> Int + Number -> a
-union2' f _ (Left x) (Left y) = f x y
-union2' _ f (Left x) (Right y) = f (toNumber x) y
-union2' _ f (Right x) (Left y) = f x (toNumber y)
-union2' _ f (Right x) (Right y) = f x y
+unionDisj :: forall a b . (b -> b -> a) -> (String -> String -> a) -> b + String -> b + String -> a
+unionDisj f _ (Left x) (Left y)   = f x y
+unionDisj _ _ (Left _) (Right _)  = error "Non-uniform argument types"
+unionDisj _ f (Right x) (Right y) = f x y
+unionDisj _ _ (Right _) (Left _)  = error "Non-uniform argument types"
