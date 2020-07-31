@@ -9,7 +9,6 @@ import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
-import Bindings (Var)
 import DataType (dataTypeFor, typeName)
 import Desugar (SExpr, desugar)
 import Expr (Expr)
@@ -36,14 +35,6 @@ slicing = true
 run :: forall a . SpecT Aff Unit Effect a → Effect Unit
 run = runMocha -- nicer name
 
-blah :: String -> String -> String -> Aff (Env 𝔹 × Expr 𝔹)
-blah dataset x file =
-   bitraverse (uncurry openDatasetAs) openWithImports ((dataset × x) × file) <#>
-   (\(ρ × ρ' × e) -> (ρ <> ρ') × e)
-
-withDataset :: String -> Var -> forall m a . Monad m => SpecT Aff (Env 𝔹) m a → SpecT Aff Unit m a
-withDataset file x = before (openDatasetAs file x)
-
 test' :: String -> Aff (Env 𝔹 × Expr 𝔹) -> String -> SpecT Aff Unit Effect Unit
 test' name setup expected =
    before setup $
@@ -60,6 +51,14 @@ test' name setup expected =
 
 test :: String -> String -> SpecT Aff Unit Effect Unit
 test file = test' file (openWithImports file)
+
+blah :: String -> String -> String -> Aff (Env 𝔹 × Expr 𝔹)
+blah dataset x file =
+   bitraverse (uncurry openDatasetAs) openWithImports ((dataset × x) × file) <#>
+   (\(ρ × ρ' × e) -> (ρ <> ρ') × e)
+
+testWithDataset :: String -> String -> SpecT Aff Unit Effect Unit
+testWithDataset dataset file =  test' file (blah dataset "data" file) ""
 
 desugarTest :: String -> SExpr -> String -> SpecT Aff Unit Effect Unit
 desugarTest name s expected =
@@ -93,7 +92,7 @@ main = do
    run $ test "reverse" "[2, 1]"
    run $ test "zipWith" "[[10], [12], [20]]"
    -- graphics
-   run $ test "graphics/background" ""
-   run $ test "graphics/line-chart" ""
+   run $ testWithDataset "renewables-restricted" "graphics/background"
+   run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    -- scratchpad
    run $ test "temp" "5.2"
