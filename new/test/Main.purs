@@ -17,6 +17,7 @@ import Util ((×), successful)
 import Val (Val(..), RawVal(..))
 import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
 
+-- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
 isGraphical Hole                 = false
 isGraphical (Val _ (Constr c _)) = typeName (successful $ dataTypeFor c) == "GraphicsElement"
@@ -45,11 +46,13 @@ runDesugar test s expected = runMocha $
 
 main :: Effect Unit
 main = do
+   -- desugaring
    runDesugar "list-comp-1" lcomp1 lcomp1_eval
    runDesugar "list-comp-2" lcomp2 lcomp2_eval
    runDesugar "list-comp-3" lcomp3 lcomp3_eval
    runDesugar "list-comp-4" lcomp4 lcomp4_eval
    runDesugar "list-seq-1" lseq1 lseq1_eval
+   -- slicing
    runExample "arithmetic" "42" true
    runExample "compose" "5" true
    runExample "factorial" "40320" true
@@ -67,5 +70,6 @@ main = do
    runExample "zipWith" "[[10], [12], [20]]" true
    -- graphics
    runExample "graphics/background" "" true
+   runExample "graphics/line-chart" "" true
    -- scratchpad
    runExample "temp" "5.2" true
