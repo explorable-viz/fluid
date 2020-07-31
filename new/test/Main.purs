@@ -7,7 +7,7 @@ import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
-import Bindings (Bindings, Var)
+import Bindings (Var)
 import DataType (dataTypeFor, typeName)
 import Desugar (SExpr, desugar)
 import Eval (eval)
@@ -26,11 +26,14 @@ isGraphical Hole                 = false
 isGraphical (Val _ (Constr c _)) = typeName (successful $ dataTypeFor c) == "GraphicsElement"
 isGraphical (Val _ _)            = false
 
+run :: forall a . SpecT Aff Unit Effect a → Effect Unit
+run = runMocha -- nicer name
+
 withDataset :: String -> Var -> forall m a . Monad m => SpecT Aff (Env 𝔹) m a → SpecT Aff Unit m a
 withDataset file x = before (openDatasetAs file x)
 
-runExample' :: String -> String -> Boolean -> SpecT Aff Unit Effect Unit
-runExample' file expected slice =
+test :: String -> String -> Boolean -> SpecT Aff Unit Effect Unit
+test file expected slice =
    before (openWithImports file) $
       it file $ \(ρ × e) -> do
          case successful $ eval ρ e of
@@ -43,53 +46,39 @@ runExample' file expected slice =
                   unless (isGraphical v) $
                      (render $ pretty v') `shouldEqual` expected
 
-runExample :: String -> String -> Boolean -> Effect Unit
-runExample file expected slice = runMocha $
-   before (openWithImports file) $
-      it file $ \(ρ × e) -> do
-         case successful $ eval ρ e of
-            t × v -> do
-               unless (isGraphical v) $
-                  (render $ pretty v) `shouldEqual` expected
-               when slice do
-                  let ρ' × e' × α'  = eval_bwd v t
-                      v'            = eval_fwd ρ' e' true
-                  unless (isGraphical v) $
-                     (render $ pretty v') `shouldEqual` expected
-
-runDesugar :: String -> SExpr -> String -> Effect Unit
-runDesugar test s expected = runMocha $
+desugarTest :: String -> SExpr -> String -> SpecT Aff Unit Effect Unit
+desugarTest name s expected =
    before (loadModule "prelude" primitives) $
-      it test $ \ρ ->
+      it name $ \ρ ->
          case successful $ eval ρ (desugar s) of
             t × v -> (render $ pretty v) `shouldEqual` expected
 
 main :: Effect Unit
 main = do
    -- desugaring
-   runDesugar "list-comp-1" lcomp1 lcomp1_eval
-   runDesugar "list-comp-2" lcomp2 lcomp2_eval
-   runDesugar "list-comp-3" lcomp3 lcomp3_eval
-   runDesugar "list-comp-4" lcomp4 lcomp4_eval
-   runDesugar "list-seq-1" lseq1 lseq1_eval
+   run $ desugarTest "list-comp-1" lcomp1 lcomp1_eval
+   run $ desugarTest "list-comp-2" lcomp2 lcomp2_eval
+   run $ desugarTest "list-comp-3" lcomp3 lcomp3_eval
+   run $ desugarTest "list-comp-4" lcomp4 lcomp4_eval
+   run $ desugarTest "list-seq-1" lseq1 lseq1_eval
    -- slicing
-   runExample "arithmetic" "42" true
-   runExample "compose" "5" true
-   runExample "factorial" "40320" true
-   runExample "filter" "[8, 7]" true
-   runExample "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]" true
-   runExample "foldr_sumSquares" "661" true
-   runExample "lexicalScoping" "\"6\"" true
-   runExample "length" "2" true
-   runExample "lookup" "Some \"sarah\"" true
-   runExample "map" "[5, 7, 13, 15, 4, 3, -3]" true
-   runExample "mergeSort" "[1, 2, 3]" true
-   runExample "normalise" "(33, 66)" true
-   runExample "pattern-match" "4" true
-   runExample "reverse" "[2, 1]" true
-   runExample "zipWith" "[[10], [12], [20]]" true
+   run $ test "arithmetic" "42" true
+   run $ test "compose" "5" true
+   run $ test "factorial" "40320" true
+   run $ test "filter" "[8, 7]" true
+   run $ test "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]" true
+   run $ test "foldr_sumSquares" "661" true
+   run $ test "lexicalScoping" "\"6\"" true
+   run $ test "length" "2" true
+   run $ test "lookup" "Some \"sarah\"" true
+   run $ test "map" "[5, 7, 13, 15, 4, 3, -3]" true
+   run $ test "mergeSort" "[1, 2, 3]" true
+   run $ test "normalise" "(33, 66)" true
+   run $ test "pattern-match" "4" true
+   run $ test "reverse" "[2, 1]" true
+   run $ test "zipWith" "[[10], [12], [20]]" true
    -- graphics
-   runExample "graphics/background" "" true
-   runExample "graphics/line-chart" "" true
+   run $ test "graphics/background" "" true
+   run $ test "graphics/line-chart" "" true
    -- scratchpad
-   runExample "temp" "5.2" true
+   run $ test "temp" "5.2" true
