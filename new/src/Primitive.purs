@@ -142,17 +142,17 @@ primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    -- where necessary instantiate corresponding PureScript primitive at concrete type
    -- pow and log are not overloaded, but useful to document their type
-   "+"         ↦ from   ((+) `union2` (+) :: Int + Number -> Int + Number -> Int + Number),
-   "-"         ↦ from   ((-) `union2` (-) :: Int + Number -> Int + Number -> Int + Number),
-   "*"         ↦ from   ((*) `union2` (*) :: Int + Number -> Int + Number -> Int + Number),
+   "+"         ↦ from   ((+) `union` (+) :: Int + Number -> Int + Number -> Int + Number),
+   "-"         ↦ from   ((-) `union` (-) :: Int + Number -> Int + Number -> Int + Number),
+   "*"         ↦ from   ((*) `union` (*) :: Int + Number -> Int + Number -> Int + Number),
    "**"        ↦ from   (pow :: Number -> Number -> Number),
    "/"         ↦ from   ((/) :: Number -> Number -> Number),
-   "=="        ↦ from   ((==) `union2` (==) `unionDisj` (==)),
-   "/="        ↦ from   ((/=) `union2` (/=) `unionDisj` (==)),
-   "<"         ↦ from   ((<) `union2` (<) `unionDisj` (==)),
-   ">"         ↦ from   ((>) `union2` (>) `unionDisj` (==)),
-   "<="        ↦ from   ((<=) `union2` (<=) `unionDisj` (==)),
-   ">="        ↦ from   ((>=) `union2` (>=) `unionDisj` (==)),
+   "=="        ↦ from   ((==) `union` (==) `unionDisj` (==)),
+   "/="        ↦ from   ((/=) `union` (/=) `unionDisj` (==)),
+   "<"         ↦ from   ((<) `union` (<) `unionDisj` (==)),
+   ">"         ↦ from   ((>) `union` (>) `unionDisj` (==)),
+   "<="        ↦ from   ((<=) `union` (<=) `unionDisj` (==)),
+   ">="        ↦ from   ((>=) `union` (>=) `unionDisj` (==)),
    "++"        ↦ from   ((<>) :: String -> String -> String),
    "ceiling"   ↦ from   ceil,
    "debugLog"  ↦ from   debugLog,
@@ -160,7 +160,7 @@ primitives = foldl (:+:) Empty [
    "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
    "log"       ↦ from   (log :: Number -> Number),
-   "numToStr"  ↦ from   (show `union` show)
+   "numToStr"  ↦ from   (show `union1` show)
 ]
 
 debugLog :: Endo (Val 𝔹)
@@ -178,16 +178,16 @@ instance coerceNumIntOrNum :: Coerce Number (Either Int Number) where
 instance coerceBooleanBoolean :: Coerce Boolean Boolean where
    coerce = identity
 
-union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
-union f _ (Left x)   = f x
-union _ f (Right x)  = f x
+union1 :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
+union1 f _ (Left x)   = f x
+union1 _ f (Right x)  = f x
 
-union2 :: forall a b c . Coerce a c => Coerce b c =>
-           (Int -> Int -> a) -> (Number -> Number -> b) -> Int + Number -> Int + Number -> c
-union2 f _ (Left x) (Left y)     = coerce $ f x y
-union2 _ f (Left x) (Right y)    = coerce $ f (toNumber x) y
-union2 _ f (Right x) (Right y)   = coerce $ f x y
-union2 _ f (Right x) (Left y)    = coerce $ f x (toNumber y)
+union :: forall a b c . Coerce a c => Coerce b c =>
+         (Int -> Int -> a) -> (Number -> Number -> b) -> Int + Number -> Int + Number -> c
+union f _ (Left x) (Left y)     = coerce $ f x y
+union _ f (Left x) (Right y)    = coerce $ f (toNumber x) y
+union _ f (Right x) (Right y)   = coerce $ f x y
+union _ f (Right x) (Left y)    = coerce $ f x (toNumber y)
 
 unionDisj :: forall a b . (b -> b -> a) -> (String -> String -> a) -> b + String -> b + String -> a
 unionDisj f _ (Left x) (Left y)   = f x y
