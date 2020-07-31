@@ -2,19 +2,22 @@ module Test.Main where
 
 import Prelude
 import Effect (Effect)
-import Test.Spec (before, it)
+import Effect.Aff (Aff)
+import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
+import Bindings (Bindings, Var)
 import DataType (dataTypeFor, typeName)
 import Desugar (SExpr, desugar)
 import Eval (eval)
 import Fwd (eval_fwd)
-import Module (openWithImports, loadModule)
+import Lattice (𝔹)
+import Module (loadModule, openDatasetAs, openWithImports)
 import Pretty (pretty, render)
 import Primitive (primitives)
 import Util ((×), successful)
-import Val (Val(..), RawVal(..))
+import Val (Env, Val(..), RawVal(..))
 import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
 
 -- Don't enforce expected values for graphics tests (values too complex).
@@ -22,6 +25,23 @@ isGraphical :: forall a . Val a -> Boolean
 isGraphical Hole                 = false
 isGraphical (Val _ (Constr c _)) = typeName (successful $ dataTypeFor c) == "GraphicsElement"
 isGraphical (Val _ _)            = false
+
+withDataset :: String -> Var -> forall m a . Monad m => SpecT Aff (Env 𝔹) m a → SpecT Aff Unit m a
+withDataset file x = before (openDatasetAs file x)
+
+runExample' :: String -> String -> Boolean -> SpecT Aff Unit Effect Unit
+runExample' file expected slice =
+   before (openWithImports file) $
+      it file $ \(ρ × e) -> do
+         case successful $ eval ρ e of
+            t × v -> do
+               unless (isGraphical v) $
+                  (render $ pretty v) `shouldEqual` expected
+               when slice do
+                  let ρ' × e' × α'  = eval_bwd v t
+                      v'            = eval_fwd ρ' e' true
+                  unless (isGraphical v) $
+                     (render $ pretty v') `shouldEqual` expected
 
 runExample :: String -> String -> Boolean -> Effect Unit
 runExample file expected slice = runMocha $
