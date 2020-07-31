@@ -12,10 +12,10 @@ import Data.Tuple (Tuple(..))
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 
-infixr 7 type Tuple as ×
-infixr 7 Tuple as ×
+infixl 7 type Tuple as ×
+infixl 7 Tuple as ×
 
-infixr 6 type Either as +
+infixl 6 type Either as +
 
 error :: String -> ∀ a . a
 error msg = unsafePerformEffect $ throw msg
