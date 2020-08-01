@@ -4,7 +4,7 @@ import Prelude hiding (absurd, apply)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, singleton, unzip, snoc)
 import Data.Map (lookup, update)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity)
@@ -12,6 +12,7 @@ import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹)
+import Pattern (checkDataType)
 import Pretty (pretty, render)
 import Primitive (apply)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
@@ -23,12 +24,10 @@ match v (ElimVar x κ)
    | x == varAnon = pure $ Empty × κ × MatchVarAnon v
    | otherwise    = pure $ (Empty :+: x ↦ v) × κ × MatchVar x
 match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
-   if (isNothing $ lookup c κs) then
-      error $ "Here: no branch for " <> show c
-   else do
-      κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
-      ρ × κ' × ξs <- matchArgs c vs κ
-      pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
+   checkDataType "Pattern mismatch: " c κs
+   κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
+   ρ × κ' × ξs <- matchArgs c vs κ
+   pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v _ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))

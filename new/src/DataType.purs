@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 import Data.Char.Unicode (isUpper)
 import Data.Either (note)
 import Data.Foldable (class Foldable)
+import Data.Function (on)
 import Data.List (fromFoldable) as L
 import Data.List (List, concat, length)
 import Data.Map (Map, lookup)
@@ -44,6 +45,12 @@ type CtrSig = List FieldName -- but see issue #162
 
 typeName :: DataType -> TypeName
 typeName (DataType name _) = name
+
+instance eqDataType :: Eq (DataType' (List String)) where
+   eq = eq `on` typeName
+
+instance showDataType :: Show (DataType' (List String)) where
+   show = typeName
 
 ctr :: forall f . Foldable f => Ctr -> f FieldName -> Ctr × CtrSig
 ctr c = L.fromFoldable >>> (×) c

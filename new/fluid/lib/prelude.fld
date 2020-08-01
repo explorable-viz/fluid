@@ -72,11 +72,11 @@ let prod f g x = (f x, g x);
 let swap (a, b) = (b, a);
 
 -- List a -> a
-let head Nil = error "Can't take head of empty list"
+let head Nil = error "Can't take head of empty list";
     head (x : _) = x;
 
 -- List a -> List a
-let tail Nil = error "Can't take tail of empty list"
+let tail Nil = error "Can't take tail of empty list";
     tail (_ : xs) = xs;
 
 -- Int -> List Int -> Bool
