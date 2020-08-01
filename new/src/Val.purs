@@ -16,7 +16,7 @@ data Primitive =
    NumberOp (Number -> Val 𝔹) |
    IntOrNumberOp (Int + Number -> Val 𝔹) |
    StringOp (String -> Val 𝔹) |
-   IntOrNumberOrStringOp ((Int + Number) + String -> Val 𝔹)
+   IntOrNumberOrStringOp (Int + Number + String -> Val 𝔹)
 
 data RawVal a =
    Int Int |

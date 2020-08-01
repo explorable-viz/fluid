@@ -67,7 +67,7 @@ let scaleToWidth w (Rect x y _ h fill) = Rect x y w h fill;
 
 -- Float -> List GraphicsElement -> List GraphicsElement
 let stackRight sep gs =
-   map (scaleToWidth (1 - sep)) (spaceRight (sep / 2) 1 gs);
+   map (scaleToWidth (1 - sep)) (spaceRight (sep / 2.0) 1 gs);
 
 -- Float -> List GraphicsElement -> GraphicsElement
 let groupRight sep gs =
@@ -219,8 +219,8 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 -- Str -> GraphicsElement -> GraphicsElement
 let caption str (Viewport x y w h fill margin scale translate g) =
    let g' = Group (
-      Text (x + w / 2) -2 str "middle" "hanging" :
+      Text (x + w / 2.0) -2 str "middle" "hanging" :
       Viewport 0 0 w h fill margin scale translate g :
       Nil
    )
-   in Viewport x y w h backgroundColour (defaultMargin / 2 + 4) (Scale 1 1) (Translate 0 0) g';
+   in Viewport x y w h backgroundColour (defaultMargin / 2.0 + 4) (Scale 1 1) (Translate 0 0) g';
