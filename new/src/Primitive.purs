@@ -140,7 +140,7 @@ apply_fwd φ α v@(Val α' _) = case apply φ v of
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
-   -- pow and log are not overloaded, but useful to document their type
+   -- some signatures are documented for clarity
    -- PureScript / isn't defined at Int -> Int -> Number, so roll our own
    "+"         ↦ from   ((+) `union2` (+)),
    "-"         ↦ from   ((-) `union2` (-)),
@@ -159,7 +159,7 @@ primitives = foldl (:+:) Empty [
    "div"       ↦ from   (div :: Int -> Int -> Int),
    "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
-   "log"       ↦ from   (log :: Number -> Number),
+   "log"       ↦ from   ((toNumber >>> log) `union` log),
    "numToStr"  ↦ from   (show `union` show)
 ]
 
