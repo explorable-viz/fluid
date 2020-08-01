@@ -23,11 +23,12 @@ match v (ElimVar x κ)
    | x == varAnon = pure $ Empty × κ × MatchVarAnon v
    | otherwise    = pure $ (Empty :+: x ↦ v) × κ × MatchVar x
 match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
-   when (isNothing $ lookup c κs) $
-      error "here"
-   κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
-   ρ × κ' × ξs <- matchArgs c vs κ
-   pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
+   if (isNothing $ lookup c κs) then
+      error $ "Here: no branch for " <> show c
+   else do
+      κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
+      ρ × κ' × ξs <- matchArgs c vs κ
+      pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v _ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))

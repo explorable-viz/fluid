@@ -72,10 +72,12 @@ let prod f g x = (f x, g x);
 let swap (a, b) = (b, a);
 
 -- List a -> a
-let head (x : _) = x;
+let head Nil = error "Can't take head of empty list"
+    head (x : _) = x;
 
 -- List a -> List a
-let tail (_ : xs) = xs;
+let tail Nil = error "Can't take tail of empty list"
+    tail (_ : xs) = xs;
 
 -- Int -> List Int -> Bool
 let elem x Nil = False;
@@ -198,7 +200,7 @@ let nth n (x : xs) =
 
 -- Partial; requires k to be in the map.
 -- Int -> List (Int, b) -> b
-let lookup k Nil = error "Key not found in map"
+let lookup k Nil = error "Key not found in map";
     lookup k ((k', v) : kvs) =
        match k == k' as {
           True -> v;
