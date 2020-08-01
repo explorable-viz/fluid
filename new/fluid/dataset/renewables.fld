@@ -128,61 +128,61 @@
 -- http://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
 (2016,
    ("China",
-      ("Bio", 12) :
-      ("Geothermal", 0) :
-      ("Hydro", 305) :
-      ("Ocean", 0) :
-      ("Solar", 77) :
-      ("CSP", 0) :
-      ("Wind", 169) : Nil
+      ("Bio", 12.0) :
+      ("Geothermal", 0.0) :
+      ("Hydro", 305.0) :
+      ("Ocean", 0.0) :
+      ("Solar", 77.0) :
+      ("CSP", 0.0) :
+      ("Wind", 169.0) : Nil
    ) :
    ("USA",
       ("Bio", 16.8) :
       ("Geothermal", 3.6) :
-      ("Hydro", 80) :
-      ("Ocean", 0) :
-      ("Solar", 41) :
+      ("Hydro", 80.0) :
+      ("Ocean", 0.0) :
+      ("Solar", 41.0) :
       ("CSP", 1.7) :
-      ("Wind", 82) : Nil
+      ("Wind", 82.0) : Nil
    ) :
    ("Germany",
       ("Bio", 7.6) :
-      ("Geothermal", 0) :
+      ("Geothermal", 0.0) :
       ("Hydro", 5.6) :
-      ("Ocean", 0) :
-      ("Solar", 41) :
-      ("CSP", 0) :
-      ("Wind", 50) : Nil
+      ("Ocean", 0.0) :
+      ("Solar", 41.0) :
+      ("CSP", 0.0) :
+      ("Wind", 50.0) : Nil
    ) :
    ("India",
       ("Bio", 8.3) :
-      ("Geothermal", 0) :
-      ("Hydro", 47) :
-      ("Ocean", 0) :
+      ("Geothermal", 0.0) :
+      ("Hydro", 47.0) :
+      ("Ocean", 0.0) :
       ("Solar", 9.1) :
       ("CSP", 0.2) :
-      ("Wind", 29) : Nil
+      ("Wind", 29.0) : Nil
    ) : Nil
 ) :
 -- http://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2
 (2017,
    ("China",
       ("Bio", 14.9) :
-      ("Geothermal", 0) :
-      ("Hydro", 313) :
-      ("Ocean", 0) :
-      ("Solar", 131) :
-      ("CSP", 0) :
-      ("Wind", 188) : Nil
+      ("Geothermal", 0.0) :
+      ("Hydro", 313.0) :
+      ("Ocean", 0.0) :
+      ("Solar", 131.0) :
+      ("CSP", 0.0) :
+      ("Wind", 188.0) : Nil
    ) :
    ("USA",
       ("Bio", 16.7) :
       ("Geothermal", 2.5) :
-      ("Hydro", 80) :
-      ("Ocean", 0) :
-      ("Solar", 51) :
+      ("Hydro", 80.0) :
+      ("Ocean", 0.0) :
+      ("Solar", 51.0) :
       ("CSP", 1.7) :
-      ("Wind", 89) : Nil
+      ("Wind", 89.0) : Nil
    ) :
    ("Germany",
       ("Bio", 8) :
