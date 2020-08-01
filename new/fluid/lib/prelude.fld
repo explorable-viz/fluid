@@ -196,12 +196,14 @@ let nth n (x : xs) =
       False -> nth (n - 1) xs
    };
 
+-- Partial; requires k to be in the map.
 -- Int -> List (Int, b) -> b
-let lookup k ((k', v) : kvs) =
-   match k == k' as {
-      True -> v;
-      False -> lookup k kvs
-   };
+let lookup k Nil = error "Key not found in map"
+    lookup k ((k', v) : kvs) =
+       match k == k' as {
+          True -> v;
+          False -> lookup k kvs
+       };
 
 -- TODO: curry.
 -- (Int, Int) -> Int

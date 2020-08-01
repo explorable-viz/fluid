@@ -4,7 +4,7 @@ import Prelude hiding (absurd, apply)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, singleton, unzip, snoc)
 import Data.Map (lookup, update)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity)
@@ -23,6 +23,8 @@ match v (ElimVar x κ)
    | x == varAnon = pure $ Empty × κ × MatchVarAnon v
    | otherwise    = pure $ (Empty :+: x ↦ v) × κ × MatchVar x
 match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
+   when (isNothing $ lookup c κs) $
+      error "here"
    κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
