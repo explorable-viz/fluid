@@ -147,7 +147,7 @@ let iterate n f z =
 
 -- List Int -> Int
 let sum xs =
-   foldr (+) 0 xs;
+   foldr (uncurry (+)) 0 xs;
 
 -- List a -> a
 let last (x : Nil) = x;
