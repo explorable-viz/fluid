@@ -43,6 +43,9 @@ let curry f x y = f (x, y);
 -- (a -> b -> c) -> (a, b) -> c
 let uncurry f (x, y) = f x y;
 
+-- a -> b -> a
+let const x _ = x;
+
 -- (a -> b) -> (a, c) -> (b, c)
 let first f (a, c) = (f a, c);
 
