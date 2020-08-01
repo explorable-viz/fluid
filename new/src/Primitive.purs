@@ -141,11 +141,11 @@ apply_fwd φ α v@(Val α' _) = case apply φ v of
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    -- some signatures are documented for clarity
-   -- PureScript / isn't defined at Int -> Int -> Number, so roll our own
+   -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
    "+"         ↦ from   ((+) `union2` (+)),
    "-"         ↦ from   ((-) `union2` (-)),
    "*"         ↦ from   ((*) `union2` (*)),
-   "**"        ↦ from   (pow :: Number -> Number -> Number),
+   "**"        ↦ from   ((\x y -> toNumber x / toNumber y) `union2'` pow),
    "/"         ↦ from   ((\x y -> toNumber x / toNumber y)  `union2'` (/)),
    "=="        ↦ from   ((==) `union2'` (==) `unionDisj` (==)),
    "/="        ↦ from   ((/=) `union2'` (/=) `unionDisj` (==)),
