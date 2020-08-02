@@ -8,7 +8,7 @@ import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
-import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
+import DataType (DataType, Ctr, arity, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), Var, expr)
 import Lattice (𝔹)
 import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
@@ -58,9 +58,11 @@ dataType κs = case keys κs of
 
 checkDataType :: String -> Ctr -> Map Ctr (Cont 𝔹) -> MayFail Unit
 checkDataType msg c κs = void $ do
-   d <- dataType κs
-   d' <- dataTypeFor c
-   with (msg <> show c <> " is not a constructor of " <> show d') $ d ≞ d'
+   d <- dataTypeFor c
+   d' <- dataType κs
+   if (d /= d')
+   then error "***"
+   else with (msg <> show c <> " is not a constructor of " <> show d') $ d ≞ d'
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = void $ with ("Checking arity of " <> show c) $

@@ -25,7 +25,7 @@ match v (ElimVar x κ)
    | otherwise    = pure $ (Empty :+: x ↦ v) × κ × MatchVar x
 match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    checkDataType "Pattern mismatch: " c κs
-   κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
+   κ <- note ("Incomplete pattern: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v _ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"

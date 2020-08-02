@@ -96,4 +96,4 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/grouped-bar-chart"
    run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    -- scratchpad
-   run $ test "temp" "5.2"
+   run $ test "temp" "2.0"

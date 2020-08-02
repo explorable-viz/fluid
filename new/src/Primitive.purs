@@ -145,7 +145,7 @@ primitives = foldl (:+:) Empty [
    "+"         ↦ from   ((+) `union2` (+)),
    "-"         ↦ from   ((-) `union2` (-)),
    "*"         ↦ from   ((*) `union2` (*)),
-   "**"        ↦ from   ((\x y -> toNumber x / toNumber y) `union2'` pow),
+   "**"        ↦ from   ((\x y -> toNumber x `pow` toNumber y) `union2'` pow),
    "/"         ↦ from   ((\x y -> toNumber x / toNumber y)  `union2'` (/)),
    "=="        ↦ from   ((==) `union2'` (==) `unionDisj` (==)),
    "/="        ↦ from   ((/=) `union2'` (/=) `unionDisj` (==)),
