@@ -89,7 +89,9 @@ main = do
    run $ test "normalise" "(33, 66)"
    run $ test "pattern-match" "4"
    run $ test "reverse" "[2, 1]"
+-}
    run $ test "zipWith" "[[10], [12], [20]]"
+{-
    -- graphics
    run $ testWithDataset "renewables-restricted" "graphics/background"
 -}

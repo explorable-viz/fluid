@@ -10,7 +10,7 @@ import Debug.Trace (trace)
 import Math (log, pow)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), (:+:), (↦))
-import DataType (cTrue, cFalse)
+import DataType (cCons, cTrue, cFalse)
 import Lattice (𝔹, (∧))
 import Expr (Var)
 import Util (Endo, type (×), (×), type (+), absurd, error)
@@ -154,6 +154,7 @@ primitives = foldl (:+:) Empty [
    "<="        ↦ from   ((<=) `union2'` (<=) `unionDisj` (==)),
    ">="        ↦ from   ((>=) `union2'` (>=) `unionDisj` (==)),
    "++"        ↦ from   ((<>) :: String -> String -> String),
+   ":"         ↦ val (V.Constr cCons Nil),
    "ceiling"   ↦ from   ceil,
    "debugLog"  ↦ from   debugLog,
    "div"       ↦ from   (div :: Int -> Int -> Int),
