@@ -20,7 +20,7 @@ import Pretty (pretty, render)
 import Primitive (primitives)
 import Util (type (×), (×), successful)
 import Val (Env, Val(..), RawVal(..))
--- import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
+import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -67,7 +67,6 @@ desugarTest name s expected =
 
 main :: Effect Unit
 main = do
-{-
    -- desugaring
    run $ desugarTest "list-comp-1" lcomp1 lcomp1_eval
    run $ desugarTest "list-comp-2" lcomp2 lcomp2_eval
@@ -89,12 +88,9 @@ main = do
    run $ test "normalise" "(33, 66)"
    run $ test "pattern-match" "4"
    run $ test "reverse" "[2, 1]"
--}
    run $ test "zipWith" "[[10], [12], [20]]"
-{-
    -- graphics
    run $ testWithDataset "renewables-restricted" "graphics/background"
--}
    run $ testWithDataset "renewables-restricted" "graphics/grouped-bar-chart"
    run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
