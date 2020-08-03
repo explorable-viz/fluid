@@ -94,6 +94,7 @@ instance joinSemilatticeRawExpr :: JoinSemilattice (RawExpr Boolean) where
    maybeJoin (Var x) (Var x')              = Var <$> x ≟ x'
    maybeJoin (Op op) (Op op')              = Op <$> op ≟ op'
    maybeJoin (Int n) (Int n')              = Int <$> n ≟ n'
+   maybeJoin (Str str) (Str str')          = Str <$> str ≟ str'
    maybeJoin (Float n) (Float n')          = Float <$> n ≟ n'
    maybeJoin (Str s) (Var s')              = Str <$> s ≟ s'
    maybeJoin (Constr c es) (Constr c' es') = Constr <$> c ≟ c' <*> maybeJoin es es'
