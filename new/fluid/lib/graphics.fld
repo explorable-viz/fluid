@@ -184,7 +184,7 @@ let categoricalChart plotValue withAxes colours sep data =
       True ->
          let x_axis = catAxis Horiz 0 (map fst data);
              (y_axis, h') = axis Vert 0 0 h
-         in viewport 0 w h' defaultMargin (concat gs (x_axis : y_axis : Nil)); -- axes on top
+         in viewport 0 w h' defaultMargin (concat2 gs (x_axis : y_axis : Nil)); -- axes on top
       False -> viewport 0 w h 0 gs
    };
 
