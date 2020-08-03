@@ -40,6 +40,8 @@ eval_fwd ρ (Expr _ (Op op)) _ =
    successful $ find op ρ
 eval_fwd ρ (Expr α (Int n)) α' =
    Val (α ∧ α') $ V.Int n
+eval_fwd ρ (Expr α (Float n)) α' =
+   Val (α ∧ α') $ V.Float n
 eval_fwd ρ (Expr α (Str str)) α' =
    Val (α ∧ α') $ V.Str str
 eval_fwd ρ (Expr α (Constr c es)) α' =

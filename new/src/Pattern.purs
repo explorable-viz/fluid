@@ -8,7 +8,7 @@ import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
-import DataType (DataType, Ctr, arity, dataTypeFor, typeName)
+import DataType (DataType, Ctr, arity, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), Var, expr)
 import Lattice (𝔹)
 import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
@@ -56,6 +56,18 @@ dataType κs = case keys κs of
    Nil   -> error absurd
    c : _ -> dataTypeFor c
 
+checkDataType :: String -> Ctr -> Map Ctr (Cont 𝔹) -> MayFail Unit
+checkDataType msg c κs = void $ do
+   d <- dataTypeFor c
+   d' <- dataType κs
+   if (d /= d')
+   then error "***"
+   else with (msg <> show c <> " is not a constructor of " <> show d') $ d ≞ d'
+
+checkArity :: Ctr -> Int -> MayFail Unit
+checkArity c n = void $ with ("Checking arity of " <> show c) $
+   arity c `(=<<<) (≞)` pure n
+
 instance joinablePatternElim :: Joinable Pattern (Elim Boolean) where
    maybeJoin (ElimVar x κ) (PattVar y κ')       = ElimVar <$> x ≞ y <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (PattConstr c n κ) = ElimConstr <$> mayFailUpdate
@@ -64,14 +76,9 @@ instance joinablePatternElim :: Joinable Pattern (Elim Boolean) where
       mayFailUpdate =
          case lookup c κs of
             Nothing -> do
-               checkDataType
+               checkDataType "Non-uniform patterns: " c κs
+               checkArity c n
                insert <$> pure c <*> toCont κ <@> κs
-               where
-               checkDataType :: MayFail Unit
-               checkDataType = void $ do
-                  (with "Non-uniform patterns" $
-                     (typeName <$> dataType κs) `(=<<<) (≞)` (typeName <$> dataTypeFor c))
-                  *> checkArity c n
             Just κ' -> update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
    maybeJoin _ _                               = report "Can't join variable and constructor patterns"
 
@@ -83,6 +90,3 @@ instance joinablePContCont :: Joinable PCont (Cont Boolean) where
 
 joinAll :: NonEmptyList Pattern -> MayFail (Elim 𝔹)
 joinAll (NonEmptyList (π :| πs)) = foldl (om $ maybeJoin) (toElim π) πs
-
-checkArity :: Ctr -> Int -> MayFail Int
-checkArity c n = with ("Checking arity of " <> show c) $ arity c `(=<<<) (≞)` pure n

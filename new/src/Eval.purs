@@ -12,6 +12,7 @@ import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹)
+import Pattern (checkDataType)
 import Pretty (pretty, render)
 import Primitive (apply)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
@@ -23,7 +24,8 @@ match v (ElimVar x κ)
    | x == varAnon = pure $ Empty × κ × MatchVarAnon v
    | otherwise    = pure $ (Empty :+: x ↦ v) × κ × MatchVar x
 match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
-   κ <- note ("Pattern mismatch: no branch for " <> show c) $ lookup c κs
+   checkDataType "Pattern mismatch: " c κs
+   κ <- note ("Incomplete pattern: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v _ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
@@ -54,9 +56,11 @@ eval ρ (Expr _ (Var x)) =
 eval ρ (Expr _ (Op op)) =
    (Expl ρ (T.Op op) × _) <$> find op ρ
 eval ρ (Expr _ (Int n)) =
-   (Expl ρ (T.Int n) × _) <$> pure (val $ V.Int n)
+   (Expl ρ T.Int × _) <$> pure (val $ V.Int n)
+eval ρ (Expr _ (Float n)) =
+   (Expl ρ T.Float × _) <$> pure (val $ V.Float n)
 eval ρ (Expr _ (Str str)) =
-   (Expl ρ (T.Str str) × _) <$> pure (val $ V.Str str)
+   (Expl ρ T.Str × _) <$> pure (val $ V.Str str)
 eval ρ (Expr _ (Constr c es)) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
@@ -66,7 +70,7 @@ eval ρ (Expr _ (LetRec δ e)) = do
    t × v <- eval (ρ <> ρ') e
    (Expl ρ (T.LetRec δ t) × _) <$> pure v
 eval ρ (Expr _ (Lambda σ)) =
-   (Expl ρ (T.Lambda σ) × _) <$> pure (val $ V.Closure ρ Empty σ)
+   (Expl ρ T.Lambda × _) <$> pure (val $ V.Closure ρ Empty σ)
 eval ρ (Expr _ (App e e')) = do
    t × v <- eval ρ e
    case v of

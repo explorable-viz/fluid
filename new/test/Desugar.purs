@@ -4,7 +4,7 @@ import Prelude
 import Data.List (List(..), (:))
 import Bindings (Var)
 import DataType (cCons, cNil)
-import Desugar (Pattern(..), Predicate(..), SExpr, SugaredExpr(..), sexpr)
+import Desugar (Pattern(..), Predicate(..), SExpr, RawSExpr(..), sexpr)
 
 lcomp1 :: SExpr
 lcomp1

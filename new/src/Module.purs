@@ -7,7 +7,8 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
-import Eval (defs)
+import Bindings (Bindings(..), Var, (:+:), (↦))
+import Eval (defs, eval)
 import Expr (Expr)
 import Lattice (𝔹)
 import Parse (module_, program)
@@ -45,5 +46,11 @@ successfulParse src p =
 
 parseWithImports :: String -> Aff (Env 𝔹 × Expr 𝔹)
 parseWithImports src = do
-   (×) <$> loadModule "prelude" primitives
+   (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
        <@> successfulParse src program
+
+openDatasetAs :: String -> Var -> Aff (Env 𝔹)
+openDatasetAs file x = do
+   ρ × e <- loadFile "fluid/dataset" file >>= parseWithImports
+   let _ × v = successful $ eval ρ e
+   pure $ Empty :+: x ↦ v

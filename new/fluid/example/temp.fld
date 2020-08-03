@@ -1,4 +1,1 @@
-let unzip2 Nil = 6;
-    unzip2 (((x, y) : Nil) : zs) = 5
-in
-unzip2 (((5, 6) : Nil) : Nil)
+2 * 10 ** 0

@@ -13,7 +13,7 @@ import Expr (RawExpr(..), Expr(Hole)) as E
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
 import Util (Endo, type (×), (×), absurd, error, intersperse)
-import Val (Primitive(..), RawVal, Val(..), val)
+import Val (Primitive, RawVal, Val(..), val)
 import Val (RawVal(..), Val(Hole)) as V
 
 infixl 5 beside as :<>:
@@ -78,10 +78,11 @@ instance prettyRawExpl :: Pretty (RawExpl Boolean) where
    pretty T.Hole                          = hole
    pretty (T.Var x)                       = text x
    pretty (T.Op op)                       = text op
-   pretty (T.Int n)                       = text $ show n
-   pretty (T.Str s)                       = text $ show s
+   pretty T.Int                           = text "int"
+   pretty T.Float                         = text "float"
+   pretty T.Str                           = text "str"
    pretty (T.Constr c ts)                 = prettyConstr c ts
-   pretty (T.Lambda σ)                    = text "fun " :<>: pretty σ
+   pretty T.Lambda                        = text "fun"
    pretty (T.AppHole t)                   = text "App" :<>: parens (hole :<>: comma :<>: hole)
    pretty (T.App (t × _) t' ξ t'')        =
       text "App" :<>:
@@ -140,6 +141,7 @@ prettyConstr c xs
 
 instance prettyRawExpr :: Pretty (RawExpr Boolean) where
    pretty (E.Int n)                 = text $ show n
+   pretty (E.Float n)               = text $ show n
    pretty (E.Str str)               = text $ show str
    pretty (E.Var x)                 = text x
    pretty r@(E.Constr c es)
@@ -180,6 +182,7 @@ instance prettyVal :: Pretty (Val Boolean) where
 
 instance prettyRawVal :: Pretty (RawVal Boolean) where
    pretty (V.Int n)              = text $ show n
+   pretty (V.Float n)            = text $ show n
    pretty (V.Str str)            = text $ show str
    pretty u@(V.Constr c vs)
       | c == cNil || c == cCons  = pretty $ toList $ val u
@@ -190,7 +193,7 @@ instance prettyRawVal :: Pretty (RawVal Boolean) where
    pretty (V.Primitive op)       = parens $ pretty op
 
 instance prettyPrimitive :: Pretty Primitive where
-   pretty (IntOp _) = text "<prim-op>"
+   pretty _ = text "<prim-op>"
 
 prettyProgram :: Expr Boolean -> Doc
 prettyProgram e = atop (pretty e) (text "")

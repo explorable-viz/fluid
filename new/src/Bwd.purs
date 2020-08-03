@@ -58,13 +58,15 @@ eval_bwd V.Hole (Expl ρ _)
    = bot ρ × Hole × false
 eval_bwd v (Expl ρ (T.Var x))
    = (bot ρ ◃ x ↦ v) × Expr false (Var x) × false
-eval_bwd (Val α (V.Str s)) (Expl ρ (T.Str _))
-   = bot ρ × Expr α (Str s) × α
-eval_bwd (Val α (V.Int n)) (Expl ρ (T.Int _))
-   = bot ρ × Expr α (Int n) × α
-eval_bwd v@(Val α (V.Primitive φ)) (Expl ρ (T.Op op))
+eval_bwd v (Expl ρ (T.Op op))
    = (bot ρ ◃ op ↦ v) × Expr false (Op op) × false
-eval_bwd (Val α (V.Closure ρ δ σ)) (Expl _ (T.Lambda σ'))
+eval_bwd (Val α (V.Str s)) (Expl ρ T.Str)
+   = bot ρ × Expr α (Str s) × α
+eval_bwd (Val α (V.Int n)) (Expl ρ T.Int)
+   = bot ρ × Expr α (Int n) × α
+eval_bwd (Val α (V.Float n)) (Expl ρ T.Float)
+   = bot ρ × Expr α (Float n) × α
+eval_bwd (Val α (V.Closure ρ δ σ)) (Expl _ T.Lambda)
    = ρ × Expr α (Lambda σ) × α
 eval_bwd (Val α (V.Constr c vs)) (Expl ρ (T.Constr c' ts))
    = let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)

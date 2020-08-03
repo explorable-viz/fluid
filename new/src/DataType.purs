@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 import Data.Char.Unicode (isUpper)
 import Data.Either (note)
 import Data.Foldable (class Foldable)
+import Data.Function (on)
 import Data.List (fromFoldable) as L
 import Data.List (List, concat, length)
 import Data.Map (Map, lookup)
@@ -11,9 +12,11 @@ import Data.Map (fromFoldable) as M
 import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
 import Data.String.CodeUnits (charAt)
+import Data.Tuple (uncurry)
 import Util (MayFail, type (×), (×), absurd, error, fromJust)
 
 type TypeName = String
+type FieldName = String
 
 -- A Ctr is a purely syntactic notion. There may be no constructor with such a name.
 newtype Ctr = Ctr String
@@ -38,16 +41,22 @@ instance showCtr :: Show Ctr where
 
 data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
-type CtrSig = List TypeName
+type CtrSig = List FieldName -- but see issue #162
 
 typeName :: DataType -> TypeName
 typeName (DataType name _) = name
 
-ctr :: forall f . Foldable f => Ctr -> f TypeName -> Ctr × CtrSig
+instance eqDataType :: Eq (DataType' (List String)) where
+   eq = eq `on` typeName
+
+instance showDataType :: Show (DataType' (List String)) where
+   show = typeName
+
+ctr :: forall f . Foldable f => Ctr -> f FieldName -> Ctr × CtrSig
 ctr c = L.fromFoldable >>> (×) c
 
-dataType :: forall f . Foldable f => TypeName -> f (Ctr × CtrSig) -> DataType
-dataType name = M.fromFoldable >>> DataType name
+dataType :: forall f . Functor f => Foldable f => TypeName -> f (Ctr × f FieldName) -> DataType
+dataType name = map (uncurry ctr) >>> M.fromFoldable >>> DataType name
 
 ctrToDataType :: Map Ctr DataType
 ctrToDataType = M.fromFoldable $
@@ -61,43 +70,129 @@ arity c = do
    DataType _ sigs <- dataTypeFor c
    length <$> note absurd (lookup c sigs)
 
+-- Used internally by primitives or desugaring.
 cFalse      = Ctr "False"     :: Ctr -- Bool
 cTrue       = Ctr "True"      :: Ctr
 cNil        = Ctr "Nil"       :: Ctr -- List
 cCons       = Ctr ":"         :: Ctr
-cNone       = Ctr "None"      :: Ctr -- Option
-cSome       = Ctr "Some"      :: Ctr
-cGT         = Ctr "GT"        :: Ctr -- Ordering
-cLT         = Ctr "LT"        :: Ctr
-cEQ         = Ctr "EQ"        :: Ctr
 cPair       = Ctr "Pair"      :: Ctr -- Pair
-cEmpty      = Ctr "Empty"     :: Ctr -- Tree
-cNonEmpty   = Ctr "NonEmpty"  :: Ctr
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [
+   -- Core
    dataType "Bool" [
-      ctr cTrue [],
-      ctr cFalse []
+      cTrue    × [],
+      cFalse   × []
    ],
    dataType "List" [
-      ctr cNil [],
-      ctr cCons ["head", "tail"]
+      cNil  × [],
+      cCons × [
+         "head",  -- any
+         "tail"   -- List<any>
+      ]
    ],
    dataType "Option" [
-      ctr cNone [],
-      ctr cSome ["x"]
+      Ctr "None"  × [],
+      Ctr "Some"  × [
+         "x"   -- any
+      ]
    ],
    dataType "Ordering" [
-      ctr cGT [],
-      ctr cLT [],
-      ctr cEQ []
+      Ctr "GT" × [],
+      Ctr "LT" × [],
+      Ctr "EQ" × []
    ],
    dataType "Pair" [
-      ctr cPair ["fst", "snd"]
+      Ctr "Pair" × [
+         "fst",   -- any
+         "snd"    -- any
+      ]
    ],
    dataType "Tree" [
-      ctr cEmpty [],
-      ctr cNonEmpty ["left", "x", "right"]
+      Ctr "Empty"    × [],
+      Ctr "NonEmpty" × [
+         "left",  -- Tree<any>
+         "x",     -- any
+         "right"  -- Tree<any>
+      ]
+   ],
+   -- Graphics
+   dataType "Point" [
+      Ctr "Point" × [
+         "x",  -- Float
+         "y"   -- Float
+      ]
+   ],
+
+   dataType "Orient" [  -- iso to Bool
+      Ctr "Horiz" × [],
+      Ctr "Vert"  × []
+   ],
+
+   dataType "GraphicsElement" [
+      Ctr "Circle" × [
+         "x",        -- Float
+         "y",        -- Float
+         "radius",   -- Float
+         "fill"      -- Str
+      ],
+      Ctr "Group" × [
+         "gs"  -- List<GraphicsElement>
+      ],
+      Ctr "Line" × [
+         "p1",          -- Float
+         "p2",          -- Float
+         "stroke",      -- Str
+         "strokeWidth"  -- Float
+      ],
+      Ctr "Polyline" × [
+         "points",      -- List<Point>
+         "stroke",      -- Str
+         "strokeWidth"  -- Float
+      ],
+      Ctr "Polymarkers" × [
+         "points",   -- List<Point>
+         "markers"   -- List<GraphicsElement>
+      ],
+      Ctr "Rect" × [
+         "x",        -- Float
+         "y",        -- Float
+         "width",    -- Float
+         "height",   -- Float
+         "fill"      -- Str
+      ],
+      Ctr "Text" × [
+         "x",        -- Float
+         "y",        -- Float
+         "str",      -- Str
+         "anchor",   -- Str (SVG text-anchor)
+         "baseline"  -- Str (SVG alignment-baseline)
+      ],
+      Ctr "Viewport" × [
+         "x",           -- Float
+         "y",           -- Float
+         "width",       -- Float
+         "height",      -- Float
+         "fill",        -- Str
+         "margin",      -- Float (in *parent* reference frame)
+         "scale",       -- Transform
+         "translate",   -- Transform (scaling applies to translated coordinates)
+         "g"            -- GraphicsElement
+      ]
+   ],
+
+   dataType "Transform" [
+      Ctr "Scale" × [
+         "x",  -- Float
+         "y"   -- Float
+      ],
+      Ctr "Translate" × [
+         "x",  -- Float
+         "y"   -- Float
+      ]
+   ],
+
+   dataType "Marker" [
+      Ctr "Arrowhead" × []
    ]
 ]

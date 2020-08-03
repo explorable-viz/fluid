@@ -1,1 +1,1 @@
-zipWith (fun (x, xs) -> x : xs) (10 : 12 : 20 : Nil) (Nil : Nil : Nil : Nil : Nil)
+zipWith (uncurry (:)) (10 : 12 : 20 : Nil) (Nil : Nil : Nil : Nil : Nil)

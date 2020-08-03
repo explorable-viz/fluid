@@ -188,6 +188,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
       simpleExpr =
          try ctrExpr <|>
          try variable <|>
+         try float <|>
          try int <|> -- int may start with +/-
          string <|>
          defsExpr <|>
@@ -204,16 +205,22 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          variable :: SParser (Expr 𝔹)
          variable = ident <#> Var >>> expr
 
+         signOpt :: ∀ a . Ring a => SParser (a -> a)
+         signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
+
+         -- built-in integer/float parsers don't seem to allow leading signs.
          int :: SParser (Expr 𝔹)
          int = do
             sign <- signOpt
             (sign >>> Int >>> expr) <$> token.natural
-            where
-            signOpt :: ∀ a . (Ring a) => SParser (a -> a)
-            signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
+
+         float :: SParser (Expr 𝔹)
+         float = do
+            sign <- signOpt
+            (sign >>> Float >>> expr) <$> token.float
 
          string :: SParser (Expr 𝔹)
-         string = expr <$> (Str <$> token.stringLiteral)
+         string = (Str >>> expr) <$> token.stringLiteral
 
          defsExpr :: SParser (Expr 𝔹)
          defsExpr = do
