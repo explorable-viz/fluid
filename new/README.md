@@ -8,6 +8,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 3 August 2020 | Core PureScript migration complete | [281](https://github.com/explorable-viz/fluid/issues/281) |
 | 2 July 2020 | (PureScript implementation) First-class constructors | [49](https://github.com/explorable-viz/fluid/issues/49) |
 | 18 June 2020 | (PureScript implementation) Piecewise function definitions | [356](https://github.com/explorable-viz/fluid/issues/356) |
 | 4 June 2020 | (PureScript implementation) Structured `let` syntax | [171](https://github.com/explorable-viz/fluid/issues/171) |
