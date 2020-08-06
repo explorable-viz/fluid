@@ -44,21 +44,21 @@ type Env = Bindings Val
 derive instance functorRawVal :: Functor RawVal
 derive instance functorVal :: Functor Val
 
-instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
+instance joinSemilatticeVal :: JoinSemilattice a => JoinSemilattice (Val a) where
    join = definedJoin
 
-instance slicesVal :: Slices (Val Boolean) where
+instance slicesVal :: JoinSemilattice a => Slices (Val a) where
    maybeJoin Hole v                 = pure v
    maybeJoin v Hole                 = pure v
    maybeJoin (Val α r) (Val α' r')  = Val <$> pure (α ∨ α') <*> maybeJoin r r'
 
-instance boundedSlices :: BoundedSlices (Val Boolean) where
+instance boundedSlices :: JoinSemilattice a => BoundedSlices (Val a) where
    botOf = const Hole
 
-instance joinSemilatticeRawVal :: JoinSemilattice (RawVal Boolean) where
+instance joinSemilatticeRawVal :: JoinSemilattice a => JoinSemilattice (RawVal a) where
    join = definedJoin
 
-instance slicesRawVal :: Slices (RawVal Boolean) where
+instance slicesRawVal :: JoinSemilattice a => Slices (RawVal a) where
    maybeJoin (Int n) (Int m)                    = Int <$> n ≟ m
    maybeJoin (Float n) (Float m)                = Float <$> n ≟ m
    maybeJoin (Str s) (Str s')                   = Str <$> s ≟ s'
