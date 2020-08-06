@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
-import Lattice (class BoundedSlices, class JoinSemilattice', class Slices, 𝔹, (∨), definedJoin, maybeJoin)
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, maybeJoin)
 import Util (Endo, type (+), (≟), absurd, error)
 
 -- one constructor for each PureScript type that appears in an exported operator signature
@@ -44,8 +44,8 @@ type Env = Bindings Val
 derive instance functorRawVal :: Functor RawVal
 derive instance functorVal :: Functor Val
 
-instance joinSemilatticeVal :: JoinSemilattice' (Val Boolean) where
-   join' = definedJoin
+instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
+   join = definedJoin
 
 instance slicesVal :: Slices (Val Boolean) where
    maybeJoin Hole v                 = pure v
@@ -55,8 +55,8 @@ instance slicesVal :: Slices (Val Boolean) where
 instance boundedSlices :: BoundedSlices (Val Boolean) where
    botOf = const Hole
 
-instance joinSemilatticeRawVal :: JoinSemilattice' (RawVal Boolean) where
-   join' = definedJoin
+instance joinSemilatticeRawVal :: JoinSemilattice (RawVal Boolean) where
+   join = definedJoin
 
 instance slicesRawVal :: Slices (RawVal Boolean) where
    maybeJoin (Int n) (Int m)                    = Int <$> n ≟ m

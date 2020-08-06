@@ -3,7 +3,7 @@ module Bindings where
 import Prelude
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
-import Lattice (class BoundedSlices, class JoinSemilattice', class Slices, botOf, definedJoin, maybeJoin)
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin)
 import Util (Endo, MayFail, type (×), (×), (≟), report)
 
 type Var = String
@@ -66,8 +66,8 @@ instance semigroupBindings :: Semigroup (Bindings t a) where
 instance monoidBindings :: Monoid (Bindings t a) where
    mempty = Empty
 
-instance joinSemilatticeBindings :: Slices (t Boolean) => JoinSemilattice' (Bindings t Boolean) where
-   join' = definedJoin
+instance joinSemilatticeBindings :: Slices (t Boolean) => JoinSemilattice (Bindings t Boolean) where
+   join = definedJoin
 
 instance slicesBindings :: Slices (t Boolean) => Slices (Bindings t Boolean) where
    maybeJoin Empty Empty                     = pure Empty
