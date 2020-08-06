@@ -66,10 +66,10 @@ instance semigroupBindings :: Semigroup (Bindings t a) where
 instance monoidBindings :: Monoid (Bindings t a) where
    mempty = Empty
 
-instance joinSemilatticeBindings :: Slices (t Boolean) => JoinSemilattice (Bindings t Boolean) where
+instance joinSemilatticeBindings :: Slices (t a) => JoinSemilattice (Bindings t a) where
    join = definedJoin
 
-instance slicesBindings :: Slices (t Boolean) => Slices (Bindings t Boolean) where
+instance slicesBindings :: Slices (t a) => Slices (Bindings t a) where
    maybeJoin Empty Empty                     = pure Empty
    maybeJoin (ρ :+: x ↦ v) (ρ' :+: y ↦ v')   = (:+:) <$> maybeJoin ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeJoin v v')
    maybeJoin _ _                             = Nothing
