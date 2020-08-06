@@ -6,7 +6,7 @@ import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
 import DataType (Ctr)
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, 𝔹, (∨), bot, maybeJoin)
+import Lattice (class BoundedSlices, class JoinSemilattice', class Slices, 𝔹, (∨), botOf, definedJoin, maybeJoin)
 import Util (type (+), (≟), error)
 
 type Var = String
@@ -59,38 +59,53 @@ derive instance functorExpr :: Functor Expr
 derive instance functorCont :: Functor Cont
 derive instance functorElim :: Functor Elim
 
-instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
+instance joinSemilatticeElim :: JoinSemilattice' (Elim Boolean) where
+   join' = definedJoin
+
+instance slicesElim :: Slices (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> x ≟ x' <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
    maybeJoin _ _                                = Nothing
 
-instance boundedSemilatticeElim :: BoundedJoinSemilattice (Elim Boolean) where
-   bot (ElimVar x κ)   = ElimVar x (bot κ)
-   bot (ElimConstr κs) = ElimConstr $ map bot κs
+instance boundedSlicesElim :: BoundedSlices (Elim Boolean) where
+   botOf (ElimVar x κ)   = ElimVar x (botOf κ)
+   botOf (ElimConstr κs) = ElimConstr $ map botOf κs
 
-instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
+instance joinSemilatticeCont :: JoinSemilattice' (Cont Boolean) where
+   join' = definedJoin
+
+instance slicesCont :: Slices (Cont Boolean) where
    maybeJoin None None            = pure None
    maybeJoin (Body e) (Body e')   = Body <$> maybeJoin e e'
    maybeJoin (Arg σ) (Arg σ')     = Arg <$> maybeJoin σ σ'
    maybeJoin _ _                  = Nothing
 
-instance boundedJoinSemilatticeCont :: BoundedJoinSemilattice (Cont Boolean) where
-   bot None      = None
-   bot (Body e)  = Body $ bot e
-   bot (Arg σ)   = Arg $ bot σ
+instance boundedSlicesCont :: BoundedSlices (Cont Boolean) where
+   botOf None      = None
+   botOf (Body e)  = Body $ botOf e
+   botOf (Arg σ)   = Arg $ botOf σ
 
-instance joinSemilatticeVarDef :: JoinSemilattice (VarDef Boolean) where
+instance joinSemilatticeVarDef :: JoinSemilattice' (VarDef Boolean) where
+   join' = definedJoin
+
+instance slicesVarDef :: Slices (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
-instance joinSemilatticeExpr :: JoinSemilattice (Expr Boolean) where
+instance joinSemilatticeExpr :: JoinSemilattice' (Expr Boolean) where
+   join' = definedJoin
+
+instance slicesExpr :: Slices (Expr Boolean) where
    maybeJoin Hole e                    = pure e
    maybeJoin e Hole                    = pure e
    maybeJoin (Expr α r) (Expr α' r')   = Expr <$> pure (α ∨ α') <*> maybeJoin r r'
 
-instance boundedJoinSemilatticeExpr :: BoundedJoinSemilattice (Expr Boolean) where
-   bot = const Hole
+instance boundedSlicesExpr :: BoundedSlices (Expr Boolean) where
+   botOf = const Hole
 
-instance joinSemilatticeRawExpr :: JoinSemilattice (RawExpr Boolean) where
+instance joinSemilatticeRawExpr :: JoinSemilattice' (RawExpr Boolean) where
+   join' = definedJoin
+
+instance slicesRawExpr :: Slices (RawExpr Boolean) where
    maybeJoin (Var x) (Var x')              = Var <$> x ≟ x'
    maybeJoin (Op op) (Op op')              = Op <$> op ≟ op'
    maybeJoin (Int n) (Int n')              = Int <$> n ≟ n'

@@ -9,40 +9,65 @@ import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
 import Util ((×), (≟), fromJust)
 
-class JoinSemilattice a where
+class JoinSemilattice' a where
+   join' :: a -> a -> a
+
+class JoinSemilattice' a <= BoundedJoinSemilattice' a where
+   bot' :: a
+
+instance joinSemilatticeBoolean :: JoinSemilattice' Boolean where
+   join' = (||)
+
+instance boundedJoinSemilatticeBoolean :: BoundedJoinSemilattice' Boolean where
+   bot' = false
+
+instance joinSemilatticeUnit :: JoinSemilattice' Unit where
+   join' _ = const unit
+
+instance boundedJoinSemilatticeUnit :: BoundedJoinSemilattice' Unit where
+   bot' = unit
+
+-- Notationally convenient to be able to assume join defined even if it may not be.
+class JoinSemilattice' a <= Slices a where
    maybeJoin :: a -> a -> Maybe a
 
-class JoinSemilattice a <= BoundedJoinSemilattice a where
-   bot :: a -> a
+definedJoin :: forall a . Slices a => a -> a -> a
+definedJoin x = fromJust "Join undefined" <<< maybeJoin x
+
+class Slices a <= BoundedSlices a where
+   botOf :: a -> a
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
-infixl 6 join as ∨
+infixl 6 join' as ∨
 
 type 𝔹 = Boolean
-
-instance joinSemilatticeBoolean :: JoinSemilattice Boolean where
-   maybeJoin x y = pure $ x || y
-
-join :: forall a . JoinSemilattice a => a -> a -> a
-join x y = fromJust "Join undefined" $ maybeJoin x y
 
 -- don't need a meet semilattice typeclass just yet
 meet :: Boolean -> Boolean -> Boolean
 meet = (&&)
 
-instance joinSemilatticeTuple :: (Eq k, JoinSemilattice t) => JoinSemilattice (Tuple k t) where
+instance joinSemilatticeTuple :: (Eq k, Slices t) => JoinSemilattice' (Tuple k t) where
+   join' = definedJoin
+
+instance slicesTuple :: (Eq k, Slices t) => Slices (Tuple k t) where
    maybeJoin (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeJoin v v'
 
-instance joinSemilatticeList :: JoinSemilattice t => JoinSemilattice (List t) where
+instance joinSemilatticeList :: Slices t => JoinSemilattice' (List t) where
+   join' = definedJoin
+
+instance slicesList :: Slices t => Slices (List t) where
    maybeJoin xs ys
       | length xs == length ys   = sequence $ zipWith maybeJoin xs ys
       | otherwise                = Nothing
 
-instance boundedSemilatticeList :: BoundedJoinSemilattice t => BoundedJoinSemilattice (List t) where
-   bot = map bot
+instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
+   botOf = map botOf
 
-instance joinSemilatticeMap :: (Ord k, JoinSemilattice t) => JoinSemilattice (Map k t) where
+instance joinSemilatticeMap :: (Ord k, Slices t) => JoinSemilattice' (Map k t) where
+   join' = definedJoin
+
+instance slicesMap :: (Ord k, Slices t) => Slices (Map k t) where
    maybeJoin κs κs'
       | size κs == size κs' =
          fromFoldable <$> (sequence $ zipWith maybeJoin (toUnfoldable κs) (toUnfoldable κs'))

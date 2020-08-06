@@ -7,7 +7,7 @@ import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, find, foldE
 import Expl (Expl(..), Match(..))
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), VarDef(..), RecDefs, varAnon)
-import Lattice (𝔹, bot, (∨))
+import Lattice (𝔹, botOf, (∨))
 import Util (Endo, type (×), (×), (≜), absurd, error, successful)
 import Val (Env, Val(Val), setα)
 import Val (RawVal(..), Val(Hole)) as V
@@ -28,21 +28,21 @@ unmatchArgs ρ (ξ : ξs) =
 -- second argument contains original environment and recursive definitions
 closeDefs_bwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
 closeDefs_bwd ρ (ρ0 × δ0) =
-   case foldEnv joinDefs (Empty × bot ρ0 × bot δ0 × false) ρ of
+   case foldEnv joinDefs (Empty × botOf ρ0 × botOf δ0 × false) ρ of
    δ' × ρ' × δ × α -> ρ' × (δ ∨ δ') × α
    where
    joinDefs :: Binding Val 𝔹 -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
    joinDefs (f ↦ Val α_f (V.Closure ρ_f δ_f σ_f)) (δ_acc × ρ' × δ × α)
       = (δ_acc :+: f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
    joinDefs (_ ↦ Val _ _) _                     = error absurd
-   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α)   = (δ_acc :+: f ↦ bot (successful $ find f δ0)) × ρ' × δ × α
+   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α)   = (δ_acc :+: f ↦ botOf (successful $ find f δ0)) × ρ' × δ × α
 
 match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
-match_bwd Empty κ α (MatchVarAnon v)            = bot v × ElimVar varAnon κ
+match_bwd Empty κ α (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
 match_bwd ρ κ α (MatchConstr (c × ξs) κs)       =
    let vs × κ' = matchArgs_bwd ρ κ α ξs in
-   (Val α $ V.Constr c vs) × (ElimConstr $ insert c κ' $ map bot κs)
+   (Val α $ V.Constr c vs) × (ElimConstr $ insert c κ' $ map botOf κs)
 match_bwd _ _ _ _                               = error absurd
 
 matchArgs_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -55,24 +55,24 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
 
 eval_bwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 eval_bwd V.Hole (Expl ρ _)
-   = bot ρ × Hole × false
+   = botOf ρ × Hole × false
 eval_bwd v (Expl ρ (T.Var x))
-   = (bot ρ ◃ x ↦ v) × Expr false (Var x) × false
+   = (botOf ρ ◃ x ↦ v) × Expr false (Var x) × false
 eval_bwd v (Expl ρ (T.Op op))
-   = (bot ρ ◃ op ↦ v) × Expr false (Op op) × false
+   = (botOf ρ ◃ op ↦ v) × Expr false (Op op) × false
 eval_bwd (Val α (V.Str s)) (Expl ρ T.Str)
-   = bot ρ × Expr α (Str s) × α
+   = botOf ρ × Expr α (Str s) × α
 eval_bwd (Val α (V.Int n)) (Expl ρ T.Int)
-   = bot ρ × Expr α (Int n) × α
+   = botOf ρ × Expr α (Int n) × α
 eval_bwd (Val α (V.Float n)) (Expl ρ T.Float)
-   = bot ρ × Expr α (Float n) × α
+   = botOf ρ × Expr α (Float n) × α
 eval_bwd (Val α (V.Closure ρ δ σ)) (Expl _ T.Lambda)
    = ρ × Expr α (Lambda σ) × α
 eval_bwd (Val α (V.Constr c vs)) (Expl ρ (T.Constr c' ts))
    = let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
          evalArg_bwd (v × t) (ρ' × es × α') = (ρ' ∨ ρ'') × (e : es) × (α' ∨ α'')
             where ρ'' × e × α'' = eval_bwd v t
-         ρ' × es × α' = foldr evalArg_bwd (bot ρ × Nil × α) (zip vs ts) in
+         ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
      ρ' × Expr α (Constr c es) × α'
 eval_bwd v (Expl _ (T.App (t × δ) t' ξ t''))
    = let ρ1ρ2ρ3 × e × α    = eval_bwd v t''

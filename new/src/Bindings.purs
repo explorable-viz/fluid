@@ -3,7 +3,7 @@ module Bindings where
 import Prelude
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
-import Lattice (class BoundedJoinSemilattice, class JoinSemilattice, bot, maybeJoin)
+import Lattice (class BoundedSlices, class JoinSemilattice', class Slices, botOf, definedJoin, maybeJoin)
 import Util (Endo, MayFail, type (×), (×), (≟), report)
 
 type Var = String
@@ -66,12 +66,14 @@ instance semigroupBindings :: Semigroup (Bindings t a) where
 instance monoidBindings :: Monoid (Bindings t a) where
    mempty = Empty
 
-instance joinSemilatticeBindings :: JoinSemilattice (t Boolean) => JoinSemilattice (Bindings t Boolean) where
+instance joinSemilatticeBindings :: Slices (t Boolean) => JoinSemilattice' (Bindings t Boolean) where
+   join' = definedJoin
+
+instance slicesBindings :: Slices (t Boolean) => Slices (Bindings t Boolean) where
    maybeJoin Empty Empty                     = pure Empty
    maybeJoin (ρ :+: x ↦ v) (ρ' :+: y ↦ v')   = (:+:) <$> maybeJoin ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeJoin v v')
    maybeJoin _ _                             = Nothing
 
-instance boundedJoinSemilatticeBindings ::
-   BoundedJoinSemilattice (t Boolean) => BoundedJoinSemilattice (Bindings t Boolean) where
-   bot Empty = Empty
-   bot (Extend ρ (x ↦ v)) = Extend (bot ρ) (x ↦ bot v)
+instance boundedSlices :: BoundedSlices (t Boolean) => BoundedSlices (Bindings t Boolean) where
+   botOf Empty = Empty
+   botOf (Extend ρ (x ↦ v)) = Extend (botOf ρ) (x ↦ botOf v)
