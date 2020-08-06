@@ -12,6 +12,7 @@ import Expr (Cont(..), Elim(..), Expr(..), RawExpr, VarDef(..), expr, varAnon)
 import Expr (RawExpr(..), Expr(Hole)) as E
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
+import Lattice (class BoundedJoinSemilattice)
 import Util (Endo, type (×), (×), absurd, error, intersperse)
 import Val (Primitive, RawVal, Val(..), val)
 import Val (RawVal(..), Val(Hole)) as V
@@ -48,12 +49,12 @@ hole = text "□"
 class ToList a where
    toList :: a -> List a
 
-instance toListExpr :: ToList (Expr Boolean)  where
+instance toListExpr :: ToList (Expr a)  where
    toList (Expr _ (E.Constr c (e : e' : Nil))) | c == cCons = e : toList e'
    toList (Expr _ (E.Constr c Nil)) | c == cNil             = Nil
    toList _                                                 = error "not a list"
 
-instance toListVal :: ToList (Val Boolean)  where
+instance toListVal :: ToList (Val a)  where
    toList (Val _ (V.Constr c (v : v' : Nil))) | c == cCons  = v : toList v'
    toList (Val _ (V.Constr c Nil)) | c == cNil              = Nil
    toList _                                                 = error "not a list"
@@ -64,17 +65,17 @@ class Pretty p where
 instance prettyBool :: Pretty Boolean where
    pretty = text <<< show
 
-instance prettyBindings :: Pretty (t Boolean) => Pretty (Bindings t Boolean) where
+instance prettyBindings :: Pretty (t a) => Pretty (Bindings t a) where
    pretty (ρ :+: kv) = brackets $ pretty $ ρ :+: kv
    pretty Empty = text "[]"
 
 instance prettyVoid :: Pretty Void where
    pretty _ = error absurd
 
-instance prettyExpl :: Pretty (Expl Boolean) where
+instance prettyExpl :: BoundedJoinSemilattice a => Pretty (Expl a) where
    pretty (Expl _ t) = pretty t
 
-instance prettyRawExpl :: Pretty (RawExpl Boolean) where
+instance prettyRawExpl :: BoundedJoinSemilattice a => Pretty (RawExpl a) where
    pretty T.Hole                          = hole
    pretty (T.Var x)                       = text x
    pretty (T.Op op)                       = text op
@@ -102,7 +103,7 @@ instance prettyRawExpl :: Pretty (RawExpl Boolean) where
       atop (text "letrec " :<>: pretty δ)
            (text "in     " :<>: pretty t)
 
-instance prettyMatch :: Pretty (Match Boolean) where
+instance prettyMatch :: BoundedJoinSemilattice a => Pretty (Match a) where
    pretty (MatchConstr (c × ξs) κs) =
       text "ξ = " :<>:
       atop (text "Pattern:       " :<>: text (show c) :<>: operator "-> " :<>: vcat (map pretty ξs))
@@ -110,13 +111,13 @@ instance prettyMatch :: Pretty (Match Boolean) where
    pretty (MatchVar x) = text "ξ = " :<>: text x
    pretty (MatchVarAnon x) = text "ξ = " :<>: text varAnon
 
-instance prettyExplVal :: Pretty (Expl Boolean × Val Boolean) where
+instance prettyExplVal :: BoundedJoinSemilattice a => Pretty (Expl a × Val a) where
    pretty (t × v) = parens $ pretty t :<>: comma :<>: pretty v
 
 instance prettyList :: Pretty a => Pretty (List a) where
    pretty xs = brackets $ hcat $ intersperse comma $ map pretty xs
 
-instance prettyExpr :: Pretty (Expr Boolean) where
+instance prettyExpr :: BoundedJoinSemilattice a => Pretty (Expr a) where
    pretty E.Hole     = hole
    pretty (Expr _ r) = pretty r
 
@@ -139,7 +140,7 @@ prettyConstr c xs
    | c == cNil || c == cCons = pretty xs
    | otherwise = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
 
-instance prettyRawExpr :: Pretty (RawExpr Boolean) where
+instance prettyRawExpr :: BoundedJoinSemilattice a => Pretty (RawExpr a) where
    pretty (E.Int n)                 = text $ show n
    pretty (E.Float n)               = text $ show n
    pretty (E.Str str)               = text $ show str
@@ -158,29 +159,29 @@ instance prettyRawExpr :: Pretty (RawExpr Boolean) where
    pretty (E.App e e')              = pretty e :<>: space :<>: pretty e'
    pretty (E.BinaryApp e op e')     = pretty e :<>: operator op :<>: pretty e'
 
-instance prettyBindingElim :: Pretty (Binding Elim Boolean) where
+instance prettyBindingElim :: BoundedJoinSemilattice a => Pretty (Binding Elim a) where
    pretty (f ↦ σ) = text f :<>: operator "=" :<>: pretty σ
 
-instance prettyBindingVal :: Pretty (Binding Val Boolean) where
+instance prettyBindingVal :: BoundedJoinSemilattice a => Pretty (Binding Val a) where
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
-instance prettyCont :: Pretty (Cont Boolean) where
+instance prettyCont :: BoundedJoinSemilattice a => Pretty (Cont a) where
    pretty None          = text "⋆"
    pretty (Body e)      = pretty e
    pretty (Arg σ)       = pretty σ
 
-instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
+instance prettyBranch :: BoundedJoinSemilattice a => Pretty (Ctr × Cont a) where
    pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
-instance prettyElim :: Pretty (Elim Boolean) where
+instance prettyElim :: BoundedJoinSemilattice a => Pretty (Elim a) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = hcat $ map (\x -> pretty x :<>: comma) $ (toUnfoldable κs :: List _)
 
-instance prettyVal :: Pretty (Val Boolean) where
+instance prettyVal :: BoundedJoinSemilattice a => Pretty (Val a) where
    pretty V.Hole     = hole
    pretty (Val _ u)  = pretty u
 
-instance prettyRawVal :: Pretty (RawVal Boolean) where
+instance prettyRawVal :: BoundedJoinSemilattice a => Pretty (RawVal a) where
    pretty (V.Int n)              = text $ show n
    pretty (V.Float n)            = text $ show n
    pretty (V.Str str)            = text $ show str

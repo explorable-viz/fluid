@@ -6,7 +6,10 @@ import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, maybeJoin)
+import Lattice (
+   class BoundedJoinSemilattice, class BoundedSlices, class JoinSemilattice, class Slices,
+   𝔹, (∨), bot, definedJoin, maybeJoin
+)
 import Util (Endo, type (+), (≟), absurd, error)
 
 -- one constructor for each PureScript type that appears in an exported operator signature
@@ -28,8 +31,8 @@ data RawVal a =
 
 data Val a = Hole | Val a (RawVal a)
 
-val :: RawVal 𝔹 -> Val 𝔹
-val = Val false
+val :: forall a . BoundedJoinSemilattice a => RawVal a -> Val a
+val = Val bot
 
 setα :: 𝔹 -> Endo (Val 𝔹)
 setα true Hole    = error absurd

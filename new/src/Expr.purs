@@ -6,7 +6,10 @@ import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
 import DataType (Ctr)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), botOf, definedJoin, maybeJoin)
+import Lattice (
+   class BoundedJoinSemilattice, class BoundedSlices, class JoinSemilattice, class Slices,
+   𝔹, (∨), bot, botOf, definedJoin, maybeJoin
+)
 import Util (type (+), (≟), error)
 
 type Var = String
@@ -29,8 +32,8 @@ data RawExpr a =
 
 data Expr a = Hole | Expr a (RawExpr a)
 
-expr :: RawExpr 𝔹 -> Expr 𝔹
-expr = Expr false
+expr :: forall a . BoundedJoinSemilattice a => RawExpr a -> Expr a
+expr = Expr bot
 
 data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
 type VarDefs a = List (VarDef a) -- todo: move to surface language
