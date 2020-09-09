@@ -94,7 +94,7 @@ simplePattern pattern' =
    ctr_pattern :: SParser Pattern
    ctr_pattern = PattConstr <$> ctr <@> 0 <@> PNone
 
-      -- TODO: anonymous variables
+   -- TODO: anonymous variables
    patternVariable :: SParser Pattern
    patternVariable = PattVar <$> ident <@> PNone
 
