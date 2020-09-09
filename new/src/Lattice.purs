@@ -22,7 +22,7 @@ instance boundedJoinSemilatticeBoolean :: BoundedJoinSemilattice Boolean where
    bot = false
 
 instance joinSemilatticeUnit :: JoinSemilattice Unit where
-   join _ = const unit
+   join _ = identity
 
 instance boundedJoinSemilatticeUnit :: BoundedJoinSemilattice Unit where
    bot = unit
