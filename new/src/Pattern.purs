@@ -12,7 +12,7 @@ import DataType (DataType, Ctr, arity, dataTypeFor)
 import Desugar (Pattern(..)) as D
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), Var, expr)
 import Lattice (𝔹)
-import Util (MayFail, type (×), (×), (≞), (=<<<), absurd, error, om, report, with)
+import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =
    PNone |              -- intermediate state during construction, but also for structured let
