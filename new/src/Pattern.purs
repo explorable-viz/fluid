@@ -13,7 +13,7 @@ import Desugar (Branch)
 import Desugar (Pattern(..)) as D
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), Var, expr)
 import Lattice (𝔹)
-import Util (MayFail, (×), (≞), (=<<<), absurd, error, om, report, with)
+import Util (MayFail, type (×), (×), (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =
    PNone |              -- intermediate state during construction, but also for structured let
@@ -27,6 +27,12 @@ toCont (PBody e)     = pure $ Body e
 toCont (PLambda π)   = Body <$> (expr <$> (Lambda <$> toElim π))
 toCont (PArg π)      = Arg <$> toElim π
 
+toCont2 :: List D.Pattern × Cont 𝔹 -> MayFail (Cont 𝔹)
+toCont2 (Nil × κ)       = pure κ
+toCont2 ((π : πs) × κ)  = do
+   κ' <- toCont2 (πs × κ)
+   Arg <$> toElim2 (π × κ')
+
 -- Since this includes the continuation, "Branch" might be a better name.
 data Pattern =
    PattVar Var PCont |
@@ -36,9 +42,9 @@ toElim :: Pattern -> MayFail (Elim 𝔹)
 toElim (PattVar x κ)      = ElimVar x <$> toCont κ
 toElim (PattConstr c n κ) = checkArity c n *> (ElimConstr <$> (singleton c <$> toCont κ))
 
-toElim2 :: Branch -> MayFail (Elim 𝔹)
-toElim2 (D.PVar x × e)         = pure $ ElimVar x (Body e)
-toElim2 (D.PConstr c πs × e)   = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> ?_)
+toElim2 :: D.Pattern × Cont 𝔹 -> MayFail (Elim 𝔹)
+toElim2 (D.PVar x × κ)         = pure $ ElimVar x κ
+toElim2 (D.PConstr c πs × κ)   = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont2 (πs × κ))
 
 class MapCont a where
    -- replace a None continuation by a non-None one
