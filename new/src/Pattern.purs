@@ -48,7 +48,7 @@ instance setContPattern :: MapCont Pattern where
    setCont κ (PattVar x κ')      = PattVar x $ setCont κ κ'
    setCont κ (PattConstr c n κ') = PattConstr c n $ setCont κ κ'
 
-class Joinable a b | a -> b where
+class Joinable a b where
    maybeJoin :: b -> a -> MayFail b
 
 dataType :: Map Ctr (Cont 𝔹) -> MayFail DataType
