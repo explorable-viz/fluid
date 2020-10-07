@@ -8,7 +8,7 @@ import DataType (Ctr, DataType'(..), ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), Var, expr)
 import Expr (RawExpr(..)) as E
 import Lattice (𝔹)
-import Util ((×), absurd, error, fromJust, mustLookup)
+import Util (type (×), (×), absurd, error, fromJust, mustLookup)
 
 data RawSExpr =
    Var Var |
@@ -29,6 +29,8 @@ data RawSExpr =
 data Pattern =
    PVar Var |
    PConstr Ctr (List Pattern)
+
+type Branch = Pattern × Expr 𝔹
 
 data Predicate =
    Guard SExpr |

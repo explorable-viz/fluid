@@ -10,7 +10,7 @@ import Data.Bitraversable (bisequence)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List, (:), concat, foldr, groupBy, reverse, singleton, sortBy)
+import Data.List (List, (:), concat, foldr, groupBy, many, reverse, singleton, sortBy)
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (values)
 import Data.Ordering (invert)
@@ -25,6 +25,8 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Binding, (↦), fromList)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
+import Desugar (Branch)
+import Desugar (Pattern(..)) as D
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDefs, Var, VarDef(..), VarDefs, expr)
 import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
@@ -104,6 +106,10 @@ simplePattern pattern' =
          π <- pattern' <* token.comma
          π' <- pattern'
          pure $ PattConstr cPair 2 $ PArg $ setCont (PArg π') π
+
+ctr_branch :: SParser (Expr 𝔹) -> SParser Branch
+ctr_branch expr' =
+   (D.PConstr <$> ctr <*> many pattern2) `lift2 (×)` expr'
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -268,6 +274,9 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    infixCtr op = do
       op' <- token.operator
       onlyIf (isCtrOp op' && op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
+
+pattern2 :: SParser D.Pattern
+pattern2 = error "todo"
 
 topLevel :: forall a . Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
