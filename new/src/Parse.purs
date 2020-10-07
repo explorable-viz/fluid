@@ -10,7 +10,7 @@ import Data.Bitraversable (bisequence)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List(..), (:), concat, foldr, groupBy, reverse, singleton, sortBy)
+import Data.List (List(..), (:), concat, foldr, groupBy, reverse, singleton, snoc, sortBy)
 import Data.List.NonEmpty (NonEmptyList, head, toList)
 import Data.Map (values)
 import Data.Ordering (invert)
@@ -113,8 +113,17 @@ simplePattern2 pattern' =
    where
    -- Constructor name as a nullary constructor pattern.
    ctr_pattern :: SParser D.Pattern
-   ctr_pattern =
-      D.PConstr <$> ctr <@> Nil
+   ctr_pattern = D.PConstr <$> ctr <@> Nil
+
+   var_pattern :: SParser D.Pattern
+   var_pattern = D.PVar <$> ident
+
+   pair_pattern :: SParser D.Pattern
+   pair_pattern =
+      token.parens $ do
+         π <- pattern' <* token.comma
+         π' <- pattern'
+         pure $ D.PConstr cPair (π : π' : Nil)
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -280,8 +289,26 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
       op' <- token.operator
       onlyIf (isCtrOp op' && op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
 
+-- Pattern with no continuation.
 pattern2 :: SParser D.Pattern
-pattern2 = error "todo"
+pattern2 = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
+   where
+   -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
+   -- non-saturated constructor applications, or patterns other than constructors in the function position.
+   appChain_pattern :: Endo (SParser D.Pattern)
+   appChain_pattern pattern' = simplePattern2 pattern' >>= rest
+      where
+         rest ∷ D.Pattern -> SParser D.Pattern
+         rest π@(D.PConstr c πs) = ctrArgs <|> pure π
+            where
+            ctrArgs :: SParser D.Pattern
+            ctrArgs = simplePattern2 pattern' >>= \π' -> rest $ D.PConstr c (πs `snoc` π')
+         rest π@(D.PVar _) = pure π
+
+   infixCtr :: String -> SParser (D.Pattern -> D.Pattern -> D.Pattern)
+   infixCtr op = do
+      op' <- token.operator
+      onlyIf (isCtrOp op' && op == op') \π π' -> D.PConstr (Ctr op') (π' : π : Nil)
 
 topLevel :: forall a . Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
