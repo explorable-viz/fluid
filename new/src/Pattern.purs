@@ -1,7 +1,7 @@
 module Pattern where
 
 import Prelude hiding (absurd, join)
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), length)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, insert, lookup, singleton, update)
 import Data.Map.Internal (keys)
@@ -9,9 +9,11 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
 import DataType (DataType, Ctr, arity, dataTypeFor)
+import Desugar (Branch)
+import Desugar (Pattern(..)) as D
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), Var, expr)
 import Lattice (𝔹)
-import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
+import Util (MayFail, (×), (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =
    PNone |              -- intermediate state during construction, but also for structured let
@@ -33,6 +35,10 @@ data Pattern =
 toElim :: Pattern -> MayFail (Elim 𝔹)
 toElim (PattVar x κ)      = ElimVar x <$> toCont κ
 toElim (PattConstr c n κ) = checkArity c n *> (ElimConstr <$> (singleton c <$> toCont κ))
+
+toElim2 :: Branch -> MayFail (Elim 𝔹)
+toElim2 (D.PVar x × e)         = pure $ ElimVar x (Body e)
+toElim2 (D.PConstr c πs × e)   = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> ?_)
 
 class MapCont a where
    -- replace a None continuation by a non-None one
